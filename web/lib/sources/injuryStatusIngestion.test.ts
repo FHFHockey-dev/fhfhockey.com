@@ -8,6 +8,7 @@ import {
   normalizeGameDayTweetsNewsStatusRows,
   parseGameDayTweetsNewsPage,
   selectCurrentPlayerStatusRows,
+  inferInjuryAttributes,
   toGameDayTweetsNewsProvenanceRows,
   toInjurySourceProvenanceRows
 } from "./injuryStatusIngestion";
@@ -53,7 +54,41 @@ describe("injuryStatusIngestion", () => {
       team_abbreviation: "TBL",
       status_state: "injured",
       raw_status: "Out",
-      status_detail: "Upper body"
+      status_detail: "Upper body",
+      metadata: {
+        injuryAttributes: {
+          bodyRegion: "upper_body",
+          confidence: "medium"
+        }
+      }
+    });
+  });
+
+  it("infers severity, body region, return windows, and return limitations from injury text", () => {
+    expect(
+      inferInjuryAttributes({
+        rawStatus: "Out",
+        statusDetail: "Lower-body surgery; week-to-week",
+        classification: "injury"
+      })
+    ).toMatchObject({
+      severityTier: "severe",
+      bodyRegion: "lower_body",
+      expectedReturnWindow: "multi_week",
+      confidence: "high"
+    });
+
+    expect(
+      inferInjuryAttributes({
+        text: "Eriksson Ek will not travel and remains day-to-day with an upper-body issue.",
+        classification: "questionable"
+      })
+    ).toMatchObject({
+      severityTier: "minor",
+      bodyRegion: "upper_body",
+      expectedReturnWindow: "day_to_day",
+      returnLimitations: ["will_not_travel"],
+      confidence: "high"
     });
   });
 
@@ -139,6 +174,65 @@ describe("injuryStatusIngestion", () => {
         })
       ])
     );
+  });
+
+  it("keeps questionable injury news and ignores transaction-only or lineup-only tweets", () => {
+    const items = parseGameDayTweetsNewsPage({
+      html: `
+        <body>
+          <blockquote class="tweet">
+            <a class="handle" href="https://twitter.com/WildPR">@WildPR</a>
+            Joel Eriksson Ek is a game-time decision after limited practice.
+            <a href="https://twitter.com/GameDayNewsNHL/status/3">Apr 22, 2026</a>
+          </blockquote>
+          <blockquote class="tweet">
+            <a class="handle" href="https://twitter.com/WildPR">@WildPR</a>
+            Joel Eriksson Ek recalled from Iowa.
+            <a href="https://twitter.com/GameDayNewsNHL/status/4">Apr 22, 2026</a>
+          </blockquote>
+          <blockquote class="tweet">
+            <a class="handle" href="https://twitter.com/WildPR">@WildPR</a>
+            Joel Eriksson Ek centered the second line at morning skate.
+            <a href="https://twitter.com/GameDayNewsNHL/status/5">Apr 22, 2026</a>
+          </blockquote>
+        </body>
+      `,
+      sourceUrl: "https://www.gamedaytweets.com/news",
+      rosterEntries: [
+        {
+          playerId: 97,
+          fullName: "Joel Eriksson Ek",
+          lastName: "Eriksson Ek",
+          teamId: 30
+        }
+      ],
+      directory: buildTeamStatusDirectory()
+    });
+
+    const rows = normalizeGameDayTweetsNewsStatusRows({
+      items,
+      snapshotDate: "2026-04-22",
+      observedAt: "2026-04-22T12:00:00.000Z"
+    });
+
+    expect(items.map((item) => item.classification)).toEqual([
+      "questionable",
+      "transaction",
+      "other"
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      player_id: 97,
+      status_state: "injured",
+      raw_status: "Questionable",
+      metadata: {
+        injuryAttributes: {
+          severityTier: "minor",
+          expectedReturnWindow: "day_to_day",
+          returnLimitations: ["game_time_decision", "limited_practice"]
+        }
+      }
+    });
   });
 
   it("maps returning rows into homepage-friendly display copy", () => {

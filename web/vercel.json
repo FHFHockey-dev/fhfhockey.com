@@ -58,6 +58,10 @@
       "schedule": "45 11 * * *"
     },
     {
+      "path": "/api/v1/db/auto-news-feed-items?limit=300&daysBack=14&perSourceLimit=500",
+      "schedule": "*/30 * * * *"
+    },
+    {
       "path": "/api/v1/db/cron-report",
       "schedule": "0 13 * * *"
     }

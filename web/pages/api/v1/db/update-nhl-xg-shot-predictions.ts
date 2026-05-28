@@ -11,6 +11,7 @@ import {
   fetchPersistedFeatureRows,
   loadXgModelArtifact,
   predictShotGoalProbabilities,
+  resolveXgArtifactPredictionType,
   type PersistedFeatureRow,
   type XgShotPredictionType
 } from "lib/xg/shotFeaturePersistence";
@@ -94,6 +95,7 @@ function buildArtifactHealthResponse(resolution: ArtifactPathResolution) {
   try {
     const artifact = loadXgModelArtifact(resolution.path);
     const modelApproved = artifact.approvalGradeEligibility?.isEligible === true;
+    const artifactPredictionType = resolveXgArtifactPredictionType(artifact);
 
     return {
       statusCode: modelApproved ? 200 : 409,
@@ -103,6 +105,7 @@ function buildArtifactHealthResponse(resolution: ArtifactPathResolution) {
         artifactPath: resolution.path,
         artifactPathSource: resolution.source,
         artifactTag: artifact.artifactTag,
+        predictionType: artifactPredictionType,
         modelFamily: artifact.family,
         featureFamily: artifact.featureFamily ?? null,
         featureVersion: artifact.featureVersion,
@@ -176,22 +179,29 @@ async function resolveSeasonId(query: NextApiRequest["query"]): Promise<number> 
 async function fetchPersistedFeatureRowsPage(args: {
   seasonId: number;
   featureVersion: number;
+  predictionType: XgShotPredictionType;
   from: number;
   to: number;
 }): Promise<PersistedFeatureRow[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .from("nhl_xg_shot_features" as any)
     .select(
       "feature_version, game_id, event_id, season_id, game_date, event_owner_team_id, shooter_player_id, goalie_in_net_id, shot_event_type, is_goal, creates_rebound, feature_payload"
     )
     .eq("feature_version", args.featureVersion)
     .eq("season_id", args.seasonId)
-    .eq("is_unblocked_shot_attempt", true)
     .eq("is_penalty_shot_event", false)
     .eq("is_shootout_event", false)
     .order("game_id", { ascending: true })
-    .order("event_id", { ascending: true })
-    .range(args.from, args.to);
+    .order("event_id", { ascending: true });
+
+  if (args.predictionType === "rebound_creation") {
+    query = query.in("shot_event_type", ["shot-on-goal", "missed-shot", "blocked-shot"]);
+  } else {
+    query = query.eq("is_unblocked_shot_attempt", true);
+  }
+
+  const { data, error } = await query.range(args.from, args.to);
 
   if (error) {
     throw new Error(`Failed to fetch nhl_xg_shot_features page: ${error.message}`);
@@ -332,15 +342,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   try {
     const predictionType = parsePredictionType(firstQueryValue(req.query.predictionType));
-    if (predictionType !== "shot_goal") {
-      return res.status(501).json({
-        success: false,
-        predictionType,
-        error:
-          "Rebound-creation prediction storage is available, but no rebound model artifact contract has been approved yet."
-      });
-    }
-
     const modelArtifactPath = artifactPathResolution.path;
     if (!modelArtifactPath) {
       return res.status(400).json({
@@ -353,8 +354,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     }
 
     const artifact = loadXgModelArtifact(modelArtifactPath);
+    const artifactPredictionType = resolveXgArtifactPredictionType(artifact);
     const allowUnapproved = parseBoolean(firstQueryValue(req.query.allowUnapproved));
     const modelApproved = artifact.approvalGradeEligibility?.isEligible === true;
+
+    if (artifactPredictionType !== predictionType) {
+      return res.status(409).json({
+        success: false,
+        artifactTag: artifact.artifactTag,
+        modelFamily: artifact.family,
+        artifactPredictionType,
+        requestedPredictionType: predictionType,
+        error:
+          "The selected xG artifact predictionType does not match the requested predictionType."
+      });
+    }
 
     if (!modelApproved && !allowUnapproved) {
       return res.status(409).json({
@@ -399,6 +413,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         const featureRows = await fetchPersistedFeatureRowsPage({
           seasonId,
           featureVersion,
+          predictionType,
           from,
           to: from + pageLimit - 1
         });
@@ -492,6 +507,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         supabase,
         gameIds: gameIdBatch,
         featureVersion,
+        predictionType,
         limit: null
       });
 

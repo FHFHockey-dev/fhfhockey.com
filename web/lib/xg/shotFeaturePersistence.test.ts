@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildPredictionDbRow,
+  assertXgArtifactSupportsPredictionType,
   predictShotGoalProbabilities,
+  resolveXgArtifactPredictionType,
   type PersistedXgModelArtifact,
 } from "./shotFeaturePersistence";
 
@@ -79,5 +81,41 @@ describe("shotFeaturePersistence", () => {
       selectedMethod: "isotonic",
       applied: true,
     });
+  });
+
+  it("requires artifacts to match the requested prediction type", () => {
+    const legacyShotGoalArtifact = {
+      artifactKind: "nhl_xg_model",
+      artifactTag: "legacy-shot-goal",
+      family: "logistic_l2",
+      featureVersion: 1,
+      selectedFeatures: {
+        numeric: [],
+        boolean: [],
+        categorical: [],
+      },
+      featureKeys: [],
+      model: {
+        featureCount: 0,
+        weights: [],
+        bias: 0,
+      },
+    } satisfies PersistedXgModelArtifact;
+    const reboundArtifact = {
+      ...legacyShotGoalArtifact,
+      artifactTag: "rebound-model",
+      predictionType: "rebound_creation",
+    } satisfies PersistedXgModelArtifact;
+
+    expect(resolveXgArtifactPredictionType(legacyShotGoalArtifact)).toBe("shot_goal");
+    expect(resolveXgArtifactPredictionType(reboundArtifact)).toBe("rebound_creation");
+    expect(() =>
+      assertXgArtifactSupportsPredictionType(legacyShotGoalArtifact, "rebound_creation")
+    ).toThrow(
+      "Model artifact legacy-shot-goal is for predictionType=shot_goal; requested predictionType=rebound_creation."
+    );
+    expect(() =>
+      assertXgArtifactSupportsPredictionType(reboundArtifact, "rebound_creation")
+    ).not.toThrow();
   });
 });

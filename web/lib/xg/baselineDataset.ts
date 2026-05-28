@@ -1,6 +1,7 @@
 import type { NhlShotFeatureRow } from "../supabase/Upserts/nhlShotFeatureBuilder";
 
 export type DatasetSplit = "train" | "validation" | "test";
+export type BaselinePredictionType = "shot_goal" | "rebound_creation";
 
 export type EncodedBaselineExample = {
   rowId: string;
@@ -17,6 +18,8 @@ export type EncodedBaselineExample = {
 };
 
 export type EncodedBaselineDataset = {
+  predictionType: BaselinePredictionType;
+  labelKey: "label_goal" | "label_rebound_creation";
   featureKeys: string[];
   categoricalLevels: Record<string, string[]>;
   splitAssignments: Array<{ gameId: number; split: DatasetSplit }>;
@@ -137,6 +140,7 @@ export type BaselineSplitConfig = {
 };
 
 export type BaselineDatasetBuildOptions = {
+  predictionType?: BaselinePredictionType;
   featureFamily?: BaselineFeatureFamilyName;
   featureSelection?: BaselineFeatureSelection;
   splitConfig?: BaselineSplitConfig;
@@ -224,12 +228,39 @@ function normalizeCategoricalValue(value: unknown): string | null {
   return normalized.length > 0 ? normalized : null;
 }
 
-export function isEligibleBaselineTrainingRow(row: NhlShotFeatureRow): boolean {
-  return (
-    row.isUnblockedShotAttempt &&
-    !row.isPenaltyShotEvent &&
-    !row.isShootoutEvent
-  );
+const REBOUND_CREATION_SOURCE_EVENT_TYPES = new Set([
+  "shot-on-goal",
+  "missed-shot",
+  "blocked-shot",
+]);
+
+export function isEligibleBaselineTrainingRow(
+  row: NhlShotFeatureRow,
+  predictionType: BaselinePredictionType = "shot_goal"
+): boolean {
+  if (row.isPenaltyShotEvent || row.isShootoutEvent) {
+    return false;
+  }
+
+  if (predictionType === "rebound_creation") {
+    return (
+      row.shotEventType != null &&
+      REBOUND_CREATION_SOURCE_EVENT_TYPES.has(row.shotEventType)
+    );
+  }
+
+  return row.isUnblockedShotAttempt;
+}
+
+function buildTrainingLabel(
+  row: NhlShotFeatureRow,
+  predictionType: BaselinePredictionType
+): 0 | 1 {
+  if (predictionType === "rebound_creation") {
+    return row.createsRebound ? 1 : 0;
+  }
+
+  return row.isGoal ? 1 : 0;
 }
 
 function createDeterministicRandom(seed: number): () => number {
@@ -389,7 +420,10 @@ export function buildEncodedBaselineDataset(
   shotRows: NhlShotFeatureRow[],
   options: BaselineDatasetBuildOptions = {}
 ): EncodedBaselineDataset {
-  const eligibleRows = shotRows.filter(isEligibleBaselineTrainingRow);
+  const predictionType = options.predictionType ?? "shot_goal";
+  const eligibleRows = shotRows.filter((row) =>
+    isEligibleBaselineTrainingRow(row, predictionType)
+  );
   if (!eligibleRows.length) {
     throw new Error("No eligible shot-feature rows were available for baseline training.");
   }
@@ -464,7 +498,7 @@ export function buildEncodedBaselineDataset(
       seasonId: row.seasonId ?? null,
       gameDate: row.gameDate ?? null,
       split,
-      label: row.isGoal ? 1 : 0,
+      label: buildTrainingLabel(row, predictionType),
       strengthState: row.strengthState ?? null,
       isReboundShot: row.isReboundShot === true,
       isRushShot: row.isRushShot === true,
@@ -473,6 +507,11 @@ export function buildEncodedBaselineDataset(
   });
 
   return {
+    predictionType,
+    labelKey:
+      predictionType === "rebound_creation"
+        ? "label_rebound_creation"
+        : "label_goal",
     featureKeys,
     categoricalLevels,
     splitAssignments,

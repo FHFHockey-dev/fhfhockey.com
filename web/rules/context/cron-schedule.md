@@ -2,473 +2,591 @@
 ```json
 [
   {
+    "jobid": 1,
+    "jobname": "update-line-combinations-job",
+    "schedule": "*/25 * * * *",
+    "run_time_utc": null,
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-line-combinations?count=10"
+  },
+  {
+    "jobid": 2,
+    "jobname": "update-stats-job",
+    "schedule": "*/20 * * * *",
+    "run_time_utc": null,
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/cron/update-stats-cron?count=4"
+  },
+  {
     "jobid": 3,
     "jobname": "update-teams-job",
     "schedule": "0 0 * * *",
     "run_time_utc": "00:00 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-teams"
   },
   {
     "jobid": 5,
     "jobname": "update-seasons-job",
     "schedule": "0 1 * * *",
     "run_time_utc": "01:00 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-seasons"
   },
   {
     "jobid": 6,
     "jobname": "update-players-job",
     "schedule": "0 2 * * *",
     "run_time_utc": "02:00 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-players"
   },
   {
     "jobid": 7,
     "jobname": "update-games-job",
     "schedule": "0 3 * * *",
     "run_time_utc": "03:00 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-games"
   },
   {
     "jobid": 271,
     "jobname": "daily-refresh-nstwgo-matview",
     "schedule": "00 04 * * *",
     "run_time_utc": "04:00 UTC",
-    "active": true
+    "active": true,
+    "method": "SQL"
   },
   {
     "jobid": 233,
     "jobname": "update-yahoo-matchup-dates",
     "schedule": "20 7 * * *",
     "run_time_utc": "07:20 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-yahoo-weeks?game_key=nhl"
   },
   {
     "jobid": 79,
     "jobname": "update-nst-gamelog",
     "schedule": "25 7 * * *",
     "run_time_utc": "07:25 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-nst-gamelog"
   },
   {
     "jobid": 9,
     "jobname": "update-all-wgo-skaters",
     "schedule": "30 7 * * *",
     "run_time_utc": "07:30 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-wgo-skaters?action=all"
   },
   {
     "jobid": 8,
     "jobname": "update-all-wgo-goalies",
     "schedule": "35 7 * * *",
     "run_time_utc": "07:35 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-wgo-goalies?action=all"
   },
   {
     "jobid": 14,
     "jobname": "update-all-wgo-skater-totals",
     "schedule": "40 7 * * *",
     "run_time_utc": "07:40 UTC",
-    "active": true
-  },
-  {
-    "jobid": 278,
-    "jobname": "update-rolling-player-averages",
-    "schedule": "15 8 * * *",
-    "run_time_utc": "08:15 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-wgo-totals?season=current"
   },
   {
     "jobid": 16,
     "jobname": "update-shift-charts",
     "schedule": "45 7 * * *",
     "run_time_utc": "07:45 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-shifts?action=all"
   },
   {
     "jobid": 248,
     "jobname": "daily-refresh-player-unified-matview",
     "schedule": "50 7 * * *",
     "run_time_utc": "07:50 UTC",
-    "active": true
+    "active": true,
+    "method": "SQL"
   },
   {
     "jobid": 23,
     "jobname": "update-power-play-timeframes",
     "schedule": "55 7 * * *",
     "run_time_utc": "07:55 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/powerPlayTimeFrame?gameId=all"
   },
   {
     "jobid": 24,
     "jobname": "update-line-combinations-all",
     "schedule": "00 8 * * *",
     "run_time_utc": "08:00 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-line-combinations"
   },
   {
     "jobid": 388,
     "jobname": "update-power-play-combinations",
     "schedule": "05 8 * * *",
     "run_time_utc": "08:05 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-power-play-combinations?startDate="
   },
   {
     "jobid": 247,
     "jobname": "update-team-yearly-summary",
     "schedule": "05 8 * * *",
     "run_time_utc": "08:05 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-team-yearly-summary"
   },
   {
     "jobid": 17,
     "jobname": "update-nst-tables-all",
     "schedule": "10 8 * * *",
     "run_time_utc": "08:10 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/Teams/nst-team-stats?date=all"
+  },
+  {
+    "jobid": 278,
+    "jobname": "update-rolling-player-averages",
+    "schedule": "15 8 * * *",
+    "run_time_utc": "08:15 UTC",
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-rolling-player-averages"
   },
   {
     "jobid": 43,
     "jobname": "update-standings-details",
     "schedule": "15 8 * * *",
     "run_time_utc": "08:15 UTC",
-    "active": true
-  },
-  {
-    "jobid": 281,
-    "jobname": "daily-refresh-team-power-ratings-daily",
-    "schedule": "20 8 * * *",
-    "run_time_utc": "08:20 UTC",
-    "active": false
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-standings-details?date=all"
   },
   {
     "jobid": 76,
     "jobname": "update-all-wgo-goalie-totals",
     "schedule": "20 8 * * *",
     "run_time_utc": "08:20 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-wgo-goalie-totals"
   },
   {
     "jobid": 26,
     "jobname": "update-expected-goals",
     "schedule": "25 8 * * *",
     "run_time_utc": "08:25 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-expected-goals?date=all"
   },
   {
     "jobid": 99,
     "jobname": "update-nst-goalies",
     "schedule": "30 8 * * *",
     "run_time_utc": "08:30 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-nst-goalies"
   },
   {
     "jobid": 106,
     "jobname": "update-yahoo-players",
     "schedule": "40 8 * * *",
     "run_time_utc": "08:40 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-yahoo-players?gameId=465"
   },
   {
     "jobid": 220,
     "jobname": "update-nst-current-season",
     "schedule": "45 8 * * *",
     "run_time_utc": "08:45 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-nst-current-season"
   },
   {
     "jobid": 231,
     "jobname": "update-wigo-table-stats",
     "schedule": "50 8 * * *",
     "run_time_utc": "08:50 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/calculate-wigo-stats"
   },
   {
     "jobid": 251,
     "jobname": "sync-yahoo-players-to-sheet",
     "schedule": "55 8 * * *",
     "run_time_utc": "08:55 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/internal/sync-yahoo-players-to-sheet?gameId=465"
   },
   {
     "jobid": 272,
     "jobname": "daily-refresh-goalie-unified-matview",
     "schedule": "05 9 * * *",
     "run_time_utc": "09:05 UTC",
-    "active": true
+    "active": true,
+    "method": "SQL"
   },
   {
     "jobid": 279,
     "jobname": "update-team-ctpi-daily",
     "schedule": "10 9 * * *",
     "run_time_utc": "09:10 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-team-ctpi-daily"
   },
   {
     "jobid": 365,
     "jobname": "update-team-sos",
     "schedule": "12 9 * * *",
     "run_time_utc": "09:12 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-team-sos"
   },
   {
     "jobid": 283,
     "jobname": "update-team-power-ratings",
     "schedule": "15 9 * * *",
     "run_time_utc": "09:15 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-team-power-ratings"
   },
   {
-    "jobid": 284,
-    "jobname": "update-team-power-ratings-new",
-    "schedule": "20 9 * * *",
-    "run_time_utc": "09:20 UTC",
-    "active": true
-  },
-  {
-    "jobid": null,
+    "jobid": 389,
     "jobname": "update-nhl-edge-stats",
     "schedule": "25 9 * * *",
     "run_time_utc": "09:25 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-nhl-edge-stats?action=all&limit=1000&concurrency=8"
   },
   {
     "jobid": 364,
     "jobname": "update-goalie-projections-v2",
     "schedule": "30 9 * * *",
     "run_time_utc": "09:30 UTC",
-    "active": true
+    "active": true,
+    "method": "POST",
+    "route": "/api/v1/db/update-goalie-projections-v2"
   },
   {
     "jobid": 381,
     "jobname": "update-player-underlying-stats-yesterday",
     "schedule": "35 9 * * *",
     "run_time_utc": "09:35 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-player-underlying-stats?startDate="
   },
   {
     "jobid": 44,
     "jobname": "update-wgo-teams",
     "schedule": "35 9 * * *",
     "run_time_utc": "09:35 UTC",
-    "active": true
-  },
-  {
-    "jobid": 280,
-    "jobname": "update-start-chart-projections",
-    "schedule": "40 9 * * *",
-    "run_time_utc": "09:40 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/run-fetch-wgo-data"
   },
   {
     "jobid": 363,
     "jobname": "ingest-projection-inputs",
     "schedule": "45 9 * * *",
     "run_time_utc": "09:45 UTC",
-    "active": true
+    "active": true,
+    "method": "POST",
+    "route": "/api/v1/db/ingest-projection-inputs"
   },
   {
     "jobid": 305,
     "jobname": "build-forge-derived-v2",
     "schedule": "50 09 * * *",
     "run_time_utc": "09:50 UTC",
-    "active": true
-  },
-  {
-    "jobid": null,
-    "jobname": "update-nhl-xg-shot-features",
-    "schedule": "51 9 * * *",
-    "run_time_utc": "09:51 UTC",
-    "active": true
-  },
-  {
-    "jobid": null,
-    "jobname": "update-nhl-xg-shot-predictions",
-    "schedule": "52 9 * * *",
-    "run_time_utc": "09:52 UTC",
-    "active": true
+    "active": true,
+    "method": "POST",
+    "route": "/api/v1/db/build-projection-derived-v2"
   },
   {
     "jobid": 275,
     "jobname": "update-nst-team-daily",
     "schedule": "55 9 * * *",
     "run_time_utc": "09:55 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-nst-team-daily"
   },
   {
     "jobid": 201,
     "jobname": "daily-refresh-matview",
     "schedule": "0 10 * * *",
     "run_time_utc": "10:00 UTC",
-    "active": true
+    "active": true,
+    "method": "SQL"
   },
   {
     "jobid": 308,
     "jobname": "run-forge-projection-v2",
     "schedule": "05 10 * * *",
     "run_time_utc": "10:05 UTC",
-    "active": true
-  },
-  {
-    "jobid": 277,
-    "jobname": "refresh-team-power-ratings-daily",
-    "schedule": "15 10 * * *",
-    "run_time_utc": "10:15 UTC",
-    "active": false
+    "active": true,
+    "method": "POST",
+    "route": "/api/v1/db/run-projection-v2"
   },
   {
     "jobid": 318,
     "jobname": "update-season-stats-current-season",
     "schedule": "20 10 * * *",
     "run_time_utc": "10:20 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-season-stats"
   },
   {
     "jobid": 319,
     "jobname": "update-rolling-games-recent",
     "schedule": "25 10 * * *",
     "run_time_utc": "10:25 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-rolling-games?date=recent"
   },
   {
     "jobid": 321,
     "jobname": "update-sko-stats-full-season",
     "schedule": "30 10 * * *",
     "run_time_utc": "10:30 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-sko-stats"
   },
   {
     "jobid": 323,
     "jobname": "update-wgo-averages",
     "schedule": "35 10 * * *",
     "run_time_utc": "10:35 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-wgo-averages"
   },
   {
     "jobid": 326,
     "jobname": "rebuild-sustainability-baselines",
     "schedule": "40 10 * * *",
     "run_time_utc": "10:40 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/sustainability/rebuild-baselines"
   },
   {
     "jobid": 374,
     "jobname": "daily-refresh-player-totals-unified-matview",
     "schedule": "41 10 * * *",
     "run_time_utc": "10:41 UTC",
-    "active": true
+    "active": true,
+    "method": "SQL"
   },
   {
     "jobid": 376,
     "jobname": "rebuild-sustainability-priors",
     "schedule": "42 10 * * *",
     "run_time_utc": "10:42 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/sustainability/rebuild-priors?season=current"
   },
   {
     "jobid": 370,
     "jobname": "rebuild-sustainability-window-z",
     "schedule": "43 10 * * *",
     "run_time_utc": "10:43 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/sustainability/rebuild-window-z?season=current&runAll=true"
   },
   {
     "jobid": 371,
     "jobname": "rebuild-sustainability-score",
     "schedule": "44 10 * * *",
     "run_time_utc": "10:44 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/sustainability/rebuild-score?season=current&runAll=true"
   },
   {
     "jobid": 327,
     "jobname": "update-predictions-sko",
     "schedule": "45 10 * * *",
     "run_time_utc": "10:45 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/ml/update-predictions-sko"
   },
   {
     "jobid": 372,
     "jobname": "rebuild-sustainability-trend-bands",
     "schedule": "46 10 * * *",
     "run_time_utc": "10:46 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/sustainability/rebuild-trend-bands?runAll=true"
   },
   {
     "jobid": 328,
     "jobname": "update-nst-team-daily-incremental",
     "schedule": "50 10 * * *",
     "run_time_utc": "10:50 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-nst-team-daily"
   },
   {
     "jobid": 329,
     "jobname": "update-nst-team-stats-all",
     "schedule": "55 10 * * *",
     "run_time_utc": "10:55 UTC",
-    "active": true
-  },
-  {
-    "jobid": 330,
-    "jobname": "update-power-rankings",
-    "schedule": "00 11 * * *",
-    "run_time_utc": "11:00 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/Teams/nst-team-stats"
   },
   {
     "jobid": 361,
     "jobname": "run-projection-accuracy",
     "schedule": "30 11 * * *",
     "run_time_utc": "11:30 UTC",
-    "active": true
+    "active": true,
+    "method": "POST",
+    "route": "/api/v1/db/run-projection-accuracy?projectionOffsetDays=0"
   },
   {
-    "jobid": null,
+    "jobid": 383,
     "jobname": "game-predictions-forecast-h7",
     "schedule": "35 11 * * *",
     "run_time_utc": "11:35 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/game-predictions/forecast?fromOffsetDays=7&toOffsetDays=7&limit=16&maxRuntimeMs=240000"
   },
   {
-    "jobid": null,
+    "jobid": 384,
     "jobname": "game-predictions-forecast-h3",
     "schedule": "36 11 * * *",
     "run_time_utc": "11:36 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/game-predictions/forecast?fromOffsetDays=3&toOffsetDays=3&limit=16&maxRuntimeMs=240000"
   },
   {
-    "jobid": null,
+    "jobid": 385,
     "jobname": "game-predictions-forecast-h1",
     "schedule": "37 11 * * *",
     "run_time_utc": "11:37 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/game-predictions/forecast?fromOffsetDays=1&toOffsetDays=1&limit=16&maxRuntimeMs=240000"
   },
   {
-    "jobid": null,
+    "jobid": 386,
     "jobname": "game-predictions-forecast-h0",
     "schedule": "38 11 * * *",
     "run_time_utc": "11:38 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/game-predictions/forecast?fromOffsetDays=0&toOffsetDays=0&limit=16&maxRuntimeMs=240000"
   },
   {
-    "jobid": null,
+    "jobid": 387,
     "jobname": "game-predictions-score-recent",
     "schedule": "40 11 * * *",
     "run_time_utc": "11:40 UTC",
-    "active": true
-  },
-  {
-    "jobid": 234,
-    "jobname": "daily-cron-report",
-    "schedule": "00 13 * * *",
-    "run_time_utc": "13:00 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/game-predictions/score?startDate="
   },
   {
     "jobid": 104,
     "jobname": "update-pbp",
     "schedule": "51 20 * * *",
     "run_time_utc": "20:51 UTC",
-    "active": true
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-PbP?gameId=recent"
+  },
+  {
+    "jobid": 234,
+    "jobname": "daily-cron-report",
+    "schedule": "15 21 * * *",
+    "run_time_utc": "21:15 UTC",
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/cron-report"
+  },
+  {
+    "jobid": 281,
+    "jobname": "daily-refresh-team-power-ratings-daily",
+    "schedule": "20 8 * * *",
+    "run_time_utc": "08:20 UTC",
+    "active": false,
+    "method": "SQL"
+  },
+  {
+    "jobid": 280,
+    "jobname": "update-start-chart-projections",
+    "schedule": "40 9 * * *",
+    "run_time_utc": "09:40 UTC",
+    "active": false,
+    "method": "POST",
+    "route": "/api/v1/db/update-start-chart-projections"
+  },
+  {
+    "jobid": 277,
+    "jobname": "refresh-team-power-ratings-daily",
+    "schedule": "15 10 * * *",
+    "run_time_utc": "10:15 UTC",
+    "active": false,
+    "method": "SQL"
+  },
+  {
+    "jobid": 330,
+    "jobname": "update-power-rankings",
+    "schedule": "00 11 * * *",
+    "run_time_utc": "11:00 UTC",
+    "active": false,
+    "method": "GET",
+    "route": "/api/v1/db/update-power-rankings"
   }
 ]
 ```
@@ -478,79 +596,78 @@
 ----------------------------------------------------------------------------------
 -- Timeline (earliest -> latest)
 --
--- - 08:00 UTC / 03:00 EST: update-yahoo-matchup-dates
--- - 08:01 UTC / 03:01 EST: update-all-wgo-skaters
--- - 08:02 UTC / 03:02 EST: update-all-wgo-goalies
--- - 08:04 UTC / 03:04 EST: update-all-wgo-skater-totals
--- - 08:06 UTC / 03:06 EST: daily-refresh-player-unified-matview
--- - 08:07 UTC / 03:07 EST: update-power-play-timeframes
--- - 08:08 UTC / 03:08 EST: update-line-combinations-all
+-- - */25 * * * *: update-line-combinations-job
+-- - */20 * * * *: update-stats-job
+-- - 00:00 UTC / 19:00 EST: update-teams-job
+-- - 01:00 UTC / 20:00 EST: update-seasons-job
+-- - 02:00 UTC / 21:00 EST: update-players-job
+-- - 03:00 UTC / 22:00 EST: update-games-job
+-- - 04:00 UTC / 23:00 EST: daily-refresh-nstwgo-matview
+-- - 07:20 UTC / 02:20 EST: update-yahoo-matchup-dates
+-- - 07:25 UTC / 02:25 EST: update-nst-gamelog
+-- - 07:30 UTC / 02:30 EST: update-all-wgo-skaters
+-- - 07:35 UTC / 02:35 EST: update-all-wgo-goalies
+-- - 07:40 UTC / 02:40 EST: update-all-wgo-skater-totals
+-- - 07:45 UTC / 02:45 EST: update-shift-charts
+-- - 07:50 UTC / 02:50 EST: daily-refresh-player-unified-matview
+-- - 07:55 UTC / 02:55 EST: update-power-play-timeframes
+-- - 08:00 UTC / 03:00 EST: update-line-combinations-all
 -- - 08:05 UTC / 03:05 EST: update-power-play-combinations
--- - 08:09 UTC / 03:09 EST: update-team-yearly-summary
--- - 08:10 UTC / 03:10 EST: update-nst-gamelog
--- - 08:12 UTC / 03:12 EST: update-standings-details
--- - 08:14 UTC / 03:14 EST: update-all-wgo-goalie-totals
+-- - 08:05 UTC / 03:05 EST: update-team-yearly-summary
+-- - 08:10 UTC / 03:10 EST: update-nst-tables-all
 -- - 08:15 UTC / 03:15 EST: update-rolling-player-averages
--- - 08:17 UTC / 03:17 EST: update-yahoo-players
--- - 08:30 UTC / 03:30 EST: update-nst-tables-all
--- - 08:45 UTC / 03:45 EST: update-nst-goalies
+-- - 08:15 UTC / 03:15 EST: update-standings-details
+-- - 08:20 UTC / 03:20 EST: update-all-wgo-goalie-totals
+-- - 08:25 UTC / 03:25 EST: update-expected-goals
+-- - 08:30 UTC / 03:30 EST: update-nst-goalies
+-- - 08:40 UTC / 03:40 EST: update-yahoo-players
+-- - 08:45 UTC / 03:45 EST: update-nst-current-season
 -- - 08:50 UTC / 03:50 EST: update-wigo-table-stats
 -- - 08:55 UTC / 03:55 EST: sync-yahoo-players-to-sheet
 -- - 09:05 UTC / 04:05 EST: daily-refresh-goalie-unified-matview
 -- - 09:10 UTC / 04:10 EST: update-team-ctpi-daily
--- - 09:11 UTC / 04:11 EST: update-team-sos
--- - 09:12 UTC / 04:12 EST: update-team-power-ratings
--- - 09:13 UTC / 04:13 EST: update-team-power-ratings-new
--- - 09:14 UTC / 04:14 EST: update-wgo-teams
--- - 09:15 UTC / 04:15 EST: update-nst-current-season
+-- - 09:12 UTC / 04:12 EST: update-team-sos
+-- - 09:15 UTC / 04:15 EST: update-team-power-ratings
 -- - 09:25 UTC / 04:25 EST: update-nhl-edge-stats
 -- - 09:30 UTC / 04:30 EST: update-goalie-projections-v2
--- - 09:40 UTC / 04:40 EST: RETIRED IN PASS 3 (formerly update-start-chart-projections)
+-- - 09:35 UTC / 04:35 EST: update-player-underlying-stats-yesterday
+-- - 09:35 UTC / 04:35 EST: update-wgo-teams
 -- - 09:45 UTC / 04:45 EST: ingest-projection-inputs
 -- - 09:50 UTC / 04:50 EST: build-forge-derived-v2
--- - 09:51 UTC / 04:51 EST: update-nhl-xg-shot-features
--- - 09:52 UTC / 04:52 EST: update-nhl-xg-shot-predictions
 -- - 09:55 UTC / 04:55 EST: update-nst-team-daily
 -- - 10:00 UTC / 05:00 EST: daily-refresh-matview
 -- - 10:05 UTC / 05:05 EST: run-forge-projection-v2
--- - 10:15 UTC / 05:15 EST: refresh-team-power-ratings-daily
 -- - 10:20 UTC / 05:20 EST: update-season-stats-current-season
 -- - 10:25 UTC / 05:25 EST: update-rolling-games-recent
 -- - 10:30 UTC / 05:30 EST: update-sko-stats-full-season
 -- - 10:35 UTC / 05:35 EST: update-wgo-averages
--- - 10:40 UTC / 05:40 EST: daily-refresh-player-totals-unified-matview
--- - 10:42 UTC / 05:42 EST: rebuild-sustainability-baselines
--- - 10:43 UTC / 05:43 EST: rebuild-sustainability-priors
--- - 10:44 UTC / 05:44 EST: rebuild-sustainability-window-z-batch-000
--- - 10:45 UTC / 05:45 EST: rebuild-sustainability-window-z-batch-250
--- - 10:46 UTC / 05:46 EST: rebuild-sustainability-window-z-batch-500
--- - 10:47 UTC / 05:47 EST: rebuild-sustainability-window-z-batch-750
--- - 10:48 UTC / 05:48 EST: rebuild-sustainability-score-batch-000
--- - 10:49 UTC / 05:49 EST: rebuild-sustainability-score-batch-250
--- - 10:50 UTC / 05:50 EST: rebuild-sustainability-score-batch-500
--- - 10:51 UTC / 05:51 EST: rebuild-sustainability-score-batch-750
--- - 10:52 UTC / 05:52 EST: rebuild-sustainability-trend-bands-batch-000
--- - 10:53 UTC / 05:53 EST: rebuild-sustainability-trend-bands-batch-250
--- - 10:54 UTC / 05:54 EST: rebuild-sustainability-trend-bands-batch-500
--- - 10:55 UTC / 05:55 EST: rebuild-sustainability-trend-bands-batch-750
--- - 10:56 UTC / 05:56 EST: update-predictions-sko
--- - 11:00 UTC / 06:00 EST: update-power-rankings
--- - 11:05 UTC / 06:05 EST: update-nst-team-daily-incremental
--- - 11:20 UTC / 06:20 EST: update-nst-team-stats-all
+-- - 10:40 UTC / 05:40 EST: rebuild-sustainability-baselines
+-- - 10:41 UTC / 05:41 EST: daily-refresh-player-totals-unified-matview
+-- - 10:42 UTC / 05:42 EST: rebuild-sustainability-priors
+-- - 10:43 UTC / 05:43 EST: rebuild-sustainability-window-z
+-- - 10:44 UTC / 05:44 EST: rebuild-sustainability-score
+-- - 10:45 UTC / 05:45 EST: update-predictions-sko
+-- - 10:46 UTC / 05:46 EST: rebuild-sustainability-trend-bands
+-- - 10:50 UTC / 05:50 EST: update-nst-team-daily-incremental
+-- - 10:55 UTC / 05:55 EST: update-nst-team-stats-all
 -- - 11:30 UTC / 06:30 EST: run-projection-accuracy
+-- - 11:35 UTC / 06:35 EST: game-predictions-forecast-h7
+-- - 11:36 UTC / 06:36 EST: game-predictions-forecast-h3
+-- - 11:37 UTC / 06:37 EST: game-predictions-forecast-h1
+-- - 11:38 UTC / 06:38 EST: game-predictions-forecast-h0
+-- - 11:40 UTC / 06:40 EST: game-predictions-score-recent
 -- - 20:51 UTC / 15:51 EST: update-pbp
 -- - 21:15 UTC / 16:15 EST: daily-cron-report
 --
 -- Schedule floor
--- - No active daily cron should run before 08:00 UTC / 03:00 EST.
--- - Remaining retired pre-floor placeholders are limited to the NST/backfill and broken routes that still need dedicated reslotting:
---   update-shift-charts and update-rolling-player-averages (GET).
--- - Active timeline labels below use the actual scheduled job names; broken status is called out in the detailed block notes instead.
--- - Direct NST cron starts now keep at least 15 minutes of separation:
---   08:10 -> 08:30 -> 08:45 -> 09:15 -> 09:55 -> 11:05 -> 11:20 UTC.
+-- - Daily report should run after the final scheduled data job.
+-- - Current intended final data job: 20:51 UTC / 15:51 EST update-pbp.
+-- - Current intended report job: 21:15 UTC / 16:15 EST daily-cron-report.
+-- - Direct NST cron starts should keep at least 15 minutes of separation where possible.
 --
 -- Gap notes
--- - 07:15 UTC / 02:15 EST: retired pre-floor slot for update-games.
+-- - update-stats-job and update-line-combinations-job are interval jobs and are not part of the daily floor cluster.
+-- - update-power-rankings and update-start-chart-projections are intentionally inactive until replacement routes are available.
 ----------------------------------------------------------------------------------
 
   ----------------------------------------------------------------------------------
@@ -1948,7 +2065,7 @@ curl -i -sS -m 180 \
 -- |||||||||||||||||||||||||||||||||  15:51 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
--- NOT WORKING
+-- ACTIVE FINAL DATA JOB
 -- SELECT cron.schedule(
 --     'update-pbp',
 --     '51 20 * * *', -- 20:51 UTC

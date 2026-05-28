@@ -15,6 +15,12 @@ function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
 }
 
+const TEAM_XG_AGGREGATE_MODEL_VERSION_ENV_VAR =
+  "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION";
+const TEAM_XG_AGGREGATE_FEATURE_VERSION_ENV_VAR =
+  "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION";
+const DEFAULT_TEAM_XG_AGGREGATE_WINDOW_GAMES = 10;
+
 function meanOrNull(nums: Array<number | null | undefined>): number | null {
   const vals = nums.filter(
     (n): n is number => typeof n === "number" && Number.isFinite(n)
@@ -65,6 +71,86 @@ export async function fetchTeamStrengthAverages(
   };
 }
 
+function parseOptionalIntegerEnv(name: string): number | null {
+  const raw = process.env[name];
+  if (!raw) return null;
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function resolveInHouseTeamXgModelVersion(): string | null {
+  return (
+    process.env[TEAM_XG_AGGREGATE_MODEL_VERSION_ENV_VAR]?.trim() ||
+    process.env.NHL_XG_MODEL_VERSION?.trim() ||
+    null
+  );
+}
+
+function toFiniteOrNull(value: any): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+export function buildTeamStrengthPriorFromInHouseXgAggregateRow(
+  row: any
+): TeamStrengthPrior | null {
+  const gamesCount = toFiniteOrNull(row?.games_count);
+  if (gamesCount == null || gamesCount <= 0) return null;
+
+  const xgFor = toFiniteOrNull(row?.xg_for);
+  const xgAgainst = toFiniteOrNull(row?.xg_against);
+  if (xgFor == null || xgAgainst == null) return null;
+
+  return {
+    source: "nhl_xg_team_rolling_aggregates",
+    sourceDate: typeof row?.as_of_game_date === "string" ? row.as_of_game_date : null,
+    xga: xgAgainst,
+    xgaPerGame: Number((xgAgainst / gamesCount).toFixed(4)),
+    xgfPerGame: Number((xgFor / gamesCount).toFixed(4)),
+    sourceModelVersion:
+      typeof row?.model_version === "string" ? row.model_version : null,
+    featureVersion: toFiniteOrNull(row?.feature_version),
+    windowGames: toFiniteOrNull(row?.window_games)
+  };
+}
+
+async function fetchInHouseTeamStrengthPrior(
+  teamId: number,
+  asOfDate: string
+): Promise<TeamStrengthPrior | null> {
+  const modelVersion = resolveInHouseTeamXgModelVersion();
+  if (!modelVersion) return null;
+
+  const featureVersion = parseOptionalIntegerEnv(
+    TEAM_XG_AGGREGATE_FEATURE_VERSION_ENV_VAR
+  );
+  const windowGames =
+    parseOptionalIntegerEnv("NHL_XG_TEAM_AGGREGATE_WINDOW_GAMES") ??
+    DEFAULT_TEAM_XG_AGGREGATE_WINDOW_GAMES;
+
+  let query = supabase
+    .from("nhl_xg_team_rolling_aggregates" as any)
+    .select(
+      "model_version,feature_version,as_of_game_date,window_games,games_count,xg_for,xg_against"
+    )
+    .eq("team_id", teamId)
+    .eq("model_version", modelVersion)
+    .eq("window_games", windowGames)
+    .lt("as_of_game_date", asOfDate);
+
+  if (featureVersion != null) {
+    query = query.eq("feature_version", featureVersion);
+  }
+
+  const { data, error } = await query
+    .order("as_of_game_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return buildTeamStrengthPriorFromInHouseXgAggregateRow(data);
+}
+
 export async function fetchTeamAbbreviationMap(
   teamIds: number[]
 ): Promise<Map<number, string>> {
@@ -90,11 +176,24 @@ export async function fetchTeamAbbreviationMap(
 
 export async function fetchTeamStrengthPrior(
   teamAbbrev: string,
-  asOfDate: string
+  asOfDate: string,
+  teamId?: number | null
 ): Promise<TeamStrengthPrior | null> {
   assertSupabase();
   const normalizedAbbrev = teamAbbrev.trim().toUpperCase();
   if (!normalizedAbbrev) return null;
+
+  if (teamId != null && Number.isFinite(teamId)) {
+    try {
+      const inHousePrior = await fetchInHouseTeamStrengthPrior(teamId, asOfDate);
+      if (inHousePrior) return inHousePrior;
+    } catch (error: any) {
+      console.warn(
+        "Falling back to nhl_team_data team xG prior after in-house aggregate fetch failed:",
+        error?.message ?? error
+      );
+    }
+  }
 
   const historical = await supabase
     .from("nhl_team_data")
@@ -120,10 +219,8 @@ export async function fetchTeamStrengthPrior(
   }
   if (!row) return null;
 
-  const toFiniteOrNull = (value: any): number | null =>
-    typeof value === "number" && Number.isFinite(value) ? Number(value) : null;
-
   return {
+    source: "nhl_team_data",
     sourceDate: typeof row.date === "string" ? row.date : null,
     xga: toFiniteOrNull(row.xga),
     xgaPerGame: toFiniteOrNull(row.xga_per_game),

@@ -21,6 +21,7 @@ export type PersistedXgModelArtifact = {
   artifactKind: "nhl_xg_model";
   artifactTag: string;
   family: string;
+  predictionType?: XgShotPredictionType;
   featureFamily?: string;
   featureVersion: number;
   approvalGradeEligibility?: {
@@ -235,6 +236,24 @@ export function loadXgModelArtifact(filePath: string): PersistedXgModelArtifact 
   return JSON.parse(fs.readFileSync(resolved, "utf8")) as PersistedXgModelArtifact;
 }
 
+export function resolveXgArtifactPredictionType(
+  artifact: PersistedXgModelArtifact
+): XgShotPredictionType {
+  return artifact.predictionType ?? "shot_goal";
+}
+
+export function assertXgArtifactSupportsPredictionType(
+  artifact: PersistedXgModelArtifact,
+  predictionType: XgShotPredictionType
+): void {
+  const artifactPredictionType = resolveXgArtifactPredictionType(artifact);
+  if (artifactPredictionType !== predictionType) {
+    throw new Error(
+      `Model artifact ${artifact.artifactTag} is for predictionType=${artifactPredictionType}; requested predictionType=${predictionType}.`
+    );
+  }
+}
+
 export function encodeFeatureVector(
   row: NhlShotFeatureRow,
   artifact: PersistedXgModelArtifact
@@ -388,6 +407,7 @@ export function buildPredictionDbRow(args: {
       featureFamily: args.artifact.featureFamily ?? null,
       selectedFeatures: args.artifact.selectedFeatures,
       calibration: args.artifact.calibration ?? null,
+      predictionType: resolveXgArtifactPredictionType(args.artifact),
       approved,
       approvalBlockingReasons:
         args.artifact.approvalGradeEligibility?.blockingReasons ?? []
@@ -444,8 +464,10 @@ export async function fetchPersistedFeatureRows(args: {
   supabase: SupabaseClient<Database>;
   gameIds: number[];
   featureVersion: number;
+  predictionType?: XgShotPredictionType;
   limit: number | null;
 }): Promise<PersistedFeatureRow[]> {
+  const predictionType = args.predictionType ?? "shot_goal";
   let query = args.supabase
     .from("nhl_xg_shot_features" as any)
     .select(
@@ -453,11 +475,16 @@ export async function fetchPersistedFeatureRows(args: {
     )
     .eq("feature_version", args.featureVersion)
     .in("game_id", args.gameIds)
-    .eq("is_unblocked_shot_attempt", true)
     .eq("is_penalty_shot_event", false)
     .eq("is_shootout_event", false)
     .order("game_id", { ascending: true })
     .order("event_id", { ascending: true });
+
+  if (predictionType === "rebound_creation") {
+    query = query.in("shot_event_type", ["shot-on-goal", "missed-shot", "blocked-shot"]);
+  } else {
+    query = query.eq("is_unblocked_shot_attempt", true);
+  }
 
   if (args.limit != null) {
     query = query.limit(args.limit);

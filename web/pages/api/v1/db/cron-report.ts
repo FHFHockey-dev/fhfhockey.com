@@ -135,6 +135,9 @@ type CronScheduleJsonEntry = {
   schedule?: string;
   run_time_utc?: string;
   active?: boolean;
+  method?: ScheduleMethod;
+  route?: string | null;
+  url?: string | null;
 };
 
 type ParsedAuditDetails = {
@@ -931,6 +934,13 @@ async function loadScheduledCronJobs(
     .map((entry, index) => {
       const name = String(entry.jobname ?? "").trim();
       const cronExpression = String(entry.schedule ?? "").trim();
+      const entryRoute = typeof entry.route === "string" ? entry.route : null;
+      const entryUrl = typeof entry.url === "string" ? entry.url : entryRoute;
+      const entryInvocation = parseUrlPieces(entryUrl);
+      const entryMethod =
+        entry.method === "GET" || entry.method === "POST" || entry.method === "SQL"
+          ? entry.method
+          : null;
       const definition =
         sqlDefinitions.find(
           (candidate) =>
@@ -944,10 +954,10 @@ async function loadScheduledCronJobs(
         name,
         cronExpression,
         scheduleTimeDisplay: formatScheduleTime(cronExpression),
-        method: definition?.method ?? "UNKNOWN",
-        url: definition?.url ?? null,
-        route: definition?.route ?? null,
-        routePath: definition?.routePath ?? null,
+        method: definition?.method ?? entryMethod ?? "UNKNOWN",
+        url: definition?.url ?? entryUrl,
+        route: definition?.route ?? entryInvocation.route,
+        routePath: definition?.routePath ?? entryInvocation.routePath,
         sqlText: definition?.sqlText ?? null,
         expectedRunAt: expectedRunAtWithinWindow(cronExpression, since, now),
         sortOrder: index

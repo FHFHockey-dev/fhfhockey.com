@@ -159,6 +159,34 @@ describe("baselineDataset", () => {
     ).toBe(false);
   });
 
+  it("uses the rebound-creation cohort only when explicitly requested", () => {
+    expect(
+      isEligibleBaselineTrainingRow(
+        createShotRow({
+          shotEventType: "blocked-shot",
+          isUnblockedShotAttempt: false,
+          isBlockedShot: true,
+        })
+      )
+    ).toBe(false);
+    expect(
+      isEligibleBaselineTrainingRow(
+        createShotRow({
+          shotEventType: "blocked-shot",
+          isUnblockedShotAttempt: false,
+          isBlockedShot: true,
+        }),
+        "rebound_creation"
+      )
+    ).toBe(true);
+    expect(
+      isEligibleBaselineTrainingRow(
+        createShotRow({ shotEventType: "goal", isGoal: true }),
+        "rebound_creation"
+      )
+    ).toBe(false);
+  });
+
   it("builds deterministic chronological splits and honors feature subset selection", () => {
     const rows = [
       createShotRow({
@@ -250,6 +278,77 @@ describe("baselineDataset", () => {
       label: 1,
       features: [70, 19, 1, 1, 0, 0, 1, 0],
     });
+  });
+
+  it("builds rebound-creation labels from createsRebound without changing shot-goal defaults", () => {
+    const rows = [
+      createShotRow({
+        gameId: 2025021001,
+        eventId: 1,
+        gameDate: "2026-01-01",
+        shotEventType: "shot-on-goal",
+        isGoal: false,
+        createsRebound: true,
+      }),
+      createShotRow({
+        gameId: 2025021002,
+        eventId: 2,
+        gameDate: "2026-01-02",
+        shotEventType: "missed-shot",
+        createsRebound: false,
+      }),
+      createShotRow({
+        gameId: 2025021003,
+        eventId: 3,
+        gameDate: "2026-01-03",
+        shotEventType: "blocked-shot",
+        isUnblockedShotAttempt: false,
+        isBlockedShot: true,
+        createsRebound: true,
+      }),
+      createShotRow({
+        gameId: 2025021004,
+        eventId: 4,
+        gameDate: "2026-01-04",
+        shotEventType: "goal",
+        isGoal: true,
+        createsRebound: false,
+      }),
+    ];
+
+    const shotGoalDataset = buildEncodedBaselineDataset(rows, {
+      featureSelection: {
+        numericKeys: ["normalizedX"],
+        booleanKeys: ["isReboundShot"],
+        categoricalKeys: ["shotType"],
+      },
+    });
+    const reboundDataset = buildEncodedBaselineDataset(rows, {
+      predictionType: "rebound_creation",
+      featureSelection: {
+        numericKeys: ["normalizedX"],
+        booleanKeys: ["isReboundShot"],
+        categoricalKeys: ["shotType"],
+      },
+    });
+
+    expect(shotGoalDataset.predictionType).toBe("shot_goal");
+    expect(shotGoalDataset.labelKey).toBe("label_goal");
+    expect(shotGoalDataset.examples.map((example) => example.rowId)).toEqual([
+      "2025021001:1",
+      "2025021002:2",
+      "2025021004:4",
+    ]);
+    expect(shotGoalDataset.examples.map((example) => example.label)).toEqual([0, 0, 1]);
+
+    expect(reboundDataset.predictionType).toBe("rebound_creation");
+    expect(reboundDataset.labelKey).toBe("label_rebound_creation");
+    expect(reboundDataset.examples.map((example) => example.rowId)).toEqual([
+      "2025021001:1",
+      "2025021002:2",
+      "2025021003:3",
+    ]);
+    expect(reboundDataset.examples.map((example) => example.label)).toEqual([1, 0, 1]);
   });
 
   it("rejects leaked current-shot event-class features if they are forced back in", () => {

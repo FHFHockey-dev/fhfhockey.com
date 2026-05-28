@@ -7,6 +7,33 @@ const BELL_MEDIA_INJURIES_URL =
 const RETURNING_STATUS_TTL_DAYS = 7;
 
 export type PlayerStatusState = "injured" | "returning";
+export type InjurySeverityTier = "minor" | "moderate" | "severe" | "unknown";
+export type InjuryBodyRegion =
+  | "upper_body"
+  | "lower_body"
+  | "head"
+  | "illness"
+  | "undisclosed"
+  | "unknown";
+export type InjuryExpectedReturnWindow =
+  | "same_day"
+  | "day_to_day"
+  | "week_to_week"
+  | "multi_week"
+  | "indefinite"
+  | "season"
+  | "unknown";
+export type InjuryReturnLimitation =
+  | "game_time_decision"
+  | "limited_practice"
+  | "non_participant_practice"
+  | "no_contact"
+  | "maintenance"
+  | "will_not_travel"
+  | "ruled_out"
+  | "returning_to_lineup"
+  | "practice_participant";
+export type InjuryAttributeConfidence = "high" | "medium" | "low";
 export type GameDayTweetsNewsClassification =
   | "injury"
   | "returning"
@@ -59,6 +86,16 @@ export type PlayerStatusHistoryRow = {
   status_expires_at: string | null;
   metadata: Record<string, unknown>;
   updated_at: string;
+};
+
+export type InjuryAttributeInference = {
+  severityTier: InjurySeverityTier;
+  bodyRegion: InjuryBodyRegion;
+  expectedReturnWindow: InjuryExpectedReturnWindow;
+  returnLimitations: InjuryReturnLimitation[];
+  confidence: InjuryAttributeConfidence;
+  evidencePhrases: string[];
+  inferredFrom: string[];
 };
 
 export type CurrentPlayerStatusRow = {
@@ -122,6 +159,142 @@ function normalizeKey(value: string): string {
 
 function normalizeDisplayText(value: string): string {
   return value.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function addEvidence(
+  target: string[],
+  normalizedText: string,
+  pattern: RegExp,
+  evidence: string
+): boolean {
+  if (!pattern.test(normalizedText)) return false;
+  target.push(evidence);
+  return true;
+}
+
+export function inferInjuryAttributes(args: {
+  rawStatus?: string | null;
+  statusDetail?: string | null;
+  text?: string | null;
+  classification?: GameDayTweetsNewsClassification | null;
+}): InjuryAttributeInference {
+  const sourceText = [args.rawStatus, args.statusDetail, args.text]
+    .filter((value): value is string => Boolean(value))
+    .join(" ");
+  const normalized = normalizeKey(sourceText);
+  const evidencePhrases: string[] = [];
+  const inferredFrom: string[] = [];
+
+  const hasBodyRegion =
+    addEvidence(evidencePhrases, normalized, /\bupper[- ]body\b/, "upper body") ||
+    addEvidence(evidencePhrases, normalized, /\blower[- ]body\b/, "lower body") ||
+    addEvidence(evidencePhrases, normalized, /\b(head|concussion|concussion protocol)\b/, "head/concussion") ||
+    addEvidence(evidencePhrases, normalized, /\b(illness|sick|flu|virus)\b/, "illness") ||
+    addEvidence(evidencePhrases, normalized, /\bundisclosed\b/, "undisclosed");
+
+  const bodyRegion: InjuryBodyRegion = /\bupper[- ]body\b/.test(normalized)
+    ? "upper_body"
+    : /\blower[- ]body\b/.test(normalized)
+      ? "lower_body"
+      : /\b(head|concussion|concussion protocol)\b/.test(normalized)
+        ? "head"
+        : /\b(illness|sick|flu|virus)\b/.test(normalized)
+          ? "illness"
+          : /\bundisclosed\b/.test(normalized)
+            ? "undisclosed"
+            : "unknown";
+
+  const returnLimitations = new Set<InjuryReturnLimitation>();
+  if (addEvidence(evidencePhrases, normalized, /\b(game[- ]time decision|gtd)\b/, "game-time decision")) {
+    returnLimitations.add("game_time_decision");
+  }
+  if (addEvidence(evidencePhrases, normalized, /\blimited (practice|participant)|skated in a limited\b/, "limited practice")) {
+    returnLimitations.add("limited_practice");
+  }
+  if (addEvidence(evidencePhrases, normalized, /\b(did not practice|not practicing|non[- ]participant)\b/, "non-participant practice")) {
+    returnLimitations.add("non_participant_practice");
+  }
+  if (addEvidence(evidencePhrases, normalized, /\bno[- ]contact\b/, "no-contact")) {
+    returnLimitations.add("no_contact");
+  }
+  if (addEvidence(evidencePhrases, normalized, /\bmaintenance\b/, "maintenance")) {
+    returnLimitations.add("maintenance");
+  }
+  if (addEvidence(evidencePhrases, normalized, /\b(will not travel|won't travel|did not travel|not travel)\b/, "will not travel")) {
+    returnLimitations.add("will_not_travel");
+  }
+  if (addEvidence(evidencePhrases, normalized, /\b(ruled out|confirmed out|will not play|won't play|out tonight|out for)\b/, "ruled out")) {
+    returnLimitations.add("ruled_out");
+  }
+  if (addEvidence(evidencePhrases, normalized, /\b(will play|returns? to the lineup|back in the lineup|available|good to go)\b/, "returning to lineup")) {
+    returnLimitations.add("returning_to_lineup");
+  }
+  if (addEvidence(evidencePhrases, normalized, /\b(returned to practice|practiced|full participant)\b/, "practice participant")) {
+    returnLimitations.add("practice_participant");
+  }
+
+  const expectedReturnWindow: InjuryExpectedReturnWindow =
+    /\b(out for the season|season-ending|season ending)\b/.test(normalized)
+      ? "season"
+      : /\b(indefinite|no timetable|ltir|long[- ]term injured reserve)\b/.test(normalized)
+        ? "indefinite"
+        : /\b(month[- ]to[- ]month|multiple weeks|several weeks|long[- ]term|surgery)\b/.test(normalized)
+          ? "multi_week"
+          : /\b(week[- ]to[- ]week|weeks?)\b/.test(normalized)
+            ? "week_to_week"
+            : /\b(day[- ]to[- ]day|questionable|game[- ]time decision|gtd)\b/.test(normalized)
+              ? "day_to_day"
+              : /\b(will play|returns? to the lineup|back in the lineup|available|good to go)\b/.test(normalized)
+                ? "same_day"
+                : "unknown";
+
+  if (expectedReturnWindow !== "unknown") {
+    inferredFrom.push(`expected_return_window:${expectedReturnWindow}`);
+  }
+  if (hasBodyRegion) {
+    inferredFrom.push(`body_region:${bodyRegion}`);
+  }
+  if (returnLimitations.size > 0) {
+    inferredFrom.push("return_limitation_phrase");
+  }
+
+  const severe =
+    expectedReturnWindow === "season" ||
+    expectedReturnWindow === "indefinite" ||
+    expectedReturnWindow === "multi_week" ||
+    /\b(surgery|torn|tear|fracture|broken|ltir)\b/.test(normalized);
+  const moderate = expectedReturnWindow === "week_to_week";
+  const minor =
+    expectedReturnWindow === "same_day" ||
+    expectedReturnWindow === "day_to_day" ||
+    returnLimitations.has("maintenance") ||
+    returnLimitations.has("game_time_decision");
+  const severityTier: InjurySeverityTier = severe
+    ? "severe"
+    : moderate
+      ? "moderate"
+      : minor
+        ? "minor"
+        : "unknown";
+
+  const confidence: InjuryAttributeConfidence =
+    severityTier !== "unknown" && (bodyRegion !== "unknown" || returnLimitations.size > 0)
+      ? "high"
+      : severityTier !== "unknown" || bodyRegion !== "unknown" || returnLimitations.size > 0
+        ? "medium"
+        : args.classification === "injury" || args.classification === "questionable"
+          ? "low"
+          : "low";
+
+  return {
+    severityTier,
+    bodyRegion,
+    expectedReturnWindow,
+    returnLimitations: Array.from(returnLimitations).sort(),
+    confidence,
+    evidencePhrases: Array.from(new Set(evidencePhrases)),
+    inferredFrom,
+  };
 }
 
 function addDaysIso(value: string, days: number): string {
@@ -235,7 +408,11 @@ function classifyGameDayTweetsNewsItem(
     return "injury";
   }
 
-  if (/\b(game time decision|gtd|questionable|day-to-day|close|not sure)\b/i.test(normalized)) {
+  if (
+    /\b(game[- ]time decision|gtd|questionable|day[- ]to[- ]day|close|not sure|limited practice|non[- ]participant|no[- ]contact)\b/i.test(
+      normalized
+    )
+  ) {
     return "questionable";
   }
 
@@ -375,7 +552,12 @@ export function normalizeBellMediaInjuryRows(args: {
           source_rank: 1,
           status_expires_at: null,
           metadata: {
-            sourceTeamLabel: teamEntry.competitor?.shortName ?? teamEntry.competitor?.name ?? null
+            sourceTeamLabel: teamEntry.competitor?.shortName ?? teamEntry.competitor?.name ?? null,
+            injuryAttributes: inferInjuryAttributes({
+              rawStatus: injury.status,
+              statusDetail: injury.description,
+              classification: "injury"
+            })
           },
           updated_at: observedAt
         }
@@ -395,6 +577,8 @@ export function normalizeGameDayTweetsNewsStatusRows(args: {
     const statusState: PlayerStatusState | null =
       item.classification === "injury"
         ? "injured"
+        : item.classification === "questionable"
+          ? "injured"
         : item.classification === "returning"
           ? "returning"
           : null;
@@ -420,17 +604,31 @@ export function normalizeGameDayTweetsNewsStatusRows(args: {
         team_id: item.teamId,
         team_abbreviation: item.teamAbbreviation,
         status_state: statusState,
-        raw_status: statusState === "injured" ? "Out" : "Returning",
+        raw_status:
+          item.classification === "questionable"
+            ? "Questionable"
+            : statusState === "injured"
+              ? "Out"
+              : "Returning",
         status_detail: item.text,
         source_name: "gamedaytweets-news",
         source_url: item.tweetUrl ?? item.sourceUrl,
         source_rank: 2,
         status_expires_at:
-          statusState === "returning" ? addDaysIso(observedAt, 3) : null,
+          statusState === "returning"
+            ? addDaysIso(observedAt, 3)
+            : item.classification === "questionable"
+              ? addDaysIso(observedAt, 2)
+              : null,
         metadata: {
           classification: item.classification,
           postedLabel: item.postedLabel,
-          sourceHandle: item.sourceHandle
+          sourceHandle: item.sourceHandle,
+          injuryAttributes: inferInjuryAttributes({
+            rawStatus: item.classification === "questionable" ? "Questionable" : null,
+            text: item.text,
+            classification: item.classification
+          })
         },
         updated_at: observedAt
       }

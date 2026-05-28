@@ -94,4 +94,53 @@ describe("cronInventory", () => {
       executionShape: "wrapper-dependent",
     });
   });
+
+  it("prefers the JSON inventory over stale SQL blocks when both are present", () => {
+    const inventory = parseCronInventoryFromMarkdown(`
+# ALL CRON JOBS:
+\`\`\`json
+[
+  {
+    "jobid": 1,
+    "jobname": "daily-cron-report",
+    "schedule": "15 21 * * *",
+    "run_time_utc": "21:15 UTC",
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/cron-report"
+  },
+  {
+    "jobid": 2,
+    "jobname": "retired-job",
+    "schedule": "0 13 * * *",
+    "run_time_utc": "13:00 UTC",
+    "active": false,
+    "method": "GET",
+    "route": "/api/v1/db/retired"
+  }
+]
+\`\`\`
+
+SELECT cron.schedule(
+  'daily-cron-report',
+  '0 13 * * *',
+  $$
+    SELECT net.http_get(
+      url := 'https://fhfhockey.com/api/v1/db/cron-report'
+    );
+  $$
+);
+`);
+
+    expect(inventory).toHaveLength(1);
+    expect(inventory[0]).toMatchObject({
+      name: "daily-cron-report",
+      cronExpression: "15 21 * * *",
+      scheduleTimeDisplay: "21:15 UTC",
+      method: "GET",
+      executionShape: "HTTP route",
+      route: "/api/v1/db/cron-report",
+      routePath: "/api/v1/db/cron-report"
+    });
+  });
 });

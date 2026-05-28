@@ -722,7 +722,7 @@ function shouldReplaceCandidate(existing: SyncCandidate, candidate: SyncCandidat
   return toMillis(candidate.source_created_at) > toMillis(existing.source_created_at);
 }
 
-async function syncTweetPatternReviewItems(args: {
+export async function syncTweetPatternReviewItems(args: {
   supabase: any;
   perSourceLimit: number;
 }) {
