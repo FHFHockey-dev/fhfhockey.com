@@ -88,6 +88,8 @@ type ExistingReviewRow = Pick<
   | "reviewed_at"
 >;
 
+const SYNC_DB_BATCH_SIZE = 100;
+
 type LinesCccReviewSourceRow = {
   capture_key: string;
   source: string | null;
@@ -794,16 +796,20 @@ export async function syncTweetPatternReviewItems(args: {
     };
   }
 
-  const { data: existingRows, error: existingError } = await args.supabase
-    .from("tweet_pattern_review_items" as any)
-    .select(
-      "id, dedupe_key, review_status, reviewed_category, reviewed_subcategory, selected_highlights, review_assignments, notes, metadata, reviewed_at"
-    )
-    .in("dedupe_key", dedupeKeys);
-  if (existingError) throw existingError;
+  const existingRows: ExistingReviewRow[] = [];
+  for (let index = 0; index < dedupeKeys.length; index += SYNC_DB_BATCH_SIZE) {
+    const { data, error } = await args.supabase
+      .from("tweet_pattern_review_items" as any)
+      .select(
+        "id, dedupe_key, review_status, reviewed_category, reviewed_subcategory, selected_highlights, review_assignments, notes, metadata, reviewed_at"
+      )
+      .in("dedupe_key", dedupeKeys.slice(index, index + SYNC_DB_BATCH_SIZE));
+    if (error) throw error;
+    existingRows.push(...((data ?? []) as ExistingReviewRow[]));
+  }
 
   const existingByKey = new Map<string, ExistingReviewRow>(
-    ((existingRows ?? []) as ExistingReviewRow[]).map((row) => [row.dedupe_key, row])
+    existingRows.map((row) => [row.dedupe_key, row])
   );
   const nowIso = new Date().toISOString();
   const upsertRows = Array.from(candidates.values()).map((candidate) => {
@@ -850,10 +856,14 @@ export async function syncTweetPatternReviewItems(args: {
     };
   });
 
-  const { error: upsertError } = await args.supabase
-    .from("tweet_pattern_review_items" as any)
-    .upsert(upsertRows, { onConflict: "dedupe_key" });
-  if (upsertError) throw upsertError;
+  for (let index = 0; index < upsertRows.length; index += SYNC_DB_BATCH_SIZE) {
+    const { error: upsertError } = await args.supabase
+      .from("tweet_pattern_review_items" as any)
+      .upsert(upsertRows.slice(index, index + SYNC_DB_BATCH_SIZE), {
+        onConflict: "dedupe_key"
+      });
+    if (upsertError) throw upsertError;
+  }
 
   return {
     syncedCount: upsertRows.length,

@@ -3,7 +3,7 @@
 
 .navBar {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: center;
   gap: v.$space-sm;
   width: 100%;

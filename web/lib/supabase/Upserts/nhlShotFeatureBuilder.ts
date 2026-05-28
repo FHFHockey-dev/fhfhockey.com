@@ -116,6 +116,12 @@ export type NhlShotFeatureRow = {
   reboundDistanceDeltaFeet: number | null;
   reboundAngleChangeDegrees: number | null;
   createsRebound: boolean;
+  reboundControlOutcome?: string | null;
+  createsSecondChanceAllowed?: boolean;
+  createsGoalieFreeze?: boolean;
+  createsCoveredPuck?: boolean;
+  createsNoDangerContinuation?: boolean;
+  reboundOutcomeConfidence?: "high" | "medium" | "low" | null;
   isRushShot: boolean;
   rushSourceEventId: number | null;
   rushSourceTypeDescKey: string | null;
@@ -565,6 +571,14 @@ export function buildShotFeatureRows(
         reboundDistanceDeltaFeet: rebound?.reboundDistanceDeltaFeet ?? null,
         reboundAngleChangeDegrees: rebound?.reboundAngleChangeDegrees ?? null,
         createsRebound: rebound?.createsRebound ?? false,
+        reboundControlOutcome: rebound?.reboundControlOutcome ?? null,
+        createsSecondChanceAllowed:
+          rebound?.createsSecondChanceAllowed ?? false,
+        createsGoalieFreeze: rebound?.createsGoalieFreeze ?? false,
+        createsCoveredPuck: rebound?.createsCoveredPuck ?? false,
+        createsNoDangerContinuation:
+          rebound?.createsNoDangerContinuation ?? false,
+        reboundOutcomeConfidence: rebound?.reboundOutcomeConfidence ?? null,
         isRushShot: rush?.isRushShot ?? false,
         rushSourceEventId: rush?.rushSourceEventId ?? null,
         rushSourceTypeDescKey: rush?.rushSourceTypeDescKey ?? null,

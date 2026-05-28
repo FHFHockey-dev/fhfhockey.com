@@ -1,0 +1,276 @@
+@use "styles/vars" as v;
+@use "styles/panel" as p;
+
+$page-max-width: 1600px;
+
+.page {
+  min-height: 100vh;
+  padding: v.$space-md clamp(1rem, 3vw, 2rem);
+  background: v.$background-dark;
+  color: v.$text-primary;
+  font-family: v.$font-family-primary, sans-serif;
+}
+
+.pageInner {
+  width: min(100%, $page-max-width);
+  margin: 0 auto;
+  display: grid;
+  gap: v.$space-md;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-md;
+  flex-wrap: wrap;
+}
+
+.header {
+  @include p.panel-shell($padding: v.$space-md, $variant: soft, $overflow: visible);
+  display: grid;
+  gap: v.$space-md;
+}
+
+.headerText {
+  display: grid;
+  gap: v.$space-xs;
+  min-width: 0;
+}
+
+.eyebrow,
+.label,
+.metaLabel {
+  margin: 0;
+  color: v.$color-brand-yellow;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-xxs;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  color: v.$color-white;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: clamp(1.5rem, 2.4vw, 2.15rem);
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.description {
+  margin: 0;
+  max-width: 78ch;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  line-height: 1.55;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) repeat(3, minmax(120px, 160px));
+  gap: v.$space-sm;
+  align-items: end;
+}
+
+.scopeTabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: v.$space-xs;
+}
+
+.scopeButton,
+.refreshButton {
+  min-height: v.$control-height-md;
+  border: 1px solid v.$border-soft;
+  border-radius: v.$radius-sm;
+  background: rgba(v.$color-neutral-900, 0.74);
+  color: v.$text-secondary;
+  cursor: pointer;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition:
+    border-color 0.16s ease,
+    color 0.16s ease,
+    background-color 0.16s ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: v.$color-brand-yellow;
+    color: v.$color-white;
+    outline: none;
+  }
+}
+
+.scopeButton[data-active="true"] {
+  border-color: v.$color-brand-yellow;
+  background: rgba(v.$color-brand-yellow, 0.18);
+  color: v.$color-brand-yellow;
+}
+
+.controlGroup {
+  display: grid;
+  gap: v.$space-xxs;
+  min-width: 0;
+}
+
+.input,
+.select {
+  width: 100%;
+  min-height: v.$control-height-md;
+  border: 1px solid v.$border-soft;
+  border-radius: v.$radius-sm;
+  background: rgba(v.$color-neutral-950, 0.84);
+  color: v.$color-white;
+  font-family: v.$font-family-numbers, monospace;
+  font-size: v.$font-size-sm;
+  padding: 0 v.$space-sm;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: v.$space-sm;
+}
+
+.metaItem {
+  @include p.panel-shell($padding: v.$space-sm, $variant: flat);
+  min-width: 0;
+}
+
+.metaValue {
+  margin: v.$space-xxs 0 0;
+  color: v.$color-white;
+  font-family: v.$font-family-numbers, monospace;
+  font-size: v.$font-size-md;
+  overflow-wrap: anywhere;
+}
+
+.panel {
+  @include p.panel-shell($padding: 0, $variant: soft, $overflow: hidden);
+  display: grid;
+  min-height: 520px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-md;
+  padding: v.$space-md v.$space-lg;
+  border-bottom: 1px solid v.$border-soft;
+  flex-wrap: wrap;
+}
+
+.panelTitle {
+  margin: 0;
+  color: v.$color-white;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-md;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.statusText {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.tableWrap {
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 1120px;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: v.$space-sm;
+  border-bottom: 1px solid v.$border-soft;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: v.$background-dark;
+  color: v.$color-brand-yellow;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-xxs;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.table td {
+  color: v.$text-primary;
+  font-family: v.$font-family-numbers, monospace;
+  font-size: v.$font-size-sm;
+}
+
+.table th:first-child,
+.table td:first-child {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: v.$background-dark;
+}
+
+.entityName {
+  color: v.$color-white;
+  font-family: v.$font-family-primary, sans-serif;
+  font-weight: 700;
+}
+
+.muted {
+  color: v.$text-muted;
+}
+
+.notes {
+  display: grid;
+  gap: v.$space-xs;
+  margin: 0;
+  padding: v.$space-md v.$space-lg;
+  border-top: 1px solid v.$border-soft;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.errorBox,
+.emptyBox {
+  margin: v.$space-lg;
+  padding: v.$space-lg;
+  border: 1px solid v.$border-soft;
+  border-radius: v.$radius-sm;
+  color: v.$text-secondary;
+}
+
+.errorBox {
+  border-color: rgba(v.$danger-color, 0.55);
+  color: v.$danger-color;
+}
+
+@media (max-width: v.$breakpoint-desktop) {
+  .controls,
+  .metaGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: v.$breakpoint-tablet) {
+  .controls,
+  .metaGrid,
+  .scopeTabs {
+    grid-template-columns: 1fr;
+  }
+}

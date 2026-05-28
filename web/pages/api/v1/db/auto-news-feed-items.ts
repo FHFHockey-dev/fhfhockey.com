@@ -34,6 +34,17 @@ function parseBooleanFlag(value: string | string[] | undefined): boolean {
   return rawValue === "1" || rawValue === "true" || rawValue === "yes";
 }
 
+function isLocalDevRequest(req: any): boolean {
+  const host = typeof req.headers?.host === "string" ? req.headers.host : "";
+  const hostname = host.toLowerCase().split(":")[0];
+  return (
+    process.env.NODE_ENV !== "production" &&
+    (hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "::1")
+  );
+}
+
 function parseString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
@@ -253,7 +264,10 @@ export default withCronJobAudit(
     }
 
     const limit = parseLimit(req.query.limit, 200);
-    const dryRun = parseBooleanFlag(req.query.dryRun);
+    const dryRun =
+      req.query.dryRun === undefined
+        ? req.method === "GET" && isLocalDevRequest(req)
+        : parseBooleanFlag(req.query.dryRun);
     const reprocess = parseBooleanFlag(req.query.reprocess);
     const includeAmbiguous = req.query.includeAmbiguous
       ? parseBooleanFlag(req.query.includeAmbiguous)

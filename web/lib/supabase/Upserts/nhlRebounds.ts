@@ -15,6 +15,13 @@ type ReboundBuildOptions = {
   reboundWindowSeconds?: number;
 };
 
+export type ReboundControlOutcome =
+  | "second_chance_allowed"
+  | "goalie_freeze"
+  | "covered_puck"
+  | "no_danger_continuation"
+  | "unknown";
+
 export type NhlReboundContext = {
   gameId: number;
   eventId: number;
@@ -31,6 +38,12 @@ export type NhlReboundContext = {
   createsRebound: boolean;
   reboundTargetEventId: number | null;
   reboundTargetTypeDescKey: string | null;
+  reboundControlOutcome: ReboundControlOutcome;
+  createsSecondChanceAllowed: boolean;
+  createsGoalieFreeze: boolean;
+  createsCoveredPuck: boolean;
+  createsNoDangerContinuation: boolean;
+  reboundOutcomeConfidence: "high" | "medium" | "low";
 };
 
 function computeShotDistanceFeet(
@@ -80,6 +93,81 @@ function isEligibleReboundSource(event: ParsedNhlPbpEvent): boolean {
 
 function isEligibleReboundShot(event: ParsedNhlPbpEvent): boolean {
   return isShotFeatureEligible(event);
+}
+
+function secondsBetweenEvents(
+  source: ParsedNhlPbpEvent,
+  next: ParsedNhlPbpEvent | null
+): number | null {
+  if (!next || source.game_id !== next.game_id) return null;
+  if (source.game_seconds_elapsed == null || next.game_seconds_elapsed == null) return null;
+  const delta = next.game_seconds_elapsed - source.game_seconds_elapsed;
+  return Number.isFinite(delta) ? delta : null;
+}
+
+function classifyReboundControlOutcome(args: {
+  source: ParsedNhlPbpEvent;
+  next: ParsedNhlPbpEvent | null;
+  reboundTarget: ParsedNhlPbpEvent | null;
+  reboundWindowSeconds: number;
+}): Pick<
+  NhlReboundContext,
+  | "reboundControlOutcome"
+  | "createsSecondChanceAllowed"
+  | "createsGoalieFreeze"
+  | "createsCoveredPuck"
+  | "createsNoDangerContinuation"
+  | "reboundOutcomeConfidence"
+> {
+  if (!isEligibleReboundSource(args.source)) {
+    return {
+      reboundControlOutcome: "unknown",
+      createsSecondChanceAllowed: false,
+      createsGoalieFreeze: false,
+      createsCoveredPuck: false,
+      createsNoDangerContinuation: false,
+      reboundOutcomeConfidence: "low",
+    };
+  }
+
+  if (args.reboundTarget) {
+    return {
+      reboundControlOutcome: "second_chance_allowed",
+      createsSecondChanceAllowed: true,
+      createsGoalieFreeze: false,
+      createsCoveredPuck: false,
+      createsNoDangerContinuation: false,
+      reboundOutcomeConfidence: "high",
+    };
+  }
+
+  const nextDelta = secondsBetweenEvents(args.source, args.next);
+  const nextWithinWindow =
+    nextDelta != null && nextDelta > 0 && nextDelta <= args.reboundWindowSeconds;
+  if (
+    args.source.type_desc_key === "shot-on-goal" &&
+    args.next?.period_number === args.source.period_number &&
+    args.next?.type_desc_key === "stoppage" &&
+    nextWithinWindow
+  ) {
+    return {
+      reboundControlOutcome: "goalie_freeze",
+      createsSecondChanceAllowed: false,
+      createsGoalieFreeze: true,
+      createsCoveredPuck: true,
+      createsNoDangerContinuation: false,
+      reboundOutcomeConfidence: "medium",
+    };
+  }
+
+  return {
+    reboundControlOutcome: "no_danger_continuation",
+    createsSecondChanceAllowed: false,
+    createsGoalieFreeze: false,
+    createsCoveredPuck: false,
+    createsNoDangerContinuation: true,
+    reboundOutcomeConfidence: "medium",
+  };
 }
 
 export function buildReboundContexts(
@@ -179,17 +267,35 @@ export function buildReboundContexts(
       createsRebound: false,
       reboundTargetEventId: null,
       reboundTargetTypeDescKey: null,
+      reboundControlOutcome: "unknown",
+      createsSecondChanceAllowed: false,
+      createsGoalieFreeze: false,
+      createsCoveredPuck: false,
+      createsNoDangerContinuation: false,
+      reboundOutcomeConfidence: "low",
     };
   });
 
-  return reboundContexts.map((context) => {
+  return reboundContexts.map((context, index) => {
+    const source = sorted[index]!;
+    const next =
+      index + 1 < sorted.length && sorted[index + 1]!.game_id === source.game_id
+        ? sorted[index + 1]!
+        : null;
     const reboundTarget = reboundTargetsBySourceEventId.get(context.eventId);
+    const control = classifyReboundControlOutcome({
+      source,
+      next,
+      reboundTarget: reboundTarget ?? null,
+      reboundWindowSeconds,
+    });
 
     return {
       ...context,
       createsRebound: reboundTarget != null,
       reboundTargetEventId: reboundTarget?.event_id ?? null,
       reboundTargetTypeDescKey: reboundTarget?.type_desc_key ?? null,
+      ...control,
     };
   });
 }

@@ -75,10 +75,16 @@ describe("featureLeakageRegistry", () => {
   });
 
   it("finds registry entries by table", () => {
-    expect(getFeatureLeakageEntriesByTable("nhl_edge_skater_game_metrics")).toEqual([
+    expect(getFeatureLeakageEntriesByTable("nhl_edge_skater_metrics_daily")).toEqual([
       expect.objectContaining({
         id: "nhl_edge_metrics",
         category: "pregame_safe_with_freshness",
+      }),
+    ]);
+    expect(getFeatureLeakageEntriesByTable("nhl_xg_rebound_control_goalie_game_aggregates")).toEqual([
+      expect.objectContaining({
+        id: "xg_aggregates",
+        category: "postgame_descriptive",
       }),
     ]);
   });

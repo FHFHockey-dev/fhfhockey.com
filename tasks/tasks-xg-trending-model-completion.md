@@ -30,6 +30,10 @@
 - `web/lib/sources/injuryStatusIngestion.ts` - Existing injury/status ingestion layer to extend for severity, body region, and return limitation fields.
 - `web/lib/sources/injuryStatusIngestion.test.ts` - Tests for normalized injury/status behavior.
 - `web/lib/projections/utils/projection-metadata-builders.ts` - Existing starter scenario metadata path and likely bridge to first-class goalie mixture distributions.
+- `web/lib/projections/goalieStarterMixtures.ts` - Builds first-class goalie starter mixture distributions and branch projection rows.
+- `web/lib/projections/goalieStarterMixtures.test.ts` - Tests confirmed starters, ambiguous distributions, stale rows, back-to-backs, manual overrides, and weighted branch outputs.
+- `migrations/20260527_create_goalie_starter_mixture_tables.sql` - Defines persisted goalie starter mixture distribution and projection branch tables.
+- `web/pages/api/v1/db/update-goalie-starter-mixtures.ts` - Admin endpoint for dry-running or upserting starter mixture distributions from `goalie_start_projections`.
 - `web/lib/game-predictions/featureBuilder.ts` - Game-level feature builder where travel, timezone, fatigue, leakage registry, and EDGE features may feed prediction models.
 - `web/lib/game-predictions/featureSources.ts` - Existing feature-source metadata that may become part of the leakage/source-safety registry.
 - `web/lib/ml/featureLeakageRegistry.ts` - Global feature/source safety registry and validation helpers for model builders.
@@ -37,6 +41,8 @@
 - `web/pages/api/v1/db/update-nhl-edge-stats.ts` - NHL EDGE ingestion endpoint for typed skater/team/goalie metric tables.
 - `web/pages/api/v1/db/update-nhl-edge-teams.ts` - Team-focused NHL EDGE ingestion endpoint.
 - `web/lib/NHL/edgeIngestion.ts` - NHL EDGE row builders and typed metric extraction.
+- `web/lib/NHL/edgeFeatureContract.ts` - Model-facing NHL EDGE feature contracts, join-plan helpers, and snapshot freshness validation.
+- `web/lib/NHL/edgeFeatureContract.test.ts` - Tests EDGE contracts, leakage-gated join plans, leaderboard exclusion, and stale snapshot handling.
 - `migrations/20260527_create_nhl_xg_created_xg_tables.sql` - Defines player game and rolling created-xG aggregate tables with component breakdowns.
 - `web/lib/xg/createdXg.ts` - Builds distinct player created-xG aggregates from inferred shot-assist candidates and selected non-shooter transition credit.
 - `web/lib/xg/createdXg.test.ts` - Tests created-xG component aggregation, rolling windows, shooter self-credit exclusions, and reconciliation checks.
@@ -53,6 +59,10 @@
 - `web/lib/xg/travelFatigue.test.ts` - Tests home/away identification, timezone inference, back-to-backs, three-in-four, road trips, and missing timezone handling.
 - `migrations/20260527_create_nhl_xg_travel_fatigue_tables.sql` - Defines persisted team-game travel/fatigue feature rows.
 - `web/pages/api/v1/db/update-nhl-xg-travel-fatigue.ts` - Admin endpoint for dry-running or upserting schedule-derived travel/fatigue rows.
+- `web/lib/xg/reboundControl.ts` - Builds team, player, and goalie rebound-control outputs from approved rebound-creation predictions.
+- `web/lib/xg/reboundControl.test.ts` - Tests rebound-control aggregates, empty-net goalie exclusions, delayed-penalty QA, and unapproved-row rejection.
+- `migrations/20260527_create_nhl_xg_rebound_control_tables.sql` - Defines team/player/goalie rebound-control aggregate tables.
+- `web/pages/api/v1/db/update-nhl-xg-rebound-control.ts` - Admin endpoint for dry-running or upserting rebound-control aggregates.
 - `web/pages/underlying-stats/playerStats/index.tsx` - Candidate UI surface for player-level xG creation, shot-assist, and transition metrics.
 - `web/pages/underlying-stats/teamStats/index.tsx` - Candidate UI surface for team-level xGF/xGA and transition metrics.
 - `web/pages/api/v1/underlying-stats/players.ts` - Existing player underlying-stats API that may be extended or joined with xG creation summaries.
@@ -63,6 +73,7 @@
 - `tasks/xg-training-feature-contract.md` - Current xG feature contract and leakage-exclusion reference.
 - `tasks/xg-training-dataset-contract.md` - Current xG training-row, label, split, and rebound-creation target contract.
 - `tasks/feature-leakage-registry.md` - Documentation for registry categories and onboarding requirements for new model features.
+- `tasks/nhl-edge-feature-contract.md` - Documents model-usable EDGE tables, grains, fields, and freshness/leakage semantics.
 
 ### Notes
 
@@ -279,32 +290,65 @@
   - Added `tasks/feature-leakage-registry.md` documenting category semantics and the requirement that new model features be registered before use.
   - Focused verification passed: `npx vitest --run lib/ml/featureLeakageRegistry.test.ts`; full `npx tsc --noEmit --pretty false --incremental false` passed.
 
-- [ ] 16.0 Add first-class goalie starter mixture distributions
-  - [ ] 16.1 Audit current starter scenario metadata and Twitter feed ingestion for probability, source, and freshness signals.
-  - [ ] 16.2 Persist starter probability distributions by game/team/goalie with source confidence and as-of timestamp.
-  - [ ] 16.3 Update goalie and game projections to consume scenario-weighted starter distributions instead of a single thin starter estimate when status is uncertain.
-  - [ ] 16.4 Store branch-level projection outputs for likely starters and aggregate them into scenario-weighted slate outputs.
-  - [ ] 16.5 Add tests for confirmed starters, ambiguous starters, stale confirmations, back-to-back goalie usage, and manual overrides.
+- [x] 16.0 Add first-class goalie starter mixture distributions
+  - [x] 16.1 Audit current starter scenario metadata and Twitter feed ingestion for probability, source, and freshness signals.
+  - [x] 16.2 Persist starter probability distributions by game/team/goalie with source confidence and as-of timestamp.
+  - [x] 16.3 Update goalie and game projections to consume scenario-weighted starter distributions instead of a single thin starter estimate when status is uncertain.
+  - [x] 16.4 Store branch-level projection outputs for likely starters and aggregate them into scenario-weighted slate outputs.
+  - [x] 16.5 Add tests for confirmed starters, ambiguous starters, stale confirmations, back-to-back goalie usage, and manual overrides.
 
-- [ ] 17.0 Add expected rebounds, freezes, and richer rebound-control metrics
-  - [ ] 17.1 Extend rebound feature labels to distinguish rebound created, goalie freeze, covered puck, second chance allowed, and no-danger continuation where data supports it.
-  - [ ] 17.2 Define goalie-facing rebound-control aggregates separate from shooter shot-goal xG.
-  - [ ] 17.3 Train and approve rebound/freezing baselines only after label coverage is sufficient.
-  - [ ] 17.4 Persist player/team/goalie rebound-control outputs with model version and confidence.
-  - [ ] 17.5 Add QA checks for rebounds after posts/misses, empty-net events, delayed penalties, and rapid flurry sequences.
+  Notes:
+  - Current projection code already builds top starter scenarios and blends branch outputs; task 16 adds the missing persisted distribution contract around those probabilities.
+  - Added `migrations/20260527_create_goalie_starter_mixture_tables.sql`, `web/lib/projections/goalieStarterMixtures.ts`, and `/api/v1/db/update-goalie-starter-mixtures`.
+  - `nhl_goalie_starter_mixture_distributions` persists game/team/goalie probability rows with `as_of_timestamp`, source confidence, source freshness, confirmed/manual override flags, stale flags, back-to-back context, prior probability, adjusted probability, normalized probability, and provenance.
+  - `nhl_goalie_starter_mixture_projection_branches` stores branch-level goalie projection outputs and weighted branch outputs for scenario-weighted slate aggregation.
+  - The builder can convert persisted mixture rows back into starter scenarios for projection consumption, preserving ambiguous two-goalie distributions instead of collapsing to one starter.
+  - Focused verification passed: `npx vitest --run lib/projections/goalieStarterMixtures.test.ts lib/ml/featureLeakageRegistry.test.ts`; full `npx tsc --noEmit --pretty false --incremental false` passed.
 
-- [ ] 18.0 Complete typed NHL EDGE feature contracts and model integration
-  - [ ] 18.1 Audit `update-nhl-edge-stats.ts`, `update-nhl-edge-teams.ts`, and `edgeIngestion.ts` for skater, goalie, team, and shot-location metric coverage.
-  - [ ] 18.2 Finalize typed EDGE table documentation and map every model-usable EDGE field to entity, grain, season, game type, and freshness semantics.
-  - [ ] 18.3 Add stable read helpers or views for latest and historical EDGE features.
-  - [ ] 18.4 Register EDGE features in the leakage registry with prospective-archive limitations clearly marked.
-  - [ ] 18.5 Add EDGE feature joins to the relevant trending/prediction model builders only after freshness and leakage rules are enforced.
-  - [ ] 18.6 Add tests for EDGE row parsing, missing percentile fields, unsupported endpoint families, and stale snapshot handling.
+- [x] 17.0 Add expected rebounds, freezes, and richer rebound-control metrics
+  - [x] 17.1 Extend rebound feature labels to distinguish rebound created, goalie freeze, covered puck, second chance allowed, and no-danger continuation where data supports it.
+  - [x] 17.2 Define goalie-facing rebound-control aggregates separate from shooter shot-goal xG.
+  - [x] 17.3 Train and approve rebound/freezing baselines only after label coverage is sufficient.
+  - [x] 17.4 Persist player/team/goalie rebound-control outputs with model version and confidence.
+  - [x] 17.5 Add QA checks for rebounds after posts/misses, empty-net events, delayed penalties, and rapid flurry sequences.
+
+  Notes:
+  - Extended rebound contexts and shot feature payloads with `reboundControlOutcome`, `createsSecondChanceAllowed`, `createsGoalieFreeze`, `createsCoveredPuck`, `createsNoDangerContinuation`, and `reboundOutcomeConfidence`.
+  - Added `migrations/20260527_create_nhl_xg_rebound_control_tables.sql`, `web/lib/xg/reboundControl.ts`, and `/api/v1/db/update-nhl-xg-rebound-control`.
+  - Expected rebounds use the approved `rebound_creation` prediction rows. Freeze/covered-puck outputs are persisted as label-only with `freeze_model_status='label_only_no_approved_model'`; no expected-freeze probability is emitted until a separate freeze artifact is trained and approved.
+  - Team outputs track expected/actual rebounds for and against, goalie freezes, covered pucks, no-danger continuations, and rebound-source shots. Player outputs track expected/actual rebounds created. Goalie outputs track expected rebounds allowed, actual rebounds allowed, rebound-control saved above expected, freezes, covered pucks, and no-danger continuations allowed.
+  - QA flags empty-net goalie exclusions, delayed-penalty rebound contexts, unapproved prediction rows, and missing team/shooter/goalie mappings.
+  - Focused verification passed: `npx vitest --run lib/supabase/Upserts/nhlRebounds.test.ts lib/supabase/Upserts/nhlShotFeatureBuilder.test.ts lib/xg/reboundControl.test.ts`; full `npx tsc --noEmit --pretty false --incremental false` passed.
+
+- [x] 18.0 Complete typed NHL EDGE feature contracts and model integration
+  - [x] 18.1 Audit `update-nhl-edge-stats.ts`, `update-nhl-edge-teams.ts`, and `edgeIngestion.ts` for skater, goalie, team, and shot-location metric coverage.
+  - [x] 18.2 Finalize typed EDGE table documentation and map every model-usable EDGE field to entity, grain, season, game type, and freshness semantics.
+  - [x] 18.3 Add stable read helpers or views for latest and historical EDGE features.
+  - [x] 18.4 Register EDGE features in the leakage registry with prospective-archive limitations clearly marked.
+  - [x] 18.5 Add EDGE feature joins to the relevant trending/prediction model builders only after freshness and leakage rules are enforced.
+  - [x] 18.6 Add tests for EDGE row parsing, missing percentile fields, unsupported endpoint families, and stale snapshot handling.
+
+  Notes:
+  - Existing EDGE ingestion covers raw archive rows plus typed skater, team, goalie, and skater shot-location leaderboard tables; the migration already includes latest analytics views for skater/team/goalie metrics.
+  - Added `web/lib/NHL/edgeFeatureContract.ts` and `tasks/nhl-edge-feature-contract.md` to define model-usable EDGE entities, tables, grains, fields, `snapshot_date <= as_of_date` freshness rules, and latest-view/display boundaries.
+  - Corrected the leakage registry to register the actual typed daily tables: `nhl_edge_skater_metrics_daily`, `nhl_edge_team_metrics_daily`, `nhl_edge_goalie_metrics_daily`, and `nhl_edge_skater_shot_location_leaders_daily`.
+  - Model join plans now go through `assertFeatureLeakageUsage` and return required `season_id`, `game_type`, and `snapshot_date_lte` filters. Leaderboard rows remain display/ranking support, not model join inputs.
+  - Added stale/future/missing snapshot freshness validation with a default 14-day maximum age.
+  - Focused verification passed: `npx vitest --run lib/NHL/edgeFeatureContract.test.ts lib/NHL/edgeIngestion.test.ts lib/ml/featureLeakageRegistry.test.ts`; full `npx tsc --noEmit --pretty false --incremental false` passed.
 
 - [ ] 19.0 Add xG/trending model outputs to `underlying-stats` web pages
-  - [ ] 19.1 Decide whether the first UI should extend the existing player stats page or add a dedicated player creation/xG tab under `web/pages/underlying-stats/playerStats`.
-  - [ ] 19.2 Add a read-only underlying-stats API or Supabase view for player xG creation summaries; do not call admin backfill/operator endpoints from the page.
-  - [ ] 19.3 Surface player metrics including `ixG`, shot-assist candidates, expected primary assists, controlled entries/exits, entry assists, transition-created shots, transition-created xG, and distinct `created_xg` once task 10 is complete.
-  - [ ] 19.4 Add team-level xG/transition metrics to the team stats page, including xGF, xGA, xG%, controlled entries/exits, failed exits, and transition-created xG.
-  - [ ] 19.5 Add sorting, formatting, loading, empty-state, and API error handling consistent with the existing underlying-stats tables.
+  - [x] 19.1 Decide whether the first UI should extend the existing player stats page or add a dedicated player creation/xG tab under `web/pages/underlying-stats/playerStats`.
+  - [x] 19.2 Add a read-only underlying-stats API or Supabase view for player xG creation summaries; do not call admin backfill/operator endpoints from the page.
+  - [x] 19.3 Surface player metrics including `ixG`, shot-assist candidates, expected primary assists, controlled entries/exits, entry assists, transition-created shots, transition-created xG, and distinct `created_xg` once task 10 is complete.
+  - [x] 19.4 Add team-level xG/transition metrics to the team stats page, including xGF, xGA, xG%, controlled entries/exits, failed exits, and transition-created xG.
+  - [x] 19.5 Add sorting, formatting, loading, empty-state, and API error handling consistent with the existing underlying-stats tables.
   - [ ] 19.6 Add focused API/query tests and a browser smoke test for the new underlying-stats page or tab.
+
+  Notes:
+  - Chose a dedicated lab route first: `/underlying-stats/xg`. The production player, goalie, and team drill-ins remain untouched until the xG output is reviewed and tuned.
+  - Added read-only API `/api/v1/underlying-stats/xg`, which resolves latest xG/rebound model versions when query params are omitted and never calls backfill/operator endpoints.
+  - Added `web/lib/underlying-stats/xgExplorer.ts` to merge rolling xG aggregates with created-xG, transition, and rebound-control supplemental rows for player/team/goalie views.
+  - The lab page exposes player, team, and goalie scopes with season/window/limit/model controls, loading/error/empty states, metadata chips, and compact sortable-by-contract server output.
+  - Current smoke result on `http://localhost:3001`: page returns `200`; API returns `200` with an empty-state note when rolling aggregate rows have not been built yet.
+  - Focused verification passed: `npx vitest --run lib/underlying-stats/xgExplorer.test.ts`; full `npx tsc --noEmit --pretty false --incremental false` passed.
+  - Browser visual smoke is still pending; the available headless Playwright path was not installed in this workspace.
