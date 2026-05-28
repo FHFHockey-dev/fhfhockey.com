@@ -484,6 +484,148 @@ describe("train-nhl-xg-baseline", () => {
     expect(modelArtifact.featureFamily).toBe("expanded_v2");
   });
 
+  it("applies rebound-creation-specific approval gates", () => {
+    const dataset = buildEncodedBaselineDataset(
+      [
+        createShotRow({
+          gameId: 2025021001,
+          eventId: 1,
+          gameDate: "2026-01-01",
+          createsRebound: true,
+        }),
+        createShotRow({
+          gameId: 2025021002,
+          eventId: 2,
+          gameDate: "2026-01-02",
+          createsRebound: false,
+        }),
+        createShotRow({
+          gameId: 2025021003,
+          eventId: 3,
+          gameDate: "2026-01-03",
+          createsRebound: true,
+        }),
+      ],
+      { predictionType: "rebound_creation" }
+    );
+
+    const emptyEvaluation = {
+      exampleCount: 0,
+      goalCount: 0,
+      goalRate: null,
+      averagePrediction: null,
+      logLoss: null,
+      brierScore: null,
+      calibrationBins: [],
+    };
+    const { modelArtifact } = buildBaselineArtifactPayloads({
+      artifactTag: "logistic_l2-rebound_creation-s20252026-p1-st1-f1-cfgtest789",
+      generatedAt: "2026-03-31T15:00:00.000Z",
+      sourceCommitSha: "ghi789",
+      seasonScope: 20252026,
+      family: "logistic_l2",
+      featureFamily: "first_pass_v1",
+      parserVersion: 1,
+      strengthVersion: 1,
+      featureVersion: 1,
+      randomSeed: 42,
+      splitConfig: { trainRatio: 0.7, validationRatio: 0.15 },
+      splitStrategy: "chronological_game(train=0.7,validation=0.15,test=0.15)",
+      selectedFeatures: {
+        numeric: ["normalizedX"],
+        boolean: ["isReboundShot"],
+        categorical: ["shotType"],
+      },
+      dataset,
+      fitOptions: {
+        iterations: 800,
+        learningRate: 0.05,
+        l1: 0,
+        l2: 0.01,
+      },
+      evaluation: {
+        overall: {
+          exampleCount: 3,
+          goalCount: 2,
+          goalRate: 0.666667,
+          averagePrediction: 0.1,
+          logLoss: 0.9,
+          brierScore: 0.4,
+          calibrationBins: [],
+        },
+        train: {
+          exampleCount: 1,
+          goalCount: 1,
+          goalRate: 1,
+          averagePrediction: 0.2,
+          logLoss: 0.2,
+          brierScore: 0.04,
+          calibrationBins: [],
+        },
+        validation: {
+          exampleCount: 1,
+          goalCount: 1,
+          goalRate: 1,
+          averagePrediction: 0.2,
+          logLoss: 0.2,
+          brierScore: 0.04,
+          calibrationBins: [],
+        },
+        test: emptyEvaluation,
+      },
+      holdoutEvaluation: {
+        exampleCount: 1,
+        goalCount: 1,
+        goalRate: 1,
+        averagePrediction: 0.2,
+        logLoss: 1.6,
+        brierScore: 0.64,
+        calibrationBins: [],
+      },
+      holdoutSliceEvaluations: {
+        strengthState: [],
+        rebound: [],
+        rush: [],
+      },
+      holdoutScores: [],
+      calibrationAssessment: {
+        requiresPostCalibration: true,
+        requirementReason: "test",
+        validationStrategy: "cross_validated_holdout",
+        holdoutExampleCount: 1,
+        holdoutPositiveCount: 1,
+        reboundPositiveCount: 0,
+        rushPositiveCount: 0,
+        trustWarnings: [],
+        adoptabilityBlockingReasons: ["test calibration blocker"],
+        methods: [],
+        bestObservedMethod: null,
+        adoptableMethod: null,
+      },
+      model: {
+        featureCount: dataset.featureKeys.length,
+        weights: Array.from({ length: dataset.featureKeys.length }, () => 0.1),
+        bias: -1.2,
+      },
+    });
+
+    expect(modelArtifact.predictionType).toBe("rebound_creation");
+    expect(modelArtifact.approvalGradeEligibility).toMatchObject({
+      isEligible: false,
+      blockingReasons: expect.arrayContaining([
+        "Rebound-creation validation split has 1 examples; approval requires at least 1000.",
+        "Rebound-creation test split has 0 examples; approval requires at least 1000.",
+        "Rebound-creation validation split has 1 positive labels; approval requires at least 100.",
+        "Rebound-creation test split has 0 positive labels; approval requires at least 100.",
+        "Rebound-creation validation+test holdout has 1 positive labels; approval requires at least 250.",
+        "Rebound-creation validation/test positive rates are unavailable; approval requires stable positive-rate diagnostics.",
+        "Rebound-creation holdout Brier score does not beat the base-rate baseline.",
+        "test calibration blocker",
+        "Rebound-creation post-calibration is required, but no calibration method is currently adoptable.",
+      ]),
+    });
+  });
+
   it("rejects leaked shotEventType metadata during artifact generation", () => {
     const dataset = buildEncodedBaselineDataset([
       createShotRow({ gameId: 2025021001, eventId: 1, gameDate: "2026-01-01", isGoal: true }),

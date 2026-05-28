@@ -2028,14 +2028,14 @@ export async function runProjectionV2ForDate(
         if (!teamStrengthPriorCache.has(teamDateKey(teamId))) {
           teamStrengthPriorCache.set(teamDateKey(teamId),
             teamAbbrev
-              ? await fetchTeamStrengthPrior(teamAbbrev, asOfDate)
+              ? await fetchTeamStrengthPrior(teamAbbrev, asOfDate, teamId)
               : null
           );
         }
         if (!teamStrengthPriorCache.has(teamDateKey(opponentTeamId))) {
           teamStrengthPriorCache.set(teamDateKey(opponentTeamId),
             opponentAbbrev
-              ? await fetchTeamStrengthPrior(opponentAbbrev, asOfDate)
+              ? await fetchTeamStrengthPrior(opponentAbbrev, asOfDate, opponentTeamId)
               : null
           );
         }
@@ -3630,14 +3630,14 @@ export async function runProjectionV2ForDate(
         if (!teamStrengthPriorCache.has(teamDateKey(c.teamId))) {
           teamStrengthPriorCache.set(teamDateKey(c.teamId),
             defendingTeamAbbrev
-              ? await fetchTeamStrengthPrior(defendingTeamAbbrev, asOfDate)
+              ? await fetchTeamStrengthPrior(defendingTeamAbbrev, asOfDate, c.teamId)
               : null
           );
         }
         if (!teamStrengthPriorCache.has(teamDateKey(c.opponentTeamId))) {
           teamStrengthPriorCache.set(teamDateKey(c.opponentTeamId),
             opponentTeamAbbrev
-              ? await fetchTeamStrengthPrior(opponentTeamAbbrev, asOfDate)
+              ? await fetchTeamStrengthPrior(opponentTeamAbbrev, asOfDate, c.opponentTeamId)
               : null
           );
         }

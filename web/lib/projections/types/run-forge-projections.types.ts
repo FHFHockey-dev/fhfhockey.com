@@ -266,10 +266,14 @@ export type TeamOffenseEnvironment = {
 };
 
 export type TeamStrengthPrior = {
+  source?: "nhl_xg_team_rolling_aggregates" | "nhl_team_data";
   sourceDate: string | null;
   xga: number | null;
   xgaPerGame: number | null;
   xgfPerGame: number | null;
+  sourceModelVersion?: string | null;
+  featureVersion?: number | null;
+  windowGames?: number | null;
 };
 
 export type TeamFiveOnFiveProfile = {

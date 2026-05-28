@@ -12,6 +12,7 @@ import {
   buildEncodedBaselineDataset,
   BOOLEAN_FEATURE_KEYS,
   CATEGORICAL_FEATURE_KEYS,
+  type BaselinePredictionType,
   type BaselineFeatureFamilyName,
   NUMERIC_FEATURE_KEYS,
   type EncodedBaselineExample,
@@ -58,6 +59,7 @@ type CliOptions = {
   season: number;
   outputDir: string;
   family: string;
+  predictionType: BaselinePredictionType;
   featureFamily: BaselineFeatureFamilyName;
   parserVersion: number;
   strengthVersion: number;
@@ -146,6 +148,7 @@ type DatasetArtifactPayload = {
   parserVersion: number;
   strengthVersion: number;
   featureVersion: number;
+  predictionType: BaselinePredictionType;
   datasetContractRef: string;
   featureContractRef: string;
   materializationDecisionRef: string;
@@ -176,6 +179,7 @@ type ModelArtifactPayload = {
   parserVersion: number;
   strengthVersion: number;
   featureVersion: number;
+  predictionType: BaselinePredictionType;
   seasonScope: number;
   randomSeed: number;
   splitConfig: BaselineSplitConfig;
@@ -246,6 +250,7 @@ function printHelp(): void {
 Options:
   --season <seasonId>          Season id to train on. Default: 20252026
   --family <name>              Model family. Default: xgboost_js
+  --predictionType <name>      Prediction target: shot_goal or rebound_creation. Default: shot_goal
   --featureFamily <name>       Feature family preset. Default: first_pass_v1
   --parserVersion <n>          Required parser version. Default: 1
   --strengthVersion <n>        Required strength version. Default: 1
@@ -276,13 +281,162 @@ const MIN_APPROVAL_HOLDOUT_POSITIVES = 10;
 const MIN_APPROVAL_TEST_POSITIVES = 10;
 const MIN_NON_COLLAPSED_AVERAGE_PREDICTION = 0.001;
 const MAX_NON_COLLAPSED_AVERAGE_PREDICTION = 0.999;
+const MIN_REBOUND_CREATION_VALIDATION_EXAMPLES = 1000;
+const MIN_REBOUND_CREATION_TEST_EXAMPLES = 1000;
+const MIN_REBOUND_CREATION_VALIDATION_POSITIVES = 100;
+const MIN_REBOUND_CREATION_TEST_POSITIVES = 100;
+const MIN_REBOUND_CREATION_HOLDOUT_POSITIVES = 250;
+const MAX_REBOUND_CREATION_VALIDATION_TEST_RATE_DELTA = 0.025;
+const MAX_REBOUND_CREATION_HOLDOUT_CALIBRATION_DELTA = 0.025;
+
+function binaryLogLossBaseline(positiveRate: number): number | null {
+  if (!Number.isFinite(positiveRate) || positiveRate <= 0 || positiveRate >= 1) {
+    return null;
+  }
+
+  return -(
+    positiveRate * Math.log(positiveRate) +
+    (1 - positiveRate) * Math.log(1 - positiveRate)
+  );
+}
+
+function binaryBrierBaseline(positiveRate: number): number | null {
+  if (!Number.isFinite(positiveRate) || positiveRate < 0 || positiveRate > 1) {
+    return null;
+  }
+
+  return positiveRate * (1 - positiveRate);
+}
+
+function buildReboundCreationApprovalBlockingReasons(args: {
+  evaluation: Record<"overall" | "train" | "validation" | "test", SplitEvaluation>;
+  holdoutEvaluation: SplitEvaluation;
+  calibrationAssessment: CalibrationAssessment;
+}): string[] {
+  const blockingReasons: string[] = [];
+  const validation = args.evaluation.validation;
+  const test = args.evaluation.test;
+  const holdout = args.holdoutEvaluation;
+
+  if (validation.exampleCount < MIN_REBOUND_CREATION_VALIDATION_EXAMPLES) {
+    blockingReasons.push(
+      `Rebound-creation validation split has ${validation.exampleCount} examples; approval requires at least ${MIN_REBOUND_CREATION_VALIDATION_EXAMPLES}.`
+    );
+  }
+
+  if (test.exampleCount < MIN_REBOUND_CREATION_TEST_EXAMPLES) {
+    blockingReasons.push(
+      `Rebound-creation test split has ${test.exampleCount} examples; approval requires at least ${MIN_REBOUND_CREATION_TEST_EXAMPLES}.`
+    );
+  }
+
+  if (validation.goalCount < MIN_REBOUND_CREATION_VALIDATION_POSITIVES) {
+    blockingReasons.push(
+      `Rebound-creation validation split has ${validation.goalCount} positive labels; approval requires at least ${MIN_REBOUND_CREATION_VALIDATION_POSITIVES}.`
+    );
+  }
+
+  if (test.goalCount < MIN_REBOUND_CREATION_TEST_POSITIVES) {
+    blockingReasons.push(
+      `Rebound-creation test split has ${test.goalCount} positive labels; approval requires at least ${MIN_REBOUND_CREATION_TEST_POSITIVES}.`
+    );
+  }
+
+  if (holdout.goalCount < MIN_REBOUND_CREATION_HOLDOUT_POSITIVES) {
+    blockingReasons.push(
+      `Rebound-creation validation+test holdout has ${holdout.goalCount} positive labels; approval requires at least ${MIN_REBOUND_CREATION_HOLDOUT_POSITIVES}.`
+    );
+  }
+
+  if (validation.goalRate == null || test.goalRate == null) {
+    blockingReasons.push(
+      "Rebound-creation validation/test positive rates are unavailable; approval requires stable positive-rate diagnostics."
+    );
+  } else {
+    const rateDelta = Math.abs(validation.goalRate - test.goalRate);
+    if (rateDelta > MAX_REBOUND_CREATION_VALIDATION_TEST_RATE_DELTA) {
+      blockingReasons.push(
+        `Rebound-creation validation/test positive-rate delta is ${rateDelta.toFixed(6)}; approval allows at most ${MAX_REBOUND_CREATION_VALIDATION_TEST_RATE_DELTA}.`
+      );
+    }
+  }
+
+  if (holdout.goalRate == null || holdout.averagePrediction == null) {
+    blockingReasons.push(
+      "Rebound-creation holdout calibration diagnostics are unavailable; approval requires observed and predicted holdout rates."
+    );
+  } else {
+    const calibrationDelta = Math.abs(holdout.averagePrediction - holdout.goalRate);
+    if (calibrationDelta > MAX_REBOUND_CREATION_HOLDOUT_CALIBRATION_DELTA) {
+      blockingReasons.push(
+        `Rebound-creation holdout calibration delta is ${calibrationDelta.toFixed(6)}; approval allows at most ${MAX_REBOUND_CREATION_HOLDOUT_CALIBRATION_DELTA}.`
+      );
+    }
+  }
+
+  const holdoutLogLossBaseline =
+    holdout.goalRate == null ? null : binaryLogLossBaseline(holdout.goalRate);
+  if (
+    holdout.logLoss == null ||
+    holdoutLogLossBaseline == null ||
+    holdout.logLoss >= holdoutLogLossBaseline
+  ) {
+    blockingReasons.push(
+      "Rebound-creation holdout log loss does not beat the base-rate baseline."
+    );
+  }
+
+  const holdoutBrierBaseline =
+    holdout.goalRate == null ? null : binaryBrierBaseline(holdout.goalRate);
+  if (
+    holdout.brierScore == null ||
+    holdoutBrierBaseline == null ||
+    holdout.brierScore >= holdoutBrierBaseline
+  ) {
+    blockingReasons.push(
+      "Rebound-creation holdout Brier score does not beat the base-rate baseline."
+    );
+  }
+
+  for (const reason of args.calibrationAssessment.adoptabilityBlockingReasons) {
+    if (!blockingReasons.includes(reason)) {
+      blockingReasons.push(reason);
+    }
+  }
+
+  if (
+    args.calibrationAssessment.requiresPostCalibration &&
+    args.calibrationAssessment.adoptableMethod == null
+  ) {
+    blockingReasons.push(
+      "Rebound-creation post-calibration is required, but no calibration method is currently adoptable."
+    );
+  }
+
+  return blockingReasons;
+}
 
 function buildApprovalGradeEligibility(args: {
+  predictionType: BaselinePredictionType;
   splitCounts: Record<"train" | "validation" | "test", number>;
+  evaluation: Record<"overall" | "train" | "validation" | "test", SplitEvaluation>;
   holdoutEvaluation: SplitEvaluation;
   testEvaluation: SplitEvaluation;
   calibrationAssessment: CalibrationAssessment;
 }): ApprovalGradeEligibility {
+  if (args.predictionType === "rebound_creation") {
+    const blockingReasons = buildReboundCreationApprovalBlockingReasons({
+      evaluation: args.evaluation,
+      holdoutEvaluation: args.holdoutEvaluation,
+      calibrationAssessment: args.calibrationAssessment,
+    });
+
+    return {
+      isEligible: blockingReasons.length === 0,
+      blockingReasons,
+    };
+  }
+
   const blockingReasons: string[] = [];
 
   if (args.splitCounts.test <= 0) {
@@ -408,12 +562,22 @@ function parseCliArgs(argv: string[]): CliOptions {
       ).join(", ")}.`
     );
   }
+  const requestedPredictionType = options.predictionType ?? "shot_goal";
+  if (
+    requestedPredictionType !== "shot_goal" &&
+    requestedPredictionType !== "rebound_creation"
+  ) {
+    throw new Error(
+      `Unsupported --predictionType "${requestedPredictionType}". Supported types: shot_goal, rebound_creation.`
+    );
+  }
 
   return {
     season: Number(options.season ?? 20252026),
     outputDir:
       options.outputDir ?? path.resolve(process.cwd(), "scripts/output/xg-baselines"),
     family: options.family ?? "xgboost_js",
+    predictionType: requestedPredictionType as BaselinePredictionType,
     featureFamily: requestedFeatureFamily as BaselineFeatureFamilyName,
     parserVersion: Number(options.parserVersion ?? 1),
     strengthVersion: Number(options.strengthVersion ?? 1),
@@ -482,16 +646,20 @@ function getCommitSha(repoRoot: string): string | null {
 
 function buildArtifactVersionTag(args: {
   family: string;
+  predictionType: BaselinePredictionType;
   season: number;
   parserVersion: number;
   strengthVersion: number;
   featureVersion: number;
   configSignature: string;
 }): string {
-  return `${args.family}-s${args.season}-p${args.parserVersion}-st${args.strengthVersion}-f${args.featureVersion}-cfg${args.configSignature}`;
+  const predictionTypePrefix =
+    args.predictionType === "shot_goal" ? "" : `-${args.predictionType}`;
+  return `${args.family}${predictionTypePrefix}-s${args.season}-p${args.parserVersion}-st${args.strengthVersion}-f${args.featureVersion}-cfg${args.configSignature}`;
 }
 
 function buildConfigSignature(args: {
+  predictionType: BaselinePredictionType;
   featureFamily: string;
   seed: number;
   splitConfig: BaselineSplitConfig;
@@ -500,7 +668,19 @@ function buildConfigSignature(args: {
   categoricalFeatures: string[];
   fitOptions: Record<string, number>;
 }): string {
-  const raw = JSON.stringify(args);
+  const signatureArgs =
+    args.predictionType === "shot_goal"
+      ? {
+          featureFamily: args.featureFamily,
+          seed: args.seed,
+          splitConfig: args.splitConfig,
+          numericFeatures: args.numericFeatures,
+          booleanFeatures: args.booleanFeatures,
+          categoricalFeatures: args.categoricalFeatures,
+          fitOptions: args.fitOptions,
+        }
+      : args;
+  const raw = JSON.stringify(signatureArgs);
   return crypto.createHash("sha1").update(raw).digest("hex").slice(0, 8);
 }
 
@@ -1248,7 +1428,9 @@ export function buildBaselineArtifactPayloads(args: {
     featureKeys: args.dataset.featureKeys,
   });
   const approvalGradeEligibility = buildApprovalGradeEligibility({
+    predictionType: args.dataset.predictionType,
     splitCounts: args.dataset.splitCounts,
+    evaluation: args.evaluation,
     holdoutEvaluation: args.holdoutEvaluation,
     testEvaluation: args.evaluation.test,
     calibrationAssessment: args.calibrationAssessment,
@@ -1264,6 +1446,7 @@ export function buildBaselineArtifactPayloads(args: {
     parserVersion: args.parserVersion,
     strengthVersion: args.strengthVersion,
     featureVersion: args.featureVersion,
+    predictionType: args.dataset.predictionType,
     datasetContractRef:
       "/Users/tim/Code/fhfhockey.com/tasks/xg-training-dataset-contract.md",
     featureContractRef:
@@ -1294,6 +1477,7 @@ export function buildBaselineArtifactPayloads(args: {
     parserVersion: args.parserVersion,
     strengthVersion: args.strengthVersion,
     featureVersion: args.featureVersion,
+    predictionType: args.dataset.predictionType,
     seasonScope: args.seasonScope,
     randomSeed: args.randomSeed,
     splitConfig: args.splitConfig,
@@ -1434,6 +1618,7 @@ async function main(): Promise<void> {
     );
 
     const dataset = buildEncodedBaselineDataset(seasonShotRowsWithTrainingContext, {
+      predictionType: options.predictionType,
       featureFamily: options.featureFamily,
       seed: options.seed,
       splitConfig,
@@ -1584,6 +1769,7 @@ async function main(): Promise<void> {
       }
     );
     const configSignature = buildConfigSignature({
+      predictionType: options.predictionType,
       featureFamily: selectedFeatures.featureFamily,
       seed: options.seed,
       splitConfig,
@@ -1594,6 +1780,7 @@ async function main(): Promise<void> {
     });
     const artifactTag = buildArtifactVersionTag({
       family: options.family,
+      predictionType: options.predictionType,
       season: options.season,
       parserVersion: options.parserVersion,
       strengthVersion: options.strengthVersion,
@@ -1640,6 +1827,7 @@ async function main(): Promise<void> {
           ok: true,
           artifactTag,
           outputRoot,
+          predictionType: options.predictionType,
           featureFamily: selectedFeatures.featureFamily,
           games: selectedGames.length,
           shotRows: shotRows.length,

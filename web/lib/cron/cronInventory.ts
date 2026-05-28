@@ -220,9 +220,8 @@ export function parseCronInventoryFromMarkdown(markdown: string): CronInventoryJ
     } satisfies CronInventoryJob;
   });
 
-  const sqlJobNames = new Set(sqlJobs.map((job) => job.name));
-  const jsonJobs = parseCronInventoryJsonJobs(markdown, sqlJobNames, sqlJobs.length);
-  const jobs = [...sqlJobs, ...jsonJobs];
+  const jsonJobs = parseCronInventoryJsonJobs(markdown, sqlJobs);
+  const jobs = jsonJobs.length > 0 ? jsonJobs : sqlJobs;
 
   return jobs.sort((left, right) => {
     if (left.slotIndex !== right.slotIndex) {
@@ -235,17 +234,20 @@ export function parseCronInventoryFromMarkdown(markdown: string): CronInventoryJ
 
 function parseCronInventoryJsonJobs(
   markdown: string,
-  skipNames: Set<string>,
-  sortOffset: number
+  sqlJobs: CronInventoryJob[]
 ): CronInventoryJob[] {
   const jsonMatch = markdown.match(/```json\s*([\s\S]*?)```/i);
   if (!jsonMatch?.[1]) return [];
 
   let rows: Array<{
+    jobid?: number | null;
     jobname?: string;
     schedule?: string;
     run_time_utc?: string;
     active?: boolean;
+    method?: CronInventoryMethod;
+    route?: string | null;
+    url?: string | null;
   }>;
   try {
     rows = JSON.parse(jsonMatch[1]);
@@ -255,12 +257,25 @@ function parseCronInventoryJsonJobs(
 
   return rows
     .filter((row) => row.active !== false && row.jobname && row.schedule)
-    .filter((row) => !skipNames.has(row.jobname!))
     .map((row, index) => {
-      const routePath = JSON_JOB_ROUTE_ALIASES[row.jobname!] ?? null;
+      const definition =
+        sqlJobs.find(
+          (job) => job.name === row.jobname && job.cronExpression === row.schedule
+        ) ??
+        sqlJobs.find((job) => job.name === row.jobname) ??
+        null;
+      const rawRoute = row.route ?? row.url ?? JSON_JOB_ROUTE_ALIASES[row.jobname!] ?? null;
+      const parsedRoute = parseUrlPieces(rawRoute);
+      const routePath = definition?.routePath ?? parsedRoute.routePath;
+      const route = definition?.route ?? parsedRoute.route;
+      const method =
+        definition?.method ??
+        (row.method === "GET" || row.method === "POST" || row.method === "SQL"
+          ? row.method
+          : "UNKNOWN");
       const { hour, minute } = parseScheduleTimeParts(row.schedule!);
       return {
-        key: `${row.jobname}__${row.schedule}__JSON__${index}`,
+        key: definition?.key ?? `${row.jobname}__${row.schedule}__JSON__${index}`,
         name: row.jobname!,
         cronExpression: row.schedule!,
         scheduleTimeDisplay: row.run_time_utc ?? formatScheduleTime(row.schedule!),
@@ -268,13 +283,20 @@ function parseCronInventoryJsonJobs(
         utcMinute: minute,
         slotIndex:
           hour != null && minute != null ? hour * 60 + minute : Number.MAX_SAFE_INTEGER,
-        sortOrder: sortOffset + index,
-        method: "UNKNOWN",
-        executionShape: routePath ? "wrapper-dependent" : "currently non-runnable in local/dev",
-        url: null,
-        route: routePath,
+        sortOrder: index,
+        method,
+        executionShape:
+          method === "GET" || method === "POST"
+            ? "HTTP route"
+            : method === "SQL"
+              ? "SQL-only"
+              : routePath
+                ? "wrapper-dependent"
+                : "currently non-runnable in local/dev",
+        url: definition?.url ?? row.url ?? null,
+        route,
         routePath,
-        sqlText: null,
+        sqlText: definition?.sqlText ?? null,
         notes: ["Parsed from ALL CRON JOBS JSON inventory."]
       } satisfies CronInventoryJob;
     });
