@@ -20,7 +20,7 @@ import {
   WGOScoringRatesSkaterTotal,
   WGOScoringCountsSkaterTotal,
   WGOShotTypeSkaterTotal,
-  WGOToiSkaterTotal
+  WGOToiSkaterTotal,
 } from "lib/NHL/types";
 
 type SkaterTotalsTable =
@@ -37,7 +37,7 @@ type SkaterTotalsTable =
 // Helper: Concurrently fetch all pages for one endpoint.
 async function fetchAllDataForEndpoint<T>(
   urlBuilder: (start: number) => string,
-  concurrency: number = 4
+  concurrency: number = 4,
 ): Promise<T[]> {
   const limit = 100;
   let page = 0;
@@ -52,9 +52,9 @@ async function fetchAllDataForEndpoint<T>(
         limiter(
           () =>
             Fetch(urlBuilder((page + i) * limit)).then((res) =>
-              res.json()
-            ) as Promise<{ data: T[]; total: number }>
-        )
+              res.json(),
+            ) as Promise<{ data: T[]; total: number }>,
+        ),
       );
     }
     const batchResults = await Promise.all(batchPromises);
@@ -94,7 +94,7 @@ async function getAllSeasonsFromDB(): Promise<string[]> {
 // Fetches all data for a given season and gameType (2 for regular, 3 for playoffs).
 async function fetchAllTotalsForSeason(
   season: string,
-  gameType: number
+  gameType: number,
 ): Promise<{
   skaterTotalStats: WGOSummarySkaterTotal[];
   skatersBio: WGOSkatersBio[];
@@ -167,38 +167,38 @@ async function fetchAllTotalsForSeason(
     scoringRatesTotalStats,
     scoringPerGameTotalStats,
     shotTypeTotalStats,
-    timeOnIceTotalStats
+    timeOnIceTotalStats,
   ] = await Promise.all([
     fetchAllDataForEndpoint<WGOSummarySkaterTotal>(buildSkaterTotalStatsUrl),
     fetchAllDataForEndpoint<WGOSkatersBio>(buildSkatersBioUrl),
     fetchAllDataForEndpoint<WGORealtimeSkaterTotal>(buildMiscSkaterTotalsUrl),
     fetchAllDataForEndpoint<WGOFaceoffSkaterTotal>(buildFaceOffTotalsUrl),
     fetchAllDataForEndpoint<WGOFaceOffWinLossSkaterTotal>(
-      buildFaceoffWinLossTotalsUrl
+      buildFaceoffWinLossTotalsUrl,
     ),
     fetchAllDataForEndpoint<WGOGoalsForAgainstSkaterTotal>(
-      buildGoalsForAgainstTotalsUrl
+      buildGoalsForAgainstTotalsUrl,
     ),
     fetchAllDataForEndpoint<WGOPenaltySkaterTotal>(buildPenaltiesTotalsUrl),
     fetchAllDataForEndpoint<WGOPenaltyKillSkaterTotal>(
-      buildPenaltyKillTotalsUrl
+      buildPenaltyKillTotalsUrl,
     ),
     fetchAllDataForEndpoint<WGOPowerPlaySkaterTotal>(buildPowerPlayTotalsUrl),
     fetchAllDataForEndpoint<WGOPuckPossessionSkaterTotal>(
-      buildPuckPossessionTotalsUrl
+      buildPuckPossessionTotalsUrl,
     ),
     fetchAllDataForEndpoint<WGOSatCountSkaterTotal>(buildSatCountsTotalsUrl),
     fetchAllDataForEndpoint<WGOSatPercentageSkaterTotal>(
-      buildSatPercentagesTotalsUrl
+      buildSatPercentagesTotalsUrl,
     ),
     fetchAllDataForEndpoint<WGOScoringRatesSkaterTotal>(
-      buildScoringRatesTotalsUrl
+      buildScoringRatesTotalsUrl,
     ),
     fetchAllDataForEndpoint<WGOScoringCountsSkaterTotal>(
-      buildScoringPerGameTotalsUrl
+      buildScoringPerGameTotalsUrl,
     ),
     fetchAllDataForEndpoint<WGOShotTypeSkaterTotal>(buildShotTypeTotalsUrl),
-    fetchAllDataForEndpoint<WGOToiSkaterTotal>(buildTimeOnIceTotalsUrl)
+    fetchAllDataForEndpoint<WGOToiSkaterTotal>(buildTimeOnIceTotalsUrl),
   ]);
 
   return {
@@ -217,7 +217,7 @@ async function fetchAllTotalsForSeason(
     scoringRatesTotalStats,
     scoringPerGameTotalStats,
     shotTypeTotalStats,
-    timeOnIceTotalStats
+    timeOnIceTotalStats,
   };
 }
 
@@ -227,7 +227,7 @@ async function batchUpsert(
   tableName: SkaterTotalsTable,
   dataArray: any[],
   batchSize: number = 500,
-  concurrency: number = 4
+  concurrency: number = 4,
 ) {
   if (dataArray.length === 0) {
     console.log(`No data to upsert for table ${tableName}. Skipping.`);
@@ -241,12 +241,16 @@ async function batchUpsert(
   const limit = pLimit(concurrency);
   await Promise.all(
     chunks.map((chunk) =>
-      limit(() =>
-        supabase
+      limit(async () => {
+        const { error } = await supabase
           .from(tableName)
-          .upsert(chunk, { onConflict: "player_id,season" })
-      )
-    )
+          .upsert(chunk, { onConflict: "player_id,season" });
+
+        if (error) {
+          throw new Error(`Failed to upsert ${tableName}: ${error.message}`);
+        }
+      }),
+    ),
   );
 }
 
@@ -271,7 +275,7 @@ async function processSeasons(): Promise<{
       seasons.length
     } seasons to process, starting from ${seasons[0]} up to ${
       seasons[seasons.length - 1]
-    }.`
+    }.`,
   );
 
   const seasonLimit = pLimit(2);
@@ -279,18 +283,18 @@ async function processSeasons(): Promise<{
     seasonLimit(() => {
       console.log(`Updating season: ${season}`);
       return updateSkaterTotals(season);
-    })
+    }),
   );
   await Promise.all(updateTasks);
 
   const overallEndTime = Date.now();
   const totalTimeInSeconds = (overallEndTime - overallStartTime) / 1000;
   console.log(
-    `Total script execution time: ${totalTimeInSeconds.toFixed(2)} seconds.`
+    `Total script execution time: ${totalTimeInSeconds.toFixed(2)} seconds.`,
   );
   return {
     seasonsProcessed: seasons,
-    totalTimeInSeconds
+    totalTimeInSeconds,
   };
 }
 
@@ -299,11 +303,11 @@ async function processSeasons(): Promise<{
 async function fetchProcessAndUpsert(
   season: string,
   gameType: number,
-  tableName: SkaterTotalsTable
+  tableName: SkaterTotalsTable,
 ): Promise<{ playersUpdated: number; totalErrors: number }> {
   const gameTypeName = gameType === 2 ? "Regular Season" : "Playoffs";
   console.log(
-    `Starting update for ${gameTypeName} (table: ${tableName}) for season ${season}`
+    `Starting update for ${gameTypeName} (table: ${tableName}) for season ${season}`,
   );
 
   let playersUpdated = 0;
@@ -326,18 +330,18 @@ async function fetchProcessAndUpsert(
       scoringRatesTotalStats,
       scoringPerGameTotalStats,
       shotTypeTotalStats,
-      timeOnIceTotalStats
+      timeOnIceTotalStats,
     } = await fetchAllTotalsForSeason(season, gameType);
 
     if (skaterTotalStats.length === 0) {
       console.log(
-        `No ${gameTypeName} data found for season ${season}. Skipping processing and upsert.`
+        `No ${gameTypeName} data found for season ${season}. Skipping processing and upsert.`,
       );
       return { playersUpdated: 0, totalErrors: 0 };
     }
 
     console.log(
-      `Data fetched for ${skaterTotalStats.length} players for ${gameTypeName}, beginning processing.`
+      `Data fetched for ${skaterTotalStats.length} players for ${gameTypeName}, beginning processing.`,
     );
 
     const skatersBioMap = new Map<number, WGOSkatersBio>();
@@ -597,7 +601,7 @@ async function fetchProcessAndUpsert(
         shifts: toiStats?.shifts,
         shifts_per_game: toiStats?.shiftsPerGame,
         time_on_ice_per_shift: toiStats?.timeOnIcePerShift,
-        updated_at: now
+        updated_at: now,
       };
       dataArray.push(skatersData);
     }
@@ -614,7 +618,7 @@ async function fetchProcessAndUpsert(
 // --------------------------
 // updateSkaterTotals calls the helper for regular season and playoffs separately.
 async function updateSkaterTotals(
-  season: string
+  season: string,
 ): Promise<{ updated: boolean; playersUpdated: number; totalErrors: number }> {
   console.log(`Starting to update skater totals for season ${season}`);
   const startTime = Date.now();
@@ -622,13 +626,13 @@ async function updateSkaterTotals(
   const regularSeasonResult = await fetchProcessAndUpsert(
     season,
     2,
-    "wgo_skater_stats_totals"
+    "wgo_skater_stats_totals",
   );
 
   const playoffResult = await fetchProcessAndUpsert(
     season,
     3,
-    "wgo_skater_stats_totals_playoffs"
+    "wgo_skater_stats_totals_playoffs",
   );
 
   const playersUpdated =
@@ -638,19 +642,19 @@ async function updateSkaterTotals(
   const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
 
   console.log(
-    `Season ${season} done: ${playersUpdated} total players updated in ${durationSec}s with ${totalErrors} total error(s).`
+    `Season ${season} done: ${playersUpdated} total players updated in ${durationSec}s with ${totalErrors} total error(s).`,
   );
   console.log(
-    `Regular Season: ${regularSeasonResult.playersUpdated} players updated with ${regularSeasonResult.totalErrors} errors.`
+    `Regular Season: ${regularSeasonResult.playersUpdated} players updated with ${regularSeasonResult.totalErrors} errors.`,
   );
   console.log(
-    `Playoffs: ${playoffResult.playersUpdated} players updated with ${playoffResult.totalErrors} errors.`
+    `Playoffs: ${playoffResult.playersUpdated} players updated with ${playoffResult.totalErrors} errors.`,
   );
 
   return {
     updated: totalErrors === 0,
     playersUpdated,
-    totalErrors
+    totalErrors,
   };
 }
 
@@ -658,7 +662,7 @@ async function updateSkaterTotals(
 // API handler
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   const jobName = "update-all-wgo-skater-totals";
   const startTime = Date.now();
@@ -679,12 +683,12 @@ export default async function handler(
       rowsAffected = -1; // Indicate a multi-season run
       details = {
         seasonsProcessed: result.seasonsProcessed,
-        totalTimeInSeconds: result.totalTimeInSeconds
+        totalTimeInSeconds: result.totalTimeInSeconds,
       };
       responseBody = {
         message: `Successfully processed ${result.seasonsProcessed.length} seasons.`,
         success: true,
-        ...details
+        ...details,
       };
       return res.json(responseBody);
     }
@@ -700,12 +704,12 @@ export default async function handler(
       details = {
         playersUpdated: result.playersUpdated,
         totalErrors: result.totalErrors,
-        season: seasonValue
+        season: seasonValue,
       };
       responseBody = {
         message: `Updated ${rowsAffected} players for current season ${seasonValue}.`,
         success: result.updated,
-        ...details
+        ...details,
       };
       return res.json(responseBody);
     }
@@ -719,12 +723,12 @@ export default async function handler(
     details = {
       playersUpdated: result.playersUpdated,
       totalErrors: result.totalErrors,
-      season: seasonValue
+      season: seasonValue,
     };
     responseBody = {
       message: `Updated ${rowsAffected} players for ${seasonValue}.`,
       success: result.updated,
-      ...details
+      ...details,
     };
     return res.json(responseBody);
   } catch (err: any) {
@@ -750,11 +754,12 @@ export default async function handler(
             url: req.url ?? null,
             statusCode: res.statusCode,
             durationMs: processingTimeMs,
-            error: status === "error" ? details?.error ?? "Unknown error" : null,
+            error:
+              status === "error" ? (details?.error ?? "Unknown error") : null,
             response: responseBody,
-            context: details
-          }
-        }
+            context: details,
+          },
+        },
       ]);
     } catch (auditErr) {
       console.error("Failed to write audit row:", auditErr);

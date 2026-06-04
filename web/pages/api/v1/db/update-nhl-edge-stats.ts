@@ -6,32 +6,56 @@ import {
   buildEdgeGoalieMetricRow,
   buildEdgeGoalieDetailRow,
   buildEdgeGoalieDetailNowRow,
+  buildEdgeGoalieSupplementalDetailRow,
   buildEdgeSkaterMetricRow,
   buildEdgeSkaterDetailRow,
   buildEdgeSkaterDetailNowRow,
+  buildEdgeSkaterSkatingDistanceGameRows,
   buildEdgeSkaterShotLocationLeaderMetricRows,
   buildEdgeSkaterShotLocationRows,
+  buildEdgeSkaterSupplementalDetailRow,
   buildEdgeTeamMetricRow,
   buildEdgeTeamDetailRow,
   buildEdgeTeamDetailNowRow,
+  buildEdgeTeamSkatingDistanceGameRows,
+  buildEdgeTeamSupplementalDetailRow,
   type NhlEdgeStatsFamily,
   type NhlEdgeStatsRow
 } from "lib/NHL/edgeIngestion";
 import {
+  getEdgeGoalie5v5Detail,
   getEdgeGoalieDetail,
   getEdgeGoalieDetailNow,
+  getEdgeGoalieSavePercentageDetail,
+  getEdgeGoalieShotLocationDetail,
   getEdgeSkaterDetail,
   getEdgeSkaterDetailNow,
+  getEdgeSkaterShotLocationDetail,
   getEdgeSkaterShotLocationTop10,
+  getEdgeSkaterShotSpeedDetail,
+  getEdgeSkaterSkatingDistanceDetail,
+  getEdgeSkaterSkatingSpeedDetail,
+  getEdgeSkaterZoneTime,
   getEdgeTeamDetail,
   getEdgeTeamDetailNow,
+  getEdgeTeamShotLocationDetail,
+  getEdgeTeamShotSpeedDetail,
+  getEdgeTeamSkatingDistanceDetail,
+  getEdgeTeamSkatingSpeedDetail,
+  getEdgeTeamZoneTimeDetails,
   type EdgeGameType
 } from "lib/NHL/edge";
 import { getCurrentSeason, getTeams } from "lib/NHL/server";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import supabase from "lib/supabase/server";
 
-type TargetMode = "all" | NhlEdgeStatsFamily;
+type SupplementalTargetMode =
+  | "supplemental"
+  | "skater-supplemental"
+  | "team-supplemental"
+  | "goalie-supplemental";
+
+type TargetMode = "all" | NhlEdgeStatsFamily | SupplementalTargetMode;
 
 type RosterTarget = {
   playerId: number;
@@ -64,6 +88,73 @@ type DetailFetchResult = {
   }>;
 };
 
+type TeamTarget = {
+  teamId: number;
+  teamName: string | null;
+  teamAbbreviation: string | null;
+};
+
+const SKATER_SUPPLEMENTAL_ENDPOINTS = [
+  {
+    family: "skater-shot-speed-detail" as const,
+    fetch: getEdgeSkaterShotSpeedDetail
+  },
+  {
+    family: "skater-skating-speed-detail" as const,
+    fetch: getEdgeSkaterSkatingSpeedDetail
+  },
+  {
+    family: "skater-skating-distance-detail" as const,
+    fetch: getEdgeSkaterSkatingDistanceDetail
+  },
+  {
+    family: "skater-shot-location-detail" as const,
+    fetch: getEdgeSkaterShotLocationDetail
+  },
+  {
+    family: "skater-zone-time" as const,
+    fetch: getEdgeSkaterZoneTime
+  }
+] as const;
+
+const TEAM_SUPPLEMENTAL_ENDPOINTS = [
+  {
+    family: "team-skating-distance-detail" as const,
+    fetch: getEdgeTeamSkatingDistanceDetail
+  },
+  {
+    family: "team-zone-time-details" as const,
+    fetch: getEdgeTeamZoneTimeDetails
+  },
+  {
+    family: "team-shot-location-detail" as const,
+    fetch: getEdgeTeamShotLocationDetail
+  },
+  {
+    family: "team-shot-speed-detail" as const,
+    fetch: getEdgeTeamShotSpeedDetail
+  },
+  {
+    family: "team-skating-speed-detail" as const,
+    fetch: getEdgeTeamSkatingSpeedDetail
+  }
+] as const;
+
+const GOALIE_SUPPLEMENTAL_ENDPOINTS = [
+  {
+    family: "goalie-shot-location-detail" as const,
+    fetch: getEdgeGoalieShotLocationDetail
+  },
+  {
+    family: "goalie-5v5-detail" as const,
+    fetch: getEdgeGoalie5v5Detail
+  },
+  {
+    family: "goalie-save-percentage-detail" as const,
+    fetch: getEdgeGoalieSavePercentageDetail
+  }
+] as const;
+
 function firstQueryValue(value: string | string[] | undefined): string | null {
   if (Array.isArray(value)) return value[0] ?? null;
   return value ?? null;
@@ -79,11 +170,28 @@ function parseTarget(value: string | null): TargetMode {
   switch (value) {
     case "skater-detail-now":
     case "skater-detail":
+    case "skater-shot-speed-detail":
+    case "skater-skating-speed-detail":
+    case "skater-skating-distance-detail":
+    case "skater-shot-location-detail":
+    case "skater-zone-time":
     case "team-detail-now":
     case "team-detail":
+    case "team-skating-distance-detail":
+    case "team-zone-time-details":
+    case "team-shot-location-detail":
+    case "team-shot-speed-detail":
+    case "team-skating-speed-detail":
     case "goalie-detail-now":
     case "goalie-detail":
+    case "goalie-shot-location-detail":
+    case "goalie-5v5-detail":
+    case "goalie-save-percentage-detail":
     case "skater-shot-location-top-10":
+    case "supplemental":
+    case "skater-supplemental":
+    case "team-supplemental":
+    case "goalie-supplemental":
       return value;
     default:
       return "all";
@@ -96,6 +204,12 @@ function parseActionTarget(action: string | null, target: string | null): Target
   if (action === "skaters") return "skater-detail";
   if (action === "goalies") return "goalie-detail";
   if (action === "leaderboards") return "skater-shot-location-top-10";
+  if (action === "supplemental") return "supplemental";
+  if (action === "skater-supplemental") return "skater-supplemental";
+  if (action === "team-supplemental") return "team-supplemental";
+  if (action === "goalie-supplemental") return "goalie-supplemental";
+  if (action === "skater-distance") return "skater-skating-distance-detail";
+  if (action === "team-distance") return "team-skating-distance-detail";
   return parseTarget(target);
 }
 
@@ -190,6 +304,10 @@ async function upsertTypedMetricRows(rows: NhlEdgeStatsRow[]) {
     .map(buildEdgeGoalieMetricRow)
     .filter(notNull);
   const leaderboardRows = buildEdgeSkaterShotLocationLeaderMetricRows(rows);
+  const skaterSkatingDistanceGameRows =
+    buildEdgeSkaterSkatingDistanceGameRows(rows);
+  const teamSkatingDistanceGameRows =
+    buildEdgeTeamSkatingDistanceGameRows(rows);
 
   const upserts = [
     {
@@ -211,6 +329,16 @@ async function upsertTypedMetricRows(rows: NhlEdgeStatsRow[]) {
       table: "nhl_edge_skater_shot_location_leaders_daily",
       rows: leaderboardRows,
       onConflict: "snapshot_date,season_id,game_type,metric_key,rank_order,player_id"
+    },
+    {
+      table: "nhl_edge_skater_skating_distance_games_daily",
+      rows: skaterSkatingDistanceGameRows,
+      onConflict: "snapshot_date,season_id,game_type,player_id,game_id"
+    },
+    {
+      table: "nhl_edge_team_skating_distance_games_daily",
+      rows: teamSkatingDistanceGameRows,
+      onConflict: "snapshot_date,season_id,game_type,team_id,game_id"
     }
   ];
 
@@ -229,7 +357,9 @@ async function upsertTypedMetricRows(rows: NhlEdgeStatsRow[]) {
     skaters: skaterRows.length,
     teams: teamRows.length,
     goalies: goalieRows.length,
-    skaterShotLocationLeaders: leaderboardRows.length
+    skaterShotLocationLeaders: leaderboardRows.length,
+    skaterSkatingDistanceGames: skaterSkatingDistanceGameRows.length,
+    teamSkatingDistanceGames: teamSkatingDistanceGameRows.length
   };
 }
 
@@ -418,6 +548,169 @@ async function fetchTeamDetailRows(args: {
   return rows;
 }
 
+async function fetchSkaterSupplementalDetailRows(args: {
+  snapshotDate: string;
+  seasonId: number;
+  gameType: EdgeGameType;
+  targets: RosterTarget[];
+  concurrency: number;
+  family: NhlEdgeStatsFamily | null;
+}): Promise<DetailFetchResult> {
+  const endpointSpecs = SKATER_SUPPLEMENTAL_ENDPOINTS.filter(
+    (spec) => args.family == null || spec.family === args.family
+  );
+  const limit = pLimit(args.concurrency);
+  const results = await Promise.all(
+    args.targets.flatMap((target) =>
+      endpointSpecs.map((spec) =>
+        limit(async () => {
+          try {
+            const payload = await spec.fetch(
+              target.playerId,
+              args.seasonId,
+              args.gameType
+            );
+            return {
+              row: buildEdgeSkaterSupplementalDetailRow({
+                snapshotDate: args.snapshotDate,
+                seasonId: args.seasonId,
+                gameType: args.gameType,
+                playerId: target.playerId,
+                playerName: target.fullName,
+                teamId: target.teamId,
+                teamAbbreviation: target.teamAbbreviation,
+                position: target.position,
+                endpointFamily: spec.family,
+                payload
+              }),
+              skipped: null
+            };
+          } catch (error) {
+            if (!isEdgeNotFoundError(error)) {
+              throw error;
+            }
+            return {
+              row: null,
+              skipped: {
+                entityType: "skater" as const,
+                playerId: target.playerId,
+                fullName: target.fullName,
+                reason: `${spec.family} not available`
+              }
+            };
+          }
+        })
+      )
+    )
+  );
+
+  return {
+    rows: results.flatMap((result) => (result.row ? [result.row] : [])),
+    skipped: results.flatMap((result) =>
+      result.skipped ? [result.skipped] : []
+    )
+  };
+}
+
+async function fetchTeamSupplementalDetailRows(args: {
+  snapshotDate: string;
+  seasonId: number;
+  gameType: EdgeGameType;
+  targets: TeamTarget[];
+  concurrency: number;
+  family: NhlEdgeStatsFamily | null;
+}): Promise<NhlEdgeStatsRow[]> {
+  const endpointSpecs = TEAM_SUPPLEMENTAL_ENDPOINTS.filter(
+    (spec) => args.family == null || spec.family === args.family
+  );
+  const limit = pLimit(args.concurrency);
+  return Promise.all(
+    args.targets.flatMap((target) =>
+      endpointSpecs.map((spec) =>
+        limit(async () =>
+          buildEdgeTeamSupplementalDetailRow({
+            snapshotDate: args.snapshotDate,
+            seasonId: args.seasonId,
+            gameType: args.gameType,
+            teamId: target.teamId,
+            teamName: target.teamName,
+            teamAbbreviation: target.teamAbbreviation,
+            endpointFamily: spec.family,
+            payload: await spec.fetch(
+              target.teamId,
+              args.seasonId,
+              args.gameType
+            )
+          })
+        )
+      )
+    )
+  );
+}
+
+async function fetchGoalieSupplementalDetailRows(args: {
+  snapshotDate: string;
+  seasonId: number;
+  gameType: EdgeGameType;
+  targets: RosterTarget[];
+  concurrency: number;
+  family: NhlEdgeStatsFamily | null;
+}): Promise<DetailFetchResult> {
+  const endpointSpecs = GOALIE_SUPPLEMENTAL_ENDPOINTS.filter(
+    (spec) => args.family == null || spec.family === args.family
+  );
+  const limit = pLimit(args.concurrency);
+  const results = await Promise.all(
+    args.targets.flatMap((target) =>
+      endpointSpecs.map((spec) =>
+        limit(async () => {
+          try {
+            const payload = await spec.fetch(
+              target.playerId,
+              args.seasonId,
+              args.gameType
+            );
+            return {
+              row: buildEdgeGoalieSupplementalDetailRow({
+                snapshotDate: args.snapshotDate,
+                seasonId: args.seasonId,
+                gameType: args.gameType,
+                goalieId: target.playerId,
+                goalieName: target.fullName,
+                teamId: target.teamId,
+                teamAbbreviation: target.teamAbbreviation,
+                endpointFamily: spec.family,
+                payload
+              }),
+              skipped: null
+            };
+          } catch (error) {
+            if (!isEdgeNotFoundError(error)) {
+              throw error;
+            }
+            return {
+              row: null,
+              skipped: {
+                entityType: "goalie" as const,
+                playerId: target.playerId,
+                fullName: target.fullName,
+                reason: `${spec.family} not available`
+              }
+            };
+          }
+        })
+      )
+    )
+  );
+
+  return {
+    rows: results.flatMap((result) => (result.row ? [result.row] : [])),
+    skipped: results.flatMap((result) =>
+      result.skipped ? [result.skipped] : []
+    )
+  };
+}
+
 async function fetchSkaterShotLocationRows(args: {
   snapshotDate: string;
   seasonId: number;
@@ -493,6 +786,7 @@ export async function runNhlEdgeStatsSnapshot(
   const seasonId = currentSeason.seasonId;
   const rosterTargets = await getCurrentRosterTargets();
   const { skaters, goalies } = splitRosterTargets(rosterTargets);
+  const teams = await getTeams(seasonId);
 
   const selectedSkaters =
     options.playerId != null
@@ -502,6 +796,15 @@ export async function runNhlEdgeStatsSnapshot(
     options.goalieId != null
       ? goalies.filter((target) => target.playerId === options.goalieId)
       : applyBatch(goalies, options.limit, options.offset);
+  const selectedTeams =
+    options.teamId != null
+      ? teams.filter((team) => team.id === options.teamId)
+      : teams;
+  const selectedTeamTargets = selectedTeams.map((team) => ({
+    teamId: team.id,
+    teamName: team.name ?? null,
+    teamAbbreviation: team.abbreviation ?? null
+  }));
 
   const rows: NhlEdgeStatsRow[] = [];
   const executedTargets: string[] = [];
@@ -594,6 +897,78 @@ export async function runNhlEdgeStatsSnapshot(
     executedTargets.push("goalie-detail-now");
   }
 
+  const skaterSupplementalFamily = SKATER_SUPPLEMENTAL_ENDPOINTS.some(
+    (spec) => spec.family === options.target
+  )
+    ? (options.target as NhlEdgeStatsFamily)
+    : null;
+  if (
+    options.target === "supplemental" ||
+    options.target === "skater-supplemental" ||
+    skaterSupplementalFamily != null
+  ) {
+    const skaterSupplementalResult = await fetchSkaterSupplementalDetailRows({
+      snapshotDate: options.snapshotDate,
+      seasonId,
+      gameType: options.gameType,
+      targets: selectedSkaters,
+      concurrency: options.concurrency,
+      family: skaterSupplementalFamily
+    });
+    rows.push(...skaterSupplementalResult.rows);
+    skippedDetails.push(...skaterSupplementalResult.skipped);
+    executedTargets.push(
+      skaterSupplementalFamily ?? "skater-supplemental"
+    );
+  }
+
+  const teamSupplementalFamily = TEAM_SUPPLEMENTAL_ENDPOINTS.some(
+    (spec) => spec.family === options.target
+  )
+    ? (options.target as NhlEdgeStatsFamily)
+    : null;
+  if (
+    options.target === "supplemental" ||
+    options.target === "team-supplemental" ||
+    teamSupplementalFamily != null
+  ) {
+    const teamSupplementalRows = await fetchTeamSupplementalDetailRows({
+      snapshotDate: options.snapshotDate,
+      seasonId,
+      gameType: options.gameType,
+      targets: selectedTeamTargets,
+      concurrency: options.concurrency,
+      family: teamSupplementalFamily
+    });
+    rows.push(...teamSupplementalRows);
+    executedTargets.push(teamSupplementalFamily ?? "team-supplemental");
+  }
+
+  const goalieSupplementalFamily = GOALIE_SUPPLEMENTAL_ENDPOINTS.some(
+    (spec) => spec.family === options.target
+  )
+    ? (options.target as NhlEdgeStatsFamily)
+    : null;
+  if (
+    options.target === "supplemental" ||
+    options.target === "goalie-supplemental" ||
+    goalieSupplementalFamily != null
+  ) {
+    const goalieSupplementalResult = await fetchGoalieSupplementalDetailRows({
+      snapshotDate: options.snapshotDate,
+      seasonId,
+      gameType: options.gameType,
+      targets: selectedGoalies,
+      concurrency: options.concurrency,
+      family: goalieSupplementalFamily
+    });
+    rows.push(...goalieSupplementalResult.rows);
+    skippedDetails.push(...goalieSupplementalResult.skipped);
+    executedTargets.push(
+      goalieSupplementalFamily ?? "goalie-supplemental"
+    );
+  }
+
   const validRows = rows.filter(
     (row) => Number.isFinite(row.entity_id) && row.entity_id > 0
   );
@@ -631,7 +1006,10 @@ export async function runNhlEdgeStatsSnapshot(
       processedGoalies:
         executedTargets.includes("goalie-detail") || executedTargets.includes("goalie-detail-now")
         ? selectedGoalies.length - skippedDetails.filter((entry) => entry.entityType === "goalie").length
-        : 0
+        : 0,
+      processedSupplementalEndpoints: rows.filter((row) =>
+        Boolean((row.metadata as Record<string, unknown>).supplementalDetail)
+      ).length
     },
     skipped: {
       total: skippedDetails.length,

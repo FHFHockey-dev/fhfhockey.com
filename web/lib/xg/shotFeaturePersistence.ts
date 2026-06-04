@@ -7,6 +7,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "lib/supabase/database-generated.types";
 import type { NhlShotFeatureRow } from "lib/supabase/Upserts/nhlShotFeatureBuilder";
 import {
+  auditScoringRowsAgainstFeatureCoverage,
+  type XgFeatureCoverageProfile,
+} from "./featureCoverage";
+import {
   predictWithSerializedCalibrator,
   type SerializedCalibrationModel
 } from "./calibration";
@@ -19,15 +23,32 @@ export type XgShotPredictionType = "shot_goal" | "rebound_creation";
 
 export type PersistedXgModelArtifact = {
   artifactKind: "nhl_xg_model";
+  artifactVersion?: number;
   artifactTag: string;
   family: string;
+  generatedAt?: string;
+  sourceCommitSha?: string | null;
+  parserVersion?: number;
+  strengthVersion?: number;
   predictionType?: XgShotPredictionType;
   featureFamily?: string;
   featureVersion: number;
+  seasonScope?: number | number[];
+  seasonScopes?: number[];
+  trainExampleCount?: number;
+  validationExampleCount?: number;
+  testExampleCount?: number;
+  splitDateRanges?: {
+    train?: { startDate: string | null; endDate: string | null };
+    validation?: { startDate: string | null; endDate: string | null };
+    test?: { startDate: string | null; endDate: string | null };
+  };
   approvalGradeEligibility?: {
     isEligible?: boolean;
     blockingReasons?: string[];
   };
+  evaluation?: unknown;
+  calibrationAssessment?: unknown;
   selectedFeatures: {
     numeric: string[];
     boolean: string[];
@@ -38,12 +59,44 @@ export type PersistedXgModelArtifact = {
   featureTransforms?: {
     numericStandardization?: Record<string, { mean: number; std: number }>;
   };
+  featureCoverage?: XgFeatureCoverageProfile | null;
   calibration?: {
     selectedMethod: string;
     applied: boolean;
     model?: SerializedCalibrationModel;
   };
   model: unknown;
+};
+
+type SelectedFeatureGroup = keyof PersistedXgModelArtifact["selectedFeatures"];
+
+export type XgArtifactFeatureContractIssue = {
+  code:
+    | "duplicate_selected_feature"
+    | "empty_categorical_levels"
+    | "feature_coverage_blocking_reason"
+    | "feature_null_rate_drift"
+    | "feature_key_count_mismatch"
+    | "model_feature_count_mismatch"
+    | "missing_scoring_feature"
+    | "categorical_unknown_rate";
+  feature?: string;
+  featureGroup?: SelectedFeatureGroup;
+  rowId?: string;
+  expected?: number;
+  actual?: number;
+  trainingRate?: number;
+  scoringRate?: number;
+  allowedRate?: number;
+  message: string;
+};
+
+export type XgArtifactFeatureContractAudit = {
+  passed: boolean;
+  checkedRowCount: number;
+  encodedFeatureCount: number;
+  selectedFeatureCounts: Record<SelectedFeatureGroup, number>;
+  issues: XgArtifactFeatureContractIssue[];
 };
 
 type LogisticModel = {
@@ -152,6 +205,189 @@ function readFeatureValue(row: NhlShotFeatureRow, key: string): unknown {
   return (row as Record<string, unknown>)[key];
 }
 
+function hasFeatureKey(row: NhlShotFeatureRow, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(row, key);
+}
+
+function buildFeatureRowId(row: NhlShotFeatureRow): string {
+  const gameId = (row as { gameId?: unknown }).gameId;
+  const eventId = (row as { eventId?: unknown }).eventId;
+  return `${gameId ?? "unknown"}:${eventId ?? "unknown"}`;
+}
+
+function getSelectedFeatureEntries(artifact: PersistedXgModelArtifact): Array<{
+  feature: string;
+  featureGroup: SelectedFeatureGroup;
+}> {
+  return (["numeric", "boolean", "categorical"] as SelectedFeatureGroup[]).flatMap(
+    (featureGroup) =>
+      artifact.selectedFeatures[featureGroup].map((feature) => ({
+        feature,
+        featureGroup
+      }))
+  );
+}
+
+function resolveEncodedFeatureCount(artifact: PersistedXgModelArtifact): number {
+  const categoricalLevels = resolveCategoricalLevels(artifact);
+  return (
+    artifact.selectedFeatures.numeric.length +
+    artifact.selectedFeatures.boolean.length +
+    artifact.selectedFeatures.categorical.reduce(
+      (sum, key) => sum + (categoricalLevels[key]?.length ?? 0),
+      0
+    )
+  );
+}
+
+function resolveModelFeatureCount(artifact: PersistedXgModelArtifact): number | null {
+  const model = artifact.model;
+  if (
+    model &&
+    typeof model === "object" &&
+    "featureCount" in model &&
+    typeof (model as { featureCount?: unknown }).featureCount === "number" &&
+    Number.isFinite((model as { featureCount: number }).featureCount)
+  ) {
+    return (model as { featureCount: number }).featureCount;
+  }
+
+  return null;
+}
+
+export function auditXgArtifactFeatureContract(args: {
+  artifact: PersistedXgModelArtifact;
+  rows?: NhlShotFeatureRow[];
+  maxIssues?: number;
+}): XgArtifactFeatureContractAudit {
+  const { artifact } = args;
+  const rows = args.rows ?? [];
+  const maxIssues = Math.max(1, args.maxIssues ?? 25);
+  const issues: XgArtifactFeatureContractIssue[] = [];
+  const pushIssue = (issue: XgArtifactFeatureContractIssue): void => {
+    if (issues.length < maxIssues) issues.push(issue);
+  };
+  const categoricalLevels = resolveCategoricalLevels(artifact);
+  const encodedFeatureCount = resolveEncodedFeatureCount(artifact);
+  const selectedFeatureEntries = getSelectedFeatureEntries(artifact);
+  const seenFeatures = new Map<string, SelectedFeatureGroup>();
+
+  for (const reason of artifact.featureCoverage?.blockingReasons ?? []) {
+    pushIssue({
+      code: "feature_coverage_blocking_reason",
+      message: reason
+    });
+  }
+
+  for (const entry of selectedFeatureEntries) {
+    const priorGroup = seenFeatures.get(entry.feature);
+    if (priorGroup) {
+      pushIssue({
+        code: "duplicate_selected_feature",
+        feature: entry.feature,
+        featureGroup: entry.featureGroup,
+        message:
+          `Selected feature "${entry.feature}" appears in both ${priorGroup} ` +
+          `and ${entry.featureGroup}.`
+      });
+    }
+    seenFeatures.set(entry.feature, entry.featureGroup);
+  }
+
+  for (const feature of artifact.selectedFeatures.categorical) {
+    const levels = categoricalLevels[feature] ?? [];
+    if (levels.length === 0) {
+      pushIssue({
+        code: "empty_categorical_levels",
+        feature,
+        featureGroup: "categorical",
+        message: `Categorical selected feature "${feature}" has no encoded levels.`
+      });
+    }
+  }
+
+  if (artifact.featureKeys.length > 0 && artifact.featureKeys.length !== encodedFeatureCount) {
+    pushIssue({
+      code: "feature_key_count_mismatch",
+      expected: encodedFeatureCount,
+      actual: artifact.featureKeys.length,
+      message:
+        `Artifact featureKeys length ${artifact.featureKeys.length} does not match ` +
+        `the encoded selected-feature count ${encodedFeatureCount}.`
+    });
+  }
+
+  const modelFeatureCount = resolveModelFeatureCount(artifact);
+  if (modelFeatureCount != null && modelFeatureCount !== encodedFeatureCount) {
+    pushIssue({
+      code: "model_feature_count_mismatch",
+      expected: modelFeatureCount,
+      actual: encodedFeatureCount,
+      message:
+        `Model expects ${modelFeatureCount} features but the artifact contract ` +
+        `encodes ${encodedFeatureCount}.`
+    });
+  }
+
+  for (const row of rows) {
+    for (const entry of selectedFeatureEntries) {
+      if (!hasFeatureKey(row, entry.feature)) {
+        pushIssue({
+          code: "missing_scoring_feature",
+          feature: entry.feature,
+          featureGroup: entry.featureGroup,
+          rowId: buildFeatureRowId(row),
+          message:
+            `Scoring payload ${buildFeatureRowId(row)} is missing selected ` +
+            `${entry.featureGroup} feature "${entry.feature}".`
+        });
+      }
+    }
+  }
+
+  for (const issue of auditScoringRowsAgainstFeatureCoverage({
+    rows,
+    selectedFeatures: artifact.selectedFeatures,
+    trainingProfile: artifact.featureCoverage ?? null,
+  })) {
+    pushIssue({
+      code: issue.code,
+      feature: issue.feature,
+      featureGroup: issue.featureGroup,
+      trainingRate: issue.trainingRate,
+      scoringRate: issue.scoringRate,
+      allowedRate: issue.allowedRate,
+      message: issue.message,
+    });
+  }
+
+  return {
+    passed: issues.length === 0,
+    checkedRowCount: rows.length,
+    encodedFeatureCount,
+    selectedFeatureCounts: {
+      numeric: artifact.selectedFeatures.numeric.length,
+      boolean: artifact.selectedFeatures.boolean.length,
+      categorical: artifact.selectedFeatures.categorical.length
+    },
+    issues
+  };
+}
+
+export function assertXgArtifactFeatureContract(args: {
+  artifact: PersistedXgModelArtifact;
+  rows?: NhlShotFeatureRow[];
+  maxIssues?: number;
+}): void {
+  const audit = auditXgArtifactFeatureContract(args);
+  if (audit.passed) return;
+
+  throw new Error(
+    `xG artifact feature contract failed for ${args.artifact.artifactTag}: ` +
+      audit.issues.map((issue) => issue.message).join("; ")
+  );
+}
+
 export function mapShotFeatureRowToDb(row: NhlShotFeatureRow) {
   return {
     feature_version: row.featureVersion,
@@ -188,6 +424,12 @@ export function mapShotFeatureRowToDb(row: NhlShotFeatureRow) {
     normalized_y: row.normalizedY,
     shot_distance_feet: row.shotDistanceFeet,
     shot_angle_degrees: row.shotAngleDegrees,
+    shooter_roster_position: row.shooterRosterPosition,
+    shooter_position_group: row.shooterPositionGroup,
+    is_defenseman_shooter: row.isDefensemanShooter,
+    shooter_handedness: row.shooterHandedness,
+    goalie_catch_hand: row.goalieCatchHand,
+    shooter_goalie_handedness_matchup: row.shooterGoalieHandednessMatchup,
     previous_event_id: row.previousEventId,
     previous_event_type_desc_key: row.previousEventTypeDescKey,
     previous_event_team_id: row.previousEventTeamId,
@@ -213,6 +455,15 @@ export function mapShotFeatureRowToDb(row: NhlShotFeatureRow) {
     is_short_side_miss: row.isShortSideMiss,
     owner_power_play_age_seconds: row.ownerPowerPlayAgeSeconds,
     shooter_shift_age_seconds: row.shooterShiftAgeSeconds,
+    owner_forward_count_on_ice: row.ownerForwardCountOnIce,
+    owner_defense_count_on_ice: row.ownerDefenseCountOnIce,
+    opponent_forward_count_on_ice: row.opponentForwardCountOnIce,
+    opponent_defense_count_on_ice: row.opponentDefenseCountOnIce,
+    owner_goalie_on_ice: row.ownerGoalieOnIce,
+    opponent_goalie_on_ice: row.opponentGoalieOnIce,
+    owner_skater_deployment_bucket: row.ownerSkaterDeploymentBucket,
+    opponent_skater_deployment_bucket: row.opponentSkaterDeploymentBucket,
+    skater_role_matchup_bucket: row.skaterRoleMatchupBucket,
     east_west_movement_feet: row.eastWestMovementFeet,
     north_south_movement_feet: row.northSouthMovementFeet,
     crossed_royal_road: row.crossedRoyalRoad,
@@ -258,6 +509,7 @@ export function encodeFeatureVector(
   row: NhlShotFeatureRow,
   artifact: PersistedXgModelArtifact
 ): number[] {
+  assertXgArtifactFeatureContract({ artifact, rows: [row], maxIssues: 10 });
   const categoricalLevels = resolveCategoricalLevels(artifact);
   const numeric = artifact.selectedFeatures.numeric.map((key) => {
     const value = readFeatureValue(row, key);
@@ -406,6 +658,7 @@ export function buildPredictionDbRow(args: {
     provenance: {
       featureFamily: args.artifact.featureFamily ?? null,
       selectedFeatures: args.artifact.selectedFeatures,
+      featureCoverage: args.artifact.featureCoverage ?? null,
       calibration: args.artifact.calibration ?? null,
       predictionType: resolveXgArtifactPredictionType(args.artifact),
       approved,

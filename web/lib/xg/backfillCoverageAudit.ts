@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 
 type LooseSupabaseClient = SupabaseClient<any, any, any>;
 
@@ -65,8 +66,6 @@ export type XgBackfillCoverageAudit = {
   };
 };
 
-const PAGE_SIZE = 1000;
-
 function uniqueSortedNumbers(values: Iterable<number>): number[] {
   return Array.from(new Set(values)).sort((a, b) => a - b);
 }
@@ -99,17 +98,13 @@ async function fetchAllRows<T>(
     to: number
   ) => Promise<{ data: T[] | null; error: { message: string } | null }>
 ): Promise<T[]> {
-  const rows: T[] = [];
-
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await queryPage(from, from + PAGE_SIZE - 1);
-    if (error) throw new Error(error.message);
-    if (!data?.length) break;
-    rows.push(...data);
-    if (data.length < PAGE_SIZE) break;
-  }
-
-  return rows;
+  return fetchAllSupabasePages<T>(async ({ from, to }) => {
+    const { data, error } = await queryPage(from, to);
+    return {
+      data,
+      error: error == null ? null : new Error(error.message),
+    };
+  });
 }
 
 async function fetchEligibleGames(args: XgBackfillCoverageAuditArgs): Promise<GameCoverageRow[]> {

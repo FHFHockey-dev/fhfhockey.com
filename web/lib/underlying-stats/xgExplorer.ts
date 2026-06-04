@@ -89,7 +89,21 @@ export type XgExplorerResponse = {
     sourceRows: number;
     supplementalRows: number;
   };
+  coverage: XgExplorerCoverageReport;
   notes: string[];
+};
+
+export type XgExplorerCoverageReport = {
+  status: "ok" | "warning";
+  sourceRows: number;
+  supplementalRows: number;
+  ratios: {
+    supplementalToSource: number | null;
+    createdToSource: number | null;
+    transitionToSource: number | null;
+    reboundToSource: number | null;
+  };
+  warnings: string[];
 };
 
 export type XgExplorerError = {
@@ -237,6 +251,87 @@ function xgPct(forValue: number, againstValue: number): number | null {
   return total > 0 ? roundMetric(forValue / total) : null;
 }
 
+function ratio(numerator: number, denominator: number): number | null {
+  return denominator > 0 ? roundMetric(numerator / denominator) : null;
+}
+
+function formatRatioPercent(value: number | null): string {
+  return value == null ? "n/a" : `${(value * 100).toFixed(1)}%`;
+}
+
+export function buildXgExplorerCoverageReport(args: {
+  scope: XgExplorerScope;
+  sourceRows: number;
+  supplementalRows: number;
+  createdRows?: number;
+  transitionRows?: number;
+  reboundRows?: number;
+}): XgExplorerCoverageReport {
+  const ratios = {
+    supplementalToSource: ratio(args.supplementalRows, args.sourceRows),
+    createdToSource:
+      args.createdRows == null ? null : ratio(args.createdRows, args.sourceRows),
+    transitionToSource:
+      args.transitionRows == null ? null : ratio(args.transitionRows, args.sourceRows),
+    reboundToSource:
+      args.reboundRows == null ? null : ratio(args.reboundRows, args.sourceRows),
+  };
+  const warnings: string[] = [];
+
+  if (args.sourceRows > 0 && args.supplementalRows === 0) {
+    warnings.push(
+      "No supplemental xG rows were found for this scope; zero-filled creator, transition, or rebound fields should be treated as missing coverage."
+    );
+  }
+
+  if (
+    args.scope === "players" &&
+    args.sourceRows > 0 &&
+    args.createdRows != null &&
+    args.createdRows / args.sourceRows < 0.02
+  ) {
+    warnings.push(
+      `Sparse created-xG coverage: ${args.createdRows} created rows vs ${args.sourceRows} core rolling xG rows (${formatRatioPercent(
+        ratios.createdToSource
+      )}). Zero created-xG fields are not production-authoritative yet.`
+    );
+  }
+
+  if (
+    args.sourceRows > 0 &&
+    args.transitionRows != null &&
+    args.transitionRows > 0 &&
+    args.transitionRows / args.sourceRows < 0.02
+  ) {
+    warnings.push(
+      `Sparse transition supplemental coverage: ${args.transitionRows} transition rows vs ${args.sourceRows} core rows (${formatRatioPercent(
+        ratios.transitionToSource
+      )}).`
+    );
+  }
+
+  if (
+    args.sourceRows > 0 &&
+    args.reboundRows != null &&
+    args.reboundRows > 0 &&
+    args.reboundRows / args.sourceRows < 0.02
+  ) {
+    warnings.push(
+      `Sparse rebound-control supplemental coverage: ${args.reboundRows} rebound rows vs ${args.sourceRows} core rows (${formatRatioPercent(
+        ratios.reboundToSource
+      )}).`
+    );
+  }
+
+  return {
+    status: warnings.length ? "warning" : "ok",
+    sourceRows: args.sourceRows,
+    supplementalRows: args.supplementalRows,
+    ratios,
+    warnings,
+  };
+}
+
 export function buildPlayerXgExplorerRows(args: {
   xgRows: PlayerXgRollingInput[];
   createdRows: CreatedXgRollingInput[];
@@ -246,7 +341,11 @@ export function buildPlayerXgExplorerRows(args: {
   teams: TeamIdentityInput[];
   limit: number;
 }): XgExplorerPlayerRow[] {
-  const createdByPlayer = new Map(args.createdRows.map((row) => [row.player_id, row]));
+  const createdByPlayer = new Map(
+    latestByEntity(args.createdRows, "player_id", "as_of_game_date", "as_of_game_id").map(
+      (row) => [row.player_id, row]
+    )
+  );
   const transitionByPlayer = sumByEntity(args.transitionRows, "entity_id", [
     "controlled_entries",
     "controlled_exits",

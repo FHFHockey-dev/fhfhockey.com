@@ -4,6 +4,7 @@ import { Pool } from "pg";
 
 import supabase from "lib/supabase/server";
 import type { Database } from "lib/supabase/database-generated.types";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import {
   getGoalModifierFromRawEvent,
   type ParsedNhlPbpEvent,
@@ -207,7 +208,6 @@ function isObjectRecord(value: unknown): value is Record<string, unknown> {
 
 const NHL_REGULATION_PERIOD_SECONDS = 20 * 60;
 const NHL_REGULAR_SEASON_OVERTIME_SECONDS = 5 * 60;
-const SUPABASE_PAGE_SIZE = 1000;
 const GAME_ID_CHUNK_SIZE = 50;
 export const PLAYER_STATS_SUMMARY_ENDPOINT = "underlying-player-summary-v1";
 export const PLAYER_STATS_SUMMARY_STORAGE_ENDPOINT = "landing";
@@ -617,69 +617,31 @@ function isRetryablePlayerStatsSupabaseReadError(error: unknown) {
   );
 }
 
-async function sleepPlayerStatsReadRetry(delayMs: number) {
-  await new Promise((resolve) => setTimeout(resolve, delayMs));
-}
-
 async function fetchAllSupabaseRows<TRow>(
   fetchPage: (from: number, to: number) => PromiseLike<{
     data: unknown[] | null;
     error: unknown;
   }>
 ): Promise<TRow[]> {
-  const rows: TRow[] = [];
-
-  for (let offset = 0; ; offset += SUPABASE_PAGE_SIZE) {
-    let result: { data: unknown[] | null; error: unknown } | null = null;
-
-    for (
-      let attempt = 1;
-      attempt <= PLAYER_STATS_SUPABASE_READ_RETRIES;
-      attempt += 1
-    ) {
-      result = await fetchPage(offset, offset + SUPABASE_PAGE_SIZE - 1);
-
-      if (!result.error) {
-        break;
-      }
-
-      if (
-        attempt === PLAYER_STATS_SUPABASE_READ_RETRIES ||
-        !isRetryablePlayerStatsSupabaseReadError(result.error)
-      ) {
-        break;
-      }
-
-      if (process.env.NODE_ENV !== "test") {
-        console.warn("[player-stats] retrying Supabase page read", {
-          attempt,
-          offset,
-          error: stringifyPlayerStatsReadError(result.error)
-        });
-      }
-
-      await sleepPlayerStatsReadRetry(
-        PLAYER_STATS_SUPABASE_RETRY_DELAY_MS * attempt
-      );
+  return fetchAllSupabasePages<TRow>(
+    ({ from, to }) => fetchPage(from, to) as any,
+    {
+      retry: {
+        attempts: PLAYER_STATS_SUPABASE_READ_RETRIES,
+        delayMs: (attempt) => PLAYER_STATS_SUPABASE_RETRY_DELAY_MS * attempt,
+        shouldRetry: (error) => isRetryablePlayerStatsSupabaseReadError(error),
+        onRetry: ({ attempt, range, error }) => {
+          if (process.env.NODE_ENV !== "test") {
+            console.warn("[player-stats] retrying Supabase page read", {
+              attempt,
+              offset: range.from,
+              error: stringifyPlayerStatsReadError(error),
+            });
+          }
+        },
+      },
     }
-
-    if (result == null) {
-      break;
-    }
-
-    if (result.error) {
-      throw result.error;
-    }
-
-    const pageRows = (result.data ?? []) as TRow[];
-    rows.push(...pageRows);
-
-    if (pageRows.length < SUPABASE_PAGE_SIZE) {
-      break;
-    }
-  }
-
-  return rows;
+  );
 }
 
 function getPlayerStatsPgPool(): Pool | null {

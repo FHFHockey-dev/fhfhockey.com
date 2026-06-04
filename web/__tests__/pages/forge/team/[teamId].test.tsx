@@ -144,7 +144,7 @@ describe("FORGE team detail page", () => {
           (link) => link.getAttribute("href") === "/trends?date=2026-03-14&team=NJD"
         )
     ).toBe(true);
-    expect(screen.getByRole("link", { name: "FORGE Landing" }).getAttribute("href")).toBe(
+    expect(screen.getByRole("link", { name: "Quick Read" }).getAttribute("href")).toBe(
       "/FORGE?date=2026-03-14&team=NJD"
     );
     expect(screen.getByRole("link", { name: "Underlying Stats" })).toBeTruthy();

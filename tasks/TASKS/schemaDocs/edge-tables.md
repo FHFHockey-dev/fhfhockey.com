@@ -89,6 +89,31 @@ Primary key: `(snapshot_date, season_id, game_type, metric_key, rank_order, play
 
 Supported `metric_key` values in the current endpoint: `goals`, `sog`, `shooting-pctg`.
 
+## Typed Skating-Distance Game Rows
+
+### `nhl_edge_skater_skating_distance_games_daily`
+
+Derived from `skater-skating-distance-detail/{playerId}/{seasonId}/{gameType}` payloads.
+
+Primary key: `(snapshot_date, season_id, game_type, player_id, game_id)`.
+
+This table normalizes the `skatingDistanceLast10` array into one row per player-game with:
+
+| Family | Columns |
+| --- | --- |
+| Identity | `player_id`, `player_name`, `team_id`, `team_abbreviation`, `position`, `game_id`, `game_date` |
+| Home/away context | `player_on_home_team`, `home_team_abbreviation`, `away_team_abbreviation` |
+| Workload | `toi_all_seconds`, `toi_even_seconds`, `toi_pp_seconds`, `toi_pk_seconds` |
+| Movement | `distance_skated_all_*`, `distance_skated_even_*`, `distance_skated_pp_*`, `distance_skated_pk_*` |
+
+### `nhl_edge_team_skating_distance_games_daily`
+
+Derived from `team-skating-distance-detail/{teamId}/{seasonId}/{gameType}` payloads.
+
+Primary key: `(snapshot_date, season_id, game_type, team_id, game_id)`.
+
+This table normalizes team-level `skatingDistanceLast10` rows with the same workload and movement columns as the skater table.
+
 ## Latest Views
 
 The migration also creates:
@@ -98,3 +123,5 @@ The migration also creates:
 | `analytics.vw_nhl_edge_latest_skater_metrics` | Latest typed Edge skater row per player and game type. |
 | `analytics.vw_nhl_edge_latest_team_metrics` | Latest typed Edge team row per team and game type. |
 | `analytics.vw_nhl_edge_latest_goalie_metrics` | Latest typed Edge goalie row per goalie and game type. |
+| `analytics.vw_nhl_edge_latest_skater_skating_distance_games` | Latest typed Edge skater distance row per player, game type, and game. |
+| `analytics.vw_nhl_edge_latest_team_skating_distance_games` | Latest typed Edge team distance row per team, game type, and game. |

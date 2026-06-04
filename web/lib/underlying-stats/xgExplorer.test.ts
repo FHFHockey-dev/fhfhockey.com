@@ -4,6 +4,7 @@ import {
   buildGoalieXgExplorerRows,
   buildPlayerXgExplorerRows,
   buildTeamXgExplorerRows,
+  buildXgExplorerCoverageReport,
 } from "./xgExplorer";
 
 const teams = [
@@ -46,6 +47,18 @@ describe("xgExplorer", () => {
         },
       ],
       createdRows: [
+        {
+          player_id: 10,
+          team_id: 1,
+          as_of_game_date: "2026-01-01",
+          as_of_game_id: 1,
+          games_count: 9,
+          created_xg: 9,
+          shot_assist_created_xg: 9,
+          transition_created_xg: 0,
+          shot_assist_events: 9,
+          transition_events: 0,
+        },
         {
           player_id: 10,
           team_id: 1,
@@ -186,5 +199,20 @@ describe("xgExplorer", () => {
       reboundControlSavedAboveExpected: 1.5,
       goalieFreezes: 9,
     });
+  });
+
+  it("flags sparse player created-xG coverage", () => {
+    const report = buildXgExplorerCoverageReport({
+      scope: "players",
+      sourceRows: 42236,
+      supplementalRows: 570,
+      createdRows: 570,
+      transitionRows: 191,
+      reboundRows: 0,
+    });
+
+    expect(report.status).toBe("warning");
+    expect(report.ratios.createdToSource).toBe(0.013496);
+    expect(report.warnings.join(" ")).toContain("Sparse created-xG coverage");
   });
 });

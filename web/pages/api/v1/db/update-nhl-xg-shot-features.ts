@@ -6,6 +6,7 @@ import supabase from "lib/supabase/server";
 import type { Database } from "lib/supabase/database-generated.types";
 import { buildShotFeatureRows, type NhlShotFeatureRow } from "lib/supabase/Upserts/nhlShotFeatureBuilder";
 import type { ParsedNhlPbpEvent } from "lib/supabase/Upserts/nhlPlayByPlayParser";
+import { enrichShotRowsWithPersistedTrainingContext } from "lib/xg/shotFeatureEnrichment";
 import { upsertXgShotFeatureRows } from "lib/xg/shotFeaturePersistence";
 
 type GameRow = {
@@ -470,7 +471,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     ]);
     const pbpByGameId = groupByGameId(pbpRows.map((row) => ({ ...row, game_id: row.game_id })));
     const shiftByGameId = groupByGameId(shiftRows.map((row) => ({ ...row, game_id: row.game_id })));
-    const shotRows: NhlShotFeatureRow[] = [];
+    const baseShotRows: NhlShotFeatureRow[] = [];
 
     for (const game of games) {
       if (game.homeTeamId == null || game.awayTeamId == null) {
@@ -485,7 +486,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
 
       processedGameCount += 1;
-      shotRows.push(
+      baseShotRows.push(
         ...buildShotFeatureRows(
           events,
           shiftByGameId.get(game.id) ?? [],
@@ -495,6 +496,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         )
       );
     }
+
+    const shotRows = await enrichShotRowsWithPersistedTrainingContext({
+      supabase,
+      shotRows: baseShotRows,
+      shiftRows,
+      seasonId: selection.seasonId
+    });
 
     rowsBuilt += shotRows.length;
     rowsUpserted += await upsertXgShotFeatureRows(supabase, shotRows, {

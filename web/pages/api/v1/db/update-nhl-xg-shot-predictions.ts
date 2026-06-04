@@ -7,6 +7,8 @@ import { getCurrentSeason } from "lib/NHL/server";
 import supabase from "lib/supabase/server";
 import { resolveRequestedGameIds } from "lib/supabase/Upserts/nhlRawGamecenterRoute";
 import {
+  auditXgArtifactFeatureContract,
+  assertXgArtifactFeatureContract,
   buildPredictionDbRow,
   fetchPersistedFeatureRows,
   loadXgModelArtifact,
@@ -96,11 +98,12 @@ function buildArtifactHealthResponse(resolution: ArtifactPathResolution) {
     const artifact = loadXgModelArtifact(resolution.path);
     const modelApproved = artifact.approvalGradeEligibility?.isEligible === true;
     const artifactPredictionType = resolveXgArtifactPredictionType(artifact);
+    const featureContract = auditXgArtifactFeatureContract({ artifact });
 
     return {
-      statusCode: modelApproved ? 200 : 409,
+      statusCode: modelApproved && featureContract.passed ? 200 : 409,
       body: {
-        success: modelApproved,
+        success: modelApproved && featureContract.passed,
         configured: true,
         artifactPath: resolution.path,
         artifactPathSource: resolution.source,
@@ -120,7 +123,16 @@ function buildArtifactHealthResponse(resolution: ArtifactPathResolution) {
           numeric: artifact.selectedFeatures.numeric.length,
           boolean: artifact.selectedFeatures.boolean.length,
           categorical: artifact.selectedFeatures.categorical.length
-        }
+        },
+        featureCoverage: artifact.featureCoverage
+          ? {
+              rowCount: artifact.featureCoverage.rowCount,
+              blockingReasons: artifact.featureCoverage.blockingReasons,
+              warnings: artifact.featureCoverage.warnings,
+              policy: artifact.featureCoverage.policy
+            }
+          : null,
+        featureContract
       }
     };
   } catch (error) {
@@ -261,6 +273,12 @@ function buildPredictionRows(args: {
   modelArtifactPath: string | null;
   predictionType: XgShotPredictionType;
 }) {
+  assertXgArtifactFeatureContract({
+    artifact: args.artifact,
+    rows: args.featureRows.map((feature) => feature.feature_payload),
+    maxIssues: 10
+  });
+
   return args.featureRows.map((feature) => {
     const probabilities = predictShotGoalProbabilities(feature.feature_payload, args.artifact);
     return buildPredictionDbRow({
@@ -355,6 +373,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     const artifact = loadXgModelArtifact(modelArtifactPath);
     const artifactPredictionType = resolveXgArtifactPredictionType(artifact);
+    const artifactFeatureContract = auditXgArtifactFeatureContract({ artifact });
     const allowUnapproved = parseBoolean(firstQueryValue(req.query.allowUnapproved));
     const modelApproved = artifact.approvalGradeEligibility?.isEligible === true;
 
@@ -379,6 +398,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         error:
           "The selected xG artifact is not approval-grade. Re-run with allowUnapproved=true only for local diagnostics.",
         blockingReasons: artifact.approvalGradeEligibility?.blockingReasons ?? []
+      });
+    }
+
+    if (!artifactFeatureContract.passed) {
+      return res.status(409).json({
+        success: false,
+        artifactTag: artifact.artifactTag,
+        modelFamily: artifact.family,
+        modelApproved,
+        featureContract: artifactFeatureContract,
+        error:
+          "The selected xG artifact feature contract is invalid. Fix the artifact before scoring predictions."
       });
     }
 
@@ -463,6 +494,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         modelApproved,
         predictionType,
         featureVersion,
+        featureContract: artifactFeatureContract,
         requestedGameCount: gameIds.size,
         featureRows: featureRowCount,
         featureRowsScanned,
@@ -513,17 +545,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       if (featureRows.length === 0) continue;
 
-      const predictionRows = featureRows.map((feature) => {
-        const probabilities = predictShotGoalProbabilities(feature.feature_payload, artifact);
-        return buildPredictionDbRow({
-          feature,
-          artifact,
-          modelArtifactPath,
-          predictionType,
-          rawProbability: probabilities.rawProbability,
-          calibratedProbability: probabilities.calibratedProbability,
-          xg: probabilities.xg
-        });
+      const predictionRows = buildPredictionRows({
+        featureRows,
+        artifact,
+        modelArtifactPath,
+        predictionType
       });
 
       featureRowCount += featureRows.length;
@@ -541,6 +567,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       modelApproved,
       predictionType,
       featureVersion,
+      featureContract: artifactFeatureContract,
       requestedGameCount: selection.gameIds.length,
       featureRows: featureRowCount,
       rowsUpserted,

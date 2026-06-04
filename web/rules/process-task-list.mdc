@@ -100,6 +100,14 @@ Guidelines for managing task lists in markdown files to track progress on comple
 - Make the smallest effective change that fully solves the current sub-task.
 - Before making a large rewrite, first consider whether a narrower patch can achieve the same result with less risk and less token usage.
 
+## Supabase Data Access Strategy
+
+- Treat Supabase/PostgREST reads as paginated by default.
+- Any Supabase query that may return more than a small known-bounded set must explicitly consider pagination with `.range()` loops, RPC-side pagination, or another documented bounded query strategy.
+- Do **not** assume `.limit(10000)` or a large limit overrides the platform/page cap; verify the actual returned row count and continue paging until a short page is returned.
+- When a task depends on complete table coverage, include pagination in implementation and verification planning before marking the sub-task complete.
+- It is acceptable to skip pagination only when the result set is provably bounded below the page cap, such as one row by primary key, a small fixed enum/config table, or an explicitly documented capped dashboard preview.
+
 ## Test Strategy
 
 - Do **not** create or update test files by default for every change.

@@ -2,6 +2,7 @@ import type { NextApiRequestQuery } from "next/dist/server/api-utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "lib/supabase/database-generated.types";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import serverReadonlyClient from "lib/supabase/serverReadonly";
 import {
   createDefaultTeamLandingFilterState,
@@ -159,7 +160,6 @@ type OfficialTeamMetricsSnapshot = {
   shotTypeByTeamId: Map<number, OfficialShotTypeRow>;
 };
 
-const SUPABASE_PAGE_SIZE = 1000;
 const TEAM_SUMMARY_SELECT = [
   "game_id",
   "season_id",
@@ -225,28 +225,7 @@ async function fetchAllRows<TRow>(
     error: unknown;
   }>
 ): Promise<TRow[]> {
-  const rows: TRow[] = [];
-
-  for (let from = 0; ; from += SUPABASE_PAGE_SIZE) {
-    const to = from + SUPABASE_PAGE_SIZE - 1;
-    const { data, error } = await fetchPage(from, to);
-    if (error) {
-      throw error;
-    }
-
-    const pageRows = (data ?? []) as TRow[];
-    if (!pageRows.length) {
-      break;
-    }
-
-    rows.push(...pageRows);
-
-    if (pageRows.length < SUPABASE_PAGE_SIZE) {
-      break;
-    }
-  }
-
-  return rows;
+  return fetchAllSupabasePages<TRow>(({ from, to }) => fetchPage(from, to) as any);
 }
 
 function toPer60(value: number | null | undefined, toiSeconds: number | null | undefined) {

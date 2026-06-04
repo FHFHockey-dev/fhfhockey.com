@@ -382,14 +382,15 @@ export default function ForgeTeamDetailPage() {
                     <Link
                       href={buildForgeHref("/start-chart", {
                         date,
-                        resolvedDate: resolvedDate ?? routeResolvedDate
+                        resolvedDate: resolvedDate ?? routeResolvedDate,
+                        team: teamAbbr
                       })}
                       className={styles.slateActionLink}
                     >
                       Start Chart
                     </Link>
                     <Link
-                      href={buildForgeHref("/trends", { date })}
+                      href={buildForgeHref("/trends", { date, team: teamAbbr })}
                       className={styles.slateActionLink}
                     >
                       Trends

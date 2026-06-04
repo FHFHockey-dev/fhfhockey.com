@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import supabase from "lib/supabase/server";
 import { parseMetricParam, parseWindowParam } from "lib/sustainability/bandService";
 import { normalizeSustainabilityDate } from "lib/sustainability/dates";
@@ -23,21 +24,7 @@ function parseSeasonIdParam(value: string | string[] | undefined): number | null
 }
 
 async function fetchAllRows<T>(buildQuery: (from: number, to: number) => any): Promise<T[]> {
-  const pageSize = 1000;
-  const rows: T[] = [];
-
-  for (let from = 0; ; from += pageSize) {
-    const to = from + pageSize - 1;
-    const { data, error } = await buildQuery(from, to);
-    if (error) throw error;
-    const page = (data ?? []) as T[];
-    rows.push(...page);
-    if (page.length < pageSize) {
-      break;
-    }
-  }
-
-  return rows;
+  return fetchAllSupabasePages<T>(({ from, to }) => buildQuery(from, to));
 }
 
 async function fetchSeasonPlayerIds(args: {

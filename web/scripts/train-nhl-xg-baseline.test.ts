@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { buildEncodedBaselineDataset } from "../lib/xg/baselineDataset";
 import type { NhlShotFeatureRow } from "../lib/supabase/Upserts/nhlShotFeatureBuilder";
 import {
+  buildOutOfTimeGameSplitAssignments,
   buildBaselineArtifactPayloads,
   enrichShotRowsWithHandedness,
   enrichShotRowsWithTrainingContext,
@@ -147,6 +148,26 @@ function createShotRow(
 }
 
 describe("train-nhl-xg-baseline", () => {
+  it("builds grouped out-of-time split assignments with a held-out test season", () => {
+    const assignments = buildOutOfTimeGameSplitAssignments({
+      rows: [
+        createShotRow({ gameId: 2023020001, seasonId: 20232024, gameDate: "2023-10-10" }),
+        createShotRow({ gameId: 2023020002, seasonId: 20232024, gameDate: "2023-10-11" }),
+        createShotRow({ gameId: 2024020001, seasonId: 20242025, gameDate: "2024-10-10" }),
+        createShotRow({ gameId: 2025020001, seasonId: 20252026, gameDate: "2025-10-10" }),
+      ],
+      testSeasons: [20252026],
+      splitConfig: { validationRatio: 0.34 },
+    });
+
+    expect(assignments).toEqual([
+      { gameId: 2023020001, split: "train" },
+      { gameId: 2023020002, split: "train" },
+      { gameId: 2024020001, split: "validation" },
+      { gameId: 2025020001, split: "test" },
+    ]);
+  });
+
   it("builds dataset and model artifact payloads with lineage and evaluation metadata", () => {
     const dataset = buildEncodedBaselineDataset([
       createShotRow({ gameId: 2025021001, eventId: 1, gameDate: "2026-01-01", isGoal: true }),
@@ -286,6 +307,7 @@ describe("train-nhl-xg-baseline", () => {
       artifactTag: "logistic_unregularized-s20252026-p1-st1-f1-cfgtest123",
       sourceCommitSha: "abc123",
       randomSeed: 42,
+      seasonScopes: [20252026],
       featureFamily: "first_pass_v1",
       splitConfig: { trainRatio: 0.7, validationRatio: 0.15 },
       splitStrategy: "chronological_game(train=0.7,validation=0.15,test=0.15)",
@@ -314,7 +336,13 @@ describe("train-nhl-xg-baseline", () => {
     expect(modelArtifact).toMatchObject({
       artifactKind: "nhl_xg_model",
       family: "logistic_unregularized",
+      seasonScopes: [20252026],
       featureFamily: "first_pass_v1",
+      splitDateRanges: {
+        train: { startDate: "2026-01-01", endDate: "2026-01-02" },
+        validation: { startDate: "2026-01-03", endDate: "2026-01-03" },
+        test: { startDate: null, endDate: null },
+      },
       trainExampleCount: 2,
       validationExampleCount: 1,
       testExampleCount: 0,

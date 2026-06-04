@@ -617,4 +617,32 @@ describe("baselineDataset", () => {
       "ownerScoreDiffByGameTimeBucket:trail-1@mid-regulation",
     ]);
   });
+
+  it("honors explicit game-level split assignments for out-of-time holdouts", () => {
+    const dataset = buildEncodedBaselineDataset(
+      [
+        createShotRow({ gameId: 2023020001, eventId: 1, gameDate: "2023-10-10" }),
+        createShotRow({ gameId: 2024020001, eventId: 2, gameDate: "2024-10-10" }),
+        createShotRow({ gameId: 2025020001, eventId: 3, gameDate: "2025-10-10" }),
+      ],
+      {
+        splitAssignments: [
+          { gameId: 2023020001, split: "train" },
+          { gameId: 2024020001, split: "validation" },
+          { gameId: 2025020001, split: "test" },
+        ],
+      }
+    );
+
+    expect(dataset.splitCounts).toEqual({
+      train: 1,
+      validation: 1,
+      test: 1,
+    });
+    expect(dataset.examples.map((example) => example.split)).toEqual([
+      "train",
+      "validation",
+      "test",
+    ]);
+  });
 });

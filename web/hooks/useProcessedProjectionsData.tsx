@@ -31,6 +31,7 @@ import {
   YAHOO_PLAYER_MAP_KEYS,
   YAHOO_PLAYERS_TABLE_KEYS
 } from "lib/projectionsConfig/yahooConfig";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 
 // Central constant: current Yahoo game/season prefix for filtering ADP rows.
 // Ensure all yahoo_players and mapping data are restricted to this prefix to avoid prior season leakage.
@@ -286,8 +287,6 @@ export function calculateDiffPercentage(
 
 // --- Helper function for paginated Supabase fetches ---
 // Adds: head count (if available) + push spread (avoid repeated concat) + timing logs in dev.
-const SUPABASE_PAGE_SIZE = 1000;
-
 async function fetchAllSupabaseData<T extends Record<string, any>>(
   queryBuilder: any,
   selectString: string,
@@ -298,10 +297,6 @@ async function fetchAllSupabaseData<T extends Record<string, any>>(
   const label = opts.label || "supabase_fetch";
   const t0 =
     typeof performance !== "undefined" ? performance.now() : Date.now();
-  let allData: T[] = [];
-  let offset = 0;
-  let keepFetching = true;
-  let page = 0;
   let expectedTotal: number | null = null;
   try {
     // Attempt count head request (cheap metadata call)
@@ -328,41 +323,35 @@ async function fetchAllSupabaseData<T extends Record<string, any>>(
       );
   }
 
-  while (keepFetching) {
+  const allData = await fetchAllSupabasePages<T>(async ({ from, to, pageIndex }) => {
     const pageStart =
       typeof performance !== "undefined" ? performance.now() : Date.now();
     const { data, error }: PostgrestResponse<T> = await queryBuilder
       .select(selectString)
-      .range(offset, offset + SUPABASE_PAGE_SIZE - 1);
+      .range(from, to);
     if (error) {
       throw new Error(
-        `Supabase query failed (page ${page + 1} ${label}): ${error.message}`
+        `Supabase query failed (page ${pageIndex + 1} ${label}): ${error.message}`
       );
-    }
-    if (data && data.length > 0) {
-      allData.push(...data); // push spread avoids realloc concat chain
     }
     const pageElapsed =
       (typeof performance !== "undefined" ? performance.now() : Date.now()) -
       pageStart;
     if (DEV) {
       console.log(
-        `[fetchAllSupabaseData] page ${page + 1} size=${data?.length || 0} elapsed=${pageElapsed.toFixed(1)}ms label=${label}`
+        `[fetchAllSupabaseData] page ${pageIndex + 1} size=${data?.length || 0} elapsed=${pageElapsed.toFixed(1)}ms label=${label}`
       );
     }
-    if (!data || data.length < SUPABASE_PAGE_SIZE) {
-      keepFetching = false;
-    } else {
-      offset += SUPABASE_PAGE_SIZE;
-      page++;
-    }
-  }
+
+    return { data: data ?? [], error: null };
+  });
+
   if (DEV) {
     const totalElapsed =
       (typeof performance !== "undefined" ? performance.now() : Date.now()) -
       t0;
     console.log(
-      `[fetchAllSupabaseData] complete label=${label} pages=${page + 1} rows=${allData.length}` +
+      `[fetchAllSupabaseData] complete label=${label} rows=${allData.length}` +
         (expectedTotal != null ? ` expected=${expectedTotal}` : "") +
         ` total=${totalElapsed.toFixed(1)}ms`
     );

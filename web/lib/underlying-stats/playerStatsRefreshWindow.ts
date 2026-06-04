@@ -1,14 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getCurrentSeason } from "lib/NHL/server";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import serviceRoleClient from "lib/supabase/server";
 
 import {
   fetchSeasonSummaryGameIdSet,
   PLAYER_STATS_SUMMARY_PARTITION_SOURCE_URL_PREFIX,
 } from "./playerStatsSummaryRefresh";
-
-const SUPABASE_PAGE_SIZE = 1000;
 
 type GameRow = {
   id: number | string | null;
@@ -29,27 +28,7 @@ async function fetchAllRows<TRow>(
     error: unknown;
   }>
 ): Promise<TRow[]> {
-  const rows: TRow[] = [];
-
-  for (let from = 0; ; from += SUPABASE_PAGE_SIZE) {
-    const to = from + SUPABASE_PAGE_SIZE - 1;
-    const { data, error } = await fetchPage(from, to);
-    if (error) throw error;
-
-    const pageRows = (data ?? []) as TRow[];
-
-    if (!pageRows.length) {
-      break;
-    }
-
-    rows.push(...pageRows);
-
-    if (pageRows.length < SUPABASE_PAGE_SIZE) {
-      break;
-    }
-  }
-
-  return rows;
+  return fetchAllSupabasePages<TRow>(({ from, to }) => fetchPage(from, to) as any);
 }
 
 async function resolveSeasonId(seasonId?: number | null): Promise<number> {

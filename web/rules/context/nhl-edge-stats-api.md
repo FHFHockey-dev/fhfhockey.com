@@ -71,6 +71,24 @@ Last verified live on `2026-04-23`.
 - `https://api-web.nhle.com/v1/edge/skater-shot-location-top-10/all/{stat}/all/{seasonId}/{gameType}`
   - Re-verified on `2026-04-23` for `goals`, `sog`, and `shooting-pctg`
   - Example: `https://api-web.nhle.com/v1/edge/skater-shot-location-top-10/all/sog/all/20252026/2`
+- `https://api-web.nhle.com/v1/edge/skater-skating-distance-detail/{playerId}/{seasonId}/{gameType}`
+  - Verified live on `2026-05-30` with `8478402 / 20242025 / 2`
+  - Exposes: `skatingDistanceLast10`, `skatingDistanceDetails`
+  - The `skatingDistanceLast10` rows include `gameCenterLink`, `gameDate`, home/away context, TOI, and distance skated by all/even/PP/PK.
+- `https://api-web.nhle.com/v1/edge/skater-shot-speed-detail/{playerId}/{seasonId}/{gameType}`
+- `https://api-web.nhle.com/v1/edge/skater-skating-speed-detail/{playerId}/{seasonId}/{gameType}`
+- `https://api-web.nhle.com/v1/edge/skater-shot-location-detail/{playerId}/{seasonId}/{gameType}`
+- `https://api-web.nhle.com/v1/edge/skater-zone-time/{playerId}/{seasonId}/{gameType}`
+- `https://api-web.nhle.com/v1/edge/team-skating-distance-detail/{teamId}/{seasonId}/{gameType}`
+  - Verified live on `2026-05-30` with `22 / 20242025 / 2`
+  - Exposes team-level `skatingDistanceLast10`, including team TOI/distance by all/even/PP/PK.
+- `https://api-web.nhle.com/v1/edge/team-zone-time-details/{teamId}/{seasonId}/{gameType}`
+- `https://api-web.nhle.com/v1/edge/team-shot-location-detail/{teamId}/{seasonId}/{gameType}`
+- `https://api-web.nhle.com/v1/edge/team-shot-speed-detail/{teamId}/{seasonId}/{gameType}`
+- `https://api-web.nhle.com/v1/edge/team-skating-speed-detail/{teamId}/{seasonId}/{gameType}`
+- `https://api-web.nhle.com/v1/edge/goalie-shot-location-detail/{goalieId}/{seasonId}/{gameType}`
+- `https://api-web.nhle.com/v1/edge/goalie-5v5-detail/{goalieId}/{seasonId}/{gameType}`
+- `https://api-web.nhle.com/v1/edge/goalie-save-percentage-detail/{goalieId}/{seasonId}/{gameType}`
 
 ## Endpoint guesses that did not verify
 
@@ -80,7 +98,6 @@ These guessed standalone families returned `404` during live checks and should n
 - `skater-skating-speed`
 - `team-zone-time`
 - `team-zone-time-detail`
-- `team-skating-speed-detail`
 - `goalie-save-location-detail`
 - `goalie-save-location-top-10`
 - `goalie-top-10`
@@ -88,7 +105,7 @@ These guessed standalone families returned `404` during live checks and should n
 ## Endpoint families visible in the current site implementation but not yet proven as distinct API families
 
 - None beyond the verified families above.
-- The current shipped widget bundle clearly references the route/filter states `shot-speed`, `skating-speed`, `skating-distance`, `shot-locations`, `zone-time`, `save-locations`, `five-on-five`, and `save-pctg`, but the bundle evidence currently points back to the same `by-the-numbers`, `skater-detail`, `team-detail`, and `goalie-detail` families rather than new public endpoints.
+- The current shipped widget bundle references the route/filter states `shot-speed`, `skating-speed`, `skating-distance`, `shot-locations`, `zone-time`, `save-locations`, `five-on-five`, and `save-pctg`; live API checks now prove several of those states have dedicated season/game-type detail endpoints.
 
 ## Launch guidance
 
@@ -111,6 +128,9 @@ These guessed standalone families returned `404` during live checks and should n
   - `/v1/edge/team-detail/{teamId}/{seasonId}/{gameType}`
   - `/v1/edge/goalie-detail/{goalieId}/{seasonId}/{gameType}`
   - `/v1/edge/skater-shot-location-top-10/all/{stat}/all/{seasonId}/{gameType}`
+  - `/v1/edge/skater-*-detail/{playerId}/{seasonId}/{gameType}` supplemental detail families
+  - `/v1/edge/team-*detail/{teamId}/{seasonId}/{gameType}` supplemental detail families
+  - `/v1/edge/goalie-*detail/{goalieId}/{seasonId}/{gameType}` supplemental detail families
 - NHL's own product language still describes the site as a daily-updated surface and a season-long historical view since `2021-22`, not as a date-addressable archive of prior daily snapshots.
 - Practical implication: `nhl_edge_stats_daily` must be treated as a prospective archive from the day we start collecting it. It should not be presented as a reconstructable source of true past daily Edge states.
 

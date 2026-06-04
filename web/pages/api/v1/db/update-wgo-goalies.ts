@@ -128,13 +128,13 @@ import {
   isBefore,
   isAfter,
   subDays,
-  isValid
+  isValid,
 } from "date-fns";
 import { getCurrentSeason } from "lib/NHL/server";
 import {
   WGOGoalieStat,
   WGOAdvancedGoalieStat,
-  WGODaysLeftStat
+  WGODaysLeftStat,
 } from "lib/NHL/types";
 import { updateAllGoaliesStats } from "lib/supabase/utils/updateAllGoalies";
 
@@ -154,7 +154,7 @@ interface SeasonInfo {
 type RunMode = "incremental" | "forward" | "reverse" | "single";
 
 function parseRunMode(
-  value: string | string[] | undefined
+  value: string | string[] | undefined,
 ): RunMode | undefined {
   const raw = (Array.isArray(value) ? value[0] : value)?.toLowerCase();
   if (
@@ -169,7 +169,7 @@ function parseRunMode(
 }
 
 function parseBooleanParam(
-  value: string | string[] | undefined
+  value: string | string[] | undefined,
 ): boolean | undefined {
   const raw = (Array.isArray(value) ? value[0] : value)?.toLowerCase();
   if (!raw) return undefined;
@@ -179,7 +179,7 @@ function parseBooleanParam(
 }
 
 function parseDateParam(
-  value: string | string[] | undefined
+  value: string | string[] | undefined,
 ): string | undefined {
   const raw = Array.isArray(value) ? value[0] : value;
   if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
@@ -196,7 +196,7 @@ function parseDateParam(
  * @returns A Promise resolving to the SeasonInfo object or null if not found/error.
  */
 async function getSeasonFromDate(
-  dateString: string
+  dateString: string,
 ): Promise<SeasonInfo | null> {
   try {
     // First, try the direct approach - look for a season that contains this date
@@ -211,13 +211,13 @@ async function getSeasonFromDate(
       // Found a direct match - date falls within a regular season
       return {
         ...directMatch,
-        id: Number(directMatch.id)
+        id: Number(directMatch.id),
       };
     }
 
     // If no direct match (likely offseason), use smart logic similar to fetchCurrentSeason
     console.log(
-      `Date ${dateString} falls outside regular season periods. Using smart season detection...`
+      `Date ${dateString} falls outside regular season periods. Using smart season detection...`,
     );
 
     // Fetch all seasons to determine which one this date most likely belongs to
@@ -229,7 +229,7 @@ async function getSeasonFromDate(
     if (seasonsError || !allSeasons || allSeasons.length === 0) {
       console.error(
         "Could not fetch seasons for smart detection:",
-        seasonsError?.message
+        seasonsError?.message,
       );
       return null;
     }
@@ -253,7 +253,7 @@ async function getSeasonFromDate(
       if (targetDate >= seasonStart && targetDate <= seasonEnd) {
         return {
           ...currentSeason,
-          id: Number(currentSeason.id)
+          id: Number(currentSeason.id),
         };
       }
 
@@ -266,11 +266,11 @@ async function getSeasonFromDate(
             // Date is in offseason between this season and next season
             // Use the more recent season (next season) for context
             console.log(
-              `Date ${dateString} is in offseason. Using upcoming season ${nextSeason.id} for context.`
+              `Date ${dateString} is in offseason. Using upcoming season ${nextSeason.id} for context.`,
             );
             return {
               ...nextSeason,
-              id: Number(nextSeason.id)
+              id: Number(nextSeason.id),
             };
           }
         } else {
@@ -281,11 +281,11 @@ async function getSeasonFromDate(
             (1000 * 60 * 60 * 24 * 30.44);
           if (monthsAfterSeason <= 6) {
             console.log(
-              `Date ${dateString} is in recent offseason. Using completed season ${currentSeason.id} for context.`
+              `Date ${dateString} is in recent offseason. Using completed season ${currentSeason.id} for context.`,
             );
             return {
               ...currentSeason,
-              id: Number(currentSeason.id)
+              id: Number(currentSeason.id),
             };
           }
         }
@@ -294,13 +294,13 @@ async function getSeasonFromDate(
 
     // If we get here, we couldn't determine an appropriate season
     console.warn(
-      `Could not determine appropriate season for date: ${dateString}`
+      `Could not determine appropriate season for date: ${dateString}`,
     );
     return null;
   } catch (err: any) {
     console.error(
       `Unexpected error in getSeasonFromDate for ${dateString}:`,
-      err.message
+      err.message,
     );
     return null;
   }
@@ -312,7 +312,7 @@ async function getSeasonFromDate(
  * @returns A Promise resolving to the SeasonInfo object or null if not found/error.
  */
 async function getSeasonDetailsById(
-  seasonId: number
+  seasonId: number,
 ): Promise<SeasonInfo | null> {
   try {
     const { data, error } = await supabase
@@ -324,7 +324,7 @@ async function getSeasonDetailsById(
     if (error) {
       console.error(
         `Error fetching season details for ID ${seasonId}:`,
-        error.message
+        error.message,
       );
       return null;
     }
@@ -332,14 +332,14 @@ async function getSeasonDetailsById(
       // Ensure the id is treated as a number
       return {
         ...data,
-        id: Number(data.id)
+        id: Number(data.id),
       };
     }
     return null;
   } catch (err: any) {
     console.error(
       `Unexpected error in getSeasonDetailsById for ${seasonId}:`,
-      err.message
+      err.message,
     );
     return null;
   }
@@ -357,7 +357,7 @@ async function getEarliestSeasonStartDate(): Promise<string | null> {
     if (error || !data?.startDate) {
       console.error(
         "Error fetching earliest season start date:",
-        error?.message
+        error?.message,
       );
       return null;
     }
@@ -366,7 +366,7 @@ async function getEarliestSeasonStartDate(): Promise<string | null> {
   } catch (err: any) {
     console.error(
       "Unexpected error in getEarliestSeasonStartDate:",
-      err.message
+      err.message,
     );
     return null;
   }
@@ -381,7 +381,7 @@ async function hasExistingGoalieStatsForDate(date: string): Promise<boolean> {
 
   if (error) {
     throw new Error(
-      `Failed checking existing goalie stats for ${date}: ${error.message}`
+      `Failed checking existing goalie stats for ${date}: ${error.message}`,
     );
   }
 
@@ -396,9 +396,45 @@ async function deleteGoalieStatsForDate(date: string): Promise<void> {
 
   if (error) {
     throw new Error(
-      `Failed deleting existing goalie stats for ${date}: ${error.message}`
+      `Failed deleting existing goalie stats for ${date}: ${error.message}`,
     );
   }
+}
+
+function mapByPlayerId<T extends { playerId: number }>(
+  rows: T[],
+): Map<number, T> {
+  return new Map(rows.map((row) => [row.playerId, row]));
+}
+
+async function upsertGoalieStatsRecords(records: any[]): Promise<number> {
+  if (records.length === 0) {
+    return 0;
+  }
+
+  const { error } = await supabase.from("wgo_goalie_stats").upsert(records);
+  if (!error) {
+    return records.length;
+  }
+
+  console.error("Bulk goalie stats upsert failed; retrying row-by-row:", error);
+
+  let upserted = 0;
+  for (const record of records) {
+    const { error: rowError } = await supabase
+      .from("wgo_goalie_stats")
+      .upsert(record);
+    if (rowError) {
+      console.error(
+        `Upsert failed for goalie ${record.goalie_id} on ${record.date} (Season ${record.season_id}):`,
+        rowError.message,
+      );
+      continue;
+    }
+    upserted++;
+  }
+
+  return upserted;
 }
 
 /**
@@ -411,7 +447,7 @@ async function deleteGoalieStatsForDate(date: string): Promise<void> {
 export async function fetchDataForPlayer(
   playerId: string,
   playerName: string,
-  date: string // Expects 'YYYY-MM-DD'
+  date: string, // Expects 'YYYY-MM-DD'
 ): Promise<{
   goalieStats: WGOGoalieStat[];
   advancedGoalieStats: WGOAdvancedGoalieStat[];
@@ -431,7 +467,7 @@ export async function fetchDataForPlayer(
   const season = await getSeasonFromDate(formattedEndDate);
   if (!season) {
     console.error(
-      `Could not determine season for date ${formattedEndDate} in fetchDataForPlayer.`
+      `Could not determine season for date ${formattedEndDate} in fetchDataForPlayer.`,
     );
     return null; // Indicate failure due to missing season context
   }
@@ -451,25 +487,25 @@ export async function fetchDataForPlayer(
       const [
         goalieStatsResponse,
         advancedGoalieStatsResponse,
-        daysRestResponse
+        daysRestResponse,
       ] = await Promise.all([
         Fetch(goalieStatsUrl).then(
-          (res) => res.json() as Promise<NHLApiResponse>
+          (res) => res.json() as Promise<NHLApiResponse>,
         ),
         Fetch(advancedGoalieStatsUrl).then(
-          (res) => res.json() as Promise<NHLApiResponse>
+          (res) => res.json() as Promise<NHLApiResponse>,
         ),
-        Fetch(daysRestUrl).then((res) => res.json() as Promise<NHLApiResponse>)
+        Fetch(daysRestUrl).then((res) => res.json() as Promise<NHLApiResponse>),
       ]);
 
       goalieStats = goalieStats.concat(
-        goalieStatsResponse.data as WGOGoalieStat[]
+        goalieStatsResponse.data as WGOGoalieStat[],
       );
       advancedGoalieStats = advancedGoalieStats.concat(
-        advancedGoalieStatsResponse.data as WGOAdvancedGoalieStat[]
+        advancedGoalieStatsResponse.data as WGOAdvancedGoalieStat[],
       );
       daysLeftStats = daysLeftStats.concat(
-        daysRestResponse.data as WGODaysLeftStat[]
+        daysRestResponse.data as WGODaysLeftStat[],
       );
 
       moreDataAvailable =
@@ -480,7 +516,7 @@ export async function fetchDataForPlayer(
     } catch (fetchError: any) {
       console.error(
         `Error fetching player data for ${playerId} on ${formattedEndDate}:`,
-        fetchError.message
+        fetchError.message,
       );
       moreDataAvailable = false; // Stop fetching on error
       return null; // Indicate failure
@@ -490,7 +526,7 @@ export async function fetchDataForPlayer(
   return {
     goalieStats,
     advancedGoalieStats,
-    daysLeftStats
+    daysLeftStats,
   };
 }
 
@@ -515,7 +551,7 @@ async function updateGoalieStats(date: string): Promise<{
   const season = await getSeasonFromDate(formattedDate);
   if (!season) {
     console.warn(
-      `Skipping update for ${formattedDate}: Could not find season.`
+      `Skipping update for ${formattedDate}: Could not find season.`,
     );
     return {
       updated: false,
@@ -523,7 +559,7 @@ async function updateGoalieStats(date: string): Promise<{
       advancedGoalieStats: [],
       daysRestStats: [],
       processedDate: formattedDate,
-      actualUpsertCount: 0
+      actualUpsertCount: 0,
     };
   }
   const seasonId = season.id; // Use the ID from the 'seasons' table
@@ -534,67 +570,60 @@ async function updateGoalieStats(date: string): Promise<{
   const advancedGoalieStats = dataForDate.advancedGoalieStats;
   const daysRestStats = dataForDate.daysRestStats;
 
-  // Iterate over each goalie stat and upsert into the Supabase table
-  for (const stat of goalieStats) {
-    const advStats = advancedGoalieStats.find(
-      (aStat) => aStat.playerId === stat.playerId
-    );
-    const daysRestStat = daysRestStats.find(
-      (dStat) => dStat.playerId === stat.playerId
-    );
-    try {
-      await supabase.from("wgo_goalie_stats").upsert({
-        // Mapping fields from fetched data to Supabase table columns
-        goalie_id: stat.playerId,
-        goalie_name: stat.goalieFullName,
-        date: formattedDate,
-        season_id: seasonId, // *** Use the correct season ID ***
-        shoots_catches: stat.shootsCatches,
-        position_code: "G",
-        games_played: stat.gamesPlayed,
-        games_started: stat.gamesStarted,
-        wins: stat.wins,
-        losses: stat.losses,
-        ot_losses: stat.otLosses,
-        save_pct: stat.savePct,
-        saves: stat.saves,
-        goals_against: stat.goalsAgainst,
-        goals_against_avg: stat.goalsAgainstAverage,
-        shots_against: stat.shotsAgainst,
-        time_on_ice: stat.timeOnIce,
-        shutouts: stat.shutouts,
-        goals: stat.goals,
-        assists: stat.assists,
-        complete_game_pct: advStats?.completeGamePct,
-        complete_games: advStats?.completeGames,
-        incomplete_games: advStats?.incompleteGames,
-        quality_start: advStats?.qualityStart,
-        quality_starts_pct: advStats?.qualityStartsPct,
-        regulation_losses: advStats?.regulationLosses,
-        regulation_wins: advStats?.regulationWins,
-        shots_against_per_60: advStats?.shotsAgainstPer60,
-        games_played_days_rest_0: daysRestStat?.gamesPlayedDaysRest0,
-        games_played_days_rest_1: daysRestStat?.gamesPlayedDaysRest1,
-        games_played_days_rest_2: daysRestStat?.gamesPlayedDaysRest2,
-        games_played_days_rest_3: daysRestStat?.gamesPlayedDaysRest3,
-        games_played_days_rest_4_plus: daysRestStat?.gamesPlayedDaysRest4Plus,
-        save_pct_days_rest_0: daysRestStat?.savePctDaysRest0,
-        save_pct_days_rest_1: daysRestStat?.savePctDaysRest1,
-        save_pct_days_rest_2: daysRestStat?.savePctDaysRest2,
-        save_pct_days_rest_3: daysRestStat?.savePctDaysRest3,
-        save_pct_days_rest_4_plus: daysRestStat?.savePctDaysRest4Plus
-      });
-      updateCount++;
-    } catch (upsertError: any) {
-      console.error(
-        `Upsert failed for goalie ${stat.playerId} on ${formattedDate} (Season ${seasonId}):`,
-        upsertError.message
-      );
-      // Decide if you want to stop or continue on upsert error
-    }
-  }
+  const advancedGoalieStatsByPlayer = mapByPlayerId(advancedGoalieStats);
+  const daysRestStatsByPlayer = mapByPlayerId(daysRestStats);
+
+  const records = goalieStats.map((stat) => {
+    const advStats = advancedGoalieStatsByPlayer.get(stat.playerId);
+    const daysRestStat = daysRestStatsByPlayer.get(stat.playerId);
+
+    return {
+      // Mapping fields from fetched data to Supabase table columns
+      goalie_id: stat.playerId,
+      goalie_name: stat.goalieFullName,
+      date: formattedDate,
+      season_id: seasonId, // *** Use the correct season ID ***
+      shoots_catches: stat.shootsCatches,
+      position_code: "G",
+      games_played: stat.gamesPlayed,
+      games_started: stat.gamesStarted,
+      wins: stat.wins,
+      losses: stat.losses,
+      ot_losses: stat.otLosses,
+      save_pct: stat.savePct,
+      saves: stat.saves,
+      goals_against: stat.goalsAgainst,
+      goals_against_avg: stat.goalsAgainstAverage,
+      shots_against: stat.shotsAgainst,
+      time_on_ice: stat.timeOnIce,
+      shutouts: stat.shutouts,
+      goals: stat.goals,
+      assists: stat.assists,
+      complete_game_pct: advStats?.completeGamePct,
+      complete_games: advStats?.completeGames,
+      incomplete_games: advStats?.incompleteGames,
+      quality_start: advStats?.qualityStart,
+      quality_starts_pct: advStats?.qualityStartsPct,
+      regulation_losses: advStats?.regulationLosses,
+      regulation_wins: advStats?.regulationWins,
+      shots_against_per_60: advStats?.shotsAgainstPer60,
+      games_played_days_rest_0: daysRestStat?.gamesPlayedDaysRest0,
+      games_played_days_rest_1: daysRestStat?.gamesPlayedDaysRest1,
+      games_played_days_rest_2: daysRestStat?.gamesPlayedDaysRest2,
+      games_played_days_rest_3: daysRestStat?.gamesPlayedDaysRest3,
+      games_played_days_rest_4_plus: daysRestStat?.gamesPlayedDaysRest4Plus,
+      save_pct_days_rest_0: daysRestStat?.savePctDaysRest0,
+      save_pct_days_rest_1: daysRestStat?.savePctDaysRest1,
+      save_pct_days_rest_2: daysRestStat?.savePctDaysRest2,
+      save_pct_days_rest_3: daysRestStat?.savePctDaysRest3,
+      save_pct_days_rest_4_plus: daysRestStat?.savePctDaysRest4Plus,
+    };
+  });
+
+  updateCount = await upsertGoalieStatsRecords(records);
+
   console.log(
-    `Updated ${updateCount} goalie stats for ${formattedDate} (Season ${seasonId})`
+    `Updated ${updateCount} goalie stats for ${formattedDate} (Season ${seasonId})`,
   );
   return {
     updated: updateCount > 0,
@@ -602,7 +631,7 @@ async function updateGoalieStats(date: string): Promise<{
     advancedGoalieStats,
     daysRestStats,
     processedDate: formattedDate,
-    actualUpsertCount: updateCount // Return the actual upsert count
+    actualUpsertCount: updateCount, // Return the actual upsert count
   };
 }
 
@@ -615,7 +644,7 @@ async function updateGoalieStats(date: string): Promise<{
  */
 async function fetchAllDataForDate(
   formattedDate: string,
-  limit: number
+  limit: number,
 ): Promise<{
   goalieStats: WGOGoalieStat[];
   advancedGoalieStats: WGOAdvancedGoalieStat[];
@@ -639,25 +668,25 @@ async function fetchAllDataForDate(
       const [
         goalieStatsResponse,
         advancedGoalieStatsResponse,
-        daysRestResponse
+        daysRestResponse,
       ] = await Promise.all([
         Fetch(goalieStatsUrl).then(
-          (res) => res.json() as Promise<NHLApiResponse>
+          (res) => res.json() as Promise<NHLApiResponse>,
         ),
         Fetch(advancedGoalieStatsUrl).then(
-          (res) => res.json() as Promise<NHLApiResponse>
+          (res) => res.json() as Promise<NHLApiResponse>,
         ),
-        Fetch(daysRestUrl).then((res) => res.json() as Promise<NHLApiResponse>)
+        Fetch(daysRestUrl).then((res) => res.json() as Promise<NHLApiResponse>),
       ]);
 
       goalieStats = goalieStats.concat(
-        goalieStatsResponse.data as WGOGoalieStat[]
+        goalieStatsResponse.data as WGOGoalieStat[],
       );
       advancedGoalieStats = advancedGoalieStats.concat(
-        advancedGoalieStatsResponse.data as WGOAdvancedGoalieStat[]
+        advancedGoalieStatsResponse.data as WGOAdvancedGoalieStat[],
       );
       daysRestStats = daysRestStats.concat(
-        daysRestResponse.data as WGODaysLeftStat[]
+        daysRestResponse.data as WGODaysLeftStat[],
       );
 
       // Check if the length of *any* response data equals the limit
@@ -672,7 +701,7 @@ async function fetchAllDataForDate(
     } catch (fetchError: any) {
       console.error(
         `Error fetching data for date ${formattedDate}:`,
-        fetchError.message
+        fetchError.message,
       );
       moreDataAvailable = false; // Stop fetching for this date on error
       // Return potentially partial data collected so far or empty arrays
@@ -683,7 +712,7 @@ async function fetchAllDataForDate(
   return {
     goalieStats,
     advancedGoalieStats,
-    daysRestStats
+    daysRestStats,
   };
 }
 
@@ -699,13 +728,13 @@ async function updateAllGoalieStatsForSeason(targetSeasonId: number) {
   const seasonDetails = await getSeasonDetailsById(targetSeasonId);
   if (!seasonDetails) {
     console.error(
-      `Could not find season details for ID ${targetSeasonId}. Aborting.`
+      `Could not find season details for ID ${targetSeasonId}. Aborting.`,
     );
     return {
       message: `Failed to find season details for ID ${targetSeasonId}.`,
       success: false,
       totalUpdates: 0,
-      totalErrors: 1 // Count this as an error
+      totalErrors: 1, // Count this as an error
     };
   }
 
@@ -734,7 +763,7 @@ async function updateAllGoalieStatsForSeason(targetSeasonId: number) {
       ) {
         // If not updated AND no season found for the date (e.g., mid-season break?), don't count as error
         console.log(
-          `Skipping ${formattedDate} as it falls outside a season definition.`
+          `Skipping ${formattedDate} as it falls outside a season definition.`,
         );
       } else if (!dailyResult.updated) {
         // Potentially log non-update scenarios if needed, but maybe not errors unless fetch failed
@@ -748,13 +777,13 @@ async function updateAllGoalieStatsForSeason(targetSeasonId: number) {
   }
 
   console.log(
-    `Season ${targetSeasonId} update finished. Total Estimated Updates: ${totalUpdates}, Errors: ${totalErrors}`
+    `Season ${targetSeasonId} update finished. Total Estimated Updates: ${totalUpdates}, Errors: ${totalErrors}`,
   );
   return {
     message: `Season ${targetSeasonId} data update finished.`,
     success: totalErrors === 0,
     totalUpdates,
-    totalErrors
+    totalErrors,
   };
 }
 
@@ -787,7 +816,7 @@ async function updateAllHistoricalGoalieStats(): Promise<{
       success: false,
       totalUpdates: 0,
       totalErrors: 1,
-      seasonsProcessed: 0
+      seasonsProcessed: 0,
     };
   }
 
@@ -800,7 +829,7 @@ async function updateAllHistoricalGoalieStats(): Promise<{
       success: false,
       totalUpdates: 0,
       totalErrors: 1,
-      seasonsProcessed: 0
+      seasonsProcessed: 0,
     };
   }
 
@@ -823,14 +852,14 @@ async function updateAllHistoricalGoalieStats(): Promise<{
       grandTotalErrors += seasonResult.totalErrors;
       seasonsProcessed++;
       console.log(
-        `--- Finished Season ${targetSeasonId}. Updates: ${seasonResult.totalUpdates}, Errors: ${seasonResult.totalErrors} ---`
+        `--- Finished Season ${targetSeasonId}. Updates: ${seasonResult.totalUpdates}, Errors: ${seasonResult.totalErrors} ---`,
       );
       // Optional: Add a small delay between seasons if needed to avoid rate limits
       // await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
     } catch (e: any) {
       console.error(
         `Critical error during processing of season ${targetSeasonId}:`,
-        e.message
+        e.message,
       );
       grandTotalErrors++; // Increment error count for the season that failed critically
     }
@@ -838,14 +867,14 @@ async function updateAllHistoricalGoalieStats(): Promise<{
 
   const finalMessage = `Full historical refresh finished processing ${seasonsProcessed} seasons.`;
   console.log(
-    `${finalMessage} Grand Total Updates: ${grandTotalUpdates}, Grand Total Errors: ${grandTotalErrors}`
+    `${finalMessage} Grand Total Updates: ${grandTotalUpdates}, Grand Total Errors: ${grandTotalErrors}`,
   );
   return {
     message: finalMessage,
     success: grandTotalErrors === 0,
     totalUpdates: grandTotalUpdates,
     totalErrors: grandTotalErrors,
-    seasonsProcessed: seasonsProcessed
+    seasonsProcessed: seasonsProcessed,
   };
 }
 
@@ -881,7 +910,7 @@ async function updateRecentGoalieStats(): Promise<{
       totalUpdates: 0,
       totalErrors: 1,
       startDate: null,
-      endDate: format(subDays(new Date(), 1), "yyyy-MM-dd") // Yesterday
+      endDate: format(subDays(new Date(), 1), "yyyy-MM-dd"), // Yesterday
     };
   }
 
@@ -890,19 +919,19 @@ async function updateRecentGoalieStats(): Promise<{
   if (latestEntry?.date) {
     startDateToProcess = addDays(parseISO(latestEntry.date), 1); // Day after the last record
     console.log(
-      `Last record found on: ${latestEntry.date}. Starting update from: ${format(startDateToProcess, "yyyy-MM-dd")}`
+      `Last record found on: ${latestEntry.date}. Starting update from: ${format(startDateToProcess, "yyyy-MM-dd")}`,
     );
   } else {
     // Table is empty - decide behaviour. Let's default to starting from the beginning of the *current* season.
     console.warn(
-      "No existing data found. Starting incremental update from the beginning of the current season."
+      "No existing data found. Starting incremental update from the beginning of the current season.",
     );
     const todayStr = format(new Date(), "yyyy-MM-dd");
     const currentSeasonInfo = await getSeasonFromDate(todayStr); // Assumes today is within a season
     if (currentSeasonInfo) {
       startDateToProcess = parseISO(currentSeasonInfo.startDate);
       console.log(
-        `Determined current season start date: ${currentSeasonInfo.startDate}`
+        `Determined current season start date: ${currentSeasonInfo.startDate}`,
       );
     } else {
       // Still couldn't find current season (e.g., deep offseason) - maybe start from a fixed historical date or fail?
@@ -916,7 +945,7 @@ async function updateRecentGoalieStats(): Promise<{
       if (earliestSeason && !earliestError) {
         startDateToProcess = parseISO(earliestSeason.startDate);
         console.warn(
-          `Could not determine current season, starting from earliest known season: ${earliestSeason.startDate}`
+          `Could not determine current season, starting from earliest known season: ${earliestSeason.startDate}`,
         );
       } else {
         const msg =
@@ -928,7 +957,7 @@ async function updateRecentGoalieStats(): Promise<{
           totalUpdates: 0,
           totalErrors: 1,
           startDate: null,
-          endDate: format(subDays(new Date(), 1), "yyyy-MM-dd")
+          endDate: format(subDays(new Date(), 1), "yyyy-MM-dd"),
         };
       }
     }
@@ -948,13 +977,13 @@ async function updateRecentGoalieStats(): Promise<{
       totalUpdates: 0,
       totalErrors: 0,
       startDate: format(startDateToProcess, "yyyy-MM-dd"),
-      endDate: formattedEndDate
+      endDate: formattedEndDate,
     };
   }
 
   const loopStartDateStr = format(startDateToProcess, "yyyy-MM-dd");
   console.log(
-    `Processing dates from ${loopStartDateStr} to ${formattedEndDate}`
+    `Processing dates from ${loopStartDateStr} to ${formattedEndDate}`,
   );
 
   // 5. Loop through dates and update
@@ -974,7 +1003,7 @@ async function updateRecentGoalieStats(): Promise<{
     } catch (e: any) {
       console.error(
         `Critical error processing ${formattedDate} during incremental update:`,
-        e.message
+        e.message,
       );
       totalErrors++;
       // Optional: Decide whether to stop the whole process on critical error
@@ -984,7 +1013,7 @@ async function updateRecentGoalieStats(): Promise<{
 
   const finalMessage = `Incremental update finished. Processed dates: ${loopStartDateStr} to ${formattedEndDate}.`;
   console.log(
-    `${finalMessage} Estimated Updates: ${totalUpdates}, Errors: ${totalErrors}`
+    `${finalMessage} Estimated Updates: ${totalUpdates}, Errors: ${totalErrors}`,
   );
   return {
     message: finalMessage,
@@ -992,7 +1021,7 @@ async function updateRecentGoalieStats(): Promise<{
     totalUpdates,
     totalErrors,
     startDate: loopStartDateStr,
-    endDate: formattedEndDate
+    endDate: formattedEndDate,
   };
 }
 
@@ -1028,14 +1057,14 @@ async function runGoalieStatsDateRange(options: {
 
     if (latestEntryError) {
       throw new Error(
-        `Failed to fetch latest goalie stats date: ${latestEntryError.message}`
+        `Failed to fetch latest goalie stats date: ${latestEntryError.message}`,
       );
     }
 
     if (latestEntry?.date) {
       resolvedStartDate = format(
         addDays(parseISO(latestEntry.date), 1),
-        "yyyy-MM-dd"
+        "yyyy-MM-dd",
       );
     } else {
       const currentSeasonInfo = await getSeasonFromDate(today);
@@ -1049,14 +1078,14 @@ async function runGoalieStatsDateRange(options: {
 
   if (!resolvedStartDate) {
     throw new Error(
-      `Missing required startDate. Provide startDate=YYYY-MM-DD when runMode=${runMode}.`
+      `Missing required startDate. Provide startDate=YYYY-MM-DD when runMode=${runMode}.`,
     );
   }
 
   const startDateObj = parseISO(resolvedStartDate);
   if (!isValid(startDateObj)) {
     throw new Error(
-      `Invalid startDate format: ${resolvedStartDate}. Expected YYYY-MM-DD.`
+      `Invalid startDate format: ${resolvedStartDate}. Expected YYYY-MM-DD.`,
     );
   }
 
@@ -1067,7 +1096,7 @@ async function runGoalieStatsDateRange(options: {
     const earliestSeasonStartDate = await getEarliestSeasonStartDate();
     if (!earliestSeasonStartDate) {
       throw new Error(
-        "Could not determine earliest season start date for reverse mode."
+        "Could not determine earliest season start date for reverse mode.",
       );
     }
     endDate = earliestSeasonStartDate;
@@ -1091,7 +1120,7 @@ async function runGoalieStatsDateRange(options: {
       runMode,
       overwrite,
       processedDates: 0,
-      skippedDates: 0
+      skippedDates: 0,
     };
   }
 
@@ -1126,7 +1155,7 @@ async function runGoalieStatsDateRange(options: {
       totalErrors++;
       console.error(
         `Error processing ${formattedDate} in ${runMode} mode:`,
-        error.message
+        error.message,
       );
     }
 
@@ -1143,14 +1172,14 @@ async function runGoalieStatsDateRange(options: {
     runMode,
     overwrite,
     processedDates,
-    skippedDates
+    skippedDates,
   };
 }
 
 // --- API Handler ---
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   const jobName = "update-all-wgo-goalies";
   const startTime = Date.now();
@@ -1182,19 +1211,19 @@ export default async function handler(
     if (hasRangeParams) {
       if (actionParam || dateParam || playerIdParam) {
         throw new Error(
-          "Invalid parameter combination. runMode/startDate/overwrite cannot be combined with action, date, or playerId request modes."
+          "Invalid parameter combination. runMode/startDate/overwrite cannot be combined with action, date, or playerId request modes.",
         );
       }
 
       if (req.query.startDate !== undefined && !startDateParam) {
         throw new Error(
-          `Invalid startDate format: ${Array.isArray(req.query.startDate) ? req.query.startDate[0] : req.query.startDate}. Expected YYYY-MM-DD.`
+          `Invalid startDate format: ${Array.isArray(req.query.startDate) ? req.query.startDate[0] : req.query.startDate}. Expected YYYY-MM-DD.`,
         );
       }
 
       if (req.query.overwrite !== undefined && overwriteParam === undefined) {
         throw new Error(
-          "Invalid overwrite value. Use true/false, yes/no, or 1/0."
+          "Invalid overwrite value. Use true/false, yes/no, or 1/0.",
         );
       }
 
@@ -1206,7 +1235,7 @@ export default async function handler(
         !startDateParam
       ) {
         throw new Error(
-          `Missing required startDate. Provide startDate=YYYY-MM-DD when runMode=${runMode}.`
+          `Missing required startDate. Provide startDate=YYYY-MM-DD when runMode=${runMode}.`,
         );
       }
 
@@ -1214,7 +1243,7 @@ export default async function handler(
       const result = await runGoalieStatsDateRange({
         runMode,
         startDate: startDateParam,
-        overwrite: overwriteParam
+        overwrite: overwriteParam,
       });
       rowsAffected = result.totalUpdates;
       totalErrors = result.totalErrors;
@@ -1229,7 +1258,7 @@ export default async function handler(
         processedDates: result.processedDates,
         skippedDates: result.skippedDates,
         totalUpdates: result.totalUpdates,
-        totalErrors: result.totalErrors
+        totalErrors: result.totalErrors,
       };
       responseData = result;
     }
@@ -1247,7 +1276,7 @@ export default async function handler(
         ...details,
         totalUpdates: result.totalUpdates,
         totalErrors: result.totalErrors,
-        success: result.totalErrors === 0
+        success: result.totalErrors === 0,
       };
       responseData = result;
     }
@@ -1260,7 +1289,7 @@ export default async function handler(
         const targetSeasonId = parseInt(seasonParam, 10);
         if (isNaN(targetSeasonId)) {
           throw new Error(
-            `Invalid season parameter format: ${seasonParam}. Expected numeric ID like 20232024.`
+            `Invalid season parameter format: ${seasonParam}. Expected numeric ID like 20232024.`,
           );
         }
         console.log(`Received request for specific season: ${targetSeasonId}`);
@@ -1274,7 +1303,7 @@ export default async function handler(
         details = {
           ...details,
           totalUpdates: result.totalUpdates,
-          totalErrors: result.totalErrors
+          totalErrors: result.totalErrors,
         };
         responseData = result;
       } else {
@@ -1296,7 +1325,7 @@ export default async function handler(
       details.action = "single_date_update";
       if (!/^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
         throw new Error(
-          `Invalid date format: ${dateParam}. Expected YYYY-MM-DD.`
+          `Invalid date format: ${dateParam}. Expected YYYY-MM-DD.`,
         );
       }
       const result = await updateGoalieStats(dateParam);
@@ -1309,7 +1338,7 @@ export default async function handler(
         processedDate: result.processedDate,
         updated: result.updated,
         statsFetched: result.goalieStats.length,
-        actualUpserts: result.actualUpsertCount
+        actualUpserts: result.actualUpsertCount,
       };
       responseData = result;
     }
@@ -1320,18 +1349,18 @@ export default async function handler(
       details.action = "fetch_single_player";
       if (!/^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
         throw new Error(
-          `Invalid date format: ${dateParam}. Expected YYYY-MM-DD.`
+          `Invalid date format: ${dateParam}. Expected YYYY-MM-DD.`,
         );
       }
       const result = await fetchDataForPlayer(
         playerIdParam,
         goalieFullName,
-        dateParam
+        dateParam,
       );
 
       if (result === null) {
         throw new Error(
-          `Failed to fetch player data for ${playerIdParam} on ${dateParam}, possibly missing season context.`
+          `Failed to fetch player data for ${playerIdParam} on ${dateParam}, possibly missing season context.`,
         );
       }
 
@@ -1342,7 +1371,7 @@ export default async function handler(
         ...details,
         fetched: rowsAffected > 0,
         dateContext: dateParam,
-        playerId: playerIdParam
+        playerId: playerIdParam,
       };
       responseData = result;
     }
@@ -1350,7 +1379,7 @@ export default async function handler(
     // --- No valid action or parameter combination ---
     else {
       throw new Error(
-        "Missing or invalid required parameters. Valid combinations: 'action=all', 'action=fullRefresh' (optional '&season=YYYYYYYY'), 'date=YYYY-MM-DD', or 'playerId=<id>&date=YYYY-MM-DD'."
+        "Missing or invalid required parameters. Valid combinations: 'action=all', 'action=fullRefresh' (optional '&season=YYYYYYYY'), 'date=YYYY-MM-DD', or 'playerId=<id>&date=YYYY-MM-DD'.",
       );
     }
 
@@ -1359,7 +1388,7 @@ export default async function handler(
       // Use 500 if process finished with errors
       message: responseMessage,
       success: status === "success",
-      data: responseData // Include detailed result object
+      data: responseData, // Include detailed result object
     };
     return res.status(status === "success" ? 200 : 500).json(responseBody);
   } catch (err: any) {
@@ -1392,12 +1421,12 @@ export default async function handler(
             durationMs: elapsedMs,
             error:
               status === "error"
-                ? details?.error ?? responseMessage ?? "Unknown error"
+                ? (details?.error ?? responseMessage ?? "Unknown error")
                 : null,
             response: responseBody,
-            context: details
-          }
-        }
+            context: details,
+          },
+        },
       ]);
     } catch (auditErr: any) {
       console.error("Failed to write audit row:", auditErr.message);

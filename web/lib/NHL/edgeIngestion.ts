@@ -1,19 +1,35 @@
 import type {
   EdgeGameType,
   EdgeGoalieDetailResponse,
+  EdgeGoalieSupplementalDetailResponse,
   EdgeSkaterDetailResponse,
   EdgeSkaterShotLocationLeaderRow,
   EdgeSkaterShotLocationSortKey,
-  EdgeTeamDetailResponse
+  EdgeSkaterSupplementalDetailResponse,
+  EdgeTeamDetailResponse,
+  EdgeTeamSupplementalDetailResponse
 } from "lib/NHL/edge";
 
 export type NhlEdgeStatsFamily =
   | "skater-detail-now"
   | "skater-detail"
+  | "skater-shot-speed-detail"
+  | "skater-skating-speed-detail"
+  | "skater-skating-distance-detail"
+  | "skater-shot-location-detail"
+  | "skater-zone-time"
   | "team-detail-now"
   | "team-detail"
+  | "team-skating-distance-detail"
+  | "team-zone-time-details"
+  | "team-shot-location-detail"
+  | "team-shot-speed-detail"
+  | "team-skating-speed-detail"
   | "goalie-detail-now"
   | "goalie-detail"
+  | "goalie-shot-location-detail"
+  | "goalie-5v5-detail"
+  | "goalie-save-percentage-detail"
   | "skater-shot-location-top-10";
 
 export type NhlEdgeStatsEntityType = "skater" | "team" | "goalie";
@@ -243,6 +259,70 @@ export type NhlEdgeSkaterShotLocationLeaderMetricRow = {
   updated_at: string;
 };
 
+export type NhlEdgeSkaterSkatingDistanceGameRow = {
+  snapshot_date: string;
+  season_id: number;
+  game_type: EdgeGameType;
+  player_id: number;
+  player_name: string | null;
+  team_id: number | null;
+  team_abbreviation: string | null;
+  position: string | null;
+  game_id: number;
+  game_date: string | null;
+  player_on_home_team: boolean | null;
+  home_team_abbreviation: string | null;
+  away_team_abbreviation: string | null;
+  toi_all_seconds: number | null;
+  distance_skated_all_miles: number | null;
+  distance_skated_all_km: number | null;
+  toi_even_seconds: number | null;
+  distance_skated_even_miles: number | null;
+  distance_skated_even_km: number | null;
+  toi_pp_seconds: number | null;
+  distance_skated_pp_miles: number | null;
+  distance_skated_pp_km: number | null;
+  toi_pk_seconds: number | null;
+  distance_skated_pk_miles: number | null;
+  distance_skated_pk_km: number | null;
+  game_center_link: string | null;
+  source_url: string;
+  raw_payload: unknown;
+  metadata: Record<string, unknown>;
+  updated_at: string;
+};
+
+export type NhlEdgeTeamSkatingDistanceGameRow = {
+  snapshot_date: string;
+  season_id: number;
+  game_type: EdgeGameType;
+  team_id: number;
+  team_abbreviation: string | null;
+  team_name: string | null;
+  game_id: number;
+  game_date: string | null;
+  is_home_team: boolean | null;
+  home_team_abbreviation: string | null;
+  away_team_abbreviation: string | null;
+  toi_all_seconds: number | null;
+  distance_skated_all_miles: number | null;
+  distance_skated_all_km: number | null;
+  toi_even_seconds: number | null;
+  distance_skated_even_miles: number | null;
+  distance_skated_even_km: number | null;
+  toi_pp_seconds: number | null;
+  distance_skated_pp_miles: number | null;
+  distance_skated_pp_km: number | null;
+  toi_pk_seconds: number | null;
+  distance_skated_pk_miles: number | null;
+  distance_skated_pk_km: number | null;
+  game_center_link: string | null;
+  source_url: string;
+  raw_payload: unknown;
+  metadata: Record<string, unknown>;
+  updated_at: string;
+};
+
 export const EDGE_SHOT_LOCATION_VARIANTS: readonly EdgeSkaterShotLocationSortKey[] =
   ["goals", "sog", "shooting-pctg"] as const;
 
@@ -286,6 +366,41 @@ function numberOrNull(value: unknown): number | null {
 function integerOrNull(value: unknown): number | null {
   const numberValue = numberOrNull(value);
   return numberValue == null ? null : Math.trunc(numberValue);
+}
+
+function booleanOrNull(value: unknown): boolean | null {
+  return typeof value === "boolean" ? value : null;
+}
+
+function stringOrNull(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function objectOrNull(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value != null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function parseGameIdFromGameCenterLink(value: unknown): number | null {
+  if (typeof value !== "string") return null;
+  const match = value.match(/\/(\d{10})$/);
+  if (!match) return null;
+  const parsed = Number.parseInt(match[1] ?? "", 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function edgeMeasure(value: unknown): { imperial: number | null; metric: number | null } {
+  const measure = objectOrNull(value);
+  return {
+    imperial: numberOrNull(measure?.imperial),
+    metric: numberOrNull(measure?.metric)
+  };
+}
+
+function teamAbbreviationFromPayload(value: unknown): string | null {
+  const team = objectOrNull(value);
+  return stringOrNull(team?.abbrev);
 }
 
 function findLocationSummary(
@@ -501,6 +616,129 @@ export function buildEdgeSkaterShotLocationRows(args: {
     },
     updated_at: isoNow()
   }));
+}
+
+export function buildEdgeSkaterSupplementalDetailRow(args: {
+  snapshotDate: string;
+  seasonId: number;
+  gameType: EdgeGameType;
+  playerId: number;
+  playerName: string | null;
+  teamId: number | null;
+  teamAbbreviation: string | null;
+  position: string | null;
+  endpointFamily: Extract<
+    NhlEdgeStatsFamily,
+    | "skater-shot-speed-detail"
+    | "skater-skating-speed-detail"
+    | "skater-skating-distance-detail"
+    | "skater-shot-location-detail"
+    | "skater-zone-time"
+  >;
+  payload: EdgeSkaterSupplementalDetailResponse;
+}): NhlEdgeStatsRow {
+  return {
+    snapshot_date: args.snapshotDate,
+    season_id: args.seasonId,
+    game_type: args.gameType,
+    entity_type: "skater",
+    entity_id: args.playerId,
+    entity_slug: null,
+    entity_name: args.playerName,
+    team_id: args.teamId,
+    team_abbreviation: args.teamAbbreviation,
+    endpoint_family: args.endpointFamily,
+    endpoint_variant: "",
+    rank_order: 0,
+    source: "nhl-edge",
+    source_url: `https://api-web.nhle.com/v1/edge/${args.endpointFamily}/${args.playerId}/${args.seasonId}/${args.gameType}`,
+    payload: args.payload,
+    metadata: {
+      playerPosition: args.position,
+      supplementalDetail: true
+    },
+    updated_at: isoNow()
+  };
+}
+
+export function buildEdgeTeamSupplementalDetailRow(args: {
+  snapshotDate: string;
+  seasonId: number;
+  gameType: EdgeGameType;
+  teamId: number;
+  teamName: string | null;
+  teamAbbreviation: string | null;
+  endpointFamily: Extract<
+    NhlEdgeStatsFamily,
+    | "team-skating-distance-detail"
+    | "team-zone-time-details"
+    | "team-shot-location-detail"
+    | "team-shot-speed-detail"
+    | "team-skating-speed-detail"
+  >;
+  payload: EdgeTeamSupplementalDetailResponse;
+}): NhlEdgeStatsRow {
+  return {
+    snapshot_date: args.snapshotDate,
+    season_id: args.seasonId,
+    game_type: args.gameType,
+    entity_type: "team",
+    entity_id: args.teamId,
+    entity_slug: null,
+    entity_name: args.teamName,
+    team_id: args.teamId,
+    team_abbreviation: args.teamAbbreviation,
+    endpoint_family: args.endpointFamily,
+    endpoint_variant: "",
+    rank_order: 0,
+    source: "nhl-edge",
+    source_url: `https://api-web.nhle.com/v1/edge/${args.endpointFamily}/${args.teamId}/${args.seasonId}/${args.gameType}`,
+    payload: args.payload,
+    metadata: {
+      supplementalDetail: true
+    },
+    updated_at: isoNow()
+  };
+}
+
+export function buildEdgeGoalieSupplementalDetailRow(args: {
+  snapshotDate: string;
+  seasonId: number;
+  gameType: EdgeGameType;
+  goalieId: number;
+  goalieName: string | null;
+  teamId: number | null;
+  teamAbbreviation: string | null;
+  endpointFamily: Extract<
+    NhlEdgeStatsFamily,
+    | "goalie-shot-location-detail"
+    | "goalie-5v5-detail"
+    | "goalie-save-percentage-detail"
+  >;
+  payload: EdgeGoalieSupplementalDetailResponse;
+}): NhlEdgeStatsRow {
+  return {
+    snapshot_date: args.snapshotDate,
+    season_id: args.seasonId,
+    game_type: args.gameType,
+    entity_type: "goalie",
+    entity_id: args.goalieId,
+    entity_slug: null,
+    entity_name: args.goalieName,
+    team_id: args.teamId,
+    team_abbreviation: args.teamAbbreviation,
+    endpoint_family: args.endpointFamily,
+    endpoint_variant: "",
+    rank_order: 0,
+    source: "nhl-edge",
+    source_url: `https://api-web.nhle.com/v1/edge/${args.endpointFamily}/${args.goalieId}/${args.seasonId}/${args.gameType}`,
+    payload: args.payload,
+    metadata: {
+      playerPosition: "G",
+      supplementalDetail: true
+    },
+    updated_at: isoNow()
+  };
 }
 
 export function buildEdgeSkaterMetricRow(row: NhlEdgeStatsRow): NhlEdgeSkaterMetricRow | null {
@@ -750,4 +988,112 @@ export function buildEdgeSkaterShotLocationLeaderMetricRows(
         updated_at: row.updated_at
       };
     });
+}
+
+export function buildEdgeSkaterSkatingDistanceGameRows(
+  rows: NhlEdgeStatsRow[]
+): NhlEdgeSkaterSkatingDistanceGameRow[] {
+  return rows.flatMap((row) => {
+    if (row.entity_type !== "skater" || row.endpoint_family !== "skater-skating-distance-detail") {
+      return [];
+    }
+    const payload = row.payload as { skatingDistanceLast10?: unknown };
+    if (!Array.isArray(payload.skatingDistanceLast10)) return [];
+
+    return payload.skatingDistanceLast10.flatMap((gameRow) => {
+      const game = objectOrNull(gameRow);
+      const gameId = parseGameIdFromGameCenterLink(game?.gameCenterLink);
+      if (!game || !gameId) return [];
+      const all = edgeMeasure(game.distanceSkatedAll);
+      const even = edgeMeasure(game.distanceSkatedEven);
+      const pp = edgeMeasure(game.distanceSkatedPP);
+      const pk = edgeMeasure(game.distanceSkatedPK);
+
+      return [{
+        snapshot_date: row.snapshot_date,
+        season_id: row.season_id,
+        game_type: row.game_type,
+        player_id: row.entity_id,
+        player_name: row.entity_name,
+        team_id: row.team_id,
+        team_abbreviation: row.team_abbreviation,
+        position: stringOrNull(row.metadata.playerPosition),
+        game_id: gameId,
+        game_date: stringOrNull(game.gameDate),
+        player_on_home_team: booleanOrNull(game.playerOnHomeTeam),
+        home_team_abbreviation: teamAbbreviationFromPayload(game.homeTeam),
+        away_team_abbreviation: teamAbbreviationFromPayload(game.awayTeam),
+        toi_all_seconds: integerOrNull(game.toiAll),
+        distance_skated_all_miles: all.imperial,
+        distance_skated_all_km: all.metric,
+        toi_even_seconds: integerOrNull(game.toiEven),
+        distance_skated_even_miles: even.imperial,
+        distance_skated_even_km: even.metric,
+        toi_pp_seconds: integerOrNull(game.toiPP),
+        distance_skated_pp_miles: pp.imperial,
+        distance_skated_pp_km: pp.metric,
+        toi_pk_seconds: integerOrNull(game.toiPK),
+        distance_skated_pk_miles: pk.imperial,
+        distance_skated_pk_km: pk.metric,
+        game_center_link: stringOrNull(game.gameCenterLink),
+        source_url: row.source_url,
+        raw_payload: game,
+        metadata: row.metadata,
+        updated_at: row.updated_at
+      }];
+    });
+  });
+}
+
+export function buildEdgeTeamSkatingDistanceGameRows(
+  rows: NhlEdgeStatsRow[]
+): NhlEdgeTeamSkatingDistanceGameRow[] {
+  return rows.flatMap((row) => {
+    if (row.entity_type !== "team" || row.endpoint_family !== "team-skating-distance-detail") {
+      return [];
+    }
+    const payload = row.payload as { skatingDistanceLast10?: unknown };
+    if (!Array.isArray(payload.skatingDistanceLast10)) return [];
+
+    return payload.skatingDistanceLast10.flatMap((gameRow) => {
+      const game = objectOrNull(gameRow);
+      const gameId = parseGameIdFromGameCenterLink(game?.gameCenterLink);
+      if (!game || !gameId) return [];
+      const all = edgeMeasure(game.distanceSkatedAll);
+      const even = edgeMeasure(game.distanceSkatedEven);
+      const pp = edgeMeasure(game.distanceSkatedPP);
+      const pk = edgeMeasure(game.distanceSkatedPK);
+
+      return [{
+        snapshot_date: row.snapshot_date,
+        season_id: row.season_id,
+        game_type: row.game_type,
+        team_id: row.entity_id,
+        team_abbreviation: row.team_abbreviation,
+        team_name: row.entity_name,
+        game_id: gameId,
+        game_date: stringOrNull(game.gameDate),
+        is_home_team: booleanOrNull(game.isHomeTeam),
+        home_team_abbreviation: teamAbbreviationFromPayload(game.homeTeam),
+        away_team_abbreviation: teamAbbreviationFromPayload(game.awayTeam),
+        toi_all_seconds: integerOrNull(game.toiAll),
+        distance_skated_all_miles: all.imperial,
+        distance_skated_all_km: all.metric,
+        toi_even_seconds: integerOrNull(game.toiEven),
+        distance_skated_even_miles: even.imperial,
+        distance_skated_even_km: even.metric,
+        toi_pp_seconds: integerOrNull(game.toiPP),
+        distance_skated_pp_miles: pp.imperial,
+        distance_skated_pp_km: pp.metric,
+        toi_pk_seconds: integerOrNull(game.toiPK),
+        distance_skated_pk_miles: pk.imperial,
+        distance_skated_pk_km: pk.metric,
+        game_center_link: stringOrNull(game.gameCenterLink),
+        source_url: row.source_url,
+        raw_payload: game,
+        metadata: row.metadata,
+        updated_at: row.updated_at
+      }];
+    });
+  });
 }

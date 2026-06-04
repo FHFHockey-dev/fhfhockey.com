@@ -143,6 +143,7 @@ export type BaselineDatasetBuildOptions = {
   predictionType?: BaselinePredictionType;
   featureFamily?: BaselineFeatureFamilyName;
   featureSelection?: BaselineFeatureSelection;
+  splitAssignments?: Array<{ gameId: number; split: DatasetSplit }>;
   splitConfig?: BaselineSplitConfig;
   seed?: number;
 };
@@ -432,11 +433,13 @@ export function buildEncodedBaselineDataset(
     options.featureSelection,
     options.featureFamily
   );
-  const splitAssignments = buildChronologicalGameSplitAssignments(
-    eligibleRows,
-    options.splitConfig,
-    options.seed ?? 42
-  );
+  const splitAssignments =
+    options.splitAssignments ??
+    buildChronologicalGameSplitAssignments(
+      eligibleRows,
+      options.splitConfig,
+      options.seed ?? 42
+    );
   const splitByGameId = new Map(
     splitAssignments.map((assignment) => [assignment.gameId, assignment.split])
   );

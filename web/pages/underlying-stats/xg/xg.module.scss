@@ -134,7 +134,7 @@ $page-max-width: 1600px;
 
 .metaGrid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: v.$space-sm;
 }
 
@@ -244,6 +244,22 @@ $page-max-width: 1600px;
   border-top: 1px solid v.$border-soft;
   color: v.$text-secondary;
   font-size: v.$font-size-xs;
+}
+
+.coverageBox {
+  display: grid;
+  gap: v.$space-xs;
+  margin: v.$space-md v.$space-lg 0;
+  padding: v.$space-md;
+  border: 1px solid rgba(v.$color-brand-yellow, 0.55);
+  border-radius: v.$radius-sm;
+  background: rgba(v.$color-brand-yellow, 0.08);
+  color: v.$text-primary;
+  font-size: v.$font-size-xs;
+
+  p {
+    margin: 0;
+  }
 }
 
 .errorBox,

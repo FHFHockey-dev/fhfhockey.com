@@ -43,6 +43,13 @@
 - `web/lib/NHL/edgeIngestion.ts` - NHL EDGE row builders and typed metric extraction.
 - `web/lib/NHL/edgeFeatureContract.ts` - Model-facing NHL EDGE feature contracts, join-plan helpers, and snapshot freshness validation.
 - `web/lib/NHL/edgeFeatureContract.test.ts` - Tests EDGE contracts, leakage-gated join plans, leaderboard exclusion, and stale snapshot handling.
+- `web/lib/NHL/pptReplayCoverage.ts` - Discovers NHL `pptReplayUrl` events from explicit gamecenter PBP fields and summarizes coverage by game/type.
+- `web/lib/NHL/pptReplayCoverage.test.ts` - Tests controlled replay URL discovery and non-goal coverage accounting.
+- `web/lib/NHL/pptReplayIngestion.ts` - Fetches discovered public replay URLs and builds raw payload plus normalized player/puck frame rows.
+- `web/lib/NHL/pptReplayIngestion.test.ts` - Tests raw replay payload row shaping, player frame normalization, puck inference, and failed fetch rows.
+- `web/pages/api/v1/db/audit-nhl-ppt-replay-coverage.ts` - Admin audit endpoint for replay URL coverage by selected game IDs or scheduled game ranges.
+- `web/pages/api/v1/db/update-nhl-ppt-replay-tracking.ts` - Admin endpoint that discovers PBP replay URLs, fetches public sprite JSON, and upserts raw payload/frame rows.
+- `migrations/20260530_create_nhl_ppt_replay_tracking_tables.sql` - Defines raw replay payload and normalized player/puck frame tables.
 - `migrations/20260527_create_nhl_xg_created_xg_tables.sql` - Defines player game and rolling created-xG aggregate tables with component breakdowns.
 - `web/lib/xg/createdXg.ts` - Builds distinct player created-xG aggregates from inferred shot-assist candidates and selected non-shooter transition credit.
 - `web/lib/xg/createdXg.test.ts` - Tests created-xG component aggregation, rolling windows, shooter self-credit exclusions, and reconciliation checks.
@@ -67,13 +74,22 @@
 - `web/pages/underlying-stats/teamStats/index.tsx` - Candidate UI surface for team-level xGF/xGA and transition metrics.
 - `web/pages/api/v1/underlying-stats/players.ts` - Existing player underlying-stats API that may be extended or joined with xG creation summaries.
 - `web/pages/api/v1/underlying-stats/teams.ts` - Existing team underlying-stats API that may be extended or joined with xG aggregate summaries.
+- `web/pages/api/v1/underlying-stats/xg.ts` - Read-only xG lab API with paginated Supabase reads, model resolution, and supplemental coverage warnings.
 - `web/components/underlying-stats/PlayerStatsTable.tsx` - Existing table component that supports adding extra player-stat columns.
 - `web/components/underlying-stats/playerStatsColumns.ts` - Existing player-stat column definitions where xG creation fields can be grouped.
+- `web/pages/underlying-stats/xg/index.tsx` - Dedicated xG lab page for player/team/goalie xG aggregate review before production wiring.
+- `web/pages/underlying-stats/xg/xg.module.scss` - xG lab page styles, including the visible supplemental coverage warning state.
+- `web/lib/underlying-stats/xgExplorer.ts` - xG lab row builders and supplemental coverage QA report helpers.
+- `web/lib/underlying-stats/xgExplorer.test.ts` - Focused tests for xG lab row merging and supplemental coverage warning thresholds.
+- `web/__tests__/pages/underlying-stats/xg/index.test.tsx` - Focused xG lab page/query tests that verify the read-only API path and scope switching.
 - `web/rules/context/cron-schedule.md` - Cron documentation and placement for xG feature/prediction refresh jobs.
 - `tasks/xg-training-feature-contract.md` - Current xG feature contract and leakage-exclusion reference.
 - `tasks/xg-training-dataset-contract.md` - Current xG training-row, label, split, and rebound-creation target contract.
 - `tasks/feature-leakage-registry.md` - Documentation for registry categories and onboarding requirements for new model features.
 - `tasks/nhl-edge-feature-contract.md` - Documents model-usable EDGE tables, grains, fields, and freshness/leakage semantics.
+- `web/lib/supabase/Upserts/fetchPbP.ts` - Existing PBP ingestion path that can discover NHL `pptReplayUrl` values when gamecenter exposes goal-replay sprite URLs.
+- `web/pages/api/v1/db/update-PbP.ts` - Existing operator endpoint for PBP ingestion and candidate source for replay URL discovery coverage checks.
+- `web/lib/projections/ingest/pbp.ts` - Normalized PBP ingestion layer that can be extended to preserve replay URL provenance for tracking ingestion.
 
 ### Notes
 
@@ -336,13 +352,13 @@
   - Added stale/future/missing snapshot freshness validation with a default 14-day maximum age.
   - Focused verification passed: `npx vitest --run lib/NHL/edgeFeatureContract.test.ts lib/NHL/edgeIngestion.test.ts lib/ml/featureLeakageRegistry.test.ts`; full `npx tsc --noEmit --pretty false --incremental false` passed.
 
-- [ ] 19.0 Add xG/trending model outputs to `underlying-stats` web pages
+- [x] 19.0 Add xG/trending model outputs to `underlying-stats` web pages
   - [x] 19.1 Decide whether the first UI should extend the existing player stats page or add a dedicated player creation/xG tab under `web/pages/underlying-stats/playerStats`.
   - [x] 19.2 Add a read-only underlying-stats API or Supabase view for player xG creation summaries; do not call admin backfill/operator endpoints from the page.
   - [x] 19.3 Surface player metrics including `ixG`, shot-assist candidates, expected primary assists, controlled entries/exits, entry assists, transition-created shots, transition-created xG, and distinct `created_xg` once task 10 is complete.
   - [x] 19.4 Add team-level xG/transition metrics to the team stats page, including xGF, xGA, xG%, controlled entries/exits, failed exits, and transition-created xG.
   - [x] 19.5 Add sorting, formatting, loading, empty-state, and API error handling consistent with the existing underlying-stats tables.
-  - [ ] 19.6 Add focused API/query tests and a browser smoke test for the new underlying-stats page or tab.
+  - [x] 19.6 Add focused API/query tests and a browser smoke test for the new underlying-stats page or tab.
 
   Notes:
   - Chose a dedicated lab route first: `/underlying-stats/xg`. The production player, goalie, and team drill-ins remain untouched until the xG output is reviewed and tuned.
@@ -351,4 +367,103 @@
   - The lab page exposes player, team, and goalie scopes with season/window/limit/model controls, loading/error/empty states, metadata chips, and compact sortable-by-contract server output.
   - Current smoke result on `http://localhost:3001`: page returns `200`; API returns `200` with an empty-state note when rolling aggregate rows have not been built yet.
   - Focused verification passed: `npx vitest --run lib/underlying-stats/xgExplorer.test.ts`; full `npx tsc --noEmit --pretty false --incremental false` passed.
-  - Browser visual smoke is still pending; the available headless Playwright path was not installed in this workspace.
+  - Browser smoke was completed through the in-app browser against the existing local dev server on port `3000`.
+  - Follow-up QA needed: after supplemental migrations/backfills, full-season 20252026 only produced `158` shot-assist candidate rows and `570` created-xG rolling rows. The lab now shows non-zero supplemental rows, but the creator metrics are too sparse for production confidence without investigating the public-PBP proxy contract.
+  - Added focused page/query coverage in `web/__tests__/pages/underlying-stats/xg/index.test.tsx` to verify the lab uses `/api/v1/underlying-stats/xg` and never calls `/api/v1/db/*` from scope controls.
+  - Final verification passed: `npx vitest --run __tests__/pages/underlying-stats/xg/index.test.tsx lib/underlying-stats/xgExplorer.test.ts`; full `npx tsc --noEmit --pretty false --incremental false` passed.
+  - Browser smoke on `http://localhost:3000/underlying-stats/xg` passed: page title and scope controls rendered, API settled to the empty state with `Rows=0` and `Source Rows=0`, and browser console errors were empty.
+
+- [x] 20.0 QA and improve sparse xG creator/transition supplemental coverage
+  - [x] 20.1 Audit why `update-nhl-xg-shot-assists` only produced `158` candidate rows from `118610` feature/prediction rows.
+  - [x] 20.2 Audit why created-xG only produced `190` player-game rows and `570` rolling rows for 20252026.
+  - [x] 20.3 Decide whether the shot-assist contract should use additional PBP fields, shift context, on-ice skater context, or another source before promoting created-xG to production pages.
+  - [x] 20.4 Add coverage QA thresholds so the xG lab flags sparse supplemental output instead of making zeros look authoritative.
+
+  Notes:
+  - Shot-assist funnel audit for `20252026`, feature version `1`, model `logistic_l2-s20252026-p1-st1-f1-cfg9bac2706`: `118610` endpoint feature inputs, `106628` non-rebound rows, `60869` previous same-team rows, `60308` positive previous-time rows, `22571` same-team rows within `8` seconds, and only `4265` rows after excluding faceoff/shot/rebound/giveaway/stoppage/penalty source types. Persisted candidates remain `158`.
+  - The dominant same-team-within-8 previous event types are faceoffs (`9023`), shots/misses/blocks (`8731` combined), hits (`2285`), takeaways (`1980`), and giveaways (`552`). The current contract only allows hits and takeaways, then actor/team/self-credit checks reduce candidates further.
+  - Created-xG sparsity is expected from source coverage: `158` shot-assist rows plus `191` creator transition rows produce `190` player-game created-xG rows and `570` rolling rows for the three configured windows.
+  - Transition table coverage is broader (`10847` rows), but most rows are `transition_created_shot` (`7611`) or `failed_exit_against_proxy` (`3045`); distinct creator credit intentionally uses only `controlled_entry_proxy`, `controlled_exit_proxy`, and `entry_assist_proxy`.
+  - Decision: do not promote created-xG zeros into production player/team/goalie pages yet. Treat public-PBP creator metrics as sparse proxy coverage until a richer source is added, likely PBP replay URL tracking where available plus on-ice/shift context and more explicit possession-chain attribution.
+  - Added xG lab coverage QA: API responses now include a `coverage` report and warning notes when supplemental created/transition/rebound rows are sparse relative to core rolling xG rows, and the lab page renders those warnings visibly.
+  - Focused verification passed: `npx vitest --run lib/underlying-stats/xgExplorer.test.ts __tests__/pages/underlying-stats/xg/index.test.tsx`; full `npx tsc --noEmit --pretty false --incremental false` passed. A live `localhost:3000` API smoke request timed out while fetching full-season paginated source rows, so response-time optimization remains a follow-up before production use.
+
+- [x] 21.0 Add controlled NHL `pptReplayUrl` tracking ingestion and coverage audit
+  - [x] 21.1 Audit NHL gamecenter PBP across target seasons to count `pptReplayUrl` coverage by season, game, event type, and game state.
+  - [x] 21.2 Create a controlled ingestion path that discovers `pptReplayUrl` only from NHL PBP rather than blind event-ID probing.
+  - [x] 21.3 Fetch discovered public replay URLs with normal NHL referer/user-agent headers and store raw JSON plus fetch status/provenance.
+  - [x] 21.4 Normalize replay frames into typed player/puck tracking rows with game ID, event ID, frame index, timestamp, player ID, team ID, x/y coordinates, and puck marker.
+  - [x] 21.5 Add an audit endpoint/report showing replay coverage by season/game/event type, including whether any non-goal events expose replay URLs.
+  - [x] 21.6 Document the limitation that current evidence points to goal-replay sprite frames, not full-game or all-event tracking, until coverage audits prove otherwise.
+
+  Notes:
+  - Live NHL PBP samples confirm `pptReplayUrl` is a top-level play field. Sampled games `2025030314`, `2024020096`, and `2023020001` exposed replay URLs only on `goal` events.
+  - Added controlled discovery in `web/lib/NHL/pptReplayCoverage.ts`; it only reads explicit `pptReplayUrl` fields already present in NHL gamecenter PBP and does not guess/probe `ev*.json` URLs.
+  - Added `/api/v1/db/audit-nhl-ppt-replay-coverage` for selected `gameIds` or bounded game ranges. Smoke test for `gameIds=2025030314,2024020096` processed `2` games, `718` total plays, `13` replay events, `13` goal replay events, and `0` non-goal replay events.
+  - Added `migrations/20260530_create_nhl_ppt_replay_tracking_tables.sql` for raw replay payload rows and normalized frame/object rows. Non-dry persistence requires applying this migration before running the update endpoint.
+  - Added `/api/v1/db/update-nhl-ppt-replay-tracking`, which discovers replay URLs from PBP, fetches only those exact URLs with NHL referer/user-agent headers, stores fetch status/provenance, and normalizes frame rows with `frame_index`, `frame_timestamp`, `tracking_object_id`, `player_id`, `team_id`, `x`, `y`, and `is_puck`.
+  - Replay payload shape check for `https://wsr.nhle.com/sprites/20252026/2025030314/ev428.json`: top-level array, `140` frames, each frame has `timeStamp` plus `onIce` keyed by tracking object ID; the puck appears as a blank-player/team object and is normalized with `is_puck=true`.
+  - Dry-run smoke test for `/api/v1/db/update-nhl-ppt-replay-tracking?gameIds=2025030314&limit=1&dryRun=true`: `4` discovered/fetched payload rows, `0` failed payload rows, and `7428` normalized frame rows.
+  - Supabase JSON-path ad hoc counting against `nhl_api_pbp_events.raw_event->pptReplayUrl` hit a statement timeout, so the repeatable coverage path should use bounded game selection plus NHL PBP payload discovery unless/until a typed replay URL column/table exists.
+  - Current limitation: every observed replay URL is a goal replay sprite, not full-game/all-event tracking. The ingestion contract preserves non-goal accounting if NHL exposes future non-goal URLs, but current evidence should not be treated as complete tracking coverage.
+  - Focused verification passed: `npx vitest --run lib/NHL/pptReplayCoverage.test.ts lib/NHL/pptReplayIngestion.test.ts lib/underlying-stats/xgExplorer.test.ts __tests__/pages/underlying-stats/xg/index.test.tsx`; full `npx tsc --noEmit --pretty false --incremental false` passed.
+
+- [x] 22.0 Optimize the xG lab API for interactive response times
+  - [x] 22.1 Avoid fetching every full-season rolling/source row when the page only needs the latest row per entity and a limited display set.
+  - [x] 22.2 Preserve complete paginated coverage counts or coverage QA through separate count/aggregate queries so the lab can still warn about sparse supplemental output.
+  - [x] 22.3 Add an API smoke/performance check that verifies `/api/v1/underlying-stats/xg` returns within an acceptable local timeout for player, team, and goalie scopes.
+
+  Notes:
+  - `/api/v1/underlying-stats/xg` now uses bounded interactive preview reads (`1000` recent source rows for the default `limit=5`) instead of paging every full-season source/supplemental table before slicing display rows.
+  - Full-table coverage counts are preserved through separate exact count queries for core rolling rows and supplemental created/transition/rebound rows. The coverage warning still uses full counts, not just preview rows.
+  - Fixed player created-xG merge behavior so the latest created-xG rolling row per player wins instead of an older row overwriting it.
+  - Local API smoke checks with `curl --max-time 30` passed for `scope=players`, `scope=teams`, and `scope=goalies`. Player response returned `rows=5`, `sourceRows=42236`, `supplementalRows=7274`, and the sparse created-xG warning. Team response returned `rows=5`, `sourceRows=2772`, `supplementalRows=2594`. Goalie response returned `rows=5`, `sourceRows=2922`, `supplementalRows=0`, and the no-supplemental warning.
+  - Focused verification passed: `npx vitest --run lib/underlying-stats/xgExplorer.test.ts __tests__/pages/underlying-stats/xg/index.test.tsx`; full `npx tsc --noEmit --pretty false --incremental false` passed.
+
+- [ ] 23.0 Apply Deep Research xG hardening recommendations
+  - [x] 23.1 Enforce artifact-feature manifest parity at scoring time: required selected features, encoded feature count, categorical vocabulary coverage, and fail-closed missing scoring payload keys.
+  - [x] 23.2 Persist training-time enrichment fields into `nhl_xg_shot_features`: shooter position/group, shooter handedness, goalie catch hand, shooter/goalie handedness matchup, deployment buckets, forward/defense counts, and matchup buckets.
+  - [x] 23.3 Add artifact feature-coverage and null-rate gates to model approval, including training null rates, allowed scoring drift, categorical unknown rates, and explicit missingness policy.
+  - [x] 23.4 Add a first-class xG model registry table with artifact checksum, feature manifest hash, calibration fingerprint, training/validation/test date ranges, approval status, deployment alias, and active/champion flags.
+  - [x] 23.5 Add multi-season training and true out-of-time validation with chronological outer holdouts plus grouped-by-game inner validation.
+  - [ ] 23.6 Add rink/arena, playoff, strength-state, and score-state calibration audits.
+  - [ ] 23.7 Build separate internal benchmark surfaces for all-situations unblocked xG and 5v5 non-empty-net unblocked xG.
+  - [ ] 23.8 Investigate NST/MoneyPuck/Evolving-Hockey taxonomy deltas before treating external xG disagreement as model failure.
+  - [ ] 23.9 Train calibrated challenger models under the same frozen contract: LightGBM, CatBoost, XGBoost, and state-partitioned variants.
+  - [ ] 23.10 Add flurry-adjusted xG as a parallel aggregate surface while retaining raw xG.
+  - [ ] 23.11 Separate baseline shot quality from lagged shooter-finishing and goalie-save residual skill layers.
+  - [ ] 23.12 Expand rebound modeling into separate rebound creation, rebound danger, goalie freeze/control, and second-chance xG heads.
+  - [ ] 23.13 Continue controlled NHL replay/tracking audits and use real tracking only after stable event-to-frame alignment is proven.
+  - [ ] 23.14 Add database-backed advisory locks or queue-backed execution for long-running xG backfills, prediction scoring, and aggregate builds.
+  - [ ] 23.15 Add an xG operations dashboard for feature null-rate drift, prediction coverage, calibration drift, aggregate reconciliation, and artifact-contract mismatches.
+
+  Notes:
+  - Added artifact feature-contract auditing in `web/lib/xg/shotFeaturePersistence.ts`. The audit now verifies duplicate selected features, categorical level availability, `featureKeys` length, model feature count, and selected-feature presence in scoring payloads.
+  - `encodeFeatureVector` now fails closed when a persisted scoring payload is missing a selected model feature instead of silently imputing an absent key to zero.
+  - `/api/v1/db/update-nhl-xg-shot-predictions?action=health` now returns `featureContract` status, and scoring requests reject artifacts whose static feature contract is invalid before starting a backfill.
+  - Prediction row building now audits each scoring batch before writing rows, so feature-payload contract violations stop the run before corrupted predictions are upserted.
+  - Current approved shot-goal artifact audit passed locally: `encodedFeatureCount=72`, selected counts `numeric=13`, `boolean=8`, `categorical=6`, no issues. A 10-row persisted feature sample for 20252026 also passed.
+  - Focused verification passed: `npx vitest --run lib/xg/shotFeaturePersistence.test.ts`; full TypeScript verification passed: `npx tsc --noEmit --pretty false --incremental false`.
+  - Added `web/lib/xg/shotFeatureEnrichment.ts` to move training-time enrichment into the persisted feature build path. It fetches shooter handedness from `player_stats_unified`, goalie catch hand from `goalie_stats_unified`, roster positions from `players`, and deployment buckets/counts from `nhl_api_shift_rows` stints.
+  - `/api/v1/db/update-nhl-xg-shot-features` now enriches built shot rows before upsert so `feature_payload` includes shooter position/group, defenseman shooter flag, shooter hand, goalie catch hand, shooter-goalie hand matchup, on-ice forward/defense counts, goalie-on-ice flags, deployment buckets, and role matchup bucket.
+  - Added `migrations/20260601_add_nhl_xg_shot_feature_enrichment_columns.sql` so those fields are also queryable as typed `nhl_xg_shot_features` columns. Apply this migration before running the updated feature backfill endpoint against Supabase.
+  - Added `web/lib/xg/shotFeatureEnrichment.test.ts`. Focused verification passed: `npx vitest --run lib/xg/shotFeatureEnrichment.test.ts lib/xg/shotFeaturePersistence.test.ts lib/supabase/Upserts/nhlShotFeatureBuilder.test.ts lib/xg/deploymentContext.test.ts`; full TypeScript verification passed: `npx tsc --noEmit --pretty false --incremental false`.
+  - Local non-upsert smoke for game `2025020001` built `119` rows; roster position and deployment bucket populated on all `119`, shooter handedness on `63`, goalie catch hand on `82`.
+  - Added `web/lib/xg/featureCoverage.ts` to build selected-feature coverage profiles with explicit missingness policy: missing keys fail, numeric nulls encode as zero, boolean nulls encode as false, categorical nulls encode as all-zero, scoring drift checks require at least `1000` rows, max null-rate drift defaults to `0.25`, and max categorical unknown-level rate defaults to `0.05`.
+  - New model and dataset artifacts generated by `web/scripts/train-nhl-xg-baseline.ts` now include `featureCoverage`. Approval-grade eligibility now includes coverage blocking reasons, so selected features that are absent or entirely unpopulated in training rows cannot produce an approved artifact.
+  - Prediction artifact health now returns `featureCoverage` summary when present. Scoring-batch audits compare large scoring samples against training coverage and block large null-rate drift or categorical unknown-rate drift when an artifact declares a coverage profile. Legacy artifacts without `featureCoverage` remain backward-compatible.
+  - Current approved legacy shot-goal artifact still passes static contract audit locally; it has no coverage profile because it was generated before this gate.
+  - Focused verification passed: `npx vitest --run lib/xg/featureCoverage.test.ts scripts/train-nhl-xg-baseline.test.ts lib/xg/shotFeaturePersistence.test.ts`; full TypeScript verification passed: `npx tsc --noEmit --pretty false --incremental false`.
+  - Added `migrations/20260601_create_nhl_xg_model_registry.sql` for `nhl_xg_model_registry`. The table stores model version, prediction type, artifact checksum, feature-manifest hash, calibration fingerprint, split date ranges, split counts, approval status, deployment alias, active flag, champion flag, and artifact metadata. Apply this migration before calling the registry endpoint.
+  - Added `web/lib/xg/modelRegistry.ts` and `web/lib/xg/modelRegistry.test.ts` to build deterministic registry rows from model artifacts, hash artifact files, fingerprint feature/calibration contracts, and upsert registry rows while deactivating prior active/champion rows for the same prediction type/alias.
+  - Added `/api/v1/db/register-nhl-xg-model`. It loads `modelArtifactPath` or `NHL_XG_MODEL_ARTIFACT_PATH`, verifies the artifact feature contract, and upserts the registry row. Optional query params: `deploymentAlias`, `active=true`, `champion=true`, and `approvalStatus=candidate|approved|rejected|retired`.
+  - Updated new training artifacts to include `splitDateRanges` for train/validation/test. Legacy artifacts can still register, but split date columns will be null if the artifact predates this metadata.
+  - Local registry-row smoke for the current approved artifact produced checksum `1e56fba527b0fb51def027de9836228a092af99b7c17b8d57f7ad9e48200272a`, feature-manifest hash `3ac7a98e4d38f9f0de9c42c65d7a6956e9dff81939012b0f3939610cb67fc211`, calibration fingerprint `7779954dfb505b771fce269339ddc9ca707269fbb7b7f895071cebf01237016a`, approval status `approved`, and split counts `82636/17829/17834`.
+  - Focused verification passed: `npx vitest --run lib/xg/modelRegistry.test.ts scripts/train-nhl-xg-baseline.test.ts lib/xg/featureCoverage.test.ts lib/xg/shotFeaturePersistence.test.ts`; full TypeScript verification passed: `npx tsc --noEmit --pretty false --incremental false`.
+  - Added multi-season trainer flags to `web/scripts/train-nhl-xg-baseline.ts`: `--seasons 20232024,20242025,20252026` and optional `--testSeasons 20252026`.
+  - When `--testSeasons` is supplied, all games from those seasons are assigned to the dedicated `test` split as a true out-of-time outer holdout. Remaining games are assigned by whole game to train/validation using chronological order, so same-game shots cannot cross splits.
+  - Artifact tags and config signatures now include the season scope and out-of-time test-season scope. New artifacts carry `seasonScopes` and train/validation/test `splitDateRanges`; legacy `seasonScope` is preserved for single-season artifacts.
+  - `buildEncodedBaselineDataset` now accepts explicit game-level split assignments, which keeps split ownership centralized while allowing external split policies such as out-of-time seasons.
+  - Example multi-season command: `DOTENV_CONFIG_PATH=.env.local NODE_PATH=. ./node_modules/.bin/ts-node -r dotenv/config --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/train-nhl-xg-baseline.ts --seasons 20232024,20242025,20252026 --testSeasons 20252026 --family logistic_l2 --featureFamily expanded_v2 --predictionType shot_goal`.
+  - Local Supabase only currently has normalized xG PBP rows for `20252026`, so full live multi-season training could not be smoke-run against local data yet. The split policy itself is covered by tests.
+  - Focused verification passed: `npx vitest --run lib/xg/baselineDataset.test.ts scripts/train-nhl-xg-baseline.test.ts lib/xg/modelRegistry.test.ts`; full TypeScript verification passed: `npx tsc --noEmit --pretty false --incremental false`.

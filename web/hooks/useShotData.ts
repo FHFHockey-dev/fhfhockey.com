@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import supabase from "lib/supabase";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 
 export interface ShotData {
   xcoord: number;
@@ -71,8 +72,6 @@ export function useShotData(
         // First get all games for this team and season using pagination
         let allGames: { id: number; hometeamid: number; awayteamid: number }[] =
           [];
-        let hasMoreGames = true;
-        let gamesPage = 0;
 
         // Initialize game type filter condition
         const gameTypeFilters =
@@ -81,7 +80,7 @@ export function useShotData(
             return `id.like.${seasonStart}${gameType}%`;
           }) || [];
 
-        while (hasMoreGames) {
+        const games = await fetchAllSupabasePages<any>(({ from, to }) => {
           let gamesQuery = supabase
             .from("pbp_games")
             .select("id, hometeamid, awayteamid")
@@ -91,40 +90,19 @@ export function useShotData(
             `hometeamid.eq.${teamId},awayteamid.eq.${teamId}`
           );
 
-          gamesQuery = gamesQuery.range(
-            gamesPage * PAGE_SIZE,
-            (gamesPage + 1) * PAGE_SIZE - 1
-          );
+          return gamesQuery.range(from, to) as any;
+        }, { pageSize: PAGE_SIZE });
 
-          const { data: games, error: gamesError } = await gamesQuery;
-          console.log(
-            "Fetched games for team",
-            teamId,
-            ":",
-            games?.length || 0
-          );
+        console.log("Fetched games for team", teamId, ":", games.length);
 
-          if (gamesError) {
-            throw new Error(`Error fetching games: ${gamesError.message}`);
-          }
-
-          if (!games || games.length === 0) {
-            hasMoreGames = false;
-          } else {
-            // Only keep games with non-null hometeamid and awayteamid, and cast to number
-            allGames = allGames.concat(
-              games
-                .filter((g) => g.hometeamid !== null && g.awayteamid !== null)
-                .map((g) => ({
-                  id: g.id,
-                  hometeamid: g.hometeamid as number,
-                  awayteamid: g.awayteamid as number
-                }))
-            );
-            hasMoreGames = games.length === PAGE_SIZE;
-            gamesPage++;
-          }
-        }
+        // Only keep games with non-null hometeamid and awayteamid, and cast to number
+        allGames = games
+          .filter((g) => g.hometeamid !== null && g.awayteamid !== null)
+          .map((g) => ({
+            id: g.id,
+            hometeamid: g.hometeamid as number,
+            awayteamid: g.awayteamid as number
+          }));
 
         if (allGames.length === 0) {
           setShotData([]);
@@ -158,9 +136,7 @@ export function useShotData(
 
         // Process each chunk of game IDs
         for (const gameIdChunk of gameIdChunks) {
-          let hasMoreEvents = true;
-          let eventsPage = 0;
-          while (hasMoreEvents) {
+          const events = await fetchAllSupabasePages<any>(({ from, to }) => {
             let eventsQuery = supabase
               .from("pbp_plays")
               .select(
@@ -174,18 +150,12 @@ export function useShotData(
             if (filters.eventTypes && filters.eventTypes.length > 0) {
               eventsQuery = eventsQuery.in("typedesckey", filters.eventTypes);
             }
-            eventsQuery = eventsQuery.range(
-              eventsPage * PAGE_SIZE,
-              (eventsPage + 1) * PAGE_SIZE - 1
-            );
-            const { data: events, error: eventsError } = await eventsQuery;
-            if (eventsError) {
-              throw new Error(`Error fetching events: ${eventsError.message}`);
-            }
-            if (!events || events.length === 0) {
-              hasMoreEvents = false;
-            } else {
-              console.log("All events count:", events.length);
+
+            return eventsQuery.range(from, to) as any;
+          }, { pageSize: PAGE_SIZE });
+
+          if (events.length > 0) {
+            console.log("All events count:", events.length);
 
               // Split into team and opponent events
               // More permissive filtering for valid shots, with coordinate normalization
@@ -243,8 +213,6 @@ export function useShotData(
 
               allShots = allShots.concat(validTeamShots);
               allOpponentShots = allOpponentShots.concat(validOpponentShots);
-              hasMoreEvents = events.length === PAGE_SIZE;
-              eventsPage++;
 
               // Log some debugging info about the shot data
               console.log(
@@ -258,7 +226,6 @@ export function useShotData(
               if (validOpponentShots.length > 0) {
                 console.log("Sample opponent shot:", validOpponentShots[0]);
               }
-            }
           }
         }
 

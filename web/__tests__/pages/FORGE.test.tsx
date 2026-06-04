@@ -124,35 +124,41 @@ describe("FORGE landing page", () => {
 
     render(<FORGEPage />);
 
-    expect(await screen.findByText("Slate Preview")).toBeTruthy();
-    expect(screen.getByText("Top Player Adds")).toBeTruthy();
-    expect(screen.getByText("Sustainability Preview")).toBeTruthy();
+    expect(await screen.findByText("Tonight's Games")).toBeTruthy();
+    expect(screen.getByText("Best Waiver Adds")).toBeTruthy();
+    expect(screen.getByText("Trust Or Fade")).toBeTruthy();
     expect(screen.getByText("Top Add")).toBeTruthy();
     expect(screen.getByText("Trustworthy Skater")).toBeTruthy();
     expect(screen.getByText("Overheated Skater")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Open Full Dashboard" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Open Dashboard" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe(
       "/forge/dashboard?date=2026-03-14"
     );
-    expect(screen.getByRole("link", { name: "Start Chart" }).getAttribute("href")).toBe(
+    expect(screen.getByRole("link", { name: "Goalie Starts" }).getAttribute("href")).toBe(
       "/start-chart?date=2026-03-14"
     );
-    expect(screen.getByRole("link", { name: "Trends" }).getAttribute("href")).toBe(
+    expect(screen.getByRole("link", { name: "Player Trends" }).getAttribute("href")).toBe(
       "/trends?date=2026-03-14"
     );
-    expect(screen.getByRole("link", { name: "Open Start Chart" }).getAttribute("href")).toBe(
+    expect(screen.getByRole("link", { name: "See Goalie Starts" }).getAttribute("href")).toBe(
       "/start-chart?date=2026-03-14"
     );
   });
 
-  it("shows an error state when preview fetches fail", async () => {
+  it("shows unavailable preview states when preview fetches fail", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({}, false, 500)));
 
     render(<FORGEPage />);
 
     await waitFor(() => {
       expect(
-        screen.getByText("Error: FORGE previews are temporarily unavailable.")
+        screen.getByText("Game preview unavailable. Open goalie starts for a live retry.")
+      ).toBeTruthy();
+      expect(
+        screen.getByText("Top Adds preview unavailable. Open the dashboard for live retry.")
+      ).toBeTruthy();
+      expect(
+        screen.getByText("Trust and fade preview is partial. Open the dashboard for the full view.")
       ).toBeTruthy();
     });
   });
@@ -235,7 +241,7 @@ describe("FORGE landing page", () => {
       screen.getByText("Top Adds preview unavailable. Open the dashboard for live retry.")
     ).toBeTruthy();
     expect(
-      screen.getByText("Using latest available sustainability snapshot from 2026-03-12.")
+      screen.getByText("Using latest available trust and fade data from 2026-03-12.")
     ).toBeTruthy();
     expect(screen.getAllByText("Trustworthy Skater").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Overheated Skater").length).toBeGreaterThan(0);
