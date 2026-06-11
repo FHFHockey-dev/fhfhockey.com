@@ -78,6 +78,9 @@
  *
  */
 
+// https://www.naturalstattrick.com/playerteams.php?fromseason=20242025&thruseason=20242025&stype=2&sit=5v5&score=all&stdoi=std&rate=n&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-04-16&td=2025-04-16&tgp=410&lines=single&draftteam=ALL
+// https://www.naturalstattrick.com/playerteams.php?fromseason=20242025&thruseason=20242025&stype=2&sit=5v5&score=all&stdoi=std&rate=n&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-04-16&td=2025-04-16&tgp=410&lines=single&draftteam=ALL
+
 //  https://www.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&sit=pk&score=all&stdoi=oi&  rate=y&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-23&td=2025-10-23&tgp=410&lines=single&draftteam=ALL
 // `https://www.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&sit=all&score=all&stdoi=std&rate=n&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-04-17&td=2026-04-17&lines=single&draftteam=ALL&tgp=410
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -1433,9 +1436,9 @@ async function fetchAndParseData(
       }
       if (isNstNotFoundError(error)) {
         console.warn(
-          `NST returned 404 for ${datasetType} ${effectiveDate}; aborting this backfill because scheduled-date queries should expose a table.`
+          `NST returned 404 for ${datasetType} ${effectiveDate}; treating this query as unavailable/no upstream page.`
         );
-        throw error;
+        return { success: true, data: [] };
       }
       console.error(
         `Attempt ${attempt}/${retries} - Error fetching/parsing ${url}:`,
@@ -1464,10 +1467,6 @@ async function fetchAndParseData(
 
 // --- URL Construction ---
 
-function encodeNstDateParam(date: string): string {
-  return date.replace(/-/g, "%2D");
-}
-
 function constructUrlsForDate(
   date: string,
   seasonId: string,
@@ -1479,7 +1478,8 @@ function constructUrlsForDate(
     parse(date, "yyyy-MM-dd", new Date()),
     "yyyy-MM-dd"
   );
-  const encodedDate = encodeNstDateParam(formattedDate);
+
+  const commonParams = `fromseason=${fromSeason}&thruseason=${thruSeason}&stype=${seasonType}&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=${formattedDate}&td=${formattedDate}&lines=single&draftteam=ALL`;
 
   const strengths: Record<string, string> = {
     allStrengths: "all",
@@ -1502,7 +1502,7 @@ function constructUrlsForDate(
           datasetType += "Oi";
         }
         const tgp = "410";
-        const url = `${BASE_URL}?fromseason=${fromSeason}&thruseason=${thruSeason}&stype=${seasonType}&sit=${sitParam}&score=all&stdoi=${stdoi}&rate=${rate}&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=${encodedDate}&td=${encodedDate}&tgp=${tgp}&lines=single&draftteam=ALL`;
+        const url = `${BASE_URL}?sit=${sitParam}&score=all&stdoi=${stdoi}&rate=${rate}&team=ALL&${commonParams}&tgp=${tgp}`;
         urls[datasetType] = url;
       }
     }
