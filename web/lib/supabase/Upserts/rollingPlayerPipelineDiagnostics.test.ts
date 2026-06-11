@@ -534,4 +534,35 @@ describe("summarizeSourceTailFreshness", () => {
     });
     expect(result.warnings).toEqual([]);
   });
+
+  it("does not count non-active split-strength WGO dates as NST tail blockers", () => {
+    const result = summarizeSourceTailFreshness({
+      playerId: 23,
+      strength: "pp",
+      wgoRows: [
+        { date: "2026-04-15", game_id: 300, pp_toi: 45 },
+        { date: "2026-04-16", game_id: 301, pp_toi: 0 }
+      ],
+      countsRows: [{ date_scraped: "2026-04-15" }],
+      ratesRows: [{ date_scraped: "2026-04-15" }],
+      countsOiRows: [{ date_scraped: "2026-04-15" }],
+      ppRows: [{ gameId: 300, pp_share_of_team: 0.4, unit: 1 }],
+      lineRows: [{ gameId: 300 }, { gameId: 301 }]
+    });
+
+    expect(result.blockers).toEqual({
+      countsTailLag: 0,
+      ratesTailLag: 0,
+      countsOiTailLag: 0,
+      ppTailLag: 0,
+      lineTailLag: 0
+    });
+    expect(result.latest).toMatchObject({
+      wgoDate: "2026-04-16",
+      countsDate: "2026-04-15",
+      ratesDate: "2026-04-15",
+      countsOiDate: "2026-04-15"
+    });
+    expect(result.warnings).toEqual([]);
+  });
 });

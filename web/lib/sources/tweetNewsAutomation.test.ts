@@ -6,6 +6,7 @@ import {
   type TweetNewsAutomationPlayer,
   type TweetNewsAutomationReviewRow,
 } from "./tweetNewsAutomation";
+import { normalizeNewsTeamId } from "../newsFeed";
 
 const players: TweetNewsAutomationPlayer[] = [
   { id: 1, fullName: "Andrei Vasilevskiy", position: "G", team_id: 14 },
@@ -164,5 +165,13 @@ describe("tweet news automation", () => {
       ambiguityReason: "missing_required_evidence",
       missingRequiredEvidence: ["team", "goalie"],
     });
+  });
+
+  it("nulls stale team ids before automated news writes", () => {
+    const validTeamIds = new Set([8, 14]);
+
+    expect(normalizeNewsTeamId(14, validTeamIds)).toBe(14);
+    expect(normalizeNewsTeamId(59, validTeamIds)).toBeNull();
+    expect(normalizeNewsTeamId(null, validTeamIds)).toBeNull();
   });
 });

@@ -101,6 +101,7 @@ export type RollingMetricKey =
   | "hits_per_60"
   | "blocks_per_60"
   | "penalties_drawn_per_60"
+  | "penalties_taken_per_60"
   | "oz_start_pct"
   | "pp_share_pct"
   | "on_ice_sh_pct"
@@ -116,6 +117,7 @@ export type RollingMetricKey =
   | "primary_assists"
   | "secondary_assists"
   | "penalties_drawn"
+  | "penalties_taken"
   | "shots"
   | "hits"
   | "blocks"
@@ -140,6 +142,7 @@ export const ROLLING_METRIC_WINDOW_FAMILIES: Record<
   hits_per_60: "weighted_rate_performance",
   blocks_per_60: "weighted_rate_performance",
   penalties_drawn_per_60: "weighted_rate_performance",
+  penalties_taken_per_60: "weighted_rate_performance",
   oz_start_pct: "ratio_performance",
   pp_share_pct: "ratio_performance",
   on_ice_sh_pct: "ratio_performance",
@@ -155,6 +158,7 @@ export const ROLLING_METRIC_WINDOW_FAMILIES: Record<
   primary_assists: "additive_performance",
   secondary_assists: "additive_performance",
   penalties_drawn: "additive_performance",
+  penalties_taken: "additive_performance",
   shots: "additive_performance",
   hits: "additive_performance",
   blocks: "additive_performance",

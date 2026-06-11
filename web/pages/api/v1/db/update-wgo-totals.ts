@@ -234,9 +234,26 @@ async function batchUpsert(
     return;
   }
 
+  const keyedRows = new Map<string, any>();
+  const rowsMissingConflictKey: any[] = [];
+  for (const row of dataArray) {
+    if (row?.player_id === undefined || row?.season === undefined) {
+      rowsMissingConflictKey.push(row);
+      continue;
+    }
+    keyedRows.set(`${row.player_id}:${row.season}`, row);
+  }
+  const rowsToUpsert = [...keyedRows.values(), ...rowsMissingConflictKey];
+  const duplicatesSkipped = dataArray.length - rowsToUpsert.length;
+  if (duplicatesSkipped > 0) {
+    console.log(
+      `Deduped ${duplicatesSkipped} duplicate ${tableName} rows before upsert.`,
+    );
+  }
+
   const chunks = [];
-  for (let i = 0; i < dataArray.length; i += batchSize) {
-    chunks.push(dataArray.slice(i, i + batchSize));
+  for (let i = 0; i < rowsToUpsert.length; i += batchSize) {
+    chunks.push(rowsToUpsert.slice(i, i + batchSize));
   }
   const limit = pLimit(concurrency);
   await Promise.all(

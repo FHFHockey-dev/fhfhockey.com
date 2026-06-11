@@ -72,6 +72,13 @@ export type TeamOption = {
   logoUrl: string;
 };
 
+export function normalizeNewsTeamId(
+  teamId: number | null | undefined,
+  validTeamIds: ReadonlySet<number>,
+): number | null {
+  return typeof teamId === "number" && validTeamIds.has(teamId) ? teamId : null;
+}
+
 function normalizeWhitespace(value: string): string {
   return value.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
 }

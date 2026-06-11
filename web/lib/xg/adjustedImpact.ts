@@ -128,9 +128,45 @@ export type AdjustedImpactLeakageValidationReport = {
   };
 };
 
+export type AdjustedImpactHeldOutValidationOptions = AdjustedImpactFitOptions & {
+  validationFraction?: number;
+  minTrainingRows?: number;
+  minValidationRows?: number;
+  minimumMseImprovement?: number;
+};
+
+export type AdjustedImpactHeldOutValidationReport = {
+  passed: boolean;
+  blocking_reasons: string[];
+  warnings: string[];
+  split: {
+    strategy: "chronological_game_date";
+    validation_fraction: number;
+    training_rows: number;
+    validation_rows: number;
+    training_start_game_date: string | null;
+    training_end_game_date: string | null;
+    validation_start_game_date: string | null;
+    validation_end_game_date: string | null;
+  };
+  metrics: {
+    training_mean_response: number | null;
+    validation_mse: number | null;
+    baseline_mse: number | null;
+    mse_improvement: number | null;
+    mse_improvement_percentage: number | null;
+  };
+  model_summary: {
+    training_players: number;
+    validation_players: number;
+    unseen_validation_players: number;
+  };
+};
+
 const DEFAULT_FIT_ITERATIONS = 500;
 const DEFAULT_FIT_LEARNING_RATE = 0.03;
 const DEFAULT_FIT_L2 = 0.1;
+const DEFAULT_VALIDATION_FRACTION = 0.2;
 
 function roundMetric(value: number): number {
   return Number(value.toFixed(6));
@@ -219,6 +255,56 @@ function sparsePrediction(args: {
     prediction += (args.contextWeights.get(key) ?? 0) * value;
   }
   return prediction;
+}
+
+function baselineModelPrediction(row: AdjustedImpactDesignRow, model: AdjustedImpactBaselineModel): number {
+  const playerWeights = new Map(
+    model.player_estimates.map((estimate) => [estimate.player_id, estimate.coefficient])
+  );
+  const contextWeights = new Map(
+    model.context_estimates.map((estimate) => [estimate.feature_key, estimate.coefficient])
+  );
+  return sparsePrediction({
+    row,
+    intercept: model.intercept,
+    playerWeights,
+    contextWeights,
+  });
+}
+
+function datedRows(rows: AdjustedImpactDesignRow[]): AdjustedImpactDesignRow[] {
+  return rows
+    .filter((row) => typeof row.game_date === "string" && row.game_date.length > 0)
+    .sort((left, right) => {
+      const dateDelta = left.game_date!.localeCompare(right.game_date!);
+      if (dateDelta !== 0) return dateDelta;
+      const gameDelta = left.game_id - right.game_id;
+      return gameDelta !== 0 ? gameDelta : left.event_id - right.event_id;
+    });
+}
+
+function responseMean(rows: AdjustedImpactDesignRow[]): number {
+  return rows.reduce((sum, row) => sum + row.response_xg_differential, 0) / rows.length;
+}
+
+function meanSquaredError(rows: AdjustedImpactDesignRow[], predictor: (row: AdjustedImpactDesignRow) => number): number {
+  return (
+    rows.reduce((sum, row) => {
+      const error = predictor(row) - row.response_xg_differential;
+      return sum + error * error;
+    }, 0) / rows.length
+  );
+}
+
+function minMaxGameDate(rows: AdjustedImpactDesignRow[]): { min: string | null; max: string | null } {
+  const dates = rows
+    .map((row) => row.game_date)
+    .filter((date): date is string => typeof date === "string" && date.length > 0)
+    .sort();
+  return {
+    min: dates[0] ?? null,
+    max: dates[dates.length - 1] ?? null,
+  };
 }
 
 export function buildAdjustedImpactDesignRows(args: {
@@ -460,6 +546,108 @@ export function fitAdjustedImpactBaseline(
       context_features: contextKeys.size,
       mean_response: roundMetric(meanResponse),
       mse: roundMetric(mse),
+    },
+  };
+}
+
+export function validateAdjustedImpactHeldOut(
+  rows: AdjustedImpactDesignRow[],
+  options: AdjustedImpactHeldOutValidationOptions = {}
+): AdjustedImpactHeldOutValidationReport {
+  const validationFraction = Math.min(
+    Math.max(options.validationFraction ?? DEFAULT_VALIDATION_FRACTION, 0.05),
+    0.5
+  );
+  const minTrainingRows = options.minTrainingRows ?? 1;
+  const minValidationRows = options.minValidationRows ?? 1;
+  const minimumMseImprovement = options.minimumMseImprovement ?? 0;
+  const blockingReasons: string[] = [];
+  const warnings: string[] = [];
+  const withDates = datedRows(rows);
+  const uniqueDates = Array.from(new Set(withDates.map((row) => row.game_date!)));
+
+  if (withDates.length !== rows.length) {
+    warnings.push("rows_without_game_dates_excluded_from_held_out_validation");
+  }
+  if (uniqueDates.length < 2) {
+    blockingReasons.push("insufficient_distinct_game_dates_for_chronological_validation");
+  }
+
+  const validationDateCount = Math.max(1, Math.ceil(uniqueDates.length * validationFraction));
+  const validationStartDate = uniqueDates[Math.max(1, uniqueDates.length - validationDateCount)] ?? null;
+  const trainingRows = validationStartDate
+    ? withDates.filter((row) => row.game_date! < validationStartDate)
+    : [];
+  const validationRows = validationStartDate
+    ? withDates.filter((row) => row.game_date! >= validationStartDate)
+    : [];
+  const trainingDates = minMaxGameDate(trainingRows);
+  const validationDates = minMaxGameDate(validationRows);
+
+  if (trainingRows.length < minTrainingRows) {
+    blockingReasons.push("insufficient_training_rows_for_held_out_validation");
+  }
+  if (validationRows.length < minValidationRows) {
+    blockingReasons.push("insufficient_validation_rows_for_held_out_validation");
+  }
+
+  let trainingMean: number | null = null;
+  let validationMse: number | null = null;
+  let baselineMse: number | null = null;
+  let mseImprovement: number | null = null;
+  let mseImprovementPercentage: number | null = null;
+  let trainingPlayers = 0;
+  let validationPlayers = 0;
+  let unseenValidationPlayers = 0;
+
+  if (blockingReasons.length === 0) {
+    const model = fitAdjustedImpactBaseline(trainingRows, options);
+    const trainingPlayerIds = new Set(model.player_estimates.map((estimate) => estimate.player_id));
+    const validationPlayerIds = new Set(
+      validationRows.flatMap((row) => row.player_coefficients.map((coefficient) => coefficient.player_id))
+    );
+    trainingMean = roundMetric(responseMean(trainingRows));
+    validationMse = roundMetric(meanSquaredError(validationRows, (row) => baselineModelPrediction(row, model)));
+    baselineMse = roundMetric(meanSquaredError(validationRows, () => trainingMean!));
+    mseImprovement = roundMetric(baselineMse - validationMse);
+    mseImprovementPercentage =
+      baselineMse === 0 ? null : roundMetric((mseImprovement / baselineMse) * 100);
+    trainingPlayers = trainingPlayerIds.size;
+    validationPlayers = validationPlayerIds.size;
+    unseenValidationPlayers = Array.from(validationPlayerIds).filter(
+      (playerId) => !trainingPlayerIds.has(playerId)
+    ).length;
+
+    if (mseImprovement < minimumMseImprovement) {
+      blockingReasons.push("held_out_mse_does_not_improve_over_training_mean_baseline");
+    }
+  }
+
+  return {
+    passed: blockingReasons.length === 0,
+    blocking_reasons: blockingReasons,
+    warnings,
+    split: {
+      strategy: "chronological_game_date",
+      validation_fraction: validationFraction,
+      training_rows: trainingRows.length,
+      validation_rows: validationRows.length,
+      training_start_game_date: trainingDates.min,
+      training_end_game_date: trainingDates.max,
+      validation_start_game_date: validationDates.min,
+      validation_end_game_date: validationDates.max,
+    },
+    metrics: {
+      training_mean_response: trainingMean,
+      validation_mse: validationMse,
+      baseline_mse: baselineMse,
+      mse_improvement: mseImprovement,
+      mse_improvement_percentage: mseImprovementPercentage,
+    },
+    model_summary: {
+      training_players: trainingPlayers,
+      validation_players: validationPlayers,
+      unseen_validation_players: unseenValidationPlayers,
     },
   };
 }

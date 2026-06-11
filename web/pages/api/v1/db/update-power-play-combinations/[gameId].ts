@@ -12,6 +12,50 @@ import { getAvg } from "components/LinemateMatrix/utilities";
 import getPowerPlayBlocks from "utils/getPowerPlayBlocks";
 import { buildPowerPlayCombinationRows } from "lib/supabase/Upserts/powerPlayCombinationMetrics";
 
+type ToiRawData = Awaited<ReturnType<typeof fetchTOIRawData>>;
+
+type PowerPlayCombinationUpdateSummary = {
+  gameId: number;
+  rowCount: number;
+  teamCount: number;
+  shiftSource: string;
+};
+
+function getShiftRows(rawData: ToiRawData): unknown[] {
+  const rows = rawData[0]?.data;
+  return Array.isArray(rows) ? rows : [];
+}
+
+async function fetchTOIRawDataForPowerPlayCombinations(
+  gameId: number
+): Promise<{ rawData: ToiRawData; shiftSource: string }> {
+  const rawData = await fetchTOIRawData(gameId);
+  if (getShiftRows(rawData).length > 0) {
+    return { rawData, shiftSource: "json-api" };
+  }
+
+  const { fetchNhlApiRawGamePayloads } = await import(
+    "lib/supabase/Upserts/nhlRawGamecenter.mjs"
+  );
+  const fallbackPayload = await fetchNhlApiRawGamePayloads(gameId);
+  const shiftcharts = fallbackPayload?.payloads?.shiftcharts;
+  const fallbackRows = Array.isArray(shiftcharts?.data)
+    ? shiftcharts.data
+    : [];
+
+  if (fallbackRows.length === 0) {
+    return {
+      rawData,
+      shiftSource: shiftcharts?.source ?? "json-api-empty"
+    };
+  }
+
+  return {
+    rawData: [{ data: fallbackRows }, rawData[1], rawData[2]] as ToiRawData,
+    shiftSource: shiftcharts?.source ?? "fallback"
+  };
+}
+
 export default withCronJobAudit(adminOnly(async (req, res) => {
   const { supabase } = req;
   const gameId = Number(req.query.gameId);
@@ -40,8 +84,9 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
 export async function updatePowerPlayCombinations(
   gameId: number,
   supabase: SupabaseType
-) {
-  const rawData = await fetchTOIRawData(gameId);
+): Promise<PowerPlayCombinationUpdateSummary> {
+  const { rawData, shiftSource } =
+    await fetchTOIRawDataForPowerPlayCombinations(gameId);
   // @ts-ignore
   const { toi, teams } = getTOIData(rawData, "pp-toi");
   const [, , { plays }] = rawData;
@@ -73,7 +118,7 @@ export async function updatePowerPlayCombinations(
   }> = [];
 
   teams.forEach((team) => {
-    const toiData = toi[team.id];
+    const toiData = toi[team.id] ?? [];
     const table: Record<string, TOIData> = {};
     toiData.forEach((item) => {
       const key = getKey(item.p1.id, item.p2.id);
@@ -106,9 +151,20 @@ export async function updatePowerPlayCombinations(
   if (rows.length === 0) {
     throw new Error("No power play combinations found");
   }
-  console.log(rows);
-  // upsert the data to supabase
+  console.log("[updatePowerPlayCombinations] summary", {
+    gameId,
+    rowCount: rows.length,
+    teamCount: teams.length,
+    shiftSource
+  });
+
   await supabase.from("powerPlayCombinations").upsert(rows).throwOnError();
+  return {
+    gameId,
+    rowCount: rows.length,
+    teamCount: teams.length,
+    shiftSource
+  };
 }
 
 function parseClockToSeconds(clock: string): number {

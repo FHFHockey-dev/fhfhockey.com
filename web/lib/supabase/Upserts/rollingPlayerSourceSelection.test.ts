@@ -6,6 +6,7 @@ import {
   getHitsValue,
   getIxgValue,
   getPenaltiesDrawnValue,
+  getPenaltiesTakenValue,
   getPointsValue,
   getPrimaryAssistsValue,
   getPpPointsValue,
@@ -36,6 +37,7 @@ describe("rollingPlayerSourceSelection", () => {
         first_assists: 2,
         second_assists: 1,
         penalties_drawn: 2,
+        total_penalties: 3,
         hits: 4,
         shots_blocked: 7,
         ixg: 1.8
@@ -60,6 +62,7 @@ describe("rollingPlayerSourceSelection", () => {
     expect(getPrimaryAssistsValue(game)).toBe(2);
     expect(getSecondaryAssistsValue(game)).toBe(1);
     expect(getPenaltiesDrawnValue(game)).toBe(2);
+    expect(getPenaltiesTakenValue(game)).toBe(3);
     expect(getHitsValue(game)).toBe(4);
     expect(getBlocksValue(game)).toBe(7);
     expect(getIxgValue(game)).toBe(1.8);
@@ -90,6 +93,7 @@ describe("rollingPlayerSourceSelection", () => {
     expect(getPrimaryAssistsValue(game)).toBe(1);
     expect(getSecondaryAssistsValue(game)).toBe(0);
     expect(getPenaltiesDrawnValue(game)).toBe(null);
+    expect(getPenaltiesTakenValue(game)).toBe(null);
     expect(getHitsValue(game)).toBe(4);
     expect(getBlocksValue(game)).toBe(5);
     expect(getIxgValue(game)).toBe(0.7);
@@ -120,9 +124,23 @@ describe("rollingPlayerSourceSelection", () => {
     expect(getPrimaryAssistsValue(game)).toBe(null);
     expect(getSecondaryAssistsValue(game)).toBe(null);
     expect(getPenaltiesDrawnValue(game)).toBe(null);
+    expect(getPenaltiesTakenValue(game)).toBe(null);
     expect(getHitsValue(game)).toBe(null);
     expect(getBlocksValue(game)).toBe(null);
     expect(getIxgValue(game)).toBe(null);
+  });
+
+  it("uses WGO PP goals for PP rows when NST PP counts are missing", () => {
+    const game = createGame({
+      strength: "pp",
+      counts: {},
+      wgo: {
+        goals: 4,
+        pp_goals: 2
+      }
+    });
+
+    expect(getGoalsValue(game)).toBe(2);
   });
 
   it("uses PP counts on pp rows but WGO pp_points on all-strength rows", () => {

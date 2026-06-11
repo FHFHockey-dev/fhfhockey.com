@@ -176,7 +176,7 @@ async function updateGoalieTotals(
   // Perform a bulk upsert in a single request
   const { error } = await supabase
     .from("wgo_goalie_stats_totals")
-    .upsert(records);
+    .upsert(records, { onConflict: "goalie_id,season_id" });
 
   if (error) {
     console.error("Bulk upsert error:", error);

@@ -41,6 +41,10 @@ export function isNstRateLimitError(error: unknown): error is NstResponseError {
   return isNstResponseError(error) && error.status === 429;
 }
 
+export function isNstNotFoundError(error: unknown): error is NstResponseError {
+  return isNstResponseError(error) && error.status === 404;
+}
+
 export interface NstRequestOptions {
   path: string;
   query?: Record<string, string | number | boolean | null | undefined>;
@@ -175,6 +179,34 @@ export function buildNstRequestUrl(
   return url;
 }
 
+function stripRawQueryKey(rawSearch: string): string {
+  if (!rawSearch) return "";
+
+  const query = rawSearch.startsWith("?") ? rawSearch.slice(1) : rawSearch;
+  const parts = query.split("&").filter((part) => {
+    const key = part.split("=", 1)[0];
+    return key.toLowerCase() !== "key";
+  });
+
+  return parts.length > 0 ? `?${parts.join("&")}` : "";
+}
+
+export function buildNstRequestUrlFromAbsoluteUrl(
+  inputUrl: string,
+  allowQueryKeyFallback = false
+): URL {
+  const parsed = new URL(inputUrl);
+  let rawSearch = stripRawQueryKey(parsed.search);
+  if (allowQueryKeyFallback) {
+    rawSearch += `${rawSearch ? "&" : "?"}key=${encodeURIComponent(getNstKey())}`;
+  }
+
+  return new URL(
+    `${normalizePath(parsed.pathname)}${rawSearch}`,
+    `${NST_BASE_URL}/`
+  );
+}
+
 async function executeNstRequest(
   options: NstRequestOptions
 ): Promise<NstRequestResult> {
@@ -183,6 +215,45 @@ async function executeNstRequest(
     options.path,
     options.query,
     options.allowQueryKeyFallback ?? false
+  );
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      signal: controller.signal,
+      headers: getNstHeaders(options),
+      cache: "no-store"
+    });
+
+    const redactedUrl = redactNstUrl(url);
+
+    if (!response.ok) {
+      throw new NstResponseError({
+        status: response.status,
+        redactedUrl
+      });
+    }
+
+    return {
+      response,
+      url: url.toString(),
+      redactedUrl
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function executeNstRequestUrl(
+  inputUrl: string,
+  options?: Omit<NstRequestOptions, "path" | "query">
+): Promise<NstRequestResult> {
+  const timeoutMs = options?.timeoutMs ?? NST_DEFAULT_TIMEOUT_MS;
+  const url = buildNstRequestUrlFromAbsoluteUrl(
+    inputUrl,
+    options?.allowQueryKeyFallback ?? false
   );
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -263,6 +334,27 @@ export async function nstRequest(
   throw lastError instanceof Error ? lastError : new Error("NST request failed");
 }
 
+async function nstRequestUrl(
+  url: string,
+  options?: Omit<NstRequestOptions, "path" | "query">
+): Promise<NstRequestResult> {
+  const retries = options?.retries ?? NST_DEFAULT_RETRIES;
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await executeNstRequestUrl(url, options);
+    } catch (error) {
+      lastError = error;
+      if (attempt === retries || !shouldRetry(null, error)) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("NST request failed");
+}
+
 export async function fetchNstText(
   options: NstRequestOptions
 ): Promise<{ text: string; redactedUrl: string; response: Response }> {
@@ -279,12 +371,13 @@ export async function fetchNstTextByUrl(
   url: string,
   options?: Omit<NstRequestOptions, "path" | "query">
 ): Promise<{ text: string; redactedUrl: string; response: Response }> {
-  const parsed = parseNstUrl(url);
-  return fetchNstText({
-    ...options,
-    path: parsed.path,
-    query: parsed.query
-  });
+  const result = await nstRequestUrl(url, options);
+  const text = await result.response.text();
+  return {
+    text: redactNstMessage(text),
+    redactedUrl: result.redactedUrl,
+    response: result.response
+  };
 }
 
 export async function fetchNstTextWithCache(
@@ -314,10 +407,21 @@ export async function fetchNstTextWithCacheByUrl(
   url: string,
   options?: Omit<NstRequestOptions, "path" | "query">
 ): Promise<{ text: string; redactedUrl: string }> {
-  const parsed = parseNstUrl(url);
-  return fetchNstTextWithCache({
-    ...options,
-    path: parsed.path,
-    query: parsed.query
-  });
+  const requestUrl = buildNstRequestUrlFromAbsoluteUrl(
+    url,
+    options?.allowQueryKeyFallback ?? false
+  );
+  const redactedUrl = redactNstUrl(requestUrl);
+  const text = (await fetchWithCache(requestUrl.toString(), false, {
+    cacheKey: redactedUrl,
+    init: {
+      headers: getNstHeaders(options),
+      cache: "no-store"
+    }
+  })) as string;
+
+  return {
+    text: redactNstMessage(text),
+    redactedUrl
+  };
 }

@@ -1,6 +1,6 @@
 import { ROLLING_METRIC_SCALE_CONTRACTS } from "./rollingMetricScaleContract";
 
-type StrengthState = "all" | "ev" | "pp" | "pk";
+type StrengthState = "all" | "5v5" | "ev" | "pp" | "pk";
 
 type DateLikeRow = {
   date_scraped: string;
@@ -303,6 +303,11 @@ function countDatesAfter(rows: WgoLikeRow[], latestDate: string | null): number 
   return rows.filter((row) => row.date > latestDate).length;
 }
 
+function countDateValuesAfter(values: string[], latestDate: string | null): number {
+  if (!latestDate) return values.length;
+  return values.filter((value) => value > latestDate).length;
+}
+
 function countNumbersAfter(values: number[], latest: number | null): number {
   if (latest == null) return values.length;
   return values.filter((value) => value > latest).length;
@@ -317,9 +322,27 @@ export function summarizeSourceTailFreshness(
   const latestRatesDate = getLatestDate(params.ratesRows);
   const latestCountsOiDate = getLatestDate(params.countsOiRows);
 
-  const countsTailLag = countDatesAfter(params.wgoRows, latestCountsDate);
-  const ratesTailLag = countDatesAfter(params.wgoRows, latestRatesDate);
-  const countsOiTailLag = countDatesAfter(params.wgoRows, latestCountsOiDate);
+  const activeSplitDates = uniqueSortedDates([
+    ...params.countsRows.map((row) => row.date_scraped),
+    ...params.ratesRows.map((row) => row.date_scraped),
+    ...params.countsOiRows.map((row) => row.date_scraped)
+  ]);
+  const expectedDateRows =
+    params.strength === "all"
+      ? params.wgoRows
+      : activeSplitDates.map((date) => ({ date, game_id: null }));
+  const countsTailLag =
+    params.strength === "all"
+      ? countDatesAfter(expectedDateRows, latestCountsDate)
+      : countDateValuesAfter(activeSplitDates, latestCountsDate);
+  const ratesTailLag =
+    params.strength === "all"
+      ? countDatesAfter(expectedDateRows, latestRatesDate)
+      : countDateValuesAfter(activeSplitDates, latestRatesDate);
+  const countsOiTailLag =
+    params.strength === "all"
+      ? countDatesAfter(expectedDateRows, latestCountsOiDate)
+      : countDateValuesAfter(activeSplitDates, latestCountsOiDate);
 
   const expectedPpGameIds = uniqueSortedNumbers(
     params.wgoRows

@@ -20,7 +20,7 @@ const DIRECT_REMOTE_NST_JOBS = new Set([
 const INDIRECT_NST_DERIVED_JOBS = new Set([
   "update-rolling-player-averages",
   "daily-refresh-player-unified-matview",
-  "update-expected-goals",
+  "update-game-goal-projections",
   "update-wigo-table-stats",
   "daily-refresh-goalie-unified-matview",
   "update-team-ctpi-daily",

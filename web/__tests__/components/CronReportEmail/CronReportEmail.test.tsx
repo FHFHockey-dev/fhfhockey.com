@@ -1,11 +1,12 @@
 import { render, screen } from "@testing-library/react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { CronReportEmail } from "components/CronReportEmail/CronReportEmail";
 
 describe("CronReportEmail", () => {
   it("renders MMSS durations, optimization denotations, benchmark notes, and observation gaps", () => {
-    render(
+    const email = (
       <CronReportEmail
         sinceDate="2026-03-20T03:00:00.000Z"
         summary={{
@@ -51,6 +52,10 @@ describe("CronReportEmail", () => {
               {
                 kind: "bottleneck",
                 note: "Projection run is preflight-gated and likely to overrun when upstream data lags."
+              },
+              {
+                kind: "rate_limited",
+                note: "Projection run should remain spaced from other request-budget consumers."
               }
             ],
             missingObservationWarnings: [
@@ -85,7 +90,10 @@ describe("CronReportEmail", () => {
       />
     );
 
+    render(email);
+
     expect(screen.getByText(/OPTIMIZE: run-forge-projection-v2/i)).toBeTruthy();
+    expect(screen.getByText("Schedule health exceptions")).toBeTruthy();
     expect(screen.getAllByText("05:01").length).toBeGreaterThan(0);
     expect(screen.getByText("OPTIMIZE")).toBeTruthy();
     expect(screen.getByText("BOTTLENECK")).toBeTruthy();
@@ -95,5 +103,6 @@ describe("CronReportEmail", () => {
     expect(
       screen.getByText(/Benchmark: Projection run is preflight-gated/i)
     ).toBeTruthy();
+    expect(renderToStaticMarkup(email)).toContain("BOTTLENECK</span> <span");
   });
 });

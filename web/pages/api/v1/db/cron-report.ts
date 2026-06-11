@@ -5,7 +5,6 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 
-import { CronReportEmail } from "components/CronReportEmail/CronReportEmail";
 import { CronAuditEmail } from "components/CronReportEmail/CronAuditEmail";
 import {
   getBenchmarkAnnotations,
@@ -54,7 +53,9 @@ const SCHEDULE_ALIAS_MAP: Record<string, string[]> = {
   ],
   "update-nst-tables-all": ["/api/Teams/nst-team-stats"],
   "sync-yahoo-players-to-sheet": ["/api/internal/sync-yahoo-players-to-sheet"],
-  "update-predictions-sko": ["/api/v1/ml/update-predictions-sko"]
+  "update-predictions-sko": ["/api/v1/ml/update-predictions-sko"],
+  "update-nhl-xg-shot-features": ["/api/v1/db/update-nhl-xg-shot-features"],
+  "update-nhl-xg-shot-predictions": ["/api/v1/db/update-nhl-xg-shot-predictions"]
 };
 
 const ROUTE_TARGET_TABLE_MAP: Record<string, string> = {
@@ -74,7 +75,7 @@ const ROUTE_TARGET_TABLE_MAP: Record<string, string> = {
   "/api/v1/db/update-standings-details": "standings_details",
   "/api/v1/db/update-wgo-goalie-totals": "wgo_goalie_stats_totals",
   "/api/v1/db/update-rolling-player-averages": "rolling_player_averages",
-  "/api/v1/db/update-expected-goals": "expected_goals",
+  "/api/v1/db/update-game-goal-projections": "expected_goals",
   "/api/v1/db/update-yahoo-players": "yahoo_players",
   "/api/Teams/nst-team-stats": "nst_team_stats",
   "/api/v1/db/update-nst-goalies": "nst_goalie_stats",
@@ -283,6 +284,17 @@ function normalizeStatus(value: unknown): NormalizedStatus {
   if (["success", "succeeded", "ok", "passed"].includes(v)) return "success";
   if (["failure", "failed", "error", "errored"].includes(v)) return "failure";
   return "unknown";
+}
+
+function getQueryString(req: NextApiRequest, key: string): string | null {
+  const value = req.query?.[key];
+  if (Array.isArray(value)) return value[0] ?? null;
+  return typeof value === "string" ? value : null;
+}
+
+function parseBooleanQueryFlag(value: string | null): boolean {
+  if (!value) return false;
+  return ["1", "true", "yes"].includes(value.trim().toLowerCase());
 }
 
 function toFiniteNumber(value: unknown): number | null {
@@ -727,8 +739,8 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
     responseMessage: extractPrimaryMessage(response),
     goalieRowsProcessed,
     dataQualityWarningCount: countWarningEntries(response),
-    rowsUpserted: inferRowsUpserted(response),
-    failedRows: inferFailedRows(response),
+    rowsUpserted: toFiniteNumber(obj.rowsUpserted) ?? inferRowsUpserted(response),
+    failedRows: toFiniteNumber(obj.failedRows) ?? inferFailedRows(response),
     failedRowSamples
   };
 }
@@ -1286,6 +1298,8 @@ async function handler(
   const since = sinceDate.toISOString();
   const now = new Date();
   const emailRecipient = process.env.CRON_REPORT_EMAIL_RECIPIENT!;
+  const previewMode = getQueryString(req, "preview") === "json";
+  const dryRun = previewMode || parseBooleanQueryFlag(getQueryString(req, "dryRun"));
 
   let jobRunDetailsEmailResult: any = null;
   let auditEmailResult: any = null;
@@ -1755,21 +1769,45 @@ async function handler(
     warnMissingAudit: WARN_MISSING_AUDIT.length
   };
 
-  if (auditRows.length > 0 || auditErr) {
+  const shouldRenderCronReport =
+    auditRows.length > 0 ||
+    scheduledJobs.length > 0 ||
+    runRows.length > 0 ||
+    auditErr ||
+    runErr;
+
+  if (dryRun) {
+    auditEmailResult = {
+      success: true,
+      dryRun: true,
+      message: previewMode
+        ? "Preview JSON generated without sending email."
+        : "Dry run completed without sending email."
+    };
+    jobRunDetailsEmailResult = {
+      success: true,
+      suppressed: true,
+      dryRun: true,
+      message:
+        "Dedicated job-status email suppressed; the CEO briefing is the single daily cron report."
+    };
+  } else if (shouldRenderCronReport) {
     try {
       const { data, error } = await resend.emails.send({
         from: "audit-report@fhfhockey.com",
         to: emailRecipient,
         subject:
-          auditErr && auditRows.length === 0
-            ? "⚠️ Cron Audit — telemetry unavailable"
-            : counts.auditFailures > 0
-            ? `❌ Cron Audit — ${counts.auditFailures} failing audit runs`
-            : `✅ Cron Audit — ${counts.auditSuccesses} audit runs ok`,
+          (auditErr || runErr) && auditRows.length === 0 && runRows.length === 0
+            ? "⚠️ Daily Cron Report — telemetry unavailable"
+            : counts.jobsFailingLast > 0 || counts.jobsMissingLast > 0
+              ? `❌ Daily Cron Report — ${counts.jobsFailingLast} failing, ${counts.jobsMissingLast} missing`
+              : counts.jobsUnknownLast > 0
+                ? `⚠️ Daily Cron Report — ${counts.jobsUnknownLast} unknown`
+                : `✅ Daily Cron Report — ${counts.jobsOkLast}/${counts.scheduledJobs} jobs ok`,
         react: CronAuditEmail({
           audits: auditBriefings,
           sinceDate: since,
-          fetchErrors: errors.filter((message) => message.includes("cron_job_audit")),
+          fetchErrors: errors,
           summary: {
             auditRuns: counts.auditRuns,
             auditSuccesses: counts.auditSuccesses,
@@ -1810,60 +1848,19 @@ async function handler(
       errors.push(`Audit email exception: ${error.message}`);
       auditEmailResult = { success: false, error: error.message };
     }
-  } else if (!auditErr) {
-    auditEmailResult = { success: true, message: "No audit data to send." };
-  }
-
-  if (scheduledJobs.length > 0 || runRows.length > 0 || auditRows.length > 0) {
-    try {
-      const { data, error } = await resend.emails.send({
-        from: "job-status@fhfhockey.com",
-        to: emailRecipient,
-        subject:
-          errors.length > 0 &&
-          counts.scheduledJobsWithActivity === 0 &&
-          counts.auditRuns === 0 &&
-          counts.unscheduledRuns === 0
-            ? "⚠️ Daily Cron Summary — telemetry unavailable"
-            : counts.jobsFailingLast > 0 || counts.jobsMissingLast > 0
-            ? `❌ Daily Cron Summary — ${counts.jobsFailingLast} failing, ${counts.jobsMissingLast} missing`
-            : counts.jobsUnknownLast > 0
-              ? `⚠️ Daily Cron Summary — ${counts.jobsUnknownLast} unknown`
-            : `✅ Daily Cron Summary — ${counts.jobsOkLast}/${counts.scheduledJobs} scheduled jobs ok`,
-        react: CronReportEmail({
-          sinceDate: since,
-          summary: counts,
-          jobs: jobSummaries,
-          failureHighlights,
-          missingJobs,
-          unscheduledRuns: notableUnscheduledRuns,
-          fetchErrors: errors,
-          warnings: {
-            slowMsThreshold: SLOW_JOB_THRESHOLD_MS,
-            slowJobs: WARN_SLOW,
-            partialFailureJobs: WARN_PARTIAL_FAILURE,
-            missingAuditJobs: WARN_MISSING_AUDIT,
-            missingObservationJobs
-          }
-        })
-      });
-
-      if (error) {
-        console.error("Resend error for job run details email:", error.message);
-        errors.push(`Job run details email failed: ${error.message}`);
-        jobRunDetailsEmailResult = { success: false, error: error.message };
-      } else {
-        jobRunDetailsEmailResult = { success: true, emailId: data?.id };
-      }
-    } catch (error: any) {
-      console.error("Exception sending job run details email:", error.message);
-      errors.push(`Job run details email exception: ${error.message}`);
-      jobRunDetailsEmailResult = { success: false, error: error.message };
-    }
-  } else if (!runErr) {
     jobRunDetailsEmailResult = {
       success: true,
-      message: "No scheduled or observed cron data to send."
+      suppressed: true,
+      message:
+        "Dedicated job-status email suppressed; the CEO briefing is the single daily cron report."
+    };
+  } else {
+    auditEmailResult = { success: true, message: "No cron data to send." };
+    jobRunDetailsEmailResult = {
+      success: true,
+      suppressed: true,
+      message:
+        "Dedicated job-status email suppressed; the CEO briefing is the single daily cron report."
     };
   }
 
@@ -1881,6 +1878,8 @@ async function handler(
 
   return res.status(200).json({
     success: true,
+    dryRun,
+    preview: previewMode ? "json" : null,
     auditEmailResult,
     jobRunDetailsEmailResult,
     counts,

@@ -85,6 +85,7 @@ export type NhlShotFeatureRow = {
   previousEventSameTeam: boolean | null;
   timeSincePreviousEventSeconds: number | null;
   distanceFromPreviousEvent: number | null;
+  speedFromPreviousEventFeetPerSecond: number | null;
   homeScoreBeforeEvent: number | null;
   awayScoreBeforeEvent: number | null;
   homeScoreDiffBeforeEvent: number | null;
@@ -112,6 +113,7 @@ export type NhlShotFeatureRow = {
   reboundSourceTypeDescKey: string | null;
   reboundTimeDeltaSeconds: number | null;
   reboundDistanceFromSource: number | null;
+  reboundSpeedFromSourceFeetPerSecond: number | null;
   reboundLateralDisplacementFeet: number | null;
   reboundDistanceDeltaFeet: number | null;
   reboundAngleChangeDegrees: number | null;
@@ -126,6 +128,8 @@ export type NhlShotFeatureRow = {
   rushSourceEventId: number | null;
   rushSourceTypeDescKey: string | null;
   rushTimeSinceSourceSeconds: number | null;
+  rushDistanceFromSourceFeet: number | null;
+  rushSpeedFromSourceFeetPerSecond: number | null;
   rushSourceTeamRelativeZoneCode: string | null;
   isFlurryShot: boolean;
   flurrySequenceId: string | null;
@@ -193,6 +197,23 @@ function computeShotAngleDegrees(
   const deltaX = Math.abs(OFFENSIVE_NET_X - normalizedX);
   const deltaY = Math.abs(OFFENSIVE_NET_Y - normalizedY);
   return (Math.atan2(deltaY, deltaX) * 180) / Math.PI;
+}
+
+function computeFeetPerSecond(
+  distanceFeet: number | null | undefined,
+  seconds: number | null | undefined
+): number | null {
+  if (
+    distanceFeet == null ||
+    seconds == null ||
+    !Number.isFinite(distanceFeet) ||
+    !Number.isFinite(seconds) ||
+    seconds <= 0
+  ) {
+    return null;
+  }
+
+  return distanceFeet / seconds;
 }
 
 function getEventOrder(event: ParsedNhlPbpEvent): number {
@@ -531,6 +552,10 @@ export function buildShotFeatureRows(
         timeSincePreviousEventSeconds:
           prior?.timeSincePreviousEventSeconds ?? null,
         distanceFromPreviousEvent: prior?.distanceFromPreviousEvent ?? null,
+        speedFromPreviousEventFeetPerSecond: computeFeetPerSecond(
+          prior?.distanceFromPreviousEvent,
+          prior?.timeSincePreviousEventSeconds
+        ),
         homeScoreBeforeEvent: scoreState?.homeScoreBeforeEvent ?? null,
         awayScoreBeforeEvent: scoreState?.awayScoreBeforeEvent ?? null,
         homeScoreDiffBeforeEvent: scoreState?.homeScoreDiffBeforeEvent ?? null,
@@ -566,6 +591,10 @@ export function buildShotFeatureRows(
         reboundSourceTypeDescKey: rebound?.reboundSourceTypeDescKey ?? null,
         reboundTimeDeltaSeconds: rebound?.reboundTimeDeltaSeconds ?? null,
         reboundDistanceFromSource: rebound?.reboundDistanceFromSource ?? null,
+        reboundSpeedFromSourceFeetPerSecond: computeFeetPerSecond(
+          rebound?.reboundDistanceFromSource,
+          rebound?.reboundTimeDeltaSeconds
+        ),
         reboundLateralDisplacementFeet:
           rebound?.reboundLateralDisplacementFeet ?? null,
         reboundDistanceDeltaFeet: rebound?.reboundDistanceDeltaFeet ?? null,
@@ -583,6 +612,11 @@ export function buildShotFeatureRows(
         rushSourceEventId: rush?.rushSourceEventId ?? null,
         rushSourceTypeDescKey: rush?.rushSourceTypeDescKey ?? null,
         rushTimeSinceSourceSeconds: rush?.rushTimeSinceSourceSeconds ?? null,
+        rushDistanceFromSourceFeet: rush?.rushDistanceFromSourceFeet ?? null,
+        rushSpeedFromSourceFeetPerSecond: computeFeetPerSecond(
+          rush?.rushDistanceFromSourceFeet,
+          rush?.rushTimeSinceSourceSeconds
+        ),
         rushSourceTeamRelativeZoneCode:
           rush?.rushSourceTeamRelativeZoneCode ?? null,
         isFlurryShot: flurry?.isFlurryShot ?? false,

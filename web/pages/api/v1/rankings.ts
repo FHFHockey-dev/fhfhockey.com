@@ -2,6 +2,9 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 
 const positions = ["C", "LW", "RW", "W", "F", "D", "G", "UTIL"] as const;
+const LEGACY_ROUTE_STATUS = "legacy_start_chart_scaffold";
+const CONTEXTUAL_RANKINGS_ENDPOINT = "/api/v1/contextual-rankings";
+const CONTEXTUAL_MATRIX_ENDPOINT = "/api/v1/contextual-rankings/matrix";
 
 const rankingsQuerySchema = z.object({
   date: z
@@ -44,6 +47,16 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  res.setHeader("Deprecation", "true");
+  res.setHeader(
+    "Link",
+    `<${CONTEXTUAL_RANKINGS_ENDPOINT}>; rel="successor-version", <${CONTEXTUAL_MATRIX_ENDPOINT}>; rel="alternate"`
+  );
+  res.setHeader(
+    "X-FHFH-Legacy-Route",
+    "Start Chart rankings scaffold; use contextual-rankings endpoints for the player rankings workstation."
+  );
+
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ error: "Method not allowed" });
@@ -73,7 +86,12 @@ export default async function handler(
       }>,
       meta: {
         modelVersion: "start-chart-internal-dev",
-        message: "Rankings endpoint scaffolded; plug in projection pipeline."
+        routeStatus: LEGACY_ROUTE_STATUS,
+        message: "Rankings endpoint scaffolded; plug in projection pipeline.",
+        replacementEndpoints: {
+          contextualLeaderboard: CONTEXTUAL_RANKINGS_ENDPOINT,
+          playerMatrix: CONTEXTUAL_MATRIX_ENDPOINT
+        }
       }
     };
 

@@ -82,7 +82,7 @@ export function resolvePpShareComponents(args: {
 }
 
 export function resolvePlayerPpToiSeconds(args: {
-  strength: "all" | "ev" | "pp" | "pk";
+  strength: "all" | "5v5" | "ev" | "pp" | "pk";
   builderPlayerPpToi: number | null | undefined;
   wgoPlayerPpToi?: number | null | undefined;
 }): number | null {

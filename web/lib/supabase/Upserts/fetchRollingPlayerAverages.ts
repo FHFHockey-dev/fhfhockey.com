@@ -58,6 +58,7 @@ import {
   getHitsValue,
   getIxgValue,
   getPenaltiesDrawnValue,
+  getPenaltiesTakenValue,
   getPointsValue,
   getPrimaryAssistsValue,
   getPpPointsValue,
@@ -69,6 +70,13 @@ import {
   type AvailabilitySemanticType
 } from "./rollingPlayerAvailabilityContract";
 import {
+  ROLLING_PLAYER_SUPPORT_PAYLOAD_SCHEMA_VERSION,
+  ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE,
+  type RollingPlayerMetricSupportPayloadRow,
+  type RollingPlayerSupportPayload,
+  type RollingPlayerSupportScalar
+} from "./rollingPlayerSupportPayload";
+import {
   summarizeCoverage,
   summarizeDerivedWindowDiagnostics,
   summarizeSourceTailFreshness,
@@ -79,8 +87,9 @@ import {
   CANONICAL_ROLLING_GAME_WINDOWS,
   type CanonicalRollingGameWindow
 } from "lib/predictions/rollingWindows";
+import { ROLLING_RANKING_SELECT_FIELDS } from "lib/rankings/rollingRankingSelectFields";
 
-export type StrengthState = "all" | "ev" | "pp" | "pk";
+export type StrengthState = "all" | "5v5" | "ev" | "pp" | "pk";
 type FullRefreshMode = "rpc_truncate" | "overwrite_only" | "delete";
 type PowerPlayCombinationRow = RollingPlayerPpContextRow;
 
@@ -266,6 +275,12 @@ const STRENGTH_CONFIGS: StrengthConfig[] = [
     countsOiTable: "nst_gamelog_es_counts_oi"
   },
   {
+    state: "5v5",
+    countsTable: "nst_gamelog_5v5_counts",
+    ratesTable: "nst_gamelog_5v5_rates",
+    countsOiTable: "nst_gamelog_5v5_counts_oi"
+  },
+  {
     state: "pp",
     countsTable: "nst_gamelog_pp_counts",
     ratesTable: "nst_gamelog_pp_rates",
@@ -278,6 +293,29 @@ const STRENGTH_CONFIGS: StrengthConfig[] = [
     countsOiTable: "nst_gamelog_pk_counts_oi"
   }
 ];
+const VALID_STRENGTH_STATES = new Set<StrengthState>(
+  STRENGTH_CONFIGS.map((config) => config.state)
+);
+
+export function normalizeStrengthStates(
+  strengths: readonly string[] | undefined
+): StrengthState[] | undefined {
+  if (!strengths?.length) return undefined;
+  const normalized = strengths
+    .map((strength) => strength.trim().toLowerCase())
+    .filter((strength): strength is StrengthState =>
+      VALID_STRENGTH_STATES.has(strength as StrengthState)
+    );
+  return normalized.length ? Array.from(new Set(normalized)) : undefined;
+}
+
+function getStrengthConfigs(
+  strengths: readonly StrengthState[] | undefined
+): StrengthConfig[] {
+  if (!strengths?.length) return STRENGTH_CONFIGS;
+  const selected = new Set<StrengthState>(strengths);
+  return STRENGTH_CONFIGS.filter((config) => selected.has(config.state));
+}
 
 // Try to load environment variables for local development. In Next.js these
 // are usually already loaded, but this helps for direct Node runs. We attempt
@@ -306,12 +344,14 @@ const supabase: SupabaseClient = createClient(
   supabaseServiceRoleKey
 );
 const rollingPlayerMetricsRestUrl = `${supabaseServiceUrl.replace(/\/$/, "")}/rest/v1/rolling_player_game_metrics?on_conflict=player_id,game_date,strength_state`;
+const rollingPlayerMetricSupportRestUrl = `${supabaseServiceUrl.replace(/\/$/, "")}/rest/v1/${ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE}?on_conflict=player_id,game_date,strength_state`;
 
 interface FetchOptions {
   playerId?: number;
   season?: number;
   startDate?: string;
   endDate?: string;
+  strengths?: StrengthState[];
   resumePlayerId?: number;
   maxPlayers?: number;
   forceFullRefresh?: boolean;
@@ -326,6 +366,145 @@ interface FetchOptions {
 }
 
 type RollingUpsertRow = Record<string, unknown>;
+
+const ROLLING_STORAGE_ALWAYS_KEEP_FIELDS = new Set<string>([
+  ...ROLLING_RANKING_SELECT_FIELDS,
+  "gp_semantic_type",
+  "pp_share_of_team",
+  "pp_unit_usage_index",
+  "pp_unit_relative_toi",
+  "pp_vs_unit_avg"
+]);
+
+function isPrunableRollingStorageField(key: string): boolean {
+  if (ROLLING_STORAGE_ALWAYS_KEEP_FIELDS.has(key)) return false;
+  return (
+    key.endsWith("_all") ||
+    key.includes("_last3") ||
+    key.includes("_3ya") ||
+    key.includes("_career") ||
+    key.includes("_avg_") ||
+    key.startsWith("three_year_") ||
+    key.startsWith("career_")
+  );
+}
+
+export function compactRollingUpsertRowForRankingStorage(
+  row: RollingUpsertRow
+): RollingUpsertRow {
+  const compacted: RollingUpsertRow = { ...row };
+  for (const key of Object.keys(compacted)) {
+    if (isPrunableRollingStorageField(key)) {
+      compacted[key] = null;
+    }
+  }
+  return compacted;
+}
+
+function isSupportPayloadScalar(
+  value: unknown
+): value is RollingPlayerSupportScalar {
+  return (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  );
+}
+
+function appendSupportPayloadValue(
+  payload: RollingPlayerSupportPayload,
+  key: string,
+  value: RollingPlayerSupportScalar
+) {
+  if (key.startsWith("gp_pct_")) {
+    payload.deprecatedCompatibility ??= {};
+    payload.deprecatedCompatibility[key] = value;
+    return;
+  }
+
+  payload.historicalCompatibility ??= {};
+  payload.historicalCompatibility[key] = value;
+}
+
+export function splitRollingUpsertRowForDurableStorage(row: RollingUpsertRow): {
+  rankingRow: RollingUpsertRow;
+  supportRow: RollingPlayerMetricSupportPayloadRow | null;
+} {
+  const rankingRow: RollingUpsertRow = { ...row };
+  const supportPayload: RollingPlayerSupportPayload = {};
+  let prunedFieldCount = 0;
+
+  for (const key of Object.keys(rankingRow)) {
+    if (!isPrunableRollingStorageField(key)) continue;
+    const value = rankingRow[key];
+    rankingRow[key] = null;
+    if (!isSupportPayloadScalar(value)) continue;
+    appendSupportPayloadValue(supportPayload, key, value);
+    prunedFieldCount += 1;
+  }
+
+  if (prunedFieldCount === 0) {
+    return { rankingRow, supportRow: null };
+  }
+
+  const playerId = Number(row.player_id);
+  const season = Number(row.season);
+  const gameDate =
+    typeof row.game_date === "string" ? row.game_date : String(row.game_date);
+  const strengthState =
+    typeof row.strength_state === "string"
+      ? row.strength_state
+      : String(row.strength_state);
+
+  if (
+    !Number.isFinite(playerId) ||
+    !Number.isFinite(season) ||
+    !gameDate ||
+    !strengthState
+  ) {
+    return { rankingRow, supportRow: null };
+  }
+
+  supportPayload.diagnostics = {
+    compactedFromWideRow: true,
+    prunedFieldCount,
+    source: "fetchRollingPlayerAverages"
+  };
+
+  return {
+    rankingRow,
+    supportRow: {
+      player_id: playerId,
+      game_date: gameDate,
+      strength_state: strengthState,
+      season,
+      team_id:
+        typeof row.team_id === "number" && Number.isFinite(row.team_id)
+          ? row.team_id
+          : null,
+      game_id:
+        typeof row.game_id === "number" && Number.isFinite(row.game_id)
+          ? row.game_id
+          : null,
+      payload_schema_version: ROLLING_PLAYER_SUPPORT_PAYLOAD_SCHEMA_VERSION,
+      support_payload: supportPayload
+    }
+  };
+}
+
+function splitRollingUpsertBatchForDurableStorage(batch: RollingUpsertRow[]) {
+  const rankingRows: RollingUpsertRow[] = [];
+  const supportRows: RollingPlayerMetricSupportPayloadRow[] = [];
+
+  for (const row of batch) {
+    const split = splitRollingUpsertRowForDurableStorage(row);
+    rankingRows.push(split.rankingRow);
+    if (split.supportRow) supportRows.push(split.supportRow);
+  }
+
+  return { rankingRows, supportRows };
+}
 
 interface RollingRestUpsertError extends Error {
   code?: string | null;
@@ -432,10 +611,11 @@ function summarizeUpsertBatch(batch: RollingUpsertRow[]) {
   };
 }
 
-async function upsertRollingPlayerMetricsBatch(
-  batch: RollingUpsertRow[]
+async function postPostgrestUpsert(
+  url: string,
+  batch: Array<Record<string, unknown>>
 ): Promise<void> {
-  const response = await fetch(rollingPlayerMetricsRestUrl, {
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       apikey: supabaseServiceRoleKey,
@@ -472,6 +652,22 @@ async function upsertRollingPlayerMetricsBatch(
   error.statusCode = response.status;
   error.responseText = responseText || null;
   throw error;
+}
+
+async function upsertRollingPlayerMetricsBatch(
+  batch: RollingUpsertRow[]
+): Promise<void> {
+  const { rankingRows, supportRows } =
+    splitRollingUpsertBatchForDurableStorage(batch);
+
+  if (supportRows.length > 0) {
+    await postPostgrestUpsert(
+      rollingPlayerMetricSupportRestUrl,
+      supportRows as unknown as Array<Record<string, unknown>>
+    );
+  }
+
+  await postPostgrestUpsert(rollingPlayerMetricsRestUrl, rankingRows);
 }
 
 function createConcurrencyLimiter(concurrency: number) {
@@ -520,6 +716,7 @@ export interface WgoSkaterRow {
   blocked_shots: number | null;
   points: number | null;
   pp_points: number | null;
+  pp_goals: number | null;
   pp_toi: number | null;
   pp_toi_pct_per_game: number | null;
   toi_per_game: number | null;
@@ -535,12 +732,14 @@ export interface NstCountsRow {
   second_assists: number | null;
   total_points: number | null;
   shots: number | null;
+  icf: number | null;
   sh_percentage: number | null;
   ixg: number | null;
   iscfs: number | null;
   hdcf: number | null;
   ipp: number | null;
   penalties_drawn: number | null;
+  total_penalties: number | null;
   hits: number | null;
   shots_blocked: number | null;
 }
@@ -559,6 +758,8 @@ export interface NstCountsOiRow {
   toi: number | null;
   gf: number | null;
   ga: number | null;
+  xgf: number | null;
+  xga: number | null;
   sf: number | null;
   sa: number | null;
   off_zone_starts: number | null;
@@ -794,6 +995,10 @@ function getPenaltiesDrawn(game: PlayerGameData): number | null {
   return getPenaltiesDrawnValue(game);
 }
 
+function getPenaltiesTaken(game: PlayerGameData): number | null {
+  return getPenaltiesTakenValue(game);
+}
+
 function getHits(game: PlayerGameData): number | null {
   return getHitsValue(game);
 }
@@ -818,6 +1023,19 @@ function getPpToiSeconds(game: PlayerGameData): number | null {
     builderPlayerPpToi: game.ppCombination?.PPTOI ?? null,
     wgoPlayerPpToi: game.wgo?.pp_toi ?? null
   });
+}
+
+function getGoalsPer60ToiSeconds(game: PlayerGameData): number | null {
+  if (game.strength !== "pp") {
+    return getToiSeconds(game);
+  }
+
+  return (
+    game.counts?.toi ??
+    game.countsOi?.toi ??
+    game.rates?.toi_per_gp ??
+    getPpToiSeconds(game)
+  );
 }
 
 function getOptionalPpContextOutputs(game: PlayerGameData): Record<
@@ -866,6 +1084,20 @@ const METRICS: MetricDefinition[] = [
       }).components
   },
   {
+    key: "shot_attempts_per_60",
+    aggregation: "ratio",
+    windowFamily: "weighted_rate_performance",
+    ratioSpec: {
+      scale: 3600,
+      noPrimaryDenominatorBehavior: "null"
+    },
+    getComponents: (game) =>
+      resolvePer60Components({
+        rawValue: game.counts?.icf ?? null,
+        toiSeconds: getToiSeconds(game)
+      })
+  },
+  {
     key: "goals_per_60",
     aggregation: "ratio",
     windowFamily: "weighted_rate_performance",
@@ -876,7 +1108,7 @@ const METRICS: MetricDefinition[] = [
     getComponents: (game) =>
       resolvePer60Components({
         rawValue: getGoals(game),
-        toiSeconds: getToiSeconds(game)
+        toiSeconds: getGoalsPer60ToiSeconds(game)
       })
   },
   {
@@ -904,6 +1136,20 @@ const METRICS: MetricDefinition[] = [
     getComponents: (game) =>
       resolvePer60Components({
         rawValue: getPenaltiesDrawn(game),
+        toiSeconds: getToiSeconds(game)
+      })
+  },
+  {
+    key: "penalties_taken_per_60",
+    aggregation: "ratio",
+    windowFamily: "weighted_rate_performance",
+    ratioSpec: {
+      scale: 3600,
+      noPrimaryDenominatorBehavior: "null"
+    },
+    getComponents: (game) =>
+      resolvePer60Components({
+        rawValue: getPenaltiesTaken(game),
         toiSeconds: getToiSeconds(game)
       })
   },
@@ -971,6 +1217,12 @@ const METRICS: MetricDefinition[] = [
     aggregation: "simple",
     windowFamily: "additive_performance",
     getValue: (game) => getPenaltiesDrawn(game)
+  },
+  {
+    key: "penalties_taken",
+    aggregation: "simple",
+    windowFamily: "additive_performance",
+    getValue: (game) => getPenaltiesTaken(game)
   },
   {
     key: "primary_points_pct",
@@ -1059,6 +1311,18 @@ const METRICS: MetricDefinition[] = [
     aggregation: "simple",
     windowFamily: "additive_performance",
     getValue: ({ countsOi }) => countsOi?.ga ?? null
+  },
+  {
+    key: "oi_xgf",
+    aggregation: "simple",
+    windowFamily: "additive_performance",
+    getValue: ({ countsOi }) => countsOi?.xgf ?? null
+  },
+  {
+    key: "oi_xga",
+    aggregation: "simple",
+    windowFamily: "additive_performance",
+    getValue: ({ countsOi }) => countsOi?.xga ?? null
   },
   {
     key: "oi_sf",
@@ -1292,6 +1556,10 @@ const SUPPORT_METRICS: SupportMetricDefinition[] = [
   {
     key: "secondary_assists_per_60_secondary_assists",
     getValue: ({ counts }) => counts?.second_assists ?? null
+  },
+  {
+    key: "shot_attempts_per_60_shot_attempts",
+    getValue: ({ counts }) => counts?.icf ?? null
   }
 ];
 
@@ -1899,9 +2167,11 @@ function applyRatioSupportOutputs(
     case "ff_pct":
     case "sog_per_60":
     case "ixg_per_60":
+    case "shot_attempts_per_60":
     case "goals_per_60":
     case "assists_per_60":
     case "penalties_drawn_per_60":
+    case "penalties_taken_per_60":
     case "primary_assists_per_60":
     case "secondary_assists_per_60":
     case "hits_per_60":
@@ -1951,6 +2221,12 @@ function applyRatioSupportOutputs(
       numeratorPrefix: "ixg_per_60_ixg",
       denominatorPrefix: "ixg_per_60_toi_seconds"
     },
+    shot_attempts_per_60: {
+      numeratorKey: "shot_attempts_per_60_shot_attempts",
+      denominatorKey: "toi_seconds",
+      numeratorPrefix: "shot_attempts_per_60_shot_attempts",
+      denominatorPrefix: "shot_attempts_per_60_toi_seconds"
+    },
     goals_per_60: {
       numeratorKey: "goals",
       denominatorKey: "toi_seconds",
@@ -1968,6 +2244,12 @@ function applyRatioSupportOutputs(
       denominatorKey: "toi_seconds",
       numeratorPrefix: "penalties_drawn_per_60_penalties_drawn",
       denominatorPrefix: "penalties_drawn_per_60_toi_seconds"
+    },
+    penalties_taken_per_60: {
+      numeratorKey: "penalties_taken",
+      denominatorKey: "toi_seconds",
+      numeratorPrefix: "penalties_taken_per_60_penalties_taken",
+      denominatorPrefix: "penalties_taken_per_60_toi_seconds"
     },
     primary_assists_per_60: {
       numeratorKey: "primary_assists_per_60_primary_assists",
@@ -1998,40 +2280,45 @@ function applyRatioSupportOutputs(
   const pair = simpleSupportPairs[metricKey];
   if (!pair) return;
 
-  output[`${pair.numeratorPrefix}_season`] = getHistoricalSupportAccumulatorTotal(
-    historicalSimpleMetricsState,
+  const getHistoricalPairTotal = (
+    key: string,
+    scope: "season" | "threeYear" | "career"
+  ) =>
+    getHistoricalSupportAccumulatorTotal(
+      historicalSimpleMetricsState,
+      key,
+      currentSeason,
+      scope
+    ) ??
+    getHistoricalSupportAccumulatorTotal(
+      historicalSupportMetricsState,
+      key,
+      currentSeason,
+      scope
+    );
+
+  output[`${pair.numeratorPrefix}_season`] = getHistoricalPairTotal(
     pair.numeratorKey,
-    currentSeason,
     "season"
   );
-  output[`${pair.denominatorPrefix}_season`] = getHistoricalSupportAccumulatorTotal(
-    historicalSimpleMetricsState,
+  output[`${pair.denominatorPrefix}_season`] = getHistoricalPairTotal(
     pair.denominatorKey,
-    currentSeason,
     "season"
   );
-  output[`${pair.numeratorPrefix}_3ya`] = getHistoricalSupportAccumulatorTotal(
-    historicalSimpleMetricsState,
+  output[`${pair.numeratorPrefix}_3ya`] = getHistoricalPairTotal(
     pair.numeratorKey,
-    currentSeason,
     "threeYear"
   );
-  output[`${pair.denominatorPrefix}_3ya`] = getHistoricalSupportAccumulatorTotal(
-    historicalSimpleMetricsState,
+  output[`${pair.denominatorPrefix}_3ya`] = getHistoricalPairTotal(
     pair.denominatorKey,
-    currentSeason,
     "threeYear"
   );
-  output[`${pair.numeratorPrefix}_career`] = getHistoricalSupportAccumulatorTotal(
-    historicalSimpleMetricsState,
+  output[`${pair.numeratorPrefix}_career`] = getHistoricalPairTotal(
     pair.numeratorKey,
-    currentSeason,
     "career"
   );
-  output[`${pair.denominatorPrefix}_career`] = getHistoricalSupportAccumulatorTotal(
-    historicalSimpleMetricsState,
+  output[`${pair.denominatorPrefix}_career`] = getHistoricalPairTotal(
     pair.denominatorKey,
-    currentSeason,
     "career"
   );
 }
@@ -2493,7 +2780,7 @@ async function fetchWgoRowsForPlayer(
     let query = supabase
       .from("wgo_skater_stats")
       .select(
-        "player_id, game_id, date, season_id, team_abbrev, current_team_abbreviation, goals, assists, total_primary_assists, total_secondary_assists, shots, shooting_percentage, hits, blocked_shots, points, pp_points, pp_toi, pp_toi_pct_per_game, toi_per_game"
+        "player_id, game_id, date, season_id, team_abbrev, current_team_abbreviation, goals, assists, total_primary_assists, total_secondary_assists, shots, shooting_percentage, hits, blocked_shots, points, pp_points, pp_goals, pp_toi, pp_toi_pct_per_game, toi_per_game"
       )
       .eq("player_id", playerId)
       .order("date", { ascending: true })
@@ -2683,7 +2970,7 @@ async function fetchCounts(
         const { data, error } = await supabase
           .from(tableName as any)
           .select(
-            "date_scraped, season, toi, goals, total_assists, first_assists, second_assists, total_points, shots, ixg, iscfs, hdcf, ipp, penalties_drawn, hits, shots_blocked"
+            "date_scraped, season, toi, goals, total_assists, first_assists, second_assists, total_points, shots, icf, ixg, iscfs, hdcf, ipp, penalties_drawn, total_penalties, hits, shots_blocked"
           )
           .eq("player_id", playerId)
           .gte("date_scraped", startDate)
@@ -2755,7 +3042,7 @@ async function fetchCountsOi(
         const { data, error } = await supabase
           .from(tableName as any)
           .select(
-            "date_scraped, season, toi, gf, ga, sf, sa, off_zone_starts, def_zone_starts, neu_zone_starts, off_zone_start_pct, on_ice_sh_pct, on_ice_sv_pct, pdo, cf, ca, cf_pct, ff, fa, ff_pct"
+            "date_scraped, season, toi, gf, ga, xgf, xga, sf, sa, off_zone_starts, def_zone_starts, neu_zone_starts, off_zone_start_pct, on_ice_sh_pct, on_ice_sv_pct, pdo, cf, ca, cf_pct, ff, fa, ff_pct"
           )
           .eq("player_id", playerId)
           .gte("date_scraped", startDate)
@@ -3193,7 +3480,7 @@ async function processPlayer(
     freshnessBlockerCount: 0,
     sourceTracking: createEmptySourceTrackingSummary()
   };
-  for (const config of STRENGTH_CONFIGS) {
+  for (const config of getStrengthConfigs(options.strengths)) {
     const strengthLabel = `[fetchRollingPlayerAverages] player:${playerId} strength:${config.state}`;
     console.time(strengthLabel);
     try {
@@ -3570,6 +3857,7 @@ export async function recomputePlayerRowsForValidation(options: {
   season?: number;
   startDate?: string;
   endDate?: string;
+  strengths?: StrengthState[];
   skipDiagnostics?: boolean;
 }): Promise<ProcessPlayerResult> {
   const games = await fetchGames();
@@ -3581,6 +3869,7 @@ export async function recomputePlayerRowsForValidation(options: {
     season: options.season,
     startDate: options.startDate,
     endDate: options.endDate,
+    strengths: options.strengths,
     skipDiagnostics: options.skipDiagnostics
   });
 }
@@ -3751,6 +4040,7 @@ export async function main(
       season: options.season ?? null,
       startDate: options.startDate ?? null,
       endDate: options.endDate ?? null,
+      strengths: options.strengths ?? null,
       resumePlayerId: options.resumePlayerId ?? null,
       forceFullRefresh: Boolean(options.forceFullRefresh)
     }
@@ -4164,16 +4454,19 @@ export const __testables = {
   buildGameRecords,
   buildRunSummary,
   summarizeSourceTracking,
+  getGoalsPer60ToiSeconds,
   didPlayerCountAsAppearance,
   applyGpOutputs,
   getGpOutputCompatibilityMode,
   deriveOutputs,
   getOptionalPpContextOutputs,
   initAccumulator,
+  normalizeStrengthStates,
   normalizePlayerIdList,
   shouldUseDateScopedPlayerSelection,
   shouldWarnAboutDisabledImplicitAutoResume,
   filterPlayerIdsForResume,
+  splitRollingUpsertRowForDurableStorage,
   upsertRollingPlayerMetricsBatch
 };
 

@@ -31,7 +31,7 @@ That means:
 
 ## Named Feature Families
 
-The training harness now exposes two named feature-family presets:
+The training harness now exposes three named feature-family presets:
 
 ### `first_pass_v1`
 
@@ -80,6 +80,22 @@ Reason:
 
 - handedness did not help on the repaired sample
 - rebound geometry remained inconclusive because the current holdout still lacks positive rebound coverage
+
+### `speed_context_v3`
+
+This is the first public-model-inspired candidate family.
+
+It contains everything in `expanded_v2`, plus speed and transition-distance terms commonly found in public xG work:
+
+- `speedFromPreviousEventFeetPerSecond`
+- `reboundSpeedFromSourceFeetPerSecond`
+- `rushDistanceFromSourceFeet`
+- `rushSpeedFromSourceFeetPerSecond`
+
+Reason:
+
+- public NHL xG examples commonly combine elapsed time with last-event/rebound/fastbreak distance
+- explicit speed terms make that signal available to linear and boosted model families without requiring the learner to infer a ratio from two separate inputs
 
 ### 1. Mandatory Baseline Features
 

@@ -227,7 +227,8 @@ describe("/api/v1/db/update-line-combinations", () => {
       repairMode: "recent_gap",
       status: "skipped_external_feed_unavailable",
       processed: 0,
-      skipped: 2
+      skipped: 2,
+      skippedGameIds: [301, 302]
     });
   });
 

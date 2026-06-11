@@ -38,6 +38,50 @@ function isExternalFeedUnavailableError(message: string): boolean {
   return /Gamecenter (boxscore|play-by-play) HTTP 404: Not Found/i.test(message);
 }
 
+function summarizeLineComboFailures(
+  settled: PromiseSettledResult<any[]>[],
+  games: Array<{ id: number }>
+) {
+  const succeededGameIds: number[] = [];
+  const skippedUnavailableFeeds: Array<{ gameId: number; message: string }> = [];
+  const failures: Array<{ gameId: number; message: string }> = [];
+
+  settled.forEach((result, index) => {
+    const game = games[index];
+    if (!game) return;
+
+    if (result.status === "fulfilled") {
+      const gameId = result.value[0]?.gameId;
+      succeededGameIds.push(Number.isFinite(gameId) ? gameId : game.id);
+      return;
+    }
+
+    const message = result.reason?.message ?? String(result.reason);
+    const entry = { gameId: game.id, message };
+    if (isExternalFeedUnavailableError(message)) {
+      skippedUnavailableFeeds.push(entry);
+      return;
+    }
+    failures.push(entry);
+  });
+
+  return {
+    succeededGameIds,
+    skippedUnavailableFeeds,
+    failures
+  };
+}
+
+function formatFailureSummary(
+  failures: Array<{ gameId: number; message: string }>,
+  maxItems = 5
+) {
+  return failures
+    .slice(0, maxItems)
+    .map((failure) => `${failure.gameId}: ${failure.message}`)
+    .join("; ");
+}
+
 async function listHistoricalGamesInRange(args: {
   supabase: SupabaseClient;
   startDate: string;
@@ -118,34 +162,23 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
       const results = await Promise.allSettled(
         games.map((game) => updateLineCombos(game.id, supabase))
       );
-      const succeededGameIds: number[] = [];
-      const failures: Array<{ gameId: number; message: string }> = [];
-
-      results.forEach((result, index) => {
-        const game = games[index];
-        if (!game) return;
-        if (result.status === "fulfilled") {
-          succeededGameIds.push(game.id);
-          return;
-        }
-        failures.push({
-          gameId: game.id,
-          message: result.reason?.message ?? String(result.reason)
-        });
-      });
+      const { succeededGameIds, skippedUnavailableFeeds, failures } =
+        summarizeLineComboFailures(results, games);
 
       const payload = {
         success: failures.length === 0,
         repairMode,
         message:
           failures.length === 0
-            ? `Successfully backfilled line combinations for games [${succeededGameIds.join(", ")}].`
-            : `Backfilled line combinations for games [${succeededGameIds.join(", ")}]. Failed games [${failures
-                .map((failure) => `${failure.gameId}: ${failure.message}`)
-                .join("; ")}]`,
+            ? `Backfilled line combinations for ${succeededGameIds.length} game(s); skipped ${skippedUnavailableFeeds.length} unavailable Gamecenter feed(s).`
+            : `Backfilled line combinations for ${succeededGameIds.length} game(s). Failed ${failures.length} game(s): ${formatFailureSummary(failures)}.`,
         gameIds: games.map((game) => game.id),
         processed: succeededGameIds.length,
         failed: failures.length,
+        skipped: skippedUnavailableFeeds.length,
+        skippedGameIds: skippedUnavailableFeeds
+          .slice(0, 20)
+          .map((failure) => failure.gameId),
         requestedScope:
           gameIds.length > 0
             ? { gameIds }
@@ -213,23 +246,15 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
     const results = await Promise.allSettled(
       repairTargets.map((item) => updateLineCombos(item.id, supabase))
     );
-    const updated = results.filter(
-      (item) => item.status === "fulfilled"
-    ) as PromiseFulfilledResult<any[]>[];
-    const failed = results.filter(
-      (item) => item.status === "rejected"
-    ) as PromiseRejectedResult[];
+    const {
+      succeededGameIds: updatedGameIds,
+      skippedUnavailableFeeds,
+      failures
+    } = summarizeLineComboFailures(results, repairTargets);
 
-    const updatedGameIds = updated.map((item) => item.value[0].gameId);
-    const failedMessages = failed.map((item) => item.reason.message);
-    const allFailuresAreUnavailableFeeds =
-      failedMessages.length > 0 && failedMessages.every(isExternalFeedUnavailableError);
+    failures.forEach((item) => console.error(item.message));
 
-    failed
-      .filter((item) => !isExternalFeedUnavailableError(item.reason?.message ?? String(item.reason)))
-      .forEach((item) => console.error(item.reason));
-
-    if (allFailuresAreUnavailableFeeds) {
+    if (failures.length === 0 && skippedUnavailableFeeds.length > 0) {
       return res.json({
         success: true,
         repairMode,
@@ -240,14 +265,17 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
           seasonId: currentSeason.seasonId
         },
         processed: updatedGameIds.length,
-        skipped: failedMessages.length,
+        skipped: skippedUnavailableFeeds.length,
+        skippedGameIds: skippedUnavailableFeeds
+          .slice(0, 20)
+          .map((failure) => failure.gameId),
         message:
-          `Updated line combinations for games [${updatedGameIds}]. ` +
-          `Skipped ${failedMessages.length} game(s) because NHL Gamecenter feeds returned 404.`
+          `Updated line combinations for ${updatedGameIds.length} game(s). ` +
+          `Skipped ${skippedUnavailableFeeds.length} game(s) because NHL Gamecenter feeds returned 404.`
       });
     }
 
-    if (failed.length > 0) {
+    if (failures.length > 0) {
       return res.status(500).json({
         success: false,
         repairMode,
@@ -256,9 +284,16 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
           count,
           seasonId: currentSeason.seasonId
         },
+        processed: updatedGameIds.length,
+        skipped: skippedUnavailableFeeds.length,
+        skippedGameIds: skippedUnavailableFeeds
+          .slice(0, 20)
+          .map((failure) => failure.gameId),
+        failed: failures.length,
+        failures: failures.slice(0, 10),
         message:
-          `Updated line combinations for games [${updatedGameIds}]. ` +
-          `Failed games [${failedMessages}]`
+          `Updated line combinations for ${updatedGameIds.length} game(s). ` +
+          `Failed ${failures.length} game(s): ${formatFailureSummary(failures)}.`
       });
     }
 

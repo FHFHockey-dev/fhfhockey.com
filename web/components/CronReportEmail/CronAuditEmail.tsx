@@ -52,7 +52,36 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
   fetchErrors = [],
   summary
 }) => {
-  const failures = audits.filter((audit) => audit.status === "failure");
+  const criticalFailures = audits.filter((audit) => audit.status === "failure");
+  const missingRequiredJobs = audits.filter(
+    (audit) =>
+      audit.status === "unknown" &&
+      ((audit.reason ?? "").includes("No cron or audit") ||
+        (audit.missingObservationWarnings ?? []).some((warning) =>
+          warning.includes("No cron or audit")
+        ))
+  );
+  const auditGaps = audits.filter(
+    (audit) =>
+      audit.status !== "failure" &&
+      (audit.missingObservationWarnings ?? []).some(
+        (warning) =>
+          warning.includes("no audit payload") ||
+          warning.includes("No audit row") ||
+          warning.includes("timing metadata") ||
+          warning.includes("Telemetry source unavailable")
+      )
+  );
+  const partialSuccesses = audits.filter(
+    (audit) => audit.status === "success" && (audit.failedRows ?? 0) > 0
+  );
+  const noteworthySuccesses = audits.filter(
+    (audit) =>
+      audit.status === "success" &&
+      (audit.failedRows ?? 0) === 0 &&
+      (audit.optimizationDenotation ||
+        (audit.missingObservationWarnings ?? []).length > 0)
+  );
   const telemetryUnavailable = fetchErrors.length > 0 && audits.length === 0;
 
   const container: React.CSSProperties = {
@@ -94,21 +123,23 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
     label: string,
     colors: { background: string; color: string }
   ) => (
-    <span
-      style={{
-        display: "inline-block",
-        marginRight: 6,
-        marginTop: 4,
-        padding: "2px 8px",
-        borderRadius: 999,
-        fontSize: 11,
-        fontWeight: 700,
-        background: colors.background,
-        color: colors.color
-      }}
-    >
-      {label}
-    </span>
+    <>
+      <span
+        style={{
+          display: "inline-block",
+          marginRight: 6,
+          marginTop: 4,
+          padding: "2px 8px",
+          borderRadius: 999,
+          fontSize: 11,
+          fontWeight: 700,
+          background: colors.background,
+          color: colors.color
+        }}
+      >
+        {label}
+      </span>{" "}
+    </>
   );
 
   const renderDuration = (durationMs: number | null) =>
@@ -199,8 +230,10 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
               ) : null}
               {(audit.benchmarkAnnotations ?? []).length > 0 ? (
                 <div style={{ marginTop: 4, fontSize: 12, color: "#4B5563" }}>
-                  Benchmark:{" "}
-                  {audit.benchmarkAnnotations?.map((annotation) => annotation.note).join(" ")}
+                  Benchmark: {audit.benchmarkAnnotations?.[0]?.note}
+                  {(audit.benchmarkAnnotations?.length ?? 0) > 1
+                    ? ` (+${(audit.benchmarkAnnotations?.length ?? 1) - 1} more)`
+                    : ""}
                 </div>
               ) : null}
               {audit.failedRowSamples.length > 0 ? (
@@ -214,6 +247,18 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
       </tbody>
     </table>
   );
+
+  const renderSection = (
+    title: string,
+    rows: AuditEntry[],
+    color: string
+  ) =>
+    rows.length > 0 ? (
+      <>
+        <h2 style={{ margin: "16px 0 8px", color }}>{title}</h2>
+        {renderTable(rows)}
+      </>
+    ) : null;
 
   return (
     <div style={container}>
@@ -261,18 +306,27 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({
         </div>
       ) : null}
 
-      {!telemetryUnavailable && failures.length === 0 ? (
+      {!telemetryUnavailable && criticalFailures.length === 0 ? (
         <div style={{ margin: "12px 0", color: "#166534", fontWeight: 700 }}>
           No scheduled audit failures in this period.
         </div>
       ) : null}
 
-      {!telemetryUnavailable && audits.length > 0 ? (
-        <>
-          <h2 style={{ margin: "16px 0 8px" }}>Scheduled job briefing</h2>
-          {renderTable(audits)}
-        </>
-      ) : null}
+      {!telemetryUnavailable
+        ? renderSection("Critical failures", criticalFailures, "#991B1B")
+        : null}
+      {!telemetryUnavailable
+        ? renderSection("Missing required jobs", missingRequiredJobs, "#92400E")
+        : null}
+      {!telemetryUnavailable
+        ? renderSection("Audit gaps", auditGaps, "#92400E")
+        : null}
+      {!telemetryUnavailable
+        ? renderSection("Partial successes", partialSuccesses, "#92400E")
+        : null}
+      {!telemetryUnavailable
+        ? renderSection("Successful jobs needing attention", noteworthySuccesses, "#374151")
+        : null}
     </div>
   );
 };

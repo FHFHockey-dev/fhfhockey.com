@@ -1,0 +1,152 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  buildClientRankingsRequest,
+  buildMatrixRequestPath,
+  buildRankingsRequestPath,
+  normalizeRankingsFilters,
+} from "./rankingUrlState";
+
+describe("rankingUrlState", () => {
+  it("normalizes URL query defaults for a first-load skater leaderboard", () => {
+    expect(normalizeRankingsFilters({})).toMatchObject({
+      entity: "skaters",
+      season: "20252026",
+      window: "season",
+      position: "all",
+      deployment: "all",
+      strength: "5v5",
+      metric: "goals_per_60",
+      minGp: "1",
+      minToi: "300",
+      team: "",
+      sort: "percentile",
+      direction: "desc",
+    });
+  });
+
+  it("falls back from invalid URL query values without throwing", () => {
+    expect(
+      normalizeRankingsFilters({
+        entity: "bad",
+        window: "last30",
+        position: "G",
+        deployment: "L9",
+        strength: "bad_strength",
+        metric: "missing_metric",
+        sort: "bad_sort",
+        direction: "sideways",
+      }),
+    ).toMatchObject({
+      entity: "skaters",
+      window: "season",
+      position: "all",
+      deployment: "all",
+      strength: "5v5",
+      metric: "goals_per_60",
+      sort: "percentile",
+      direction: "desc",
+    });
+  });
+
+  it("accepts true 5v5 strength and serializes the matrix request path", () => {
+    const filters = normalizeRankingsFilters({
+      season: "20252026",
+      strength: "5v5",
+      sort_metric: "xga_per_60",
+      sort_direction: "asc",
+      sample_confidence: "high",
+      page: "2",
+      page_size: "25",
+      selected_player: "8478402",
+    });
+
+    expect(filters.strength).toBe("5v5");
+    expect(filters.matrixSortMetric).toBe("xga_per_60");
+    expect(filters.matrixSortDirection).toBe("asc");
+    expect(filters.sampleConfidence).toBe("high");
+    expect(filters.page).toBe("2");
+    expect(filters.pageSize).toBe("25");
+    expect(buildMatrixRequestPath(filters)).toBe(
+      "/api/v1/contextual-rankings/matrix?entity=skaters&season=20252026&window=season&position=all&deployment=all&strength=5v5&min_gp=1&min_toi=300&sort_metric=xga_per_60&sort_direction=asc&page=2&page_size=25&sample_confidence=high&selected_player=8478402",
+    );
+  });
+
+  it("normalizes unsupported matrix page sizes from stale URL state", () => {
+    const filters = normalizeRankingsFilters({
+      page_size: "5",
+    });
+
+    expect(filters.pageSize).toBe("10");
+    expect(buildMatrixRequestPath(filters)).toContain("page_size=10");
+  });
+
+  it("normalizes advanced display filter URL values", () => {
+    const filters = normalizeRankingsFilters({
+      sample_confidence: "medium_plus",
+      source_quality: "clean_only",
+      groups: "offense,missing,defense_on_ice,offense",
+      columns: "points_per_60,missing,xga_per_60,points_per_60",
+    });
+
+    expect(filters.sampleConfidence).toBe("medium_plus");
+    expect(filters.sourceQuality).toBe("clean_only");
+    expect(filters.metricGroups).toBe("offense,defense_on_ice");
+    expect(filters.metricColumns).toBe("points_per_60,xga_per_60");
+  });
+
+  it("resets invalid position and deployment combinations", () => {
+    expect(
+      normalizeRankingsFilters({
+        position: "D",
+        deployment: "L2",
+      }).deployment,
+    ).toBe("all");
+    expect(
+      normalizeRankingsFilters({
+        position: "F",
+        deployment: "P2",
+      }).deployment,
+    ).toBe("all");
+  });
+
+  it("serializes skater filters into the API request path and client request", () => {
+    const filters = normalizeRankingsFilters({
+      season: "20252026",
+      window: "last10",
+      position: "F",
+      deployment: "L3",
+      strength: "ev",
+      metric: "ixg_per_60",
+      min_gp: "3",
+      min_toi: "600",
+      team: "7",
+      sort: "gp",
+      direction: "asc",
+    });
+
+    expect(buildRankingsRequestPath(filters)).toBe(
+      "/api/v1/contextual-rankings?entity=skaters&season=20252026&window=last10&position=F&deployment=L3&strength=ev&metric=ixg_per_60&min_gp=3&min_toi=600&sort=gp&direction=asc&limit=100&team=7",
+    );
+    expect(buildClientRankingsRequest(filters)).toMatchObject({
+      season: 20252026,
+      window: "last10",
+      position: "F",
+      deployment: "L3",
+      strength: "ev",
+      metric: "ixg_per_60",
+      minGp: 3,
+      minToiSeconds: 600,
+      teamId: 7,
+      peerGroupType: "team",
+      sort: "gp",
+      direction: "asc",
+    });
+  });
+
+  it("does not build an API path for coming-soon entity types", () => {
+    const filters = normalizeRankingsFilters({ entity: "goalies" });
+
+    expect(buildRankingsRequestPath(filters)).toBeNull();
+  });
+});

@@ -19,6 +19,9 @@ const EPSILON = 1e-9;
 const DEFAULT_SHOT_FEATURE_UPSERT_BATCH_SIZE = 100;
 const DEFAULT_SHOT_FEATURE_UPSERT_RETRIES = 4;
 
+// "Prediction" here is model-scoring nomenclature: shot_goal means the
+// estimated probability that this already-observed shot attempt became a goal.
+// It must not be confused with pregame/team projected goals.
 export type XgShotPredictionType = "shot_goal" | "rebound_creation";
 
 export type PersistedXgModelArtifact = {
@@ -588,6 +591,9 @@ export function predictShotGoalProbabilities(
   row: NhlShotFeatureRow,
   artifact: PersistedXgModelArtifact
 ): { rawProbability: number; calibratedProbability: number | null; xg: number } {
+  // This function returns a shot-quality probability for a single shot event.
+  // Summing these probabilities creates ixG/xGF/xGA; it is not forecasting
+  // future goals for a player or team.
   const features = encodeFeatureVector(row, artifact);
   let rawProbability: number;
 

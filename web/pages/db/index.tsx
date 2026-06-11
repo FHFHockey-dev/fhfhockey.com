@@ -627,10 +627,10 @@ export default function Page() {
     }
   }
 
-  async function updateExpectedGoals() {
+  async function updateGameGoalProjections() {
     try {
       const { message, success } = await doPOST(
-        "/api/v1/db/update-expected-goals?date=all"
+        "/api/v1/db/update-game-goal-projections?date=all"
       );
       enqueueSnackbar(message, {
         variant: success ? "success" : "error"
@@ -1226,7 +1226,7 @@ export default function Page() {
           </Card>
         </Grid>
 
-        {/* Expected Goals Card */}
+        {/* Game Goal Projections Card */}
         <Grid xs={4}>
           <Card
             sx={{
@@ -1242,21 +1242,20 @@ export default function Page() {
             <CardMedia
               sx={{ height: 140 }}
               image="/pictures/expectedGoals.png" // Replace with an appropriate image URL or local path
-              title="Expected Goals"
+              title="Game Goal Projections"
             />
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
-                EXPECTED GOALS
+                GAME GOAL PROJECTIONS
               </Typography>
               <Typography variant="body2">
-                Update the expected goals calculations for all current games.
-                This will analyze team performance metrics and update the
-                `expected_goals` table in the database.
+                Update the legacy game-level projected goals and win odds for
+                all current games. This updates the `expected_goals` table.
               </Typography>
             </CardContent>
             <CardActions>
-              <Button size="small" onClick={updateExpectedGoals}>
-                Update Expected Goals
+              <Button size="small" onClick={updateGameGoalProjections}>
+                Update Goal Projections
               </Button>
             </CardActions>
           </Card>

@@ -78,6 +78,7 @@ function createShotRow(
     previousEventSameTeam: true,
     timeSincePreviousEventSeconds: 4,
     distanceFromPreviousEvent: 12,
+    speedFromPreviousEventFeetPerSecond: 3,
     homeScoreBeforeEvent: 1,
     awayScoreBeforeEvent: 0,
     homeScoreDiffBeforeEvent: 1,
@@ -115,6 +116,9 @@ function createShotRow(
     reboundLateralDisplacementFeet: null,
     reboundDistanceDeltaFeet: null,
     reboundAngleChangeDegrees: null,
+    reboundSpeedFromSourceFeetPerSecond: null,
+    rushDistanceFromSourceFeet: null,
+    rushSpeedFromSourceFeetPerSecond: null,
     ownerPowerPlayAgeSeconds: null,
     shooterShiftAgeSeconds: 15,
     shooterPreviousShiftGapSeconds: 20,
@@ -392,6 +396,27 @@ describe("baselineDataset", () => {
     expect(dataset.featureKeys).toContain("ownerScoreDiffBucket:lead-1");
     expect(dataset.featureKeys).not.toContain("shooterHandedness:L");
     expect(dataset.featureKeys).not.toContain("reboundLateralDisplacementFeet");
+  });
+
+  it("uses the speed_context_v3 feature family when requested", () => {
+    const dataset = buildEncodedBaselineDataset(
+      [
+        createShotRow({
+          speedFromPreviousEventFeetPerSecond: 3,
+          reboundSpeedFromSourceFeetPerSecond: 8,
+          rushDistanceFromSourceFeet: 90,
+          rushSpeedFromSourceFeetPerSecond: 12,
+        }),
+      ],
+      {
+        featureFamily: "speed_context_v3",
+      }
+    );
+
+    expect(dataset.featureKeys).toContain("speedFromPreviousEventFeetPerSecond");
+    expect(dataset.featureKeys).toContain("reboundSpeedFromSourceFeetPerSecond");
+    expect(dataset.featureKeys).toContain("rushDistanceFromSourceFeet");
+    expect(dataset.featureKeys).toContain("rushSpeedFromSourceFeetPerSecond");
   });
 
   it("encodes handedness categorical features when explicitly selected", () => {

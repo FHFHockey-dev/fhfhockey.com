@@ -497,6 +497,7 @@ const METRIC_FORMULAS: Record<string, string> = {
   primary_assists: "sum(first_assists)",
   secondary_assists: "sum(second_assists)",
   penalties_drawn: "sum(penalties_drawn)",
+  penalties_taken: "sum(total_penalties)",
   oz_start_pct: "sum(oz_starts) / sum(oz_starts + dz_starts) * 100",
   cf_pct: "sum(cf) / sum(cf + ca) * 100",
   ff_pct: "sum(ff) / sum(ff + fa) * 100",
@@ -505,6 +506,7 @@ const METRIC_FORMULAS: Record<string, string> = {
   goals_per_60: "sum(goals) / sum(toi_seconds) * 3600",
   assists_per_60: "sum(assists) / sum(toi_seconds) * 3600",
   penalties_drawn_per_60: "sum(penalties_drawn) / sum(toi_seconds) * 3600",
+  penalties_taken_per_60: "sum(total_penalties) / sum(toi_seconds) * 3600",
   primary_assists_per_60: "sum(primary_assists) / sum(toi_seconds) * 3600",
   secondary_assists_per_60: "sum(secondary_assists) / sum(toi_seconds) * 3600",
   hits_per_60: "sum(hits) / sum(toi_seconds) * 3600",
@@ -550,6 +552,10 @@ const WEIGHTED_RATE_SUPPORT_CONFIG = {
   penalties_drawn_per_60: {
     numeratorAlias: "penalties_drawn",
     numeratorActualBaseField: "penalties_drawn"
+  },
+  penalties_taken_per_60: {
+    numeratorAlias: "penalties_taken",
+    numeratorActualBaseField: "total_penalties"
   },
   primary_assists_per_60: {
     numeratorAlias: "primary_assists",
