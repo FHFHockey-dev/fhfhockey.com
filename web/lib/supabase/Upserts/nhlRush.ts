@@ -28,12 +28,33 @@ export type NhlRushContext = {
   rushSourceZoneCode: string | null;
   rushSourceTeamRelativeZoneCode: string | null;
   rushTimeSinceSourceSeconds: number | null;
+  rushDistanceFromSourceFeet: number | null;
   rushEventsSinceSource: number | null;
   rushWindowSeconds: number;
 };
 
 function getEventOrder(event: ParsedNhlPbpEvent): number {
   return event.sort_order ?? event.event_id;
+}
+
+function computeDistanceFeet(
+  startX: number | null | undefined,
+  startY: number | null | undefined,
+  endX: number | null | undefined,
+  endY: number | null | undefined
+): number | null {
+  if (
+    startX == null ||
+    startY == null ||
+    endX == null ||
+    endY == null
+  ) {
+    return null;
+  }
+
+  const deltaX = endX - startX;
+  const deltaY = endY - startY;
+  return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 }
 
 function sortEvents(events: ParsedNhlPbpEvent[]): ParsedNhlPbpEvent[] {
@@ -155,6 +176,7 @@ export function buildRushContexts(
         rushSourceZoneCode: null,
         rushSourceTeamRelativeZoneCode: null,
         rushTimeSinceSourceSeconds: null,
+        rushDistanceFromSourceFeet: null,
         rushEventsSinceSource: null,
         rushWindowSeconds,
       };
@@ -174,6 +196,7 @@ export function buildRushContexts(
         rushSourceZoneCode: null,
         rushSourceTeamRelativeZoneCode: null,
         rushTimeSinceSourceSeconds: null,
+        rushDistanceFromSourceFeet: null,
         rushEventsSinceSource: null,
         rushWindowSeconds,
       };
@@ -205,6 +228,12 @@ export function buildRushContexts(
             rushSourceZoneCode: candidate.zone_code ?? null,
             rushSourceTeamRelativeZoneCode: teamRelativeZoneCode,
             rushTimeSinceSourceSeconds: deltaSeconds,
+            rushDistanceFromSourceFeet: computeDistanceFeet(
+              candidate.x_coord,
+              candidate.y_coord,
+              event.x_coord,
+              event.y_coord
+            ),
             rushEventsSinceSource: index - scanIndex - 1,
             rushWindowSeconds,
           };
@@ -228,6 +257,7 @@ export function buildRushContexts(
       rushSourceZoneCode: null,
       rushSourceTeamRelativeZoneCode: null,
       rushTimeSinceSourceSeconds: null,
+      rushDistanceFromSourceFeet: null,
       rushEventsSinceSource: null,
       rushWindowSeconds,
     };

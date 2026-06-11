@@ -3,7 +3,13 @@ import {
   type FeatureLeakageValidationReport,
 } from "lib/ml/featureLeakageRegistry";
 
-export type NhlEdgeFeatureEntity = "skater" | "team" | "goalie" | "skater_shot_location_leader";
+export type NhlEdgeFeatureEntity =
+  | "skater"
+  | "team"
+  | "goalie"
+  | "skater_game"
+  | "team_game"
+  | "skater_shot_location_leader";
 export type NhlEdgeFeatureAvailability = "pregame_safe_with_freshness";
 
 export type NhlEdgeFeatureContract = {
@@ -134,6 +140,52 @@ const CONTRACTS: NhlEdgeFeatureContract[] = [
     availability: "pregame_safe_with_freshness",
     modelUse: "display_or_leaderboard_only",
     fields: ["all_value", "high_danger_value", "mid_range_value", "long_range_value"],
+  },
+  {
+    id: "edge_skater_skating_distance_games_daily",
+    entity: "skater_game",
+    table: "nhl_edge_skater_skating_distance_games_daily",
+    latestView: "analytics.vw_nhl_edge_latest_skater_skating_distance_games",
+    grain: ["snapshot_date", "season_id", "game_type", "player_id", "game_id"],
+    seasonScoped: true,
+    gameTypeScoped: true,
+    freshnessRule: "snapshot_date_lte_as_of_date",
+    availability: "pregame_safe_with_freshness",
+    modelUse: "allowed_with_as_of_join",
+    fields: [
+      "toi_all_seconds",
+      "distance_skated_all_miles",
+      "distance_skated_all_km",
+      "toi_even_seconds",
+      "distance_skated_even_miles",
+      "toi_pp_seconds",
+      "distance_skated_pp_miles",
+      "toi_pk_seconds",
+      "distance_skated_pk_miles",
+    ],
+  },
+  {
+    id: "edge_team_skating_distance_games_daily",
+    entity: "team_game",
+    table: "nhl_edge_team_skating_distance_games_daily",
+    latestView: "analytics.vw_nhl_edge_latest_team_skating_distance_games",
+    grain: ["snapshot_date", "season_id", "game_type", "team_id", "game_id"],
+    seasonScoped: true,
+    gameTypeScoped: true,
+    freshnessRule: "snapshot_date_lte_as_of_date",
+    availability: "pregame_safe_with_freshness",
+    modelUse: "allowed_with_as_of_join",
+    fields: [
+      "toi_all_seconds",
+      "distance_skated_all_miles",
+      "distance_skated_all_km",
+      "toi_even_seconds",
+      "distance_skated_even_miles",
+      "toi_pp_seconds",
+      "distance_skated_pp_miles",
+      "toi_pk_seconds",
+      "distance_skated_pk_miles",
+    ],
   },
 ];
 

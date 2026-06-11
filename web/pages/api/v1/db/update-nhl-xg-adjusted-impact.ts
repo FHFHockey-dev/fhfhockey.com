@@ -7,6 +7,7 @@ import {
   ADJUSTED_IMPACT_TARGET_FAMILY,
   buildAdjustedImpactDesignRows,
   fitAdjustedImpactBaseline,
+  validateAdjustedImpactHeldOut,
   validateAdjustedImpactLeakage,
   type AdjustedImpactUsageMode,
   type AdjustedImpactShotRow,
@@ -287,6 +288,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const learningRate = parseNumber(firstQueryValue(req.query.learningRate), 0.03);
   const l2 = parseNumber(firstQueryValue(req.query.l2), 0.1);
   const minPlayerRows = parseInteger(firstQueryValue(req.query.minPlayerRows), 100);
+  const validationFraction = parseNumber(firstQueryValue(req.query.validationFraction), 0.2);
+  const minValidationRows = parseInteger(firstQueryValue(req.query.minValidationRows), 1000);
+  const minimumMseImprovement = parseNumber(firstQueryValue(req.query.minimumMseImprovement), 0);
   const usageMode = parseUsageMode(firstQueryValue(req.query.usageMode));
   const upsertBatchSize = Math.max(
     1,
@@ -328,6 +332,27 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       leakage,
     });
   }
+  const heldOutValidation = validateAdjustedImpactHeldOut(design.rows, {
+    iterations,
+    learningRate,
+    l2,
+    minPlayerRows,
+    validationFraction,
+    minValidationRows,
+    minimumMseImprovement,
+  });
+  if (!heldOutValidation.passed) {
+    return res.status(409).json({
+      success: false,
+      dryRun,
+      sourceModelVersion,
+      adjustedModelVersion,
+      featureVersion,
+      seasonId,
+      leakage,
+      heldOutValidation,
+    });
+  }
   const model = fitAdjustedImpactBaseline(design.rows, {
     iterations,
     learningRate,
@@ -357,6 +382,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       sourceTables: ["nhl_xg_shot_predictions", "nhl_xg_shot_features", "nhl_api_shift_rows"],
       skippedRows: design.skippedRows.length,
       leakage,
+      heldOutValidation,
       generatedAt,
     },
     updated_at: generatedAt,
@@ -381,6 +407,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       targetFamily: model.target_family,
       generatedAt,
       featureAvailability: leakage.feature_availability,
+      heldOutValidation: {
+        passed: heldOutValidation.passed,
+        split: heldOutValidation.split,
+        metrics: heldOutValidation.metrics,
+      },
     },
     updated_at: generatedAt,
   }));
@@ -404,6 +435,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       seasonId,
       counts,
       leakage,
+      heldOutValidation,
       model,
       skippedDesignRowSamples: design.skippedRows.slice(0, 10),
     });
@@ -433,6 +465,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     seasonId,
     counts,
     leakage,
+    heldOutValidation,
     model: {
       ...model,
       player_estimates: model.player_estimates.slice(0, 25),

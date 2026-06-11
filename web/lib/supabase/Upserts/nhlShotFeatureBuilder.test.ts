@@ -215,6 +215,7 @@ describe("nhlShotFeatureBuilder", () => {
     });
     expect(rows[0].shotDistanceFeet).toBeCloseTo(17.6918, 3);
     expect(rows[0].shotAngleDegrees).toBeCloseTo(42.7093, 3);
+    expect(rows[0].speedFromPreviousEventFeetPerSecond).toBeCloseTo(8.6782, 3);
 
     expect(rows[1]).toMatchObject({
       eventId: 102,
@@ -242,6 +243,7 @@ describe("nhlShotFeatureBuilder", () => {
       ownerPowerPlayAgeSeconds: 6,
     });
     expect(rows[1].shotDistanceFeet).toBeCloseTo(7.6157, 3);
+    expect(rows[1].reboundSpeedFromSourceFeetPerSecond).toBeCloseTo(8.0777, 3);
     expect(rows[1].reboundDistanceDeltaFeet).toBeCloseTo(-10.0761, 3);
     expect(rows[1].reboundAngleChangeDegrees).toBeCloseTo(19.5107, 3);
   });
@@ -261,6 +263,8 @@ describe("nhlShotFeatureBuilder", () => {
         details: {
           eventOwnerTeamId: 20,
           playerId: 77,
+          xCoord: -20,
+          yCoord: 5,
           zoneCode: "O",
         },
       },
@@ -316,6 +320,7 @@ describe("nhlShotFeatureBuilder", () => {
       rushSourceEventId: 200,
       rushSourceTypeDescKey: "giveaway",
       rushSourceTeamRelativeZoneCode: "D",
+      rushTimeSinceSourceSeconds: 7,
       homeScoreBeforeEvent: 0,
       awayScoreBeforeEvent: 0,
       ownerScoreDiffBeforeEvent: 0,
@@ -332,6 +337,8 @@ describe("nhlShotFeatureBuilder", () => {
       missReasonBucket: "short-side",
       isShortSideMiss: true,
     });
+    expect(rows[0].rushDistanceFromSourceFeet).toBeCloseTo(88.1419, 3);
+    expect(rows[0].rushSpeedFromSourceFeetPerSecond).toBeCloseTo(12.5917, 3);
 
     expect(rows[1]).toMatchObject({
       eventId: 202,

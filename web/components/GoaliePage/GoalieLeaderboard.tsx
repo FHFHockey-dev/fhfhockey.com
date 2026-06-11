@@ -21,20 +21,15 @@ interface Props {
   varianceDisplayMode?: "raw" | "relative";
 }
 
+const EMPTY_GOALIE_RANKINGS: GoalieRanking[] = [];
+
 const GoalieLeaderboard: FC<Props> = ({
   goalieRankings,
   requestSort,
   sortConfig,
   varianceDisplayMode = "raw"
 }) => {
-  if (!goalieRankings || goalieRankings.length === 0) {
-    return (
-      <p className={styles.standoutNote}>
-        No rankings available. Select a date range, ensure data is fetched, and
-        check fantasy settings.
-      </p>
-    );
-  }
+  const safeGoalieRankings = goalieRankings ?? EMPTY_GOALIE_RANKINGS;
 
   // Function to determine percentage class (unchanged)
   const getPercentageClass = (percentage: number | undefined): string => {
@@ -49,9 +44,18 @@ const GoalieLeaderboard: FC<Props> = ({
     [varianceDisplayMode]
   );
   const varianceAverages = React.useMemo(
-    () => buildGoalieVarianceAverages(goalieRankings),
-    [goalieRankings]
+    () => buildGoalieVarianceAverages(safeGoalieRankings),
+    [safeGoalieRankings]
   );
+
+  if (safeGoalieRankings.length === 0) {
+    return (
+      <p className={styles.standoutNote}>
+        No rankings available. Select a date range, ensure data is fetched, and
+        check fantasy settings.
+      </p>
+    );
+  }
 
   const getValueTierClass = (tier: string | undefined) => {
     switch (tier) {
@@ -134,7 +138,7 @@ const GoalieLeaderboard: FC<Props> = ({
         </thead>
         <tbody>
           {/* Map over rankings - IMPORTANT: Ensure the order of TDs matches the headerLabels array */}
-          {goalieRankings.map((goalie, index) => {
+          {safeGoalieRankings.map((goalie, index) => {
             // Calculate fPts difference from league average
             const fPtsDiff =
               goalie.leagueAverageFantasyPointsPerGame !== undefined

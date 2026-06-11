@@ -458,6 +458,7 @@ export default function ForgePlayerDetailPage() {
                     <Link
                       href={buildForgeHref("/forge/dashboard", {
                         date,
+                        mode,
                         resolvedDate: asOfDate ?? routeResolvedDate
                       })}
                       className={styles.slateActionLink}
@@ -467,6 +468,7 @@ export default function ForgePlayerDetailPage() {
                     <Link
                       href={buildForgeHref("/start-chart", {
                         date,
+                        mode,
                         resolvedDate: asOfDate ?? routeResolvedDate
                       })}
                       className={styles.slateActionLink}

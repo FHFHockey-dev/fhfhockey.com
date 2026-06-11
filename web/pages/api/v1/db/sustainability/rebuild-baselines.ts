@@ -80,6 +80,50 @@ interface BaselineRecord {
 
 // -------------- Implementation -----------------
 const BATCH_SIZE = 100;
+const BASELINE_GAME_COLUMNS = [
+  "player_id",
+  "date",
+  "season_id",
+  "player_name",
+  "position_code",
+  "goals",
+  "goals_5v5",
+  "goals_per_60_5v5",
+  "shots",
+  "shooting_percentage",
+  "shooting_percentage_5v5",
+  "nst_ixg",
+  "nst_ixg_per_60",
+  "nst_ipp",
+  "nst_icf",
+  "nst_hdcf",
+  "nst_toi",
+  "nst_shots_per_60",
+  "nst_oi_gf",
+  "nst_oi_sf",
+  "nst_oi_sa",
+  "nst_oi_ga",
+  "nst_oi_cf",
+  "nst_oi_ca",
+  "nst_oi_xgf",
+  "nst_oi_xga",
+  "nst_oi_scf",
+  "nst_oi_sca",
+  "nst_oi_shooting_pct",
+  "nst_oi_save_pct",
+  "nst_oi_pdo",
+  "points",
+  "points_5v5",
+  "points_per_60_5v5",
+  "toi_per_game",
+  "toi_per_game_5v5",
+  "ev_time_on_ice",
+  "pp_goals",
+  "pp_shots",
+  "pp_points",
+  "pp_toi",
+  "pp_toi_pct_per_game"
+].join(",");
 
 // Supabase limits select pages to 1000 rows. Helper to fetch all pages by range
 async function fetchAllFromView(
@@ -198,8 +242,12 @@ async function handler(
       // Paginate game rows and totals rows to avoid 1k limit
       const gameRows = (await fetchAllFromView(
         "player_stats_unified",
-        "*",
-        (q: any) => q.in("player_id", batch).order("date", { ascending: false })
+        BASELINE_GAME_COLUMNS,
+        (q: any) =>
+          q
+            .in("player_id", batch)
+            .order("player_id", { ascending: true })
+            .order("date", { ascending: false })
       )) as PlayerStatsUnifiedRow[];
 
       const totalsRows = (await fetchAllFromView(

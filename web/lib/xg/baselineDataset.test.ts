@@ -78,6 +78,7 @@ function createShotRow(
     previousEventSameTeam: true,
     timeSincePreviousEventSeconds: 4,
     distanceFromPreviousEvent: 12,
+    speedFromPreviousEventFeetPerSecond: 3,
     homeScoreBeforeEvent: 1,
     awayScoreBeforeEvent: 0,
     homeScoreDiffBeforeEvent: 1,
@@ -115,6 +116,9 @@ function createShotRow(
     reboundLateralDisplacementFeet: null,
     reboundDistanceDeltaFeet: null,
     reboundAngleChangeDegrees: null,
+    reboundSpeedFromSourceFeetPerSecond: null,
+    rushDistanceFromSourceFeet: null,
+    rushSpeedFromSourceFeetPerSecond: null,
     ownerPowerPlayAgeSeconds: null,
     shooterShiftAgeSeconds: 15,
     shooterPreviousShiftGapSeconds: 20,
@@ -394,6 +398,27 @@ describe("baselineDataset", () => {
     expect(dataset.featureKeys).not.toContain("reboundLateralDisplacementFeet");
   });
 
+  it("uses the speed_context_v3 feature family when requested", () => {
+    const dataset = buildEncodedBaselineDataset(
+      [
+        createShotRow({
+          speedFromPreviousEventFeetPerSecond: 3,
+          reboundSpeedFromSourceFeetPerSecond: 8,
+          rushDistanceFromSourceFeet: 90,
+          rushSpeedFromSourceFeetPerSecond: 12,
+        }),
+      ],
+      {
+        featureFamily: "speed_context_v3",
+      }
+    );
+
+    expect(dataset.featureKeys).toContain("speedFromPreviousEventFeetPerSecond");
+    expect(dataset.featureKeys).toContain("reboundSpeedFromSourceFeetPerSecond");
+    expect(dataset.featureKeys).toContain("rushDistanceFromSourceFeet");
+    expect(dataset.featureKeys).toContain("rushSpeedFromSourceFeetPerSecond");
+  });
+
   it("encodes handedness categorical features when explicitly selected", () => {
     const dataset = buildEncodedBaselineDataset(
       [
@@ -615,6 +640,34 @@ describe("baselineDataset", () => {
       "scoreEffectsGameTimeSegment:mid-regulation",
       "ownerScoreDiffByGameTimeBucket:lead-1@final-five-regulation",
       "ownerScoreDiffByGameTimeBucket:trail-1@mid-regulation",
+    ]);
+  });
+
+  it("honors explicit game-level split assignments for out-of-time holdouts", () => {
+    const dataset = buildEncodedBaselineDataset(
+      [
+        createShotRow({ gameId: 2023020001, eventId: 1, gameDate: "2023-10-10" }),
+        createShotRow({ gameId: 2024020001, eventId: 2, gameDate: "2024-10-10" }),
+        createShotRow({ gameId: 2025020001, eventId: 3, gameDate: "2025-10-10" }),
+      ],
+      {
+        splitAssignments: [
+          { gameId: 2023020001, split: "train" },
+          { gameId: 2024020001, split: "validation" },
+          { gameId: 2025020001, split: "test" },
+        ],
+      }
+    );
+
+    expect(dataset.splitCounts).toEqual({
+      train: 1,
+      validation: 1,
+      test: 1,
+    });
+    expect(dataset.examples.map((example) => example.split)).toEqual([
+      "train",
+      "validation",
+      "test",
     ]);
   });
 });

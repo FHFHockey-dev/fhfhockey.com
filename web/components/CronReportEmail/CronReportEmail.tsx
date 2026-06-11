@@ -108,6 +108,13 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
     summary.scheduledJobsWithActivity === 0 &&
     summary.auditRuns === 0 &&
     summary.unscheduledRuns === 0;
+  const scheduleHealthRows = jobs.filter(
+    (job) =>
+      job.lastStatus !== "success" ||
+      (job.failedRowsLast ?? 0) > 0 ||
+      Boolean(job.optimizationDenotation) ||
+      (job.missingObservationWarnings ?? []).length > 0
+  );
 
   const renderTable = (children: React.ReactNode) => (
     <table
@@ -123,21 +130,23 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
     label: string,
     colors: { background: string; color: string }
   ) => (
-    <span
-      style={{
-        display: "inline-block",
-        marginRight: 6,
-        marginTop: 4,
-        padding: "2px 8px",
-        borderRadius: 999,
-        fontSize: 11,
-        fontWeight: 700,
-        background: colors.background,
-        color: colors.color
-      }}
-    >
-      {label}
-    </span>
+    <>
+      <span
+        style={{
+          display: "inline-block",
+          marginRight: 6,
+          marginTop: 4,
+          padding: "2px 8px",
+          borderRadius: 999,
+          fontSize: 11,
+          fontWeight: 700,
+          background: colors.background,
+          color: colors.color
+        }}
+      >
+        {label}
+      </span>{" "}
+    </>
   );
 
   const renderDuration = (durationMs: number | null) =>
@@ -421,7 +430,12 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
 
       {!telemetryUnavailable ? (
         <>
-          <h2 style={{ margin: "16px 0 8px" }}>Scheduled job status</h2>
+          <h2 style={{ margin: "16px 0 8px" }}>Schedule health exceptions</h2>
+          {scheduleHealthRows.length === 0 ? (
+            <div style={{ margin: "8px 0", color: "#166534", fontWeight: 700 }}>
+              No schedule-health exceptions.
+            </div>
+          ) : null}
           {renderTable(
             <>
               <thead>
@@ -441,7 +455,7 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {jobs.map((job) => (
+                {scheduleHealthRows.map((job) => (
                   <tr
                     key={job.jobKey}
                     style={
@@ -498,7 +512,10 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                       ) : null}
                       {(job.benchmarkAnnotations ?? []).length > 0 ? (
                         <div style={{ marginTop: 4, fontSize: 12, color: "#4B5563" }}>
-                          Benchmark: {job.benchmarkAnnotations?.map((annotation) => annotation.note).join(" ")}
+                          Benchmark: {job.benchmarkAnnotations?.[0]?.note}
+                          {(job.benchmarkAnnotations?.length ?? 0) > 1
+                            ? ` (+${(job.benchmarkAnnotations?.length ?? 1) - 1} more)`
+                            : ""}
                         </div>
                       ) : null}
                       {job.failedRowSamples.length > 0 ? (

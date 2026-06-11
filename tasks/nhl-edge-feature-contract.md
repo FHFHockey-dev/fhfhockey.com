@@ -11,6 +11,8 @@ Typed model-ready daily tables:
 - `public.nhl_edge_skater_metrics_daily`
 - `public.nhl_edge_team_metrics_daily`
 - `public.nhl_edge_goalie_metrics_daily`
+- `public.nhl_edge_skater_skating_distance_games_daily`
+- `public.nhl_edge_team_skating_distance_games_daily`
 
 Leaderboard/display table:
 
@@ -28,6 +30,8 @@ Model-usable grains:
 - Skater: `snapshot_date, season_id, game_type, player_id`
 - Team: `snapshot_date, season_id, game_type, team_id`
 - Goalie: `snapshot_date, season_id, game_type, goalie_id`
+- Skater skating-distance game: `snapshot_date, season_id, game_type, player_id, game_id`
+- Team skating-distance game: `snapshot_date, season_id, game_type, team_id, game_id`
 
 Leakage classification:
 
@@ -46,3 +50,7 @@ First-pass team fields:
 First-pass goalie fields:
 
 - EDGE GAA, games above .900, goal differential per 60, goal support, point percentage, and shot-location save percentages.
+
+First-pass game-row EDGE fields:
+
+- Last-10 skating-distance detail rows from `skater-skating-distance-detail` and `team-skating-distance-detail`, including TOI and distance by all/even/PP/PK context. These are still EDGE snapshots and must be joined as-of `snapshot_date <= as_of_date`.

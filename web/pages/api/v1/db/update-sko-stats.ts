@@ -64,6 +64,20 @@ interface NHLApiResponse {
 }
 
 const unsupportedSkoSkaterColumns = new Set<string>();
+const CURRENTLY_UNSUPPORTED_SKO_SKATER_COLUMNS = [
+  "assists_per_game",
+  "blocks_per_game",
+  "goals_per_game",
+  "hits_per_game",
+  "penalty_minutes_per_game",
+  "primary_assists_per_game",
+  "secondary_assists_per_game",
+  "shots_per_game"
+];
+
+CURRENTLY_UNSUPPORTED_SKO_SKATER_COLUMNS.forEach((column) => {
+  unsupportedSkoSkaterColumns.add(column);
+});
 
 export function extractMissingSkoSkaterColumnName(error: unknown): string | null {
   const message =
@@ -71,6 +85,8 @@ export function extractMissingSkoSkaterColumnName(error: unknown): string | null
       ? error.message
       : typeof error === "string"
         ? error
+        : error && typeof error === "object" && "message" in error
+          ? String((error as { message?: unknown }).message ?? "")
         : String(error ?? "");
 
   const patterns = [

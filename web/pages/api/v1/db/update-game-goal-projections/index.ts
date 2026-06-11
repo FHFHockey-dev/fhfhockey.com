@@ -1,4 +1,4 @@
-// pages/api/v1/db/update-expected-goals/index.ts
+// pages/api/v1/db/update-game-goal-projections/index.ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -8,18 +8,21 @@ import {
   fetchTeamScores,
   Game
 } from "./fetchData";
-import { performCalculations, CalculatedGameData } from "./calculations";
+import {
+  buildGameGoalProjections,
+  CalculatedGameGoalProjectionData
+} from "./calculations";
 import supabase from "lib/supabase/server";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 
 type ResponseData = {
   success: boolean;
   message: string;
-  data?: CalculatedGameData[] | null;
+  data?: CalculatedGameGoalProjectionData[] | null;
 };
 
 /**
- * API Handler for updating expected goals.
+ * API handler for updating legacy game-level goal projections.
  */
 const handler = async (
   req: NextApiRequest,
@@ -73,8 +76,8 @@ const handler = async (
 
     const leagueAverages = leagueAveragesData.gf;
 
-    // Step 2: Perform calculations
-    const calculatedData: CalculatedGameData[] = await performCalculations(
+    // Step 2: Build game-level goal projections and win odds.
+    const calculatedData: CalculatedGameGoalProjectionData[] = await buildGameGoalProjections(
       games,
       teamScores,
       leagueAverages
@@ -103,12 +106,12 @@ const handler = async (
       success: true,
       message:
         date === "all"
-          ? "Expected goals for the entire season updated successfully."
-          : "Expected goals for today updated successfully.",
+          ? "Game goal projections for the entire season updated successfully."
+          : "Game goal projections for today updated successfully.",
       data: data ?? null
     });
   } catch (error: any) {
-    console.error("Error updating expected goals:", error);
+    console.error("Error updating game goal projections:", error);
     return res.status(500).json({
       success: false,
       message: error.message

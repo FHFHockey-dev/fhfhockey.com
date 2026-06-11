@@ -13,17 +13,21 @@ import {
 let buildGameRecords: typeof import("./fetchRollingPlayerAverages").__testables.buildGameRecords;
 let buildRunSummary: typeof import("./fetchRollingPlayerAverages").__testables.buildRunSummary;
 let summarizeSourceTracking: typeof import("./fetchRollingPlayerAverages").__testables.summarizeSourceTracking;
+let getGoalsPer60ToiSeconds: typeof import("./fetchRollingPlayerAverages").__testables.getGoalsPer60ToiSeconds;
 let didPlayerCountAsAppearance: typeof import("./fetchRollingPlayerAverages").__testables.didPlayerCountAsAppearance;
 let applyGpOutputs: typeof import("./fetchRollingPlayerAverages").__testables.applyGpOutputs;
 let getGpOutputCompatibilityMode: typeof import("./fetchRollingPlayerAverages").__testables.getGpOutputCompatibilityMode;
 let deriveOutputs: typeof import("./fetchRollingPlayerAverages").__testables.deriveOutputs;
 let getOptionalPpContextOutputs: typeof import("./fetchRollingPlayerAverages").__testables.getOptionalPpContextOutputs;
 let initAccumulator: typeof import("./fetchRollingPlayerAverages").__testables.initAccumulator;
+let normalizeStrengthStates: typeof import("./fetchRollingPlayerAverages").__testables.normalizeStrengthStates;
 let normalizePlayerIdList: typeof import("./fetchRollingPlayerAverages").__testables.normalizePlayerIdList;
 let shouldUseDateScopedPlayerSelection: typeof import("./fetchRollingPlayerAverages").__testables.shouldUseDateScopedPlayerSelection;
 let shouldWarnAboutDisabledImplicitAutoResume: typeof import("./fetchRollingPlayerAverages").__testables.shouldWarnAboutDisabledImplicitAutoResume;
 let filterPlayerIdsForResume: typeof import("./fetchRollingPlayerAverages").__testables.filterPlayerIdsForResume;
+let splitRollingUpsertRowForDurableStorage: typeof import("./fetchRollingPlayerAverages").__testables.splitRollingUpsertRowForDurableStorage;
 let upsertRollingPlayerMetricsBatch: typeof import("./fetchRollingPlayerAverages").__testables.upsertRollingPlayerMetricsBatch;
+let compactRollingUpsertRowForRankingStorage: typeof import("./fetchRollingPlayerAverages").compactRollingUpsertRowForRankingStorage;
 
 beforeAll(async () => {
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
@@ -34,18 +38,22 @@ beforeAll(async () => {
       buildGameRecords,
       buildRunSummary,
       summarizeSourceTracking,
+      getGoalsPer60ToiSeconds,
       didPlayerCountAsAppearance,
       applyGpOutputs,
       getGpOutputCompatibilityMode,
       deriveOutputs,
       getOptionalPpContextOutputs,
       initAccumulator,
+      normalizeStrengthStates,
       normalizePlayerIdList,
       shouldUseDateScopedPlayerSelection,
       shouldWarnAboutDisabledImplicitAutoResume,
       filterPlayerIdsForResume,
+      splitRollingUpsertRowForDurableStorage,
       upsertRollingPlayerMetricsBatch
-    }
+    },
+    compactRollingUpsertRowForRankingStorage
   } = await import("./fetchRollingPlayerAverages"));
 });
 
@@ -230,6 +238,64 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
     expect(rows[0].sourceContext.wgoToiNormalization).toBe("missing");
   });
 
+  it("preserves true 5v5 strength rows and on-ice xG enrichment", () => {
+    const rows = buildGameRecords(
+      [
+        {
+          player_id: 7,
+          game_id: 2001,
+          date: "2026-03-01",
+          season_id: 20252026,
+          team_abbrev: "COL",
+          current_team_abbreviation: "COL",
+          toi_per_game: 18
+        } as any
+      ],
+      {
+        "2026-03-01": {
+          date_scraped: "2026-03-01",
+          season: 20252026,
+          goals: 1,
+          toi: 900
+        } as any
+      },
+      {
+        "2026-03-01": {
+          date_scraped: "2026-03-01",
+          season: 20252026,
+          toi_per_gp: 900,
+          ixg_per_60: 0.9
+        } as any
+      },
+      {
+        "2026-03-01": {
+          date_scraped: "2026-03-01",
+          toi: 900,
+          gf: 2,
+          ga: 1,
+          xgf: 1.7,
+          xga: 0.8
+        } as any
+      },
+      [],
+      [],
+      "5v5",
+      new Set([2001])
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      playerId: 7,
+      gameDate: "2026-03-01",
+      strength: "5v5"
+    });
+    expect(rows[0].countsOi?.xgf).toBe(1.7);
+    expect(rows[0].countsOi?.xga).toBe(0.8);
+    expect(rows[0].sourceContext.countsSourcePresent).toBe(true);
+    expect(rows[0].sourceContext.ratesSourcePresent).toBe(true);
+    expect(rows[0].sourceContext.countsOiSourcePresent).toBe(true);
+  });
+
   it("maps optional PP context fields to row outputs without changing pp_share semantics", () => {
     expect(
       getOptionalPpContextOutputs({
@@ -285,6 +351,34 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
 
     expect(rows[0].sourceContext.ppSourcePresent).toBe(true);
     expect(rows[0].sourceContext.ppUnitSourcePresent).toBe(false);
+  });
+
+  it("uses PP TOI for PP goals per 60 fallback rows instead of all-situations TOI", () => {
+    const rows = buildGameRecords(
+      [
+        {
+          player_id: 88,
+          game_id: 2004,
+          date: "2026-01-21",
+          season_id: 20252026,
+          team_abbrev: "NYR",
+          current_team_abbreviation: "NYR",
+          goals: 2,
+          pp_goals: 1,
+          toi_per_game: 960,
+          pp_toi: 120
+        } as any
+      ],
+      {},
+      {},
+      {},
+      [],
+      [],
+      "pp",
+      new Set([2004])
+    );
+
+    expect(getGoalsPer60ToiSeconds(rows[0] as any)).toBe(120);
   });
 
   it("distinguishes line row presence from trusted player line assignment", () => {
@@ -838,6 +932,7 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
       primary_assists: initAccumulator(),
       secondary_assists: initAccumulator(),
       penalties_drawn: initAccumulator(),
+      penalties_taken: initAccumulator(),
       oz_starts: initAccumulator(),
       dz_starts: initAccumulator(),
       nz_starts: initAccumulator(),
@@ -851,6 +946,7 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
       goals_per_60: createRatioRollingAccumulator(),
       assists_per_60: createRatioRollingAccumulator(),
       penalties_drawn_per_60: createRatioRollingAccumulator(),
+      penalties_taken_per_60: createRatioRollingAccumulator(),
       primary_assists_per_60: createRatioRollingAccumulator(),
       secondary_assists_per_60: createRatioRollingAccumulator()
     } as Record<string, any>;
@@ -865,6 +961,7 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
       goals: createHistoricalAverageAccumulator(),
       assists: createHistoricalAverageAccumulator(),
       penalties_drawn: createHistoricalAverageAccumulator(),
+      penalties_taken: createHistoricalAverageAccumulator(),
       primary_assists: createHistoricalAverageAccumulator(),
       secondary_assists: createHistoricalAverageAccumulator(),
       pp_toi_seconds: createHistoricalAverageAccumulator(),
@@ -878,6 +975,7 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
       goals_per_60: createHistoricalRatioAccumulator(),
       assists_per_60: createHistoricalRatioAccumulator(),
       penalties_drawn_per_60: createHistoricalRatioAccumulator(),
+      penalties_taken_per_60: createHistoricalRatioAccumulator(),
       primary_assists_per_60: createHistoricalRatioAccumulator(),
       secondary_assists_per_60: createHistoricalRatioAccumulator()
     } as Record<string, any>;
@@ -900,6 +998,8 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
     pushSimple(simpleMetricsState.secondary_assists, 0);
     pushSimple(simpleMetricsState.penalties_drawn, 1);
     pushSimple(simpleMetricsState.penalties_drawn, 2);
+    pushSimple(simpleMetricsState.penalties_taken, 2);
+    pushSimple(simpleMetricsState.penalties_taken, 3);
     pushSimple(simpleMetricsState.oz_starts, 4);
     pushSimple(simpleMetricsState.oz_starts, 2);
     pushSimple(simpleMetricsState.dz_starts, 3);
@@ -956,6 +1056,16 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
       { windowFamily: "weighted_rate_performance", anchor: true }
     );
     updateRatioRollingAccumulator(
+      ratioMetricsState.penalties_taken_per_60,
+      { numerator: 2, denominator: 1200 },
+      { windowFamily: "weighted_rate_performance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      ratioMetricsState.penalties_taken_per_60,
+      { numerator: 3, denominator: 600 },
+      { windowFamily: "weighted_rate_performance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
       ratioMetricsState.primary_assists_per_60,
       { numerator: 2, denominator: 1200 },
       { windowFamily: "weighted_rate_performance", anchor: true }
@@ -1003,6 +1113,16 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
       historicalSimpleMetricsState.penalties_drawn,
       20252026,
       4
+    );
+    updateHistoricalAverageAccumulator(
+      historicalSimpleMetricsState.penalties_taken,
+      20242025,
+      3
+    );
+    updateHistoricalAverageAccumulator(
+      historicalSimpleMetricsState.penalties_taken,
+      20252026,
+      5
     );
     updateHistoricalAverageAccumulator(
       historicalSimpleMetricsState.primary_assists,
@@ -1114,6 +1234,22 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
       }
     );
     updateHistoricalRatioAccumulator(
+      historicalRatioMetricsState.penalties_taken_per_60,
+      20242025,
+      {
+        numerator: 3,
+        denominator: 1800
+      }
+    );
+    updateHistoricalRatioAccumulator(
+      historicalRatioMetricsState.penalties_taken_per_60,
+      20252026,
+      {
+        numerator: 5,
+        denominator: 1500
+      }
+    );
+    updateHistoricalRatioAccumulator(
       historicalRatioMetricsState.primary_assists_per_60,
       20242025,
       {
@@ -1216,6 +1352,14 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
     expect(output.penalties_drawn_per_60_season).toBe(9.6);
     expect(output.penalties_drawn_per_60_penalties_drawn_career).toBe(6);
     expect(output.penalties_drawn_per_60_toi_seconds_career).toBe(3300);
+    expect(output.penalties_taken_total_all).toBe(5);
+    expect(output.penalties_taken_avg_all).toBe(2.5);
+    expect(output.penalties_taken_avg_season).toBe(5);
+    expect(output.penalties_taken_per_60_total_all).toBe(10);
+    expect(output.penalties_taken_per_60_all).toBe(10);
+    expect(output.penalties_taken_per_60_season).toBe(12);
+    expect(output.penalties_taken_per_60_penalties_taken_career).toBe(8);
+    expect(output.penalties_taken_per_60_toi_seconds_career).toBe(3300);
     expect(output.primary_assists_total_all).toBe(3);
     expect(output.primary_assists_avg_all).toBe(1.5);
     expect(output.primary_assists_avg_season).toBe(3);
@@ -1232,9 +1376,179 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
     expect(output.secondary_assists_per_60_secondary_assists_career).toBe(4);
     expect(output.secondary_assists_per_60_toi_seconds_career).toBe(3300);
   });
+
+  it("emits shot attempts per 60 from NST ICF components", () => {
+    const ratioMetricsState = {
+      shot_attempts_per_60: createRatioRollingAccumulator()
+    } as Record<string, any>;
+    const historicalRatioMetricsState = {
+      shot_attempts_per_60: createHistoricalRatioAccumulator()
+    } as Record<string, any>;
+    const historicalSimpleMetricsState = {
+      toi_seconds: createHistoricalAverageAccumulator()
+    } as Record<string, any>;
+    const historicalSupportMetricsState = {
+      shot_attempts_per_60_shot_attempts: createHistoricalAverageAccumulator()
+    } as Record<string, any>;
+
+    updateRatioRollingAccumulator(
+      ratioMetricsState.shot_attempts_per_60,
+      { numerator: 6, denominator: 1200 },
+      { windowFamily: "weighted_rate_performance", anchor: true }
+    );
+    updateRatioRollingAccumulator(
+      ratioMetricsState.shot_attempts_per_60,
+      { numerator: 4, denominator: 600 },
+      { windowFamily: "weighted_rate_performance", anchor: true }
+    );
+    updateHistoricalRatioAccumulator(
+      historicalRatioMetricsState.shot_attempts_per_60,
+      20252026,
+      {
+        numerator: 10,
+        denominator: 1800
+      }
+    );
+    updateHistoricalAverageAccumulator(
+      historicalSupportMetricsState.shot_attempts_per_60_shot_attempts,
+      20252026,
+      10
+    );
+    updateHistoricalAverageAccumulator(
+      historicalSimpleMetricsState.toi_seconds,
+      20252026,
+      1800
+    );
+
+    const output = deriveOutputs(
+      {},
+      ratioMetricsState,
+      {},
+      historicalSimpleMetricsState,
+      historicalSupportMetricsState,
+      historicalRatioMetricsState,
+      {
+        season: 0.7,
+        threeYear: 0.7,
+        career: 0.7,
+        seasonPlayerGames: 7,
+        seasonTeamGames: 10,
+        threeYearPlayerGames: 7,
+        threeYearTeamGames: 10,
+        careerPlayerGames: 7,
+        careerTeamGames: 10
+      },
+      {
+        windows: {
+          3: { playerGames: 2, teamGames: 3, ratio: Number((2 / 3).toFixed(6)) },
+          5: { playerGames: 2, teamGames: 5, ratio: 0.4 },
+          10: { playerGames: 2, teamGames: 10, ratio: 0.2 },
+          20: { playerGames: 2, teamGames: 20, ratio: 0.1 }
+        }
+      },
+      20252026,
+      "all"
+    );
+
+    expect(output.shot_attempts_per_60_total_all).toBe(20);
+    expect(output.shot_attempts_per_60_all).toBe(20);
+    expect(output.shot_attempts_per_60_last5).toBe(20);
+    expect(output.shot_attempts_per_60_season).toBe(20);
+    expect(output.shot_attempts_per_60_shot_attempts_season).toBe(10);
+    expect(output.shot_attempts_per_60_toi_seconds_season).toBe(1800);
+  });
 });
 
 describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
+  it("compacts storage-heavy compatibility fields while preserving ranking fields", () => {
+    expect(
+      compactRollingUpsertRowForRankingStorage({
+        player_id: 8470613,
+        game_date: "2026-04-16",
+        season: 20252026,
+        strength_state: "all",
+        points_avg_season: 1.2,
+        goals_per_60_last5: 2.5,
+        goals_per_60_total_last5: 3,
+        toi_seconds_total_last5: 900,
+        goals_avg_all: 0.4,
+        goals_avg_3ya: 0.3,
+        goals_total_last3: 1,
+        goals_avg_career: 0.25,
+        pp_share_of_team: 0.55
+      })
+    ).toEqual({
+      player_id: 8470613,
+      game_date: "2026-04-16",
+      season: 20252026,
+      strength_state: "all",
+      points_avg_season: 1.2,
+      goals_per_60_last5: 2.5,
+      goals_per_60_total_last5: 3,
+      toi_seconds_total_last5: 900,
+      goals_avg_all: null,
+      goals_avg_3ya: null,
+      goals_total_last3: null,
+      goals_avg_career: null,
+      pp_share_of_team: 0.55
+    });
+  });
+
+  it("splits pruned support fields into the durable support payload", () => {
+    expect(
+      splitRollingUpsertRowForDurableStorage({
+        player_id: 8470613,
+        game_date: "2026-04-16",
+        season: 20252026,
+        strength_state: "all",
+        team_id: 14,
+        game_id: 2025021301,
+        goals_per_60_last5: 2.5,
+        goals_avg_all: 0.4,
+        goals_avg_3ya: 0.3,
+        gp_pct_avg_all: 0.9,
+        pp_share_of_team: 0.55
+      })
+    ).toEqual({
+      rankingRow: {
+        player_id: 8470613,
+        game_date: "2026-04-16",
+        season: 20252026,
+        strength_state: "all",
+        team_id: 14,
+        game_id: 2025021301,
+        goals_per_60_last5: 2.5,
+        goals_avg_all: null,
+        goals_avg_3ya: null,
+        gp_pct_avg_all: null,
+        pp_share_of_team: 0.55
+      },
+      supportRow: {
+        player_id: 8470613,
+        game_date: "2026-04-16",
+        strength_state: "all",
+        season: 20252026,
+        team_id: 14,
+        game_id: 2025021301,
+        payload_schema_version: 1,
+        support_payload: {
+          historicalCompatibility: {
+            goals_avg_all: 0.4,
+            goals_avg_3ya: 0.3
+          },
+          deprecatedCompatibility: {
+            gp_pct_avg_all: 0.9
+          },
+          diagnostics: {
+            compactedFromWideRow: true,
+            prunedFieldCount: 3,
+            source: "fetchRollingPlayerAverages"
+          }
+        }
+      }
+    });
+  });
+
   it("posts wide rolling metric rows through the direct PostgREST endpoint", async () => {
     const fetchMock = vi
       .fn()
@@ -1249,13 +1563,47 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
         strength_state: "all",
         goals_total_last20: 0,
         toi_seconds_total_last20: 1210,
-        pp_share_pct_last20: 0.226
+        pp_share_pct_last20: 0.226,
+        goals_avg_all: 0.3
       }
     ];
 
     await expect(upsertRollingPlayerMetricsBatch(batch)).resolves.toBeUndefined();
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://example.supabase.co/rest/v1/rolling_player_metric_support_payloads?on_conflict=player_id,game_date,strength_state",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          apikey: "test-service-role-key",
+          Authorization: "Bearer test-service-role-key",
+          "Content-Type": "application/json",
+          Prefer: "resolution=merge-duplicates,return=minimal"
+        }),
+        body: JSON.stringify([
+          {
+            player_id: 8470613,
+            game_date: "2025-10-07",
+            strength_state: "all",
+            season: 20252026,
+            team_id: null,
+            game_id: null,
+            payload_schema_version: 1,
+            support_payload: {
+              historicalCompatibility: {
+                goals_avg_all: 0.3
+              },
+              diagnostics: {
+                compactedFromWideRow: true,
+                prunedFieldCount: 1,
+                source: "fetchRollingPlayerAverages"
+              }
+            }
+          }
+        ])
+      })
+    );
     expect(fetchMock).toHaveBeenCalledWith(
       "https://example.supabase.co/rest/v1/rolling_player_game_metrics?on_conflict=player_id,game_date,strength_state",
       expect.objectContaining({
@@ -1266,7 +1614,18 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
           "Content-Type": "application/json",
           Prefer: "resolution=merge-duplicates,return=minimal"
         }),
-        body: JSON.stringify(batch)
+        body: JSON.stringify([
+          {
+            player_id: 8470613,
+            game_date: "2025-10-07",
+            season: 20252026,
+            strength_state: "all",
+            goals_total_last20: 0,
+            toi_seconds_total_last20: 1210,
+            pp_share_pct_last20: 0.226,
+            goals_avg_all: null
+          }
+        ])
       })
     );
   });
@@ -1358,6 +1717,15 @@ describe("fetchRollingPlayerAverages resume behavior", () => {
       8478398,
       8485702
     ]);
+  });
+
+  it("normalizes optional strength scopes for targeted rolling recomputes", () => {
+    expect(normalizeStrengthStates(["5v5", "EV", "5v5", "bogus"])).toEqual([
+      "5v5",
+      "ev"
+    ]);
+    expect(normalizeStrengthStates(["bogus"])).toBeUndefined();
+    expect(normalizeStrengthStates(undefined)).toBeUndefined();
   });
 
   it("does not infer an implicit auto-resume for broad runs", () => {

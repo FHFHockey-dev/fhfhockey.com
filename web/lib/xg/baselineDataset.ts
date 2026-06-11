@@ -1,6 +1,8 @@
 import type { NhlShotFeatureRow } from "../supabase/Upserts/nhlShotFeatureBuilder";
 
 export type DatasetSplit = "train" | "validation" | "test";
+// "predictionType" is the persisted ML-task name. For shot_goal, the model
+// estimates P(goal | this shot's features); it is not a future-goals projection.
 export type BaselinePredictionType = "shot_goal" | "rebound_creation";
 
 export type EncodedBaselineExample = {
@@ -55,6 +57,10 @@ export const NUMERIC_FEATURE_KEYS = [
   "gameSecondsElapsed",
   "timeSincePreviousEventSeconds",
   "distanceFromPreviousEvent",
+  "speedFromPreviousEventFeetPerSecond",
+  "reboundSpeedFromSourceFeetPerSecond",
+  "rushDistanceFromSourceFeet",
+  "rushSpeedFromSourceFeetPerSecond",
   "ownerPowerPlayAgeSeconds",
   "shooterShiftAgeSeconds",
   "eastWestMovementFeet",
@@ -131,7 +137,10 @@ export type BaselineFeatureSelection = {
   categoricalKeys?: CategoricalFeatureKey[];
 };
 
-export type BaselineFeatureFamilyName = "first_pass_v1" | "expanded_v2";
+export type BaselineFeatureFamilyName =
+  | "first_pass_v1"
+  | "expanded_v2"
+  | "speed_context_v3";
 
 export type BaselineSplitConfig = {
   trainRatio?: number;
@@ -143,6 +152,7 @@ export type BaselineDatasetBuildOptions = {
   predictionType?: BaselinePredictionType;
   featureFamily?: BaselineFeatureFamilyName;
   featureSelection?: BaselineFeatureSelection;
+  splitAssignments?: Array<{ gameId: number; split: DatasetSplit }>;
   splitConfig?: BaselineSplitConfig;
   seed?: number;
 };
@@ -195,6 +205,14 @@ export const EXPANDED_V2_CATEGORICAL_FEATURE_KEYS = [
   "ownerScoreDiffBucket",
 ] as const satisfies readonly CategoricalFeatureKey[];
 
+export const SPEED_CONTEXT_V3_NUMERIC_FEATURE_KEYS = [
+  ...EXPANDED_V2_NUMERIC_FEATURE_KEYS,
+  "speedFromPreviousEventFeetPerSecond",
+  "reboundSpeedFromSourceFeetPerSecond",
+  "rushDistanceFromSourceFeet",
+  "rushSpeedFromSourceFeetPerSecond",
+] as const satisfies readonly NumericFeatureKey[];
+
 export const BASELINE_FEATURE_FAMILY_PRESETS = {
   first_pass_v1: {
     numericKeys: [...DEFAULT_NUMERIC_FEATURE_KEYS],
@@ -203,6 +221,11 @@ export const BASELINE_FEATURE_FAMILY_PRESETS = {
   },
   expanded_v2: {
     numericKeys: [...EXPANDED_V2_NUMERIC_FEATURE_KEYS],
+    booleanKeys: [...EXPANDED_V2_BOOLEAN_FEATURE_KEYS],
+    categoricalKeys: [...EXPANDED_V2_CATEGORICAL_FEATURE_KEYS],
+  },
+  speed_context_v3: {
+    numericKeys: [...SPEED_CONTEXT_V3_NUMERIC_FEATURE_KEYS],
     booleanKeys: [...EXPANDED_V2_BOOLEAN_FEATURE_KEYS],
     categoricalKeys: [...EXPANDED_V2_CATEGORICAL_FEATURE_KEYS],
   },
@@ -260,6 +283,8 @@ function buildTrainingLabel(
     return row.createsRebound ? 1 : 0;
   }
 
+  // xG's target is the observed outcome of the same eligible shot attempt.
+  // Do not replace this with a future scoring or team projection target.
   return row.isGoal ? 1 : 0;
 }
 
@@ -432,11 +457,13 @@ export function buildEncodedBaselineDataset(
     options.featureSelection,
     options.featureFamily
   );
-  const splitAssignments = buildChronologicalGameSplitAssignments(
-    eligibleRows,
-    options.splitConfig,
-    options.seed ?? 42
-  );
+  const splitAssignments =
+    options.splitAssignments ??
+    buildChronologicalGameSplitAssignments(
+      eligibleRows,
+      options.splitConfig,
+      options.seed ?? 42
+    );
   const splitByGameId = new Map(
     splitAssignments.map((assignment) => [assignment.gameId, assignment.split])
   );

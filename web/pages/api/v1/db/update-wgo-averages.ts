@@ -4,6 +4,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server"; // Adjust path as needed
 import { PostgrestError } from "@supabase/supabase-js"; // Import for type safety
 import { Database } from "lib/supabase/database-generated.types";
+import pLimit from "p-limit";
 
 /**
  * Query params:
@@ -19,7 +20,7 @@ type Tables<T extends keyof Database["public"]["Tables"]> =
 // Helper function for safe division, returns null if denominator is zero
 const safeDivide = (
   numerator: number | null | undefined,
-  denominator: number | null | undefined
+  denominator: number | null | undefined,
 ): number | null => {
   if (
     numerator === null ||
@@ -98,6 +99,67 @@ type BaseFieldName =
   | "off_zone_faceoffs"
   | "neu_zone_faceoffs"
   | "def_zone_faceoffs";
+
+const BASE_FIELDS: BaseFieldName[] = [
+  "gp",
+  "toi",
+  "goals",
+  "total_assists",
+  "first_assists",
+  "second_assists",
+  "total_points",
+  "shots",
+  "ixg",
+  "icf",
+  "iff",
+  "iscfs",
+  "ihdcf",
+  "rebounds_created",
+  "pim",
+  "total_penalties",
+  "minor_penalties",
+  "major_penalties",
+  "misconduct_penalties",
+  "penalties_drawn",
+  "giveaways",
+  "takeaways",
+  "hits",
+  "hits_taken",
+  "shots_blocked",
+  "faceoffs_won",
+  "faceoffs_lost",
+  "cf",
+  "ca",
+  "ff",
+  "fa",
+  "sf",
+  "sa",
+  "gf",
+  "ga",
+  "xgf",
+  "xga",
+  "scf",
+  "sca",
+  "hdcf",
+  "hdca",
+  "hdgf",
+  "hdga",
+  "mdcf",
+  "mdca",
+  "mdgf",
+  "mdga",
+  "ldcf",
+  "ldca",
+  "ldgf",
+  "ldga",
+  "off_zone_starts",
+  "neu_zone_starts",
+  "def_zone_starts",
+  "on_the_fly_starts",
+  "off_zone_faceoffs",
+  "neu_zone_faceoffs",
+  "def_zone_faceoffs",
+];
 
 // Interface for aggregated data storage during processing
 interface AggregatedCounts {
@@ -373,9 +435,9 @@ type CalculatedMetricsSubset = Omit<
 
 // --- *** NEW: Pagination Helper *** ---
 const fetchAllPages = async <
-  TableName extends keyof Database["public"]["Tables"]
+  TableName extends keyof Database["public"]["Tables"],
 >(
-  tableName: TableName
+  tableName: TableName,
 ): Promise<Database["public"]["Tables"][TableName]["Row"][]> => {
   const PAGE_SIZE = 1000; // Supabase default limit
   let allData: Database["public"]["Tables"][TableName]["Row"][] = []; // Use specific Row type
@@ -400,10 +462,10 @@ const fetchAllPages = async <
     if (postgrestError) {
       console.error(
         `Error fetching page ${page} from ${tableName}:`,
-        postgrestError
+        postgrestError,
       );
       throw new Error(
-        `Failed to fetch data from ${tableName}: ${postgrestError.message}`
+        `Failed to fetch data from ${tableName}: ${postgrestError.message}`,
       );
     }
 
@@ -412,11 +474,11 @@ const fetchAllPages = async <
       | null; // Cast data
 
     if (pageData) {
-      allData = allData.concat(pageData);
+      allData.push(...pageData);
       console.log(
         `  Fetched ${pageData.length} rows from ${tableName} (Page ${
           page + 1
-        }, Total: ${allData.length}${count ? `/${count}` : ""})`
+        }, Total: ${allData.length}${count ? `/${count}` : ""})`,
       );
       if (pageData.length < PAGE_SIZE) {
         keepFetching = false; // Last page fetched
@@ -428,15 +490,48 @@ const fetchAllPages = async <
     }
   }
   console.log(
-    `Finished fetching ${allData.length} total rows from ${tableName}.`
+    `Finished fetching ${allData.length} total rows from ${tableName}.`,
   );
   return allData;
 };
 
-async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function upsertAverageRows(
+  tableName: "wgo_avg_three_year" | "wgo_avg_career",
+  rows: CalculatedAverages[],
+  batchSize: number,
+  concurrency: number = 3,
+): Promise<number> {
+  if (rows.length === 0) {
+    console.log(`No average data to upsert for ${tableName}.`);
+    return 0;
+  }
+
+  const limit = pLimit(concurrency);
+  const batches: CalculatedAverages[][] = [];
+  for (let i = 0; i < rows.length; i += batchSize) {
+    batches.push(rows.slice(i, i + batchSize));
+  }
+
+  await Promise.all(
+    batches.map((batch) =>
+      limit(async () => {
+        const { error } = await supabase
+          .from(tableName)
+          .upsert(batch, { onConflict: "player_id, strength" });
+        if (error) {
+          throw new Error(
+            `Error upserting ${tableName} batch: ${error.message}`,
+          );
+        }
+      }),
+    ),
+  );
+
+  console.log(`Upserted ${rows.length} rows to ${tableName}.`);
+  return rows.length;
+}
+
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const startTime = Date.now();
   console.log("Starting player average calculation...");
 
@@ -565,7 +660,7 @@ async function handler(
         career_neu_zone_faceoffs: 0,
         three_year_neu_zone_faceoffs: 0,
         career_def_zone_faceoffs: 0,
-        three_year_def_zone_faceoffs: 0
+        three_year_def_zone_faceoffs: 0,
       });
     }
     const currentAgg = aggregationMap.get(key)!;
@@ -577,12 +672,12 @@ async function handler(
       currentAgg.teamSeasonGp.push({
         season: row.season,
         team: row.team,
-        gp: row.gp ?? 0
+        gp: row.gp ?? 0,
       });
     }
     const sumIfExists = (
       field: BaseFieldName,
-      sourceField: keyof typeof row
+      sourceField: keyof typeof row,
     ) => {
       const value = row[sourceField];
       if (value !== null && value !== undefined) {
@@ -592,75 +687,18 @@ async function handler(
         if (isCareer && careerFieldName in currentAgg) {
           (currentAgg as any)[careerFieldName] = safeSum(
             (currentAgg as any)[careerFieldName],
-            value
+            value,
           );
         }
         if (isThreeYear && threeYearFieldName in currentAgg) {
           (currentAgg as any)[threeYearFieldName] = safeSum(
             (currentAgg as any)[threeYearFieldName],
-            value
+            value,
           );
         }
       }
     };
-    sumIfExists("gp", "gp");
-    sumIfExists("toi", "toi");
-    sumIfExists("goals", "goals");
-    sumIfExists("total_assists", "total_assists");
-    sumIfExists("first_assists", "first_assists");
-    sumIfExists("second_assists", "second_assists");
-    sumIfExists("total_points", "total_points");
-    sumIfExists("shots", "shots");
-    sumIfExists("ixg", "ixg");
-    sumIfExists("icf", "icf");
-    sumIfExists("iff", "iff");
-    sumIfExists("iscfs", "iscfs");
-    sumIfExists("ihdcf", "ihdcf");
-    sumIfExists("rebounds_created", "rebounds_created");
-    sumIfExists("pim", "pim");
-    sumIfExists("total_penalties", "total_penalties");
-    sumIfExists("minor_penalties", "minor_penalties");
-    sumIfExists("major_penalties", "major_penalties");
-    sumIfExists("misconduct_penalties", "misconduct_penalties");
-    sumIfExists("penalties_drawn", "penalties_drawn");
-    sumIfExists("giveaways", "giveaways");
-    sumIfExists("takeaways", "takeaways");
-    sumIfExists("hits", "hits");
-    sumIfExists("hits_taken", "hits_taken");
-    sumIfExists("shots_blocked", "shots_blocked");
-    sumIfExists("faceoffs_won", "faceoffs_won");
-    sumIfExists("faceoffs_lost", "faceoffs_lost");
-    sumIfExists("cf", "cf");
-    sumIfExists("ca", "ca");
-    sumIfExists("ff", "ff");
-    sumIfExists("fa", "fa");
-    sumIfExists("sf", "sf");
-    sumIfExists("sa", "sa");
-    sumIfExists("gf", "gf");
-    sumIfExists("ga", "ga");
-    sumIfExists("xgf", "xgf");
-    sumIfExists("xga", "xga");
-    sumIfExists("scf", "scf");
-    sumIfExists("sca", "sca");
-    sumIfExists("hdcf", "hdcf");
-    sumIfExists("hdca", "hdca");
-    sumIfExists("hdgf", "hdgf");
-    sumIfExists("hdga", "hdga");
-    sumIfExists("mdcf", "mdcf");
-    sumIfExists("mdca", "mdca");
-    sumIfExists("mdgf", "mdgf");
-    sumIfExists("mdga", "mdga");
-    sumIfExists("ldcf", "ldcf");
-    sumIfExists("ldca", "ldca");
-    sumIfExists("ldgf", "ldgf");
-    sumIfExists("ldga", "ldga");
-    sumIfExists("off_zone_starts", "off_zone_starts");
-    sumIfExists("neu_zone_starts", "neu_zone_starts");
-    sumIfExists("def_zone_starts", "def_zone_starts");
-    sumIfExists("on_the_fly_starts", "on_the_fly_starts");
-    sumIfExists("off_zone_faceoffs", "off_zone_faceoffs");
-    sumIfExists("neu_zone_faceoffs", "neu_zone_faceoffs");
-    sumIfExists("def_zone_faceoffs", "def_zone_faceoffs");
+    BASE_FIELDS.forEach((field) => sumIfExists(field, field));
   };
 
   // --- Define calculateMetrics Function ---
@@ -669,14 +707,14 @@ async function handler(
     period: "career" | "three_year",
     relevantSeasons: Set<number>,
     teamAbbrToNameMap: Map<string | null, string>,
-    teamSeasonGpMap: Map<number, Map<string, number>>
+    teamSeasonGpMap: Map<number, Map<string, number>>,
   ): CalculatedMetricsSubset => {
     const prefix = period === "career" ? "career_" : "three_year_";
     const gp = (agg as any)[prefix + "gp"];
     const toi = (agg as any)[prefix + "toi"];
     if (!toi || toi <= 0) return null;
     const contributingSeasons = agg.teamSeasonGp.filter((tsg) =>
-      relevantSeasons.has(tsg.season)
+      relevantSeasons.has(tsg.season),
     );
     const num_seasons = new Set(contributingSeasons.map((tsg) => tsg.season))
       .size;
@@ -693,12 +731,12 @@ async function handler(
           countedTeamSeasons.add(teamSeasonKey);
         } else {
           console.warn(
-            `Missing team_summary_years GP for: ${teamFullName} in season ${tsg.season}`
+            `Missing team_summary_years GP for: ${teamFullName} in season ${tsg.season}`,
           );
         }
       } else if (!teamFullName) {
         console.warn(
-          `Could not find full team name for abbreviation: ${tsg.team} in teamsinfo`
+          `Could not find full team name for abbreviation: ${tsg.team} in teamsinfo`,
         );
       }
     });
@@ -842,7 +880,7 @@ async function handler(
       major_penalties_per_60: safeDivide(total_major_penalties * 60, toi),
       misconduct_penalties_per_60: safeDivide(
         total_misconduct_penalties * 60,
-        toi
+        toi,
       ),
       penalties_drawn_per_60: safeDivide(total_penalties_drawn * 60, toi),
       giveaways_per_60: safeDivide(total_giveaways * 60, toi),
@@ -856,7 +894,7 @@ async function handler(
       ipp: safeDivide(total_total_points, total_gf),
       faceoffs_percentage: safeDivide(
         total_faceoffs_won,
-        safeSum(total_faceoffs_won, total_faceoffs_lost)
+        safeSum(total_faceoffs_won, total_faceoffs_lost),
       ),
       cf_per_60: safeDivide(total_cf * 60, toi),
       ca_per_60: safeDivide(total_ca * 60, toi),
@@ -912,21 +950,21 @@ async function handler(
         safeSum(
           // Denominator excludes Neutral Zone and On The Fly Starts
           total_off_zone_starts,
-          total_def_zone_starts
-        )
+          total_def_zone_starts,
+        ),
       ),
       off_zone_faceoff_pct: safeDivide(
         total_off_zone_faceoffs,
         safeSum(
           // Denominator excludes Neutral Zone Faceoffs
           total_off_zone_faceoffs,
-          total_def_zone_faceoffs
-        )
+          total_def_zone_faceoffs,
+        ),
       ),
 
       // GP Percentage
       total_possible_gp: total_possible_gp > 0 ? total_possible_gp : null,
-      gp_percentage: safeDivide(gp, total_possible_gp)
+      gp_percentage: safeDivide(gp, total_possible_gp),
     };
   };
 
@@ -941,7 +979,7 @@ async function handler(
       // Fetch smaller lookup tables directly (assuming they are < 1000 rows)
       { data: teamsInfoData, error: tiError },
       { data: teamSummaryYearsData, error: tsyError },
-      { data: maxSeasonData, error: msError }
+      { data: maxSeasonData, error: msError },
     ] = await Promise.all([
       fetchAllPages<any>("nst_seasonal_individual_counts"), // Fetch all pages
       fetchAllPages<any>("nst_seasonal_on_ice_counts"), // Fetch all pages
@@ -954,7 +992,7 @@ async function handler(
         .select("season")
         .order("season", { ascending: false })
         .limit(1)
-        .maybeSingle()
+        .maybeSingle(),
     ]);
 
     // Error checking for lookup tables (fetchAllPages handles its own errors)
@@ -965,12 +1003,12 @@ async function handler(
       throw new Error(`Max Season Fetch Error: ${msError.message}`); // Allow null from maybeSingle
     if (!teamsInfoData || !teamSummaryYearsData) {
       throw new Error(
-        "Missing essential lookup data (teamsinfo, team_summary_years)."
+        "Missing essential lookup data (teamsinfo, team_summary_years).",
       );
     }
     // Log total rows fetched via pagination
     console.log(
-      `Total Fetched: ${individualCountsData.length} individual, ${onIceCountsData.length} on-ice rows.`
+      `Total Fetched: ${individualCountsData.length} individual, ${onIceCountsData.length} on-ice rows.`,
     );
 
     // Handle case where there's no data / no seasons yet
@@ -981,17 +1019,17 @@ async function handler(
         message: "No season data available.",
         totalUpsertedThreeYear: 0,
         totalUpsertedCareer: 0,
-        duration: `0.00 s`
+        duration: `0.00 s`,
       });
     }
     const currentSeason = maxSeasonData.season;
     console.log(
-      `Current Season identified as: ${currentSeason}. Excluding from averages.`
+      `Current Season identified as: ${currentSeason}. Excluding from averages.`,
     );
 
     // 2. Prepare Lookups
     const teamAbbrToNameMap = new Map(
-      teamsInfoData.map((t) => [t.nst_abbr, t.name])
+      teamsInfoData.map((t) => [t.nst_abbr, t.name]),
     );
     const teamSeasonGpMap = new Map<number, Map<string, number>>();
     teamSummaryYearsData.forEach((tsy) => {
@@ -1005,17 +1043,17 @@ async function handler(
 
     // 3. Determine Relevant Seasons
     const allSeasons = [
-      ...new Set(individualCountsData?.map((r) => r.season) ?? [])
+      ...new Set(individualCountsData?.map((r) => r.season) ?? []),
     ]
       .filter((s) => s < currentSeason)
       .sort((a, b) => b - a);
     const threeYearSeasons = new Set(allSeasons.slice(0, 3));
     const careerSeasons = new Set(allSeasons);
     console.log(
-      `Using seasons for 3-Year Avg: ${[...threeYearSeasons].join(", ")}`
+      `Using seasons for 3-Year Avg: ${[...threeYearSeasons].join(", ")}`,
     );
     console.log(
-      `Using seasons for Career Avg: ${[...careerSeasons].join(", ")}`
+      `Using seasons for Career Avg: ${[...careerSeasons].join(", ")}`,
     );
     if (careerSeasons.size === 0) {
       console.log("No past seasons found.");
@@ -1024,7 +1062,7 @@ async function handler(
         message: "No past seasons found.",
         totalUpsertedThreeYear: 0,
         totalUpsertedCareer: 0,
-        duration: `${((Date.now() - startTime) / 1000).toFixed(2)} s`
+        duration: `${((Date.now() - startTime) / 1000).toFixed(2)} s`,
       });
     }
 
@@ -1042,7 +1080,7 @@ async function handler(
       }
     });
     console.log(
-      `Aggregated data for ${aggregationMap.size} player-strength combinations.`
+      `Aggregated data for ${aggregationMap.size} player-strength combinations.`,
     );
 
     // 5. Calculate Final Metrics and Prepare Upsert Data
@@ -1058,21 +1096,21 @@ async function handler(
         "three_year",
         threeYearSeasons,
         teamAbbrToNameMap,
-        teamSeasonGpMap
+        teamSeasonGpMap,
       );
       const careerMetrics = calculateMetrics(
         agg,
         "career",
         careerSeasons,
         teamAbbrToNameMap,
-        teamSeasonGpMap
+        teamSeasonGpMap,
       );
       if (threeYearMetrics) {
         threeYearUpsertData.push({
           player_id,
           strength,
           updated_at: nowISO,
-          ...threeYearMetrics
+          ...threeYearMetrics,
         });
       }
       if (careerMetrics) {
@@ -1080,49 +1118,20 @@ async function handler(
           player_id,
           strength,
           updated_at: nowISO,
-          ...careerMetrics
+          ...careerMetrics,
         });
       }
     }
     console.log(
-      `Prepared ${threeYearUpsertData.length} rows for 3-year averages and ${careerUpsertData.length} rows for career averages.`
+      `Prepared ${threeYearUpsertData.length} rows for 3-year averages and ${careerUpsertData.length} rows for career averages.`,
     );
 
     // 6. Upsert Data in Batches
     console.log("Upserting data...");
-    let totalUpsertedThreeYear = 0;
-    let totalUpsertedCareer = 0;
-    if (threeYearUpsertData.length > 0) {
-      for (let i = 0; i < threeYearUpsertData.length; i += BATCH_SIZE) {
-        const batch = threeYearUpsertData.slice(i, i + BATCH_SIZE);
-
-        const { error } = await supabase
-          .from("wgo_avg_three_year")
-          .upsert(batch, { onConflict: "player_id, strength" });
-        if (error)
-          throw new Error(`Error upserting 3-year batch: ${error.message}`);
-        totalUpsertedThreeYear += batch.length;
-      }
-      console.log(
-        `Upserted ${totalUpsertedThreeYear} rows to wgo_avg_three_year.`
-      );
-    } else {
-      console.log("No 3-year average data to upsert.");
-    }
-    if (careerUpsertData.length > 0) {
-      for (let i = 0; i < careerUpsertData.length; i += BATCH_SIZE) {
-        const batch = careerUpsertData.slice(i, i + BATCH_SIZE);
-        const { error } = await supabase
-          .from("wgo_avg_career")
-          .upsert(batch, { onConflict: "player_id, strength" });
-        if (error)
-          throw new Error(`Error upserting career batch: ${error.message}`);
-        totalUpsertedCareer += batch.length;
-      }
-      console.log(`Upserted ${totalUpsertedCareer} rows to wgo_avg_career.`);
-    } else {
-      console.log("No career average data to upsert.");
-    }
+    const [totalUpsertedThreeYear, totalUpsertedCareer] = await Promise.all([
+      upsertAverageRows("wgo_avg_three_year", threeYearUpsertData, BATCH_SIZE),
+      upsertAverageRows("wgo_avg_career", careerUpsertData, BATCH_SIZE),
+    ]);
 
     // --- Final Response ---
     const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
@@ -1132,7 +1141,7 @@ async function handler(
       message: `Successfully calculated and upserted player averages.`,
       totalUpsertedThreeYear,
       totalUpsertedCareer,
-      duration: `${durationSec} s`
+      duration: `${durationSec} s`,
     });
   } catch (error: any) {
     const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
@@ -1144,7 +1153,7 @@ async function handler(
       message: dependencyError.message,
       duration: `${durationSec} s`,
       dependencyError,
-      ...(process.env.NODE_ENV === "development" && { stack: error.stack })
+      ...(process.env.NODE_ENV === "development" && { stack: error.stack }),
     });
   }
 }

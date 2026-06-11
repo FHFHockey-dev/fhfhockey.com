@@ -74,10 +74,16 @@ describe("rollingWindowContract", () => {
     expect(ROLLING_METRIC_WINDOW_FAMILIES.penalties_drawn).toBe(
       "additive_performance"
     );
+    expect(ROLLING_METRIC_WINDOW_FAMILIES.penalties_taken).toBe(
+      "additive_performance"
+    );
     expect(ROLLING_METRIC_WINDOW_FAMILIES.pp_toi_seconds).toBe(
       "additive_performance"
     );
     expect(ROLLING_METRIC_WINDOW_FAMILIES.penalties_drawn_per_60).toBe(
+      "weighted_rate_performance"
+    );
+    expect(ROLLING_METRIC_WINDOW_FAMILIES.penalties_taken_per_60).toBe(
       "weighted_rate_performance"
     );
     expect(ROLLING_METRIC_WINDOW_FAMILIES.shooting_pct).toBe(

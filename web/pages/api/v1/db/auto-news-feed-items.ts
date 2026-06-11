@@ -1,6 +1,7 @@
 import type { NextApiResponse } from "next";
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { normalizeNewsTeamId } from "lib/newsFeed";
 import {
   buildTweetNewsAmbiguousCandidate,
   buildTweetNewsAutomationCandidate,
@@ -157,6 +158,19 @@ async function fetchPlayers(args: {
     .filter((row) => Number.isFinite(row.id) && row.fullName);
 }
 
+async function fetchValidTeamIds(args: {
+  supabase: any;
+}): Promise<Set<number>> {
+  const { data, error } = await args.supabase.from("teams" as any).select("id");
+  if (error) throw error;
+
+  return new Set(
+    ((data ?? []) as Array<{ id: unknown }>)
+      .map((row) => Number(row.id))
+      .filter((teamId) => Number.isFinite(teamId)),
+  );
+}
+
 async function fetchExistingNewsItems(args: {
   supabase: any;
   reviewItemIds: string[];
@@ -180,6 +194,7 @@ async function persistAutomatedNewsItem(args: {
   supabase: any;
   existing: ExistingNewsItemRow | null;
   candidate: NonNullable<ReturnType<typeof buildTweetNewsAutomationCandidate>>;
+  validTeamIds: ReadonlySet<number>;
   nowIso: string;
 }): Promise<{ itemId: string; action: "inserted" | "updated" }> {
   const payload = {
@@ -189,7 +204,7 @@ async function persistAutomatedNewsItem(args: {
     tweet_url: args.candidate.tweetUrl,
     source_label: args.candidate.sourceLabel,
     source_account: args.candidate.sourceAccount,
-    team_id: args.candidate.teamId,
+    team_id: normalizeNewsTeamId(args.candidate.teamId, args.validTeamIds),
     team_abbreviation: args.candidate.teamAbbreviation,
     headline: args.candidate.headline,
     blurb: args.candidate.blurb,
@@ -241,7 +256,7 @@ async function persistAutomatedNewsItem(args: {
           news_item_id: itemId,
           player_id: player.playerId,
           player_name: player.playerName,
-          team_id: player.teamId,
+          team_id: normalizeNewsTeamId(player.teamId, args.validTeamIds),
           role: "subject",
           created_at: args.nowIso,
           updated_at: args.nowIso,
@@ -292,6 +307,7 @@ export default withCronJobAudit(
       }),
       fetchPlayers({ supabase: req.supabase }),
     ]);
+    const validTeamIds = await fetchValidTeamIds({ supabase: req.supabase });
     const existingByReviewItemId = await fetchExistingNewsItems({
       supabase: req.supabase,
       reviewItemIds: rows.map((row) => row.id),
@@ -360,6 +376,7 @@ export default withCronJobAudit(
           supabase: req.supabase,
           existing,
           candidate,
+          validTeamIds,
           nowIso,
         });
         if (result.action === "inserted") insertedCount += 1;

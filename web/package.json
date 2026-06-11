@@ -5,6 +5,7 @@
   "description": "The main web app for fhfhockey.com",
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 3000",
+    "dev:stable": "WATCHPACK_POLLING=true WATCHPACK_POLLING_INTERVAL=1000 next dev -H 0.0.0.0 -p 3000",
     "dev:turbo": "next dev --turbopack -H 0.0.0.0 -p 3000",
     "dev:3001": "next dev --turbopack -H 0.0.0.0 -p 3001",
     "test:full": "vitest --run",
@@ -17,6 +18,11 @@
     "train:nhl-xg-baseline": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/train-nhl-xg-baseline.ts",
     "benchmark:nhl-xg-baselines": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/benchmark-nhl-xg-baselines.ts",
     "check:rolling-player-runtime-budget": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/check-rolling-player-runtime-budget.ts",
+    "check:rankings-matrix-performance": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/check-rankings-matrix-performance.ts",
+    "check:rankings-deployment-tiers-performance": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/check-rankings-deployment-tiers-performance.ts",
+    "check:rankings-trending-performance": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/check-rankings-trending-performance.ts",
+    "check:rankings-splits-performance": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/check-rankings-splits-performance.ts",
+    "check:rankings-source-health": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/check-rankings-source-health.ts",
     "check:rolling-player-coverage": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/check-rolling-player-coverage.ts",
     "check:rolling-player-context-labels": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/check-rolling-player-context-labels.ts",
     "check:rolling-player-family-reconstruction": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/check-rolling-player-family-reconstruction.ts",
@@ -31,7 +37,13 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "test": "vitest",
-    "mcp:supabase": "SUPABASE_ACCESS_TOKEN=$(grep SUPABASE_ACCESS_TOKEN .env.mcp | cut -d= -f2) npx @supabase/mcp-server-supabase"
+    "e2e:install": "playwright install chromium",
+    "e2e:install:workspace": "PLAYWRIGHT_BROWSERS_PATH=.ms-playwright playwright install chromium",
+    "test:e2e": "playwright test",
+    "test:e2e:rankings": "playwright test e2e/rankings.spec.ts",
+    "test:e2e:rankings:workspace": "PLAYWRIGHT_BROWSERS_PATH=.ms-playwright playwright test e2e/rankings.spec.ts",
+    "mcp:supabase": "SUPABASE_ACCESS_TOKEN=$(grep SUPABASE_ACCESS_TOKEN .env.mcp | cut -d= -f2) npx @supabase/mcp-server-supabase",
+    "supabase:safe": "SUPABASE_TELEMETRY_DISABLED=1 npm_config_cache=/private/tmp/fhfhockey-npm-cache npx supabase"
   },
   "dependencies": {
     "@apollo/client": "^3.6.9",
@@ -116,6 +128,7 @@
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^3.2.4",
+    "@playwright/test": "^1.60.0",
     "@storybook/addon-essentials": "^8.5.3",
     "@storybook/addon-interactions": "^8.5.3",
     "@storybook/addon-onboarding": "^8.5.3",

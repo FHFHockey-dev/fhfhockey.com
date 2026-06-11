@@ -374,6 +374,131 @@ export type Database = {
         }
         Relationships: []
       }
+      entity_metric_rankings: {
+        Row: {
+          created_at: string
+          deployment_bucket: string | null
+          entity_id: number
+          entity_type: string
+          explanation_items: Json
+          games_played: number | null
+          methodology_version: string
+          metric_key: string
+          minimum_sample_met: boolean
+          normalized_value: number | null
+          peer_group_key: string
+          peer_group_type: string
+          percentile: number | null
+          position_group: string | null
+          provenance: Json
+          qualified_peer_count: number
+          raw_rank: number | null
+          raw_value: number | null
+          sample_confidence: string
+          season_id: number
+          snapshot_date: string
+          strength_state: string
+          tags: Json
+          team_id: number | null
+          toi_seconds: number | null
+          updated_at: string
+          window_semantics: string
+          window_size: number
+          window_type: string
+        }
+        Insert: {
+          created_at?: string
+          deployment_bucket?: string | null
+          entity_id: number
+          entity_type: string
+          explanation_items?: Json
+          games_played?: number | null
+          methodology_version?: string
+          metric_key: string
+          minimum_sample_met?: boolean
+          normalized_value?: number | null
+          peer_group_key: string
+          peer_group_type: string
+          percentile?: number | null
+          position_group?: string | null
+          provenance?: Json
+          qualified_peer_count?: number
+          raw_rank?: number | null
+          raw_value?: number | null
+          sample_confidence?: string
+          season_id: number
+          snapshot_date: string
+          strength_state: string
+          tags?: Json
+          team_id?: number | null
+          toi_seconds?: number | null
+          updated_at?: string
+          window_semantics: string
+          window_size?: number
+          window_type: string
+        }
+        Update: {
+          created_at?: string
+          deployment_bucket?: string | null
+          entity_id?: number
+          entity_type?: string
+          explanation_items?: Json
+          games_played?: number | null
+          methodology_version?: string
+          metric_key?: string
+          minimum_sample_met?: boolean
+          normalized_value?: number | null
+          peer_group_key?: string
+          peer_group_type?: string
+          percentile?: number | null
+          position_group?: string | null
+          provenance?: Json
+          qualified_peer_count?: number
+          raw_rank?: number | null
+          raw_value?: number | null
+          sample_confidence?: string
+          season_id?: number
+          snapshot_date?: string
+          strength_state?: string
+          tags?: Json
+          team_id?: number | null
+          toi_seconds?: number | null
+          updated_at?: string
+          window_semantics?: string
+          window_size?: number
+          window_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_metric_rankings_metric_key_fkey"
+            columns: ["metric_key"]
+            isOneToOne: false
+            referencedRelation: "metric_definitions"
+            referencedColumns: ["metric_key"]
+          },
+          {
+            foreignKeyName: "entity_metric_rankings_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "entity_metric_rankings_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "entity_metric_rankings_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entity_sustainability_bands_daily: {
         Row: {
           baseline: number | null
@@ -1925,6 +2050,370 @@ export type Database = {
           },
         ]
       }
+      game_prediction_accountability_daily: {
+        Row: {
+          accountability_daily_id: string
+          as_of_date: string
+          backtest_run_id: string | null
+          brier_score: number | null
+          computed_at: string
+          correct_games: number
+          created_at: string
+          cumulative_accuracy: number | null
+          evaluated_games: number
+          feature_set_version: string
+          log_loss: number | null
+          metadata: Json
+          model_name: string
+          model_version: string
+          rolling_10_accuracy: number | null
+          rolling_25_accuracy: number | null
+          rolling_50_accuracy: number | null
+          wrong_games: number
+        }
+        Insert: {
+          accountability_daily_id?: string
+          as_of_date: string
+          backtest_run_id?: string | null
+          brier_score?: number | null
+          computed_at?: string
+          correct_games: number
+          created_at?: string
+          cumulative_accuracy?: number | null
+          evaluated_games: number
+          feature_set_version: string
+          log_loss?: number | null
+          metadata?: Json
+          model_name: string
+          model_version: string
+          rolling_10_accuracy?: number | null
+          rolling_25_accuracy?: number | null
+          rolling_50_accuracy?: number | null
+          wrong_games: number
+        }
+        Update: {
+          accountability_daily_id?: string
+          as_of_date?: string
+          backtest_run_id?: string | null
+          brier_score?: number | null
+          computed_at?: string
+          correct_games?: number
+          created_at?: string
+          cumulative_accuracy?: number | null
+          evaluated_games?: number
+          feature_set_version?: string
+          log_loss?: number | null
+          metadata?: Json
+          model_name?: string
+          model_version?: string
+          rolling_10_accuracy?: number | null
+          rolling_25_accuracy?: number | null
+          rolling_50_accuracy?: number | null
+          wrong_games?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_prediction_accountability_daily_backtest_run_id_fkey"
+            columns: ["backtest_run_id"]
+            isOneToOne: false
+            referencedRelation: "game_prediction_backtest_runs"
+            referencedColumns: ["backtest_run_id"]
+          },
+          {
+            foreignKeyName: "game_prediction_accountability_daily_model_fkey"
+            columns: ["model_name", "model_version", "feature_set_version"]
+            isOneToOne: false
+            referencedRelation: "game_prediction_model_versions"
+            referencedColumns: [
+              "model_name",
+              "model_version",
+              "feature_set_version",
+            ]
+          },
+        ]
+      }
+      game_prediction_accountability_games: {
+        Row: {
+          accountability_game_id: string
+          actual_home_win_probability: number
+          actual_winner_team_id: number
+          away_score: number
+          away_team_id: number
+          backtest_run_id: string | null
+          computed_at: string
+          created_at: string
+          feature_set_version: string
+          final_home_win_probability: number
+          final_prediction_cutoff_at: string
+          game_id: number
+          high_home_win_probability: number
+          home_score: number
+          home_team_id: number
+          low_home_win_probability: number
+          metadata: Json
+          model_name: string
+          model_version: string
+          open_home_win_probability: number
+          predicted_winner_correct: boolean
+          predicted_winner_team_id: number | null
+          prediction_count: number
+          prediction_id: string | null
+          probability_spread: number
+          snapshot_date: string
+        }
+        Insert: {
+          accountability_game_id?: string
+          actual_home_win_probability: number
+          actual_winner_team_id: number
+          away_score: number
+          away_team_id: number
+          backtest_run_id?: string | null
+          computed_at?: string
+          created_at?: string
+          feature_set_version: string
+          final_home_win_probability: number
+          final_prediction_cutoff_at: string
+          game_id: number
+          high_home_win_probability: number
+          home_score: number
+          home_team_id: number
+          low_home_win_probability: number
+          metadata?: Json
+          model_name: string
+          model_version: string
+          open_home_win_probability: number
+          predicted_winner_correct: boolean
+          predicted_winner_team_id?: number | null
+          prediction_count: number
+          prediction_id?: string | null
+          probability_spread: number
+          snapshot_date: string
+        }
+        Update: {
+          accountability_game_id?: string
+          actual_home_win_probability?: number
+          actual_winner_team_id?: number
+          away_score?: number
+          away_team_id?: number
+          backtest_run_id?: string | null
+          computed_at?: string
+          created_at?: string
+          feature_set_version?: string
+          final_home_win_probability?: number
+          final_prediction_cutoff_at?: string
+          game_id?: number
+          high_home_win_probability?: number
+          home_score?: number
+          home_team_id?: number
+          low_home_win_probability?: number
+          metadata?: Json
+          model_name?: string
+          model_version?: string
+          open_home_win_probability?: number
+          predicted_winner_correct?: boolean
+          predicted_winner_team_id?: number | null
+          prediction_count?: number
+          prediction_id?: string | null
+          probability_spread?: number
+          snapshot_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_prediction_accountability_ga_predicted_winner_team_id_fkey"
+            columns: ["predicted_winner_team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "game_prediction_accountability_ga_predicted_winner_team_id_fkey"
+            columns: ["predicted_winner_team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "game_prediction_accountability_ga_predicted_winner_team_id_fkey"
+            columns: ["predicted_winner_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_prediction_accountability_games_actual_winner_team_id_fkey"
+            columns: ["actual_winner_team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "game_prediction_accountability_games_actual_winner_team_id_fkey"
+            columns: ["actual_winner_team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "game_prediction_accountability_games_actual_winner_team_id_fkey"
+            columns: ["actual_winner_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_prediction_accountability_games_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "game_prediction_accountability_games_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "game_prediction_accountability_games_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_prediction_accountability_games_backtest_run_id_fkey"
+            columns: ["backtest_run_id"]
+            isOneToOne: false
+            referencedRelation: "game_prediction_backtest_runs"
+            referencedColumns: ["backtest_run_id"]
+          },
+          {
+            foreignKeyName: "game_prediction_accountability_games_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_prediction_accountability_games_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "game_prediction_accountability_games_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "game_prediction_accountability_games_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_prediction_accountability_games_model_fkey"
+            columns: ["model_name", "model_version", "feature_set_version"]
+            isOneToOne: false
+            referencedRelation: "game_prediction_model_versions"
+            referencedColumns: [
+              "model_name",
+              "model_version",
+              "feature_set_version",
+            ]
+          },
+          {
+            foreignKeyName: "game_prediction_accountability_games_prediction_id_fkey"
+            columns: ["prediction_id"]
+            isOneToOne: false
+            referencedRelation: "game_prediction_history"
+            referencedColumns: ["prediction_id"]
+          },
+        ]
+      }
+      game_prediction_backtest_runs: {
+        Row: {
+          backtest_run_id: string
+          completed_at: string | null
+          created_at: string
+          feature_set_version: string
+          metadata: Json
+          metrics: Json
+          model_artifacts: Json
+          model_name: string
+          model_version: string
+          replay_end_date: string
+          replay_games: number
+          replay_start_date: string
+          retrain_cadence_games: number
+          season_id: number
+          started_at: string
+          status: string
+          training_end_date: string
+          training_games: number
+          training_start_date: string
+        }
+        Insert: {
+          backtest_run_id?: string
+          completed_at?: string | null
+          created_at?: string
+          feature_set_version: string
+          metadata?: Json
+          metrics?: Json
+          model_artifacts?: Json
+          model_name: string
+          model_version: string
+          replay_end_date: string
+          replay_games: number
+          replay_start_date: string
+          retrain_cadence_games?: number
+          season_id: number
+          started_at?: string
+          status?: string
+          training_end_date: string
+          training_games: number
+          training_start_date: string
+        }
+        Update: {
+          backtest_run_id?: string
+          completed_at?: string | null
+          created_at?: string
+          feature_set_version?: string
+          metadata?: Json
+          metrics?: Json
+          model_artifacts?: Json
+          model_name?: string
+          model_version?: string
+          replay_end_date?: string
+          replay_games?: number
+          replay_start_date?: string
+          retrain_cadence_games?: number
+          season_id?: number
+          started_at?: string
+          status?: string
+          training_end_date?: string
+          training_games?: number
+          training_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_prediction_backtest_runs_model_fkey"
+            columns: ["model_name", "model_version", "feature_set_version"]
+            isOneToOne: false
+            referencedRelation: "game_prediction_model_versions"
+            referencedColumns: [
+              "model_name",
+              "model_version",
+              "feature_set_version",
+            ]
+          },
+        ]
+      }
       game_prediction_feature_snapshots: {
         Row: {
           away_team_id: number
@@ -3062,6 +3551,287 @@ export type Database = {
         }
         Relationships: []
       }
+      line_source_ifttt_events: {
+        Row: {
+          created_at_label: string | null
+          id: string
+          link_to_tweet: string | null
+          processing_status: string
+          raw_payload: Json
+          received_at: string
+          source: string
+          source_account: string
+          source_group: string
+          source_key: string
+          text: string | null
+          tweet_created_at: string | null
+          tweet_embed_code: string | null
+          tweet_id: string | null
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          created_at_label?: string | null
+          id?: string
+          link_to_tweet?: string | null
+          processing_status?: string
+          raw_payload?: Json
+          received_at?: string
+          source?: string
+          source_account: string
+          source_group: string
+          source_key: string
+          text?: string | null
+          tweet_created_at?: string | null
+          tweet_embed_code?: string | null
+          tweet_id?: string | null
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          created_at_label?: string | null
+          id?: string
+          link_to_tweet?: string | null
+          processing_status?: string
+          raw_payload?: Json
+          received_at?: string
+          source?: string
+          source_account?: string
+          source_group?: string
+          source_key?: string
+          text?: string | null
+          tweet_created_at?: string | null
+          tweet_embed_code?: string | null
+          tweet_id?: string | null
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      line_source_snapshots: {
+        Row: {
+          author_name: string | null
+          capture_key: string
+          classification: string | null
+          detected_league: string | null
+          enriched_text: string | null
+          game_id: number | null
+          goalie_1_name: string | null
+          goalie_1_player_id: number | null
+          goalie_2_name: string | null
+          goalie_2_player_id: number | null
+          injured_player_ids: number[] | null
+          injured_player_names: string[] | null
+          keyword_hits: string[] | null
+          line_1_player_ids: number[] | null
+          line_1_player_names: string[] | null
+          line_2_player_ids: number[] | null
+          line_2_player_names: string[] | null
+          line_3_player_ids: number[] | null
+          line_3_player_names: string[] | null
+          line_4_player_ids: number[] | null
+          line_4_player_names: string[] | null
+          matched_player_ids: number[] | null
+          matched_player_names: string[] | null
+          metadata: Json
+          nhl_filter_reason: string | null
+          nhl_filter_status: string
+          observed_at: string
+          pair_1_player_ids: number[] | null
+          pair_1_player_names: string[] | null
+          pair_2_player_ids: number[] | null
+          pair_2_player_names: string[] | null
+          pair_3_player_ids: number[] | null
+          pair_3_player_names: string[] | null
+          primary_text_source: string | null
+          quoted_author_handle: string | null
+          quoted_author_name: string | null
+          quoted_enriched_text: string | null
+          quoted_raw_text: string | null
+          quoted_tweet_id: string | null
+          quoted_tweet_url: string | null
+          raw_payload: Json
+          raw_text: string | null
+          scratches_player_ids: number[] | null
+          scratches_player_names: string[] | null
+          snapshot_date: string
+          source: string
+          source_account: string
+          source_group: string
+          source_handle: string | null
+          source_key: string
+          source_label: string | null
+          source_url: string | null
+          status: string
+          team_abbreviation: string | null
+          team_id: number | null
+          team_name: string | null
+          tweet_id: string | null
+          tweet_posted_at: string | null
+          tweet_posted_label: string | null
+          tweet_url: string | null
+          unmatched_names: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          author_name?: string | null
+          capture_key: string
+          classification?: string | null
+          detected_league?: string | null
+          enriched_text?: string | null
+          game_id?: number | null
+          goalie_1_name?: string | null
+          goalie_1_player_id?: number | null
+          goalie_2_name?: string | null
+          goalie_2_player_id?: number | null
+          injured_player_ids?: number[] | null
+          injured_player_names?: string[] | null
+          keyword_hits?: string[] | null
+          line_1_player_ids?: number[] | null
+          line_1_player_names?: string[] | null
+          line_2_player_ids?: number[] | null
+          line_2_player_names?: string[] | null
+          line_3_player_ids?: number[] | null
+          line_3_player_names?: string[] | null
+          line_4_player_ids?: number[] | null
+          line_4_player_names?: string[] | null
+          matched_player_ids?: number[] | null
+          matched_player_names?: string[] | null
+          metadata?: Json
+          nhl_filter_reason?: string | null
+          nhl_filter_status?: string
+          observed_at?: string
+          pair_1_player_ids?: number[] | null
+          pair_1_player_names?: string[] | null
+          pair_2_player_ids?: number[] | null
+          pair_2_player_names?: string[] | null
+          pair_3_player_ids?: number[] | null
+          pair_3_player_names?: string[] | null
+          primary_text_source?: string | null
+          quoted_author_handle?: string | null
+          quoted_author_name?: string | null
+          quoted_enriched_text?: string | null
+          quoted_raw_text?: string | null
+          quoted_tweet_id?: string | null
+          quoted_tweet_url?: string | null
+          raw_payload?: Json
+          raw_text?: string | null
+          scratches_player_ids?: number[] | null
+          scratches_player_names?: string[] | null
+          snapshot_date: string
+          source: string
+          source_account: string
+          source_group: string
+          source_handle?: string | null
+          source_key: string
+          source_label?: string | null
+          source_url?: string | null
+          status?: string
+          team_abbreviation?: string | null
+          team_id?: number | null
+          team_name?: string | null
+          tweet_id?: string | null
+          tweet_posted_at?: string | null
+          tweet_posted_label?: string | null
+          tweet_url?: string | null
+          unmatched_names?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          author_name?: string | null
+          capture_key?: string
+          classification?: string | null
+          detected_league?: string | null
+          enriched_text?: string | null
+          game_id?: number | null
+          goalie_1_name?: string | null
+          goalie_1_player_id?: number | null
+          goalie_2_name?: string | null
+          goalie_2_player_id?: number | null
+          injured_player_ids?: number[] | null
+          injured_player_names?: string[] | null
+          keyword_hits?: string[] | null
+          line_1_player_ids?: number[] | null
+          line_1_player_names?: string[] | null
+          line_2_player_ids?: number[] | null
+          line_2_player_names?: string[] | null
+          line_3_player_ids?: number[] | null
+          line_3_player_names?: string[] | null
+          line_4_player_ids?: number[] | null
+          line_4_player_names?: string[] | null
+          matched_player_ids?: number[] | null
+          matched_player_names?: string[] | null
+          metadata?: Json
+          nhl_filter_reason?: string | null
+          nhl_filter_status?: string
+          observed_at?: string
+          pair_1_player_ids?: number[] | null
+          pair_1_player_names?: string[] | null
+          pair_2_player_ids?: number[] | null
+          pair_2_player_names?: string[] | null
+          pair_3_player_ids?: number[] | null
+          pair_3_player_names?: string[] | null
+          primary_text_source?: string | null
+          quoted_author_handle?: string | null
+          quoted_author_name?: string | null
+          quoted_enriched_text?: string | null
+          quoted_raw_text?: string | null
+          quoted_tweet_id?: string | null
+          quoted_tweet_url?: string | null
+          raw_payload?: Json
+          raw_text?: string | null
+          scratches_player_ids?: number[] | null
+          scratches_player_names?: string[] | null
+          snapshot_date?: string
+          source?: string
+          source_account?: string
+          source_group?: string
+          source_handle?: string | null
+          source_key?: string
+          source_label?: string | null
+          source_url?: string | null
+          status?: string
+          team_abbreviation?: string | null
+          team_id?: number | null
+          team_name?: string | null
+          tweet_id?: string | null
+          tweet_posted_at?: string | null
+          tweet_posted_label?: string | null
+          tweet_url?: string | null
+          unmatched_names?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "line_source_snapshots_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_source_snapshots_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "line_source_snapshots_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "line_source_snapshots_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lineCombinations: {
         Row: {
           defensemen: number[]
@@ -4051,6 +4821,99 @@ export type Database = {
           },
         ]
       }
+      metric_definitions: {
+        Row: {
+          applicable_strength_states: Json
+          availability_status: string
+          category: string
+          created_at: string
+          default_peer_group: string | null
+          default_strength_state: string
+          denominator_description: string
+          denominator_key: string
+          description: string
+          display_name: string
+          entity_type: string
+          formula_description: string
+          higher_is_better: boolean
+          is_percentile_eligible: boolean
+          is_rate_stat: boolean
+          metadata: Json
+          methodology_version: string
+          metric_key: string
+          minimum_gp: number | null
+          minimum_shots_against: number | null
+          minimum_starts: number | null
+          minimum_toi_seconds: number | null
+          phase: string
+          sample_requirements: Json
+          source_fields: Json
+          source_quality_flags: Json
+          source_table: string | null
+          updated_at: string
+        }
+        Insert: {
+          applicable_strength_states?: Json
+          availability_status?: string
+          category: string
+          created_at?: string
+          default_peer_group?: string | null
+          default_strength_state?: string
+          denominator_description?: string
+          denominator_key?: string
+          description: string
+          display_name: string
+          entity_type: string
+          formula_description: string
+          higher_is_better?: boolean
+          is_percentile_eligible?: boolean
+          is_rate_stat?: boolean
+          metadata?: Json
+          methodology_version?: string
+          metric_key: string
+          minimum_gp?: number | null
+          minimum_shots_against?: number | null
+          minimum_starts?: number | null
+          minimum_toi_seconds?: number | null
+          phase?: string
+          sample_requirements?: Json
+          source_fields?: Json
+          source_quality_flags?: Json
+          source_table?: string | null
+          updated_at?: string
+        }
+        Update: {
+          applicable_strength_states?: Json
+          availability_status?: string
+          category?: string
+          created_at?: string
+          default_peer_group?: string | null
+          default_strength_state?: string
+          denominator_description?: string
+          denominator_key?: string
+          description?: string
+          display_name?: string
+          entity_type?: string
+          formula_description?: string
+          higher_is_better?: boolean
+          is_percentile_eligible?: boolean
+          is_rate_stat?: boolean
+          metadata?: Json
+          methodology_version?: string
+          metric_key?: string
+          minimum_gp?: number | null
+          minimum_shots_against?: number | null
+          minimum_starts?: number | null
+          minimum_toi_seconds?: number | null
+          phase?: string
+          sample_requirements?: Json
+          source_fields?: Json
+          source_quality_flags?: Json
+          source_table?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       model_market_flags_daily: {
         Row: {
           computed_at: string
@@ -4219,6 +5082,223 @@ export type Database = {
           weights_json?: Json
         }
         Relationships: []
+      }
+      news_feed_item_players: {
+        Row: {
+          created_at: string
+          id: string
+          news_item_id: string
+          player_id: number | null
+          player_name: string
+          role: string
+          team_id: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          news_item_id: string
+          player_id?: number | null
+          player_name: string
+          role?: string
+          team_id?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          news_item_id?: string
+          player_id?: number | null
+          player_name?: string
+          role?: string
+          team_id?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_feed_item_players_news_item_id_fkey"
+            columns: ["news_item_id"]
+            isOneToOne: false
+            referencedRelation: "news_feed_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_feed_item_players_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_feed_item_players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "news_feed_item_players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "news_feed_item_players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      news_feed_items: {
+        Row: {
+          blurb: string
+          card_status: string
+          category: string
+          created_at: string
+          headline: string
+          id: string
+          metadata: Json
+          observed_at: string | null
+          published_at: string | null
+          source_account: string | null
+          source_label: string | null
+          source_review_item_id: string | null
+          source_tweet_id: string | null
+          source_url: string | null
+          subcategory: string | null
+          team_abbreviation: string | null
+          team_id: number | null
+          tweet_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          blurb?: string
+          card_status?: string
+          category: string
+          created_at?: string
+          headline: string
+          id?: string
+          metadata?: Json
+          observed_at?: string | null
+          published_at?: string | null
+          source_account?: string | null
+          source_label?: string | null
+          source_review_item_id?: string | null
+          source_tweet_id?: string | null
+          source_url?: string | null
+          subcategory?: string | null
+          team_abbreviation?: string | null
+          team_id?: number | null
+          tweet_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          blurb?: string
+          card_status?: string
+          category?: string
+          created_at?: string
+          headline?: string
+          id?: string
+          metadata?: Json
+          observed_at?: string | null
+          published_at?: string | null
+          source_account?: string | null
+          source_label?: string | null
+          source_review_item_id?: string | null
+          source_tweet_id?: string | null
+          source_url?: string | null
+          subcategory?: string | null
+          team_abbreviation?: string | null
+          team_id?: number | null
+          tweet_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_feed_items_source_review_item_id_fkey"
+            columns: ["source_review_item_id"]
+            isOneToOne: false
+            referencedRelation: "tweet_pattern_review_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_feed_items_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "news_feed_items_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "news_feed_items_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      news_feed_keyword_phrases: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          normalized_phrase: string
+          notes: string | null
+          phrase: string
+          scope_key: string
+          source: string
+          source_review_item_id: string | null
+          status: string
+          subcategory: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          normalized_phrase: string
+          notes?: string | null
+          phrase: string
+          scope_key: string
+          source?: string
+          source_review_item_id?: string | null
+          status?: string
+          subcategory?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          normalized_phrase?: string
+          notes?: string | null
+          phrase?: string
+          scope_key?: string
+          source?: string
+          source_review_item_id?: string | null
+          status?: string
+          subcategory?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_feed_keyword_phrases_source_review_item_id_fkey"
+            columns: ["source_review_item_id"]
+            isOneToOne: false
+            referencedRelation: "tweet_pattern_review_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       nhl_api_game_payloads_raw: {
         Row: {
@@ -4598,6 +5678,507 @@ export type Database = {
         }
         Relationships: []
       }
+      nhl_edge_goalie_metrics_daily: {
+        Row: {
+          all_goals_against: number | null
+          all_save_pct: number | null
+          all_saves: number | null
+          created_at: string
+          edge_goals_against_avg: number | null
+          edge_goals_against_avg_league_avg: number | null
+          edge_goals_against_avg_percentile: number | null
+          game_type: number
+          games_above_900: number | null
+          games_above_900_league_avg: number | null
+          games_above_900_percentile: number | null
+          games_played: number | null
+          goal_differential_per_60: number | null
+          goal_differential_per_60_league_avg: number | null
+          goal_differential_per_60_percentile: number | null
+          goal_support_avg: number | null
+          goal_support_avg_league_avg: number | null
+          goal_support_avg_percentile: number | null
+          goalie_id: number
+          goalie_name: string | null
+          goals_against_avg: number | null
+          high_danger_goals_against: number | null
+          high_danger_save_pct: number | null
+          high_danger_saves: number | null
+          long_range_goals_against: number | null
+          long_range_save_pct: number | null
+          long_range_saves: number | null
+          losses: number | null
+          metadata: Json
+          mid_range_goals_against: number | null
+          mid_range_save_pct: number | null
+          mid_range_saves: number | null
+          ot_losses: number | null
+          point_pct: number | null
+          point_pct_league_avg: number | null
+          point_pct_percentile: number | null
+          raw_payload: Json
+          save_pct: number | null
+          season_id: number
+          snapshot_date: string
+          source_url: string
+          team_abbreviation: string | null
+          team_id: number | null
+          updated_at: string
+          wins: number | null
+        }
+        Insert: {
+          all_goals_against?: number | null
+          all_save_pct?: number | null
+          all_saves?: number | null
+          created_at?: string
+          edge_goals_against_avg?: number | null
+          edge_goals_against_avg_league_avg?: number | null
+          edge_goals_against_avg_percentile?: number | null
+          game_type?: number
+          games_above_900?: number | null
+          games_above_900_league_avg?: number | null
+          games_above_900_percentile?: number | null
+          games_played?: number | null
+          goal_differential_per_60?: number | null
+          goal_differential_per_60_league_avg?: number | null
+          goal_differential_per_60_percentile?: number | null
+          goal_support_avg?: number | null
+          goal_support_avg_league_avg?: number | null
+          goal_support_avg_percentile?: number | null
+          goalie_id: number
+          goalie_name?: string | null
+          goals_against_avg?: number | null
+          high_danger_goals_against?: number | null
+          high_danger_save_pct?: number | null
+          high_danger_saves?: number | null
+          long_range_goals_against?: number | null
+          long_range_save_pct?: number | null
+          long_range_saves?: number | null
+          losses?: number | null
+          metadata?: Json
+          mid_range_goals_against?: number | null
+          mid_range_save_pct?: number | null
+          mid_range_saves?: number | null
+          ot_losses?: number | null
+          point_pct?: number | null
+          point_pct_league_avg?: number | null
+          point_pct_percentile?: number | null
+          raw_payload?: Json
+          save_pct?: number | null
+          season_id: number
+          snapshot_date: string
+          source_url: string
+          team_abbreviation?: string | null
+          team_id?: number | null
+          updated_at?: string
+          wins?: number | null
+        }
+        Update: {
+          all_goals_against?: number | null
+          all_save_pct?: number | null
+          all_saves?: number | null
+          created_at?: string
+          edge_goals_against_avg?: number | null
+          edge_goals_against_avg_league_avg?: number | null
+          edge_goals_against_avg_percentile?: number | null
+          game_type?: number
+          games_above_900?: number | null
+          games_above_900_league_avg?: number | null
+          games_above_900_percentile?: number | null
+          games_played?: number | null
+          goal_differential_per_60?: number | null
+          goal_differential_per_60_league_avg?: number | null
+          goal_differential_per_60_percentile?: number | null
+          goal_support_avg?: number | null
+          goal_support_avg_league_avg?: number | null
+          goal_support_avg_percentile?: number | null
+          goalie_id?: number
+          goalie_name?: string | null
+          goals_against_avg?: number | null
+          high_danger_goals_against?: number | null
+          high_danger_save_pct?: number | null
+          high_danger_saves?: number | null
+          long_range_goals_against?: number | null
+          long_range_save_pct?: number | null
+          long_range_saves?: number | null
+          losses?: number | null
+          metadata?: Json
+          mid_range_goals_against?: number | null
+          mid_range_save_pct?: number | null
+          mid_range_saves?: number | null
+          ot_losses?: number | null
+          point_pct?: number | null
+          point_pct_league_avg?: number | null
+          point_pct_percentile?: number | null
+          raw_payload?: Json
+          save_pct?: number | null
+          season_id?: number
+          snapshot_date?: string
+          source_url?: string
+          team_abbreviation?: string | null
+          team_id?: number | null
+          updated_at?: string
+          wins?: number | null
+        }
+        Relationships: []
+      }
+      nhl_edge_skater_metrics_daily: {
+        Row: {
+          all_goals: number | null
+          all_shooting_pct: number | null
+          all_shots: number | null
+          assists: number | null
+          bursts_over_20: number | null
+          bursts_over_20_league_avg: number | null
+          bursts_over_20_percentile: number | null
+          created_at: string
+          defensive_zone_league_avg: number | null
+          defensive_zone_pct: number | null
+          defensive_zone_percentile: number | null
+          game_type: number
+          games_played: number | null
+          goals: number | null
+          high_danger_goals: number | null
+          high_danger_shooting_pct: number | null
+          high_danger_shots: number | null
+          long_range_goals: number | null
+          long_range_shooting_pct: number | null
+          long_range_shots: number | null
+          max_game_distance_km: number | null
+          max_game_distance_league_avg_miles: number | null
+          max_game_distance_miles: number | null
+          max_game_distance_percentile: number | null
+          max_skating_speed_kph: number | null
+          max_skating_speed_league_avg_mph: number | null
+          max_skating_speed_mph: number | null
+          max_skating_speed_percentile: number | null
+          metadata: Json
+          mid_range_goals: number | null
+          mid_range_shooting_pct: number | null
+          mid_range_shots: number | null
+          neutral_zone_league_avg: number | null
+          neutral_zone_pct: number | null
+          neutral_zone_percentile: number | null
+          offensive_zone_ev_league_avg: number | null
+          offensive_zone_ev_pct: number | null
+          offensive_zone_ev_percentile: number | null
+          offensive_zone_league_avg: number | null
+          offensive_zone_pct: number | null
+          offensive_zone_percentile: number | null
+          player_id: number
+          player_name: string | null
+          points: number | null
+          position: string | null
+          raw_payload: Json
+          season_id: number
+          snapshot_date: string
+          source_url: string
+          team_abbreviation: string | null
+          team_id: number | null
+          top_shot_speed_kph: number | null
+          top_shot_speed_league_avg_mph: number | null
+          top_shot_speed_mph: number | null
+          top_shot_speed_percentile: number | null
+          total_distance_km: number | null
+          total_distance_league_avg_miles: number | null
+          total_distance_miles: number | null
+          total_distance_percentile: number | null
+          updated_at: string
+        }
+        Insert: {
+          all_goals?: number | null
+          all_shooting_pct?: number | null
+          all_shots?: number | null
+          assists?: number | null
+          bursts_over_20?: number | null
+          bursts_over_20_league_avg?: number | null
+          bursts_over_20_percentile?: number | null
+          created_at?: string
+          defensive_zone_league_avg?: number | null
+          defensive_zone_pct?: number | null
+          defensive_zone_percentile?: number | null
+          game_type?: number
+          games_played?: number | null
+          goals?: number | null
+          high_danger_goals?: number | null
+          high_danger_shooting_pct?: number | null
+          high_danger_shots?: number | null
+          long_range_goals?: number | null
+          long_range_shooting_pct?: number | null
+          long_range_shots?: number | null
+          max_game_distance_km?: number | null
+          max_game_distance_league_avg_miles?: number | null
+          max_game_distance_miles?: number | null
+          max_game_distance_percentile?: number | null
+          max_skating_speed_kph?: number | null
+          max_skating_speed_league_avg_mph?: number | null
+          max_skating_speed_mph?: number | null
+          max_skating_speed_percentile?: number | null
+          metadata?: Json
+          mid_range_goals?: number | null
+          mid_range_shooting_pct?: number | null
+          mid_range_shots?: number | null
+          neutral_zone_league_avg?: number | null
+          neutral_zone_pct?: number | null
+          neutral_zone_percentile?: number | null
+          offensive_zone_ev_league_avg?: number | null
+          offensive_zone_ev_pct?: number | null
+          offensive_zone_ev_percentile?: number | null
+          offensive_zone_league_avg?: number | null
+          offensive_zone_pct?: number | null
+          offensive_zone_percentile?: number | null
+          player_id: number
+          player_name?: string | null
+          points?: number | null
+          position?: string | null
+          raw_payload?: Json
+          season_id: number
+          snapshot_date: string
+          source_url: string
+          team_abbreviation?: string | null
+          team_id?: number | null
+          top_shot_speed_kph?: number | null
+          top_shot_speed_league_avg_mph?: number | null
+          top_shot_speed_mph?: number | null
+          top_shot_speed_percentile?: number | null
+          total_distance_km?: number | null
+          total_distance_league_avg_miles?: number | null
+          total_distance_miles?: number | null
+          total_distance_percentile?: number | null
+          updated_at?: string
+        }
+        Update: {
+          all_goals?: number | null
+          all_shooting_pct?: number | null
+          all_shots?: number | null
+          assists?: number | null
+          bursts_over_20?: number | null
+          bursts_over_20_league_avg?: number | null
+          bursts_over_20_percentile?: number | null
+          created_at?: string
+          defensive_zone_league_avg?: number | null
+          defensive_zone_pct?: number | null
+          defensive_zone_percentile?: number | null
+          game_type?: number
+          games_played?: number | null
+          goals?: number | null
+          high_danger_goals?: number | null
+          high_danger_shooting_pct?: number | null
+          high_danger_shots?: number | null
+          long_range_goals?: number | null
+          long_range_shooting_pct?: number | null
+          long_range_shots?: number | null
+          max_game_distance_km?: number | null
+          max_game_distance_league_avg_miles?: number | null
+          max_game_distance_miles?: number | null
+          max_game_distance_percentile?: number | null
+          max_skating_speed_kph?: number | null
+          max_skating_speed_league_avg_mph?: number | null
+          max_skating_speed_mph?: number | null
+          max_skating_speed_percentile?: number | null
+          metadata?: Json
+          mid_range_goals?: number | null
+          mid_range_shooting_pct?: number | null
+          mid_range_shots?: number | null
+          neutral_zone_league_avg?: number | null
+          neutral_zone_pct?: number | null
+          neutral_zone_percentile?: number | null
+          offensive_zone_ev_league_avg?: number | null
+          offensive_zone_ev_pct?: number | null
+          offensive_zone_ev_percentile?: number | null
+          offensive_zone_league_avg?: number | null
+          offensive_zone_pct?: number | null
+          offensive_zone_percentile?: number | null
+          player_id?: number
+          player_name?: string | null
+          points?: number | null
+          position?: string | null
+          raw_payload?: Json
+          season_id?: number
+          snapshot_date?: string
+          source_url?: string
+          team_abbreviation?: string | null
+          team_id?: number | null
+          top_shot_speed_kph?: number | null
+          top_shot_speed_league_avg_mph?: number | null
+          top_shot_speed_mph?: number | null
+          top_shot_speed_percentile?: number | null
+          total_distance_km?: number | null
+          total_distance_league_avg_miles?: number | null
+          total_distance_miles?: number | null
+          total_distance_percentile?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      nhl_edge_skater_shot_location_leaders_daily: {
+        Row: {
+          all_value: number | null
+          created_at: string
+          game_type: number
+          high_danger_value: number | null
+          long_range_value: number | null
+          metadata: Json
+          metric_key: string
+          mid_range_value: number | null
+          player_id: number
+          player_name: string | null
+          position: string | null
+          rank_order: number
+          raw_payload: Json
+          season_id: number
+          snapshot_date: string
+          source_url: string
+          team_abbreviation: string | null
+          team_id: number | null
+          updated_at: string
+        }
+        Insert: {
+          all_value?: number | null
+          created_at?: string
+          game_type?: number
+          high_danger_value?: number | null
+          long_range_value?: number | null
+          metadata?: Json
+          metric_key: string
+          mid_range_value?: number | null
+          player_id: number
+          player_name?: string | null
+          position?: string | null
+          rank_order: number
+          raw_payload?: Json
+          season_id: number
+          snapshot_date: string
+          source_url: string
+          team_abbreviation?: string | null
+          team_id?: number | null
+          updated_at?: string
+        }
+        Update: {
+          all_value?: number | null
+          created_at?: string
+          game_type?: number
+          high_danger_value?: number | null
+          long_range_value?: number | null
+          metadata?: Json
+          metric_key?: string
+          mid_range_value?: number | null
+          player_id?: number
+          player_name?: string | null
+          position?: string | null
+          rank_order?: number
+          raw_payload?: Json
+          season_id?: number
+          snapshot_date?: string
+          source_url?: string
+          team_abbreviation?: string | null
+          team_id?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      nhl_edge_skater_skating_distance_games_daily: {
+        Row: {
+          away_team_abbreviation: string | null
+          created_at: string
+          distance_skated_all_km: number | null
+          distance_skated_all_miles: number | null
+          distance_skated_even_km: number | null
+          distance_skated_even_miles: number | null
+          distance_skated_pk_km: number | null
+          distance_skated_pk_miles: number | null
+          distance_skated_pp_km: number | null
+          distance_skated_pp_miles: number | null
+          game_center_link: string | null
+          game_date: string | null
+          game_id: number
+          game_type: number
+          home_team_abbreviation: string | null
+          metadata: Json
+          player_id: number
+          player_name: string | null
+          player_on_home_team: boolean | null
+          position: string | null
+          raw_payload: Json
+          season_id: number
+          snapshot_date: string
+          source_url: string
+          team_abbreviation: string | null
+          team_id: number | null
+          toi_all_seconds: number | null
+          toi_even_seconds: number | null
+          toi_pk_seconds: number | null
+          toi_pp_seconds: number | null
+          updated_at: string
+        }
+        Insert: {
+          away_team_abbreviation?: string | null
+          created_at?: string
+          distance_skated_all_km?: number | null
+          distance_skated_all_miles?: number | null
+          distance_skated_even_km?: number | null
+          distance_skated_even_miles?: number | null
+          distance_skated_pk_km?: number | null
+          distance_skated_pk_miles?: number | null
+          distance_skated_pp_km?: number | null
+          distance_skated_pp_miles?: number | null
+          game_center_link?: string | null
+          game_date?: string | null
+          game_id: number
+          game_type?: number
+          home_team_abbreviation?: string | null
+          metadata?: Json
+          player_id: number
+          player_name?: string | null
+          player_on_home_team?: boolean | null
+          position?: string | null
+          raw_payload?: Json
+          season_id: number
+          snapshot_date: string
+          source_url: string
+          team_abbreviation?: string | null
+          team_id?: number | null
+          toi_all_seconds?: number | null
+          toi_even_seconds?: number | null
+          toi_pk_seconds?: number | null
+          toi_pp_seconds?: number | null
+          updated_at?: string
+        }
+        Update: {
+          away_team_abbreviation?: string | null
+          created_at?: string
+          distance_skated_all_km?: number | null
+          distance_skated_all_miles?: number | null
+          distance_skated_even_km?: number | null
+          distance_skated_even_miles?: number | null
+          distance_skated_pk_km?: number | null
+          distance_skated_pk_miles?: number | null
+          distance_skated_pp_km?: number | null
+          distance_skated_pp_miles?: number | null
+          game_center_link?: string | null
+          game_date?: string | null
+          game_id?: number
+          game_type?: number
+          home_team_abbreviation?: string | null
+          metadata?: Json
+          player_id?: number
+          player_name?: string | null
+          player_on_home_team?: boolean | null
+          position?: string | null
+          raw_payload?: Json
+          season_id?: number
+          snapshot_date?: string
+          source_url?: string
+          team_abbreviation?: string | null
+          team_id?: number | null
+          toi_all_seconds?: number | null
+          toi_even_seconds?: number | null
+          toi_pk_seconds?: number | null
+          toi_pp_seconds?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       nhl_edge_stats_daily: {
         Row: {
           created_at: string
@@ -4661,6 +6242,330 @@ export type Database = {
         }
         Relationships: []
       }
+      nhl_edge_team_metrics_daily: {
+        Row: {
+          all_goals: number | null
+          all_goals_rank: number | null
+          all_shooting_pct: number | null
+          all_shooting_pct_rank: number | null
+          all_shots: number | null
+          all_shots_rank: number | null
+          bursts_over_20: number | null
+          bursts_over_20_league_avg: number | null
+          bursts_over_20_rank: number | null
+          bursts_over_22: number | null
+          bursts_over_22_rank: number | null
+          conference: string | null
+          created_at: string
+          defensive_zone_league_avg: number | null
+          defensive_zone_pct: number | null
+          defensive_zone_rank: number | null
+          division: string | null
+          game_type: number
+          games_played: number | null
+          high_danger_goals: number | null
+          high_danger_goals_rank: number | null
+          high_danger_shooting_pct: number | null
+          high_danger_shooting_pct_rank: number | null
+          high_danger_shots: number | null
+          high_danger_shots_rank: number | null
+          long_range_goals: number | null
+          long_range_goals_rank: number | null
+          long_range_shooting_pct: number | null
+          long_range_shooting_pct_rank: number | null
+          long_range_shots: number | null
+          long_range_shots_rank: number | null
+          losses: number | null
+          max_skating_speed_kph: number | null
+          max_skating_speed_league_avg_mph: number | null
+          max_skating_speed_mph: number | null
+          max_skating_speed_rank: number | null
+          metadata: Json
+          mid_range_goals: number | null
+          mid_range_goals_rank: number | null
+          mid_range_shooting_pct: number | null
+          mid_range_shooting_pct_rank: number | null
+          mid_range_shots: number | null
+          mid_range_shots_rank: number | null
+          neutral_zone_league_avg: number | null
+          neutral_zone_pct: number | null
+          neutral_zone_rank: number | null
+          offensive_zone_ev_league_avg: number | null
+          offensive_zone_ev_pct: number | null
+          offensive_zone_ev_rank: number | null
+          offensive_zone_league_avg: number | null
+          offensive_zone_pct: number | null
+          offensive_zone_rank: number | null
+          ot_losses: number | null
+          points: number | null
+          raw_payload: Json
+          season_id: number
+          shot_attempts_over_90: number | null
+          shot_attempts_over_90_rank: number | null
+          snapshot_date: string
+          source_url: string
+          team_abbreviation: string | null
+          team_id: number
+          team_name: string | null
+          top_shot_speed_kph: number | null
+          top_shot_speed_league_avg_mph: number | null
+          top_shot_speed_mph: number | null
+          top_shot_speed_rank: number | null
+          total_distance_km: number | null
+          total_distance_league_avg_miles: number | null
+          total_distance_miles: number | null
+          total_distance_rank: number | null
+          updated_at: string
+          wins: number | null
+        }
+        Insert: {
+          all_goals?: number | null
+          all_goals_rank?: number | null
+          all_shooting_pct?: number | null
+          all_shooting_pct_rank?: number | null
+          all_shots?: number | null
+          all_shots_rank?: number | null
+          bursts_over_20?: number | null
+          bursts_over_20_league_avg?: number | null
+          bursts_over_20_rank?: number | null
+          bursts_over_22?: number | null
+          bursts_over_22_rank?: number | null
+          conference?: string | null
+          created_at?: string
+          defensive_zone_league_avg?: number | null
+          defensive_zone_pct?: number | null
+          defensive_zone_rank?: number | null
+          division?: string | null
+          game_type?: number
+          games_played?: number | null
+          high_danger_goals?: number | null
+          high_danger_goals_rank?: number | null
+          high_danger_shooting_pct?: number | null
+          high_danger_shooting_pct_rank?: number | null
+          high_danger_shots?: number | null
+          high_danger_shots_rank?: number | null
+          long_range_goals?: number | null
+          long_range_goals_rank?: number | null
+          long_range_shooting_pct?: number | null
+          long_range_shooting_pct_rank?: number | null
+          long_range_shots?: number | null
+          long_range_shots_rank?: number | null
+          losses?: number | null
+          max_skating_speed_kph?: number | null
+          max_skating_speed_league_avg_mph?: number | null
+          max_skating_speed_mph?: number | null
+          max_skating_speed_rank?: number | null
+          metadata?: Json
+          mid_range_goals?: number | null
+          mid_range_goals_rank?: number | null
+          mid_range_shooting_pct?: number | null
+          mid_range_shooting_pct_rank?: number | null
+          mid_range_shots?: number | null
+          mid_range_shots_rank?: number | null
+          neutral_zone_league_avg?: number | null
+          neutral_zone_pct?: number | null
+          neutral_zone_rank?: number | null
+          offensive_zone_ev_league_avg?: number | null
+          offensive_zone_ev_pct?: number | null
+          offensive_zone_ev_rank?: number | null
+          offensive_zone_league_avg?: number | null
+          offensive_zone_pct?: number | null
+          offensive_zone_rank?: number | null
+          ot_losses?: number | null
+          points?: number | null
+          raw_payload?: Json
+          season_id: number
+          shot_attempts_over_90?: number | null
+          shot_attempts_over_90_rank?: number | null
+          snapshot_date: string
+          source_url: string
+          team_abbreviation?: string | null
+          team_id: number
+          team_name?: string | null
+          top_shot_speed_kph?: number | null
+          top_shot_speed_league_avg_mph?: number | null
+          top_shot_speed_mph?: number | null
+          top_shot_speed_rank?: number | null
+          total_distance_km?: number | null
+          total_distance_league_avg_miles?: number | null
+          total_distance_miles?: number | null
+          total_distance_rank?: number | null
+          updated_at?: string
+          wins?: number | null
+        }
+        Update: {
+          all_goals?: number | null
+          all_goals_rank?: number | null
+          all_shooting_pct?: number | null
+          all_shooting_pct_rank?: number | null
+          all_shots?: number | null
+          all_shots_rank?: number | null
+          bursts_over_20?: number | null
+          bursts_over_20_league_avg?: number | null
+          bursts_over_20_rank?: number | null
+          bursts_over_22?: number | null
+          bursts_over_22_rank?: number | null
+          conference?: string | null
+          created_at?: string
+          defensive_zone_league_avg?: number | null
+          defensive_zone_pct?: number | null
+          defensive_zone_rank?: number | null
+          division?: string | null
+          game_type?: number
+          games_played?: number | null
+          high_danger_goals?: number | null
+          high_danger_goals_rank?: number | null
+          high_danger_shooting_pct?: number | null
+          high_danger_shooting_pct_rank?: number | null
+          high_danger_shots?: number | null
+          high_danger_shots_rank?: number | null
+          long_range_goals?: number | null
+          long_range_goals_rank?: number | null
+          long_range_shooting_pct?: number | null
+          long_range_shooting_pct_rank?: number | null
+          long_range_shots?: number | null
+          long_range_shots_rank?: number | null
+          losses?: number | null
+          max_skating_speed_kph?: number | null
+          max_skating_speed_league_avg_mph?: number | null
+          max_skating_speed_mph?: number | null
+          max_skating_speed_rank?: number | null
+          metadata?: Json
+          mid_range_goals?: number | null
+          mid_range_goals_rank?: number | null
+          mid_range_shooting_pct?: number | null
+          mid_range_shooting_pct_rank?: number | null
+          mid_range_shots?: number | null
+          mid_range_shots_rank?: number | null
+          neutral_zone_league_avg?: number | null
+          neutral_zone_pct?: number | null
+          neutral_zone_rank?: number | null
+          offensive_zone_ev_league_avg?: number | null
+          offensive_zone_ev_pct?: number | null
+          offensive_zone_ev_rank?: number | null
+          offensive_zone_league_avg?: number | null
+          offensive_zone_pct?: number | null
+          offensive_zone_rank?: number | null
+          ot_losses?: number | null
+          points?: number | null
+          raw_payload?: Json
+          season_id?: number
+          shot_attempts_over_90?: number | null
+          shot_attempts_over_90_rank?: number | null
+          snapshot_date?: string
+          source_url?: string
+          team_abbreviation?: string | null
+          team_id?: number
+          team_name?: string | null
+          top_shot_speed_kph?: number | null
+          top_shot_speed_league_avg_mph?: number | null
+          top_shot_speed_mph?: number | null
+          top_shot_speed_rank?: number | null
+          total_distance_km?: number | null
+          total_distance_league_avg_miles?: number | null
+          total_distance_miles?: number | null
+          total_distance_rank?: number | null
+          updated_at?: string
+          wins?: number | null
+        }
+        Relationships: []
+      }
+      nhl_edge_team_skating_distance_games_daily: {
+        Row: {
+          away_team_abbreviation: string | null
+          created_at: string
+          distance_skated_all_km: number | null
+          distance_skated_all_miles: number | null
+          distance_skated_even_km: number | null
+          distance_skated_even_miles: number | null
+          distance_skated_pk_km: number | null
+          distance_skated_pk_miles: number | null
+          distance_skated_pp_km: number | null
+          distance_skated_pp_miles: number | null
+          game_center_link: string | null
+          game_date: string | null
+          game_id: number
+          game_type: number
+          home_team_abbreviation: string | null
+          is_home_team: boolean | null
+          metadata: Json
+          raw_payload: Json
+          season_id: number
+          snapshot_date: string
+          source_url: string
+          team_abbreviation: string | null
+          team_id: number
+          team_name: string | null
+          toi_all_seconds: number | null
+          toi_even_seconds: number | null
+          toi_pk_seconds: number | null
+          toi_pp_seconds: number | null
+          updated_at: string
+        }
+        Insert: {
+          away_team_abbreviation?: string | null
+          created_at?: string
+          distance_skated_all_km?: number | null
+          distance_skated_all_miles?: number | null
+          distance_skated_even_km?: number | null
+          distance_skated_even_miles?: number | null
+          distance_skated_pk_km?: number | null
+          distance_skated_pk_miles?: number | null
+          distance_skated_pp_km?: number | null
+          distance_skated_pp_miles?: number | null
+          game_center_link?: string | null
+          game_date?: string | null
+          game_id: number
+          game_type?: number
+          home_team_abbreviation?: string | null
+          is_home_team?: boolean | null
+          metadata?: Json
+          raw_payload?: Json
+          season_id: number
+          snapshot_date: string
+          source_url: string
+          team_abbreviation?: string | null
+          team_id: number
+          team_name?: string | null
+          toi_all_seconds?: number | null
+          toi_even_seconds?: number | null
+          toi_pk_seconds?: number | null
+          toi_pp_seconds?: number | null
+          updated_at?: string
+        }
+        Update: {
+          away_team_abbreviation?: string | null
+          created_at?: string
+          distance_skated_all_km?: number | null
+          distance_skated_all_miles?: number | null
+          distance_skated_even_km?: number | null
+          distance_skated_even_miles?: number | null
+          distance_skated_pk_km?: number | null
+          distance_skated_pk_miles?: number | null
+          distance_skated_pp_km?: number | null
+          distance_skated_pp_miles?: number | null
+          game_center_link?: string | null
+          game_date?: string | null
+          game_id?: number
+          game_type?: number
+          home_team_abbreviation?: string | null
+          is_home_team?: boolean | null
+          metadata?: Json
+          raw_payload?: Json
+          season_id?: number
+          snapshot_date?: string
+          source_url?: string
+          team_abbreviation?: string | null
+          team_id?: number
+          team_name?: string | null
+          toi_all_seconds?: number | null
+          toi_even_seconds?: number | null
+          toi_pk_seconds?: number | null
+          toi_pp_seconds?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       nhl_names: {
         Row: {
           first_name: string | null
@@ -4679,6 +6584,126 @@ export type Database = {
           last_name?: string | null
           nhl_player_id?: string | null
           player_name?: string | null
+        }
+        Relationships: []
+      }
+      nhl_ppt_replay_frames: {
+        Row: {
+          created_at: string
+          event_id: number
+          frame_index: number
+          frame_timestamp: number | null
+          game_id: number
+          is_puck: boolean
+          player_id: number | null
+          ppt_replay_url: string
+          provenance: Json
+          sweater_number: number | null
+          team_abbrev: string | null
+          team_id: number | null
+          tracking_object_id: string
+          updated_at: string
+          x: number | null
+          y: number | null
+        }
+        Insert: {
+          created_at?: string
+          event_id: number
+          frame_index: number
+          frame_timestamp?: number | null
+          game_id: number
+          is_puck?: boolean
+          player_id?: number | null
+          ppt_replay_url: string
+          provenance?: Json
+          sweater_number?: number | null
+          team_abbrev?: string | null
+          team_id?: number | null
+          tracking_object_id: string
+          updated_at?: string
+          x?: number | null
+          y?: number | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: number
+          frame_index?: number
+          frame_timestamp?: number | null
+          game_id?: number
+          is_puck?: boolean
+          player_id?: number | null
+          ppt_replay_url?: string
+          provenance?: Json
+          sweater_number?: number | null
+          team_abbrev?: string | null
+          team_id?: number | null
+          tracking_object_id?: string
+          updated_at?: string
+          x?: number | null
+          y?: number | null
+        }
+        Relationships: []
+      }
+      nhl_ppt_replay_payloads_raw: {
+        Row: {
+          entity_frame_count: number
+          error_message: string | null
+          event_id: number
+          event_type: string | null
+          fetch_status: string
+          fetched_at: string
+          frame_count: number
+          game_date: string | null
+          game_id: number
+          game_state: string | null
+          game_type: number | null
+          http_status: number | null
+          payload: Json | null
+          payload_hash: string | null
+          ppt_replay_url: string
+          provenance: Json
+          season_id: number | null
+          updated_at: string
+        }
+        Insert: {
+          entity_frame_count?: number
+          error_message?: string | null
+          event_id: number
+          event_type?: string | null
+          fetch_status: string
+          fetched_at?: string
+          frame_count?: number
+          game_date?: string | null
+          game_id: number
+          game_state?: string | null
+          game_type?: number | null
+          http_status?: number | null
+          payload?: Json | null
+          payload_hash?: string | null
+          ppt_replay_url: string
+          provenance?: Json
+          season_id?: number | null
+          updated_at?: string
+        }
+        Update: {
+          entity_frame_count?: number
+          error_message?: string | null
+          event_id?: number
+          event_type?: string | null
+          fetch_status?: string
+          fetched_at?: string
+          frame_count?: number
+          game_date?: string | null
+          game_id?: number
+          game_state?: string | null
+          game_type?: number | null
+          http_status?: number | null
+          payload?: Json | null
+          payload_hash?: string | null
+          ppt_replay_url?: string
+          provenance?: Json
+          season_id?: number | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -4918,6 +6943,2114 @@ export type Database = {
           wins?: number | null
         }
         Relationships: []
+      }
+      nhl_xg_adjusted_impact_model_runs: {
+        Row: {
+          adjusted_model_version: string
+          context_estimates: Json
+          context_features: number
+          created_at: string
+          feature_version: number
+          intercept: number
+          iterations: number
+          l2: number
+          learning_rate: number
+          mean_response: number
+          model_family: string
+          mse: number
+          provenance: Json
+          season_id: number | null
+          source_model_version: string
+          target_family: string
+          training_players: number
+          training_rows: number
+          updated_at: string
+        }
+        Insert: {
+          adjusted_model_version: string
+          context_estimates?: Json
+          context_features: number
+          created_at?: string
+          feature_version: number
+          intercept: number
+          iterations: number
+          l2: number
+          learning_rate: number
+          mean_response: number
+          model_family: string
+          mse: number
+          provenance?: Json
+          season_id?: number | null
+          source_model_version: string
+          target_family: string
+          training_players: number
+          training_rows: number
+          updated_at?: string
+        }
+        Update: {
+          adjusted_model_version?: string
+          context_estimates?: Json
+          context_features?: number
+          created_at?: string
+          feature_version?: number
+          intercept?: number
+          iterations?: number
+          l2?: number
+          learning_rate?: number
+          mean_response?: number
+          model_family?: string
+          mse?: number
+          provenance?: Json
+          season_id?: number | null
+          source_model_version?: string
+          target_family?: string
+          training_players?: number
+          training_rows?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      nhl_xg_adjusted_player_impacts: {
+        Row: {
+          adjusted_model_version: string
+          coefficient: number
+          created_at: string
+          defensive_rows: number
+          feature_version: number
+          l2: number
+          model_family: string
+          offensive_rows: number
+          player_id: number
+          provenance: Json
+          season_id: number | null
+          source_model_version: string
+          standard_error_approx: number
+          target_family: string
+          total_rows: number
+          updated_at: string
+        }
+        Insert: {
+          adjusted_model_version: string
+          coefficient: number
+          created_at?: string
+          defensive_rows?: number
+          feature_version: number
+          l2: number
+          model_family: string
+          offensive_rows?: number
+          player_id: number
+          provenance?: Json
+          season_id?: number | null
+          source_model_version: string
+          standard_error_approx: number
+          target_family: string
+          total_rows?: number
+          updated_at?: string
+        }
+        Update: {
+          adjusted_model_version?: string
+          coefficient?: number
+          created_at?: string
+          defensive_rows?: number
+          feature_version?: number
+          l2?: number
+          model_family?: string
+          offensive_rows?: number
+          player_id?: number
+          provenance?: Json
+          season_id?: number | null
+          source_model_version?: string
+          standard_error_approx?: number
+          target_family?: string
+          total_rows?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      nhl_xg_goalie_game_aggregates: {
+        Row: {
+          created_at: string
+          feature_version: number
+          game_date: string | null
+          game_id: number
+          goalie_player_id: number
+          goals_against: number
+          goals_saved_above_expected: number
+          model_version: string
+          opponent_team_id: number | null
+          provenance: Json
+          season_id: number | null
+          shots_against: number
+          source_model_approved: boolean
+          source_prediction_type: string
+          team_id: number | null
+          updated_at: string
+          xg_against: number
+        }
+        Insert: {
+          created_at?: string
+          feature_version: number
+          game_date?: string | null
+          game_id: number
+          goalie_player_id: number
+          goals_against?: number
+          goals_saved_above_expected?: number
+          model_version: string
+          opponent_team_id?: number | null
+          provenance?: Json
+          season_id?: number | null
+          shots_against?: number
+          source_model_approved?: boolean
+          source_prediction_type?: string
+          team_id?: number | null
+          updated_at?: string
+          xg_against?: number
+        }
+        Update: {
+          created_at?: string
+          feature_version?: number
+          game_date?: string | null
+          game_id?: number
+          goalie_player_id?: number
+          goals_against?: number
+          goals_saved_above_expected?: number
+          model_version?: string
+          opponent_team_id?: number | null
+          provenance?: Json
+          season_id?: number | null
+          shots_against?: number
+          source_model_approved?: boolean
+          source_prediction_type?: string
+          team_id?: number | null
+          updated_at?: string
+          xg_against?: number
+        }
+        Relationships: []
+      }
+      nhl_xg_goalie_rolling_aggregates: {
+        Row: {
+          as_of_game_date: string | null
+          as_of_game_id: number
+          created_at: string
+          feature_version: number
+          games_count: number
+          goalie_player_id: number
+          goals_against: number
+          goals_saved_above_expected: number
+          model_version: string
+          provenance: Json
+          season_id: number | null
+          shots_against: number
+          team_id: number | null
+          updated_at: string
+          window_games: number
+          xg_against: number
+        }
+        Insert: {
+          as_of_game_date?: string | null
+          as_of_game_id: number
+          created_at?: string
+          feature_version: number
+          games_count?: number
+          goalie_player_id: number
+          goals_against?: number
+          goals_saved_above_expected?: number
+          model_version: string
+          provenance?: Json
+          season_id?: number | null
+          shots_against?: number
+          team_id?: number | null
+          updated_at?: string
+          window_games: number
+          xg_against?: number
+        }
+        Update: {
+          as_of_game_date?: string | null
+          as_of_game_id?: number
+          created_at?: string
+          feature_version?: number
+          games_count?: number
+          goalie_player_id?: number
+          goals_against?: number
+          goals_saved_above_expected?: number
+          model_version?: string
+          provenance?: Json
+          season_id?: number | null
+          shots_against?: number
+          team_id?: number | null
+          updated_at?: string
+          window_games?: number
+          xg_against?: number
+        }
+        Relationships: []
+      }
+      nhl_xg_model_registry: {
+        Row: {
+          approval_metadata: Json
+          approval_status: string
+          artifact_checksum: string
+          artifact_metadata: Json
+          artifact_tag: string
+          artifact_uri: string | null
+          calibration_fingerprint: string
+          calibration_metadata: Json | null
+          deployment_alias: string | null
+          evaluation_metadata: Json | null
+          feature_coverage: Json | null
+          feature_family: string | null
+          feature_keys: Json
+          feature_manifest_hash: string
+          feature_transforms: Json | null
+          feature_version: number
+          generated_at: string | null
+          is_active: boolean
+          is_champion: boolean
+          model_approved: boolean
+          model_family: string
+          model_version: string
+          prediction_type: string
+          registered_at: string
+          season_scope: number | null
+          selected_features: Json
+          source_commit_sha: string | null
+          test_end_date: string | null
+          test_example_count: number | null
+          test_start_date: string | null
+          train_end_date: string | null
+          train_example_count: number | null
+          train_start_date: string | null
+          updated_at: string
+          validation_end_date: string | null
+          validation_example_count: number | null
+          validation_start_date: string | null
+        }
+        Insert: {
+          approval_metadata?: Json
+          approval_status?: string
+          artifact_checksum: string
+          artifact_metadata?: Json
+          artifact_tag: string
+          artifact_uri?: string | null
+          calibration_fingerprint: string
+          calibration_metadata?: Json | null
+          deployment_alias?: string | null
+          evaluation_metadata?: Json | null
+          feature_coverage?: Json | null
+          feature_family?: string | null
+          feature_keys?: Json
+          feature_manifest_hash: string
+          feature_transforms?: Json | null
+          feature_version: number
+          generated_at?: string | null
+          is_active?: boolean
+          is_champion?: boolean
+          model_approved?: boolean
+          model_family: string
+          model_version: string
+          prediction_type: string
+          registered_at?: string
+          season_scope?: number | null
+          selected_features?: Json
+          source_commit_sha?: string | null
+          test_end_date?: string | null
+          test_example_count?: number | null
+          test_start_date?: string | null
+          train_end_date?: string | null
+          train_example_count?: number | null
+          train_start_date?: string | null
+          updated_at?: string
+          validation_end_date?: string | null
+          validation_example_count?: number | null
+          validation_start_date?: string | null
+        }
+        Update: {
+          approval_metadata?: Json
+          approval_status?: string
+          artifact_checksum?: string
+          artifact_metadata?: Json
+          artifact_tag?: string
+          artifact_uri?: string | null
+          calibration_fingerprint?: string
+          calibration_metadata?: Json | null
+          deployment_alias?: string | null
+          evaluation_metadata?: Json | null
+          feature_coverage?: Json | null
+          feature_family?: string | null
+          feature_keys?: Json
+          feature_manifest_hash?: string
+          feature_transforms?: Json | null
+          feature_version?: number
+          generated_at?: string | null
+          is_active?: boolean
+          is_champion?: boolean
+          model_approved?: boolean
+          model_family?: string
+          model_version?: string
+          prediction_type?: string
+          registered_at?: string
+          season_scope?: number | null
+          selected_features?: Json
+          source_commit_sha?: string | null
+          test_end_date?: string | null
+          test_example_count?: number | null
+          test_start_date?: string | null
+          train_end_date?: string | null
+          train_example_count?: number | null
+          train_start_date?: string | null
+          updated_at?: string
+          validation_end_date?: string | null
+          validation_example_count?: number | null
+          validation_start_date?: string | null
+        }
+        Relationships: []
+      }
+      nhl_xg_player_created_xg_game_aggregates: {
+        Row: {
+          created_at: string
+          created_xg: number
+          feature_version: number
+          game_date: string | null
+          game_id: number
+          model_version: string
+          player_id: number
+          provenance: Json
+          rebound_created_xg: number
+          rebound_events: number
+          season_id: number | null
+          shot_assist_created_xg: number
+          shot_assist_events: number
+          team_id: number | null
+          transition_created_xg: number
+          transition_events: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_xg?: number
+          feature_version: number
+          game_date?: string | null
+          game_id: number
+          model_version: string
+          player_id: number
+          provenance?: Json
+          rebound_created_xg?: number
+          rebound_events?: number
+          season_id?: number | null
+          shot_assist_created_xg?: number
+          shot_assist_events?: number
+          team_id?: number | null
+          transition_created_xg?: number
+          transition_events?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_xg?: number
+          feature_version?: number
+          game_date?: string | null
+          game_id?: number
+          model_version?: string
+          player_id?: number
+          provenance?: Json
+          rebound_created_xg?: number
+          rebound_events?: number
+          season_id?: number | null
+          shot_assist_created_xg?: number
+          shot_assist_events?: number
+          team_id?: number | null
+          transition_created_xg?: number
+          transition_events?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      nhl_xg_player_created_xg_rolling_aggregates: {
+        Row: {
+          as_of_game_date: string | null
+          as_of_game_id: number
+          created_at: string
+          created_xg: number
+          feature_version: number
+          games_count: number
+          model_version: string
+          player_id: number
+          provenance: Json
+          rebound_created_xg: number
+          rebound_events: number
+          season_id: number | null
+          shot_assist_created_xg: number
+          shot_assist_events: number
+          team_id: number | null
+          transition_created_xg: number
+          transition_events: number
+          updated_at: string
+          window_games: number
+        }
+        Insert: {
+          as_of_game_date?: string | null
+          as_of_game_id: number
+          created_at?: string
+          created_xg?: number
+          feature_version: number
+          games_count?: number
+          model_version: string
+          player_id: number
+          provenance?: Json
+          rebound_created_xg?: number
+          rebound_events?: number
+          season_id?: number | null
+          shot_assist_created_xg?: number
+          shot_assist_events?: number
+          team_id?: number | null
+          transition_created_xg?: number
+          transition_events?: number
+          updated_at?: string
+          window_games: number
+        }
+        Update: {
+          as_of_game_date?: string | null
+          as_of_game_id?: number
+          created_at?: string
+          created_xg?: number
+          feature_version?: number
+          games_count?: number
+          model_version?: string
+          player_id?: number
+          provenance?: Json
+          rebound_created_xg?: number
+          rebound_events?: number
+          season_id?: number | null
+          shot_assist_created_xg?: number
+          shot_assist_events?: number
+          team_id?: number | null
+          transition_created_xg?: number
+          transition_events?: number
+          updated_at?: string
+          window_games?: number
+        }
+        Relationships: []
+      }
+      nhl_xg_player_game_aggregates: {
+        Row: {
+          created_at: string
+          feature_version: number
+          game_date: string | null
+          game_id: number
+          goals: number
+          ixg: number
+          model_version: string
+          player_id: number
+          provenance: Json
+          season_id: number | null
+          shot_attempts: number
+          source_model_approved: boolean
+          source_prediction_type: string
+          team_id: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          feature_version: number
+          game_date?: string | null
+          game_id: number
+          goals?: number
+          ixg?: number
+          model_version: string
+          player_id: number
+          provenance?: Json
+          season_id?: number | null
+          shot_attempts?: number
+          source_model_approved?: boolean
+          source_prediction_type?: string
+          team_id?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          feature_version?: number
+          game_date?: string | null
+          game_id?: number
+          goals?: number
+          ixg?: number
+          model_version?: string
+          player_id?: number
+          provenance?: Json
+          season_id?: number | null
+          shot_attempts?: number
+          source_model_approved?: boolean
+          source_prediction_type?: string
+          team_id?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      nhl_xg_player_rolling_aggregates: {
+        Row: {
+          as_of_game_date: string | null
+          as_of_game_id: number
+          created_at: string
+          feature_version: number
+          games_count: number
+          goals: number
+          ixg: number
+          model_version: string
+          player_id: number
+          provenance: Json
+          season_id: number | null
+          shot_attempts: number
+          team_id: number | null
+          updated_at: string
+          window_games: number
+        }
+        Insert: {
+          as_of_game_date?: string | null
+          as_of_game_id: number
+          created_at?: string
+          feature_version: number
+          games_count?: number
+          goals?: number
+          ixg?: number
+          model_version: string
+          player_id: number
+          provenance?: Json
+          season_id?: number | null
+          shot_attempts?: number
+          team_id?: number | null
+          updated_at?: string
+          window_games: number
+        }
+        Update: {
+          as_of_game_date?: string | null
+          as_of_game_id?: number
+          created_at?: string
+          feature_version?: number
+          games_count?: number
+          goals?: number
+          ixg?: number
+          model_version?: string
+          player_id?: number
+          provenance?: Json
+          season_id?: number | null
+          shot_attempts?: number
+          team_id?: number | null
+          updated_at?: string
+          window_games?: number
+        }
+        Relationships: []
+      }
+      nhl_xg_rebound_control_goalie_game_aggregates: {
+        Row: {
+          actual_covered_pucks: number
+          actual_goalie_freezes: number
+          actual_rebounds_allowed: number
+          confidence: string
+          created_at: string
+          expected_rebounds_allowed: number
+          feature_version: number
+          freeze_model_status: string
+          game_date: string | null
+          game_id: number
+          goalie_player_id: number
+          no_danger_continuations_allowed: number
+          opponent_team_id: number | null
+          provenance: Json
+          rebound_control_saved_above_expected: number
+          rebound_model_version: string
+          rebound_source_shots_against: number
+          season_id: number | null
+          source_model_approved: boolean
+          source_prediction_type: string
+          team_id: number | null
+          updated_at: string
+        }
+        Insert: {
+          actual_covered_pucks?: number
+          actual_goalie_freezes?: number
+          actual_rebounds_allowed?: number
+          confidence: string
+          created_at?: string
+          expected_rebounds_allowed?: number
+          feature_version: number
+          freeze_model_status: string
+          game_date?: string | null
+          game_id: number
+          goalie_player_id: number
+          no_danger_continuations_allowed?: number
+          opponent_team_id?: number | null
+          provenance?: Json
+          rebound_control_saved_above_expected?: number
+          rebound_model_version: string
+          rebound_source_shots_against?: number
+          season_id?: number | null
+          source_model_approved?: boolean
+          source_prediction_type: string
+          team_id?: number | null
+          updated_at?: string
+        }
+        Update: {
+          actual_covered_pucks?: number
+          actual_goalie_freezes?: number
+          actual_rebounds_allowed?: number
+          confidence?: string
+          created_at?: string
+          expected_rebounds_allowed?: number
+          feature_version?: number
+          freeze_model_status?: string
+          game_date?: string | null
+          game_id?: number
+          goalie_player_id?: number
+          no_danger_continuations_allowed?: number
+          opponent_team_id?: number | null
+          provenance?: Json
+          rebound_control_saved_above_expected?: number
+          rebound_model_version?: string
+          rebound_source_shots_against?: number
+          season_id?: number | null
+          source_model_approved?: boolean
+          source_prediction_type?: string
+          team_id?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      nhl_xg_rebound_control_player_game_aggregates: {
+        Row: {
+          actual_rebounds_created: number
+          confidence: string
+          created_at: string
+          expected_rebounds_created: number
+          feature_version: number
+          game_date: string | null
+          game_id: number
+          goalie_freezes_created: number
+          no_danger_continuations: number
+          player_id: number
+          provenance: Json
+          rebound_model_version: string
+          rebound_source_shots: number
+          season_id: number | null
+          source_model_approved: boolean
+          source_prediction_type: string
+          team_id: number | null
+          updated_at: string
+        }
+        Insert: {
+          actual_rebounds_created?: number
+          confidence: string
+          created_at?: string
+          expected_rebounds_created?: number
+          feature_version: number
+          game_date?: string | null
+          game_id: number
+          goalie_freezes_created?: number
+          no_danger_continuations?: number
+          player_id: number
+          provenance?: Json
+          rebound_model_version: string
+          rebound_source_shots?: number
+          season_id?: number | null
+          source_model_approved?: boolean
+          source_prediction_type: string
+          team_id?: number | null
+          updated_at?: string
+        }
+        Update: {
+          actual_rebounds_created?: number
+          confidence?: string
+          created_at?: string
+          expected_rebounds_created?: number
+          feature_version?: number
+          game_date?: string | null
+          game_id?: number
+          goalie_freezes_created?: number
+          no_danger_continuations?: number
+          player_id?: number
+          provenance?: Json
+          rebound_model_version?: string
+          rebound_source_shots?: number
+          season_id?: number | null
+          source_model_approved?: boolean
+          source_prediction_type?: string
+          team_id?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      nhl_xg_rebound_control_team_game_aggregates: {
+        Row: {
+          actual_rebounds_against: number
+          actual_rebounds_for: number
+          confidence: string
+          covered_pucks_against: number
+          covered_pucks_for: number
+          created_at: string
+          expected_rebounds_against: number
+          expected_rebounds_for: number
+          feature_version: number
+          freeze_model_status: string
+          game_date: string | null
+          game_id: number
+          goalie_freezes_against: number
+          goalie_freezes_for: number
+          is_home: boolean | null
+          no_danger_continuations_against: number
+          no_danger_continuations_for: number
+          opponent_team_id: number | null
+          provenance: Json
+          rebound_model_version: string
+          rebound_source_shots_against: number
+          rebound_source_shots_for: number
+          season_id: number | null
+          source_model_approved: boolean
+          source_prediction_type: string
+          team_id: number
+          updated_at: string
+        }
+        Insert: {
+          actual_rebounds_against?: number
+          actual_rebounds_for?: number
+          confidence: string
+          covered_pucks_against?: number
+          covered_pucks_for?: number
+          created_at?: string
+          expected_rebounds_against?: number
+          expected_rebounds_for?: number
+          feature_version: number
+          freeze_model_status: string
+          game_date?: string | null
+          game_id: number
+          goalie_freezes_against?: number
+          goalie_freezes_for?: number
+          is_home?: boolean | null
+          no_danger_continuations_against?: number
+          no_danger_continuations_for?: number
+          opponent_team_id?: number | null
+          provenance?: Json
+          rebound_model_version: string
+          rebound_source_shots_against?: number
+          rebound_source_shots_for?: number
+          season_id?: number | null
+          source_model_approved?: boolean
+          source_prediction_type: string
+          team_id: number
+          updated_at?: string
+        }
+        Update: {
+          actual_rebounds_against?: number
+          actual_rebounds_for?: number
+          confidence?: string
+          covered_pucks_against?: number
+          covered_pucks_for?: number
+          created_at?: string
+          expected_rebounds_against?: number
+          expected_rebounds_for?: number
+          feature_version?: number
+          freeze_model_status?: string
+          game_date?: string | null
+          game_id?: number
+          goalie_freezes_against?: number
+          goalie_freezes_for?: number
+          is_home?: boolean | null
+          no_danger_continuations_against?: number
+          no_danger_continuations_for?: number
+          opponent_team_id?: number | null
+          provenance?: Json
+          rebound_model_version?: string
+          rebound_source_shots_against?: number
+          rebound_source_shots_for?: number
+          season_id?: number | null
+          source_model_approved?: boolean
+          source_prediction_type?: string
+          team_id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      nhl_xg_shot_assist_candidates: {
+        Row: {
+          candidate_rank: number
+          confidence: number
+          confidence_tier: string
+          created_at: string
+          event_id: number
+          event_owner_team_id: number | null
+          expected_primary_assists: number
+          feature_version: number
+          game_date: string | null
+          game_id: number
+          heuristic_reason: string
+          model_version: string
+          provenance: Json
+          season_id: number | null
+          shooter_player_id: number | null
+          shot_assist_player_id: number
+          source_event_id: number
+          source_event_type_desc_key: string | null
+          updated_at: string
+          xg: number
+        }
+        Insert: {
+          candidate_rank?: number
+          confidence: number
+          confidence_tier: string
+          created_at?: string
+          event_id: number
+          event_owner_team_id?: number | null
+          expected_primary_assists: number
+          feature_version: number
+          game_date?: string | null
+          game_id: number
+          heuristic_reason: string
+          model_version: string
+          provenance?: Json
+          season_id?: number | null
+          shooter_player_id?: number | null
+          shot_assist_player_id: number
+          source_event_id: number
+          source_event_type_desc_key?: string | null
+          updated_at?: string
+          xg: number
+        }
+        Update: {
+          candidate_rank?: number
+          confidence?: number
+          confidence_tier?: string
+          created_at?: string
+          event_id?: number
+          event_owner_team_id?: number | null
+          expected_primary_assists?: number
+          feature_version?: number
+          game_date?: string | null
+          game_id?: number
+          heuristic_reason?: string
+          model_version?: string
+          provenance?: Json
+          season_id?: number | null
+          shooter_player_id?: number | null
+          shot_assist_player_id?: number
+          source_event_id?: number
+          source_event_type_desc_key?: string | null
+          updated_at?: string
+          xg?: number
+        }
+        Relationships: []
+      }
+      nhl_xg_shot_features: {
+        Row: {
+          created_at: string
+          creates_rebound: boolean
+          crossed_royal_road: boolean | null
+          distance_from_previous_event: number | null
+          east_west_movement_feet: number | null
+          event_id: number
+          event_index: number | null
+          event_owner_side: string | null
+          event_owner_team_id: number | null
+          feature_payload: Json
+          feature_version: number
+          flurry_sequence_id: string | null
+          flurry_shot_count: number | null
+          flurry_shot_index: number | null
+          game_date: string | null
+          game_id: number
+          game_seconds_elapsed: number | null
+          goalie_catch_hand: string | null
+          goalie_in_net_id: number | null
+          has_rare_manpower: boolean
+          is_blocked_shot: boolean
+          is_defenseman_shooter: boolean | null
+          is_delayed_penalty_event: boolean
+          is_empty_net_event: boolean
+          is_flurry_shot: boolean
+          is_goal: boolean
+          is_missed_shot: boolean
+          is_overtime_event: boolean
+          is_own_goal: boolean
+          is_penalty_shot_event: boolean
+          is_rebound_shot: boolean
+          is_rush_shot: boolean
+          is_shootout_event: boolean
+          is_short_side_miss: boolean
+          is_shot_on_goal: boolean
+          is_unblocked_shot_attempt: boolean
+          miss_reason_bucket: string | null
+          normalized_x: number | null
+          normalized_y: number | null
+          north_south_movement_feet: number | null
+          opponent_defense_count_on_ice: number | null
+          opponent_forward_count_on_ice: number | null
+          opponent_goalie_on_ice: boolean | null
+          opponent_skater_deployment_bucket: string | null
+          owner_defense_count_on_ice: number | null
+          owner_forward_count_on_ice: number | null
+          owner_goalie_on_ice: boolean | null
+          owner_power_play_age_seconds: number | null
+          owner_skater_deployment_bucket: string | null
+          period_number: number | null
+          period_seconds_elapsed: number | null
+          period_type: string | null
+          previous_event_id: number | null
+          previous_event_same_team: boolean | null
+          previous_event_team_id: number | null
+          previous_event_type_desc_key: string | null
+          provenance: Json
+          raw_x: number | null
+          raw_y: number | null
+          rebound_angle_change_degrees: number | null
+          rebound_distance_delta_feet: number | null
+          rebound_distance_from_source: number | null
+          rebound_lateral_displacement_feet: number | null
+          rebound_source_event_id: number | null
+          rebound_time_delta_seconds: number | null
+          rush_source_event_id: number | null
+          rush_time_since_source_seconds: number | null
+          scoring_player_id: number | null
+          season_id: number | null
+          shooter_goalie_handedness_matchup: string | null
+          shooter_handedness: string | null
+          shooter_player_id: number | null
+          shooter_position_group: string | null
+          shooter_roster_position: string | null
+          shooter_shift_age_seconds: number | null
+          shooting_player_id: number | null
+          shot_angle_degrees: number | null
+          shot_distance_feet: number | null
+          shot_event_type: string | null
+          shot_type: string | null
+          skater_role_matchup_bucket: string | null
+          sort_order: number | null
+          strength_exact: string | null
+          strength_state: string | null
+          time_since_previous_event_seconds: number | null
+          updated_at: string
+          zone_code: string | null
+        }
+        Insert: {
+          created_at?: string
+          creates_rebound?: boolean
+          crossed_royal_road?: boolean | null
+          distance_from_previous_event?: number | null
+          east_west_movement_feet?: number | null
+          event_id: number
+          event_index?: number | null
+          event_owner_side?: string | null
+          event_owner_team_id?: number | null
+          feature_payload: Json
+          feature_version: number
+          flurry_sequence_id?: string | null
+          flurry_shot_count?: number | null
+          flurry_shot_index?: number | null
+          game_date?: string | null
+          game_id: number
+          game_seconds_elapsed?: number | null
+          goalie_catch_hand?: string | null
+          goalie_in_net_id?: number | null
+          has_rare_manpower?: boolean
+          is_blocked_shot?: boolean
+          is_defenseman_shooter?: boolean | null
+          is_delayed_penalty_event?: boolean
+          is_empty_net_event?: boolean
+          is_flurry_shot?: boolean
+          is_goal?: boolean
+          is_missed_shot?: boolean
+          is_overtime_event?: boolean
+          is_own_goal?: boolean
+          is_penalty_shot_event?: boolean
+          is_rebound_shot?: boolean
+          is_rush_shot?: boolean
+          is_shootout_event?: boolean
+          is_short_side_miss?: boolean
+          is_shot_on_goal?: boolean
+          is_unblocked_shot_attempt?: boolean
+          miss_reason_bucket?: string | null
+          normalized_x?: number | null
+          normalized_y?: number | null
+          north_south_movement_feet?: number | null
+          opponent_defense_count_on_ice?: number | null
+          opponent_forward_count_on_ice?: number | null
+          opponent_goalie_on_ice?: boolean | null
+          opponent_skater_deployment_bucket?: string | null
+          owner_defense_count_on_ice?: number | null
+          owner_forward_count_on_ice?: number | null
+          owner_goalie_on_ice?: boolean | null
+          owner_power_play_age_seconds?: number | null
+          owner_skater_deployment_bucket?: string | null
+          period_number?: number | null
+          period_seconds_elapsed?: number | null
+          period_type?: string | null
+          previous_event_id?: number | null
+          previous_event_same_team?: boolean | null
+          previous_event_team_id?: number | null
+          previous_event_type_desc_key?: string | null
+          provenance?: Json
+          raw_x?: number | null
+          raw_y?: number | null
+          rebound_angle_change_degrees?: number | null
+          rebound_distance_delta_feet?: number | null
+          rebound_distance_from_source?: number | null
+          rebound_lateral_displacement_feet?: number | null
+          rebound_source_event_id?: number | null
+          rebound_time_delta_seconds?: number | null
+          rush_source_event_id?: number | null
+          rush_time_since_source_seconds?: number | null
+          scoring_player_id?: number | null
+          season_id?: number | null
+          shooter_goalie_handedness_matchup?: string | null
+          shooter_handedness?: string | null
+          shooter_player_id?: number | null
+          shooter_position_group?: string | null
+          shooter_roster_position?: string | null
+          shooter_shift_age_seconds?: number | null
+          shooting_player_id?: number | null
+          shot_angle_degrees?: number | null
+          shot_distance_feet?: number | null
+          shot_event_type?: string | null
+          shot_type?: string | null
+          skater_role_matchup_bucket?: string | null
+          sort_order?: number | null
+          strength_exact?: string | null
+          strength_state?: string | null
+          time_since_previous_event_seconds?: number | null
+          updated_at?: string
+          zone_code?: string | null
+        }
+        Update: {
+          created_at?: string
+          creates_rebound?: boolean
+          crossed_royal_road?: boolean | null
+          distance_from_previous_event?: number | null
+          east_west_movement_feet?: number | null
+          event_id?: number
+          event_index?: number | null
+          event_owner_side?: string | null
+          event_owner_team_id?: number | null
+          feature_payload?: Json
+          feature_version?: number
+          flurry_sequence_id?: string | null
+          flurry_shot_count?: number | null
+          flurry_shot_index?: number | null
+          game_date?: string | null
+          game_id?: number
+          game_seconds_elapsed?: number | null
+          goalie_catch_hand?: string | null
+          goalie_in_net_id?: number | null
+          has_rare_manpower?: boolean
+          is_blocked_shot?: boolean
+          is_defenseman_shooter?: boolean | null
+          is_delayed_penalty_event?: boolean
+          is_empty_net_event?: boolean
+          is_flurry_shot?: boolean
+          is_goal?: boolean
+          is_missed_shot?: boolean
+          is_overtime_event?: boolean
+          is_own_goal?: boolean
+          is_penalty_shot_event?: boolean
+          is_rebound_shot?: boolean
+          is_rush_shot?: boolean
+          is_shootout_event?: boolean
+          is_short_side_miss?: boolean
+          is_shot_on_goal?: boolean
+          is_unblocked_shot_attempt?: boolean
+          miss_reason_bucket?: string | null
+          normalized_x?: number | null
+          normalized_y?: number | null
+          north_south_movement_feet?: number | null
+          opponent_defense_count_on_ice?: number | null
+          opponent_forward_count_on_ice?: number | null
+          opponent_goalie_on_ice?: boolean | null
+          opponent_skater_deployment_bucket?: string | null
+          owner_defense_count_on_ice?: number | null
+          owner_forward_count_on_ice?: number | null
+          owner_goalie_on_ice?: boolean | null
+          owner_power_play_age_seconds?: number | null
+          owner_skater_deployment_bucket?: string | null
+          period_number?: number | null
+          period_seconds_elapsed?: number | null
+          period_type?: string | null
+          previous_event_id?: number | null
+          previous_event_same_team?: boolean | null
+          previous_event_team_id?: number | null
+          previous_event_type_desc_key?: string | null
+          provenance?: Json
+          raw_x?: number | null
+          raw_y?: number | null
+          rebound_angle_change_degrees?: number | null
+          rebound_distance_delta_feet?: number | null
+          rebound_distance_from_source?: number | null
+          rebound_lateral_displacement_feet?: number | null
+          rebound_source_event_id?: number | null
+          rebound_time_delta_seconds?: number | null
+          rush_source_event_id?: number | null
+          rush_time_since_source_seconds?: number | null
+          scoring_player_id?: number | null
+          season_id?: number | null
+          shooter_goalie_handedness_matchup?: string | null
+          shooter_handedness?: string | null
+          shooter_player_id?: number | null
+          shooter_position_group?: string | null
+          shooter_roster_position?: string | null
+          shooter_shift_age_seconds?: number | null
+          shooting_player_id?: number | null
+          shot_angle_degrees?: number | null
+          shot_distance_feet?: number | null
+          shot_event_type?: string | null
+          shot_type?: string | null
+          skater_role_matchup_bucket?: string | null
+          sort_order?: number | null
+          strength_exact?: string | null
+          strength_state?: string | null
+          time_since_previous_event_seconds?: number | null
+          updated_at?: string
+          zone_code?: string | null
+        }
+        Relationships: []
+      }
+      nhl_xg_shot_predictions: {
+        Row: {
+          calibrated_probability: number | null
+          created_at: string
+          event_id: number
+          event_owner_team_id: number | null
+          feature_payload_hash: string | null
+          feature_version: number
+          game_date: string | null
+          game_id: number
+          goalie_in_net_id: number | null
+          label: boolean | null
+          model_approved: boolean
+          model_artifact_path: string | null
+          model_artifact_tag: string
+          model_family: string
+          model_version: string
+          prediction_type: string
+          provenance: Json
+          raw_probability: number
+          season_id: number | null
+          shooter_player_id: number | null
+          shot_event_type: string | null
+          updated_at: string
+          xg: number
+        }
+        Insert: {
+          calibrated_probability?: number | null
+          created_at?: string
+          event_id: number
+          event_owner_team_id?: number | null
+          feature_payload_hash?: string | null
+          feature_version: number
+          game_date?: string | null
+          game_id: number
+          goalie_in_net_id?: number | null
+          label?: boolean | null
+          model_approved?: boolean
+          model_artifact_path?: string | null
+          model_artifact_tag: string
+          model_family: string
+          model_version: string
+          prediction_type: string
+          provenance?: Json
+          raw_probability: number
+          season_id?: number | null
+          shooter_player_id?: number | null
+          shot_event_type?: string | null
+          updated_at?: string
+          xg: number
+        }
+        Update: {
+          calibrated_probability?: number | null
+          created_at?: string
+          event_id?: number
+          event_owner_team_id?: number | null
+          feature_payload_hash?: string | null
+          feature_version?: number
+          game_date?: string | null
+          game_id?: number
+          goalie_in_net_id?: number | null
+          label?: boolean | null
+          model_approved?: boolean
+          model_artifact_path?: string | null
+          model_artifact_tag?: string
+          model_family?: string
+          model_version?: string
+          prediction_type?: string
+          provenance?: Json
+          raw_probability?: number
+          season_id?: number | null
+          shooter_player_id?: number | null
+          shot_event_type?: string | null
+          updated_at?: string
+          xg?: number
+        }
+        Relationships: []
+      }
+      nhl_xg_team_game_aggregates: {
+        Row: {
+          created_at: string
+          feature_version: number
+          game_date: string | null
+          game_id: number
+          goals_against: number
+          goals_for: number
+          is_home: boolean | null
+          model_version: string
+          opponent_team_id: number | null
+          provenance: Json
+          season_id: number | null
+          shot_attempts_against: number
+          shot_attempts_for: number
+          source_model_approved: boolean
+          source_prediction_type: string
+          team_id: number
+          updated_at: string
+          xg_against: number
+          xg_for: number
+        }
+        Insert: {
+          created_at?: string
+          feature_version: number
+          game_date?: string | null
+          game_id: number
+          goals_against?: number
+          goals_for?: number
+          is_home?: boolean | null
+          model_version: string
+          opponent_team_id?: number | null
+          provenance?: Json
+          season_id?: number | null
+          shot_attempts_against?: number
+          shot_attempts_for?: number
+          source_model_approved?: boolean
+          source_prediction_type?: string
+          team_id: number
+          updated_at?: string
+          xg_against?: number
+          xg_for?: number
+        }
+        Update: {
+          created_at?: string
+          feature_version?: number
+          game_date?: string | null
+          game_id?: number
+          goals_against?: number
+          goals_for?: number
+          is_home?: boolean | null
+          model_version?: string
+          opponent_team_id?: number | null
+          provenance?: Json
+          season_id?: number | null
+          shot_attempts_against?: number
+          shot_attempts_for?: number
+          source_model_approved?: boolean
+          source_prediction_type?: string
+          team_id?: number
+          updated_at?: string
+          xg_against?: number
+          xg_for?: number
+        }
+        Relationships: []
+      }
+      nhl_xg_team_rolling_aggregates: {
+        Row: {
+          as_of_game_date: string | null
+          as_of_game_id: number
+          created_at: string
+          feature_version: number
+          games_count: number
+          goals_against: number
+          goals_for: number
+          model_version: string
+          provenance: Json
+          season_id: number | null
+          shot_attempts_against: number
+          shot_attempts_for: number
+          team_id: number
+          updated_at: string
+          window_games: number
+          xg_against: number
+          xg_for: number
+        }
+        Insert: {
+          as_of_game_date?: string | null
+          as_of_game_id: number
+          created_at?: string
+          feature_version: number
+          games_count?: number
+          goals_against?: number
+          goals_for?: number
+          model_version: string
+          provenance?: Json
+          season_id?: number | null
+          shot_attempts_against?: number
+          shot_attempts_for?: number
+          team_id: number
+          updated_at?: string
+          window_games: number
+          xg_against?: number
+          xg_for?: number
+        }
+        Update: {
+          as_of_game_date?: string | null
+          as_of_game_id?: number
+          created_at?: string
+          feature_version?: number
+          games_count?: number
+          goals_against?: number
+          goals_for?: number
+          model_version?: string
+          provenance?: Json
+          season_id?: number | null
+          shot_attempts_against?: number
+          shot_attempts_for?: number
+          team_id?: number
+          updated_at?: string
+          window_games?: number
+          xg_against?: number
+          xg_for?: number
+        }
+        Relationships: []
+      }
+      nhl_xg_transition_events: {
+        Row: {
+          confidence: number
+          confidence_tier: string
+          created_at: string
+          event_id: number
+          feature_version: number
+          game_date: string | null
+          game_id: number
+          model_version: string
+          player_id: number | null
+          provenance: Json
+          season_id: number | null
+          shot_event_id: number
+          shot_xg: number
+          source_event_id: number | null
+          source_event_type_desc_key: string | null
+          team_id: number | null
+          transition_created_xg: number
+          transition_type: string
+          updated_at: string
+        }
+        Insert: {
+          confidence: number
+          confidence_tier: string
+          created_at?: string
+          event_id: number
+          feature_version: number
+          game_date?: string | null
+          game_id: number
+          model_version: string
+          player_id?: number | null
+          provenance?: Json
+          season_id?: number | null
+          shot_event_id: number
+          shot_xg: number
+          source_event_id?: number | null
+          source_event_type_desc_key?: string | null
+          team_id?: number | null
+          transition_created_xg: number
+          transition_type: string
+          updated_at?: string
+        }
+        Update: {
+          confidence?: number
+          confidence_tier?: string
+          created_at?: string
+          event_id?: number
+          feature_version?: number
+          game_date?: string | null
+          game_id?: number
+          model_version?: string
+          player_id?: number | null
+          provenance?: Json
+          season_id?: number | null
+          shot_event_id?: number
+          shot_xg?: number
+          source_event_id?: number | null
+          source_event_type_desc_key?: string | null
+          team_id?: number | null
+          transition_created_xg?: number
+          transition_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      nhl_xg_transition_game_aggregates: {
+        Row: {
+          controlled_entries: number
+          controlled_exits: number
+          created_at: string
+          entity_id: number
+          entity_type: string
+          entry_assists: number
+          failed_exits_against: number
+          feature_version: number
+          game_date: string | null
+          game_id: number
+          model_version: string
+          provenance: Json
+          season_id: number | null
+          transition_created_shots: number
+          transition_created_xg: number
+          updated_at: string
+        }
+        Insert: {
+          controlled_entries?: number
+          controlled_exits?: number
+          created_at?: string
+          entity_id: number
+          entity_type: string
+          entry_assists?: number
+          failed_exits_against?: number
+          feature_version: number
+          game_date?: string | null
+          game_id: number
+          model_version: string
+          provenance?: Json
+          season_id?: number | null
+          transition_created_shots?: number
+          transition_created_xg?: number
+          updated_at?: string
+        }
+        Update: {
+          controlled_entries?: number
+          controlled_exits?: number
+          created_at?: string
+          entity_id?: number
+          entity_type?: string
+          entry_assists?: number
+          failed_exits_against?: number
+          feature_version?: number
+          game_date?: string | null
+          game_id?: number
+          model_version?: string
+          provenance?: Json
+          season_id?: number | null
+          transition_created_shots?: number
+          transition_created_xg?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      nst_gamelog_5v5_counts: {
+        Row: {
+          created_at: string | null
+          date_scraped: string
+          faceoffs_lost: number | null
+          faceoffs_percentage: number | null
+          faceoffs_won: number | null
+          first_assists: number | null
+          giveaways: number | null
+          goals: number | null
+          gp: number | null
+          hdcf: number | null
+          hits: number | null
+          hits_taken: number | null
+          icf: number | null
+          id: number
+          iff: number | null
+          ipp: number | null
+          iscfs: number | null
+          ixg: number | null
+          major_penalties: number | null
+          minor_penalties: number | null
+          misconduct_penalties: number | null
+          penalties_drawn: number | null
+          pim: number | null
+          player_id: number
+          rebounds_created: number | null
+          rush_attempts: number | null
+          season: number
+          second_assists: number | null
+          sh_percentage: number | null
+          shots: number | null
+          shots_blocked: number | null
+          takeaways: number | null
+          toi: number | null
+          total_assists: number | null
+          total_penalties: number | null
+          total_points: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_scraped: string
+          faceoffs_lost?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          first_assists?: number | null
+          giveaways?: number | null
+          goals?: number | null
+          gp?: number | null
+          hdcf?: number | null
+          hits?: number | null
+          hits_taken?: number | null
+          icf?: number | null
+          id?: number
+          iff?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          ixg?: number | null
+          major_penalties?: number | null
+          minor_penalties?: number | null
+          misconduct_penalties?: number | null
+          penalties_drawn?: number | null
+          pim?: number | null
+          player_id: number
+          rebounds_created?: number | null
+          rush_attempts?: number | null
+          season: number
+          second_assists?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          takeaways?: number | null
+          toi?: number | null
+          total_assists?: number | null
+          total_penalties?: number | null
+          total_points?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          date_scraped?: string
+          faceoffs_lost?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          first_assists?: number | null
+          giveaways?: number | null
+          goals?: number | null
+          gp?: number | null
+          hdcf?: number | null
+          hits?: number | null
+          hits_taken?: number | null
+          icf?: number | null
+          id?: number
+          iff?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          ixg?: number | null
+          major_penalties?: number | null
+          minor_penalties?: number | null
+          misconduct_penalties?: number | null
+          penalties_drawn?: number | null
+          pim?: number | null
+          player_id?: number
+          rebounds_created?: number | null
+          rush_attempts?: number | null
+          season?: number
+          second_assists?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          takeaways?: number | null
+          toi?: number | null
+          total_assists?: number | null
+          total_penalties?: number | null
+          total_points?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nst_gamelog_5v5_counts_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nst_gamelog_5v5_counts_oi: {
+        Row: {
+          ca: number | null
+          cf: number | null
+          cf_pct: number | null
+          created_at: string | null
+          date_scraped: string
+          def_zone_faceoffs: number | null
+          def_zone_starts: number | null
+          fa: number | null
+          ff: number | null
+          ff_pct: number | null
+          ga: number | null
+          gf: number | null
+          gf_pct: number | null
+          gp: number | null
+          hdca: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdga: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          id: number
+          ldca: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldga: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          mdca: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdga: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          neu_zone_faceoffs: number | null
+          neu_zone_starts: number | null
+          off_zone_faceoff_pct: number | null
+          off_zone_faceoffs: number | null
+          off_zone_start_pct: number | null
+          off_zone_starts: number | null
+          on_ice_sh_pct: number | null
+          on_ice_sv_pct: number | null
+          on_the_fly_starts: number | null
+          pdo: number | null
+          player_id: number
+          sa: number | null
+          sca: number | null
+          scf: number | null
+          scf_pct: number | null
+          season: number
+          sf: number | null
+          sf_pct: number | null
+          toi: number | null
+          xga: number | null
+          xgf: number | null
+          xgf_pct: number | null
+        }
+        Insert: {
+          ca?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          created_at?: string | null
+          date_scraped: string
+          def_zone_faceoffs?: number | null
+          def_zone_starts?: number | null
+          fa?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ga?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdga?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldga?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          mdca?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdga?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_starts?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_starts?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sv_pct?: number | null
+          on_the_fly_starts?: number | null
+          pdo?: number | null
+          player_id: number
+          sa?: number | null
+          sca?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          season: number
+          sf?: number | null
+          sf_pct?: number | null
+          toi?: number | null
+          xga?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+        }
+        Update: {
+          ca?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          created_at?: string | null
+          date_scraped?: string
+          def_zone_faceoffs?: number | null
+          def_zone_starts?: number | null
+          fa?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ga?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdga?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldga?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          mdca?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdga?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_starts?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_starts?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sv_pct?: number | null
+          on_the_fly_starts?: number | null
+          pdo?: number | null
+          player_id?: number
+          sa?: number | null
+          sca?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          season?: number
+          sf?: number | null
+          sf_pct?: number | null
+          toi?: number | null
+          xga?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nst_gamelog_5v5_counts_oi_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nst_gamelog_5v5_rates: {
+        Row: {
+          created_at: string | null
+          date_scraped: string
+          faceoffs_lost_per_60: number | null
+          faceoffs_percentage: number | null
+          faceoffs_won_per_60: number | null
+          first_assists_per_60: number | null
+          giveaways_per_60: number | null
+          goals_per_60: number | null
+          gp: number | null
+          hdcf_per_60: number | null
+          hits_per_60: number | null
+          hits_taken_per_60: number | null
+          icf_per_60: number | null
+          id: number
+          iff_per_60: number | null
+          ipp: number | null
+          iscfs_per_60: number | null
+          ixg_per_60: number | null
+          major_penalties_per_60: number | null
+          minor_penalties_per_60: number | null
+          misconduct_penalties_per_60: number | null
+          penalties_drawn_per_60: number | null
+          pim_per_60: number | null
+          player_id: number
+          rebounds_created_per_60: number | null
+          rush_attempts_per_60: number | null
+          season: number
+          second_assists_per_60: number | null
+          sh_percentage: number | null
+          shots_blocked_per_60: number | null
+          shots_per_60: number | null
+          takeaways_per_60: number | null
+          toi: number | null
+          toi_per_gp: number | null
+          total_assists_per_60: number | null
+          total_penalties_per_60: number | null
+          total_points_per_60: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_scraped: string
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won_per_60?: number | null
+          first_assists_per_60?: number | null
+          giveaways_per_60?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdcf_per_60?: number | null
+          hits_per_60?: number | null
+          hits_taken_per_60?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs_per_60?: number | null
+          ixg_per_60?: number | null
+          major_penalties_per_60?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties_per_60?: number | null
+          penalties_drawn_per_60?: number | null
+          pim_per_60?: number | null
+          player_id: number
+          rebounds_created_per_60?: number | null
+          rush_attempts_per_60?: number | null
+          season: number
+          second_assists_per_60?: number | null
+          sh_percentage?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists_per_60?: number | null
+          total_penalties_per_60?: number | null
+          total_points_per_60?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          date_scraped?: string
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won_per_60?: number | null
+          first_assists_per_60?: number | null
+          giveaways_per_60?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdcf_per_60?: number | null
+          hits_per_60?: number | null
+          hits_taken_per_60?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs_per_60?: number | null
+          ixg_per_60?: number | null
+          major_penalties_per_60?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties_per_60?: number | null
+          penalties_drawn_per_60?: number | null
+          pim_per_60?: number | null
+          player_id?: number
+          rebounds_created_per_60?: number | null
+          rush_attempts_per_60?: number | null
+          season?: number
+          second_assists_per_60?: number | null
+          sh_percentage?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists_per_60?: number | null
+          total_penalties_per_60?: number | null
+          total_points_per_60?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nst_gamelog_5v5_rates_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nst_gamelog_5v5_rates_oi: {
+        Row: {
+          ca_per_60: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          created_at: string | null
+          date_scraped: string
+          def_zone_faceoffs_per_60: number | null
+          def_zone_starts_per_60: number | null
+          fa_per_60: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          ga_per_60: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          gp: number | null
+          hdca_per_60: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga_per_60: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          id: number
+          ldca_per_60: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga_per_60: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          mdca_per_60: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga_per_60: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          neu_zone_faceoffs_per_60: number | null
+          neu_zone_starts_per_60: number | null
+          off_zone_faceoff_pct: number | null
+          off_zone_faceoffs_per_60: number | null
+          off_zone_start_pct: number | null
+          off_zone_starts_per_60: number | null
+          on_ice_sh_pct: number | null
+          on_ice_sv_pct: number | null
+          on_the_fly_starts_per_60: number | null
+          pdo: number | null
+          player_id: number
+          sa_per_60: number | null
+          sca_per_60: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          season: number
+          sf_pct: number | null
+          sf_per_60: number | null
+          toi: number | null
+          toi_per_gp: number | null
+          xga_per_60: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca_per_60?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string | null
+          date_scraped: string
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts_per_60?: number | null
+          fa_per_60?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          ga_per_60?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          gp?: number | null
+          hdca_per_60?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga_per_60?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          id?: number
+          ldca_per_60?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga_per_60?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          mdca_per_60?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga_per_60?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sv_pct?: number | null
+          on_the_fly_starts_per_60?: number | null
+          pdo?: number | null
+          player_id: number
+          sa_per_60?: number | null
+          sca_per_60?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season: number
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          xga_per_60?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca_per_60?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string | null
+          date_scraped?: string
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts_per_60?: number | null
+          fa_per_60?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          ga_per_60?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          gp?: number | null
+          hdca_per_60?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga_per_60?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          id?: number
+          ldca_per_60?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga_per_60?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          mdca_per_60?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga_per_60?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sv_pct?: number | null
+          on_the_fly_starts_per_60?: number | null
+          pdo?: number | null
+          player_id?: number
+          sa_per_60?: number | null
+          sca_per_60?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season?: number
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          xga_per_60?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nst_gamelog_5v5_rates_oi_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       nst_gamelog_as_counts: {
         Row: {
@@ -18333,6 +22466,32 @@ export type Database = {
           oi_sf_total_last20: number | null
           oi_sf_total_last3: number | null
           oi_sf_total_last5: number | null
+          oi_xga_avg_3ya: number | null
+          oi_xga_avg_all: number | null
+          oi_xga_avg_career: number | null
+          oi_xga_avg_last10: number | null
+          oi_xga_avg_last20: number | null
+          oi_xga_avg_last3: number | null
+          oi_xga_avg_last5: number | null
+          oi_xga_avg_season: number | null
+          oi_xga_total_all: number | null
+          oi_xga_total_last10: number | null
+          oi_xga_total_last20: number | null
+          oi_xga_total_last3: number | null
+          oi_xga_total_last5: number | null
+          oi_xgf_avg_3ya: number | null
+          oi_xgf_avg_all: number | null
+          oi_xgf_avg_career: number | null
+          oi_xgf_avg_last10: number | null
+          oi_xgf_avg_last20: number | null
+          oi_xgf_avg_last3: number | null
+          oi_xgf_avg_last5: number | null
+          oi_xgf_avg_season: number | null
+          oi_xgf_total_all: number | null
+          oi_xgf_total_last10: number | null
+          oi_xgf_total_last20: number | null
+          oi_xgf_total_last3: number | null
+          oi_xgf_total_last5: number | null
           on_ice_sh_pct_3ya: number | null
           on_ice_sh_pct_all: number | null
           on_ice_sh_pct_avg_3ya: number | null
@@ -18550,6 +22709,46 @@ export type Database = {
           penalties_drawn_total_last20: number | null
           penalties_drawn_total_last3: number | null
           penalties_drawn_total_last5: number | null
+          penalties_taken_avg_3ya: number | null
+          penalties_taken_avg_all: number | null
+          penalties_taken_avg_career: number | null
+          penalties_taken_avg_last10: number | null
+          penalties_taken_avg_last20: number | null
+          penalties_taken_avg_last3: number | null
+          penalties_taken_avg_last5: number | null
+          penalties_taken_avg_season: number | null
+          penalties_taken_per_60_3ya: number | null
+          penalties_taken_per_60_all: number | null
+          penalties_taken_per_60_avg_3ya: number | null
+          penalties_taken_per_60_avg_all: number | null
+          penalties_taken_per_60_avg_career: number | null
+          penalties_taken_per_60_avg_last10: number | null
+          penalties_taken_per_60_avg_last20: number | null
+          penalties_taken_per_60_avg_last3: number | null
+          penalties_taken_per_60_avg_last5: number | null
+          penalties_taken_per_60_avg_season: number | null
+          penalties_taken_per_60_career: number | null
+          penalties_taken_per_60_last10: number | null
+          penalties_taken_per_60_last20: number | null
+          penalties_taken_per_60_last3: number | null
+          penalties_taken_per_60_last5: number | null
+          penalties_taken_per_60_penalties_taken_3ya: number | null
+          penalties_taken_per_60_penalties_taken_career: number | null
+          penalties_taken_per_60_penalties_taken_season: number | null
+          penalties_taken_per_60_season: number | null
+          penalties_taken_per_60_toi_seconds_3ya: number | null
+          penalties_taken_per_60_toi_seconds_career: number | null
+          penalties_taken_per_60_toi_seconds_season: number | null
+          penalties_taken_per_60_total_all: number | null
+          penalties_taken_per_60_total_last10: number | null
+          penalties_taken_per_60_total_last20: number | null
+          penalties_taken_per_60_total_last3: number | null
+          penalties_taken_per_60_total_last5: number | null
+          penalties_taken_total_all: number | null
+          penalties_taken_total_last10: number | null
+          penalties_taken_total_last20: number | null
+          penalties_taken_total_last3: number | null
+          penalties_taken_total_last5: number | null
           player_id: number
           points_avg_3ya: number | null
           points_avg_all: number | null
@@ -18782,6 +22981,33 @@ export type Database = {
           shooting_pct_total_last20: number | null
           shooting_pct_total_last3: number | null
           shooting_pct_total_last5: number | null
+          shot_attempts_per_60_3ya: number | null
+          shot_attempts_per_60_all: number | null
+          shot_attempts_per_60_avg_3ya: number | null
+          shot_attempts_per_60_avg_all: number | null
+          shot_attempts_per_60_avg_career: number | null
+          shot_attempts_per_60_avg_last10: number | null
+          shot_attempts_per_60_avg_last20: number | null
+          shot_attempts_per_60_avg_last3: number | null
+          shot_attempts_per_60_avg_last5: number | null
+          shot_attempts_per_60_avg_season: number | null
+          shot_attempts_per_60_career: number | null
+          shot_attempts_per_60_last10: number | null
+          shot_attempts_per_60_last20: number | null
+          shot_attempts_per_60_last3: number | null
+          shot_attempts_per_60_last5: number | null
+          shot_attempts_per_60_season: number | null
+          shot_attempts_per_60_shot_attempts_3ya: number | null
+          shot_attempts_per_60_shot_attempts_career: number | null
+          shot_attempts_per_60_shot_attempts_season: number | null
+          shot_attempts_per_60_toi_seconds_3ya: number | null
+          shot_attempts_per_60_toi_seconds_career: number | null
+          shot_attempts_per_60_toi_seconds_season: number | null
+          shot_attempts_per_60_total_all: number | null
+          shot_attempts_per_60_total_last10: number | null
+          shot_attempts_per_60_total_last20: number | null
+          shot_attempts_per_60_total_last3: number | null
+          shot_attempts_per_60_total_last5: number | null
           shots_avg_3ya: number | null
           shots_avg_all: number | null
           shots_avg_career: number | null
@@ -19356,6 +23582,32 @@ export type Database = {
           oi_sf_total_last20?: number | null
           oi_sf_total_last3?: number | null
           oi_sf_total_last5?: number | null
+          oi_xga_avg_3ya?: number | null
+          oi_xga_avg_all?: number | null
+          oi_xga_avg_career?: number | null
+          oi_xga_avg_last10?: number | null
+          oi_xga_avg_last20?: number | null
+          oi_xga_avg_last3?: number | null
+          oi_xga_avg_last5?: number | null
+          oi_xga_avg_season?: number | null
+          oi_xga_total_all?: number | null
+          oi_xga_total_last10?: number | null
+          oi_xga_total_last20?: number | null
+          oi_xga_total_last3?: number | null
+          oi_xga_total_last5?: number | null
+          oi_xgf_avg_3ya?: number | null
+          oi_xgf_avg_all?: number | null
+          oi_xgf_avg_career?: number | null
+          oi_xgf_avg_last10?: number | null
+          oi_xgf_avg_last20?: number | null
+          oi_xgf_avg_last3?: number | null
+          oi_xgf_avg_last5?: number | null
+          oi_xgf_avg_season?: number | null
+          oi_xgf_total_all?: number | null
+          oi_xgf_total_last10?: number | null
+          oi_xgf_total_last20?: number | null
+          oi_xgf_total_last3?: number | null
+          oi_xgf_total_last5?: number | null
           on_ice_sh_pct_3ya?: number | null
           on_ice_sh_pct_all?: number | null
           on_ice_sh_pct_avg_3ya?: number | null
@@ -19573,6 +23825,46 @@ export type Database = {
           penalties_drawn_total_last20?: number | null
           penalties_drawn_total_last3?: number | null
           penalties_drawn_total_last5?: number | null
+          penalties_taken_avg_3ya?: number | null
+          penalties_taken_avg_all?: number | null
+          penalties_taken_avg_career?: number | null
+          penalties_taken_avg_last10?: number | null
+          penalties_taken_avg_last20?: number | null
+          penalties_taken_avg_last3?: number | null
+          penalties_taken_avg_last5?: number | null
+          penalties_taken_avg_season?: number | null
+          penalties_taken_per_60_3ya?: number | null
+          penalties_taken_per_60_all?: number | null
+          penalties_taken_per_60_avg_3ya?: number | null
+          penalties_taken_per_60_avg_all?: number | null
+          penalties_taken_per_60_avg_career?: number | null
+          penalties_taken_per_60_avg_last10?: number | null
+          penalties_taken_per_60_avg_last20?: number | null
+          penalties_taken_per_60_avg_last3?: number | null
+          penalties_taken_per_60_avg_last5?: number | null
+          penalties_taken_per_60_avg_season?: number | null
+          penalties_taken_per_60_career?: number | null
+          penalties_taken_per_60_last10?: number | null
+          penalties_taken_per_60_last20?: number | null
+          penalties_taken_per_60_last3?: number | null
+          penalties_taken_per_60_last5?: number | null
+          penalties_taken_per_60_penalties_taken_3ya?: number | null
+          penalties_taken_per_60_penalties_taken_career?: number | null
+          penalties_taken_per_60_penalties_taken_season?: number | null
+          penalties_taken_per_60_season?: number | null
+          penalties_taken_per_60_toi_seconds_3ya?: number | null
+          penalties_taken_per_60_toi_seconds_career?: number | null
+          penalties_taken_per_60_toi_seconds_season?: number | null
+          penalties_taken_per_60_total_all?: number | null
+          penalties_taken_per_60_total_last10?: number | null
+          penalties_taken_per_60_total_last20?: number | null
+          penalties_taken_per_60_total_last3?: number | null
+          penalties_taken_per_60_total_last5?: number | null
+          penalties_taken_total_all?: number | null
+          penalties_taken_total_last10?: number | null
+          penalties_taken_total_last20?: number | null
+          penalties_taken_total_last3?: number | null
+          penalties_taken_total_last5?: number | null
           player_id: number
           points_avg_3ya?: number | null
           points_avg_all?: number | null
@@ -19805,6 +24097,33 @@ export type Database = {
           shooting_pct_total_last20?: number | null
           shooting_pct_total_last3?: number | null
           shooting_pct_total_last5?: number | null
+          shot_attempts_per_60_3ya?: number | null
+          shot_attempts_per_60_all?: number | null
+          shot_attempts_per_60_avg_3ya?: number | null
+          shot_attempts_per_60_avg_all?: number | null
+          shot_attempts_per_60_avg_career?: number | null
+          shot_attempts_per_60_avg_last10?: number | null
+          shot_attempts_per_60_avg_last20?: number | null
+          shot_attempts_per_60_avg_last3?: number | null
+          shot_attempts_per_60_avg_last5?: number | null
+          shot_attempts_per_60_avg_season?: number | null
+          shot_attempts_per_60_career?: number | null
+          shot_attempts_per_60_last10?: number | null
+          shot_attempts_per_60_last20?: number | null
+          shot_attempts_per_60_last3?: number | null
+          shot_attempts_per_60_last5?: number | null
+          shot_attempts_per_60_season?: number | null
+          shot_attempts_per_60_shot_attempts_3ya?: number | null
+          shot_attempts_per_60_shot_attempts_career?: number | null
+          shot_attempts_per_60_shot_attempts_season?: number | null
+          shot_attempts_per_60_toi_seconds_3ya?: number | null
+          shot_attempts_per_60_toi_seconds_career?: number | null
+          shot_attempts_per_60_toi_seconds_season?: number | null
+          shot_attempts_per_60_total_all?: number | null
+          shot_attempts_per_60_total_last10?: number | null
+          shot_attempts_per_60_total_last20?: number | null
+          shot_attempts_per_60_total_last3?: number | null
+          shot_attempts_per_60_total_last5?: number | null
           shots_avg_3ya?: number | null
           shots_avg_all?: number | null
           shots_avg_career?: number | null
@@ -20379,6 +24698,32 @@ export type Database = {
           oi_sf_total_last20?: number | null
           oi_sf_total_last3?: number | null
           oi_sf_total_last5?: number | null
+          oi_xga_avg_3ya?: number | null
+          oi_xga_avg_all?: number | null
+          oi_xga_avg_career?: number | null
+          oi_xga_avg_last10?: number | null
+          oi_xga_avg_last20?: number | null
+          oi_xga_avg_last3?: number | null
+          oi_xga_avg_last5?: number | null
+          oi_xga_avg_season?: number | null
+          oi_xga_total_all?: number | null
+          oi_xga_total_last10?: number | null
+          oi_xga_total_last20?: number | null
+          oi_xga_total_last3?: number | null
+          oi_xga_total_last5?: number | null
+          oi_xgf_avg_3ya?: number | null
+          oi_xgf_avg_all?: number | null
+          oi_xgf_avg_career?: number | null
+          oi_xgf_avg_last10?: number | null
+          oi_xgf_avg_last20?: number | null
+          oi_xgf_avg_last3?: number | null
+          oi_xgf_avg_last5?: number | null
+          oi_xgf_avg_season?: number | null
+          oi_xgf_total_all?: number | null
+          oi_xgf_total_last10?: number | null
+          oi_xgf_total_last20?: number | null
+          oi_xgf_total_last3?: number | null
+          oi_xgf_total_last5?: number | null
           on_ice_sh_pct_3ya?: number | null
           on_ice_sh_pct_all?: number | null
           on_ice_sh_pct_avg_3ya?: number | null
@@ -20596,6 +24941,46 @@ export type Database = {
           penalties_drawn_total_last20?: number | null
           penalties_drawn_total_last3?: number | null
           penalties_drawn_total_last5?: number | null
+          penalties_taken_avg_3ya?: number | null
+          penalties_taken_avg_all?: number | null
+          penalties_taken_avg_career?: number | null
+          penalties_taken_avg_last10?: number | null
+          penalties_taken_avg_last20?: number | null
+          penalties_taken_avg_last3?: number | null
+          penalties_taken_avg_last5?: number | null
+          penalties_taken_avg_season?: number | null
+          penalties_taken_per_60_3ya?: number | null
+          penalties_taken_per_60_all?: number | null
+          penalties_taken_per_60_avg_3ya?: number | null
+          penalties_taken_per_60_avg_all?: number | null
+          penalties_taken_per_60_avg_career?: number | null
+          penalties_taken_per_60_avg_last10?: number | null
+          penalties_taken_per_60_avg_last20?: number | null
+          penalties_taken_per_60_avg_last3?: number | null
+          penalties_taken_per_60_avg_last5?: number | null
+          penalties_taken_per_60_avg_season?: number | null
+          penalties_taken_per_60_career?: number | null
+          penalties_taken_per_60_last10?: number | null
+          penalties_taken_per_60_last20?: number | null
+          penalties_taken_per_60_last3?: number | null
+          penalties_taken_per_60_last5?: number | null
+          penalties_taken_per_60_penalties_taken_3ya?: number | null
+          penalties_taken_per_60_penalties_taken_career?: number | null
+          penalties_taken_per_60_penalties_taken_season?: number | null
+          penalties_taken_per_60_season?: number | null
+          penalties_taken_per_60_toi_seconds_3ya?: number | null
+          penalties_taken_per_60_toi_seconds_career?: number | null
+          penalties_taken_per_60_toi_seconds_season?: number | null
+          penalties_taken_per_60_total_all?: number | null
+          penalties_taken_per_60_total_last10?: number | null
+          penalties_taken_per_60_total_last20?: number | null
+          penalties_taken_per_60_total_last3?: number | null
+          penalties_taken_per_60_total_last5?: number | null
+          penalties_taken_total_all?: number | null
+          penalties_taken_total_last10?: number | null
+          penalties_taken_total_last20?: number | null
+          penalties_taken_total_last3?: number | null
+          penalties_taken_total_last5?: number | null
           player_id?: number
           points_avg_3ya?: number | null
           points_avg_all?: number | null
@@ -20828,6 +25213,33 @@ export type Database = {
           shooting_pct_total_last20?: number | null
           shooting_pct_total_last3?: number | null
           shooting_pct_total_last5?: number | null
+          shot_attempts_per_60_3ya?: number | null
+          shot_attempts_per_60_all?: number | null
+          shot_attempts_per_60_avg_3ya?: number | null
+          shot_attempts_per_60_avg_all?: number | null
+          shot_attempts_per_60_avg_career?: number | null
+          shot_attempts_per_60_avg_last10?: number | null
+          shot_attempts_per_60_avg_last20?: number | null
+          shot_attempts_per_60_avg_last3?: number | null
+          shot_attempts_per_60_avg_last5?: number | null
+          shot_attempts_per_60_avg_season?: number | null
+          shot_attempts_per_60_career?: number | null
+          shot_attempts_per_60_last10?: number | null
+          shot_attempts_per_60_last20?: number | null
+          shot_attempts_per_60_last3?: number | null
+          shot_attempts_per_60_last5?: number | null
+          shot_attempts_per_60_season?: number | null
+          shot_attempts_per_60_shot_attempts_3ya?: number | null
+          shot_attempts_per_60_shot_attempts_career?: number | null
+          shot_attempts_per_60_shot_attempts_season?: number | null
+          shot_attempts_per_60_toi_seconds_3ya?: number | null
+          shot_attempts_per_60_toi_seconds_career?: number | null
+          shot_attempts_per_60_toi_seconds_season?: number | null
+          shot_attempts_per_60_total_all?: number | null
+          shot_attempts_per_60_total_last10?: number | null
+          shot_attempts_per_60_total_last20?: number | null
+          shot_attempts_per_60_total_last3?: number | null
+          shot_attempts_per_60_total_last5?: number | null
           shots_avg_3ya?: number | null
           shots_avg_all?: number | null
           shots_avg_career?: number | null
@@ -20932,6 +25344,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rolling_player_metric_support_payloads: {
+        Row: {
+          game_date: string
+          game_id: number | null
+          payload_schema_version: number
+          player_id: number
+          season: number
+          strength_state: string
+          support_payload: Json
+          team_id: number | null
+          updated_at: string
+        }
+        Insert: {
+          game_date: string
+          game_id?: number | null
+          payload_schema_version?: number
+          player_id: number
+          season: number
+          strength_state: string
+          support_payload?: Json
+          team_id?: number | null
+          updated_at?: string
+        }
+        Update: {
+          game_date?: string
+          game_id?: number | null
+          payload_schema_version?: number
+          player_id?: number
+          season?: number
+          strength_state?: string
+          support_payload?: Json
+          team_id?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       rosters: {
         Row: {
@@ -21364,6 +25812,128 @@ export type Database = {
           ycoord?: number
         }
         Relationships: []
+      }
+      skater_composite_ratings: {
+        Row: {
+          beast_tier: string | null
+          components_json: Json
+          created_at: string
+          defense_rating_deployment: number | null
+          defense_rating_overall: number | null
+          deployment_bucket: string
+          mcm_score: number | null
+          methodology_version: string
+          offense_rating_deployment: number | null
+          offense_rating_overall: number | null
+          pass_first_score: number | null
+          peer_group_key: string
+          peer_group_type: string
+          play_driver_score: number | null
+          player_id: number
+          position_group: string | null
+          provenance: Json
+          results_luck_index: number | null
+          season_id: number
+          shoot_first_score: number | null
+          snapshot_date: string
+          strength_state: string
+          tags: Json
+          team_id: number | null
+          updated_at: string
+          window_semantics: string
+          window_size: number
+          window_type: string
+        }
+        Insert: {
+          beast_tier?: string | null
+          components_json?: Json
+          created_at?: string
+          defense_rating_deployment?: number | null
+          defense_rating_overall?: number | null
+          deployment_bucket?: string
+          mcm_score?: number | null
+          methodology_version?: string
+          offense_rating_deployment?: number | null
+          offense_rating_overall?: number | null
+          pass_first_score?: number | null
+          peer_group_key?: string
+          peer_group_type?: string
+          play_driver_score?: number | null
+          player_id: number
+          position_group?: string | null
+          provenance?: Json
+          results_luck_index?: number | null
+          season_id: number
+          shoot_first_score?: number | null
+          snapshot_date: string
+          strength_state?: string
+          tags?: Json
+          team_id?: number | null
+          updated_at?: string
+          window_semantics: string
+          window_size?: number
+          window_type: string
+        }
+        Update: {
+          beast_tier?: string | null
+          components_json?: Json
+          created_at?: string
+          defense_rating_deployment?: number | null
+          defense_rating_overall?: number | null
+          deployment_bucket?: string
+          mcm_score?: number | null
+          methodology_version?: string
+          offense_rating_deployment?: number | null
+          offense_rating_overall?: number | null
+          pass_first_score?: number | null
+          peer_group_key?: string
+          peer_group_type?: string
+          play_driver_score?: number | null
+          player_id?: number
+          position_group?: string | null
+          provenance?: Json
+          results_luck_index?: number | null
+          season_id?: number
+          shoot_first_score?: number | null
+          snapshot_date?: string
+          strength_state?: string
+          tags?: Json
+          team_id?: number | null
+          updated_at?: string
+          window_semantics?: string
+          window_size?: number
+          window_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skater_composite_ratings_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skater_composite_ratings_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "skater_composite_ratings_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "skater_composite_ratings_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       skater_defensive_ratings_daily: {
         Row: {
@@ -23405,6 +27975,148 @@ export type Database = {
           short_name?: string
         }
         Relationships: []
+      }
+      tweet_pattern_review_items: {
+        Row: {
+          author_name: string | null
+          created_at: string
+          dedupe_key: string
+          enriched_text: string | null
+          id: string
+          keyword_hits: string[] | null
+          metadata: Json
+          notes: string | null
+          parser_classification: string | null
+          parser_filter_reason: string | null
+          parser_filter_status: string | null
+          quoted_text: string | null
+          quoted_tweet_id: string | null
+          quoted_tweet_url: string | null
+          raw_text: string | null
+          review_assignments: Json
+          review_status: string
+          review_text: string | null
+          reviewed_at: string | null
+          reviewed_category: string | null
+          reviewed_subcategory: string | null
+          selected_highlights: Json
+          snapshot_date: string | null
+          source_account: string | null
+          source_created_at: string | null
+          source_group: string | null
+          source_handle: string | null
+          source_key: string | null
+          source_label: string | null
+          source_row_key: string
+          source_table: string
+          source_url: string | null
+          team_abbreviation: string | null
+          team_id: number | null
+          tweet_id: string | null
+          tweet_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_name?: string | null
+          created_at?: string
+          dedupe_key: string
+          enriched_text?: string | null
+          id?: string
+          keyword_hits?: string[] | null
+          metadata?: Json
+          notes?: string | null
+          parser_classification?: string | null
+          parser_filter_reason?: string | null
+          parser_filter_status?: string | null
+          quoted_text?: string | null
+          quoted_tweet_id?: string | null
+          quoted_tweet_url?: string | null
+          raw_text?: string | null
+          review_assignments?: Json
+          review_status?: string
+          review_text?: string | null
+          reviewed_at?: string | null
+          reviewed_category?: string | null
+          reviewed_subcategory?: string | null
+          selected_highlights?: Json
+          snapshot_date?: string | null
+          source_account?: string | null
+          source_created_at?: string | null
+          source_group?: string | null
+          source_handle?: string | null
+          source_key?: string | null
+          source_label?: string | null
+          source_row_key: string
+          source_table: string
+          source_url?: string | null
+          team_abbreviation?: string | null
+          team_id?: number | null
+          tweet_id?: string | null
+          tweet_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_name?: string | null
+          created_at?: string
+          dedupe_key?: string
+          enriched_text?: string | null
+          id?: string
+          keyword_hits?: string[] | null
+          metadata?: Json
+          notes?: string | null
+          parser_classification?: string | null
+          parser_filter_reason?: string | null
+          parser_filter_status?: string | null
+          quoted_text?: string | null
+          quoted_tweet_id?: string | null
+          quoted_tweet_url?: string | null
+          raw_text?: string | null
+          review_assignments?: Json
+          review_status?: string
+          review_text?: string | null
+          reviewed_at?: string | null
+          reviewed_category?: string | null
+          reviewed_subcategory?: string | null
+          selected_highlights?: Json
+          snapshot_date?: string | null
+          source_account?: string | null
+          source_created_at?: string | null
+          source_group?: string | null
+          source_handle?: string | null
+          source_key?: string | null
+          source_label?: string | null
+          source_row_key?: string
+          source_table?: string
+          source_url?: string | null
+          team_abbreviation?: string | null
+          team_id?: number | null
+          tweet_id?: string | null
+          tweet_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tweet_pattern_review_items_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "tweet_pattern_review_items_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "tweet_pattern_review_items_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_entitlements: {
         Row: {

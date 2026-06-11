@@ -67,6 +67,46 @@ function inferRowsAffected(body: unknown): number | null {
   return visit(body);
 }
 
+function inferFailedRows(body: unknown): number | null {
+  const directKeys = [
+    "failedRows",
+    "failed_rows",
+    "failedCount",
+    "failed_count",
+    "errorCount",
+    "errorsCount",
+    "rowsFailed",
+    "rows_failed"
+  ];
+
+  const visit = (obj: any): number | null => {
+    if (!obj || typeof obj !== "object") return null;
+
+    if (Array.isArray(obj)) {
+      return obj.reduce((acc, item) => acc + (visit(item) ?? 0), 0) || null;
+    }
+
+    for (const key of directKeys) {
+      const value = obj[key];
+      if (typeof value === "number" && Number.isFinite(value)) return value;
+    }
+
+    for (const key of ["errors", "failures", "failedRows", "failed_rows"]) {
+      const value = obj[key];
+      if (Array.isArray(value)) return value.length;
+    }
+
+    for (const value of Object.values(obj)) {
+      const nested = visit(value);
+      if (nested != null) return nested;
+    }
+
+    return null;
+  };
+
+  return visit(body);
+}
+
 function inferFailure(body: unknown): boolean {
   if (!body || typeof body !== "object") return false;
   const b: any = body;
@@ -136,19 +176,23 @@ export function withCronJobAudit(
         };
     const durationMs = timing.durationMs;
     const statusCode = res.statusCode;
+    const rowsUpserted = inferRowsAffected(capturedBody);
+    const failedRows = inferFailedRows(capturedBody);
     const inferredFailure =
       thrown != null || statusCode >= 400 || inferFailure(capturedBody);
 
     const row: CronAuditRow = {
       job_name: jobName,
       status: inferredFailure ? "failure" : "success",
-      rows_affected: inferRowsAffected(capturedBody),
+      rows_affected: rowsUpserted,
       details: {
         method: req.method ?? null,
         url: req.url ?? null,
         statusCode,
         durationMs,
         timing,
+        rowsUpserted,
+        failedRows,
         error:
           thrown != null
             ? ((thrown as any)?.message ?? safeJson(thrown, 2000))

@@ -72,7 +72,7 @@ export function resolvePreferredShareComponents(args: {
 }
 
 export function resolveIxgValue(args: {
-  strength: "all" | "ev" | "pp" | "pk";
+  strength: "all" | "5v5" | "ev" | "pp" | "pk";
   countsIxg: number | null | undefined;
   wgoIxg: number | null | undefined;
 }): number | null {
@@ -94,7 +94,7 @@ export type IxgPer60ResolutionSource =
   | "unavailable";
 
 export function resolveIxgPer60Components(args: {
-  strength: "all" | "ev" | "pp" | "pk";
+  strength: "all" | "5v5" | "ev" | "pp" | "pk";
   countsIxg: number | null | undefined;
   wgoIxg: number | null | undefined;
   toiSeconds: number | null | undefined;

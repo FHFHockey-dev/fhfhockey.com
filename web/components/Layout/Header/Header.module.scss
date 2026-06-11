@@ -3,13 +3,14 @@
 @import url("https://fonts.googleapis.com/css2?family=Train+One&display=swap");
 
 $mobile-header-height: 65px;
+$desktop-header-min-width: 1120px;
 
 // Desktop Header (hidden on mobile)
 .header.desktopHeader {
   display: none;
 
   // PC - show desktop header
-  @media only screen and (min-width: v.$screen-large) {
+  @media only screen and (min-width: $desktop-header-min-width) {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -220,7 +221,7 @@ $mobile-header-height: 65px;
 .mobileNavWrapper {
   display: block;
 
-  @media only screen and (min-width: v.$screen-large) {
+  @media only screen and (min-width: $desktop-header-min-width) {
     display: none;
   }
 }
@@ -270,7 +271,7 @@ $mobile-header-height: 65px;
     );
   }
 
-  @media only screen and (min-width: v.$screen-large) {
+  @media only screen and (min-width: $desktop-header-min-width) {
     display: none;
   }
 }

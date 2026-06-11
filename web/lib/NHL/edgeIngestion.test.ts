@@ -4,7 +4,9 @@ import {
   buildEdgeGoalieDetailRow,
   buildEdgeGoalieDetailNowRow,
   buildEdgeSkaterDetailNowRow,
+  buildEdgeSkaterSkatingDistanceGameRows,
   buildEdgeSkaterShotLocationRows,
+  buildEdgeSkaterSupplementalDetailRow,
   buildEdgeTeamDetailNowRow
 } from "./edgeIngestion";
 
@@ -185,6 +187,70 @@ describe("edgeIngestion", () => {
     expect(row.metadata).toMatchObject({
       readMode: "now",
       playerPosition: "G"
+    });
+  });
+
+  it("builds supplemental skater skating distance rows and normalizes last-10 games", () => {
+    const rawRow = buildEdgeSkaterSupplementalDetailRow({
+      snapshotDate: "2026-05-30",
+      seasonId: 20252026,
+      gameType: 2,
+      playerId: 8478402,
+      playerName: "Connor McDavid",
+      teamId: 22,
+      teamAbbreviation: "EDM",
+      position: "C",
+      endpointFamily: "skater-skating-distance-detail",
+      payload: {
+        skatingDistanceLast10: [
+          {
+            gameCenterLink: "/gamecenter/edm-vs-sjs/2025/04/16/2024021306",
+            gameDate: "2025-04-16",
+            playerOnHomeTeam: false,
+            toiAll: 1051,
+            distanceSkatedAll: { imperial: 3.1379, metric: 5.0499 },
+            toiEven: 874,
+            distanceSkatedEven: { imperial: 2.6574, metric: 4.2766 },
+            toiPP: 177,
+            distanceSkatedPP: { imperial: 0.4805, metric: 0.7734 },
+            homeTeam: { abbrev: "SJS" },
+            awayTeam: { abbrev: "EDM" }
+          }
+        ]
+      }
+    });
+
+    expect(rawRow).toMatchObject({
+      endpoint_family: "skater-skating-distance-detail",
+      entity_type: "skater",
+      entity_id: 8478402,
+      source_url:
+        "https://api-web.nhle.com/v1/edge/skater-skating-distance-detail/8478402/20252026/2"
+    });
+
+    const rows = buildEdgeSkaterSkatingDistanceGameRows([rawRow]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      snapshot_date: "2026-05-30",
+      season_id: 20252026,
+      game_type: 2,
+      player_id: 8478402,
+      player_name: "Connor McDavid",
+      team_id: 22,
+      team_abbreviation: "EDM",
+      position: "C",
+      game_id: 2024021306,
+      game_date: "2025-04-16",
+      player_on_home_team: false,
+      home_team_abbreviation: "SJS",
+      away_team_abbreviation: "EDM",
+      toi_all_seconds: 1051,
+      distance_skated_all_miles: 3.1379,
+      distance_skated_all_km: 5.0499,
+      toi_even_seconds: 874,
+      distance_skated_even_miles: 2.6574,
+      toi_pp_seconds: 177,
+      distance_skated_pp_miles: 0.4805
     });
   });
 });

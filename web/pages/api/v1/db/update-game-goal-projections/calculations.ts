@@ -1,4 +1,4 @@
-// pages/api/v1/db/update-expected-goals/calculations.ts
+// pages/api/v1/db/update-game-goal-projections/calculations.ts
 
 import { poissonProbability } from "./utils";
 import { Game, TeamScores, mapAbbreviationToId } from "./fetchData";
@@ -6,7 +6,7 @@ import { Game, TeamScores, mapAbbreviationToId } from "./fetchData";
 /**
  * Interface representing the structure of data to be upserted into Supabase.
  */
-export interface CalculatedGameData {
+export interface CalculatedGameGoalProjectionData {
   game_id: number;
   game_date: string;
   league_average_goals_for: number;
@@ -24,9 +24,12 @@ export interface CalculatedGameData {
 }
 
 /**
- * Calculates expected goals for a team.
+ * Calculates legacy projected team goals for a game-level win-odds model.
+ *
+ * This is not shot-level hockey xG. True xG is produced by the NHL xG pipeline
+ * from per-shot goal probabilities and stored in the `nhl_xg_*` tables.
  */
-export function calculateExpectedGoals(
+export function calculateProjectedGoals(
   homeAttScore: number,
   awayDefScore: number,
   leagueAvgGoalsFor: number
@@ -35,7 +38,7 @@ export function calculateExpectedGoals(
 }
 
 /**
- * Generates a Poisson probability matrix for expected goals.
+ * Generates a Poisson probability matrix from projected team goals.
  */
 export function generatePoissonProbabilityMatrix(
   lambdaHome: number,
@@ -123,17 +126,17 @@ export function convertAmericanOddsToPercentage(odds: string): number {
 /**
  * Performs all calculations for a list of games.
  */
-export async function performCalculations(
+export async function buildGameGoalProjections(
   games: Game[],
   teamScores: TeamScores[],
   leagueAverages: number
-): Promise<CalculatedGameData[]> {
+): Promise<CalculatedGameGoalProjectionData[]> {
   const teamScoreMap: { [abbrev: string]: TeamScores } = {};
   teamScores.forEach((team) => {
     teamScoreMap[team.team_abbreviation] = team;
   });
 
-  const calculatedData: CalculatedGameData[] = [];
+  const calculatedData: CalculatedGameGoalProjectionData[] = [];
 
   for (const game of games) {
     const { id: game_id, gameDate, homeTeam, awayTeam } = game;
@@ -161,14 +164,13 @@ export async function performCalculations(
       continue; // skip this game
     }
 
-    // Calculate expected goals
-    const home_expected_goals = calculateExpectedGoals(
+    const homeProjectedGoals = calculateProjectedGoals(
       home_team_scores.att_score_all,
       away_team_scores.def_score_all,
       leagueAverages
     );
 
-    const away_expected_goals = calculateExpectedGoals(
+    const awayProjectedGoals = calculateProjectedGoals(
       away_team_scores.att_score_all,
       home_team_scores.def_score_all,
       leagueAverages
@@ -176,8 +178,8 @@ export async function performCalculations(
 
     // Generate Poisson probability matrix
     const poissonMatrix = generatePoissonProbabilityMatrix(
-      home_expected_goals,
-      away_expected_goals
+      homeProjectedGoals,
+      awayProjectedGoals
     );
 
     // Calculate win odds
@@ -215,7 +217,7 @@ export async function performCalculations(
     if (!Array.isArray(awayTeam.odds) || awayTeam.odds.length === 0) {
     }
 
-    const calculatedGame: CalculatedGameData = {
+    const calculatedGame: CalculatedGameGoalProjectionData = {
       game_id,
       game_date: gameDate,
       league_average_goals_for: leagueAverages,
@@ -223,8 +225,8 @@ export async function performCalculations(
       away_team_id,
       home_team_abbreviation: home_abbrev,
       away_team_abbreviation: away_abbrev,
-      home_expected_goals: parseFloat(home_expected_goals.toFixed(2)),
-      away_expected_goals: parseFloat(away_expected_goals.toFixed(2)),
+      home_expected_goals: parseFloat(homeProjectedGoals.toFixed(2)),
+      away_expected_goals: parseFloat(awayProjectedGoals.toFixed(2)),
       home_win_odds: parseFloat(homeWinOdds.toFixed(2)),
       away_win_odds: parseFloat(awayWinOdds.toFixed(2)),
       // Conditionally include odds fields only if they exist

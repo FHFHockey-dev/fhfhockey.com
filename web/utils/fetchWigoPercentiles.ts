@@ -1,4 +1,5 @@
 import supabase from "lib/supabase";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import {
   PercentileStrength,
   OffensePercentileTable,
@@ -66,10 +67,7 @@ async function fetchPercentileRows<T>(
   seasonId: number,
   filterPositiveGp = false
 ): Promise<T[]> {
-  const allRows: T[] = [];
-  let page = 0;
-
-  while (true) {
+  return fetchAllSupabasePages<T>(({ from, to }) => {
     let query = (supabase as any)
       .from(tableName)
       .select(selectColumns)
@@ -80,25 +78,8 @@ async function fetchPercentileRows<T>(
       query = query.gt("gp", 0);
     }
 
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-    const { data, error } = await query.range(from, to);
-
-    if (error) {
-      throw error;
-    }
-
-    const rows = (data as T[] | null) ?? [];
-    allRows.push(...rows);
-
-    if (rows.length < PAGE_SIZE) {
-      break;
-    }
-
-    page += 1;
-  }
-
-  return allRows;
+    return query.range(from, to);
+  }, { pageSize: PAGE_SIZE });
 }
 
 async function fetchCanonicalPlayerGp(

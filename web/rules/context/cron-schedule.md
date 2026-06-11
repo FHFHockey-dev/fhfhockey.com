@@ -199,12 +199,12 @@
   },
   {
     "jobid": 26,
-    "jobname": "update-expected-goals",
+    "jobname": "update-game-goal-projections",
     "schedule": "25 8 * * *",
     "run_time_utc": "08:25 UTC",
     "active": true,
     "method": "GET",
-    "route": "/api/v1/db/update-expected-goals?date=all"
+    "route": "/api/v1/db/update-game-goal-projections?date=all"
   },
   {
     "jobid": 99,
@@ -380,7 +380,7 @@
     "jobname": "update-rolling-games-recent",
     "schedule": "25 10 * * *",
     "run_time_utc": "10:25 UTC",
-    "active": true,
+    "active": false,
     "method": "GET",
     "route": "/api/v1/db/update-rolling-games?date=recent"
   },
@@ -618,7 +618,7 @@
 -- - 08:15 UTC / 03:15 EST: update-rolling-player-averages
 -- - 08:15 UTC / 03:15 EST: update-standings-details
 -- - 08:20 UTC / 03:20 EST: update-all-wgo-goalie-totals
--- - 08:25 UTC / 03:25 EST: update-expected-goals
+-- - 08:25 UTC / 03:25 EST: update-game-goal-projections
 -- - 08:30 UTC / 03:30 EST: update-nst-goalies
 -- - 08:40 UTC / 03:40 EST: update-yahoo-players
 -- - 08:45 UTC / 03:45 EST: update-nst-current-season
@@ -1093,11 +1093,11 @@ curl -i -sS -m 180 \
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 -- SELECT cron.schedule(
---     'update-expected-goals',
+--     'update-game-goal-projections',
 --     '15 8 * * *', -- 08:15 UTC
 --     $$
 --         SELECT net.http_get(
---             url := 'https://fhfhockey.com/api/v1/db/update-expected-goals?date=all',
+--             url := 'https://fhfhockey.com/api/v1/db/update-game-goal-projections?date=all',
 --             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );

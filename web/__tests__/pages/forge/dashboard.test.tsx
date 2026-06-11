@@ -109,14 +109,11 @@ describe("Forge dashboard render states", () => {
 
     render(<ForgeDashboardPage />);
 
-    expect(await screen.findByText("Loading team rating blend...")).toBeTruthy();
-    expect(screen.getByText("Loading sustainability signals...")).toBeTruthy();
+    expect(await screen.findByText("Loading team power...")).toBeTruthy();
+    expect(screen.getByText("Loading trust calls...")).toBeTruthy();
     expect(screen.getByText("Loading goalie projections...")).toBeTruthy();
     expect(screen.getByText("Loading game slate...")).toBeTruthy();
     expect(screen.getByText("Loading top adds...")).toBeTruthy();
-    const topBandStatus = screen.getByLabelText("Tonight's Slate status");
-    expect(topBandStatus).toBeTruthy();
-    expect(within(topBandStatus).getByText("Loading 2")).toBeTruthy();
   });
 
   it("renders empty states when endpoints return no usable rows", async () => {
@@ -157,15 +154,15 @@ describe("Forge dashboard render states", () => {
     render(<ForgeDashboardPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("No team rating-blend data for this date.")).toBeTruthy();
+      expect(screen.getByText("No team power data for this date.")).toBeTruthy();
       expect(
-        screen.getByText("No sustainability signals available for this date.")
+        screen.getByText("No trust or fade calls available for this date.")
       ).toBeTruthy();
       expect(
         screen.getByText("No goalie projections for this filter/date.")
       ).toBeTruthy();
       expect(
-        screen.getByText("No player trend movement available for this filter.")
+        screen.getByText("No player form data available for this filter.")
       ).toBeTruthy();
       expect(screen.getByText("No games match this filter/date.")).toBeTruthy();
       expect(
@@ -294,7 +291,7 @@ describe("Forge dashboard render states", () => {
       expect(screen.getByText("Confidence HIGH")).toBeTruthy();
       expect(screen.getByText("Call Start")).toBeTruthy();
       expect(
-        screen.getByText("No sustainability signals available for this date.")
+        screen.getByText("No trust or fade calls available for this date.")
       ).toBeTruthy();
       expect(screen.getByText("No games match this filter/date.")).toBeTruthy();
       expect(
@@ -432,9 +429,9 @@ describe("Forge dashboard render states", () => {
 
     render(<ForgeDashboardPage />);
 
-    expect(await screen.findByText("Focused Matchup")).toBeTruthy();
+    expect(await screen.findByText("Focus")).toBeTruthy();
     expect(screen.getAllByText("Jacob Markstrom").length).toBeGreaterThan(0);
-    expect(screen.getByText("Open Start Chart")).toBeTruthy();
+    expect(screen.getByText("See Goalie Starts")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /Focus LAK at ANA/i }));
 
@@ -837,7 +834,7 @@ describe("Forge dashboard render states", () => {
     });
   });
 
-  it("uses mobile accordions with slate, insight, and goalie expanded by default", async () => {
+  it("keeps the core dashboard modules visible on mobile", async () => {
     stubMatchMedia(true);
 
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
@@ -874,37 +871,12 @@ describe("Forge dashboard render states", () => {
 
     render(<ForgeDashboardPage />);
 
-    const topToggle = await screen.findByRole("button", {
-      name: "Collapse Tonight's Slate"
-    });
-    const teamToggle = screen.getByRole("button", {
-      name: "Expand Team Trend Context"
-    });
-    const insightToggle = screen.getByRole("button", {
-      name: "Collapse Player Insight Core"
-    });
-    const goalieToggle = screen.getByRole("button", {
-      name: "Collapse Goalie and Risk"
-    });
-
-    expect(topToggle.getAttribute("aria-expanded")).toBe("true");
-    expect(teamToggle.getAttribute("aria-expanded")).toBe("false");
-    expect(insightToggle.getAttribute("aria-expanded")).toBe("true");
-    expect(goalieToggle.getAttribute("aria-expanded")).toBe("true");
-    expect(document.getElementById("forge-band-team")?.hasAttribute("hidden")).toBe(
-      true
-    );
-
-    fireEvent.click(teamToggle);
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "Collapse Team Trend Context" })
-      ).toBeTruthy();
-      expect(document.getElementById("forge-band-team")?.hasAttribute("hidden")).toBe(
-        false
-      );
-    });
+    expect(await screen.findByText("Team Power Snapshot")).toBeTruthy();
+    expect(screen.getByText("Tonight's Games")).toBeTruthy();
+    expect(screen.getByText("Goalie Start Calls")).toBeTruthy();
+    expect(screen.getByText("Best Waiver Adds")).toBeTruthy();
+    expect(screen.getByText("Trust Or Fade")).toBeTruthy();
+    expect(screen.getByText("Who's Hot, Cold, Or Moving")).toBeTruthy();
   });
 
   it("supports top-16 and bottom-16 team power views", async () => {
@@ -956,11 +928,11 @@ describe("Forge dashboard render states", () => {
 
     render(<ForgeDashboardPage />);
 
-    expect(await screen.findByRole("button", { name: "Top 16" })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Best 6" })).toBeTruthy();
     expect(screen.getAllByText("T01").length).toBeGreaterThan(0);
     expect(screen.queryByText("T32")).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Bottom 16" }));
+    fireEvent.click(screen.getByRole("button", { name: "Weakest 6" }));
 
     await waitFor(() => {
       expect(screen.getAllByText("T32").length).toBeGreaterThan(0);
@@ -1065,13 +1037,16 @@ describe("Forge dashboard render states", () => {
 
     render(<ForgeDashboardPage />);
 
-    expect(await screen.findByText("CTPI 68")).toBeTruthy();
+    const teamLink = await screen.findByRole("link", {
+      name: /NJD New Jersey Devils/i
+    });
+    expect(within(teamLink).getByText(/Form\s+68/)).toBeTruthy();
     expect(screen.getByText("Momentum +7.0")).toBeTruthy();
     expect(screen.getAllByText(/NYI \+/).length).toBeGreaterThan(0);
     expect(
-      screen.getByText("Compact CTPI traces stay on the lead spotlight card only.")
+      screen.getByText("Top cards show the teams with the clearest fantasy environment.")
     ).toBeTruthy();
-    expect(screen.getByRole("link", { name: /NJD New Jersey Devils/i })).toBeTruthy();
+    expect(teamLink).toBeTruthy();
   });
 
   it("renders the top adds rail controls, filters by ownership band, and switches to weekly mode", async () => {
@@ -1219,14 +1194,16 @@ describe("Forge dashboard render states", () => {
     expect(screen.getByText("Victor Olofsson")).toBeTruthy();
     expect(screen.queryByText("Leo Carlsson")).toBeNull();
     expect(
-      screen.getByText("Lead add cards keep the ownership trace and score inspector for pass-4 vetting.")
+      screen.getByText(
+        "Higher add scores combine opportunity, recent demand, projection, schedule, and risk."
+      )
     ).toBeTruthy();
     expect(screen.getAllByText("Ownership 5D").length).toBeGreaterThan(0);
-    expect(screen.getByText("+7.0 pts")).toBeTruthy();
-    expect(screen.getAllByText("Score inspector").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Raw inputs").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Weighted path").length).toBeGreaterThan(0);
-    expect(screen.getByText("Trend +35.0")).toBeTruthy();
+    expect(screen.getAllByText("+7.0 pts").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Why This Add").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Fantasy Line").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Add Score").length).toBeGreaterThan(0);
+    expect(screen.getByText("Demand 35.0")).toBeTruthy();
     expect(screen.getByText("Risk -0.5")).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText("Maximum ownership"), {
@@ -1381,19 +1358,19 @@ describe("Forge dashboard render states", () => {
 
     render(<ForgeDashboardPage />);
 
-    expect(await screen.findByText("Sustainable Risers")).toBeTruthy();
-    expect(screen.getByText("Unsustainable Heaters")).toBeTruthy();
+    expect(await screen.findByText("Trust These Risers")).toBeTruthy();
+    expect(screen.getByText("Fade These Heaters")).toBeTruthy();
     expect(screen.getByText("Trustworthy")).toBeTruthy();
     expect(screen.getByText("Overheated")).toBeTruthy();
-    expect(screen.getByText("Skill-backed rise with manageable luck pressure.")).toBeTruthy();
+    expect(screen.getByText("The rise looks supported by more than luck.")).toBeTruthy();
     expect(
-      screen.getByText("Regression-prone heater pushing beyond the expected band.")
+      screen.getByText("The hot streak may cool off.")
     ).toBeTruthy();
     expect(screen.getByText("Trustworthy Skater")).toBeTruthy();
     expect(screen.getByText("Heater Skater")).toBeTruthy();
-    expect(screen.getByText("Leaning above baseline")).toBeTruthy();
-    expect(screen.getByText("Outside expected band")).toBeTruthy();
-    expect(screen.getByText(/biggest inflation source/i)).toBeTruthy();
+    expect(screen.getByText("Mostly believable")).toBeTruthy();
+    expect(screen.getByText("Likely to cool")).toBeTruthy();
+    expect(screen.getByText(/biggest reason this hot streak may cool off/i)).toBeTruthy();
 
     const trustworthyLink = screen.getByRole("link", { name: /Trustworthy Skater/i });
     const heaterLink = screen.getByRole("link", { name: /Heater Skater/i });
@@ -1534,36 +1511,36 @@ describe("Forge dashboard render states", () => {
 
     render(<ForgeDashboardPage />);
 
-    expect(await screen.findByText("Hot Players")).toBeTruthy();
+    expect(await screen.findByText("Heating Up")).toBeTruthy();
     expect(screen.getByText("Short-term only")).toBeTruthy();
     expect(
       screen.getByText(
-        "Hot and cold identify current form. They do not say whether the run is trustworthy."
+        "Hot and cold show current form. Use Trust Or Fade to judge whether it can last."
       )
     ).toBeTruthy();
     expect(
-      screen.getByText("Lead rows keep the only trend traces in each column.")
+      screen.getByText("The first row in each column includes a small form chart.")
     ).toBeTruthy();
-    expect(screen.getByText("Cold Players")).toBeTruthy();
+    expect(screen.getByText("Cooling Off")).toBeTruthy();
     expect(screen.getAllByText("Hot stretch").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Cold stretch").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Arrow Up").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Fading Skater").length).toBeGreaterThan(0);
 
-    fireEvent.click(screen.getByRole("tab", { name: "Trending Up / Down" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Fast Movers" }));
 
     await waitFor(() => {
-      expect(screen.getByText("Trending Up")).toBeTruthy();
-      expect(screen.getByText("Trending Down")).toBeTruthy();
+      expect(screen.getByText("Moving Up")).toBeTruthy();
+      expect(screen.getByText("Moving Down")).toBeTruthy();
       expect(
         screen.getByText(
-          "Trending up and down track movement speed. They do not replace sustainability."
+          "Fast movers show who changed quickest. Use Trust Or Fade to judge whether it can last."
         )
       ).toBeTruthy();
-      expect(screen.getAllByText("Acceleration band").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("Slide band").length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/climbing fastest/i).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/sliding hardest/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Moving up fast").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Dropping fast").length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/improving fastest/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/falling fastest/i).length).toBeGreaterThan(0);
     });
 
     const upLinks = screen.getAllByRole("link", { name: /Arrow Up/i });
@@ -1717,7 +1694,7 @@ describe("Forge dashboard render states", () => {
 
     render(<ForgeDashboardPage />);
 
-    expect(await screen.findByText("Insight Ownership Band")).toBeTruthy();
+    expect(await screen.findByText("Show Players Owned In")).toBeTruthy();
     expect(screen.getByText("25% - 50%")).toBeTruthy();
     expect(screen.getByText("Midband Heater")).toBeTruthy();
     expect(screen.getAllByText("Midband Trend").length).toBeGreaterThan(0);

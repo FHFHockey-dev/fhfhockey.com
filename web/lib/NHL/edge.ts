@@ -44,6 +44,8 @@ export type EdgeSkaterDetailResponse = {
   zoneTimeDetails?: unknown;
 };
 
+export type EdgeSkaterSupplementalDetailResponse = Record<string, unknown>;
+
 export type EdgeTeamDetailResponse = {
   team: EdgeTeamSummary & { id: number };
   seasonsWithEdgeStats?: number[];
@@ -55,6 +57,8 @@ export type EdgeTeamDetailResponse = {
   zoneTimeDetails?: unknown;
 };
 
+export type EdgeTeamSupplementalDetailResponse = Record<string, unknown>;
+
 export type EdgeGoalieDetailResponse = {
   player: EdgePlayerSummary;
   seasonsWithEdgeStats?: number[];
@@ -62,6 +66,8 @@ export type EdgeGoalieDetailResponse = {
   shotLocationSummary?: Record<string, unknown>;
   shotLocationDetails?: unknown;
 };
+
+export type EdgeGoalieSupplementalDetailResponse = Record<string, unknown>;
 
 export type EdgeShotLocationSplit = {
   all?: number;
@@ -109,6 +115,56 @@ export async function getEdgeSkaterDetail(
   );
 }
 
+export async function getEdgeSkaterShotSpeedDetail(
+  playerId: number,
+  seasonId: number,
+  gameType: EdgeGameType = 2
+): Promise<EdgeSkaterSupplementalDetailResponse> {
+  return get<EdgeSkaterSupplementalDetailResponse>(
+    `/edge/skater-shot-speed-detail/${playerId}/${seasonId}/${gameType}`
+  );
+}
+
+export async function getEdgeSkaterSkatingSpeedDetail(
+  playerId: number,
+  seasonId: number,
+  gameType: EdgeGameType = 2
+): Promise<EdgeSkaterSupplementalDetailResponse> {
+  return get<EdgeSkaterSupplementalDetailResponse>(
+    `/edge/skater-skating-speed-detail/${playerId}/${seasonId}/${gameType}`
+  );
+}
+
+export async function getEdgeSkaterSkatingDistanceDetail(
+  playerId: number,
+  seasonId: number,
+  gameType: EdgeGameType = 2
+): Promise<EdgeSkaterSupplementalDetailResponse> {
+  return get<EdgeSkaterSupplementalDetailResponse>(
+    `/edge/skater-skating-distance-detail/${playerId}/${seasonId}/${gameType}`
+  );
+}
+
+export async function getEdgeSkaterShotLocationDetail(
+  playerId: number,
+  seasonId: number,
+  gameType: EdgeGameType = 2
+): Promise<EdgeSkaterSupplementalDetailResponse> {
+  return get<EdgeSkaterSupplementalDetailResponse>(
+    `/edge/skater-shot-location-detail/${playerId}/${seasonId}/${gameType}`
+  );
+}
+
+export async function getEdgeSkaterZoneTime(
+  playerId: number,
+  seasonId: number,
+  gameType: EdgeGameType = 2
+): Promise<EdgeSkaterSupplementalDetailResponse> {
+  return get<EdgeSkaterSupplementalDetailResponse>(
+    `/edge/skater-zone-time/${playerId}/${seasonId}/${gameType}`
+  );
+}
+
 export async function getEdgeTeamDetail(
   teamId: number,
   seasonId: number,
@@ -125,6 +181,56 @@ export async function getEdgeTeamDetailNow(
   return get<EdgeTeamDetailResponse>(`/edge/team-detail/${teamId}/now`);
 }
 
+export async function getEdgeTeamSkatingDistanceDetail(
+  teamId: number,
+  seasonId: number,
+  gameType: EdgeGameType = 2
+): Promise<EdgeTeamSupplementalDetailResponse> {
+  return get<EdgeTeamSupplementalDetailResponse>(
+    `/edge/team-skating-distance-detail/${teamId}/${seasonId}/${gameType}`
+  );
+}
+
+export async function getEdgeTeamZoneTimeDetails(
+  teamId: number,
+  seasonId: number,
+  gameType: EdgeGameType = 2
+): Promise<EdgeTeamSupplementalDetailResponse> {
+  return get<EdgeTeamSupplementalDetailResponse>(
+    `/edge/team-zone-time-details/${teamId}/${seasonId}/${gameType}`
+  );
+}
+
+export async function getEdgeTeamShotLocationDetail(
+  teamId: number,
+  seasonId: number,
+  gameType: EdgeGameType = 2
+): Promise<EdgeTeamSupplementalDetailResponse> {
+  return get<EdgeTeamSupplementalDetailResponse>(
+    `/edge/team-shot-location-detail/${teamId}/${seasonId}/${gameType}`
+  );
+}
+
+export async function getEdgeTeamShotSpeedDetail(
+  teamId: number,
+  seasonId: number,
+  gameType: EdgeGameType = 2
+): Promise<EdgeTeamSupplementalDetailResponse> {
+  return get<EdgeTeamSupplementalDetailResponse>(
+    `/edge/team-shot-speed-detail/${teamId}/${seasonId}/${gameType}`
+  );
+}
+
+export async function getEdgeTeamSkatingSpeedDetail(
+  teamId: number,
+  seasonId: number,
+  gameType: EdgeGameType = 2
+): Promise<EdgeTeamSupplementalDetailResponse> {
+  return get<EdgeTeamSupplementalDetailResponse>(
+    `/edge/team-skating-speed-detail/${teamId}/${seasonId}/${gameType}`
+  );
+}
+
 export async function getEdgeGoalieDetail(
   goalieId: number,
   seasonId: number,
@@ -139,6 +245,36 @@ export async function getEdgeGoalieDetailNow(
   goalieId: number
 ): Promise<EdgeGoalieDetailResponse> {
   return get<EdgeGoalieDetailResponse>(`/edge/goalie-detail/${goalieId}/now`);
+}
+
+export async function getEdgeGoalieShotLocationDetail(
+  goalieId: number,
+  seasonId: number,
+  gameType: EdgeGameType = 2
+): Promise<EdgeGoalieSupplementalDetailResponse> {
+  return get<EdgeGoalieSupplementalDetailResponse>(
+    `/edge/goalie-shot-location-detail/${goalieId}/${seasonId}/${gameType}`
+  );
+}
+
+export async function getEdgeGoalie5v5Detail(
+  goalieId: number,
+  seasonId: number,
+  gameType: EdgeGameType = 2
+): Promise<EdgeGoalieSupplementalDetailResponse> {
+  return get<EdgeGoalieSupplementalDetailResponse>(
+    `/edge/goalie-5v5-detail/${goalieId}/${seasonId}/${gameType}`
+  );
+}
+
+export async function getEdgeGoalieSavePercentageDetail(
+  goalieId: number,
+  seasonId: number,
+  gameType: EdgeGameType = 2
+): Promise<EdgeGoalieSupplementalDetailResponse> {
+  return get<EdgeGoalieSupplementalDetailResponse>(
+    `/edge/goalie-save-percentage-detail/${goalieId}/${seasonId}/${gameType}`
+  );
 }
 
 export async function getEdgeSkaterShotLocationTop10(

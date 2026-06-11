@@ -1,6 +1,6 @@
 import { resolveIxgValue } from "./rollingPlayerMetricMath";
 
-type StrengthState = "all" | "ev" | "pp" | "pk";
+type StrengthState = "all" | "5v5" | "ev" | "pp" | "pk";
 
 type CountsLike = {
   total_points?: number | null;
@@ -10,6 +10,7 @@ type CountsLike = {
   first_assists?: number | null;
   second_assists?: number | null;
   penalties_drawn?: number | null;
+  total_penalties?: number | null;
   hits?: number | null;
   shots_blocked?: number | null;
   total_points_pp?: number | null;
@@ -26,6 +27,7 @@ type WgoLike = {
   hits?: number | null;
   blocked_shots?: number | null;
   pp_points?: number | null;
+  pp_goals?: number | null;
   ixg?: number | string | null;
 };
 
@@ -64,6 +66,9 @@ export function getShotsValue(game: AdditiveMetricSourceGame): number | null {
 export function getGoalsValue(game: AdditiveMetricSourceGame): number | null {
   if (game.counts?.goals != null) {
     return game.counts.goals;
+  }
+  if (game.strength === "pp") {
+    return game.wgo?.pp_goals ?? null;
   }
   if (game.strength === "all") {
     return game.wgo?.goals ?? null;
@@ -109,6 +114,12 @@ export function getPenaltiesDrawnValue(
   game: AdditiveMetricSourceGame
 ): number | null {
   return game.counts?.penalties_drawn ?? null;
+}
+
+export function getPenaltiesTakenValue(
+  game: AdditiveMetricSourceGame
+): number | null {
+  return game.counts?.total_penalties ?? null;
 }
 
 export function getHitsValue(game: AdditiveMetricSourceGame): number | null {

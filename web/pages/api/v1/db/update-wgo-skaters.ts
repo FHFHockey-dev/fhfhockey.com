@@ -77,7 +77,7 @@ import {
   addDays,
   isBefore,
   formatISO,
-  differenceInDays
+  differenceInDays,
 } from "date-fns"; // Added differenceInDays
 import { getCurrentSeason } from "lib/NHL/server"; // Assuming this is your helper
 import {
@@ -96,7 +96,7 @@ import {
   WGOScoringRatesSkaterStat,
   WGOScoringCountsSkaterStat,
   WGOShotTypeSkaterStat,
-  WGOToiSkaterStat
+  WGOToiSkaterStat,
 } from "lib/NHL/types";
 
 // Types
@@ -180,13 +180,13 @@ async function getSeasonFromDate(dateString: string): Promise<{
         seasonId: Number(containingSeason.id),
         startDate: containingSeason.startDate,
         endDate: containingSeason.endDate,
-        regularSeasonEndDate: containingSeason.regularSeasonEndDate
+        regularSeasonEndDate: containingSeason.regularSeasonEndDate,
       };
     }
 
     // If no direct match (likely offseason or date before first season/after last season), use smart logic
     console.log(
-      `Date ${dateString} does not directly fall within a known season's active period. Using smart season detection...`
+      `Date ${dateString} does not directly fall within a known season's active period. Using smart season detection...`,
     );
 
     // Fetch all seasons to determine which one this date most likely belongs to
@@ -198,7 +198,7 @@ async function getSeasonFromDate(dateString: string): Promise<{
     if (seasonsError || !allSeasons || allSeasons.length === 0) {
       console.error(
         "Could not fetch seasons for smart detection:",
-        seasonsError?.message
+        seasonsError?.message,
       );
       return null;
     }
@@ -224,13 +224,13 @@ async function getSeasonFromDate(dateString: string): Promise<{
         targetDate.toDateString() === seasonEnd.toDateString()
       ) {
         console.log(
-          `Smart detection: Date ${dateString} falls within season ${currentSeason.id} (including playoffs).`
+          `Smart detection: Date ${dateString} falls within season ${currentSeason.id} (including playoffs).`,
         );
         return {
           seasonId: Number(currentSeason.id),
           startDate: currentSeason.startDate,
           endDate: currentSeason.endDate,
-          regularSeasonEndDate: currentSeason.regularSeasonEndDate
+          regularSeasonEndDate: currentSeason.regularSeasonEndDate,
         };
       }
 
@@ -241,13 +241,13 @@ async function getSeasonFromDate(dateString: string): Promise<{
           // If date is between current season's end and next season's start (true offseason)
           if (isBefore(targetDate, nextSeasonStart)) {
             console.log(
-              `Smart detection: Date ${dateString} is in offseason between season ${currentSeason.id} and ${nextSeason.id}. Using upcoming season ${nextSeason.id} for context.`
+              `Smart detection: Date ${dateString} is in offseason between season ${currentSeason.id} and ${nextSeason.id}. Using upcoming season ${nextSeason.id} for context.`,
             );
             return {
               seasonId: Number(nextSeason.id),
               startDate: nextSeason.startDate,
               endDate: nextSeason.endDate,
-              regularSeasonEndDate: nextSeason.regularSeasonEndDate
+              regularSeasonEndDate: nextSeason.regularSeasonEndDate,
             };
           }
         } else {
@@ -257,13 +257,13 @@ async function getSeasonFromDate(dateString: string): Promise<{
           if (monthsAfterSeason <= 6) {
             // Within 6 months after the last season ended
             console.log(
-              `Smart detection: Date ${dateString} is in recent offseason after latest season ${currentSeason.id}. Using completed season ${currentSeason.id} for context.`
+              `Smart detection: Date ${dateString} is in recent offseason after latest season ${currentSeason.id}. Using completed season ${currentSeason.id} for context.`,
             );
             return {
               seasonId: Number(currentSeason.id),
               startDate: currentSeason.startDate,
               endDate: currentSeason.endDate,
-              regularSeasonEndDate: currentSeason.regularSeasonEndDate
+              regularSeasonEndDate: currentSeason.regularSeasonEndDate,
             };
           }
         }
@@ -272,13 +272,13 @@ async function getSeasonFromDate(dateString: string): Promise<{
 
     // If we get here, we couldn't determine an appropriate season
     console.warn(
-      `Could not determine appropriate season for date: ${dateString}`
+      `Could not determine appropriate season for date: ${dateString}`,
     );
     return null;
   } catch (err: any) {
     console.error(
       `Unexpected error in getSeasonFromDate for ${dateString}:`,
-      err.message
+      err.message,
     );
     return null;
   }
@@ -288,7 +288,7 @@ function mapApiDataToDbRecord(
   stat: WGOSummarySkaterStat,
   allData: DataMaps,
   formattedDate: string,
-  seasonId?: number
+  seasonId?: number,
 ): SkaterDbRecord {
   const bioStats = allData.bioMap.get(stat.playerId);
   const miscStats = allData.miscMap.get(stat.playerId);
@@ -549,13 +549,13 @@ function mapApiDataToDbRecord(
     ot_time_on_ice_per_game: timeOnIceStat?.otTimeOnIcePerOtGame,
     shifts: timeOnIceStat?.shifts,
     shifts_per_game: timeOnIceStat?.shiftsPerGame,
-    time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift
+    time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift,
   };
   if (seasonId) {
     record.season_id = seasonId;
   }
   Object.keys(record).forEach(
-    (key) => record[key] === undefined && delete record[key]
+    (key) => record[key] === undefined && delete record[key],
   );
   return record;
 }
@@ -563,11 +563,11 @@ function mapApiDataToDbRecord(
 async function fetchDataForGameType(
   gameTypeId: number,
   formattedDate: string,
-  limit: number = 100
+  limit: number = 100,
 ): Promise<AllSkaterStats> {
   const fetchJsonWithDiagnostics = async (
     url: string,
-    label: string
+    label: string,
   ): Promise<NHLApiResponse> => {
     const response = await Fetch(url);
     const contentType = response.headers.get("content-type") || "";
@@ -576,7 +576,7 @@ async function fetchDataForGameType(
       const bodyPreview = (await response.text()).slice(0, 200);
       throw new Error(
         `NHL API non-JSON response for ${label} (${response.status} ${response.statusText}). ` +
-          `content-type=${contentType}. body="${bodyPreview}"`
+          `content-type=${contentType}. body="${bodyPreview}"`,
       );
     }
 
@@ -585,7 +585,7 @@ async function fetchDataForGameType(
   const fetchJsonWithRetry = async (
     url: string,
     label: string,
-    maxRetries: number = 3
+    maxRetries: number = 3,
   ): Promise<NHLApiResponse> => {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -593,7 +593,8 @@ async function fetchDataForGameType(
       } catch (error: any) {
         const message = String(error?.message || "");
         const isRateLimit =
-          message.includes(" 429 ") || message.includes("429 Too Many Requests");
+          message.includes(" 429 ") ||
+          message.includes("429 Too Many Requests");
         if (!isRateLimit || attempt === maxRetries) {
           throw error;
         }
@@ -621,81 +622,81 @@ async function fetchDataForGameType(
     scoringRatesStats: [],
     scoringPerGameStats: [],
     shotTypeStats: [],
-    timeOnIceStats: []
+    timeOnIceStats: [],
   };
   const getUrl = (
     reportName: string,
     sort: string,
-    factCayenneExp: string = "gamesPlayed>=1"
+    factCayenneExp: string = "gamesPlayed>=1",
   ) =>
     `https://api.nhle.com/stats/rest/en/skater/${reportName}?isAggregate=false&isGame=true&sort=${encodeURIComponent(sort)}&start=${start}&limit=${limit}&factCayenneExp=${factCayenneExp}&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=${gameTypeId}`;
   while (moreDataAvailable) {
     const urls = {
       skaterStats: getUrl(
         "summary",
-        '[{"property":"points","direction":"DESC"},{"property":"goals","direction":"DESC"},{"property":"assists","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
+        '[{"property":"points","direction":"DESC"},{"property":"goals","direction":"DESC"},{"property":"assists","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
       ),
       skatersBio: getUrl(
         "bios",
         '[{"property":"lastName","direction":"ASC_CI"},{"property":"skaterFullName","direction":"ASC_CI"},{"property":"playerId","direction":"ASC"}]',
-        ""
+        "",
       ),
       miscSkaterStats: getUrl(
         "realtime",
-        '[{"property":"hits","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
+        '[{"property":"hits","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
       ),
       faceOffStats: getUrl(
         "faceoffpercentages",
-        '[{"property":"totalFaceoffs","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
+        '[{"property":"totalFaceoffs","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
       ),
       faceoffWinLossStats: getUrl(
         "faceoffwins",
-        '[{"property":"totalFaceoffWins","direction":"DESC"},{"property":"faceoffWinPct","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
+        '[{"property":"totalFaceoffWins","direction":"DESC"},{"property":"faceoffWinPct","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
       ),
       goalsForAgainstStats: getUrl(
         "goalsForAgainst",
-        '[{"property":"evenStrengthGoalDifference","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
+        '[{"property":"evenStrengthGoalDifference","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
       ),
       penaltiesStats: getUrl(
         "penalties",
-        '[{"property":"penaltyMinutes","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
+        '[{"property":"penaltyMinutes","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
       ),
       penaltyKillStats: getUrl(
         "penaltykill",
-        '[{"property":"shTimeOnIce","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
+        '[{"property":"shTimeOnIce","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
       ),
       powerPlayStats: getUrl(
         "powerplay",
-        '[{"property":"ppTimeOnIce","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
+        '[{"property":"ppTimeOnIce","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
       ),
       puckPossessionStats: getUrl(
         "puckPossessions",
-        '[{"property":"satPct","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
+        '[{"property":"satPct","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
       ),
       satCountsStats: getUrl(
         "summaryshooting",
-        '[{"property":"satTotal","direction":"DESC"},{"property":"usatTotal","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
+        '[{"property":"satTotal","direction":"DESC"},{"property":"usatTotal","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
       ),
       satPercentagesStats: getUrl(
         "percentages",
-        '[{"property":"satPercentage","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
+        '[{"property":"satPercentage","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
       ),
       scoringRatesStats: getUrl(
         "scoringRates",
-        '[{"property":"pointsPer605v5","direction":"DESC"},{"property":"goalsPer605v5","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
+        '[{"property":"pointsPer605v5","direction":"DESC"},{"property":"goalsPer605v5","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
       ),
       scoringPerGameStats: getUrl(
         "scoringpergame",
-        '[{"property":"pointsPerGame","direction":"DESC"},{"property":"goalsPerGame","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
+        '[{"property":"pointsPerGame","direction":"DESC"},{"property":"goalsPerGame","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
       ),
       shotTypeStats: getUrl(
         "shottype",
-        '[{"property":"shootingPct","direction":"DESC"},{"property":"shootingPctBat","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
+        '[{"property":"shootingPct","direction":"DESC"},{"property":"shootingPctBat","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
       ),
       timeOnIceStats: getUrl(
         "timeonice",
-        '[{"property":"timeOnIce","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
-      )
+        '[{"property":"timeOnIce","direction":"DESC"},{"property":"playerId","direction":"ASC"}]',
+      ),
     };
     const NHL_REQUEST_CONCURRENCY = 4;
     const NHL_BATCH_DELAY_MS = 250;
@@ -704,7 +705,7 @@ async function fetchDataForGameType(
     for (let i = 0; i < entries.length; i += NHL_REQUEST_CONCURRENCY) {
       const batch = entries.slice(i, i + NHL_REQUEST_CONCURRENCY);
       const batchResponses = await Promise.all(
-        batch.map(([label, url]) => fetchJsonWithRetry(url, label))
+        batch.map(([label, url]) => fetchJsonWithRetry(url, label)),
       );
       responses.push(...batchResponses);
       if (i + NHL_REQUEST_CONCURRENCY < entries.length) {
@@ -727,7 +728,7 @@ async function fetchDataForGameType(
       scoringRatesResponse,
       scoringPerGameResponse,
       shotTypeResponse,
-      timeOnIceResponse
+      timeOnIceResponse,
     ] = responses;
     allData.skaterStats.push(...skaterStatsResponse.data);
     allData.skatersBio.push(...bioStatsResponse.data);
@@ -755,12 +756,12 @@ async function processAndUpsertGameTypeData(
   allData: AllSkaterStats,
   tableName: "wgo_skater_stats" | "wgo_skater_stats_playoffs",
   formattedDate: string,
-  seasonId?: number
+  seasonId?: number,
 ): Promise<number> {
   // Early exit if no skater stats data
   if (allData.skaterStats.length === 0) {
     console.log(
-      `No skater stats data found for ${formattedDate} in ${tableName}, skipping...`
+      `No skater stats data found for ${formattedDate} in ${tableName}, skipping...`,
     );
     return 0;
   }
@@ -770,63 +771,58 @@ async function processAndUpsertGameTypeData(
     miscMap: new Map(allData.miscSkaterStats.map((s) => [s.playerId, s])),
     faceOffMap: new Map(allData.faceOffStats.map((s) => [s.playerId, s])),
     faceoffWinLossMap: new Map(
-      allData.faceoffWinLossStats.map((s) => [s.playerId, s])
+      allData.faceoffWinLossStats.map((s) => [s.playerId, s]),
     ),
     goalsForAgainstMap: new Map(
-      allData.goalsForAgainstStats.map((s) => [s.playerId, s])
+      allData.goalsForAgainstStats.map((s) => [s.playerId, s]),
     ),
     penaltiesMap: new Map(allData.penaltiesStats.map((s) => [s.playerId, s])),
     penaltyKillMap: new Map(
-      allData.penaltyKillStats.map((s) => [s.playerId, s])
+      allData.penaltyKillStats.map((s) => [s.playerId, s]),
     ),
     powerPlayMap: new Map(allData.powerPlayStats.map((s) => [s.playerId, s])),
     puckPossessionMap: new Map(
-      allData.puckPossessionStats.map((s) => [s.playerId, s])
+      allData.puckPossessionStats.map((s) => [s.playerId, s]),
     ),
     satCountsMap: new Map(allData.satCountsStats.map((s) => [s.playerId, s])),
     satPercentagesMap: new Map(
-      allData.satPercentagesStats.map((s) => [s.playerId, s])
+      allData.satPercentagesStats.map((s) => [s.playerId, s]),
     ),
     scoringRatesMap: new Map(
-      allData.scoringRatesStats.map((s) => [s.playerId, s])
+      allData.scoringRatesStats.map((s) => [s.playerId, s]),
     ),
     scoringPerGameMap: new Map(
-      allData.scoringPerGameStats.map((s) => [s.playerId, s])
+      allData.scoringPerGameStats.map((s) => [s.playerId, s]),
     ),
     shotTypeMap: new Map(allData.shotTypeStats.map((s) => [s.playerId, s])),
-    timeOnIceMap: new Map(allData.timeOnIceStats.map((s) => [s.playerId, s]))
+    timeOnIceMap: new Map(allData.timeOnIceStats.map((s) => [s.playerId, s])),
   };
 
   const recordsToUpsert: SkaterDbRecord[] = allData.skaterStats.map((stat) =>
-    mapApiDataToDbRecord(stat, dataMaps, formattedDate, seasonId)
+    mapApiDataToDbRecord(stat, dataMaps, formattedDate, seasonId),
   );
 
   if (recordsToUpsert.length > 0) {
-    const CHUNK_SIZE = 100;
-    const UPSERT_DELAY_MS = 250;
+    const CHUNK_SIZE = 500;
     for (let i = 0; i < recordsToUpsert.length; i += CHUNK_SIZE) {
       const chunk = recordsToUpsert.slice(i, i + CHUNK_SIZE);
 
       const { error } = await supabase.from(tableName).upsert(chunk, {
-        onConflict: "player_id, date"
+        onConflict: "player_id, date",
       });
 
       if (error) {
         console.error(
           `Error upserting chunk to ${tableName} for date ${formattedDate}:`,
-          error
+          error,
         );
         throw new Error(
-          `Supabase upsert failed for ${tableName} (chunk starting at index ${i}): ${error.message}`
+          `Supabase upsert failed for ${tableName} (chunk starting at index ${i}): ${error.message}`,
         );
-      }
-
-      if (i + CHUNK_SIZE < recordsToUpsert.length) {
-        await sleep(UPSERT_DELAY_MS);
       }
     }
     console.log(
-      `Successfully upserted ${recordsToUpsert.length} records to ${tableName} for ${formattedDate}`
+      `Successfully upserted ${recordsToUpsert.length} records to ${tableName} for ${formattedDate}`,
     );
   }
   return recordsToUpsert.length;
@@ -839,7 +835,7 @@ async function processAndUpsertGameTypeData(
 function determineGameTypesToFetch(
   date: string,
   regularSeasonEndDate: string,
-  seasonEndDate: string
+  seasonEndDate: string,
 ): { fetchRegularSeason: boolean; fetchPlayoffs: boolean } {
   const dateObj = parseISO(date);
   const regularSeasonEnd = parseISO(regularSeasonEndDate);
@@ -870,7 +866,7 @@ async function updateSkaterStats(
   date: string,
   seasonId: number,
   regularSeasonEndDate: string,
-  seasonEndDate: string // Pass the overall season end date
+  seasonEndDate: string, // Pass the overall season end date
 ): Promise<{
   message: string;
   success: boolean;
@@ -885,7 +881,7 @@ async function updateSkaterStats(
   const { fetchRegularSeason, fetchPlayoffs } = determineGameTypesToFetch(
     date,
     regularSeasonEndDate,
-    seasonEndDate // Pass to determineGameTypesToFetch
+    seasonEndDate, // Pass to determineGameTypesToFetch
   );
 
   let regularSeasonUpdates = 0;
@@ -904,7 +900,7 @@ async function updateSkaterStats(
         regularSeasonData,
         "wgo_skater_stats",
         date,
-        seasonId
+        seasonId,
       );
       gameTypeMessage = "Regular Season";
     }
@@ -917,7 +913,7 @@ async function updateSkaterStats(
         playoffData,
         "wgo_skater_stats_playoffs",
         date,
-        seasonId
+        seasonId,
       );
       if (gameTypeMessage === "Regular Season") {
         // Should not happen with current logic, but for robustness
@@ -928,7 +924,7 @@ async function updateSkaterStats(
     }
   } catch (error: any) {
     console.error(
-      `  > Error during data fetching/upserting for ${date}: ${error.message}`
+      `  > Error during data fetching/upserting for ${date}: ${error.message}`,
     );
     errorsEncountered = 1; // Mark as having encountered an error for the date
     // Re-throw if it's a critical error that should stop the overall process
@@ -943,7 +939,7 @@ async function updateSkaterStats(
     success: errorsEncountered === 0, // Success if no errors encountered during this date's processing
     totalUpdates,
     rowsFetched: totalFetched,
-    errors: errorsEncountered
+    errors: errorsEncountered,
   };
 }
 
@@ -959,13 +955,13 @@ async function getMostRecentDateFromDB(): Promise<string | null> {
       .from("wgo_skater_stats_playoffs")
       .select("date")
       .order("date", { ascending: false })
-      .limit(1)
+      .limit(1),
   ]);
 
   if (regularSeasonResult.error && playoffResult.error) {
     console.error("Error fetching most recent dates:", {
       regularError: regularSeasonResult.error,
-      playoffError: playoffResult.error
+      playoffError: playoffResult.error,
     });
     return null;
   }
@@ -984,7 +980,7 @@ async function getMostRecentDateFromDB(): Promise<string | null> {
 }
 
 async function updateAllSkatersFromMostRecentDate(
-  arg?: boolean | { fullRefresh?: boolean; startDate?: string }
+  arg?: boolean | { fullRefresh?: boolean; startDate?: string },
 ) {
   // Support both boolean and options object to remain backwards compatible
   const opts = typeof arg === "boolean" ? { fullRefresh: arg } : arg ? arg : {};
@@ -1002,13 +998,13 @@ async function updateAllSkatersFromMostRecentDate(
     startDate = parseISO(providedStartDate);
     console.log(
       "Starting from provided start date:",
-      formatISO(startDate, { representation: "date" })
+      formatISO(startDate, { representation: "date" }),
     );
   } else if (fullRefresh) {
     startDate = parseISO(currentSeason.regularSeasonStartDate);
     console.log(
       "Full refresh: Starting from season start date:",
-      formatISO(startDate, { representation: "date" })
+      formatISO(startDate, { representation: "date" }),
     );
   } else {
     const mostRecentDate = await getMostRecentDateFromDB();
@@ -1016,13 +1012,13 @@ async function updateAllSkatersFromMostRecentDate(
       startDate = addDays(parseISO(mostRecentDate), 1);
       console.log(
         "Incremental update: Starting from",
-        formatISO(startDate, { representation: "date" })
+        formatISO(startDate, { representation: "date" }),
       );
     } else {
       startDate = parseISO(currentSeason.regularSeasonStartDate);
       console.log(
         "No existing data: Starting from season start date:",
-        formatISO(startDate, { representation: "date" })
+        formatISO(startDate, { representation: "date" }),
       );
     }
   }
@@ -1037,14 +1033,14 @@ async function updateAllSkatersFromMostRecentDate(
 
   if (isBefore(finalEndDate, startDate)) {
     console.log(
-      "Database is already up to date, or target date is before start date."
+      "Database is already up to date, or target date is before start date.",
     );
     return {
       message: "Database is already up to date.",
       success: true,
       totalUpdates: 0,
       datesProcessed: [],
-      failedDates: []
+      failedDates: [],
     };
   }
 
@@ -1053,8 +1049,8 @@ async function updateAllSkatersFromMostRecentDate(
 
   console.log(
     `Initiating update for dates from ${formatISO(startDate, {
-      representation: "date"
-    })} to ${formatISO(finalEndDate, { representation: "date" })} (Current Season End: ${formatISO(currentSeason.seasonEndDate, { representation: "date" })})`
+      representation: "date",
+    })} to ${formatISO(finalEndDate, { representation: "date" })} (Current Season End: ${formatISO(currentSeason.seasonEndDate, { representation: "date" })})`,
   );
 
   while (
@@ -1070,13 +1066,13 @@ async function updateAllSkatersFromMostRecentDate(
     const seasonInfo = await getSeasonFromDate(formattedDate);
     if (!seasonInfo) {
       console.error(
-        `|------------------------------------------------------------|`
+        `|------------------------------------------------------------|`,
       );
       console.error(
-        `Could not determine season for date ${formattedDate}, skipping...`
+        `Could not determine season for date ${formattedDate}, skipping...`,
       );
       console.error(
-        `|------------------------------------------------------------|`
+        `|------------------------------------------------------------|`,
       );
       failedDates.push(formattedDate);
       currentDate = addDays(currentDate, 1);
@@ -1089,7 +1085,7 @@ async function updateAllSkatersFromMostRecentDate(
       totalDaysToProcess > 0
         ? Math.min(
             100,
-            Math.round((daysProcessedCount / totalDaysToProcess) * 100)
+            Math.round((daysProcessedCount / totalDaysToProcess) * 100),
           )
         : 100; // Handle division by zero if start and end are the same or range is invalid
 
@@ -1101,7 +1097,7 @@ async function updateAllSkatersFromMostRecentDate(
           seasonInfo,
           attempt,
           `${daysProcessedCount + 1}/${totalDaysToProcess}`, // Pass calculated progress
-          `${progressPercent}%` // Pass percentage
+          `${progressPercent}%`, // Pass percentage
         );
         currentTotalUpdates = result.totalUpdates;
         currentRowsFetched = result.rowsFetched;
@@ -1145,7 +1141,7 @@ async function updateAllSkatersFromMostRecentDate(
       const seasonInfo = await getSeasonFromDate(failedDate);
       if (!seasonInfo) {
         console.error(
-          `Could not determine season for failed date ${failedDate} during retry, skipping.`
+          `Could not determine season for failed date ${failedDate} during retry, skipping.`,
         );
         retryFailedDates.push(failedDate);
         retriesCompleted++;
@@ -1164,7 +1160,7 @@ async function updateAllSkatersFromMostRecentDate(
             seasonInfo,
             attempt,
             `RETRY ${retriesCompleted + 1}/${totalRetries}`, // Updated X/Y for retries
-            `${progressPercent}%`
+            `${progressPercent}%`,
           );
           if (result.errors === 0) {
             totalUpdates += result.totalUpdates;
@@ -1191,7 +1187,7 @@ async function updateAllSkatersFromMostRecentDate(
 
   if (failedDates.length > 0) {
     console.error(
-      `\n--- FINAL RESULT: ${failedDates.length} dates could not be processed after all retries: ${failedDates.join(", ")} ---`
+      `\n--- FINAL RESULT: ${failedDates.length} dates could not be processed after all retries: ${failedDates.join(", ")} ---`,
     );
   }
 
@@ -1200,7 +1196,7 @@ async function updateAllSkatersFromMostRecentDate(
     success: failedDates.length === 0,
     totalUpdates,
     datesProcessed,
-    failedDates
+    failedDates,
   };
 }
 
@@ -1235,7 +1231,7 @@ async function getAllSeasonsFromDB(): Promise<
     seasonId: season.id,
     startDate: season.startDate,
     endDate: season.endDate,
-    regularSeasonEndDate: season.regularSeasonEndDate
+    regularSeasonEndDate: season.regularSeasonEndDate,
   }));
 }
 
@@ -1256,7 +1252,7 @@ async function processDate(
   },
   attempt: number, // Add attempt parameter for logging
   progressXY: string = "", // New parameter for X/Y progress
-  progressPercent: string = "" // New parameter for % progress
+  progressPercent: string = "", // New parameter for % progress
 ): Promise<{ totalUpdates: number; rowsFetched: number; errors: number }> {
   // Return object with more details
   const { seasonId, startDate, endDate, regularSeasonEndDate } = seasonInfo;
@@ -1277,10 +1273,10 @@ async function processDate(
 
   console.log(``); // Blank line for spacing
   console.log(
-    `Date:`.padEnd(LABEL_PAD) + `${formattedDate}`.padStart(VALUE_PAD)
+    `Date:`.padEnd(LABEL_PAD) + `${formattedDate}`.padStart(VALUE_PAD),
   );
   console.log(
-    `Season ID:`.padEnd(LABEL_PAD) + `${seasonId}`.padStart(VALUE_PAD)
+    `Season ID:`.padEnd(LABEL_PAD) + `${seasonId}`.padStart(VALUE_PAD),
   );
 
   const dateObj = parseISO(formattedDate);
@@ -1306,31 +1302,31 @@ async function processDate(
   }
   console.log(
     `Season Type:`.padEnd(LABEL_PAD) +
-      `${seasonTypeMessage}`.padStart(VALUE_PAD)
+      `${seasonTypeMessage}`.padStart(VALUE_PAD),
   );
   console.log(``); // Blank line for spacing
 
   console.log(
     `Season Start Date:`.padEnd(LABEL_PAD) +
       `${formatISO(seasonStart, { representation: "date" })}`.padStart(
-        VALUE_PAD
-      )
+        VALUE_PAD,
+      ),
   );
   console.log(
     `Regular Season End Date:`.padEnd(LABEL_PAD) +
       `${formatISO(regularSeasonEnd, { representation: "date" })}`.padStart(
-        VALUE_PAD
-      )
+        VALUE_PAD,
+      ),
   );
   console.log(
     `Playoffs Start Date:`.padEnd(LABEL_PAD) +
       `${formatISO(playoffsStartDate, { representation: "date" })}`.padStart(
-        VALUE_PAD
-      )
+        VALUE_PAD,
+      ),
   );
   console.log(
     `Season End Date:`.padEnd(LABEL_PAD) +
-      `${formatISO(seasonEnd, { representation: "date" })}`.padStart(VALUE_PAD)
+      `${formatISO(seasonEnd, { representation: "date" })}`.padStart(VALUE_PAD),
   );
   console.log(``); // Blank line for spacing
 
@@ -1343,7 +1339,7 @@ async function processDate(
       formattedDate,
       seasonId,
       regularSeasonEndDate,
-      endDate // Pass the overall season end date
+      endDate, // Pass the overall season end date
     );
 
     totalUpdates = result.totalUpdates;
@@ -1352,40 +1348,40 @@ async function processDate(
 
     console.log(
       `Rows Fetched:`.padEnd(LABEL_PAD) +
-        `${String(rowsFetched)}`.padStart(VALUE_PAD)
+        `${String(rowsFetched)}`.padStart(VALUE_PAD),
     );
     console.log(
       `Rows Upserted:`.padEnd(LABEL_PAD) +
-        `${String(totalUpdates)}`.padStart(VALUE_PAD)
+        `${String(totalUpdates)}`.padStart(VALUE_PAD),
     );
     console.log(
-      `Errors:`.padEnd(LABEL_PAD) + `${String(errors)}`.padStart(VALUE_PAD)
+      `Errors:`.padEnd(LABEL_PAD) + `${String(errors)}`.padStart(VALUE_PAD),
     );
   } catch (error: any) {
     console.error(
-      `Error during processDate for ${formattedDate}: ${error.message}`
+      `Error during processDate for ${formattedDate}: ${error.message}`,
     );
     errors = 1; // Mark as error
     console.log(
       `Rows Fetched:`.padEnd(LABEL_PAD) +
-        `${String(rowsFetched)}`.padStart(VALUE_PAD)
+        `${String(rowsFetched)}`.padStart(VALUE_PAD),
     );
     console.log(
       `Rows Upserted:`.padEnd(LABEL_PAD) +
-        `${String(totalUpdates)}`.padStart(VALUE_PAD)
+        `${String(totalUpdates)}`.padStart(VALUE_PAD),
     );
     console.log(
-      `Errors:`.padEnd(LABEL_PAD) + `${String(errors)}`.padStart(VALUE_PAD)
+      `Errors:`.padEnd(LABEL_PAD) + `${String(errors)}`.padStart(VALUE_PAD),
     );
     throw error; // Re-throw to be caught by the retry logic in calling function
   } finally {
     console.log(``); // Blank line for spacing
     console.log(
       `Finished processing Date:`.padEnd(LABEL_PAD) +
-        `${formattedDate}`.padStart(VALUE_PAD)
+        `${formattedDate}`.padStart(VALUE_PAD),
     );
     console.log(
-      `|------------------------------------------------------------|`
+      `|------------------------------------------------------------|`,
     );
     console.log(`\n`); // New line to differentiate dates
   }
@@ -1402,7 +1398,7 @@ async function updateAllStatsForAllSeasons() {
     return {
       message: "No seasons found in the database to refresh.",
       success: true,
-      totalUpdates: 0
+      totalUpdates: 0,
     };
   }
 
@@ -1421,7 +1417,7 @@ async function updateAllStatsForAllSeasons() {
 
   for (const season of allSeasons) {
     console.log(
-      `\n--- Processing Season: ${season.seasonId} (${season.startDate} to ${season.endDate}) ---`
+      `\n--- Processing Season: ${season.seasonId} (${season.startDate} to ${season.endDate}) ---`,
     );
     let currentDate = parseISO(season.startDate);
     const endDate = parseISO(season.endDate);
@@ -1441,7 +1437,7 @@ async function updateAllStatsForAllSeasons() {
         seasonId: season.seasonId,
         startDate: season.startDate,
         endDate: season.endDate,
-        regularSeasonEndDate: season.regularSeasonEndDate
+        regularSeasonEndDate: season.regularSeasonEndDate,
       };
 
       const globalProgressPercent =
@@ -1449,8 +1445,8 @@ async function updateAllStatsForAllSeasons() {
           ? Math.min(
               100,
               Math.round(
-                (globalDaysProcessedCount / totalDaysAcrossAllSeasons) * 100
-              )
+                (globalDaysProcessedCount / totalDaysAcrossAllSeasons) * 100,
+              ),
             )
           : 100;
 
@@ -1461,7 +1457,7 @@ async function updateAllStatsForAllSeasons() {
             seasonInfoForDate, // Pass the season info object
             attempt, // Pass the attempt number
             `${globalDaysProcessedCount + 1}/${totalDaysAcrossAllSeasons}`, // X/Y for global progress
-            `${globalProgressPercent}%` // % for global progress
+            `${globalProgressPercent}%`, // % for global progress
           );
           currentErrors = result.errors;
           if (currentErrors === 0) {
@@ -1493,7 +1489,7 @@ async function updateAllStatsForAllSeasons() {
       const season = allSeasons.find((s) => s.seasonId === seasonId);
       if (!season) {
         console.error(
-          `Season ${seasonId} not found for failed date ${failedDate} during retry, skipping.`
+          `Season ${seasonId} not found for failed date ${failedDate} during retry, skipping.`,
         );
         retryFailedDates.push({ date: failedDate, seasonId });
         retriesCompleted++;
@@ -1505,7 +1501,7 @@ async function updateAllStatsForAllSeasons() {
         seasonId: season.seasonId,
         startDate: season.startDate,
         endDate: season.endDate,
-        regularSeasonEndDate: season.regularSeasonEndDate
+        regularSeasonEndDate: season.regularSeasonEndDate,
       };
 
       const retryProgressPercent =
@@ -1520,7 +1516,7 @@ async function updateAllStatsForAllSeasons() {
             seasonInfoForFailedDate, // Pass the season info object
             attempt, // Pass the attempt number
             `RETRY ${retriesCompleted + 1}/${totalRetries}`, // Updated X/Y for retries
-            `${retryProgressPercent}%`
+            `${retryProgressPercent}%`,
           );
           if (result.errors === 0) {
             totalUpdates += result.totalUpdates;
@@ -1544,7 +1540,7 @@ async function updateAllStatsForAllSeasons() {
 
   if (failedDates.length > 0) {
     console.error(
-      `\n--- FINAL RESULT: ${failedDates.length} dates could not be processed after all retries: ${failedDates.map((f) => f.date).join(", ")} ---\n`
+      `\n--- FINAL RESULT: ${failedDates.length} dates could not be processed after all retries: ${failedDates.map((f) => f.date).join(", ")} ---\n`,
     );
   }
 
@@ -1554,7 +1550,7 @@ async function updateAllStatsForAllSeasons() {
     message,
     success: failedDates.length === 0,
     totalUpdates,
-    failedDates: failedDates.map((f) => f.date)
+    failedDates: failedDates.map((f) => f.date),
   };
 }
 
@@ -1573,7 +1569,7 @@ async function fetchDataForPlayer(playerId: string, playerName: string) {
     const cayenneExp = `gameDate<="${formattedDate} 23:59:59" and gameDate>="${seasonStartDate}" and gameTypeId=${gameTypeId} and playerId=${playerId}`;
     const url = `https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=false&isGame=false&sort=[{"property":"points","direction":"DESC"}]&factCayenneExp=gamesPlayed>=1&cayenneExp=${encodeURIComponent(cayenneExp)}`;
     const response = await Fetch(url).then(
-      (res) => res.json() as Promise<NHLApiResponse>
+      (res) => res.json() as Promise<NHLApiResponse>,
     );
     return response.data;
   };
@@ -1584,7 +1580,7 @@ async function fetchDataForPlayer(playerId: string, playerName: string) {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   const startTime = Date.now();
   const actionParam =
@@ -1605,7 +1601,7 @@ export default async function handler(
       action,
       fullRefresh: fullRefreshParam,
       startDate: startDateParam, // Accept startDate
-      playerFullName: rawPlayerFullName
+      playerFullName: rawPlayerFullName,
     } = req.query;
     const fullRefresh = fullRefreshParam === "true" || fullRefreshParam === "1";
     const startDate =
@@ -1624,11 +1620,11 @@ export default async function handler(
       res.status(200).json(responseBody);
     } else if (action === "all") {
       console.log(
-        `Action 'all' triggered. Full refresh: ${fullRefresh}, Start date: ${startDate}`
+        `Action 'all' triggered. Full refresh: ${fullRefresh}, Start date: ${startDate}`,
       );
       result = await updateAllSkatersFromMostRecentDate({
         fullRefresh,
-        startDate
+        startDate,
       });
       totalUpdates = result.totalUpdates;
       details = {
@@ -1636,7 +1632,7 @@ export default async function handler(
         datesProcessed: result.datesProcessed,
         failedDates: result.failedDates,
         fullRefresh,
-        startDate
+        startDate,
       };
       responseBody = { ...result, fullRefresh, startDate };
       res.status(200).json(responseBody);
@@ -1655,7 +1651,7 @@ export default async function handler(
         date,
         seasonInfo.seasonId,
         seasonInfo.regularSeasonEndDate,
-        seasonInfo.endDate // Pass season's actual end date
+        seasonInfo.endDate, // Pass season's actual end date
       );
       totalUpdates = result.totalUpdates;
       details = { message: result.message };
@@ -1668,7 +1664,7 @@ export default async function handler(
       result = {
         message: `Data fetched successfully for player ${name}.`,
         success: true,
-        data: resultData
+        data: resultData,
       };
       details = { message: result.message, playerId };
       responseBody = result;
@@ -1677,7 +1673,7 @@ export default async function handler(
       status = "failure";
       details = {
         message:
-          "Missing or invalid parameters. Provide 'action=all_seasons_full_refresh', 'action=all', 'date', or 'playerId'."
+          "Missing or invalid parameters. Provide 'action=all_seasons_full_refresh', 'action=all', 'date', or 'playerId'.",
       };
       responseBody = details;
       res.status(400).json(responseBody);
@@ -1702,11 +1698,11 @@ export default async function handler(
           durationMs: Date.now() - startTime,
           error:
             status === "failure"
-              ? details?.error ?? details?.message ?? "Unknown error"
+              ? (details?.error ?? details?.message ?? "Unknown error")
               : null,
           response: responseBody,
-          context: details
-        }
+          context: details,
+        },
       });
     }
   }

@@ -11,7 +11,7 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 if (!supabaseUrl || !supabaseKey) {
   console.warn(
-    "[fetchWGOdata] Supabase URL or Service Role Key is missing. Upserts will likely fail."
+    "[fetchWGOdata] Supabase URL or Service Role Key is missing. Upserts will likely fail.",
   );
 }
 
@@ -82,16 +82,24 @@ const teamsInfo = {
   ARI: { name: "Arizona Coyotes", franchiseId: 28, id: 53 },
   VGK: { name: "Vegas Golden Knights", franchiseId: 38, id: 54 },
   SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 },
-  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 }
+  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 },
 };
+
+const teamsByFranchiseId = new Map(
+  Object.values(teamsInfo).map((team) => [team.franchiseId, team]),
+);
+
+function mapByFranchiseId(rows = []) {
+  return new Map(rows.map((row) => [row.franchiseId, row]));
+}
 
 // Helper fetch function
 async function Fetch(url) {
   const response = await fetch(url, {
     headers: {
       Accept: "application/json",
-      "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)"
-    }
+      "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",
+    },
   });
   const contentType = response.headers.get("content-type") || "";
   if (!response.ok) {
@@ -99,7 +107,7 @@ async function Fetch(url) {
   }
   if (!contentType.includes("application/json")) {
     throw new Error(
-      `Failed to fetch ${url}: expected JSON but got ${contentType || "unknown"}`
+      `Failed to fetch ${url}: expected JSON but got ${contentType || "unknown"}`,
     );
   }
   return response.json();
@@ -112,7 +120,7 @@ async function fetchNHLSeasons() {
   return response.data;
 }
 
-async function fetchAllGamesForTeamOnDate(formattedDate, teamId) {
+async function fetchGamesByTeamForDate(formattedDate) {
   const pageSize = 1000;
   let allGames = [];
   let page = 0;
@@ -122,14 +130,10 @@ async function fetchAllGamesForTeamOnDate(formattedDate, teamId) {
       .from("games")
       .select("id, homeTeamId, awayTeamId")
       .eq("date", formattedDate)
-      .or(`homeTeamId.eq.${teamId},awayTeamId.eq.${teamId}`)
       .range(page * pageSize, (page + 1) * pageSize - 1);
 
     if (error) {
-      console.error(
-        `Error fetching games for team ${teamId} on ${formattedDate}:`,
-        error
-      );
+      console.error(`Error fetching games on ${formattedDate}:`, error);
       break;
     }
 
@@ -140,7 +144,54 @@ async function fetchAllGamesForTeamOnDate(formattedDate, teamId) {
     page++;
   }
 
-  return allGames;
+  const gamesByTeamId = new Map();
+  allGames.forEach((game) => {
+    if (!gamesByTeamId.has(game.homeTeamId)) {
+      gamesByTeamId.set(game.homeTeamId, game);
+    }
+    if (!gamesByTeamId.has(game.awayTeamId)) {
+      gamesByTeamId.set(game.awayTeamId, game);
+    }
+  });
+
+  return gamesByTeamId;
+}
+
+async function upsertTeamStatsRows(rows, formattedDate, seasonId) {
+  if (rows.length === 0) {
+    return 0;
+  }
+
+  const { error } = await supabase
+    .from("wgo_team_stats")
+    .upsert(rows, { onConflict: "season_id,team_id,date" });
+
+  if (!error) {
+    return rows.length;
+  }
+
+  console.error(
+    `Bulk upsert error for ${formattedDate} (season ${seasonId}); retrying row-by-row:`,
+    error,
+  );
+
+  let upserted = 0;
+  for (const row of rows) {
+    const { error: rowError } = await supabase
+      .from("wgo_team_stats")
+      .upsert(row, { onConflict: "season_id,team_id,date" });
+
+    if (rowError) {
+      console.error(
+        `Upsert error for team ${row.team_id} on ${formattedDate} (season ${seasonId}):`,
+        rowError,
+      );
+      continue;
+    }
+    upserted++;
+  }
+
+  return upserted;
 }
 
 async function fetchNHLData(startDate, effectiveEndDate, seasonId, bar) {
@@ -159,13 +210,13 @@ async function fetchNHLData(startDate, effectiveEndDate, seasonId, bar) {
     if (existErr) {
       console.error(
         `Error checking processed date ${formattedDate}:`,
-        existErr
+        existErr,
       );
     }
 
     if (existing && existing.length > 0) {
       console.log(
-        `Overwriting previously processed data for: ${formattedDate}`
+        `Overwriting previously processed data for: ${formattedDate}`,
       );
     } else {
       console.log(`Processing date: ${formattedDate}`);
@@ -173,40 +224,53 @@ async function fetchNHLData(startDate, effectiveEndDate, seasonId, bar) {
 
     console.time(`Processing ${formattedDate}`);
 
-    const statsResponse = await Fetch(
-      //   https://api.nhle.com/stats/rest/en/team/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&cayenneExp=gameDate%3C=%222025-10-15%2023%3A59%3A59%22%20and%20gameDate%3E=%222025-10-15%22%20and%20gameTypeId=2
-      `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=true&isGame=true&sort=[{"property":"points","direction":"DESC"},{"property":"wins","direction":"DESC"},{"property":"franchiseId","direction":"ASC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=gameDate<='${formattedDate}' and gameDate>='${formattedDate}'`
-    );
-    const miscStatsResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/realtime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22hits%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
-    );
-    const penaltyResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/penalties?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22penaltyMinutes%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
-    );
-    const penaltyKillResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/penaltykill?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22penaltyKillPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
-    );
-    const powerPlayResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/powerplay?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22powerPlayPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
-    );
-    const ppToiResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/powerplaytime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22timeOnIcePp%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
-    );
-    const pkToiResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/penaltykilltime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22timeOnIceShorthanded%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
-    );
-    const shootingResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/summaryshooting?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satTotal%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
-    );
-    const shPercentageResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/percentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
-    );
-    const faceOffResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/faceoffpercentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
-    );
-    const faceOffWinLossResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/faceoffwins?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22faceoffsWon%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`
-    );
+    const [
+      statsResponse,
+      miscStatsResponse,
+      penaltyResponse,
+      penaltyKillResponse,
+      powerPlayResponse,
+      ppToiResponse,
+      pkToiResponse,
+      shootingResponse,
+      shPercentageResponse,
+      faceOffResponse,
+      faceOffWinLossResponse,
+    ] = await Promise.all([
+      Fetch(
+        `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=true&isGame=true&sort=[{"property":"points","direction":"DESC"},{"property":"wins","direction":"DESC"},{"property":"franchiseId","direction":"ASC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=gameDate<='${formattedDate}' and gameDate>='${formattedDate}'`,
+      ),
+      Fetch(
+        `https://api.nhle.com/stats/rest/en/team/realtime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22hits%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`,
+      ),
+      Fetch(
+        `https://api.nhle.com/stats/rest/en/team/penalties?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22penaltyMinutes%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`,
+      ),
+      Fetch(
+        `https://api.nhle.com/stats/rest/en/team/penaltykill?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22penaltyKillPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`,
+      ),
+      Fetch(
+        `https://api.nhle.com/stats/rest/en/team/powerplay?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22powerPlayPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`,
+      ),
+      Fetch(
+        `https://api.nhle.com/stats/rest/en/team/powerplaytime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22timeOnIcePp%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`,
+      ),
+      Fetch(
+        `https://api.nhle.com/stats/rest/en/team/penaltykilltime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22timeOnIceShorthanded%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`,
+      ),
+      Fetch(
+        `https://api.nhle.com/stats/rest/en/team/summaryshooting?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satTotal%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`,
+      ),
+      Fetch(
+        `https://api.nhle.com/stats/rest/en/team/percentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`,
+      ),
+      Fetch(
+        `https://api.nhle.com/stats/rest/en/team/faceoffpercentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`,
+      ),
+      Fetch(
+        `https://api.nhle.com/stats/rest/en/team/faceoffwins?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22faceoffsWon%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`,
+      ),
+    ]);
 
     const counts = {
       summary: statsResponse?.data?.length || 0,
@@ -219,266 +283,271 @@ async function fetchNHLData(startDate, effectiveEndDate, seasonId, bar) {
       shooting: shootingResponse?.data?.length || 0,
       percentages: shPercentageResponse?.data?.length || 0,
       faceoff: faceOffResponse?.data?.length || 0,
-      faceoffWins: faceOffWinLossResponse?.data?.length || 0
+      faceoffWins: faceOffWinLossResponse?.data?.length || 0,
     };
     const allDatasetsPresent = Object.values(counts).every((n) => n > 0);
     if (allDatasetsPresent) {
-      let upsertsForDate = 0;
+      const gamesByTeamId = await fetchGamesByTeamForDate(formattedDate);
+      const miscByFranchiseId = mapByFranchiseId(miscStatsResponse.data);
+      const penaltyByFranchiseId = mapByFranchiseId(penaltyResponse.data);
+      const penaltyKillByFranchiseId = mapByFranchiseId(
+        penaltyKillResponse.data,
+      );
+      const powerPlayByFranchiseId = mapByFranchiseId(powerPlayResponse.data);
+      const ppToiByFranchiseId = mapByFranchiseId(ppToiResponse.data);
+      const pkToiByFranchiseId = mapByFranchiseId(pkToiResponse.data);
+      const shootingByFranchiseId = mapByFranchiseId(shootingResponse.data);
+      const percentageByFranchiseId = mapByFranchiseId(
+        shPercentageResponse.data,
+      );
+      const faceOffByFranchiseId = mapByFranchiseId(faceOffResponse.data);
+      const faceOffWinLossByFranchiseId = mapByFranchiseId(
+        faceOffWinLossResponse.data,
+      );
+      const upsertRows = [];
+
       for (const stat of statsResponse.data) {
-        const additionalStats = miscStatsResponse.data.find(
-          (addStat) => addStat.franchiseId === stat.franchiseId
+        const additionalStats = miscByFranchiseId.get(stat.franchiseId);
+        const penaltyData = penaltyByFranchiseId.get(stat.franchiseId);
+        const penaltyKillData = penaltyKillByFranchiseId.get(stat.franchiseId);
+        const powerPlayData = powerPlayByFranchiseId.get(stat.franchiseId);
+        const ppToiData = ppToiByFranchiseId.get(stat.franchiseId);
+        const pkToiData = pkToiByFranchiseId.get(stat.franchiseId);
+        const shootingData = shootingByFranchiseId.get(stat.franchiseId);
+        const shPercentageData = percentageByFranchiseId.get(stat.franchiseId);
+        const faceOffData = faceOffByFranchiseId.get(stat.franchiseId);
+        const faceOffWinLossData = faceOffWinLossByFranchiseId.get(
+          stat.franchiseId,
         );
-        const penaltyData = penaltyResponse.data.find(
-          (penaltyStat) => penaltyStat.franchiseId === stat.franchiseId
-        );
-        const penaltyKillData = penaltyKillResponse.data.find(
-          (penaltyKillStat) => penaltyKillStat.franchiseId === stat.franchiseId
-        );
-        const powerPlayData = powerPlayResponse.data.find(
-          (powerPlayStat) => powerPlayStat.franchiseId === stat.franchiseId
-        );
-        const ppToiData = ppToiResponse.data.find(
-          (ppToiStat) => ppToiStat.franchiseId === stat.franchiseId
-        );
-        const pkToiData = pkToiResponse.data.find(
-          (pkToiStat) => pkToiStat.franchiseId === stat.franchiseId
-        );
-        const shootingData = shootingResponse.data.find(
-          (shootingStat) => shootingStat.franchiseId === stat.franchiseId
-        );
-        const shPercentageData = shPercentageResponse.data.find(
-          (shPercentageStat) =>
-            shPercentageStat.franchiseId === stat.franchiseId
-        );
-        const faceOffData = faceOffResponse.data.find(
-          (faceOffStat) => faceOffStat.franchiseId === stat.franchiseId
-        );
-        const faceOffWinLossData = faceOffWinLossResponse.data.find(
-          (faceOffWinLossStat) =>
-            faceOffWinLossStat.franchiseId === stat.franchiseId
-        );
-        const team = Object.values(teamsInfo).find(
-          (team) => team.franchiseId === stat.franchiseId
-        );
+        const team = teamsByFranchiseId.get(stat.franchiseId);
         if (!team) {
           console.warn(
-            `No matching team found for franchiseId ${stat.franchiseId} on ${formattedDate}`
+            `No matching team found for franchiseId ${stat.franchiseId} on ${formattedDate}`,
           );
           continue;
         }
 
-        const allGames = await fetchAllGamesForTeamOnDate(
-          formattedDate,
-          team.id
-        );
+        if (
+          !additionalStats ||
+          !penaltyData ||
+          !penaltyKillData ||
+          !powerPlayData ||
+          !ppToiData ||
+          !pkToiData ||
+          !shootingData ||
+          !shPercentageData ||
+          !faceOffData ||
+          !faceOffWinLossData
+        ) {
+          console.warn(
+            `Skipping team ${team.id} on ${formattedDate}: missing one or more WGO datasets.`,
+          );
+          continue;
+        }
+
+        const game = gamesByTeamId.get(team.id);
         let gameId = null;
         let opponentId = null;
-        if (allGames.length > 0) {
-          const game = allGames[0];
+        if (game) {
           gameId = game.id;
           opponentId =
             game.homeTeamId === team.id ? game.awayTeamId : game.homeTeamId;
         } else {
           console.warn(
-            `No matching game found for team ${team.id} on ${formattedDate}`
+            `No matching game found for team ${team.id} on ${formattedDate}`,
           );
         }
 
-        const { error: upsertError } = await supabase
-          .from("wgo_team_stats")
-          .upsert(
-            {
-              team_id: team.id,
-              franchise_name: stat.franchiseName,
-              date: formattedDate,
-              season_id: seasonId,
-              faceoff_win_pct: stat.faceoffWinPct,
-              games_played: stat.gamesPlayed,
-              goals_against: stat.goalsAgainst,
-              goals_against_per_game: stat.goalsAgainstPerGame,
-              goals_for: stat.goalsFor,
-              goals_for_per_game: stat.goalsForPerGame,
-              losses: stat.losses,
-              ot_losses: stat.otLosses,
-              penalty_kill_net_pct: stat.penaltyKillNetPct,
-              penalty_kill_pct: stat.penaltyKillPct,
-              point_pct: stat.pointPct,
-              points: stat.points,
-              power_play_net_pct: stat.powerPlayNetPct,
-              power_play_pct: stat.powerPlayPct,
-              regulation_and_ot_wins: stat.regulationAndOtWins,
-              shots_against_per_game: stat.shotsAgainstPerGame,
-              shots_for_per_game: stat.shotsForPerGame,
-              wins: stat.wins,
-              wins_in_regulation: stat.winsInRegulation,
-              wins_in_shootout: stat.winsInShootout,
-              // Miscellaneous Stats from miscStatsResponse
-              blocked_shots: additionalStats.blockedShots,
-              blocked_shots_per_60: additionalStats.blockedShotsPer60,
-              empty_net_goals: additionalStats.emptyNetGoals,
-              giveaways: additionalStats.giveaways,
-              giveaways_per_60: additionalStats.giveawaysPer60,
-              hits: additionalStats.hits,
-              hits_per_60: additionalStats.hitsPer60,
-              missed_shots: additionalStats.missedShots,
-              sat_pct: additionalStats.satPct,
-              takeaways: additionalStats.takeaways,
-              takeaways_per_60: additionalStats.takeawaysPer60,
-              time_on_ice_per_game_5v5: additionalStats.timeOnIcePerGame5v5,
-              // Penalty Stats from penaltyResponse
-              bench_minor_penalties: penaltyData.benchMinorPenalties,
-              game_misconducts: penaltyData.gameMisconducts,
-              major_penalties: penaltyData.majors,
-              match_penalties: penaltyData.matchPenalties,
-              minor_penalties: penaltyData.minors,
-              misconduct_penalties: penaltyData.misconducts,
-              net_penalties: penaltyData.netPenalties,
-              net_penalties_per_60: penaltyData.netPenaltiesPer60,
-              penalties: penaltyData.penalties,
-              penalties_drawn_per_60: penaltyData.penaltiesDrawnPer60,
-              penalties_taken_per_60: penaltyData.penaltiesTakenPer60,
-              penalty_minutes: penaltyData.penaltyMinutes,
-              penalty_seconds_per_game: penaltyData.penaltySecondsPerGame,
-              total_penalties_drawn: penaltyData.totalPenaltiesDrawn,
-              // Penalty Kill Stats from penaltyKillResponse
-              pk_net_goals: penaltyKillData.pkNetGoals,
-              pk_net_goals_per_game: penaltyKillData.pkNetGoalsPerGame,
-              pp_goals_against: penaltyKillData.ppGoalsAgainst,
-              pp_goals_against_per_game: penaltyKillData.ppGoalsAgainstPerGame,
-              sh_goals_for: penaltyKillData.shGoalsFor,
-              sh_goals_for_per_game: penaltyKillData.shGoalsForPerGame,
-              times_shorthanded: penaltyKillData.timesShorthanded,
-              times_shorthanded_per_game:
-                penaltyKillData.timesShorthandedPerGame,
-              // Power Play Stats from powerPlayResponse
-              power_play_goals_for: powerPlayData.powerPlayGoalsFor,
-              pp_goals_per_game: powerPlayData.ppGoalsPerGame,
-              pp_net_goals: powerPlayData.ppNetGoals,
-              pp_net_goals_per_game: powerPlayData.ppNetGoalsPerGame,
-              pp_opportunities: powerPlayData.ppOpportunities,
-              pp_opportunities_per_game: powerPlayData.ppOpportunitiesPerGame,
-              pp_time_on_ice_per_game: powerPlayData.ppTimeOnIcePerGame,
-              sh_goals_against: powerPlayData.shGoalsAgainst,
-              sh_goals_against_per_game: powerPlayData.shGoalsAgainstPerGame,
-              // Power Play Time on Ice from ppToiResponse
-              goals_4v3: ppToiData.goals4v3,
-              goals_5v3: ppToiData.goals5v3,
-              goals_5v4: ppToiData.goals5v4,
-              opportunities_4v3: ppToiData.opportunities4v3,
-              opportunities_5v3: ppToiData.opportunities5v3,
-              opportunities_5v4: ppToiData.opportunities5v4,
-              overall_power_play_pct: ppToiData.overallPowerPlayPct,
-              pp_pct_4v3: ppToiData.powerPlayPct4v3,
-              pp_pct_5v3: ppToiData.powerPlayPct5v3,
-              pp_pct_5v4: ppToiData.powerPlayPct5v4,
-              toi_4v3: ppToiData.timeOnIce4v3,
-              toi_5v3: ppToiData.timeOnIce5v3,
-              toi_5v4: ppToiData.timeOnIce5v4,
-              toi_pp: ppToiData.timeOnIcePp,
-              // Penalty Kill Time on Ice from pkToiResponse
-              goals_against_3v4: pkToiData.goalsAgainst3v4,
-              goals_against_3v5: pkToiData.goalsAgainst3v5,
-              goals_against_4v5: pkToiData.goalsAgainst4v5,
-              overall_penalty_kill_pct: pkToiData.overallPenaltyKillPct,
-              pk_3v4_pct: pkToiData.penaltyKillPct3v4,
-              pk_3v5_pct: pkToiData.penaltyKillPct3v5,
-              pk_4v5_pct: pkToiData.penaltyKillPct4v5,
-              toi_3v4: pkToiData.timeOnIce3v4,
-              toi_3v5: pkToiData.timeOnIce3v5,
-              toi_4v5: pkToiData.timeOnIce4v5,
-              toi_shorthanded: pkToiData.timeOnIceShorthanded,
-              times_shorthanded_3v4: pkToiData.timesShorthanded3v4,
-              times_shorthanded_3v5: pkToiData.timesShorthanded3v5,
-              times_shorthanded_4v5: pkToiData.timesShorthanded4v5,
-              // Shooting Stats from shootingResponse
-              sat_against: shootingData.satAgainst,
-              sat_behind: shootingData.satBehind,
-              sat_close: shootingData.satClose,
-              sat_for: shootingData.satFor,
-              sat_tied: shootingData.satTied,
-              sat_total: shootingData.satTotal,
-              shots_5v5: shootingData.shots5v5,
-              usat_against: shootingData.usatAgainst,
-              usat_ahead: shootingData.usatAhead,
-              usat_behind: shootingData.usatBehind,
-              usat_close: shootingData.usatClose,
-              usat_for: shootingData.usatFor,
-              usat_tied: shootingData.usatTied,
-              usat_total: shootingData.usatTotal,
-              // Shooting Percentage Stats from shPercentageResponse
-              goals_for_percentage: shPercentageData.goalsForPct,
-              sat_percentage: shPercentageData.satPct,
-              sat_pct_ahead: shPercentageData.satPctAhead,
-              sat_pct_behind: shPercentageData.satPctBehind,
-              sat_pct_close: shPercentageData.satPctClose,
-              sat_pct_tied: shPercentageData.satPctTied,
-              save_pct_5v5: shPercentageData.savePct5v5,
-              shooting_pct_5v5: shPercentageData.shootingPct5v5,
-              shooting_plus_save_pct_5v5:
-                shPercentageData.shootingPlusSavePct5v5,
-              usat_pct: shPercentageData.usatPct,
-              usat_pct_ahead: shPercentageData.usatPctAhead,
-              usat_pct_behind: shPercentageData.usatPctBehind,
-              usat_pct_close: shPercentageData.usatPctClose,
-              usat_pct_tied: shPercentageData.usatPctTied,
-              zone_start_pct_5v5: shPercentageData.zoneStartPct5v5,
-              // Faceoff Stats from faceOffResponse
-              d_zone_faceoff_pct: faceOffData.defensiveZoneFaceoffPct,
-              d_zone_faceoffs: faceOffData.defensiveZoneFaceoffs,
-              ev_faceoff_pct: faceOffData.evFaceoffPct,
-              ev_faceoffs: faceOffData.evFaceoffs,
-              neutral_zone_faceoff_pct: faceOffData.neutralZoneFaceoffPct,
-              neutral_zone_faceoffs: faceOffData.neutralZoneFaceoffs,
-              o_zone_faceoff_pct: faceOffData.offensiveZoneFaceoffPct,
-              o_zone_faceoffs: faceOffData.offensiveZoneFaceoffs,
-              pp_faceoff_pct: faceOffData.ppFaceoffPct,
-              pp_faceoffs: faceOffData.ppFaceoffs,
-              sh_faceoff_pct: faceOffData.shFaceoffPct,
-              sh_faceoffs: faceOffData.shFaceoffs,
-              total_faceoffs: faceOffData.totalFaceoffs,
-              // Faceoff Win/Loss Stats from faceOffWinLossResponse
-              d_zone_fol: faceOffWinLossData.defensiveZoneFaceoffLosses,
-              d_zone_fow: faceOffWinLossData.defensiveZoneFaceoffWins,
-              d_zone_fo: faceOffWinLossData.defensiveZoneFaceoffs,
-              ev_fo: faceOffWinLossData.evFaceoffs,
-              ev_fol: faceOffWinLossData.evFaceoffsLost,
-              ev_fow: faceOffWinLossData.evFaceoffsWon,
-              faceoffs_lost: faceOffWinLossData.faceoffsLost,
-              faceoffs_won: faceOffWinLossData.faceoffsWon,
-              neutral_zone_fol: faceOffWinLossData.neutralZoneFaceoffLosses,
-              neutral_zone_fow: faceOffWinLossData.neutralZoneFaceoffWins,
-              neutral_zone_fo: faceOffWinLossData.neutralZoneFaceoffs,
-              o_zone_fol: faceOffWinLossData.offensiveZoneFaceoffLosses,
-              o_zone_fow: faceOffWinLossData.offensiveZoneFaceoffWins,
-              o_zone_fo: faceOffWinLossData.offensiveZoneFaceoffs,
-              pp_fol: faceOffWinLossData.ppFaceoffsLost,
-              pp_fow: faceOffWinLossData.ppFaceoffsWon,
-              sh_fol: faceOffWinLossData.shFaceoffsLost,
-              sh_fow: faceOffWinLossData.shFaceoffsWon,
-              game_id: gameId,
-              opponent_id: opponentId
-            },
-            { onConflict: ["season_id", "team_id", "date"] }
-          );
-        if (upsertError) {
-          console.error(
-            `Upsert error for team ${team.id} on ${formattedDate} (season ${seasonId}):`,
-            upsertError
-          );
-        } else {
-          upsertsForDate++;
-        }
+        upsertRows.push({
+          team_id: team.id,
+          franchise_name: stat.franchiseName,
+          date: formattedDate,
+          season_id: seasonId,
+          faceoff_win_pct: stat.faceoffWinPct,
+          games_played: stat.gamesPlayed,
+          goals_against: stat.goalsAgainst,
+          goals_against_per_game: stat.goalsAgainstPerGame,
+          goals_for: stat.goalsFor,
+          goals_for_per_game: stat.goalsForPerGame,
+          losses: stat.losses,
+          ot_losses: stat.otLosses,
+          penalty_kill_net_pct: stat.penaltyKillNetPct,
+          penalty_kill_pct: stat.penaltyKillPct,
+          point_pct: stat.pointPct,
+          points: stat.points,
+          power_play_net_pct: stat.powerPlayNetPct,
+          power_play_pct: stat.powerPlayPct,
+          regulation_and_ot_wins: stat.regulationAndOtWins,
+          shots_against_per_game: stat.shotsAgainstPerGame,
+          shots_for_per_game: stat.shotsForPerGame,
+          wins: stat.wins,
+          wins_in_regulation: stat.winsInRegulation,
+          wins_in_shootout: stat.winsInShootout,
+          // Miscellaneous Stats from miscStatsResponse
+          blocked_shots: additionalStats.blockedShots,
+          blocked_shots_per_60: additionalStats.blockedShotsPer60,
+          empty_net_goals: additionalStats.emptyNetGoals,
+          giveaways: additionalStats.giveaways,
+          giveaways_per_60: additionalStats.giveawaysPer60,
+          hits: additionalStats.hits,
+          hits_per_60: additionalStats.hitsPer60,
+          missed_shots: additionalStats.missedShots,
+          sat_pct: additionalStats.satPct,
+          takeaways: additionalStats.takeaways,
+          takeaways_per_60: additionalStats.takeawaysPer60,
+          time_on_ice_per_game_5v5: additionalStats.timeOnIcePerGame5v5,
+          // Penalty Stats from penaltyResponse
+          bench_minor_penalties: penaltyData.benchMinorPenalties,
+          game_misconducts: penaltyData.gameMisconducts,
+          major_penalties: penaltyData.majors,
+          match_penalties: penaltyData.matchPenalties,
+          minor_penalties: penaltyData.minors,
+          misconduct_penalties: penaltyData.misconducts,
+          net_penalties: penaltyData.netPenalties,
+          net_penalties_per_60: penaltyData.netPenaltiesPer60,
+          penalties: penaltyData.penalties,
+          penalties_drawn_per_60: penaltyData.penaltiesDrawnPer60,
+          penalties_taken_per_60: penaltyData.penaltiesTakenPer60,
+          penalty_minutes: penaltyData.penaltyMinutes,
+          penalty_seconds_per_game: penaltyData.penaltySecondsPerGame,
+          total_penalties_drawn: penaltyData.totalPenaltiesDrawn,
+          // Penalty Kill Stats from penaltyKillResponse
+          pk_net_goals: penaltyKillData.pkNetGoals,
+          pk_net_goals_per_game: penaltyKillData.pkNetGoalsPerGame,
+          pp_goals_against: penaltyKillData.ppGoalsAgainst,
+          pp_goals_against_per_game: penaltyKillData.ppGoalsAgainstPerGame,
+          sh_goals_for: penaltyKillData.shGoalsFor,
+          sh_goals_for_per_game: penaltyKillData.shGoalsForPerGame,
+          times_shorthanded: penaltyKillData.timesShorthanded,
+          times_shorthanded_per_game: penaltyKillData.timesShorthandedPerGame,
+          // Power Play Stats from powerPlayResponse
+          power_play_goals_for: powerPlayData.powerPlayGoalsFor,
+          pp_goals_per_game: powerPlayData.ppGoalsPerGame,
+          pp_net_goals: powerPlayData.ppNetGoals,
+          pp_net_goals_per_game: powerPlayData.ppNetGoalsPerGame,
+          pp_opportunities: powerPlayData.ppOpportunities,
+          pp_opportunities_per_game: powerPlayData.ppOpportunitiesPerGame,
+          pp_time_on_ice_per_game: powerPlayData.ppTimeOnIcePerGame,
+          sh_goals_against: powerPlayData.shGoalsAgainst,
+          sh_goals_against_per_game: powerPlayData.shGoalsAgainstPerGame,
+          // Power Play Time on Ice from ppToiResponse
+          goals_4v3: ppToiData.goals4v3,
+          goals_5v3: ppToiData.goals5v3,
+          goals_5v4: ppToiData.goals5v4,
+          opportunities_4v3: ppToiData.opportunities4v3,
+          opportunities_5v3: ppToiData.opportunities5v3,
+          opportunities_5v4: ppToiData.opportunities5v4,
+          overall_power_play_pct: ppToiData.overallPowerPlayPct,
+          pp_pct_4v3: ppToiData.powerPlayPct4v3,
+          pp_pct_5v3: ppToiData.powerPlayPct5v3,
+          pp_pct_5v4: ppToiData.powerPlayPct5v4,
+          toi_4v3: ppToiData.timeOnIce4v3,
+          toi_5v3: ppToiData.timeOnIce5v3,
+          toi_5v4: ppToiData.timeOnIce5v4,
+          toi_pp: ppToiData.timeOnIcePp,
+          // Penalty Kill Time on Ice from pkToiResponse
+          goals_against_3v4: pkToiData.goalsAgainst3v4,
+          goals_against_3v5: pkToiData.goalsAgainst3v5,
+          goals_against_4v5: pkToiData.goalsAgainst4v5,
+          overall_penalty_kill_pct: pkToiData.overallPenaltyKillPct,
+          pk_3v4_pct: pkToiData.penaltyKillPct3v4,
+          pk_3v5_pct: pkToiData.penaltyKillPct3v5,
+          pk_4v5_pct: pkToiData.penaltyKillPct4v5,
+          toi_3v4: pkToiData.timeOnIce3v4,
+          toi_3v5: pkToiData.timeOnIce3v5,
+          toi_4v5: pkToiData.timeOnIce4v5,
+          toi_shorthanded: pkToiData.timeOnIceShorthanded,
+          times_shorthanded_3v4: pkToiData.timesShorthanded3v4,
+          times_shorthanded_3v5: pkToiData.timesShorthanded3v5,
+          times_shorthanded_4v5: pkToiData.timesShorthanded4v5,
+          // Shooting Stats from shootingResponse
+          sat_against: shootingData.satAgainst,
+          sat_behind: shootingData.satBehind,
+          sat_close: shootingData.satClose,
+          sat_for: shootingData.satFor,
+          sat_tied: shootingData.satTied,
+          sat_total: shootingData.satTotal,
+          shots_5v5: shootingData.shots5v5,
+          usat_against: shootingData.usatAgainst,
+          usat_ahead: shootingData.usatAhead,
+          usat_behind: shootingData.usatBehind,
+          usat_close: shootingData.usatClose,
+          usat_for: shootingData.usatFor,
+          usat_tied: shootingData.usatTied,
+          usat_total: shootingData.usatTotal,
+          // Shooting Percentage Stats from shPercentageResponse
+          goals_for_percentage: shPercentageData.goalsForPct,
+          sat_percentage: shPercentageData.satPct,
+          sat_pct_ahead: shPercentageData.satPctAhead,
+          sat_pct_behind: shPercentageData.satPctBehind,
+          sat_pct_close: shPercentageData.satPctClose,
+          sat_pct_tied: shPercentageData.satPctTied,
+          save_pct_5v5: shPercentageData.savePct5v5,
+          shooting_pct_5v5: shPercentageData.shootingPct5v5,
+          shooting_plus_save_pct_5v5: shPercentageData.shootingPlusSavePct5v5,
+          usat_pct: shPercentageData.usatPct,
+          usat_pct_ahead: shPercentageData.usatPctAhead,
+          usat_pct_behind: shPercentageData.usatPctBehind,
+          usat_pct_close: shPercentageData.usatPctClose,
+          usat_pct_tied: shPercentageData.usatPctTied,
+          zone_start_pct_5v5: shPercentageData.zoneStartPct5v5,
+          // Faceoff Stats from faceOffResponse
+          d_zone_faceoff_pct: faceOffData.defensiveZoneFaceoffPct,
+          d_zone_faceoffs: faceOffData.defensiveZoneFaceoffs,
+          ev_faceoff_pct: faceOffData.evFaceoffPct,
+          ev_faceoffs: faceOffData.evFaceoffs,
+          neutral_zone_faceoff_pct: faceOffData.neutralZoneFaceoffPct,
+          neutral_zone_faceoffs: faceOffData.neutralZoneFaceoffs,
+          o_zone_faceoff_pct: faceOffData.offensiveZoneFaceoffPct,
+          o_zone_faceoffs: faceOffData.offensiveZoneFaceoffs,
+          pp_faceoff_pct: faceOffData.ppFaceoffPct,
+          pp_faceoffs: faceOffData.ppFaceoffs,
+          sh_faceoff_pct: faceOffData.shFaceoffPct,
+          sh_faceoffs: faceOffData.shFaceoffs,
+          total_faceoffs: faceOffData.totalFaceoffs,
+          // Faceoff Win/Loss Stats from faceOffWinLossResponse
+          d_zone_fol: faceOffWinLossData.defensiveZoneFaceoffLosses,
+          d_zone_fow: faceOffWinLossData.defensiveZoneFaceoffWins,
+          d_zone_fo: faceOffWinLossData.defensiveZoneFaceoffs,
+          ev_fo: faceOffWinLossData.evFaceoffs,
+          ev_fol: faceOffWinLossData.evFaceoffsLost,
+          ev_fow: faceOffWinLossData.evFaceoffsWon,
+          faceoffs_lost: faceOffWinLossData.faceoffsLost,
+          faceoffs_won: faceOffWinLossData.faceoffsWon,
+          neutral_zone_fol: faceOffWinLossData.neutralZoneFaceoffLosses,
+          neutral_zone_fow: faceOffWinLossData.neutralZoneFaceoffWins,
+          neutral_zone_fo: faceOffWinLossData.neutralZoneFaceoffs,
+          o_zone_fol: faceOffWinLossData.offensiveZoneFaceoffLosses,
+          o_zone_fow: faceOffWinLossData.offensiveZoneFaceoffWins,
+          o_zone_fo: faceOffWinLossData.offensiveZoneFaceoffs,
+          pp_fol: faceOffWinLossData.ppFaceoffsLost,
+          pp_fow: faceOffWinLossData.ppFaceoffsWon,
+          sh_fol: faceOffWinLossData.shFaceoffsLost,
+          sh_fow: faceOffWinLossData.shFaceoffsWon,
+          game_id: gameId,
+          opponent_id: opponentId,
+        });
       }
-      console.log(
-        `Upserts for ${formattedDate} (season ${seasonId}): ${upsertsForDate}`
-      );
+
+      if (upsertRows.length > 0) {
+        const upsertsForDate = await upsertTeamStatsRows(
+          upsertRows,
+          formattedDate,
+          seasonId,
+        );
+        console.log(
+          `Upserts for ${formattedDate} (season ${seasonId}): ${upsertsForDate}`,
+        );
+      } else {
+        console.log(`No WGO team rows to upsert for ${formattedDate}.`);
+      }
     } else {
       const missing = Object.entries(counts)
         .filter(([, n]) => n === 0)
         .map(([k]) => k)
         .join(", ");
       console.warn(
-        `Skipping upserts for ${formattedDate} (season ${seasonId}) due to missing datasets: ${missing}`
+        `Skipping upserts for ${formattedDate} (season ${seasonId}) due to missing datasets: ${missing}`,
       );
     }
 
@@ -498,7 +567,7 @@ async function main(options = {}) {
     allDates = queryParams.allDates || false,
     recent = queryParams.recent !== undefined ? queryParams.recent : true,
     date = queryParams.date || null,
-    allSeasons = queryParams.allSeasons || false
+    allSeasons = queryParams.allSeasons || false,
   } = { ...options, ...queryParams };
 
   let specificDate = null;
@@ -506,7 +575,7 @@ async function main(options = {}) {
     const parsedDate = parseISO(date);
     if (!isValid(parsedDate)) {
       throw new Error(
-        `Invalid date format: ${date}. Please use YYYY-MM-DD format.`
+        `Invalid date format: ${date}. Please use YYYY-MM-DD format.`,
       );
     }
     specificDate = format(parsedDate, "yyyy-MM-dd");
@@ -528,7 +597,7 @@ async function main(options = {}) {
     processAllDates,
     processRecentDates,
     processOneDay,
-    processAllSeasons
+    processAllSeasons,
   });
   console.time("Total Process Time");
 
@@ -548,19 +617,19 @@ async function main(options = {}) {
       console.log(
         `Processing ALL ${seasons.length} seasons because ${
           processAllDates ? "allDates" : "allSeasons"
-        }=true`
+        }=true`,
       );
     } else {
       const numberOfSeasonsToFetch = 15;
       seasonsToProcess = seasons.slice(0, numberOfSeasonsToFetch).reverse();
       console.log(
-        `Processing subset of ${seasonsToProcess.length} seasons (limited to ${numberOfSeasonsToFetch})`
+        `Processing subset of ${seasonsToProcess.length} seasons (limited to ${numberOfSeasonsToFetch})`,
       );
     }
 
     console.log(
       "Seasons to process:",
-      seasonsToProcess.map((s) => s.formattedSeasonId)
+      seasonsToProcess.map((s) => s.formattedSeasonId),
     );
 
     for (let i = 0; i < seasonsToProcess.length; i++) {
@@ -568,7 +637,7 @@ async function main(options = {}) {
       console.log(
         `\n=== PROCESSING SEASON ${i + 1}/${seasonsToProcess.length}: ${
           season.formattedSeasonId
-        } ===`
+        } ===`,
       );
 
       const currentDate = new Date();
@@ -603,11 +672,11 @@ async function main(options = {}) {
             newStartDate = specificDate;
             effectiveEndDate = specificDate;
             console.log(
-              `Processing specific date ${specificDate} for season ${season.formattedSeasonId}`
+              `Processing specific date ${specificDate} for season ${season.formattedSeasonId}`,
             );
           } else {
             console.log(
-              `Skipping season ${season.formattedSeasonId} - date ${specificDate} not in range (${seasonStartStr} to ${seasonFullEndStr})`
+              `Skipping season ${season.formattedSeasonId} - date ${specificDate} not in range (${seasonStartStr} to ${seasonFullEndStr})`,
             );
             continue;
           }
@@ -615,11 +684,11 @@ async function main(options = {}) {
           newStartDate = season.startDate.split("T")[0];
           effectiveEndDate = season.endDate.split("T")[0];
           console.log(
-            `Processing all dates for season ${season.formattedSeasonId} from ${newStartDate} to ${effectiveEndDate} (including playoffs).`
+            `Processing all dates for season ${season.formattedSeasonId} from ${newStartDate} to ${effectiveEndDate} (including playoffs).`,
           );
         } else if (processRecentDates) {
           console.log(
-            `Looking up most recent processed date for season ${season.id}...`
+            `Looking up most recent processed date for season ${season.id}...`,
           );
           const { data: processedDates, error } = await supabase
             .from("wgo_team_stats")
@@ -632,25 +701,25 @@ async function main(options = {}) {
           if (error) {
             console.error(
               `Error fetching processed dates for season ${season.formattedSeasonId}:`,
-              error
+              error,
             );
             newStartDate = season.startDate.split("T")[0];
           } else if (processedDates && processedDates.length > 0) {
             newStartDate = processedDates[0].date;
             console.log(
-              `Latest processed date for season ${season.formattedSeasonId} is ${newStartDate}. Fetching from that date until today.`
+              `Latest processed date for season ${season.formattedSeasonId} is ${newStartDate}. Fetching from that date until today.`,
             );
           } else {
             newStartDate = season.startDate.split("T")[0];
             console.log(
-              `No processed dates found for season ${season.formattedSeasonId}. Starting from season start date: ${newStartDate}`
+              `No processed dates found for season ${season.formattedSeasonId}. Starting from season start date: ${newStartDate}`,
             );
           }
 
           const seasonFullEndStr = season.endDate.split("T")[0];
           effectiveEndDate = isBefore(
             parseISO(todayStr),
-            parseISO(seasonFullEndStr)
+            parseISO(seasonFullEndStr),
           )
             ? todayStr
             : seasonFullEndStr;
@@ -658,7 +727,7 @@ async function main(options = {}) {
           newStartDate = season.startDate.split("T")[0];
           effectiveEndDate = season.endDate.split("T")[0];
           console.log(
-            `Using default date range: ${newStartDate} to ${effectiveEndDate}`
+            `Using default date range: ${newStartDate} to ${effectiveEndDate}`,
           );
         }
 
@@ -667,7 +736,7 @@ async function main(options = {}) {
         const seasonRegularEndStr = season.regularSeasonEndDate.split("T")[0];
         if (effectiveEndDate > seasonRegularEndStr) {
           console.log(
-            `Note: Including playoff data - processing beyond regular season end (${seasonRegularEndStr}) up to ${effectiveEndDate}`
+            `Note: Including playoff data - processing beyond regular season end (${seasonRegularEndStr}) up to ${effectiveEndDate}`,
           );
         }
 
@@ -683,27 +752,27 @@ async function main(options = {}) {
         if (totalDays > 0) {
           const bar = new ProgressBar(
             `Fetching data for season ${season.formattedSeasonId} [:bar] :percent :etas`,
-            { total: totalDays, width: 40 }
+            { total: totalDays, width: 40 },
           );
 
           await fetchNHLData(
             newStartDate,
             effectiveEndDate,
             season.id.toString(),
-            bar
+            bar,
           );
 
           console.log(
-            `✓ Completed processing season ${season.formattedSeasonId}`
+            `✓ Completed processing season ${season.formattedSeasonId}`,
           );
         } else {
           console.log(
-            `⚠ No days to process for season ${season.formattedSeasonId} (start: ${newStartDate}, end: ${effectiveEndDate})`
+            `⚠ No days to process for season ${season.formattedSeasonId} (start: ${newStartDate}, end: ${effectiveEndDate})`,
           );
         }
       } else {
         console.log(
-          `✗ Skipping season ${season.formattedSeasonId} (started: ${seasonStarted}, active: ${isSeasonActive}, processAllSeasons: ${processAllSeasons})`
+          `✗ Skipping season ${season.formattedSeasonId} (started: ${seasonStarted}, active: ${isSeasonActive}, processAllSeasons: ${processAllSeasons})`,
         );
       }
     }

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  buildNstRequestUrlFromAbsoluteUrl,
   buildNstRequestUrl,
   buildNstUrl,
   buildNstUrlString,
@@ -11,6 +12,7 @@ import {
   getNstHeaders,
   isNstAuthError,
   isNstConfigError,
+  isNstNotFoundError,
   isNstRateLimitError,
   isNstResponseError,
   NstConfigError,
@@ -133,6 +135,37 @@ describe("nst client", () => {
     expect(result.redactedUrl).toBe(
       `${NST_BASE_URL}/playerreport.php?stype=2&sit=all&playerid=8478402`
     );
+  });
+
+  it("preserves raw encoded date params when rewriting absolute NST urls", () => {
+    const url = buildNstRequestUrlFromAbsoluteUrl(
+      "https://www.naturalstattrick.com/playerteams.php?fd=2025%2D04%2D16&td=2025%2D04%2D16&key=secret"
+    );
+
+    expect(url.toString()).toBe(
+      `${NST_BASE_URL}/playerteams.php?fd=2025%2D04%2D16&td=2025%2D04%2D16`
+    );
+    expect(url.toString()).not.toContain("key=");
+  });
+
+  it("fetches absolute NST urls without decoding encoded date params", async () => {
+    vi.stubEnv("NST_KEY", "encoded-date-key");
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response("<html>encoded</html>", { status: 200, statusText: "OK" })
+    );
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchNstTextByUrl(
+      `${NST_BASE_URL}/playerteams.php?fd=2025%2D04%2D16&td=2025%2D04%2D16`
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      `${NST_BASE_URL}/playerteams.php?fd=2025%2D04%2D16&td=2025%2D04%2D16`
+    );
+    expect(result.text).toBe("<html>encoded</html>");
   });
 
   it("fetches text with retries and returns a redacted url", async () => {
@@ -327,10 +360,16 @@ describe("nst client", () => {
       status: 429,
       redactedUrl: `${NST_BASE_URL}/playerreport.php?playerid=1`
     });
+    const notFoundError = new NstResponseError({
+      status: 404,
+      redactedUrl: `${NST_BASE_URL}/playerteams.php?fd=2025-04-17`
+    });
 
     expect(isNstResponseError(authError)).toBe(true);
     expect(isNstAuthError(authError)).toBe(true);
     expect(isNstRateLimitError(authError)).toBe(false);
     expect(isNstRateLimitError(rateLimitError)).toBe(true);
+    expect(isNstNotFoundError(notFoundError)).toBe(true);
+    expect(isNstRateLimitError(notFoundError)).toBe(false);
   });
 });

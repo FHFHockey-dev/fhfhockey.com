@@ -98,7 +98,7 @@
 - [ ] 12.0 Audit finding: determine whether `web/pages/skoCharts.tsx` needs any further lineage documentation now that the runtime page is already a quarantine shell rather than a live legacy implementation.
 - [ ] 13.0 Audit finding: decide whether the orphaned `web/components/forge-dashboard/TopMoversCard.tsx` should be removed, rehomed, or reintegrated now that it is no longer part of the active dashboard composition.
 - [ ] 14.0 Audit finding: promote the shot-level `xgboost_js` baseline from benchmark-only support into a calibrated, clearly preferred expected-goals training path instead of leaving gradient boosting as an ambiguous optional family.
-- [ ] 15.0 Audit finding: classify or remediate the legacy `/api/v1/db/update-expected-goals` route, which still uses team attack/defense heuristics rather than the newer shot-level xG modeling surface.
+- [ ] 15.0 Audit finding: classify or remediate the legacy `/api/v1/db/update-game-goal-projections` route, which still uses team attack/defense heuristics rather than the newer shot-level xG modeling surface.
 - [x] 16.0 Audit finding: treat pregame `FUT`/`PRE` game-state failures from bulk power-play combination repair as skips instead of hard pipeline blockers, and cover that behavior with regression tests.
 - [x] 17.0 Audit finding: harden `/api/v1/db/update-games` so a single club-schedule fetch failure does not abort the entire rolling FORGE pipeline when the shared slate can still be reconstructed from other teams.
 - [x] 18.0 Audit finding: align `daily_incremental` rolling-FORGE pipeline lookback windows with `run-projection-v2` preflight freshness expectations for ingestion and derived-build stages.

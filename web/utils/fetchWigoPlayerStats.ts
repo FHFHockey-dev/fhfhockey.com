@@ -12,6 +12,7 @@ import {
 } from "components/WiGO/statMetadata";
 import supabase from "lib/supabase";
 import { Database } from "lib/supabase/database-generated.types";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 
 // Import the types for the tables
 export type WigoCareerRow = Database["public"]["Tables"]["wigo_career"]["Row"];
@@ -655,32 +656,25 @@ export async function fetchPaginatedData<T>(
   seasonFilter?: { column: string; value: number | string }
 ): Promise<T[]> {
   const PAGE_SIZE = 500; // Reduced from 1000 to 500
-  let allData: T[] = [];
-  let page = 0;
-  let fetchMore = true;
   const MAX_RETRIES = 3;
 
-  while (fetchMore) {
-    const startIndex = page * PAGE_SIZE;
-    const endIndex = startIndex + PAGE_SIZE - 1;
-
+  const rows = await fetchAllSupabasePages<T>(async ({ from, to, pageIndex }) => {
     let retries = 0;
-    let success = false;
     let lastError = null;
 
-    while (retries < MAX_RETRIES && !success) {
+    while (retries < MAX_RETRIES) {
       try {
         let query = supabase
           .from(tableName)
           .select(selectColumns)
-          .range(startIndex, endIndex);
+          .range(from, to);
 
         // Add season filter if provided
         if (seasonFilter) {
           query = query.eq(seasonFilter.column, seasonFilter.value);
         }
 
-        const { data, error, count } = await query;
+        const { data, error } = await query;
 
         if (error) {
           lastError = error;
@@ -697,20 +691,11 @@ export async function fetchPaginatedData<T>(
 
         if (data) {
           console.log(
-            `[fetchPaginatedData] Fetched ${data.length} rows on page ${page} for ${tableName}.`
+            `[fetchPaginatedData] Fetched ${data.length} rows on page ${pageIndex} for ${tableName}.`
           );
-          allData = allData.concat(data as T[]);
-          success = true;
-
-          // Check if the number of rows returned is less than the page size
-          if (data.length < PAGE_SIZE) {
-            fetchMore = false; // Reached the end
-          } else {
-            page++; // Prepare for the next page
-          }
+          return { data: data as T[], error: null };
         } else {
-          fetchMore = false; // No data returned, stop.
-          success = true;
+          return { data: [], error: null };
         }
       } catch (error) {
         lastError = error;
@@ -725,15 +710,13 @@ export async function fetchPaginatedData<T>(
       }
     }
 
-    if (!success && lastError) {
-      throw lastError;
-    }
-  }
+    return { data: null, error: lastError };
+  }, { pageSize: PAGE_SIZE });
 
   console.log(
-    `[fetchPaginatedData] Finished fetch for ${tableName}. Total rows: ${allData.length}`
+    `[fetchPaginatedData] Finished fetch for ${tableName}. Total rows: ${rows.length}`
   );
-  return allData;
+  return rows;
 }
 
 // New function to fetch per-game relevant totals

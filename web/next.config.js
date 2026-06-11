@@ -38,6 +38,34 @@ const nextConfig = {
     ]
   },
   reactStrictMode: true,
+  watchOptions: {
+    pollIntervalMs: 1000
+  },
+  webpack(config, { dev }) {
+    if (dev) {
+      const ignored = [
+        "**/.next/**",
+        "**/node_modules/**",
+        "**/coverage/**",
+        "**/storybook-static/**",
+        "**/tasks/artifacts/**",
+        "**/package-lock 2.json"
+      ];
+      const existingIgnored = config.watchOptions?.ignored;
+      const existingIgnoredGlobs = Array.isArray(existingIgnored)
+        ? existingIgnored.filter(
+            (entry) => typeof entry === "string" && entry.length > 0
+          )
+        : typeof existingIgnored === "string" && existingIgnored.length > 0
+          ? [existingIgnored]
+          : [];
+      config.watchOptions = {
+        ...config.watchOptions,
+        ignored: [...existingIgnoredGlobs, ...ignored]
+      };
+    }
+    return config;
+  },
   // swcMinify: false, // Default is true, sticking to standard
   experimental: {
     externalDir: true

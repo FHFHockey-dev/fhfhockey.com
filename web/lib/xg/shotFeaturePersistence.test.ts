@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  auditXgArtifactFeatureContract,
   buildPredictionDbRow,
   assertXgArtifactSupportsPredictionType,
   predictShotGoalProbabilities,
@@ -117,5 +118,71 @@ describe("shotFeaturePersistence", () => {
     expect(() =>
       assertXgArtifactSupportsPredictionType(reboundArtifact, "rebound_creation")
     ).not.toThrow();
+  });
+
+  it("fails closed when a scoring payload is missing a selected feature", () => {
+    const artifact: PersistedXgModelArtifact = {
+      artifactKind: "nhl_xg_model",
+      artifactTag: "requires-shot-distance",
+      family: "logistic_l2",
+      featureVersion: 1,
+      selectedFeatures: {
+        numeric: ["shotDistanceFeet"],
+        boolean: [],
+        categorical: [],
+      },
+      featureKeys: ["shotDistanceFeet"],
+      model: {
+        featureCount: 1,
+        weights: [0.1],
+        bias: 0,
+      },
+    };
+
+    const audit = auditXgArtifactFeatureContract({
+      artifact,
+      rows: [{ gameId: 2025020001, eventId: 101 } as any],
+    });
+
+    expect(audit.passed).toBe(false);
+    expect(audit.issues[0]).toMatchObject({
+      code: "missing_scoring_feature",
+      feature: "shotDistanceFeet",
+      rowId: "2025020001:101",
+    });
+    expect(() =>
+      predictShotGoalProbabilities({ gameId: 2025020001, eventId: 101 } as any, artifact)
+    ).toThrow(/missing selected numeric feature "shotDistanceFeet"/);
+  });
+
+  it("flags encoded feature count mismatches before scoring", () => {
+    const artifact: PersistedXgModelArtifact = {
+      artifactKind: "nhl_xg_model",
+      artifactTag: "bad-feature-count",
+      family: "logistic_l2",
+      featureVersion: 1,
+      selectedFeatures: {
+        numeric: ["shotDistanceFeet"],
+        boolean: [],
+        categorical: [],
+      },
+      featureKeys: ["shotDistanceFeet"],
+      model: {
+        featureCount: 2,
+        weights: [0.1, 0.2],
+        bias: 0,
+      },
+    };
+
+    const audit = auditXgArtifactFeatureContract({ artifact });
+
+    expect(audit.passed).toBe(false);
+    expect(audit.issues).toContainEqual(
+      expect.objectContaining({
+        code: "model_feature_count_mismatch",
+        expected: 2,
+        actual: 1,
+      })
+    );
   });
 });

@@ -109,6 +109,8 @@ const REGISTRY: FeatureLeakageRegistryEntry[] = [
       "nhl_edge_goalie_metrics_daily",
       "nhl_edge_team_metrics_daily",
       "nhl_edge_skater_shot_location_leaders_daily",
+      "nhl_edge_skater_skating_distance_games_daily",
+      "nhl_edge_team_skating_distance_games_daily",
       "nhl_edge_stats_daily",
     ],
     freshnessRequired: true,

@@ -154,8 +154,16 @@ SELECT cron.schedule(
     await handler(req, res);
 
     expect(res.statusCode).toBe(200);
+    expect(resendSendMock).toHaveBeenCalledTimes(1);
+    expect(resendSendMock.mock.calls[0]?.[0]).toMatchObject({
+      from: "audit-report@fhfhockey.com",
+      subject: expect.stringContaining("Daily Cron Report")
+    });
     expect(res.body).toMatchObject({
       success: true,
+      jobRunDetailsEmailResult: expect.objectContaining({
+        suppressed: true
+      }),
       counts: expect.objectContaining({
         warnSlow: 1,
         jobsOkLast: 1
@@ -262,5 +270,27 @@ SELECT cron.schedule(
         scheduledJobsWithActivity: 1
       })
     });
+  });
+
+  it("supports preview=json without sending Resend emails", async () => {
+    const req: any = { method: "GET", query: { preview: "json" } };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      dryRun: true,
+      preview: "json",
+      auditEmailResult: expect.objectContaining({
+        dryRun: true
+      }),
+      jobRunDetailsEmailResult: expect.objectContaining({
+        suppressed: true,
+        dryRun: true
+      })
+    });
+    expect(resendSendMock).not.toHaveBeenCalled();
   });
 });

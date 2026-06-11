@@ -135,6 +135,12 @@ export default async function handler(
       CREATE UNIQUE INDEX IF NOT EXISTS idx_player_stats_unified_pk 
       ON player_stats_unified (player_id, date);
 
+      CREATE INDEX IF NOT EXISTS idx_player_stats_unified_player_date_desc 
+      ON player_stats_unified (player_id ASC, date DESC);
+
+      CREATE INDEX IF NOT EXISTS idx_player_stats_unified_date_player 
+      ON player_stats_unified (date DESC, player_id);
+
       -- Create indexes for common query patterns
       CREATE INDEX IF NOT EXISTS idx_player_stats_unified_player_season 
       ON player_stats_unified (player_id, season_id);

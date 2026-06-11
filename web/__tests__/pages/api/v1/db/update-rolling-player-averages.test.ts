@@ -178,6 +178,7 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
       season: 20252026,
       startDate: undefined,
       endDate: undefined,
+      strengths: undefined,
       resumePlayerId: 8478000,
       forceFullRefresh: false,
       fullRefreshMode: "overwrite_only",
@@ -228,6 +229,7 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
       season: 20252026,
       startDate: undefined,
       endDate: undefined,
+      strengths: undefined,
       resumePlayerId: undefined,
       forceFullRefresh: undefined,
       fullRefreshMode: undefined,
@@ -309,6 +311,7 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
       season: undefined,
       startDate: "2026-03-10",
       endDate: "2026-03-14",
+      strengths: undefined,
       resumePlayerId: undefined,
       maxPlayers: undefined,
       forceFullRefresh: undefined,
@@ -334,6 +337,125 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
           "This run is not a one-day smoke test. Use explicit startDate=endDate for a true one-day operational probe."
       }
     });
+  });
+
+  it("passes through a bounded true-5v5 strength scope", async () => {
+    const req: any = {
+      method: "GET",
+      query: {
+        season: "20252026",
+        startDate: "2026-03-01",
+        endDate: "2026-04-16",
+        strength: "5v5",
+        fastMode: "true",
+        skipDiagnostics: "true",
+        maxPlayers: "10"
+      },
+      url: "/api/v1/db/update-rolling-player-averages?season=20252026&startDate=2026-03-01&endDate=2026-04-16&strength=5v5&fastMode=true&skipDiagnostics=true&maxPlayers=10"
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(mainMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        season: 20252026,
+        startDate: "2026-03-01",
+        endDate: "2026-04-16",
+        strengths: ["5v5"],
+        maxPlayers: 10,
+        playerConcurrency: 4,
+        upsertConcurrency: 4,
+        skipDiagnostics: true
+      })
+    );
+    expect(res.statusCode).toBe(200);
+  });
+
+  it("blocks unbounded multi-week date-window recomputes", async () => {
+    const req: any = {
+      method: "GET",
+      query: {
+        season: "20252026",
+        startDate: "2026-03-01",
+        endDate: "2026-04-16",
+        strength: "5v5",
+        fastMode: "true",
+        skipDiagnostics: "true"
+      },
+      url: "/api/v1/db/update-rolling-player-averages?season=20252026&startDate=2026-03-01&endDate=2026-04-16&strength=5v5&fastMode=true&skipDiagnostics=true"
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(mainMock).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(422);
+    expect(res.body).toMatchObject({
+      success: false,
+      operationStatus: "blocked",
+      executionProfile: "daily_incremental",
+      executionScope: {
+        startDate: "2026-03-01",
+        endDate: "2026-04-16",
+        implicitDailyWindowApplied: false,
+        windowDays: 47,
+        smokeTestComparable: false
+      }
+    });
+    expect(res.body.message).toContain("maxPlayers");
+    expect(res.body.message).toContain("executionProfile=overnight");
+    expect(res.body.progressGuidance).toMatchObject({
+      responseMode: "buffered",
+      progressEndpoint: null
+    });
+    expect(res.body.progressGuidance.recommendedOperatorPath).toContain(
+      "future async job table"
+    );
+  });
+
+  it("allows deliberate broad true-5v5 recomputes with the overnight profile", async () => {
+    const req: any = {
+      method: "GET",
+      query: {
+        season: "20252026",
+        startDate: "2026-03-01",
+        endDate: "2026-04-16",
+        strength: "5v5",
+        fastMode: "true",
+        skipDiagnostics: "true",
+        executionProfile: "overnight"
+      },
+      url: "/api/v1/db/update-rolling-player-averages?season=20252026&startDate=2026-03-01&endDate=2026-04-16&strength=5v5&fastMode=true&skipDiagnostics=true&executionProfile=overnight"
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(mainMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        season: 20252026,
+        startDate: "2026-03-01",
+        endDate: "2026-04-16",
+        strengths: ["5v5"],
+        playerConcurrency: 4,
+        upsertBatchSize: 250,
+        upsertConcurrency: 2,
+        skipDiagnostics: true
+      })
+    );
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      executionProfile: "overnight",
+      appliedPlayerLimit: undefined,
+      progressGuidance: {
+        responseMode: "buffered",
+        progressEndpoint: null
+      }
+    });
+    expect(res.body.progressGuidance.resumeStrategy).toContain(
+      "Overnight runs are intentionally buffered"
+    );
   });
 
   it("marks explicit same-day rolling runs as smoke-test comparable", async () => {

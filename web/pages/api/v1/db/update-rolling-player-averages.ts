@@ -11,6 +11,7 @@
  * - season (number, optional): Filter games by season ID (e.g., 20232024).
  * - startDate (string, optional): Filter games starting from this date (YYYY-MM-DD).
  * - endDate (string, optional): Filter games up to this date (YYYY-MM-DD).
+ * - strength / strengths (string, optional): Comma-separated rolling strengths to recompute. Supports all, 5v5, ev, pp, pk. Defaults to all strengths.
  * - resumeFrom (number, optional): Resume processing from a specific player ID (exclusive). Useful for continuing interrupted batch jobs.
  *   Implicit auto-resume is intentionally disabled; broad runs process the full player set unless `resumeFrom` is provided explicitly.
  * - maxPlayers (number, optional): Cap the number of players processed in a single run. Useful for bounded serverless invocations.
@@ -41,12 +42,15 @@
  * - Resume from a player ID: /api/v1/db/update-rolling-player-averages?resumeFrom=8477000
  * - Date range: /api/v1/db/update-rolling-player-averages?startDate=2023-10-01&endDate=2023-11-01
  * - Faster current-season sweep: /api/v1/db/update-rolling-player-averages?season=20252026&fastMode=true
+ * - True 5v5-only smoke check: /api/v1/db/update-rolling-player-averages?season=20252026&startDate=2026-03-01&endDate=2026-04-16&strength=5v5&fastMode=true&skipDiagnostics=true&maxPlayers=10
+ * - Deliberate broad true 5v5 recompute: /api/v1/db/update-rolling-player-averages?season=20252026&startDate=2026-03-01&endDate=2026-04-16&strength=5v5&fastMode=true&skipDiagnostics=true&executionProfile=overnight
  *
  * Notes:
  * - Do not combine `playerId` with `fullRefresh=true`; full refresh modes operate on the entire table.
  * - For targeted backfills or corrections, prefer `playerId`, `season`, or an explicit `resumeFrom` without `fullRefresh=true`.
  * - A bare GET/POST call with no scope params uses the `daily_incremental` profile plus an implicit recent lookback window for maintenance convenience; that default is not a one-day smoke test.
  * - For a true one-day operational probe, pass explicit `startDate` and `endDate` with the same YYYY-MM-DD value.
+ * - Explicit multi-week date-window requests must be bounded by `playerId`, `resumeFrom`, or `maxPlayers`; use `executionProfile=overnight` or `confirmBroadRun=true` for intentional broad runs.
  */
 // /api/v1/db/update-rolling-player-averages
 
@@ -67,7 +71,10 @@ import {
   type RollingExecutionProfile
 } from "lib/rollingPlayerOperationalPolicy";
 import { getRollingForgeStageDependencyContract } from "lib/rollingForgePipeline";
-import type { RollingPlayerRunSummary } from "lib/supabase/Upserts/fetchRollingPlayerAverages";
+import type {
+  RollingPlayerRunSummary,
+  StrengthState
+} from "lib/supabase/Upserts/fetchRollingPlayerAverages";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 type ResponseBody = {
@@ -91,6 +98,12 @@ type ResponseBody = {
     durationLabel: string;
     withinBudget: boolean;
   };
+  progressGuidance?: {
+    responseMode: "buffered";
+    progressEndpoint: null;
+    recommendedOperatorPath: string;
+    resumeStrategy: string;
+  };
   appliedPlayerLimit?: number;
   dependencyContract?: ReturnType<typeof getRollingForgeStageDependencyContract>;
   runSummary?: RollingPlayerRunSummary;
@@ -105,6 +118,15 @@ type ResponseBody = {
 type FullRefreshMode = "rpc_truncate" | "overwrite_only" | "delete";
 type EndpointPhase = "request" | "execute" | "response";
 const DEFAULT_INCREMENTAL_LOOKBACK_DAYS = 14;
+const DAILY_INCREMENTAL_BROAD_WINDOW_LIMIT_DAYS =
+  DEFAULT_INCREMENTAL_LOOKBACK_DAYS + 1;
+const VALID_STRENGTH_STATES = new Set<StrengthState>([
+  "all",
+  "5v5",
+  "ev",
+  "pp",
+  "pk"
+]);
 
 function logEndpointPhase(args: {
   phase: EndpointPhase;
@@ -147,6 +169,23 @@ function parseExecutionProfile(
   const value = parseQueryString(param);
   if (isRollingExecutionProfile(value)) return value;
   return undefined;
+}
+
+function parseStrengthScope(
+  strengthParam: string | string[] | undefined,
+  strengthsParam: string | string[] | undefined
+) : StrengthState[] | undefined {
+  const values = [strengthParam, strengthsParam]
+    .flatMap((param) => {
+      if (param === undefined) return [];
+      return Array.isArray(param) ? param : [param];
+    })
+    .flatMap((value) => value.split(","))
+    .map((value) => value.trim().toLowerCase())
+    .filter((value): value is StrengthState =>
+      VALID_STRENGTH_STATES.has(value as StrengthState)
+    );
+  return values.length ? Array.from(new Set(values)) : undefined;
 }
 
 function getRequestParam(
@@ -244,6 +283,36 @@ function buildRuntimeBudgetSummary(
   };
 }
 
+function buildBroadRunBlockerMessage(args: {
+  windowDays: number;
+  limitDays: number;
+}) {
+  return `Explicit rolling recomputes wider than ${args.limitDays} days must be bounded by playerId, resumeFrom, or maxPlayers. This request spans ${args.windowDays} days. Use maxPlayers for smoke checks, playerId for targeted repairs, or executionProfile=overnight/confirmBroadRun=true for deliberate broad recomputes.`;
+}
+
+function buildProgressGuidance(args: {
+  executionProfile: RollingExecutionProfile | undefined;
+  executionScope: ReturnType<typeof buildExecutionScopeSummary>;
+  maxPlayers: number | undefined;
+}): NonNullable<ResponseBody["progressGuidance"]> {
+  const isBroad =
+    (args.executionScope.windowDays ?? 0) >
+    DAILY_INCREMENTAL_BROAD_WINDOW_LIMIT_DAYS;
+  return {
+    responseMode: "buffered",
+    progressEndpoint: null,
+    recommendedOperatorPath: isBroad
+      ? "Use maxPlayers for chunked browser-triggered runs, playerId for targeted repairs, or executionProfile=overnight for deliberate broad recomputes. A future async job table should expose pollable progress before broad browser runs are treated as ergonomic."
+      : "Use explicit same-day startDate/endDate requests for smoke checks; broader browser-triggered runs should be bounded with maxPlayers.",
+    resumeStrategy:
+      args.maxPlayers != null
+        ? "When chunking manually with maxPlayers, resume with an explicit resumeFrom value chosen from the last successfully processed player in the response/logs."
+        : args.executionProfile === "overnight"
+          ? "Overnight runs are intentionally buffered today; check cron/audit logs for completion until an async progress table exists."
+          : "No automatic resume cursor is emitted by this endpoint today."
+  };
+}
+
 async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseBody>
@@ -291,6 +360,10 @@ async function handler(
     const season = parseQueryNumber(getRequestParam(req, "season"));
     const requestedStartDate = parseQueryString(getRequestParam(req, "startDate"));
     const requestedEndDate = parseQueryString(getRequestParam(req, "endDate"));
+    const strengths = parseStrengthScope(
+      getRequestParam(req, "strength"),
+      getRequestParam(req, "strengths")
+    );
     const resumeFrom = parseQueryNumber(getRequestParam(req, "resumeFrom"));
     const maxPlayers = parseQueryPositiveInt(getRequestParam(req, "maxPlayers"));
     const fullRefresh = parseQueryBoolean(getRequestParam(req, "fullRefresh"));
@@ -303,6 +376,7 @@ async function handler(
     const dryRunUpsert = parseQueryBoolean(getRequestParam(req, "dryRunUpsert"));
     const debugUpsertPayload = parseQueryBoolean(getRequestParam(req, "debugUpsertPayload"));
     const fastMode = parseQueryBoolean(getRequestParam(req, "fastMode"));
+    const confirmBroadRun = parseQueryBoolean(getRequestParam(req, "confirmBroadRun"));
     const bypassFreshnessBlockers = parseQueryBoolean(
       getRequestParam(req, "bypassFreshnessBlockers")
     );
@@ -351,6 +425,48 @@ async function handler(
       endDate,
       implicitDailyWindowApplied: implicitDailyWindow != null
     });
+    const isUnboundedBroadDateWindowRun =
+      executionProfile !== "overnight" &&
+      implicitDailyWindow == null &&
+      playerId === undefined &&
+      resumeFrom === undefined &&
+      maxPlayers === undefined &&
+      !fullRefresh &&
+      (executionScope.windowDays ?? 0) >
+        DAILY_INCREMENTAL_BROAD_WINDOW_LIMIT_DAYS &&
+      !confirmBroadRun;
+
+    if (isUnboundedBroadDateWindowRun && executionScope.windowDays != null) {
+      const message = buildBroadRunBlockerMessage({
+        windowDays: executionScope.windowDays,
+        limitDays: DAILY_INCREMENTAL_BROAD_WINDOW_LIMIT_DAYS
+      });
+      logEndpointPhase({
+        phase: "response",
+        status: "complete",
+        details: {
+          statusCode: 422,
+          executionProfile,
+          executionScope,
+          reason: "unbounded_broad_date_window_run"
+        }
+      });
+      return res.status(422).json({
+        message,
+        success: false,
+        operationStatus: "blocked",
+        warning: message,
+        executionProfile,
+        executionScope,
+        progressGuidance: buildProgressGuidance({
+          executionProfile,
+          executionScope,
+          maxPlayers
+        }),
+        appliedPlayerLimit: maxPlayers,
+        dependencyContract
+      });
+    }
 
     const resolvedPlayerConcurrency =
       playerConcurrency ??
@@ -374,6 +490,7 @@ async function handler(
         season,
         startDate,
         endDate,
+        strengths,
         resumeFrom,
         maxPlayers,
         fullRefresh,
@@ -403,6 +520,7 @@ async function handler(
         season,
         startDate,
         endDate,
+        strengths,
         fullRefresh,
         fullRefreshMode,
         executionProfile,
@@ -427,6 +545,7 @@ async function handler(
       details: {
         playerId,
         season,
+        strengths,
         fullRefresh,
         fastMode
       }
@@ -441,6 +560,7 @@ async function handler(
         season,
         startDate,
         endDate,
+        strengths,
         resumePlayerId: resumeFrom,
         maxPlayers,
         forceFullRefresh: fullRefresh,
@@ -509,6 +629,11 @@ async function handler(
           executionProfile,
           executionScope,
           runtimeBudget,
+          progressGuidance: buildProgressGuidance({
+            executionProfile,
+            executionScope,
+            maxPlayers
+          }),
           appliedPlayerLimit: maxPlayers,
           dependencyContract,
           runSummary,
@@ -551,6 +676,11 @@ async function handler(
       executionProfile,
       executionScope,
       runtimeBudget,
+      progressGuidance: buildProgressGuidance({
+        executionProfile,
+        executionScope,
+        maxPlayers
+      }),
       appliedPlayerLimit: maxPlayers,
       dependencyContract,
       runSummary,

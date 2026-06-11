@@ -377,6 +377,10 @@ export default function XgUnderlyingStatsLabRoute() {
                 <p className={styles.metaLabel}>Rebound Model</p>
                 <p className={styles.metaValue}>{data?.reboundModelVersion ?? "-"}</p>
               </div>
+              <div className={styles.metaItem}>
+                <p className={styles.metaLabel}>Coverage</p>
+                <p className={styles.metaValue}>{data?.coverage.status ?? "-"}</p>
+              </div>
             </div>
           </section>
 
@@ -411,6 +415,14 @@ export default function XgUnderlyingStatsLabRoute() {
                 )}
               </div>
             )}
+
+            {data?.coverage.status === "warning" ? (
+              <div className={styles.coverageBox}>
+                {data.coverage.warnings.map((warning) => (
+                  <p key={warning}>{warning}</p>
+                ))}
+              </div>
+            ) : null}
 
             {data?.notes?.length ? (
               <ul className={styles.notes}>

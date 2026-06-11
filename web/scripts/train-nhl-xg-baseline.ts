@@ -17,6 +17,7 @@ import {
   NUMERIC_FEATURE_KEYS,
   type EncodedBaselineExample,
   type BaselineSplitConfig,
+  type DatasetSplit,
 } from "../lib/xg/baselineDataset";
 import {
   predictBinaryLogisticProbability,
@@ -32,6 +33,10 @@ import {
   type CalibrationExample,
   type SerializedCalibrationModel,
 } from "../lib/xg/calibration";
+import {
+  buildXgFeatureCoverageProfile,
+  type XgFeatureCoverageProfile,
+} from "../lib/xg/featureCoverage";
 import {
   buildShooterGoalieHandednessMatchup,
   normalizeShootsCatchesValue,
@@ -57,6 +62,8 @@ dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
 
 type CliOptions = {
   season: number;
+  seasons: number[];
+  testSeasons: number[] | null;
   outputDir: string;
   family: string;
   predictionType: BaselinePredictionType;
@@ -138,13 +145,18 @@ type ApprovalGradeEligibility = {
 type FeatureTransforms = {
   numericStandardization?: Record<string, { mean: number; std: number }>;
 };
+type SplitDateRanges = Record<
+  "train" | "validation" | "test",
+  { startDate: string | null; endDate: string | null }
+>;
 type DatasetArtifactPayload = {
   artifactKind: "nhl_xg_training_dataset";
   artifactVersion: number;
   artifactTag: string;
   generatedAt: string;
   sourceCommitSha: string | null;
-  seasonScope: number;
+  seasonScope: number | number[];
+  seasonScopes: number[];
   parserVersion: number;
   strengthVersion: number;
   featureVersion: number;
@@ -163,8 +175,10 @@ type DatasetArtifactPayload = {
   };
   splitAssignments: Array<{ gameId: number; split: "train" | "validation" | "test" }>;
   splitCounts: Record<"train" | "validation" | "test", number>;
+  splitDateRanges: SplitDateRanges;
   featureKeys: string[];
   categoricalLevels: Record<string, string[]>;
+  featureCoverage: XgFeatureCoverageProfile | null;
   approvalGradeEligibility: ApprovalGradeEligibility;
   rowCount: number;
   rowIds: string[];
@@ -180,10 +194,12 @@ type ModelArtifactPayload = {
   strengthVersion: number;
   featureVersion: number;
   predictionType: BaselinePredictionType;
-  seasonScope: number;
+  seasonScope: number | number[];
+  seasonScopes: number[];
   randomSeed: number;
   splitConfig: BaselineSplitConfig;
   splitStrategy: string;
+  splitDateRanges: SplitDateRanges;
   featureFamily: string;
   selectedFeatures: {
     numeric: string[];
@@ -192,6 +208,7 @@ type ModelArtifactPayload = {
   };
   featureKeys: string[];
   featureTransforms?: FeatureTransforms;
+  featureCoverage: XgFeatureCoverageProfile | null;
   trainExampleCount: number;
   validationExampleCount: number;
   testExampleCount: number;
@@ -244,11 +261,39 @@ function assertNoLeakedBaselineArtifactFeatures(args: {
   }
 }
 
+function buildSplitDateRanges(
+  examples: EncodedBaselineExample[]
+): SplitDateRanges {
+  const ranges: SplitDateRanges = {
+    train: { startDate: null, endDate: null },
+    validation: { startDate: null, endDate: null },
+    test: { startDate: null, endDate: null },
+  };
+
+  for (const split of ["train", "validation", "test"] as const) {
+    const dates = examples
+      .filter((example) => example.split === split && example.gameDate != null)
+      .map((example) => example.gameDate as string)
+      .sort();
+
+    if (dates.length) {
+      ranges[split] = {
+        startDate: dates[0] ?? null,
+        endDate: dates[dates.length - 1] ?? null,
+      };
+    }
+  }
+
+  return ranges;
+}
+
 function printHelp(): void {
   console.log(`Usage: npm run train:nhl-xg-baseline -- [options]
 
 Options:
   --season <seasonId>          Season id to train on. Default: 20252026
+  --seasons <csv>              Optional comma-separated season ids for multi-season training
+  --testSeasons <csv>          Optional season ids held out as true out-of-time test split
   --family <name>              Model family. Default: xgboost_js
   --predictionType <name>      Prediction target: shot_goal or rebound_creation. Default: shot_goal
   --featureFamily <name>       Feature family preset. Default: first_pass_v1
@@ -423,6 +468,7 @@ function buildApprovalGradeEligibility(args: {
   holdoutEvaluation: SplitEvaluation;
   testEvaluation: SplitEvaluation;
   calibrationAssessment: CalibrationAssessment;
+  featureCoverage?: XgFeatureCoverageProfile | null;
 }): ApprovalGradeEligibility {
   if (args.predictionType === "rebound_creation") {
     const blockingReasons = buildReboundCreationApprovalBlockingReasons({
@@ -430,6 +476,11 @@ function buildApprovalGradeEligibility(args: {
       holdoutEvaluation: args.holdoutEvaluation,
       calibrationAssessment: args.calibrationAssessment,
     });
+    for (const reason of args.featureCoverage?.blockingReasons ?? []) {
+      if (!blockingReasons.includes(reason)) {
+        blockingReasons.push(reason);
+      }
+    }
 
     return {
       isEligible: blockingReasons.length === 0,
@@ -438,6 +489,12 @@ function buildApprovalGradeEligibility(args: {
   }
 
   const blockingReasons: string[] = [];
+
+  for (const reason of args.featureCoverage?.blockingReasons ?? []) {
+    if (!blockingReasons.includes(reason)) {
+      blockingReasons.push(reason);
+    }
+  }
 
   if (args.splitCounts.test <= 0) {
     blockingReasons.push(
@@ -574,6 +631,8 @@ function parseCliArgs(argv: string[]): CliOptions {
 
   return {
     season: Number(options.season ?? 20252026),
+    seasons: parseIntegerList(options.seasons) ?? [Number(options.season ?? 20252026)],
+    testSeasons: parseIntegerList(options.testSeasons),
     outputDir:
       options.outputDir ?? path.resolve(process.cwd(), "scripts/output/xg-baselines"),
     family: options.family ?? "xgboost_js",
@@ -647,7 +706,7 @@ function getCommitSha(repoRoot: string): string | null {
 function buildArtifactVersionTag(args: {
   family: string;
   predictionType: BaselinePredictionType;
-  season: number;
+  seasonScopeLabel: string;
   parserVersion: number;
   strengthVersion: number;
   featureVersion: number;
@@ -655,12 +714,20 @@ function buildArtifactVersionTag(args: {
 }): string {
   const predictionTypePrefix =
     args.predictionType === "shot_goal" ? "" : `-${args.predictionType}`;
-  return `${args.family}${predictionTypePrefix}-s${args.season}-p${args.parserVersion}-st${args.strengthVersion}-f${args.featureVersion}-cfg${args.configSignature}`;
+  return `${args.family}${predictionTypePrefix}-s${args.seasonScopeLabel}-p${args.parserVersion}-st${args.strengthVersion}-f${args.featureVersion}-cfg${args.configSignature}`;
+}
+
+function buildSeasonScopeLabel(seasons: number[]): string {
+  const ordered = Array.from(new Set(seasons)).sort((left, right) => left - right);
+  if (ordered.length <= 2) return ordered.join("_");
+  return `${ordered[0]}-${ordered[ordered.length - 1]}`;
 }
 
 function buildConfigSignature(args: {
   predictionType: BaselinePredictionType;
   featureFamily: string;
+  seasonScopes: number[];
+  testSeasons: number[] | null;
   seed: number;
   splitConfig: BaselineSplitConfig;
   numericFeatures: string[];
@@ -672,6 +739,8 @@ function buildConfigSignature(args: {
     args.predictionType === "shot_goal"
       ? {
           featureFamily: args.featureFamily,
+          seasonScopes: args.seasonScopes,
+          testSeasons: args.testSeasons,
           seed: args.seed,
           splitConfig: args.splitConfig,
           numericFeatures: args.numericFeatures,
@@ -761,6 +830,69 @@ function buildSplitStrategyLabel(splitConfig: BaselineSplitConfig): string {
   const testRatio = splitConfig.testRatio ?? Math.max(0, 1 - trainRatio - validationRatio);
 
   return `chronological_game(train=${trainRatio},validation=${validationRatio},test=${testRatio})`;
+}
+
+function buildOutOfTimeSplitStrategyLabel(args: {
+  seasons: number[];
+  testSeasons: number[];
+  splitConfig: BaselineSplitConfig;
+}): string {
+  const validationRatio = args.splitConfig.validationRatio ?? 0.15;
+  return (
+    `out_of_time(testSeasons=${args.testSeasons.join(",")};` +
+    `inner=chronological_game_by_training_seasons(validation=${validationRatio});` +
+    `seasons=${args.seasons.join(",")})`
+  );
+}
+
+export function buildOutOfTimeGameSplitAssignments(args: {
+  rows: NhlShotFeatureRow[];
+  testSeasons: number[];
+  splitConfig?: BaselineSplitConfig;
+}): Array<{ gameId: number; split: DatasetSplit }> {
+  const testSeasonSet = new Set(args.testSeasons);
+  const validationRatio = args.splitConfig?.validationRatio ?? 0.15;
+  const games = Array.from(
+    new Map(
+      args.rows.map((row) => [
+        row.gameId,
+        {
+          gameId: row.gameId,
+          seasonId: row.seasonId,
+          gameDate: row.gameDate ?? "9999-12-31",
+        },
+      ])
+    ).values()
+  ).sort((left, right) => {
+    const dateCompare = left.gameDate.localeCompare(right.gameDate);
+    return dateCompare !== 0 ? dateCompare : left.gameId - right.gameId;
+  });
+
+  const trainingGames = games.filter((game) => !testSeasonSet.has(game.seasonId ?? -1));
+  const testGames = games.filter((game) => testSeasonSet.has(game.seasonId ?? -1));
+  if (!trainingGames.length) {
+    throw new Error("Out-of-time split requires at least one non-test-season training game.");
+  }
+  if (!testGames.length) {
+    throw new Error("Out-of-time split requires at least one test-season game.");
+  }
+
+  const validationCount = Math.max(
+    trainingGames.length >= 2 ? 1 : 0,
+    Math.floor(trainingGames.length * validationRatio)
+  );
+  const validationStart = Math.max(0, trainingGames.length - validationCount);
+  const assignments = new Map<number, DatasetSplit>();
+
+  trainingGames.forEach((game, index) => {
+    assignments.set(game.gameId, index >= validationStart ? "validation" : "train");
+  });
+  testGames.forEach((game) => assignments.set(game.gameId, "test"));
+
+  return games.map((game) => ({
+    gameId: game.gameId,
+    split: assignments.get(game.gameId) ?? "test",
+  }));
 }
 
 function resolveFitOptions(options: CliOptions): Required<BinaryLogisticFitOptions> {
@@ -866,7 +998,7 @@ async function fetchSelectedGames(
     const { data, error } = await client
       .from("games")
       .select("id, date, seasonId, homeTeamId, awayTeamId")
-      .eq("seasonId", options.season)
+      .in("seasonId", options.seasons)
       .order("date", { ascending: true })
       .order("id", { ascending: true })
       .range(from, from + SUPABASE_PAGE_SIZE - 1);
@@ -1390,7 +1522,8 @@ export function buildBaselineArtifactPayloads(args: {
   artifactTag: string;
   generatedAt: string;
   sourceCommitSha: string | null;
-  seasonScope: number;
+  seasonScope: number | number[];
+  seasonScopes?: number[];
   family: string;
   featureFamily: string;
   parserVersion: number;
@@ -1405,6 +1538,7 @@ export function buildBaselineArtifactPayloads(args: {
     categorical: string[];
   };
   dataset: ReturnType<typeof buildEncodedBaselineDataset>;
+  featureCoverage?: XgFeatureCoverageProfile | null;
   featureTransforms?: FeatureTransforms;
   fitOptions: Record<string, number>;
   evaluation: Record<"overall" | "train" | "validation" | "test", SplitEvaluation>;
@@ -1427,6 +1561,7 @@ export function buildBaselineArtifactPayloads(args: {
     selectedFeatures: args.selectedFeatures,
     featureKeys: args.dataset.featureKeys,
   });
+  const splitDateRanges = buildSplitDateRanges(args.dataset.examples);
   const approvalGradeEligibility = buildApprovalGradeEligibility({
     predictionType: args.dataset.predictionType,
     splitCounts: args.dataset.splitCounts,
@@ -1434,6 +1569,7 @@ export function buildBaselineArtifactPayloads(args: {
     holdoutEvaluation: args.holdoutEvaluation,
     testEvaluation: args.evaluation.test,
     calibrationAssessment: args.calibrationAssessment,
+    featureCoverage: args.featureCoverage ?? null,
   });
 
   const datasetArtifact: DatasetArtifactPayload = {
@@ -1443,6 +1579,7 @@ export function buildBaselineArtifactPayloads(args: {
     generatedAt: args.generatedAt,
     sourceCommitSha: args.sourceCommitSha,
     seasonScope: args.seasonScope,
+    seasonScopes: args.seasonScopes ?? (Array.isArray(args.seasonScope) ? args.seasonScope : [args.seasonScope]),
     parserVersion: args.parserVersion,
     strengthVersion: args.strengthVersion,
     featureVersion: args.featureVersion,
@@ -1460,8 +1597,10 @@ export function buildBaselineArtifactPayloads(args: {
     selectedFeatures: args.selectedFeatures,
     splitAssignments: args.dataset.splitAssignments,
     splitCounts: args.dataset.splitCounts,
+    splitDateRanges,
     featureKeys: args.dataset.featureKeys,
     categoricalLevels: args.dataset.categoricalLevels,
+    featureCoverage: args.featureCoverage ?? null,
     approvalGradeEligibility,
     rowCount: args.dataset.examples.length,
     rowIds: args.dataset.examples.map((example: EncodedBaselineExample) => example.rowId),
@@ -1479,13 +1618,16 @@ export function buildBaselineArtifactPayloads(args: {
     featureVersion: args.featureVersion,
     predictionType: args.dataset.predictionType,
     seasonScope: args.seasonScope,
+    seasonScopes: args.seasonScopes ?? (Array.isArray(args.seasonScope) ? args.seasonScope : [args.seasonScope]),
     randomSeed: args.randomSeed,
     splitConfig: args.splitConfig,
     splitStrategy: args.splitStrategy,
+    splitDateRanges,
     featureFamily: args.featureFamily,
     selectedFeatures: args.selectedFeatures,
     featureKeys: args.dataset.featureKeys,
     featureTransforms: args.featureTransforms,
+    featureCoverage: args.featureCoverage ?? null,
     trainExampleCount: args.dataset.splitCounts.train,
     validationExampleCount: args.dataset.splitCounts.validation,
     testExampleCount: args.dataset.splitCounts.test,
@@ -1513,7 +1655,13 @@ async function main(): Promise<void> {
     validationRatio: options.validationRatio,
     testRatio: options.testRatio ?? undefined,
   };
-  const splitStrategy = buildSplitStrategyLabel(splitConfig);
+  const splitStrategy = options.testSeasons?.length
+    ? buildOutOfTimeSplitStrategyLabel({
+        seasons: options.seasons,
+        testSeasons: options.testSeasons,
+        splitConfig,
+      })
+    : buildSplitStrategyLabel(splitConfig);
   {
     const games = await fetchSelectedGames(supabase, options);
 
@@ -1525,7 +1673,7 @@ async function main(): Promise<void> {
         );
       }
 
-      throw new Error(`No games found for season ${options.season}.`);
+      throw new Error(`No games found for seasons ${options.seasons.join(", ")}.`);
     }
 
     const shotRows: NhlShotFeatureRow[] = [];
@@ -1604,24 +1752,42 @@ async function main(): Promise<void> {
       );
     }
 
-    const seasonShotRows = shotRows.filter((row) => row.seasonId === options.season);
+    const seasonSet = new Set(options.seasons);
+    const seasonShotRows = shotRows.filter(
+      (row) => row.seasonId != null && seasonSet.has(row.seasonId)
+    );
     if (!seasonShotRows.length) {
       throw new Error(
-        `No shot-feature rows were found for the selected games and season ${options.season}. Ingest nhl_api_pbp_events and nhl_api_shift_rows for those games first.`
+        `No shot-feature rows were found for selected seasons ${options.seasons.join(", ")}. Ingest nhl_api_pbp_events and nhl_api_shift_rows for those games first.`
       );
     }
 
-    const seasonShotRowsWithTrainingContext = await enrichShotRowsWithHandedness(
-      supabase,
-      seasonShotRows,
-      options.season
-    );
+    const seasonShotRowsWithTrainingContext = (
+      await Promise.all(
+        options.seasons.map((seasonId) =>
+          enrichShotRowsWithHandedness(
+            supabase,
+            seasonShotRows.filter((row) => row.seasonId === seasonId),
+            seasonId
+          )
+        )
+      )
+    ).flat();
+    const splitAssignments =
+      options.testSeasons?.length
+        ? buildOutOfTimeGameSplitAssignments({
+            rows: seasonShotRowsWithTrainingContext,
+            testSeasons: options.testSeasons,
+            splitConfig,
+          })
+        : undefined;
 
     const dataset = buildEncodedBaselineDataset(seasonShotRowsWithTrainingContext, {
       predictionType: options.predictionType,
       featureFamily: options.featureFamily,
       seed: options.seed,
       splitConfig,
+      splitAssignments,
       featureSelection: {
         numericKeys: selectedFeatures.numeric as
           | (typeof NUMERIC_FEATURE_KEYS)[number][]
@@ -1633,6 +1799,13 @@ async function main(): Promise<void> {
           | (typeof CATEGORICAL_FEATURE_KEYS)[number][]
           | undefined,
       },
+    });
+    const eligibleRowIds = new Set(dataset.examples.map((example) => example.rowId));
+    const featureCoverage = buildXgFeatureCoverageProfile({
+      rows: seasonShotRowsWithTrainingContext.filter((row) =>
+        eligibleRowIds.has(`${row.gameId}:${row.eventId}`)
+      ),
+      selectedFeatures,
     });
     const featureTransforms = buildNumericStandardization(
       dataset.examples,
@@ -1771,6 +1944,8 @@ async function main(): Promise<void> {
     const configSignature = buildConfigSignature({
       predictionType: options.predictionType,
       featureFamily: selectedFeatures.featureFamily,
+      seasonScopes: options.seasons,
+      testSeasons: options.testSeasons,
       seed: options.seed,
       splitConfig,
       numericFeatures: selectedFeatures.numeric,
@@ -1781,7 +1956,7 @@ async function main(): Promise<void> {
     const artifactTag = buildArtifactVersionTag({
       family: options.family,
       predictionType: options.predictionType,
-      season: options.season,
+      seasonScopeLabel: buildSeasonScopeLabel(options.seasons),
       parserVersion: options.parserVersion,
       strengthVersion: options.strengthVersion,
       featureVersion: options.featureVersion,
@@ -1795,7 +1970,8 @@ async function main(): Promise<void> {
       artifactTag,
       generatedAt,
       sourceCommitSha: commitSha,
-      seasonScope: options.season,
+      seasonScope: options.seasons.length === 1 ? options.seasons[0]! : options.seasons,
+      seasonScopes: options.seasons,
       family: options.family,
       featureFamily: selectedFeatures.featureFamily,
       parserVersion: options.parserVersion,
@@ -1806,6 +1982,7 @@ async function main(): Promise<void> {
       splitStrategy,
       selectedFeatures,
       dataset,
+      featureCoverage,
       featureTransforms,
       fitOptions,
       evaluation,
@@ -1829,6 +2006,8 @@ async function main(): Promise<void> {
           outputRoot,
           predictionType: options.predictionType,
           featureFamily: selectedFeatures.featureFamily,
+          seasonScopes: options.seasons,
+          testSeasons: options.testSeasons,
           games: selectedGames.length,
           shotRows: shotRows.length,
           eligibleRows: dataset.examples.length,
@@ -1837,6 +2016,7 @@ async function main(): Promise<void> {
           holdoutEvaluation,
           holdoutSliceEvaluations,
           calibrationAssessment,
+          featureCoverage,
         },
         null,
         2

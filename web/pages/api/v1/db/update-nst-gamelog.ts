@@ -21,25 +21,35 @@
  *      It can be combined with the `startDate` parameter to begin the process from a specific point in the past.
  *      Example: /api/v1/db/update-nst-gamelog?runMode=reverse
  *
- * 2. `startDate` (optional): Used exclusively with `runMode=reverse`. This parameter defines the starting date for the
- *    historical data fetch. The script will identify the season corresponding to this date and begin its reverse
- *    chronological fetch from there. If omitted in `reverse` mode, it starts from the current season.
+ * 2. `startDate` (optional): Defines the start date for targeted incremental runs, or the starting date for
+ *    reverse historical fetches. If omitted in `reverse` mode, it starts from the current season.
  *    The format must be YYYY-MM-DD.
  *    Example: /api/v1/db/update-nst-gamelog?runMode=reverse&startDate=2024-02-05
  *
  *                                                         Bookmark: 2024-02-05
  *
- * 3. `overwrite` (optional): Controls whether to re-fetch and overwrite existing dates.
+ * 3. `endDate` (optional): Defines the end date for incremental targeted runs.
+ *    The format must be YYYY-MM-DD.
+ *    Example: /api/v1/db/update-nst-gamelog?runMode=incremental&startDate=2026-03-01&endDate=2026-03-07&datasetGroup=fiveOnFive&overwrite=yes
+ *
+ * 4. `dates` (optional): Comma-separated exact dates to fetch. Useful for surgical gap backfills.
+ *    The format for each date must be YYYY-MM-DD.
+ *    Example: /api/v1/db/update-nst-gamelog?runMode=incremental&dates=2026-01-12,2026-04-12&datasetGroup=fiveOnFive&overwrite=yes
+ *
+ * 5. `overwrite` (optional): Controls whether to re-fetch and overwrite existing dates.
  *    - Accepted: `yes` | `no` (also `true` | `false`, `1` | `0`)
  *    - Defaults preserve current behavior:
  *      - reverse/forward: overwrite defaults to yes (full-refresh)
  *      - incremental: overwrite defaults to no (skip complete dates)
  *    Example: /api/v1/db/update-nst-gamelog?runMode=reverse&overwrite=no
  *
- * 4. `datasetType` (optional): Filters the operation to a specific dataset type.
+ * 6. `datasetType` (optional): Filters the operation to a specific dataset type.
  *    Useful for debugging or targeting a specific table.
  *    Example: /api/v1/db/update-nst-gamelog?runMode=forward&datasetType=penaltyKillRatesOi
  *    Example from Date: /api/v1/db/update-nst-gamelog?runMode=forward&datasetType=penaltyKillRatesOi&startDate=2025-05-25
+ *
+ * 7. `datasetGroup` (optional): Filters the operation to a supported dataset family.
+ *    Example: /api/v1/db/update-nst-gamelog?runMode=reverse&startDate=2026-03-01&datasetGroup=fiveOnFive
  *
  * --- How It Works ---
  *
@@ -68,6 +78,9 @@
  *
  */
 
+// https://www.naturalstattrick.com/playerteams.php?fromseason=20242025&thruseason=20242025&stype=2&sit=5v5&score=all&stdoi=std&rate=n&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-04-16&td=2025-04-16&tgp=410&lines=single&draftteam=ALL
+// https://www.naturalstattrick.com/playerteams.php?fromseason=20242025&thruseason=20242025&stype=2&sit=5v5&score=all&stdoi=std&rate=n&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-04-16&td=2025-04-16&tgp=410&lines=single&draftteam=ALL
+
 //  https://www.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&sit=pk&score=all&stdoi=oi&  rate=y&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-23&td=2025-10-23&tgp=410&lines=single&draftteam=ALL
 // `https://www.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&sit=all&score=all&stdoi=std&rate=n&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-04-17&td=2026-04-17&lines=single&draftteam=ALL&tgp=410
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -78,7 +91,11 @@ import dotenv from "dotenv";
 import {
   fetchNstTextByUrl,
   isNstAuthError,
-  isNstRateLimitError
+  isNstConfigError,
+  isNstNotFoundError,
+  isNstRateLimitError,
+  isNstResponseError,
+  toNstOperatorMessage
 } from "lib/nst/client";
 import { resolveNstGamelogRequestPlan } from "lib/cron/nstBurstPlans";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
@@ -91,8 +108,18 @@ import {
   format as dateFnsFormat // Use alias to avoid conflict
 } from "date-fns";
 import { toZonedTime, format as tzFormat, fromZonedTime } from "date-fns-tz";
+import {
+  DEFAULT_SUPABASE_PAGE_SIZE,
+  fetchAllSupabasePages
+} from "lib/supabase/pagination";
 
 type RunMode = "incremental" | "forward" | "reverse";
+type NstSeasonType = "1" | "2" | "3";
+type NhlGameType = 1 | 2 | 3;
+
+const NST_HISTORICAL_DATED_DATA_HOST_MESSAGE =
+  "data.naturalstattrick.com currently returns 404 for prior-season date-filtered playerteams/teamtable pages. Use a startDate within the current season, or pass allowHistoricalDatedRequests=yes to force the attempt.";
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 dotenv.config({ path: "./../../../.env.local" });
 
@@ -125,7 +152,9 @@ const playerNameMapping: Record<string, { fullName: string }> = {
   "Mat?j Blümel": { fullName: "Matěj Blümel" },
   "Alex Petrovic": { fullName: "Alexander Petrovic" },
   "Martin Fehervary": { fullName: "Martin Fehérváry" },
-  "Jonathan Lekkerimaki": { fullName: "Jonathan Lekkerimäki" }
+  "Jonathan Lekkerimaki": { fullName: "Jonathan Lekkerimäki" },
+  "Freddy Gaudreau": { fullName: "Frederick Gaudreau" },
+  "Frederic Gaudreau": { fullName: "Frederick Gaudreau" }
 };
 
 // Global list for players whose IDs couldn't be found during the process
@@ -221,10 +250,152 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function firstQueryValue(value: string | string[] | undefined): string | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
+
+function inferSeasonIdFromDate(date: string): string {
+  const year = Number(date.slice(0, 4));
+  const month = Number(date.slice(5, 7));
+  const startYear = month >= 9 ? year : year - 1;
+  return `${startYear}${startYear + 1}`;
+}
+
+function parseDiagnosticSeasonType(value: string | null): NstSeasonType {
+  const normalized = value?.toLowerCase();
+  if (normalized === "1" || normalized === "preseason") return "1";
+  if (normalized === "3" || normalized === "playoffs" || normalized === "playoff") {
+    return "3";
+  }
+  return "2";
+}
+
 function parseDateInTimeZone(dateStr: string, timeZone: string): Date {
   // Interpret `YYYY-MM-DD` as midnight in the provided time zone.
   // This avoids the "UTC midnight => previous day in America/New_York" pitfall.
   return fromZonedTime(`${dateStr}T00:00:00`, timeZone);
+}
+
+function assertIsoDate(value: string, paramName: string): void {
+  if (!ISO_DATE_RE.test(value)) {
+    throw new Error(`${paramName} must be YYYY-MM-DD`);
+  }
+}
+
+export function normalizeTargetDates(values: readonly string[]): string[] {
+  const normalized = values
+    .flatMap((value) => value.split(","))
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  for (const value of normalized) {
+    assertIsoDate(value, "dates");
+  }
+
+  return Array.from(new Set(normalized)).sort();
+}
+
+export function parseDatesParam(
+  value: string | string[] | undefined
+): string[] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  return normalizeTargetDates(Array.isArray(value) ? value : [value]);
+}
+
+export type NstScheduledGameDateRow = {
+  date: string;
+  seasonId: string | number;
+  type: number | null;
+};
+
+export type NstScheduledDateInfo = {
+  date: string;
+  seasonId: string;
+  gameType: NhlGameType;
+  stype: NstSeasonType;
+};
+
+function normalizeScheduleDate(value: string): string {
+  return value.slice(0, 10);
+}
+
+export function resolveNstSeasonTypeForGameType(
+  gameType: number | null | undefined
+): NstSeasonType | null {
+  if (gameType === 1 || gameType === 2 || gameType === 3) {
+    return String(gameType) as NstSeasonType;
+  }
+
+  return null;
+}
+
+export function buildNstScheduledDateMap(
+  rows: readonly NstScheduledGameDateRow[]
+): Map<string, NstScheduledDateInfo> {
+  const byDate = new Map<string, NstScheduledDateInfo>();
+  const priority: Record<NhlGameType, number> = { 1: 1, 2: 2, 3: 3 };
+
+  for (const row of rows) {
+    const stype = resolveNstSeasonTypeForGameType(row.type);
+    if (!stype) continue;
+
+    const date = normalizeScheduleDate(String(row.date));
+    const gameType = Number(row.type) as NhlGameType;
+    const candidate: NstScheduledDateInfo = {
+      date,
+      seasonId: String(row.seasonId),
+      gameType,
+      stype
+    };
+    const existing = byDate.get(date);
+    if (!existing || priority[candidate.gameType] > priority[existing.gameType]) {
+      byDate.set(date, candidate);
+    }
+  }
+
+  return byDate;
+}
+
+export function shouldBlockHistoricalDatedNstRequest(args: {
+  requestedStartDate?: string | null;
+  currentSeasonStartDate?: string | null;
+  allowHistoricalDatedRequests?: boolean;
+}): boolean {
+  if (args.allowHistoricalDatedRequests) return false;
+  if (!args.requestedStartDate || !args.currentSeasonStartDate) return false;
+
+  return args.requestedStartDate < args.currentSeasonStartDate;
+}
+
+export function filterReverseSeasonsForHistoricalDatedNst<
+  T extends { id: string | number }
+>(
+  seasons: readonly T[],
+  currentSeasonId: string | number,
+  allowHistoricalDatedRequests = false
+): T[] {
+  if (allowHistoricalDatedRequests) {
+    return [...seasons];
+  }
+
+  return seasons.filter(
+    (season) => String(season.id) === String(currentSeasonId)
+  );
+}
+
+function assertHistoricalDatedNstRequestAllowed(args: {
+  requestedStartDate?: string | null;
+  currentSeasonStartDate?: string | null;
+  allowHistoricalDatedRequests?: boolean;
+}) {
+  if (!shouldBlockHistoricalDatedNstRequest(args)) return;
+
+  throw new Error(
+    `${NST_HISTORICAL_DATED_DATA_HOST_MESSAGE} Requested startDate=${args.requestedStartDate}; current season starts ${args.currentSeasonStartDate}.`
+  );
 }
 
 function getDatesBetween(start: Date, end: Date): string[] {
@@ -280,6 +451,33 @@ async function dateIsComplete(table: string, date: string): Promise<boolean> {
   };
 
   return data.some((r: any) => hasAnyStatValue(r));
+}
+
+async function fetchScheduledGameDateMap(args: {
+  seasonIds: readonly string[];
+  startDate: string;
+  endDate: string;
+}): Promise<Map<string, NstScheduledDateInfo>> {
+  const seasonIds = Array.from(new Set(args.seasonIds.map((id) => Number(id)))).filter(
+    Number.isFinite
+  );
+  if (seasonIds.length === 0) return new Map();
+
+  const rows = await fetchAllSupabasePages<NstScheduledGameDateRow>(
+    ({ from, to }) =>
+      supabase
+        .from("games")
+        .select("date, seasonId, type")
+        .in("seasonId", seasonIds)
+        .in("type", [1, 2, 3])
+        .gte("date", args.startDate)
+        .lte("date", args.endDate)
+        .order("date", { ascending: true })
+        .range(from, to) as any,
+    { pageSize: DEFAULT_SUPABASE_PAGE_SIZE }
+  );
+
+  return buildNstScheduledDateMap(rows);
 }
 
 function mapHeaderToColumn(headerRaw: string): string | null {
@@ -462,10 +660,14 @@ function mapHeaderToColumn(headerRaw: string): string | null {
 const NST_TABLE_NAMES = [
   "nst_gamelog_as_counts",
   "nst_gamelog_as_rates",
+  "nst_gamelog_5v5_counts",
+  "nst_gamelog_5v5_rates",
   "nst_gamelog_pp_counts",
   "nst_gamelog_pp_rates",
   "nst_gamelog_as_counts_oi",
   "nst_gamelog_as_rates_oi",
+  "nst_gamelog_5v5_counts_oi",
+  "nst_gamelog_5v5_rates_oi",
   "nst_gamelog_pp_counts_oi",
   "nst_gamelog_pp_rates_oi",
   "nst_gamelog_es_counts",
@@ -478,15 +680,58 @@ const NST_TABLE_NAMES = [
   "nst_gamelog_pk_rates_oi"
 ];
 
+export const NST_DATASET_GROUPS: Record<string, readonly string[]> = {
+  allStrengths: [
+    "allStrengthsCounts",
+    "allStrengthsRates",
+    "allStrengthsCountsOi",
+    "allStrengthsRatesOi"
+  ],
+  fiveOnFive: [
+    "fiveOnFiveCounts",
+    "fiveOnFiveRates",
+    "fiveOnFiveCountsOi",
+    "fiveOnFiveRatesOi"
+  ],
+  powerPlay: [
+    "powerPlayCounts",
+    "powerPlayRates",
+    "powerPlayCountsOi",
+    "powerPlayRatesOi"
+  ],
+  rankingFreshnessSkaterSources: [
+    "allStrengthsCounts",
+    "allStrengthsRates",
+    "allStrengthsCountsOi",
+    "allStrengthsRatesOi",
+    "evenStrengthCounts",
+    "evenStrengthRates",
+    "evenStrengthCountsOi",
+    "evenStrengthRatesOi",
+    "powerPlayCounts",
+    "powerPlayRates",
+    "powerPlayCountsOi",
+    "powerPlayRatesOi",
+    "penaltyKillCounts",
+    "penaltyKillRates",
+    "penaltyKillCountsOi",
+    "penaltyKillRatesOi"
+  ]
+};
+
 function getTableName(datasetType: string): string {
   // Mapping should be comprehensive based on constructUrlsForDate logic
   const mapping: Record<string, string> = {
     allStrengthsCounts: "nst_gamelog_as_counts",
     allStrengthsRates: "nst_gamelog_as_rates",
+    fiveOnFiveCounts: "nst_gamelog_5v5_counts",
+    fiveOnFiveRates: "nst_gamelog_5v5_rates",
     powerPlayCounts: "nst_gamelog_pp_counts",
     powerPlayRates: "nst_gamelog_pp_rates",
     allStrengthsCountsOi: "nst_gamelog_as_counts_oi",
     allStrengthsRatesOi: "nst_gamelog_as_rates_oi",
+    fiveOnFiveCountsOi: "nst_gamelog_5v5_counts_oi",
+    fiveOnFiveRatesOi: "nst_gamelog_5v5_rates_oi",
     powerPlayCountsOi: "nst_gamelog_pp_counts_oi",
     powerPlayRatesOi: "nst_gamelog_pp_rates_oi",
     evenStrengthCounts: "nst_gamelog_es_counts",
@@ -594,7 +839,7 @@ function isDashPlaceholder(value: string): boolean {
   );
 }
 
-type PlayerCacheRow = { id: number; position: string };
+export type PlayerCacheRow = { id: number; position: string };
 let playerIdCache: Map<string, PlayerCacheRow[]> | null = null;
 const playerIdMemo = new Map<string, number | null>();
 type NstRowDebugMeta = {
@@ -603,6 +848,31 @@ type NstRowDebugMeta = {
   date: string;
   datasetType: string;
 };
+
+function addPlayerCacheRow(
+  cache: Map<string, PlayerCacheRow[]>,
+  key: string,
+  row: PlayerCacheRow
+) {
+  const existing = cache.get(key) ?? [];
+  existing.push(row);
+  cache.set(key, existing);
+}
+
+export function getPlayerCacheCandidates(
+  cache: Map<string, PlayerCacheRow[]>,
+  fullName: string
+): PlayerCacheRow[] | undefined {
+  const exact = cache.get(fullName);
+  if (exact && exact.length > 0) return exact;
+
+  const normalized = normalizeName(fullName);
+  return normalized === fullName ? undefined : cache.get(normalized);
+}
+
+export function resolveMappedPlayerName(fullName: string): string {
+  return playerNameMapping[fullName]?.fullName ?? fullName;
+}
 
 async function loadPlayerIdCache(): Promise<Map<string, PlayerCacheRow[]>> {
   if (playerIdCache) return playerIdCache;
@@ -630,13 +900,12 @@ async function loadPlayerIdCache(): Promise<Map<string, PlayerCacheRow[]>> {
 
     for (const r of rows) {
       if (!r?.id || !r?.fullName) continue;
-      const key = r.fullName;
-      const existing = cache.get(key) ?? [];
-      existing.push({
+      const cacheRow = {
         id: r.id,
         position: String(r.position ?? "").toUpperCase()
-      });
-      cache.set(key, existing);
+      };
+      addPlayerCacheRow(cache, r.fullName, cacheRow);
+      addPlayerCacheRow(cache, normalizeName(r.fullName), cacheRow);
     }
 
     if (!rows || rows.length < PAGE_SIZE) break;
@@ -651,8 +920,7 @@ async function getPlayerIdByName(
   fullName: string,
   position: string
 ): Promise<number | null> {
-  const mappedInfo = playerNameMapping[fullName];
-  const searchName = mappedInfo ? mappedInfo.fullName : fullName;
+  const searchName = resolveMappedPlayerName(fullName);
 
   const memoKey = `${searchName}|${String(position ?? "").toUpperCase()}`;
   if (playerIdMemo.has(memoKey)) return playerIdMemo.get(memoKey) ?? null;
@@ -663,7 +931,7 @@ async function getPlayerIdByName(
 
   try {
     const cache = await loadPlayerIdCache();
-    const candidates = cache.get(searchName);
+    const candidates = getPlayerCacheCandidates(cache, searchName);
     if (candidates && candidates.length > 0) {
       if (candidates.length === 1 && !requiresPositionCheck) {
         playerIdMemo.set(memoKey, candidates[0].id);
@@ -1166,6 +1434,12 @@ async function fetchAndParseData(
       if (isNstAuthError(error) || isNstRateLimitError(error)) {
         throw error;
       }
+      if (isNstNotFoundError(error)) {
+        console.warn(
+          `NST returned 404 for ${datasetType} ${effectiveDate}; treating this query as unavailable/no upstream page.`
+        );
+        return { success: true, data: [] };
+      }
       console.error(
         `Attempt ${attempt}/${retries} - Error fetching/parsing ${url}:`,
         error.message
@@ -1196,7 +1470,7 @@ async function fetchAndParseData(
 function constructUrlsForDate(
   date: string,
   seasonId: string,
-  isPlayoffs: boolean = false
+  seasonType: NstSeasonType = "2"
 ): Record<string, string> {
   const fromSeason = seasonId;
   const thruSeason = seasonId;
@@ -1205,11 +1479,11 @@ function constructUrlsForDate(
     "yyyy-MM-dd"
   );
 
-  const seasonType = isPlayoffs ? "3" : "2";
   const commonParams = `fromseason=${fromSeason}&thruseason=${thruSeason}&stype=${seasonType}&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=${formattedDate}&td=${formattedDate}&lines=single&draftteam=ALL`;
 
   const strengths: Record<string, string> = {
     allStrengths: "all",
+    fiveOnFive: "5v5",
     evenStrength: "ev",
     powerPlay: "pp",
     penaltyKill: "pk"
@@ -1227,14 +1501,139 @@ function constructUrlsForDate(
         if (stdoi === "oi") {
           datasetType += "Oi";
         }
-        // NST uses tgp=410 for rate pages in some views; counts can remain 0
-        let tgp = rate === "n" ? "0" : "410";
+        const tgp = "410";
         const url = `${BASE_URL}?sit=${sitParam}&score=all&stdoi=${stdoi}&rate=${rate}&team=ALL&${commonParams}&tgp=${tgp}`;
         urls[datasetType] = url;
       }
     }
   }
   return urls;
+}
+
+function resolveNstStatusDatasetType(query: NextApiRequest["query"]): string {
+  const explicitDatasetType = firstQueryValue(query.datasetType);
+  if (explicitDatasetType) return explicitDatasetType;
+
+  const datasetGroup = firstQueryValue(query.datasetGroup);
+  if (datasetGroup) {
+    const group = NST_DATASET_GROUPS[datasetGroup];
+    if (!group) {
+      throw new Error(
+        `Unknown datasetGroup "${datasetGroup}". Supported groups: ${Object.keys(
+          NST_DATASET_GROUPS
+        ).join(", ")}`
+      );
+    }
+
+    return group.includes("fiveOnFiveRates")
+      ? "fiveOnFiveRates"
+      : (group[1] ?? group[0] ?? "fiveOnFiveRates");
+  }
+
+  return "fiveOnFiveRates";
+}
+
+export function buildNstStatusUrl(query: NextApiRequest["query"]): {
+  url: string;
+  date: string;
+  seasonId: string;
+  datasetType: string;
+  source: "testUrl" | "constructed";
+} {
+  const testUrl = firstQueryValue(query.testUrl);
+  if (testUrl) {
+    return {
+      url: testUrl,
+      date: getDateFromUrl(testUrl) ?? "unknown",
+      seasonId: new URL(testUrl).searchParams.get("fromseason") ?? "unknown",
+      datasetType: firstQueryValue(query.datasetType) ?? "custom",
+      source: "testUrl"
+    };
+  }
+
+  const date = firstQueryValue(query.date) ?? firstQueryValue(query.startDate);
+  if (!date) {
+    throw new Error("Provide date=YYYY-MM-DD or startDate=YYYY-MM-DD for action=nstStatus.");
+  }
+  assertIsoDate(date, "date");
+
+  const seasonId = firstQueryValue(query.seasonId) ?? inferSeasonIdFromDate(date);
+  const datasetType = resolveNstStatusDatasetType(query);
+  const seasonType = parseDiagnosticSeasonType(
+    firstQueryValue(query.stype) ?? firstQueryValue(query.gameType)
+  );
+  const urls = constructUrlsForDate(date, seasonId, seasonType);
+  const url = urls[datasetType];
+  if (!url) {
+    throw new Error(
+      `Unknown datasetType "${datasetType}" for action=nstStatus. Available: ${Object.keys(
+        urls
+      ).join(", ")}`
+    );
+  }
+
+  return {
+    url,
+    date,
+    seasonId,
+    datasetType,
+    source: "constructed"
+  };
+}
+
+async function handleNstStatusCheck(req: NextApiRequest, res: NextApiResponse) {
+  const diagnostic = buildNstStatusUrl(req.query);
+  const startedAt = new Date().toISOString();
+  try {
+    const response = await nstGet(diagnostic.url, 30000, {
+      bypassRateLimit: firstQueryValue(req.query.bypassLocalWait) === "yes"
+    });
+    const hasTable = cheerio.load(response.data)("table").first().length > 0;
+    return res.status(200).json({
+      success: true,
+      status: response.status,
+      classification: "ok",
+      operatorMessage: "NST authenticated request succeeded",
+      request: {
+        ...diagnostic,
+        startedAt,
+        completedAt: new Date().toISOString(),
+        hasTable
+      },
+      rateLimitNote:
+        "This diagnostic makes exactly one authenticated NST page request. A browser visit to data.naturalstattrick.com without the nst-key header may return 403 even when the key is active."
+    });
+  } catch (error) {
+    const status = isNstResponseError(error) ? error.status : null;
+    const classification = isNstRateLimitError(error)
+      ? "rate_limited"
+      : isNstAuthError(error)
+        ? "auth_or_forbidden"
+        : isNstNotFoundError(error)
+          ? "not_found_or_unavailable_query"
+        : isNstConfigError(error)
+          ? "missing_config"
+          : "upstream_or_network_error";
+
+    return res.status(status ?? 503).json({
+      success: false,
+      status,
+      classification,
+      operatorMessage: toNstOperatorMessage(error),
+      request: {
+        ...diagnostic,
+        startedAt,
+        completedAt: new Date().toISOString()
+      },
+      rateLimitNote:
+        status === 403
+          ? "403 is forbidden/auth in this client. It can happen if NST_KEY is missing/invalid or if NST is temporarily forbidding the key/IP. NST hard rate-limit responses are expected as 429 when exposed distinctly."
+          : status === 404
+            ? "404 is not NST's token-budget signal. It means the authenticated data host did not expose a page for this path/query/date/season combination."
+          : "429 indicates the token/page budget was exhausted. Two route instances can exceed NST limits even though each process waits 21 seconds locally.",
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
 }
 
 // --- Main Processing Logic ---
@@ -1612,14 +2011,47 @@ async function main(
   runMode: RunMode,
   options?: {
     startDate?: string;
+    endDate?: string;
+    dates?: string[];
     overwrite?: boolean;
     datasetType?: string;
+    datasetGroup?: string;
+    seasonId?: string;
+    allowHistoricalDatedRequests?: boolean;
   }
 ) {
   const isForwardFull = runMode === "forward";
   const isReverseFull = runMode === "reverse";
   const overwriteRequested = options?.overwrite;
   const targetDataset = options?.datasetType;
+  const targetDatasetGroup = options?.datasetGroup;
+  const targetSeasonId = options?.seasonId;
+  const allowHistoricalDatedRequests =
+    options?.allowHistoricalDatedRequests ?? false;
+  const targetDates = options?.dates?.length
+    ? normalizeTargetDates(options.dates)
+    : undefined;
+  const targetDatasetSet = targetDataset
+    ? new Set([targetDataset])
+    : targetDatasetGroup
+      ? new Set(NST_DATASET_GROUPS[targetDatasetGroup] ?? [])
+      : null;
+
+  if (targetDatasetGroup && !NST_DATASET_GROUPS[targetDatasetGroup]) {
+    throw new Error(
+      `Unknown datasetGroup "${targetDatasetGroup}". Supported groups: ${Object.keys(
+        NST_DATASET_GROUPS
+      ).join(", ")}`
+    );
+  }
+  if (targetDates && isReverseFull) {
+    throw new Error(
+      "The dates parameter is only supported with runMode=incremental or runMode=forward."
+    );
+  }
+
+  const shouldProcessDataset = (datasetType: string) =>
+    targetDatasetSet == null || targetDatasetSet.has(datasetType);
 
   // Preserve legacy behavior by default: forward/reverse overwrite=true, incremental overwrite=false
   const fullRefreshFlag = (mode: RunMode) =>
@@ -1629,7 +2061,9 @@ async function main(
   banner(
     `Script execution started. Mode: ${runMode}. Full Refresh: ${
       isForwardFull || isReverseFull
-    } | Target Dataset: ${targetDataset || "ALL"}`
+    } | Target Dataset: ${targetDataset || "ALL"} | Target Group: ${
+      targetDatasetGroup || "none"
+    } | Target Dates: ${targetDates?.join(",") || "none"}`
   );
   const startTime = Date.now();
   troublesomePlayers.length = 0; // Clear troublesome list for this run
@@ -1642,7 +2076,14 @@ async function main(
         job_name: "update-nst-gamelog",
         status: "started",
         rows_affected: 0,
-        details: { runMode, startTime: new Date().toISOString() }
+        details: {
+          runMode,
+          startDate: options?.startDate ?? null,
+          endDate: options?.endDate ?? null,
+          dates: targetDates ?? null,
+          seasonId: targetSeasonId ?? null,
+          startTime: new Date().toISOString()
+        }
       }
     ]);
 
@@ -1656,12 +2097,17 @@ async function main(
           "Could not determine the current season to start the reverse process."
         );
       }
+      const reverseAnchorSeasonId =
+        targetSeasonId ?? String(currentSeasonInfo.id);
       if (requestedStartDateStr) {
         console.log(
           `Reverse mode requested startDate=${requestedStartDateStr}`
         );
       }
-      console.log(`Reverse mode start: ${currentSeasonInfo.id}`);
+      if (targetSeasonId) {
+        console.log(`Reverse mode requested seasonId=${targetSeasonId}`);
+      }
+      console.log(`Reverse mode start: ${reverseAnchorSeasonId}`);
 
       const { data: allSeasons, error: seasonsError } = await supabase
         .from("seasons")
@@ -1676,7 +2122,7 @@ async function main(
 
       // Print current season details if available
       const currentSeason = allSeasons.find(
-        (s) => s.id === currentSeasonInfo.id
+        (s) => String(s.id) === String(reverseAnchorSeasonId)
       );
       if (currentSeason) {
         section("Season Data");
@@ -1691,6 +2137,16 @@ async function main(
         ]);
       }
 
+      assertHistoricalDatedNstRequestAllowed({
+        requestedStartDate: requestedStartDateStr ?? null,
+        currentSeasonStartDate: currentSeason
+          ? String((currentSeason as any).startDate).slice(0, 10)
+          : targetSeasonId
+            ? null
+            : currentSeasonInfo.startDate,
+        allowHistoricalDatedRequests
+      });
+
       let startingIndex = -1;
       let clampFirstSeasonEndDate: string | null = null;
       if (requestedStartDateStr) {
@@ -1702,9 +2158,7 @@ async function main(
           );
           startingIndex = allSeasons.findIndex((s) => {
             const sStart = parseISO((s as any).startDate);
-            const sEnd = parseISO(
-              (s as any).regularSeasonEndDate || (s as any).endDate
-            );
+            const sEnd = parseISO((s as any).endDate);
             return reqDate >= sStart && reqDate <= sEnd;
           });
           if (startingIndex !== -1) {
@@ -1718,21 +2172,41 @@ async function main(
       }
       if (startingIndex === -1) {
         startingIndex = allSeasons.findIndex(
-          (s) => s.id === currentSeasonInfo.id
+          (s) => String(s.id) === String(reverseAnchorSeasonId)
         );
       }
 
       let seasonsToProcess = [];
       if (startingIndex !== -1) {
         seasonsToProcess = allSeasons.slice(startingIndex);
+        const unrestrictedSeasonCount = seasonsToProcess.length;
+        seasonsToProcess = filterReverseSeasonsForHistoricalDatedNst(
+          seasonsToProcess,
+          reverseAnchorSeasonId,
+          allowHistoricalDatedRequests
+        );
+        if (!allowHistoricalDatedRequests) {
+          const skippedSeasonCount =
+            unrestrictedSeasonCount - seasonsToProcess.length;
+          if (skippedSeasonCount > 0) {
+            console.log(
+              `Historical dated NST requests are disabled; reverse mode is limited to season ${reverseAnchorSeasonId}. Skipped ${skippedSeasonCount} older seasons. Add allowHistoricalDatedRequests=yes to force them.`
+            );
+          }
+        }
+        if (seasonsToProcess.length === 0) {
+          console.warn(
+            `No seasons remain after applying the historical NST date-filter guard for season ${reverseAnchorSeasonId}.`
+          );
+          return;
+        }
         console.log(
           `Found ${seasonsToProcess.length} seasons to process in reverse.`
         );
       } else {
-        console.warn(
-          `Current season ${currentSeasonInfo.id} not found in the Supabase 'seasons' table. Aborting reverse run.`
+        throw new Error(
+          `Season ${reverseAnchorSeasonId} not found in the Supabase 'seasons' table. Aborting reverse run.`
         );
-        return;
       }
 
       const reverseQueue: UrlQueueItem[] = [];
@@ -1740,11 +2214,24 @@ async function main(
       // silently coerce to season-to-date cumulative results.
       const nowEST = toZonedTime(new Date(), "America/New_York");
       const todayStr = tzFormat(nowEST, "yyyy-MM-dd");
+      const reverseSeasonStarts = seasonsToProcess
+        .map((s: any) => String(s.startDate).slice(0, 10))
+        .sort();
+      const reverseSeasonEnds = seasonsToProcess
+        .map((s: any) => String(s.endDate).slice(0, 10))
+        .sort();
+      const scheduledDateMap = await fetchScheduledGameDateMap({
+        seasonIds: seasonsToProcess.map((s: any) => String(s.id)),
+        startDate: reverseSeasonStarts[0],
+        endDate: reverseSeasonEnds[reverseSeasonEnds.length - 1]
+      });
+      console.log(
+        `Loaded ${scheduledDateMap.size} scheduled NHL game dates for reverse NST aperture.`
+      );
       for (let idx = 0; idx < seasonsToProcess.length; idx++) {
         const s = seasonsToProcess[idx];
         const seasonStartStr = (s as any).startDate;
-        const seasonEndStr =
-          (s as any).regularSeasonEndDate || (s as any).endDate;
+        const seasonEndStr = (s as any).endDate;
         const effectiveEndStr =
           idx === 0 && clampFirstSeasonEndDate
             ? clampFirstSeasonEndDate
@@ -1765,16 +2252,24 @@ async function main(
           parseISO(finalEndStr)
         ).reverse();
         for (const date of dates) {
-          const urls = constructUrlsForDate(date, String(s.id), false);
+          const scheduledInfo = scheduledDateMap.get(date);
+          if (!scheduledInfo || scheduledInfo.seasonId !== String(s.id)) {
+            continue;
+          }
+          const urls = constructUrlsForDate(
+            date,
+            scheduledInfo.seasonId,
+            scheduledInfo.stype
+          );
           for (const [datasetType, url] of Object.entries(urls)) {
-            if (targetDataset && targetDataset !== datasetType) {
+            if (!shouldProcessDataset(datasetType)) {
               continue;
             }
             reverseQueue.push({
               datasetType,
               url,
               date,
-              seasonId: String(s.id)
+              seasonId: scheduledInfo.seasonId
             });
           }
         }
@@ -1837,19 +2332,20 @@ async function main(
     const getSeasonInfoForDate = (dateStr: string) => {
       const date = parseDateInTimeZone(dateStr, timeZone);
       const season = allSeasons.find((s) => {
-        const start = parseDateInTimeZone(String(s.startDate).slice(0, 10), timeZone);
-        const end = parseDateInTimeZone(String(s.endDate).slice(0, 10), timeZone);
+        const start = parseDateInTimeZone(
+          String(s.startDate).slice(0, 10),
+          timeZone
+        );
+        const end = parseDateInTimeZone(
+          String(s.endDate).slice(0, 10),
+          timeZone
+        );
         return date >= start && date <= end;
       });
 
       if (season) {
-        const regEnd = parseDateInTimeZone(
-          String(season.regularSeasonEndDate).slice(0, 10),
-          timeZone
-        );
         return {
-          seasonId: season.id.toString(),
-          isPlayoffs: isAfter(date, regEnd)
+          seasonId: season.id.toString()
         };
       }
       return null; // Off-season
@@ -1858,7 +2354,14 @@ async function main(
     const todayEST = toZonedTime(new Date(), timeZone);
     let startDate: Date;
 
-    if (isForwardFull) {
+    if (targetDates) {
+      startDate = parseDateInTimeZone(targetDates[0], timeZone);
+      console.log(
+        `Targeted date update: Processing exact dates ${targetDates.join(
+          ", "
+        )}.`
+      );
+    } else if (isForwardFull) {
       const currentSeasonInfo = getSeasonInfoForDate(
         tzFormat(todayEST, "yyyy-MM-dd")
       );
@@ -1885,9 +2388,7 @@ async function main(
       const requestedStartDateStr = options?.startDate;
       if (requestedStartDateStr) {
         try {
-          if (!/^\d{4}-\d{2}-\d{2}$/.test(requestedStartDateStr)) {
-            throw new Error("startDate must be YYYY-MM-DD");
-          }
+          assertIsoDate(requestedStartDateStr, "startDate");
           startDate = parseDateInTimeZone(requestedStartDateStr, timeZone);
           console.log(
             `Incremental Update: User specified start date. Starting from ${tzFormat(
@@ -1929,14 +2430,21 @@ async function main(
     console.log(
       `Debug: todayEST is ${tzFormat(todayEST, "yyyy-MM-dd", { timeZone })}`
     );
-    const scrapingEndDate = new Date();
+    const requestedEndDateStr = options?.endDate;
+    if (requestedEndDateStr) {
+      assertIsoDate(requestedEndDateStr, "endDate");
+    }
+    const scrapingEndDate = requestedEndDateStr
+      ? parseDateInTimeZone(requestedEndDateStr, timeZone)
+      : new Date();
     console.log(
       `Effective scraping end date: ${tzFormat(scrapingEndDate, "yyyy-MM-dd", {
         timeZone
       })}`
     );
 
-    const allDatesToScrape = getDatesBetween(startDate, scrapingEndDate);
+    const allDatesToScrape =
+      targetDates ?? getDatesBetween(startDate, scrapingEndDate);
 
     if (allDatesToScrape.length === 0) {
       console.log("No new dates to scrape based on the determined range.");
@@ -1957,28 +2465,59 @@ async function main(
       return;
     }
 
+    const currentDatedSeason = allSeasons.find((season) => {
+      const start = String(season.startDate).slice(0, 10);
+      const end = String(season.endDate).slice(0, 10);
+      const today = tzFormat(todayEST, "yyyy-MM-dd", { timeZone });
+      return today >= start && today <= end;
+    });
+    assertHistoricalDatedNstRequestAllowed({
+      requestedStartDate: allDatesToScrape[0],
+      currentSeasonStartDate: currentDatedSeason
+        ? String(currentDatedSeason.startDate).slice(0, 10)
+        : null,
+      allowHistoricalDatedRequests
+    });
+
     console.log(
       `Planning to scrape ${allDatesToScrape.length} dates from ${
         allDatesToScrape[0]
       } to ${allDatesToScrape[allDatesToScrape.length - 1]}`
     );
 
+    const scheduledDateMap = await fetchScheduledGameDateMap({
+      seasonIds: allSeasons.map((season) => String(season.id)),
+      startDate: allDatesToScrape[0],
+      endDate: allDatesToScrape[allDatesToScrape.length - 1]
+    });
+    console.log(
+      `Loaded ${scheduledDateMap.size} scheduled NHL game dates for NST aperture.`
+    );
+
     const initialUrlsQueue: UrlQueueItem[] = [];
     for (const date of allDatesToScrape) {
-      const seasonInfoForDate = getSeasonInfoForDate(date);
+      const scheduledInfo = scheduledDateMap.get(date);
 
-      if (!seasonInfoForDate) {
-        console.log(`Date ${date} is in the off-season. Skipping.`);
+      if (!scheduledInfo) {
+        console.log(`Date ${date} has no scheduled NHL games. Skipping.`);
         continue;
       }
 
-      const { seasonId, isPlayoffs } = seasonInfoForDate;
-      const urls = constructUrlsForDate(date, seasonId, isPlayoffs);
+      const urls = constructUrlsForDate(
+        date,
+        scheduledInfo.seasonId,
+        scheduledInfo.stype
+      );
       for (const [datasetType, url] of Object.entries(urls)) {
-        if (targetDataset && targetDataset !== datasetType) {
+        if (!shouldProcessDataset(datasetType)) {
           continue;
         }
-        initialUrlsQueue.push({ datasetType, url, date, seasonId });
+        initialUrlsQueue.push({
+          datasetType,
+          url,
+          date,
+          seasonId: scheduledInfo.seasonId
+        });
       }
     }
 
@@ -2115,6 +2654,7 @@ async function main(
         details: { error: error.message, stack: error.stack }
       }
     ]);
+    throw error;
   } finally {
     console.log(`--- Script execution block completed. ---`);
   }
@@ -2131,10 +2671,25 @@ export default async function handler(
       .json({ error: "Method not allowed. GET and POST are supported." });
   }
 
+  const action =
+    req.method === "POST"
+      ? typeof req.body?.action === "string"
+        ? req.body.action
+        : null
+      : firstQueryValue(req.query.action);
+  if (action === "nstStatus") {
+    return handleNstStatusCheck(req, res);
+  }
+
   let runMode: RunMode = "incremental";
   let startDate: string | undefined;
+  let endDate: string | undefined;
+  let dates: string[] | undefined;
   let overwrite: boolean | undefined;
   let datasetType: string | undefined;
+  let datasetGroup: string | undefined;
+  let seasonId: string | undefined;
+  let allowHistoricalDatedRequests = false;
 
   if (req.method === "POST") {
     const mode = req.body?.runMode;
@@ -2144,8 +2699,22 @@ export default async function handler(
     if (typeof req.body?.startDate === "string") {
       startDate = req.body.startDate;
     }
+    if (typeof req.body?.endDate === "string") {
+      endDate = req.body.endDate;
+    }
+    if (typeof req.body?.dates === "string" || Array.isArray(req.body?.dates)) {
+      dates = parseDatesParam(req.body.dates);
+    }
     if (typeof req.body?.datasetType === "string") {
       datasetType = req.body.datasetType;
+    }
+    if (typeof req.body?.datasetGroup === "string") {
+      datasetGroup = req.body.datasetGroup;
+    }
+    if (typeof req.body?.seasonId === "string") {
+      seasonId = req.body.seasonId;
+    } else if (typeof req.body?.season === "string") {
+      seasonId = req.body.season;
     }
     // Support 'table' alias for datasetType
     if (typeof req.body?.table === "string") {
@@ -2162,6 +2731,18 @@ export default async function handler(
         overwrite = v;
       }
     }
+    if (typeof req.body?.allowHistoricalDatedRequests !== "undefined") {
+      const v = req.body.allowHistoricalDatedRequests;
+      if (typeof v === "string") {
+        allowHistoricalDatedRequests = ["yes", "true", "1"].includes(
+          v.toLowerCase()
+        );
+      } else if (typeof v === "number") {
+        allowHistoricalDatedRequests = v === 1;
+      } else if (typeof v === "boolean") {
+        allowHistoricalDatedRequests = v;
+      }
+    }
   } else {
     // GET
     const modeQuery = req.query.runMode;
@@ -2174,8 +2755,22 @@ export default async function handler(
     if (typeof req.query.startDate === "string") {
       startDate = req.query.startDate as string;
     }
+    if (typeof req.query.endDate === "string") {
+      endDate = req.query.endDate as string;
+    }
+    if (typeof req.query.dates === "string" || Array.isArray(req.query.dates)) {
+      dates = parseDatesParam(req.query.dates);
+    }
     if (typeof req.query.datasetType === "string") {
       datasetType = req.query.datasetType as string;
+    }
+    if (typeof req.query.datasetGroup === "string") {
+      datasetGroup = req.query.datasetGroup as string;
+    }
+    if (typeof req.query.seasonId === "string") {
+      seasonId = req.query.seasonId as string;
+    } else if (typeof req.query.season === "string") {
+      seasonId = req.query.season as string;
     }
     // Support 'table' alias for datasetType
     if (typeof req.query.table === "string") {
@@ -2186,27 +2781,61 @@ export default async function handler(
     if (typeof ow === "string") {
       overwrite = ["yes", "true", "1"].includes(ow.toLowerCase());
     }
+    const allowHistorical = req.query.allowHistoricalDatedRequests;
+    if (typeof allowHistorical === "string") {
+      allowHistoricalDatedRequests = ["yes", "true", "1"].includes(
+        allowHistorical.toLowerCase()
+      );
+    }
   }
 
   console.log(
     `API request received. runMode=${runMode}, startDate=${
       startDate || "none"
+    }, endDate=${endDate || "none"}, dates=${
+      dates?.join(",") || "none"
     }, overwrite=${
       overwrite === undefined ? "default" : overwrite
-    }, datasetType=${datasetType || "ALL"}`
+    }, datasetType=${datasetType || "ALL"}, datasetGroup=${
+      datasetGroup || "none"
+    }, seasonId=${seasonId || "auto"}, allowHistoricalDatedRequests=${allowHistoricalDatedRequests}`
   );
   banner(
     `API request: mode=${runMode} | startDate=${
       startDate || "none"
+    } | endDate=${endDate || "none"} | dates=${
+      dates?.join(",") || "none"
     } | overwrite=${
       overwrite === undefined ? "default" : overwrite
-    } | datasetType=${datasetType || "ALL"}`
+    } | datasetType=${datasetType || "ALL"} | datasetGroup=${
+      datasetGroup || "none"
+    } | seasonId=${seasonId || "auto"} | allowHistoricalDatedRequests=${allowHistoricalDatedRequests}`
   );
   try {
-    await main(runMode, { startDate, overwrite, datasetType });
+    await main(runMode, {
+      startDate,
+      endDate,
+      dates,
+      overwrite,
+      datasetType,
+      datasetGroup,
+      seasonId,
+      allowHistoricalDatedRequests
+    });
     return res
       .status(200)
-      .json({ message: "Done", runMode, startDate, overwrite, datasetType });
+      .json({
+        message: "Done",
+        runMode,
+        startDate,
+        endDate,
+        dates,
+        overwrite,
+        datasetType,
+        datasetGroup,
+        seasonId,
+        allowHistoricalDatedRequests
+      });
   } catch (err: any) {
     console.error(err);
     return res.status(500).json({ error: err.message });

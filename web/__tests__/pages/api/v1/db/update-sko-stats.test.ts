@@ -71,6 +71,12 @@ describe("/api/v1/db/update-sko-stats helpers", () => {
         'Could not find the "assists_5v5" column of "sko_skater_stats" in the schema cache'
       )
     ).toBe("assists_5v5");
+    expect(
+      extractMissingSkoSkaterColumnName({
+        code: "42703",
+        message: "Column 'assists_per_game' of relation 'sko_skater_stats' does not exist"
+      })
+    ).toBe("assists_per_game");
     expect(extractMissingSkoSkaterColumnName("unrelated")).toBeNull();
   });
 });

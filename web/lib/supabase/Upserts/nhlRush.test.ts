@@ -36,6 +36,8 @@ describe("nhlRush", () => {
         details: {
           eventOwnerTeamId: 10,
           playerId: 16,
+          xCoord: 5,
+          yCoord: 2,
           zoneCode: "N",
         },
       },
@@ -71,10 +73,12 @@ describe("nhlRush", () => {
         rushSourceZoneCode: "N",
         rushSourceTeamRelativeZoneCode: "N",
         rushTimeSinceSourceSeconds: 6,
+        rushDistanceFromSourceFeet: expect.any(Number),
         rushEventsSinceSource: 0,
         rushWindowSeconds: DEFAULT_RUSH_WINDOW_SECONDS,
       },
     ]);
+    expect(contexts[1].rushDistanceFromSourceFeet).toBeCloseTo(68.2642, 3);
   });
 
   it("treats an opponent offensive-zone giveaway as a defensive-zone rush source for the shooting team", () => {
