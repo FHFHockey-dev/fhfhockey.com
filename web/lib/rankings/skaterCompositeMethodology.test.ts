@@ -38,8 +38,12 @@ describe("skaterCompositeMethodology", () => {
       "hits_per_60",
       "blocks_per_60",
     ]);
+    expect(MCM_COMPONENTS.scoring).toContain("pp_points_per_60");
     expect(MCM_SCORE_CONTRACT.formula).toContain("average(top_2");
     expect(MCM_SCORE_CONTRACT.requiredOutputFields).toContain("visible_thresholds");
+    expect(MCM_SCORE_CONTRACT.caveats.join(" ")).toContain(
+      "pp_points_per_60",
+    );
 
     const beastPlus = BEAST_TIER_GATES[0];
     expect(beastPlus.tier).toBe("BEAST+");

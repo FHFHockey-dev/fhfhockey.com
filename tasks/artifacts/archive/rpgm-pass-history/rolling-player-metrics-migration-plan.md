@@ -17,7 +17,7 @@ It translates the PRD and audit into concrete schema decisions for:
 Primary inputs:
 
 - `/Users/tim/Code/fhfhockey.com/tasks/prd-rolling-player-metrics-remediation-blueprint.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/rolling-player-metrics-audit-notes.md`
+- `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md`
 - `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-game-metrics-schema-surface-audit.md`
 
 ## Decision Summary

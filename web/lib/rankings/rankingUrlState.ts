@@ -2,7 +2,10 @@ import {
   getContextualRankingMetricDefinition,
   type ContextualRankingMetricKey,
 } from "./metricDefinitions";
-import type { GoalieMatrixMetricKey } from "./goalieMatrix";
+import type {
+  GoalieMatrixMetricKey,
+  GoalieMatrixRoleFilter,
+} from "./goalieMatrix";
 import type { TeamMatrixMetricKey } from "./teamMatrix";
 import {
   MATRIX_METRIC_GROUPS,
@@ -35,19 +38,24 @@ export type RankingsFilterState = {
   minGp: string;
   minToi: string;
   team: string;
+  search: string;
   sort: ContextualRankingsSortKey;
   direction: ContextualRankingsSortDirection;
   matrixSortMetric: ContextualRankingMetricKey;
   goalieMetric: GoalieMatrixMetricKey;
+  goalieRole: GoalieMatrixRoleFilter;
   teamMetric: TeamMatrixMetricKey;
   matrixSortDirection: ContextualRankingsSortDirection;
   sampleConfidence: "all" | "medium_plus" | "high";
   sourceQuality: "all" | "clean_only" | "caveats_only";
+  displayMode: "percentile" | "raw_rank" | "both";
   metricGroups: string;
   metricColumns: string;
   page: string;
   pageSize: string;
   selectedPlayerId: string;
+  selectedGoalieId: string;
+  selectedTeam: string;
 };
 
 export const DEFAULT_RANKINGS_FILTERS: RankingsFilterState = {
@@ -62,19 +70,24 @@ export const DEFAULT_RANKINGS_FILTERS: RankingsFilterState = {
   minGp: "1",
   minToi: "300",
   team: "",
+  search: "",
   sort: "percentile",
   direction: "desc",
   matrixSortMetric: "points_per_60",
   goalieMetric: "save_percentage",
+  goalieRole: "all",
   teamMetric: "off_rating",
   matrixSortDirection: "desc",
   sampleConfidence: "all",
   sourceQuality: "all",
+  displayMode: "both",
   metricGroups: "",
   metricColumns: "",
   page: "1",
   pageSize: "10",
   selectedPlayerId: "",
+  selectedGoalieId: "",
+  selectedTeam: "",
 };
 
 type QueryValue = string | string[] | undefined;
@@ -145,10 +158,22 @@ function parseGoalieMetric(value: string): GoalieMatrixMetricKey {
   return value === "gsax" ||
     value === "gsaa_per_60" ||
     value === "quality_start_pct" ||
+    value === "really_bad_start_rate" ||
     value === "steal_rate" ||
     value === "start_share"
     ? value
     : "save_percentage";
+}
+
+function parseGoalieRole(value: string): GoalieMatrixRoleFilter {
+  return value === "g1_workhorse" ||
+    value === "g1_starter" ||
+    value === "g1a_tandem_lead" ||
+    value === "g1b_tandem_secondary" ||
+    value === "g2_backup" ||
+    value === "g2_reserve"
+    ? value
+    : "all";
 }
 
 function parseTeamMetric(value: string): TeamMatrixMetricKey {
@@ -175,6 +200,12 @@ function parseSampleConfidence(
 
 function parseSourceQuality(value: string): RankingsFilterState["sourceQuality"] {
   return value === "clean_only" || value === "caveats_only" ? value : "all";
+}
+
+function parseDisplayMode(value: string): RankingsFilterState["displayMode"] {
+  return value === "percentile" || value === "raw_rank" || value === "both"
+    ? value
+    : DEFAULT_RANKINGS_FILTERS.displayMode;
 }
 
 function parsePageSize(value: string): RankingsFilterState["pageSize"] {
@@ -257,14 +288,17 @@ export function normalizeRankingsFilters(query: RankingsQuery) {
     minGp: queryValue(query.min_gp) || DEFAULT_RANKINGS_FILTERS.minGp,
     minToi: queryValue(query.min_toi) || DEFAULT_RANKINGS_FILTERS.minToi,
     team: queryValue(query.team),
+    search: queryValue(query.search).trim().slice(0, 80),
     sort,
     direction: parseDirection(queryValue(query.direction), sort),
     matrixSortMetric,
     goalieMetric: parseGoalieMetric(queryValue(query.goalie_metric)),
+    goalieRole: parseGoalieRole(queryValue(query.goalie_role)),
     teamMetric: parseTeamMetric(queryValue(query.team_metric)),
     matrixSortDirection: parseMatrixDirection(queryValue(query.sort_direction)),
     sampleConfidence: parseSampleConfidence(queryValue(query.sample_confidence)),
     sourceQuality: parseSourceQuality(queryValue(query.source_quality)),
+    displayMode: parseDisplayMode(queryValue(query.display)),
     metricGroups: parseCsvFilter(queryValue(query.groups), (entry) =>
       MATRIX_METRIC_GROUPS.some((group) => group.key === entry),
     ),
@@ -274,6 +308,8 @@ export function normalizeRankingsFilters(query: RankingsQuery) {
     page: queryValue(query.page) || DEFAULT_RANKINGS_FILTERS.page,
     pageSize: parsePageSize(queryValue(query.page_size)),
     selectedPlayerId: queryValue(query.selected_player),
+    selectedGoalieId: queryValue(query.selected_goalie),
+    selectedTeam: queryValue(query.selected_team).toUpperCase(),
   };
   if (!isValidDeploymentForPosition(next.deployment, next.position)) {
     next.deployment = "all";
@@ -360,6 +396,9 @@ export function buildRankingsRequestPath(filters: RankingsFilterState) {
   if (filters.team.trim() !== "") {
     params.set("team", filters.team.trim());
   }
+  if (filters.search.trim() !== "") {
+    params.set("search", filters.search.trim());
+  }
   return `/api/v1/contextual-rankings?${params.toString()}`;
 }
 
@@ -383,6 +422,9 @@ export function buildMatrixRequestPath(filters: RankingsFilterState) {
   if (filters.team.trim() !== "") {
     params.set("team", filters.team.trim());
   }
+  if (filters.search.trim() !== "") {
+    params.set("search", filters.search.trim());
+  }
   if (filters.sampleConfidence !== "all") {
     params.set("sample_confidence", filters.sampleConfidence);
   }
@@ -397,12 +439,19 @@ export function buildGoalieMatrixRequestPath(filters: RankingsFilterState) {
     season: filters.season,
     window: filters.window,
     metric: filters.goalieMetric,
+    role: filters.goalieRole,
     sort_direction: filters.matrixSortDirection,
     min_starts: filters.minGp,
     min_shots: filters.minToi,
     page: filters.page,
     page_size: filters.pageSize,
   });
+  if (filters.team.trim() !== "") {
+    params.set("team", filters.team.trim());
+  }
+  if (filters.search.trim() !== "") {
+    params.set("search", filters.search.trim());
+  }
   return `/api/v1/contextual-rankings/goalies?${params.toString()}`;
 }
 
@@ -414,6 +463,9 @@ export function buildTeamMatrixRequestPath(filters: RankingsFilterState) {
     page: filters.page,
     page_size: filters.pageSize,
   });
+  if (filters.search.trim() !== "") {
+    params.set("search", filters.search.trim());
+  }
   return `/api/v1/contextual-rankings/teams?${params.toString()}`;
 }
 
@@ -474,4 +526,58 @@ export function buildSplitsRequestPath(filters: RankingsFilterState) {
     params.set("team", filters.team.trim());
   }
   return `/api/v1/contextual-rankings/splits?${params.toString()}`;
+}
+
+export function buildWarRequestPath(filters: RankingsFilterState) {
+  const params = new URLSearchParams({
+    entity: filters.entity,
+    season: filters.season,
+    window: filters.window,
+    position: filters.position,
+    deployment: filters.deployment,
+    strength: filters.strength,
+  });
+  if (filters.team.trim() !== "") {
+    params.set("team", filters.team.trim());
+  }
+  return `/api/v1/contextual-rankings/war?${params.toString()}`;
+}
+
+export function buildSnapshotRequestPath(filters: RankingsFilterState) {
+  if (filters.tab !== "rankings") return null;
+
+  const params = new URLSearchParams({
+    entity: filters.entity,
+    season: filters.season,
+    window: filters.window,
+    position: filters.position,
+    deployment: filters.deployment,
+    strength: filters.strength,
+    min_gp: filters.minGp,
+    min_toi: filters.minToi,
+    sort_metric: filters.matrixSortMetric,
+    goalie_metric: filters.goalieMetric,
+    goalie_role: filters.goalieRole,
+    team_metric: filters.teamMetric,
+    sort_direction: filters.matrixSortDirection,
+  });
+  if (filters.team.trim() !== "") {
+    params.set("team", filters.team.trim());
+  }
+  if (filters.search.trim() !== "") {
+    params.set("search", filters.search.trim());
+  }
+
+  if (filters.entity === "goalies") {
+    if (filters.selectedGoalieId.trim() === "") return null;
+    params.set("selected_goalie", filters.selectedGoalieId.trim());
+  } else if (filters.entity === "teams") {
+    if (filters.selectedTeam.trim() === "") return null;
+    params.set("selected_team", filters.selectedTeam.trim().toUpperCase());
+  } else {
+    if (filters.selectedPlayerId.trim() === "") return null;
+    params.set("selected_player", filters.selectedPlayerId.trim());
+  }
+
+  return `/api/v1/contextual-rankings/snapshot?${params.toString()}`;
 }

@@ -15,6 +15,7 @@ import {
   type MatrixMetricColumnDefinition,
   type MatrixMetricGroup,
 } from "./matrixMetricRegistry";
+import { buildEntityMetricRankingSurfaces } from "./entityMetricRankingReader";
 import { buildContextualRankingsSurfaces } from "./rankingQueries";
 import type {
   ContextualRankingApiRow,
@@ -29,6 +30,7 @@ import type {
   RankingPeerGroupWarning,
   RankingSampleConfidence,
 } from "./rankingCalculator";
+import { rankNormalizedMetricValues } from "./rankingCalculator";
 import type {
   SkaterProductionWindow,
   SkaterWindowStrengthState,
@@ -45,6 +47,7 @@ export type PlayerMatrixRequest = {
   minGp: number | null;
   minToiSeconds: number | null;
   teamId: number | null;
+  search: string | null;
   peerGroupType: ContextualRankingPeerGroupType;
   sortMetric: ContextualRankingMetricKey;
   sortDirection: ContextualRankingsSortDirection;
@@ -52,6 +55,7 @@ export type PlayerMatrixRequest = {
   page: number;
   pageSize: number;
   selectedPlayerId: number | null;
+  rankingSourcePreference: "fallback" | "entity_metric_rankings";
 };
 
 export type PlayerMatrixMetricCell = {
@@ -74,6 +78,7 @@ export type PlayerMatrixMetricCell = {
   methodologyVersion: string | null;
   snapshotDate: string | null;
   warnings: RankingPeerGroupWarning[];
+  rankScopes?: PlayerMatrixRankScopes;
 };
 
 export type PlayerMatrixComposite = {
@@ -90,6 +95,18 @@ export type PlayerMatrixComposite = {
   updatedAt: string | null;
 };
 
+export type PlayerMatrixRankScope = {
+  rank: number | null;
+  percentile: number | null;
+  qualifiedPeerCount: number;
+  peerGroupKey: string | null;
+};
+
+export type PlayerMatrixRankScopes = {
+  overall: PlayerMatrixRankScope | null;
+  deployment: PlayerMatrixRankScope | null;
+};
+
 export type PlayerMatrixRow = {
   entity: ContextualRankingApiRow["entity"];
   team: ContextualRankingApiRow["team"];
@@ -102,6 +119,7 @@ export type PlayerMatrixRow = {
     metricKey: ContextualRankingMetricKey;
     rank: number | null;
     percentile: number | null;
+    rankScopes?: PlayerMatrixRankScopes;
   };
   composite: PlayerMatrixComposite | null;
   metrics: Record<string, PlayerMatrixMetricCell>;
@@ -140,7 +158,16 @@ export type PlayerMatrixResponse = {
     latestAvailableSnapshotDate: string | null;
     snapshotUpdatedAt: string | null;
     snapshotSelectionReason: string | null;
-    sourceTable: "rolling_player_game_metrics";
+    sourceTable: "rolling_player_game_metrics" | "entity_metric_rankings";
+    sourceTables?: Array<
+      | "rolling_player_game_metrics"
+      | "entity_metric_rankings"
+      | "skater_composite_ratings"
+    >;
+    rankingSource?: "fallback_rolling_player_game_metrics" | "entity_metric_rankings";
+    rankingSourcePreference?: PlayerMatrixRequest["rankingSourcePreference"];
+    rankingSourceFallbackReason?: string | null;
+    compositeSourceTable?: "skater_composite_ratings";
     message: string | null;
   };
 };
@@ -152,7 +179,13 @@ const MAX_PAGE_SIZE = 50;
 const COMPOSITE_IN_FILTER_CHUNK_SIZE = 500;
 const COMPOSITE_QUERY_PAGE_SIZE = 1000;
 const PAGE_SIZE_OPTIONS = [10, 25, 50] as const;
-const COMPOSITE_METRIC_KEYS = ["mcm_score", "beast_tier", "results_luck_index"] as const;
+const COMPOSITE_METRIC_KEYS = [
+  "offense_rating",
+  "defense_rating",
+  "mcm_score",
+  "beast_tier",
+  "results_luck_index",
+] as const;
 
 type CompositeMetricKey = (typeof COMPOSITE_METRIC_KEYS)[number];
 type CompositeRatingRow =
@@ -242,6 +275,18 @@ function parseDate(value: QueryValue) {
     });
   }
   return raw;
+}
+
+function parseSearch(value: QueryValue) {
+  const raw = first(value)?.trim();
+  return raw ? raw.slice(0, 80) : null;
+}
+
+function parseRankingSourcePreference(
+  value: QueryValue,
+): PlayerMatrixRequest["rankingSourcePreference"] {
+  const raw = first(value)?.toLowerCase();
+  return raw === "entity_metric_rankings" ? "entity_metric_rankings" : "fallback";
 }
 
 function parseMetric(value: QueryValue, fallback: ContextualRankingMetricKey) {
@@ -343,6 +388,7 @@ export function parsePlayerMatrixRequest(
     minGp: parseInteger(query.min_gp, "min_gp", { min: 0 }),
     minToiSeconds: parseInteger(query.min_toi, "min_toi", { min: 0 }),
     teamId,
+    search: parseSearch(query.search),
     peerGroupType: derivePeerGroupType({ teamId, deployment, position }),
     sortMetric: parseMetric(query.sort_metric, defaultSortMetric),
     sortDirection: parseEnum(
@@ -366,7 +412,22 @@ export function parsePlayerMatrixRequest(
     selectedPlayerId: parseInteger(query.selected_player, "selected_player", {
       min: 1,
     }),
+    rankingSourcePreference: parseRankingSourcePreference(query.ranking_source),
   };
+}
+
+function rowMatchesSearch(row: ContextualRankingApiRow, search: string | null) {
+  if (!search) return true;
+  const needle = search.toLowerCase();
+  return [
+    row.entity.name,
+    row.entity.position,
+    row.team.abbreviation,
+    row.team.name,
+    ...row.tags,
+  ]
+    .filter((value): value is string => typeof value === "string")
+    .some((value) => value.toLowerCase().includes(needle));
 }
 
 function contextualRequestForMetric(args: {
@@ -404,8 +465,14 @@ function compositeMetricValue(
   metricKey: CompositeMetricKey,
 ) {
   if (!row) return null;
-  if (metricKey === "results_luck_index") return row.results_luck_index;
-  return row.mcm_score;
+  if (metricKey === "offense_rating") {
+    return row.offense_rating_overall ?? row.offense_rating_deployment ?? null;
+  }
+  if (metricKey === "defense_rating") {
+    return row.defense_rating_overall ?? row.defense_rating_deployment ?? null;
+  }
+  if (metricKey === "results_luck_index") return row.results_luck_index ?? null;
+  return row.mcm_score ?? null;
 }
 
 function matrixCompositeWindowType(window: SkaterProductionWindow) {
@@ -532,6 +599,7 @@ function cellFromRow(args: {
   row: ContextualRankingApiRow | null;
   snapshotDate: string | null;
   unavailableReason: string | null;
+  rankScopes: PlayerMatrixRankScopes;
 }): PlayerMatrixMetricCell {
   return {
     metricKey: args.column.metricKey,
@@ -557,6 +625,7 @@ function cellFromRow(args: {
     methodologyVersion: args.column.methodologyVersion,
     snapshotDate: args.snapshotDate,
     warnings: args.row?.warnings ?? [],
+    rankScopes: args.rankScopes,
   };
 }
 
@@ -565,21 +634,18 @@ function cellFromCompositeRow(args: {
   composite: CompositeRatingRow | null;
   totalRows: number;
   unavailableReason: string | null;
+  rankScopes: PlayerMatrixRankScopes;
 }): PlayerMatrixMetricCell {
-  const mcmScore = args.composite?.mcm_score ?? null;
-  const resultsLuckIndex = args.composite?.results_luck_index ?? null;
-  const rawValue =
-    args.column.metricKey === "results_luck_index"
-      ? resultsLuckIndex
-      : args.column.metricKey === "mcm_score"
-        ? mcmScore
-        : null;
+  const metricKey = args.column.metricKey as CompositeMetricKey;
+  const rawValue = compositeMetricValue(args.composite ?? undefined, metricKey);
   const percentile =
     args.column.metricKey === "results_luck_index"
-      ? resultsLuckIndex == null
+      ? rawValue == null
         ? null
-        : Math.max(0, Math.min(100, resultsLuckIndex))
-      : mcmScore;
+        : Math.max(0, Math.min(100, rawValue))
+      : args.column.metricKey === "beast_tier"
+        ? rawValue
+        : rawValue;
   const formattedValue =
     args.column.metricKey === "beast_tier"
       ? args.composite?.beast_tier ?? null
@@ -614,11 +680,39 @@ function cellFromCompositeRow(args: {
     methodologyVersion: args.composite?.methodology_version ?? args.column.methodologyVersion,
     snapshotDate: args.composite?.snapshot_date ?? null,
     warnings: [],
+    rankScopes: args.rankScopes,
   };
 }
 
 function toRowMap(rows: ContextualRankingApiRow[]) {
   return new Map(rows.map((row) => [row.entity.id, row]));
+}
+
+function rankScopeFromRow(row: ContextualRankingApiRow | null): PlayerMatrixRankScope | null {
+  if (!row) return null;
+  return {
+    rank: row.metric.rawRank,
+    percentile: row.metric.percentile,
+    qualifiedPeerCount: row.metric.qualifiedPeerCount,
+    peerGroupKey: row.peerGroup.key,
+  };
+}
+
+function emptyRankScopes(): PlayerMatrixRankScopes {
+  return {
+    overall: null,
+    deployment: null,
+  };
+}
+
+function rankScopesFor(args: {
+  overallRow: ContextualRankingApiRow | null;
+  deploymentRow: ContextualRankingApiRow | null;
+}): PlayerMatrixRankScopes {
+  return {
+    overall: rankScopeFromRow(args.overallRow),
+    deployment: rankScopeFromRow(args.deploymentRow),
+  };
 }
 
 function sampleConfidenceMatches(
@@ -661,17 +755,46 @@ export async function buildPlayerMatrixSurface(
       ),
     ]),
   );
-  const rankingSurfacesByMetric = await buildContextualRankingsSurfaces(
-    contextualRequestForMetric({
-      request: {
-        ...request,
-        sortMetric: baseSortMetric,
-      },
-      metric: baseSortMetric,
-      limit: null,
-    }),
-    surfaceMetricKeys,
-  );
+  const baseContextualRequest = contextualRequestForMetric({
+    request: {
+      ...request,
+      sortMetric: baseSortMetric,
+    },
+    metric: baseSortMetric,
+    limit: null,
+  });
+  let rankingSource:
+    | "fallback_rolling_player_game_metrics"
+    | "entity_metric_rankings" = "fallback_rolling_player_game_metrics";
+  let rankingSourceFallbackReason: string | null = null;
+  let rankingSurfacesByMetric =
+    request.rankingSourcePreference === "entity_metric_rankings"
+      ? await buildEntityMetricRankingSurfaces(
+          baseContextualRequest,
+          surfaceMetricKeys,
+        )
+      : await buildContextualRankingsSurfaces(
+          baseContextualRequest,
+          surfaceMetricKeys,
+        );
+  const preferredSortSurface = rankingSurfacesByMetric.get(baseSortMetric);
+  if (request.rankingSourcePreference === "entity_metric_rankings") {
+    if (
+      preferredSortSurface &&
+      !preferredSortSurface.meta.unavailable &&
+      preferredSortSurface.rankings.length > 0
+    ) {
+      rankingSource = "entity_metric_rankings";
+    } else {
+      rankingSourceFallbackReason =
+        preferredSortSurface?.meta.message ??
+        "entity_metric_rankings did not contain rows for the requested sort context.";
+      rankingSurfacesByMetric = await buildContextualRankingsSurfaces(
+        baseContextualRequest,
+        surfaceMetricKeys,
+      );
+    }
+  }
   const sortSurface = rankingSurfacesByMetric.get(baseSortMetric);
   if (!sortSurface) {
     throw new Error(`Ranking surface unavailable for ${baseSortMetric}`);
@@ -704,12 +827,69 @@ export async function buildPlayerMatrixSurface(
       return left.entity.id - right.entity.id;
     });
   }
-  const sortRankByPlayerId = new Map(
-    sortedRows.map((row, index) => [row.entity.id, index + 1]),
-  );
+  const compositeSortRanksByPlayerId = sortUsesComposite
+    ? rankNormalizedMetricValues(
+        sortedRows.map((row) => {
+          const value = compositeMetricValue(
+            compositeSortRowsByPlayerId.get(row.entity.id),
+            sortMetric,
+          );
+          return {
+            id: row.entity.id,
+            normalizedValue:
+              value == null
+                ? null
+                : request.sortDirection === "asc"
+                  ? -value
+                  : value,
+          };
+        }),
+      )
+    : new Map();
+  sortedRows = sortedRows.filter((row) => rowMatchesSearch(row, request.search));
   const start = (request.page - 1) * request.pageSize;
   const pageRows = sortedRows.slice(start, start + request.pageSize);
   const pagePlayerIds = pageRows.map((row) => row.entity.id);
+  const overallPeerRequest: PlayerMatrixRequest = {
+    ...request,
+    deployment: "all",
+    peerGroupType: derivePeerGroupType({
+      teamId: request.teamId,
+      deployment: "all",
+      position: request.position,
+    }),
+    sortMetric: baseSortMetric,
+  };
+  const deploymentPeerRequest: PlayerMatrixRequest = {
+    ...request,
+    deployment: "all",
+    peerGroupType: "deployment",
+    sortMetric: baseSortMetric,
+  };
+  const buildSelectedRankingSurfaces =
+    rankingSource === "entity_metric_rankings"
+      ? buildEntityMetricRankingSurfaces
+      : buildContextualRankingsSurfaces;
+  const [overallSurfacesByMetric, deploymentSurfacesByMetric] = await Promise.all([
+    buildSelectedRankingSurfaces(
+      contextualRequestForMetric({
+        request: overallPeerRequest,
+        metric: baseSortMetric,
+        entityIds: pagePlayerIds,
+        limit: null,
+      }),
+      surfaceMetricKeys,
+    ),
+    buildSelectedRankingSurfaces(
+      contextualRequestForMetric({
+        request: deploymentPeerRequest,
+        metric: baseSortMetric,
+        entityIds: pagePlayerIds,
+        limit: null,
+      }),
+      surfaceMetricKeys,
+    ),
+  ]);
   const compositeRowsByPlayerId = sortUsesComposite
     ? new Map(
         pageRows.flatMap((row) => {
@@ -741,6 +921,22 @@ export async function buildPlayerMatrixSurface(
     metricSurfaces.map((entry) => [
       entry.column.metricKey,
       entry.surface ? toRowMap(entry.surface.rankings) : new Map<number, ContextualRankingApiRow>(),
+    ]),
+  );
+  const overallRowsByKey = new Map(
+    metricSurfaces.map((entry) => [
+      entry.column.metricKey,
+      overallSurfacesByMetric.get(entry.column.metricKey)?.rankings
+        ? toRowMap(overallSurfacesByMetric.get(entry.column.metricKey)?.rankings ?? [])
+        : new Map<number, ContextualRankingApiRow>(),
+    ]),
+  );
+  const deploymentRowsByKey = new Map(
+    metricSurfaces.map((entry) => [
+      entry.column.metricKey,
+      deploymentSurfacesByMetric.get(entry.column.metricKey)?.rankings
+        ? toRowMap(deploymentSurfacesByMetric.get(entry.column.metricKey)?.rankings ?? [])
+        : new Map<number, ContextualRankingApiRow>(),
     ]),
   );
   const snapshotByMetric = new Map(
@@ -796,11 +992,18 @@ export async function buildPlayerMatrixSurface(
           composite,
           totalRows: sortedRows.length,
           unavailableReason: entry.reason,
+          rankScopes: emptyRankScopes(),
         });
         continue;
       }
       const metricRow =
         metricRowsByKey.get(entry.column.metricKey)?.get(baseRow.entity.id) ??
+        null;
+      const overallRow =
+        overallRowsByKey.get(entry.column.metricKey)?.get(baseRow.entity.id) ??
+        metricRow;
+      const deploymentRow =
+        deploymentRowsByKey.get(entry.column.metricKey)?.get(baseRow.entity.id) ??
         null;
       const unavailableReason =
         entry.reason ??
@@ -815,8 +1018,24 @@ export async function buildPlayerMatrixSurface(
         row: metricRow,
         snapshotDate: snapshotByMetric.get(entry.column.metricKey) ?? null,
         unavailableReason,
+        rankScopes: rankScopesFor({ overallRow, deploymentRow }),
       });
     }
+    const sortOverallRow =
+      overallRowsByKey.get(sortMetric)?.get(baseRow.entity.id) ??
+      (sortUsesComposite ? null : baseRow);
+    const sortDeploymentRow =
+      deploymentRowsByKey.get(sortMetric)?.get(baseRow.entity.id) ?? null;
+    const sortOverallScope = sortUsesComposite
+      ? {
+          rank: compositeSortRanksByPlayerId.get(baseRow.entity.id)?.rank ?? null,
+          percentile: compositeMetricValue(composite ?? undefined, sortMetric),
+          qualifiedPeerCount:
+            compositeSortRanksByPlayerId.get(baseRow.entity.id)?.qualifiedPeerCount ??
+            0,
+          peerGroupKey: matrixCompositePeerGroupKey(request),
+        }
+      : rankScopeFromRow(sortOverallRow);
 
     return {
       entity: baseRow.entity,
@@ -829,11 +1048,15 @@ export async function buildPlayerMatrixSurface(
       sort: {
         metricKey: sortMetric,
         rank: sortUsesComposite
-          ? sortRankByPlayerId.get(baseRow.entity.id) ?? null
+          ? compositeSortRanksByPlayerId.get(baseRow.entity.id)?.rank ?? null
           : baseRow.metric.rawRank,
         percentile: sortUsesComposite
           ? compositeMetricValue(composite ?? undefined, sortMetric)
           : baseRow.metric.percentile,
+        rankScopes: {
+          overall: sortOverallScope,
+          deployment: sortUsesComposite ? null : rankScopeFromRow(sortDeploymentRow),
+        },
       },
       composite: toComposite(composite),
       metrics,
@@ -873,7 +1096,20 @@ export async function buildPlayerMatrixSurface(
       latestAvailableSnapshotDate: sortSurface.meta.latestAvailableSnapshotDate,
       snapshotUpdatedAt: sortSurface.meta.snapshotUpdatedAt,
       snapshotSelectionReason: sortSurface.meta.snapshotSelectionReason,
-      sourceTable: "rolling_player_game_metrics",
+      sourceTable:
+        rankingSource === "entity_metric_rankings"
+          ? "entity_metric_rankings"
+          : "rolling_player_game_metrics",
+      sourceTables: [
+        rankingSource === "entity_metric_rankings"
+          ? "entity_metric_rankings"
+          : "rolling_player_game_metrics",
+        "skater_composite_ratings",
+      ],
+      rankingSource,
+      rankingSourcePreference: request.rankingSourcePreference,
+      rankingSourceFallbackReason,
+      compositeSourceTable: "skater_composite_ratings",
       message:
         sortSurface.meta.message ??
         (rows.length === 0 ? "No players matched the matrix filters." : null),

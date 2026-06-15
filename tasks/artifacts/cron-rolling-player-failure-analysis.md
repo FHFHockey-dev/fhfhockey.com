@@ -22,11 +22,11 @@ They fail at different surfaces:
 
 The `GET` cron is a bare route call with no query parameters:
 
-- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md#L198)
+- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md#L198)
 
 The `POST` cron also sends no meaningful scope controls. Its request body is just `{}`, and the route does not read `req.body` for execution options:
 
-- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md#L448)
+- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md#L448)
 - [update-rolling-player-averages.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-rolling-player-averages.ts#L185)
 
 ### Route behavior
@@ -78,7 +78,7 @@ Observed benchmark result:
 
 This aligns with the outer caller hitting the cron HTTP timeout boundary at `300000 ms`:
 
-- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md#L455)
+- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md#L455)
 
 Because the route never completed a response, the benchmark runner only saw a transport failure:
 

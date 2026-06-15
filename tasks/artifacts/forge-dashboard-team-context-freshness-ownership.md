@@ -39,7 +39,7 @@ The chain is not merely stale. It is operationally misowned in multiple places:
 
 ## Current Scheduled Chain
 
-Current runbook entries in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md):
+Current runbook entries in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md):
 
 - `09:10 UTC` `update-team-ctpi-daily`
 - `09:15 UTC` `update-team-power-ratings`

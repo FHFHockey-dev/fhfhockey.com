@@ -58,7 +58,7 @@ describe("rankingCalculator", () => {
     ).toBe(2.5);
   });
 
-  it("calculates dense raw ranks with ties and better-than percentiles", () => {
+  it("calculates dense raw ranks with ties and better-or-equal peer percentiles", () => {
     const rows = buildContextualRankingRows({
       metricKey: "goals_per_60",
       peerGroupType: "all_skaters",
@@ -78,10 +78,10 @@ describe("rankingCalculator", () => {
         percentile: row.percentile,
       })),
     ).toEqual([
-      { id: 2, rank: 1, percentile: 50 },
-      { id: 3, rank: 1, percentile: 50 },
-      { id: 1, rank: 2, percentile: 25 },
-      { id: 4, rank: 3, percentile: 0 },
+      { id: 2, rank: 1, percentile: 100 },
+      { id: 3, rank: 1, percentile: 100 },
+      { id: 1, rank: 2, percentile: 50 },
+      { id: 4, rank: 3, percentile: 25 },
     ]);
   });
 
@@ -103,9 +103,11 @@ describe("rankingCalculator", () => {
     const leader = rows.find((row) => row.entityId === 2);
 
     expect(lowSample?.rawRank).toBeNull();
+    expect(lowSample?.percentile).toBeNull();
     expect(lowSample?.minimumSampleMet).toBe(false);
     expect(lowSample?.warnings).toContain("sample_below_minimum");
     expect(leader?.rawRank).toBe(1);
+    expect(leader?.percentile).toBe(100);
     expect(leader?.qualifiedPeerCount).toBe(2);
   });
 

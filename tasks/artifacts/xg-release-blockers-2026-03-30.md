@@ -4,11 +4,11 @@
 
 This artifact lists the unresolved blockers found during the `1.2` review of:
 
-- `tasks/validation-checklist.md`
+- `tasks/TASKS/xg-model/nhl-api-foundation/validation-checklist.md`
 - `tasks/final-implementation-summary.md`
 - `tasks/artifacts/xg-baseline-validation-2026-03-30.md`
 - `tasks/artifacts/nhl-manual-audit-2026-03-30.md`
-- `tasks/post-drift-retry-verification.md`
+- `tasks/TASKS/xg-model/nhl-api-foundation/post-drift-retry-verification.md`
 
 The scope here is training-use release readiness, not production-reader cutover.
 
@@ -98,7 +98,7 @@ Status:
 
 Evidence:
 
-- `tasks/validation-checklist.md`
+- `tasks/TASKS/xg-model/nhl-api-foundation/validation-checklist.md`
 - `tasks/artifacts/xg-baseline-validation-2026-03-30.md`
 
 Current finding:

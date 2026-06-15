@@ -123,7 +123,7 @@ The values rendered from the payload are expected to be populated upstream into 
 
 ### SQL/source-of-truth documentation
 
-- `web/rules/power-ratings-tables.md`
+- `tasks/TASKS/three-pillars-analytics/underlying-stats/power-ratings-tables.md`
   - documents:
     - `off_rating`
     - `def_rating`

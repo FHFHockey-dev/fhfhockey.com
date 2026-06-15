@@ -2,7 +2,7 @@
 
 ## Summary
 
-- Source: `web/rules/cron-schedule.md`
+- Source: `tasks/TASKS/cron-operations/cron-schedule.md`
 - Parsed scheduled blocks: `52`
 - Normalization fields captured for each entry:
   - dependency position
@@ -79,7 +79,7 @@
 - `21` `update-rolling-player-averages`
   Evidence: same implementation as dependency `07`; POST version of the same NST-derived route.
 - `22` `daily-refresh-goalie-unified-matview`
-  Evidence: [goalie-tables.md](/Users/tim/Code/fhfhockey.com/web/rules/goalie-tables.md) shows `goalie_stats_unified` includes extensive `nst_*` fields.
+  Evidence: [goalie-tables.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/schema-docs/supabase-context/goalie-tables.md) shows `goalie_stats_unified` includes extensive `nst_*` fields.
 - `23` `update-team-ctpi-daily`
   Evidence: [update-team-ctpi-daily.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-team-ctpi-daily.ts) reads `nst_team_gamelogs_as_rates`, `nst_team_gamelogs_as_counts`, `nst_team_gamelogs_pp_counts`, and `nst_team_gamelogs_pk_counts`.
 - `25` `update-team-power-ratings`
@@ -93,7 +93,7 @@
 - `40` `rebuild-sustainability-baselines`
   Evidence: [rebuild-baselines.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/sustainability/rebuild-baselines.ts) fetches from `player_stats_unified` and `player_totals_unified`.
 - `41` `daily-refresh-player-totals-unified-matview`
-  Evidence: [supabase-views.md](/Users/tim/Code/fhfhockey.com/web/rules/supabase-views.md) defines `player_totals_unified` as a materialized view built from `player_stats_unified`.
+  Evidence: [supabase-views.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/schema-docs/supabase-context/supabase-views.md) defines `player_totals_unified` as a materialized view built from `player_stats_unified`.
 - `42` `rebuild-sustainability-priors`
   Evidence: [priors.ts](/Users/tim/Code/fhfhockey.com/web/lib/sustainability/priors.ts) reads `player_totals_unified` `nst_oi_*` fields.
 - `43` `rebuild-sustainability-window-z`
@@ -110,7 +110,7 @@
 ## NST Touch Unknown
 
 - `06` `update-shift-charts`
-  Evidence: the scheduled target is already marked `STATUS: 404 NOT FOUND` in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md), and the scheduled `/api/v1/db/update-shifts` target does not have a matching working implementation in the current repo surface.
+  Evidence: the scheduled target is already marked `STATUS: 404 NOT FOUND` in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md), and the scheduled `/api/v1/db/update-shifts` target does not have a matching working implementation in the current repo surface.
 
 ## No NST Touch Observed
 

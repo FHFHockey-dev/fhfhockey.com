@@ -7,7 +7,7 @@ This step adds direct audit-output copy helpers to [trendsDebug.tsx](/Users/tim/
 ### Implemented helpers
 
 - formula-only audit entry copy
-  - output shape matches [rpm-audit-notes-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-notes-pass-2.md)
+  - output shape matches [rpm-audit-notes-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md)
   - uses readiness plus focused-row diff to derive the status emoji
   - includes only emoji, metric name, and formula
 - stored-vs-reconstructed comparison block copy

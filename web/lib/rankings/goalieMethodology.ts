@@ -7,6 +7,29 @@ export type GoalieStartShareBucket =
   | "backup"
   | "spot_start";
 
+export type GoalieDeploymentBucket =
+  | "g1_workhorse"
+  | "g1_starter"
+  | "g1a_tandem_lead"
+  | "g1b_tandem_secondary"
+  | "g2_backup"
+  | "g2_reserve";
+
+export type GoalieRoleFilter = "all" | GoalieDeploymentBucket;
+
+export const GOALIE_ROLE_FILTER_OPTIONS: Array<{
+  value: GoalieRoleFilter;
+  label: string;
+}> = [
+  { value: "all", label: "All Goalie Roles" },
+  { value: "g1_workhorse", label: "G1 Workhorse" },
+  { value: "g1_starter", label: "G1 Starter" },
+  { value: "g1a_tandem_lead", label: "G1A Tandem Lead" },
+  { value: "g1b_tandem_secondary", label: "G1B Tandem Secondary" },
+  { value: "g2_backup", label: "G2 Backup" },
+  { value: "g2_reserve", label: "G2 Reserve" },
+];
+
 export type GoalieGameForMethodology = {
   goalieId: number;
   gameId?: number | null;
@@ -168,6 +191,31 @@ export function getGoalieStartsShareBucket(
   if (share >= 0.3) return "secondary_tandem";
   if (share >= 0.1) return "backup";
   return "spot_start";
+}
+
+export function getGoalieDeploymentBucket(
+  startShare: number | null | undefined,
+): GoalieDeploymentBucket | null {
+  const share = finite(startShare);
+  if (share == null || share < 0) return null;
+  if (share >= 0.65) return "g1_workhorse";
+  if (share >= 0.55) return "g1_starter";
+  if (share >= 0.45) return "g1a_tandem_lead";
+  if (share >= 0.3) return "g1b_tandem_secondary";
+  if (share >= 0.1) return "g2_backup";
+  return "g2_reserve";
+}
+
+export function formatGoalieDeploymentBucket(
+  bucket: GoalieDeploymentBucket | null | undefined,
+) {
+  if (bucket === "g1_workhorse") return "G1 Workhorse";
+  if (bucket === "g1_starter") return "G1 Starter";
+  if (bucket === "g1a_tandem_lead") return "G1A Tandem Lead";
+  if (bucket === "g1b_tandem_secondary") return "G1B Tandem Secondary";
+  if (bucket === "g2_backup") return "G2 Backup";
+  if (bucket === "g2_reserve") return "G2 Reserve";
+  return null;
 }
 
 export function calculateAdjustedCoreNetshare(args: {

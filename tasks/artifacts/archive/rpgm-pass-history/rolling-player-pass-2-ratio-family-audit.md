@@ -18,7 +18,7 @@ It covers every persisted ratio metric family in `rolling_player_game_metrics` a
 - window semantics
 - component completeness rules
 
-This artifact does not assign final status buckets yet. Status ledger work remains separate in `/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-notes-pass-2.md`.
+This artifact does not assign final status buckets yet. Status ledger work remains separate in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`.
 
 ## Scope
 
@@ -549,6 +549,6 @@ Evidence from tests:
 
 - task `2.3` should compare weighted-rate families against the same ratio-aggregation mechanics, with TOI-specific source review added
 - tasks `2.6` and `2.7` should translate each audited ratio family into:
-  - a formula-only status entry in `/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-notes-pass-2.md`
-  - an action item in `/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-action-items-pass-2.md` whenever support visibility, naming, fallback clarity, or reconstruction friction needs follow-up
+  - a formula-only status entry in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`
+  - an action item in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md` whenever support visibility, naming, fallback clarity, or reconstruction friction needs follow-up
 - tasks in `3.x` should use this artifact as the reconstruction reference during live validation and freshness checks

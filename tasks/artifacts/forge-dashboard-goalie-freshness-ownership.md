@@ -12,7 +12,7 @@
 - [goaliePipeline.ts](/Users/tim/Code/fhfhockey.com/web/lib/projections/goaliePipeline.ts)
 - [freshness.ts](/Users/tim/Code/fhfhockey.com/web/lib/dashboard/freshness.ts)
 - [perfBudget.ts](/Users/tim/Code/fhfhockey.com/web/lib/dashboard/perfBudget.ts)
-- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md)
+- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md)
 
 ## Ownership Question
 
@@ -80,7 +80,7 @@ In that declared model:
 
 ## Actual Cron Ownership
 
-Current scheduled jobs in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md):
+Current scheduled jobs in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md):
 
 - `09:30 UTC`
   - `update-goalie-projections-v2`

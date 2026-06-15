@@ -152,7 +152,7 @@ function explanationItems(row: ContextualRankingRow) {
   ];
   if (row.percentile != null) {
     items.push(
-      `Better than ${row.percentile.toFixed(1)}% of qualified peers; higher is better.`,
+      `Peer percentile ${row.percentile.toFixed(1)}%; higher is better after metric directionality is applied.`,
     );
   }
   if (!row.minimumSampleMet) {
@@ -603,6 +603,102 @@ function toApiRow(args: {
 
 type RankedSnapshotResult = Awaited<ReturnType<typeof buildRankedSnapshot>>;
 
+type RankedSnapshotResolution = {
+  uniqueMetricKeys: ContextualRankingMetricKey[];
+  availableMetricKeys: ContextualRankingMetricKey[];
+  unavailableMetricKeys: ContextualRankingMetricKey[];
+  latestAvailableSnapshotDate: string | null;
+  latestEvaluatedSnapshot: RankedSnapshotResult | null;
+  selectedSnapshotsByMetric: Map<ContextualRankingMetricKey, RankedSnapshotResult>;
+};
+
+export type ContextualRankingSnapshotMetricRows = {
+  request: ContextualRankingsRequest;
+  metricKey: ContextualRankingMetricKey;
+  rankedRows: ContextualRankingRow[];
+  snapshotDate: string | null;
+  snapshotUpdatedAt: string | null;
+  latestAvailableSnapshotDate: string | null;
+  snapshotSelectionReason:
+    | "latest_available"
+    | "latest_calculable_metric"
+    | "metric_unavailable"
+    | "no_snapshot";
+  unavailable: boolean;
+  message: string | null;
+};
+
+async function resolveRankedSnapshotsForMetrics(
+  request: ContextualRankingsRequest,
+  metricKeys: ContextualRankingMetricKey[],
+): Promise<RankedSnapshotResolution> {
+  const uniqueMetricKeys = Array.from(new Set(metricKeys));
+  const availableMetricKeys: ContextualRankingMetricKey[] = [];
+  const unavailableMetricKeys: ContextualRankingMetricKey[] = [];
+
+  for (const metricKey of uniqueMetricKeys) {
+    const metricDefinition = getContextualRankingMetricDefinition(metricKey);
+    if (!metricDefinition || metricDefinition.availabilityStatus !== "available") {
+      unavailableMetricKeys.push(metricKey);
+      continue;
+    }
+    availableMetricKeys.push(metricKey);
+  }
+
+  if (availableMetricKeys.length === 0) {
+    return {
+      uniqueMetricKeys,
+      availableMetricKeys,
+      unavailableMetricKeys,
+      latestAvailableSnapshotDate: null,
+      latestEvaluatedSnapshot: null,
+      selectedSnapshotsByMetric: new Map(),
+    };
+  }
+
+  const snapshotDates = await resolveRollingSnapshotDates(request);
+  const latestAvailableSnapshotDate = snapshotDates[0] ?? null;
+  let latestEvaluatedSnapshot: RankedSnapshotResult | null = null;
+  const selectedSnapshotsByMetric = new Map<
+    ContextualRankingMetricKey,
+    RankedSnapshotResult
+  >();
+  const unresolvedMetricKeys = new Set(availableMetricKeys);
+
+  for (const [index, snapshotDate] of snapshotDates.entries()) {
+    const evaluatedSnapshot = await buildRankedSnapshot(
+      { ...request, metric: availableMetricKeys[0] },
+      snapshotDate,
+      snapshotDates.slice(index),
+      availableMetricKeys,
+    );
+    latestEvaluatedSnapshot ??= evaluatedSnapshot;
+
+    for (const metricKey of unresolvedMetricKeys) {
+      if (
+        hasCalculableMetricValue(
+          evaluatedSnapshot.rankedRowsByMetric.get(metricKey) ?? [],
+        )
+      ) {
+        selectedSnapshotsByMetric.set(metricKey, evaluatedSnapshot);
+      }
+    }
+    for (const metricKey of selectedSnapshotsByMetric.keys()) {
+      unresolvedMetricKeys.delete(metricKey);
+    }
+    if (unresolvedMetricKeys.size === 0) break;
+  }
+
+  return {
+    uniqueMetricKeys,
+    availableMetricKeys,
+    unavailableMetricKeys,
+    latestAvailableSnapshotDate,
+    latestEvaluatedSnapshot,
+    selectedSnapshotsByMetric,
+  };
+}
+
 function unavailableMetricResponse(args: {
   request: ContextualRankingsRequest;
   definition: ContextualRankingMetricDefinition | undefined;
@@ -731,66 +827,26 @@ export async function buildContextualRankingsSurfaces(
   metricKeys: ContextualRankingMetricKey[],
 ): Promise<Map<ContextualRankingMetricKey, ContextualRankingsResponse>> {
   const generatedAt = new Date().toISOString();
-  const uniqueMetricKeys = Array.from(new Set(metricKeys));
+  const resolution = await resolveRankedSnapshotsForMetrics(request, metricKeys);
   const responses = new Map<
     ContextualRankingMetricKey,
     ContextualRankingsResponse
   >();
-  const availableMetricKeys: ContextualRankingMetricKey[] = [];
 
-  for (const metricKey of uniqueMetricKeys) {
+  for (const metricKey of resolution.unavailableMetricKeys) {
     const metricRequest = { ...request, metric: metricKey };
     const metricDefinition = getContextualRankingMetricDefinition(metricKey);
-    if (!metricDefinition || metricDefinition.availabilityStatus !== "available") {
-      responses.set(
-        metricKey,
-        unavailableMetricResponse({
-          request: metricRequest,
-          definition: metricDefinition,
-          generatedAt,
-        }),
-      );
-      continue;
-    }
-    availableMetricKeys.push(metricKey);
-  }
-
-  if (availableMetricKeys.length === 0) return responses;
-
-  const snapshotDates = await resolveRollingSnapshotDates(request);
-  const latestAvailableSnapshotDate = snapshotDates[0] ?? null;
-  let latestEvaluatedSnapshot: RankedSnapshotResult | null = null;
-  const selectedSnapshotsByMetric = new Map<
-    ContextualRankingMetricKey,
-    RankedSnapshotResult
-  >();
-  const unresolvedMetricKeys = new Set(availableMetricKeys);
-
-  for (const [index, snapshotDate] of snapshotDates.entries()) {
-    const evaluatedSnapshot = await buildRankedSnapshot(
-      { ...request, metric: availableMetricKeys[0] },
-      snapshotDate,
-      snapshotDates.slice(index),
-      availableMetricKeys,
+    responses.set(
+      metricKey,
+      unavailableMetricResponse({
+        request: metricRequest,
+        definition: metricDefinition,
+        generatedAt,
+      }),
     );
-    latestEvaluatedSnapshot ??= evaluatedSnapshot;
-
-    for (const metricKey of unresolvedMetricKeys) {
-      if (
-        hasCalculableMetricValue(
-          evaluatedSnapshot.rankedRowsByMetric.get(metricKey) ?? [],
-        )
-      ) {
-        selectedSnapshotsByMetric.set(metricKey, evaluatedSnapshot);
-      }
-    }
-    for (const metricKey of selectedSnapshotsByMetric.keys()) {
-      unresolvedMetricKeys.delete(metricKey);
-    }
-    if (unresolvedMetricKeys.size === 0) break;
   }
 
-  for (const metricKey of availableMetricKeys) {
+  for (const metricKey of resolution.availableMetricKeys) {
     const metricDefinition = getContextualRankingMetricDefinition(metricKey);
     if (!metricDefinition || metricDefinition.availabilityStatus !== "available") {
       continue;
@@ -801,14 +857,99 @@ export async function buildContextualRankingsSurfaces(
         request: { ...request, metric: metricKey },
         definition: metricDefinition,
         generatedAt,
-        latestAvailableSnapshotDate,
-        latestEvaluatedSnapshot,
-        selectedSnapshot: selectedSnapshotsByMetric.get(metricKey) ?? null,
+        latestAvailableSnapshotDate: resolution.latestAvailableSnapshotDate,
+        latestEvaluatedSnapshot: resolution.latestEvaluatedSnapshot,
+        selectedSnapshot: resolution.selectedSnapshotsByMetric.get(metricKey) ?? null,
       }),
     );
   }
 
   return responses;
+}
+
+export async function buildContextualRankingSnapshotRowsByMetric(
+  request: ContextualRankingsRequest,
+  metricKeys: ContextualRankingMetricKey[],
+): Promise<Map<ContextualRankingMetricKey, ContextualRankingSnapshotMetricRows>> {
+  const resolution = await resolveRankedSnapshotsForMetrics(request, metricKeys);
+  const snapshots = new Map<
+    ContextualRankingMetricKey,
+    ContextualRankingSnapshotMetricRows
+  >();
+
+  for (const metricKey of resolution.uniqueMetricKeys) {
+    const metricRequest = { ...request, metric: metricKey };
+    const metricDefinition = getContextualRankingMetricDefinition(metricKey);
+
+    if (!metricDefinition || metricDefinition.availabilityStatus !== "available") {
+      snapshots.set(metricKey, {
+        request: metricRequest,
+        metricKey,
+        rankedRows: [],
+        snapshotDate: null,
+        snapshotUpdatedAt: null,
+        latestAvailableSnapshotDate: null,
+        snapshotSelectionReason: "metric_unavailable",
+        unavailable: true,
+        message: metricDefinition
+          ? "Requested metric is not available from current verified data."
+          : "Requested metric is unknown.",
+      });
+      continue;
+    }
+
+    const selectedSnapshot =
+      resolution.selectedSnapshotsByMetric.get(metricKey) ?? null;
+    const fallbackSnapshot =
+      selectedSnapshot ?? resolution.latestEvaluatedSnapshot;
+    const candidates =
+      fallbackSnapshot?.candidates.filter(
+        (candidate) => candidate.metricKey === metricKey,
+      ) ?? [];
+    const snapshotSelectionReason =
+      selectedSnapshot == null
+        ? resolution.latestAvailableSnapshotDate == null
+          ? "no_snapshot"
+          : "latest_available"
+        : selectedSnapshot.snapshotDate === resolution.latestAvailableSnapshotDate
+          ? "latest_available"
+          : "latest_calculable_metric";
+
+    if (candidates.length > 0 && selectedSnapshot == null) {
+      snapshots.set(metricKey, {
+        request: metricRequest,
+        metricKey,
+        rankedRows: [],
+        snapshotDate: fallbackSnapshot?.snapshotDate ?? null,
+        snapshotUpdatedAt: fallbackSnapshot?.snapshotUpdatedAt ?? null,
+        latestAvailableSnapshotDate: resolution.latestAvailableSnapshotDate,
+        snapshotSelectionReason,
+        unavailable: true,
+        message:
+          "Requested metric has no calculable values for the current filters.",
+      });
+      continue;
+    }
+
+    snapshots.set(metricKey, {
+      request: metricRequest,
+      metricKey,
+      rankedRows: fallbackSnapshot?.rankedRowsByMetric.get(metricKey) ?? [],
+      snapshotDate: fallbackSnapshot?.snapshotDate ?? null,
+      snapshotUpdatedAt: fallbackSnapshot?.snapshotUpdatedAt ?? null,
+      latestAvailableSnapshotDate: resolution.latestAvailableSnapshotDate,
+      snapshotSelectionReason,
+      unavailable: false,
+      message:
+        snapshotSelectionMessage({
+          selectedSnapshotDate: fallbackSnapshot?.snapshotDate ?? null,
+          latestAvailableSnapshotDate: resolution.latestAvailableSnapshotDate,
+          metricKey,
+        }) ?? null,
+    });
+  }
+
+  return snapshots;
 }
 
 export async function buildContextualRankingsSurface(

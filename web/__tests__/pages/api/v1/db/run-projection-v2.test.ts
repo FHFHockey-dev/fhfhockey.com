@@ -51,6 +51,7 @@ vi.mock("lib/projections/run-forge-projections", () => ({
 }));
 
 import handler, {
+  buildProjectionInputIngestGate,
   summarizeGoalieRosterAssignments
 } from "../../../../../pages/api/v1/db/run-projection-v2";
 
@@ -190,6 +191,35 @@ describe("/api/v1/db/run-projection-v2", () => {
       goalieCandidatesChecked: 2,
       mismatchedAssignments: 1,
       nonGoaliePositionRows: 0
+    });
+  });
+
+  it("excludes playoff placeholders without PBP from projection ingest coverage", () => {
+    expect(
+      buildProjectionInputIngestGate({
+        scheduledRecentGames: 10,
+        actualPbpGames: 6,
+        shiftedActualGames: 5,
+        shiftRows: 191
+      })
+    ).toMatchObject({
+      status: "PASS",
+      detail:
+        "scheduled_recent_games=10, actual_pbp_games=6, shifted_actual_games=5, shift_coverage=0.83, shift_rows=191"
+    });
+  });
+
+  it("fails projection ingest coverage when actual PBP games lack shift coverage", () => {
+    expect(
+      buildProjectionInputIngestGate({
+        scheduledRecentGames: 10,
+        actualPbpGames: 6,
+        shiftedActualGames: 3,
+        shiftRows: 120
+      })
+    ).toMatchObject({
+      status: "FAIL",
+      action: "Run /api/v1/db/ingest-projection-inputs for recent actual game dates."
     });
   });
 });

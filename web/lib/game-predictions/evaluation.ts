@@ -231,8 +231,8 @@ export function buildSegmentMetrics(evaluated: EvaluatedGamePrediction[]): Segme
     );
   }
 
-  for (const seasonPhase of ["early", "middle", "late"]) {
-    const rows = evaluated.filter((row) => getSeasonPhase(row.prediction.snapshot_date) === seasonPhase);
+  for (const seasonPhase of ["early", "middle", "late", "playoff"]) {
+    const rows = evaluated.filter((row) => getSeasonPhase(row) === seasonPhase);
     if (rows.length > 0) {
       segments.push(calculateSegmentMetric(rows, "season_phase", seasonPhase));
     }
@@ -260,6 +260,38 @@ export function buildSegmentMetrics(evaluated: EvaluatedGamePrediction[]): Segme
         ),
         "goalie_confirmation_state",
         goalieState
+      )
+    );
+  }
+
+  const goalieUncertaintyBuckets = Array.from(
+    new Set(evaluated.map(getGoalieUncertaintyBucket).filter(Boolean))
+  ) as string[];
+  for (const uncertaintyBucket of goalieUncertaintyBuckets) {
+    segments.push(
+      calculateSegmentMetric(
+        evaluated.filter((row) => getGoalieUncertaintyBucket(row) === uncertaintyBucket),
+        "goalie_start_uncertainty",
+        uncertaintyBucket
+      )
+    );
+  }
+
+  const marketEdgeBuckets = Array.from(
+    new Set(
+      evaluated
+        .map((row) => readMetadataString(row.prediction.metadata, "market_edge_bucket"))
+        .filter(Boolean)
+    )
+  ) as string[];
+  for (const marketEdgeBucket of marketEdgeBuckets) {
+    segments.push(
+      calculateSegmentMetric(
+        evaluated.filter(
+          (row) => readMetadataString(row.prediction.metadata, "market_edge_bucket") === marketEdgeBucket
+        ),
+        "market_edge_bucket",
+        marketEdgeBucket
       )
     );
   }
@@ -293,11 +325,30 @@ export function buildSegmentMetrics(evaluated: EvaluatedGamePrediction[]): Segme
   return segments;
 }
 
-function getSeasonPhase(snapshotDate: string): "early" | "middle" | "late" {
-  const month = Number(snapshotDate.slice(5, 7));
+function getSeasonPhase(row: EvaluatedGamePrediction): "early" | "middle" | "late" | "playoff" {
+  const metadataPhase = readMetadataString(row.prediction.metadata, "season_phase");
+  if (
+    metadataPhase === "early" ||
+    metadataPhase === "middle" ||
+    metadataPhase === "late" ||
+    metadataPhase === "playoff"
+  ) {
+    return metadataPhase;
+  }
+  const month = Number(row.prediction.snapshot_date.slice(5, 7));
   if (month === 10 || month === 11) return "early";
   if (month >= 3 && month <= 6) return "late";
   return "middle";
+}
+
+function getGoalieUncertaintyBucket(row: EvaluatedGamePrediction): string | null {
+  const home = readMetadataNumber(row.prediction.metadata, "home_goalie_start_uncertainty");
+  const away = readMetadataNumber(row.prediction.metadata, "away_goalie_start_uncertainty");
+  const uncertainty = Math.max(home ?? 0, away ?? 0);
+  if (uncertainty >= 0.75) return "high";
+  if (uncertainty >= 0.25) return "medium";
+  if (home != null || away != null) return "low";
+  return null;
 }
 
 function getPredictedSide(row: EvaluatedGamePrediction): "home" | "away" {

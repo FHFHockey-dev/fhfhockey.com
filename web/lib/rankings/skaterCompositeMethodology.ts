@@ -73,6 +73,7 @@ export const MCM_SCORE_CONTRACT = {
   ],
   caveats: [
     "Hits and blocks are rink/scorekeeper-sensitive until a rink-adjusted source is verified.",
+    "Power-play points remain source-pending when pp_points_per_60 is unavailable in the active ranking context.",
     "MCM is a fantasy multi-category signal, not a pure NHL talent rating.",
   ],
 } as const;

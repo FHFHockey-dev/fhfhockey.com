@@ -97,6 +97,14 @@ export const GOALIE_RANKING_SOURCE_CONTRACT: RankingEntitySourceContract = {
         "Use starts as the denominator and show low-start sample warnings.",
     },
     {
+      metricKey: "goalie_really_bad_start_rate",
+      label: "RBS%",
+      source: "goalie_stats_unified plus goalieMethodology.isGoalieReallyBadStart",
+      availabilityTarget: "available",
+      notes:
+        "Use starts as the denominator, modern GSAx thresholds when xG source rows exist, and lower-is-better percentile semantics.",
+    },
+    {
       metricKey: "goalie_start_share",
       label: "Start Share",
       source: "goalie_start_projections.l10_start_pct and season_start_pct",

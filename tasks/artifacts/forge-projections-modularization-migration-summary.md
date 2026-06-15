@@ -32,8 +32,8 @@ Structural refactor and runner rename from `runProjectionV2.ts` to `run-forge-pr
 - Script path updated:
   - `fix_terminal.sh`
 - Internal docs/tasks updated for active-path references:
-  - `FORGE_EXPLAINED.md`
-  - `FORGE_ECOSYSTEM_ELI5_AUDIT.md`
+  - `tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md`
+  - `tasks/TASKS/forge-projections/docs/FORGE_ECOSYSTEM_ELI5_AUDIT.md`
   - `tasks/tasks-prd-projection-model.md`
   - `tasks/tasks-skater-forge.md`
   - `tasks/tasks-goalie-forge.md`

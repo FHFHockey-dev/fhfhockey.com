@@ -265,6 +265,25 @@ const MATRIX_METRIC_COLUMNS: MatrixMetricColumn[] = [
     playerTypes: ["skater"],
   },
   {
+    metricKey: "offense_rating",
+    groupKey: "overall_context",
+    shortLabel: "Off",
+    fullLabel: "Offense Rating",
+    tooltip: "Published offensive composite from skater_composite_ratings.",
+    defaultVisible: true,
+    playerTypes: ["skater"],
+  },
+  {
+    metricKey: "defense_rating",
+    groupKey: "overall_context",
+    shortLabel: "Def",
+    fullLabel: "Defensive Impact",
+    tooltip:
+      "Published contextual defensive-impact composite from skater_composite_ratings; uses unadjusted on-ice inputs with caveats.",
+    defaultVisible: true,
+    playerTypes: ["skater"],
+  },
+  {
     metricKey: "mcm_score",
     groupKey: "overall_context",
     shortLabel: "MCM",

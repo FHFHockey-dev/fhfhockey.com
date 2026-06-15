@@ -338,6 +338,73 @@
   }
 }
 
+.marketBlock {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(v.$primary-color, 0.35);
+  border-radius: 8px;
+  background: v.$surface-0;
+}
+
+.marketHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+
+  h3 {
+    margin: 0;
+    color: v.$color-white;
+    font-size: 0.9rem;
+    letter-spacing: 0;
+  }
+
+  span {
+    min-width: 0;
+    color: v.$text-secondary;
+    font-size: 0.76rem;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+}
+
+.marketGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+
+  div {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid v.$border-soft;
+    border-radius: 8px;
+    background: v.$surface-1;
+  }
+
+  span,
+  small {
+    min-width: 0;
+    color: v.$text-secondary;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  strong {
+    min-width: 0;
+    color: v.$primary-color;
+    font-family: v.$font-family-numbers, monospace;
+    font-size: 1.08rem;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+  }
+}
+
 .performancePanel,
 .accountabilityPanel,
 .statePanel,
@@ -731,6 +798,7 @@
 
   .predictionGrid,
   .detailGrid,
+  .marketGrid,
   .performanceGrid,
   .accountabilityGrid,
   .stockChartControls,

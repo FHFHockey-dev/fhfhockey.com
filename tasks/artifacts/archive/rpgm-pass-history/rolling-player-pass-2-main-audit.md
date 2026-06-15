@@ -21,8 +21,8 @@ Primary supporting artifacts:
 - [rolling-player-pass-2-schema-change-recommendations.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-schema-change-recommendations.md)
 - [rolling-player-pass-2-suggested-metric-additions-review.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-suggested-metric-additions-review.md)
 - [rolling-player-pass-2-post-optimization-verification-2026-03-14.md](/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-post-optimization-verification-2026-03-14.md)
-- [rpm-audit-notes-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-notes-pass-2.md)
-- [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-action-items-pass-2.md)
+- [rpm-audit-notes-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md)
+- [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md)
 
 ## Upstream Tables
 
@@ -325,7 +325,7 @@ Supporting evidence:
 
 Running source of truth:
 
-- [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-action-items-pass-2.md)
+- [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md)
 
 This section is a summary only. The full running implementation backlog remains in the separate backlog file.
 
@@ -581,9 +581,9 @@ Implementation order after the audit:
 5. optional enhancements
    - sequence additive assist decomposition, penalties-drawn families, and `pp_toi_seconds` after the higher-priority audit backlog is burned down
 
-The implementation backlog in [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-action-items-pass-2.md) is the source for post-audit sequencing. Pass 2 leaves behind both:
+The implementation backlog in [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md) is the source for post-audit sequencing. Pass 2 leaves behind both:
 
-- a validation ledger in [rpm-audit-notes-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-notes-pass-2.md)
-- an implementation backlog in [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-action-items-pass-2.md)
+- a validation ledger in [rpm-audit-notes-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md)
+- an implementation backlog in [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md)
 
 This audit is not only descriptive. It continuously converted concrete findings into implementation-sequencing inputs, and the backlog file is the authoritative handoff surface for the next remediation phase.

@@ -167,7 +167,7 @@ These flows should be modes of the same coordinator surface, not three unrelated
 
 Source showing current sprawl:
 
-- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md)
+- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md)
 
 Why not:
 

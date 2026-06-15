@@ -2,6 +2,7 @@ import type {
   PlayerMatrixMetricCell,
   PlayerMatrixResponse,
   PlayerMatrixRow,
+  PlayerMatrixRankScopes,
 } from "lib/rankings/playerMatrix";
 import {
   formatDeploymentLabel,
@@ -10,6 +11,7 @@ import {
 import type {
   ContextualRankingsSortDirection,
 } from "lib/rankings/rankingTypes";
+import type { RankingsFilterState } from "lib/rankings/rankingUrlState";
 import {
   formatPercentileScore,
   getScoreTileTone,
@@ -29,6 +31,8 @@ type PlayerMatrixTableProps = {
   ) => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
+  displayMode?: RankingsFilterState["displayMode"];
+  rankMode?: RankDisplayMode;
 };
 
 const SCORE_TILE_LEGEND = [
@@ -42,14 +46,50 @@ const SCORE_TILE_LEGEND = [
   { label: "N/A", toneClass: styles.scoreToneMuted },
 ];
 
-function metricCellTitle(cell: PlayerMatrixMetricCell, staleSource: boolean) {
+type RankDisplayMode = "overall" | "deployment";
+
+function rankScopeLabel(mode: RankDisplayMode) {
+  return mode === "deployment" ? "Deployment" : "Overall";
+}
+
+function scopedRank(args: {
+  rankScopes: PlayerMatrixRankScopes | undefined;
+  fallbackRank: number | null;
+  fallbackPercentile: number | null;
+  fallbackPeerCount: number;
+  mode: RankDisplayMode;
+}) {
+  const scope = args.rankScopes?.[args.mode];
+  return {
+    rank: scope?.rank ?? args.fallbackRank,
+    percentile: scope?.percentile ?? args.fallbackPercentile,
+    qualifiedPeerCount: scope?.qualifiedPeerCount ?? args.fallbackPeerCount,
+    peerGroupKey: scope?.peerGroupKey ?? null,
+  };
+}
+
+function metricCellTitle(
+  cell: PlayerMatrixMetricCell,
+  staleSource: boolean,
+  rankMode: RankDisplayMode,
+) {
+  const rank = scopedRank({
+    rankScopes: cell.rankScopes,
+    fallbackRank: cell.rank,
+    fallbackPercentile: cell.percentile,
+    fallbackPeerCount: cell.qualifiedPeerCount,
+    mode: rankMode,
+  });
   const parts = [
     cell.fullLabel,
     cell.formattedValue ? `Value ${cell.formattedValue}` : null,
-    cell.rank == null ? null : `Rank ${cell.rank}`,
-    cell.percentile == null ? null : `Percentile ${cell.percentile.toFixed(1)}%`,
+    rank.rank == null ? null : `${rankScopeLabel(rankMode)} Rank ${rank.rank}`,
+    rank.percentile == null
+      ? null
+      : `${rankScopeLabel(rankMode)} Percentile ${rank.percentile.toFixed(1)}%`,
     cell.sampleConfidence === "low" ? "Low sample" : null,
-    !cell.qualifiedPeerCount ? "No qualified peer sample" : null,
+    !rank.qualifiedPeerCount ? "No qualified peer sample" : null,
+    rank.peerGroupKey ? `Peer group ${rank.peerGroupKey}` : null,
     staleSource ? "Snapshot is older than latest available matrix snapshot" : null,
     cell.lowerIsBetter ? "Lower raw values are better" : null,
     cell.availabilityReason,
@@ -88,9 +128,13 @@ function metricState(cell: PlayerMatrixMetricCell, staleSource: boolean) {
 function MatrixMetricCell({
   cell,
   latestSnapshotDate,
+  rankMode,
+  displayMode,
 }: {
   cell: PlayerMatrixMetricCell;
   latestSnapshotDate: string | null;
+  rankMode: RankDisplayMode;
+  displayMode: RankingsFilterState["displayMode"];
 }) {
   const unavailable = cell.availabilityState !== "available" || cell.availabilityReason;
   const staleSource =
@@ -98,32 +142,50 @@ function MatrixMetricCell({
     latestSnapshotDate != null &&
     cell.snapshotDate != null &&
     cell.snapshotDate !== latestSnapshotDate;
+  const rank = scopedRank({
+    rankScopes: cell.rankScopes,
+    fallbackRank: cell.rank,
+    fallbackPercentile: cell.percentile,
+    fallbackPeerCount: cell.qualifiedPeerCount,
+    mode: rankMode,
+  });
   const score =
     cell.availabilityState === "planned"
       ? "Planned"
       : unavailable
         ? "N/A"
-        : formatPercentileScore(cell.percentile);
+        : formatPercentileScore(rank.percentile);
   const state = metricState(cell, staleSource);
-  const rankLabel = cell.rank == null ? "UR" : `#${cell.rank}`;
+  const rankLabel = rank.rank == null ? "UR" : `#${rank.rank}`;
   const valueLabel = cell.formattedValue ?? "-";
+  const title = metricCellTitle(cell, staleSource, rankMode);
+  const showRank = displayMode === "both" || displayMode === "raw_rank";
+  const primaryLabel =
+    displayMode === "raw_rank"
+      ? unavailable
+        ? "N/A"
+        : rankLabel
+      : score;
   return (
     <td>
       <div
         className={`${styles.matrixMetricCell} ${
-          unavailable ? styles.scoreToneMuted : getScoreTileTone(cell.percentile)
+          unavailable ? styles.scoreToneMuted : getScoreTileTone(rank.percentile)
         }`}
-        title={metricCellTitle(cell, staleSource)}
-        aria-label={metricCellTitle(cell, staleSource)}
+        title={title}
+        aria-label={title}
       >
         <div className={styles.metricScoreStack}>
           <div className={styles.metricScoreTile}>
-            <strong>{score}</strong>
+            <strong>{primaryLabel}</strong>
           </div>
-          <span className={styles.metricScoreMeta}>
-            <span>{unavailable ? "N/A" : rankLabel}</span>
-            <span aria-hidden="true">•</span>
-            <span>{unavailable ? "N/A" : valueLabel}</span>
+          {showRank && displayMode !== "raw_rank" ? (
+            <span className={styles.metricRankLine}>
+              {unavailable ? "N/A" : rankLabel}
+            </span>
+          ) : null}
+          <span className={styles.metricValueLine}>
+            {unavailable ? "N/A" : valueLabel}
           </span>
         </div>
         {state ? (
@@ -174,17 +236,60 @@ function StateBody({ message, colSpan }: { message: string; colSpan: number }) {
   );
 }
 
+function DeploymentBadges({
+  deployment,
+}: {
+  deployment: PlayerMatrixRow["deployment"];
+}) {
+  const badgeCandidates: Array<{ key: string; label: string; className: string } | null> = [
+    deployment.ev ? { key: "ev", label: String(deployment.ev), className: styles.deploymentBadgeEv } : null,
+    deployment.pp ? { key: "pp", label: String(deployment.pp), className: styles.deploymentBadgePp } : null,
+    deployment.pk ? { key: "pk", label: String(deployment.pk), className: styles.deploymentBadgePk } : null,
+  ];
+  const badges = badgeCandidates.filter(
+    (badge): badge is { key: string; label: string; className: string } => badge != null,
+  );
+
+  if (badges.length === 0) {
+    return <span className={styles.deploymentBadgeMuted}>No deployment</span>;
+  }
+
+  return (
+    <span
+      className={styles.deploymentBadges}
+      aria-label={`Deployment ${formatDeploymentLabel(deployment)}`}
+    >
+      {badges.map((badge) => (
+        <span key={badge.key} className={`${styles.deploymentBadge} ${badge.className}`}>
+          {badge.label}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function Row({
   row,
   payload,
   selected,
+  rankMode,
+  displayMode,
   onSelectPlayer,
 }: {
   row: PlayerMatrixRow;
   payload: PlayerMatrixResponse;
   selected: boolean;
+  rankMode: RankDisplayMode;
+  displayMode: RankingsFilterState["displayMode"];
   onSelectPlayer: (playerId: number) => void;
 }) {
+  const sortRank = scopedRank({
+    rankScopes: row.sort.rankScopes,
+    fallbackRank: row.sort.rank,
+    fallbackPercentile: row.sort.percentile,
+    fallbackPeerCount: payload.meta.totalRankedRows,
+    mode: rankMode,
+  });
   return (
     <tr
       className={selected ? styles.selectedMatrixRow : undefined}
@@ -200,27 +305,29 @@ function Row({
             onSelectPlayer(row.entity.id);
           }}
         >
-          {row.sort.rank ?? "-"}
+          {sortRank.rank ?? "-"}
         </button>
       </td>
       <td className={styles.stickyPlayerCell}>
         <div className={styles.playerCell}>
-          <strong>{row.entity.name ?? `Player ${row.entity.id}`}</strong>
-          <span>
-            {row.entity.position ?? "-"} · {row.team.name ?? row.team.abbreviation ?? "Team unavailable"}
+          <span className={styles.playerIdentity}>
+            <strong>{row.entity.name ?? `Player ${row.entity.id}`}</strong>
+            <span>
+              {row.entity.position ?? "-"} · {row.team.name ?? row.team.abbreviation ?? "Team unavailable"}
+            </span>
           </span>
+          <DeploymentBadges deployment={row.deployment} />
         </div>
       </td>
-      <td>{row.team.abbreviation ?? "-"}</td>
-      <td>{row.entity.position ?? "-"}</td>
-      <td>{row.sample.gamesPlayed ?? "-"}</td>
-      <td>{formatToiClock(row.sample.toiPerGameSeconds)}</td>
-      <td>{formatDeploymentLabel(row.deployment)}</td>
+      <td className={styles.sampleCell}>{row.sample.gamesPlayed ?? "-"}</td>
+      <td className={styles.sampleCell}>{formatToiClock(row.sample.toiPerGameSeconds)}</td>
       {payload.meta.metricColumns.map((column) => (
         <MatrixMetricCell
           key={column.metricKey}
           cell={row.metrics[column.metricKey]}
           latestSnapshotDate={payload.meta.latestAvailableSnapshotDate}
+          rankMode={rankMode}
+          displayMode={displayMode}
         />
       ))}
     </tr>
@@ -236,9 +343,12 @@ export default function PlayerMatrixTable({
   onSortMetric,
   onPageChange,
   onPageSizeChange,
+  displayMode = "both",
+  rankMode,
 }: PlayerMatrixTableProps) {
+  const activeRankMode = rankMode ?? "overall";
   const metricColumnCount = payload?.meta.metricColumns.length ?? 0;
-  const colSpan = 7 + metricColumnCount;
+  const colSpan = 4 + metricColumnCount;
 
   return (
     <section className={styles.matrixSection}>
@@ -270,11 +380,8 @@ export default function PlayerMatrixTable({
               <th className={styles.stickyPlayerCell} scope="col" rowSpan={2}>
                 Player
               </th>
-              <th scope="col" rowSpan={2}>Team</th>
-              <th scope="col" rowSpan={2}>Pos</th>
-              <th scope="col" rowSpan={2}>GP</th>
-              <th scope="col" rowSpan={2}>TOI/G</th>
-              <th scope="col" rowSpan={2}>Deployment</th>
+              <th className={styles.sampleCell} scope="col" rowSpan={2}>GP</th>
+              <th className={styles.sampleCell} scope="col" rowSpan={2}>TOI/G</th>
               {(payload ? groupedHeaders(payload) : []).map((entry) => (
                 <th key={entry.group.key} scope="colgroup" colSpan={entry.columns.length}>
                   {entry.group.label}
@@ -325,6 +432,8 @@ export default function PlayerMatrixTable({
                   row={row}
                   payload={payload}
                   selected={row.entity.id === selectedPlayerId}
+                  rankMode={activeRankMode}
+                  displayMode={displayMode}
                   onSelectPlayer={onSelectPlayer}
                 />
               ))}

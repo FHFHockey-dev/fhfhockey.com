@@ -40,7 +40,7 @@ The documented SQL source defines:
 
 Reference:
 
-- `web/rules/power-ratings-tables.md:628`
+- `tasks/TASKS/three-pillars-analytics/underlying-stats/power-ratings-tables.md:628`
 
 The current updater instead:
 

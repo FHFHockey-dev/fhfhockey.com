@@ -31,6 +31,9 @@ export type ContextualRankingsSortKey =
   | "gp"
   | "toi_per_game";
 export type ContextualRankingsSortDirection = "asc" | "desc";
+export type ContextualRankingsSourceTable =
+  | "rolling_player_game_metrics"
+  | "entity_metric_rankings";
 
 export type ContextualRankingsRequest = {
   entity: ContextualRankingsEntity;
@@ -108,7 +111,7 @@ export type ContextualRankingsResponse = {
       | "latest_calculable_metric"
       | "metric_unavailable"
       | "no_snapshot";
-    sourceTable: "rolling_player_game_metrics";
+    sourceTable: ContextualRankingsSourceTable;
     metric: {
       key: string;
       displayName: string | null;

@@ -9,6 +9,7 @@ import {
   calculateTeamLuckComponents,
   calculateTeamShotQuality,
 } from "./teamStyleMethodology";
+import { rankNormalizedMetricValues } from "./rankingCalculator";
 import { ContextualRankingsQueryError } from "./rankingTypes";
 
 export type TeamMatrixMetricKey =
@@ -30,6 +31,7 @@ export type TeamMatrixRequest = {
   asOfDate: string | null;
   metric: TeamMatrixMetricKey;
   sortDirection: "asc" | "desc";
+  search: string | null;
   page: number;
   pageSize: number;
 };
@@ -338,6 +340,11 @@ function parseDate(value: string | string[] | undefined) {
   return raw;
 }
 
+function parseSearch(value: string | string[] | undefined) {
+  const raw = first(value)?.trim();
+  return raw ? raw.slice(0, 80) : null;
+}
+
 export function parseTeamMatrixRequest(
   query: NextApiRequest["query"],
 ): TeamMatrixRequest {
@@ -361,6 +368,7 @@ export function parseTeamMatrixRequest(
       ["asc", "desc"] as const,
       "desc",
     ),
+    search: parseSearch(query.search),
     page:
       parseInteger(query.page, "page", {
         defaultValue: 1,
@@ -374,6 +382,14 @@ export function parseTeamMatrixRequest(
         max: MAX_PAGE_SIZE,
       }) ?? DEFAULT_PAGE_SIZE,
   };
+}
+
+function teamRowMatchesSearch(row: TeamMatrixRow, search: string | null) {
+  if (!search) return true;
+  const needle = search.toLowerCase();
+  return [row.team.abbreviation, row.team.name, row.style.label]
+    .filter((value): value is string => typeof value === "string")
+    .some((value) => value.toLowerCase().includes(needle));
 }
 
 function finite(value: unknown): number | null {
@@ -458,54 +474,17 @@ function metricValue(args: {
   return null;
 }
 
-function rankValues<T extends { id: string; value: number | null }>(
+export function rankTeamMetricValues<T extends { id: string; value: number | null }>(
   rows: T[],
   lowerIsBetter: boolean,
 ) {
-  const qualified = rows
-    .filter((row): row is T & { value: number } => row.value != null)
-    .sort((a, b) => {
-      const aValue = lowerIsBetter ? -a.value : a.value;
-      const bValue = lowerIsBetter ? -b.value : b.value;
-      if (bValue !== aValue) return bValue - aValue;
-      return a.id.localeCompare(b.id);
-    });
-  const qualifiedPeerCount = qualified.length;
-  const lowerPeerCountByValue = new Map<number, number>();
-  for (let index = 0; index < qualified.length;) {
-    const value = lowerIsBetter ? -qualified[index].value : qualified[index].value;
-    let nextIndex = index + 1;
-    while (
-      nextIndex < qualified.length &&
-      (lowerIsBetter ? -qualified[nextIndex].value : qualified[nextIndex].value) ===
-        value
-    ) {
-      nextIndex += 1;
-    }
-    lowerPeerCountByValue.set(value, qualifiedPeerCount - nextIndex);
-    index = nextIndex;
-  }
-
-  const ranks = new Map<string, { rank: number; percentile: number; qualifiedPeerCount: number }>();
-  let priorValue: number | null = null;
-  let rank = 0;
-  for (const row of qualified) {
-    const normalizedValue = lowerIsBetter ? -row.value : row.value;
-    if (priorValue == null || normalizedValue !== priorValue) {
-      rank += 1;
-      priorValue = normalizedValue;
-    }
-    ranks.set(row.id, {
-      rank,
-      percentile: round(
-        ((lowerPeerCountByValue.get(normalizedValue) ?? 0) / qualifiedPeerCount) *
-          100,
-        3,
-      ),
-      qualifiedPeerCount,
-    });
-  }
-  return ranks;
+  return rankNormalizedMetricValues(
+    rows.map((row) => ({
+      id: row.id,
+      normalizedValue:
+        row.value == null ? null : lowerIsBetter ? -row.value : row.value,
+    })),
+  );
 }
 
 export function aggregateTeamStyleRows(args: {
@@ -765,11 +744,14 @@ export async function buildTeamMatrixSurface(
     return { power, aggregate, style };
   });
 
-  const rankMaps = new Map<TeamMatrixMetricKey, ReturnType<typeof rankValues>>();
+  const rankMaps = new Map<
+    TeamMatrixMetricKey,
+    ReturnType<typeof rankTeamMetricValues>
+  >();
   for (const column of METRIC_COLUMNS) {
     rankMaps.set(
       column.metricKey,
-      rankValues(
+      rankTeamMetricValues(
         baseRows.map((row) => ({
           id: row.power.team_abbreviation,
           value: metricValue({
@@ -861,10 +843,13 @@ export async function buildTeamMatrixSurface(
     return a.team.abbreviation.localeCompare(b.team.abbreviation);
   });
 
-  const totalRankedRows = rows.length;
+  const filteredRows = rows.filter((row) =>
+    teamRowMatchesSearch(row, request.search),
+  );
+  const totalRankedRows = filteredRows.length;
   const pageCount = Math.max(1, Math.ceil(totalRankedRows / request.pageSize));
   const start = (request.page - 1) * request.pageSize;
-  const pageRows = rows.slice(start, start + request.pageSize);
+  const pageRows = filteredRows.slice(start, start + request.pageSize);
 
   return {
     success: true,

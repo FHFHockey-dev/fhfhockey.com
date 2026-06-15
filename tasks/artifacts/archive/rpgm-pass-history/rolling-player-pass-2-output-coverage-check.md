@@ -13,9 +13,9 @@ This artifact verifies that the pass-2 audit produced the required output surfac
 
 The pass-2 PRD requires that every audited metric can produce up to three parallel outputs:
 
-1. one status / formula entry in `tasks/rpm-audit-notes-pass-2.md`
+1. one status / formula entry in `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`
 2. rationale / validation coverage in the main audit artifact and supporting family artifacts where needed
-3. an action-backlog item in `tasks/rpm-audit-action-items-pass-2.md` whenever the audit discovered a concrete next action
+3. an action-backlog item in `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md` whenever the audit discovered a concrete next action
 
 Important contract clarification:
 
@@ -27,7 +27,7 @@ Important contract clarification:
 
 File:
 
-- [rpm-audit-notes-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-notes-pass-2.md)
+- [rpm-audit-notes-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md)
 
 Verified entry count:
 
@@ -85,7 +85,7 @@ Result:
 
 File:
 
-- [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-action-items-pass-2.md)
+- [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md)
 
 Verified action categories present:
 

@@ -53,7 +53,7 @@ export function buildRankingExplanationItems(args: {
 
   if (row.metric.rawRank != null) {
     items.push(
-      `Raw rank ${row.metric.rawRank} of ${row.metric.qualifiedPeerCount}; better than ${formatPercentile(row.metric.percentile)} of qualified peers.`,
+      `Raw rank ${row.metric.rawRank} of ${row.metric.qualifiedPeerCount}; peer percentile ${formatPercentile(row.metric.percentile)}.`,
     );
   }
 

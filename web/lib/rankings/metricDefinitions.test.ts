@@ -111,6 +111,39 @@ describe("metricDefinitions", () => {
     });
   });
 
+  it("keeps PP points source-pending until verified ranking rows exist", () => {
+    const definition = getContextualRankingMetricDefinition("pp_points_per_60");
+
+    expect(definition?.availabilityStatus).toBe("unavailable");
+    expect(definition?.defaultStrengthState).toBe("pp");
+    expect(definition?.applicableStrengthStates).toEqual(["pp"]);
+    expect(definition?.sourceTable).toBeNull();
+    expect(definition?.sourceQualityFlags).toContain("source_pending");
+    expect(definition?.metadata).toMatchObject({
+      sourcePendingReason:
+        "MCM methodology includes PP points, but the current contextual ranking surface has no verified pp_points_per_60 metric rows.",
+    });
+  });
+
+  it("publishes offense and defensive impact as live composite metric contracts", () => {
+    const offense = getContextualRankingMetricDefinition("offense_rating");
+    const defense = getContextualRankingMetricDefinition("defense_rating");
+
+    expect(offense?.availabilityStatus).toBe("available");
+    expect(offense?.sourceTable).toBe("skater_composite_ratings");
+    expect(offense?.denominatorKey).toBe("component_percentiles");
+    expect(offense?.sourceFields).toContain(
+      "skater_composite_ratings.offense_rating_overall",
+    );
+    expect(defense?.availabilityStatus).toBe("available");
+    expect(defense?.displayName).toBe("Defensive Impact");
+    expect(defense?.sourceTable).toBe("skater_composite_ratings");
+    expect(defense?.denominatorKey).toBe("component_percentiles");
+    expect(defense?.sourceQualityFlags).toContain(
+      "context_influenced_unadjusted_on_ice",
+    );
+  });
+
   it("labels raw on-ice defensive metrics as context influenced until adjusted models exist", () => {
     const xga = getContextualRankingMetricDefinition("xga_per_60");
     const onIceGf = getContextualRankingMetricDefinition("on_ice_gf_percentage");

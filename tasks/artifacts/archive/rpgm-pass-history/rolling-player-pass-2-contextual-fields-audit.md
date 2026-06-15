@@ -17,7 +17,7 @@ It covers the persisted PP-context and line-context fields in `rolling_player_ga
 - reconstruction method
 - diagnostics and validation implications
 
-This artifact does not assign final status buckets yet. Status ledger work remains separate in `/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-notes-pass-2.md`.
+This artifact does not assign final status buckets yet. Status ledger work remains separate in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`.
 
 ## Scope
 

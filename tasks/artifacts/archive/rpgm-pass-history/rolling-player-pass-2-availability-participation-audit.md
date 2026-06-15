@@ -18,7 +18,7 @@ It covers every persisted availability, participation, and GP-compatibility fiel
 - traded-player and split-strength implications
 - legacy alias behavior
 
-This artifact does not assign final status buckets yet. Status ledger work remains separate in `/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-notes-pass-2.md`.
+This artifact does not assign final status buckets yet. Status ledger work remains separate in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`.
 
 ## Scope
 
@@ -491,8 +491,8 @@ Evidence from tests:
 
 - task `2.5` should keep contextual labels such as `gp_semantic_type`, `pp_unit`, and line context distinct from arithmetic metrics while still auditing their stored meaning
 - tasks `2.6` and `2.7` should translate the availability / participation surfaces into:
-  - a formula-only status entry in `/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-notes-pass-2.md`
-  - an action item in `/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-action-items-pass-2.md` whenever naming ambiguity, compatibility drag, or debug-console visibility needs follow-up
+  - a formula-only status entry in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`
+  - an action item in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md` whenever naming ambiguity, compatibility drag, or debug-console visibility needs follow-up
 - tasks in `3.x` should use this artifact for live validation examples involving:
   - healthy one-team availability
   - missed-game denominator growth

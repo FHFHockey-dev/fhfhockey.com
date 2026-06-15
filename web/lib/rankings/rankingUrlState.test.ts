@@ -2,8 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildClientRankingsRequest,
+  buildGoalieMatrixRequestPath,
   buildMatrixRequestPath,
   buildRankingsRequestPath,
+  buildSnapshotRequestPath,
+  buildTeamMatrixRequestPath,
+  buildWarRequestPath,
   normalizeRankingsFilters,
 } from "./rankingUrlState";
 
@@ -20,6 +24,9 @@ describe("rankingUrlState", () => {
       minGp: "1",
       minToi: "300",
       team: "",
+      search: "",
+      displayMode: "both",
+      goalieRole: "all",
       sort: "percentile",
       direction: "desc",
     });
@@ -59,6 +66,7 @@ describe("rankingUrlState", () => {
       page: "2",
       page_size: "25",
       selected_player: "8478402",
+      search: "Savoie",
     });
 
     expect(filters.strength).toBe("5v5");
@@ -68,7 +76,7 @@ describe("rankingUrlState", () => {
     expect(filters.page).toBe("2");
     expect(filters.pageSize).toBe("25");
     expect(buildMatrixRequestPath(filters)).toBe(
-      "/api/v1/contextual-rankings/matrix?entity=skaters&season=20252026&window=season&position=all&deployment=all&strength=5v5&min_gp=1&min_toi=300&sort_metric=xga_per_60&sort_direction=asc&page=2&page_size=25&sample_confidence=high&selected_player=8478402",
+      "/api/v1/contextual-rankings/matrix?entity=skaters&season=20252026&window=season&position=all&deployment=all&strength=5v5&min_gp=1&min_toi=300&sort_metric=xga_per_60&sort_direction=asc&page=2&page_size=25&search=Savoie&sample_confidence=high&selected_player=8478402",
     );
   });
 
@@ -87,10 +95,12 @@ describe("rankingUrlState", () => {
       source_quality: "clean_only",
       groups: "offense,missing,defense_on_ice,offense",
       columns: "points_per_60,missing,xga_per_60,points_per_60",
+      display: "raw_rank",
     });
 
     expect(filters.sampleConfidence).toBe("medium_plus");
     expect(filters.sourceQuality).toBe("clean_only");
+    expect(filters.displayMode).toBe("raw_rank");
     expect(filters.metricGroups).toBe("offense,defense_on_ice");
     expect(filters.metricColumns).toBe("points_per_60,xga_per_60");
   });
@@ -148,5 +158,60 @@ describe("rankingUrlState", () => {
     const filters = normalizeRankingsFilters({ entity: "goalies" });
 
     expect(buildRankingsRequestPath(filters)).toBeNull();
+  });
+
+  it("serializes search for goalie and team matrix requests", () => {
+    const goalieFilters = normalizeRankingsFilters({
+      entity: "goalies",
+      team: "DAL",
+      search: "Shesterkin",
+      goalie_metric: "gsax",
+      goalie_role: "g1_workhorse",
+    });
+    const teamFilters = normalizeRankingsFilters({
+      entity: "teams",
+      search: "DAL",
+      team_metric: "net_luck",
+    });
+
+    expect(buildGoalieMatrixRequestPath(goalieFilters)).toContain(
+      "search=Shesterkin",
+    );
+    expect(buildGoalieMatrixRequestPath(goalieFilters)).toContain("team=DAL");
+    expect(buildGoalieMatrixRequestPath(goalieFilters)).toContain(
+      "role=g1_workhorse",
+    );
+    expect(buildTeamMatrixRequestPath(teamFilters)).toContain("search=DAL");
+  });
+
+  it("serializes the WAR source-pending contract path for every entity type", () => {
+    const filters = normalizeRankingsFilters({
+      entity: "teams",
+      tab: "war",
+      season: "20252026",
+      window: "last20",
+      strength: "5v5",
+    });
+
+    expect(buildWarRequestPath(filters)).toBe(
+      "/api/v1/contextual-rankings/war?entity=teams&season=20252026&window=last20&position=all&deployment=all&strength=5v5",
+    );
+  });
+
+  it("serializes selected snapshot paths only when an entity is explicitly selected", () => {
+    expect(buildSnapshotRequestPath(normalizeRankingsFilters({}))).toBeNull();
+
+    const filters = normalizeRankingsFilters({
+      entity: "goalies",
+      selected_goalie: "32",
+      goalie_metric: "gsax",
+      goalie_role: "g1_workhorse",
+      team: "DAL",
+      search: "DeSmith",
+    });
+
+    expect(buildSnapshotRequestPath(filters)).toBe(
+      "/api/v1/contextual-rankings/snapshot?entity=goalies&season=20252026&window=season&position=all&deployment=all&strength=5v5&min_gp=1&min_toi=300&sort_metric=points_per_60&goalie_metric=gsax&goalie_role=g1_workhorse&team_metric=off_rating&sort_direction=desc&team=DAL&search=DeSmith&selected_goalie=32",
+    );
   });
 });

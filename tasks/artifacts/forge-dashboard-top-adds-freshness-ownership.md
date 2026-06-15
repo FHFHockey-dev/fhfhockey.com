@@ -34,7 +34,7 @@ The chain is more traceable than the slate chain’s goalie leg, but it is still
 
 ## Current Scheduled Chain
 
-Documented current jobs from [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md):
+Documented current jobs from [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md):
 
 - `07:15 UTC` pre-ingestion slot noted for `update-games`
 - `08:40 UTC` `update-yahoo-players`

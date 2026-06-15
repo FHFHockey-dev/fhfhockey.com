@@ -102,7 +102,13 @@ function defaultDenominatorKey(definition: ContextualRankingMetricDefinitionInpu
   if (definition.metricKey === "sax_percentage") return "shooting_percentage";
   if (definition.metricKey.endsWith("_percentage")) return "event_share";
   if (definition.metricKey === "results_luck_index") return "historical_baseline";
-  if (definition.metricKey === "mcm_score") return "component_percentiles";
+  if (
+    definition.metricKey === "offense_rating" ||
+    definition.metricKey === "defense_rating" ||
+    definition.metricKey === "mcm_score"
+  ) {
+    return "component_percentiles";
+  }
   if (definition.metricKey === "beast_tier") return "eligibility_thresholds";
   if (definition.isRateStat) return "toi_seconds";
   return "metric_specific";
@@ -119,6 +125,12 @@ function defaultDenominatorDescription(
   }
   if (definition.metricKey === "mcm_score") {
     return "Weighted component percentiles from published contextual metric components.";
+  }
+  if (
+    definition.metricKey === "offense_rating" ||
+    definition.metricKey === "defense_rating"
+  ) {
+    return "Weighted component percentiles from published skater composite rating rows.";
   }
   if (definition.metricKey === "beast_tier") {
     return "Eligibility thresholds applied to contextual percentile components.";
@@ -143,7 +155,8 @@ function defaultSourceQualityFlags(
   if (
     definition.metricKey === "xga_per_60" ||
     definition.metricKey === "on_ice_gf_percentage" ||
-    definition.metricKey === "on_ice_xgf_percentage"
+    definition.metricKey === "on_ice_xgf_percentage" ||
+    definition.metricKey === "defense_rating"
   ) {
     return ["context_influenced_unadjusted_on_ice"];
   }
@@ -284,6 +297,37 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     metadata: {
       derivedMetric: true,
       windowSource: "player_last_n_games_played",
+    },
+  },
+  {
+    metricKey: "pp_points_per_60",
+    displayName: "Power-play Points/60",
+    entityType: "skater",
+    category: "Special Teams",
+    description:
+      "Power-play points per 60 minutes in the selected window; source contract is pending in the current ranking surface.",
+    formulaDescription:
+      "power-play points / power-play TOI seconds * 3600 once verified PP point and PP TOI fields are promoted into the ranking surface.",
+    higherIsBetter: true,
+    defaultStrengthState: "pp",
+    defaultPeerGroup: "deployment",
+    minimumGp: 1,
+    minimumToiSeconds: 120,
+    isRateStat: true,
+    isPercentileEligible: true,
+    phase: "phase_2",
+    availabilityStatus: "unavailable",
+    sourceTable: null,
+    sourceFields: [],
+    applicableStrengthStates: ["pp"],
+    denominatorKey: "pp_toi_seconds_source_pending",
+    denominatorDescription:
+      "Verified player power-play TOI seconds in the selected player-production window; not available in the current matrix ranking contract.",
+    sourceQualityFlags: ["source_pending"],
+    metadata: {
+      sourcePendingReason:
+        "MCM methodology includes PP points, but the current contextual ranking surface has no verified pp_points_per_60 metric rows.",
+      requiredFields: ["power_play_points", "power_play_toi_seconds"],
     },
   },
   {
@@ -707,6 +751,69 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     sourceTable: null,
     sourceFields: [],
     metadata: { requiresTeamWithoutPlayerBaseline: true },
+  },
+  {
+    metricKey: "offense_rating",
+    displayName: "Offense Rating",
+    entityType: "skater",
+    category: "Composite",
+    description:
+      "Published skater offensive composite sourced from skater_composite_ratings.",
+    formulaDescription:
+      "Weighted blend of scoring-rate, chance-creation, playmaking, and finishing-context percentile components.",
+    higherIsBetter: true,
+    defaultStrengthState: "all",
+    defaultPeerGroup: "deployment",
+    minimumGp: 1,
+    minimumToiSeconds: 600,
+    isRateStat: false,
+    isPercentileEligible: true,
+    phase: "phase_2",
+    availabilityStatus: "available",
+    sourceTable: "skater_composite_ratings",
+    sourceFields: [
+      "skater_composite_ratings.offense_rating_overall",
+      "skater_composite_ratings.offense_rating_deployment",
+    ],
+    metadata: {
+      signalType: "contextual_percentile_composite",
+      componentGroups: [
+        "scoring_rate_score",
+        "chance_creation_score",
+        "playmaking_score",
+        "finishing_context_score",
+      ],
+    },
+  },
+  {
+    metricKey: "defense_rating",
+    displayName: "Defensive Impact",
+    entityType: "skater",
+    category: "Composite",
+    description:
+      "Published contextual defensive-impact composite sourced from skater_composite_ratings.",
+    formulaDescription:
+      "Weighted blend of suppression, raw on-ice process, and physical-support percentile components.",
+    higherIsBetter: true,
+    defaultStrengthState: "all",
+    defaultPeerGroup: "deployment",
+    minimumGp: 1,
+    minimumToiSeconds: 600,
+    isRateStat: false,
+    isPercentileEligible: true,
+    phase: "phase_2",
+    availabilityStatus: "available",
+    sourceTable: "skater_composite_ratings",
+    sourceFields: [
+      "skater_composite_ratings.defense_rating_overall",
+      "skater_composite_ratings.defense_rating_deployment",
+    ],
+    metadata: {
+      labelScope: "Defensive Impact in Context",
+      signalType: "contextual_percentile_composite",
+      caveat:
+        "Uses context-influenced on-ice defensive inputs and should not be presented as adjusted defensive talent.",
+    },
   },
   {
     metricKey: "results_luck_index",

@@ -2705,6 +2705,152 @@ export type Database = {
           },
         ]
       }
+      game_prediction_market_odds_snapshots: {
+        Row: {
+          away_market_no_vig_probability: number | null
+          away_moneyline: number
+          away_spread_line: number | null
+          away_spread_odds: number | null
+          away_team_abbreviation: string
+          away_team_id: number
+          captured_at: string
+          created_at: string
+          espn_game_id: string | null
+          event_start_at: string | null
+          game_date: string
+          game_id: number
+          home_market_no_vig_probability: number | null
+          home_moneyline: number
+          home_spread_line: number | null
+          home_spread_odds: number | null
+          home_team_abbreviation: string
+          home_team_id: number
+          market_overround: number | null
+          metadata: Json
+          odds_snapshot_id: string
+          over_odds: number | null
+          provider: string
+          provenance: Json
+          requested_date: string
+          source_payload: Json
+          source_url: string
+          total_line: number | null
+          under_odds: number | null
+        }
+        Insert: {
+          away_market_no_vig_probability?: number | null
+          away_moneyline: number
+          away_spread_line?: number | null
+          away_spread_odds?: number | null
+          away_team_abbreviation: string
+          away_team_id: number
+          captured_at: string
+          created_at?: string
+          espn_game_id?: string | null
+          event_start_at?: string | null
+          game_date: string
+          game_id: number
+          home_market_no_vig_probability?: number | null
+          home_moneyline: number
+          home_spread_line?: number | null
+          home_spread_odds?: number | null
+          home_team_abbreviation: string
+          home_team_id: number
+          market_overround?: number | null
+          metadata?: Json
+          odds_snapshot_id?: string
+          over_odds?: number | null
+          provider: string
+          provenance?: Json
+          requested_date: string
+          source_payload?: Json
+          source_url: string
+          total_line?: number | null
+          under_odds?: number | null
+        }
+        Update: {
+          away_market_no_vig_probability?: number | null
+          away_moneyline?: number
+          away_spread_line?: number | null
+          away_spread_odds?: number | null
+          away_team_abbreviation?: string
+          away_team_id?: number
+          captured_at?: string
+          created_at?: string
+          espn_game_id?: string | null
+          event_start_at?: string | null
+          game_date?: string
+          game_id?: number
+          home_market_no_vig_probability?: number | null
+          home_moneyline?: number
+          home_spread_line?: number | null
+          home_spread_odds?: number | null
+          home_team_abbreviation?: string
+          home_team_id?: number
+          market_overround?: number | null
+          metadata?: Json
+          odds_snapshot_id?: string
+          over_odds?: number | null
+          provider?: string
+          provenance?: Json
+          requested_date?: string
+          source_payload?: Json
+          source_url?: string
+          total_line?: number | null
+          under_odds?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_prediction_market_odds_snapshots_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "game_prediction_market_odds_snapshots_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "game_prediction_market_odds_snapshots_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_prediction_market_odds_snapshots_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_prediction_market_odds_snapshots_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "game_prediction_market_odds_snapshots_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "game_prediction_market_odds_snapshots_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_prediction_model_metrics: {
         Row: {
           accuracy: number | null

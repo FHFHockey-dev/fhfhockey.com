@@ -41,11 +41,41 @@ describe("/api/v1/contextual-rankings/metadata", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
+    expect(res.body.filters.entities).toEqual(["skaters", "goalies", "teams"]);
+    expect(res.body.filters.strengths).toContain("5v5");
     expect(res.body.filters.windows).toContain("last10");
+    expect(res.body.availableFilters).toMatchObject({
+      success: true,
+      version: "contextual_rankings_available_filters_v1",
+    });
+    expect(res.body.availableFilters.entities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ value: "goalies", status: "available" }),
+        expect.objectContaining({ value: "teams", status: "available" }),
+      ]),
+    );
     expect(res.body.comparison).toMatchObject({
-      endpoint: "/api/v1/contextual-rankings",
-      entityIdsParam: "entity_ids",
-      maxEntityIds: 25,
+      endpoint: "/api/v1/contextual-rankings/comparison",
+      version: "contextual_ranking_comparison_v1",
+      status: "available",
+      supportedEntities: ["skaters", "goalies", "teams"],
+      maxSubjects: 6,
+      subjectParams: {
+        skaters: ["player_ids", "entity_ids"],
+        goalies: ["goalie_ids", "entity_ids"],
+        teams: ["teams", "team_abbreviations"],
+      },
+      legacyListComparison: {
+        endpoint: "/api/v1/contextual-rankings",
+        entityIdsParam: "entity_ids",
+        maxEntityIds: 25,
+        supportedEntities: ["skaters"],
+      },
+    });
+    expect(res.body.snapshot).toMatchObject({
+      endpoint: "/api/v1/contextual-rankings/snapshot",
+      supportedEntities: ["skaters", "goalies", "teams"],
+      status: "available",
     });
     expect(res.body.defensiveComposites).toMatchObject({
       labels: {
@@ -74,8 +104,22 @@ describe("/api/v1/contextual-rankings/metadata", () => {
       expect.arrayContaining([
         expect.objectContaining({ key: "better_than_percentile" }),
         expect.objectContaining({ key: "source_quality_flags" }),
+        expect.objectContaining({ key: "wins_above_replacement_source_pending" }),
+        expect.objectContaining({ key: "comparison_payload_contract" }),
       ]),
     );
+    expect(res.body.war).toMatchObject({
+      status: "source_pending",
+      methodology: {
+        key: "wins_above_replacement",
+        sourceStatus: "source_pending",
+        formula: null,
+      },
+      meta: {
+        rowCount: 0,
+      },
+    });
+    expect(res.body.war.rows).toEqual([]);
     expect(res.body.metrics).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

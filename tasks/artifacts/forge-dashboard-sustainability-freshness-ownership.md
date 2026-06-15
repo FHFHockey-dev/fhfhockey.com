@@ -12,7 +12,7 @@
 - [rebuild-score.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/sustainability/rebuild-score.ts)
 - [freshness.ts](/Users/tim/Code/fhfhockey.com/web/lib/dashboard/freshness.ts)
 - [perfBudget.ts](/Users/tim/Code/fhfhockey.com/web/lib/dashboard/perfBudget.ts)
-- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md)
+- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md)
 
 ## Ownership Question
 
@@ -27,7 +27,7 @@ This audit asks whether sustainability freshness is:
 
 The sustainability chain is explicitly represented in the runbook.
 
-Current scheduled jobs in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md):
+Current scheduled jobs in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md):
 
 - `10:42 UTC` `rebuild-sustainability-baselines`
 - `10:43 UTC` `rebuild-sustainability-priors`

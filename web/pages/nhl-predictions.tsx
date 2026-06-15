@@ -6,6 +6,10 @@ import type {
   PredictionCandlestick,
 } from "lib/game-predictions/accountability";
 import type {
+  EspnGameOdds,
+  EspnOddsPayload,
+} from "lib/game-predictions/espnOdds";
+import type {
   PublicGamePrediction,
   PublicGamePredictionsPayload,
   PublicPredictionPerformance,
@@ -20,6 +24,12 @@ type PageProps = {
 type AccountabilityApiPayload = AccountabilityDashboard & {
   success?: boolean;
   error?: string;
+};
+
+type MoneylineSide = {
+  odds: string | null;
+  modelProbability: number | null;
+  marketProbability: number | null;
 };
 
 function formatPercent(value: number | null): string {
@@ -37,6 +47,11 @@ function formatCompactDecimal(value: number | null, digits = 3): string {
 function formatSignedNumber(value: number | null, digits = 2): string {
   if (value == null) return "--";
   return value > 0 ? `+${value.toFixed(digits)}` : value.toFixed(digits);
+}
+
+function formatPercentagePoint(value: number | null): string {
+  if (value == null) return "--";
+  return value > 0 ? `+${value.toFixed(1)} pts` : `${value.toFixed(1)} pts`;
 }
 
 function formatDateTime(value: string | null): string {
@@ -94,6 +109,50 @@ function factorDirectionLabel(
   if (factor.direction === "home") return prediction.homeTeam.abbreviation;
   if (factor.direction === "away") return prediction.awayTeam.abbreviation;
   return "Neutral";
+}
+
+function oddsKey(args: {
+  date: string;
+  awayTeam: string;
+  homeTeam: string;
+}): string {
+  return `${args.date}|${args.awayTeam}|${args.homeTeam}`;
+}
+
+function parseAmericanOdds(value: string | null): number | null {
+  if (!value) return null;
+  const parsed = Number(value.replace(/[^\d+-]/g, ""));
+  return Number.isFinite(parsed) && parsed !== 0 ? parsed : null;
+}
+
+function americanOddsToImplied(value: string | null): number | null {
+  const odds = parseAmericanOdds(value);
+  if (odds == null) return null;
+  return odds > 0 ? 100 / (odds + 100) : Math.abs(odds) / (Math.abs(odds) + 100);
+}
+
+function noVigMoneyline(args: {
+  homeOdds: string | null;
+  awayOdds: string | null;
+}): { home: number | null; away: number | null } {
+  const home = americanOddsToImplied(args.homeOdds);
+  const away = americanOddsToImplied(args.awayOdds);
+  if (home == null || away == null) return { home: null, away: null };
+  const total = home + away;
+  if (total <= 0) return { home: null, away: null };
+  return { home: home / total, away: away / total };
+}
+
+function moneylineSideEdge(side: MoneylineSide): number | null {
+  if (side.modelProbability == null || side.marketProbability == null) {
+    return null;
+  }
+  return (side.modelProbability - side.marketProbability) * 100;
+}
+
+function formatLineOdds(line: string | null, odds: string | null): string {
+  if (!line && !odds) return "--";
+  return [line, odds].filter(Boolean).join(" ");
 }
 
 function isDarkColor(hex: string | undefined): boolean {
@@ -184,7 +243,96 @@ function ComparisonRow({
   );
 }
 
-function PredictionCard({ prediction }: { prediction: PublicGamePrediction }) {
+function MarketCheck({
+  prediction,
+  odds,
+}: {
+  prediction: PublicGamePrediction;
+  odds: EspnGameOdds | null;
+}) {
+  if (!odds || (!odds.moneyline.home && !odds.moneyline.away)) {
+    return (
+      <section className={styles.marketBlock}>
+        <div className={styles.marketHeader}>
+          <h3>Market Check</h3>
+          <span>ESPN odds unavailable</span>
+        </div>
+      </section>
+    );
+  }
+
+  const market = noVigMoneyline({
+    homeOdds: odds.moneyline.home,
+    awayOdds: odds.moneyline.away,
+  });
+  const awaySide: MoneylineSide = {
+    odds: odds.moneyline.away,
+    modelProbability: prediction.awayWinProbability,
+    marketProbability: market.away,
+  };
+  const homeSide: MoneylineSide = {
+    odds: odds.moneyline.home,
+    modelProbability: prediction.homeWinProbability,
+    marketProbability: market.home,
+  };
+
+  return (
+    <section className={styles.marketBlock}>
+      <div className={styles.marketHeader}>
+        <h3>Market Check</h3>
+        <span>{odds.provider ? `ESPN / ${odds.provider}` : "ESPN odds"}</span>
+      </div>
+      <div className={styles.marketGrid}>
+        <div>
+          <span>{prediction.awayTeam.abbreviation} ML</span>
+          <strong>{awaySide.odds ?? "--"}</strong>
+          <small>
+            Model {formatPercent(awaySide.modelProbability)} / Market{" "}
+            {formatPercent(awaySide.marketProbability)}
+          </small>
+          <small>
+            Edge {formatPercentagePoint(moneylineSideEdge(awaySide))}
+          </small>
+        </div>
+        <div>
+          <span>{prediction.homeTeam.abbreviation} ML</span>
+          <strong>{homeSide.odds ?? "--"}</strong>
+          <small>
+            Model {formatPercent(homeSide.modelProbability)} / Market{" "}
+            {formatPercent(homeSide.marketProbability)}
+          </small>
+          <small>
+            Edge {formatPercentagePoint(moneylineSideEdge(homeSide))}
+          </small>
+        </div>
+        <div>
+          <span>Puck line</span>
+          <strong>
+            {formatLineOdds(odds.spread.home.line, odds.spread.home.odds)}
+          </strong>
+          <small>{prediction.homeTeam.abbreviation}</small>
+        </div>
+        <div>
+          <span>Total</span>
+          <strong>
+            {formatLineOdds(odds.total.over.line, odds.total.over.odds)}
+          </strong>
+          <small>
+            Under {formatLineOdds(odds.total.under.line, odds.total.under.odds)}
+          </small>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PredictionCard({
+  prediction,
+  odds,
+}: {
+  prediction: PublicGamePrediction;
+  odds: EspnGameOdds | null;
+}) {
   const matchup = prediction.matchup;
   return (
     <article className={styles.gameCard}>
@@ -229,6 +377,8 @@ function PredictionCard({ prediction }: { prediction: PublicGamePrediction }) {
           <span>Sources fresh</span>
         )}
       </div>
+
+      <MarketCheck prediction={prediction} odds={odds} />
 
       <div className={styles.detailGrid}>
         <section>
@@ -787,6 +937,9 @@ export default function NhlPredictionsPage({
   const [error, setError] = useState<string | null>(null);
   const [accountability, setAccountability] =
     useState<AccountabilityDashboard | null>(null);
+  const [oddsByGameKey, setOddsByGameKey] = useState<
+    Record<string, EspnGameOdds>
+  >({});
 
   useEffect(() => {
     if (initialPayload) return;
@@ -867,6 +1020,51 @@ export default function NhlPredictionsPage({
   }, []);
 
   const predictions = payload?.predictions ?? [];
+  const oddsDateList = useMemo(
+    () =>
+      Array.from(
+        new Set(predictions.map((prediction) => prediction.snapshotDate)),
+      ),
+    [predictions],
+  );
+
+  useEffect(() => {
+    if (!oddsDateList.length) return;
+    let active = true;
+    const dates = oddsDateList.map((date) => date.replace(/-/g, "")).join(",");
+
+    fetch(`/api/v1/game-predictions/espn-odds?dates=${dates}`)
+      .then(async (response) => {
+        const body = (await response.json()) as EspnOddsPayload;
+        if (!response.ok || body.success === false) {
+          throw new Error(body.error ?? "Unable to load ESPN odds");
+        }
+        return body.odds;
+      })
+      .then((odds) => {
+        if (!active) return;
+        const nextOddsByGameKey: Record<string, EspnGameOdds> = {};
+        for (const gameOdds of odds) {
+          const date = gameOdds.localDate ?? gameOdds.requestedDate;
+          nextOddsByGameKey[
+            oddsKey({
+              date,
+              awayTeam: gameOdds.awayTeam,
+              homeTeam: gameOdds.homeTeam,
+            })
+          ] = gameOdds;
+        }
+        setOddsByGameKey(nextOddsByGameKey);
+      })
+      .catch(() => {
+        if (active) setOddsByGameKey({});
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [oddsDateList]);
+
   const slateLabel = useMemo(() => {
     if (!predictions.length) return "Upcoming NHL Games";
     const dates = Array.from(
@@ -920,6 +1118,15 @@ export default function NhlPredictionsPage({
               <PredictionCard
                 key={`${prediction.gameId}-${prediction.computedAt}`}
                 prediction={prediction}
+                odds={
+                  oddsByGameKey[
+                    oddsKey({
+                      date: prediction.snapshotDate,
+                      awayTeam: prediction.awayTeam.abbreviation,
+                      homeTeam: prediction.homeTeam.abbreviation,
+                    })
+                  ] ?? null
+                }
               />
             ))}
           </section>

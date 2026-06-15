@@ -4,7 +4,7 @@
 
 This artifact records the remaining blockers after reviewing:
 
-- `/Users/tim/Code/fhfhockey.com/tasks/validation-checklist.md`
+- `/Users/tim/Code/fhfhockey.com/tasks/TASKS/xg-model/nhl-api-foundation/validation-checklist.md`
 - `/Users/tim/Code/fhfhockey.com/tasks/artifacts/xg-release-validation-2026-03-31-v2.md`
 - `/Users/tim/Code/fhfhockey.com/tasks/artifacts/xg-release-exception-policy-decision-2026-03-31.md`
 - `/Users/tim/Code/fhfhockey.com/tasks/artifacts/xg-exact-parity-disposition-2026-03-30.md`

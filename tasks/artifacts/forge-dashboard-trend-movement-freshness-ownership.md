@@ -10,7 +10,7 @@
 - [player-trends.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/trends/player-trends.ts)
 - [freshness.ts](/Users/tim/Code/fhfhockey.com/web/lib/dashboard/freshness.ts)
 - [perfBudget.ts](/Users/tim/Code/fhfhockey.com/web/lib/dashboard/perfBudget.ts)
-- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md)
+- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md)
 - [playerOwnership.ts](/Users/tim/Code/fhfhockey.com/web/lib/dashboard/playerOwnership.ts)
 
 ## Ownership Question
@@ -53,7 +53,7 @@ This confirms the source table is not magical or computed inline by the serving 
 
 ## Cron Ownership Gap
 
-I found no active cron entry in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md) for:
+I found no active cron entry in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md) for:
 
 - `/api/v1/trends/player-trends`
 - any named `player_trend_metrics` rebuild job

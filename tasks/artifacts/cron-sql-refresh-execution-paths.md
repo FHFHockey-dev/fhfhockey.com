@@ -15,11 +15,11 @@ The benchmark failure path is not the same as the production cron path.
   - [cron-audit-runner.ts](/Users/tim/Code/fhfhockey.com/web/scripts/cron-audit-runner.ts#L244)
   - RPC used: `execute_sql`
 - In the real schedule, these jobs are registered as direct SQL in Postgres via `cron.schedule(...)`:
-  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md#L219)
-  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md#L470)
-  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md#L668)
-  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md#L707)
-  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md#L798)
+  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md#L219)
+  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md#L470)
+  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md#L668)
+  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md#L707)
+  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md#L798)
 
 That means the benchmark proved instability in the Supabase RPC execution path, not a confirmed defect in the underlying SQL definitions.
 

@@ -49,7 +49,7 @@ This step answers:
 Ask:
 
 1. Is there an explicit scheduled path that keeps the source current?
-2. Is the chain documented in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md)?
+2. Is the chain documented in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md)?
 3. Is freshness inherited from another scheduled chain, or does it rely on undocumented manual work?
 4. Does the component already have a freshness target in [freshness.ts](/Users/tim/Code/fhfhockey.com/web/lib/dashboard/freshness.ts)?
 

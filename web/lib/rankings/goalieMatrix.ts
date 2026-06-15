@@ -2,7 +2,16 @@ import type { NextApiRequest } from "next";
 
 import supabase from "lib/supabase/server";
 
-import { isGoalieStealGame } from "./goalieMethodology";
+import {
+  formatGoalieDeploymentBucket,
+  getGoalieDeploymentBucket,
+  GOALIE_ROLE_FILTER_OPTIONS,
+  isGoalieReallyBadStart,
+  isGoalieStealGame,
+  type GoalieDeploymentBucket,
+  type GoalieRoleFilter,
+} from "./goalieMethodology";
+import { rankNormalizedMetricValues } from "./rankingCalculator";
 import { ContextualRankingsQueryError } from "./rankingTypes";
 
 export type GoalieMatrixMetricKey =
@@ -10,11 +19,13 @@ export type GoalieMatrixMetricKey =
   | "gsax"
   | "gsaa_per_60"
   | "quality_start_pct"
+  | "really_bad_start_rate"
   | "steal_rate"
   | "start_share";
 
 export type GoalieMatrixWindow = "season" | "last5" | "last10" | "last20";
 export type GoalieMatrixSortDirection = "asc" | "desc";
+export type GoalieMatrixRoleFilter = GoalieRoleFilter;
 
 export type GoalieMatrixRequest = {
   season: number;
@@ -22,8 +33,11 @@ export type GoalieMatrixRequest = {
   window: GoalieMatrixWindow;
   metric: GoalieMatrixMetricKey;
   sortDirection: GoalieMatrixSortDirection;
+  role: GoalieMatrixRoleFilter;
   minStarts: number;
   minShots: number;
+  team: string | null;
+  search: string | null;
   page: number;
   pageSize: number;
 };
@@ -83,6 +97,7 @@ type GoalieAggregate = {
   shotsAgainst: number;
   toiSeconds: number;
   qualityStarts: number;
+  reallyBadStarts: number;
   stealGames: number;
   nst5v5ToiSeconds: number;
   nst5v5Gsaa: number | null;
@@ -121,6 +136,13 @@ export type GoalieMatrixRow = {
     confidence: "low" | "medium" | "high";
   };
   role: {
+    deploymentBucket: GoalieDeploymentBucket | null;
+    deploymentLabel: string | null;
+    deploymentSource:
+      | "goalie_start_projections.season_start_pct"
+      | "selected_window_team_start_share"
+      | null;
+    windowStartShare: number | null;
     startShareLast10: number | null;
     seasonStartShare: number | null;
     startProbability: number | null;
@@ -194,6 +216,15 @@ const METRIC_COLUMNS: GoalieMatrixResponse["meta"]["metricColumns"] = [
     description: "Quality starts divided by starts.",
     lowerIsBetter: false,
     source: "goalie_stats_unified.quality_start / games_started",
+  },
+  {
+    metricKey: "really_bad_start_rate",
+    label: "RBS%",
+    description:
+      "Really bad starts divided by starts; lower rates are better.",
+    lowerIsBetter: true,
+    source:
+      "goalieMethodology.isGoalieReallyBadStart over goalie_stats_unified rows",
   },
   {
     metricKey: "steal_rate",
@@ -275,6 +306,18 @@ function parseDate(value: string | string[] | undefined) {
   return raw;
 }
 
+function parseSearch(value: string | string[] | undefined) {
+  const raw = first(value)?.trim();
+  return raw ? raw.slice(0, 80) : null;
+}
+
+function parseGoalieRole(value: string | string[] | undefined): GoalieMatrixRoleFilter {
+  const raw = first(value)?.trim().toLowerCase() ?? "all";
+  return GOALIE_ROLE_FILTER_OPTIONS.some((option) => option.value === raw)
+    ? (raw as GoalieMatrixRoleFilter)
+    : "all";
+}
+
 export function parseGoalieMatrixRequest(
   query: NextApiRequest["query"],
 ): GoalieMatrixRequest {
@@ -304,6 +347,7 @@ export function parseGoalieMatrixRequest(
       ["asc", "desc"] as const,
       "desc",
     ),
+    role: parseGoalieRole(query.role ?? query.goalie_role),
     minStarts: parseInteger(query.min_starts, "min_starts", {
       defaultValue: 3,
       min: 0,
@@ -312,6 +356,8 @@ export function parseGoalieMatrixRequest(
       defaultValue: 100,
       min: 0,
     }) ?? 100,
+    team: parseSearch(query.team),
+    search: parseSearch(query.search),
     page: parseInteger(query.page, "page", {
       defaultValue: 1,
       min: 1,
@@ -324,6 +370,19 @@ export function parseGoalieMatrixRequest(
         max: MAX_PAGE_SIZE,
       }) ?? DEFAULT_PAGE_SIZE,
   };
+}
+
+function goalieRowMatchesSearch(row: GoalieMatrixRow, search: string | null) {
+  if (!search) return true;
+  const needle = search.toLowerCase();
+  return [
+    row.entity.name,
+    String(row.entity.id),
+    row.team.abbreviation,
+    row.team.name,
+  ]
+    .filter((value): value is string => typeof value === "string")
+    .some((value) => value.toLowerCase().includes(needle));
 }
 
 function finite(value: unknown): number | null {
@@ -347,6 +406,7 @@ function formatMetricValue(metricKey: GoalieMatrixMetricKey, value: number | nul
   if (
     metricKey === "save_percentage" ||
     metricKey === "quality_start_pct" ||
+    metricKey === "really_bad_start_rate" ||
     metricKey === "steal_rate" ||
     metricKey === "start_share"
   ) {
@@ -376,6 +436,11 @@ function metricValue(
       ? round(aggregate.stealGames / aggregate.gamesStarted)
       : null;
   }
+  if (metricKey === "really_bad_start_rate") {
+    return aggregate.gamesStarted > 0
+      ? round(aggregate.reallyBadStarts / aggregate.gamesStarted)
+      : null;
+  }
   if (metricKey === "gsax") return aggregate.nst5v5Gsax;
   if (metricKey === "gsaa_per_60") {
     return aggregate.nst5v5Gsaa != null && aggregate.nst5v5ToiSeconds > 0
@@ -398,6 +463,13 @@ function sampleConfidence(args: {
   const sampleMultiple = Math.min(startMultiple, shotMultiple);
   if (sampleMultiple >= 2) return "high";
   return "medium";
+}
+
+function roleMatchesFilter(
+  bucket: GoalieDeploymentBucket | null,
+  filter: GoalieMatrixRoleFilter,
+) {
+  return filter === "all" || bucket === filter;
 }
 
 export function aggregateGoalieGameRows(
@@ -425,6 +497,7 @@ export function aggregateGoalieGameRows(
     let shotsAgainst = 0;
     let toiSeconds = 0;
     let qualityStarts = 0;
+    let reallyBadStarts = 0;
     let stealGames = 0;
     let nst5v5ToiSeconds = 0;
     let nst5v5Gsaa = 0;
@@ -455,17 +528,21 @@ export function aggregateGoalieGameRows(
         const gsax = xgAgainst - nstGoalsAgainst;
         nst5v5Gsax += gsax;
         nst5v5GsaxRows += 1;
+        const methodologyGame = {
+          goalieId: row.player_id,
+          date: row.date,
+          started: (finite(row.games_started) ?? 0) > 0,
+          shotsAgainst: finite(row.shots_against),
+          saves: finite(row.saves),
+          goalsAgainst: nstGoalsAgainst,
+          goalsSavedAboveExpected: gsax,
+          won: (finite(row.wins) ?? 0) > 0,
+        };
+        if (isGoalieReallyBadStart(methodologyGame)) {
+          reallyBadStarts += 1;
+        }
         if (
-          isGoalieStealGame({
-            goalieId: row.player_id,
-            date: row.date,
-            started: (finite(row.games_started) ?? 0) > 0,
-            shotsAgainst: finite(row.shots_against),
-            saves: finite(row.saves),
-            goalsAgainst: nstGoalsAgainst,
-            goalsSavedAboveExpected: gsax,
-            won: (finite(row.wins) ?? 0) > 0,
-          })
+          isGoalieStealGame(methodologyGame)
         ) {
           stealGames += 1;
         }
@@ -491,6 +568,7 @@ export function aggregateGoalieGameRows(
       shotsAgainst,
       toiSeconds,
       qualityStarts,
+      reallyBadStarts,
       stealGames,
       nst5v5ToiSeconds,
       nst5v5Gsaa: nst5v5GsaaRows > 0 ? round(nst5v5Gsaa) : null,
@@ -502,46 +580,59 @@ export function aggregateGoalieGameRows(
   return aggregates;
 }
 
-function rankValues<T extends { id: number; value: number | null }>(rows: T[]) {
-  const qualified = rows
-    .filter((row): row is T & { value: number } => row.value != null)
-    .sort((a, b) => {
-      if (b.value !== a.value) return b.value - a.value;
-      return a.id - b.id;
-    });
-  const qualifiedPeerCount = qualified.length;
-  const lowerPeerCountByValue = new Map<number, number>();
-  for (let index = 0; index < qualified.length;) {
-    const value = qualified[index].value;
-    let nextIndex = index + 1;
-    while (nextIndex < qualified.length && qualified[nextIndex].value === value) {
-      nextIndex += 1;
-    }
-    lowerPeerCountByValue.set(value, qualifiedPeerCount - nextIndex);
-    index = nextIndex;
+function buildTeamStartTotals(aggregates: readonly GoalieAggregate[]) {
+  const startsByTeamId = new Map<number, number>();
+  for (const aggregate of aggregates) {
+    if (aggregate.teamId == null) continue;
+    startsByTeamId.set(
+      aggregate.teamId,
+      (startsByTeamId.get(aggregate.teamId) ?? 0) + aggregate.gamesStarted,
+    );
   }
+  return startsByTeamId;
+}
 
-  const ranks = new Map<
-    number,
-    { rank: number; percentile: number; qualifiedPeerCount: number }
-  >();
-  let priorValue: number | null = null;
-  let rank = 0;
-  for (const row of qualified) {
-    if (priorValue == null || row.value !== priorValue) {
-      rank += 1;
-      priorValue = row.value;
-    }
-    ranks.set(row.id, {
-      rank,
-      percentile: round(
-        ((lowerPeerCountByValue.get(row.value) ?? 0) / qualifiedPeerCount) * 100,
-        3,
-      ),
-      qualifiedPeerCount,
-    });
-  }
-  return ranks;
+function buildGoalieRoleContext(args: {
+  aggregate: GoalieAggregate;
+  projection: GoalieStartProjectionRow | null;
+  teamStartTotals: Map<number, number>;
+}) {
+  const teamStarts =
+    args.aggregate.teamId == null
+      ? null
+      : args.teamStartTotals.get(args.aggregate.teamId) ?? null;
+  const windowStartShare =
+    teamStarts != null && teamStarts > 0
+      ? round(args.aggregate.gamesStarted / teamStarts)
+      : null;
+  const projectedSeasonShare = finite(args.projection?.season_start_pct);
+  const roleShare = projectedSeasonShare ?? windowStartShare;
+  const deploymentBucket = getGoalieDeploymentBucket(roleShare);
+
+  return {
+    deploymentBucket,
+    deploymentLabel: formatGoalieDeploymentBucket(deploymentBucket),
+    deploymentSource:
+      projectedSeasonShare != null
+        ? "goalie_start_projections.season_start_pct" as const
+        : windowStartShare != null
+          ? "selected_window_team_start_share" as const
+          : null,
+    windowStartShare,
+  };
+}
+
+export function rankGoalieMetricValues<T extends { id: number; value: number | null }>(
+  rows: T[],
+  lowerIsBetter = false,
+) {
+  return rankNormalizedMetricValues(
+    rows.map((row) => ({
+      id: row.id,
+      normalizedValue:
+        row.value == null ? null : lowerIsBetter ? -row.value : row.value,
+    })),
+  );
 }
 
 function latestDate(rows: readonly GoalieGameSourceRow[]) {
@@ -553,6 +644,9 @@ function latestDate(rows: readonly GoalieGameSourceRow[]) {
 
 async function fetchAllGoalieGameRows(request: GoalieMatrixRequest) {
   const rows: GoalieGameSourceRow[] = [];
+  const teamIds = await resolveGoalieTeamFilterIds(request.team);
+  if (teamIds != null && teamIds.length === 0) return rows;
+
   for (let from = 0;; from += GOALIE_QUERY_PAGE_SIZE) {
     let query = supabase
       .from("goalie_stats_unified" as any)
@@ -583,6 +677,9 @@ async function fetchAllGoalieGameRows(request: GoalieMatrixRequest) {
     if (request.asOfDate != null) {
       query = query.lte("date", request.asOfDate);
     }
+    if (teamIds != null) {
+      query = query.in("team_id", teamIds);
+    }
     const { data, error } = await query;
     if (error) {
       throw new Error(`Unable to load goalie ranking source rows: ${error.message}`);
@@ -591,6 +688,23 @@ async function fetchAllGoalieGameRows(request: GoalieMatrixRequest) {
     if ((data ?? []).length < GOALIE_QUERY_PAGE_SIZE) break;
   }
   return rows;
+}
+
+async function resolveGoalieTeamFilterIds(team: string | null) {
+  if (team == null || team.trim() === "") return null;
+  const normalized = team.trim().toLowerCase();
+  if (/^\d+$/.test(normalized)) return [Number(normalized)];
+
+  const { data, error } = await supabase.from("teams").select("id,abbreviation,name");
+  if (error) throw new Error(`Unable to resolve goalie team filter: ${error.message}`);
+
+  return ((data ?? []) as TeamMeta[])
+    .filter((row) => {
+      const abbreviation = row.abbreviation?.toLowerCase() ?? "";
+      const name = row.name?.toLowerCase() ?? "";
+      return abbreviation === normalized || name === normalized;
+    })
+    .map((row) => row.id);
 }
 
 async function fetchLatestStartProjections(args: {
@@ -665,6 +779,7 @@ export async function buildGoalieMatrixSurface(
   const gameRows = await fetchAllGoalieGameRows(request);
   const latestAvailableSnapshotDate = latestDate(gameRows);
   const aggregates = aggregateGoalieGameRows(gameRows, request.window);
+  const teamStartTotals = buildTeamStartTotals(aggregates);
   const playerIds = aggregates.map((aggregate) => aggregate.playerId);
   const teamIds = aggregates
     .map((aggregate) => aggregate.teamId)
@@ -680,15 +795,25 @@ export async function buildGoalieMatrixSurface(
 
   const valuesByMetric = new Map<
     GoalieMatrixMetricKey,
-    Map<number, { value: number | null; ranks: ReturnType<typeof rankValues> }>
+    Map<number, { value: number | null; ranks: ReturnType<typeof rankGoalieMetricValues> }>
   >();
   for (const column of METRIC_COLUMNS) {
-    const values = new Map<number, { value: number | null; ranks: ReturnType<typeof rankValues> }>();
+    const values = new Map<number, { value: number | null; ranks: ReturnType<typeof rankGoalieMetricValues> }>();
     const rankInput = aggregates
       .filter(
-        (aggregate) =>
-          aggregate.gamesStarted >= request.minStarts &&
-          aggregate.shotsAgainst >= request.minShots,
+        (aggregate) => {
+          const projection = projectionByPlayerId.get(aggregate.playerId) ?? null;
+          const roleContext = buildGoalieRoleContext({
+            aggregate,
+            projection,
+            teamStartTotals,
+          });
+          return (
+            aggregate.gamesStarted >= request.minStarts &&
+            aggregate.shotsAgainst >= request.minShots &&
+            roleMatchesFilter(roleContext.deploymentBucket, request.role)
+          );
+        },
       )
       .map((aggregate) => {
         const projection = projectionByPlayerId.get(aggregate.playerId) ?? null;
@@ -697,7 +822,7 @@ export async function buildGoalieMatrixSurface(
           value: metricValue(aggregate, projection, column.metricKey),
         };
       });
-    const ranks = rankValues(rankInput);
+    const ranks = rankGoalieMetricValues(rankInput, column.lowerIsBetter);
     for (const aggregate of aggregates) {
       const projection = projectionByPlayerId.get(aggregate.playerId) ?? null;
       values.set(aggregate.playerId, {
@@ -711,6 +836,11 @@ export async function buildGoalieMatrixSurface(
   const rows = aggregates.map((aggregate): GoalieMatrixRow => {
     const player = playersById.get(aggregate.playerId);
     const projection = projectionByPlayerId.get(aggregate.playerId) ?? null;
+    const roleContext = buildGoalieRoleContext({
+      aggregate,
+      projection,
+      teamStartTotals,
+    });
     const teamId = aggregate.teamId ?? projection?.team_id ?? null;
     const team = teamId == null ? null : teamsById.get(teamId) ?? null;
     const minimumSampleMet =
@@ -761,6 +891,10 @@ export async function buildGoalieMatrixSurface(
         }),
       },
       role: {
+        deploymentBucket: roleContext.deploymentBucket,
+        deploymentLabel: roleContext.deploymentLabel,
+        deploymentSource: roleContext.deploymentSource,
+        windowStartShare: roleContext.windowStartShare,
         startShareLast10: finite(projection?.l10_start_pct),
         seasonStartShare: finite(projection?.season_start_pct),
         startProbability: finite(projection?.start_probability),
@@ -800,10 +934,15 @@ export async function buildGoalieMatrixSurface(
       : bValue - aValue || a.entity.id - b.entity.id;
   });
 
-  const totalRankedRows = rows.length;
+  const filteredRows = rows.filter(
+    (row) =>
+      roleMatchesFilter(row.role.deploymentBucket, request.role) &&
+      goalieRowMatchesSearch(row, request.search),
+  );
+  const totalRankedRows = filteredRows.length;
   const pageCount = Math.max(1, Math.ceil(totalRankedRows / request.pageSize));
   const start = (request.page - 1) * request.pageSize;
-  const pageRows = rows.slice(start, start + request.pageSize);
+  const pageRows = filteredRows.slice(start, start + request.pageSize);
   const sourceWarnings = Array.from(
     new Set(rows.flatMap((row) => row.warnings).filter((warning) => warning.startsWith("partial_"))),
   );

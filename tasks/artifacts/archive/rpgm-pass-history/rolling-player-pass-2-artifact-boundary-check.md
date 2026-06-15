@@ -4,8 +4,8 @@
 
 This artifact enforces the pass-2 rule that the audit leaves behind two separate outputs with non-overlapping responsibilities:
 
-- `/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-notes-pass-2.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-action-items-pass-2.md`
+- `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`
+- `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md`
 
 It exists to prevent rationale, remediation ideas, and optimization work from leaking into the strict formula ledger.
 
@@ -15,7 +15,7 @@ It exists to prevent rationale, remediation ideas, and optimization work from le
 
 File:
 
-- `/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-notes-pass-2.md`
+- `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`
 
 Allowed per-entry content:
 
@@ -39,7 +39,7 @@ Forbidden content:
 
 File:
 
-- `/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-action-items-pass-2.md`
+- `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md`
 
 Required per-entry content:
 
@@ -118,5 +118,5 @@ Additional verification:
 - Every audited metric must have at most one formula-ledger entry and that entry must stay formula-only.
 - A metric may also produce a rationale entry in the main audit artifact.
 - A metric or field must produce a backlog item whenever the audit discovers a concrete improvement opportunity.
-- If content can be phrased as “what should be changed,” it belongs in `/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-action-items-pass-2.md`, not in `/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-notes-pass-2.md`.
+- If content can be phrased as “what should be changed,” it belongs in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md`, not in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`.
 - If content can be phrased as “what the metric means or how it was validated,” it belongs in the main audit artifact, not in either standalone audit-output file.

@@ -90,9 +90,10 @@ const METHODOLOGY_VERSION = "contextual_composites_v1";
 const UPSERT_CONFLICT_COLUMNS =
   "player_id,season_id,snapshot_date,window_type,window_size,strength_state,peer_group_type,peer_group_key";
 
-const SOURCE_METRICS = [
+export const SKATER_COMPOSITE_SOURCE_METRICS = [
   "goals_per_60",
   "points_per_60",
+  "pp_points_per_60",
   "ixg_per_60",
   "shot_attempts_per_60",
   "sog_per_60",
@@ -543,7 +544,7 @@ export function buildSkaterCompositeRatingRow(args: {
       peerGroupType: args.request.peerGroupType,
       peerGroupKey: requestPeerGroupKey(args.request),
       deployment: args.request.deployment,
-      sourceMetrics: SOURCE_METRICS,
+      sourceMetrics: SKATER_COMPOSITE_SOURCE_METRICS,
       sourceFreshness: args.sourceFreshness,
       unavailableMetrics: args.unavailableMetrics,
       caveats: [
@@ -559,7 +560,7 @@ export async function buildSkaterCompositeRatingRows(
   request: SkaterCompositeBuildRequest,
 ): Promise<SkaterCompositeBuildResult> {
   const metricEntries = await Promise.all(
-    SOURCE_METRICS.map(async (metricKey) => {
+    SKATER_COMPOSITE_SOURCE_METRICS.map(async (metricKey) => {
       const surface = await buildContextualRankingsSurface(
         contextualRequestForMetric(request, metricKey),
       );
@@ -621,7 +622,7 @@ export async function buildSkaterCompositeRatingRows(
     rows,
     snapshotDate,
     snapshotUpdatedAt,
-    sourceMetrics: [...SOURCE_METRICS],
+    sourceMetrics: [...SKATER_COMPOSITE_SOURCE_METRICS],
     sourceFreshness: freshness,
     unavailableMetrics,
   };

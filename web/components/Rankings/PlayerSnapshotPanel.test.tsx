@@ -22,6 +22,7 @@ const payload: PlayerMatrixResponse = {
     minGp: 1,
     minToiSeconds: 300,
     teamId: null,
+    search: null,
     peerGroupType: "deployment",
     sortMetric: "goals_per_60",
     sortDirection: "desc",

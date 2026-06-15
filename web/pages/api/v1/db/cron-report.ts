@@ -861,10 +861,7 @@ function expectedRunAtWithinWindow(
 
 async function readCronScheduleMarkdown(): Promise<string> {
   const candidates = [
-    path.resolve(process.cwd(), "rules/cron-schedule.md"),
-    path.resolve(process.cwd(), "web/rules/cron-schedule.md"),
-    path.resolve(process.cwd(), "rules/context/cron-schedule.md"),
-    path.resolve(process.cwd(), "web/rules/context/cron-schedule.md")
+    path.resolve(process.cwd(), "tasks/TASKS/cron-operations/cron-schedule.md")
   ];
 
   for (const candidate of candidates) {
@@ -876,7 +873,7 @@ async function readCronScheduleMarkdown(): Promise<string> {
   }
 
   throw new Error(
-    "Could not locate cron schedule markdown in rules/cron-schedule.md, web/rules/cron-schedule.md, rules/context/cron-schedule.md, or web/rules/context/cron-schedule.md"
+    "Could not locate cron schedule markdown in tasks/TASKS/cron-operations/cron-schedule.md"
   );
 }
 
@@ -1052,11 +1049,13 @@ function candidateMatchesSchedule(
   if (!aliasMatch) return false;
 
   const candidateMethod = candidate.method?.toUpperCase() ?? null;
+  const exactJobNameMatch = candidate.jobName === job.name;
   if (
     job.method !== "SQL" &&
     candidateMethod &&
     candidateMethod !== "UNKNOWN" &&
-    candidateMethod !== job.method
+    candidateMethod !== job.method &&
+    !exactJobNameMatch
   ) {
     return false;
   }
@@ -1243,8 +1242,20 @@ function collectMissingObservationWarnings(job: {
   hasObservedSqlTiming: boolean;
   runDataAvailable: boolean;
   auditDataAvailable: boolean;
+  latestRunTime: string | null;
+  auditGapGraceStartedAt: string | null;
 }): string[] {
   const warnings: string[] = [];
+  const latestRunMs = job.latestRunTime ? Date.parse(job.latestRunTime) : null;
+  const auditGapGraceMs = job.auditGapGraceStartedAt
+    ? Date.parse(job.auditGapGraceStartedAt)
+    : null;
+  const awaitingPostGraceRun =
+    latestRunMs != null &&
+    auditGapGraceMs != null &&
+    Number.isFinite(latestRunMs) &&
+    Number.isFinite(auditGapGraceMs) &&
+    latestRunMs < auditGapGraceMs;
 
   if (job.lastStatus === "missing") {
     warnings.push("No cron or audit observation matched this scheduled slot.");
@@ -1254,7 +1265,8 @@ function collectMissingObservationWarnings(job: {
     job.runsCount > 0 &&
     job.auditRunsCount === 0 &&
     job.method !== "SQL" &&
-    job.auditDataAvailable
+    job.auditDataAvailable &&
+    !awaitingPostGraceRun
   ) {
     warnings.push("Cron invoked the route, but no audit payload was recorded.");
   }
@@ -1357,6 +1369,10 @@ async function handler(
     parsed: parseAuditDetails(row.details)
   }));
   const lastKnownSuccessMap = buildLastKnownSuccessMap(auditRows);
+  const auditGapGraceStartedAt =
+    auditRows
+      .filter((row) => row.jobName === "daily-cron-report")
+      .sort((a, b) => Date.parse(b.time) - Date.parse(a.time))[0]?.time ?? null;
 
   const runRows: RunRow[] = (runs ?? []).map((row: any, index: number) => {
     const invocation = parseCronInvocation((row.sql_text ?? null) as string | null);
@@ -1533,7 +1549,9 @@ async function handler(
         lastDurationMs,
         hasObservedSqlTiming: matchingRuns.some((row) => row.timing != null),
         runDataAvailable,
-        auditDataAvailable
+        auditDataAvailable,
+        latestRunTime: lastRun?.time ?? null,
+        auditGapGraceStartedAt
       });
 
       const notes: string[] = [];
@@ -1544,7 +1562,10 @@ async function handler(
         matchingRuns.length > 0 &&
         matchingAudits.length === 0 &&
         job.method !== "SQL" &&
-        auditDataAvailable
+        auditDataAvailable &&
+        missingObservationWarnings.includes(
+          "Cron invoked the route, but no audit payload was recorded."
+        )
       ) {
         notes.push("Cron invoked the route, but no audit payload was recorded.");
       }
@@ -1709,7 +1730,10 @@ async function handler(
         job.runsCount > 0 &&
         job.auditRunsCount === 0 &&
         job.method !== "SQL" &&
-        auditDataAvailable
+        auditDataAvailable &&
+        job.missingObservationWarnings.includes(
+          "Cron invoked the route, but no audit payload was recorded."
+        )
     )
     .map((job) => job.displayName);
 

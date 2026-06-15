@@ -1,6 +1,7 @@
 import {
   CONTEXTUAL_RANKING_METRIC_DEFINITIONS,
 } from "./metricDefinitions";
+import { buildContextualRankingsAvailableFilters } from "./availableFilters";
 import {
   ADJUSTED_DEFENSE_MODEL_ROADMAP,
   ADJUSTED_DEFENSE_MODEL_PREREQUISITES,
@@ -14,11 +15,12 @@ import {
 } from "./adjustedImpactPromotionContract";
 import { RANKING_ENTITY_COVERAGE_CONTRACTS } from "./entityCoverageContracts";
 import { TEAM_STYLE_SOURCE_CONTRACT } from "./teamStyleMethodology";
+import { buildWarSurface } from "./war";
 
 export const CONTEXTUAL_RANKINGS_METHODOLOGY_UPDATED_AT = "2026-06-09";
 
 export const CONTEXTUAL_RANKING_FILTER_OPTIONS = {
-  entities: ["skaters"] as const,
+  entities: ["skaters", "goalies", "teams"] as const,
   windows: ["season", "last5", "last10", "last20"] as const,
   positions: ["all", "F", "D"] as const,
   deployments: [
@@ -36,7 +38,7 @@ export const CONTEXTUAL_RANKING_FILTER_OPTIONS = {
     "PK1",
     "PK2",
   ] as const,
-  strengths: ["all", "ev", "pp", "pk"] as const,
+  strengths: ["all", "5v5", "ev", "pp", "pk"] as const,
   peerGroups: ["all_skaters", "position", "deployment", "team"] as const,
   sorts: ["percentile", "raw_rank", "metric_value", "gp", "toi_per_game"] as const,
 };
@@ -62,9 +64,9 @@ export const CONTEXTUAL_RANKING_GLOSSARY = [
   },
   {
     key: "better_than_percentile",
-    label: "Better-than percentile",
+    label: "Peer percentile",
     description:
-      "The share of qualified peers with a lower normalized value after directionality is applied.",
+      "The share of qualified peers at or below the row's normalized value after directionality is applied, so the top qualified peer group displays as 100.",
   },
   {
     key: "source_quality_flags",
@@ -88,13 +90,25 @@ export const CONTEXTUAL_RANKING_GLOSSARY = [
     key: "goalie_rankings_source_contract",
     label: "Goalie rankings source contract",
     description:
-      "Goalie ranking sources are verified, but goalie rows remain gated until a goalie-specific matrix reader, peer groups, and sample-confidence model are implemented.",
+      "Goalie ranking sources are verified and power the live goalie matrix with goalie-specific peer groups, workload filters, and sample-confidence caveats.",
   },
   {
     key: "team_rankings_source_contract",
     label: "Team rankings source contract",
     description:
-      "Team ranking sources are verified, but team rows remain gated until a team-specific matrix reader, peer groups, and stale-source metadata are implemented.",
+      "Team ranking sources are verified and power the live team matrix with raw/contextual style labels and stale-source caveats where source dates diverge.",
+  },
+  {
+    key: "wins_above_replacement_source_pending",
+    label: "Wins Above Replacement source pending",
+    description:
+      "WAR is not published until replacement baseline, position adjustment, win conversion, and validation gates are documented and populated.",
+  },
+  {
+    key: "comparison_payload_contract",
+    label: "Comparison payload contract",
+    description:
+      "Comparison payloads use cached ranking matrix surfaces, return per-subject unavailable states, and do not fabricate missing rows.",
   },
 ] as const;
 
@@ -107,6 +121,7 @@ export function buildContextualRankingsMetadataSurface() {
     success: true,
     generatedAt: new Date().toISOString(),
     filters: CONTEXTUAL_RANKING_FILTER_OPTIONS,
+    availableFilters: buildContextualRankingsAvailableFilters(),
     metrics: CONTEXTUAL_RANKING_METRIC_DEFINITIONS.map((definition) => ({
       key: definition.metricKey,
       displayName: definition.displayName,
@@ -129,9 +144,36 @@ export function buildContextualRankingsMetadataSurface() {
     })),
     glossary: CONTEXTUAL_RANKING_GLOSSARY,
     comparison: {
-      endpoint: "/api/v1/contextual-rankings",
-      entityIdsParam: "entity_ids",
-      maxEntityIds: 25,
+      endpoint: "/api/v1/contextual-rankings/comparison",
+      version: "contextual_ranking_comparison_v1",
+      status: "available",
+      supportedEntities: ["skaters", "goalies", "teams"],
+      maxSubjects: 6,
+      subjectParams: {
+        skaters: ["player_ids", "entity_ids"],
+        goalies: ["goalie_ids", "entity_ids"],
+        teams: ["teams", "team_abbreviations"],
+      },
+      notes: [
+        "Comparison payloads page through the same cached matrix surfaces used by the workstation.",
+        "Unavailable subjects are returned with explicit reasons instead of fabricated rows.",
+        "The endpoint returns available, partial, or unavailable status for the requested subject set.",
+      ],
+      legacyListComparison: {
+        endpoint: "/api/v1/contextual-rankings",
+        entityIdsParam: "entity_ids",
+        maxEntityIds: 25,
+        supportedEntities: ["skaters"],
+      },
+    },
+    snapshot: {
+      endpoint: "/api/v1/contextual-rankings/snapshot",
+      supportedEntities: ["skaters", "goalies", "teams"],
+      status: "available",
+      notes: [
+        "Returns a selected entity row from the same cached matrix surfaces used by the workstation.",
+        "Returns status unavailable rather than fabricating a row when the selected entity is absent from the requested context.",
+      ],
     },
     defensiveComposites: {
       labels: DEFENSIVE_COMPOSITE_LABELS,
@@ -147,6 +189,14 @@ export function buildContextualRankingsMetadataSurface() {
       },
     },
     teamStyle: TEAM_STYLE_SOURCE_CONTRACT,
+    war: buildWarSurface({
+      entity: "skaters",
+      season: 20252026,
+      window: "season",
+      strength: "5v5",
+      position: "all",
+      deployment: "all",
+    }),
     entityCoverage: RANKING_ENTITY_COVERAGE_CONTRACTS,
   };
 }

@@ -14,6 +14,7 @@ import styles from "styles/Rankings.module.scss";
 type PlayerSnapshotPanelProps = {
   payload: PlayerMatrixResponse | null;
   selectedPlayerId: number | null;
+  snapshotRow?: PlayerMatrixRow | null;
 };
 
 const SNAPSHOT_METRICS = [
@@ -31,7 +32,17 @@ const SNAPSHOT_METRICS = [
 const PLAYER_PLACEHOLDER_SRC = "/pictures/player-placeholder.jpg";
 const TEAM_LOGO_FALLBACK_SRC = "/teamLogos/FHFH.png";
 
-function selectedRow(payload: PlayerMatrixResponse | null, selectedPlayerId: number | null) {
+function selectedRow(
+  payload: PlayerMatrixResponse | null,
+  selectedPlayerId: number | null,
+  snapshotRow: PlayerMatrixRow | null | undefined,
+) {
+  if (
+    snapshotRow &&
+    (selectedPlayerId == null || snapshotRow.entity.id === selectedPlayerId)
+  ) {
+    return snapshotRow;
+  }
   if (!payload) return null;
   if (selectedPlayerId != null) {
     return payload.rows.find((row) => row.entity.id === selectedPlayerId) ?? null;
@@ -186,8 +197,9 @@ function teamLogoSrc(abbreviation: string | null) {
 export default function PlayerSnapshotPanel({
   payload,
   selectedPlayerId,
+  snapshotRow,
 }: PlayerSnapshotPanelProps) {
-  const row = selectedRow(payload, selectedPlayerId);
+  const row = selectedRow(payload, selectedPlayerId, snapshotRow);
 
   if (!row) {
     return (

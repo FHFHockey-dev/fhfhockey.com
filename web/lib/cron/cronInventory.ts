@@ -304,10 +304,7 @@ function parseCronInventoryJsonJobs(
 
 export async function readCronScheduleMarkdown(): Promise<string> {
   const candidates = [
-    path.resolve(process.cwd(), "rules/cron-schedule.md"),
-    path.resolve(process.cwd(), "web/rules/cron-schedule.md"),
-    path.resolve(process.cwd(), "rules/context/cron-schedule.md"),
-    path.resolve(process.cwd(), "web/rules/context/cron-schedule.md")
+    path.resolve(process.cwd(), "tasks/TASKS/cron-operations/cron-schedule.md")
   ];
 
   for (const candidate of candidates) {

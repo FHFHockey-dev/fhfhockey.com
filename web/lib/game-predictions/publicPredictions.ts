@@ -94,6 +94,7 @@ type FeatureSnapshotRow = Tables<"game_prediction_feature_snapshots">;
 type TeamRow = Pick<Tables<"teams">, "id" | "abbreviation" | "name">;
 type GameRow = Pick<Tables<"games">, "id" | "startTime">;
 type MetricRow = Tables<"game_prediction_model_metrics">;
+type ModelVersionRow = Tables<"game_prediction_model_versions">;
 
 const FACTOR_LABELS: Record<string, string> = {
   homeMinusAwayOffRating: "Offense rating edge",
@@ -104,11 +105,34 @@ const FACTOR_LABELS: Record<string, string> = {
   homeMinusAwayGoalDifferential: "Goal differential edge",
   homeMinusAwayRecent5GoalDifferentialPerGame: "Last 5 goal differential edge",
   homeMinusAwayRecent10GoalDifferentialPerGame: "Last 10 goal differential edge",
+  homeMinusAwayRecent20GoalDifferentialPerGame: "Last 20 goal differential edge",
+  homeMinusAwayRecent40GoalDifferentialPerGame: "Last 40 goal differential edge",
   homeMinusAwayRecent5XgfPct: "Last 5 xG share edge",
   homeMinusAwayRecent10XgfPct: "Last 10 xG share edge",
+  homeMinusAwayRecent20XgfPct: "Last 20 xG share edge",
+  homeMinusAwayRecent40XgfPct: "Last 40 xG share edge",
+  homeMinusAwaySeasonToDateXgfPct: "Season xG share edge",
+  homeMinusAwayCrossSeasonPriorXgfPct: "Early-season prior xG edge",
   homeMinusAwayRecent10PointPct: "Last 10 point rate edge",
+  homeMinusAwaySeasonToDatePointPct: "Season point rate edge",
+  homeMinusAwayRecent20ShotShare: "Last 20 shot share edge",
+  homeMinusAwayRecent40ShotShare: "Last 40 shot share edge",
+  homeMinusAwayRecent20FenwickShare: "Last 20 Fenwick share edge",
+  homeMinusAwayRecent40FenwickShare: "Last 40 Fenwick share edge",
+  homeMinusAwayRecent20GfPct: "Last 20 goal share edge",
+  homeMinusAwayRecent40GfPct: "Last 40 goal share edge",
+  homeMinusAwayRecent20XgaPer60: "Last 20 xGA/60 edge",
+  homeMinusAwayRecent40XgaPer60: "Last 40 xGA/60 edge",
+  homeMinusAwayCtpi: "Team context pressure edge",
+  homeMinusAwayPastOpponentCompositeRating: "Recent schedule strength edge",
+  homeMinusAwayForgeProjectedGoals: "Projected goals edge",
+  homeMinusAwayForgeProjectedShots: "Projected shots edge",
   homeMinusAwayWeightedGoalieGsaaPer60: "Projected goalie GSAA edge",
+  homeMinusAwayGoalieStartUncertainty: "Goalie starter certainty edge",
   homeRestAdvantageDays: "Rest edge",
+  homeMinusAwayGamesPlayedAsOf: "Games-played context edge",
+  seasonPhaseOrdinal: "Season phase context",
+  homeMarketNoVigProbability: "Market implied probability",
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -118,6 +142,21 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function toNumber(value: unknown): number | null {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function publicExplanationFeatureKeys(
+  output: OutputRow,
+  history?: HistoryRow,
+): Set<string> {
+  const metadataSources = [history?.metadata, output.metadata];
+  for (const metadata of metadataSources) {
+    if (!isRecord(metadata)) continue;
+    const keys = metadata.public_explanation_feature_keys;
+    if (Array.isArray(keys)) {
+      return new Set(keys.filter((key): key is string => typeof key === "string"));
+    }
+  }
+  return new Set();
 }
 
 function extractTopFactors(
@@ -130,11 +169,12 @@ function extractTopFactors(
         Array.isArray(output.components.top_factors)
       ? output.components.top_factors
       : [];
+  const allowedFeatureKeys = publicExplanationFeatureKeys(output, history);
 
   return source.flatMap((factor) => {
     if (!isRecord(factor)) return [];
     const featureKey = String(factor.featureKey ?? "");
-    if (!featureKey) return [];
+    if (!featureKey || !allowedFeatureKeys.has(featureKey)) return [];
     const contribution = toNumber(factor.contribution);
     return [
       {
@@ -242,6 +282,28 @@ function outputKey(
   return `${row.game_id}|${row.model_name}|${row.model_version}|${row.prediction_scope}`;
 }
 
+function modelMetricKey(row: {
+  model_name: string;
+  model_version: string;
+  feature_set_version: string;
+}) {
+  return `${row.model_name}|${row.model_version}|${row.feature_set_version}`;
+}
+
+function outputFeatureSetVersion(
+  output: OutputRow,
+  history?: HistoryRow,
+): string | null {
+  if (history?.feature_set_version) return history.feature_set_version;
+  if (
+    isRecord(output.metadata) &&
+    typeof output.metadata.feature_set_version === "string"
+  ) {
+    return output.metadata.feature_set_version;
+  }
+  return null;
+}
+
 export function buildPublicGamePredictionsPayload(args: {
   outputs: OutputRow[];
   histories?: HistoryRow[];
@@ -249,6 +311,7 @@ export function buildPublicGamePredictionsPayload(args: {
   teams?: TeamRow[];
   games?: GameRow[];
   metrics?: MetricRow[];
+  modelVersions?: ModelVersionRow[];
   generatedAt?: string;
 }): PublicGamePredictionsPayload {
   const teamsById = new Map((args.teams ?? []).map((team) => [team.id, team]));
@@ -267,8 +330,30 @@ export function buildPublicGamePredictionsPayload(args: {
       historyByOutputKey.set(key, history);
     }
   }
+  const productionModelKeys = args.modelVersions
+    ? new Set(
+        args.modelVersions
+          .filter((model) => model.status === "production")
+          .map(modelMetricKey),
+      )
+    : null;
 
-  const predictions = args.outputs.map((output) => {
+  const publicOutputs = args.outputs.filter((output) => {
+    const history = historyByOutputKey.get(outputKey(output));
+    if (!productionModelKeys) return true;
+    const featureSetVersion = outputFeatureSetVersion(output, history);
+    return featureSetVersion
+      ? productionModelKeys.has(
+          modelMetricKey({
+            model_name: output.model_name,
+            model_version: output.model_version,
+            feature_set_version: featureSetVersion,
+          }),
+        )
+      : false;
+  });
+
+  const predictions = publicOutputs.map((output) => {
     const history = historyByOutputKey.get(outputKey(output));
     const payload = toFeaturePayload(
       history?.feature_snapshot_id
@@ -307,23 +392,38 @@ export function buildPublicGamePredictionsPayload(args: {
       computedAt: output.computed_at,
       modelName: output.model_name,
       modelVersion: output.model_version,
-      featureSetVersion:
-        history?.feature_set_version ??
-        (isRecord(output.metadata) &&
-        typeof output.metadata.feature_set_version === "string"
-          ? output.metadata.feature_set_version
-          : null),
+      featureSetVersion: outputFeatureSetVersion(output, history),
       freshness: extractFreshness(output, payload),
       factors: extractTopFactors(output, history),
       matchup: buildMatchup(payload),
     };
   });
 
+  const visiblePredictionMetricKeys = new Set(
+    predictions.flatMap((prediction) =>
+      prediction.featureSetVersion
+        ? [
+            modelMetricKey({
+              model_name: prediction.modelName,
+              model_version: prediction.modelVersion,
+              feature_set_version: prediction.featureSetVersion,
+            }),
+          ]
+        : [],
+    ),
+  );
+  const allowedMetricKeys =
+    visiblePredictionMetricKeys.size > 0
+      ? visiblePredictionMetricKeys
+      : productionModelKeys;
   const overallMetric =
     (args.metrics ?? [])
       .filter(
         (metric) =>
-          metric.segment_key === "overall" && metric.segment_value === "all",
+          metric.segment_key === "overall" &&
+          metric.segment_value === "all" &&
+          (allowedMetricKeys == null ||
+            allowedMetricKeys.has(modelMetricKey(metric))),
       )
       .sort((a, b) => b.computed_at.localeCompare(a.computed_at))[0] ?? null;
 
@@ -365,6 +465,10 @@ function addDays(date: Date, days: number): string {
   return copy.toISOString().slice(0, 10);
 }
 
+function uniqueStrings(values: string[]): string[] {
+  return Array.from(new Set(values));
+}
+
 export async function fetchPublicGamePredictions(args: {
   client: SupabaseClient<Database>;
   fromDate?: string;
@@ -375,6 +479,13 @@ export async function fetchPublicGamePredictions(args: {
   const fromDate = args.fromDate ?? today.toISOString().slice(0, 10);
   const toDate = args.toDate ?? addDays(today, 7);
   const limit = Math.min(Math.max(args.limit ?? 30, 1), 100);
+
+  const modelVersionsResult = await args.client
+    .from("game_prediction_model_versions")
+    .select("*")
+    .eq("status", "production");
+  if (modelVersionsResult.error) throw modelVersionsResult.error;
+  const productionModels = modelVersionsResult.data ?? [];
 
   const { data: outputs, error: outputsError } = await args.client
     .from("game_prediction_outputs")
@@ -392,6 +503,31 @@ export async function fetchPublicGamePredictions(args: {
   const teamIds = Array.from(
     new Set(outputRows.flatMap((row) => [row.home_team_id, row.away_team_id])),
   );
+  let metricsQuery = args.client
+    .from("game_prediction_model_metrics")
+    .select("*")
+    .eq("segment_key", "overall")
+    .eq("segment_value", "all")
+    .order("computed_at", { ascending: false });
+
+  if (productionModels.length > 0) {
+    metricsQuery = metricsQuery
+      .in(
+        "model_name",
+        uniqueStrings(productionModels.map((model) => model.model_name)),
+      )
+      .in(
+        "model_version",
+        uniqueStrings(productionModels.map((model) => model.model_version)),
+      )
+      .in(
+        "feature_set_version",
+        uniqueStrings(productionModels.map((model) => model.feature_set_version)),
+      )
+      .limit(Math.max(5, productionModels.length * 3));
+  } else {
+    metricsQuery = metricsQuery.limit(5);
+  }
 
   const [teamsResult, gamesResult, historiesResult, metricsResult] =
     await Promise.all([
@@ -413,13 +549,7 @@ export async function fetchPublicGamePredictions(args: {
             .eq("is_public", true)
             .order("computed_at", { ascending: false })
         : Promise.resolve({ data: [], error: null }),
-      args.client
-        .from("game_prediction_model_metrics")
-        .select("*")
-        .eq("segment_key", "overall")
-        .eq("segment_value", "all")
-        .order("computed_at", { ascending: false })
-        .limit(5),
+      metricsQuery,
     ]);
 
   for (const result of [
@@ -453,5 +583,6 @@ export async function fetchPublicGamePredictions(args: {
     teams: teamsResult.data ?? [],
     games: gamesResult.data ?? [],
     metrics: metricsResult.data ?? [],
+    modelVersions: productionModels,
   });
 }

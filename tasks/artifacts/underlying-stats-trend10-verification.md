@@ -8,13 +8,13 @@ Task `1.2`: verify the intended `trend10` definition against the documented SQL 
 
 ### SQL source-of-truth
 
-`web/rules/power-ratings-tables.md` defines `trend10` as:
+`tasks/TASKS/three-pillars-analytics/underlying-stats/power-ratings-tables.md` defines `trend10` as:
 
 - `round(COALESCE(wt.off_rating - wt.off_rating_last10, 0::numeric), 2) AS trend10`
 
 Reference:
 
-- `web/rules/power-ratings-tables.md:628`
+- `tasks/TASKS/three-pillars-analytics/underlying-stats/power-ratings-tables.md:628`
 
 Interpretation:
 

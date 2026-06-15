@@ -19,7 +19,7 @@ It covers every persisted weighted-rate metric family in `rolling_player_game_me
 - window semantics
 - component completeness rules
 
-This artifact does not assign final status buckets yet. Status ledger work remains separate in `/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-notes-pass-2.md`.
+This artifact does not assign final status buckets yet. Status ledger work remains separate in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`.
 
 ## Scope
 
@@ -533,8 +533,8 @@ Evidence from tests:
 
 - task `2.4` should keep availability and participation semantics separate from weighted-rate appearance windows
 - tasks `2.6` and `2.7` should translate each weighted-rate family into:
-  - a formula-only status entry in `/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-notes-pass-2.md`
-  - an action item in `/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-action-items-pass-2.md` whenever TOI trust visibility, numerator-source asymmetry, or reconstruction friction needs follow-up
+  - a formula-only status entry in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`
+  - an action item in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md` whenever TOI trust visibility, numerator-source asymmetry, or reconstruction friction needs follow-up
 - tasks in `3.x` should use this artifact to design live validation slices that intentionally exercise:
   - authoritative TOI
   - supplementary TOI

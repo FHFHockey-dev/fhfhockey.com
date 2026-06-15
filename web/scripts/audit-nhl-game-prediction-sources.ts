@@ -388,6 +388,25 @@ const SOURCES: SourceDefinition[] = [
     notes: "Existing key cannot preserve repeated same-day outputs for the same model/game.",
   },
   {
+    name: "game_prediction_market_odds_snapshots",
+    purpose: "Append-only market odds observations for baselines, calibration comparison, and pre-cutoff candidate model features.",
+    priority: "core",
+    expectedDateColumns: ["captured_at", "requested_date", "game_date", "event_start_at", "created_at"],
+    keyColumns: [
+      "odds_snapshot_id",
+      "game_id",
+      "provider",
+      "captured_at",
+      "home_moneyline",
+      "away_moneyline",
+      "home_market_no_vig_probability",
+      "away_market_no_vig_probability",
+      "provenance",
+      "metadata",
+    ],
+    notes: "Feature use requires captured_at before prediction cutoff/puck drop plus trusted source provenance coverage.",
+  },
+  {
     name: "player_prediction_outputs",
     purpose: "Player prediction output contract.",
     priority: "storage",
@@ -3150,6 +3169,76 @@ async function buildManagementAsOfLeakageChecks(): Promise<AsOfLeakageCheck[]> {
       `,
     },
     {
+      name: "market_odds_snapshot_temporal_safety_check",
+      description:
+        "Market odds can be candidate model features only when trusted snapshot rows were captured before the prediction cutoff and puck drop; late/current odds remain baseline/comparison evidence only.",
+      warnPredicate: (rows) => {
+        const row = rows[0] ?? {};
+        const evaluationGames = Number(row.evaluation_games ?? 0);
+        return (
+          evaluationGames === 0 ||
+          Number(row.trusted_pre_cutoff_games ?? 0) < evaluationGames ||
+          Number(row.post_start_snapshot_rows ?? 0) > 0 ||
+          Number(row.untrusted_source_rows ?? 0) > 0
+        );
+      },
+      query: `
+        WITH evaluation_games AS (
+          SELECT
+            id AS game_id,
+            date,
+            "startTime",
+            LEAST(
+              "startTime",
+              (date::text || 'T16:00:00.000Z')::timestamptz
+            ) AS prediction_cutoff_at
+          FROM public.games
+          WHERE date BETWEEN DATE '2025-10-01' AND LEAST(current_date, DATE '2026-06-30')
+            AND type = 2
+            AND "startTime" IS NOT NULL
+        ),
+        odds AS (
+          SELECT
+            mos.*,
+            COALESCE(
+              mos.provenance ->> 'import_source_name',
+              mos.metadata ->> 'import_source_name',
+              mos.provenance ->> 'source_name',
+              mos.metadata ->> 'source_name'
+            ) AS trusted_source_name
+          FROM public.game_prediction_market_odds_snapshots mos
+          JOIN evaluation_games g ON g.game_id = mos.game_id
+        )
+        SELECT
+          (SELECT count(*) FROM evaluation_games) AS evaluation_games,
+          count(DISTINCT odds.game_id) AS snapshot_games,
+          count(DISTINCT odds.game_id) FILTER (
+            WHERE odds.captured_at < g.prediction_cutoff_at
+          ) AS pre_cutoff_games,
+          count(DISTINCT odds.game_id) FILTER (
+            WHERE odds.captured_at < g.prediction_cutoff_at
+              AND odds.trusted_source_name IN (
+                'espn_site_api_market_odds',
+                'historical_market_odds_import'
+              )
+          ) AS trusted_pre_cutoff_games,
+          count(*) FILTER (
+            WHERE odds.captured_at >= g."startTime"
+          ) AS post_start_snapshot_rows,
+          count(*) FILTER (
+            WHERE odds.trusted_source_name IS NULL
+              OR odds.trusted_source_name NOT IN (
+                'espn_site_api_market_odds',
+                'historical_market_odds_import'
+              )
+          ) AS untrusted_source_rows,
+          min(odds.captured_at) AS min_captured_at,
+          max(odds.captured_at) AS max_captured_at
+        FROM evaluation_games g
+        LEFT JOIN odds ON odds.game_id = g.game_id
+      `,
+    },
+    {
       name: "lineup_source_temporal_safety_check",
       description:
         "Lineup sources need observed/snapshot timestamps before game start for historical training; `lineCombinations` has no observation timestamp and should remain current/explanation-only unless provenance is added.",
@@ -3468,7 +3557,7 @@ function renderMarkdown(
 
 Generated at: ${generatedAt}
 
-Scope: live schema, source inventory, identity joins, team-power math, NST team-table semantics, WGO/standings semantics, goalie-source semantics, lineup/player-context coverage, prediction storage/provenance fit, representative row-level data quality, and as-of/leakage safety for tasks 1.1 through 1.11 of \`tasks/tasks-prd-nhl-game-prediction-model.md\`.
+Scope: live schema, source inventory, identity joins, team-power math, NST team-table semantics, WGO/standings semantics, goalie-source semantics, lineup/player-context coverage, prediction storage/provenance fit, representative row-level data quality, and as-of/leakage safety for tasks 1.1 through 1.11 of \`tasks/TASKS/nhl-game-prediction-model/tasks-prd-nhl-game-prediction-model.md\`.
 
 Metadata mode: ${metadataModes}
 

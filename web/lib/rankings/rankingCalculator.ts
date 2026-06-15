@@ -54,6 +54,17 @@ export type BuildContextualRankingRowsInput = {
   minimumPeerCount?: number;
 };
 
+export type NormalizedRankingValue<Id extends number | string> = {
+  id: Id;
+  normalizedValue: number | null;
+};
+
+export type NormalizedRankingResult = {
+  rank: number;
+  percentile: number;
+  qualifiedPeerCount: number;
+};
+
 function finiteNumber(value: unknown): number | null {
   if (typeof value !== "number" || !Number.isFinite(value)) return null;
   return value;
@@ -61,6 +72,71 @@ function finiteNumber(value: unknown): number | null {
 
 function round(value: number, decimals = 6): number {
   return Number(value.toFixed(decimals));
+}
+
+function compareRankingIds<Id extends number | string>(left: Id, right: Id) {
+  if (typeof left === "number" && typeof right === "number") {
+    return left - right;
+  }
+  return String(left).localeCompare(String(right));
+}
+
+export function rankNormalizedMetricValues<Id extends number | string>(
+  rows: Array<NormalizedRankingValue<Id>>,
+  compareIds: (left: Id, right: Id) => number = compareRankingIds,
+): Map<Id, NormalizedRankingResult> {
+  const qualified = rows
+    .map((row) => ({
+      id: row.id,
+      normalizedValue: finiteNumber(row.normalizedValue),
+    }))
+    .filter(
+      (row): row is { id: Id; normalizedValue: number } =>
+        row.normalizedValue != null,
+    )
+    .sort((left, right) => {
+      if (right.normalizedValue !== left.normalizedValue) {
+        return right.normalizedValue - left.normalizedValue;
+      }
+      return compareIds(left.id, right.id);
+    });
+
+  const qualifiedPeerCount = qualified.length;
+  const betterOrEqualPeerCountByValue = new Map<number, number>();
+  for (let index = 0; index < qualified.length;) {
+    const value = qualified[index].normalizedValue;
+    let nextIndex = index + 1;
+    while (
+      nextIndex < qualified.length &&
+      qualified[nextIndex].normalizedValue === value
+    ) {
+      nextIndex += 1;
+    }
+    betterOrEqualPeerCountByValue.set(value, qualifiedPeerCount - index);
+    index = nextIndex;
+  }
+
+  const ranks = new Map<Id, NormalizedRankingResult>();
+  let priorValue: number | null = null;
+  let rank = 0;
+  for (const row of qualified) {
+    if (priorValue == null || row.normalizedValue !== priorValue) {
+      rank += 1;
+      priorValue = row.normalizedValue;
+    }
+    ranks.set(row.id, {
+      rank,
+      percentile: round(
+        ((betterOrEqualPeerCountByValue.get(row.normalizedValue) ?? 0) /
+          qualifiedPeerCount) *
+          100,
+        3,
+      ),
+      qualifiedPeerCount,
+    });
+  }
+
+  return ranks;
 }
 
 export function calculateMetricRawValue(args: {
@@ -164,37 +240,20 @@ function rankQualifiedRows(
     return a.entityId - b.entityId;
   });
   const qualifiedPeerCount = sorted.length;
-  const lowerPeerCountByValue = new Map<number, number>();
-  for (let index = 0; index < sorted.length;) {
-    const value = sorted[index].normalizedValue;
-    let nextIndex = index + 1;
-    while (
-      nextIndex < sorted.length &&
-      sorted[nextIndex].normalizedValue === value
-    ) {
-      nextIndex += 1;
-    }
-    lowerPeerCountByValue.set(value, qualifiedPeerCount - nextIndex);
-    index = nextIndex;
-  }
-  let priorValue: number | null = null;
-  let rank = 0;
+  const ranks = rankNormalizedMetricValues(
+    sorted.map((row) => ({
+      id: row.entityId,
+      normalizedValue: row.normalizedValue,
+    })),
+  );
 
   return sorted.map((row) => {
-    if (priorValue == null || row.normalizedValue !== priorValue) {
-      rank += 1;
-      priorValue = row.normalizedValue;
-    }
+    const ranking = ranks.get(row.entityId);
 
     return {
       ...row,
-      rawRank: rank,
-      percentile: round(
-        ((lowerPeerCountByValue.get(row.normalizedValue) ?? 0) /
-          qualifiedPeerCount) *
-          100,
-        3,
-      ),
+      rawRank: ranking?.rank ?? null,
+      percentile: ranking?.percentile ?? null,
       qualifiedPeerCount,
       warnings:
         qualifiedPeerCount < minimumPeerCount

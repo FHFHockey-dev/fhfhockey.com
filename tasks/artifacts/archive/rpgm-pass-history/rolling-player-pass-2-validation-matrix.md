@@ -22,7 +22,7 @@ Primary supporting evidence:
 - `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-context-label-validation-report-2026-03-11.md`
 - `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-refresh-actions-report-2026-03-11.md`
 - `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-validation-freshness-report-2026-03-11.md`
-- `/Users/tim/Code/fhfhockey.com/tasks/rolling-player-metrics-audit-notes.md`
+- `/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md`
 
 ## Validation Matrix
 

@@ -95,7 +95,7 @@ The route family currently breaks into three operational layers:
 
 ## Current Cron Ownership And Runtime Expectations
 
-This section maps the **current** scheduled ownership visible in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md) into the component families above.
+This section maps the **current** scheduled ownership visible in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md) into the component families above.
 
 The goal here is to make current ownership explicit, including where it is incomplete or indirect.
 
@@ -103,7 +103,7 @@ The goal here is to make current ownership explicit, including where it is incom
 
 - `Freshness target` comes from [freshness.ts](/Users/tim/Code/fhfhockey.com/web/lib/dashboard/freshness.ts) where a dashboard policy already exists.
 - `Serving runtime` comes from [perfBudget.ts](/Users/tim/Code/fhfhockey.com/web/lib/dashboard/perfBudget.ts) where a dashboard endpoint budget already exists.
-- `Refresh timeout` refers to the HTTP timeout currently defined for upstream cron jobs in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md).
+- `Refresh timeout` refers to the HTTP timeout currently defined for upstream cron jobs in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md).
 
 ### Component-Family Refresh Map
 

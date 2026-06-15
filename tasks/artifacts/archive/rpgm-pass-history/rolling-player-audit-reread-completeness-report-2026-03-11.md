@@ -4,7 +4,7 @@ Date: March 11, 2026
 
 ## Purpose
 
-This artifact fulfills the PRD’s final audit re-read requirement by re-reading [rolling-player-metrics-audit-notes.md](/Users/tim/Code/fhfhockey.com/tasks/rolling-player-metrics-audit-notes.md) and classifying every actionable remediation item as one of:
+This artifact fulfills the PRD’s final audit re-read requirement by re-reading [rolling-player-metrics-audit-notes.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md) and classifying every actionable remediation item as one of:
 
 - implemented
 - intentionally deferred as optional

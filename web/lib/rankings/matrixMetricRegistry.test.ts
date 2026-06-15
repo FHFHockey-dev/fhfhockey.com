@@ -18,6 +18,8 @@ describe("matrixMetricRegistry", () => {
     expect(keys).toContain("xga_per_60");
     expect(keys).toContain("on_ice_xgf_percentage");
     expect(keys).toContain("penalties_taken_per_60");
+    expect(keys).toContain("offense_rating");
+    expect(keys).toContain("defense_rating");
     expect(keys).toContain("mcm_score");
     expect(keys).toContain("beast_tier");
     expect(keys).not.toContain("results_luck_index");
@@ -54,5 +56,25 @@ describe("matrixMetricRegistry", () => {
     expect(luck?.tooltip).toContain("above 100");
     expect(luck?.tooltip).toContain("selected-window-excluded baseline");
     expect(luck?.definition?.sourceTable).toBe("skater_composite_ratings");
+  });
+
+  it("publishes offense and defensive impact as first-class composite columns", () => {
+    const offense = getMatrixMetricColumn("offense_rating");
+    const defense = getMatrixMetricColumn("defense_rating");
+
+    expect(offense).toMatchObject({
+      availabilityState: "available",
+      defaultVisible: true,
+      fullLabel: "Offense Rating",
+    });
+    expect(offense?.definition?.sourceTable).toBe("skater_composite_ratings");
+    expect(defense).toMatchObject({
+      availabilityState: "available",
+      defaultVisible: true,
+      fullLabel: "Defensive Impact",
+    });
+    expect(defense?.sourceQualityFlags).toContain(
+      "context_influenced_unadjusted_on_ice",
+    );
   });
 });

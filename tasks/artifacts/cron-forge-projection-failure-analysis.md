@@ -36,7 +36,7 @@ Root cause classification:
 Why:
 
 - The cron entry is a bare `POST` with `body := '{}'` and a `300000 ms` timeout:
-  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md#L588)
+  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md#L588)
 - The handler defaults to "tomorrow EST" when no date is supplied:
   - [update-start-chart-projections.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-start-chart-projections.ts#L150)
 - For the target slate it:
@@ -68,7 +68,7 @@ Root cause classification:
 Why:
 
 - The cron entry is a bare `POST` with no query params and a `300000 ms` timeout:
-  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md#L607)
+  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md#L607)
 - The handler defaults to `startDate = today`, `endDate = startDate`, and a `270000 ms` internal budget unless overridden:
   - [ingest-projection-inputs.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/ingest-projection-inputs.ts#L175)
 - For each game it may call:
@@ -99,7 +99,7 @@ Root cause classification:
 Why:
 
 - The cron entry is a bare `POST` with `body := '{}'` and a `300000 ms` timeout:
-  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md#L627)
+  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md#L627)
 - The route supports `startDate`, `endDate`, `chunkDays`, `resumeFromDate`, `maxDurationMs`, and `bypassMaxDuration`, but the cron is not using them:
   - [build-projection-derived-v2.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/build-projection-derived-v2.ts#L136)
 - The handler runs three expensive builders in one request:
@@ -129,7 +129,7 @@ Root cause classification:
 Why:
 
 - The cron entry is a bare `POST` with `body := '{}'` and `300000 ms` timeout:
-  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md#L677)
+  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md#L677)
 - This route is explicitly preflight-gated before running projections:
   - line combinations
   - recent PBP + shift ingest
@@ -168,7 +168,7 @@ Root cause classification:
 Why:
 
 - The cron entry is explicit only about `projectionOffsetDays=0`; it still runs as one broad analytics pass:
-  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md#L1131)
+  - [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md#L1131)
 - The route first resolves a successful run id:
   - [projections/_helpers.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/projections/_helpers.ts#L17)
 - It then reads and writes across many downstream tables:

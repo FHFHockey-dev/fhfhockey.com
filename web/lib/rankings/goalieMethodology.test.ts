@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   calculateAdjustedCoreNetshare,
+  formatGoalieDeploymentBucket,
+  getGoalieDeploymentBucket,
   calculateGoalieGsax,
   getGoalieStartsShareBucket,
   isGoalieQualityStart,
@@ -89,6 +91,17 @@ describe("goalieMethodology", () => {
     expect(getGoalieStartsShareBucket(0.2)).toBe("backup");
     expect(getGoalieStartsShareBucket(0.05)).toBe("spot_start");
     expect(getGoalieStartsShareBucket(null)).toBeNull();
+  });
+
+  it("assigns product-facing goalie deployment buckets", () => {
+    expect(getGoalieDeploymentBucket(0.72)).toBe("g1_workhorse");
+    expect(formatGoalieDeploymentBucket("g1_workhorse")).toBe("G1 Workhorse");
+    expect(getGoalieDeploymentBucket(0.58)).toBe("g1_starter");
+    expect(getGoalieDeploymentBucket(0.5)).toBe("g1a_tandem_lead");
+    expect(getGoalieDeploymentBucket(0.34)).toBe("g1b_tandem_secondary");
+    expect(getGoalieDeploymentBucket(0.2)).toBe("g2_backup");
+    expect(getGoalieDeploymentBucket(0.05)).toBe("g2_reserve");
+    expect(getGoalieDeploymentBucket(null)).toBeNull();
   });
 
   it("excludes emergency-callup starts during confident top-two absence windows", () => {

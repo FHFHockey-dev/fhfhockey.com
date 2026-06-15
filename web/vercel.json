@@ -54,6 +54,18 @@
       "schedule": "33 11 * * *"
     },
     {
+      "path": "/api/v1/game-predictions/ingest-espn-odds?fromOffsetDays=0&toOffsetDays=7&maxDates=8",
+      "schedule": "34 11 * * *"
+    },
+    {
+      "path": "/api/v1/game-predictions/ingest-espn-odds?fromOffsetDays=0&toOffsetDays=1&maxDates=2",
+      "schedule": "34 17 * * *"
+    },
+    {
+      "path": "/api/v1/game-predictions/ingest-espn-odds?fromOffsetDays=-1&toOffsetDays=1&maxDates=3",
+      "schedule": "10 21 * * *"
+    },
+    {
       "path": "/api/v1/game-predictions/forecast?fromOffsetDays=0&toOffsetDays=0&limit=16&maxRuntimeMs=220000",
       "schedule": "45 11 * * *"
     },

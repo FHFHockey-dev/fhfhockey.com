@@ -8,12 +8,14 @@ import {
   type GamePredictionFeatureInputs,
   type NstTeamGamelogRow,
 } from "./featureBuilder";
+import { ESPN_MARKET_ODDS_SOURCE_NAME } from "./espnOdds";
 import { getFeatureSourceByTable } from "./featureSources";
 import { buildGamePredictionSourceProvenanceRows } from "lib/predictions/sourceProvenance";
 
 function createNstTeamGamelogRow(args: {
   teamAbbreviation: string;
   date: string;
+  seasonId?: number;
   gf: number;
   ga: number;
   xgf: number;
@@ -23,6 +25,7 @@ function createNstTeamGamelogRow(args: {
   points: number;
 }): NstTeamGamelogRow {
   return {
+    season_id: args.seasonId ?? 20252026,
     team_abbreviation: args.teamAbbreviation,
     date: args.date,
     gp: 1,
@@ -33,12 +36,21 @@ function createNstTeamGamelogRow(args: {
     point_pct: args.points / 2,
     gf: args.gf,
     ga: args.ga,
+    gf_pct: (args.gf / (args.gf + args.ga)) * 100,
     xgf: args.xgf,
     xga: args.xga,
     xgf_pct: (args.xgf / (args.xgf + args.xga)) * 100,
+    xga_per_60: args.xga,
+    toi_seconds: 3600,
     sf: args.sf,
     sa: args.sa,
     sf_pct: (args.sf / (args.sf + args.sa)) * 100,
+    ff: args.sf - 4,
+    fa: args.sa - 4,
+    ff_pct: ((args.sf - 4) / (args.sf + args.sa - 8)) * 100,
+    cf: args.sf + 10,
+    ca: args.sa + 10,
+    cf_pct: ((args.sf + 10) / (args.sf + args.sa + 20)) * 100,
   };
 }
 
@@ -446,6 +458,198 @@ describe("game prediction feature builder", () => {
     expect(payload.matchup.homeMinusAwayRecent10PointPct).toBe(0.5);
   });
 
+  it("builds long-window, season-to-date, and early-season prior NST features", () => {
+    const priorHomeRows = Array.from({ length: 4 }, (_, index) =>
+      createNstTeamGamelogRow({
+        teamAbbreviation: "BOS",
+        seasonId: 20242025,
+        date: `2025-04-${String(10 + index).padStart(2, "0")}`,
+        gf: 4,
+        ga: 2,
+        xgf: 3.5,
+        xga: 1.5,
+        sf: 36,
+        sa: 24,
+        points: 2,
+      }),
+    );
+    const priorAwayRows = Array.from({ length: 4 }, (_, index) =>
+      createNstTeamGamelogRow({
+        teamAbbreviation: "MTL",
+        seasonId: 20242025,
+        date: `2025-04-${String(10 + index).padStart(2, "0")}`,
+        gf: 2,
+        ga: 4,
+        xgf: 1.5,
+        xga: 3.5,
+        sf: 24,
+        sa: 36,
+        points: 0,
+      }),
+    );
+    const payload = buildGamePredictionFeatureSnapshotPayload(
+      createInputs({
+        nstTeamGamelogRows: [
+          ...createInputs().nstTeamGamelogRows,
+          ...priorHomeRows,
+          ...priorAwayRows,
+        ],
+      }),
+    );
+
+    expect(payload.seasonPhase).toMatchObject({
+      phase: "middle",
+      homeGamesPlayed: 40,
+      awayGamesPlayed: 40,
+    });
+    expect(payload.home.recentForm).toMatchObject({
+      currentSeasonGames: 2,
+      last20Games: 2,
+      seasonToDateGames: 2,
+    });
+    expect(payload.home.recentForm?.earlySeasonPrior?.games).toBe(4);
+    expect(payload.home.recentForm?.crossSeasonLast20?.games).toBe(6);
+    expect(payload.matchup.homeMinusAwayRecent20ShotShare).toBeGreaterThan(0);
+    expect(payload.matchup.homeMinusAwayRecent40ShotShare).toBeGreaterThan(0);
+    expect(payload.matchup.homeMinusAwayRecent20FenwickShare).toBeGreaterThan(0);
+    expect(payload.matchup.homeMinusAwaySeasonToDateXgfPct).toBeCloseTo(0.16);
+    expect(payload.matchup.homeMinusAwayCrossSeasonPriorXgfPct).toBeCloseTo(0.4);
+  });
+
+  it("uses only market odds snapshots captured before the prediction cutoff", () => {
+    const payload = buildGamePredictionFeatureSnapshotPayload(
+      createInputs({
+        predictionCutoffAt: "2026-01-10T18:00:00.000Z",
+        marketOddsRows: [
+          {
+            odds_snapshot_id: "22222222-2222-2222-2222-222222222222",
+            game_id: 2025020001,
+            provider: "DraftKings",
+            captured_at: "2026-01-10T19:00:00.000Z",
+            game_date: "2026-01-10",
+            event_start_at: "2026-01-10T23:00:00.000Z",
+            home_team_id: 1,
+            away_team_id: 2,
+            home_moneyline: -250,
+            away_moneyline: 210,
+            home_market_no_vig_probability: 0.69,
+            away_market_no_vig_probability: 0.31,
+            market_overround: 0.04,
+            home_spread_line: -1.5,
+            home_spread_odds: 130,
+            away_spread_line: 1.5,
+            away_spread_odds: -150,
+            total_line: 5.5,
+            over_odds: -110,
+            under_odds: -110,
+            source_url: "https://site.api.espn.com/test-late",
+            provenance: {
+              provider: "espn_site_api",
+            },
+            metadata: {},
+          },
+          {
+            odds_snapshot_id: "11111111-1111-1111-1111-111111111111",
+            game_id: 2025020001,
+            provider: "DraftKings",
+            captured_at: "2026-01-10T17:00:00.000Z",
+            game_date: "2026-01-10",
+            event_start_at: "2026-01-10T23:00:00.000Z",
+            home_team_id: 1,
+            away_team_id: 2,
+            home_moneyline: -120,
+            away_moneyline: 100,
+            home_market_no_vig_probability: 0.545455,
+            away_market_no_vig_probability: 0.454545,
+            market_overround: 0.045455,
+            home_spread_line: -1.5,
+            home_spread_odds: 180,
+            away_spread_line: 1.5,
+            away_spread_odds: -210,
+            total_line: 5.5,
+            over_odds: -110,
+            under_odds: -110,
+            source_url: "https://site.api.espn.com/test",
+            provenance: {
+              import_source_name: "historical_market_odds_import",
+              import_recorded_at: "2026-06-15T12:00:00.000Z",
+              import_batch_id: "market-import-2026-06-15",
+            },
+            metadata: {},
+          },
+        ],
+      }),
+    );
+
+    expect(payload.market).toMatchObject({
+      oddsSnapshotId: "11111111-1111-1111-1111-111111111111",
+      sourceName: "historical_market_odds_import",
+      importRecordedAt: "2026-06-15T12:00:00.000Z",
+      importBatchId: "market-import-2026-06-15",
+      homeMoneyline: -120,
+      awayMoneyline: 100,
+      homeNoVigProbability: 0.545455,
+    });
+    expect(payload.fallbackFlags.market_odds_unavailable).toBeUndefined();
+    expect(payload.sourceCutoffs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          table: "game_prediction_market_odds_snapshots",
+          cutoff: "2026-01-10T17:00:00.000Z",
+          stale: false,
+        }),
+      ]),
+    );
+  });
+
+  it("preserves canonical live ESPN market odds source names in feature snapshots", () => {
+    const payload = buildGamePredictionFeatureSnapshotPayload(
+      createInputs({
+        predictionCutoffAt: "2026-01-10T18:00:00.000Z",
+        marketOddsRows: [
+          {
+            odds_snapshot_id: "33333333-3333-3333-3333-333333333333",
+            game_id: 2025020001,
+            provider: "ESPN BET",
+            captured_at: "2026-01-10T17:00:00.000Z",
+            game_date: "2026-01-10",
+            event_start_at: "2026-01-10T23:00:00.000Z",
+            home_team_id: 1,
+            away_team_id: 2,
+            home_moneyline: -120,
+            away_moneyline: 100,
+            home_market_no_vig_probability: 0.545455,
+            away_market_no_vig_probability: 0.454545,
+            market_overround: 0.045455,
+            home_spread_line: -1.5,
+            home_spread_odds: 180,
+            away_spread_line: 1.5,
+            away_spread_odds: -210,
+            total_line: 5.5,
+            over_odds: -110,
+            under_odds: -110,
+            source_url: "https://site.api.espn.com/test",
+            provenance: {
+              source_name: ESPN_MARKET_ODDS_SOURCE_NAME,
+              provider: "espn_site_api",
+              capture_recorded_at: "2026-01-10T17:00:05.000Z",
+            },
+            metadata: {
+              source_name: ESPN_MARKET_ODDS_SOURCE_NAME,
+              capture_recorded_at: "2026-01-10T17:00:05.000Z",
+            },
+          },
+        ],
+      }),
+    );
+
+    expect(payload.market).toMatchObject({
+      sourceName: ESPN_MARKET_ODDS_SOURCE_NAME,
+      oddsSnapshotId: "33333333-3333-3333-3333-333333333333",
+      provider: "ESPN BET",
+    });
+  });
+
   it("builds CTPI and schedule-strength context without using same-day rows", () => {
     const payload = buildGamePredictionFeatureSnapshotPayload(
       createInputs({
@@ -778,7 +982,7 @@ describe("game prediction feature builder", () => {
       snapshot_date: "2026-01-10",
       model_name: "baseline_logistic",
       model_version: "v0",
-      feature_set_version: "game_features_v4_roster_sos_context",
+      feature_set_version: "game_features_v5_accuracy_candidates",
       home_team_id: 1,
       away_team_id: 2,
     });
@@ -786,7 +990,7 @@ describe("game prediction feature builder", () => {
       prediction_contract: {
         modelName: "baseline_logistic",
         modelVersion: "v0",
-        featureSetVersion: "game_features_v4_roster_sos_context",
+        featureSetVersion: "game_features_v5_accuracy_candidates",
         asOfDate: "2026-01-10",
         fallbackFlags: {
           away_wgo_team_fallback: true,

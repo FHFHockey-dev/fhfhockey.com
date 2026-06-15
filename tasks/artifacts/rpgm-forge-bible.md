@@ -6,8 +6,8 @@ Status rules:
 
 - this file is the source of truth for architecture, operations, freshness, validation posture, performance targets, and implementation priorities
 - detailed pass artifacts are historical support only
-- formula-only metric status remains in [rpm-audit-notes-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-notes-pass-2.md)
-- implementation sequencing remains in [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-action-items-pass-2.md)
+- formula-only metric status remains in [rpm-audit-notes-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md)
+- implementation sequencing remains in [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md)
 
 ## Mission
 
@@ -177,10 +177,10 @@ Validation rule:
 Validation is split across three authoritative surfaces:
 
 1. formula ledger
-   - [rpm-audit-notes-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-notes-pass-2.md)
+   - [rpm-audit-notes-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md)
    - strict metric status and formula entries only
 2. implementation backlog
-   - [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-action-items-pass-2.md)
+   - [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md)
    - source for sequencing follow-up work
 3. live validation console
    - [trendsDebug.tsx](/Users/tim/Code/fhfhockey.com/web/pages/trendsDebug.tsx)

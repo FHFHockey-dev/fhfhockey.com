@@ -48,7 +48,7 @@ Current explicit policy helpers include:
 
 ### 1. Team Context Schedule Order Is Wrong
 
-Current cron order in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md):
+Current cron order in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md):
 
 - `09:10` `update-team-ctpi-daily`
 - `09:12` `update-team-power-ratings`

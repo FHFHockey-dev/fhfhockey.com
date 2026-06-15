@@ -81,8 +81,43 @@ describe("NhlPredictionsPage", () => {
   beforeEach(() => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(() =>
-        Promise.resolve({
+      vi.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/v1/game-predictions/espn-odds")) {
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                success: true,
+                generatedAt: "2026-04-27T12:00:00.000Z",
+                count: 1,
+                odds: [
+                  {
+                    gameId: "espn-1",
+                    requestedDate: "2026-04-28",
+                    localDate: "2026-04-28",
+                    name: "Montreal Canadiens at Boston Bruins",
+                    date: "2026-04-28T23:00Z",
+                    status: "Scheduled",
+                    homeTeam: "BOS",
+                    awayTeam: "MTL",
+                    provider: "DraftKings",
+                    moneyline: { home: "-130", away: "+110" },
+                    spread: {
+                      home: { line: "-1.5", odds: "+180" },
+                      away: { line: "+1.5", odds: "-220" },
+                    },
+                    total: {
+                      over: { line: "o5.5", odds: "-105" },
+                      under: { line: "u5.5", odds: "-115" },
+                    },
+                  },
+                ],
+              }),
+          });
+        }
+
+        return Promise.resolve({
           ok: true,
           json: () =>
             Promise.resolve({
@@ -105,8 +140,8 @@ describe("NhlPredictionsPage", () => {
               daily: [],
               candles: [],
             }),
-        }),
-      ),
+        });
+      }),
     );
   });
 
@@ -115,7 +150,7 @@ describe("NhlPredictionsPage", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders probability cards, stored factors, and performance metrics", () => {
+  it("renders probability cards, stored factors, performance metrics, and market odds", async () => {
     render(<NhlPredictionsPage initialPayload={populatedPayload} />);
 
     expect(
@@ -129,7 +164,10 @@ describe("NhlPredictionsPage", () => {
     expect(screen.getByText("Evaluated games")).toBeTruthy();
     expect(screen.getByText("Accountability Index")).toBeTruthy();
     expect(screen.getByText("100")).toBeTruthy();
-    expect(screen.queryByText(/bet|wager|sportsbook|odds/i)).toBeNull();
+    expect(await screen.findByText("ESPN / DraftKings")).toBeTruthy();
+    expect(screen.getByText("MTL ML")).toBeTruthy();
+    expect(screen.getByText("+110")).toBeTruthy();
+    expect(screen.getByText("-130")).toBeTruthy();
   });
 
   it("renders stale-data warnings from the API payload", () => {

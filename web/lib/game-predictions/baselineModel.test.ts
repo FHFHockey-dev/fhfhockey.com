@@ -2,13 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import type { BinaryLogisticModel } from "lib/xg/binaryLogistic";
 import {
+  BASELINE_FEATURE_KEYS,
   BASELINE_MODEL_VERSION,
   analyzeBaselineFeatureSignals,
   buildBaselineFeatureVector,
   buildBaselineTrainingDataset,
   buildGamePredictionHistoryInsert,
   buildGamePredictionOutputUpsert,
+  predictGameWithExtraTreesModel,
   predictGameWithBaselineModel,
+  trainGamePredictionExtraTreesModel,
   trainGamePredictionBaselineModel,
 } from "./baselineModel";
 import {
@@ -125,9 +128,20 @@ function createPayload(homeOffRating = 60) {
 
 describe("game prediction baseline model", () => {
   it("builds finite baseline feature vectors", () => {
-    expect(buildBaselineFeatureVector(createPayload())).toEqual([
-      12, 5, 3, 7, 0.12, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.4, 0,
-    ]);
+    const vector = buildBaselineFeatureVector(createPayload());
+    const valueFor = (featureKey: (typeof BASELINE_FEATURE_KEYS)[number]) =>
+      vector[BASELINE_FEATURE_KEYS.indexOf(featureKey)];
+
+    expect(vector).toHaveLength(BASELINE_FEATURE_KEYS.length);
+    expect(valueFor("homeMinusAwayOffRating")).toBe(12);
+    expect(valueFor("homeMinusAwayDefRating")).toBe(5);
+    expect(valueFor("homeMinusAwayGoalieRating")).toBe(3);
+    expect(valueFor("homeMinusAwaySpecialRating")).toBe(7);
+    expect(valueFor("homeMinusAwayPointPctg")).toBe(0.12);
+    expect(valueFor("homeMinusAwayGoalDifferential")).toBe(0.5);
+    expect(valueFor("homeMinusAwayRecent20ShotShare")).toBe(0);
+    expect(valueFor("homeMinusAwayRecent40ShotShare")).toBe(0);
+    expect(valueFor("homeMinusAwayWeightedGoalieGsaaPer60")).toBe(0.4);
   });
 
   it("creates training examples from feature snapshots and outcomes", () => {
@@ -164,11 +178,80 @@ describe("game prediction baseline model", () => {
       learningRate: 0.01,
       l2: 0.01,
     });
-    expect(model.featureCount).toBe(17);
-    expect(model.weights).toHaveLength(17);
-    expect(model.featureNormalization?.means).toHaveLength(17);
-    expect(model.featureNormalization?.scales).toHaveLength(17);
+    expect(model.featureCount).toBe(BASELINE_FEATURE_KEYS.length);
+    expect(model.weights).toHaveLength(BASELINE_FEATURE_KEYS.length);
+    expect(model.featureNormalization?.means).toHaveLength(
+      BASELINE_FEATURE_KEYS.length,
+    );
+    expect(model.featureNormalization?.scales).toHaveLength(
+      BASELINE_FEATURE_KEYS.length,
+    );
     expect(model.probabilityFloor).toBe(0.05);
+  });
+
+  it("trains and predicts with the ExtraTrees candidate model", () => {
+    const winningPayload = createPayload(75);
+    const losingPayload = createPayload(35);
+    losingPayload.gameId = 2025020002;
+    const examples = buildBaselineTrainingDataset(
+      [
+        { featureSnapshotId: "win", payload: winningPayload },
+        { featureSnapshotId: "loss", payload: losingPayload },
+      ],
+      [
+        { gameId: winningPayload.gameId, homeWon: true },
+        { gameId: losingPayload.gameId, homeWon: false },
+      ],
+      {
+        includeDefaultExcludedFeatureKeys: true,
+        excludedFeatureKeys: ["homeMarketNoVigProbability"],
+      },
+    );
+
+    const model = trainGamePredictionExtraTreesModel(examples, {
+      treeCount: 9,
+      maxDepth: 3,
+      minLeafExamples: 1,
+      seed: 7,
+    });
+    const prediction = predictGameWithExtraTreesModel({
+      payload: winningPayload,
+      model,
+      predictionCutoffAt: "2026-01-10T18:00:00+00:00",
+      featureVectorOptions: {
+        includeDefaultExcludedFeatureKeys: true,
+        excludedFeatureKeys: ["homeMarketNoVigProbability"],
+      },
+    });
+    const calibratedPrediction = predictGameWithExtraTreesModel({
+      payload: winningPayload,
+      model,
+      predictionCutoffAt: "2026-01-10T18:00:00+00:00",
+      calibrator: {
+        method: "platt",
+        model: { method: "raw" },
+        predict: () => 0.6,
+      },
+      featureVectorOptions: {
+        includeDefaultExcludedFeatureKeys: true,
+        excludedFeatureKeys: ["homeMarketNoVigProbability"],
+      },
+    });
+
+    expect(model.modelFamily).toBe("extra_trees");
+    expect(model.trees).toHaveLength(9);
+    expect(model.featureImportances).toHaveLength(BASELINE_FEATURE_KEYS.length);
+    expect(prediction.homeWinProbability).toBeGreaterThan(0);
+    expect(prediction.homeWinProbability).toBeLessThan(1);
+    expect(prediction.components).toMatchObject({
+      model_family: "extra_trees",
+      calibration_method: "raw_extra_trees",
+    });
+    expect(calibratedPrediction.components).toMatchObject({
+      calibration_method: "platt",
+      calibrated_home_win_probability: 0.6,
+    });
+    expect(prediction.metadata.public_explanation_feature_keys).toEqual([]);
   });
 
   it("analyzes per-feature winning signal with standardized logistic weights", () => {
@@ -199,8 +282,25 @@ describe("game prediction baseline model", () => {
     expect(analysis.homeWins).toBe(1);
     expect(analysis.awayWins).toBe(1);
     expect(offRatingSignal?.pearsonCorrelation).toBeGreaterThan(0);
+    expect(offRatingSignal?.mutualInformationScore).toBeGreaterThanOrEqual(0);
     expect(offRatingSignal?.univariateOddsRatioPerStdDev).toBeGreaterThan(1);
     expect(offRatingSignal?.multivariateOddsRatioPerStdDev).toBeGreaterThan(1);
+    expect(
+      analysis.leakageChecks.find(
+        (check) => check.featureKey === "homeMinusAwayRecent20ShotShare",
+      ),
+    ).toMatchObject({
+      status: "review",
+      defaultExcluded: true,
+    });
+    expect(
+      analysis.leakageChecks.find(
+        (check) => check.featureKey === "homeMarketNoVigProbability",
+      ),
+    ).toMatchObject({
+      status: "blocked_by_default",
+      defaultExcluded: true,
+    });
   });
 
   it("bounds extreme probabilities and records normalization metadata", () => {

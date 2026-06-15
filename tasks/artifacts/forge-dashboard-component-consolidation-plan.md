@@ -9,7 +9,7 @@ Identify the overlapping UI patterns across the current FORGE, Trends, Start Cha
 
 This artifact also records the styling sources that must govern the merged components:
 
-- [fhfh-styles.md](/Users/tim/Code/fhfhockey.com/fhfh-styles.md)
+- [tasks/TASKS/rules/fhfh-styles.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/rules/fhfh-styles.md)
 - [vars.scss](/Users/tim/Code/fhfhockey.com/web/styles/vars.scss)
 - [_panel.scss](/Users/tim/Code/fhfhockey.com/web/styles/_panel.scss)
 
@@ -19,7 +19,7 @@ The goal is not only to reduce duplicate code. The goal is to keep the refreshed
 
 All merged dashboard components should follow:
 
-1. [fhfh-styles.md](/Users/tim/Code/fhfhockey.com/fhfh-styles.md)
+1. [tasks/TASKS/rules/fhfh-styles.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/rules/fhfh-styles.md)
    - overall tone: Neon Noir Analytics
    - data-dense terminal posture
    - card strip, panel, typography, and hover-glow rules
@@ -270,7 +270,7 @@ Use:
 
 ### Card Identity
 
-Use the card guidance from [fhfh-styles.md](/Users/tim/Code/fhfhockey.com/fhfh-styles.md):
+Use the card guidance from [tasks/TASKS/rules/fhfh-styles.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/rules/fhfh-styles.md):
 
 - accent strips
 - layered dark surfaces

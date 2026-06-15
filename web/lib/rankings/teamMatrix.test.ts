@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   aggregateTeamStyleRows,
   parseTeamMatrixRequest,
+  rankTeamMetricValues,
 } from "./teamMatrix";
 
 describe("teamMatrix", () => {
@@ -72,6 +73,7 @@ describe("teamMatrix", () => {
     const request = parseTeamMatrixRequest({
       season: "20252026",
       metric: "xgf_percentage",
+      search: "Leafs",
       page_size: "25",
     });
 
@@ -79,8 +81,38 @@ describe("teamMatrix", () => {
       season: 20252026,
       metric: "xgf_percentage",
       sortDirection: "desc",
+      search: "Leafs",
       page: 1,
       pageSize: 25,
     });
+  });
+
+  it("ranks team metrics with dense ties and lower-is-better percentile direction", () => {
+    const ranks = rankTeamMetricValues(
+      [
+        { id: "BOS", value: 2.1 },
+        { id: "DAL", value: 2.1 },
+        { id: "TOR", value: 3.4 },
+        { id: "UTA", value: null },
+      ],
+      true,
+    );
+
+    expect(ranks.get("BOS")).toMatchObject({
+      rank: 1,
+      percentile: 100,
+      qualifiedPeerCount: 3,
+    });
+    expect(ranks.get("DAL")).toMatchObject({
+      rank: 1,
+      percentile: 100,
+      qualifiedPeerCount: 3,
+    });
+    expect(ranks.get("TOR")).toMatchObject({
+      rank: 2,
+      percentile: 33.333,
+      qualifiedPeerCount: 3,
+    });
+    expect(ranks.has("UTA")).toBe(false);
   });
 });

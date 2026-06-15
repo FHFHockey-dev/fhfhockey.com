@@ -2,7 +2,7 @@
 
 Generated at: 2026-04-28T01:46:16.920Z
 
-Scope: live schema, source inventory, identity joins, team-power math, NST team-table semantics, WGO/standings semantics, goalie-source semantics, lineup/player-context coverage, prediction storage/provenance fit, representative row-level data quality, and as-of/leakage safety for tasks 1.1 through 1.11 of `tasks/tasks-prd-nhl-game-prediction-model.md`.
+Scope: live schema, source inventory, identity joins, team-power math, NST team-table semantics, WGO/standings semantics, goalie-source semantics, lineup/player-context coverage, prediction storage/provenance fit, representative row-level data quality, and as-of/leakage safety for tasks 1.1 through 1.11 of `tasks/TASKS/nhl-game-prediction-model/tasks-prd-nhl-game-prediction-model.md`.
 
 Metadata mode: management_api_sql
 

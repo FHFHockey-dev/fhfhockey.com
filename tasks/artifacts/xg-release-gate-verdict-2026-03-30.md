@@ -17,7 +17,7 @@ This verdict is based on the current release-review set:
 - `tasks/artifacts/xg-baseline-validation-2026-03-30.md`
 - `tasks/artifacts/xg-release-blockers-2026-03-30.md`
 - `tasks/artifacts/nhl-manual-audit-2026-03-30.md`
-- `tasks/validation-checklist.md`
+- `tasks/TASKS/xg-model/nhl-api-foundation/validation-checklist.md`
 - `tasks/final-implementation-summary.md`
 
 ## Rationale
@@ -31,7 +31,7 @@ The gate is not satisfied because the current training-use blocker set is still 
    - sampled parity comparison still shows hard drift on exact-count families, not only approximation families
    - representative failures include shots, `icf`, `iff`, faceoffs, hits, assists/points, and TOI
 3. the release validation record is not yet complete enough
-   - the final release artifact still needs the full validation metadata contract required by `tasks/validation-checklist.md`
+   - the final release artifact still needs the full validation metadata contract required by `tasks/TASKS/xg-model/nhl-api-foundation/validation-checklist.md`
 
 ## Approved Exceptions
 

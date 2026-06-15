@@ -34,7 +34,7 @@ The chain is mostly traceable, but it is not yet a single clean authoritative pi
 
 ## Current Scheduled Chain
 
-Documented jobs from [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md):
+Documented jobs from [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md):
 
 - `08:00 UTC` `update-line-combinations`
 - `08:40 UTC` `update-yahoo-players`

@@ -31,6 +31,7 @@ type RequestWithSupabase = {
     maxTrainingGames?: string | string[];
     maxReplayGames?: string | string[];
     variants?: string | string[];
+    persistEvidence?: string | string[];
   };
   supabase: SupabaseClient<Database>;
 };
@@ -67,6 +68,10 @@ function readVariantKeys(value: string | string[] | undefined): Set<string> | nu
     .map((part) => part.trim())
     .filter(Boolean);
   return keys.length > 0 ? new Set(keys) : null;
+}
+
+function readBoolean(value: string | string[] | undefined): boolean {
+  return readSingleQueryValue(value) === "true";
 }
 
 async function handler(req: RequestWithSupabase, res: NextApiResponse) {
@@ -120,11 +125,13 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
     maxTrainingGames: readInteger(req.query.maxTrainingGames),
     maxReplayGames: readInteger(req.query.maxReplayGames),
     variants,
+    persistEvidence: readBoolean(req.query.persistEvidence),
   });
 
   return res.status(200).json({
     success: true,
     dryRun: true,
+    evidencePersisted: result.promotionEvidencePersisted,
     result,
   });
 }

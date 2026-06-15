@@ -1,9 +1,11 @@
+import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 
 import {
   CONTEXTUAL_RANKING_METRIC_DEFINITIONS,
   type ContextualRankingMetricKey,
 } from "lib/rankings/metricDefinitions";
+import { GOALIE_ROLE_FILTER_OPTIONS } from "lib/rankings/goalieMethodology";
 import type {
   MatrixMetricColumnDefinition,
   MatrixMetricGroup,
@@ -24,6 +26,7 @@ type RankingsFiltersProps = {
   showMetric?: boolean;
   matrixMetricGroups?: readonly MatrixMetricGroup[];
   matrixMetricColumns?: readonly MatrixMetricColumnDefinition[];
+  methodologyControl?: ReactNode;
 };
 
 const WINDOW_OPTIONS = [
@@ -45,6 +48,12 @@ const STRENGTH_OPTIONS = [
   { value: "ev", label: "EV" },
   { value: "pp", label: "PP" },
   { value: "pk", label: "PK" },
+] as const;
+
+const DISPLAY_MODE_OPTIONS = [
+  { value: "both", label: "Both" },
+  { value: "percentile", label: "Percentile" },
+  { value: "raw_rank", label: "Raw Rank" },
 ] as const;
 
 function deploymentOptions(position: ContextualRankingsPositionFilter) {
@@ -97,6 +106,7 @@ export default function RankingsFilters({
   showMetric = true,
   matrixMetricGroups = [],
   matrixMetricColumns = [],
+  methodologyControl,
 }: RankingsFiltersProps) {
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
   const metrics = CONTEXTUAL_RANKING_METRIC_DEFINITIONS.filter(
@@ -113,30 +123,65 @@ export default function RankingsFilters({
   );
   const selectedGroups = selectedSet(value.metricGroups, groupKeys);
   const selectedColumns = selectedSet(value.metricColumns, columnKeys);
+  const roleOptions =
+    value.entity === "goalies"
+      ? GOALIE_ROLE_FILTER_OPTIONS
+      : availableDeploymentOptions.map((option) => ({
+          value: option,
+          label: option === "all" ? "All Deployments" : option,
+        }));
+  const showMoreFilters = value.entity === "skaters";
 
   return (
     <section className={styles.filters} aria-label="Ranking filters">
       <div className={`${styles.filterControl} ${styles.playerTypeControl}`}>
-        <span>Player Type</span>
-        <div className={styles.segmentedControl} role="group" aria-label="Player type">
+        <span>Entity</span>
+        <div className={styles.segmentedControl} role="group" aria-label="Ranking entity">
           <button
             type="button"
             aria-pressed={value.entity === "skaters" && value.position === "all"}
-            onClick={() => onChange({ entity: "skaters", position: "all", deployment: "all" })}
+            onClick={() =>
+              onChange({
+                entity: "skaters",
+                position: "all",
+                deployment: "all",
+                goalieRole: "all",
+                selectedGoalieId: "",
+                selectedTeam: "",
+              })
+            }
           >
             All Skaters
           </button>
           <button
             type="button"
             aria-pressed={value.entity === "skaters" && value.position === "F"}
-            onClick={() => onChange({ entity: "skaters", position: "F", deployment: "all" })}
+            onClick={() =>
+              onChange({
+                entity: "skaters",
+                position: "F",
+                deployment: "all",
+                goalieRole: "all",
+                selectedGoalieId: "",
+                selectedTeam: "",
+              })
+            }
           >
             Forwards
           </button>
           <button
             type="button"
             aria-pressed={value.entity === "skaters" && value.position === "D"}
-            onClick={() => onChange({ entity: "skaters", position: "D", deployment: "all" })}
+            onClick={() =>
+              onChange({
+                entity: "skaters",
+                position: "D",
+                deployment: "all",
+                goalieRole: "all",
+                selectedGoalieId: "",
+                selectedTeam: "",
+              })
+            }
           >
             Defensemen
           </button>
@@ -148,7 +193,10 @@ export default function RankingsFilters({
                 entity: "goalies",
                 position: "all",
                 deployment: "all",
+                goalieRole: "all",
                 tab: "rankings",
+                selectedPlayerId: "",
+                selectedTeam: "",
               })
             }
           >
@@ -162,7 +210,11 @@ export default function RankingsFilters({
                 entity: "teams",
                 position: "all",
                 deployment: "all",
+                goalieRole: "all",
                 tab: "rankings",
+                team: "",
+                selectedPlayerId: "",
+                selectedGoalieId: "",
               })
             }
           >
@@ -171,8 +223,8 @@ export default function RankingsFilters({
         </div>
       </div>
 
-      <label className={styles.filterControl}>
-        <span>Season</span>
+      <label className={`${styles.filterControl} ${styles.filterSeason}`}>
+        <span>Season / Timeframe</span>
         <input
           inputMode="numeric"
           pattern="[0-9]*"
@@ -181,7 +233,7 @@ export default function RankingsFilters({
         />
       </label>
 
-      <label className={styles.filterControl}>
+      <label className={`${styles.filterControl} ${styles.filterWindow}`}>
         <span>Window</span>
         <select
           value={value.window}
@@ -196,6 +248,46 @@ export default function RankingsFilters({
           ))}
         </select>
       </label>
+
+      {value.tab === "rankings" ? (
+        <label className={`${styles.filterControl} ${styles.searchControl}`}>
+          <span>Search</span>
+          <input
+            type="search"
+            placeholder={
+              value.entity === "teams"
+                ? "Team name or code"
+                : value.entity === "goalies"
+                  ? "Goalie or team"
+                  : "Player or team"
+            }
+            value={value.search}
+            onChange={(event) =>
+              onChange({ search: event.target.value, page: "1" })
+            }
+          />
+        </label>
+      ) : null}
+
+      {value.tab === "rankings" ? (
+        <label className={`${styles.filterControl} ${styles.filterDisplay}`}>
+          <span>Display</span>
+          <select
+            value={value.displayMode}
+            onChange={(event) =>
+              onChange({
+                displayMode: event.target.value as RankingsFilterState["displayMode"],
+              })
+            }
+          >
+            {DISPLAY_MODE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
 
       {value.entity === "skaters" && showMetric ? (
         <label className={styles.filterControl}>
@@ -223,20 +315,25 @@ export default function RankingsFilters({
       ) : null}
 
       {value.entity !== "teams" ? (
-      <label className={styles.filterControl}>
+      <label className={`${styles.filterControl} ${styles.filterDeployment}`}>
         <span>{value.entity === "goalies" ? "Role" : "Deployment"}</span>
         <select
-          value={value.deployment}
-          disabled={value.entity === "goalies"}
+          value={value.entity === "goalies" ? value.goalieRole : value.deployment}
           onChange={(event) =>
-            onChange({
-              deployment: event.target.value as ContextualRankingsDeploymentFilter,
-            })
+            value.entity === "goalies"
+              ? onChange({
+                  goalieRole: event.target.value as RankingsFilterState["goalieRole"],
+                  selectedGoalieId: "",
+                  page: "1",
+                })
+              : onChange({
+                  deployment: event.target.value as ContextualRankingsDeploymentFilter,
+                })
           }
         >
-          {availableDeploymentOptions.map((option) => (
-            <option key={option} value={option}>
-              {option === "all" ? "All Deployments" : option}
+          {roleOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </select>
@@ -244,7 +341,7 @@ export default function RankingsFilters({
       ) : null}
 
       {value.entity === "skaters" ? (
-      <label className={styles.filterControl}>
+      <label className={`${styles.filterControl} ${styles.filterStrength}`}>
         <span>Strength</span>
         <select
           value={value.strength}
@@ -281,7 +378,7 @@ export default function RankingsFilters({
       ) : null}
 
       {value.entity !== "teams" ? (
-      <label className={styles.filterControl}>
+      <label className={`${styles.filterControl} ${styles.filterMinGp}`}>
         <span>{value.entity === "goalies" ? "Min Starts" : "Min GP"}</span>
         <input
           inputMode="numeric"
@@ -304,20 +401,9 @@ export default function RankingsFilters({
         </label>
       ) : null}
 
-      {value.entity !== "teams" ? (
-      <label className={styles.filterControl}>
-        <span>Team</span>
-        <input
-          inputMode="numeric"
-          pattern="[0-9]*"
-          value={value.team}
-          onChange={(event) => onChange({ team: event.target.value })}
-        />
-      </label>
-      ) : null}
-
+      {showMoreFilters ? (
       <div className={`${styles.filterControl} ${styles.moreFiltersControl}`}>
-        <span>More Filters</span>
+        <span>Tools</span>
         <button
           type="button"
           aria-expanded={moreFiltersOpen}
@@ -380,6 +466,19 @@ export default function RankingsFilters({
                   <option value="caveats_only">Caveats Only</option>
                 </select>
               </label>
+
+              <label className={styles.filterControl}>
+                <span>Team</span>
+                <input
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="Team ID"
+                  value={value.team}
+                  onChange={(event) =>
+                    onChange({ team: event.target.value, page: "1" })
+                  }
+                />
+              </label>
             </div>
 
             <fieldset className={styles.moreFiltersFieldset}>
@@ -434,6 +533,24 @@ export default function RankingsFilters({
           </div>
         ) : null}
       </div>
+      ) : null}
+
+      {value.entity === "goalies" ? (
+        <label className={`${styles.filterControl} ${styles.moreFiltersControl}`}>
+          <span>Team</span>
+        <input
+          type="text"
+          inputMode="text"
+          placeholder="Team code or name"
+          value={value.team}
+            onChange={(event) => onChange({ team: event.target.value, page: "1" })}
+          />
+        </label>
+      ) : null}
+
+      {methodologyControl ? (
+        <div className={styles.filterMethodologySlot}>{methodologyControl}</div>
+      ) : null}
     </section>
   );
 }

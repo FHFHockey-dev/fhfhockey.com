@@ -1,0 +1,1285 @@
+---
+
+## ProjectionsTable.tsx
+
+ - Summary: Main available-players table with rich sorting, filtering, need-weighted value metrics (VORP/VONA/VBD and composite score), risk estimation to next pick, favorites, expandable last-season stats via Supabase, diagnostics, and an advanced settings drawer. Supports categories vs points modes, stat-columns view, and compare-players modal.
+
+**Props**
+ - Inbound: `players`, `allPlayers?`, `draftedPlayers`, `isLoading`, `error`, `onDraftPlayer`, `canDraft`, `vorpMetrics?`, `replacementByPos?`, `baselineMode?`, `onBaselineModeChange?`, `expectedRuns?`, `needWeightEnabled?`, `onNeedWeightChange?`, `posNeeds?`, `needAlpha?`, `onNeedAlphaChange?`, `nextPickNumber?`, `leagueType?`, `forwardGrouping?`, `activeCategoryKeys?`, `enabledSkaterStatKeys?`, `enabledGoalieStatKeys?`.
+ - Outbound: `onDraftPlayer` when drafting, `onBaselineModeChange`, `onNeedWeightChange`, `onNeedAlphaChange`.
+
+**Dependencies**
+ - External: `react` hooks, browser `localStorage`, `supabase` client for last-season totals, `STATS_MASTER_LIST` for stat definitions.
+ - Project: `ComparePlayersModal`, CSS `ProjectionsTable.module.scss`, types `ProcessedPlayer`, `DraftedPlayer`, `PlayerVorpMetrics`.
+
+**Data Flows**
+ - Persistence: Many UI preferences persisted to localStorage (stat columns mode, hide drafted, band scope, risk SD, position filter, sort field/dir, stat sort key, favorites and favorites-only).
+ - Filters: Position filter (supports `ALL`, `SKATER`, `FORWARDS`, `G`, and discrete), search (debounced), favorites-only, and optional hide-drafted.
+ - Sorting: By name, position, team, ADP, FP/Score, VORP/VONA/VBD (need-adjusted), Risk, or a selected stat column. Sort dir inferred per field; stat sort direction uses stat def’s `higherIsBetter`.
+ - Value metrics: Builds `vorpMap` from `vorpMetrics` and adjusts VBD with `posNeeds` and `needAlpha` when `needWeightEnabled` is true. Bands (success/warning/danger) computed per position or overall using percentile ranks over remaining (undrafted) players.
+ - Risk model: Computes probability of being drafted before `nextPickNumber` using a Normal CDF with adjustable SD (picks). Colors the AVL% cell.
+ - Expand rows: On expand, fetches last-season skater or goalie totals from Supabase and caches results per player ID with loading/error state.
+ - Diagnostics: Optional panel summarizes exclusion reasons and counts; cross-check can query all projection source tables to find players present in sources but missing from UI pool.
+ - Compare: Right-most checkboxes select players for `ComparePlayersModal` (requires 2+ selections).
+
+**Efficiency Gaps & Recommendations**
+ - Re-sorting large arrays:
+   - Full `filtered.sort` runs on every input change; `filtered` is copied upfront. Acceptable for moderate sizes, but heavy at scale.
+   - Recommendation: Memoize comparator inputs (`vorpMap`, `riskMap`, `statSortKey`, etc.) and consider stable-sort with key extraction to reduce repeated property access. For very large lists, consider windowing in the table.
+ - Multiple passes for filters and diagnostics:
+   - The `diagnostics` memo re-walks `players` with similar predicates as the main filter.
+   - Recommendation: Factor shared predicate helpers; optionally compute diagnostic counters during the main filter step when `showDiagnostics` is enabled.
+ - Supabase fetch per expand:
+   - Each first expand triggers a DB call; rapid expands can fan out.
+   - Recommendation: Add a simple in-flight guard (already present via `seasonLoading[id]`) and a small LRU or sessionStorage cache keyed by playerId to persist across page reloads.
+ - LocalStorage churn:
+   - Many effects write individual keys on every change.
+   - Recommendation: Batch writes by section (e.g., settings vs filters) with a debounced effect, or serialize a single object namespace `projections.prefs`.
+ - Risk recompute and Normal CDF:
+   - `riskMap` recomputes for all `players` when SD or `nextPickNumber` changes.
+   - Recommendation: It’s O(n) and fine; micro-opt: precompute normalized ADP values and skip players with missing ADP early.
+ - ADP sort handling:
+   - Missing ADP path includes tiebreakers; fine, but consider memoizing ADP normalization.
+ - getDisplayPos recalculation:
+   - Called in multiple maps and sorts.
+   - Recommendation: Cache a `displayPosById` via `useMemo` if profiling shows cost.
+ - Draft button state:
+   - Only disables when already drafted.
+   - Recommendation: Also respect `!canDraft` and `!onDraftPlayer` to guard UI.
+
+**Actionable Improvements (to implement post-audit)**
+ - Share filter predicate logic:
+   - Extract `matchesFilters(player)` used by both diagnostics and the main filter to avoid divergence and double work.
+ - Debounce preference persistence:
+   - Use a single `useDebouncedEffect` to persist a `prefs` object: `{ bandScope, riskSd, positionFilter, sortField, sortDirection, statColumnsMode, statSortKey, favoritesOnly }`.
+ - Respect draftability:
+   - Disable Draft button when `!canDraft`; optionally add a tooltip explaining why.
+ - Memoize display position:
+   - `const displayPosById = useMemo(() => new Map(players.map(p => [String(p.playerId), getDisplayPos(p)])), [players, forwardGrouping]);` and reuse where possible.
+ - Cross-check guardrails:
+   - Limit cross-check result size in UI or provide CSV export; ensure Supabase errors surface succinctly.
+ - Window the table (optional):
+   - If list length exceeds a threshold (e.g., > 1000), add react-window or a simple manual windowing to reduce DOM nodes.
+
+**Connections & Cross-References**
+ - Consumes `vorpMetrics`, `replacementByPos`, and `baselineMode` from `DraftDashboard.tsx`/`useVORPCalculations`; ensure banding semantics align with SuggestedPicks’ ranking and DraftBoard’s leaderboard.
+ - Honors `forwardGrouping` same as `MyRoster.tsx` and filters/labels positions consistently.
+ - The `ComparePlayersModal` leverages `allPlayers`; ensure parent provides complete pool when available to include drafted players in comparisons.
+
+**Potential Acceptance Tests (informal)**
+ - Sorting by each header works; direction toggles; stat header respects `higherIsBetter`.
+ - Filters (position/search/favorites-only/hide-drafted) produce expected counts; diagnostics numbers align when enabled.
+ - Expanding a player loads and caches last-season totals; subsequent expands are instant and show formatted values.
+ - Risk color coding matches AVL% thresholds and updates when `riskSd` or `nextPickNumber` changes.
+ - Draft button disabled when `!canDraft`; clicking draft invokes `onDraftPlayer` with stringified id.
+
+# Draft Dashboard – Structured Audit
+
+---
+
+## Canonical Element Family Summary
+
+This summary maps each reusable UI family to the current best reference implementation and flags the main style conflicts discovered during the audit.
+
+| Element Family | Current Best Reference | Why It Is The Best Reference | Main Conflicts / Caveats |
+| --- | --- | --- | --- |
+| Dashboard page shell | `DraftDashboard.module.scss` (`dashboardContainer`, `mainContent`, `leftPanel`, `centerPanel`, `rightPanel`) | Defines the clearest utility-first page shell, three-panel workspace, and emphasized focal column. | Center panel relies on stronger gradient/glow treatment that should become optional, not default. |
+| Full-width control plane | `DraftSettings.module.scss` (`settingsContainer`, `settingsHeader`, `headerActions`, `settingsGrid`) | Strongest current example of a compact top-level control surface with grouped subsections. | Current container leans glass-heavy; structure should transfer more than the blur/shine treatment. |
+| Panel header + scrollable body | Shared across `DraftDashboard`, `DraftBoard`, `MyRoster`, and `ProjectionsTable` panel headers | Repeated enough to justify a canonical header/body split rule for panels. | Reimplemented multiple times instead of being centralized in one shared primitive. |
+| Segmented toggle rail | `DraftSettings.module.scss` (`draftTypeToggle`, `toggleButton.active`) | Clearest current segmented-control pattern in the app. | Variants in other modules should be collapsed into this shared rule family. |
+| Compact dashboard action buttons | `DraftSettings.module.scss` (`summaryButton`, `actionButton`, `inlineResetBtn`) | Best reference for small dashboard-primary and utility actions. | Too many local button variants exist; needs consolidation into a smaller canonical family. |
+| Tiny icon / utility button | `DraftSettings.module.scss` (`collapseButton`) | Best current reference for small icon-only control treatment. | Still one-off; should become a documented icon-button variant. |
+| Select / dropdown control | `DraftSettings.module.scss` (`select`) | Cleanest default dark select styling with compact sizing and accent focus state. | Similar but duplicated select styling exists in `SuggestedPicks` and `ProjectionsTable`. |
+| Number input + stepper | `DraftSettings.module.scss` (`numberInput`, `rosterStepper`, `stepButton`) | Strongest current compact stepper/input pattern. | Accent-heavy top/bottom border treatment may need softening for broader site use. |
+| Dense analytics table | `ProjectionsTable.module.scss` (`tableContainer`, `playersTable`, sticky `thead`, `sortableHeader`) | Heaviest and clearest full-table reference for filters, sticky headers, sorting, and action columns. | Contains duplicated/conflicting style declarations that need cleanup before canonical rollout. |
+| Compact standings / leaderboard table | `DraftBoard.module.scss` (`leaderboardSection`, `leaderboardTable`, `sortableHeader`, `currentTeamRow`) | Best reference for compressed leaderboard-style tables and highlighted current rows. | Strong current-turn gradients/animations should be optional, not default. |
+| Matrix / cell-state grid | `DraftBoard.module.scss` (`roundCell`, `pickCell`, `currentPick`, `draftedPick`) | Best reference for stateful compact cells in a matrix-like layout. | Some current-state animation and gradient intensity should be toned down in the canonical rules. |
+| Current row / selected row emphasis | `DraftBoard.module.scss` (`currentTeamRow`) | Best example of left-accent border plus restrained tint for active row emphasis. | Similar row highlighting should be standardized across all tables. |
+| Progress module | `MyRoster.module.scss` (`rosterProgress`, `progressBar`, `progressFill`) | Strongest compact progress block pattern inside a work panel. | Gradient fill is heavier than necessary for a default system token. |
+| Micro summary cards | `MyRoster.module.scss` (`teamSummary`, `summaryCard`) | Best current supporting-metric card pattern that does not overpower the main content. | Nested `.summaryValue` rules include confusing table-related styles that likely need cleanup. |
+| Search-and-act block | `MyRoster.module.scss` (`draftSection`, `searchInput`, `draftButton`) | Best compact search + primary action grouping. | Button treatment should be harmonized with the broader button system. |
+| Slot / composition cards | `MyRoster.module.scss` (`rosterSlot` and slot-list structure) | Best current reference for stacked structured cards representing roster or inventory slots. | Needs to be abstracted into a more general “slot card” rule in the final style guide. |
+| Recommendation rail | `SuggestedPicks.module.scss` (`cardsRow`) | Best horizontal rail pattern for featured/recommended items. | Card rail should preserve structure while allowing calmer card styling on non-dashboard pages. |
+| Canonical card anatomy | `SuggestedPicks.module.scss` (`card`, `cardSelected`, left accent strip) | Strongest current expression of the FHFH card identity: dark surface, visible border, left flat accent strip, compact metrics, strong hover state. | Heavy gradients, glow, blur, and neon intensity need to become optional tiers, not baseline defaults. |
+| Metric pills / inline tags | `SuggestedPicks.module.scss` (`stat`, `statLabel`, `statValue`, `tag`) | Best reference for compact supporting metrics inside cards. | Similar micro-metric patterns should be centralized as a shared primitive. |
+| Filter toolbar | `ProjectionsTable.module.scss` (`controlsBar`, `searchContainer`, `positionFilter`, `controlToggleBtn`) | Best full-featured filter toolbar with visible primary controls and secondary settings. | Pattern overlaps with `DraftSettings` and `SuggestedPicks`; needs consolidation into one control language. |
+| Run forecast / compact chart-adjacent strip | `ProjectionsTable.module.scss` (`miniRunForecast`, `runForecast`) | Best current compact “micro-visualization in a toolbar” pattern. | Should be documented as an advanced optional pattern rather than a base control. |
+| Modal / dialog shell | `DraftSummaryModal.module.scss`, `ComparePlayersModal.module.scss`, plus accessibility patterns from `ComparePlayersModal.tsx` and `ImportCsvModal.tsx` | Together they show a mature overlay/backdrop/shell/header/close-control/dialog-body system. | Visual intensity varies widely; canonicalization should stop at the shared shell level and not force all modal internals into one template. |
+
+### Consolidation Priorities
+
+1. Centralize repeated panel header/body patterns.
+2. Reduce the number of local button variants into a smaller documented family.
+3. Unify select, toggle, and compact toolbar controls across `DraftSettings`, `SuggestedPicks`, and `ProjectionsTable`.
+4. Preserve the left-accent card pattern while lowering default glow/gradient intensity.
+5. Treat `ProjectionsTable` as the canonical heavy-table reference after cleaning up duplicated/conflicting declarations.
+6. Include modal shell patterns in the style system, but keep specialized modal internals feature-specific.
+
+### Known Conflicts To Resolve Before Final Canonical Rollout
+
+1. `ProjectionsTable.module.scss` contains duplicated/conflicting control, checkbox, and table declarations.
+2. `MyRoster.module.scss` contains oddly nested table-related rules inside `.summaryValue`, which likely indicates dead, misplaced, or confusing styling.
+3. Panel headers are visually similar across modules but are reimplemented locally instead of being driven by a single shared primitive.
+4. Buttons and compact utility controls have drifted into too many local variants.
+5. Multiple modules still depend on stronger gradients, blur, and glow than the new style rules should allow by default.
+
+### Missing Element Types That Still Need Site Examples
+
+These elements are not represented strongly enough in `DraftDashboard` to become final canonical rules without another site example from elsewhere on FHFH:
+
+1. Data-page hero/header systems with eyebrow text, descriptive copy, breadcrumbs, and top-right metadata cards.
+2. Chart-first page layouts with large standalone charts, legends, annotations, chart toolbars, and chart-to-table transitions.
+3. Plain content sections for text-heavy explanatory areas, longform notes, or documentation-style blocks.
+4. Standard dropdown or action-menu popovers that are more advanced than a native `<select>`.
+5. Pagination patterns or “load more” navigation patterns for long tables/lists.
+6. Empty states that are page-level rather than in-panel or in-table.
+7. Inline notices/callouts that live in content flows rather than inside dense dashboard control surfaces.
+8. Any site-specific chart cards or chart-grid layouts that should define the canonical chart-page system beyond the limited forecast strips seen in `DraftDashboard`.
+
+Current recommendation:
+
+- Proceed using `DraftDashboard` as the canonical source for dashboard shells, controls, cards, progress modules, rails, tables, and modal shells.
+- Do not finalize canonical rules for the missing element families above until the owner provides a rendered site example for each one that matters.
+
+### Sandbox Reference Validation Matrix
+
+This is a working matrix for the sandbox review pass started on April 4, 2026. It is not yet a full completed pass across every primitive. The rule for the remaining review work is:
+
+1. Find the closest `DraftDashboard` reference first.
+2. If the element is not represented strongly enough there, fall back to another rendered site surface.
+3. Compare the sandbox recreation to that source.
+4. Approve, revise, or explicitly defer before moving to the next element.
+
+| Sandbox Primitive | Primary Reference | Fallback Reference | Review Outcome | Notes |
+| --- | --- | --- | --- | --- |
+| Dashboard shell | `DraftDashboard.module.scss` (`dashboardContainer`, `mainContent`, panel layout) | None | Approved | Sandbox shell should continue following the compact three-panel hierarchy rather than a hero-first page treatment. |
+| Data-page shell | No strong `DraftDashboard` equivalent | `underlying-stats` surfaces are the nearest live family, but not yet canonical | Deferred | Visual pass confirms the sandbox shell is usable, but no live canonical source exists yet. Final lock should happen during task `5.0`. |
+| Standard panel | Shared `DraftDashboard` / `DraftBoard` panel shell and header-body split | None | Approved | Live sandbox matches the compact dark bordered shell and header/body separation used across the dashboard workspace. |
+| Softened data panel | `DraftDashboard` panel shell as base anatomy | Data-page softening is currently guide-driven rather than source-complete | Deferred | The sandbox treatment is directionally correct, but it should not become final canon until the first `underlying-stats` production implementation establishes the true data-page source of truth. |
+| Left-accent card | `SuggestedPicks.module.scss` (`card`, selected card, left accent strip) | None | Approved | Live sandbox preserves the flat left accent strip, dark surface, and compact stack while intentionally toning down the optional glow intensity. |
+| Empty state | Weak within `DraftDashboard` | `start-chart.module.scss` (`emptyState`) | Deferred | The sandbox block is acceptable as a review aid, but the site still lacks a sufficiently strong canonical empty-state system beyond lightweight placeholders. |
+| Loading banner | Weak within `DraftDashboard` | `ProjectionsTable.module.scss` (`loadingState`, `loadingSpinner`) plus scattered lightweight loading copy elsewhere | Deferred | The sandbox banner is functional, but the site does not yet present one clearly canonical loading-state pattern across modules. |
+| Buttons | `DraftSettings` compact action buttons were the first dashboard reference reviewed | `GameGrid.module.scss` (`dateNav`, `dateButtonPrev`, `dateButtonNext`) | Approved after revision | Owner review chose the `GameGrid` control language over the earlier dashboard button approximation. |
+| Segmented toggle | `DraftSettings.module.scss` (`draftTypeToggle`) | `GameGrid.module.scss` (`modeToggle`, `modeButton`, `modeButtonActive`) | Approved after revision | Owner review chose `GameGrid` as the stronger canonical segmented-control match. |
+| Search input | `ProjectionsTable.module.scss` / `MyRoster.module.scss` (`searchInput`) | None | Approved after revision | Dark field, visible border, blue focus state, and italic condensed placeholder are now the approved sandbox behavior. |
+| Select / dropdown trigger | `DraftSettings.module.scss` (`select`) as the base dashboard source | `PlayerStatsFilters.module.scss` (`select`) | Approved after revision | Sandbox select and dropdown now follow the stronger filter-select behavior, with the owner-approved blue hover preview treatment. |
+| Text field / numeric input row | `DraftSettings.module.scss` (`numberInput`, grouped field rows) | None | Approved | The sandbox field row matches the compact dark input grouping and aligned utility-row density used in dashboard settings. |
+| Stepper | `DraftSettings.module.scss` (`rosterStepper`, `stepButton`) | None | Approved | The sandbox stepper matches the joined-control pattern and compact button/value proportions from the dashboard settings surface. |
+| Analytics table | `ProjectionsTable.module.scss` heavy-table pattern | `DraftBoard.module.scss` for compact leaderboard behaviors | Approved | Live sandbox matches the intended sticky-header, dense-row, numeric-alignment table family while using a calmer presentation than the production heavy table. |
+| Chart frame | No strong `DraftDashboard` equivalent beyond small forecast strips | `start-chart.module.scss` (`chartPanel`, header, legend structures) | Deferred | The sandbox chart frame is a useful placeholder, but a chart-first production page is still required before final canonical framing/legend rules should be treated as locked. |
+
+Review note:
+
+- The owner manually reviewed the sandbox through the dropdown/control tranche.
+- Buttons, segmented toggle, search input, and select/dropdown behavior were explicitly rejected in their earlier sandbox form and revised to match stronger site references.
+- The remaining sandbox primitives have now been walked through against rendered references on a clean local browser session.
+- Approved items are ready to act as sandbox canon.
+- Deferred items still intentionally await either the `underlying-stats` production restyle or a stronger chart/empty-state site example before they should be treated as final production canon.
+
+---
+
+## DraftSettings.tsx
+
+- Summary: Settings panel controlling league configuration, roster structure, scoring modes, projection source weighting, CSV import/export triggers, keepers, traded picks, and portable bookmark serialization. Debounced UX for weight editing and normalization, plus optional expansion UIs for adding/removing stats and categories.
+
+**Props**
+- Inbound: `settings`, `onSettingsChange`, `isSnakeDraft`, `onSnakeDraftChange`, `myTeamId`, `onMyTeamIdChange`, `undoLastPick`, `resetDraft`, `draftHistory`, `draftedPlayers`, `currentPick`, `customTeamNames`, `forwardGrouping`, `onForwardGroupingChange`, `sourceControls`, `onSourceControlsChange`, `goalieSourceControls`, `onGoalieSourceControlsChange`, `goalieScoringCategories`, `onGoalieScoringChange`, `onOpenSummary`, `onOpenImportCsv`, `customSourceLabel`, `availableSkaterStatKeys`, `availableGoalieStatKeys`, `onExportCsv`, `onRemoveCustomSource`, `pickOwnerOverrides`, `onAddTradedPick`, `onRemoveTradedPick`, `keepers`, `onAddKeeper`, `onRemoveKeeper`, `onBookmarkCreate`, `onBookmarkImport`, `playersForKeeperAutocomplete`.
+- Outbound: Calls parent callbacks to mutate settings and trigger actions; no children receive new props from this component.
+
+**Dependencies**
+- External: `react`, `lz-string` for bookmark compression, browser APIs (`localStorage`, `sessionStorage`, `alert`, `prompt`, `navigator.clipboard`).
+- Project: `PROJECTION_SOURCES_CONFIG`, `getDefaultFantasyPointsConfig`, CSS `DraftSettings.module.scss`, `PlayerAutocomplete`.
+- Types: `DraftSettings` type imported from `DraftDashboard`.
+
+**Data Flows**
+- League & roster: Stepper and inputs adjust `teamCount`, `draftOrder`, `myTeamId`, and `rosterConfig` via `onSettingsChange` and `onMyTeamIdChange`.
+- Modes: Toggles for `isSnakeDraft`, `leagueType`, `isKeeper`, and `forwardGrouping` propagate up.
+- Scoring: Points mode edits `settings.scoringCategories`. Categories mode edits `settings.categoryWeights`, split UI for skater vs goalie categories using available keys from parent.
+- Sources: Displays and edits `sourceControls`/`goalieSourceControls` with debounced numeric/slider inputs, optional auto-normalization to sum of 1.00 for selected sources. Custom sources can be removed via `onRemoveCustomSource`.
+- Goalie scoring: Separate `goalieScoringCategories` with add/remove, reset to defaults via `getDefaultFantasyPointsConfig("goalie")`.
+- Bookmarks: Builds a portable payload including parent-managed state fields (read-only here), compresses with `lz-string`, offers copy and prompt-based import, then calls `onBookmarkImport` to reconcile state in parent.
+- Keepers & traded picks: Provides UI for entering overrides and keepers; emits `onAddTradedPick`, `onRemoveTradedPick`, `onAddKeeper`, `onRemoveKeeper` with parsed values from DOM inputs.
+- Persistence/UX: Collapsed state stored in localStorage; “Unsaved/Saved” indicator debounced by hashing key inputs; popover for weight editing; normalization state badge.
+
+**Efficiency Gaps & Recommendations**
+- Debounced timers per source id:
+  - Current approach uses `Map` of timers for skater/goalie with frequent `setTimeout` churn. This is fine for small sets but can scale poorly with many sources.
+  - Recommendation: Use a single debounced commit per control set (skater/goalie) keyed by last edit time, aggregating all pending changes into one update. Reduces timer churn and renders.
+- DOM querying for forms (keeper/trade):
+  - Uses `document.getElementById` to read inputs, then pulses classes for error feedback.
+  - Recommendation: Convert to controlled local component state for round/pick/team fields. Improves React correctness and testability; removes direct DOM coupling and class pulsing via imperative code.
+- Normalization work and copies:
+  - `normalizeWeights`, `rebalanceWithAnchor`, and `orderSources` create new objects/arrays frequently.
+  - Recommendation: Memoize ordered source arrays and precomputed totals with `useMemo`. Consider performing share calculations on-the-fly without storing interim maps in state when `autoNormalize` is true.
+- Bookmarks and alerts:
+  - `alert`/`prompt` are blocking and can disrupt UX; clipboard API may fail silently.
+  - Recommendation: Provide non-blocking UI feedback (toast) and a modal for import. Keep `serializeBookmark`/`deserializeBookmark` but avoid blocking calls in production.
+- Labels from sessionStorage per render:
+  - Resolves custom CSV names by reading and parsing `draft.customCsvList.v2` on each render.
+  - Recommendation: Accept `customCsvList` or a `getCustomSourceLabel(id)` prop from parent to avoid storage reads within render.
+- Accessible controls clustering:
+  - Many buttons inside stepper rows; ensure `aria-*` labels maintained, but consider grouping in forms with submit handlers instead of imperative read on click.
+
+**Actionable Improvements (to implement post-audit)**
+- Convert keeper/trade inputs to controlled state:
+  - Local state: `tradeOwner`, `tradeRound`, `tradePick`, `keeperTeam`, `keeperRound`, `keeperPick`, `keeperSelectedPlayerId` (already). Dispatch callbacks using state values; remove `document.getElementById` and class pulsing via direct DOM.
+- Aggregate debounced source updates:
+  - Replace per-id timers with a single `useDebouncedCallback` that commits the latest working copy of controls after 200ms. Manage a local working `controlsDraft` object while sliders move.
+- Provide import/export UI hooks:
+  - Replace `alert/prompt` with `onToast(message)` prop and an `onOpenBookmarkImport()` modal signal. Keep backward compatibility for dev.
+- Accept custom CSV labeling via props:
+  - Add optional prop `getCustomSourceLabel?: (id: string) => string` and prefer it before reading sessionStorage.
+- Memoize derived values:
+  - `orderSources(obj)`, `totalActiveSourceWeight`, and `totalActiveGoalieSourceWeight` can be memoized by shallow-equality of control maps to reduce re-renders.
+- Guard coercion effect:
+  - Coercion from percents to scalars should only run once per mount or when a clear violation is detected; add a guard ref to prevent repeated warnings.
+
+**Connections & Cross-References**
+- Consumes and mutates state owned by `DraftDashboard.tsx`. Critical contracts:
+  - Source control shapes and normalization expectations used by `useProcessedProjectionsData` in the parent.
+  - Category/scoring keys must align with `availableSkaterStatKeys`/`availableGoalieStatKeys` computed in the parent from processed players.
+  - Keeper/trade handlers directly alter parent’s `draftedPlayers` and `pickOwnerOverrides`, affecting `currentTurn`, `teamStats`, and `posNeeds`.
+  - Bookmark import/export mirrors the parent’s Snapshot V2 fields; ensure parity with any future persistence refactors.
+
+**Potential Acceptance Tests (informal)**
+- Changing any source weight updates share badges and calls `onSourceControlsChange` after debounce; normalization sums to ~1.00 for selected sources when Auto is on.
+- Adding/removing skater/goalie stats updates respective configs and hides “Add” when nothing is available.
+- Keeper and traded pick additions propagate callbacks with correct parsed values and reflect in parent state (e.g., current pick auto-advance on keepers).
+- Team count changes update `draftOrder` and `myTeamId` validity; roster stepper respects per-position max.
+
+---
+
+## DraftBoard.tsx
+
+- Summary: Visualizes draft progress and team standings. Renders a leaderboard with category totals and team VORP, a GitHub-style contribution grid of rounds/picks (with traded pick ownership and keeper badges), and supports inline team name editing. Derives dynamic categories from settings and computes per-team aggregates using the complete player pool.
+
+**Props**
+- Inbound: `draftSettings`, `draftedPlayers`, `currentTurn` ({ round, pickInRound, teamId, isMyTurn }), `teamStats`, `isSnakeDraft`, `availablePlayers` (optional), `allPlayers` (complete player pool), `onUpdateTeamName`, `pickOwnerOverrides`, `keepers`, `vorpMetrics` (Map by playerId).
+- Outbound: Calls `onUpdateTeamName(teamId, newName)` when editing team names.
+
+**Dependencies**
+- External: `react` (state, memo, effect, refs), DOM timing (`setTimeout`), environment check for DEBUG.
+- Project: Types from `DraftDashboard`, `ProcessedPlayer` from `useProcessedProjectionsData`, `PlayerVorpMetrics` from `useVORPCalculations`, CSS `DraftBoard.module.scss`.
+
+**Data Flows**
+- Augmented pool: Builds `augmentedAllPlayers` Map → Array to ensure every drafted player has a placeholder if missing from `allPlayers` (guards against source-filtered pools).
+- Team names: Builds `teamNameById` from `teamStats` (preferred) or `draftSettings.draftOrder` fallback.
+- Contribution grid: Iterates teams × rounds, determines pick owner (snake + `pickOwnerOverrides`), marks current pick, keeper cells, and traded ownership; colors by projected fantasy points intensity from `augmentedAllPlayers`.
+- Leaderboard: Derives `teamStatsWithCategories` by recomputing category sums from `draftedPlayers` using `augmentedAllPlayers` plus dynamic categories from `draftSettings.categoryWeights` that aren’t part of a fixed core. Computes `teamScoreAvg` in categories leagues from `vorpMetrics.value`.
+- Extents: Computes per-category and metric extents for heat coloring cells. Sorting supports core categories, dynamic categories, teamVorp, and projectedPoints/score.
+- Editing: Inline team name edit with refs for autofocus and a blur-timeout to commit changes via `onUpdateTeamName`.
+
+**Efficiency Gaps & Recommendations**
+- O(n) lookups inside loops:
+  - Uses `Array.find` within per-team loops (e.g., `augmentedAllPlayers.find`), which leads to O(n·m) behavior.
+  - Recommendation: Build a `playerById` Map once from `augmentedAllPlayers` and use O(1) lookups throughout grid and leaderboard aggregation. The file already builds `allPlayersData` Map; reuse it universally to avoid any remaining `.find` calls.
+- Rebuilding augmented pool:
+  - `augmentedAllPlayers` recreates an Array from a Map every time; downstream code immediately turns it back into a Map (`allPlayersData`).
+  - Recommendation: Keep `augmentedAllPlayersMap` as a Map in memo and derive both Array (when needed for iteration) and Map from the same memo source to avoid duplicate conversions.
+- Heatmap intensity scaling:
+  - `maxFantasyPoints` scans all augmented players each render dependency change.
+  - Recommendation: Derive while constructing the Map to avoid a second pass, or cache `maxFantasyPoints` as part of the same memo that builds the Map.
+- Debug logging:
+  - Extensive `console.log` in `teamStatsWithCategories` and editing handlers can be noisy in production.
+  - Recommendation: Wrap behind a runtime `DEBUG` flag (already present) and ensure stripped or disabled in production builds.
+- Contribution grid scale:
+  - Renders teams × rounds cells; with many rounds the DOM count grows large.
+  - Recommendation: Consider virtualization for the grid (windowing) when team count × rounds > threshold, or chunk into rows with lazy rendering.
+- Blur debounce for submit:
+  - `setTimeout` per blur may conflict if many edits happen quickly.
+  - Recommendation: Use a stable debounced submit per `editingTeam` or commit on Enter and explicit checkmark button; keep blur simple to cancel edit.
+
+**Actionable Improvements (to implement post-audit)**
+- Replace `.find` lookups:
+  - Build `const playerById = useMemo(() => new Map(augmentedAllPlayers.map(p => [String(p.playerId), p])), [augmentedAllPlayers]);` and use `playerById.get(id)` in leaderboard category sums and contribution grid.
+- Single memo for pool + max:
+  - Memoize `{ playerById, maxFantasyPoints }` from `allPlayers` and `draftedPlayers`; remove the separate `maxFantasyPoints` pass and derive intensity directly from memo output.
+- Consolidate team name editing:
+  - Provide a single input instance via portal/modal or maintain controlled state keyed by `editingTeam` with a `useDebouncedCallback` for submit. This removes ref juggling across two inputs.
+- Optional virtualization:
+  - Introduce windowing for the contribution grid when `roundsToShow` is large (e.g., > 20) or teamCount > 16 to keep DOM size manageable.
+- Hoist derived dynamic keys:
+  - Accept `dynamicCategoryKeys` from parent (optional) to ensure consistent derivation with parent’s stats and reduce per-component derivation churn.
+
+**Connections & Cross-References**
+- Consumes `teamStats` computed in `DraftDashboard.tsx` but also recomputes category totals locally using `augmentedAllPlayers`. Ensure these stay consistent with parent logic; consider sharing a single `useTeamStats` hook across both to avoid divergence.
+- Uses `vorpMetrics` from parent to compute `teamScoreAvg` for categories. Align semantics with how `SuggestedPicks` and `ProjectionsTable` display/weight scores.
+- Depends on `pickOwnerOverrides` and `keepers` semantics set in `DraftSettings` → parent; grid rendering reflects those decisions visually.
+
+**Potential Acceptance Tests (informal)**
+- Sorting by each column orders rows correctly; toggling sort direction flips order.
+- Keeper/traded pick flags render correct badges and ownership tooltips; current pick cell highlights as expected.
+- Team name edit: clicking a name focuses input, Enter commits, Escape cancels, blur after 100ms commits change; parent receives `onUpdateTeamName` with trimmed value.
+- Category totals and VORP cells match sums reported by parent `teamStats` for the same players.
+
+This single document will accumulate file-by-file findings and cross-references for the Draft Dashboard feature.
+
+---
+
+## DraftDashboard.tsx
+
+- Summary: Top-level orchestrator for the draft experience. Manages session state, projections ingestion (skaters/goalies + custom CSV), team/draft flow, VORP metrics, and passes rich props to child components.
+
+**Props**
+- Component: `DraftDashboard`: no incoming props (root container).
+- Outbound (to children):
+  - `DraftSettings`: `settings`, `onSettingsChange`, `isSnakeDraft`, `onSnakeDraftChange`, `myTeamId`, `onMyTeamIdChange`, undo/reset handlers, history, `draftedPlayers`, `currentPick`, `customTeamNames`, `forwardGrouping`, `onForwardGroupingChange`, source controls (skater/goalie), goalie scoring, modal openers, `customSourceLabel`, available stat keys, CSV export handler, custom-source removal, traded-picks & keepers handlers and data, `playersForKeeperAutocomplete`, `customSourceResolutions`, bookmark create/import handlers.
+  - `SuggestedPicks`: `players`, `vorpMetrics`, need-weight toggles and alpha, `posNeeds`, `currentPick`, `teamCount`, `baselineMode`, `nextPickNumber`, `onDraftPlayer`, `canDraft`, `leagueType`, `catNeeds`, `rosterProgress`, personalize replacement toggles.
+  - `DraftBoard`: `draftSettings`, `draftedPlayers`, `currentTurn`, `teamStats`, `isSnakeDraft`, `availablePlayers`, `allPlayers`, `onUpdateTeamName`, `pickOwnerOverrides`, `keepers`, `vorpMetrics`.
+  - `MyRoster`: `myTeamId`, `teamStatsList`, `draftSettings`, `availablePlayers`, `allPlayers`, `onDraftPlayer`, `onMovePlayer`, `canDraft`, `currentPick`, `currentTurn`, `teamOptions`, `vorpMetrics`, need-weight toggles and alpha, `posNeeds`, `forwardGrouping`.
+  - `ProjectionsTable`: `players`, `allPlayers`, `draftedPlayers`, `isLoading`, `error`, `onDraftPlayer`, `canDraft`, `vorpMetrics`, `replacementByPos`, `baselineMode`, `onBaselineModeChange`, `expectedRuns`, need-weight toggles and alpha, `posNeeds`, `nextPickNumber`, `leagueType`, `forwardGrouping`, enabled skater/goalie stat keys.
+  - `DraftSummaryModal`: `isOpen`, `onClose`, `draftSettings`, `draftedPlayers`, `teamStats`, `allPlayers`, `vorpMetrics`.
+  - `ImportCsvModal`: `open`, `onClose`, minimum coverage/name-fallback, `onImported` (persists CSV to session and toggles sources).
+
+**Dependencies**
+- External: `react` (hooks), browser APIs (`localStorage`, `sessionStorage`, `Blob`, `URL`, `window.addEventListener`), `console` logging.
+- Project libs/hooks:
+  - `hooks/useProcessedProjectionsData`, types `ProcessedPlayer`, `CustomAdditionalProjectionSource`.
+  - `hooks/useVORPCalculations` (VORP, replacement, expected runs).
+  - `hooks/useCurrentSeason`.
+  - `lib/projectionsConfig/*`: `getDefaultFantasyPointsConfig`, `PROJECTION_SOURCES_CONFIG`.
+  - `lib/supabase` (passed into projections hook).
+- Internal components: `DraftSettings`, `DraftBoard`, `MyRoster`, `ProjectionsTable`, `SuggestedPicks`, `DraftSummaryModal`, `ImportCsvModal`, CSS module `DraftDashboard.module.scss`.
+
+**Data Flows**
+- Projections ingestion:
+  - Two calls to `useProcessedProjectionsData` (skater/goalie), configured via `sourceControls`/`goalieSourceControls`, league settings, season, and custom CSV sources from `sessionStorage` list `draft.customCsvList.v2`.
+  - Custom CSV rows are split by position (skater vs goalie) and mapped to standardized stat keys. Name-fallback and per-source coverage drive UI banners.
+- Aggregation:
+  - `skaterPlayers` + `goaliePlayers` -> `allPlayers`.
+  - `availablePlayers` filters `allPlayers` by `draftedPlayers` via a Set.
+- Metrics:
+  - `useVORPCalculations` consumes `allPlayers`, `availablePlayers`, settings, picks-until-next, `baselineMode`, `forwardGrouping`, `personalizeReplacement`, `prorate82` -> returns `vorpMetrics` Map, `replacementByPos`, `expectedTakenByPos`, `expectedN`.
+- Team/draft state:
+  - `draftSettings`, `currentPick`, `isSnakeDraft`, `myTeamId`, `draftedPlayers`, `positionOverrides`, traded-pick owner overrides, `keepers`, custom team names.
+  - `currentTurn` computed from `currentPick`, snake logic, and overrides.
+  - `teamStats` derives per-team roster slot fills, bench, projected points, category totals, and `teamVorp` by summing `vorpMetrics` for drafted players.
+  - `posNeeds` and `catNeeds` derived from `teamStats`; `rosterProgress` for progress bar.
+- Persistence/session:
+  - Snapshot V2 persisted to `sessionStorage` key `draft.snapshot.v2` (contains nearly all draft state incl. controls and CSV list). Prompt to resume on mount.
+  - Legacy session V1 in `localStorage` (`draftDashboard.session.v1`) also has a resume prompt, but see note under Efficiency.
+  - Several independent localStorage flags: `forwardGrouping`, `personalizeReplacement`, `baselineMode`, `needWeightEnabled`, `needAlpha`, `projections.prorate82`.
+- UI interactions:
+  - `draftPlayer`, `undoLastPick`, `resetDraft`, `assignPlayerToSlot`.
+  - Auto-skip already drafted picks (keepers) by advancing `currentPick`.
+  - Keyboard shortcuts: U (undo), S (summary), N (need-weight toggle), B (baseline toggle).
+  - Data refresh button bumps `refreshKey` to re-query projections.
+  - CSV export builds a blended projections file from `allPlayers`.
+
+**Style Audit: Root Shell and Layout Hierarchy**
+- Page shell:
+  - `dashboardContainer` establishes the canonical dashboard-page wrapper: full-width, full-height dark canvas, internal padding, vertical stacking, and consistent section gaps.
+  - The shell reads as a tool surface rather than a marketing page. It avoids a hero and moves directly into functional controls.
+- Section order:
+  - The visual hierarchy is `settings` -> `suggested picks rail` -> `three-panel workspace`.
+  - This is a strong reference for other application pages that should feel immediate and utility-first.
+- Top control region:
+  - The settings section is full-width and visually reads as the control plane for the rest of the screen.
+  - It uses an opaque panel treatment, compact padding, and strong border/shadow definition rather than a decorative container.
+- Mid-page recommendation rail:
+  - `suggestedSection` acts as a transitional strip between configuration and heavy workspace content.
+  - This pattern is useful for “secondary but high-value” content that should stay visible without competing with the main work area.
+- Main workspace grid:
+  - `mainContent` is the clearest root layout reference in the dashboard: a three-column 2fr / 1fr / 2fr grid with a deliberately emphasized center column.
+  - The center panel is visually differentiated through a stronger border and glow treatment, which makes it the natural “your team / primary focus” column.
+- Shared panel anatomy:
+  - `leftPanel`, `centerPanel`, and `rightPanel` share the same base shell: dark surface, border, radius, flex-column structure, overflow clipping, and box shadow.
+  - This is the canonical example of how related panels should feel like part of one system before local variations are applied.
+- Highlighted primary panel:
+  - `centerPanel` is the canonical “featured panel” variant: same base anatomy as sibling panels, but with stronger emphasis through border weight, accent color, and elevated treatment.
+  - This should inform future guidance for “primary focus” panels without turning every page into a neon-heavy layout.
+- Header/content split:
+  - `panelHeader` and `panelContent` define a repeatable split used across the dashboard: compact dark title band above a padded scrollable content body.
+  - This is a strong candidate for canonical panel/header rules in the style guide because the pattern recurs across multiple dashboard modules.
+- Spacing:
+  - The root shell uses compact but readable spacing. The layout succeeds because spacing is disciplined and repeated, not because any one surface is oversized.
+  - This is an important contrast with the current `underlying-stats` landing page, which uses looser spacing and more decorative top treatment.
+- Responsive behavior:
+  - On narrower screens, the three-column workspace collapses to a single column and the center panel moves first.
+  - This is a useful canonical responsive rule for priority-based panel stacks: preserve the same surfaces, but reorder by user importance rather than visual symmetry.
+- Style-system implications:
+  - The best transferable rules from this root shell are: utility-first page entry, compact section spacing, strong opaque panel shells, a repeatable header/body split, and one deliberately emphasized focal panel per workspace.
+  - The less-transferable rules are the more decorative parts of the center-panel gradient/glow and the animated shimmer treatment on the summary button; these should be optional accents, not defaults.
+
+**Efficiency Gaps & Recommendations**
+- Repeated lookups by ID:
+  - Pattern: `allPlayers.find(p => String(p.playerId) === draftedPlayer.playerId)` inside loops (e.g., building `teamStats`). This is O(n) per lookup and becomes O(n·m) for `m` drafted players per team.
+  - Recommendation: Memoize `playerById` as `Map<string, ProcessedPlayer>` via `useMemo` and replace all `.find` usages with O(1) map lookups. Expectably reduces `teamStats` and category aggregation cost significantly.
+- CSV list access cost:
+  - `getCsvList()` reads/parses `sessionStorage` during render to build `customAdditionalSources` for both hooks. This runs every render.
+  - Recommendation: Hoist a `csvList` state with initial read + dedicated setters. Pass `csvList` into hooks and update `refreshKey` when list changes. This avoids repeated storage I/O and JSON parsing.
+- Duplicate resume gate:
+  - Two mount effects check `resumeAttemptedRef`. The first (Snapshot V2) sets the ref, which prevents the second (Legacy V1) from ever running. If that’s intentional (V2 supersedes V1), consider removing the second effect or separating refs with clear precedence logic. If not intentional, use distinct refs or a single consolidated resume flow with precedence: V2 -> V1.
+- Allocation churn in derived arrays/sets:
+  - `availableSkaterStatKeys`/`availableGoalieStatKeys` rebuild large sets each time `allPlayers` changes. This is acceptable, but if costly in practice, consider computing once per processed results or doing it server-side during `useProcessedProjectionsData`.
+- Console logging in hot path:
+  - Multiple `console.log`/`console.warn` run on every render or data change (debug traces). Gate by `process.env.NODE_ENV !== 'production'` or behind a `debug` flag.
+- Team stats assembly:
+  - `teamPlayers` per team could be computed once via a `Map<teamId, DraftedPlayer[]>` before iterating teams. This avoids repeated filters.
+- Auto-skip effect:
+  - The auto-advance of `currentPick` on keepers can produce many re-renders when initializing large keeper sets. Consider a while-loop within a single effect pass or precomputing the next available pick.
+- Storage writes:
+  - Many independent effects write to `localStorage`/`sessionStorage`. Batch writes and/or debounce to reduce synchronous main-thread cost. A custom `usePersistedState` could centralize this.
+- Monolith component size:
+  - Consider extracting logic into hooks: `useDraftPersistence`, `useCsvSources`, `useTeamStats(playerById, draftedPlayers, settings)`, `useUiShortcuts`. This will improve readability and potentially memoization boundaries.
+
+**Actionable Improvements (to implement post-audit)**
+- Player index map:
+  - Create `const playerById = useMemo(() => new Map(allPlayers.map(p => [String(p.playerId), p])), [allPlayers]);` and replace all `allPlayers.find(...)` lookups within `teamStats`, `teamVorp` sums, and keeper handling with `playerById.get(id)`.
+- Group drafted players by team once:
+  - Before mapping `teamStats`, build `const draftedByTeam = useMemo(() => { const m = new Map<string, DraftedPlayer[]>(); draftedPlayers.forEach(dp => { const a = m.get(dp.teamId) || []; a.push(dp); m.set(dp.teamId, a); }); return m; }, [draftedPlayers]);` and then use `draftedByTeam.get(teamId) || []`.
+- Hoist CSV list from storage to state:
+  - Replace ad-hoc `getCsvList()`/`setCsvList()` with `const [csvList, setCsvList] = useState<SessionCsvEntry[]>(() => initialReadFromSession());` and update the projections hooks’ `customAdditionalSources` to depend on `csvList`. Write back to storage only when `csvList` changes.
+- Consolidate session resume flows:
+  - Prefer Snapshot V2. Remove or gate the Legacy V1 resume effect behind a check that V2 didn’t resume. Alternatively, merge into a single `useDraftPersistence` hook with precedence V2 -> V1 and a single `resumeAttemptedRef`.
+- Reduce storage write frequency:
+  - Batch related flags into a single object and persist via a debounced effect (e.g., 200ms) or a custom `useDebouncedLocalStorage(key, value)`.
+- Gate debug logging:
+  - Wrap dev logs with `if (process.env.NODE_ENV !== 'production') { ... }` or a `const debug = false` flag to minimize noise and work in production.
+- Optimize keeper auto-skip:
+  - Replace the simple effect with a loop that advances `currentPick` until it reaches the next non-drafted pick within a single state update to avoid multiple renders on init with many keepers.
+- Extract heavy logic to hooks:
+  - `useTeamStats(playerById, draftedPlayers, draftSettings, vorpMetrics)`
+  - `useCsvSources(csvList, setCsvList)` (adds/removes sources and triggers `refreshKey`)
+  - `useUiShortcuts({ undoLastPick, setIsSummaryOpen, setNeedWeightEnabled, setBaselineMode })`
+
+**Connections & Cross-References**
+- First file in the audit; no prior connections. Establishes the data contract for: `DraftSettings`, `DraftBoard`, `MyRoster`, `ProjectionsTable`, `SuggestedPicks`, `DraftSummaryModal`, `ImportCsvModal`.
+  - Key shared types/props to watch in subsequent files: `vorpMetrics` (Map by `playerId`), `replacementByPos`, `expectedRuns` shape, `availablePlayers` vs `allPlayers`, roster assignment (`positionOverrides` semantics), and CSV/custom-source surfaces.
+
+**Potential Acceptance Tests (informal)**
+- Changing `sourceControls` or importing CSV updates `allPlayers` and Suggested Picks without full page reload.
+- Drafting, undo, keepers, and traded-pick overrides update `currentTurn`, `teamStats`, and `posNeeds` deterministically.
+- Toggling `forwardGrouping` updates roster config and downstream needs/VORP behavior.
+- Session resume works from Snapshot V2; legacy V1 is clearly deprecated or still functional depending on chosen strategy.
+
+**Style Audit: Draft Settings Control System**
+- Container treatment:
+  - `settingsContainer` is currently more glass-heavy than the root dashboard shell, but its structure is still the clearest reference for a dense control plane.
+  - The best reusable pattern is the compact, full-width control container with grouped subsections, not necessarily the blur/glass effect itself.
+- Header composition:
+  - `settingsHeader` combines the main page title with a right-aligned action/control cluster.
+  - This is a strong reference for pages that need a title plus immediate utility controls in the same band.
+- Action clustering:
+  - `headerActions` demonstrates a useful pattern: related high-priority controls are grouped horizontally and kept close to the title rather than scattered down the page.
+  - The status badges, toggle rail, summary button, and collapse button all read as one compact utility cluster.
+- Segmented toggle rail:
+  - `draftTypeToggle` is the clearest canonical segmented-control pattern in the current site.
+  - The rail uses a dark inset track, compact inner padding, and small-radius pills.
+  - `toggleButton.active` is the canonical active state: semi-opaque accent fill, visible accent border, and stronger text contrast.
+  - Inactive buttons stay quiet and only gain accent treatment on hover.
+- Compact action buttons:
+  - `summaryButton`, `inlineResetBtn`, and `actionButton` together show the current site’s compact dashboard button language: small height, uppercase/accent typography, border-led emphasis, and restrained spacing.
+  - This family is a good starting point for canonical “dashboard compact action” rules, though button variants need to be consolidated in the final guide.
+- Collapse/icon control:
+  - `collapseButton` is a useful reference for tiny utility icon buttons: square footprint, subtle border, dark fill, quiet default state, and accent hover.
+  - This should become a documented icon-button variant rather than staying an ad hoc one-off.
+- Settings grid:
+  - `settingsGrid` and the nested fieldsets demonstrate the best current pattern for multi-group settings pages: responsive auto-fit columns, compact internal spacing, and section-level containment.
+  - This is a strong page archetype for dense forms and configuration surfaces.
+- Settings groups and legends:
+  - The fieldset/legend pattern creates readable subgrouping without needing oversized cards.
+  - This should inform canonical rules for “control groups” and “subsections” in the final style guide.
+- Row anatomy:
+  - `settingRow` uses a simple two-sided label/control alignment that works well for compact administrative settings.
+  - This is a better reference for data-heavy control pages than a full stacked form layout.
+- Selects:
+  - `select` is the clearest base dropdown rule in the dashboard: dark surface, visible border, compact radius, compact padding, and accent focus ring.
+  - This should become the canonical default select treatment across the site.
+- Number inputs and steppers:
+  - `numberInput` plus `rosterStepper` and `stepButton` form the best existing stepper/input pattern.
+  - The current number input is visually distinctive because of top/bottom accent borders rather than a full outline. This may be worth softening for broader site use, but it is still the current best reference for compact stepper-based numeric controls.
+- Density and spacing:
+  - The settings surface succeeds because spacing is intentionally compressed: legends, rows, subgroup titles, and controls all use reduced padding and margin values without becoming unreadable.
+  - This density profile should directly influence the `underlying-stats` restyle, which currently feels looser and less “tool-like.”
+- Style-system implications:
+  - Canonical control rules should borrow the segmented rail, compact fieldset grouping, responsive settings grid, and dark bordered selects directly from this module.
+  - The final style guide should reduce local style sprawl by collapsing the many button and helper variants into a smaller documented family.
+
+**Style Audit: Draft Board Dense Grid and Leaderboard Patterns**
+- Subsection headers:
+  - The compact subheaders used for “Team Standings” and “Draft Graph” are strong references for dense in-panel section headers.
+  - They work because they combine a short accent title with a terse supporting summary instead of a large decorative band.
+- Dense data container:
+  - `leaderboardSection` is a strong canonical reference for an analytics table container: tight padding, dark inset surface, visible divider, and scrollable interior.
+  - This should inform canonical table-section framing across the site.
+- Sticky table header:
+  - `leaderboardTable thead` and its `th` cells are among the clearest current references for sticky analytics headers.
+  - The key transferable traits are compact height, uppercase labeling, strong bottom border, and enough contrast to stay readable while scrolling.
+- Sortable header affordance:
+  - `sortableHeader` and `activeSortHeader` provide a useful baseline for interactive column headers: subtle hover accent, active tint, and small directional indicators.
+  - This should directly shape the style guide’s default sortable-table behavior.
+- Dense row language:
+  - The leaderboard rows are intentionally compressed and rely on striping, alignment, and restrained hover states rather than oversized spacing.
+  - This density profile is a better reference for data pages than the looser current `underlying-stats` presentation.
+- Current row emphasis:
+  - `currentTeamRow` shows a good canonical pattern for highlighting an important row: left accent border plus restrained background tint.
+  - This pattern should be reusable for “current”, “selected”, or “my team” rows elsewhere.
+- Stateful grid cells:
+  - `roundCell` versus `pickCell` is a strong example of hierarchy in matrix-like data: anchor cells get stronger accent treatment while data cells stay neutral until state changes.
+  - `currentPick`, `pastPick`, and `draftedPick` show how one shared base cell can branch into multiple clearly legible states.
+- Status banners inside panels:
+  - `currentTurnStatus`, `myTurnIndicator`, and `otherTurnIndicator` show how status can live inside a panel instead of becoming a page-level alert.
+  - The layout pattern is reusable; the stronger gradients and pulse animation should likely become optional rather than default.
+- Visual hierarchy in dense data:
+  - The module succeeds by using compact typography, small-radius cells, strong borders, and clear state color semantics.
+  - This is one of the strongest references for future schedule tables, standings views, and compact heatmap-style matrix layouts.
+- Style-system implications:
+  - The most transferable rules here are sticky table headers, compact sortable columns, current-row accenting, and shared base cell anatomy with state variants.
+  - The less-transferable rules are the more animated or gradient-heavy status treatments, which should be documented as optional emphasis rather than baseline behavior.
+
+---
+
+## MyRoster.tsx
+
+- Summary: Team roster panel with player search/draft and a visual roster composition view. Supports viewing any team's roster, drafting a selected player via autocomplete, showing projected totals, and indicating eligible move targets for a selected rostered player. Prepares recommendation ranking via `usePlayerRecommendations` (state and sorting are wired), but no recommendations UI is currently rendered and the keyboard handler is not attached.
+
+**Props**
+- Inbound: `myTeamId`, `teamStatsList: TeamDraftStats[]`, `draftSettings`, `availablePlayers`, `allPlayers`, `onDraftPlayer(playerId)`, `onMovePlayer?(playerId, targetPos)`, `canDraft`, `currentPick`, `currentTurn` ({ round, pickInRound, teamId, isMyTurn }), `teamOptions`, `vorpMetrics?`, `needWeightEnabled?`, `needAlpha?`, `posNeeds?`, `forwardGrouping?`.
+- Outbound: Calls `onDraftPlayer` when clicking Add Player; calls optional `onMovePlayer` when moving a selected roster player into an empty eligible slot.
+
+**Dependencies**
+- External: `react` hooks, browser `localStorage` for persisting suggested picks sort.
+- Project: `PlayerAutocomplete`, `TeamRosterSelect`, CSS `MyRoster.module.scss`, types `DraftSettings`, `TeamDraftStats`, `DraftedPlayer` from `DraftDashboard`; `ProcessedPlayer` from `useProcessedProjectionsData`; `usePlayerRecommendations` and `PlayerVorpMetrics` from `useVORPCalculations`.
+
+**Data Flows**
+- Team selection: Local state `selectedViewTeamId` mirrors `myTeamId` when viewing self; can switch to any team via `TeamRosterSelect` or quick "My Team" button. Derives `selectedTeamStats` and `selectedTeamName` from `teamStatsList`/`teamOptions`.
+- Player search/draft: `PlayerAutocomplete` receives a processed list of `allPlayers` (mapped to the autocomplete's expected shape) and an ADP map for sorting. Selecting populates `selectedPlayerId`; clicking Add triggers `onDraftPlayer` for the current team and resets selection.
+- Recommendations (not rendered): `usePlayerRecommendations` consumes `availablePlayers`, `vorpMetrics`, `posNeeds`, `needWeightEnabled`, `needAlpha`, `currentPick`, and `teamCount` to compute `recommendations`. The component defines sort state (`recSortField`, `recSortDir`) and keyboard navigation helpers (`selectedRecId`, `onRowKeyDown`), but there is no JSX rendering a list or table yet.
+- Roster progress: Computes `totalRosterSpots` from `draftSettings.rosterConfig`; `currentPlayerCount` from `selectedTeamStats.rosterSlots` and `bench`. Renders progress bar and summary cards.
+- Roster composition: For each position in `positionsToShow` (respects `forwardGrouping` and treats `UTILITY` specially), renders slot cards up to the max count from `rosterConfig`. Click behavior: clicking a filled slot selects that player for potential move; clicking an empty, eligible target slot invokes `onMovePlayer(selected.playerId, pos)` and clears selection.
+- Eligibility logic: Determines eligible target positions from a player's `eligiblePositions` or `displayPosition`, merges forwards into `FWD` when grouping is on, and allows all skaters to move to `UTILITY` when present; goalies cannot move to `UTILITY`.
+- Bench: Renders bench slots with player names; no move interactions in current implementation.
+
+**Efficiency Gaps & Recommendations**
+- Unused recommendations UI:
+  - State and handlers for recommendations (sorting, selected item, keyboard nav) are present, but no DOM renders them and `onRowKeyDown` is not attached.
+  - Recommendation: Either remove the dead code or add a minimal Recommendations table with attached keyboard handler, or integrate into an existing panel.
+- Player mapping per render:
+  - `playersOverride` for `PlayerAutocomplete` is rebuilt on every render and `adpByPlayerId` scans `allPlayers` to build an object map.
+  - Recommendation: Memoize `playersOverride` and reuse the same memo for `adpByPlayerId`. Consider moving these to a shared hook if multiple components need them.
+- Recommendations sorting stability:
+  - Sorting calls `arr.sort` even when `recSortField === 'rank'`, returning `0` and doing needless work.
+  - Recommendation: Skip sorting for `'rank'` to preserve incoming order from the hook and avoid extra allocations.
+- Keyboard navigation index lookup:
+  - Rebuilds `ids` array and uses `indexOf` on every keydown.
+  - Recommendation: Cache `ids` in `useMemo` and track a numeric `selectedIndex`; derive `selectedRecId` from index.
+- Inline handlers for many slots:
+  - Closures created for each slot cell may churn with frequent renders.
+  - Recommendation: Extract `RosterSlot` and `BenchSlot` components with stable props or use `useCallback` with positional args.
+- LocalStorage writes on every sort tweak:
+  - Persisting `recSortField` and `recSortDir` immediately is fine but can be debounced.
+  - Recommendation: Debounce writes or batch into a single key (e.g., `{ field, dir }`).
+
+**Actionable Improvements (to implement post-audit)**
+- Memoize heavy derived props:
+  - `const playersOverride = useMemo(() => allPlayers.map(p => ({ id: Number(p.playerId), fullName: p.fullName })), [allPlayers]);`
+  - `const adpByPlayerId = useMemo(() => Object.fromEntries(allPlayers.filter(p => Number.isFinite(p.yahooAvgPick)).map(p => [p.playerId, p.yahooAvgPick!])), [allPlayers]);`
+- Render or remove recommendations:
+  - Option A: Add a compact table listing top `recommendations` with sortable headers and attach `onKeyDown` for ArrowUp/Down.
+  - Option B: Remove the unused recommendation state and handlers until the UI is ready to avoid confusion.
+- Respect `canDraft` and turn state:
+  - Disable the Add button when `!canDraft` or `!currentTurn.isMyTurn` to prevent accidental drafting.
+- Strengthen eligibility logic helper:
+  - Extract a `getEligibleTargets(player, currentPos, forwardGrouping, hasUtility)` helper to centralize the logic and reuse in future drag-and-drop.
+- Extract slot components:
+  - Create memoized `RosterSlot`/`BenchSlot` to reduce re-renders and isolate click logic.
+
+**Connections & Cross-References**
+- Consumes `teamStatsList`, `draftSettings`, and `currentTurn` from `DraftDashboard.tsx`; move operations should align with the parent’s `assignPlayerToSlot` semantics to keep `rosterSlots` consistent.
+- Shares `vorpMetrics`, `posNeeds`, and forward grouping behavior with `SuggestedPicks` and `ProjectionsTable`. Ensure position naming (`FWD` vs `C/LW/RW` vs `UTILITY`) remains consistent across components.
+- `TeamRosterSelect` options originate from parent team name state; editing team names in `DraftBoard` should reflect here via `teamOptions`.
+
+**Potential Acceptance Tests (informal)**
+- Searching and selecting a player enables the Add button; clicking adds to the active team, clears selection, and decrements availability from `availablePlayers` upstream.
+- Switching the view team updates roster composition and progress counts; My Team button jumps back to `myTeamId`.
+- Selecting a rostered player highlights eligible empty slots; clicking an eligible empty slot moves the player and clears selection (fires `onMovePlayer`).
+- If a Recommendations panel is added: sorting and navigating updates selection with ArrowUp/Down and persists across reload via localStorage.
+
+---
+
+## SuggestedPicks.tsx
+
+- Summary: Renders a ranked set of suggested picks using `usePlayerRecommendations`, with optional availability estimation, roster-need adjusted VORP, multi/single position filters, keyboard shortcuts, and the ability to draft directly from cards. Provides a roster progress bar that doubles as a multi-select position filter.
+
+**Props**
+- Inbound: `players` (available only), `vorpMetrics?`, `needWeightEnabled?`, `needAlpha?`, `posNeeds?`, `currentPick`, `teamCount`, `baselineMode?`, `nextPickNumber?`, `defaultLimit?`, `onSelectPlayer?`, `leagueType?`, `catNeeds?`, `rosterProgress?`, `onDraftPlayer?`, `canDraft?`, `personalizeReplacement?`, `onPersonalizeReplacementChange?`.
+- Outbound: `onSelectPlayer` on selection change, `onDraftPlayer` when drafting from a card, `onPersonalizeReplacementChange` from PR toggle.
+
+**Dependencies**
+- External: `react` hooks, browser `localStorage` for persistent UI prefs.
+- Project: `usePlayerRecommendations` (core ranking), types `ProcessedPlayer`, `PlayerVorpMetrics`, CSS `SuggestedPicks.module.scss`.
+
+**Data Flows**
+- Recommendations: Uses `usePlayerRecommendations` with `players`, `vorpMetrics`, `posNeeds`, `needWeightEnabled`, `needAlpha`, `currentPick`, `teamCount`, and optional `leagueType`/`catNeeds`; requests a large limit (200), then applies sorting/filters locally and slices to `limit`.
+- Availability: Computes `availability` per recommendation via Normal CDF using `nextPickNumber` and `riskSd` (synced with `ProjectionsTable` via localStorage key `projections.riskSd`).
+- Roster-adjusted VORP: Optional client-side multiplier (`rosterVorpEnabled`) scales VORP by average positional needs across a player's eligible positions.
+- Filters & sorting: Supports single-select `posFilter` and multi-select `selectedPositions` via the roster bar. Sorts by rank/projFp/vorp/vbd/adp/avail/fit with direction toggle.
+- Selection & draft: Clicking a card toggles selection and calls `onSelectPlayer`. Keyboard: ArrowLeft/Right move selection; Enter or "d" drafts if `onDraftPlayer` is provided.
+- Roster bar: Displays progress per position; clicking toggles inclusion in `selectedPositions` (UTIL acts as reset to ALL) and keeps the dropdown at ALL.
+- Preferences: Persists sort, dir, pos filters (single and multi), limit, collapsed, roster bar visibility, and rosterVorpEnabled to localStorage.
+
+**Efficiency Gaps & Recommendations**
+- Double computation of risk model:
+  - SuggestedPicks maintains its own Normal CDF for availability separate from ProjectionsTable.
+  - Recommendation: Extract a shared utility (e.g., `lib/value/risk.ts`) and memoize by `adp` and `nextPickNumber` to ensure consistency and reduce duplication.
+- Sorting with constant-return for rank:
+  - When `sortField === 'rank'`, comparator returns 0 but still invokes Array.sort.
+  - Recommendation: Skip sorting for `'rank'` to preserve hook order and avoid unnecessary work.
+- Position parsing in filters:
+  - Repeated string splits and case handling.
+  - Recommendation: Normalize/canonicalize eligible positions in the player model (once) and reuse across components; or memoize a `posListById` map here.
+- Keydown listener:
+  - Global window keydown may conflict with other panels and fires when focus is in inputs unless guarded.
+  - Recommendation: Scope to component container with `onKeyDown` (already used for arrows/draft); limit global keys or add a feature flag.
+- LocalStorage writes:
+  - Many individual writes; acceptable but can be batched with a debounced `prefs` object.
+- Availability clamp values:
+  - Clamps to [0.01, 0.99]; might prefer [0,1] and render UI edge cases explicitly.
+- Draft button enablement:
+  - Cards always show Draft; guard by `canDraft` and possibly disable when not your turn to avoid misclicks.
+
+**Actionable Improvements (to implement post-audit)**
+- Share risk helper:
+  - Factor `normalCdf` and availability computation into a shared util used by both SuggestedPicks and ProjectionsTable; memoize results by `(adp, nextPickNumber, sd)`.
+- Skip no-op sort:
+  - If `sortField === 'rank'`, return `filtered` as-is without calling `.sort`.
+- Respect `canDraft`:
+  - Disable the Draft link/button when `!canDraft`; show a tooltip hint.
+- Memoize positions:
+  - `const posListById = useMemo(() => new Map(players.map(p => [String(p.playerId), (p.displayPosition||'').split(',').map(s=>s.trim().toUpperCase())])), [players]);` and use for filters and rosterVorp calculation.
+- Batch prefs persistence:
+  - Debounce saving `{ sortField, sortDir, posFilter, selectedPositions, limit, collapsed, showRosterBar, rosterVorpEnabled }` into a single localStorage key.
+- Align replacement personalization:
+  - Indicate visually when `personalizeReplacement` is active; optionally derive a subtle tag in reasonTags.
+
+**Connections & Cross-References**
+- Directly complements `ProjectionsTable.tsx`; both use risk and VORP semantics and should stay in sync (shared util recommended).
+- Position semantics and grouping should remain consistent with `MyRoster.tsx` and `DraftDashboard.tsx` (forward grouping in parent may affect eligible positions).
+- Consumes and signals toggles that impact `useVORPCalculations` in the parent (baseline and personalize replacement paths).
+
+**Potential Acceptance Tests (informal)**
+- Toggling NeedV updates card VORP values when rosterVorpEnabled; disabling reverts to base VORP.
+- Changing risk SD in ProjectionsTable updates availability percentages shown here (via localStorage sync).
+- Multi-select via roster bar filters cards; UTIL segment clears filters.
+- Draft action fires `onDraftPlayer`; disabled when `!canDraft`.
+
+**Style Audit: Cards, Progress Blocks, Recommendation Rails, and Large Data Tables**
+- My Roster as a progress-and-composition reference:
+  - `rosterProgress`, `progressBar`, and `progressFill` are strong references for compact progress modules inside a panel.
+  - The structure is more transferable than the current gradient fill; the key reusable idea is the tight label/count/header plus a low-height progress track.
+- Summary micro-cards:
+  - `teamSummary` and `summaryCard` show a useful pattern for small metric cards inside a larger work panel.
+  - This is a good canonical reference for “supporting metrics” that should not visually overpower the main table or roster content.
+- Search-and-act block:
+  - `draftSection`, `searchInput`, `searchResults`, and `draftButton` together form a compact search/action module.
+  - This is a strong reference for future inline player-picker or quick-action zones, though the button family should be normalized with the broader dashboard button system.
+- Slot composition cards:
+  - `rosterSlot` and the surrounding slot-list composition provide a useful pattern for stacked card rows representing structured inventory or roster state.
+  - This can inform future “slot”, “lineup”, or “composition” card patterns elsewhere on the site.
+- Suggested Picks card rail:
+  - `cardsRow` is the clearest current reference for a horizontal recommendation rail made of repeated high-density cards.
+  - This is a strong pattern for “top suggestions”, “featured insights”, or “recommended actions” sections on other pages.
+- Canonical card anatomy:
+  - `SuggestedPicks .card` is the strongest current expression of the FHFH card identity: dark surface, visible body border, left flat accent strip, strong hover state, and a compact internal information stack.
+  - The left accent strip should be treated as a canonical pattern, but the blur, glow, and heavy gradient usage should be optional or softened in the final system to satisfy the new gradient rule.
+- Card selection state:
+  - `cardSelected` is a useful pattern for selected-card emphasis: keep the same card anatomy, intensify border/glow, and preserve the accent identity rather than inventing a separate layout.
+- Compact stat pills and tags:
+  - `stat`, `statLabel`, `statValue`, and `tag` provide a good reference for small inline metric blocks inside cards.
+  - This should influence canonical “metric pill”, “meta pill”, and “reason tag” definitions in the style guide.
+- Recommendation controls:
+  - `headerRow`, `controls`, `controlGroup`, `select`, `sortDirBtn`, and `collapseBtn` show a repeatable compact toolbar pattern for recommendation and filter surfaces.
+  - These should be reconciled with the `DraftSettings` control rules so the site ends up with one shared compact-control language.
+- Projections table as the heaviest table/filter reference:
+  - `controlsBar`, `searchContainer`, `positionFilter`, `controlToggleBtn`, `miniRunForecast`, and `settingsDrawer` collectively show the site’s most complex filter-toolbar system.
+  - The key transferable idea is a tiered control area: essential filters visible first, deeper settings behind a secondary control or drawer.
+- Large data table framing:
+  - `tableContainer`, `playersTable`, sticky `thead`, `sortableHeader`, and the compact row/cell treatment are the strongest current references for large scrollable analytics tables.
+  - This is likely the canonical table system for `underlying-stats` and other data-dense pages.
+- Action cells and compare controls:
+  - `draftButton`, compare checkboxes, and compare-launch affordances show how single-purpose action cells can stay compact and visually distinct within a dense table.
+  - This should become a documented rule for action columns rather than remaining feature-specific styling.
+- Important cleanup discovery:
+  - `ProjectionsTable.module.scss` contains duplicated/conflicting control and checkbox patterns, and `MyRoster.module.scss` contains oddly nested table-related rules under `.summaryValue`.
+  - These are useful signals that the final implementation should include cleanup and consolidation work, not just documentation and restyling.
+- Style-system implications:
+  - The most transferable patterns from this group are: compact progress modules, micro-summary cards, left-accent recommendation cards, horizontal card rails, compact filter toolbars, and heavy-data sticky tables.
+  - The final guide should explicitly separate “core anatomy” from “optional intensity” so the site can keep the FHFH identity without defaulting every card or table to blur/glow-heavy treatment.
+
+**Style Audit: Dialogs and Overlays**
+- Scope decision:
+  - Dialog patterns should be included in the same style-system pass, but only at the shared-shell level.
+  - The canonical system should cover backdrop, modal shell, header band, close button, action cluster, scrollable body, and dialog sizing rules.
+  - Highly specialized interior layouts such as roster recap grids, radar-comparison layouts, or CSV-mapping workflows should remain feature-specific.
+- Shared modal anatomy:
+  - `DraftSummaryModal` and `ComparePlayersModal` both confirm that the site already relies on a repeatable overlay structure: full-screen backdrop, centered shell, header band, action/close controls, and scrollable content body.
+  - That shared anatomy is mature enough to justify canonical rules.
+- Backdrop treatment:
+  - Both modals use darkened, blurred backdrops with accent-aware lighting.
+  - The transferable rule is the backdrop’s job: isolate the app and focus the eye. The stronger radial lighting and blur intensity should be optional, not mandatory.
+- Shell treatment:
+  - `DraftSummaryModal` and `ComparePlayersModal` both use large, high-emphasis shells with strong border/shadow hierarchy.
+  - The final style guide should define a calmer baseline modal shell and document stronger “feature modal” variants as optional.
+- Header band:
+  - Both modals use a sticky or strongly separated header band with accent typography and close controls.
+  - This should become a canonical modal-header rule because it is consistent with the panel-header language already present across the dashboard.
+- Close and action controls:
+  - The small close control in `ComparePlayersModal` and the action cluster in `DraftSummaryModal` show two useful dialog-control patterns.
+  - These should be normalized into documented icon-button and dialog-action variants.
+- Accessibility signal:
+  - `ComparePlayersModal` and `ImportCsvModal` already contain stronger keyboard/focus handling than `DraftSummaryModal`.
+  - This is a signal that the style-system pass should include dialog accessibility expectations, not just visual styling.
+- Inclusion boundary:
+  - Include dialogs in the style-system pass for shared shell/backdrop/header/controls.
+  - Do not try to over-canonicalize the interior content architecture of every modal in this pass.
+
+---
+
+## ImportCsvModal.tsx
+
+- Summary: CSV import modal for custom projection sources. Parses headers and rows, standardizes column names, previews mapped rows, and resolves player names to internal `player_id` using DB lookups (Supabase), deterministic rules, fuzzy matching, and optional manual overrides. Gated by coverage thresholds with options to require full mapping or force import.
+
+**Props**
+- Inbound: `open`, `onClose`, `minimumCoveragePercent = 25`, `allowNameFallback = true`, `onFallbackSettingsChange?({ allowCustomNameFallback, minimumCoveragePercent })`, `onImported({ headers, rows, sourceId, label, resolution })`.
+- Outbound: Calls `onFallbackSettingsChange` when confirming; calls `onImported` with `sourceId: "custom_csv"`, the standardized `headers`, fully mapped `rows` (adds `player_id`), user `label` (source name), and `resolution` stats.
+
+**Dependencies**
+- External: `react` hooks, `papaparse` (CSV parsing), `react-dropzone` (file input), `supabase` (players lookup), browser focus/keyboard handling.
+- Project: `standardizePlayerName`, `standardizeColumnName`, `defaultCanonicalColumnMap` (canonical keys), `teamsInfo` (id/abbr maps).
+
+**Data Flows**
+- Parse & headers: Dropzone → Papa.parse with `header: true` and `dynamicTyping`. Builds `headers: { original, standardized, selected, status }` via `standardizeColumnName` and classification: `required` (must include) vs `supported` vs `unsupported`.
+- Preview & mapping: Maintains `rawRows` (first 50) and `allRows` (entire file). Builds `mappedPreview` and `mappedAllRows` by re-keying selected headers to canonical names; player column is normalized via `standardizePlayerName`.
+- Player index: On open, paginates `players` from Supabase (id, fullName, lastName, position, team_id) and derives `teamAbbrev` via `teamsInfo`. Secondary fetch pulls any missing last names found in the CSV. Indexes: `ids`, `byId`, `byStdName`, `byTeamAbbrev`.
+- Resolution (per row):
+  - Extracts standardized `Player_Name`, detects any numeric `playerId` column(s), parses optional team from `Team_Abbreviation`.
+  - Priority: manual override → exact `player_id` present in roster → single std-name match → multi-match filtered by team → fuzzy by Levenshtein within team candidates (threshold ≤2).
+  - Writes `player_id` (and any `playerId`-like columns) on success; else deletes them and records in `__resolution` with `method`, `stdKey`, `team`, `invalidOriginalId`.
+  - Accumulates stats: `idMatched`, `nameMatched`, `fuzzyMatched`, `manualOverrides`, `invalidIds`, `unresolved`, `coverage`.
+- Ambiguities: Aggregates names that map to multiple DB players (mostly by last name) and suggests best candidate by normalized Levenshtein score. Auto-resolves unique perfect matches; supports explicit Yes/No, select box, and live search per name.
+- Coverage gates: Local `allowNameFallback` and `minimumCoveragePercent` mirror props. Confirm is disabled if below threshold or unresolved rows exist, unless "Enable anyway" is toggled. `Require full mapping` enforces 100% coverage.
+- Confirm: Persists fallback settings via `onFallbackSettingsChange`, emits `onImported` with rows, headers, label, and stats, then closes.
+- Accessibility: Dialog role with aria attributes, focus trap with Tab wrapping, Escape to close, and keyboard-safe controls.
+
+**Efficiency Gaps & Recommendations**
+- Full-table prefetch: Fetches all players (paged) on open, then a secondary `in(lastName)` query. For large tables this is heavy.
+  - Recommendation: Pre-scan CSV last names first, then fetch only candidates via one or few `in(lastName)` calls (chunked), optionally also `ilike(fullName)` for rare cases. Avoid full-table scan.
+- Resolution on main thread: Name→ID resolution runs over entire dataset with multiple passes and string ops; fuzzy matches call Levenshtein repeatedly.
+  - Recommendation: Move resolution to a Web Worker for large files; post back progress and results. Alternatively, gate expensive fuzzy matching behind a toggle or limit to rows still unresolved after exact/team filtering.
+- Ambiguity keying by name only: `ambiguousChoices` is keyed by canonical name, so a single choice applies to all rows with that name, regardless of CSV team.
+  - Recommendation: Key overrides by a compound key, e.g., `${name}|${csvTeamAbbrev||''}|${csvPos||''}`, or by row index. Reflect this in the UI labels and in `resolution` to disambiguate same-name players on different teams.
+- `allowNameFallback` semantics: The algorithm always attempts name/fuzzy matching regardless of `allowNameFallback`; the flag only affects messaging.
+  - Recommendation: Honor the flag: when false, treat only rows with valid `player_id` as resolved; skip name/fuzzy paths and reflect that in coverage/stats and import rows.
+- Duplicate state and copies: Maintains both `allRows` and `rawRows`, and re-maps arrays multiple times.
+  - Recommendation: Keep only `allRows`; derive preview via `allRows.slice(0, 50)`. Memoize mapping once per header/player column change.
+- Supabase shape: Converts `team_id` to `teamAbbrev` client-side repeatedly.
+  - Recommendation: Request `team_id` and compute abbrev once while building the index; store in the index record only.
+- Logging noise: Multiple `console.log` for target players and counts.
+  - Recommendation: Gate debug logs behind a `DEBUG` flag or `process.env.NODE_ENV !== 'production'`.
+
+**Actionable Improvements (to implement post-audit)**
+- Optimize player fetch path:
+  - Pre-read CSV to collect unique last names; query Supabase with `in('lastName', names)` in chunks (e.g., 200 each). Skip initial full-table pagination.
+- Respect fallback flag:
+  - Add `if (!localAllowFallback) { … }` branch in resolution to bypass name/fuzzy matching and only accept valid `player_id` hits. Update coverage and UI copy accordingly.
+- Row-scoped overrides:
+  - Change `ambiguousChoices` to use a compound key including CSV team/pos (or row index). Update UI to display and set overrides per distinct key.
+- Offload heavy work:
+  - Introduce a worker (`/workers/csvResolver.ts`) to compute mapping and stats for large files, posting progress to the UI (e.g., every 1k rows).
+- Single mapping memo:
+  - Replace duplicate mapping of preview and full arrays with one `useMemo` that returns both `mappedAll` and `mappedPreview` from the same computation.
+- Import UX polish:
+  - Add a Clear File button; persist `sourceName` alongside the session CSV list to show consistent labels in `DraftSettings`.
+
+**Connections & Cross-References**
+- `DraftDashboard.tsx`: Consumes `onImported` payload to append to `draft.customCsvList.v2` in session and trigger reprocessing in `useProcessedProjectionsData`. Coverage and fallback settings should influence source weights and warnings in parent.
+- `DraftSettings.tsx`: Displays custom source label and removal; consider passing a `getCustomSourceLabel` down from parent to avoid direct storage reads in Settings.
+- `useProcessedProjectionsData`: Expects canonical stat keys defined by `defaultCanonicalColumnMap`. Ensure standardized headers match what the processor supports for both skaters and goalies.
+
+**Potential Acceptance Tests (informal)**
+- Header mapping: Unsupported headers get flagged; required headers (`Player_Name`, `Team_Abbreviation`, `Position`, `Goals`, `Assists`) must be present or confirmation blocks.
+- ID-first resolution: Rows with valid `player_id` resolve via id; invalid ids are repaired via name/team matching and counted under `invalidIds`.
+- Fallback off: With `allowNameFallback = false`, only rows with valid `player_id` are considered resolved; coverage reflects this and import is gated appropriately.
+- Ambiguities: Duplicate-name rows surface suggestions; auto-resolve unique perfect matches; manual selection updates mapping and coverage.
+- Coverage gates: Below-threshold or unresolved rows disable Confirm until "Enable anyway" or 100% mapping when required.
+- Payload shape: `onImported` receives `headers`, `rows` with `player_id`, `sourceId: 'custom_csv'`, `label`, and `resolution` matching on-screen summary.
+
+---
+
+## DraftSummaryModal.tsx
+
+- Summary: Shareable end-of-draft recap modal that renders either a roster grid per team or a picks recap board. Computes highlights (biggest steal/reach by ADP and top VORP pick), a simple weighted draft winner metric, and exports the visible summary to a PNG via html-to-image.
+
+**Props**
+- Inbound: `isOpen`, `onClose`, `draftSettings`, `draftedPlayers`, `teamStats`, `allPlayers`, `vorpMetrics?`.
+- Outbound: No callbacks beyond `onClose`; image export is client-side via DOM.
+
+**Dependencies**
+- External: `react` hooks, `html-to-image` (`toPng`), `next/image` for a medal image, CSS module `DraftSummaryModal.module.scss`.
+- Project types: `DraftSettings`, `DraftedPlayer`, `TeamDraftStats` from `DraftDashboard`; `ProcessedPlayer` and `PlayerVorpMetrics`.
+
+**Data Flows**
+- `playerMap`: Memoized `Map<string, ProcessedPlayer>` keyed by `playerId` for O(1) lookup during rendering and highlight computation.
+- `sortedTeams`: Takes up to `teamCount` teams from `teamStats`, sorts by `projectedPoints` desc, adds 1-based `rank`.
+- `teamsInDraftOrder`: Reorders `sortedTeams` to match `draftSettings.draftOrder` while preserving computed ranks.
+- `chunkedRosters`: Splits teams into rows of `MAX_TEAMS_PER_ROW` for grid layout.
+- `picksByTeam`: Groups `draftedPlayers` by `teamId`, sorts each group by `pickNumber` to align recap columns by round.
+- `totalRounds`: Computes as `ceil(draftedPlayers.length / teamCount)` to size recap columns.
+- `highlights`: Scans all picks to determine:
+  - Biggest Steal/Reach by delta = `overallPick - ADP` using `yahooAvgPick` or `adp` when present.
+  - Top VORP pick using `vorpMetrics.get(playerId)?.vorp` when provided.
+- `draftWinner`: Combines normalized projectedPoints (60%) and teamVorp (40%) across teams to compute a simple composite score and selects the max.
+- Rendering:
+  - Roster view: Table per team showing slots for C/LW/RW/D/UTIL/G and Bench with pick metadata.
+  - Recap view: Colored cells per round with position-coded classes inferred from first token of `displayPosition`.
+- Export: `downloadImage()` captures the `.content` container to PNG with background color, `pixelRatio: 2`, and `skipFonts: true`, triggers a download.
+
+**Efficiency Gaps & Recommendations**
+- Rounds label mismatch: Header shows "Rounds" as the sum of `rosterConfig` counts, while recap uses `totalRounds` derived from `draftedPlayers`.
+  - Recommendation: Display `totalRounds` consistently in the header for accuracy, and optionally include roster slots as a separate meta item.
+- Large DOM capture: `toPng` on a big grid can be slow and memory-heavy.
+  - Recommendation: Offer capture of the current view only (recap vs roster) and consider a lower `pixelRatio` with an option to upscale. Provide a spinner during export.
+- Position class inference: Recomputes per cell.
+  - Recommendation: Precompute a small map from first-position token to class or use a function with a memoized lookup object.
+- Category vs points display: Leaderboard always sorts by `projectedPoints` and shows a fixed set of skater categories.
+  - Recommendation: In categories leagues, consider ranking by composite category standings or show additional goalie/category columns based on `leagueType` and available stats.
+- Winner formula rigidity: Uses fixed 60/40 weighting.
+  - Recommendation: Expose weighting in UI or compute from league type (e.g., increase VORP share in categories if appropriate) and show a short tooltip explaining the score.
+- Accessibility & controls:
+  - Modal lacks explicit `role="dialog"`, focus management, and Escape handling.
+  - Recommendation: Add `role`, `aria-modal`, focus trap and an Escape key listener consistent with other modals.
+
+**Actionable Improvements (to implement post-audit)**
+- Header accuracy: Replace roster-slot sum with `totalRounds` and add a separate "Roster Spots per Team" indicator.
+- Export UX: Show a brief loading indicator during PNG render; catch and toast errors. Add an option to export the other view without toggling.
+- Dynamic leaderboard: Toggle columns based on `leagueType`; include goalie metrics for goalie-heavy leagues. Optionally colorize ranks by percentile.
+- Position class map: `const posClassMap = { C: styles.posC, LW: styles.posLW, RW: styles.posRW, D: styles.posD, G: styles.posG, UTIL: styles.posUTIL }` and use a helper.
+- Winner explanation: Add a hover tooltip or small legend describing the 60/40 formula with min-max normalization.
+- Modal a11y: Align with `ImportCsvModal` focus/keydown patterns; add `aria-labelledby` and initial focus.
+
+**Connections & Cross-References**
+- `DraftDashboard.tsx`: Supplies `teamStats`, `draftedPlayers`, `draftSettings`, `allPlayers`, and `vorpMetrics`. Winner logic and ranks should align with leaderboard/board semantics in `DraftBoard.tsx`.
+- `DraftBoard.tsx`: Both render team standings; ensure projectedPoints, category totals, and `teamVorp` values match across views.
+- `useVORPCalculations`: `vorpMetrics` used for Top VORP pick; keep metric definitions consistent with `ProjectionsTable` and `SuggestedPicks` displays.
+
+**Potential Acceptance Tests (informal)**
+- Toggling Recap/Roster updates the grid and keeps highlights/leaderboard intact.
+- Download PNG produces a readable image of the visible content; no CORS font errors; file name includes today’s date.
+- Highlights: Changing a pick to one with extreme ADP delta updates Biggest Steal/Reach; providing `vorpMetrics` updates Top VORP pick.
+- Leaderboard: Top 3 rows styled gold/silver/bronze; ordering matches sort by projectedPoints.
+
+---
+
+## useProcessedProjectionsData.tsx
+
+- Summary: Core ingestion/processing hook that blends multiple projection sources (built-ins + custom CSV), enriches with ADP/mappings constrained by `CURRENT_YAHOO_GAME_PREFIX`, computes combined stats, and prepares table-friendly `ProcessedPlayer` rows. Supports injecting round summary rows and pulls actual season totals from Supabase for diffs.
+
+**Inputs/Outputs**
+- Inbound (props object): active sources (built-in + `CustomAdditionalProjectionSource[]`), season/game prefix, league type, enabled stat keys, forward grouping, and options for round summaries and caching.
+- Outbound: `{ players, allPlayers, isLoading, error, availableSkaterStatKeys, availableGoalieStatKeys, ... }` (names inferred from usage in parent/components).
+
+**Pipeline**
+- Source fetch: `fetchAllSourceData(supabaseClient, activeSourceConfigs, uniqueNhlPlayerIds, type, currentSeasonId, ...)` paginates via `fetchAllSupabaseData` with `SUPABASE_PAGE_SIZE=1000` and label/timing logs. Applies per-source stat-key mappings.
+- Merge & standardize: Collates per-player stat entries into `combinedStats` with projected/actual placeholders and attaches metadata (ADP, team, positions). `stdName` ensures consistent name lookups.
+- Actuals: Defines `ACTUAL_*_STATS_TABLE` + `ACTUAL_STATS_COLUMN_MAP` to pull last-season totals and compute `% diff` via `calculateDiffPercentage`.
+- Round summaries: `addRoundSummariesToPlayers(sortedPlayers, calculateDiffFn, teamCount)` injects summary rows between players for UI grouping.
+- Caching: Exposes snapshot info types for cache layers (`CachedBasePlayerData`, `CachedFullPlayerData`).
+
+**Efficiency Gaps & Recommendations**
+- Supabase paging: Multiple full-table loads per source can be costly.
+  - Recommendation: Narrow selects; prefer `in(nhl_player_id, ids)` when CSV/name-matched maps are available; chunk queries to reduce bandwidth.
+- Key-mapping cost: Per-source stat remap repeated across renders.
+  - Recommendation: Pre-compile mapping functions per source and memoize by config hash to reduce object churn.
+- Actuals joins: Fetch and join actual stats per player can be heavy.
+  - Recommendation: Cache actuals per season in `sessionStorage` with ETag-like key; only refetch on season change or explicit refresh.
+- Name index: `stdName` runs broadly; avoid repeated normalization for the same strings.
+  - Recommendation: Build a `Map<string,string>` normalization cache for hot paths; size-bound to avoid growth.
+- Round summary injection: Increases array size and sort complexity for very large pools.
+  - Recommendation: Make summary insertion lazy or behind a UI toggle to keep base arrays lean during heavy interactions.
+
+**Actionables**
+- Add a `debug` flag to gate timing logs; provide simple metrics for source fetch duration.
+- Memoize per-source mapping functions; include hash of `ProjectionSourceConfig` in deps.
+- Introduce a simple in-memory LRU for actuals/ADP joins keyed by `nhl_player_id`.
+- Expose a `skipRoundSummaries` option and move summary insertion to the view layer.
+
+**Connections**
+- `DraftDashboard.tsx`: Primary consumer, drives players lists and enabled stat keys.
+- `ProjectionsTable`/`ComparePlayersModal`: Depend on `availableSkaterStatKeys`/`availableGoalieStatKeys` and consistent stat naming.
+
+---
+
+## useProjectionSourceAnalysis.ts
+
+- Summary: Manages source controls (enable/disable + integer weights 0–100), persists them to localStorage (v3), migrates legacy v2 float weights, and derives per-source normalized shares.
+
+**State & Persistence**
+- `controls: SourceControl[]` with `{ id, label, enabled, weight }`.
+- Persistence: Debounced save to `LOCAL_KEY_V3` with change-detection to avoid redundant writes. Legacy migration from `LEGACY_KEY_V2` (0–2 floats) to integer 0-100 handled.
+- Auto-reconcile: Ensures `initialSources` appear with defaults, drops missing sources.
+
+**API**
+- `setEnabled(id, enabled)`: Re-enabling restores last non-zero weight via `lastNonZeroWeightRef` (min 1%).
+- `setWeight(id, weight)`: Sets weight and auto-enables when >0; disables when 0.
+- `removeSource(id)`: Hard-removes a source.
+- `effectiveShares`: Normalized shares across enabled, weight>0 sources; 0 when none enabled.
+
+**Efficiency & UX Notes**
+- Debounced persistence: Good; 180ms likely sufficient. Consider grouping with other settings to a single namespace key.
+- Last-weight restore: Solid UX; ensure ref is hydrated when migrating legacy data.
+
+**Actionables**
+- Add validation to cap weights [0,100]; coerce invalid values from legacy payloads.
+- Provide a hook return for `saveInProgress` to show a subtle saving indicator near sliders.
+- Add optional `onChange(controls, effectiveShares)` callback for analytics or external sync.
+
+**Connections**
+- `DraftSettings.tsx`: UI for sliders/toggles; uses `effectiveShares` to show normalized percent.
+- `useProcessedProjectionsData`: Consumes `effectiveShares`/enable flags to weight-blend source stats.
+
+---
+
+## projectionWeights.ts
+
+- Summary: Integer-based helpers for distributing and normalizing source weights.
+
+**Functions**
+- `evenlyDistribute(count)`: Returns integer array summing to 100; early indices get +1 remainder.
+- `normalizeWithAnchor(weights, anchorIndex)`: Preserves anchor’s value exactly, scales others proportionally to sum to 100 (last non-anchor absorbs drift; anchor bounded at 100 if overweight).
+- `normalize(weights)`: Picks first positive weight as anchor (or 0) and normalizes.
+
+**Edge Cases & Guarantees**
+- Empty arrays → `[]`; negative/oversized anchor indexes coerced to 0.
+- If `othersTotal <= 0`, all weight to anchor (capped at 100), others 0.
+- Rounding drift corrected deterministically to largest non-anchor (or anchor).
+
+**Actionables**
+- Add unit tests for drift handling and anchor overweight scenarios.
+- Provide a `clampWeights` helper to coerce external inputs into [0,100] before normalize.
+
+---
+
+## fantasyPointsConfig.ts
+
+- Summary: Default fantasy point weights for skaters and goalies, plus `getDefaultFantasyPointsConfig` to select a baseline by player type.
+
+**Notes**
+- Keys should match `STATS_MASTER_LIST` keys. Non-listed stats default to 0. Skaters and goalies separated.
+
+**Actionables**
+- Document any league presets (e.g., Yahoo standard) and expose a merge helper to overlay custom values cleanly.
+- Consider versioning the defaults to aid migrations and user education.
+
+---
+
+## projectionSourcesConfig.ts
+
+- Summary: Schema for projection sources and stat mappings. Each source declares where to fetch, which stats it provides, and how to map to canonical keys.
+
+**Key Types**
+- `SourceStatMapping`: Per-stat mapping config (project-specific fields omitted here).
+- `ProjectionSourceConfig`: Source metadata, table names, stat maps, skater/goalie type, and weightability.
+
+**Actionables**
+- Keep mappings centralized and validated at startup; log missing/unknown keys vs `STATS_MASTER_LIST`.
+- Provide example mapping snippets for custom CSV to guide users.
+
+---
+
+## columnStandardization.ts
+
+- Summary: Canonical column-name mapping and header normalization utility used by CSV import and source processing.
+
+**Helpers**
+- `defaultCanonicalColumnMap`: Rich map covering player info, standard stats, special provider keys (e.g., A&G, Bangers), goalie stats, and fantasy point columns.
+- `standardizeColumnName(rawHeader, customMap?)`: Lowercases and trims; matches via merged map; else title-cases and replaces non-alphanumerics with `_`.
+
+**Notes & Actionables**
+- Ensure `titleCase` import is correct (already included) and resilient to nullish headers (guard present).
+- Add round-trip tests for common vendor headers; keep goalie vs skater distinctions tight.
+- Consider exporting `CANONICAL_COLUMN_OPTIONS` for UI autocompletes (mirrors ImportCsvModal behavior).
+
+---
+
+## ComparePlayersModal.tsx
+
+- Summary: Two-player comparison modal with radar chart (Chart.js) and percentile tables across selected metrics. Picks default metric set based on whether any selected is a goalie.
+
+**Data Flows**
+- Filters `allPlayers` by `selectedIds` (first 2). Chooses metric keys (`defaultsSkater` vs `defaultsGoalie`). Computes percentiles per metric across `allPlayers`, then constructs radar datasets and per-game derived rows.
+
+**Efficiency & UX**
+- Percentiles across allPlayers recomputed per open; acceptable for moderate sizes. Consider memoizing a global index of sorted values per key when available.
+- Uses global keydown; ensure handler respects focus in inputs.
+- Image headshots list built per player; can cache URLs per playerId.
+
+**Actionables**
+- Add a11y parity (role="dialog", focus trap, Escape handling like ImportCsvModal).
+- Provide metric selection UI; persist last selection. Allow toggling per-game vs totals.
+- Memoize `byKeySorted` across opens or cache in a context when pool unchanged.
+
+**Connections**
+- `ProjectionsTable`: Launches modal; relies on stat keys consistency in `STATS_MASTER_LIST`.
+
+---
+
+## useVORPCalculations.ts
+
+- Summary: Core value engine computing comparable value (`value`), VORP, VONA, VBD, best position, and replacement baselines. Supports points and categories leagues, forward grouping, personalized replacement, expected picks before next turn, 82-game proration, and custom fantasy scoring.
+
+**Inputs/Outputs**
+- In: `UseVORPParams` including `players`, `availablePlayers`, `draftSettings`, `picksUntilNext`, `leagueType`, `baselineMode`, `categoryWeights`, `forwardGrouping`, `myFilledSlots`, `personalizeReplacement`, `prorate82`, `fantasyPointSettings`.
+- Out: `{ playerMetrics: Map<string, PlayerVorpMetrics>, replacementByPos, expectedTakenByPos?, expectedN? }`.
+
+**Algorithm Highlights**
+- Eligibility parsing from `displayPosition`, honoring forward grouping.
+- Points mode: Computes fantasy points (integrates proration via `prorate82` + `fantasyPointSettings`) and derives VORP-like metrics vs baselines.
+- Categories mode: Z-score per category with goalie rate regression (`PRIOR_SHOTS`, `PRIOR_STARTS`), inversion for lower-better stats, and weighted sum via `categoryWeights` to a composite `value`.
+- Replacement: Baseline can be among remaining or full pool; accounts for my filled slots when `personalizeReplacement` is on.
+- Expected runs: Estimates `expectedTakenByPos` and `expectedN` using `picksUntilNext` to modulate VBD/VONA.
+
+**Efficiency & Recommendations**
+- Heavy memos: Good use of `useMemo`; ensure dependencies include all tuning knobs.
+- Map/array builds: Build `playerById`/`posBuckets` once; avoid repeated `combinedStats` property traversal when possible.
+- Regression params: Consider exposing `PRIOR_*` as configurable tunables via props for experimentation.
+
+**Actionables**
+- Add small helper for projected stat access with optional proration baked in to reduce branching.
+- Expose debug diagnostics (counts per position, baseline picks) when `__DEV__`.
+- Provide a reference doc of metric definitions to align UI labels and tooltips across components.
+
+**Connections**
+- Consumed by `DraftDashboard.tsx`, `ProjectionsTable`, and `SuggestedPicks`; keep semantics identical across displays.
+
+---
+
+## proration.ts
+
+- Summary: Utilities to compute 82-game pacing for skater counting stats and recompute fantasy points accordingly without mutating original projections.
+
+**API**
+- `PRORATE_82_STAT_KEYS`: Set of skater stat keys to prorate (excludes rates/percentages/goalie stats).
+- `isGoaliePlayer(player)`: Detects goalie by `displayPosition`.
+- `getProratedStat(player, statKey, enable)`: Returns `(raw/GP)*82` for eligible stats; guards nulls, goalie roles, and invalid GP.
+- `computeProratedFantasyPoints(player, enable, customScoring?)`: Merges defaults (`DEFAULT_*_FANTASY_POINTS`) with overrides and sums `proratedStat * weight` when enabled; else returns existing projected FP.
+
+**Actionables**
+- Cache per-player GP and derived prorated values for hot keys to avoid repeated property lookups in tight loops (e.g., in VORP calculations).
+- Provide a batch function to map a list of players to prorated FP for table precompute.
+
+**Connections**
+- `useVORPCalculations`: Consumes via `prorate82` to affect points-league `value`.
+- `ProjectionsTable`: Should reflect proration in displayed fantasy points when toggle is on to avoid UI mismatch.
+
+---
+
+## statsMasterList.ts
+
+- Summary: Source of truth for `StatDefinition` and the list of stat keys/metadata used across the app (display names, units, higherIsBetter, player type, etc.).
+
+**Governance**
+- Keep keys stable and aligned with canonical names used by `columnStandardization` and processing hooks.
+- Mark category-vs-points roles explicitly; include goalie vs skater tags to drive defaults in UI (e.g., Compare modal metric sets).
+
+**Actionables**
+- Add docstrings/comments on any non-obvious stat semantics and units.
+- Provide a small validator that runs in dev to ensure no duplicates, all keys are uppercase, and every used key in code exists in this list.
+
+---
+
+## usePlayerRecommendations.ts
+
+- Summary: Memoized hook that ranks players by `score` derived from VBD/VORP and optionally blends in team needs (positions or weighted categories). Adds simple availability heuristics from ADP vs next-pick window and emits explanation tags.
+
+**Inputs/Outputs**
+- In: `{ players, vorpMetrics?, posNeeds?, catNeeds?, needWeightEnabled?, needAlpha?, limit?, baselineMode?, currentPick?, teamCount?, leagueType? }`.
+- Out: `{ recommendations: Recommendation[] }`, where each item includes `{ player, score, vorp?, vona?, vbd?, availability?, fitScore?, reasonTags? }`.
+
+**Algorithm & Data Flow**
+- Pulls `PlayerVorpMetrics` from `vorpMetrics` Map by stringified `playerId`; defaults `score` to `vbd` (fallback to `vorp`).
+- Computes a needs `fitScore`:
+  - Categories mode: `sum(projectedStat[k] * catNeeds[k])` across a fixed set of keys: `GOALS, ASSISTS, PP_POINTS, SHOTS_ON_GOAL, HITS, BLOCKED_SHOTS`.
+  - Points mode: average `posNeeds` across eligible positions parsed from `displayPosition` (uppercase, comma-separated).
+- Availability: Logistic function of `delta = adp - (currentPick + teamCount)` using `sd = 12`, clamped to [0.01, 0.99]. Uses `yahooAvgPick` then `adp` if present.
+- Blending: If `needWeightEnabled`, sets `score = (1-needAlpha)*VBD + needAlpha*(fitNorm*10)` after normalizing `fitScore` by the max absolute fit across candidates. Otherwise `score = VBD`.
+- Tags: Adds `High VBD`, baseline tags for `remaining`/`full`, `Cat Fit` or `Team Need Fit` when fit is material, and `ADP Value` if ADP is well after expected next pick.
+- Sorting: Desc by `score`, then projected fantasy points, then alphabetical by name/ID. Slices to `limit` (default 10).
+
+**Efficiency & Edge Cases**
+- O(n) over input `players`; very fast, dominated by property access. Uses a single `useMemo` over all inputs.
+- Missing metrics: Safely defaults to 0 via `safeNum`; ID coercion uses `String(playerId)` consistently.
+- Position parsing: Relies on `displayPosition` shape; empty/unknown yields neutral fit.
+- Categories set: Fixed `CAT_KEYS` list may diverge from actual configured categories.
+
+**Actionables**
+- Configurable categories: Accept `activeCategoryKeys` to align with league settings instead of fixed `CAT_KEYS`.
+- Availability model: Make `sd` tunable and optionally use a skewed/log-normal based on empirical ADP variance per round.
+- Richer reasons: Include numeric deltas (e.g., `+X VBD vs next`, `ADP +Y vs next pick`) for tooltips.
+- Deterministic tiebreakers: Prefer `playerId` numeric as final tiebreak to stabilize ordering across renders.
+
+**Connections**
+- `SuggestedPicks.tsx`: Primary consumer; sorts/filters the returned list further and renders cards.
+- `MyRoster.tsx`: Wiring exists for recommendations; UI not yet rendered there.
+- `useVORPCalculations`: Supplies `vorpMetrics`; ensure VBD/VORP semantics match table displays.
+
+---
+
+## useCurrentSeason.ts
+
+- Summary: Tiny hook that fetches and returns the current NHL `Season` via `getCurrentSeason()` on mount.
+
+**API & Flow**
+- Imports `Season` type and `getCurrentSeason` client helper; holds `season` in `useState<Season | undefined>`.
+- `useEffect([])` calls `getCurrentSeason().then(setSeason)` once; returns the `season` object.
+
+**Efficiency & Risks**
+- Minimal; single call on mount per component consumer. Multiple consumers on a page may duplicate requests.
+- No error/loading states; components must handle `undefined` while pending.
+
+**Actionables**
+- Share/cache: Memoize globally (e.g., module-level cache or SWR/react-query) to dedupe concurrent calls and share result across components.
+- Error handling: Add a try/catch branch or return `{ season, isLoading, error }` variant to improve robustness.
+- Update cadence: If the notion of "current season" can change at runtime (rare), add revalidation on interval or on visibility change.
+
+**Connections**
+- Used across many pages/components (Team dashboards, WiGO charts, DraftDashboard, etc.) as seen in usages; ensure any migration to a shared cache remains a drop-in replacement for default import.
+
+---
+
+## TeamRosterSelect.tsx
+
+- Summary: Simple controlled `<select>` for choosing a team to view in roster-related components.
+
+**Props**
+- Inbound: `{ value: string, onChange: (id: string) => void, options: { id: string; label: string }[], selectClassName? }`.
+- Outbound: Calls `onChange` with the selected team `id`.
+
+**Behavior & Accessibility**
+- Renders options from `options` array with `key`/`value` = `id` and display `label`.
+- Includes `aria-label="Select team to view"` for screen readers.
+
+**Actionables**
+- Empty state: If `options` is empty, render a disabled placeholder option (e.g., "No teams").
+- IDs vs numbers: Upstream often treats team IDs as numeric; ensure consistent string coercion or switch prop to `string | number` while normalizing internally.
+- Labels: Consider accepting an optional placeholder label and a `disabled` prop for read-only views.
+
+**Connections**
+- Used by `MyRoster.tsx` for picking which team’s roster to view. Ensure the selected value stays in sync with `draftSettings`/parent state.
+
+---
+
+## PlayerAutocomplete.tsx
+
+- Summary: MUI-based autocomplete for NHL players with optional ADP sorting and an override to supply a custom pool. Integrates with default `usePlayers` hook when no override is provided.
+
+**Props**
+- Inbound: `{ playerId, onPlayerIdChange?, onPlayerChange?, inputClassName?, listClassName?, showButton?, adpByPlayerId?, sortByAdp?, playersOverride? }`.
+- Outbound: Emits `onPlayerIdChange(id)` and `onPlayerChange(player|null)` on selection/clear.
+
+**Behavior**
+- Uses `useAutocomplete` with `limit: 10000` and a `stringify` that strips periods from names. Stable equality by `id`.
+- Sorts by ADP when `sortByAdp` and `adpByPlayerId` set; falls back to alphabetical on ties.
+- Ignores `blur` reason to avoid clearing selection accidentally; only responds to `selectOption` and `clear`.
+- Merges refs to ensure MUI’s internal ref and local `inputRef` both receive the element; blurs input on selection.
+
+**Efficiency & Edge Cases**
+- Options array recomputed when ADP map or `sortByAdp` changes; otherwise passes through `players`.
+- `playersOverride` allows importing processed projection pools where sweater numbers may be missing.
+- Event reasons: Historical bug mentioned in PRD—ensure `onPlayerIdChange` is not fired on non-select reasons (handled here).
+
+**Actionables**
+- Loading UX: Add a spinner or empty-state text when `players` is empty.
+- Keyboard UX: Ensure Enter selects highlighted option; consider adding an `onSubmit` handler when `showButton` is true.
+- Accessibility: Associate the hidden label to input via `id/aria-labelledby` rather than `hidden` attribute alone.
+- Virtualization: If options grow large (>10k), consider windowed listbox.
+
+**Connections**
+- Used in `DraftSettings` (keepers) and `MyRoster` (draft/search). Upstream may want to pass `playersOverride` from processed projections to keep names consistent with Draft Dashboard pools.
+
+---
+
+## usePlayers.ts
+
+- Summary: Fetches and returns the full NHL players list via `getAllPlayers()` on mount.
+
+**Behavior**
+- Holds local `players` state; guards state updates using a `mounted` flag in `useEffect` cleanup.
+- Returns an empty array until data arrives; no error/loading indication.
+
+**Actionables**
+- Cache/share: Use SWR/react-query or a module-level cache to avoid duplicate network requests across consumers.
+- Loading/error: Optionally expose `{ players, isLoading, error }` to improve UX in autocompletes.
+- Update strategy: Consider revalidating occasionally or on visibility focus if upstream data can change.
+
+**Connections**
+- Consumed by `PlayerAutocomplete` when `playersOverride` is not supplied.
+
+---
+
+## nameStandardization.ts
+
+- Summary: Core name normalization module exporting a canonical map from normalized strings to DB `fullName`, plus `standardizePlayerName` and `titleCase` helpers used across CSV import and processing.
+
+**Key Exports**
+- `canonicalNameMap`: Dense mapping of normalized keys (diacritics stripped, punctuation removed) to canonical `fullName` strings from DB.
+- `standardizePlayerName(name: string)`: Normalizes input, checks `canonicalNameMap`, applies nickname formalization, and falls back to `titleCase` with debug logging options.
+- `titleCase(str: string)`: Utility used by column and name standardization fallbacks.
+
+**Actionables**
+- Test coverage: Add fixtures validating tricky cases (accents, nicknames, hyphenated names, ambiguous duplicates like Sebastian Aho).
+- Shared artifact: Export a JSON snapshot of `canonicalNameMap` for Python upsert scripts to avoid duplicated logic.
+- Perf: Consider splitting the giant map into smaller chunks or lazy-loading if bundle size becomes a concern; or mark as dev-only for CSV tooling.
+
+**Connections**
+- Consumed by `ImportCsvModal`, `upsert-projections` page, and API `upsert-csv` route; column standardization relies on `titleCase`.
+
+---
+
+## calculatePercentiles.ts
+
+- Summary: Utilities for percentile rank and rank position. `calculatePercentileRank` uses (below + 0.5*equal)/total and inverts when lower-is-better; `calculatePlayerRank` returns 1-based index after sorting.
+
+**Actionables**
+- Consistency: Ensure consumers use the same tie policy; document that percentiles include half of ties by design.
+- Performance: For repeated ranks across many keys, consider pre-sorting and reusing arrays to avoid repeated sorts.
+
+**Connections**
+- Used by compare modal and various charts/tables that need percentile badges.
+
+---
+
+## Supabase Tables (Draft Dashboard touchpoints)
+
+- Summary: Reference of Supabase tables/columns used by Draft Dashboard features for clarity and performance guardrails. Full schema lives in `tasks/TASKS/schema-docs/supabase-context/supabase-table-structure.md`.
+
+**players**
+- Call sites: `ImportCsvModal.tsx` (initial paged fetch, last-name backfill).
+- Columns: `id, fullName, position, lastName, team_id`.
+- Usage: Build disambiguation index (`byId`, `byStdName`, `byTeamAbbrev`) and map `team_id` → abbrev via `teamsInfo`.
+- Notes: Paged in 1000-row chunks; secondary query `.in('lastName', [...])` when CSV contains unseen last names.
+- Actionables: Narrow initial select to columns actually needed; consider server-side function with `lastName` filtering to reduce backfills.
+
+**wgo_skater_stats_totals**
+- Call sites: `ProjectionsTable.tsx` (row expand → last season totals).
+- Columns: `season, games_played, goals, assists, points, shots, hits, blocked_shots, pp_points, toi_per_game, plus_minus, shooting_percentage, gw_goals` filtered by `player_id`.
+- Usage: Display last-season quick reference for skaters.
+- Actionables: Cache results (session/local) keyed by `player_id, season` to avoid repeated queries across expands.
+
+**wgo_goalie_stats_totals**
+- Call sites: `ProjectionsTable.tsx` (row expand → last season totals).
+- Columns: `season_id, games_played, wins, losses, ot_losses, goals_against_avg, save_pct, shutouts, saves` filtered by `goalie_id`.
+- Usage: Display last-season quick reference for goalies.
+- Actionables: Same caching guidance as skaters; ensure season label formatters handle `season_id` shape consistently.
+
+**teamsinfo** (indirect)
+- Call sites: Not queried directly in Draft Dashboard, but used widely elsewhere and via `teamsInfo` static map for id→abbr/name.
+- Columns often used elsewhere: `nst_abbr, name`.
+- Usage: `ImportCsvModal` maps `team_id` → abbrev through `teamsInfo` to improve fuzzy matching and UI labels.
+- Actionables: If runtime consistency with DB is needed, optionally hydrate `teamsInfo` from this table at build/startup; otherwise static map is fine.
+
+**General Actionables**
+- Centralize client: Ensure all calls go through a shared Supabase client with error handling/logging.
+- Dedupe fetches: Memoize expanded-row results and throttle last-name backfills.
+- Column minimization: Keep `.select()` narrow; avoid `*`.
+- Error surfacing: Show concise errors in UI (currently swallowed in some paths).

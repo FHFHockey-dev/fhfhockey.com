@@ -293,4 +293,160 @@ SELECT cron.schedule(
     });
     expect(resendSendMock).not.toHaveBeenCalled();
   });
+
+  it("matches audit rows when a route wrapper converts the cron GET to POST", async () => {
+    vi.setSystemTime(new Date("2026-03-20T12:00:00.000Z"));
+
+    cronJobReportSelectMock.mockReturnValue({
+      gte: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({
+          data: [
+            {
+              jobname: "update-shift-charts",
+              scheduled_time: "2026-03-20T07:45:00.000Z",
+              end_time: "2026-03-20T07:50:01.000Z",
+              status: "success",
+              return_message: "1 row",
+              sql_text:
+                "select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-shifts?action=all');"
+            }
+          ],
+          error: null
+        })
+      })
+    });
+
+    cronJobAuditSelectMock.mockReturnValue({
+      gte: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({
+          data: [
+            {
+              job_name: "update-shift-charts",
+              run_time: "2026-03-20T07:50:01.000Z",
+              rows_affected: 10,
+              status: "success",
+              details: {
+                method: "POST",
+                url: "/api/v1/db/update-shifts?action=all",
+                statusCode: 200,
+                durationMs: 301000,
+                response: JSON.stringify({ success: true, rowsUpserted: 10 })
+              }
+            }
+          ],
+          error: null
+        })
+      })
+    });
+
+    readFileMock.mockResolvedValue(`
+\`\`\`json
+[
+  {
+    "jobid": 16,
+    "jobname": "update-shift-charts",
+    "schedule": "45 7 * * *",
+    "run_time_utc": "07:45 UTC",
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-shifts?action=all"
+  }
+]
+\`\`\`
+`);
+
+    const req: any = { method: "GET", query: { preview: "json" } };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      counts: expect.objectContaining({
+        jobsOkLast: 1,
+        warnMissingAudit: 0
+      }),
+      warnings: expect.objectContaining({
+        missingObservationJobs: []
+      })
+    });
+  });
+
+  it("does not report pre-checkpoint cron runs as live audit gaps", async () => {
+    vi.setSystemTime(new Date("2026-03-20T12:00:00.000Z"));
+
+    cronJobReportSelectMock.mockReturnValue({
+      gte: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({
+          data: [
+            {
+              jobname: "update-nst-current-season",
+              scheduled_time: "2026-03-20T08:45:00.000Z",
+              end_time: "2026-03-20T08:46:00.000Z",
+              status: "success",
+              return_message: "1 row",
+              sql_text:
+                "select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-nst-current-season');"
+            }
+          ],
+          error: null
+        })
+      })
+    });
+
+    cronJobAuditSelectMock.mockReturnValue({
+      gte: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({
+          data: [
+            {
+              job_name: "daily-cron-report",
+              run_time: "2026-03-20T10:00:00.000Z",
+              rows_affected: 0,
+              status: "success",
+              details: {
+                method: "GET",
+                url: "/api/v1/db/cron-report?preview=json",
+                statusCode: 200,
+                durationMs: 100,
+                response: JSON.stringify({ success: true, dryRun: true })
+              }
+            }
+          ],
+          error: null
+        })
+      })
+    });
+
+    readFileMock.mockResolvedValue(`
+\`\`\`json
+[
+  {
+    "jobid": 220,
+    "jobname": "update-nst-current-season",
+    "schedule": "45 8 * * *",
+    "run_time_utc": "08:45 UTC",
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-nst-current-season"
+  }
+]
+\`\`\`
+`);
+
+    const req: any = { method: "GET", query: { preview: "json" } };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      counts: expect.objectContaining({
+        jobsOkLast: 1,
+        warnMissingAudit: 0
+      }),
+      warnings: expect.objectContaining({
+        missingObservationJobs: []
+      })
+    });
+  });
 });

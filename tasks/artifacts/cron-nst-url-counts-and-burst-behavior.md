@@ -75,8 +75,8 @@ Actual route:
 - `/api/v1/db/update-nst-team-daily`
 
 Schedule evidence:
-- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md#L58)
-- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md#L1096)
+- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md#L58)
+- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md#L1096)
 
 Finding:
 - there is no separate `update-nst-team-daily-incremental` route file
@@ -98,8 +98,8 @@ Actual route:
 - `/api/Teams/nst-team-stats`
 
 Schedule evidence:
-- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md#L59)
-- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/web/rules/cron-schedule.md#L1118)
+- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md#L59)
+- [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md#L1118)
 
 Code evidence:
 - [nst-team-stats.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/Teams/nst-team-stats.ts#L12)

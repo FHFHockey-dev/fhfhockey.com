@@ -1585,11 +1585,11 @@ export function buildBaselineArtifactPayloads(args: {
     featureVersion: args.featureVersion,
     predictionType: args.dataset.predictionType,
     datasetContractRef:
-      "/Users/tim/Code/fhfhockey.com/tasks/xg-training-dataset-contract.md",
+      "/Users/tim/Code/fhfhockey.com/tasks/TASKS/xg-model/baseline/xg-training-dataset-contract.md",
     featureContractRef:
-      "/Users/tim/Code/fhfhockey.com/tasks/xg-training-feature-contract.md",
+      "/Users/tim/Code/fhfhockey.com/tasks/TASKS/xg-model/baseline/xg-training-feature-contract.md",
     materializationDecisionRef:
-      "/Users/tim/Code/fhfhockey.com/tasks/xg-training-materialization-decision.md",
+      "/Users/tim/Code/fhfhockey.com/tasks/TASKS/xg-model/baseline/xg-training-materialization-decision.md",
     randomSeed: args.randomSeed,
     splitConfig: args.splitConfig,
     splitStrategy: args.splitStrategy,

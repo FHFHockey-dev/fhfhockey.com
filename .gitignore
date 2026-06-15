@@ -18,6 +18,7 @@ dist
 # misc
 .DS_Store
 *.pem
+web/tasks/
 
 # debug
 npm-debug.log*

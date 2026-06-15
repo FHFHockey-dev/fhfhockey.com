@@ -8,8 +8,10 @@ import {
   calculateMcmScore,
   calculateOffenseRating,
   resolveBeastTier,
+  SKATER_COMPOSITE_SOURCE_METRICS,
   type SkaterCompositeBuildRequest,
 } from "./skaterCompositeWriter";
+import { MCM_COMPONENTS } from "./skaterCompositeMethodology";
 
 const request: SkaterCompositeBuildRequest = {
   season: 20252026,
@@ -71,6 +73,7 @@ const baseRow: ContextualRankingApiRow = {
 const strongPercentiles = {
   goals_per_60: 90,
   points_per_60: 95,
+  pp_points_per_60: 92,
   ixg_per_60: 88,
   shot_attempts_per_60: 84,
   sog_per_60: 82,
@@ -101,13 +104,20 @@ const sourceFreshness = [
     unavailable: true,
     reason: "Metric unavailable in this context.",
   },
+  {
+    metricKey: "pp_points_per_60" as const,
+    snapshotDate: null,
+    snapshotUpdatedAt: null,
+    unavailable: true,
+    reason: "Metric unavailable in this context.",
+  },
 ];
 
 describe("skaterCompositeWriter", () => {
   it("calculates bounded percentile-based composite scores", () => {
     expect(calculateOffenseRating(strongPercentiles)).toBe(83.88);
     expect(calculateDefenseRating(strongPercentiles)).toBe(79.25);
-    expect(calculateMcmScore(strongPercentiles)).toBe(86.23);
+    expect(calculateMcmScore(strongPercentiles)).toBe(86.53);
     expect(calculateArchetypeScores(strongPercentiles)).toMatchObject({
       shootFirstScore: 77.3,
       passFirstScore: 71.2,
@@ -130,6 +140,12 @@ describe("skaterCompositeWriter", () => {
         null,
       ),
     ).toBe("MCM Watch");
+  });
+
+  it("requests every published MCM scoring component from the source surfaces", () => {
+    expect(SKATER_COMPOSITE_SOURCE_METRICS).toEqual(
+      expect.arrayContaining(MCM_COMPONENTS.scoring),
+    );
   });
 
   it("builds an upsert row with methodology, provenance, and missing luck status", () => {
@@ -158,7 +174,7 @@ describe("skaterCompositeWriter", () => {
       deployment_bucket: "all",
       offense_rating_overall: 83.88,
       defense_rating_overall: 79.25,
-      mcm_score: 86.23,
+      mcm_score: 86.53,
       beast_tier: "BEAST",
       results_luck_index: null,
       methodology_version: "contextual_composites_v1",
@@ -191,6 +207,14 @@ describe("skaterCompositeWriter", () => {
     expect(JSON.stringify(row.provenance)).toContain("contextual_composites_v1");
     expect(row.provenance).toMatchObject({
       sourceFreshness,
+    });
+    expect(row.provenance).toMatchObject({
+      sourceMetrics: expect.arrayContaining(["pp_points_per_60"]),
+    });
+    expect(row.components_json).toMatchObject({
+      percentiles: {
+        pp_points_per_60: 92,
+      },
     });
   });
 

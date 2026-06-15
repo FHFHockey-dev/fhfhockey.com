@@ -8,6 +8,7 @@ import type { PlayerMatrixResponse } from "lib/rankings/playerMatrix";
 import type { RankingsSplitsResponse } from "lib/rankings/splits";
 import type { TeamMatrixResponse } from "lib/rankings/teamMatrix";
 import type { TrendingResponse } from "lib/rankings/trending";
+import type { WarSurfaceResponse } from "lib/rankings/war";
 import { TEAM_STYLE_SOURCE_CONTRACT } from "lib/rankings/teamStyleMethodology";
 import type {
   ContextualRankingApiRow,
@@ -117,6 +118,7 @@ const matrixPayload: PlayerMatrixResponse = {
     minGp: 1,
     minToiSeconds: 300,
     teamId: null,
+    search: null,
     peerGroupType: "all_skaters",
     sortMetric: "points_per_60",
     sortDirection: "desc",
@@ -242,6 +244,32 @@ const explorerPayload: ContextualRankingsResponse = {
     limit: 100,
     message: null,
   },
+};
+
+const metadataPayload = {
+  success: true,
+  generatedAt: "2026-06-13T12:00:00.000Z",
+  filters: {},
+  metrics: [],
+  glossary: [
+    {
+      key: "better_than_percentile",
+      label: "Better-than percentile",
+      description:
+        "The share of qualified peers with a lower normalized value after directionality is applied.",
+    },
+    {
+      key: "source_quality_flags",
+      label: "Source caveats",
+      description:
+        "Metric-specific flags for source limitations such as rink-scorekeeper sensitivity or denominator semantics.",
+    },
+  ],
+  comparison: {},
+  defensiveComposites: {},
+  teamStyle: TEAM_STYLE_SOURCE_CONTRACT,
+  war: null,
+  entityCoverage: [],
 };
 
 const deploymentTiersPayload: DeploymentTiersResponse = {
@@ -526,6 +554,65 @@ const splitsPayload: RankingsSplitsResponse = {
   },
 };
 
+const warPayload: WarSurfaceResponse = {
+  success: true,
+  request: {
+    entity: "skaters",
+    season: 20252026,
+    window: "season",
+    strength: "5v5",
+    position: "all",
+    deployment: "all",
+  },
+  status: "source_pending",
+  methodology: {
+    key: "wins_above_replacement",
+    label: "Wins Above Replacement",
+    version: null,
+    updatedAt: null,
+    sourceStatus: "source_pending",
+    replacementBaseline: null,
+    formula: null,
+    denominator: "wins",
+    direction: "higher_is_better",
+  },
+  summary:
+    "WAR remains unavailable until a defensible replacement-level model is documented, validated, and populated.",
+  sourcePendingReason:
+    "The current rankings snapshots publish descriptive rates, percentiles, deployment context, and composites, but they do not define replacement baselines, position adjustments, or win-value conversion.",
+  sourceTables: [
+    "rolling_player_game_metrics",
+    "skater_composite_ratings",
+    "goalie_stats_unified",
+    "team_power_ratings_daily",
+  ],
+  prerequisites: [
+    {
+      key: "replacement_baseline",
+      label: "Replacement Baseline",
+      status: "missing",
+      detail: "No approved replacement baseline is published.",
+    },
+    {
+      key: "win_value_conversion",
+      label: "Win Conversion",
+      status: "needs_validation",
+      detail: "Existing percentile composites are not a win-value model.",
+    },
+  ],
+  caveats: [
+    "No WAR values are exposed in API or UI.",
+    "Current matrix metrics are not a WAR substitute.",
+  ],
+  rows: [],
+  meta: {
+    generatedAt: "2026-06-13T12:00:00.000Z",
+    sourceStatus: "source_pending",
+    rowCount: 0,
+    message: "Wins Above Replacement is Source Pending for this context.",
+  },
+};
+
 const goaliePayload: GoalieMatrixResponse = {
   success: true,
   request: {
@@ -534,8 +621,11 @@ const goaliePayload: GoalieMatrixResponse = {
     window: "season",
     metric: "save_percentage",
     sortDirection: "desc",
+    role: "all",
     minStarts: 3,
     minShots: 100,
+    team: null,
+    search: null,
     page: 1,
     pageSize: 10,
   },
@@ -561,6 +651,10 @@ const goaliePayload: GoalieMatrixResponse = {
         confidence: "medium",
       },
       role: {
+        deploymentBucket: "g2_reserve",
+        deploymentLabel: "G2 Reserve",
+        deploymentSource: "goalie_start_projections.season_start_pct",
+        windowStartShare: 0.3,
         startShareLast10: 0.3,
         seasonStartShare: 0.032,
         startProbability: 0.1,
@@ -608,6 +702,15 @@ const goaliePayload: GoalieMatrixResponse = {
           percentile: 92,
           qualifiedPeerCount: 60,
           lowerIsBetter: false,
+        },
+        really_bad_start_rate: {
+          metricKey: "really_bad_start_rate",
+          rawValue: 0.083,
+          formattedValue: "8.3%",
+          rank: 5,
+          percentile: 94,
+          qualifiedPeerCount: 60,
+          lowerIsBetter: true,
         },
         steal_rate: {
           metricKey: "steal_rate",
@@ -666,6 +769,69 @@ const goaliePayload: GoalieMatrixResponse = {
   },
 };
 
+goaliePayload.rows.push({
+  ...goaliePayload.rows[0]!,
+  entity: {
+    id: 32,
+    name: "Casey DeSmith",
+    position: "G",
+    imageUrl: null,
+  },
+  team: {
+    id: 9,
+    abbreviation: "DAL",
+    name: "Dallas Stars",
+  },
+  sample: {
+    gamesPlayed: 8,
+    gamesStarted: 7,
+    shotsAgainst: 221,
+    toiSeconds: 24540,
+    minimumSampleMet: true,
+    confidence: "high",
+  },
+  role: {
+    deploymentBucket: "g2_backup",
+    deploymentLabel: "G2 Backup",
+    deploymentSource: "goalie_start_projections.season_start_pct",
+    windowStartShare: 0.7,
+    startShareLast10: 0.7,
+    seasonStartShare: 0.22,
+    startProbability: 0.62,
+    projectedGsaaPer60: 0.4,
+    confirmedStatus: true,
+  },
+  sort: {
+    metricKey: "save_percentage",
+    rank: 2,
+    percentile: 93.1,
+  },
+  metrics: {
+    ...goaliePayload.rows[0]!.metrics,
+    save_percentage: {
+      ...goaliePayload.rows[0]!.metrics.save_percentage,
+      rawValue: 0.921,
+      formattedValue: "92.1%",
+      rank: 2,
+      percentile: 93.1,
+    },
+    steal_rate: {
+      ...goaliePayload.rows[0]!.metrics.steal_rate,
+      rawValue: 0.2,
+      formattedValue: "20.0%",
+      rank: 8,
+      percentile: 84,
+    },
+    start_share: {
+      ...goaliePayload.rows[0]!.metrics.start_share,
+      rawValue: 0.22,
+      formattedValue: "22.0%",
+      rank: 20,
+      percentile: 60,
+    },
+  },
+});
+
 const teamPayload: TeamMatrixResponse = {
   success: true,
   request: {
@@ -673,6 +839,7 @@ const teamPayload: TeamMatrixResponse = {
     asOfDate: null,
     metric: "off_rating",
     sortDirection: "desc",
+    search: null,
     page: 1,
     pageSize: 10,
   },
@@ -851,6 +1018,61 @@ const teamPayload: TeamMatrixResponse = {
   },
 };
 
+teamPayload.rows.push({
+  ...teamPayload.rows[0]!,
+  team: {
+    id: 9,
+    abbreviation: "DAL",
+    name: "Dallas Stars",
+  },
+  record: {
+    latestPowerDate: "2026-06-09",
+    styleSnapshotDate: "2026-04-07",
+    styleGames: 78,
+    ppTier: 2,
+    pkTier: 1,
+    trend10: 1.4,
+  },
+  style: {
+    label: "Balanced pressure",
+    paceAxis: "balanced_event",
+    controlAxis: "balanced_control",
+    xgForPercentage: 51.2,
+    eventRate: 6.88,
+    shotQuality: 0.101,
+    source: "team_underlying_stats_summary",
+    adjusted: false,
+  },
+  luck: {
+    finishingLuck: 12.3,
+    saveLuck: 4.1,
+    netGoalsAboveExpected: 16.4,
+  },
+  sort: {
+    metricKey: "off_rating",
+    rank: 2,
+    percentile: 93.75,
+  },
+  metrics: {
+    ...teamPayload.rows[0]!.metrics,
+    off_rating: {
+      ...teamPayload.rows[0]!.metrics.off_rating,
+      rawValue: 126.4,
+      formattedValue: "126.4",
+      rank: 2,
+      percentile: 93.75,
+    },
+    net_luck: {
+      ...teamPayload.rows[0]!.metrics.net_luck,
+      rawValue: 16.4,
+      formattedValue: "16.40",
+      rank: 5,
+      percentile: 84,
+    },
+  },
+  warnings: ["raw_contextual_team_style"],
+});
+
 function setupSWR() {
   swrMock.mockImplementation((key: string | null) => {
     if (key == null) {
@@ -873,6 +1095,66 @@ function setupSWR() {
     }
     if (key.startsWith("/api/v1/contextual-rankings/splits")) {
       return { data: splitsPayload, error: null, isLoading: false };
+    }
+    if (key.startsWith("/api/v1/contextual-rankings/war")) {
+      return { data: warPayload, error: null, isLoading: false };
+    }
+    if (key.startsWith("/api/v1/contextual-rankings/snapshot")) {
+      const url = new URL(key, "https://fhfh.test");
+      const entity = url.searchParams.get("entity");
+      const selectedGoalie = url.searchParams.get("selected_goalie");
+      const selectedTeam = url.searchParams.get("selected_team");
+      const selectedPlayer = url.searchParams.get("selected_player");
+      let row: unknown = null;
+
+      if (entity === "goalies" && selectedGoalie === "32") {
+        row = goaliePayload.rows[1];
+      } else if (entity === "goalies" && selectedGoalie === "999") {
+        row = {
+          ...goaliePayload.rows[1]!,
+          entity: {
+            ...goaliePayload.rows[1]!.entity,
+            id: 999,
+            name: "Off Page Goalie",
+          },
+        };
+      } else if (entity === "teams" && selectedTeam === "DAL") {
+        row = teamPayload.rows[1];
+      } else if (entity === "skaters" && selectedPlayer === "1") {
+        row = matrixPayload.rows[0];
+      }
+
+      return {
+        data: row
+          ? {
+              success: true,
+              version: "contextual_ranking_snapshot_v1",
+              status: "available",
+              request: {
+                entity,
+                season: 20252026,
+                window: entity === "teams" ? null : "season",
+                selectedPlayerId: selectedPlayer ? Number(selectedPlayer) : null,
+                selectedGoalieId: selectedGoalie ? Number(selectedGoalie) : null,
+                selectedTeam,
+              },
+              row,
+              source: {
+                endpoint: "/api/v1/contextual-rankings/snapshot",
+                sourceTables: [],
+                snapshotDate: "2026-06-09",
+                latestAvailableSnapshotDate: "2026-06-09",
+                generatedAt: "2026-06-13T12:00:00.000Z",
+              },
+              caveats: [],
+            }
+          : undefined,
+        error: null,
+        isLoading: false,
+      };
+    }
+    if (key.startsWith("/api/v1/contextual-rankings/metadata")) {
+      return { data: metadataPayload, error: null, isLoading: false };
     }
     if (key.startsWith("/api/v1/contextual-rankings?")) {
       return { data: explorerPayload, error: null, isLoading: false };
@@ -897,6 +1179,43 @@ describe("RankingsPage interactions", () => {
 
     expect(screen.getByText("Rankings Matrix")).toBeTruthy();
     expect(screen.getAllByText("Matt Savoie").length).toBeGreaterThan(0);
+    expect(screen.getByText("Legend & Methodology")).toBeTruthy();
+    fireEvent.click(screen.getByText("Legend & Methodology"));
+    expect(screen.getByRole("heading", { name: "Ranking Legend" })).toBeTruthy();
+    expect(
+      screen.getByText("Percentile among qualified peers; higher percentile is stronger."),
+    ).toBeTruthy();
+    expect(screen.getByText(/Raw rank uses dense-rank semantics/)).toBeTruthy();
+    expect(screen.getByText("Better-than percentile")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("Search"), {
+      target: { value: "Savoie" },
+    });
+    expect(replaceMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pathname: "/rankings",
+        query: expect.objectContaining({
+          search: "Savoie",
+          page: "1",
+        }),
+      }),
+      undefined,
+      { shallow: true },
+    );
+
+    fireEvent.change(screen.getByLabelText("Display"), {
+      target: { value: "raw_rank" },
+    });
+    expect(replaceMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pathname: "/rankings",
+        query: expect.objectContaining({
+          display: "raw_rank",
+        }),
+      }),
+      undefined,
+      { shallow: true },
+    );
 
     fireEvent.click(screen.getByRole("button", { name: /P\/60/i }));
     expect(replaceMock).toHaveBeenCalledWith(
@@ -1034,9 +1353,15 @@ describe("RankingsPage interactions", () => {
       screen.getByRole("region", { name: "Wins Above Replacement status" }),
     ).toBeTruthy();
     expect(
-      screen.getByText("WAR remains unavailable until a defensible model is documented."),
+      screen.getByText(
+        "WAR remains unavailable until a defensible replacement-level model is documented, validated, and populated.",
+      ),
     ).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Replacement Baseline" })).toBeTruthy();
     expect(screen.getByText("No WAR values are exposed in API or UI.")).toBeTruthy();
+    expect(swrMock).toHaveBeenCalledWith(
+      expect.stringMatching(/^\/api\/v1\/contextual-rankings\/war\?/),
+    );
   });
 
   it("renders skater, goalie, team, and planned states from entity URL state", () => {
@@ -1051,11 +1376,77 @@ describe("RankingsPage interactions", () => {
     expect(
       screen.getByRole("heading", { name: "Goalie Rankings Matrix" }),
     ).toBeTruthy();
-    expect(screen.getByText("Trent Miner")).toBeTruthy();
-    expect(screen.getByText(/Goalie role caveat:/)).toBeTruthy();
+    expect(screen.getAllByText("Trent Miner").length).toBeGreaterThan(0);
+    expect(screen.getByText(/Goalie roles use latest projected season start share/)).toBeTruthy();
+    expect(screen.getByLabelText("Goalie snapshot")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Why He Stands Out" })).toBeTruthy();
+    expect(screen.getByText(/Start share: 3.2%/)).toBeTruthy();
+    expect(
+      screen.getByText("Emergency call-up denominator adjustment remains Source Pending."),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByText("Casey DeSmith"));
+    expect(replaceMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pathname: "/rankings",
+        query: expect.objectContaining({
+          entity: "goalies",
+          selected_goalie: "32",
+        }),
+      }),
+      undefined,
+      { shallow: true },
+    );
+    routerState.query = {
+      entity: "goalies",
+      tab: "rankings",
+      selected_goalie: "32",
+    };
+    rerender(<RankingsPage />);
+    expect(
+      within(screen.getByLabelText("Goalie snapshot")).getByText("Casey DeSmith"),
+    ).toBeTruthy();
+    expect(screen.getByText(/Start share: 22.0%/)).toBeTruthy();
     expect(swrMock).toHaveBeenCalledWith(
       expect.stringMatching(/^\/api\/v1\/contextual-rankings\/goalies\?/),
     );
+    expect(swrMock).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^\/api\/v1\/contextual-rankings\/snapshot\?.*selected_goalie=32/,
+      ),
+    );
+
+    routerState.query = {
+      entity: "goalies",
+      tab: "rankings",
+      selected_goalie: "999",
+    };
+    rerender(<RankingsPage />);
+    expect(
+      within(screen.getByLabelText("Goalie snapshot")).getByText("Off Page Goalie"),
+    ).toBeTruthy();
+
+    routerState.query = { entity: "goalies", tab: "trending" };
+    rerender(<RankingsPage />);
+
+    expect(screen.getByRole("region", { name: "Trending status" })).toBeTruthy();
+    expect(screen.getByText(/Trending is Source Pending for goalie rankings/)).toBeTruthy();
+    expect(screen.getByText("No fake values are generated while the secondary-tab source contract is pending.")).toBeTruthy();
+
+    swrMock.mockClear();
+    routerState.query = { entity: "goalies", tab: "metric_explorer" };
+    rerender(<RankingsPage />);
+
+    expect(screen.getByRole("region", { name: "Metric Explorer status" })).toBeTruthy();
+    expect(
+      screen.getByText(/Metric Explorer is Source Pending for goalie rankings/),
+    ).toBeTruthy();
+    expect(
+      swrMock.mock.calls.some(
+        ([key]) =>
+          typeof key === "string" &&
+          /^\/api\/v1\/contextual-rankings\?/.test(key),
+      ),
+    ).toBe(false);
 
     routerState.query = { entity: "teams", tab: "rankings" };
     rerender(<RankingsPage />);
@@ -1063,9 +1454,38 @@ describe("RankingsPage interactions", () => {
     expect(
       screen.getByRole("heading", { name: "Team Rankings Matrix" }),
     ).toBeTruthy();
-    expect(screen.getByText("Carolina Hurricanes")).toBeTruthy();
-    expect(screen.getByText("Controls play")).toBeTruthy();
+    expect(screen.getAllByText("Carolina Hurricanes").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Controls play").length).toBeGreaterThan(0);
     expect(screen.getByText(/Team style caveat:/)).toBeTruthy();
+    expect(screen.getByLabelText("Team snapshot")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Why This Team Stands Out" })).toBeTruthy();
+    expect(
+      screen.getByText("Score/venue-adjusted style remains Source Pending when unavailable."),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByText("Dallas Stars"));
+    expect(replaceMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pathname: "/rankings",
+        query: expect.objectContaining({
+          entity: "teams",
+          selected_team: "DAL",
+        }),
+      }),
+      undefined,
+      { shallow: true },
+    );
+    routerState.query = {
+      entity: "teams",
+      tab: "rankings",
+      selected_team: "DAL",
+    };
+    rerender(<RankingsPage />);
+    expect(
+      within(screen.getByLabelText("Team snapshot")).getByText("Dallas Stars"),
+    ).toBeTruthy();
+    expect(
+      within(screen.getByLabelText("Team snapshot")).getByText("Balanced pressure"),
+    ).toBeTruthy();
     expect(swrMock).toHaveBeenCalledWith(
       expect.stringMatching(/^\/api\/v1\/contextual-rankings\/teams\?/),
     );
@@ -1074,7 +1494,9 @@ describe("RankingsPage interactions", () => {
     rerender(<RankingsPage />);
 
     expect(
-      screen.getByText("WAR remains unavailable until a defensible model is documented."),
+      screen.getByText(
+        "WAR remains unavailable until a defensible replacement-level model is documented, validated, and populated.",
+      ),
     ).toBeTruthy();
   });
 });

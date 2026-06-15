@@ -25,7 +25,7 @@ This checklist translates the pass-2 PRD into an execution artifact for the audi
 
 ## 2. Formula Ledger Gates
 
-- [x] `tasks/rpm-audit-notes-pass-2.md` exists.
+- [x] `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md` exists.
 - [x] Every audited metric has exactly one status/formula entry in the formula ledger.
 - [x] Each entry contains only:
   - emoji status
@@ -37,7 +37,7 @@ This checklist translates the pass-2 PRD into an execution artifact for the audi
 
 ## 3. Action Backlog Gates
 
-- [x] `tasks/rpm-audit-action-items-pass-2.md` exists.
+- [x] `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md` exists.
 - [x] Every concrete improvement opportunity discovered during the audit is captured in the action backlog when required by the PRD decision rule.
 - [x] Every backlog entry includes:
   - title
@@ -57,8 +57,8 @@ This checklist translates the pass-2 PRD into an execution artifact for the audi
 ## 3A. Artifact Boundary Gates
 
 - [x] The current state of the two standalone audit outputs is checked against `/Users/tim/Code/fhfhockey.com/tasks/artifacts/rolling-player-pass-2-artifact-boundary-check.md`.
-- [x] `tasks/rpm-audit-notes-pass-2.md` contains only formula-ledger entries and no implementation guidance.
-- [x] `tasks/rpm-audit-action-items-pass-2.md` contains implementation-oriented findings and no formula-ledger-only filler entries.
+- [x] `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md` contains only formula-ledger entries and no implementation guidance.
+- [x] `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md` contains implementation-oriented findings and no formula-ledger-only filler entries.
 - [x] Any newly discovered correctness, naming, fallback, observability, recompute-friction, performance, compatibility, test, or optional-enhancement finding is written to the backlog file instead of the formula ledger.
 
 ## 4. Validation Evidence Gates
@@ -117,8 +117,8 @@ This checklist translates the pass-2 PRD into an execution artifact for the audi
 ## 7. Completion Gates
 
 - [x] The audit leaves behind both:
-  - `tasks/rpm-audit-notes-pass-2.md`
-  - `tasks/rpm-audit-action-items-pass-2.md`
+  - `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md`
+  - `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md`
 - [x] The remediation plan explicitly says the action-items backlog becomes the source for implementation sequencing after the audit.
 - [x] The final audit confirms that each audited metric produced the appropriate outputs:
   - formula/status ledger entry

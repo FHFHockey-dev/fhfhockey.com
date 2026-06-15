@@ -68,4 +68,28 @@ describe("rankingMetadata", () => {
       "team_underlying_stats_summary currently lags",
     );
   });
+
+  it("publishes the versioned comparison payload contract", () => {
+    const payload = buildContextualRankingsMetadataSurface();
+
+    expect(payload.glossary.map((entry) => entry.key)).toContain(
+      "comparison_payload_contract",
+    );
+    expect(payload.comparison).toMatchObject({
+      endpoint: "/api/v1/contextual-rankings/comparison",
+      version: "contextual_ranking_comparison_v1",
+      status: "available",
+      supportedEntities: ["skaters", "goalies", "teams"],
+      maxSubjects: 6,
+      subjectParams: {
+        skaters: ["player_ids", "entity_ids"],
+        goalies: ["goalie_ids", "entity_ids"],
+        teams: ["teams", "team_abbreviations"],
+      },
+      legacyListComparison: {
+        endpoint: "/api/v1/contextual-rankings",
+        supportedEntities: ["skaters"],
+      },
+    });
+  });
 });

@@ -4,6 +4,7 @@ import type {
 } from "lib/rankings/goalieMatrix";
 import { formatToiClock } from "lib/rankings/rankingFormatters";
 import type { ContextualRankingsSortDirection } from "lib/rankings/rankingTypes";
+import type { RankingsFilterState } from "lib/rankings/rankingUrlState";
 
 import {
   formatPercentileScore,
@@ -22,6 +23,9 @@ type GoalieMatrixTableProps = {
   ) => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
+  selectedGoalieId: number | null;
+  onSelectGoalie: (goalieId: number) => void;
+  displayMode?: RankingsFilterState["displayMode"];
 };
 
 function sortDirectionForMetric(args: {
@@ -44,6 +48,108 @@ function StateBody({ message, colSpan }: { message: string; colSpan: number }) {
   );
 }
 
+function goalieMetricState(
+  cell: GoalieMatrixResponse["rows"][number]["metrics"][GoalieMatrixMetricKey],
+  row: GoalieMatrixResponse["rows"][number],
+  staleSource: boolean,
+) {
+  if (cell.qualifiedPeerCount === 0) {
+    return { label: "No sample", className: styles.metricStateUnavailable };
+  }
+  if (cell.rawValue == null || cell.percentile == null) {
+    return { label: "Source pending", className: styles.metricStateUnavailable };
+  }
+  if (staleSource) {
+    return { label: "Stale source", className: styles.metricStateStale };
+  }
+  if (!row.sample.minimumSampleMet || row.sample.confidence === "low") {
+    return { label: "Low sample", className: styles.metricStateLowSample };
+  }
+  if (row.warnings.length > 0) {
+    return { label: "Source caveat", className: styles.metricStateCaveat };
+  }
+  if (cell.rawValue === 0) {
+    return { label: "True zero", className: styles.metricStateZero };
+  }
+  return null;
+}
+
+function GoalieMetricCell({
+  cell,
+  column,
+  row,
+  displayMode,
+  staleSource,
+}: {
+  cell: GoalieMatrixResponse["rows"][number]["metrics"][GoalieMatrixMetricKey];
+  column: GoalieMatrixResponse["meta"]["metricColumns"][number];
+  row: GoalieMatrixResponse["rows"][number];
+  displayMode: RankingsFilterState["displayMode"];
+  staleSource: boolean;
+}) {
+  const unavailable =
+    cell.qualifiedPeerCount === 0 || cell.rawValue == null || cell.percentile == null;
+  const effectiveStaleSource = staleSource && !unavailable;
+  const state = goalieMetricState(cell, row, effectiveStaleSource);
+  const title = [
+    column.label,
+    cell.formattedValue ? `Value ${cell.formattedValue}` : null,
+    cell.rank == null ? null : `Rank ${cell.rank}`,
+    cell.percentile == null ? null : `Percentile ${cell.percentile.toFixed(1)}%`,
+    column.lowerIsBetter ? "Lower raw values are better" : null,
+    effectiveStaleSource
+      ? "Snapshot is older than latest available goalie matrix snapshot"
+      : null,
+    !row.sample.minimumSampleMet || row.sample.confidence === "low"
+      ? "Low sample"
+      : null,
+    row.warnings.length ? `Caveats: ${row.warnings.join(", ")}` : null,
+    column.source,
+  ].filter(Boolean).join(" | ");
+  const percentileLabel = formatPercentileScore(cell.percentile);
+  const rankLabel = cell.rank == null ? "UR" : `#${cell.rank}`;
+  const primaryLabel =
+    displayMode === "raw_rank"
+      ? unavailable
+        ? "N/A"
+        : rankLabel
+      : unavailable
+        ? "N/A"
+        : percentileLabel;
+  const showRank = displayMode === "both";
+
+  return (
+    <td>
+      <div
+        className={`${styles.matrixMetricCell} ${
+          unavailable ? styles.scoreToneMuted : getScoreTileTone(cell.percentile)
+        }`}
+        title={title}
+        aria-label={title}
+      >
+        <div className={styles.metricScoreStack}>
+          <div className={styles.metricScoreTile}>
+            <strong>{primaryLabel}</strong>
+          </div>
+          {showRank ? (
+            <span className={styles.metricRankLine}>
+              {unavailable ? "N/A" : rankLabel}
+            </span>
+          ) : null}
+          <span className={styles.metricValueLine}>
+            {unavailable ? "N/A" : cell.formattedValue ?? "-"}
+          </span>
+        </div>
+        {state ? (
+          <span className={`${styles.metricStateChip} ${state.className}`}>
+            {state.label}
+          </span>
+        ) : null}
+      </div>
+    </td>
+  );
+}
+
 export default function GoalieMatrixTable({
   payload,
   isLoading,
@@ -51,26 +157,27 @@ export default function GoalieMatrixTable({
   onSortMetric,
   onPageChange,
   onPageSizeChange,
+  selectedGoalieId,
+  onSelectGoalie,
+  displayMode = "both",
 }: GoalieMatrixTableProps) {
   const metricColumnCount = payload?.meta.metricColumns.length ?? 0;
-  const colSpan = 7 + metricColumnCount;
+  const colSpan = 8 + metricColumnCount;
+  const staleMatrixSnapshot =
+    payload?.meta.snapshotDate != null &&
+    payload.meta.latestAvailableSnapshotDate != null &&
+    payload.meta.snapshotDate !== payload.meta.latestAvailableSnapshotDate;
 
   return (
     <section className={styles.matrixSection}>
-      <div className={styles.inlineNotice}>
-        Goalie role caveat: Start Share uses latest projection role context;
-        emergency call-up denominator adjustment remains planned.
-        {payload?.meta.sourceWarnings.length
-          ? ` Source caveats: ${payload.meta.sourceWarnings.join(", ")}.`
-          : ""}
-      </div>
       <div className={styles.matrixWrap}>
         <table className={styles.matrixTable}>
           <thead>
             <tr>
-              <th>Rank</th>
+              <th>Sort Rank</th>
               <th>Goalie</th>
               <th>Team</th>
+              <th>Role</th>
               <th>GP</th>
               <th>Starts</th>
               <th>Shots</th>
@@ -106,9 +213,27 @@ export default function GoalieMatrixTable({
           ) : (
             <tbody>
               {payload.rows.map((row) => (
-                <tr key={row.entity.id}>
+                <tr
+                  key={row.entity.id}
+                  className={
+                    row.entity.id === selectedGoalieId
+                      ? styles.selectedMatrixRow
+                      : undefined
+                  }
+                  onClick={() => onSelectGoalie(row.entity.id)}
+                >
                   <td className={styles.stickyRankCell}>
-                    {row.sort.rank ?? "-"}
+                    <button
+                      type="button"
+                      className={styles.rowSelectButton}
+                      aria-pressed={row.entity.id === selectedGoalieId}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onSelectGoalie(row.entity.id);
+                      }}
+                    >
+                      {row.sort.rank ?? "-"}
+                    </button>
                   </td>
                   <td className={styles.stickyPlayerCell}>
                     <div className={styles.playerCell}>
@@ -120,6 +245,7 @@ export default function GoalieMatrixTable({
                     </div>
                   </td>
                   <td>{row.team.abbreviation ?? "-"}</td>
+                  <td>{row.role.deploymentLabel ?? "Unclassified"}</td>
                   <td>{row.sample.gamesPlayed}</td>
                   <td>{row.sample.gamesStarted}</td>
                   <td>{row.sample.shotsAgainst}</td>
@@ -127,32 +253,14 @@ export default function GoalieMatrixTable({
                   {payload.meta.metricColumns.map((column) => {
                     const cell = row.metrics[column.metricKey];
                     return (
-                      <td key={column.metricKey}>
-                        <div
-                          className={`${styles.matrixMetricCell} ${getScoreTileTone(
-                            cell.percentile,
-                          )}`}
-                          title={`${column.label}: ${
-                            cell.formattedValue ?? "N/A"
-                          } | Rank ${cell.rank ?? "UR"} | ${column.source}`}
-                        >
-                          <div className={styles.metricScoreStack}>
-                            <div className={styles.metricScoreTile}>
-                              <strong>{formatPercentileScore(cell.percentile)}</strong>
-                            </div>
-                            <span className={styles.metricScoreMeta}>
-                              <span>{cell.rank == null ? "UR" : `#${cell.rank}`}</span>
-                              <span aria-hidden="true">•</span>
-                              <span>{cell.formattedValue ?? "-"}</span>
-                            </span>
-                          </div>
-                          {row.warnings.length ? (
-                            <span className={styles.metricStateChip}>
-                              {row.sample.minimumSampleMet ? "Source caveat" : "Low sample"}
-                            </span>
-                          ) : null}
-                        </div>
-                      </td>
+                      <GoalieMetricCell
+                        key={column.metricKey}
+                        cell={cell}
+                        column={column}
+                        row={row}
+                        displayMode={displayMode}
+                        staleSource={Boolean(staleMatrixSnapshot)}
+                      />
                     );
                   })}
                 </tr>
@@ -160,6 +268,14 @@ export default function GoalieMatrixTable({
             </tbody>
           )}
         </table>
+      </div>
+      <div className={styles.inlineNotice}>
+        Goalie roles use latest projected season start share when available,
+        with selected-window team start share as a fallback. Emergency call-up
+        denominator adjustment remains Source Pending.
+        {payload?.meta.sourceWarnings.length
+          ? ` Source caveats: ${payload.meta.sourceWarnings.join(", ")}.`
+          : ""}
       </div>
       {payload ? (
         <footer className={styles.matrixFooter}>

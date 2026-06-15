@@ -9,6 +9,7 @@ export type AsOfRule =
   | "identity"
   | "strict_before_game_date"
   | "strict_before_start_time"
+  | "strict_before_prediction_cutoff_and_start_time"
   | "current_prediction_only"
   | "serving_only";
 
@@ -22,7 +23,7 @@ export type GamePredictionFeatureSource = {
   goNoGo: "go" | "go_with_caveat" | "limited" | "no_go";
 };
 
-export const GAME_PREDICTION_FEATURE_SET_VERSION = "game_features_v4_roster_sos_context";
+export const GAME_PREDICTION_FEATURE_SET_VERSION = "game_features_v5_accuracy_candidates";
 
 export const GAME_PREDICTION_FEATURE_SOURCES: GamePredictionFeatureSource[] = [
   {
@@ -102,6 +103,16 @@ export const GAME_PREDICTION_FEATURE_SOURCES: GamePredictionFeatureSource[] = [
     use: "required",
     asOfRule: "current_prediction_only",
     fallback: "Blend likely starters or fall back to team-level goalie strength.",
+    goNoGo: "go_with_caveat",
+  },
+  {
+    id: "market_odds_snapshots",
+    tables: ["game_prediction_market_odds_snapshots"],
+    featureGroup: "market",
+    use: "optional",
+    asOfRule: "strict_before_prediction_cutoff_and_start_time",
+    fallback:
+      "Use odds only as a market baseline/comparator until pregame-safe historical snapshots exist for training.",
     goNoGo: "go_with_caveat",
   },
   {

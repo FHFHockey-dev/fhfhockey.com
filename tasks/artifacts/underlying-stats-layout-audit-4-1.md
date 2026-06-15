@@ -1,6 +1,6 @@
 # Underlying Stats Landing Page Layout Audit
 
-Task: `4.1 Review the rendered landing page against fhfh-styles.md and identify the specific header, spacing, and module-density changes needed to make the page more table-first.`
+Task: `4.1 Review the rendered landing page against tasks/TASKS/rules/fhfh-styles.md and identify the specific header, spacing, and module-density changes needed to make the page more table-first.`
 
 ## Audit basis
 
@@ -16,9 +16,9 @@ Verified render sources:
 
 Reference rules:
 
-- table-heavy/data-page structure in `/Users/tim/Code/fhfhockey.com/fhfh-styles.md:208`
-- typography and scanability rules in `/Users/tim/Code/fhfhockey.com/fhfh-styles.md:576`
-- table structure and row-density rules in `/Users/tim/Code/fhfhockey.com/fhfh-styles.md:1028`
+- table-heavy/data-page structure in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/rules/fhfh-styles.md:208`
+- typography and scanability rules in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/rules/fhfh-styles.md:576`
+- table structure and row-density rules in `/Users/tim/Code/fhfhockey.com/tasks/TASKS/rules/fhfh-styles.md:1028`
 
 ## Findings
 

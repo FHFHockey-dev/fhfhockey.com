@@ -4,7 +4,7 @@ Sub-task: `4.8`
 
 This artifact records the highest-value debug-surface gaps, payload omissions, and UX blockers still visible after the `4.1` through `4.7` implementation pass.
 
-The concrete backlog items were added to [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/rpm-audit-action-items-pass-2.md). The remaining gaps cluster into three implementation buckets.
+The concrete backlog items were added to [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md). The remaining gaps cluster into three implementation buckets.
 
 ### 1. Payload authority gaps
 

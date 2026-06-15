@@ -3,6 +3,7 @@ import type {
   TeamMatrixResponse,
 } from "lib/rankings/teamMatrix";
 import type { ContextualRankingsSortDirection } from "lib/rankings/rankingTypes";
+import type { RankingsFilterState } from "lib/rankings/rankingUrlState";
 
 import {
   formatPercentileScore,
@@ -21,6 +22,9 @@ type TeamMatrixTableProps = {
   ) => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
+  selectedTeam: string;
+  onSelectTeam: (team: string) => void;
+  displayMode?: RankingsFilterState["displayMode"];
 };
 
 function sortDirectionForMetric(args: {
@@ -43,6 +47,118 @@ function StateBody({ message, colSpan }: { message: string; colSpan: number }) {
   );
 }
 
+function teamMetricState(
+  cell: TeamMatrixResponse["rows"][number]["metrics"][TeamMatrixMetricKey],
+  row: TeamMatrixResponse["rows"][number],
+  staleSource: boolean,
+) {
+  if (cell.qualifiedPeerCount === 0) {
+    return { label: "No sample", className: styles.metricStateUnavailable };
+  }
+  if (cell.rawValue == null || cell.percentile == null) {
+    return { label: "Source pending", className: styles.metricStateUnavailable };
+  }
+  if (staleSource) {
+    return { label: "Stale source", className: styles.metricStateStale };
+  }
+  if (row.warnings.length > 0) {
+    return { label: "Raw context", className: styles.metricStateCaveat };
+  }
+  if (cell.rawValue === 0) {
+    return { label: "True zero", className: styles.metricStateZero };
+  }
+  return null;
+}
+
+function isStyleDerivedMetric(metricKey: TeamMatrixMetricKey) {
+  return (
+    metricKey === "xgf_percentage" ||
+    metricKey === "shot_quality" ||
+    metricKey === "event_rate" ||
+    metricKey === "finishing_luck" ||
+    metricKey === "save_luck" ||
+    metricKey === "net_luck"
+  );
+}
+
+function TeamMetricCell({
+  cell,
+  column,
+  row,
+  displayMode,
+  staleMatrixSnapshot,
+}: {
+  cell: TeamMatrixResponse["rows"][number]["metrics"][TeamMatrixMetricKey];
+  column: TeamMatrixResponse["meta"]["metricColumns"][number];
+  row: TeamMatrixResponse["rows"][number];
+  displayMode: RankingsFilterState["displayMode"];
+  staleMatrixSnapshot: boolean;
+}) {
+  const unavailable =
+    cell.qualifiedPeerCount === 0 || cell.rawValue == null || cell.percentile == null;
+  const staleStyleSource =
+    isStyleDerivedMetric(column.metricKey) &&
+    row.record.styleSnapshotDate != null &&
+    row.record.styleSnapshotDate !== row.record.latestPowerDate;
+  const staleSource = !unavailable && (staleMatrixSnapshot || staleStyleSource);
+  const state = teamMetricState(cell, row, staleSource);
+  const title = [
+    column.label,
+    cell.formattedValue ? `Value ${cell.formattedValue}` : null,
+    cell.rank == null ? null : `Rank ${cell.rank}`,
+    cell.percentile == null ? null : `Percentile ${cell.percentile.toFixed(1)}%`,
+    column.lowerIsBetter ? "Lower raw values are better" : null,
+    staleMatrixSnapshot ? "Snapshot is older than latest available team matrix snapshot" : null,
+    staleStyleSource
+      ? `Team style source ${row.record.styleSnapshotDate} differs from team power snapshot ${row.record.latestPowerDate}`
+      : null,
+    row.warnings.length ? `Caveats: ${row.warnings.join(", ")}` : null,
+    column.source,
+  ].filter(Boolean).join(" | ");
+  const percentileLabel = formatPercentileScore(cell.percentile);
+  const rankLabel = cell.rank == null ? "UR" : `#${cell.rank}`;
+  const primaryLabel =
+    displayMode === "raw_rank"
+      ? unavailable
+        ? "N/A"
+        : rankLabel
+      : unavailable
+        ? "N/A"
+        : percentileLabel;
+  const showRank = displayMode === "both";
+
+  return (
+    <td>
+      <div
+        className={`${styles.matrixMetricCell} ${
+          unavailable ? styles.scoreToneMuted : getScoreTileTone(cell.percentile)
+        }`}
+        title={title}
+        aria-label={title}
+      >
+        <div className={styles.metricScoreStack}>
+          <div className={styles.metricScoreTile}>
+            <strong>{primaryLabel}</strong>
+          </div>
+          {showRank ? (
+            <span className={styles.metricRankLine}>
+              {unavailable ? "N/A" : rankLabel}
+            </span>
+          ) : null}
+          <span className={styles.metricValueLine}>
+            {unavailable ? "N/A" : cell.formattedValue ?? "-"}
+          </span>
+        </div>
+        {state ? (
+          <span className={`${styles.metricStateChip} ${state.className}`}>
+            {state.label}
+          </span>
+        ) : null}
+      </div>
+    </td>
+  );
+}
+
 export default function TeamMatrixTable({
   payload,
   isLoading,
@@ -50,24 +166,25 @@ export default function TeamMatrixTable({
   onSortMetric,
   onPageChange,
   onPageSizeChange,
+  selectedTeam,
+  onSelectTeam,
+  displayMode = "both",
 }: TeamMatrixTableProps) {
   const metricColumnCount = payload?.meta.metricColumns.length ?? 0;
   const colSpan = 7 + metricColumnCount;
+  const normalizedSelectedTeam = selectedTeam.trim().toUpperCase();
+  const staleMatrixSnapshot =
+    payload?.meta.snapshotDate != null &&
+    payload.meta.latestAvailableSnapshotDate != null &&
+    payload.meta.snapshotDate !== payload.meta.latestAvailableSnapshotDate;
 
   return (
     <section className={styles.matrixSection}>
-      <div className={styles.inlineNotice}>
-        Team style caveat: badges are raw/contextual descriptors, not score- or
-        venue-adjusted team traits.
-        {payload?.meta.sourceWarnings.length
-          ? ` ${payload.meta.sourceWarnings.join(" ")}.`
-          : ""}
-      </div>
       <div className={styles.matrixWrap}>
         <table className={styles.matrixTable}>
           <thead>
             <tr>
-              <th>Rank</th>
+              <th>Sort Rank</th>
               <th>Team</th>
               <th>Style</th>
               <th>Games</th>
@@ -105,8 +222,30 @@ export default function TeamMatrixTable({
           ) : (
             <tbody>
               {payload.rows.map((row) => (
-                <tr key={row.team.abbreviation}>
-                  <td className={styles.stickyRankCell}>{row.sort.rank ?? "-"}</td>
+                <tr
+                  key={row.team.abbreviation}
+                  className={
+                    row.team.abbreviation.toUpperCase() === normalizedSelectedTeam
+                      ? styles.selectedMatrixRow
+                      : undefined
+                  }
+                  onClick={() => onSelectTeam(row.team.abbreviation)}
+                >
+                  <td className={styles.stickyRankCell}>
+                    <button
+                      type="button"
+                      className={styles.rowSelectButton}
+                      aria-pressed={
+                        row.team.abbreviation.toUpperCase() === normalizedSelectedTeam
+                      }
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onSelectTeam(row.team.abbreviation);
+                      }}
+                    >
+                      {row.sort.rank ?? "-"}
+                    </button>
+                  </td>
                   <td className={styles.stickyPlayerCell}>
                     <div className={styles.playerCell}>
                       <strong>{row.team.abbreviation}</strong>
@@ -130,32 +269,14 @@ export default function TeamMatrixTable({
                   {payload.meta.metricColumns.map((column) => {
                     const cell = row.metrics[column.metricKey];
                     return (
-                      <td key={column.metricKey}>
-                        <div
-                          className={`${styles.matrixMetricCell} ${getScoreTileTone(
-                            cell.percentile,
-                          )}`}
-                          title={`${column.label}: ${
-                            cell.formattedValue ?? "N/A"
-                          } | Rank ${cell.rank ?? "UR"} | ${column.source}`}
-                        >
-                          <div className={styles.metricScoreStack}>
-                            <div className={styles.metricScoreTile}>
-                              <strong>{formatPercentileScore(cell.percentile)}</strong>
-                            </div>
-                            <span className={styles.metricScoreMeta}>
-                              <span>{cell.rank == null ? "UR" : `#${cell.rank}`}</span>
-                              <span aria-hidden="true">•</span>
-                              <span>{cell.formattedValue ?? "-"}</span>
-                            </span>
-                          </div>
-                          {row.warnings.length ? (
-                            <span className={styles.metricStateChip}>
-                              Raw context
-                            </span>
-                          ) : null}
-                        </div>
-                      </td>
+                      <TeamMetricCell
+                        key={column.metricKey}
+                        cell={cell}
+                        column={column}
+                        row={row}
+                        displayMode={displayMode}
+                        staleMatrixSnapshot={Boolean(staleMatrixSnapshot)}
+                      />
                     );
                   })}
                 </tr>
@@ -163,6 +284,13 @@ export default function TeamMatrixTable({
             </tbody>
           )}
         </table>
+      </div>
+      <div className={styles.inlineNotice}>
+        Team style caveat: badges are raw/contextual descriptors, not score- or
+        venue-adjusted team traits.
+        {payload?.meta.sourceWarnings.length
+          ? ` ${payload.meta.sourceWarnings.join(" ")}.`
+          : ""}
       </div>
       {payload ? (
         <footer className={styles.matrixFooter}>

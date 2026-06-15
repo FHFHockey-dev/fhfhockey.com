@@ -4,7 +4,7 @@
 
 This artifact records the remaining training-use release blockers after reviewing:
 
-- `tasks/validation-checklist.md`
+- `tasks/TASKS/xg-model/nhl-api-foundation/validation-checklist.md`
 - `tasks/artifacts/xg-release-validation-2026-03-31.md`
 - `tasks/artifacts/xg-exact-parity-disposition-2026-03-30.md`
 - `tasks/artifacts/xg-on-ice-policy-decision-2026-03-30.md`

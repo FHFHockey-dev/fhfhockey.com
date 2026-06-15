@@ -71,6 +71,7 @@ export type WgoTeamRow = Pick<
 
 export type NstTeamGamelogRow = Pick<
   Tables<"nst_team_gamelogs_as_counts">,
+  | "season_id"
   | "team_abbreviation"
   | "date"
   | "gp"
@@ -84,9 +85,18 @@ export type NstTeamGamelogRow = Pick<
   | "xgf"
   | "xga"
   | "xgf_pct"
+  | "xga_per_60"
+  | "toi_seconds"
+  | "gf_pct"
   | "sf"
   | "sa"
   | "sf_pct"
+  | "ff"
+  | "fa"
+  | "ff_pct"
+  | "cf"
+  | "ca"
+  | "cf_pct"
 >;
 
 export type TeamCtpiRow = Pick<
@@ -195,9 +205,38 @@ export type ForgeTeamProjectionRow = Pick<
   | "updated_at"
 >;
 
+export type MarketOddsSnapshotRow = Pick<
+  Tables<"game_prediction_market_odds_snapshots">,
+  | "odds_snapshot_id"
+  | "game_id"
+  | "provider"
+  | "captured_at"
+  | "game_date"
+  | "event_start_at"
+  | "home_team_id"
+  | "away_team_id"
+  | "home_moneyline"
+  | "away_moneyline"
+  | "home_market_no_vig_probability"
+  | "away_market_no_vig_probability"
+  | "market_overround"
+  | "home_spread_line"
+  | "home_spread_odds"
+  | "away_spread_line"
+  | "away_spread_odds"
+  | "total_line"
+  | "over_odds"
+  | "under_odds"
+  | "source_url"
+  | "provenance"
+  | "metadata"
+>;
+
 export type GamePredictionFeatureInputs = {
   game: GameRow;
   sourceAsOfDate: string;
+  predictionCutoffAt?: string;
+  oddsSourceCutoffAt?: string;
   homeTeam: TeamRow;
   awayTeam: TeamRow;
   teamRows?: TeamRow[];
@@ -214,6 +253,7 @@ export type GamePredictionFeatureInputs = {
   forgeGoalieGameRows: ForgeGoalieGameRow[];
   wgoGoalieRows: WgoGoalieRow[];
   forgeTeamProjectionRows?: ForgeTeamProjectionRow[];
+  marketOddsRows?: MarketOddsSnapshotRow[];
 };
 
 export type SourceCutoff = {
@@ -232,6 +272,7 @@ export type FeatureBuildWarning = {
 export type TeamSideFeatures = {
   teamId: number;
   abbreviation: string;
+  gamesPlayedAsOf: number;
   daysRest: number | null;
   isBackToBack: boolean;
   gamesInLast3Days: number;
@@ -284,22 +325,72 @@ export type WgoTeamFeatures = {
   penaltyKillPct: number | null;
 };
 
+export type TeamRecentWindowFeatures = {
+  games: number;
+  goalDifferentialPerGame: number | null;
+  goalsForPerGame: number | null;
+  goalsAgainstPerGame: number | null;
+  xgfPct: number | null;
+  shotShare: number | null;
+  fenwickShare: number | null;
+  corsiShare: number | null;
+  gfPct: number | null;
+  xgaPer60: number | null;
+  pointPct: number | null;
+};
+
 export type TeamRecentFormFeatures = {
   sourceMaxDate: string;
+  currentSeasonGames: number;
+  priorSeasonGamesUsed: number;
+  last5: TeamRecentWindowFeatures;
+  last10: TeamRecentWindowFeatures;
+  last20: TeamRecentWindowFeatures;
+  last40: TeamRecentWindowFeatures;
+  seasonToDate: TeamRecentWindowFeatures;
+  crossSeasonLast20: TeamRecentWindowFeatures | null;
+  crossSeasonLast40: TeamRecentWindowFeatures | null;
+  earlySeasonPrior: TeamRecentWindowFeatures | null;
+  noCrossSeasonLast20: TeamRecentWindowFeatures;
+  noCrossSeasonLast40: TeamRecentWindowFeatures;
   last5Games: number;
   last10Games: number;
+  last20Games: number;
+  last40Games: number;
+  seasonToDateGames: number;
   last5GoalDifferentialPerGame: number | null;
   last10GoalDifferentialPerGame: number | null;
+  last20GoalDifferentialPerGame: number | null;
+  last40GoalDifferentialPerGame: number | null;
   last5GoalsForPerGame: number | null;
   last10GoalsForPerGame: number | null;
+  last20GoalsForPerGame: number | null;
+  last40GoalsForPerGame: number | null;
   last5GoalsAgainstPerGame: number | null;
   last10GoalsAgainstPerGame: number | null;
+  last20GoalsAgainstPerGame: number | null;
+  last40GoalsAgainstPerGame: number | null;
   last5XgfPct: number | null;
   last10XgfPct: number | null;
+  last20XgfPct: number | null;
+  last40XgfPct: number | null;
+  seasonToDateXgfPct: number | null;
+  crossSeasonPriorXgfPct: number | null;
   last5ShotShare: number | null;
   last10ShotShare: number | null;
+  last20ShotShare: number | null;
+  last40ShotShare: number | null;
+  last20FenwickShare: number | null;
+  last40FenwickShare: number | null;
+  last20GfPct: number | null;
+  last40GfPct: number | null;
+  last20XgaPer60: number | null;
+  last40XgaPer60: number | null;
   last5PointPct: number | null;
   last10PointPct: number | null;
+  last20PointPct: number | null;
+  last40PointPct: number | null;
+  seasonToDatePointPct: number | null;
 };
 
 export type TeamCtpiFeatures = {
@@ -344,6 +435,7 @@ export type GoalieBlendFeatures = {
   topGoalieId: number | null;
   topGoalieName: string | null;
   topGoalieStartProbability: number | null;
+  startUncertainty: number;
   probabilityMass: number;
   context: GoalieContextFeatures | null;
 };
@@ -382,15 +474,69 @@ export type MatchupFeatures = {
   homeMinusAwayGoalDifferential: number | null;
   homeMinusAwayRecent5GoalDifferentialPerGame: number | null;
   homeMinusAwayRecent10GoalDifferentialPerGame: number | null;
+  homeMinusAwayRecent20GoalDifferentialPerGame: number | null;
+  homeMinusAwayRecent40GoalDifferentialPerGame: number | null;
   homeMinusAwayRecent5XgfPct: number | null;
   homeMinusAwayRecent10XgfPct: number | null;
+  homeMinusAwayRecent20XgfPct: number | null;
+  homeMinusAwayRecent40XgfPct: number | null;
+  homeMinusAwaySeasonToDateXgfPct: number | null;
+  homeMinusAwayCrossSeasonPriorXgfPct: number | null;
   homeMinusAwayRecent10PointPct: number | null;
+  homeMinusAwayRecent20PointPct: number | null;
+  homeMinusAwayRecent40PointPct: number | null;
+  homeMinusAwaySeasonToDatePointPct: number | null;
+  homeMinusAwayRecent20ShotShare: number | null;
+  homeMinusAwayRecent40ShotShare: number | null;
+  homeMinusAwayRecent20FenwickShare: number | null;
+  homeMinusAwayRecent40FenwickShare: number | null;
+  homeMinusAwayRecent20GfPct: number | null;
+  homeMinusAwayRecent40GfPct: number | null;
+  homeMinusAwayRecent20XgaPer60: number | null;
+  homeMinusAwayRecent40XgaPer60: number | null;
   homeMinusAwayCtpi: number | null;
   homeMinusAwayPastOpponentCompositeRating: number | null;
   homeMinusAwayForgeProjectedGoals: number | null;
   homeMinusAwayForgeProjectedShots: number | null;
   homeMinusAwayWeightedGoalieGsaaPer60: number | null;
+  homeMinusAwayGoalieStartUncertainty: number | null;
   homeRestAdvantageDays: number | null;
+  homeMinusAwayGamesPlayedAsOf: number | null;
+  seasonPhaseOrdinal: number;
+};
+
+export type MarketOddsFeatures = {
+  source: "game_prediction_market_odds_snapshots";
+  sourceName: string;
+  oddsSnapshotId: string;
+  provider: string;
+  capturedAt: string;
+  importRecordedAt: string | null;
+  importBatchId: string | null;
+  capturedAgeHours: number | null;
+  sourceUrl: string;
+  homeMoneyline: number;
+  awayMoneyline: number;
+  homeNoVigProbability: number | null;
+  awayNoVigProbability: number | null;
+  overround: number | null;
+  homeSpreadLine: number | null;
+  homeSpreadOdds: number | null;
+  awaySpreadLine: number | null;
+  awaySpreadOdds: number | null;
+  totalLine: number | null;
+  overOdds: number | null;
+  underOdds: number | null;
+};
+
+export type SeasonPhase = "early" | "middle" | "late" | "playoff";
+
+export type SeasonPhaseFeatures = {
+  phase: SeasonPhase;
+  ordinal: number;
+  homeGamesPlayed: number;
+  awayGamesPlayed: number;
+  averageGamesPlayed: number;
 };
 
 export type GamePredictionFeatureSnapshotPayload = {
@@ -401,6 +547,9 @@ export type GamePredictionFeatureSnapshotPayload = {
   gameDate: string;
   startTime: string;
   sourceAsOfDate: string;
+  predictionCutoffAt: string | null;
+  seasonPhase: SeasonPhaseFeatures;
+  market: MarketOddsFeatures | null;
   home: TeamSideFeatures;
   away: TeamSideFeatures;
   matchup: MatchupFeatures;
@@ -426,6 +575,14 @@ function toNumber(value: number | string | null | undefined): number | null {
   if (value == null) return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value : null;
 }
 
 function clampNumber(
@@ -519,6 +676,17 @@ function latestDateOnly(values: Array<string | null | undefined>): string | null
       .filter((value): value is string => Boolean(value))
       .sort((a, b) => b.localeCompare(a))[0] ?? null
   );
+}
+
+function earliestIso(values: Array<string | null | undefined>): string | null {
+  const parsed = values
+    .flatMap((value) => {
+      if (!value) return [];
+      const time = Date.parse(value);
+      return Number.isFinite(time) ? [{ value, time }] : [];
+    })
+    .sort((a, b) => a.time - b.time)[0];
+  return parsed?.value ?? null;
 }
 
 export function buildScheduleContextFeatures(args: {
@@ -621,7 +789,7 @@ function shareFromCounts(
   return percentishToRate(fallbackPct);
 }
 
-function summarizeRecentTeamRows(rows: NstTeamGamelogRow[]) {
+function summarizeRecentTeamRows(rows: NstTeamGamelogRow[]): TeamRecentWindowFeatures {
   const games = sumNumbers(rows, (row) => row.gp) || rows.length;
   const goalsFor = sumNumbers(rows, (row) => row.gf);
   const goalsAgainst = sumNumbers(rows, (row) => row.ga);
@@ -629,8 +797,16 @@ function summarizeRecentTeamRows(rows: NstTeamGamelogRow[]) {
   const xga = sumNumbers(rows, (row) => row.xga);
   const shotsFor = sumNumbers(rows, (row) => row.sf);
   const shotsAgainst = sumNumbers(rows, (row) => row.sa);
+  const fenwickFor = sumNumbers(rows, (row) => row.ff);
+  const fenwickAgainst = sumNumbers(rows, (row) => row.fa);
+  const corsiFor = sumNumbers(rows, (row) => row.cf);
+  const corsiAgainst = sumNumbers(rows, (row) => row.ca);
+  const toiSeconds = sumNumbers(rows, (row) => row.toi_seconds);
   const points = sumNumbers(rows, (row) => row.points);
   const hasPoints = rows.some((row) => toNumber(row.points) != null);
+  const xgaPer60Values = rows
+    .map((row) => toNumber(row.xga_per_60))
+    .filter((value): value is number => value != null);
 
   return {
     games,
@@ -639,6 +815,16 @@ function summarizeRecentTeamRows(rows: NstTeamGamelogRow[]) {
     goalsAgainstPerGame: divideOrNull(goalsAgainst, games),
     xgfPct: shareFromCounts(xgf, xga, rows[0]?.xgf_pct),
     shotShare: shareFromCounts(shotsFor, shotsAgainst, rows[0]?.sf_pct),
+    fenwickShare: shareFromCounts(fenwickFor, fenwickAgainst, rows[0]?.ff_pct),
+    corsiShare: shareFromCounts(corsiFor, corsiAgainst, rows[0]?.cf_pct),
+    gfPct: shareFromCounts(goalsFor, goalsAgainst, rows[0]?.gf_pct),
+    xgaPer60:
+      toiSeconds > 0
+        ? (xga / toiSeconds) * 3600
+        : xgaPer60Values.length > 0
+          ? xgaPer60Values.reduce((sum, value) => sum + value, 0) /
+            xgaPer60Values.length
+          : null,
     pointPct:
       hasPoints && games > 0
         ? points / (2 * games)
@@ -649,6 +835,7 @@ function summarizeRecentTeamRows(rows: NstTeamGamelogRow[]) {
 function buildTeamRecentFormFeatures(
   rows: NstTeamGamelogRow[],
   teamAbbreviation: string,
+  seasonId: number,
   sourceAsOfDate: string,
 ): TeamRecentFormFeatures | null {
   const teamRows = rows
@@ -660,25 +847,85 @@ function buildTeamRecentFormFeatures(
     .sort((a, b) => b.date.localeCompare(a.date));
   if (teamRows.length === 0) return null;
 
-  const last5 = summarizeRecentTeamRows(teamRows.slice(0, 5));
-  const last10 = summarizeRecentTeamRows(teamRows.slice(0, 10));
+  const currentSeasonRows = teamRows.filter((row) => row.season_id === seasonId);
+  const strictRows = currentSeasonRows;
+  const priorSeasonRows = teamRows.filter((row) => row.season_id < seasonId);
+  const currentSeasonSummary = summarizeRecentTeamRows(currentSeasonRows);
+  const currentSeasonGames = currentSeasonSummary.games;
+  const useCrossSeasonPrior = currentSeasonGames < 20 && priorSeasonRows.length > 0;
+  const crossSeasonRows = [...currentSeasonRows, ...priorSeasonRows].sort((a, b) =>
+    b.date.localeCompare(a.date),
+  );
+
+  const last5 = summarizeRecentTeamRows(strictRows.slice(0, 5));
+  const last10 = summarizeRecentTeamRows(strictRows.slice(0, 10));
+  const last20 = summarizeRecentTeamRows(strictRows.slice(0, 20));
+  const last40 = summarizeRecentTeamRows(strictRows.slice(0, 40));
+  const seasonToDate = summarizeRecentTeamRows(currentSeasonRows);
+  const crossSeasonLast20 = useCrossSeasonPrior
+    ? summarizeRecentTeamRows(crossSeasonRows.slice(0, 20))
+    : null;
+  const crossSeasonLast40 = useCrossSeasonPrior
+    ? summarizeRecentTeamRows(crossSeasonRows.slice(0, 40))
+    : null;
+  const earlySeasonPrior = useCrossSeasonPrior
+    ? summarizeRecentTeamRows(priorSeasonRows.slice(0, 20))
+    : null;
 
   return {
     sourceMaxDate: teamRows[0]!.date,
+    currentSeasonGames,
+    priorSeasonGamesUsed: useCrossSeasonPrior
+      ? Math.max(0, (crossSeasonLast40?.games ?? 0) - currentSeasonGames)
+      : 0,
+    last5,
+    last10,
+    last20,
+    last40,
+    seasonToDate,
+    crossSeasonLast20,
+    crossSeasonLast40,
+    earlySeasonPrior,
+    noCrossSeasonLast20: last20,
+    noCrossSeasonLast40: last40,
     last5Games: last5.games,
     last10Games: last10.games,
+    last20Games: last20.games,
+    last40Games: last40.games,
+    seasonToDateGames: seasonToDate.games,
     last5GoalDifferentialPerGame: last5.goalDifferentialPerGame,
     last10GoalDifferentialPerGame: last10.goalDifferentialPerGame,
+    last20GoalDifferentialPerGame: last20.goalDifferentialPerGame,
+    last40GoalDifferentialPerGame: last40.goalDifferentialPerGame,
     last5GoalsForPerGame: last5.goalsForPerGame,
     last10GoalsForPerGame: last10.goalsForPerGame,
+    last20GoalsForPerGame: last20.goalsForPerGame,
+    last40GoalsForPerGame: last40.goalsForPerGame,
     last5GoalsAgainstPerGame: last5.goalsAgainstPerGame,
     last10GoalsAgainstPerGame: last10.goalsAgainstPerGame,
+    last20GoalsAgainstPerGame: last20.goalsAgainstPerGame,
+    last40GoalsAgainstPerGame: last40.goalsAgainstPerGame,
     last5XgfPct: last5.xgfPct,
     last10XgfPct: last10.xgfPct,
+    last20XgfPct: last20.xgfPct,
+    last40XgfPct: last40.xgfPct,
+    seasonToDateXgfPct: seasonToDate.xgfPct,
+    crossSeasonPriorXgfPct: earlySeasonPrior?.xgfPct ?? null,
     last5ShotShare: last5.shotShare,
     last10ShotShare: last10.shotShare,
+    last20ShotShare: last20.shotShare,
+    last40ShotShare: last40.shotShare,
+    last20FenwickShare: last20.fenwickShare,
+    last40FenwickShare: last40.fenwickShare,
+    last20GfPct: last20.gfPct,
+    last40GfPct: last40.gfPct,
+    last20XgaPer60: last20.xgaPer60,
+    last40XgaPer60: last40.xgaPer60,
     last5PointPct: last5.pointPct,
     last10PointPct: last10.pointPct,
+    last20PointPct: last20.pointPct,
+    last40PointPct: last40.pointPct,
+    seasonToDatePointPct: seasonToDate.pointPct,
   };
 }
 
@@ -823,14 +1070,15 @@ export function buildGoalieBlendFeatures(
       ),
     )[0];
   if (linesCccGoalie) {
+    const candidateCount =
+      linesCccGoalie.goalie_2_player_id != null ||
+      linesCccGoalie.goalie_2_name != null
+        ? 2
+        : 1;
     return {
       source: "lines_ccc",
       confirmed: true,
-      candidateCount:
-        linesCccGoalie.goalie_2_player_id != null ||
-        linesCccGoalie.goalie_2_name != null
-          ? 2
-          : 1,
+      candidateCount,
       weightedProjectedGsaaPer60: latestGoaliePerformanceGsaa(
         goaliePerformanceRows,
         linesCccGoalie.goalie_1_player_id,
@@ -838,6 +1086,12 @@ export function buildGoalieBlendFeatures(
       topGoalieId: linesCccGoalie.goalie_1_player_id,
       topGoalieName: linesCccGoalie.goalie_1_name,
       topGoalieStartProbability: 1,
+      startUncertainty: goalieStartUncertainty({
+        source: "lines_ccc",
+        confirmed: true,
+        topGoalieStartProbability: 1,
+        candidateCount,
+      }),
       probabilityMass: 1,
       context: null,
     };
@@ -865,6 +1119,12 @@ export function buildGoalieBlendFeatures(
         topGoalieId: currentLineGoalie,
         topGoalieName: null,
         topGoalieStartProbability: 1,
+        startUncertainty: goalieStartUncertainty({
+          source: "lineCombinations",
+          confirmed: false,
+          topGoalieStartProbability: 1,
+          candidateCount: 1,
+        }),
         probabilityMass: 1,
         context: null,
       };
@@ -886,6 +1146,12 @@ export function buildGoalieBlendFeatures(
       topGoalieId: null,
       topGoalieName: null,
       topGoalieStartProbability: null,
+      startUncertainty: goalieStartUncertainty({
+        source: "fallback",
+        confirmed: false,
+        topGoalieStartProbability: null,
+        candidateCount: 0,
+      }),
       probabilityMass: 0,
       context: null,
     };
@@ -925,9 +1191,31 @@ export function buildGoalieBlendFeatures(
     topGoalieId: top?.row.player_id ?? null,
     topGoalieName: null,
     topGoalieStartProbability: top ? top.weight : null,
+    startUncertainty: goalieStartUncertainty({
+      source: "goalie_start_projections",
+      confirmed: confirmedRows.length > 0,
+      topGoalieStartProbability: top ? top.weight : null,
+      candidateCount: usableRows.length,
+    }),
     probabilityMass: rawTotal,
     context: null,
   };
+}
+
+function goalieStartUncertainty(args: {
+  source: GoalieBlendFeatures["source"];
+  confirmed: boolean;
+  topGoalieStartProbability: number | null;
+  candidateCount: number;
+}): number {
+  if (args.confirmed) return 0;
+  if (args.source === "fallback") return 1;
+  const probabilityUncertainty =
+    args.topGoalieStartProbability == null
+      ? 0.5
+      : 1 - Math.max(0, Math.min(1, args.topGoalieStartProbability));
+  const sourceFloor = args.candidateCount > 1 ? 0.1 : 0.25;
+  return Number(Math.max(sourceFloor, probabilityUncertainty).toFixed(6));
 }
 
 function firstGoalieIdForGameTeam(
@@ -984,6 +1272,12 @@ function buildRecentUsageGoalieFeatures(args: {
     topGoalieId,
     topGoalieName: null,
     topGoalieStartProbability: topCount / recentStarterIds.length,
+    startUncertainty: goalieStartUncertainty({
+      source: "recent_usage",
+      confirmed: false,
+      topGoalieStartProbability: topCount / recentStarterIds.length,
+      candidateCount: counts.size,
+    }),
     probabilityMass: 1,
     context: null,
   };
@@ -1108,9 +1402,121 @@ function subtractNullable(
   return a == null || b == null ? null : a - b;
 }
 
+function gamesPlayedAsOf(args: {
+  teamId: number;
+  standings: StandingsFeatures | null;
+  priorGames: GameRow[];
+  seasonId: number;
+  sourceAsOfDate: string;
+}): number {
+  const standingsGames = toNumber(args.standings?.gamesPlayed);
+  if (standingsGames != null) return Math.max(0, Math.round(standingsGames));
+  return args.priorGames.filter(
+    (game) =>
+      game.seasonId === args.seasonId &&
+      game.date < args.sourceAsOfDate &&
+      (game.homeTeamId === args.teamId || game.awayTeamId === args.teamId),
+  ).length;
+}
+
+function deriveSeasonPhase(args: {
+  gameType: number | null;
+  homeGamesPlayed: number;
+  awayGamesPlayed: number;
+}): SeasonPhaseFeatures {
+  const averageGamesPlayed =
+    (Math.max(0, args.homeGamesPlayed) + Math.max(0, args.awayGamesPlayed)) / 2;
+  const phase: SeasonPhase =
+    args.gameType === 3
+      ? "playoff"
+      : averageGamesPlayed < 20
+        ? "early"
+        : averageGamesPlayed < 60
+          ? "middle"
+          : "late";
+  const ordinalByPhase: Record<SeasonPhase, number> = {
+    early: 0,
+    middle: 1,
+    late: 2,
+    playoff: 3,
+  };
+
+  return {
+    phase,
+    ordinal: ordinalByPhase[phase],
+    homeGamesPlayed: args.homeGamesPlayed,
+    awayGamesPlayed: args.awayGamesPlayed,
+    averageGamesPlayed,
+  };
+}
+
+function buildMarketOddsFeatures(args: {
+  rows: MarketOddsSnapshotRow[];
+  game: GameRow;
+  predictionCutoffAt: string | null | undefined;
+}): MarketOddsFeatures | null {
+  const cutoff = args.predictionCutoffAt ?? args.game.startTime;
+  if (!cutoff) return null;
+  const eligibleRows = args.rows
+    .filter(
+      (row) =>
+        row.game_id === args.game.id &&
+        row.home_team_id === args.game.homeTeamId &&
+        row.away_team_id === args.game.awayTeamId &&
+        row.captured_at < cutoff &&
+        (!args.game.startTime || row.captured_at < args.game.startTime),
+    )
+    .sort((a, b) => b.captured_at.localeCompare(a.captured_at));
+  const row = eligibleRows[0] ?? null;
+  if (!row) return null;
+  const capturedAtMs = Date.parse(row.captured_at);
+  const cutoffMs = Date.parse(cutoff);
+  const provenance = isRecord(row.provenance) ? row.provenance : {};
+  const metadata = isRecord(row.metadata) ? row.metadata : {};
+  const sourceName =
+    stringValue(provenance.import_source_name) ??
+    stringValue(metadata.import_source_name) ??
+    stringValue(provenance.source_name) ??
+    stringValue(metadata.source_name) ??
+    stringValue(provenance.provider) ??
+    "game_prediction_market_odds_snapshots";
+
+  return {
+    source: "game_prediction_market_odds_snapshots",
+    sourceName,
+    oddsSnapshotId: row.odds_snapshot_id,
+    provider: row.provider,
+    capturedAt: row.captured_at,
+    importRecordedAt:
+      stringValue(provenance.import_recorded_at) ??
+      stringValue(metadata.import_recorded_at),
+    importBatchId:
+      stringValue(provenance.import_batch_id) ??
+      stringValue(metadata.import_batch_id),
+    capturedAgeHours:
+      Number.isFinite(capturedAtMs) && Number.isFinite(cutoffMs)
+        ? Math.max(0, (cutoffMs - capturedAtMs) / 3_600_000)
+        : null,
+    sourceUrl: row.source_url,
+    homeMoneyline: row.home_moneyline,
+    awayMoneyline: row.away_moneyline,
+    homeNoVigProbability: toNumber(row.home_market_no_vig_probability),
+    awayNoVigProbability: toNumber(row.away_market_no_vig_probability),
+    overround: toNumber(row.market_overround),
+    homeSpreadLine: toNumber(row.home_spread_line),
+    homeSpreadOdds: toNumber(row.home_spread_odds),
+    awaySpreadLine: toNumber(row.away_spread_line),
+    awaySpreadOdds: toNumber(row.away_spread_odds),
+    totalLine: toNumber(row.total_line),
+    overOdds: toNumber(row.over_odds),
+    underOdds: toNumber(row.under_odds),
+  };
+}
+
 export function buildMatchupFeatures(
   home: TeamSideFeatures,
   away: TeamSideFeatures,
+  seasonPhase: SeasonPhaseFeatures,
 ): MatchupFeatures {
   return {
     homeMinusAwayOffRating: subtractNullable(
@@ -1145,6 +1551,14 @@ export function buildMatchupFeatures(
       home.recentForm?.last10GoalDifferentialPerGame,
       away.recentForm?.last10GoalDifferentialPerGame,
     ),
+    homeMinusAwayRecent20GoalDifferentialPerGame: subtractNullable(
+      home.recentForm?.last20GoalDifferentialPerGame,
+      away.recentForm?.last20GoalDifferentialPerGame,
+    ),
+    homeMinusAwayRecent40GoalDifferentialPerGame: subtractNullable(
+      home.recentForm?.last40GoalDifferentialPerGame,
+      away.recentForm?.last40GoalDifferentialPerGame,
+    ),
     homeMinusAwayRecent5XgfPct: subtractNullable(
       home.recentForm?.last5XgfPct,
       away.recentForm?.last5XgfPct,
@@ -1153,9 +1567,69 @@ export function buildMatchupFeatures(
       home.recentForm?.last10XgfPct,
       away.recentForm?.last10XgfPct,
     ),
+    homeMinusAwayRecent20XgfPct: subtractNullable(
+      home.recentForm?.last20XgfPct,
+      away.recentForm?.last20XgfPct,
+    ),
+    homeMinusAwayRecent40XgfPct: subtractNullable(
+      home.recentForm?.last40XgfPct,
+      away.recentForm?.last40XgfPct,
+    ),
+    homeMinusAwaySeasonToDateXgfPct: subtractNullable(
+      home.recentForm?.seasonToDateXgfPct,
+      away.recentForm?.seasonToDateXgfPct,
+    ),
+    homeMinusAwayCrossSeasonPriorXgfPct: subtractNullable(
+      home.recentForm?.crossSeasonPriorXgfPct,
+      away.recentForm?.crossSeasonPriorXgfPct,
+    ),
     homeMinusAwayRecent10PointPct: subtractNullable(
       home.recentForm?.last10PointPct,
       away.recentForm?.last10PointPct,
+    ),
+    homeMinusAwayRecent20PointPct: subtractNullable(
+      home.recentForm?.last20PointPct,
+      away.recentForm?.last20PointPct,
+    ),
+    homeMinusAwayRecent40PointPct: subtractNullable(
+      home.recentForm?.last40PointPct,
+      away.recentForm?.last40PointPct,
+    ),
+    homeMinusAwaySeasonToDatePointPct: subtractNullable(
+      home.recentForm?.seasonToDatePointPct,
+      away.recentForm?.seasonToDatePointPct,
+    ),
+    homeMinusAwayRecent20ShotShare: subtractNullable(
+      home.recentForm?.last20ShotShare,
+      away.recentForm?.last20ShotShare,
+    ),
+    homeMinusAwayRecent40ShotShare: subtractNullable(
+      home.recentForm?.last40ShotShare,
+      away.recentForm?.last40ShotShare,
+    ),
+    homeMinusAwayRecent20FenwickShare: subtractNullable(
+      home.recentForm?.last20FenwickShare,
+      away.recentForm?.last20FenwickShare,
+    ),
+    homeMinusAwayRecent40FenwickShare: subtractNullable(
+      home.recentForm?.last40FenwickShare,
+      away.recentForm?.last40FenwickShare,
+    ),
+    homeMinusAwayRecent20GfPct: subtractNullable(
+      home.recentForm?.last20GfPct,
+      away.recentForm?.last20GfPct,
+    ),
+    homeMinusAwayRecent40GfPct: subtractNullable(
+      home.recentForm?.last40GfPct,
+      away.recentForm?.last40GfPct,
+    ),
+    homeMinusAwayRecent20XgaPer60: subtractNullable(
+      home.recentForm?.last20XgaPer60,
+      away.recentForm?.last20XgaPer60,
+    ),
+    homeMinusAwayRecent40XgaPer60: subtractNullable(
+      home.recentForm?.last40XgaPer60,
+      away.recentForm?.last40XgaPer60,
     ),
     homeMinusAwayCtpi: subtractNullable(
       home.ctpi?.ctpi0To100,
@@ -1177,7 +1651,16 @@ export function buildMatchupFeatures(
       home.goalie.weightedProjectedGsaaPer60,
       away.goalie.weightedProjectedGsaaPer60,
     ),
+    homeMinusAwayGoalieStartUncertainty: subtractNullable(
+      home.goalie.startUncertainty,
+      away.goalie.startUncertainty,
+    ),
     homeRestAdvantageDays: subtractNullable(home.daysRest, away.daysRest),
+    homeMinusAwayGamesPlayedAsOf: subtractNullable(
+      home.gamesPlayedAsOf,
+      away.gamesPlayedAsOf,
+    ),
+    seasonPhaseOrdinal: seasonPhase.ordinal,
   };
 }
 
@@ -1221,6 +1704,7 @@ function buildTeamSideFeatures(args: {
   const recentForm = buildTeamRecentFormFeatures(
     inputs.nstTeamGamelogRows,
     team.abbreviation,
+    inputs.game.seasonId,
     inputs.sourceAsOfDate,
   );
   const ctpiRow = latestBefore(
@@ -1241,6 +1725,15 @@ function buildTeamSideFeatures(args: {
     inputs.game.id,
     team.id,
   );
+
+  const standings = buildStandingsFeatures(standingsRow);
+  const gamesPlayed = gamesPlayedAsOf({
+    teamId: team.id,
+    standings,
+    priorGames: inputs.priorGames,
+    seasonId: inputs.game.seasonId,
+    sourceAsOfDate: inputs.sourceAsOfDate,
+  });
 
   for (const cutoff of [
     collectSourceCutoff(
@@ -1493,9 +1986,10 @@ function buildTeamSideFeatures(args: {
   return {
     teamId: team.id,
     abbreviation: team.abbreviation,
+    gamesPlayedAsOf: gamesPlayed,
     ...schedule,
     teamPower: buildTeamPowerFeatures(teamPowerRow, inputs.game.date),
-    standings: buildStandingsFeatures(standingsRow),
+    standings,
     wgoTeam: buildWgoTeamFeatures(wgoRow),
     recentForm,
     ctpi: buildTeamCtpiFeatures(ctpiRow),
@@ -1531,6 +2025,49 @@ export function buildGamePredictionFeatureSnapshotPayload(
     fallbackFlags,
     sourceCutoffs,
   });
+  const predictionCutoffAt = inputs.predictionCutoffAt ?? null;
+  const seasonPhase = deriveSeasonPhase({
+    gameType: inputs.game.type,
+    homeGamesPlayed: home.gamesPlayedAsOf,
+    awayGamesPlayed: away.gamesPlayedAsOf,
+  });
+  const market = buildMarketOddsFeatures({
+    rows: inputs.marketOddsRows ?? [],
+    game: inputs.game,
+    predictionCutoffAt: predictionCutoffAt ?? inputs.oddsSourceCutoffAt,
+  });
+  const marketCutoff: SourceCutoff = {
+    table: "game_prediction_market_odds_snapshots",
+    cutoff: market?.capturedAt ?? null,
+    asOfRule: "strict_before_prediction_cutoff_and_start_time",
+    stale:
+      !market ||
+      (market.capturedAgeHours != null && market.capturedAgeHours > 24),
+  };
+  sourceCutoffs.push(marketCutoff);
+  if (!market) {
+    fallbackFlags.market_odds_unavailable = true;
+    warnings.push({
+      code: "missing_market_odds",
+      source: "game_prediction_market_odds_snapshots",
+      message:
+        "No pre-cutoff market odds snapshot is available; odds remain comparator-only.",
+    });
+  } else if (marketCutoff.stale) {
+    warnings.push({
+      code: "stale_market_odds",
+      source: "game_prediction_market_odds_snapshots",
+      message:
+        "Market odds snapshot is older than 24 hours at prediction cutoff.",
+    });
+  }
+  fallbackFlags.close_score_5v5_omitted = true;
+  warnings.push({
+    code: "unsupported_close_score_5v5",
+    source: "nst_team_gamelogs_as_counts",
+    message:
+      "Close-score / 5v5-close xG share is omitted because the current stored source does not expose a leak-free close-score split.",
+  });
 
   return {
     featureSetVersion: GAME_PREDICTION_FEATURE_SET_VERSION,
@@ -1540,9 +2077,12 @@ export function buildGamePredictionFeatureSnapshotPayload(
     gameDate: inputs.game.date,
     startTime: inputs.game.startTime,
     sourceAsOfDate: inputs.sourceAsOfDate,
+    predictionCutoffAt,
+    seasonPhase,
+    market,
     home,
     away,
-    matchup: buildMatchupFeatures(home, away),
+    matchup: buildMatchupFeatures(home, away, seasonPhase),
     sourceCutoffs,
     missingFeatures,
     fallbackFlags,
@@ -1624,6 +2164,7 @@ export async function fetchGamePredictionFeatureInputs(
   gameId: number,
   options: {
     sourceAsOfDate?: string;
+    predictionCutoffAt?: string;
   } = {},
 ): Promise<GamePredictionFeatureInputs> {
   const { data: game, error: gameError } = await client
@@ -1637,9 +2178,14 @@ export async function fetchGamePredictionFeatureInputs(
   const hasExplicitSourceAsOfDate = options.sourceAsOfDate != null;
   const sourceAsOfDate = options.sourceAsOfDate ?? typedGame.date;
   const sourceAsOfEnd = `${sourceAsOfDate}T23:59:59.999Z`;
+  const predictionCutoffAt =
+    options.predictionCutoffAt ?? typedGame.startTime ?? sourceAsOfEnd;
+  const oddsSourceCutoffAt =
+    earliestIso([predictionCutoffAt, typedGame.startTime]) ??
+    predictionCutoffAt;
   const minPriorDate = new Date(
     Math.min(parseDateOnly(typedGame.date), parseDateOnly(sourceAsOfDate)) -
-      45 * 86_400_000,
+      420 * 86_400_000,
   )
     .toISOString()
     .slice(0, 10);
@@ -1721,6 +2267,7 @@ export async function fetchGamePredictionFeatureInputs(
     forgeGoalieGameResult,
     wgoGoalieResult,
     forgeTeamProjectionResult,
+    marketOddsResult,
   ] = await Promise.all([
     client
       .from("team_power_ratings_daily")
@@ -1750,12 +2297,12 @@ export async function fetchGamePredictionFeatureInputs(
     client
       .from("nst_team_gamelogs_as_counts")
       .select(
-        "team_abbreviation,date,gp,wins,losses,otl,points,point_pct,gf,ga,xgf,xga,xgf_pct,sf,sa,sf_pct",
+        "season_id,team_abbreviation,date,gp,wins,losses,otl,points,point_pct,gf,ga,gf_pct,xgf,xga,xgf_pct,xga_per_60,toi_seconds,sf,sa,sf_pct,ff,fa,ff_pct,cf,ca,cf_pct",
       )
       .in("team_abbreviation", teamAbbreviations)
       .lt("date", sourceAsOfDate)
       .order("date", { ascending: false })
-      .limit(80),
+      .limit(240),
     client
       .from("team_ctpi_daily")
       .select(
@@ -1820,6 +2367,15 @@ export async function fetchGamePredictionFeatureInputs(
       .eq("horizon_games", 1)
       .order("updated_at", { ascending: false })
       .limit(10),
+    client
+      .from("game_prediction_market_odds_snapshots")
+      .select(
+        "odds_snapshot_id,game_id,provider,captured_at,game_date,event_start_at,home_team_id,away_team_id,home_moneyline,away_moneyline,home_market_no_vig_probability,away_market_no_vig_probability,market_overround,home_spread_line,home_spread_odds,away_spread_line,away_spread_odds,total_line,over_odds,under_odds,source_url,provenance,metadata",
+      )
+      .eq("game_id", gameId)
+      .lt("captured_at", oddsSourceCutoffAt)
+      .order("captured_at", { ascending: false })
+      .limit(20),
   ]);
 
   for (const result of [
@@ -1835,6 +2391,7 @@ export async function fetchGamePredictionFeatureInputs(
     forgeGoalieGameResult,
     wgoGoalieResult,
     forgeTeamProjectionResult,
+    marketOddsResult,
   ]) {
     if (result.error) throw result.error;
   }
@@ -1842,6 +2399,8 @@ export async function fetchGamePredictionFeatureInputs(
   return {
     game: typedGame,
     sourceAsOfDate,
+    predictionCutoffAt,
+    oddsSourceCutoffAt,
     homeTeam,
     awayTeam,
     teamRows,
@@ -1864,5 +2423,6 @@ export async function fetchGamePredictionFeatureInputs(
     wgoGoalieRows: (wgoGoalieResult.data ?? []) as WgoGoalieRow[],
     forgeTeamProjectionRows: (forgeTeamProjectionResult.data ??
       []) as ForgeTeamProjectionRow[],
+    marketOddsRows: (marketOddsResult.data ?? []) as MarketOddsSnapshotRow[],
   };
 }

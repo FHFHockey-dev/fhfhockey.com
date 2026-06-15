@@ -178,4 +178,4 @@ Recommended implementation order after the audit:
 
 ## Backlog implication
 
-These additions should live in `tasks/rpm-audit-action-items-pass-2.md` under `optional enhancement`. They are worthwhile, but none should block pass-2 signoff of the current rolling contract.
+These additions should live in `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md` under `optional enhancement`. They are worthwhile, but none should block pass-2 signoff of the current rolling contract.
