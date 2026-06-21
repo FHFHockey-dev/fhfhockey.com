@@ -35,6 +35,11 @@ import type {
   SkaterProductionWindow,
   SkaterWindowStrengthState,
 } from "./skaterWindowAggregation";
+import { CONTEXTUAL_RANKINGS_METHODOLOGY_UPDATED_AT } from "./rankingMetadata";
+import {
+  resolveTeamToken,
+  type ResolvedTeamToken,
+} from "./teamTokenResolver";
 
 export type PlayerMatrixRequest = {
   entity: "skaters";
@@ -164,9 +169,15 @@ export type PlayerMatrixResponse = {
       | "entity_metric_rankings"
       | "skater_composite_ratings"
     >;
-    rankingSource?: "fallback_rolling_player_game_metrics" | "entity_metric_rankings";
+    rankingSource?:
+      | "fallback_rolling_player_game_metrics"
+      | "entity_metric_rankings";
     rankingSourcePreference?: PlayerMatrixRequest["rankingSourcePreference"];
     rankingSourceFallbackReason?: string | null;
+    methodologyVersion?: string | null;
+    methodologyUpdatedAt?: string | null;
+    sourceQualityFlags?: string[];
+    sourceWarnings?: string[];
     compositeSourceTable?: "skater_composite_ratings";
     message: string | null;
   };
@@ -178,6 +189,7 @@ const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
 const COMPOSITE_IN_FILTER_CHUNK_SIZE = 500;
 const COMPOSITE_QUERY_PAGE_SIZE = 1000;
+const PLAYER_MATRIX_RESPONSE_CACHE_TTL_MS = 30_000;
 const PAGE_SIZE_OPTIONS = [10, 25, 50] as const;
 const COMPOSITE_METRIC_KEYS = [
   "offense_rating",
@@ -187,9 +199,30 @@ const COMPOSITE_METRIC_KEYS = [
   "results_luck_index",
 ] as const;
 
+const playerMatrixResponseCache = new Map<
+  string,
+  { expiresAt: number; response: PlayerMatrixResponse }
+>();
+
+export function clearPlayerMatrixSurfaceCachesForTests() {
+  playerMatrixResponseCache.clear();
+}
+
 type CompositeMetricKey = (typeof COMPOSITE_METRIC_KEYS)[number];
 type CompositeRatingRow =
   Database["public"]["Tables"]["skater_composite_ratings"]["Row"];
+type AllStrengthToiRow = Pick<
+  Database["public"]["Tables"]["rolling_player_game_metrics"]["Row"],
+  | "player_id"
+  | "game_date"
+  | "updated_at"
+  | "games_played"
+  | "season_games_played"
+  | "toi_seconds_avg_season"
+  | "toi_seconds_total_last5"
+  | "toi_seconds_total_last10"
+  | "toi_seconds_total_last20"
+>;
 
 export const MATRIX_COLOR_SCALE_BANDS = [
   { label: "0-19", min: 0, max: 19.999, tone: "poor" },
@@ -220,14 +253,22 @@ function first(value: QueryValue): string | undefined {
 function parseInteger(
   value: QueryValue,
   key: string,
-  options: { defaultValue?: number; required?: boolean; min?: number; max?: number },
+  options: {
+    defaultValue?: number;
+    required?: boolean;
+    min?: number;
+    max?: number;
+  },
 ) {
   const raw = first(value);
   if (!raw) {
     if (options.required) {
-      throw new ContextualRankingsQueryError(`Missing required query param: ${key}`, {
-        [key]: "required",
-      });
+      throw new ContextualRankingsQueryError(
+        `Missing required query param: ${key}`,
+        {
+          [key]: "required",
+        },
+      );
     }
     return options.defaultValue ?? null;
   }
@@ -286,7 +327,9 @@ function parseRankingSourcePreference(
   value: QueryValue,
 ): PlayerMatrixRequest["rankingSourcePreference"] {
   const raw = first(value)?.toLowerCase();
-  return raw === "entity_metric_rankings" ? "entity_metric_rankings" : "fallback";
+  return raw === "fallback" || raw === "rolling_player_game_metrics"
+    ? "fallback"
+    : "entity_metric_rankings";
 }
 
 function parseMetric(value: QueryValue, fallback: ContextualRankingMetricKey) {
@@ -307,7 +350,7 @@ function parsePageSize(value: QueryValue) {
     max: MAX_PAGE_SIZE,
   });
   return PAGE_SIZE_OPTIONS.includes(parsed as any)
-    ? parsed ?? DEFAULT_PAGE_SIZE
+    ? (parsed ?? DEFAULT_PAGE_SIZE)
     : DEFAULT_PAGE_SIZE;
 }
 
@@ -330,8 +373,15 @@ function activePeerGroupDescription(request: PlayerMatrixRequest) {
   return "all skaters";
 }
 
+function unresolvedTeamError(token: string) {
+  return new ContextualRankingsQueryError(`No team matched ${token}`, {
+    team: "must be a numeric id, team abbreviation, or team name",
+  });
+}
+
 export function parsePlayerMatrixRequest(
   query: NextApiRequest["query"],
+  options: { resolvedTeamToken?: ResolvedTeamToken | null } = {},
 ): PlayerMatrixRequest {
   const position = parseEnum(
     query.position,
@@ -359,7 +409,10 @@ export function parsePlayerMatrixRequest(
     ] as const,
     "all",
   );
-  const teamId = parseInteger(query.team, "team", { min: 1 });
+  const teamId =
+    options.resolvedTeamToken != null
+      ? options.resolvedTeamToken.teamId
+      : parseInteger(query.team, "team", { min: 1 });
   const defaultSortMetric = defaultMatrixSortMetric();
 
   return {
@@ -403,17 +456,29 @@ export function parsePlayerMatrixRequest(
       ["all", "medium_plus", "high"] as const,
       "all",
     ),
-    page: parseInteger(query.page, "page", {
-      defaultValue: 1,
-      min: 1,
-      max: 100,
-    }) ?? 1,
+    page:
+      parseInteger(query.page, "page", {
+        defaultValue: 1,
+        min: 1,
+        max: 100,
+      }) ?? 1,
     pageSize: parsePageSize(query.page_size),
     selectedPlayerId: parseInteger(query.selected_player, "selected_player", {
       min: 1,
     }),
     rankingSourcePreference: parseRankingSourcePreference(query.ranking_source),
   };
+}
+
+export async function parsePlayerMatrixRequestWithResolvedTeam(
+  query: NextApiRequest["query"],
+) {
+  const rawTeam = first(query.team)?.trim() ?? "";
+  const resolvedTeamToken = await resolveTeamToken(rawTeam);
+  if (rawTeam !== "" && resolvedTeamToken == null) {
+    throw unresolvedTeamError(rawTeam);
+  }
+  return parsePlayerMatrixRequest(query, { resolvedTeamToken });
 }
 
 function rowMatchesSearch(row: ContextualRankingApiRow, search: string | null) {
@@ -456,7 +521,9 @@ function contextualRequestForMetric(args: {
   };
 }
 
-function isCompositeMetricKey(metricKey: string): metricKey is CompositeMetricKey {
+function isCompositeMetricKey(
+  metricKey: string,
+): metricKey is CompositeMetricKey {
   return COMPOSITE_METRIC_KEYS.includes(metricKey as CompositeMetricKey);
 }
 
@@ -492,11 +559,14 @@ function matrixCompositeWindowSize(window: SkaterProductionWindow) {
 function matrixCompositePeerGroupKey(request: PlayerMatrixRequest) {
   if (request.teamId != null) return String(request.teamId);
   if (request.deployment !== "all") return request.deployment;
-  if (request.position === "F" || request.position === "D") return request.position;
+  if (request.position === "F" || request.position === "D")
+    return request.position;
   return "all_skaters";
 }
 
-function toComposite(row: CompositeRatingRow | null): PlayerMatrixComposite | null {
+function toComposite(
+  row: CompositeRatingRow | null,
+): PlayerMatrixComposite | null {
   if (!row) return null;
   return {
     offenseRating: row.offense_rating_overall ?? row.offense_rating_deployment,
@@ -513,15 +583,130 @@ function toComposite(row: CompositeRatingRow | null): PlayerMatrixComposite | nu
   };
 }
 
+function finiteNumber(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return value;
+}
+
+function windowSize(window: SkaterProductionWindow) {
+  if (window === "last5") return 5;
+  if (window === "last10") return 10;
+  if (window === "last20") return 20;
+  return null;
+}
+
+function allStrengthsToiPerGame(
+  row: AllStrengthToiRow,
+  window: SkaterProductionWindow,
+) {
+  const seasonGames =
+    finiteNumber(row.season_games_played) ?? finiteNumber(row.games_played);
+  if (window === "season") {
+    return finiteNumber(row.toi_seconds_avg_season);
+  }
+
+  const size = windowSize(window);
+  const gamesPlayed =
+    seasonGames == null || size == null ? null : Math.min(seasonGames, size);
+  const field = `toi_seconds_total_${window}` as
+    | "toi_seconds_total_last5"
+    | "toi_seconds_total_last10"
+    | "toi_seconds_total_last20";
+  const toi = finiteNumber(row[field]);
+  if (toi == null || gamesPlayed == null || gamesPlayed <= 0) return null;
+  return Number((toi / gamesPlayed).toFixed(6));
+}
+
+function isNewerAllStrengthToiRow(
+  candidate: AllStrengthToiRow,
+  current: AllStrengthToiRow,
+) {
+  const candidateDate =
+    typeof candidate.game_date === "string" ? candidate.game_date : "";
+  const currentDate =
+    typeof current.game_date === "string" ? current.game_date : "";
+  if (candidateDate !== currentDate) return candidateDate > currentDate;
+
+  const candidateUpdatedAt =
+    typeof candidate.updated_at === "string" ? candidate.updated_at : "";
+  const currentUpdatedAt =
+    typeof current.updated_at === "string" ? current.updated_at : "";
+  return candidateUpdatedAt > currentUpdatedAt;
+}
+
+async function fetchAllStrengthsToiByPlayerId(args: {
+  request: PlayerMatrixRequest;
+  snapshotDate: string | null;
+  playerIds: number[];
+}) {
+  if (args.snapshotDate == null || args.playerIds.length === 0) {
+    return new Map<number, number | null>();
+  }
+
+  const rows: AllStrengthToiRow[] = [];
+  const uniquePlayerIds = Array.from(new Set(args.playerIds));
+  const selectFields = [
+    "player_id",
+    "game_date",
+    "updated_at",
+    "games_played",
+    "season_games_played",
+    "toi_seconds_avg_season",
+    "toi_seconds_total_last5",
+    "toi_seconds_total_last10",
+    "toi_seconds_total_last20",
+  ].join(",");
+
+  for (
+    let index = 0;
+    index < uniquePlayerIds.length;
+    index += COMPOSITE_IN_FILTER_CHUNK_SIZE
+  ) {
+    const chunk = uniquePlayerIds.slice(
+      index,
+      index + COMPOSITE_IN_FILTER_CHUNK_SIZE,
+    );
+    for (let from = 0; ; from += COMPOSITE_QUERY_PAGE_SIZE) {
+      const { data, error } = await supabase
+        .from("rolling_player_game_metrics")
+        .select(selectFields)
+        .eq("season", args.request.season)
+        .eq("strength_state", "all")
+        .lte("game_date", args.snapshotDate)
+        .in("player_id", chunk)
+        .order("game_date", { ascending: false })
+        .range(from, from + COMPOSITE_QUERY_PAGE_SIZE - 1);
+      if (error) throw error;
+
+      const page = (data ?? []) as unknown as AllStrengthToiRow[];
+      rows.push(...page);
+      if (page.length < COMPOSITE_QUERY_PAGE_SIZE) break;
+    }
+  }
+
+  const latestRowsByPlayerId = new Map<number, AllStrengthToiRow>();
+  for (const row of rows) {
+    if (typeof row.player_id !== "number") continue;
+    const current = latestRowsByPlayerId.get(row.player_id);
+    if (!current || isNewerAllStrengthToiRow(row, current)) {
+      latestRowsByPlayerId.set(row.player_id, row);
+    }
+  }
+
+  return new Map(
+    Array.from(latestRowsByPlayerId.entries()).map(([playerId, row]) => [
+      playerId,
+      allStrengthsToiPerGame(row, args.request.window),
+    ]),
+  );
+}
+
 async function fetchCompositeRatingsByPlayerId(args: {
   request: PlayerMatrixRequest;
   snapshotDate: string | null;
   playerIds: number[];
 }) {
-  if (
-    args.snapshotDate == null ||
-    args.playerIds.length === 0
-  ) {
+  if (args.snapshotDate == null || args.playerIds.length === 0) {
     return new Map<number, CompositeRatingRow>();
   }
 
@@ -553,7 +738,10 @@ async function fetchCompositeRatingsByPlayerId(args: {
     index < uniquePlayerIds.length;
     index += COMPOSITE_IN_FILTER_CHUNK_SIZE
   ) {
-    const chunk = uniquePlayerIds.slice(index, index + COMPOSITE_IN_FILTER_CHUNK_SIZE);
+    const chunk = uniquePlayerIds.slice(
+      index,
+      index + COMPOSITE_IN_FILTER_CHUNK_SIZE,
+    );
     for (let from = 0; ; from += COMPOSITE_QUERY_PAGE_SIZE) {
       const { data, error } = await supabase
         .from("skater_composite_ratings")
@@ -575,9 +763,7 @@ async function fetchCompositeRatingsByPlayerId(args: {
     }
   }
 
-  return new Map(
-    rows.map((row) => [row.player_id, row]),
-  );
+  return new Map(rows.map((row) => [row.player_id, row]));
 }
 
 function metricUnavailableReason(args: {
@@ -588,7 +774,11 @@ function metricUnavailableReason(args: {
   if (args.column.availabilityState !== "available") {
     return args.column.plannedReason ?? "Metric is planned and not live yet.";
   }
-  if (!args.column.definition.applicableStrengthStates.includes(args.request.strength)) {
+  if (
+    !args.column.definition.applicableStrengthStates.includes(
+      args.request.strength,
+    )
+  ) {
     return `Metric is not available for ${args.request.strength.toUpperCase()} strength.`;
   }
   return null;
@@ -648,7 +838,7 @@ function cellFromCompositeRow(args: {
         : rawValue;
   const formattedValue =
     args.column.metricKey === "beast_tier"
-      ? args.composite?.beast_tier ?? null
+      ? (args.composite?.beast_tier ?? null)
       : rawValue == null
         ? null
         : rawValue.toFixed(1);
@@ -677,7 +867,8 @@ function cellFromCompositeRow(args: {
     sourceQualityFlags: [...args.column.sourceQualityFlags],
     denominatorKey: args.column.denominatorKey,
     denominatorDescription: args.column.denominatorDescription,
-    methodologyVersion: args.composite?.methodology_version ?? args.column.methodologyVersion,
+    methodologyVersion:
+      args.composite?.methodology_version ?? args.column.methodologyVersion,
     snapshotDate: args.composite?.snapshot_date ?? null,
     warnings: [],
     rankScopes: args.rankScopes,
@@ -688,7 +879,9 @@ function toRowMap(rows: ContextualRankingApiRow[]) {
   return new Map(rows.map((row) => [row.entity.id, row]));
 }
 
-function rankScopeFromRow(row: ContextualRankingApiRow | null): PlayerMatrixRankScope | null {
+function rankScopeFromRow(
+  row: ContextualRankingApiRow | null,
+): PlayerMatrixRankScope | null {
   if (!row) return null;
   return {
     rank: row.metric.rawRank,
@@ -727,10 +920,16 @@ function sampleConfidenceMatches(
 export async function buildPlayerMatrixSurface(
   request: PlayerMatrixRequest,
 ): Promise<PlayerMatrixResponse> {
+  const cacheKey = JSON.stringify(request);
+  const now = Date.now();
+  const cached = playerMatrixResponseCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) return cached.response;
+
   const generatedAt = new Date().toISOString();
   const allColumns = getMatrixMetricColumns();
   const plannedMetrics = allColumns.filter(
-    (column) => column.availabilityState !== "available" || !column.defaultVisible,
+    (column) =>
+      column.availabilityState !== "available" || !column.defaultVisible,
   );
   const metricColumns = getDefaultMatrixMetricColumns({
     strength: request.strength,
@@ -743,6 +942,7 @@ export async function buildPlayerMatrixSurface(
       ? sortColumn.metricKey
       : defaultMatrixSortMetric(metricColumns);
   const sortUsesComposite = isCompositeMetricKey(sortMetric);
+  const sortDefinition = getContextualRankingMetricDefinition(sortMetric);
   const baseSortMetric = sortUsesComposite ? "points_per_60" : sortMetric;
   const surfaceMetricKeys = Array.from(
     new Set([
@@ -771,11 +971,12 @@ export async function buildPlayerMatrixSurface(
     request.rankingSourcePreference === "entity_metric_rankings"
       ? await buildEntityMetricRankingSurfaces(
           baseContextualRequest,
-          surfaceMetricKeys,
+          [baseSortMetric],
+          { hydrateMetadata: request.search != null },
         )
       : await buildContextualRankingsSurfaces(
           baseContextualRequest,
-          surfaceMetricKeys,
+          [baseSortMetric],
         );
   const preferredSortSurface = rankingSurfacesByMetric.get(baseSortMetric);
   if (request.rankingSourcePreference === "entity_metric_rankings") {
@@ -791,7 +992,7 @@ export async function buildPlayerMatrixSurface(
         "entity_metric_rankings did not contain rows for the requested sort context.";
       rankingSurfacesByMetric = await buildContextualRankingsSurfaces(
         baseContextualRequest,
-        surfaceMetricKeys,
+        [baseSortMetric],
       );
     }
   }
@@ -820,7 +1021,8 @@ export async function buildPlayerMatrixSurface(
         compositeSortRowsByPlayerId.get(right.entity.id),
         sortMetric,
       );
-      if (leftValue == null && rightValue == null) return left.entity.id - right.entity.id;
+      if (leftValue == null && rightValue == null)
+        return left.entity.id - right.entity.id;
       if (leftValue == null) return 1;
       if (rightValue == null) return -1;
       if (leftValue !== rightValue) return (leftValue - rightValue) * direction;
@@ -846,7 +1048,9 @@ export async function buildPlayerMatrixSurface(
         }),
       )
     : new Map();
-  sortedRows = sortedRows.filter((row) => rowMatchesSearch(row, request.search));
+  sortedRows = sortedRows.filter((row) =>
+    rowMatchesSearch(row, request.search),
+  );
   const start = (request.page - 1) * request.pageSize;
   const pageRows = sortedRows.slice(start, start + request.pageSize);
   const pagePlayerIds = pageRows.map((row) => row.entity.id);
@@ -870,25 +1074,48 @@ export async function buildPlayerMatrixSurface(
     rankingSource === "entity_metric_rankings"
       ? buildEntityMetricRankingSurfaces
       : buildContextualRankingsSurfaces;
-  const [overallSurfacesByMetric, deploymentSurfacesByMetric] = await Promise.all([
-    buildSelectedRankingSurfaces(
-      contextualRequestForMetric({
-        request: overallPeerRequest,
-        metric: baseSortMetric,
-        entityIds: pagePlayerIds,
-        limit: null,
-      }),
-      surfaceMetricKeys,
-    ),
-    buildSelectedRankingSurfaces(
-      contextualRequestForMetric({
-        request: deploymentPeerRequest,
-        metric: baseSortMetric,
-        entityIds: pagePlayerIds,
-        limit: null,
-      }),
-      surfaceMetricKeys,
-    ),
+  const currentSurfacesPromise = buildSelectedRankingSurfaces(
+    contextualRequestForMetric({
+      request,
+      metric: baseSortMetric,
+      entityIds: pagePlayerIds,
+      limit: null,
+    }),
+    surfaceMetricKeys,
+  );
+  const overallMatchesCurrent =
+    overallPeerRequest.deployment === request.deployment &&
+    overallPeerRequest.peerGroupType === request.peerGroupType &&
+    overallPeerRequest.position === request.position &&
+    overallPeerRequest.teamId === request.teamId;
+  const overallSurfacesPromise = overallMatchesCurrent
+    ? currentSurfacesPromise
+    : buildSelectedRankingSurfaces(
+        contextualRequestForMetric({
+          request: overallPeerRequest,
+          metric: baseSortMetric,
+          entityIds: pagePlayerIds,
+          limit: null,
+        }),
+        surfaceMetricKeys,
+      );
+  const deploymentSurfacesPromise = buildSelectedRankingSurfaces(
+    contextualRequestForMetric({
+      request: deploymentPeerRequest,
+      metric: baseSortMetric,
+      entityIds: pagePlayerIds,
+      limit: null,
+    }),
+    surfaceMetricKeys,
+  );
+  const [
+    currentSurfacesByMetric,
+    overallSurfacesByMetric,
+    deploymentSurfacesByMetric,
+  ] = await Promise.all([
+    currentSurfacesPromise,
+    overallSurfacesPromise,
+    deploymentSurfacesPromise,
   ]);
   const compositeRowsByPlayerId = sortUsesComposite
     ? new Map(
@@ -902,6 +1129,11 @@ export async function buildPlayerMatrixSurface(
         snapshotDate: sortSurface.meta.snapshotDate,
         playerIds: pagePlayerIds,
       });
+  const allStrengthsToiByPlayerId = await fetchAllStrengthsToiByPlayerId({
+    request,
+    snapshotDate: sortSurface.meta.snapshotDate,
+    playerIds: pagePlayerIds,
+  });
   const metricSurfaces = await Promise.all(
     metricColumns.map(async (column) => {
       const reason = metricUnavailableReason({ column, request });
@@ -912,7 +1144,7 @@ export async function buildPlayerMatrixSurface(
       return {
         column,
         reason: null,
-        surface: rankingSurfacesByMetric.get(column.metricKey) ?? null,
+        surface: currentSurfacesByMetric.get(column.metricKey) ?? null,
       };
     }),
   );
@@ -920,14 +1152,18 @@ export async function buildPlayerMatrixSurface(
   const metricRowsByKey = new Map(
     metricSurfaces.map((entry) => [
       entry.column.metricKey,
-      entry.surface ? toRowMap(entry.surface.rankings) : new Map<number, ContextualRankingApiRow>(),
+      entry.surface
+        ? toRowMap(entry.surface.rankings)
+        : new Map<number, ContextualRankingApiRow>(),
     ]),
   );
   const overallRowsByKey = new Map(
     metricSurfaces.map((entry) => [
       entry.column.metricKey,
       overallSurfacesByMetric.get(entry.column.metricKey)?.rankings
-        ? toRowMap(overallSurfacesByMetric.get(entry.column.metricKey)?.rankings ?? [])
+        ? toRowMap(
+            overallSurfacesByMetric.get(entry.column.metricKey)?.rankings ?? [],
+          )
         : new Map<number, ContextualRankingApiRow>(),
     ]),
   );
@@ -935,7 +1171,10 @@ export async function buildPlayerMatrixSurface(
     metricSurfaces.map((entry) => [
       entry.column.metricKey,
       deploymentSurfacesByMetric.get(entry.column.metricKey)?.rankings
-        ? toRowMap(deploymentSurfacesByMetric.get(entry.column.metricKey)?.rankings ?? [])
+        ? toRowMap(
+            deploymentSurfacesByMetric.get(entry.column.metricKey)?.rankings ??
+              [],
+          )
         : new Map<number, ContextualRankingApiRow>(),
     ]),
   );
@@ -954,8 +1193,8 @@ export async function buildPlayerMatrixSurface(
             reason:
               sortColumn == null
                 ? "Sort metric is not part of the matrix registry."
-                : metricUnavailableReason({ column: sortColumn, request }) ??
-                  "Sort metric could not be used for this context.",
+                : (metricUnavailableReason({ column: sortColumn, request }) ??
+                  "Sort metric could not be used for this context."),
           },
         ]
       : []),
@@ -985,6 +1224,8 @@ export async function buildPlayerMatrixSurface(
   const rows = pageRows.map((baseRow) => {
     const metrics: Record<string, PlayerMatrixMetricCell> = {};
     const composite = compositeRowsByPlayerId.get(baseRow.entity.id) ?? null;
+    const displayBaseRow =
+      metricRowsByKey.get(baseSortMetric)?.get(baseRow.entity.id) ?? baseRow;
     for (const entry of metricSurfaces) {
       if (isCompositeMetricKey(entry.column.metricKey)) {
         metrics[entry.column.metricKey] = cellFromCompositeRow({
@@ -1003,13 +1244,14 @@ export async function buildPlayerMatrixSurface(
         overallRowsByKey.get(entry.column.metricKey)?.get(baseRow.entity.id) ??
         metricRow;
       const deploymentRow =
-        deploymentRowsByKey.get(entry.column.metricKey)?.get(baseRow.entity.id) ??
-        null;
+        deploymentRowsByKey
+          .get(entry.column.metricKey)
+          ?.get(baseRow.entity.id) ?? null;
       const unavailableReason =
         entry.reason ??
         (entry.surface?.meta.unavailable
-          ? entry.surface.meta.message ??
-            "Metric has no calculable values for this player in the current filters."
+          ? (entry.surface.meta.message ??
+            "Metric has no calculable values for this player in the current filters.")
           : metricRow == null
             ? "Metric row was not returned for this player in the current filters."
             : null);
@@ -1028,34 +1270,44 @@ export async function buildPlayerMatrixSurface(
       deploymentRowsByKey.get(sortMetric)?.get(baseRow.entity.id) ?? null;
     const sortOverallScope = sortUsesComposite
       ? {
-          rank: compositeSortRanksByPlayerId.get(baseRow.entity.id)?.rank ?? null,
+          rank:
+            compositeSortRanksByPlayerId.get(baseRow.entity.id)?.rank ?? null,
           percentile: compositeMetricValue(composite ?? undefined, sortMetric),
           qualifiedPeerCount:
-            compositeSortRanksByPlayerId.get(baseRow.entity.id)?.qualifiedPeerCount ??
-            0,
+            compositeSortRanksByPlayerId.get(baseRow.entity.id)
+              ?.qualifiedPeerCount ?? 0,
           peerGroupKey: matrixCompositePeerGroupKey(request),
         }
       : rankScopeFromRow(sortOverallRow);
 
     return {
-      entity: baseRow.entity,
-      team: baseRow.team,
-      deployment: baseRow.deployment,
-      sample: baseRow.sample,
-      peerGroup: baseRow.peerGroup,
-      tags: baseRow.tags,
-      warnings: baseRow.warnings,
+      entity: displayBaseRow.entity,
+      team: displayBaseRow.team,
+      deployment: displayBaseRow.deployment,
+      sample: {
+        ...displayBaseRow.sample,
+        allStrengthsToiPerGameSeconds:
+          allStrengthsToiByPlayerId.get(baseRow.entity.id) ??
+          (request.strength === "all"
+            ? displayBaseRow.sample.toiPerGameSeconds
+            : null),
+      },
+      peerGroup: displayBaseRow.peerGroup,
+      tags: displayBaseRow.tags,
+      warnings: displayBaseRow.warnings,
       sort: {
         metricKey: sortMetric,
         rank: sortUsesComposite
-          ? compositeSortRanksByPlayerId.get(baseRow.entity.id)?.rank ?? null
+          ? (compositeSortRanksByPlayerId.get(baseRow.entity.id)?.rank ?? null)
           : baseRow.metric.rawRank,
         percentile: sortUsesComposite
           ? compositeMetricValue(composite ?? undefined, sortMetric)
           : baseRow.metric.percentile,
         rankScopes: {
           overall: sortOverallScope,
-          deployment: sortUsesComposite ? null : rankScopeFromRow(sortDeploymentRow),
+          deployment: sortUsesComposite
+            ? null
+            : rankScopeFromRow(sortDeploymentRow),
         },
       },
       composite: toComposite(composite),
@@ -1067,9 +1319,9 @@ export async function buildPlayerMatrixSurface(
     request.selectedPlayerId != null &&
     rows.some((row) => row.entity.id === request.selectedPlayerId)
       ? request.selectedPlayerId
-      : rows[0]?.entity.id ?? null;
+      : (rows[0]?.entity.id ?? null);
 
-  return {
+  const response: PlayerMatrixResponse = {
     success: true,
     request: {
       ...request,
@@ -1109,10 +1361,29 @@ export async function buildPlayerMatrixSurface(
       rankingSource,
       rankingSourcePreference: request.rankingSourcePreference,
       rankingSourceFallbackReason,
+      methodologyVersion:
+        sortDefinition?.methodologyVersion ?? sortColumn?.methodologyVersion ?? null,
+      methodologyUpdatedAt: sortDefinition
+        ? CONTEXTUAL_RANKINGS_METHODOLOGY_UPDATED_AT
+        : null,
+      sourceQualityFlags: Array.from(
+        new Set([
+          ...(sortDefinition?.sourceQualityFlags ?? []),
+          ...metricColumns.flatMap((column) => column.sourceQualityFlags),
+        ]),
+      ),
+      sourceWarnings: [
+        ...(rankingSourceFallbackReason ? [rankingSourceFallbackReason] : []),
+      ],
       compositeSourceTable: "skater_composite_ratings",
       message:
         sortSurface.meta.message ??
         (rows.length === 0 ? "No players matched the matrix filters." : null),
     },
   };
+  playerMatrixResponseCache.set(cacheKey, {
+    expiresAt: now + PLAYER_MATRIX_RESPONSE_CACHE_TTL_MS,
+    response,
+  });
+  return response;
 }

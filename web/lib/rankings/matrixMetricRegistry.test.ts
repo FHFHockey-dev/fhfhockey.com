@@ -53,6 +53,7 @@ describe("matrixMetricRegistry", () => {
 
     expect(luck?.availabilityState).toBe("available");
     expect(luck?.defaultVisible).toBe(false);
+    expect(luck?.tooltip).toContain("Current 100-centered Results Luck Index");
     expect(luck?.tooltip).toContain("above 100");
     expect(luck?.tooltip).toContain("selected-window-excluded baseline");
     expect(luck?.definition?.sourceTable).toBe("skater_composite_ratings");
@@ -76,5 +77,12 @@ describe("matrixMetricRegistry", () => {
     expect(defense?.sourceQualityFlags).toContain(
       "context_influenced_unadjusted_on_ice",
     );
+
+    const mcm = getMatrixMetricColumn("mcm_score");
+    const beast = getMatrixMetricColumn("beast_tier");
+    expect(mcm?.tooltip).toContain("Current-contract");
+    expect(mcm?.tooltip).toContain("PP points are source-pending and excluded");
+    expect(beast?.tooltip).toContain("Current-contract");
+    expect(beast?.tooltip).toContain("PP points are source-pending and excluded");
   });
 });

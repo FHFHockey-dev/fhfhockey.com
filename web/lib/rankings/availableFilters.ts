@@ -1,9 +1,9 @@
-import {
-  getContextualRankingMetricDefinition,
-} from "./metricDefinitions";
+import { GOALIE_SOURCE_PENDING_METRIC_CONTRACTS } from "./goalieMatrix";
+import { getContextualRankingMetricDefinition } from "./metricDefinitions";
 import { GOALIE_ROLE_FILTER_OPTIONS } from "./goalieMethodology";
 import { getMatrixMetricColumns } from "./matrixMetricRegistry";
 import { SKATER_ARCHETYPE_TAG_CONTRACTS } from "./skaterCompositeMethodology";
+import { TEAM_SOURCE_PENDING_METRIC_CONTRACTS } from "./teamStyleMethodology";
 
 export type RankingsFilterAvailabilityStatus =
   | "available"
@@ -18,9 +18,18 @@ type AvailableFilterOption<T extends string = string> = {
   disabledReason?: string;
 };
 
-type EntityFilterOption = AvailableFilterOption<"skaters" | "goalies" | "teams"> & {
+type EntityFilterOption = AvailableFilterOption<
+  "skaters" | "goalies" | "teams"
+> & {
   defaultTab: "rankings";
-  supportedTabs: Array<"rankings" | "metric_explorer" | "deployment_tiers" | "trending" | "splits" | "war">;
+  supportedTabs: Array<
+    | "rankings"
+    | "metric_explorer"
+    | "deployment_tiers"
+    | "trending"
+    | "splits"
+    | "war"
+  >;
 };
 
 export type ContextualRankingsAvailableFiltersResponse = ReturnType<
@@ -30,9 +39,27 @@ export type ContextualRankingsAvailableFiltersResponse = ReturnType<
 const TABS = [
   { value: "rankings", label: "Rankings", status: "available" },
   { value: "metric_explorer", label: "Metric Explorer", status: "available" },
-  { value: "deployment_tiers", label: "Deployment Tiers", status: "available" },
-  { value: "trending", label: "Trending", status: "available" },
-  { value: "splits", label: "Splits", status: "available" },
+  {
+    value: "deployment_tiers",
+    label: "Deployment Tiers",
+    status: "available",
+    description:
+      "Skater deployment-tier rows are live; goalie/team deployment-tier tabs remain Source Pending through entity support metadata.",
+  },
+  {
+    value: "trending",
+    label: "Trending",
+    status: "available",
+    description:
+      "Skater trending rows are live; goalie/team trend rows remain Source Pending through entity support metadata.",
+  },
+  {
+    value: "splits",
+    label: "Splits",
+    status: "available",
+    description:
+      "Skater split rows are live; goalie/team split rows remain Source Pending through entity support metadata.",
+  },
   {
     value: "war",
     label: "Wins Above Replacement",
@@ -64,7 +91,7 @@ const ENTITY_OPTIONS: EntityFilterOption[] = [
     defaultTab: "rankings",
     supportedTabs: ["rankings", "war"],
     description:
-      "Goalie rankings and snapshots are live; secondary trend/split/deployment tab row contracts remain Source Pending.",
+      "Goalie rankings and snapshots are live. Metric Explorer, trend, split, and deployment-tier row contracts remain Source Pending for goalies.",
   },
   {
     value: "teams",
@@ -73,7 +100,7 @@ const ENTITY_OPTIONS: EntityFilterOption[] = [
     defaultTab: "rankings",
     supportedTabs: ["rankings", "war"],
     description:
-      "Team rankings and raw/contextual style snapshots are live; secondary trend/split/deployment tab row contracts remain Source Pending.",
+      "Team rankings and raw/contextual style snapshots are live. Metric Explorer, trend, split, and deployment-tier row contracts remain Source Pending for teams.",
   },
 ];
 
@@ -148,17 +175,47 @@ const GOALIE_METRIC_OPTIONS = [
   { value: "save_percentage", label: "SV%", status: "available" },
   { value: "gsax", label: "GSAx", status: "available" },
   { value: "gsaa_per_60", label: "GSAA/60", status: "available" },
+  {
+    value: "xga_per_shot_against",
+    label: "xGA/Shot",
+    status: "available",
+    description:
+      "5v5 expected goals against per 5v5 shot against; workload context, not pure goalie talent.",
+  },
+  {
+    value: "goalie_value_signal",
+    label: "Value Signal",
+    status: "available",
+    description:
+      "Documented saved-goals signal from available cumulative 5v5 GSAx and GSAA.",
+  },
+  {
+    value: "high_danger_save_percentage",
+    label: "HD SV%",
+    status: "available",
+    description: "5v5 high-danger save percentage from NST goalie counts.",
+  },
   { value: "quality_start_pct", label: "QS%", status: "available" },
   { value: "really_bad_start_rate", label: "RBS%", status: "available" },
   { value: "steal_rate", label: "Steal Rate", status: "available" },
   { value: "start_share", label: "Start Share", status: "available" },
   {
-    value: "under_pressure",
-    label: "Under Pressure",
+    value: "relative_save_percentage",
+    label: "Relative SV%",
     status: "source_pending",
     disabledReason:
-      "Pressure-quadrant source data is not populated in the goalie rankings row contract.",
+      GOALIE_SOURCE_PENDING_METRIC_CONTRACTS.find(
+        (contract) => contract.metricKey === "relative_save_percentage",
+      )?.reason,
   },
+  ...GOALIE_SOURCE_PENDING_METRIC_CONTRACTS.filter(
+    (contract) => contract.metricKey !== "relative_save_percentage",
+  ).map((contract) => ({
+    value: contract.metricKey,
+    label: contract.label,
+    status: "source_pending" as const,
+    disabledReason: contract.reason,
+  })),
 ] as const satisfies readonly AvailableFilterOption[];
 
 const TEAM_METRIC_OPTIONS = [
@@ -174,20 +231,20 @@ const TEAM_METRIC_OPTIONS = [
   { value: "net_luck", label: "Net Luck", status: "available" },
   { value: "pace_rating", label: "Pace Rating", status: "available" },
   { value: "special_rating", label: "Special Teams", status: "available" },
+  { value: "one_goal_game_rate", label: "1-Goal Game Rate", status: "available" },
+  { value: "pp_opportunity_rate", label: "PP Opp/G", status: "available" },
   {
-    value: "home_road_split",
-    label: "Home/Road Split",
-    status: "source_pending",
-    disabledReason:
-      "Home/road split rows are not published in the team rankings contract.",
+    value: "penalties_taken_per_60",
+    label: "Penalties/60",
+    status: "available",
+    description: "Penalties taken per 60 minutes; lower raw values are better.",
   },
-  {
-    value: "rest_day_split",
-    label: "Rest-Day Split",
-    status: "source_pending",
-    disabledReason:
-      "Rest-day split rows are not published in the team rankings contract.",
-  },
+  ...TEAM_SOURCE_PENDING_METRIC_CONTRACTS.map((contract) => ({
+    value: contract.metricKey,
+    label: contract.label,
+    status: "source_pending" as const,
+    disabledReason: contract.reason,
+  })),
 ] as const satisfies readonly AvailableFilterOption[];
 
 function skaterMetricOptions() {

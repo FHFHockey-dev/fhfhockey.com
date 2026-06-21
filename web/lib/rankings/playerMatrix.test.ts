@@ -26,6 +26,7 @@ vi.mock("lib/supabase/server", () => ({
 
 import {
   buildPlayerMatrixSurface,
+  clearPlayerMatrixSurfaceCachesForTests,
   parsePlayerMatrixRequest,
 } from "./playerMatrix";
 import type {
@@ -33,7 +34,10 @@ import type {
   ContextualRankingsRequest,
 } from "./rankingTypes";
 
-function rankingRow(id: number, request: ContextualRankingsRequest): ContextualRankingApiRow {
+function rankingRow(
+  id: number,
+  request: ContextualRankingsRequest,
+): ContextualRankingApiRow {
   return {
     entity: {
       id,
@@ -82,7 +86,9 @@ function mockCompositeRows(rows: Array<Record<string, unknown>> = []) {
   const query = {
     select: vi.fn(() => query),
     eq: vi.fn(() => query),
+    lte: vi.fn(() => query),
     in: vi.fn(() => query),
+    order: vi.fn(() => query),
     range: vi.fn(() => Promise.resolve({ data: rows, error: null })),
   };
   supabaseFromMock.mockReturnValue(query);
@@ -92,6 +98,7 @@ function mockCompositeRows(rows: Array<Record<string, unknown>> = []) {
 describe("playerMatrix", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearPlayerMatrixSurfaceCachesForTests();
     mockCompositeRows();
     buildEntityMetricRankingSurfacesMock.mockReset();
   });
@@ -102,10 +109,10 @@ describe("playerMatrix", () => {
         const surfaces = new Map();
         const ids =
           request.entityIds ??
-          Array.from({ length: request.limit == null ? 250 : request.limit }, (
-            _,
-            index,
-          ) => index + 1);
+          Array.from(
+            { length: request.limit == null ? 250 : request.limit },
+            (_, index) => index + 1,
+          );
 
         for (const metricKey of metricKeys) {
           const metricRequest = { ...request, metric: metricKey as any };
@@ -153,23 +160,28 @@ describe("playerMatrix", () => {
         window: "last5",
         page: "2",
         page_size: "25",
+        ranking_source: "fallback",
       }),
     );
 
-    expect(buildContextualRankingsSurfacesMock.mock.calls[0]?.[0]).toMatchObject({
+    expect(
+      buildContextualRankingsSurfacesMock.mock.calls[0]?.[0],
+    ).toMatchObject({
       limit: null,
       entityIds: null,
     });
     expect(buildContextualRankingsSurfacesMock).toHaveBeenCalledTimes(3);
-    expect(buildContextualRankingsSurfacesMock.mock.calls[0]?.[1]).toContain(
+    expect(buildContextualRankingsSurfacesMock.mock.calls[0]?.[1]).toEqual([
       "points_per_60",
-    );
-    expect(buildContextualRankingsSurfacesMock.mock.calls[1]?.[0]).toMatchObject({
-      deployment: "all",
-      peerGroupType: "all_skaters",
+    ]);
+    expect(
+      buildContextualRankingsSurfacesMock.mock.calls[1]?.[0],
+    ).toMatchObject({
       entityIds: Array.from({ length: 25 }, (_, index) => index + 26),
     });
-    expect(buildContextualRankingsSurfacesMock.mock.calls[2]?.[0]).toMatchObject({
+    expect(
+      buildContextualRankingsSurfacesMock.mock.calls[2]?.[0],
+    ).toMatchObject({
       deployment: "all",
       peerGroupType: "deployment",
       entityIds: Array.from({ length: 25 }, (_, index) => index + 26),
@@ -178,8 +190,12 @@ describe("playerMatrix", () => {
     expect(response.meta.pageCount).toBe(10);
     expect(response.meta.rowCount).toBe(25);
     expect(response.rows[0]?.entity.id).toBe(26);
-    expect(response.rows[0]?.metrics.points_per_60.rankScopes?.overall?.rank).toBe(26);
-    expect(response.rows[0]?.metrics.points_per_60.rankScopes?.deployment?.rank).toBe(26);
+    expect(
+      response.rows[0]?.metrics.points_per_60.rankScopes?.overall?.rank,
+    ).toBe(26);
+    expect(
+      response.rows[0]?.metrics.points_per_60.rankScopes?.deployment?.rank,
+    ).toBe(26);
   });
 
   it("filters cached matrix rows by search before pagination without changing peer ranks", async () => {
@@ -188,10 +204,10 @@ describe("playerMatrix", () => {
         const surfaces = new Map();
         const ids =
           request.entityIds ??
-          Array.from({ length: request.limit == null ? 50 : request.limit }, (
-            _,
-            index,
-          ) => index + 1);
+          Array.from(
+            { length: request.limit == null ? 50 : request.limit },
+            (_, index) => index + 1,
+          );
 
         for (const metricKey of metricKeys) {
           const metricRequest = { ...request, metric: metricKey as any };
@@ -238,6 +254,7 @@ describe("playerMatrix", () => {
         strength: "5v5",
         search: "Player 26",
         page_size: "10",
+        ranking_source: "fallback",
       }),
     );
 
@@ -246,12 +263,14 @@ describe("playerMatrix", () => {
     expect(response.meta.rowCount).toBe(1);
     expect(response.rows[0]?.entity.name).toBe("Player 26");
     expect(response.rows[0]?.sort.rank).toBe(26);
-    expect(buildContextualRankingsSurfacesMock.mock.calls[1]?.[0]).toMatchObject({
+    expect(
+      buildContextualRankingsSurfacesMock.mock.calls[1]?.[0],
+    ).toMatchObject({
       entityIds: [26],
     });
   });
 
-  it("uses entity_metric_rankings surfaces when explicitly requested and populated", async () => {
+  it("uses entity_metric_rankings surfaces by default when populated", async () => {
     buildEntityMetricRankingSurfacesMock.mockImplementation(
       async (request: ContextualRankingsRequest, metricKeys: string[]) => {
         const surfaces = new Map();
@@ -299,7 +318,6 @@ describe("playerMatrix", () => {
       parsePlayerMatrixRequest({
         season: "20252026",
         strength: "5v5",
-        ranking_source: "entity_metric_rankings",
       }),
     );
 
@@ -350,7 +368,8 @@ describe("playerMatrix", () => {
               unavailable: true,
               rowCount: 0,
               limit: request.limit,
-              message: "No entity_metric_rankings snapshot rows matched the request.",
+              message:
+                "No entity_metric_rankings snapshot rows matched the request.",
             },
           });
         }
@@ -486,6 +505,7 @@ describe("playerMatrix", () => {
         season: "20252026",
         strength: "5v5",
         window: "season",
+        ranking_source: "fallback",
       }),
     );
 
@@ -600,6 +620,7 @@ describe("playerMatrix", () => {
         strength: "5v5",
         window: "season",
         sort_metric: "offense_rating",
+        ranking_source: "fallback",
       }),
     );
 
@@ -698,6 +719,7 @@ describe("playerMatrix", () => {
         strength: "5v5",
         window: "last20",
         sort_metric: "results_luck_index",
+        ranking_source: "fallback",
       }),
     );
 
@@ -714,5 +736,6 @@ describe("playerMatrix", () => {
     });
 
     expect(request.pageSize).toBe(10);
+    expect(request.rankingSourcePreference).toBe("entity_metric_rankings");
   });
 });

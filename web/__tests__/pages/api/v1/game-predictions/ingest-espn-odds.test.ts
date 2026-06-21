@@ -70,10 +70,14 @@ describe("/api/v1/game-predictions/ingest-espn-odds", () => {
       requestedDates: ["2026-06-01", "2026-06-02", "2026-06-03"],
       capturedAt: "2026-06-01T12:00:00.000Z",
       fetchedGames: 3,
+      candidateSnapshots: 3,
       insertedSnapshots: 3,
       skippedSnapshots: 0,
+      postStartSkippedSnapshots: 0,
+      missingMoneylineSnapshots: 0,
       unmappedGames: 0,
       provenanceRows: 3,
+      rejectedProvenanceRows: 0,
       dryRun: true,
       batchCount: 2,
       batches: [],
@@ -113,10 +117,76 @@ describe("/api/v1/game-predictions/ingest-espn-odds", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({
       success: true,
+      operationStatus: "success",
+      dataQualityWarnings: [],
       result: {
         batchCount: 2,
         requestedDates: ["2026-06-01", "2026-06-02", "2026-06-03"],
       },
+    });
+  });
+
+  it("surfaces degraded pre-start odds coverage in the cron response", async () => {
+    ingestEspnNhlOddsSnapshotsForWindowMock.mockResolvedValue({
+      requestedDates: ["2026-06-01"],
+      capturedAt: "2026-06-01T12:00:00.000Z",
+      fetchedGames: 2,
+      candidateSnapshots: 0,
+      insertedSnapshots: 0,
+      skippedSnapshots: 1,
+      postStartSkippedSnapshots: 0,
+      missingMoneylineSnapshots: 1,
+      unmappedGames: 1,
+      provenanceRows: 1,
+      rejectedProvenanceRows: 1,
+      dryRun: false,
+      batchCount: 1,
+      batches: [],
+    });
+    const { req, res } = createMockApiContext();
+
+    await handler(req as never, res as never);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      operationStatus: "warning",
+      warning:
+        "ESPN market odds ingestion completed with source-quality warnings. Treat market odds coverage as degraded until these warnings clear.",
+      dataQualityWarnings: [
+        "espn_odds_ingest_unmapped_games",
+        "espn_odds_ingest_missing_moneyline",
+        "espn_odds_ingest_no_usable_pre_start_snapshots",
+      ],
+    });
+  });
+
+  it("does not warn when every fetched row is rejected only because the window is post-start", async () => {
+    ingestEspnNhlOddsSnapshotsForWindowMock.mockResolvedValue({
+      requestedDates: ["2026-06-01"],
+      capturedAt: "2026-06-02T12:00:00.000Z",
+      fetchedGames: 2,
+      candidateSnapshots: 0,
+      insertedSnapshots: 0,
+      skippedSnapshots: 2,
+      postStartSkippedSnapshots: 2,
+      missingMoneylineSnapshots: 0,
+      unmappedGames: 0,
+      provenanceRows: 2,
+      rejectedProvenanceRows: 2,
+      dryRun: false,
+      batchCount: 1,
+      batches: [],
+    });
+    const { req, res } = createMockApiContext();
+
+    await handler(req as never, res as never);
+
+    expect(res.body).toMatchObject({
+      success: true,
+      operationStatus: "success",
+      warning: null,
+      dataQualityWarnings: [],
     });
   });
 });

@@ -11,6 +11,7 @@ type QueryState = {
 const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
   const queryCalls: QueryState[] = [];
   const scenario = {
+    entityRows: [] as Array<Record<string, unknown>>,
     paginatedRows: [] as Array<Record<string, unknown>>,
   };
 
@@ -36,6 +37,39 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
   }
 
   function resolveQuery(state: QueryState) {
+    const requestedMetricKeys = Array.isArray(state.filters.metric_key)
+      ? state.filters.metric_key
+      : state.filters.metric_key == null
+        ? null
+        : [state.filters.metric_key];
+    const matchingEntityRows = scenario.entityRows.filter(
+      (row) =>
+        row.metric_key == null ||
+        requestedMetricKeys == null ||
+        requestedMetricKeys.includes(row.metric_key),
+    );
+    if (
+      state.table === "entity_metric_rankings" &&
+      state.selectFields === "snapshot_date"
+    ) {
+      return {
+        data:
+          matchingEntityRows.length > 0
+            ? [{ snapshot_date: "2026-04-16" }]
+            : [],
+        error: null,
+      };
+    }
+
+    if (state.table === "entity_metric_rankings") {
+      const from = state.rangeFrom ?? 0;
+      const to = state.rangeTo ?? matchingEntityRows.length - 1;
+      return {
+        data: matchingEntityRows.slice(from, to + 1),
+        error: null,
+      };
+    }
+
     if (state.table === "games") {
       return {
         data: [
@@ -177,15 +211,200 @@ vi.mock("lib/supabase/server", () => ({
 
 import {
   buildContextualRankingsSurface,
+  buildSnapshotFirstContextualRankingsSurface,
   clearContextualRankingsQueryCachesForTests,
 } from "./rankingQueries";
+import { clearEntityMetricRankingReaderCachesForTests } from "./entityMetricRankingReader";
 
 describe("rankingQueries", () => {
   beforeEach(() => {
     queryCalls.length = 0;
+    scenario.entityRows = [];
     scenario.paginatedRows = [];
     clearContextualRankingsQueryCachesForTests();
+    clearEntityMetricRankingReaderCachesForTests();
     supabaseMock.from.mockClear();
+  });
+
+  it("uses entity_metric_rankings for Metric Explorer when durable rows exist", async () => {
+    scenario.entityRows = [
+      {
+        entity_type: "skater",
+        entity_id: 1,
+        team_id: 10,
+        season_id: 20252026,
+        snapshot_date: "2026-04-16",
+        window_type: "season",
+        window_size: 0,
+        window_semantics: "season_to_date",
+        strength_state: "5v5",
+        metric_key: "sog_per_60",
+        peer_group_type: "all_skaters",
+        peer_group_key: "all",
+        position_group: "forward",
+        deployment_bucket: "L1",
+        raw_value: 9.2,
+        normalized_value: 9.2,
+        raw_rank: 1,
+        percentile: 100,
+        qualified_peer_count: 1,
+        minimum_sample_met: true,
+        sample_confidence: "high",
+        games_played: 10,
+        toi_seconds: 6000,
+        tags: ["L1"],
+        explanation_items: ["Rank 1 of 1 in all_skaters:all."],
+        provenance: {},
+        methodology_version: "contextual_rankings_v1",
+        created_at: "2026-04-16T06:00:00.000Z",
+        updated_at: "2026-04-16T06:00:00.000Z",
+      },
+    ];
+
+    const response = await buildSnapshotFirstContextualRankingsSurface({
+      entity: "skaters",
+      season: 20252026,
+      asOfDate: null,
+      window: "season",
+      position: "all",
+      deployment: "all",
+      strength: "5v5",
+      metric: "sog_per_60",
+      minGp: null,
+      minToiSeconds: null,
+      peerGroupType: "all_skaters",
+      sort: "percentile",
+      direction: "desc",
+      limit: 100,
+      teamId: null,
+      entityIds: null,
+    });
+
+    expect(response.meta).toMatchObject({
+      sourceTable: "entity_metric_rankings",
+      sourceTables: ["entity_metric_rankings"],
+      rankingSource: "entity_metric_rankings",
+      rankingSourcePreference: "entity_metric_rankings",
+      rankingSourceFallbackReason: null,
+      snapshotDate: "2026-04-16",
+      rowCount: 1,
+    });
+    expect(response.rankings[0]).toMatchObject({
+      entity: { id: 1, name: "Fallback Skater" },
+      metric: {
+        key: "sog_per_60",
+        value: 9.2,
+        rawRank: 1,
+        percentile: 100,
+      },
+    });
+    expect(
+      queryCalls.some(
+        (call) =>
+          call.table === "rolling_player_game_metrics" &&
+          call.selectFields !== "game_date",
+      ),
+    ).toBe(false);
+  });
+
+  it("uses entity_metric_rankings for another common Metric Explorer metric", async () => {
+    scenario.entityRows = [
+      {
+        entity_type: "skater",
+        entity_id: 1,
+        team_id: 10,
+        season_id: 20252026,
+        snapshot_date: "2026-04-16",
+        window_type: "season",
+        window_size: 0,
+        window_semantics: "season_to_date",
+        strength_state: "5v5",
+        metric_key: "points_per_60",
+        peer_group_type: "all_skaters",
+        peer_group_key: "all",
+        position_group: "forward",
+        deployment_bucket: "L1",
+        raw_value: 3.1,
+        normalized_value: 3.1,
+        raw_rank: 2,
+        percentile: 96,
+        qualified_peer_count: 50,
+        minimum_sample_met: true,
+        sample_confidence: "high",
+        games_played: 10,
+        toi_seconds: 6000,
+        tags: ["L1"],
+        explanation_items: ["Rank 2 of 50 in all_skaters:all."],
+        provenance: {},
+        methodology_version: "contextual_rankings_v1",
+        created_at: "2026-04-16T06:00:00.000Z",
+        updated_at: "2026-04-16T06:00:00.000Z",
+      },
+    ];
+
+    const response = await buildSnapshotFirstContextualRankingsSurface({
+      entity: "skaters",
+      season: 20252026,
+      asOfDate: null,
+      window: "season",
+      position: "all",
+      deployment: "all",
+      strength: "5v5",
+      metric: "points_per_60",
+      minGp: null,
+      minToiSeconds: null,
+      peerGroupType: "all_skaters",
+      sort: "percentile",
+      direction: "desc",
+      limit: 100,
+      teamId: null,
+      entityIds: null,
+    });
+
+    expect(response.meta).toMatchObject({
+      sourceTable: "entity_metric_rankings",
+      rankingSource: "entity_metric_rankings",
+      rankingSourceFallbackReason: null,
+      rowCount: 1,
+    });
+    expect(response.rankings[0]?.metric).toMatchObject({
+      key: "points_per_60",
+      value: 3.1,
+      rawRank: 2,
+      percentile: 96,
+    });
+  });
+
+  it("falls back to rolling Metric Explorer rankings when durable snapshots are empty", async () => {
+    const response = await buildSnapshotFirstContextualRankingsSurface({
+      entity: "skaters",
+      season: 20252026,
+      asOfDate: null,
+      window: "last5",
+      position: "all",
+      deployment: "all",
+      strength: "all",
+      metric: "ixg_per_60",
+      minGp: null,
+      minToiSeconds: null,
+      peerGroupType: "all_skaters",
+      sort: "percentile",
+      direction: "desc",
+      limit: 100,
+      teamId: null,
+      entityIds: null,
+    });
+
+    expect(response.meta).toMatchObject({
+      sourceTable: "rolling_player_game_metrics",
+      sourceTables: ["rolling_player_game_metrics"],
+      rankingSource: "fallback_rolling_player_game_metrics",
+      rankingSourcePreference: "entity_metric_rankings",
+      rankingSourceFallbackReason:
+        "No entity_metric_rankings snapshot rows matched the request.",
+      snapshotDate: "2026-04-11",
+    });
+    expect(response.rankings).toHaveLength(1);
   });
 
   it("falls back from a null-only latest snapshot to the latest calculable metric snapshot", async () => {

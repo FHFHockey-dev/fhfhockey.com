@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   PREGAME_PREDICTION_REFRESH_POLICY,
@@ -8,7 +8,10 @@ import {
   canBootstrapCurrentCompiledBaseline,
   decidePromotion,
   evaluatePersistedModelVersionPromotionGate,
+  generatePregamePredictionsForWindow,
   historicalPregamePredictionCutoffAt,
+  isPregamePredictionCutoff,
+  previewGamePredictionModelVersionPromotion,
   servingModelVersionPersistenceAction,
   sourceAsOfDateForPredictionCutoff,
 } from "./workflow";
@@ -17,6 +20,69 @@ import {
   BASELINE_MODEL_VERSION,
 } from "./baselineModel";
 import { GAME_PREDICTION_FEATURE_SET_VERSION } from "./featureSources";
+
+function eligiblePromotionMetadata(overrides?: Record<string, unknown>) {
+  return {
+    promotion_status: "eligible_for_manual_promotion",
+    promotion_decision: {
+      promote: true,
+    },
+    validation_window: {
+      start_date: "2026-01-01",
+      end_date: "2026-04-01",
+      evaluated_games: 240,
+    },
+    promotion_evidence: {
+      current: {
+        logLoss: 0.66,
+        brierScore: 0.23,
+        calibrationMaxGap: 0.04,
+        evaluatedGames: 240,
+      },
+      candidate: {
+        logLoss: 0.64,
+        brierScore: 0.21,
+        calibrationMaxGap: 0.03,
+        evaluatedGames: 240,
+      },
+      simpleBaselineFloor: {
+        key: "goal_differential",
+        label: "Goal differential baseline",
+        logLoss: 0.65,
+        brierScore: 0.22,
+        calibrationMaxGap: null,
+        evaluatedGames: 240,
+        accuracy: 0.56,
+      },
+    },
+    baseline_floor: {
+      key: "goal_differential",
+      label: "Goal differential baseline",
+      logLoss: 0.65,
+      brierScore: 0.22,
+      calibrationMaxGap: null,
+      evaluatedGames: 240,
+      accuracy: 0.56,
+    },
+    excluded_feature_keys: [],
+    ...overrides,
+  };
+}
+
+function queryBuilder(result: unknown, terminal: "maybeSingle" | "limit") {
+  const builder: any = {
+    select: vi.fn(() => builder),
+    eq: vi.fn(() => builder),
+    in: vi.fn(() => builder),
+    limit: vi.fn(() =>
+      terminal === "limit" ? Promise.resolve(result) : builder,
+    ),
+    maybeSingle: vi.fn(() =>
+      terminal === "maybeSingle" ? Promise.resolve(result) : builder,
+    ),
+  };
+  return builder;
+}
 
 describe("game prediction workflow", () => {
   it("defines repeated same-day pregame refresh windows", () => {
@@ -61,6 +127,89 @@ describe("game prediction workflow", () => {
         startTime: null,
       }),
     ).toBe("2026-01-10T16:00:00.000Z");
+    expect(
+      historicalPregamePredictionCutoffAt(
+        {
+          date: "2026-01-10",
+          startTime: "19:00:00",
+        },
+        2,
+      ),
+    ).toBe("2026-01-10T17:00:00.000Z");
+  });
+
+  it("rejects pregame prediction cutoffs at or after puck drop", () => {
+    expect(
+      isPregamePredictionCutoff({
+        game: { date: "2026-01-10", startTime: "2026-01-10T23:00:00.000Z" },
+        predictionCutoffAt: "2026-01-10T22:59:59.000Z",
+      }),
+    ).toBe(true);
+    expect(
+      isPregamePredictionCutoff({
+        game: { date: "2026-01-10", startTime: "2026-01-10T23:00:00.000Z" },
+        predictionCutoffAt: "2026-01-10T23:00:00.000Z",
+      }),
+    ).toBe(false);
+    expect(
+      isPregamePredictionCutoff({
+        game: { date: "2026-01-10", startTime: "19:00:00" },
+        predictionCutoffAt: "2026-01-10T20:00:00.000Z",
+      }),
+    ).toBe(false);
+    expect(
+      isPregamePredictionCutoff({
+        game: { date: "2026-01-10", startTime: "19:00:00" },
+        predictionCutoffAt: "2026-01-10T18:59:59.000Z",
+      }),
+    ).toBe(true);
+  });
+
+  it("skips post-start games in forecast windows without aborting the run", async () => {
+    const limit = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: 1,
+          date: "2026-01-10",
+          startTime: "19:00:00",
+          seasonId: 20252026,
+          homeTeamId: 10,
+          awayTeamId: 20,
+          type: 2,
+        },
+      ],
+      error: null,
+    });
+    const secondOrder = vi.fn(() => ({ limit }));
+    const firstOrder = vi.fn(() => ({ order: secondOrder }));
+    const lte = vi.fn(() => ({ order: firstOrder }));
+    const gte = vi.fn(() => ({ lte }));
+    const select = vi.fn(() => ({ gte }));
+    const from = vi.fn(() => ({ select }));
+
+    const result = await generatePregamePredictionsForWindow({
+      client: { from } as any,
+      fromDate: "2026-01-10",
+      toDate: "2026-01-10",
+      predictionCutoffAt: "2026-01-10T20:00:00.000Z",
+      dryRun: true,
+    });
+
+    expect(result).toMatchObject({
+      requestedGames: 1,
+      processedGames: 0,
+      skippedGames: 1,
+      dryRun: true,
+      results: [
+        {
+          gameId: 1,
+          homeWinProbability: null,
+          awayWinProbability: null,
+          skippedReason: "prediction_cutoff_at_or_after_puck_drop",
+        },
+      ],
+    });
+    expect(from).toHaveBeenCalledTimes(1);
   });
 
   it("requires meaningful metric improvement before promotion", () => {
@@ -119,12 +268,7 @@ describe("game prediction workflow", () => {
               evaluatedGames: 240,
             },
           },
-          metadata: {
-            promotion_status: "eligible_for_manual_promotion",
-            promotion_decision: {
-              promote: true,
-            },
-          },
+          metadata: eligiblePromotionMetadata(),
           source_audit_metadata: {
             uses_market_features: false,
             public_explanation_ready: true,
@@ -178,6 +322,9 @@ describe("game prediction workflow", () => {
         "Only candidate model versions can be promoted manually.",
         "Persisted promotion evidence is not eligible for promotion.",
         "Persisted promotion decision does not approve promotion.",
+        "Promotion evidence metadata must include a validation window matching the model version.",
+        "Promotion evidence metadata is required before promotion.",
+        "Promotion evidence metadata must include excluded feature keys.",
         "Validation date range is required before promotion.",
         "Candidate evaluated games below minimum 100.",
         "Persisted overall model metric row is required before promotion.",
@@ -211,12 +358,7 @@ describe("game prediction workflow", () => {
           evaluatedGames: 240,
         },
       },
-      metadata: {
-        promotion_status: "eligible_for_manual_promotion",
-        promotion_decision: {
-          promote: true,
-        },
-      },
+      metadata: eligiblePromotionMetadata(),
       source_audit_metadata: {
         uses_market_features: true,
         market_feature_training_eligible: true,
@@ -283,6 +425,146 @@ describe("game prediction workflow", () => {
     expect(eligible).toEqual({ promote: true, reasons: [] });
   });
 
+  it("requires persisted promotion evidence metadata before manual promotion", () => {
+    const result = evaluatePersistedModelVersionPromotionGate({
+      modelVersion: {
+        status: "candidate",
+        validation_start_date: "2026-01-01",
+        validation_end_date: "2026-04-01",
+        validation_metrics: {
+          summary: {
+            evaluatedGames: 240,
+          },
+        },
+        metadata: {
+          promotion_status: "eligible_for_manual_promotion",
+          promotion_decision: {
+            promote: true,
+          },
+          validation_window: {
+            start_date: "2026-01-01",
+            end_date: "2026-04-01",
+            evaluated_games: 240,
+          },
+          promotion_evidence: {
+            current: {
+              logLoss: 0.66,
+              brierScore: 0.23,
+              evaluatedGames: 240,
+            },
+          },
+        },
+        source_audit_metadata: {
+          uses_market_features: false,
+          public_explanation_ready: true,
+          explanation_blockers: [],
+          segment_regression_count: 0,
+        },
+      },
+      persistedOverallMetric: {
+        segment_key: "overall",
+        segment_value: "all",
+        evaluation_start_date: "2026-01-01",
+        evaluation_end_date: "2026-04-01",
+        evaluated_games: 240,
+        log_loss: 0.64,
+        brier_score: 0.21,
+        accuracy: 0.58,
+      },
+      persistedMonitoredSegmentKeys: REQUIRED_PROMOTION_MONITORED_SEGMENT_KEYS,
+    });
+
+    expect(result.promote).toBe(false);
+    expect(result.reasons).toEqual(
+      expect.arrayContaining([
+        "Promotion evidence metadata must include current and candidate probability metrics.",
+        "Promotion evidence metadata must include strongest simple-baseline comparison metadata.",
+        "Promotion evidence metadata must include excluded feature keys.",
+      ]),
+    );
+  });
+
+  it("previews persisted promotion gates without mutating model rows", async () => {
+    const modelQuery = queryBuilder(
+      {
+        data: {
+          model_name: "nhl_game_baseline_logistic",
+          model_version: "candidate-v1",
+          feature_set_version: "game_features_v5_accuracy_candidates",
+          status: "candidate",
+          validation_start_date: "2026-01-01",
+          validation_end_date: "2026-04-01",
+          validation_metrics: {
+            summary: {
+              evaluatedGames: 240,
+            },
+          },
+          metadata: eligiblePromotionMetadata(),
+          source_audit_metadata: {
+            uses_market_features: false,
+            public_explanation_ready: true,
+            explanation_blockers: [],
+            segment_regression_count: 0,
+          },
+        },
+        error: null,
+      },
+      "maybeSingle",
+    );
+    const metricQuery = queryBuilder(
+      {
+        data: {
+          segment_key: "overall",
+          segment_value: "all",
+          evaluation_start_date: "2026-01-01",
+          evaluation_end_date: "2026-04-01",
+          evaluated_games: 240,
+          log_loss: 0.64,
+          brier_score: 0.21,
+          accuracy: 0.58,
+        },
+        error: null,
+      },
+      "maybeSingle",
+    );
+    const segmentQuery = queryBuilder(
+      {
+        data: REQUIRED_PROMOTION_MONITORED_SEGMENT_KEYS.map((segment_key) => ({
+          segment_key,
+        })),
+        error: null,
+      },
+      "limit",
+    );
+    const metricQueries = [metricQuery, segmentQuery];
+    const from = vi.fn((table: string) => {
+      if (table === "game_prediction_model_versions") return modelQuery;
+      if (table === "game_prediction_model_metrics") {
+        return metricQueries.shift();
+      }
+      throw new Error(`Unexpected table ${table}`);
+    });
+
+    const result = await previewGamePredictionModelVersionPromotion({
+      client: { from } as any,
+      modelName: "nhl_game_baseline_logistic",
+      modelVersion: "candidate-v1",
+      featureSetVersion: "game_features_v5_accuracy_candidates",
+      minEvaluatedGames: 150,
+    });
+
+    expect(result).toEqual({
+      wouldPromote: true,
+      reasons: [],
+      modelName: "nhl_game_baseline_logistic",
+      modelVersion: "candidate-v1",
+      featureSetVersion: "game_features_v5_accuracy_candidates",
+      persistedEvidenceChecked: true,
+    });
+    expect(from).toHaveBeenCalledTimes(3);
+    expect(modelQuery).not.toHaveProperty("update");
+  });
+
   it("requires persisted overall metric evidence to match the promotion window", () => {
     const modelVersion = {
       status: "candidate",
@@ -293,12 +575,7 @@ describe("game prediction workflow", () => {
           evaluatedGames: 240,
         },
       },
-      metadata: {
-        promotion_status: "eligible_for_manual_promotion",
-        promotion_decision: {
-          promote: true,
-        },
-      },
+      metadata: eligiblePromotionMetadata(),
       source_audit_metadata: {
         uses_market_features: false,
         public_explanation_ready: true,
@@ -341,8 +618,22 @@ describe("game prediction workflow", () => {
     };
 
     expect(canBootstrapCurrentCompiledBaseline(currentBaseline)).toBe(true);
-    expect(servingModelVersionPersistenceAction(currentBaseline)).toBe(
-      "bootstrap_current_compiled_baseline",
+    expect(() =>
+      servingModelVersionPersistenceAction(currentBaseline),
+    ).toThrow(/Promote the model version before serving predictions/);
+    expect(
+      servingModelVersionPersistenceAction({
+        ...currentBaseline,
+        allowBaselineBootstrap: true,
+      }),
+    ).toBe("bootstrap_current_compiled_baseline");
+    expect(
+      servingModelVersionPersistenceAction({
+        ...currentBaseline,
+        existingStatus: "production",
+      }),
+    ).toBe(
+      "use_existing_production",
     );
     expect(
       servingModelVersionPersistenceAction({

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 
 import Header from "./Header";
@@ -11,12 +11,68 @@ type LayoutProps = {
 function Layout({ children }: LayoutProps) {
   const router = useRouter();
   const isUnderlyingStatsRoute = router.pathname.startsWith("/underlying-stats");
+  const [isFooterVisible, setIsFooterVisible] = useState(false);
+  const touchStartYRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const updateFooterVisibility = (
+      isScrollingDown: boolean,
+      allowAtPageTop = false,
+    ) => {
+      setIsFooterVisible(
+        isScrollingDown && (allowAtPageTop || window.scrollY > 24),
+      );
+    };
+
+    let lastScrollY = window.scrollY;
+
+    const handleScroll = () => {
+      const nextScrollY = window.scrollY;
+
+      updateFooterVisibility(nextScrollY > lastScrollY);
+      lastScrollY = nextScrollY;
+    };
+
+    const handleWheel = (event: WheelEvent) => {
+      if (event.deltaY !== 0) {
+        updateFooterVisibility(event.deltaY > 0, true);
+      }
+    };
+
+    const handleTouchStart = (event: TouchEvent) => {
+      touchStartYRef.current = event.touches[0]?.clientY ?? null;
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const touchStartY = touchStartYRef.current;
+      const nextTouchY = event.touches[0]?.clientY;
+
+      if (touchStartY != null && nextTouchY != null) {
+        updateFooterVisibility(nextTouchY < touchStartY, true);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("wheel", handleWheel, { passive: true });
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("wheel", handleWheel);
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, []);
 
   return (
     <div className={styles.container}>
       <Header />
       {children}
-      <Footer isUnderlyingStatsRoute={isUnderlyingStatsRoute} />
+      <Footer
+        isUnderlyingStatsRoute={isUnderlyingStatsRoute}
+        isVisible={isFooterVisible}
+      />
     </div>
   );
 }
@@ -60,11 +116,16 @@ function FooterLogo() {
 
 export function Footer({
   isUnderlyingStatsRoute = false,
+  isVisible = false,
 }: {
   isUnderlyingStatsRoute?: boolean;
+  isVisible?: boolean;
 }) {
   return (
-    <footer className={styles.footer}>
+    <footer
+      className={`${styles.footer} ${isVisible ? styles.footerVisible : ""}`}
+      aria-hidden={!isVisible}
+    >
       <span
         className={
           isUnderlyingStatsRoute

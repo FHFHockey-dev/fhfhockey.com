@@ -180,6 +180,7 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
       endDate: undefined,
       strengths: undefined,
       resumePlayerId: 8478000,
+      maxPlayers: undefined,
       forceFullRefresh: false,
       fullRefreshMode: "overwrite_only",
       fullRefreshDeleteChunkSize: 25000,
@@ -231,6 +232,7 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
       endDate: undefined,
       strengths: undefined,
       resumePlayerId: undefined,
+      maxPlayers: undefined,
       forceFullRefresh: undefined,
       fullRefreshMode: undefined,
       fullRefreshDeleteChunkSize: undefined,
@@ -370,6 +372,120 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
       })
     );
     expect(res.statusCode).toBe(200);
+  });
+
+  it("auto-resumes bounded batches until the cursor is exhausted", async () => {
+    mainMock
+      .mockResolvedValueOnce(
+        createRollingRunSummary({
+          rowsUpserted: 100,
+          processedPlayers: 25,
+          lastProcessedPlayerId: 8475000,
+          nextResumeFrom: 8475000,
+          remainingPlayerCount: 25,
+          totalPlayersAfterResumeFilter: 50
+        })
+      )
+      .mockResolvedValueOnce(
+        createRollingRunSummary({
+          rowsUpserted: 80,
+          processedPlayers: 25,
+          lastProcessedPlayerId: 8476000,
+          nextResumeFrom: null,
+          remainingPlayerCount: 0,
+          totalPlayersAfterResumeFilter: 25
+        })
+      );
+    const req: any = {
+      method: "GET",
+      query: {
+        season: "20252026",
+        startDate: "2025-10-07",
+        endDate: "2026-04-16",
+        strength: "5v5",
+        executionProfile: "overnight",
+        autoResume: "true",
+        autoResumeMaxBatches: "3"
+      },
+      url: "/api/v1/db/update-rolling-player-averages?autoResume=true"
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(mainMock).toHaveBeenCalledTimes(2);
+    expect(mainMock.mock.calls[0][0]).toMatchObject({
+      season: 20252026,
+      strengths: ["5v5"],
+      resumePlayerId: undefined,
+      maxPlayers: 25,
+      playerConcurrency: 1,
+      upsertBatchSize: 50,
+      upsertConcurrency: 1,
+      skipDiagnostics: true
+    });
+    expect(mainMock.mock.calls[1][0]).toMatchObject({
+      resumePlayerId: 8475000,
+      maxPlayers: 25
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      runSummary: {
+        rowsUpserted: 180,
+        processedPlayers: 50,
+        nextResumeFrom: null
+      },
+      autoResume: {
+        enabled: true,
+        batchesRun: 2,
+        runtimeBudgetDisabled: false,
+        stoppedReason: "complete",
+        nextResumeFrom: null,
+        maxPlayersPerBatch: 25
+      }
+    });
+  });
+
+  it("allows manual auto-resume runs to disable the loop runtime budget", async () => {
+    mainMock.mockResolvedValueOnce(
+      createRollingRunSummary({
+        rowsUpserted: 100,
+        processedPlayers: 25,
+        lastProcessedPlayerId: 8475000,
+        nextResumeFrom: 8475000,
+        remainingPlayerCount: 25,
+        totalPlayersAfterResumeFilter: 50
+      })
+    );
+    const req: any = {
+      method: "GET",
+      query: {
+        season: "20252026",
+        startDate: "2025-10-07",
+        endDate: "2026-04-16",
+        strength: "5v5",
+        executionProfile: "overnight",
+        autoResume: "true",
+        autoResumeMaxBatches: "1",
+        disableAutoResumeRuntimeBudget: "true"
+      },
+      url: "/api/v1/db/update-rolling-player-averages?autoResume=true&disableAutoResumeRuntimeBudget=true"
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(mainMock).toHaveBeenCalledTimes(1);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      autoResume: {
+        enabled: true,
+        maxRuntimeMs: null,
+        runtimeBudgetDisabled: true,
+        stoppedReason: "max_batches",
+        nextResumeFrom: 8475000
+      }
+    });
   });
 
   it("blocks unbounded multi-week date-window recomputes", async () => {

@@ -44,6 +44,26 @@ export type PublicPredictionMatchup = {
   optionalPlayerImpactAvailable: boolean;
 };
 
+export type PublicPredictionMarket = {
+  source: "feature_snapshot";
+  sourceName: string;
+  provider: string;
+  capturedAt: string;
+  sourceUrl: string | null;
+  homeMoneyline: number | null;
+  awayMoneyline: number | null;
+  homeNoVigProbability: number | null;
+  awayNoVigProbability: number | null;
+  overround: number | null;
+  homeSpreadLine: number | null;
+  homeSpreadOdds: number | null;
+  awaySpreadLine: number | null;
+  awaySpreadOdds: number | null;
+  totalLine: number | null;
+  overOdds: number | null;
+  underOdds: number | null;
+};
+
 export type PublicGamePrediction = {
   gameId: number;
   snapshotDate: string;
@@ -65,6 +85,7 @@ export type PublicGamePrediction = {
   };
   factors: PublicPredictionFactor[];
   matchup: PublicPredictionMatchup | null;
+  market: PublicPredictionMarket | null;
 };
 
 export type PublicPredictionPerformance = {
@@ -262,6 +283,32 @@ function buildMatchup(
   };
 }
 
+function buildMarket(
+  payload?: GamePredictionFeatureSnapshotPayload,
+): PublicPredictionMarket | null {
+  const market = payload?.market;
+  if (!market) return null;
+  return {
+    source: "feature_snapshot",
+    sourceName: market.sourceName,
+    provider: market.provider,
+    capturedAt: market.capturedAt,
+    sourceUrl: market.sourceUrl || null,
+    homeMoneyline: market.homeMoneyline,
+    awayMoneyline: market.awayMoneyline,
+    homeNoVigProbability: market.homeNoVigProbability,
+    awayNoVigProbability: market.awayNoVigProbability,
+    overround: market.overround,
+    homeSpreadLine: market.homeSpreadLine,
+    homeSpreadOdds: market.homeSpreadOdds,
+    awaySpreadLine: market.awaySpreadLine,
+    awaySpreadOdds: market.awaySpreadOdds,
+    totalLine: market.totalLine,
+    overOdds: market.overOdds,
+    underOdds: market.underOdds,
+  };
+}
+
 function mapTeam(
   row: TeamRow | undefined,
   teamId: number,
@@ -330,17 +377,14 @@ export function buildPublicGamePredictionsPayload(args: {
       historyByOutputKey.set(key, history);
     }
   }
-  const productionModelKeys = args.modelVersions
-    ? new Set(
-        args.modelVersions
-          .filter((model) => model.status === "production")
-          .map(modelMetricKey),
-      )
-    : null;
+  const productionModelKeys = new Set(
+    (args.modelVersions ?? [])
+      .filter((model) => model.status === "production")
+      .map(modelMetricKey),
+  );
 
   const publicOutputs = args.outputs.filter((output) => {
     const history = historyByOutputKey.get(outputKey(output));
-    if (!productionModelKeys) return true;
     const featureSetVersion = outputFeatureSetVersion(output, history);
     return featureSetVersion
       ? productionModelKeys.has(
@@ -396,6 +440,7 @@ export function buildPublicGamePredictionsPayload(args: {
       freshness: extractFreshness(output, payload),
       factors: extractTopFactors(output, history),
       matchup: buildMatchup(payload),
+      market: buildMarket(payload),
     };
   });
 

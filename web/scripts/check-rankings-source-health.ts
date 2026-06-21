@@ -4,45 +4,84 @@ type RankingsPayload = {
   rankings?: Array<{
     metric?: { value?: number | null; percentile?: number | null };
   }>;
+  rows?: unknown[];
   meta?: {
     rowCount?: number;
+    totalRankedRows?: number;
+    pageCount?: number;
     snapshotDate?: string | null;
     latestAvailableSnapshotDate?: string | null;
+    styleSnapshotDate?: string | null;
     snapshotSelectionReason?: string;
+    sourceTable?: string;
+    sourceTables?: string[];
+    rankingSource?: string;
+    rankingSourceFallbackReason?: string | null;
+    methodologyVersion?: string | null;
+    methodologyUpdatedAt?: string | null;
+    sourceQualityFlags?: string[];
     unavailable?: boolean;
     message?: string | null;
+    sourceWarnings?: string[];
   };
+};
+
+type Check = {
+  kind: "matrix" | "metric_explorer";
+  label: string;
+  minRows: number;
+  path: string;
 };
 
 type Args = {
   baseUrl: string;
-  minRows: number;
 };
 
 const DEFAULT_BASE_URL = "http://localhost:3000";
-const CHECKS = [
+const CHECKS: Check[] = [
   {
-    label: "5v5 goals/60",
+    label: "skater matrix",
+    kind: "matrix",
+    path: "/api/v1/contextual-rankings/matrix?entity=skaters&season=20252026&window=season&position=all&deployment=all&strength=5v5&min_gp=1&min_toi=300&sort_metric=points_per_60&sort_direction=desc&page=1&page_size=10",
+    minRows: 10,
+  },
+  {
+    label: "Metric Explorer 5v5 goals/60",
+    kind: "metric_explorer",
     path: "/api/v1/contextual-rankings?entity=skaters&season=20252026&window=season&position=all&deployment=all&strength=5v5&metric=goals_per_60&min_gp=1&min_toi=300&sort=percentile&direction=desc&limit=25",
+    minRows: 10,
   },
   {
-    label: "5v5 shot attempts/60",
+    label: "Metric Explorer 5v5 shot attempts/60",
+    kind: "metric_explorer",
     path: "/api/v1/contextual-rankings?entity=skaters&season=20252026&window=season&position=all&deployment=all&strength=5v5&metric=shot_attempts_per_60&min_gp=1&min_toi=300&sort=percentile&direction=desc&limit=25",
+    minRows: 10,
   },
   {
-    label: "5v5 ixG/60",
+    label: "Metric Explorer 5v5 ixG/60",
+    kind: "metric_explorer",
     path: "/api/v1/contextual-rankings?entity=skaters&season=20252026&window=season&position=all&deployment=all&strength=5v5&metric=ixg_per_60&min_gp=1&min_toi=300&sort=percentile&direction=desc&limit=25",
+    minRows: 10,
   },
   {
-    label: "PP goals/60",
+    label: "Metric Explorer PP goals/60",
+    kind: "metric_explorer",
     path: "/api/v1/contextual-rankings?entity=skaters&season=20252026&window=season&position=all&deployment=all&strength=pp&metric=goals_per_60&min_gp=1&min_toi=0&sort=percentile&direction=desc&limit=25",
+    minRows: 10,
+  },
+  {
+    label: "goalie matrix",
+    kind: "matrix",
+    path: "/api/v1/contextual-rankings/goalies?season=20252026&window=season&metric=save_percentage&sort_direction=desc&role=all&min_starts=3&min_shots=100&page=1&page_size=10",
+    minRows: 10,
+  },
+  {
+    label: "team matrix",
+    kind: "matrix",
+    path: "/api/v1/contextual-rankings/teams?season=20252026&metric=off_rating&sort_direction=desc&page=1&page_size=10",
+    minRows: 10,
   },
 ] as const;
-
-function parsePositiveInt(value: string | undefined, fallback: number) {
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
-}
 
 function parseArgs(argv: string[]): Args {
   const values = new Map<string, string>();
@@ -63,7 +102,6 @@ function parseArgs(argv: string[]): Args {
 
   return {
     baseUrl: values.get("baseUrl") ?? DEFAULT_BASE_URL,
-    minRows: parsePositiveInt(values.get("minRows"), 10),
   };
 }
 
@@ -91,6 +129,41 @@ async function fetchCheck(baseUrl: string, path: string) {
   return { durationMs, payload, url };
 }
 
+function assertPayload(check: Check, payload: RankingsPayload) {
+  const rowCount = payload.meta?.rowCount ?? 0;
+  const returnedRows =
+    check.kind === "metric_explorer"
+      ? (payload.rankings?.length ?? 0)
+      : (payload.rows?.length ?? 0);
+  const finiteRows =
+    check.kind === "metric_explorer" ? finiteMetricRows(payload) : returnedRows;
+
+  if (payload.meta?.unavailable) {
+    throw new Error(`${check.label} is unavailable: ${payload.meta.message ?? ""}`);
+  }
+  if (!payload.meta?.snapshotDate) {
+    throw new Error(`${check.label} did not expose a snapshot date.`);
+  }
+  if (!payload.meta?.sourceTable && !payload.meta?.sourceTables?.length) {
+    throw new Error(`${check.label} did not expose source table metadata.`);
+  }
+  if (!payload.meta?.methodologyVersion) {
+    throw new Error(`${check.label} did not expose methodology version metadata.`);
+  }
+  if (!Array.isArray(payload.meta.sourceQualityFlags)) {
+    throw new Error(`${check.label} did not expose source-quality flag metadata.`);
+  }
+  if (
+    rowCount < check.minRows ||
+    returnedRows < check.minRows ||
+    finiteRows < check.minRows
+  ) {
+    throw new Error(
+      `${check.label} returned too few rows (rowCount=${rowCount}, returnedRows=${returnedRows}, finiteRows=${finiteRows}, min=${check.minRows}).`,
+    );
+  }
+}
+
 async function run() {
   const args = parseArgs(process.argv.slice(2));
   const results: Array<Record<string, unknown>> = [];
@@ -98,16 +171,7 @@ async function run() {
 
   for (const check of CHECKS) {
     const { durationMs, payload, url } = await fetchCheck(args.baseUrl, check.path);
-    const rowCount = payload.meta?.rowCount ?? 0;
-    const finiteRows = finiteMetricRows(payload);
-    if (payload.meta?.unavailable) {
-      throw new Error(`${check.label} is unavailable: ${payload.meta.message ?? ""}`);
-    }
-    if (rowCount < args.minRows || finiteRows < args.minRows) {
-      throw new Error(
-        `${check.label} returned too few calculable rows (rowCount=${rowCount}, finiteRows=${finiteRows}, min=${args.minRows}).`,
-      );
-    }
+    assertPayload(check, payload);
     if (
       payload.meta?.snapshotDate &&
       payload.meta.latestAvailableSnapshotDate &&
@@ -117,14 +181,36 @@ async function run() {
         `${check.label} is using fallback snapshot ${payload.meta.snapshotDate}; latest available is ${payload.meta.latestAvailableSnapshotDate}.`,
       );
     }
+    if (payload.meta?.rankingSourceFallbackReason) {
+      warnings.push(
+        `${check.label} used fallback ranking source: ${payload.meta.rankingSourceFallbackReason}`,
+      );
+    }
+    if (payload.meta?.sourceWarnings?.length) {
+      warnings.push(
+        `${check.label} reported source warnings: ${payload.meta.sourceWarnings.join(", ")}`,
+      );
+    }
     results.push({
       label: check.label,
       durationMs,
-      rowCount,
-      finiteRows,
+      rowCount: payload.meta?.rowCount ?? null,
+      totalRankedRows: payload.meta?.totalRankedRows ?? null,
+      pageCount: payload.meta?.pageCount ?? null,
       snapshotDate: payload.meta?.snapshotDate ?? null,
-      latestAvailableSnapshotDate: payload.meta?.latestAvailableSnapshotDate ?? null,
+      latestAvailableSnapshotDate:
+        payload.meta?.latestAvailableSnapshotDate ?? null,
+      styleSnapshotDate: payload.meta?.styleSnapshotDate ?? null,
       snapshotSelectionReason: payload.meta?.snapshotSelectionReason ?? null,
+      sourceTable: payload.meta?.sourceTable ?? null,
+      sourceTables: payload.meta?.sourceTables ?? [],
+      rankingSource: payload.meta?.rankingSource ?? null,
+      rankingSourceFallbackReason:
+        payload.meta?.rankingSourceFallbackReason ?? null,
+      methodologyVersion: payload.meta?.methodologyVersion ?? null,
+      methodologyUpdatedAt: payload.meta?.methodologyUpdatedAt ?? null,
+      sourceQualityFlags: payload.meta?.sourceQualityFlags ?? [],
+      sourceWarnings: payload.meta?.sourceWarnings ?? [],
       url,
     });
   }

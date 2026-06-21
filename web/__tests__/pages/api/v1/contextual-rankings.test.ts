@@ -1,11 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { buildSurfaceMock } = vi.hoisted(() => ({
+const { buildSurfaceMock, resolveTeamTokenMock } = vi.hoisted(() => ({
   buildSurfaceMock: vi.fn(),
+  resolveTeamTokenMock: vi.fn(),
+}));
+
+vi.mock("../../../../lib/rankings/teamTokenResolver", () => ({
+  resolveTeamToken: resolveTeamTokenMock,
 }));
 
 vi.mock("../../../../lib/rankings/rankingQueries", () => ({
-  buildContextualRankingsSurface: buildSurfaceMock,
+  buildSnapshotFirstContextualRankingsSurface: buildSurfaceMock,
 }));
 
 import handler from "../../../../pages/api/v1/contextual-rankings";
@@ -33,6 +38,7 @@ function createMockRes() {
 describe("/api/v1/contextual-rankings", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resolveTeamTokenMock.mockResolvedValue(null);
     buildSurfaceMock.mockImplementation(async (request) => ({
       success: true,
       request,
@@ -109,6 +115,36 @@ describe("/api/v1/contextual-rankings", () => {
       }),
     );
     expect(res.body?.success).toBe(true);
+  });
+
+  it("resolves team names before building Metric Explorer rankings", async () => {
+    resolveTeamTokenMock.mockResolvedValueOnce({
+      input: "Boston Bruins",
+      teamId: 6,
+      abbreviation: "BOS",
+      name: "Boston Bruins",
+      matchedBy: "name",
+    });
+    const req: any = {
+      method: "GET",
+      query: {
+        season: "20252026",
+        metric: "goals_per_60",
+        team: "Boston Bruins",
+      },
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(resolveTeamTokenMock).toHaveBeenCalledWith("Boston Bruins");
+    expect(buildSurfaceMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        teamId: 6,
+        peerGroupType: "team",
+      }),
+    );
   });
 
   it("returns 400 for invalid query params before querying Supabase", async () => {

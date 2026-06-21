@@ -63,8 +63,8 @@ describe("rankingCalculator lower-is-better ranking", () => {
       })),
     ).toEqual([
       { id: 2, value: 1.4, rank: 1, percentile: 100 },
-      { id: 3, value: 2.1, rank: 2, percentile: 66.667 },
-      { id: 1, value: 2.9, rank: 3, percentile: 33.333 },
+      { id: 3, value: 2.1, rank: 2, percentile: 50 },
+      { id: 1, value: 2.9, rank: 3, percentile: 0 },
     ]);
   });
 });

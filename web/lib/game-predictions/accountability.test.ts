@@ -21,6 +21,7 @@ import {
   selectAccuracyImprovementAblationVariants,
   selectAccuracyLoopSourceReadinessGames,
   selectWalkForwardBacktestGameWindows,
+  syntheticBacktestPredictionCutoffAt,
   type AccountabilityGameRow,
   type AccountabilityPredictionRow,
   type BacktestAblationVariant,
@@ -243,6 +244,85 @@ describe("game prediction accountability", () => {
       homeTeamAbbreviation: "BUF",
       awayTeamAbbreviation: "BOS",
     });
+  });
+
+  it("excludes at-or-after-start predictions when the game start time is time-only", () => {
+    const result = buildPredictionCandlestick({
+      teamsById,
+      game: {
+        id: 1,
+        date: "2026-01-10",
+        startTime: "19:00:00",
+        seasonId: 20252026,
+        homeTeamId: 2,
+        awayTeamId: 1,
+        type: 2,
+      },
+      outcome: {
+        gameId: 1,
+        homeTeamId: 2,
+        awayTeamId: 1,
+        homeScore: 4,
+        awayScore: 2,
+        homeWon: true,
+      },
+      predictions: [
+        prediction({
+          prediction_id: "prediction-1",
+          prediction_cutoff_at: "2026-01-10T18:59:59.000Z",
+          home_win_probability: 0.52,
+          away_win_probability: 0.48,
+        }),
+        prediction({
+          prediction_id: "prediction-2",
+          prediction_cutoff_at: "2026-01-10T19:00:00.000Z",
+          home_win_probability: 0.2,
+          away_win_probability: 0.8,
+          predicted_winner_team_id: 1,
+        }),
+        prediction({
+          prediction_id: "prediction-3",
+          prediction_cutoff_at: "2026-01-10T20:00:00.000Z",
+          home_win_probability: 0.9,
+          away_win_probability: 0.1,
+        }),
+      ],
+    });
+
+    expect(result).toMatchObject({
+      predictionCount: 1,
+      finalPredictionId: "prediction-1",
+      finalPredictionCutoffAt: "2026-01-10T18:59:59.000Z",
+      finalHomeWinProbability: 0.52,
+    });
+
+    expect(
+      buildPredictionCandlestick({
+        teamsById,
+        game: {
+          id: 1,
+          date: "2026-01-10",
+          startTime: "19:00:00",
+          seasonId: 20252026,
+          homeTeamId: 2,
+          awayTeamId: 1,
+          type: 2,
+        },
+        outcome: {
+          gameId: 1,
+          homeTeamId: 2,
+          awayTeamId: 1,
+          homeScore: 4,
+          awayScore: 2,
+          homeWon: true,
+        },
+        predictions: [
+          prediction({
+            prediction_cutoff_at: "2026-01-10T19:00:00.000Z",
+          }),
+        ],
+      }),
+    ).toBeNull();
   });
 
   it("summarizes cumulative and rolling accountability", () => {
@@ -667,6 +747,65 @@ describe("game prediction accountability", () => {
     );
   });
 
+  it("rejects market odds readiness captured after a time-only puck drop", () => {
+    const readiness = buildMarketOddsSourceReadiness({
+      games: [
+        {
+          id: 1,
+          date: "2026-01-10",
+          startTime: "13:00:00",
+          seasonId: 20252026,
+          homeTeamId: 2,
+          awayTeamId: 1,
+          type: 2,
+        },
+      ],
+      oddsRows: [
+        {
+          game_id: 1,
+          captured_at: "2026-01-10T15:00:00.000Z",
+          event_start_at: null,
+          provider: "DraftKings",
+          provenance: {
+            import_source_name: "historical_market_odds_import",
+            import_batch_id: "market-import-2026-01-10",
+          },
+          metadata: {},
+        },
+      ],
+      provenanceRows: [
+        {
+          game_id: 1,
+          source_type: "game_prediction_market_odds",
+          source_name: "historical_market_odds_import",
+          status: "observed",
+          observed_at: "2026-01-10T15:00:00.000Z",
+          freshness_expires_at: "2026-01-10T16:00:00.000Z",
+        },
+      ],
+    });
+
+    expect(readiness).toMatchObject({
+      requiredGames: 1,
+      snapshotGames: 1,
+      preCutoffEligibleGames: 0,
+      trustedSnapshotSourceGames: 0,
+      provenanceGames: 0,
+      freshProvenanceGames: 0,
+      trainingFeatureEligible: false,
+      missingPreCutoffEligibleGameIds: [1],
+      missingTrustedSnapshotSourceGameIds: [1],
+      missingProvenanceGameIds: [1],
+    });
+    expect(readiness.warnings).toEqual(
+      expect.arrayContaining([
+        "market_odds_snapshots_missing_or_after_prediction_cutoff",
+        "market_odds_snapshot_source_provenance_missing_or_untrusted",
+        "market_odds_source_provenance_missing",
+      ]),
+    );
+  });
+
   it("scopes source readiness to capped training and replay windows", () => {
     const games: AccountabilityGameRow[] = Array.from(
       { length: 8 },
@@ -767,6 +906,41 @@ describe("game prediction accountability", () => {
       6,
       7,
     ]);
+  });
+
+  it("uses strict pregame cutoffs for same-day synthetic backtests", () => {
+    expect(
+      syntheticBacktestPredictionCutoffAt({
+        game: {
+          date: "2026-01-10",
+          startTime: "19:00:00",
+        },
+        simulationDate: "2026-01-10",
+        horizonDays: 0,
+      }),
+    ).toBe("2026-01-10T18:00:00.000Z");
+
+    expect(
+      syntheticBacktestPredictionCutoffAt({
+        game: {
+          date: "2026-01-10",
+          startTime: "2026-01-10T23:00:00.000Z",
+        },
+        simulationDate: "2026-01-10",
+        horizonDays: 0,
+      }),
+    ).toBe("2026-01-10T22:00:00.000Z");
+
+    expect(
+      syntheticBacktestPredictionCutoffAt({
+        game: {
+          date: "2026-01-10",
+          startTime: "19:00:00",
+        },
+        simulationDate: "2026-01-09",
+        horizonDays: 1,
+      }),
+    ).toBe("2026-01-09T16:00:00.000Z");
   });
 
   it("builds promotion evidence with calibration, market, and segment guardrails", () => {
@@ -1063,12 +1237,16 @@ describe("game prediction accountability", () => {
       trustedImportBatchIds: ["market-import-2026-01-10"],
     });
     expect(blockedEvidence.marketFeatureTrainingEligible).toBe(false);
+    expect(blockedEvidence.marketSourceTrainingEligible).toBe(false);
+    expect(blockedEvidence.marketFeatureSuppressedBySourceReadiness).toBe(false);
     expect(blockedEvidence.decision.reasons).toEqual(
       expect.arrayContaining([
         expect.stringContaining("Market features require historical odds snapshots"),
       ]),
     );
     expect(eligibleEvidence.marketFeatureTrainingEligible).toBe(true);
+    expect(eligibleEvidence.marketSourceTrainingEligible).toBe(true);
+    expect(eligibleEvidence.marketFeatureSuppressedBySourceReadiness).toBe(false);
   });
 
   it("suppresses market features from ablation training until source readiness is eligible", () => {
@@ -1153,6 +1331,26 @@ describe("game prediction accountability", () => {
     });
     expect(guarded[1]).toBe(variants[1]);
     expect(eligible[0]).toBe(variants[0]);
+
+    const suppressedEvidence = buildBacktestPromotionEvidence({
+      baseline: ablationComparison({ key: "v4_default" }),
+      candidate: ablationComparison({
+        key: "market_anchored_candidate",
+        modelAuditMetadata: guarded[0]?.modelAuditMetadata ?? {},
+      }),
+      candidateFeatureVectorOptions: guarded[0]?.featureVectorOptions,
+      marketSourceReadiness: ineligibleSourceReadiness,
+    });
+
+    expect(suppressedEvidence.usesMarketFeatures).toBe(false);
+    expect(suppressedEvidence.marketSourceTrainingEligible).toBe(false);
+    expect(suppressedEvidence.marketFeatureSuppressedBySourceReadiness).toBe(true);
+    expect(suppressedEvidence.marketFeatureTrainingEligible).toBe(false);
+    expect(suppressedEvidence.decision.reasons).not.toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("Market features require historical odds snapshots"),
+      ]),
+    );
   });
 
   it("builds model-version rows that persist rejected promotion evidence", () => {
@@ -1346,6 +1544,8 @@ describe("game prediction accountability", () => {
     expect(candidateRow?.source_audit_metadata).toMatchObject({
       uses_market_features: true,
       market_feature_training_eligible: false,
+      market_source_training_eligible: false,
+      market_feature_suppressed_by_source_readiness: false,
       run_source_readiness: {
         marketOdds: {
           requiredGames: SOURCE_READINESS_GAME_ID_SAMPLE_LIMIT + 2,

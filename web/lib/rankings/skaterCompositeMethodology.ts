@@ -51,9 +51,17 @@ export const MCM_COMPONENTS = {
     "goals_per_60",
     "primary_assists_per_60",
     "points_per_60",
-    "pp_points_per_60",
   ],
 } as const;
+
+export const MCM_SOURCE_PENDING_COMPONENTS = [
+  {
+    metricKey: "pp_points_per_60",
+    originalRole: "power-play scoring component",
+    reason:
+      "Original MCM includes power-play points, but verified pp_points_per_60 ranking rows are not available in the current source contract.",
+  },
+] as const;
 
 export const MCM_SCORE_CONTRACT = {
   label: "MCM Score",
@@ -61,8 +69,9 @@ export const MCM_SCORE_CONTRACT = {
   peerGroup: "deployment",
   scale: "percentile_0_to_100",
   formula:
-    "0.45 * average(top_2(riff_percentiles)) + 0.35 * max(scoring_percentiles) + 0.20 * average(all_component_percentiles)",
+    "0.45 * average(top_2(riff_percentiles)) + 0.35 * max(live_scoring_percentiles) + 0.20 * average(live_component_percentiles)",
   componentGroups: MCM_COMPONENTS,
+  sourcePendingComponents: MCM_SOURCE_PENDING_COMPONENTS,
   requiredOutputFields: [
     "mcm_score",
     "beast_tier",
@@ -73,7 +82,7 @@ export const MCM_SCORE_CONTRACT = {
   ],
   caveats: [
     "Hits and blocks are rink/scorekeeper-sensitive until a rink-adjusted source is verified.",
-    "Power-play points remain source-pending when pp_points_per_60 is unavailable in the active ranking context.",
+    "Power-play points are explicitly excluded from the live MCM calculation until pp_points_per_60 ranking rows are verified.",
     "MCM is a fantasy multi-category signal, not a pure NHL talent rating.",
   ],
 } as const;
@@ -112,21 +121,24 @@ export const BEAST_TIER_GATES = [
 export const SKATER_ARCHETYPE_TAG_CONTRACTS = [
   {
     key: "shoot_first",
-    label: "Shoot First",
+    label: "Shoot First Proxy",
+    status: "current_proxy",
     rule:
       "shot_attempts_per_60 percentile >= 75 and primary_assists_per_60 percentile < 70",
     components: ["shot_attempts_per_60", "sog_per_60", "primary_assists_per_60"],
   },
   {
     key: "pass_first",
-    label: "Pass First",
+    label: "Pass First Proxy",
+    status: "current_proxy",
     rule:
       "primary_assists_per_60 percentile >= 75 and shot_attempts_per_60 percentile < 70",
     components: ["primary_assists_per_60", "assists_per_60", "shot_attempts_per_60"],
   },
   {
     key: "play_driver",
-    label: "Play Driver",
+    label: "Play Driver Proxy",
+    status: "current_proxy",
     rule:
       "on_ice_xgf_percentage percentile >= 70 and either shot_attempts_per_60 or primary_assists_per_60 percentile >= 70",
     components: [

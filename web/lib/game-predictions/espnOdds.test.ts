@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   americanOddsToImpliedProbability,
+  buildHistoricalMarketOddsImportRejectedProvenanceRows,
   buildMarketOddsSourceProvenanceRows,
   buildRejectedMarketOddsSourceProvenanceRows,
   calculateNoVigMoneylineProbabilities,
@@ -294,6 +295,106 @@ describe("ESPN NHL odds", () => {
     });
   });
 
+  it("normalizes time-only live ESPN event starts before inserting odds", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          events: [
+            {
+              id: "401874176",
+              name: "Carolina Hurricanes at Vegas Golden Knights",
+              date: "19:00:00",
+              status: { type: { description: "Scheduled" } },
+              competitions: [
+                {
+                  competitors: [
+                    {
+                      homeAway: "home",
+                      team: { abbreviation: "VGK" },
+                    },
+                    {
+                      homeAway: "away",
+                      team: { abbreviation: "CAR" },
+                    },
+                  ],
+                  odds: [
+                    {
+                      provider: { displayName: "DraftKings" },
+                      moneyline: {
+                        home: { close: { odds: "-105" } },
+                        away: { close: { odds: "-115" } },
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        }),
+      })),
+    );
+    const insertedSnapshots: any[] = [];
+    const fromMock = vi.fn((table: string) => {
+      if (table === "teams") {
+        return {
+          select: vi.fn(() => ({
+            in: vi.fn().mockResolvedValue({
+              data: [
+                { id: 54, abbreviation: "VGK" },
+                { id: 12, abbreviation: "CAR" },
+              ],
+              error: null,
+            }),
+          })),
+        };
+      }
+      if (table === "games") {
+        return {
+          select: vi.fn(() => ({
+            in: vi.fn().mockResolvedValue({
+              data: [
+                {
+                  id: 2025020001,
+                  date: "2026-06-15",
+                  startTime: "19:00:00",
+                  homeTeamId: 54,
+                  awayTeamId: 12,
+                },
+              ],
+              error: null,
+            }),
+          })),
+        };
+      }
+      if (table === "game_prediction_market_odds_snapshots") {
+        return {
+          insert: vi.fn((rows: any[]) => {
+            insertedSnapshots.push(...rows);
+            return Promise.resolve({ error: null });
+          }),
+        };
+      }
+      return {
+        upsert: vi.fn().mockResolvedValue({ error: null }),
+      };
+    });
+
+    const result = await ingestEspnNhlOddsSnapshots({
+      client: { from: fromMock } as any,
+      dates: ["2026-06-15"],
+      capturedAt: "2026-06-15T15:00:00.000Z",
+      now: new Date("2026-06-15T15:00:30.000Z"),
+      dryRun: false,
+    });
+
+    expect(result.insertedSnapshots).toBe(1);
+    expect(insertedSnapshots[0]).toMatchObject({
+      event_start_at: "2026-06-15T19:00:00.000Z",
+    });
+  });
+
   it("refuses to store odds captured after puck drop", async () => {
     vi.stubGlobal(
       "fetch",
@@ -543,6 +644,40 @@ describe("ESPN NHL odds", () => {
     });
   });
 
+  it("expires observed source provenance at time-only puck drop", () => {
+    const rows = buildMarketOddsSourceProvenanceRows([
+      {
+        game_id: 1,
+        espn_game_id: "espn-1",
+        provider: "DraftKings",
+        captured_at: "2026-01-10T15:00:00.000Z",
+        requested_date: "2026-01-10",
+        game_date: "2026-01-10",
+        event_start_at: "19:00:00",
+        home_team_id: 10,
+        away_team_id: 20,
+        home_team_abbreviation: "BOS",
+        away_team_abbreviation: "MTL",
+        home_moneyline: -130,
+        away_moneyline: 110,
+        home_market_no_vig_probability: 0.55,
+        away_market_no_vig_probability: 0.45,
+        market_overround: 0.04,
+        source_url: "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=20260110",
+        source_payload: {},
+        provenance: {},
+        metadata: {},
+      },
+    ] as any);
+
+    expect(rows[0]).toMatchObject({
+      freshness_expires_at: "2026-01-10T19:00:00.000Z",
+      metadata: {
+        eventStartAt: "2026-01-10T19:00:00.000Z",
+      },
+    });
+  });
+
   it("builds rejected source provenance rows for mapped but unusable odds", () => {
     const rows = buildRejectedMarketOddsSourceProvenanceRows([
       {
@@ -598,7 +733,253 @@ describe("ESPN NHL odds", () => {
     });
   });
 
+  it("expires rejected live source provenance at time-only puck drop", () => {
+    const rows = buildRejectedMarketOddsSourceProvenanceRows([
+      {
+        capturedAt: "2026-01-10T20:00:00.000Z",
+        captureRecordedAt: "2026-01-10T20:00:30.000Z",
+        rejectionReason: "post_start_capture",
+        game: {
+          id: 1,
+          date: "2026-01-10",
+          startTime: "19:00:00",
+          homeTeamId: 10,
+          awayTeamId: 20,
+        },
+        odds: {
+          gameId: "espn-1",
+          requestedDate: "2026-01-10",
+          localDate: "2026-01-10",
+          name: "Away at Home",
+          date: "19:00:00",
+          status: "Scheduled",
+          homeTeam: "BOS",
+          awayTeam: "MTL",
+          provider: "DraftKings",
+          moneyline: { home: "-130", away: "110" },
+          spread: {
+            home: { line: null, odds: null },
+            away: { line: null, odds: null },
+          },
+          total: {
+            over: { line: null, odds: null },
+            under: { line: null, odds: null },
+          },
+        },
+      },
+    ]);
+
+    expect(rows[0]).toMatchObject({
+      freshness_expires_at: "2026-01-10T19:00:00.000Z",
+      metadata: {
+        eventStartAt: "2026-01-10T19:00:00.000Z",
+      },
+    });
+  });
+
+  it("expires rejected historical import provenance at time-only puck drop", () => {
+    const rows = buildHistoricalMarketOddsImportRejectedProvenanceRows([
+      {
+        importedAt: "2026-06-15T12:00:00.000Z",
+        importBatchId: "market-import-2026-06-15",
+        rejectionReason: "post_start_capture",
+        game: {
+          id: 1,
+          date: "2026-01-10",
+          startTime: "19:00:00",
+          homeTeamId: 10,
+          awayTeamId: 20,
+        },
+        row: {
+          gameId: 1,
+          provider: "DraftKings",
+          capturedAt: "2026-01-10T20:00:00.000Z",
+          sourceUrl: "https://example.com/odds/game-1",
+          homeMoneyline: "-130",
+          awayMoneyline: "+110",
+          metadata: {
+            historical_market_odds_import_file: {
+              fileName: "odds.csv",
+              sha256: "a".repeat(64),
+              bytes: 128,
+              format: "csv",
+            },
+          },
+        },
+      },
+    ]);
+
+    expect(rows[0]).toMatchObject({
+      freshness_expires_at: "2026-01-10T19:00:00.000Z",
+      metadata: {
+        eventStartAt: "2026-01-10T19:00:00.000Z",
+        rowMetadata: {
+          historical_market_odds_import_file: {
+            fileName: "odds.csv",
+            sha256: "a".repeat(64),
+            bytes: 128,
+            format: "csv",
+          },
+        },
+      },
+    });
+  });
+
   it("imports historical market odds only when captured before puck drop", async () => {
+    const insertSnapshotsMock = vi.fn().mockResolvedValue({ error: null });
+    const upsertProvenanceMock = vi.fn().mockResolvedValue({ error: null });
+    const fromMock = vi.fn((table: string) => {
+      if (table === "games") {
+        return {
+          select: vi.fn(() => ({
+            in: vi.fn().mockResolvedValue({
+              data: [
+                {
+                  id: 1,
+                  date: "2026-01-10",
+                  startTime: "19:00:00",
+                  homeTeamId: 10,
+                  awayTeamId: 20,
+                },
+                {
+                  id: 2,
+                  date: "2026-01-11",
+                  startTime: "2026-01-11T23:00:00.000Z",
+                  homeTeamId: 10,
+                  awayTeamId: 20,
+                },
+              ],
+              error: null,
+            }),
+          })),
+        };
+      }
+      if (table === "teams") {
+        return {
+          select: vi.fn(() => ({
+            in: vi.fn().mockResolvedValue({
+              data: [
+                { id: 10, abbreviation: "BOS" },
+                { id: 20, abbreviation: "MTL" },
+              ],
+              error: null,
+            }),
+          })),
+        };
+      }
+      if (table === "game_prediction_market_odds_snapshots") {
+        return { insert: insertSnapshotsMock };
+      }
+      if (table === "source_provenance_snapshots") {
+        return { upsert: upsertProvenanceMock };
+      }
+      throw new Error(`Unexpected table ${table}`);
+    });
+
+    const result = await importHistoricalMarketOddsSnapshots({
+      client: { from: fromMock } as any,
+      importedAt: "2026-06-15T12:00:00.000Z",
+      importBatchId: "market-import-2026-06-15",
+      expectedGameIds: [1],
+      dryRun: false,
+      rows: [
+        {
+          gameId: 1,
+          provider: "DraftKings",
+          capturedAt: "2026-01-10T15:00:00.000Z",
+          sourceUrl: "https://example.com/odds/game-1",
+          homeMoneyline: "-130",
+          awayMoneyline: "+110",
+          requestedDate: "2026-01-10",
+          sourcePayload: { archived: true },
+        },
+        {
+          gameId: 2,
+          provider: "DraftKings",
+          capturedAt: "2026-01-11T23:05:00.000Z",
+          sourceUrl: "https://example.com/odds/game-2",
+          homeMoneyline: "-120",
+          awayMoneyline: "+100",
+        },
+      ],
+    });
+
+    expect(result).toMatchObject({
+      importBatchId: "market-import-2026-06-15",
+      requestedRows: 2,
+      candidateSnapshots: 1,
+      importedSnapshots: 1,
+      rowsInserted: 1,
+      skippedSnapshots: 1,
+      postStartRejectedRows: 1,
+      provenanceRows: 2,
+      rejectedProvenanceRows: 1,
+      dryRun: false,
+      blocked: false,
+      blockingReasons: [],
+      rejectionReasons: { post_start_capture: 1 },
+      preflight: {
+        expectedGames: 1,
+        rowGameIds: 2,
+        matchedExpectedGames: 1,
+        candidateSnapshotGames: 1,
+        missingExpectedGameIds: [],
+        missingExpectedGameIdCount: 0,
+        missingExpectedGameIdsTruncated: false,
+        coveragePct: 1,
+        warnings: [],
+      },
+    });
+    expect(insertSnapshotsMock).toHaveBeenCalledWith([
+      expect.objectContaining({
+        game_id: 1,
+        provider: "DraftKings",
+        captured_at: "2026-01-10T15:00:00.000Z",
+        event_start_at: "2026-01-10T19:00:00.000Z",
+        home_team_abbreviation: "BOS",
+        away_team_abbreviation: "MTL",
+        home_moneyline: -130,
+        away_moneyline: 110,
+        home_market_no_vig_probability: expect.any(Number),
+        source_url: "https://example.com/odds/game-1",
+        metadata: expect.objectContaining({
+          import_source_name: HISTORICAL_MARKET_ODDS_IMPORT_SOURCE_NAME,
+          import_recorded_at: "2026-06-15T12:00:00.000Z",
+          import_batch_id: "market-import-2026-06-15",
+        }),
+        provenance: expect.objectContaining({
+          import_batch_id: "market-import-2026-06-15",
+        }),
+      }),
+    ]);
+    const provenanceRows = upsertProvenanceMock.mock.calls[0]?.[0] ?? [];
+    expect(provenanceRows).toHaveLength(2);
+    expect(provenanceRows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          game_id: 1,
+          source_name: HISTORICAL_MARKET_ODDS_IMPORT_SOURCE_NAME,
+          status: "observed",
+          observed_at: "2026-01-10T15:00:00.000Z",
+          metadata: expect.objectContaining({
+            importBatchId: "market-import-2026-06-15",
+          }),
+        }),
+        expect.objectContaining({
+          game_id: 2,
+          source_name: HISTORICAL_MARKET_ODDS_IMPORT_REJECTED_SOURCE_NAME,
+          status: "rejected",
+          observed_at: "2026-01-11T23:05:00.000Z",
+          metadata: expect.objectContaining({
+            rejectionReason: "post_start_capture",
+            importBatchId: "market-import-2026-06-15",
+          }),
+        }),
+      ]),
+    );
+  });
+
+  it("blocks non-dry-run historical market odds imports with incomplete expected coverage", async () => {
     const insertSnapshotsMock = vi.fn().mockResolvedValue({ error: null });
     const upsertProvenanceMock = vi.fn().mockResolvedValue({ error: null });
     const fromMock = vi.fn((table: string) => {
@@ -652,7 +1033,7 @@ describe("ESPN NHL odds", () => {
     const result = await importHistoricalMarketOddsSnapshots({
       client: { from: fromMock } as any,
       importedAt: "2026-06-15T12:00:00.000Z",
-      importBatchId: "market-import-2026-06-15",
+      expectedGameIds: [1, 2],
       dryRun: false,
       rows: [
         {
@@ -662,78 +1043,98 @@ describe("ESPN NHL odds", () => {
           sourceUrl: "https://example.com/odds/game-1",
           homeMoneyline: "-130",
           awayMoneyline: "+110",
-          requestedDate: "2026-01-10",
-          sourcePayload: { archived: true },
-        },
-        {
-          gameId: 2,
-          provider: "DraftKings",
-          capturedAt: "2026-01-11T23:05:00.000Z",
-          sourceUrl: "https://example.com/odds/game-2",
-          homeMoneyline: "-120",
-          awayMoneyline: "+100",
         },
       ],
     });
 
     expect(result).toMatchObject({
-      importBatchId: "market-import-2026-06-15",
-      requestedRows: 2,
       candidateSnapshots: 1,
-      importedSnapshots: 1,
-      rowsInserted: 1,
+      importedSnapshots: 0,
+      rowsInserted: 0,
+      provenanceRows: 0,
+      dryRun: false,
+      blocked: true,
+      blockingReasons: [
+        "historical_market_odds_import_incomplete_expected_coverage",
+      ],
+      preflight: {
+        expectedGames: 2,
+        candidateSnapshotGames: 1,
+        missingExpectedGameIds: [2],
+        missingExpectedGameIdCount: 1,
+        coveragePct: 0.5,
+        warnings: ["historical_market_odds_import_missing_expected_games"],
+      },
+    });
+    expect(insertSnapshotsMock).not.toHaveBeenCalled();
+    expect(upsertProvenanceMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects historical market odds captured after a time-only game start", async () => {
+    const fromMock = vi.fn((table: string) => {
+      if (table === "games") {
+        return {
+          select: vi.fn(() => ({
+            in: vi.fn().mockResolvedValue({
+              data: [
+                {
+                  id: 1,
+                  date: "2026-01-10",
+                  startTime: "19:00:00",
+                  homeTeamId: 10,
+                  awayTeamId: 20,
+                },
+              ],
+              error: null,
+            }),
+          })),
+        };
+      }
+      if (table === "teams") {
+        return {
+          select: vi.fn(() => ({
+            in: vi.fn().mockResolvedValue({
+              data: [
+                { id: 10, abbreviation: "BOS" },
+                { id: 20, abbreviation: "MTL" },
+              ],
+              error: null,
+            }),
+          })),
+        };
+      }
+      return { insert: vi.fn().mockResolvedValue({ error: null }) };
+    });
+
+    const result = await importHistoricalMarketOddsSnapshots({
+      client: { from: fromMock } as any,
+      importedAt: "2026-06-15T12:00:00.000Z",
+      expectedGameIds: [1],
+      dryRun: true,
+      rows: [
+        {
+          gameId: 1,
+          provider: "DraftKings",
+          capturedAt: "2026-01-10T20:00:00.000Z",
+          sourceUrl: "https://example.com/odds/game-1",
+          homeMoneyline: "-130",
+          awayMoneyline: "+110",
+        },
+      ],
+    });
+
+    expect(result).toMatchObject({
+      candidateSnapshots: 0,
+      importedSnapshots: 0,
       skippedSnapshots: 1,
       postStartRejectedRows: 1,
-      provenanceRows: 2,
-      rejectedProvenanceRows: 1,
-      dryRun: false,
       rejectionReasons: { post_start_capture: 1 },
+      preflight: {
+        expectedGames: 1,
+        candidateSnapshotGames: 0,
+        missingExpectedGameIds: [1],
+        missingExpectedGameIdCount: 1,
+      },
     });
-    expect(insertSnapshotsMock).toHaveBeenCalledWith([
-      expect.objectContaining({
-        game_id: 1,
-        provider: "DraftKings",
-        captured_at: "2026-01-10T15:00:00.000Z",
-        home_team_abbreviation: "BOS",
-        away_team_abbreviation: "MTL",
-        home_moneyline: -130,
-        away_moneyline: 110,
-        home_market_no_vig_probability: expect.any(Number),
-        source_url: "https://example.com/odds/game-1",
-        metadata: expect.objectContaining({
-          import_source_name: HISTORICAL_MARKET_ODDS_IMPORT_SOURCE_NAME,
-          import_recorded_at: "2026-06-15T12:00:00.000Z",
-          import_batch_id: "market-import-2026-06-15",
-        }),
-        provenance: expect.objectContaining({
-          import_batch_id: "market-import-2026-06-15",
-        }),
-      }),
-    ]);
-    const provenanceRows = upsertProvenanceMock.mock.calls[0]?.[0] ?? [];
-    expect(provenanceRows).toHaveLength(2);
-    expect(provenanceRows).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          game_id: 1,
-          source_name: HISTORICAL_MARKET_ODDS_IMPORT_SOURCE_NAME,
-          status: "observed",
-          observed_at: "2026-01-10T15:00:00.000Z",
-          metadata: expect.objectContaining({
-            importBatchId: "market-import-2026-06-15",
-          }),
-        }),
-        expect.objectContaining({
-          game_id: 2,
-          source_name: HISTORICAL_MARKET_ODDS_IMPORT_REJECTED_SOURCE_NAME,
-          status: "rejected",
-          observed_at: "2026-01-11T23:05:00.000Z",
-          metadata: expect.objectContaining({
-            rejectionReason: "post_start_capture",
-            importBatchId: "market-import-2026-06-15",
-          }),
-        }),
-      ]),
-    );
   });
 });

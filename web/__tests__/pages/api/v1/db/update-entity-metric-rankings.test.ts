@@ -130,6 +130,7 @@ describe("/api/v1/db/update-entity-metric-rankings", () => {
         position: "F",
         deployment: "L2",
         strength: "5v5",
+        upsertChunkSize: "25",
       },
     };
     const res = createMockRes();
@@ -145,12 +146,14 @@ describe("/api/v1/db/update-entity-metric-rankings", () => {
         peerGroupType: "deployment",
       }),
     );
-    expect(upsertRowsMock).toHaveBeenCalledWith(fakeSupabase, [
-      { entity_id: 1 },
-      { entity_id: 2 },
-    ]);
+    expect(upsertRowsMock).toHaveBeenCalledWith(
+      fakeSupabase,
+      [{ entity_id: 1 }, { entity_id: 2 }],
+      { chunkSize: 25 },
+    );
     expect(res.body).toMatchObject({
       dryRun: false,
+      upsertChunkSize: 25,
       rowsUpserted: 2,
     });
   });

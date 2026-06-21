@@ -3,7 +3,9 @@ import type { NextApiRequest } from "next";
 import supabase from "lib/supabase/server";
 
 import {
+  TEAM_SOURCE_PENDING_METRIC_CONTRACTS,
   TEAM_STYLE_SOURCE_CONTRACT,
+  calculateTeamGameContextComponents,
   calculateRunAndGunProfile,
   calculateTeamExpectedGoalsForPercentage,
   calculateTeamLuckComponents,
@@ -24,7 +26,11 @@ export type TeamMatrixMetricKey =
   | "save_luck"
   | "net_luck"
   | "pace_rating"
-  | "special_rating";
+  | "special_rating"
+  | "one_goal_game_rate"
+  | "home_road_point_pct_gap"
+  | "pp_opportunity_rate"
+  | "penalties_taken_per_60";
 
 export type TeamMatrixRequest = {
   season: number;
@@ -73,6 +79,18 @@ type TeamUnderlyingRow = {
   ca: number;
 };
 
+type TeamGameContextRow = {
+  date: string;
+  team_id: number | null;
+  game_id: number | null;
+  home_road: string | null;
+  goals_for: number | null;
+  goals_against: number | null;
+  point_pct: number | null;
+  pp_opportunities_per_game: number | null;
+  penalties_taken_per_60: number | null;
+};
+
 type NstTeamRow = {
   team_abbreviation: string;
   team_name: string | null;
@@ -109,6 +127,16 @@ type TeamStyleAggregate = {
   cf: number | null;
   ca: number | null;
   source: "team_underlying_stats_summary" | "nst_team_stats" | "none";
+};
+
+type TeamGameContextAggregate = {
+  teamId: number;
+  gamesCount: number;
+  latestDate: string | null;
+  oneGoalGameRate: number | null;
+  homeRoadPointPctGap: number | null;
+  powerPlayOpportunityRate: number | null;
+  penaltiesTakenPer60: number | null;
 };
 
 type RankedMetric = {
@@ -149,6 +177,14 @@ export type TeamMatrixRow = {
     saveLuck: number | null;
     netGoalsAboveExpected: number | null;
   };
+  context: {
+    games: number;
+    latestDate: string | null;
+    oneGoalGameRate: number | null;
+    homeRoadPointPctGap: number | null;
+    powerPlayOpportunityRate: number | null;
+    penaltiesTakenPer60: number | null;
+  };
   sort: {
     metricKey: TeamMatrixMetricKey;
     rank: number | null;
@@ -173,8 +209,12 @@ export type TeamMatrixResponse = {
     latestAvailableSnapshotDate: string | null;
     styleSnapshotDate: string | null;
     sourceTables: string[];
+    methodologyVersion?: string;
+    methodologyUpdatedAt?: string;
+    sourceQualityFlags?: string[];
     sourceWarnings: string[];
     teamStyleContract: typeof TEAM_STYLE_SOURCE_CONTRACT;
+    sourcePendingMetricContracts: typeof TEAM_SOURCE_PENDING_METRIC_CONTRACTS;
     metricColumns: Array<{
       metricKey: TeamMatrixMetricKey;
       label: string;
@@ -188,6 +228,15 @@ export type TeamMatrixResponse = {
 const TEAM_QUERY_PAGE_SIZE = 1000;
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
+const TEAM_MATRIX_RESPONSE_CACHE_TTL_MS = 30_000;
+const teamMatrixResponseCache = new Map<
+  string,
+  { expiresAt: number; response: TeamMatrixResponse }
+>();
+
+export function clearTeamMatrixSurfaceCachesForTests() {
+  teamMatrixResponseCache.clear();
+}
 
 const METRIC_COLUMNS: TeamMatrixResponse["meta"]["metricColumns"] = [
   {
@@ -273,6 +322,35 @@ const METRIC_COLUMNS: TeamMatrixResponse["meta"]["metricColumns"] = [
     description: "Current special-teams rating component.",
     lowerIsBetter: false,
     source: "team_power_ratings_daily.special_rating",
+  },
+  {
+    metricKey: "one_goal_game_rate",
+    label: "1-Goal%",
+    description: "Share of team games decided by one goal or fewer.",
+    lowerIsBetter: false,
+    source: "wgo_team_stats goals_for / goals_against",
+  },
+  {
+    metricKey: "home_road_point_pct_gap",
+    label: "Home Edge",
+    description:
+      "Source-pending home point-percentage minus road point-percentage.",
+    lowerIsBetter: false,
+    source: "Source Pending: wgo_team_stats lacks a verified home_road split column",
+  },
+  {
+    metricKey: "pp_opportunity_rate",
+    label: "PP Opp/G",
+    description: "Power-play opportunities per game.",
+    lowerIsBetter: false,
+    source: "wgo_team_stats.pp_opportunities_per_game",
+  },
+  {
+    metricKey: "penalties_taken_per_60",
+    label: "Pen/60",
+    description: "Penalties taken per 60 minutes. Lower raw values are better.",
+    lowerIsBetter: true,
+    source: "wgo_team_stats.penalties_taken_per_60",
   },
 ];
 
@@ -423,10 +501,14 @@ function formatMetricValue(metricKey: TeamMatrixMetricKey, value: number | null)
     metricKey === "save_luck" ||
     metricKey === "net_luck" ||
     metricKey === "xgf60" ||
-    metricKey === "xga60"
+    metricKey === "xga60" ||
+    metricKey === "home_road_point_pct_gap" ||
+    metricKey === "pp_opportunity_rate" ||
+    metricKey === "penalties_taken_per_60"
   ) {
     return value.toFixed(2);
   }
+  if (metricKey === "one_goal_game_rate") return `${value.toFixed(1)}%`;
   return value.toFixed(1);
 }
 
@@ -456,9 +538,10 @@ function deriveStyleBadge(args: {
 function metricValue(args: {
   power: TeamPowerRow;
   style: ReturnType<typeof buildStylePayload>;
+  context: TeamGameContextAggregate | null;
   metricKey: TeamMatrixMetricKey;
 }) {
-  const { power, style, metricKey } = args;
+  const { power, style, context, metricKey } = args;
   if (metricKey === "off_rating") return finite(power.off_rating);
   if (metricKey === "def_rating") return finite(power.def_rating);
   if (metricKey === "xgf60") return finite(power.xgf60);
@@ -471,6 +554,16 @@ function metricValue(args: {
   if (metricKey === "finishing_luck") return style.luck.finishingLuck;
   if (metricKey === "save_luck") return style.luck.saveLuck;
   if (metricKey === "net_luck") return style.luck.netGoalsAboveExpected;
+  if (metricKey === "one_goal_game_rate") return context?.oneGoalGameRate ?? null;
+  if (metricKey === "home_road_point_pct_gap") {
+    return context?.homeRoadPointPctGap ?? null;
+  }
+  if (metricKey === "pp_opportunity_rate") {
+    return context?.powerPlayOpportunityRate ?? null;
+  }
+  if (metricKey === "penalties_taken_per_60") {
+    return context?.penaltiesTakenPer60 ?? null;
+  }
   return null;
 }
 
@@ -521,6 +614,49 @@ export function aggregateTeamStyleRows(args: {
       cf: sum(rows.map((row) => row.cf)),
       ca: sum(rows.map((row) => row.ca)),
       source: "team_underlying_stats_summary",
+    });
+  }
+
+  return aggregates;
+}
+
+export function aggregateTeamGameContextRows(
+  rows: readonly TeamGameContextRow[],
+): Map<number, TeamGameContextAggregate> {
+  const rowsByTeam = new Map<number, TeamGameContextRow[]>();
+  for (const row of rows) {
+    if (row.team_id == null) continue;
+    const current = rowsByTeam.get(row.team_id) ?? [];
+    current.push(row);
+    rowsByTeam.set(row.team_id, current);
+  }
+
+  const aggregates = new Map<number, TeamGameContextAggregate>();
+  for (const [teamId, teamRows] of rowsByTeam.entries()) {
+    const uniqueGameIds = new Set(
+      teamRows.map((row) => row.game_id ?? `${row.date}-${teamId}`),
+    );
+    const context = calculateTeamGameContextComponents({
+      games: teamRows.map((row) => ({
+        goalsFor: row.goals_for,
+        goalsAgainst: row.goals_against,
+        pointPct: row.point_pct,
+        homeRoad: row.home_road,
+        powerPlayOpportunitiesPerGame: row.pp_opportunities_per_game,
+        penaltiesTakenPer60: row.penalties_taken_per_60,
+      })),
+    });
+    aggregates.set(teamId, {
+      teamId,
+      gamesCount: uniqueGameIds.size,
+      latestDate: teamRows.reduce<string | null>(
+        (latest, row) => (latest == null || row.date > latest ? row.date : latest),
+        null,
+      ),
+      oneGoalGameRate: context.oneGoalGameRate,
+      homeRoadPointPctGap: context.homeRoadPointPctGap,
+      powerPlayOpportunityRate: context.powerPlayOpportunityRate,
+      penaltiesTakenPer60: context.penaltiesTakenPer60,
     });
   }
 
@@ -680,6 +816,37 @@ async function fetchNstTeamRows(season: number) {
   return (data ?? []) as unknown as NstTeamRow[];
 }
 
+async function fetchTeamGameContextRows(request: TeamMatrixRequest) {
+  const rows: TeamGameContextRow[] = [];
+  for (let from = 0;; from += TEAM_QUERY_PAGE_SIZE) {
+    let query = supabase
+      .from("wgo_team_stats")
+      .select(
+        [
+          "date",
+          "team_id",
+          "game_id",
+          "goals_for",
+          "goals_against",
+          "point_pct",
+          "pp_opportunities_per_game",
+          "penalties_taken_per_60",
+        ].join(","),
+      )
+      .eq("season_id", request.season)
+      .order("date", { ascending: false })
+      .range(from, from + TEAM_QUERY_PAGE_SIZE - 1);
+    if (request.asOfDate != null) query = query.lte("date", request.asOfDate);
+    const { data, error } = await query;
+    if (error) {
+      throw new Error(`Unable to load team game context rows: ${error.message}`);
+    }
+    rows.push(...((data ?? []) as unknown as TeamGameContextRow[]));
+    if ((data ?? []).length < TEAM_QUERY_PAGE_SIZE) break;
+  }
+  return rows;
+}
+
 function latestStyleDate(aggregates: Iterable<TeamStyleAggregate>) {
   let latest: string | null = null;
   for (const aggregate of aggregates) {
@@ -692,20 +859,28 @@ function latestStyleDate(aggregates: Iterable<TeamStyleAggregate>) {
 export async function buildTeamMatrixSurface(
   request: TeamMatrixRequest,
 ): Promise<TeamMatrixResponse> {
+  const cacheKey = JSON.stringify(request);
+  const now = Date.now();
+  const cached = teamMatrixResponseCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) return cached.response;
+
   const latestPowerDate = await fetchLatestPowerDate(request.asOfDate);
   if (latestPowerDate == null) {
     throw new ContextualRankingsQueryError("No team power snapshot available");
   }
-  const [powerRows, teamMeta, underlyingRows, nstRows] = await Promise.all([
-    fetchTeamPowerRows(latestPowerDate),
-    fetchTeamMeta(),
-    fetchUnderlyingStyleRows(request),
-    fetchNstTeamRows(request.season),
-  ]);
+  const [powerRows, teamMeta, underlyingRows, nstRows, gameContextRows] =
+    await Promise.all([
+      fetchTeamPowerRows(latestPowerDate),
+      fetchTeamMeta(),
+      fetchUnderlyingStyleRows(request),
+      fetchNstTeamRows(request.season),
+      fetchTeamGameContextRows(request),
+    ]);
   const styleByAbbreviation = aggregateTeamStyleRows({
     rows: underlyingRows,
     teamsById: teamMeta.byId,
   });
+  const contextByTeamId = aggregateTeamGameContextRows(gameContextRows);
   for (const row of nstRows) {
     if (!styleByAbbreviation.has(row.team_abbreviation)) {
       styleByAbbreviation.set(row.team_abbreviation, styleAggregateFromNst(row));
@@ -735,13 +910,16 @@ export async function buildTeamMatrixSurface(
           `team style source snapshot ${styleSnapshotDate} differs from team power snapshot ${latestPowerDate}`,
         ]
       : []),
+    "home_road_point_pct_gap is source-pending because wgo_team_stats.home_road is not published",
     "team style is raw/contextual, not score- or venue-adjusted",
   ];
 
   const baseRows = powerRows.map((power) => {
     const aggregate = styleByAbbreviation.get(power.team_abbreviation) ?? null;
+    const team = teamMeta.byAbbreviation.get(power.team_abbreviation);
+    const context = team?.id == null ? null : contextByTeamId.get(team.id) ?? null;
     const style = buildStylePayload({ aggregate, leagueAverageEventRate });
-    return { power, aggregate, style };
+    return { power, aggregate, style, context };
   });
 
   const rankMaps = new Map<
@@ -757,6 +935,7 @@ export async function buildTeamMatrixSurface(
           value: metricValue({
             power: row.power,
             style: row.style,
+            context: row.context,
             metricKey: column.metricKey,
           }),
         })),
@@ -765,13 +944,14 @@ export async function buildTeamMatrixSurface(
     );
   }
 
-  const rows = baseRows.map(({ power, aggregate, style }): TeamMatrixRow => {
+  const rows = baseRows.map(({ power, aggregate, style, context }): TeamMatrixRow => {
     const team = teamMeta.byAbbreviation.get(power.team_abbreviation);
     const metrics = Object.fromEntries(
       METRIC_COLUMNS.map((column) => {
         const value = metricValue({
           power,
           style,
+          context,
           metricKey: column.metricKey,
         });
         const rank = rankMaps.get(column.metricKey)?.get(power.team_abbreviation);
@@ -814,6 +994,14 @@ export async function buildTeamMatrixSurface(
         adjusted: false,
       },
       luck: style.luck,
+      context: {
+        games: context?.gamesCount ?? 0,
+        latestDate: context?.latestDate ?? null,
+        oneGoalGameRate: context?.oneGoalGameRate ?? null,
+        homeRoadPointPctGap: context?.homeRoadPointPctGap ?? null,
+        powerPlayOpportunityRate: context?.powerPlayOpportunityRate ?? null,
+        penaltiesTakenPer60: context?.penaltiesTakenPer60 ?? null,
+      },
       sort: {
         metricKey: request.metric,
         rank: sortCell.rank,
@@ -825,6 +1013,7 @@ export async function buildTeamMatrixSurface(
         ...(aggregate?.source === "nst_team_stats"
           ? ["team_style_using_season_level_nst_fallback"]
           : []),
+        ...(context == null ? ["team_game_context_source_missing"] : []),
         "raw_contextual_team_style",
       ],
     };
@@ -851,7 +1040,7 @@ export async function buildTeamMatrixSurface(
   const start = (request.page - 1) * request.pageSize;
   const pageRows = filteredRows.slice(start, start + request.pageSize);
 
-  return {
+  const response: TeamMatrixResponse = {
     success: true,
     request,
     rows: pageRows,
@@ -869,10 +1058,23 @@ export async function buildTeamMatrixSurface(
         "team_power_ratings_daily",
         "team_underlying_stats_summary",
         "nst_team_stats",
+        "wgo_team_stats",
+      ],
+      methodologyVersion: "team_rankings_v1",
+      methodologyUpdatedAt: "2026-06-21",
+      sourceQualityFlags: [
+        "raw_contextual_team_style",
+        "home_road_split_source_pending",
       ],
       sourceWarnings,
       teamStyleContract: TEAM_STYLE_SOURCE_CONTRACT,
+      sourcePendingMetricContracts: TEAM_SOURCE_PENDING_METRIC_CONTRACTS,
       metricColumns: METRIC_COLUMNS,
     },
   };
+  teamMatrixResponseCache.set(cacheKey, {
+    expiresAt: now + TEAM_MATRIX_RESPONSE_CACHE_TTL_MS,
+    response,
+  });
+  return response;
 }

@@ -72,8 +72,9 @@ export type GeneratePregamePredictionResult = {
   gameId: number;
   featureSnapshotId: string | null;
   predictionId: string | null;
-  homeWinProbability: number;
-  awayWinProbability: number;
+  homeWinProbability: number | null;
+  awayWinProbability: number | null;
+  skippedReason: string | null;
   dryRun: boolean;
 };
 
@@ -138,6 +139,19 @@ type GamePredictionModelVersionRow =
 type GamePredictionModelMetricRow =
   Database["public"]["Tables"]["game_prediction_model_metrics"]["Row"];
 
+type PromotionGateModelVersionRow = Pick<
+  GamePredictionModelVersionRow,
+  | "feature_set_version"
+  | "metadata"
+  | "model_name"
+  | "model_version"
+  | "source_audit_metadata"
+  | "status"
+  | "validation_end_date"
+  | "validation_metrics"
+  | "validation_start_date"
+>;
+
 type PromotionOverallMetricRow = Pick<
   GamePredictionModelMetricRow,
   | "accuracy"
@@ -158,6 +172,22 @@ export type PromoteGamePredictionModelVersionResult = {
   featureSetVersion: string;
   promotedAt: string | null;
   retiredProductionRows: number;
+};
+
+export type PreviewGamePredictionModelVersionPromotionResult = {
+  wouldPromote: boolean;
+  reasons: string[];
+  modelName: string;
+  modelVersion: string;
+  featureSetVersion: string;
+  persistedEvidenceChecked: boolean;
+};
+
+type PromotionGateEvidence = {
+  modelVersion: PromotionGateModelVersionRow | null;
+  persistedOverallMetric: PromotionOverallMetricRow | null;
+  persistedMonitoredSegmentKeys: string[];
+  decision: PromotionDecision;
 };
 
 type ServingModelVersionPersistenceAction =
@@ -210,8 +240,9 @@ export function servingModelVersionPersistenceAction(args: {
   modelVersion: string;
   featureSetVersion: string;
   existingStatus?: string | null;
+  allowBaselineBootstrap?: boolean;
 }): ServingModelVersionPersistenceAction {
-  if (canBootstrapCurrentCompiledBaseline(args)) {
+  if (args.allowBaselineBootstrap && canBootstrapCurrentCompiledBaseline(args)) {
     return "bootstrap_current_compiled_baseline";
   }
 
@@ -262,6 +293,65 @@ function evaluatedGamesForModelVersion(
     toFiniteNumber(validationWindow.evaluated_games) ??
     0
   );
+}
+
+function hasPromotionMetricEvidence(value: unknown): boolean {
+  const metric = asRecord(value);
+  return (
+    toFiniteNumber(metric.logLoss) != null &&
+    toFiniteNumber(metric.brierScore) != null &&
+    toFiniteNumber(metric.evaluatedGames) != null
+  );
+}
+
+function promotionEvidenceMetadataGateReasons(args: {
+  metadata: Record<string, unknown>;
+  validationStartDate: string | null;
+  validationEndDate: string | null;
+  evaluatedGames: number;
+}): string[] {
+  const reasons: string[] = [];
+  const validationWindow = asRecord(args.metadata.validation_window);
+  const promotionEvidence = asRecord(args.metadata.promotion_evidence);
+
+  if (
+    validationWindow.start_date !== args.validationStartDate ||
+    validationWindow.end_date !== args.validationEndDate ||
+    toFiniteNumber(validationWindow.evaluated_games) !== args.evaluatedGames
+  ) {
+    reasons.push(
+      "Promotion evidence metadata must include a validation window matching the model version.",
+    );
+  }
+
+  if (Object.keys(promotionEvidence).length === 0) {
+    reasons.push("Promotion evidence metadata is required before promotion.");
+  } else {
+    if (
+      !hasPromotionMetricEvidence(promotionEvidence.current) ||
+      !hasPromotionMetricEvidence(promotionEvidence.candidate)
+    ) {
+      reasons.push(
+        "Promotion evidence metadata must include current and candidate probability metrics.",
+      );
+    }
+    if (
+      !isRecord(promotionEvidence.simpleBaselineFloor) &&
+      !isRecord(args.metadata.baseline_floor)
+    ) {
+      reasons.push(
+        "Promotion evidence metadata must include strongest simple-baseline comparison metadata.",
+      );
+    }
+  }
+
+  if (!Array.isArray(args.metadata.excluded_feature_keys)) {
+    reasons.push(
+      "Promotion evidence metadata must include excluded feature keys.",
+    );
+  }
+
+  return reasons;
 }
 
 function hasCompleteTrustedMarketSnapshotSourceCoverage(
@@ -338,6 +428,15 @@ export function evaluatePersistedModelVersionPromotionGate(args: {
   if (promotionDecision.promote !== true) {
     reasons.push("Persisted promotion decision does not approve promotion.");
   }
+
+  reasons.push(
+    ...promotionEvidenceMetadataGateReasons({
+      metadata,
+      validationStartDate: row.validation_start_date,
+      validationEndDate: row.validation_end_date,
+      evaluatedGames,
+    }),
+  );
 
   if (!row.validation_start_date || !row.validation_end_date) {
     reasons.push("Validation date range is required before promotion.");
@@ -447,15 +546,13 @@ function sameModelVersionKey(
   );
 }
 
-export async function promoteGamePredictionModelVersion(args: {
+async function loadPromotionGateEvidence(args: {
   client: SupabaseClient<Database>;
   modelName: string;
   modelVersion: string;
   featureSetVersion: string;
-  promotedAt?: string;
   minEvaluatedGames?: number;
-}): Promise<PromoteGamePredictionModelVersionResult> {
-  const promotedAt = args.promotedAt ?? new Date().toISOString();
+}): Promise<PromotionGateEvidence> {
   const { data: modelVersion, error } = await args.client
     .from("game_prediction_model_versions")
     .select(
@@ -469,13 +566,13 @@ export async function promoteGamePredictionModelVersion(args: {
 
   if (!modelVersion) {
     return {
-      promoted: false,
-      reasons: ["Model version not found."],
-      modelName: args.modelName,
-      modelVersion: args.modelVersion,
-      featureSetVersion: args.featureSetVersion,
-      promotedAt: null,
-      retiredProductionRows: 0,
+      modelVersion: null,
+      persistedOverallMetric: null,
+      persistedMonitoredSegmentKeys: [],
+      decision: {
+        promote: false,
+        reasons: ["Model version not found."],
+      },
     };
   }
 
@@ -520,6 +617,58 @@ export async function promoteGamePredictionModelVersion(args: {
     persistedMonitoredSegmentKeys,
     minEvaluatedGames: args.minEvaluatedGames,
   });
+
+  return {
+    modelVersion,
+    persistedOverallMetric,
+    persistedMonitoredSegmentKeys,
+    decision,
+  };
+}
+
+export async function previewGamePredictionModelVersionPromotion(args: {
+  client: SupabaseClient<Database>;
+  modelName: string;
+  modelVersion: string;
+  featureSetVersion: string;
+  minEvaluatedGames?: number;
+}): Promise<PreviewGamePredictionModelVersionPromotionResult> {
+  const evidence = await loadPromotionGateEvidence(args);
+
+  return {
+    wouldPromote: evidence.decision.promote,
+    reasons: evidence.decision.reasons,
+    modelName: args.modelName,
+    modelVersion: args.modelVersion,
+    featureSetVersion: args.featureSetVersion,
+    persistedEvidenceChecked: evidence.modelVersion != null,
+  };
+}
+
+export async function promoteGamePredictionModelVersion(args: {
+  client: SupabaseClient<Database>;
+  modelName: string;
+  modelVersion: string;
+  featureSetVersion: string;
+  promotedAt?: string;
+  minEvaluatedGames?: number;
+}): Promise<PromoteGamePredictionModelVersionResult> {
+  const promotedAt = args.promotedAt ?? new Date().toISOString();
+  const evidence = await loadPromotionGateEvidence(args);
+  const { modelVersion, decision } = evidence;
+
+  if (!modelVersion) {
+    return {
+      promoted: false,
+      reasons: decision.reasons,
+      modelName: args.modelName,
+      modelVersion: args.modelVersion,
+      featureSetVersion: args.featureSetVersion,
+      promotedAt: null,
+      retiredProductionRows: 0,
+    };
+  }
+
   if (!decision.promote) {
     return {
       promoted: false,
@@ -539,12 +688,23 @@ export async function promoteGamePredictionModelVersion(args: {
     .eq("status", "production");
   if (productionError) throw productionError;
 
+  const promotionMetadata = {
+    ...asRecord(modelVersion.metadata),
+    manual_promotion: {
+      promoted_at: promotedAt,
+      evidence_verified_at: promotedAt,
+      min_evaluated_games: args.minEvaluatedGames ?? 100,
+      promotion_gate: decision,
+    },
+  } as unknown as Json;
+
   const { error: promoteError } = await args.client
     .from("game_prediction_model_versions")
     .update({
       status: "production",
       promoted_at: promotedAt,
       retired_at: null,
+      metadata: promotionMetadata,
       updated_at: promotedAt,
     })
     .eq("model_name", args.modelName)
@@ -592,8 +752,9 @@ async function ensureServingModelVersion(args: {
   modelName: string;
   modelVersion: string;
   featureSetVersion: string;
+  allowBaselineBootstrap?: boolean;
 }): Promise<void> {
-  if (canBootstrapCurrentCompiledBaseline(args)) {
+  if (args.allowBaselineBootstrap && canBootstrapCurrentCompiledBaseline(args)) {
     await ensureGamePredictionModelVersion({
       client: args.client,
       modelName: args.modelName,
@@ -625,13 +786,44 @@ export function historicalPregamePredictionCutoffAt(
   hoursBeforeStart = 1,
 ): string {
   const boundedHours = Math.max(0, Math.min(48, hoursBeforeStart));
-  if (game.startTime) {
-    const startTime = Date.parse(game.startTime);
-    if (Number.isFinite(startTime)) {
-      return new Date(startTime - boundedHours * 3_600_000).toISOString();
-    }
+  const startTime = parseDateTimeWithGameDate(game.startTime, game.date);
+  if (startTime != null) {
+    return new Date(startTime - boundedHours * 3_600_000).toISOString();
   }
   return `${game.date}T16:00:00.000Z`;
+}
+
+function parseDateTimeWithGameDate(
+  value: string | null | undefined,
+  gameDate: string | null | undefined,
+): number | null {
+  if (!value) return null;
+  const direct = Date.parse(value);
+  if (Number.isFinite(direct)) return direct;
+  if (!gameDate || !/^\d{4}-\d{2}-\d{2}$/.test(gameDate)) return null;
+  const normalized = value.trim();
+  if (!normalized) return null;
+  const hasTimeZone = /(?:z|[+-]\d{2}:?\d{2})$/i.test(normalized);
+  const parsed = Date.parse(
+    `${gameDate}T${normalized}${hasTimeZone ? "" : "Z"}`,
+  );
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function isPregamePredictionCutoff(args: {
+  game: { date: string; startTime?: string | null };
+  predictionCutoffAt: string;
+}): boolean {
+  const cutoffMs = parseDateTimeWithGameDate(
+    args.predictionCutoffAt,
+    args.game.date,
+  );
+  if (cutoffMs == null) return false;
+  const startMs = parseDateTimeWithGameDate(
+    args.game.startTime,
+    args.game.date,
+  );
+  return startMs == null || cutoffMs < startMs;
 }
 
 export function sourceAsOfDateForPredictionCutoff(
@@ -649,6 +841,7 @@ export async function generatePregamePredictionForGame(args: {
   modelName?: string;
   modelVersion?: string;
   runId?: string | null;
+  allowBaselineBootstrap?: boolean;
   dryRun?: boolean;
 }): Promise<GeneratePregamePredictionResult> {
   const model = args.model ?? INITIAL_BASELINE_MODEL;
@@ -659,6 +852,11 @@ export async function generatePregamePredictionForGame(args: {
     sourceAsOfDate: args.sourceAsOfDate,
     predictionCutoffAt,
   });
+  if (!isPregamePredictionCutoff({ game: inputs.game, predictionCutoffAt })) {
+    throw new Error(
+      "Refusing to generate pregame prediction at or after puck drop.",
+    );
+  }
   const payload = buildGamePredictionFeatureSnapshotPayload(inputs);
   const prediction = predictGameWithBaselineModel({
     payload,
@@ -675,6 +873,7 @@ export async function generatePregamePredictionForGame(args: {
       predictionId: null,
       homeWinProbability: prediction.homeWinProbability,
       awayWinProbability: prediction.awayWinProbability,
+      skippedReason: null,
       dryRun: true,
     };
   }
@@ -684,6 +883,7 @@ export async function generatePregamePredictionForGame(args: {
     modelName,
     modelVersion,
     featureSetVersion: payload.featureSetVersion,
+    allowBaselineBootstrap: args.allowBaselineBootstrap,
   });
 
   const featureSnapshotId = await persistGamePredictionFeatureSnapshot(
@@ -726,6 +926,7 @@ export async function generatePregamePredictionForGame(args: {
     predictionId: data.prediction_id,
     homeWinProbability: prediction.homeWinProbability,
     awayWinProbability: prediction.awayWinProbability,
+    skippedReason: null,
     dryRun: false,
   };
 }
@@ -905,6 +1106,7 @@ export async function generatePregamePredictionsForWindow(args: {
   model?: BinaryLogisticModel;
   modelName?: string;
   modelVersion?: string;
+  allowBaselineBootstrap?: boolean;
   limit?: number;
   maxRuntimeMs?: number;
   dryRun?: boolean;
@@ -938,27 +1140,55 @@ export async function generatePregamePredictionsForWindow(args: {
       break;
     }
 
-    results.push(
-      await generatePregamePredictionForGame({
-        client: args.client,
+    if (!isPregamePredictionCutoff({ game, predictionCutoffAt })) {
+      results.push({
         gameId: game.id,
-        predictionCutoffAt,
-        sourceAsOfDate,
-        model: args.model,
-        modelName: args.modelName,
-        modelVersion: args.modelVersion,
-        dryRun: args.dryRun,
-      }),
-    );
+        featureSnapshotId: null,
+        predictionId: null,
+        homeWinProbability: null,
+        awayWinProbability: null,
+        skippedReason: "prediction_cutoff_at_or_after_puck_drop",
+        dryRun: Boolean(args.dryRun),
+      });
+      continue;
+    }
+
+    try {
+      results.push(
+        await generatePregamePredictionForGame({
+          client: args.client,
+          gameId: game.id,
+          predictionCutoffAt,
+          sourceAsOfDate,
+          model: args.model,
+          modelName: args.modelName,
+          modelVersion: args.modelVersion,
+          allowBaselineBootstrap: args.allowBaselineBootstrap,
+          dryRun: args.dryRun,
+        }),
+      );
+    } catch (error) {
+      results.push({
+        gameId: game.id,
+        featureSnapshotId: null,
+        predictionId: null,
+        homeWinProbability: null,
+        awayWinProbability: null,
+        skippedReason:
+          error instanceof Error ? error.message : "prediction_generation_failed",
+        dryRun: Boolean(args.dryRun),
+      });
+    }
   }
 
+  const processedGames = results.filter((result) => !result.skippedReason).length;
   return {
     fromDate: args.fromDate,
     toDate: args.toDate,
     sourceAsOfDate,
     requestedGames: games.length,
-    processedGames: results.length,
-    skippedGames: Math.max(0, games.length - results.length),
+    processedGames,
+    skippedGames: games.length - processedGames,
     stoppedForDeadline,
     dryRun: Boolean(args.dryRun),
     results,

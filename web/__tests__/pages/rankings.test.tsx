@@ -126,6 +126,7 @@ const matrixPayload: PlayerMatrixResponse = {
     page: 1,
     pageSize: 10,
     selectedPlayerId: 1,
+    rankingSourcePreference: "entity_metric_rankings",
   },
   selectedPlayerId: 1,
   rows: [
@@ -204,7 +205,12 @@ const matrixPayload: PlayerMatrixResponse = {
     latestAvailableSnapshotDate: "2026-04-16",
     snapshotUpdatedAt: "2026-04-16T06:00:00.000Z",
     snapshotSelectionReason: "latest_available",
-    sourceTable: "rolling_player_game_metrics",
+    sourceTable: "entity_metric_rankings",
+    sourceTables: ["entity_metric_rankings", "skater_composite_ratings"],
+    rankingSource: "entity_metric_rankings",
+    rankingSourcePreference: "entity_metric_rankings",
+    rankingSourceFallbackReason: null,
+    compositeSourceTable: "skater_composite_ratings",
     message: null,
   },
 };
@@ -219,7 +225,11 @@ const explorerPayload: ContextualRankingsResponse = {
     snapshotUpdatedAt: "2026-04-16T06:00:00.000Z",
     latestAvailableSnapshotDate: "2026-04-16",
     snapshotSelectionReason: "latest_available",
-    sourceTable: "rolling_player_game_metrics",
+    sourceTable: "entity_metric_rankings",
+    sourceTables: ["entity_metric_rankings"],
+    rankingSource: "entity_metric_rankings",
+    rankingSourcePreference: "entity_metric_rankings",
+    rankingSourceFallbackReason: null,
     metric: {
       key: "goals_per_60",
       displayName: "Goals/60",
@@ -654,6 +664,17 @@ const goaliePayload: GoalieMatrixResponse = {
         deploymentBucket: "g2_reserve",
         deploymentLabel: "G2 Reserve",
         deploymentSource: "goalie_start_projections.season_start_pct",
+        rawStartShare: 0.3,
+        adjustedStartShare: 0.3,
+        coreStartShare: null,
+        coreGoalieIds: [32, 31],
+        excludedTeamStarts: 3,
+        roleConfidence: "medium",
+        roleNotes: [
+          "Raw window share uses 3 starts out of 10 team starts.",
+          "Goalie is outside the inferred top-two workload group; adjusted core share is not used for role promotion.",
+          "Projected season start share is available and remains the primary role source.",
+        ],
         windowStartShare: 0.3,
         startShareLast10: 0.3,
         seasonStartShare: 0.032,
@@ -691,6 +712,33 @@ const goaliePayload: GoalieMatrixResponse = {
           formattedValue: "58.15",
           rank: 1,
           percentile: 98.7,
+          qualifiedPeerCount: 60,
+          lowerIsBetter: false,
+        },
+        xga_per_shot_against: {
+          metricKey: "xga_per_shot_against",
+          rawValue: 0.096,
+          formattedValue: "0.096",
+          rank: 18,
+          percentile: 72,
+          qualifiedPeerCount: 60,
+          lowerIsBetter: false,
+        },
+        goalie_value_signal: {
+          metricKey: "goalie_value_signal",
+          rawValue: 1.3,
+          formattedValue: "1.3",
+          rank: 14,
+          percentile: 78,
+          qualifiedPeerCount: 60,
+          lowerIsBetter: false,
+        },
+        high_danger_save_percentage: {
+          metricKey: "high_danger_save_percentage",
+          rawValue: 0.842,
+          formattedValue: "84.2%",
+          rank: 11,
+          percentile: 82,
           qualifiedPeerCount: 60,
           lowerIsBetter: false,
         },
@@ -764,8 +812,40 @@ const goaliePayload: GoalieMatrixResponse = {
         lowerIsBetter: false,
         source: "goalieMethodology",
       },
+      {
+        metricKey: "xga_per_shot_against",
+        label: "xGA/Shot",
+        description: "Shot-quality workload.",
+        lowerIsBetter: false,
+        source:
+          "goalie_stats_unified.nst_5v5_counts_xg_against / nst_5v5_counts_shots_against",
+      },
+      {
+        metricKey: "high_danger_save_percentage",
+        label: "HD SV%",
+        description: "High-danger save percentage.",
+        lowerIsBetter: false,
+        source: "goalie_stats_unified.nst_5v5_counts_hd_sv_percentage",
+      },
     ],
     sourceWarnings: [],
+    sourcePendingMetricContracts: [
+      {
+        metricKey: "relative_save_percentage",
+        label: "Relative SV%",
+        status: "source_pending",
+        reason:
+          "Team-without-goalie save-percentage baselines are not published.",
+        requiredFields: ["team without goalie save percentage"],
+      },
+      {
+        metricKey: "under_pressure_profile",
+        label: "Under Pressure",
+        status: "source_pending",
+        reason: "Pressure-quadrant source rows are not published.",
+        requiredFields: ["pressure labels", "save outcomes"],
+      },
+    ],
   },
 };
 
@@ -794,6 +874,17 @@ goaliePayload.rows.push({
     deploymentBucket: "g2_backup",
     deploymentLabel: "G2 Backup",
     deploymentSource: "goalie_start_projections.season_start_pct",
+    rawStartShare: 0.7,
+    adjustedStartShare: 0.7,
+    coreStartShare: 0.7,
+    coreGoalieIds: [32, 31],
+    excludedTeamStarts: 3,
+    roleConfidence: "high",
+    roleNotes: [
+      "Raw window share uses 7 starts out of 10 team starts.",
+      "Adjusted core share uses inferred top-two goalie starts only (10 starts).",
+      "Projected season start share is available and remains the primary role source.",
+    ],
     windowStartShare: 0.7,
     startShareLast10: 0.7,
     seasonStartShare: 0.22,
@@ -872,6 +963,14 @@ const teamPayload: TeamMatrixResponse = {
         finishingLuck: -188.68,
         saveLuck: 97.44,
         netGoalsAboveExpected: -91.24,
+      },
+      context: {
+        games: 82,
+        latestDate: "2026-06-06",
+        oneGoalGameRate: 43.9,
+        homeRoadPointPctGap: 8.5,
+        powerPlayOpportunityRate: 3.12,
+        penaltiesTakenPer60: 3.84,
       },
       sort: {
         metricKey: "off_rating",
@@ -975,6 +1074,38 @@ const teamPayload: TeamMatrixResponse = {
           qualifiedPeerCount: 32,
           lowerIsBetter: false,
         },
+        one_goal_game_rate: {
+          rawValue: 43.9,
+          formattedValue: "43.9%",
+          rank: 18,
+          percentile: 44,
+          qualifiedPeerCount: 32,
+          lowerIsBetter: false,
+        },
+        home_road_point_pct_gap: {
+          rawValue: 8.5,
+          formattedValue: "8.50",
+          rank: 10,
+          percentile: 69,
+          qualifiedPeerCount: 32,
+          lowerIsBetter: false,
+        },
+        pp_opportunity_rate: {
+          rawValue: 3.12,
+          formattedValue: "3.12",
+          rank: 9,
+          percentile: 72,
+          qualifiedPeerCount: 32,
+          lowerIsBetter: false,
+        },
+        penalties_taken_per_60: {
+          rawValue: 3.84,
+          formattedValue: "3.84",
+          rank: 7,
+          percentile: 78,
+          qualifiedPeerCount: 32,
+          lowerIsBetter: true,
+        },
       },
       warnings: ["raw_contextual_team_style"],
     },
@@ -993,12 +1124,39 @@ const teamPayload: TeamMatrixResponse = {
       "team_power_ratings_daily",
       "team_underlying_stats_summary",
       "nst_team_stats",
+      "wgo_team_stats",
     ],
     sourceWarnings: [
       "team style source snapshot 2026-04-07 differs from team power snapshot 2026-06-09",
       "team style is raw/contextual, not score- or venue-adjusted",
     ],
     teamStyleContract: TEAM_STYLE_SOURCE_CONTRACT,
+    sourcePendingMetricContracts: [
+      {
+        metricKey: "forward_top_load_index",
+        label: "Forward Top Load",
+        status: "source_pending",
+        reason:
+          "Verified forward-line TOI share by team/game is not published in the current rankings source contract.",
+        requiredFields: ["line TOI seconds", "team forward TOI seconds"],
+      },
+      {
+        metricKey: "defense_pair_top_load_index",
+        label: "Defense Pair Top Load",
+        status: "source_pending",
+        reason:
+          "Verified defense-pair TOI share by team/game is not published in the current rankings source contract.",
+        requiredFields: ["pair TOI seconds", "team defense TOI seconds"],
+      },
+      {
+        metricKey: "pp1_pp2_usage_share",
+        label: "PP1/PP2 Usage Share",
+        status: "source_pending",
+        reason:
+          "Power-play unit membership exists as contextual labels, but verified PP unit TOI share is not published.",
+        requiredFields: ["unit PP TOI seconds", "team PP TOI seconds"],
+      },
+    ],
     metricColumns: [
       {
         metricKey: "off_rating",
@@ -1013,6 +1171,20 @@ const teamPayload: TeamMatrixResponse = {
         description: "Net luck.",
         lowerIsBetter: false,
         source: "teamStyleMethodology",
+      },
+      {
+        metricKey: "one_goal_game_rate",
+        label: "1-Goal%",
+        description: "One-goal game rate.",
+        lowerIsBetter: false,
+        source: "wgo_team_stats",
+      },
+      {
+        metricKey: "home_road_point_pct_gap",
+        label: "Home Edge",
+        description: "Home-road point-percentage gap.",
+        lowerIsBetter: false,
+        source: "wgo_team_stats",
       },
     ],
   },
@@ -1177,16 +1349,35 @@ describe("RankingsPage interactions", () => {
   it("wires matrix sorting, pagination, page size, and row selection into URL state", () => {
     render(<RankingsPage />);
 
+    expect(screen.getByRole("heading", { name: "Skater Rankings" })).toBeTruthy();
+    expect(document.title).toBe("Skater Rankings | FHFHockey");
+    expect(
+      document
+        .querySelector('meta[name="description"]')
+        ?.getAttribute("content"),
+    ).toBe(
+      "Contextual NHL skater rankings with deployment filters, percentiles, multi-metric matrices, and player snapshots.",
+    );
+    expect(
+      within(screen.getByLabelText("Ranking quick info")).getByText(
+        "Points/60 Percentile",
+      ),
+    ).toBeTruthy();
     expect(screen.getByText("Rankings Matrix")).toBeTruthy();
     expect(screen.getAllByText("Matt Savoie").length).toBeGreaterThan(0);
     expect(screen.getByText("Legend & Methodology")).toBeTruthy();
     fireEvent.click(screen.getByText("Legend & Methodology"));
     expect(screen.getByRole("heading", { name: "Ranking Legend" })).toBeTruthy();
     expect(
-      screen.getByText("Percentile among qualified peers; higher percentile is stronger."),
+      screen.getByText(
+        "Percentile shows the share of other qualified peers this row is better than after metric directionality is applied.",
+      ),
     ).toBeTruthy();
     expect(screen.getByText(/Raw rank uses dense-rank semantics/)).toBeTruthy();
     expect(screen.getByText("Better-than percentile")).toBeTruthy();
+    expect(
+      screen.getByText("Durable snapshot: entity_metric_rankings"),
+    ).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText("Search"), {
       target: { value: "Savoie" },
@@ -1204,13 +1395,13 @@ describe("RankingsPage interactions", () => {
     );
 
     fireEvent.change(screen.getByLabelText("Display"), {
-      target: { value: "raw_rank" },
+      target: { value: "metric_value" },
     });
     expect(replaceMock).toHaveBeenCalledWith(
       expect.objectContaining({
         pathname: "/rankings",
         query: expect.objectContaining({
-          display: "raw_rank",
+          display: "metric_value",
         }),
       }),
       undefined,
@@ -1289,6 +1480,10 @@ describe("RankingsPage interactions", () => {
       screen.getByRole("heading", { name: "Metric Explorer" }),
     ).toBeTruthy();
     expect(screen.getAllByText("Goals/60").length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByText("Legend & Methodology"));
+    expect(
+      screen.getByText("Durable snapshot: entity_metric_rankings"),
+    ).toBeTruthy();
     expect(screen.queryByText(/Adjusted Defensive Impact/i)).toBeNull();
     expect(screen.queryByText(/Adjusted xG Impact/i)).toBeNull();
     expect(screen.getAllByText("Matt Savoie").length).toBeGreaterThan(0);
@@ -1373,6 +1568,13 @@ describe("RankingsPage interactions", () => {
     routerState.query = { entity: "goalies", tab: "rankings" };
     rerender(<RankingsPage />);
 
+    expect(screen.getByRole("heading", { name: "Goalie Rankings" })).toBeTruthy();
+    expect(document.title).toBe("Goalie Rankings | FHFHockey");
+    expect(
+      within(screen.getByLabelText("Ranking quick info")).getByText(
+        "SV% Percentile",
+      ),
+    ).toBeTruthy();
     expect(
       screen.getByRole("heading", { name: "Goalie Rankings Matrix" }),
     ).toBeTruthy();
@@ -1381,8 +1583,13 @@ describe("RankingsPage interactions", () => {
     expect(screen.getByLabelText("Goalie snapshot")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Why He Stands Out" })).toBeTruthy();
     expect(screen.getByText(/Start share: 3.2%/)).toBeTruthy();
+    expect(screen.getByText(/Role confidence: medium/)).toBeTruthy();
+    expect(screen.getByText(/Raw window start share: 30.0%/)).toBeTruthy();
+    expect(screen.getByText(/Adjusted core start share: 30.0%/)).toBeTruthy();
     expect(
-      screen.getByText("Emergency call-up denominator adjustment remains Source Pending."),
+      screen.getByText(
+        "Goalie is outside the inferred top-two workload group; adjusted core share is not used for role promotion.",
+      ),
     ).toBeTruthy();
     fireEvent.click(screen.getByText("Casey DeSmith"));
     expect(replaceMock).toHaveBeenCalledWith(
@@ -1451,14 +1658,31 @@ describe("RankingsPage interactions", () => {
     routerState.query = { entity: "teams", tab: "rankings" };
     rerender(<RankingsPage />);
 
+    expect(screen.getByRole("heading", { name: "Team Rankings" })).toBeTruthy();
+    expect(document.title).toBe("Team Rankings | FHFHockey");
+    expect(
+      within(screen.getByLabelText("Ranking quick info")).getByText(
+        "Off Rating Percentile",
+      ),
+    ).toBeTruthy();
     expect(
       screen.getByRole("heading", { name: "Team Rankings Matrix" }),
     ).toBeTruthy();
     expect(screen.getAllByText("Carolina Hurricanes").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Controls play").length).toBeGreaterThan(0);
     expect(screen.getByText(/Team style caveat:/)).toBeTruthy();
+    expect(
+      screen.getAllByText(
+        /Source-pending team contracts: Forward Top Load, Defense Pair Top Load, PP1\/PP2 Usage Share/,
+      ).length,
+    ).toBeGreaterThan(0);
     expect(screen.getByLabelText("Team snapshot")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Why This Team Stands Out" })).toBeTruthy();
+    expect(screen.getByText(/Game-context source: 2026-06-06/)).toBeTruthy();
+    expect(screen.getByText(/One-goal game rate: 43.9%/)).toBeTruthy();
+    expect(screen.getByText(/Home edge: 8.5 percentage points/)).toBeTruthy();
+    expect(screen.getByText(/PP opportunities: 3.12 per game/)).toBeTruthy();
+    expect(screen.getByText(/Penalties taken: 3.84 per 60/)).toBeTruthy();
     expect(
       screen.getByText("Score/venue-adjusted style remains Source Pending when unavailable."),
     ).toBeTruthy();

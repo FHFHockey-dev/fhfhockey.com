@@ -141,11 +141,15 @@ vi.mock("lib/supabase/server", () => ({
   default: supabaseMock,
 }));
 
-import { buildEntityMetricRankingSurfaces } from "./entityMetricRankingReader";
+import {
+  buildEntityMetricRankingSurfaces,
+  clearEntityMetricRankingReaderCachesForTests,
+} from "./entityMetricRankingReader";
 
 describe("entityMetricRankingReader", () => {
   beforeEach(() => {
     queryCalls.length = 0;
+    clearEntityMetricRankingReaderCachesForTests();
     supabaseMock.from.mockClear();
   });
 
@@ -169,10 +173,11 @@ describe("entityMetricRankingReader", () => {
         limit: null,
         entityIds: null,
       },
-      ["points_per_60"],
+      ["points_per_60", "goals_per_60"],
     );
 
     const surface = surfaces.get("points_per_60");
+    const missingMetricSurface = surfaces.get("goals_per_60");
     expect(surface?.meta).toMatchObject({
       sourceTable: "entity_metric_rankings",
       snapshotDate: "2026-04-16",
@@ -220,6 +225,22 @@ describe("entityMetricRankingReader", () => {
       peer_group_type: "all_skaters",
       peer_group_key: "all",
       snapshot_date: "2026-04-17",
+    });
+    const rankingRowQueries = queryCalls.filter(
+      (call) =>
+        call.table === "entity_metric_rankings" &&
+        call.selectFields !== "snapshot_date",
+    );
+    expect(rankingRowQueries).toHaveLength(1);
+    expect(rankingRowQueries[0]?.filters.metric_key).toEqual([
+      "points_per_60",
+      "goals_per_60",
+    ]);
+    expect(missingMetricSurface?.meta).toMatchObject({
+      sourceTable: "entity_metric_rankings",
+      unavailable: true,
+      rowCount: 0,
+      message: "No entity_metric_rankings rows matched the selected snapshot.",
     });
   });
 });

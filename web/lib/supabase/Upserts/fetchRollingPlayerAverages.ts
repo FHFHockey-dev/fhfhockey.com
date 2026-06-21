@@ -654,6 +654,52 @@ async function postPostgrestUpsert(
   throw error;
 }
 
+function isStatementTimeoutError(error: unknown): boolean {
+  const message = getErrorMessage(error).toLowerCase();
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? (error as { code?: unknown }).code
+      : null;
+  return (
+    code === "57014" ||
+    message.includes("canceling statement due to statement timeout") ||
+    message.includes("statement timeout")
+  );
+}
+
+async function postPostgrestUpsertWithAdaptiveSplit(
+  url: string,
+  batch: Array<Record<string, unknown>>,
+  label: string
+): Promise<void> {
+  if (batch.length === 0) return;
+
+  try {
+    await postPostgrestUpsert(url, batch);
+    return;
+  } catch (error) {
+    if (!isStatementTimeoutError(error) || batch.length === 1) {
+      throw error;
+    }
+
+    const midpoint = Math.ceil(batch.length / 2);
+    const firstHalf = batch.slice(0, midpoint);
+    const secondHalf = batch.slice(midpoint);
+    console.warn(
+      "[fetchRollingPlayerAverages] splitting timed-out upsert batch",
+      JSON.stringify({
+        label,
+        rows: batch.length,
+        firstHalfRows: firstHalf.length,
+        secondHalfRows: secondHalf.length,
+        error: getErrorMessage(error)
+      })
+    );
+    await postPostgrestUpsertWithAdaptiveSplit(url, firstHalf, label);
+    await postPostgrestUpsertWithAdaptiveSplit(url, secondHalf, label);
+  }
+}
+
 async function upsertRollingPlayerMetricsBatch(
   batch: RollingUpsertRow[]
 ): Promise<void> {
@@ -661,13 +707,18 @@ async function upsertRollingPlayerMetricsBatch(
     splitRollingUpsertBatchForDurableStorage(batch);
 
   if (supportRows.length > 0) {
-    await postPostgrestUpsert(
+    await postPostgrestUpsertWithAdaptiveSplit(
       rollingPlayerMetricSupportRestUrl,
-      supportRows as unknown as Array<Record<string, unknown>>
+      supportRows as unknown as Array<Record<string, unknown>>,
+      "rolling_player_metric_support_payloads"
     );
   }
 
-  await postPostgrestUpsert(rollingPlayerMetricsRestUrl, rankingRows);
+  await postPostgrestUpsertWithAdaptiveSplit(
+    rollingPlayerMetricsRestUrl,
+    rankingRows,
+    "rolling_player_game_metrics"
+  );
 }
 
 function createConcurrencyLimiter(concurrency: number) {
@@ -870,6 +921,10 @@ export type RollingPlayerRunSummary = {
   unknownGameIds: number;
   freshnessBlockers: number;
   sourceTracking: SourceTrackingSummary;
+  lastProcessedPlayerId?: number | null;
+  nextResumeFrom?: number | null;
+  totalPlayersAfterResumeFilter?: number;
+  remainingPlayerCount?: number;
 };
 
 const cachedPowerPlayCombos = new Map<string, PowerPlayCombinationRow>();
@@ -2472,7 +2527,11 @@ function buildRunSummary(args: RollingPlayerRunSummary): RollingPlayerRunSummary
     suspiciousOutputWarnings: args.suspiciousOutputWarnings,
     unknownGameIds: args.unknownGameIds,
     freshnessBlockers: args.freshnessBlockers,
-    sourceTracking: args.sourceTracking
+    sourceTracking: args.sourceTracking,
+    lastProcessedPlayerId: args.lastProcessedPlayerId ?? null,
+    nextResumeFrom: args.nextResumeFrom ?? null,
+    totalPlayersAfterResumeFilter: args.totalPlayersAfterResumeFilter ?? 0,
+    remainingPlayerCount: args.remainingPlayerCount ?? 0
   };
 }
 
@@ -4190,6 +4249,14 @@ export async function main(
     options.maxPlayers && options.maxPlayers > 0
       ? filteredPlayerIds.slice(0, options.maxPlayers)
       : filteredPlayerIds;
+  const lastBoundedPlayerId =
+    boundedPlayerIds.length > 0
+      ? boundedPlayerIds[boundedPlayerIds.length - 1]
+      : null;
+  const remainingPlayerCount = Math.max(
+    filteredPlayerIds.length - boundedPlayerIds.length,
+    0
+  );
 
   if (!boundedPlayerIds.length) {
     console.info(
@@ -4203,7 +4270,11 @@ export async function main(
       suspiciousOutputWarnings: 0,
       unknownGameIds: 0,
       freshnessBlockers: 0,
-      sourceTracking: createEmptySourceTrackingSummary()
+      sourceTracking: createEmptySourceTrackingSummary(),
+      lastProcessedPlayerId: null,
+      nextResumeFrom: null,
+      totalPlayersAfterResumeFilter: filteredPlayerIds.length,
+      remainingPlayerCount: 0
     });
   }
 
@@ -4428,7 +4499,11 @@ export async function main(
     suspiciousOutputWarnings,
     unknownGameIds,
     freshnessBlockers,
-    sourceTracking
+    sourceTracking,
+    lastProcessedPlayerId: processedPlayers > 0 ? lastBoundedPlayerId : null,
+    nextResumeFrom: remainingPlayerCount > 0 ? lastBoundedPlayerId : null,
+    totalPlayersAfterResumeFilter: filteredPlayerIds.length,
+    remainingPlayerCount
   });
   console.info(
     "[fetchRollingPlayerAverages] Completed run",

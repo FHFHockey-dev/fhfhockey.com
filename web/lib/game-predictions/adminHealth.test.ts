@@ -74,7 +74,26 @@ describe("game prediction admin health", () => {
           computed_at: "2026-04-27T08:00:00.000Z",
         },
       ] as any,
-      scheduledGames: [{ id: 1 }, { id: 2 }] as any,
+      scheduledGames: [
+        {
+          id: 1,
+          date: "2026-04-27",
+          startTime: "23:00:00",
+          seasonId: 20252026,
+          homeTeamId: 1,
+          awayTeamId: 2,
+          type: 2,
+        },
+        {
+          id: 2,
+          date: "2026-04-27",
+          startTime: "23:30:00",
+          seasonId: 20252026,
+          homeTeamId: 3,
+          awayTeamId: 4,
+          type: 2,
+        },
+      ] as any,
       predictionOutputs: [{ game_id: 1 }] as any,
       provenanceRows: [
         {
@@ -132,13 +151,21 @@ describe("game prediction admin health", () => {
       ]),
     );
     expect(report.featureQuality.missingFeatureRate).toBe(0.5);
+    expect(report.marketOddsReadiness).toMatchObject({
+      requiredGames: 2,
+      snapshotGames: 0,
+      trustedSnapshotSourceGames: 0,
+      trainingFeatureEligible: false,
+    });
     expect(report.segmentPerformance.missingSegmentKeys).toEqual([]);
+    expect(report.segmentPerformance.windowMismatches).toEqual([]);
     expect(report.segmentPerformance.segments).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           segmentKey: "season_phase",
           segmentValue: "late",
           coveragePctOfOverall: 50 / 120,
+          matchesLatestOverallWindow: true,
         }),
         expect.objectContaining({
           segmentKey: "market_edge_bucket",
@@ -152,6 +179,7 @@ describe("game prediction admin health", () => {
         "missing_predictions",
         "failed_jobs",
         "stale_model",
+        "market_odds_source_readiness_incomplete",
         "goalie_probability_anomalies",
       ])
     );
@@ -192,6 +220,112 @@ describe("game prediction admin health", () => {
     ]);
     expect(report.alerts.map((alert) => alert.code)).toContain(
       "segment_monitoring_incomplete",
+    );
+  });
+
+  it("warns when production model state or production metrics are missing", () => {
+    const missingModelReport = buildGamePredictionHealthReport({
+      generatedAt: "2026-04-27T12:00:00.000Z",
+    });
+
+    expect(missingModelReport.alerts.map((alert) => alert.code)).toEqual([
+      "production_model_missing",
+    ]);
+
+    const missingMetricReport = buildGamePredictionHealthReport({
+      generatedAt: "2026-04-27T12:00:00.000Z",
+      productionModel: {
+        model_name: "nhl_game_baseline_logistic",
+        model_version: "candidate-v1",
+        feature_set_version: "game_features_v5_accuracy_candidates",
+        status: "production",
+        trained_at: "2026-04-01T00:00:00.000Z",
+        promoted_at: "2026-04-26T00:00:00.000Z",
+        updated_at: "2026-04-26T00:00:00.000Z",
+        validation_start_date: "2025-12-01",
+        validation_end_date: "2026-04-20",
+        validation_metrics: {
+          summary: {
+            evaluatedGames: 180,
+          },
+        },
+        metadata: {
+          promotion_status: "eligible_for_manual_promotion",
+          promotion_decision: {
+            promote: true,
+          },
+        },
+        source_audit_metadata: {
+          uses_market_features: false,
+          public_explanation_ready: true,
+          explanation_blockers: [],
+          segment_regression_count: 0,
+        },
+      } as any,
+    });
+
+    expect(missingMetricReport.alerts.map((alert) => alert.code)).toContain(
+      "production_metric_missing",
+    );
+    expect(missingMetricReport.alerts.map((alert) => alert.code)).not.toContain(
+      "healthy",
+    );
+  });
+
+  it("does not let stale segment windows satisfy post-promotion monitoring", () => {
+    const report = buildGamePredictionHealthReport({
+      generatedAt: "2026-04-27T12:00:00.000Z",
+      latestMetric: {
+        evaluated_games: 120,
+        accuracy: 0.58,
+        log_loss: 0.66,
+        brier_score: 0.22,
+        auc: 0.61,
+        evaluation_start_date: "2026-01-01",
+        evaluation_end_date: "2026-04-20",
+        computed_at: "2026-04-27T08:00:00.000Z",
+      } as any,
+      segmentMetrics: [
+        {
+          segment_key: "market_edge_bucket",
+          segment_value: "no_market",
+          evaluated_games: 100,
+          accuracy: 0.58,
+          log_loss: 0.67,
+          brier_score: 0.23,
+          evaluation_start_date: "2025-10-01",
+          evaluation_end_date: "2025-12-31",
+          computed_at: "2026-04-26T08:00:00.000Z",
+        },
+      ] as any,
+    });
+
+    expect(report.segmentPerformance.missingSegmentKeys).toEqual([
+      "season_phase",
+      "goalie_confirmation_state",
+      "has_stale_source",
+      "market_edge_bucket",
+    ]);
+    expect(report.segmentPerformance.windowMismatches).toEqual([
+      {
+        segmentKey: "market_edge_bucket",
+        segmentValue: "no_market",
+        evaluationStartDate: "2025-10-01",
+        evaluationEndDate: "2025-12-31",
+        expectedEvaluationStartDate: "2026-01-01",
+        expectedEvaluationEndDate: "2026-04-20",
+        computedAt: "2026-04-26T08:00:00.000Z",
+      },
+    ]);
+    expect(report.segmentPerformance.segments[0]).toMatchObject({
+      segmentKey: "market_edge_bucket",
+      matchesLatestOverallWindow: false,
+    });
+    expect(report.alerts.map((alert) => alert.code)).toEqual(
+      expect.arrayContaining([
+        "segment_monitoring_incomplete",
+        "segment_monitoring_window_mismatch",
+      ]),
     );
   });
 

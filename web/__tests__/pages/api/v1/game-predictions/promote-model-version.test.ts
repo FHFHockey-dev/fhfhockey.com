@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { promoteGamePredictionModelVersionMock } = vi.hoisted(() => ({
+const {
+  previewGamePredictionModelVersionPromotionMock,
+  promoteGamePredictionModelVersionMock,
+} = vi.hoisted(() => ({
+  previewGamePredictionModelVersionPromotionMock: vi.fn(),
   promoteGamePredictionModelVersionMock: vi.fn(),
 }));
 
@@ -13,6 +17,8 @@ vi.mock("utils/adminOnlyMiddleware", () => ({
 }));
 
 vi.mock("lib/game-predictions/workflow", () => ({
+  previewGamePredictionModelVersionPromotion:
+    previewGamePredictionModelVersionPromotionMock,
   promoteGamePredictionModelVersion: promoteGamePredictionModelVersionMock,
 }));
 
@@ -56,6 +62,14 @@ function createMockApiContext(args?: {
 describe("/api/v1/game-predictions/promote-model-version", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    previewGamePredictionModelVersionPromotionMock.mockResolvedValue({
+      wouldPromote: true,
+      reasons: [],
+      modelName: "nhl_game_baseline_logistic",
+      modelVersion: "candidate-v1",
+      featureSetVersion: "game_features_v5_accuracy_candidates",
+      persistedEvidenceChecked: true,
+    });
     promoteGamePredictionModelVersionMock.mockResolvedValue({
       promoted: true,
       reasons: [],
@@ -67,23 +81,55 @@ describe("/api/v1/game-predictions/promote-model-version", () => {
     });
   });
 
-  it("refuses mutation unless dryRun=false and confirm=true are explicit", async () => {
+  it("previews the persisted promotion gate by default without mutating", async () => {
+    const { req, res, supabase } = createMockApiContext({
+      query: {
+        modelName: "nhl_game_baseline_logistic",
+        modelVersion: "candidate-v1",
+        featureSetVersion: "game_features_v5_accuracy_candidates",
+        minEvaluatedGames: "150",
+      },
+    });
+
+    await handler(req as never, res as never);
+
+    expect(res.statusCode).toBe(200);
+    expect(previewGamePredictionModelVersionPromotionMock).toHaveBeenCalledWith({
+      client: supabase,
+      modelName: "nhl_game_baseline_logistic",
+      modelVersion: "candidate-v1",
+      featureSetVersion: "game_features_v5_accuracy_candidates",
+      minEvaluatedGames: 150,
+    });
+    expect(promoteGamePredictionModelVersionMock).not.toHaveBeenCalled();
+    expect(res.body).toMatchObject({
+      success: true,
+      dryRun: true,
+      result: {
+        wouldPromote: true,
+        persistedEvidenceChecked: true,
+      },
+    });
+  });
+
+  it("refuses mutation unless confirm=true is explicit", async () => {
     const { req, res } = createMockApiContext({
       query: {
         modelName: "nhl_game_baseline_logistic",
         modelVersion: "candidate-v1",
         featureSetVersion: "game_features_v5_accuracy_candidates",
-        confirm: "true",
+        dryRun: "false",
       },
     });
 
     await handler(req as never, res as never);
 
     expect(res.statusCode).toBe(400);
+    expect(previewGamePredictionModelVersionPromotionMock).not.toHaveBeenCalled();
     expect(promoteGamePredictionModelVersionMock).not.toHaveBeenCalled();
     expect(res.body).toEqual({
       success: false,
-      dryRun: true,
+      dryRun: false,
       error:
         "Promotion requires dryRun=false and confirm=true after persisted evidence review.",
     });

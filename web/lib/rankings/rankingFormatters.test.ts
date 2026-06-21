@@ -101,6 +101,9 @@ describe("rankingFormatters", () => {
     expect(items).toContain("Window: last 10 player games at EV strength.");
     expect(items).toContain("Peer group: deployment:L3.");
     expect(items).toContain(
+      "Raw rank 4 of 24; better than 81.3% of other qualified peers.",
+    );
+    expect(items).toContain(
       "Sample caveat: minimum GP or TOI was not met before ranking.",
     );
     expect(items).toContain(

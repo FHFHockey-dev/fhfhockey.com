@@ -66,7 +66,7 @@ export const CONTEXTUAL_RANKING_GLOSSARY = [
     key: "better_than_percentile",
     label: "Peer percentile",
     description:
-      "The share of qualified peers at or below the row's normalized value after directionality is applied, so the top qualified peer group displays as 100.",
+      "The share of other qualified peers a row is better than after metric directionality is applied; an untied leader displays as 100 and the worst qualified row displays as 0.",
   },
   {
     key: "source_quality_flags",

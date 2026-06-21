@@ -65,6 +65,8 @@ export type EntityMetricRankingBuildResult = {
 };
 
 const METHODOLOGY_VERSION = "contextual_rankings_v1";
+const DEFAULT_UPSERT_CHUNK_SIZE = 100;
+const MAX_UPSERT_CHUNK_SIZE = 500;
 const UPSERT_CONFLICT_COLUMNS =
   "entity_type,entity_id,season_id,snapshot_date,window_type,window_size,strength_state,metric_key,peer_group_type,peer_group_key";
 const COMPOSITE_MATRIX_METRICS = new Set<string>([
@@ -77,6 +79,15 @@ const COMPOSITE_MATRIX_METRICS = new Set<string>([
 
 function finite(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function errorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object" && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string") return message;
+  }
+  return String(error);
 }
 
 function windowType(window: SkaterProductionWindow) {
@@ -105,7 +116,7 @@ function explanationItems(row: ContextualRankingRow) {
   ];
   if (row.percentile != null) {
     items.push(
-      `Peer percentile ${row.percentile.toFixed(1)}%; higher is better after metric directionality is applied.`,
+      `Better than ${row.percentile.toFixed(1)}% of other qualified peers after metric directionality is applied.`,
     );
   }
   if (!row.minimumSampleMet) {
@@ -291,20 +302,55 @@ export async function buildEntityMetricRankingRows(
 export async function upsertEntityMetricRankingRows(
   client: SupabaseClient<Database>,
   rows: EntityMetricRankingInsert[],
+  options: { chunkSize?: number } = {},
 ) {
-  const chunkSize = 500;
+  const chunkSize = Math.min(
+    Math.max(options.chunkSize ?? DEFAULT_UPSERT_CHUNK_SIZE, 1),
+    MAX_UPSERT_CHUNK_SIZE,
+  );
   let rowsUpserted = 0;
 
   for (let index = 0; index < rows.length; index += chunkSize) {
     const chunk = rows.slice(index, index + chunkSize);
-    const { error } = await client
-      .from("entity_metric_rankings")
-      .upsert(chunk, { onConflict: UPSERT_CONFLICT_COLUMNS });
-    if (error) {
-      throw new Error(`Failed to upsert entity_metric_rankings: ${error.message}`);
+    try {
+      rowsUpserted += await upsertEntityMetricRankingChunk(client, chunk);
+    } catch (error) {
+      throw new Error(
+        `Failed to upsert entity_metric_rankings: ${errorMessage(error)}`,
+      );
     }
-    rowsUpserted += chunk.length;
   }
 
   return rowsUpserted;
+}
+
+async function upsertEntityMetricRankingChunk(
+  client: SupabaseClient<Database>,
+  rows: EntityMetricRankingInsert[],
+): Promise<number> {
+  try {
+    const { error } = await client
+      .from("entity_metric_rankings")
+      .upsert(rows, { onConflict: UPSERT_CONFLICT_COLUMNS });
+    if (error) throw error;
+    return rows.length;
+  } catch (error) {
+    if (rows.length === 1) throw error;
+
+    const midpoint = Math.ceil(rows.length / 2);
+    const firstHalf = rows.slice(0, midpoint);
+    const secondHalf = rows.slice(midpoint);
+    console.warn(
+      "[entityMetricRankingWriter] splitting failed upsert chunk",
+      JSON.stringify({
+        rows: rows.length,
+        firstHalfRows: firstHalf.length,
+        secondHalfRows: secondHalf.length,
+        error: errorMessage(error),
+      }),
+    );
+    const firstCount = await upsertEntityMetricRankingChunk(client, firstHalf);
+    const secondCount = await upsertEntityMetricRankingChunk(client, secondHalf);
+    return firstCount + secondCount;
+  }
 }

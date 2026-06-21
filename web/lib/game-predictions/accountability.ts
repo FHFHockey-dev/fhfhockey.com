@@ -58,7 +58,7 @@ import {
 type Tables<T extends keyof Database["public"]["Tables"]> =
   Database["public"]["Tables"][T]["Row"];
 
-type MarketOddsSourceAuditRow = Pick<
+export type MarketOddsSourceAuditRow = Pick<
   Tables<"game_prediction_market_odds_snapshots">,
   | "game_id"
   | "captured_at"
@@ -68,7 +68,7 @@ type MarketOddsSourceAuditRow = Pick<
   | "metadata"
 >;
 
-type SourceProvenanceAuditRow = Pick<
+export type SourceProvenanceAuditRow = Pick<
   Tables<"source_provenance_snapshots">,
   | "game_id"
   | "source_type"
@@ -344,6 +344,8 @@ export type BacktestPromotionEvidence = {
   }) | null;
   usesMarketFeatures: boolean;
   marketFeatureTrainingEligible: boolean;
+  marketSourceTrainingEligible: boolean;
+  marketFeatureSuppressedBySourceReadiness: boolean;
   marketBaselineCoverage: {
     evaluatedGames: number;
     requiredGames: number;
@@ -550,6 +552,31 @@ function isoAtOrAfter(
   return Number.isFinite(leftTime) && Number.isFinite(rightTime) && leftTime >= rightTime;
 }
 
+function parseDateTimeWithGameDate(
+  value: string | null | undefined,
+  gameDate: string | null | undefined,
+): number | null {
+  if (!value) return null;
+  const direct = Date.parse(value);
+  if (Number.isFinite(direct)) return direct;
+  if (!gameDate || !/^\d{4}-\d{2}-\d{2}$/.test(gameDate)) return null;
+  const normalized = value.trim();
+  if (!normalized) return null;
+  const hasTimeZone = /(?:z|[+-]\d{2}:?\d{2})$/i.test(normalized);
+  const parsed = Date.parse(
+    `${gameDate}T${normalized}${hasTimeZone ? "" : "Z"}`,
+  );
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function isoDateTimeWithGameDate(
+  value: string | null | undefined,
+  gameDate: string | null | undefined,
+): string | null {
+  const parsed = parseDateTimeWithGameDate(value, gameDate);
+  return parsed == null ? null : new Date(parsed).toISOString();
+}
+
 function earliestValidIso(
   values: Array<string | null | undefined>,
 ): string | null {
@@ -573,9 +600,32 @@ function marketOddsReadinessCutoff(args: {
 }): string | null {
   return earliestValidIso([
     accuracyLoopSyntheticPredictionCutoff(args.game),
-    args.game.startTime,
-    args.eventStartAt,
+    isoDateTimeWithGameDate(args.game.startTime, args.game.date),
+    isoDateTimeWithGameDate(args.eventStartAt, args.game.date),
   ]);
+}
+
+export function syntheticBacktestPredictionCutoffAt(args: {
+  game: Pick<AccountabilityGameRow, "date" | "startTime">;
+  simulationDate: string;
+  horizonDays: number;
+  hoursBeforeStart?: number;
+}): string {
+  if (args.horizonDays === 0 && args.game.startTime) {
+    const startMs = parseDateTimeWithGameDate(
+      args.game.startTime,
+      args.game.date,
+    );
+    if (startMs != null) {
+      const hoursBeforeStart = Math.max(
+        0,
+        Math.min(48, args.hoursBeforeStart ?? 1),
+      );
+      return new Date(startMs - hoursBeforeStart * 3_600_000).toISOString();
+    }
+  }
+
+  return `${args.simulationDate}T16:00:00.000Z`;
 }
 
 function coveragePct(covered: number, required: number): number | null {
@@ -1149,12 +1199,18 @@ function finalPregamePredictions(
 ): AccountabilityPredictionRow[] {
   const sorted = sortPredictions(predictions);
   if (!game?.startTime) return sorted;
+  const startMs = parseDateTimeWithGameDate(game.startTime, game.date);
+  if (startMs == null) return sorted;
   const beforeStart = sorted.filter(
-    (prediction) =>
-      (prediction.prediction_cutoff_at ?? prediction.computed_at) <=
-      game.startTime,
+    (prediction) => {
+      const predictionMs = parseDateTimeWithGameDate(
+        prediction.prediction_cutoff_at ?? prediction.computed_at,
+        game.date,
+      );
+      return predictionMs != null && predictionMs < startMs;
+    },
   );
-  return beforeStart.length > 0 ? beforeStart : sorted;
+  return beforeStart;
 }
 
 export function buildPredictionCandlestick(args: {
@@ -1753,9 +1809,13 @@ export function buildBacktestPromotionEvidence(args: {
     requiredMarketGames > 0 && marketEvaluatedGames >= requiredMarketGames;
   const marketSourceTrainingEligible =
     args.marketSourceReadiness?.trainingFeatureEligible ?? false;
+  const marketFeatureSuppressedBySourceReadiness =
+    args.candidate.modelAuditMetadata.marketFeatureSuppressedBySourceReadiness ===
+    true;
   const marketFeatureTrainingEligible =
-    !usesMarketFeatures ||
-    (marketBaselineCoverageComplete && marketSourceTrainingEligible);
+    usesMarketFeatures
+      ? marketBaselineCoverageComplete && marketSourceTrainingEligible
+      : !marketFeatureSuppressedBySourceReadiness;
   const segmentRegressions = countBacktestSegmentRegressions({
     baseline: args.baseline.phaseSummaries,
     candidate: args.candidate.phaseSummaries,
@@ -1788,6 +1848,8 @@ export function buildBacktestPromotionEvidence(args: {
     simpleBaselineFloor,
     usesMarketFeatures,
     marketFeatureTrainingEligible,
+    marketSourceTrainingEligible,
+    marketFeatureSuppressedBySourceReadiness,
     marketBaselineCoverage: {
       evaluatedGames: marketEvaluatedGames,
       requiredGames: requiredMarketGames,
@@ -1883,6 +1945,10 @@ export function buildAblationPromotionEvidenceModelVersionRows(args: {
         uses_market_features: evidence?.usesMarketFeatures ?? false,
         market_feature_training_eligible:
           evidence?.marketFeatureTrainingEligible ?? null,
+        market_source_training_eligible:
+          evidence?.marketSourceTrainingEligible ?? null,
+        market_feature_suppressed_by_source_readiness:
+          evidence?.marketFeatureSuppressedBySourceReadiness ?? false,
         market_baseline_coverage: evidence?.marketBaselineCoverage ?? null,
         market_source_readiness: compactEvidence?.marketSourceReadiness ?? null,
         run_source_readiness: compactRunSourceReadiness,
@@ -2640,6 +2706,55 @@ export function selectAccuracyLoopSourceReadinessGames(args: {
       ? left.id - right.id
       : left.date.localeCompare(right.date),
   );
+}
+
+export type AccuracyLoopExpectedMarketOddsGameWindow = {
+  seasonId: number;
+  gameType?: number;
+  trainStartDate?: string;
+  blindDate?: string;
+  replayEndDate?: string;
+  analysisEndDate?: string;
+  horizonDays?: number[];
+  maxSimulationDays?: number;
+  maxTrainingGames?: number;
+  maxReplayGames?: number;
+};
+
+export type AccuracyLoopExpectedMarketOddsGameIds = {
+  gameIds: number[];
+  gameCount: number;
+  windowStartDate: string | null;
+  windowEndDate: string | null;
+};
+
+export async function fetchAccuracyLoopExpectedMarketOddsGameIds(args: {
+  client: SupabaseClient<Database>;
+  window: AccuracyLoopExpectedMarketOddsGameWindow;
+}): Promise<AccuracyLoopExpectedMarketOddsGameIds> {
+  const { games } = await fetchCompletedSeasonGames({
+    client: args.client,
+    seasonId: args.window.seasonId,
+    gameType: args.window.gameType ?? 2,
+  });
+  const windowGames = selectAccuracyLoopSourceReadinessGames({
+    games,
+    trainStartDate: args.window.trainStartDate,
+    blindDate: args.window.blindDate,
+    analysisEndDate: args.window.analysisEndDate,
+    replayEndDate: args.window.replayEndDate,
+    horizonDays: args.window.horizonDays,
+    maxSimulationDays: args.window.maxSimulationDays,
+    maxTrainingGames: args.window.maxTrainingGames,
+    maxReplayGames: args.window.maxReplayGames,
+  });
+
+  return {
+    gameIds: windowGames.map((game) => game.id),
+    gameCount: windowGames.length,
+    windowStartDate: windowGames[0]?.date ?? null,
+    windowEndDate: windowGames[windowGames.length - 1]?.date ?? null,
+  };
 }
 
 export function selectWalkForwardBacktestGameWindows(args: {
@@ -3607,10 +3722,11 @@ export async function runWalkForwardBacktest(args: {
         const targetGames = replayGamesByDate.get(targetDate) ?? [];
         for (const game of targetGames) {
           const payload = await getPayload(game.id, simulationDate);
-          const predictionCutoffAt =
-            horizonDaysValue === 0 && game.startTime
-              ? game.startTime
-              : `${simulationDate}T16:00:00.000Z`;
+          const predictionCutoffAt = syntheticBacktestPredictionCutoffAt({
+            game,
+            simulationDate,
+            horizonDays: horizonDaysValue,
+          });
           const modelSelection = modelSelectionForPayload(modelState, payload);
           phaseModelSourceByGameId.set(game.id, modelSelection.source);
           const prediction = predictGameWithBacktestModel({
@@ -3676,7 +3792,11 @@ export async function runWalkForwardBacktest(args: {
       const outcome = outcomesByGameId.get(game.id);
       if (!outcome) continue;
       const payload = await getPayload(game.id, game.date);
-      const predictionCutoffAt = game.startTime || `${game.date}T12:00:00.000Z`;
+      const predictionCutoffAt = syntheticBacktestPredictionCutoffAt({
+        game,
+        simulationDate: game.date,
+        horizonDays: 0,
+      });
       const modelSelection = modelSelectionForPayload(modelState, payload);
       phaseModelSourceByGameId.set(game.id, modelSelection.source);
       const prediction = predictGameWithBacktestModel({

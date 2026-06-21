@@ -83,7 +83,13 @@ describe("game prediction evaluation", () => {
   it("calculates segment metrics and calibration bins", () => {
     const evaluated = attachOutcomesToPredictions(
       [
-        createPrediction({ prediction_id: "p1", game_id: 1, home_win_probability: 0.8, confidence_label: "high" }),
+        createPrediction({
+          prediction_id: "p1",
+          game_id: 1,
+          home_win_probability: 0.8,
+          confidence_label: "high",
+          metadata: { market_edge_bucket: "no_market" },
+        }),
         createPrediction({
           prediction_id: "p2",
           game_id: 2,
@@ -119,6 +125,13 @@ describe("game prediction evaluation", () => {
     expect(segments.some((segment) => segment.segmentKey === "season_phase")).toBe(true);
     expect(segments.some((segment) => segment.segmentKey === "predicted_side")).toBe(true);
     expect(segments.some((segment) => segment.segmentKey === "goalie_confirmation_state")).toBe(true);
+    expect(
+      segments.some(
+        (segment) =>
+          segment.segmentKey === "market_edge_bucket" &&
+          segment.segmentValue === "no_market",
+      ),
+    ).toBe(true);
     expect(segments.some((segment) => segment.segmentKey === "game_type")).toBe(true);
   });
 

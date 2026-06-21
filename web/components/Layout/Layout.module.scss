@@ -6,13 +6,29 @@
   min-height: 100vh;
 
   .footer {
-    margin-top: auto;
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: vars.$z-desktop-sticky;
     height: 65px;
     background: rgba(0, 0, 0, 0.3);
     display: flex;
     justify-content: center;
     align-items: center;
-    position: relative;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(100%);
+    transition:
+      opacity vars.$transition-duration vars.$transition-easing,
+      transform vars.$transition-duration vars.$transition-easing;
+
+    &.footerVisible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
     &::before {
       content: "";
       position: absolute;

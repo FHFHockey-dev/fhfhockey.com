@@ -69,6 +69,17 @@ const goaliePayload: GoalieMatrixResponse = {
         deploymentBucket: "g1_workhorse",
         deploymentLabel: "G1 Workhorse",
         deploymentSource: "goalie_start_projections.season_start_pct",
+        rawStartShare: 0.83,
+        adjustedStartShare: 1,
+        coreStartShare: 1,
+        coreGoalieIds: [31, 32],
+        excludedTeamStarts: 2,
+        roleConfidence: "high",
+        roleNotes: [
+          "Raw window share uses 10 starts out of 12 team starts.",
+          "Adjusted core share uses inferred top-two goalie starts only (10 starts).",
+          "Projected season start share is available and remains the primary role source.",
+        ],
         windowStartShare: 0.83,
         startShareLast10: 0.7,
         seasonStartShare: 0.65,
@@ -94,6 +105,24 @@ const goaliePayload: GoalieMatrixResponse = {
           formattedValue: "0.00",
           rank: 18,
           percentile: 50,
+        }),
+        xga_per_shot_against: goalieCell("xga_per_shot_against", {
+          rawValue: 0.092,
+          formattedValue: "0.092",
+          rank: 12,
+          percentile: 70,
+        }),
+        goalie_value_signal: goalieCell("goalie_value_signal", {
+          rawValue: 1.4,
+          formattedValue: "1.4",
+          rank: 8,
+          percentile: 82,
+        }),
+        high_danger_save_percentage: goalieCell("high_danger_save_percentage", {
+          rawValue: 0.818,
+          formattedValue: "81.8%",
+          rank: 9,
+          percentile: 78,
         }),
         quality_start_pct: goalieCell("quality_start_pct"),
         really_bad_start_rate: goalieCell("really_bad_start_rate", {
@@ -141,8 +170,40 @@ const goaliePayload: GoalieMatrixResponse = {
         lowerIsBetter: false,
         source: "goalie_stats_unified",
       },
+      {
+        metricKey: "xga_per_shot_against",
+        label: "xGA/Shot",
+        description: "Shot-quality workload",
+        lowerIsBetter: false,
+        source:
+          "goalie_stats_unified.nst_5v5_counts_xg_against / nst_5v5_counts_shots_against",
+      },
+      {
+        metricKey: "high_danger_save_percentage",
+        label: "HD SV%",
+        description: "High-danger save percentage",
+        lowerIsBetter: false,
+        source: "goalie_stats_unified.nst_5v5_counts_hd_sv_percentage",
+      },
     ],
     sourceWarnings: [],
+    sourcePendingMetricContracts: [
+      {
+        metricKey: "relative_save_percentage",
+        label: "Relative SV%",
+        status: "source_pending",
+        reason:
+          "Team-without-goalie save-percentage baselines are not published.",
+        requiredFields: ["team without goalie save percentage"],
+      },
+      {
+        metricKey: "under_pressure_profile",
+        label: "Under Pressure",
+        status: "source_pending",
+        reason: "Pressure-quadrant source rows are not published.",
+        requiredFields: ["pressure labels", "save outcomes"],
+      },
+    ],
   },
 };
 
@@ -202,6 +263,14 @@ const teamPayload: TeamMatrixResponse = {
         saveLuck: -1,
         netGoalsAboveExpected: 1,
       },
+      context: {
+        games: 20,
+        latestDate: "2026-06-13",
+        oneGoalGameRate: 45,
+        homeRoadPointPctGap: 12.5,
+        powerPlayOpportunityRate: 3.4,
+        penaltiesTakenPer60: 4.2,
+      },
       sort: {
         metricKey: "off_rating",
         rank: 4,
@@ -231,6 +300,31 @@ const teamPayload: TeamMatrixResponse = {
         net_luck: teamCell("net_luck"),
         pace_rating: teamCell("pace_rating"),
         special_rating: teamCell("special_rating"),
+        one_goal_game_rate: teamCell("one_goal_game_rate", {
+          rawValue: 45,
+          formattedValue: "45.0%",
+          rank: 10,
+          percentile: 70,
+        }),
+        home_road_point_pct_gap: teamCell("home_road_point_pct_gap", {
+          rawValue: 12.5,
+          formattedValue: "12.50",
+          rank: 7,
+          percentile: 78,
+        }),
+        pp_opportunity_rate: teamCell("pp_opportunity_rate", {
+          rawValue: 3.4,
+          formattedValue: "3.40",
+          rank: 5,
+          percentile: 84,
+        }),
+        penalties_taken_per_60: teamCell("penalties_taken_per_60", {
+          rawValue: 4.2,
+          formattedValue: "4.20",
+          rank: 15,
+          percentile: 55,
+          lowerIsBetter: true,
+        }),
       },
       warnings: ["raw score-and-venue adjustment unavailable"],
     },
@@ -245,9 +339,35 @@ const teamPayload: TeamMatrixResponse = {
     snapshotDate: "2026-06-13",
     latestAvailableSnapshotDate: "2026-06-13",
     styleSnapshotDate: "2026-06-13",
-    sourceTables: ["team_power_ratings_daily"],
+    sourceTables: ["team_power_ratings_daily", "wgo_team_stats"],
     sourceWarnings: [],
     teamStyleContract: TEAM_STYLE_SOURCE_CONTRACT,
+    sourcePendingMetricContracts: [
+      {
+        metricKey: "forward_top_load_index",
+        label: "Forward Top Load",
+        status: "source_pending",
+        reason:
+          "Verified forward-line TOI share by team/game is not published in the current rankings source contract.",
+        requiredFields: ["line TOI seconds", "team forward TOI seconds"],
+      },
+      {
+        metricKey: "defense_pair_top_load_index",
+        label: "Defense Pair Top Load",
+        status: "source_pending",
+        reason:
+          "Verified defense-pair TOI share by team/game is not published in the current rankings source contract.",
+        requiredFields: ["pair TOI seconds", "team defense TOI seconds"],
+      },
+      {
+        metricKey: "pp1_pp2_usage_share",
+        label: "PP1/PP2 Usage Share",
+        status: "source_pending",
+        reason:
+          "Power-play unit membership exists as contextual labels, but verified PP unit TOI share is not published.",
+        requiredFields: ["unit PP TOI seconds", "team PP TOI seconds"],
+      },
+    ],
     metricColumns: [
       {
         metricKey: "off_rating",
@@ -270,6 +390,34 @@ const teamPayload: TeamMatrixResponse = {
         lowerIsBetter: false,
         source: "teamStyleMethodology",
       },
+      {
+        metricKey: "one_goal_game_rate",
+        label: "1-Goal%",
+        description: "One-goal game rate",
+        lowerIsBetter: false,
+        source: "wgo_team_stats",
+      },
+      {
+        metricKey: "home_road_point_pct_gap",
+        label: "Home Edge",
+        description: "Home point gap",
+        lowerIsBetter: false,
+        source: "wgo_team_stats",
+      },
+      {
+        metricKey: "pp_opportunity_rate",
+        label: "PP Opp/G",
+        description: "Power-play opportunities",
+        lowerIsBetter: false,
+        source: "wgo_team_stats",
+      },
+      {
+        metricKey: "penalties_taken_per_60",
+        label: "Pen/60",
+        description: "Penalties taken",
+        lowerIsBetter: true,
+        source: "wgo_team_stats",
+      },
     ],
   },
 };
@@ -291,10 +439,21 @@ describe("GoalieMatrixTable and TeamMatrixTable", () => {
     expect(screen.getByText("Sort Rank")).toBeTruthy();
     expect(screen.getByText("Test Goalie")).toBeTruthy();
     expect(screen.getByText("G1 Workhorse")).toBeTruthy();
+    expect(screen.getByText("83.0%")).toBeTruthy();
+    expect(screen.getByText("100.0%")).toBeTruthy();
+    expect(screen.getByLabelText("G1 Workhorse role, high confidence")).toBeTruthy();
     expect(screen.getByText("88%")).toBeTruthy();
+    expect(screen.getByText("xGA/Shot")).toBeTruthy();
+    expect(screen.getByText("0.092")).toBeTruthy();
+    expect(screen.getByText("HD SV%")).toBeTruthy();
+    expect(screen.getByText("81.8%")).toBeTruthy();
+    expect(
+      screen.getByText(/Source-pending goalie contracts: Relative SV%, Under Pressure/),
+    ).toBeTruthy();
     expect(screen.getAllByText("#3").length).toBeGreaterThan(0);
     expect(screen.getByText(".925")).toBeTruthy();
-    expect(screen.getByText("Source pending")).toBeTruthy();
+    expect(screen.getAllByLabelText("Source pending").length).toBeGreaterThan(0);
+    expect(screen.getByLabelText("Goalie source state legend")).toBeTruthy();
     expect(screen.getAllByText("N/A").length).toBeGreaterThan(0);
     expect(screen.getByLabelText(/SV%.*Value \.925.*Rank 3.*Percentile 88\.4%/)).toBeTruthy();
   });
@@ -319,7 +478,7 @@ describe("GoalieMatrixTable and TeamMatrixTable", () => {
       />,
     );
 
-    expect(screen.getAllByText("Stale source").length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText("Stale source").length).toBeGreaterThan(0);
     expect(
       screen.getAllByLabelText(
         /Snapshot is older than latest available goalie matrix snapshot/,
@@ -342,14 +501,28 @@ describe("GoalieMatrixTable and TeamMatrixTable", () => {
 
     expect(screen.getByText("Sort Rank")).toBeTruthy();
     expect(screen.getByText("High Event")).toBeTruthy();
-    expect(screen.getByText("84%")).toBeTruthy();
+    expect(screen.getAllByText("84%").length).toBeGreaterThan(0);
     expect(screen.getAllByText("#4").length).toBeGreaterThan(0);
     expect(screen.getByText("2.85")).toBeTruthy();
     expect(screen.getByText("80%")).toBeTruthy();
-    expect(screen.getByText("#5")).toBeTruthy();
+    expect(screen.getAllByText("#5").length).toBeGreaterThan(0);
     expect(screen.getByText("2.20")).toBeTruthy();
-    expect(screen.getByText("Source pending")).toBeTruthy();
-    expect(screen.getAllByText("Raw context").length).toBeGreaterThan(0);
+    expect(screen.getByText("1-Goal%")).toBeTruthy();
+    expect(screen.getByText("45.0%")).toBeTruthy();
+    expect(screen.getByText("Home Edge")).toBeTruthy();
+    expect(screen.getByText("12.50")).toBeTruthy();
+    expect(screen.getByText("PP Opp/G")).toBeTruthy();
+    expect(screen.getByText("3.40")).toBeTruthy();
+    expect(screen.getByText("Pen/60")).toBeTruthy();
+    expect(screen.getByText("4.20")).toBeTruthy();
+    expect(
+      screen.getByText(
+        /Source-pending team contracts: Forward Top Load, Defense Pair Top Load, PP1\/PP2 Usage Share/,
+      ),
+    ).toBeTruthy();
+    expect(screen.getAllByLabelText("Source pending").length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText("Raw context").length).toBeGreaterThan(0);
+    expect(screen.getByLabelText("Team source state legend")).toBeTruthy();
     expect(screen.getByLabelText(/xGA\/60.*Value 2\.20.*Rank 5.*Lower raw values are better/)).toBeTruthy();
   });
 
@@ -387,7 +560,7 @@ describe("GoalieMatrixTable and TeamMatrixTable", () => {
       />,
     );
 
-    expect(screen.getByText("Stale source")).toBeTruthy();
+    expect(screen.getByLabelText("Stale source")).toBeTruthy();
     expect(
       screen.getByLabelText(
         /Team style source 2026-06-11 differs from team power snapshot 2026-06-13/,

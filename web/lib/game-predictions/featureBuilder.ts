@@ -565,6 +565,23 @@ function parseDateOnly(value: string): number {
   return Date.parse(`${value}T00:00:00.000Z`);
 }
 
+function parseDateTimeWithGameDate(
+  value: string | null | undefined,
+  gameDate: string | null | undefined,
+): number | null {
+  if (!value) return null;
+  const direct = Date.parse(value);
+  if (Number.isFinite(direct)) return direct;
+  if (!gameDate || !/^\d{4}-\d{2}-\d{2}$/.test(gameDate)) return null;
+  const normalized = value.trim();
+  if (!normalized) return null;
+  const hasTimeZone = /(?:z|[+-]\d{2}:?\d{2})$/i.test(normalized);
+  const parsed = Date.parse(
+    `${gameDate}T${normalized}${hasTimeZone ? "" : "Z"}`,
+  );
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function differenceInDays(laterDate: string, earlierDate: string): number {
   return Math.floor(
     (parseDateOnly(laterDate) - parseDateOnly(earlierDate)) / 86_400_000,
@@ -1457,20 +1474,30 @@ function buildMarketOddsFeatures(args: {
 }): MarketOddsFeatures | null {
   const cutoff = args.predictionCutoffAt ?? args.game.startTime;
   if (!cutoff) return null;
+  const cutoffMs = parseDateTimeWithGameDate(cutoff, args.game.date);
+  if (cutoffMs == null) return null;
   const eligibleRows = args.rows
-    .filter(
-      (row) =>
-        row.game_id === args.game.id &&
-        row.home_team_id === args.game.homeTeamId &&
-        row.away_team_id === args.game.awayTeamId &&
-        row.captured_at < cutoff &&
-        (!args.game.startTime || row.captured_at < args.game.startTime),
-    )
+    .filter((row) => {
+      if (
+        row.game_id !== args.game.id ||
+        row.home_team_id !== args.game.homeTeamId ||
+        row.away_team_id !== args.game.awayTeamId
+      ) {
+        return false;
+      }
+      const capturedAtMs = Date.parse(row.captured_at);
+      if (!Number.isFinite(capturedAtMs) || capturedAtMs >= cutoffMs) {
+        return false;
+      }
+      const eventStartMs =
+        parseDateTimeWithGameDate(row.event_start_at, row.game_date) ??
+        parseDateTimeWithGameDate(args.game.startTime, args.game.date);
+      return eventStartMs == null || capturedAtMs < eventStartMs;
+    })
     .sort((a, b) => b.captured_at.localeCompare(a.captured_at));
   const row = eligibleRows[0] ?? null;
   if (!row) return null;
   const capturedAtMs = Date.parse(row.captured_at);
-  const cutoffMs = Date.parse(cutoff);
   const provenance = isRecord(row.provenance) ? row.provenance : {};
   const metadata = isRecord(row.metadata) ? row.metadata : {};
   const sourceName =

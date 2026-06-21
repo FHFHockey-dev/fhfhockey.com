@@ -602,6 +602,55 @@ describe("game prediction feature builder", () => {
     );
   });
 
+  it("does not use market odds snapshots captured after a time-only game start", () => {
+    const payload = buildGamePredictionFeatureSnapshotPayload(
+      createInputs({
+        game: {
+          id: 2025020001,
+          date: "2026-01-10",
+          startTime: "19:00:00",
+          seasonId: 20252026,
+          homeTeamId: 1,
+          awayTeamId: 2,
+          type: 2,
+        },
+        predictionCutoffAt: "2026-01-10T21:00:00.000Z",
+        marketOddsRows: [
+          {
+            odds_snapshot_id: "44444444-4444-4444-4444-444444444444",
+            game_id: 2025020001,
+            provider: "DraftKings",
+            captured_at: "2026-01-10T20:00:00.000Z",
+            game_date: "2026-01-10",
+            event_start_at: null,
+            home_team_id: 1,
+            away_team_id: 2,
+            home_moneyline: -120,
+            away_moneyline: 100,
+            home_market_no_vig_probability: 0.545455,
+            away_market_no_vig_probability: 0.454545,
+            market_overround: 0.045455,
+            home_spread_line: -1.5,
+            home_spread_odds: 180,
+            away_spread_line: 1.5,
+            away_spread_odds: -210,
+            total_line: 5.5,
+            over_odds: -110,
+            under_odds: -110,
+            source_url: "https://site.api.espn.com/test-time-only",
+            provenance: {
+              import_source_name: "historical_market_odds_import",
+            },
+            metadata: {},
+          },
+        ],
+      }),
+    );
+
+    expect(payload.market).toBeNull();
+    expect(payload.fallbackFlags.market_odds_unavailable).toBe(true);
+  });
+
   it("preserves canonical live ESPN market odds source names in feature snapshots", () => {
     const payload = buildGamePredictionFeatureSnapshotPayload(
       createInputs({

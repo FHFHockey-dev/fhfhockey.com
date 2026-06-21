@@ -5,6 +5,7 @@ import {
   DEFENSE_RATING_CONTRACT,
   MCM_COMPONENTS,
   MCM_SCORE_CONTRACT,
+  MCM_SOURCE_PENDING_COMPONENTS,
   OFFENSE_RATING_CONTRACT,
   RESULTS_LUCK_BASELINE_PERSISTENCE_CONTRACT,
   RESULTS_LUCK_INDEX_CONTRACT,
@@ -38,11 +39,21 @@ describe("skaterCompositeMethodology", () => {
       "hits_per_60",
       "blocks_per_60",
     ]);
-    expect(MCM_COMPONENTS.scoring).toContain("pp_points_per_60");
+    expect(MCM_COMPONENTS.scoring).toEqual([
+      "goals_per_60",
+      "primary_assists_per_60",
+      "points_per_60",
+    ]);
+    expect(MCM_COMPONENTS.scoring).not.toContain("pp_points_per_60");
+    expect(MCM_SOURCE_PENDING_COMPONENTS[0]).toMatchObject({
+      metricKey: "pp_points_per_60",
+      originalRole: "power-play scoring component",
+    });
     expect(MCM_SCORE_CONTRACT.formula).toContain("average(top_2");
+    expect(MCM_SCORE_CONTRACT.formula).toContain("live_scoring_percentiles");
     expect(MCM_SCORE_CONTRACT.requiredOutputFields).toContain("visible_thresholds");
     expect(MCM_SCORE_CONTRACT.caveats.join(" ")).toContain(
-      "pp_points_per_60",
+      "Power-play points are explicitly excluded",
     );
 
     const beastPlus = BEAST_TIER_GATES[0];
@@ -61,6 +72,8 @@ describe("skaterCompositeMethodology", () => {
       (tag) => tag.key === "play_driver",
     );
     expect(playDriver?.components).toContain("on_ice_xgf_percentage");
+    expect(playDriver?.label).toBe("Play Driver Proxy");
+    expect(playDriver?.status).toBe("current_proxy");
     expect(playDriver?.rule).toMatch(/percentile/);
 
     expect(RESULTS_LUCK_INDEX_CONTRACT.centeredAt).toBe(100);

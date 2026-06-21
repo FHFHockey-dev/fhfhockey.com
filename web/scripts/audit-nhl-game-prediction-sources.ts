@@ -702,6 +702,25 @@ async function queryManagementApi<T>(query: string): Promise<T[]> {
   return JSON.parse(body) as T[];
 }
 
+async function findMissingManagementRelations(
+  relationNames: string[],
+): Promise<string[]> {
+  if (relationNames.length === 0) return [];
+  const rows = await queryManagementApi<{
+    relation_name: string;
+    relation_exists: boolean;
+  }>(`
+    SELECT
+      relation_name,
+      to_regclass('public.' || relation_name) IS NOT NULL AS relation_exists
+    FROM unnest(ARRAY[${relationNames.map(sqlString).join(",")}]) AS relation_name
+  `);
+
+  return rows
+    .filter((row) => row.relation_exists !== true)
+    .map((row) => row.relation_name);
+}
+
 async function buildManagementInventory(): Promise<{
   rows: SourceInventoryRow[];
   identityChecks: IdentityCheck[];
@@ -3032,6 +3051,7 @@ async function buildManagementAsOfLeakageChecks(): Promise<AsOfLeakageCheck[]> {
   const checkDefinitions: Array<{
     name: string;
     description: string;
+    requiredRelations?: string[];
     blockerPredicate?: (rows: Record<string, unknown>[]) => boolean;
     warnPredicate?: (rows: Record<string, unknown>[]) => boolean;
     query: string;
@@ -3172,6 +3192,7 @@ async function buildManagementAsOfLeakageChecks(): Promise<AsOfLeakageCheck[]> {
       name: "market_odds_snapshot_temporal_safety_check",
       description:
         "Market odds can be candidate model features only when trusted snapshot rows were captured before the prediction cutoff and puck drop; late/current odds remain baseline/comparison evidence only.",
+      requiredRelations: ["game_prediction_market_odds_snapshots"],
       warnPredicate: (rows) => {
         const row = rows[0] ?? {};
         const evaluationGames = Number(row.evaluation_games ?? 0);
@@ -3200,6 +3221,7 @@ async function buildManagementAsOfLeakageChecks(): Promise<AsOfLeakageCheck[]> {
         odds AS (
           SELECT
             mos.*,
+            COALESCE(mos.event_start_at, g."startTime") AS market_event_start_at,
             COALESCE(
               mos.provenance ->> 'import_source_name',
               mos.metadata ->> 'import_source_name',
@@ -3213,25 +3235,36 @@ async function buildManagementAsOfLeakageChecks(): Promise<AsOfLeakageCheck[]> {
           (SELECT count(*) FROM evaluation_games) AS evaluation_games,
           count(DISTINCT odds.game_id) AS snapshot_games,
           count(DISTINCT odds.game_id) FILTER (
-            WHERE odds.captured_at < g.prediction_cutoff_at
+            WHERE odds.captured_at < LEAST(
+              g.prediction_cutoff_at,
+              odds.market_event_start_at
+            )
           ) AS pre_cutoff_games,
           count(DISTINCT odds.game_id) FILTER (
-            WHERE odds.captured_at < g.prediction_cutoff_at
+            WHERE odds.captured_at < LEAST(
+              g.prediction_cutoff_at,
+              odds.market_event_start_at
+            )
               AND odds.trusted_source_name IN (
                 'espn_site_api_market_odds',
                 'historical_market_odds_import'
               )
           ) AS trusted_pre_cutoff_games,
           count(*) FILTER (
-            WHERE odds.captured_at >= g."startTime"
+            WHERE odds.captured_at >= odds.market_event_start_at
           ) AS post_start_snapshot_rows,
           count(*) FILTER (
-            WHERE odds.trusted_source_name IS NULL
-              OR odds.trusted_source_name NOT IN (
-                'espn_site_api_market_odds',
-                'historical_market_odds_import'
+            WHERE odds.game_id IS NOT NULL
+              AND (
+                odds.trusted_source_name IS NULL
+                OR odds.trusted_source_name NOT IN (
+                  'espn_site_api_market_odds',
+                  'historical_market_odds_import'
+                )
               )
           ) AS untrusted_source_rows,
+          min(odds.market_event_start_at) AS min_market_event_start_at,
+          max(odds.market_event_start_at) AS max_market_event_start_at,
           min(odds.captured_at) AS min_captured_at,
           max(odds.captured_at) AS max_captured_at
         FROM evaluation_games g
@@ -3326,6 +3359,26 @@ async function buildManagementAsOfLeakageChecks(): Promise<AsOfLeakageCheck[]> {
   const checks: AsOfLeakageCheck[] = [];
 
   for (const definition of checkDefinitions) {
+    if (definition.requiredRelations?.length) {
+      const missingRelations = await findMissingManagementRelations(
+        definition.requiredRelations,
+      );
+      if (missingRelations.length > 0) {
+        checks.push({
+          name: definition.name,
+          description: definition.description,
+          rows: missingRelations.map((relationName) => ({
+            relation_name: relationName,
+            relation_exists: false,
+            audit_blocker:
+              "Required source relation is missing; run/apply the market odds snapshot migration before using odds as candidate model features.",
+          })),
+          severity: "blocker",
+        });
+        continue;
+      }
+    }
+
     const rows = await queryManagementApi<Record<string, unknown>>(definition.query);
     const isBlocker = definition.blockerPredicate?.(rows) ?? false;
     const isWarning = !isBlocker && (definition.warnPredicate?.(rows) ?? false);

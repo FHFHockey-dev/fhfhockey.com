@@ -8,6 +8,7 @@ import {
 import {
   CONTEXTUAL_RANKINGS_METHODOLOGY_UPDATED_AT,
 } from "./rankingMetadata";
+import { buildEntityMetricRankingSurfaces } from "./entityMetricRankingReader";
 import {
   buildContextualRankingRows,
   type ContextualRankingCandidate,
@@ -152,7 +153,7 @@ function explanationItems(row: ContextualRankingRow) {
   ];
   if (row.percentile != null) {
     items.push(
-      `Peer percentile ${row.percentile.toFixed(1)}%; higher is better after metric directionality is applied.`,
+      `Better than ${row.percentile.toFixed(1)}% of other qualified peers after metric directionality is applied.`,
     );
   }
   if (!row.minimumSampleMet) {
@@ -726,6 +727,40 @@ function unavailableMetricResponse(args: {
   };
 }
 
+function withMetricExplorerSourceMetadata(args: {
+  response: ContextualRankingsResponse;
+  rankingSource: NonNullable<ContextualRankingsResponse["meta"]["rankingSource"]>;
+  fallbackReason: string | null;
+}): ContextualRankingsResponse {
+  const sourceTable =
+    args.rankingSource === "entity_metric_rankings"
+      ? "entity_metric_rankings"
+      : "rolling_player_game_metrics";
+  return {
+    ...args.response,
+    meta: {
+      ...args.response.meta,
+      sourceTable,
+      sourceTables: [sourceTable],
+      rankingSource: args.rankingSource,
+      rankingSourcePreference: "entity_metric_rankings",
+      rankingSourceFallbackReason: args.fallbackReason,
+      methodologyVersion: args.response.meta.metric.methodologyVersion,
+      methodologyUpdatedAt: args.response.meta.metric.methodologyUpdatedAt,
+      sourceQualityFlags: [...args.response.meta.metric.sourceQualityFlags],
+      sourceWarnings: args.fallbackReason ? [args.fallbackReason] : [],
+    },
+  };
+}
+
+function snapshotSurfaceIsUsable(
+  surface: ContextualRankingsResponse | undefined,
+) {
+  return Boolean(
+    surface && !surface.meta.unavailable && surface.rankings.length > 0,
+  );
+}
+
 function metricResponseFromSnapshot(args: {
   request: ContextualRankingsRequest;
   definition: ContextualRankingMetricDefinition;
@@ -966,4 +1001,32 @@ export async function buildContextualRankingsSurface(
       generatedAt: new Date().toISOString(),
     })
   );
+}
+
+export async function buildSnapshotFirstContextualRankingsSurface(
+  request: ContextualRankingsRequest,
+): Promise<ContextualRankingsResponse> {
+  const snapshotSurfaces = await buildEntityMetricRankingSurfaces(request, [
+    request.metric,
+  ]);
+  const snapshotSurface = snapshotSurfaces.get(request.metric);
+
+  if (snapshotSurfaceIsUsable(snapshotSurface)) {
+    return withMetricExplorerSourceMetadata({
+      response: snapshotSurface!,
+      rankingSource: "entity_metric_rankings",
+      fallbackReason: null,
+    });
+  }
+
+  const fallbackReason =
+    snapshotSurface?.meta.message ??
+    "entity_metric_rankings did not contain rows for the requested Metric Explorer context.";
+  const fallbackSurface = await buildContextualRankingsSurface(request);
+
+  return withMetricExplorerSourceMetadata({
+    response: fallbackSurface,
+    rankingSource: "fallback_rolling_player_game_metrics",
+    fallbackReason,
+  });
 }

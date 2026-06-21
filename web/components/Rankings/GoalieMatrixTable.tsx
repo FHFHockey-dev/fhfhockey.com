@@ -48,28 +48,32 @@ function StateBody({ message, colSpan }: { message: string; colSpan: number }) {
   );
 }
 
+function pctValue(value: number | null | undefined) {
+  return value == null ? "N/A" : `${(value * 100).toFixed(1)}%`;
+}
+
 function goalieMetricState(
   cell: GoalieMatrixResponse["rows"][number]["metrics"][GoalieMatrixMetricKey],
   row: GoalieMatrixResponse["rows"][number],
   staleSource: boolean,
 ) {
   if (cell.qualifiedPeerCount === 0) {
-    return { label: "No sample", className: styles.metricStateUnavailable };
+    return { label: "No sample", marker: "?", className: styles.metricStateUnavailable };
   }
   if (cell.rawValue == null || cell.percentile == null) {
-    return { label: "Source pending", className: styles.metricStateUnavailable };
+    return { label: "Source pending", marker: "?", className: styles.metricStateUnavailable };
   }
   if (staleSource) {
-    return { label: "Stale source", className: styles.metricStateStale };
+    return { label: "Stale source", marker: "~", className: styles.metricStateStale };
   }
   if (!row.sample.minimumSampleMet || row.sample.confidence === "low") {
-    return { label: "Low sample", className: styles.metricStateLowSample };
+    return { label: "Low sample", marker: "L", className: styles.metricStateLowSample };
   }
   if (row.warnings.length > 0) {
-    return { label: "Source caveat", className: styles.metricStateCaveat };
+    return { label: "Source caveat", marker: "!", className: styles.metricStateCaveat };
   }
   if (cell.rawValue === 0) {
-    return { label: "True zero", className: styles.metricStateZero };
+    return { label: "True zero", marker: "0", className: styles.metricStateZero };
   }
   return null;
 }
@@ -141,8 +145,12 @@ function GoalieMetricCell({
           </span>
         </div>
         {state ? (
-          <span className={`${styles.metricStateChip} ${state.className}`}>
-            {state.label}
+          <span
+            className={`${styles.metricStateChip} ${state.className}`}
+            title={state.label}
+            aria-label={state.label}
+          >
+            {state.marker}
           </span>
         ) : null}
       </div>
@@ -162,7 +170,7 @@ export default function GoalieMatrixTable({
   displayMode = "both",
 }: GoalieMatrixTableProps) {
   const metricColumnCount = payload?.meta.metricColumns.length ?? 0;
-  const colSpan = 8 + metricColumnCount;
+  const colSpan = 10 + metricColumnCount;
   const staleMatrixSnapshot =
     payload?.meta.snapshotDate != null &&
     payload.meta.latestAvailableSnapshotDate != null &&
@@ -180,6 +188,8 @@ export default function GoalieMatrixTable({
               <th>Role</th>
               <th>GP</th>
               <th>Starts</th>
+              <th>Raw Start%</th>
+              <th>Adj Start%</th>
               <th>Shots</th>
               <th>TOI</th>
               {payload?.meta.metricColumns.map((column) => (
@@ -240,14 +250,23 @@ export default function GoalieMatrixTable({
                       <strong>{row.entity.name ?? `Goalie ${row.entity.id}`}</strong>
                       <span>
                         {row.sample.confidence} sample
+                        {" · "}
+                        {row.role.roleConfidence} role
                         {row.role.confirmedStatus ? " · confirmed starter" : ""}
                       </span>
                     </div>
                   </td>
                   <td>{row.team.abbreviation ?? "-"}</td>
-                  <td>{row.role.deploymentLabel ?? "Unclassified"}</td>
+                  <td
+                    title={row.role.roleNotes.join(" | ")}
+                    aria-label={`${row.role.deploymentLabel ?? "Unclassified"} role, ${row.role.roleConfidence} confidence`}
+                  >
+                    {row.role.deploymentLabel ?? "Unclassified"}
+                  </td>
                   <td>{row.sample.gamesPlayed}</td>
                   <td>{row.sample.gamesStarted}</td>
+                  <td>{pctValue(row.role.rawStartShare)}</td>
+                  <td>{pctValue(row.role.adjustedStartShare)}</td>
                   <td>{row.sample.shotsAgainst}</td>
                   <td>{formatToiClock(row.sample.toiSeconds)}</td>
                   {payload.meta.metricColumns.map((column) => {
@@ -271,10 +290,16 @@ export default function GoalieMatrixTable({
       </div>
       <div className={styles.inlineNotice}>
         Goalie roles use latest projected season start share when available,
-        with selected-window team start share as a fallback. Emergency call-up
-        denominator adjustment remains Source Pending.
+        with inferred top-two/core selected-window start share and raw team
+        start share as fallbacks. Adjusted workload context is labeled with
+        confidence and should not be treated as confirmed injury status.
         {payload?.meta.sourceWarnings.length
           ? ` Source caveats: ${payload.meta.sourceWarnings.join(", ")}.`
+          : ""}
+        {payload?.meta.sourcePendingMetricContracts.length
+          ? ` Source-pending goalie contracts: ${payload.meta.sourcePendingMetricContracts
+              .map((contract) => contract.label)
+              .join(", ")}.`
           : ""}
       </div>
       {payload ? (
@@ -282,6 +307,13 @@ export default function GoalieMatrixTable({
           <span>
             Showing {payload.meta.rowCount} of {payload.meta.totalRankedRows} goalies
           </span>
+          <div className={styles.matrixLegend} aria-label="Goalie source state legend">
+            <span className={styles.legendPill}>? Source pending/no sample</span>
+            <span className={styles.legendPill}>~ Stale source</span>
+            <span className={styles.legendPill}>! Source caveat</span>
+            <span className={styles.legendPill}>L Low sample</span>
+            <span className={styles.legendPill}>0 True zero</span>
+          </div>
           <div>
             <button
               type="button"

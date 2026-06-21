@@ -1,6 +1,6 @@
 import {
   buildPlayerMatrixSurface,
-  parsePlayerMatrixRequest,
+  parsePlayerMatrixRequestWithResolvedTeam,
 } from "lib/rankings/playerMatrix";
 import { ContextualRankingsQueryError } from "lib/rankings/rankingTypes";
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -18,7 +18,7 @@ export default async function handler(
   }
 
   try {
-    const request = parsePlayerMatrixRequest(req.query);
+    const request = await parsePlayerMatrixRequestWithResolvedTeam(req.query);
     const payload = await buildPlayerMatrixSurface(request);
     return res.status(200).json(payload);
   } catch (error) {

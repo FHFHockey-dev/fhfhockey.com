@@ -1,18 +1,24 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, Json } from "lib/supabase/database-generated.types";
+import {
+  buildMarketOddsSourceReadiness,
+  compactMarketOddsSourceReadinessForMetadata,
+  type CompactAccuracyLoopMarketOddsSourceReadiness,
+  type MarketOddsSourceAuditRow,
+  type SourceProvenanceAuditRow,
+} from "./accountability";
 import { getGamePredictionFeatureSources } from "./featureSources";
-import { buildPredictionHealthChecks, type PredictionHealthCheck } from "./workflow";
+import {
+  REQUIRED_PROMOTION_MONITORED_SEGMENT_KEYS,
+  buildPredictionHealthChecks,
+  type PredictionHealthCheck,
+} from "./workflow";
 
 type Tables<T extends keyof Database["public"]["Tables"]> =
   Database["public"]["Tables"][T]["Row"];
 
-const MONITORED_SEGMENT_KEYS = [
-  "season_phase",
-  "goalie_confirmation_state",
-  "has_stale_source",
-  "market_edge_bucket",
-] as const;
+const MONITORED_SEGMENT_KEYS = REQUIRED_PROMOTION_MONITORED_SEGMENT_KEYS;
 
 type MonitoredSegmentKey = (typeof MONITORED_SEGMENT_KEYS)[number];
 
@@ -40,6 +46,17 @@ export type GamePredictionSegmentHealthMetric = {
   brierScore: number | null;
   evaluationStartDate: string;
   evaluationEndDate: string;
+  computedAt: string;
+  matchesLatestOverallWindow: boolean;
+};
+
+export type GamePredictionSegmentWindowMismatch = {
+  segmentKey: MonitoredSegmentKey;
+  segmentValue: string;
+  evaluationStartDate: string;
+  evaluationEndDate: string;
+  expectedEvaluationStartDate: string;
+  expectedEvaluationEndDate: string;
   computedAt: string;
 };
 
@@ -119,9 +136,11 @@ export type GamePredictionHealthReport = {
     missingFeatureRate: number | null;
     goalieWarningCount: number;
   };
+  marketOddsReadiness: CompactAccuracyLoopMarketOddsSourceReadiness;
   segmentPerformance: {
     monitoredSegmentKeys: MonitoredSegmentKey[];
     missingSegmentKeys: MonitoredSegmentKey[];
+    windowMismatches: GamePredictionSegmentWindowMismatch[];
     segments: GamePredictionSegmentHealthMetric[];
   };
   alerts: PredictionHealthCheck[];
@@ -131,7 +150,12 @@ type HealthInputs = {
   generatedAt?: string;
   productionModel?: Tables<"game_prediction_model_versions"> | null;
   latestMetric?: Tables<"game_prediction_model_metrics"> | null;
-  scheduledGames?: Array<Pick<Tables<"games">, "id">>;
+  scheduledGames?: Array<
+    Pick<
+      Tables<"games">,
+      "id" | "date" | "startTime" | "seasonId" | "homeTeamId" | "awayTeamId" | "type"
+    >
+  >;
   predictionOutputs?: Array<Pick<Tables<"game_prediction_outputs">, "game_id">>;
   provenanceRows?: Array<
     Pick<
@@ -144,6 +168,8 @@ type HealthInputs = {
     Pick<Tables<"game_prediction_feature_snapshots">, "missing_features" | "feature_payload">
   >;
   segmentMetrics?: Tables<"game_prediction_model_metrics">[];
+  marketOddsRows?: MarketOddsSourceAuditRow[];
+  marketOddsProvenanceRows?: SourceProvenanceAuditRow[];
 };
 
 function dateDiffDays(laterIso: string, earlierIso: string | null): number | null {
@@ -329,6 +355,10 @@ function buildSegmentPerformance(args: {
 }): GamePredictionHealthReport["segmentPerformance"] {
   const latestSegmentMetrics = latestSegmentMetricsByBucket(args.segmentMetrics);
   const overallGames = args.latestMetric?.evaluated_games ?? null;
+  const expectedEvaluationStartDate =
+    args.latestMetric?.evaluation_start_date ?? null;
+  const expectedEvaluationEndDate =
+    args.latestMetric?.evaluation_end_date ?? null;
   const segments = latestSegmentMetrics.map((metric) => ({
     segmentKey: metric.segment_key as MonitoredSegmentKey,
     segmentValue: metric.segment_value,
@@ -343,16 +373,50 @@ function buildSegmentPerformance(args: {
     evaluationStartDate: metric.evaluation_start_date,
     evaluationEndDate: metric.evaluation_end_date,
     computedAt: metric.computed_at,
+    matchesLatestOverallWindow:
+      !expectedEvaluationStartDate ||
+      !expectedEvaluationEndDate ||
+      (
+        metric.evaluation_start_date === expectedEvaluationStartDate &&
+        metric.evaluation_end_date === expectedEvaluationEndDate
+      ),
   }));
-  const observedKeys = new Set(segments.map((segment) => segment.segmentKey));
+  const observedKeys = new Set(
+    segments
+      .filter((segment) => segment.matchesLatestOverallWindow)
+      .map((segment) => segment.segmentKey),
+  );
+  const windowMismatches =
+    expectedEvaluationStartDate && expectedEvaluationEndDate
+      ? segments
+          .filter((segment) => !segment.matchesLatestOverallWindow)
+          .map((segment) => ({
+            segmentKey: segment.segmentKey,
+            segmentValue: segment.segmentValue,
+            evaluationStartDate: segment.evaluationStartDate,
+            evaluationEndDate: segment.evaluationEndDate,
+            expectedEvaluationStartDate,
+            expectedEvaluationEndDate,
+            computedAt: segment.computedAt,
+          }))
+      : [];
 
   return {
     monitoredSegmentKeys: [...MONITORED_SEGMENT_KEYS],
     missingSegmentKeys: MONITORED_SEGMENT_KEYS.filter(
       (segmentKey) => !observedKeys.has(segmentKey),
     ),
+    windowMismatches,
     segments,
   };
+}
+
+function chunkValues<T>(values: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let index = 0; index < values.length; index += size) {
+    chunks.push(values.slice(index, index + size));
+  }
+  return chunks;
 }
 
 export function buildGamePredictionHealthReport(
@@ -393,6 +457,13 @@ export function buildGamePredictionHealthReport(
     latestMetric,
     segmentMetrics: inputs.segmentMetrics,
   });
+  const marketOddsReadiness = compactMarketOddsSourceReadinessForMetadata(
+    buildMarketOddsSourceReadiness({
+      games: inputs.scheduledGames ?? [],
+      oddsRows: inputs.marketOddsRows ?? [],
+      provenanceRows: inputs.marketOddsProvenanceRows ?? [],
+    }),
+  );
 
   const alerts = buildPredictionHealthChecks({
     staleSourceCount: staleSources.length,
@@ -402,6 +473,34 @@ export function buildGamePredictionHealthReport(
     recentLogLoss: latestMetric?.log_loss ?? null,
     referenceLogLoss: null,
   });
+
+  if (!productionModel) {
+    alerts.push({
+      status: "warn",
+      code: "production_model_missing",
+      message: "No production game-prediction model version is active.",
+    });
+  }
+
+  if (productionModel && !latestMetric) {
+    alerts.push({
+      status: "warn",
+      code: "production_metric_missing",
+      message:
+        "Production game-prediction model is missing persisted overall evaluation metrics.",
+    });
+  }
+
+  if (
+    marketOddsReadiness.requiredGames > 0 &&
+    marketOddsReadiness.trainingFeatureEligible !== true
+  ) {
+    alerts.push({
+      status: "warn",
+      code: "market_odds_source_readiness_incomplete",
+      message: `Market odds source readiness is incomplete for ${marketOddsReadiness.trustedSnapshotSourceGames}/${marketOddsReadiness.requiredGames} required games with trusted pre-cutoff snapshot provenance.`,
+    });
+  }
 
   if (metricHasImpossibleValues(latestMetric)) {
     alerts.push({
@@ -429,6 +528,14 @@ export function buildGamePredictionHealthReport(
       status: "warn",
       code: "segment_monitoring_incomplete",
       message: `Missing monitored segment metrics for ${segmentPerformance.missingSegmentKeys.join(", ")}.`,
+    });
+  }
+  if (segmentPerformance.windowMismatches.length > 0) {
+    alerts.push({
+      status: "warn",
+      code: "segment_monitoring_window_mismatch",
+      message:
+        "Some monitored segment metrics do not match the latest overall evaluation window.",
     });
   }
 
@@ -460,6 +567,10 @@ export function buildGamePredictionHealthReport(
         "Production game-prediction model is missing eligible persisted promotion evidence or required guardrail metadata.",
     });
   }
+
+  const finalAlerts = alerts.some((alert) => alert.status === "warn")
+    ? alerts.filter((alert) => alert.status === "warn")
+    : alerts;
 
   return {
     generatedAt,
@@ -526,8 +637,9 @@ export function buildGamePredictionHealthReport(
       missingFeatureRate,
       goalieWarningCount,
     },
+    marketOddsReadiness,
     segmentPerformance,
-    alerts,
+    alerts: finalAlerts,
   };
 }
 
@@ -593,7 +705,11 @@ export async function fetchGamePredictionHealthReport(args: {
   ] = await Promise.all([
     overallMetricQuery,
     segmentMetricsQuery,
-    args.client.from("games").select("id").gte("date", fromDate).lte("date", toDate),
+    args.client
+      .from("games")
+      .select("id,date,startTime,seasonId,homeTeamId,awayTeamId,type")
+      .gte("date", fromDate)
+      .lte("date", toDate),
     args.client
       .from("game_prediction_outputs")
       .select("game_id")
@@ -631,16 +747,60 @@ export async function fetchGamePredictionHealthReport(args: {
     if (result.error) throw result.error;
   }
 
+  const scheduledGames = gamesResult.data ?? [];
+  const gameIds = scheduledGames.map((game) => game.id);
+  let marketOddsRows: MarketOddsSourceAuditRow[] = [];
+  let marketOddsProvenanceRows: SourceProvenanceAuditRow[] = [];
+  if (gameIds.length > 0) {
+    const gameIdChunks = chunkValues(gameIds, 250);
+    const [marketOddsResults, marketOddsProvenanceResults] = await Promise.all([
+      Promise.all(
+        gameIdChunks.map((chunk) =>
+          args.client
+            .from("game_prediction_market_odds_snapshots")
+            .select("game_id,captured_at,event_start_at,provider,provenance,metadata")
+            .in("game_id", chunk)
+            .limit(10_000),
+        ),
+      ),
+      Promise.all(
+        gameIdChunks.map((chunk) =>
+          args.client
+            .from("source_provenance_snapshots")
+            .select(
+              "game_id,source_type,source_name,status,observed_at,freshness_expires_at,metadata",
+            )
+            .eq("source_type", "game_prediction_market_odds")
+            .in("game_id", chunk)
+            .limit(10_000),
+        ),
+      ),
+    ]);
+
+    for (const result of marketOddsResults) {
+      if (result.error) throw result.error;
+      marketOddsRows.push(...((result.data ?? []) as MarketOddsSourceAuditRow[]));
+    }
+    for (const result of marketOddsProvenanceResults) {
+      if (result.error) throw result.error;
+      marketOddsProvenanceRows.push(
+        ...((result.data ?? []) as SourceProvenanceAuditRow[]),
+      );
+    }
+  }
+
   return buildGamePredictionHealthReport({
     generatedAt,
     productionModel,
     latestMetric: metricResult.data,
     segmentMetrics: segmentMetricsResult.data ?? [],
-    scheduledGames: gamesResult.data ?? [],
+    scheduledGames,
     predictionOutputs: outputsResult.data ?? [],
     provenanceRows: provenanceResult.data ?? [],
     failedJobs: jobsResult.data ?? [],
     featureSnapshots: snapshotsResult.data ?? [],
+    marketOddsRows,
+    marketOddsProvenanceRows,
   });
 }
 

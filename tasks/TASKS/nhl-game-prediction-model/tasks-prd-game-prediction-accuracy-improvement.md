@@ -11,11 +11,28 @@
 - `web/lib/game-predictions/accountability.test.ts` - Tests for ablations, market baselines, season-phase segmentation, and promotion evidence summaries.
 - `web/lib/game-predictions/evaluation.ts` - Model metrics and metric segments; add market-relative and season-phase segments if not already covered.
 - `web/lib/game-predictions/evaluation.test.ts` - Unit tests for new metric segments and calibration behavior.
+- `web/lib/game-predictions/adminHealth.ts` - Production health report and post-promotion segment monitoring.
 - `web/pages/api/v1/game-predictions/feature-signal-analysis.ts` - Existing feature signal analysis endpoint; extend for mutual-information style ranking and leakage checks.
 - `web/pages/api/v1/game-predictions/backtest-ablation.ts` - Dry-run comparison endpoint for feature/model variants before promotion.
 - `web/pages/api/v1/game-predictions/accuracy-loop.ts` - Dry-run accuracy improvement loop endpoint combining feature-signal analysis, leakage checks, ablations, baseline comparisons, and promotion evidence.
+- `web/__tests__/pages/api/v1/game-predictions/accuracy-loop.test.ts` - API route tests for accuracy-loop dry-run scope, candidate variant validation, and explicit evidence-persistence confirmation.
+- `web/pages/api/v1/game-predictions/import-market-odds.ts` - Historical market-odds import endpoint with dry-run defaults, expected-game coverage checks, and explicit write confirmation.
+- `web/__tests__/pages/api/v1/game-predictions/import-market-odds.test.ts` - API route tests for market-odds import dry-run behavior, expected-window coverage, blocked imports, and write confirmation.
+- `web/scripts/import-historical-market-odds.ts` - Guarded historical odds import CLI with expected-game discovery, import-file contract output, dry-run defaults, and explicit write confirmation.
+- `web/scripts/import-historical-market-odds.test.ts` - Unit tests for historical odds import parsing, manifest normalization, expected-game discovery, and provenance metadata attachment.
+- `web/pages/api/v1/game-predictions/generate.ts` - Single-game serving prediction endpoint with explicit baseline-bootstrap opt-in.
+- `web/pages/api/v1/game-predictions/forecast.ts` - Windowed serving prediction endpoint with explicit baseline-bootstrap opt-in.
+- `web/__tests__/pages/api/v1/game-predictions/generate.test.ts` - API route tests for generate endpoint bootstrap opt-in behavior.
+- `web/__tests__/pages/api/v1/game-predictions/forecast.test.ts` - API route tests for forecast endpoint bootstrap opt-in behavior and method guard.
 - `web/pages/nhl-predictions.tsx` - Public prediction page; surface only validated model and market comparison details.
 - `web/styles/NhlPredictions.module.scss` - Styling for any new model, market, or factor UI elements on the public page.
+- `web/lib/game-predictions/publicPredictions.ts` - Public payload builder that filters serving rows and metrics to active production model versions.
+- `web/lib/game-predictions/publicPredictions.test.ts` - Unit tests for public production gating, factor allowlists, and snapshot-only market display.
+- `web/__tests__/pages/api/v1/game-predictions/latest.test.ts` - API route tests for the public latest-predictions payload boundary and cache/error behavior.
+- `web/scripts/check-game-prediction-health.ts` - Read-only CLI runner for the admin health report and optional alert-failing monitoring mode.
+- `web/scripts/check-game-prediction-health.test.ts` - Unit tests for health-check CLI parsing and summary output.
+- `web/scripts/forecast-game-predictions.ts` - Guarded dry-run/write CLI runner for regenerating public game-prediction serving rows through the existing workflow.
+- `web/scripts/forecast-game-predictions.test.ts` - Unit tests for forecast CLI parsing, write guardrails, date-window resolution, and summary output.
 
 ### Notes
 
@@ -24,6 +41,9 @@
 - Use `npx tsc --noEmit --pretty false` and targeted Vitest files after implementation changes.
 - Primary promotion metrics are log loss, Brier score, calibration, and enough evaluated games. Accuracy is useful but must not be the sole promotion metric.
 - Guardrail: do not train on current/future ESPN odds. Odds can become a model feature only after historical odds snapshots are stored with `captured_at` before prediction cutoff/puck drop.
+- 2026-06-15 live guardrail evidence: health check shows no active production model and 0/1 trusted pre-cutoff market-odds source games for the current serving window. A bounded dry-run accuracy loop still suppresses `homeMarketNoVigProbability` and rejects candidate promotion, so 6.1 and 7.1-7.5 remain intentionally open.
+- Historical odds backfill prep now supports `npm run import:historical-market-odds -- --print-expected-games ...` to emit the exact expected game IDs and required import-file columns before any write is possible.
+- The accuracy-loop CLI now includes `nextActions.marketOddsBackfill` whenever market odds are not training-eligible, including the matching `--print-expected-games` command and strict provenance guardrail for the evaluated window.
 
 ## Tasks
 
@@ -81,4 +101,4 @@
   - [ ] 7.3 Persist promotion evidence in model-version metadata: date range, evaluated games, metrics, baselines, and excluded features.
   - [ ] 7.4 Regenerate public predictions and accountability dashboards for the promoted version.
   - [ ] 7.5 Verify `/nhl-predictions` renders market comparison, model factors, and performance panels without layout regressions.
-  - [ ] 7.6 Monitor post-promotion performance by season phase, goalie confirmation state, stale-source state, and market-edge bucket.
+  - [x] 7.6 Monitor post-promotion performance by season phase, goalie confirmation state, stale-source state, and market-edge bucket.

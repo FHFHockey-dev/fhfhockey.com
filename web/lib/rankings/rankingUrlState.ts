@@ -48,7 +48,7 @@ export type RankingsFilterState = {
   matrixSortDirection: ContextualRankingsSortDirection;
   sampleConfidence: "all" | "medium_plus" | "high";
   sourceQuality: "all" | "clean_only" | "caveats_only";
-  displayMode: "percentile" | "raw_rank" | "both";
+  displayMode: "percentile" | "raw_rank" | "both" | "metric_value";
   metricGroups: string;
   metricColumns: string;
   page: string;
@@ -157,6 +157,9 @@ function parseMatrixDirection(value: string): ContextualRankingsSortDirection {
 function parseGoalieMetric(value: string): GoalieMatrixMetricKey {
   return value === "gsax" ||
     value === "gsaa_per_60" ||
+    value === "xga_per_shot_against" ||
+    value === "goalie_value_signal" ||
+    value === "high_danger_save_percentage" ||
     value === "quality_start_pct" ||
     value === "really_bad_start_rate" ||
     value === "steal_rate" ||
@@ -187,7 +190,11 @@ function parseTeamMetric(value: string): TeamMatrixMetricKey {
     value === "save_luck" ||
     value === "net_luck" ||
     value === "pace_rating" ||
-    value === "special_rating"
+    value === "special_rating" ||
+    value === "one_goal_game_rate" ||
+    value === "home_road_point_pct_gap" ||
+    value === "pp_opportunity_rate" ||
+    value === "penalties_taken_per_60"
     ? value
     : "off_rating";
 }
@@ -198,12 +205,17 @@ function parseSampleConfidence(
   return value === "medium_plus" || value === "high" ? value : "all";
 }
 
-function parseSourceQuality(value: string): RankingsFilterState["sourceQuality"] {
+function parseSourceQuality(
+  value: string,
+): RankingsFilterState["sourceQuality"] {
   return value === "clean_only" || value === "caveats_only" ? value : "all";
 }
 
 function parseDisplayMode(value: string): RankingsFilterState["displayMode"] {
-  return value === "percentile" || value === "raw_rank" || value === "both"
+  return value === "percentile" ||
+    value === "raw_rank" ||
+    value === "both" ||
+    value === "metric_value"
     ? value
     : DEFAULT_RANKINGS_FILTERS.displayMode;
 }
@@ -214,10 +226,7 @@ function parsePageSize(value: string): RankingsFilterState["pageSize"] {
     : DEFAULT_RANKINGS_FILTERS.pageSize;
 }
 
-function parseCsvFilter(
-  value: string,
-  isAllowed: (entry: string) => boolean,
-) {
+function parseCsvFilter(value: string, isAllowed: (entry: string) => boolean) {
   return value
     .split(",")
     .map((entry) => entry.trim())
@@ -258,7 +267,8 @@ export function normalizeRankingsFilters(query: RankingsQuery) {
   const next: RankingsFilterState = {
     ...DEFAULT_RANKINGS_FILTERS,
     entity:
-      queryValue(query.entity) === "goalies" || queryValue(query.entity) === "teams"
+      queryValue(query.entity) === "goalies" ||
+      queryValue(query.entity) === "teams"
         ? (queryValue(query.entity) as RankingsFilterState["entity"])
         : "skaters",
     tab: parseTab(queryValue(query.tab)),
@@ -281,10 +291,9 @@ export function normalizeRankingsFilters(query: RankingsQuery) {
       queryValue(query.strength) === "pk"
         ? (queryValue(query.strength) as RankingsFilterState["strength"])
         : DEFAULT_RANKINGS_FILTERS.strength,
-    metric:
-      getContextualRankingMetricDefinition(queryValue(query.metric))
-        ? (queryValue(query.metric) as ContextualRankingMetricKey)
-        : DEFAULT_RANKINGS_FILTERS.metric,
+    metric: getContextualRankingMetricDefinition(queryValue(query.metric))
+      ? (queryValue(query.metric) as ContextualRankingMetricKey)
+      : DEFAULT_RANKINGS_FILTERS.metric,
     minGp: queryValue(query.min_gp) || DEFAULT_RANKINGS_FILTERS.minGp,
     minToi: queryValue(query.min_toi) || DEFAULT_RANKINGS_FILTERS.minToi,
     team: queryValue(query.team),
@@ -296,7 +305,9 @@ export function normalizeRankingsFilters(query: RankingsQuery) {
     goalieRole: parseGoalieRole(queryValue(query.goalie_role)),
     teamMetric: parseTeamMetric(queryValue(query.team_metric)),
     matrixSortDirection: parseMatrixDirection(queryValue(query.sort_direction)),
-    sampleConfidence: parseSampleConfidence(queryValue(query.sample_confidence)),
+    sampleConfidence: parseSampleConfidence(
+      queryValue(query.sample_confidence),
+    ),
     sourceQuality: parseSourceQuality(queryValue(query.source_quality)),
     displayMode: parseDisplayMode(queryValue(query.display)),
     metricGroups: parseCsvFilter(queryValue(query.groups), (entry) =>
@@ -353,6 +364,13 @@ export function deriveRankingsPeerGroupType(
   return "all_skaters";
 }
 
+function numericTeamIdOrNull(team: string) {
+  const normalized = team.trim();
+  if (!/^\d+$/.test(normalized)) return null;
+  const parsed = Number(normalized);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
 export function buildClientRankingsRequest(
   filters: RankingsFilterState,
 ): ContextualRankingsRequest {
@@ -367,7 +385,7 @@ export function buildClientRankingsRequest(
     metric: filters.metric,
     minGp: Number(filters.minGp) || null,
     minToiSeconds: Number(filters.minToi) || null,
-    teamId: filters.team.trim() === "" ? null : Number(filters.team),
+    teamId: numericTeamIdOrNull(filters.team),
     peerGroupType: deriveRankingsPeerGroupType(filters),
     sort: filters.sort,
     direction: filters.direction,
@@ -418,6 +436,7 @@ export function buildMatrixRequestPath(filters: RankingsFilterState) {
     sort_direction: filters.matrixSortDirection,
     page: filters.page,
     page_size: filters.pageSize,
+    ranking_source: "entity_metric_rankings",
   });
   if (filters.team.trim() !== "") {
     params.set("team", filters.team.trim());

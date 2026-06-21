@@ -149,6 +149,7 @@ export type EspnOddsIngestionResult = {
   captureRecordedAt: string;
   captureClockSkewMs: number;
   fetchedGames: number;
+  candidateSnapshots: number;
   insertedSnapshots: number;
   skippedSnapshots: number;
   postStartSkippedSnapshots: number;
@@ -184,6 +185,18 @@ export type HistoricalMarketOddsImportRow = {
   metadata?: Json;
 };
 
+export type HistoricalMarketOddsImportPreflight = {
+  expectedGames: number;
+  rowGameIds: number;
+  matchedExpectedGames: number;
+  candidateSnapshotGames: number;
+  missingExpectedGameIds: number[];
+  missingExpectedGameIdCount: number;
+  missingExpectedGameIdsTruncated: boolean;
+  coveragePct: number | null;
+  warnings: string[];
+};
+
 export type HistoricalMarketOddsImportResult = {
   importedAt: string;
   importBatchId: string;
@@ -198,7 +211,10 @@ export type HistoricalMarketOddsImportResult = {
   provenanceRows: number;
   rejectedProvenanceRows: number;
   dryRun: boolean;
+  blocked: boolean;
+  blockingReasons: string[];
   rejectionReasons: Record<string, number>;
+  preflight: HistoricalMarketOddsImportPreflight;
 };
 
 function firstParam(value: string | string[] | undefined): string | undefined {
@@ -216,6 +232,42 @@ function addDays(date: string, days: number): string {
   const parsed = new Date(`${date}T00:00:00.000Z`);
   parsed.setUTCDate(parsed.getUTCDate() + days);
   return parsed.toISOString().slice(0, 10);
+}
+
+function parseDateTimeWithGameDate(
+  value: string | null | undefined,
+  gameDate: string | null | undefined,
+): number | null {
+  if (!value) return null;
+  const direct = Date.parse(value);
+  if (Number.isFinite(direct)) return direct;
+  if (!gameDate || !/^\d{4}-\d{2}-\d{2}$/.test(gameDate)) return null;
+  const normalized = value.trim();
+  if (!normalized) return null;
+  const hasTimeZone = /(?:z|[+-]\d{2}:?\d{2})$/i.test(normalized);
+  const parsed = Date.parse(
+    `${gameDate}T${normalized}${hasTimeZone ? "" : "Z"}`,
+  );
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function isoDateTimeWithGameDate(
+  value: string | null | undefined,
+  gameDate: string | null | undefined,
+): string | null {
+  const parsed = parseDateTimeWithGameDate(value, gameDate);
+  return parsed === null ? null : new Date(parsed).toISOString();
+}
+
+function marketEventStartMs(args: {
+  gameDate: string;
+  gameStartTime?: string | null;
+  eventStartAt?: string | null;
+}): number | null {
+  return (
+    parseDateTimeWithGameDate(args.eventStartAt, args.gameDate) ??
+    parseDateTimeWithGameDate(args.gameStartTime, args.gameDate)
+  );
 }
 
 function addHoursIso(iso: string, hours: number): string {
@@ -634,9 +686,15 @@ export async function fetchPersistedEspnNhlOddsSnapshots(args: {
 
   const latestByGame = new Map<string, EspnGameOdds>();
   for (const row of (data ?? []) as unknown as MarketOddsSnapshotRow[]) {
+    const capturedAtMs = Date.parse(row.captured_at);
+    const eventStartMs = marketEventStartMs({
+      gameDate: row.game_date,
+      eventStartAt: row.event_start_at,
+    });
     if (
-      row.event_start_at &&
-      Date.parse(row.captured_at) >= Date.parse(row.event_start_at)
+      eventStartMs != null &&
+      Number.isFinite(capturedAtMs) &&
+      capturedAtMs >= eventStartMs
     ) {
       continue;
     }
@@ -666,6 +724,9 @@ function buildEspnMarketOddsSnapshotInsert(args: {
     homeMoneyline,
     awayMoneyline,
   });
+  const eventStartAt =
+    isoDateTimeWithGameDate(args.odds.date, args.game.date) ??
+    isoDateTimeWithGameDate(args.game.startTime, args.game.date);
 
   return {
     game_id: args.game.id,
@@ -674,7 +735,7 @@ function buildEspnMarketOddsSnapshotInsert(args: {
     captured_at: args.capturedAt,
     requested_date: args.odds.requestedDate,
     game_date: args.game.date,
-    event_start_at: args.odds.date ?? args.game.startTime ?? null,
+    event_start_at: eventStartAt,
     home_team_id: args.homeTeamId,
     away_team_id: args.awayTeamId,
     home_team_abbreviation: args.odds.homeTeam,
@@ -725,57 +786,64 @@ export function buildMarketOddsSourceProvenanceRows(
 ): SourceProvenanceInsert[] {
   const updatedAt = new Date().toISOString();
 
-  return inserts.map((insert) => ({
-    snapshot_date: insert.game_date,
-    source_type: "game_prediction_market_odds",
-    entity_type: "game",
-    entity_id: insert.game_id,
-    game_id: insert.game_id,
-    source_name: options?.sourceName ?? ESPN_MARKET_ODDS_SOURCE_NAME,
-    source_url: insert.source_url,
-    source_rank: 1,
-    is_official: false,
-    status: "observed",
-    observed_at: insert.captured_at,
-    freshness_expires_at: earliestIso(
-      addHoursIso(insert.captured_at, 24),
+  return inserts.map((insert) => {
+    const eventStartAt = isoDateTimeWithGameDate(
       insert.event_start_at,
-    ),
-    payload: {
-      provider: insert.provider,
-      requestedDate: insert.requested_date,
-      homeTeamAbbreviation: insert.home_team_abbreviation,
-      awayTeamAbbreviation: insert.away_team_abbreviation,
-      homeMoneyline: insert.home_moneyline,
-      awayMoneyline: insert.away_moneyline,
-      homeMarketNoVigProbability: insert.home_market_no_vig_probability,
-      awayMarketNoVigProbability: insert.away_market_no_vig_probability,
-      marketOverround: insert.market_overround,
-    } as unknown as Json,
-    metadata: {
-      guardrail:
-        "eligible for model features only when captured_at is before prediction cutoff and puck drop",
-      oddsSnapshotSource: "game_prediction_market_odds_snapshots",
-      eventStartAt: insert.event_start_at,
-      captureRecordedAt:
-        (isRecord(insert.metadata)
-          ? stringOrNull(insert.metadata.capture_recorded_at)
-          : null) ?? insert.captured_at,
-      importRecordedAt:
-        (isRecord(insert.metadata)
-          ? stringOrNull(insert.metadata.import_recorded_at)
-          : null) ?? null,
-      importBatchId:
-        (isRecord(insert.metadata)
-          ? stringOrNull(insert.metadata.import_batch_id)
-          : null) ??
-        (isRecord(insert.provenance)
-          ? stringOrNull(insert.provenance.import_batch_id)
-          : null) ??
-        null,
-    } as unknown as Json,
-    updated_at: updatedAt,
-  }));
+      insert.game_date,
+    );
+
+    return {
+      snapshot_date: insert.game_date,
+      source_type: "game_prediction_market_odds",
+      entity_type: "game",
+      entity_id: insert.game_id,
+      game_id: insert.game_id,
+      source_name: options?.sourceName ?? ESPN_MARKET_ODDS_SOURCE_NAME,
+      source_url: insert.source_url,
+      source_rank: 1,
+      is_official: false,
+      status: "observed",
+      observed_at: insert.captured_at,
+      freshness_expires_at: earliestIso(
+        addHoursIso(insert.captured_at, 24),
+        eventStartAt,
+      ),
+      payload: {
+        provider: insert.provider,
+        requestedDate: insert.requested_date,
+        homeTeamAbbreviation: insert.home_team_abbreviation,
+        awayTeamAbbreviation: insert.away_team_abbreviation,
+        homeMoneyline: insert.home_moneyline,
+        awayMoneyline: insert.away_moneyline,
+        homeMarketNoVigProbability: insert.home_market_no_vig_probability,
+        awayMarketNoVigProbability: insert.away_market_no_vig_probability,
+        marketOverround: insert.market_overround,
+      } as unknown as Json,
+      metadata: {
+        guardrail:
+          "eligible for model features only when captured_at is before prediction cutoff and puck drop",
+        oddsSnapshotSource: "game_prediction_market_odds_snapshots",
+        eventStartAt: eventStartAt ?? insert.event_start_at,
+        captureRecordedAt:
+          (isRecord(insert.metadata)
+            ? stringOrNull(insert.metadata.capture_recorded_at)
+            : null) ?? insert.captured_at,
+        importRecordedAt:
+          (isRecord(insert.metadata)
+            ? stringOrNull(insert.metadata.import_recorded_at)
+            : null) ?? null,
+        importBatchId:
+          (isRecord(insert.metadata)
+            ? stringOrNull(insert.metadata.import_batch_id)
+            : null) ??
+          (isRecord(insert.provenance)
+            ? stringOrNull(insert.provenance.import_batch_id)
+            : null) ??
+          null,
+      } as unknown as Json,
+      updated_at: updatedAt,
+    };
+  });
 }
 
 export function buildRejectedMarketOddsSourceProvenanceRows(
@@ -784,42 +852,49 @@ export function buildRejectedMarketOddsSourceProvenanceRows(
   const updatedAt = new Date().toISOString();
 
   return inputs.map(
-    ({ odds, capturedAt, captureRecordedAt, game, rejectionReason }) => ({
-      snapshot_date: game.date,
-      source_type: "game_prediction_market_odds",
-      entity_type: "game",
-      entity_id: game.id,
-      game_id: game.id,
-      source_name: ESPN_MARKET_ODDS_REJECTED_SOURCE_NAME,
-      source_url: espnScoreboardUrlForDate(odds.requestedDate),
-      source_rank: 1,
-      is_official: false,
-      status: "rejected",
-      observed_at: capturedAt,
-      freshness_expires_at: earliestIso(
-        addHoursIso(capturedAt, 24),
-        game.startTime,
-        odds.date,
-      ),
-      payload: {
-        provider: odds.provider,
-        requestedDate: odds.requestedDate,
-        homeTeamAbbreviation: odds.homeTeam,
-        awayTeamAbbreviation: odds.awayTeam,
-        homeMoneyline: odds.moneyline.home,
-        awayMoneyline: odds.moneyline.away,
-        status: odds.status,
-      } as unknown as Json,
-      metadata: {
-        rejectionReason,
-        guardrail:
-          "not eligible for model features; no pre-cutoff market odds snapshot was persisted",
-        canonicalObservedSourceName: ESPN_MARKET_ODDS_SOURCE_NAME,
-        eventStartAt: game.startTime ?? odds.date,
-        captureRecordedAt,
-      } as unknown as Json,
-      updated_at: updatedAt,
-    }),
+    ({ odds, capturedAt, captureRecordedAt, game, rejectionReason }) => {
+      const gameStartAt = isoDateTimeWithGameDate(game.startTime, game.date);
+      const oddsStartAt = isoDateTimeWithGameDate(odds.date, game.date);
+      const eventStartAt =
+        gameStartAt ?? oddsStartAt ?? game.startTime ?? odds.date ?? null;
+
+      return {
+        snapshot_date: game.date,
+        source_type: "game_prediction_market_odds",
+        entity_type: "game",
+        entity_id: game.id,
+        game_id: game.id,
+        source_name: ESPN_MARKET_ODDS_REJECTED_SOURCE_NAME,
+        source_url: espnScoreboardUrlForDate(odds.requestedDate),
+        source_rank: 1,
+        is_official: false,
+        status: "rejected",
+        observed_at: capturedAt,
+        freshness_expires_at: earliestIso(
+          addHoursIso(capturedAt, 24),
+          gameStartAt,
+          oddsStartAt,
+        ),
+        payload: {
+          provider: odds.provider,
+          requestedDate: odds.requestedDate,
+          homeTeamAbbreviation: odds.homeTeam,
+          awayTeamAbbreviation: odds.awayTeam,
+          homeMoneyline: odds.moneyline.home,
+          awayMoneyline: odds.moneyline.away,
+          status: odds.status,
+        } as unknown as Json,
+        metadata: {
+          rejectionReason,
+          guardrail:
+            "not eligible for model features; no pre-cutoff market odds snapshot was persisted",
+          canonicalObservedSourceName: ESPN_MARKET_ODDS_SOURCE_NAME,
+          eventStartAt,
+          captureRecordedAt,
+        } as unknown as Json,
+        updated_at: updatedAt,
+      };
+    },
   );
 }
 
@@ -840,9 +915,13 @@ function buildHistoricalMarketOddsImportInsert(args: {
   if (!Number.isFinite(capturedAtMs)) {
     return { rejectionReason: "invalid_captured_at" };
   }
+  const gameStartMs = marketEventStartMs({
+    gameDate: args.game.date,
+    gameStartTime: args.game.startTime,
+  });
   if (
-    args.game.startTime &&
-    capturedAtMs >= Date.parse(args.game.startTime)
+    gameStartMs != null &&
+    capturedAtMs >= gameStartMs
   ) {
     return { rejectionReason: "post_start_capture" };
   }
@@ -859,6 +938,10 @@ function buildHistoricalMarketOddsImportInsert(args: {
   });
   const requestedDate =
     normalizeDate(args.row.requestedDate ?? undefined) ?? args.game.date;
+  const eventStartAt = isoDateTimeWithGameDate(
+    args.game.startTime,
+    args.game.date,
+  );
 
   return {
     insert: {
@@ -868,7 +951,7 @@ function buildHistoricalMarketOddsImportInsert(args: {
       captured_at: args.row.capturedAt,
       requested_date: requestedDate,
       game_date: args.game.date,
-      event_start_at: args.game.startTime ?? null,
+      event_start_at: eventStartAt,
       home_team_id: args.homeTeam.id,
       away_team_id: args.awayTeam.id,
       home_team_abbreviation: args.homeTeam.abbreviation,
@@ -923,6 +1006,7 @@ export function buildHistoricalMarketOddsImportRejectedProvenanceRows(
   return inputs.map(({ row, importedAt, importBatchId, game, rejectionReason }) => {
     const observedAt =
       Number.isFinite(Date.parse(row.capturedAt)) ? row.capturedAt : importedAt;
+    const eventStartAt = isoDateTimeWithGameDate(game.startTime, game.date);
     return {
       snapshot_date: game.date,
       source_type: "game_prediction_market_odds",
@@ -937,7 +1021,7 @@ export function buildHistoricalMarketOddsImportRejectedProvenanceRows(
       observed_at: observedAt,
       freshness_expires_at: earliestIso(
         addHoursIso(observedAt, 24),
-        game.startTime,
+        eventStartAt,
       ),
       payload: {
         provider: row.provider,
@@ -950,8 +1034,9 @@ export function buildHistoricalMarketOddsImportRejectedProvenanceRows(
         importedAt,
         importBatchId,
         attemptedCapturedAt: row.capturedAt,
+        rowMetadata: isRecord(row.metadata) ? row.metadata : null,
         canonicalObservedSourceName: HISTORICAL_MARKET_ODDS_IMPORT_SOURCE_NAME,
-        eventStartAt: game.startTime,
+        eventStartAt: eventStartAt ?? game.startTime,
         guardrail:
           "not eligible for model features; imported historical market odds row failed pre-cutoff validation",
       } as unknown as Json,
@@ -994,12 +1079,86 @@ function normalizeHistoricalMarketOddsImportBatchId(
   )}`;
 }
 
+function compactNumberSample(values: number[], limit = 25): {
+  sample: number[];
+  count: number;
+  truncated: boolean;
+} {
+  return {
+    sample: values.slice(0, limit),
+    count: values.length,
+    truncated: values.length > limit,
+  };
+}
+
+function buildHistoricalMarketOddsImportPreflight(args: {
+  expectedGameIds: number[];
+  rows: HistoricalMarketOddsImportRow[];
+  gamesById: Map<number, GameRow>;
+  inserts: MarketOddsSnapshotInsert[];
+}): HistoricalMarketOddsImportPreflight {
+  const rowGameIds = new Set(
+    args.rows
+      .map((row) => row.gameId)
+      .filter((gameId) => Number.isInteger(gameId) && gameId > 0),
+  );
+  const expectedGameIds = Array.from(
+    new Set(
+      args.expectedGameIds.filter(
+        (gameId) => Number.isInteger(gameId) && gameId > 0,
+      ),
+    ),
+  ).sort((left, right) => left - right);
+  const expectedGameIdSet = new Set(expectedGameIds);
+  const candidateSnapshotGameIds = new Set(
+    args.inserts
+      .map((insert) => insert.game_id)
+      .filter(
+        (gameId) =>
+          expectedGameIdSet.size === 0 || expectedGameIdSet.has(gameId),
+      ),
+  );
+  const missingExpectedGameIds = expectedGameIds.filter(
+    (gameId) => !candidateSnapshotGameIds.has(gameId),
+  );
+  const missingExpected = compactNumberSample(missingExpectedGameIds);
+  const warnings: string[] = [];
+
+  if (expectedGameIds.length === 0) {
+    warnings.push("no_expected_game_ids_supplied");
+  }
+  if (candidateSnapshotGameIds.size < expectedGameIds.length) {
+    warnings.push("historical_market_odds_import_missing_expected_games");
+  }
+
+  return {
+    expectedGames: expectedGameIds.length,
+    rowGameIds: rowGameIds.size,
+    matchedExpectedGames: expectedGameIds.filter((gameId) =>
+      args.gamesById.has(gameId),
+    ).length,
+    candidateSnapshotGames: candidateSnapshotGameIds.size,
+    missingExpectedGameIds: missingExpected.sample,
+    missingExpectedGameIdCount: missingExpected.count,
+    missingExpectedGameIdsTruncated: missingExpected.truncated,
+    coveragePct:
+      expectedGameIds.length > 0
+        ? roundProbability(
+            candidateSnapshotGameIds.size / expectedGameIds.length,
+          )
+        : null,
+    warnings,
+  };
+}
+
 export async function importHistoricalMarketOddsSnapshots(args: {
   client: SupabaseClient<Database>;
   rows: HistoricalMarketOddsImportRow[];
+  expectedGameIds?: number[];
   importedAt?: string;
   importBatchId?: string;
   dryRun?: boolean;
+  allowIncompleteExpectedCoverage?: boolean;
 }): Promise<HistoricalMarketOddsImportResult> {
   const importedAt = args.importedAt ?? new Date().toISOString();
   const importBatchId = normalizeHistoricalMarketOddsImportBatchId(
@@ -1007,11 +1166,19 @@ export async function importHistoricalMarketOddsSnapshots(args: {
     args.importBatchId,
   );
   const rows = args.rows.slice(0, 500);
+  const expectedGameIds = Array.from(
+    new Set(
+      (args.expectedGameIds ?? []).filter(
+        (gameId) => Number.isInteger(gameId) && gameId > 0,
+      ),
+    ),
+  );
   const gameIds = Array.from(
     new Set(
-      rows
-        .map((row) => row.gameId)
-        .filter((gameId) => Number.isInteger(gameId) && gameId > 0),
+      [
+        ...rows.map((row) => row.gameId),
+        ...expectedGameIds,
+      ].filter((gameId) => Number.isInteger(gameId) && gameId > 0),
     ),
   );
   const rejectionReasons: Record<string, number> = {};
@@ -1102,9 +1269,28 @@ export async function importHistoricalMarketOddsSnapshots(args: {
     });
   }
 
+  const preflight = buildHistoricalMarketOddsImportPreflight({
+    expectedGameIds,
+    rows,
+    gamesById,
+    inserts,
+  });
+  const blockingReasons: string[] = [];
+  if (!args.dryRun && !args.allowIncompleteExpectedCoverage) {
+    if (preflight.expectedGames === 0) {
+      blockingReasons.push(
+        "historical_market_odds_import_expected_games_required",
+      );
+    } else if (preflight.missingExpectedGameIdCount > 0) {
+      blockingReasons.push(
+        "historical_market_odds_import_incomplete_expected_coverage",
+      );
+    }
+  }
+
   let provenanceRows = 0;
   let rejectedProvenanceRows = 0;
-  if (!args.dryRun) {
+  if (!args.dryRun && blockingReasons.length === 0) {
     if (inserts.length > 0) {
       const { error } = await args.client
         .from("game_prediction_market_odds_snapshots")
@@ -1123,7 +1309,8 @@ export async function importHistoricalMarketOddsSnapshots(args: {
     rejectedProvenanceRows = rejectedRows.length;
   }
 
-  const importedSnapshots = args.dryRun ? 0 : inserts.length;
+  const importedSnapshots =
+    args.dryRun || blockingReasons.length > 0 ? 0 : inserts.length;
   return {
     importedAt,
     importBatchId,
@@ -1138,7 +1325,10 @@ export async function importHistoricalMarketOddsSnapshots(args: {
     provenanceRows,
     rejectedProvenanceRows,
     dryRun: Boolean(args.dryRun),
+    blocked: blockingReasons.length > 0,
+    blockingReasons,
     rejectionReasons,
+    preflight,
   };
 }
 
@@ -1208,10 +1398,12 @@ export async function ingestEspnNhlOddsSnapshots(args: {
       unmappedGames += 1;
       return [];
     }
-    if (
-      matchedGame.startTime &&
-      Date.parse(capturedAt) >= Date.parse(matchedGame.startTime)
-    ) {
+    const eventStartMs = marketEventStartMs({
+      gameDate: matchedGame.date,
+      gameStartTime: matchedGame.startTime,
+      eventStartAt: game.date,
+    });
+    if (eventStartMs != null && Date.parse(capturedAt) >= eventStartMs) {
       skippedSnapshots += 1;
       postStartSkippedSnapshots += 1;
       rejectedProvenanceInputs.push({
@@ -1272,6 +1464,7 @@ export async function ingestEspnNhlOddsSnapshots(args: {
     captureRecordedAt,
     captureClockSkewMs,
     fetchedGames: odds.length,
+    candidateSnapshots: inserts.length,
     insertedSnapshots: args.dryRun ? 0 : inserts.length,
     skippedSnapshots,
     postStartSkippedSnapshots,
@@ -1316,6 +1509,10 @@ export async function ingestEspnNhlOddsSnapshotsForWindow(args: {
     captureRecordedAt,
     captureClockSkewMs,
     fetchedGames: batches.reduce((sum, batch) => sum + batch.fetchedGames, 0),
+    candidateSnapshots: batches.reduce(
+      (sum, batch) => sum + batch.candidateSnapshots,
+      0,
+    ),
     insertedSnapshots: batches.reduce(
       (sum, batch) => sum + batch.insertedSnapshots,
       0,

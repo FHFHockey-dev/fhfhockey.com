@@ -35,6 +35,34 @@ type TeamMeta = {
 const ENTITY_RANKING_QUERY_PAGE_SIZE = 1000;
 const METADATA_IN_FILTER_CHUNK_SIZE = 500;
 const METADATA_QUERY_PAGE_SIZE = 1000;
+const SNAPSHOT_DATE_CACHE_TTL_MS = 30_000;
+const ENTITY_RANKING_SELECT_FIELDS = [
+  "entity_id",
+  "team_id",
+  "snapshot_date",
+  "metric_key",
+  "peer_group_type",
+  "peer_group_key",
+  "position_group",
+  "deployment_bucket",
+  "raw_value",
+  "raw_rank",
+  "percentile",
+  "qualified_peer_count",
+  "minimum_sample_met",
+  "sample_confidence",
+  "games_played",
+  "toi_seconds",
+  "tags",
+  "explanation_items",
+  "updated_at",
+].join(",");
+
+const snapshotDateCache = new Map<string, { expiresAt: number; value: string | null }>();
+
+export function clearEntityMetricRankingReaderCachesForTests() {
+  snapshotDateCache.clear();
+}
 
 function finiteNumber(value: unknown): number | null {
   if (typeof value !== "number" || !Number.isFinite(value)) return null;
@@ -163,6 +191,20 @@ function sortRows(
 }
 
 async function fetchLatestSnapshotDate(request: ContextualRankingsRequest) {
+  const cacheKey = [
+    request.season,
+    request.asOfDate ?? "",
+    windowType(request.window),
+    windowSize(request.window),
+    request.strength,
+    request.metric,
+    request.peerGroupType,
+    requestPeerGroupKey(request),
+  ].join(":");
+  const cached = snapshotDateCache.get(cacheKey);
+  const now = Date.now();
+  if (cached && cached.expiresAt > now) return cached.value;
+
   let query = supabase
     .from("entity_metric_rankings")
     .select("snapshot_date")
@@ -173,48 +215,81 @@ async function fetchLatestSnapshotDate(request: ContextualRankingsRequest) {
     .eq("strength_state", request.strength)
     .eq("metric_key", request.metric)
     .eq("peer_group_type", request.peerGroupType)
-    .eq("peer_group_key", requestPeerGroupKey(request))
-    .order("snapshot_date", { ascending: false });
+    .eq("peer_group_key", requestPeerGroupKey(request));
   if (request.asOfDate != null) {
     query = query.lte("snapshot_date", request.asOfDate);
   }
+  query = query.order("snapshot_date", { ascending: false });
   const { data, error } = await query.limit(1);
   if (error) throw error;
   const snapshotDate = data?.[0]?.snapshot_date;
-  return typeof snapshotDate === "string" ? snapshotDate : null;
+  const value = typeof snapshotDate === "string" ? snapshotDate : null;
+  snapshotDateCache.set(cacheKey, {
+    expiresAt: now + SNAPSHOT_DATE_CACHE_TTL_MS,
+    value,
+  });
+  return value;
 }
 
 async function fetchEntityMetricRows(
   request: ContextualRankingsRequest,
   snapshotDate: string,
+  metricKeys: ContextualRankingMetricKey[] = [request.metric],
 ) {
   const rows: EntityMetricRankingRow[] = [];
+  const uniqueMetricKeys = Array.from(new Set(metricKeys));
+  const canApplyDatabaseLimit =
+    uniqueMetricKeys.length === 1 &&
+    request.limit != null &&
+    request.entityIds == null &&
+    request.sort !== "toi_per_game";
 
   for (let from = 0; ; from += ENTITY_RANKING_QUERY_PAGE_SIZE) {
     let query = supabase
       .from("entity_metric_rankings")
-      .select("*")
+      .select(ENTITY_RANKING_SELECT_FIELDS)
       .eq("entity_type", "skater")
       .eq("season_id", request.season)
       .eq("snapshot_date", snapshotDate)
       .eq("window_type", windowType(request.window))
       .eq("window_size", windowSize(request.window))
       .eq("strength_state", request.strength)
-      .eq("metric_key", request.metric)
+      .in("metric_key", uniqueMetricKeys)
       .eq("peer_group_type", request.peerGroupType)
       .eq("peer_group_key", requestPeerGroupKey(request));
     if (request.entityIds != null) {
       query = query.in("entity_id", request.entityIds);
     }
-    const { data, error } = await query.range(
-      from,
-      from + ENTITY_RANKING_QUERY_PAGE_SIZE - 1,
-    );
+    if (canApplyDatabaseLimit) {
+      const ascending = request.direction === "asc";
+      if (request.sort === "raw_rank") {
+        query = query
+          .order("raw_rank", { ascending, nullsFirst: false })
+          .order("entity_id", { ascending: true });
+      } else if (request.sort === "metric_value") {
+        query = query
+          .order("raw_value", { ascending, nullsFirst: false })
+          .order("entity_id", { ascending: true });
+      } else if (request.sort === "gp") {
+        query = query
+          .order("games_played", { ascending, nullsFirst: false })
+          .order("entity_id", { ascending: true });
+      } else {
+        query = query
+          .order("percentile", { ascending, nullsFirst: false })
+          .order("entity_id", { ascending: true });
+      }
+    }
+    const { data, error } = canApplyDatabaseLimit
+      ? await query.limit(request.limit ?? ENTITY_RANKING_QUERY_PAGE_SIZE)
+      : await query.range(from, from + ENTITY_RANKING_QUERY_PAGE_SIZE - 1);
     if (error) throw error;
 
-    const page = (data ?? []) as EntityMetricRankingRow[];
+    const page = (data ?? []) as unknown as EntityMetricRankingRow[];
     rows.push(...page);
-    if (page.length < ENTITY_RANKING_QUERY_PAGE_SIZE) break;
+    if (canApplyDatabaseLimit || page.length < ENTITY_RANKING_QUERY_PAGE_SIZE) {
+      break;
+    }
   }
 
   return rows;
@@ -329,80 +404,86 @@ function toApiRow(args: {
   };
 }
 
-async function buildEntityMetricRankingSurface(
-  request: ContextualRankingsRequest,
-): Promise<ContextualRankingsResponse> {
-  const generatedAt = new Date().toISOString();
-  const definition = getContextualRankingMetricDefinition(request.metric);
-  const snapshotDate = await fetchLatestSnapshotDate(request);
-
-  if (snapshotDate == null) {
+function buildEntityMetricRankingSurfaceFromRows(args: {
+  request: ContextualRankingsRequest;
+  rows: EntityMetricRankingRow[];
+  playersById: Map<number, PlayerMeta>;
+  teamsById: Map<number, TeamMeta>;
+  generatedAt: string;
+  snapshotDate: string | null;
+}): ContextualRankingsResponse {
+  const definition = getContextualRankingMetricDefinition(args.request.metric);
+  if (args.snapshotDate == null) {
     return {
       success: true,
-      request,
+      request: args.request,
       rankings: [],
       meta: {
-        generatedAt,
+        generatedAt: args.generatedAt,
         snapshotDate: null,
         snapshotUpdatedAt: null,
         latestAvailableSnapshotDate: null,
         snapshotSelectionReason: "no_snapshot",
-        sourceTable: "entity_metric_rankings",
-        metric: metricResponseMetadata(definition, request.metric),
-        unavailable: true,
-        rowCount: 0,
-        limit: request.limit,
-        message: "No entity_metric_rankings snapshot rows matched the request.",
-      },
-    };
+      sourceTable: "entity_metric_rankings",
+      metric: metricResponseMetadata(definition, args.request.metric),
+      unavailable: true,
+      rowCount: 0,
+      limit: args.request.limit,
+      methodologyVersion: definition?.methodologyVersion ?? null,
+      methodologyUpdatedAt: definition
+        ? CONTEXTUAL_RANKINGS_METHODOLOGY_UPDATED_AT
+        : null,
+      sourceQualityFlags: [...(definition?.sourceQualityFlags ?? [])],
+      sourceWarnings: [],
+      message: "No entity_metric_rankings snapshot rows matched the request.",
+    },
+  };
   }
 
-  const rows = await fetchEntityMetricRows(request, snapshotDate);
-  const playerIds = rows.map((row) => row.entity_id);
-  const teamIds = rows
-    .map((row) => row.team_id)
-    .filter((id): id is number => typeof id === "number");
-  const [playersById, teamsById] = await Promise.all([
-    fetchPlayerMeta(playerIds),
-    fetchTeamMeta(teamIds),
-  ]);
   const entityIdFilter =
-    request.entityIds == null ? null : new Set(request.entityIds);
+    args.request.entityIds == null ? null : new Set(args.request.entityIds);
   const sortedApiRows = sortRows(
-    rows.map((row) =>
+    args.rows.map((row) =>
       toApiRow({
-        request,
+        request: args.request,
         row,
-        player: playersById.get(row.entity_id) ?? null,
-        team: row.team_id == null ? null : teamsById.get(row.team_id) ?? null,
+        player: args.playersById.get(row.entity_id) ?? null,
+        team:
+          row.team_id == null ? null : args.teamsById.get(row.team_id) ?? null,
       }),
     ).filter(
       (row) => entityIdFilter == null || entityIdFilter.has(row.entity.id),
     ),
-    request,
+    args.request,
   );
   const apiRows =
-    request.limit == null
+    args.request.limit == null
       ? sortedApiRows
-      : sortedApiRows.slice(0, request.limit);
+      : sortedApiRows.slice(0, args.request.limit);
 
   return {
     success: true,
-    request,
+    request: args.request,
     rankings: apiRows,
     meta: {
-      generatedAt,
-      snapshotDate,
-      snapshotUpdatedAt: latestTimestamp(rows),
-      latestAvailableSnapshotDate: snapshotDate,
+      generatedAt: args.generatedAt,
+      snapshotDate: args.snapshotDate,
+      snapshotUpdatedAt: latestTimestamp(args.rows),
+      latestAvailableSnapshotDate: args.snapshotDate,
       snapshotSelectionReason: "latest_available",
       sourceTable: "entity_metric_rankings",
-      metric: metricResponseMetadata(definition, request.metric),
-      unavailable: rows.length === 0,
+      metric: metricResponseMetadata(definition, args.request.metric),
+      unavailable: args.rows.length === 0,
       rowCount: apiRows.length,
-      limit: request.limit,
+      limit: args.request.limit,
+      methodologyVersion: definition?.methodologyVersion ?? null,
+      methodologyUpdatedAt: definition
+        ? CONTEXTUAL_RANKINGS_METHODOLOGY_UPDATED_AT
+        : null,
+      sourceQualityFlags: [...(definition?.sourceQualityFlags ?? [])],
+      sourceWarnings: [],
       message:
-        rows.length === 0
+        args.rows.length === 0
           ? "No entity_metric_rankings rows matched the selected snapshot."
           : apiRows.length === 0
             ? "No ranking rows matched the request."
@@ -414,14 +495,86 @@ async function buildEntityMetricRankingSurface(
 export async function buildEntityMetricRankingSurfaces(
   request: ContextualRankingsRequest,
   metricKeys: ContextualRankingMetricKey[],
+  options: { hydrateMetadata?: boolean } = {},
 ): Promise<Map<ContextualRankingMetricKey, ContextualRankingsResponse>> {
+  const hydrateMetadata = options.hydrateMetadata ?? true;
   const uniqueMetricKeys = Array.from(new Set(metricKeys));
-  const entries = await Promise.all(
-    uniqueMetricKeys.map(async (metricKey) => [
-      metricKey,
-      await buildEntityMetricRankingSurface({ ...request, metric: metricKey }),
-    ] as const),
+  const generatedAt = new Date().toISOString();
+  const snapshotEntries =
+    uniqueMetricKeys.length <= 1
+      ? await Promise.all(
+          uniqueMetricKeys.map(async (metricKey) => {
+            const snapshotDate = await fetchLatestSnapshotDate({
+              ...request,
+              metric: metricKey,
+            });
+            return [metricKey, snapshotDate] as const;
+          }),
+        )
+      : uniqueMetricKeys.map((metricKey) => [
+          metricKey,
+          null,
+        ] as const);
+  const snapshotDateByMetric = new Map(snapshotEntries);
+  if (uniqueMetricKeys.length > 1) {
+    const batchSnapshotDate = await fetchLatestSnapshotDate({
+      ...request,
+      metric: uniqueMetricKeys.includes(request.metric)
+        ? request.metric
+        : uniqueMetricKeys[0],
+    });
+    for (const metricKey of uniqueMetricKeys) {
+      snapshotDateByMetric.set(metricKey, batchSnapshotDate);
+    }
+  }
+  const metricKeysBySnapshotDate = new Map<string, ContextualRankingMetricKey[]>();
+
+  for (const [metricKey, snapshotDate] of snapshotDateByMetric) {
+    if (snapshotDate == null) continue;
+    const existing = metricKeysBySnapshotDate.get(snapshotDate) ?? [];
+    existing.push(metricKey);
+    metricKeysBySnapshotDate.set(snapshotDate, existing);
+  }
+
+  const rowsByMetric = new Map<ContextualRankingMetricKey, EntityMetricRankingRow[]>(
+    uniqueMetricKeys.map((metricKey) => [metricKey, []]),
   );
+  const rowGroups = await Promise.all(
+    Array.from(metricKeysBySnapshotDate.entries()).map(
+      async ([snapshotDate, snapshotMetricKeys]) =>
+        fetchEntityMetricRows(request, snapshotDate, snapshotMetricKeys),
+    ),
+  );
+  const allRows = rowGroups.flat();
+  for (const row of allRows) {
+    const metricKey = row.metric_key as ContextualRankingMetricKey;
+    const metricRows = rowsByMetric.get(metricKey);
+    if (metricRows) metricRows.push(row);
+  }
+
+  const playerIds = allRows.map((row) => row.entity_id);
+  const teamIds = allRows
+    .map((row) => row.team_id)
+    .filter((id): id is number => typeof id === "number");
+  const [playersById, teamsById] = await Promise.all([
+    hydrateMetadata ? fetchPlayerMeta(playerIds) : new Map<number, PlayerMeta>(),
+    hydrateMetadata ? fetchTeamMeta(teamIds) : new Map<number, TeamMeta>(),
+  ]);
+
+  const entries = uniqueMetricKeys.map((metricKey) => {
+    const metricRequest = { ...request, metric: metricKey };
+    return [
+      metricKey,
+      buildEntityMetricRankingSurfaceFromRows({
+        request: metricRequest,
+        rows: rowsByMetric.get(metricKey) ?? [],
+        playersById,
+        teamsById,
+        generatedAt,
+        snapshotDate: snapshotDateByMetric.get(metricKey) ?? null,
+      }),
+    ] as const;
+  });
 
   return new Map(entries);
 }

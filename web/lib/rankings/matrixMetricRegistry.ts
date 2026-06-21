@@ -260,7 +260,7 @@ const MATRIX_METRIC_COLUMNS: MatrixMetricColumn[] = [
     shortLabel: "Luck",
     fullLabel: "Results Luck Index",
     tooltip:
-      "Regression metric centered at 100; values above 100 mean current results are running hotter than a selected-window-excluded baseline.",
+      "Current 100-centered Results Luck Index; values above 100 mean current results are running hotter than a selected-window-excluded baseline.",
     defaultVisible: false,
     playerTypes: ["skater"],
   },
@@ -288,7 +288,8 @@ const MATRIX_METRIC_COLUMNS: MatrixMetricColumn[] = [
     groupKey: "overall_context",
     shortLabel: "MCM",
     fullLabel: "MCM Score",
-    tooltip: "Verified multi-category fantasy composite from contextual percentile components.",
+    tooltip:
+      "Current-contract multi-category fantasy composite from verified contextual percentile components; PP points are source-pending and excluded.",
     defaultVisible: true,
     playerTypes: ["skater"],
   },
@@ -297,7 +298,8 @@ const MATRIX_METRIC_COLUMNS: MatrixMetricColumn[] = [
     groupKey: "overall_context",
     shortLabel: "BEAST",
     fullLabel: "BEAST Tier",
-    tooltip: "Fantasy tier label from verified MCM component gates.",
+    tooltip:
+      "Current-contract fantasy tier label from verified MCM component gates; PP points are source-pending and excluded.",
     defaultVisible: true,
     playerTypes: ["skater"],
   },

@@ -246,7 +246,9 @@ describe("game prediction baseline model", () => {
     expect(prediction.components).toMatchObject({
       model_family: "extra_trees",
       calibration_method: "raw_extra_trees",
+      market_edge_bucket: "no_market",
     });
+    expect(prediction.metadata.market_edge_bucket).toBe("no_market");
     expect(calibratedPrediction.components).toMatchObject({
       calibration_method: "platt",
       calibrated_home_win_probability: 0.6,
@@ -339,6 +341,8 @@ describe("game prediction baseline model", () => {
       "training_set_standard_score",
     );
     expect(prediction.components.probability_floor).toBe(0.05);
+    expect(prediction.components.market_edge_bucket).toBe("no_market");
+    expect(prediction.metadata.market_edge_bucket).toBe("no_market");
   });
 
   it("dampens confidence when source quality is weaker", () => {

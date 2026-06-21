@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { buildMatrixMock } = vi.hoisted(() => ({
+const { buildMatrixMock, resolveTeamTokenMock } = vi.hoisted(() => ({
   buildMatrixMock: vi.fn(),
+  resolveTeamTokenMock: vi.fn(),
+}));
+
+vi.mock("../../../../lib/rankings/teamTokenResolver", () => ({
+  resolveTeamToken: resolveTeamTokenMock,
 }));
 
 vi.mock("../../../../lib/rankings/playerMatrix", async (importOriginal) => {
@@ -38,6 +43,7 @@ function createMockRes() {
 describe("/api/v1/contextual-rankings/matrix", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resolveTeamTokenMock.mockResolvedValue(null);
     buildMatrixMock.mockImplementation(async (request) => ({
       success: true,
       request,
@@ -190,6 +196,56 @@ describe("/api/v1/contextual-rankings/matrix", () => {
       pageCount: 5,
       snapshotDate: "2026-04-16",
     });
+  });
+
+  it("resolves team abbreviations before building the matrix", async () => {
+    resolveTeamTokenMock.mockResolvedValueOnce({
+      input: "BOS",
+      teamId: 6,
+      abbreviation: "BOS",
+      name: "Boston Bruins",
+      matchedBy: "abbreviation",
+    });
+    const req: any = {
+      method: "GET",
+      query: {
+        season: "20252026",
+        team: "BOS",
+      },
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(resolveTeamTokenMock).toHaveBeenCalledWith("BOS");
+    expect(buildMatrixMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        teamId: 6,
+        peerGroupType: "team",
+      }),
+    );
+  });
+
+  it("returns a clear validation message for unknown text teams", async () => {
+    resolveTeamTokenMock.mockResolvedValueOnce(null);
+    const req: any = {
+      method: "GET",
+      query: {
+        season: "20252026",
+        team: "BOSX",
+      },
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body?.error).toBe("No team matched BOSX");
+    expect(res.body?.details).toMatchObject({
+      team: "must be a numeric id, team abbreviation, or team name",
+    });
+    expect(buildMatrixMock).not.toHaveBeenCalled();
   });
 
   it("returns 400 for invalid query params before building the matrix", async () => {

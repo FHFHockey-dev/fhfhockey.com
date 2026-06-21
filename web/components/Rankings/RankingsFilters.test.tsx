@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -103,12 +109,16 @@ describe("RankingsFilters", () => {
 
   it("emits shareable display mode changes for matrix cells", () => {
     const onChange = renderFilters();
+    const displaySelect = screen.getByLabelText("Display");
 
-    fireEvent.change(screen.getByLabelText("Display"), {
-      target: { value: "raw_rank" },
+    expect(displaySelect.textContent).toContain("Metric Value");
+    expect(displaySelect.textContent).not.toContain("Novel Score");
+
+    fireEvent.change(displaySelect, {
+      target: { value: "metric_value" },
     });
 
-    expect(onChange).toHaveBeenCalledWith({ displayMode: "raw_rank" });
+    expect(onChange).toHaveBeenCalledWith({ displayMode: "metric_value" });
   });
 
   it("uses goalie-specific filter labels without exposing skater-only advanced filters", () => {
@@ -131,15 +141,20 @@ describe("RankingsFilters", () => {
       selectedGoalieId: "",
       page: "1",
     });
-    expect((screen.getByLabelText("Min Starts") as HTMLInputElement).value).toBe("3");
-    expect((screen.getByLabelText("Min Shots") as HTMLInputElement).value).toBe("100");
-    const teamInput = screen.getByLabelText("Team") as HTMLInputElement;
+    expect(
+      (screen.getByLabelText("Min Starts") as HTMLInputElement).value,
+    ).toBe("3");
+    expect((screen.getByLabelText("Min Shots") as HTMLInputElement).value).toBe(
+      "100",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "More Filters" }));
+    const dialog = screen.getByRole("dialog", { name: "More ranking filters" });
+    const teamInput = within(dialog).getByLabelText("Team") as HTMLInputElement;
     expect(teamInput.value).toBe("DAL");
     expect(teamInput.inputMode).toBe("text");
     expect(teamInput.placeholder).toBe("Team code or name");
     fireEvent.change(teamInput, { target: { value: "NYR" } });
     expect(onChange).toHaveBeenCalledWith({ team: "NYR", page: "1" });
-    expect(screen.queryByRole("button", { name: "More Filters" })).toBeNull();
     expect(screen.queryByLabelText("Min GP")).toBeNull();
   });
 
@@ -153,6 +168,6 @@ describe("RankingsFilters", () => {
     expect(screen.queryByLabelText("Strength")).toBeNull();
     expect(screen.queryByLabelText("Min GP")).toBeNull();
     expect(screen.queryByLabelText("Team")).toBeNull();
-    expect(screen.queryByRole("button", { name: "More Filters" })).toBeNull();
+    expect(screen.getByRole("button", { name: "More Filters" })).toBeTruthy();
   });
 });

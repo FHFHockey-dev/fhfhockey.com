@@ -30,6 +30,7 @@ const payload: PlayerMatrixResponse = {
     page: 1,
     pageSize: 10,
     selectedPlayerId: 1,
+    rankingSourcePreference: "fallback",
   },
   selectedPlayerId: 1,
   rows: [
@@ -94,6 +95,20 @@ const payload: PlayerMatrixResponse = {
           rank: 1,
           percentile: 98.2,
           qualifiedPeerCount: 30,
+          rankScopes: {
+            overall: {
+              rank: 9,
+              percentile: 70.2,
+              qualifiedPeerCount: 155,
+              peerGroupKey: "all_skaters",
+            },
+            deployment: {
+              rank: 1,
+              percentile: 98.2,
+              qualifiedPeerCount: 30,
+              peerGroupKey: "L1",
+            },
+          },
           lowerIsBetter: false,
           availabilityState: "available",
           availabilityReason: null,
@@ -115,6 +130,20 @@ const payload: PlayerMatrixResponse = {
           rank: 2,
           percentile: 92.1,
           qualifiedPeerCount: 30,
+          rankScopes: {
+            overall: {
+              rank: 42,
+              percentile: 48.5,
+              qualifiedPeerCount: 155,
+              peerGroupKey: "all_skaters",
+            },
+            deployment: {
+              rank: 2,
+              percentile: 92.1,
+              qualifiedPeerCount: 30,
+              peerGroupKey: "L1",
+            },
+          },
           lowerIsBetter: true,
           availabilityState: "available",
           availabilityReason: null,
@@ -166,10 +195,15 @@ describe("PlayerSnapshotPanel", () => {
     );
     expect(screen.getByText("L1 / PP1")).toBeTruthy();
     expect(screen.getByText("Profile Read")).toBeTruthy();
-    expect(screen.getByText(/Best live signal is Goals\/60/)).toBeTruthy();
+    expect(
+      screen.getByText(/Best live signal is Goals\/60 \(70\.2% overall\)/),
+    ).toBeTruthy();
     expect(screen.getByText("Live Strengths")).toBeTruthy();
-    expect(screen.getByText(/Goals\/60: 98\.2% percentile, rank 1/)).toBeTruthy();
-    expect(screen.getByText(/xGA\/60: 92\.1% percentile, rank 2/)).toBeTruthy();
+    expect(
+      screen.getByText(
+        /Goals\/60: 70\.2% overall percentile, rank 9 of 155 · peer group all_skaters/,
+      ),
+    ).toBeTruthy();
     expect(screen.getByText("Weak Spots")).toBeTruthy();
     expect(screen.getByText("Sample & Source Notes")).toBeTruthy();
     expect(screen.getByText("xGA/60: source caveat applies.")).toBeTruthy();
@@ -177,9 +211,48 @@ describe("PlayerSnapshotPanel", () => {
     expect(screen.getByText("Composite Status")).toBeTruthy();
     expect(screen.getByText("Offense Rating")).toBeTruthy();
     expect(screen.getByText("91.4")).toBeTruthy();
-    expect(screen.getAllByText("Published composite value").length).toBeGreaterThan(0);
+    expect(
+      screen.getByText(/Offense Rating: deployment-peer percentile composite from skater_composite_ratings/),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/Defensive Impact in Context: context-influenced defensive composite from skater_composite_ratings/),
+    ).toBeTruthy();
     expect(screen.getByText("BEAST+ · 88.6")).toBeTruthy();
-    expect(screen.getByText("Planned; no live value")).toBeTruthy();
+    expect(
+      screen.getByText(
+        /MCM Score: current-contract fantasy multi-category composite from skater_composite_ratings.*PP points source-pending/,
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText("Results Luck Index")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Source pending until selected-window-excluded baseline provenance is available",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("switches snapshot explanations to deployment rank scope", () => {
+    render(
+      <PlayerSnapshotPanel
+        payload={payload}
+        selectedPlayerId={1}
+        rankMode="deployment"
+      />,
+    );
+
+    expect(
+      screen.getByText(/Best live signal is Goals\/60 \(98\.2% deployment\)/),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        /Goals\/60: 98\.2% deployment percentile, rank 1 of 30 · peer group L1/,
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        /xGA\/60: 92\.1% deployment percentile, rank 2 of 30 · peer group L1/,
+      ),
+    ).toBeTruthy();
   });
 
   it("falls back to known local player and team images", () => {

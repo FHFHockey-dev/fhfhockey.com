@@ -2,7 +2,10 @@ import type { NextApiResponse } from "next";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
-import { promoteGamePredictionModelVersion } from "lib/game-predictions/workflow";
+import {
+  previewGamePredictionModelVersionPromotion,
+  promoteGamePredictionModelVersion,
+} from "lib/game-predictions/workflow";
 import type { Database } from "lib/supabase/database-generated.types";
 import adminOnly from "utils/adminOnlyMiddleware";
 
@@ -56,10 +59,27 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
     });
   }
 
-  if (readSingleQueryValue(req.query.dryRun) !== "false" || !readBoolean(req.query.confirm)) {
+  const minEvaluatedGames = readInteger(req.query.minEvaluatedGames);
+  if (readSingleQueryValue(req.query.dryRun) !== "false") {
+    const result = await previewGamePredictionModelVersionPromotion({
+      client: req.supabase,
+      modelName,
+      modelVersion,
+      featureSetVersion,
+      minEvaluatedGames,
+    });
+
+    return res.status(200).json({
+      success: true,
+      dryRun: true,
+      result,
+    });
+  }
+
+  if (!readBoolean(req.query.confirm)) {
     return res.status(400).json({
       success: false,
-      dryRun: true,
+      dryRun: false,
       error:
         "Promotion requires dryRun=false and confirm=true after persisted evidence review.",
     });
@@ -70,7 +90,7 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
     modelName,
     modelVersion,
     featureSetVersion,
-    minEvaluatedGames: readInteger(req.query.minEvaluatedGames),
+    minEvaluatedGames,
   });
 
   return res.status(result.promoted ? 200 : 409).json({

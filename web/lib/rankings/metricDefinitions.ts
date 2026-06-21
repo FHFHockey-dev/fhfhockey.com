@@ -326,7 +326,7 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     sourceQualityFlags: ["source_pending"],
     metadata: {
       sourcePendingReason:
-        "MCM methodology includes PP points, but the current contextual ranking surface has no verified pp_points_per_60 metric rows.",
+        "Original MCM includes PP points, but the live MCM contract excludes pp_points_per_60 until verified ranking rows are available.",
       requiredFields: ["power_play_points", "power_play_toi_seconds"],
     },
   },
@@ -850,9 +850,10 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     displayName: "MCM Score",
     entityType: "skater",
     category: "Fantasy composite",
-    description: "Multi-category fantasy score based on percentile components.",
+    description:
+      "Current-contract multi-category fantasy score based on verified live percentile components.",
     formulaDescription:
-      "Weighted blend of riff score, scoring score, and category depth score",
+      "Weighted blend of riff score, live scoring score, and live category depth score; power-play points are excluded until pp_points_per_60 source rows are verified.",
     higherIsBetter: true,
     defaultStrengthState: "all",
     defaultPeerGroup: "deployment",
@@ -872,11 +873,13 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
         "goals_per_60",
         "primary_assists_per_60",
         "points_per_60",
-        "pp_points_per_60",
       ],
+      sourcePendingComponents: ["pp_points_per_60"],
       componentCaveats: {
         hits_per_60: "RTSS event; not rink-adjusted in current sources.",
         blocks_per_60: "RTSS event; not rink-adjusted in current sources.",
+        pp_points_per_60:
+          "Original MCM component; excluded from the live MCM score until verified source rows exist.",
       },
       signalType: "fantasy_peripheral_composite",
     },
@@ -886,8 +889,10 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     displayName: "BEAST Tier",
     entityType: "skater",
     category: "Fantasy composite",
-    description: "Tier label for qualified multi-category players.",
-    formulaDescription: "Eligibility gates based on percentile thresholds",
+    description:
+      "Current-contract tier label for qualified multi-category players.",
+    formulaDescription:
+      "Eligibility gates based on verified live MCM percentile thresholds; power-play points are source-pending and excluded.",
     higherIsBetter: true,
     defaultStrengthState: "all",
     defaultPeerGroup: "deployment",
@@ -901,9 +906,12 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     sourceFields: ["skater_composite_ratings.beast_tier"],
     metadata: {
       allowedTiers: ["MCM Watch", "MCM", "BEAST", "BEAST+"],
+      sourcePendingComponents: ["pp_points_per_60"],
       componentCaveats: {
         hits_per_60: "RTSS event; not rink-adjusted in current sources.",
         blocks_per_60: "RTSS event; not rink-adjusted in current sources.",
+        pp_points_per_60:
+          "Original MCM component; excluded from live BEAST gates until verified source rows exist.",
       },
       signalType: "fantasy_peripheral_tier",
     },

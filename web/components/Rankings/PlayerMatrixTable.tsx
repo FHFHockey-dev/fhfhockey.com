@@ -8,9 +8,7 @@ import {
   formatDeploymentLabel,
   formatToiClock,
 } from "lib/rankings/rankingFormatters";
-import type {
-  ContextualRankingsSortDirection,
-} from "lib/rankings/rankingTypes";
+import type { ContextualRankingsSortDirection } from "lib/rankings/rankingTypes";
 import type { RankingsFilterState } from "lib/rankings/rankingUrlState";
 import {
   formatPercentileScore,
@@ -45,6 +43,9 @@ const SCORE_TILE_LEGEND = [
   { label: "0-19", toneClass: styles.scoreTonePoor },
   { label: "N/A", toneClass: styles.scoreToneMuted },
 ];
+
+const PLAYER_PLACEHOLDER_SRC = "/pictures/player-placeholder.jpg";
+const TEAM_LOGO_FALLBACK_SRC = "/teamLogos/FHFH.png";
 
 type RankDisplayMode = "overall" | "deployment";
 
@@ -90,7 +91,9 @@ function metricCellTitle(
     cell.sampleConfidence === "low" ? "Low sample" : null,
     !rank.qualifiedPeerCount ? "No qualified peer sample" : null,
     rank.peerGroupKey ? `Peer group ${rank.peerGroupKey}` : null,
-    staleSource ? "Snapshot is older than latest available matrix snapshot" : null,
+    staleSource
+      ? "Snapshot is older than latest available matrix snapshot"
+      : null,
     cell.lowerIsBetter ? "Lower raw values are better" : null,
     cell.availabilityReason,
     cell.sourceQualityFlags.length > 0
@@ -98,31 +101,6 @@ function metricCellTitle(
       : null,
   ].filter(Boolean);
   return parts.join(" | ");
-}
-
-function metricState(cell: PlayerMatrixMetricCell, staleSource: boolean) {
-  if (cell.availabilityState === "planned") {
-    return { label: "Planned", className: styles.metricStatePlanned };
-  }
-  if (cell.availabilityState === "unavailable" || cell.availabilityReason) {
-    return {
-      label: !cell.qualifiedPeerCount ? "No sample" : "Source pending",
-      className: styles.metricStateUnavailable,
-    };
-  }
-  if (staleSource) {
-    return { label: "Stale source", className: styles.metricStateStale };
-  }
-  if (cell.sampleConfidence === "low" || cell.warnings.length > 0) {
-    return { label: "Low sample", className: styles.metricStateLowSample };
-  }
-  if (cell.sourceQualityFlags.length > 0) {
-    return { label: "Source caveat", className: styles.metricStateCaveat };
-  }
-  if (cell.rawValue === 0) {
-    return { label: "True zero", className: styles.metricStateZero };
-  }
-  return null;
 }
 
 function MatrixMetricCell({
@@ -136,7 +114,8 @@ function MatrixMetricCell({
   rankMode: RankDisplayMode;
   displayMode: RankingsFilterState["displayMode"];
 }) {
-  const unavailable = cell.availabilityState !== "available" || cell.availabilityReason;
+  const unavailable =
+    cell.availabilityState !== "available" || cell.availabilityReason;
   const staleSource =
     !unavailable &&
     latestSnapshotDate != null &&
@@ -155,47 +134,61 @@ function MatrixMetricCell({
       : unavailable
         ? "N/A"
         : formatPercentileScore(rank.percentile);
-  const state = metricState(cell, staleSource);
   const rankLabel = rank.rank == null ? "UR" : `#${rank.rank}`;
-  const valueLabel = cell.formattedValue ?? "-";
   const title = metricCellTitle(cell, staleSource, rankMode);
-  const showRank = displayMode === "both" || displayMode === "raw_rank";
-  const primaryLabel =
-    displayMode === "raw_rank"
-      ? unavailable
-        ? "N/A"
-        : rankLabel
-      : score;
+  const toneClass = unavailable
+    ? styles.scoreToneMuted
+    : getScoreTileTone(rank.percentile);
+  const showValue = displayMode === "metric_value";
+
   return (
-    <td>
-      <div
-        className={`${styles.matrixMetricCell} ${
-          unavailable ? styles.scoreToneMuted : getScoreTileTone(rank.percentile)
-        }`}
-        title={title}
-        aria-label={title}
-      >
-        <div className={styles.metricScoreStack}>
-          <div className={styles.metricScoreTile}>
-            <strong>{primaryLabel}</strong>
-          </div>
-          {showRank && displayMode !== "raw_rank" ? (
+    <td className={styles.matrixMetricScoreCell}>
+      {showValue ? (
+        <span
+          className={`${styles.metricValueTile} ${toneClass}`}
+          title={title}
+          aria-label={`${cell.fullLabel} value ${
+            unavailable ? "not available" : (cell.formattedValue ?? "-")
+          }`}
+        >
+          {unavailable ? "N/A" : (cell.formattedValue ?? "-")}
+        </span>
+      ) : (
+        <div
+          className={`${styles.matrixMetricCell} ${toneClass}`}
+          title={title}
+          aria-label={title}
+        >
+          <div className={styles.metricScoreStack}>
+            <div className={styles.metricScoreTile}>
+              <strong>{score}</strong>
+            </div>
             <span className={styles.metricRankLine}>
               {unavailable ? "N/A" : rankLabel}
             </span>
-          ) : null}
-          <span className={styles.metricValueLine}>
-            {unavailable ? "N/A" : valueLabel}
-          </span>
+          </div>
         </div>
-        {state ? (
-          <span className={`${styles.metricStateChip} ${state.className}`}>
-            {state.label}
-          </span>
-        ) : null}
-      </div>
+      )}
     </td>
   );
+}
+
+function metricHeaderTitle(args: {
+  column: PlayerMatrixResponse["meta"]["metricColumns"][number];
+  displayMode: RankingsFilterState["displayMode"];
+}) {
+  return args.displayMode === "metric_value"
+    ? `${args.column.fullLabel} novel score value`
+    : args.column.tooltip;
+}
+
+function metricHeaderLabel(args: {
+  column: PlayerMatrixResponse["meta"]["metricColumns"][number];
+  displayMode: RankingsFilterState["displayMode"];
+}) {
+  return args.displayMode === "metric_value"
+    ? `${args.column.shortLabel} Val`
+    : args.column.shortLabel;
 }
 
 function sortMetricLabel(payload: PlayerMatrixResponse) {
@@ -236,18 +229,49 @@ function StateBody({ message, colSpan }: { message: string; colSpan: number }) {
   );
 }
 
+function teamLogoSrc(abbreviation: string | null) {
+  return abbreviation
+    ? `/teamLogos/${abbreviation}.png`
+    : TEAM_LOGO_FALLBACK_SRC;
+}
+
+function deploymentToneClass(label: string) {
+  switch (label) {
+    case "L1":
+    case "P1":
+    case "PP1":
+      return styles.deploymentBadgeGreen;
+    case "L2":
+    case "PP2":
+      return styles.deploymentBadgeYellow;
+    case "L3":
+    case "P2":
+      return styles.deploymentBadgeOrange;
+    case "L4":
+    case "P3":
+      return styles.deploymentBadgeRed;
+    case "PK1":
+    case "PK2":
+      return styles.deploymentBadgePk;
+    default:
+      return styles.deploymentBadgeMutedTone;
+  }
+}
+
 function DeploymentBadges({
   deployment,
 }: {
   deployment: PlayerMatrixRow["deployment"];
 }) {
-  const badgeCandidates: Array<{ key: string; label: string; className: string } | null> = [
-    deployment.ev ? { key: "ev", label: String(deployment.ev), className: styles.deploymentBadgeEv } : null,
-    deployment.pp ? { key: "pp", label: String(deployment.pp), className: styles.deploymentBadgePp } : null,
-    deployment.pk ? { key: "pk", label: String(deployment.pk), className: styles.deploymentBadgePk } : null,
+  const badgeCandidates: Array<{ key: string; label: string } | null> = [
+    deployment.ev ? { key: "ev", label: String(deployment.ev) } : null,
+    deployment.pp && deployment.pp !== "PP3"
+      ? { key: "pp", label: String(deployment.pp) }
+      : null,
+    deployment.pk ? { key: "pk", label: String(deployment.pk) } : null,
   ];
   const badges = badgeCandidates.filter(
-    (badge): badge is { key: string; label: string; className: string } => badge != null,
+    (badge): badge is { key: string; label: string } => badge != null,
   );
 
   if (badges.length === 0) {
@@ -260,11 +284,38 @@ function DeploymentBadges({
       aria-label={`Deployment ${formatDeploymentLabel(deployment)}`}
     >
       {badges.map((badge) => (
-        <span key={badge.key} className={`${styles.deploymentBadge} ${badge.className}`}>
+        <span
+          key={badge.key}
+          className={`${styles.deploymentBadge} ${deploymentToneClass(badge.label)}`}
+        >
           {badge.label}
         </span>
       ))}
     </span>
+  );
+}
+
+function ToiCell({
+  sample,
+  strength,
+}: {
+  sample: PlayerMatrixRow["sample"];
+  strength: PlayerMatrixResponse["request"]["strength"];
+}) {
+  const selectedLabel = strength === "all" ? "ALL" : strength.toUpperCase();
+  return (
+    <td className={styles.toiCell}>
+      <span className={styles.toiCellRow}>
+        <b>{selectedLabel}</b>
+        <span>{formatToiClock(sample.toiPerGameSeconds)}</span>
+      </span>
+      <span className={styles.toiCellRow}>
+        <b>ALL</b>
+        <span>
+          {formatToiClock(sample.allStrengthsToiPerGameSeconds ?? null)}
+        </span>
+      </span>
+    </td>
   );
 }
 
@@ -310,17 +361,36 @@ function Row({
       </td>
       <td className={styles.stickyPlayerCell}>
         <div className={styles.playerCell}>
+          <span className={styles.playerMedia} aria-hidden="true">
+            <img
+              className={styles.playerHeadshot}
+              src={row.entity.imageUrl ?? PLAYER_PLACEHOLDER_SRC}
+              alt=""
+              onError={(event) => {
+                event.currentTarget.src = PLAYER_PLACEHOLDER_SRC;
+              }}
+            />
+            <img
+              className={styles.playerTeamLogo}
+              src={teamLogoSrc(row.team.abbreviation)}
+              alt=""
+              onError={(event) => {
+                event.currentTarget.src = TEAM_LOGO_FALLBACK_SRC;
+              }}
+            />
+          </span>
           <span className={styles.playerIdentity}>
             <strong>{row.entity.name ?? `Player ${row.entity.id}`}</strong>
             <span>
-              {row.entity.position ?? "-"} · {row.team.name ?? row.team.abbreviation ?? "Team unavailable"}
+              {row.entity.position ?? "-"} ·{" "}
+              {row.team.name ?? row.team.abbreviation ?? "Team unavailable"}
             </span>
           </span>
           <DeploymentBadges deployment={row.deployment} />
         </div>
       </td>
       <td className={styles.sampleCell}>{row.sample.gamesPlayed ?? "-"}</td>
-      <td className={styles.sampleCell}>{formatToiClock(row.sample.toiPerGameSeconds)}</td>
+      <ToiCell sample={row.sample} strength={payload.request.strength} />
       {payload.meta.metricColumns.map((column) => (
         <MatrixMetricCell
           key={column.metricKey}
@@ -380,10 +450,18 @@ export default function PlayerMatrixTable({
               <th className={styles.stickyPlayerCell} scope="col" rowSpan={2}>
                 Player
               </th>
-              <th className={styles.sampleCell} scope="col" rowSpan={2}>GP</th>
-              <th className={styles.sampleCell} scope="col" rowSpan={2}>TOI/G</th>
+              <th className={styles.sampleCell} scope="col" rowSpan={2}>
+                GP
+              </th>
+              <th className={styles.toiCell} scope="col" rowSpan={2}>
+                TOI/G
+              </th>
               {(payload ? groupedHeaders(payload) : []).map((entry) => (
-                <th key={entry.group.key} scope="colgroup" colSpan={entry.columns.length}>
+                <th
+                  key={entry.group.key}
+                  scope="colgroup"
+                  colSpan={entry.columns.length}
+                >
                   {entry.group.label}
                 </th>
               ))}
@@ -396,17 +474,27 @@ export default function PlayerMatrixTable({
                   payload,
                 });
                 return (
-                  <th key={column.metricKey} scope="col">
+                  <th
+                    key={column.metricKey}
+                    className={styles.matrixMetricHeader}
+                    scope="col"
+                  >
                     <button
                       type="button"
                       className={styles.matrixSortButton}
                       aria-pressed={active}
-                      title={column.tooltip}
-                      onClick={() => onSortMetric(column.metricKey, nextDirection)}
+                      title={metricHeaderTitle({ column, displayMode })}
+                      onClick={() =>
+                        onSortMetric(column.metricKey, nextDirection)
+                      }
                     >
-                      <span>{column.shortLabel}</span>
+                      <span>{metricHeaderLabel({ column, displayMode })}</span>
                       {active ? (
-                        <small>{payload.meta.sortDirection === "asc" ? "ASC" : "DESC"}</small>
+                        <small>
+                          {payload.meta.sortDirection === "asc"
+                            ? "ASC"
+                            : "DESC"}
+                        </small>
                       ) : null}
                     </button>
                   </th>
@@ -414,14 +502,21 @@ export default function PlayerMatrixTable({
               })}
             </tr>
           </thead>
-          {isLoading ? <StateBody colSpan={colSpan} message="Loading matrix..." /> : null}
+          {isLoading ? (
+            <StateBody colSpan={colSpan} message="Loading matrix..." />
+          ) : null}
           {!isLoading && errorMessage ? (
             <StateBody colSpan={colSpan} message={errorMessage} />
           ) : null}
-          {!isLoading && !errorMessage && payload && payload.rows.length === 0 ? (
+          {!isLoading &&
+          !errorMessage &&
+          payload &&
+          payload.rows.length === 0 ? (
             <StateBody
               colSpan={colSpan}
-              message={payload.meta.message ?? "No players matched these filters."}
+              message={
+                payload.meta.message ?? "No players matched these filters."
+              }
             />
           ) : null}
           {!isLoading && !errorMessage && payload && payload.rows.length > 0 ? (
@@ -447,7 +542,7 @@ export default function PlayerMatrixTable({
             <span>
               Showing {payload.meta.rowCount} of {payload.meta.totalRankedRows}
             </span>
-            <span>Color = percentile among qualified peers</span>
+            <span>Color = better-than-peer percentile</span>
             {SCORE_TILE_LEGEND.map((band) => (
               <span
                 key={band.label}
@@ -457,10 +552,13 @@ export default function PlayerMatrixTable({
               </span>
             ))}
             <span className={styles.lowerBetterLegend}>
-              Lower-is-better metrics still use better-is-greener percentile coloring
+              Lower-is-better metrics still use better-is-greener percentile
+              coloring
             </span>
             <span className={styles.legendPill}>Low sample = caution</span>
-            <span className={styles.legendPill}>Planned/N/A = not live or not enough source data</span>
+            <span className={styles.legendPill}>
+              Planned/N/A = not live or not enough source data
+            </span>
           </div>
           <div className={styles.paginationControls}>
             <button
@@ -484,7 +582,9 @@ export default function PlayerMatrixTable({
               Rows
               <select
                 value={payload.meta.pageSize}
-                onChange={(event) => onPageSizeChange(Number(event.target.value))}
+                onChange={(event) =>
+                  onPageSizeChange(Number(event.target.value))
+                }
               >
                 {[10, 25, 50].map((size) => (
                   <option key={size} value={size}>

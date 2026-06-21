@@ -1,6 +1,6 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import useSWR from "swr";
 
 import DeploymentTiersPanel from "components/Rankings/DeploymentTiersPanel";
@@ -43,6 +43,7 @@ import {
   buildTeamMatrixRequestPath,
   buildTrendingRequestPath,
   buildWarRequestPath,
+  DEFAULT_RANKINGS_FILTERS,
   defaultDirectionForSort,
   normalizeRankingsFilters,
 } from "lib/rankings/rankingUrlState";
@@ -62,13 +63,19 @@ const TABS: Array<{
   key: RankingsFilterState["tab"];
   label: string;
   planned?: boolean;
+  icon: SmallIconName;
 }> = [
-  { key: "rankings", label: "Rankings" },
-  { key: "metric_explorer", label: "Metric Explorer" },
-  { key: "deployment_tiers", label: "Deployment Tiers" },
-  { key: "trending", label: "Trending" },
-  { key: "splits", label: "Splits" },
-  { key: "war", label: "Wins Above Replacement", planned: true },
+  { key: "rankings", label: "Rankings", icon: "bar" },
+  { key: "metric_explorer", label: "Metric Explorer", icon: "barChart" },
+  { key: "deployment_tiers", label: "Deployment Tiers", icon: "layers" },
+  { key: "trending", label: "Trending", icon: "line" },
+  { key: "splits", label: "Splits", icon: "pie" },
+  {
+    key: "war",
+    label: "Wins Above Replacement",
+    icon: "target",
+    planned: true,
+  },
 ];
 
 const fetcher = async <T,>(url: string) => {
@@ -84,6 +91,12 @@ const fetcher = async <T,>(url: string) => {
     throw new Error(message);
   }
   return payload as T;
+};
+
+const RANKINGS_SWR_OPTIONS = {
+  keepPreviousData: true,
+  revalidateOnFocus: false,
+  dedupingInterval: 30_000,
 };
 
 function filtersToQuery(filters: RankingsFilterState) {
@@ -162,7 +175,9 @@ function applyMatrixDisplayFilters(
     }
     return true;
   });
-  const visibleGroupKeys = new Set(metricColumns.map((column) => column.groupKey));
+  const visibleGroupKeys = new Set(
+    metricColumns.map((column) => column.groupKey),
+  );
   return {
     ...payload,
     meta: {
@@ -177,6 +192,155 @@ function applyMatrixDisplayFilters(
 
 function tabLabel(tab: RankingsFilterState["tab"]) {
   return TABS.find((entry) => entry.key === tab)?.label ?? "Rankings";
+}
+
+function pageLabels(filters: RankingsFilterState) {
+  if (filters.entity === "goalies") {
+    return {
+      headingLead: "Goalie",
+      headingRest: "Rankings",
+      title: "Goalie Rankings | FHFHockey",
+      description:
+        "Contextual NHL goalie rankings with role filters, workload context, source states, and goalie snapshots.",
+      snapshotLabel: "Goalie snapshot",
+      quickInfoFallback: "Goalie Metric",
+    };
+  }
+
+  if (filters.entity === "teams") {
+    return {
+      headingLead: "Team",
+      headingRest: "Rankings",
+      title: "Team Rankings | FHFHockey",
+      description:
+        "Contextual NHL team rankings with style metrics, source states, and team snapshots.",
+      snapshotLabel: "Team snapshot",
+      quickInfoFallback: "Team Metric",
+    };
+  }
+
+  return {
+    headingLead: "Skater",
+    headingRest: "Rankings",
+    title: "Skater Rankings | FHFHockey",
+    description:
+      "Contextual NHL skater rankings with deployment filters, percentiles, multi-metric matrices, and player snapshots.",
+    snapshotLabel: "Player snapshot",
+    quickInfoFallback: "Skater Metric",
+  };
+}
+
+function formatSnapshotDate(value?: string | null) {
+  if (!value) return "Loading";
+  const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+  if (!year || !month || !day) return value;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, day)));
+}
+
+type SmallIconName =
+  | "bar"
+  | "barChart"
+  | "book"
+  | "calendar"
+  | "layers"
+  | "line"
+  | "pie"
+  | "spark"
+  | "target"
+  | "user";
+
+function SmallIcon({ name }: { name: SmallIconName }) {
+  const imageIconPaths: Partial<Record<SmallIconName, string>> = {
+    bar: "/pictures/chart-line-bar.png",
+    barChart: "/pictures/bar-chart.png",
+    book: "/pictures/book.svg",
+    layers: "/pictures/tiers.png",
+    line: "/pictures/chart-line-up.svg",
+    pie: "/pictures/pie-slice.png",
+    target: "/pictures/target.png",
+    user: "/pictures/filtersIcon.png",
+  };
+  const imageSrc = imageIconPaths[name];
+
+  if (imageSrc) {
+    return (
+      <img
+        className={`${styles.toolbarIcon} ${styles.toolbarImageIcon}`}
+        src={imageSrc}
+        alt=""
+        aria-hidden="true"
+      />
+    );
+  }
+
+  const paths: Partial<Record<SmallIconName, ReactNode>> = {
+    bar: (
+      <>
+        <path d="M5 19V9M12 19V5M19 19v-7" />
+        <path d="M4 19h16" />
+      </>
+    ),
+    book: (
+      <>
+        <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v15H6.5A2.5 2.5 0 0 0 4 20.5z" />
+        <path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v15h4.5A2.5 2.5 0 0 1 20 20.5z" />
+      </>
+    ),
+    calendar: (
+      <>
+        <path d="M7 3v4M17 3v4M4.5 9h15" />
+        <rect x="4.5" y="5" width="15" height="15" rx="2" />
+      </>
+    ),
+    layers: (
+      <>
+        <path d="m12 3 8 4-8 4-8-4 8-4Z" />
+        <path d="m4 12 8 4 8-4M4 17l8 4 8-4" />
+      </>
+    ),
+    line: <path d="M4 16 9 11l4 3 7-8M17 6h3v3" />,
+    pie: (
+      <>
+        <path d="M12 3v9h9" />
+        <path d="M20.5 14A8.5 8.5 0 1 1 10 3.3" />
+      </>
+    ),
+    spark: (
+      <>
+        <path d="M4 19V9M9 19V5M14 19v-7M19 19V3" />
+        <path d="M4 19h16" />
+      </>
+    ),
+    target: (
+      <>
+        <circle cx="12" cy="12" r="8" />
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+      </>
+    ),
+    user: (
+      <>
+        <circle cx="12" cy="8" r="3" />
+        <path d="M5.5 20c1.2-4 3.4-6 6.5-6s5.3 2 6.5 6" />
+      </>
+    ),
+  };
+
+  return (
+    <svg
+      className={styles.toolbarIcon}
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+    >
+      {paths[name]}
+    </svg>
+  );
 }
 
 function UnsupportedSecondaryTabState({
@@ -244,6 +408,8 @@ function activeMethodologySummary({
       methodologyVersion: "Source Pending",
       sample: warData.sourcePendingReason,
       source: warData.sourceTables.join(", "),
+      sourceQualityFlags: ["source_pending"],
+      sourceWarnings: [warData.sourcePendingReason],
     };
   }
 
@@ -256,6 +422,12 @@ function activeMethodologySummary({
       denominator:
         filters.goalieMetric === "start_share"
           ? "team goalie starts in selected window"
+          : filters.goalieMetric === "xga_per_shot_against"
+            ? "5v5 NST shots against"
+          : filters.goalieMetric === "high_danger_save_percentage"
+            ? "5v5 NST high-danger shots against"
+          : filters.goalieMetric === "goalie_value_signal"
+            ? "available cumulative 5v5 saved-goals signals"
           : filters.goalieMetric === "save_percentage"
             ? "shots against"
             : "goalie starts / shots against where supported",
@@ -265,6 +437,8 @@ function activeMethodologySummary({
         column?.source ??
         goalieMatrixData?.meta.sourceTables.join(", ") ??
         "goalie ranking snapshots",
+      sourceQualityFlags: goalieMatrixData?.meta.sourceQualityFlags ?? [],
+      sourceWarnings: goalieMatrixData?.meta.sourceWarnings ?? [],
     };
   }
 
@@ -284,21 +458,45 @@ function activeMethodologySummary({
         column?.source ??
         teamMatrixData?.meta.sourceTables.join(", ") ??
         "team ranking snapshots",
+      sourceQualityFlags: teamMatrixData?.meta.sourceQualityFlags ?? [],
+      sourceWarnings: teamMatrixData?.meta.sourceWarnings ?? [],
     };
   }
 
   const metricKey =
     filters.tab === "metric_explorer"
       ? filters.metric
-      : matrixData?.meta.sortMetric ?? filters.matrixSortMetric;
+      : (matrixData?.meta.sortMetric ?? filters.matrixSortMetric);
   const definition =
     explorerData?.meta.metric.key === metricKey
       ? explorerData.meta.metric
       : getContextualRankingMetricDefinition(metricKey);
+  const matrixSource =
+    matrixData?.meta.rankingSource === "entity_metric_rankings"
+      ? "Durable snapshot: entity_metric_rankings"
+      : matrixData?.meta.rankingSource === "fallback_rolling_player_game_metrics"
+        ? `Rolling fallback: rolling_player_game_metrics${
+            matrixData.meta.rankingSourceFallbackReason
+              ? ` (${matrixData.meta.rankingSourceFallbackReason})`
+              : ""
+          }`
+        : (matrixData?.meta.sourceTable ?? "contextual ranking snapshots");
+  const explorerSource =
+    explorerData?.meta.rankingSource === "entity_metric_rankings"
+      ? "Durable snapshot: entity_metric_rankings"
+      : explorerData?.meta.rankingSource ===
+          "fallback_rolling_player_game_metrics"
+        ? `Rolling fallback: rolling_player_game_metrics${
+            explorerData.meta.rankingSourceFallbackReason
+              ? ` (${explorerData.meta.rankingSourceFallbackReason})`
+              : ""
+          }`
+        : (explorerData?.meta.sourceTable ?? "contextual ranking snapshots");
 
   return {
     label: definition?.displayName ?? metricKey,
-    denominator: definition?.denominatorDescription ?? "Metric-specific denominator.",
+    denominator:
+      definition?.denominatorDescription ?? "Metric-specific denominator.",
     methodologyVersion: definition?.methodologyVersion ?? "Source Pending",
     sample: definition?.sampleRequirements
       ? `Min ${definition.sampleRequirements.minimumGp} GP · Min ${Math.round(
@@ -306,9 +504,27 @@ function activeMethodologySummary({
         )} TOI min · ${definition.sampleRequirements.windowSource}`
       : `Min ${filters.minGp} GP · Min ${Math.round((Number(filters.minToi) || 0) / 60)} TOI min`,
     source:
-      definition && "sourceTable" in definition
-        ? definition.sourceTable ?? "contextual ranking snapshots"
-        : matrixData?.meta.sourceTable ?? "contextual ranking snapshots",
+      filters.tab === "rankings"
+        ? matrixSource
+        : filters.tab === "metric_explorer"
+          ? explorerSource
+        : definition && "sourceTable" in definition
+          ? (definition.sourceTable ?? "contextual ranking snapshots")
+          : matrixSource,
+    sourceQualityFlags:
+      filters.tab === "rankings"
+        ? (matrixData?.meta.sourceQualityFlags ??
+          [...(definition?.sourceQualityFlags ?? [])])
+        : filters.tab === "metric_explorer"
+          ? (explorerData?.meta.sourceQualityFlags ??
+            [...(definition?.sourceQualityFlags ?? [])])
+          : [...(definition?.sourceQualityFlags ?? [])],
+    sourceWarnings:
+      filters.tab === "rankings"
+        ? (matrixData?.meta.sourceWarnings ?? [])
+        : filters.tab === "metric_explorer"
+          ? (explorerData?.meta.sourceWarnings ?? [])
+          : [],
   };
 }
 
@@ -350,7 +566,10 @@ function WorkstationMethodologyPanel({
   return (
     <details className={styles.methodologyPanel}>
       <summary>
-        <span>Legend & Methodology</span>
+        <span>
+          <SmallIcon name="book" />
+          Legend & Methodology
+        </span>
         <strong>{active.label}</strong>
       </summary>
       <div className={styles.methodologyPopover}>
@@ -359,19 +578,30 @@ function WorkstationMethodologyPanel({
           <dl>
             <div>
               <dt>Color</dt>
-              <dd>Percentile among qualified peers; higher percentile is stronger.</dd>
+              <dd>
+                Percentile shows the share of other qualified peers this row is
+                better than after metric directionality is applied.
+              </dd>
             </div>
             <div>
               <dt>Rank</dt>
-              <dd>Raw rank uses dense-rank semantics, so ties may share a rank.</dd>
+              <dd>
+                Raw rank uses dense-rank semantics, so ties may share a rank.
+              </dd>
             </div>
             <div>
               <dt>Lower Better</dt>
-              <dd>Suppression metrics still color by positive better-is-higher percentile.</dd>
+              <dd>
+                Suppression metrics still color by positive better-is-higher
+                percentile.
+              </dd>
             </div>
             <div>
               <dt>States</dt>
-              <dd>N/A, Source Pending, Low Sample, and Stale Source are distinct states.</dd>
+              <dd>
+                N/A, Source Pending, Low Sample, and Stale Source are distinct
+                states.
+              </dd>
             </div>
           </dl>
         </section>
@@ -394,6 +624,18 @@ function WorkstationMethodologyPanel({
               <strong>Source</strong>
               <span>{active.source}</span>
             </li>
+            {active.sourceQualityFlags.length ? (
+              <li>
+                <strong>Source Flags</strong>
+                <span>{active.sourceQualityFlags.join(", ")}</span>
+              </li>
+            ) : null}
+            {active.sourceWarnings.length ? (
+              <li>
+                <strong>Source Warnings</strong>
+                <span>{active.sourceWarnings.join(", ")}</span>
+              </li>
+            ) : null}
             {glossaryItems.map((entry) => (
               <li key={entry.key}>
                 <strong>{entry.label}</strong>
@@ -437,13 +679,11 @@ function goalieResultSummary(
   const role =
     payload.request.role === "all"
       ? "all goalie roles"
-      : payload.rows[0]?.role.deploymentLabel ?? filters.goalieRole;
+      : (payload.rows[0]?.role.deploymentLabel ?? filters.goalieRole);
   return `Sorted by ${sortMetric?.label ?? payload.request.metric} percentile · ${window} · ${role}`;
 }
 
-function teamResultSummary(
-  payload: TeamMatrixResponse | undefined,
-) {
+function teamResultSummary(payload: TeamMatrixResponse | undefined) {
   if (!payload) return "Loading team rankings";
   const sortMetric = payload.meta.metricColumns.find(
     (column) => column.metricKey === payload.request.metric,
@@ -486,13 +726,16 @@ function GoalieSnapshotPanel({
   payload,
   selectedGoalieId,
   snapshotRow,
+  label = "Goalie snapshot",
 }: {
   payload: GoalieMatrixResponse | null;
   selectedGoalieId: number | null;
   snapshotRow?: GoalieMatrixResponse["rows"][number] | null;
+  label?: string;
 }) {
   const row =
-    (snapshotRow && (selectedGoalieId == null || snapshotRow.entity.id === selectedGoalieId)
+    (snapshotRow &&
+    (selectedGoalieId == null || snapshotRow.entity.id === selectedGoalieId)
       ? snapshotRow
       : null) ??
     payload?.rows.find((row) => row.entity.id === selectedGoalieId) ??
@@ -501,9 +744,11 @@ function GoalieSnapshotPanel({
 
   if (!payload || !row) {
     return (
-      <aside className={styles.snapshotPanel} aria-label="Goalie snapshot">
+      <aside className={styles.snapshotPanel} aria-label={label}>
         <h2>Goalie Snapshot</h2>
-        <p className={styles.snapshotMuted}>No goalie is available for this filter set.</p>
+        <p className={styles.snapshotMuted}>
+          No goalie is available for this filter set.
+        </p>
       </aside>
     );
   }
@@ -525,7 +770,7 @@ function GoalieSnapshotPanel({
     .sort((a, b) => (b.cell.percentile ?? 0) - (a.cell.percentile ?? 0))[0];
 
   return (
-    <aside className={styles.snapshotPanel} aria-label="Goalie snapshot">
+    <aside className={styles.snapshotPanel} aria-label={label}>
       <header className={styles.snapshotHeader}>
         <div className={styles.snapshotAvatar}>
           <img
@@ -538,7 +783,9 @@ function GoalieSnapshotPanel({
         </div>
         <div>
           <h2>{row.entity.name ?? `Goalie ${row.entity.id}`}</h2>
-          <p>G · {row.team.name ?? row.team.abbreviation ?? "Team unavailable"}</p>
+          <p>
+            G · {row.team.name ?? row.team.abbreviation ?? "Team unavailable"}
+          </p>
         </div>
       </header>
 
@@ -587,19 +834,31 @@ function GoalieSnapshotPanel({
         <h3>Role & Source Notes</h3>
         <ul>
           <li>Role bucket: {row.role.deploymentLabel ?? "Unavailable"}</li>
+          <li>Role confidence: {row.role.roleConfidence}</li>
           <li>
             Role source:{" "}
-            {row.role.deploymentSource === "goalie_start_projections.season_start_pct"
+            {row.role.deploymentSource ===
+            "goalie_start_projections.season_start_pct"
               ? "projected season start share"
+              : row.role.deploymentSource === "adjusted_core_start_share"
+                ? "inferred top-two/core start share"
               : row.role.deploymentSource === "selected_window_team_start_share"
                 ? "selected-window team start share"
                 : "Source Pending"}
           </li>
           <li>Start share: {pctValue(row.role.seasonStartShare)}</li>
-          <li>Window start share: {pctValue(row.role.windowStartShare)}</li>
+          <li>Raw window start share: {pctValue(row.role.rawStartShare)}</li>
+          <li>Adjusted core start share: {pctValue(row.role.adjustedStartShare)}</li>
+          <li>Core start share: {pctValue(row.role.coreStartShare)}</li>
+          <li>Excluded non-core starts: {row.role.excludedTeamStarts}</li>
           <li>Start probability: {pctValue(row.role.startProbability)}</li>
-          <li>Emergency call-up denominator adjustment remains Source Pending.</li>
-          {(payload.meta.sourceWarnings.length ? payload.meta.sourceWarnings : row.warnings).map((warning) => (
+          {row.role.roleNotes.map((note) => (
+            <li key={note}>{note}</li>
+          ))}
+          {(payload.meta.sourceWarnings.length
+            ? payload.meta.sourceWarnings
+            : row.warnings
+          ).map((warning) => (
             <li key={warning}>{warning}</li>
           ))}
         </ul>
@@ -612,10 +871,12 @@ function TeamSnapshotPanel({
   payload,
   selectedTeam,
   snapshotRow,
+  label = "Team snapshot",
 }: {
   payload: TeamMatrixResponse | null;
   selectedTeam: string;
   snapshotRow?: TeamMatrixResponse["rows"][number] | null;
+  label?: string;
 }) {
   const normalizedSelectedTeam = selectedTeam.trim().toUpperCase();
   const row =
@@ -632,9 +893,11 @@ function TeamSnapshotPanel({
 
   if (!payload || !row) {
     return (
-      <aside className={styles.snapshotPanel} aria-label="Team snapshot">
+      <aside className={styles.snapshotPanel} aria-label={label}>
         <h2>Team Snapshot</h2>
-        <p className={styles.snapshotMuted}>No team is available for this filter set.</p>
+        <p className={styles.snapshotMuted}>
+          No team is available for this filter set.
+        </p>
       </aside>
     );
   }
@@ -654,9 +917,11 @@ function TeamSnapshotPanel({
     .map((column) => ({ column, cell: row.metrics[column.metricKey] }))
     .filter((entry) => entry.cell?.percentile != null)
     .sort((a, b) => (b.cell.percentile ?? 0) - (a.cell.percentile ?? 0))[0];
+  const oneGoalGameRate =
+    row.context.oneGoalGameRate == null ? null : row.context.oneGoalGameRate / 100;
 
   return (
-    <aside className={styles.snapshotPanel} aria-label="Team snapshot">
+    <aside className={styles.snapshotPanel} aria-label={label}>
       <header className={styles.snapshotHeader}>
         <div className={styles.snapshotAvatar}>
           <img
@@ -718,9 +983,47 @@ function TeamSnapshotPanel({
         <h3>Style & Source Notes</h3>
         <ul>
           <li>Style source: {row.style.source}</li>
-          <li>Shot quality uses xGF per Fenwick-for where source data supports it.</li>
-          <li>Score/venue-adjusted style remains Source Pending when unavailable.</li>
-          {(payload.meta.sourceWarnings.length ? payload.meta.sourceWarnings : row.warnings).map((warning) => (
+          <li>
+            Game-context source: {row.context.latestDate ?? "Source pending"} (
+            {row.context.games || 0} games).
+          </li>
+          <li>One-goal game rate: {pctValue(oneGoalGameRate)}</li>
+          <li>
+            Home edge:{" "}
+            {row.context.homeRoadPointPctGap == null
+              ? "Source pending"
+              : `${row.context.homeRoadPointPctGap.toFixed(1)} percentage points`}
+          </li>
+          <li>
+            PP opportunities:{" "}
+            {row.context.powerPlayOpportunityRate == null
+              ? "Source pending"
+              : `${row.context.powerPlayOpportunityRate.toFixed(2)} per game`}
+          </li>
+          <li>
+            Penalties taken:{" "}
+            {row.context.penaltiesTakenPer60 == null
+              ? "Source pending"
+              : `${row.context.penaltiesTakenPer60.toFixed(2)} per 60`}
+          </li>
+          {payload.meta.sourcePendingMetricContracts.length ? (
+            <li>
+              Source-pending team contracts:{" "}
+              {payload.meta.sourcePendingMetricContracts
+                .map((contract) => contract.label)
+                .join(", ")}
+            </li>
+          ) : null}
+          <li>
+            Shot quality uses xGF per Fenwick-for where source data supports it.
+          </li>
+          <li>
+            Score/venue-adjusted style remains Source Pending when unavailable.
+          </li>
+          {(payload.meta.sourceWarnings.length
+            ? payload.meta.sourceWarnings
+            : row.warnings
+          ).map((warning) => (
             <li key={warning}>{warning}</li>
           ))}
         </ul>
@@ -732,6 +1035,7 @@ function TeamSnapshotPanel({
 export default function RankingsPage() {
   const router = useRouter();
   const [rankMode, setRankMode] = useState<"overall" | "deployment">("overall");
+  const [isControlShellCollapsed, setIsControlShellCollapsed] = useState(false);
   const filters = useMemo(
     () => normalizeRankingsFilters(router.query),
     [router.query],
@@ -749,7 +1053,9 @@ export default function RankingsPage() {
       ? buildTeamMatrixRequestPath(filters)
       : null;
   const explorerRequestPath =
-    filters.tab === "metric_explorer" ? buildRankingsRequestPath(filters) : null;
+    filters.tab === "metric_explorer"
+      ? buildRankingsRequestPath(filters)
+      : null;
   const deploymentTiersRequestPath =
     filters.tab === "deployment_tiers"
       ? buildDeploymentTiersRequestPath(filters)
@@ -766,33 +1072,33 @@ export default function RankingsPage() {
     data: matrixData,
     error: matrixError,
     isLoading: matrixLoading,
-  } = useSWR<PlayerMatrixResponse>(
-    matrixRequestPath,
-    (url: string) => fetcher<PlayerMatrixResponse>(url),
+  } = useSWR<PlayerMatrixResponse>(matrixRequestPath, (url: string) =>
+    fetcher<PlayerMatrixResponse>(url),
+    RANKINGS_SWR_OPTIONS,
   );
   const {
     data: goalieMatrixData,
     error: goalieMatrixError,
     isLoading: goalieMatrixLoading,
-  } = useSWR<GoalieMatrixResponse>(
-    goalieMatrixRequestPath,
-    (url: string) => fetcher<GoalieMatrixResponse>(url),
+  } = useSWR<GoalieMatrixResponse>(goalieMatrixRequestPath, (url: string) =>
+    fetcher<GoalieMatrixResponse>(url),
+    RANKINGS_SWR_OPTIONS,
   );
   const {
     data: teamMatrixData,
     error: teamMatrixError,
     isLoading: teamMatrixLoading,
-  } = useSWR<TeamMatrixResponse>(
-    teamMatrixRequestPath,
-    (url: string) => fetcher<TeamMatrixResponse>(url),
+  } = useSWR<TeamMatrixResponse>(teamMatrixRequestPath, (url: string) =>
+    fetcher<TeamMatrixResponse>(url),
+    RANKINGS_SWR_OPTIONS,
   );
   const {
     data: explorerData,
     error: explorerError,
     isLoading: explorerLoading,
-  } = useSWR<ContextualRankingsResponse>(
-    explorerRequestPath,
-    (url: string) => fetcher<ContextualRankingsResponse>(url),
+  } = useSWR<ContextualRankingsResponse>(explorerRequestPath, (url: string) =>
+    fetcher<ContextualRankingsResponse>(url),
+    RANKINGS_SWR_OPTIONS,
   );
   const {
     data: deploymentTiersData,
@@ -801,51 +1107,54 @@ export default function RankingsPage() {
   } = useSWR<DeploymentTiersResponse>(
     deploymentTiersRequestPath,
     (url: string) => fetcher<DeploymentTiersResponse>(url),
+    RANKINGS_SWR_OPTIONS,
   );
   const {
     data: trendingData,
     error: trendingError,
     isLoading: trendingLoading,
-  } = useSWR<TrendingResponse>(
-    trendingRequestPath,
-    (url: string) => fetcher<TrendingResponse>(url),
+  } = useSWR<TrendingResponse>(trendingRequestPath, (url: string) =>
+    fetcher<TrendingResponse>(url),
+    RANKINGS_SWR_OPTIONS,
   );
   const {
     data: splitsData,
     error: splitsError,
     isLoading: splitsLoading,
-  } = useSWR<RankingsSplitsResponse>(
-    splitsRequestPath,
-    (url: string) => fetcher<RankingsSplitsResponse>(url),
+  } = useSWR<RankingsSplitsResponse>(splitsRequestPath, (url: string) =>
+    fetcher<RankingsSplitsResponse>(url),
+    RANKINGS_SWR_OPTIONS,
   );
   const {
     data: warData,
     error: warError,
     isLoading: warLoading,
-  } = useSWR<WarSurfaceResponse>(
-    warRequestPath,
-    (url: string) => fetcher<WarSurfaceResponse>(url),
+  } = useSWR<WarSurfaceResponse>(warRequestPath, (url: string) =>
+    fetcher<WarSurfaceResponse>(url),
+    RANKINGS_SWR_OPTIONS,
   );
   const { data: snapshotData } = useSWR<ContextualRankingSnapshotResponse>(
     snapshotRequestPath,
     (url: string) => fetcher<ContextualRankingSnapshotResponse>(url),
+    RANKINGS_SWR_OPTIONS,
   );
   const { data: metadataData } = useSWR<ContextualRankingsMetadataResponse>(
     metadataRequestPath,
     (url: string) => fetcher<ContextualRankingsMetadataResponse>(url),
+    RANKINGS_SWR_OPTIONS,
   );
   const metric = getContextualRankingMetricDefinition(filters.metric);
   const selectedPlayerId =
     filters.selectedPlayerId.trim() === ""
-      ? matrixData?.selectedPlayerId ?? null
+      ? (matrixData?.selectedPlayerId ?? null)
       : Number(filters.selectedPlayerId);
   const selectedGoalieId =
     filters.selectedGoalieId.trim() === ""
-      ? goalieMatrixData?.rows[0]?.entity.id ?? null
+      ? (goalieMatrixData?.rows[0]?.entity.id ?? null)
       : Number(filters.selectedGoalieId);
   const selectedTeam =
     filters.selectedTeam.trim() === ""
-      ? teamMatrixData?.rows[0]?.team.abbreviation ?? ""
+      ? (teamMatrixData?.rows[0]?.team.abbreviation ?? "")
       : filters.selectedTeam;
   const selectedSkaterSnapshotRow =
     filters.entity === "skaters" &&
@@ -869,9 +1178,12 @@ export default function RankingsPage() {
     () => applyMatrixDisplayFilters(matrixData, filters),
     [matrixData, filters],
   );
+  const labels = pageLabels(filters);
 
   const updateFilters = (patch: Partial<RankingsFilterState>) => {
-    const next = normalizeRankingsFilters(filtersToQuery({ ...filters, ...patch }));
+    const next = normalizeRankingsFilters(
+      filtersToQuery({ ...filters, ...patch }),
+    );
     void router.replace(
       { pathname: router.pathname, query: filtersToQuery(next) },
       undefined,
@@ -899,111 +1211,128 @@ export default function RankingsPage() {
       page: "1",
     });
   };
+  const latestSnapshotDate =
+    matrixData?.meta.snapshotDate ??
+    goalieMatrixData?.meta.snapshotDate ??
+    teamMatrixData?.meta.snapshotDate ??
+    explorerData?.meta.snapshotDate ??
+    deploymentTiersData?.meta.latestAvailableSnapshotDate ??
+    trendingData?.meta.latestAvailableSnapshotDate ??
+    splitsData?.meta.latestAvailableSnapshotDate ??
+    warData?.meta.generatedAt?.slice(0, 10) ??
+    null;
 
   return (
     <>
       <Head>
-        <title>Player Rankings | FHFHockey</title>
+        <title>{labels.title}</title>
         <meta
           name="description"
-          content="Multi-metric NHL player rankings with contextual percentiles, deployment filters, and player snapshots."
+          content={labels.description}
         />
       </Head>
 
       <main className={styles.page}>
-        <header className={styles.header}>
-          <div>
-            <p className={styles.eyebrow}>Player Rankings</p>
-            <h1>Player Rankings</h1>
-            <p>{buildRankingsContextSummary(filters)}</p>
-          </div>
-          <div className={styles.metaPanel}>
-            <span>Data updated</span>
-            <strong>
-              {matrixData?.meta.snapshotDate ??
-                goalieMatrixData?.meta.snapshotDate ??
-                teamMatrixData?.meta.snapshotDate ??
-                explorerData?.meta.snapshotDate ??
-                deploymentTiersData?.meta.latestAvailableSnapshotDate ??
-                trendingData?.meta.latestAvailableSnapshotDate ??
-                splitsData?.meta.latestAvailableSnapshotDate ??
-                warData?.meta.generatedAt?.slice(0, 10) ??
-                "Loading"}
-            </strong>
-          </div>
-        </header>
-
-        <RankingsFilters
-          value={filters}
-          showMetric={filters.tab === "metric_explorer"}
-          matrixMetricGroups={matrixData?.meta.metricGroups ?? []}
-          matrixMetricColumns={matrixData?.meta.metricColumns ?? []}
-          onChange={(patch) => updateFilters({ ...patch, page: "1" })}
-          methodologyControl={
-            <WorkstationMethodologyPanel
-              filters={filters}
-              metadata={metadataData}
-              matrixData={matrixData}
-              goalieMatrixData={goalieMatrixData}
-              teamMatrixData={teamMatrixData}
-              explorerData={explorerData}
-              warData={warData}
-            />
-          }
-        />
-
-        <div className={styles.matrixActionBar}>
-          <nav className={styles.tabs} aria-label="Rankings views">
-            {TABS.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                aria-pressed={filters.tab === tab.key}
-                onClick={() => updateFilters({ tab: tab.key, page: "1" })}
-              >
-                {tab.label}
-                {tab.planned ? <span>Planned</span> : null}
-              </button>
-            ))}
-          </nav>
-          <div className={styles.matrixToolbar}>
-            {filters.entity === "skaters" && filters.tab === "rankings" ? (
-              <>
+        <div
+          className={`${styles.rankingsControlShell} ${
+            isControlShellCollapsed ? styles.rankingsControlShellCollapsed : ""
+          }`}
+        >
+          <header className={styles.header}>
+            <div>
+              <h1>
+                <span>{labels.headingLead}</span> {labels.headingRest}
+              </h1>
+              <p>{buildRankingsContextSummary(filters)}</p>
+            </div>
+            <div className={styles.controlShellHeaderActions}>
+              <div className={styles.metaPanel}>
+                <SmallIcon name="calendar" />
                 <div>
-                  <strong>Rank Display</strong>
-                  <span>
-                    {rankMode === "overall"
-                      ? "Overall peer rank"
-                      : "Deployment bucket rank"}
-                  </span>
+                  <span>Data updated</span>
+                  <strong>{formatSnapshotDate(latestSnapshotDate)}</strong>
                 </div>
-                <div className={styles.rankModeToggle} aria-label="Rank display mode">
+              </div>
+              <button
+                className={styles.collapseControlButton}
+                type="button"
+                aria-expanded={!isControlShellCollapsed}
+                aria-controls="rankings-control-shell-body"
+                onClick={() => setIsControlShellCollapsed((value) => !value)}
+              >
+                {isControlShellCollapsed ? "Show controls" : "Hide controls"}
+              </button>
+            </div>
+          </header>
+
+          <div
+            id="rankings-control-shell-body"
+            className={styles.controlShellBody}
+            hidden={isControlShellCollapsed}
+          >
+            <RankingsFilters
+              value={filters}
+              showMetric={filters.tab === "metric_explorer"}
+              matrixMetricGroups={matrixData?.meta.metricGroups ?? []}
+              matrixMetricColumns={matrixData?.meta.metricColumns ?? []}
+              onChange={(patch) => updateFilters({ ...patch, page: "1" })}
+              onReset={() => updateFilters(DEFAULT_RANKINGS_FILTERS)}
+              methodologyControl={
+                <WorkstationMethodologyPanel
+                  filters={filters}
+                  metadata={metadataData}
+                  matrixData={matrixData}
+                  goalieMatrixData={goalieMatrixData}
+                  teamMatrixData={teamMatrixData}
+                  explorerData={explorerData}
+                  warData={warData}
+                />
+              }
+            />
+
+            <div className={styles.matrixActionBar}>
+              <nav className={styles.tabs} aria-label="Rankings views">
+                {TABS.map((tab) => (
                   <button
+                    key={tab.key}
                     type="button"
-                    aria-pressed={rankMode === "overall"}
-                    onClick={() => setRankMode("overall")}
+                    aria-pressed={filters.tab === tab.key}
+                    onClick={() => updateFilters({ tab: tab.key, page: "1" })}
                   >
-                    Overall
+                    <SmallIcon name={tab.icon} />
+                    {tab.label}
+                    {tab.planned ? <span>Planned</span> : null}
                   </button>
-                  <button
-                    type="button"
-                    aria-pressed={rankMode === "deployment"}
-                    onClick={() => setRankMode("deployment")}
+                ))}
+              </nav>
+              <div className={styles.matrixToolbar}>
+                {filters.entity === "skaters" && filters.tab === "rankings" ? (
+                  <div
+                    className={styles.rankModeToggle}
+                    aria-label="Rank display mode"
                   >
-                    Deployment
-                  </button>
-                </div>
-              </>
-            ) : (
-              <span>
-                Snapshot{" "}
-                {matrixData?.meta.snapshotDate ??
-                  goalieMatrixData?.meta.snapshotDate ??
-                  teamMatrixData?.meta.snapshotDate ??
-                  explorerData?.meta.snapshotDate ??
-                  "pending"}
-              </span>
-            )}
+                    <button
+                      type="button"
+                      aria-pressed={rankMode === "overall"}
+                      onClick={() => setRankMode("overall")}
+                    >
+                      <SmallIcon name="bar" />
+                      Overall
+                    </button>
+                    <button
+                      type="button"
+                      aria-pressed={rankMode === "deployment"}
+                      onClick={() => setRankMode("deployment")}
+                    >
+                      <SmallIcon name="user" />
+                      Deployment
+                    </button>
+                  </div>
+                ) : (
+                  <span>Snapshot {formatSnapshotDate(latestSnapshotDate)}</span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1039,6 +1368,7 @@ export default function RankingsPage() {
               payload={teamMatrixData ?? null}
               selectedTeam={selectedTeam}
               snapshotRow={selectedTeamSnapshotRow}
+              label={labels.snapshotLabel}
             />
           </section>
         ) : null}
@@ -1077,6 +1407,7 @@ export default function RankingsPage() {
               payload={goalieMatrixData ?? null}
               selectedGoalieId={selectedGoalieId}
               snapshotRow={selectedGoalieSnapshotRow}
+              label={labels.snapshotLabel}
             />
           </section>
         ) : null}
@@ -1108,6 +1439,8 @@ export default function RankingsPage() {
               payload={matrixData ?? null}
               selectedPlayerId={selectedPlayerId}
               snapshotRow={selectedSkaterSnapshotRow}
+              label={labels.snapshotLabel}
+              rankMode={rankMode}
             />
           </section>
         ) : null}
@@ -1117,16 +1450,20 @@ export default function RankingsPage() {
             <h2 className={styles.visuallyHidden}>Metric Explorer</h2>
             <RankingsTable
               rows={explorerData?.rankings ?? []}
-              request={explorerData?.request ?? buildClientRankingsRequest(filters)}
+              request={
+                explorerData?.request ?? buildClientRankingsRequest(filters)
+              }
               sort={filters.sort}
               direction={filters.direction}
               isLoading={explorerLoading}
               errorMessage={
-                explorerError instanceof Error ? explorerError.message : undefined
+                explorerError instanceof Error
+                  ? explorerError.message
+                  : undefined
               }
               unavailableMessage={
                 explorerData?.meta.unavailable
-                  ? explorerData.meta.message ?? "Metric unavailable."
+                  ? (explorerData.meta.message ?? "Metric unavailable.")
                   : null
               }
               onSort={updateExplorerSort}
@@ -1175,7 +1512,9 @@ export default function RankingsPage() {
           <WarPanel
             payload={warData ?? null}
             isLoading={warLoading}
-            errorMessage={warError instanceof Error ? warError.message : undefined}
+            errorMessage={
+              warError instanceof Error ? warError.message : undefined
+            }
           />
         ) : null}
       </main>

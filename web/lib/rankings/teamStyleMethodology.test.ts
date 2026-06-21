@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   TEAM_STYLE_SOURCE_CONTRACT,
+  TEAM_SOURCE_PENDING_METRIC_CONTRACTS,
+  calculateTeamGameContextComponents,
   calculateRunAndGunProfile,
   calculateTeamExpectedGoalsForPercentage,
   calculateTeamLuckComponents,
@@ -93,5 +95,47 @@ describe("teamStyleMethodology", () => {
 
     expect(unluckyDefense.saveLuck).toBe(-3);
     expect(unluckyDefense.netGoalsAboveExpected).toBe(-3);
+  });
+
+  it("calculates source-backed team game-context components and publishes pending usage contracts", () => {
+    const context = calculateTeamGameContextComponents({
+      games: [
+        {
+          goalsFor: 3,
+          goalsAgainst: 2,
+          pointPct: 1,
+          homeRoad: "home",
+          powerPlayOpportunitiesPerGame: 4,
+          penaltiesTakenPer60: 3.5,
+        },
+        {
+          goalsFor: 1,
+          goalsAgainst: 4,
+          pointPct: 0,
+          homeRoad: "road",
+          powerPlayOpportunitiesPerGame: 2,
+          penaltiesTakenPer60: 5.5,
+        },
+        {
+          goalsFor: 2,
+          goalsAgainst: 3,
+          pointPct: 0.5,
+          homeRoad: "home",
+          powerPlayOpportunitiesPerGame: 3,
+          penaltiesTakenPer60: 4,
+        },
+      ],
+    });
+
+    expect(context.oneGoalGameRate).toBe(66.666667);
+    expect(context.homeRoadPointPctGap).toBe(75);
+    expect(context.powerPlayOpportunityRate).toBe(3);
+    expect(context.penaltiesTakenPer60).toBe(4.333333);
+    expect(TEAM_SOURCE_PENDING_METRIC_CONTRACTS.map((contract) => contract.metricKey)).toEqual([
+      "home_road_point_pct_gap",
+      "forward_top_load_index",
+      "defense_pair_top_load_index",
+      "pp1_pp2_usage_share",
+    ]);
   });
 });

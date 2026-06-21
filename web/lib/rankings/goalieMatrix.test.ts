@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import {
   aggregateGoalieGameRows,
+  buildGoalieRoleContextForTests,
+  calculateGoalieHighDangerSavePercentage,
+  calculateGoalieValueSignal,
+  calculateGoalieXgaPerShotAgainst,
+  GOALIE_SOURCE_PENDING_METRIC_CONTRACTS,
   parseGoalieMatrixRequest,
   rankGoalieMetricValues,
 } from "./goalieMatrix";
@@ -28,6 +33,9 @@ describe("goalieMatrix", () => {
           nst_5v5_counts_xg_against: 2.4,
           nst_5v5_counts_goals_against: 2,
           nst_5v5_counts_gsaa: 0.7,
+          nst_5v5_counts_shots_against: 24,
+          nst_5v5_counts_hd_saves: 7,
+          nst_5v5_counts_hd_shots_against: 8,
         },
         {
           player_id: 1,
@@ -47,6 +55,9 @@ describe("goalieMatrix", () => {
           nst_5v5_counts_xg_against: 2.1,
           nst_5v5_counts_goals_against: 3,
           nst_5v5_counts_gsaa: -0.4,
+          nst_5v5_counts_shots_against: 21,
+          nst_5v5_counts_hd_saves: 5,
+          nst_5v5_counts_hd_shots_against: 7,
         },
       ],
       "season",
@@ -64,8 +75,40 @@ describe("goalieMatrix", () => {
       stealGames: 0,
       nst5v5Gsaa: 0.3,
       nst5v5Gsax: -0.5,
+      nst5v5XgAgainst: 4.5,
+      nst5v5ShotsAgainst: 45,
+      nst5v5HighDangerSaves: 12,
+      nst5v5HighDangerShotsAgainst: 15,
     });
     expect(rows[0].sourceWarnings).toEqual([]);
+  });
+
+  it("calculates next-set goalie metrics from verified NST fields and publishes pending contracts", () => {
+    expect(
+      calculateGoalieXgaPerShotAgainst({
+        xgAgainst: 4.5,
+        shotsAgainst: 45,
+      }),
+    ).toBe(0.1);
+    expect(calculateGoalieValueSignal({ gsax: -0.5, gsaa: 0.3 })).toBe(-0.1);
+    expect(
+      calculateGoalieHighDangerSavePercentage({
+        saves: 12,
+        shotsAgainst: 15,
+      }),
+    ).toBe(0.8);
+    expect(GOALIE_SOURCE_PENDING_METRIC_CONTRACTS).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          metricKey: "relative_save_percentage",
+          status: "source_pending",
+        }),
+        expect.objectContaining({
+          metricKey: "under_pressure_profile",
+          status: "source_pending",
+        }),
+      ]),
+    );
   });
 
   it("parses goalie matrix requests with conservative defaults", () => {
@@ -139,19 +182,116 @@ describe("goalieMatrix", () => {
 
     expect(ranks.get(1)).toMatchObject({
       rank: 1,
-      percentile: 100,
+      percentile: 50,
       qualifiedPeerCount: 3,
     });
     expect(ranks.get(2)).toMatchObject({
       rank: 1,
-      percentile: 100,
+      percentile: 50,
       qualifiedPeerCount: 3,
     });
     expect(ranks.get(3)).toMatchObject({
       rank: 2,
-      percentile: 33.333,
+      percentile: 0,
       qualifiedPeerCount: 3,
     });
     expect(ranks.has(4)).toBe(false);
+  });
+
+  it("builds raw and inferred top-two/core start-share role context", () => {
+    const aggregates = aggregateGoalieGameRows(
+      [
+        {
+          player_id: 1,
+          date: "2026-04-03",
+          season_id: 20252026,
+          team_id: 10,
+          player_name: "Starter",
+          games_played: 6,
+          games_started: 6,
+          wins: 4,
+          saves: 150,
+          goals_against: 12,
+          shots_against: 162,
+          time_on_ice: 21600,
+          quality_start: 4,
+          nst_5v5_counts_toi: 18000,
+          nst_5v5_counts_xg_against: 11,
+          nst_5v5_counts_goals_against: 12,
+          nst_5v5_counts_gsaa: 1,
+        },
+        {
+          player_id: 2,
+          date: "2026-04-03",
+          season_id: 20252026,
+          team_id: 10,
+          player_name: "Backup",
+          games_played: 3,
+          games_started: 3,
+          wins: 1,
+          saves: 75,
+          goals_against: 8,
+          shots_against: 83,
+          time_on_ice: 10800,
+          quality_start: 1,
+          nst_5v5_counts_toi: 9000,
+          nst_5v5_counts_xg_against: 7,
+          nst_5v5_counts_goals_against: 8,
+          nst_5v5_counts_gsaa: -1,
+        },
+        {
+          player_id: 3,
+          date: "2026-04-03",
+          season_id: 20252026,
+          team_id: 10,
+          player_name: "Call Up",
+          games_played: 1,
+          games_started: 1,
+          wins: 0,
+          saves: 20,
+          goals_against: 4,
+          shots_against: 24,
+          time_on_ice: 3600,
+          quality_start: 0,
+          nst_5v5_counts_toi: 3000,
+          nst_5v5_counts_xg_against: 3,
+          nst_5v5_counts_goals_against: 4,
+          nst_5v5_counts_gsaa: -1,
+        },
+      ],
+      "season",
+    );
+
+    const starter = buildGoalieRoleContextForTests({
+      aggregate: aggregates.find((row) => row.playerId === 1)!,
+      projection: null,
+      aggregates,
+    });
+    const callUp = buildGoalieRoleContextForTests({
+      aggregate: aggregates.find((row) => row.playerId === 3)!,
+      projection: null,
+      aggregates,
+    });
+
+    expect(starter).toMatchObject({
+      deploymentBucket: "g1_workhorse",
+      deploymentSource: "adjusted_core_start_share",
+      rawStartShare: 0.6,
+      adjustedStartShare: 0.666667,
+      coreStartShare: 0.666667,
+      coreGoalieIds: [1, 2],
+      excludedTeamStarts: 1,
+      roleConfidence: "medium",
+    });
+    expect(starter.roleNotes.join(" ")).toContain("inferred top-two");
+    expect(callUp).toMatchObject({
+      deploymentBucket: "g2_backup",
+      deploymentSource: "selected_window_team_start_share",
+      rawStartShare: 0.1,
+      adjustedStartShare: 0.1,
+      coreStartShare: null,
+      roleConfidence: "low",
+    });
+    expect(callUp.roleNotes.join(" ")).toContain("outside the inferred top-two");
   });
 });

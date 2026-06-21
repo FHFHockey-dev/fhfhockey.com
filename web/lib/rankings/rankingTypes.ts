@@ -17,6 +17,10 @@ import type {
   SkaterProductionWindow,
   SkaterWindowStrengthState,
 } from "./skaterWindowAggregation";
+import {
+  resolveTeamToken,
+  type ResolvedTeamToken,
+} from "./teamTokenResolver";
 
 export type ContextualRankingsEntity = "skaters";
 export type ContextualRankingsPositionFilter = "all" | "F" | "D";
@@ -77,6 +81,7 @@ export type ContextualRankingApiRow = {
     gamesPlayed: number | null;
     toiSeconds: number | null;
     toiPerGameSeconds: number | null;
+    allStrengthsToiPerGameSeconds?: number | null;
     confidence: RankingSampleConfidence;
     minimumSampleMet: boolean;
   };
@@ -135,6 +140,16 @@ export type ContextualRankingsResponse = {
     unavailable: boolean;
     rowCount: number;
     limit: number | null;
+    sourceTables?: ContextualRankingsSourceTable[];
+    rankingSource?:
+      | "entity_metric_rankings"
+      | "fallback_rolling_player_game_metrics";
+    rankingSourcePreference?: "entity_metric_rankings";
+    rankingSourceFallbackReason?: string | null;
+    methodologyVersion?: string | null;
+    methodologyUpdatedAt?: string | null;
+    sourceQualityFlags?: string[];
+    sourceWarnings?: string[];
     message: string | null;
   };
 };
@@ -151,6 +166,12 @@ export class ContextualRankingsQueryError extends Error {
   }
 }
 
+function unresolvedTeamError(token: string) {
+  return new ContextualRankingsQueryError(`No team matched ${token}`, {
+    team: "must be a numeric id, team abbreviation, or team name",
+  });
+}
+
 function first(value: QueryValue): string | undefined {
   if (Array.isArray(value)) return value[0];
   return value;
@@ -164,9 +185,12 @@ function parseIntParam(
   const raw = first(value);
   if (!raw) {
     if (options?.required) {
-      throw new ContextualRankingsQueryError(`Missing required query param: ${key}`, {
-        [key]: "required",
-      });
+      throw new ContextualRankingsQueryError(
+        `Missing required query param: ${key}`,
+        {
+          [key]: "required",
+        },
+      );
     }
     return null;
   }
@@ -282,6 +306,7 @@ function derivePeerGroupType(args: {
 
 export function parseContextualRankingsRequest(
   query: NextApiRequest["query"],
+  options: { resolvedTeamToken?: ResolvedTeamToken | null } = {},
 ): ContextualRankingsRequest {
   const entity = parseEnumParam(
     query.entity,
@@ -327,7 +352,10 @@ export function parseContextualRankingsRequest(
     "all",
   );
   const metric = parseMetric(query.metric);
-  const teamId = parseIntParam(query.team, "team", { min: 1 });
+  const teamId =
+    options.resolvedTeamToken != null
+      ? options.resolvedTeamToken.teamId
+      : parseIntParam(query.team, "team", { min: 1 });
   const limit = parseIntParam(query.limit, "limit", {
     min: 1,
     max: 100,
@@ -377,4 +405,15 @@ export function parseContextualRankingsRequest(
       maxItems: 25,
     }),
   };
+}
+
+export async function parseContextualRankingsRequestWithResolvedTeam(
+  query: NextApiRequest["query"],
+) {
+  const rawTeam = first(query.team)?.trim() ?? "";
+  const resolvedTeamToken = await resolveTeamToken(rawTeam);
+  if (rawTeam !== "" && resolvedTeamToken == null) {
+    throw unresolvedTeamError(rawTeam);
+  }
+  return parseContextualRankingsRequest(query, { resolvedTeamToken });
 }

@@ -17,6 +17,21 @@ export type TeamLuckComponents = {
   netGoalsAboveExpected: number | null;
 };
 
+export type TeamGameContextComponents = {
+  oneGoalGameRate: number | null;
+  homeRoadPointPctGap: number | null;
+  powerPlayOpportunityRate: number | null;
+  penaltiesTakenPer60: number | null;
+};
+
+export type TeamSourcePendingMetricContract = {
+  metricKey: string;
+  label: string;
+  status: "source_pending";
+  reason: string;
+  requiredFields: string[];
+};
+
 export const TEAM_STYLE_SOURCE_CONTRACT = {
   currentLabel: "raw_contextual_5v5",
   publishLabel: "Raw/contextual 5v5 team style",
@@ -41,6 +56,64 @@ export const TEAM_STYLE_SOURCE_CONTRACT = {
     "Keep event rate separate from control so high-event weak-control teams are not mislabeled as run-and-gun in a positive sense.",
   ],
 } as const;
+
+export const TEAM_SOURCE_PENDING_METRIC_CONTRACTS: TeamSourcePendingMetricContract[] = [
+  {
+    metricKey: "home_road_point_pct_gap",
+    label: "Home Edge",
+    status: "source_pending",
+    reason:
+      "The current wgo_team_stats source publishes point percentage but not the verified home/road split column needed for this metric.",
+    requiredFields: [
+      "team id",
+      "game id",
+      "home/road flag",
+      "point percentage or game result by venue",
+    ],
+  },
+  {
+    metricKey: "forward_top_load_index",
+    label: "Forward Top Load",
+    status: "source_pending",
+    reason:
+      "Verified forward-line TOI share by team/game is not published in the current rankings source contract.",
+    requiredFields: [
+      "team id",
+      "game id",
+      "line number",
+      "line TOI seconds",
+      "team forward TOI seconds",
+    ],
+  },
+  {
+    metricKey: "defense_pair_top_load_index",
+    label: "Defense Pair Top Load",
+    status: "source_pending",
+    reason:
+      "Verified defense-pair TOI share by team/game is not published in the current rankings source contract.",
+    requiredFields: [
+      "team id",
+      "game id",
+      "pair number",
+      "pair TOI seconds",
+      "team defense TOI seconds",
+    ],
+  },
+  {
+    metricKey: "pp1_pp2_usage_share",
+    label: "PP1/PP2 Usage Share",
+    status: "source_pending",
+    reason:
+      "Power-play unit membership exists as contextual labels, but verified PP unit TOI share is not published.",
+    requiredFields: [
+      "team id",
+      "game id",
+      "power-play unit number",
+      "unit PP TOI seconds",
+      "team PP TOI seconds",
+    ],
+  },
+];
 
 function finite(value: number | null | undefined): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -162,5 +235,67 @@ export function calculateTeamLuckComponents(args: {
     finishingLuck,
     saveLuck,
     netGoalsAboveExpected: round(finishingLuck + saveLuck),
+  };
+}
+
+function average(values: Array<number | null | undefined>) {
+  let total = 0;
+  let count = 0;
+  for (const value of values) {
+    const number = finite(value);
+    if (number == null) continue;
+    total += number;
+    count += 1;
+  }
+  return count > 0 ? round(total / count) : null;
+}
+
+export function calculateTeamGameContextComponents(args: {
+  games: Array<{
+    goalsFor: number | null;
+    goalsAgainst: number | null;
+    pointPct: number | null;
+    homeRoad: string | null;
+    powerPlayOpportunitiesPerGame: number | null;
+    penaltiesTakenPer60: number | null;
+  }>;
+}): TeamGameContextComponents {
+  const scoredGames = args.games.filter(
+    (game) => finite(game.goalsFor) != null && finite(game.goalsAgainst) != null,
+  );
+  const oneGoalGameRate =
+    scoredGames.length > 0
+      ? round(
+          (scoredGames.filter(
+            (game) =>
+              Math.abs((finite(game.goalsFor) ?? 0) - (finite(game.goalsAgainst) ?? 0)) <=
+              1,
+          ).length /
+            scoredGames.length) *
+            100,
+        )
+      : null;
+
+  const homePointPct = average(
+    args.games
+      .filter((game) => game.homeRoad?.toLowerCase() === "home")
+      .map((game) => game.pointPct),
+  );
+  const roadPointPct = average(
+    args.games
+      .filter((game) => game.homeRoad?.toLowerCase() === "road")
+      .map((game) => game.pointPct),
+  );
+
+  return {
+    oneGoalGameRate,
+    homeRoadPointPctGap:
+      homePointPct == null || roadPointPct == null
+        ? null
+        : round((homePointPct - roadPointPct) * 100),
+    powerPlayOpportunityRate: average(
+      args.games.map((game) => game.powerPlayOpportunitiesPerGame),
+    ),
+    penaltiesTakenPer60: average(args.games.map((game) => game.penaltiesTakenPer60)),
   };
 }

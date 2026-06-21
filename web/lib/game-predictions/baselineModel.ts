@@ -1014,8 +1014,8 @@ export function getConfidenceLabel(probability: number): GamePredictionResult["c
   return "low";
 }
 
-function marketEdgeBucket(edge: number | null): string | null {
-  if (edge == null || !Number.isFinite(edge)) return null;
+function marketEdgeBucket(edge: number | null): string {
+  if (edge == null || !Number.isFinite(edge)) return "no_market";
   const absoluteEdge = Math.abs(edge);
   if (absoluteEdge >= 0.08) return edge > 0 ? "home_large" : "away_large";
   if (absoluteEdge >= 0.04) return edge > 0 ? "home_medium" : "away_medium";

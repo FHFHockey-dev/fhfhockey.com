@@ -33,6 +33,9 @@
  * - debugUpsertPayload (boolean, optional): If true, logs per-batch payload summaries and structured upsert failure details.
  * - fastMode (boolean, optional): Applies speed-oriented defaults when explicit tuning params are omitted:
  *   playerConcurrency=4, upsertConcurrency=4, skipDiagnostics=true.
+ * - autoResume (boolean, optional): If true, loops through bounded player batches using the emitted resume cursor.
+ * - autoResumeMaxRuntimeMs (number, optional): Max auto-resume loop runtime before stopping between batches. Defaults to 220000.
+ * - disableAutoResumeRuntimeBudget (boolean, optional): If true, removes the auto-resume loop runtime cap for manual backfills.
  *
  * Example URLs:
  * - Process a single player: /api/v1/db/update-rolling-player-averages?playerId=8478402
@@ -107,6 +110,30 @@ type ResponseBody = {
   appliedPlayerLimit?: number;
   dependencyContract?: ReturnType<typeof getRollingForgeStageDependencyContract>;
   runSummary?: RollingPlayerRunSummary;
+  autoResume?: {
+    enabled: boolean;
+    batchesRun: number;
+    maxBatches: number;
+    maxRuntimeMs: number | null;
+    runtimeBudgetDisabled: boolean;
+    stoppedReason:
+      | "complete"
+      | "max_batches"
+      | "runtime_budget"
+      | "stalled";
+    initialResumeFrom: number | null;
+    nextResumeFrom: number | null;
+    maxPlayersPerBatch: number | null;
+    batches: Array<{
+      batch: number;
+      resumeFrom: number | null;
+      lastProcessedPlayerId: number | null;
+      nextResumeFrom: number | null;
+      processedPlayers: number;
+      rowsUpserted: number;
+      remainingPlayerCount: number;
+    }>;
+  };
   freshnessGate?: {
     status: "PASS" | "FAIL";
     blockerCount: number;
@@ -120,6 +147,9 @@ type EndpointPhase = "request" | "execute" | "response";
 const DEFAULT_INCREMENTAL_LOOKBACK_DAYS = 14;
 const DAILY_INCREMENTAL_BROAD_WINDOW_LIMIT_DAYS =
   DEFAULT_INCREMENTAL_LOOKBACK_DAYS + 1;
+const DEFAULT_AUTO_RESUME_MAX_PLAYERS = 25;
+const DEFAULT_AUTO_RESUME_MAX_BATCHES = 20;
+const DEFAULT_AUTO_RESUME_MAX_RUNTIME_MS = 220_000;
 const VALID_STRENGTH_STATES = new Set<StrengthState>([
   "all",
   "5v5",
@@ -313,6 +343,52 @@ function buildProgressGuidance(args: {
   };
 }
 
+function addNestedNumbers(target: Record<string, any>, incoming: Record<string, any>) {
+  for (const [key, value] of Object.entries(incoming)) {
+    if (typeof value === "number") {
+      target[key] = (typeof target[key] === "number" ? target[key] : 0) + value;
+      continue;
+    }
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      target[key] = target[key] && typeof target[key] === "object" ? target[key] : {};
+      addNestedNumbers(target[key], value as Record<string, any>);
+    }
+  }
+}
+
+function mergeRollingRunSummaries(
+  aggregate: RollingPlayerRunSummary | null,
+  current: RollingPlayerRunSummary
+): RollingPlayerRunSummary {
+  if (!aggregate) {
+    return {
+      ...current,
+      sourceTracking: JSON.parse(JSON.stringify(current.sourceTracking))
+    };
+  }
+
+  addNestedNumbers(
+    aggregate.sourceTracking as unknown as Record<string, any>,
+    current.sourceTracking as unknown as Record<string, any>
+  );
+
+  return {
+    ...aggregate,
+    rowsUpserted: aggregate.rowsUpserted + current.rowsUpserted,
+    processedPlayers: aggregate.processedPlayers + current.processedPlayers,
+    playersWithRows: aggregate.playersWithRows + current.playersWithRows,
+    coverageWarnings: aggregate.coverageWarnings + current.coverageWarnings,
+    suspiciousOutputWarnings:
+      aggregate.suspiciousOutputWarnings + current.suspiciousOutputWarnings,
+    unknownGameIds: aggregate.unknownGameIds + current.unknownGameIds,
+    freshnessBlockers: aggregate.freshnessBlockers + current.freshnessBlockers,
+    lastProcessedPlayerId: current.lastProcessedPlayerId ?? null,
+    nextResumeFrom: current.nextResumeFrom ?? null,
+    totalPlayersAfterResumeFilter: current.totalPlayersAfterResumeFilter ?? 0,
+    remainingPlayerCount: current.remainingPlayerCount ?? 0
+  };
+}
+
 async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseBody>
@@ -376,6 +452,17 @@ async function handler(
     const dryRunUpsert = parseQueryBoolean(getRequestParam(req, "dryRunUpsert"));
     const debugUpsertPayload = parseQueryBoolean(getRequestParam(req, "debugUpsertPayload"));
     const fastMode = parseQueryBoolean(getRequestParam(req, "fastMode"));
+    const autoResume = parseQueryBoolean(getRequestParam(req, "autoResume")) ?? false;
+    const autoResumeMaxBatches =
+      parseQueryPositiveInt(getRequestParam(req, "autoResumeMaxBatches")) ??
+      DEFAULT_AUTO_RESUME_MAX_BATCHES;
+    const disableAutoResumeRuntimeBudget =
+      parseQueryBoolean(getRequestParam(req, "disableAutoResumeRuntimeBudget")) ??
+      false;
+    const autoResumeMaxRuntimeMs = disableAutoResumeRuntimeBudget
+      ? null
+      : parseQueryPositiveInt(getRequestParam(req, "autoResumeMaxRuntimeMs")) ??
+        DEFAULT_AUTO_RESUME_MAX_RUNTIME_MS;
     const confirmBroadRun = parseQueryBoolean(getRequestParam(req, "confirmBroadRun"));
     const bypassFreshnessBlockers = parseQueryBoolean(
       getRequestParam(req, "bypassFreshnessBlockers")
@@ -420,6 +507,10 @@ async function handler(
     const profileDefaults = executionProfile
       ? ROLLING_EXECUTION_PROFILE_DEFAULTS[executionProfile]
       : undefined;
+    const effectiveMaxPlayers =
+      autoResume && maxPlayers === undefined
+        ? DEFAULT_AUTO_RESUME_MAX_PLAYERS
+        : maxPlayers;
     const executionScope = buildExecutionScopeSummary({
       startDate,
       endDate,
@@ -430,7 +521,7 @@ async function handler(
       implicitDailyWindow == null &&
       playerId === undefined &&
       resumeFrom === undefined &&
-      maxPlayers === undefined &&
+      effectiveMaxPlayers === undefined &&
       !fullRefresh &&
       (executionScope.windowDays ?? 0) >
         DAILY_INCREMENTAL_BROAD_WINDOW_LIMIT_DAYS &&
@@ -461,25 +552,28 @@ async function handler(
         progressGuidance: buildProgressGuidance({
           executionProfile,
           executionScope,
-          maxPlayers
+          maxPlayers: effectiveMaxPlayers
         }),
-        appliedPlayerLimit: maxPlayers,
+        appliedPlayerLimit: effectiveMaxPlayers,
         dependencyContract
       });
     }
 
     const resolvedPlayerConcurrency =
       playerConcurrency ??
+      (autoResume ? 1 : undefined) ??
       profileDefaults?.playerConcurrency ??
       (fastMode ? 4 : undefined);
     const resolvedUpsertBatchSize =
-      upsertBatchSize ?? profileDefaults?.upsertBatchSize;
+      upsertBatchSize ?? (autoResume ? 50 : undefined) ?? profileDefaults?.upsertBatchSize;
     const resolvedUpsertConcurrency =
       upsertConcurrency ??
+      (autoResume ? 1 : undefined) ??
       profileDefaults?.upsertConcurrency ??
       (fastMode ? 4 : undefined);
     const resolvedSkipDiagnostics =
       skipDiagnostics ??
+      (autoResume ? true : undefined) ??
       profileDefaults?.skipDiagnostics ??
       (fastMode ? true : undefined);
     logEndpointPhase({
@@ -492,7 +586,7 @@ async function handler(
         endDate,
         strengths,
         resumeFrom,
-        maxPlayers,
+        maxPlayers: effectiveMaxPlayers,
         fullRefresh,
         fullRefreshMode,
         executionProfile,
@@ -505,7 +599,11 @@ async function handler(
         skipDiagnostics: resolvedSkipDiagnostics,
         dryRunUpsert,
         debugUpsertPayload,
-        fastMode
+        fastMode,
+        autoResume,
+        autoResumeMaxBatches,
+        autoResumeMaxRuntimeMs,
+        disableAutoResumeRuntimeBudget
       }
     });
 
@@ -533,7 +631,11 @@ async function handler(
         skipDiagnostics: resolvedSkipDiagnostics,
         dryRunUpsert,
         debugUpsertPayload,
-        fastMode
+        fastMode,
+        autoResume,
+        autoResumeMaxBatches,
+        autoResumeMaxRuntimeMs,
+        disableAutoResumeRuntimeBudget
       })
     );
     const timerLabel = `[update-rolling-player-averages] total ${Date.now()}`;
@@ -554,25 +656,104 @@ async function handler(
     let runtimeBudget:
       | ResponseBody["runtimeBudget"]
       | undefined;
+    let autoResumeSummary: ResponseBody["autoResume"] | undefined;
     try {
-      runSummary = await main({
-        playerId,
-        season,
-        startDate,
-        endDate,
-        strengths,
-        resumePlayerId: resumeFrom,
-        maxPlayers,
-        forceFullRefresh: fullRefresh,
-        fullRefreshMode,
-        fullRefreshDeleteChunkSize: deleteChunkSize,
-        playerConcurrency: resolvedPlayerConcurrency,
-        upsertBatchSize: resolvedUpsertBatchSize,
-        upsertConcurrency: resolvedUpsertConcurrency,
-        skipDiagnostics: resolvedSkipDiagnostics,
-        dryRunUpsert,
-        debugUpsertPayload
-      });
+      if (autoResume) {
+        let currentResumeFrom = resumeFrom;
+        let aggregateSummary: RollingPlayerRunSummary | null = null;
+        let stoppedReason: NonNullable<ResponseBody["autoResume"]>["stoppedReason"] =
+          "complete";
+        const batches: NonNullable<ResponseBody["autoResume"]>["batches"] = [];
+
+        for (let batch = 1; batch <= autoResumeMaxBatches; batch += 1) {
+          if (
+            autoResumeMaxRuntimeMs != null &&
+            Date.now() - executeStartedAt >= autoResumeMaxRuntimeMs
+          ) {
+            stoppedReason = "runtime_budget";
+            break;
+          }
+
+          const batchSummary = await main({
+            playerId,
+            season,
+            startDate,
+            endDate,
+            strengths,
+            resumePlayerId: currentResumeFrom,
+            maxPlayers: effectiveMaxPlayers,
+            forceFullRefresh: fullRefresh,
+            fullRefreshMode,
+            fullRefreshDeleteChunkSize: deleteChunkSize,
+            playerConcurrency: resolvedPlayerConcurrency,
+            upsertBatchSize: resolvedUpsertBatchSize,
+            upsertConcurrency: resolvedUpsertConcurrency,
+            skipDiagnostics: resolvedSkipDiagnostics,
+            dryRunUpsert,
+            debugUpsertPayload
+          });
+
+          aggregateSummary = mergeRollingRunSummaries(
+            aggregateSummary,
+            batchSummary
+          );
+          batches.push({
+            batch,
+            resumeFrom: currentResumeFrom ?? null,
+            lastProcessedPlayerId: batchSummary.lastProcessedPlayerId ?? null,
+            nextResumeFrom: batchSummary.nextResumeFrom ?? null,
+            processedPlayers: batchSummary.processedPlayers,
+            rowsUpserted: batchSummary.rowsUpserted,
+            remainingPlayerCount: batchSummary.remainingPlayerCount ?? 0
+          });
+
+          if (batchSummary.nextResumeFrom == null) {
+            stoppedReason = "complete";
+            break;
+          }
+          if (batchSummary.nextResumeFrom === currentResumeFrom) {
+            stoppedReason = "stalled";
+            break;
+          }
+          currentResumeFrom = batchSummary.nextResumeFrom;
+          if (batch === autoResumeMaxBatches) {
+            stoppedReason = "max_batches";
+          }
+        }
+
+        runSummary = aggregateSummary ?? undefined;
+        autoResumeSummary = {
+          enabled: true,
+          batchesRun: batches.length,
+          maxBatches: autoResumeMaxBatches,
+          maxRuntimeMs: autoResumeMaxRuntimeMs,
+          runtimeBudgetDisabled: disableAutoResumeRuntimeBudget,
+          stoppedReason,
+          initialResumeFrom: resumeFrom ?? null,
+          nextResumeFrom: runSummary?.nextResumeFrom ?? null,
+          maxPlayersPerBatch: effectiveMaxPlayers ?? null,
+          batches
+        };
+      } else {
+        runSummary = await main({
+          playerId,
+          season,
+          startDate,
+          endDate,
+          strengths,
+          resumePlayerId: resumeFrom,
+          maxPlayers: effectiveMaxPlayers,
+          forceFullRefresh: fullRefresh,
+          fullRefreshMode,
+          fullRefreshDeleteChunkSize: deleteChunkSize,
+          playerConcurrency: resolvedPlayerConcurrency,
+          upsertBatchSize: resolvedUpsertBatchSize,
+          upsertConcurrency: resolvedUpsertConcurrency,
+          skipDiagnostics: resolvedSkipDiagnostics,
+          dryRunUpsert,
+          debugUpsertPayload
+        });
+      }
       const executeDurationMs = Date.now() - executeStartedAt;
       runtimeBudget = executionProfile
         ? buildRuntimeBudgetSummary(executionProfile, executeDurationMs)
@@ -632,11 +813,12 @@ async function handler(
           progressGuidance: buildProgressGuidance({
             executionProfile,
             executionScope,
-            maxPlayers
+            maxPlayers: effectiveMaxPlayers
           }),
-          appliedPlayerLimit: maxPlayers,
+          appliedPlayerLimit: effectiveMaxPlayers,
           dependencyContract,
           runSummary,
+          autoResume: autoResumeSummary,
           freshnessGate: {
             status: "FAIL",
             blockerCount: runSummary?.freshnessBlockers ?? 0,
@@ -679,11 +861,12 @@ async function handler(
       progressGuidance: buildProgressGuidance({
         executionProfile,
         executionScope,
-        maxPlayers
+        maxPlayers: effectiveMaxPlayers
       }),
-      appliedPlayerLimit: maxPlayers,
+      appliedPlayerLimit: effectiveMaxPlayers,
       dependencyContract,
       runSummary,
+      autoResume: autoResumeSummary,
       freshnessGate: {
         status:
           (runSummary?.freshnessBlockers ?? 0) > 0 ? "FAIL" : "PASS",

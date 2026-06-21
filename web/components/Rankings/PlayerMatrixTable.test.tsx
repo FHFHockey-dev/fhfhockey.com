@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { PlayerMatrixResponse } from "lib/rankings/playerMatrix";
@@ -30,6 +36,7 @@ const payload: PlayerMatrixResponse = {
     page: 1,
     pageSize: 10,
     selectedPlayerId: 1,
+    rankingSourcePreference: "fallback",
   },
   selectedPlayerId: 1,
   rows: [
@@ -39,7 +46,7 @@ const payload: PlayerMatrixResponse = {
         name: "Matt Savoie",
         position: "C",
         positionGroup: "forward",
-        imageUrl: null,
+        imageUrl: "https://example.test/matt-savoie.png",
       },
       team: {
         id: 7,
@@ -56,6 +63,7 @@ const payload: PlayerMatrixResponse = {
         gamesPlayed: 12,
         toiSeconds: 8400,
         toiPerGameSeconds: 700,
+        allStrengthsToiPerGameSeconds: 900,
         confidence: "high",
         minimumSampleMet: true,
       },
@@ -246,25 +254,49 @@ describe("PlayerMatrixTable", () => {
     expect(screen.getByText("Matt Savoie")).toBeTruthy();
     expect(screen.queryByRole("columnheader", { name: "Team" })).toBeNull();
     expect(screen.queryByRole("columnheader", { name: "Pos" })).toBeNull();
+    expect(screen.getByText("11:40")).toBeTruthy();
+    expect(screen.getByText("15:00")).toBeTruthy();
+    expect(screen.queryByText("Val")).toBeNull();
     expect(screen.getByLabelText("Deployment L2 / PP1")).toBeTruthy();
     expect(screen.getByText("92%")).toBeTruthy();
     expect(screen.getByText("84%")).toBeTruthy();
     expect(screen.getAllByText("#2").length).toBeGreaterThan(0);
-    expect(screen.getByText("3.20")).toBeTruthy();
     expect(screen.getByText("#4")).toBeTruthy();
-    expect(screen.getByText("1.70")).toBeTruthy();
-    expect(screen.getByLabelText(/Points\/60.*Value 3\.20.*Overall Rank 2.*Overall Percentile 92\.2%/)).toBeTruthy();
-    expect(screen.getByLabelText(/xGA\/60.*Value 1\.70.*Overall Rank 4.*Overall Percentile 84\.1%/)).toBeTruthy();
-    expect(screen.getByText("Source caveat")).toBeTruthy();
+    expect(
+      screen.getByLabelText(
+        /Points\/60.*Value 3\.20.*Overall Rank 2.*Overall Percentile 92\.2%/,
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByLabelText(
+        /xGA\/60.*Value 1\.70.*Overall Rank 4.*Overall Percentile 84\.1%/,
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByLabelText(
+        /xGA\/60.*Caveats: context_influenced_unadjusted_on_ice/,
+      ),
+    ).toBeTruthy();
     expect(screen.getByText("Showing 1 of 18")).toBeTruthy();
-    expect(screen.getByText("Color = percentile among qualified peers")).toBeTruthy();
+    expect(
+      screen.getByText("Color = better-than-peer percentile"),
+    ).toBeTruthy();
     expect(screen.getByText("95-100")).toBeTruthy();
-    expect(screen.getByText("Lower-is-better metrics still use better-is-greener percentile coloring")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Lower-is-better metrics still use better-is-greener percentile coloring",
+      ),
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /P\/60/i }));
     expect(onSortMetric).toHaveBeenCalledWith("points_per_60", "asc");
 
-    fireEvent.click(within(screen.getByRole("row", { name: /Matt Savoie/i })).getByRole("button", { name: "2" }));
+    fireEvent.click(
+      within(screen.getByRole("row", { name: /Matt Savoie/i })).getByRole(
+        "button",
+        { name: "2" },
+      ),
+    );
     expect(onSelectPlayer).toHaveBeenCalledWith(1);
 
     rerender(
@@ -281,7 +313,11 @@ describe("PlayerMatrixTable", () => {
     );
     expect(screen.getAllByText("#1").length).toBeGreaterThan(0);
     expect(screen.getByText("99%")).toBeTruthy();
-    expect(screen.getByLabelText(/Points\/60.*Deployment Rank 1.*Deployment Percentile 98\.5%/)).toBeTruthy();
+    expect(
+      screen.getByLabelText(
+        /Points\/60.*Deployment Rank 1.*Deployment Percentile 98\.5%/,
+      ),
+    ).toBeTruthy();
   });
 
   it("renders loading and unavailable metric notices", () => {
@@ -326,11 +362,15 @@ describe("PlayerMatrixTable", () => {
       />,
     );
 
-    expect(screen.getByText(/Some requested metrics are unavailable/i)).toBeTruthy();
-    expect(screen.getByText("No players matched the matrix filters.")).toBeTruthy();
+    expect(
+      screen.getByText(/Some requested metrics are unavailable/i),
+    ).toBeTruthy();
+    expect(
+      screen.getByText("No players matched the matrix filters."),
+    ).toBeTruthy();
   });
 
-  it("can render metric cells in raw-rank display mode", () => {
+  it("toggles metric cells to the novel score value display mode", () => {
     render(
       <PlayerMatrixTable
         payload={payload}
@@ -340,13 +380,17 @@ describe("PlayerMatrixTable", () => {
         onSortMetric={vi.fn()}
         onPageChange={vi.fn()}
         onPageSizeChange={vi.fn()}
-        displayMode="raw_rank"
+        displayMode="metric_value"
       />,
     );
 
     expect(screen.queryByText("92%")).toBeNull();
-    expect(screen.getAllByText("#2").length).toBeGreaterThan(0);
+    expect(screen.queryByText("#4")).toBeNull();
+    expect(screen.getByRole("button", { name: "P/60 Val DESC" })).toBeTruthy();
+    expect(screen.getByText("xGA/60 Val")).toBeTruthy();
     expect(screen.getByText("3.20")).toBeTruthy();
+    expect(screen.getByText("1.70")).toBeTruthy();
+    expect(screen.getByLabelText("Points/60 value 3.20")).toBeTruthy();
   });
 
   it("renders planned, unavailable, low-sample, true-zero, and stale-source states", () => {
@@ -427,7 +471,8 @@ describe("PlayerMatrixTable", () => {
               percentile: null,
               qualifiedPeerCount: 0,
               availabilityState: "unavailable",
-              availabilityReason: "No verified Results Luck value for this row.",
+              availabilityReason:
+                "No verified Results Luck value for this row.",
             },
             rel_5v5_gf_percentage: {
               ...payload.rows[0].metrics.points_per_60,
@@ -450,7 +495,11 @@ describe("PlayerMatrixTable", () => {
         latestAvailableSnapshotDate: "2026-04-16",
         metricGroups: [
           ...payload.meta.metricGroups,
-          { key: "overall_context", label: "Overall / Context", description: "Overall" },
+          {
+            key: "overall_context",
+            label: "Overall / Context",
+            description: "Overall",
+          },
         ],
         metricColumns: [
           ...payload.meta.metricColumns,
@@ -475,7 +524,8 @@ describe("PlayerMatrixTable", () => {
             groupKey: "overall_context",
             shortLabel: "Luck",
             fullLabel: "Results Luck Index",
-            tooltip: "Results Luck live, sparse until all verified components are available.",
+            tooltip:
+              "Results Luck live, sparse until all verified components are available.",
             defaultVisible: false,
             playerTypes: ["skater"],
             definition: undefined,
@@ -519,11 +569,16 @@ describe("PlayerMatrixTable", () => {
     );
 
     expect(screen.getByText("0%")).toBeTruthy();
-    expect(screen.getByText("Low sample")).toBeTruthy();
-    expect(screen.getByText("True zero")).toBeTruthy();
-    expect(screen.getByLabelText(/Snapshot is older than latest available matrix snapshot/)).toBeTruthy();
-    expect(screen.getAllByText("No sample").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Low sample")).toBeNull();
+    expect(screen.queryByText("True zero")).toBeNull();
+    expect(
+      screen.getByLabelText(
+        /Snapshot is older than latest available matrix snapshot/,
+      ),
+    ).toBeTruthy();
     expect(screen.getAllByText("N/A").length).toBeGreaterThan(0);
-    expect(screen.getByLabelText(/xGA\/60.*Lower raw values are better/).className).toContain("scoreToneStrong");
+    expect(
+      screen.getByLabelText(/xGA\/60.*Lower raw values are better/).className,
+    ).toContain("scoreToneStrong");
   });
 });

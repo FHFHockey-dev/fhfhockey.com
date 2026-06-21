@@ -12,6 +12,7 @@ type RequestWithSupabase = {
     sourceAsOfDate?: string | string[];
     predictionCutoffAt?: string | string[];
     dryRun?: string | string[];
+    allowBaselineBootstrap?: string | string[];
   };
   supabase: SupabaseClient<Database>;
 };
@@ -37,6 +38,8 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
     sourceAsOfDate: readSingleQueryValue(req.query.sourceAsOfDate) ?? undefined,
     predictionCutoffAt:
       readSingleQueryValue(req.query.predictionCutoffAt) ?? undefined,
+    allowBaselineBootstrap:
+      readSingleQueryValue(req.query.allowBaselineBootstrap) === "true",
     dryRun,
   });
 

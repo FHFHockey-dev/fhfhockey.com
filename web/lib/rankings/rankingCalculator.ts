@@ -102,7 +102,7 @@ export function rankNormalizedMetricValues<Id extends number | string>(
     });
 
   const qualifiedPeerCount = qualified.length;
-  const betterOrEqualPeerCountByValue = new Map<number, number>();
+  const strictlyWorsePeerCountByValue = new Map<number, number>();
   for (let index = 0; index < qualified.length;) {
     const value = qualified[index].normalizedValue;
     let nextIndex = index + 1;
@@ -112,7 +112,7 @@ export function rankNormalizedMetricValues<Id extends number | string>(
     ) {
       nextIndex += 1;
     }
-    betterOrEqualPeerCountByValue.set(value, qualifiedPeerCount - index);
+    strictlyWorsePeerCountByValue.set(value, qualifiedPeerCount - nextIndex);
     index = nextIndex;
   }
 
@@ -127,9 +127,11 @@ export function rankNormalizedMetricValues<Id extends number | string>(
     ranks.set(row.id, {
       rank,
       percentile: round(
-        ((betterOrEqualPeerCountByValue.get(row.normalizedValue) ?? 0) /
-          qualifiedPeerCount) *
-          100,
+        qualifiedPeerCount === 1
+          ? 100
+          : ((strictlyWorsePeerCountByValue.get(row.normalizedValue) ?? 0) /
+              (qualifiedPeerCount - 1)) *
+              100,
         3,
       ),
       qualifiedPeerCount,

@@ -93,7 +93,6 @@ const UPSERT_CONFLICT_COLUMNS =
 export const SKATER_COMPOSITE_SOURCE_METRICS = [
   "goals_per_60",
   "points_per_60",
-  "pp_points_per_60",
   "ixg_per_60",
   "shot_attempts_per_60",
   "sog_per_60",
@@ -519,6 +518,8 @@ export function buildSkaterCompositeRatingRow(args: {
       percentiles: args.percentiles,
       mcm: {
         formula: MCM_SCORE_CONTRACT.formula,
+        liveComponents: MCM_SCORE_CONTRACT.componentGroups,
+        sourcePendingComponents: MCM_SCORE_CONTRACT.sourcePendingComponents,
         flagCounts: counts,
         visibleThresholds: BEAST_TIER_GATES,
       },
@@ -545,6 +546,7 @@ export function buildSkaterCompositeRatingRow(args: {
       peerGroupKey: requestPeerGroupKey(args.request),
       deployment: args.request.deployment,
       sourceMetrics: SKATER_COMPOSITE_SOURCE_METRICS,
+      sourcePendingMetrics: MCM_SCORE_CONTRACT.sourcePendingComponents,
       sourceFreshness: args.sourceFreshness,
       unavailableMetrics: args.unavailableMetrics,
       caveats: [

@@ -209,15 +209,22 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
   try {
     const request = parseRequest(req.query);
     const dryRun = readBoolean(req.query.dryRun, true);
+    const upsertChunkSize = readInteger(req.query.upsertChunkSize, null, {
+      min: 1,
+      max: 500,
+    });
     const built = await buildEntityMetricRankingRows(request);
     const rowsUpserted = dryRun
       ? 0
-      : await upsertEntityMetricRankingRows(req.supabase, built.rows);
+      : await upsertEntityMetricRankingRows(req.supabase, built.rows, {
+          chunkSize: upsertChunkSize ?? undefined,
+        });
 
     return res.status(200).json({
       success: true,
       dryRun,
       request,
+      upsertChunkSize,
       generatedRows: built.rows.length,
       rowsUpserted,
       contexts: built.contexts,

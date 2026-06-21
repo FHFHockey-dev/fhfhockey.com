@@ -89,6 +89,48 @@ export const GOALIE_RANKING_SOURCE_CONTRACT: RankingEntitySourceContract = {
         "Prefer explicit xG-against minus goals-against semantics when a precomputed GSAx field is absent.",
     },
     {
+      metricKey: "goalie_xga_per_shot_against",
+      label: "xGA/Shot",
+      source:
+        "goalie_stats_unified.nst_5v5_counts_xg_against and nst_5v5_counts_shots_against",
+      availabilityTarget: "available",
+      notes:
+        "Shot-quality workload context. Higher values indicate harder chances faced, not pure goalie talent.",
+    },
+    {
+      metricKey: "goalie_value_signal",
+      label: "Value Signal",
+      source: "goalie_stats_unified 5v5 GSAx and GSAA",
+      availabilityTarget: "available",
+      notes:
+        "Documented non-WAR saved-goals signal from available cumulative 5v5 GSAx and GSAA.",
+    },
+    {
+      metricKey: "goalie_high_danger_save_percentage",
+      label: "HD SV%",
+      source:
+        "goalie_stats_unified.nst_5v5_counts_hd_saves and hd_shots_against",
+      availabilityTarget: "available",
+      notes:
+        "Source-backed high-danger save context from NST counts; still sample-sensitive.",
+    },
+    {
+      metricKey: "goalie_relative_save_percentage",
+      label: "Relative SV%",
+      source: "team-without-goalie baseline not yet published",
+      availabilityTarget: "planned",
+      notes:
+        "Keep source-pending until matched team-without-goalie save percentage can be computed safely.",
+    },
+    {
+      metricKey: "goalie_under_pressure_profile",
+      label: "Under Pressure",
+      source: "pressure-quadrant source rows not yet published",
+      availabilityTarget: "planned",
+      notes:
+        "Keep source-pending until pressure bucket labels and save outcomes are available.",
+    },
+    {
       metricKey: "goalie_quality_start_pct",
       label: "QS%",
       source: "wgo_goalie_stats.quality_start / games_started",
@@ -163,6 +205,15 @@ export const TEAM_RANKING_SOURCE_CONTRACT: RankingEntitySourceContract = {
       rankingUse:
         "season-level control, shot quality, goal share, and raw team-style context",
     },
+    {
+      name: "wgo_team_stats",
+      kind: "table",
+      rowCount: null,
+      latestDate: "2026-06-06",
+      ownership: "official team game-log ingestion",
+      rankingUse:
+        "one-goal game rate, home/road point-percentage split, power-play opportunities, and penalty context",
+    },
   ],
   liveRankingGates: [
     "Extend rankings entity parser/types to teams without overloading player-specific request fields.",
@@ -204,9 +255,64 @@ export const TEAM_RANKING_SOURCE_CONTRACT: RankingEntitySourceContract = {
       metricKey: "team_style_badge",
       label: "Team Style",
       source: "nst_team_stats plus team_underlying_stats_summary",
-      availabilityTarget: "planned",
+      availabilityTarget: "available",
       notes:
         "Publish as raw/contextual only until score- and venue-adjusted aggregates are verified.",
+    },
+    {
+      metricKey: "team_one_goal_game_rate",
+      label: "1-Goal Game Rate",
+      source: "wgo_team_stats.goals_for and goals_against",
+      availabilityTarget: "available",
+      notes:
+        "Current game-context style metric; share of team games decided by one goal or fewer.",
+    },
+    {
+      metricKey: "team_home_road_point_pct_gap",
+      label: "Home Edge",
+      source: "wgo_team_stats.home_road and point_pct",
+      availabilityTarget: "available",
+      notes:
+        "Home point-percentage minus road point-percentage; context, not pure coaching talent.",
+    },
+    {
+      metricKey: "team_pp_opportunity_rate",
+      label: "PP Opp/G",
+      source: "wgo_team_stats.pp_opportunities_per_game",
+      availabilityTarget: "available",
+      notes: "Special-teams opportunity context from verified team game logs.",
+    },
+    {
+      metricKey: "team_penalties_taken_per_60",
+      label: "Penalties/60",
+      source: "wgo_team_stats.penalties_taken_per_60",
+      availabilityTarget: "available",
+      notes:
+        "Discipline context with lower-is-better ranking semantics; not labeled as adjusted coaching talent.",
+    },
+    {
+      metricKey: "team_forward_top_load_index",
+      label: "Forward Top Load",
+      source: "line/pair TOI source not yet published",
+      availabilityTarget: "planned",
+      notes:
+        "Lineup identity rows exist, but verified forward-line TOI share is required before publishing top-load usage.",
+    },
+    {
+      metricKey: "team_defense_pair_top_load_index",
+      label: "Defense Pair Top Load",
+      source: "line/pair TOI source not yet published",
+      availabilityTarget: "planned",
+      notes:
+        "Lineup identity rows exist, but verified defense-pair TOI share is required before publishing top-load usage.",
+    },
+    {
+      metricKey: "team_pp1_pp2_usage_share",
+      label: "PP1/PP2 Usage Share",
+      source: "PP unit TOI source not yet published",
+      availabilityTarget: "planned",
+      notes:
+        "Power-play unit labels are not enough; publish only after unit-level PP TOI share is available.",
     },
   ],
   caveats: [

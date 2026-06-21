@@ -87,6 +87,7 @@ describe("/api/v1/game-predictions/accuracy-loop", () => {
       query: {
         seasonId: "20252026",
         persistEvidence: "true",
+        confirmPersist: "true",
         analysisEndDate: "2026-03-08",
         horizonDays: "0,3",
         maxReplayGames: "25",
@@ -135,6 +136,46 @@ describe("/api/v1/game-predictions/accuracy-loop", () => {
     expect(res.body).toEqual({
       success: false,
       error: "The accuracy loop endpoint is dry-run only.",
+    });
+  });
+
+  it("requires POST and explicit confirmation before persisting evidence", async () => {
+    const getContext = createMockApiContext({
+      method: "GET",
+      query: {
+        seasonId: "20252026",
+        persistEvidence: "true",
+        confirmPersist: "true",
+      },
+    });
+
+    await handler(getContext.req as never, getContext.res as never);
+
+    expect(getContext.res.statusCode).toBe(405);
+    expect(runGamePredictionAccuracyImprovementLoopMock).not.toHaveBeenCalled();
+    expect(getContext.res.body).toEqual({
+      success: false,
+      error: "Persisting accuracy-loop evidence requires POST.",
+    });
+
+    const unconfirmedContext = createMockApiContext({
+      method: "POST",
+      query: {
+        seasonId: "20252026",
+        persistEvidence: "true",
+      },
+    });
+
+    await handler(
+      unconfirmedContext.req as never,
+      unconfirmedContext.res as never,
+    );
+
+    expect(unconfirmedContext.res.statusCode).toBe(400);
+    expect(runGamePredictionAccuracyImprovementLoopMock).not.toHaveBeenCalled();
+    expect(unconfirmedContext.res.body).toEqual({
+      success: false,
+      error: "Persisting accuracy-loop evidence requires confirmPersist=true.",
     });
   });
 

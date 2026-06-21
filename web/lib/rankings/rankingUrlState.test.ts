@@ -9,6 +9,7 @@ import {
   buildTeamMatrixRequestPath,
   buildWarRequestPath,
   normalizeRankingsFilters,
+  type RankingsFilterState,
 } from "./rankingUrlState";
 
 describe("rankingUrlState", () => {
@@ -76,7 +77,7 @@ describe("rankingUrlState", () => {
     expect(filters.page).toBe("2");
     expect(filters.pageSize).toBe("25");
     expect(buildMatrixRequestPath(filters)).toBe(
-      "/api/v1/contextual-rankings/matrix?entity=skaters&season=20252026&window=season&position=all&deployment=all&strength=5v5&min_gp=1&min_toi=300&sort_metric=xga_per_60&sort_direction=asc&page=2&page_size=25&search=Savoie&sample_confidence=high&selected_player=8478402",
+      "/api/v1/contextual-rankings/matrix?entity=skaters&season=20252026&window=season&position=all&deployment=all&strength=5v5&min_gp=1&min_toi=300&sort_metric=xga_per_60&sort_direction=asc&page=2&page_size=25&ranking_source=entity_metric_rankings&search=Savoie&sample_confidence=high&selected_player=8478402",
     );
   });
 
@@ -87,6 +88,37 @@ describe("rankingUrlState", () => {
 
     expect(filters.pageSize).toBe("10");
     expect(buildMatrixRequestPath(filters)).toContain("page_size=10");
+  });
+
+  it("preserves selected skater snapshot state across matrix pagination and filters", () => {
+    const filters = normalizeRankingsFilters({
+      selected_player: "8478402",
+      page: "3",
+      page_size: "25",
+      search: "Savoie",
+      display: "metric_value",
+    });
+
+    expect(buildMatrixRequestPath(filters)).toContain(
+      "selected_player=8478402",
+    );
+    expect(buildMatrixRequestPath(filters)).toContain("page=3");
+    expect(buildSnapshotRequestPath(filters)).toContain(
+      "selected_player=8478402",
+    );
+
+    const changedPage: RankingsFilterState = {
+      ...filters,
+      page: "1",
+      matrixSortMetric: "xga_per_60",
+    };
+
+    expect(buildMatrixRequestPath(changedPage)).toContain(
+      "selected_player=8478402",
+    );
+    expect(buildSnapshotRequestPath(changedPage)).toContain(
+      "selected_player=8478402",
+    );
   });
 
   it("normalizes advanced display filter URL values", () => {
@@ -154,6 +186,19 @@ describe("rankingUrlState", () => {
     });
   });
 
+  it("preserves text team tokens in shareable URLs without creating client NaN ids", () => {
+    const filters = normalizeRankingsFilters({
+      team: "BOS",
+    });
+
+    expect(buildMatrixRequestPath(filters)).toContain("team=BOS");
+    expect(buildRankingsRequestPath(filters)).toContain("team=BOS");
+    expect(buildClientRankingsRequest(filters)).toMatchObject({
+      teamId: null,
+      peerGroupType: "team",
+    });
+  });
+
   it("does not build an API path for coming-soon entity types", () => {
     const filters = normalizeRankingsFilters({ entity: "goalies" });
 
@@ -165,13 +210,13 @@ describe("rankingUrlState", () => {
       entity: "goalies",
       team: "DAL",
       search: "Shesterkin",
-      goalie_metric: "gsax",
+      goalie_metric: "xga_per_shot_against",
       goalie_role: "g1_workhorse",
     });
     const teamFilters = normalizeRankingsFilters({
       entity: "teams",
       search: "DAL",
-      team_metric: "net_luck",
+      team_metric: "home_road_point_pct_gap",
     });
 
     expect(buildGoalieMatrixRequestPath(goalieFilters)).toContain(
@@ -179,9 +224,15 @@ describe("rankingUrlState", () => {
     );
     expect(buildGoalieMatrixRequestPath(goalieFilters)).toContain("team=DAL");
     expect(buildGoalieMatrixRequestPath(goalieFilters)).toContain(
+      "metric=xga_per_shot_against",
+    );
+    expect(buildGoalieMatrixRequestPath(goalieFilters)).toContain(
       "role=g1_workhorse",
     );
     expect(buildTeamMatrixRequestPath(teamFilters)).toContain("search=DAL");
+    expect(buildTeamMatrixRequestPath(teamFilters)).toContain(
+      "metric=home_road_point_pct_gap",
+    );
   });
 
   it("serializes the WAR source-pending contract path for every entity type", () => {

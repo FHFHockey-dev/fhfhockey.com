@@ -28,6 +28,7 @@ const populatedPayload: PublicGamePredictionsPayload = {
         warnings: [],
         staleSources: [],
       },
+      market: null,
       factors: [
         {
           featureKey: "homeMinusAwayOffRating",
@@ -150,7 +151,7 @@ describe("NhlPredictionsPage", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders probability cards, stored factors, performance metrics, and market odds", async () => {
+  it("renders probability cards, stored factors, performance metrics, and market status", () => {
     render(<NhlPredictionsPage initialPayload={populatedPayload} />);
 
     expect(
@@ -164,10 +165,46 @@ describe("NhlPredictionsPage", () => {
     expect(screen.getByText("Evaluated games")).toBeTruthy();
     expect(screen.getByText("Accountability Index")).toBeTruthy();
     expect(screen.getByText("100")).toBeTruthy();
-    expect(await screen.findByText("ESPN / DraftKings")).toBeTruthy();
-    expect(screen.getByText("MTL ML")).toBeTruthy();
-    expect(screen.getByText("+110")).toBeTruthy();
-    expect(screen.getByText("-130")).toBeTruthy();
+    expect(screen.getByText("Stored market snapshot unavailable")).toBeTruthy();
+  });
+
+  it("renders persisted market snapshots from the public payload", () => {
+    render(
+      <NhlPredictionsPage
+        initialPayload={{
+          ...populatedPayload,
+          predictions: [
+            {
+              ...populatedPayload.predictions[0],
+              market: {
+                source: "feature_snapshot",
+                sourceName: "historical_market_odds_import",
+                provider: "BetMGM",
+                capturedAt: "2026-04-27T14:00:00.000Z",
+                sourceUrl: "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard",
+                homeMoneyline: -145,
+                awayMoneyline: 125,
+                homeNoVigProbability: 0.573529,
+                awayNoVigProbability: 0.426471,
+                overround: 0.036281,
+                homeSpreadLine: -1.5,
+                homeSpreadOdds: 170,
+                awaySpreadLine: 1.5,
+                awaySpreadOdds: -205,
+                totalLine: 5.5,
+                overOdds: -110,
+                underOdds: -110,
+              },
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Snapshot / BetMGM")).toBeTruthy();
+    expect(screen.getByText("-145")).toBeTruthy();
+    expect(screen.getByText("+125")).toBeTruthy();
+    expect(screen.queryByText("ESPN / DraftKings")).toBeNull();
   });
 
   it("renders stale-data warnings from the API payload", () => {

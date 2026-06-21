@@ -105,6 +105,29 @@ describe("public game predictions payload", () => {
               },
             ],
             warnings: [{ code: "stale_source", message: "source is stale" }],
+            market: {
+              source: "game_prediction_market_odds_snapshots",
+              sourceName: "historical_market_odds_import",
+              oddsSnapshotId: "odds-1",
+              provider: "DraftKings",
+              capturedAt: "2026-04-27T14:00:00.000Z",
+              importRecordedAt: "2026-04-27T15:00:00.000Z",
+              importBatchId: "batch-1",
+              capturedAgeHours: 5,
+              sourceUrl: "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard",
+              homeMoneyline: -130,
+              awayMoneyline: 110,
+              homeNoVigProbability: 0.553191,
+              awayNoVigProbability: 0.446809,
+              overround: 0.041958,
+              homeSpreadLine: -1.5,
+              homeSpreadOdds: 180,
+              awaySpreadLine: 1.5,
+              awaySpreadOdds: -220,
+              totalLine: 5.5,
+              overOdds: -105,
+              underOdds: -115,
+            },
           },
         },
       ] as any,
@@ -113,6 +136,14 @@ describe("public game predictions payload", () => {
         { id: 20, abbreviation: "MTL", name: "Montreal Canadiens" },
       ],
       games: [{ id: 1, startTime: "19:00:00" }],
+      modelVersions: [
+        {
+          model_name: "nhl_game_baseline_logistic",
+          model_version: "v1",
+          feature_set_version: "game_features_v1",
+          status: "production",
+        },
+      ] as any,
       metrics: [
         {
           model_name: "nhl_game_baseline_logistic",
@@ -159,6 +190,16 @@ describe("public game predictions payload", () => {
     expect(payload.predictions[0].matchup?.homeGoalieConfirmed).toBe(true);
     expect(payload.predictions[0].matchup?.homeGoalieSource).toBe("lines_ccc");
     expect(payload.predictions[0].matchup?.homeGoalieName).toBe("Home Starter");
+    expect(payload.predictions[0].market).toMatchObject({
+      source: "feature_snapshot",
+      sourceName: "historical_market_odds_import",
+      provider: "DraftKings",
+      capturedAt: "2026-04-27T14:00:00.000Z",
+      homeMoneyline: -130,
+      awayMoneyline: 110,
+      homeNoVigProbability: 0.553191,
+      awayNoVigProbability: 0.446809,
+    });
     expect(payload.performance?.evaluatedGames).toBe(100);
     expect(payload.performance?.calibrationSummary).toBe(
       "1 populated calibration bins",
@@ -188,13 +229,24 @@ describe("public game predictions payload", () => {
               },
             ],
           },
-          metadata: { confidence_label: "medium" },
+          metadata: {
+            confidence_label: "medium",
+            feature_set_version: "game_features_candidate",
+          },
           provenance: {},
           updated_at: "2026-04-27T10:01:00.000Z",
           away_expected_goals: null,
           home_expected_goals: null,
           spread_projection: null,
           total_expected_goals: null,
+        },
+      ] as any,
+      modelVersions: [
+        {
+          model_name: "nhl_game_baseline_logistic",
+          model_version: "candidate-v1",
+          feature_set_version: "game_features_candidate",
+          status: "production",
         },
       ] as any,
     });
@@ -279,6 +331,37 @@ describe("public game predictions payload", () => {
     expect(payload.performance).toBeNull();
   });
 
+  it("hides serving rows when production model-version evidence is absent", () => {
+    const payload = buildPublicGamePredictionsPayload({
+      outputs: [
+        {
+          game_id: 1,
+          snapshot_date: "2026-04-28",
+          home_team_id: 10,
+          away_team_id: 20,
+          home_win_probability: 0.61,
+          away_win_probability: 0.39,
+          model_name: "nhl_game_baseline_logistic",
+          model_version: "candidate-v1",
+          prediction_scope: "pregame",
+          computed_at: "2026-04-27T11:00:00.000Z",
+          components: {},
+          metadata: { feature_set_version: "candidate_features_v1" },
+          provenance: {},
+          updated_at: "2026-04-27T11:01:00.000Z",
+          away_expected_goals: null,
+          home_expected_goals: null,
+          spread_projection: null,
+          total_expected_goals: null,
+        },
+      ] as any,
+    });
+
+    expect(payload.count).toBe(0);
+    expect(payload.predictions).toEqual([]);
+    expect(payload.performance).toBeNull();
+  });
+
   it("labels only explicitly whitelisted candidate-era factors", () => {
     const payload = buildPublicGamePredictionsPayload({
       outputs: [
@@ -314,6 +397,7 @@ describe("public game predictions payload", () => {
           },
           metadata: {
             confidence_label: "medium",
+            feature_set_version: "game_features_v5_accuracy_candidates",
             public_explanation_feature_keys: [
               "homeMinusAwayRecent20XgfPct",
               "homeMinusAwayRecent20ShotShare",
@@ -325,6 +409,14 @@ describe("public game predictions payload", () => {
           home_expected_goals: null,
           spread_projection: null,
           total_expected_goals: null,
+        },
+      ] as any,
+      modelVersions: [
+        {
+          model_name: "nhl_game_baseline_logistic",
+          model_version: "promoted-v1",
+          feature_set_version: "game_features_v5_accuracy_candidates",
+          status: "production",
         },
       ] as any,
     });

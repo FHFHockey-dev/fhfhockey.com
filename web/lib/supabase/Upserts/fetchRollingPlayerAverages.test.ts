@@ -586,6 +586,10 @@ describe("fetchRollingPlayerAverages buildGameRecords", () => {
       suspiciousOutputWarnings: 211766,
       unknownGameIds: 27,
       freshnessBlockers: 4,
+      lastProcessedPlayerId: null,
+      nextResumeFrom: null,
+      totalPlayersAfterResumeFilter: 0,
+      remainingPlayerCount: 0,
       sourceTracking: expect.objectContaining({
         wgoFallbacks: expect.objectContaining({
           goals: 1176,
@@ -1674,6 +1678,64 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
       expect(String(typed.responseText)).toContain("bogus_metric");
       return true;
     });
+  });
+
+  it("splits and retries timed-out direct upsert statements", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            message: "canceling statement due to statement timeout",
+            code: "57014"
+          }),
+          {
+            status: 500,
+            statusText: "Internal Server Error",
+            headers: {
+              "Content-Type": "application/json"
+            }
+          }
+        )
+      )
+      .mockResolvedValue(new Response("", { status: 200, statusText: "OK" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const firstRow = {
+      player_id: 8470613,
+      game_date: "2025-10-07",
+      season: 20252026,
+      strength_state: "5v5",
+      goals_total_last20: 0
+    };
+    const secondRow = {
+      player_id: 8470613,
+      game_date: "2025-10-09",
+      season: 20252026,
+      strength_state: "5v5",
+      goals_total_last20: 1
+    };
+
+    await expect(
+      upsertRollingPlayerMetricsBatch([firstRow, secondRow])
+    ).resolves.toBeUndefined();
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock.mock.calls[0][1]).toEqual(
+      expect.objectContaining({
+        body: JSON.stringify([firstRow, secondRow])
+      })
+    );
+    expect(fetchMock.mock.calls[1][1]).toEqual(
+      expect.objectContaining({
+        body: JSON.stringify([firstRow])
+      })
+    );
+    expect(fetchMock.mock.calls[2][1]).toEqual(
+      expect.objectContaining({
+        body: JSON.stringify([secondRow])
+      })
+    );
   });
 });
 

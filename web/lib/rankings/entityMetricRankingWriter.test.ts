@@ -165,6 +165,9 @@ describe("entityMetricRankingWriter", () => {
     expect(result.rows[0]?.explanation_items).toContain(
       "Rank 1 of 2 in all_skaters:all.",
     );
+    expect(result.rows[0]?.explanation_items).toContain(
+      "Better than 100.0% of other qualified peers after metric directionality is applied.",
+    );
     expect(result.rows[0]?.provenance).toMatchObject({
       sourceTable: "rolling_player_game_metrics",
       writer: "entityMetricRankingWriter",
@@ -241,7 +244,9 @@ describe("entityMetricRankingWriter", () => {
       peer_group_key: "all",
     })) as EntityMetricRankingInsert[];
 
-    const rowsUpserted = await upsertEntityMetricRankingRows(client as any, rows);
+    const rowsUpserted = await upsertEntityMetricRankingRows(client as any, rows, {
+      chunkSize: 500,
+    });
 
     expect(rowsUpserted).toBe(501);
     expect(client.from).toHaveBeenCalledWith("entity_metric_rankings");
@@ -252,5 +257,42 @@ describe("entityMetricRankingWriter", () => {
       onConflict:
         "entity_type,entity_id,season_id,snapshot_date,window_type,window_size,strength_state,metric_key,peer_group_type,peer_group_key",
     });
+  });
+
+  it("splits failed upsert chunks and retries smaller payloads", async () => {
+    const upsertMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        error: { message: "TypeError: fetch failed" },
+      })
+      .mockResolvedValue({ error: null });
+    const client = {
+      from: vi.fn(() => ({
+        upsert: upsertMock,
+      })),
+    };
+    const rows = Array.from({ length: 4 }, (_, index) => ({
+      entity_type: "skater",
+      entity_id: index + 1,
+      season_id: 20252026,
+      snapshot_date: "2026-04-16",
+      window_type: "last_5",
+      window_size: 5,
+      window_semantics: "player_last_n_games_played",
+      strength_state: "5v5",
+      metric_key: "points_per_60",
+      peer_group_type: "all_skaters",
+      peer_group_key: "all",
+    })) as EntityMetricRankingInsert[];
+
+    const rowsUpserted = await upsertEntityMetricRankingRows(client as any, rows, {
+      chunkSize: 4,
+    });
+
+    expect(rowsUpserted).toBe(4);
+    expect(upsertMock).toHaveBeenCalledTimes(3);
+    expect(upsertMock.mock.calls[0]?.[0]).toHaveLength(4);
+    expect(upsertMock.mock.calls[1]?.[0]).toHaveLength(2);
+    expect(upsertMock.mock.calls[2]?.[0]).toHaveLength(2);
   });
 });

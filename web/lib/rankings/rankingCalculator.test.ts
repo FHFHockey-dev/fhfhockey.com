@@ -58,7 +58,7 @@ describe("rankingCalculator", () => {
     ).toBe(2.5);
   });
 
-  it("calculates dense raw ranks with ties and better-or-equal peer percentiles", () => {
+  it("calculates dense raw ranks with ties and better-than-peer percentiles", () => {
     const rows = buildContextualRankingRows({
       metricKey: "goals_per_60",
       peerGroupType: "all_skaters",
@@ -78,11 +78,52 @@ describe("rankingCalculator", () => {
         percentile: row.percentile,
       })),
     ).toEqual([
-      { id: 2, rank: 1, percentile: 100 },
-      { id: 3, rank: 1, percentile: 100 },
-      { id: 1, rank: 2, percentile: 50 },
-      { id: 4, rank: 3, percentile: 25 },
+      { id: 2, rank: 1, percentile: 66.667 },
+      { id: 3, rank: 1, percentile: 66.667 },
+      { id: 1, rank: 2, percentile: 33.333 },
+      { id: 4, rank: 3, percentile: 0 },
     ]);
+  });
+
+  it("gives an untied best row 100 and the worst row 0", () => {
+    const rows = buildContextualRankingRows({
+      metricKey: "goals_per_60",
+      peerGroupType: "all_skaters",
+      minimumPeerCount: 1,
+      candidates: [
+        candidate({ entityId: 1, rawValue: 10 }),
+        candidate({ entityId: 2, rawValue: 6 }),
+        candidate({ entityId: 3, rawValue: 4 }),
+      ],
+    });
+
+    expect(
+      rows.map((row) => ({
+        id: row.entityId,
+        rank: row.rawRank,
+        percentile: row.percentile,
+      })),
+    ).toEqual([
+      { id: 1, rank: 1, percentile: 100 },
+      { id: 2, rank: 2, percentile: 50 },
+      { id: 3, rank: 3, percentile: 0 },
+    ]);
+  });
+
+  it("keeps the sole qualified row at 100 because there are no lower peers", () => {
+    const rows = buildContextualRankingRows({
+      metricKey: "goals_per_60",
+      peerGroupType: "all_skaters",
+      minimumPeerCount: 1,
+      candidates: [candidate({ entityId: 1, rawValue: 10 })],
+    });
+
+    expect(rows[0]).toMatchObject({
+      entityId: 1,
+      rawRank: 1,
+      percentile: 100,
+      qualifiedPeerCount: 1,
+    });
   });
 
   it("filters minimum GP and TOI before rank and percentile calculation", () => {
@@ -109,6 +150,7 @@ describe("rankingCalculator", () => {
     expect(leader?.rawRank).toBe(1);
     expect(leader?.percentile).toBe(100);
     expect(leader?.qualifiedPeerCount).toBe(2);
+    expect(rows.find((row) => row.entityId === 3)?.percentile).toBe(0);
   });
 
   it("supports position, deployment, and team peer groups", () => {

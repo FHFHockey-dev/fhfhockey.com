@@ -121,7 +121,47 @@ describe("metricDefinitions", () => {
     expect(definition?.sourceQualityFlags).toContain("source_pending");
     expect(definition?.metadata).toMatchObject({
       sourcePendingReason:
-        "MCM methodology includes PP points, but the current contextual ranking surface has no verified pp_points_per_60 metric rows.",
+        "Original MCM includes PP points, but the live MCM contract excludes pp_points_per_60 until verified ranking rows are available.",
+    });
+  });
+
+  it("labels MCM and BEAST as current-contract composites with source-pending PP points excluded", () => {
+    const mcm = getContextualRankingMetricDefinition("mcm_score");
+    const beast = getContextualRankingMetricDefinition("beast_tier");
+
+    expect(mcm?.description).toContain("Current-contract");
+    expect(mcm?.formulaDescription).toContain("power-play points are excluded");
+    expect(mcm?.metadata?.componentMetrics).toEqual([
+      "sog_per_60",
+      "hits_per_60",
+      "blocks_per_60",
+      "goals_per_60",
+      "primary_assists_per_60",
+      "points_per_60",
+    ]);
+    expect(mcm?.metadata?.sourcePendingComponents).toEqual([
+      "pp_points_per_60",
+    ]);
+    expect(beast?.description).toContain("Current-contract");
+    expect(beast?.formulaDescription).toContain("source-pending and excluded");
+    expect(beast?.metadata?.sourcePendingComponents).toEqual([
+      "pp_points_per_60",
+    ]);
+  });
+
+  it("keeps team-without-player relative 5v5 metrics planned until baselines exist", () => {
+    const relGf = getContextualRankingMetricDefinition("rel_5v5_gf_percentage");
+    const relXgf = getContextualRankingMetricDefinition("rel_5v5_xgf_percentage");
+
+    expect(relGf?.availabilityStatus).toBe("planned");
+    expect(relGf?.sourceTable).toBeNull();
+    expect(relGf?.metadata).toMatchObject({
+      requiresTeamWithoutPlayerBaseline: true,
+    });
+    expect(relXgf?.availabilityStatus).toBe("planned");
+    expect(relXgf?.sourceTable).toBeNull();
+    expect(relXgf?.metadata).toMatchObject({
+      requiresTeamWithoutPlayerBaseline: true,
     });
   });
 

@@ -31,6 +31,7 @@ type RequestWithSupabase = {
     variants?: string | string[];
     dryRun?: string | string[];
     persistEvidence?: string | string[];
+    confirmPersist?: string | string[];
   };
   supabase: SupabaseClient<Database>;
 };
@@ -88,6 +89,21 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
     });
   }
 
+  const persistEvidence = readBoolean(req.query.persistEvidence);
+  if (persistEvidence && req.method !== "POST") {
+    return res.status(405).json({
+      success: false,
+      error: "Persisting accuracy-loop evidence requires POST.",
+    });
+  }
+  if (persistEvidence && !readBoolean(req.query.confirmPersist)) {
+    return res.status(400).json({
+      success: false,
+      error:
+        "Persisting accuracy-loop evidence requires confirmPersist=true.",
+    });
+  }
+
   const seasonId = readInteger(req.query.seasonId);
   if (!seasonId) {
     return res.status(400).json({
@@ -132,7 +148,7 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
     retrainCadenceGames: readInteger(req.query.retrainCadenceGames),
     maxTrainingGames: readInteger(req.query.maxTrainingGames),
     maxReplayGames: readInteger(req.query.maxReplayGames),
-    persistEvidence: readBoolean(req.query.persistEvidence),
+    persistEvidence,
     variantKeys:
       variantKeys ?? Array.from(ACCURACY_IMPROVEMENT_ABLATION_VARIANT_KEYS),
   });

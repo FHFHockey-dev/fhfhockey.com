@@ -1,9 +1,9 @@
 import {
-  buildContextualRankingsSurface,
+  buildSnapshotFirstContextualRankingsSurface,
 } from "lib/rankings/rankingQueries";
 import {
   ContextualRankingsQueryError,
-  parseContextualRankingsRequest,
+  parseContextualRankingsRequestWithResolvedTeam,
 } from "lib/rankings/rankingTypes";
 import type { NextApiRequest, NextApiResponse } from "next";
 
@@ -20,8 +20,10 @@ export default async function handler(
   }
 
   try {
-    const request = parseContextualRankingsRequest(req.query);
-    const payload = await buildContextualRankingsSurface(request);
+    const request = await parseContextualRankingsRequestWithResolvedTeam(
+      req.query,
+    );
+    const payload = await buildSnapshotFirstContextualRankingsSurface(request);
     return res.status(200).json(payload);
   } catch (error) {
     const statusCode =

@@ -9,7 +9,7 @@ test.describe("/rankings", () => {
     );
 
     await expect(
-      page.getByRole("heading", { name: "Player Rankings" }),
+      page.getByRole("heading", { name: "Skater Rankings" }),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Rankings Matrix" }),

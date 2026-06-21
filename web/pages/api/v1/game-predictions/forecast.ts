@@ -18,6 +18,7 @@ type RequestWithSupabase = {
     limit?: string | string[];
     maxRuntimeMs?: string | string[];
     dryRun?: string | string[];
+    allowBaselineBootstrap?: string | string[];
   };
   supabase: SupabaseClient<Database>;
 };
@@ -73,6 +74,8 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
     predictionCutoffAt,
     limit: readInteger(req.query.limit),
     maxRuntimeMs: readInteger(req.query.maxRuntimeMs),
+    allowBaselineBootstrap:
+      readSingleQueryValue(req.query.allowBaselineBootstrap) === "true",
     dryRun: readSingleQueryValue(req.query.dryRun) === "true",
   });
 

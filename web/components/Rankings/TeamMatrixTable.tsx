@@ -53,19 +53,19 @@ function teamMetricState(
   staleSource: boolean,
 ) {
   if (cell.qualifiedPeerCount === 0) {
-    return { label: "No sample", className: styles.metricStateUnavailable };
+    return { label: "No sample", marker: "?", className: styles.metricStateUnavailable };
   }
   if (cell.rawValue == null || cell.percentile == null) {
-    return { label: "Source pending", className: styles.metricStateUnavailable };
+    return { label: "Source pending", marker: "?", className: styles.metricStateUnavailable };
   }
   if (staleSource) {
-    return { label: "Stale source", className: styles.metricStateStale };
+    return { label: "Stale source", marker: "~", className: styles.metricStateStale };
   }
   if (row.warnings.length > 0) {
-    return { label: "Raw context", className: styles.metricStateCaveat };
+    return { label: "Raw context", marker: "!", className: styles.metricStateCaveat };
   }
   if (cell.rawValue === 0) {
-    return { label: "True zero", className: styles.metricStateZero };
+    return { label: "True zero", marker: "0", className: styles.metricStateZero };
   }
   return null;
 }
@@ -150,8 +150,12 @@ function TeamMetricCell({
           </span>
         </div>
         {state ? (
-          <span className={`${styles.metricStateChip} ${state.className}`}>
-            {state.label}
+          <span
+            className={`${styles.metricStateChip} ${state.className}`}
+            title={state.label}
+            aria-label={state.label}
+          >
+            {state.marker}
           </span>
         ) : null}
       </div>
@@ -291,12 +295,23 @@ export default function TeamMatrixTable({
         {payload?.meta.sourceWarnings.length
           ? ` ${payload.meta.sourceWarnings.join(" ")}.`
           : ""}
+        {payload?.meta.sourcePendingMetricContracts.length
+          ? ` Source-pending team contracts: ${payload.meta.sourcePendingMetricContracts
+              .map((contract) => contract.label)
+              .join(", ")}.`
+          : ""}
       </div>
       {payload ? (
         <footer className={styles.matrixFooter}>
           <span>
             Showing {payload.meta.rowCount} of {payload.meta.totalRankedRows} teams
           </span>
+          <div className={styles.matrixLegend} aria-label="Team source state legend">
+            <span className={styles.legendPill}>? Source pending/no sample</span>
+            <span className={styles.legendPill}>~ Stale source</span>
+            <span className={styles.legendPill}>! Raw context/caveat</span>
+            <span className={styles.legendPill}>0 True zero</span>
+          </div>
           <div>
             <button
               type="button"
