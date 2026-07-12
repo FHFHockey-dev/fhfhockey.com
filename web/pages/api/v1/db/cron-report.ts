@@ -9,7 +9,7 @@ import { CronAuditEmail } from "components/CronReportEmail/CronAuditEmail";
 import {
   getBenchmarkAnnotations,
   hasBenchmarkAnnotationKind,
-  type BenchmarkAnnotation
+  type BenchmarkAnnotation,
 } from "lib/cron/benchmarkNotes";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import {
@@ -17,17 +17,15 @@ import {
   isSlowJobDuration,
   SLOW_JOB_DENOTATION,
   SLOW_JOB_THRESHOLD_MS,
-  type SlowJobWarning
+  type SlowJobWarning,
 } from "lib/cron/cronReportFlags";
-import {
-  type CronJobTimingRecord
-} from "lib/cron/timingContract";
+import { type CronJobTimingRecord } from "lib/cron/timingContract";
 import { extractAuditTimingRecord } from "lib/cron/cronReportTiming";
 import { buildSqlCronTimingObservation } from "lib/cron/sqlTiming";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
@@ -37,25 +35,36 @@ const MATCH_WINDOW_MS = 6 * 60 * 60 * 1000;
 const MAX_UNSCHEDULED_ALERTS = 8;
 
 const SCHEDULE_ALIAS_MAP: Record<string, string[]> = {
-  "update-all-wgo-skaters": ["update-wgo-skaters", "/api/v1/db/update-wgo-skaters"],
+  "update-all-wgo-skaters": [
+    "update-wgo-skaters",
+    "/api/v1/db/update-wgo-skaters",
+  ],
   "update-all-wgo-goalies": ["/api/v1/db/update-wgo-goalies"],
   "update-all-wgo-skater-totals": [
     "update-skater-totals",
-    "/api/v1/db/update-wgo-totals"
+    "/api/v1/db/update-wgo-totals",
   ],
-  "update-shift-charts": ["/api/v1/db/shift-charts", "/api/v1/db/update-shifts"],
+  "update-shift-charts": [
+    "/api/v1/db/shift-charts",
+    "/api/v1/db/update-shifts",
+  ],
   "update-yahoo-matchup-dates": ["/api/v1/db/update-yahoo-weeks"],
   "update-line-combinations-all": ["/api/v1/db/update-line-combinations"],
+  "update-lineup-deployment-tallies": [
+    "/api/v1/db/update-lineup-deployment-tallies",
+  ],
   "update-wgo-teams": ["run-fetch-wgo-data", "/api/v1/db/run-fetch-wgo-data"],
   "update-wigo-table-stats": [
     "calculate-wigo-stats",
-    "/api/v1/db/calculate-wigo-stats"
+    "/api/v1/db/calculate-wigo-stats",
   ],
   "update-nst-tables-all": ["/api/Teams/nst-team-stats"],
   "sync-yahoo-players-to-sheet": ["/api/internal/sync-yahoo-players-to-sheet"],
   "update-predictions-sko": ["/api/v1/ml/update-predictions-sko"],
   "update-nhl-xg-shot-features": ["/api/v1/db/update-nhl-xg-shot-features"],
-  "update-nhl-xg-shot-predictions": ["/api/v1/db/update-nhl-xg-shot-predictions"]
+  "update-nhl-xg-shot-predictions": [
+    "/api/v1/db/update-nhl-xg-shot-predictions",
+  ],
 };
 
 const ROUTE_TARGET_TABLE_MAP: Record<string, string> = {
@@ -69,6 +78,8 @@ const ROUTE_TARGET_TABLE_MAP: Record<string, string> = {
   "/api/v1/db/update-wgo-goalies": "wgo_goalie_stats",
   "/api/v1/db/update-wgo-totals": "wgo_skater_stats_totals",
   "/api/v1/db/update-power-play-combinations": "powerPlayCombinations",
+  "/api/v1/db/update-lineup-deployment-tallies":
+    "player_lineup_deployment_tallies",
   "/api/v1/db/powerPlayTimeFrame": "powerPlayTimeFrame",
   "/api/v1/db/update-line-combinations": "lineCombinations",
   "/api/v1/db/update-team-yearly-summary": "team_yearly_summary",
@@ -89,6 +100,7 @@ const ROUTE_TARGET_TABLE_MAP: Record<string, string> = {
   "/api/v1/db/update-nhl-edge-stats": "nhl_edge_*",
   "/api/v1/db/update-goalie-projections-v2": "goalie_projections",
   "/api/v1/db/update-player-underlying-stats": "player_underlying_*",
+  "/api/v1/db/update-player-trend-metrics": "player_trend_metrics",
   "/api/v1/db/ingest-projection-inputs": "projection_inputs",
   "/api/v1/db/build-projection-derived-v2": "projection_derived_*",
   "/api/v1/db/update-nst-team-daily": "nst_team_daily",
@@ -107,7 +119,7 @@ const ROUTE_TARGET_TABLE_MAP: Record<string, string> = {
   "/api/v1/db/run-projection-accuracy": "projection_accuracy",
   "/api/v1/game-predictions/forecast": "game_prediction_forecasts",
   "/api/v1/game-predictions/score": "game_prediction_scores",
-  "/api/v1/db/update-PbP": "play_by_play"
+  "/api/v1/db/update-PbP": "play_by_play",
 };
 
 type NormalizedStatus = "success" | "failure" | "unknown";
@@ -153,6 +165,8 @@ type ParsedAuditDetails = {
   response: unknown;
   responseMessage: string | null;
   goalieRowsProcessed: number | null;
+  skaterRowsProcessed: number | null;
+  skaterFreshnessFailureCount: number;
   dataQualityWarningCount: number;
   rowsUpserted: number | null;
   failedRows: number | null;
@@ -279,7 +293,9 @@ type BenchmarkSummary = {
 };
 
 function normalizeStatus(value: unknown): NormalizedStatus {
-  const v = String(value ?? "").toLowerCase().trim();
+  const v = String(value ?? "")
+    .toLowerCase()
+    .trim();
   if (!v) return "unknown";
   if (["success", "succeeded", "ok", "passed"].includes(v)) return "success";
   if (["failure", "failed", "error", "errored"].includes(v)) return "failure";
@@ -334,7 +350,9 @@ function sanitizeErrorMessage(value: unknown, maxLen = 240): string | null {
   const titleReason =
     title?.match(/\|\s*\d{3}\s*:\s*([^|]+)/)?.[1]?.trim() ?? null;
   const headingReason =
-    raw.match(/<span class="inline-block">\s*([^<]+)\s*<\/span>/i)?.[1]?.trim() ?? null;
+    raw
+      .match(/<span class="inline-block">\s*([^<]+)\s*<\/span>/i)?.[1]
+      ?.trim() ?? null;
   const host = title?.split("|")[0]?.trim() ?? null;
   const provider = /cloudflare/i.test(raw) ? "Cloudflare" : "upstream proxy";
   const code = cloudflareCode ?? titleCode;
@@ -344,7 +362,7 @@ function sanitizeErrorMessage(value: unknown, maxLen = 240): string | null {
     [provider, code ? `${code}` : null, reason, host ? `from ${host}` : null]
       .filter((part): part is string => Boolean(part))
       .join(" "),
-    maxLen
+    maxLen,
   );
 }
 
@@ -391,7 +409,7 @@ function extractPrimaryMessage(value: unknown): string | null {
     "details",
     "return_message",
     "returnMessage",
-    "statusText"
+    "statusText",
   ]) {
     if (typeof obj[key] === "string" && obj[key]?.trim()) {
       return sanitizeErrorMessage(obj[key], 240);
@@ -424,7 +442,7 @@ function extractDetailsMessage(details: unknown): string | null {
 
 function getDirectNumericField(
   value: unknown,
-  keys: readonly string[]
+  keys: readonly string[],
 ): number | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const obj = value as Record<string, unknown>;
@@ -438,7 +456,7 @@ function getDirectNumericField(
 function sumNumericFields(
   value: unknown,
   keys: readonly string[],
-  skipKeys: ReadonlySet<string>
+  skipKeys: ReadonlySet<string>,
 ): { found: boolean; total: number } {
   if (!value || typeof value !== "object") {
     return { found: false, total: 0 };
@@ -452,7 +470,7 @@ function sumNumericFields(
           ? { found: true, total: acc.total + nested.total }
           : acc;
       },
-      { found: false, total: 0 }
+      { found: false, total: 0 },
     );
   }
 
@@ -491,7 +509,7 @@ function inferRowsUpserted(response: unknown): number | null {
     "updated",
     "totalUpdates",
     "total_updates",
-    "count"
+    "count",
   ]);
   if (direct != null) return direct;
 
@@ -506,9 +524,9 @@ function inferRowsUpserted(response: unknown): number | null {
       "inserted",
       "updated",
       "totalUpdates",
-      "total_updates"
+      "total_updates",
     ],
-    new Set(["observability", "debug", "errors", "warnings"])
+    new Set(["observability", "debug", "errors", "warnings"]),
   );
 
   return nested.found ? nested.total : null;
@@ -523,7 +541,7 @@ function collectFailureEntries(value: unknown, limit = 10): unknown[] {
     "failed_rows",
     "rowFailures",
     "invalidRows",
-    "invalid_rows"
+    "invalid_rows",
   ]);
 
   const visit = (current: unknown) => {
@@ -571,7 +589,7 @@ function inferFailedRows(response: unknown): number | null {
     "errorCount",
     "errorsCount",
     "rowsFailed",
-    "rows_failed"
+    "rows_failed",
   ]);
   if (direct != null) return direct;
 
@@ -644,9 +662,10 @@ function countWarningEntries(response: unknown): number {
   return total;
 }
 
-function parseUrlPieces(
-  rawUrl: string | null
-): { route: string | null; routePath: string | null } {
+function parseUrlPieces(rawUrl: string | null): {
+  route: string | null;
+  routePath: string | null;
+} {
   if (!rawUrl) {
     return { route: null, routePath: null };
   }
@@ -655,17 +674,20 @@ function parseUrlPieces(
     const parsed = new URL(rawUrl);
     return {
       route: `${parsed.pathname}${parsed.search}`,
-      routePath: parsed.pathname
+      routePath: parsed.pathname,
     };
   } catch {
     return {
       route: rawUrl,
-      routePath: rawUrl.split("?")[0] ?? rawUrl
+      routePath: rawUrl.split("?")[0] ?? rawUrl,
     };
   }
 }
 
-function inferTargetTable(routePath: string | null, jobName: string): string | null {
+function inferTargetTable(
+  routePath: string | null,
+  jobName: string,
+): string | null {
   if (routePath && ROUTE_TARGET_TABLE_MAP[routePath]) {
     return ROUTE_TARGET_TABLE_MAP[routePath];
   }
@@ -695,10 +717,12 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
     response: null,
     responseMessage: null,
     goalieRowsProcessed: null,
+    skaterRowsProcessed: null,
+    skaterFreshnessFailureCount: 0,
     dataQualityWarningCount: 0,
     rowsUpserted: null,
     failedRows: null,
-    failedRowSamples: []
+    failedRowSamples: [],
   };
 
   if (!details) return empty;
@@ -708,7 +732,7 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
     return {
       ...empty,
       error: extractPrimaryMessage(parsedDetails),
-      responseMessage: extractPrimaryMessage(parsedDetails)
+      responseMessage: extractPrimaryMessage(parsedDetails),
     };
   }
 
@@ -716,11 +740,16 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
   const response = parseJsonMaybe(obj.response);
   const timing = extractAuditTimingRecord(parsedDetails);
   const { route, routePath } = parseUrlPieces(
-    typeof obj.url === "string" ? obj.url : null
+    typeof obj.url === "string" ? obj.url : null,
   );
   const goalieRowsProcessed = getDirectNumericField(response, [
-    "goalieRowsProcessed"
+    "goalieRowsProcessed",
   ]);
+  const skaterRowsProcessed = getDirectNumericField(response, [
+    "skaterRowsProcessed",
+  ]);
+  const skaterFreshnessFailureCount =
+    getDirectNumericField(response, ["skaterFreshnessFailureCount"]) ?? 0;
   const failedRowSamples = collectFailureEntries(response)
     .map((entry) => formatFailureSample(entry))
     .filter((entry): entry is string => Boolean(entry))
@@ -738,15 +767,18 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
     response,
     responseMessage: extractPrimaryMessage(response),
     goalieRowsProcessed,
+    skaterRowsProcessed,
+    skaterFreshnessFailureCount,
     dataQualityWarningCount: countWarningEntries(response),
-    rowsUpserted: toFiniteNumber(obj.rowsUpserted) ?? inferRowsUpserted(response),
+    rowsUpserted:
+      toFiniteNumber(obj.rowsUpserted) ?? inferRowsUpserted(response),
     failedRows: toFiniteNumber(obj.failedRows) ?? inferFailedRows(response),
-    failedRowSamples
+    failedRowSamples,
   };
 }
 
 function parseRowsAffectedFromReturnMessage(
-  returnMessage: string | null
+  returnMessage: string | null,
 ): number | null {
   if (!returnMessage) return null;
 
@@ -811,7 +843,7 @@ function parseCronInvocation(sqlText: string | null): {
     method,
     url,
     route,
-    routePath
+    routePath,
   };
 }
 
@@ -831,7 +863,7 @@ function formatScheduleTime(cronExpression: string): string {
 function expectedRunAtWithinWindow(
   cronExpression: string,
   since: Date,
-  now: Date
+  now: Date,
 ): string | null {
   const parts = cronExpression.trim().split(/\s+/);
   if (parts.length < 2) return null;
@@ -848,20 +880,22 @@ function expectedRunAtWithinWindow(
       hour,
       minute,
       0,
-      0
-    )
+      0,
+    ),
   );
 
   if (candidate.getTime() > now.getTime()) {
     candidate.setUTCDate(candidate.getUTCDate() - 1);
   }
 
-  return candidate.getTime() >= since.getTime() ? candidate.toISOString() : null;
+  return candidate.getTime() >= since.getTime()
+    ? candidate.toISOString()
+    : null;
 }
 
 async function readCronScheduleMarkdown(): Promise<string> {
   const candidates = [
-    path.resolve(process.cwd(), "tasks/TASKS/cron-operations/cron-schedule.md")
+    path.resolve(process.cwd(), "tasks/TASKS/cron-operations/cron-schedule.md"),
   ];
 
   for (const candidate of candidates) {
@@ -873,7 +907,7 @@ async function readCronScheduleMarkdown(): Promise<string> {
   }
 
   throw new Error(
-    "Could not locate cron schedule markdown in tasks/TASKS/cron-operations/cron-schedule.md"
+    "Could not locate cron schedule markdown in tasks/TASKS/cron-operations/cron-schedule.md",
   );
 }
 
@@ -893,7 +927,7 @@ function parseScheduleJsonEntries(markdown: string): CronScheduleJsonEntry[] {
 
 async function loadScheduledCronJobs(
   since: Date,
-  now: Date
+  now: Date,
 ): Promise<ScheduledCronJob[]> {
   const markdown = await readCronScheduleMarkdown();
   const activeMarkdown =
@@ -907,8 +941,8 @@ async function loadScheduledCronJobs(
 
   const matches = Array.from(
     normalized.matchAll(
-      /SELECT\s+cron\.schedule\(\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*([\s\S]*?)\);\s*/gi
-    )
+      /SELECT\s+cron\.schedule\(\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*([\s\S]*?)\);\s*/gi,
+    ),
   );
 
   const sqlDefinitions = matches.map((match, index) => {
@@ -934,7 +968,7 @@ async function loadScheduledCronJobs(
       routePath: invocation.routePath,
       sqlText,
       expectedRunAt,
-      sortOrder: index
+      sortOrder: index,
     };
   });
 
@@ -947,13 +981,16 @@ async function loadScheduledCronJobs(
       const entryUrl = typeof entry.url === "string" ? entry.url : entryRoute;
       const entryInvocation = parseUrlPieces(entryUrl);
       const entryMethod =
-        entry.method === "GET" || entry.method === "POST" || entry.method === "SQL"
+        entry.method === "GET" ||
+        entry.method === "POST" ||
+        entry.method === "SQL"
           ? entry.method
           : null;
       const definition =
         sqlDefinitions.find(
           (candidate) =>
-            candidate.name === name && candidate.cronExpression === cronExpression
+            candidate.name === name &&
+            candidate.cronExpression === cronExpression,
         ) ??
         sqlDefinitions.find((candidate) => candidate.name === name) ??
         null;
@@ -969,7 +1006,7 @@ async function loadScheduledCronJobs(
         routePath: definition?.routePath ?? entryInvocation.routePath,
         sqlText: definition?.sqlText ?? null,
         expectedRunAt: expectedRunAtWithinWindow(cronExpression, since, now),
-        sortOrder: index
+        sortOrder: index,
       };
     })
     .filter((job) => job.name && job.cronExpression);
@@ -983,26 +1020,27 @@ async function loadScheduledCronJobs(
       job.method,
       job.route ?? "",
       job.url ?? "",
-      job.sqlText ?? ""
+      job.sqlText ?? "",
     ].join("::");
     return (
       index ===
-      jobs.findIndex((candidate) =>
-        [
-          candidate.name,
-          candidate.cronExpression,
-          candidate.method,
-          candidate.route ?? "",
-          candidate.url ?? "",
-          candidate.sqlText ?? ""
-        ].join("::") === signature
+      jobs.findIndex(
+        (candidate) =>
+          [
+            candidate.name,
+            candidate.cronExpression,
+            candidate.method,
+            candidate.route ?? "",
+            candidate.url ?? "",
+            candidate.sqlText ?? "",
+          ].join("::") === signature,
       )
     );
   });
 
   const duplicateCounts = dedupedJobs.reduce(
     (acc, job) => acc.set(job.name, (acc.get(job.name) ?? 0) + 1),
-    new Map<string, number>()
+    new Map<string, number>(),
   );
 
   return dedupedJobs.map((job) => {
@@ -1021,10 +1059,10 @@ async function loadScheduledCronJobs(
             job.route,
             job.routePath,
             job.url,
-            ...(SCHEDULE_ALIAS_MAP[job.name] ?? [])
-          ].filter((value): value is string => Boolean(value))
-        )
-      )
+            ...(SCHEDULE_ALIAS_MAP[job.name] ?? []),
+          ].filter((value): value is string => Boolean(value)),
+        ),
+      ),
     };
   });
 }
@@ -1037,12 +1075,12 @@ function candidateMatchesSchedule(
     method: string | null;
     route: string | null;
     routePath: string | null;
-  }
+  },
 ): boolean {
   const aliases = new Set(
     [candidate.jobName, candidate.route, candidate.routePath].filter(
-      (value): value is string => Boolean(value)
-    )
+      (value): value is string => Boolean(value),
+    ),
   );
 
   const aliasMatch = job.aliases.some((alias) => aliases.has(alias));
@@ -1085,7 +1123,7 @@ function statusSortValue(status: ReportJobStatus): number {
 
 function buildRunDigestFromAudit(
   row: AuditRow,
-  lastKnownSuccessDisplay: string | null = null
+  lastKnownSuccessDisplay: string | null = null,
 ): RunDigest {
   const benchmarkAnnotations = getBenchmarkAnnotations(row.jobName);
   const optimizationDenotation = isSlowJobDuration(row.parsed.durationMs)
@@ -1121,13 +1159,13 @@ function buildRunDigestFromAudit(
     failedRowSamples: row.parsed.failedRowSamples,
     optimizationDenotation,
     benchmarkAnnotations,
-    missingObservationWarnings
+    missingObservationWarnings,
   };
 }
 
 function buildRunDigestFromCron(
   row: RunRow,
-  lastKnownSuccessDisplay: string | null = null
+  lastKnownSuccessDisplay: string | null = null,
 ): RunDigest {
   const benchmarkAnnotations = getBenchmarkAnnotations(row.jobName);
   const optimizationDenotation = isSlowJobDuration(row.durationMs)
@@ -1154,12 +1192,14 @@ function buildRunDigestFromCron(
     rowsUpserted: row.rowsAffected,
     rowsAffected: row.rowsAffected,
     failedRows: null,
-    reason: row.returnMessage ? sanitizeErrorMessage(row.returnMessage, 240) : null,
+    reason: row.returnMessage
+      ? sanitizeErrorMessage(row.returnMessage, 240)
+      : null,
     lastKnownSuccessDisplay,
     failedRowSamples: [],
     optimizationDenotation,
     benchmarkAnnotations,
-    missingObservationWarnings
+    missingObservationWarnings,
   };
 }
 
@@ -1186,8 +1226,8 @@ function buildLastKnownSuccessMap(auditRows: AuditRow[]): Map<string, string> {
       auditSuccessKey({
         jobName: row.jobName,
         route: row.parsed.route,
-        routePath: row.parsed.routePath
-      })
+        routePath: row.parsed.routePath,
+      }),
     ]);
 
     for (const key of keys) {
@@ -1206,7 +1246,7 @@ function findLastKnownSuccessDisplay(
     jobName: string;
     route: string | null;
     routePath: string | null;
-  }
+  },
 ): string | null {
   return (
     successMap.get(candidate.jobName) ??
@@ -1281,18 +1321,23 @@ function collectMissingObservationWarnings(job: {
 
   if (job.method === "SQL" && job.runsCount > 0 && !job.hasObservedSqlTiming) {
     warnings.push(
-      "SQL observation is missing scheduled_time or end_time timing fields."
+      "SQL observation is missing scheduled_time or end_time timing fields.",
     );
   }
 
   if (job.method === "SQL" && !job.runDataAvailable) {
-    warnings.push("Cron run telemetry is unavailable for SQL schedule matching.");
+    warnings.push(
+      "Cron run telemetry is unavailable for SQL schedule matching.",
+    );
   }
 
-  if (job.method !== "SQL" && (!job.runDataAvailable || !job.auditDataAvailable)) {
+  if (
+    job.method !== "SQL" &&
+    (!job.runDataAvailable || !job.auditDataAvailable)
+  ) {
     const unavailableSources = [
       !job.runDataAvailable ? "cron_job_report" : null,
-      !job.auditDataAvailable ? "cron_job_audit" : null
+      !job.auditDataAvailable ? "cron_job_audit" : null,
     ]
       .filter((source): source is string => Boolean(source))
       .join(" and ");
@@ -1302,16 +1347,14 @@ function collectMissingObservationWarnings(job: {
   return warnings;
 }
 
-async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const sinceDate = new Date(Date.now() - REPORT_WINDOW_MS);
   const since = sinceDate.toISOString();
   const now = new Date();
   const emailRecipient = process.env.CRON_REPORT_EMAIL_RECIPIENT!;
   const previewMode = getQueryString(req, "preview") === "json";
-  const dryRun = previewMode || parseBooleanQueryFlag(getQueryString(req, "dryRun"));
+  const dryRun =
+    previewMode || parseBooleanQueryFlag(getQueryString(req, "dryRun"));
 
   let jobRunDetailsEmailResult: any = null;
   let auditEmailResult: any = null;
@@ -1319,7 +1362,9 @@ async function handler(
 
   const { data: runs, error: runErr } = await supabase
     .from("cron_job_report")
-    .select("jobname, scheduled_time, status, return_message, end_time, sql_text")
+    .select(
+      "jobname, scheduled_time, status, return_message, end_time, sql_text",
+    )
     .gte("scheduled_time", since)
     .order("scheduled_time", { ascending: true });
 
@@ -1328,7 +1373,7 @@ async function handler(
     errors.push(
       `Failed to fetch cron_job_report: ${
         sanitizeErrorMessage(runErr.message) ?? "Unknown upstream error"
-      }`
+      }`,
     );
   }
 
@@ -1343,7 +1388,7 @@ async function handler(
     errors.push(
       `Failed to fetch cron_job_audit: ${
         sanitizeErrorMessage(auditErr.message) ?? "Unknown upstream error"
-      }`
+      }`,
     );
   }
 
@@ -1353,21 +1398,23 @@ async function handler(
   } catch (error: any) {
     console.error("Error loading cron schedule:", error?.message ?? error);
     errors.push(
-      `Failed to parse cron schedule: ${error?.message ?? String(error)}`
+      `Failed to parse cron schedule: ${error?.message ?? String(error)}`,
     );
   }
 
-  const auditRows: AuditRow[] = (audits ?? []).map((row: any, index: number) => ({
-    id: `audit:${index}:${row.job_name ?? ""}:${row.run_time ?? ""}`,
-    jobName: String(row.job_name ?? ""),
-    time: String(row.run_time ?? ""),
-    rowsAffected: (row.rows_affected ?? null) as number | null,
-    rawStatus: row.status,
-    status: normalizeStatus(row.status),
-    details: row.details,
-    detailsMessage: extractDetailsMessage(row.details),
-    parsed: parseAuditDetails(row.details)
-  }));
+  const auditRows: AuditRow[] = (audits ?? []).map(
+    (row: any, index: number) => ({
+      id: `audit:${index}:${row.job_name ?? ""}:${row.run_time ?? ""}`,
+      jobName: String(row.job_name ?? ""),
+      time: String(row.run_time ?? ""),
+      rowsAffected: (row.rows_affected ?? null) as number | null,
+      rawStatus: row.status,
+      status: normalizeStatus(row.status),
+      details: row.details,
+      detailsMessage: extractDetailsMessage(row.details),
+      parsed: parseAuditDetails(row.details),
+    }),
+  );
   const lastKnownSuccessMap = buildLastKnownSuccessMap(auditRows);
   const auditGapGraceStartedAt =
     auditRows
@@ -1375,14 +1422,16 @@ async function handler(
       .sort((a, b) => Date.parse(b.time) - Date.parse(a.time))[0]?.time ?? null;
 
   const runRows: RunRow[] = (runs ?? []).map((row: any, index: number) => {
-    const invocation = parseCronInvocation((row.sql_text ?? null) as string | null);
+    const invocation = parseCronInvocation(
+      (row.sql_text ?? null) as string | null,
+    );
     const timing = buildSqlCronTimingObservation({
       jobname: (row.jobname ?? null) as string | null,
       scheduled_time: (row.scheduled_time ?? null) as string | null,
       end_time: (row.end_time ?? null) as string | null,
       status: row.status,
       return_message: (row.return_message ?? null) as string | null,
-      sql_text: (row.sql_text ?? null) as string | null
+      sql_text: (row.sql_text ?? null) as string | null,
     }).timing;
     return {
       id: `run:${index}:${row.jobname ?? ""}:${row.scheduled_time ?? ""}`,
@@ -1394,19 +1443,19 @@ async function handler(
       sqlText: (row.sql_text ?? null) as string | null,
       endTime: (row.end_time ?? null) as string | null,
       rowsAffected: parseRowsAffectedFromReturnMessage(
-        (row.return_message ?? null) as string | null
+        (row.return_message ?? null) as string | null,
       ),
       timing,
       durationMs:
         timing?.durationMs ??
         safeDurationMs(
           (row.scheduled_time ?? null) as string | null,
-          (row.end_time ?? null) as string | null
+          (row.end_time ?? null) as string | null,
         ),
       method: invocation.method,
       url: invocation.url,
       route: invocation.route,
-      routePath: invocation.routePath
+      routePath: invocation.routePath,
     };
   });
 
@@ -1424,8 +1473,8 @@ async function handler(
             time: row.time,
             method: row.parsed.method,
             route: row.parsed.route,
-            routePath: row.parsed.routePath
-          })
+            routePath: row.parsed.routePath,
+          }),
         )
         .sort((a, b) => Date.parse(b.time) - Date.parse(a.time));
 
@@ -1436,8 +1485,8 @@ async function handler(
             time: row.time,
             method: row.method,
             route: row.route,
-            routePath: row.routePath
-          })
+            routePath: row.routePath,
+          }),
         )
         .sort((a, b) => Date.parse(b.time) - Date.parse(a.time));
 
@@ -1480,11 +1529,14 @@ async function handler(
         .filter((value): value is number => typeof value === "number");
       const avgDurationMs =
         durations.length > 0
-          ? Math.round(durations.reduce((acc, value) => acc + value, 0) / durations.length)
+          ? Math.round(
+              durations.reduce((acc, value) => acc + value, 0) /
+                durations.length,
+            )
           : fallbackDurations.length > 0
             ? Math.round(
                 fallbackDurations.reduce((acc, value) => acc + value, 0) /
-                  fallbackDurations.length
+                  fallbackDurations.length,
               )
             : null;
 
@@ -1502,7 +1554,8 @@ async function handler(
         lastAudit?.rowsAffected ??
         lastRun?.rowsAffected ??
         null;
-      const rowsAffectedLast = lastAudit?.rowsAffected ?? lastRun?.rowsAffected ?? null;
+      const rowsAffectedLast =
+        lastAudit?.rowsAffected ?? lastRun?.rowsAffected ?? null;
       const failedRowsLast = lastAudit?.parsed.failedRows ?? null;
       const failedRowSamples = lastAudit?.parsed.failedRowSamples ?? [];
       const route = job.route ?? job.sqlText;
@@ -1512,8 +1565,8 @@ async function handler(
         {
           jobName: job.name,
           route,
-          routePath
-        }
+          routePath,
+        },
       );
 
       const message =
@@ -1551,7 +1604,7 @@ async function handler(
         runDataAvailable,
         auditDataAvailable,
         latestRunTime: lastRun?.time ?? null,
-        auditGapGraceStartedAt
+        auditGapGraceStartedAt,
       });
 
       const notes: string[] = [];
@@ -1564,35 +1617,57 @@ async function handler(
         job.method !== "SQL" &&
         auditDataAvailable &&
         missingObservationWarnings.includes(
-          "Cron invoked the route, but no audit payload was recorded."
+          "Cron invoked the route, but no audit payload was recorded.",
         )
       ) {
-        notes.push("Cron invoked the route, but no audit payload was recorded.");
+        notes.push(
+          "Cron invoked the route, but no audit payload was recorded.",
+        );
       }
       if (!lastAudit && !lastRun && !hasFullCoverageForMissing) {
-        notes.push("Telemetry is incomplete, so missing-run status could not be determined.");
+        notes.push(
+          "Telemetry is incomplete, so missing-run status could not be determined.",
+        );
       }
       if (lastStatus === "success" && (failedRowsLast ?? 0) > 0) {
         notes.push(`Completed with ${failedRowsLast} row-level failures.`);
       }
       if ((lastAudit?.parsed.dataQualityWarningCount ?? 0) > 0) {
         notes.push(
-          `Returned ${lastAudit?.parsed.dataQualityWarningCount} warning(s).`
+          `Returned ${lastAudit?.parsed.dataQualityWarningCount} warning(s).`,
         );
+      }
+      if ((lastAudit?.parsed.skaterFreshnessFailureCount ?? 0) > 0) {
+        notes.push(
+          `FORGE skater freshness has ${lastAudit?.parsed.skaterFreshnessFailureCount} blocking gate(s).`,
+        );
+      }
+      if (
+        lastAudit?.parsed.routePath === "/api/v1/db/run-projection-v2" &&
+        (lastAudit.parsed.skaterRowsProcessed ?? 0) === 0
+      ) {
+        notes.push("FORGE projection execution returned zero skater rows.");
       }
       if (optimizationDenotation) {
         notes.push(`${optimizationDenotation}: last runtime exceeded 4m30s.`);
       }
       if (hasBenchmarkAnnotationKind(benchmarkAnnotations, "bottleneck")) {
         const firstBottleneckNote = benchmarkAnnotations.find(
-          (annotation) => annotation.kind === "bottleneck"
+          (annotation) => annotation.kind === "bottleneck",
         )?.note;
         if (firstBottleneckNote) {
           notes.push(`Bottleneck: ${firstBottleneckNote}`);
         }
       }
-      if (job.method === "SQL" && lastRun?.returnMessage && lastStatus !== "failure") {
-        const sanitizedReturnMessage = sanitizeErrorMessage(lastRun.returnMessage, 140);
+      if (
+        job.method === "SQL" &&
+        lastRun?.returnMessage &&
+        lastStatus !== "failure"
+      ) {
+        const sanitizedReturnMessage = sanitizeErrorMessage(
+          lastRun.returnMessage,
+          140,
+        );
         if (sanitizedReturnMessage) {
           notes.push(sanitizedReturnMessage);
         }
@@ -1633,19 +1708,26 @@ async function handler(
         lastKnownSuccessDisplay,
         optimizationDenotation,
         benchmarkAnnotations,
-        missingObservationWarnings
+        missingObservationWarnings,
       };
     })
     .sort((a, b) => {
-      const statusDiff = statusSortValue(a.lastStatus) - statusSortValue(b.lastStatus);
+      const statusDiff =
+        statusSortValue(a.lastStatus) - statusSortValue(b.lastStatus);
       if (statusDiff !== 0) return statusDiff;
-      const scheduleA = scheduledJobs.find((job) => job.key === a.jobKey)?.sortOrder ?? 0;
-      const scheduleB = scheduledJobs.find((job) => job.key === b.jobKey)?.sortOrder ?? 0;
+      const scheduleA =
+        scheduledJobs.find((job) => job.key === a.jobKey)?.sortOrder ?? 0;
+      const scheduleB =
+        scheduledJobs.find((job) => job.key === b.jobKey)?.sortOrder ?? 0;
       return scheduleA - scheduleB;
     });
 
-  const failureHighlights = jobSummaries.filter((job) => job.lastStatus === "failure");
-  const missingJobs = jobSummaries.filter((job) => job.lastStatus === "missing");
+  const failureHighlights = jobSummaries.filter(
+    (job) => job.lastStatus === "failure",
+  );
+  const missingJobs = jobSummaries.filter(
+    (job) => job.lastStatus === "missing",
+  );
 
   const unmatchedAuditRuns = auditRows
     .filter((row) => !matchedAuditIds.has(row.id))
@@ -1655,9 +1737,9 @@ async function handler(
         findLastKnownSuccessDisplay(lastKnownSuccessMap, {
           jobName: row.jobName,
           route: row.parsed.route,
-          routePath: row.parsed.routePath
-        })
-      )
+          routePath: row.parsed.routePath,
+        }),
+      ),
     );
   const unmatchedCronRuns = runRows
     .filter((row) => !matchedRunIds.has(row.id))
@@ -1667,12 +1749,12 @@ async function handler(
         findLastKnownSuccessDisplay(lastKnownSuccessMap, {
           jobName: row.jobName,
           route: row.route,
-          routePath: row.routePath
-        })
-      )
+          routePath: row.routePath,
+        }),
+      ),
     );
   const unscheduledRuns = [...unmatchedAuditRuns, ...unmatchedCronRuns].sort(
-    (a, b) => Date.parse(b.runTime) - Date.parse(a.runTime)
+    (a, b) => Date.parse(b.runTime) - Date.parse(a.runTime),
   );
   const notableUnscheduledRuns = compactUnscheduledRuns(unscheduledRuns);
 
@@ -1683,44 +1765,51 @@ async function handler(
         findLastKnownSuccessDisplay(lastKnownSuccessMap, {
           jobName: row.jobName,
           route: row.parsed.route,
-          routePath: row.parsed.routePath
-        })
-      )
+          routePath: row.parsed.routePath,
+        }),
+      ),
     )
     .sort((a, b) => Date.parse(b.runTime) - Date.parse(a.runTime));
-  const auditBriefings = jobSummaries.map((job) => ({
-    key: job.jobKey,
-    label: job.route ?? job.displayName,
-    jobName: job.displayName,
-    status: job.lastStatus === "missing" ? "unknown" : job.lastStatus,
-    runTime: job.lastRunDisplay,
-    runTimeDisplay: job.lastRunDisplay,
-    method: job.method === "UNKNOWN" ? null : job.method,
-    route: job.route,
-    routePath: job.routePath,
-    targetTable: job.targetTable,
-    statusCode: job.statusCode,
-    durationMs: job.lastDurationMs,
-    rowsUpserted: job.rowsUpsertedLast,
-    rowsAffected: job.rowsAffectedLast,
-    failedRows: job.failedRowsLast,
-    reason: job.why ?? job.note,
-    lastKnownSuccessDisplay: job.lastKnownSuccessDisplay,
-    failedRowSamples: job.failedRowSamples,
-    optimizationDenotation: job.optimizationDenotation,
-    benchmarkAnnotations: job.benchmarkAnnotations,
-    missingObservationWarnings: job.missingObservationWarnings
-  } satisfies RunDigest));
+  const auditBriefings = jobSummaries.map(
+    (job) =>
+      ({
+        key: job.jobKey,
+        label: job.route ?? job.displayName,
+        jobName: job.displayName,
+        status: job.lastStatus === "missing" ? "unknown" : job.lastStatus,
+        runTime: job.lastRunDisplay,
+        runTimeDisplay: job.lastRunDisplay,
+        method: job.method === "UNKNOWN" ? null : job.method,
+        route: job.route,
+        routePath: job.routePath,
+        targetTable: job.targetTable,
+        statusCode: job.statusCode,
+        durationMs: job.lastDurationMs,
+        rowsUpserted: job.rowsUpsertedLast,
+        rowsAffected: job.rowsAffectedLast,
+        failedRows: job.failedRowsLast,
+        reason: job.why ?? job.note,
+        lastKnownSuccessDisplay: job.lastKnownSuccessDisplay,
+        failedRowSamples: job.failedRowSamples,
+        optimizationDenotation: job.optimizationDenotation,
+        benchmarkAnnotations: job.benchmarkAnnotations,
+        missingObservationWarnings: job.missingObservationWarnings,
+      }) satisfies RunDigest,
+  );
 
   const WARN_SLOW: SlowJobWarning[] = jobSummaries
     .filter((job) => isSlowJobDuration(job.lastDurationMs))
-    .map((job) => buildSlowJobWarning(job.displayName, job.lastDurationMs ?? 0));
+    .map((job) =>
+      buildSlowJobWarning(job.displayName, job.lastDurationMs ?? 0),
+    );
 
   const WARN_PARTIAL_FAILURE = jobSummaries
-    .filter((job) => job.lastStatus === "success" && (job.failedRowsLast ?? 0) > 0)
+    .filter(
+      (job) => job.lastStatus === "success" && (job.failedRowsLast ?? 0) > 0,
+    )
     .map((job) => ({
       displayName: job.displayName,
-      failedRows: job.failedRowsLast ?? 0
+      failedRows: job.failedRowsLast ?? 0,
     }));
 
   const WARN_MISSING_AUDIT = jobSummaries
@@ -1732,8 +1821,8 @@ async function handler(
         job.method !== "SQL" &&
         auditDataAvailable &&
         job.missingObservationWarnings.includes(
-          "Cron invoked the route, but no audit payload was recorded."
-        )
+          "Cron invoked the route, but no audit payload was recorded.",
+        ),
     )
     .map((job) => job.displayName);
 
@@ -1741,56 +1830,62 @@ async function handler(
     .filter((job) => job.missingObservationWarnings.length > 0)
     .map((job) => ({
       displayName: job.displayName,
-      warnings: job.missingObservationWarnings
+      warnings: job.missingObservationWarnings,
     }));
 
   const benchmarkSummary: BenchmarkSummary = {
     annotatedJobCount: jobSummaries.filter(
-      (job) => job.benchmarkAnnotations.length > 0
+      (job) => job.benchmarkAnnotations.length > 0,
     ).length,
     bottleneckJobs: jobSummaries
-      .filter((job) => hasBenchmarkAnnotationKind(job.benchmarkAnnotations, "bottleneck"))
+      .filter((job) =>
+        hasBenchmarkAnnotationKind(job.benchmarkAnnotations, "bottleneck"),
+      )
       .map((job) => ({
         displayName: job.displayName,
         notes: job.benchmarkAnnotations
           .filter((annotation) => annotation.kind === "bottleneck")
-          .map((annotation) => annotation.note)
+          .map((annotation) => annotation.note),
       })),
-    missingObservationJobs
+    missingObservationJobs,
   };
 
   const warningSummary: WarningSummary = {
     slowMsThreshold: SLOW_JOB_THRESHOLD_MS,
     slowJobDenotation: SLOW_JOB_DENOTATION,
     slowJobs: WARN_SLOW,
-    missingObservationJobs
+    missingObservationJobs,
   };
 
   const counts: ReportCounts = {
     scheduledJobs: scheduledJobs.length,
     scheduledJobsWithActivity: jobSummaries.filter(
-      (job) => job.runsCount > 0 || job.auditRunsCount > 0
+      (job) => job.runsCount > 0 || job.auditRunsCount > 0,
     ).length,
     auditRuns: auditRows.length,
     auditSuccesses: auditRows.filter((row) => row.status === "success").length,
     auditFailures: auditRows.filter((row) => row.status === "failure").length,
     auditUnknown: auditRows.filter((row) => row.status === "unknown").length,
-    jobsOkLast: jobSummaries.filter((job) => job.lastStatus === "success").length,
-    jobsFailingLast: jobSummaries.filter((job) => job.lastStatus === "failure").length,
-    jobsMissingLast: jobSummaries.filter((job) => job.lastStatus === "missing").length,
-    jobsUnknownLast: jobSummaries.filter((job) => job.lastStatus === "unknown").length,
+    jobsOkLast: jobSummaries.filter((job) => job.lastStatus === "success")
+      .length,
+    jobsFailingLast: jobSummaries.filter((job) => job.lastStatus === "failure")
+      .length,
+    jobsMissingLast: jobSummaries.filter((job) => job.lastStatus === "missing")
+      .length,
+    jobsUnknownLast: jobSummaries.filter((job) => job.lastStatus === "unknown")
+      .length,
     unscheduledRuns: unscheduledRuns.length,
     totalRowsUpserted: jobSummaries.reduce(
       (acc, job) => acc + (job.rowsUpsertedLast ?? job.rowsAffectedLast ?? 0),
-      0
+      0,
     ),
     totalFailedRows: jobSummaries.reduce(
       (acc, job) => acc + (job.failedRowsLast ?? 0),
-      0
+      0,
     ),
     warnSlow: WARN_SLOW.length,
     warnPartialFailure: WARN_PARTIAL_FAILURE.length,
-    warnMissingAudit: WARN_MISSING_AUDIT.length
+    warnMissingAudit: WARN_MISSING_AUDIT.length,
   };
 
   const shouldRenderCronReport =
@@ -1806,14 +1901,14 @@ async function handler(
       dryRun: true,
       message: previewMode
         ? "Preview JSON generated without sending email."
-        : "Dry run completed without sending email."
+        : "Dry run completed without sending email.",
     };
     jobRunDetailsEmailResult = {
       success: true,
       suppressed: true,
       dryRun: true,
       message:
-        "Dedicated job-status email suppressed; the CEO briefing is the single daily cron report."
+        "Dedicated job-status email suppressed; the CEO briefing is the single daily cron report.",
     };
   } else if (shouldRenderCronReport) {
     try {
@@ -1840,24 +1935,25 @@ async function handler(
             slowJobDenotation: SLOW_JOB_DENOTATION,
             slowMsThreshold: SLOW_JOB_THRESHOLD_MS,
             annotatedJobCount: auditRunDigests.filter(
-              (audit) => audit.benchmarkAnnotations.length > 0
+              (audit) => audit.benchmarkAnnotations.length > 0,
             ).length,
             slowRuns: auditRunDigests.filter(
-              (audit) => audit.optimizationDenotation != null
+              (audit) => audit.optimizationDenotation != null,
             ).length,
             missingObservationRuns: auditRunDigests.filter(
-              (audit) => audit.missingObservationWarnings.length > 0
+              (audit) => audit.missingObservationWarnings.length > 0,
             ).length,
             totalRowsUpserted: auditRunDigests.reduce(
-              (acc, audit) => acc + (audit.rowsUpserted ?? audit.rowsAffected ?? 0),
-              0
+              (acc, audit) =>
+                acc + (audit.rowsUpserted ?? audit.rowsAffected ?? 0),
+              0,
             ),
             totalFailedRows: auditRunDigests.reduce(
               (acc, audit) => acc + (audit.failedRows ?? 0),
-              0
-            )
-          }
-        })
+              0,
+            ),
+          },
+        }),
       });
 
       if (error) {
@@ -1876,7 +1972,7 @@ async function handler(
       success: true,
       suppressed: true,
       message:
-        "Dedicated job-status email suppressed; the CEO briefing is the single daily cron report."
+        "Dedicated job-status email suppressed; the CEO briefing is the single daily cron report.",
     };
   } else {
     auditEmailResult = { success: true, message: "No cron data to send." };
@@ -1884,7 +1980,7 @@ async function handler(
       success: true,
       suppressed: true,
       message:
-        "Dedicated job-status email suppressed; the CEO briefing is the single daily cron report."
+        "Dedicated job-status email suppressed; the CEO briefing is the single daily cron report.",
     };
   }
 
@@ -1896,7 +1992,7 @@ async function handler(
       message: "One or more operations failed.",
       errors,
       auditEmailResult,
-      jobRunDetailsEmailResult
+      jobRunDetailsEmailResult,
     });
   }
 
@@ -1908,7 +2004,7 @@ async function handler(
     jobRunDetailsEmailResult,
     counts,
     warnings: warningSummary,
-    benchmark: benchmarkSummary
+    benchmark: benchmarkSummary,
   });
 }
 

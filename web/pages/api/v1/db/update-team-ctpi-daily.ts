@@ -6,8 +6,9 @@ import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import {
   type TeamGameRow,
   computeTrendMetrics,
-  computeCtpi
+  computeCtpi,
 } from "lib/trends/ctpi";
+import { fetchPaginatedRows } from "lib/power-ratings";
 
 dotenv.config({ path: "./../../../.env.local" });
 
@@ -64,36 +65,49 @@ async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
     "cf_pct",
     "ga",
     "xga",
-    "pdo"
+    "pdo",
   ].join(",");
 
-  const { data: asRows, error: asErr } = await supabase
-    .from(AS_RATES_TABLE)
-    .select(baseSelect)
-    .eq("season_id", seasonId)
-    .order("date", { ascending: false });
-  if (asErr) throw asErr;
-
-  const { data: ppRows, error: ppErr } = await supabase
-    .from(PP_COUNTS_TABLE)
-    .select(["team_abbreviation", "date", "gf", "xgf", "toi_seconds"].join(","))
-    .eq("season_id", seasonId)
-    .order("date", { ascending: false });
-  if (ppErr) throw ppErr;
-
-  const { data: pkRows, error: pkErr } = await supabase
-    .from(PK_COUNTS_TABLE)
-    .select(["team_abbreviation", "date", "ga", "xga", "toi_seconds"].join(","))
-    .eq("season_id", seasonId)
-    .order("date", { ascending: false });
-  if (pkErr) throw pkErr;
-
-  const { data: asCountRows, error: asCountErr } = await supabase
-    .from(AS_COUNTS_TABLE)
-    .select(["team_abbreviation", "date", "toi_seconds", "ga", "xga"].join(","))
-    .eq("season_id", seasonId)
-    .order("date", { ascending: false });
-  if (asCountErr) throw asCountErr;
+  const [asRows, ppRows, pkRows, asCountRows] = await Promise.all([
+    fetchPaginatedRows<any>(
+      () =>
+        supabase
+          .from(AS_RATES_TABLE)
+          .select(baseSelect)
+          .eq("season_id", seasonId),
+      ["date", "team_abbreviation"],
+    ),
+    fetchPaginatedRows<any>(
+      () =>
+        supabase
+          .from(PP_COUNTS_TABLE)
+          .select(
+            ["team_abbreviation", "date", "gf", "xgf", "toi_seconds"].join(","),
+          )
+          .eq("season_id", seasonId),
+      ["date", "team_abbreviation"],
+    ),
+    fetchPaginatedRows<any>(
+      () =>
+        supabase
+          .from(PK_COUNTS_TABLE)
+          .select(
+            ["team_abbreviation", "date", "ga", "xga", "toi_seconds"].join(","),
+          )
+          .eq("season_id", seasonId),
+      ["date", "team_abbreviation"],
+    ),
+    fetchPaginatedRows<any>(
+      () =>
+        supabase
+          .from(AS_COUNTS_TABLE)
+          .select(
+            ["team_abbreviation", "date", "toi_seconds", "ga", "xga"].join(","),
+          )
+          .eq("season_id", seasonId),
+      ["date", "team_abbreviation"],
+    ),
+  ]);
 
   const ppMap = new Map<
     string,
@@ -103,7 +117,7 @@ async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
     ppMap.set(`${row.team_abbreviation}|${row.date}`, {
       gf: row.gf ?? null,
       xgf: row.xgf ?? null,
-      toi: row.toi_seconds ?? null
+      toi: row.toi_seconds ?? null,
     });
   });
 
@@ -115,7 +129,7 @@ async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
     pkMap.set(`${row.team_abbreviation}|${row.date}`, {
       ga: row.ga ?? null,
       xga: row.xga ?? null,
-      toi: row.toi_seconds ?? null
+      toi: row.toi_seconds ?? null,
     });
   });
 
@@ -127,7 +141,7 @@ async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
     asCountMap.set(`${row.team_abbreviation}|${row.date}`, {
       toi: row.toi_seconds ?? null,
       ga: row.ga ?? null,
-      xga: row.xga ?? null
+      xga: row.xga ?? null,
     });
   });
 
@@ -156,7 +170,7 @@ async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
       pk_xga: pk?.xga ?? null,
       net_penalties_per_60: null,
       pdo: row.pdo != null ? Number(row.pdo) : null,
-      toi_all_seconds: asCount?.toi ?? null
+      toi_all_seconds: asCount?.toi ?? null,
     };
   });
 }
@@ -173,7 +187,7 @@ const buildDateRange = (start: string, end: string) => {
 
 async function resolveStartDate(
   seasonId: number,
-  seasonStart: string
+  seasonStart: string,
 ): Promise<string> {
   const { data, error } = await supabase
     .from(DEST_TABLE)
@@ -199,10 +213,7 @@ async function upsertRows(rows: CtpiRow[]) {
   }
 }
 
-const handler = async (
-  req: NextApiRequest,
-  res: NextApiResponse
-) => {
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ message: "Method not allowed" });
@@ -216,7 +227,9 @@ const handler = async (
     const seasonEnd = season.endDate || season.regularSeasonEndDate || todayIso;
     const endDate = seasonEnd > todayIso ? todayIso : seasonEnd;
     const startParam =
-      typeof req.query.start === "string" ? req.query.start.slice(0, 10) : undefined;
+      typeof req.query.start === "string"
+        ? req.query.start.slice(0, 10)
+        : undefined;
     const startCandidate = startParam
       ? startParam
       : await resolveStartDate(seasonId, season.startDate.slice(0, 10));
@@ -233,7 +246,7 @@ const handler = async (
         startDate,
         endDate,
         rowsUpserted: 0,
-        datesComputed: 0
+        datesComputed: 0,
       });
     }
 
@@ -252,8 +265,8 @@ const handler = async (
         computeTrendMetrics(
           games.filter((g) => g.date <= date),
           undefined,
-          10
-        )
+          10,
+        ),
       );
       const ctpi = computeCtpi(metrics);
       const computedAt = new Date().toISOString();
@@ -270,7 +283,7 @@ const handler = async (
           goaltending: c.goaltending,
           special_teams: c.specialTeams,
           luck: c.luck,
-          payload: c
+          payload: c,
         });
       });
     }
@@ -283,17 +296,17 @@ const handler = async (
       datesComputed: dates.length,
       rowsUpserted: insertRows.length,
       startDate,
-      endDate
+      endDate,
     });
   } catch (error: any) {
     console.error("update-team-ctpi-daily error", error);
     return res.status(500).json({
       message: "Failed to compute daily CTPI.",
-      error: error?.message ?? "Unknown error"
+      error: error?.message ?? "Unknown error",
     });
   }
 };
 
 export default withCronJobAudit(handler, {
-  jobName: "/api/v1/db/update-team-ctpi-daily"
+  jobName: "/api/v1/db/update-team-ctpi-daily",
 });
