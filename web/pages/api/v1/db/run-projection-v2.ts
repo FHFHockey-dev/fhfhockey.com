@@ -113,6 +113,33 @@ type GoalieRosterRow = {
   teamId: number;
 };
 
+export function buildProjectionDerivedGate(args: {
+  scheduledGameCount: number;
+  playerLatest: string | null;
+  teamLatest: string | null;
+  goalieLatest: string | null;
+}): PreflightGate {
+  if (args.scheduledGameCount === 0) {
+    return {
+      gate_key: "projection_derived_v2",
+      status: "PASS",
+      detail:
+        "No scheduled games on requested date; projection-derived freshness is not applicable.",
+      action: "None."
+    };
+  }
+
+  const pass = Boolean(
+    args.playerLatest && args.teamLatest && args.goalieLatest
+  );
+  return {
+    gate_key: "projection_derived_v2",
+    status: pass ? "PASS" : "FAIL",
+    detail: `player_latest=${args.playerLatest ?? "none"}, team_latest=${args.teamLatest ?? "none"}, goalie_latest=${args.goalieLatest ?? "none"}`,
+    action: "Run /api/v1/db/build-projection-derived-v2 for recent dates."
+  };
+}
+
 type Result =
   | {
       success: true;
@@ -435,46 +462,55 @@ export async function runProjectionPreflightChecks(
     });
   }
 
-  const derivedFreshnessStart = addDays(asOfDate, -7);
-  const [playerDerived, teamDerived, goalieDerived] = await Promise.all([
-    supabase
-      .from("forge_player_game_strength")
-      .select("game_date")
-      .lt("game_date", asOfDate)
-      .gte("game_date", derivedFreshnessStart)
-      .order("game_date", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from("forge_team_game_strength")
-      .select("game_date")
-      .lt("game_date", asOfDate)
-      .gte("game_date", derivedFreshnessStart)
-      .order("game_date", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from("forge_goalie_game")
-      .select("game_date")
-      .lt("game_date", asOfDate)
-      .gte("game_date", derivedFreshnessStart)
-      .order("game_date", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-  ]);
-  if (playerDerived.error) throw playerDerived.error;
-  if (teamDerived.error) throw teamDerived.error;
-  if (goalieDerived.error) throw goalieDerived.error;
-  const derivedPass =
-    Boolean((playerDerived.data as any)?.game_date) &&
-    Boolean((teamDerived.data as any)?.game_date) &&
-    Boolean((goalieDerived.data as any)?.game_date);
-  gates.push({
-    gate_key: "projection_derived_v2",
-    status: derivedPass ? "PASS" : "FAIL",
-    detail: `player_latest=${(playerDerived.data as any)?.game_date ?? "none"}, team_latest=${(teamDerived.data as any)?.game_date ?? "none"}, goalie_latest=${(goalieDerived.data as any)?.game_date ?? "none"}`,
-    action: "Run /api/v1/db/build-projection-derived-v2 for recent dates."
-  });
+  if (scheduledGameIds.length === 0) {
+    gates.push(
+      buildProjectionDerivedGate({
+        scheduledGameCount: 0,
+        playerLatest: null,
+        teamLatest: null,
+        goalieLatest: null
+      })
+    );
+  } else {
+    const derivedFreshnessStart = addDays(asOfDate, -7);
+    const [playerDerived, teamDerived, goalieDerived] = await Promise.all([
+      supabase
+        .from("forge_player_game_strength")
+        .select("game_date")
+        .lt("game_date", asOfDate)
+        .gte("game_date", derivedFreshnessStart)
+        .order("game_date", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("forge_team_game_strength")
+        .select("game_date")
+        .lt("game_date", asOfDate)
+        .gte("game_date", derivedFreshnessStart)
+        .order("game_date", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("forge_goalie_game")
+        .select("game_date")
+        .lt("game_date", asOfDate)
+        .gte("game_date", derivedFreshnessStart)
+        .order("game_date", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    ]);
+    if (playerDerived.error) throw playerDerived.error;
+    if (teamDerived.error) throw teamDerived.error;
+    if (goalieDerived.error) throw goalieDerived.error;
+    gates.push(
+      buildProjectionDerivedGate({
+        scheduledGameCount: scheduledGameIds.length,
+        playerLatest: (playerDerived.data as any)?.game_date ?? null,
+        teamLatest: (teamDerived.data as any)?.game_date ?? null,
+        goalieLatest: (goalieDerived.data as any)?.game_date ?? null
+      })
+    );
+  }
 
   if (scheduledGameIds.length > 0) {
     const { count: goalieStartRows, error: goalieStartErr } = await supabase

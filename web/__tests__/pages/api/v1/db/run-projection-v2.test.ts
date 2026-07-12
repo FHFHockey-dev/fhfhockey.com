@@ -51,6 +51,7 @@ vi.mock("lib/projections/run-forge-projections", () => ({
 }));
 
 import handler, {
+  buildProjectionDerivedGate,
   summarizeGoalieRosterAssignments
 } from "../../../../../pages/api/v1/db/run-projection-v2";
 
@@ -190,6 +191,39 @@ describe("/api/v1/db/run-projection-v2", () => {
       goalieCandidatesChecked: 2,
       mismatchedAssignments: 1,
       nonGoaliePositionRows: 0
+    });
+  });
+
+  it("treats projection-derived freshness as not applicable on a zero-game slate", () => {
+    expect(
+      buildProjectionDerivedGate({
+        scheduledGameCount: 0,
+        playerLatest: null,
+        teamLatest: null,
+        goalieLatest: null
+      })
+    ).toEqual({
+      gate_key: "projection_derived_v2",
+      status: "PASS",
+      detail:
+        "No scheduled games on requested date; projection-derived freshness is not applicable.",
+      action: "None."
+    });
+  });
+
+  it("retains the projection-derived blocker when a scheduled slate lacks inputs", () => {
+    expect(
+      buildProjectionDerivedGate({
+        scheduledGameCount: 1,
+        playerLatest: null,
+        teamLatest: "2026-03-19",
+        goalieLatest: "2026-03-19"
+      })
+    ).toMatchObject({
+      gate_key: "projection_derived_v2",
+      status: "FAIL",
+      detail:
+        "player_latest=none, team_latest=2026-03-19, goalie_latest=2026-03-19"
     });
   });
 });
