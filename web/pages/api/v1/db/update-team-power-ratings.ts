@@ -17,9 +17,12 @@ import {
   ZScored,
   RawScore,
   RawDistribution,
-  FinalRating
+  FinalRating,
 } from "../../../../lib/power-ratings";
-import { deriveTrendOverridesFromLogs } from "../../../../lib/teamRatingsTrend";
+import {
+  TEAM_RATINGS_TREND_LOOKBACK_DAYS,
+  deriveTrendOverridesFromLogs,
+} from "../../../../lib/teamRatingsTrend";
 
 function parseBooleanFlag(value: unknown): boolean {
   if (typeof value !== "string") return false;
@@ -27,10 +30,7 @@ function parseBooleanFlag(value: unknown): boolean {
   return normalized === "1" || normalized === "true" || normalized === "yes";
 }
 
-function getRequestValue(
-  req: NextApiRequest,
-  key: string
-): unknown {
+function getRequestValue(req: NextApiRequest, key: string): unknown {
   if (req.method === "GET") {
     const raw = req.query[key];
     return Array.isArray(raw) ? raw[0] : raw;
@@ -38,10 +38,7 @@ function getRequestValue(
   return req.body?.[key];
 }
 
-function getRequestFlag(
-  req: NextApiRequest,
-  key: string
-): boolean {
+function getRequestFlag(req: NextApiRequest, key: string): boolean {
   return parseBooleanFlag(getRequestValue(req, key));
 }
 
@@ -57,10 +54,7 @@ function isValidIsoDate(value: string): boolean {
   );
 }
 
-async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST" && req.method !== "GET") {
     res.setHeader("Allow", ["POST", "GET"]);
     return res.status(405).json({ error: "Method not allowed" });
@@ -74,7 +68,8 @@ async function handler(
   const parsedEndDateParam = parseDateParam(rawEndDateParam);
 
   if (
-    (rawDateParam != null && (!parsedDateParam || !isValidIsoDate(parsedDateParam))) ||
+    (rawDateParam != null &&
+      (!parsedDateParam || !isValidIsoDate(parsedDateParam))) ||
     (rawStartDateParam != null &&
       (!parsedStartDateParam || !isValidIsoDate(parsedStartDateParam))) ||
     (rawEndDateParam != null &&
@@ -89,10 +84,7 @@ async function handler(
     new Date().toISOString().slice(0, 10);
   const explicitStartDate = parsedStartDateParam;
 
-  if (
-    explicitStartDate &&
-    explicitStartDate > targetDateParam
-  ) {
+  if (explicitStartDate && explicitStartDate > targetDateParam) {
     return res.status(400).json({ error: "Invalid startDate/endDate range" });
   }
 
@@ -116,11 +108,11 @@ async function handler(
       console.log(`Backfilling from season start: ${startDateStr}`);
     } else if (tableWasEmpty && smokeTestMode) {
       console.log(
-        `Smoke-test mode enabled; skipping empty-table backfill and probing only ${targetDateParam}.`
+        `Smoke-test mode enabled; skipping empty-table backfill and probing only ${targetDateParam}.`,
       );
     } else if (explicitRangeApplied) {
       console.log(
-        `Explicit rating refresh range requested: ${startDateStr} -> ${targetDateParam}.`
+        `Explicit rating refresh range requested: ${startDateStr} -> ${targetDateParam}.`,
       );
     }
 
@@ -128,7 +120,7 @@ async function handler(
     const endDate = new Date(`${targetDateParam}T00:00:00.000Z`);
     const executionWindowDays =
       Math.floor(
-        (endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)
+        (endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000),
       ) + 1;
     let processedCount = 0;
     let totalUpserts = 0;
@@ -142,11 +134,13 @@ async function handler(
       const targetDate = d.toISOString().slice(0, 10);
       console.log(`Processing ${targetDate}...`);
 
-      // We need a lookback period for fetching logs.
-      // 25 games is roughly 60 days. Let's fetch 90 days to be safe.
+      // Use the shared trend lookback so off-season dates still retain the last
+      // played-game snapshots instead of propagating zero after day 90.
       const logEndDate = targetDate;
-      const logStartDateObj = new Date(logEndDate);
-      logStartDateObj.setDate(logStartDateObj.getDate() - 90);
+      const logStartDateObj = new Date(`${logEndDate}T00:00:00.000Z`);
+      logStartDateObj.setUTCDate(
+        logStartDateObj.getUTCDate() - TEAM_RATINGS_TREND_LOOKBACK_DAYS,
+      );
       const logStartDate = logStartDateObj.toISOString().slice(0, 10);
 
       const logs = await fetchGameLogs(supabase, logStartDate, logEndDate);
@@ -169,7 +163,7 @@ async function handler(
         const processed = teamRawLogs.map((l, index) => ({
           ...l,
           rn_desc: index, // 0 is most recent
-          gp_to_date: teamRawLogs.length - index // 1 is first game
+          gp_to_date: teamRawLogs.length - index, // 1 is first game
         }));
 
         teamLogs.set(team, processed);
@@ -192,7 +186,7 @@ async function handler(
 
         // Calculate Z-Scores
         const zScores: ZScored[] = ewmaMetrics.map((m) =>
-          calculateZScores(m, leagueMetrics)
+          calculateZScores(m, leagueMetrics),
         );
 
         // Calculate Raw Scores
@@ -215,7 +209,7 @@ async function handler(
         supabase,
         "team_power_ratings_daily",
         targetDate,
-        trendStartDate.toISOString().slice(0, 10)
+        trendStartDate.toISOString().slice(0, 10),
       );
 
       // Map of team -> latest rating
@@ -247,7 +241,7 @@ async function handler(
 
       const allTeams = new Set<string>([
         ...Array.from(teamLogs.keys()),
-        ...Array.from(latestMap.keys())
+        ...Array.from(latestMap.keys()),
       ]);
 
       for (const team of allTeams) {
@@ -275,7 +269,7 @@ async function handler(
       const getTier = (
         val: number | null | undefined,
         p33: number,
-        p67: number
+        p67: number,
       ) => {
         if (val == null) return 3;
         if (val >= p67) return 1;
@@ -286,11 +280,10 @@ async function handler(
       const upserts: any[] = [];
       for (const team of allTeams) {
         const calculated = finalRatings.find(
-          (r) => r.team_abbreviation === team
+          (r) => r.team_abbreviation === team,
         );
         const trend10 =
-          trendOverrides.get(team) ??
-          Number(latestMap.get(team)?.trend10 ?? 0);
+          trendOverrides.get(team) ?? Number(latestMap.get(team)?.trend10 ?? 0);
 
         // Tiers
         const wgo = wgoMap.get(team);
@@ -302,7 +295,7 @@ async function handler(
             ...calculated,
             trend10,
             pp_tier: ppTier,
-            pk_tier: pkTier
+            pk_tier: pkTier,
           });
         } else {
           const latest = latestMap.get(team);
@@ -328,7 +321,7 @@ async function handler(
               variance_flag: latest.variance_flag,
               trend10,
               pp_tier: ppTier,
-              pk_tier: pkTier
+              pk_tier: pkTier,
             });
           }
         }
@@ -367,8 +360,8 @@ async function handler(
         smokeTestGuidance:
           executionWindowDays === 1
             ? null
-            : "This run expanded beyond a one-day smoke test. Pass smokeTest=true with a target date to force a bounded one-day operational probe when the table is empty."
-      }
+            : "This run expanded beyond a one-day smoke test. Pass smokeTest=true with a target date to force a bounded one-day operational probe when the table is empty.",
+      },
     });
   } catch (err: any) {
     console.error(err);

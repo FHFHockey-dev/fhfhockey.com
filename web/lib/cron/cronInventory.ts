@@ -32,6 +32,7 @@ const JSON_JOB_ROUTE_ALIASES: Record<string, string> = {
   "update-teams-job": "/api/v1/db/update-teams",
   "update-players-job": "/api/v1/db/update-players",
   "update-line-combinations-all": "/api/v1/db/update-line-combinations",
+  "update-player-trend-metrics": "/api/v1/db/update-player-trend-metrics",
   "update-power-play-combinations": "/api/v1/db/update-power-play-combinations",
   "update-rolling-player-averages": "/api/v1/db/update-rolling-player-averages",
   "update-goalie-projections-v2": "/api/v1/db/update-goalie-projections-v2",

@@ -12,7 +12,7 @@ const {
   calculateZScoresMock,
   calculateRawScoresMock,
   calculateRawDistributionMock,
-  calculateFinalRatingMock
+  calculateFinalRatingMock,
 } = vi.hoisted(() => ({
   countState: { value: 0 },
   fetchCurrentSeasonMock: vi.fn(),
@@ -25,15 +25,15 @@ const {
   calculateZScoresMock: vi.fn(),
   calculateRawScoresMock: vi.fn(),
   calculateRawDistributionMock: vi.fn(),
-  calculateFinalRatingMock: vi.fn()
+  calculateFinalRatingMock: vi.fn(),
 }));
 
 vi.mock("../../../../../lib/cron/withCronJobAudit", () => ({
-  withCronJobAudit: (handler: unknown) => handler
+  withCronJobAudit: (handler: unknown) => handler,
 }));
 
 vi.mock("../../../../../utils/fetchCurrentSeason", () => ({
-  fetchCurrentSeason: fetchCurrentSeasonMock
+  fetchCurrentSeason: fetchCurrentSeasonMock,
 }));
 
 vi.mock("../../../../../lib/power-ratings", () => ({
@@ -46,7 +46,8 @@ vi.mock("../../../../../lib/power-ratings", () => ({
   calculateFinalRating: calculateFinalRatingMock,
   fetchWgoStats: fetchWgoStatsMock,
   fetchAllRatings: fetchAllRatingsMock,
-  LOOKBACK_GAMES: 25
+  LOOKBACK_GAMES: 25,
+  POSTGREST_PAGE_SIZE: 1000,
 }));
 
 vi.mock("../../../../../lib/supabase/server", () => ({
@@ -55,12 +56,12 @@ vi.mock("../../../../../lib/supabase/server", () => ({
       select: vi.fn(() =>
         Promise.resolve({
           count: countState.value,
-          error: null
-        })
+          error: null,
+        }),
       ),
-      upsert: upsertMock
-    }))
-  }
+      upsert: upsertMock,
+    })),
+  },
 }));
 
 import handler from "../../../../../pages/api/v1/db/update-team-power-ratings";
@@ -80,7 +81,7 @@ function createMockRes() {
     json(payload: any) {
       this.body = payload;
       return this;
-    }
+    },
   };
   return res;
 }
@@ -99,7 +100,7 @@ describe("/api/v1/db/update-team-power-ratings", () => {
     calculateZScoresMock.mockImplementation((metric) => metric);
     calculateRawScoresMock.mockImplementation((metric) => metric);
     calculateRawDistributionMock.mockImplementation((scores: any[]) => ({
-      date: scores[0]?.date ?? "2026-03-14"
+      date: scores[0]?.date ?? "2026-03-14",
     }));
     calculateFinalRatingMock.mockImplementation(() => ({
       team_abbreviation: "ANA",
@@ -119,14 +120,14 @@ describe("/api/v1/db/update-team-power-ratings", () => {
       danger_rating: 100,
       special_rating: 100,
       discipline_rating: 100,
-      variance_flag: 0
+      variance_flag: 0,
     }));
   });
 
   it("returns 405 for unsupported methods", async () => {
     const req: any = {
       method: "DELETE",
-      query: {}
+      query: {},
     };
     const res = createMockRes();
 
@@ -141,8 +142,8 @@ describe("/api/v1/db/update-team-power-ratings", () => {
     const req: any = {
       method: "GET",
       query: {
-        date: "2026-03-14"
-      }
+        date: "2026-03-14",
+      },
     };
     const res = createMockRes();
 
@@ -162,8 +163,8 @@ describe("/api/v1/db/update-team-power-ratings", () => {
         autoBackfillApplied: true,
         smokeTestComparable: false,
         smokeTestGuidance:
-          "This run expanded beyond a one-day smoke test. Pass smokeTest=true with a target date to force a bounded one-day operational probe when the table is empty."
-      }
+          "This run expanded beyond a one-day smoke test. Pass smokeTest=true with a target date to force a bounded one-day operational probe when the table is empty.",
+      },
     });
     expect(res.body.executionScope.windowDays).toBeGreaterThan(1);
   });
@@ -173,8 +174,8 @@ describe("/api/v1/db/update-team-power-ratings", () => {
       method: "GET",
       query: {
         date: "2026-03-14",
-        smokeTest: "true"
-      }
+        smokeTest: "true",
+      },
     };
     const res = createMockRes();
 
@@ -195,8 +196,8 @@ describe("/api/v1/db/update-team-power-ratings", () => {
         smokeTestMode: true,
         autoBackfillApplied: false,
         smokeTestComparable: true,
-        smokeTestGuidance: null
-      }
+        smokeTestGuidance: null,
+      },
     });
   });
 
@@ -207,8 +208,8 @@ describe("/api/v1/db/update-team-power-ratings", () => {
       method: "GET",
       query: {
         startDate: "2026-03-20",
-        endDate: "2026-04-05"
-      }
+        endDate: "2026-04-05",
+      },
     };
     const res = createMockRes();
 
@@ -229,8 +230,8 @@ describe("/api/v1/db/update-team-power-ratings", () => {
         smokeTestMode: false,
         autoBackfillApplied: false,
         explicitRangeApplied: true,
-        smokeTestComparable: false
-      }
+        smokeTestComparable: false,
+      },
     });
     expect(res.body.executionScope.windowDays).toBeGreaterThan(1);
   });
@@ -243,34 +244,36 @@ describe("/api/v1/db/update-team-power-ratings", () => {
       { team_abbreviation: "COL", date: "2026-04-03", data_mode: "all" },
       { team_abbreviation: "COL", date: "2026-04-01", data_mode: "all" },
       { team_abbreviation: "COL", date: "2026-03-30", data_mode: "all" },
-      { team_abbreviation: "COL", date: "2026-03-28", data_mode: "all" }
+      { team_abbreviation: "COL", date: "2026-03-28", data_mode: "all" },
     ]);
     fetchAllRatingsMock.mockResolvedValue([
       {
         team_abbreviation: "COL",
         date: "2026-04-04",
         off_rating: 120,
-        trend10: 0
+        trend10: 0,
       },
       {
         team_abbreviation: "COL",
         date: "2026-04-02",
         off_rating: 120,
-        trend10: 0
-      }
+        trend10: 0,
+      },
     ]);
 
-    calculateEwmaMock.mockImplementation((games: any[], targetDate: string) => ({
-      team_abbreviation: games[0].team_abbreviation,
-      date: targetDate
-    }));
+    calculateEwmaMock.mockImplementation(
+      (games: any[], targetDate: string) => ({
+        team_abbreviation: games[0].team_abbreviation,
+        date: targetDate,
+      }),
+    );
     calculateFinalRatingMock.mockImplementation((score: any) => {
       const offByDate: Record<string, number> = {
         "2026-04-05": 120,
         "2026-04-03": 110,
         "2026-04-01": 108,
         "2026-03-30": 106,
-        "2026-03-28": 104
+        "2026-03-28": 104,
       };
 
       return {
@@ -291,15 +294,15 @@ describe("/api/v1/db/update-team-power-ratings", () => {
         danger_rating: 100,
         special_rating: 100,
         discipline_rating: 100,
-        variance_flag: 0
+        variance_flag: 0,
       };
     });
 
     const req: any = {
       method: "GET",
       query: {
-        date: "2026-04-05"
-      }
+        date: "2026-04-05",
+      },
     };
     const res = createMockRes();
 
@@ -307,13 +310,41 @@ describe("/api/v1/db/update-team-power-ratings", () => {
 
     expect(res.statusCode).toBe(200);
     expect(upsertMock).toHaveBeenCalledTimes(1);
-    const upserts = upsertMock.mock.calls[0]?.[0] as Array<Record<string, unknown>>;
+    const upserts = upsertMock.mock.calls[0]?.[0] as Array<
+      Record<string, unknown>
+    >;
     expect(upserts).toEqual([
       expect.objectContaining({
         team_abbreviation: "COL",
-        trend10: 13
-      })
+        trend10: 13,
+      }),
     ]);
+  });
+
+  it("keeps the shared 150-day trend window during the offseason", async () => {
+    countState.value = 32;
+
+    const req: any = {
+      method: "GET",
+      query: {
+        date: "2026-07-11",
+      },
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(fetchGameLogsMock).toHaveBeenCalledWith(
+      expect.anything(),
+      "2026-02-11",
+      "2026-07-11",
+    );
+    expect(fetchWgoStatsMock).toHaveBeenCalledWith(
+      expect.anything(),
+      "2026-02-11",
+      "2026-07-11",
+    );
   });
 
   it("returns 400 for invalid explicit date ranges", async () => {
@@ -321,8 +352,8 @@ describe("/api/v1/db/update-team-power-ratings", () => {
       method: "GET",
       query: {
         startDate: "2026-04-05",
-        endDate: "2026-03-20"
-      }
+        endDate: "2026-03-20",
+      },
     };
     const res = createMockRes();
 
@@ -330,7 +361,7 @@ describe("/api/v1/db/update-team-power-ratings", () => {
 
     expect(res.statusCode).toBe(400);
     expect(res.body).toEqual({
-      error: "Invalid startDate/endDate range"
+      error: "Invalid startDate/endDate range",
     });
   });
 });

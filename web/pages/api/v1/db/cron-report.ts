@@ -89,6 +89,7 @@ const ROUTE_TARGET_TABLE_MAP: Record<string, string> = {
   "/api/v1/db/update-nhl-edge-stats": "nhl_edge_*",
   "/api/v1/db/update-goalie-projections-v2": "goalie_projections",
   "/api/v1/db/update-player-underlying-stats": "player_underlying_*",
+  "/api/v1/db/update-player-trend-metrics": "player_trend_metrics",
   "/api/v1/db/ingest-projection-inputs": "projection_inputs",
   "/api/v1/db/build-projection-derived-v2": "projection_derived_*",
   "/api/v1/db/update-nst-team-daily": "nst_team_daily",

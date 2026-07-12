@@ -2,6 +2,36 @@ import { SupabaseClient } from "@supabase/supabase-js";
 
 export const LOOKBACK_GAMES = 25;
 export const HALF_LIFE_GAMES = 10.0;
+export const POSTGREST_PAGE_SIZE = 1000;
+
+export async function fetchPaginatedRows<T>(
+  buildQuery: () => any,
+  orderColumns: readonly string[],
+): Promise<T[]> {
+  const rows: T[] = [];
+
+  for (let page = 0; ; page += 1) {
+    let query = buildQuery();
+    orderColumns.forEach((column) => {
+      query = query.order(column, { ascending: true });
+    });
+
+    const from = page * POSTGREST_PAGE_SIZE;
+    const to = from + POSTGREST_PAGE_SIZE - 1;
+    const { data, error } = await query.range(from, to);
+
+    if (error) throw error;
+
+    const pageRows = (data ?? []) as T[];
+    rows.push(...pageRows);
+
+    if (pageRows.length < POSTGREST_PAGE_SIZE) {
+      break;
+    }
+  }
+
+  return rows;
+}
 
 export interface GameLog {
   team_abbreviation: string;
@@ -91,58 +121,68 @@ export interface LeagueMetrics {
 export async function fetchGameLogs(
   supabase: SupabaseClient,
   startDate: string,
-  endDate: string
+  endDate: string,
 ): Promise<GameLog[]> {
   // Fetch nst_team_gamelogs_as_rates (situation = 'all')
-  const { data: allData, error: allError } = await supabase
-    .from("nst_team_gamelogs_as_rates")
-    .select("*")
-    .eq("situation", "all")
-    .gte("date", startDate)
-    .lte("date", endDate);
-
-  if (allError) throw allError;
+  const allData = await fetchPaginatedRows<any>(
+    () =>
+      supabase
+        .from("nst_team_gamelogs_as_rates")
+        .select("*")
+        .eq("situation", "all")
+        .gte("date", startDate)
+        .lte("date", endDate),
+    ["date", "team_abbreviation"],
+  );
 
   // Fetch nst_team_5v5 (situation = 'all')
-  const { data: f5v5Data, error: f5v5Error } = await supabase
-    .from("nst_team_5v5")
-    .select("*")
-    .eq("situation", "all")
-    .gte("date", startDate)
-    .lte("date", endDate);
-
-  if (f5v5Error) throw f5v5Error;
+  const f5v5Data = await fetchPaginatedRows<any>(
+    () =>
+      supabase
+        .from("nst_team_5v5")
+        .select("*")
+        .eq("situation", "all")
+        .gte("date", startDate)
+        .lte("date", endDate),
+    ["date", "team_abbreviation"],
+  );
 
   // Fetch PP Rates
-  const { data: ppData, error: ppError } = await supabase
-    .from("nst_team_gamelogs_pp_rates")
-    .select("team_abbreviation, date, xgf_per_60")
-    .eq("situation", "pp")
-    .gte("date", startDate)
-    .lte("date", endDate);
-
-  if (ppError) throw ppError;
+  const ppData = await fetchPaginatedRows<any>(
+    () =>
+      supabase
+        .from("nst_team_gamelogs_pp_rates")
+        .select("team_abbreviation, date, xgf_per_60")
+        .eq("situation", "pp")
+        .gte("date", startDate)
+        .lte("date", endDate),
+    ["date", "team_abbreviation"],
+  );
 
   // Fetch PK Rates
-  const { data: pkData, error: pkError } = await supabase
-    .from("nst_team_gamelogs_pk_rates")
-    .select("team_abbreviation, date, xga_per_60")
-    .eq("situation", "pk")
-    .gte("date", startDate)
-    .lte("date", endDate);
-
-  if (pkError) throw pkError;
+  const pkData = await fetchPaginatedRows<any>(
+    () =>
+      supabase
+        .from("nst_team_gamelogs_pk_rates")
+        .select("team_abbreviation, date, xga_per_60")
+        .eq("situation", "pk")
+        .gte("date", startDate)
+        .lte("date", endDate),
+    ["date", "team_abbreviation"],
+  );
 
   // Fetch WGO Stats (for discipline)
-  const { data: wgoData, error: wgoError } = await supabase
-    .from("wgo_team_stats")
-    .select(
-      "team_id, franchise_name, date, penalties_drawn_per_60, penalties_taken_per_60"
-    )
-    .gte("date", startDate)
-    .lte("date", endDate);
-
-  if (wgoError) throw wgoError;
+  const wgoData = await fetchPaginatedRows<any>(
+    () =>
+      supabase
+        .from("wgo_team_stats")
+        .select(
+          "team_id, franchise_name, date, penalties_drawn_per_60, penalties_taken_per_60",
+        )
+        .gte("date", startDate)
+        .lte("date", endDate),
+    ["date", "team_id"],
+  );
 
   // Helper to map WGO team_id/name to abbreviation
   const { data: teamsData } = await supabase
@@ -211,7 +251,7 @@ export async function fetchGameLogs(
       pp_xgf_per_60: pp ? Number(pp.xgf_per_60) : null,
       pk_xga_per_60: pk ? Number(pk.xga_per_60) : null,
       penalties_drawn_per_60: wgo ? Number(wgo.penalties_drawn_per_60) : null,
-      penalties_taken_per_60: wgo ? Number(wgo.penalties_taken_per_60) : null
+      penalties_taken_per_60: wgo ? Number(wgo.penalties_taken_per_60) : null,
     });
   });
 
@@ -248,7 +288,7 @@ export async function fetchGameLogs(
       pp_xgf_per_60: pp ? Number(pp.xgf_per_60) : null,
       pk_xga_per_60: pk ? Number(pk.xga_per_60) : null,
       penalties_drawn_per_60: wgo ? Number(wgo.penalties_drawn_per_60) : null,
-      penalties_taken_per_60: wgo ? Number(wgo.penalties_taken_per_60) : null
+      penalties_taken_per_60: wgo ? Number(wgo.penalties_taken_per_60) : null,
     });
   });
 
@@ -257,7 +297,7 @@ export async function fetchGameLogs(
 
 export function calculateEwma(
   games: TeamGame[],
-  targetDate: string
+  targetDate: string,
 ): EwmaMetrics | null {
   const validGames = games.filter((g) => g.date <= targetDate);
   if (validGames.length === 0) return null;
@@ -334,7 +374,7 @@ export function calculateEwma(
     pdo_ewma: sumPdo / sumWeights,
     pp_xgf60_ewma: sumPpXgf / sumWeights,
     pk_xga60_ewma: sumPkXga / sumWeights,
-    discipline_diff_ewma: sumDisciplineDiff / sumWeights
+    discipline_diff_ewma: sumDisciplineDiff / sumWeights,
   };
 }
 
@@ -364,7 +404,7 @@ export function calculateLeagueMetrics(metrics: EwmaMetrics[]): LeagueMetrics {
     metrics.map((m) => {
       const total = m.hdcf60_ewma + m.hdca60_ewma;
       return total > 0 ? m.hdcf60_ewma / total : 0.5;
-    })
+    }),
   );
   const ppOff = calcStats(metrics.map((m) => m.pp_xgf60_ewma));
   const pkDef = calcStats(metrics.map((m) => m.pk_xga60_ewma));
@@ -400,7 +440,7 @@ export function calculateLeagueMetrics(metrics: EwmaMetrics[]): LeagueMetrics {
     league_discipline_avg: discipline.avg,
     league_discipline_stddev: discipline.stddev,
     league_pdo_avg: pdo.avg,
-    league_pdo_stddev: pdo.stddev
+    league_pdo_stddev: pdo.stddev,
   };
 }
 
@@ -433,7 +473,7 @@ export interface ZScored {
 
 export function calculateZScores(
   metric: EwmaMetrics,
-  league: LeagueMetrics
+  league: LeagueMetrics,
 ): ZScored {
   const z = (val: number, avg: number, stddev: number) =>
     stddev === 0 ? 0 : (val - avg) / stddev;
@@ -481,7 +521,7 @@ export function calculateZScores(
     finishing_z: z(
       finishing,
       league.league_finishing_avg,
-      league.league_finishing_stddev
+      league.league_finishing_stddev,
     ),
     goalie_z: z(goalie, league.league_goalie_avg, league.league_goalie_stddev),
     danger_z: z(danger, league.league_danger_avg, league.league_danger_stddev),
@@ -490,9 +530,9 @@ export function calculateZScores(
     discipline_z: z(
       discipline,
       league.league_discipline_avg,
-      league.league_discipline_stddev
+      league.league_discipline_stddev,
     ),
-    pdo_z: z(pdo, league.league_pdo_avg, league.league_pdo_stddev)
+    pdo_z: z(pdo, league.league_pdo_avg, league.league_pdo_stddev),
   };
 }
 
@@ -514,7 +554,7 @@ export function calculateRawScores(z: ZScored): RawScore {
     def_raw:
       0.7 * (-z.xga60_z || 0) + 0.2 * (-z.sa60_z || 0) + 0.1 * (-z.ga60_z || 0),
     pace_raw: z.pace60_z || 0,
-    z
+    z,
   };
 }
 
@@ -550,7 +590,7 @@ export function calculateRawDistribution(scores: RawScore[]): RawDistribution {
     def_raw_avg: def.avg,
     def_raw_stddev: def.stddev,
     pace_raw_avg: pace.avg,
-    pace_raw_stddev: pace.stddev
+    pace_raw_stddev: pace.stddev,
   };
 }
 
@@ -578,7 +618,7 @@ export interface FinalRating {
 
 export function calculateFinalRating(
   score: RawScore,
-  dist: RawDistribution
+  dist: RawDistribution,
 ): FinalRating {
   const normalize = (val: number, avg: number, stddev: number) =>
     100 + 15 * (stddev === 0 ? 0 : (val - avg) / stddev);
@@ -593,7 +633,7 @@ export function calculateFinalRating(
     pace_rating: normalize(
       score.pace_raw,
       dist.pace_raw_avg,
-      dist.pace_raw_stddev
+      dist.pace_raw_stddev,
     ),
     xgf60: score.z.xgf60,
     gf60: score.z.gf60,
@@ -608,7 +648,7 @@ export function calculateFinalRating(
     special_rating:
       100 + 15 * (0.2 * (z.pp_off_z || 0) + 0.2 * -(z.pk_def_z || 0)),
     discipline_rating: 100 + 15 * (z.discipline_z || 0),
-    variance_flag: Math.abs(z.pdo_z || 0) >= 1.0 ? 1 : 0
+    variance_flag: Math.abs(z.pdo_z || 0) >= 1.0 ? 1 : 0,
   };
 }
 
@@ -626,15 +666,17 @@ export interface WgoStat {
 export async function fetchWgoStats(
   supabase: SupabaseClient,
   startDate: string,
-  endDate: string
+  endDate: string,
 ): Promise<WgoStat[]> {
-  const { data: wgoData, error: wgoError } = await supabase
-    .from("wgo_team_stats")
-    .select("*")
-    .gte("date", startDate)
-    .lte("date", endDate);
-
-  if (wgoError) throw wgoError;
+  const wgoData = await fetchPaginatedRows<any>(
+    () =>
+      supabase
+        .from("wgo_team_stats")
+        .select("*")
+        .gte("date", startDate)
+        .lte("date", endDate),
+    ["date", "team_id"],
+  );
 
   const { data: teamsData } = await supabase
     .from("teams")
@@ -662,7 +704,7 @@ export async function fetchWgoStats(
         penalties_drawn_per_60: Number(row.penalties_drawn_per_60),
         penalties_taken_per_60: Number(row.penalties_taken_per_60),
         pp_opportunities_per_game: Number(row.pp_opportunities_per_game),
-        times_shorthanded_per_game: Number(row.times_shorthanded_per_game)
+        times_shorthanded_per_game: Number(row.times_shorthanded_per_game),
       });
     }
   });
@@ -674,7 +716,7 @@ export async function fetchAllRatings(
   supabase: SupabaseClient,
   table: string,
   targetDate: string,
-  trendStartDate: string
+  trendStartDate: string,
 ) {
   let allData: any[] = [];
   let page = 0;

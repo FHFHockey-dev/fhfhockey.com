@@ -5,7 +5,7 @@ import type { Database } from "lib/supabase/database-generated.types";
 import {
   GOALIE_TREND_REQUIRED_COLUMNS,
   SKATER_TREND_REQUIRED_COLUMNS,
-  buildPlayerTrendRecords
+  buildPlayerTrendRecords,
 } from "lib/trends/playerTrendCalculator";
 
 type PlayerStatsRow =
@@ -16,6 +16,7 @@ type GoalieStatsRow =
 interface RebuildResponse {
   success: boolean;
   startDate: string;
+  writeFromDate?: string;
   seasonId?: number;
   playersProcessed: number;
   gamesProcessed: number;
@@ -32,6 +33,13 @@ const SKATER_SELECT_COLUMNS = SKATER_TREND_REQUIRED_COLUMNS.join(",");
 const GOALIE_SELECT_COLUMNS = GOALIE_TREND_REQUIRED_COLUMNS.join(",");
 const PAGE_SIZE = 1000;
 const UPSERT_BATCH_SIZE = 500;
+
+export type RebuildPlayerTrendsOptions = {
+  startDate: string;
+  seasonId?: number;
+  playerIds?: number[];
+  writeFromDate?: string;
+};
 
 function parsePlayerIds(input: unknown): number[] | undefined {
   if (!input) return undefined;
@@ -87,7 +95,7 @@ async function fetchSkaterStats(options: {
 
     if (error) {
       throw new Error(
-        `Failed to load skater stats (page ${page}): ${error.message}`
+        `Failed to load skater stats (page ${page}): ${error.message}`,
       );
     }
 
@@ -138,7 +146,7 @@ async function fetchPlayoffSkaterStats(options: {
 
     if (error) {
       throw new Error(
-        `Failed to load playoff skater stats (page ${page}): ${error.message}`
+        `Failed to load playoff skater stats (page ${page}): ${error.message}`,
       );
     }
 
@@ -146,7 +154,7 @@ async function fetchPlayoffSkaterStats(options: {
       break;
     }
 
-    results.push(...((data as unknown) as PlayerStatsRow[]));
+    results.push(...(data as unknown as PlayerStatsRow[]));
 
     if (data.length < PAGE_SIZE) {
       break;
@@ -191,7 +199,7 @@ async function fetchGoalieStats(options: {
 
     if (error) {
       throw new Error(
-        `Failed to load goalie stats (page ${page}): ${error.message}`
+        `Failed to load goalie stats (page ${page}): ${error.message}`,
       );
     }
 
@@ -218,7 +226,7 @@ function chunkArray<T>(input: T[], size: number) {
 }
 
 async function upsertTrendRecords(
-  records: ReturnType<typeof buildPlayerTrendRecords>
+  records: ReturnType<typeof buildPlayerTrendRecords>,
 ) {
   if (!records.length) {
     return;
@@ -232,17 +240,61 @@ async function upsertTrendRecords(
     const { error } = await supabase
       .from("player_trend_metrics")
       .upsert(batch, {
-        onConflict: "player_id,game_date,metric_key"
+        onConflict: "player_id,game_date,metric_key",
       });
 
     if (error) {
       throw new Error(
         `Failed to upsert trend metrics (batch ${index + 1}/${
           batches.length
-        }): ${error.message}`
+        }): ${error.message}`,
       );
     }
   }
+}
+
+export async function rebuildPlayerTrends({
+  startDate,
+  seasonId,
+  playerIds,
+  writeFromDate,
+}: RebuildPlayerTrendsOptions): Promise<RebuildResponse> {
+  const [skaterRows, playoffSkaterRows, goalieRows] = await Promise.all([
+    fetchSkaterStats({
+      startDate,
+      seasonId,
+      playerIds,
+    }),
+    fetchPlayoffSkaterStats({
+      startDate,
+      seasonId,
+      playerIds,
+    }),
+    fetchGoalieStats({
+      startDate,
+      seasonId,
+      playerIds,
+    }),
+  ]);
+
+  const rows = [...skaterRows, ...playoffSkaterRows, ...goalieRows];
+
+  const trendRecords = buildPlayerTrendRecords(rows, {
+    emitFromDate: writeFromDate,
+  });
+  await upsertTrendRecords(trendRecords);
+
+  const uniquePlayers = new Set(trendRecords.map((record) => record.player_id));
+
+  return {
+    success: true,
+    startDate,
+    writeFromDate,
+    seasonId,
+    playersProcessed: uniquePlayers.size,
+    gamesProcessed: rows.length,
+    metricsUpserted: trendRecords.length,
+  };
 }
 
 async function handlePost(req: NextApiRequest, res: NextApiResponse) {
@@ -251,55 +303,30 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       ? req.body.startDate
       : DEFAULT_START_DATE;
 
-  const seasonId =
+  const rawSeasonId =
     req.body?.seasonId !== undefined && req.body.seasonId !== null
       ? Number(req.body.seasonId)
       : undefined;
-
+  const seasonId = Number.isFinite(rawSeasonId) ? rawSeasonId : undefined;
   const playerIds = parsePlayerIds(req.body?.playerIds);
+  const writeFromDate =
+    typeof req.body?.writeFromDate === "string" &&
+    req.body.writeFromDate.length > 0
+      ? req.body.writeFromDate.slice(0, 10)
+      : undefined;
 
   try {
-    const [skaterRows, playoffSkaterRows, goalieRows] = await Promise.all([
-      fetchSkaterStats({
-        startDate,
-        seasonId: Number.isFinite(seasonId) ? seasonId : undefined,
-        playerIds
-      }),
-      fetchPlayoffSkaterStats({
-        startDate,
-        seasonId: Number.isFinite(seasonId) ? seasonId : undefined,
-        playerIds
-      }),
-      fetchGoalieStats({
-        startDate,
-        seasonId: Number.isFinite(seasonId) ? seasonId : undefined,
-        playerIds
-      })
-    ]);
-
-    const rows = [...skaterRows, ...playoffSkaterRows, ...goalieRows];
-
-    const trendRecords = buildPlayerTrendRecords(rows);
-    await upsertTrendRecords(trendRecords);
-
-    const uniquePlayers = new Set(
-      trendRecords.map((record) => record.player_id)
-    );
-
-    const response: RebuildResponse = {
-      success: true,
+    const response = await rebuildPlayerTrends({
       startDate,
-      seasonId: Number.isFinite(seasonId) ? seasonId : undefined,
-      playersProcessed: uniquePlayers.size,
-      gamesProcessed: rows.length,
-      metricsUpserted: trendRecords.length
-    };
-
+      seasonId,
+      playerIds,
+      writeFromDate,
+    });
     return res.status(200).json(response);
   } catch (error: any) {
     return res.status(500).json({
       success: false,
-      message: error.message ?? "Failed to rebuild player trends"
+      message: error.message ?? "Failed to rebuild player trends",
     });
   }
 }
@@ -346,21 +373,21 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
 
     const response: FetchResponse = {
       success: true,
-      data: data ?? []
+      data: data ?? [],
     };
 
     return res.status(200).json(response);
   } catch (error: any) {
     return res.status(500).json({
       success: false,
-      message: error.message ?? "Failed to fetch trend metrics"
+      message: error.message ?? "Failed to fetch trend metrics",
     });
   }
 }
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   if (req.method === "POST") {
     return handlePost(req, res);
@@ -373,6 +400,6 @@ export default async function handler(
   res.setHeader("Allow", ["GET", "POST"]);
   return res.status(405).json({
     success: false,
-    message: `Method ${req.method} Not Allowed`
+    message: `Method ${req.method} Not Allowed`,
   });
 }
