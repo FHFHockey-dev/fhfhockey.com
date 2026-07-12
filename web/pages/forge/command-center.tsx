@@ -74,6 +74,7 @@ const ForgeCommandCenterPage: NextPage = () => {
   const [commandData, setCommandData] = useState<CommandCenterData | null>(null);
   const [dataError, setDataError] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(false);
+  const [routeStateHydrated, setRouteStateHydrated] = useState(false);
   const teamOptions = useMemo(
     () =>
       Object.values(teamsInfo)
@@ -153,10 +154,15 @@ const ForgeCommandCenterPage: NextPage = () => {
     setPosition(requestedState.position);
     setSlateMode(requestedState.slateMode);
     setAddMode(requestedState.addMode);
+    setRouteStateHydrated(true);
   }, [requestedState, router.isReady]);
 
   useEffect(() => {
-    if (!router.isReady || typeof router.replace !== "function") return;
+    if (
+      !router.isReady ||
+      !routeStateHydrated ||
+      typeof router.replace !== "function"
+    ) return;
     const href = buildForgeHref("/forge/command-center", {
       date,
       resolvedDate,
@@ -168,10 +174,10 @@ const ForgeCommandCenterPage: NextPage = () => {
 
     if (router.asPath === href) return;
     void router.replace(href, undefined, { shallow: true, scroll: false });
-  }, [addMode, date, position, resolvedDate, router, slateMode, team]);
+  }, [addMode, date, position, resolvedDate, routeStateHydrated, router, slateMode, team]);
 
   useEffect(() => {
-    if (!router.isReady) return;
+    if (!router.isReady || !routeStateHydrated) return;
     let active = true;
     setDataLoading(true);
     setDataError(null);
@@ -199,7 +205,7 @@ const ForgeCommandCenterPage: NextPage = () => {
     return () => {
       active = false;
     };
-  }, [resolvedDate, routeState, router.isReady]);
+  }, [resolvedDate, routeState, routeStateHydrated, router.isReady]);
 
   const resetFilters = () => {
     setDate(todayEt);

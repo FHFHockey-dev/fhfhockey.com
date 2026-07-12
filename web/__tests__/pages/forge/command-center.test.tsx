@@ -380,6 +380,32 @@ describe("Forge command center page", () => {
     });
   });
 
+  it("hydrates URL filters before replacing the route or loading data", async () => {
+    routerState.isReady = false;
+    const { rerender } = render(<ForgeCommandCenterPage />);
+
+    expect(routerState.replace).not.toHaveBeenCalled();
+    expect(loadCommandCenterDataMock).not.toHaveBeenCalled();
+
+    routerState.isReady = true;
+    rerender(<ForgeCommandCenterPage />);
+
+    await waitFor(() => {
+      expect((screen.getByLabelText("Date") as HTMLInputElement).value).toBe(
+        "2026-03-14"
+      );
+      expect((screen.getByLabelText("Team") as HTMLSelectElement).value).toBe("CAR");
+    });
+    expect(loadCommandCenterDataMock).toHaveBeenCalledWith(
+      expect.objectContaining({ date: "2026-03-14", team: "CAR" })
+    );
+    expect(routerState.replace).not.toHaveBeenCalledWith(
+      expect.stringContaining("date=2026-07-12"),
+      undefined,
+      expect.anything()
+    );
+  });
+
   it("preserves upstream error states when row-driven modules have no rows", async () => {
     const data = buildCommandData();
     data.modules.topAdds = {
