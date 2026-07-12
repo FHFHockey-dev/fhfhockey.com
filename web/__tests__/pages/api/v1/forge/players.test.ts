@@ -19,7 +19,10 @@ type QueryResult = {
   error: null;
 };
 
-function createQueryBuilder(resolver: () => QueryResult) {
+function createQueryBuilder(
+  resolver: () => QueryResult,
+  onEq?: (column: string, value: unknown) => void
+) {
   const state = {
     isHeadCount: false
   };
@@ -28,7 +31,8 @@ function createQueryBuilder(resolver: () => QueryResult) {
       state.isHeadCount = Boolean(options?.head);
       return builder;
     },
-    eq() {
+    eq(column: string, value: unknown) {
+      onEq?.(column, value);
       return builder;
     },
     lte() {
@@ -357,5 +361,144 @@ describe("/api/v1/forge/players", () => {
           "Fallback role context used because line combos were hard stale (24d stale)."
       }
     });
+  });
+
+  it("serves a same-date weekly run when the newest run only owns horizon one", async () => {
+    let projectionQueryCount = 0;
+    const horizonFilters: unknown[] = [];
+    fromMock.mockImplementation((table: string) => {
+      if (table === "forge_player_projections") {
+        projectionQueryCount += 1;
+        const result =
+          projectionQueryCount === 1
+            ? { data: [], error: null }
+            : projectionQueryCount === 2
+              ? { count: 0, error: null }
+              : projectionQueryCount === 3
+                ? { count: 1, error: null }
+                : {
+                    data: [
+                      {
+                        player_id: 8478402,
+                        players: { fullName: "Weekly Skater", position: "C" },
+                        teams: { name: "Canadiens" },
+                        proj_goals_es: 1.2,
+                        proj_goals_pp: 0.4,
+                        proj_goals_pk: 0,
+                        proj_assists_es: 1.4,
+                        proj_assists_pp: 0.6,
+                        proj_assists_pk: 0,
+                        proj_shots_es: 10,
+                        proj_shots_pp: 3,
+                        proj_shots_pk: 0,
+                        proj_hits: 2,
+                        proj_blocks: 1,
+                        uncertainty: {}
+                      }
+                    ],
+                    error: null
+                  };
+        return createQueryBuilder(() => result, (column, value) => {
+          if (column === "horizon_games") horizonFilters.push(value);
+        });
+      }
+      if (table === "forge_runs") {
+        return createQueryBuilder(() => ({
+          data: [
+            { run_id: "daily-run", as_of_date: "2026-02-07" },
+            { run_id: "weekly-run", as_of_date: "2026-02-07" }
+          ],
+          error: null
+        }));
+      }
+      if (table === "seasons") {
+        return createQueryBuilder(() => ({ data: { id: 20252026 }, error: null }));
+      }
+      if (table === "rosters") {
+        return createQueryBuilder(() => ({
+          data: [{ playerId: 8478402 }],
+          error: null
+        }));
+      }
+      return createQueryBuilder(() => ({ data: [], count: 0, error: null }));
+    });
+    requireLatestSucceededRunIdMock.mockResolvedValue("daily-run");
+
+    const res = createMockRes();
+    await handler(
+      { method: "GET", query: { date: "2026-02-07", horizon: "5" } } as any,
+      res
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      runId: "weekly-run",
+      asOfDate: "2026-02-07",
+      horizonGames: 5,
+      fallbackApplied: false,
+      diagnostics: {
+        state: "ready",
+        missingRequestedHorizon: false
+      }
+    });
+    expect(res.body.data[0].player_name).toBe("Weekly Skater");
+    expect(horizonFilters).toEqual([5, 5, 5, 5]);
+  });
+
+  it("blocks instead of returning a healthy empty when only horizon one exists", async () => {
+    let projectionQueryCount = 0;
+    fromMock.mockImplementation((table: string) => {
+      if (table === "forge_player_projections") {
+        projectionQueryCount += 1;
+        return createQueryBuilder(() =>
+          projectionQueryCount === 4
+            ? { count: 1, error: null }
+            : projectionQueryCount === 1
+              ? { data: [], error: null }
+              : { count: 0, error: null }
+        );
+      }
+      if (table === "forge_runs") {
+        return createQueryBuilder(() => ({
+          data: [{ run_id: "daily-run", as_of_date: "2026-02-07" }],
+          error: null
+        }));
+      }
+      if (table === "seasons") {
+        return createQueryBuilder(() => ({ data: { id: 20252026 }, error: null }));
+      }
+      if (table === "rosters") {
+        return createQueryBuilder(() => ({ data: [], error: null }));
+      }
+      return createQueryBuilder(() => ({ data: [], count: 0, error: null }));
+    });
+    requireLatestSucceededRunIdMock.mockResolvedValue("daily-run");
+
+    const res = createMockRes();
+    await handler(
+      { method: "GET", query: { date: "2026-02-07", horizon: "5" } } as any,
+      res
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      runId: "daily-run",
+      horizonGames: 5,
+      data: [],
+      scanSummary: {
+        status: "blocked",
+        blockingIssueCount: 1,
+        rowCounts: { missing_requested_horizon: 1 }
+      },
+      diagnostics: {
+        state: "blocked",
+        missingRequestedHorizon: true,
+        fallbackReason:
+          "requested horizon has no genuine output while one-game output exists"
+      }
+    });
+    expect(res.body.diagnostics.message).toContain(
+      "one-game output exists but is not relabeled or scaled"
+    );
   });
 });

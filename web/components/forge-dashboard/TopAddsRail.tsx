@@ -62,6 +62,11 @@ type ProjectionResponse = {
     skaterPoolRecoveryPlayerCount: number;
     note: string | null;
   } | null;
+  diagnostics?: {
+    state: "ready" | "empty" | "blocked";
+    missingRequestedHorizon?: boolean;
+    message?: string | null;
+  } | null;
   data: ProjectionRow[];
 };
 
@@ -328,6 +333,16 @@ export default function TopAddsRail({
       .then(async (projectionPayload) => {
         if (!active) return;
         setProjectionResponse(projectionPayload);
+
+        if (projectionPayload.diagnostics?.state === "blocked") {
+          setError(
+            projectionPayload.diagnostics.message ??
+              "The requested projection horizon is unavailable."
+          );
+          setOwnershipResponse(null);
+          setOwnershipSnapshotMap({});
+          return;
+        }
 
         const projectedPlayerIds = Array.from(
           new Set(

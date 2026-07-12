@@ -305,6 +305,7 @@ export default async function handler(
     let runId: string | null = null;
     let fallbackApplied = false;
     let projectionsRaw: any[] = [];
+    let missingRequestedHorizon = false;
 
     // 1. Try to find a run for the requested date
     try {
@@ -384,6 +385,16 @@ export default async function handler(
       }
     }
 
+    if (projectionsRaw.length === 0 && runId && horizonGames !== 1) {
+      const { count, error } = await supabase
+        .from("forge_player_projections")
+        .select("player_id", { count: "exact", head: true })
+        .eq("run_id", runId)
+        .eq("horizon_games", 1);
+      if (error) throw error;
+      missingRequestedHorizon = (count ?? 0) > 0;
+    }
+
     const currentSeasonId = await fetchCurrentSeasonIdForDate(resolvedDate);
     const activeRosterPlayerIds = await fetchActiveRosterPlayerIdSet(
       currentSeasonId
@@ -433,6 +444,14 @@ export default async function handler(
     const degradedProjectionSummary = buildDegradedProjectionSummary(
       projections.map((row) => row.degradedProjectionContext)
     );
+    const responseState = missingRequestedHorizon
+      ? "blocked"
+      : projections.length > 0
+        ? "ready"
+        : "empty";
+    const missingHorizonMessage = missingRequestedHorizon
+      ? `No genuine ${horizonGames}-game projection output is available for ${resolvedDate}; one-game output exists but is not relabeled or scaled.`
+      : null;
     const serving = buildRequestedDateServingState({
       requestedDate: targetDate,
       resolvedDate,
@@ -446,10 +465,11 @@ export default async function handler(
       requestedDate: targetDate,
       activeDataDate: resolvedDate,
       fallbackApplied,
-      status: projections.length > 0 ? "ready" : "empty",
+      status: responseState,
       rowCounts: {
         returned: projections.length,
         degraded_projection_rows: degradedProjectionSummary.degradedPlayerCount,
+        missing_requested_horizon: missingRequestedHorizon ? 1 : 0,
         line_combo_fallback_rows:
           degradedProjectionSummary.lineComboFallbackPlayerCount,
         skater_pool_recovery_rows:
@@ -458,9 +478,11 @@ export default async function handler(
       notes: fallbackApplied
         ? [
             `Serving fallback skater projections from ${resolvedDate}.`,
+            missingHorizonMessage,
             degradedProjectionSummary.note
           ]
-        : [degradedProjectionSummary.note]
+        : [missingHorizonMessage, degradedProjectionSummary.note],
+      blockingIssueCount: missingRequestedHorizon ? 1 : 0
     });
 
     return res.status(200).json({
@@ -473,6 +495,21 @@ export default async function handler(
       degradedProjectionSummary,
       serving,
       scanSummary,
+      diagnostics: {
+        state: responseState,
+        returnedRows: projections.length,
+        requestedDate: targetDate,
+        resolvedDate,
+        fallbackApplied,
+        fallbackReason: missingRequestedHorizon
+          ? "requested horizon has no genuine output while one-game output exists"
+          : fallbackApplied
+            ? "requested date had no usable skater rows"
+            : null,
+        missingRequestedHorizon,
+        message: missingHorizonMessage,
+        degradedProjectionSummary
+      },
       compatibilityInventory: buildCanonicalReaderCompatibility({
         canonicalRoute: "/api/v1/forge/players",
         legacyRoute: "/api/v1/projections/players"
