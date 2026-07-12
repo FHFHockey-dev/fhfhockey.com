@@ -380,8 +380,18 @@ describe("Forge command center page", () => {
     });
   });
 
-  it("preserves a player-insight error state when no insight rows render", async () => {
+  it("preserves upstream error states when row-driven modules have no rows", async () => {
     const data = buildCommandData();
+    data.modules.topAdds = {
+      ...data.modules.topAdds,
+      status: "error",
+      error: "Request failed (500) for top adds",
+      data: {
+        ...data.modules.topAdds.data,
+        forgePlayers: { data: [] },
+        ownershipTrends: null
+      }
+    };
     data.modules.playerInsight = {
       ...data.modules.playerInsight,
       status: "error",
@@ -397,12 +407,20 @@ describe("Forge command center page", () => {
         }
       }
     };
+    data.modules.goalieContext = {
+      ...data.modules.goalieContext,
+      status: "error",
+      error: "Request failed (500) for goalie context",
+      data: { ...data.modules.goalieContext.data, data: [] }
+    };
     loadCommandCenterDataMock.mockResolvedValue(data);
 
     render(<ForgeCommandCenterPage />);
 
-    expect(await screen.findByText("Error")).toBeTruthy();
+    expect((await screen.findAllByText("Error")).length).toBe(3);
+    expect(screen.getByText("Request failed (500) for top adds")).toBeTruthy();
     expect(screen.getByText("Request failed (500) for skater power")).toBeTruthy();
+    expect(screen.getByText("Request failed (500) for goalie context")).toBeTruthy();
     expect(screen.queryByText("Empty")).toBeNull();
   });
 });

@@ -178,7 +178,10 @@ export default function TopAddsWatchlist({
     return rankTopAddsCandidates(inputs, addMode).slice(0, MAX_ROWS);
   }, [addMode, module.data.forgePlayers, module.data.ownershipTrends, position]);
 
-  const renderedModule = candidates.length > 0 ? module : { ...module, status: "empty" as const };
+  const renderedModule =
+    module.status === "ready" && candidates.length === 0
+      ? { ...module, status: "empty" as const }
+      : module;
 
   return (
     <ModuleState module={renderedModule}>

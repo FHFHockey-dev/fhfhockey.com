@@ -349,7 +349,8 @@
   grid-template-columns: minmax(360px, 0.9fr) minmax(420px, 1fr) minmax(360px, 0.8fr);
   grid-template-areas:
     "team slate adds"
-    "insight insight goalie"
+    "insight insight insight"
+    "goalie goalie goalie"
     "route route route";
   gap: 12px;
   align-items: start;

@@ -59,7 +59,10 @@ export default function GoalieContextPanel({
   ).length;
   const streamCount = rows.filter((row) => recommendationTone(row) === "warn").length;
   const sitCount = rows.filter((row) => recommendationTone(row) === "danger").length;
-  const renderedModule = rows.length > 0 ? module : { ...module, status: "empty" as const };
+  const renderedModule =
+    module.status === "ready" && rows.length === 0
+      ? { ...module, status: "empty" as const }
+      : module;
 
   return (
     <ModuleState module={renderedModule}>
