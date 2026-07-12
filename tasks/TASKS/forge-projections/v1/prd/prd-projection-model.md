@@ -512,13 +512,13 @@ The ingest endpoint considers a game “complete” and will skip when:
 - [x] Implement simulation loop for horizon=1 and extract p10/p50/p90 into `uncertainty` JSONB.
 - [x] Extend simulation to horizon 2–10 by iterating over schedule slices (home/away/rest placeholders OK).
 - [x] Add interval calibration checks to backtests and store summary metrics.
-- [ ] Validate performance (batching, chunked upserts) so nightly runs stay within time limits.
+- [x] Validate performance (batching, chunked upserts) so nightly runs stay within time limits. **OWNER-APPROVED EVIDENCE EXCEPTION (2026-07-11):** implementation has bounded time budgets, chunk/resume cursors, and scoped upserts, but a current deployed success under the runtime target was not observed; promotion remains blocked pending that evidence.
 
 ### Task 5: Ops + backtest reporting
-- [ ] Implement `/runs/{run_id}` detail endpoint for run metadata.
-- [ ] Implement admin endpoints for run triggers and `forge_roster_events` CRUD.
-- [ ] Add nightly scheduler wiring (Vercel cron or GitHub Actions) with `withCronJobAudit`.
-- [ ] Implement backtest report job (last 30 days, MAE + interval coverage) and store a report artifact.
+- [x] Implement `/runs/{run_id}` detail endpoint for run metadata.
+- [x] Implement admin endpoints for run triggers and `forge_roster_events` CRUD.
+- [x] Add nightly scheduler wiring (Vercel cron or GitHub Actions) with `withCronJobAudit`.
+- [x] Implement backtest report job (last 30 days, MAE + interval coverage) and store a report artifact.
 ## Relevant files
 - `tasks/prd-projection-model.md` - PRD and tracked task list for FORGE model work.
 - `web/pages/FORGE.tsx` - FORGE projections page UI.
@@ -550,7 +550,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-yahoo-weeks?game_key=nhl',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 240000 -- 4 mins
 --         );
 --     $$
@@ -570,7 +570,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-nst-gamelog', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 240000
 --         );
 --     $$
@@ -587,7 +587,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     '30 7 * * *', -- 07:30 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-wgo-skaters?action=all', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -604,7 +604,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     '35 7 * * *', -- 07:35 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-wgo-goalies?action=all', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -621,7 +621,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     '40 7 * * *', -- 07:40 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-wgo-totals?season=current', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -640,7 +640,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     '45 7 * * *', -- 07:45 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-shifts?action=all',
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -657,7 +657,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     '45 7 * * *', -- 07:45 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-rolling-player-averages',
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -686,7 +686,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     '55 7 * * *', -- 07:55 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/powerPlayTimeFrame?gameId=all', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -703,7 +703,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     '00 8 * * *', -- 08:00 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-line-combinations', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -722,7 +722,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-team-yearly-summary',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 240000 -- 4 mins
 --         );
 --     $$
@@ -740,7 +740,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     '10 8 * * *', -- 08:10 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/Teams/nst-team-stats?date=all', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -757,7 +757,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     '15 8 * * *', -- 08:15 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-standings-details?date=all', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -774,7 +774,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     '20 8 * * *', -- 08:20 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-wgo-goalie-totals', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -791,7 +791,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     '25 8 * * *', -- 08:25 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-expected-goals?date=all', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -809,7 +809,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     '30 8 * * *', -- 08:30 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-nst-goalies', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -827,7 +827,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     '51 20 * * *', -- 08:35 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-PbP?gameId=recent',
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -845,7 +845,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     $$
 --         SELECT net.http_get(
 --         url := 'https://fhfhockey.com/api/v1/db/update-yahoo-players?gameId=465',
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -864,7 +864,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-nst-current-season',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 240000 -- 4 mins
 --         );
 --     $$
@@ -882,7 +882,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/calculate-wigo-stats',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 240000 -- 4 mins
 --         );
 --     $$
@@ -900,7 +900,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     $$  
 --         SELECT net.http_get(
 --         url := 'https://fhfhockey.com/api/internal/sync-yahoo-players-to-sheet?gameId=465',
---         headers := '{"Authorization":"Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization":"Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 300000
 --         );
 --     $$
@@ -919,7 +919,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/update-rolling-player-averages',
 --             body := '{}'::jsonb,
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 300000 -- 5 mins
 --         );
 --     $$
@@ -949,7 +949,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-team-ctpi-daily',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 100000
 --         );
 --     $$
@@ -967,7 +967,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-team-power-ratings',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000 -- 5 mins
 --         );
 --     $$
@@ -985,7 +985,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-team-power-ratings-new',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000 -- 5 mins
 --         );
 --     $$
@@ -1004,7 +1004,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/update-goalie-projections-v2',
 --             body := '{}'::jsonb,
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 100000
 --         );
 --     $$
@@ -1021,7 +1021,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     '35 9 * * *', -- 09:35 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/run-fetch-wgo-data', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -1040,7 +1040,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/update-start-chart-projections',
 --             body := '{}'::jsonb,
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1060,7 +1060,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/build-projection-derived-v2',
 --             body := '{}'::jsonb,
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1080,7 +1080,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/run-projection-v2',
 --             body := '{}'::jsonb,
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1100,7 +1100,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/run-projection-accuracy?projectionOffsetDays=0',
 --             body := '{}'::jsonb,
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1119,7 +1119,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-nst-team-daily',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 100000
 --         );
 --     $$
@@ -1177,7 +1177,7 @@ The ingest endpoint considers a game “complete” and will skip when:
 --    $$
 --      SELECT net.http_get(
 --        url       := 'https://fhfhockey.com/api/v1/db/cron-report',
---        headers   := '{"Authorization":"Bearer fhfh-cron-mima-233"}'::jsonb,
+--        headers   := '{"Authorization":"Bearer <CRON_SECRET>"}'::jsonb,
 --        timeout_milliseconds := 240000
 --      );
 --    $$

@@ -1171,6 +1171,26 @@ describe("AccountSettingsPage profile section", () => {
           imported_at: "2026-03-27T12:00:00.000Z",
           created_at: "2026-03-27T12:00:00.000Z",
           updated_at: "2026-03-27T12:00:00.000Z"
+        },
+        {
+          id: "team-2",
+          external_league_id: "league-1",
+          connected_account_id: "yahoo-account-1",
+          user_id: "user-1",
+          provider: "yahoo",
+          external_team_key: "nhl.l.1.t.2",
+          team_name: "League Rival",
+          team_metadata: {
+            is_owned: false,
+            standings: { rank: 1 }
+          },
+          roster_snapshot: {
+            players: [],
+            visibility: "not_fetched"
+          },
+          imported_at: "2026-03-27T12:00:00.000Z",
+          created_at: "2026-03-27T12:00:00.000Z",
+          updated_at: "2026-03-27T12:00:00.000Z"
         }
       ],
       error: null
@@ -1197,11 +1217,32 @@ describe("AccountSettingsPage profile section", () => {
     expect(screen.getByText("Connected account label: Tim's Yahoo")).toBeTruthy();
     expect(screen.getByText("Keeper League (default league)")).toBeTruthy();
     expect(screen.getByText("Tim's Test Team")).toBeTruthy();
+    expect(screen.getByText("League Rival")).toBeTruthy();
+    expect(screen.getByText("League opponent · Standings rank 1")).toBeTruthy();
     expect(screen.getAllByText("Default team: Tim's Test Team").length).toBeGreaterThan(0);
     expect(
       screen.getByRole("button", { name: "Disconnect Yahoo Fantasy" })
     ).toBeTruthy();
     expect(screen.getByText("Default Team")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Save Imported Team" }));
+
+    await waitFor(() => {
+      expect(accountState.savedTeamsInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user_id: "user-1",
+          name: "Tim's Test Team",
+          source_type: "external-provider",
+          provider: "yahoo",
+          external_league_key: "nhl.l.1",
+          external_team_key: "nhl.l.1.t.1",
+          is_default: true
+        })
+      );
+    });
+    expect(
+      await screen.findByText('"Tim\'s Test Team" was saved from Yahoo.')
+    ).toBeTruthy();
   });
 
   it("shows Patreon as an account-linked entitlement placeholder, not site auth", async () => {

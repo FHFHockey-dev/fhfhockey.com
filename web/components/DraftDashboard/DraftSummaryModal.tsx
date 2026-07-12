@@ -1,9 +1,10 @@
 import React, { useMemo, useRef, useState } from "react";
 import styles from "./DraftSummaryModal.module.scss";
+import modalStyles from "./ModalShell.module.scss";
 import type {
   DraftSettings,
   DraftedPlayer,
-  TeamDraftStats
+  TeamDraftStats,
 } from "./DraftDashboard";
 import type { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import { toPng } from "html-to-image";
@@ -29,7 +30,7 @@ export default function DraftSummaryModal({
   draftedPlayers,
   teamStats,
   allPlayers,
-  vorpMetrics
+  vorpMetrics,
 }: DraftSummaryModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [viewMode, setViewMode] = useState<"roster" | "recap">("recap");
@@ -126,7 +127,7 @@ export default function DraftSummaryModal({
             overall,
             round: dp.round,
             pickInRound: dp.pickInRound,
-            delta
+            delta,
           };
         }
         if (
@@ -140,7 +141,7 @@ export default function DraftSummaryModal({
             overall,
             round: dp.round,
             pickInRound: dp.pickInRound,
-            delta
+            delta,
           };
         }
       }
@@ -156,7 +157,7 @@ export default function DraftSummaryModal({
               vorp: v,
               overall,
               round: dp.round,
-              pickInRound: dp.pickInRound
+              pickInRound: dp.pickInRound,
             };
           }
         }
@@ -172,7 +173,7 @@ export default function DraftSummaryModal({
     const vorps = teamStats.map((t) => t.teamVorp || 0);
     const minMax = (arr: number[]) => ({
       min: Math.min(...arr),
-      max: Math.max(...arr)
+      max: Math.max(...arr),
     });
     const pmm = minMax(pts);
     const vmm = minMax(vorps);
@@ -181,7 +182,7 @@ export default function DraftSummaryModal({
     const scored = teamStats.map((t) => ({
       team: t,
       score:
-        0.6 * norm(t.projectedPoints, pmm) + 0.4 * norm(t.teamVorp || 0, vmm)
+        0.6 * norm(t.projectedPoints, pmm) + 0.4 * norm(t.teamVorp || 0, vmm),
     }));
     scored.sort((a, b) => b.score - a.score);
     return scored[0];
@@ -196,7 +197,7 @@ export default function DraftSummaryModal({
         cacheBust: true,
         // Avoid cross-origin CSS font embedding errors
         // @ts-ignore: option supported in html-to-image
-        skipFonts: true
+        skipFonts: true,
       });
       const link = document.createElement("a");
       link.download = `fhfh-draft-summary-${new Date()
@@ -253,7 +254,7 @@ export default function DraftSummaryModal({
       order.push({
         key: "UTILITY",
         label: "UTIL",
-        list: rosterSlots["UTILITY"] || []
+        list: rosterSlots["UTILITY"] || [],
       });
     }
 
@@ -306,7 +307,7 @@ export default function DraftSummaryModal({
           <div
             key={`${team.teamId}-empty-${i}`}
             className={`${styles.pickCell} ${styles.pickEmpty}`}
-          />
+          />,
         );
         continue;
       }
@@ -335,7 +336,7 @@ export default function DraftSummaryModal({
             <span className={styles.pickNum}>#{dp.pickNumber}</span>
           </div>
           <div className={styles.pickName}>{p?.fullName || dp.playerId}</div>
-        </div>
+        </div>,
       );
     }
 
@@ -348,16 +349,21 @@ export default function DraftSummaryModal({
   };
 
   return (
-    <div className={styles.backdrop}>
-      <div className={styles.modal}>
-        <div className={styles.modalHeader}>
+    <div
+      className={`${modalStyles.backdrop} ${styles.backdrop}`}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="draft-summary-title"
+    >
+      <div className={`${modalStyles.dialog} ${styles.modal}`}>
+        <div className={`${modalStyles.header} ${styles.modalHeader}`}>
           <div className={styles.branding}>
             <span className={styles.brandMark}>FHFH</span>
             <span className={styles.brandSub}>
               fhfhockey.com/draft-dashboard
             </span>
           </div>
-          <div className={styles.headerActions}>
+          <div className={`${modalStyles.actions} ${styles.headerActions}`}>
             <div className={styles.viewToggle}>
               <button
                 className={`${styles.toggleBtn} ${viewMode === "recap" ? styles.toggleActive : ""}`}
@@ -383,14 +389,19 @@ export default function DraftSummaryModal({
           </div>
         </div>
 
-        <div className={styles.content} ref={containerRef}>
+        <div
+          className={`${modalStyles.body} ${styles.content}`}
+          ref={containerRef}
+        >
           <div className={styles.summaryTop}>
-            <h2 className={styles.title}>Draft Summary</h2>
+            <h2 id="draft-summary-title" className={styles.title}>
+              Draft Summary
+            </h2>
             <div className={styles.meta}>
               {draftSettings.teamCount} Teams •{" "}
               {Object.values(draftSettings.rosterConfig).reduce(
                 (a, b) => a + b,
-                0
+                0,
               )}{" "}
               Rounds • {leagueLabel}
             </div>

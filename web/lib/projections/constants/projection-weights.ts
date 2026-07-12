@@ -43,7 +43,7 @@ export const TEAM_5V5_MAX_LEAGUE_SAVE_PCT_ADJ = 0.01;
 export const TEAM_5V5_MAX_CONTEXT_PCT_ADJ = 0.035;
 export const TEAM_NST_XGA_PER60_BASELINE = 2.5;
 export const TEAM_NST_MAX_CONTEXT_PCT_ADJ = 0.05;
-export const MAX_SUPPORTED_HORIZON_GAMES = 5;
+export const MAX_SUPPORTED_HORIZON_GAMES = 10;
 export const HORIZON_DECAY_PER_GAME = 0.015;
 export const HORIZON_B2B_PENALTY = 0.08;
 export const HORIZON_ZERO_REST_PENALTY = 0.12;
@@ -120,6 +120,7 @@ export const TREND_BAND_METRIC_PRIORITY = [
   "fantasy_score",
   "ixg_per_60",
   "shots_per_60",
-  "points_per_60_5v5"
+  "points_per_60_5v5",
 ] as const;
-export const TREND_BAND_WINDOW_PRIORITY = FORGE_TREND_ADJUSTMENT_WINDOW_PRIORITY;
+export const TREND_BAND_WINDOW_PRIORITY =
+  FORGE_TREND_ADJUSTMENT_WINDOW_PRIORITY;

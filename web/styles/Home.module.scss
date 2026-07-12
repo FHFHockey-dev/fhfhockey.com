@@ -1,1617 +1,1284 @@
-// styles/Home.module.scss
 @use "styles/vars" as v;
+@use "styles/_panel" as panel;
 @use "sass:color";
-@use "sass:math";
 
-// breakpoints
-$breakpoint-small: 320px;
-$breakpoint-medium: 480px;
-$breakpoint-large: 768px;
-$mobile-fixed-width: 40px;
-$mobile-column-short: 30px;
-
-// mixin
-@mixin respond-to($breakpoint) {
-  @if $breakpoint == small {
-    @media (max-width: $breakpoint-small) {
-      @content;
-    }
-  } @else if $breakpoint == medium {
-    @media (max-width: $breakpoint-medium) {
-      @content;
-    }
-  } @else if $breakpoint == large {
-    @media (max-width: $breakpoint-large) {
-      @content;
-    }
-  }
+.homeContainer {
+  padding-bottom: 0 !important;
 }
 
-// --- Main Page Layout ---
 .homepage {
-  width: min(100%, 1780px);
-  max-width: 1780px;
-  margin: clamp(v.$space-lg, 2vw, v.$space-xxl) auto;
-  padding-inline: clamp(v.$space-sm, 2vw, v.$space-lg);
+  width: min(100%, 1680px);
+  margin: v.$space-sm auto v.$space-md;
+  padding-inline: v.$space-sm;
   box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: clamp(v.$space-lg, 2.5vw, v.$space-xxl);
+  display: grid;
+  gap: v.$space-sm;
 }
 
-@media (max-width: #{v.$breakpoint-desktop}) {
-  .homepage {
-    width: 100%;
-    max-width: 100%;
-    margin: v.$space-lg auto;
-    padding-inline: clamp(v.$space-sm, 2vw, v.$space-lg);
+.socialMedia {
+  @media only screen and (min-width: 800px) {
+    display: none;
   }
 }
 
-// --- Games Section ---
 .gameCardsContainer {
-  @include v.element-wrapper; // Apply consistent component frame
-}
-
-.moduleStatusPanel {
-  padding: v.$space-md v.$space-lg;
-  border-bottom: 1px solid rgba(v.$border-color-primary, 0.35);
-  text-align: left;
-}
-
-.latestNewsContainer {
-  @include v.element-wrapper;
   display: grid;
-  gap: v.$space-lg;
-  padding: v.$space-lg;
-  background:
-    radial-gradient(circle at top left, rgba(v.$secondary-color, 0.12), transparent 34%),
-    linear-gradient(145deg, color.adjust(v.$background-dark, $lightness: -3%), v.$background-medium);
-}
-
-.latestNewsHeader {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: v.$space-xs v.$space-md;
-  align-items: end;
-
-  p {
-    grid-column: 1 / -1;
-    margin: 0;
-    color: v.$secondary-color;
-    font-family: v.$font-family-primary;
-    font-size: 0.72rem;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-  }
-
-  h2 {
-    margin: 0;
-    color: v.$text-color-primary;
-    font-family: v.$font-family-primary;
-    font-size: clamp(1.2rem, 2vw, 1.7rem);
-    font-weight: 500;
-    letter-spacing: 0.12em;
-    line-height: 1.15;
-    text-transform: uppercase;
-
-    span {
-      color: v.$secondary-color;
-    }
-  }
-
-  a {
-    color: v.$secondary-color;
-    font-family: v.$font-family-primary;
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    text-decoration: none;
-
-    &:hover {
-      color: v.$text-color-primary;
-    }
-  }
-}
-
-.latestNewsGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: v.$space-md;
-}
-
-.slateHero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr);
-  gap: v.$space-xl;
-  padding: v.$space-xl;
-  background:
-    radial-gradient(circle at top left, color.adjust(v.$secondary-color, $lightness: -18%) 0%, transparent 36%),
-    linear-gradient(145deg, color.adjust(v.$background-dark, $lightness: -4%) 0%, v.$background-medium 100%);
-  border-bottom: 8px solid color.adjust(v.$border-color-primary, $lightness: 8%);
-}
-
-@media (max-width: #{v.$breakpoint-desktop}) {
-  .slateHero {
-    grid-template-columns: 1fr;
-    gap: v.$space-lg;
-  }
-
-  .slateHeroContent {
-    grid-template-columns: 1fr;
-    gap: v.$space-sm;
-  }
-}
-
-.slateHeroIntro {
-  display: flex;
-  flex-direction: column;
   gap: v.$space-sm;
   min-width: 0;
-  justify-content: center;
 }
 
-.slateHeroContent {
-  display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
-  gap: v.$space-lg;
-  align-items: start;
-}
-
-.slateDescriptionWrap {
+.gamesStrip,
+.slateHero,
+.newsPanel,
+.leagueChartPanel,
+.standingsContainer,
+.injuriesContainer,
+.quickTools {
+  @include panel.panel-shell(
+    $radius: v.$radius-panel,
+    $padding: 0,
+    $variant: standard
+  );
   min-width: 0;
 }
 
-.slateEyebrow {
-  margin: 0;
-  font-family: v.$font-family-primary;
-  text-transform: uppercase;
-  letter-spacing: 0.24em;
-  font-size: 0.72rem;
-  color: v.$secondary-color;
-}
-
-.slateHeadline {
-  margin: 0;
-  font-family: v.$font-family-primary;
-  font-size: clamp(2rem, 4vw, 3.2rem);
-  line-height: 0.98;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: v.$text-color-primary;
-
-}
-
-.slateDescription {
-  margin: 0;
-  max-width: 58ch;
-  font-size: 1rem;
-  line-height: 1.6;
-  color: v.$text-color-secondary;
-  text-align: right;
-}
-
-.slateSummaryRail {
+.gamesStrip {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: v.$space-sm;
-  align-self: start;
-}
-
-.slateSummaryCard {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-xs;
-  min-width: 0;
-  padding: v.$space-md v.$space-md v.$space-md calc(v.$space-md + 12px);
-  border: 1px solid color.adjust(v.$border-color-primary, $lightness: 6%);
-  border-radius: v.$radius-card;
-  background: color.adjust(v.$background-dark, $lightness: -1%);
-  box-shadow:
-    0 10px 24px rgba(0, 0, 0, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
-
-  &::before {
-    content: "";
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 6px;
-    border-radius: v.$radius-card 0 0 v.$radius-card;
-    background: v.$primary-color;
-  }
-}
-
-.slateSummaryLabel {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.22em;
-  color: v.$color-brand-primary;
-  font-weight: 900;
-}
-
-.slateSummaryValue {
-  font-family: v.$font-family-primary;
-  font-size: clamp(1.05rem, 2.4vw, 1.45rem);
-  line-height: 1.1;
-  text-transform: uppercase;
-  color: v.$text-color-primary;
-}
-
-.slateActionRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: v.$space-sm;
-  grid-column: 1 / -1;
-  display: none;
-}
-
-.slateActionLink {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 42px;
-  padding: 0 v.$space-lg;
-  border: 1px solid color.adjust(v.$border-color-primary, $lightness: 10%);
-  border-radius: 999px;
-  background: color.adjust(v.$background-medium, $lightness: -2%);
-  color: v.$text-color-primary;
-  font-family: v.$font-family-primary;
-  font-size: 0.88rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  text-decoration: none;
-  transition:
-    transform v.$transition-duration v.$transition-easing,
-    background-color v.$transition-duration v.$transition-easing,
-    border-color v.$transition-duration v.$transition-easing;
-
-  &:hover {
-    transform: translateY(-1px);
-    background: color.adjust(v.$secondary-color, $lightness: -12%);
-    border-color: v.$secondary-color;
-  }
-
-  &:focus-visible {
-    outline: 2px solid v.$focus-color;
-    outline-offset: 2px;
-  }
+  background: color.adjust(v.$background-dark, $lightness: -3%);
 }
 
 .gamesHeader {
-  display: flex;
-  align-items: stretch;
-  justify-content: space-between;
-  border-bottom: 8px solid v.$border-color-primary;
-  background-color: color.adjust(v.$background-dark, $lightness: -2%);
-  width: 100%; // Ensure it spans the wrapper
-  height: 100px;
-  position: relative;
+  display: grid;
+  grid-template-columns: auto auto minmax(128px, auto) auto minmax(300px, 1fr);
+  align-items: center;
+  gap: v.$space-xs;
+  min-height: 46px;
+  padding: v.$space-xs v.$space-sm;
+  border-bottom: 1px solid v.$border-soft;
+  background: v.$background-dark;
 
-  // Mobile adjustments if needed
-  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    padding: 0;
-    flex-direction: row;
-    justify-content: space-between; // Center on mobile
+  > button {
+    @include v.reset-button;
+    display: inline-flex;
     align-items: center;
-    height: 52px;
+    justify-content: center;
+    width: v.$control-height-md;
+    height: v.$control-height-md;
+    border: v.$border-subtle;
+    border-radius: v.$radius-control;
+    background: rgba(v.$color-white, 0.025);
+    color: v.$text-primary;
+    cursor: pointer;
+    transition:
+      border-color v.$transition-duration v.$transition-easing,
+      background-color v.$transition-duration v.$transition-easing,
+      color v.$transition-duration v.$transition-easing;
+
+    &[aria-label="Previous Day"]::before {
+      content: "‹";
+    }
+
+    &[aria-label="Next Day"]::before {
+      content: "›";
+    }
+
+    &:hover {
+      border-color: v.$primary-color;
+      background: rgba(v.$primary-color, 0.12);
+      color: v.$color-white;
+    }
+
+    &:focus-visible {
+      outline: 2px solid v.$primary-color;
+      outline-offset: 2px;
+    }
+  }
+}
+
+.gamesHeaderTitle h2,
+.compactPanelHeader h2,
+.standingsHeader h2,
+.injuriesHeader h2 {
+  margin: 0;
+  color: v.$color-white;
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: clamp(0.9rem, 1.3vw, 1.08rem);
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.1em;
+  line-height: 1.1;
+  text-transform: uppercase;
+
+  span {
+    color: v.$primary-color;
   }
 }
 
 .headerAndDate {
-  flex-grow: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  padding: 0 v.$space-lg;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    135deg,
-    v.$primary-color 0%,
-    v.$primary-color 7%,
-
-    v.$background-light 7%,
-    v.$background-light 10%,
-
-    v.$primary-color 10%,
-    v.$primary-color 13%,
-
-    v.$background-light 13%,
-    v.$background-light 16%,
-
-    v.$text-color-primary 16%,
-    v.$text-color-primary 19%,
-
-    v.$background-light 19%,
-    v.$background-light 20%,
-
-    color.adjust(v.$secondary-color, $lightness: -18%) 20%,
-    color.adjust(v.$background-light, $lightness: -4%) 35%,
-
-    v.$background-light 80%,
-    v.$background-light 81%,
-
-    v.$text-color-primary 81%,
-    v.$text-color-primary 84%,
-
-    v.$background-light 84%,
-    v.$background-light 87%,
-
-    v.$primary-color 87%,
-    v.$primary-color 90%,
-
-    v.$background-light 90%,
-    v.$background-light 93%,
-
-    v.$primary-color 93%,
-    v.$primary-color 100%
-  );
-
-  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    padding: 0 v.$space-md;
-    border-left: 2px solid v.$border-color;
-    border-right: 2px solid v.$border-color;
-  }
-}
-
-.gamesHeader h1 {
-  margin: 0;
-  font-family: v.$font-family-primary;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  font-weight: 100; // Lighter weight
-  font-size: clamp(1.8rem, 4vw, 2.2rem); // Responsive title size
-  line-height: 1.2; // Adjust line height
-  color: v.$text-color-primary;
-  padding: v.$space-md 0 v.$space-sm 0; // Space around title
-
-  span {
-    color: v.$secondary-color; // Use variable
-    font-weight: 100; // Match title weight
-  }
-
-  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    padding: v.$space-xxs 0 0 0;
-    font-size: clamp(1.3rem, 4vw, 1.8rem); // Slightly smaller on mobile
-  }
-}
-
-.gamesHeader h1.smallerHeader {
-  font-size: clamp(1rem, 3.2vw, 1.4rem);
+  min-height: v.$control-height-md;
+  padding: 0 v.$space-sm;
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  background: color.adjust(v.$background-dark, $lightness: -2%);
 }
 
 .dateDisplay {
-  color: v.$text-color-secondary; // Lighter color for date
-  font-family: v.$font-family-primary;
-  font-size: v.$font-size-small * 0.9; // Smaller date font
-  text-align: center;
-  margin-top: v.$space-xs; // Space below title
-  margin-bottom: 0;
-  padding: 0 0 v.$space-lg 0; // Consistent padding
-
-  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    font-size: v.$font-size-small * 0.8; // Adjust for mobile
-    margin-top: v.$space-xs;
-    padding: 0 0 v.$space-xs 0; // Adjust padding for mobile
-  }
+  color: v.$text-primary;
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-// --- Specific Button Styles for Games Header ---
-.gamesHeader button {
-  @include v.button-style;
-  flex-shrink: 0;
-  min-width: 50px;
-  width: 60px;
-  height: auto;
-  padding: 0;
-  border: none;
-  border-radius: 0;
-  font-size: 1.5rem;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: v.$primary-color; // Arrow color
-  background-color: color.adjust(v.$background-dark, $lightness: -5%);
-  transition: background-color v.$transition-duration v.$transition-easing;
+.gamesSummary {
+  justify-self: end;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(78px, 1fr));
+  gap: v.$space-xs;
+  width: min(100%, 292px);
 
-  &:hover {
-    background-color: v.$secondary-color; // Change background on hover
-    color: v.$text-color-primary;
-    border: none; // Ensure no border appears on hover
-    filter: none; // Remove inherited filter if any
+  > span {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: v.$space-sm;
+    min-height: 34px;
+    padding: 2px v.$space-xs;
+    border: v.$border-subtle;
+    border-radius: v.$radius-control;
+    color: v.$text-secondary;
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+    line-height: 1.05;
+    text-transform: uppercase;
   }
 
-  &:focus-visible {
-    outline: 2px solid v.$text-color-primary;
-    outline-offset: -2px; // Adjust focus outline inward
-    z-index: 1; // Ensure focus outline is visible
-  }
-
-  // Add arrow content using pseudo-elements
-  // Clear existing button text in TSX first!
-  &[aria-label="Previous Day"]::before {
-    content: "<";
-  }
-  &[aria-label="Next Day"]::before {
-    content: ">";
-  }
-
-  // Adjustments for first/last child if needed (e.g., rounding corners with container)
-  &:first-child {
-    border-top-left-radius: v.$border-radius; // Example if needed
-  }
-  &:last-child {
-    border-top-right-radius: v.$border-radius; // Example if needed
-  }
-
-  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    min-width: 45px;
-    max-width: 45px;
-    padding: v.$space-xs v.$space-sm; // Smaller button padding
-    font-size: 1rem; // Smaller icon size
-
-    &:first-child {
-      border-top-left-radius: v.$border-radius-sm; // Example if needed
-    }
-
-    &:last-child {
-      border-top-right-radius: v.$border-radius-sm; // Example if needed
-    }
+  strong {
+    grid-row: 1 / 3;
+    color: v.$color-white;
+    font-family: v.$font-family-numbers;
+    font-size: 1rem;
+    font-weight: v.$font-weight-semibold;
   }
 }
 
 .gamesContainer {
-  display: grid;
-  gap: v.$space-lg;
-  padding: v.$space-lg;
-  border-left: v.$background-light;
-  border-right: v.$background-light;
-  border-bottom: v.$background-light;
-  border-top: none;
-  align-items: stretch;
-    background:
-    radial-gradient(circle at top left, color.adjust(v.$secondary-color, $lightness: -18%) 0%, transparent 36%),
-    linear-gradient(145deg, color.adjust(v.$background-dark, $lightness: -4%) 0%, v.$background-medium 100%);
+  min-width: 0;
+  padding: v.$space-xs;
+}
+
+.moduleStatusPanel {
+  padding: v.$space-sm;
+  border: 1px dashed v.$border-soft;
+  border-radius: v.$radius-control;
+  background: v.$background-dark;
 }
 
 .gamesGrid {
-  width: min(100%, calc((4 * 360px) + (3 * #{v.$space-xl})));
-  margin: 0 auto;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: v.$space-lg;
-}
-
-.gamesGrid > .gameLink {
-  flex: 0 1 360px;
-  max-width: 360px;
+  gap: v.$space-sm;
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  padding: v.$space-xxs;
+  scroll-snap-type: x proximity;
+  @include v.custom-scrollbar(v.$primary-color, v.$background-dark, 4px);
 }
 
 .gameLink {
-  text-decoration: none;
+  flex: 1 0 150px;
+  min-width: 150px;
+  max-width: 210px;
   color: inherit;
-  display: block; // Ensure link takes up block space for layout
-  min-width: 0;
-  transition: transform 0.2s v.$transition-easing; // Add subtle hover effect
+  text-decoration: none;
+  scroll-snap-align: start;
 
-  &:hover {
-    transform: scale(103%); // Lift card slightly on hover
-    outline: 3px solid v.$color-blue-300;
-    outline-offset: 3px;
-    border-radius: v.$border-radius; // Match card radius
+  &:hover .combinedGameCard {
+    border-color: rgba(v.$primary-color, 0.72);
+    transform: translateY(-1px);
   }
+
   &:focus-visible {
-    outline: 2px solid v.$focus-color;
-    outline-offset: 3px;
-    border-radius: v.$border-radius-sm; // Match card radius
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+    border-radius: v.$radius-card;
   }
-
-  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    margin-bottom: v.$space-xs;
-
-    &:hover {
-      transform: translateY(0); // Remove hover effect on mobile
-      box-shadow: none; // Remove shadow on hover
-    }
-  }
-}
-
-.noGamesMessage {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: v.$space-xl;
-  font-family: v.$font-family-primary;
-  font-size: 1rem;
-  color: v.$text-color-secondary;
 }
 
 .combinedGameCard {
-  display: flex;
-  flex-direction: row;
-  background-color: v.$background-medium;
-  align-items: stretch;
-  justify-content: space-between;
-  border: 3px solid color.adjust(v.$color-white, $lightness: -25% );
-  border-radius: v.$border-radius;
-  overflow: hidden;
-  color: v.$text-color-primary;
-  // min-height: 96px; // Reduce height to tighten space between label/logo/record
   position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: v.$space-xs;
+  min-height: 96px;
+  padding: v.$space-md v.$space-xs v.$space-xs;
+  overflow: hidden;
+  border: 1px solid rgba(v.$border-secondary, 0.78);
+  border-radius: v.$radius-card;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--away-primary-color) 8%, transparent),
+      transparent 42%
+    ),
+    linear-gradient(
+      270deg,
+      color-mix(in srgb, var(--home-primary-color) 8%, transparent),
+      transparent 42%
+    ),
+    v.$background-medium;
+  transition:
+    transform v.$transition-duration v.$transition-easing,
+    border-color v.$transition-duration v.$transition-easing;
 
   &::before {
     content: "";
     position: absolute;
-    inset: 0 auto 0 0;
-    width: 8px;
-    background: var(--home-primary-light-color);
-    border-right: 4px solid var(--home-secondary-color);
-    z-index: 2;
-    border-top-left-radius: v.$border-radius-md;
-    border-bottom-left-radius: v.$border-radius-md;
+    inset: 0 50% auto 0;
+    height: 2px;
+    background: var(--away-primary-light-color);
   }
 
   &::after {
     content: "";
     position: absolute;
-    inset: 0 0 0 auto;
-    width: 8px;
-    background: var(--away-primary-light-color);
-    border-left: 4px solid var(--away-secondary-color);
-    z-index: 2;
-    border-top-right-radius: v.$border-radius-md;
-    border-bottom-right-radius: v.$border-radius-md;
+    inset: 0 0 auto 50%;
+    height: 2px;
+    background: var(--home-primary-light-color);
   }
 }
 
-.gameColumnLabels {
-  display: none;
+.broadcastLabel {
+  position: absolute;
+  top: v.$space-xs;
+  right: v.$space-sm;
+  left: v.$space-sm;
+  overflow: hidden;
+  color: v.$text-secondary;
+  font-size: 0.58rem;
+  line-height: 1;
+  text-align: right;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.teamRecordMobile {
-  display: none;
-}
-
-// Team Logo Sections (Home/Away)
 .homeTeamLogo,
 .awayTeamLogo {
-  flex: 0 0 86px; // width of logo columns
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between; // top label, middle logo, bottom record
-  align-items: center;
-  padding: v.$space-sm v.$space-xs; // maintain vertical padding for absolute elements
-  position: relative;
-  gap: v.$space-xxs;
-
-  &::before {
-    content: "";
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    top: 0;
-    left: 0;
-  }
-}
-
-.homeTeamLogo {
-    flex: 0 0 calc(86px + 11px); // Offset the 11px side border
-    padding-left: calc(v.$space-xs + 11px);
-    border-top-left-radius: v.$border-radius;
-    border-bottom-left-radius: v.$border-radius;
-}
-
-.awayTeamLogo {
-    flex: 0 0 calc(86px + 11px); // Offset the 11px side border
-    padding-right: calc(v.$space-xs + 11px);
-    border-top-right-radius: v.$border-radius;
-    border-bottom-right-radius: v.$border-radius;
-}
-
-.homeTeamLogo::before {
-  background-color: color-mix(
-    in srgb,
-    var(--home-primary-light-color) 20%,
-    transparent
-  );
-  box-shadow:
-    0 0 6px color-mix(in srgb, var(--home-primary-light-color) 40%, transparent),
-    0 0 10px rgba(0, 0, 0, 0.35);
-  border-bottom-left-radius: v.$border-radius;
-  border-top-left-radius: v.$border-radius;
-}
-
-.awayTeamLogo::before {
-  background-color: color-mix(
-    in srgb,
-    var(--away-primary-light-color) 20%,
-    transparent
-  );
-  box-shadow:
-    0 0 6px color-mix(in srgb, var(--away-primary-light-color) 40%, transparent),
-    0 0 10px rgba(0, 0, 0, 0.35);
-  border-bottom-right-radius: v.$border-radius * 0.35;
-  border-top-right-radius: v.$border-radius * 0.35;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: 0;
 }
 
 .leftImage,
 .rightImage {
-  max-width: 56px;
-  max-height: 56px;
-  height: auto;
-  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
-  position: relative;
-  z-index: 1;
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(v.$color-black, 0.42));
 }
 
-// Team record text under logos
+.teamAbbreviation {
+  color: v.$color-white;
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+  font-size: v.$font-size-sm;
+  letter-spacing: 0.06em;
+}
+
 .teamRecord {
-  position: relative;
-  z-index: 1;
-  margin-top: 0; // remove extra spacing above record
-  font-family: v.$font-family-primary;
-  font-size: 0.75rem;
-  color: v.$text-color-primary;
-  text-align: center;
-  line-height: 1;
-}
-
-// HOME/AWAY label above the logo
-.homeAwayLabel {
-  position: relative;
-  z-index: 1;
-  font-family: v.$font-family-primary;
-  font-size: 0.7rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 4px;
-}
-
-// Team-colored labels
-.homeTeamLogo .homeAwayLabel {
-  color: var(--home-primary-light-color);
-}
-.awayTeamLogo .homeAwayLabel {
-  color: var(--away-primary-light-color);
-}
-
-// Middle Game Info Section
-.gameTimeSection {
-  flex-grow: 1;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  padding: 0 v.$space-sm;
-  // height: 100%; // Implicit with align-items: stretch
-  background-image: linear-gradient(
-      135deg,
-      var(--home-primary-light-color) 0%,
-      var(--home-primary-light-color) 16%,
-
-      v.$text-color-primary 16%,
-      // Use variable for white
-      v.$text-color-primary 19%,
-      // Use variable for white
-      var(--home-jersey-color) 19%,
-      var(--home-jersey-color) 20%,
-      v.$background-medium 20%,
-      // Use variable for middle background
-      v.$background-medium 80%,
-      // Use variable for middle background
-      var(--away-jersey-color) 80%,
-      var(--away-jersey-color) 81%,
-      v.$text-color-primary 81%,
-      // Use variable for white
-      v.$text-color-primary 84%,
-
-      // Use variable for white
-      var(--away-primary-light-color) 84%,
-      var(--away-primary-light-color) 100%
-    );
-  background-size: 100% 100%;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.homeScore,
-.awayScore {
-  flex: 1; // Allow scores to take space
-  text-align: center;
-  color: v.$text-color-primary;
-  font-size: 1.8rem; // Larger score font
-  font-family: v.$font-family-primary;
-  font-weight: 600; // Bold score
-  line-height: 1;
+  color: v.$text-secondary;
+  font-family: v.$font-family-numbers;
+  font-size: 0.58rem;
+  white-space: nowrap;
 }
 
 .gameTimeInfo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 0 v.$space-xs; // Small padding around time/status
-  flex-shrink: 0; // Prevent shrinking
-}
-
-.gameState,
-.gameTimeText {
-  font-family: v.$font-family-primary;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-style: normal;
-  white-space: nowrap;
-  line-height: 1.3;
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  min-width: 32px;
 }
 
 .gameState {
-  font-weight: 600;
-  color: v.$secondary-color; // Use accent color for status
-  font-size: 0.7rem;
+  color: v.$primary-color;
+  font-size: 0.55rem;
+  font-weight: v.$font-weight-bold;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.gameTimeText {
-  font-weight: 400;
-  color: v.$text-color-secondary; // Lighter color for time
-  font-size: 0.8rem;
+.gameTimeText,
+.matchupDivider {
+  color: v.$text-secondary;
+  font-family: v.$font-family-numbers;
+  font-size: 0.55rem;
+  white-space: nowrap;
 }
 
-// --- Standings & Injuries Section ---
+.matchupDivider {
+  color: v.$text-primary;
+  text-transform: uppercase;
+}
+
+.gameScore {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 2px;
+  background: rgba(v.$color-black, 0.28);
+  color: v.$text-primary;
+  font-family: v.$font-family-numbers;
+  font-size: 0.6rem;
+  text-align: center;
+}
+
+.slateHero {
+  position: relative;
+  display: grid;
+  grid-template-columns: 255px minmax(0, 1fr);
+  min-height: 164px;
+  overflow: hidden;
+  border-color: rgba(v.$primary-color, 0.28);
+  background:
+    radial-gradient(
+      circle at 8% 26%,
+      rgba(v.$primary-color, 0.12),
+      transparent 30%
+    ),
+    color.adjust(v.$background-dark, $lightness: -3%);
+}
+
+.slateHeroIntro {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: v.$space-md v.$space-lg calc(v.$space-xl + v.$space-sm);
+  border-right: 1px solid v.$border-soft;
+}
+
+.slateEyebrow {
+  margin: 0 0 v.$space-xs;
+  color: v.$primary-color;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.slateHeadline {
+  margin: 0;
+  color: v.$color-white;
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: clamp(1.9rem, 3.4vw, 2.65rem);
+  font-style: italic;
+  font-weight: v.$font-weight-bold;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+  line-height: 0.98;
+  text-transform: uppercase;
+  text-shadow: 0 0 18px rgba(v.$primary-color, 0.28);
+}
+
+.slateDescription {
+  margin: v.$space-sm 0 0;
+  color: v.$text-primary;
+  font-size: clamp(0.88rem, 1.1vw, 1rem);
+  line-height: 1.45;
+}
+
+.slateAccent {
+  position: absolute;
+  right: v.$space-md;
+  bottom: 0;
+  left: v.$space-md;
+  display: grid;
+  grid-template-columns: repeat(3, 42px) minmax(70px, 1fr);
+  align-items: end;
+  gap: v.$space-xs;
+  height: 42px;
+
+  i {
+    display: block;
+    height: 24px;
+    background: v.$primary-color;
+    clip-path: polygon(28% 0, 100% 0, 72% 100%, 0 100%);
+
+    &:nth-child(2) {
+      background: v.$secondary-color;
+    }
+
+    &:nth-child(3) {
+      background: v.$color-white;
+    }
+
+    &:last-child {
+      height: 38px;
+      background: linear-gradient(
+        135deg,
+        v.$secondary-color,
+        v.$color-blue-600
+      );
+    }
+  }
+}
+
+.slateDashboard {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+}
+
+.slateSummaryRail {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-bottom: 1px solid v.$border-soft;
+}
+
+.slateSummaryCard {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto auto;
+  align-content: center;
+  column-gap: v.$space-sm;
+  min-width: 0;
+  min-height: 70px;
+  padding: v.$space-sm;
+  border-right: 1px solid v.$border-soft;
+
+  &:last-child {
+    border-right: 0;
+  }
+
+  small {
+    grid-column: 2;
+    overflow: hidden;
+    color: v.$text-secondary;
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+}
+
+.metricIcon {
+  grid-row: 1 / 4;
+  align-self: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid v.$primary-color;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, v.$primary-color 0 2px, transparent 3px),
+    rgba(v.$primary-color, 0.08);
+  box-shadow: inset 0 0 0 3px rgba(v.$primary-color, 0.08);
+}
+
+.slateSummaryLabel {
+  color: v.$text-secondary;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.slateSummaryValue {
+  overflow: hidden;
+  color: v.$color-white;
+  font-family: v.$font-family-numbers;
+  font-size: clamp(0.95rem, 1.6vw, 1.3rem);
+  font-weight: v.$font-weight-medium;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edgePanel {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-width: 0;
+  padding: v.$space-sm;
+  overflow: hidden;
+  background-image:
+    linear-gradient(rgba(v.$primary-color, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(v.$primary-color, 0.045) 1px, transparent 1px);
+  background-size: 28px 22px;
+
+  &::before {
+    content: "";
+    position: absolute;
+    right: 12%;
+    bottom: 26%;
+    left: 8%;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      v.$primary-color 24%,
+      v.$secondary-color 72%,
+      transparent
+    );
+    clip-path: polygon(
+      0 60%,
+      8% 52%,
+      14% 70%,
+      23% 28%,
+      32% 62%,
+      44% 42%,
+      55% 58%,
+      66% 18%,
+      77% 72%,
+      88% 38%,
+      100% 52%,
+      100% 100%,
+      0 100%
+    );
+    opacity: 0.64;
+  }
+}
+
+.edgeCopy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding-inline: v.$space-sm;
+  text-align: center;
+
+  strong {
+    color: v.$color-white;
+    font-family: v.$font-family-primary, sans-serif;
+    font-size: clamp(1rem, 1.6vw, 1.35rem);
+    font-weight: v.$font-weight-bold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+
+    span {
+      color: v.$primary-color;
+    }
+  }
+
+  p {
+    max-width: 70ch;
+    margin: 0;
+    color: v.$text-secondary;
+    font-size: v.$font-size-xs;
+    line-height: 1.4;
+  }
+}
+
+.dataUpdated {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: v.$space-xs;
+  justify-items: start;
+  min-width: 112px;
+  color: v.$text-secondary;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+
+  small {
+    display: inline-flex;
+    align-items: center;
+    gap: v.$space-xs;
+    color: v.$text-primary;
+    font-family: v.$font-family-numbers;
+    font-size: 0.62rem;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: v.$success-color;
+    box-shadow: 0 0 8px rgba(v.$success-color, 0.5);
+  }
+}
+
+.slateActionRow {
+  position: absolute;
+  right: v.$space-md;
+  bottom: v.$space-xs;
+  left: calc(255px + v.$space-sm);
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  gap: v.$space-sm;
+  pointer-events: none;
+}
+
+.slateActionLink {
+  color: v.$text-secondary;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+  pointer-events: auto;
+
+  &:hover,
+  &:focus-visible {
+    color: v.$primary-color;
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
+}
+
+.insightsGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 1.16fr) minmax(0, 1fr);
+  gap: v.$space-sm;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.newsPanel,
+.leagueChartPanel {
+  background: v.$background-medium;
+}
+
+.newsPanel {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.compactPanelHeader,
+.standingsHeader,
+.injuriesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-sm;
+  min-height: 42px;
+  padding: v.$space-xs v.$space-sm;
+  border-bottom: 1px solid v.$border-soft;
+  background: v.$background-dark;
+}
+
+.compactPanelHeader a,
+.panelViewAll {
+  color: v.$primary-color;
+  font-size: 0.62rem;
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  &:hover,
+  &:focus-visible {
+    color: v.$color-white;
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
+}
+
+.compactNewsList {
+  display: grid;
+  align-content: start;
+  gap: v.$space-xs;
+  min-width: 0;
+  padding: v.$space-xs;
+
+  > article {
+    min-width: 0;
+  }
+}
+
+.leagueChartPanel {
+  overflow: hidden;
+}
+
+.inlineEmptyState {
+  margin: v.$space-md;
+  padding: v.$space-md;
+  border: 1px dashed v.$border-soft;
+  border-radius: v.$radius-card;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  line-height: 1.45;
+}
+
 .standingsInjuriesContainer {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: clamp(v.$space-lg, 2vw, v.$space-xxl);
-}
-
-@media (min-width: #{v.$breakpoint-tablet}) {
-  .standingsInjuriesContainer {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-    align-items: start;
-  }
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: v.$space-sm;
+  align-items: stretch;
+  min-width: 0;
 }
 
 .standingsContainer,
 .injuriesContainer {
-  @include v.component-wrapper; // Consistent wrapper
-  display: flex; // Use flex internally
-  flex-direction: column; // Stack header and table
-  min-width: 0; // Prevent flex overflow issues
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background: v.$background-medium;
 }
 
-.standingsHeader,
-.injuriesHeader {
-  padding: v.$space-sm v.$space-lg;
-  border-bottom: 1px solid rgba(v.$secondary-color, 0.55);
-  background:
-    linear-gradient(
-      180deg,
-      color.adjust(v.$background-dark, $lightness: -1%) 0%,
-      rgba(v.$background-dark, 0.86) 100%
-    );
-  flex-shrink: 0; // Prevent header from shrinking
+.panelMeta {
+  color: v.$text-secondary;
+  font-family: v.$font-family-numbers;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
 
-  h1,
-  h2 {
-    margin: 0;
-    font-family: v.$font-family-primary;
+.updateTabs {
+  display: flex;
+  gap: v.$space-xs;
+  padding: 2px v.$space-sm;
+  border-bottom: 1px solid v.$border-soft;
+  background: color.adjust(v.$background-dark, $lightness: -2%);
+
+  button {
+    min-height: 26px;
+    padding: 0 v.$space-md;
+    border: 2px solid transparent;
+    border-radius: v.$radius-control;
+    background: transparent;
+    color: v.$text-secondary;
+    cursor: pointer;
+    font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+    font-size: v.$font-size-xxs;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
-    font-weight: 400;
-    font-size: clamp(
-      1.05rem,
-      2vw,
-      1.45rem
-    );
-    line-height: 1.2;
-    color: v.$text-color-primary;
-    text-align: left;
 
-    span {
-      color: v.$secondary-color;
-      font-weight: 400;
+    &:hover {
+      background: rgba(v.$primary-color, 0.1);
+      color: v.$color-white;
+    }
+
+    &:focus-visible {
+      outline: 2px solid v.$primary-color;
+      outline-offset: 2px;
     }
   }
+}
+
+.updateTabs .activeTab {
+  border-color: v.$primary-color;
+  background: v.$primary-color-opaque;
+  color: v.$color-white;
 }
 
 .tableWrapper {
-  // Add a wrapper for scrolling within the component
+  flex: 1;
+  min-width: 0;
   overflow-x: auto;
-  flex-grow: 1; // Allow wrapper to fill remaining space
   -webkit-overflow-scrolling: touch;
-
-  // Hide scrollbar visually
-  &::-webkit-scrollbar {
-    display: none;
-  }
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  @include v.custom-scrollbar(v.$primary-color, v.$background-dark, 5px);
 }
 
-// --- Table Styling (Standings & Injuries) ---
 .standingsTable,
-.injuryTable {
-  @include v.table-base; // Use base table mixin (removes need for direct border/radius)
-  border: none; // Remove border from mixin if wrapper provides it
+.injuryTable,
+.transactionTable {
   width: 100%;
-  margin-top: 0; // Remove margin if padding is handled by wrapper/header
-  background-color: transparent; // Let tbody rows handle background
+  border: 0;
+  border-collapse: collapse;
+  color: v.$text-primary;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-xs;
+  font-variant-numeric: tabular-nums;
 
-  thead {
+  thead th {
     position: sticky;
     top: 0;
-    z-index: 2;
-    background-color: v.$background-dark; // Ensure sticky header has background
-
-    th {
-      background-color: v.$background-dark; // Cell background
-      color: v.$text-color-secondary; // Header text color
-      font-weight: 500;
-      font-family: v.$font-family-primary;
-      font-size: 10px;
-      padding: v.$space-sm v.$space-md; // Consistent padding
-      text-align: center;
-      border-bottom: 1px solid rgba(v.$secondary-color, 0.4);
-      border-right: v.$border-subtle; // Subtle vertical separators
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      white-space: nowrap;
-
-      &:first-child {
-        text-align: left;
-        padding-left: v.$space-lg; // Indent first column header
-        border-left: none; // No left border on first header
-      }
-      &:last-child {
-        border-right: none; // No right border on last header
-      }
-    }
-  }
-
-  tbody {
-    tr {
-      transition: background-color v.$transition-duration v.$transition-easing;
-      border-bottom: v.$border-subtle; // Use subtle separator between rows
-
-      &:last-child {
-        border-bottom: none; // No border below last row
-      }
-
-      &:nth-child(even) {
-        background-color: v.$background-light;
-      }
-      &:nth-child(odd) {
-        background-color: v.$background-dark;
-      }
-
-      &:hover {
-        background-color: rgba(v.$primary-color, 0.1);
-      }
-    }
-
-    td {
-      padding: v.$space-sm v.$space-md; // Consistent padding
-      border-right: v.$border-subtle; // Subtle vertical separators
-      vertical-align: middle;
-      font-size: v.$font-size-small * 0.95;
-
-      &:first-child {
-        border-left: none; // No left border on first cell
-        padding-left: v.$space-lg; // Indent first column data
-      }
-      &:last-child {
-        border-right: none; // No right border on last cell
-      }
-    }
-  }
-}
-
-// --- Standings Table Specifics ---
-.standingsTable {
-  // Use fixed layout for predictable columns
-  table-layout: fixed;
-
-  th:nth-child(1), // Rank
-  td:nth-child(1) {
-    width: 10%;
+    z-index: 1;
+    height: 26px;
+    padding: 2px v.$space-xs;
+    border-bottom: 1px solid rgba(v.$primary-color, 0.36);
+    background: v.$background-dark;
+    color: v.$text-secondary;
+    font-size: 0.58rem;
+    font-weight: v.$font-weight-semibold;
+    letter-spacing: 0.06em;
     text-align: center;
-    padding-left: v.$space-md;
-  }
-
-  th:nth-child(2), // Team
-  td:nth-child(2) {
-    width: 50%;
-    text-align: left;
-    padding-left: v.$space-lg;
-  }
-
-  th:nth-child(3), // Record
-  td:nth-child(3) {
-    width: 20%;
-    text-align: center;
-  }
-
-  th:nth-child(4), // Points
-  td:nth-child(4) {
-    width: 20%;
-    text-align: center;
-    padding-right: v.$space-md;
-  }
-
-  .standingsTeamLogo {
-    height: 25px;
-    width: 25px; // Explicit width
-    vertical-align: middle; // Align logo nicely with text
-    margin-right: v.$space-sm; // Space between logo and name
-    display: inline-block; // Needed for vertical-align
-    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.3));
-  }
-
-  .standingsTeamNameSpan {
-    // Style the name span if needed, but often default is fine
-    vertical-align: middle;
-  }
-}
-
-// --- Injuries Table Specifics ---
-.injuryTable {
-  table-layout: auto;
-
-  th.teamColumn, // Target header as well
-  td.teamColumn {
-    width: 15%; // Increase width slightly
-    text-align: center;
-    // Add specific padding if needed around logo+text
-    padding-left: v.$space-sm;
-    padding-right: v.$space-sm;
-  }
-
-  // Style for the logo within the injury table cell
-  .injuryTeamLogo {
-    height: 25px; // Match standings logo size
-    width: 25px; // Match standings logo size
-    vertical-align: middle;
-    margin-right: v.$space-sm;
-    display: inline-block;
-    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.3));
-  }
-  .injuryTeamNameSpan {
-    // If you wrap the team name
-    vertical-align: middle;
-  }
-
-  .dateColumn {
-    width: 6.5rem;
-    min-width: 6.5rem;
-    max-width: 6.5rem;
+    text-transform: uppercase;
     white-space: nowrap;
   }
-  // Adjust other column widths if needed due to team column change
-  .nameColumn {
-    width: 25%;
+
+  tbody tr {
+    border-bottom: 1px solid v.$border-soft;
+    transition: background-color v.$transition-duration v.$transition-easing;
+
+    &:nth-child(even) {
+      background: rgba(v.$color-white, 0.018);
+    }
+
+    &:hover {
+      background: rgba(v.$primary-color, 0.07);
+    }
   }
-  .statusColumn {
-    width: 15%;
+
+  tbody td,
+  tbody th {
+    height: 24px;
+    padding: 1px v.$space-xs;
     text-align: center;
-  }
-  .descriptionColumn {
-    width: 30%;
-  } // Reduced slightly
-
-  td.dateColumn {
-    font-size: v.$font-size-small * 0.9;
-    color: v.$text-color-secondary;
-  }
-  td.statusColumn {
-    font-weight: 600;
+    white-space: nowrap;
   }
 
-  .injuredRow td.statusColumn {
-    color: #ef6a6a;
+  tbody th {
+    color: v.$text-secondary;
+    font-family: v.$font-family-numbers;
+    font-size: 0.62rem;
+    font-weight: v.$font-weight-medium;
+  }
+}
+
+.standingsTable {
+  min-width: 100%;
+  table-layout: fixed;
+
+  th:first-child,
+  td:first-child {
+    width: 24px;
   }
 
-  .returningRow td.statusColumn {
-    color: #65d58a;
+  th:nth-child(2),
+  td:nth-child(2) {
+    width: 116px;
+    text-align: left;
   }
+
+  td:nth-child(n + 3) {
+    font-family: v.$font-family-numbers;
+    font-size: 0.64rem;
+  }
+}
+
+.teamLink {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-xs;
+  max-width: 100%;
+  color: v.$text-primary;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    color: v.$primary-color;
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
+}
+
+.standingsTeamLogo,
+.injuryTeamLogo {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(v.$color-black, 0.38));
+}
+
+.standingsTeamNameSpan {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.injuryTable,
+.transactionTable {
+  min-width: 100%;
+  table-layout: fixed;
+
+  tbody td,
+  tbody th {
+    height: 24px;
+  }
+
+  a {
+    color: v.$text-primary;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      color: v.$primary-color;
+    }
+  }
+}
+
+.dateColumn {
+  width: 58px;
+  color: v.$text-secondary;
+  font-family: v.$font-family-numbers;
+  font-size: 0.6rem;
+}
+
+.teamColumn {
+  width: 38px;
+}
+
+.nameColumn {
+  width: 25%;
+  max-width: 190px;
+  overflow: hidden;
+  text-align: left !important;
+  text-overflow: ellipsis;
+}
+
+.statusColumn {
+  width: 19%;
+  max-width: 130px;
+  overflow: hidden;
+  font-weight: v.$font-weight-semibold;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+
+.descriptionColumn {
+  max-width: 260px;
+  overflow: hidden;
+  color: v.$text-secondary;
+  text-align: left !important;
+  text-overflow: ellipsis;
+}
+
+.injuredRow .statusColumn {
+  color: v.$danger-color;
+}
+
+.returningRow .statusColumn {
+  color: v.$success-color;
 }
 
 .pagination {
   display: flex;
-  justify-content: space-between; // Push buttons apart
   align-items: center;
-  padding: v.$space-md v.$space-lg; // Consistent padding
-  border-top: 1px solid v.$border-color-primary; // Separator line above pagination
-  flex-shrink: 0; // Prevent shrinking
+  justify-content: space-between;
+  gap: v.$space-sm;
+  padding: v.$space-sm v.$space-md;
+  border-top: 1px solid v.$border-soft;
+  color: v.$text-secondary;
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-xxs;
 
   button {
-    font-size: v.$font-size-xs;
-    font-family: v.$font-family-accent, sans-serif;
-    letter-spacing: 0.06em;
-    padding: 4px 10px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid v.$border-secondary;
-    border-radius: 4px;
+    min-height: v.$control-height-sm;
+    padding: 0 v.$space-md;
+    border: v.$border-subtle;
+    border-radius: v.$radius-control;
+    background: v.$background-dark;
+    color: v.$text-primary;
     cursor: pointer;
-    color: v.$border-secondary;
-    min-width: 100px; // Ensure decent button width
-    box-sizing: border-box;
-    transition: all 0.2s ease;
-    &:hover {
-      background: rgba(255, 255, 255, 0.15);
+
+    &:hover:not(:disabled) {
+      border-color: v.$primary-color;
+      color: v.$primary-color;
     }
+
     &:disabled {
-      opacity: 0.5;
+      opacity: 0.45;
       cursor: not-allowed;
     }
   }
 }
 
-// Utility: visually hidden (accessible) content
+.quickTools {
+  background: v.$background-medium;
+}
+
+.quickToolsGrid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: v.$space-xs;
+  padding: v.$space-sm;
+}
+
+.quickToolCard {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: v.$space-xs;
+  min-width: 0;
+  min-height: 58px;
+  padding: v.$space-xs;
+  border: v.$border-subtle;
+  border-radius: v.$radius-card;
+  background: v.$background-dark;
+  color: v.$text-primary;
+  text-decoration: none;
+  transition:
+    transform v.$transition-duration v.$transition-easing,
+    border-color v.$transition-duration v.$transition-easing,
+    background-color v.$transition-duration v.$transition-easing;
+
+  &:hover {
+    border-color: rgba(v.$primary-color, 0.65);
+    background: rgba(v.$primary-color, 0.06);
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
+
+  > span {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  strong,
+  small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  strong {
+    color: v.$color-white;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  small {
+    color: v.$text-secondary;
+    font-size: 0.58rem;
+    line-height: 1.2;
+  }
+}
+
+.quickToolIcon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  filter: brightness(0) saturate(100%) invert(51%) sepia(93%) saturate(1776%)
+    hue-rotate(155deg) brightness(97%) contrast(95%);
+}
+
 .visuallyHidden {
   position: absolute !important;
-  height: 1px;
   width: 1px;
-  overflow: hidden;
-  clip: rect(1px, 1px, 1px, 1px); /* deprecated but widely supported */
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
+  height: 1px;
   padding: 0;
   margin: -1px;
-}
-
-// --- Chart Container ---
-.chartContainer {
-  // Add a class for the chart wrapper if needed
-  @include v.component-wrapper;
-  padding: v.$space-lg; // Add padding inside the chart wrapper
-  min-width: 0;
   overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 
-  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    display: none; // Hide the chart container on smaller screens
+@media (max-width: 760px) {
+  .gamesHeader {
+    grid-template-columns: auto auto minmax(128px, auto) auto;
   }
-}
 
-// --- Extra Widgets (Top team cards + Projections) ---
-.extraWidgets {
-  display: grid;
-  grid-template-columns: 1fr 380px; // main area + side widget
-  gap: v.$space-lg;
-  align-items: start;
-}
-
-.teamStatCards {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: v.$space-md;
-}
-
-.predictionsWidget {
-  // small card container on the right side
-  .title {
-    margin: 0 0 v.$space-sm 0;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: v.$primary-color;
-    font-family: v.$font-family-accent;
-  }
-}
-
-@media (max-width: #{v.$breakpoint-tablet - 1px}) {
-  .extraWidgets {
-    grid-template-columns: 1fr;
-  }
-  .teamStatCards {
-    grid-template-columns: repeat(1, 1fr);
-  }
-}
-
-// --- General Cleanup ---
-.separator {
-  // Remove this if not needed, headers provide separation now
-  display: none;
-}
-
-.socialMedia {
-  // Keep this rule if needed for mobile banner
-  @media only screen and (min-width: v.$breakpoint-desktop) {
-    display: none;
-  }
-}
-
-.container {
-  // Keep base page padding if needed, but mainGridContainer handles margins
-  padding: 0;
-}
-
-// --- Mobile Overrides ---
-@media (max-width: #{v.$breakpoint-tablet - 1px}) {
-  .homepage {
-    margin-top: v.$space-md;
-    gap: v.$space-lg; // Tighter gap for mobile
+  .gamesSummary {
+    grid-column: 1 / -1;
+    justify-self: stretch;
     width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
   }
 
-  .gameCardsContainer,
-  .standingsContainer,
-  .injuriesContainer,
-  .latestNewsContainer,
-  .chartContainer {
-    min-width: 0 !important;
-    max-width: 100% !important; // respect Container.pageContent width
-    width: 100% !important; // avoid viewport-based overflow
-    outline: none !important;
-    box-sizing: border-box;
-    border: 4px solid v.$border-color-primary;
+  .insightsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .gameCardsContainer {
-    border-radius: v.$border-radius;
+  .leagueChartPanel {
+    grid-column: 1 / -1;
+    grid-row: 1;
   }
 
-  .latestNewsContainer {
-    padding: v.$space-md;
+  .quickToolsGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+}
 
-  .latestNewsHeader {
-    grid-template-columns: 1fr;
-    align-items: start;
-  }
-
-  .latestNewsGrid {
-    grid-template-columns: 1fr;
+@media (max-width: 760px) {
+  .homepage {
+    width: 100%;
+    padding-inline: v.$space-sm;
   }
 
   .slateHero {
     grid-template-columns: 1fr;
-    gap: v.$space-md;
-    padding: v.$space-lg;
   }
 
-  .slateHeadline {
-    max-width: none;
-    font-size: clamp(1.6rem, 8vw, 2.3rem);
-  }
-
-  .slateDescription {
-    font-size: 0.94rem;
-    line-height: 1.5;
-  }
-
-  .slateSummaryRail {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: v.$space-xs;
-  }
-
-  .slateSummaryCard {
-    min-height: 0;
-    padding: v.$space-sm v.$space-sm v.$space-sm calc(v.$space-sm + 10px);
-  }
-
-  .slateSummaryLabel {
-    font-size: 0.58rem;
-    letter-spacing: 0.18em;
-  }
-
-  .slateSummaryValue {
-    font-size: 0.92rem;
+  .slateHeroIntro {
+    border-right: 0;
+    border-bottom: 1px solid v.$border-soft;
   }
 
   .slateActionRow {
-    gap: v.$space-xs;
-  }
-
-  .slateActionLink {
-    min-height: 38px;
-    padding: 0 v.$space-md;
-    font-size: 0.74rem;
-    letter-spacing: 0.08em;
-  }
-
-  .headerAndDate {
-    border-left: 4px solid v.$border-color-primary;
-    border-right: 4px solid v.$border-color-primary;
-  }
-
-  .gamesHeader {
-    border-bottom: 4px solid v.$border-color-primary;
-  }
-
-  .gamesHeader button {
-    min-width: 44px;
-    // min-height: 44px;
-    padding: v.$space-xs v.$space-sm;
-    font-size: 1rem;
-  }
-
-  .gamesContainer {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: v.$space-xs;
-    padding: v.$space-xs;
-    > * {
-      max-width: 100%;
-      margin: v.$space-xs;
-    }
-  }
-
-  .gamesGrid {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: v.$space-xs;
-  }
-
-  .gamesGrid > .gameLink {
-    flex: 1 1 auto;
-    max-width: 100%;
-  }
-
-  .gameColumnLabels {
-    display: grid;
-    grid-template-columns: 28px 44px 28px 1fr 28px 44px 28px;
-    align-items: center;
-    width: 100%;
-    padding: 0 v.$space-xs;
-    margin-bottom: v.$space-xxs;
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
-    font-size: 0.5rem;
-    color: v.$text-color-secondary;
-  }
-
-  .homeLabel {
-    grid-column: 1 / span 3;
-    justify-self: start;
-  }
-
-  .awayLabel {
-    grid-column: 5 / span 3;
-    justify-self: end;
-  }
-
-  .combinedGameCard {
-    min-height: 34px; // ~65% height reduction for mobile
-    height: 48px;
-    align-items: center;
-    border-radius: v.$border-radius;
-    overflow: visible;
-  }
-  .homeTeamLogo,
-  .awayTeamLogo {
-    flex: 0 0 34px;
-    // padding: v.$space-xxs; // tighter vertical padding
-    gap: 0;
-    height: 100%;
-    justify-content: center;
-  }
-
-  .homeTeamLogo {
-    flex: 0 0 calc(34px + 11px); // Offset the 11px side border
-    padding-left: 11px;
-    border-top-left-radius: v.$border-radius;
-    border-bottom-left-radius: v.$border-radius;
-
-}
-
-.awayTeamLogo {
-    flex: 0 0 calc(34px + 11px); // Offset the 11px side border
-    padding-right: 11px;
-    border-top-right-radius: v.$border-radius;
-    border-bottom-right-radius: v.$border-radius;
-}
-
-.homeTeamLogo::before {
-  background-color: color-mix(
-    in srgb,
-    var(--home-primary-light-color) 20%,
-    transparent
-  );
-  box-shadow:
-    0 0 6px color-mix(in srgb, var(--home-primary-light-color) 40%, transparent),
-    0 0 10px rgba(0, 0, 0, 0.35);
-  border-bottom-left-radius: v.$border-radius * 0.75;
-  border-top-left-radius: v.$border-radius * 0.75;
-}
-
-.awayTeamLogo::before {
-  background-color: color-mix(
-    in srgb,
-    var(--away-primary-light-color) 20%,
-    transparent
-  );
-  box-shadow:
-    0 0 6px color-mix(in srgb, var(--away-primary-light-color) 40%, transparent),
-    0 0 10px rgba(0, 0, 0, 0.35);
-  border-bottom-right-radius: v.$border-radius * 0.75;
-  border-top-right-radius: v.$border-radius * 0.75;
-}
-
-  .leftImage,
-  .rightImage {
-    width: 48px;
-    height: 48px;
-    margin: -7px 0; // allow logo to visually exceed card height
-  }
-  .teamRecord {
-    display: none;
-  }
-  .homeAwayLabel {
-    display: none;
-  }
-  .homeScore,
-  .awayScore {
-    font-size: 0.7rem;
-    line-height: 1;
-  }
-  .gameState {
-    font-size: 0.45rem;
-  }
-
-  .gameTimeInfo {
-    text-align: center;
-    align-items: center; // already in your styles
-    justify-content: center;
-    order: 4;
-    padding: 0 v.$space-xxs;
-  }
-
-  .gameTimeText {
-    display: block;
-    width: 100%;
-    text-align: center;
-  }
-
-
-  .teamRecordMobile {
-    display: block;
-    font-family: v.$font-family-primary;
-    font-size: 0.65rem;
-    color: v.$text-color-primary;
-    line-height: 1;
-    text-align: center;
-    min-width: 44px;
-    padding: 0 v.$space-sm;
-  }
-
-  .homeRecord {
-    order: 2;
-  }
-
-  .awayRecord {
-    order: 6;
-  }
-
-  .homeTeamLogo {
-    order: 1;
-  }
-
-  .awayTeamLogo {
-    order: 7;
-  }
-
-  .gameTimeSection {
-    display: contents;
-
-  }
-
-  .homeScore {
-    order: 3;
-  }
-
-
-
-  .awayScore {
-    order: 5;
+    left: v.$space-md;
   }
 
   .standingsInjuriesContainer {
-    gap: v.$space-lg;
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1100px) and (min-width: 769px) {
+  .quickToolCard {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+
+    small {
+      display: none;
+    }
+  }
+}
+
+@media (max-width: #{v.$breakpoint-tablet}) {
+  .homepage,
+  .gameCardsContainer {
+    gap: v.$space-sm;
+  }
+
+  .gamesHeader {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+  }
+
+  .gamesHeaderTitle {
+    grid-column: 1 / -1;
+  }
+
+  .gamesSummary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .slateSummaryRail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .slateSummaryCard:nth-child(2) {
+    border-right: 0;
+  }
+
+  .slateSummaryCard:nth-child(-n + 2) {
+    border-bottom: 1px solid v.$border-soft;
+  }
+
+  .insightsGrid {
     grid-template-columns: 1fr;
   }
 
+  .leagueChartPanel,
+  .newsPanel {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .quickToolsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: #{v.$breakpoint-mobile-lg}) {
+  .homepage {
+    margin-top: v.$space-sm;
+    padding-inline: 0;
+  }
+
+  .gamesHeader {
+    gap: v.$space-xs;
+    padding: v.$space-sm;
+  }
+
+  .headerAndDate {
+    padding: 0 v.$space-sm;
+  }
+
+  .gamesSummary > span {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+
+    strong {
+      grid-row: auto;
+    }
+  }
+
+  .gameLink {
+    flex-basis: 142px;
+    min-width: 142px;
+  }
+
+  .slateHeroIntro {
+    padding: v.$space-lg v.$space-md calc(v.$space-xl + v.$space-lg);
+  }
+
+  .slateHeadline {
+    font-size: clamp(2rem, 13vw, 3.2rem);
+  }
+
+  .slateAccent {
+    grid-template-columns: repeat(3, 34px) minmax(60px, 1fr);
+  }
+
+  .slateSummaryCard {
+    min-height: 84px;
+    padding: v.$space-sm;
+  }
+
+  .metricIcon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .edgePanel {
+    grid-template-columns: 1fr;
+    gap: v.$space-md;
+    min-height: 160px;
+    padding: v.$space-md;
+  }
+
+  .dataUpdated {
+    justify-self: center;
+    justify-items: center;
+  }
+
+  .slateActionRow {
+    position: static;
+    flex-wrap: wrap;
+    padding: 0 v.$space-md v.$space-md;
+    background: v.$background-dark;
+  }
+
+  .compactPanelHeader,
   .standingsHeader,
   .injuriesHeader {
+    align-items: flex-start;
+  }
+
+  .injuriesHeader h2 {
+    max-width: 22ch;
+  }
+
+  .quickToolsGrid {
     padding: v.$space-sm;
-    font-family: v.$font-family-accent;
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
-
-    h2 {
-      font-size: clamp(1rem, 3.2vw, 1.4rem);
-      margin: v.$space-xs;
-    }
   }
 
-  .standingsHeader h1,
-  .injuriesHeader h1 {
-    font-size: clamp(1.2rem, 4vw, 1.5rem);
-    padding: v.$space-xs;
-  }
-
-  .standingsTable,
-  .injuryTable {
-    thead th {
-      font-variant: all-small-caps;
-      font-size: 12px;
-      padding: 2px 4px;
-      letter-spacing: 0.3px;
-      &:first-child {
-        padding-left: v.$space-xs;
-      }
-      &:last-child {
-        padding-right: v.$space-xs;
-      }
-    }
-    tbody td {
-      font-variant: all-small-caps;
-      font-size: 14px;
-      font-family: v.$font-family-primary;
-      font-weight: 700;
-
-      line-height: 1.1;
-      padding: v.$space-xs v.$space-xs;
-      &:first-child {
-        padding-left: v.$space-xs;
-      }
-    }
-  }
-
-  .standingsTable {
-    tbody tr {
-      height: 32px;
-    }
-    tbody td {
-      padding: v.$space-xxs v.$space-xs;
-      font-size: 13px;
-    }
-    th:nth-child(1),
-    td:nth-child(1) {
-      width: 10%;
-    }
-    th:nth-child(2),
-    td:nth-child(2) {
-      width: 45%;
-      padding-left: v.$space-sm;
-      text-transform: uppercase;
-      letter-spacing: 0.75px;
-    }
-    th:nth-child(3),
-    td:nth-child(3) {
-      width: 20%;
-    }
-    th:nth-child(4),
-    td:nth-child(4) {
-      width: 15%;
-    }
-    .standingsTeamLogo {
-      width: 24px;
-      height: 24px;
-      margin-right: v.$space-xs;
-    }
-  }
-
-  .injuryTable {
-    tbody tr {
-      height: 44px; // or your preferred value, e.g., 40px, 48px, etc.
-    }
-    tbody td {
-      height: 44px; // Ensures the cell fills the row height
-      vertical-align: middle; // Vertically center content
-    }
-
-    // COLUMN WIDTHS
-    // DATE
-    th:nth-child(1),
-    td:nth-child(1) {
-      width: 6.25rem;
-      min-width: 6.25rem;
-      font-weight: 900;
-      font-size: 16px;
-      text-align: center;
-    }
-
-    // TEAM
-    th:nth-child(2),
-    td:nth-child(2) {
-      width: 5%;
-      padding-left: v.$space-sm;
-    }
-
-    // NAME
-    th:nth-child(3),
-    td:nth-child(3) {
-      width: 30%;
-      padding-left: v.$space-sm;
-      text-align: left;
-      letter-spacing: 0.75px;
-      font-size: 14px;
-    }
-
-    // STATUS
-    th:nth-child(4) {
-      text-align: left;
-      padding-left: v.$space-sm;
-    }
-
-    td:nth-child(4) {
-      width: 15%;
-      text-transform: uppercase;
-      text-align: center;
-      font-size: 14px;
-    }
-
-    // DESCRIPTION
-    th:nth-child(5),
-    td:nth-child(5) {
-      width: 35%;
-      text-align: left;
-      padding-left: v.$space-sm;
-      font-size: 14px;
-    }
-
-    table-layout: auto;
-    overflow-x: auto;
-    display: block;
-    .dateColumn,
-    .teamColumn,
-    .nameColumn,
-    .statusColumn,
-    .descriptionColumn {
-      white-space: normal;
-    }
-    td.dateColumn {
-      white-space: nowrap;
-    }
-    // Hide description column on very small screens
-    @media (max-width: 400px) {
-      th.descriptionColumn,
-      td.descriptionColumn {
-        display: none;
-      }
-    }
-
-    td.teamColumn {
-      padding: 0 !important;
-      margin: 0 !important;
-      text-align: center; // Optional: center the logo horizontally
-    }
-
-    .injuryTeamLogo {
-      padding: 0 !important;
-      margin: 0 auto !important;
-      height: 30px;
-      width: 30px;
-    }
-  }
-
-  .pagination {
-    padding: v.$space-xs v.$space-sm;
-    button {
-      min-width: 100px;
-      padding: 6px 10px;
-      font-size: v.$font-size-xs;
-      border: 1px solid v.$primary-color;
-      background-color: rgba( v.$primary-color, 0.3 );
-      color: v.$primary-color;
-      text-transform: uppercase;
-    }
-
-    :disabled {
-      opacity: 0.6;
-      border: 2px solid v.$border-color-secondary;
-      background-color: rgba( v.$border-color-secondary, 0.2 );
-      color: v.$border-color-secondary;
-    }
+  .quickToolCard {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
   }
 }

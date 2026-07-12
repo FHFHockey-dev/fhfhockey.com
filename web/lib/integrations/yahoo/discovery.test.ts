@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { flattenYahooTeams, selectLatestYahooGames } from "./discovery";
+import {
+  flattenYahooTeams,
+  mergeYahooLeagueTeams,
+  selectLatestYahooGames,
+  selectYahooGamesForCanonicalSeason,
+} from "./discovery";
 
 describe("Yahoo discovery helpers", () => {
   it("keeps only the latest Yahoo game season for sync", () => {
@@ -41,6 +46,40 @@ describe("Yahoo discovery helpers", () => {
         game_code: "nhl",
         game_name: "Hockey",
       }),
+    ]);
+  });
+
+  it("uses the canonical Yahoo game row even when user games are not ordered", () => {
+    const games = [
+      { game_key: "465", game_id: 465, season: "2025", code: "nhl" },
+      { game_key: "453", game_id: 453, season: "2024", code: "nhl" },
+      { game_key: "500", game_id: 500, season: "2026", code: "nhl" },
+    ];
+
+    expect(
+      selectYahooGamesForCanonicalSeason(games, {
+        game_id: 500,
+        game_key: "500",
+        season: 2026,
+      })
+    ).toEqual([{ game_key: "500", game_id: 500, season: "2026", code: "nhl" }]);
+  });
+
+  it("merges the full league field with standings by team key", () => {
+    expect(
+      mergeYahooLeagueTeams(
+        [
+          { team_key: "500.l.1.t.1", name: "Five Hole" },
+          { team_key: "500.l.1.t.2", name: "Rival" },
+        ],
+        [
+          { team_key: "500.l.1.t.2", standings: { rank: 1 } },
+          { team_key: "500.l.1.t.1", standings: { rank: 2 } },
+        ]
+      )
+    ).toEqual([
+      expect.objectContaining({ team_key: "500.l.1.t.1", standings: { rank: 2 } }),
+      expect.objectContaining({ team_key: "500.l.1.t.2", standings: { rank: 1 } }),
     ]);
   });
 });

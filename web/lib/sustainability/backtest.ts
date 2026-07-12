@@ -35,6 +35,19 @@ export type SustainabilityBacktestResult = {
   bestByMae: SustainabilityBacktestVariant | null;
 };
 
+export type SustainabilityStreakClass = "hot" | "normal" | "cold";
+
+export type SustainabilityProbabilityBacktestExample = {
+  actualClass: SustainabilityStreakClass | null | undefined;
+  probabilities: Partial<Record<SustainabilityStreakClass, number>> | null | undefined;
+};
+
+export type SustainabilityProbabilityBacktestMetric = {
+  variant: "sustainability_probability" | "uniform";
+  sampleCount: number;
+  brier: number | null;
+};
+
 const VARIANT_ORDER: SustainabilityBacktestVariant[] = [
   "sustainability_score",
   "career_only",
@@ -146,4 +159,46 @@ export function runSustainabilityBaselineBacktest(
     variants: metrics,
     bestByMae
   };
+}
+
+const STREAK_CLASSES: SustainabilityStreakClass[] = ["hot", "normal", "cold"];
+
+function validProbabilityVector(
+  value: SustainabilityProbabilityBacktestExample["probabilities"]
+): Record<SustainabilityStreakClass, number> | null {
+  if (!value) return null;
+  const vector = STREAK_CLASSES.map((key) => toFiniteNumber(value[key]));
+  if (vector.some((probability) => probability === null || probability < 0 || probability > 1)) {
+    return null;
+  }
+  const total = vector.reduce<number>((sum, probability) => sum + (probability ?? 0), 0);
+  if (Math.abs(total - 1) > 1e-6) return null;
+  return { hot: vector[0]!, normal: vector[1]!, cold: vector[2]! };
+}
+
+export function runSustainabilityProbabilityBacktest(
+  examples: SustainabilityProbabilityBacktestExample[],
+  options: { precision?: number } = {}
+): SustainabilityProbabilityBacktestMetric[] {
+  const precision = options.precision ?? 6;
+  const totals = { sustainability_probability: 0, uniform: 0 };
+  let sampleCount = 0;
+
+  for (const example of examples) {
+    if (!example.actualClass || !STREAK_CLASSES.includes(example.actualClass)) continue;
+    const probabilities = validProbabilityVector(example.probabilities);
+    if (!probabilities) continue;
+    sampleCount += 1;
+    for (const key of STREAK_CLASSES) {
+      const target = key === example.actualClass ? 1 : 0;
+      totals.sustainability_probability += (probabilities[key] - target) ** 2;
+      totals.uniform += (1 / 3 - target) ** 2;
+    }
+  }
+
+  return (["sustainability_probability", "uniform"] as const).map((variant) => ({
+    variant,
+    sampleCount,
+    brier: sampleCount ? roundMetric(totals[variant] / sampleCount, precision) : null
+  }));
 }

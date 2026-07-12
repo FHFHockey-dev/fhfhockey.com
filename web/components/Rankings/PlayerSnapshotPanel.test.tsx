@@ -80,6 +80,8 @@ const payload: PlayerMatrixResponse = {
         passFirstScore: 85.2,
         playDriverScore: 87.1,
         resultsLuckIndex: null,
+        resultsLuckUnavailableReason:
+          "Results Luck unavailable: season windows do not have a selected-window-excluded baseline.",
         methodologyVersion: "contextual_composites_v1",
         snapshotDate: "2026-04-16",
         updatedAt: "2026-06-08T00:00:00.000Z",
@@ -220,13 +222,13 @@ describe("PlayerSnapshotPanel", () => {
     expect(screen.getByText("BEAST+ · 88.6")).toBeTruthy();
     expect(
       screen.getByText(
-        /MCM Score: current-contract fantasy multi-category composite from skater_composite_ratings.*PP points source-pending/,
+        /MCM Score: fantasy multi-category composite from skater_composite_ratings.*PP points included when PP rows are available/,
       ),
     ).toBeTruthy();
     expect(screen.getByText("Results Luck Index")).toBeTruthy();
     expect(
       screen.getByText(
-        "Source pending until selected-window-excluded baseline provenance is available",
+        "Results Luck unavailable: season windows do not have a selected-window-excluded baseline.",
       ),
     ).toBeTruthy();
   });

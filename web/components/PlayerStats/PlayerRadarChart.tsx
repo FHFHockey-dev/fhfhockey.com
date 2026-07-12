@@ -363,9 +363,6 @@ export function PlayerRadarChart({
             playerValue === null ||
             playerValue === undefined
           ) {
-            console.warn(
-              `[PlayerRadarChart] Invalid value for ${stat}: ${(playerData as any)[stat]}`
-            );
             continue;
           }
 
@@ -892,10 +889,11 @@ export function PlayerRadarChart({
 
         {/* Comparison Type Selector */}
         <div className={styles.comparisonControls}>
-          <p>
-            Percentile rankings {getComparisonDescription()}
-            {showPlayoffData ? " (Playoffs)" : " (Regular Season)"}
-            {/* Loading and status indicators */}
+          <div>
+            <p>
+              Percentile rankings {getComparisonDescription()}
+              {showPlayoffData ? " (Playoffs)" : " (Regular Season)"}
+            </p>
             {percentileLoading && (
               <div
                 style={{
@@ -921,7 +919,7 @@ export function PlayerRadarChart({
                 Calculating...
               </div>
             )}
-          </p>
+          </div>
 
           <div className={styles.comparisonButtons}>
             <button

@@ -707,7 +707,7 @@
   width: auto;
   max-width: 28rem;
   line-height: 1.45;
-  filter: drop-shadow(0  0 4px rgba(255, 255, 255, 0.4));
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4));
 
   @media (max-width: 980px) {
     text-align: center;
@@ -1187,9 +1187,7 @@
 
   thead th {
     position: sticky;
-    top: calc(
-      var(--master-table-sticky-top) + var(--master-group-row-height)
-    );
+    top: calc(var(--master-table-sticky-top) + var(--master-group-row-height));
     z-index: 8;
     padding: 0;
     background-color: #26292d;
@@ -1521,6 +1519,8 @@
   align-items: center;
   justify-content: center;
   min-height: 34px;
+  color: inherit;
+  text-decoration: none;
 }
 
 .masterTeamLogoWrap {
@@ -1762,8 +1762,6 @@
   text-shadow: none;
 }
 
-
-
 .masterTotalsRow td {
   background: #14465b !important;
   color: rgba(v.$color-white, 0.92);
@@ -1961,7 +1959,7 @@
   overflow: visible;
 
   img {
-    position:relative !important;
+    position: relative !important;
     width: 100%;
     height: 100%;
     transform: none;
@@ -2388,7 +2386,7 @@
     @media (max-width: 480px) {
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
-  }
+    }
   }
   > td:first-child .firstColumnContent {
     background: transparent !important;
@@ -2412,14 +2410,12 @@
     border-top-left-radius: v.$border-radius-sm;
     border-bottom-left-radius: v.$border-radius-sm;
     @include v.schedule-outline(v.$schedule-red);
-        @media (max-width: 480px) {
+    @media (max-width: 480px) {
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
-  }
-  
+    }
   }
 
-  
   > td:first-child .firstColumnContent {
     background: transparent !important;
   }
@@ -2875,10 +2871,7 @@
     @media (max-width: 480px) {
       border-bottom-left-radius: v.$border-radius-md;
     }
-
   }
-
-
 
   @include v.table-base; // Apply base table styles from mixin
   text-align: center; // OVERRIDE mixin's text-align: left for default cell alignment
@@ -3047,11 +3040,11 @@
       border-left: 2px solid v.$primary-color;
       // background: color.adjust(v.$background-dark, $lightness: -2%);
       background: linear-gradient(
-          135deg,
-          rgba(v.$secondary-color, 0.12),
-          rgba(v.$secondary-color, 0.08)
-        );
-        color: v.$primary-color;
+        135deg,
+        rgba(v.$secondary-color, 0.12),
+        rgba(v.$secondary-color, 0.08)
+      );
+      color: v.$primary-color;
       // Removed cell border in favor of continuous overlay line
       box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
       border-right: 2px solid v.$secondary-color; // Match header bottom border color for corner
@@ -3211,7 +3204,6 @@
       .desktopText {
         font-size: 0.95em;
         padding: 0;
-
       }
       .scoreHeaderText {
         font-size: 0.8em;
@@ -3380,7 +3372,12 @@
       position: sticky;
       left: 0;
       z-index: 2; // Above normal cells, below header
-      background: rgba(0, 0, 0, 0.7); // Solid surface to avoid scroll "white flashes"
+      background: rgba(
+        0,
+        0,
+        0,
+        0.7
+      ); // Solid surface to avoid scroll "white flashes"
       box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
     }
 
@@ -3759,6 +3756,13 @@
   overflow: hidden; // allow logo to overflow but clip to the cell shape
   background: rgba(0, 0, 0, 0.64); // flattened from prior gradient
 
+  .teamSurfaceLink {
+    display: flex;
+    align-items: center;
+    color: inherit;
+    text-decoration: none;
+  }
+
   .desktopTeamAbbreviation {
     display: none;
   }
@@ -3766,8 +3770,6 @@
     display: inline-flex;
     z-index: 4;
   }
-
-
 
   @media (min-width: v.$breakpoint-desktop) {
     .desktopTeamAbbreviation {

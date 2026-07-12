@@ -29,12 +29,34 @@ type SkaterProjectionDegradedSummary = {
   note: string | null;
 };
 
+type SkaterModelMetadata = {
+  modelVersion: string | null;
+  scenarioCount: number | null;
+};
+
+type SkaterCalibrationHints = {
+  sourceDate: string | null;
+  projectionDate: string | null;
+  sampleCount30d: number | null;
+  pointsMae30d: number | null;
+  pointsRmse30d: number | null;
+  pointsIntervalHitRate: number | null;
+};
+
+const SKATER_INTERVAL_DEFINITIONS = {
+  floor: "P10: roughly one outcome in ten is expected below this value.",
+  typical: "P50: the model's median outcome, not a guarantee.",
+  ceiling: "P90: roughly one outcome in ten is expected above this value.",
+} as const;
+
 function parseFiniteNumber(value: unknown): number | null {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : null;
 }
 
-function parseLineComboRecencyClass(value: unknown): LineComboRecencyClass | null {
+function parseLineComboRecencyClass(
+  value: unknown,
+): LineComboRecencyClass | null {
   if (
     value === "FRESH" ||
     value === "SOFT_STALE" ||
@@ -46,37 +68,141 @@ function parseLineComboRecencyClass(value: unknown): LineComboRecencyClass | nul
   return null;
 }
 
+function extractSkaterModelMetadata(uncertainty: unknown): SkaterModelMetadata {
+  const model = (uncertainty as any)?.model;
+  const scenarioMetadata =
+    model?.skater_selection?.role_scenarios?.scenario_metadata;
+  const modelVersion =
+    typeof model?.rollout?.modelVersion === "string"
+      ? model.rollout.modelVersion
+      : typeof scenarioMetadata?.model_version === "string"
+        ? scenarioMetadata.model_version
+        : null;
+  const scenarioCount = parseFiniteNumber(scenarioMetadata?.scenario_count);
+  return {
+    modelVersion,
+    scenarioCount:
+      scenarioCount != null && scenarioCount >= 0 ? scenarioCount : null,
+  };
+}
+
+function extractSkaterConfidenceDrivers(uncertainty: unknown) {
+  const model = (uncertainty as any)?.model ?? {};
+  const selection = model.skater_selection ?? {};
+  return {
+    role: {
+      evenStrength:
+        typeof selection.es_role === "string" ? selection.es_role : null,
+      unitTier:
+        typeof selection.unit_tier === "string" ? selection.unit_tier : null,
+      source: typeof selection.source === "string" ? selection.source : null,
+      continuityShare: parseFiniteNumber(
+        selection.role_continuity?.continuity_share,
+      ),
+    },
+    powerPlay: {
+      allocatedShare: parseFiniteNumber(
+        model.pp_opportunity?.allocated_player_pp_share,
+      ),
+      teamTargetSeconds: parseFiniteNumber(
+        model.pp_opportunity?.team_pp_target_seconds,
+      ),
+    },
+    matchup: {
+      opponentGoalieGoalRateMultiplier: parseFiniteNumber(
+        model.opponent_goalie_context?.goal_rate_multiplier,
+      ),
+      opponentStarterCertainty: parseFiniteNumber(
+        model.opponent_goalie_context?.starter_certainty,
+      ),
+      opponentDefenseEdge: parseFiniteNumber(
+        model.team_level_context?.opponent_defense_edge,
+      ),
+    },
+    rest: {
+      teamRestDays: parseFiniteNumber(model.rest_schedule?.team_rest_days),
+      opponentRestDays: parseFiniteNumber(
+        model.rest_schedule?.opponent_rest_days,
+      ),
+      restDelta: parseFiniteNumber(model.rest_schedule?.rest_delta),
+    },
+  };
+}
+
+function extractProjectionRange(uncertainty: unknown) {
+  const points = (uncertainty as any)?.pts;
+  const floor = parseFiniteNumber(points?.p10);
+  const typical = parseFiniteNumber(points?.p50);
+  const ceiling = parseFiniteNumber(points?.p90);
+  return {
+    points: { floor, typical, ceiling },
+    labels: SKATER_INTERVAL_DEFINITIONS,
+  };
+}
+
+async function fetchSkaterCalibrationHints(
+  projectionDate: string,
+): Promise<SkaterCalibrationHints | null> {
+  if (!supabase) throw new Error("Supabase server client not available");
+  const { data, error } = await supabase
+    .from("forge_projection_calibration_daily")
+    .select("date,projection_date,metrics")
+    .eq("scope", "skater_rolling_dashboard")
+    .lte("projection_date", projectionDate)
+    .order("projection_date", { ascending: false })
+    .order("date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const metrics = (data as any).metrics ?? {};
+  const points = metrics?.stat_diagnostics?.pts?.rolling_30d ?? {};
+  const interval = metrics?.interval_coverage_daily?.pts ?? {};
+  return {
+    sourceDate:
+      typeof (data as any).date === "string" ? (data as any).date : null,
+    projectionDate:
+      typeof (data as any).projection_date === "string"
+        ? (data as any).projection_date
+        : null,
+    sampleCount30d: parseFiniteNumber(points.player_count),
+    pointsMae30d: parseFiniteNumber(points.mae),
+    pointsRmse30d: parseFiniteNumber(points.rmse),
+    pointsIntervalHitRate: parseFiniteNumber(interval.p10_p90_hit_rate),
+  };
+}
+
 function buildDegradedProjectionSummary(
-  contexts: Array<SkaterProjectionDegradedContext | null>
+  contexts: Array<SkaterProjectionDegradedContext | null>,
 ): SkaterProjectionDegradedSummary {
   const formatCountLabel = (
     count: number,
     singularTail: string,
-    pluralTail: string
+    pluralTail: string,
   ) =>
     `${count} projected skater${count === 1 ? "" : "s"} ${
       count === 1 ? singularTail : pluralTail
     }`;
   const nonNullContexts = contexts.filter(
-    (context): context is SkaterProjectionDegradedContext => Boolean(context)
+    (context): context is SkaterProjectionDegradedContext => Boolean(context),
   );
   const lineComboFallbackPlayerCount = nonNullContexts.filter(
-    (context) => context.usedLineComboFallback
+    (context) => context.usedLineComboFallback,
   ).length;
   const hardStaleLineComboPlayerCount = nonNullContexts.filter(
-    (context) => context.lineComboRecencyClass === "HARD_STALE"
+    (context) => context.lineComboRecencyClass === "HARD_STALE",
   ).length;
   const missingLineComboPlayerCount = nonNullContexts.filter(
-    (context) => context.lineComboRecencyClass === "MISSING"
+    (context) => context.lineComboRecencyClass === "MISSING",
   ).length;
   const softStaleLineComboPlayerCount = nonNullContexts.filter(
-    (context) => context.lineComboRecencyClass === "SOFT_STALE"
+    (context) => context.lineComboRecencyClass === "SOFT_STALE",
   ).length;
   const skaterPoolRecoveryPlayerCount = nonNullContexts.filter(
-    (context) => context.skaterPoolRecoveryPath != null
+    (context) => context.skaterPoolRecoveryPath != null,
   ).length;
   const degradedPlayerCount = nonNullContexts.filter(
-    (context) => context.isDegraded
+    (context) => context.isDegraded,
   ).length;
 
   let note: string | null = null;
@@ -84,19 +210,19 @@ function buildDegradedProjectionSummary(
     note = formatCountLabel(
       lineComboFallbackPlayerCount,
       "is using fallback role context because line combinations were missing, empty, or hard stale.",
-      "are using fallback role context because line combinations were missing, empty, or hard stale."
+      "are using fallback role context because line combinations were missing, empty, or hard stale.",
     );
   } else if (skaterPoolRecoveryPlayerCount > 0) {
     note = formatCountLabel(
       skaterPoolRecoveryPlayerCount,
       "required emergency pool recovery beyond the initial line-combo group.",
-      "required emergency pool recovery beyond the initial line-combo group."
+      "required emergency pool recovery beyond the initial line-combo group.",
     );
   } else if (softStaleLineComboPlayerCount > 0) {
     note = formatCountLabel(
       softStaleLineComboPlayerCount,
       "is still tied to soft-stale line-combo context.",
-      "are still tied to soft-stale line-combo context."
+      "are still tied to soft-stale line-combo context.",
     );
   }
 
@@ -107,12 +233,12 @@ function buildDegradedProjectionSummary(
     missingLineComboPlayerCount,
     softStaleLineComboPlayerCount,
     skaterPoolRecoveryPlayerCount,
-    note
+    note,
   };
 }
 
 function extractDegradedProjectionContext(
-  uncertainty: unknown
+  uncertainty: unknown,
 ): SkaterProjectionDegradedContext | null {
   if (!uncertainty || typeof uncertainty !== "object") return null;
   const model = (uncertainty as Record<string, unknown>).model;
@@ -124,10 +250,11 @@ function extractDegradedProjectionContext(
     (skaterSelection as Record<string, unknown>).fallback_path ?? null;
   const lineComboRecency =
     (skaterSelection as Record<string, unknown>).line_combo_recency ?? null;
-  const activePool = (skaterSelection as Record<string, unknown>).active_pool ?? null;
+  const activePool =
+    (skaterSelection as Record<string, unknown>).active_pool ?? null;
   const fallbackRecovery =
     activePool && typeof activePool === "object"
-      ? (activePool as Record<string, unknown>).fallback_recovery ?? null
+      ? ((activePool as Record<string, unknown>).fallback_recovery ?? null)
       : null;
 
   const usedLineComboFallback =
@@ -136,27 +263,29 @@ function extractDegradedProjectionContext(
       : false;
   const lineComboFallbackReason =
     fallbackPath && typeof fallbackPath === "object"
-      ? ((fallbackPath as Record<string, unknown>).reason as
+      ? (((fallbackPath as Record<string, unknown>).reason as
           | "missing"
           | "hard_stale"
           | "empty"
-          | null) ?? null
+          | null) ?? null)
       : null;
   const lineComboRecencyClass =
     lineComboRecency && typeof lineComboRecency === "object"
       ? parseLineComboRecencyClass(
-          (lineComboRecency as Record<string, unknown>).class
+          (lineComboRecency as Record<string, unknown>).class,
         )
       : null;
   const lineComboDaysStale =
     lineComboRecency && typeof lineComboRecency === "object"
-      ? parseFiniteNumber((lineComboRecency as Record<string, unknown>).days_stale)
+      ? parseFiniteNumber(
+          (lineComboRecency as Record<string, unknown>).days_stale,
+        )
       : null;
   const skaterPoolRecoveryPath =
     fallbackRecovery && typeof fallbackRecovery === "object"
-      ? (typeof (fallbackRecovery as Record<string, unknown>).path === "string"
-          ? ((fallbackRecovery as Record<string, unknown>).path as string)
-          : null)
+      ? typeof (fallbackRecovery as Record<string, unknown>).path === "string"
+        ? ((fallbackRecovery as Record<string, unknown>).path as string)
+        : null
       : null;
 
   const isDegraded = usedLineComboFallback || skaterPoolRecoveryPath != null;
@@ -195,7 +324,7 @@ function extractDegradedProjectionContext(
     lineComboDaysStale,
     skaterPoolRecoveryPath,
     isDegraded,
-    summary
+    summary,
   };
 }
 
@@ -218,7 +347,7 @@ async function fetchCurrentSeasonIdForDate(asOfDate: string): Promise<number> {
 }
 
 async function fetchActiveRosterPlayerIdSet(
-  seasonId: number
+  seasonId: number,
 ): Promise<Set<number>> {
   if (!supabase) throw new Error("Supabase server client not available");
   const { data, error } = await supabase
@@ -230,13 +359,13 @@ async function fetchActiveRosterPlayerIdSet(
   return new Set(
     ((data ?? []) as Array<any>)
       .map((row) => Number(row?.playerId))
-      .filter((id) => Number.isFinite(id))
+      .filter((id) => Number.isFinite(id)),
   );
 }
 
 async function fetchFallbackRunWithPlayerData(
   targetDate: string,
-  horizonGames: number
+  horizonGames: number,
 ): Promise<{ runId: string; asOfDate: string } | null> {
   if (!supabase) throw new Error("Supabase server client not available");
 
@@ -282,12 +411,12 @@ function parseHorizonGames(value: string | string[] | undefined): number {
   const parsed = Number(raw ?? 1);
   if (!Number.isFinite(parsed)) return 1;
   const intValue = Math.floor(parsed);
-  return Math.max(1, Math.min(5, intValue));
+  return Math.max(1, Math.min(10, intValue));
 }
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   const startedAt = Date.now();
   if (req.method !== "GET") {
@@ -305,6 +434,7 @@ export default async function handler(
     let runId: string | null = null;
     let fallbackApplied = false;
     let projectionsRaw: any[] = [];
+    let missingRequestedHorizon = false;
 
     // 1. Try to find a run for the requested date
     try {
@@ -352,7 +482,7 @@ export default async function handler(
     if (!runId || projectionsRaw.length === 0) {
       const fallback = await fetchFallbackRunWithPlayerData(
         targetDate,
-        horizonGames
+        horizonGames,
       );
 
       // Only switch if we found a fallback request
@@ -376,7 +506,7 @@ export default async function handler(
         // No fallback found. If we never had a runId, throw 404.
         if (!runId) {
           const err = new Error(
-            `No succeeded projection run found for date=${targetDate}`
+            `No succeeded projection run found for date=${targetDate}`,
           );
           (err as any).statusCode = 404;
           throw err;
@@ -384,19 +514,28 @@ export default async function handler(
       }
     }
 
+    if (projectionsRaw.length === 0 && runId && horizonGames !== 1) {
+      const { count, error } = await supabase
+        .from("forge_player_projections")
+        .select("player_id", { count: "exact", head: true })
+        .eq("run_id", runId)
+        .eq("horizon_games", 1);
+      if (error) throw error;
+      missingRequestedHorizon = (count ?? 0) > 0;
+    }
+
     const currentSeasonId = await fetchCurrentSeasonIdForDate(resolvedDate);
-    const activeRosterPlayerIds = await fetchActiveRosterPlayerIdSet(
-      currentSeasonId
-    );
+    const activeRosterPlayerIds =
+      await fetchActiveRosterPlayerIdSet(currentSeasonId);
     if (activeRosterPlayerIds.size > 0) {
       projectionsRaw = projectionsRaw.filter((row: any) =>
-        activeRosterPlayerIds.has(Number(row?.player_id))
+        activeRosterPlayerIds.has(Number(row?.player_id)),
       );
     }
 
     const projections = projectionsRaw.map((row: any) => {
       const degradedProjectionContext = extractDegradedProjectionContext(
-        row.uncertainty
+        row.uncertainty,
       );
       const g =
         (row.proj_goals_es ?? 0) +
@@ -427,40 +566,67 @@ export default async function handler(
         fw: 0,
         fl: 0,
         uncertainty: row.uncertainty,
-        degradedProjectionContext
+        degradedProjectionContext,
+        modelMetadata: extractSkaterModelMetadata(row.uncertainty),
+        confidenceDrivers: extractSkaterConfidenceDrivers(row.uncertainty),
+        projectionRange: extractProjectionRange(row.uncertainty),
       };
     });
+    const calibrationHints = await fetchSkaterCalibrationHints(resolvedDate);
+    const modelVersions = projections
+      .map((row) => row.modelMetadata.modelVersion)
+      .filter((value): value is string => value != null);
+    const scenarioCounts = projections
+      .map((row) => row.modelMetadata.scenarioCount)
+      .filter((value): value is number => value != null);
+    const modelMetadata = {
+      modelVersion: modelVersions[0] ?? null,
+      scenarioCount:
+        scenarioCounts.length > 0 ? Math.max(...scenarioCounts) : null,
+      calibrationHints,
+    };
     const degradedProjectionSummary = buildDegradedProjectionSummary(
-      projections.map((row) => row.degradedProjectionContext)
+      projections.map((row) => row.degradedProjectionContext),
     );
+    const responseState = missingRequestedHorizon
+      ? "blocked"
+      : projections.length > 0
+        ? "ready"
+        : "empty";
+    const missingHorizonMessage = missingRequestedHorizon
+      ? `No genuine ${horizonGames}-game projection output is available for ${resolvedDate}; one-game output exists but is not relabeled or scaled.`
+      : null;
     const serving = buildRequestedDateServingState({
       requestedDate: targetDate,
       resolvedDate,
       fallbackApplied,
       strategy: fallbackApplied
         ? "latest_available_with_data"
-        : "requested_date"
+        : "requested_date",
     });
     const scanSummary = buildEndpointScanSummary({
       surface: "forge_players_reader",
       requestedDate: targetDate,
       activeDataDate: resolvedDate,
       fallbackApplied,
-      status: projections.length > 0 ? "ready" : "empty",
+      status: responseState,
       rowCounts: {
         returned: projections.length,
         degraded_projection_rows: degradedProjectionSummary.degradedPlayerCount,
+        missing_requested_horizon: missingRequestedHorizon ? 1 : 0,
         line_combo_fallback_rows:
           degradedProjectionSummary.lineComboFallbackPlayerCount,
         skater_pool_recovery_rows:
-          degradedProjectionSummary.skaterPoolRecoveryPlayerCount
+          degradedProjectionSummary.skaterPoolRecoveryPlayerCount,
       },
       notes: fallbackApplied
         ? [
             `Serving fallback skater projections from ${resolvedDate}.`,
-            degradedProjectionSummary.note
+            missingHorizonMessage,
+            degradedProjectionSummary.note,
           ]
-        : [degradedProjectionSummary.note]
+        : [missingHorizonMessage, degradedProjectionSummary.note],
+      blockingIssueCount: missingRequestedHorizon ? 1 : 0,
     });
 
     return res.status(200).json({
@@ -473,18 +639,52 @@ export default async function handler(
       degradedProjectionSummary,
       serving,
       scanSummary,
+      diagnostics: {
+        state: responseState,
+        returnedRows: projections.length,
+        requestedDate: targetDate,
+        resolvedDate,
+        fallbackApplied,
+        fallbackReason: missingRequestedHorizon
+          ? "requested horizon has no genuine output while one-game output exists"
+          : fallbackApplied
+            ? "requested date had no usable skater rows"
+            : null,
+        missingRequestedHorizon,
+        message: missingHorizonMessage,
+        degradedProjectionSummary,
+      },
+      modelMetadata,
+      intervalDefinitions: SKATER_INTERVAL_DEFINITIONS,
+      disclosures: [
+        "Role, power-play share, matchup, and rest inputs can change after the projection run.",
+        "Floor, typical, and ceiling are P10/P50/P90 model outcomes, not guaranteed bounds.",
+        "Fallback or stale lineup context is reported per player and in the response diagnostics.",
+      ],
       compatibilityInventory: buildCanonicalReaderCompatibility({
         canonicalRoute: "/api/v1/forge/players",
-        legacyRoute: "/api/v1/projections/players"
+        legacyRoute: "/api/v1/projections/players",
       }),
-      data: projections
+      data: projections,
     });
   } catch (e) {
     const statusCode = (e as any)?.statusCode ?? 500;
     return res.status(statusCode).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
+      scanSummary: buildEndpointScanSummary({
+        surface: "forge_players_reader",
+        requestedDate:
+          (req.query.date as string | undefined) ??
+          new Date().toISOString().split("T")[0],
+        activeDataDate: null,
+        fallbackApplied: false,
+        status: "blocked",
+        rowCounts: { returned: 0 },
+        blockingIssueCount: 1,
+        notes: ["Unable to resolve a usable FORGE skater projection response."],
+      }),
       error: (e as any)?.message ?? String(e),
-      details: (e as any)?.details
+      details: (e as any)?.details,
     });
   }
 }

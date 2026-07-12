@@ -55,6 +55,40 @@ export type TrendingToiSummary = {
   deltaLast5VsLast20Seconds: number | null;
 };
 
+export type OpportunitySignalType =
+  | "toi_up"
+  | "pp1_promotion"
+  | "pp2_to_pp1_threat"
+  | "line_promotion"
+  | "pair_promotion"
+  | "shot_volume_spike"
+  | "usage_drop"
+  | "goalie_starter_share_rising"
+  | "goalie_starter_share_falling"
+  | "team_top_load_change"
+  | "team_pp_unit_concentration_change";
+
+export type OpportunitySignal = {
+  type: OpportunitySignalType;
+  label: string;
+  severity: "low" | "medium" | "high";
+  sourceState: "available" | "partial" | "source_pending";
+  baselineWindow: "last20";
+  currentWindow: "last5";
+  baselineValue: number | null;
+  currentValue: number | null;
+  delta: number | null;
+  evidence: string;
+};
+
+export type OpportunitySignalContract = {
+  type: OpportunitySignalType;
+  label: string;
+  sourceState: "available" | "source_pending";
+  requiredInputs: string[];
+  description: string;
+};
+
 export type TrendingRow = {
   entity: ContextualRankingApiRow["entity"];
   team: ContextualRankingApiRow["team"];
@@ -65,6 +99,7 @@ export type TrendingRow = {
   primaryDeltaLast5VsLast20: number | null;
   toiTrend: TrendingToiSummary;
   metrics: TrendingMetricSummary[];
+  opportunitySignals: OpportunitySignal[];
   sourceState: "available" | "partial" | "unavailable";
   message: string | null;
 };
@@ -97,6 +132,7 @@ export type TrendingResponse = {
     sourceTable: "rolling_player_game_metrics";
     metricKeys: ContextualRankingMetricKey[];
     windows: TrendingWindow[];
+    opportunitySignalContracts: OpportunitySignalContract[];
     snapshotDates: Partial<Record<TrendingWindow, string | null>>;
     latestAvailableSnapshotDate: string | null;
     message: string | null;
@@ -105,6 +141,89 @@ export type TrendingResponse = {
 
 type QueryValue = string | string[] | undefined;
 type WindowSurfaceMap = Map<ContextualRankingMetricKey, ContextualRankingsResponse>;
+
+export const OPPORTUNITY_SIGNAL_CONTRACTS: OpportunitySignalContract[] = [
+  {
+    type: "toi_up",
+    label: "TOI Up",
+    sourceState: "available",
+    requiredInputs: ["last5 toi per game", "last20 toi per game"],
+    description: "Flags players whose selected-window TOI/G is materially up.",
+  },
+  {
+    type: "usage_drop",
+    label: "Usage Drop",
+    sourceState: "available",
+    requiredInputs: ["last5 toi per game", "last20 toi per game"],
+    description: "Flags players whose selected-window TOI/G is materially down.",
+  },
+  {
+    type: "shot_volume_spike",
+    label: "Shot Volume Spike",
+    sourceState: "available",
+    requiredInputs: [
+      "last5 shot_attempts_per_60 or sog_per_60 percentile",
+      "last20 shot_attempts_per_60 or sog_per_60 percentile",
+    ],
+    description: "Flags players with a material recent shot-volume percentile jump.",
+  },
+  {
+    type: "pp1_promotion",
+    label: "PP1 Promotion",
+    sourceState: "source_pending",
+    requiredInputs: ["current PP unit", "prior PP unit", "PP TOI share by game"],
+    description: "Requires deployment history rather than only current PP bucket.",
+  },
+  {
+    type: "pp2_to_pp1_threat",
+    label: "PP2-to-PP1 Threat",
+    sourceState: "source_pending",
+    requiredInputs: ["PP2 current role", "PP1 role trend", "PP production and PP TOI share"],
+    description: "Requires unit-level PP history and teammate context.",
+  },
+  {
+    type: "line_promotion",
+    label: "Line Promotion",
+    sourceState: "source_pending",
+    requiredInputs: ["current EV line", "prior EV line", "EV TOI share by game"],
+    description: "Requires historical line-assignment comparison.",
+  },
+  {
+    type: "pair_promotion",
+    label: "Pair Promotion",
+    sourceState: "source_pending",
+    requiredInputs: ["current defense pair", "prior defense pair", "defense TOI share by game"],
+    description: "Requires historical pair-assignment comparison.",
+  },
+  {
+    type: "goalie_starter_share_rising",
+    label: "Starter Share Rising",
+    sourceState: "source_pending",
+    requiredInputs: ["current goalie start share", "baseline goalie start share"],
+    description: "Requires goalie role trend rows beyond the current matrix snapshot.",
+  },
+  {
+    type: "goalie_starter_share_falling",
+    label: "Starter Share Falling",
+    sourceState: "source_pending",
+    requiredInputs: ["current goalie start share", "baseline goalie start share"],
+    description: "Requires goalie role trend rows beyond the current matrix snapshot.",
+  },
+  {
+    type: "team_top_load_change",
+    label: "Team Top-Load Change",
+    sourceState: "source_pending",
+    requiredInputs: ["current team_unit_toi top-load", "baseline team_unit_toi top-load"],
+    description: "Requires historical team unit-usage comparison.",
+  },
+  {
+    type: "team_pp_unit_concentration_change",
+    label: "PP Unit Concentration Change",
+    sourceState: "source_pending",
+    requiredInputs: ["current PP1/PP2 usage share", "baseline PP1/PP2 usage share"],
+    description: "Requires historical team PP unit concentration comparison.",
+  },
+];
 
 function first(value: QueryValue) {
   if (Array.isArray(value)) return value[0];
@@ -233,6 +352,87 @@ function rowSourceState(metrics: TrendingMetricSummary[]) {
     return "partial" as const;
   }
   return "unavailable" as const;
+}
+
+function severityFromMagnitude(
+  magnitude: number,
+  thresholds: { low: number; medium: number; high: number },
+) {
+  if (magnitude >= thresholds.high) return "high" as const;
+  if (magnitude >= thresholds.medium) return "medium" as const;
+  return "low" as const;
+}
+
+function buildToiOpportunitySignal(
+  toiTrend: TrendingToiSummary,
+): OpportunitySignal | null {
+  const deltaSeconds = toiTrend.deltaLast5VsLast20Seconds;
+  if (deltaSeconds == null || Math.abs(deltaSeconds) < 30) return null;
+  const positive = deltaSeconds > 0;
+  return {
+    type: positive ? "toi_up" : "usage_drop",
+    label: positive ? "TOI Up" : "Usage Drop",
+    severity: severityFromMagnitude(Math.abs(deltaSeconds), {
+      low: 30,
+      medium: 60,
+      high: 120,
+    }),
+    sourceState: "available",
+    baselineWindow: "last20",
+    currentWindow: "last5",
+    baselineValue: toiTrend.last20Seconds,
+    currentValue: toiTrend.last5Seconds,
+    delta: deltaSeconds,
+    evidence: `TOI/G ${positive ? "up" : "down"} ${formatSecondsDelta(deltaSeconds)} from last 20 to last 5.`,
+  };
+}
+
+function formatSecondsDelta(value: number) {
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${Math.round(value)}s`;
+}
+
+function buildShotVolumeOpportunitySignal(
+  metrics: TrendingMetricSummary[],
+): OpportunitySignal | null {
+  const metric =
+    metrics.find((entry) => entry.metricKey === "shot_attempts_per_60") ??
+    metrics.find((entry) => entry.metricKey === "sog_per_60") ??
+    null;
+  if (!metric || metric.deltaLast5VsLast20 == null || metric.deltaLast5VsLast20 < 8) {
+    return null;
+  }
+  return {
+    type: "shot_volume_spike",
+    label: "Shot Volume Spike",
+    severity: severityFromMagnitude(metric.deltaLast5VsLast20, {
+      low: 8,
+      medium: 15,
+      high: 25,
+    }),
+    sourceState: "available",
+    baselineWindow: "last20",
+    currentWindow: "last5",
+    baselineValue: metric.last20?.percentile ?? null,
+    currentValue: metric.last5?.percentile ?? null,
+    delta: metric.deltaLast5VsLast20,
+    evidence: `${metric.shortLabel} percentile ${formatSigned(metric.deltaLast5VsLast20)} from last 20 to last 5.`,
+  };
+}
+
+function formatSigned(value: number) {
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(1)}`;
+}
+
+export function buildOpportunitySignals(args: {
+  toiTrend: TrendingToiSummary;
+  metrics: TrendingMetricSummary[];
+}) {
+  return [
+    buildToiOpportunitySignal(args.toiTrend),
+    buildShotVolumeOpportunitySignal(args.metrics),
+  ].filter((signal): signal is OpportunitySignal => signal != null);
 }
 
 export function parseTrendingRequest(
@@ -367,6 +567,7 @@ export async function buildTrendingSurface(
     );
     const primaryMetricSummary =
       metrics.find((metric) => metric.metricKey === primaryMetric) ?? null;
+    const opportunitySignals = buildOpportunitySignals({ toiTrend, metrics });
 
     return {
       entity: contextRow?.entity ?? {
@@ -396,6 +597,7 @@ export async function buildTrendingSurface(
         primaryMetricSummary?.deltaLast5VsLast20 ?? null,
       toiTrend,
       metrics,
+      opportunitySignals,
       sourceState,
       message:
         sourceState === "unavailable"
@@ -430,6 +632,7 @@ export async function buildTrendingSurface(
       sourceTable: "rolling_player_game_metrics",
       metricKeys,
       windows: [...TRENDING_WINDOWS],
+      opportunitySignalContracts: OPPORTUNITY_SIGNAL_CONTRACTS,
       snapshotDates,
       latestAvailableSnapshotDate,
       message:

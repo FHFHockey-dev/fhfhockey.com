@@ -12,11 +12,14 @@ describe("Dashboard Performance Budget Audit", () => {
     expect(endpoints).toEqual(
       expect.arrayContaining([
         "/api/team-ratings",
+        "/api/v1/forge/players",
         "/api/v1/forge/goalies",
         "/api/v1/start-chart",
         "/api/v1/trends/team-ctpi",
         "/api/v1/trends/skater-power",
-        "/api/v1/sustainability/trends"
+        "/api/v1/sustainability/trends",
+        "/api/v1/transactions/ownership-trends",
+        "/api/v1/transactions/ownership-snapshots"
       ])
     );
   });

@@ -62,5 +62,128 @@
     .footerLogoUnderlyingStats {
       color: vars.$color-brand-yellow;
     }
+
+    &.homepageFooter {
+      position: static;
+      z-index: auto;
+      display: block;
+      width: 100%;
+      height: auto;
+      min-height: 62px;
+      margin-top: vars.$space-sm;
+      padding: vars.$space-sm vars.$space-md;
+      border-top: 1px solid vars.$border-soft;
+      background: color-mix(in srgb, vars.$background-dark 92%, black);
+      opacity: 1;
+      pointer-events: auto;
+      transform: none;
+
+      &::before,
+      &::after {
+        display: none;
+      }
+    }
+  }
+}
+
+.homepageFooterInner {
+  width: min(100%, 1680px);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: auto minmax(180px, 1fr) auto auto;
+  align-items: center;
+  gap: vars.$space-lg;
+
+  > p {
+    margin: 0;
+    color: vars.$text-secondary;
+    font-size: vars.$font-size-xs;
+  }
+
+  > nav {
+    display: flex;
+    align-items: center;
+    gap: vars.$space-lg;
+
+    a {
+      color: vars.$text-secondary;
+      font-family: vars.$font-family-primary;
+      font-size: vars.$font-size-xs;
+      letter-spacing: 0.08em;
+      text-decoration: none;
+      text-transform: uppercase;
+
+      &:hover,
+      &:focus-visible {
+        color: vars.$primary-color;
+      }
+
+      &:focus-visible {
+        outline: 2px solid vars.$primary-color;
+        outline-offset: 2px;
+      }
+    }
+  }
+}
+
+.homepageFooterBrand {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+
+  small {
+    color: vars.$primary-color;
+    font-size: 0.42rem;
+    font-style: italic;
+    font-weight: vars.$font-weight-bold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+}
+
+.homepageFooterSocials {
+  display: flex;
+  align-items: center;
+
+  > :global(div) {
+    gap: vars.$space-sm;
+  }
+
+  :global(img) {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .homepageFooterInner {
+    grid-template-columns: auto 1fr auto;
+
+    > nav {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      justify-content: center;
+    }
+  }
+}
+
+@media (max-width: vars.$breakpoint-mobile-lg) {
+  .container .footer.homepageFooter {
+    padding: vars.$space-lg vars.$space-md;
+  }
+
+  .homepageFooterInner {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: vars.$space-md;
+    text-align: center;
+
+    > nav {
+      grid-column: auto;
+      grid-row: auto;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: vars.$space-md;
+    }
   }
 }

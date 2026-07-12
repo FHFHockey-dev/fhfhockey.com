@@ -1,8 +1,10 @@
 import type { NextApiRequest } from "next";
 
 import supabase from "lib/supabase/server";
+import type { Database } from "lib/supabase/database-generated.types";
 
 import {
+  TEAM_ADJUSTED_STYLE_SOURCE_CONTRACTS,
   TEAM_SOURCE_PENDING_METRIC_CONTRACTS,
   TEAM_STYLE_SOURCE_CONTRACT,
   calculateTeamGameContextComponents,
@@ -30,7 +32,10 @@ export type TeamMatrixMetricKey =
   | "one_goal_game_rate"
   | "home_road_point_pct_gap"
   | "pp_opportunity_rate"
-  | "penalties_taken_per_60";
+  | "penalties_taken_per_60"
+  | "forward_top_load_index"
+  | "defense_pair_top_load_index"
+  | "pp1_pp2_usage_share";
 
 export type TeamMatrixRequest = {
   season: number;
@@ -91,6 +96,12 @@ type TeamGameContextRow = {
   penalties_taken_per_60: number | null;
 };
 
+type GameVenueRow = {
+  id: number;
+  homeTeamId: number | null;
+  awayTeamId: number | null;
+};
+
 type NstTeamRow = {
   team_abbreviation: string;
   team_name: string | null;
@@ -139,6 +150,53 @@ type TeamGameContextAggregate = {
   penaltiesTakenPer60: number | null;
 };
 
+type TeamUnitToiRow = {
+  [Key in
+    | "team_id"
+    | "game_id"
+    | "game_date"
+    | "snapshot_date"
+    | "unit_type"
+    | "unit_number"
+    | "unit_share"
+    | "unit_toi_seconds"
+    | "team_unit_pool_toi_seconds"
+    | "coverage_status"
+    | "coverage_warnings"]: Database["public"]["Tables"]["team_unit_toi"]["Row"][Key];
+};
+
+type TeamUnitMetricCoverageStatus = "complete" | "partial" | "source_gap";
+
+export type TeamUnitMetricCoverage = {
+  games: number;
+  latestDate: string | null;
+  snapshotDate: string | null;
+  status: TeamUnitMetricCoverageStatus;
+  warnings: string[];
+};
+
+export type TeamUnitMetricInterpretation = {
+  label: string;
+  coverageQualified: boolean;
+  minimumGames: number;
+  reason: string;
+};
+
+type TeamUnitUsageAggregate = {
+  teamId: number;
+  gamesCount: number;
+  latestDate: string | null;
+  snapshotDate: string | null;
+  forwardTopLoadIndex: number | null;
+  defensePairTopLoadIndex: number | null;
+  pp1Pp2UsageShare: number | null;
+  coverage: {
+    forwardTopLoad: TeamUnitMetricCoverage;
+    defensePairTopLoad: TeamUnitMetricCoverage;
+    pp1Pp2UsageShare: TeamUnitMetricCoverage;
+  };
+};
+
 type RankedMetric = {
   rawValue: number | null;
   formattedValue: string | null;
@@ -164,6 +222,11 @@ export type TeamMatrixRow = {
   };
   style: {
     label: string;
+    descriptorType: "raw_contextual";
+    displayLabel: string;
+    adjustedTargetLabel: string;
+    adjustedStatus: "source_pending";
+    interpretation: string;
     paceAxis: string | null;
     controlAxis: string | null;
     xgForPercentage: number | null;
@@ -184,6 +247,20 @@ export type TeamMatrixRow = {
     homeRoadPointPctGap: number | null;
     powerPlayOpportunityRate: number | null;
     penaltiesTakenPer60: number | null;
+  };
+  unitUsage: {
+    games: number;
+    latestDate: string | null;
+    snapshotDate: string | null;
+    forwardTopLoadIndex: number | null;
+    defensePairTopLoadIndex: number | null;
+    pp1Pp2UsageShare: number | null;
+    coverage: TeamUnitUsageAggregate["coverage"];
+    labels: {
+      forwardTopLoad: TeamUnitMetricInterpretation;
+      defensePairTopLoad: TeamUnitMetricInterpretation;
+      pp1Pp2UsageShare: TeamUnitMetricInterpretation;
+    };
   };
   sort: {
     metricKey: TeamMatrixMetricKey;
@@ -214,7 +291,10 @@ export type TeamMatrixResponse = {
     sourceQualityFlags?: string[];
     sourceWarnings: string[];
     teamStyleContract: typeof TEAM_STYLE_SOURCE_CONTRACT;
-    sourcePendingMetricContracts: typeof TEAM_SOURCE_PENDING_METRIC_CONTRACTS;
+    sourcePendingMetricContracts: Array<
+      (typeof TEAM_SOURCE_PENDING_METRIC_CONTRACTS)[number] |
+        (typeof TEAM_ADJUSTED_STYLE_SOURCE_CONTRACTS)[number]
+    >;
     metricColumns: Array<{
       metricKey: TeamMatrixMetricKey;
       label: string;
@@ -229,10 +309,32 @@ const TEAM_QUERY_PAGE_SIZE = 1000;
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
 const TEAM_MATRIX_RESPONSE_CACHE_TTL_MS = 30_000;
+const TEAM_UNIT_TOI_SELECT =
+  "team_id,game_id,game_date,snapshot_date,unit_type,unit_number,unit_share,unit_toi_seconds,team_unit_pool_toi_seconds,coverage_status,coverage_warnings" as const;
 const teamMatrixResponseCache = new Map<
   string,
   { expiresAt: number; response: TeamMatrixResponse }
 >();
+
+function emptyTeamUnitMetricCoverage(
+  snapshotDate: string | null,
+): TeamUnitMetricCoverage {
+  return {
+    games: 0,
+    latestDate: null,
+    snapshotDate,
+    status: "source_gap",
+    warnings: [],
+  };
+}
+
+function emptyTeamUnitCoverage(snapshotDate: string | null) {
+  return {
+    forwardTopLoad: emptyTeamUnitMetricCoverage(snapshotDate),
+    defensePairTopLoad: emptyTeamUnitMetricCoverage(snapshotDate),
+    pp1Pp2UsageShare: emptyTeamUnitMetricCoverage(snapshotDate),
+  };
+}
 
 export function clearTeamMatrixSurfaceCachesForTests() {
   teamMatrixResponseCache.clear();
@@ -333,10 +435,9 @@ const METRIC_COLUMNS: TeamMatrixResponse["meta"]["metricColumns"] = [
   {
     metricKey: "home_road_point_pct_gap",
     label: "Home Edge",
-    description:
-      "Source-pending home point-percentage minus road point-percentage.",
+    description: "Home point-percentage minus road point-percentage.",
     lowerIsBetter: false,
-    source: "Source Pending: wgo_team_stats lacks a verified home_road split column",
+    source: "wgo_team_stats.point_pct joined to games homeTeamId/awayTeamId",
   },
   {
     metricKey: "pp_opportunity_rate",
@@ -351,6 +452,30 @@ const METRIC_COLUMNS: TeamMatrixResponse["meta"]["metricColumns"] = [
     description: "Penalties taken per 60 minutes. Lower raw values are better.",
     lowerIsBetter: true,
     source: "wgo_team_stats.penalties_taken_per_60",
+  },
+  {
+    metricKey: "forward_top_load_index",
+    label: "Fwd Top Load",
+    description:
+      "Average top forward-line share of team forward pooled player-seconds.",
+    lowerIsBetter: false,
+    source: "team_unit_toi forward_line unit_number=1",
+  },
+  {
+    metricKey: "defense_pair_top_load_index",
+    label: "Pair Top Load",
+    description:
+      "Average top defense-pair share of team defense pooled player-seconds.",
+    lowerIsBetter: false,
+    source: "team_unit_toi defense_pair unit_number=1",
+  },
+  {
+    metricKey: "pp1_pp2_usage_share",
+    label: "PP1/PP2 Share",
+    description:
+      "Average share of team power-play pooled player-seconds assigned to PP1 and PP2.",
+    lowerIsBetter: false,
+    source: "team_unit_toi power_play unit_number in (1,2)",
   },
 ];
 
@@ -491,9 +616,29 @@ function sum(values: Array<number | null | undefined>) {
   return count > 0 ? round(total) : null;
 }
 
+function average(values: Array<number | null | undefined>) {
+  let total = 0;
+  let count = 0;
+  for (const value of values) {
+    const number = finite(value);
+    if (number == null) continue;
+    total += number;
+    count += 1;
+  }
+  return count > 0 ? round(total / count) : null;
+}
+
 function formatMetricValue(metricKey: TeamMatrixMetricKey, value: number | null) {
   if (value == null) return null;
-  if (metricKey === "xgf_percentage") return `${value.toFixed(1)}%`;
+  if (
+    metricKey === "xgf_percentage" ||
+    metricKey === "one_goal_game_rate" ||
+    metricKey === "forward_top_load_index" ||
+    metricKey === "defense_pair_top_load_index" ||
+    metricKey === "pp1_pp2_usage_share"
+  ) {
+    return `${value.toFixed(1)}%`;
+  }
   if (metricKey === "shot_quality") return value.toFixed(3);
   if (
     metricKey === "event_rate" ||
@@ -508,8 +653,35 @@ function formatMetricValue(metricKey: TeamMatrixMetricKey, value: number | null)
   ) {
     return value.toFixed(2);
   }
-  if (metricKey === "one_goal_game_rate") return `${value.toFixed(1)}%`;
   return value.toFixed(1);
+}
+
+const MIN_TEAM_UNIT_LABEL_GAMES = 3;
+
+export function buildTeamUnitMetricInterpretation(args: {
+  metricLabel: string;
+  coverage: TeamUnitMetricCoverage;
+}) {
+  const coverageQualified =
+    args.coverage.status === "complete" &&
+    args.coverage.games >= MIN_TEAM_UNIT_LABEL_GAMES;
+  if (coverageQualified) {
+    return {
+      label: `${args.metricLabel} coverage-qualified`,
+      coverageQualified,
+      minimumGames: MIN_TEAM_UNIT_LABEL_GAMES,
+      reason: `${args.coverage.games} complete resolved games support this unit-usage label.`,
+    };
+  }
+  return {
+    label: `${args.metricLabel} coverage-limited`,
+    coverageQualified,
+    minimumGames: MIN_TEAM_UNIT_LABEL_GAMES,
+    reason:
+      args.coverage.status === "source_gap"
+        ? "No resolved unit-usage games are available for this label."
+        : `${args.coverage.games} resolved games with ${args.coverage.status} coverage; require ${MIN_TEAM_UNIT_LABEL_GAMES} complete games before naming a team top-load style.`,
+  };
 }
 
 function deriveStyleBadge(args: {
@@ -539,9 +711,10 @@ function metricValue(args: {
   power: TeamPowerRow;
   style: ReturnType<typeof buildStylePayload>;
   context: TeamGameContextAggregate | null;
+  unitUsage: TeamUnitUsageAggregate | null;
   metricKey: TeamMatrixMetricKey;
 }) {
-  const { power, style, context, metricKey } = args;
+  const { power, style, context, unitUsage, metricKey } = args;
   if (metricKey === "off_rating") return finite(power.off_rating);
   if (metricKey === "def_rating") return finite(power.def_rating);
   if (metricKey === "xgf60") return finite(power.xgf60);
@@ -563,6 +736,15 @@ function metricValue(args: {
   }
   if (metricKey === "penalties_taken_per_60") {
     return context?.penaltiesTakenPer60 ?? null;
+  }
+  if (metricKey === "forward_top_load_index") {
+    return unitUsage?.forwardTopLoadIndex ?? null;
+  }
+  if (metricKey === "defense_pair_top_load_index") {
+    return unitUsage?.defensePairTopLoadIndex ?? null;
+  }
+  if (metricKey === "pp1_pp2_usage_share") {
+    return unitUsage?.pp1Pp2UsageShare ?? null;
   }
   return null;
 }
@@ -657,6 +839,178 @@ export function aggregateTeamGameContextRows(
       homeRoadPointPctGap: context.homeRoadPointPctGap,
       powerPlayOpportunityRate: context.powerPlayOpportunityRate,
       penaltiesTakenPer60: context.penaltiesTakenPer60,
+    });
+  }
+
+  return aggregates;
+}
+
+export function aggregateTeamUnitToiRows(
+  rows: readonly TeamUnitToiRow[],
+): Map<number, TeamUnitUsageAggregate> {
+  type TeamGameUsage = {
+    gameId: number;
+    gameDate: string | null;
+    snapshotDate: string | null;
+    forwardTopShare: number | null;
+    defenseTopShare: number | null;
+    ppTopTwoSeconds: number;
+    ppPoolSeconds: number | null;
+    forwardCoverageStatus: TeamUnitMetricCoverageStatus | null;
+    defenseCoverageStatus: TeamUnitMetricCoverageStatus | null;
+    ppCoverageStatuses: TeamUnitMetricCoverageStatus[];
+    forwardCoverageWarnings: string[];
+    defenseCoverageWarnings: string[];
+    ppCoverageWarnings: string[];
+  };
+
+  const collectWarnings = (warnings: TeamUnitToiRow["coverage_warnings"]) =>
+    Array.isArray(warnings)
+      ? warnings.filter((warning): warning is string => typeof warning === "string")
+      : [];
+
+  const usageByTeamGame = new Map<number, Map<number, TeamGameUsage>>();
+  for (const row of rows) {
+    const teamGames = usageByTeamGame.get(row.team_id) ?? new Map();
+    const usage =
+      teamGames.get(row.game_id) ??
+      ({
+        gameId: row.game_id,
+        gameDate: row.game_date,
+        snapshotDate: row.snapshot_date,
+        forwardTopShare: null,
+        defenseTopShare: null,
+        ppTopTwoSeconds: 0,
+        ppPoolSeconds: null,
+        forwardCoverageStatus: null,
+        defenseCoverageStatus: null,
+        ppCoverageStatuses: [],
+        forwardCoverageWarnings: [],
+        defenseCoverageWarnings: [],
+        ppCoverageWarnings: [],
+      } satisfies TeamGameUsage);
+
+    if (row.game_date != null) usage.gameDate = row.game_date;
+    usage.snapshotDate = row.snapshot_date;
+    const coverageWarnings = collectWarnings(row.coverage_warnings);
+
+    if (row.unit_type === "forward_line" && row.unit_number === 1) {
+      usage.forwardTopShare =
+        row.unit_share == null ? null : round(row.unit_share * 100);
+      usage.forwardCoverageStatus = row.coverage_status;
+      usage.forwardCoverageWarnings.push(...coverageWarnings);
+    }
+    if (row.unit_type === "defense_pair" && row.unit_number === 1) {
+      usage.defenseTopShare =
+        row.unit_share == null ? null : round(row.unit_share * 100);
+      usage.defenseCoverageStatus = row.coverage_status;
+      usage.defenseCoverageWarnings.push(...coverageWarnings);
+    }
+    if (row.unit_type === "power_play") {
+      const poolSeconds = finite(row.team_unit_pool_toi_seconds);
+      if (poolSeconds != null && poolSeconds > 0) usage.ppPoolSeconds = poolSeconds;
+      const unitSeconds = finite(row.unit_toi_seconds);
+      if (row.unit_number <= 2 && unitSeconds != null) {
+        usage.ppTopTwoSeconds += unitSeconds;
+      }
+      usage.ppCoverageStatuses.push(row.coverage_status);
+      usage.ppCoverageWarnings.push(...coverageWarnings);
+    }
+
+    teamGames.set(row.game_id, usage);
+    usageByTeamGame.set(row.team_id, teamGames);
+  }
+
+  const buildCoverage = (args: {
+    games: TeamGameUsage[];
+    values: Array<number | null>;
+    statuses: (game: TeamGameUsage) => TeamUnitMetricCoverageStatus[];
+    warnings: (game: TeamGameUsage) => string[];
+  }): TeamUnitMetricCoverage => {
+    const gamesWithValue = args.games.filter((game, index) => args.values[index] != null);
+    const statuses = args.games.flatMap(args.statuses);
+    const warnings = Array.from(new Set(args.games.flatMap(args.warnings))).sort();
+    const hasPartialStatus = statuses.some((status) => status !== "complete");
+    const status: TeamUnitMetricCoverageStatus =
+      gamesWithValue.length === 0
+        ? "source_gap"
+        : gamesWithValue.length < args.games.length || hasPartialStatus
+          ? "partial"
+          : "complete";
+    return {
+      games: gamesWithValue.length,
+      latestDate: gamesWithValue.reduce<string | null>(
+        (latest, game) =>
+          game.gameDate == null || (latest != null && game.gameDate <= latest)
+            ? latest
+            : game.gameDate,
+        null,
+      ),
+      snapshotDate: gamesWithValue.reduce<string | null>(
+        (latest, game) =>
+          game.snapshotDate == null ||
+          (latest != null && game.snapshotDate <= latest)
+            ? latest
+            : game.snapshotDate,
+        null,
+      ),
+      status,
+      warnings,
+    };
+  };
+
+  const aggregates = new Map<number, TeamUnitUsageAggregate>();
+  for (const [teamId, teamGames] of usageByTeamGame.entries()) {
+    const games = Array.from(teamGames.values());
+    const forwardShares = games.map((game) => game.forwardTopShare);
+    const defenseShares = games.map((game) => game.defenseTopShare);
+    const ppShares = games.map((game) =>
+      game.ppPoolSeconds == null || game.ppPoolSeconds <= 0
+        ? null
+        : round((game.ppTopTwoSeconds / game.ppPoolSeconds) * 100),
+    );
+    aggregates.set(teamId, {
+      teamId,
+      gamesCount: games.length,
+      latestDate: games.reduce<string | null>(
+        (latest, game) =>
+          game.gameDate == null || (latest != null && game.gameDate <= latest)
+            ? latest
+            : game.gameDate,
+        null,
+      ),
+      snapshotDate: games.reduce<string | null>(
+        (latest, game) =>
+          game.snapshotDate == null || (latest != null && game.snapshotDate <= latest)
+            ? latest
+            : game.snapshotDate,
+        null,
+      ),
+      forwardTopLoadIndex: average(forwardShares),
+      defensePairTopLoadIndex: average(defenseShares),
+      pp1Pp2UsageShare: average(ppShares),
+      coverage: {
+        forwardTopLoad: buildCoverage({
+          games,
+          values: forwardShares,
+          statuses: (game) =>
+            game.forwardCoverageStatus == null ? [] : [game.forwardCoverageStatus],
+          warnings: (game) => game.forwardCoverageWarnings,
+        }),
+        defensePairTopLoad: buildCoverage({
+          games,
+          values: defenseShares,
+          statuses: (game) =>
+            game.defenseCoverageStatus == null ? [] : [game.defenseCoverageStatus],
+          warnings: (game) => game.defenseCoverageWarnings,
+        }),
+        pp1Pp2UsageShare: buildCoverage({
+          games,
+          values: ppShares,
+          statuses: (game) => game.ppCoverageStatuses,
+          warnings: (game) => game.ppCoverageWarnings,
+        }),
+      },
     });
   }
 
@@ -844,7 +1198,80 @@ async function fetchTeamGameContextRows(request: TeamMatrixRequest) {
     rows.push(...((data ?? []) as unknown as TeamGameContextRow[]));
     if ((data ?? []).length < TEAM_QUERY_PAGE_SIZE) break;
   }
-  return rows;
+
+  const gameIds = Array.from(
+    new Set(
+      rows
+        .map((row) => finite(row.game_id))
+        .filter((gameId): gameId is number => gameId != null),
+    ),
+  );
+  const venuesByGameId = await fetchGameVenueRows(gameIds);
+  return rows.map((row) => {
+    const gameId = finite(row.game_id);
+    const venue = gameId == null ? null : venuesByGameId.get(gameId) ?? null;
+    const homeRoad =
+      venue == null || row.team_id == null
+        ? null
+        : row.team_id === venue.homeTeamId
+          ? "home"
+          : row.team_id === venue.awayTeamId
+            ? "road"
+            : null;
+    return { ...row, home_road: homeRoad };
+  });
+}
+
+async function fetchGameVenueRows(gameIds: number[]) {
+  const rows: GameVenueRow[] = [];
+  for (let index = 0; index < gameIds.length; index += TEAM_QUERY_PAGE_SIZE) {
+    const chunk = gameIds.slice(index, index + TEAM_QUERY_PAGE_SIZE);
+    if (chunk.length === 0) continue;
+    const { data, error } = await supabase
+      .from("games")
+      .select("id,homeTeamId,awayTeamId")
+      .in("id", chunk);
+    if (error) throw new Error(`Unable to load game venue rows: ${error.message}`);
+    rows.push(...((data ?? []) as unknown as GameVenueRow[]));
+  }
+  return new Map(rows.map((row) => [Number(row.id), row]));
+}
+
+async function fetchLatestTeamUnitToiSnapshotDate(season: number) {
+  const { data, error } = await supabase
+    .from("team_unit_toi")
+    .select("snapshot_date")
+    .eq("season_id", season)
+    .order("snapshot_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`Unable to load team unit-TOI snapshot: ${error.message}`);
+  return data?.snapshot_date ?? null;
+}
+
+async function fetchTeamUnitToiRows(request: TeamMatrixRequest) {
+  const snapshotDate = await fetchLatestTeamUnitToiSnapshotDate(request.season);
+  if (snapshotDate == null) {
+    return { snapshotDate: null, rows: [] as TeamUnitToiRow[] };
+  }
+
+  const rows: TeamUnitToiRow[] = [];
+  for (let from = 0;; from += TEAM_QUERY_PAGE_SIZE) {
+    let query = supabase
+      .from("team_unit_toi")
+      .select(TEAM_UNIT_TOI_SELECT)
+      .eq("season_id", request.season)
+      .eq("snapshot_date", snapshotDate)
+      .order("game_date", { ascending: false })
+      .range(from, from + TEAM_QUERY_PAGE_SIZE - 1);
+    if (request.asOfDate != null) query = query.lte("game_date", request.asOfDate);
+    const { data, error } = await query;
+    if (error) throw new Error(`Unable to load team unit-TOI rows: ${error.message}`);
+    rows.push(...((data ?? []) as TeamUnitToiRow[]));
+    if ((data ?? []).length < TEAM_QUERY_PAGE_SIZE) break;
+  }
+
+  return { snapshotDate, rows };
 }
 
 function latestStyleDate(aggregates: Iterable<TeamStyleAggregate>) {
@@ -868,19 +1295,21 @@ export async function buildTeamMatrixSurface(
   if (latestPowerDate == null) {
     throw new ContextualRankingsQueryError("No team power snapshot available");
   }
-  const [powerRows, teamMeta, underlyingRows, nstRows, gameContextRows] =
+  const [powerRows, teamMeta, underlyingRows, nstRows, gameContextRows, unitToi] =
     await Promise.all([
       fetchTeamPowerRows(latestPowerDate),
       fetchTeamMeta(),
       fetchUnderlyingStyleRows(request),
       fetchNstTeamRows(request.season),
       fetchTeamGameContextRows(request),
+      fetchTeamUnitToiRows(request),
     ]);
   const styleByAbbreviation = aggregateTeamStyleRows({
     rows: underlyingRows,
     teamsById: teamMeta.byId,
   });
   const contextByTeamId = aggregateTeamGameContextRows(gameContextRows);
+  const unitUsageByTeamId = aggregateTeamUnitToiRows(unitToi.rows);
   for (const row of nstRows) {
     if (!styleByAbbreviation.has(row.team_abbreviation)) {
       styleByAbbreviation.set(row.team_abbreviation, styleAggregateFromNst(row));
@@ -904,22 +1333,28 @@ export async function buildTeamMatrixSurface(
       ? round(eventRates.reduce((total, value) => total + value, 0) / eventRates.length)
       : null;
   const styleSnapshotDate = latestStyleDate(styleByAbbreviation.values());
+  const unitUsageSnapshotDate = unitToi.snapshotDate;
   const sourceWarnings = [
     ...(styleSnapshotDate != null && styleSnapshotDate !== latestPowerDate
       ? [
           `team style source snapshot ${styleSnapshotDate} differs from team power snapshot ${latestPowerDate}`,
         ]
       : []),
-    "home_road_point_pct_gap is source-pending because wgo_team_stats.home_road is not published",
     "team style is raw/contextual, not score- or venue-adjusted",
+    ...(unitToi.rows.length > 0
+      ? [
+          "team unit-usage metrics use pooled player-seconds; forward/defense overlap coverage is partial when raw shifts cannot resolve complete 5v5 position groups",
+        ]
+      : ["team_unit_toi source rows are unavailable for team usage metrics"]),
   ];
 
   const baseRows = powerRows.map((power) => {
     const aggregate = styleByAbbreviation.get(power.team_abbreviation) ?? null;
     const team = teamMeta.byAbbreviation.get(power.team_abbreviation);
     const context = team?.id == null ? null : contextByTeamId.get(team.id) ?? null;
+    const unitUsage = team?.id == null ? null : unitUsageByTeamId.get(team.id) ?? null;
     const style = buildStylePayload({ aggregate, leagueAverageEventRate });
-    return { power, aggregate, style, context };
+    return { power, aggregate, style, context, unitUsage };
   });
 
   const rankMaps = new Map<
@@ -936,6 +1371,7 @@ export async function buildTeamMatrixSurface(
             power: row.power,
             style: row.style,
             context: row.context,
+            unitUsage: row.unitUsage,
             metricKey: column.metricKey,
           }),
         })),
@@ -944,7 +1380,7 @@ export async function buildTeamMatrixSurface(
     );
   }
 
-  const rows = baseRows.map(({ power, aggregate, style, context }): TeamMatrixRow => {
+  const rows = baseRows.map(({ power, aggregate, style, context, unitUsage }): TeamMatrixRow => {
     const team = teamMeta.byAbbreviation.get(power.team_abbreviation);
     const metrics = Object.fromEntries(
       METRIC_COLUMNS.map((column) => {
@@ -952,6 +1388,7 @@ export async function buildTeamMatrixSurface(
           power,
           style,
           context,
+          unitUsage,
           metricKey: column.metricKey,
         });
         const rank = rankMaps.get(column.metricKey)?.get(power.team_abbreviation);
@@ -985,6 +1422,12 @@ export async function buildTeamMatrixSurface(
       },
       style: {
         label: style.label,
+        descriptorType: "raw_contextual",
+        displayLabel: `${style.label} (raw/contextual)`,
+        adjustedTargetLabel: TEAM_STYLE_SOURCE_CONTRACT.adjustedTargetLabel,
+        adjustedStatus: "source_pending",
+        interpretation:
+          "Environment descriptor from current raw/contextual 5v5 inputs; not a coach/system claim.",
         paceAxis: style.paceAxis,
         controlAxis: style.controlAxis,
         xgForPercentage: style.xgForPercentage,
@@ -1002,6 +1445,33 @@ export async function buildTeamMatrixSurface(
         powerPlayOpportunityRate: context?.powerPlayOpportunityRate ?? null,
         penaltiesTakenPer60: context?.penaltiesTakenPer60 ?? null,
       },
+      unitUsage: {
+        games: unitUsage?.gamesCount ?? 0,
+        latestDate: unitUsage?.latestDate ?? null,
+        snapshotDate: unitUsage?.snapshotDate ?? unitUsageSnapshotDate,
+        forwardTopLoadIndex: unitUsage?.forwardTopLoadIndex ?? null,
+        defensePairTopLoadIndex: unitUsage?.defensePairTopLoadIndex ?? null,
+        pp1Pp2UsageShare: unitUsage?.pp1Pp2UsageShare ?? null,
+        coverage: unitUsage?.coverage ?? emptyTeamUnitCoverage(unitUsageSnapshotDate),
+        labels: (() => {
+          const coverage =
+            unitUsage?.coverage ?? emptyTeamUnitCoverage(unitUsageSnapshotDate);
+          return {
+            forwardTopLoad: buildTeamUnitMetricInterpretation({
+              metricLabel: "Forward top load",
+              coverage: coverage.forwardTopLoad,
+            }),
+            defensePairTopLoad: buildTeamUnitMetricInterpretation({
+              metricLabel: "Defense pair top load",
+              coverage: coverage.defensePairTopLoad,
+            }),
+            pp1Pp2UsageShare: buildTeamUnitMetricInterpretation({
+              metricLabel: "PP1/PP2 usage share",
+              coverage: coverage.pp1Pp2UsageShare,
+            }),
+          };
+        })(),
+      },
       sort: {
         metricKey: request.metric,
         rank: sortCell.rank,
@@ -1014,6 +1484,7 @@ export async function buildTeamMatrixSurface(
           ? ["team_style_using_season_level_nst_fallback"]
           : []),
         ...(context == null ? ["team_game_context_source_missing"] : []),
+        ...(unitUsage == null ? ["team_unit_toi_source_missing"] : []),
         "raw_contextual_team_style",
       ],
     };
@@ -1059,16 +1530,21 @@ export async function buildTeamMatrixSurface(
         "team_underlying_stats_summary",
         "nst_team_stats",
         "wgo_team_stats",
+        "games",
+        "team_unit_toi",
       ],
-      methodologyVersion: "team_rankings_v1",
-      methodologyUpdatedAt: "2026-06-21",
+      methodologyVersion: "team_rankings_v1_team_unit_toi_v1",
+      methodologyUpdatedAt: "2026-06-24",
       sourceQualityFlags: [
         "raw_contextual_team_style",
-        "home_road_split_source_pending",
+        "team_unit_toi_partial_forward_defense_coverage",
       ],
       sourceWarnings,
       teamStyleContract: TEAM_STYLE_SOURCE_CONTRACT,
-      sourcePendingMetricContracts: TEAM_SOURCE_PENDING_METRIC_CONTRACTS,
+      sourcePendingMetricContracts: [
+        ...TEAM_SOURCE_PENDING_METRIC_CONTRACTS,
+        ...TEAM_ADJUSTED_STYLE_SOURCE_CONTRACTS,
+      ],
       metricColumns: METRIC_COLUMNS,
     },
   };

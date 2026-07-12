@@ -1,0 +1,112 @@
+@use "styles/vars" as v;
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: v.$mobile-z-index-modal;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(v.$space-sm, 3vh, v.$space-xl);
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(6px);
+}
+
+.dialog {
+  width: min(1150px, 96vw);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid v.$border-soft;
+  border-radius: v.$border-radius-lg;
+  background: v.$background-dark;
+  color: v.$text-primary;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.58);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-md;
+  flex: 0 0 auto;
+  padding: v.$space-sm v.$space-md;
+  border-bottom: 1px solid v.$border-soft;
+  background: v.$background-medium;
+}
+
+.title {
+  margin: 0;
+  color: v.$color-white;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-lg;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.closeButton {
+  @include v.reset-button;
+  width: v.$control-height-md;
+  height: v.$control-height-md;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border: 1px solid v.$border-soft;
+  border-radius: v.$border-radius-sm;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xl;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    border-color: v.$primary-color;
+    color: v.$primary-color;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(v.$primary-color, 0.65);
+    outline-offset: 2px;
+  }
+}
+
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: v.$space-md;
+  overscroll-behavior: contain;
+  @include v.custom-scrollbar(v.$primary-color, v.$background-medium);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: v.$space-sm;
+}
+
+.footer {
+  flex: 0 0 auto;
+  padding: v.$space-sm v.$space-md;
+  border-top: 1px solid v.$border-soft;
+  background: v.$background-medium;
+}
+
+@media (max-width: v.$breakpoint-mobile-max) {
+  .backdrop {
+    align-items: stretch;
+    padding: v.$space-sm;
+  }
+
+  .dialog {
+    width: 100%;
+    max-height: 100%;
+  }
+
+  .header {
+    align-items: flex-start;
+  }
+}

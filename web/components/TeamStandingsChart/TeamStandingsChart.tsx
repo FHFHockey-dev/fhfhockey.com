@@ -9,7 +9,11 @@ import { teamsInfo, teamNameToAbbreviationMap } from "lib/teamsInfo";
 import publicSupabase from "lib/supabase/public-client";
 import styles from "./TeamStandingsChart.module.scss";
 import Fetch from "lib/cors-fetch";
-import { getMetricValue, getYDomainMax, type NumericMetric } from "./metricUtils";
+import {
+  getMetricValue,
+  getYDomainMax,
+  type NumericMetric,
+} from "./metricUtils";
 
 // -------------------------------
 // TYPE DEFINITIONS
@@ -36,7 +40,7 @@ interface TeamData {
 /** Accumulate daily data for each team. */
 function processDailyData(
   currentData: Map<string, TeamData[]>,
-  dailyData: TeamData[]
+  dailyData: TeamData[],
 ): Map<string, TeamData[]> {
   const newData = new Map(currentData);
   dailyData.forEach((entry) => {
@@ -59,7 +63,7 @@ function processDailyData(
 function computeRollingForGoals(
   data: TeamData[],
   windowSize: number,
-  type: "goalsFor" | "goalsAgainst"
+  type: "goalsFor" | "goalsAgainst",
 ): TeamData[] {
   if (data.length <= windowSize) return [];
   return data.slice(windowSize).map((d, i) => {
@@ -83,7 +87,7 @@ function computeRollingForGoals(
 function computeRollingAverageFiltered(
   data: TeamData[],
   windowSize: number,
-  metric: NumericMetric
+  metric: NumericMetric,
 ): TeamData[] {
   if (data.length < windowSize) return [];
   return data.slice(windowSize - 1).map((_, i) => {
@@ -96,7 +100,11 @@ function computeRollingAverageFiltered(
 // -------------------------------
 // MAIN COMPONENT
 // -------------------------------
-const TeamStandingsChart: React.FC = () => {
+type TeamStandingsChartProps = {
+  compact?: boolean;
+};
+
+const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
   const season = useCurrentSeason();
   const [data, setData] = useState<Map<string, TeamData[]>>(new Map());
   const [loading, setLoading] = useState(false);
@@ -122,9 +130,10 @@ const TeamStandingsChart: React.FC = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { width, height } = useResizeObserver(containerRef);
   const chartWidth = width || containerRef.current?.clientWidth || 0;
+  const minimumChartHeight = compact ? 252 : 600;
   const chartHeight = Math.max(
     height || containerRef.current?.clientHeight || 0,
-    600
+    minimumChartHeight,
   );
 
   // -------------------------------
@@ -162,7 +171,7 @@ const TeamStandingsChart: React.FC = () => {
               goal_for,
               conference_abbrev,
               division_name
-            `
+            `,
             )
             .gte("date", seasonStartStr)
             .lte("date", endDateStr)
@@ -190,7 +199,7 @@ const TeamStandingsChart: React.FC = () => {
               games_played,
               penalty_kill_pct,
               power_play_pct
-            `
+            `,
             )
             .gte("date", seasonStartStr)
             .lte("date", endDateStr)
@@ -230,7 +239,7 @@ const TeamStandingsChart: React.FC = () => {
             conference: row.conference_abbrev || "N/A",
             division: row.division_name || "N/A",
             goalFor: row.goal_for || 0,
-            goalAgainst: row.goal_against || 0
+            goalAgainst: row.goal_against || 0,
           } as TeamData;
         });
 
@@ -242,7 +251,7 @@ const TeamStandingsChart: React.FC = () => {
         setError(
           fetchError instanceof Error
             ? fetchError.message
-            : "Unable to load standings chart."
+            : "Unable to load standings chart.",
         );
       } finally {
         setLoading(false);
@@ -336,7 +345,7 @@ const TeamStandingsChart: React.FC = () => {
           return;
         }
         const sortedData = [...teamData].sort(
-          (a, b) => a.gamesPlayed - b.gamesPlayed
+          (a, b) => a.gamesPlayed - b.gamesPlayed,
         );
         if (useRolling) {
           if (rolling5) {
@@ -348,7 +357,9 @@ const TeamStandingsChart: React.FC = () => {
             s.forEach((d) => allValues.push(getMetricValue(d[metric], metric)));
           }
         } else {
-          sortedData.forEach((d) => allValues.push(getMetricValue(d[metric], metric)));
+          sortedData.forEach((d) =>
+            allValues.push(getMetricValue(d[metric], metric)),
+          );
         }
       });
       const minVal = d3.min(allValues) ?? 0;
@@ -405,14 +416,14 @@ const TeamStandingsChart: React.FC = () => {
           return;
         }
         const sortedData = [...teamData].sort(
-          (a, b) => a.gamesPlayed - b.gamesPlayed
+          (a, b) => a.gamesPlayed - b.gamesPlayed,
         );
         if (useRolling) {
           if (rolling5) {
             const s = computeRollingForGoals(
               sortedData,
               5,
-              metric === "goalsForPerGame" ? "goalsFor" : "goalsAgainst"
+              metric === "goalsForPerGame" ? "goalsFor" : "goalsAgainst",
             );
             s.forEach((d) => allValues.push(getMetricValue(d[metric], metric)));
           }
@@ -420,12 +431,14 @@ const TeamStandingsChart: React.FC = () => {
             const s = computeRollingForGoals(
               sortedData,
               10,
-              metric === "goalsForPerGame" ? "goalsFor" : "goalsAgainst"
+              metric === "goalsForPerGame" ? "goalsFor" : "goalsAgainst",
             );
             s.forEach((d) => allValues.push(getMetricValue(d[metric], metric)));
           }
         } else {
-          sortedData.forEach((d) => allValues.push(getMetricValue(d[metric], metric)));
+          sortedData.forEach((d) =>
+            allValues.push(getMetricValue(d[metric], metric)),
+          );
         }
       });
       const minVal = d3.min(allValues) ?? 0;
@@ -477,7 +490,7 @@ const TeamStandingsChart: React.FC = () => {
         return;
       }
       const sortedData = [...teamData].sort(
-        (a, b) => a.gamesPlayed - b.gamesPlayed
+        (a, b) => a.gamesPlayed - b.gamesPlayed,
       );
       const color = teamsInfo[abbr]?.lightColor || "#999";
       const teamG = mainG
@@ -501,7 +514,7 @@ const TeamStandingsChart: React.FC = () => {
           if (metric === "penaltyKillPct" || metric === "powerPlayPct") {
             seriesList.push({
               data: computeRollingAverageFiltered(sortedData, 5, metric),
-              strokeDash: "4,2"
+              strokeDash: "4,2",
             });
           } else if (
             metric === "goalsForPerGame" ||
@@ -511,9 +524,9 @@ const TeamStandingsChart: React.FC = () => {
               data: computeRollingForGoals(
                 sortedData,
                 5,
-                metric === "goalsForPerGame" ? "goalsFor" : "goalsAgainst"
+                metric === "goalsForPerGame" ? "goalsFor" : "goalsAgainst",
               ),
-              strokeDash: "4,2"
+              strokeDash: "4,2",
             });
           }
         }
@@ -521,7 +534,7 @@ const TeamStandingsChart: React.FC = () => {
           if (metric === "penaltyKillPct" || metric === "powerPlayPct") {
             seriesList.push({
               data: computeRollingAverageFiltered(sortedData, 10, metric),
-              strokeDash: "2,2"
+              strokeDash: "2,2",
             });
           } else if (
             metric === "goalsForPerGame" ||
@@ -531,9 +544,9 @@ const TeamStandingsChart: React.FC = () => {
               data: computeRollingForGoals(
                 sortedData,
                 10,
-                metric === "goalsForPerGame" ? "goalsFor" : "goalsAgainst"
+                metric === "goalsForPerGame" ? "goalsFor" : "goalsAgainst",
               ),
-              strokeDash: "2,2"
+              strokeDash: "2,2",
             });
           }
         }
@@ -582,7 +595,7 @@ const TeamStandingsChart: React.FC = () => {
               ? yScale(getMetricValue(d[metric], metric) - 50)
               : metric === "points"
                 ? yScale(d.points - d.gamesPlayed)
-                : yScale(getMetricValue(d[metric], metric))
+                : yScale(getMetricValue(d[metric], metric)),
           )
           .attr("r", 3)
           .attr("fill", color)
@@ -623,7 +636,7 @@ const TeamStandingsChart: React.FC = () => {
               ? yScale(getMetricValue(lastPoint[metric], metric) - 50) - 10
               : metric === "points"
                 ? yScale(lastPoint.points - lastPoint.gamesPlayed) - 10
-                : yScale(getMetricValue(lastPoint[metric], metric)) - 10
+                : yScale(getMetricValue(lastPoint[metric], metric)) - 10,
           )
           .attr("width", 20)
           .attr("height", 20);
@@ -751,7 +764,7 @@ const TeamStandingsChart: React.FC = () => {
     rolling10,
     selectedTeams,
     chartWidth,
-    chartHeight
+    chartHeight,
   ]);
 
   // -------------------------------
@@ -800,7 +813,7 @@ const TeamStandingsChart: React.FC = () => {
     maxAgeHours: 18,
     loadingMessage: "Loading standings history...",
     emptyMessage: "Standings chart data is unavailable right now.",
-    staleMessage: "Standings chart data may be stale."
+    staleMessage: "Standings chart data may be stale.",
   });
   const selectedTeamCount = selectedTeams.length;
   const summaryLabel =
@@ -817,10 +830,16 @@ const TeamStandingsChart: React.FC = () => {
               : metric === "penaltyKillPct"
                 ? "Penalty-kill efficiency"
                 : "League form";
-  const trendModeLabel = rolling10 ? "10-game view" : rolling5 ? "5-game view" : "full-season view";
+  const trendModeLabel = rolling10
+    ? "10-game view"
+    : rolling5
+      ? "5-game view"
+      : "full-season view";
 
   return (
-    <div className={styles.teamStandingsChart}>
+    <div
+      className={`${styles.teamStandingsChart} ${compact ? styles.compact : ""}`.trim()}
+    >
       <div className={styles.summaryHeader}>
         <div className={styles.summaryCopy}>
           <div className={styles.summaryIntro}>
@@ -908,7 +927,9 @@ const TeamStandingsChart: React.FC = () => {
                 >
                   <option value="points">Points</option>
                   <option value="pointPct">Point Percentage</option>
-                  <option value="goalsAgainstPerGame">Goals Against/Game</option>
+                  <option value="goalsAgainstPerGame">
+                    Goals Against/Game
+                  </option>
                   <option value="goalsForPerGame">Goals For/Game</option>
                   <option value="penaltyKillPct">PK%</option>
                   <option value="powerPlayPct">PP%</option>
@@ -949,76 +970,82 @@ const TeamStandingsChart: React.FC = () => {
             </div>
           </div>
 
-          <div className={styles.teamToggles}>
-            <div className={styles.toggleButtons}>
-              <button onClick={selectAllTeams}>Select All</button>
-              <button onClick={clearAllTeams}>Clear All</button>
-            </div>
-            <div className={styles.toggleList}>
-              <div className={styles.toggleColumn}>
-                {leftDivisions.map((div) => (
-                  <div key={div} className={styles.divisionGroup}>
-                    <strong>{div}</strong>
-                    <div className={styles.divisionTeams}>
-                      {teamsByDivision[div]?.map((abbr) => (
-                        <label key={abbr} className={styles.teamToggle}>
-                          <input
-                            type="checkbox"
-                            checked={selectedTeams.includes(abbr)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedTeams((prev) => [...prev, abbr]);
-                              } else {
-                                setSelectedTeams((prev) =>
-                                  prev.filter((t) => t !== abbr)
-                                );
-                              }
-                            }}
-                          />
-                          <img
-                            src={`/teamLogos/${abbr ?? "default"}.png`}
-                            alt={abbr}
-                            className={styles.toggleLogo}
-                          />
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+          <details
+            className={styles.teamToggleDetails}
+            open={compact ? undefined : true}
+          >
+            <summary>Teams ({selectedTeamCount})</summary>
+            <div className={styles.teamToggles}>
+              <div className={styles.toggleButtons}>
+                <button onClick={selectAllTeams}>Select All</button>
+                <button onClick={clearAllTeams}>Clear All</button>
               </div>
-              <div className={styles.toggleColumn}>
-                {rightDivisions.map((div) => (
-                  <div key={div} className={styles.divisionGroup}>
-                    <strong>{div === "Metropolitan" ? "Metro" : div}</strong>
-                    <div className={styles.divisionTeams}>
-                      {teamsByDivision[div]?.map((abbr) => (
-                        <label key={abbr} className={styles.teamToggle}>
-                          <input
-                            type="checkbox"
-                            checked={selectedTeams.includes(abbr)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedTeams((prev) => [...prev, abbr]);
-                              } else {
-                                setSelectedTeams((prev) =>
-                                  prev.filter((t) => t !== abbr)
-                                );
-                              }
-                            }}
-                          />
-                          <img
-                            src={`/teamLogos/${abbr ?? "default"}.png`}
-                            alt={abbr}
-                            className={styles.toggleLogo}
-                          />
-                        </label>
-                      ))}
+              <div className={styles.toggleList}>
+                <div className={styles.toggleColumn}>
+                  {leftDivisions.map((div) => (
+                    <div key={div} className={styles.divisionGroup}>
+                      <strong>{div}</strong>
+                      <div className={styles.divisionTeams}>
+                        {teamsByDivision[div]?.map((abbr) => (
+                          <label key={abbr} className={styles.teamToggle}>
+                            <input
+                              type="checkbox"
+                              checked={selectedTeams.includes(abbr)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedTeams((prev) => [...prev, abbr]);
+                                } else {
+                                  setSelectedTeams((prev) =>
+                                    prev.filter((t) => t !== abbr),
+                                  );
+                                }
+                              }}
+                            />
+                            <img
+                              src={`/teamLogos/${abbr ?? "default"}.png`}
+                              alt={abbr}
+                              className={styles.toggleLogo}
+                            />
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+                <div className={styles.toggleColumn}>
+                  {rightDivisions.map((div) => (
+                    <div key={div} className={styles.divisionGroup}>
+                      <strong>{div === "Metropolitan" ? "Metro" : div}</strong>
+                      <div className={styles.divisionTeams}>
+                        {teamsByDivision[div]?.map((abbr) => (
+                          <label key={abbr} className={styles.teamToggle}>
+                            <input
+                              type="checkbox"
+                              checked={selectedTeams.includes(abbr)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedTeams((prev) => [...prev, abbr]);
+                                } else {
+                                  setSelectedTeams((prev) =>
+                                    prev.filter((t) => t !== abbr),
+                                  );
+                                }
+                              }}
+                            />
+                            <img
+                              src={`/teamLogos/${abbr ?? "default"}.png`}
+                              alt={abbr}
+                              className={styles.toggleLogo}
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          </details>
         </div>
       )}
 

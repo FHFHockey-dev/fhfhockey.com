@@ -1,0 +1,77 @@
+# Sustainability Model Runbook
+
+## Runtime contract
+
+The canonical player key is `players.id`. Writes use the server-side Supabase client; public routes are read-only. Snapshot writes are idempotent on `(player_id, snapshot_date, metric_key, horizon_games, projection_type, scope_key)`.
+
+### Recompute
+
+`POST /api/v1/sustainability/recompute`
+
+- Auth: admin/cron middleware; never call with a public key.
+- Query: `date=YYYY-MM-DD` (defaults to yesterday UTC), `offset=0..100000`, `limit=1..50` (default 25), and optional `dry=true`.
+- Repeat with the returned next offset while `hasMore` is true. A dry run computes but does not persist.
+- Success is `200`; partial player failures are isolated and return `207`; validation errors return `400`.
+- The response includes snapshot date, processed player/row counts, failures with bounded reasons, paging state, and timing metadata.
+
+Example:
+
+```text
+POST /api/v1/sustainability/recompute?date=2026-01-15&offset=0&limit=25&dry=true
+```
+
+The route currently projects goals, assists, points, shots, power-play points, hits, and blocks for 5/10-game snapshots plus per-opponent game rows. Hot/Normal/Cold probabilities remain unavailable until historical calibration evidence exists.
+
+### Player read
+
+`GET /api/v1/sustainability/player/:playerId?window=10&horizon=5`
+
+- `window`: one of `3`, `5`, `10`, `25`, `50`.
+- `horizon`: `5` or `10`.
+- Returns the latest score/raw score, metric bands, count projections and intervals, flags, top-driver explanations, and source/snapshot metadata.
+- Probability fields explicitly return `pending_calibration` and null values until a held-out backtest supports publication.
+- Returns `404` when the player has no sustainability snapshot.
+
+### Upcoming read
+
+`GET /api/v1/sustainability/upcoming/:playerId?games=5`
+
+- `games`: `5` or `10`.
+- Returns opponent-game projection rows grouped by game, including team/opponent provenance and snapshot metadata.
+- Returns `404` when no upcoming projections exist.
+
+## Feature dictionary
+
+The executable dictionary is `web/lib/sustainability/featureDictionary.ts`. Its stable groups are recent rate, baseline rate, z-score, percentile, usage delta, context delta, opponent adjustment, reliability, and sample weight. Each entry declares its unit, primary source tables, description, and whether the score requires it. New production features must be added there before they are exposed in explanations or model metadata.
+
+Primary data ownership:
+
+- `rolling_player_game_metrics`: recent/career rates, samples, and context.
+- `sustainability_player_priors`: shrunk baseline priors.
+- `sustainability_window_z_scores`: normalized deltas and percentiles.
+- `wgo_skater_stats`: current player production and usage inputs.
+- `team_power_ratings_daily`, `nst_team_all`, `nst_team_stats`: opponent context.
+- `sustainability_scores`, `sustainability_trend_bands`, `sustainability_projections`: public snapshot outputs.
+
+## Historical backtest and publication gate
+
+`web/lib/sustainability/backtestHarness.ts` pages persisted snapshot projections in stable date/player/metric/horizon order and evaluates resolved future actuals against sustainability, career-only, season-only, recent-only, and naive variants. Count metrics are MAE, RMSE, bias, mean actual, and mean prediction. Probability evaluation uses multiclass Brier score and a uniform baseline. Invalid/missing values are excluded per variant and sample counts are always reported.
+
+Production coverage measured 2026-07-11:
+
+| Table | Rows | Date span | Distinct players |
+|---|---:|---|---:|
+| `sustainability_scores` | 219,568 | 2025-10-14–2026-07-11 | 694 |
+| `sustainability_trend_bands` | 10,849,256 | 2024-10-04–2026-07-11 | 1,293 |
+| `sustainability_projections` | 0 | none | 0 |
+
+Therefore no projection MAE/RMSE, baseline-win, or Brier claim is currently publishable. The API deliberately reports pending calibration. Close the gate only after real projection snapshots have matured through their 5/10-game horizons, actual outcomes are resolved without leakage, and held-out metrics plus sample/date/player coverage are recorded. Do not substitute scores or trend bands for absent historical projections.
+
+## Operations and performance
+
+- Target: full active-skater nightly recompute under 15 minutes. Process bounded pages and aggregate route timing from each response; do not send one unbounded request.
+- Partial failures are returned per player and can be retried with the same snapshot/date/page. Composite-key upserts prevent duplicates.
+- Reads are bounded by exact player/snapshot/window/horizon keys and limits. Potentially large historical reads use `.range()` until a short page.
+- Live index verification on 2026-07-11 confirmed the player/date index serves latest-snapshot lookup and the primary key serves exact player/snapshot/horizon/type reads. `EXPLAIN` selected index scans with estimated total costs 2.36 and 2.37 respectively. No speculative index was added to an empty projection table.
+- RLS is enabled on score, band, and projection tables. `anon`/`authenticated` have SELECT only; service role owns writes.
+- Investigate only measured regressions: record route timing, row counts, failures, paging state, query plan, and table cardinality before proposing an index or schema change.

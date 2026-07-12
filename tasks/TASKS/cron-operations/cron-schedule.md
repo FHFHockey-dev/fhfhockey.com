@@ -198,7 +198,7 @@
     "route": "/api/v1/db/update-wgo-goalie-totals"
   },
   {
-    "jobid": 26,
+    "jobid": 390,
     "jobname": "update-game-goal-projections",
     "schedule": "25 8 * * *",
     "run_time_utc": "08:25 UTC",
@@ -262,8 +262,8 @@
   {
     "jobid": 279,
     "jobname": "update-team-ctpi-daily",
-    "schedule": "10 9 * * *",
-    "run_time_utc": "09:10 UTC",
+    "schedule": "10 10 * * *",
+    "run_time_utc": "10:10 UTC",
     "active": true,
     "method": "GET",
     "route": "/api/v1/db/update-team-ctpi-daily"
@@ -280,8 +280,8 @@
   {
     "jobid": 283,
     "jobname": "update-team-power-ratings",
-    "schedule": "15 9 * * *",
-    "run_time_utc": "09:15 UTC",
+    "schedule": "15 10 * * *",
+    "run_time_utc": "10:15 UTC",
     "active": true,
     "method": "GET",
     "route": "/api/v1/db/update-team-power-ratings"
@@ -350,6 +350,15 @@
     "route": "/api/v1/db/update-nst-team-daily"
   },
   {
+    "jobid": 391,
+    "jobname": "update-lineup-deployment-tallies",
+    "schedule": "55 9 * * *",
+    "run_time_utc": "09:55 UTC",
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-lineup-deployment-tallies"
+  },
+  {
     "jobid": 201,
     "jobname": "daily-refresh-matview",
     "schedule": "0 10 * * *",
@@ -364,7 +373,19 @@
     "run_time_utc": "10:05 UTC",
     "active": true,
     "method": "POST",
-    "route": "/api/v1/db/run-projection-v2"
+    "route": "/api/v1/db/run-projection-v2",
+    "auth": "Supabase Vault cron_secret"
+  },
+  {
+    "jobid": 393,
+    "jobname": "run-forge-projection-v2-weekly",
+    "schedule": "12 10 * * *",
+    "run_time_utc": "10:12 UTC",
+    "active": true,
+    "method": "POST",
+    "route": "/api/v1/db/run-projection-v2?horizonGames=5",
+    "auth": "Supabase Vault cron_secret",
+    "verification": "Old token rejected 401; new token authorized 200; zero-game horizon-5 no-op returned HTTP 200 in 430 ms on production deployment dpl_D8gth3djEPB1JLZ6B2fAL44oETVE"
   },
   {
     "jobid": 318,
@@ -492,31 +513,13 @@
     "route": "/api/v1/db/run-projection-accuracy?projectionOffsetDays=0"
   },
   {
-    "jobid": 390,
-    "jobname": "game-predictions-ingest-espn-odds-h0-h7",
-    "schedule": "34 11 * * *",
-    "run_time_utc": "11:34 UTC",
-    "active": true,
-    "method": "GET",
-    "route": "/api/v1/game-predictions/ingest-espn-odds?fromOffsetDays=0&toOffsetDays=7&maxDates=8"
-  },
-  {
-    "jobid": 391,
-    "jobname": "game-predictions-ingest-espn-odds-h0-h1",
-    "schedule": "34 17 * * *",
-    "run_time_utc": "17:34 UTC",
-    "active": true,
-    "method": "GET",
-    "route": "/api/v1/game-predictions/ingest-espn-odds?fromOffsetDays=0&toOffsetDays=1&maxDates=2"
-  },
-  {
     "jobid": 392,
-    "jobname": "game-predictions-ingest-espn-odds-utc-spillover",
-    "schedule": "10 21 * * *",
-    "run_time_utc": "21:10 UTC",
+    "jobname": "update-player-trend-metrics",
+    "schedule": "0 12 * * *",
+    "run_time_utc": "12:00 UTC",
     "active": true,
-    "method": "GET",
-    "route": "/api/v1/game-predictions/ingest-espn-odds?fromOffsetDays=-1&toOffsetDays=1&maxDates=3"
+    "method": "POST",
+    "route": "/api/v1/db/update-player-trend-metrics"
   },
   {
     "jobid": 383,
@@ -618,6 +621,13 @@
 ]
 ```
 
+> **Observed production snapshot (reconciled 2026-07-11):** The active
+> dependency chain is WGO teams job 44 at `09:35` → incremental NST team job
+> 275 at `09:55` → CTPI job 279 at `10:10` → team power job 283 at `10:15`
+> UTC. The separate full NST job 329 remains at `10:55`. Player trends are
+> owned by audited POST job 392 at `12:00`. The deployed writer probes passed;
+> offseason trend serving remains truthfully blocked on the latest played date.
+
 
 
 ----------------------------------------------------------------------------------
@@ -652,9 +662,7 @@
 -- - 08:50 UTC / 03:50 EST: update-wigo-table-stats
 -- - 08:55 UTC / 03:55 EST: sync-yahoo-players-to-sheet
 -- - 09:05 UTC / 04:05 EST: daily-refresh-goalie-unified-matview
--- - 09:10 UTC / 04:10 EST: update-team-ctpi-daily
 -- - 09:12 UTC / 04:12 EST: update-team-sos
--- - 09:15 UTC / 04:15 EST: update-team-power-ratings
 -- - 09:25 UTC / 04:25 EST: update-nhl-edge-stats
 -- - 09:30 UTC / 04:30 EST: update-goalie-projections-v2
 -- - 09:35 UTC / 04:35 EST: update-player-underlying-stats-yesterday
@@ -664,6 +672,9 @@
 -- - 09:55 UTC / 04:55 EST: update-nst-team-daily
 -- - 10:00 UTC / 05:00 EST: daily-refresh-matview
 -- - 10:05 UTC / 05:05 EST: run-forge-projection-v2
+-- - 10:10 UTC / 05:10 EST: update-team-ctpi-daily (after WGO/NST team sources)
+-- - 10:12 UTC / 05:12 EST: run-forge-projection-v2-weekly (horizonGames=5, Vault-backed)
+-- - 10:15 UTC / 05:15 EST: update-team-power-ratings (after WGO/NST team sources)
 -- - 10:20 UTC / 05:20 EST: update-season-stats-current-season
 -- - 10:25 UTC / 05:25 EST: update-rolling-games-recent
 -- - 10:30 UTC / 05:30 EST: update-sko-stats-full-season
@@ -684,6 +695,7 @@
 -- - 11:37 UTC / 06:37 EST: game-predictions-forecast-h1
 -- - 11:38 UTC / 06:38 EST: game-predictions-forecast-h0
 -- - 11:40 UTC / 06:40 EST: game-predictions-score-recent
+-- - 12:00 UTC / 07:00 EST: update-player-trend-metrics (proposed; deploy/runtime probe required)
 -- - 17:34 UTC / 12:34 EST: game-predictions-ingest-espn-odds-h0-h1
 -- - 20:51 UTC / 15:51 EST: update-pbp
 -- - 21:10 UTC / 16:10 EST: game-predictions-ingest-espn-odds-utc-spillover
@@ -774,7 +786,7 @@
 -- AS $$
 -- DECLARE
 --   url TEXT := 'https://fhfhockey.com/api/v1/db/update-player-underlying-stats';
---   headers JSONB := '{"Content-Type": "application/json", "Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb;
+--   headers JSONB := '{"Content-Type": "application/json", "Authorization": "Bearer <CRON_SECRET>"}'::jsonb;
 --   home_team_id INTEGER;
 -- BEGIN
 --   SELECT "homeTeamId"
@@ -822,7 +834,23 @@
 --         '&endDate=' ||
 --         to_char((CURRENT_DATE - INTERVAL '1 day')::date, 'YYYY-MM-DD') ||
 --         '&warmLandingCache=true',
---       headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--       headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
+--       timeout_milliseconds := 270000
+--     );
+--   $$
+-- );
+--
+-- Lineup deployment percentage grid tallies:
+--   Refreshes player_lineup_deployment_tallies for the current season after
+--   nightly line-combination and power-play-combination repair windows.
+--
+-- SELECT cron.schedule(
+--   'update-lineup-deployment-tallies',
+--   '55 9 * * *', -- 09:55 UTC / 05:55 ET
+--   $$
+--     SELECT net.http_get(
+--       url := 'https://fhfhockey.com/api/v1/db/update-lineup-deployment-tallies?action=current',
+--       headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --       timeout_milliseconds := 270000
 --     );
 --   $$
@@ -869,7 +897,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-yahoo-weeks?game_key=nhl',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 240000
 --         );
 --     $$
@@ -889,7 +917,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-nst-gamelog',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -907,7 +935,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-wgo-skaters?action=all',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -925,7 +953,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-wgo-goalies?action=all',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -943,7 +971,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-wgo-totals?season=current',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -962,7 +990,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-shifts?action=all',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -980,7 +1008,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-rolling-player-averages',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1010,7 +1038,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/powerPlayTimeFrame?gameId=all',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1028,7 +1056,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-line-combinations',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1044,7 +1072,7 @@ curl -i -sS -m 180 \
 --               to_char((CURRENT_DATE - INTERVAL '2 days')::date, 'YYYY-MM-DD') ||
 --               '&endDate=' ||
 --               to_char(CURRENT_DATE::date, 'YYYY-MM-DD'),
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1063,7 +1091,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-team-yearly-summary',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1082,7 +1110,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/Teams/nst-team-stats?date=all',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1100,7 +1128,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-standings-details?date=all',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 100000
 --         );
 --     $$
@@ -1118,7 +1146,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-wgo-goalie-totals',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1136,7 +1164,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-game-goal-projections?date=all',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1155,7 +1183,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-nst-goalies',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1173,7 +1201,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-yahoo-players?gameId=465',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1192,7 +1220,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-nst-current-season',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1210,7 +1238,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/calculate-wigo-stats',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1228,7 +1256,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/internal/sync-yahoo-players-to-sheet?gameId=465',
---             headers := '{"Authorization":"Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization":"Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1247,7 +1275,7 @@ curl -i -sS -m 180 \
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/update-rolling-player-averages',
 --             body := '{}'::jsonb,
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1267,17 +1295,17 @@ curl -i -sS -m 180 \
 
 ----------------------------------------------------------------------------------
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
--- |||||||||||||||||||||||||||||||||  09:10 UTC  |||||||||||||||||||||||||||||||||
--- |||||||||||||||||||||||||||||||||  04:10 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  10:10 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  05:10 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 -- SELECT cron.schedule(
 --     'update-team-ctpi-daily',
---     '10 9 * * *', -- 09:10 UTC
+--     '10 10 * * *', -- 10:10 UTC; WGO 09:35 and NST 09:55 must finish first
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-team-ctpi-daily',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 100000
 --         );
 --     $$
@@ -1295,7 +1323,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-team-sos',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 240000
 --         );
 --     $$
@@ -1303,17 +1331,17 @@ curl -i -sS -m 180 \
 
 ----------------------------------------------------------------------------------
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
--- |||||||||||||||||||||||||||||||||  09:12 UTC  |||||||||||||||||||||||||||||||||
--- |||||||||||||||||||||||||||||||||  04:12 EST  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  10:15 UTC  |||||||||||||||||||||||||||||||||
+-- |||||||||||||||||||||||||||||||||  05:15 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 -- SELECT cron.schedule(
 --     'update-team-power-ratings',
---     '12 9 * * *', -- 09:12 UTC
+--     '15 10 * * *', -- 10:15 UTC; WGO 09:35 and NST 09:55 must finish first
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-team-power-ratings',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1334,7 +1362,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-team-power-ratings-new',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1352,7 +1380,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-nhl-edge-stats?action=all&limit=1000&concurrency=8',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1371,7 +1399,7 @@ curl -i -sS -m 180 \
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/update-goalie-projections-v2',
 --             body := '{}'::jsonb,
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 100000
 --         );
 --     $$
@@ -1389,7 +1417,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/run-fetch-wgo-data',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 100000
 --         );
 --     $$
@@ -1420,7 +1448,7 @@ curl -i -sS -m 180 \
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/ingest-projection-inputs',
 --             body := '{}'::jsonb,
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1440,7 +1468,7 @@ curl -i -sS -m 180 \
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/build-projection-derived-v2',
 --             body := '{}'::jsonb,
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1461,7 +1489,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-nhl-xg-shot-features?backfill=true&featureVersion=1&parserVersion=1&strengthVersion=1&limit=25&gameBatchSize=1&upsertBatchSize=500',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1482,7 +1510,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-nhl-xg-shot-predictions?backfill=true&featureVersion=1&predictionType=shot_goal&limit=3000&upsertBatchSize=500',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1501,7 +1529,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-nst-team-daily',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 100000
 --         );
 --     $$
@@ -1533,10 +1561,37 @@ curl -i -sS -m 180 \
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/run-projection-v2',
 --             body := '{}'::jsonb,
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
+-- );
+
+-- 10:12 UTC option-A weekly owner (approved 2026-07-11; NOT ACTIVE):
+-- - runs after the daily writer's 4m30s ceiling plus buffer
+-- - owns only genuine horizon-5 output
+-- - uses a separate run id on the same as-of date
+-- - must use a Vault-backed Authorization header
+-- - activation is blocked until the exposed cron credential is rotated and
+--   job 308 is migrated away from its plaintext command
+--
+-- SELECT cron.schedule(
+--   'run-forge-projection-v2-weekly',
+--   '12 10 * * *',
+--   $$
+--     SELECT net.http_post(
+--       url := 'https://fhfhockey.com/api/v1/db/run-projection-v2?horizonGames=5',
+--       body := '{}'::jsonb,
+--       headers := jsonb_build_object(
+--         'Authorization', 'Bearer ' || (
+--           SELECT decrypted_secret FROM vault.decrypted_secrets
+--           WHERE name = 'cron_secret'
+--         ),
+--         'Content-Type', 'application/json'
+--       ),
+--       timeout_milliseconds := 300000
+--     );
+--   $$
 -- );
 
 ----------------------------------------------------------------------------------
@@ -1577,7 +1632,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-season-stats',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1598,7 +1653,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-rolling-games?date=recent',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1616,7 +1671,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-sko-stats',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1634,7 +1689,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-wgo-averages',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1664,7 +1719,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/sustainability/rebuild-baselines',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1682,7 +1737,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/sustainability/rebuild-priors?season=current',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1700,7 +1755,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/sustainability/rebuild-window-z?season=current&offset=0&limit=250',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1718,7 +1773,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/sustainability/rebuild-window-z?season=current&offset=250&limit=250',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1736,7 +1791,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/sustainability/rebuild-window-z?season=current&offset=500&limit=250',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1754,7 +1809,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/sustainability/rebuild-window-z?season=current&offset=750&limit=250',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1772,7 +1827,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/sustainability/rebuild-score?season=current&offset=0&limit=250',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1790,7 +1845,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/sustainability/rebuild-score?season=current&offset=250&limit=250',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1808,7 +1863,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/sustainability/rebuild-score?season=current&offset=500&limit=250',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1826,7 +1881,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/sustainability/rebuild-score?season=current&offset=750&limit=250',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1844,7 +1899,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/sustainability/rebuild-trend-bands?offset=0&limit=250',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1862,7 +1917,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/sustainability/rebuild-trend-bands?offset=250&limit=250',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1880,7 +1935,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/sustainability/rebuild-trend-bands?offset=500&limit=250',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1898,7 +1953,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/sustainability/rebuild-trend-bands?offset=750&limit=250',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1916,7 +1971,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/ml/update-predictions-sko',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1937,7 +1992,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-power-rankings',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1955,7 +2010,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-nst-team-daily',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1973,7 +2028,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/Teams/nst-team-stats',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -1992,7 +2047,7 @@ curl -i -sS -m 180 \
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/run-projection-accuracy?projectionOffsetDays=0',
 --             body := '{}'::jsonb,
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -2011,7 +2066,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/game-predictions/ingest-espn-odds?fromOffsetDays=0&toOffsetDays=7&maxDates=8',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 270000
 --         );
 --     $$
@@ -2030,7 +2085,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/game-predictions/forecast?fromOffsetDays=7&toOffsetDays=7&limit=16&maxRuntimeMs=240000',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 270000
 --         );
 --     $$
@@ -2049,7 +2104,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/game-predictions/forecast?fromOffsetDays=3&toOffsetDays=3&limit=16&maxRuntimeMs=240000',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 270000
 --         );
 --     $$
@@ -2068,7 +2123,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/game-predictions/forecast?fromOffsetDays=1&toOffsetDays=1&limit=16&maxRuntimeMs=240000',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 270000
 --         );
 --     $$
@@ -2087,7 +2142,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/game-predictions/forecast?fromOffsetDays=0&toOffsetDays=0&limit=16&maxRuntimeMs=240000',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 270000
 --         );
 --     $$
@@ -2110,7 +2165,7 @@ curl -i -sS -m 180 \
 --                 to_char((CURRENT_DATE - INTERVAL '1 day')::date, 'YYYY-MM-DD') ||
 --                 '&endDate=' ||
 --                 to_char(CURRENT_DATE::date, 'YYYY-MM-DD'),
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 270000
 --         );
 --     $$
@@ -2129,7 +2184,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/game-predictions/ingest-espn-odds?fromOffsetDays=0&toOffsetDays=1&maxDates=2',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 270000
 --         );
 --     $$
@@ -2148,7 +2203,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-PbP?gameId=recent',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 100000
 --         );
 --     $$
@@ -2167,7 +2222,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/game-predictions/ingest-espn-odds?fromOffsetDays=-1&toOffsetDays=1&maxDates=3',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 270000
 --         );
 --     $$
@@ -2185,7 +2240,7 @@ curl -i -sS -m 180 \
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/cron-report',
---             headers := '{"Authorization":"Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization":"Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -2194,7 +2249,51 @@ curl -i -sS -m 180 \
 ----------------------------------------------------------------------------------
 -- NEED TO ADD
 --
--- Static dashboard-critical URLs that are not currently scheduled above:
+-- A-FORGE-DASH production activation patch (applied 2026-07-11; retained as history):
+--
+-- 1. Deploy the local CTPI/team-power pagination/lookback changes and the
+--    audited update-player-trend-metrics POST route.
+-- 2. Run one bounded manual probe of each deployed writer and inspect
+--    cron_job_audit plus source-date/non-flat output before enabling schedules.
+-- 3. Apply the dependency-order changes only after the probes pass:
+--
+-- SELECT cron.alter_job(
+--   job_id := (SELECT jobid FROM cron.job WHERE jobname = 'update-team-ctpi-daily'),
+--   schedule := '10 10 * * *'
+-- );
+--
+-- SELECT cron.alter_job(
+--   job_id := (SELECT jobid FROM cron.job WHERE jobname = 'update-team-power-ratings'),
+--   schedule := '15 10 * * *'
+-- );
+--
+-- SELECT cron.schedule(
+--   'update-player-trend-metrics',
+--   '0 12 * * *',
+--   $$
+--     SELECT net.http_post(
+--       url := 'https://fhfhockey.com/api/v1/db/update-player-trend-metrics',
+--       headers := jsonb_build_object(
+--         'Authorization', 'Bearer ' || (
+--           SELECT decrypted_secret
+--           FROM vault.decrypted_secrets
+--           WHERE name = 'cron_secret'
+--         ),
+--         'Content-Type', 'application/json'
+--       ),
+--       body := '{}'::jsonb,
+--       timeout_milliseconds := 300000
+--     );
+--   $$
+-- );
+--
+-- Post-activation evidence recorded 2026-07-11:
+-- - WGO 09:35 and NST 09:55 finish before CTPI 10:10 and power 10:15.
+-- - current `/api/team-ratings` has 32 rows and more than one `trend10` value.
+-- - bounded player-trend audit succeeded in 17.33s; offseason window had zero eligible writes.
+-- - player-trends/skater-power resolve to latest eligible 2026-05-09 and truthfully block a 64-day fallback.
+--
+-- Other static dashboard-critical URLs that are not currently scheduled above:
 --
 -- Core FORGE preflight inputs:
 -- - https://fhfhockey.com/api/v1/db/update-seasons
@@ -2202,7 +2301,7 @@ curl -i -sS -m 180 \
 -- - https://fhfhockey.com/api/v1/db/update-games
 -- - https://fhfhockey.com/api/v1/db/update-players
 --
--- Dashboard trend refresh:
+-- Dashboard trend refresh compatibility reader/manual rebuild route:
 -- - https://fhfhockey.com/api/v1/trends/player-trends
 --
 -- Notes:

@@ -3,7 +3,9 @@ import { useRouter } from "next/router";
 import { useMemo, useState, type ReactNode } from "react";
 import useSWR from "swr";
 
+import ComparisonSummaryPanel from "components/Rankings/ComparisonSummaryPanel";
 import DeploymentTiersPanel from "components/Rankings/DeploymentTiersPanel";
+import ExperimentalToolkitPanel from "components/Rankings/ExperimentalToolkitPanel";
 import GoalieMatrixTable from "components/Rankings/GoalieMatrixTable";
 import PlayerMatrixTable from "components/Rankings/PlayerMatrixTable";
 import PlayerSnapshotPanel from "components/Rankings/PlayerSnapshotPanel";
@@ -15,6 +17,7 @@ import SplitsPanel from "components/Rankings/SplitsPanel";
 import TeamMatrixTable from "components/Rankings/TeamMatrixTable";
 import TrendingPanel from "components/Rankings/TrendingPanel";
 import WarPanel from "components/Rankings/WarPanel";
+import type { ContextualRankingComparisonResponse } from "lib/rankings/comparison";
 import { getContextualRankingMetricDefinition } from "lib/rankings/metricDefinitions";
 import type { DeploymentTiersResponse } from "lib/rankings/deploymentTiers";
 import type {
@@ -422,15 +425,17 @@ function activeMethodologySummary({
       denominator:
         filters.goalieMetric === "start_share"
           ? "team goalie starts in selected window"
-          : filters.goalieMetric === "xga_per_shot_against"
-            ? "5v5 NST shots against"
-          : filters.goalieMetric === "high_danger_save_percentage"
-            ? "5v5 NST high-danger shots against"
-          : filters.goalieMetric === "goalie_value_signal"
-            ? "available cumulative 5v5 saved-goals signals"
-          : filters.goalieMetric === "save_percentage"
-            ? "shots against"
-            : "goalie starts / shots against where supported",
+          : filters.goalieMetric === "relative_save_percentage"
+            ? "same-team other-goalie 5v5 save percentage"
+            : filters.goalieMetric === "xga_per_shot_against"
+              ? "5v5 NST shots against"
+              : filters.goalieMetric === "high_danger_save_percentage"
+                ? "5v5 NST high-danger shots against"
+                : filters.goalieMetric === "goalie_value_signal"
+                  ? "available cumulative 5v5 saved-goals signals"
+                  : filters.goalieMetric === "save_percentage"
+                    ? "shots against"
+                    : "goalie starts / shots against where supported",
       methodologyVersion: "goalie_rankings_v1",
       sample: `Min ${filters.minGp} starts · Min ${filters.minToi} shots`,
       source:
@@ -474,7 +479,8 @@ function activeMethodologySummary({
   const matrixSource =
     matrixData?.meta.rankingSource === "entity_metric_rankings"
       ? "Durable snapshot: entity_metric_rankings"
-      : matrixData?.meta.rankingSource === "fallback_rolling_player_game_metrics"
+      : matrixData?.meta.rankingSource ===
+          "fallback_rolling_player_game_metrics"
         ? `Rolling fallback: rolling_player_game_metrics${
             matrixData.meta.rankingSourceFallbackReason
               ? ` (${matrixData.meta.rankingSourceFallbackReason})`
@@ -508,16 +514,18 @@ function activeMethodologySummary({
         ? matrixSource
         : filters.tab === "metric_explorer"
           ? explorerSource
-        : definition && "sourceTable" in definition
-          ? (definition.sourceTable ?? "contextual ranking snapshots")
-          : matrixSource,
+          : definition && "sourceTable" in definition
+            ? (definition.sourceTable ?? "contextual ranking snapshots")
+            : matrixSource,
     sourceQualityFlags:
       filters.tab === "rankings"
-        ? (matrixData?.meta.sourceQualityFlags ??
-          [...(definition?.sourceQualityFlags ?? [])])
+        ? (matrixData?.meta.sourceQualityFlags ?? [
+            ...(definition?.sourceQualityFlags ?? []),
+          ])
         : filters.tab === "metric_explorer"
-          ? (explorerData?.meta.sourceQualityFlags ??
-            [...(definition?.sourceQualityFlags ?? [])])
+          ? (explorerData?.meta.sourceQualityFlags ?? [
+              ...(definition?.sourceQualityFlags ?? []),
+            ])
           : [...(definition?.sourceQualityFlags ?? [])],
     sourceWarnings:
       filters.tab === "rankings"
@@ -714,6 +722,28 @@ function isTeamSnapshotRow(
   return "team" in row && !("entity" in row);
 }
 
+function formatUnitCoverage(
+  coverage: TeamMatrixResponse["rows"][number]["unitUsage"]["coverage"]["forwardTopLoad"],
+) {
+  const status =
+    coverage.status === "complete"
+      ? "complete"
+      : coverage.status === "partial"
+        ? "partial"
+        : "no coverage";
+  const latest =
+    coverage.latestDate == null ? "no resolved date" : coverage.latestDate;
+  return `${status}; ${coverage.games} resolved games, latest ${latest}`;
+}
+
+function formatCoveredUnitMetric(
+  value: number | null,
+  coverage: TeamMatrixResponse["rows"][number]["unitUsage"]["coverage"]["forwardTopLoad"],
+) {
+  const formattedValue = value == null ? "N/A" : `${value.toFixed(1)}%`;
+  return `${formattedValue} (${formatUnitCoverage(coverage)})`;
+}
+
 function compactPercent(value: number | null | undefined) {
   return value == null ? "N/A" : formatPercentile(value ?? null);
 }
@@ -842,13 +872,16 @@ function GoalieSnapshotPanel({
               ? "projected season start share"
               : row.role.deploymentSource === "adjusted_core_start_share"
                 ? "inferred top-two/core start share"
-              : row.role.deploymentSource === "selected_window_team_start_share"
-                ? "selected-window team start share"
-                : "Source Pending"}
+                : row.role.deploymentSource ===
+                    "selected_window_team_start_share"
+                  ? "selected-window team start share"
+                  : "Source Pending"}
           </li>
           <li>Start share: {pctValue(row.role.seasonStartShare)}</li>
           <li>Raw window start share: {pctValue(row.role.rawStartShare)}</li>
-          <li>Adjusted core start share: {pctValue(row.role.adjustedStartShare)}</li>
+          <li>
+            Adjusted core start share: {pctValue(row.role.adjustedStartShare)}
+          </li>
           <li>Core start share: {pctValue(row.role.coreStartShare)}</li>
           <li>Excluded non-core starts: {row.role.excludedTeamStarts}</li>
           <li>Start probability: {pctValue(row.role.startProbability)}</li>
@@ -918,7 +951,9 @@ function TeamSnapshotPanel({
     .filter((entry) => entry.cell?.percentile != null)
     .sort((a, b) => (b.cell.percentile ?? 0) - (a.cell.percentile ?? 0))[0];
   const oneGoalGameRate =
-    row.context.oneGoalGameRate == null ? null : row.context.oneGoalGameRate / 100;
+    row.context.oneGoalGameRate == null
+      ? null
+      : row.context.oneGoalGameRate / 100;
 
   return (
     <aside className={styles.snapshotPanel} aria-label={label}>
@@ -941,7 +976,7 @@ function TeamSnapshotPanel({
       <dl className={styles.snapshotFacts}>
         <div>
           <dt>Style</dt>
-          <dd>{row.style.label}</dd>
+          <dd>{row.style.displayLabel}</dd>
         </div>
         <div>
           <dt>Games</dt>
@@ -983,6 +1018,13 @@ function TeamSnapshotPanel({
         <h3>Style & Source Notes</h3>
         <ul>
           <li>Style source: {row.style.source}</li>
+          <li>{row.style.interpretation}</li>
+          <li>
+            Adjusted target:{" "}
+            {row.style.adjustedTargetLabel ??
+              payload.meta.teamStyleContract.adjustedTargetLabel}{" "}
+            ({(row.style.adjustedStatus ?? "source_pending").replace("_", " ")})
+          </li>
           <li>
             Game-context source: {row.context.latestDate ?? "Source pending"} (
             {row.context.games || 0} games).
@@ -1005,6 +1047,36 @@ function TeamSnapshotPanel({
             {row.context.penaltiesTakenPer60 == null
               ? "Source pending"
               : `${row.context.penaltiesTakenPer60.toFixed(2)} per 60`}
+          </li>
+          <li>
+            Unit usage source:{" "}
+            {row.unitUsage.snapshotDate == null
+              ? "Source pending"
+              : `${row.unitUsage.snapshotDate} (${row.unitUsage.games || 0} games)`}
+          </li>
+          <li>
+            {row.unitUsage.labels.forwardTopLoad.label}:{" "}
+            {formatCoveredUnitMetric(
+              row.unitUsage.forwardTopLoadIndex,
+              row.unitUsage.coverage.forwardTopLoad,
+            )}
+            . {row.unitUsage.labels.forwardTopLoad.reason}
+          </li>
+          <li>
+            {row.unitUsage.labels.defensePairTopLoad.label}:{" "}
+            {formatCoveredUnitMetric(
+              row.unitUsage.defensePairTopLoadIndex,
+              row.unitUsage.coverage.defensePairTopLoad,
+            )}
+            . {row.unitUsage.labels.defensePairTopLoad.reason}
+          </li>
+          <li>
+            {row.unitUsage.labels.pp1Pp2UsageShare.label}:{" "}
+            {formatCoveredUnitMetric(
+              row.unitUsage.pp1Pp2UsageShare,
+              row.unitUsage.coverage.pp1Pp2UsageShare,
+            )}
+            . {row.unitUsage.labels.pp1Pp2UsageShare.reason}
           </li>
           {payload.meta.sourcePendingMetricContracts.length ? (
             <li>
@@ -1030,6 +1102,110 @@ function TeamSnapshotPanel({
       </section>
     </aside>
   );
+}
+
+function validPositiveId(value: number | null) {
+  return value != null && Number.isInteger(value) && value > 0 ? value : null;
+}
+
+function uniqueNumbers(values: Array<number | null | undefined>) {
+  return Array.from(
+    new Set(
+      values.filter(
+        (value): value is number =>
+          typeof value === "number" && Number.isInteger(value) && value > 0,
+      ),
+    ),
+  ).slice(0, 6);
+}
+
+function buildComparisonRequestPath(args: {
+  filters: RankingsFilterState;
+  selectedPlayerId: number | null;
+  selectedGoalieId: number | null;
+  selectedTeam: string;
+  matrixData: PlayerMatrixResponse | null | undefined;
+  goalieMatrixData: GoalieMatrixResponse | null | undefined;
+  teamMatrixData: TeamMatrixResponse | null | undefined;
+}) {
+  if (args.filters.tab !== "rankings") return null;
+
+  if (args.filters.entity === "goalies") {
+    const ids = uniqueNumbers([
+      validPositiveId(args.selectedGoalieId),
+      ...(args.goalieMatrixData?.rows.map((row) => row.entity.id) ?? []),
+    ]);
+    if (ids.length === 0) return null;
+    const params = new URLSearchParams({
+      entity: "goalies",
+      season: args.filters.season,
+      window: args.filters.window,
+      metric: args.filters.goalieMetric,
+      role: args.filters.goalieRole,
+      sort_direction: args.filters.matrixSortDirection,
+      min_starts: args.filters.minGp,
+      min_shots: args.filters.minToi,
+      goalie_ids: ids.join(","),
+    });
+    if (args.filters.team.trim() !== "")
+      params.set("team", args.filters.team.trim());
+    if (args.filters.search.trim() !== "") {
+      params.set("search", args.filters.search.trim());
+    }
+    return `/api/v1/contextual-rankings/comparison?${params.toString()}`;
+  }
+
+  if (args.filters.entity === "teams") {
+    const teams = Array.from(
+      new Set(
+        [
+          args.selectedTeam.trim().toUpperCase(),
+          ...(args.teamMatrixData?.rows.map((row) => row.team.abbreviation) ??
+            []),
+        ].filter(Boolean),
+      ),
+    ).slice(0, 6);
+    if (teams.length === 0) return null;
+    const params = new URLSearchParams({
+      entity: "teams",
+      season: args.filters.season,
+      metric: args.filters.teamMetric,
+      sort_direction: args.filters.matrixSortDirection,
+      teams: teams.join(","),
+    });
+    if (args.filters.search.trim() !== "") {
+      params.set("search", args.filters.search.trim());
+    }
+    return `/api/v1/contextual-rankings/comparison?${params.toString()}`;
+  }
+
+  const ids = uniqueNumbers([
+    validPositiveId(args.selectedPlayerId),
+    ...(args.matrixData?.rows.map((row) => row.entity.id) ?? []),
+  ]);
+  if (ids.length === 0) return null;
+  const params = new URLSearchParams({
+    entity: "skaters",
+    season: args.filters.season,
+    window: args.filters.window,
+    position: args.filters.position,
+    deployment: args.filters.deployment,
+    strength: args.filters.strength,
+    min_gp: args.filters.minGp,
+    min_toi: args.filters.minToi,
+    sort_metric: args.filters.matrixSortMetric,
+    sort_direction: args.filters.matrixSortDirection,
+    player_ids: ids.join(","),
+  });
+  if (args.filters.team.trim() !== "")
+    params.set("team", args.filters.team.trim());
+  if (args.filters.search.trim() !== "") {
+    params.set("search", args.filters.search.trim());
+  }
+  if (args.filters.sampleConfidence !== "all") {
+    params.set("sample_confidence", args.filters.sampleConfidence);
+  }
+  return `/api/v1/contextual-rankings/comparison?${params.toString()}`;
 }
 
 export default function RankingsPage() {
@@ -1072,32 +1248,36 @@ export default function RankingsPage() {
     data: matrixData,
     error: matrixError,
     isLoading: matrixLoading,
-  } = useSWR<PlayerMatrixResponse>(matrixRequestPath, (url: string) =>
-    fetcher<PlayerMatrixResponse>(url),
+  } = useSWR<PlayerMatrixResponse>(
+    matrixRequestPath,
+    (url: string) => fetcher<PlayerMatrixResponse>(url),
     RANKINGS_SWR_OPTIONS,
   );
   const {
     data: goalieMatrixData,
     error: goalieMatrixError,
     isLoading: goalieMatrixLoading,
-  } = useSWR<GoalieMatrixResponse>(goalieMatrixRequestPath, (url: string) =>
-    fetcher<GoalieMatrixResponse>(url),
+  } = useSWR<GoalieMatrixResponse>(
+    goalieMatrixRequestPath,
+    (url: string) => fetcher<GoalieMatrixResponse>(url),
     RANKINGS_SWR_OPTIONS,
   );
   const {
     data: teamMatrixData,
     error: teamMatrixError,
     isLoading: teamMatrixLoading,
-  } = useSWR<TeamMatrixResponse>(teamMatrixRequestPath, (url: string) =>
-    fetcher<TeamMatrixResponse>(url),
+  } = useSWR<TeamMatrixResponse>(
+    teamMatrixRequestPath,
+    (url: string) => fetcher<TeamMatrixResponse>(url),
     RANKINGS_SWR_OPTIONS,
   );
   const {
     data: explorerData,
     error: explorerError,
     isLoading: explorerLoading,
-  } = useSWR<ContextualRankingsResponse>(explorerRequestPath, (url: string) =>
-    fetcher<ContextualRankingsResponse>(url),
+  } = useSWR<ContextualRankingsResponse>(
+    explorerRequestPath,
+    (url: string) => fetcher<ContextualRankingsResponse>(url),
     RANKINGS_SWR_OPTIONS,
   );
   const {
@@ -1113,24 +1293,27 @@ export default function RankingsPage() {
     data: trendingData,
     error: trendingError,
     isLoading: trendingLoading,
-  } = useSWR<TrendingResponse>(trendingRequestPath, (url: string) =>
-    fetcher<TrendingResponse>(url),
+  } = useSWR<TrendingResponse>(
+    trendingRequestPath,
+    (url: string) => fetcher<TrendingResponse>(url),
     RANKINGS_SWR_OPTIONS,
   );
   const {
     data: splitsData,
     error: splitsError,
     isLoading: splitsLoading,
-  } = useSWR<RankingsSplitsResponse>(splitsRequestPath, (url: string) =>
-    fetcher<RankingsSplitsResponse>(url),
+  } = useSWR<RankingsSplitsResponse>(
+    splitsRequestPath,
+    (url: string) => fetcher<RankingsSplitsResponse>(url),
     RANKINGS_SWR_OPTIONS,
   );
   const {
     data: warData,
     error: warError,
     isLoading: warLoading,
-  } = useSWR<WarSurfaceResponse>(warRequestPath, (url: string) =>
-    fetcher<WarSurfaceResponse>(url),
+  } = useSWR<WarSurfaceResponse>(
+    warRequestPath,
+    (url: string) => fetcher<WarSurfaceResponse>(url),
     RANKINGS_SWR_OPTIONS,
   );
   const { data: snapshotData } = useSWR<ContextualRankingSnapshotResponse>(
@@ -1177,6 +1360,33 @@ export default function RankingsPage() {
   const displayedMatrixData = useMemo(
     () => applyMatrixDisplayFilters(matrixData, filters),
     [matrixData, filters],
+  );
+  const comparisonRequestPath = buildComparisonRequestPath({
+    filters,
+    selectedPlayerId,
+    selectedGoalieId,
+    selectedTeam,
+    matrixData: displayedMatrixData,
+    goalieMatrixData,
+    teamMatrixData,
+  });
+  const comparisonOpportunityRequestPath =
+    filters.entity === "skaters" && filters.tab === "rankings"
+      ? buildTrendingRequestPath(filters)
+      : null;
+  const {
+    data: comparisonData,
+    error: comparisonError,
+    isLoading: comparisonLoading,
+  } = useSWR<ContextualRankingComparisonResponse>(
+    comparisonRequestPath,
+    (url: string) => fetcher<ContextualRankingComparisonResponse>(url),
+    RANKINGS_SWR_OPTIONS,
+  );
+  const { data: comparisonTrendingData } = useSWR<TrendingResponse>(
+    comparisonOpportunityRequestPath,
+    (url: string) => fetcher<TrendingResponse>(url),
+    RANKINGS_SWR_OPTIONS,
   );
   const labels = pageLabels(filters);
 
@@ -1226,10 +1436,7 @@ export default function RankingsPage() {
     <>
       <Head>
         <title>{labels.title}</title>
-        <meta
-          name="description"
-          content={labels.description}
-        />
+        <meta name="description" content={labels.description} />
       </Head>
 
       <main className={styles.page}>
@@ -1364,12 +1571,23 @@ export default function RankingsPage() {
                 displayMode={filters.displayMode}
               />
             </div>
-            <TeamSnapshotPanel
-              payload={teamMatrixData ?? null}
-              selectedTeam={selectedTeam}
-              snapshotRow={selectedTeamSnapshotRow}
-              label={labels.snapshotLabel}
-            />
+            <div className={styles.contextRail}>
+              <TeamSnapshotPanel
+                payload={teamMatrixData ?? null}
+                selectedTeam={selectedTeam}
+                snapshotRow={selectedTeamSnapshotRow}
+                label={labels.snapshotLabel}
+              />
+              <ComparisonSummaryPanel
+                payload={comparisonData ?? null}
+                isLoading={comparisonLoading}
+                errorMessage={
+                  comparisonError instanceof Error
+                    ? comparisonError.message
+                    : undefined
+                }
+              />
+            </div>
           </section>
         ) : null}
 
@@ -1403,46 +1621,74 @@ export default function RankingsPage() {
                 displayMode={filters.displayMode}
               />
             </div>
-            <GoalieSnapshotPanel
-              payload={goalieMatrixData ?? null}
-              selectedGoalieId={selectedGoalieId}
-              snapshotRow={selectedGoalieSnapshotRow}
-              label={labels.snapshotLabel}
-            />
+            <div className={styles.contextRail}>
+              <GoalieSnapshotPanel
+                payload={goalieMatrixData ?? null}
+                selectedGoalieId={selectedGoalieId}
+                snapshotRow={selectedGoalieSnapshotRow}
+                label={labels.snapshotLabel}
+              />
+              <ComparisonSummaryPanel
+                payload={comparisonData ?? null}
+                isLoading={comparisonLoading}
+                errorMessage={
+                  comparisonError instanceof Error
+                    ? comparisonError.message
+                    : undefined
+                }
+              />
+            </div>
           </section>
         ) : null}
 
         {filters.entity === "skaters" && filters.tab === "rankings" ? (
-          <section className={styles.workstation}>
-            <div className={styles.matrixMain}>
-              <h2 className={styles.visuallyHidden}>Rankings Matrix</h2>
-              <PlayerMatrixTable
-                payload={displayedMatrixData}
-                isLoading={matrixLoading}
-                errorMessage={
-                  matrixError instanceof Error ? matrixError.message : undefined
-                }
-                selectedPlayerId={selectedPlayerId}
-                onSelectPlayer={(playerId) =>
-                  updateFilters({ selectedPlayerId: String(playerId) })
-                }
-                onSortMetric={updateMatrixSort}
-                onPageChange={(page) => updateFilters({ page: String(page) })}
-                onPageSizeChange={(pageSize) =>
-                  updateFilters({ page: "1", pageSize: String(pageSize) })
-                }
-                displayMode={filters.displayMode}
-                rankMode={rankMode}
-              />
-            </div>
-            <PlayerSnapshotPanel
-              payload={matrixData ?? null}
-              selectedPlayerId={selectedPlayerId}
-              snapshotRow={selectedSkaterSnapshotRow}
-              label={labels.snapshotLabel}
-              rankMode={rankMode}
-            />
-          </section>
+          <>
+            <section className={styles.workstation}>
+              <div className={styles.matrixMain}>
+                <h2 className={styles.visuallyHidden}>Rankings Matrix</h2>
+                <PlayerMatrixTable
+                  payload={displayedMatrixData}
+                  isLoading={matrixLoading}
+                  errorMessage={
+                    matrixError instanceof Error
+                      ? matrixError.message
+                      : undefined
+                  }
+                  selectedPlayerId={selectedPlayerId}
+                  onSelectPlayer={(playerId) =>
+                    updateFilters({ selectedPlayerId: String(playerId) })
+                  }
+                  onSortMetric={updateMatrixSort}
+                  onPageChange={(page) => updateFilters({ page: String(page) })}
+                  onPageSizeChange={(pageSize) =>
+                    updateFilters({ page: "1", pageSize: String(pageSize) })
+                  }
+                  displayMode={filters.displayMode}
+                  rankMode={rankMode}
+                />
+              </div>
+              <div className={styles.contextRail}>
+                <PlayerSnapshotPanel
+                  payload={matrixData ?? null}
+                  selectedPlayerId={selectedPlayerId}
+                  snapshotRow={selectedSkaterSnapshotRow}
+                  label={labels.snapshotLabel}
+                  rankMode={rankMode}
+                />
+                <ComparisonSummaryPanel
+                  payload={comparisonData ?? null}
+                  isLoading={comparisonLoading}
+                  errorMessage={
+                    comparisonError instanceof Error
+                      ? comparisonError.message
+                      : undefined
+                  }
+                  opportunityRows={comparisonTrendingData?.rows ?? []}
+                />
+              </div>
+            </section>
+            <ExperimentalToolkitPanel />
+          </>
         ) : null}
 
         {filters.entity === "skaters" && filters.tab === "metric_explorer" ? (

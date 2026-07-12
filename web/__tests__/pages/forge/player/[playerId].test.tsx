@@ -4,18 +4,44 @@ import { cleanup, render, screen } from "@testing-library/react";
 
 import { clearClientFetchCache } from "lib/dashboard/clientFetchCache";
 
+const routerState = vi.hoisted(() => ({
+  query: {
+    playerId: "88",
+    date: "2026-03-14",
+    mode: "tonight"
+  }
+}));
+
 vi.mock("next/head", () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
 
 vi.mock("next/router", () => ({
-  useRouter: () => ({
-    query: {
-      playerId: "88",
-      date: "2026-03-14",
-      mode: "tonight"
-    }
-  })
+  useRouter: () => routerState
+}));
+
+vi.mock("components/GameGrid/utils/useSchedule", () => ({
+  default: () => [
+    [
+      {
+        teamId: 1,
+        SAT: {
+          id: 10,
+          gameType: 2,
+          homeTeam: { id: 1 },
+          awayTeam: { id: 2 }
+        },
+        SUN: {
+          id: 11,
+          gameType: 2,
+          homeTeam: { id: 3 },
+          awayTeam: { id: 1 }
+        }
+      }
+    ],
+    [10, 10, 10, 10, 10, 4, 4],
+    false
+  ]
 }));
 
 vi.mock("hooks/useTeamSchedule", () => ({
@@ -47,6 +73,11 @@ describe("FORGE player detail page", () => {
   beforeEach(() => {
     clearClientFetchCache();
     vi.restoreAllMocks();
+    routerState.query = {
+      playerId: "88",
+      date: "2026-03-14",
+      mode: "tonight"
+    };
   });
 
   afterEach(() => {
@@ -182,5 +213,51 @@ describe("FORGE player detail page", () => {
     expect(screen.getByText("Ownership context unavailable for this player.")).toBeTruthy();
     expect(screen.getAllByText("Projection and Ownership").length).toBeGreaterThan(0);
     expect(screen.getByText("Top Add")).toBeTruthy();
+  });
+
+  it("uses the same weekly schedule context in the player-detail add score", async () => {
+    routerState.query = {
+      playerId: "88",
+      date: "2026-03-14",
+      mode: "week"
+    };
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/forge/players")) {
+        return jsonResponse({
+          asOfDate: "2026-03-14",
+          data: [
+            {
+              player_id: 88,
+              player_name: "Top Add",
+              team_name: "New Jersey Devils",
+              position: "C",
+              pts: 2.7,
+              ppp: 0.8,
+              sog: 3.6,
+              hit: 0.4,
+              blk: 0.2,
+              uncertainty: 0.3
+            }
+          ]
+        });
+      }
+      if (url.includes("/api/v1/transactions/ownership-snapshots")) {
+        return jsonResponse({ players: [{ playerId: 88, ownership: 42 }] });
+      }
+      if (url.includes("/api/v1/transactions/ownership-trends")) {
+        return jsonResponse({
+          success: true,
+          selectedPlayers: [{ playerId: 88, latest: 42, delta: 5, sparkline: [] }]
+        });
+      }
+      return jsonResponse({}, false);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ForgePlayerDetailPage />);
+
+    expect(await screen.findByText(/Weekly stream mode • 2G • 2 off/)).toBeTruthy();
+    expect(fetchMock.mock.calls.some(([input]) => String(input).includes("horizon=5"))).toBe(true);
   });
 });

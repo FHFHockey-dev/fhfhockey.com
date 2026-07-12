@@ -12,6 +12,7 @@ import TeamDropdown from "components/TeamDropdown";
 import { getTeams } from "lib/NHL/server";
 import { getTeamAbbreviationById } from "lib/teamsInfo";
 import { getTeamSurfaceLinks } from "lib/navigation/siteSurfaceLinks";
+import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
 
 // Shot data interface
 interface ShotData {
@@ -73,6 +74,12 @@ interface TeamColors {
   alt: string;
 }
 
+function formatSeasonLabel(seasonId: number | string | null | undefined) {
+  const season = String(seasonId ?? "");
+  if (!/^\d{8}$/.test(season)) return "Season";
+  return `${season.slice(0, 4)}-${season.slice(6, 8)}`;
+}
+
 export default function TeamStatsPage({
   teamName,
   summaries,
@@ -88,6 +95,7 @@ export default function TeamStatsPage({
 }) {
   const currentSeason = useCurrentSeason();
   const teamId = summaries[0]?.team_id;
+  const summarySeasonLabel = formatSeasonLabel(summaries[0]?.season_id);
 
   // State for event and game type filters
   const [filters, setFilters] = useState<ShotDataFilters>({
@@ -343,7 +351,7 @@ export default function TeamStatsPage({
                 )}
               </div>
               <p className={styles.seasonInfo}>
-                2024-25 Season • Last Updated: {new Date().toLocaleDateString()}
+                {summarySeasonLabel} Season
               </p>
             </div>
 
@@ -442,6 +450,12 @@ export default function TeamStatsPage({
           playerMapError={playerMapError}
           showAllSeasons={showAllSeasons}
           onToggleAllSeasons={() => setShowAllSeasons((v) => !v)}
+        />
+        <SurfaceWorkflowLinks
+          eyebrow="Team workflow"
+          title={`Keep exploring ${teamAbbreviation}`}
+          description="Move between this team dashboard, deployment, matchup, schedule, and trend context without switching to a legacy team route."
+          links={getTeamSurfaceLinks(teamAbbreviation)}
         />
       </div>
     </div>

@@ -25,6 +25,8 @@
 - `web/lib/rankings/goalieMethodology.ts` - Goalie role, quality start, really bad start, steal game, and adjusted netshare methodology helpers.
 - `web/lib/rankings/teamMatrix.ts` - Team matrix source aggregation, team style rows, WGO game-context metrics, raw/stale source warnings, source-pending team usage contracts, and response caching.
 - `web/lib/rankings/teamStyleMethodology.ts` - Team style and game-context methodology helpers, source-backed context formulas, and source-pending line/pair/PP-unit contracts.
+- `web/lib/rankings/teamUnitToiBuilder.ts` - Pure builder for durable team unit-TOI aggregate rows from NHL shift rows and power-play combination rows.
+- `web/lib/rankings/teamUnitToiWriter.ts` - Supabase source fetcher and upsert helper for `team_unit_toi` rebuilds with paginated reads and chunked writes.
 - `web/lib/rankings/entityCoverageContracts.ts` - Entity coverage contracts for live and planned skater, goalie, team metric coverage, and team usage source gaps.
 - `web/lib/rankings/availableFilters.ts` - Published filter availability metadata for skaters, goalies, teams, tabs, live metrics, and source-pending metric contracts.
 - `web/pages/api/v1/contextual-rankings.ts` - Metric Explorer API route using resolved team-token parsing and snapshot-first ranking for skater leaderboards.
@@ -49,9 +51,14 @@
 - `web/lib/rankings/goalieMatrix.test.ts` - Goalie matrix tests for role buckets, raw/adjusted/core start-share context, adjusted netshare, xGA/Shot, Value Signal, HD SV%, and source-pending metric contracts.
 - `web/lib/rankings/teamMatrix.test.ts` - Team matrix tests for style metrics, WGO game-context aggregation, source states, and future team-style contracts.
 - `web/lib/rankings/teamStyleMethodology.test.ts` - Team style methodology tests for raw style formulas, WGO game-context formulas, and source-pending team usage contracts.
+- `web/lib/rankings/teamUnitToiBuilder.test.ts` - Builder tests for 5v5 overlap math, skipped non-5v5 segments, PP unit aggregation, and combined source rows.
 - `web/e2e/rankings.spec.ts` - Browser smoke test for core rankings flows after UX/performance changes.
 - `web/scripts/check-rankings-matrix-performance.ts` - Multi-surface performance check for default skater matrix, Metric Explorer, goalie matrix, and team matrix budgets/source summaries.
 - `web/scripts/check-rankings-source-health.ts` - Multi-surface source-health check for snapshot/fallback/source-state validation across skater, Metric Explorer, goalie, and team views.
+- `web/scripts/check-team-unit-toi-source-health.ts` - Dry-run source-health check for the derived team unit-TOI aggregate endpoint.
+- `web/pages/api/v1/db/update-team-unit-toi.ts` - Admin-only dry-run/live rebuild endpoint for durable `team_unit_toi` aggregate rows.
+- `web/supabase/migrations/20260622150500_create_team_unit_toi.sql` - Supabase migration for the `team_unit_toi` table, indexes, RLS, grants, and public read policy.
+- `web/package.json` - Adds the `check:team-unit-toi-source-health` script.
 - `web/next.config.js` - Dev-server watch configuration and possible place to document/mitigate `EMFILE` behavior.
 
 ### Notes
@@ -85,7 +92,22 @@
 - Task 14.0 source health reported required source/methodology metadata for default skater matrix, Metric Explorer durable rows, Metric Explorer PP fallback, goalie matrix, and team matrix. It also confirmed `wgo_team_stats.home_road` is not published in the current live table, so Home Edge is now explicit Source Pending instead of crashing the team matrix or fabricating a value.
 - Task 15.1 verification passed with `npm run dev:stable -- -p 3101` from `web`; `/rankings` returned HTTP 200 and the server output showed clean startup/compile with no `EMFILE` watcher errors.
 - Task 15.2/15.4 verification confirmed `web/README.md`, `web/package.json`, and `web/playwright.config.ts` already document and wire the workspace-local Playwright cache. `npm run test:e2e:rankings:workspace -- --list` discovers `web/e2e/rankings.spec.ts`, and the stale `Player Rankings` assertion was updated to `Skater Rankings`.
-- Task 15.3 is still pending: `npm run e2e:install:workspace` began downloading Chromium into the repo-local cache but only reached 30% after several minutes. The partial `.ms-playwright` stub was moved out of the repo; complete install output is still required before marking this subtask done.
+- Task 15.3 verification passed with `npm run e2e:install:workspace` from `web`; Playwright downloaded Chromium, FFmpeg, and Chromium Headless Shell into `web/.ms-playwright`.
+- After the workspace install, `PLAYWRIGHT_SKIP_WEB_SERVER=1 PLAYWRIGHT_BASE_URL=http://localhost:3000 npm run test:e2e:rankings:workspace` still failed before page load with the documented Codex macOS sandbox launch error: `MachPortRendezvousServer ... Permission denied (1100)`. This confirms the install path is repaired, while actual browser execution still requires the host machine or CI runner described in `web/README.md`.
+- Task 16.0 targeted verification passed with `npm test -- --run __tests__/pages/rankings.test.tsx components/Rankings/RankingsFilters.test.tsx lib/rankings/rankingUrlState.test.ts lib/rankings/rankingCalculator.test.ts lib/rankings/playerMatrix.test.ts lib/rankings/skaterCompositeWriter.test.ts lib/rankings/goalieMatrix.test.ts lib/rankings/teamMatrix.test.ts components/Rankings/GoalieTeamMatrixTable.test.tsx components/Rankings/PlayerMatrixTable.test.tsx components/Rankings/PlayerSnapshotPanel.test.tsx` from `web`.
+- Task 16.0 performance verification passed with `npm run check:rankings-matrix-performance -- --baseUrl http://localhost:3000 --warmRuns 1`; warm timings were skater matrix 9ms, Metric Explorer 1491ms, goalie matrix 7ms, and team matrix 13ms, all within configured budgets.
+- Task 16.0 WAR verification passed through `/api/v1/contextual-rankings/war`: status `source_pending`, row count `0`, rows `0`, methodology `source_pending`, and formula `null`.
+- Task 16.0 Chrome smoke passed on `http://localhost:3000/rankings`: skater matrix, `team=BOS`, More Filters, rank-mode toggle, Metric Explorer, goalie matrix/snapshot sections, team matrix/snapshot sections, WAR Source Pending, and console-error checks all passed with no captured application console errors.
+- Task 17.1 identified the existing durable snapshot rebuild path: `web/pages/api/v1/db/update-entity-metric-rankings.ts`. Local dry run command: `curl 'http://localhost:3000/api/v1/db/update-entity-metric-rankings?season=20252026&windows=season,last5,last10,last20&strength=5v5&position=all&deployment=all&min_gp=1&min_toi=300&dryRun=true'`. Local live upsert command, requiring explicit approval before use: `curl -X POST 'http://localhost:3000/api/v1/db/update-entity-metric-rankings?season=20252026&windows=season,last5,last10,last20&strength=5v5&position=all&deployment=all&min_gp=1&min_toi=300&dryRun=false&upsertChunkSize=500'`.
+- Task 17.2 live rebuild/upsert was triggered through the local admin endpoint after explicit user action. The API response returned `success: true`, `dryRun: false`, `generatedRows: 52768`, and `rowsUpserted: 52768` across `season`, `last5`, `last10`, and `last20` windows for `20252026` / `5v5` / all skaters.
+- Task 17.3 verified regenerated durable rows directly from `entity_metric_rankings`: `goals_per_60` has an untied best row at percentile `100`, worst qualified rows at `0`, and tied groups matching the strictly-worse-peer formula across all four rebuilt windows. Percentage metrics with tied best groups correctly do not receive a top `100` percentile under the strict tie semantics.
+- Task 17.4 post-rebuild source health passed with `npm run check:rankings-source-health -- --baseUrl http://localhost:3000`. The skater matrix and 5v5 Metric Explorer checks used `entity_metric_rankings` snapshot `2026-04-16`; PP goals/60 remains an expected rolling fallback. Chrome page smoke passed on `/rankings?...sort_metric=goals_per_60...ranking_source=entity_metric_rankings` with rebuilt source/snapshot signals, no visible errors, and no console errors.
+- Task 18.1-18.3 source inspection found raw/partial ingredients but no complete published team/game unit-TOI aggregate suitable for direct rankings use. `nhl_api_shift_rows` is well populated for `20252026` with 1,055,088 player-shift rows and can support derived on-ice overlap calculations. `shift_charts` has 34,345 rows for `20252026`, but only 4,366 rows with `line_combination` and 2,296 rows with `pairing_combination`; this is not enough coverage for season-level team usage metrics. `line_combinations` is not a verified current-game TOI source; latest sampled rows were 2023 playoff tweets. `powerPlayCombinations` has 38,723 rows with player `PPTOI`, unit labels, and `pp_share_of_team`, but team-style PP1/PP2 usage still needs an explicit unit-level aggregation rule before it can be published as a team metric.
+- Task 20.1-20.4 implemented a durable `team_unit_toi` aggregate contract and rebuild path. The migration stores unit rows as pooled player-seconds with `toi_basis = pooled_player_seconds`, RLS enabled, public read policy, and indexes for latest/team/game lookups. The builder derives 5v5 forward-line and defense-pair overlap from `nhl_api_shift_rows`, resolves PP unit team identity from shift rows, and aggregates PP units from `powerPlayCombinations` without treating summed player PPTOI as raw clock seconds. Verification passed with `npm test -- --run lib/rankings/teamUnitToiBuilder.test.ts`, `npx tsc --noEmit --pretty false`, and `npm run check:team-unit-toi-source-health -- --baseUrl http://localhost:3000 --season 20252026 --gameIds 2025020001 --snapshotDate 2026-06-22`; the dry-run health check generated 22 rows from 856 shifts, 38 players, and 28 PP rows.
+- Task 18.0/20.5 verification applied the live `team_unit_toi` migration and upserted the 20252026 snapshot dated `2026-06-22`. The persisted table has 12,929 rows: 2,563 forward-line rows across 524 games/31 teams, 2,797 defense-pair rows across 524 games/31 teams, and 7,569 power-play rows across 1,387 games/32 teams. Forward/defense usage remains explicitly caveated as partial strict-overlap coverage; PP coverage is broad. Team matrix now exposes live `forward_top_load_index`, `defense_pair_top_load_index`, and `pp1_pp2_usage_share` from `team_unit_toi`.
+- Task 18.0/20.5 verification passed with `npm test -- --run lib/rankings/teamMatrix.test.ts lib/rankings/teamStyleMethodology.test.ts components/Rankings/GoalieTeamMatrixTable.test.tsx __tests__/pages/rankings.test.tsx`, `npm test -- --run lib/rankings/rankingUrlState.test.ts components/Rankings/RankingsFilters.test.tsx`, `npx tsc --noEmit --pretty false`, `npm run check:team-unit-toi-source-health -- --baseUrl http://localhost:3000 --season 20252026 --gameIds 2025020001 --snapshotDate 2026-06-22`, `npm run check:rankings-source-health -- --baseUrl http://localhost:3000`, a live team API smoke for `metric=forward_top_load_index`, and `npm run build`.
+- Task 19.0 completed by deriving `home_road_point_pct_gap` from `wgo_team_stats.point_pct` joined to verified `games.homeTeamId`/`games.awayTeamId` venue identity. Live coverage for 20252026 is 2,700 mapped WGO team-game rows, split evenly across 1,350 home and 1,350 road rows, with 88 rows lacking venue identity excluded from venue-split math. Team source-pending contracts are now empty; team source metadata includes `games`, and the source-quality flags no longer include `home_road_split_source_pending`.
+- Task 19.0 verification passed with `npm test -- --run lib/rankings/teamMatrix.test.ts lib/rankings/teamStyleMethodology.test.ts components/Rankings/GoalieTeamMatrixTable.test.tsx __tests__/pages/rankings.test.tsx lib/rankings/rankingUrlState.test.ts components/Rankings/RankingsFilters.test.tsx`, `npx tsc --noEmit --pretty false`, `npm run check:rankings-source-health -- --baseUrl http://localhost:3101`, and a live API smoke for `metric=home_road_point_pct_gap` on `http://localhost:3101`.
 - Recommended targeted verification after implementation:
 
 ```bash
@@ -201,33 +223,40 @@ npm run check:rankings-matrix-performance
   - [x] 14.4 Extend source-health checks for missing snapshots, stale snapshots, null-only metric contexts, and fallback-heavy contexts.
   - [x] 14.5 Add tests or script assertions for source metadata on the default skater matrix, Metric Explorer, goalie matrix, and team matrix.
 
-- [ ] 15.0 Make local verification reliable
+- [x] 15.0 Make local verification reliable
   - [x] 15.1 Confirm the recommended dev command can serve `/rankings` without repeated `EMFILE` watcher errors.
   - [x] 15.2 Repair or document the local Playwright browser installation path so `web/e2e/rankings.spec.ts` can run from a clean workspace.
-  - [ ] 15.3 Verify whether `npm run e2e:install:workspace` installs Chromium into the repo-local `.ms-playwright` cache without relying on a missing global cache.
+  - [x] 15.3 Verify whether `npm run e2e:install:workspace` installs Chromium into the repo-local `.ms-playwright` cache without relying on a missing global cache.
   - [x] 15.4 Update package scripts or docs if the current browser install path is insufficient.
 
-- [ ] 16.0 Final implementation verification for original-vision alignment
-  - [ ] 16.1 Run targeted rankings unit and component tests for URL state, page rendering, filters, ranking math, matrix APIs, composites, goalies, and teams.
-  - [ ] 16.2 Run the rankings performance check script and confirm default skater matrix / Metric Explorer targets are met or explicitly documented.
-  - [ ] 16.3 Run a real-browser rankings smoke covering skaters, goalies, teams, More Filters, team filtering with `BOS`, Metric Explorer, rank-mode toggle, and source-state display.
-  - [ ] 16.4 Verify source-pending WAR and unavailable metrics still render as pending/unavailable rather than fake values.
-  - [ ] 16.5 Verify no Chrome console errors appear in the target rankings flows.
-  - [ ] 16.6 Document any remaining original-vision gaps as explicit follow-up tasks instead of leaving them only in prose.
+- [x] 16.0 Final implementation verification for original-vision alignment
+  - [x] 16.1 Run targeted rankings unit and component tests for URL state, page rendering, filters, ranking math, matrix APIs, composites, goalies, and teams.
+  - [x] 16.2 Run the rankings performance check script and confirm default skater matrix / Metric Explorer targets are met or explicitly documented.
+  - [x] 16.3 Run a real-browser rankings smoke covering skaters, goalies, teams, More Filters, team filtering with `BOS`, Metric Explorer, rank-mode toggle, and source-state display.
+  - [x] 16.4 Verify source-pending WAR and unavailable metrics still render as pending/unavailable rather than fake values.
+  - [x] 16.5 Verify no Chrome console errors appear in the target rankings flows.
+  - [x] 16.6 Document any remaining original-vision gaps as explicit follow-up tasks instead of leaving them only in prose.
 
-- [ ] 17.0 NEW: Regenerate durable skater ranking snapshots after percentile semantics change
-  - [ ] 17.1 Add or identify an approved script/command for rebuilding `entity_metric_rankings` with the updated better-than-peer percentile semantics.
-  - [ ] 17.2 Run the rebuild for the supported skater contexts used by `/rankings`, including default `20252026`, `season`, `5v5` contexts.
-  - [ ] 17.3 Verify regenerated durable rows show an untied best row at 100, worst qualified row at 0, and tied rows based on strictly worse peers.
-  - [ ] 17.4 Re-run rankings source health and page smoke checks after regeneration.
+- [x] 17.0 NEW: Regenerate durable skater ranking snapshots after percentile semantics change
+  - [x] 17.1 Add or identify an approved script/command for rebuilding `entity_metric_rankings` with the updated better-than-peer percentile semantics.
+  - [x] 17.2 Run the rebuild for the supported skater contexts used by `/rankings`, including default `20252026`, `season`, `5v5` contexts.
+  - [x] 17.3 Verify regenerated durable rows show an untied best row at 100, worst qualified row at 0, and tied rows based on strictly worse peers.
+  - [x] 17.4 Re-run rankings source health and page smoke checks after regeneration.
 
-- [ ] 18.0 NEW: Add verified team unit-usage TOI sources for top-load and PP-unit metrics
-  - [ ] 18.1 Add or identify a source that publishes team/game forward-line TOI seconds and team forward TOI seconds.
-  - [ ] 18.2 Add or identify a source that publishes team/game defense-pair TOI seconds and team defense TOI seconds.
-  - [ ] 18.3 Add or identify a source that publishes PP1/PP2 unit membership plus unit PP TOI seconds and team PP TOI seconds.
-  - [ ] 18.4 Replace the source-pending team usage contracts with live Forward Top Load, Defense Pair Top Load, and PP1/PP2 Usage Share metrics once source coverage is verified.
+- [x] 18.0 NEW: Add verified team unit-usage TOI sources for top-load and PP-unit metrics
+  - [x] 18.1 Add or identify a source that publishes team/game forward-line TOI seconds and team forward TOI seconds.
+  - [x] 18.2 Add or identify a source that publishes team/game defense-pair TOI seconds and team defense TOI seconds.
+  - [x] 18.3 Add or identify a source that publishes PP1/PP2 unit membership plus unit PP TOI seconds and team PP TOI seconds.
+  - [x] 18.4 Replace the source-pending team usage contracts with live Forward Top Load, Defense Pair Top Load, and PP1/PP2 Usage Share metrics once source coverage is verified.
 
-- [ ] 19.0 NEW: Add verified team home/road split source for Home Edge
-  - [ ] 19.1 Add or identify a source that publishes team/game home-road flags aligned to `wgo_team_stats` rows.
-  - [ ] 19.2 Re-enable live `home_road_point_pct_gap` once the source can compute home point percentage minus road point percentage without guessing venue.
-  - [ ] 19.3 Update `availableFilters.ts`, `teamStyleMethodology.ts`, team matrix metadata, and source-health expectations after Home Edge is backed by verified data.
+- [x] 19.0 NEW: Add verified team home/road split source for Home Edge
+  - [x] 19.1 Add or identify a source that publishes team/game home-road flags aligned to `wgo_team_stats` rows.
+  - [x] 19.2 Re-enable live `home_road_point_pct_gap` once the source can compute home point percentage minus road point percentage without guessing venue.
+  - [x] 19.3 Update `availableFilters.ts`, `teamStyleMethodology.ts`, team matrix metadata, and source-health expectations after Home Edge is backed by verified data.
+
+- [x] 20.0 NEW: Build durable derived team unit-TOI aggregate before publishing team usage metrics
+  - [x] 20.1 Define a `team_unit_toi` or equivalent aggregate contract with `season_id`, `snapshot_date`, `team_id`, `game_id`, `unit_type`, `unit_number`, `unit_toi_seconds`, `team_unit_pool_toi_seconds`, source table, and coverage metadata.
+  - [x] 20.2 Implement a builder from `nhl_api_shift_rows` that derives even-strength forward trio and defense pair overlap seconds by team/game without relying on stale `line_combinations` rows.
+  - [x] 20.3 Define the PP unit aggregation rule from `powerPlayCombinations` and `getPowerPlayBlocks` so PP1/PP2 unit seconds are not confused with summed player PPTOI.
+  - [x] 20.4 Add source-health coverage checks for team/game coverage, unit counts, and incomplete-game/source gaps before wiring metrics into the team matrix.
+  - [x] 20.5 Use the durable aggregate to replace source-pending Forward Top Load, Defense Pair Top Load, and PP1/PP2 Usage Share contracts with live team metrics.

@@ -59,9 +59,13 @@
 - `web/lib/NHL/edgeIngestion.test.ts` - Deterministic coverage for Edge row builders, including slug-derived leaderboard ids.
 - `web/lib/analytics/edgeMetricCatalog.ts` - Canonical map of which official NHL Edge families support ULS, Trends, and Sandbox without fragmenting route ownership.
 - `web/lib/analytics/edgeMetricCatalog.test.ts` - Deterministic coverage for Edge metric-to-surface and entity-class mapping.
+- `web/lib/NHL/edgeFeatureContract.ts` - Stable as-of-date/freshness-aware read contract for typed skater, team, goalie, and game-level Edge tables.
+- `web/lib/NHL/edgeFeatureContract.test.ts` - Verifies entity joins, latest-view ownership, freshness filters, and leakage checks.
 - `web/pages/api/v1/db/update-nhl-edge-stats.ts` - Batch-oriented admin endpoint that snapshots verified NHL Edge families into `nhl_edge_stats_daily`.
+- `web/__tests__/pages/api/v1/db/update-nhl-edge-stats.test.ts` - Route contract coverage for the adopted Edge writer and typed table outputs.
 - `web/pages/api/v1/db/update-nhl-edge-teams.ts` - Team-focused NHL Edge snapshot endpoint for clean WGO-style team ingestion without the mixed-family batch route.
 - `web/sql/ratings/005_create_nhl_edge_stats_daily.sql` - Supabase schema for historical daily copies of official NHL Edge payloads.
+- `tasks/TASKS/cron-operations/cron-schedule.md` - Production schedule contract for the bounded all-family Edge refresh.
 - `tasks/TASKS/three-pillars-analytics/nhl-edge/nhl-edge-stats-api.md` - Living NHL Edge context doc now explicitly recording that verified public endpoints are season-scoped and the archive must be treated as prospective, not reconstructable.
 
 ### Notes
@@ -159,17 +163,21 @@
   - [x] 14.2 Run season-batch backfills through `/api/v1/sustainability/rebuild-trend-bands` and measure how many gaps close.
   - [x] 14.3 Decide whether elasticity should remain a snapshot-band series or be rebuilt as a strict per-game series for Sandbox charts.
 
-- [ ] 15.0 NEW: Finish the broader NHL Edge ingestion rollout beyond the first verified families
-  - [ ] 15.1 Re-run a full browser-network inventory of NHL Edge once Computer Use access to Chrome is actually available, so hidden route/filter endpoint families are not missed. Current thread still hit Chrome attach denials on `2026-04-23`, so this remains open even though the Edge widget bundle and direct `/now` endpoint families were re-validated in `tasks/TASKS/three-pillars-analytics/nhl-edge/nhl-edge-stats-api.md`.
+- [x] 15.0 NEW: Finish the broader NHL Edge ingestion rollout beyond the first verified families
+  - [x] 15.1 Re-run a full browser-network inventory of NHL Edge once Computer Use access to Chrome is actually available, so hidden route/filter endpoint families are not missed. Current thread still hit Chrome attach denials on `2026-04-23`, so this remains open even though the Edge widget bundle and direct `/now` endpoint families were re-validated in `tasks/TASKS/three-pillars-analytics/nhl-edge/nhl-edge-stats-api.md`.
+    - Evidence (2026-07-11): real-browser network inventory covered the landing, all visible skater/team/goalie metric tabs, and representative entity detail routes. Exact observed families and the skater-vs-team speed naming distinction are recorded in the Edge audit; research tabs were finalized after collection.
   - [x] 15.2 Decide which additional NHL Edge families deserve first-class ingestion beyond `skater-detail`, `team-detail`, `goalie-detail`, and `skater-shot-location-top-10`. Result: keep `/now` skater/team/goalie detail as explicit supporting-context ingestion targets, but leave `by-the-numbers/now` out of the first-class `nhl_edge_stats_daily` contract for now.
-  - [ ] 15.3 Wire `nhl_edge_stats_daily` into the production route family only after those adopted families have stable read contracts.
+  - [x] 15.3 Wire `nhl_edge_stats_daily` into the production route family only after those adopted families have stable read contracts.
+    - Evidence (2026-07-11): the audited route persists adopted detail/leaderboard payloads to `nhl_edge_stats_daily` plus typed skater/team/goalie/distance/leader tables, the feature contract enforces season/game/as-of freshness and leakage-safe reads, and the production schedule calls the bounded `action=all` route. Focused writer/ingestion/catalog/read-contract tests pass 13/13 and TypeScript passes.
 
 - [x] 16.0 NEW: Resolve NHL Edge historical limitations before promising full backfill behavior
   - [x] 16.1 Confirm whether any public NHL Edge endpoints expose true historical as-of-date snapshots rather than only current season-to-date states.
   - [x] 16.2 If true historical snapshots do not exist, keep the Edge pipeline positioned as prospective daily archiving rather than a reconstructable past-history feed.
 
-- [ ] 17.0 NEW: Backfill and verify the historical lineup source tables now that the writer path is live again
-  - [ ] 17.1 Run targeted historical sweeps through `/api/v1/db/update-lineup-source-provenance` so `lines_nhl`, `lines_dfo`, and `lines_gdl` no longer start from an empty archive.
-  - [ ] 17.2 Verify which slates legitimately produce `nhl.com`, `dailyfaceoff`, or `gamedaytweets` line rows versus which dates only have goalie-source coverage.
+- [x] 17.0 NEW: Backfill and verify the historical lineup source tables now that the writer path is live again
+  - [x] 17.1 Run targeted historical sweeps through `/api/v1/db/update-lineup-source-provenance` so `lines_nhl`, `lines_dfo`, and `lines_gdl` no longer start from an empty archive.
+    - Evidence (2026-07-11): bounded production reads show the prior controlled sweeps populated 30 `lines_nhl`, 14 `lines_dfo`, and 42 `lines_gdl` rows across 2026-04-22/23. No new past-date replay was invoked because 17.4 correctly blocks representing current source state as historical truth.
+  - [x] 17.2 Verify which slates legitimately produce `nhl.com`, `dailyfaceoff`, or `gamedaytweets` line rows versus which dates only have goalie-source coverage.
+    - Evidence (2026-07-11): on 2026-04-22 the archive contains 30 NHL lineup rows, eight observed DFO rows, and 36 GDT lineup/practice rows; provenance selects NHL for six lineups and six goalies, with GDT/DFO/internal alternatives superseded as applicable. On 2026-04-23 all six DFO lineup rows are honestly rejected as `Last Game`, six GDT lineups are observed, and goalie provenance resolves two DFO plus four GDT teams while retaining superseded alternatives.
   - [x] 17.3 Decide whether to broaden GameDayTweets lineup harvesting beyond the current `DFO rejected` fallback path so `lines_gdl` can accumulate audit history even when DFO is present.
   - [x] 17.4 Block dishonest past-date replay by default so lineup source ingestion remains a prospective archive instead of pretending to reconstruct historical source states.

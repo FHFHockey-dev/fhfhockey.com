@@ -70,6 +70,23 @@ function Row({ row }: { row: TrendingRow }) {
       <td>{formatToiClock(row.toiTrend.last5Seconds)}</td>
       <td>{formatDelta(row.toiTrend.deltaLast5VsLast20Seconds, "s")}</td>
       <td>
+        <div className={styles.opportunitySignals}>
+          {row.opportunitySignals.length ? (
+            row.opportunitySignals.slice(0, 3).map((signal) => (
+              <span
+                key={signal.type}
+                className={styles.opportunitySignal}
+                title={signal.evidence}
+              >
+                {signal.label}
+              </span>
+            ))
+          ) : (
+            <span className={styles.opportunityEmpty}>-</span>
+          )}
+        </div>
+      </td>
+      <td>
         <div className={styles.trendingMiniMetrics}>
           {supportingMetrics.map((metric) => (
             <span key={metric.metricKey}>
@@ -86,7 +103,7 @@ function StateBody({ message }: { message: string }) {
   return (
     <tbody>
       <tr>
-        <td className={styles.tableStateCell} colSpan={11}>
+        <td className={styles.tableStateCell} colSpan={12}>
           {message}
         </td>
       </tr>
@@ -105,7 +122,7 @@ export default function TrendingPanel({
         <div>
           <h2>Trending Players</h2>
           <p>
-            Last 5 vs last 20 percentile movement across verified rolling metrics.
+            Last 5 vs last 20 movement across verified rolling metrics and opportunity signals.
           </p>
         </div>
         <span>
@@ -126,6 +143,7 @@ export default function TrendingPanel({
               <th scope="col">Delta</th>
               <th scope="col">TOI/G</th>
               <th scope="col">TOI Delta</th>
+              <th scope="col">Opportunity</th>
               <th scope="col">Metric Deltas</th>
             </tr>
           </thead>
@@ -145,6 +163,15 @@ export default function TrendingPanel({
           ) : null}
         </table>
       </div>
+      {payload?.meta.opportunitySignalContracts.length ? (
+        <div className={styles.inlineNotice}>
+          Opportunity contracts:{" "}
+          {payload.meta.opportunitySignalContracts
+            .filter((contract) => contract.sourceState === "source_pending")
+            .map((contract) => contract.label)
+            .join(", ") || "all configured signals live"}
+        </div>
+      ) : null}
     </section>
   );
 }

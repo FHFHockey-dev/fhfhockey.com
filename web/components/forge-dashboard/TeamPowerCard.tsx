@@ -25,6 +25,7 @@ type TeamPowerCardProps = {
   date: string;
   team: string;
   onResolvedDate?: (resolvedDate: string | null) => void;
+  onCtpiResolvedDate?: (resolvedDate: string | null) => void;
   onStatusChange?: (status: {
     loading: boolean;
     error: string | null;
@@ -93,6 +94,7 @@ export default function TeamPowerCard({
   date,
   team,
   onResolvedDate,
+  onCtpiResolvedDate,
   onStatusChange
 }: TeamPowerCardProps) {
   const [view, setView] = useState<TeamPowerView>("top");
@@ -100,6 +102,7 @@ export default function TeamPowerCard({
   const [ctpiRows, setCtpiRows] = useState<NormalizedCtpiTeamRow[]>([]);
   const [slateGames, setSlateGames] = useState<NormalizedStartChartGameRow[]>([]);
   const [ctpiGeneratedAt, setCtpiGeneratedAt] = useState<string | null>(null);
+  const [ctpiDateUsed, setCtpiDateUsed] = useState<string | null>(null);
   const [slateDateUsed, setSlateDateUsed] = useState<string | null>(null);
   const [slateServingMessage, setSlateServingMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -118,7 +121,10 @@ export default function TeamPowerCard({
         `/api/team-ratings?date=${encodeURIComponent(date)}`,
         { ttlMs: 60_000 }
       ),
-      fetchCachedJson<unknown>("/api/v1/trends/team-ctpi", { ttlMs: 60_000 }),
+      fetchCachedJson<unknown>(
+        `/api/v1/trends/team-ctpi?date=${encodeURIComponent(date)}`,
+        { ttlMs: 60_000 }
+      ),
       fetchCachedJson<unknown>(
         `/api/v1/start-chart?date=${encodeURIComponent(date)}`,
         { ttlMs: 60_000 }
@@ -137,6 +143,7 @@ export default function TeamPowerCard({
           setCtpiRows([]);
           setSlateGames([]);
           setCtpiGeneratedAt(null);
+          setCtpiDateUsed(null);
           setSlateDateUsed(null);
           return;
         }
@@ -149,9 +156,11 @@ export default function TeamPowerCard({
           const normalizedCtpi = normalizeCtpiResponse(ctpiResult.value);
           setCtpiRows(normalizedCtpi.teams);
           setCtpiGeneratedAt(normalizedCtpi.generatedAt);
+          setCtpiDateUsed(normalizedCtpi.dateUsed);
         } else {
           setCtpiRows([]);
           setCtpiGeneratedAt(null);
+          setCtpiDateUsed(null);
           warnings.push("Team trend unavailable");
         }
 
@@ -242,6 +251,10 @@ export default function TeamPowerCard({
   useEffect(() => {
     onResolvedDate?.(resolvedDate);
   }, [onResolvedDate, resolvedDate]);
+
+  useEffect(() => {
+    onCtpiResolvedDate?.(ctpiDateUsed);
+  }, [ctpiDateUsed, onCtpiResolvedDate]);
 
   useEffect(() => {
     onStatusChange?.({

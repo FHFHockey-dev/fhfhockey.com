@@ -48,7 +48,9 @@ export const deriveYahooSeason = (date: string): number => {
     return new Date().getUTCFullYear();
   }
 
-  return month >= 8 ? year + 1 : year;
+  // Yahoo rows store the season by its starting calendar year (for example,
+  // March 2026 belongs to the 2025 NHL/Yahoo season).
+  return month >= 8 ? year : year - 1;
 };
 
 export const fetchOwnershipSnapshotMap = async (

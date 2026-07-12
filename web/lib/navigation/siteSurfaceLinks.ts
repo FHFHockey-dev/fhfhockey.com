@@ -10,216 +10,258 @@ export const HOME_SURFACE_LINKS: SiteSurfaceLink[] = [
   {
     href: "/start-chart",
     label: "Starter Board",
-    description: "Move from the slate into matchup and starter context."
+    description: "Move from the slate into matchup and starter context.",
   },
   {
     href: GAME_GRID_HREF,
     label: "Game Grid",
-    description: "Plan weekly volume and schedule convenience."
+    description: "Plan weekly volume and schedule convenience.",
   },
   {
     href: "/trends",
     label: "Trends Dashboard",
-    description: "Scan recent form, skater movers, and workload context."
+    description: "Scan recent form, skater movers, and workload context.",
   },
   {
     href: "/underlying-stats",
     label: "Underlying Stats",
-    description: "Read team strength, process, and schedule texture."
+    description: "Read team strength, process, and schedule texture.",
   },
   {
     href: "/lines",
     label: "Lines",
-    description: "Check current deployment and PP personnel."
+    description: "Check current deployment and PP personnel.",
   },
   {
     href: "/variance/goalies",
     label: "Goalie View",
-    description: "Review workload, starts, and weekly goalie context."
-  }
+    description: "Review workload, starts, and weekly goalie context.",
+  },
 ];
 
 export const TRENDS_SURFACE_LINKS: SiteSurfaceLink[] = [
   {
     href: "/underlying-stats",
     label: "Underlying Stats",
-    description: "Move from movement into the team-quality and process read."
+    description: "Move from movement into the team-quality and process read.",
   },
   {
     href: "/splits",
     label: "Splits",
-    description: "Move recent form into player-vs-team and matchup split context."
+    description:
+      "Move recent form into player-vs-team and matchup split context.",
   },
   {
     href: "/start-chart",
     label: "Starter Board",
-    description: "Carry recent-form context into start or sit decisions."
+    description: "Carry recent-form context into start or sit decisions.",
   },
   {
     href: GAME_GRID_HREF,
     label: "Game Grid",
-    description: "Match trend movement against schedule density."
+    description: "Match trend movement against schedule density.",
   },
   {
     href: "/lines",
     label: "Lines",
-    description: "Confirm deployment changes behind the trend movement."
+    description: "Confirm deployment changes behind the trend movement.",
   },
   {
     href: "/variance/goalies",
     label: "Goalie View",
-    description: "Check the goalie side before locking in a call."
-  }
+    description: "Check the goalie side before locking in a call.",
+  },
 ];
 
 export const UNDERLYING_STATS_SURFACE_LINKS: SiteSurfaceLink[] = [
   {
     href: "/trends",
     label: "Trends Dashboard",
-    description: "Carry the team read into player movement and recent form."
+    description: "Carry the team read into player movement and recent form.",
   },
   {
     href: "/splits",
     label: "Splits",
-    description: "Stress-test the team profile against matchup-specific context."
+    description:
+      "Stress-test the team profile against matchup-specific context.",
   },
   {
     href: "/start-chart",
     label: "Starter Board",
-    description: "Turn the team read into slate and matchup decisions."
+    description: "Turn the team read into slate and matchup decisions.",
   },
   {
     href: "/lines",
     label: "Lines",
-    description: "Confirm deployment and PP personnel behind the team thesis."
-  }
+    description: "Confirm deployment and PP personnel behind the team thesis.",
+  },
 ];
 
 export const START_CHART_SURFACE_LINKS: SiteSurfaceLink[] = [
   {
     href: "/splits",
     label: "Splits",
-    description: "Open player-vs-team and L10 matchup context for the slate."
+    description: "Open player-vs-team and L10 matchup context for the slate.",
   },
   {
     href: "/trends",
     label: "Trends Dashboard",
-    description: "Add recent-form context to the starter board."
+    description: "Add recent-form context to the starter board.",
   },
   {
     href: GAME_GRID_HREF,
     label: "Game Grid",
-    description: "Compare matchup quality with the weekly schedule."
+    description: "Compare matchup quality with the weekly schedule.",
   },
   {
     href: "/lines",
     label: "Lines",
-    description: "Validate deployment before acting on the matchup."
+    description: "Validate deployment before acting on the matchup.",
   },
   {
     href: "/variance/goalies",
     label: "Goalie View",
-    description: "Cross-check starter context against goalie workload."
-  }
+    description: "Cross-check starter context against goalie workload.",
+  },
 ];
 
 export const GAME_GRID_SURFACE_LINKS: SiteSurfaceLink[] = [
   {
     href: "/start-chart",
     label: "Starter Board",
-    description: "Carry schedule spots into matchup and starter context."
+    description: "Carry schedule spots into matchup and starter context.",
   },
   {
     href: "/trends",
     label: "Trends Dashboard",
-    description: "Check recent movement before chasing schedule volume."
+    description: "Check recent movement before chasing schedule volume.",
   },
   {
     href: "/lines",
     label: "Lines",
-    description: "Confirm line and PP deployment next to the grid."
+    description: "Confirm line and PP deployment next to the grid.",
   },
   {
     href: "/variance/goalies",
     label: "Goalie View",
-    description: "Compare weekly volume plans with goalie reliability."
-  }
+    description: "Compare weekly volume plans with goalie reliability.",
+  },
+];
+
+export const getWigoSurfaceLinks = (
+  teamAbbreviation?: string | null,
+): SiteSurfaceLink[] => [
+  ...(teamAbbreviation
+    ? [
+        {
+          href: `/stats/team/${teamAbbreviation}`,
+          label: "Team HQ",
+          description:
+            "Open the selected player’s team schedule, form, and shot map.",
+        },
+        {
+          href: `/lines/${teamAbbreviation}`,
+          label: "Team Lines",
+          description:
+            "Confirm the deployment and PP personnel behind the player read.",
+        },
+      ]
+    : []),
+  {
+    href: "/trends",
+    label: "Trends Dashboard",
+    description:
+      "Compare the player and team explanation with recent-form movement.",
+  },
+  {
+    href: GAME_GRID_HREF,
+    label: "Game Grid",
+    description:
+      "Apply the team-driver read to weekly volume and opponent planning.",
+  },
+  {
+    href: "/start-chart",
+    label: "Starter Board",
+    description:
+      "Carry the player and team context into start-or-sit decisions.",
+  },
 ];
 
 export const SPLITS_SURFACE_LINKS: SiteSurfaceLink[] = [
   {
     href: "/trends",
     label: "Trends Dashboard",
-    description: "Cross-check split targets against recent-form movement."
+    description: "Cross-check split targets against recent-form movement.",
   },
   {
     href: "/lines",
     label: "Lines",
-    description: "Confirm deployment and PP personnel behind the split edge."
+    description: "Confirm deployment and PP personnel behind the split edge.",
   },
   {
     href: "/start-chart",
     label: "Starter Board",
-    description: "Carry split context straight into the slate decision board."
-  }
+    description: "Carry split context straight into the slate decision board.",
+  },
 ];
 
 export const getTeamSurfaceLinks = (
-  teamAbbreviation: string
+  teamAbbreviation: string,
 ): SiteSurfaceLink[] => [
   {
     href: `/splits?team=${teamAbbreviation}`,
     label: "Splits",
-    description: "Open player-vs-team and L10 matchup context for this club."
+    description: "Open player-vs-team and L10 matchup context for this club.",
   },
   {
     href: `/lines/${teamAbbreviation}`,
     label: "Team Lines",
-    description: "Open the matching deployment and PP personnel page."
+    description: "Open the matching deployment and PP personnel page.",
   },
   {
     href: "/start-chart",
     label: "Starter Board",
-    description: "Carry team context into matchup and slate planning."
+    description: "Carry team context into matchup and slate planning.",
   },
   {
     href: GAME_GRID_HREF,
     label: "Game Grid",
-    description: "Compare this team against the weekly schedule landscape."
+    description: "Compare this team against the weekly schedule landscape.",
   },
   {
     href: "/trends",
     label: "Trends Dashboard",
-    description: "Match team context with league-wide recent movement."
-  }
+    description: "Match team context with league-wide recent movement.",
+  },
 ];
 
 export const getLinesSurfaceLinks = (
-  teamAbbreviation: string
+  teamAbbreviation: string,
 ): SiteSurfaceLink[] => [
   {
     href: `/splits?team=${teamAbbreviation}`,
     label: "Splits",
-    description: "Connect the current units to player-vs-team and PP shot-share context."
+    description:
+      "Connect the current units to player-vs-team and PP shot-share context.",
   },
   {
     href: `/stats/team/${teamAbbreviation}`,
     label: "Team HQ",
-    description: "Return to the full team dashboard, schedule, and shot map."
+    description: "Return to the full team dashboard, schedule, and shot map.",
   },
   {
     href: "/start-chart",
     label: "Starter Board",
-    description: "Apply deployment context to matchup decisions."
+    description: "Apply deployment context to matchup decisions.",
   },
   {
     href: GAME_GRID_HREF,
     label: "Game Grid",
-    description: "Connect line changes to weekly volume planning."
+    description: "Connect line changes to weekly volume planning.",
   },
   {
     href: "/trends",
     label: "Trends Dashboard",
-    description: "See whether deployment changes already show up in form."
-  }
+    description: "See whether deployment changes already show up in form.",
+  },
 ];

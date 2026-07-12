@@ -1,5 +1,8 @@
 import supabase from "lib/supabase";
 import type { Database } from "lib/supabase/database-generated.types";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+type SustainabilityClient = SupabaseClient<Database>;
 
 type RosterRow = Database["public"]["Tables"]["rosters"]["Row"];
 type GameRow = Database["public"]["Tables"]["games"]["Row"];
@@ -50,9 +53,10 @@ export function mapUpcomingGamesForTeam(
 }
 
 export async function getPlayerCurrentTeamId(
-  playerId: number
+  playerId: number,
+  client: SustainabilityClient = supabase
 ): Promise<number | null> {
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from("rosters")
     .select("teamId, seasonId")
     .eq("playerId", playerId)
@@ -70,6 +74,7 @@ export async function getUpcomingScheduleForPlayer(
   options: {
     snapshotDate?: string;
     limit?: number;
+    client?: SustainabilityClient;
   } = {}
 ): Promise<UpcomingGame[]> {
   const snapshotDate =
@@ -78,10 +83,11 @@ export async function getUpcomingScheduleForPlayer(
       : new Date().toISOString().slice(0, 10);
   const limit = Math.max(1, Math.min(25, options.limit ?? 10));
 
-  const teamId = await getPlayerCurrentTeamId(playerId);
+  const client = options.client ?? supabase;
+  const teamId = await getPlayerCurrentTeamId(playerId, client);
   if (!teamId) return [];
 
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from("games")
     .select("id, date, homeTeamId, awayTeamId")
     .gte("date", snapshotDate)
@@ -144,7 +150,8 @@ export function mapOpponentStrengthRecord(
 
 export async function getOpponentStrengths(
   teamAbbreviations: string[],
-  asOfDate: string
+  asOfDate: string,
+  client: SustainabilityClient = supabase
 ): Promise<Record<string, OpponentStrengthRow>> {
   const normalized = Array.from(
     new Set(
@@ -155,7 +162,7 @@ export async function getOpponentStrengths(
   );
   if (!normalized.length) return {};
 
-  const ratingRows = await supabase
+  const ratingRows = await client
     .from("team_power_ratings_daily")
     .select("team_abbreviation, pk_tier")
     .in("team_abbreviation", normalized)
@@ -174,7 +181,7 @@ export async function getOpponentStrengths(
     );
   }
 
-  const dailyRes = await supabase
+  const dailyRes = await client
     .from("nst_team_all")
     .select("team_abbreviation, date, gp, toi, xga, ca, sca, hdca, sv_pct")
     .in("team_abbreviation", normalized)
@@ -199,7 +206,7 @@ export async function getOpponentStrengths(
 
   const asOf = new Date(`${asOfDate}T00:00:00.000Z`);
   const season = asOf.getUTCMonth() + 1 >= 7 ? asOf.getUTCFullYear() : asOf.getUTCFullYear() - 1;
-  const seasonRes = await supabase
+  const seasonRes = await client
     .from("nst_team_stats")
     .select("team_abbreviation, season, gp, toi, xga, ca, sca, hdca, sv_pct")
     .in("team_abbreviation", missing)
@@ -244,18 +251,20 @@ export function mergeUpcomingOpponents(
 export async function getUpcomingOpponents(
   playerId: number,
   nGames = 10,
-  snapshotDate?: string
+  snapshotDate?: string,
+  client: SustainabilityClient = supabase
 ): Promise<UpcomingOpponent[]> {
   const games = await getUpcomingScheduleForPlayer(playerId, {
     limit: nGames,
-    snapshotDate
+    snapshotDate,
+    client
   });
   if (!games.length) return [];
 
   const opponentTeamIds = Array.from(
     new Set(games.map((game) => game.opponentTeamId))
   );
-  const { data: teamRows, error: teamError } = await supabase
+  const { data: teamRows, error: teamError } = await client
     .from("teams")
     .select("id, abbreviation")
     .in("id", opponentTeamIds);
@@ -272,7 +281,8 @@ export async function getUpcomingOpponents(
   );
   const opponentStrengths = await getOpponentStrengths(
     opponentAbbreviations,
-    snapshotDate ?? new Date().toISOString().slice(0, 10)
+    snapshotDate ?? new Date().toISOString().slice(0, 10),
+    client
   );
 
   return mergeUpcomingOpponents(

@@ -1,5 +1,6 @@
 ## Relevant Files
 
+- `tasks/TASKS/xg-model/release/prd/prd-xg-release-validation-and-exception-resolution.md` - Shared PRD pairing this exception-resolution list with the active release-remediation list.
 - `tasks/tasks-xg-release-exception-resolution.md` - Execution plan for resolving the gap between the approved-exception package and the still-failing formal release artifact.
 - `tasks/artifacts/xg-release-validation-2026-03-31.md` - Current formal release-batch artifact, which still records `FAIL`.
 - `tasks/artifacts/xg-release-exception-reconciliation-2026-03-31.md` - Reconciliation of the March 31 formal failure classes against the approved exception package, showing which reported failures are already exceptioned.

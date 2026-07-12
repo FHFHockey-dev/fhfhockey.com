@@ -1,5 +1,7 @@
 # PRD: Codebase Cleanup & Warning Reduction
 
+> **Implementation task list:** `tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md`
+
 ## Objective
 Reduce technical noise (lint warnings, repetitive code patterns) to improve developer velocity, build clarity, accessibility, and performance readiness before deeper feature work.
 

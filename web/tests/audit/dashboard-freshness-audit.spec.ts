@@ -11,8 +11,11 @@ describe("Dashboard Freshness Audit", () => {
   it("passes when all sources are within freshness windows", () => {
     const checks = buildDashboardFreshnessChecks({
       teamRatingsDate: "2026-03-04",
+      forgePlayersAsOfDate: "2026-03-04",
       goalieAsOfDate: "2026-03-04",
       startChartDateUsed: "2026-03-04",
+      ownershipSnapshotGeneratedAt: "2026-03-04",
+      ownershipTrendsGeneratedAt: "2026-03-03",
       teamCtpiGeneratedAt: "2026-03-04T15:00:00.000Z",
       skaterPowerGeneratedAt: "2026-03-03T18:00:00.000Z",
       sustainabilitySnapshotDate: "2026-03-03"
@@ -26,8 +29,11 @@ describe("Dashboard Freshness Audit", () => {
   it("fails when error-severity snapshot feeds are stale", () => {
     const checks = buildDashboardFreshnessChecks({
       teamRatingsDate: "2026-03-01",
+      forgePlayersAsOfDate: "2026-03-01",
       goalieAsOfDate: "2026-02-28",
       startChartDateUsed: "2026-03-04",
+      ownershipSnapshotGeneratedAt: "2026-03-01",
+      ownershipTrendsGeneratedAt: "2026-03-04",
       teamCtpiGeneratedAt: "2026-03-04T12:00:00.000Z",
       skaterPowerGeneratedAt: "2026-03-04T12:00:00.000Z",
       sustainabilitySnapshotDate: "2026-03-04"
@@ -41,13 +47,22 @@ describe("Dashboard Freshness Audit", () => {
     expect(result.issues.some((issue) => issue.source === "forge-goalies")).toBe(
       true
     );
+    expect(result.issues.some((issue) => issue.source === "forge-players")).toBe(
+      true
+    );
+    expect(
+      result.issues.some((issue) => issue.source === "ownership-snapshots")
+    ).toBe(true);
   });
 
   it("returns warnings for trend-feed staleness without failing", () => {
     const checks = buildDashboardFreshnessChecks({
       teamRatingsDate: "2026-03-04",
+      forgePlayersAsOfDate: "2026-03-04",
       goalieAsOfDate: "2026-03-04",
       startChartDateUsed: "2026-03-04",
+      ownershipSnapshotGeneratedAt: "2026-03-04",
+      ownershipTrendsGeneratedAt: "2026-02-25",
       teamCtpiGeneratedAt: "2026-02-25T00:00:00.000Z",
       skaterPowerGeneratedAt: "2026-02-25T00:00:00.000Z",
       sustainabilitySnapshotDate: "2026-02-25"
@@ -62,8 +77,11 @@ describe("Dashboard Freshness Audit", () => {
   it("flags missing/invalid timestamps", () => {
     const checks = buildDashboardFreshnessChecks({
       teamRatingsDate: null,
+      forgePlayersAsOfDate: null,
       goalieAsOfDate: "not-a-date",
       startChartDateUsed: "2026-03-04",
+      ownershipSnapshotGeneratedAt: null,
+      ownershipTrendsGeneratedAt: "2026-03-04",
       teamCtpiGeneratedAt: null,
       skaterPowerGeneratedAt: "2026-03-04T00:00:00.000Z",
       sustainabilitySnapshotDate: "2026-03-04"

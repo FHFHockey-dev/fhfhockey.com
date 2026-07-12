@@ -1,5 +1,7 @@
 # PRD: Date Range Matrix (DRM) Refactor
 
+> **Implementation task list:** `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md`
+
 Generated: 2025-09-12 13:27:53 UTC
 
 ## Overview

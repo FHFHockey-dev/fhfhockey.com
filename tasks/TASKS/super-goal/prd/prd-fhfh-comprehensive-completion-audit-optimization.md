@@ -1,0 +1,475 @@
+# PRD: FHFH Comprehensive Completion, Audit, and Optimization
+
+## 1. Introduction / Overview
+
+This PRD is the canonical product and execution contract for the repository-wide completion program defined by `web/rules/super-goal.md`. It consolidates every discoverable FHFH PRD, task list, embedded checklist, audit, implementation plan, runbook, schema contract, research note, and current implementation signal into a single dependency-aware program.
+
+The program is continuous. It first verifies and finishes unfinished initiatives (Wave A), then plans and completes not-started or untracked initiatives (Wave B), and finally audits and remediates every completed initiative (Wave C). Historical checkmarks are claims that require implementation evidence and a Wave-C audit; they are not accepted as proof by themselves.
+
+### Canonical control artifacts
+
+- `tasks/TASKS/super-goal/prd/prd-fhfh-comprehensive-completion-audit-optimization.md` — this PRD.
+- `tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md` — canonical task control plane and source-checkbox ledger.
+- `tasks/TASKS/super-goal/super-goal-context-diary.md` — the only durable super-goal execution diary.
+- `tasks/TASKS/super-goal/super-goal-final-summary.md` — final evidence report, maintained as a skeleton until completion.
+
+## 2. Goals
+
+1. Inventory and classify every artifact under `tasks/TASKS/` and every implementation location needed to verify it.
+2. Preserve source provenance and import every actionable checkbox into the master task list using stable source identifiers.
+3. Repair every missing, empty, duplicate, superseded, or conflicting PRD/task-list pair without erasing source history.
+4. Complete every Wave-A initiative before broad Wave-B implementation, subject to documented dependency and risk ordering within each wave.
+5. Complete every Wave-B initiative, including implementation, verification, documentation, and source/master synchronization.
+6. Audit every initially completed and newly completed initiative; close every P0/P1 and complete every P2/P3 unless the user explicitly approves an exception.
+7. Verify shared data, identity, auth, model, cron, API, UI, security, pagination, observability, and documentation contracts across initiatives.
+8. Leave a recoverable diary and a final evidence-backed summary that reports every initiative consistently.
+
+## 3. User Stories
+
+- As the project owner, I want all scattered plans and checklists represented in one program so unfinished or untracked work cannot disappear.
+- As the project owner, I want implementation to continue after planning so the repository reaches the actual Definition of Done.
+- As a developer, I want each master task traceable to its source and verification evidence so status is auditable.
+- As an operator, I want ingestion, cron, auth, and model workflows to have safe failure behavior, pagination, observability, and current runbooks.
+- As a product user, I want FHFH surfaces to be correct, responsive, accessible, and clear about loading, empty, error, stale, and partial states.
+- As a future Codex session, I want an exact restart point and understood working tree so prior work is preserved.
+
+## 4. Functional Requirements
+
+### FR-1 — Governing workflow and precedence
+
+Read and apply `web/rules/super-goal.md`, `tasks/TASKS/rules/create-prd.mdc`, the requested `web/rules/generate-tasks.mdc`, the populated governing copy `tasks/TASKS/rules/generate-tasks.mdc`, and `tasks/TASKS/rules/process-task-list.mdc`. Latest user instructions outrank the charter, which outranks governing rules, initiative artifacts, and inferred conventions. Record resolved conflicts in the diary and master task list.
+
+### FR-2 — Exhaustive artifact and implementation inventory
+
+For each initiative record a stable ID, domain, PRD, task list, supporting artifacts, claimed checkbox state, verified status, implementation evidence, dependencies, pair/duplicate/empty/conflict state, wave, and next action. Inventory implementation locations only as needed to verify active work; do not treat filenames as implementation proof.
+
+### FR-3 — Source normalization and provenance
+
+Import every source checkbox, including completed historical rows and embedded checklists. Each imported row must include its original state, source path, source line or stable ordinal, and master initiative mapping. Deduplicate only semantically identical work and retain all source references. Mark completed source work as claimed complete pending Wave C.
+
+### FR-4 — Pair repair
+
+Create a task list for a PRD-only initiative, derive a concise PRD for a task-list-only initiative, and recover empty scopes from neighboring artifacts plus implementation. A pair may be explicitly merged into a broader initiative when scope and provenance remain unambiguous. Do not delete historical artifacts.
+
+### FR-5 — Wave A execution
+
+Verify and finish all in-progress, nearly finished, partially implemented, active, and remediation-in-progress initiatives. Fix correctness and shared-contract blockers before downstream UI or polish. Synchronize source and master checkboxes immediately after evidence is obtained.
+
+### FR-6 — Wave B execution
+
+After Wave A, plan, start, implement, verify, and document every not-started, planned, untracked, missing-pair, or empty initiative. Add newly discovered work to both source and master lists as `NEW` tasks.
+
+### FR-7 — Wave C audit and remediation
+
+Audit every completed initiative after its latest implementation changes. Evaluate requirement alignment, data integrity/freshness/provenance, reliability/idempotency/cron behavior, security/auth/privacy, performance/pagination/caching, UX/accessibility/responsiveness, maintainability/ownership, documentation, and regression protection. Log findings as P0–P3 tasks, remediate in severity/dependency order, and re-verify.
+
+### FR-8 — Dependency-aware ordering
+
+Within each wave order work by: release/correctness/security blockers; shared ingestion/schema/identity/auth/cron/model foundations; multi-initiative blockers; nearly completed work; product surfaces and low-risk optimization. Document each material reorder.
+
+### FR-9 — Initiative Definition of Done
+
+An initiative is complete only when PRD requirements and all old/new tasks are closed or explicitly approved out of scope; source/master lists agree; required code/data/jobs/routes/UI/docs exist; narrow verification passes; important logic has proportionate regression protection; potentially large Supabase reads use verified pagination; relevant UI states and operational failures are handled; temporary debris is removed; and blockers/exceptions are explicit.
+
+### FR-10 — Supabase and data safety
+
+Treat PostgREST reads as paginated unless provably bounded. Verify full-table reads using `.range()` loops, RPC-side pagination, or another documented bounded strategy and continue until a short page. Before Supabase implementation, check current changelog/docs. Enforce RLS and ownership-aware policies on exposed data, avoid user-editable authorization claims, keep service-role secrets server-only, review view/function privilege behavior, and run the narrowest available advisors/query verification for schema work.
+
+### FR-11 — Implementation discipline
+
+Prefer targeted in-place edits and current repository conventions. Preserve unrelated dirty-tree work. Add tests for non-trivial calculations, parsing, normalization, transformations, meaningful branches, API behavior, and regressions; use direct verification for low-risk presentation or wiring changes. Remove scratch artifacts before completion.
+
+### FR-12 — Pause protocol
+
+Pause only for destructive/irreversible changes, broad architecture replacement, breaking contracts, mass deletion/route removal, production/provider/account actions, material conflicts or strategy forks, invalidated assumptions, or true user-owned manual action/verification. Before pausing, synchronize source/master tasks and diary and provide the exact checkpoint structure required by the charter.
+
+### FR-13 — Durable context recovery
+
+Maintain only the canonical diary. At initialization, significant task boundaries, pauses, resumes, compaction, dependency/scope/status changes, and completion checkpoints, append factual entries with files, decisions, checks, blockers, discoveries, and exact next action. Recovery requires re-reading the charter, rules, canonical PRD/list, latest three entries, status/diff, and active initiative artifacts before resuming.
+
+### FR-14 — Final integration and summary
+
+Reconcile shared contracts and verify critical end-to-end paths, build/type/lint/test status, completeness/pagination/identity/freshness/leakage boundaries, cron health, auth/entitlements, UI states, accessibility, performance, observability, and documentation. Populate the final summary with consistent category/initiative/path/status/goal/support/evidence/findings/exception sections and repository-wide totals.
+
+### FR-15 — Initial initiative registry
+
+The seed registry below is a starting classification; verified repository evidence may split, merge, or reorder entries. Every entry receives a Wave-C audit after its latest implementation.
+
+#### Wave A — unfinished first
+
+| ID | Initiative | Domain | Claimed state | Key dependency role |
+|---|---|---|---|---|
+| A-AUTH | Authentication and user settings | Platform | 15/34 parents | Shared auth/entitlement foundation |
+| A-CRON-EMAIL | Cron audit email failures | Operations | 3/7 parents | Operational visibility; reconcile B-CRON-NST |
+| A-GDL | GDL suite ingestion | Data ingestion | 3/10 parents; PRD missing | Shared lines identity/data foundation |
+| A-3P | Three Pillars Analytics | Analytics | 14/17 parents | Umbrella dependency for sustainability/trends |
+| A-SUST | Sustainability model | Analytics | 10/12 parents | Depends on rolling metrics/model contracts |
+| A-US-SOS | Underlying stats remediation/SOS | Stats surfaces | 6/7 parents | Shared underlying-stats foundation |
+| A-SITE | Site surface expansion roadmap | Site | 4/9 parents | Depends on underlying surfaces |
+| A-STYLE | Style system/underlying restyle | UX | 8/12 parents | Depends on stable routes/components |
+| A-FORGE-V1 | FORGE projection model V1 | Models | 22/40 parents plus skater 4/8 | Shared FORGE model contract |
+| A-FORGE-DASH | FORGE dashboard remediation | UX/models | Wave A complete; 74/74 remediation rows | Option A deployed; credential rotated across Vercel/Vault/60 commands; jobs 308/393 Vault-backed; Top Adds promotion retains the prospective non-zero in-season evidence gate |
+| A-FORGE-CC | FORGE Command Center | Operations/models | 6/9 parents | Depends on pipeline/run ownership |
+| A-FORGE-P4 | FORGE ecosystem pass four | Models | 20/23 parents | Multi-surface remediation |
+| A-FORGE-LIVE | FORGE living pass four | Models | 13/28 parents | Audit/remediation tail |
+| A-PRED | NHL game prediction model | Models | 9/11 plus nested incomplete lists | Depends on ingestion/roster/SOS contracts |
+| A-XG-TREND | xG trending completion | Models | 22/23 parents; PRD missing | Depends on xG/NST foundations |
+| A-XG-REL | xG release remediation | Release/models | 4/8 parents | Release gate; reconcile exception list |
+| A-DRAFT | Draft Dashboard | Yahoo/product | Partially implemented; task list missing | Depends on Yahoo mapping |
+| A-DRAFT-DEBUG | Draft Dashboard debug/performance | Yahoo/product | 1/5 explicit items | Primary-path performance/correctness |
+
+#### Wave B — plan/start after Wave A
+
+| ID | Initiative | Domain | Claimed state | Key dependency role |
+|---|---|---|---|---|
+| B-CRON-NST | Cron NST/audit remediation | Operations | 0/5 | Reconciles A-CRON-EMAIL and NST ownership |
+| B-SUST-BAR | Sustainability Barometer | Analytics/UX | 0/8 | Depends on A-SUST |
+| B-SUST-AUD | Sustainability/trends audit | Analytics | 0/5 | Depends on A-SUST and recovered trends scope |
+| B-GAMEGRID | Game Grid master dashboard | Stats/product | 0/5 | Depends on underlying data/routes |
+| B-SKO | SKO charts | Models/UX | Planned; task list missing | Reconcile burn-down/modeling scopes |
+| B-START | Start Chart/model | FORGE | Planned; task list missing | Depends on FORGE V1 |
+| B-FORGE-COMBO | FORGE + Trends + Start Chart | Models/product | 0/10 | Depends on A-FORGE-V1, A-XG-TREND, B-START |
+| B-XG-EX | xG release exception resolution | Release/models | 0/4; PRD missing | Follows A-XG-REL |
+| B-YAHOO | Yahoo ingestion/mapping audit | Yahoo/data | Audit/planning; task list missing | Foundation for Draft Dashboard |
+| B-DRAFT-STYLE | Game Grid/Draft style overhaul | UX | Planned; task list missing | After stable product paths |
+| B-CLEAN | Code cleanup/warning reduction | Maintenance | Planned; task list missing | After active feature stabilization |
+| B-DEAD | Dead-code follow-through | Maintenance | Audit complete; removal untracked | Requires consumer verification/approval for mass removal |
+| B-DRM | Date Range Matrix refactor | Maintenance/product | Planned; task list missing | Current dirty implementation evidence exists |
+| B-SKO-BURN | SKO pipeline burn-down | Models/maintenance | Planned; pair missing or merge | Merge candidate with B-SKO |
+| B-TRENDS | Trends scope recovery | Analytics | Empty PRD; task list missing | Cross-cutting dependency for combo/audit |
+
+#### Wave C — completed claims requiring audit
+
+| ID | Initiative group | Included claimed-complete initiatives |
+|---|---|---|
+| C-OPS | Platform/operations | Cron schedule optimization; failed-job remediation; NST API migration; Lines/CCC ingestion |
+| C-RANK | Rankings/analytics | Contextual Hockey Rankings; ecosystem alignment; post-alignment gap audit; rolling metrics audits/blueprints/remediation/pass-two |
+| C-US | Underlying/site | Player/team/goalie underlying stats; standalone landing/power-ranking roadmaps; mobile optimization; WiGO charts |
+| C-FORGE | FORGE | Goalie nested work; run modularization; dashboard refresh; component-health audit; ecosystem pass three; prediction-engine super list |
+| C-XG | xG | NHL API foundation; baseline option/follow-up contracts |
+| C-VAR | Variance | Skater leaderboard; variance section/goalies; second pass |
+| C-DYNAMIC | Newly completed work | Every Wave-A and Wave-B initiative after its latest implementation |
+
+### FR-16 — Dependency graphs and initial ordering
+
+Wave A begins with shared foundations and release/correctness signals, then dependent product surfaces:
+
+`A-AUTH → auth-dependent surfaces`; `A-GDL/A-CRON-EMAIL → ingestion/operations`; `A-XG-REL → A-XG-TREND → A-PRED`; `A-FORGE-V1 → A-FORGE-CC/A-FORGE-DASH/A-FORGE-P4/A-FORGE-LIVE`; `A-3P → A-SUST → A-US-SOS → A-SITE/A-STYLE`; `B-YAHOO mapping evidence may be audited narrowly to unblock A-DRAFT/A-DRAFT-DEBUG`.
+
+Wave B follows stable foundations:
+
+`A-CRON-EMAIL/A-XG-REL → B-CRON-NST/B-XG-EX`; `A-SUST/B-TRENDS → B-SUST-BAR/B-SUST-AUD`; `A-US-SOS → B-GAMEGRID`; `A-FORGE-V1 + B-TRENDS + B-START → B-FORGE-COMBO`; `B-SKO ↔ B-SKO-BURN` (merge decision from evidence); `B-YAHOO → B-DRAFT-STYLE`; active feature completion → `B-CLEAN/B-DEAD/B-DRM`.
+
+Initial execution favors nearly complete release/foundation work when it does not bypass a higher-risk auth or data issue. Any reorder is recorded in the diary.
+
+## 5. Non-Goals (Out of Scope)
+
+- No speculative subsystem rewrites or architecture replacement for stylistic preference.
+- No destructive production operations, mass deletion, breaking migration, provider/account change, or route removal without checkpoint approval.
+- No erasure of source history or treating checked boxes as evidence.
+- No proliferation of initiative-specific diaries or scratch documentation.
+- No ritual test creation for trivial changes; verification effort follows risk.
+- No silent scope reduction or completion claim while unapproved work remains.
+
+## 6. Design Considerations
+
+UI work follows `brand-style-cheat-sheet.md`, `fhfh-styles.md`, `vars_Audit.md`, established FHFH patterns, and current production behavior. Changes must preserve or improve accessibility, responsive/mobile behavior, information hierarchy, density, and communication of loading, empty, error, stale, fallback, and partial-success states. Existing mockups are inputs, not automatic authority over verified product requirements.
+
+## 7. Technical Considerations
+
+- The working tree was already heavily modified at initialization. Preserve unrelated changes and inspect relevant diffs before editing overlap.
+- The repository includes Next.js/React/TypeScript, JavaScript API routes, Python/data jobs, Supabase/Postgres migrations, cron configuration, and external hockey/Yahoo/provider data.
+- Reconcile canonical player/team/goalie identities across NHL, Yahoo, auth/Patreon, NST/GDL/CCC, and internal tables.
+- Preserve model leakage boundaries and provenance for projections, xG, sustainability, trends, rankings, and predictions.
+- Prefer single ownership and shared contracts over parallel ingestion or transformation implementations.
+- Use current documentation/changelogs for temporally unstable Supabase behavior before implementation.
+
+## 8. Success Metrics
+
+Success requires: all artifacts inventoried; all initiatives paired or explicitly merged; every Wave-A/B task implemented and verified; every completed initiative audited after latest changes; all P0/P1 closed and P2/P3 completed or approved; source/master lists synchronized; required tests/checks/manual verification recorded; shared contracts reconciled; temporary debris removed; diary current; final summary complete; and working tree understood.
+
+## 9. Open Questions
+
+No launch question blocks bootstrap. Material conflicts, destructive changes, provider/account actions, strategy forks, or true user-owned verification become explicit `NEW` tasks and use the pause protocol. The empty `web/rules/generate-tasks.mdc` is recorded as a documentation-drift finding; the populated `tasks/TASKS/rules/generate-tasks.mdc` governs unless the user directs otherwise.
+
+## Appendix A — Initialization Artifact Inventory
+
+This table classifies every non-canonical file discovered recursively under `tasks/TASKS/` at initialization. Classification is functional and may be refined when implementation evidence is inspected. Task-list rows are separately imported in full in the canonical master task list.
+
+| Path | Classification | Initiative mapping | Baseline note |
+|---|---|---|---|
+| `tasks/TASKS/auth-user-settings-platform/docs/auth-provider-manual-config.md` | supporting note/reference | A-AUTH | — |
+| `tasks/TASKS/auth-user-settings-platform/prd/prd-auth-user-settings-platform.md` | PRD | A-AUTH | — |
+| `tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md` | task list | A-AUTH | 168 checkbox rows |
+| `tasks/TASKS/contextual-hockey-rankings/2026-06-07-goal.md` | reference/supporting context | C-RANK | — |
+| `tasks/TASKS/contextual-hockey-rankings/gpt-codex-suggested-prompt.md` | reference/supporting context | C-RANK | — |
+| `tasks/TASKS/contextual-hockey-rankings/prd-contextual-hockey-rankings.md` | PRD | C-RANK | — |
+| `tasks/TASKS/contextual-hockey-rankings/prd-rankings-ecosystem-alignment-audit.md` | PRD | C-RANK | — |
+| `tasks/TASKS/contextual-hockey-rankings/prd-rankings-post-alignment-gap-audit.md` | PRD | C-RANK | — |
+| `tasks/TASKS/contextual-hockey-rankings/prd-v2-pass-CHR.md` | PRD | C-RANK | — |
+| `tasks/TASKS/contextual-hockey-rankings/research/deep-research-report.md` | research/decision support | C-RANK | — |
+| `tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md` | task list | C-RANK | 467 checkbox rows |
+| `tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-ecosystem-alignment-audit.md` | task list | C-RANK | 123 checkbox rows |
+| `tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-post-alignment-gap-audit.md` | task list | C-RANK | 63 checkbox rows |
+| `tasks/TASKS/contextual-hockey-rankings/workstation/Recommendations-DRR.md` | research/decision support | C-RANK | — |
+| `tasks/TASKS/contextual-hockey-rankings/workstation/assets/current-state-fullpage.jpeg` | visual/style reference | C-RANK | binary asset |
+| `tasks/TASKS/contextual-hockey-rankings/workstation/assets/target-mockup-fhfh-heatmap.jpeg` | visual/style reference | C-RANK | binary asset |
+| `tasks/TASKS/contextual-hockey-rankings/workstation/assets/target-mockup-true-hockey-insights.jpeg` | visual/style reference | C-RANK | binary asset |
+| `tasks/TASKS/contextual-hockey-rankings/workstation/context.md` | reference/supporting context | C-RANK | 32 checkbox rows |
+| `tasks/TASKS/contextual-hockey-rankings/workstation/deep-research-report.md` | research/decision support | C-RANK | — |
+| `tasks/TASKS/contextual-hockey-rankings/workstation/goal.md` | reference/supporting context | C-RANK | — |
+| `tasks/TASKS/cron-operations/cron-schedule.md` | supporting note/reference | A-CRON-EMAIL / B-CRON-NST / C-OPS | — |
+| `tasks/TASKS/cron-operations/prd/prd-cron-audit-and-schedule-optimization.md` | PRD | A-CRON-EMAIL / B-CRON-NST / C-OPS | — |
+| `tasks/TASKS/cron-operations/prd/prd-cron-failed-jobs-remediation.md` | PRD | A-CRON-EMAIL / B-CRON-NST / C-OPS | — |
+| `tasks/TASKS/cron-operations/prd/prd-cron-nst-audit-remediation.md` | PRD | A-CRON-EMAIL / B-CRON-NST / C-OPS | — |
+| `tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 47 checkbox rows |
+| `tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 43 checkbox rows |
+| `tasks/TASKS/cron-operations/tasks-prd-cron-failed-jobs-remediation.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 34 checkbox rows |
+| `tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 5 checkbox rows |
+| `tasks/TASKS/cron-operations/tasks-prd-nst-api-audit-and-migration.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 46 checkbox rows |
+| `tasks/TASKS/dead-code-cleanup/burn-down-plan.md` | implementation map/architecture plan | B-CLEAN / B-DEAD / B-DRM / B-SKO-BURN | — |
+| `tasks/TASKS/dead-code-cleanup/prd-cleanup-tasks.md` | PRD | B-CLEAN / B-DEAD / B-DRM / B-SKO-BURN | — |
+| `tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md` | PRD | B-CLEAN / B-DEAD / B-DRM / B-SKO-BURN | — |
+| `tasks/TASKS/dead-code-cleanup/prd-drm-refactor.md` | PRD | B-CLEAN / B-DEAD / B-DRM / B-SKO-BURN | — |
+| `tasks/TASKS/dead-code-cleanup/prd-file-inventory.md` | PRD | B-CLEAN / B-DEAD / B-DRM / B-SKO-BURN | — |
+| `tasks/TASKS/draft-dashboard-yahoo/docs/DraftDashboard_Audit.md` | audit/remediation supporting record | A-DRAFT / A-DRAFT-DEBUG / B-YAHOO / B-DRAFT-STYLE | — |
+| `tasks/TASKS/draft-dashboard-yahoo/docs/yahoo-tables.md` | schema/data contract | A-DRAFT / A-DRAFT-DEBUG / B-YAHOO / B-DRAFT-STYLE | — |
+| `tasks/TASKS/draft-dashboard-yahoo/draft-dashbord-audit.md` | audit/remediation supporting record | A-DRAFT / A-DRAFT-DEBUG / B-YAHOO / B-DRAFT-STYLE | — |
+| `tasks/TASKS/draft-dashboard-yahoo/prd-yahoo-audit.md` | PRD | A-DRAFT / A-DRAFT-DEBUG / B-YAHOO / B-DRAFT-STYLE | — |
+| `tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md` | PRD | A-DRAFT / A-DRAFT-DEBUG / B-YAHOO / B-DRAFT-STYLE | 6 checkbox rows |
+| `tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dashboard.md` | PRD | A-DRAFT / A-DRAFT-DEBUG / B-YAHOO / B-DRAFT-STYLE | — |
+| `tasks/TASKS/draft-dashboard-yahoo/prd/prd-gamegrid-draft-dashboard-style-overhaul.md` | PRD | A-DRAFT / A-DRAFT-DEBUG / B-YAHOO / B-DRAFT-STYLE | — |
+| `tasks/TASKS/forge-projections/command-center/prd-forge-command-center-rebuild.md` | PRD | A-FORGE-CC | — |
+| `tasks/TASKS/forge-projections/command-center/tasks-prd-forge-command-center-rebuild.md` | task list | A-FORGE-CC | 74 checkbox rows |
+| `tasks/TASKS/forge-projections/context/forge-tables.md` | schema/data contract | A-FORGE-V1 / C-FORGE | — |
+| `tasks/TASKS/forge-projections/context/projection-model-research.md` | research/decision support | A-FORGE-V1 / C-FORGE | — |
+| `tasks/TASKS/forge-projections/context/projectionTableStructure.md` | schema/data contract | A-FORGE-V1 / C-FORGE | — |
+| `tasks/TASKS/forge-projections/dashboard-health/prd/prd-forge-dashboard-component-health.md` | PRD | A-FORGE-DASH / C-FORGE | — |
+| `tasks/TASKS/forge-projections/dashboard-health/prd/prd-forge-dashboard.md` | PRD | A-FORGE-DASH / C-FORGE | — |
+| `tasks/TASKS/forge-projections/dashboard-health/tasks-forge-dashboard-component-remediation.md` | task list | A-FORGE-DASH / C-FORGE | 74 checkbox rows; Wave A complete |
+| `tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard-component-health.md` | task list | A-FORGE-DASH / C-FORGE | 46 checkbox rows |
+| `tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard.md` | task list | A-FORGE-DASH / C-FORGE | 47 checkbox rows |
+| `tasks/TASKS/forge-projections/docs/FORGE_ECOSYSTEM_ELI5_AUDIT.md` | audit/remediation supporting record | A-FORGE-V1 / C-FORGE | — |
+| `tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md` | reference/supporting context | A-FORGE-V1 / C-FORGE | — |
+| `tasks/TASKS/forge-projections/ecosystem-audits/forge-trends-combo-architecture.md` | implementation map/architecture plan | A-FORGE-P4 / A-FORGE-LIVE / B-FORGE-COMBO / C-FORGE | — |
+| `tasks/TASKS/forge-projections/ecosystem-audits/prd-forge-pass-4-living-audit-remediation.md` | PRD | A-FORGE-P4 / A-FORGE-LIVE / B-FORGE-COMBO / C-FORGE | — |
+| `tasks/TASKS/forge-projections/ecosystem-audits/prd/prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md` | PRD | A-FORGE-P4 / A-FORGE-LIVE / B-FORGE-COMBO / C-FORGE | — |
+| `tasks/TASKS/forge-projections/ecosystem-audits/prd/prd-forge-ecosystem-pass-4-audit-remediation.md` | PRD | A-FORGE-P4 / A-FORGE-LIVE / B-FORGE-COMBO / C-FORGE | — |
+| `tasks/TASKS/forge-projections/ecosystem-audits/prd/prd-forge-trends-combo-project.md` | PRD | A-FORGE-P4 / A-FORGE-LIVE / B-FORGE-COMBO / C-FORGE | — |
+| `tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md` | task list | A-FORGE-P4 / A-FORGE-LIVE / B-FORGE-COMBO / C-FORGE | 46 checkbox rows |
+| `tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md` | task list | A-FORGE-P4 / A-FORGE-LIVE / B-FORGE-COMBO / C-FORGE | 90 checkbox rows |
+| `tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md` | task list | A-FORGE-P4 / A-FORGE-LIVE / B-FORGE-COMBO / C-FORGE | 63 checkbox rows |
+| `tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md` | task list | A-FORGE-P4 / A-FORGE-LIVE / B-FORGE-COMBO / C-FORGE | 37 checkbox rows |
+| `tasks/TASKS/forge-projections/prediction-engine/tasks-prd-forge-prediction-engine-super-task-list.md` | task list | C-FORGE | 101 checkbox rows |
+| `tasks/TASKS/forge-projections/v1/docs/goalie-forge-operator-runbook.md` | runbook | A-FORGE-V1 / B-START / C-FORGE | — |
+| `tasks/TASKS/forge-projections/v1/goalie-forge.md` | reference/supporting context | A-FORGE-V1 / B-START / C-FORGE | — |
+| `tasks/TASKS/forge-projections/v1/prd/goalie-forge-implementation-plan.md` | PRD | A-FORGE-V1 / B-START / C-FORGE | — |
+| `tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md` | PRD | A-FORGE-V1 / B-START / C-FORGE | 18 checkbox rows |
+| `tasks/TASKS/forge-projections/v1/prd/prd-run-forge-projections-modularization.md` | PRD | A-FORGE-V1 / B-START / C-FORGE | — |
+| `tasks/TASKS/forge-projections/v1/prd/prd-start-chart-model.md` | PRD | A-FORGE-V1 / B-START / C-FORGE | — |
+| `tasks/TASKS/forge-projections/v1/prd/prd-start-chart.md` | PRD | A-FORGE-V1 / B-START / C-FORGE | — |
+| `tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md` | task list | A-FORGE-V1 / B-START / C-FORGE | 54 checkbox rows |
+| `tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md` | task list | A-FORGE-V1 / B-START / C-FORGE | 40 checkbox rows |
+| `tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md` | task list | A-FORGE-V1 / B-START / C-FORGE | 34 checkbox rows |
+| `tasks/TASKS/forge-projections/v1/tasks-skater-forge.md` | task list | A-FORGE-V1 / B-START / C-FORGE | 55 checkbox rows |
+| `tasks/TASKS/lines-ccc-ingestion/prd-lines-ccc-ingestion.md` | PRD | C-OPS | — |
+| `tasks/TASKS/lines-ccc-ingestion/tasks-prd-lines-ccc-ingestion.md` | task list | C-OPS | 92 checkbox rows |
+| `tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md` | task list | A-GDL | 69 checkbox rows |
+| `tasks/TASKS/nhl-game-prediction-model/prd-nhl-game-prediction-model.md` | PRD | A-PRED | — |
+| `tasks/TASKS/nhl-game-prediction-model/research/deep-research-report.md` | research/decision support | A-PRED | — |
+| `tasks/TASKS/nhl-game-prediction-model/tasks-prd-game-prediction-accuracy-improvement.md` | task list | A-PRED | 49 checkbox rows |
+| `tasks/TASKS/nhl-game-prediction-model/tasks-prd-nhl-game-prediction-model.md` | task list | A-PRED | 107 checkbox rows |
+| `tasks/TASKS/nhl-game-prediction-model/tasks-prd-nhl-game-prediction-roster-sos-model.md` | task list | A-PRED | 60 checkbox rows |
+| `tasks/TASKS/rules/brand-style-cheat-sheet.md` | active process/style reference | CONTROL | — |
+| `tasks/TASKS/rules/create-prd.mdc` | active process/style reference | CONTROL | — |
+| `tasks/TASKS/rules/fhfh-styles.md` | active process/style reference | CONTROL | — |
+| `tasks/TASKS/rules/generate-tasks.mdc` | active process/style reference | CONTROL | 6 checkbox rows |
+| `tasks/TASKS/rules/process-task-list.mdc` | active process/style reference | CONTROL | — |
+| `tasks/TASKS/rules/vars_Audit.md` | active process/style reference | CONTROL | — |
+| `tasks/TASKS/schema-docs/README.md` | schema/data contract reference | REFERENCE-SCHEMA | — |
+| `tasks/TASKS/schema-docs/api-db.md` | schema/data contract reference | REFERENCE-SCHEMA | — |
+| `tasks/TASKS/schema-docs/edge-tables.md` | schema/data contract reference | REFERENCE-SCHEMA | — |
+| `tasks/TASKS/schema-docs/goalie-tables.md` | schema/data contract reference | REFERENCE-SCHEMA | — |
+| `tasks/TASKS/schema-docs/other-tables.md` | schema/data contract reference | REFERENCE-SCHEMA | — |
+| `tasks/TASKS/schema-docs/skater-tables.md` | schema/data contract reference | REFERENCE-SCHEMA | — |
+| `tasks/TASKS/schema-docs/supabase-context/goalie-tables.md` | schema/data contract reference | REFERENCE-SCHEMA | — |
+| `tasks/TASKS/schema-docs/supabase-context/nst-goalie-table-schemas.md` | schema/data contract reference | REFERENCE-SCHEMA | — |
+| `tasks/TASKS/schema-docs/supabase-context/nst-team-tables-schemas.md` | schema/data contract reference | REFERENCE-SCHEMA | — |
+| `tasks/TASKS/schema-docs/supabase-context/player-table-schemas.md` | schema/data contract reference | REFERENCE-SCHEMA | — |
+| `tasks/TASKS/schema-docs/supabase-context/supabase-sql-tables.md` | schema/data contract reference | REFERENCE-SCHEMA | — |
+| `tasks/TASKS/schema-docs/supabase-context/supabase-table-structure.md` | schema/data contract reference | REFERENCE-SCHEMA | — |
+| `tasks/TASKS/schema-docs/supabase-context/supabase-table-structure.mdc` | schema/data contract reference | REFERENCE-SCHEMA | — |
+| `tasks/TASKS/schema-docs/supabase-context/supabase-views.md` | schema/data contract reference | REFERENCE-SCHEMA | — |
+| `tasks/TASKS/schema-docs/team-tables.md` | schema/data contract reference | REFERENCE-SCHEMA | — |
+| `tasks/TASKS/sko-charts/prd-sko-charts.md` | PRD | B-SKO / B-SKO-BURN | 25 checkbox rows |
+| `tasks/TASKS/sko-charts/prd-sko.md` | PRD | B-SKO / B-SKO-BURN | — |
+| `tasks/TASKS/sko-charts/sko-modeling-notes.md` | research/decision support | B-SKO / B-SKO-BURN | 37 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/nhl-edge/nhl-edge-feature-contract.md` | schema/data contract | A-3P | — |
+| `tasks/TASKS/three-pillars-analytics/nhl-edge/nhl-edge-stats-api.md` | supporting note/reference | A-3P | — |
+| `tasks/TASKS/three-pillars-analytics/prd-three-pillars-analytics.md` | PRD | A-3P | — |
+| `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-averages.md` | PRD | C-RANK | 5 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-audit-pass-2-trends-debug.md` | PRD | C-RANK | — |
+| `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-audit.md` | PRD | C-RANK | — |
+| `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-remediation-blueprint.md` | PRD | C-RANK | — |
+| `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-remediation.md` | PRD | C-RANK | — |
+| `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md` | audit/remediation supporting record | C-RANK | — |
+| `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md` | audit/remediation supporting record | C-RANK | — |
+| `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md` | audit/remediation supporting record | C-RANK | — |
+| `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-audit-pass-2-trends-debug.md` | task list | C-RANK | 48 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-audit.md` | task list | C-RANK | 41 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-remediation-blueprint.md` | task list | C-RANK | 63 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-remediation.md` | task list | C-RANK | 30 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rolling-player-pass-2-main-audit.md` | task list | C-RANK | 38 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rpm-audit-action-items-pass-2.md` | task list | C-RANK | 36 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/site-roadmap/prd/fhfh-site-surface-expansion-implementation-map.md` | PRD | A-SITE / A-STYLE / C-US | — |
+| `tasks/TASKS/three-pillars-analytics/site-roadmap/prd/prd-fhfh-site-surface-expansion-roadmap.md` | PRD | A-SITE / A-STYLE / C-US | — |
+| `tasks/TASKS/three-pillars-analytics/site-roadmap/prd/prd-fhfh-style-system-and-underlying-stats-restyle.md` | PRD | A-SITE / A-STYLE / C-US | — |
+| `tasks/TASKS/three-pillars-analytics/site-roadmap/prd/prd-mobile-stats-page-optimization.md` | PRD | A-SITE / A-STYLE / C-US | — |
+| `tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-fhfh-site-surface-expansion-roadmap.md` | task list | A-SITE / A-STYLE / C-US | 65 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-fhfh-style-system-and-underlying-stats-restyle.md` | task list | A-SITE / A-STYLE / C-US | 87 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-mobile-stats-page-optimization.md` | task list | A-SITE / A-STYLE / C-US | 39 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/sustainability/deep-research-report.md` | research/decision support | A-SUST / B-SUST-BAR / B-SUST-AUD | — |
+| `tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-barometer.md` | PRD | A-SUST / B-SUST-BAR / B-SUST-AUD | — |
+| `tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-model.md` | PRD | A-SUST / B-SUST-BAR / B-SUST-AUD | — |
+| `tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-step4.md` | PRD | A-SUST / B-SUST-BAR / B-SUST-AUD | — |
+| `tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-trends-audit.md` | PRD | A-SUST / B-SUST-BAR / B-SUST-AUD | — |
+| `tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md` | supporting note/reference | A-SUST / B-SUST-BAR / B-SUST-AUD | 19 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md` | task list | A-SUST / B-SUST-BAR / B-SUST-AUD | 87 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md` | task list | A-SUST / B-SUST-BAR / B-SUST-AUD | 84 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md` | task list | A-SUST / B-SUST-BAR / B-SUST-AUD | 42 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/tasks-prd-three-pillars-analytics.md` | task list | A-3P | 85 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/trends/prd-trends.md` | PRD | B-TRENDS | recovered from empty scope on 2026-07-11 |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/PlayerStatsDetail_Audit.md` | audit/remediation supporting record | A-US-SOS / B-GAMEGRID / C-US | — |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/PlayerStatsLanding_Audit.md` | audit/remediation supporting record | A-US-SOS / B-GAMEGRID / C-US | — |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/UnderlyingStats_Audit.md` | audit/remediation supporting record | A-US-SOS / B-GAMEGRID / C-US | — |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/game-grid/game-grid-revamp-plan.md` | implementation map/architecture plan | A-US-SOS / B-GAMEGRID / C-US | — |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/game-grid/modularization-of-the-game-page.md` | implementation map/architecture plan | A-US-SOS / B-GAMEGRID / C-US | — |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/game-grid/prd-game-grid-master-table-dashboard.md` | PRD | A-US-SOS / B-GAMEGRID / C-US | — |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/goalie-underlying-stats-runbook.md` | runbook | A-US-SOS / B-GAMEGRID / C-US | — |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/player-underlying-stats-runbook.md` | runbook | A-US-SOS / B-GAMEGRID / C-US | — |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/power-ratings-tables.md` | schema/data contract | A-US-SOS / B-GAMEGRID / C-US | — |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/prd/prd-goalie-underlying-stats-landing-page.md` | PRD | A-US-SOS / B-GAMEGRID / C-US | — |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/prd/prd-player-underlying-stats-landing-page.md` | PRD | A-US-SOS / B-GAMEGRID / C-US | — |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/prd/prd-team-underlying-stats-landing-page.md` | PRD | A-US-SOS / B-GAMEGRID / C-US | — |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/prd/prd-underlying-stats-landing-page-sos.md` | PRD | A-US-SOS / B-GAMEGRID / C-US | — |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-player-underlying-stats-landing-page.md` | task list | A-US-SOS / B-GAMEGRID / C-US | — |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-game-grid-master-table-dashboard.md` | task list | A-US-SOS / B-GAMEGRID / C-US | 32 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-goalie-underlying-stats-landing-page.md` | task list | A-US-SOS / B-GAMEGRID / C-US | 44 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-player-underlying-stats-landing-page.md` | task list | A-US-SOS / B-GAMEGRID / C-US | 81 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-team-underlying-stats-landing-page.md` | task list | A-US-SOS / B-GAMEGRID / C-US | 66 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-underlying-stats-landing-page-sos.md` | task list | A-US-SOS / B-GAMEGRID / C-US | 33 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-underlying-stats-landing-page.md` | task list | A-US-SOS / B-GAMEGRID / C-US | 40 checkbox rows |
+| `tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-underlying-stats-power-rankings-roadmap.md` | task list | A-US-SOS / B-GAMEGRID / C-US | 30 checkbox rows |
+| `tasks/TASKS/variance/v1/prd-skater-variance-leaderboard.md` | PRD | C-VAR | — |
+| `tasks/TASKS/variance/v1/prd/prd-variance-section.md` | PRD | C-VAR | — |
+| `tasks/TASKS/variance/v1/tasks-prd-skater-variance-leaderboard.md` | task list | C-VAR | 91 checkbox rows |
+| `tasks/TASKS/variance/v1/tasks-prd-variance-section.md` | task list | C-VAR | 52 checkbox rows |
+| `tasks/TASKS/variance/v2/goalie-page-relevant-tables.md` | schema/data contract | C-VAR | — |
+| `tasks/TASKS/variance/v2/prd-variance-goalies-skaters-second-pass.md` | PRD | C-VAR | — |
+| `tasks/TASKS/variance/v2/tasks-prd-variance-goalies-skaters-second-pass.md` | task list | C-VAR | 66 checkbox rows |
+| `tasks/TASKS/variance/v2/variance-runbook.md` | runbook | C-VAR | — |
+| `tasks/TASKS/wigo-charts/prd-wigo-charts-optimization.md` | PRD | C-US | — |
+| `tasks/TASKS/wigo-charts/tasks-prd-wigo-charts-optimization.md` | task list | C-US | 36 checkbox rows |
+| `tasks/TASKS/xg-model/baseline/tasks-xg-baseline-follow-ups.md` | task list | C-XG | 32 checkbox rows |
+| `tasks/TASKS/xg-model/baseline/tasks-xg-baseline-options.md` | task list | C-XG | 36 checkbox rows |
+| `tasks/TASKS/xg-model/baseline/xg-training-dataset-contract.md` | schema/data contract | C-XG | — |
+| `tasks/TASKS/xg-model/baseline/xg-training-feature-contract.md` | schema/data contract | C-XG | — |
+| `tasks/TASKS/xg-model/baseline/xg-training-materialization-decision.md` | research/decision support | C-XG | — |
+| `tasks/TASKS/xg-model/docs/data-contract-boundaries.md` | schema/data contract | C-XG | — |
+| `tasks/TASKS/xg-model/docs/definitions-and-parity.md` | supporting note/reference | C-XG | — |
+| `tasks/TASKS/xg-model/docs/event-dictionary.md` | schema/data contract | C-XG | — |
+| `tasks/TASKS/xg-model/docs/failure-handling-policy.md` | supporting note/reference | C-XG | — |
+| `tasks/TASKS/xg-model/docs/final-implementation-summary.md` | reference/supporting context | C-XG | — |
+| `tasks/TASKS/xg-model/nhl-api-foundation/corrective-migration-decision.md` | research/decision support | C-XG | — |
+| `tasks/TASKS/xg-model/nhl-api-foundation/feature-leakage-registry.md` | supporting note/reference | C-XG | — |
+| `tasks/TASKS/xg-model/nhl-api-foundation/idempotent-backfill-behavior.md` | supporting note/reference | C-XG | — |
+| `tasks/TASKS/xg-model/nhl-api-foundation/legacy-ingest-conventions.md` | supporting note/reference | C-XG | — |
+| `tasks/TASKS/xg-model/nhl-api-foundation/live-schema-drift-audit.md` | audit/remediation supporting record | C-XG | — |
+| `tasks/TASKS/xg-model/nhl-api-foundation/manual-audit-requirements.md` | audit/remediation supporting record | C-XG | — |
+| `tasks/TASKS/xg-model/nhl-api-foundation/metric-parity-map.md` | supporting note/reference | C-XG | — |
+| `tasks/TASKS/xg-model/nhl-api-foundation/nhl-api-nst-migration-brief.md` | reference/supporting context | C-XG | — |
+| `tasks/TASKS/xg-model/nhl-api-foundation/pbp-plays-vs-nhl-api-events-audit.md` | audit/remediation supporting record | C-XG | — |
+| `tasks/TASKS/xg-model/nhl-api-foundation/post-drift-retry-verification.md` | supporting note/reference | C-XG | — |
+| `tasks/TASKS/xg-model/nhl-api-foundation/post-foundation-follow-ups.md` | supporting note/reference | C-XG | — |
+| `tasks/TASKS/xg-model/nhl-api-foundation/prd/prd-nhl-api-xg-model.md` | PRD | C-XG | — |
+| `tasks/TASKS/xg-model/nhl-api-foundation/schema-recommendation.md` | schema/data contract | C-XG | — |
+| `tasks/TASKS/xg-model/nhl-api-foundation/shift-charts-vs-nhl-api-shifts-audit.md` | audit/remediation supporting record | C-XG | — |
+| `tasks/TASKS/xg-model/nhl-api-foundation/strength-mapping.md` | schema/data contract | C-XG | — |
+| `tasks/TASKS/xg-model/nhl-api-foundation/team-format-example.json` | data/example reference | C-XG | — |
+| `tasks/TASKS/xg-model/nhl-api-foundation/upstream-ambiguities.md` | research/decision support | C-XG | — |
+| `tasks/TASKS/xg-model/nhl-api-foundation/validation-checklist.md` | supporting note/reference | C-XG | — |
+| `tasks/TASKS/xg-model/nst-migration/nst-api-migration-runbook.md` | runbook | C-OPS | — |
+| `tasks/TASKS/xg-model/nst-migration/nst-config-contract.md` | schema/data contract | C-OPS | — |
+| `tasks/TASKS/xg-model/nst-migration/nst-direct-caller-inventory.md` | supporting note/reference | C-OPS | — |
+| `tasks/TASKS/xg-model/nst-migration/nst-route-ownership-decisions.md` | research/decision support | C-OPS | — |
+| `tasks/TASKS/xg-model/nst-migration/prd/prd-nst-api-audit-and-migration.md` | PRD | C-OPS | — |
+| `tasks/TASKS/xg-model/release/tasks-xg-release-exception-resolution.md` | task list | A-XG-REL / B-XG-EX | 15 checkbox rows |
+| `tasks/TASKS/xg-model/release/tasks-xg-release-remediation.md` | task list | A-XG-REL / B-XG-EX | 32 checkbox rows |
+| `tasks/TASKS/xg-model/tasks-nhl-api-xg-model.md` | task list | C-XG | 72 checkbox rows |
+| `tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md` | task list | A-XG-TREND | 150 checkbox rows |
+| `tasks/TASKS/lines-gdl-ingestion/prd/prd-gdl-suite-ingestion.md` | PRD | A-GDL | missing pair repaired 2026-07-11 |
+| `tasks/TASKS/xg-model/trending-model/prd/prd-xg-trending-model-completion.md` | PRD | A-XG-TREND | missing pair repaired 2026-07-11 |
+| `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md` | task list | A-DRAFT | missing pair repaired; 64 generated rows |
+| `tasks/TASKS/sko-charts/tasks-prd-sko-charts.md` | task list | B-SKO / B-SKO-BURN | reconciled pair; 53 generated rows |
+| `tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md` | task list | B-START | reconciled pair; 51 generated rows |
+| `tasks/TASKS/xg-model/release/prd/prd-xg-release-validation-and-exception-resolution.md` | PRD | A-XG-REL / B-XG-EX | shared pair repaired 2026-07-11 |
+| `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md` | task list | B-YAHOO | missing pair repaired; 58 generated rows |
+| `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md` | task list | B-DRAFT-STYLE | missing pair repaired; 52 generated rows |
+| `tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md` | task list | B-CLEAN | missing pair repaired; 31 generated rows |
+| `tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md` | task list | B-DEAD | missing pair repaired; 35 generated rows |
+| `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md` | task list | B-DRM | missing pair repaired; 33 generated rows |
+| `tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md` | task list | B-TRENDS | recovered pair; 50 generated rows |
+
+## Appendix B — Initiative Pair Reconciliation Matrix
+
+`Direct` means a dedicated PRD/task pair exists. `Shared/merged` means the initiative has a usable governing PRD or task list through the explicit mapping below; source history remains in place. Pair repair does not prove implementation completion.
+
+| Initiative | PRD ownership | Task-list ownership | Pair disposition |
+|---|---|---|---|
+| A-AUTH Authentication/settings | `auth-user-settings-platform/prd/prd-auth-user-settings-platform.md` | `auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md` | Direct |
+| A-CRON-EMAIL email failures | `cron-operations/prd/prd-cron-nst-audit-remediation.md` | `cron-operations/tasks-cron-audit-email-failures.md` | Shared PRD with B-CRON-NST; route/failure dedupe required |
+| A-GDL GDL Suite | `lines-gdl-ingestion/prd/prd-gdl-suite-ingestion.md` | `lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md` | Direct; repaired |
+| A-3P Three Pillars | `three-pillars-analytics/prd-three-pillars-analytics.md` | `three-pillars-analytics/tasks-prd-three-pillars-analytics.md` | Direct |
+| A-SUST Sustainability model | `three-pillars-analytics/sustainability/prd/prd-sustainability-model.md` + Step 4 | `three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md` | Direct/shared phase PRD |
+| A-US-SOS Underlying/SOS | `three-pillars-analytics/underlying-stats/prd/prd-underlying-stats-landing-page-sos.md` | corresponding `tasks-prd-underlying-stats-landing-page-sos.md` | Direct |
+| A-SITE Site roadmap | dedicated site-roadmap PRD | corresponding site-roadmap task list | Direct |
+| A-STYLE Style system/restyle | dedicated site-roadmap style PRD | corresponding style task list | Direct |
+| A-FORGE-V1 Projection V1 | `forge-projections/v1/prd/prd-projection-model.md` | main V1 plus skater/goalie nested lists | Shared/merged nested work |
+| A-FORGE-DASH Dashboard remediation | component-health PRD + dashboard PRD | audit and remediation lists | Shared audit/remediation pair |
+| A-FORGE-CC Command Center | dedicated command-center PRD | dedicated list | Direct |
+| A-FORGE-P4 Ecosystem pass four | dedicated pass-four PRD | dedicated list | Direct |
+| A-FORGE-LIVE Living pass four | dedicated living PRD | dedicated list | Direct |
+| A-PRED Game prediction | `nhl-game-prediction-model/prd-nhl-game-prediction-model.md` | main, accuracy, and roster/SOS lists | Shared umbrella PRD for nested lists |
+| A-XG-TREND xG completion | repaired trending-model PRD | trending completion list | Direct; repaired |
+| A-XG-REL / B-XG-EX release | shared release validation/exception PRD | remediation + exception lists | Shared; repaired |
+| A-DRAFT Draft Dashboard | dedicated Draft Dashboard PRD | reconstructed Draft Dashboard list | Direct; repaired |
+| A-DRAFT-DEBUG debug/performance | `prd-draft-dash-debug.md` | embedded checklist plus overlaps synchronized to Draft list | Embedded/shared pair |
+| B-CRON-NST Cron/NST audit | dedicated cron/NST PRD | dedicated list | Direct; also governs A-CRON-EMAIL |
+| B-SUST-BAR Barometer | dedicated PRD | dedicated list | Direct |
+| B-SUST-AUD trends audit | dedicated PRD | dedicated list; plan/report supporting | Direct |
+| B-GAMEGRID master dashboard | dedicated Game Grid PRD | dedicated list | Direct |
+| B-SKO / B-SKO-BURN | later SKO PRD; older SKO PRD marked research/superseded; burn plan supporting | reconciled SKO task list | Shared/merged; repaired |
+| B-START Start Chart | both source PRDs with Daily MVP precedence | reconciled Start Chart list | Shared/merged; repaired |
+| B-FORGE-COMBO | dedicated combo PRD + architecture | dedicated combo list | Direct |
+| B-YAHOO Yahoo audit | Yahoo audit PRD | generated Yahoo list | Direct; repaired |
+| B-DRAFT-STYLE Game Grid style | dedicated style PRD | generated style list | Direct; repaired |
+| B-CLEAN warning cleanup | cleanup PRD | generated cleanup list | Direct; repaired |
+| B-DEAD dead-code follow-through | audit PRD | generated follow-through list | Direct; repaired |
+| B-DRM Date Range Matrix | DRM PRD | generated DRM list | Direct; repaired |
+| B-TRENDS Trends | recovered formerly empty PRD | generated Trends list | Direct; repaired |
+| C-OPS Cron schedule/failures | dedicated cron PRDs | dedicated lists | Direct |
+| C-OPS NST migration | `xg-model/nst-migration/prd/prd-nst-api-audit-and-migration.md` | `cron-operations/tasks-prd-nst-api-audit-and-migration.md` | Cross-directory direct pair |
+| C-OPS Lines/CCC | dedicated CCC PRD | dedicated list | Direct |
+| C-RANK Contextual Rankings | contextual PRDs for base/alignment/gap | corresponding three lists | Direct |
+| C-RANK Rolling metrics | audit/blueprint/remediation/pass-two PRDs | corresponding primary and nested lists | Direct/shared nested evidence |
+| C-US player/team/goalie underlying | dedicated entity PRDs | dedicated entity lists | Direct |
+| C-US standalone landing/power roadmaps | underlying/SOS and entity PRDs | `tasks-underlying-stats-landing-page.md` and power-ranking roadmap | Explicit merge into underlying initiative; no competing PRD |
+| C-US Mobile stats | dedicated PRD | dedicated list | Direct |
+| C-US WiGO | dedicated PRD | dedicated list | Direct |
+| C-FORGE goalie nested | goalie implementation plan/`goalie-forge.md` plus V1 PRD | `tasks-goalie-forge.md` | Shared/merged into V1 |
+| C-FORGE modularization/dashboard/pass three | dedicated PRDs | dedicated lists | Direct |
+| C-FORGE prediction-engine super list | Projection V1 PRD and master PRD C-FORGE contract | prediction-engine super list | Explicit merge; standalone PRD unnecessary |
+| C-XG NHL API foundation | dedicated foundation PRD | `tasks-nhl-api-xg-model.md` | Direct |
+| C-XG baseline contracts | foundation PRD + dataset/feature/materialization contracts | baseline option/follow-up lists | Explicit merge into C-XG foundation |
+| C-VAR variance initiatives | three dedicated PRDs | three dedicated lists | Direct |
+| REFERENCE schema/process/style | Reference indices/contracts/rules | Tasks created only for verified drift | Reference-only, not missing implementation pairs |

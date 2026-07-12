@@ -1,16 +1,31 @@
 ## Relevant Files
 
+- `tasks/TASKS/cron-operations/prd/prd-cron-nst-audit-remediation.md` - Shared PRD pairing this email-derived remediation list with the broader Cron/NST/audit initiative.
 - `tasks/TASKS/cron-operations/cron-schedule.md` - Source-of-truth schedule inventory, SQL itinerary, and active/retired job status.
 - `web/pages/api/v1/db/cron-report.ts` - Builds scheduled job matching, audit summaries, missing-run detection, and both email payloads.
 - `web/components/CronReportEmail/CronAuditEmail.tsx` - CEO-style audit briefing email presentation.
 - `web/components/CronReportEmail/CronReportEmail.tsx` - Job-status email presentation and noise controls.
 - `web/lib/cron/cronInventory.ts` - Shared parser for schedule inventory and SQL route extraction.
 - `web/lib/cron/withCronJobAudit.ts` - Shared audit wrapper for routes that should write `cron_job_audit`.
+- `web/lib/cron/cronAuditCoverage.ts` - Resolves active scheduled HTTP routes to Pages API files and classifies shared-wrapper, manual-insert, or documented-exemption ownership.
+- `web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts` - Static regression gate proving every active scheduled HTTP route has an audit owner.
 - `web/pages/api/v1/db/update-line-combinations/index.ts` - Failing line-combination route.
 - `web/pages/api/v1/db/run-projection-v2.ts` - Failing projection execution route.
 - `web/pages/api/v1/db/run-projection-accuracy.ts` - Projection accuracy route blocked by projection freshness.
+- `web/pages/api/v1/db/build-projection-derived-v2.ts` - FORGE derived builder with separate failed-stage, failed-row, and deferred-date contracts.
+- `web/__tests__/pages/api/v1/db/build-projection-derived-v2.test.ts` - Covers bounded execution, resume/deferred dates, and stage-failure classification.
 - `web/pages/api/v1/db/update-sko-stats.ts` - Failing sKO stats route with schema mismatch.
 - `web/pages/api/v1/db/update-power-rankings.ts` - Disabled legacy route that is still scheduled.
+- `web/pages/api/v1/db/update-nhl-edge-stats.ts` - NHL Edge ingestion route with endpoint-family-specific skip diagnostics for skaters, goalies, and teams.
+- `web/__tests__/pages/api/v1/db/update-nhl-edge-stats.test.ts` - Focused diagnostic reason regression coverage.
+- `web/pages/api/v1/db/update-goalie-projections-v2.ts` - Goalie projection writer with confirmed-row accounting and database-write failure separation.
+- `web/__tests__/pages/api/v1/db/update-goalie-projections-v2.test.ts` - Verifies chunk success/failure accounting.
+- `web/pages/api/v1/db/update-wgo-skaters.ts` - WGO skater refresh route with per-date skip/failure classification preserved through retries.
+- `web/lib/cron/wgoDateOutcome.ts` - Typed WGO date outcome and bounded diagnostic summary contract.
+- `web/lib/cron/wgoDateOutcome.test.ts` - Covers expected no-game skips, failure categories, reasons, and bounded samples.
+- `web/pages/api/Teams/nst-team-stats.ts` - Shared NST team route with explicit deferred-date, empty-source skip, request-failure, and failed-row contracts.
+- `web/lib/cron/nstTeamStatsOutcome.ts` - Builds bounded NST team audit diagnostics without treating backlog dates as failures.
+- `web/lib/cron/nstTeamStatsOutcome.test.ts` - Verifies backlog/skip separation and bounded request-failure samples.
 - `web/pages/api/v1/db/update-shifts.ts` - Shift chart wrapper route that needs production audit coverage after deploy.
 - `web/pages/api/v1/db/update-standings-details/index.ts` - Cron-invoked route reported without audit payload.
 - `web/pages/api/v1/db/update-nst-goalies.ts` - Cron-invoked NST route reported without audit payload.
@@ -86,24 +101,24 @@
     - Current code has wrappers for inspected routes, but production still lacks audit rows for several jobs. Verification query used: `with latest_report as (...) select ... from cron_job_report left join cron_job_audit ... where a.job_name is null;`.
   - [x] 4.3 Normalize manual audit inserts to include `method`, `url`, `statusCode`, `durationMs`, `response`, `rowsUpserted`, `failedRows`, and concise `error`.
     - `withCronJobAudit` now writes normalized `rowsUpserted` and `failedRows` alongside existing method/url/status/duration/response/error details.
-  - [ ] 4.4 Fix `update-nst-gamelog` so its audit row uses `success` or `failure`, includes timing metadata, and avoids `UNKNOWN` unless status truly cannot be determined.
-    - BLOCKED (active NST backfills / do not run NST endpoints): latest production audit row is `status='started'` from an active reverse backfill. Do not trigger NST. Verification query after backfill/deploy: `select job_name, run_time, status, rows_affected, details from cron_job_audit where job_name='update-nst-gamelog' order by run_time desc limit 5;`. Expected result: latest completed row has `status in ('success','failure')`, timing metadata, and no stale `started` row newer than completion.
-  - [ ] 4.5 Add tests or route-level assertions for every scheduled API route that should write `cron_job_audit`.
-    - BLOCKED (broad route harness): exact command after route audit test harness exists: `cd web && npm test -- --run __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts`. Expected result: every non-SQL scheduled route either uses `withCronJobAudit` or is explicitly exempt for manual audit insertion.
+  - [x] 4.4 Fix `update-nst-gamelog` so its audit row uses `success` or `failure`, includes timing metadata, and avoids `UNKNOWN` unless status truly cannot be determined.
+    - Implemented 2026-07-11: removed non-terminal `started` and phase audit rows, normalized every terminal path to `success`/`failure`, added the shared timing envelope plus `failedRows`, and removed stack persistence. Cron timing/wrapper/report tests pass and `tsc --noEmit` passes. Production observation remains covered by 7.5; do not trigger active NST backfills for this check.
+  - [x] 4.5 Add tests or route-level assertions for every scheduled API route that should write `cron_job_audit`.
+    - Implemented 2026-07-11: the static harness derives active HTTP routes from `cron-schedule.md`, resolves each Pages API owner, and requires `withCronJobAudit`, a manual `cron_job_audit` insert, or an explicit exemption. Current result: zero uncovered routes, zero exemptions, four recognized manual owners, and all remaining routes use the shared wrapper. Exact 13-test cron gate and `tsc --noEmit` pass.
 
-- [ ] 5.0 Fix partial row failures and row-count quality
-  - [ ] 5.1 Investigate the two failed `update-all-wgo-skaters` dates and determine whether they are expected no-game dates, source failures, or real transform errors.
-    - BLOCKED (production data classification): run `select run_time, status, rows_affected, details->>'response' as response from cron_job_audit where job_name in ('update-all-wgo-skaters','/api/v1/db/update-wgo-skaters') and run_time >= now() - interval '7 days' order by run_time desc limit 10;`. Expected result: response identifies failed date samples. Verification query after classification/fix: same query returns `status='success'` with `failedRows` null/0 or expected no-game dates classified as skipped, not failed.
-  - [ ] 5.2 Investigate `update-power-play-combinations` failed rows for skipped pregame games and classify expected skips separately from row errors.
-    - BLOCKED (production data classification): run `select run_time, status, rows_affected, details->>'response' as response from cron_job_audit where job_name in ('update-power-play-combinations','/api/v1/db/update-power-play-combinations') and run_time >= now() - interval '7 days' order by run_time desc limit 10;`. Expected result: response separates pregame/skipped games from true row errors. Verification query: same query shows skipped pregame IDs outside `failedRows`.
-  - [ ] 5.3 Investigate `update-nst-tables-all` and `update-nst-team-stats-all` 100 failed rows and determine whether the route is reporting skipped backlog dates as failures.
-    - BLOCKED (NST backfills active; do not run NST endpoints): read-only query only: `select run_time, status, rows_affected, details->>'response' as response from cron_job_audit where job_name in ('update-nst-tables-all','update-nst-team-stats-all','/api/Teams/nst-team-stats') and run_time >= now() - interval '7 days' order by run_time desc limit 10;`. Expected result: response shows whether failures are backlog skips or true NST fetch/upsert errors. Verification query after deploy/next run: same query shows skipped dates classified separately and no false `failedRows=100`.
-  - [ ] 5.4 Investigate `update-nhl-edge-stats` failed metric families and add per-family failure reasons.
-    - BLOCKED (production data classification): run `select run_time, status, rows_affected, details->>'response' as response from cron_job_audit where job_name in ('update-nhl-edge-stats','/api/v1/db/update-nhl-edge-stats') and run_time >= now() - interval '7 days' order by run_time desc limit 10;`. Expected result: response includes metric-family failures. Verification query: same query after fix shows per-family `failedRowSamples`/reasons and `failedRows` only for real failed families.
-  - [ ] 5.5 Investigate `update-goalie-projections-v2` failed downstream routes and distinguish dashboard refresh warnings from failed database upserts.
-    - BLOCKED (production data classification): run `select run_time, status, rows_affected, details->>'response' as response from cron_job_audit where job_name in ('update-goalie-projections-v2','/api/v1/db/update-goalie-projections-v2') and run_time >= now() - interval '7 days' order by run_time desc limit 10;`. Expected result: response separates projection upsert failures from dashboard refresh warnings. Verification query: same query after fix shows dashboard refresh warnings outside `failedRows`.
-  - [ ] 5.6 Investigate `build-forge-derived-v2` 30 failed rows and decide whether they are acceptable warnings, skipped dates, or true failed writes.
-    - BLOCKED (production data classification): run `select run_time, status, rows_affected, details->>'response' as response from cron_job_audit where job_name in ('build-forge-derived-v2','/api/v1/db/build-projection-derived-v2') and run_time >= now() - interval '7 days' order by run_time desc limit 10;`. Expected result: response identifies whether the 30 rows are warnings, skipped dates, or failed writes. Verification query: same query after fix shows `failedRows` only for true failed writes.
+- [x] 5.0 Fix partial row failures and row-count quality
+  - [x] 5.1 Investigate the two failed `update-all-wgo-skaters` dates and determine whether they are expected no-game dates, source failures, or real transform errors.
+    - Implemented 2026-07-11: both incremental and all-seasons refreshes preserve typed per-date outcomes through retries. Empty successful NHL responses are `expected_no_game` skips; source transport/HTTP, transform, Supabase write, and season-mapping failures retain category and reason in bounded samples. Failed dates no longer masquerade as failed rows (`failedRows: 0`, separate `failedDatesCount`), partial runs return 207, and audit details include confirmed rows plus skip/failure diagnostics. Focused outcome/cron tests pass 5/5 and `tsc --noEmit` passes. Production observation remains under 7.5.
+  - [x] 5.2 Investigate `update-power-play-combinations` failed rows for skipped pregame games and classify expected skips separately from row errors.
+    - Verified 2026-07-11: `FUT`/`PRE` game-state failures are returned in `skips`, counted under `skipped`, excluded from `failures`/`failed`, and preserve HTTP 200 when no true errors remain. The focused route suite passes 4/4 tests.
+  - [x] 5.3 Investigate `update-nst-tables-all` and `update-nst-team-stats-all` 100 failed rows and determine whether the route is reporting skipped backlog dates as failures.
+    - Resolved locally 2026-07-11 without invoking active NST backfills: both schedules share `nst-team-stats`, whose bounded backlog is now explicit `deferredDates` and never a failure/row count. Empty source responses are structured skips; nonempty responses that cannot map are transform/request failures. The response declares `failedRows: 0`, separate `failedRequests`, and bounded failure/skip samples so audit inference cannot turn deferred dates or request failures into 100 failed database rows. Focused NST/WGO/audit tests pass 7/7 and `tsc --noEmit` passes. Post-deploy production observation remains under 7.5.
+  - [x] 5.4 Investigate `update-nhl-edge-stats` failed metric families and add per-family failure reasons.
+    - Implemented 2026-07-11: every skater/goalie/team skip now includes `endpointFamily` and a family-named reason; team supplemental 404s become structured skips instead of aborting the route. The response reports team skip counts and bounded samples. Edge/power-play suites pass 11/11 tests and `tsc --noEmit` passes.
+  - [x] 5.5 Investigate `update-goalie-projections-v2` failed downstream routes and distinguish dashboard refresh warnings from failed database upserts.
+    - Implemented 2026-07-11: the current route has upstream goalie-log data-quality warnings but no dashboard-refresh mutation. Those remain warnings. Database writes now use bounded chunks, count only confirmed rows, expose `failedRows` and bounded stage-specific failures, and return 207/500 rather than false success when writes fail. Focused persistence/partial-failure tests pass 6/6 and `tsc --noEmit` passes.
+  - [x] 5.6 Investigate `build-forge-derived-v2` 30 failed rows and decide whether they are acceptable warnings, skipped dates, or true failed writes.
+    - Resolved 2026-07-11: the route’s `errors` entries are date/stage build exceptions, not database row-write failures; the shared wrapper was inferring array length as `failedRows`. The response now sets `failedRows: 0`, emits structured/bounded `failedStages`/`failures`, and separates max-day/timeout carryover into `deferredDates`. True stage failures still return 207 and `success: false`. Derived/audit/report tests pass 10/10 and `tsc --noEmit` passes.
   - [x] 5.7 Ensure each route reports true domain rows upserted instead of wrapper/audit-row counts.
     - `withCronJobAudit` now records inferred domain `rowsUpserted` and `failedRows` in details; route-specific domain count cleanup remains part of items 5.1-5.6.
 
@@ -123,3 +138,10 @@
     - BLOCKED (requires deployed code or local server with production env): command after deploy/local server: `curl -fsS -H "Authorization: Bearer $CRON_SECRET" "https://fhfhockey.com/api/v1/db/cron-report?preview=json"`. Expected result: JSON `success: true`, `dryRun: true`, no Resend send, one suppressed job-status result. Verification query: `select job_name, run_time, details->>'url' from cron_job_audit where job_name='daily-cron-report' order by run_time desc limit 1;`.
   - [ ] 7.5 After deployment, verify the next morning report shows zero false missing jobs, zero false audit gaps, and only real route/data failures.
     - BLOCKED (next scheduled report after deploy): after 2026-06-12 21:15 UTC, run `select job_name, run_time, status, details->>'response' as response from cron_job_audit where job_name='daily-cron-report' and run_time >= '2026-06-12 21:15:00+00' order by run_time desc limit 1;`. Expected result: response counts show no false missing inactive jobs, no duplicate email send path, and only real route/data failures.
+
+- [x] NEW 8.0 Reconcile the two failing `update-nst-gamelog` URL-contract assertions with the current `URLSearchParams` output before treating the full route suite as green.
+  - [x] NEW 8.1 Confirm the HTTP contract is decoded parameter semantics: query order is irrelevant and hyphens are valid unescaped query characters.
+  - [x] NEW 8.2 Update assertions to compare the endpoint plus decoded parameter map and rerun the suite. Result: all 13 NST route tests and all 23 combined NST/audit/report tests pass (2026-07-11).
+
+- [ ] NEW 9.0 Audit and enforce the intended inbound authentication contract across scheduled HTTP routes. The 2026-07-12 credential rotation proved that cron commands send `Authorization: Bearer <CRON_SECRET>`, but the shared audit wrapper and most route handlers do not validate it; only the destructive Yahoo-to-Sheets sync currently enforces `CRON_SECRET`.
+  - [ ] NEW 9.1 Inventory every active HTTP job and public/manual caller, define fail-closed exceptions and rollout/rollback behavior, then propose the cross-route enforcement boundary before changing production contracts.

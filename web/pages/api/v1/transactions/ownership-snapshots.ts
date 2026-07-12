@@ -15,6 +15,16 @@ type SupabaseQueryClient = {
   from(table: string): any;
 };
 
+const ID_CHUNK_SIZE = 500;
+
+function chunk<T>(values: T[], size = ID_CHUNK_SIZE): T[][] {
+  const chunks: T[][] = [];
+  for (let index = 0; index < values.length; index += size) {
+    chunks.push(values.slice(index, index + size));
+  }
+  return chunks;
+}
+
 function resolveKey(): { url: string; key: string } {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!url) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
@@ -39,7 +49,8 @@ const normalizePlayerIds = (raw: string | string[] | undefined): string[] => {
 
 const resolveOwnership = (row: Record<string, unknown>): number | null => {
   const timeline = Array.isArray(row.ownership_timeline)
-    ? (row.ownership_timeline as Array<{ value?: unknown }>)
+    ? [...(row.ownership_timeline as Array<{ date?: unknown; value?: unknown }>)]
+        .sort((a, b) => String(a.date ?? "").localeCompare(String(b.date ?? "")))
     : [];
   const latestPoint = timeline[timeline.length - 1];
   const latestValue =
@@ -63,52 +74,61 @@ function getLatestTimelineDate(row: Record<string, unknown>): string | null {
   const timeline = Array.isArray(row.ownership_timeline)
     ? (row.ownership_timeline as Array<{ date?: unknown }>)
     : [];
-  const latestPoint = timeline[timeline.length - 1];
-  return typeof latestPoint?.date === "string" ? latestPoint.date : null;
+  return timeline.reduce<string | null>((latest, point) => {
+    const date = typeof point?.date === "string" ? point.date : null;
+    return date && (!latest || date > latest) ? date : latest;
+  }, null);
 }
 
 async function resolveYahooPlayerIds(
   supabase: SupabaseQueryClient,
   playerIds: string[]
 ): Promise<PlayerIdResolution[]> {
-  const { data, error } = await supabase
-    .from("yahoo_nhl_player_map_mat")
-    .select("nhl_player_id, yahoo_player_id")
-    .in("nhl_player_id", playerIds);
-
-  if (error) throw error;
-
   const byNhlId = new Map<string, string>();
-  (data ?? []).forEach((row: any) => {
-    const nhlPlayerId = row?.nhl_player_id != null ? String(row.nhl_player_id) : null;
-    const yahooPlayerId =
-      row?.yahoo_player_id != null ? String(row.yahoo_player_id) : null;
-    if (nhlPlayerId && yahooPlayerId) byNhlId.set(nhlPlayerId, yahooPlayerId);
-  });
+  for (const idChunk of chunk(playerIds)) {
+    const { data, error } = await supabase
+      .from("yahoo_nhl_player_map_mat")
+      .select("nhl_player_id, yahoo_player_id")
+      .in("nhl_player_id", idChunk);
+    if (error) throw error;
+    (data ?? []).forEach((row: any) => {
+      const nhlPlayerId = row?.nhl_player_id != null ? String(row.nhl_player_id) : null;
+      const yahooPlayerId =
+        row?.yahoo_player_id != null ? String(row.yahoo_player_id) : null;
+      if (nhlPlayerId && yahooPlayerId) byNhlId.set(nhlPlayerId, yahooPlayerId);
+    });
+  }
 
   const unresolvedIds = playerIds.filter((playerId) => !byNhlId.has(playerId));
   if (unresolvedIds.length > 0) {
-    const { data: players, error: playersError } = await supabase
-      .from("players")
-      .select("id, fullName")
-      .in("id", unresolvedIds.map(Number));
-    if (playersError) throw playersError;
-
     const namesById = new Map<string, string>();
-    (players ?? []).forEach((row: any) => {
-      const id = row?.id != null ? String(row.id) : null;
-      const name = typeof row?.fullName === "string" ? row.fullName.trim() : "";
-      if (id && name) namesById.set(id, name);
-    });
+    for (const idChunk of chunk(unresolvedIds)) {
+      const { data: players, error: playersError } = await supabase
+        .from("players")
+        .select("id, fullName")
+        .in("id", idChunk.map(Number));
+      if (playersError) throw playersError;
+      (players ?? []).forEach((row: any) => {
+        const id = row?.id != null ? String(row.id) : null;
+        const name = typeof row?.fullName === "string" ? row.fullName.trim() : "";
+        if (id && name) namesById.set(id, name);
+      });
+    }
 
     const names = Array.from(new Set(namesById.values()));
     if (names.length > 0) {
-      const { data: yahooRows, error: yahooError } = await supabase
-        .from("yahoo_players")
-        .select("player_id, full_name, player_name, ownership_timeline, season")
-        .in("full_name", names)
-        .limit(Math.max(names.length * 3, 20));
-      if (yahooError) throw yahooError;
+      const yahooRows: any[] = [];
+      for (const nameChunk of chunk(names, 100)) {
+        const { data, error: yahooError } = await supabase
+          .from("yahoo_players")
+          .select("player_id, full_name, player_name, ownership_timeline, season")
+          .in("full_name", nameChunk)
+          .order("player_id", { ascending: true })
+          .order("season", { ascending: true, nullsFirst: true })
+          .range(0, 999);
+        if (yahooError) throw yahooError;
+        yahooRows.push(...(data ?? []));
+      }
 
       const yahooByName = new Map<string, Record<string, unknown>>();
       (yahooRows ?? []).forEach((row: any) => {
@@ -170,34 +190,34 @@ export default async function handler(
       new Set(idResolution.map((entry) => entry.yahooPlayerId))
     );
 
-    let query = supabase
-      .from("yahoo_players")
-      .select("player_id, percent_ownership, ownership_timeline, season")
-      .in("player_id", yahooPlayerIds)
-      .limit(Math.max(yahooPlayerIds.length * 2, 50));
+    const loadRows = async (requestedSeason: number | null) => {
+      const loaded: Array<Record<string, unknown>> = [];
+      for (const idChunk of chunk(yahooPlayerIds)) {
+        let query = supabase
+          .from("yahoo_players")
+          .select("player_id, percent_ownership, ownership_timeline, season")
+          .in("player_id", idChunk)
+          .order("player_id", { ascending: true })
+          .order("season", { ascending: true, nullsFirst: true })
+          .range(0, 999);
+        if (requestedSeason != null) query = query.eq("season", requestedSeason);
+        const { data, error } = await query;
+        if (error) throw error;
+        loaded.push(...(data ?? []));
+      }
+      return loaded;
+    };
 
-    if (season && Number.isFinite(season)) {
-      query = query.eq("season", season);
+    let rows = await loadRows(season && Number.isFinite(season) ? season : null);
+    let seasonFallbackApplied = false;
+    if (rows.length === 0 && season && Number.isFinite(season)) {
+      rows = await loadRows(null);
+      seasonFallbackApplied = true;
     }
-
-    let { data, error } = await query;
-    if (error) throw error;
-    if ((!data || data.length === 0) && season && Number.isFinite(season)) {
-      const fallback = await supabase
-        .from("yahoo_players")
-        .select("player_id, percent_ownership, ownership_timeline, season")
-        .in("player_id", yahooPlayerIds)
-        .limit(Math.max(yahooPlayerIds.length * 2, 50));
-      data = fallback.data;
-      error = fallback.error;
-      if (error) throw error;
-    }
-
-    const rows = Array.isArray(data) ? (data as Array<Record<string, unknown>>) : [];
     const byPlayer = new Map<string, Record<string, unknown>>();
 
     rows.forEach((row) => {
-      const playerId = typeof row.player_id === "string" ? row.player_id : null;
+      const playerId = row.player_id != null ? String(row.player_id) : null;
       if (!playerId) return;
       const existing = byPlayer.get(playerId);
       const existingTimelineDate = existing ? getLatestTimelineDate(existing) : null;
@@ -228,7 +248,18 @@ export default async function handler(
       "Cache-Control",
       "public, s-maxage=300, stale-while-revalidate=600"
     );
-    return res.status(200).json({ success: true, players });
+    const sourceDate = rows.reduce<string | null>((latest, row) => {
+      const date = getLatestTimelineDate(row);
+      return date && (!latest || date > latest) ? date : latest;
+    }, null);
+    return res.status(200).json({
+      success: true,
+      requestedSeason: season && Number.isFinite(season) ? season : null,
+      seasonFallbackApplied,
+      sourceDate,
+      generatedAt: sourceDate ? `${sourceDate}T23:59:59.999Z` : null,
+      players
+    });
   } catch (err: any) {
     console.error("ownership-snapshots error", err?.message || err);
     return res

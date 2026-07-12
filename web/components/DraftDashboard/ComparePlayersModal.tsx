@@ -10,9 +10,10 @@ import {
   LineElement,
   Filler,
   Tooltip,
-  Legend
+  Legend,
 } from "chart.js";
 import styles from "./ComparePlayersModal.module.scss";
+import modalStyles from "./ModalShell.module.scss";
 import { teamsInfo } from "lib/teamsInfo";
 
 ChartJS.register(
@@ -21,7 +22,7 @@ ChartJS.register(
   LineElement,
   Filler,
   Tooltip,
-  Legend
+  Legend,
 );
 
 type Props = {
@@ -37,7 +38,7 @@ export default function ComparePlayersModal({
   onClose,
   selectedIds,
   allPlayers,
-  leagueType = "points"
+  leagueType = "points",
 }: Props) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
 
@@ -50,8 +51,8 @@ export default function ComparePlayersModal({
         if (!el) return;
         const focusables = Array.from(
           el.querySelectorAll<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-          )
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          ),
         ).filter((n) => !n.hasAttribute("disabled"));
         if (focusables.length === 0) return;
         const first = focusables[0];
@@ -86,13 +87,13 @@ export default function ComparePlayersModal({
       "PP_POINTS",
       "SHOTS_ON_GOAL",
       "HITS",
-      "BLOCKED_SHOTS"
+      "BLOCKED_SHOTS",
     ];
     const defaultsGoalie = [
       "WINS_GOALIE",
       "SAVE_PERCENTAGE",
       "GOALS_AGAINST_AVERAGE",
-      "SHUTOUTS_GOALIE"
+      "SHUTOUTS_GOALIE",
     ];
     // If any selected is goalie, use goalie metrics; else skater
     const anyGoalie = players.some((p) =>
@@ -100,7 +101,7 @@ export default function ComparePlayersModal({
         .toUpperCase()
         .split(",")
         .map((s) => s.trim())
-        .includes("G")
+        .includes("G"),
     );
     return anyGoalie ? defaultsGoalie : defaultsSkater;
   }, [players]);
@@ -148,7 +149,7 @@ export default function ComparePlayersModal({
       key: d.key,
       label: d.displayName,
       p1: leftData[i] ?? 0,
-      p2: rightData[i] ?? 0
+      p2: rightData[i] ?? 0,
     }));
     const leftAvg = leftData.length
       ? leftData.reduce((a, b) => a + b, 0) / leftData.length
@@ -165,7 +166,7 @@ export default function ComparePlayersModal({
     const perGameEligible = defs.filter(
       (d) =>
         d.dataType !== "percentage" &&
-        !["GOALS_AGAINST_AVERAGE", "TIME_ON_ICE_PER_GAME"].includes(d.key)
+        !["GOALS_AGAINST_AVERAGE", "TIME_ON_ICE_PER_GAME"].includes(d.key),
     );
     const getProjected = (p: ProcessedPlayer | undefined, key: string) =>
       p
@@ -202,7 +203,7 @@ export default function ComparePlayersModal({
         p2: perRight,
         p1Display: format(perLeft),
         p2Display: format(perRight),
-        higherIsBetter: d.higherIsBetter
+        higherIsBetter: d.higherIsBetter,
       };
     });
   }, [players, metricKeys]);
@@ -220,11 +221,11 @@ export default function ComparePlayersModal({
     const srcs: string[] = [];
     if (teamAbbr && seasonId) {
       srcs.push(
-        `https://assets.nhle.com/mugs/nhl/${seasonId}/${teamAbbr}/${id}.png`
+        `https://assets.nhle.com/mugs/nhl/${seasonId}/${teamAbbr}/${id}.png`,
       );
     }
     srcs.push(
-      `https://cms.nhl.bamgrid.com/images/headshots/current/168x168/${id}.jpg`
+      `https://cms.nhl.bamgrid.com/images/headshots/current/168x168/${id}.jpg`,
     );
     return srcs;
   };
@@ -235,9 +236,9 @@ export default function ComparePlayersModal({
   const radarOpts = {
     responsive: true,
     scales: {
-      r: { suggestedMin: 0, suggestedMax: 100, ticks: { display: true } }
+      r: { suggestedMin: 0, suggestedMax: 100, ticks: { display: true } },
     },
-    plugins: { legend: { display: false } }
+    plugins: { legend: { display: false } },
   } as const;
   const leftData = useMemo(
     () => ({
@@ -250,11 +251,11 @@ export default function ComparePlayersModal({
           borderColor: "rgba(78,121,255,0.95)",
           pointBackgroundColor: "rgba(255,255,255,0.9)",
           pointRadius: 2,
-          borderWidth: 2
-        }
-      ]
+          borderWidth: 2,
+        },
+      ],
     }),
-    [left?.fullName, labels, rows]
+    [left?.fullName, labels, rows],
   );
   const rightData = useMemo(
     () => ({
@@ -267,11 +268,11 @@ export default function ComparePlayersModal({
           borderColor: "rgba(255,99,132,0.95)",
           pointBackgroundColor: "rgba(255,255,255,0.9)",
           pointRadius: 2,
-          borderWidth: 2
-        }
-      ]
+          borderWidth: 2,
+        },
+      ],
     }),
-    [right?.fullName, labels, rows]
+    [right?.fullName, labels, rows],
   );
 
   const overallWinner =
@@ -301,18 +302,18 @@ export default function ComparePlayersModal({
       role="dialog"
       aria-modal="true"
       aria-label="Compare Players"
-      className={styles.backdrop}
+      className={`${modalStyles.backdrop} ${styles.backdrop}`}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div ref={dialogRef} className={styles.modal}>
-        <div className={styles.header}>
+      <div ref={dialogRef} className={`${modalStyles.dialog} ${styles.modal}`}>
+        <div className={`${modalStyles.header} ${styles.header}`}>
           <h3 className={styles.title}>Compare Players</h3>
           <button
             onClick={onClose}
             aria-label="Close"
-            className={styles.closeBtn}
+            className={`${modalStyles.closeButton} ${styles.closeBtn}`}
           >
             ×
           </button>
@@ -325,8 +326,8 @@ export default function ComparePlayersModal({
               left?.displayTeam
                 ? {
                     ["--team-accent-rgb" as any]: hexToRgb(
-                      teamsInfo[left.displayTeam]?.primaryColor
-                    )
+                      teamsInfo[left.displayTeam]?.primaryColor,
+                    ),
                   }
                 : undefined
             }
@@ -376,10 +377,10 @@ export default function ComparePlayersModal({
                           pointLabels: { color: "rgba(255,255,255,0.8)" },
                           ticks: {
                             display: true,
-                            color: "rgba(255,255,255,0.8)"
-                          }
-                        }
-                      }
+                            color: "rgba(255,255,255,0.8)",
+                          },
+                        },
+                      },
                     }}
                   />
                 </div>
@@ -404,7 +405,7 @@ export default function ComparePlayersModal({
                 : "#4e79ff",
               ["--right-accent" as any]: right?.displayTeam
                 ? teamsInfo[right.displayTeam]?.primaryColor
-                : "#ff6384"
+                : "#ff6384",
             }}
           >
             {players.length === 2 && (
@@ -462,7 +463,7 @@ export default function ComparePlayersModal({
                           leftWins && left?.displayTeam
                             ? {
                                 ["--cell-accent" as any]:
-                                  teamsInfo[left.displayTeam]?.primaryColor
+                                  teamsInfo[left.displayTeam]?.primaryColor,
                               }
                             : undefined
                         }
@@ -492,7 +493,7 @@ export default function ComparePlayersModal({
                           rightWins && right?.displayTeam
                             ? {
                                 ["--cell-accent" as any]:
-                                  teamsInfo[right.displayTeam]?.primaryColor
+                                  teamsInfo[right.displayTeam]?.primaryColor,
                               }
                             : undefined
                         }
@@ -555,7 +556,7 @@ export default function ComparePlayersModal({
                             leftWins && left?.displayTeam
                               ? {
                                   ["--cell-accent" as any]:
-                                    teamsInfo[left.displayTeam]?.primaryColor
+                                    teamsInfo[left.displayTeam]?.primaryColor,
                                 }
                               : undefined
                           }
@@ -585,7 +586,7 @@ export default function ComparePlayersModal({
                             rightWins && right?.displayTeam
                               ? {
                                   ["--cell-accent" as any]:
-                                    teamsInfo[right.displayTeam]?.primaryColor
+                                    teamsInfo[right.displayTeam]?.primaryColor,
                                 }
                               : undefined
                           }
@@ -607,8 +608,8 @@ export default function ComparePlayersModal({
               right?.displayTeam
                 ? {
                     ["--team-accent-rgb" as any]: hexToRgb(
-                      teamsInfo[right.displayTeam]?.primaryColor
-                    )
+                      teamsInfo[right.displayTeam]?.primaryColor,
+                    ),
                   }
                 : undefined
             }
@@ -658,10 +659,10 @@ export default function ComparePlayersModal({
                           pointLabels: { color: "rgba(255,255,255,0.8)" },
                           ticks: {
                             display: true,
-                            color: "rgba(255,255,255,0.8)"
-                          }
-                        }
-                      }
+                            color: "rgba(255,255,255,0.8)",
+                          },
+                        },
+                      },
                     }}
                   />
                 </div>

@@ -171,6 +171,120 @@ describe("Forge dashboard render states", () => {
     });
   });
 
+  it("warns at page level when module source dates materially diverge", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/team-ratings")) return jsonResponse([]);
+      if (url.includes("/api/v1/trends/team-ctpi")) {
+        return jsonResponse({
+          generatedAt: "2026-02-01T23:59:59.999Z",
+          dateUsed: "2026-02-01",
+          teams: []
+        });
+      }
+      if (url.includes("/api/v1/start-chart")) {
+        return jsonResponse({ dateUsed: "2026-02-07", games: [] });
+      }
+      if (url.includes("/api/v1/forge/goalies")) {
+        return jsonResponse({ asOfDate: "2026-02-07", data: [] });
+      }
+      if (url.includes("/api/v1/forge/players")) {
+        return jsonResponse(emptyForgePlayersResponse());
+      }
+      if (url.includes("/api/v1/transactions/ownership-trends")) {
+        return jsonResponse(emptyOwnershipResponse());
+      }
+      if (url.includes("/api/v1/sustainability/trends")) {
+        return jsonResponse({ snapshot_date: "2026-02-07", rows: [] });
+      }
+      if (url.includes("/api/v1/trends/skater-power")) {
+        return jsonResponse({
+          generatedAt: "2026-02-07T23:59:59.999Z",
+          dateUsed: "2026-02-07",
+          categories: { all: { rankings: [] } },
+          playerMetadata: {}
+        });
+      }
+      return jsonResponse({}, false);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ForgeDashboardPage />);
+
+    expect(
+      await screen.findByText(
+        "Dashboard modules are using mixed source dates (2026-02-01 to 2026-02-07, 6 days apart). Review each panel's date before comparing signals."
+      )
+    ).toBeTruthy();
+  });
+
+  it("does not merge Top Adds ownership by matching player name when stable ids differ", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/team-ratings")) return jsonResponse([]);
+      if (url.includes("/api/v1/sustainability/trends")) {
+        return jsonResponse({ snapshot_date: "2026-02-07", rows: [] });
+      }
+      if (url.includes("/api/v1/forge/goalies")) {
+        return jsonResponse({ asOfDate: "2026-02-07", data: [] });
+      }
+      if (url.includes("/api/v1/trends/team-ctpi")) {
+        return jsonResponse({ dateUsed: "2026-02-07", teams: [] });
+      }
+      if (url.includes("/api/v1/start-chart")) {
+        return jsonResponse({ dateUsed: "2026-02-07", games: [] });
+      }
+      if (url.includes("/api/v1/forge/players")) {
+        return jsonResponse({
+          asOfDate: "2026-02-07",
+          requestedDate: "2026-02-07",
+          data: [
+            {
+              player_id: 100,
+              player_name: "Same Name",
+              team_name: "NJD",
+              position: "C",
+              pts: 2,
+              ppp: 0,
+              sog: 2,
+              hit: 0,
+              blk: 0,
+              uncertainty: 0.2
+            }
+          ]
+        });
+      }
+      if (url.includes("/api/v1/transactions/ownership-snapshots")) {
+        return jsonResponse({ success: true, players: [{ playerId: 100, ownership: null }] });
+      }
+      if (url.includes("/api/v1/transactions/ownership-trends")) {
+        return jsonResponse({
+          success: true,
+          risers: [{ playerId: 200, name: "Same Name", latest: 40, delta: 5, sparkline: [] }],
+          fallers: []
+        });
+      }
+      if (url.includes("/api/v1/trends/skater-power")) {
+        return jsonResponse({
+          dateUsed: "2026-02-07",
+          categories: { all: { rankings: [] } },
+          playerMetadata: {}
+        });
+      }
+      return jsonResponse({}, false);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ForgeDashboardPage />);
+
+    expect(
+      await screen.findByText(
+        "Ownership is missing for 1 projected candidates, so they are hidden by this ownership range."
+      )
+    ).toBeTruthy();
+    expect(screen.getByText("No add candidates for this ownership band yet.")).toBeTruthy();
+  });
+
   it("renders error states when endpoints fail", async () => {
     const fetchMock = vi.fn(async () => jsonResponse({}, false, 500));
     vi.stubGlobal("fetch", fetchMock);
@@ -1225,6 +1339,61 @@ describe("Forge dashboard render states", () => {
         )
       ).toBe(true);
     });
+  });
+
+  it("shows a blocked weekly projection contract instead of a healthy empty rail", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/team-ratings")) return jsonResponse([]);
+      if (url.includes("/api/v1/sustainability/trends")) {
+        return jsonResponse({ snapshot_date: "2026-02-07", rows: [] });
+      }
+      if (url.includes("/api/v1/forge/goalies")) {
+        return jsonResponse({ asOfDate: "2026-02-07", data: [] });
+      }
+      if (url.includes("/api/v1/start-chart")) {
+        return jsonResponse({ dateUsed: "2026-02-07", games: [] });
+      }
+      if (url.includes("/api/v1/forge/players")) {
+        if (url.includes("horizon=5")) {
+          return jsonResponse({
+            asOfDate: "2026-02-07",
+            requestedDate: "2026-02-07",
+            horizonGames: 5,
+            diagnostics: {
+              state: "blocked",
+              missingRequestedHorizon: true,
+              message:
+                "No genuine 5-game projection output is available for 2026-02-07; one-game output exists but is not relabeled or scaled."
+            },
+            data: []
+          });
+        }
+        return jsonResponse(emptyForgePlayersResponse());
+      }
+      if (url.includes("/api/v1/transactions/ownership-trends")) {
+        return jsonResponse(emptyOwnershipResponse());
+      }
+      if (url.includes("/api/v1/trends/skater-power")) {
+        return jsonResponse({
+          generatedAt: "2026-02-07T12:00:00.000Z",
+          categories: { all: { rankings: [] } },
+          playerMetadata: {}
+        });
+      }
+      return jsonResponse({}, false);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ForgeDashboardPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "This Week" }));
+
+    expect(
+      await screen.findByText(
+        /Error: No genuine 5-game projection output is available/
+      )
+    ).toBeTruthy();
+    expect(screen.queryByText("No players matched this ownership range.")).toBeNull();
   });
 
   it("renders stale sustainability fallback when latest available snapshot is older than selected date", async () => {

@@ -16,6 +16,7 @@ import { ContextualRankingsQueryError } from "./rankingTypes";
 
 export type GoalieMatrixMetricKey =
   | "save_percentage"
+  | "relative_save_percentage"
   | "gsax"
   | "gsaa_per_60"
   | "xga_per_shot_against"
@@ -63,6 +64,7 @@ type GoalieGameSourceRow = {
   nst_5v5_counts_xg_against: number | null;
   nst_5v5_counts_goals_against: number | null;
   nst_5v5_counts_gsaa: number | null;
+  nst_5v5_counts_saves?: number | null;
   nst_5v5_counts_shots_against?: number | null;
   nst_5v5_counts_hd_saves?: number | null;
   nst_5v5_counts_hd_shots_against?: number | null;
@@ -110,10 +112,20 @@ type GoalieAggregate = {
   nst5v5Gsaa: number | null;
   nst5v5Gsax: number | null;
   nst5v5XgAgainst: number | null;
+  nst5v5Saves: number;
   nst5v5ShotsAgainst: number;
   nst5v5HighDangerSaves: number;
   nst5v5HighDangerShotsAgainst: number;
   sourceWarnings: string[];
+};
+
+type GoalieRelativeSaveContext = {
+  goalieSavePercentage: number | null;
+  teamWithoutGoalieSavePercentage: number | null;
+  teamWithoutGoalieSaves: number;
+  teamWithoutGoalieShotsAgainst: number;
+  relativeSavePercentage: number | null;
+  warnings: string[];
 };
 
 export type GoalieMatrixMetricCell = {
@@ -217,6 +229,7 @@ const METADATA_QUERY_PAGE_SIZE = 1000;
 const MAX_PAGE_SIZE = 50;
 const DEFAULT_PAGE_SIZE = 10;
 const GOALIE_MATRIX_RESPONSE_CACHE_TTL_MS = 30_000;
+const MIN_RELATIVE_SAVE_BASELINE_SHOTS = 50;
 const goalieMatrixResponseCache = new Map<
   string,
   { expiresAt: number; response: GoalieMatrixResponse }
@@ -233,6 +246,15 @@ const METRIC_COLUMNS: GoalieMatrixResponse["meta"]["metricColumns"] = [
     description: "Window save percentage from WGO goalie game logs.",
     lowerIsBetter: false,
     source: "goalie_stats_unified.saves / shots_against",
+  },
+  {
+    metricKey: "relative_save_percentage",
+    label: "Rel SV%",
+    description:
+      "5v5 save percentage versus same-team other-goalie 5v5 save percentage in the selected window.",
+    lowerIsBetter: false,
+    source:
+      "goalie_stats_unified.nst_5v5_counts_saves / shots against minus same-team other-goalie baseline",
   },
   {
     metricKey: "gsax",
@@ -310,28 +332,20 @@ const METRIC_COLUMNS: GoalieMatrixResponse["meta"]["metricColumns"] = [
 
 export const GOALIE_SOURCE_PENDING_METRIC_CONTRACTS: GoalieMatrixResponse["meta"]["sourcePendingMetricContracts"] = [
   {
-    metricKey: "relative_save_percentage",
-    label: "Relative SV%",
-    status: "source_pending",
-    reason:
-      "Team-without-goalie save-percentage baselines are not published in the current goalie ranking source contract.",
-    requiredFields: [
-      "team save percentage with goalie on ice",
-      "team save percentage without goalie in same context",
-      "matched strength/window/team denominator",
-    ],
-  },
-  {
     metricKey: "under_pressure_profile",
     label: "Under Pressure",
     status: "source_pending",
     reason:
       "Pressure-quadrant source rows are not published as a stable goalie ranking input.",
     requiredFields: [
-      "rush attempts against",
-      "rebound attempts against",
-      "screen/traffic or pressure labels",
-      "save outcomes by pressure bucket",
+      "goalie_id",
+      "game_id",
+      "shot_id",
+      "pressure_bucket",
+      "rush_attempt_against",
+      "rebound_attempt_against",
+      "screen_or_traffic_label",
+      "shot_result_save_or_goal",
     ],
   },
 ] as const;
@@ -499,6 +513,7 @@ function formatMetricValue(metricKey: GoalieMatrixMetricKey, value: number | nul
   if (value == null) return null;
   if (
     metricKey === "save_percentage" ||
+    metricKey === "relative_save_percentage" ||
     metricKey === "quality_start_pct" ||
     metricKey === "really_bad_start_rate" ||
     metricKey === "steal_rate" ||
@@ -540,16 +555,41 @@ export function calculateGoalieHighDangerSavePercentage(args: {
   return args.shotsAgainst > 0 ? round(args.saves / args.shotsAgainst) : null;
 }
 
+export function calculateGoalieRelativeSavePercentage(args: {
+  goalieSaves: number;
+  goalieShotsAgainst: number;
+  teamWithoutGoalieSaves: number;
+  teamWithoutGoalieShotsAgainst: number;
+  minBaselineShots?: number;
+}) {
+  const minBaselineShots =
+    args.minBaselineShots ?? MIN_RELATIVE_SAVE_BASELINE_SHOTS;
+  if (
+    args.goalieShotsAgainst <= 0 ||
+    args.teamWithoutGoalieShotsAgainst < minBaselineShots
+  ) {
+    return null;
+  }
+  return round(
+    args.goalieSaves / args.goalieShotsAgainst -
+      args.teamWithoutGoalieSaves / args.teamWithoutGoalieShotsAgainst,
+  );
+}
+
 function metricValue(
   aggregate: GoalieAggregate,
   projection: GoalieStartProjectionRow | null,
   metricKey: GoalieMatrixMetricKey,
   roleContext?: ReturnType<typeof buildGoalieRoleContext>,
+  relativeContext?: GoalieRelativeSaveContext | null,
 ) {
   if (metricKey === "save_percentage") {
     return aggregate.shotsAgainst > 0
       ? round(aggregate.saves / aggregate.shotsAgainst)
       : null;
+  }
+  if (metricKey === "relative_save_percentage") {
+    return relativeContext?.relativeSavePercentage ?? null;
   }
   if (metricKey === "quality_start_pct") {
     return aggregate.gamesStarted > 0
@@ -656,6 +696,8 @@ export function aggregateGoalieGameRows(
     let nst5v5GsaxRows = 0;
     let nst5v5XgAgainst = 0;
     let nst5v5XgAgainstRows = 0;
+    let nst5v5Saves = 0;
+    let nst5v5SavesRows = 0;
     let nst5v5ShotsAgainst = 0;
     let nst5v5ShotsAgainstRows = 0;
     let nst5v5HighDangerSaves = 0;
@@ -689,6 +731,11 @@ export function aggregateGoalieGameRows(
       if (nstShotsAgainst != null) {
         nst5v5ShotsAgainst += nstShotsAgainst;
         nst5v5ShotsAgainstRows += 1;
+      }
+      const nstSaves = finite(row.nst_5v5_counts_saves);
+      if (nstSaves != null) {
+        nst5v5Saves += nstSaves;
+        nst5v5SavesRows += 1;
       }
       const highDangerSaves = finite(row.nst_5v5_counts_hd_saves);
       const highDangerShots = finite(row.nst_5v5_counts_hd_shots_against);
@@ -734,6 +781,12 @@ export function aggregateGoalieGameRows(
     ) {
       warnings.add("partial_nst_5v5_shot_quality_source");
     }
+    if (
+      nst5v5SavesRows < selectedRows.length ||
+      nst5v5ShotsAgainstRows < selectedRows.length
+    ) {
+      warnings.add("partial_nst_5v5_relative_save_source");
+    }
     if (nst5v5HighDangerRows < selectedRows.length) {
       warnings.add("partial_nst_5v5_high_danger_source");
     }
@@ -757,6 +810,7 @@ export function aggregateGoalieGameRows(
       nst5v5Gsax: nst5v5GsaxRows > 0 ? round(nst5v5Gsax) : null,
       nst5v5XgAgainst:
         nst5v5XgAgainstRows > 0 ? round(nst5v5XgAgainst) : null,
+      nst5v5Saves,
       nst5v5ShotsAgainst,
       nst5v5HighDangerSaves,
       nst5v5HighDangerShotsAgainst,
@@ -765,6 +819,62 @@ export function aggregateGoalieGameRows(
   }
 
   return aggregates;
+}
+
+export function buildGoalieRelativeSaveContexts(
+  aggregates: readonly GoalieAggregate[],
+) {
+  const teamTotals = new Map<number, { saves: number; shotsAgainst: number }>();
+  for (const aggregate of aggregates) {
+    if (aggregate.teamId == null) continue;
+    const current = teamTotals.get(aggregate.teamId) ?? {
+      saves: 0,
+      shotsAgainst: 0,
+    };
+    current.saves += aggregate.nst5v5Saves;
+    current.shotsAgainst += aggregate.nst5v5ShotsAgainst;
+    teamTotals.set(aggregate.teamId, current);
+  }
+
+  const contexts = new Map<number, GoalieRelativeSaveContext>();
+  for (const aggregate of aggregates) {
+    const teamTotal =
+      aggregate.teamId == null ? null : teamTotals.get(aggregate.teamId) ?? null;
+    const teamWithoutGoalieSaves =
+      teamTotal == null ? 0 : teamTotal.saves - aggregate.nst5v5Saves;
+    const teamWithoutGoalieShotsAgainst =
+      teamTotal == null
+        ? 0
+        : teamTotal.shotsAgainst - aggregate.nst5v5ShotsAgainst;
+    const relativeSavePercentage = calculateGoalieRelativeSavePercentage({
+      goalieSaves: aggregate.nst5v5Saves,
+      goalieShotsAgainst: aggregate.nst5v5ShotsAgainst,
+      teamWithoutGoalieSaves,
+      teamWithoutGoalieShotsAgainst,
+    });
+    const warnings = [
+      aggregate.nst5v5ShotsAgainst <= 0 ? "missing_goalie_5v5_save_sample" : null,
+      teamWithoutGoalieShotsAgainst < MIN_RELATIVE_SAVE_BASELINE_SHOTS
+        ? "low_team_without_goalie_5v5_save_sample"
+        : null,
+    ].filter((warning): warning is string => typeof warning === "string");
+
+    contexts.set(aggregate.playerId, {
+      goalieSavePercentage:
+        aggregate.nst5v5ShotsAgainst > 0
+          ? round(aggregate.nst5v5Saves / aggregate.nst5v5ShotsAgainst)
+          : null,
+      teamWithoutGoalieSavePercentage:
+        teamWithoutGoalieShotsAgainst > 0
+          ? round(teamWithoutGoalieSaves / teamWithoutGoalieShotsAgainst)
+          : null,
+      teamWithoutGoalieSaves,
+      teamWithoutGoalieShotsAgainst,
+      relativeSavePercentage,
+      warnings,
+    });
+  }
+  return contexts;
 }
 
 function buildTeamStartTotals(aggregates: readonly GoalieAggregate[]) {
@@ -959,6 +1069,7 @@ async function fetchAllGoalieGameRows(request: GoalieMatrixRequest) {
           "nst_5v5_counts_xg_against",
           "nst_5v5_counts_goals_against",
           "nst_5v5_counts_gsaa",
+          "nst_5v5_counts_saves",
           "nst_5v5_counts_shots_against",
           "nst_5v5_counts_hd_saves",
           "nst_5v5_counts_hd_shots_against",
@@ -1080,6 +1191,7 @@ export async function buildGoalieMatrixSurface(
   const aggregates = aggregateGoalieGameRows(gameRows, request.window);
   const teamStartTotals = buildTeamStartTotals(aggregates);
   const workloadContexts = buildTeamWorkloadContexts(aggregates);
+  const relativeSaveContexts = buildGoalieRelativeSaveContexts(aggregates);
   const playerIds = aggregates.map((aggregate) => aggregate.playerId);
   const teamIds = aggregates
     .map((aggregate) => aggregate.teamId)
@@ -1124,10 +1236,16 @@ export async function buildGoalieMatrixSurface(
           teamStartTotals,
           workloadContexts,
         });
-        return {
-          id: aggregate.playerId,
-          value: metricValue(aggregate, projection, column.metricKey, roleContext),
-        };
+          return {
+            id: aggregate.playerId,
+            value: metricValue(
+              aggregate,
+              projection,
+              column.metricKey,
+              roleContext,
+              relativeSaveContexts.get(aggregate.playerId) ?? null,
+            ),
+          };
       });
     const ranks = rankGoalieMetricValues(rankInput, column.lowerIsBetter);
     for (const aggregate of aggregates) {
@@ -1139,7 +1257,13 @@ export async function buildGoalieMatrixSurface(
         workloadContexts,
       });
       values.set(aggregate.playerId, {
-        value: metricValue(aggregate, projection, column.metricKey, roleContext),
+        value: metricValue(
+          aggregate,
+          projection,
+          column.metricKey,
+          roleContext,
+          relativeSaveContexts.get(aggregate.playerId) ?? null,
+        ),
         ranks,
       });
     }
@@ -1157,6 +1281,8 @@ export async function buildGoalieMatrixSurface(
     });
     const teamId = aggregate.teamId ?? projection?.team_id ?? null;
     const team = teamId == null ? null : teamsById.get(teamId) ?? null;
+    const relativeSaveContext =
+      relativeSaveContexts.get(aggregate.playerId) ?? null;
     const minimumSampleMet =
       aggregate.gamesStarted >= request.minStarts &&
       aggregate.shotsAgainst >= request.minShots;
@@ -1230,6 +1356,7 @@ export async function buildGoalieMatrixSurface(
       metrics,
       warnings: [
         ...aggregate.sourceWarnings,
+        ...(relativeSaveContext?.warnings ?? []),
         ...(roleContext.roleConfidence === "low" ? ["low_role_confidence"] : []),
         ...(roleContext.excludedTeamStarts > 0
           ? ["inferred_top_two_adjusted_start_share"]
@@ -1291,8 +1418,8 @@ export async function buildGoalieMatrixSurface(
         "nst_gamelog_goalie_*",
         "goalie_start_projections",
       ],
-      methodologyVersion: "goalie_rankings_v1",
-      methodologyUpdatedAt: "2026-06-21",
+      methodologyVersion: "goalie_rankings_v1_relative_sv_v1",
+      methodologyUpdatedAt: "2026-06-24",
       sourceQualityFlags: sourceWarnings.length
         ? ["partial_source_coverage"]
         : [],

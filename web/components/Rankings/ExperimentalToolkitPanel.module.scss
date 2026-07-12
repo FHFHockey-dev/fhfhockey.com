@@ -1,0 +1,123 @@
+@use "styles/vars" as v;
+
+.panel {
+  margin-top: v.$space-lg;
+  border: 1px solid rgba(v.$secondary-color, 0.22);
+  border-radius: v.$border-radius-lg;
+  background: rgba(v.$background-dark, 0.82);
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-md;
+  min-height: 48px;
+  padding: v.$space-sm v.$space-md;
+  color: v.$text-color-primary;
+  cursor: pointer;
+  font-weight: 700;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring-desktop;
+  }
+}
+
+.badge,
+.plannedBadge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.badge {
+  color: v.$color-mint-300;
+  background: rgba(v.$schedule-green, 0.14);
+}
+
+.plannedBadge {
+  color: v.$color-gold-400;
+  background: rgba(v.$schedule-yellow, 0.14);
+}
+
+.body {
+  padding: 0 v.$space-md v.$space-md;
+}
+
+.intro {
+  margin: 0 0 v.$space-md;
+  color: v.$text-color-secondary;
+  font-size: v.$font-size-small;
+  line-height: 1.5;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: v.$space-sm;
+
+  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  padding: v.$space-md;
+  border: 1px solid rgba(v.$color-white, 0.08);
+  border-radius: v.$border-radius-md;
+  background: rgba(v.$background-medium, 0.72);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: v.$space-sm;
+}
+
+.card h3 {
+  margin: 0;
+  color: v.$text-color-primary;
+  font-size: v.$font-size-base;
+}
+
+.subtitle,
+.copy,
+.destination {
+  margin: 5px 0 0;
+  color: v.$text-color-secondary;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.subtitle {
+  color: v.$secondary-color;
+  font-weight: 700;
+}
+
+.destination {
+  color: v.$color-gold-400;
+}
+
+.metricList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: v.$space-sm 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.metricList li {
+  border-radius: 999px;
+  padding: 3px 7px;
+  color: v.$text-color-primary;
+  background: rgba(v.$secondary-color, 0.1);
+  font-family: v.$font-family-numbers;
+  font-size: 10px;
+}

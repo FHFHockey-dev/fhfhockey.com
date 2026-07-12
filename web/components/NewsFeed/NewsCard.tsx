@@ -12,7 +12,7 @@ import {
 import {
   isLineupNewsCategory,
   readLineupCardFromMetadata,
-  type NewsLineupCardData
+  type NewsLineupCardData,
 } from "lib/newsLineupCard";
 
 type NewsCardProps = {
@@ -33,6 +33,7 @@ type NewsCardProps = {
     | "players"
   >;
   compact?: boolean;
+  rail?: boolean;
   sourceDisplayNameOverride?: string | null;
   onLineupGoalieSlotClick?: (slotIndex: number) => void;
 };
@@ -49,7 +50,7 @@ function LineupSlot({
   label,
   variant,
   isStarter = false,
-  onClick
+  onClick,
 }: {
   name: string | null;
   label: string;
@@ -61,7 +62,7 @@ function LineupSlot({
     styles.lineupSlot,
     styles[`lineupSlot${variant[0].toUpperCase()}${variant.slice(1)}`],
     isStarter ? styles.lineupSlotStarter : "",
-    onClick ? styles.lineupSlotEditable : ""
+    onClick ? styles.lineupSlotEditable : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -87,14 +88,12 @@ function LineupSlot({
     );
   }
 
-  return (
-    <div className={className}>{content}</div>
-  );
+  return <div className={className}>{content}</div>;
 }
 
 function LineupGrid({
   lineup,
-  onGoalieSlotClick
+  onGoalieSlotClick,
 }: {
   lineup: NewsLineupCardData;
   onGoalieSlotClick?: (slotIndex: number) => void;
@@ -113,23 +112,26 @@ function LineupGrid({
                   variant="defense"
                 />
               ))
-            : lineup.goalies.slice(0, 2).map((name, index) => (
-                <LineupSlot
-                  key={`g-${index}`}
-                  name={name}
-                  label={index === 0 ? "G1" : "G2"}
-                  variant="goalie"
-                  onClick={
-                    onGoalieSlotClick
-                      ? () => onGoalieSlotClick(index)
-                      : undefined
-                  }
-                  isStarter={Boolean(
-                    lineup.startingGoalie &&
-                      name.toLowerCase() === lineup.startingGoalie.toLowerCase()
-                  )}
-                />
-              ));
+            : lineup.goalies
+                .slice(0, 2)
+                .map((name, index) => (
+                  <LineupSlot
+                    key={`g-${index}`}
+                    name={name}
+                    label={index === 0 ? "G1" : "G2"}
+                    variant="goalie"
+                    onClick={
+                      onGoalieSlotClick
+                        ? () => onGoalieSlotClick(index)
+                        : undefined
+                    }
+                    isStarter={Boolean(
+                      lineup.startingGoalie &&
+                      name.toLowerCase() ===
+                        lineup.startingGoalie.toLowerCase(),
+                    )}
+                  />
+                ));
 
         return [
           ...Array.from({ length: 3 }).map((__, index) => (
@@ -140,21 +142,22 @@ function LineupGrid({
               variant="forward"
             />
           )),
-          ...Array.from({ length: 2 }).map((__, index) =>
-            rightSide[index] ?? (
-              <LineupSlot
-                key={`empty-${rowIndex}-${index}`}
-                name={null}
-                label={rowIndex < 3 ? `D${rowIndex + 1}` : `G${index + 1}`}
-                variant={rowIndex < 3 ? "defense" : "goalie"}
-                onClick={
-                  rowIndex === 3 && onGoalieSlotClick
-                    ? () => onGoalieSlotClick(index)
-                    : undefined
-                }
-              />
-            )
-          )
+          ...Array.from({ length: 2 }).map(
+            (__, index) =>
+              rightSide[index] ?? (
+                <LineupSlot
+                  key={`empty-${rowIndex}-${index}`}
+                  name={null}
+                  label={rowIndex < 3 ? `D${rowIndex + 1}` : `G${index + 1}`}
+                  variant={rowIndex < 3 ? "defense" : "goalie"}
+                  onClick={
+                    rowIndex === 3 && onGoalieSlotClick
+                      ? () => onGoalieSlotClick(index)
+                      : undefined
+                  }
+                />
+              ),
+          ),
         ];
       })}
     </div>
@@ -167,7 +170,8 @@ function formatSourceAttribution(
   sourceDisplayNameOverride?: string | null,
 ): string | null {
   const account = sourceAccount?.trim() || null;
-  const label = sourceDisplayNameOverride?.trim() || sourceLabel?.trim() || null;
+  const label =
+    sourceDisplayNameOverride?.trim() || sourceLabel?.trim() || null;
   if (!label && !account) return null;
   if (!label) return account;
   if (!account) return label;
@@ -178,8 +182,9 @@ function formatSourceAttribution(
 export default function NewsCard({
   item,
   compact = false,
+  rail = false,
   sourceDisplayNameOverride = null,
-  onLineupGoalieSlotClick
+  onLineupGoalieSlotClick,
 }: NewsCardProps) {
   const team = getNewsItemTeamColors(item.team_abbreviation);
   const publishedAt = item.published_at ?? item.created_at ?? null;
@@ -198,7 +203,7 @@ export default function NewsCard({
 
   return (
     <article
-      className={`${styles.card} ${compact ? styles.compact : ""} ${
+      className={`${styles.card} ${compact ? styles.compact : ""} ${rail ? styles.rail : ""} ${
         lineup ? styles.lineupCard : ""
       }`.trim()}
       style={
@@ -232,7 +237,10 @@ export default function NewsCard({
         {!lineup && item.players.length > 0 ? (
           <div className={styles.playerRow}>
             {item.players.map((player) => (
-              <span key={`${item.headline}-${player.player_name}`} className={styles.playerChip}>
+              <span
+                key={`${item.headline}-${player.player_name}`}
+                className={styles.playerChip}
+              >
                 {player.player_name}
               </span>
             ))}
@@ -256,7 +264,11 @@ export default function NewsCard({
         <div className={styles.teamLogo}>
           <Image
             src={team.logoUrl}
-            alt={item.team_abbreviation ? `${item.team_abbreviation} logo` : "NHL logo"}
+            alt={
+              item.team_abbreviation
+                ? `${item.team_abbreviation} logo`
+                : "NHL logo"
+            }
             width={64}
             height={64}
             objectFit="contain"

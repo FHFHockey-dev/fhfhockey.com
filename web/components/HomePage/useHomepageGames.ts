@@ -34,7 +34,22 @@ export function useHomepageGames({
         }
         const res = await fetch(`/api/v1/games?date=${currentDate}`);
         if (!res.ok) {
-          throw new Error(`Slate request failed (${res.status}).`);
+          let message = `Slate request failed (${res.status}).`;
+          try {
+            const body = await res.json();
+            if (typeof body?.error === "string") {
+              message = body.error;
+            }
+          } catch {
+            // Preserve the status-based fallback message.
+          }
+
+          if (!cancelled) {
+            setGames([]);
+            setError(message);
+            setLastUpdatedAt(new Date().toISOString());
+          }
+          return;
         }
         const data = await res.json();
         if (!Array.isArray(data)) {
@@ -156,8 +171,9 @@ export function useHomepageGames({
           setLastUpdatedAt(new Date().toISOString());
         }
       } catch (error) {
-        console.error("Error fetching homepage games:", error);
+        console.warn("Error fetching homepage games:", error);
         if (!cancelled) {
+          setGames([]);
           setError(
             error instanceof Error ? error.message : "Unable to refresh the slate."
           );

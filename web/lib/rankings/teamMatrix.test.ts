@@ -1,13 +1,22 @@
 import { describe, expect, it } from "vitest";
 
+import { buildContextualRankingsAvailableFilters } from "./availableFilters";
 import {
   aggregateTeamGameContextRows,
   aggregateTeamStyleRows,
+  aggregateTeamUnitToiRows,
+  buildTeamUnitMetricInterpretation,
   parseTeamMatrixRequest,
   rankTeamMetricValues,
 } from "./teamMatrix";
 
 describe("teamMatrix", () => {
+  const publishedTeamMetricOptions =
+    buildContextualRankingsAvailableFilters()
+      .entities.find((entity) => entity.value === "teams")
+      ?.filters.metrics.filter((metric) => metric.status === "available")
+      .map((metric) => metric.value) ?? [];
+
   it("aggregates five-on-five team style rows by team abbreviation", () => {
     const teamsById = new Map([
       [1, { id: 1, abbreviation: "BOS", name: "Boston Bruins" }],
@@ -88,6 +97,25 @@ describe("teamMatrix", () => {
     });
   });
 
+  it("parses every published live team metric option", () => {
+    expect(publishedTeamMetricOptions).toEqual(
+      expect.arrayContaining([
+        "forward_top_load_index",
+        "defense_pair_top_load_index",
+        "pp1_pp2_usage_share",
+      ]),
+    );
+
+    for (const metric of publishedTeamMetricOptions) {
+      expect(
+        parseTeamMatrixRequest({
+          season: "20252026",
+          metric,
+        }).metric,
+      ).toBe(metric);
+    }
+  });
+
   it("aggregates WGO team game-context rows by team id", () => {
     const aggregates = aggregateTeamGameContextRows([
       {
@@ -133,6 +161,141 @@ describe("teamMatrix", () => {
       homeRoadPointPctGap: 75,
       powerPlayOpportunityRate: 3,
       penaltiesTakenPer60: 4,
+    });
+  });
+
+  it("aggregates durable team unit-TOI rows into live usage metrics", () => {
+    const aggregates = aggregateTeamUnitToiRows([
+      {
+        team_id: 1,
+        game_id: 101,
+        game_date: "2026-04-01",
+        snapshot_date: "2026-06-22",
+        unit_type: "forward_line",
+        unit_number: 1,
+        unit_share: 0.6,
+        unit_toi_seconds: 180,
+        team_unit_pool_toi_seconds: 300,
+        coverage_status: "complete",
+        coverage_warnings: [],
+      },
+      {
+        team_id: 1,
+        game_id: 101,
+        game_date: "2026-04-01",
+        snapshot_date: "2026-06-22",
+        unit_type: "defense_pair",
+        unit_number: 1,
+        unit_share: 0.55,
+        unit_toi_seconds: 110,
+        team_unit_pool_toi_seconds: 200,
+        coverage_status: "complete",
+        coverage_warnings: [],
+      },
+      {
+        team_id: 1,
+        game_id: 101,
+        game_date: "2026-04-01",
+        snapshot_date: "2026-06-22",
+        unit_type: "power_play",
+        unit_number: 1,
+        unit_share: 0.7,
+        unit_toi_seconds: 70,
+        team_unit_pool_toi_seconds: 100,
+        coverage_status: "complete",
+        coverage_warnings: [],
+      },
+      {
+        team_id: 1,
+        game_id: 101,
+        game_date: "2026-04-01",
+        snapshot_date: "2026-06-22",
+        unit_type: "power_play",
+        unit_number: 2,
+        unit_share: 0.2,
+        unit_toi_seconds: 20,
+        team_unit_pool_toi_seconds: 100,
+        coverage_status: "complete",
+        coverage_warnings: [],
+      },
+      {
+        team_id: 1,
+        game_id: 102,
+        game_date: "2026-04-03",
+        snapshot_date: "2026-06-22",
+        unit_type: "forward_line",
+        unit_number: 1,
+        unit_share: 0.5,
+        unit_toi_seconds: 150,
+        team_unit_pool_toi_seconds: 300,
+        coverage_status: "partial",
+        coverage_warnings: ["defense_pair_unresolved"],
+      },
+    ]);
+
+    expect(aggregates.get(1)).toMatchObject({
+      teamId: 1,
+      gamesCount: 2,
+      latestDate: "2026-04-03",
+      snapshotDate: "2026-06-22",
+      forwardTopLoadIndex: 55,
+      defensePairTopLoadIndex: 55,
+      pp1Pp2UsageShare: 90,
+      coverage: {
+        forwardTopLoad: {
+          games: 2,
+          latestDate: "2026-04-03",
+          snapshotDate: "2026-06-22",
+          status: "partial",
+          warnings: ["defense_pair_unresolved"],
+        },
+        defensePairTopLoad: {
+          games: 1,
+          latestDate: "2026-04-01",
+          snapshotDate: "2026-06-22",
+          status: "partial",
+        },
+        pp1Pp2UsageShare: {
+          games: 1,
+          latestDate: "2026-04-01",
+          snapshotDate: "2026-06-22",
+          status: "partial",
+        },
+      },
+    });
+  });
+
+  it("requires complete minimum unit coverage before naming top-load labels", () => {
+    expect(
+      buildTeamUnitMetricInterpretation({
+        metricLabel: "Forward top load",
+        coverage: {
+          games: 3,
+          latestDate: "2026-04-03",
+          snapshotDate: "2026-06-22",
+          status: "complete",
+          warnings: [],
+        },
+      }),
+    ).toMatchObject({
+      label: "Forward top load coverage-qualified",
+      coverageQualified: true,
+    });
+    expect(
+      buildTeamUnitMetricInterpretation({
+        metricLabel: "Forward top load",
+        coverage: {
+          games: 2,
+          latestDate: "2026-04-03",
+          snapshotDate: "2026-06-22",
+          status: "partial",
+          warnings: ["forward_lines_unresolved"],
+        },
+      }),
+    ).toMatchObject({
+      label: "Forward top load coverage-limited",
+      coverageQualified: false,
+      reason: expect.stringContaining("require 3 complete games"),
     });
   });
 

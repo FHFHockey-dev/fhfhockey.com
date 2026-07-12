@@ -98,6 +98,7 @@ import {
   toNstOperatorMessage
 } from "lib/nst/client";
 import { resolveNstGamelogRequestPlan } from "lib/cron/nstBurstPlans";
+import { buildCronJobTiming } from "lib/cron/timingContract";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import {
   addDays,
@@ -2069,23 +2070,9 @@ async function main(
   troublesomePlayers.length = 0; // Clear troublesome list for this run
 
   let totalRowsAffected = 0;
+  let failedUrlCountAfterRetry = 0;
 
   try {
-    await supabase.from("cron_job_audit").insert([
-      {
-        job_name: "update-nst-gamelog",
-        status: "started",
-        rows_affected: 0,
-        details: {
-          runMode,
-          startDate: options?.startDate ?? null,
-          endDate: options?.endDate ?? null,
-          dates: targetDates ?? null,
-          seasonId: targetSeasonId ?? null,
-          startTime: new Date().toISOString()
-        }
-      }
-    ]);
 
     if (isReverseFull) {
       // NOTE: Reverse mode logic is preserved as-is, per user request.
@@ -2294,17 +2281,13 @@ async function main(
       await supabase.from("cron_job_audit").insert([
         {
           job_name: "update-nst-gamelog",
-          status: "completed",
+          status: "success",
           rows_affected: totalRowsAffected,
           details: {
-            totalDurationMinutes: (
-              (Date.now() - startTime) /
-              1000 /
-              60
-            ).toFixed(2),
+            timing: { ...buildCronJobTiming(startTime), source: "audit" },
+            failedRows: failedUrls.length,
             troublesomePlayersCount: troublesomePlayers.length,
             isReverseFull: fullRefreshFlag("reverse"),
-            endTime: new Date().toISOString()
           }
         }
       ]);
@@ -2451,11 +2434,12 @@ async function main(
       await supabase.from("cron_job_audit").insert([
         {
           job_name: "update-nst-gamelog",
-          status: "completed",
+          status: "success",
           rows_affected: 0,
           details: {
             message: "no new dates to scrape",
-            duration: (Date.now() - startTime) / 1000
+            failedRows: 0,
+            timing: { ...buildCronJobTiming(startTime), source: "audit" }
           }
         }
       ]);
@@ -2545,20 +2529,7 @@ async function main(
     );
 
     totalRowsAffected += initialProcessResult.totalRowsProcessed || 0;
-
-    await supabase.from("cron_job_audit").insert([
-      {
-        job_name: "update-nst-gamelog",
-        status: failedUrls.length > 0 ? "partial_success" : "success",
-        rows_affected: initialProcessResult.totalRowsProcessed || 0,
-        details: {
-          phase: "initial_processing",
-          urlsProcessed: initialUrlsQueue.length,
-          failedUrls: failedUrls.length,
-          playersProcessed: processedPlayerIds.size
-        }
-      }
-    ]);
+    failedUrlCountAfterRetry = failedUrls.length;
 
     if (failedUrls.length > 0) {
       console.log(`\n--- Retrying ${failedUrls.length} failed URLs ---`);
@@ -2584,19 +2555,7 @@ async function main(
       );
 
       totalRowsAffected += retryResult.totalRowsProcessed || 0;
-
-      await supabase.from("cron_job_audit").insert([
-        {
-          job_name: "update-nst-gamelog",
-          status: retryFailedUrls.length > 0 ? "partial_success" : "success",
-          rows_affected: retryResult.totalRowsProcessed || 0,
-          details: {
-            phase: "retry_processing",
-            urlsRetried: failedUrlsRetryCopy.length,
-            stillFailed: retryFailedUrls.length
-          }
-        }
-      ]);
+      failedUrlCountAfterRetry = retryFailedUrls.length;
 
       if (retryFailedUrls.length > 0) {
         console.error(
@@ -2624,13 +2583,15 @@ async function main(
     await supabase.from("cron_job_audit").insert([
       {
         job_name: "update-nst-gamelog",
-        status: "completed",
+        status: "success",
         rows_affected: totalRowsAffected,
         details: {
-          totalDuration: duration,
+          timing: { ...buildCronJobTiming(startTime, endTime), source: "audit" },
+          failedRows: failedUrlCountAfterRetry,
+          urlsProcessed: initialUrlsQueue.length,
+          playersProcessed: processedPlayerIds.size,
           troublesomePlayersCount: troublesomePlayers.length,
           isForwardFull: isForwardFull,
-          endTime: new Date().toISOString()
         }
       }
     ]);
@@ -2649,9 +2610,13 @@ async function main(
     await supabase.from("cron_job_audit").insert([
       {
         job_name: "update-nst-gamelog",
-        status: "error",
+        status: "failure",
         rows_affected: totalRowsAffected,
-        details: { error: error.message, stack: error.stack }
+        details: {
+          error: error.message,
+          failedRows: failedUrlCountAfterRetry,
+          timing: { ...buildCronJobTiming(startTime), source: "audit" }
+        }
       }
     ]);
     throw error;

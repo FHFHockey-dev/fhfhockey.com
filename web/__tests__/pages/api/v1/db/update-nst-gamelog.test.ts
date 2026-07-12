@@ -97,7 +97,7 @@ describe("update-nst-gamelog request scoping", () => {
     expect(diagnostic.url).toContain("sit=5v5");
     expect(diagnostic.url).toContain("rate=y");
     expect(diagnostic.url).toContain("fromseason=20252026");
-    expect(diagnostic.url).toContain("fd=2025%2D10%2D07");
+    expect(new URL(diagnostic.url).searchParams.get("fd")).toBe("2025-10-07");
     expect(diagnostic.url).not.toContain("key=");
   });
 
@@ -108,9 +108,29 @@ describe("update-nst-gamelog request scoping", () => {
       datasetType: "fiveOnFiveCounts"
     });
 
-    expect(diagnostic.url).toBe(
-      "https://data.naturalstattrick.com/playerteams.php?fromseason=20242025&thruseason=20242025&stype=2&sit=5v5&score=all&stdoi=std&rate=n&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025%2D04%2D16&td=2025%2D04%2D16&tgp=410&lines=single&draftteam=ALL"
+    const url = new URL(diagnostic.url);
+    expect(url.origin + url.pathname).toBe(
+      "https://data.naturalstattrick.com/playerteams.php"
     );
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      sit: "5v5",
+      score: "all",
+      stdoi: "std",
+      rate: "n",
+      team: "ALL",
+      fromseason: "20242025",
+      thruseason: "20242025",
+      stype: "2",
+      pos: "S",
+      loc: "B",
+      toi: "0",
+      gpfilt: "gpdate",
+      fd: "2025-04-16",
+      td: "2025-04-16",
+      lines: "single",
+      draftteam: "ALL",
+      tgp: "410"
+    });
   });
 
   it("accepts a custom diagnostic NST URL without requiring browser-visible keys", () => {

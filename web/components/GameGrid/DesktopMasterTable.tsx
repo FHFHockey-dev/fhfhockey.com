@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import clsx from "clsx";
 
 import { MatchUpCell } from "./TeamRow";
@@ -7,21 +8,16 @@ import Toggle from "./Toggle/Toggle";
 import {
   calcTotalGP,
   calcTotalOffNights,
-  getGamesPerDayIntensity
+  getGamesPerDayIntensity,
 } from "./TotalGamesPerDayRow";
 import { addDays, formatDate, getDayStr } from "./utils/date-func";
 import styles from "./GameGrid.module.scss";
 
-import {
-  DAYS,
-  DAY_ABBREVIATION,
-  EXTENDED_DAYS,
-  WeekData
-} from "lib/NHL/types";
+import { DAYS, DAY_ABBREVIATION, EXTENDED_DAYS, WeekData } from "lib/NHL/types";
 import { useTeamsMap } from "hooks/useTeams";
 import {
   OpponentMetricAverages,
-  OpponentMetricColumn
+  OpponentMetricColumn,
 } from "./utils/useOpponentMetricsData";
 
 type TeamScheduleRow = WeekData & {
@@ -74,6 +70,7 @@ type TeamNumeric = { teamId: number; value: number };
 
 type MasterRow = TeamScheduleRow & {
   teamName: string;
+  teamAbbreviation: string;
   logo: string;
   opponentMetrics: OpponentMetricAverages;
   fourWeekGamesPlayed: number | null;
@@ -101,7 +98,7 @@ type StickyHeaderState = {
 
 function getCurrentSummaryIntensity(
   type: "gp" | "off",
-  value: number
+  value: number,
 ): string | undefined {
   if (type === "gp") {
     if (value <= 1) return "low";
@@ -133,16 +130,13 @@ function getDefaultDirection(key: SortKey): SortConfig["direction"] {
 
 function formatMetricValue(
   key: SortKey,
-  value: number | null | undefined
+  value: number | null | undefined,
 ): string {
   if (typeof value !== "number") {
     return "-";
   }
 
-  if (
-    key === "avgWinPct" ||
-    key === "fourWeekOpponentPointPct"
-  ) {
+  if (key === "avgWinPct" || key === "fourWeekOpponentPointPct") {
     return `${(value * 100).toFixed(1)}%`;
   }
 
@@ -165,7 +159,7 @@ function formatMetricValue(
 function compareValues(
   aValue: number | string | null | undefined,
   bValue: number | string | null | undefined,
-  direction: SortConfig["direction"]
+  direction: SortConfig["direction"],
 ) {
   if (typeof aValue === "string" && typeof bValue === "string") {
     return direction === "ascending"
@@ -184,12 +178,14 @@ function compareValues(
 
 function toRankMaps(entries: TeamNumeric[], bestDirection: "asc" | "desc") {
   const sorted = [...entries].sort((a, b) =>
-    bestDirection === "asc" ? a.value - b.value : b.value - a.value
+    bestDirection === "asc" ? a.value - b.value : b.value - a.value,
   );
   const best = new Map<number, number>();
   const worst = new Map<number, number>();
 
-  sorted.slice(0, 10).forEach((entry, index) => best.set(entry.teamId, index + 1));
+  sorted
+    .slice(0, 10)
+    .forEach((entry, index) => best.set(entry.teamId, index + 1));
   sorted
     .slice(Math.max(sorted.length - 10, 0))
     .forEach((entry, index) => worst.set(entry.teamId, index + 1));
@@ -205,14 +201,16 @@ function distributeWidths(baseWidths: number[], targetWidth: number): number[] {
   }
 
   const totalBaseWidth = baseWidths.reduce((sum, width) => sum + width, 0);
-  const scaledWidths = baseWidths.map((width) => (width / totalBaseWidth) * targetWidth);
+  const scaledWidths = baseWidths.map(
+    (width) => (width / totalBaseWidth) * targetWidth,
+  );
   const widths = scaledWidths.map((width) => Math.floor(width));
   let remainder = targetWidth - widths.reduce((sum, width) => sum + width, 0);
 
   const byFraction = scaledWidths
     .map((width, index) => ({
       index,
-      fraction: width - Math.floor(width)
+      fraction: width - Math.floor(width),
     }))
     .sort((a, b) => b.fraction - a.fraction);
 
@@ -236,7 +234,7 @@ export default function DesktopMasterTable({
   opponentLeagueAverages,
   opponentMetricsLoading,
   fourWeekSummaryByTeamId,
-  fourWeekAverages
+  fourWeekAverages,
 }: DesktopMasterTableProps) {
   const teamsMap = useTeamsMap();
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -244,7 +242,7 @@ export default function DesktopMasterTable({
   const theadRef = useRef<HTMLTableSectionElement | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     key: "teamName",
-    direction: "ascending"
+    direction: "ascending",
   });
   const [isFourWeekCollapsed, setIsFourWeekCollapsed] = useState(true);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -253,16 +251,16 @@ export default function DesktopMasterTable({
     left: 0,
     width: 0,
     scrollLeft: 0,
-    tableWidth: 0
+    tableWidth: 0,
   });
 
   const days = extended ? EXTENDED_DAYS : DAYS;
   const dayKeys = useMemo(
     () =>
       days.map((_, index) =>
-        getDayStr(new Date(start), addDays(new Date(start), index))
+        getDayStr(new Date(start), addDays(new Date(start), index)),
       ),
-    [days, start]
+    [days, start],
   );
   const rows = useMemo<MasterRow[]>(() => {
     return scheduleRows.map((row) => {
@@ -272,6 +270,7 @@ export default function DesktopMasterTable({
       return {
         ...row,
         teamName: team?.name ?? "",
+        teamAbbreviation: team?.abbreviation ?? String(row.teamId),
         logo: team?.logo ?? `/teamLogos/${row.teamId}.png`,
         opponentMetrics: opponentMetricsByTeamId[row.teamId] ?? {
           avgXgf: null,
@@ -280,15 +279,20 @@ export default function DesktopMasterTable({
           avgSa: null,
           avgGoalFor: null,
           avgGoalAgainst: null,
-          avgWinPct: null
+          avgWinPct: null,
         },
         fourWeekGamesPlayed: fourWeek?.gamesPlayed ?? null,
         fourWeekOffNights: fourWeek?.offNights ?? null,
         fourWeekOpponentPointPct: fourWeek?.avgOpponentPointPct ?? null,
-        fourWeekScore: fourWeek?.score ?? null
+        fourWeekScore: fourWeek?.score ?? null,
       };
     });
-  }, [fourWeekSummaryByTeamId, opponentMetricsByTeamId, scheduleRows, teamsMap]);
+  }, [
+    fourWeekSummaryByTeamId,
+    opponentMetricsByTeamId,
+    scheduleRows,
+    teamsMap,
+  ]);
 
   const totalLeagueGames = calcTotalGP(gamesPerDay, excludedDays);
   const totalLeagueOffNights = calcTotalOffNights(gamesPerDay, excludedDays);
@@ -343,9 +347,9 @@ export default function DesktopMasterTable({
       new Set(
         [...scoreRanking.entries()]
           .filter(([, rank]) => rank <= 10)
-          .map(([teamId]) => teamId)
+          .map(([teamId]) => teamId),
       ),
-    [scoreRanking]
+    [scoreRanking],
   );
 
   const bottomTenTeams = useMemo(
@@ -354,9 +358,9 @@ export default function DesktopMasterTable({
         [...scoreRanking.entries()]
           .sort((a, b) => a[1] - b[1])
           .slice(-10)
-          .map(([teamId]) => teamId)
+          .map(([teamId]) => teamId),
       ),
-    [scoreRanking]
+    [scoreRanking],
   );
 
   const opponentMetricRankMaps = useMemo(() => {
@@ -367,7 +371,7 @@ export default function DesktopMasterTable({
       avgSa: "desc",
       avgGoalFor: "asc",
       avgGoalAgainst: "desc",
-      avgWinPct: "asc"
+      avgWinPct: "asc",
     };
 
     return opponentMetricColumns.reduce<
@@ -375,28 +379,31 @@ export default function DesktopMasterTable({
         keyof OpponentMetricAverages,
         { best: Map<number, number>; worst: Map<number, number> }
       >
-    >((acc, { key }) => {
-      const entries: TeamNumeric[] = [];
+    >(
+      (acc, { key }) => {
+        const entries: TeamNumeric[] = [];
 
-      rows.forEach((row) => {
-        const value = row.opponentMetrics[key];
-        if (typeof value === "number") {
-          entries.push({ teamId: row.teamId, value });
-        }
-      });
+        rows.forEach((row) => {
+          const value = row.opponentMetrics[key];
+          if (typeof value === "number") {
+            entries.push({ teamId: row.teamId, value });
+          }
+        });
 
-      acc[key] = toRankMaps(entries, directions[key]);
-      return acc;
-    }, {} as Record<
-      keyof OpponentMetricAverages,
-      { best: Map<number, number>; worst: Map<number, number> }
-    >);
+        acc[key] = toRankMaps(entries, directions[key]);
+        return acc;
+      },
+      {} as Record<
+        keyof OpponentMetricAverages,
+        { best: Map<number, number>; worst: Map<number, number> }
+      >,
+    );
   }, [opponentMetricColumns, rows]);
 
   const getOpponentMetricStateClass = (
     key: keyof OpponentMetricAverages,
     teamId: number,
-    value: number | null
+    value: number | null,
   ) => {
     if (typeof value !== "number") return undefined;
 
@@ -423,13 +430,13 @@ export default function DesktopMasterTable({
         return {
           key,
           direction:
-            prev.direction === "ascending" ? "descending" : "ascending"
+            prev.direction === "ascending" ? "descending" : "ascending",
         };
       }
 
       return {
         key,
-        direction: getDefaultDirection(key)
+        direction: getDefaultDirection(key),
       };
     });
   };
@@ -453,7 +460,7 @@ export default function DesktopMasterTable({
     const widths = [
       ...Array(opponentMetricColumns.length).fill(MASTER_METRIC_COL_BASE_WIDTH),
       MASTER_TEAM_COL_BASE_WIDTH,
-      ...Array(dayKeys.length).fill(MASTER_DAY_COL_BASE_WIDTH)
+      ...Array(dayKeys.length).fill(MASTER_DAY_COL_BASE_WIDTH),
     ];
 
     if (isFourWeekCollapsed) {
@@ -462,14 +469,14 @@ export default function DesktopMasterTable({
       widths.push(
         MASTER_FOUR_WEEK_COL_BASE_WIDTH,
         MASTER_FOUR_WEEK_COL_BASE_WIDTH,
-        MASTER_FOUR_WEEK_COL_BASE_WIDTH
+        MASTER_FOUR_WEEK_COL_BASE_WIDTH,
       );
     }
 
     widths.push(
       MASTER_SUMMARY_COL_BASE_WIDTH,
       MASTER_SUMMARY_COL_BASE_WIDTH,
-      MASTER_SCORE_COL_BASE_WIDTH
+      MASTER_SCORE_COL_BASE_WIDTH,
     );
 
     return widths;
@@ -477,12 +484,12 @@ export default function DesktopMasterTable({
 
   const columnWidths = useMemo(
     () => distributeWidths(baseColumnWidths, containerWidth),
-    [baseColumnWidths, containerWidth]
+    [baseColumnWidths, containerWidth],
   );
 
   const tableWidth = useMemo(
     () => columnWidths.reduce((sum, width) => sum + width, 0),
-    [columnWidths]
+    [columnWidths],
   );
 
   const stickyMetricOffsets = useMemo(() => {
@@ -501,7 +508,7 @@ export default function DesktopMasterTable({
         ? stickyMetricOffsets[stickyMetricOffsets.length - 1] +
           (columnWidths[opponentMetricColumns.length - 1] ?? 0)
         : 0,
-    [columnWidths, opponentMetricColumns.length, stickyMetricOffsets]
+    [columnWidths, opponentMetricColumns.length, stickyMetricOffsets],
   );
 
   const renderSortableHeader = (
@@ -509,7 +516,7 @@ export default function DesktopMasterTable({
     key: SortKey,
     className?: string,
     stickyLeft?: number,
-    headerKey?: string
+    headerKey?: string,
   ) => {
     const isSorted = sortConfig.key === key;
     const directionGlyph =
@@ -518,7 +525,10 @@ export default function DesktopMasterTable({
     return (
       <th
         key={headerKey ?? key}
-        className={clsx(className, stickyLeft != null && styles.masterStickyMetric)}
+        className={clsx(
+          className,
+          stickyLeft != null && styles.masterStickyMetric,
+        )}
         style={stickyLeft != null ? { left: `${stickyLeft}px` } : undefined}
       >
         <button
@@ -536,7 +546,7 @@ export default function DesktopMasterTable({
             <span
               className={clsx(
                 styles.masterSortGlyph,
-                styles.masterSortGlyphActive
+                styles.masterSortGlyphActive,
               )}
               aria-hidden="true"
             >
@@ -571,7 +581,7 @@ export default function DesktopMasterTable({
             styles.masterSectionBanner,
             styles.masterSectionBannerMetrics,
             styles.masterStickyMetricGroup,
-            styles.masterSectionBannerStart
+            styles.masterSectionBannerStart,
           )}
         >
           <span className={styles.masterSectionLabel}>Opponent Metrics</span>
@@ -584,7 +594,7 @@ export default function DesktopMasterTable({
           className={clsx(
             styles.masterSectionBanner,
             styles.masterSectionBannerFourWeek,
-            isFourWeekCollapsed && styles.masterSectionBannerCollapsed
+            isFourWeekCollapsed && styles.masterSectionBannerCollapsed,
           )}
         >
           <span className={styles.masterSectionLabel}>
@@ -596,7 +606,7 @@ export default function DesktopMasterTable({
           className={clsx(
             styles.masterSectionBanner,
             styles.masterSectionBannerSummary,
-            styles.masterSectionBannerEnd
+            styles.masterSectionBannerEnd,
           )}
         >
           <span className={styles.masterSectionLabel}>Week Summary</span>
@@ -610,18 +620,19 @@ export default function DesktopMasterTable({
             clsx(
               styles.masterMetricHeader,
               index === 0 && styles.masterMetricHeaderLead,
-              index === opponentMetricColumns.length - 1 && styles.masterGroupEdge
+              index === opponentMetricColumns.length - 1 &&
+                styles.masterGroupEdge,
             ),
             stickyMetricOffsets[index],
-            `${keyPrefix}${column.key}`
-          )
+            `${keyPrefix}${column.key}`,
+          ),
         )}
         <th
           key={`${keyPrefix}teamName`}
           className={clsx(
             styles.masterTeamHeader,
             styles.masterStickyCol,
-            styles.masterStickyTeamCol
+            styles.masterStickyTeamCol,
           )}
           style={{ left: `${stickyTeamOffset}px` }}
         >
@@ -642,7 +653,7 @@ export default function DesktopMasterTable({
                 <span
                   className={clsx(
                     styles.masterSortGlyph,
-                    styles.masterSortGlyphActive
+                    styles.masterSortGlyphActive,
                   )}
                   aria-hidden="true"
                 >
@@ -699,7 +710,7 @@ export default function DesktopMasterTable({
               className={clsx(
                 styles.masterFourWeekHeader,
                 styles.masterFourWeekLead,
-                styles.masterFourWeekColumn
+                styles.masterFourWeekColumn,
               )}
             >
               <button
@@ -718,14 +729,14 @@ export default function DesktopMasterTable({
               "fourWeekOffNights",
               styles.masterFourWeekHeader,
               undefined,
-              `${keyPrefix}fourWeekOffNights`
+              `${keyPrefix}fourWeekOffNights`,
             )}
             {renderSortableHeader(
               "Opp %",
               "fourWeekOpponentPointPct",
               clsx(styles.masterFourWeekHeader, styles.masterGroupEdge),
               undefined,
-              `${keyPrefix}fourWeekOpponentPointPct`
+              `${keyPrefix}fourWeekOpponentPointPct`,
             )}
           </>
         )}
@@ -736,14 +747,14 @@ export default function DesktopMasterTable({
               styles.masterFourWeekHeader,
               styles.masterFourWeekColumn,
               styles.masterFourWeekCollapsedHeader,
-              styles.masterGroupEdge
+              styles.masterGroupEdge,
             )}
           >
             <button
               type="button"
               className={clsx(
                 styles.masterCollapseButton,
-                styles.masterFourWeekCollapsedButton
+                styles.masterFourWeekCollapsedButton,
               )}
               onClick={() => setIsFourWeekCollapsed((value) => !value)}
               aria-expanded={!isFourWeekCollapsed}
@@ -759,21 +770,21 @@ export default function DesktopMasterTable({
           "totalGamesPlayed",
           styles.masterBlueHeader,
           undefined,
-          `${keyPrefix}totalGamesPlayed`
+          `${keyPrefix}totalGamesPlayed`,
         )}
         {renderSortableHeader(
           "OFF",
           "totalOffNights",
           clsx(styles.masterBlueHeader, styles.masterGroupEdge),
           undefined,
-          `${keyPrefix}totalOffNights`
+          `${keyPrefix}totalOffNights`,
         )}
         {renderSortableHeader(
           "Score",
           "weekScore",
           clsx(styles.masterSummaryScore, styles.masterScoreHeader),
           undefined,
-          `${keyPrefix}weekScore`
+          `${keyPrefix}weekScore`,
         )}
       </tr>
     </thead>
@@ -798,11 +809,13 @@ export default function DesktopMasterTable({
 
       const nextState: StickyHeaderState = {
         active:
-          isDesktop && tableRect.top <= 0 && tableRect.bottom - headerHeight > 0,
+          isDesktop &&
+          tableRect.top <= 0 &&
+          tableRect.bottom - headerHeight > 0,
         left: scrollRect.left,
         width: scrollEl.clientWidth,
         scrollLeft: scrollEl.scrollLeft,
-        tableWidth: tableEl.offsetWidth
+        tableWidth: tableEl.offsetWidth,
       };
 
       setStickyHeader((prev) => {
@@ -900,17 +913,20 @@ export default function DesktopMasterTable({
           className={styles.masterStickyHeaderOverlay}
           style={{
             left: `${stickyHeader.left}px`,
-            width: `${stickyHeader.width}px`
+            width: `${stickyHeader.width}px`,
           }}
         >
           <div className={styles.masterStickyHeaderViewport}>
             <table
-              className={clsx(styles.masterTable, styles.masterStickyHeaderTable)}
+              className={clsx(
+                styles.masterTable,
+                styles.masterStickyHeaderTable,
+              )}
               aria-describedby="weekScoreDesc"
               style={{
                 width: `${tableWidth || stickyHeader.tableWidth}px`,
                 minWidth: `${tableWidth || stickyHeader.tableWidth}px`,
-                transform: `translateX(-${stickyHeader.scrollLeft}px)`
+                transform: `translateX(-${stickyHeader.scrollLeft}px)`,
               }}
             >
               {renderColGroup()}
@@ -941,7 +957,7 @@ export default function DesktopMasterTable({
                     styles.masterMetricCell,
                     styles.masterStickyMetric,
                     index === opponentMetricColumns.length - 1 &&
-                      styles.masterGroupEdge
+                      styles.masterGroupEdge,
                   )}
                   style={{ left: `${stickyMetricOffsets[index] ?? 0}px` }}
                 >
@@ -949,7 +965,7 @@ export default function DesktopMasterTable({
                     ? "..."
                     : formatMetricValue(
                         column.key,
-                        opponentLeagueAverages[column.key]
+                        opponentLeagueAverages[column.key],
                       )}
                 </td>
               ))}
@@ -958,7 +974,7 @@ export default function DesktopMasterTable({
                   styles.masterStickyCol,
                   styles.masterStickyTeamCol,
                   styles.masterTeamCell,
-                  styles.masterAverageLabel
+                  styles.masterAverageLabel,
                 )}
                 style={{ left: `${stickyTeamOffset}px` }}
               >
@@ -969,7 +985,9 @@ export default function DesktopMasterTable({
                 <td
                   key={`avg-${day}`}
                   className={styles.masterAverageDash}
-                  data-intensity={getGamesPerDayIntensity(gamesPerDay[index] ?? 0)}
+                  data-intensity={getGamesPerDayIntensity(
+                    gamesPerDay[index] ?? 0,
+                  )}
                 >
                   {gamesPerDay[index] ?? "-"}
                 </td>
@@ -979,19 +997,19 @@ export default function DesktopMasterTable({
                   <td className={styles.masterFourWeekLeadCell}>
                     {formatMetricValue(
                       "fourWeekGamesPlayed",
-                      fourWeekAverages.gamesPlayed
+                      fourWeekAverages.gamesPlayed,
                     )}
                   </td>
                   <td className={styles.masterFourWeekCell}>
                     {formatMetricValue(
                       "fourWeekOffNights",
-                      fourWeekAverages.offNights
+                      fourWeekAverages.offNights,
                     )}
                   </td>
                   <td className={styles.masterFourWeekCell}>
                     {formatMetricValue(
                       "fourWeekOpponentPointPct",
-                      fourWeekAverages.avgOpponentPointPct
+                      fourWeekAverages.avgOpponentPointPct,
                     )}
                   </td>
                 </>
@@ -1000,7 +1018,10 @@ export default function DesktopMasterTable({
                 <td className={styles.masterCollapseSpacer}></td>
               )}
               <td
-                data-intensity={getCurrentSummaryIntensity("gp", totalLeagueGames)}
+                data-intensity={getCurrentSummaryIntensity(
+                  "gp",
+                  totalLeagueGames,
+                )}
               >
                 {totalLeagueGames}
               </td>
@@ -1008,7 +1029,7 @@ export default function DesktopMasterTable({
                 className={styles.masterGroupEdge}
                 data-intensity={getCurrentSummaryIntensity(
                   "off",
-                  totalLeagueOffNights
+                  totalLeagueOffNights,
                 )}
               >
                 {totalLeagueOffNights}
@@ -1036,10 +1057,10 @@ export default function DesktopMasterTable({
                         getOpponentMetricStateClass(
                           column.key,
                           row.teamId,
-                          row.opponentMetrics[column.key]
+                          row.opponentMetrics[column.key],
                         ),
                         index === opponentMetricColumns.length - 1 &&
-                          styles.masterGroupEdge
+                          styles.masterGroupEdge,
                       )}
                       style={{ left: `${stickyMetricOffsets[index] ?? 0}px` }}
                     >
@@ -1047,7 +1068,7 @@ export default function DesktopMasterTable({
                         ? "..."
                         : formatMetricValue(
                             column.key,
-                            row.opponentMetrics[column.key]
+                            row.opponentMetrics[column.key],
                           )}
                     </td>
                   ))}
@@ -1055,11 +1076,15 @@ export default function DesktopMasterTable({
                     className={clsx(
                       styles.masterStickyCol,
                       styles.masterStickyTeamCol,
-                      styles.masterTeamCell
+                      styles.masterTeamCell,
                     )}
                     style={{ left: `${stickyTeamOffset}px` }}
                   >
-                    <div className={styles.masterTeamIdentity}>
+                    <Link
+                      href={`/stats/team/${row.teamAbbreviation}`}
+                      aria-label={`Open ${row.teamName} Team HQ`}
+                      className={styles.masterTeamIdentity}
+                    >
                       <span className={styles.masterTeamLogoWrap}>
                         <Image
                           src={row.logo}
@@ -1069,12 +1094,14 @@ export default function DesktopMasterTable({
                           className={styles.masterTeamLogo}
                         />
                       </span>
-                    </div>
+                    </Link>
                   </td>
                   {dayKeys.map((day, index) => {
                     const matchup = row[day];
                     const isPreseason = !!matchup && matchup.gameType === 1;
-                    const excluded = excludedDays.includes(day as DAY_ABBREVIATION);
+                    const excluded = excludedDays.includes(
+                      day as DAY_ABBREVIATION,
+                    );
                     let dayIntensityClass = "";
 
                     if ((gamesPerDay[index] ?? 0) >= 9) {
@@ -1088,7 +1115,10 @@ export default function DesktopMasterTable({
                     return (
                       <td
                         key={`${row.teamId}-${day}`}
-                        className={clsx(styles.cellInnerBorder, dayIntensityClass)}
+                        className={clsx(
+                          styles.cellInnerBorder,
+                          dayIntensityClass,
+                        )}
                       >
                         {matchup && !(isPreseason && hidePreseason) ? (
                           <MatchUpCell
@@ -1109,19 +1139,19 @@ export default function DesktopMasterTable({
                       <td className={styles.masterFourWeekLeadCell}>
                         {formatMetricValue(
                           "fourWeekGamesPlayed",
-                          row.fourWeekGamesPlayed
+                          row.fourWeekGamesPlayed,
                         )}
                       </td>
                       <td className={styles.masterFourWeekCell}>
                         {formatMetricValue(
                           "fourWeekOffNights",
-                          row.fourWeekOffNights
+                          row.fourWeekOffNights,
                         )}
                       </td>
                       <td className={styles.masterFourWeekCell}>
                         {formatMetricValue(
                           "fourWeekOpponentPointPct",
-                          row.fourWeekOpponentPointPct
+                          row.fourWeekOpponentPointPct,
                         )}
                       </td>
                     </>
@@ -1132,7 +1162,7 @@ export default function DesktopMasterTable({
                   <td
                     data-intensity={getCurrentSummaryIntensity(
                       "gp",
-                      row.totalGamesPlayed
+                      row.totalGamesPlayed,
                     )}
                   >
                     {row.totalGamesPlayed}
@@ -1141,7 +1171,7 @@ export default function DesktopMasterTable({
                     className={styles.masterGroupEdge}
                     data-intensity={getCurrentSummaryIntensity(
                       "off",
-                      row.totalOffNights
+                      row.totalOffNights,
                     )}
                   >
                     {row.totalOffNights}
@@ -1150,7 +1180,7 @@ export default function DesktopMasterTable({
                     className={clsx(
                       styles.masterSummaryScore,
                       styles[`rank-color-${rank}`],
-                      rowHighlightClass
+                      rowHighlightClass,
                     )}
                   >
                     {row.weekScore === -100 ? "-" : row.weekScore.toFixed(1)}

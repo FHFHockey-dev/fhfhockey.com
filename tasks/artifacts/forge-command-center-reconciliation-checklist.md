@@ -1,6 +1,6 @@
 # FORGE Command Center Reconciliation Checklist
 
-Status: initial implementation checklist. Complete source-to-render value checks before promotion.
+Status: implementation verification in progress. Complete source-to-render value and six-viewport checks before promotion.
 
 | Module | Source APIs | Source Tables | Rendered Values To Reconcile | Freshness State | Verification Method | Status |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -12,6 +12,6 @@ Status: initial implementation checklist. Complete source-to-render value checks
 
 Open gaps before promotion:
 
-- Browser screenshot verification is partially blocked locally by dev-server file-watch `EMFILE` noise and unstable mobile headless Chrome capture.
-- `npm run test:full` was attempted after focused command-center tests passed; the full suite still fails in existing FORGE/dashboard tests outside the new route, including `__tests__/pages/FORGE.test.tsx`, `__tests__/pages/forge/dashboard.test.tsx`, `__tests__/pages/forge/team/[teamId].test.tsx`, and `__tests__/pages/forge/player/[playerId].test.tsx`.
+- The earlier local `EMFILE`/headless-capture limitation is stale and must be re-tested with the current browser workflow before it can be treated as a blocker.
+- Full-suite verification passed on 2026-07-12: 400/400 test files and 1,860/1,860 tests in 23.09s.
 - `/forge/dashboard` remains the rollback/reference route until this checklist is completed and the user approves promotion.

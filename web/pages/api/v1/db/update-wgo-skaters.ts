@@ -81,6 +81,13 @@ import {
 } from "date-fns"; // Added differenceInDays
 import { getCurrentSeason } from "lib/NHL/server"; // Assuming this is your helper
 import {
+  createWgoDateFailure,
+  createWgoDateOutcome,
+  summarizeWgoDateOutcomes,
+  WgoDateOutcome,
+  WgoDateProcessingError,
+} from "lib/cron/wgoDateOutcome";
+import {
   WGOSummarySkaterStat,
   WGOSkatersBio,
   WGORealtimeSkaterStat,
@@ -574,7 +581,8 @@ async function fetchDataForGameType(
 
     if (!response.ok || !contentType.includes("application/json")) {
       const bodyPreview = (await response.text()).slice(0, 200);
-      throw new Error(
+      throw new WgoDateProcessingError(
+        "source_failure",
         `NHL API non-JSON response for ${label} (${response.status} ${response.statusText}). ` +
           `content-type=${contentType}. body="${bodyPreview}"`,
       );
@@ -596,13 +604,23 @@ async function fetchDataForGameType(
           message.includes(" 429 ") ||
           message.includes("429 Too Many Requests");
         if (!isRateLimit || attempt === maxRetries) {
-          throw error;
+          if (error instanceof WgoDateProcessingError) {
+            throw error;
+          }
+          throw new WgoDateProcessingError(
+            "source_failure",
+            `NHL API request failed for ${label}: ${message || String(error)}`,
+            { cause: error },
+          );
         }
         const backoffMs = 500 * Math.pow(2, attempt - 1);
         await sleep(backoffMs);
       }
     }
-    throw new Error(`NHL API retry exhausted for ${label}`);
+    throw new WgoDateProcessingError(
+      "source_failure",
+      `NHL API retry exhausted for ${label}`,
+    );
   };
   let start = 0;
   let moreDataAvailable = true;
@@ -798,9 +816,18 @@ async function processAndUpsertGameTypeData(
     timeOnIceMap: new Map(allData.timeOnIceStats.map((s) => [s.playerId, s])),
   };
 
-  const recordsToUpsert: SkaterDbRecord[] = allData.skaterStats.map((stat) =>
-    mapApiDataToDbRecord(stat, dataMaps, formattedDate, seasonId),
-  );
+  let recordsToUpsert: SkaterDbRecord[];
+  try {
+    recordsToUpsert = allData.skaterStats.map((stat) =>
+      mapApiDataToDbRecord(stat, dataMaps, formattedDate, seasonId),
+    );
+  } catch (error) {
+    throw new WgoDateProcessingError(
+      "transform_failure",
+      `Could not transform ${tableName} rows for ${formattedDate}: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
+    );
+  }
 
   if (recordsToUpsert.length > 0) {
     const CHUNK_SIZE = 500;
@@ -816,7 +843,8 @@ async function processAndUpsertGameTypeData(
           `Error upserting chunk to ${tableName} for date ${formattedDate}:`,
           error,
         );
-        throw new Error(
+        throw new WgoDateProcessingError(
+          "write_failure",
           `Supabase upsert failed for ${tableName} (chunk starting at index ${i}): ${error.message}`,
         );
       }
@@ -873,6 +901,7 @@ async function updateSkaterStats(
   totalUpdates: number;
   rowsFetched: number;
   errors: number;
+  outcome: WgoDateOutcome;
 }> {
   // Add rowsFetched and errors to return type
   // No direct console.log here, as processDate will handle the detailed logging
@@ -888,58 +917,53 @@ async function updateSkaterStats(
   let playoffUpdates = 0;
   let regularSeasonFetched = 0;
   let playoffFetched = 0;
-  let errorsEncountered = 0;
   let gameTypeMessage = "None"; // Default in case no relevant game type is found
 
-  try {
-    if (fetchRegularSeason) {
-      console.log(`  > Fetching Regular Season data...`);
-      const regularSeasonData = await fetchDataForGameType(2, date);
-      regularSeasonFetched = regularSeasonData.skaterStats.length;
-      regularSeasonUpdates = await processAndUpsertGameTypeData(
-        regularSeasonData,
-        "wgo_skater_stats",
-        date,
-        seasonId,
-      );
-      gameTypeMessage = "Regular Season";
-    }
-
-    if (fetchPlayoffs) {
-      console.log(`  > Fetching Playoff data...`);
-      const playoffData = await fetchDataForGameType(3, date);
-      playoffFetched = playoffData.skaterStats.length;
-      playoffUpdates = await processAndUpsertGameTypeData(
-        playoffData,
-        "wgo_skater_stats_playoffs",
-        date,
-        seasonId,
-      );
-      if (gameTypeMessage === "Regular Season") {
-        // Should not happen with current logic, but for robustness
-        gameTypeMessage += " & Playoffs";
-      } else {
-        gameTypeMessage = "Playoffs";
-      }
-    }
-  } catch (error: any) {
-    console.error(
-      `  > Error during data fetching/upserting for ${date}: ${error.message}`,
+  if (fetchRegularSeason) {
+    console.log(`  > Fetching Regular Season data...`);
+    const regularSeasonData = await fetchDataForGameType(2, date);
+    regularSeasonFetched = regularSeasonData.skaterStats.length;
+    regularSeasonUpdates = await processAndUpsertGameTypeData(
+      regularSeasonData,
+      "wgo_skater_stats",
+      date,
+      seasonId,
     );
-    errorsEncountered = 1; // Mark as having encountered an error for the date
-    // Re-throw if it's a critical error that should stop the overall process
-    // For now, let it be caught by the calling function's retry logic.
+    gameTypeMessage = "Regular Season";
+  }
+
+  if (fetchPlayoffs) {
+    console.log(`  > Fetching Playoff data...`);
+    const playoffData = await fetchDataForGameType(3, date);
+    playoffFetched = playoffData.skaterStats.length;
+    playoffUpdates = await processAndUpsertGameTypeData(
+      playoffData,
+      "wgo_skater_stats_playoffs",
+      date,
+      seasonId,
+    );
+    if (gameTypeMessage === "Regular Season") {
+      gameTypeMessage += " & Playoffs";
+    } else {
+      gameTypeMessage = "Playoffs";
+    }
   }
 
   const totalUpdates = regularSeasonUpdates + playoffUpdates;
   const totalFetched = regularSeasonFetched + playoffFetched;
+  const outcome = createWgoDateOutcome({
+    date,
+    totalUpdates,
+    rowsFetched: totalFetched,
+  });
 
   return {
     message: `Skater stats processed for ${date} (${gameTypeMessage}).`,
-    success: errorsEncountered === 0, // Success if no errors encountered during this date's processing
+    success: true,
     totalUpdates,
     rowsFetched: totalFetched,
-    errors: errorsEncountered,
+    errors: 0,
+    outcome,
   };
 }
 
@@ -1025,12 +1049,11 @@ async function updateAllSkatersFromMostRecentDate(
 
   let totalUpdates = 0;
   const datesProcessed: string[] = [];
-  const failedDates: string[] = [];
+  let failedOutcomes: WgoDateOutcome[] = [];
+  const skippedOutcomes: WgoDateOutcome[] = [];
   let currentDate = startDate;
 
   const MAX_RETRIES = 3;
-  const RETRY_DELAY_MS = 2000;
-
   if (isBefore(finalEndDate, startDate)) {
     console.log(
       "Database is already up to date, or target date is before start date.",
@@ -1041,6 +1064,11 @@ async function updateAllSkatersFromMostRecentDate(
       totalUpdates: 0,
       datesProcessed: [],
       failedDates: [],
+      failedDatesCount: 0,
+      failures: [],
+      skippedDates: [],
+      skippedDatesCount: 0,
+      skips: [],
     };
   }
 
@@ -1059,9 +1087,7 @@ async function updateAllSkatersFromMostRecentDate(
   ) {
     const formattedDate = formatISO(currentDate, { representation: "date" });
     let success = false;
-    let currentTotalUpdates = 0; // Track updates for the current date's attempts
-    let currentRowsFetched = 0; // Track fetched rows for current date
-    let currentErrors = 0; // Track errors for current date
+    let lastOutcome: WgoDateOutcome | null = null;
 
     const seasonInfo = await getSeasonFromDate(formattedDate);
     if (!seasonInfo) {
@@ -1074,7 +1100,13 @@ async function updateAllSkatersFromMostRecentDate(
       console.error(
         `|------------------------------------------------------------|`,
       );
-      failedDates.push(formattedDate);
+      failedOutcomes.push(
+        createWgoDateFailure(
+          formattedDate,
+          `Could not determine a season for ${formattedDate}.`,
+          "season_mapping_failure",
+        ),
+      );
       currentDate = addDays(currentDate, 1);
       daysProcessedCount++; // Increment counter even if skipped
       continue;
@@ -1099,51 +1131,55 @@ async function updateAllSkatersFromMostRecentDate(
           `${daysProcessedCount + 1}/${totalDaysToProcess}`, // Pass calculated progress
           `${progressPercent}%`, // Pass percentage
         );
-        currentTotalUpdates = result.totalUpdates;
-        currentRowsFetched = result.rowsFetched;
-        currentErrors = result.errors;
+        lastOutcome = result;
 
-        if (currentErrors === 0) {
-          // Only consider successful if no errors occurred in processDate
-          totalUpdates += currentTotalUpdates;
+        if (result.status === "processed") {
+          totalUpdates += result.totalUpdates;
           if (!datesProcessed.includes(formattedDate)) {
-            // Prevent duplicates if retried successfully
             datesProcessed.push(formattedDate);
           }
           success = true;
           break;
         }
+        if (result.status === "skipped") {
+          skippedOutcomes.push(result);
+          success = true;
+          break;
+        }
       } catch (error: any) {
-        // Error already logged by processDate, just indicate failure for retry loop
-        currentErrors = 1;
+        lastOutcome = createWgoDateFailure(formattedDate, error);
       }
     }
 
-    if (!success) {
-      // This means all attempts for this date failed or resulted in errors
-      if (!failedDates.includes(formattedDate)) {
-        // Prevent duplicates
-        failedDates.push(formattedDate);
-      }
+    if (!success && lastOutcome) {
+      failedOutcomes.push(lastOutcome);
     }
     daysProcessedCount++; // Increment counter after processing a date
     currentDate = addDays(currentDate, 1);
   }
 
-  if (failedDates.length > 0) {
-    console.log(`\n--- RETRYING ${failedDates.length} FAILED DATES ---`);
-    const retryFailedDates: string[] = [];
-    const totalRetries = failedDates.length;
+  if (failedOutcomes.length > 0) {
+    console.log(`\n--- RETRYING ${failedOutcomes.length} FAILED DATES ---`);
+    const retryFailedOutcomes: WgoDateOutcome[] = [];
+    const totalRetries = failedOutcomes.length;
     let retriesCompleted = 0;
 
-    for (const failedDate of failedDates) {
+    for (const failedOutcome of failedOutcomes) {
+      const failedDate = failedOutcome.date;
       let retrySuccess = false;
+      let lastOutcome = failedOutcome;
       const seasonInfo = await getSeasonFromDate(failedDate);
       if (!seasonInfo) {
         console.error(
           `Could not determine season for failed date ${failedDate} during retry, skipping.`,
         );
-        retryFailedDates.push(failedDate);
+        retryFailedOutcomes.push(
+          createWgoDateFailure(
+            failedDate,
+            `Could not determine a season for ${failedDate} during retry.`,
+            "season_mapping_failure",
+          ),
+        );
         retriesCompleted++;
         continue;
       }
@@ -1162,7 +1198,8 @@ async function updateAllSkatersFromMostRecentDate(
             `RETRY ${retriesCompleted + 1}/${totalRetries}`, // Updated X/Y for retries
             `${progressPercent}%`,
           );
-          if (result.errors === 0) {
+          lastOutcome = result;
+          if (result.status === "processed") {
             totalUpdates += result.totalUpdates;
             if (!datesProcessed.includes(failedDate)) {
               datesProcessed.push(failedDate);
@@ -1170,33 +1207,45 @@ async function updateAllSkatersFromMostRecentDate(
             retrySuccess = true;
             break;
           }
+          if (result.status === "skipped") {
+            skippedOutcomes.push(result);
+            retrySuccess = true;
+            break;
+          }
         } catch (error: any) {
-          // Error already logged by processDate
+          lastOutcome = createWgoDateFailure(failedDate, error);
         }
       }
 
       if (!retrySuccess) {
-        retryFailedDates.push(failedDate);
+        retryFailedOutcomes.push(lastOutcome);
       }
       retriesCompleted++;
     }
 
-    failedDates.length = 0;
-    failedDates.push(...retryFailedDates);
+    failedOutcomes = retryFailedOutcomes;
   }
 
-  if (failedDates.length > 0) {
+  if (failedOutcomes.length > 0) {
     console.error(
-      `\n--- FINAL RESULT: ${failedDates.length} dates could not be processed after all retries: ${failedDates.join(", ")} ---`,
+      `\n--- FINAL RESULT: ${failedOutcomes.length} dates could not be processed after all retries: ${failedOutcomes.map((outcome) => outcome.date).join(", ")} ---`,
     );
   }
 
+  const outcomeSummary = summarizeWgoDateOutcomes([
+    ...failedOutcomes,
+    ...skippedOutcomes,
+  ]);
+
   return {
-    message: `All skater stats updated successfully. Processed ${datesProcessed.length} distinct dates with ${totalUpdates} total updates.`,
-    success: failedDates.length === 0,
+    message:
+      failedOutcomes.length === 0
+        ? `All skater stats updated successfully. Processed ${datesProcessed.length} distinct dates with ${totalUpdates} total updates.`
+        : `Skater stats update completed with ${failedOutcomes.length} failed dates after retries.`,
+    success: failedOutcomes.length === 0,
     totalUpdates,
     datesProcessed,
-    failedDates,
+    ...outcomeSummary,
   };
 }
 
@@ -1237,8 +1286,7 @@ async function getAllSeasonsFromDB(): Promise<
 
 /**
  * Processes all data for a single date with intelligent game type fetching.
- * Throws an error on failure, which is caught by the calling function.
- * @returns The total number of player records updated for the date.
+ * Returns a typed outcome so callers retain skip and failure reasons through retries.
  */
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/v1/db/update-wgo-skaters.ts
 
@@ -1253,7 +1301,7 @@ async function processDate(
   attempt: number, // Add attempt parameter for logging
   progressXY: string = "", // New parameter for X/Y progress
   progressPercent: string = "", // New parameter for % progress
-): Promise<{ totalUpdates: number; rowsFetched: number; errors: number }> {
+): Promise<WgoDateOutcome> {
   // Return object with more details
   const { seasonId, startDate, endDate, regularSeasonEndDate } = seasonInfo;
 
@@ -1333,6 +1381,7 @@ async function processDate(
   let totalUpdates = 0;
   let rowsFetched = 0;
   let errors = 0;
+  let outcome: WgoDateOutcome;
 
   try {
     const result = await updateSkaterStats(
@@ -1345,6 +1394,7 @@ async function processDate(
     totalUpdates = result.totalUpdates;
     rowsFetched = result.rowsFetched;
     errors = result.errors;
+    outcome = result.outcome;
 
     console.log(
       `Rows Fetched:`.padEnd(LABEL_PAD) +
@@ -1362,6 +1412,7 @@ async function processDate(
       `Error during processDate for ${formattedDate}: ${error.message}`,
     );
     errors = 1; // Mark as error
+    outcome = createWgoDateFailure(formattedDate, error);
     console.log(
       `Rows Fetched:`.padEnd(LABEL_PAD) +
         `${String(rowsFetched)}`.padStart(VALUE_PAD),
@@ -1373,7 +1424,6 @@ async function processDate(
     console.log(
       `Errors:`.padEnd(LABEL_PAD) + `${String(errors)}`.padStart(VALUE_PAD),
     );
-    throw error; // Re-throw to be caught by the retry logic in calling function
   } finally {
     console.log(``); // Blank line for spacing
     console.log(
@@ -1386,27 +1436,32 @@ async function processDate(
     console.log(`\n`); // New line to differentiate dates
   }
 
-  return { totalUpdates, rowsFetched, errors };
+  return outcome!;
 }
 // Affected portion: updateAllStatsForAllSeasons function
 async function updateAllStatsForAllSeasons() {
   const allSeasons = await getAllSeasonsFromDB();
   let totalUpdates = 0;
-  const failedDates: { date: string; seasonId: number }[] = [];
+  let failedOutcomes: Array<WgoDateOutcome & { seasonId: number }> = [];
+  const skippedOutcomes: WgoDateOutcome[] = [];
 
   if (allSeasons.length === 0) {
     return {
       message: "No seasons found in the database to refresh.",
       success: true,
       totalUpdates: 0,
+      failedDates: [],
+      failedDatesCount: 0,
+      failures: [],
+      skippedDates: [],
+      skippedDatesCount: 0,
+      skips: [],
     };
   }
 
   console.log(`Starting full refresh for ${allSeasons.length} seasons.`);
 
   const MAX_RETRIES = 3;
-  const RETRY_DELAY_MS = 2000;
-
   let totalDaysAcrossAllSeasons = 0;
   for (const season of allSeasons) {
     totalDaysAcrossAllSeasons +=
@@ -1421,8 +1476,6 @@ async function updateAllStatsForAllSeasons() {
     );
     let currentDate = parseISO(season.startDate);
     const endDate = parseISO(season.endDate);
-    const seasonDaysToProcess = differenceInDays(endDate, currentDate) + 1;
-    let seasonDaysProcessedCount = 0;
 
     while (
       isBefore(currentDate, endDate) ||
@@ -1430,7 +1483,7 @@ async function updateAllStatsForAllSeasons() {
     ) {
       const formattedDate = formatISO(currentDate, { representation: "date" });
       let success = false;
-      let currentErrors = 0;
+      let lastOutcome: WgoDateOutcome | null = null;
 
       // Use the seasonInfo directly as it's iterated per season
       const seasonInfoForDate = {
@@ -1459,44 +1512,58 @@ async function updateAllStatsForAllSeasons() {
             `${globalDaysProcessedCount + 1}/${totalDaysAcrossAllSeasons}`, // X/Y for global progress
             `${globalProgressPercent}%`, // % for global progress
           );
-          currentErrors = result.errors;
-          if (currentErrors === 0) {
+          lastOutcome = result;
+          if (result.status === "processed") {
             totalUpdates += result.totalUpdates;
             success = true;
             break;
           }
+          if (result.status === "skipped") {
+            skippedOutcomes.push(result);
+            success = true;
+            break;
+          }
         } catch (error: any) {
-          currentErrors = 1; // Mark as error
+          lastOutcome = createWgoDateFailure(formattedDate, error);
         }
       }
 
-      if (!success) {
-        failedDates.push({ date: formattedDate, seasonId: season.seasonId });
+      if (!success && lastOutcome) {
+        failedOutcomes.push({ ...lastOutcome, seasonId: season.seasonId });
       }
       globalDaysProcessedCount++;
-      seasonDaysProcessedCount++;
       currentDate = addDays(currentDate, 1);
     }
   }
 
-  if (failedDates.length > 0) {
-    console.log(`\n--- RETRYING ${failedDates.length} FAILED DATES ---`);
-    const retryFailedDates: { date: string; seasonId: number }[] = [];
-    const totalRetries = failedDates.length;
+  if (failedOutcomes.length > 0) {
+    console.log(`\n--- RETRYING ${failedOutcomes.length} FAILED DATES ---`);
+    const retryFailedOutcomes: Array<WgoDateOutcome & { seasonId: number }> =
+      [];
+    const totalRetries = failedOutcomes.length;
     let retriesCompleted = 0;
 
-    for (const { date: failedDate, seasonId } of failedDates) {
+    for (const failedOutcome of failedOutcomes) {
+      const { date: failedDate, seasonId } = failedOutcome;
       const season = allSeasons.find((s) => s.seasonId === seasonId);
       if (!season) {
         console.error(
           `Season ${seasonId} not found for failed date ${failedDate} during retry, skipping.`,
         );
-        retryFailedDates.push({ date: failedDate, seasonId });
+        retryFailedOutcomes.push({
+          ...createWgoDateFailure(
+            failedDate,
+            `Season ${seasonId} was not found during retry.`,
+            "season_mapping_failure",
+          ),
+          seasonId,
+        });
         retriesCompleted++;
         continue;
       }
 
       let retrySuccess = false;
+      let lastOutcome: WgoDateOutcome = failedOutcome;
       const seasonInfoForFailedDate = {
         seasonId: season.seasonId,
         startDate: season.startDate,
@@ -1518,39 +1585,48 @@ async function updateAllStatsForAllSeasons() {
             `RETRY ${retriesCompleted + 1}/${totalRetries}`, // Updated X/Y for retries
             `${retryProgressPercent}%`,
           );
-          if (result.errors === 0) {
+          lastOutcome = result;
+          if (result.status === "processed") {
             totalUpdates += result.totalUpdates;
             retrySuccess = true;
             break;
           }
+          if (result.status === "skipped") {
+            skippedOutcomes.push(result);
+            retrySuccess = true;
+            break;
+          }
         } catch (error: any) {
-          // Error already logged by processDate
+          lastOutcome = createWgoDateFailure(failedDate, error);
         }
       }
 
       if (!retrySuccess) {
-        retryFailedDates.push({ date: failedDate, seasonId });
+        retryFailedOutcomes.push({ ...lastOutcome, seasonId });
       }
       retriesCompleted++;
     }
 
-    failedDates.length = 0;
-    failedDates.push(...retryFailedDates);
+    failedOutcomes = retryFailedOutcomes;
   }
 
-  if (failedDates.length > 0) {
+  if (failedOutcomes.length > 0) {
     console.error(
-      `\n--- FINAL RESULT: ${failedDates.length} dates could not be processed after all retries: ${failedDates.map((f) => f.date).join(", ")} ---\n`,
+      `\n--- FINAL RESULT: ${failedOutcomes.length} dates could not be processed after all retries: ${failedOutcomes.map((outcome) => outcome.date).join(", ")} ---\n`,
     );
   }
 
   const message = `All-time refresh complete. Processed ${allSeasons.length} seasons with a total of ${totalUpdates} updates.`;
   console.log(message);
+  const outcomeSummary = summarizeWgoDateOutcomes([
+    ...failedOutcomes,
+    ...skippedOutcomes,
+  ]);
   return {
     message,
-    success: failedDates.length === 0,
+    success: failedOutcomes.length === 0,
     totalUpdates,
-    failedDates: failedDates.map((f) => f.date),
+    ...outcomeSummary,
   };
 }
 
@@ -1615,9 +1691,17 @@ export default async function handler(
       console.log("Action 'all_seasons_full_refresh' triggered.");
       result = await updateAllStatsForAllSeasons();
       totalUpdates = result.totalUpdates;
-      details = { message: result.message, failedDates: result.failedDates };
-      responseBody = result;
-      res.status(200).json(responseBody);
+      status = result.success ? "success" : "failure";
+      details = {
+        message: result.message,
+        failedDates: result.failedDates,
+        failedDatesCount: result.failedDatesCount,
+        failures: result.failures,
+        skippedDatesCount: result.skippedDatesCount,
+        skips: result.skips,
+      };
+      responseBody = { ...result, failedRows: 0 };
+      res.status(result.success ? 200 : 207).json(responseBody);
     } else if (action === "all") {
       console.log(
         `Action 'all' triggered. Full refresh: ${fullRefresh}, Start date: ${startDate}`,
@@ -1627,15 +1711,26 @@ export default async function handler(
         startDate,
       });
       totalUpdates = result.totalUpdates;
+      status = result.success ? "success" : "failure";
       details = {
         message: result.message,
         datesProcessed: result.datesProcessed,
         failedDates: result.failedDates,
+        failedDatesCount: result.failedDatesCount,
+        failures: result.failures,
+        skippedDates: result.skippedDates,
+        skippedDatesCount: result.skippedDatesCount,
+        skips: result.skips,
         fullRefresh,
         startDate,
       };
-      responseBody = { ...result, fullRefresh, startDate };
-      res.status(200).json(responseBody);
+      responseBody = {
+        ...result,
+        failedRows: 0,
+        fullRefresh,
+        startDate,
+      };
+      res.status(result.success ? 200 : 207).json(responseBody);
     } else if (date && typeof date === "string") {
       console.log(`Date parameter found: ${date}`);
       const seasonInfo = await getSeasonFromDate(date);
@@ -1681,7 +1776,7 @@ export default async function handler(
   } catch (e: any) {
     console.error("Handler error:", e);
     status = "failure";
-    details = { error: e.message, stack: e.stack };
+    details = { error: e.message };
     responseBody = details;
     res.status(500).json(responseBody);
   } finally {
@@ -1696,6 +1791,8 @@ export default async function handler(
           url: req.url ?? null,
           statusCode: res.statusCode,
           durationMs: Date.now() - startTime,
+          rowsUpserted: totalUpdates,
+          failedRows: responseBody?.failedRows ?? 0,
           error:
             status === "failure"
               ? (details?.error ?? details?.message ?? "Unknown error")

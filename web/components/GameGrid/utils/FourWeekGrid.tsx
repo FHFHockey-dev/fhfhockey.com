@@ -3,9 +3,16 @@
 import React, { useMemo, useState, useEffect } from "react"; // Added useEffect
 import styles from "./FourWeekGrid.module.scss";
 import Image from "next/image"; // Use next/image instead of legacy
+import Link from "next/link";
 import { TeamDataWithTotals, TeamWithScore } from "lib/NHL/types"; // Consolidate type imports
 import { useTeamsMap } from "hooks/useTeams";
 import clsx from "clsx";
+import {
+  buildFourWeekDetailAverages,
+  buildFourWeekDetailCells,
+  FourWeekGridView,
+  getFourWeekNumbers,
+} from "./fourWeekGridViews";
 
 // --- useIsMobile hook ---
 function useIsMobile() {
@@ -45,12 +52,14 @@ type TeamNumeric = { teamId: number; value: number };
 
 function toRankMaps(entries: TeamNumeric[], bestDirection: "asc" | "desc") {
   const sorted = [...entries].sort((a, b) =>
-    bestDirection === "asc" ? a.value - b.value : b.value - a.value
+    bestDirection === "asc" ? a.value - b.value : b.value - a.value,
   );
   const best = new Map<number, number>();
   const worst = new Map<number, number>();
 
-  sorted.slice(0, 10).forEach((entry, index) => best.set(entry.teamId, index + 1));
+  sorted
+    .slice(0, 10)
+    .forEach((entry, index) => best.set(entry.teamId, index + 1));
   sorted
     .slice(Math.max(sorted.length - 10, 0))
     .forEach((entry, index) => worst.set(entry.teamId, index + 1));
@@ -62,6 +71,7 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
   const teamsMap = useTeamsMap();
   const isMobile = useIsMobile();
   const [isMobileMinimized, setIsMobileMinimized] = useState(false);
+  const [activeView, setActiveView] = useState<FourWeekGridView>("summary");
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null); // Default sort removed, will apply in useMemo
 
   // --- Handlers ---
@@ -97,30 +107,30 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
     const totalTeams = teamDataArray.length;
     const totalGP = teamDataArray.reduce(
       (acc, team) => acc + (team.totals?.gamesPlayed ?? 0),
-      0
+      0,
     );
     const totalOFF = teamDataArray.reduce(
       (acc, team) => acc + (team.totals?.offNights ?? 0),
-      0
+      0,
     );
     const totalOPP = teamDataArray.reduce(
       (acc, team) => acc + (team.avgOpponentPointPct ?? 0),
-      0
+      0,
     );
     return {
       gamesPlayed: totalTeams > 0 ? totalGP / totalTeams : 0,
       offNights: totalTeams > 0 ? totalOFF / totalTeams : 0,
-      avgOpponentPointPct: totalTeams > 0 ? totalOPP / totalTeams : 0
+      avgOpponentPointPct: totalTeams > 0 ? totalOPP / totalTeams : 0,
     };
   }, [teamDataArray]);
 
   const roundedAvgGP = useMemo(
     () => Math.round(averages.gamesPlayed),
-    [averages.gamesPlayed]
+    [averages.gamesPlayed],
   );
   const roundedAvgOFF = useMemo(
     () => Math.round(averages.offNights),
-    [averages.offNights]
+    [averages.offNights],
   );
 
   const teamsWithScore: TeamWithScore[] = useMemo(() => {
@@ -203,7 +213,8 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
       const opp = t.avgOpponentPointPct;
       const score = t.score;
 
-      if (typeof gp === "number") gpEntries.push({ teamId: t.teamId, value: gp });
+      if (typeof gp === "number")
+        gpEntries.push({ teamId: t.teamId, value: gp });
       if (typeof off === "number")
         offEntries.push({ teamId: t.teamId, value: off });
       if (typeof opp === "number")
@@ -216,13 +227,22 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
       gamesPlayed: toRankMaps(gpEntries, "desc"),
       offNights: toRankMaps(offEntries, "desc"),
       avgOpponentPointPct: toRankMaps(oppEntries, "asc"),
-      score: toRankMaps(scoreEntries, "desc")
+      score: toRankMaps(scoreEntries, "desc"),
     };
   }, [teamsWithScore]);
 
+  const weekNumbers = useMemo(
+    () => getFourWeekNumbers(teamDataArray ?? []),
+    [teamDataArray],
+  );
+  const weeklyAverages = useMemo(
+    () => buildFourWeekDetailAverages(teamDataArray ?? [], weekNumbers),
+    [teamDataArray, weekNumbers],
+  );
+
   const getRankClass = (
     key: keyof typeof rankMaps,
-    teamId: number
+    teamId: number,
   ): string | undefined => {
     const rank = rankMaps[key].best.get(teamId);
     if (rank != null) return (styles as any)[`rankGood${rank}`];
@@ -240,7 +260,7 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
     <div
       className={clsx(
         styles.container,
-        isMobile && isMobileMinimized && styles.minimized
+        isMobile && isMobileMinimized && styles.minimized,
       )}
     >
       {/* Clickable Title Header */}
@@ -261,7 +281,7 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
           <span
             className={clsx(
               styles.minimizeToggleIcon,
-              isMobileMinimized && styles.minimized
+              isMobileMinimized && styles.minimized,
             )}
             aria-hidden="true"
           >
@@ -278,151 +298,252 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
         ) : !hasData ? (
           <div className={styles.message}>No schedule data available.</div>
         ) : (
-          // REMOVED Scroll Container Div - Table directly inside wrapper
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                {/* Team Header - Make it sortable too */}
-                <th>
-                  <button
-                    type="button"
-                    onClick={() => handleSort("teamName")}
-                    className={styles.sortButton}
-                    aria-label={`Sort by Team Name ${
-                      sortConfig?.key === "teamName" &&
-                      sortConfig.direction === "ascending"
-                        ? "descending"
-                        : "ascending"
-                    }`}
-                  >
-                    Team{" "}
-                    {sortConfig?.key === "teamName" &&
-                      (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
-                  </button>
-                </th>
-                <th>
-                  <button
-                    type="button"
-                    onClick={() => handleSort("gamesPlayed")}
-                    className={styles.sortButton}
-                    aria-label={`Sort by Games Played ${
-                      sortConfig?.key === "gamesPlayed" &&
-                      sortConfig.direction === "descending"
-                        ? "ascending"
-                        : "descending"
-                    }`}
-                  >
-                    GP{" "}
-                    {sortConfig?.key === "gamesPlayed" &&
-                      (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
-                  </button>
-                </th>
-                <th>
-                  <button
-                    type="button"
-                    onClick={() => handleSort("offNights")}
-                    className={styles.sortButton}
-                    aria-label={`Sort by OFF ${
-                      sortConfig?.key === "offNights" &&
-                      sortConfig.direction === "descending"
-                        ? "ascending"
-                        : "descending"
-                    }`}
-                  >
-                    OFF{" "}
-                    {sortConfig?.key === "offNights" &&
-                      (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
-                  </button>
-                </th>
-                <th>
-                  <button
-                    type="button"
-                    onClick={() => handleSort("avgOpponentPointPct")}
-                    className={styles.sortButton}
-                    aria-label={`Sort by Opponent Pct ${
-                      sortConfig?.key === "avgOpponentPointPct" &&
-                      sortConfig.direction === "descending"
-                        ? "ascending"
-                        : "descending"
-                    }`}
-                  >
-                    OPP (%){" "}
-                    {sortConfig?.key === "avgOpponentPointPct" &&
-                      (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
-                  </button>
-                </th>
-                <th>
-                  <button
-                    type="button"
-                    onClick={() => handleSort("score")}
-                    className={styles.sortButton}
-                    aria-label={`Sort by 4 WK Score ${
-                      sortConfig?.key === "score" &&
-                      sortConfig.direction === "descending"
-                        ? "ascending"
-                        : "descending"
-                    }`}
-                  >
-                    4WK Score{" "}
-                    {sortConfig?.key === "score" &&
-                      (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
-                  </button>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* AVG Row */}
-              <tr className={styles.averagesRow}>
-                <td>AVG:</td>
-                <td>{averages.gamesPlayed.toFixed(2)}</td>
-                <td>{averages.offNights.toFixed(2)}</td>
-                <td>{(averages.avgOpponentPointPct * 100).toFixed(1)}%</td>
-                <td>0.00</td> {/* AVG score is always 0 by definition */}
-              </tr>
-
-              {/* Data Rows */}
-              {sortedTeams.map((team) => {
-                const teamInfo = teamsMap[team.teamId];
-                if (!teamInfo) return null; // Skip if no team info found
-
-                const gp = team.totals?.gamesPlayed ?? "-"; // Use '-' if null
-                const off = team.totals?.offNights ?? "-";
-                const oppPct = team.avgOpponentPointPct;
-                const score = team.score;
-
-                const gpClass = getRankClass("gamesPlayed", team.teamId);
-                const offClass = getRankClass("offNights", team.teamId);
-                const oppClass = getRankClass("avgOpponentPointPct", team.teamId);
-                const scoreClass = getRankClass("score", team.teamId);
-
-                return (
-                  <tr key={team.teamId}>
-                    <td className={styles.teamCell}>
-                      <div className={styles.teamInfo}>
-                        <Image
-                          src={teamInfo.logo}
-                          alt={`${teamInfo.name} logo`}
-                          width={24}
-                          height={24}
-                          className={styles.teamLogo}
-                        />
-                        {/* Optional: Add team name/abbr here on wider screens */}
-                        {/* <span className={styles.teamNameText}>{teamInfo.abbreviation}</span> */}
-                      </div>
-                    </td>
-                    <td className={gpClass}>{gp}</td>
-                    <td className={offClass}>{off}</td>
-                    <td className={oppClass}>
-                      {typeof oppPct === "number"
-                        ? `${(oppPct * 100).toFixed(1)}%`
-                        : "-"}
-                    </td>
-                    <td className={scoreClass}>{score.toFixed(2)}</td>
+          <>
+            <div
+              className={styles.viewTabs}
+              role="tablist"
+              aria-label="Four-week forecast views"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeView === "summary"}
+                className={clsx(
+                  styles.viewTab,
+                  activeView === "summary" && styles.viewTabActive,
+                )}
+                onClick={() => setActiveView("summary")}
+              >
+                4W Summary
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeView === "weekly"}
+                className={clsx(
+                  styles.viewTab,
+                  activeView === "weekly" && styles.viewTabActive,
+                )}
+                onClick={() => setActiveView("weekly")}
+              >
+                Weekly Detail
+              </button>
+            </div>
+            {activeView === "summary" ? (
+              // REMOVED Scroll Container Div - Table directly inside wrapper
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    {/* Team Header - Make it sortable too */}
+                    <th>
+                      <button
+                        type="button"
+                        onClick={() => handleSort("teamName")}
+                        className={styles.sortButton}
+                        aria-label={`Sort by Team Name ${
+                          sortConfig?.key === "teamName" &&
+                          sortConfig.direction === "ascending"
+                            ? "descending"
+                            : "ascending"
+                        }`}
+                      >
+                        Team{" "}
+                        {sortConfig?.key === "teamName" &&
+                          (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
+                      </button>
+                    </th>
+                    <th>
+                      <button
+                        type="button"
+                        onClick={() => handleSort("gamesPlayed")}
+                        className={styles.sortButton}
+                        aria-label={`Sort by Games Played ${
+                          sortConfig?.key === "gamesPlayed" &&
+                          sortConfig.direction === "descending"
+                            ? "ascending"
+                            : "descending"
+                        }`}
+                      >
+                        GP{" "}
+                        {sortConfig?.key === "gamesPlayed" &&
+                          (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
+                      </button>
+                    </th>
+                    <th>
+                      <button
+                        type="button"
+                        onClick={() => handleSort("offNights")}
+                        className={styles.sortButton}
+                        aria-label={`Sort by OFF ${
+                          sortConfig?.key === "offNights" &&
+                          sortConfig.direction === "descending"
+                            ? "ascending"
+                            : "descending"
+                        }`}
+                      >
+                        OFF{" "}
+                        {sortConfig?.key === "offNights" &&
+                          (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
+                      </button>
+                    </th>
+                    <th>
+                      <button
+                        type="button"
+                        onClick={() => handleSort("avgOpponentPointPct")}
+                        className={styles.sortButton}
+                        aria-label={`Sort by Opponent Pct ${
+                          sortConfig?.key === "avgOpponentPointPct" &&
+                          sortConfig.direction === "descending"
+                            ? "ascending"
+                            : "descending"
+                        }`}
+                      >
+                        OPP (%){" "}
+                        {sortConfig?.key === "avgOpponentPointPct" &&
+                          (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
+                      </button>
+                    </th>
+                    <th>
+                      <button
+                        type="button"
+                        onClick={() => handleSort("score")}
+                        className={styles.sortButton}
+                        aria-label={`Sort by 4 WK Score ${
+                          sortConfig?.key === "score" &&
+                          sortConfig.direction === "descending"
+                            ? "ascending"
+                            : "descending"
+                        }`}
+                      >
+                        4WK Score{" "}
+                        {sortConfig?.key === "score" &&
+                          (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
+                      </button>
+                    </th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {/* AVG Row */}
+                  <tr className={styles.averagesRow}>
+                    <td>AVG:</td>
+                    <td>{averages.gamesPlayed.toFixed(2)}</td>
+                    <td>{averages.offNights.toFixed(2)}</td>
+                    <td>{(averages.avgOpponentPointPct * 100).toFixed(1)}%</td>
+                    <td>0.00</td>
+                  </tr>
+
+                  {/* Data Rows */}
+                  {sortedTeams.map((team) => {
+                    const teamInfo = teamsMap[team.teamId];
+                    if (!teamInfo) return null; // Skip if no team info found
+
+                    const gp = team.totals?.gamesPlayed ?? "-"; // Use '-' if null
+                    const off = team.totals?.offNights ?? "-";
+                    const oppPct = team.avgOpponentPointPct;
+                    const score = team.score;
+
+                    const gpClass = getRankClass("gamesPlayed", team.teamId);
+                    const offClass = getRankClass("offNights", team.teamId);
+                    const oppClass = getRankClass(
+                      "avgOpponentPointPct",
+                      team.teamId,
+                    );
+                    const scoreClass = getRankClass("score", team.teamId);
+
+                    return (
+                      <tr key={team.teamId}>
+                        <td className={styles.teamCell}>
+                          <Link
+                            href={`/stats/team/${teamInfo.abbreviation}`}
+                            aria-label={`Open ${teamInfo.name} Team HQ`}
+                            className={styles.teamInfo}
+                          >
+                            <Image
+                              src={teamInfo.logo}
+                              alt={`${teamInfo.name} logo`}
+                              width={24}
+                              height={24}
+                              className={styles.teamLogo}
+                            />
+                            {/* Optional: Add team name/abbr here on wider screens */}
+                            {/* <span className={styles.teamNameText}>{teamInfo.abbreviation}</span> */}
+                          </Link>
+                        </td>
+                        <td className={gpClass}>{gp}</td>
+                        <td className={offClass}>{off}</td>
+                        <td className={oppClass}>
+                          {typeof oppPct === "number"
+                            ? `${(oppPct * 100).toFixed(1)}%`
+                            : "-"}
+                        </td>
+                        <td className={scoreClass}>{score.toFixed(2)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              <table className={clsx(styles.table, styles.weeklyTable)}>
+                <thead>
+                  <tr>
+                    <th>Team</th>
+                    {weekNumbers.map((weekNumber) => (
+                      <th key={weekNumber}>W{weekNumber}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className={styles.averagesRow}>
+                    <td>AVG:</td>
+                    {weeklyAverages.map((week) => (
+                      <td key={week.weekNumber}>
+                        {week.gamesPlayed.toFixed(1)}G /{" "}
+                        {week.offNights.toFixed(1)}O
+                      </td>
+                    ))}
+                  </tr>
+                  {sortedTeams.map((team) => {
+                    const teamInfo = teamsMap[team.teamId];
+                    if (!teamInfo) return null;
+
+                    return (
+                      <tr key={team.teamId}>
+                        <td className={styles.teamCell}>
+                          <Link
+                            href={`/stats/team/${teamInfo.abbreviation}`}
+                            aria-label={`Open ${teamInfo.name} Team HQ`}
+                            className={styles.teamInfo}
+                          >
+                            <Image
+                              src={teamInfo.logo}
+                              alt={`${teamInfo.name} logo`}
+                              width={24}
+                              height={24}
+                              className={styles.teamLogo}
+                            />
+                          </Link>
+                        </td>
+                        {buildFourWeekDetailCells(team, weekNumbers).map(
+                          (week) => (
+                            <td key={week.weekNumber}>
+                              <strong>
+                                {week.gamesPlayed}G / {week.offNights}O
+                              </strong>
+                              <span className={styles.opponentList}>
+                                {week.opponents.length
+                                  ? week.opponents.join(" · ")
+                                  : "No games"}
+                              </span>
+                            </td>
+                          ),
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </>
         )}
       </div>
     </div>

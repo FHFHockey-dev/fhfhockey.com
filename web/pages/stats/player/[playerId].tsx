@@ -12,6 +12,10 @@ import { PlayerPerformanceHeatmap } from "components/PlayerStats/PlayerPerforman
 import { PlayerRadarChart } from "components/PlayerStats/PlayerRadarChart";
 import { PlayerContextualStats } from "components/PlayerStats/PlayerContextualStats";
 import { PlayerAdvancedStats } from "components/PlayerStats/PlayerAdvancedStats";
+import {
+  PlayerLineupDeploymentGrid,
+  PlayerLineupDeploymentTally
+} from "components/PlayerStats/PlayerLineupDeploymentGrid";
 import styles from "components/PlayerStats/PlayerStats.module.scss";
 
 // Import types from the shared types file
@@ -33,6 +37,7 @@ import {
   formatDate
 } from "utils/stats/formatters";
 import { fetchAllGameLogRows } from "utils/stats/nhlStatsFetch";
+import { getTeamAbbreviationById, getTeamInfoById } from "lib/teamsInfo";
 
 interface PlayerStatsPageProps {
   player: PlayerInfo | null;
@@ -49,6 +54,7 @@ interface PlayerStatsPageProps {
   mostRecentSeason?: string | number | null;
   usedGameLogFallback?: boolean;
   missedGames?: MissedGame[];
+  lineupDeploymentTallies?: PlayerLineupDeploymentTally[];
 }
 
 // Simple mock for getCurrentSeason - replace with actual implementation
@@ -77,7 +83,8 @@ export default function PlayerStatsPage({
   availableSeasonsFormatted, // Add this prop
   mostRecentSeason,
   usedGameLogFallback = false,
-  missedGames = []
+  missedGames = [],
+  lineupDeploymentTallies = []
 }: PlayerStatsPageProps) {
   const router = useRouter();
   const { playerId, season } = router.query;
@@ -94,6 +101,14 @@ export default function PlayerStatsPage({
   const [selectedStats, setSelectedStats] = useState<string[]>([]);
   const [showPlayoffData, setShowPlayoffData] = useState<boolean>(false);
   const [showRollingAverage, setShowRollingAverage] = useState<boolean>(false);
+  const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "FHFHockey";
+  const teamInfo = player?.team_id ? getTeamInfoById(player.team_id) : null;
+  const teamAbbreviation = player?.team_id
+    ? getTeamAbbreviationById(player.team_id)
+    : null;
+  const teamLabel = teamInfo
+    ? `${teamInfo.name}${teamAbbreviation ? ` (${teamAbbreviation})` : ""}`
+    : teamAbbreviation;
 
   // Get position-specific stat configuration
   const positionConfig = useMemo(() => {
@@ -169,7 +184,7 @@ export default function PlayerStatsPage({
   return (
     <>
       <NextSeo
-        title={`${player.fullName} Stats - ${process.env.NEXT_PUBLIC_SITE_NAME}`}
+        title={`${player.fullName} Stats - ${siteName}`}
         description={`Detailed hockey statistics for ${player.fullName}`}
       />
 
@@ -203,9 +218,9 @@ export default function PlayerStatsPage({
             <h1 className={styles.playerName}>{player.fullName}</h1>
             <div className={styles.playerDetails}>
               #{player.sweater_number || "-"} | {player.position}
-              {player.team_id && ` | Team ID: ${player.team_id}`}
+              {teamLabel && ` | ${teamLabel}`}
               <br />
-              {player.birthCity && ` | ${player.birthCity}`}
+              {player.birthCity && `${player.birthCity}`}
               {player.birthCountry && `, ${player.birthCountry}`}
               <br />
               {player.heightInCentimeters && (
@@ -352,6 +367,11 @@ export default function PlayerStatsPage({
                       missedGames={missedGames}
                     />
                   </div>
+                  {!isGoalie && lineupDeploymentTallies.length > 0 && (
+                    <PlayerLineupDeploymentGrid
+                      rows={lineupDeploymentTallies}
+                    />
+                  )}
                 </div>
                 <div className={styles.rightColumn}>
                   <div className={styles.calendarSection}>
@@ -1449,6 +1469,29 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     player.team_id ?? undefined
   );
 
+  let lineupDeploymentTallies: PlayerLineupDeploymentTally[] = [];
+  if (!isGoalie && selectedSeason) {
+    const { data: deploymentRows, error: deploymentError } = await (supabase as any)
+      .from("player_lineup_deployment_tallies")
+      .select(
+        "deployment_group,deployment_code,deployment_label,games,total_games,share"
+      )
+      .eq("player_id", playerIdNum)
+      .eq("season_id", selectedSeason)
+      .eq("game_type", 2)
+      .order("deployment_group", { ascending: true })
+      .order("deployment_code", { ascending: true });
+
+    if (deploymentError) {
+      console.warn(
+        "[SSR] Error fetching lineup deployment tallies:",
+        deploymentError.message
+      );
+    } else {
+      lineupDeploymentTallies = (deploymentRows ?? []) as PlayerLineupDeploymentTally[];
+    }
+  }
+
   console.log(`[SSR] Final missed games data:`, {
     count: missedGamesData.length,
     games: missedGamesData
@@ -1485,7 +1528,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         ? seasonTotals.map((s) => (s as GoalieSeasonTotals).season_id)
         : seasonTotals.map((s) => (s as SkaterSeasonTotals).season_id),
       availableSeasonsFormatted: availableSeasons, // Add formatted seasons for the heatmap
-      missedGames: missedGamesData || []
+      missedGames: missedGamesData || [],
+      lineupDeploymentTallies
     }
   };
 }

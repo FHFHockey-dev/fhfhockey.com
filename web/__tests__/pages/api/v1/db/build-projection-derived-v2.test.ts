@@ -137,4 +137,38 @@ describe("/api/v1/db/build-projection-derived-v2", () => {
 
     Date.now = realDateNow;
   });
+
+  it("reports stage failures separately from failed database rows", async () => {
+    goalieBuilderMock.mockRejectedValueOnce(new Error("goalie source unavailable"));
+    const req: any = {
+      method: "POST",
+      query: {
+        startDate: "2026-03-18",
+        endDate: "2026-03-18"
+      },
+      body: {}
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(207);
+    expect(res.body).toMatchObject({
+      success: false,
+      failedRows: 0,
+      failedStages: 1,
+      failures: [
+        {
+          date: "2026-03-18",
+          stage: "goalie",
+          error: "goalie source unavailable"
+        }
+      ],
+      observability: {
+        dataQualityWarnings: expect.arrayContaining([
+          expect.objectContaining({ code: "goalie_derived_failed" })
+        ])
+      }
+    });
+  });
 });

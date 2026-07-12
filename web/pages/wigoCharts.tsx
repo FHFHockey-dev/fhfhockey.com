@@ -7,10 +7,12 @@ import {
   WigoDashboardHeader,
   WigoOverviewSection,
   WigoPercentilesSection,
-  WigoTrendsSection
+  WigoTrendsSection,
 } from "components/WiGO/WigoDashboardSections";
 import useWigoPlayerDashboard from "hooks/useWigoPlayerDashboard";
 import { computeDiffColumn } from "components/WiGO/tableUtils";
+import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
+import { getWigoSurfaceLinks } from "lib/navigation/siteSurfaceLinks";
 
 const WigoCharts: React.FC = () => {
   const [leftTimeframe, setLeftTimeframe] =
@@ -31,14 +33,14 @@ const WigoCharts: React.FC = () => {
     isLoadingAggData,
     aggDataError,
     handlePlayerSelect,
-    updateUrlWith
+    updateUrlWith,
   } = useWigoPlayerDashboard();
   type TabKey = "overview" | "trends" | "percentiles" | "comparison";
   const validTabs: TabKey[] = [
     "overview",
     "trends",
     "percentiles",
-    "comparison"
+    "comparison",
   ];
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
 
@@ -71,6 +73,10 @@ const WigoCharts: React.FC = () => {
   const mobileVisibleColumns = useMemo(() => {
     return [leftTimeframe, rightTimeframe] as Array<keyof TableAggregateData>;
   }, [leftTimeframe, rightTimeframe]);
+  const workflowLinks = useMemo(
+    () => getWigoSurfaceLinks(teamAbbreviation),
+    [teamAbbreviation],
+  );
 
   const renderTabs = () => (
     <div className={styles.mobileTabsBar}>
@@ -103,7 +109,7 @@ const WigoCharts: React.FC = () => {
               "--secondary-color": teamColors.secondaryColor,
               "--accent-color": teamColors.accentColor,
               "--alt-color": teamColors.altColor,
-              "--jersey-color": teamColors.jerseyColor
+              "--jersey-color": teamColors.jerseyColor,
             } as React.CSSProperties
           }
         >
@@ -159,7 +165,7 @@ const WigoCharts: React.FC = () => {
               "--secondary-color": teamColors.secondaryColor,
               "--accent-color": teamColors.accentColor,
               "--alt-color": teamColors.altColor,
-              "--jersey-color": teamColors.jerseyColor
+              "--jersey-color": teamColors.jerseyColor,
             } as React.CSSProperties
           }
         >
@@ -214,6 +220,12 @@ const WigoCharts: React.FC = () => {
             )}
           </div>
         </div>
+        <SurfaceWorkflowLinks
+          eyebrow="Next decision"
+          title="Put the explanation in context"
+          description="Move from player and team drivers into recent form, deployment, schedule, and slate planning."
+          links={workflowLinks}
+        />
       </div>
     </div>
   );

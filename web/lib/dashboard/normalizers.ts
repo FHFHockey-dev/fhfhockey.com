@@ -216,6 +216,7 @@ export type NormalizedCtpiTeamRow = {
 
 export type NormalizedCtpiResponse = {
   generatedAt: string | null;
+  dateUsed: string | null;
   teams: NormalizedCtpiTeamRow[];
 };
 
@@ -248,6 +249,10 @@ export const normalizeCtpiResponse = (payload: unknown): NormalizedCtpiResponse 
 
   return {
     generatedAt: toStringOrNull(root.generatedAt),
+    dateUsed:
+      toStringOrNull(root.dateUsed) ??
+      toStringOrNull(root.generatedAt)?.slice(0, 10) ??
+      null,
     teams
   };
 };

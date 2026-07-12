@@ -1,5 +1,7 @@
 # PRD: Cron, NST, and Audit Remediation
 
+> **Shared pair mapping:** This PRD governs both `tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md` and the active email-derived remediation list `tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md`. The two lists must be reconciled by owning route/failure rather than executed as duplicate fixes.
+
 ## Introduction/Overview
 
 The cron health emails from March 29, 2026 and March 31, 2026 show a mix of real job failures, missing audit observations, and likely misclassified audit failures. The current cron-report surfaces in `[cron-report.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/cron-report.ts)`, `[CronAuditEmail.tsx](/Users/tim/Code/fhfhockey.com/web/components/CronReportEmail/CronAuditEmail.tsx)`, and `[CronReportEmail.tsx](/Users/tim/Code/fhfhockey.com/web/components/CronReportEmail/CronReportEmail.tsx)` depend on consistent `cron_job_audit` rows and on stable upstream integrations.

@@ -1,5 +1,7 @@
 # PRD: sKO Charts — Player Evaluation and Prediction
 
+> **Reconciled implementation task list:** `tasks/TASKS/sko-charts/tasks-prd-sko-charts.md`
+
 ## 1) Purpose
 - Provide a clear, reproducible method to evaluate per-game player performance and stabilize predictions by leveraging consistency (CV) from characteristic game patterns.
 - Reflect insights from the Top Scorers Relationship Analysis in our sKO calculation and charting.

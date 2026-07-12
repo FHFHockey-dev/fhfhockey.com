@@ -3,7 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { GoalieMatrixResponse } from "lib/rankings/goalieMatrix";
 import type { TeamMatrixResponse } from "lib/rankings/teamMatrix";
-import { TEAM_STYLE_SOURCE_CONTRACT } from "lib/rankings/teamStyleMethodology";
+import {
+  TEAM_ADJUSTED_STYLE_SOURCE_CONTRACTS,
+  TEAM_STYLE_SOURCE_CONTRACT,
+} from "lib/rankings/teamStyleMethodology";
 
 import GoalieMatrixTable from "./GoalieMatrixTable";
 import TeamMatrixTable from "./TeamMatrixTable";
@@ -94,6 +97,12 @@ const goaliePayload: GoalieMatrixResponse = {
       },
       metrics: {
         save_percentage: goalieCell("save_percentage"),
+        relative_save_percentage: goalieCell("relative_save_percentage", {
+          rawValue: 0.027,
+          formattedValue: "2.7%",
+          rank: 7,
+          percentile: 84,
+        }),
         gsax: goalieCell("gsax", {
           rawValue: null,
           formattedValue: null,
@@ -164,6 +173,13 @@ const goaliePayload: GoalieMatrixResponse = {
         source: "goalie_stats_unified",
       },
       {
+        metricKey: "relative_save_percentage",
+        label: "Rel SV%",
+        description: "Relative save percentage",
+        lowerIsBetter: false,
+        source: "goalie_stats_unified same-team baseline",
+      },
+      {
         metricKey: "gsax",
         label: "GSAx",
         description: "Goals saved above expected",
@@ -189,14 +205,6 @@ const goaliePayload: GoalieMatrixResponse = {
     sourceWarnings: [],
     sourcePendingMetricContracts: [
       {
-        metricKey: "relative_save_percentage",
-        label: "Relative SV%",
-        status: "source_pending",
-        reason:
-          "Team-without-goalie save-percentage baselines are not published.",
-        requiredFields: ["team without goalie save percentage"],
-      },
-      {
         metricKey: "under_pressure_profile",
         label: "Under Pressure",
         status: "source_pending",
@@ -221,6 +229,51 @@ function teamCell(
     ...overrides,
   };
 }
+
+const teamUnitCoverage: TeamMatrixResponse["rows"][number]["unitUsage"]["coverage"] = {
+  forwardTopLoad: {
+    games: 20,
+    latestDate: "2026-06-13",
+    snapshotDate: "2026-06-22",
+    status: "complete",
+    warnings: [],
+  },
+  defensePairTopLoad: {
+    games: 20,
+    latestDate: "2026-06-13",
+    snapshotDate: "2026-06-22",
+    status: "complete",
+    warnings: [],
+  },
+  pp1Pp2UsageShare: {
+    games: 20,
+    latestDate: "2026-06-13",
+    snapshotDate: "2026-06-22",
+    status: "complete",
+    warnings: [],
+  },
+};
+
+const teamUnitLabels: TeamMatrixResponse["rows"][number]["unitUsage"]["labels"] = {
+  forwardTopLoad: {
+    label: "Forward top load coverage-qualified",
+    coverageQualified: true,
+    minimumGames: 3,
+    reason: "20 complete resolved games support this unit-usage label.",
+  },
+  defensePairTopLoad: {
+    label: "Defense pair top load coverage-qualified",
+    coverageQualified: true,
+    minimumGames: 3,
+    reason: "20 complete resolved games support this unit-usage label.",
+  },
+  pp1Pp2UsageShare: {
+    label: "PP1/PP2 usage share coverage-qualified",
+    coverageQualified: true,
+    minimumGames: 3,
+    reason: "20 complete resolved games support this unit-usage label.",
+  },
+};
 
 const teamPayload: TeamMatrixResponse = {
   success: true,
@@ -250,6 +303,12 @@ const teamPayload: TeamMatrixResponse = {
       },
       style: {
         label: "High Event",
+        descriptorType: "raw_contextual",
+        displayLabel: "High Event (raw/contextual)",
+        adjustedTargetLabel: "Score- and venue-adjusted 5v5 team style",
+        adjustedStatus: "source_pending",
+        interpretation:
+          "Environment descriptor from current raw/contextual 5v5 inputs; not a coach/system claim.",
         paceAxis: "Fast",
         controlAxis: "Control",
         xgForPercentage: 0.55,
@@ -270,6 +329,16 @@ const teamPayload: TeamMatrixResponse = {
         homeRoadPointPctGap: 12.5,
         powerPlayOpportunityRate: 3.4,
         penaltiesTakenPer60: 4.2,
+      },
+      unitUsage: {
+        games: 20,
+        latestDate: "2026-06-13",
+        snapshotDate: "2026-06-22",
+        forwardTopLoadIndex: 56.2,
+        defensePairTopLoadIndex: 49.4,
+        pp1Pp2UsageShare: 91.5,
+        coverage: teamUnitCoverage,
+        labels: teamUnitLabels,
       },
       sort: {
         metricKey: "off_rating",
@@ -325,6 +394,24 @@ const teamPayload: TeamMatrixResponse = {
           percentile: 55,
           lowerIsBetter: true,
         }),
+        forward_top_load_index: teamCell("forward_top_load_index", {
+          rawValue: 56.2,
+          formattedValue: "56.2%",
+          rank: 8,
+          percentile: 76,
+        }),
+        defense_pair_top_load_index: teamCell("defense_pair_top_load_index", {
+          rawValue: 49.4,
+          formattedValue: "49.4%",
+          rank: 11,
+          percentile: 66,
+        }),
+        pp1_pp2_usage_share: teamCell("pp1_pp2_usage_share", {
+          rawValue: 91.5,
+          formattedValue: "91.5%",
+          rank: 4,
+          percentile: 88,
+        }),
       },
       warnings: ["raw score-and-venue adjustment unavailable"],
     },
@@ -339,35 +426,10 @@ const teamPayload: TeamMatrixResponse = {
     snapshotDate: "2026-06-13",
     latestAvailableSnapshotDate: "2026-06-13",
     styleSnapshotDate: "2026-06-13",
-    sourceTables: ["team_power_ratings_daily", "wgo_team_stats"],
+    sourceTables: ["team_power_ratings_daily", "wgo_team_stats", "games", "team_unit_toi"],
     sourceWarnings: [],
     teamStyleContract: TEAM_STYLE_SOURCE_CONTRACT,
-    sourcePendingMetricContracts: [
-      {
-        metricKey: "forward_top_load_index",
-        label: "Forward Top Load",
-        status: "source_pending",
-        reason:
-          "Verified forward-line TOI share by team/game is not published in the current rankings source contract.",
-        requiredFields: ["line TOI seconds", "team forward TOI seconds"],
-      },
-      {
-        metricKey: "defense_pair_top_load_index",
-        label: "Defense Pair Top Load",
-        status: "source_pending",
-        reason:
-          "Verified defense-pair TOI share by team/game is not published in the current rankings source contract.",
-        requiredFields: ["pair TOI seconds", "team defense TOI seconds"],
-      },
-      {
-        metricKey: "pp1_pp2_usage_share",
-        label: "PP1/PP2 Usage Share",
-        status: "source_pending",
-        reason:
-          "Power-play unit membership exists as contextual labels, but verified PP unit TOI share is not published.",
-        requiredFields: ["unit PP TOI seconds", "team PP TOI seconds"],
-      },
-    ],
+    sourcePendingMetricContracts: TEAM_ADJUSTED_STYLE_SOURCE_CONTRACTS,
     metricColumns: [
       {
         metricKey: "off_rating",
@@ -395,7 +457,7 @@ const teamPayload: TeamMatrixResponse = {
         label: "1-Goal%",
         description: "One-goal game rate",
         lowerIsBetter: false,
-        source: "wgo_team_stats",
+        source: "wgo_team_stats + games",
       },
       {
         metricKey: "home_road_point_pct_gap",
@@ -417,6 +479,27 @@ const teamPayload: TeamMatrixResponse = {
         description: "Penalties taken",
         lowerIsBetter: true,
         source: "wgo_team_stats",
+      },
+      {
+        metricKey: "forward_top_load_index",
+        label: "Fwd Top Load",
+        description: "Forward top load",
+        lowerIsBetter: false,
+        source: "team_unit_toi",
+      },
+      {
+        metricKey: "defense_pair_top_load_index",
+        label: "Pair Top Load",
+        description: "Defense pair top load",
+        lowerIsBetter: false,
+        source: "team_unit_toi",
+      },
+      {
+        metricKey: "pp1_pp2_usage_share",
+        label: "PP1/PP2 Share",
+        description: "PP1/PP2 usage",
+        lowerIsBetter: false,
+        source: "team_unit_toi",
       },
     ],
   },
@@ -448,7 +531,7 @@ describe("GoalieMatrixTable and TeamMatrixTable", () => {
     expect(screen.getByText("HD SV%")).toBeTruthy();
     expect(screen.getByText("81.8%")).toBeTruthy();
     expect(
-      screen.getByText(/Source-pending goalie contracts: Relative SV%, Under Pressure/),
+      screen.getByText(/Source-pending goalie contracts: Under Pressure/),
     ).toBeTruthy();
     expect(screen.getAllByText("#3").length).toBeGreaterThan(0);
     expect(screen.getByText(".925")).toBeTruthy();
@@ -500,7 +583,8 @@ describe("GoalieMatrixTable and TeamMatrixTable", () => {
     );
 
     expect(screen.getByText("Sort Rank")).toBeTruthy();
-    expect(screen.getByText("High Event")).toBeTruthy();
+    expect(screen.getByText("High Event (raw/contextual)")).toBeTruthy();
+    expect(screen.getByText(/not a coach\/system claim/)).toBeTruthy();
     expect(screen.getAllByText("84%").length).toBeGreaterThan(0);
     expect(screen.getAllByText("#4").length).toBeGreaterThan(0);
     expect(screen.getByText("2.85")).toBeTruthy();
@@ -515,11 +599,13 @@ describe("GoalieMatrixTable and TeamMatrixTable", () => {
     expect(screen.getByText("3.40")).toBeTruthy();
     expect(screen.getByText("Pen/60")).toBeTruthy();
     expect(screen.getByText("4.20")).toBeTruthy();
-    expect(
-      screen.getByText(
-        /Source-pending team contracts: Forward Top Load, Defense Pair Top Load, PP1\/PP2 Usage Share/,
-      ),
-    ).toBeTruthy();
+    expect(screen.getByText("Fwd Top Load")).toBeTruthy();
+    expect(screen.getByText("56.2%")).toBeTruthy();
+    expect(screen.getByText("Pair Top Load")).toBeTruthy();
+    expect(screen.getByText("49.4%")).toBeTruthy();
+    expect(screen.getByText("PP1/PP2 Share")).toBeTruthy();
+    expect(screen.getByText("91.5%")).toBeTruthy();
+    expect(screen.getByText(/Source-pending team contracts:/)).toBeTruthy();
     expect(screen.getAllByLabelText("Source pending").length).toBeGreaterThan(0);
     expect(screen.getAllByLabelText("Raw context").length).toBeGreaterThan(0);
     expect(screen.getByLabelText("Team source state legend")).toBeTruthy();
@@ -564,6 +650,61 @@ describe("GoalieMatrixTable and TeamMatrixTable", () => {
     expect(
       screen.getByLabelText(
         /Team style source 2026-06-11 differs from team power snapshot 2026-06-13/,
+      ),
+    ).toBeTruthy();
+  });
+
+  it("distinguishes missing team unit coverage from a low top-load value", () => {
+    render(
+      <TeamMatrixTable
+        payload={{
+          ...teamPayload,
+          request: {
+            ...teamPayload.request,
+            metric: "forward_top_load_index",
+          },
+          rows: [
+            {
+              ...teamPayload.rows[0],
+              unitUsage: {
+                ...teamPayload.rows[0].unitUsage,
+                forwardTopLoadIndex: null,
+                coverage: {
+                  ...teamPayload.rows[0].unitUsage.coverage,
+                  forwardTopLoad: {
+                    games: 0,
+                    latestDate: null,
+                    snapshotDate: "2026-06-22",
+                    status: "source_gap",
+                    warnings: ["forward_lines_unresolved"],
+                  },
+                },
+              },
+              metrics: {
+                ...teamPayload.rows[0].metrics,
+                forward_top_load_index: teamCell("forward_top_load_index", {
+                  rawValue: null,
+                  formattedValue: null,
+                  rank: null,
+                  percentile: null,
+                }),
+              },
+            },
+          ],
+        }}
+        isLoading={false}
+        selectedTeam="TST"
+        onSelectTeam={vi.fn()}
+        onSortMetric={vi.fn()}
+        onPageChange={vi.fn()}
+        onPageSizeChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText("No unit coverage")).toBeTruthy();
+    expect(
+      screen.getByLabelText(
+        /Fwd Top Load.*Unit coverage source_gap; resolved games 0; latest none.*forward_lines_unresolved/,
       ),
     ).toBeTruthy();
   });

@@ -7,6 +7,10 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 
+import {
+  selectFirstArrivalBuckets,
+  type FirstArrivalCandidate,
+} from "lib/sources/lineSourceFirstArrival";
 import serverClient from "lib/supabase/server";
 
 import styles from "./index.module.scss";
@@ -19,6 +23,7 @@ type TwitterEmbedSource = {
 
 export type LocalTweetCard = {
   key: string;
+  sourceKey: string;
   tweetId: string;
   authorName: string;
   authorHandle: string;
@@ -32,8 +37,21 @@ export type LocalTweetCard = {
   quotedTweetUrl: string | null;
   quotedText: string;
   status: string;
+  snapshotDate: string;
+  teamId: number | null;
+  teamAbbreviation: string | null;
+  gameId: number | null;
+  signalType: string | null;
+  tweetPostedAt: string | null;
   observedAt: string | null;
   rowStatus: string;
+  bucketKey: string | null;
+  alternativeSources: Array<{
+    sourceKey: string;
+    sourceAccount: string | null;
+    tweetUrl: string;
+    observedAt: string | null;
+  }>;
 };
 
 const twitterEmbedSources = [
@@ -69,6 +87,12 @@ const retweetingSourceHandles = new Set([
 
 type LinesCccPageRow = {
   capture_key: string;
+  snapshot_date: string;
+  team_id: number | null;
+  team_abbreviation: string | null;
+  game_id: number | null;
+  classification: string | null;
+  tweet_posted_at: string | null;
   tweet_id: string | null;
   tweet_url: string | null;
   source_url: string | null;
@@ -90,6 +114,12 @@ type LinesCccPageRow = {
 
 type LineSourceSnapshotPageRow = {
   capture_key: string;
+  snapshot_date: string;
+  team_id: number | null;
+  team_abbreviation: string | null;
+  game_id: number | null;
+  classification: string | null;
+  tweet_posted_at: string | null;
   source_key: string;
   source_account: string | null;
   tweet_id: string | null;
@@ -221,6 +251,7 @@ export function mapLinesCccRowToCard(row: LinesCccPageRow): LocalTweetCard {
 
   return {
     key: row.capture_key,
+    sourceKey: "ccc",
     tweetId:
       retweetedAttribution?.tweetId ??
       row.tweet_id ??
@@ -256,8 +287,16 @@ export function mapLinesCccRowToCard(row: LinesCccPageRow): LocalTweetCard {
       ? ""
       : (row.quoted_enriched_text ?? row.quoted_raw_text ?? ""),
     status: row.nhl_filter_status,
+    snapshotDate: row.snapshot_date,
+    teamId: row.team_id,
+    teamAbbreviation: row.team_abbreviation,
+    gameId: row.game_id,
+    signalType: row.classification,
+    tweetPostedAt: row.tweet_posted_at,
     observedAt: row.observed_at ?? null,
     rowStatus: row.status,
+    bucketKey: null,
+    alternativeSources: [],
   };
 }
 
@@ -269,6 +308,7 @@ export function mapLineSourceSnapshotRowToCard(
 
   return {
     key: row.capture_key,
+    sourceKey: row.source_key,
     tweetId:
       retweetedAttribution?.tweetId ??
       row.tweet_id ??
@@ -305,9 +345,54 @@ export function mapLineSourceSnapshotRowToCard(
       ? ""
       : (row.quoted_enriched_text ?? row.quoted_raw_text ?? ""),
     status: row.nhl_filter_status,
+    snapshotDate: row.snapshot_date,
+    teamId: row.team_id,
+    teamAbbreviation: row.team_abbreviation,
+    gameId: row.game_id,
+    signalType: row.classification,
+    tweetPostedAt: row.tweet_posted_at,
     observedAt: row.observed_at ?? null,
     rowStatus: row.status,
+    bucketKey: null,
+    alternativeSources: [],
   };
+}
+
+function toFirstArrivalCandidate(
+  card: LocalTweetCard,
+): FirstArrivalCandidate<LocalTweetCard> {
+  return {
+    value: card,
+    captureKey: card.key,
+    sourceKey: card.sourceKey,
+    tweetId: card.tweetId === "unknown-tweet" ? null : card.tweetId,
+    snapshotDate: card.snapshotDate,
+    teamId: card.teamId,
+    teamAbbreviation: card.teamAbbreviation,
+    gameId: card.gameId,
+    signalType: card.signalType,
+    tweetPostedAt: card.tweetPostedAt,
+    observedAt: card.observedAt,
+    status: card.rowStatus,
+    nhlFilterStatus: card.status,
+  };
+}
+
+export function selectFirstArrivalTweetCards(
+  cards: LocalTweetCard[],
+): LocalTweetCard[] {
+  return selectFirstArrivalBuckets(cards.map(toFirstArrivalCandidate)).map(
+    ({ bucketKey, winner, nonWinners }) => ({
+      ...winner.value,
+      bucketKey,
+      alternativeSources: nonWinners.map(({ value }) => ({
+        sourceKey: value.sourceKey,
+        sourceAccount: value.sourceAccount,
+        tweetUrl: value.tweetUrl,
+        observedAt: value.observedAt,
+      })),
+    }),
+  );
 }
 
 function getCardCanonicalUrl(card: LocalTweetCard): string | null {
@@ -433,11 +518,13 @@ const TwitterEmbedsPage: NextPage<
         >
           {loadError ? (
             <p className={styles.stateNote}>
-              Failed to load `lines_ccc`: {loadError}
+              Failed to load one or more lineup sources: {loadError}
             </p>
           ) : null}
           {!loadError && localTweetCards.length === 0 ? (
-            <p className={styles.stateNote}>No `lines_ccc` rows found yet.</p>
+            <p className={styles.stateNote}>
+              No accepted lineup-source rows found yet.
+            </p>
           ) : null}
           {localTweetCards.map((tweet) => (
             <article className={styles.tweetCard} key={tweet.key}>
@@ -474,6 +561,29 @@ const TwitterEmbedsPage: NextPage<
                 {tweet.sourceAccount ? ` · via ${tweet.sourceAccount}` : ""}
                 {" · "}tweet id {tweet.tweetId}
               </footer>
+              {tweet.alternativeSources.length > 0 ? (
+                <details className={styles.alternativeSources}>
+                  <summary>
+                    {tweet.alternativeSources.length} later source
+                    {tweet.alternativeSources.length === 1 ? "" : "s"} in this
+                    signal bucket
+                  </summary>
+                  <ul>
+                    {tweet.alternativeSources.map((source, index) => (
+                      <li
+                        key={`${source.sourceKey}-${source.tweetUrl}-${index}`}
+                      >
+                        <a href={source.tweetUrl}>
+                          {source.sourceAccount ?? source.sourceKey}
+                        </a>
+                        {source.observedAt
+                          ? ` · observed ${new Date(source.observedAt).toLocaleString()}`
+                          : ""}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              ) : null}
             </article>
           ))}
         </section>
@@ -496,18 +606,22 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
     serverClient
       .from("lines_ccc" as any)
       .select(
-        "capture_key, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, author_name, source_handle, quoted_author_name, quoted_author_handle, tweet_posted_label, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, nhl_filter_status, observed_at, status",
+        "capture_key, snapshot_date, team_id, team_abbreviation, game_id, classification, tweet_posted_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, author_name, source_handle, quoted_author_name, quoted_author_handle, tweet_posted_label, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, nhl_filter_status, observed_at, status",
       )
+      .eq("status", "observed")
+      .eq("nhl_filter_status", "accepted")
       .order("observed_at", { ascending: false })
-      .limit(24),
+      .limit(48),
     serverClient
       .from("line_source_snapshots" as any)
       .select(
-        "capture_key, source_key, source_account, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, author_name, source_handle, quoted_author_name, quoted_author_handle, tweet_posted_label, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, nhl_filter_status, observed_at, status",
+        "capture_key, snapshot_date, team_id, team_abbreviation, game_id, classification, tweet_posted_at, source_key, source_account, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, author_name, source_handle, quoted_author_name, quoted_author_handle, tweet_posted_label, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, nhl_filter_status, observed_at, status",
       )
       .eq("source_group", "gdl_suite")
+      .eq("status", "observed")
+      .eq("nhl_filter_status", "accepted")
       .order("observed_at", { ascending: false })
-      .limit(36),
+      .limit(72),
   ]);
 
   const loadError = [cccResult.error?.message, gdlResult.error?.message]
@@ -524,7 +638,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
 
   return {
     props: {
-      localTweetCards: dedupeTweetCards(cards).slice(0, 18),
+      localTweetCards: selectFirstArrivalTweetCards(cards).slice(0, 18),
       loadError: loadError || null,
     },
   };

@@ -33,6 +33,9 @@ yarn-error.log*
 .env.production.local
 .env.mcp
 
+# Never track Yahoo OAuth token exports; runtime credentials belong in env/Vault-backed storage.
+web/lib/supabase/Upserts/yahooAuth/token.json
+
 # vercel
 .vercel
 

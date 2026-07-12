@@ -41,6 +41,45 @@ async function processBatched<T, R>(
   return results;
 }
 
+export async function upsertGoalieProjectionRows(
+  client: Pick<typeof supabase, "from">,
+  updates: any[],
+  chunkSize = 1000
+) {
+  let rowsUpserted = 0;
+  const failures: Array<{
+    stage: "goalie_start_projections_upsert";
+    batchIndex: number;
+    rows: number;
+    error: string;
+  }> = [];
+
+  for (let offset = 0; offset < updates.length; offset += chunkSize) {
+    const batch = updates.slice(offset, offset + chunkSize);
+    const { error } = await client
+      .from("goalie_start_projections" as any)
+      .upsert(batch, { onConflict: "game_id, player_id" });
+
+    if (error) {
+      failures.push({
+        stage: "goalie_start_projections_upsert",
+        batchIndex: Math.floor(offset / chunkSize),
+        rows: batch.length,
+        error: error.message
+      });
+      continue;
+    }
+
+    rowsUpserted += batch.length;
+  }
+
+  return {
+    rowsUpserted,
+    failedRows: failures.reduce((sum, failure) => sum + failure.rows, 0),
+    failures
+  };
+}
+
 const handler = async (
   req: NextApiRequest,
   res: NextApiResponse
@@ -172,6 +211,10 @@ const handler = async (
     console.log("Finished fetching team logs. Starting processing...");
 
     let totalUpserted = 0;
+    let failedRows = 0;
+    let databaseWriteFailures: Awaited<
+      ReturnType<typeof upsertGoalieProjectionRows>
+    >["failures"] = [];
     const updates: any[] = [];
 
     // 5. Process Games
@@ -271,23 +314,31 @@ const handler = async (
     // 6. Batch Upsert
     if (updates.length > 0) {
       console.log(`Upserting ${updates.length} records...`);
-      // Upsert in chunks of 1000 to avoid payload limits
-      await processBatched(updates, 1000, async (batch) => {
-        const { error } = await supabase
-          .from("goalie_start_projections" as any)
-          .upsert(batch, { onConflict: "game_id, player_id" });
-        if (error) console.error("Upsert error:", error);
-      });
-      totalUpserted = updates.length;
+      const upsertResult = await upsertGoalieProjectionRows(supabase, updates);
+      totalUpserted = upsertResult.rowsUpserted;
+      failedRows = upsertResult.failedRows;
+      databaseWriteFailures = upsertResult.failures;
     }
 
-    return res.status(200).json({
-      success: true,
-      message: `Updated projections. Total upserted: ${totalUpserted}`,
+    const statusCode = databaseWriteFailures.length > 0
+      ? totalUpserted > 0
+        ? 207
+        : 500
+      : 200;
+
+    return res.status(statusCode).json({
+      success: databaseWriteFailures.length === 0,
+      message:
+        databaseWriteFailures.length === 0
+          ? `Updated projections. Total upserted: ${totalUpserted}`
+          : `Goalie projection writes were incomplete: ${totalUpserted} upserted, ${failedRows} failed.`,
       updates: totalUpserted,
+      failedRows,
+      failures: databaseWriteFailures.slice(0, 10),
       ownershipDecision: GOALIE_START_TABLE_OWNERSHIP,
       observability: {
         goalieRowsProcessed: totalUpserted,
+        databaseWriteFailures: databaseWriteFailures.length,
         dataQualityWarnings: [
           ...(filteredGames.length > 0 && totalUpserted === 0
             ? [

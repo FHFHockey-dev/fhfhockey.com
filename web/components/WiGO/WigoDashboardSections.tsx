@@ -11,6 +11,7 @@ import NameSearchBar from "components/WiGO/NameSearchBar";
 import RateStatPercentiles from "components/WiGO/RateStatPercentiles";
 import StatsTable from "components/WiGO/StatsTable";
 import TimeframeComparison from "components/WiGO/TimeframeComparison";
+import TeamPerformanceDrivers from "components/WiGO/TeamPerformanceDrivers";
 import { formatCell as formatCellUtil } from "components/WiGO/tableUtils";
 import { Player, TableAggregateData, TeamColors } from "components/WiGO/types";
 import styles from "styles/wigoCharts.module.scss";
@@ -21,20 +22,20 @@ const ChartLoadingPlaceholder = ({ message }: { message: string }) => (
 
 const ToiLineChart = dynamic(() => import("components/WiGO/ToiLineChart"), {
   ssr: false,
-  loading: () => <ChartLoadingPlaceholder message="Loading TOI Chart..." />
+  loading: () => <ChartLoadingPlaceholder message="Loading TOI Chart..." />,
 });
 
 const PpgLineChart = dynamic(() => import("components/WiGO/PpgLineChart"), {
   ssr: false,
-  loading: () => <ChartLoadingPlaceholder message="Loading PPG Chart..." />
+  loading: () => <ChartLoadingPlaceholder message="Loading PPG Chart..." />,
 });
 
 const ConsistencyChart = dynamic(
   () => import("components/WiGO/ConsistencyChart"),
   {
     ssr: false,
-    loading: () => <ChartLoadingPlaceholder message="Loading Consistency..." />
-  }
+    loading: () => <ChartLoadingPlaceholder message="Loading Consistency..." />,
+  },
 );
 
 interface WigoDashboardHeaderProps {
@@ -83,10 +84,14 @@ function WigoPlayerIdentity({
   headshotUrl,
   teamName,
   teamAbbreviation,
-  teamColors
+  teamColors,
 }: Pick<
   WigoOverviewSectionProps,
-  "selectedPlayer" | "headshotUrl" | "teamName" | "teamAbbreviation" | "teamColors"
+  | "selectedPlayer"
+  | "headshotUrl"
+  | "teamName"
+  | "teamAbbreviation"
+  | "teamColors"
 >) {
   return (
     <>
@@ -117,7 +122,7 @@ function WigoPlayerIdentity({
 }
 
 export function WigoDashboardHeader({
-  onPlayerSelect
+  onPlayerSelect,
 }: WigoDashboardHeaderProps) {
   return (
     <>
@@ -150,7 +155,7 @@ export function WigoOverviewSection({
   teamColors,
   teamIdForLog,
   currentSeasonId,
-  minGp
+  minGp,
 }: WigoOverviewSectionProps) {
   return (
     <>
@@ -187,13 +192,18 @@ export function WigoOverviewSection({
           </div>
         )}
       </div>
+      <TeamPerformanceDrivers
+        teamId={teamIdForLog}
+        teamAbbreviation={teamAbbreviation}
+        seasonId={currentSeasonId}
+      />
     </>
   );
 }
 
 export function WigoTrendsSection({
   selectedPlayer,
-  currentSeasonId
+  currentSeasonId,
 }: WigoTrendsSectionProps) {
   return (
     <>
@@ -219,10 +229,16 @@ export function WigoTrendsSection({
         </div>
       </div>
       <div className={styles.toiChartContainer}>
-        <ToiLineChart playerId={selectedPlayer?.id} seasonId={currentSeasonId} />
+        <ToiLineChart
+          playerId={selectedPlayer?.id}
+          seasonId={currentSeasonId}
+        />
       </div>
       <div className={styles.ppgChartContainer}>
-        <PpgLineChart playerId={selectedPlayer?.id} seasonId={currentSeasonId} />
+        <PpgLineChart
+          playerId={selectedPlayer?.id}
+          seasonId={currentSeasonId}
+        />
       </div>
       <div className={styles.gameScoreContainer}>
         <GameScoreSection
@@ -238,7 +254,7 @@ export function WigoPercentilesSection({
   playerId,
   seasonId,
   minGp,
-  onMinGpChange
+  onMinGpChange,
 }: WigoPercentilesSectionProps) {
   return (
     <div className={styles.rateStatBarPercentilesContainer}>
@@ -261,7 +277,7 @@ export function WigoComparisonSection({
   leftTimeframe,
   rightTimeframe,
   onCompare,
-  visibleColumns
+  visibleColumns,
 }: WigoComparisonSectionProps) {
   return (
     <div className={styles.timeframeComparisonWrapper}>

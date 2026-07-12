@@ -8,6 +8,7 @@ import {
   computeTrendMetrics
 } from "lib/trends/ctpi";
 import { type CtpiScore } from "lib/trends/ctpi";
+import { buildRequestedDateServingState } from "lib/dashboard/freshness";
 
 dotenv.config({ path: "./../../../.env.local" });
 
@@ -25,54 +26,85 @@ const AS_COUNTS_TABLE = "nst_team_gamelogs_as_counts";
 const PP_COUNTS_TABLE = "nst_team_gamelogs_pp_counts";
 const PK_COUNTS_TABLE = "nst_team_gamelogs_pk_counts";
 const DAILY_TABLE = "team_ctpi_daily";
+const PAGE_SIZE = 1000;
 
-async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
-  // Pull all games for the season
-  const { data: asRows, error: asErr } = await supabase
-    .from(AS_RATES_TABLE)
-    .select(
-      [
-        "team_abbreviation",
-        "date",
-        "xgf_per_60",
-        "hdcf_per_60",
-        "gf_per_60",
-        "xga_per_60",
-        "hdca_per_60",
-        "ca_per_60", // Added
-        "cf_pct",
-        "ga",
-        "xga",
-        "pdo"
-      ].join(",")
-    )
-    .eq("season_id", seasonId)
-    .order("date", { ascending: false });
-  // Removed limit(1200)
-  if (asErr) throw asErr;
+async function fetchAllPages<T>(buildQuery: () => any): Promise<T[]> {
+  const rows: T[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await buildQuery().range(
+      from,
+      from + PAGE_SIZE - 1
+    );
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    rows.push(...(data as T[]));
+    if (data.length < PAGE_SIZE) break;
+  }
+  return rows;
+}
 
-  const { data: asCountsRows, error: asCountsErr } = await supabase
-    .from(AS_COUNTS_TABLE)
-    .select(["team_abbreviation", "date", "toi_seconds", "xga", "ga"].join(","))
-    .eq("season_id", seasonId)
-    .order("date", { ascending: false });
-  if (asCountsErr) throw asCountsErr;
+function sourceDateTimestamp(sourceDate: string | null): string | null {
+  return sourceDate ? `${sourceDate}T23:59:59.999Z` : null;
+}
 
-  const { data: ppRows, error: ppErr } = await supabase
-    .from(PP_COUNTS_TABLE)
-    .select(["team_abbreviation", "date", "gf", "xgf", "toi_seconds"].join(",")) // Added xgf
-    .eq("season_id", seasonId)
-    .order("date", { ascending: false });
-  // Removed limit(1200)
-  if (ppErr) throw ppErr;
+async function fetchGameRows(
+  seasonId: number,
+  requestedDate: string
+): Promise<TeamGameRow[]> {
+  const asRows = await fetchAllPages<any>(() =>
+    supabase
+      .from(AS_RATES_TABLE)
+      .select(
+        [
+          "team_abbreviation",
+          "date",
+          "xgf_per_60",
+          "hdcf_per_60",
+          "gf_per_60",
+          "xga_per_60",
+          "hdca_per_60",
+          "ca_per_60",
+          "cf_pct",
+          "ga",
+          "xga",
+          "pdo"
+        ].join(",")
+      )
+      .eq("season_id", seasonId)
+      .lte("date", requestedDate)
+      .order("date", { ascending: true })
+      .order("team_abbreviation", { ascending: true })
+  );
 
-  const { data: pkRows, error: pkErr } = await supabase
-    .from(PK_COUNTS_TABLE)
-    .select(["team_abbreviation", "date", "ga", "xga", "toi_seconds"].join(",")) // Added xga
-    .eq("season_id", seasonId)
-    .order("date", { ascending: false });
-  // Removed limit(1200)
-  if (pkErr) throw pkErr;
+  const asCountsRows = await fetchAllPages<any>(() =>
+    supabase
+      .from(AS_COUNTS_TABLE)
+      .select(["team_abbreviation", "date", "toi_seconds", "xga", "ga"].join(","))
+      .eq("season_id", seasonId)
+      .lte("date", requestedDate)
+      .order("date", { ascending: true })
+      .order("team_abbreviation", { ascending: true })
+  );
+
+  const ppRows = await fetchAllPages<any>(() =>
+    supabase
+      .from(PP_COUNTS_TABLE)
+      .select(["team_abbreviation", "date", "gf", "xgf", "toi_seconds"].join(","))
+      .eq("season_id", seasonId)
+      .lte("date", requestedDate)
+      .order("date", { ascending: true })
+      .order("team_abbreviation", { ascending: true })
+  );
+
+  const pkRows = await fetchAllPages<any>(() =>
+    supabase
+      .from(PK_COUNTS_TABLE)
+      .select(["team_abbreviation", "date", "ga", "xga", "toi_seconds"].join(","))
+      .eq("season_id", seasonId)
+      .lte("date", requestedDate)
+      .order("date", { ascending: true })
+      .order("team_abbreviation", { ascending: true })
+  );
 
   // Index AS Counts by team+date
   const asCountsMap = new Map<
@@ -146,42 +178,56 @@ async function fetchGameRows(seasonId: number): Promise<TeamGameRow[]> {
 }
 
 async function fetchCtpiDaily(
-  seasonId: number
-): Promise<{ scores: CtpiScore[]; generatedAt: string } | null> {
-  const { data, error } = await supabase
-    .from(DAILY_TABLE)
-    .select(
-      [
-        "team",
-        "date",
-        "ctpi_raw",
-        "ctpi_0_to_100",
-        "offense",
-        "defense",
-        "goaltending",
-        "special_teams",
-        "luck",
-        "computed_at"
-      ].join(",")
-    )
-    .eq("season_id", seasonId)
-    .order("date", { ascending: false })
-    .limit(4000);
-
-  if (error) {
+  seasonId: number,
+  requestedDate: string
+): Promise<{
+  scores: CtpiScore[];
+  sourceDate: string;
+  computedAt: string | null;
+  sourceRowCount: number;
+} | null> {
+  let data: any[];
+  try {
+    data = await fetchAllPages<any>(() =>
+      supabase
+        .from(DAILY_TABLE)
+        .select(
+          [
+            "team",
+            "date",
+            "ctpi_raw",
+            "ctpi_0_to_100",
+            "offense",
+            "defense",
+            "goaltending",
+            "special_teams",
+            "luck",
+            "computed_at"
+          ].join(",")
+        )
+        .eq("season_id", seasonId)
+        .lte("date", requestedDate)
+        .order("date", { ascending: true })
+        .order("team", { ascending: true })
+    );
+  } catch (error) {
     console.error("team-ctpi daily load error", error);
     return null;
   }
   if (!data || data.length === 0) return null;
 
   const teamMap = new Map<string, any[]>();
-  let latestGeneratedAt: string | null = null;
+  let latestComputedAt: string | null = null;
+  let sourceDate = "";
   data.forEach((row: any) => {
     if (!teamMap.has(row.team)) teamMap.set(row.team, []);
     teamMap.get(row.team)!.push(row);
-    const generatedAt = row.computed_at ?? (row.date ? `${row.date}T23:59:59.999Z` : null);
-    if (generatedAt && (!latestGeneratedAt || generatedAt > latestGeneratedAt)) {
-      latestGeneratedAt = generatedAt;
+    if (row.date && row.date > sourceDate) sourceDate = row.date;
+    if (
+      row.computed_at &&
+      (!latestComputedAt || row.computed_at > latestComputedAt)
+    ) {
+      latestComputedAt = row.computed_at;
     }
   });
 
@@ -206,7 +252,9 @@ async function fetchCtpiDaily(
   });
   return {
     scores,
-    generatedAt: latestGeneratedAt ?? new Date().toISOString()
+    sourceDate,
+    computedAt: latestComputedAt,
+    sourceRowCount: data.length
   };
 }
 
@@ -222,31 +270,64 @@ export default async function handler(
   try {
     const season = await fetchCurrentSeason();
     const seasonId = season.id;
+    const requestedDateRaw = String(
+      Array.isArray(req.query.date) ? req.query.date[0] : req.query.date ?? ""
+    ).trim();
+    const requestedDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDateRaw)
+      ? requestedDateRaw
+      : new Date().toISOString().slice(0, 10);
 
     // Prefer precomputed daily table for latest values + sparkline
-    const dailyCtpi = await fetchCtpiDaily(seasonId);
+    const dailyCtpi = await fetchCtpiDaily(seasonId, requestedDate);
     let ctpi: CtpiScore[] | null = dailyCtpi?.scores ?? null;
-    let generatedAt = dailyCtpi?.generatedAt ?? new Date().toISOString();
+    let sourceDate = dailyCtpi?.sourceDate ?? null;
+    let computedAt = dailyCtpi?.computedAt ?? null;
+    let sourceRowCount = dailyCtpi?.sourceRowCount ?? 0;
+    let source: "team_ctpi_daily" | "on_the_fly" = "team_ctpi_daily";
 
     // Fallback to on-the-fly compute if table empty
     if (!ctpi || ctpi.length === 0) {
-      const rows = await fetchGameRows(seasonId);
+      const rows = await fetchGameRows(seasonId, requestedDate);
       const teamMap = new Map<string, TeamGameRow[]>();
       rows.forEach((row) => {
         if (!teamMap.has(row.team)) teamMap.set(row.team, []);
         teamMap.get(row.team)!.push(row);
+        if (!sourceDate || row.date > sourceDate) sourceDate = row.date;
       });
       const trendMetrics = Array.from(teamMap.values()).map((games) =>
         computeTrendMetrics(games)
       );
       ctpi = computeCtpi(trendMetrics);
-      generatedAt = new Date().toISOString();
+      source = "on_the_fly";
+      sourceRowCount = rows.length;
+      computedAt = null;
     }
+
+    const dateUsed = sourceDate ?? requestedDate;
+    const fallbackApplied = dateUsed !== requestedDate;
+    const serving = buildRequestedDateServingState({
+      requestedDate,
+      resolvedDate: dateUsed,
+      fallbackApplied,
+      strategy: fallbackApplied
+        ? "latest_available_with_data"
+        : "requested_date"
+    });
 
     res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=60");
     return res.status(200).json({
       seasonId,
-      generatedAt,
+      generatedAt: sourceDateTimestamp(sourceDate),
+      requestedDate,
+      dateUsed,
+      fallbackApplied,
+      serving,
+      source: {
+        kind: source,
+        sourceDate,
+        computedAt,
+        rowCount: sourceRowCount
+      },
       teams: ctpi
     });
   } catch (error: any) {

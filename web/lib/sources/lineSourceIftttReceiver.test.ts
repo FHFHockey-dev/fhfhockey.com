@@ -26,7 +26,8 @@ function createMockReq(overrides: Record<string, unknown> = {}) {
       source_account: "GameDayGoalies",
       text: "Confirmed Wild Starting Goalie: Filip Gustavsson",
       username: "GameDayGoalies",
-      link_to_tweet: "https://twitter.com/GameDayGoalies/status/2049999999999999999",
+      link_to_tweet:
+        "https://twitter.com/GameDayGoalies/status/2049999999999999999",
       created_at: "April 30, 2026 at 06:05PM",
     },
     ...overrides,
@@ -57,6 +58,7 @@ function createMockRes() {
 describe("createLineSourceIftttReceiver", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
     process.env.IFTTT_GAMEDAYGOALIES_WEBHOOK_SECRET = "test-secret";
     process.env.IFTTT_GAMEDAYLINES_WEBHOOK_SECRET = "test-secret";
     upsertMock.mockResolvedValue({ error: null });
@@ -150,6 +152,46 @@ describe("createLineSourceIftttReceiver", () => {
     });
     expect(upsertMock.mock.calls[1][1]).toEqual({
       onConflict: "source_key,tweet_id",
+    });
+  });
+
+  it("keeps the raw event stored and retryable when process=true follow-up fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response("processor unavailable", {
+          status: 503,
+        }),
+      ),
+    );
+    const handler = createLineSourceIftttReceiver({
+      sourceGroup: "gdl_suite",
+      sourceKey: "gamedaygoalies",
+      sourceAccount: "GameDayGoalies",
+      secretEnvVar: "IFTTT_GAMEDAYGOALIES_WEBHOOK_SECRET",
+      processorPath: "/api/v1/db/update-line-sources",
+    });
+    const res = createMockRes();
+
+    await handler(
+      createMockReq({
+        query: { process: "true" },
+      }),
+      res,
+    );
+
+    expect(upsertMock).toHaveBeenCalledOnce();
+    expect(upsertMock.mock.calls[0]?.[0]).toMatchObject({
+      processing_status: "pending",
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      processingStatus: "processed_attempted",
+      processor: {
+        success: false,
+        status: 503,
+      },
     });
   });
 });

@@ -1,11 +1,6 @@
 import type { GoalieRanking, GoalieValueTier } from "./goalieTypes";
 
-export type GoalieAdvancedStrength =
-  | "all"
-  | "5v5"
-  | "ev"
-  | "pk"
-  | "pp";
+export type GoalieAdvancedStrength = "all" | "5v5" | "ev" | "pk" | "pp";
 
 export interface GoalieAdvancedStrengthOption {
   value: GoalieAdvancedStrength;
@@ -36,18 +31,19 @@ export interface GoalieAdvancedMetricsRow {
   >;
 }
 
-export const GOALIE_ADVANCED_STRENGTH_OPTIONS: GoalieAdvancedStrengthOption[] = [
-  { value: "all", label: "All Situations", prefix: "nst_all_counts" },
-  { value: "5v5", label: "5v5", prefix: "nst_5v5_counts" },
-  { value: "ev", label: "Even Strength", prefix: "nst_ev_counts" },
-  { value: "pk", label: "PK", prefix: "nst_pk_counts" },
-  { value: "pp", label: "PP", prefix: "nst_pp_counts" }
-];
+export const GOALIE_ADVANCED_STRENGTH_OPTIONS: GoalieAdvancedStrengthOption[] =
+  [
+    { value: "all", label: "All Situations", prefix: "nst_all_counts" },
+    { value: "5v5", label: "5v5", prefix: "nst_5v5_counts" },
+    { value: "ev", label: "Even Strength", prefix: "nst_ev_counts" },
+    { value: "pk", label: "PK", prefix: "nst_pk_counts" },
+    { value: "pp", label: "PP", prefix: "nst_pp_counts" },
+  ];
 
 type GoalieStatsUnifiedRow = Record<string, number | string | null | boolean>;
 
-const ADVANCED_STRENGTH_SELECT_FIELDS = GOALIE_ADVANCED_STRENGTH_OPTIONS.flatMap(
-  ({ prefix }) => [
+const ADVANCED_STRENGTH_SELECT_FIELDS =
+  GOALIE_ADVANCED_STRENGTH_OPTIONS.flatMap(({ prefix }) => [
     `${prefix}_toi`,
     `${prefix}_gsaa`,
     `${prefix}_xg_against`,
@@ -57,9 +53,8 @@ const ADVANCED_STRENGTH_SELECT_FIELDS = GOALIE_ADVANCED_STRENGTH_OPTIONS.flatMap
     `${prefix}_rebound_attempts_against`,
     `${prefix}_rush_attempts_against`,
     `${prefix}_avg_shot_distance`,
-    `${prefix}_avg_goal_distance`
-  ]
-);
+    `${prefix}_avg_goal_distance`,
+  ]);
 
 export const GOALIE_ADVANCED_METRICS_SELECT = [
   "player_id",
@@ -67,7 +62,7 @@ export const GOALIE_ADVANCED_METRICS_SELECT = [
   "games_played",
   "games_started",
   "quality_start",
-  ...ADVANCED_STRENGTH_SELECT_FIELDS
+  ...ADVANCED_STRENGTH_SELECT_FIELDS,
 ].join(",");
 
 const finiteOrZero = (value: unknown) =>
@@ -104,7 +99,7 @@ const per60OrNull = (value: number | null, toi: number) =>
 const weightedAverageField = (
   rows: GoalieStatsUnifiedRow[],
   valueField: string,
-  weightField: string
+  weightField: string,
 ) => {
   let weightedTotal = 0;
   let weightTotal = 0;
@@ -129,7 +124,7 @@ const weightedAverageField = (
 };
 
 export const buildGoalieAdvancedMetricsRows = (
-  rows: GoalieStatsUnifiedRow[]
+  rows: GoalieStatsUnifiedRow[],
 ): GoalieAdvancedMetricsRow[] => {
   const byGoalie = new Map<number, GoalieStatsUnifiedRow[]>();
 
@@ -149,36 +144,33 @@ export const buildGoalieAdvancedMetricsRows = (
       const firstRow = goalieRows[0] ?? {};
       const gamesStarted = goalieRows.reduce(
         (sum, row) => sum + finiteOrZero(row.games_started),
-        0
+        0,
       );
       const qualityStarts = goalieRows.reduce(
         (sum, row) => sum + finiteOrZero(row.quality_start),
-        0
+        0,
       );
 
       const strengths = GOALIE_ADVANCED_STRENGTH_OPTIONS.reduce(
         (acc, strength) => {
           const { prefix, value } = strength;
           const toi = sumField(goalieRows, `${prefix}_toi`).total;
-          const xgAgainst = sumFieldOrNull(
-            goalieRows,
-            `${prefix}_xg_against`
-          );
+          const xgAgainst = sumFieldOrNull(goalieRows, `${prefix}_xg_against`);
           const hdShotsAgainst = sumFieldOrNull(
             goalieRows,
-            `${prefix}_hd_shots_against`
+            `${prefix}_hd_shots_against`,
           );
           const shotsAgainst = sumFieldOrNull(
             goalieRows,
-            `${prefix}_shots_against`
+            `${prefix}_shots_against`,
           );
           const reboundAttemptsAgainst = sumFieldOrNull(
             goalieRows,
-            `${prefix}_rebound_attempts_against`
+            `${prefix}_rebound_attempts_against`,
           );
           const rushAttemptsAgainst = sumFieldOrNull(
             goalieRows,
-            `${prefix}_rush_attempts_against`
+            `${prefix}_rush_attempts_against`,
           );
 
           acc[value] = {
@@ -189,24 +181,24 @@ export const buildGoalieAdvancedMetricsRows = (
             shotsAgainstPer60: per60OrNull(shotsAgainst, toi),
             reboundAttemptsAgainstPer60: per60OrNull(
               reboundAttemptsAgainst,
-              toi
+              toi,
             ),
             rushAttemptsAgainstPer60: per60OrNull(rushAttemptsAgainst, toi),
             avgShotDistance: weightedAverageField(
               goalieRows,
               `${prefix}_avg_shot_distance`,
-              `${prefix}_shots_against`
+              `${prefix}_shots_against`,
             ),
             avgGoalDistance: weightedAverageField(
               goalieRows,
               `${prefix}_avg_goal_distance`,
-              `${prefix}_goals_against`
-            )
+              `${prefix}_goals_against`,
+            ),
           };
 
           return acc;
         },
-        {} as GoalieAdvancedMetricsRow["strengths"]
+        {} as GoalieAdvancedMetricsRow["strengths"],
       );
 
       return {
@@ -217,12 +209,12 @@ export const buildGoalieAdvancedMetricsRows = (
             : "Unknown Goalie",
         gamesPlayed: goalieRows.reduce(
           (sum, row) => sum + finiteOrZero(row.games_played),
-          0
+          0,
         ),
         gamesStarted,
         qualityStartsPct:
           gamesStarted > 0 ? finiteOrNull(qualityStarts / gamesStarted) : null,
-        strengths
+        strengths,
       };
     })
     .sort((a, b) => a.goalieName.localeCompare(b.goalieName));
@@ -257,7 +249,7 @@ const average = (values: number[]) => {
 const percentile = (
   value: number,
   values: number[],
-  direction: "larger" | "smaller"
+  direction: "larger" | "smaller",
 ) => {
   const validValues = values.filter((entry) => Number.isFinite(entry));
 
@@ -282,7 +274,7 @@ const topRows = (
   compare: (a: GoalieRanking, b: GoalieRanking) => number,
   metricLabel: string,
   valueFormatter: (goalie: GoalieRanking) => string,
-  metricLabelTitle?: string
+  metricLabelTitle?: string,
 ) =>
   [...rows]
     .sort(compare)
@@ -293,11 +285,11 @@ const topRows = (
       team: goalie.team ?? "N/A",
       value: valueFormatter(goalie),
       metricLabel,
-      metricLabelTitle
+      metricLabelTitle,
     }));
 
 export const buildGoalieMetricsGroups = (
-  goalieRankings: GoalieRanking[]
+  goalieRankings: GoalieRanking[],
 ): GoalieMetricsGroup[] => {
   if (goalieRankings.length === 0) {
     return [];
@@ -308,29 +300,29 @@ export const buildGoalieMetricsGroups = (
       Number.isFinite(goalie.averageFantasyPointsPerGame) ||
       Number.isFinite(goalie.wowVariance) ||
       Number.isFinite(goalie.gogVariance) ||
-      Number.isFinite(goalie.totalGamesPlayed)
+      Number.isFinite(goalie.totalGamesPlayed),
   );
 
   const fantasyValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.averageFantasyPointsPerGame)
+    toFiniteNumber(goalie.averageFantasyPointsPerGame),
   );
   const fantasyDeltaValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.fantasyPointsAboveAverage)
+    toFiniteNumber(goalie.fantasyPointsAboveAverage),
   );
   const wowVarianceValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.wowVariance)
+    toFiniteNumber(goalie.wowVariance),
   );
   const gogVarianceValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.gogVariance)
+    toFiniteNumber(goalie.gogVariance),
   );
   const gamesPlayedValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.totalGamesPlayed)
+    toFiniteNumber(goalie.totalGamesPlayed),
   );
   const gamesStartedValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.totalGamesStarted)
+    toFiniteNumber(goalie.totalGamesStarted),
   );
   const totalPointValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.totalPoints)
+    toFiniteNumber(goalie.totalPoints),
   );
 
   return [
@@ -344,9 +336,10 @@ export const buildGoalieMetricsGroups = (
           toFiniteNumber(b.averageFantasyPointsPerGame) -
           toFiniteNumber(a.averageFantasyPointsPerGame),
         "Avg fPts/G",
-        (goalie) => toFiniteNumber(goalie.averageFantasyPointsPerGame).toFixed(2),
-        "Higher average fantasy points per game is better."
-      )
+        (goalie) =>
+          toFiniteNumber(goalie.averageFantasyPointsPerGame).toFixed(2),
+        "Higher average fantasy points per game is better.",
+      ),
     },
     {
       title: "Consistency",
@@ -359,11 +352,12 @@ export const buildGoalieMetricsGroups = (
           (toFiniteNumber(b.wowVariance) + toFiniteNumber(b.gogVariance)),
         "Std Dev",
         (goalie) =>
-          `${(toFiniteNumber(goalie.wowVariance) + toFiniteNumber(goalie.gogVariance)).toFixed(
-            2
-          )}`,
-        "Lower combined standard deviation is better."
-      )
+          `${(
+            toFiniteNumber(goalie.wowVariance) +
+            toFiniteNumber(goalie.gogVariance)
+          ).toFixed(2)}`,
+        "Lower combined standard deviation is better.",
+      ),
     },
     {
       title: "Workload",
@@ -371,15 +365,16 @@ export const buildGoalieMetricsGroups = (
       rows: topRows(
         goaliesWithFiniteValues,
         (a, b) =>
-          toFiniteNumber(b.totalGamesPlayed) - toFiniteNumber(a.totalGamesPlayed) ||
+          toFiniteNumber(b.totalGamesPlayed) -
+            toFiniteNumber(a.totalGamesPlayed) ||
           toFiniteNumber(b.totalTimeOnIce) - toFiniteNumber(a.totalTimeOnIce),
         "GP",
         (goalie) =>
           `${toFiniteNumber(goalie.totalGamesPlayed)} GP · ${toFiniteNumber(
-            goalie.totalTimeOnIce
+            goalie.totalTimeOnIce,
           ).toFixed(1)} min`,
-        "Higher workload suggests a stronger start-volume profile."
-      )
+        "Higher workload suggests a stronger start-volume profile.",
+      ),
     },
     {
       title: "Recent Form",
@@ -388,15 +383,16 @@ export const buildGoalieMetricsGroups = (
         goaliesWithFiniteValues,
         (a, b) =>
           toFiniteNumber(b.totalPoints) - toFiniteNumber(a.totalPoints) ||
-          toFiniteNumber(b.percentGoodWeeks) - toFiniteNumber(a.percentGoodWeeks),
+          toFiniteNumber(b.percentGoodWeeks) -
+            toFiniteNumber(a.percentGoodWeeks),
         "WoW Pts",
         (goalie) =>
           `${toFiniteNumber(goalie.totalPoints)} pts · ${toFiniteNumber(
-            goalie.percentGoodWeeks
+            goalie.percentGoodWeeks,
           ).toFixed(1)}% good weeks`,
-        "Higher ranking points and a higher good-week rate are better."
-      )
-    }
+        "Higher ranking points and a higher good-week rate are better.",
+      ),
+    },
   ];
 };
 
@@ -415,11 +411,11 @@ export interface GoalieVarianceAverages {
 }
 
 export const buildGoalieVarianceAverages = (
-  goalieRankings: GoalieRanking[]
+  goalieRankings: GoalieRanking[],
 ): GoalieVarianceAverages => {
   const averageOrNull = (values: Array<number | undefined>) => {
     const validValues = values.filter((value): value is number =>
-      Number.isFinite(value)
+      Number.isFinite(value),
     );
 
     return validValues.length > 0 ? average(validValues) : null;
@@ -427,18 +423,18 @@ export const buildGoalieVarianceAverages = (
 
   return {
     wowVariance: averageOrNull(
-      goalieRankings.map((goalie) => goalie.wowVariance)
+      goalieRankings.map((goalie) => goalie.wowVariance),
     ),
     gogVariance: averageOrNull(
-      goalieRankings.map((goalie) => goalie.gogVariance)
-    )
+      goalieRankings.map((goalie) => goalie.gogVariance),
+    ),
   };
 };
 
 export const formatGoalieVarianceValue = (
   value: number | undefined,
   averageValue: number | null,
-  varianceDisplayMode: GoalieVarianceDisplayMode
+  varianceDisplayMode: GoalieVarianceDisplayMode,
 ) => {
   if (value == null || !Number.isFinite(value)) {
     return "N/A";
@@ -457,7 +453,7 @@ export const formatGoalieVarianceValue = (
 };
 
 export const getGoalieLeaderboardColumns = (
-  varianceDisplayMode: GoalieVarianceDisplayMode
+  varianceDisplayMode: GoalieVarianceDisplayMode,
 ): GoalieLeaderboardColumn[] => [
   { label: "Rank", width: "4%", sortKey: "totalPoints" },
   { label: "Name", width: "10%", sortKey: "goalieFullName" },
@@ -467,16 +463,37 @@ export const getGoalieLeaderboardColumns = (
     width: "7%",
     sortKey: "valueTierScore",
     infoTitle:
-      "Relative value tier for the current filtered population. Uses fantasy production, consistency, workload, and start confidence."
+      "Relative value tier for the current filtered population. Uses fantasy production, consistency, workload, and start confidence.",
   },
   { label: "WoW Pts", width: "5%", sortKey: "totalPoints" },
   { label: "Elite Wk", width: "5%", sortKey: "eliteWeeks" },
-  { label: "Quality", width: "5%", sortKey: "qualityWeeks" },
+  { label: "Good", width: "5%", sortKey: "goodWeeks" },
   { label: "AVG", width: "5%", sortKey: "averageWeeks" },
   { label: "BAD", width: "5%", sortKey: "badWeeks" },
-  { label: "Really Bad", width: "5%", sortKey: "reallyBadWeeks" },
+  { label: "Abysmal", width: "5%", sortKey: "abysmalWeeks" },
   { label: "% OK WKs", width: "5%", sortKey: "percentAcceptableWeeks" },
   { label: "% Good WKs", width: "5%", sortKey: "percentGoodWeeks" },
+  {
+    label: "Consistency",
+    width: "5%",
+    sortKey: "consistencyScore",
+    infoTitle:
+      "0-100 stability score across eligible weekly quality bands. Requires at least two classified weeks; higher means less week-to-week movement, independent of whether the level is good or bad.",
+  },
+  {
+    label: "GS/Wk",
+    width: "5%",
+    sortKey: "averageStartsPerWeek",
+    infoTitle:
+      "Average starts per eligible week, separating workload from quality.",
+  },
+  {
+    label: "Weekly Records",
+    width: "8%",
+    sortKey: "totalWins",
+    infoTitle:
+      "Most common weekly W-L/OT decision patterns (for example 3-2, 2-1, or 1-0).",
+  },
   {
     label: varianceDisplayMode === "relative" ? "WoW Δ vs Avg" : "WoW Std Dev",
     width: "6%",
@@ -484,95 +501,98 @@ export const getGoalieLeaderboardColumns = (
     infoTitle:
       varianceDisplayMode === "relative"
         ? "Difference from the filtered average week-over-week standard deviation. Lower relative deltas indicate more consistency."
-        : "Week-over-week standard deviation of ranking points. Lower values indicate more consistency."
+        : "Week-over-week standard deviation of ranking points. Lower values indicate more consistency.",
   },
   {
-    label: varianceDisplayMode === "relative" ? "Game Δ vs Avg" : "Game Std Dev",
+    label:
+      varianceDisplayMode === "relative" ? "Game Δ vs Avg" : "Game Std Dev",
     width: "6%",
     sortKey: "gogVariance",
     infoTitle:
       varianceDisplayMode === "relative"
         ? "Difference from the filtered average game standard deviation. Lower relative deltas indicate more consistency."
-        : "Game-over-game standard deviation of fantasy points. Lower values indicate more consistency."
+        : "Game-over-game standard deviation of fantasy points. Lower values indicate more consistency.",
   },
   { label: "Avg fPts/G", width: "5%", sortKey: "averageFantasyPointsPerGame" },
   {
     label: "+/- Lg Avg fPts",
     width: "5%",
     sortKey: "fantasyPointsAboveAverage",
-    infoTitle: "Goalie average fantasy points per game versus the filtered league average."
+    infoTitle:
+      "Goalie average fantasy points per game versus the filtered league average.",
   },
   {
     label: "Percentile Rank",
     width: "5%",
     sortKey: "averagePercentileRank",
-    infoTitle: "Average percentile rank across the visible stat set."
+    infoTitle: "Average percentile rank across the visible stat set.",
   },
   { label: "GP", width: "4%", sortKey: "totalGamesPlayed" },
   { label: "SV%", width: "5%", sortKey: "overallSavePct" },
-  { label: "GAA", width: "5%", sortKey: "overallGaa" }
+  { label: "GAA", width: "5%", sortKey: "overallGaa" },
 ];
 
 export const buildGoalieValueTierMap = (
   goalieRankings: GoalieRanking[],
-  advancedMetricsRows: GoalieAdvancedMetricsRow[] = []
+  advancedMetricsRows: GoalieAdvancedMetricsRow[] = [],
 ) => {
   const goaliesWithFiniteValues = goalieRankings.filter(
     (goalie) =>
       Number.isFinite(goalie.averageFantasyPointsPerGame) ||
       Number.isFinite(goalie.wowVariance) ||
       Number.isFinite(goalie.gogVariance) ||
-      Number.isFinite(goalie.totalGamesPlayed)
+      Number.isFinite(goalie.totalGamesPlayed),
   );
 
   const fantasyValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.averageFantasyPointsPerGame)
+    toFiniteNumber(goalie.averageFantasyPointsPerGame),
   );
   const fantasyDeltaValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.fantasyPointsAboveAverage)
+    toFiniteNumber(goalie.fantasyPointsAboveAverage),
   );
   const wowVarianceValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.wowVariance)
+    toFiniteNumber(goalie.wowVariance),
   );
   const gogVarianceValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.gogVariance)
+    toFiniteNumber(goalie.gogVariance),
   );
   const gamesPlayedValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.totalGamesPlayed)
+    toFiniteNumber(goalie.totalGamesPlayed),
   );
   const gamesStartedValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.totalGamesStarted)
+    toFiniteNumber(goalie.totalGamesStarted),
   );
   const timeOnIceValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.totalTimeOnIce)
+    toFiniteNumber(goalie.totalTimeOnIce),
   );
   const acceptableWeekValues = goaliesWithFiniteValues.map((goalie) =>
-    toFiniteNumber(goalie.percentAcceptableWeeks)
+    toFiniteNumber(goalie.percentAcceptableWeeks),
   );
   const advancedMetricsByGoalieId = new Map(
-    advancedMetricsRows.map((row) => [row.playerId, row])
+    advancedMetricsRows.map((row) => [row.playerId, row]),
   );
   const qualityStartPctValues = goaliesWithFiniteValues
     .map(
       (goalie) =>
-        advancedMetricsByGoalieId.get(goalie.playerId)?.qualityStartsPct
+        advancedMetricsByGoalieId.get(goalie.playerId)?.qualityStartsPct,
     )
     .filter((value): value is number => Number.isFinite(value));
 
   const scoreParts = (goalie: GoalieRanking) => {
-    const qualityStartsPct =
-      advancedMetricsByGoalieId.get(goalie.playerId)?.qualityStartsPct;
+    const qualityStartsPct = advancedMetricsByGoalieId.get(
+      goalie.playerId,
+    )?.qualityStartsPct;
     const startConfidenceParts = [
       percentile(
         toFiniteNumber(goalie.totalGamesStarted),
         gamesStartedValues,
-        "larger"
+        "larger",
       ),
       percentile(
         toFiniteNumber(goalie.percentAcceptableWeeks),
         acceptableWeekValues,
-        "larger"
-      )
+        "larger",
+      ),
     ];
 
     if (
@@ -580,7 +600,7 @@ export const buildGoalieValueTierMap = (
       Number.isFinite(qualityStartsPct)
     ) {
       startConfidenceParts.push(
-        percentile(qualityStartsPct, qualityStartPctValues, "larger")
+        percentile(qualityStartsPct, qualityStartPctValues, "larger"),
       );
     }
 
@@ -589,39 +609,39 @@ export const buildGoalieValueTierMap = (
         percentile(
           toFiniteNumber(goalie.averageFantasyPointsPerGame),
           fantasyValues,
-          "larger"
+          "larger",
         ),
         percentile(
           toFiniteNumber(goalie.fantasyPointsAboveAverage),
           fantasyDeltaValues,
-          "larger"
-        )
+          "larger",
+        ),
       ]),
       consistencyScore: average([
         percentile(
           toFiniteNumber(goalie.wowVariance),
           wowVarianceValues,
-          "smaller"
+          "smaller",
         ),
         percentile(
           toFiniteNumber(goalie.gogVariance),
           gogVarianceValues,
-          "smaller"
-        )
+          "smaller",
+        ),
       ]),
       workloadScore: average([
         percentile(
           toFiniteNumber(goalie.totalGamesPlayed),
           gamesPlayedValues,
-          "larger"
+          "larger",
         ),
         percentile(
           toFiniteNumber(goalie.totalTimeOnIce),
           timeOnIceValues,
-          "larger"
-        )
+          "larger",
+        ),
       ]),
-      startConfidenceScore: average(startConfidenceParts)
+      startConfidenceScore: average(startConfidenceParts),
     };
   };
 
@@ -630,7 +650,7 @@ export const buildGoalieValueTierMap = (
       fantasyScore,
       consistencyScore,
       workloadScore,
-      startConfidenceScore
+      startConfidenceScore,
     } = scoreParts(goalie);
 
     return (
@@ -656,20 +676,20 @@ export const buildGoalieValueTierMap = (
         goalie.playerId,
         {
           score,
-          tier: tierForScore(score)
-        }
+          tier: tierForScore(score),
+        },
       ] as const;
-    })
+    }),
   );
 };
 
 export const applyGoalieValueTiers = (
   goalieRankings: GoalieRanking[],
-  advancedMetricsRows: GoalieAdvancedMetricsRow[] = []
+  advancedMetricsRows: GoalieAdvancedMetricsRow[] = [],
 ): GoalieRanking[] => {
   const valueTierByGoalieId = buildGoalieValueTierMap(
     goalieRankings,
-    advancedMetricsRows
+    advancedMetricsRows,
   );
 
   return goalieRankings.map((goalie) => {
@@ -678,7 +698,7 @@ export const applyGoalieValueTiers = (
     return {
       ...goalie,
       valueTier: valueTier?.tier,
-      valueTierScore: valueTier?.score
+      valueTierScore: valueTier?.score,
     };
   });
 };

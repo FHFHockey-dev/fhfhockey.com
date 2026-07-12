@@ -105,6 +105,38 @@
   @include v.custom-scrollbar(v.$secondary-color, v.$background-medium);
 }
 
+.viewTabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: v.$background-dark;
+  border-bottom: 1px solid rgba(v.$secondary-color, 0.22);
+}
+
+.viewTab {
+  min-height: 34px;
+  border: 0;
+  background: transparent;
+  color: v.$text-color-secondary;
+  font-family: v.$font-family-primary;
+  font-size: 11px;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: inset v.$focus-ring-desktop;
+  }
+}
+
+.viewTabActive {
+  color: v.$secondary-color;
+  background: rgba(v.$secondary-color, 0.1);
+  box-shadow: inset 0 -2px 0 v.$secondary-color;
+}
+
 /* --- Base Table Styling --- */
 .table {
   margin: 0 auto;
@@ -121,9 +153,30 @@
 /* --- Table Header Styling --- */
 .table thead {
   position: sticky; // ** Sticky header **
-  top: 0; // ** Stick to top of .tableWrapper **
+  top: 34px; // Keep headers below the sticky view tabs.
   z-index: 2;
   background-color: v.$background-dark; // Needed for sticky header background
+}
+
+.weeklyTable th:not(:first-child),
+.weeklyTable td:not(:first-child) {
+  width: 20%;
+}
+
+.weeklyTable td:not(:first-child) {
+  padding: 3px 2px;
+  line-height: 1.15;
+}
+
+.opponentList {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  color: v.$text-color-secondary;
+  font-size: 8.5px;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .table th {
@@ -236,6 +289,8 @@
     align-items: center;
     justify-content: center;
     min-height: 28px;
+    color: inherit;
+    text-decoration: none;
   }
   .teamLogo {
     display: block;

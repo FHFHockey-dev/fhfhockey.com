@@ -156,6 +156,7 @@ function parseMatrixDirection(value: string): ContextualRankingsSortDirection {
 
 function parseGoalieMetric(value: string): GoalieMatrixMetricKey {
   return value === "gsax" ||
+    value === "relative_save_percentage" ||
     value === "gsaa_per_60" ||
     value === "xga_per_shot_against" ||
     value === "goalie_value_signal" ||
@@ -194,7 +195,10 @@ function parseTeamMetric(value: string): TeamMatrixMetricKey {
     value === "one_goal_game_rate" ||
     value === "home_road_point_pct_gap" ||
     value === "pp_opportunity_rate" ||
-    value === "penalties_taken_per_60"
+    value === "penalties_taken_per_60" ||
+    value === "forward_top_load_index" ||
+    value === "defense_pair_top_load_index" ||
+    value === "pp1_pp2_usage_share"
     ? value
     : "off_rating";
 }

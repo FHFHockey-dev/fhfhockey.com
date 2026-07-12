@@ -1,5 +1,7 @@
 # PRD: Dead Code & Hidden Surface Audit
 
+> **Implementation task list:** `tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md`
+
 Generated: 2026-04-28
 
 Scope: repository source files under `/Users/tim/Code/fhfhockey.com`, with generated/build/vendor output excluded from conclusions (`node_modules`, `.next`, cache folders, lockfiles). This pass treated a file as dead when it has no credible runtime entrypoint, no imports from production code, and no public-facing navigation/link path. Next.js route files are called out separately because they are technically reachable by URL even when hidden from the site.

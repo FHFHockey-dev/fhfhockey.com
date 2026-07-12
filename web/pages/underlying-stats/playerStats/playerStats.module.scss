@@ -13,7 +13,7 @@ $page-max-width: 1600px;
   color: v.$text-primary;
   display: flex;
   flex-direction: column;
-  gap: v.$space-lg;
+  gap: v.$space-md;
   font-family: v.$font-family-primary, sans-serif;
 }
 
@@ -24,7 +24,7 @@ $page-max-width: 1600px;
   margin: 0 auto;
   display: grid;
   grid-template-rows: auto auto auto minmax(0, 1fr);
-  gap: v.$space-lg;
+  gap: v.$space-md;
 }
 
 .utilityRow,
@@ -43,9 +43,13 @@ $page-max-width: 1600px;
 }
 
 .hero {
-  @include p.panel-shell($padding: v.$space-md, $variant: soft, $overflow: visible);
+  @include p.panel-shell(
+    $padding: v.$space-sm,
+    $variant: soft,
+    $overflow: visible
+  );
   display: grid;
-  gap: v.$space-md;
+  gap: v.$space-sm;
 }
 
 .heroBody {
@@ -150,7 +154,7 @@ $page-max-width: 1600px;
   gap: v.$space-sm;
   width: 100%;
   min-width: 0;
-  padding: v.$space-md v.$space-lg;
+  padding: v.$space-sm v.$space-md;
   border-bottom: 1px solid v.$border-soft;
 }
 
@@ -162,7 +166,6 @@ $page-max-width: 1600px;
   gap: v.$space-sm;
   align-items: stretch;
 }
-
 
 .chip {
   position: relative;
@@ -399,7 +402,7 @@ $page-max-width: 1600px;
   padding: 0 v.$space-sm;
   border-radius: 999px;
   border: 1px solid rgba(v.$color-brand-yellow, 0.24);
-    background: rgba(v.$color-brand-yellow, 0.1);
+  background: rgba(v.$color-brand-yellow, 0.1);
   color: v.$color-white;
   font-size: v.$font-size-xs;
   font-weight: 700;
@@ -413,7 +416,7 @@ $page-max-width: 1600px;
   &:hover,
   &:focus-visible {
     border-color: rgba(v.$color-brand-yellow, 0.55);
-    background: rgba(v.$color-brand-yellow  , 0.18);
+    background: rgba(v.$color-brand-yellow, 0.18);
     outline: none;
   }
 }

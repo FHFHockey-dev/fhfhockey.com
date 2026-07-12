@@ -252,15 +252,32 @@ export async function rebuildBetaWindowZForSnapshot(
   return { count: rows.length, sample: rows.slice(0, 5) };
 }
 
-export async function loadPlayersForSnapshot(snapshot_date: string) {
-  const { data, error } = await (supabase as any)
-    .from("player_baselines")
-    .select("player_id, position_code")
-    .eq("snapshot_date", snapshot_date);
-  if (error) throw error;
+export async function loadPlayersForSnapshot(
+  snapshot_date: string,
+  options: { client?: any; pageSize?: number } = {}
+) {
+  const client = options.client ?? (supabase as any);
+  const pageSize = Math.max(1, Math.min(1000, options.pageSize ?? 1000));
+  const rows: Array<{ player_id: number; position_code: string | null }> = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await client
+      .from("player_baselines")
+      .select("player_id, position_code")
+      .eq("snapshot_date", snapshot_date)
+      .order("player_id", { ascending: true })
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < pageSize) break;
+    from += pageSize;
+  }
+
   const ids: number[] = [];
   const posMap = new Map<number, PosGroup>();
-  for (const r of data ?? []) {
+  for (const r of rows) {
     const pg = toPosGroup(r.position_code);
     if (!pg) continue;
     ids.push(Number(r.player_id));

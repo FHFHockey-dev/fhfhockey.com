@@ -230,6 +230,22 @@
   overflow: visible;
 }
 
+.dialogStage {
+  display: grid;
+  place-items: center;
+  min-height: 360px;
+  padding: v.$space-lg;
+  border: 1px dashed v.$border-soft;
+  border-radius: v.$border-radius-lg;
+  background: rgba(0, 0, 0, 0.46);
+}
+
+.demoDialog {
+  position: relative;
+  width: min(720px, 100%);
+  max-height: 320px;
+}
+
 .demoPanelStrong {
   @include panel.panel-shell($padding: v.$space-md, $variant: intense);
 }
@@ -796,9 +812,19 @@
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(to right, rgba(v.$border-secondary, 0.18) 1px, transparent 1px),
-    linear-gradient(to top, rgba(v.$border-secondary, 0.18) 1px, transparent 1px);
-  background-size: 20% 100%, 100% 25%;
+    linear-gradient(
+      to right,
+      rgba(v.$border-secondary, 0.18) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to top,
+      rgba(v.$border-secondary, 0.18) 1px,
+      transparent 1px
+    );
+  background-size:
+    20% 100%,
+    100% 25%;
 }
 
 .chartBars {

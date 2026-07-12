@@ -1,13 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { format, startOfWeek } from "date-fns";
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import styles from "./TransactionTrends.module.scss";
 import OwnershipSparkline, {
-  type OwnershipSparkPoint
+  type OwnershipSparkPoint,
 } from "./OwnershipSparkline";
 import PanelStatus from "components/common/PanelStatus";
-import useSchedule from "components/GameGrid/utils/useSchedule";
 import { buildHomepageModulePresentation } from "lib/dashboard/freshness";
-import { buildTopAddsScheduleContextMap } from "lib/dashboard/topAddsScheduleContext";
 type TrendPlayer = {
   playerKey: string;
   playerId?: number | null;
@@ -81,13 +79,8 @@ export default function TransactionTrends() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTable, setActiveTable] = useState<"risers" | "fallers">(
-    "risers"
+    "risers",
   );
-  const weekStartDate = useMemo(
-    () => format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd"),
-    []
-  );
-  const [weekSchedule, weekNumGamesPerDay] = useSchedule(weekStartDate, false);
 
   useEffect(() => {
     let active = true;
@@ -101,7 +94,7 @@ export default function TransactionTrends() {
         params.set("offset", String(offset));
         if (pos) params.set("pos", pos);
         const res = await fetch(
-          `/api/v1/transactions/ownership-trends?${params.toString()}`
+          `/api/v1/transactions/ownership-trends?${params.toString()}`,
         );
         const body = await res.text();
         if (!res.ok) {
@@ -144,132 +137,23 @@ export default function TransactionTrends() {
     maxAgeHours: 18,
     loadingMessage: "Loading ownership movement...",
     emptyMessage: "No ownership movement is available right now.",
-    staleMessage: "Ownership movement may be stale."
+    staleMessage: "Ownership movement may be stale.",
   });
-  const leadRiser = data?.risers?.[0] ?? null;
-  const leadFaller = data?.fallers?.[0] ?? null;
-  const activePositionLabel = pos || "All skaters";
-  const summaryWindowLabel = `${windowDays}-day window`;
-  const scheduleContextMap = useMemo(
-    () =>
-      buildTopAddsScheduleContextMap(
-        weekSchedule,
-        weekNumGamesPerDay,
-        weekStartDate
-      ),
-    [weekNumGamesPerDay, weekSchedule, weekStartDate]
-  );
-  const leadRiserSchedule =
-    leadRiser?.teamAbbrev != null
-      ? scheduleContextMap[leadRiser.teamAbbrev.toUpperCase()] ?? null
-      : null;
-  const leadFallerSchedule =
-    leadFaller?.teamAbbrev != null
-      ? scheduleContextMap[leadFaller.teamAbbrev.toUpperCase()] ?? null
-      : null;
-
   return (
     <section
       className={styles.transactionTrends}
       aria-labelledby="trends-heading"
     >
       <div className={styles.headerRow}>
-        <h2 id="trends-heading" className={styles.title}>
-          Transaction <span>Trends</span>
-        </h2>
-      </div>
-      <div className={styles.summaryIntro}>
-        <p className={styles.summaryEyebrow}>Market pulse</p>
-        <p className={styles.summaryBody}>
-          Scan the fastest ownership moves first, then use the sparkline and delta
-          columns to separate genuine momentum from short-term noise.
-        </p>
-      </div>
-      {data && (
-        <div className={styles.summaryGrid}>
-          <div className={styles.summaryCard}>
-            <span className={styles.summaryLabel}>Scope</span>
-            <strong className={styles.summaryValue}>{summaryWindowLabel}</strong>
-            <span className={styles.summaryMeta}>
-              {activePositionLabel} • Page{" "}
-              {Math.floor((data.offset ?? offset) / (data.pageSize ?? limit)) + 1}
-            </span>
-          </div>
-          <div className={`${styles.summaryCard} ${styles.riseSummaryCard}`}>
-            <span className={styles.summaryLabel}>Lead riser</span>
-            <div className={styles.summaryCardBody}>
-              <div className={styles.summaryCopyBlock}>
-                <strong className={styles.summaryValue}>
-                  {leadRiser ? leadRiser.name : "No riser data"}
-                </strong>
-                <div className={styles.summaryMetaStack}>
-                  <span className={styles.summaryMeta}>
-                    {leadRiser
-                      ? `${leadRiser.delta > 0 ? "+" : ""}${leadRiser.delta.toFixed(1)} pts • ${leadRiser.latest.toFixed(1)}% rostered`
-                      : "No movement available"}
-                  </span>
-                  <span className={styles.summaryMeta}>
-                    {leadRiser
-                      ? [leadRiser.teamAbbrev, leadRiser.displayPosition]
-                          .filter(Boolean)
-                          .join(" • ")
-                      : "No team context available"}
-                  </span>
-                </div>
-              </div>
-              <div className={styles.summaryStatRow}>
-                <span className={`${styles.summaryStat} ${styles.riseStat}`}>
-                  {leadRiserSchedule
-                    ? `${leadRiserSchedule.gamesRemaining} GP`
-                    : "GP --"}
-                </span>
-                <span className={`${styles.summaryStat} ${styles.riseStat}`}>
-                  {leadRiserSchedule
-                    ? `${leadRiserSchedule.offNightsRemaining} off`
-                    : "Off --"}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className={`${styles.summaryCard} ${styles.fallSummaryCard}`}>
-            <span className={styles.summaryLabel}>Lead faller</span>
-            <div className={styles.summaryCardBody}>
-              <div className={styles.summaryCopyBlock}>
-                <strong className={styles.summaryValue}>
-                  {leadFaller ? leadFaller.name : "No faller data"}
-                </strong>
-                <div className={styles.summaryMetaStack}>
-                  <span className={styles.summaryMeta}>
-                    {leadFaller
-                      ? `${leadFaller.delta.toFixed(1)} pts • ${leadFaller.latest.toFixed(1)}% rostered`
-                      : "No movement available"}
-                  </span>
-                  <span className={styles.summaryMeta}>
-                    {leadFaller
-                      ? [leadFaller.teamAbbrev, leadFaller.displayPosition]
-                          .filter(Boolean)
-                          .join(" • ")
-                      : "No team context available"}
-                  </span>
-                </div>
-              </div>
-              <div className={styles.summaryStatRow}>
-                <span className={`${styles.summaryStat} ${styles.fallStat}`}>
-                  {leadFallerSchedule
-                    ? `${leadFallerSchedule.gamesRemaining} GP`
-                    : "GP --"}
-                </span>
-                <span className={`${styles.summaryStat} ${styles.fallStat}`}>
-                  {leadFallerSchedule
-                    ? `${leadFallerSchedule.offNightsRemaining} off`
-                    : "Off --"}
-                </span>
-              </div>
-            </div>
-          </div>
+        <div className={styles.titleBlock}>
+          <h2 id="trends-heading" className={styles.title}>
+            Transaction <span>Trends</span>
+          </h2>
+          <p className={styles.subtitle}>
+            Ownership movement over the last {windowDays} day
+            {windowDays === 1 ? "" : "s"}.
+          </p>
         </div>
-      )}
-      <div className={styles.headerControls}>
         <div
           className={styles.timeframeButtons}
           role="group"
@@ -285,6 +169,9 @@ export default function TransactionTrends() {
             </button>
           ))}
         </div>
+      </div>
+      <div className={styles.headerControls}>
+        <span className={styles.filterLabel}>Position</span>
         <div
           className={styles.posButtons}
           role="group"
@@ -314,7 +201,7 @@ export default function TransactionTrends() {
           <div className={`${styles.tablesWrapper} ${styles.desktopTables}`}>
             <div className={`${styles.panel} ${styles.risersPanel}`}>
               <h3 className={styles.tableTitle}>
-                Top Risers (% Change Δ {data.windowDays}D)
+                Top Risers (Δ {data.windowDays}D)
               </h3>
               <table
                 className={styles.dataTable}
@@ -327,13 +214,13 @@ export default function TransactionTrends() {
                     </th>
                     <th scope="col">Player</th>
                     <th scope="col" className={styles.ownCellHeader}>
-                      Own
+                      Own %
                     </th>
                     <th scope="col" className={styles.sparkCell}>
                       Trend
                     </th>
                     <th scope="col" style={{ textAlign: "right" }}>
-                      % Change Δ
+                      Δ
                     </th>
                   </tr>
                 </thead>
@@ -361,7 +248,18 @@ export default function TransactionTrends() {
                           )}
                           <div className={styles.playerTextWrap}>
                             <span className={styles.playerText}>
-                              <span className={styles.playerName}>{p.name}</span>
+                              {p.playerId ? (
+                                <Link
+                                  href={`/trends/player/${p.playerId}`}
+                                  className={styles.playerName}
+                                >
+                                  {p.name}
+                                </Link>
+                              ) : (
+                                <span className={styles.playerName}>
+                                  {p.name}
+                                </span>
+                              )}
                               {(p.displayPosition ||
                                 p.teamFullName ||
                                 p.teamAbbrev ||
@@ -454,7 +352,7 @@ export default function TransactionTrends() {
             </div>
             <div className={`${styles.panel} ${styles.fallersPanel}`}>
               <h3 className={styles.tableTitle}>
-                Top Fallers (% Change Δ {data.windowDays}D)
+                Top Fallers (Δ {data.windowDays}D)
               </h3>
               <table
                 className={styles.dataTable}
@@ -467,13 +365,13 @@ export default function TransactionTrends() {
                     </th>
                     <th scope="col">Player</th>
                     <th scope="col" className={styles.ownCellHeader}>
-                      Own
+                      Own %
                     </th>
                     <th scope="col" className={styles.sparkCell}>
                       Trend
                     </th>
                     <th scope="col" style={{ textAlign: "right" }}>
-                      % Change Δ
+                      Δ
                     </th>
                   </tr>
                 </thead>
@@ -501,7 +399,18 @@ export default function TransactionTrends() {
                           )}
                           <div className={styles.playerTextWrap}>
                             <span className={styles.playerText}>
-                              <span className={styles.playerName}>{p.name}</span>
+                              {p.playerId ? (
+                                <Link
+                                  href={`/trends/player/${p.playerId}`}
+                                  className={styles.playerName}
+                                >
+                                  {p.name}
+                                </Link>
+                              ) : (
+                                <span className={styles.playerName}>
+                                  {p.name}
+                                </span>
+                              )}
                               {(p.displayPosition ||
                                 p.teamFullName ||
                                 p.teamAbbrev ||
@@ -625,8 +534,8 @@ export default function TransactionTrends() {
               </div>
               <h3 className={styles.tableTitle}>
                 {activeTable === "risers"
-                  ? `Top Risers (% Change Δ ${data.windowDays}D)`
-                  : `Top Fallers (% Change Δ ${data.windowDays}D)`}
+                  ? `Top Risers (Δ ${data.windowDays}D)`
+                  : `Top Fallers (Δ ${data.windowDays}D)`}
               </h3>
               <table
                 className={styles.dataTable}
@@ -643,13 +552,13 @@ export default function TransactionTrends() {
                     </th>
                     <th scope="col">Player</th>
                     <th scope="col" className={styles.ownCellHeader}>
-                      Own
+                      Own %
                     </th>
                     <th scope="col" className={styles.sparkCell}>
                       Trend
                     </th>
                     <th scope="col" style={{ textAlign: "right" }}>
-                      % Change Δ
+                      Δ
                     </th>
                   </tr>
                 </thead>
@@ -678,9 +587,18 @@ export default function TransactionTrends() {
                             )}
                             <div className={styles.playerTextWrap}>
                               <span className={styles.playerText}>
-                                <span className={styles.playerName}>
-                                  {p.name}
-                                </span>
+                                {p.playerId ? (
+                                  <Link
+                                    href={`/trends/player/${p.playerId}`}
+                                    className={styles.playerName}
+                                  >
+                                    {p.name}
+                                  </Link>
+                                ) : (
+                                  <span className={styles.playerName}>
+                                    {p.name}
+                                  </span>
+                                )}
                                 {(p.displayPosition ||
                                   p.teamFullName ||
                                   p.teamAbbrev ||
@@ -787,7 +705,7 @@ export default function TransactionTrends() {
                           </div>
                         </td>
                       </tr>
-                    )
+                    ),
                   )}
                 </tbody>
               </table>
@@ -795,7 +713,7 @@ export default function TransactionTrends() {
           </div>
         </>
       )}
-      {data && (
+      {data && modulePresentation.state !== "empty" && (
         <div className={styles.pager} role="navigation" aria-label="Pagination">
           <div className={styles.pagerInfo}>
             <span>
@@ -821,8 +739,9 @@ export default function TransactionTrends() {
               disabled={
                 !!(
                   (activeTable === "risers"
-                    ? data.totalRisers ?? data.risers.length
-                    : data.totalFallers ?? data.fallers.length) <= offset + limit
+                    ? (data.totalRisers ?? data.risers.length)
+                    : (data.totalFallers ?? data.fallers.length)) <=
+                  offset + limit
                 )
               }
             >
@@ -831,10 +750,12 @@ export default function TransactionTrends() {
           </div>
         </div>
       )}
-      <p className={styles.footNote}>
-        Δ = change in Yahoo! percent ownership (percentage points) over selected
-        window. Sparkline shows recent daily trajectory.
-      </p>
+      {data && modulePresentation.state !== "empty" ? (
+        <p className={styles.footNote}>
+          Δ = change in Yahoo! percent ownership (percentage points) over
+          selected window. Sparkline shows recent daily trajectory.
+        </p>
+      ) : null}
     </section>
   );
 }

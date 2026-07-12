@@ -1,4 +1,4 @@
-import { getKey, TOIData, PlayerData } from "./index";
+import type { TOIData, PlayerData } from "./index";
 import { Block, parseTime } from "utils/getPowerPlayBlocks";
 import groupBy from "utils/groupBy";
 
@@ -149,10 +149,12 @@ export function getAvg(
   players: PlayerData[],
   toiData: Record<string, TOIData>
 ) {
+  if (players.length === 0) return 0;
+
   let total = 0;
   players.forEach((p) => {
-    const key = getKey(p.id, p.id);
-    total += toiData[key].toi;
+    const key = `${[p.id, p.id].sort()}`;
+    total += toiData[key]?.toi ?? 0;
   });
 
   return total / players.length;

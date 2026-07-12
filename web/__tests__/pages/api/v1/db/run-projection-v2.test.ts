@@ -3,15 +3,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const { auditInsertMock, gamesEqMock, gamesSelectMock } = vi.hoisted(() => ({
   auditInsertMock: vi.fn().mockResolvedValue({ error: null }),
   gamesEqMock: vi.fn(),
-  gamesSelectMock: vi.fn()
+  gamesSelectMock: vi.fn(),
 }));
 
 vi.mock("lib/supabase", () => ({
   default: {
     from: vi.fn(() => ({
-      insert: auditInsertMock
-    }))
-  }
+      insert: auditInsertMock,
+    })),
+  },
 }));
 
 vi.mock("lib/supabase/server", () => ({
@@ -22,14 +22,14 @@ vi.mock("lib/supabase/server", () => ({
           data: null,
           error: {
             message:
-              "<!DOCTYPE html><html><title>fyhftlxokyjtpndbkfse.supabase.co | 522: Connection timed out</title></html>"
-          }
+              "<!DOCTYPE html><html><title>fyhftlxokyjtpndbkfse.supabase.co | 522: Connection timed out</title></html>",
+          },
         });
         gamesSelectMock.mockReturnValue({
-          eq: gamesEqMock
+          eq: gamesEqMock,
         });
         return {
-          select: gamesSelectMock
+          select: gamesSelectMock,
         };
       }
 
@@ -39,20 +39,22 @@ vi.mock("lib/supabase/server", () => ({
           in: vi.fn().mockResolvedValue({ data: [], error: null }),
           eq: vi.fn().mockResolvedValue({ data: [], error: null }),
           gte: vi.fn().mockResolvedValue({ data: [], error: null }),
-          lt: vi.fn().mockResolvedValue({ data: [], error: null })
-        }))
+          lt: vi.fn().mockResolvedValue({ data: [], error: null }),
+        })),
       };
-    })
-  }
+    }),
+  },
 }));
 
 vi.mock("lib/projections/run-forge-projections", () => ({
-  runProjectionV2ForDate: vi.fn()
+  runProjectionV2ForDate: vi.fn(),
 }));
 
 import handler, {
+  buildProjectionDerivedGate,
   buildProjectionInputIngestGate,
-  summarizeGoalieRosterAssignments
+  summarizeSkaterFreshnessCoverage,
+  summarizeGoalieRosterAssignments,
 } from "../../../../../pages/api/v1/db/run-projection-v2";
 
 function createMockRes() {
@@ -77,7 +79,7 @@ function createMockRes() {
       this.body = payload;
       this.headersSent = true;
       return this;
-    }
+    },
   };
   return res;
 }
@@ -91,8 +93,8 @@ describe("/api/v1/db/run-projection-v2", () => {
     const req: any = {
       method: "GET",
       query: {
-        date: "2026-03-20"
-      }
+        date: "2026-03-20",
+      },
     };
     const res = createMockRes();
 
@@ -107,51 +109,51 @@ describe("/api/v1/db/run-projection-v2", () => {
         version: "rolling-forge-operator-order-v1",
         currentStage: {
           id: "projection_execution",
-          order: 7
+          order: 7,
         },
         prerequisiteStages: [
           expect.objectContaining({
             id: "rolling_player_recompute",
-            order: 4
+            order: 4,
           }),
           expect.objectContaining({
             id: "projection_derived_build",
-            order: 6
-          })
-        ]
+            order: 6,
+          }),
+        ],
       },
       compatibilityInventory: {
         version: "forge-compatibility-inventory-v2",
         removedShim: {
           legacyModulePath: "web/lib/projections/runProjectionV2.ts",
           canonicalModulePath: "web/lib/projections/run-forge-projections.ts",
-          status: "removed"
+          status: "removed",
         },
         duplicateReaders: expect.arrayContaining([
           expect.objectContaining({
             canonicalRoute: "/api/v1/forge/players",
-            legacyRoute: "/api/v1/projections/players"
+            legacyRoute: "/api/v1/projections/players",
           }),
           expect.objectContaining({
             canonicalRoute: "/api/v1/forge/goalies",
-            legacyRoute: "/api/v1/projections/goalies"
-          })
-        ])
+            legacyRoute: "/api/v1/projections/goalies",
+          }),
+        ]),
       },
       dependencyError: {
         kind: "dependency_error",
         classification: "html_upstream_response",
         source: "supabase_or_proxy",
-        htmlLike: true
+        htmlLike: true,
       },
       observability: {
         dataQualityWarnings: [
           expect.objectContaining({
             code: "dependency_error",
             message:
-              "Upstream dependency returned an HTML error page instead of structured JSON."
-          })
-        ]
+              "Upstream dependency returned an HTML error page instead of structured JSON.",
+          }),
+        ],
       },
       scanSummary: {
         surface: "projection_run_operator",
@@ -163,10 +165,10 @@ describe("/api/v1/db/run-projection-v2", () => {
           gamesProcessed: 0,
           playerRowsUpserted: 0,
           teamRowsUpserted: 0,
-          goalieRowsUpserted: 0
+          goalieRowsUpserted: 0,
         },
-        blockingIssueCount: 1
-      }
+        blockingIssueCount: 1,
+      },
     });
   });
 
@@ -174,23 +176,23 @@ describe("/api/v1/db/run-projection-v2", () => {
     const result = summarizeGoalieRosterAssignments({
       latestGoaliesByTeam: new Map([
         [6, [101, 202]],
-        [7, [101]]
+        [7, [101]],
       ]),
       goaliePlayers: [
         { id: 101, position: "G" },
-        { id: 202, position: "G" }
+        { id: 202, position: "G" },
       ],
       goalieRosters: [
         { playerId: 101, teamId: 6 },
         { playerId: 101, teamId: 7 },
-        { playerId: 202, teamId: 8 }
-      ]
+        { playerId: 202, teamId: 8 },
+      ],
     });
 
     expect(result).toEqual({
       goalieCandidatesChecked: 2,
       mismatchedAssignments: 1,
-      nonGoaliePositionRows: 0
+      nonGoaliePositionRows: 0,
     });
   });
 
@@ -200,12 +202,12 @@ describe("/api/v1/db/run-projection-v2", () => {
         scheduledRecentGames: 10,
         actualPbpGames: 6,
         shiftedActualGames: 5,
-        shiftRows: 191
-      })
+        shiftRows: 191,
+      }),
     ).toMatchObject({
       status: "PASS",
       detail:
-        "scheduled_recent_games=10, actual_pbp_games=6, shifted_actual_games=5, shift_coverage=0.83, shift_rows=191"
+        "scheduled_recent_games=10, actual_pbp_games=6, shifted_actual_games=5, shift_coverage=0.83, shift_rows=191",
     });
   });
 
@@ -215,11 +217,85 @@ describe("/api/v1/db/run-projection-v2", () => {
         scheduledRecentGames: 10,
         actualPbpGames: 6,
         shiftedActualGames: 3,
-        shiftRows: 120
-      })
+        shiftRows: 120,
+      }),
     ).toMatchObject({
       status: "FAIL",
-      action: "Run /api/v1/db/ingest-projection-inputs for recent actual game dates."
+      action:
+        "Run /api/v1/db/ingest-projection-inputs for recent actual game dates.",
+    });
+  });
+
+  it("treats projection-derived freshness as not applicable on a zero-game slate", () => {
+    expect(
+      buildProjectionDerivedGate({
+        scheduledGameCount: 0,
+        playerLatest: null,
+        teamLatest: null,
+        goalieLatest: null,
+      }),
+    ).toEqual({
+      gate_key: "projection_derived_v2",
+      status: "PASS",
+      detail:
+        "No scheduled games on requested date; projection-derived freshness is not applicable.",
+      action: "None.",
+    });
+  });
+
+  it("retains the projection-derived blocker when a scheduled slate lacks inputs", () => {
+    expect(
+      buildProjectionDerivedGate({
+        scheduledGameCount: 1,
+        playerLatest: null,
+        teamLatest: "2026-03-19",
+        goalieLatest: "2026-03-19",
+      }),
+    ).toMatchObject({
+      gate_key: "projection_derived_v2",
+      status: "FAIL",
+      detail:
+        "player_latest=none, team_latest=2026-03-19, goalie_latest=2026-03-19",
+    });
+  });
+
+  it("separates missing, stale, thin-role, and derived skater freshness failures", () => {
+    const result = summarizeSkaterFreshnessCoverage({
+      asOfDate: "2026-03-30",
+      scheduledTeamIds: [1, 2, 3],
+      recentLineCombosByTeam: new Map([
+        [
+          1,
+          [
+            {
+              gameId: 101,
+              forwards: Array.from({ length: 12 }, (_, index) => index + 1),
+              defensemen: Array.from({ length: 6 }, (_, index) => index + 20),
+              games: { date: "2026-03-29" },
+            },
+          ],
+        ],
+        [
+          2,
+          [
+            {
+              gameId: 102,
+              forwards: [31, 32, 33, 34, 35, 36],
+              defensemen: [41, 42],
+              games: { date: "2026-03-01" },
+            },
+          ],
+        ],
+      ]),
+      teamsWithRecentDerivedRows: new Set([1, 2]),
+    });
+
+    expect(result).toEqual({
+      missingLineComboTeams: 1,
+      softStaleLineComboTeams: 0,
+      hardStaleLineComboTeams: 1,
+      insufficientRoleCoverageTeams: 2,
+      missingRecentDerivedTeams: 1,
     });
   });
 });

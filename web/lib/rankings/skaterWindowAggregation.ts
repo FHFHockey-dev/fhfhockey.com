@@ -94,6 +94,14 @@ const PHASE_1_WINDOW_METRIC_SPECS: MetricExtractionSpec[] = [
     deriveSeasonFromAverages: true,
   },
   {
+    metricKey: "pp_points_per_60",
+    numeratorBase: "pp_points",
+    denominatorBase: "pp_toi_seconds",
+    seasonNumeratorField: "pp_points_avg_season",
+    seasonDenominatorField: "pp_toi_seconds_avg_season",
+    deriveSeasonFromAverages: true,
+  },
+  {
     metricKey: "sog_per_60",
     directFieldBase: "sog_per_60",
     numeratorBase: "sog_per_60",
@@ -242,6 +250,7 @@ function resolveToiSeconds(args: {
   gamesPlayed: number | null;
 }) {
   if (args.window === "season") {
+    if (args.denominator != null) return args.denominator;
     const seasonAverageToi = readNumber(args.row, "toi_seconds_avg_season");
     if (seasonAverageToi != null && args.gamesPlayed != null) {
       return Number((seasonAverageToi * args.gamesPlayed).toFixed(6));
@@ -250,10 +259,11 @@ function resolveToiSeconds(args: {
   }
 
   return (
+    args.denominator ??
     readNumber(
       args.row,
       `toi_seconds_total_${args.window}`,
-    ) ?? args.denominator
+    )
   );
 }
 
@@ -419,8 +429,25 @@ function extractWindowMetric(args: {
   if (window === "season") {
     const numeratorField = spec.seasonNumeratorField;
     const denominatorField = spec.seasonDenominatorField;
-    const numerator = numeratorField ? readNumber(row, numeratorField) : null;
-    const denominator = denominatorField ? readNumber(row, denominatorField) : null;
+    const rawNumerator = numeratorField ? readNumber(row, numeratorField) : null;
+    const rawDenominator = denominatorField ? readNumber(row, denominatorField) : null;
+    const seasonGames =
+      readNumber(
+        row,
+        getSeasonParticipationField(
+          isSupportedSkaterWindowStrengthState(row.strength_state as string)
+            ? (row.strength_state as SkaterWindowStrengthState)
+            : "all",
+        ),
+      ) ?? readNumber(row, "games_played");
+    const numerator =
+      spec.deriveSeasonFromAverages && rawNumerator != null && seasonGames != null
+        ? Number((rawNumerator * seasonGames).toFixed(6))
+        : rawNumerator;
+    const denominator =
+      spec.deriveSeasonFromAverages && rawDenominator != null && seasonGames != null
+        ? Number((rawDenominator * seasonGames).toFixed(6))
+        : rawDenominator;
     const directField = spec.directFieldBase
       ? `${spec.directFieldBase}_season`
       : null;

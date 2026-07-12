@@ -100,6 +100,15 @@ const MATRIX_METRIC_COLUMNS: MatrixMetricColumn[] = [
     playerTypes: ["skater"],
   },
   {
+    metricKey: "pp_points_per_60",
+    groupKey: "offense",
+    shortLabel: "PPP/60",
+    fullLabel: "PP Points/60",
+    tooltip: "Power-play points per 60 minutes in the selected PP window.",
+    defaultVisible: false,
+    playerTypes: ["skater"],
+  },
+  {
     metricKey: "ixg_per_60",
     groupKey: "offense",
     shortLabel: "ixG/60",
@@ -242,7 +251,8 @@ const MATRIX_METRIC_COLUMNS: MatrixMetricColumn[] = [
     tooltip: "Planned team-without-player relative goal-share metric.",
     defaultVisible: false,
     playerTypes: ["skater"],
-    plannedReason: "Team-without-player 5v5 baseline is not implemented yet.",
+    plannedReason:
+      "Requires matched team-without-player 5v5 goals-for/goals-against and TOI baselines.",
   },
   {
     metricKey: "rel_5v5_xgf_percentage",
@@ -252,7 +262,8 @@ const MATRIX_METRIC_COLUMNS: MatrixMetricColumn[] = [
     tooltip: "Planned team-without-player relative xG-share metric.",
     defaultVisible: false,
     playerTypes: ["skater"],
-    plannedReason: "Team-without-player 5v5 xG baseline is not implemented yet.",
+    plannedReason:
+      "Requires matched team-without-player 5v5 xGF/xGA and TOI baselines.",
   },
   {
     metricKey: "results_luck_index",
@@ -269,7 +280,8 @@ const MATRIX_METRIC_COLUMNS: MatrixMetricColumn[] = [
     groupKey: "overall_context",
     shortLabel: "Off",
     fullLabel: "Offense Rating",
-    tooltip: "Published offensive composite from skater_composite_ratings.",
+    tooltip:
+      "Published contextual descriptive offensive composite from skater_composite_ratings; not an adjusted isolated-impact metric.",
     defaultVisible: true,
     playerTypes: ["skater"],
   },
@@ -279,7 +291,7 @@ const MATRIX_METRIC_COLUMNS: MatrixMetricColumn[] = [
     shortLabel: "Def",
     fullLabel: "Defensive Impact",
     tooltip:
-      "Published contextual defensive-impact composite from skater_composite_ratings; uses unadjusted on-ice inputs with caveats.",
+      "Published contextual defensive-impact-in-context composite from skater_composite_ratings; uses unadjusted on-ice inputs and is not isolated defensive talent.",
     defaultVisible: true,
     playerTypes: ["skater"],
   },
@@ -289,7 +301,7 @@ const MATRIX_METRIC_COLUMNS: MatrixMetricColumn[] = [
     shortLabel: "MCM",
     fullLabel: "MCM Score",
     tooltip:
-      "Current-contract multi-category fantasy composite from verified contextual percentile components; PP points are source-pending and excluded.",
+      "Multi-category fantasy composite from verified contextual percentile components, including live PP points where PP rows are available.",
     defaultVisible: true,
     playerTypes: ["skater"],
   },
@@ -299,7 +311,7 @@ const MATRIX_METRIC_COLUMNS: MatrixMetricColumn[] = [
     shortLabel: "BEAST",
     fullLabel: "BEAST Tier",
     tooltip:
-      "Current-contract fantasy tier label from verified MCM component gates; PP points are source-pending and excluded.",
+      "Fantasy tier label from verified MCM component gates, including live PP points where PP rows are available.",
     defaultVisible: true,
     playerTypes: ["skater"],
   },

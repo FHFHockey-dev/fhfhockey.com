@@ -29,7 +29,12 @@ type SupabaseQueryClient = {
 type OwnershipTrendPayload = {
   success: boolean;
   windowDays: number;
-  generatedAt: string;
+  generatedAt: string | null;
+  sourceDate: string | null;
+  requestedSeason: number | null;
+  seasonFallbackApplied: boolean;
+  mappedPlayerCount: number;
+  unmappedPlayerCount: number;
   page: number;
   pageSize: number;
   offset: number;
@@ -42,6 +47,64 @@ type OwnershipTrendPayload = {
 };
 
 const ALLOWED_WINDOWS = [1, 3, 5, 10];
+const PAGE_SIZE = 1000;
+const MAP_CHUNK_SIZE = 500;
+
+function chunk<T>(values: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let index = 0; index < values.length; index += size) {
+    chunks.push(values.slice(index, index + size));
+  }
+  return chunks;
+}
+
+export async function fetchYahooPlayerRows(args: {
+  supabase: SupabaseQueryClient;
+  select: string;
+  season?: number;
+}): Promise<any[]> {
+  const rows: any[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    let query = args.supabase
+      .from("yahoo_players")
+      .select(args.select)
+      .order("player_id", { ascending: true })
+      .order("season", { ascending: true, nullsFirst: true })
+      .range(from, from + PAGE_SIZE - 1);
+    if (args.season != null) query = query.eq("season", args.season);
+    const { data, error } = await query;
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    rows.push(...data);
+    if (data.length < PAGE_SIZE) break;
+  }
+  return rows;
+}
+
+export function matchesPositionFilter(
+  filter: string | null,
+  eligiblePositions: string[] | null,
+  displayPositionTokens: string[]
+): boolean {
+  if (!filter) return true;
+  const positions = new Set([...(eligiblePositions ?? []), ...displayPositionTokens]);
+  if (filter === "F") {
+    return ["F", "C", "LW", "RW", "W"].some((position) => positions.has(position));
+  }
+  return positions.has(filter);
+}
+
+export function latestOwnershipTimelineDate(rows: any[]): string | null {
+  return rows.reduce<string | null>((latest, row) => {
+    const timeline: any[] = Array.isArray(row?.ownership_timeline)
+      ? row.ownership_timeline
+      : [];
+    return timeline.reduce((rowLatest: string | null, point: any) => {
+      const date = typeof point?.date === "string" ? point.date : null;
+      return date && (!rowLatest || date > rowLatest) ? date : rowLatest;
+    }, latest);
+  }, null);
+}
 
 function resolveKey(): { url: string; key: string } {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -65,21 +128,21 @@ async function fetchYahooToNhlMap(
   );
   if (uniqueIds.length === 0) return new Map();
 
-  const { data, error } = await supabase
-    .from("yahoo_nhl_player_map_mat")
-    .select("nhl_player_id, yahoo_player_id")
-    .in("yahoo_player_id", uniqueIds.map(String));
-
-  if (error) throw error;
-
   const map: YahooToNhlMap = new Map();
-  (data ?? []).forEach((row: any) => {
-    const yahooId = Number(row?.yahoo_player_id);
-    const nhlId = Number(row?.nhl_player_id);
-    if (Number.isFinite(yahooId) && Number.isFinite(nhlId)) {
-      map.set(yahooId, nhlId);
-    }
-  });
+  for (const idChunk of chunk(uniqueIds, MAP_CHUNK_SIZE)) {
+    const { data, error } = await supabase
+      .from("yahoo_nhl_player_map_mat")
+      .select("nhl_player_id, yahoo_player_id")
+      .in("yahoo_player_id", idChunk.map(String));
+    if (error) throw error;
+    (data ?? []).forEach((row: any) => {
+      const yahooId = Number(row?.yahoo_player_id);
+      const nhlId = Number(row?.nhl_player_id);
+      if (Number.isFinite(yahooId) && Number.isFinite(nhlId)) {
+        map.set(yahooId, nhlId);
+      }
+    });
+  }
   return map;
 }
 
@@ -125,21 +188,15 @@ export default async function handler(
     const selectMinimal =
       "player_key, player_id, full_name, headshot_url, ownership_timeline";
 
-    // Try metadata fields first
-    let query = supabase
-      .from("yahoo_players")
-      .select(selectWithMeta)
-      .limit(2500);
-    if (season) query = query.eq("season", season);
-    let data: any[] | null = null;
-    let error: any = null;
-    {
-      const r1 = await query;
-      data = (r1.data as any[] | null) ?? null;
-      error = r1.error;
-    }
-
-    if (error) {
+    let data: any[] = [];
+    let seasonFallbackApplied = false;
+    try {
+      data = await fetchYahooPlayerRows({
+        supabase,
+        select: selectWithMeta,
+        season
+      });
+    } catch (error: any) {
       const msg = String(error.message || "").toLowerCase();
       const missingCols =
         msg.includes("display_position") ||
@@ -149,28 +206,21 @@ export default async function handler(
         msg.includes("uniform_number") ||
         msg.includes("column") ||
         msg.includes("does not exist");
-      if (missingCols) {
-        let fb = supabase
-          .from("yahoo_players")
-          .select(selectMinimal)
-          .limit(2500);
-        if (season) fb = fb.eq("season", season);
-        const r2 = await fb;
-        data = (r2.data as any[] | null) ?? null;
-        error = r2.error;
-      }
+      if (!missingCols) throw error;
+      data = await fetchYahooPlayerRows({
+        supabase,
+        select: selectMinimal,
+        season
+      });
     }
-    if (error) throw error;
-    if ((!data || data.length === 0) && season) {
-      let fallback = supabase
-        .from("yahoo_players")
-        .select(selectWithMeta)
-        .limit(2500);
-      let r3: any = await fallback;
-      data = (r3.data as any[] | null) ?? null;
-      error = r3.error;
-
-      if (error) {
+    if (data.length === 0 && season) {
+      seasonFallbackApplied = true;
+      try {
+        data = await fetchYahooPlayerRows({
+          supabase,
+          select: selectWithMeta
+        });
+      } catch (error: any) {
         const msg = String(error.message || "").toLowerCase();
         const missingCols =
           msg.includes("display_position") ||
@@ -180,18 +230,14 @@ export default async function handler(
           msg.includes("uniform_number") ||
           msg.includes("column") ||
           msg.includes("does not exist");
-        if (missingCols) {
-          r3 = await supabase
-            .from("yahoo_players")
-            .select(selectMinimal)
-            .limit(2500);
-          data = (r3.data as any[] | null) ?? null;
-          error = r3.error;
-        }
+        if (!missingCols) throw error;
+        data = await fetchYahooPlayerRows({
+          supabase,
+          select: selectMinimal
+        });
       }
-      if (error) throw error;
     }
-    const rows: any[] = Array.isArray(data) ? (data as any[]) : [];
+    const rows: any[] = Array.isArray(data) ? data : [];
     const yahooToNhl = await fetchYahooToNhlMap(
       supabase,
       rows
@@ -260,7 +306,7 @@ export default async function handler(
           ...(eligiblePositions ?? []),
           ...displayPosTokens
         ]);
-        if (!all.has(posFilter)) continue;
+        if (!matchesPositionFilter(posFilter, eligiblePositions, displayPosTokens)) continue;
       }
 
       const yahooPlayerId =
@@ -268,7 +314,7 @@ export default async function handler(
           ? null
           : Number(row.player_id);
       const nhlPlayerId =
-        yahooPlayerId != null ? yahooToNhl.get(yahooPlayerId) ?? yahooPlayerId : null;
+        yahooPlayerId != null ? yahooToNhl.get(yahooPlayerId) ?? null : null;
 
       const obj: TrendPlayer = {
         playerKey: row.player_key,
@@ -302,13 +348,24 @@ export default async function handler(
 
     const totalRisers = risers.length;
     const totalFallers = fallers.length;
+    const sourceDate = latestOwnershipTimelineDate(rows);
+    const mappedPlayerCount = rows.filter((row) => {
+      const yahooId = Number(row?.player_id);
+      return Number.isFinite(yahooId) && yahooToNhl.has(yahooId);
+    }).length;
+    const unmappedPlayerCount = rows.length - mappedPlayerCount;
     const risersPage = risers.slice(offset, offset + limit);
     const fallersPage = fallers.slice(offset, offset + limit);
 
     const payload: OwnershipTrendPayload = {
       success: true,
       windowDays,
-      generatedAt: new Date().toISOString(),
+      generatedAt: sourceDate ? `${sourceDate}T23:59:59.999Z` : null,
+      sourceDate,
+      requestedSeason: season ?? null,
+      seasonFallbackApplied,
+      mappedPlayerCount,
+      unmappedPlayerCount,
       page: Math.floor(offset / limit) + 1,
       pageSize: limit,
       offset,

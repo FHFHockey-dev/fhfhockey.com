@@ -51,17 +51,11 @@ export const MCM_COMPONENTS = {
     "goals_per_60",
     "primary_assists_per_60",
     "points_per_60",
+    "pp_points_per_60",
   ],
 } as const;
 
-export const MCM_SOURCE_PENDING_COMPONENTS = [
-  {
-    metricKey: "pp_points_per_60",
-    originalRole: "power-play scoring component",
-    reason:
-      "Original MCM includes power-play points, but verified pp_points_per_60 ranking rows are not available in the current source contract.",
-  },
-] as const;
+export const MCM_SOURCE_PENDING_COMPONENTS = [] as const;
 
 export const MCM_SCORE_CONTRACT = {
   label: "MCM Score",
@@ -69,7 +63,7 @@ export const MCM_SCORE_CONTRACT = {
   peerGroup: "deployment",
   scale: "percentile_0_to_100",
   formula:
-    "0.45 * average(top_2(riff_percentiles)) + 0.35 * max(live_scoring_percentiles) + 0.20 * average(live_component_percentiles)",
+    "0.45 * average(top_2(riff_percentiles)) + 0.35 * max(scoring_percentiles) + 0.20 * average(component_percentiles)",
   componentGroups: MCM_COMPONENTS,
   sourcePendingComponents: MCM_SOURCE_PENDING_COMPONENTS,
   requiredOutputFields: [
@@ -82,7 +76,7 @@ export const MCM_SCORE_CONTRACT = {
   ],
   caveats: [
     "Hits and blocks are rink/scorekeeper-sensitive until a rink-adjusted source is verified.",
-    "Power-play points are explicitly excluded from the live MCM calculation until pp_points_per_60 ranking rows are verified.",
+    "Power-play points use verified rolling PP points and PP TOI rows when the selected source strength is PP-capable.",
     "MCM is a fantasy multi-category signal, not a pure NHL talent rating.",
   ],
 } as const;
@@ -126,6 +120,13 @@ export const SKATER_ARCHETYPE_TAG_CONTRACTS = [
     rule:
       "shot_attempts_per_60 percentile >= 75 and primary_assists_per_60 percentile < 70",
     components: ["shot_attempts_per_60", "sog_per_60", "primary_assists_per_60"],
+    exactFormulaStatus: "source_pending",
+    exactRequiredInputs: [
+      "individual_shot_attempt_share",
+      "team_shot_attempt_share_without_player",
+      "individual_pass_attempt_share",
+      "deployment_relative_primary_assist_share",
+    ],
   },
   {
     key: "pass_first",
@@ -134,6 +135,13 @@ export const SKATER_ARCHETYPE_TAG_CONTRACTS = [
     rule:
       "primary_assists_per_60 percentile >= 75 and shot_attempts_per_60 percentile < 70",
     components: ["primary_assists_per_60", "assists_per_60", "shot_attempts_per_60"],
+    exactFormulaStatus: "source_pending",
+    exactRequiredInputs: [
+      "individual_pass_attempt_share",
+      "team_pass_attempt_share_without_player",
+      "primary_assist_share",
+      "deployment_relative_shot_attempt_share",
+    ],
   },
   {
     key: "play_driver",
@@ -145,6 +153,14 @@ export const SKATER_ARCHETYPE_TAG_CONTRACTS = [
       "on_ice_xgf_percentage",
       "shot_attempts_per_60",
       "primary_assists_per_60",
+    ],
+    exactFormulaStatus: "source_pending",
+    exactRequiredInputs: [
+      "relative_5v5_xgf_percentage",
+      "relative_5v5_gf_percentage",
+      "team_without_player_5v5_xgf",
+      "team_without_player_5v5_xga",
+      "controlled_zone_entry_share",
     ],
   },
 ] as const;

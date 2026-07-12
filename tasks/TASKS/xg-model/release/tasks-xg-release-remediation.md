@@ -1,5 +1,6 @@
 ## Relevant Files
 
+- `tasks/TASKS/xg-model/release/prd/prd-xg-release-validation-and-exception-resolution.md` - Paired PRD for remediation, formal validation, exception policy, and training-use verdict requirements.
 - `tasks/tasks-xg-release-remediation.md` - Execution plan for fixing the release blockers that currently prevent baseline-model training.
 - `tasks/artifacts/xg-baseline-validation-2026-03-30.md` - Validation evidence showing the current raw-identity and parity failures.
 - `tasks/artifacts/xg-release-blockers-2026-03-30.md` - Current minimal blocker list for training-use release approval.

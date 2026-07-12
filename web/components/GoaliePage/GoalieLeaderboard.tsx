@@ -6,12 +6,12 @@ import styles from "styles/Goalies.module.scss";
 import type {
   GoalieRanking,
   Ranking,
-  SortConfig
+  SortConfig,
 } from "components/GoaliePage/goalieTypes";
 import {
   buildGoalieVarianceAverages,
   formatGoalieVarianceValue,
-  getGoalieLeaderboardColumns
+  getGoalieLeaderboardColumns,
 } from "./goalieMetrics";
 
 interface Props {
@@ -27,7 +27,7 @@ const GoalieLeaderboard: FC<Props> = ({
   goalieRankings,
   requestSort,
   sortConfig,
-  varianceDisplayMode = "raw"
+  varianceDisplayMode = "raw",
 }) => {
   const safeGoalieRankings = goalieRankings ?? EMPTY_GOALIE_RANKINGS;
 
@@ -41,11 +41,11 @@ const GoalieLeaderboard: FC<Props> = ({
 
   const columns = React.useMemo(
     () => getGoalieLeaderboardColumns(varianceDisplayMode),
-    [varianceDisplayMode]
+    [varianceDisplayMode],
   );
   const varianceAverages = React.useMemo(
     () => buildGoalieVarianceAverages(safeGoalieRankings),
-    [safeGoalieRankings]
+    [safeGoalieRankings],
   );
 
   if (safeGoalieRankings.length === 0) {
@@ -76,10 +76,10 @@ const GoalieLeaderboard: FC<Props> = ({
   const getWeekCount = (goalie: GoalieRanking, rank: Ranking): number => {
     const legacyRankMap: Record<Ranking, string> = {
       Elite: "Elite Week",
-      Quality: "Quality Week",
+      Good: "Quality Week",
       Average: "Week",
       Bad: "Bad Week",
-      "Really Bad": "Really Bad Week"
+      Abysmal: "Really Bad Week",
     };
 
     return (
@@ -119,10 +119,7 @@ const GoalieLeaderboard: FC<Props> = ({
                 >
                   {label}
                   {infoTitle && (
-                    <span
-                      className={styles.infoIcon}
-                      title={infoTitle}
-                    >
+                    <span className={styles.infoIcon} title={infoTitle}>
                       &#9432;
                     </span>
                   )}
@@ -157,10 +154,10 @@ const GoalieLeaderboard: FC<Props> = ({
                     return goalie.valueTier && goalie.valueTierScore != null ? (
                       <span
                         className={`${styles.valueTierPill} ${getValueTierClass(
-                          goalie.valueTier
+                          goalie.valueTier,
                         )}`}
                         title={`Filtered-population value score ${goalie.valueTierScore.toFixed(
-                          1
+                          1,
                         )}`}
                       >
                         {goalie.valueTier}
@@ -172,10 +169,10 @@ const GoalieLeaderboard: FC<Props> = ({
                 </td>
                 <td>{goalie.totalPoints ?? 0}</td> {/* WoW Pts */}
                 <td>{getWeekCount(goalie, "Elite")}</td> {/* Elite Wk */}
-                <td>{getWeekCount(goalie, "Quality")}</td> {/* Quality */}
+                <td>{getWeekCount(goalie, "Good")}</td> {/* Good */}
                 <td>{getWeekCount(goalie, "Average")}</td> {/* AVG */}
                 <td>{getWeekCount(goalie, "Bad")}</td> {/* BAD */}
-                <td>{getWeekCount(goalie, "Really Bad")}</td> {/* Really Bad */}
+                <td>{getWeekCount(goalie, "Abysmal")}</td> {/* Abysmal */}
                 <td
                   className={getPercentageClass(goalie.percentAcceptableWeeks)}
                 >
@@ -185,17 +182,33 @@ const GoalieLeaderboard: FC<Props> = ({
                   {(goalie.percentGoodWeeks ?? 0).toFixed(1)}%
                 </td>
                 <td>
+                  {goalie.consistencyScore == null
+                    ? "N/A"
+                    : `${goalie.consistencyScore}`}
+                </td>
+                <td>{goalie.averageStartsPerWeek?.toFixed(1) ?? "N/A"}</td>
+                <td>
+                  {goalie.weeklyRecordPatterns?.length
+                    ? goalie.weeklyRecordPatterns
+                        .slice(0, 3)
+                        .map(({ record, count }) =>
+                          count > 1 ? `${record} ×${count}` : record,
+                        )
+                        .join(", ")
+                    : "N/A"}
+                </td>
+                <td>
                   {formatGoalieVarianceValue(
                     goalie.wowVariance,
                     varianceAverages.wowVariance,
-                    varianceDisplayMode
+                    varianceDisplayMode,
                   )}
                 </td>
                 <td>
                   {formatGoalieVarianceValue(
                     goalie.gogVariance,
                     varianceAverages.gogVariance,
-                    varianceDisplayMode
+                    varianceDisplayMode,
                   )}
                 </td>
                 <td>
@@ -221,10 +234,13 @@ const GoalieLeaderboard: FC<Props> = ({
       </table>
 
       <p className={styles.varianceNote}>
-        Lower standard deviation indicates more consistent performance.
+        Lower standard deviation indicates more consistent performance. Weekly
+        bands require at least one start and 20 minutes played; shorter
+        relief-only weeks are unclassified. The 0-100 consistency score measures
+        stability, while the named bands and good-week percentage show quality.
         Avg %ile shows overall statistical rank vs peers (higher is better).
-        Relative mode shows the delta versus the filtered average.
-        Fantasy Points (fPts) calculated based on settings.
+        Relative mode shows the delta versus the filtered average. Fantasy
+        Points (fPts) calculated based on settings.
       </p>
     </>
   );

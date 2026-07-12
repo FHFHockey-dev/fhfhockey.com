@@ -130,9 +130,10 @@ export default function DateRangeMatrix({
       timesPlayedWith: item.regularSeasonData.timesPlayedWith,
       ATOI: item.regularSeasonData.ATOI,
       percentOfSeason: item.regularSeasonData.percentOfSeason,
-      displayPosition: item.regularSeasonData.displayPosition,
+      displayPosition: item.displayPosition ?? item.primaryPosition ?? "",
       mutualSharedToi: {},
-      comboPoints: item.comboPoints || 0
+      comboPoints: item.comboPoints || 0,
+      playerType: item.playerType
     }));
     // console.log("Sorted Roster in DateRangeMatrix:", roster);
     return roster;

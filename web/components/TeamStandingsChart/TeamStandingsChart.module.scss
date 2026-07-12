@@ -301,6 +301,14 @@
   align-self: stretch;
 }
 
+.teamToggleDetails {
+  min-width: 0;
+
+  > summary {
+    display: none;
+  }
+}
+
 .toggleButtons {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -507,5 +515,152 @@
 
   .toggleList {
     grid-template-columns: 1fr;
+  }
+}
+
+.compact {
+  gap: v.$space-xs;
+  height: 100%;
+
+  .summaryHeader {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: v.$space-sm;
+    min-height: 42px;
+    padding: v.$space-xs v.$space-sm;
+    border-bottom: 1px solid v.$border-soft;
+  }
+
+  .summaryCopy {
+    grid-template-columns: 1fr;
+  }
+
+  .summaryEyebrow,
+  .summaryBody {
+    display: none;
+  }
+
+  .summaryTitle {
+    font-family: v.$font-family-primary, sans-serif;
+    font-size: 0.88rem;
+    font-weight: v.$font-weight-bold;
+    letter-spacing: 0.12em;
+  }
+
+  .summaryStats {
+    display: none;
+  }
+
+  .summaryStat {
+    min-width: 76px;
+    padding: v.$space-xs v.$space-sm v.$space-xs calc(v.$space-sm + 5px);
+    border-radius: v.$radius-control;
+    box-shadow: none;
+
+    &:last-child {
+      display: none;
+    }
+  }
+
+  .summaryStatLabel {
+    font-size: 0.58rem;
+  }
+
+  .summaryStatValue {
+    font-size: 0.72rem;
+  }
+
+  .chartAndToggles {
+    grid-template-columns: minmax(0, 1fr);
+    gap: v.$space-xs;
+    padding: 0 v.$space-xs v.$space-xs;
+  }
+
+  .filters {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2px;
+    padding: 2px;
+  }
+
+  .filterField {
+    min-width: 0;
+    grid-template-columns: 1fr;
+
+    label {
+      display: none;
+    }
+
+    select {
+      border-left: 0;
+      min-height: 28px;
+      padding-left: v.$space-xs;
+      font-size: v.$font-size-xxs;
+    }
+  }
+
+  .rollingToggles {
+    grid-column: 1 / -1;
+  }
+
+  .chartContainer {
+    min-height: 252px;
+    height: 252px;
+  }
+
+  .teamToggleDetails {
+    @include panel.panel-shell($padding: 0, $variant: soft);
+
+    > summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: v.$control-height-md;
+      padding: 0 v.$space-md;
+      color: v.$primary-color;
+      cursor: pointer;
+      font-family: v.$font-family-accent, sans-serif;
+      font-size: v.$font-size-xs;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+
+      &:focus-visible {
+        outline: 2px solid v.$primary-color;
+        outline-offset: -2px;
+      }
+    }
+  }
+
+  .teamToggles {
+    max-height: 270px;
+    overflow: auto;
+    border: 0;
+    border-top: 1px solid v.$border-soft;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  @media (max-width: 768px) {
+    display: grid;
+
+    .summaryHeader {
+      grid-template-columns: 1fr;
+    }
+
+    .summaryStats {
+      width: 100%;
+    }
+
+    .summaryStat {
+      flex: 1;
+    }
+
+    .filters {
+      grid-template-columns: 1fr;
+    }
+
+    .chartContainer {
+      min-height: 300px;
+      height: 300px;
+    }
   }
 }

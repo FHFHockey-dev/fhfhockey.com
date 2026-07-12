@@ -30,6 +30,15 @@ export type TopAddsCandidateInput = {
     isDegraded: boolean;
     summary: string | null;
   } | null;
+  confidenceDrivers?: {
+    role: { evenStrength: string | null; unitTier: string | null };
+    powerPlay: { allocatedShare: number | null };
+    matchup: {
+      opponentGoalieGoalRateMultiplier: number | null;
+      opponentStarterCertainty: number | null;
+    };
+    rest: { teamRestDays: number | null; opponentRestDays: number | null };
+  } | null;
   scheduleGamesRemaining: number | null;
   scheduleOffNightsRemaining: number | null;
   scheduleLabel: string | null;
@@ -54,7 +63,7 @@ function round2(value: number): number {
 
 export function scoreTopAddsCandidate(
   candidate: TopAddsCandidateInput,
-  mode: TopAddsMode
+  mode: TopAddsMode,
 ): TopAddsScoreBreakdown {
   const trendStrengthScore = candidate.delta * 5;
   const ownershipBiasScore = ((100 - candidate.ownership) / 100) * 8;
@@ -82,18 +91,18 @@ export function scoreTopAddsCandidate(
     projectionSupportScore: round2(projectionSupportScore),
     scheduleContextScore: round2(scheduleContextScore),
     riskPenaltyScore: round2(riskPenaltyScore),
-    total: round2(total)
+    total: round2(total),
   };
 }
 
 export function rankTopAddsCandidates(
   candidates: TopAddsCandidateInput[],
-  mode: TopAddsMode
+  mode: TopAddsMode,
 ): RankedTopAddsCandidate[] {
   return candidates
     .map((candidate) => ({
       ...candidate,
-      score: scoreTopAddsCandidate(candidate, mode)
+      score: scoreTopAddsCandidate(candidate, mode),
     }))
     .sort((a, b) => {
       if (b.score.total !== a.score.total) {

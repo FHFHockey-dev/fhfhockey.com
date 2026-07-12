@@ -17,6 +17,7 @@ import {
   type PlayerStatsSourceGameRow,
 } from "lib/underlying-stats/playerStatsLandingServer";
 import { matchesPlayerStatsPositionGroup } from "lib/underlying-stats/playerStatsQueries";
+import { classifyPlayerUnderlyingCoverage } from "lib/underlying-stats/playerUnderlyingCoverage";
 import type {
   PlayerStatsDetailFilterState,
   PlayerStatsFilterState,
@@ -82,7 +83,9 @@ function parseArgs(): Args {
   let query = "";
   if (typeof urlArg === "string" && urlArg.length > 0) {
     const parsed = new URL(urlArg);
-    query = parsed.search.startsWith("?") ? parsed.search.slice(1) : parsed.search;
+    query = parsed.search.startsWith("?")
+      ? parsed.search.slice(1)
+      : parsed.search;
   } else if (typeof queryArg === "string" && queryArg.length > 0) {
     query = queryArg.startsWith("?") ? queryArg.slice(1) : queryArg;
   }
@@ -117,7 +120,9 @@ function queryStringToObject(query: string): QueryLike {
   return result;
 }
 
-function cloneStateWithLargePageSize<T extends PlayerStatsFilterState>(state: T): T {
+function cloneStateWithLargePageSize<T extends PlayerStatsFilterState>(
+  state: T,
+): T {
   return {
     ...state,
     view: {
@@ -130,11 +135,18 @@ function cloneStateWithLargePageSize<T extends PlayerStatsFilterState>(state: T)
   };
 }
 
-function enumerateSeasonIds(fromSeasonId: number, throughSeasonId: number): number[] {
+function enumerateSeasonIds(
+  fromSeasonId: number,
+  throughSeasonId: number,
+): number[] {
   const fromYear = Number(String(fromSeasonId).slice(0, 4));
   const throughYear = Number(String(throughSeasonId).slice(0, 4));
 
-  if (!Number.isFinite(fromYear) || !Number.isFinite(throughYear) || fromYear > throughYear) {
+  if (
+    !Number.isFinite(fromYear) ||
+    !Number.isFinite(throughYear) ||
+    fromYear > throughYear
+  ) {
     return [fromSeasonId];
   }
 
@@ -144,13 +156,94 @@ function enumerateSeasonIds(fromSeasonId: number, throughSeasonId: number): numb
   });
 }
 
-function resolveGameType(seasonType: PlayerStatsFilterState["primary"]["seasonType"]) {
+function resolveGameType(
+  seasonType: PlayerStatsFilterState["primary"]["seasonType"],
+) {
   if (seasonType === "preSeason") return 1;
   if (seasonType === "playoffs") return 3;
   return 2;
 }
 
-async function fetchEligibleGamesForState(state: PlayerStatsFilterState): Promise<SourceGameRow[]> {
+async function fetchExpectedPlayerGameIds(args: {
+  playerId: number;
+  state: PlayerStatsFilterState;
+}): Promise<{ available: boolean; gameIds: number[]; issues: string[] }> {
+  const fromSeasonId = args.state.primary.seasonRange.fromSeasonId;
+  const throughSeasonId = args.state.primary.seasonRange.throughSeasonId;
+  if (fromSeasonId == null || throughSeasonId == null) {
+    return { available: true, gameIds: [], issues: [] };
+  }
+
+  const gameIds: number[] = [];
+  const issues: string[] = [];
+  const gameType = resolveGameType(args.state.primary.seasonType);
+
+  for (const seasonId of enumerateSeasonIds(fromSeasonId, throughSeasonId)) {
+    try {
+      const response = await fetch(
+        `https://api-web.nhle.com/v1/player/${args.playerId}/game-log/${seasonId}/${gameType}`,
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const payload = (await response.json()) as {
+        gameLog?: Array<{ gameId?: number; gameDate?: string }>;
+      };
+      for (const game of payload.gameLog ?? []) {
+        if (!Number.isFinite(game.gameId)) continue;
+        if (
+          args.state.expandable.scope.kind === "dateRange" &&
+          ((args.state.expandable.scope.startDate &&
+            (game.gameDate ?? "") < args.state.expandable.scope.startDate) ||
+            (args.state.expandable.scope.endDate &&
+              (game.gameDate ?? "") > args.state.expandable.scope.endDate))
+        ) {
+          continue;
+        }
+        gameIds.push(Number(game.gameId));
+      }
+    } catch (error) {
+      issues.push(
+        `${seasonId}: ${error instanceof Error ? error.message : "unknown game-log error"}`,
+      );
+    }
+  }
+
+  return {
+    available: issues.length === 0,
+    gameIds,
+    issues,
+  };
+}
+
+async function fetchRosterGameIdsForPlayer(args: {
+  playerId: number;
+  eligibleGameIds: readonly number[];
+}): Promise<number[]> {
+  const rows: number[] = [];
+  for (let index = 0; index < args.eligibleGameIds.length; index += 100) {
+    const gameIds = args.eligibleGameIds.slice(index, index + 100);
+    const { data, error } = await serviceRoleClient
+      .from("nhl_api_game_roster_spots")
+      .select("game_id")
+      .eq("player_id", args.playerId)
+      .in("game_id", gameIds)
+      .order("game_id", { ascending: true });
+    if (error) {
+      throw new Error(`[verify-player-underlying-query] ${error.message}`);
+    }
+    rows.push(
+      ...(data ?? [])
+        .map((row) => Number(row.game_id))
+        .filter((gameId) => Number.isFinite(gameId)),
+    );
+  }
+  return rows;
+}
+
+async function fetchEligibleGamesForState(
+  state: PlayerStatsFilterState,
+): Promise<SourceGameRow[]> {
   const fromSeasonId = state.primary.seasonRange.fromSeasonId;
   const throughSeasonId = state.primary.seasonRange.throughSeasonId;
 
@@ -232,7 +325,7 @@ async function fetchEligibleGamesForState(state: PlayerStatsFilterState): Promis
 
 function compareGamesDescending(
   left: Pick<SourceGameRow, "date" | "id">,
-  right: Pick<SourceGameRow, "date" | "id">
+  right: Pick<SourceGameRow, "date" | "id">,
 ) {
   if (left.date !== right.date) {
     return right.date.localeCompare(left.date);
@@ -275,15 +368,20 @@ function getSelectedGamesForTeamContext(args: {
 
   return new Set(
     eligibleGames
-      .slice(0, args.limit == null || args.limit <= 0 ? eligibleGames.length : args.limit)
-      .map((game) => game.id)
+      .slice(
+        0,
+        args.limit == null || args.limit <= 0
+          ? eligibleGames.length
+          : args.limit,
+      )
+      .map((game) => game.id),
   );
 }
 
 function matchesSummaryRowForState(
   playerId: number,
   state: PlayerStatsFilterState,
-  row: SummaryRow
+  row: SummaryRow,
 ) {
   if (row.playerId !== playerId) {
     return false;
@@ -303,7 +401,10 @@ function matchesSummaryRowForState(
 
   if (state.surface === "landing") {
     const landingState = state as PlayerStatsLandingFilterState;
-    if (landingState.expandable.teamId != null && row.teamId !== landingState.expandable.teamId) {
+    if (
+      landingState.expandable.teamId != null &&
+      row.teamId !== landingState.expandable.teamId
+    ) {
       return false;
     }
   } else {
@@ -345,7 +446,10 @@ function getGroupingKey(state: PlayerStatsFilterState, row: SummaryRow) {
     : `${row.playerId}`;
 }
 
-function takeMostRecentSummaryRows(rows: readonly SummaryRow[], limit: number | null) {
+function takeMostRecentSummaryRows(
+  rows: readonly SummaryRow[],
+  limit: number | null,
+) {
   if (limit == null || limit <= 0) {
     return [...rows];
   }
@@ -354,8 +458,8 @@ function takeMostRecentSummaryRows(rows: readonly SummaryRow[], limit: number | 
     .sort((left, right) =>
       compareGamesDescending(
         { date: left.gameDate, id: left.gameId },
-        { date: right.gameDate, id: right.gameId }
-      )
+        { date: right.gameDate, id: right.gameId },
+      ),
     )
     .slice(0, limit);
 }
@@ -384,14 +488,16 @@ function applyScopeToSummaryRows(args: {
 
   if (scope.kind === "gameRange") {
     return [...rowsByGroupingKey.values()].flatMap((groupRows) =>
-      takeMostRecentSummaryRows(groupRows, scope.value)
+      takeMostRecentSummaryRows(groupRows, scope.value),
     );
   }
 
   return [...rowsByGroupingKey.values()].flatMap((groupRows) => {
     const selectedGameIds = new Set<number>();
     const explicitLandingTeamId =
-      args.state.surface === "landing" ? args.state.expandable.teamId ?? null : null;
+      args.state.surface === "landing"
+        ? (args.state.expandable.teamId ?? null)
+        : null;
     const teamIds =
       explicitLandingTeamId != null
         ? [explicitLandingTeamId]
@@ -416,7 +522,8 @@ function applyScopeToSummaryRows(args: {
 
 function sumNullable(values: Array<number | null | undefined>) {
   const numericValues = values.filter(
-    (value): value is number => typeof value === "number" && Number.isFinite(value)
+    (value): value is number =>
+      typeof value === "number" && Number.isFinite(value),
   );
 
   if (numericValues.length === 0) {
@@ -426,14 +533,20 @@ function sumNullable(values: Array<number | null | undefined>) {
   return numericValues.reduce((total, value) => total + value, 0);
 }
 
-function buildRawNumeratorTotals(mode: PlayerStatsMode, rows: readonly SummaryRow[]) {
+function buildRawNumeratorTotals(
+  mode: PlayerStatsMode,
+  rows: readonly SummaryRow[],
+) {
   const uniqueRows = dedupeRowsByGameId(rows);
   const totals = {
-    toiSeconds: uniqueRows.reduce((total, row) => total + (row.metrics.toiSeconds ?? 0), 0),
+    toiSeconds: uniqueRows.reduce(
+      (total, row) => total + (row.metrics.toiSeconds ?? 0),
+      0,
+    ),
     gamesPlayed: uniqueRows.length,
     onIceGoalsForForIpp: uniqueRows.reduce(
       (total, row) => total + (row.metrics.onIceGoalsForForIpp ?? 0),
-      0
+      0,
     ),
   } as Record<string, unknown>;
 
@@ -469,8 +582,10 @@ function buildRawNumeratorTotals(mode: PlayerStatsMode, rows: readonly SummaryRo
     totals.individual = Object.fromEntries(
       keys.map((key) => [
         key,
-        sumNullable(uniqueRows.map((row) => row.metrics.individual?.[key] ?? null)),
-      ])
+        sumNullable(
+          uniqueRows.map((row) => row.metrics.individual?.[key] ?? null),
+        ),
+      ]),
     );
     return totals;
   }
@@ -504,7 +619,7 @@ function buildRawNumeratorTotals(mode: PlayerStatsMode, rows: readonly SummaryRo
       keys.map((key) => [
         key,
         sumNullable(uniqueRows.map((row) => row.metrics.onIce?.[key] ?? null)),
-      ])
+      ]),
     );
     return totals;
   }
@@ -538,7 +653,7 @@ function buildRawNumeratorTotals(mode: PlayerStatsMode, rows: readonly SummaryRo
     keys.map((key) => [
       key,
       sumNullable(uniqueRows.map((row) => row.metrics.goalies?.[key] ?? null)),
-    ])
+    ]),
   );
   return totals;
 }
@@ -566,22 +681,28 @@ function findLandingAggregationRowForPlayer(args: {
       args.rows.find(
         (row) =>
           Number(row?.playerId) === args.playerId &&
-          String(row?.teamAbbrev ?? "") === String(args.teamAbbrev ?? "")
+          String(row?.teamAbbrev ?? "") === String(args.teamAbbrev ?? ""),
       ) ?? null
     );
   }
 
-  return args.rows.find((row) => Number(row?.playerId) === args.playerId) ?? null;
+  return (
+    args.rows.find((row) => Number(row?.playerId) === args.playerId) ?? null
+  );
 }
 
 function findDetailAggregationRowForPlayer(args: {
   seasonId: number;
   rows: readonly any[];
 }) {
-  return args.rows.find((row) => Number(row?.seasonId) === args.seasonId) ?? null;
+  return (
+    args.rows.find((row) => Number(row?.seasonId) === args.seasonId) ?? null
+  );
 }
 
-function pickDerivedRateValues(finalRowPayload: Record<string, unknown> | null) {
+function pickDerivedRateValues(
+  finalRowPayload: Record<string, unknown> | null,
+) {
   if (!finalRowPayload) {
     return null;
   }
@@ -600,7 +721,7 @@ function pickDerivedRateValues(finalRowPayload: Record<string, unknown> | null) 
         key === "avgShotDistance" ||
         key === "avgGoalDistance"
       );
-    })
+    }),
   );
 }
 
@@ -613,27 +734,32 @@ async function main() {
       : createDefaultLandingFilterState();
   const parsedState = parsePlayerStatsFilterStateFromQuery(
     queryObject,
-    defaultState as any
+    defaultState as any,
   ) as PlayerStatsFilterState;
   const validation = validatePlayerStatsFilterState(parsedState);
 
   if (!validation.isValid) {
-    throw new Error(
-      `Invalid filter state: ${validation.issues.join(", ")}`
-    );
+    throw new Error(`Invalid filter state: ${validation.issues.join(", ")}`);
   }
 
   console.error("[verify-player-underlying-query] fetching eligible games");
   const games = await fetchEligibleGamesForState(parsedState);
+  const [expectedGameReference, rosterGameIds] = await Promise.all([
+    fetchExpectedPlayerGameIds({ playerId: args.playerId, state: parsedState }),
+    fetchRosterGameIdsForPlayer({
+      playerId: args.playerId,
+      eligibleGameIds: games.map((game) => game.id),
+    }),
+  ]);
   console.error(
-    `[verify-player-underlying-query] rebuilding summary snapshots for ${games.length} games`
+    `[verify-player-underlying-query] rebuilding summary snapshots for ${games.length} games`,
   );
   const snapshots = await buildPlayerStatsLandingSummarySnapshotsForGameIds(
     games.map((game) => game.id),
-    serviceRoleClient
+    serviceRoleClient,
   );
   console.error(
-    `[verify-player-underlying-query] loaded ${snapshots.length} summary snapshots`
+    `[verify-player-underlying-query] loaded ${snapshots.length} summary snapshots`,
   );
 
   const summaryRows = snapshots.flatMap((snapshot) => {
@@ -646,12 +772,18 @@ async function main() {
   });
 
   const playerSummaryRows = summaryRows.filter((row) =>
-    matchesSummaryRowForState(args.playerId, parsedState, row)
+    matchesSummaryRowForState(args.playerId, parsedState, row),
   );
   const scopedRows = applyScopeToSummaryRows({
     state: parsedState,
     games,
     rows: playerSummaryRows,
+  });
+  const coverageDiagnostic = classifyPlayerUnderlyingCoverage({
+    expectedGameIds: expectedGameReference.gameIds,
+    rosterGameIds,
+    summaryGameIds: scopedRows.map((row) => row.gameId),
+    referenceAvailable: expectedGameReference.available,
   });
 
   const rowsByGroupingKey = new Map<string, SummaryRow[]>();
@@ -683,81 +815,82 @@ async function main() {
         })
       : null;
 
-  const verificationBlocks = [...rowsByGroupingKey.entries()].map(([groupKey, rows]) => {
-    const dedupedRows = dedupeRowsByGameId(rows).sort((left, right) =>
-      compareGamesDescending(
-        { date: left.gameDate, id: left.gameId },
-        { date: right.gameDate, id: right.gameId }
-      )
-    );
-    const rebuiltFinalRowPayload =
-      parsedState.surface === "landing"
-        ? (() => {
-            const aggregationRow = findLandingAggregationRowForPlayer({
-              playerId: args.playerId,
-              state: parsedState as PlayerStatsLandingFilterState,
-              rows: landingAggregationRows ?? [],
-              teamAbbrev: rows[0]?.teamAbbrev ?? null,
-            });
+  const verificationBlocks = [...rowsByGroupingKey.entries()].map(
+    ([groupKey, rows]) => {
+      const dedupedRows = dedupeRowsByGameId(rows).sort((left, right) =>
+        compareGamesDescending(
+          { date: left.gameDate, id: left.gameId },
+          { date: right.gameDate, id: right.gameId },
+        ),
+      );
+      const rebuiltFinalRowPayload =
+        parsedState.surface === "landing"
+          ? (() => {
+              const aggregationRow = findLandingAggregationRowForPlayer({
+                playerId: args.playerId,
+                state: parsedState as PlayerStatsLandingFilterState,
+                rows: landingAggregationRows ?? [],
+                teamAbbrev: rows[0]?.teamAbbrev ?? null,
+              });
 
-            if (!aggregationRow) {
-              return null;
-            }
+              if (!aggregationRow) {
+                return null;
+              }
 
-            return (
-              buildLandingApiResultFromAggregationRows({
+              return (buildLandingApiResultFromAggregationRows({
                 state: cloneStateWithLargePageSize(
-                  parsedState as PlayerStatsLandingFilterState
+                  parsedState as PlayerStatsLandingFilterState,
                 ),
                 rows: [aggregationRow],
-              }).rows[0] ?? null
-            ) as Record<string, unknown> | null;
-          })()
-        : (() => {
-            const aggregationRow = findDetailAggregationRowForPlayer({
-              seasonId: rows[0]?.seasonId ?? 0,
-              rows: detailAggregationRows ?? [],
-            });
+              }).rows[0] ?? null) as Record<string, unknown> | null;
+            })()
+          : (() => {
+              const aggregationRow = findDetailAggregationRowForPlayer({
+                seasonId: rows[0]?.seasonId ?? 0,
+                rows: detailAggregationRows ?? [],
+              });
 
-            if (!aggregationRow) {
-              return null;
-            }
+              if (!aggregationRow) {
+                return null;
+              }
 
-            return (
-              buildDetailApiResultFromAggregationRows({
+              return (buildDetailApiResultFromAggregationRows({
                 playerId: args.playerId,
                 state: cloneStateWithLargePageSize(
-                  parsedState as PlayerStatsDetailFilterState
+                  parsedState as PlayerStatsDetailFilterState,
                 ),
                 rows: [aggregationRow],
-              }).rows[0] ?? null
-            ) as Record<string, unknown> | null;
-          })();
+              }).rows[0] ?? null) as Record<string, unknown> | null;
+            })();
 
-    return {
-      groupingKey: groupKey,
-      includedGameIds: dedupedRows.map((row) => row.gameId),
-      includedGames: dedupedRows.map((row) => ({
-        gameId: row.gameId,
-        gameDate: row.gameDate,
-        seasonId: row.seasonId,
-        teamId: row.teamId,
-        teamAbbrev: row.teamAbbrev,
-        opponentTeamId: row.opponentTeamId,
-        isHome: row.isHome,
-        rowMode: row.mode,
-        rowStrength: row.strength,
-        toiSeconds: row.metrics.toiSeconds ?? null,
-      })),
-      summedToiSeconds: dedupedRows.reduce(
-        (total, row) => total + (row.metrics.toiSeconds ?? 0),
-        0
-      ),
-      rawNumeratorTotals: buildRawNumeratorTotals(parsedState.primary.statMode, dedupedRows),
-      derivedValues: pickDerivedRateValues(rebuiltFinalRowPayload),
-      rebuiltFinalRowPayload,
-    };
-  });
+      return {
+        groupingKey: groupKey,
+        includedGameIds: dedupedRows.map((row) => row.gameId),
+        includedGames: dedupedRows.map((row) => ({
+          gameId: row.gameId,
+          gameDate: row.gameDate,
+          seasonId: row.seasonId,
+          teamId: row.teamId,
+          teamAbbrev: row.teamAbbrev,
+          opponentTeamId: row.opponentTeamId,
+          isHome: row.isHome,
+          rowMode: row.mode,
+          rowStrength: row.strength,
+          toiSeconds: row.metrics.toiSeconds ?? null,
+        })),
+        summedToiSeconds: dedupedRows.reduce(
+          (total, row) => total + (row.metrics.toiSeconds ?? 0),
+          0,
+        ),
+        rawNumeratorTotals: buildRawNumeratorTotals(
+          parsedState.primary.statMode,
+          dedupedRows,
+        ),
+        derivedValues: pickDerivedRateValues(rebuiltFinalRowPayload),
+        rebuiltFinalRowPayload,
+      };
+    },
+  );
 
   const output = {
     input: args,
@@ -769,6 +902,8 @@ async function main() {
     },
     eligibleGameCount: games.length,
     eligibleGameIds: games.map((game) => game.id),
+    coverageDiagnostic,
+    coverageReferenceIssues: expectedGameReference.issues,
     summaryRowCountForPlayer: playerSummaryRows.length,
     scopedSummaryRowCountForPlayer: scopedRows.length,
     verificationBlocks,
@@ -779,7 +914,9 @@ async function main() {
 
 main().catch((error) => {
   console.error(
-    error instanceof Error ? error.message : "Unable to verify player underlying query."
+    error instanceof Error
+      ? error.message
+      : "Unable to verify player underlying query.",
   );
   process.exit(1);
 });

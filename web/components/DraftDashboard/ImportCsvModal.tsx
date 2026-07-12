@@ -6,8 +6,9 @@ import { teamsInfo } from "../../lib/teamsInfo";
 import supabase from "lib/supabase";
 import {
   defaultCanonicalColumnMap,
-  standardizeColumnName
+  standardizeColumnName,
 } from "../../lib/standardization/columnStandardization";
+import modalStyles from "./ModalShell.module.scss";
 
 export type CsvPreviewRow = Record<string, string | number | null>;
 
@@ -24,14 +25,14 @@ const REQUIRED_SKATER_COLUMNS = [
   "Team_Abbreviation",
   "Position",
   "Goals",
-  "Assists"
+  "Assists",
 ];
 
 const REQUIRED_GOALIE_COLUMNS = [
   "Player_Name",
   "Team_Abbreviation",
   "Position",
-  "Games_Started_Goalie"
+  "Games_Started_Goalie",
 ];
 
 const FIRST_NAME_ALIASES: Record<string, string[]> = {
@@ -105,11 +106,11 @@ const FIRST_NAME_ALIASES: Record<string, string[]> = {
   stephen: ["steve"],
   vladimir: ["vlad"],
   vladislav: ["vlad"],
-  alexi: ["alex", "alexei"]
+  alexi: ["alex", "alexei"],
 };
 
 const CANONICAL_COLUMN_OPTIONS = Array.from(
-  new Set([...Object.values(defaultCanonicalColumnMap), "player_id"])
+  new Set([...Object.values(defaultCanonicalColumnMap), "player_id"]),
 ).sort();
 
 const ALLOWED_COLUMNS = new Set<string>(CANONICAL_COLUMN_OPTIONS);
@@ -149,7 +150,7 @@ function levenshteinDistance(a: string, b: string): number {
       dp[i][j] = Math.min(
         dp[i - 1][j] + 1,
         dp[i][j - 1] + 1,
-        dp[i - 1][j - 1] + cost
+        dp[i - 1][j - 1] + cost,
       );
     }
   }
@@ -229,7 +230,7 @@ export default function ImportCsvModal({
   onImported,
   minimumCoveragePercent = 25,
   allowNameFallback = true,
-  onFallbackSettingsChange
+  onFallbackSettingsChange,
 }: ImportCsvModalProps) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const [allRows, setAllRows] = useState<CsvPreviewRow[]>([]);
@@ -254,7 +255,7 @@ export default function ImportCsvModal({
     Record<string, number | "">
   >({}); // key: standardized name in preview, val: selected player id
   const [rejectedSuggestions, setRejectedSuggestions] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const [searchInputs, setSearchInputs] = useState<Record<string, string>>({});
   const [forceImportDespiteUnresolved, setForceImportDespiteUnresolved] =
@@ -287,7 +288,7 @@ export default function ImportCsvModal({
         lastName: p.lastName,
         teamId: p.teamId ?? null,
         teamAbbrev: p.teamAbbrev ?? null,
-        std
+        std,
       };
       ids.add(record.id);
       if (!byStdName.has(std)) byStdName.set(std, []);
@@ -325,7 +326,7 @@ export default function ImportCsvModal({
       ids,
       byStdName,
       byTeamAbbrev,
-      byId
+      byId,
     };
   }, [dbPlayers]);
 
@@ -333,7 +334,7 @@ export default function ImportCsvModal({
     const el = dialogRef.current;
     if (!el) return;
     const focusables = el.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
     );
     focusables[0]?.focus();
   }, []);
@@ -371,12 +372,12 @@ export default function ImportCsvModal({
                 teamAbbrev:
                   typeof (r as any).team_id === "number"
                     ? TEAM_ABBREV_BY_ID.get((r as any).team_id) || null
-                    : null
-              }))
+                    : null,
+              })),
             );
             try {
               console.log(
-                `[ImportCsvModal] Loaded players count: ${all.length}`
+                `[ImportCsvModal] Loaded players count: ${all.length}`,
               );
             } catch {}
             // Targeted presence logging for specific players of interest
@@ -385,19 +386,20 @@ export default function ImportCsvModal({
               "Adam Larsson",
               "Cutter Gauthier",
               "J.T. Miller",
-              "K'Andre Miller"
+              "K'Andre Miller",
             ];
             targets.forEach((t) => {
               const matches = all.filter(
-                (p: any) => String(p.fullName).toLowerCase() === t.toLowerCase()
+                (p: any) =>
+                  String(p.fullName).toLowerCase() === t.toLowerCase(),
               );
               if (matches.length) {
                 console.log(
-                  `[ImportCsvModal] Target player present in DB fetch: ${t} -> IDs: ${matches.map((m: any) => m.id).join(", ")}`
+                  `[ImportCsvModal] Target player present in DB fetch: ${t} -> IDs: ${matches.map((m: any) => m.id).join(", ")}`,
                 );
               } else {
                 console.log(
-                  `[ImportCsvModal] Target player NOT found in DB fetch: ${t}`
+                  `[ImportCsvModal] Target player NOT found in DB fetch: ${t}`,
                 );
               }
             });
@@ -427,11 +429,11 @@ export default function ImportCsvModal({
     if (!csvLastNames.size) return;
     const have = new Set(
       dbPlayers.map((p) =>
-        (p.lastName || p.fullName.split(" ").slice(-1)[0]).toLowerCase()
-      )
+        (p.lastName || p.fullName.split(" ").slice(-1)[0]).toLowerCase(),
+      ),
     );
     const missing = Array.from(csvLastNames).filter(
-      (ln) => !have.has(ln.toLowerCase())
+      (ln) => !have.has(ln.toLowerCase()),
     );
     if (!missing.length) return;
     (async () => {
@@ -454,13 +456,13 @@ export default function ImportCsvModal({
                 teamAbbrev:
                   typeof (r as any).team_id === "number"
                     ? TEAM_ABBREV_BY_ID.get((r as any).team_id) || null
-                    : null
+                    : null,
               }));
             return extra.length ? [...prev, ...extra] : prev;
           });
           try {
             console.log(
-              `[ImportCsvModal] Secondary fetch added ${data.length} players (after last-name scan)`
+              `[ImportCsvModal] Secondary fetch added ${data.length} players (after last-name scan)`,
             );
           } catch {}
         }
@@ -482,8 +484,8 @@ export default function ImportCsvModal({
         if (!el) return;
         const focusables = Array.from(
           el.querySelectorAll<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-          )
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          ),
         ).filter((n) => !n.hasAttribute("disabled"));
         if (focusables.length === 0) return;
         const first = focusables[0];
@@ -511,24 +513,24 @@ export default function ImportCsvModal({
         return {
           status: "required" as HeaderConfig["status"],
           selected: true,
-          error: null
+          error: null,
         };
       }
       if (ALLOWED_COLUMNS.has(standardized)) {
         return {
           status: "supported" as HeaderConfig["status"],
           selected: true,
-          error: null
+          error: null,
         };
       }
       return {
         status: "unsupported" as HeaderConfig["status"],
         selected: true,
         error:
-          "Unrecognized column. Consider mapping to a supported stat or uncheck."
+          "Unrecognized column. Consider mapping to a supported stat or uncheck.",
       };
     },
-    [REQUIRED_COLUMN_SET]
+    [REQUIRED_COLUMN_SET],
   );
 
   const onDrop = useCallback(
@@ -550,14 +552,14 @@ export default function ImportCsvModal({
           }
 
           const positionHeader = Object.keys(data[0] as object).find(
-            (h) => h.toLowerCase() === "position" || h.toLowerCase() === "pos"
+            (h) => h.toLowerCase() === "position" || h.toLowerCase() === "pos",
           );
           if (positionHeader) {
             const goalieCount = data.filter(
               (row: any) =>
                 row[positionHeader] &&
                 typeof row[positionHeader] === "string" &&
-                row[positionHeader].toUpperCase() === "G"
+                row[positionHeader].toUpperCase() === "G",
             ).length;
             if (goalieCount / data.length > 0.5) {
               setIsGoalieCsv(true);
@@ -575,7 +577,7 @@ export default function ImportCsvModal({
               standardized,
               selected: classification.selected,
               status: classification.status,
-              error: classification.error
+              error: classification.error,
             } as HeaderConfig;
           });
           setHeaders(processed);
@@ -591,16 +593,16 @@ export default function ImportCsvModal({
         error: (err) => {
           setError(err.message || "Failed to parse CSV");
           setIsParsing(false);
-        }
+        },
       });
     },
-    [classifyColumn]
+    [classifyColumn],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     multiple: false,
-    accept: { "text/csv": [".csv"] }
+    accept: { "text/csv": [".csv"] },
   });
 
   const mappedPreview = useMemo(() => {
@@ -653,12 +655,12 @@ export default function ImportCsvModal({
         invalidIds: 0,
         coverage: 0,
         lastUpdated: Date.now(),
-        unresolvedNames: []
+        unresolvedNames: [],
       };
       return {
         rows: [] as CsvPreviewRow[],
         stats: emptyStats,
-        detail: [] as RowResolutionDetail[]
+        detail: [] as RowResolutionDetail[],
       };
     }
 
@@ -699,8 +701,8 @@ export default function ImportCsvModal({
             (row as any).Player_Name ||
               (row as any).player_name ||
               (row as any).Name ||
-              ""
-          )
+              "",
+          ),
         );
         if (fallback) {
           canonicalName = fallback;
@@ -808,8 +810,8 @@ export default function ImportCsvModal({
 
       const playerIdTargets = Array.from(
         new Set(
-          playerIdKeys.length ? [...playerIdKeys, "player_id"] : ["player_id"]
-        )
+          playerIdKeys.length ? [...playerIdKeys, "player_id"] : ["player_id"],
+        ),
       );
 
       if (finalId != null) {
@@ -828,14 +830,14 @@ export default function ImportCsvModal({
         stdKey,
         team: csvTeamAbbrev,
         manualOverride: method === "manual",
-        invalidOriginalId
+        invalidOriginalId,
       };
 
       detail.push({
         name: trimmedName,
         method,
         playerId: finalId,
-        invalidOriginalId
+        invalidOriginalId,
       });
       rows.push(out);
     });
@@ -855,7 +857,7 @@ export default function ImportCsvModal({
       invalidIds,
       coverage,
       lastUpdated: now,
-      unresolvedNames: Array.from(unresolvedNames).sort()
+      unresolvedNames: Array.from(unresolvedNames).sort(),
     };
 
     return { rows, stats, detail };
@@ -866,7 +868,7 @@ export default function ImportCsvModal({
   const [localAllowFallback, setLocalAllowFallback] =
     useState(allowNameFallback);
   const [localMinCoverage, setLocalMinCoverage] = useState(
-    minimumCoveragePercent
+    minimumCoveragePercent,
   );
   useEffect(() => {
     setLocalAllowFallback(allowNameFallback);
@@ -923,11 +925,11 @@ export default function ImportCsvModal({
       let cands = dbPlayers.filter(
         (p) =>
           p.fullName.split(" ").slice(-1)[0].toLowerCase() ===
-          last.toLowerCase()
+          last.toLowerCase(),
       );
       // Ensure exact full-name match is included at front if found but not already in cands
       const exact = dbPlayers.find(
-        (p) => p.fullName.toLowerCase() === name.toLowerCase()
+        (p) => p.fullName.toLowerCase() === name.toLowerCase(),
       );
       if (exact && !cands.some((c) => c.id === exact.id)) {
         cands = [exact, ...cands];
@@ -940,10 +942,10 @@ export default function ImportCsvModal({
             id: c.id,
             fullName: c.fullName,
             position: c.position ?? null,
-            teamAbbrev: (c as any).teamAbbrev ?? null
+            teamAbbrev: (c as any).teamAbbrev ?? null,
           })),
           csvTeam,
-          csvPos
+          csvPos,
         });
       }
     });
@@ -987,7 +989,7 @@ export default function ImportCsvModal({
   // ---------- Fuzzy Matching Helpers ----------
   const levenshtein = useCallback(
     (a: string, b: string) => levenshteinDistance(a, b),
-    []
+    [],
   );
 
   const ambiguousWithSuggestions = useMemo(() => {
@@ -1020,7 +1022,7 @@ export default function ImportCsvModal({
             fullName: c.fullName,
             position: (c as any).position ?? null,
             teamAbbrev: (c as any).teamAbbrev ?? null,
-            score
+            score,
           };
         })
         .sort((x, y) => y.score - x.score);
@@ -1035,14 +1037,14 @@ export default function ImportCsvModal({
     try {
       const total = ambiguousWithSuggestions.reduce(
         (acc, r) => acc + r.candidates.length,
-        0
+        0,
       );
       const missing = ambiguousWithSuggestions.reduce(
         (acc, r) => acc + r.candidates.filter((c) => !c.teamAbbrev).length,
-        0
+        0,
       );
       console.log(
-        `[ImportCsvModal] Ambiguity candidates: ${total}, missing teamAbbrev: ${missing}`
+        `[ImportCsvModal] Ambiguity candidates: ${total}, missing teamAbbrev: ${missing}`,
       );
     } catch {}
   }, [ambiguousWithSuggestions]);
@@ -1062,7 +1064,7 @@ export default function ImportCsvModal({
 
   const missingRequired = useMemo(() => {
     const set = new Set(
-      headers.filter((h) => h.selected).map((h) => h.standardized)
+      headers.filter((h) => h.selected).map((h) => h.standardized),
     );
     return REQUIRED_COLUMNS.filter((r) => !set.has(r));
   }, [headers, REQUIRED_COLUMNS]);
@@ -1079,7 +1081,7 @@ export default function ImportCsvModal({
     const hasUnresolvedRows = resolutionStats.unresolved > 0;
     if (requireFullMapping && resolutionStats.coverage < 1) {
       setError(
-        "Require full mapping is enabled. Resolve all players before importing."
+        "Require full mapping is enabled. Resolve all players before importing.",
       );
       return;
     }
@@ -1090,9 +1092,9 @@ export default function ImportCsvModal({
       setError(
         coverageBelowThreshold
           ? `Coverage ${(resolutionStats.coverage * 100).toFixed(
-              1
+              1,
             )}% is below the minimum ${localMinCoverage}%. Review or force import.`
-          : `There are still ${resolutionStats.unresolved} unresolved players. Review or force import.`
+          : `There are still ${resolutionStats.unresolved} unresolved players. Review or force import.`,
       );
       return;
     }
@@ -1104,11 +1106,11 @@ export default function ImportCsvModal({
     const resolutionPayload: ResolutionStats = {
       ...resolutionStats,
       lastUpdated: Date.now(),
-      unresolvedNames: [...resolutionStats.unresolvedNames]
+      unresolvedNames: [...resolutionStats.unresolvedNames],
     };
     onFallbackSettingsChange?.({
       allowCustomNameFallback: localAllowFallback,
-      minimumCoveragePercent: localMinCoverage
+      minimumCoveragePercent: localMinCoverage,
     });
     try {
       console.log(
@@ -1120,7 +1122,7 @@ export default function ImportCsvModal({
           resolutionPayload.manualOverrides
         }, unresolved=${resolutionPayload.unresolved}, invalidIds=${
           resolutionPayload.invalidIds
-        }, coverage=${(resolutionPayload.coverage * 100).toFixed(1)}%`
+        }, coverage=${(resolutionPayload.coverage * 100).toFixed(1)}%`,
       );
     } catch {}
     const payload = {
@@ -1128,7 +1130,7 @@ export default function ImportCsvModal({
       rows: mapped,
       sourceId: "custom_csv",
       label: sourceName,
-      resolution: resolutionPayload
+      resolution: resolutionPayload,
     } as const;
     onImported(payload);
     onClose();
@@ -1140,7 +1142,7 @@ export default function ImportCsvModal({
         if (i !== idx) return h;
         if (h.status === "required") return h;
         return { ...h, selected: !h.selected };
-      })
+      }),
     );
   };
 
@@ -1172,9 +1174,9 @@ export default function ImportCsvModal({
           standardized: nextStandardized,
           status: classification.status,
           selected: nextSelected,
-          error: classification.error
+          error: classification.error,
         };
-      })
+      }),
     );
   };
 
@@ -1183,7 +1185,7 @@ export default function ImportCsvModal({
     const rec = rosterIndex.byId.get(playerId);
     setManualSearchInputs((prev) => ({
       ...prev,
-      [name]: rec?.fullName || prev[name] || ""
+      [name]: rec?.fullName || prev[name] || "",
     }));
   };
 
@@ -1205,7 +1207,7 @@ export default function ImportCsvModal({
   const unresolvedCount = useMemo(
     () =>
       ambiguousWithSuggestions.filter((r) => !ambiguousChoices[r.key]).length,
-    [ambiguousWithSuggestions, ambiguousChoices]
+    [ambiguousWithSuggestions, ambiguousChoices],
   );
 
   // Live mapped rows & unmapped count (for banner guard) – lightweight derivation
@@ -1218,13 +1220,14 @@ export default function ImportCsvModal({
     targets.forEach((t) => {
       const row = liveMappedRows.find(
         (r) =>
-          String((r as any).Player_Name || "").toLowerCase() === t.toLowerCase()
+          String((r as any).Player_Name || "").toLowerCase() ===
+          t.toLowerCase(),
       );
       if (row) {
         console.log(
           `[ImportCsvModal] Mapping status for ${t}: player_id=${
             (row as any).player_id || "NONE"
-          }`
+          }`,
         );
       } else {
         console.log(`[ImportCsvModal] CSV row not found for target name: ${t}`);
@@ -1240,24 +1243,27 @@ export default function ImportCsvModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="import-csv-title"
-      className="importCsvModalBackdrop"
-      style={backdropStyle}
+      className={`importCsvModalBackdrop ${modalStyles.backdrop}`}
     >
-      <div ref={dialogRef} className="importCsvModal" style={modalStyle}>
-        <div className="modalHeader" style={headerStyle}>
-          <h2 id="import-csv-title" style={{ margin: 0 }}>
+      <div ref={dialogRef} className={`importCsvModal ${modalStyles.dialog}`}>
+        <div className={`modalHeader ${modalStyles.header}`}>
+          <h2 id="import-csv-title" className={modalStyles.title}>
             Import Projections (CSV)
           </h2>
-          <button onClick={onClose} aria-label="Close" style={buttonStyle}>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className={modalStyles.closeButton}
+          >
             ×
           </button>
         </div>
-        <div style={contentStyle}>
+        <div className={modalStyles.body} style={contentLayoutStyle}>
           <div
             {...getRootProps()}
             style={{
               ...dropzoneStyle,
-              borderColor: isDragActive ? "#4caf50" : "#888"
+              borderColor: isDragActive ? "#4caf50" : "#888",
             }}
             aria-label="CSV Dropzone"
           >
@@ -1281,7 +1287,7 @@ export default function ImportCsvModal({
               display: "flex",
               flexWrap: "wrap",
               gap: 16,
-              alignItems: "center"
+              alignItems: "center",
             }}
           >
             <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1313,7 +1319,7 @@ export default function ImportCsvModal({
                   borderRadius: 4,
                   border: "1px solid #555",
                   background: "#181818",
-                  color: "#f5f5f5"
+                  color: "#f5f5f5",
                 }}
               />
             </label>
@@ -1330,7 +1336,7 @@ export default function ImportCsvModal({
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  marginBottom: 6
+                  marginBottom: 6,
                 }}
               >
                 <h3 style={{ margin: 0 }}>Header mapping</h3>
@@ -1349,7 +1355,7 @@ export default function ImportCsvModal({
                       maxHeight: 240,
                       overflow: "auto",
                       border: "1px solid #2f2f2f",
-                      borderRadius: 6
+                      borderRadius: 6,
                     }}
                   >
                     <datalist id="import-csv-header-options">
@@ -1376,7 +1382,7 @@ export default function ImportCsvModal({
                             isUnsupported
                               ? {
                                   background: "rgba(211, 50, 47, 0.12)",
-                                  borderLeft: "3px solid #d32f2f"
+                                  borderLeft: "3px solid #d32f2f",
                                 }
                               : undefined;
                           const inputStyle: React.CSSProperties = {
@@ -1387,7 +1393,7 @@ export default function ImportCsvModal({
                             background: "#181818",
                             color: "#f5f5f5",
                             borderRadius: 4,
-                            padding: "4px 6px"
+                            padding: "4px 6px",
                           };
                           return (
                             <tr key={h.original} style={rowStyle}>
@@ -1406,7 +1412,7 @@ export default function ImportCsvModal({
                                   style={{
                                     display: "flex",
                                     flexDirection: "column",
-                                    gap: 4
+                                    gap: 4,
                                   }}
                                 >
                                   <input
@@ -1416,7 +1422,7 @@ export default function ImportCsvModal({
                                     onChange={(e) =>
                                       handleHeaderNameChange(
                                         idx,
-                                        e.target.value
+                                        e.target.value,
                                       )
                                     }
                                     aria-label={`Standardized name for ${h.original}`}
@@ -1426,7 +1432,7 @@ export default function ImportCsvModal({
                                     <span
                                       style={{
                                         color: "#ff8a80",
-                                        fontSize: 11
+                                        fontSize: 11,
                                       }}
                                     >
                                       {h.error}
@@ -1463,7 +1469,7 @@ export default function ImportCsvModal({
                       maxHeight: 180,
                       overflow: "auto",
                       border: "1px solid #2f2f2f",
-                      borderRadius: 6
+                      borderRadius: 6,
                     }}
                   >
                     <table
@@ -1512,7 +1518,7 @@ export default function ImportCsvModal({
                 marginTop: 16,
                 display: "grid",
                 gap: 16,
-                gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))"
+                gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
               }}
             >
               {resolutionStats.totalRows > 0 && (
@@ -1521,7 +1527,7 @@ export default function ImportCsvModal({
                     padding: "12px 16px",
                     border: "1px solid #295644",
                     borderRadius: 8,
-                    background: "rgba(41, 86, 68, 0.2)"
+                    background: "rgba(41, 86, 68, 0.2)",
                   }}
                 >
                   <h3 style={{ margin: "0 0 6px" }}>
@@ -1543,7 +1549,7 @@ export default function ImportCsvModal({
                       style={{
                         margin: "6px 0 0",
                         fontSize: 12,
-                        color: "#ffb74d"
+                        color: "#ffb74d",
                       }}
                     >
                       {resolutionStats.invalidIds} player_id value(s) not
@@ -1555,7 +1561,7 @@ export default function ImportCsvModal({
                       style={{
                         margin: "6px 0 0",
                         fontSize: 12,
-                        color: "#ff8a80"
+                        color: "#ff8a80",
                       }}
                     >
                       Name fallback is disabled. Unresolved rows will be ignored
@@ -1571,7 +1577,7 @@ export default function ImportCsvModal({
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      marginBottom: 6
+                      marginBottom: 6,
                     }}
                   >
                     <h4 style={{ margin: 0 }}>
@@ -1593,7 +1599,7 @@ export default function ImportCsvModal({
                         gap: 12,
                         maxHeight: 260,
                         overflowY: "auto",
-                        paddingRight: 4
+                        paddingRight: 4,
                       }}
                     >
                       {unresolvedNames.map((name) => {
@@ -1606,12 +1612,12 @@ export default function ImportCsvModal({
                           PlayerIndexRecord
                         >();
                         baseSuggestions.forEach((rec) =>
-                          suggestionsMap.set(rec.id, rec)
+                          suggestionsMap.set(rec.id, rec),
                         );
                         if (normalized.length >= 2) {
                           dbPlayers
                             .filter((p) =>
-                              p.fullName.toLowerCase().includes(normalized)
+                              p.fullName.toLowerCase().includes(normalized),
                             )
                             .slice(0, 12)
                             .forEach((p) => {
@@ -1624,13 +1630,13 @@ export default function ImportCsvModal({
                                   lastName: p.lastName ?? null,
                                   teamId: p.teamId ?? null,
                                   teamAbbrev: p.teamAbbrev ?? null,
-                                  std: stdName(p.fullName)
+                                  std: stdName(p.fullName),
                                 } as PlayerIndexRecord);
                               suggestionsMap.set(rec.id, rec);
                             });
                         }
                         const suggestionList = Array.from(
-                          suggestionsMap.values()
+                          suggestionsMap.values(),
                         ).slice(0, 12);
                         const selectedId = ambiguousChoices[name];
                         const selectedPlayer =
@@ -1644,7 +1650,7 @@ export default function ImportCsvModal({
                               border: "1px solid #2f2f2f",
                               borderRadius: 8,
                               padding: "10px 12px",
-                              background: "rgba(255,255,255,0.03)"
+                              background: "rgba(255,255,255,0.03)",
                             }}
                           >
                             <div
@@ -1653,7 +1659,7 @@ export default function ImportCsvModal({
                                 justifyContent: "space-between",
                                 alignItems: "center",
                                 gap: 8,
-                                flexWrap: "wrap"
+                                flexWrap: "wrap",
                               }}
                             >
                               <strong>{name}</strong>
@@ -1676,7 +1682,7 @@ export default function ImportCsvModal({
                                 marginTop: 6,
                                 display: "flex",
                                 flexDirection: "column",
-                                gap: 6
+                                gap: 6,
                               }}
                             >
                               <input
@@ -1686,7 +1692,7 @@ export default function ImportCsvModal({
                                 onChange={(e) =>
                                   setManualSearchInputs((prev) => ({
                                     ...prev,
-                                    [name]: e.target.value
+                                    [name]: e.target.value,
                                   }))
                                 }
                                 style={{
@@ -1694,14 +1700,14 @@ export default function ImportCsvModal({
                                   background: "#111",
                                   color: "#f5f5f5",
                                   borderRadius: 4,
-                                  padding: "4px 6px"
+                                  padding: "4px 6px",
                                 }}
                               />
                               <div
                                 style={{
                                   display: "flex",
                                   flexWrap: "wrap",
-                                  gap: 6
+                                  gap: 6,
                                 }}
                               >
                                 {suggestionList.length === 0 && (
@@ -1728,7 +1734,7 @@ export default function ImportCsvModal({
                                         ...smallPrimaryBtn,
                                         background: isActive
                                           ? "#2e7d32"
-                                          : "#1976d2"
+                                          : "#1976d2",
                                       }}
                                     >
                                       {rec.fullName} ({labelTeam}
@@ -1764,7 +1770,7 @@ export default function ImportCsvModal({
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  marginBottom: 6
+                  marginBottom: 6,
                 }}
               >
                 <h3 style={{ margin: 0 }}>Resolve Ambiguous Names</h3>
@@ -1783,7 +1789,7 @@ export default function ImportCsvModal({
                     others below. Use search if needed.
                   </p>
                   {ambiguousWithSuggestions.some(
-                    (r) => ambiguousChoices[r.key]
+                    (r) => ambiguousChoices[r.key],
                   ) && (
                     <div style={{ marginBottom: 12 }}>
                       <strong>Auto-Resolved</strong>
@@ -1792,7 +1798,7 @@ export default function ImportCsvModal({
                           margin: "4px 0 0",
                           paddingLeft: 18,
                           maxHeight: 100,
-                          overflowY: "auto"
+                          overflowY: "auto",
                         }}
                       >
                         {ambiguousWithSuggestions
@@ -1810,7 +1816,7 @@ export default function ImportCsvModal({
                                     color: "#fff",
                                     padding: "1px 6px",
                                     borderRadius: 10,
-                                    fontSize: 10
+                                    fontSize: 10,
                                   }}
                                 >
                                   auto
@@ -1827,7 +1833,7 @@ export default function ImportCsvModal({
                       overflowY: "auto",
                       paddingRight: 4,
                       borderTop: "1px solid #333",
-                      paddingTop: 8
+                      paddingTop: 8,
                     }}
                   >
                     {ambiguousWithSuggestions
@@ -1835,7 +1841,7 @@ export default function ImportCsvModal({
                       .map((r) => {
                         const csvMeta = (() => {
                           const raw = previewAmbiguities.find(
-                            (p) => p.key === r.key
+                            (p) => p.key === r.key,
                           );
                           const t = raw?.csvTeam || "CSV?";
                           const p = raw?.csvPos || "?";
@@ -1859,7 +1865,7 @@ export default function ImportCsvModal({
                               marginBottom: 12,
                               background: "rgba(255,255,255,0.04)",
                               padding: 8,
-                              borderRadius: 6
+                              borderRadius: 6,
                             }}
                           >
                             <div
@@ -1868,7 +1874,7 @@ export default function ImportCsvModal({
                                 gap: 8,
                                 alignItems: "center",
                                 flexWrap: "wrap",
-                                justifyContent: "space-between"
+                                justifyContent: "space-between",
                               }}
                             >
                               <div style={{ fontWeight: 600 }}>
@@ -1880,7 +1886,7 @@ export default function ImportCsvModal({
                                   style={{
                                     display: "flex",
                                     gap: 8,
-                                    alignItems: "center"
+                                    alignItems: "center",
                                   }}
                                 >
                                   <span style={{ fontSize: 12, opacity: 0.85 }}>
@@ -1899,7 +1905,7 @@ export default function ImportCsvModal({
                                     onClick={() =>
                                       setAmbiguousChoices((prev) => ({
                                         ...prev,
-                                        [r.key]: suggestion.id
+                                        [r.key]: suggestion.id,
                                       }))
                                     }
                                     style={smallPrimaryBtn}
@@ -1910,7 +1916,7 @@ export default function ImportCsvModal({
                                     onClick={() =>
                                       setRejectedSuggestions(
                                         (s) =>
-                                          new Set([...Array.from(s), r.key])
+                                          new Set([...Array.from(s), r.key]),
                                       )
                                     }
                                     style={smallSecondaryBtn}
@@ -1926,7 +1932,7 @@ export default function ImportCsvModal({
                                   marginTop: 6,
                                   display: "flex",
                                   gap: 8,
-                                  flexWrap: "wrap"
+                                  flexWrap: "wrap",
                                 }}
                               >
                                 <select
@@ -1936,7 +1942,7 @@ export default function ImportCsvModal({
                                       ...prev,
                                       [r.key]: e.target.value
                                         ? Number(e.target.value)
-                                        : ""
+                                        : "",
                                     }))
                                   }
                                   style={{ minWidth: 260 }}
@@ -1945,7 +1951,7 @@ export default function ImportCsvModal({
                                   {r.candidates.map((c) => {
                                     // fallback to CSV context if no teamAbbrev / position
                                     const csvCtx = previewAmbiguities.find(
-                                      (p) => p.key === r.key
+                                      (p) => p.key === r.key,
                                     );
                                     const team =
                                       c.teamAbbrev || csvCtx?.csvTeam || "??";
@@ -1965,7 +1971,7 @@ export default function ImportCsvModal({
                                   )}
                                   {dynamicMatches.map((p) => {
                                     const csvCtx = previewAmbiguities.find(
-                                      (px) => px.key === r.key
+                                      (px) => px.key === r.key,
                                     );
                                     const team =
                                       (p as any).teamAbbrev ||
@@ -1989,13 +1995,13 @@ export default function ImportCsvModal({
                                   onChange={(e) =>
                                     setSearchInputs((prev) => ({
                                       ...prev,
-                                      [r.key]: e.target.value
+                                      [r.key]: e.target.value,
                                     }))
                                   }
                                   style={{
                                     flex: "1 1 160px",
                                     minWidth: 160,
-                                    padding: 4
+                                    padding: 4,
                                   }}
                                 />
                                 <button
@@ -2037,7 +2043,7 @@ export default function ImportCsvModal({
                 width: "100%",
                 padding: 8,
                 borderRadius: 4,
-                border: "1px solid #ccc"
+                border: "1px solid #ccc",
               }}
               placeholder="Enter a name for this source"
             />
@@ -2054,7 +2060,7 @@ export default function ImportCsvModal({
                     color: "#856404",
                     padding: "10px 12px",
                     borderRadius: 4,
-                    marginBottom: 12
+                    marginBottom: 12,
                   }}
                 >
                   <strong>Low ID match rate.</strong>{" "}
@@ -2067,7 +2073,7 @@ export default function ImportCsvModal({
                       display: "flex",
                       flexWrap: "wrap",
                       gap: 12,
-                      alignItems: "center"
+                      alignItems: "center",
                     }}
                   >
                     <button
@@ -2077,7 +2083,7 @@ export default function ImportCsvModal({
                         border: 0,
                         padding: "6px 10px",
                         borderRadius: 4,
-                        cursor: "pointer"
+                        cursor: "pointer",
                       }}
                       onClick={() => setForceImportDespiteUnresolved(true)}
                     >
@@ -2101,7 +2107,7 @@ export default function ImportCsvModal({
                     color: "#721c24",
                     padding: "10px 12px",
                     borderRadius: 4,
-                    marginBottom: 12
+                    marginBottom: 12,
                   }}
                 >
                   Import will proceed with {resolutionStats.unresolved}{" "}
@@ -2115,7 +2121,7 @@ export default function ImportCsvModal({
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
-                fontSize: 13
+                fontSize: 13,
               }}
             >
               <input
@@ -2128,7 +2134,9 @@ export default function ImportCsvModal({
           </div>
         </div>
 
-        <div className="modalFooter" style={footerStyle}>
+        <div
+          className={`modalFooter ${modalStyles.footer} ${modalStyles.actions}`}
+        >
           <button onClick={onClose} style={secondaryButtonStyle}>
             Cancel
           </button>
@@ -2145,57 +2153,10 @@ export default function ImportCsvModal({
   );
 }
 
-// Inline styles to avoid external CSS dependencies here
-const backdropStyle: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "rgba(0,0,0,0.5)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000
-};
-const modalStyle: React.CSSProperties = {
-  background: "#121212",
-  color: "#f5f5f5",
-  width: "min(1150px, 96vw)",
-  maxHeight: "92vh",
-  borderRadius: 10,
-  boxShadow: "0 18px 40px rgba(0,0,0,0.5)",
-  padding: 0,
-  outline: "none",
-  display: "flex",
-  flexDirection: "column"
-};
-const headerStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  paddingBottom: 8,
-  borderBottom: "1px solid #333",
-  padding: "12px 16px"
-};
-const footerStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: 8,
-  borderTop: "1px solid #333",
-  padding: "12px 16px"
-};
-const buttonStyle: React.CSSProperties = {
-  background: "transparent",
-  border: "none",
-  color: "#fff",
-  fontSize: 20,
-  cursor: "pointer"
-};
-const contentStyle: React.CSSProperties = {
-  padding: "0 16px 16px",
-  overflowY: "auto",
-  flex: 1,
+const contentLayoutStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
-  gap: 12
+  gap: 12,
 };
 const primaryButtonStyle: React.CSSProperties = {
   background: "#1976d2",
@@ -2203,7 +2164,7 @@ const primaryButtonStyle: React.CSSProperties = {
   border: 0,
   padding: "8px 12px",
   borderRadius: 4,
-  cursor: "pointer"
+  cursor: "pointer",
 };
 const secondaryButtonStyle: React.CSSProperties = {
   background: "#2e2e2e",
@@ -2211,7 +2172,7 @@ const secondaryButtonStyle: React.CSSProperties = {
   border: 0,
   padding: "8px 12px",
   borderRadius: 4,
-  cursor: "pointer"
+  cursor: "pointer",
 };
 const dropzoneStyle: React.CSSProperties = {
   display: "flex",
@@ -2220,7 +2181,7 @@ const dropzoneStyle: React.CSSProperties = {
   height: 120,
   border: "2px dashed #888",
   borderRadius: 8,
-  marginTop: 8
+  marginTop: 8,
 };
 
 const smallPrimaryBtn: React.CSSProperties = {
@@ -2230,7 +2191,7 @@ const smallPrimaryBtn: React.CSSProperties = {
   padding: "2px 10px",
   borderRadius: 4,
   fontSize: 12,
-  cursor: "pointer"
+  cursor: "pointer",
 };
 const smallSecondaryBtn: React.CSSProperties = {
   background: "#2e2e2e",
@@ -2239,5 +2200,5 @@ const smallSecondaryBtn: React.CSSProperties = {
   padding: "2px 10px",
   borderRadius: 4,
   fontSize: 12,
-  cursor: "pointer"
+  cursor: "pointer",
 };

@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   getCurrentSeason: vi.fn(),
   getTeams: vi.fn(),
   from: vi.fn(),
+  syncLineCombinationSourceWinners: vi.fn(),
 }));
 
 vi.mock("lib/NHL/server", () => ({
@@ -35,6 +36,10 @@ vi.mock("lib/cron/withCronJobAudit", () => ({
       });
     }
   },
+}));
+
+vi.mock("lib/sources/lineSourceLineCombinations", () => ({
+  syncLineCombinationSourceWinners: mocks.syncLineCombinationSourceWinners,
 }));
 
 import handler from "../../../../../pages/api/v1/db/update-line-sources";
@@ -368,6 +373,12 @@ describe("/api/v1/db/update-line-sources", () => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();
     mocks.getCurrentSeason.mockResolvedValue({ seasonId: 20252026 });
+    mocks.syncLineCombinationSourceWinners.mockResolvedValue({
+      sourceRows: 3,
+      eligibleWinners: 1,
+      written: 1,
+      failures: [],
+    });
     mocks.getTeams.mockResolvedValue([
       {
         id: 8,
@@ -458,8 +469,11 @@ describe("/api/v1/db/update-line-sources", () => {
         text: "confirmed Flyers Starting Goalie: Dan Vladar\nconfirmed Penguins Starting Goalie: Arturs Silovs",
       }),
     ];
-    const { eventUpdateMock, eventUpdateEqMock, lineSourceSnapshotsUpsertMock } =
-      createSupabaseMocks(events);
+    const {
+      eventUpdateMock,
+      eventUpdateEqMock,
+      lineSourceSnapshotsUpsertMock,
+    } = createSupabaseMocks(events);
     const req = createMockReq();
     const res = createMockRes();
 
@@ -477,6 +491,12 @@ describe("/api/v1/db/update-line-sources", () => {
         nonNhlRejected: 1,
         ambiguousRejected: 1,
         rowsUpserted: 5,
+        lineCombinationSync: {
+          sourceRows: 3,
+          eligibleWinners: 1,
+          written: 1,
+          failures: [],
+        },
         eventsProcessed: 3,
         eventsRejected: 2,
         bySourceKey: {
@@ -500,6 +520,10 @@ describe("/api/v1/db/update-line-sources", () => {
           },
         },
       },
+    });
+    expect(mocks.syncLineCombinationSourceWinners).toHaveBeenCalledWith({
+      supabase: expect.any(Object),
+      date: "2026-04-29",
     });
 
     const upsertedRows = getUpsertedRows(lineSourceSnapshotsUpsertMock);

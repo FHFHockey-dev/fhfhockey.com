@@ -39,6 +39,16 @@ function debugLineCombinationsLog(label: string, value: unknown) {
   }
 }
 
+export function aggregateSkaterToiSeconds(
+  rows: readonly { playerId: number; toi: string }[]
+): Map<number, number> {
+  const totals = new Map<number, number>();
+  rows.forEach((row) => {
+    totals.set(row.playerId, (totals.get(row.playerId) ?? 0) + parseTime(row.toi));
+  });
+  return totals;
+}
+
 // Type Guard Function
 function isNonEmptyArray(goalie: any[] | null): goalie is any[] {
   return goalie !== null && goalie.length > 0;
@@ -179,6 +189,17 @@ export async function getLineCombinations(
       .returns<SkaterStats[]>()
       .throwOnError();
 
+    const { data: skaterToiRows } = await supabase
+      .from("skatersGameStats")
+      .select("playerId,toi")
+      .in(
+        "gameId",
+        lineCombinations.map((game: any) => game.gameId)
+      )
+      .in("playerId", Array.from(allPlayerIds))
+      .throwOnError();
+    const toiSecondsByPlayerId = aggregateSkaterToiSeconds(skaterToiRows ?? []);
+
     debugLineCombinationsLog("Fetched Skater Stats:", skaters);
 
     // Fetch goalie stats similarly, ensuring all goalies are included
@@ -241,6 +262,9 @@ export async function getLineCombinations(
 
       item.sweaterNumber = playerId_Info.get(item.playerId)?.sweaterNumber ?? 0;
       item.position = playerId_Info.get(item.playerId)?.position ?? "L";
+      if ("Goals" in item && toiSecondsByPlayerId.has(item.playerId)) {
+        item.TOISeconds = toiSecondsByPlayerId.get(item.playerId);
+      }
       item.lineChange = getLineChangeType(
         promotions.map((p) => p.playerId),
         demotions.map((d) => d.playerId),

@@ -2,6 +2,7 @@ import React from "react";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { ContextualRankingComparisonResponse } from "lib/rankings/comparison";
 import type { DeploymentTiersResponse } from "lib/rankings/deploymentTiers";
 import type { GoalieMatrixResponse } from "lib/rankings/goalieMatrix";
 import type { PlayerMatrixResponse } from "lib/rankings/playerMatrix";
@@ -9,7 +10,10 @@ import type { RankingsSplitsResponse } from "lib/rankings/splits";
 import type { TeamMatrixResponse } from "lib/rankings/teamMatrix";
 import type { TrendingResponse } from "lib/rankings/trending";
 import type { WarSurfaceResponse } from "lib/rankings/war";
-import { TEAM_STYLE_SOURCE_CONTRACT } from "lib/rankings/teamStyleMethodology";
+import {
+  TEAM_ADJUSTED_STYLE_SOURCE_CONTRACTS,
+  TEAM_STYLE_SOURCE_CONTRACT,
+} from "lib/rankings/teamStyleMethodology";
 import type {
   ContextualRankingApiRow,
   ContextualRankingsRequest,
@@ -434,6 +438,20 @@ const trendingPayload: TrendingResponse = {
           deltaLast5VsSeason: null,
         },
       ],
+      opportunitySignals: [
+        {
+          type: "toi_up",
+          label: "TOI Up",
+          severity: "medium",
+          sourceState: "available",
+          baselineWindow: "last20",
+          currentWindow: "last5",
+          baselineValue: 710,
+          currentValue: 760,
+          delta: 50,
+          evidence: "TOI/G up +50s from last 20 to last 5.",
+        },
+      ],
       sourceState: "available",
       message: null,
     },
@@ -444,6 +462,22 @@ const trendingPayload: TrendingResponse = {
     sourceTable: "rolling_player_game_metrics",
     metricKeys: ["points_per_60", "goals_per_60"],
     windows: ["season", "last20", "last10", "last5"],
+    opportunitySignalContracts: [
+      {
+        type: "toi_up",
+        label: "TOI Up",
+        sourceState: "available",
+        requiredInputs: ["last5 toi per game", "last20 toi per game"],
+        description: "Flags players whose selected-window TOI/G is materially up.",
+      },
+      {
+        type: "pp1_promotion",
+        label: "PP1 Promotion",
+        sourceState: "source_pending",
+        requiredInputs: ["current PP unit", "prior PP unit", "PP TOI share by game"],
+        description: "Requires deployment history rather than only current PP bucket.",
+      },
+    ],
     snapshotDates: {
       season: "2026-04-16",
       last20: "2026-04-16",
@@ -623,6 +657,119 @@ const warPayload: WarSurfaceResponse = {
   },
 };
 
+function comparisonPayloadFor(
+  entity: "skaters" | "goalies" | "teams",
+): ContextualRankingComparisonResponse {
+  if (entity === "goalies") {
+    return {
+      success: true,
+      version: "contextual_ranking_comparison_v1",
+      status: "available",
+      request: {
+        entity: "goalies",
+        season: 20252026,
+        window: "season",
+        metric: "save_percentage",
+        subjectCount: 2,
+      },
+      source: {
+        endpoint: "/api/v1/contextual-rankings/goalies",
+        sourceTables: goaliePayload.meta.sourceTables,
+        snapshotDate: goaliePayload.meta.snapshotDate,
+        latestAvailableSnapshotDate: goaliePayload.meta.latestAvailableSnapshotDate,
+        generatedAt: goaliePayload.meta.generatedAt,
+      },
+      metricColumns: goaliePayload.meta.metricColumns.map((column) => ({
+        metricKey: column.metricKey,
+        label: column.label,
+        lowerIsBetter: column.lowerIsBetter,
+        source: column.source,
+      })),
+      subjects: goaliePayload.rows.slice(0, 2).map((row) => ({
+        key: String(row.entity.id),
+        label: row.entity.name ?? `Goalie ${row.entity.id}`,
+        status: "available",
+        row,
+        reason: null,
+        caveats: row.warnings,
+      })),
+      caveats: [],
+    };
+  }
+
+  if (entity === "teams") {
+    return {
+      success: true,
+      version: "contextual_ranking_comparison_v1",
+      status: "available",
+      request: {
+        entity: "teams",
+        season: 20252026,
+        window: null,
+        metric: "off_rating",
+        subjectCount: 2,
+      },
+      source: {
+        endpoint: "/api/v1/contextual-rankings/teams",
+        sourceTables: teamPayload.meta.sourceTables,
+        snapshotDate: teamPayload.meta.snapshotDate,
+        latestAvailableSnapshotDate: teamPayload.meta.latestAvailableSnapshotDate,
+        generatedAt: teamPayload.meta.generatedAt,
+      },
+      metricColumns: teamPayload.meta.metricColumns.map((column) => ({
+        metricKey: column.metricKey,
+        label: column.label,
+        lowerIsBetter: column.lowerIsBetter,
+        source: column.source,
+      })),
+      subjects: teamPayload.rows.slice(0, 2).map((row) => ({
+        key: row.team.abbreviation,
+        label: row.team.name ?? row.team.abbreviation,
+        status: "available",
+        row,
+        reason: null,
+        caveats: row.warnings,
+      })),
+      caveats: ["Score/venue-adjusted team style remains Source Pending."],
+    };
+  }
+
+  return {
+    success: true,
+    version: "contextual_ranking_comparison_v1",
+    status: "available",
+    request: {
+      entity: "skaters",
+      season: 20252026,
+      window: "season",
+      metric: "points_per_60",
+      subjectCount: 1,
+    },
+    source: {
+      endpoint: "/api/v1/contextual-rankings/matrix",
+      sourceTables: matrixPayload.meta.sourceTables ?? [matrixPayload.meta.sourceTable],
+      snapshotDate: matrixPayload.meta.snapshotDate,
+      latestAvailableSnapshotDate: matrixPayload.meta.latestAvailableSnapshotDate,
+      generatedAt: matrixPayload.meta.generatedAt,
+    },
+    metricColumns: matrixPayload.meta.metricColumns.map((column) => ({
+      metricKey: column.metricKey,
+      label: column.shortLabel,
+      lowerIsBetter: column.lowerIsBetter,
+      source: column.denominatorDescription ?? "matrix metric",
+    })),
+    subjects: matrixPayload.rows.map((row) => ({
+      key: String(row.entity.id),
+      label: row.entity.name ?? `Skater ${row.entity.id}`,
+      status: "available",
+      row,
+      reason: null,
+      caveats: row.warnings,
+    })),
+    caveats: [],
+  };
+}
+
 const goaliePayload: GoalieMatrixResponse = {
   success: true,
   request: {
@@ -694,6 +841,15 @@ const goaliePayload: GoalieMatrixResponse = {
           formattedValue: "93.3%",
           rank: 1,
           percentile: 98.7,
+          qualifiedPeerCount: 60,
+          lowerIsBetter: false,
+        },
+        relative_save_percentage: {
+          metricKey: "relative_save_percentage",
+          rawValue: 0.018,
+          formattedValue: "1.8%",
+          rank: 12,
+          percentile: 80,
           qualifiedPeerCount: 60,
           lowerIsBetter: false,
         },
@@ -806,6 +962,13 @@ const goaliePayload: GoalieMatrixResponse = {
         source: "goalie_stats_unified",
       },
       {
+        metricKey: "relative_save_percentage",
+        label: "Rel SV%",
+        description: "Relative save percentage.",
+        lowerIsBetter: false,
+        source: "goalie_stats_unified same-team baseline",
+      },
+      {
         metricKey: "steal_rate",
         label: "Steal Rate",
         description: "Steal rate.",
@@ -830,14 +993,6 @@ const goaliePayload: GoalieMatrixResponse = {
     ],
     sourceWarnings: [],
     sourcePendingMetricContracts: [
-      {
-        metricKey: "relative_save_percentage",
-        label: "Relative SV%",
-        status: "source_pending",
-        reason:
-          "Team-without-goalie save-percentage baselines are not published.",
-        requiredFields: ["team without goalie save percentage"],
-      },
       {
         metricKey: "under_pressure_profile",
         label: "Under Pressure",
@@ -923,6 +1078,51 @@ goaliePayload.rows.push({
   },
 });
 
+const teamUnitCoverage: TeamMatrixResponse["rows"][number]["unitUsage"]["coverage"] = {
+  forwardTopLoad: {
+    games: 78,
+    latestDate: "2026-04-16",
+    snapshotDate: "2026-06-22",
+    status: "complete",
+    warnings: [],
+  },
+  defensePairTopLoad: {
+    games: 78,
+    latestDate: "2026-04-16",
+    snapshotDate: "2026-06-22",
+    status: "complete",
+    warnings: [],
+  },
+  pp1Pp2UsageShare: {
+    games: 78,
+    latestDate: "2026-04-16",
+    snapshotDate: "2026-06-22",
+    status: "complete",
+    warnings: [],
+  },
+};
+
+const teamUnitLabels: TeamMatrixResponse["rows"][number]["unitUsage"]["labels"] = {
+  forwardTopLoad: {
+    label: "Forward top load coverage-qualified",
+    coverageQualified: true,
+    minimumGames: 3,
+    reason: "78 complete resolved games support this unit-usage label.",
+  },
+  defensePairTopLoad: {
+    label: "Defense pair top load coverage-qualified",
+    coverageQualified: true,
+    minimumGames: 3,
+    reason: "78 complete resolved games support this unit-usage label.",
+  },
+  pp1Pp2UsageShare: {
+    label: "PP1/PP2 usage share coverage-qualified",
+    coverageQualified: true,
+    minimumGames: 3,
+    reason: "78 complete resolved games support this unit-usage label.",
+  },
+};
+
 const teamPayload: TeamMatrixResponse = {
   success: true,
   request: {
@@ -951,6 +1151,12 @@ const teamPayload: TeamMatrixResponse = {
       },
       style: {
         label: "Controls play",
+        descriptorType: "raw_contextual",
+        displayLabel: "Controls play (raw/contextual)",
+        adjustedTargetLabel: "Score- and venue-adjusted 5v5 team style",
+        adjustedStatus: "source_pending",
+        interpretation:
+          "Environment descriptor from current raw/contextual 5v5 inputs; not a coach/system claim.",
         paceAxis: "balanced_event",
         controlAxis: "controls_play",
         xgForPercentage: 58.6,
@@ -971,6 +1177,16 @@ const teamPayload: TeamMatrixResponse = {
         homeRoadPointPctGap: 8.5,
         powerPlayOpportunityRate: 3.12,
         penaltiesTakenPer60: 3.84,
+      },
+      unitUsage: {
+        games: 78,
+        latestDate: "2026-04-16",
+        snapshotDate: "2026-06-22",
+        forwardTopLoadIndex: 54.2,
+        defensePairTopLoadIndex: 47.8,
+        pp1Pp2UsageShare: 88.4,
+        coverage: teamUnitCoverage,
+        labels: teamUnitLabels,
       },
       sort: {
         metricKey: "off_rating",
@@ -1106,6 +1322,30 @@ const teamPayload: TeamMatrixResponse = {
           qualifiedPeerCount: 32,
           lowerIsBetter: true,
         },
+        forward_top_load_index: {
+          rawValue: 54.2,
+          formattedValue: "54.2%",
+          rank: 12,
+          percentile: 65,
+          qualifiedPeerCount: 31,
+          lowerIsBetter: false,
+        },
+        defense_pair_top_load_index: {
+          rawValue: 47.8,
+          formattedValue: "47.8%",
+          rank: 15,
+          percentile: 53,
+          qualifiedPeerCount: 31,
+          lowerIsBetter: false,
+        },
+        pp1_pp2_usage_share: {
+          rawValue: 88.4,
+          formattedValue: "88.4%",
+          rank: 5,
+          percentile: 84,
+          qualifiedPeerCount: 32,
+          lowerIsBetter: false,
+        },
       },
       warnings: ["raw_contextual_team_style"],
     },
@@ -1125,38 +1365,16 @@ const teamPayload: TeamMatrixResponse = {
       "team_underlying_stats_summary",
       "nst_team_stats",
       "wgo_team_stats",
+      "games",
+      "team_unit_toi",
     ],
     sourceWarnings: [
       "team style source snapshot 2026-04-07 differs from team power snapshot 2026-06-09",
       "team style is raw/contextual, not score- or venue-adjusted",
+      "team unit-usage metrics use pooled player-seconds",
     ],
     teamStyleContract: TEAM_STYLE_SOURCE_CONTRACT,
-    sourcePendingMetricContracts: [
-      {
-        metricKey: "forward_top_load_index",
-        label: "Forward Top Load",
-        status: "source_pending",
-        reason:
-          "Verified forward-line TOI share by team/game is not published in the current rankings source contract.",
-        requiredFields: ["line TOI seconds", "team forward TOI seconds"],
-      },
-      {
-        metricKey: "defense_pair_top_load_index",
-        label: "Defense Pair Top Load",
-        status: "source_pending",
-        reason:
-          "Verified defense-pair TOI share by team/game is not published in the current rankings source contract.",
-        requiredFields: ["pair TOI seconds", "team defense TOI seconds"],
-      },
-      {
-        metricKey: "pp1_pp2_usage_share",
-        label: "PP1/PP2 Usage Share",
-        status: "source_pending",
-        reason:
-          "Power-play unit membership exists as contextual labels, but verified PP unit TOI share is not published.",
-        requiredFields: ["unit PP TOI seconds", "team PP TOI seconds"],
-      },
-    ],
+    sourcePendingMetricContracts: TEAM_ADJUSTED_STYLE_SOURCE_CONTRACTS,
     metricColumns: [
       {
         metricKey: "off_rating",
@@ -1177,7 +1395,7 @@ const teamPayload: TeamMatrixResponse = {
         label: "1-Goal%",
         description: "One-goal game rate.",
         lowerIsBetter: false,
-        source: "wgo_team_stats",
+        source: "wgo_team_stats + games",
       },
       {
         metricKey: "home_road_point_pct_gap",
@@ -1185,6 +1403,27 @@ const teamPayload: TeamMatrixResponse = {
         description: "Home-road point-percentage gap.",
         lowerIsBetter: false,
         source: "wgo_team_stats",
+      },
+      {
+        metricKey: "forward_top_load_index",
+        label: "Fwd Top Load",
+        description: "Forward top load.",
+        lowerIsBetter: false,
+        source: "team_unit_toi",
+      },
+      {
+        metricKey: "defense_pair_top_load_index",
+        label: "Pair Top Load",
+        description: "Defense pair top load.",
+        lowerIsBetter: false,
+        source: "team_unit_toi",
+      },
+      {
+        metricKey: "pp1_pp2_usage_share",
+        label: "PP1/PP2 Share",
+        description: "PP1/PP2 usage share.",
+        lowerIsBetter: false,
+        source: "team_unit_toi",
       },
     ],
   },
@@ -1207,6 +1446,12 @@ teamPayload.rows.push({
   },
   style: {
     label: "Balanced pressure",
+    descriptorType: "raw_contextual",
+    displayLabel: "Balanced pressure (raw/contextual)",
+    adjustedTargetLabel: "Score- and venue-adjusted 5v5 team style",
+    adjustedStatus: "source_pending",
+    interpretation:
+      "Environment descriptor from current raw/contextual 5v5 inputs; not a coach/system claim.",
     paceAxis: "balanced_event",
     controlAxis: "balanced_control",
     xgForPercentage: 51.2,
@@ -1270,6 +1515,17 @@ function setupSWR() {
     }
     if (key.startsWith("/api/v1/contextual-rankings/war")) {
       return { data: warPayload, error: null, isLoading: false };
+    }
+    if (key.startsWith("/api/v1/contextual-rankings/comparison")) {
+      const url = new URL(key, "https://fhfh.test");
+      const entity =
+        (url.searchParams.get("entity") as "skaters" | "goalies" | "teams" | null) ??
+        "skaters";
+      return {
+        data: comparisonPayloadFor(entity),
+        error: null,
+        isLoading: false,
+      };
     }
     if (key.startsWith("/api/v1/contextual-rankings/snapshot")) {
       const url = new URL(key, "https://fhfh.test");
@@ -1365,6 +1621,14 @@ describe("RankingsPage interactions", () => {
     ).toBeTruthy();
     expect(screen.getByText("Rankings Matrix")).toBeTruthy();
     expect(screen.getAllByText("Matt Savoie").length).toBeGreaterThan(0);
+    expect(screen.getByRole("complementary", { name: "Comparison context" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Comparison Context" })).toBeTruthy();
+    expect(screen.getByText("TOI Up: TOI/G up +50s from last 20 to last 5.")).toBeTruthy();
+    expect(swrMock).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^\/api\/v1\/contextual-rankings\/comparison\?.*player_ids=1/,
+      ),
+    );
     expect(screen.getByText("Legend & Methodology")).toBeTruthy();
     fireEvent.click(screen.getByText("Legend & Methodology"));
     expect(screen.getByRole("heading", { name: "Ranking Legend" })).toBeTruthy();
@@ -1526,6 +1790,8 @@ describe("RankingsPage interactions", () => {
     expect(screen.getByRole("heading", { name: "Trending Players" })).toBeTruthy();
     expect(screen.getByText("+18.4")).toBeTruthy();
     expect(screen.getByText("+22.1 pct")).toBeTruthy();
+    expect(screen.getByText("TOI Up")).toBeTruthy();
+    expect(screen.getByText(/Opportunity contracts: PP1 Promotion/)).toBeTruthy();
     expect(swrMock).toHaveBeenCalledWith(
       expect.stringMatching(/^\/api\/v1\/contextual-rankings\/trending\?/),
     );
@@ -1581,6 +1847,12 @@ describe("RankingsPage interactions", () => {
     expect(screen.getAllByText("Trent Miner").length).toBeGreaterThan(0);
     expect(screen.getByText(/Goalie roles use latest projected season start share/)).toBeTruthy();
     expect(screen.getByLabelText("Goalie snapshot")).toBeTruthy();
+    expect(screen.getByRole("complementary", { name: "Comparison context" })).toBeTruthy();
+    expect(
+      screen.getAllByText(
+        "Opportunity-change signals are source-pending for this entity type.",
+      ).length,
+    ).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: "Why He Stands Out" })).toBeTruthy();
     expect(screen.getByText(/Start share: 3.2%/)).toBeTruthy();
     expect(screen.getByText(/Role confidence: medium/)).toBeTruthy();
@@ -1591,7 +1863,7 @@ describe("RankingsPage interactions", () => {
         "Goalie is outside the inferred top-two workload group; adjusted core share is not used for role promotion.",
       ),
     ).toBeTruthy();
-    fireEvent.click(screen.getByText("Casey DeSmith"));
+    fireEvent.click(screen.getAllByText("Casey DeSmith")[0]!);
     expect(replaceMock).toHaveBeenCalledWith(
       expect.objectContaining({
         pathname: "/rankings",
@@ -1615,6 +1887,11 @@ describe("RankingsPage interactions", () => {
     expect(screen.getByText(/Start share: 22.0%/)).toBeTruthy();
     expect(swrMock).toHaveBeenCalledWith(
       expect.stringMatching(/^\/api\/v1\/contextual-rankings\/goalies\?/),
+    );
+    expect(swrMock).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^\/api\/v1\/contextual-rankings\/comparison\?.*goalie_ids=32%2C31/,
+      ),
     );
     expect(swrMock).toHaveBeenCalledWith(
       expect.stringMatching(
@@ -1669,24 +1946,28 @@ describe("RankingsPage interactions", () => {
       screen.getByRole("heading", { name: "Team Rankings Matrix" }),
     ).toBeTruthy();
     expect(screen.getAllByText("Carolina Hurricanes").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Controls play").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Controls play (raw/contextual)").length).toBeGreaterThan(0);
     expect(screen.getByText(/Team style caveat:/)).toBeTruthy();
-    expect(
-      screen.getAllByText(
-        /Source-pending team contracts: Forward Top Load, Defense Pair Top Load, PP1\/PP2 Usage Share/,
-      ).length,
-    ).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Source-pending team contracts:/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/not a coach\/system claim/).length).toBeGreaterThan(0);
     expect(screen.getByLabelText("Team snapshot")).toBeTruthy();
+    expect(screen.getByRole("complementary", { name: "Comparison context" })).toBeTruthy();
+    expect(screen.getByText("Score/venue-adjusted team style remains Source Pending.")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Why This Team Stands Out" })).toBeTruthy();
     expect(screen.getByText(/Game-context source: 2026-06-06/)).toBeTruthy();
     expect(screen.getByText(/One-goal game rate: 43.9%/)).toBeTruthy();
     expect(screen.getByText(/Home edge: 8.5 percentage points/)).toBeTruthy();
     expect(screen.getByText(/PP opportunities: 3.12 per game/)).toBeTruthy();
     expect(screen.getByText(/Penalties taken: 3.84 per 60/)).toBeTruthy();
+    expect(screen.getByText(/Unit usage source: 2026-06-22/)).toBeTruthy();
+    expect(screen.getByText(/Forward top load coverage-qualified:/)).toBeTruthy();
+    expect(screen.getAllByText(/78 complete resolved games support this unit-usage label/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Defense pair top load coverage-qualified:/)).toBeTruthy();
+    expect(screen.getByText(/PP1\/PP2 usage share coverage-qualified:/)).toBeTruthy();
     expect(
       screen.getByText("Score/venue-adjusted style remains Source Pending when unavailable."),
     ).toBeTruthy();
-    fireEvent.click(screen.getByText("Dallas Stars"));
+    fireEvent.click(screen.getAllByText("Dallas Stars")[0]!);
     expect(replaceMock).toHaveBeenCalledWith(
       expect.objectContaining({
         pathname: "/rankings",
@@ -1708,10 +1989,17 @@ describe("RankingsPage interactions", () => {
       within(screen.getByLabelText("Team snapshot")).getByText("Dallas Stars"),
     ).toBeTruthy();
     expect(
-      within(screen.getByLabelText("Team snapshot")).getByText("Balanced pressure"),
+      within(screen.getByLabelText("Team snapshot")).getByText(
+        "Balanced pressure (raw/contextual)",
+      ),
     ).toBeTruthy();
     expect(swrMock).toHaveBeenCalledWith(
       expect.stringMatching(/^\/api\/v1\/contextual-rankings\/teams\?/),
+    );
+    expect(swrMock).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^\/api\/v1\/contextual-rankings\/comparison\?.*teams=DAL%2CCAR/,
+      ),
     );
 
     routerState.query = { tab: "war" };
@@ -1722,5 +2010,31 @@ describe("RankingsPage interactions", () => {
         "WAR remains unavailable until a defensible replacement-level model is documented, validated, and populated.",
       ),
     ).toBeTruthy();
+  });
+
+  it("restores live team unit metrics from URL state", () => {
+    routerState.query = {
+      entity: "teams",
+      tab: "rankings",
+      team_metric: "forward_top_load_index",
+    };
+
+    render(<RankingsPage />);
+
+    expect(screen.getByRole("heading", { name: "Team Rankings" })).toBeTruthy();
+    expect(
+      within(screen.getByLabelText("Ranking quick info")).getByText(
+        "Forward Top Load Percentile",
+      ),
+    ).toBeTruthy();
+    expect(
+      swrMock.mock.calls.some(
+        ([key]) =>
+          typeof key === "string" &&
+          /^\/api\/v1\/contextual-rankings\/teams\?.*metric=forward_top_load_index/.test(
+            key,
+          ),
+      ),
+    ).toBe(true);
   });
 });

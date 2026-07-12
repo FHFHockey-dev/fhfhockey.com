@@ -1,9 +1,11 @@
 @use "styles/vars" as v;
 @use "sass:math";
+@use "sass:color";
 @import url("https://fonts.googleapis.com/css2?family=Train+One&display=swap");
 
 $mobile-header-height: 65px;
-$desktop-header-min-width: 1120px;
+$desktop-header-min-width: 800px;
+$desktop-header-height: 48px;
 
 // Desktop Header (hidden on mobile)
 .header.desktopHeader {
@@ -14,16 +16,18 @@ $desktop-header-min-width: 1120px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    height: $mobile-header-height;
+    height: $desktop-header-height;
     position: sticky;
     top: 0;
     bottom: auto;
-    border-bottom: double 5px white;
-    box-shadow: none;
-    background-color: #181818;
+    border-bottom: 1px solid rgba(v.$border-secondary, 0.75);
+    box-shadow: 0 12px 26px -24px rgba(v.$color-black, 0.9);
+    background:
+      linear-gradient(180deg, rgba(v.$color-white, 0.035), transparent),
+      color.adjust(v.$background-dark, $lightness: -8%);
     transition: transform ease 0.3s;
     z-index: 1000;
-    padding-left: 3%;
+    padding: 0 clamp(v.$space-lg, 2vw, v.$space-xl);
 
     &.hidden {
       transform: translate3d(0, calc(-100% - 2px), 0);
@@ -31,12 +35,15 @@ $desktop-header-min-width: 1120px;
 
     .logo {
       display: flex;
+      flex-direction: column;
+      justify-content: center;
       align-items: center;
-      width: 270px;
-      flex: 0 0 270px;
-      filter: drop-shadow(0px 1px 4px #07aae2);
+      width: 88px;
+      flex: 0 0 88px;
+      filter: drop-shadow(0 0 6px rgba(v.$secondary-color, 0.55));
       position: relative;
       margin: 0;
+      line-height: 1;
 
       // Disable overflow hidden.
       // This is designed for the Image component from Next.js 12
@@ -46,13 +53,28 @@ $desktop-header-min-width: 1120px;
     }
 
     .logo.underlyingStatsLogo {
+      flex-direction: row;
       filter: drop-shadow(0px 1px 4px v.$color-brand-yellow);
+    }
+
+    .logoSubline {
+      display: block;
+      margin-top: -3px;
+      color: v.$secondary-color;
+      font-family: v.$font-family-primary;
+      font-size: 0.4rem;
+      font-style: italic;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      text-transform: uppercase;
+      white-space: nowrap;
     }
 
     .nav {
       display: block;
       flex: 1;
-      margin-left: 40px;
+      margin-left: v.$space-sm;
       min-width: 0;
 
       ul {
@@ -62,7 +84,18 @@ $desktop-header-min-width: 1120px;
 
     .socials {
       display: block;
-      margin-right: 18px;
+      flex: 0 0 auto;
+      width: auto;
+      margin-right: v.$space-sm;
+
+      > :global(div) {
+        gap: 7px;
+      }
+
+      :global(img) {
+        width: 15px !important;
+        height: 15px !important;
+      }
     }
 
     .underlyingStatsNavTheme {
@@ -72,13 +105,13 @@ $desktop-header-min-width: 1120px;
 
     .underlyingStatsSocialsTheme {
       :global(a img) {
-        filter: brightness(0) saturate(100%) invert(70%) sepia(67%) saturate(1049%)
-          hue-rotate(11deg) brightness(92%) contrast(92%);
+        filter: brightness(0) saturate(100%) invert(70%) sepia(67%)
+          saturate(1049%) hue-rotate(11deg) brightness(92%) contrast(92%);
       }
     }
 
     .bmcWrap {
-      display: flex;
+      display: none;
       align-items: center;
       margin-right: 16px;
 
@@ -117,16 +150,16 @@ $desktop-header-min-width: 1120px;
       align-items: center;
       justify-content: center;
       margin-right: 16px;
-      min-height: 36px;
+      min-height: 30px;
       padding: 0 v.$space-md;
       border-radius: v.$border-radius-sm;
-      border: 2px solid v.$primary-color;
-      background-color: rgba(v.$primary-color, 0.18);
+      border: 1px solid v.$primary-color;
+      background-color: rgba(v.$primary-color, 0.08);
       color: v.$secondary-color;
-      font-family: v.$font-family-accent, sans-serif;
-      font-size: v.$font-size-sm;
-      font-weight: 600;
-      letter-spacing: 0.05em;
+      font-family: v.$font-family-primary;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
       text-decoration: none;
       white-space: nowrap;
@@ -176,8 +209,8 @@ $desktop-header-min-width: 1120px;
     }
 
     .authCtaPlaceholder {
-      min-width: 168px;
-      min-height: 36px;
+      min-width: 96px;
+      min-height: 30px;
       margin-right: 16px;
       flex-shrink: 0;
     }
@@ -212,6 +245,33 @@ $desktop-header-min-width: 1120px;
 
       &:hover {
         cursor: pointer;
+      }
+    }
+
+    @media (max-width: 1200px) {
+      padding-inline: 12px;
+
+      .logo {
+        width: 70px;
+        flex-basis: 70px;
+      }
+
+      .nav {
+        margin-left: v.$space-xs;
+      }
+
+      .socials {
+        margin-right: v.$space-sm;
+      }
+
+      .authCta,
+      .authCtaPlaceholder {
+        margin-right: 0;
+      }
+
+      .authCta {
+        padding-inline: v.$space-xs;
+        font-size: 0.56rem;
       }
     }
   }

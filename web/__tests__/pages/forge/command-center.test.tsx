@@ -379,4 +379,30 @@ describe("Forge command center page", () => {
       );
     });
   });
+
+  it("preserves a player-insight error state when no insight rows render", async () => {
+    const data = buildCommandData();
+    data.modules.playerInsight = {
+      ...data.modules.playerInsight,
+      status: "error",
+      error: "Request failed (500) for skater power",
+      data: {
+        ...data.modules.playerInsight.data,
+        sustainable: { ...data.modules.playerInsight.data.sustainable, rows: [] },
+        unsustainable: { ...data.modules.playerInsight.data.unsustainable, rows: [] },
+        skaterTrends: {
+          ...data.modules.playerInsight.data.skaterTrends,
+          categories: {},
+          playerMetadata: {}
+        }
+      }
+    };
+    loadCommandCenterDataMock.mockResolvedValue(data);
+
+    render(<ForgeCommandCenterPage />);
+
+    expect(await screen.findByText("Error")).toBeTruthy();
+    expect(screen.getByText("Request failed (500) for skater power")).toBeTruthy();
+    expect(screen.queryByText("Empty")).toBeNull();
+  });
 });

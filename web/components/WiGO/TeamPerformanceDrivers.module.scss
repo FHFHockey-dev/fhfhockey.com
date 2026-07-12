@@ -1,0 +1,75 @@
+@use "styles/vars" as v;
+
+.body {
+  display: grid;
+  gap: v.$space-sm;
+  padding: v.$space-sm;
+}
+
+.driverGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: v.$space-sm;
+
+  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.driverCard {
+  padding: v.$space-sm;
+  border: 1px solid rgba(v.$color-white, 0.08);
+  border-radius: v.$border-radius-md;
+  background: rgba(v.$background-dark, 0.78);
+}
+
+.driverHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: v.$space-sm;
+}
+
+.driverLabel {
+  color: v.$text-color-primary;
+  font-size: v.$font-size-small;
+  font-weight: 700;
+}
+
+.driverValue {
+  color: v.$text-color-secondary;
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-small;
+}
+
+.driverBand {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.strength {
+  color: v.$color-mint-300;
+}
+
+.neutral {
+  color: v.$color-gold-400;
+}
+
+.concern {
+  color: v.$color-coral-500;
+}
+
+.driverExplanation,
+.sourceNote {
+  margin: 4px 0 0;
+  color: v.$text-color-secondary;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.sourceNote {
+  margin: 0;
+}

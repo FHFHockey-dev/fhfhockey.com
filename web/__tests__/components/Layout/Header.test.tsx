@@ -121,7 +121,7 @@ describe("Header auth entry", () => {
     render(<Header />);
 
     const authButton = screen.getByRole("button", {
-      name: "Sign-in / Sign-up"
+      name: "Sign In / Sign Up"
     });
     expect(authButton).toBeDefined();
 

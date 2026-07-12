@@ -117,10 +117,11 @@ export const GOALIE_RANKING_SOURCE_CONTRACT: RankingEntitySourceContract = {
     {
       metricKey: "goalie_relative_save_percentage",
       label: "Relative SV%",
-      source: "team-without-goalie baseline not yet published",
-      availabilityTarget: "planned",
+      source:
+        "goalie_stats_unified 5v5 saves/shots with same-team other-goalie baseline",
+      availabilityTarget: "available",
       notes:
-        "Keep source-pending until matched team-without-goalie save percentage can be computed safely.",
+        "Selected-window 5v5 relative save signal. Rows stay null until the goalie and same-team other-goalie baseline samples are available.",
     },
     {
       metricKey: "goalie_under_pressure_profile",
@@ -214,6 +215,24 @@ export const TEAM_RANKING_SOURCE_CONTRACT: RankingEntitySourceContract = {
       rankingUse:
         "one-goal game rate, home/road point-percentage split, power-play opportunities, and penalty context",
     },
+    {
+      name: "games",
+      kind: "table",
+      rowCount: null,
+      latestDate: "2026-06-22",
+      ownership: "official game schedule/identity ingestion",
+      rankingUse:
+        "homeTeamId and awayTeamId venue identity for WGO team game rows",
+    },
+    {
+      name: "team_unit_toi",
+      kind: "table",
+      rowCount: 12929,
+      latestDate: "2026-06-22",
+      ownership: "derived durable aggregate from NHL shift rows and power-play combination rows",
+      rankingUse:
+        "forward top-load, defense-pair top-load, and PP1/PP2 usage-share metrics from pooled player-seconds",
+    },
   ],
   liveRankingGates: [
     "Extend rankings entity parser/types to teams without overloading player-specific request fields.",
@@ -270,7 +289,7 @@ export const TEAM_RANKING_SOURCE_CONTRACT: RankingEntitySourceContract = {
     {
       metricKey: "team_home_road_point_pct_gap",
       label: "Home Edge",
-      source: "wgo_team_stats.home_road and point_pct",
+      source: "wgo_team_stats.point_pct joined to games.homeTeamId/awayTeamId",
       availabilityTarget: "available",
       notes:
         "Home point-percentage minus road point-percentage; context, not pure coaching talent.",
@@ -293,31 +312,32 @@ export const TEAM_RANKING_SOURCE_CONTRACT: RankingEntitySourceContract = {
     {
       metricKey: "team_forward_top_load_index",
       label: "Forward Top Load",
-      source: "line/pair TOI source not yet published",
-      availabilityTarget: "planned",
+      source: "team_unit_toi forward_line unit_number=1",
+      availabilityTarget: "available",
       notes:
-        "Lineup identity rows exist, but verified forward-line TOI share is required before publishing top-load usage.",
+        "Durable aggregate derives 5v5 forward trio overlap from NHL shift rows using pooled player-seconds; coverage is partial when shifts cannot resolve complete position groups.",
     },
     {
       metricKey: "team_defense_pair_top_load_index",
       label: "Defense Pair Top Load",
-      source: "line/pair TOI source not yet published",
-      availabilityTarget: "planned",
+      source: "team_unit_toi defense_pair unit_number=1",
+      availabilityTarget: "available",
       notes:
-        "Lineup identity rows exist, but verified defense-pair TOI share is required before publishing top-load usage.",
+        "Durable aggregate derives 5v5 defense pair overlap from NHL shift rows using pooled player-seconds; coverage is partial when shifts cannot resolve complete position groups.",
     },
     {
       metricKey: "team_pp1_pp2_usage_share",
       label: "PP1/PP2 Usage Share",
-      source: "PP unit TOI source not yet published",
-      availabilityTarget: "planned",
+      source: "team_unit_toi power_play unit_number in (1,2)",
+      availabilityTarget: "available",
       notes:
-        "Power-play unit labels are not enough; publish only after unit-level PP TOI share is available.",
+        "Durable aggregate combines power-play unit membership and PPTOI into team/game unit shares using pooled player-seconds.",
     },
   ],
   caveats: [
     "Team power ratings are current through 2026-06-09, while team_underlying_stats_summary currently lags at 2026-04-07.",
     "Current team-style methodology is raw/contextual, not score- and venue-adjusted.",
+    "Forward/defense unit-usage coverage is partial because strict 5v5 overlap requires complete position-resolved shift rows.",
     "Team views need their own request model because skater fields such as position, deployment, and selectedPlayerId do not apply.",
   ],
 };

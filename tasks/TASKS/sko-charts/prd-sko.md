@@ -1,5 +1,7 @@
 SKO (Sustainability KPI Overview)
 
+> **Production-definition status:** superseded research input. The reconciled implementation list is `tasks/TASKS/sko-charts/tasks-prd-sko-charts.md`; current production behavior follows the later stability-CV contract in `prd-sko-charts.md`. Residual-P/60 ideas remain Sustainability/Trends research rather than a competing score.
+
 Working name options
 	•	sKO — Sustainability K‑Score & Outlook (my vote: short, pronounceable, keeps “KO” branding)
 	•	SKO — Sustainability KPI Overview (your original; totally fine)

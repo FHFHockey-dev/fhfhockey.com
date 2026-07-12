@@ -1130,7 +1130,8 @@ export function TeamDashboard({
 
   const formatPercentage = (value: number | null) => {
     if (value === null || value === undefined) return "N/A";
-    return `${(value * 100).toFixed(1)}%`;
+    const normalized = Math.abs(value) > 1 ? value : value * 100;
+    return `${normalized.toFixed(1)}%`;
   };
 
   const formatDecimal = (value: number | null, decimals: number = 1) => {
@@ -1820,7 +1821,7 @@ export function TeamDashboard({
                   <span
                     className={`${styles.statValue} ${getRankingBasedColor(getStatRank("scf_pct"))}`}
                   >
-                    {(teamStats.scf_pct * 100).toFixed(2) || 0}%
+                    {formatPercentage(teamStats.scf_pct)}
                   </span>
                   <span className={styles.statLabel}>SCF %</span>
                 </div>

@@ -56,6 +56,36 @@ export function selectLatestYahooGames(games: Array<any>) {
   return games.filter((game) => getYahooSeasonValue(game) === latestSeasonValue);
 }
 
+export function selectYahooGamesForCanonicalSeason(
+  games: Array<any>,
+  canonicalGame: { game_id?: number | null; game_key?: string | null; season?: number | null } | null
+) {
+  if (!canonicalGame || !Array.isArray(games)) {
+    return [];
+  }
+
+  return games.filter((game) => {
+    if (
+      canonicalGame.game_id != null &&
+      String(game?.game_id ?? "") === String(canonicalGame.game_id)
+    ) {
+      return true;
+    }
+
+    if (
+      canonicalGame.game_key &&
+      String(game?.game_key ?? "") === String(canonicalGame.game_key)
+    ) {
+      return true;
+    }
+
+    return (
+      canonicalGame.season != null &&
+      String(game?.season ?? "") === String(canonicalGame.season)
+    );
+  });
+}
+
 export function flattenYahooLeagues(games: Array<any>) {
   return games.flatMap((game) =>
     Array.isArray(game?.leagues)
@@ -87,6 +117,22 @@ export function flattenYahooTeams(games: Array<any>) {
         }))
       : []
   );
+}
+
+export function mergeYahooLeagueTeams(teams: Array<any>, standings: Array<any>) {
+  const standingsByTeamKey = new Map(
+    (Array.isArray(standings) ? standings : [])
+      .filter((team) => team?.team_key)
+      .map((team) => [String(team.team_key), team.standings || null])
+  );
+  const sourceTeams = Array.isArray(teams) && teams.length > 0 ? teams : standings;
+
+  return (Array.isArray(sourceTeams) ? sourceTeams : [])
+    .filter((team) => team?.team_key)
+    .map((team) => ({
+      ...team,
+      standings: standingsByTeamKey.get(String(team.team_key)) || team.standings || null,
+    }));
 }
 
 function toJsonObject(value: Record<string, unknown>): Json {
@@ -216,11 +262,26 @@ export async function syncYahooDiscovery({
     providerUserId: providerUserId ?? null,
   });
 
-  const userGamesResponse = await yahoo.user.games();
+  const [userGamesResponse, canonicalGameResponse] = await Promise.all([
+    yahoo.user.games(),
+    serviceRoleClient
+      .from("yahoo_game_keys")
+      .select("game_id,game_key,season,last_updated")
+      .eq("code", YAHOO_GAME_CODE)
+      .order("season", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
   const nhlGames = Array.isArray(userGamesResponse?.games)
     ? userGamesResponse.games.filter((game: any) => game.code === YAHOO_GAME_CODE)
     : [];
-  const latestNhlGames = selectLatestYahooGames(nhlGames);
+  const canonicalNhlGames = canonicalGameResponse.error
+    ? []
+    : selectYahooGamesForCanonicalSeason(nhlGames, canonicalGameResponse.data);
+  const latestNhlGames =
+    canonicalNhlGames.length > 0 ? canonicalNhlGames : selectLatestYahooGames(nhlGames);
+  const discoveryGameSource =
+    canonicalNhlGames.length > 0 ? "yahoo_game_keys" : "user_games_fallback";
   const nhlGameKeys = latestNhlGames.map((game: any) =>
     String(game.game_key || game.game_id || YAHOO_GAME_CODE)
   );
@@ -254,6 +315,7 @@ export async function syncYahooDiscovery({
           ...jsonObjectOrEmpty(connectedAccount.metadata),
           provider_user_id: providerUserId ?? null,
           available_game_codes: [],
+          discovery_game_source: discoveryGameSource,
           discovery: {
             league_count: 0,
             team_count: 0,
@@ -291,8 +353,18 @@ export async function syncYahooDiscovery({
   );
 
   const normalizedLeagues = [];
+  const leagueTeamsByLeagueKey = new Map<string, Array<any>>();
   for (const league of discoveredLeagues) {
-    const settingsResponse = await yahoo.league.settings(league.league_key);
+    const [settingsResponse, standingsResponse, teamsResponse] = await Promise.all([
+      yahoo.league.settings(league.league_key),
+      yahoo.league.standings(league.league_key),
+      yahoo.league.teams(league.league_key),
+    ]);
+    const leagueTeams = mergeYahooLeagueTeams(
+      teamsResponse?.teams || [],
+      standingsResponse?.standings || []
+    );
+    leagueTeamsByLeagueKey.set(String(league.league_key), leagueTeams);
     normalizedLeagues.push({
       connected_account_id: connectedAccount.id,
       user_id: userId,
@@ -307,6 +379,8 @@ export async function syncYahooDiscovery({
           num_teams: settingsResponse.num_teams || league.num_teams || null,
           draft_status: settingsResponse.draft_status || league.draft_status || null,
         },
+        standings: standingsResponse?.standings || [],
+        team_count: leagueTeams.length,
       }),
       scoring_settings: toJsonObject({
         scoring_type: settingsResponse.scoring_type || league.scoring_type || null,
@@ -340,34 +414,46 @@ export async function syncYahooDiscovery({
   const leagueRows = (leagueUpsertResponse.data || []) as ExternalLeagueRow[];
   const leagueIdByKey = new Map(leagueRows.map((row) => [row.external_league_key, row]));
 
+  const ownedTeamByKey = new Map(
+    discoveredTeams
+      .filter((team) => team?.team_key)
+      .map((team) => [String(team.team_key), team])
+  );
   const normalizedTeams = [];
-  for (const team of discoveredTeams) {
-    const matchingLeague = leagueIdByKey.get(String(team.league_key));
+  for (const [leagueKey, leagueTeams] of leagueTeamsByLeagueKey.entries()) {
+    const matchingLeague = leagueIdByKey.get(leagueKey);
     if (!matchingLeague) {
       continue;
     }
 
-    const rosterResponse = await yahoo.team.roster(team.team_key);
+    for (const leagueTeam of leagueTeams) {
+      const ownedTeam = ownedTeamByKey.get(String(leagueTeam.team_key));
+      const rosterResponse = ownedTeam
+        ? await yahoo.team.roster(leagueTeam.team_key)
+        : null;
 
-    normalizedTeams.push({
-      connected_account_id: connectedAccount.id,
-      external_league_id: matchingLeague.id,
-      user_id: userId,
-      provider: YAHOO_PROVIDER,
-      external_team_key: team.team_key,
-      team_name: team.name || null,
-      team_metadata: toJsonObject({
-        ...team,
-        team_logo_url:
-          Array.isArray(team.team_logos) && team.team_logos.length > 0
-            ? team.team_logos[0]?.url || null
-            : null,
-      }),
-      roster_snapshot: toJsonObject({
-        players: rosterResponse?.roster || [],
-      }),
-      imported_at: new Date().toISOString(),
-    });
+      normalizedTeams.push({
+        connected_account_id: connectedAccount.id,
+        external_league_id: matchingLeague.id,
+        user_id: userId,
+        provider: YAHOO_PROVIDER,
+        external_team_key: leagueTeam.team_key,
+        team_name: leagueTeam.name || null,
+        team_metadata: toJsonObject({
+          ...leagueTeam,
+          is_owned: Boolean(ownedTeam),
+          team_logo_url:
+            Array.isArray(leagueTeam.team_logos) && leagueTeam.team_logos.length > 0
+              ? leagueTeam.team_logos[0]?.url || null
+              : null,
+        }),
+        roster_snapshot: toJsonObject({
+          players: rosterResponse?.roster || [],
+          visibility: ownedTeam ? "owned" : "not_fetched",
+        }),
+        imported_at: new Date().toISOString(),
+      });
+    }
   }
 
   const teamUpsertResponse = await serviceRoleClient
@@ -382,6 +468,9 @@ export async function syncYahooDiscovery({
   }
 
   const teamRows = (teamUpsertResponse.data || []) as ExternalTeamRow[];
+  const ownedTeamRows = teamRows.filter(
+    (team) => jsonObjectOrEmpty(team.team_metadata).is_owned === true
+  );
 
   const { data: existingPreferences, error: preferencesError } = await serviceRoleClient
     .from("user_provider_preferences")
@@ -395,8 +484,8 @@ export async function syncYahooDiscovery({
   }
 
   const nextDefaultTeam =
-    teamRows.find((team) => team.id === existingPreferences?.default_external_team_id) ||
-    teamRows[0] ||
+    ownedTeamRows.find((team) => team.id === existingPreferences?.default_external_team_id) ||
+    ownedTeamRows[0] ||
     null;
   const nextDefaultLeague =
     leagueRows.find((league) => league.id === existingPreferences?.default_external_league_id) ||
@@ -457,6 +546,7 @@ export async function syncYahooDiscovery({
         ...jsonObjectOrEmpty(connectedAccount.metadata),
         provider_user_id: providerUserId ?? null,
         available_game_codes: latestNhlGames.map((game: any) => game.code),
+        discovery_game_source: discoveryGameSource,
         discovery: {
           league_count: leagueRows.length,
           team_count: teamRows.length,

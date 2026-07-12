@@ -74,7 +74,8 @@
   - [x] 2.4 Decide whether optional context such as home/away, goal differential, or other opponent-strength adjustments is supported well enough to include without speculative placeholders.
   - [x] 2.5 Document the final formula in plain language, including what was directly verified from source data versus what is an implementation choice based on available inputs.
 
-- [ ] NEW 7.0 Refresh `nhl_standings_details` ingestion so record/split fields like goal differential and home/road standings can be reconsidered later without snapshot staleness.
+- [x] NEW 7.0 Refresh `nhl_standings_details` ingestion so record/split fields like goal differential and home/road standings can be reconsidered later without snapshot staleness.
+  - Evidence (2026-07-11): production contains 12,448 dated rows through the completed 2025–26 regular-season snapshot on 2026-04-17. The final snapshot has all 32 teams at 82 games and non-null goal-differential, home-split, and road-split fields for every team. The active daily ingestion route has 51 audited runs, including 34 successes; no off-season mutation was needed.
 - [x] 3.0 Implement the `SoS` data path and add the `SoS` column to the `/underlying-stats` landing-page table
   - [x] 3.1 Add or extend a dedicated helper that computes landing-page `SoS` from the selected snapshot date and the verified source inputs.
   - [x] 3.2 Extend the landing-page server/data-fetching path so each team row includes the computed `SoS` value needed by the UI.

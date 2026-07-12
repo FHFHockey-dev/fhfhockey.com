@@ -100,9 +100,10 @@ export function useDateRangeMatrixData({
             timesPlayedWith: item.regularSeasonData?.timesPlayedWith ?? {},
             ATOI: item.regularSeasonData?.ATOI ?? "0:00",
             percentOfSeason: item.regularSeasonData?.percentOfSeason ?? {},
-            displayPosition: item.regularSeasonData?.displayPosition ?? "",
+            displayPosition: item.displayPosition ?? item.primaryPosition ?? "",
             mutualSharedToi: {},
             comboPoints: item.comboPoints ?? 0,
+            playerType: item.playerType,
           }));
           if (!mounted) return;
           setRoster(mapped);
@@ -145,4 +146,3 @@ export function useDateRangeMatrixData({
     pairs,
   };
 }
-

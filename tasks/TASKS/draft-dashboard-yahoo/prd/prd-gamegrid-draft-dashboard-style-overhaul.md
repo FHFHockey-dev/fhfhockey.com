@@ -1,5 +1,7 @@
 # PRD: GameGrid Style Refactor to Draft Dashboard Brand
 
+> **Implementation task list:** `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md`
+
 ## Purpose
 Refactor the **GameGrid** UI styles so the page is visually indistinguishable from the **Draft Dashboard** brand (“Neon Noir Analytics”), while preserving existing behaviors, data, and layout logic.
 
@@ -233,4 +235,3 @@ Also check for SCSS compilation errors by ensuring the Next build/lint succeeds;
 - Keep class names stable when possible to minimize blast radius.
 - Prefer token-driven values and mixins over one-off numbers; where you must use a number (e.g., pixel-perfect grid cell sizing), document why in the PR summary (not inline comments).
 - Avoid introducing new global styles; keep changes scoped to modules unless the style is truly global and reusable.
-

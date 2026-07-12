@@ -4,12 +4,14 @@ import {
   dedupeTweetCards,
   mapLineSourceSnapshotRowToCard,
   mapLinesCccRowToCard,
+  selectFirstArrivalTweetCards,
   type LocalTweetCard,
 } from "../../../pages/twitterEmbeds";
 
 function buildCard(overrides: Partial<LocalTweetCard> = {}): LocalTweetCard {
   return {
     key: overrides.key ?? "card-1",
+    sourceKey: overrides.sourceKey ?? "ccc",
     tweetId: overrides.tweetId ?? "tweet-1",
     authorName: overrides.authorName ?? "Author",
     authorHandle: overrides.authorHandle ?? "author",
@@ -23,8 +25,16 @@ function buildCard(overrides: Partial<LocalTweetCard> = {}): LocalTweetCard {
     quotedTweetUrl: overrides.quotedTweetUrl ?? null,
     quotedText: overrides.quotedText ?? "",
     status: overrides.status ?? "accepted",
+    snapshotDate: overrides.snapshotDate ?? "2026-04-30",
+    teamId: overrides.teamId ?? 1,
+    teamAbbreviation: overrides.teamAbbreviation ?? "BOS",
+    gameId: overrides.gameId ?? 1000,
+    signalType: overrides.signalType ?? "lineup",
+    tweetPostedAt: overrides.tweetPostedAt ?? "2026-04-30T11:59:00.000Z",
     observedAt: overrides.observedAt ?? "2026-04-30T12:00:00.000Z",
     rowStatus: overrides.rowStatus ?? "observed",
+    bucketKey: overrides.bucketKey ?? null,
+    alternativeSources: overrides.alternativeSources ?? [],
   };
 }
 
@@ -33,6 +43,12 @@ function buildLinesCccRow(
 ): Parameters<typeof mapLinesCccRowToCard>[0] {
   return {
     capture_key: "ccc-row",
+    snapshot_date: "2026-04-30",
+    team_id: 1,
+    team_abbreviation: "BOS",
+    game_id: 1000,
+    classification: "lineup",
+    tweet_posted_at: "2026-04-30T11:59:00.000Z",
     tweet_id: "100",
     tweet_url: "https://twitter.com/CcCMiddleton/status/100",
     source_url: "https://twitter.com/CcCMiddleton/status/100",
@@ -59,6 +75,12 @@ function buildLineSourceSnapshotRow(
 ): Parameters<typeof mapLineSourceSnapshotRowToCard>[0] {
   return {
     capture_key: "gdl-row",
+    snapshot_date: "2026-04-30",
+    team_id: 1,
+    team_abbreviation: "BOS",
+    game_id: 1000,
+    classification: "lineup",
+    tweet_posted_at: "2026-04-30T11:59:00.000Z",
     source_key: "gamedaylines",
     source_account: "GameDayLines",
     tweet_id: "300",
@@ -201,5 +223,56 @@ describe("twitterEmbeds dedupeTweetCards", () => {
 
     expect(cards).toHaveLength(1);
     expect(cards[0]?.key).toBe("accepted-later");
+  });
+});
+
+describe("twitterEmbeds first-arrival buckets", () => {
+  it("selects the earliest source for a shared team/date/game/signal bucket", () => {
+    const cards = selectFirstArrivalTweetCards([
+      buildCard({
+        key: "ccc-first",
+        sourceKey: "ccc",
+        sourceAccount: "CcCMiddleton",
+        tweetId: "100",
+        tweetUrl: "https://twitter.com/CcCMiddleton/status/100",
+        tweetPostedAt: "2026-04-30T12:00:00.000Z",
+      }),
+      buildCard({
+        key: "gdl-later",
+        sourceKey: "gamedaylines",
+        sourceAccount: "GameDayLines",
+        tweetId: "200",
+        tweetUrl: "https://twitter.com/GameDayLines/status/200",
+        tweetPostedAt: "2026-04-30T12:02:00.000Z",
+      }),
+    ]);
+
+    expect(cards).toHaveLength(1);
+    expect(cards[0]).toMatchObject({
+      key: "ccc-first",
+      bucketKey: "2026-04-30|team:1|game:1000|lineup|none",
+      alternativeSources: [
+        {
+          sourceKey: "gamedaylines",
+          sourceAccount: "GameDayLines",
+          tweetUrl: "https://twitter.com/GameDayLines/status/200",
+        },
+      ],
+    });
+  });
+
+  it("keeps separate signal buckets for the same team and date", () => {
+    const cards = selectFirstArrivalTweetCards([
+      buildCard({ key: "lineup", signalType: "lineup" }),
+      buildCard({
+        key: "goalie",
+        tweetId: "200",
+        signalType: "goalie_start",
+      }),
+    ]);
+
+    expect(cards.map((card) => card.key)).toEqual(
+      expect.arrayContaining(["lineup", "goalie"]),
+    );
   });
 });

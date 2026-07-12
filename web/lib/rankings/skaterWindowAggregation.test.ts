@@ -31,6 +31,10 @@ function rollingRow(
     goals_per_60_toi_seconds_season: 27000,
     points_total_last5: 8,
     points_avg_season: 0.75,
+    pp_points_total_last5: 4,
+    pp_points_avg_season: 0.35,
+    pp_toi_seconds_total_last5: 1200,
+    pp_toi_seconds_avg_season: 180,
     shot_attempts_per_60_last5: 8,
     shot_attempts_per_60_total_last5: 10,
     shot_attempts_per_60_season: 6,
@@ -99,6 +103,40 @@ describe("skaterWindowAggregation", () => {
       numerator: 8,
       denominator: 4500,
       sourceFields: ["points_total_last5", "toi_seconds_total_last5"],
+    });
+  });
+
+  it("derives PP points per 60 from verified PP points and PP TOI fields", () => {
+    const [ppPointsLast5] = buildSkaterWindowAggregatesFromRollingRow(
+      rollingRow({ strength_state: "pp", season_games_played: null }),
+      { windows: ["last5"], metricKeys: ["pp_points_per_60"] },
+    );
+
+    expect(ppPointsLast5).toMatchObject({
+      metricKey: "pp_points_per_60",
+      strengthState: "pp",
+      rawValue: 12,
+      numerator: 4,
+      denominator: 1200,
+      toiSeconds: 1200,
+      sourceFields: ["pp_points_total_last5", "pp_toi_seconds_total_last5"],
+    });
+  });
+
+  it("derives season PP points per 60 from PP average fields", () => {
+    const [ppPointsSeason] = buildSkaterWindowAggregatesFromRollingRow(
+      rollingRow({ strength_state: "pp", season_games_played: null }),
+      { windows: ["season"], metricKeys: ["pp_points_per_60"] },
+    );
+
+    expect(ppPointsSeason).toMatchObject({
+      metricKey: "pp_points_per_60",
+      strengthState: "pp",
+      rawValue: 7,
+      numerator: 10.5,
+      denominator: 5400,
+      toiSeconds: 5400,
+      sourceFields: ["pp_points_avg_season", "pp_toi_seconds_avg_season"],
     });
   });
 

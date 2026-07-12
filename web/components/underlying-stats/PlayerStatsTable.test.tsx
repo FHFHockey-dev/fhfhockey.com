@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { PLAYER_STATS_TABLE_RENDERING_STRATEGY } from "lib/underlying-stats/playerStatsTypes";
@@ -21,14 +27,14 @@ describe("PlayerStatsTable", () => {
       "goalieCounts",
       "Shots Against",
       "Sort by SV%",
-      "Sort by Avg. Shot Distance"
+      "Sort by Avg. Shot Distance",
     ],
     [
       "goalieRates",
       "Shots Against/60",
       "Sort by SV%",
-      "Sort by Avg. Goal Distance"
-    ]
+      "Sort by Avg. Goal Distance",
+    ],
   ])(
     "renders the %s column family with the expected default active sort",
     (family, metricHeaderLabel, activeSortLabel, secondarySortLabel) => {
@@ -78,7 +84,7 @@ describe("PlayerStatsTable", () => {
               avgShotDistance: 33.4,
               avgGoalDistance: 19.8,
               shotsAgainstPer60: 29.1,
-              savesPer60: 27.4
+              savesPer60: 27.4,
             }
           : {
               rowKey: `${family}-row`,
@@ -193,7 +199,7 @@ describe("PlayerStatsTable", () => {
               mdga: 18,
               mdgaPer60: 0.85,
               mdgfPct: 0.538,
-              ldcf: 109
+              ldcf: 109,
             };
 
       const sortState =
@@ -206,21 +212,21 @@ describe("PlayerStatsTable", () => {
               : { sortKey: "xgfPct", direction: "desc" as const };
 
       render(
-        <PlayerStatsTable family={family} rows={[row]} sortState={sortState} />
+        <PlayerStatsTable family={family} rows={[row]} sortState={sortState} />,
       );
 
       expect(
         screen
           .getByRole("button", { name: activeSortLabel })
-          .getAttribute("aria-pressed")
+          .getAttribute("aria-pressed"),
       ).toBe("true");
       expect(
         screen
           .getByRole("button", { name: secondarySortLabel })
-          .getAttribute("aria-pressed")
+          .getAttribute("aria-pressed"),
       ).toBe("false");
       expect(screen.getByText(metricHeaderLabel)).toBeTruthy();
-    }
+    },
   );
 
   it("renders a wide sortable table shell with sticky identity offsets", () => {
@@ -267,7 +273,7 @@ describe("PlayerStatsTable", () => {
           },
         ]}
         sortState={{ sortKey: "totalPoints", direction: "desc" }}
-      />
+      />,
     );
 
     const table = screen.getByRole("table");
@@ -275,11 +281,19 @@ describe("PlayerStatsTable", () => {
 
     const playerHeader = screen.getByRole("button", { name: "Sort by Player" });
     const teamHeader = screen.getByRole("button", { name: "Sort by Team" });
-    const positionHeader = screen.getByRole("button", { name: "Sort by Position" });
+    const positionHeader = screen.getByRole("button", {
+      name: "Sort by Position",
+    });
 
-    expect((playerHeader.closest("th") as HTMLTableCellElement).style.left).toBe("0px");
-    expect((teamHeader.closest("th") as HTMLTableCellElement).style.left).toBe("188px");
-    expect((positionHeader.closest("th") as HTMLTableCellElement).style.left).toBe("260px");
+    expect(
+      (playerHeader.closest("th") as HTMLTableCellElement).style.left,
+    ).toBe("0px");
+    expect((teamHeader.closest("th") as HTMLTableCellElement).style.left).toBe(
+      "188px",
+    );
+    expect(
+      (positionHeader.closest("th") as HTMLTableCellElement).style.left,
+    ).toBe("260px");
     expect(screen.getByText("POS")).toBeTruthy();
 
     const row = within(table).getByText("Sam Bennett").closest("tr");
@@ -331,7 +345,7 @@ describe("PlayerStatsTable", () => {
         ]}
         sortState={{ sortKey: "savePct", direction: "desc" }}
         onSortChange={onSortChange}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Sort by SV%" }));
@@ -391,7 +405,7 @@ describe("PlayerStatsTable", () => {
           },
         ]}
         sortState={{ sortKey: "totalPoints", direction: "desc" }}
-      />
+      />,
     );
 
     expect(screen.getByText("1,211")).toBeTruthy();
@@ -442,7 +456,7 @@ describe("PlayerStatsTable", () => {
           },
         ]}
         sortState={{ sortKey: "totalPointsPer60", direction: "desc" }}
-      />
+      />,
     );
 
     expect(screen.getByText("3.16")).toBeTruthy();
@@ -490,7 +504,7 @@ describe("PlayerStatsTable", () => {
           },
         ]}
         sortState={{ sortKey: "savePct", direction: "desc" }}
-      />
+      />,
     );
 
     expect(screen.getByText("91.4%")).toBeTruthy();
@@ -546,7 +560,7 @@ describe("PlayerStatsTable", () => {
         sortState={{ sortKey: "totalPoints", direction: "desc" }}
         pagination={{ page: 2, pageSize: 50, totalRows: 138, totalPages: 3 }}
         onPageChange={onPageChange}
-      />
+      />,
     );
 
     expect(PLAYER_STATS_TABLE_RENDERING_STRATEGY).toBe("pagination");
@@ -580,12 +594,45 @@ describe("PlayerStatsTable", () => {
         ]}
         sortState={{ sortKey: "totalPoints", direction: "desc" }}
         pagination={{ page: 2, pageSize: 50, totalRows: 138, totalPages: 3 }}
-      />
+      />,
     );
 
     expect(screen.queryByText("Showing 51-100 of 138")).toBeNull();
     expect(screen.queryByRole("button", { name: "Previous" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
+  });
+
+  it("renders an on-demand load-more footer without numbered pagination", () => {
+    const onLoadMore = vi.fn();
+
+    render(
+      <PlayerStatsTable
+        family="individualCounts"
+        rows={[
+          {
+            rowKey: "player-1",
+            playerName: "Sam Bennett",
+            teamLabel: "FLA",
+            positionCode: "C",
+            gamesPlayed: 82,
+            toiSeconds: 3723,
+            goals: 25,
+            totalAssists: 24,
+            totalPoints: 49,
+          },
+        ]}
+        sortState={{ sortKey: "totalPoints", direction: "desc" }}
+        pagination={{ page: 1, pageSize: 100, totalRows: 138, totalPages: 2 }}
+        renderingStrategy="load-more"
+        hasMoreRows
+        onLoadMore={onLoadMore}
+      />,
+    );
+
+    expect(screen.getByText("Showing 1 of 138")).toBeTruthy();
+    expect(screen.queryByText(/Page 1 of/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Load more" }));
+    expect(onLoadMore).toHaveBeenCalledTimes(1);
   });
 
   it("renders a reusable loading, empty, error, or warning state instead of the table when requested", () => {
@@ -595,7 +642,7 @@ describe("PlayerStatsTable", () => {
         rows={[]}
         sortState={{ sortKey: "totalPoints", direction: "desc" }}
         state={{ kind: "loading", message: "Loading player stats..." }}
-      />
+      />,
     );
 
     expect(screen.getByText("Loading player stats...")).toBeTruthy();
@@ -606,11 +653,16 @@ describe("PlayerStatsTable", () => {
         family="individualCounts"
         rows={[]}
         sortState={{ sortKey: "totalPoints", direction: "desc" }}
-        state={{ kind: "empty", message: "No players matched the current filters." }}
-      />
+        state={{
+          kind: "empty",
+          message: "No players matched the current filters.",
+        }}
+      />,
     );
 
-    expect(screen.getByText("No players matched the current filters.")).toBeTruthy();
+    expect(
+      screen.getByText("No players matched the current filters."),
+    ).toBeTruthy();
 
     rerender(
       <PlayerStatsTable
@@ -618,7 +670,7 @@ describe("PlayerStatsTable", () => {
         rows={[]}
         sortState={{ sortKey: "totalPoints", direction: "desc" }}
         state={{ kind: "error", message: "Player stats query failed." }}
-      />
+      />,
     );
 
     expect(screen.getByText("Player stats query failed.")).toBeTruthy();
@@ -632,12 +684,12 @@ describe("PlayerStatsTable", () => {
           kind: "warning",
           message: "Goalie mode does not support winger-only filters.",
         }}
-      />
+      />,
     );
 
     expect(screen.getByText("Filter combination warning")).toBeTruthy();
     expect(
-      screen.getByText("Goalie mode does not support winger-only filters.")
+      screen.getByText("Goalie mode does not support winger-only filters."),
     ).toBeTruthy();
   });
 
@@ -729,14 +781,22 @@ describe("PlayerStatsTable", () => {
         renderExpandedRow={({ row }) => (
           <div>{`Expanded content for ${String(row.playerName)}`}</div>
         )}
-      />
+      />,
     );
 
     const rows = screen.getAllByRole("row");
-    expect(within(rows[1] as HTMLElement).getAllByRole("cell")[0]?.textContent).toBe("1");
-    expect(within(rows[1] as HTMLElement).getByText("Second Player")).toBeTruthy();
-    expect(within(rows[3] as HTMLElement).getAllByRole("cell")[0]?.textContent).toBe("2");
-    expect(within(rows[3] as HTMLElement).getByText("First Player")).toBeTruthy();
+    expect(
+      within(rows[1] as HTMLElement).getAllByRole("cell")[0]?.textContent,
+    ).toBe("1");
+    expect(
+      within(rows[1] as HTMLElement).getByText("Second Player"),
+    ).toBeTruthy();
+    expect(
+      within(rows[3] as HTMLElement).getAllByRole("cell")[0]?.textContent,
+    ).toBe("2");
+    expect(
+      within(rows[3] as HTMLElement).getByText("First Player"),
+    ).toBeTruthy();
     expect(screen.getByText("Expanded content for Second Player")).toBeTruthy();
   });
 });
@@ -750,12 +810,12 @@ describe("PlayerStatsTableState", () => {
           title: "No compatible filters",
           message: "Try clearing the score-state or position filter.",
         }}
-      />
+      />,
     );
 
     expect(screen.getByText("No compatible filters")).toBeTruthy();
     expect(
-      screen.getByText("Try clearing the score-state or position filter.")
+      screen.getByText("Try clearing the score-state or position filter."),
     ).toBeTruthy();
   });
 });

@@ -6,7 +6,7 @@ import Image from "next/image";
 import type {
   NavbarItem,
   NavbarItemCategory as NavbarItemCategoryType,
-  NavbarItemLink
+  NavbarItemLink,
 } from "./NavbarItemsData";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 
@@ -42,7 +42,7 @@ function NavbarItemCategory({ item, onItemClick }: NavBarCategoryProps) {
     <li
       className={classNames(styles.category, {
         [styles.active]: isCategoryActive(item),
-        [styles.collapsed]: collapsed
+        [styles.collapsed]: collapsed,
       })}
     >
       <div
@@ -74,6 +74,7 @@ type NavBarItemsProps = {
   items: NavbarItem[];
   onItemClick: (item?: NavbarItem) => void;
   className?: string;
+  forceLarge?: boolean;
 };
 
 function NavbarItems_({ items, onItemClick }: NavBarItemsProps) {
@@ -96,7 +97,7 @@ function NavbarItems_({ items, onItemClick }: NavBarItemsProps) {
                 key={idx}
                 className={classNames(styles.link, {
                   [styles.active]: isLinkActive(item),
-                  [styles.underlyingStatsLink]: item.accent === "yellow"
+                  [styles.underlyingStatsLink]: item.accent === "yellow",
                 })}
                 onClick={() => onItemClick(item)}
               >
@@ -112,6 +113,7 @@ function NavbarItems_({ items, onItemClick }: NavBarItemsProps) {
 
 export default function NavbarItems({
   className,
+  forceLarge = false,
   ...props
 }: NavBarItemsProps) {
   const size = useScreenSize();
@@ -120,7 +122,9 @@ export default function NavbarItems({
       className={classNames(
         styles.items,
         className,
-        size.screen === BreakPoint.l ? styles.large : styles.small
+        forceLarge || size.screen === BreakPoint.l
+          ? styles.large
+          : styles.small,
       )}
     >
       <NavbarItems_ {...props} />

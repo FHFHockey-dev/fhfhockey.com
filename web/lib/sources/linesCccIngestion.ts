@@ -998,25 +998,59 @@ function extractTransactionSignals(args: {
   text: string;
   rosterEntries: RosterNameEntry[];
 }): Array<{ signal: string; playerName: string }> {
-  const normalizedText = args.text.toLowerCase();
-  const orderedNames = extractOrderedRosterHitsFromTweet(
-    args.text,
-    args.rosterEntries,
-  );
-  const signals: string[] = [];
+  const signalPatterns: Array<{ signal: string; pattern: RegExp }> = [
+    {
+      signal: "return",
+      pattern: /\breturns?\b|\breturning\b|\bback in (?:the )?lineup\b/i,
+    },
+    {
+      signal: "called_up",
+      pattern: /\brecalled\b|\bcalled up\b|\bpromoted\b/i,
+    },
+    {
+      signal: "sent_down",
+      pattern: /\bassigned to\b|\bsent down\b|\bloaned\b/i,
+    },
+    {
+      signal: "healthy_scratch",
+      pattern:
+        /\bhealthy scratch(?:ed)?\b|\bscratched\b|\bremoved from (?:the )?lineup\b/i,
+    },
+    {
+      signal: "trade",
+      pattern: /\btraded\b|\bacquired (?:in a trade|from)\b/i,
+    },
+    {
+      signal: "waiver",
+      pattern: /\bwaived\b|\bwaivers?\b|\bclaimed off waivers\b/i,
+    },
+    { signal: "signing", pattern: /\bsigned\b|\bsigns\b/i },
+    { signal: "activated", pattern: /\bactivated\b/i },
+    { signal: "ir", pattern: /\bplaced on (?:ir|injured reserve)\b/i },
+  ];
+  const pairs: Array<{ signal: string; playerName: string }> = [];
+  const seen = new Set<string>();
+  const addPairs = (text: string) => {
+    const names = extractOrderedRosterHitsFromTweet(text, args.rosterEntries);
+    if (names.length === 0) return;
 
-  if (/\breturns?\b|\breturning\b/.test(normalizedText)) signals.push("return");
-  if (/\brecalled\b/.test(normalizedText)) signals.push("recalled");
-  if (/\bpromoted\b/.test(normalizedText)) signals.push("promoted");
-  if (/\bsigned\b/.test(normalizedText)) signals.push("signed");
-  if (/\bactivated\b/.test(normalizedText)) signals.push("activated");
+    for (const { signal, pattern } of signalPatterns) {
+      if (!pattern.test(text)) continue;
+      for (const playerName of names.slice(0, 3)) {
+        const key = `${signal}:${normalizeNameKey(playerName)}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        pairs.push({ signal, playerName });
+      }
+    }
+  };
 
-  return signals.flatMap((signal) =>
-    orderedNames.slice(0, 3).map((playerName) => ({
-      signal,
-      playerName,
-    })),
-  );
+  for (const clause of args.text.split(/[,;\n]|(?<=[.!?])\s+/)) {
+    addPairs(clause);
+  }
+  if (pairs.length === 0) addPairs(args.text);
+
+  return pairs;
 }
 
 function detectPowerPlayUnitLabel(value: string): PowerPlayUnitLabel {

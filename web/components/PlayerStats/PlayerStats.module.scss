@@ -196,6 +196,87 @@
   box-sizing: border-box;
 }
 
+.lcpgSection {
+  @include v.component-wrapper;
+  padding: v.$space-lg;
+}
+
+.lcpgHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: v.$space-md;
+  margin-bottom: v.$space-md;
+
+  h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: v.$text-primary;
+  }
+
+  span {
+    font-size: 0.78rem;
+    color: v.$text-secondary;
+    text-transform: uppercase;
+  }
+}
+
+.lcpgLayout {
+  display: grid;
+  grid-template-columns: minmax(132px, 1fr) minmax(88px, 0.7fr) minmax(88px, 0.6fr);
+  gap: v.$space-md;
+  align-items: start;
+}
+
+.lcpgGroupLabel {
+  margin-bottom: v.$space-xs;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+}
+
+.lcpgForwardGrid,
+.lcpgDefenseGrid,
+.lcpgPowerPlayGrid {
+  display: grid;
+  gap: 5px;
+}
+
+.lcpgForwardGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.lcpgDefenseGrid,
+.lcpgPowerPlayGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.lcpgCell {
+  aspect-ratio: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 6px;
+  background: #1f2937;
+  color: v.$text-primary;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.lcpgCellActive {
+  background:
+    linear-gradient(
+      rgba(18, 85, 175, calc(0.15 + (var(--lcpg-share, 0) * 0.75))),
+      rgba(18, 85, 175, calc(0.15 + (var(--lcpg-share, 0) * 0.75)))
+    ),
+    #1f2937;
+  border-color: rgba(96, 165, 250, 0.5);
+}
+
 // =============================================================================
 // HEADER & PLAYER INFO
 // =============================================================================

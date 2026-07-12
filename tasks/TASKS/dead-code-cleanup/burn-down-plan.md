@@ -1,5 +1,7 @@
 # Burn Down / Simplify sKO Predictions Pipeline (v2 Plan)
 
+> **Execution mapping:** SKO-specific burn-down work is merged into `tasks/TASKS/sko-charts/tasks-prd-sko-charts.md`; this document remains the historical simplification plan and source inventory.
+
 Date: 2025-09-28
 Owner: (you)
 Scope: Replace complex multi-horizon forward targets + recovery scripts with a lean, single-horizon (next-game) prediction pipeline and derived rollups. Keep UI intact but point it to simplified data sources.

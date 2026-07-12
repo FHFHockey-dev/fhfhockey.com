@@ -172,14 +172,9 @@ export default function DRMPage() {
           teamsInfo[selectedTeam as TeamAbbreviation].id,
           gamesBack
         );
-        console.log("Date Range:", dateRange);
-        console.log("Time Frame:", timeFrame);
-
         if (dateRange) {
           setStartDate(new Date(dateRange.startDate));
           setEndDate(new Date(dateRange.endDate));
-          console.log("Start Date:", dateRange.startDate);
-          console.log("End Date:", dateRange.endDate);
         }
       } else if (seasonType === "regularSeason") {
         setStartDate(regularSeasonDateRange?.start);
@@ -252,8 +247,6 @@ export default function DRMPage() {
       );
       setLines(newLines);
       setPairs(newPairs);
-      console.log("Recalculated Lines:", newLines);
-      console.log("Recalculated Pairs:", newPairs);
     }
   }, [startDate, endDate, aggregatedData]);
 

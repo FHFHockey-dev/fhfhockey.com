@@ -3984,6 +3984,11 @@ export type Database = {
           forwards: number[]
           gameId: number
           goalies: number[]
+          observed_at: string | null
+          source_capture_key: string | null
+          source_key: string | null
+          source_kind: string | null
+          source_url: string | null
           teamId: number
         }
         Insert: {
@@ -3991,6 +3996,11 @@ export type Database = {
           forwards: number[]
           gameId: number
           goalies: number[]
+          observed_at?: string | null
+          source_capture_key?: string | null
+          source_key?: string | null
+          source_kind?: string | null
+          source_url?: string | null
           teamId: number
         }
         Update: {
@@ -3998,6 +4008,11 @@ export type Database = {
           forwards?: number[]
           gameId?: number
           goalies?: number[]
+          observed_at?: string | null
+          source_capture_key?: string | null
+          source_key?: string | null
+          source_kind?: string | null
+          source_url?: string | null
           teamId?: number
         }
         Relationships: [
@@ -27680,6 +27695,81 @@ export type Database = {
         }
         Relationships: []
       }
+      team_unit_toi: {
+        Row: {
+          coverage_status: "complete" | "partial" | "source_gap"
+          coverage_warnings: Json
+          created_at: string
+          game_date: string | null
+          game_id: number
+          id: number
+          metadata: Json
+          player_count: number
+          player_ids: number[]
+          season_id: number
+          snapshot_date: string
+          source_table: string
+          source_version: string
+          team_abbrev: string | null
+          team_id: number
+          team_unit_pool_toi_seconds: number
+          toi_basis: string
+          unit_number: number
+          unit_share: number | null
+          unit_toi_seconds: number
+          unit_type: "forward_line" | "defense_pair" | "power_play"
+          updated_at: string
+        }
+        Insert: {
+          coverage_status?: "complete" | "partial" | "source_gap"
+          coverage_warnings?: Json
+          created_at?: string
+          game_date?: string | null
+          game_id: number
+          id?: number
+          metadata?: Json
+          player_count?: number
+          player_ids?: number[]
+          season_id: number
+          snapshot_date: string
+          source_table: string
+          source_version?: string
+          team_abbrev?: string | null
+          team_id: number
+          team_unit_pool_toi_seconds: number
+          toi_basis?: string
+          unit_number: number
+          unit_share?: never
+          unit_toi_seconds: number
+          unit_type: "forward_line" | "defense_pair" | "power_play"
+          updated_at?: string
+        }
+        Update: {
+          coverage_status?: "complete" | "partial" | "source_gap"
+          coverage_warnings?: Json
+          created_at?: string
+          game_date?: string | null
+          game_id?: number
+          id?: number
+          metadata?: Json
+          player_count?: number
+          player_ids?: number[]
+          season_id?: number
+          snapshot_date?: string
+          source_table?: string
+          source_version?: string
+          team_abbrev?: string | null
+          team_id?: number
+          team_unit_pool_toi_seconds?: number
+          toi_basis?: string
+          unit_number?: number
+          unit_share?: never
+          unit_toi_seconds?: number
+          unit_type?: "forward_line" | "defense_pair" | "power_play"
+          updated_at?: string
+        }
+        Relationships: []
+      }
       team_season: {
         Row: {
           created_at: string
@@ -43148,6 +43238,21 @@ export type Database = {
         Returns: {
           id: number
         }[]
+      }
+      upsert_line_combinations_from_source: {
+        Args: {
+          p_defensemen?: number[] | null
+          p_forwards?: number[] | null
+          p_game_id: number
+          p_goalies?: number[] | null
+          p_observed_at: string | null
+          p_source_capture_key: string | null
+          p_source_key: string
+          p_source_kind: string
+          p_source_url: string | null
+          p_team_id: number
+        }
+        Returns: Json
       }
       get_unupdated_games: {
         Args: never

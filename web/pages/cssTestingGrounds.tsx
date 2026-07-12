@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import Head from "next/head";
 
 import styles from "./cssTestingGrounds.module.scss";
+import modalStyles from "components/DraftDashboard/ModalShell.module.scss";
 
 type ShowcaseStatus = "review" | "approved" | "planned" | "deferred";
 
@@ -27,8 +28,8 @@ const reviewQueue: ShowcaseItem[] = [
     family: "Reserved top slot",
     status: "planned",
     notes:
-      "When a new primitive is being reviewed, add it here first so it appears at the top of the sandbox."
-  }
+      "When a new primitive is being reviewed, add it here first so it appears at the top of the sandbox.",
+  },
 ];
 
 // Move any currently reviewed showcase section IDs here so they render near the top
@@ -48,7 +49,7 @@ const showcaseSections: ShowcaseSection[] = [
         family: "Page shell",
         status: "approved",
         notes:
-          "Approved canonical dashboard page shell drawn from DraftDashboard spacing, hierarchy, and multi-panel workspace structure."
+          "Approved canonical dashboard page shell drawn from DraftDashboard spacing, hierarchy, and multi-panel workspace structure.",
       },
       {
         id: "data-shell",
@@ -56,9 +57,9 @@ const showcaseSections: ShowcaseSection[] = [
         family: "Page shell",
         status: "approved",
         notes:
-          "Approved softer analytics shell validated against the restyled underlying-stats production pages."
-      }
-    ]
+          "Approved softer analytics shell validated against the restyled underlying-stats production pages.",
+      },
+    ],
   },
   {
     id: "surfaces",
@@ -72,7 +73,7 @@ const showcaseSections: ShowcaseSection[] = [
         family: "Panel",
         status: "approved",
         notes:
-          "Approved default shell for dashboard and table surfaces using the shared panel primitive."
+          "Approved default shell for dashboard and table surfaces using the shared panel primitive.",
       },
       {
         id: "accent-card",
@@ -80,7 +81,7 @@ const showcaseSections: ShowcaseSection[] = [
         family: "Card",
         status: "approved",
         notes:
-          "Approved spotlight-card pattern based on SuggestedPicks and other left-accent production cards."
+          "Approved spotlight-card pattern based on SuggestedPicks and other left-accent production cards.",
       },
       {
         id: "empty-state",
@@ -88,9 +89,9 @@ const showcaseSections: ShowcaseSection[] = [
         family: "State block",
         status: "approved",
         notes:
-          "Approved in-panel empty/loading/state treatment. Page-level empty-state canon remains a separate deferred family."
-      }
-    ]
+          "Approved in-panel empty/loading/state treatment. Page-level empty-state canon remains a separate deferred family.",
+      },
+    ],
   },
   {
     id: "controls",
@@ -104,7 +105,7 @@ const showcaseSections: ShowcaseSection[] = [
         family: "Controls",
         status: "approved",
         notes:
-          "Approved against GameGrid dense controls and aligned compact dashboard utility buttons."
+          "Approved against GameGrid dense controls and aligned compact dashboard utility buttons.",
       },
       {
         id: "segmented-toggle",
@@ -112,7 +113,7 @@ const showcaseSections: ShowcaseSection[] = [
         family: "Controls",
         status: "approved",
         notes:
-          "Approved against the GameGrid mode toggle pattern with grouped active, hover, focus, and disabled behavior."
+          "Approved against the GameGrid mode toggle pattern with grouped active, hover, focus, and disabled behavior.",
       },
       {
         id: "search-row",
@@ -120,9 +121,25 @@ const showcaseSections: ShowcaseSection[] = [
         family: "Controls",
         status: "approved",
         notes:
-          "Approved against ProjectionsTable, MyRoster, and PlayerStatsFilters for input density, select behavior, and dropdown positioning."
-      }
-    ]
+          "Approved against ProjectionsTable, MyRoster, and PlayerStatsFilters for input density, select behavior, and dropdown positioning.",
+      },
+    ],
+  },
+  {
+    id: "dialogs",
+    title: "Dialogs And Overlays",
+    description:
+      "Use this group to verify the shared backdrop, bounded shell, compact header, visible close control, scroll owner, and footer action cluster without prescribing feature-specific internals.",
+    items: [
+      {
+        id: "modal-shell",
+        title: "Canonical modal shell",
+        family: "Dialog",
+        status: "approved",
+        notes:
+          "Shared structural classes now back Draft Summary, Compare Players, and CSV Import while their feature content remains independent.",
+      },
+    ],
   },
   {
     id: "data-display",
@@ -136,7 +153,7 @@ const showcaseSections: ShowcaseSection[] = [
         family: "Table",
         status: "approved",
         notes:
-          "Approved sticky-header analytics table pattern aligned to ProjectionsTable, DraftBoard, and production underlying-stats tables."
+          "Approved sticky-header analytics table pattern aligned to ProjectionsTable, DraftBoard, and production underlying-stats tables.",
       },
       {
         id: "chart-frame",
@@ -144,24 +161,24 @@ const showcaseSections: ShowcaseSection[] = [
         family: "Chart",
         status: "deferred",
         notes:
-          "Deferred until a stronger chart-first production page is documented and reviewed against the sandbox."
-      }
-    ]
-  }
+          "Deferred until a stronger chart-first production page is documented and reviewed against the sandbox.",
+      },
+    ],
+  },
 ];
 
 const statusLabel: Record<ShowcaseStatus, string> = {
   review: "In review",
   approved: "Approved",
   planned: "Planned",
-  deferred: "Deferred"
+  deferred: "Deferred",
 };
 
 const statusColor: Record<ShowcaseStatus, string> = {
   review: "#ffc857",
   approved: "#00c896",
   planned: "#07aae2",
-  deferred: "#8b95a7"
+  deferred: "#8b95a7",
 };
 
 function renderGuideRefs(refs: string[]) {
@@ -187,10 +204,14 @@ function renderShowcaseExamples(sectionId: string) {
                 <div className={styles.demoTitleStack}>
                   <p className={styles.demoEyebrow}>Dashboard shell</p>
                   <h3 className={styles.demoHeading}>Draft Dashboard Layout</h3>
-                  {renderGuideRefs(["6.1 Dashboard Pages", "6.3 Bento-Box Pages", "9.1 Page Shells"])}
+                  {renderGuideRefs([
+                    "6.1 Dashboard Pages",
+                    "6.3 Bento-Box Pages",
+                    "9.1 Page Shells",
+                  ])}
                   <p className={styles.demoCopy}>
-                    Compact title stack, metadata row, and a bento workspace with
-                    a clear primary panel.
+                    Compact title stack, metadata row, and a bento workspace
+                    with a clear primary panel.
                   </p>
                 </div>
                 <div className={styles.demoMetaRow}>
@@ -264,8 +285,14 @@ function renderShowcaseExamples(sectionId: string) {
               <header className={styles.demoPageHeader}>
                 <div className={styles.demoTitleStack}>
                   <p className={styles.demoEyebrow}>Data page shell</p>
-                  <h3 className={styles.demoHeading}>Underlying Stats Surface</h3>
-                  {renderGuideRefs(["6.2 Data Pages", "9.1 Page Shells", "10.1 Page Shell"])}
+                  <h3 className={styles.demoHeading}>
+                    Underlying Stats Surface
+                  </h3>
+                  {renderGuideRefs([
+                    "6.2 Data Pages",
+                    "9.1 Page Shells",
+                    "10.1 Page Shell",
+                  ])}
                   <p className={styles.demoCopy}>
                     Softer header treatment, tighter filters, and flatter panels
                     for analytics-first pages.
@@ -285,10 +312,16 @@ function renderShowcaseExamples(sectionId: string) {
                   readOnly
                   aria-label="Example search"
                 />
-                <select className={styles.demoSelect} aria-label="Example split">
+                <select
+                  className={styles.demoSelect}
+                  aria-label="Example split"
+                >
                   <option>5v5 rate</option>
                 </select>
-                <select className={styles.demoSelect} aria-label="Example season">
+                <select
+                  className={styles.demoSelect}
+                  aria-label="Example season"
+                >
                   <option>Last 30 days</option>
                 </select>
               </div>
@@ -346,7 +379,11 @@ function renderShowcaseExamples(sectionId: string) {
               <span>Flatter analytics shell</span>
             </div>
             <div className={styles.demoPanelBody}>
-              {renderGuideRefs(["7.6 Data-Page Softened Treatment", "9.2 Panels", "10.3 Softened Data Panel"])}
+              {renderGuideRefs([
+                "7.6 Data-Page Softened Treatment",
+                "9.2 Panels",
+                "10.3 Softened Data Panel",
+              ])}
               <p className={styles.demoCopy}>
                 Use this when the data should carry the emphasis instead of the
                 chrome.
@@ -364,7 +401,11 @@ function renderShowcaseExamples(sectionId: string) {
               <span>Spotlight / recommendation</span>
             </div>
             <div className={styles.demoPanelBody}>
-              {renderGuideRefs(["9.3 Cards", "9.12 Recommendation Rails", "10.4 Left-Accent Card"])}
+              {renderGuideRefs([
+                "9.3 Cards",
+                "9.12 Recommendation Rails",
+                "10.4 Left-Accent Card",
+              ])}
               <p className={styles.demoCopy}>
                 Use the flat accent strip for recommendation rails and insight
                 cards. Do not replace it with a full-card gradient.
@@ -396,7 +437,10 @@ function renderShowcaseExamples(sectionId: string) {
               <strong>Loading Banner</strong>
               <span>Transient page state</span>
             </div>
-            {renderGuideRefs(["9.2 Panels", "12. Implementation Checklist For Codex"])}
+            {renderGuideRefs([
+              "9.2 Panels",
+              "12. Implementation Checklist For Codex",
+            ])}
             <div className={styles.demoLoadingBanner}>
               <span className={styles.demoLoadingDot} aria-hidden="true" />
               Refreshing player summary rows
@@ -442,8 +486,15 @@ function renderShowcaseExamples(sectionId: string) {
               <strong>Segmented Toggle</strong>
               <span>One grouped control</span>
             </div>
-            {renderGuideRefs(["9.5 Segmented Toggles", "10.6 Segmented Toggle"])}
-            <div className={styles.segmentRail} role="tablist" aria-label="Example toggle">
+            {renderGuideRefs([
+              "9.5 Segmented Toggles",
+              "10.6 Segmented Toggle",
+            ])}
+            <div
+              className={styles.segmentRail}
+              role="tablist"
+              aria-label="Example toggle"
+            >
               <button className={styles.segment} type="button">
                 Overview
               </button>
@@ -464,7 +515,11 @@ function renderShowcaseExamples(sectionId: string) {
               <strong>Search / Inputs</strong>
               <span>Compact filter row</span>
             </div>
-            {renderGuideRefs(["9.6 Inputs And Selects", "9.7 Filter Bars And Control Rows", "10.7 Input / Select"])}
+            {renderGuideRefs([
+              "9.6 Inputs And Selects",
+              "9.7 Filter Bars And Control Rows",
+              "10.7 Input / Select",
+            ])}
             <div className={styles.demoFilterBar}>
               <input
                 className={styles.demoSearch}
@@ -472,7 +527,10 @@ function renderShowcaseExamples(sectionId: string) {
                 placeholder="Search players"
                 aria-label="Example search input"
               />
-              <select className={styles.demoSelect} aria-label="Example position">
+              <select
+                className={styles.demoSelect}
+                aria-label="Example position"
+              >
                 <option>Position</option>
                 <option>Center</option>
                 <option>Wing</option>
@@ -514,20 +572,44 @@ function renderShowcaseExamples(sectionId: string) {
                     ▾
                   </span>
                 </button>
-                <div className={styles.dropdownMenu} role="menu" aria-label="Example actions menu">
-                  <button className={styles.dropdownItem} type="button" role="menuitem">
+                <div
+                  className={styles.dropdownMenu}
+                  role="menu"
+                  aria-label="Example actions menu"
+                >
+                  <button
+                    className={styles.dropdownItem}
+                    type="button"
+                    role="menuitem"
+                  >
                     Pin metric
                   </button>
-                  <button className={styles.dropdownItem} type="button" role="menuitem">
+                  <button
+                    className={styles.dropdownItem}
+                    type="button"
+                    role="menuitem"
+                  >
                     Export CSV
                   </button>
-                  <button className={styles.dropdownItem} type="button" role="menuitem">
+                  <button
+                    className={styles.dropdownItem}
+                    type="button"
+                    role="menuitem"
+                  >
                     Open detail
                   </button>
-                  <button className={styles.dropdownItem} type="button" role="menuitem">
+                  <button
+                    className={styles.dropdownItem}
+                    type="button"
+                    role="menuitem"
+                  >
                     Compare to league
                   </button>
-                  <button className={styles.dropdownItem} type="button" role="menuitem">
+                  <button
+                    className={styles.dropdownItem}
+                    type="button"
+                    role="menuitem"
+                  >
                     Add to watchlist
                   </button>
                 </div>
@@ -544,7 +626,11 @@ function renderShowcaseExamples(sectionId: string) {
               <strong>Analytics Table</strong>
               <span>Sticky header, compact rows</span>
             </div>
-            {renderGuideRefs(["6.4 Table-Heavy Pages", "9.9 Tables", "10.8 Table Shell"])}
+            {renderGuideRefs([
+              "6.4 Table-Heavy Pages",
+              "9.9 Tables",
+              "10.8 Table Shell",
+            ])}
             <div className={styles.tableWrap}>
               <table className={styles.demoTable}>
                 <thead>
@@ -588,7 +674,11 @@ function renderShowcaseExamples(sectionId: string) {
               <strong>Chart Frame</strong>
               <span>Toolbar + legend + notes</span>
             </div>
-            {renderGuideRefs(["6.5 Chart Pages", "9.10 Chart Containers", "10.9 Chart Frame"])}
+            {renderGuideRefs([
+              "6.5 Chart Pages",
+              "9.10 Chart Containers",
+              "10.9 Chart Frame",
+            ])}
             <div className={styles.chartToolbar}>
               <button
                 className={`${styles.toolbarChip} ${styles.toolbarChipActive}`}
@@ -624,8 +714,45 @@ function renderShowcaseExamples(sectionId: string) {
               </span>
             </div>
             <p className={styles.chartNote}>
-              Chart notes belong inside the frame block, below the visualization.
+              Chart notes belong inside the frame block, below the
+              visualization.
             </p>
+          </article>
+        </div>
+      );
+    case "dialogs":
+      return (
+        <div className={styles.dialogStage}>
+          <article
+            className={`${modalStyles.dialog} ${styles.demoDialog}`}
+            aria-label="Canonical modal shell example"
+          >
+            <header className={modalStyles.header}>
+              <h3 className={modalStyles.title}>Compare Players</h3>
+              <button
+                type="button"
+                className={modalStyles.closeButton}
+                aria-label="Close example dialog"
+              >
+                ×
+              </button>
+            </header>
+            <div className={modalStyles.body}>
+              {renderGuideRefs(["9.13 Dialogs And Overlays"])}
+              <p className={styles.demoCopy}>
+                The shared body owns scrolling. Feature-specific comparison,
+                import, or summary content belongs here without changing the
+                backdrop and shell contract.
+              </p>
+            </div>
+            <footer className={`${modalStyles.footer} ${modalStyles.actions}`}>
+              <button className={styles.demoButtonGhost} type="button">
+                Cancel
+              </button>
+              <button className={styles.demoButtonPrimary} type="button">
+                Confirm
+              </button>
+            </footer>
           </article>
         </div>
       );
@@ -635,7 +762,9 @@ function renderShowcaseExamples(sectionId: string) {
 }
 
 const pinnedShowcaseSections = pinnedShowcaseSectionIds
-  .map((sectionId) => showcaseSections.find((section) => section.id === sectionId))
+  .map((sectionId) =>
+    showcaseSections.find((section) => section.id === sectionId),
+  )
   .filter((section): section is ShowcaseSection => Boolean(section));
 
 export default function CssTestingGroundsPage() {
@@ -675,7 +804,9 @@ export default function CssTestingGroundsPage() {
                   key={item.id}
                   className={styles.showcaseCard}
                   style={
-                    { "--status-color": statusColor[item.status] } as CSSProperties
+                    {
+                      "--status-color": statusColor[item.status],
+                    } as CSSProperties
                   }
                 >
                   <div className={styles.cardTop}>
@@ -726,14 +857,34 @@ export default function CssTestingGroundsPage() {
               <header className={styles.sectionTitleBlock}>
                 <h2 className={styles.sectionTitle}>{section.title}</h2>
                 {section.id === "page-shells" &&
-                  renderGuideRefs(["6. Page Archetypes", "9.1 Page Shells", "10.1 Page Shell"])}
+                  renderGuideRefs([
+                    "6. Page Archetypes",
+                    "9.1 Page Shells",
+                    "10.1 Page Shell",
+                  ])}
                 {section.id === "surfaces" &&
-                  renderGuideRefs(["7. Token System", "9.2 Panels", "9.3 Cards"])}
+                  renderGuideRefs([
+                    "7. Token System",
+                    "9.2 Panels",
+                    "9.3 Cards",
+                  ])}
                 {section.id === "controls" &&
-                  renderGuideRefs(["9.4 Buttons", "9.5 Segmented Toggles", "9.6 Inputs And Selects", "9.7 Filter Bars And Control Rows"])}
+                  renderGuideRefs([
+                    "9.4 Buttons",
+                    "9.5 Segmented Toggles",
+                    "9.6 Inputs And Selects",
+                    "9.7 Filter Bars And Control Rows",
+                  ])}
                 {section.id === "data-display" &&
-                  renderGuideRefs(["6.4 Table-Heavy Pages", "6.5 Chart Pages", "9.9 Tables", "9.10 Chart Containers"])}
-                <p className={styles.sectionDescription}>{section.description}</p>
+                  renderGuideRefs([
+                    "6.4 Table-Heavy Pages",
+                    "6.5 Chart Pages",
+                    "9.9 Tables",
+                    "9.10 Chart Containers",
+                  ])}
+                <p className={styles.sectionDescription}>
+                  {section.description}
+                </p>
               </header>
 
               {renderShowcaseExamples(section.id)}
@@ -744,7 +895,9 @@ export default function CssTestingGroundsPage() {
                     key={item.id}
                     className={styles.showcaseCard}
                     style={
-                      { "--status-color": statusColor[item.status] } as CSSProperties
+                      {
+                        "--status-color": statusColor[item.status],
+                      } as CSSProperties
                     }
                   >
                     <div className={styles.cardTop}>

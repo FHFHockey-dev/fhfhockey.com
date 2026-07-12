@@ -1,5 +1,7 @@
 # PRD: Yahoo Fantasy -> Supabase Ingestion & Mapping Audit ("Yahoo Pipeline")
 
+> **Implementation task list:** `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md`
+
 Version: 2025-08-27
 Author: Automated Audit (GitHub Copilot)
 Scope: Comprehensive lighthouse pass across Yahoo-related ingestion, transformation, persistence, and mapping utilities.

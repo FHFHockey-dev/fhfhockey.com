@@ -177,9 +177,10 @@ export default function PlayerInsightCore({
 
   const quadrantRows = momentumRows.slice(0, 6);
   const renderedModule =
-    trustRows.length + fadeRows.length + momentumRows.length > 0
-      ? module
-      : { ...module, status: "empty" as const };
+    module.status === "ready" &&
+    trustRows.length + fadeRows.length + momentumRows.length === 0
+      ? { ...module, status: "empty" as const }
+      : module;
 
   return (
     <ModuleState module={renderedModule}>

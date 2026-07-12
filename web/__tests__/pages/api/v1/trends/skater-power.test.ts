@@ -60,11 +60,16 @@ function createMockRes() {
   return res;
 }
 
-function buildSupabaseMock(metricRows: Array<Record<string, unknown>>) {
+function buildSupabaseMock(
+  metricRows: Array<Record<string, unknown>>,
+  rangeCalls: Array<[number, number]> = []
+) {
   return {
     from(table: string) {
       if (table === "player_trend_metrics") {
         const query = {
+          rangeStart: 0,
+          rangeEnd: metricRows.length - 1,
           select() {
             return this;
           },
@@ -83,13 +88,16 @@ function buildSupabaseMock(metricRows: Array<Record<string, unknown>>) {
           order() {
             return this;
           },
-          range() {
+          range(from: number, to: number) {
+            this.rangeStart = from;
+            this.rangeEnd = to;
+            rangeCalls.push([from, to]);
             return this;
           },
           then(resolve: (value: { data: Array<Record<string, unknown>>; error: null }) => unknown) {
             return Promise.resolve(
               resolve({
-                data: metricRows,
+                data: metricRows.slice(this.rangeStart, this.rangeEnd + 1),
                 error: null
               })
             );
@@ -178,6 +186,7 @@ describe("/api/v1/trends/skater-power", () => {
     });
     expect(res.body.serving.gapDays).toBeGreaterThanOrEqual(14);
     expect(res.body.serving.message).toContain("materially stale");
+    expect(res.body.generatedAt).toBe("2025-10-16T23:59:59.999Z");
   });
 
   it("returns requested-date serving when the latest scope matches the dashboard date", async () => {
@@ -224,6 +233,42 @@ describe("/api/v1/trends/skater-power", () => {
       }
     });
     expect(res.body.serving.gapDays).toBe(0);
+    expect(res.body.generatedAt).toBe("2026-02-08T23:59:59.999Z");
+  });
+
+  it("continues past the default 1000-row PostgREST page cap", async () => {
+    const rangeCalls: Array<[number, number]> = [];
+    supabaseState.current = buildSupabaseMock(
+      Array.from({ length: 1001 }, (_, index) => ({
+        player_id: 8_470_000 + index,
+        game_date: index === 1000 ? "2026-02-09" : "2026-02-08",
+        raw_value: index + 1,
+        rolling_avg_3: index + 1,
+        rolling_avg_5: index + 1,
+        rolling_avg_10: index + 1,
+        season_id: 20252026,
+        position_code: "C"
+      })),
+      rangeCalls
+    );
+
+    const req: any = {
+      method: "GET",
+      query: {
+        date: "2026-02-09",
+        position: "forward",
+        window: "5",
+        limit: "10"
+      }
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.dateUsed).toBe("2026-02-09");
+    expect(rangeCalls).toContainEqual([0, 999]);
+    expect(rangeCalls).toContainEqual([1000, 1999]);
   });
 
   it("supports a 20-game window by averaging the trailing raw values", async () => {

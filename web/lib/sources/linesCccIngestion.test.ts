@@ -976,6 +976,71 @@ describe("linesCccIngestion", () => {
     });
   });
 
+  it("stores explicit roster-move signals as canonical-player metadata", () => {
+    const parsed = buildLinesCccSourceFromIftttEvent({
+      event: {
+        id: "roster-move-example",
+        source: "ifttt",
+        source_account: "GameDayNewsNHL",
+        username: "GameDayNewsNHL",
+        text: "Canadiens recalled Kirby Dach. Patrik Laine was assigned to Laval. Nick Suzuki is a healthy scratch. Cole Caufield was placed on IR.",
+        link_to_tweet: "https://twitter.com/GameDayNewsNHL/status/2047812222222222222",
+        tweet_id: "2047812222222222222",
+        tweet_created_at: null,
+        created_at_label: "April 24, 2026 at 08:00PM",
+        raw_payload: {},
+        received_at: "2026-04-25T00:00:00.000Z",
+      },
+      snapshotDate: "2026-04-24",
+      teams: [canadiens!],
+      rosterByTeam: new Map([[8, canadiensRoster]]),
+    });
+
+    expect(parsed).toMatchObject({
+      team: canadiens,
+      metadata: {
+        transactionSignals: expect.arrayContaining([
+          { signal: "called_up", playerName: "Kirby Dach" },
+          { signal: "sent_down", playerName: "Patrik Laine" },
+          { signal: "healthy_scratch", playerName: "Nick Suzuki" },
+          { signal: "ir", playerName: "Cole Caufield" },
+        ]),
+      },
+    });
+  });
+
+  it("stores explicit trade, waiver, and signing signals as canonical-player metadata", () => {
+    const parsed = buildLinesCccSourceFromIftttEvent({
+      event: {
+        id: "roster-transaction-example",
+        source: "ifttt",
+        source_account: "GameDayNewsNHL",
+        username: "GameDayNewsNHL",
+        text: "Canadiens traded Kirby Dach. Patrik Laine was claimed off waivers. Nick Suzuki signed a contract extension.",
+        link_to_tweet: "https://twitter.com/GameDayNewsNHL/status/2047813333333333333",
+        tweet_id: "2047813333333333333",
+        tweet_created_at: null,
+        created_at_label: "April 24, 2026 at 08:30PM",
+        raw_payload: {},
+        received_at: "2026-04-25T00:30:00.000Z",
+      },
+      snapshotDate: "2026-04-24",
+      teams: [canadiens!],
+      rosterByTeam: new Map([[8, canadiensRoster]]),
+    });
+
+    expect(parsed).toMatchObject({
+      team: canadiens,
+      metadata: {
+        transactionSignals: expect.arrayContaining([
+          { signal: "trade", playerName: "Kirby Dach" },
+          { signal: "waiver", playerName: "Patrik Laine" },
+          { signal: "signing", playerName: "Nick Suzuki" },
+        ]),
+      },
+    });
+  });
+
   it("shapes accepted NHL rows with stable keys, roster ids, and quote provenance", () => {
     const row = toLinesCccRow({
       source: {

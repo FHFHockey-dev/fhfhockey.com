@@ -23,6 +23,7 @@ describe("matrixMetricRegistry", () => {
     expect(keys).toContain("mcm_score");
     expect(keys).toContain("beast_tier");
     expect(keys).not.toContain("results_luck_index");
+    expect(keys).not.toContain("pp_points_per_60");
   });
 
   it("filters default columns by strength applicability", () => {
@@ -34,6 +35,7 @@ describe("matrixMetricRegistry", () => {
     expect(allStrengthKeys).toContain("expected_shooting_percentage");
     expect(allStrengthKeys).not.toContain("xga_per_60");
     expect(allStrengthKeys).not.toContain("on_ice_xgf_percentage");
+    expect(allStrengthKeys).not.toContain("pp_points_per_60");
   });
 
   it("publishes lower-is-better metadata for defensive suppression metrics", () => {
@@ -68,6 +70,8 @@ describe("matrixMetricRegistry", () => {
       defaultVisible: true,
       fullLabel: "Offense Rating",
     });
+    expect(offense?.tooltip).toContain("contextual descriptive");
+    expect(offense?.tooltip).toContain("not an adjusted isolated-impact metric");
     expect(offense?.definition?.sourceTable).toBe("skater_composite_ratings");
     expect(defense).toMatchObject({
       availabilityState: "available",
@@ -77,12 +81,35 @@ describe("matrixMetricRegistry", () => {
     expect(defense?.sourceQualityFlags).toContain(
       "context_influenced_unadjusted_on_ice",
     );
+    expect(defense?.tooltip).toContain("not isolated defensive talent");
 
     const mcm = getMatrixMetricColumn("mcm_score");
     const beast = getMatrixMetricColumn("beast_tier");
-    expect(mcm?.tooltip).toContain("Current-contract");
-    expect(mcm?.tooltip).toContain("PP points are source-pending and excluded");
-    expect(beast?.tooltip).toContain("Current-contract");
-    expect(beast?.tooltip).toContain("PP points are source-pending and excluded");
+    expect(mcm?.tooltip).toContain("including live PP points");
+    expect(beast?.tooltip).toContain("including live PP points");
+
+    const ppPoints = getMatrixMetricColumn("pp_points_per_60");
+    expect(ppPoints).toMatchObject({
+      availabilityState: "available",
+      defaultVisible: false,
+      fullLabel: "PP Points/60",
+    });
+    expect(ppPoints?.definition?.applicableStrengthStates).toEqual(["pp"]);
+  });
+
+  it("keeps relative 5v5 metrics planned with explicit missing baseline requirements", () => {
+    const relGf = getMatrixMetricColumn("rel_5v5_gf_percentage");
+    const relXgf = getMatrixMetricColumn("rel_5v5_xgf_percentage");
+
+    expect(relGf).toMatchObject({
+      availabilityState: "planned",
+      defaultVisible: false,
+    });
+    expect(relGf?.plannedReason).toContain("goals-for/goals-against");
+    expect(relXgf).toMatchObject({
+      availabilityState: "planned",
+      defaultVisible: false,
+    });
+    expect(relXgf?.plannedReason).toContain("xGF/xGA");
   });
 });

@@ -40,7 +40,11 @@
 - `web/lib/projections/derived/buildGoalieGameV2.ts` - Builds `goalie_game_v2` from PbP (SA/GA/saves; TOI deferred).
 - `web/pages/api/v1/db/build-projection-derived-v2.ts` - Date-range endpoint to populate derived v2 strength tables.
 - `web/lib/projections/run-forge-projections.ts` - Baseline horizon=1 projection runner writing `*_projections_v2` and `projection_runs_v2`.
+- `web/lib/projections/skaterRollout.ts` - Versioned skater candidate/baseline rollout and rollback contract.
+- `web/lib/projections/promotionGates.ts` - Launch-gate and holdout comparison contracts.
 - `web/pages/api/v1/db/run-projection-v2.ts` - Endpoint to trigger a projection run for a date.
+- `web/pages/api/v1/db/run-projection-accuracy.ts` - Stored 30-day accuracy, calibration, role, miss-attribution, and baseline-comparison reporting.
+- `web/pages/api/v1/db/cron-report.ts` - Projection row/freshness observability in cron audit reporting.
 - `web/pages/api/v1/projections/_helpers.ts` - Shared query parsing and “latest run” resolution for projections endpoints.
 - `web/pages/api/v1/projections/players.ts` - Read endpoint for v2 player projections (filters + defaults to latest succeeded run).
 - `web/pages/api/v1/projections/teams.ts` - Read endpoint for v2 team projections (filters + defaults to latest succeeded run).
@@ -68,6 +72,7 @@
   - Shots/goals/assists by strength: derive from `pbp_plays` using `typeDescKey` + `situationCode` + shooter/scorer/assist ids.
   - Goalie SA/GA/saves: `goaliesGameStats` for per-game values (season priors can come from `wgo_goalie_stats`/`wgo_goalie_stats_totals` later), with starter probabilities from `goalie_start_projections` and overrides from `roster_events`.
 - Data quality (Task 2.7): `projection_runs_v2.metrics.data_quality` tracks missing PbP/shift totals/line combos, missing rolling metrics, and TOI scaling diagnostics for each projection run.
+- Reconciliation evidence (2026-07-11): the newer skater and goalie nested implementations satisfy the older main-list engine/uncertainty/API/ops rows. Horizon support is now consistently clamped to 1–10; scheduled execution is active in the canonical cron inventory; the accuracy job persists per-stat and 7/14/30-day diagnostics plus interval calibration and holdout comparisons; range execution uses bounded time budgets and explicit chunk/resume cursors. The nested skater 14-day shadow-observation row remains independently open and is not hidden by closing these older implementation rows.
 
 ### Workflow (per `tasks/TASKS/rules/process-task-list.mdc`)
 
@@ -93,27 +98,27 @@
 - [x] 2.5 Build derived-table builder for `team_game_strength` (minutes/shots/goals by strength) and reconcile against sums of player aggregates (pre-checks)
 - [x] 2.6 Build derived-table builder for `goalie_game` (SA, GA, saves, TOI) and map goalie ids to `players`
 - [x] 2.7 Add data quality checks (missing games, TOI sanity, duplicate rows, team totals vs player totals) and persist run-level metrics to `projection_runs.metrics`
-- [ ] 3.0 Implement horizon=1 projection engine (team opportunities → player shares → conversion) + reconciliation
-- [ ] 3.1 Define MVP feature set + priors (rolling windows, season baselines) and document how each is computed (outside SQL)
-- [ ] 3.2 Implement team opportunity baseline model by strength (minutes + shots), using existing NST/WGO team tables as inputs where appropriate
-- [ ] 3.3 Implement player usage/share model by strength (TOI share, shot share, PP usage), leveraging `lineCombinations`/shift signals when available
-- [ ] 3.4 Implement conversion models (shots→goals, goals→assists) with shrinkage/priors and guardrails for small samples
-- [ ] 3.5 Implement goalie layer (starter probability from `goalie_start_projections`/`roster_events`; SA from opponent/team context; GA from SA×(1-sv%))
+- [x] 3.0 Implement horizon=1 projection engine (team opportunities → player shares → conversion) + reconciliation
+- [x] 3.1 Define MVP feature set + priors (rolling windows, season baselines) and document how each is computed (outside SQL)
+- [x] 3.2 Implement team opportunity baseline model by strength (minutes + shots), using existing NST/WGO team tables as inputs where appropriate
+- [x] 3.3 Implement player usage/share model by strength (TOI share, shot share, PP usage), leveraging `lineCombinations`/shift signals when available
+- [x] 3.4 Implement conversion models (shots→goals, goals→assists) with shrinkage/priors and guardrails for small samples
+- [x] 3.5 Implement goalie layer (starter probability from `goalie_start_projections`/`roster_events`; SA from opponent/team context; GA from SA×(1-sv%))
 - [x] 3.6 Implement reconciliation pass (hard constraints for team TOI + shots; optional goals constraint) and write unit tests for these invariants
-- [ ] 3.7 Write the run orchestrator that reads derived tables + events, writes projections for all games on a target date, and upserts under a new `projection_runs` row
+- [x] 3.7 Write the run orchestrator that reads derived tables + events, writes projections for all games on a target date, and upserts under a new `projection_runs` row
 - [x] 3.8 Baseline run orchestrator (rolling metrics) writing v2 projections + run logs
-- [ ] 4.0 Add uncertainty simulation (p10/p50/p90) + horizon>1 schedule scaffolding
-- [ ] 4.1 Define uncertainty inputs and distributions (team opportunity noise, player share noise, conversion noise, goalie scenario noise)
-- [ ] 4.2 Implement simulation loop for horizon=1 and extract quantiles per stat into `uncertainty` JSONB (p10/p50/p90 at minimum)
-- [ ] 4.3 Extend simulation to horizon 2–10 by iterating over the schedule slice (home/away/rest placeholders OK for MVP)
-- [ ] 4.4 Add interval calibration checks to backtests (coverage vs nominal) and store summary metrics
-- [ ] 4.5 Validate performance (batching, chunked upserts) so nightly runs complete within the MVP target
-- [ ] 5.0 Ship API + ops (read endpoints, admin triggers/events, nightly scheduler, backtest report)
-- [ ] 5.1 Implement read endpoints for player/team/goalie projections with filtering (date, game_id, team_id, player_id, horizon, run_id) and stable response schemas
+- [x] 4.0 Add uncertainty simulation (p10/p50/p90) + horizon>1 schedule scaffolding
+- [x] 4.1 Define uncertainty inputs and distributions (team opportunity noise, player share noise, conversion noise, goalie scenario noise)
+- [x] 4.2 Implement simulation loop for horizon=1 and extract quantiles per stat into `uncertainty` JSONB (p10/p50/p90 at minimum)
+- [x] 4.3 Extend simulation to horizon 2–10 by iterating over the schedule slice (home/away/rest placeholders OK for MVP)
+- [x] 4.4 Add interval calibration checks to backtests (coverage vs nominal) and store summary metrics
+- [x] 4.5 Validate performance (batching, chunked upserts) so nightly runs complete within the MVP target. **OWNER-APPROVED EVIDENCE EXCEPTION (2026-07-11):** runtime success was not observed on deployed current-date data; model promotion remains blocked until it is.
+- [x] 5.0 Ship API + ops (read endpoints, admin triggers/events, nightly scheduler, backtest report)
+- [x] 5.1 Implement read endpoints for player/team/goalie projections with filtering (date, game_id, team_id, player_id, horizon, run_id) and stable response schemas
 - [x] 5.2 Implement run metadata endpoints (`/runs/latest`, `/runs/{run_id}`) and ensure pagination/limits for large queries
 - [x] 5.2a Add v2 read endpoints (players/teams/goalies + runs/latest)
 - [x] 5.3 Implement admin endpoints: trigger run for a date, create/update `roster_events`, and (optional) set confirmed starters
-- [ ] 5.4 Add nightly scheduler (Vercel Cron or GitHub Actions) that triggers the run + persists `cron_job_audit` via `withCronJobAudit`
-- [ ] 5.5 Add observability: structured logs, `projection_runs.status` transitions, failure capture, and run metrics summaries
-- [ ] 5.6 Implement backtest report job (at least last 30 days): MAE for shots/goals, interval coverage, and a stored artifact (table row or file path)
+- [x] 5.4 Add nightly scheduler (Vercel Cron or GitHub Actions) that triggers the run + persists `cron_job_audit` via `withCronJobAudit`
+- [x] 5.5 Add observability: structured logs, `projection_runs.status` transitions, failure capture, and run metrics summaries
+- [x] 5.6 Implement backtest report job (at least last 30 days): MAE for shots/goals, interval coverage, and a stored artifact (table row or file path)
 - [x] 5.7 Document ops runbooks (how to run locally, how to backfill, how to debug missing data) and keep PRD open questions updated

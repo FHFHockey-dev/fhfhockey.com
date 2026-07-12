@@ -209,7 +209,7 @@ Primary objective now:
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-yahoo-weeks?game_key=nhl',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 240000 -- 4 mins
 --         );
 --     $$
@@ -229,7 +229,7 @@ Primary objective now:
 
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-nst-gamelog', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 240000
 --         );
 --     $$
@@ -246,7 +246,7 @@ Primary objective now:
 --     '30 7 * * *', -- 07:30 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-wgo-skaters?action=all', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -263,7 +263,7 @@ Primary objective now:
 --     '35 7 * * *', -- 07:35 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-wgo-goalies?action=all', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -280,7 +280,7 @@ Primary objective now:
 --     '40 7 * * *', -- 07:40 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-wgo-totals?season=current', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -299,7 +299,7 @@ Primary objective now:
 --     '45 7 * * *', -- 07:45 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-shifts?action=all',
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -316,7 +316,7 @@ Primary objective now:
 --     '45 7 * * *', -- 07:45 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-rolling-player-averages',
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -345,7 +345,7 @@ Primary objective now:
 --     '55 7 * * *', -- 07:55 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/powerPlayTimeFrame?gameId=all', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -362,7 +362,7 @@ Primary objective now:
 --     '00 8 * * *', -- 08:00 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-line-combinations', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -381,7 +381,7 @@ Primary objective now:
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-team-yearly-summary',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 240000 -- 4 mins
 --         );
 --     $$
@@ -399,7 +399,7 @@ Primary objective now:
 --     '10 8 * * *', -- 08:10 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/Teams/nst-team-stats?date=all', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -416,7 +416,7 @@ Primary objective now:
 --     '15 8 * * *', -- 08:15 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-standings-details?date=all', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -433,7 +433,7 @@ Primary objective now:
 --     '20 8 * * *', -- 08:20 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-wgo-goalie-totals', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -450,7 +450,7 @@ Primary objective now:
 --     '25 8 * * *', -- 08:25 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-expected-goals?date=all', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -468,7 +468,7 @@ Primary objective now:
 --     '30 8 * * *', -- 08:30 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-nst-goalies', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -485,7 +485,7 @@ Primary objective now:
 --     '51 20 * * *', -- 08:35 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/update-PbP?gameId=recent',
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -503,7 +503,7 @@ Primary objective now:
 --     $$
 --         SELECT net.http_get(
 --         url := 'https://fhfhockey.com/api/v1/db/update-yahoo-players?gameId=465',
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -522,7 +522,7 @@ Primary objective now:
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-nst-current-season',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 240000 -- 4 mins
 --         );
 --     $$
@@ -540,7 +540,7 @@ Primary objective now:
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/calculate-wigo-stats',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 240000 -- 4 mins
 --         );
 --     $$
@@ -558,7 +558,7 @@ Primary objective now:
 --     $$  
 --         SELECT net.http_get(
 --         url := 'https://fhfhockey.com/api/internal/sync-yahoo-players-to-sheet?gameId=465',
---         headers := '{"Authorization":"Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization":"Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 300000
 --         );
 --     $$
@@ -577,7 +577,7 @@ Primary objective now:
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/update-rolling-player-averages',
 --             body := '{}'::jsonb,
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 300000 -- 5 mins
 --         );
 --     $$
@@ -607,7 +607,7 @@ Primary objective now:
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-team-ctpi-daily',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 100000
 --         );
 --     $$
@@ -625,7 +625,7 @@ Primary objective now:
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-team-power-ratings',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000 -- 5 mins
 --         );
 --     $$
@@ -643,7 +643,7 @@ Primary objective now:
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-team-power-ratings-new',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 300000 -- 5 mins
 --         );
 --     $$
@@ -662,7 +662,7 @@ Primary objective now:
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/update-goalie-projections-v2',
 --             body := '{}'::jsonb,
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 100000
 --         );
 --     $$
@@ -679,7 +679,7 @@ Primary objective now:
 --     '35 9 * * *', -- 09:35 UTC
 --     $$
 --         SELECT net.http_get(url:= 'https://fhfhockey.com/api/v1/db/run-fetch-wgo-data', 
---         headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--         headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --         timeout_milliseconds := 100000
 --         );
 --     $$
@@ -698,7 +698,7 @@ Primary objective now:
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/update-start-chart-projections',
 --             body := '{}'::jsonb,
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -718,7 +718,7 @@ Primary objective now:
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/build-projection-derived-v2',
 --             body := '{}'::jsonb,
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -738,7 +738,7 @@ Primary objective now:
 --         SELECT net.http_post(
 --             url := 'https://fhfhockey.com/api/v1/db/run-projection-v2',
 --             body := '{}'::jsonb,
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233", "Content-Type": "application/json"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>", "Content-Type": "application/json"}'::jsonb,
 --             timeout_milliseconds := 300000
 --         );
 --     $$
@@ -757,7 +757,7 @@ Primary objective now:
 --     $$
 --         SELECT net.http_get(
 --             url := 'https://fhfhockey.com/api/v1/db/update-nst-team-daily',
---             headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+--             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
 --             timeout_milliseconds := 100000
 --         );
 --     $$
@@ -815,7 +815,7 @@ Primary objective now:
 --    $$
 --      SELECT net.http_get(
 --        url       := 'https://fhfhockey.com/api/v1/db/cron-report',
---        headers   := '{"Authorization":"Bearer fhfh-cron-mima-233"}'::jsonb,
+--        headers   := '{"Authorization":"Bearer <CRON_SECRET>"}'::jsonb,
 --        timeout_milliseconds := 240000
 --      );
 --    $$
@@ -834,7 +834,7 @@ SELECT cron.schedule(
     $$
         SELECT net.http_get(
             url := 'https://fhfhockey.com/api/v1/db/update-rolling-player-averages',
-            headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+            headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
             timeout_milliseconds := 300000
         );
     $$
@@ -852,7 +852,7 @@ SELECT cron.schedule(
     $$
         SELECT net.http_get(
             url := 'https://fhfhockey.com/api/v1/db/ingest-projection-inputs',
-            headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+            headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
             timeout_milliseconds := 600000
         );
     $$
@@ -870,7 +870,7 @@ SELECT cron.schedule(
     $$
         SELECT net.http_get(
             url := 'https://fhfhockey.com/api/v1/db/build-projection-derived-v2',
-            headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+            headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
             timeout_milliseconds := 600000
         );
     $$
@@ -888,7 +888,7 @@ SELECT cron.schedule(
     $$
         SELECT net.http_get(
             url := 'https://fhfhockey.com/api/v1/db/update-goalie-projections-v2',
-            headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+            headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
             timeout_milliseconds := 300000
         );
     $$
@@ -906,7 +906,7 @@ SELECT cron.schedule(
     $$
         SELECT net.http_get(
             url := 'https://fhfhockey.com/api/v1/db/run-projection-v2?horizonGames=1',
-            headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+            headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
             timeout_milliseconds := 600000
         );
     $$
@@ -924,7 +924,7 @@ SELECT cron.schedule(
     $$
         SELECT net.http_get(
             url := 'https://fhfhockey.com/api/v1/db/run-projection-accuracy',
-            headers := '{"Authorization": "Bearer fhfh-cron-mima-233"}'::jsonb,
+            headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
             timeout_milliseconds := 300000
         );
     $$

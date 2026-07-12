@@ -62,6 +62,11 @@ type ProjectionResponse = {
     skaterPoolRecoveryPlayerCount: number;
     note: string | null;
   } | null;
+  diagnostics?: {
+    state: "ready" | "empty" | "blocked";
+    missingRequestedHorizon?: boolean;
+    message?: string | null;
+  } | null;
   data: ProjectionRow[];
 };
 
@@ -174,10 +179,6 @@ function resolveTeamAbbr(
     (team) => team.name.toLowerCase() === normalizedName
   );
   return match?.abbrev ?? null;
-}
-
-function normalizeName(value: string | null | undefined): string {
-  return (value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 function formatSigned(value: number | null | undefined, suffix = ""): string {
@@ -329,6 +330,16 @@ export default function TopAddsRail({
         if (!active) return;
         setProjectionResponse(projectionPayload);
 
+        if (projectionPayload.diagnostics?.state === "blocked") {
+          setError(
+            projectionPayload.diagnostics.message ??
+              "The requested projection horizon is unavailable."
+          );
+          setOwnershipResponse(null);
+          setOwnershipSnapshotMap({});
+          return;
+        }
+
         const projectedPlayerIds = Array.from(
           new Set(
             (projectionPayload.data ?? [])
@@ -414,19 +425,15 @@ export default function TopAddsRail({
     const projections = projectionResponse?.data ?? [];
     const ownershipRows = getOwnershipRows(ownershipResponse);
     const ownershipByPlayerId = new Map<number, OwnershipTrendRow>();
-    const ownershipByName = new Map<string, OwnershipTrendRow>();
 
     ownershipRows.forEach((row) => {
       if (row.playerId != null) {
         ownershipByPlayerId.set(row.playerId, row);
       }
-      ownershipByName.set(normalizeName(row.name), row);
     });
 
     return projections.flatMap<TopAddsCandidateInput>((row) => {
-        const ownershipRow =
-          ownershipByPlayerId.get(row.player_id) ??
-          ownershipByName.get(normalizeName(row.player_name));
+        const ownershipRow = ownershipByPlayerId.get(row.player_id);
         if (!matchesPosition(row.position, position)) return [];
 
         const ownership =
@@ -482,20 +489,16 @@ export default function TopAddsRail({
   const missingOwnershipCount = useMemo(() => {
     const projections = projectionResponse?.data ?? [];
     const ownershipByPlayerId = new Map<number, OwnershipTrendRow>();
-    const ownershipByName = new Map<string, OwnershipTrendRow>();
 
     getOwnershipRows(ownershipResponse).forEach((row) => {
       if (row.playerId != null) {
         ownershipByPlayerId.set(row.playerId, row);
       }
-      ownershipByName.set(normalizeName(row.name), row);
     });
 
     return projections.reduce((count, row) => {
       if (!matchesPosition(row.position, position)) return count;
-      const ownershipRow =
-        ownershipByPlayerId.get(row.player_id) ??
-        ownershipByName.get(normalizeName(row.player_name));
+      const ownershipRow = ownershipByPlayerId.get(row.player_id);
       const snapshotOwnership = ownershipSnapshotMap[row.player_id] ?? null;
       return ownershipRow || snapshotOwnership != null ? count : count + 1;
     }, 0);

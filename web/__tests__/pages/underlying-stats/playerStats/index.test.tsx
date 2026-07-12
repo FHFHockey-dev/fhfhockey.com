@@ -4,7 +4,7 @@ import {
   render,
   screen,
   waitFor,
-  within
+  within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -16,22 +16,22 @@ const routerMock = {
   isReady: true,
   pathname: "/underlying-stats/playerStats",
   query: {} as Record<string, string>,
-  replace: vi.fn()
+  replace: vi.fn(),
 };
 
 vi.mock("next/router", () => ({
-  useRouter: () => routerMock
+  useRouter: () => routerMock,
 }));
 
 vi.mock("next/head", () => ({
-  default: ({ children }: { children: React.ReactNode }) => children
+  default: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 vi.mock("next/link", () => ({
   default: ({
     children,
     href,
-    className
+    className,
   }: {
     children: React.ReactNode;
     href: string;
@@ -40,14 +40,14 @@ vi.mock("next/link", () => ({
     <a href={href} className={className}>
       {children}
     </a>
-  )
+  ),
 }));
 
 vi.mock("components/underlying-stats/PlayerStatsExpandedRowChart", () => ({
   default: ({
     playerId,
     selectedMetricKey,
-    variant
+    variant,
   }: {
     playerId: number;
     selectedMetricKey: string;
@@ -57,7 +57,7 @@ vi.mock("components/underlying-stats/PlayerStatsExpandedRowChart", () => ({
       Expanded chart for player {playerId} using {selectedMetricKey} via{" "}
       {variant ?? "player"}
     </div>
-  )
+  ),
 }));
 
 function resolveFamily(statMode: string | null, displayMode: string | null) {
@@ -79,7 +79,7 @@ function buildMockLandingRow(family: string) {
     playerName: "Test Player",
     teamLabel: "TST",
     gamesPlayed: 12,
-    toiSeconds: 987
+    toiSeconds: 987,
   };
 
   if (family === "goalieCounts" || family === "goalieRates") {
@@ -88,7 +88,7 @@ function buildMockLandingRow(family: string) {
 
   return {
     ...baseRow,
-    positionCode: "C"
+    positionCode: "C",
   };
 }
 
@@ -101,7 +101,7 @@ function buildMockLandingRows(family: string, count: number) {
       ...row,
       rowKey: `row:${family}:${playerNumber}`,
       playerId: 8478400 + playerNumber,
-      playerName: `Player ${playerNumber}`
+      playerName: `Player ${playerNumber}`,
     };
   });
 }
@@ -136,7 +136,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
       throughSeasonId: "20252026",
       scope: "dateRange",
       startDate: "2025-11-01",
-      endDate: "2026-02-01"
+      endDate: "2026-02-01",
     };
     routerMock.replace.mockReset();
 
@@ -152,7 +152,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
         const params = new URL(url, "http://localhost").searchParams;
         const family = resolveFamily(
           params.get("statMode"),
-          params.get("displayMode")
+          params.get("displayMode"),
         );
 
         return {
@@ -163,10 +163,10 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
             sort: { sortKey: "xgfPct", direction: "desc" },
             pagination: { page: 1, pageSize: 50, totalRows: 1, totalPages: 1 },
             placeholder: false,
-            generatedAt: "2026-03-31T12:00:00.000Z"
-          })
+            generatedAt: "2026-03-31T12:00:00.000Z",
+          }),
         };
-      })
+      }),
     );
   });
 
@@ -175,24 +175,24 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
       fromSeasonId: "20252026",
       throughSeasonId: "20252026",
       scope: "dateRange",
-      endDate: "2026-02-01"
+      endDate: "2026-02-01",
     };
 
     render(<PlayerUnderlyingStatsLandingPage />);
 
     await waitFor(() => {
       expect(
-        screen.getAllByText("Invalid filter combination").length
+        screen.getAllByText("Invalid filter combination").length,
       ).toBeGreaterThan(0);
     });
 
     expect(
-      screen.getAllByText("Date Range requires a start date.").length
+      screen.getAllByText("Date Range requires a start date.").length,
     ).toBeGreaterThan(0);
     expect(getPlayerLandingFetchCalls()).toHaveLength(0);
 
     fireEvent.click(
-      screen.getByRole("button", { name: "Reset landing filters" })
+      screen.getByRole("button", { name: "Reset landing filters" }),
     );
 
     await waitFor(() => {
@@ -203,8 +203,8 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     expect(latestReplaceCall?.[0]).toMatchObject({
       pathname: "/underlying-stats/playerStats",
       query: expect.objectContaining({
-        scope: "none"
-      })
+        scope: "none",
+      }),
     });
     expect(latestReplaceCall?.[0].query).not.toHaveProperty("startDate");
     expect(latestReplaceCall?.[0].query).not.toHaveProperty("endDate");
@@ -219,12 +219,12 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
 
     await waitFor(() => {
       expect(screen.getAllByText("Scope: Date Range").length).toBeGreaterThan(
-        0
+        0,
       );
     });
 
     fireEvent.change(screen.getByLabelText("# of GP"), {
-      target: { value: "7" }
+      target: { value: "7" },
     });
 
     await waitFor(() => {
@@ -239,8 +239,8 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     expect(latestReplaceCall?.[0]).toMatchObject({
       pathname: "/underlying-stats/playerStats",
       query: expect.objectContaining({
-        scope: "gameRange"
-      })
+        scope: "gameRange",
+      }),
     });
     expect(latestReplaceCall?.[0].query).not.toHaveProperty("startDate");
     expect(latestReplaceCall?.[0].query).not.toHaveProperty("endDate");
@@ -249,17 +249,17 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     await waitFor(() => {
       expect(fetch).toHaveBeenLastCalledWith(
         expect.stringContaining("scope=gameRange"),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
     expect(fetch).toHaveBeenLastCalledWith(
       expect.not.stringContaining("startDate="),
-      expect.any(Object)
+      expect.any(Object),
     );
     expect(fetch).toHaveBeenLastCalledWith(
       expect.not.stringContaining("endDate="),
-      expect.any(Object)
+      expect.any(Object),
     );
   });
 
@@ -275,9 +275,9 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
           sort: { sortKey: "xgfPct", direction: "desc" },
           pagination: { page: 1, pageSize: 50, totalRows: 0, totalPages: 0 },
           placeholder: false,
-          generatedAt: "2026-03-31T12:00:00.000Z"
-        })
-      })
+          generatedAt: "2026-03-31T12:00:00.000Z",
+        }),
+      }),
     );
 
     render(<PlayerUnderlyingStatsLandingPage />);
@@ -285,8 +285,8 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     await waitFor(() => {
       expect(
         screen.getAllByText(
-          "No players matched the current filter combination. Widen the scope or reset filters."
-        ).length
+          "No players matched the current filter combination. Widen the scope or reset filters.",
+        ).length,
       ).toBeTruthy();
     });
   });
@@ -308,7 +308,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
       sortKey: "totalPoints",
       sortDirection: "desc",
       page: "2",
-      pageSize: "25"
+      pageSize: "25",
     };
 
     render(<PlayerUnderlyingStatsLandingPage />);
@@ -318,7 +318,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     expect(screen.getByText("16:27")).toBeTruthy();
     expect(screen.getByText("12")).toBeTruthy();
     expect(link.getAttribute("href")).toBe(
-      "/underlying-stats/playerStats/8478401?fromSeasonId=20252026&throughSeasonId=20252026&seasonType=regularSeason&strength=powerPlay&scoreState=allScores&statMode=individual&displayMode=counts&venue=away&tradeMode=split&scope=dateRange&startDate=2025-11-01&endDate=2026-02-01&sortKey=totalPoints&sortDirection=desc&page=1&pageSize=100"
+      "/underlying-stats/playerStats/8478401?fromSeasonId=20252026&throughSeasonId=20252026&seasonType=regularSeason&strength=powerPlay&scoreState=allScores&statMode=individual&displayMode=counts&venue=away&tradeMode=split&scope=dateRange&startDate=2025-11-01&endDate=2026-02-01&sortKey=totalPoints&sortDirection=desc&page=1&pageSize=100",
     );
   });
 
@@ -338,7 +338,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
       sortKey: "savePct",
       sortDirection: "desc",
       page: "1",
-      pageSize: "100"
+      pageSize: "100",
     };
 
     render(<PlayerUnderlyingStatsLandingPage variant="goalie" />);
@@ -346,7 +346,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith(
         expect.stringContaining("/api/v1/underlying-stats/goalies?"),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -356,7 +356,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     expect(screen.queryByLabelText("Stat Mode")).toBeNull();
     expect(screen.getByLabelText("# of Goalie GP")).toBeTruthy();
     expect(
-      screen.getByPlaceholderText("Last X goalie appearances")
+      screen.getByPlaceholderText("Last X goalie appearances"),
     ).toBeTruthy();
     expect(within(table).getByText("Rank")).toBeTruthy();
     expect(within(table).getByText("xG Against")).toBeTruthy();
@@ -365,11 +365,11 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
 
     const rows = within(table).getAllByRole("row");
     expect(
-      within(rows[1] as HTMLElement).getAllByRole("cell")[0]?.textContent
+      within(rows[1] as HTMLElement).getAllByRole("cell")[0]?.textContent,
     ).toBe("1");
 
     fireEvent.click(
-      screen.getByRole("button", { name: "Show advanced filters" })
+      screen.getByRole("button", { name: "Show advanced filters" }),
     );
 
     expect(screen.queryByLabelText("Position Group")).toBeNull();
@@ -379,11 +379,11 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     expect(screen.getByLabelText("Minimum TOI (seconds)")).toBeTruthy();
   });
 
-  it("hydrates remaining goalie rows through the dedicated goalie namespace with goalie-specific progress copy", async () => {
+  it("loads the next goalie batch on demand through the dedicated goalie namespace", async () => {
     routerMock.pathname = "/underlying-stats/goalieStats";
     routerMock.query = {
       statMode: "goalies",
-      displayMode: "counts"
+      displayMode: "counts",
     };
 
     let resolveSecondPageFetch: (() => void) | null = null;
@@ -417,11 +417,11 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
                     page: 2,
                     pageSize: 100,
                     totalRows: 150,
-                    totalPages: 2
+                    totalPages: 2,
                   },
                   placeholder: false,
-                  generatedAt: "2026-03-31T12:00:00.000Z"
-                })
+                  generatedAt: "2026-03-31T12:00:00.000Z",
+                }),
               });
           });
         }
@@ -436,13 +436,13 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
               page: 1,
               pageSize: 100,
               totalRows: 150,
-              totalPages: 2
+              totalPages: 2,
             },
             placeholder: false,
-            generatedAt: "2026-03-31T12:00:00.000Z"
-          })
+            generatedAt: "2026-03-31T12:00:00.000Z",
+          }),
         });
-      })
+      }),
     );
 
     render(<PlayerUnderlyingStatsLandingPage variant="goalie" />);
@@ -452,18 +452,23 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     });
 
     expect(screen.queryByText("Player 150")).toBeNull();
-    expect(
-      screen.getByText("Loading remaining goalies (100/150)")
-    ).toBeTruthy();
-    expect(screen.getByText("Loading next 50 goalies (100/150)")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Load more" })).toBeTruthy();
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/v1/underlying-stats/goalies?"),
-      expect.any(Object)
+      expect.any(Object),
     );
+    expect(fetch).not.toHaveBeenCalledWith(
+      expect.stringContaining("page=2&pageSize=100"),
+      expect.any(Object),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Load more" }));
+
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining("page=2&pageSize=100"),
-      expect.any(Object)
+      expect.any(Object),
     );
+    expect(screen.getByRole("button", { name: "Loading…" })).toBeTruthy();
 
     const flushSecondPageFetch = resolveSecondPageFetch as (() => void) | null;
     if (flushSecondPageFetch !== null) {
@@ -491,7 +496,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
       sortKey: "savePct",
       sortDirection: "desc",
       page: "1",
-      pageSize: "100"
+      pageSize: "100",
     };
 
     const fetchMock = vi
@@ -506,7 +511,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
         const params = new URL(url, "http://localhost").searchParams;
         const family = resolveFamily(
           params.get("statMode"),
-          params.get("displayMode")
+          params.get("displayMode"),
         );
 
         return {
@@ -517,8 +522,8 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
             sort: { sortKey: "savePct", direction: "desc" },
             pagination: { page: 1, pageSize: 100, totalRows: 1, totalPages: 1 },
             placeholder: false,
-            generatedAt: "2026-03-31T12:00:00.000Z"
-          })
+            generatedAt: "2026-03-31T12:00:00.000Z",
+          }),
         };
       });
     vi.stubGlobal("fetch", fetchMock);
@@ -532,38 +537,38 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     expect(
       screen
         .getByRole("button", { name: "Sort by SV%" })
-        .getAttribute("aria-pressed")
+        .getAttribute("aria-pressed"),
     ).toBe("true");
     expect(
-      screen.getByRole("button", { name: "Sort by Shots Against" })
+      screen.getByRole("button", { name: "Sort by Shots Against" }),
     ).toBeTruthy();
     expect(
-      screen.queryByRole("button", { name: "Sort by Position" })
+      screen.queryByRole("button", { name: "Sort by Position" }),
     ).toBeNull();
 
     fireEvent.change(screen.getByLabelText("Display Mode"), {
-      target: { value: "rates" }
+      target: { value: "rates" },
     });
 
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: "Sort by Shots Against/60" })
+        screen.getByRole("button", { name: "Sort by Shots Against/60" }),
       ).toBeTruthy();
     });
 
     expect(
       screen
         .getByRole("button", { name: "Sort by SV%" })
-        .getAttribute("aria-pressed")
+        .getAttribute("aria-pressed"),
     ).toBe("true");
     expect(
-      screen.queryByRole("button", { name: "Sort by Position" })
+      screen.queryByRole("button", { name: "Sort by Position" }),
     ).toBeNull();
 
     await waitFor(() => {
       const lastFetchCall = fetchMock.mock.calls.at(-1)?.[0];
       expect(String(lastFetchCall)).toContain(
-        "/api/v1/underlying-stats/goalies?"
+        "/api/v1/underlying-stats/goalies?",
       );
       expect(String(lastFetchCall)).toContain("displayMode=rates");
       expect(String(lastFetchCall)).toContain("sortKey=savePct");
@@ -587,7 +592,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
       sortKey: "savePct",
       sortDirection: "desc",
       page: "1",
-      pageSize: "100"
+      pageSize: "100",
     };
     routerMock.replace.mockImplementation(async (nextLocation) => {
       if (nextLocation && typeof nextLocation === "object") {
@@ -618,7 +623,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
         const params = new URL(url, "http://localhost").searchParams;
         const family = resolveFamily(
           params.get("statMode"),
-          params.get("displayMode")
+          params.get("displayMode"),
         );
 
         return {
@@ -629,8 +634,8 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
             sort: { sortKey: "savePct", direction: "desc" },
             pagination: { page: 1, pageSize: 100, totalRows: 1, totalPages: 1 },
             placeholder: false,
-            generatedAt: "2026-03-31T12:00:00.000Z"
-          })
+            generatedAt: "2026-03-31T12:00:00.000Z",
+          }),
         };
       });
     vi.stubGlobal("fetch", fetchMock);
@@ -642,32 +647,32 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     });
 
     fireEvent.change(screen.getByLabelText("Season Type"), {
-      target: { value: "playoffs" }
+      target: { value: "playoffs" },
     });
     fireEvent.change(screen.getByLabelText("Strength"), {
-      target: { value: "powerPlay" }
+      target: { value: "powerPlay" },
     });
     fireEvent.change(screen.getByLabelText("Score State"), {
-      target: { value: "withinOne" }
+      target: { value: "withinOne" },
     });
 
     fireEvent.change(screen.getByLabelText("# of Team GP"), {
-      target: { value: "5" }
+      target: { value: "5" },
     });
 
     await waitFor(() => {
       expect(
         routerMock.replace.mock.calls.some(
           ([nextLocation]) =>
-            nextLocation?.pathname === "/underlying-stats/goalieStats"
-        )
+            nextLocation?.pathname === "/underlying-stats/goalieStats",
+        ),
       ).toBe(true);
     });
 
     await waitFor(() => {
       const lastFetchCall = fetchMock.mock.calls.at(-1)?.[0];
       expect(String(lastFetchCall)).toContain(
-        "/api/v1/underlying-stats/goalies?"
+        "/api/v1/underlying-stats/goalies?",
       );
       expect(String(lastFetchCall)).toContain("seasonType=playoffs");
       expect(String(lastFetchCall)).toContain("strength=powerPlay");
@@ -683,41 +688,41 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
       fromSeasonId: "20252026",
       throughSeasonId: "20252026",
       statMode: "goalies",
-      displayMode: "counts"
+      displayMode: "counts",
     };
 
     render(<PlayerUnderlyingStatsLandingPage variant="goalie" />);
 
     const expandButton = await screen.findByRole("button", {
-      name: "Expand goalie trend chart for Test Player"
+      name: "Expand goalie trend chart for Test Player",
     });
     fireEvent.click(expandButton);
 
     expect(
       screen.getByText(
-        "Expanded chart for player 8478401 using gamesPlayed via goalie"
-      )
+        "Expanded chart for player 8478401 using gamesPlayed via goalie",
+      ),
     ).toBeTruthy();
 
     const rows = screen.getAllByRole("row");
     expect(
-      within(rows[1] as HTMLElement).getAllByRole("cell")[0]?.textContent
+      within(rows[1] as HTMLElement).getAllByRole("cell")[0]?.textContent,
     ).toBe("1");
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Collapse goalie trend chart for Test Player"
-      })
+        name: "Collapse goalie trend chart for Test Player",
+      }),
     );
 
     expect(
       screen.queryByText(
-        "Expanded chart for player 8478401 using gamesPlayed via goalie"
-      )
+        "Expanded chart for player 8478401 using gamesPlayed via goalie",
+      ),
     ).toBeNull();
   });
 
-  it("renders the first 100 sorted rows immediately and hydrates the remaining rows in the background", async () => {
+  it("renders the first 100 sorted rows immediately and loads another sorted batch on demand", async () => {
     routerMock.query = {};
 
     let resolveSecondPageFetch: (() => void) | null = null;
@@ -751,11 +756,11 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
                     page: 2,
                     pageSize: 100,
                     totalRows: 150,
-                    totalPages: 2
+                    totalPages: 2,
                   },
                   placeholder: false,
-                  generatedAt: "2026-03-31T12:00:00.000Z"
-                })
+                  generatedAt: "2026-03-31T12:00:00.000Z",
+                }),
               });
           });
         }
@@ -770,13 +775,13 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
               page: 1,
               pageSize: 100,
               totalRows: 150,
-              totalPages: 2
+              totalPages: 2,
             },
             placeholder: false,
-            generatedAt: "2026-03-31T12:00:00.000Z"
-          })
+            generatedAt: "2026-03-31T12:00:00.000Z",
+          }),
         });
-      })
+      }),
     );
 
     render(<PlayerUnderlyingStatsLandingPage />);
@@ -786,13 +791,20 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     });
 
     expect(screen.queryByText("Player 150")).toBeNull();
-    expect(screen.getByText("Loading remaining rows (100/150)")).toBeTruthy();
-    expect(fetch).toHaveBeenCalledWith(
+    expect(screen.getByRole("button", { name: "Load more" })).toBeTruthy();
+    expect(fetch).not.toHaveBeenCalledWith(
       expect.stringContaining("page=2&pageSize=100"),
-      expect.any(Object)
+      expect.any(Object),
     );
     expect(screen.queryByRole("button", { name: "Previous" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Load more" }));
+
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining("page=2&pageSize=100"),
+      expect.any(Object),
+    );
 
     const flushSecondPageFetch = resolveSecondPageFetch as (() => void) | null;
     if (flushSecondPageFetch !== null) {
@@ -804,7 +816,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     });
   });
 
-  it("revalidates a fresh cached first page before hydrating the remaining landing rows", async () => {
+  it("revalidates a fresh cached first page before loading another batch on demand", async () => {
     routerMock.query = {};
 
     const family = "onIceCounts";
@@ -812,7 +824,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     const pageOneRows = buildMockLandingRows(family, 100);
     const pageTwoRows = buildMockLandingRows(family, 200).slice(100, 200);
     const requestPath = buildPlayerStatsLandingApiPath(
-      createDefaultLandingFilterState({ pageSize: 100 })
+      createDefaultLandingFilterState({ pageSize: 100 }),
     );
 
     window.sessionStorage.setItem(
@@ -825,9 +837,9 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
           sort: { sortKey: "xgfPct", direction: "desc" },
           pagination: { page: 1, pageSize: 100, totalRows: 108, totalPages: 2 },
           placeholder: false,
-          generatedAt: "2026-03-31T12:00:00.000Z"
-        }
-      })
+          generatedAt: "2026-03-31T12:00:00.000Z",
+        },
+      }),
     );
 
     vi.stubGlobal(
@@ -853,11 +865,11 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
                 page: 2,
                 pageSize: 100,
                 totalRows: 908,
-                totalPages: 10
+                totalPages: 10,
               },
               placeholder: false,
-              generatedAt: "2026-03-31T12:00:00.000Z"
-            })
+              generatedAt: "2026-03-31T12:00:00.000Z",
+            }),
           });
         }
 
@@ -871,13 +883,13 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
               page: 1,
               pageSize: 100,
               totalRows: 908,
-              totalPages: 10
+              totalPages: 10,
             },
             placeholder: false,
-            generatedAt: "2026-03-31T12:00:00.000Z"
-          })
+            generatedAt: "2026-03-31T12:00:00.000Z",
+          }),
         });
-      })
+      }),
     );
 
     render(<PlayerUnderlyingStatsLandingPage />);
@@ -885,13 +897,15 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith(
         expect.stringContaining("page=1&pageSize=100"),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
     expect(
-      screen.getAllByText((content) => content.includes("100/908")).length
+      screen.getAllByText((content) => content.includes("100/908")).length,
     ).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole("button", { name: "Load more" }));
 
     await waitFor(() => {
       expect(screen.getByText("Player 200")).toBeTruthy();
@@ -904,9 +918,9 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
       vi.fn().mockResolvedValue({
         ok: false,
         json: async () => ({
-          error: "Server query failed."
-        })
-      })
+          error: "Server query failed.",
+        }),
+      }),
     );
 
     render(<PlayerUnderlyingStatsLandingPage />);
@@ -916,10 +930,10 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     });
 
     expect(screen.getAllByText("Server query failed.").length).toBeGreaterThan(
-      0
+      0,
     );
     expect(
-      screen.getAllByRole("button", { name: "Reset landing filters" }).length
+      screen.getAllByRole("button", { name: "Reset landing filters" }).length,
     ).toBeTruthy();
   });
 
@@ -928,33 +942,33 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
       {
         query: { statMode: "onIce", displayMode: "counts" },
         expectedHeaders: ["CF", "xGF%", "LDCF"],
-        expectsPositionColumn: true
+        expectsPositionColumn: true,
       },
       {
         query: { statMode: "onIce", displayMode: "rates" },
         expectedHeaders: ["CF/60", "xGF/60", "MDCF/60"],
-        expectsPositionColumn: true
+        expectsPositionColumn: true,
       },
       {
         query: { statMode: "individual", displayMode: "counts" },
         expectedHeaders: ["Goals", "Total Points", "SH%"],
-        expectsPositionColumn: true
+        expectsPositionColumn: true,
       },
       {
         query: { statMode: "individual", displayMode: "rates" },
         expectedHeaders: ["Goals/60", "Total Points/60", "TOI/GP"],
-        expectsPositionColumn: true
+        expectsPositionColumn: true,
       },
       {
         query: { statMode: "goalies", displayMode: "counts" },
         expectedHeaders: ["Shots Against", "SV%", "GSAA"],
-        expectsPositionColumn: false
+        expectsPositionColumn: false,
       },
       {
         query: { statMode: "goalies", displayMode: "rates" },
         expectedHeaders: ["Shots Against/60", "SV%", "GSAA/60"],
-        expectsPositionColumn: false
-      }
+        expectsPositionColumn: false,
+      },
     ] as const;
 
     for (const testCase of cases) {
@@ -962,7 +976,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
       routerMock.query = {
         fromSeasonId: "20252026",
         throughSeasonId: "20252026",
-        ...testCase.query
+        ...testCase.query,
       };
 
       render(<PlayerUnderlyingStatsLandingPage />);
@@ -972,7 +986,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
       });
 
       expect(
-        screen.getByRole("button", { name: "Sort by Player" })
+        screen.getByRole("button", { name: "Sort by Player" }),
       ).toBeTruthy();
       expect(screen.getByRole("button", { name: "Sort by Team" })).toBeTruthy();
       expect(screen.getByRole("button", { name: "Sort by GP" })).toBeTruthy();
@@ -980,17 +994,17 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
 
       for (const header of testCase.expectedHeaders) {
         expect(
-          screen.getByRole("button", { name: `Sort by ${header}` })
+          screen.getByRole("button", { name: `Sort by ${header}` }),
         ).toBeTruthy();
       }
 
       if (testCase.expectsPositionColumn) {
         expect(
-          screen.getByRole("button", { name: "Sort by Position" })
+          screen.getByRole("button", { name: "Sort by Position" }),
         ).toBeTruthy();
       } else {
         expect(
-          screen.queryByRole("button", { name: "Sort by Position" })
+          screen.queryByRole("button", { name: "Sort by Position" }),
         ).toBeNull();
       }
     }
@@ -1008,9 +1022,9 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
           sort: { sortKey: "xgfPct", direction: "desc" },
           pagination: { page: 1, pageSize: 100, totalRows: 2, totalPages: 1 },
           placeholder: false,
-          generatedAt: "2026-03-31T12:00:00.000Z"
-        })
-      })
+          generatedAt: "2026-03-31T12:00:00.000Z",
+        }),
+      }),
     );
 
     render(<PlayerUnderlyingStatsLandingPage />);
@@ -1021,28 +1035,28 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Expand player trend chart for Player 1"
-      })
+        name: "Expand player trend chart for Player 1",
+      }),
     );
 
     expect(
       screen.getByText(
-        "Expanded chart for player 8478401 using xgfPct via player"
-      )
+        "Expanded chart for player 8478401 using xgfPct via player",
+      ),
     ).toBeTruthy();
     expect(screen.getByText("1")).toBeTruthy();
     expect(screen.getByText("2")).toBeTruthy();
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Collapse player trend chart for Player 1"
-      })
+        name: "Collapse player trend chart for Player 1",
+      }),
     );
 
     expect(
       screen.queryByText(
-        "Expanded chart for player 8478401 using xgfPct via player"
-      )
+        "Expanded chart for player 8478401 using xgfPct via player",
+      ),
     ).toBeNull();
   });
 });

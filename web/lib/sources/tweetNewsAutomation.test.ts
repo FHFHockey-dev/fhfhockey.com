@@ -123,6 +123,20 @@ describe("tweet news automation", () => {
     expect(candidate).toBeNull();
   });
 
+  it("does not create news cards for top-performer stat recaps", () => {
+    const candidate = buildTweetNewsAutomationCandidate({
+      row: buildRow({
+        parser_classification: "other",
+        review_text:
+          "NHL goalie top performers: Andrei Vasilevskiy 32 saves, 1 goal against.",
+      }),
+      players,
+      nowIso: "2026-05-27T13:00:00.000Z",
+    });
+
+    expect(candidate).toBeNull();
+  });
+
   it("flags dictionary misses as ambiguous draft candidates", () => {
     const candidate = buildTweetNewsAmbiguousCandidate({
       row: buildRow({

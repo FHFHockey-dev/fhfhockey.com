@@ -93,6 +93,7 @@ const UPSERT_CONFLICT_COLUMNS =
 export const SKATER_COMPOSITE_SOURCE_METRICS = [
   "goals_per_60",
   "points_per_60",
+  "pp_points_per_60",
   "ixg_per_60",
   "shot_attempts_per_60",
   "sog_per_60",

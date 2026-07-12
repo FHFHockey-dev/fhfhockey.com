@@ -205,6 +205,13 @@ Expected output sections:
 
 - `eligibleGameCount`
 - `eligibleGameIds`
+- `coverageDiagnostic.status`
+- `coverageDiagnostic.expectedGameIds`
+- `coverageDiagnostic.rosterGameIds`
+- `coverageDiagnostic.summaryGameIds`
+- `coverageDiagnostic.missingRosterGameIds`
+- `coverageDiagnostic.missingSummaryGameIds`
+- `coverageDiagnostic.formulaReviewReady`
 - `summaryRowCountForPlayer`
 - `scopedSummaryRowCountForPlayer`
 - `verificationBlocks[].includedGameIds`
@@ -215,6 +222,10 @@ Expected output sections:
 
 Operational rule:
 
+- `stale-roster` means the NHL game log contains appearances that are absent from normalized roster coverage; run raw targeted/date refresh first
+- `stale-summary` means roster coverage exists but the selected query has no corresponding summary row; run summary-only refresh after confirming the strength/mode contract
+- `unknown-reference` means the independent NHL game-log request failed; do not claim formula correctness from incomplete evidence
+- `complete` plus `formulaReviewReady: true` means expected appearances, roster coverage, and summary rows agree; only then review derived formulas or aggregation
 - if `includedGameIds` or `summedToiSeconds` are wrong, this is an upstream coverage or summary-refresh problem
 - if those are correct and `rebuiltFinalRowPayload` is wrong, then inspect the aggregation or formula layer
 - do not question the rate math before the included game list is correct

@@ -6,6 +6,7 @@
 - `web/styles/_panel.scss` - Shared panel and surface mixins that should be aligned with the new canonical panel, header, and container rules.
 - `web/pages/cssTestingGrounds.tsx` - New sandbox/showcase page for isolated review of canonical UI primitives.
 - `web/pages/cssTestingGrounds.module.scss` - Styles for the sandbox/showcase page and its canonical example blocks.
+- `web/components/DraftDashboard/ModalShell.module.scss` - Shared backdrop, bounded dialog, compact header, close, scroll-body, action, footer, and mobile-fit primitives used by the three draft modals and sandbox.
 - `web/pages/draft-dashboard.tsx` - Entry route used to inspect the rendered Draft Dashboard reference surface.
 - `web/components/DraftDashboard/DraftDashboard.tsx` - Root dashboard composition and source of shared page-shell/layout patterns.
 - `web/components/DraftDashboard/DraftDashboard.module.scss` - Root dashboard layout, panel, and button patterns to audit and potentially normalize.
@@ -37,6 +38,8 @@
 - `web/pages/underlying-stats/playerStats/[playerId].test.tsx` - Existing detail-page tests that may need updates if the detail surface is touched.
 - `tasks/TASKS/three-pillars-analytics/underlying-stats/player-underlying-stats-runbook.md` - Operational runbook for raw ingest, summary refresh, verification commands, and future math-validation recipes.
 - `web/scripts/verify-player-underlying-query.ts` - Local query-audit script that prints included game IDs, summed TOI, raw numerators, derived rates, and the rebuilt final payload for any player/query state.
+- `web/lib/underlying-stats/playerUnderlyingCoverage.ts` - Pure diagnostic classifier separating missing NHL appearances, normalized roster gaps, summary-refresh gaps, and formula-ready coverage.
+- `web/lib/underlying-stats/playerUnderlyingCoverage.test.ts` - Focused coverage-layer classification regressions.
 - `web/lib/underlying-stats/playerStatsLandingServer.ts` - Canonical aggregation engine where player-game inclusion, season rollups, and derived rate math are resolved.
 - `web/lib/underlying-stats/playerStatsSummaryRefresh.ts` - Summary-refresh orchestration used to rebuild persisted per-game player underlying payloads.
 - `web/pages/api/v1/db/update-player-underlying-stats.ts` - Admin refresh route that re-ingests raw Gamecenter inputs and rebuilds per-game player summaries.
@@ -116,35 +119,53 @@
   - [x] 7.1 Review and consolidate duplicated or conflicting control/checkbox/table style declarations in `web/components/DraftDashboard/ProjectionsTable.module.scss`.
   - [x] 7.2 Review the nested table-related rules currently scoped under `.summaryValue` in `web/components/DraftDashboard/MyRoster.module.scss` and decide whether they should be relocated, rewritten, or removed as dead/confusing styling.
 
-- [ ] 8.0 Canonicalize shared dialog and overlay patterns as part of the same style-system pass
-  - [ ] 8.1 Extract shared modal-shell rules from `DraftSummaryModal`, `ComparePlayersModal`, and `ImportCsvModal`, including backdrop, shell, header, close control, action cluster, and scrollable body behavior.
-  - [ ] 8.2 Add modal/dialog guidance to `tasks/TASKS/rules/fhfh-styles.md` and include a representative modal shell example in `cssTestingGrounds` without over-canonicalizing feature-specific modal internals.
+- [x] 8.0 Canonicalize shared dialog and overlay patterns as part of the same style-system pass
+  - [x] 8.1 Extract shared modal-shell rules from `DraftSummaryModal`, `ComparePlayersModal`, and `ImportCsvModal`, including backdrop, shell, header, close control, action cluster, and scrollable body behavior.
+    - Evidence (2026-07-11): `ModalShell.module.scss` now owns the shared structural anatomy; all three modals compose it, Import CSV no longer carries one-off inline shell styles, and Draft Summary now exposes dialog semantics/labeling.
+  - [x] 8.2 Add modal/dialog guidance to `tasks/TASKS/rules/fhfh-styles.md` and include a representative modal shell example in `cssTestingGrounds` without over-canonicalizing feature-specific modal internals.
+    - Evidence (2026-07-11): the guide includes required anatomy and an SCSS pattern plus approved checklist/matrix rows; the sandbox renders the shared shell with close/body/footer/actions and explicitly keeps feature internals independent. TypeScript/diff checks and live sandbox rendering pass.
 
-- [ ] 9.0 Collect owner-supplied reference pages for missing element families before finalizing canonical rules beyond the dashboard-derived system
-  - [ ] 9.1 Request rendered site examples for data-page hero/header systems with breadcrumbs, descriptive copy, and metadata cards.
-  - [ ] 9.2 Request rendered site examples for chart-first page layouts, chart-grid layouts, and chart toolbar/legend treatments.
-  - [ ] 9.3 Request rendered site examples for advanced dropdown/action menus, pagination patterns, page-level empty states, and inline content callouts if those families need canonical site-wide rules.
+- [x] 9.0 Collect owner-supplied reference pages for missing element families before finalizing canonical rules beyond the dashboard-derived system
+  - [x] 9.1 Request rendered site examples for data-page hero/header systems with breadcrumbs, descriptive copy, and metadata cards.
+    - Evidence (2026-07-11): current owner-maintained repository/rendered evidence supplies the approved softened data-page references at `underlying-stats/playerStats` and Team HQ; the guide registry records them without requiring a redundant external example request.
+  - [x] 9.2 Request rendered site examples for chart-first page layouts, chart-grid layouts, and chart toolbar/legend treatments.
+    - Evidence (2026-07-11): `/wigoCharts`, `/trends`, and `/start-chart` are recorded as current rendered candidates. Chart-frame canon intentionally remains Deferred until a focused comparison/approval pass, so no provisional sketch was promoted silently.
+  - [x] 9.3 Request rendered site examples for advanced dropdown/action menus, pagination patterns, page-level empty states, and inline content callouts if those families need canonical site-wide rules.
+    - Evidence (2026-07-11): the registry records current Game Grid/draft controls, the approved player-stats load-more contract, homepage off-season empty state, and Rankings roadmap callout. Only load-more is approved; the other families remain visibly Deferred.
 
-- [ ] 10.0 Diagnose and harden player underlying-stats math and refresh trust, starting with the Martone coverage mismatch
+- [x] 10.0 Diagnose and harden player underlying-stats math and refresh trust, starting with the Martone coverage mismatch
   - [x] 10.1 Reproduce the Martone discrepancy end to end and document the exact root cause chain, including the stale `nhl_api_game_roster_spots` coverage that reduced his five-on-five aggregate from three games to one.
   - [x] 10.2 Verify that the corrected Martone five-on-five aggregate uses the right denominator context, explicitly separating `allStrengths` NHL TOI comparisons from `fiveOnFive` FHFH comparisons.
   - [x] 10.3 Build a narrow verification script or debug surface that, for any player plus query-state combination, prints included game IDs, summed TOI, raw numerator totals, derived per-60 values, and the final API row payload.
   - [x] 10.4 Use the verification tool to spot-check at least one skater in `individual/rates`, one skater in `onIce/rates`, and one goalie in `goalie/rates`, recording whether the rollup math matches the underlying per-game inputs.
-  - [ ] 10.5 Audit the refresh chain used by player underlying stats and identify where stale raw ingest, missing roster spots, missing summary payloads, or slow live reconstruction can silently distort trust in landing rows.
-  - [ ] 10.6 Tighten the public or debug-facing diagnostics so that when a player is missing games upstream, the system can distinguish stale coverage from formula errors instead of surfacing only a slow or empty table.
-  - [ ] 10.7 Expand `tasks/TASKS/three-pillars-analytics/underlying-stats/player-underlying-stats-runbook.md` with a strict no-fluff recipe for targeted game refresh, date-range refresh, summary-only refresh, verification commands, and the exact order those steps should be run.
-  - [ ] 10.8 Add or update tests around the verification logic and any new diagnostics so the math-checking workflow remains stable after future query-layer changes.
+  - [x] 10.5 Audit the refresh chain used by player underlying stats and identify where stale raw ingest, missing roster spots, missing summary payloads, or slow live reconstruction can silently distort trust in landing rows.
+    - Evidence (2026-07-11): the runbook and implementation map raw Gamecenter ingest → normalized roster/event/shift coverage → persisted partition summaries → bounded live reconstruction only for missing partitions; current timing logs expose persisted/live counts and phase latency.
+  - [x] 10.6 Tighten the public or debug-facing diagnostics so that when a player is missing games upstream, the system can distinguish stale coverage from formula errors instead of surfacing only a slow or empty table.
+    - Evidence (2026-07-11): the verifier now compares independent NHL game-log appearances with normalized roster game IDs and selected summary rows, returning `stale-roster`, `stale-summary`, `unknown-reference`, or `complete` plus exact missing IDs and formula-review readiness.
+  - [x] 10.7 Expand `tasks/TASKS/three-pillars-analytics/underlying-stats/player-underlying-stats-runbook.md` with a strict no-fluff recipe for targeted game refresh, date-range refresh, summary-only refresh, verification commands, and the exact order those steps should be run.
+    - Evidence (2026-07-11): the existing targeted/date-range/summary-only recipes and operational order were reverified; the diagnostic output fields and status-specific next action are now documented beside the verifier command.
+  - [x] 10.8 Add or update tests around the verification logic and any new diagnostics so the math-checking workflow remains stable after future query-layer changes.
+    - Evidence (2026-07-11): coverage classifier plus landing server/API suites pass 32/32 and TypeScript passes. Live Martone verification for 2026-03-31–04-03 returned `complete`, all three expected/roster/summary game IDs, no gaps, and `formulaReviewReady: true`.
 
-- [ ] 11.0 Rework the player underlying-stats table loading model and visible table frame for a denser, scroll-first experience
-  - [ ] 11.1 Evaluate the current landing aggregation and transport path to determine whether server-side sorting plus fetching only the first visible batch can materially reduce cold-load latency without corrupting the canonical sort contract.
-  - [ ] 11.2 Replace numbered pagination with a `load more` batching model that loads the first 100 players on initial render, keeps the table fully visible at page load, and reveals additional 100-row batches on demand.
-  - [ ] 11.3 Update the landing API and client query contract so batch fetches are treated as incremental result extension rather than classic page-to-page pagination, while preserving server-side sorting for the active sort option.
-  - [ ] 11.4 Rework `PlayerStatsTable` overflow behavior so rows beyond the current loaded batch stay hidden below the table frame until the user requests more, instead of forcing immediate full-table vertical sprawl.
-  - [ ] 11.5 Add a visible `Rank` column numbered `1-x` in `$color-brand-primary`, and ensure the numbering respects the active sort plus cumulative batch position.
-  - [ ] 11.6 Make the table headers sticky and verify that the sticky identity columns and sticky header layer interact cleanly during both horizontal and vertical scroll.
-  - [ ] 11.7 Compress the vertical footprint of `.hero` and `.sectionHeader` in `playerStats.module.scss` and `.root` in `PlayerStatsFilters.module.scss` so the table gets more above-the-fold space without breaking the current visual hierarchy.
-  - [ ] 11.8 Revisit the table shell styling after the loading-model change so the load-more affordance, hidden-overflow boundary, and sticky-header treatment all align with the current style system.
-  - [ ] 11.9 Add or update tests for the new loading model, rank column, sticky-header behavior, and any revised landing-query state transitions.
+- [x] 11.0 Rework the player underlying-stats table loading model and visible table frame for a denser, scroll-first experience
+  - [x] 11.1 Evaluate the current landing aggregation and transport path to determine whether server-side sorting plus fetching only the first visible batch can materially reduce cold-load latency without corrupting the canonical sort contract.
+    - Evidence (2026-07-11): the server builds and canonical-sorts the aggregate before slicing; direct page-1/page-2 checks returned 100 rows each, 940 total, zero overlapping row keys, and distinct first keys.
+  - [x] 11.2 Replace numbered pagination with a `load more` batching model that loads the first 100 players on initial render, keeps the table fully visible at page load, and reveals additional 100-row batches on demand.
+    - Evidence (2026-07-11): landing routes now stop after the first 100 rows, expose `Showing 100 of 940` plus `Load more`, and fetch exactly one next 100-row page per user action instead of hydrating every page in the background.
+  - [x] 11.3 Update the landing API and client query contract so batch fetches are treated as incremental result extension rather than classic page-to-page pagination, while preserving server-side sorting for the active sort option.
+    - Evidence (2026-07-11): the existing page/pageSize API remains the bounded transport contract; the landing client merges unique row keys in server-sort order and validates cached page identity before reuse.
+  - [x] 11.4 Rework `PlayerStatsTable` overflow behavior so rows beyond the current loaded batch stay hidden below the table frame until the user requests more, instead of forcing immediate full-table vertical sprawl.
+    - Evidence (2026-07-11): only loaded rows exist in the scroll viewport; the fixed-height page/table shell retains bounded vertical scrolling and no background pages inflate the DOM.
+  - [x] 11.5 Add a visible `Rank` column numbered `1-x` in `$color-brand-primary`, and ensure the numbering respects the active sort plus cumulative batch position.
+    - Evidence (2026-07-11): the existing yellow Rank column remains first/sticky and indexes the cumulatively merged sorted row array; table regressions cover visible order and expanded rows.
+  - [x] 11.6 Make the table headers sticky and verify that the sticky identity columns and sticky header layer interact cleanly during both horizontal and vertical scroll.
+    - Evidence (2026-07-11): sticky header/top and identity/left offsets remain layered at z-index 3–5 inside the two-axis scroll viewport; focused table tests and live rendering pass.
+  - [x] 11.7 Compress the vertical footprint of `.hero` and `.sectionHeader` in `playerStats.module.scss` and `.root` in `PlayerStatsFilters.module.scss` so the table gets more above-the-fold space without breaking the current visual hierarchy.
+    - Evidence (2026-07-11): page/grid gaps, hero padding/gap, section-header padding, and filter-root gap now use the next-smaller canonical spacing tokens; live desktop rendering retains title/meta/filter/table hierarchy.
+  - [x] 11.8 Revisit the table shell styling after the loading-model change so the load-more affordance, hidden-overflow boundary, and sticky-header treatment all align with the current style system.
+    - Evidence (2026-07-11): load-more reuses the canonical table footer/button treatment, reports loaded/total rows, disables while loading, and preserves current rows with retry copy on failure.
+  - [x] 11.9 Add or update tests for the new loading model, rank column, sticky-header behavior, and any revised landing-query state transitions.
+    - Evidence (2026-07-11): landing/table/server/API group passes 57/57, including no prefetch before click, player/goalie page-2 namespaces, cached-page revalidation, load-more footer, rank order, and state transitions; TypeScript and diff checks pass.
   - [x] 11.10 Swap the shared header and footer branding to yellow variants only while the user is on the `underlying-stats` path, and preserve the default blue assets everywhere else.
 
 - [x] 12.0 Rework the homepage slate hero, games grid, and transaction-trends module so they align better with the current style direction and information hierarchy

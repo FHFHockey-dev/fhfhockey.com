@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  SUSTAINABILITY_PROJECTION_ON_CONFLICT,
   TREND_BAND_ON_CONFLICT,
+  toSustainabilityProjectionRow,
+  upsertSustainabilityProjectionRows,
   upsertTrendBandRows,
+  type SustainabilityProjectionRow,
   type TrendBandRow
 } from "./persist";
 
@@ -119,5 +123,100 @@ describe("upsertTrendBandRows", () => {
         client: client as any
       })
     ).rejects.toThrow("duplicate-key conflict");
+  });
+});
+
+describe("sustainability projection persistence", () => {
+  it("serializes snapshot and opponent-game projections to the SQL contract", () => {
+    expect(
+      toSustainabilityProjectionRow({
+        playerId: 8478402,
+        snapshotDate: "2026-03-09",
+        metricKey: "goals",
+        horizonGames: 5,
+        expectedValue: 2.4,
+        band50: { lower: 1, upper: 3 },
+        band80: { lower: 0, upper: 5 }
+      })
+    ).toMatchObject({
+      player_id: 8478402,
+      projection_type: "snapshot",
+      scope_key: "overall",
+      game_id: null,
+      opponent_team_id: null,
+      band50_lower: 1,
+      band50_upper: 3
+    });
+
+    expect(
+      toSustainabilityProjectionRow({
+        playerId: 8478402,
+        snapshotDate: "2026-03-09",
+        metricKey: "shots",
+        horizonGames: 1,
+        expectedValue: 3.1,
+        projectionType: "opponent_game",
+        gameId: 2025021001,
+        opponentTeamId: 8
+      })
+    ).toMatchObject({
+      projection_type: "opponent_game",
+      scope_key: "game:2025021001",
+      game_id: 2025021001,
+      opponent_team_id: 8
+    });
+  });
+
+  it("rejects invalid horizons, bands, and incomplete opponent-game scope", () => {
+    const base = {
+      playerId: 1,
+      snapshotDate: "2026-03-09",
+      metricKey: "goals",
+      horizonGames: 5,
+      expectedValue: 1
+    };
+
+    expect(() =>
+      toSustainabilityProjectionRow({ ...base, horizonGames: 11 })
+    ).toThrow("horizonGames");
+    expect(() =>
+      toSustainabilityProjectionRow({
+        ...base,
+        band50: { lower: 3, upper: 2 }
+      })
+    ).toThrow("band50");
+    expect(() =>
+      toSustainabilityProjectionRow({
+        ...base,
+        projectionType: "opponent_game",
+        gameId: 2025021001
+      })
+    ).toThrow("opponent_game");
+  });
+
+  it("chunks projection upserts on the full composite key", async () => {
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    const client = { from: vi.fn().mockReturnValue({ upsert }) };
+    const rows = Array.from({ length: 3 }, (_, index) =>
+      toSustainabilityProjectionRow({
+        playerId: 1000 + index,
+        snapshotDate: "2026-03-09",
+        metricKey: "goals",
+        horizonGames: 5,
+        expectedValue: index
+      })
+    ) as SustainabilityProjectionRow[];
+
+    const result = await upsertSustainabilityProjectionRows({
+      rows,
+      client: client as any,
+      chunkSize: 2
+    });
+
+    expect(upsert).toHaveBeenCalledTimes(2);
+    expect(upsert).toHaveBeenNthCalledWith(1, rows.slice(0, 2), {
+      onConflict: SUSTAINABILITY_PROJECTION_ON_CONFLICT
+    });
+    expect(result).toEqual({ inserted: 3, chunks: 2 });
   });
 });

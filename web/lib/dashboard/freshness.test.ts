@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { buildHomepageModulePresentation, evaluateFreshness } from "./freshness";
+import {
+  buildHomepageModulePresentation,
+  evaluateFreshness,
+  evaluateMixedEffectiveDates
+} from "./freshness";
 
 describe("buildHomepageModulePresentation", () => {
   it("prioritizes loading and error states over stale evaluation", () => {
@@ -79,6 +83,30 @@ describe("buildHomepageModulePresentation", () => {
     ).toEqual({
       ok: true,
       issues: []
+    });
+  });
+});
+
+describe("evaluateMixedEffectiveDates", () => {
+  it("warns only when known module dates differ beyond the tolerated daily cadence", () => {
+    expect(
+      evaluateMixedEffectiveDates([
+        { source: "slate", label: "Slate", date: "2026-03-14" },
+        { source: "adds", label: "Top Adds", date: "2026-03-13" }
+      ])
+    ).toMatchObject({ isMixed: false, gapDays: 1 });
+
+    expect(
+      evaluateMixedEffectiveDates([
+        { source: "slate", label: "Slate", date: "2026-03-14" },
+        { source: "movement", label: "Player movement", date: "2026-03-09" },
+        { source: "missing", label: "Missing", date: null }
+      ])
+    ).toMatchObject({
+      isMixed: true,
+      gapDays: 5,
+      earliestDate: "2026-03-09",
+      latestDate: "2026-03-14"
     });
   });
 });

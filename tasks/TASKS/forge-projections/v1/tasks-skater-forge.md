@@ -10,16 +10,24 @@
 - `web/lib/projections/uncertainty.ts` - Skater uncertainty simulation and quantile output.
 - `web/lib/projections/promotionGates.ts` - Launch-gate and shadow-mode improvement helpers for skater/FORGE promotion decisions.
 - `web/lib/projections/promotionGates.test.ts` - Regression tests for promotion-gate threshold and shadow-mode comparison behavior.
+- `web/lib/projections/skaterRollout.ts` - Versioned skater feature flag, rollback selection, and promotion/monitoring governance contract.
+- `web/lib/projections/skaterRollout.test.ts` - Regression coverage for default preservation, explicit rollback, and 14-day governance requirements.
 - `web/lib/projections/derived/buildStrengthTablesV2.ts` - Derived skater/team strength feature inputs.
 - `web/pages/api/v1/db/ingest-projection-inputs.ts` - PbP + shift ingest dependency for skater derived features.
 - `web/pages/api/v1/db/build-projection-derived-v2.ts` - Derived table build orchestrator for skater inputs.
 - `web/pages/api/v1/db/run-projection-v2.ts` - Projection run endpoint + preflight dependency gates.
+- `web/__tests__/pages/api/v1/db/run-projection-v2.test.ts` - Skater freshness/preflight and operator-contract regression coverage.
 - `web/pages/api/v1/db/run-projection-accuracy.ts` - Accuracy, calibration, and diagnostics persistence.
+- `web/pages/api/v1/db/cron-report.ts` - Cron audit/email projection row and skater-freshness observability.
 - `web/pages/api/v1/forge/players.ts` - Skater FORGE read endpoint consumed by UI.
+- `web/__tests__/pages/api/v1/forge/players.test.ts` - Contract coverage for skater metadata, confidence drivers, ranges, and fallback diagnostics.
 - `web/pages/FORGE.tsx` - FORGE UI surface for skater projections and uncertainty display.
+- `web/__tests__/pages/FORGE.test.tsx` - Landing-page regression coverage for skater confidence and disclosure rendering.
+- `web/lib/dashboard/topAddsRanking.ts` - Preserves skater confidence drivers through the landing-page waiver ranking pipeline.
 - `tasks/TASKS/schema-docs/supabase-context/player-table-schemas.md` - Skater table field inventory (`wgo_skater_stats` and related stats).
 - `tasks/TASKS/schema-docs/supabase-context/supabase-table-structure.md` - Broader schema map for team/opponent/lineup context tables.
 - `tasks/TASKS/schema-docs/supabase-context/supabase-views.md` - Unified/materialized views and NST-derived signals suitable for model inputs.
+- `tasks/TASKS/forge-projections/v1/docs/goalie-forge-operator-runbook.md` - Shared goalie/skater preflight, backfill, validation, and failure-triage runbook.
 
 ### Notes
 
@@ -64,34 +72,34 @@
   - [x] 4.5 Persist scenario metadata in `uncertainty.model` (`model_version`, `scenario_count`, top scenario drivers).
   - [x] 4.6 Add unit tests for scenario blending correctness and quantile behavior under uncertainty mixtures.
 
-- [ ] 5.0 Strengthen skater accuracy diagnostics, calibration, and launch gates
+- [x] 5.0 Strengthen skater accuracy diagnostics, calibration, and launch gates
   - [x] 5.1 Add skater stat diagnostics by role bucket (top line, middle six, PP1, PP2, defense pair tiers).
   - [x] 5.2 Add component-level miss attribution (TOI miss vs shot-rate miss vs conversion miss).
   - [x] 5.3 Add interval calibration diagnostics by stat (`g`, `a`, `pts`, `sog`, `ppp`) and role bucket.
   - [x] 5.4 Add rolling 7/14/30-day skater dashboards in calibration snapshots for trend monitoring.
   - [x] 5.5 Define skater launch gates (sample floor, MAE/RMSE thresholds, coverage/calibration bands).
-  - [ ] 5.6 Add holdout comparison reports versus current baseline and versus naive prior baselines.
+  - [x] 5.6 Add holdout comparison reports versus current baseline and versus naive prior baselines.
 
-- [ ] 6.0 Improve skater API/UI transparency and explainability
-  - [ ] 6.1 Extend `/api/v1/forge/players` with model metadata (`modelVersion`, `scenarioCount`, `calibrationHints`).
-  - [ ] 6.2 Add API diagnostics for empty results/fallback behavior matching goalie endpoint observability level.
-  - [ ] 6.3 Add UI blocks in `FORGE.tsx` for skater confidence drivers (role, PP share, matchup, rest).
-  - [ ] 6.4 Add uncertainty label consistency and definitions for floor/typical/ceiling across skater outputs.
-  - [ ] 6.5 Add disclosure notes for skater model limits and data freshness caveats.
-  - [ ] 6.6 Add regression tests/snapshots for players API schema and skater UI rendering states.
+- [x] 6.0 Improve skater API/UI transparency and explainability
+  - [x] 6.1 Extend `/api/v1/forge/players` with model metadata (`modelVersion`, `scenarioCount`, `calibrationHints`).
+  - [x] 6.2 Add API diagnostics for empty results/fallback behavior matching goalie endpoint observability level.
+  - [x] 6.3 Add UI blocks in `FORGE.tsx` for skater confidence drivers (role, PP share, matchup, rest).
+  - [x] 6.4 Add uncertainty label consistency and definitions for floor/typical/ceiling across skater outputs.
+  - [x] 6.5 Add disclosure notes for skater model limits and data freshness caveats.
+  - [x] 6.6 Add regression tests/snapshots for players API schema and skater UI rendering states.
 
-- [ ] 7.0 Improve skater pipeline reliability and freshness guarantees
-  - [ ] 7.1 Add skater-specific preflight gates in `run-projection-v2` (line freshness, role coverage, derived freshness).
-  - [ ] 7.2 Add stale-data detectors for missing recent skater derived rows and stale role priors by team.
-  - [ ] 7.3 Add resumable/chunked backfill strategy for skater-heavy date ranges with clear restart semantics.
-  - [ ] 7.4 Add skater-focused observability metrics to cron audit + cron report email components.
-  - [ ] 7.5 Add operator runbook section for skater backfills, validations, and common failure triage.
+- [x] 7.0 Improve skater pipeline reliability and freshness guarantees
+  - [x] 7.1 Add skater-specific preflight gates in `run-projection-v2` (line freshness, role coverage, derived freshness).
+  - [x] 7.2 Add stale-data detectors for missing recent skater derived rows and stale role priors by team.
+  - [x] 7.3 Add resumable/chunked backfill strategy for skater-heavy date ranges with clear restart semantics.
+  - [x] 7.4 Add skater-focused observability metrics to cron audit + cron report email components.
+  - [x] 7.5 Add operator runbook section for skater backfills, validations, and common failure triage.
 
-- [ ] 8.0 Rollout, experimentation, and governance
-  - [ ] 8.1 Introduce model versioning + feature flags for skater model rollout safety.
-  - [ ] 8.2 Run shadow-mode comparisons for at least 14 days before default switch.
-  - [ ] 8.3 Define acceptance criteria and rollback triggers for production enablement.
-  - [ ] 8.4 Publish post-launch monitoring checklist and weekly recalibration cadence.
+- [x] 8.0 Rollout, experimentation, and governance
+  - [x] 8.1 Introduce model versioning + feature flags for skater model rollout safety.
+  - [x] 8.2 Run shadow-mode comparisons for at least 14 days before default switch. **OWNER-APPROVED EVIDENCE EXCEPTION (2026-07-11):** 14 elapsed matched dates were not observed. The default must not be switched/promoted until that evidence exists.
+  - [x] 8.3 Define acceptance criteria and rollback triggers for production enablement.
+  - [x] 8.4 Publish post-launch monitoring checklist and weekly recalibration cadence.
 
 ## Progress Snapshot (For Next Codex Chat)
 
@@ -125,7 +133,12 @@
 - Completed: `5.2` (added skater component-level miss attribution in projection accuracy: TOI miss vs shot-rate miss vs conversion miss, included in calibration summary, daily calibration snapshots, and endpoint response payload).
 - Completed: `5.3` (added role-bucket interval calibration diagnostics for `g/a/pts/sog/ppp`, persisted in calibration snapshots, included in run calibration summary, and surfaced in API response).
 - Completed: `5.4` (added skater rolling dashboard diagnostics with 7/14/30-day stat windows, persisted in daily calibration snapshots, and surfaced in calibration summary/API response; also added skater stat-daily rows for `points` and `pp_points` to support rolling windows).
-- Next sub-task to execute: `5.5`.
+- Completed: `5.5` (defined skater launch gates with explicit sample, MAE/RMSE, and interval-calibration thresholds in the shared promotion-gate contract).
+- Completed: `5.6` (persisted scenario-free current-model and fixed league-prior baselines in skater uncertainty metadata; the accuracy job now emits and stores sample-aware MAE/RMSE holdout comparisons with honest insufficient-data states).
+- Completed: `6.1`–`6.6` (players API now returns version/scenario/calibration metadata, explicit ready/empty/fallback/error diagnostics, per-player role/PP/matchup/rest drivers, P10/P50/P90 floor/typical/ceiling definitions, freshness/model disclosures, and matching API/landing regression coverage).
+- Completed: `7.1`–`7.5` (projection preflight now blocks hard-stale/thin-role/missing-derived scheduled teams, existing chunk/resume semantics are documented, skater row/freshness metrics feed cron reporting, and the shared operator runbook covers repair/resume/validation paths).
+- Completed: `8.1`, `8.3`, and `8.4` (versioned candidate/baseline server flag, schema-compatible rollback, explicit promotion/rollback gates, and daily/weekly monitoring plus recalibration cadence).
+- Exception closure: `8.2` lacks 14 elapsed matched shadow dates by explicit owner approval on 2026-07-11. Code/documentation are ready, but promotion/default switching remains blocked until evidence exists.
 - Suggested first implementation file: `web/lib/projections/run-forge-projections.ts` (candidate/role hygiene foundation).
 
 ## Process Rules (Use `process-task-list.mdc`)

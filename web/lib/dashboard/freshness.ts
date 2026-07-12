@@ -16,6 +16,21 @@ export type FreshnessAuditResult = {
   issues: FreshnessIssue[];
 };
 
+export type EffectiveDateSource = {
+  source: string;
+  label: string;
+  date: string | null | undefined;
+};
+
+export type MixedEffectiveDateResult = {
+  isMixed: boolean;
+  gapDays: number;
+  earliestDate: string | null;
+  latestDate: string | null;
+  sources: Array<{ source: string; label: string; date: string }>;
+  message: string | null;
+};
+
 export type RequestedDateServingStrategy =
   | "requested_date"
   | "latest_available_with_data"
@@ -85,6 +100,35 @@ const diffDateOnlyDays = (
   const earlierTs = parseTimestamp(earlierDate);
   if (laterTs == null || earlierTs == null) return null;
   return Math.max(0, Math.round((laterTs - earlierTs) / (24 * MS_PER_HOUR)));
+};
+
+export const evaluateMixedEffectiveDates = (
+  inputs: EffectiveDateSource[],
+  toleratedGapDays = 1
+): MixedEffectiveDateResult => {
+  const sources = inputs.flatMap((input) => {
+    const date = normalizeDateOnly(input.date);
+    return date ? [{ source: input.source, label: input.label, date }] : [];
+  });
+  const dates = sources.map((source) => source.date).sort();
+  const earliestDate = dates[0] ?? null;
+  const latestDate = dates[dates.length - 1] ?? null;
+  const gapDays =
+    earliestDate && latestDate
+      ? (diffDateOnlyDays(latestDate, earliestDate) ?? 0)
+      : 0;
+  const isMixed = sources.length >= 2 && gapDays > toleratedGapDays;
+
+  return {
+    isMixed,
+    gapDays,
+    earliestDate,
+    latestDate,
+    sources,
+    message: isMixed
+      ? `Dashboard modules are using mixed source dates (${earliestDate} to ${latestDate}, ${gapDays} days apart). Review each panel's date before comparing signals.`
+      : null
+  };
 };
 
 export const buildRequestedDateServingState = (input: {
@@ -267,19 +311,30 @@ export const evaluateFreshness = (
 export const DASHBOARD_FRESHNESS_POLICY: FreshnessCheck[] = [
   // Snapshot-like sources should be near-real-time (allow for pipeline lag).
   { source: "team-ratings", timestamp: null, maxAgeHours: 30, severity: "error" },
+  { source: "forge-players", timestamp: null, maxAgeHours: 30, severity: "error" },
   { source: "forge-goalies", timestamp: null, maxAgeHours: 30, severity: "error" },
   { source: "start-chart", timestamp: null, maxAgeHours: 30, severity: "error" },
+  {
+    source: "ownership-snapshots",
+    timestamp: null,
+    maxAgeHours: 30,
+    severity: "error"
+  },
 
   // Trend feeds can lag longer while still useful.
   { source: "team-ctpi", timestamp: null, maxAgeHours: 72, severity: "warn" },
   { source: "skater-power", timestamp: null, maxAgeHours: 72, severity: "warn" },
-  { source: "sustainability", timestamp: null, maxAgeHours: 72, severity: "warn" }
+  { source: "sustainability", timestamp: null, maxAgeHours: 72, severity: "warn" },
+  { source: "ownership-trends", timestamp: null, maxAgeHours: 72, severity: "warn" }
 ];
 
 export const buildDashboardFreshnessChecks = (input: {
   teamRatingsDate: string | null;
+  forgePlayersAsOfDate: string | null;
   goalieAsOfDate: string | null;
   startChartDateUsed: string | null;
+  ownershipSnapshotGeneratedAt: string | null;
+  ownershipTrendsGeneratedAt: string | null;
   teamCtpiGeneratedAt: string | null;
   skaterPowerGeneratedAt: string | null;
   sustainabilitySnapshotDate: string | null;
@@ -287,6 +342,12 @@ export const buildDashboardFreshnessChecks = (input: {
   {
     source: "team-ratings",
     timestamp: input.teamRatingsDate,
+    maxAgeHours: 30,
+    severity: "error"
+  },
+  {
+    source: "forge-players",
+    timestamp: input.forgePlayersAsOfDate,
     maxAgeHours: 30,
     severity: "error"
   },
@@ -299,6 +360,12 @@ export const buildDashboardFreshnessChecks = (input: {
   {
     source: "start-chart",
     timestamp: input.startChartDateUsed,
+    maxAgeHours: 30,
+    severity: "error"
+  },
+  {
+    source: "ownership-snapshots",
+    timestamp: input.ownershipSnapshotGeneratedAt,
     maxAgeHours: 30,
     severity: "error"
   },
@@ -317,6 +384,12 @@ export const buildDashboardFreshnessChecks = (input: {
   {
     source: "sustainability",
     timestamp: input.sustainabilitySnapshotDate,
+    maxAgeHours: 72,
+    severity: "warn"
+  },
+  {
+    source: "ownership-trends",
+    timestamp: input.ownershipTrendsGeneratedAt,
     maxAgeHours: 72,
     severity: "warn"
   }

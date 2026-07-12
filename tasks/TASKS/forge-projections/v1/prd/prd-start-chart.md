@@ -1,5 +1,7 @@
 You are GPT-5 Codex. Implement the Start Chart DAILY MVP exactly as specified.
 
+> **Reconciled implementation task list:** `tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md`
+
 Title
 Start Chart — Daily Fantasy Hockey Start/Sit Rankings
 

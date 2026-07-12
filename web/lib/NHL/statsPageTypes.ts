@@ -49,6 +49,8 @@ export type GoalieStat = {
 };
 
 export type StatsProps = {
+  skaterSeasonLabel: string;
+  goalieSeasonLabel: string;
   pointsLeaders: SkaterStat[];
   goalsLeaders: SkaterStat[];
   pppLeaders: SkaterStat[];

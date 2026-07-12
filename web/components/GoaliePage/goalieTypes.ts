@@ -60,10 +60,17 @@ export interface AggregatedGoalieData extends GoalieInfo {
 export type GoalieAverages = Record<NumericGoalieStatKey, string>;
 
 // Ranking categories
-export type Ranking = "Elite" | "Quality" | "Average" | "Bad" | "Really Bad";
+export type Ranking = "Elite" | "Good" | "Average" | "Bad" | "Abysmal";
 
 // Structure for counting weeks by ranking
 export type WeekCounts = Record<Ranking, number>;
+
+export interface GoalieWeeklyRecordPattern {
+  record: string;
+  wins: number;
+  losses: number;
+  count: number;
+}
 
 export type GoalieValueTier =
   | "Tier 1"
@@ -82,10 +89,15 @@ export interface GoalieRanking extends GoalieInfo {
   totalPoints: number; // Based on WoW ranking
   weekCounts: WeekCounts;
   eliteWeeks?: number;
-  qualityWeeks?: number;
+  goodWeeks?: number;
   averageWeeks?: number;
   badWeeks?: number;
-  reallyBadWeeks?: number;
+  abysmalWeeks?: number;
+  eligibleWeeks?: number;
+  unclassifiedWeeks?: number;
+  consistencyScore?: number | null;
+  averageStartsPerWeek?: number;
+  weeklyRecordPatterns?: GoalieWeeklyRecordPattern[];
   percentAcceptableWeeks?: number;
   percentGoodWeeks?: number;
   wowVariance?: number; // StdDev of Weekly Points (vs League Avg)

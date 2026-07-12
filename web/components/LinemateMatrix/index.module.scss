@@ -1,5 +1,9 @@
 @use "styles/vars";
 
+.shell {
+  width: 100%;
+}
+
 .gridWrapper {
   display: flex;
   flex-direction: column;
@@ -14,6 +18,24 @@
   max-width: 250px;
   padding-top: vars.$space-md;
   margin: 0 auto;
+}
+
+.status,
+.statusError,
+.emptyState {
+  width: 95%;
+  margin: vars.$space-md auto 0;
+  padding: vars.$space-sm vars.$space-md;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: vars.$color-white;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.statusError {
+  border: 1px solid rgba(255, 110, 110, 0.7);
+  background: rgba(120, 0, 0, 0.25);
 }
 
 // single matrix container

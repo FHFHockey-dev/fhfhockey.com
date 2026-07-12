@@ -1,23 +1,42 @@
 // lib/supabase/server.ts
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./database-generated.types";
 
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  "https://fyhftlxokyjtpndbkfse.supabase.co";
-const supabaseKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY ||
-  "test-key";
+let cachedServiceRoleClient: SupabaseClient<Database> | undefined;
 
-// This module is intended for server-only imports. Keep the client stable so
-// test and API modules never receive a nullable service-role wrapper.
-const serviceRoleClient = createClient<Database>(supabaseUrl, supabaseKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-    detectSessionInUrl: false,
+export function getServiceRoleClient(): SupabaseClient<Database> {
+  if (cachedServiceRoleClient) {
+    return cachedServiceRoleClient;
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error(
+      "Server-only Supabase access requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
+    );
+  }
+
+  cachedServiceRoleClient = createClient<Database>(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+  });
+
+  return cachedServiceRoleClient;
+}
+
+// Keep imports side-effect free for tests and routes that inject their own
+// client. Configuration is validated when a privileged method is first used.
+const serviceRoleClient = new Proxy({} as SupabaseClient<Database>, {
+  get(_target, property) {
+    const client = getServiceRoleClient();
+    const value = Reflect.get(client, property, client);
+    return typeof value === "function" ? value.bind(client) : value;
   },
 });
 

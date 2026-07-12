@@ -6,6 +6,9 @@ function buildRow(overrides: Record<string, unknown> = {}) {
   return {
     capture_key: "capture-1",
     source: "gamedaylines",
+    source_group: "gdl_suite",
+    source_key: "gamedaylines",
+    source_account: "GameDayLines",
     source_url: "https://twitter.com/i/web/status/2050267867149672449",
     tweet_id: "2050267867149672449",
     quoted_tweet_id: null,
@@ -62,7 +65,11 @@ describe("lineSourceProcessing", () => {
           normalized_name: "r. smith",
           metadata: expect.objectContaining({
             reason: "unmatched_names",
+            parserReason: "unmatched_names",
             contextAlias: "R. Smith",
+            sourceGroup: "gdl_suite",
+            sourceKey: "gamedaylines",
+            sourceAccount: "GameDayLines",
           }),
         }),
         expect.objectContaining({
@@ -73,7 +80,7 @@ describe("lineSourceProcessing", () => {
             contextAlias: "C. Smith",
           }),
         }),
-      ])
+      ]),
     );
   });
 });

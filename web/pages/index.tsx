@@ -2,6 +2,8 @@
 // @ts-nocheck
 import type { NextPage } from "next";
 import Head from "next/head";
+import Image from "next/image";
+import Link from "next/link";
 import { NextSeo } from "next-seo";
 import moment from "moment";
 import "moment-timezone"; // Import moment-timezone
@@ -29,7 +31,7 @@ import {
   fetchBellMediaInjuries,
   fetchCurrentHomepagePlayerStatuses,
   mapPlayerStatusRowsToHomepageRows,
-  normalizeBellMediaInjuryRows
+  normalizeBellMediaInjuryRows,
 } from "lib/sources/injuryStatusIngestion";
 
 // Import our chart component
@@ -43,6 +45,57 @@ const debugLog = (...args: any[]) => {
     console.log(...args);
   }
 };
+
+const QUICK_TOOLS = [
+  {
+    label: "Player Search",
+    description: "Profiles and player metrics",
+    href: "/stats",
+    icon: "/pictures/IconSearch.png",
+  },
+  {
+    label: "Team Analytics",
+    description: "Team trends and performance",
+    href: "/underlying-stats/teamStats",
+    icon: "/pictures/teamsTable.png",
+  },
+  {
+    label: "Projections Dashboard",
+    description: "Season outlooks and forecasts",
+    href: "/projections",
+    icon: "/pictures/chart-line-bar.png",
+  },
+  {
+    label: "Game Grid",
+    description: "Weekly schedule planning",
+    href: "/game-grid/7-Day-Forecast",
+    icon: "/pictures/gameGrid.png",
+  },
+  {
+    label: "Fantasy Tools",
+    description: "Draft and roster workspace",
+    href: "/draft-dashboard",
+    icon: "/pictures/playersTable.png",
+  },
+  {
+    label: "Advanced Stats",
+    description: "Underlying team signals",
+    href: "/underlying-stats",
+    icon: "/pictures/statsIcon.png",
+  },
+  {
+    label: "Line Combinations",
+    description: "Current deployment context",
+    href: "/lines",
+    icon: "/pictures/lineCombosIcon.png",
+  },
+  {
+    label: "Goalie View",
+    description: "Workload and variance",
+    href: "/variance/goalies",
+    icon: "/pictures/injured.png",
+  },
+] as const;
 
 // DEV NOTE:
 // Integrate Live Period/Time Clock instead of just displaying "LIVE" for live games
@@ -58,16 +111,25 @@ const Home: NextPage = ({
   homepageSnapshotGeneratedAt,
   standingsLoadError,
   injuriesLoadError,
-  latestNews
+  latestNews,
+  recentTransactions,
+  homepagePlayerCount,
 }) => {
-  const { currentDate, games, gamesHeaderText, changeDate, loading, error, lastUpdatedAt } =
-    useHomepageGames({
-      initialGames,
-      nextGameDate
-    });
+  const {
+    currentDate,
+    games,
+    gamesHeaderText,
+    changeDate,
+    loading,
+    error,
+    lastUpdatedAt,
+  } = useHomepageGames({
+    initialGames,
+    nextGameDate,
+  });
 
   return (
-    <Container>
+    <Container className={styles.homeContainer}>
       <NextSeo
         title="FHFH | Home"
         description="Five Hole Fantasy Hockey Podcast Home page."
@@ -75,9 +137,9 @@ const Home: NextPage = ({
           images: [
             {
               url: `${process.env.NEXT_PUBLIC_SITE_URL}/pictures/circle.png`,
-              alt: "logo"
-            }
-          ]
+              alt: "logo",
+            },
+          ],
         }}
       />
       <Head>
@@ -102,39 +164,128 @@ const Home: NextPage = ({
           playoffsActive={playoffsActive}
           playoffBracket={playoffBracket}
           playoffWeekGames={playoffWeekGames}
+          heroMetrics={[
+            {
+              label: "Teams",
+              value: Array.isArray(initialStandings)
+                ? String(initialStandings.length)
+                : "0",
+              caption: "in standings",
+            },
+            {
+              label: "Players",
+              value: String(homepagePlayerCount ?? 0),
+              caption: "indexed",
+            },
+            {
+              label: "Transactions",
+              value: Array.isArray(recentTransactions)
+                ? String(recentTransactions.length)
+                : "0",
+              caption: "latest updates",
+            },
+            {
+              label: "Injuries",
+              value: Array.isArray(initialInjuries)
+                ? String(initialInjuries.length)
+                : "0",
+              caption: "current updates",
+            },
+          ]}
         />
         <ClientOnly>
           <TransactionTrends />
         </ClientOnly>
 
-        {latestNews?.length > 0 ? (
-          <section className={styles.latestNewsContainer}>
-            <div className={styles.latestNewsHeader}>
-              <p>Distilled feed</p>
+        <section
+          className={styles.insightsGrid}
+          aria-label="League news and trends"
+        >
+          <div className={styles.newsPanel}>
+            <div className={styles.compactPanelHeader}>
               <h2>
-                Latest <span>News Cards</span>
+                Latest <span>News</span>
               </h2>
-              <a href="/news">View all</a>
+              <Link href="/news">View all</Link>
             </div>
-            <div className={styles.latestNewsGrid}>
-              {latestNews.map((item) => (
-                <NewsCard key={item.id} compact item={item} />
+            <div className={styles.compactNewsList}>
+              {latestNews?.slice(0, 4).map((item) => (
+                <NewsCard key={item.id} compact rail item={item} />
               ))}
+              {!latestNews?.length ? (
+                <p className={styles.inlineEmptyState}>
+                  No published news cards are available right now.
+                </p>
+              ) : null}
             </div>
-          </section>
-        ) : null}
+          </div>
 
-        <div className={styles.chartContainer}>
-          <TeamStandingsChart />
-        </div>
+          <div className={styles.leagueChartPanel}>
+            <ClientOnly>
+              <TeamStandingsChart compact />
+            </ClientOnly>
+          </div>
+
+          <div className={styles.newsPanel}>
+            <div className={styles.compactPanelHeader}>
+              <h2>
+                News &amp; <span>Updates</span>
+              </h2>
+              <Link href="/news">View all</Link>
+            </div>
+            <div className={styles.compactNewsList}>
+              {latestNews?.slice(4, 8).map((item) => (
+                <NewsCard key={item.id} compact rail item={item} />
+              ))}
+              {latestNews?.length > 0 && latestNews.length <= 4 ? (
+                <p className={styles.inlineEmptyState}>
+                  No additional published updates are available.
+                </p>
+              ) : null}
+            </div>
+          </div>
+        </section>
 
         <HomepageStandingsInjuriesSection
           standings={initialStandings}
           injuries={initialInjuries}
+          recentTransactions={recentTransactions}
           snapshotGeneratedAt={homepageSnapshotGeneratedAt}
           standingsError={standingsLoadError}
           injuriesError={injuriesLoadError}
         />
+
+        <section
+          className={styles.quickTools}
+          aria-labelledby="quick-tools-heading"
+        >
+          <div className={styles.compactPanelHeader}>
+            <h2 id="quick-tools-heading">
+              Quick <span>Tools</span>
+            </h2>
+          </div>
+          <div className={styles.quickToolsGrid}>
+            {QUICK_TOOLS.map((tool) => (
+              <Link
+                key={tool.href}
+                href={tool.href}
+                className={styles.quickToolCard}
+              >
+                <Image
+                  src={tool.icon}
+                  alt=""
+                  width={28}
+                  height={28}
+                  className={styles.quickToolIcon}
+                />
+                <span>
+                  <strong>{tool.label}</strong>
+                  <small>{tool.description}</small>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
       </div>
     </Container>
   );
@@ -143,7 +294,7 @@ const Home: NextPage = ({
 export async function getServerSideProps({ req, res }) {
   res.setHeader(
     "Cache-Control",
-    "public, s-maxage=60, stale-while-revalidate=120" // Cache for 60s, allow stale for 2 min
+    "public, s-maxage=60, stale-while-revalidate=120", // Cache for 60s, allow stale for 2 min
   );
 
   const fetchJson = async (url: string) => {
@@ -152,14 +303,16 @@ export async function getServerSideProps({ req, res }) {
 
     if (!response.ok) {
       throw new Error(
-        `Request failed (${response.status})${text ? `: ${text.slice(0, 200)}` : ""}`
+        `Request failed (${response.status})${text ? `: ${text.slice(0, 200)}` : ""}`,
       );
     }
 
     try {
       return JSON.parse(text);
     } catch {
-      throw new Error(`Expected JSON response but received: ${text.slice(0, 120)}`);
+      throw new Error(
+        `Expected JSON response but received: ${text.slice(0, 120)}`,
+      );
     }
   };
 
@@ -173,18 +326,18 @@ export async function getServerSideProps({ req, res }) {
           ? response.gameWeek.flatMap((entry: any) =>
               (entry?.games || []).map((game: any) => ({
                 ...game,
-                scheduleDate: entry.date
-              }))
+                scheduleDate: entry.date,
+              })),
             )
           : [],
-        failed: false
+        failed: false,
       };
     } catch (error) {
       console.error(`Error fetching games for ${date}: `, error.message);
       return {
         games: [],
         weeklyGames: [],
-        failed: true
+        failed: true,
       };
     }
   };
@@ -192,12 +345,14 @@ export async function getServerSideProps({ req, res }) {
   const fetchInjuries = async () => {
     try {
       const persistedStatuses = await fetchCurrentHomepagePlayerStatuses({
-        supabase: supabaseServer
+        supabase: supabaseServer,
       });
       if (persistedStatuses.length > 0) {
         return {
-          data: persistedStatuses.sort((a, b) => moment(b.date).diff(moment(a.date))),
-          error: null
+          data: persistedStatuses.sort((a, b) =>
+            moment(b.date).diff(moment(a.date)),
+          ),
+          error: null,
         };
       }
 
@@ -206,7 +361,7 @@ export async function getServerSideProps({ req, res }) {
         rawTeams,
         snapshotDate: moment().utc().format("YYYY-MM-DD"),
         directory: buildTeamStatusDirectory(),
-        rosterByTeam: new Map()
+        rosterByTeam: new Map(),
       });
 
       return {
@@ -218,16 +373,16 @@ export async function getServerSideProps({ req, res }) {
             team_abbreviation: row.team_abbreviation,
             status_state: row.status_state,
             raw_status: row.raw_status,
-            status_detail: row.status_detail
-          }))
+            status_detail: row.status_detail,
+          })),
         ).sort((a, b) => moment(b.date).diff(moment(a.date))),
-        error: null
+        error: null,
       };
     } catch (error) {
       console.error("Error fetching injuries: ", error.message);
       return {
         data: [],
-        error: "Injury updates could not be loaded."
+        error: "Injury updates could not be loaded.",
       };
     }
   };
@@ -247,26 +402,35 @@ export async function getServerSideProps({ req, res }) {
           // Attempt to get the end date of the season if outside
           dateForStandings = moment(seasonEnd).format("YYYY-MM-DD");
           console.log(
-            `Outside regular season. Fetching standings for season end date: ${dateForStandings}`
+            `Outside regular season. Fetching standings for season end date: ${dateForStandings}`,
           );
         }
       } else {
         console.warn(
-          "Could not determine current season dates accurately. Defaulting to today for standings."
+          "Could not determine current season dates accurately. Defaulting to today for standings.",
         );
       }
 
-      const response = await fetchJson(`https://api-web.nhle.com/v1/standings/${dateForStandings}`);
+      let response = await fetchJson(
+        `https://api-web.nhle.com/v1/standings/${dateForStandings}`,
+      );
+
+      if (
+        !Array.isArray(response?.standings) ||
+        response.standings.length === 0
+      ) {
+        response = await fetchJson("https://api-web.nhle.com/v1/standings/now");
+      }
 
       if (!response || !Array.isArray(response.standings)) {
         console.error(
           "Standings data not available or in unexpected format for date:",
           dateForStandings,
-          response
+          response,
         );
         return {
           data: [],
-          error: "Standings are unavailable right now."
+          error: "Standings are unavailable right now.",
         };
       }
 
@@ -274,15 +438,21 @@ export async function getServerSideProps({ req, res }) {
       const standingsData = response.standings.map((team: any) => ({
         leagueSequence: team.leagueSequence ?? 99, // Provide default
         teamName: team.teamName?.default ?? "Unknown Team", // Provide default
+        teamAbbreviation: team.teamAbbrev?.default ?? "NHL",
+        gamesPlayed: team.gamesPlayed ?? 0,
         wins: team.wins ?? 0,
         losses: team.losses ?? 0,
         otLosses: team.otLosses ?? 0,
         points: team.points ?? 0,
+        pointPercentage: team.pointPctg ?? 0,
+        streak: team.streakCode ?? "—",
+        conference: team.conferenceName ?? null,
+        division: team.divisionName ?? null,
         teamLogo:
           team.teamLogo ??
           `https://assets.nhle.com/logos/nhl/svg/${
             team.teamAbbrev?.default ?? "NHL"
-          }_light.svg` // Default logo
+          }_light.svg`, // Default logo
       }));
 
       // Sort by leagueSequence ascending after mapping
@@ -290,13 +460,13 @@ export async function getServerSideProps({ req, res }) {
 
       return {
         data: standingsData,
-        error: null
+        error: null,
       };
     } catch (error) {
       console.error("Error fetching standings: ", error.message);
       return {
         data: [],
-        error: "Standings could not be loaded."
+        error: "Standings could not be loaded.",
       };
     }
   };
@@ -324,9 +494,13 @@ export async function getServerSideProps({ req, res }) {
     playoffWeekGames = todayGamesResult.weeklyGames;
     nextGameDateFound = today;
 
-    if (!playoffsActive && gamesToday.length === 0 && !todayGamesResult.failed) {
+    if (
+      !playoffsActive &&
+      gamesToday.length === 0 &&
+      !todayGamesResult.failed
+    ) {
       debugLog(
-        `No games found for today (${today}), searching for next available date...`
+        `No games found for today (${today}), searching for next available date...`,
       );
       let nextDay = moment(today).add(1, "days");
       let attempts = 0;
@@ -339,7 +513,7 @@ export async function getServerSideProps({ req, res }) {
         gamesToday = nextGamesResult.games;
         if (nextGamesResult.failed) {
           console.warn(
-            `Stopping future game search after upstream failure on ${dateStr}.`
+            `Stopping future game search after upstream failure on ${dateStr}.`,
           );
           break;
         }
@@ -354,7 +528,7 @@ export async function getServerSideProps({ req, res }) {
       }
       if (gamesToday.length === 0) {
         console.warn(
-          `Could not find games within the next ${maxAttempts} days.`
+          `Could not find games within the next ${maxAttempts} days.`,
         );
       }
     } else {
@@ -365,7 +539,9 @@ export async function getServerSideProps({ req, res }) {
   let playoffBracket = null;
   if (playoffsActive) {
     try {
-      playoffBracket = await getPlayoffBracket(getPlayoffBracketYear(currentSeason));
+      playoffBracket = await getPlayoffBracket(
+        getPlayoffBracketYear(currentSeason),
+      );
     } catch (error: any) {
       console.error("Error fetching playoff bracket:", error.message);
     }
@@ -374,14 +550,36 @@ export async function getServerSideProps({ req, res }) {
   const injuriesResult = await fetchInjuries();
   const standingsResult = await fetchStandings();
   let latestNews = [];
+  let recentTransactions = [];
+  let homepagePlayerCount = 0;
   try {
-    latestNews = await fetchNewsFeedItems({
+    const publishedNews = await fetchNewsFeedItems({
       supabase: supabaseServer,
       status: "published",
-      limit: 3
+      limit: 40,
     });
+    latestNews = publishedNews.slice(0, 8);
+    recentTransactions = publishedNews
+      .filter((item) =>
+        ["TRANSACTION", "TRADE", "SIGNING", "ROSTER MOVE", "WAIVER"].includes(
+          String(item.category ?? "")
+            .trim()
+            .toUpperCase(),
+        ),
+      )
+      .slice(0, 32);
   } catch (error: any) {
     console.error("Error fetching homepage news cards:", error.message);
+  }
+
+  try {
+    const { count, error } = await supabaseServer
+      .from("players")
+      .select("id", { count: "exact", head: true });
+    if (error) throw error;
+    homepagePlayerCount = count ?? 0;
+  } catch (error: any) {
+    console.error("Error fetching homepage player count:", error.message);
   }
 
   return {
@@ -397,8 +595,10 @@ export async function getServerSideProps({ req, res }) {
       homepageSnapshotGeneratedAt: new Date().toISOString(),
       standingsLoadError: standingsResult.error,
       injuriesLoadError: injuriesResult.error,
-      latestNews
-    }
+      latestNews,
+      recentTransactions,
+      homepagePlayerCount,
+    },
   };
 }
 

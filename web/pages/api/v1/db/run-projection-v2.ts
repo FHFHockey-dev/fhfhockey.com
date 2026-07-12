@@ -58,16 +58,21 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import {
   buildEndpointScanSummary,
   countFailingPreflightGates,
-  type EndpointScanSummary
+  type EndpointScanSummary,
 } from "lib/api/scanSummary";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
 import {
   normalizeDependencyError,
-  type NormalizedDependencyError
+  type NormalizedDependencyError,
 } from "lib/cron/normalizeDependencyError";
 import { fetchRecentTeamLineCombinations } from "lib/projections/queries/line-combo-queries";
 import { runProjectionV2ForDate } from "lib/projections/run-forge-projections";
+import {
+  LINE_COMBO_STALE_HARD_DAYS,
+  LINE_COMBO_STALE_SOFT_DAYS,
+} from "lib/projections/constants/projection-weights";
+import type { LineCombinationWithGameDateRow } from "lib/projections/types/run-forge-projections.types";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { FORGE_COMPATIBILITY_INVENTORY } from "lib/projections/compatibilityInventory";
 import { getGoalieForgePipelineSpec } from "lib/projections/goaliePipeline";
@@ -96,6 +101,8 @@ type DataQualityWarning = {
 
 type GoalieObservability = {
   goalieRowsProcessed: number;
+  skaterRowsProcessed: number;
+  skaterFreshnessFailureCount: number;
   dataQualityWarnings: DataQualityWarning[];
 };
 
@@ -113,6 +120,59 @@ type GoalieRosterRow = {
   teamId: number;
 };
 
+export function summarizeSkaterFreshnessCoverage(args: {
+  asOfDate: string;
+  scheduledTeamIds: number[];
+  recentLineCombosByTeam: Map<number, LineCombinationWithGameDateRow[]>;
+  teamsWithRecentDerivedRows: Set<number>;
+}) {
+  let missingLineComboTeams = 0;
+  let softStaleLineComboTeams = 0;
+  let hardStaleLineComboTeams = 0;
+  let insufficientRoleCoverageTeams = 0;
+  for (const teamId of args.scheduledTeamIds) {
+    const latest = args.recentLineCombosByTeam.get(teamId)?.[0];
+    if (!latest) {
+      missingLineComboTeams += 1;
+      insufficientRoleCoverageTeams += 1;
+      continue;
+    }
+    const sourceDate = latest.games?.date ?? null;
+    const ageDays =
+      sourceDate == null
+        ? null
+        : Math.max(
+            0,
+            Math.floor(
+              (Date.parse(`${args.asOfDate}T00:00:00.000Z`) -
+                Date.parse(`${sourceDate}T00:00:00.000Z`)) /
+                86_400_000,
+            ),
+          );
+    if (ageDays == null || ageDays > LINE_COMBO_STALE_HARD_DAYS) {
+      hardStaleLineComboTeams += 1;
+    } else if (ageDays > LINE_COMBO_STALE_SOFT_DAYS) {
+      softStaleLineComboTeams += 1;
+    }
+    const rolePlayerIds = new Set(
+      [...(latest.forwards ?? []), ...(latest.defensemen ?? [])]
+        .map(Number)
+        .filter(Number.isFinite),
+    );
+    if (rolePlayerIds.size < 12) insufficientRoleCoverageTeams += 1;
+  }
+  const missingRecentDerivedTeams = args.scheduledTeamIds.filter(
+    (teamId) => !args.teamsWithRecentDerivedRows.has(teamId),
+  ).length;
+  return {
+    missingLineComboTeams,
+    softStaleLineComboTeams,
+    hardStaleLineComboTeams,
+    insufficientRoleCoverageTeams,
+    missingRecentDerivedTeams,
+  };
+}
+
 export function buildProjectionInputIngestGate(args: {
   scheduledRecentGames: number;
   actualPbpGames: number;
@@ -125,7 +185,7 @@ export function buildProjectionInputIngestGate(args: {
       status: "PASS",
       detail: `scheduled_recent_games=${args.scheduledRecentGames}, actual_pbp_games=0, shifted_actual_games=0, shift_coverage=1.00, shift_rows=${args.shiftRows}`,
       action:
-        "No recent games with PBP were found; ingest freshness is not applicable."
+        "No recent games with PBP were found; ingest freshness is not applicable.",
     };
   }
 
@@ -138,7 +198,34 @@ export function buildProjectionInputIngestGate(args: {
     detail: `scheduled_recent_games=${args.scheduledRecentGames}, actual_pbp_games=${args.actualPbpGames}, shifted_actual_games=${args.shiftedActualGames}, shift_coverage=${shiftCoverage.toFixed(2)}, shift_rows=${args.shiftRows}`,
     action: pass
       ? "Recent actual-game PBP and shift coverage are sufficient; scheduled playoff placeholders without PBP are excluded from the denominator."
-      : "Run /api/v1/db/ingest-projection-inputs for recent actual game dates."
+      : "Run /api/v1/db/ingest-projection-inputs for recent actual game dates.",
+  };
+}
+
+export function buildProjectionDerivedGate(args: {
+  scheduledGameCount: number;
+  playerLatest: string | null;
+  teamLatest: string | null;
+  goalieLatest: string | null;
+}): PreflightGate {
+  if (args.scheduledGameCount === 0) {
+    return {
+      gate_key: "projection_derived_v2",
+      status: "PASS",
+      detail:
+        "No scheduled games on requested date; projection-derived freshness is not applicable.",
+      action: "None.",
+    };
+  }
+
+  const pass = Boolean(
+    args.playerLatest && args.teamLatest && args.goalieLatest,
+  );
+  return {
+    gate_key: "projection_derived_v2",
+    status: pass ? "PASS" : "FAIL",
+    detail: `player_latest=${args.playerLatest ?? "none"}, team_latest=${args.teamLatest ?? "none"}, goalie_latest=${args.goalieLatest ?? "none"}`,
+    action: "Run /api/v1/db/build-projection-derived-v2 for recent dates.",
   };
 }
 
@@ -161,7 +248,9 @@ type Result =
       maxDurationMs: string;
       durationMs: string;
       pipeline: ReturnType<typeof getGoalieForgePipelineSpec>;
-      dependencyContract: ReturnType<typeof getRollingForgeStageDependencyContract>;
+      dependencyContract: ReturnType<
+        typeof getRollingForgeStageDependencyContract
+      >;
       compatibilityInventory: typeof FORGE_COMPATIBILITY_INVENTORY;
       preflight: PreflightSummary;
       observability: GoalieObservability;
@@ -190,7 +279,9 @@ type Result =
       maxDurationMs: string;
       durationMs: string;
       pipeline: ReturnType<typeof getGoalieForgePipelineSpec>;
-      dependencyContract: ReturnType<typeof getRollingForgeStageDependencyContract>;
+      dependencyContract: ReturnType<
+        typeof getRollingForgeStageDependencyContract
+      >;
       compatibilityInventory: typeof FORGE_COMPATIBILITY_INVENTORY;
       preflight: PreflightSummary;
       observability: GoalieObservability;
@@ -243,7 +334,7 @@ function buildDateRange(start: string, end: string): string[] {
 function parseHorizonGames(value: string | null): number {
   const n = Number(value ?? 1);
   if (!Number.isFinite(n)) return 1;
-  return Math.max(1, Math.min(5, Math.floor(n)));
+  return Math.max(1, Math.min(10, Math.floor(n)));
 }
 
 function parseChunkDays(value: string | null): number {
@@ -292,17 +383,20 @@ export function summarizeGoalieRosterAssignments(args: {
 } {
   const rosterTeamsByPlayer = new Map<number, Set<number>>();
   for (const row of args.goalieRosters) {
-    if (!Number.isFinite(row.playerId) || !Number.isFinite(row.teamId)) continue;
+    if (!Number.isFinite(row.playerId) || !Number.isFinite(row.teamId))
+      continue;
     const teamIds = rosterTeamsByPlayer.get(row.playerId) ?? new Set<number>();
     teamIds.add(row.teamId);
     rosterTeamsByPlayer.set(row.playerId, teamIds);
   }
 
-  const goalieById = new Map(args.goaliePlayers.map((player) => [player.id, player]));
+  const goalieById = new Map(
+    args.goaliePlayers.map((player) => [player.id, player]),
+  );
   const goalieCandidateIds = new Set(
-    Array.from(args.latestGoaliesByTeam.values()).flat().filter((id) =>
-      Number.isFinite(id)
-    )
+    Array.from(args.latestGoaliesByTeam.values())
+      .flat()
+      .filter((id) => Number.isFinite(id)),
   );
 
   let mismatchedAssignments = 0;
@@ -322,13 +416,13 @@ export function summarizeGoalieRosterAssignments(args: {
   return {
     goalieCandidatesChecked: goalieCandidateIds.size,
     mismatchedAssignments,
-    nonGoaliePositionRows
+    nonGoaliePositionRows,
   };
 }
 
 export async function runProjectionPreflightChecks(
   asOfDate: string,
-  bypassed: boolean
+  bypassed: boolean,
 ): Promise<PreflightSummary> {
   const gates: PreflightGate[] = [];
   if (bypassed) {
@@ -341,9 +435,9 @@ export async function runProjectionPreflightChecks(
           gate_key: "preflight_bypass",
           status: "PASS",
           detail: "Preflight checks bypassed by request parameter.",
-          action: "Remove bypassPreflight=true to enforce freshness checks."
-        }
-      ]
+          action: "Remove bypassPreflight=true to enforce freshness checks.",
+        },
+      ],
     };
   }
 
@@ -357,9 +451,9 @@ export async function runProjectionPreflightChecks(
           gate_key: "supabase_client_available",
           status: "FAIL",
           detail: "Supabase server client is not available.",
-          action: "Ensure server-side Supabase credentials are configured."
-        }
-      ]
+          action: "Ensure server-side Supabase credentials are configured.",
+        },
+      ],
     };
   }
 
@@ -375,8 +469,12 @@ export async function runProjectionPreflightChecks(
   }>;
   const scheduledGameIds = scheduledGames.map((g) => g.id);
   const scheduledTeamIds = Array.from(
-    new Set(scheduledGames.flatMap((g) => [g.homeTeamId, g.awayTeamId]))
+    new Set(scheduledGames.flatMap((g) => [g.homeTeamId, g.awayTeamId])),
   );
+  const recentLineCombosByTeam = new Map<
+    number,
+    LineCombinationWithGameDateRow[]
+  >();
 
   const { count: teamCount, error: teamsErr } = await supabase
     .from("teams")
@@ -391,32 +489,88 @@ export async function runProjectionPreflightChecks(
     status: (teamCount ?? 0) > 0 && (playerCount ?? 0) > 0 ? "PASS" : "FAIL",
     detail: `teams=${teamCount ?? 0}, players=${playerCount ?? 0}, scheduled_games=${scheduledGames.length}`,
     action:
-      "Run /api/v1/db/update-games, /api/v1/db/update-teams, and /api/v1/db/update-players."
+      "Run /api/v1/db/update-games, /api/v1/db/update-teams, and /api/v1/db/update-players.",
   });
 
   if (scheduledTeamIds.length > 0) {
-    let missingLineComboTeams = 0;
     for (const teamId of scheduledTeamIds) {
       const rows = await fetchRecentTeamLineCombinations({
         teamId,
         asOfDate,
-        limit: 1
+        limit: 3,
       });
-      if (rows.length === 0) missingLineComboTeams += 1;
+      recentLineCombosByTeam.set(teamId, rows);
     }
+    const derivedFreshnessStart = addDays(asOfDate, -7);
+    const derivedCounts = await Promise.all(
+      scheduledTeamIds.map(async (teamId) => {
+        const { count, error } = await supabase
+          .from("forge_player_game_strength")
+          .select("player_id", { count: "exact", head: true })
+          .eq("team_id", teamId)
+          .lt("game_date", asOfDate)
+          .gte("game_date", derivedFreshnessStart);
+        if (error) throw error;
+        return { teamId, count: count ?? 0 };
+      }),
+    );
+    const freshness = summarizeSkaterFreshnessCoverage({
+      asOfDate,
+      scheduledTeamIds,
+      recentLineCombosByTeam,
+      teamsWithRecentDerivedRows: new Set(
+        derivedCounts.filter((row) => row.count > 0).map((row) => row.teamId),
+      ),
+    });
     gates.push({
       gate_key: "line_combinations",
-      status: missingLineComboTeams === 0 ? "PASS" : "FAIL",
-      detail: `teams_checked=${scheduledTeamIds.length}, missing_recent_line_combos=${missingLineComboTeams}`,
-      action: "Run /api/v1/db/update-line-combinations before projection execution."
+      status: freshness.missingLineComboTeams === 0 ? "PASS" : "FAIL",
+      detail: `teams_checked=${scheduledTeamIds.length}, missing_recent_line_combos=${freshness.missingLineComboTeams}`,
+      action:
+        "Run /api/v1/db/update-line-combinations before projection execution.",
+    });
+    gates.push({
+      gate_key: "skater_line_freshness",
+      status: freshness.hardStaleLineComboTeams === 0 ? "PASS" : "FAIL",
+      detail: `teams_checked=${scheduledTeamIds.length}, soft_stale_teams=${freshness.softStaleLineComboTeams}, hard_stale_teams=${freshness.hardStaleLineComboTeams}, soft_days=${LINE_COMBO_STALE_SOFT_DAYS}, hard_days=${LINE_COMBO_STALE_HARD_DAYS}`,
+      action:
+        "Refresh line combinations; soft-stale rows remain visible but hard-stale role priors block projection execution.",
+    });
+    gates.push({
+      gate_key: "skater_role_coverage",
+      status: freshness.insufficientRoleCoverageTeams === 0 ? "PASS" : "FAIL",
+      detail: `teams_checked=${scheduledTeamIds.length}, teams_below_12_role_players=${freshness.insufficientRoleCoverageTeams}`,
+      action:
+        "Refresh line combinations and verify at least 12 distinct forward/defense role assignments per scheduled team.",
+    });
+    gates.push({
+      gate_key: "skater_derived_freshness",
+      status: freshness.missingRecentDerivedTeams === 0 ? "PASS" : "FAIL",
+      detail: `teams_checked=${scheduledTeamIds.length}, teams_missing_recent_skater_derived_rows=${freshness.missingRecentDerivedTeams}, stale_window_days=7`,
+      action:
+        "Run /api/v1/db/build-projection-derived-v2 for recent dates and verify scheduled-team skater coverage.",
     });
   } else {
     gates.push({
       gate_key: "line_combinations",
       status: "PASS",
-      detail: "No scheduled games on requested date; skipping line combination coverage check.",
-      action: "None."
+      detail:
+        "No scheduled games on requested date; skipping line combination coverage check.",
+      action: "None.",
     });
+    for (const gate_key of [
+      "skater_line_freshness",
+      "skater_role_coverage",
+      "skater_derived_freshness",
+    ]) {
+      gates.push({
+        gate_key,
+        status: "PASS",
+        detail:
+          "No scheduled teams on requested date; skater freshness check skipped.",
+        action: "None.",
+      });
+    }
   }
 
   const recentWindowStart = addDays(asOfDate, -14);
@@ -426,7 +580,9 @@ export async function runProjectionPreflightChecks(
     .gte("date", recentWindowStart)
     .lt("date", asOfDate);
   if (recentGamesErr) throw recentGamesErr;
-  const recentGameIds = ((recentGames ?? []) as Array<{ id: number }>).map((g) => g.id);
+  const recentGameIds = ((recentGames ?? []) as Array<{ id: number }>).map(
+    (g) => g.id,
+  );
 
   if (recentGameIds.length > 0) {
     const { data: pbpRows, error: pbpErr } = await supabase
@@ -447,66 +603,78 @@ export async function runProjectionPreflightChecks(
         .map((row) => row.game_id)
         .filter(
           (id): id is number =>
-            typeof id === "number" && Number.isFinite(id) && pbpGameIds.includes(id)
-        )
+            typeof id === "number" &&
+            Number.isFinite(id) &&
+            pbpGameIds.includes(id),
+        ),
     );
     gates.push(
       buildProjectionInputIngestGate({
         scheduledRecentGames: recentGameIds.length,
         actualPbpGames: pbpGameIds.length,
         shiftedActualGames: shiftedActualGameIds.size,
-        shiftRows: (shiftRows ?? []).length
-      })
+        shiftRows: (shiftRows ?? []).length,
+      }),
     );
   } else {
     gates.push({
       gate_key: "projection_input_ingest",
       status: "PASS",
-      detail: "No prior 14-day games before requested date; ingest freshness not applicable.",
-      action: "None."
+      detail:
+        "No prior 14-day games before requested date; ingest freshness not applicable.",
+      action: "None.",
     });
   }
 
-  const derivedFreshnessStart = addDays(asOfDate, -7);
-  const [playerDerived, teamDerived, goalieDerived] = await Promise.all([
-    supabase
-      .from("forge_player_game_strength")
-      .select("game_date")
-      .lt("game_date", asOfDate)
-      .gte("game_date", derivedFreshnessStart)
-      .order("game_date", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from("forge_team_game_strength")
-      .select("game_date")
-      .lt("game_date", asOfDate)
-      .gte("game_date", derivedFreshnessStart)
-      .order("game_date", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from("forge_goalie_game")
-      .select("game_date")
-      .lt("game_date", asOfDate)
-      .gte("game_date", derivedFreshnessStart)
-      .order("game_date", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-  ]);
-  if (playerDerived.error) throw playerDerived.error;
-  if (teamDerived.error) throw teamDerived.error;
-  if (goalieDerived.error) throw goalieDerived.error;
-  const derivedPass =
-    Boolean((playerDerived.data as any)?.game_date) &&
-    Boolean((teamDerived.data as any)?.game_date) &&
-    Boolean((goalieDerived.data as any)?.game_date);
-  gates.push({
-    gate_key: "projection_derived_v2",
-    status: derivedPass ? "PASS" : "FAIL",
-    detail: `player_latest=${(playerDerived.data as any)?.game_date ?? "none"}, team_latest=${(teamDerived.data as any)?.game_date ?? "none"}, goalie_latest=${(goalieDerived.data as any)?.game_date ?? "none"}`,
-    action: "Run /api/v1/db/build-projection-derived-v2 for recent dates."
-  });
+  if (scheduledGameIds.length === 0) {
+    gates.push(
+      buildProjectionDerivedGate({
+        scheduledGameCount: 0,
+        playerLatest: null,
+        teamLatest: null,
+        goalieLatest: null,
+      }),
+    );
+  } else {
+    const derivedFreshnessStart = addDays(asOfDate, -7);
+    const [playerDerived, teamDerived, goalieDerived] = await Promise.all([
+      supabase
+        .from("forge_player_game_strength")
+        .select("game_date")
+        .lt("game_date", asOfDate)
+        .gte("game_date", derivedFreshnessStart)
+        .order("game_date", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("forge_team_game_strength")
+        .select("game_date")
+        .lt("game_date", asOfDate)
+        .gte("game_date", derivedFreshnessStart)
+        .order("game_date", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("forge_goalie_game")
+        .select("game_date")
+        .lt("game_date", asOfDate)
+        .gte("game_date", derivedFreshnessStart)
+        .order("game_date", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    if (playerDerived.error) throw playerDerived.error;
+    if (teamDerived.error) throw teamDerived.error;
+    if (goalieDerived.error) throw goalieDerived.error;
+    gates.push(
+      buildProjectionDerivedGate({
+        scheduledGameCount: scheduledGameIds.length,
+        playerLatest: (playerDerived.data as any)?.game_date ?? null,
+        teamLatest: (teamDerived.data as any)?.game_date ?? null,
+        goalieLatest: (goalieDerived.data as any)?.game_date ?? null,
+      }),
+    );
+  }
 
   if (scheduledGameIds.length > 0) {
     const { count: goalieStartRows, error: goalieStartErr } = await supabase
@@ -518,14 +686,15 @@ export async function runProjectionPreflightChecks(
       gate_key: "goalie_start_priors_v2",
       status: (goalieStartRows ?? 0) > 0 ? "PASS" : "FAIL",
       detail: `scheduled_games=${scheduledGameIds.length}, goalie_start_rows=${goalieStartRows ?? 0}`,
-      action: `Run /api/v1/db/update-goalie-projections-v2?date=${asOfDate}.`
+      action: `Run /api/v1/db/update-goalie-projections-v2?date=${asOfDate}.`,
     });
   } else {
     gates.push({
       gate_key: "goalie_start_priors_v2",
       status: "PASS",
-      detail: "No scheduled games on requested date; goalie start priors not required.",
-      action: "None."
+      detail:
+        "No scheduled games on requested date; goalie start priors not required.",
+      action: "None.",
     });
   }
 
@@ -545,30 +714,26 @@ export async function runProjectionPreflightChecks(
     const teamsWithRecentGoalieRows = new Set(
       ((recentGoalieRows ?? []) as Array<{ team_id: number | null }>)
         .map((r) => r.team_id)
-        .filter((id): id is number => Number.isFinite(id))
+        .filter((id): id is number => Number.isFinite(id)),
     );
     const missingRecentGoalieTeams = scheduledTeamIds.filter(
-      (teamId) => !teamsWithRecentGoalieRows.has(teamId)
+      (teamId) => !teamsWithRecentGoalieRows.has(teamId),
     );
     gates.push({
       gate_key: "stale_goalie_game_rows",
       status: missingRecentGoalieTeams.length === 0 ? "PASS" : "FAIL",
       detail: `teams_checked=${scheduledTeamIds.length}, teams_missing_recent_goalie_rows=${missingRecentGoalieTeams.length}, stale_window_days=30`,
       action:
-        "Run /api/v1/db/build-projection-derived-v2 for recent dates and verify source goalie game ingestion."
+        "Run /api/v1/db/build-projection-derived-v2 for recent dates and verify source goalie game ingestion.",
     });
 
     const recentGoalieCandidateIds = new Set<number>();
     const latestGoaliesByTeam = new Map<number, number[]>();
     for (const teamId of scheduledTeamIds) {
-      const rows = await fetchRecentTeamLineCombinations({
-        teamId,
-        asOfDate,
-        limit: 3
-      });
+      const rows = recentLineCombosByTeam.get(teamId) ?? [];
       rows.forEach((row, index) => {
         const goalieIds = (row.goalies ?? []).filter((goalieId) =>
-          Number.isFinite(goalieId)
+          Number.isFinite(goalieId),
         );
         goalieIds.forEach((goalieId) => recentGoalieCandidateIds.add(goalieId));
         if (index === 0 && goalieIds.length > 0) {
@@ -592,17 +757,15 @@ export async function runProjectionPreflightChecks(
       const assignmentSummary = summarizeGoalieRosterAssignments({
         latestGoaliesByTeam,
         goaliePlayers: (goaliePlayers ?? []) as GoaliePlayerRow[],
-        goalieRosters: (goalieRosters ?? []) as GoalieRosterRow[]
+        goalieRosters: (goalieRosters ?? []) as GoalieRosterRow[],
       });
-      const rosterAssignmentDrift =
-        assignmentSummary.mismatchedAssignments > 0;
+      const rosterAssignmentDrift = assignmentSummary.mismatchedAssignments > 0;
       gates.push({
         gate_key: "outdated_player_team_assignments",
-        status:
-          assignmentSummary.nonGoaliePositionRows === 0 ? "PASS" : "FAIL",
+        status: assignmentSummary.nonGoaliePositionRows === 0 ? "PASS" : "FAIL",
         detail: `goalie_candidates_checked=${assignmentSummary.goalieCandidatesChecked}, mismatched_team_assignments=${assignmentSummary.mismatchedAssignments}, non_goalie_positions=${assignmentSummary.nonGoaliePositionRows}, season_id=${seasonId}`,
         action:
-          "Refresh players/rosters and line combinations; verify current-season goalie roster assignments are present in rosters."
+          "Refresh players/rosters and line combinations; verify current-season goalie roster assignments are present in rosters.",
       });
       if (rosterAssignmentDrift) {
         gates.push({
@@ -610,29 +773,32 @@ export async function runProjectionPreflightChecks(
           status: "PASS",
           detail: `Roster drift warning only: ${assignmentSummary.mismatchedAssignments} latest line-combination goalie assignments are not present on current-season rosters.`,
           action:
-            "Review recalled, reassigned, or traded goalie history if projection inputs look suspicious; this warning does not block the run."
+            "Review recalled, reassigned, or traded goalie history if projection inputs look suspicious; this warning does not block the run.",
         });
       }
     } else {
       gates.push({
         gate_key: "outdated_player_team_assignments",
         status: "PASS",
-        detail: "No recent line-combination goalie candidates available for assignment validation.",
-        action: "None."
+        detail:
+          "No recent line-combination goalie candidates available for assignment validation.",
+        action: "None.",
       });
     }
   } else {
     gates.push({
       gate_key: "stale_goalie_game_rows",
       status: "PASS",
-      detail: "No scheduled teams on requested date; stale goalie-row detector skipped.",
-      action: "None."
+      detail:
+        "No scheduled teams on requested date; stale goalie-row detector skipped.",
+      action: "None.",
     });
     gates.push({
       gate_key: "outdated_player_team_assignments",
       status: "PASS",
-      detail: "No scheduled teams on requested date; team-assignment detector skipped.",
-      action: "None."
+      detail:
+        "No scheduled teams on requested date; team-assignment detector skipped.",
+      action: "None.",
     });
   }
 
@@ -641,7 +807,7 @@ export async function runProjectionPreflightChecks(
     asOfDate,
     bypassed: false,
     status: failed ? "FAIL" : "PASS",
-    gates
+    gates,
   };
 }
 
@@ -649,6 +815,7 @@ function buildGoalieObservability(args: {
   preflight: PreflightSummary;
   gamesProcessed: number;
   goalieRowsProcessed: number;
+  skaterRowsProcessed?: number;
   zeroGoalieRowDates?: string[];
 }): GoalieObservability {
   const warnings: DataQualityWarning[] = [];
@@ -657,24 +824,24 @@ function buildGoalieObservability(args: {
     warnings.push({
       code: `preflight_${gate.gate_key}`,
       message: "Preflight dependency check failed.",
-      detail: gate.detail
+      detail: gate.detail,
     });
   }
   const warningOnlyGates = args.preflight.gates.filter((g) =>
-    g.gate_key.endsWith("_warning")
+    g.gate_key.endsWith("_warning"),
   );
   for (const gate of warningOnlyGates) {
     warnings.push({
       code: `preflight_${gate.gate_key}`,
       message: "Preflight data-quality warning.",
-      detail: gate.detail
+      detail: gate.detail,
     });
   }
 
   if (args.gamesProcessed > 0 && args.goalieRowsProcessed === 0) {
     warnings.push({
       code: "goalie_rows_zero",
-      message: "Projection run processed games but wrote zero goalie rows."
+      message: "Projection run processed games but wrote zero goalie rows.",
     });
   }
 
@@ -683,13 +850,30 @@ function buildGoalieObservability(args: {
       code: "goalie_rows_zero_dates",
       message:
         "One or more processed dates wrote zero goalie rows in range execution.",
-      detail: args.zeroGoalieRowDates!.slice(0, 5).join(", ")
+      detail: args.zeroGoalieRowDates!.slice(0, 5).join(", "),
+    });
+  }
+
+  const skaterFreshnessFailureCount = failedGates.filter((gate) =>
+    [
+      "line_combinations",
+      "skater_line_freshness",
+      "skater_role_coverage",
+      "skater_derived_freshness",
+    ].includes(gate.gate_key),
+  ).length;
+  if (args.gamesProcessed > 0 && (args.skaterRowsProcessed ?? 0) === 0) {
+    warnings.push({
+      code: "skater_rows_zero",
+      message: "Projection run processed games but wrote zero skater rows.",
     });
   }
 
   return {
     goalieRowsProcessed: args.goalieRowsProcessed,
-    dataQualityWarnings: warnings
+    skaterRowsProcessed: args.skaterRowsProcessed ?? 0,
+    skaterFreshnessFailureCount,
+    dataQualityWarnings: warnings,
   };
 }
 
@@ -709,13 +893,13 @@ function buildProjectionRunScanSummary(args: {
     status: args.status,
     rowCounts: args.rowCounts,
     blockingIssueCount: args.blockingIssueCount,
-    notes: args.notes
+    notes: args.notes,
   });
 }
 
 async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<CronTimedResponse<Result>>
+  res: NextApiResponse<CronTimedResponse<Result>>,
 ) {
   const startedAt = Date.now();
   const withTiming = (body: Result, endedAt = Date.now()) =>
@@ -725,24 +909,25 @@ async function handler(
   const resumeFromDate = parseDateParam(getParam(req, "resumeFromDate"));
   const pipeline = getGoalieForgePipelineSpec();
   const dependencyContract = getRollingForgeStageDependencyContract(
-    "projection_execution"
+    "projection_execution",
   );
   const bypassPreflight = parseBooleanParam(getParam(req, "bypassPreflight"));
   const defaultPreflight: PreflightSummary = {
     asOfDate: "",
     bypassed: bypassPreflight,
     status: "PASS",
-    gates: []
+    gates: [],
   };
   const defaultObservability: GoalieObservability = {
     goalieRowsProcessed: 0,
-    dataQualityWarnings: []
+    skaterRowsProcessed: 0,
+    skaterFreshnessFailureCount: 0,
+    dataQualityWarnings: [],
   };
   if (req.method !== "POST" && req.method !== "GET") {
     res.setHeader("Allow", ["GET", "POST"]);
-    return res
-      .status(405)
-      .json(withTiming({
+    return res.status(405).json(
+      withTiming({
         success: false,
         asOfDate: "",
         startDate: "",
@@ -762,13 +947,14 @@ async function handler(
           activeDataDate: "",
           blockingIssueCount: 1,
           notes: ["Method not allowed."],
-          rowCounts: {}
+          rowCounts: {},
         }),
         timedOut: false,
         maxDurationMs: formatDurationMsToMMSS(0),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
-        error: "Method not allowed"
-      }));
+        error: "Method not allowed",
+      }),
+    );
   }
 
   const dateParam = parseDateParam(getParam(req, "date"));
@@ -789,33 +975,35 @@ async function handler(
     (rangeDates.length === 0 ||
       (startDateParam && endDateParam && startDateParam > endDateParam))
   ) {
-    return res.status(400).json(withTiming({
-      success: false,
-      asOfDate: "",
-      startDate: startDateParam ?? "",
-      endDate: endDateParam ?? "",
-      horizonGames,
-      chunkDays,
-      resumeFromDate,
-      nextStartDate: null,
-      pipeline,
-      dependencyContract,
-      compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
-      preflight: defaultPreflight,
-      observability: defaultObservability,
-      scanSummary: buildProjectionRunScanSummary({
-        status: "blocked",
-        requestedDate: startDateParam ?? "",
-        activeDataDate: endDateParam ?? "",
-        blockingIssueCount: 1,
-        notes: ["Invalid startDate/endDate range."],
-        rowCounts: {}
+    return res.status(400).json(
+      withTiming({
+        success: false,
+        asOfDate: "",
+        startDate: startDateParam ?? "",
+        endDate: endDateParam ?? "",
+        horizonGames,
+        chunkDays,
+        resumeFromDate,
+        nextStartDate: null,
+        pipeline,
+        dependencyContract,
+        compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
+        preflight: defaultPreflight,
+        observability: defaultObservability,
+        scanSummary: buildProjectionRunScanSummary({
+          status: "blocked",
+          requestedDate: startDateParam ?? "",
+          activeDataDate: endDateParam ?? "",
+          blockingIssueCount: 1,
+          notes: ["Invalid startDate/endDate range."],
+          rowCounts: {},
+        }),
+        timedOut: false,
+        maxDurationMs: formatDurationMsToMMSS(0),
+        durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
+        error: "Invalid startDate/endDate range",
       }),
-      timedOut: false,
-      maxDurationMs: formatDurationMsToMMSS(0),
-      durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
-      error: "Invalid startDate/endDate range"
-    }));
+    );
   }
   const asOfDate = dateParam ?? isoDateOnly(new Date().toISOString());
   const startDate = startDateParam ?? asOfDate;
@@ -830,7 +1018,9 @@ async function handler(
 
     if (rangeDates.length > 0) {
       const effectiveRangeStart =
-        resumeFromDate && resumeFromDate >= startDate && resumeFromDate <= endDate
+        resumeFromDate &&
+        resumeFromDate >= startDate &&
+        resumeFromDate <= endDate
           ? resumeFromDate
           : startDate;
       const fullRangeDates = buildDateRange(effectiveRangeStart, endDate);
@@ -838,7 +1028,7 @@ async function handler(
         chunkDays > 0 ? fullRangeDates.slice(0, chunkDays) : fullRangeDates;
       const chunkNextStartDate =
         chunkDays > 0 && fullRangeDates.length > limitedRangeDates.length
-          ? fullRangeDates[limitedRangeDates.length] ?? null
+          ? (fullRangeDates[limitedRangeDates.length] ?? null)
           : null;
       const results: Array<{
         asOfDate: string;
@@ -852,125 +1042,148 @@ async function handler(
       for (const date of limitedRangeDates) {
         const rangePreflight = await runProjectionPreflightChecks(
           date,
-          bypassPreflight
+          bypassPreflight,
         );
         const failedRangePreflightObservability = buildGoalieObservability({
           preflight: rangePreflight,
           gamesProcessed: results.reduce((sum, r) => sum + r.gamesProcessed, 0),
           goalieRowsProcessed: results.reduce(
             (sum, r) => sum + r.goalieRowsUpserted,
-            0
-          )
+            0,
+          ),
+          skaterRowsProcessed: results.reduce(
+            (sum, r) => sum + r.playerRowsUpserted,
+            0,
+          ),
         });
         if (rangePreflight.status === "FAIL") {
           const failedGateCount = countFailingPreflightGates(rangePreflight);
-          return res.status(422).json(withTiming({
-            success: false,
-            asOfDate: date,
-            startDate: effectiveRangeStart,
-            endDate,
-            horizonGames,
-            chunkDays,
-            resumeFromDate,
-            nextStartDate: date,
-            pipeline,
-            dependencyContract,
-            compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
-            preflight: rangePreflight,
-            observability: failedRangePreflightObservability,
-            scanSummary: buildProjectionRunScanSummary({
-              status: "blocked",
-              requestedDate: date,
-              activeDataDate: date,
-              blockingIssueCount: failedGateCount,
-              notes: [
-                "Projection run blocked by preflight freshness gates for requested range date."
-              ],
-              rowCounts: {
-                gamesProcessed: results.reduce((sum, r) => sum + r.gamesProcessed, 0),
-                playerRowsUpserted: results.reduce(
-                  (sum, r) => sum + r.playerRowsUpserted,
-                  0
-                ),
-                teamRowsUpserted: results.reduce(
-                  (sum, r) => sum + r.teamRowsUpserted,
-                  0
-                ),
-                goalieRowsUpserted: results.reduce(
-                  (sum, r) => sum + r.goalieRowsUpserted,
-                  0
-                ),
-                processedDates: results.length
-              }
+          return res.status(422).json(
+            withTiming({
+              success: false,
+              asOfDate: date,
+              startDate: effectiveRangeStart,
+              endDate,
+              horizonGames,
+              chunkDays,
+              resumeFromDate,
+              nextStartDate: date,
+              pipeline,
+              dependencyContract,
+              compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
+              preflight: rangePreflight,
+              observability: failedRangePreflightObservability,
+              scanSummary: buildProjectionRunScanSummary({
+                status: "blocked",
+                requestedDate: date,
+                activeDataDate: date,
+                blockingIssueCount: failedGateCount,
+                notes: [
+                  "Projection run blocked by preflight freshness gates for requested range date.",
+                ],
+                rowCounts: {
+                  gamesProcessed: results.reduce(
+                    (sum, r) => sum + r.gamesProcessed,
+                    0,
+                  ),
+                  playerRowsUpserted: results.reduce(
+                    (sum, r) => sum + r.playerRowsUpserted,
+                    0,
+                  ),
+                  teamRowsUpserted: results.reduce(
+                    (sum, r) => sum + r.teamRowsUpserted,
+                    0,
+                  ),
+                  goalieRowsUpserted: results.reduce(
+                    (sum, r) => sum + r.goalieRowsUpserted,
+                    0,
+                  ),
+                  processedDates: results.length,
+                },
+              }),
+              timedOut: false,
+              maxDurationMs: formatDurationMsToMMSS(budgetMs),
+              durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
+              error:
+                "Preflight freshness checks failed for range date. Resolve upstream dependencies or use bypassPreflight=true.",
             }),
-            timedOut: false,
-            maxDurationMs: formatDurationMsToMMSS(budgetMs),
-            durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
-            error:
-              "Preflight freshness checks failed for range date. Resolve upstream dependencies or use bypassPreflight=true."
-          }));
+          );
         }
         if (Date.now() > deadlineMs) {
           const timedOutObservability = buildGoalieObservability({
             preflight: rangePreflight,
-            gamesProcessed: results.reduce((sum, r) => sum + r.gamesProcessed, 0),
+            gamesProcessed: results.reduce(
+              (sum, r) => sum + r.gamesProcessed,
+              0,
+            ),
             goalieRowsProcessed: results.reduce(
               (sum, r) => sum + r.goalieRowsUpserted,
-              0
+              0,
+            ),
+            skaterRowsProcessed: results.reduce(
+              (sum, r) => sum + r.playerRowsUpserted,
+              0,
             ),
             zeroGoalieRowDates: results
               .filter((r) => r.goalieRowsUpserted === 0)
-              .map((r) => r.asOfDate)
+              .map((r) => r.asOfDate),
           });
-          return res.status(200).json(withTiming({
-            success: false,
-            asOfDate: date,
-            startDate: effectiveRangeStart,
-            endDate,
-            horizonGames,
-            chunkDays,
-            resumeFromDate,
-            nextStartDate: date,
-            pipeline,
-            dependencyContract,
-            compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
-            preflight: rangePreflight,
-            observability: timedOutObservability,
-            scanSummary: buildProjectionRunScanSummary({
-              status: "partial",
-              requestedDate: endDate,
-              activeDataDate:
-                results[results.length - 1]?.asOfDate ?? effectiveRangeStart,
-              blockingIssueCount: 0,
-              notes: ["Timed out before completing the requested projection range."],
-              rowCounts: {
-                gamesProcessed: results.reduce((sum, r) => sum + r.gamesProcessed, 0),
-                playerRowsUpserted: results.reduce(
-                  (sum, r) => sum + r.playerRowsUpserted,
-                  0
-                ),
-                teamRowsUpserted: results.reduce(
-                  (sum, r) => sum + r.teamRowsUpserted,
-                  0
-                ),
-                goalieRowsUpserted: results.reduce(
-                  (sum, r) => sum + r.goalieRowsUpserted,
-                  0
-                ),
-                processedDates: results.length
-              }
+          return res.status(200).json(
+            withTiming({
+              success: false,
+              asOfDate: date,
+              startDate: effectiveRangeStart,
+              endDate,
+              horizonGames,
+              chunkDays,
+              resumeFromDate,
+              nextStartDate: date,
+              pipeline,
+              dependencyContract,
+              compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
+              preflight: rangePreflight,
+              observability: timedOutObservability,
+              scanSummary: buildProjectionRunScanSummary({
+                status: "partial",
+                requestedDate: endDate,
+                activeDataDate:
+                  results[results.length - 1]?.asOfDate ?? effectiveRangeStart,
+                blockingIssueCount: 0,
+                notes: [
+                  "Timed out before completing the requested projection range.",
+                ],
+                rowCounts: {
+                  gamesProcessed: results.reduce(
+                    (sum, r) => sum + r.gamesProcessed,
+                    0,
+                  ),
+                  playerRowsUpserted: results.reduce(
+                    (sum, r) => sum + r.playerRowsUpserted,
+                    0,
+                  ),
+                  teamRowsUpserted: results.reduce(
+                    (sum, r) => sum + r.teamRowsUpserted,
+                    0,
+                  ),
+                  goalieRowsUpserted: results.reduce(
+                    (sum, r) => sum + r.goalieRowsUpserted,
+                    0,
+                  ),
+                  processedDates: results.length,
+                },
+              }),
+              timedOut: true,
+              maxDurationMs: formatDurationMsToMMSS(budgetMs),
+              durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
+              error: "Timed out",
+              results,
+              processedDates: results.map((r) => r.asOfDate),
             }),
-            timedOut: true,
-            maxDurationMs: formatDurationMsToMMSS(budgetMs),
-            durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
-            error: "Timed out",
-            results,
-            processedDates: results.map((r) => r.asOfDate)
-          }));
+          );
         }
         const out = await runProjectionV2ForDate(date, {
           deadlineMs,
-          horizonGames
+          horizonGames,
         });
         results.push({
           asOfDate: date,
@@ -979,7 +1192,7 @@ async function handler(
           playerRowsUpserted: out.playerRowsUpserted,
           teamRowsUpserted: out.teamRowsUpserted,
           goalieRowsUpserted: out.goalieRowsUpserted,
-          timedOut: out.timedOut
+          timedOut: out.timedOut,
         });
       }
       const last = results[results.length - 1];
@@ -988,154 +1201,172 @@ async function handler(
         gamesProcessed: results.reduce((sum, r) => sum + r.gamesProcessed, 0),
         goalieRowsProcessed: results.reduce(
           (sum, r) => sum + r.goalieRowsUpserted,
-          0
+          0,
+        ),
+        skaterRowsProcessed: results.reduce(
+          (sum, r) => sum + r.playerRowsUpserted,
+          0,
         ),
         zeroGoalieRowDates: results
           .filter((r) => r.goalieRowsUpserted === 0)
-          .map((r) => r.asOfDate)
+          .map((r) => r.asOfDate),
       });
-      return res.status(200).json(withTiming({
-        success: true,
-        asOfDate: last?.asOfDate ?? asOfDate,
-        startDate: effectiveRangeStart,
-        endDate,
-        horizonGames,
-        chunkDays,
-        resumeFromDate,
-        nextStartDate: chunkNextStartDate,
-        pipeline,
-        dependencyContract,
-        compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
-        preflight,
-        observability: rangeObservability,
-        scanSummary: buildProjectionRunScanSummary({
-          status: chunkNextStartDate ? "partial" : "ready",
-          requestedDate: endDate,
-          activeDataDate: last?.asOfDate ?? asOfDate,
-          blockingIssueCount: 0,
-          notes: chunkNextStartDate
-            ? ["Chunked range execution stopped before the requested end date."]
-            : [],
-          rowCounts: {
-            gamesProcessed: results.reduce((sum, r) => sum + r.gamesProcessed, 0),
-            playerRowsUpserted: results.reduce(
-              (sum, r) => sum + r.playerRowsUpserted,
-              0
-            ),
-            teamRowsUpserted: results.reduce((sum, r) => sum + r.teamRowsUpserted, 0),
-            goalieRowsUpserted: results.reduce(
-              (sum, r) => sum + r.goalieRowsUpserted,
-              0
-            ),
-            processedDates: results.length
-          }
+      return res.status(200).json(
+        withTiming({
+          success: true,
+          asOfDate: last?.asOfDate ?? asOfDate,
+          startDate: effectiveRangeStart,
+          endDate,
+          horizonGames,
+          chunkDays,
+          resumeFromDate,
+          nextStartDate: chunkNextStartDate,
+          pipeline,
+          dependencyContract,
+          compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
+          preflight,
+          observability: rangeObservability,
+          scanSummary: buildProjectionRunScanSummary({
+            status: chunkNextStartDate ? "partial" : "ready",
+            requestedDate: endDate,
+            activeDataDate: last?.asOfDate ?? asOfDate,
+            blockingIssueCount: 0,
+            notes: chunkNextStartDate
+              ? [
+                  "Chunked range execution stopped before the requested end date.",
+                ]
+              : [],
+            rowCounts: {
+              gamesProcessed: results.reduce(
+                (sum, r) => sum + r.gamesProcessed,
+                0,
+              ),
+              playerRowsUpserted: results.reduce(
+                (sum, r) => sum + r.playerRowsUpserted,
+                0,
+              ),
+              teamRowsUpserted: results.reduce(
+                (sum, r) => sum + r.teamRowsUpserted,
+                0,
+              ),
+              goalieRowsUpserted: results.reduce(
+                (sum, r) => sum + r.goalieRowsUpserted,
+                0,
+              ),
+              processedDates: results.length,
+            },
+          }),
+          timedOut: false,
+          maxDurationMs: formatDurationMsToMMSS(budgetMs),
+          durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
+          runId: last?.runId ?? "",
+          gamesProcessed: last?.gamesProcessed ?? 0,
+          playerRowsUpserted: last?.playerRowsUpserted ?? 0,
+          teamRowsUpserted: last?.teamRowsUpserted ?? 0,
+          goalieRowsUpserted: last?.goalieRowsUpserted ?? 0,
+          results,
+          processedDates: results.map((r) => r.asOfDate),
         }),
-        timedOut: false,
-        maxDurationMs: formatDurationMsToMMSS(budgetMs),
-        durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
-        runId: last?.runId ?? "",
-        gamesProcessed: last?.gamesProcessed ?? 0,
-        playerRowsUpserted: last?.playerRowsUpserted ?? 0,
-        teamRowsUpserted: last?.teamRowsUpserted ?? 0,
-        goalieRowsUpserted: last?.goalieRowsUpserted ?? 0,
-        results,
-        processedDates: results.map((r) => r.asOfDate)
-      }));
+      );
     }
 
     if (preflight.status === "FAIL") {
       const failedPreflightObservability = buildGoalieObservability({
         preflight,
         gamesProcessed: 0,
-        goalieRowsProcessed: 0
+        goalieRowsProcessed: 0,
       });
       const failedGateCount = countFailingPreflightGates(preflight);
-      return res.status(422).json(withTiming({
-        success: false,
-        asOfDate,
-        startDate,
-        endDate,
-        horizonGames,
-        chunkDays,
-        resumeFromDate,
-        nextStartDate: asOfDate,
-        pipeline,
-        dependencyContract,
-        compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
-        preflight,
-        observability: failedPreflightObservability,
-        scanSummary: buildProjectionRunScanSummary({
-          status: "blocked",
-          requestedDate: asOfDate,
-          activeDataDate: asOfDate,
-          blockingIssueCount: failedGateCount,
-          notes: ["Projection run blocked by preflight freshness gates."],
-          rowCounts: {
-            gamesProcessed: 0,
-            playerRowsUpserted: 0,
-            teamRowsUpserted: 0,
-            goalieRowsUpserted: 0
-          }
+      return res.status(422).json(
+        withTiming({
+          success: false,
+          asOfDate,
+          startDate,
+          endDate,
+          horizonGames,
+          chunkDays,
+          resumeFromDate,
+          nextStartDate: asOfDate,
+          pipeline,
+          dependencyContract,
+          compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
+          preflight,
+          observability: failedPreflightObservability,
+          scanSummary: buildProjectionRunScanSummary({
+            status: "blocked",
+            requestedDate: asOfDate,
+            activeDataDate: asOfDate,
+            blockingIssueCount: failedGateCount,
+            notes: ["Projection run blocked by preflight freshness gates."],
+            rowCounts: {
+              gamesProcessed: 0,
+              playerRowsUpserted: 0,
+              teamRowsUpserted: 0,
+              goalieRowsUpserted: 0,
+            },
+          }),
+          timedOut: false,
+          maxDurationMs: formatDurationMsToMMSS(0),
+          durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
+          error:
+            "Preflight freshness checks failed. Resolve upstream dependencies or use bypassPreflight=true to override.",
         }),
-        timedOut: false,
-        maxDurationMs: formatDurationMsToMMSS(0),
-        durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
-        error:
-          "Preflight freshness checks failed. Resolve upstream dependencies or use bypassPreflight=true to override."
-      }));
+      );
     }
 
     const out = await runProjectionV2ForDate(asOfDate, {
       deadlineMs,
-      horizonGames
+      horizonGames,
     });
     const singleRunObservability = buildGoalieObservability({
       preflight,
       gamesProcessed: out.gamesProcessed,
-      goalieRowsProcessed: out.goalieRowsUpserted
+      goalieRowsProcessed: out.goalieRowsUpserted,
+      skaterRowsProcessed: out.playerRowsUpserted,
     });
     if (out.timedOut) {
-      return res.status(200).json(withTiming({
-        success: false,
-        asOfDate,
-        startDate,
-        endDate,
-        horizonGames,
-        chunkDays,
-        resumeFromDate,
-        nextStartDate: asOfDate,
-        pipeline,
-        dependencyContract,
-        compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
-        preflight,
-        observability: singleRunObservability,
-        scanSummary: buildProjectionRunScanSummary({
-          status: "partial",
-          requestedDate: asOfDate,
-          activeDataDate: asOfDate,
-          blockingIssueCount: 0,
-          notes: ["Timed out before the projection run completed."],
-          rowCounts: {
-            gamesProcessed: out.gamesProcessed,
-            playerRowsUpserted: out.playerRowsUpserted,
-            teamRowsUpserted: out.teamRowsUpserted,
-            goalieRowsUpserted: out.goalieRowsUpserted
-          }
+      return res.status(200).json(
+        withTiming({
+          success: false,
+          asOfDate,
+          startDate,
+          endDate,
+          horizonGames,
+          chunkDays,
+          resumeFromDate,
+          nextStartDate: asOfDate,
+          pipeline,
+          dependencyContract,
+          compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
+          preflight,
+          observability: singleRunObservability,
+          scanSummary: buildProjectionRunScanSummary({
+            status: "partial",
+            requestedDate: asOfDate,
+            activeDataDate: asOfDate,
+            blockingIssueCount: 0,
+            notes: ["Timed out before the projection run completed."],
+            rowCounts: {
+              gamesProcessed: out.gamesProcessed,
+              playerRowsUpserted: out.playerRowsUpserted,
+              teamRowsUpserted: out.teamRowsUpserted,
+              goalieRowsUpserted: out.goalieRowsUpserted,
+            },
+          }),
+          timedOut: true,
+          maxDurationMs: formatDurationMsToMMSS(budgetMs),
+          durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
+          runId: out.runId,
+          gamesProcessed: out.gamesProcessed,
+          playerRowsUpserted: out.playerRowsUpserted,
+          teamRowsUpserted: out.teamRowsUpserted,
+          goalieRowsUpserted: out.goalieRowsUpserted,
+          error: "Timed out",
         }),
-        timedOut: true,
-        maxDurationMs: formatDurationMsToMMSS(budgetMs),
-        durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
-        runId: out.runId,
-        gamesProcessed: out.gamesProcessed,
-        playerRowsUpserted: out.playerRowsUpserted,
-        teamRowsUpserted: out.teamRowsUpserted,
-        goalieRowsUpserted: out.goalieRowsUpserted,
-        error: "Timed out"
-      }));
+      );
     }
-    return res
-      .status(200)
-      .json(withTiming({
+    return res.status(200).json(
+      withTiming({
         success: true,
         asOfDate,
         startDate,
@@ -1158,8 +1389,8 @@ async function handler(
             gamesProcessed: out.gamesProcessed,
             playerRowsUpserted: out.playerRowsUpserted,
             teamRowsUpserted: out.teamRowsUpserted,
-            goalieRowsUpserted: out.goalieRowsUpserted
-          }
+            goalieRowsUpserted: out.goalieRowsUpserted,
+          },
         }),
         timedOut: false,
         maxDurationMs: formatDurationMsToMMSS(budgetMs),
@@ -1168,22 +1399,22 @@ async function handler(
         gamesProcessed: out.gamesProcessed,
         playerRowsUpserted: out.playerRowsUpserted,
         teamRowsUpserted: out.teamRowsUpserted,
-        goalieRowsUpserted: out.goalieRowsUpserted
-      }));
+        goalieRowsUpserted: out.goalieRowsUpserted,
+      }),
+    );
   } catch (e) {
     const dependencyError = normalizeDependencyError(e);
     const baseObservability = buildGoalieObservability({
       preflight,
       gamesProcessed: 0,
-      goalieRowsProcessed: 0
+      goalieRowsProcessed: 0,
     });
     const statusCode =
       typeof (e as { statusCode?: unknown })?.statusCode === "number"
         ? Number((e as { statusCode?: number }).statusCode)
         : 500;
-    return res
-      .status(statusCode)
-      .json(withTiming({
+    return res.status(statusCode).json(
+      withTiming({
         success: false,
         asOfDate,
         startDate,
@@ -1203,9 +1434,9 @@ async function handler(
             {
               code: "dependency_error",
               message: dependencyError.message,
-              detail: dependencyError.detail ?? undefined
-            }
-          ]
+              detail: dependencyError.detail ?? undefined,
+            },
+          ],
         },
         scanSummary: buildProjectionRunScanSummary({
           status: "blocked",
@@ -1217,15 +1448,16 @@ async function handler(
             gamesProcessed: 0,
             playerRowsUpserted: 0,
             teamRowsUpserted: 0,
-            goalieRowsUpserted: 0
-          }
+            goalieRowsUpserted: 0,
+          },
         }),
         timedOut: false,
         maxDurationMs: formatDurationMsToMMSS(budgetMs),
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
         error: dependencyError.message,
-        dependencyError
-      }));
+        dependencyError,
+      }),
+    );
   }
 }
 

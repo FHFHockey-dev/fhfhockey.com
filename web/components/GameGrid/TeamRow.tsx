@@ -1,6 +1,7 @@
 // components/GameGrid/TeamRow.tsx
 
 import Image from "next/image";
+import Link from "next/link";
 import { formatWinOdds, calculateBlendedWinOdds } from "./utils/calcWinOdds";
 import { formatWeekScore } from "./utils/calcWeekScore";
 import { useTeam } from "./contexts/GameGridContext";
@@ -9,7 +10,7 @@ import {
   DAY_ABBREVIATION,
   EXTENDED_DAYS,
   GameData,
-  WeekData
+  WeekData,
 } from "lib/NHL/types";
 import Tooltip from "./PDHC/Tooltip";
 import PoissonHeatmap from "./PDHC/PoissonHeatMap";
@@ -99,40 +100,46 @@ function TeamRow(props: TeamRowProps) {
     <tr className={clsx(styles.teamRow, props.rowHighlightClass)}>
       {/* First column: show abbreviation on desktop, logo on mobile */}
       <td className={styles.firstColumnContent}>
-        <span
-          className={styles.desktopTeamAbbreviation}
-          style={
-            {
-              "--team-primary-color":
-                teamsInfo[team.abbreviation]?.primaryColor ?? undefined,
-              "--team-secondary-color":
-                teamsInfo[team.abbreviation]?.secondaryColor ?? undefined,
-              "--team-accent-color":
-                teamsInfo[team.abbreviation]?.accent ?? undefined,
-              "--team-light-color":
-                teamsInfo[team.abbreviation]?.lightColor ?? undefined,
-              "--team-dark-color":
-                teamsInfo[team.abbreviation]?.darkColor ?? undefined,
-              "--team-jersey-color":
-                teamsInfo[team.abbreviation]?.jersey ?? undefined
-            } as React.CSSProperties
-          }
+        <Link
+          href={`/stats/team/${team.abbreviation}`}
+          aria-label={`Open ${team.name} Team HQ`}
+          className={styles.teamSurfaceLink}
         >
-          {team.abbreviation}
-        </span>
-        <span className={styles.mobileTeamLogo}>
-          <span className={styles.firstColumnLogo}>
-            <Image
-              alt={`${team.name} logo`}
-              src={team.logo}
-              title={team.name}
-              fill
-              sizes="40px"
-              className={styles.teamLogo24}
-              style={{ objectFit: "contain" }}
-            />
+          <span
+            className={styles.desktopTeamAbbreviation}
+            style={
+              {
+                "--team-primary-color":
+                  teamsInfo[team.abbreviation]?.primaryColor ?? undefined,
+                "--team-secondary-color":
+                  teamsInfo[team.abbreviation]?.secondaryColor ?? undefined,
+                "--team-accent-color":
+                  teamsInfo[team.abbreviation]?.accent ?? undefined,
+                "--team-light-color":
+                  teamsInfo[team.abbreviation]?.lightColor ?? undefined,
+                "--team-dark-color":
+                  teamsInfo[team.abbreviation]?.darkColor ?? undefined,
+                "--team-jersey-color":
+                  teamsInfo[team.abbreviation]?.jersey ?? undefined,
+              } as React.CSSProperties
+            }
+          >
+            {team.abbreviation}
           </span>
-        </span>
+          <span className={styles.mobileTeamLogo}>
+            <span className={styles.firstColumnLogo}>
+              <Image
+                alt={`${team.name} logo`}
+                src={team.logo}
+                title={team.name}
+                fill
+                sizes="40px"
+                className={styles.teamLogo24}
+                style={{ objectFit: "contain" }}
+              />
+            </span>
+          </span>
+        </Link>
       </td>
       {/* Days */}
       {days.map((day, index) => {
@@ -172,7 +179,7 @@ function TeamRow(props: TeamRowProps) {
           dayIntensityClass,
           offNightTypeClass,
           isPreseason ? styles.preseason : undefined,
-          isPostseason ? styles.postseason : undefined
+          isPostseason ? styles.postseason : undefined,
         );
 
         return (
@@ -214,7 +221,7 @@ function TeamRow(props: TeamRowProps) {
           <td
             className={clsx(
               styles.weekScoreCell,
-              styles[`rank-color-${props.rank}`]
+              styles[`rank-color-${props.rank}`],
             )}
           >
             {props.weekScore === -100 ? "-" : formatWeekScore(props.weekScore)}
@@ -238,7 +245,7 @@ export function MatchUpCell({
   homeTeam,
   awayTeam,
   gameId,
-  excluded
+  excluded,
 }: MatchUpCellProps) {
   const us = home ? homeTeam : awayTeam;
   const opponent = home ? awayTeam : homeTeam;
@@ -261,7 +268,7 @@ export function MatchUpCell({
     "--opponent-accent-color": opponentColors?.accent,
     "--opponent-light-color": opponentColors?.lightColor,
     "--opponent-dark-color": opponentColors?.darkColor,
-    "--opponent-jersey-color": opponentColors?.jersey
+    "--opponent-jersey-color": opponentColors?.jersey,
   } as React.CSSProperties;
 
   // Proceed with rendering
@@ -299,13 +306,13 @@ export function MatchUpCell({
           <div
             className={clsx(
               styles.logoWithIconWrapper,
-              styles.mobileMatchupLogoWrapper
+              styles.mobileMatchupLogoWrapper,
             )}
           >
             <span
               className={clsx(
                 styles.cornerBadge,
-                home ? styles.homeBadge : styles.awayBadge
+                home ? styles.homeBadge : styles.awayBadge,
               )}
               aria-label={home ? "Home game" : "Away game"}
             >
@@ -316,7 +323,7 @@ export function MatchUpCell({
                 styles.mobileLogoSize,
                 styles.compactMobileLogo,
                 home ? styles["home-shadow"] : styles["away-shadow"],
-                excluded ? styles.excludedStateMobile : undefined
+                excluded ? styles.excludedStateMobile : undefined,
               )}
               objectFit="contain"
               alt={`${opponentTeam.name} logo`}
@@ -331,7 +338,7 @@ export function MatchUpCell({
             <span
               className={clsx(
                 styles.matchupOpponentLogo,
-                excluded ? styles.excludedStateDesktop : undefined
+                excluded ? styles.excludedStateDesktop : undefined,
               )}
             >
               <Image
@@ -342,7 +349,7 @@ export function MatchUpCell({
                 sizes="44px"
                 className={clsx(
                   styles.opponentLogoDesktop,
-                  home ? styles["home-shadow"] : styles["away-shadow"]
+                  home ? styles["home-shadow"] : styles["away-shadow"],
                 )}
                 style={{ objectFit: "contain" }}
               />
@@ -351,7 +358,7 @@ export function MatchUpCell({
               className={clsx(
                 styles.matchupHomeAwayIcon,
                 home ? styles.homeAwayBadgeHome : styles.homeAwayBadgeAway,
-                excluded ? styles.excludedGrayscale : undefined
+                excluded ? styles.excludedGrayscale : undefined,
               )}
             >
               <Image

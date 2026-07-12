@@ -141,7 +141,7 @@ function processShifts(
   const teamIds = Object.keys(rosters).map(Number);
   const result: Record<number, { toi: number; p1: number; p2: number }[]> = {};
   teamIds.forEach((teamId) => {
-    const teamRosters = [...rosters[teamId]];
+    const teamRosters = [...(rosters[teamId] ?? [])];
     const teamShifts = shifts.filter((shift) => shift.teamId === teamId);
     for (let i = 0; i < teamRosters.length; i++) {
       for (let j = i; j < teamRosters.length; j++) {
@@ -213,6 +213,7 @@ export function getTOIData(
   const [{ data: shiftsData }, { rostersMap, teams }, { plays }] = rawData;
 
   let rosters = groupBy(Object.values(rostersMap), (player) => player.teamId);
+  const shiftRows = Array.isArray(shiftsData) ? shiftsData : [];
 
   const data: Record<number, TOIData[]> = {};
   let ppBlocks: Block[] = [];
@@ -220,7 +221,7 @@ export function getTOIData(
     ppBlocks = getPowerPlayBlocks(plays);
   }
   const pairwiseTOIForTwoTeams = processShifts(
-    shiftsData,
+    shiftRows,
     rosters,
     mode !== "pp-toi" ? undefined : ppBlocks
   );
@@ -253,6 +254,7 @@ function useTOI(id: number, mode: Mode) {
   const [toi, setTOI] = useState<Record<number, TOIData[]>>({});
   const [rosters, setRosters] = useState<Record<number, PlayerData[]>>({});
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [teams, setTeams] = useState<[Team, Team] | null>(null);
   const [rawData, setRawData] = useState<
     | [
@@ -274,38 +276,51 @@ function useTOI(id: number, mode: Mode) {
   >(null);
 
   useEffect(() => {
-    setLoading(false);
     let mounted = true;
     if (!id || rawData === null) {
-      mounted = false;
       return;
     }
     (async () => {
       setLoading(true);
+      setError(null);
       try {
         const { toi, rosters, teams } = getTOIData(rawData, mode);
         if (mounted) {
           setTOI(toi);
           setRosters(rosters);
           setTeams(teams as any);
-          setLoading(false);
         }
       } catch (e: any) {
         console.error(e);
-        setLoading(false);
+        if (mounted) {
+          setError(e?.message ?? "Failed to build linemate matrix.");
+        }
+      } finally {
+        if (mounted) setLoading(false);
       }
     })();
+    return () => {
+      mounted = false;
+    };
   }, [id, rawData, mode]);
 
   useEffect(() => {
-    setLoading(false);
     let mounted = true;
     if (!id) {
-      mounted = false;
+      setTOI({});
+      setRosters({});
+      setTeams(null);
+      setRawData(null);
+      setError("Select a completed game to load linemate data.");
       return;
     }
     (async () => {
       setLoading(true);
+      setError(null);
+      setRawData(null);
+      setTOI({});
+      setRosters({});
+      setTeams(null);
       try {
         const rawData = await fetchTOIRawData(id);
 
@@ -315,11 +330,18 @@ function useTOI(id: number, mode: Mode) {
         }
       } catch (e: any) {
         console.error(e);
-        setLoading(false);
+        if (mounted) {
+          setError(e?.message ?? "Failed to load linemate matrix data.");
+        }
+      } finally {
+        if (mounted) setLoading(false);
       }
     })();
+    return () => {
+      mounted = false;
+    };
   }, [id]);
-  return [toi, rosters, teams, loading] as const;
+  return [toi, rosters, teams, loading, error] as const;
 }
 
 type Team = { id: number; name: string };
@@ -347,27 +369,61 @@ export default function LinemateMatrix({
   mode,
   onModeChanged = () => {}
 }: Props) {
-  const [toiData, rosters, gameInfo, loading] = useTOI(id, mode);
-  if (!gameInfo) return <></>;
+  const [activeMode, setActiveMode] = useState<Mode>(mode);
+
+  useEffect(() => {
+    setActiveMode(mode);
+  }, [mode]);
+
+  const [toiData, rosters, gameInfo, loading, error] = useTOI(id, activeMode);
+  const handleModeChange = (newMode: Mode) => {
+    setActiveMode(newMode);
+    onModeChanged(newMode);
+  };
+
+  if (!gameInfo) {
+    return (
+      <div className={styles.shell}>
+        <div className={styles.selectWrapper}>
+          <Select
+            options={OPTIONS}
+            option={activeMode}
+            onOptionChange={handleModeChange}
+          />
+        </div>
+        <div className={styles.status} role={error ? "alert" : "status"}>
+          {error ?? (loading ? "Loading linemate matrix..." : "No linemate data loaded.")}
+        </div>
+      </div>
+    );
+  }
   const [homeTeam, awayTeam] = gameInfo;
   return (
-    <div>
+    <div className={styles.shell}>
       <div className={styles.selectWrapper}>
         <Select
           options={OPTIONS}
-          option={mode}
-          onOptionChange={(newOption) => {
-            onModeChanged(newOption);
-          }}
+          option={activeMode}
+          onOptionChange={handleModeChange}
         />
       </div>
+      {loading && (
+        <div className={styles.status} role="status">
+          Updating linemate matrix...
+        </div>
+      )}
+      {error && (
+        <div className={styles.statusError} role="alert">
+          {error}
+        </div>
+      )}
       <div className={styles.gridWrapper}>
         <LinemateMatrixInternal
           teamId={homeTeam.id}
           teamName={homeTeam.name}
           roster={rosters[homeTeam.id]}
           toiData={toiData[homeTeam.id]}
-          mode={mode}
+          mode={activeMode}
         />
 
         <LinemateMatrixInternal
@@ -375,7 +431,7 @@ export default function LinemateMatrix({
           teamName={awayTeam.name}
           roster={rosters[awayTeam.id]}
           toiData={toiData[awayTeam.id]}
-          mode={mode}
+          mode={activeMode}
         />
       </div>
     </div>
@@ -393,19 +449,19 @@ export function sortByLineCombination(
 ): PlayerData[] {
   // TJ: I think that would be the three fwds w most shared toi, then 2nd, 3rd, 4th etc
   if (players.length === 0) return [];
+  const getTOI = (playerId1: number, playerId2: number) =>
+    data[getKey(playerId1, playerId2)]?.toi ?? 0;
   const groups = groupBy(players, (player) =>
     isForward(player.position) ? "forwards" : "defensemen"
   );
   const result: PlayerData[] = [];
   ["forwards", "defensemen"].forEach((playerType) => {
-    const players = [...groups[playerType]];
+    const players = [...(groups[playerType] ?? [])];
     const numPlayersPerLine = NUM_PLAYERS_PER_LINE[playerType as PlayerType];
-    const numLines = players.length / numPlayersPerLine;
+    const numLines = Math.ceil(players.length / numPlayersPerLine);
     for (let line = 0; line < numLines; line++) {
       const pivotPlayer = players
-        .sort(
-          (a, b) => data[getKey(b.id, b.id)].toi - data[getKey(a.id, a.id)].toi
-        )
+        .sort((a, b) => getTOI(b.id, b.id) - getTOI(a.id, a.id))
         .shift();
       if (!pivotPlayer) break;
       result.push(pivotPlayer);
@@ -413,8 +469,8 @@ export function sortByLineCombination(
         const p = players
           .sort(
             (a, b) =>
-              data[getKey(pivotPlayer!.id, b.id)].toi -
-              data[getKey(pivotPlayer!.id, a.id)].toi
+              getTOI(pivotPlayer!.id, b.id) -
+              getTOI(pivotPlayer!.id, a.id)
           )
           .shift();
         if (!p) break;
@@ -439,6 +495,7 @@ export function sortByPPTOI(data: Record<string, TOIData>): PlayerData[] {
     .map((item) => item.p1.id);
 
   const allPlayers = new Set(filteredPlayers);
+  if (allPlayers.size === 0) return [];
 
   const sortBySharedTOI = (pivotId: number, playerIds: number[]) =>
     [...playerIds].sort((a, b) => getTOI(pivotId, b) - getTOI(pivotId, a));
@@ -461,7 +518,8 @@ export function sortByPPTOI(data: Record<string, TOIData>): PlayerData[] {
   // Find the player with the highest individual TOI as the PP2 pivot
   const pp2Pivot = sortPlayerSet(remainingPlayers)[0];
 
-  const pp2PlayerIds = selectTopPlayers(pp2Pivot, remainingPlayers, 5);
+  const pp2PlayerIds =
+    pp2Pivot == null ? new Set<number>() : selectTopPlayers(pp2Pivot, remainingPlayers, 5);
 
   // Step 3: Sort the remaining players
 
@@ -475,7 +533,9 @@ export function sortByPPTOI(data: Record<string, TOIData>): PlayerData[] {
     ...sortedPP1Players,
     ...sortedPP2Players,
     ...sortedRemainingPlayers
-  ].map((playerId) => data[getKey(playerId, playerId)].p1);
+  ]
+    .map((playerId) => data[getKey(playerId, playerId)]?.p1)
+    .filter((player): player is PlayerData => player != null);
 }
 
 type Mode = "number" | "total-toi" | "pp-toi" | "line-combination";
@@ -508,7 +568,7 @@ export function LinemateMatrixInternal({
 
   const sortedRoster = useMemo(() => {
     if (mode === "number") {
-      const rosterSortedByNumber = roster.sort(
+      const rosterSortedByNumber = [...roster].sort(
         (a, b) => a.sweaterNumber - b.sweaterNumber
       );
       return rosterSortedByNumber;
@@ -527,6 +587,7 @@ export function LinemateMatrixInternal({
     }
   }, [table, mode, roster]);
   const avgSharedToi = useMemo(() => {
+    if (sortedRoster.length === 0) return 0;
     let sum = 0;
     sortedRoster.forEach((player) => {
       sum += table[getKey(player.id, player.id)]?.toi ?? 0;
@@ -537,6 +598,9 @@ export function LinemateMatrixInternal({
   return (
     <section id={`linemate-matrix-${teamId}`} className={styles.container}>
       <h4>{teamName}</h4>
+      {sortedRoster.length === 0 ? (
+        <div className={styles.emptyState}>No skater TOI available.</div>
+      ) : null}
       <div
         className={classNames(styles.grid, "content")}
         style={{
@@ -597,7 +661,7 @@ export function LinemateMatrixInternal({
                         <Cell
                           key={`${p1.id}-${p2.id}`}
                           teamAvgToi={avgSharedToi}
-                          sharedToi={table[getKey(p1.id, p2.id)].toi}
+                          sharedToi={table[getKey(p1.id, p2.id)]?.toi ?? 0}
                           p1={p1}
                           p2={p2}
                           highlight={isHighlight}
@@ -668,7 +732,7 @@ function getColor(p1Pos: string, p2Pos: string) {
   if (isForward(p1Pos) && isForward(p2Pos)) return BLUE;
   if (isDefense(p1Pos) && isDefense(p2Pos)) return RED;
   if (isMixing(p1Pos, p2Pos)) return PURPLE; // the check can be omitted
-  throw new Error("impossible");
+  return "#6b7280";
 }
 
 function Cell({
@@ -680,7 +744,10 @@ function Cell({
   onPointerEnter = () => {},
   onPointerLeave = () => {}
 }: CellProps) {
-  const opacity = sharedToi / teamAvgToi;
+  const opacity =
+    teamAvgToi > 0 && Number.isFinite(teamAvgToi)
+      ? Math.max(0, Math.min(1, sharedToi / teamAvgToi))
+      : 0;
   const color = getColor(p1.position, p2.position);
 
   return (
@@ -721,9 +788,8 @@ const PP2_COLOR = "#D55008";
 
 function PPTOIComparasion({ AVG_PPTOI1, AVG_PPTOI2 }: PPTOIComparasionProps) {
   const total = AVG_PPTOI1 + AVG_PPTOI2;
-  const pp1Percent = (AVG_PPTOI1 / total) * 100;
-  const pp2Percent = (AVG_PPTOI2 / total) * 100;
-  const CUT_LENGTH = 30;
+  const pp1Percent = total > 0 ? (AVG_PPTOI1 / total) * 100 : 0;
+  const pp2Percent = total > 0 ? (AVG_PPTOI2 / total) * 100 : 0;
   return (
     <div className={styles.comparisonBar}>
       {/* average PPTOI comparasion*/}
@@ -742,12 +808,12 @@ function PPTOIComparasion({ AVG_PPTOI1, AVG_PPTOI2 }: PPTOIComparasionProps) {
         {/* Left Section */}
         <div className={styles.comparisonBarLeftSection}>
           <div>PP1</div>
-          <div>{pp1Percent.toFixed(1)}</div>
+          <div>{pp1Percent.toFixed(1)}%</div>
         </div>
 
         <div className={styles.comparisonBarRightSection}>
           <div>PP2</div>
-          <div>{pp2Percent.toFixed(1)}</div>
+          <div>{pp2Percent.toFixed(1)}%</div>
         </div>
       </div>
     </div>

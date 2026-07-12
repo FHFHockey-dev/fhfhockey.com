@@ -19,8 +19,7 @@ import supabase from "lib/supabase/client";
 
 import styles from "./Header.module.scss";
 // import LOGO from "public/pictures/logo3.png";
-// import LOGO from "public/pictures/fhfh-italic-2.png";
-import LOGO from "public/pictures/FHFHonly.png";
+import LOGO from "public/pictures/fhfh-italic.png";
 import UNDERLYING_STATS_LOGO from "public/pictures/ULSlogo.png";
 //         src="/pictures/logo-fhfh.svg"
 
@@ -30,32 +29,32 @@ const BOTTOM_NAV_ITEMS = [
     id: "home",
     label: "Home",
     href: "/",
-    icon: "/pictures/homeNavIcon.png"
+    icon: "/pictures/homeNavIcon.png",
   },
   {
     id: "gameGrid",
     label: "Game Grid",
     href: "/game-grid",
-    icon: "/pictures/gameGrid.png"
+    icon: "/pictures/gameGrid.png",
   },
   {
     id: "stats",
     label: "Stats",
     href: "/stats",
-    icon: "/pictures/statsIcon.png"
+    icon: "/pictures/statsIcon.png",
   },
   {
     id: "lines",
     label: "Lines",
     href: "/lines",
-    icon: "/pictures/lineCombosIcon.png"
+    icon: "/pictures/lineCombosIcon.png",
   },
   {
     id: "more",
     label: "More",
     href: "#",
-    icon: "/pictures/hamburgerMenu.png"
-  }
+    icon: "/pictures/hamburgerMenu.png",
+  },
 ];
 
 function BottomNavigation({ onMoreClick }: { onMoreClick: () => void }) {
@@ -127,7 +126,7 @@ function BottomNavigation({ onMoreClick }: { onMoreClick: () => void }) {
                 onClick={() => handleNavClick(item)}
                 className={classNames(
                   styles.bottomNavButton,
-                  styles.moreButton
+                  styles.moreButton,
                 )}
                 aria-label={item.label}
               >
@@ -145,7 +144,7 @@ function BottomNavigation({ onMoreClick }: { onMoreClick: () => void }) {
               <Link
                 href={item.href}
                 className={classNames(styles.bottomNavButton, {
-                  [styles.active]: isActive(item.href)
+                  [styles.active]: isActive(item.href),
                 })}
               >
                 <div className={styles.bottomNavIcon}>
@@ -169,12 +168,7 @@ function BottomNavigation({ onMoreClick }: { onMoreClick: () => void }) {
 function BurgerButton({ onClick }: { onClick: () => void }) {
   return (
     <button className={styles.burgerButton} onClick={onClick}>
-      <Image
-        src="/pictures/burgerMenu.svg"
-        alt="menu"
-        width={24}
-        height={16}
-      />
+      <Image src="/pictures/burgerMenu.svg" alt="menu" width={24} height={16} />
     </button>
   );
 }
@@ -223,24 +217,27 @@ function Header() {
       <header
         ref={navbarRef}
         className={classNames(styles.header, styles.desktopHeader, {
-          [styles.hidden]: menuOpen ? false : !isNavbarVisible
+          [styles.hidden]: menuOpen ? false : !isNavbarVisible,
         })}
       >
         {/* logo */}
         <Link
           href="/"
           className={classNames(styles.logo, {
-            [styles.underlyingStatsLogo]: isUnderlyingStatsRoute
+            [styles.underlyingStatsLogo]: isUnderlyingStatsRoute,
           })}
         >
           {/* Main Logo Image */}
           <Image
             src={isUnderlyingStatsRoute ? UNDERLYING_STATS_LOGO : LOGO}
             alt="FHFH logo"
-            width={isUnderlyingStatsRoute ? 270 : 110}
-            height={isUnderlyingStatsRoute ? 35 : 30}
+            width={isUnderlyingStatsRoute ? 270 : 82}
+            height={isUnderlyingStatsRoute ? 35 : 32}
             priority
           />
+          {!isUnderlyingStatsRoute ? (
+            <span className={styles.logoSubline}>Hockey Analytics</span>
+          ) : null}
         </Link>
 
         {/* nav bar items */}
@@ -248,8 +245,11 @@ function Header() {
           <NavbarItems
             items={ITEMS_DATA}
             onItemClick={onItemClick}
+            forceLarge
             className={
-              isUnderlyingStatsRoute ? styles.underlyingStatsNavTheme : undefined
+              isUnderlyingStatsRoute
+                ? styles.underlyingStatsNavTheme
+                : undefined
             }
           />
         </ClientOnly>
@@ -258,7 +258,9 @@ function Header() {
         <div className={styles.socials}>
           <SocialMedias
             className={
-              isUnderlyingStatsRoute ? styles.underlyingStatsSocialsTheme : undefined
+              isUnderlyingStatsRoute
+                ? styles.underlyingStatsSocialsTheme
+                : undefined
             }
           />
         </div>
@@ -266,7 +268,7 @@ function Header() {
         {/* Buy Me a Coffee */}
         <div
           className={classNames(styles.bmcWrap, {
-            [styles.underlyingStatsBmcWrap]: isUnderlyingStatsRoute
+            [styles.underlyingStatsBmcWrap]: isUnderlyingStatsRoute,
           })}
         >
           <a
@@ -288,11 +290,11 @@ function Header() {
           <button
             type="button"
             className={classNames(styles.authCta, {
-              [styles.underlyingStatsAuthCta]: isUnderlyingStatsRoute
+              [styles.underlyingStatsAuthCta]: isUnderlyingStatsRoute,
             })}
             onClick={() => setAuthModalOpen(true)}
           >
-            Sign-in / Sign-up
+            Sign In / Sign Up
           </button>
         ) : user ? (
           <UserMenu />

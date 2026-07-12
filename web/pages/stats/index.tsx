@@ -51,6 +51,8 @@ interface ActiveGradient {
 }
 
 export default function StatsPage({
+  skaterSeasonLabel = "Season",
+  goalieSeasonLabel = "Season",
   pointsLeaders,
   goalsLeaders,
   pppLeaders,
@@ -533,7 +535,7 @@ export default function StatsPage({
             <h2 id="skater-stats-heading" className={styles.title}>
               <span className={styles.titleAccent}>Skater Statistics</span>
             </h2>
-            <div className={styles.seasonBadge}>2024-25 Season</div>
+            <div className={styles.seasonBadge}>{skaterSeasonLabel} Season</div>
           </header>
           <div className={styles.leaderboards}>
             <LeaderboardCategory
@@ -669,6 +671,7 @@ export default function StatsPage({
             <h2 id="goalie-stats-heading" className={styles.title}>
               <span className={styles.titleAccent}>Goaltender Statistics</span>
             </h2>
+            <div className={styles.seasonBadge}>{goalieSeasonLabel} Season</div>
           </header>
           <div className={styles.leaderboards}>
             <LeaderboardCategoryGoalie

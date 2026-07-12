@@ -1,5 +1,7 @@
 # Start Chart & Predictive Model - Comprehensive Plan
 
+> **Reconciliation status:** supporting input to `tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md`. Where this document proposes roster-size sit/start or streamer behavior, the Daily MVP PRD takes precedence and keeps rankings scoped to one chosen date without bench/off-night factors.
+
 # Context - Table Schema Ledger File:
 ** Markdown File with the Schemas for all Team tables in the Supabase **
 - nst-team-tables-schemas.md

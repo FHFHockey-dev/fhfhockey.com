@@ -95,6 +95,7 @@ export type PlayerMatrixComposite = {
   passFirstScore: number | null;
   playDriverScore: number | null;
   resultsLuckIndex: number | null;
+  resultsLuckUnavailableReason: string | null;
   methodologyVersion: string | null;
   snapshotDate: string | null;
   updatedAt: string | null;
@@ -211,6 +212,50 @@ export function clearPlayerMatrixSurfaceCachesForTests() {
 type CompositeMetricKey = (typeof COMPOSITE_METRIC_KEYS)[number];
 type CompositeRatingRow =
   Database["public"]["Tables"]["skater_composite_ratings"]["Row"];
+
+function recordValue(value: unknown): Record<string, unknown> | null {
+  return value != null && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === "string")
+    : [];
+}
+
+export function getResultsLuckUnavailableReasonForComposite(
+  row: Pick<CompositeRatingRow, "components_json" | "results_luck_index"> | null,
+) {
+  if (row == null) return "Composite rating row is not published for this player/context.";
+  if (row.results_luck_index != null) return null;
+
+  const components = recordValue(row.components_json);
+  const resultsLuck = recordValue(components?.resultsLuck);
+  const baselineProvenance = recordValue(resultsLuck?.baselineProvenance);
+  const warnings = stringArray(baselineProvenance?.warnings);
+  const storedReason =
+    typeof resultsLuck?.reason === "string" ? resultsLuck.reason : null;
+
+  if (warnings.includes("season_window_has_no_non_overlapping_baseline")) {
+    return "Results Luck unavailable: season windows do not have a selected-window-excluded baseline.";
+  }
+  if (warnings.includes("baseline_window_not_excluded")) {
+    return "Results Luck unavailable: selected-window-excluded baseline was not verified.";
+  }
+  if (warnings.includes("baseline_not_persisted")) {
+    return "Results Luck unavailable: baseline provenance was not persisted.";
+  }
+  if (baselineProvenance?.baselineWindowExcluded === false) {
+    return "Results Luck unavailable: selected-window-excluded baseline was not verified.";
+  }
+  return (
+    storedReason ??
+    "Results Luck unavailable: verified selected-window-excluded source values were unavailable or failed the publish gate."
+  );
+}
+
 type AllStrengthToiRow = Pick<
   Database["public"]["Tables"]["rolling_player_game_metrics"]["Row"],
   | "player_id"
@@ -577,6 +622,7 @@ function toComposite(
     passFirstScore: row.pass_first_score,
     playDriverScore: row.play_driver_score,
     resultsLuckIndex: row.results_luck_index,
+    resultsLuckUnavailableReason: getResultsLuckUnavailableReasonForComposite(row),
     methodologyVersion: row.methodology_version,
     snapshotDate: row.snapshot_date,
     updatedAt: row.updated_at,
@@ -846,6 +892,8 @@ function cellFromCompositeRow(args: {
     args.unavailableReason ??
     (args.composite == null
       ? "Composite rating row is not published for this player/context."
+      : args.column.metricKey === "results_luck_index"
+        ? getResultsLuckUnavailableReasonForComposite(args.composite)
       : formattedValue == null
         ? "Composite metric is not available for this player/context."
         : null);

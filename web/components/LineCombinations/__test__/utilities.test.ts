@@ -1,6 +1,24 @@
 import { describe, expect, test } from "vitest";
 import { lineCombos_2023020951_2023020970 } from "./LineCombinationsData";
-import { convertToLines, getLineChanges } from "../utilities";
+import {
+  aggregateSkaterToiSeconds,
+  convertToLines,
+  getLineChanges
+} from "../utilities";
+
+describe("aggregateSkaterToiSeconds", () => {
+  test("sums tracked game TOI for each player", () => {
+    expect(
+      Object.fromEntries(
+        aggregateSkaterToiSeconds([
+          { playerId: 1, toi: "12:30" },
+          { playerId: 1, toi: "10:15" },
+          { playerId: 2, toi: "08:00" }
+        ])
+      )
+    ).toEqual({ 1: 1365, 2: 480 });
+  });
+});
 
 describe("getLineChanges", () => {
   test("game 2023020951 vs 2023020970 | team 26", () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  TEAM_ADJUSTED_STYLE_SOURCE_CONTRACTS,
   TEAM_STYLE_SOURCE_CONTRACT,
   TEAM_SOURCE_PENDING_METRIC_CONTRACTS,
   calculateTeamGameContextComponents,
@@ -21,6 +22,22 @@ describe("teamStyleMethodology", () => {
     );
     expect(TEAM_STYLE_SOURCE_CONTRACT.caveats.join(" ")).toMatch(
       /Do not label current team-style helpers as adjusted/,
+    );
+    expect(TEAM_ADJUSTED_STYLE_SOURCE_CONTRACTS).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          metricKey: "score_venue_adjusted_5v5_style",
+          status: "source_pending",
+          requiredFields: expect.arrayContaining([
+            "score-state-adjusted 5v5 xGF",
+            "venue-adjusted 5v5 xGA",
+          ]),
+        }),
+        expect.objectContaining({
+          metricKey: "coach_system_style",
+          status: "source_pending",
+        }),
+      ]),
     );
   });
 
@@ -131,11 +148,6 @@ describe("teamStyleMethodology", () => {
     expect(context.homeRoadPointPctGap).toBe(75);
     expect(context.powerPlayOpportunityRate).toBe(3);
     expect(context.penaltiesTakenPer60).toBe(4.333333);
-    expect(TEAM_SOURCE_PENDING_METRIC_CONTRACTS.map((contract) => contract.metricKey)).toEqual([
-      "home_road_point_pct_gap",
-      "forward_top_load_index",
-      "defense_pair_top_load_index",
-      "pp1_pp2_usage_share",
-    ]);
+    expect(TEAM_SOURCE_PENDING_METRIC_CONTRACTS).toEqual([]);
   });
 });

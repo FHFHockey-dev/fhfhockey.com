@@ -30,6 +30,7 @@
     "check:rankings-trending-performance": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/check-rankings-trending-performance.ts",
     "check:rankings-splits-performance": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/check-rankings-splits-performance.ts",
     "check:rankings-source-health": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/check-rankings-source-health.ts",
+    "check:team-unit-toi-source-health": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/check-team-unit-toi-source-health.ts",
     "check:rolling-player-coverage": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/check-rolling-player-coverage.ts",
     "check:rolling-player-context-labels": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/check-rolling-player-context-labels.ts",
     "check:rolling-player-family-reconstruction": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/check-rolling-player-family-reconstruction.ts",

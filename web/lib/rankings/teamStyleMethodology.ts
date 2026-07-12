@@ -57,60 +57,49 @@ export const TEAM_STYLE_SOURCE_CONTRACT = {
   ],
 } as const;
 
-export const TEAM_SOURCE_PENDING_METRIC_CONTRACTS: TeamSourcePendingMetricContract[] = [
+export const TEAM_SOURCE_PENDING_METRIC_CONTRACTS: TeamSourcePendingMetricContract[] = [];
+
+export const TEAM_ADJUSTED_STYLE_SOURCE_CONTRACTS: TeamSourcePendingMetricContract[] = [
   {
-    metricKey: "home_road_point_pct_gap",
-    label: "Home Edge",
+    metricKey: "score_venue_adjusted_5v5_style",
+    label: "Score/Venue Adjusted 5v5 Style",
     status: "source_pending",
     reason:
-      "The current wgo_team_stats source publishes point percentage but not the verified home/road split column needed for this metric.",
+      "Current team style rows are raw/contextual; adjusted score and venue aggregates are not wired into rankings.",
     requiredFields: [
-      "team id",
-      "game id",
-      "home/road flag",
-      "point percentage or game result by venue",
+      "score-state-adjusted 5v5 xGF",
+      "score-state-adjusted 5v5 xGA",
+      "venue-adjusted 5v5 xGF",
+      "venue-adjusted 5v5 xGA",
+      "score-state-adjusted 5v5 FF",
+      "score-state-adjusted 5v5 FA",
     ],
   },
   {
-    metricKey: "forward_top_load_index",
-    label: "Forward Top Load",
+    metricKey: "opponent_adjusted_team_style",
+    label: "Opponent Adjusted Team Style",
     status: "source_pending",
     reason:
-      "Verified forward-line TOI share by team/game is not published in the current rankings source contract.",
+      "Opponent-adjusted style needs schedule-strength and opponent-context joins before it can be described as a team system signal.",
     requiredFields: [
-      "team id",
-      "game id",
-      "line number",
-      "line TOI seconds",
-      "team forward TOI seconds",
+      "opponent adjusted 5v5 xGF",
+      "opponent adjusted 5v5 xGA",
+      "opponent adjusted 5v5 event rate",
+      "opponent adjusted shot-location profile",
     ],
   },
   {
-    metricKey: "defense_pair_top_load_index",
-    label: "Defense Pair Top Load",
+    metricKey: "coach_system_style",
+    label: "Coach/System Style",
     status: "source_pending",
     reason:
-      "Verified defense-pair TOI share by team/game is not published in the current rankings source contract.",
+      "Coach/system labels require stable adjusted team style inputs across score, venue, rest, opponent, and roster context.",
     requiredFields: [
-      "team id",
-      "game id",
-      "pair number",
-      "pair TOI seconds",
-      "team defense TOI seconds",
-    ],
-  },
-  {
-    metricKey: "pp1_pp2_usage_share",
-    label: "PP1/PP2 Usage Share",
-    status: "source_pending",
-    reason:
-      "Power-play unit membership exists as contextual labels, but verified PP unit TOI share is not published.",
-    requiredFields: [
-      "team id",
-      "game id",
-      "power-play unit number",
-      "unit PP TOI seconds",
-      "team PP TOI seconds",
+      "score-state controls",
+      "venue controls",
+      "rest/fatigue controls",
+      "opponent controls",
+      "roster/lineup continuity controls",
     ],
   },
 ];

@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
+import Link from "next/link";
 
 import Header from "./Header";
+import SocialMedias from "components/SocialMedias";
 import styles from "./Layout.module.scss";
 
 type LayoutProps = {
@@ -10,7 +12,9 @@ type LayoutProps = {
 
 function Layout({ children }: LayoutProps) {
   const router = useRouter();
-  const isUnderlyingStatsRoute = router.pathname.startsWith("/underlying-stats");
+  const isUnderlyingStatsRoute =
+    router.pathname.startsWith("/underlying-stats");
+  const isHomepage = router.pathname === "/";
   const [isFooterVisible, setIsFooterVisible] = useState(false);
   const touchStartYRef = useRef<number | null>(null);
 
@@ -72,6 +76,7 @@ function Layout({ children }: LayoutProps) {
       <Footer
         isUnderlyingStatsRoute={isUnderlyingStatsRoute}
         isVisible={isFooterVisible}
+        isHomepage={isHomepage}
       />
     </div>
   );
@@ -117,25 +122,48 @@ function FooterLogo() {
 export function Footer({
   isUnderlyingStatsRoute = false,
   isVisible = false,
+  isHomepage = false,
 }: {
   isUnderlyingStatsRoute?: boolean;
   isVisible?: boolean;
+  isHomepage?: boolean;
 }) {
   return (
     <footer
-      className={`${styles.footer} ${isVisible ? styles.footerVisible : ""}`}
-      aria-hidden={!isVisible}
+      className={`${styles.footer} ${isHomepage ? styles.homepageFooter : ""} ${
+        isVisible ? styles.footerVisible : ""
+      }`}
+      aria-hidden={!isHomepage && !isVisible}
     >
-      <span
-        className={
-          isUnderlyingStatsRoute
-            ? styles.footerLogoUnderlyingStats
-            : styles.footerLogoDefault
-        }
-        aria-label="FHFH logo"
-      >
-        <FooterLogo />
-      </span>
+      {isHomepage ? (
+        <div className={styles.homepageFooterInner}>
+          <div className={styles.homepageFooterBrand}>
+            <span className={styles.footerLogoDefault} aria-label="FHFH logo">
+              <FooterLogo />
+            </span>
+            <small>Hockey Analytics</small>
+          </div>
+          <p>© {new Date().getFullYear()} FHFHockey. All rights reserved.</p>
+          <nav aria-label="Footer navigation">
+            <Link href="/underlying-stats">Analytics</Link>
+            <Link href="/news">News</Link>
+            <Link href="/podfeed">Podcast</Link>
+            <Link href="/game-grid">Tools</Link>
+          </nav>
+          <SocialMedias className={styles.homepageFooterSocials} />
+        </div>
+      ) : (
+        <span
+          className={
+            isUnderlyingStatsRoute
+              ? styles.footerLogoUnderlyingStats
+              : styles.footerLogoDefault
+          }
+          aria-label="FHFH logo"
+        >
+          <FooterLogo />
+        </span>
+      )}
     </footer>
   );
 }

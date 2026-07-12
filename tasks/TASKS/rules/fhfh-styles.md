@@ -1240,6 +1240,45 @@ Do not over-canonicalize:
 
 - feature-specific modal internals
 
+Required shared anatomy:
+
+1. Put `role="dialog"`, `aria-modal="true"`, and a stable accessible label on the dialog boundary.
+2. Use one fixed backdrop with restrained dark opacity and optional modest blur; do not stack feature backdrops.
+3. Keep the shell within the viewport, make the body the scroll owner, and keep header/footer actions outside that scroll region.
+4. Use a compact header band, visible close control, and a wrapping right-aligned action cluster.
+5. Feature modules may change shell width and internal content, but should compose the shared modal-shell classes for backdrop, shell, header, close, body, actions, and footer.
+
+```scss
+.backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: v.$space-md;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(6px);
+}
+
+.dialog {
+  width: min(1150px, 96vw);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid v.$border-soft;
+  border-radius: v.$border-radius-lg;
+  background: v.$background-dark;
+}
+
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: v.$space-md;
+}
+```
+
 ## 10. Do / Do Not + SCSS Patterns
 
 Use these as compact execution references when styling a page from this document.
@@ -1641,6 +1680,7 @@ Checklist statuses:
 | 7 | Inputs and selects | `ProjectionsTable`, `MyRoster`, `PlayerStatsFilters`, `DraftSettings` | Approved | Includes search boxes, text inputs, numeric inputs, selects, dropdown triggers, and field-row grouping. |
 | 8 | State banners | `playerStats` and `underlying-stats` production pages | Approved | Loading, warning, error, stale-data, and empty-table banners should stay in-section, not page-replacing. |
 | 9 | Chart frames | No locked `DraftDashboard` source; use strongest chart page reference when supplied | Deferred | Keep sandbox chart examples provisional until a stronger chart-first production example is documented. |
+| 10 | Dialogs and overlays | Shared `ModalShell` composed by `DraftSummaryModal`, `ComparePlayersModal`, and `ImportCsvModal` | Approved | Canonicalize backdrop/shell/header/close/body/actions/footer; keep feature internals independent. |
 
 Practical meaning:
 
@@ -1662,6 +1702,7 @@ Use this matrix when implementing or reviewing any canonical family.
 | Inputs and selects | `ProjectionsTable` / `MyRoster` search field behavior, `PlayerStatsFilters` select behavior, `DraftSettings` base select/input density | Mixed: `DraftDashboard` plus production site surfaces | `$control-height-md`, `$radius-control`, `$background-dark`, `$background-medium`, `$text-primary`, `$text-secondary`, `$primary-color`, `$color-brand-dark`, `$border-soft`, `$focus-ring`, `$font-family-primary` | `cssTestingGrounds -> controls -> Search and filter row` | Default, placeholder, hover, focus-visible, open menu, selected option, disabled |
 | State banners | `playerStats` and `underlying-stats` production in-section loading/warning/error/empty banners | Other site surface | `$background-dark`, `$background-medium`, `$text-primary`, `$text-secondary`, `$primary-color`, `$warning-color`, `$danger-color`, `$border-soft`, `$radius-card` | `cssTestingGrounds -> surfaces -> Empty state / loading banner examples` | Loading, warning, error, empty, stale-data/cached-warning, optional secondary action |
 | Chart frames | No locked chart-first production reference yet; use `start-chart` framing only as a temporary fallback until a stronger chart page is documented | Deferred to other site surface | `$background-dark`, `$background-medium`, `$border-soft`, `$text-primary`, `$text-secondary`, `$primary-color`, `$radius-panel`, `$shadow-panel`, `panel-shell` | `cssTestingGrounds -> data-display -> Chart frame` | Default, hover on toolbar controls, focus-visible on controls, legend visibility, loading/error/empty chart states |
+| Dialogs and overlays | Shared `ModalShell` with Draft Summary, Compare Players, and CSV Import as production compositions | Mixed DraftDashboard production references | `$mobile-z-index-modal`, `$background-dark`, `$background-medium`, `$border-soft`, `$text-primary`, `$text-secondary`, `$primary-color`, `$control-height-md`, `$border-radius-lg`, `custom-scrollbar` | `cssTestingGrounds -> dialogs -> Canonical modal shell` | Open, bounded scroll, backdrop dismissal where supported, close focus/keyboard, wrapping actions, mobile viewport fit |
 
 Source-selection note:
 
@@ -1820,6 +1861,19 @@ The following element families still need site examples before their canonical r
 - pagination/load-more patterns
 - page-level empty states
 - inline content-flow callouts and notices
+
+### 14.1 Repository Reference Candidate Registry
+
+The repository and current rendered routes are authoritative reference inputs. Recording a candidate here does not promote it to final canon; `Deferred` families still require an explicit later approval pass.
+
+| Family | Current repository/rendered reference | Status |
+| --- | --- | --- |
+| Data-page hero/header with breadcrumbs and metadata | `underlying-stats/playerStats` and Team HQ production headers | Approved for the softened data-page archetype |
+| Chart-first page/grid/toolbar/legend | `/wigoCharts`, `/trends`, and `/start-chart` | Candidate collected; chart-frame canon remains Deferred pending a focused comparison pass |
+| Advanced dropdown/action menu | `cssTestingGrounds` control example plus current Game Grid/draft utility controls | Candidate collected; advanced popover canon remains Deferred |
+| Load-more pagination | `underlying-stats/playerStats` first-100 plus bounded next-100 contract | Approved for table-heavy landing pages; numbered pagination remains valid for detail/admin contexts |
+| Page-level empty state | Homepage off-season slate and current no-results landing shells | Candidate collected; page-level canon remains Deferred |
+| Inline content callout | Rankings experimental-toolkit roadmap and current source/freshness notes | Candidate collected; content-flow callout canon remains Deferred |
 
 ## 15. Next Expansion Targets
 

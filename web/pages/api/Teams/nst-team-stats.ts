@@ -6,6 +6,10 @@ import {
   NST_TEAM_STATS_SAFE_INTERVAL_MS,
   resolveNstTeamStatsRequestPlan
 } from "lib/cron/nstBurstPlans";
+import {
+  buildNstTeamStatsDiagnostics,
+  NstTeamStatsSkip
+} from "lib/cron/nstTeamStatsOutcome";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { getCurrentSeason } from "lib/NHL/server";
 import { teamsInfo, teamNameToAbbreviationMap } from "lib/teamsInfo";
@@ -592,6 +596,7 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
       currentProcessingEndDate
     );
     const fetchIssues: string[] = [];
+    const skippedRequests: NstTeamStatsSkip[] = [];
     const processedDates: string[] = [];
     const processedTables: string[] = [];
     const dateBasedConfigs = Object.values(dateBasedResponseKeys);
@@ -843,6 +848,12 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
             logNst(
               `${runLabel} | request ${scriptOutput.requestSequence} | table=${table} | situation=${situation} | raw rows=0 | skipping upsert`
             );
+            skippedRequests.push({
+              scope: "date",
+              table,
+              date: formattedDate,
+              reason: "empty_source"
+            });
             continue;
           }
 
@@ -855,6 +866,9 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
           if (upsertData.length === 0) {
             logNst(
               `${runLabel} | request ${scriptOutput.requestSequence} | table=${table} | situation=${situation} | raw rows=${scriptOutput.data.length} | mapped rows=0 | skipping upsert`
+            );
+            fetchIssues.push(
+              `Transform produced no rows for ${table} on ${formattedDate} from ${scriptOutput.data.length} source rows.`
             );
             continue;
           }
@@ -918,6 +932,12 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
             logNst(
               `${runLabel} | request ${scriptOutput.requestSequence} | table=${table} | situation=${situation} | raw rows=0 | skipping upsert`
             );
+            skippedRequests.push({
+              scope: "season",
+              table,
+              season,
+              reason: "empty_source"
+            });
             continue;
           }
 
@@ -930,6 +950,9 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
           if (upsertData.length === 0) {
             logNst(
               `${runLabel} | request ${scriptOutput.requestSequence} | table=${table} | situation=${situation} | raw rows=${scriptOutput.data.length} | mapped rows=0 | skipping upsert`
+            );
+            fetchIssues.push(
+              `Transform produced no rows for ${table} in season ${season} from ${scriptOutput.data.length} source rows.`
             );
             continue;
           }
@@ -973,6 +996,11 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
     }
 
     const complete = remainingDates.length === 0;
+    const diagnostics = buildNstTeamStatsDiagnostics({
+      failures: fetchIssues,
+      skips: skippedRequests,
+      deferredDates: remainingDates
+    });
     const durationSeconds = (Date.now() - scriptStartTime) / 1000;
     logNst(
       `Run finished in ${durationSeconds.toFixed(1)}s | processed dates=${processedDates.length} | processed tables=${processedTables.length} | issues=${fetchIssues.length} | remaining dates=${remainingDates.length}`
@@ -1004,7 +1032,8 @@ const handler = adminOnly(async (req: any, res: NextApiResponse) => {
           : null,
       nextEndDate: isBackwardRangeMode ? remainingDates[0] ?? null : null,
       processedTables,
-      issues: fetchIssues
+      issues: fetchIssues,
+      ...diagnostics
     });
   } catch (error: any) {
     console.error("Error in nst-team-stats API:", error.message);

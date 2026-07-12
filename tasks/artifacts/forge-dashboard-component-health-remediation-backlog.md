@@ -11,28 +11,33 @@ This file is also the required rolling backlog for newly discovered issues and o
 ### `P0`
 
 - Repair same-day goalie coverage for the slate and goalie bands by restoring current requested-date `goalie_start_projections` and `forge_goalie_projections` coverage.
-- Repair CTPI source recency so `/api/v1/trends/team-ctpi` stops serving early-November rows as a current momentum pulse.
+- [Resolved in code 2026-07-11; live quarantine reconciliation remains] Repair CTPI source recency so `/api/v1/trends/team-ctpi` stops serving early-November rows as a current momentum pulse. The reader now paginates every owning table, honors the requested date, and reports the actual source date separately from computation time.
 - Restore continuity for `l10` sustainability snapshots so `/api/v1/sustainability/trends` does not fall back from mid-March requests to `2026-03-07`.
-- Restore true current recency for `player_trend_metrics` and stop serving materially stale October data to movement surfaces.
+- [Verified still open 2026-07-11] A paginated production read found 7,363 March `l10` rows across only 12 dates, with a 13-day 2026-03-07→2026-03-20 hole. Do not recreate historical snapshots with present-day priors without an explicit leakage-safe decision.
+- [Owner-approved historical exception 2026-07-11] Preserve this gap rather than backfill it with future-leaking present-season priors. Keep historical scopes quarantined and require prospective same-day continuity evidence before promotion.
+- [Production activated and verified 2026-07-11] Restore true current recency ownership for `player_trend_metrics`. Audited POST job 392 runs at 12:00 UTC; a bounded offseason probe processed 52,153 games in 17.33s and truthfully emitted no rows for the empty seven-day window.
 - Repair the current NST ingest path so `/api/v1/db/update-nst-gamelog` can survive or explicitly classify Cloudflare/403 responses from `naturalstattrick.com` instead of silently leaving same-day rolling FORGE refreshes stale.
 
 ### `P1`
 
-- Restore non-flat `trend10` behavior in team power so current team ratings reflect actual daily movement instead of repeated values.
+- [Production activated and verified 2026-07-11] Restore non-flat `trend10` behavior in team power. The production smoke writer returned 32/32 non-zero and 32 distinct values using the shared 150-day trend window.
 - Reconcile current projection dates between FORGE skaters, FORGE goalies, and Start Chart so the dashboard is not mixing prior-day projections with same-day ownership.
+- [Verified still open 2026-07-11] For 2026-03-29, live Start Chart serves six same-day games, but `/api/v1/forge/goalies` has zero requested-date rows and truthfully blocks a four-row fallback from 2026-03-26.
+- [Owner-approved historical exception 2026-07-11] Preserve the missing historical goalie rows rather than rebuild them with later lineup/model inputs. The truthful blocked fallback remains required and the historical scope stays quarantined.
 
 ## Track 2: Correctness And Contract Repair
 
 ### `P0`
 
-- Repair Top Adds stable-ID projection-to-Yahoo matching so the dashboard no longer depends on normalized-name fallback as its primary ownership merge path.
-- Remove ownership-universe truncation in `/api/v1/transactions/ownership-trends` so the rail is not silently ranking against an incomplete Yahoo pool.
-- Fix Yahoo season resolution in dashboard ownership helpers and APIs so valid players do not resolve to null ownership when live rows exist.
+- [Operational owner activated 2026-07-12; promotion evidence pending] Distinct Vault-backed job 393 owns Top Adds weekly (`horizon=5`) projections at 10:12 UTC after daily job 308. The exposed credential was rotated across Vercel, Vault, and all 60 affected commands; same-date multi-run and blocked-missing-horizon regressions pass. Keep Top Adds red until the first prospective non-zero in-season run; never relabel scaled daily rows.
+- [Resolved 2026-07-11] Repair Top Adds stable-ID projection-to-Yahoo matching so the dashboard no longer depends on normalized-name fallback as its primary ownership merge path.
+- [Resolved 2026-07-11] Remove ownership-universe truncation in `/api/v1/transactions/ownership-trends`; ordered pagination now covers all 2,827 audited rows rather than the former 2,500-row slice.
+- [Resolved 2026-07-11] Fix Yahoo season resolution in dashboard ownership helpers and APIs; Yahoo rows use the NHL season's starting year (March 2026 → 2025).
 
 ### `P1`
 
-- Align forward-position filtering between the Top Adds rail and Yahoo ownership APIs so `F` does not mismatch against `C/LW/RW` tokens.
-- Correct Top Adds trend labeling so point-change values are not presented as percentages.
+- [Resolved 2026-07-11] Align forward-position filtering between the Top Adds rail and Yahoo ownership APIs so `F` matches C/LW/RW/F tokens.
+- [Resolved 2026-07-11] Correct Top Adds trend labeling so ownership movement is consistently presented as percentage points.
 - Calibrate sustainability trust and heat thresholds against the live `luck_pressure` scale instead of the current collapsed badge bands.
 - Align dashboard-specific player-detail add scoring with the week-mode schedule context used by the main Top Adds rail.
 - Reconcile the displayed `Team Power` composite with its actual inputs so the UI does not present a broad all-in score when `computeTeamPowerScore` currently ignores trend and the extra sub-rating fields already shown beside it.
@@ -42,9 +47,9 @@ This file is also the required rolling backlog for newly discovered issues and o
 
 ### `P0`
 
-- Reorder the team-context cron chain so NST and WGO team sources refresh before CTPI and team-power writers run.
+- [Production activated and verified 2026-07-11] Reordered the team-context chain to WGO job 44 at 09:35 → incremental NST team job 275 at 09:55 → CTPI job 279 at 10:10 → team power job 283 at 10:15 UTC; the separate full NST job 329 remains at 10:55.
 - Reorder the goalie / projection cron chain so goalie priors are not executed ahead of the ingest and derived stages they depend on.
-- Give `player_trend_metrics` an explicit scheduled owner instead of leaving `/api/v1/trends/player-trends` as an unscheduled rebuild surface.
+- [Production activated and verified 2026-07-11] `player_trend_metrics` has explicit audited POST owner job 392 at 12:00 UTC. Its bounded offseason probe processed 52,153 source games in 17.33s and emitted zero rows because no games fell in the seven-day write window; compatibility reads remain latest-eligible and truthfully blocked when stale.
 - Make same-day `daily_incremental` `/api/v1/db/run-rolling-forge-pipeline` runs skip or downgrade FUT-only `update-power-play-combinations-batch` failures so `contextual_builders` does not block rolling recompute and FORGE projection execution before games start.
 
 ### `P1`
@@ -57,7 +62,7 @@ This file is also the required rolling backlog for newly discovered issues and o
 
 ### `P0`
 
-- Add page-level mixed-date warnings for dashboard and landing surfaces when modules resolve to materially different source dates.
+- [Resolved 2026-07-11] Add page-level mixed-date warnings for dashboard and landing surfaces when modules resolve to materially different source dates. Both routes now aggregate known panel source dates through one tested policy and warn when the spread exceeds one cadence day.
 - Add first-class degraded states for ownership-overlay failure so “no signals” is not used when rows were actually filtered out by null ownership.
 - Quantify goalie coverage-loss in the UI when a resolved fallback date returns only partial slate coverage.
 - Current all-position insight-band vetting on `2026-03-29` showed both `SustainabilityCard` and `HotColdCard` resolving to fully empty states because every returned player ID mapped to `ownership: null`; replace the clean empty-state copy with ownership-coverage-aware degraded messaging and preserve some operator-visible raw-signal evidence.
@@ -76,27 +81,30 @@ This file is also the required rolling backlog for newly discovered issues and o
 
 ### `P0`
 
-- Replace request-time freshness stand-ins in CTPI and skater-power routes with true source-recency metadata.
-- Add explicit freshness policy entries for `/api/v1/forge/players`, `/api/v1/transactions/ownership-trends`, and `/api/v1/transactions/ownership-snapshots`.
-- Add automated verification for mixed effective dates versus rendered date labels across dashboard and landing surfaces.
-- Stop `ownership-trends` from reporting request-time `generatedAt` as if it were source freshness when the payload is derived from historical Yahoo rows and may mask stale ownership data.
+- [Resolved 2026-07-11] Replace request-time freshness stand-ins in CTPI and skater-power routes with true source-recency metadata.
+- [Resolved 2026-07-11] Keep skater-power page requests at or below the 1,000-row PostgREST default cap; the prior 2,000-row request could silently stop after one server-capped page.
+- [Production deployed and verified 2026-07-11] Page every large NST/WGO team-power read and all four CTPI writer sources in deterministic 1,000-row windows instead of accepting hidden PostgREST truncation.
+- [Production applied and verified 2026-07-11] `player_trend_metrics_game_date_idx` removes the estimated 2M+-row scan/sort; `EXPLAIN ANALYZE` uses an index-only scan and completes in 2.842 ms.
+- [Resolved 2026-07-11] Add explicit freshness policy entries for `/api/v1/forge/players`, `/api/v1/transactions/ownership-trends`, and `/api/v1/transactions/ownership-snapshots`.
+- [Resolved 2026-07-11] Add automated verification for mixed effective dates versus rendered date labels across dashboard and landing surfaces.
+- [Resolved 2026-07-11] Stop `ownership-trends` from reporting request-time `generatedAt`; the route now derives recency from the latest included timeline date and exposes map/season coverage metadata.
 
 ### `P1`
 
-- Add ownership-overlay reconciliation checks that distinguish:
+- [Resolved 2026-07-11] Add ownership-overlay reconciliation checks that distinguish:
   - healthy empty results
   - null ownership suppression
   - source truncation
   - merge failure
-- Add route continuity tests for preserving `date`, `mode`, and resolved fallback context across CTA and row-level drill-ins.
-- Add coverage-delta checks for goalie fallback behavior and projection coverage loss.
-- Fix the FORGE page-route Vitest module-resolution blocker so `web/__tests__/pages/FORGE.test.tsx`, `web/__tests__/pages/forge/dashboard.test.tsx`, and the player/team detail suites can collect again instead of failing on `lib/dashboard/clientFetchCache` imports before execution.
+- [Resolved 2026-07-11] Add route continuity tests for preserving `date`, `mode`, and resolved fallback context across CTA and row-level drill-ins.
+- [Resolved 2026-07-11] Add coverage-delta checks for goalie fallback behavior and projection coverage loss.
+- [Resolved 2026-07-11] Fix the FORGE page-route Vitest module-resolution blocker so the route-family suites collect and pass.
 
 ## Track 6: Runtime And Optimization
 
 ### `P1`
 
-- Add endpoint budgets to `perfBudget.ts` for:
+- [Resolved 2026-07-11] Add endpoint budgets to `perfBudget.ts` for:
   - `/api/v1/forge/players`
   - `/api/v1/transactions/ownership-trends`
   - `/api/v1/transactions/ownership-snapshots`

@@ -1,5 +1,6 @@
 ## Relevant Files
 
+- `tasks/TASKS/xg-model/trending-model/prd/prd-xg-trending-model-completion.md` - Derived canonical initiative PRD covering the implemented xG platform and remaining Deep Research hardening scope.
 - `migrations/20260522_create_nhl_xg_shot_feature_tables.sql` - Defines the persisted xG feature and prediction tables that need backfill, QA, and aggregate consumers.
 - `web/pages/api/v1/db/update-nhl-xg-shot-features.ts` - Endpoint for generating and upserting persisted shot-feature rows.
 - `web/pages/api/v1/db/update-nhl-xg-shot-predictions.ts` - Endpoint for scoring persisted shot features with approved model artifacts.

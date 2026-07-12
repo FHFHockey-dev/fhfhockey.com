@@ -288,6 +288,29 @@ function getSavedTeamLeagueType(settingsSnapshot: Json) {
   return settingsSnapshot.league_type === "categories" ? "categories" : "points";
 }
 
+function getYahooTeamMetadata(team: ExternalTeamRow) {
+  return team.team_metadata &&
+    !Array.isArray(team.team_metadata) &&
+    typeof team.team_metadata === "object"
+    ? team.team_metadata
+    : {};
+}
+
+function isOwnedYahooTeam(team: ExternalTeamRow) {
+  return getYahooTeamMetadata(team).is_owned !== false;
+}
+
+function getYahooTeamStandingRank(team: ExternalTeamRow) {
+  const standings = getYahooTeamMetadata(team).standings;
+  if (!standings || Array.isArray(standings) || typeof standings !== "object") {
+    return null;
+  }
+
+  return typeof standings.rank === "number" || typeof standings.rank === "string"
+    ? String(standings.rank)
+    : null;
+}
+
 function getQueryParamValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -528,13 +551,19 @@ export default function AccountSettingsPage() {
         : null;
 
     return (
-      yahooTeams.find((team) => team.id === activeYahooTeamId) ||
+      yahooTeams.find(
+        (team) => team.id === activeYahooTeamId && isOwnedYahooTeam(team)
+      ) ||
       yahooTeams.find(
         (team) =>
           team.id === yahooPreferences?.default_external_team_id &&
-          team.external_league_id === activeYahooLeague?.id
+          team.external_league_id === activeYahooLeague?.id &&
+          isOwnedYahooTeam(team)
       ) ||
-      yahooTeams.find((team) => team.external_league_id === activeYahooLeague?.id) ||
+      yahooTeams.find(
+        (team) =>
+          team.external_league_id === activeYahooLeague?.id && isOwnedYahooTeam(team)
+      ) ||
       null
     );
   }, [
@@ -555,7 +584,11 @@ export default function AccountSettingsPage() {
   const yahooTeamsForActiveLeague = useMemo(
     () =>
       activeYahooLeague
-        ? yahooTeams.filter((team) => team.external_league_id === activeYahooLeague.id)
+        ? yahooTeams.filter(
+            (team) =>
+              team.external_league_id === activeYahooLeague.id &&
+              isOwnedYahooTeam(team)
+          )
         : [],
     [activeYahooLeague, yahooTeams]
   );
@@ -1321,6 +1354,101 @@ export default function AccountSettingsPage() {
       });
     } finally {
       setIsYahooActionLoading(false);
+    }
+  }
+
+  async function handleSaveYahooTeam(team: ExternalTeamRow) {
+    if (!user?.id) {
+      return;
+    }
+
+    const league = yahooLeagues.find((item) => item.id === team.external_league_id) || null;
+    if (!league) {
+      setSavedTeamsFeedback({
+        tone: "error",
+        message: "The Yahoo league for this team is unavailable. Refresh the account state and try again."
+      });
+      return;
+    }
+
+    setIsSavedTeamSaving(true);
+    setSavedTeamsFeedback(null);
+    setYahooFeedback(null);
+
+    try {
+      const currentSavedTeams = await reloadSavedTeams();
+      const existingSavedTeam = currentSavedTeams.find(
+        (savedTeam) =>
+          savedTeam.provider === YAHOO_PROVIDER &&
+          savedTeam.external_team_key === team.external_team_key
+      );
+      const shouldBeDefault =
+        existingSavedTeam?.is_default ?? currentSavedTeams.every((savedTeam) => !savedTeam.is_default);
+
+      if (shouldBeDefault) {
+        await Promise.all(
+          currentSavedTeams
+            .filter(
+              (savedTeam) =>
+                savedTeam.is_default && savedTeam.id !== existingSavedTeam?.id
+            )
+            .map(async (savedTeam) => {
+              const { error } = await supabase
+                .from("user_saved_teams")
+                .update({ is_default: false })
+                .eq("id", savedTeam.id);
+
+              if (error) {
+                throw error;
+              }
+            })
+        );
+      }
+
+      const payload = {
+        user_id: user.id,
+        name: team.team_name || league.league_name || "Yahoo Fantasy Team",
+        source_type: "external-provider",
+        provider: YAHOO_PROVIDER,
+        external_team_key: team.external_team_key,
+        external_league_key: league.external_league_key,
+        roster_json: team.roster_snapshot,
+        settings_snapshot: {
+          provider: YAHOO_PROVIDER,
+          external_league_id: league.id,
+          external_team_id: team.id,
+          scoring_settings: league.scoring_settings,
+          roster_settings: league.roster_settings,
+          league_metadata: league.league_metadata,
+          imported_at: team.imported_at
+        },
+        is_default: shouldBeDefault
+      };
+
+      const { error } = existingSavedTeam
+        ? await supabase
+            .from("user_saved_teams")
+            .update(payload)
+            .eq("id", existingSavedTeam.id)
+        : await supabase.from("user_saved_teams").insert(payload);
+
+      if (error) {
+        throw error;
+      }
+
+      await reloadSavedTeams();
+      const message = existingSavedTeam
+        ? `"${payload.name}" was updated from the latest Yahoo roster snapshot.`
+        : `"${payload.name}" was saved from Yahoo.`;
+      setSavedTeamsFeedback({ tone: "success", message });
+      setYahooFeedback({ tone: "success", message });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to save the imported Yahoo team.";
+      setSavedTeamsFeedback({ tone: "error", message });
+      setYahooFeedback({ tone: "error", message });
+    } finally {
+      setIsSavedTeamSaving(false);
     }
   }
 
@@ -2459,6 +2587,13 @@ export default function AccountSettingsPage() {
                               yahooLeagues.find(
                                 (leagueItem) => leagueItem.id === team.external_league_id
                               ) || null;
+                            const savedYahooTeam = savedTeams.find(
+                              (savedTeam) =>
+                                savedTeam.provider === YAHOO_PROVIDER &&
+                                savedTeam.external_team_key === team.external_team_key
+                            );
+                            const isOwnedTeam = isOwnedYahooTeam(team);
+                            const standingRank = getYahooTeamStandingRank(team);
 
                             return (
                               <div key={team.id} className={styles.providerControlRow}>
@@ -2466,10 +2601,14 @@ export default function AccountSettingsPage() {
                                 <div>
                                   League: {league?.league_name || league?.external_league_key || "Yahoo league"}
                                 </div>
+                                <div>
+                                  {isOwnedTeam ? "Owned team" : "League opponent"}
+                                  {standingRank ? ` · Standings rank ${standingRank}` : ""}
+                                </div>
                                 <div className={styles.cardActionRow}>
-                                  {yahooDefaultTeam?.id === team.id ? (
+                                  {isOwnedTeam && yahooDefaultTeam?.id === team.id ? (
                                     <span className={styles.defaultBadge}>Default Team</span>
-                                  ) : (
+                                  ) : isOwnedTeam ? (
                                     <button
                                       type="button"
                                       className={styles.secondaryButton}
@@ -2478,7 +2617,17 @@ export default function AccountSettingsPage() {
                                     >
                                       Set Default Team
                                     </button>
-                                  )}
+                                  ) : null}
+                                  {isOwnedTeam ? (
+                                    <button
+                                      type="button"
+                                      className={styles.secondaryButton}
+                                      onClick={() => void handleSaveYahooTeam(team)}
+                                      disabled={isSavedTeamSaving}
+                                    >
+                                      {savedYahooTeam ? "Update Saved Team" : "Save Imported Team"}
+                                    </button>
+                                  ) : null}
                                 </div>
                               </div>
                             );

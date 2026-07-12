@@ -19,8 +19,20 @@
 - `web/pages/lines/index.tsx` - Lines landing page that can route users into stronger line-context and data-freshness workflows.
 - `web/components/PowerPlayCombos/PowerPlayCombos.tsx` - Existing PP-unit and personnel surface that should be extended for PP split and shot-share context.
 - `web/components/LineCombinations/LineCombinationsGrid.tsx` - Current lines-grid renderer that is a likely integration point for new line-level visual context.
+- `web/components/LineCombinations/utilities.ts` - Canonical line loader now supplies bounded tracked-game TOI totals for share visualization.
+- `web/components/LineCombinations/__test__/utilities.test.ts` - Regression coverage for player TOI aggregation plus existing line mapping.
+- `web/components/LineCombinations/LineShareBars.tsx` - L1–L4 recent timeshare and goal-share visualization mounted on the team lines route.
+- `web/components/LineCombinations/LineShareBars.test.tsx` - Render coverage for line share rows and metrics.
 - `web/pages/goalies.js` - Current goalie route for weekly rankings and consistency-facing improvements.
+- `web/pages/variance/goalies.js` - Canonical public goalie route, reusing the shared `goalies.js` implementation while `/goalies` remains a redirect alias.
 - `web/pages/trueGoalieValue.tsx` - Existing goalie experiment that may absorb or link to stronger workload and weekly-quality surfaces.
+- `web/components/GoaliePage/goalieTypes.ts` - Shared strong-v1 goalie band, consistency, workload, and weekly-record response types.
+- `web/components/GoaliePage/goalieCalculations.ts` - Weekly eligibility, five-band classification, stability score, starts-per-week, and record-pattern calculations.
+- `web/components/GoaliePage/goalieCalculations.test.ts` - Regression coverage for eligibility, band thresholds, consistency scoring, workload, and weekly-record summaries.
+- `web/components/GoaliePage/GoalieLeaderboard.tsx` - Canonical summary table rendering the five bands, consistency, workload, and weekly-record patterns.
+- `web/components/GoaliePage/GoalieList.tsx` - Single-week ranking order aligned to the strong-v1 five-band contract.
+- `web/components/GoaliePage/goalieMetrics.ts` - Leaderboard column contract for the goalie consistency/workload additions.
+- `web/components/GoaliePage/goalieMetrics.test.ts` - Column/value-tier regressions updated for the strong-v1 band names.
 - `web/components/GoalieShareChart/index.tsx` - Existing goalie-share visualization component that can be reused for clearer workload trend packaging.
 - `web/pages/game-grid/index.tsx` - Game-grid route that should keep its planning role while linking to deeper team and matchup tools.
 - `web/pages/game-grid/[mode].tsx` - Canonical game-grid route where phase-1 cross-links should guide users into the related deep-dive surfaces.
@@ -28,16 +40,38 @@
 - `web/components/TeamStandingsChart/TeamStandingsChart.tsx` - Homepage standings-chart component where PP% and PK% metric scaling must stay aligned with upstream percentage units.
 - `web/components/TeamStandingsChart/metricUtils.ts` - Shared metric-scaling helpers for homepage standings-chart percentage handling.
 - `web/components/TeamStandingsChart/metricUtils.test.ts` - Regression tests that protect point-percentage scaling while keeping PP% and PK% in their original units.
+- `web/components/TeamScheduleCalendar/TeamScheduleCalendar.tsx` - Team HQ schedule surface now using paginated dated team-power snapshots for opponent-strength labels.
+- `web/lib/teamOpponentStrength.ts` - Deterministic dated league-tertile classifier using the canonical Team HQ power-score formula and a completeness gate.
+- `web/lib/teamOpponentStrength.test.ts` - Regression coverage for strong/average/weak bands and sparse-snapshot rejection.
 - `web/components/GameGrid/utils/FourWeekGrid.tsx` - Core four-week-grid implementation that needs the tabbed “back side” redesign.
+- `web/components/GameGrid/utils/FourWeekGrid.module.scss` - Sticky accessible tab and weekly-detail styling for the four-week forecast.
+- `web/components/GameGrid/utils/FourWeekGrid.test.tsx` - Component regressions for default/alternate views and preserved sort state.
+- `web/components/GameGrid/TeamRow.tsx` - Standard schedule-grid team identity now links directly to canonical Team HQ.
+- `web/components/GameGrid/DesktopMasterTable.tsx` - Desktop master-grid team identity now links directly to canonical Team HQ.
+- `web/components/GameGrid/GameGrid.module.scss` - Focus-preserving, visual-inheritance styling for Game Grid team links.
+- `web/components/GameGrid/utils/fourWeekGridViews.ts` - Pure weekly-detail/average shaping from the existing four-week schedule contract.
+- `web/components/GameGrid/utils/fourWeekGridViews.test.ts` - Regression coverage for chronological weeks, missing-week zeros, opponents, and league averages.
 - `web/components/GameGrid/OpponentMetricsTable.tsx` - Existing opponent-context companion table that should remain aligned with grid enhancements.
 - `web/lib/dashboard/teamContext.ts` - Existing team-context shaping logic that is a natural starting point for L10-style and matchup-facing modules.
 - `web/lib/underlying-stats/teamScheduleStrength.ts` - Team schedule-strength helper that can support opponent-success and upcoming-schedule context.
 - `web/lib/trends/teamPercentiles.ts` - Existing percentile/category foundation that can feed later category-coverage synthesis work.
+- `web/components/Rankings/PlayerSnapshotPanel.tsx` - Existing live percentile/category summary-card foundation for the Player Evaluation Toolkit.
+- `web/components/Rankings/ExperimentalToolkitPanel.tsx` - Collapsed, explicitly labeled user-facing shell for the live toolkit foundation and planned Breakout/Value channels.
+- `web/components/Rankings/ExperimentalToolkitPanel.module.scss` - Responsive gated-roadmap card styling and live/planned status badges.
+- `web/components/Rankings/ExperimentalToolkitPanel.test.tsx` - Regression coverage for descriptive naming, bounded metrics, planned labels, and absence of dead-route links.
+- `web/pages/rankings.tsx` - Skater Rankings route now hosts the gated toolkit roadmap shell beside the live matrix/snapshot foundation.
 - `web/lib/trends/trendsSurface.ts` - Shared trends-surface helper contract for locked baseline modes, quick-view labels, and recent-form summary cards.
 - `web/lib/trends/trendsSurface.test.ts` - Helper-level regression coverage for trends-surface baseline and summary-card shaping.
 - `web/pages/api/v1/trends/team-power.ts` - Existing recent-team-context API surface that may need expansion for fantasy-facing L10 packaging.
 - `web/pages/api/v1/trends/team-sos.ts` - Existing team-schedule/opponent context route that can support matchup framing.
 - `web/pages/api/v1/trends/team-ctpi.ts` - Existing team-context API surface that may be reused instead of creating duplicate recent-form endpoints.
+- `web/components/WiGO/TeamPerformanceDrivers.tsx` - Bounded live loader and explanatory driver cards for the selected player’s team.
+- `web/components/WiGO/TeamPerformanceDrivers.module.scss` - Responsive driver-card status and source-provenance styling.
+- `web/components/WiGO/teamPerformanceDriverModel.ts` - Complete-snapshot gating and league-relative chance, suppression, finishing, and special-teams calculations.
+- `web/components/WiGO/teamPerformanceDrivers.test.ts` - Directionality, completeness, recency, ratio-format, and ordinal regressions for team drivers.
+- `web/components/WiGO/WigoDashboardSections.tsx` - Overview composition now includes the team-driver explainer.
+- `web/pages/wigoCharts.tsx` - Canonical WGO page now connects driver explanations to adjacent decision surfaces.
+- `web/pages/game-grid/[mode].tsx` - Canonical Game Grid route now mounts the existing workflow-link contract.
 - `web/pages/api/v1/start-chart.ts` - Existing matchup-planning API route whose context may need to cross-link with splits and recent-form surfaces.
 - `web/pages/api/v1/trends/skater-power.ts` - Skater recent-form API that now needs to support the stronger 20-game window contract used by the trends toolkit.
 - `web/lib/navigation/siteSurfaceLinks.ts` - Shared configuration for roadmap-approved cross-links between homepage, trends, team pages, lines, goalies, start chart, and game grid.
@@ -102,43 +136,88 @@
   - [x] 4.7 Add navigation hooks from trends, team pages, lines pages, and start-chart-adjacent surfaces into the new splits and recent-context modules.
   - [x] 4.8 Add route, API, and calculation tests for split-query correctness, L10-context shaping, and PP shot-share derivation.
 
-- [ ] 5.0 Expand team pages and lines pages into the main team-context workflow
-  - [ ] 5.1 Keep the current team route as the primary team destination and remove any ambiguity about which route should own new team-context modules.
-  - [ ] 5.2 Add or enhance rolling team line charts for GF/GP, PP%, points percentage, xGF, xGA, and shots-for style metrics where the repo already has enough data to support a stable contract.
-  - [ ] 5.3 Strengthen team-level opponent-success or opponent-quality context so upcoming schedule interpretation is visible inside the team experience instead of only in grid-adjacent tools.
-  - [ ] 5.4 Extend PP personnel coverage into a clearer PP split-by-personnel surface, either directly on the team page or through a clearly linked sub-surface that users can discover without guesswork.
-  - [ ] 5.5 Audit the existing line-ingestion pipeline and close the gap between background line-refresh work and stable user-facing output, especially if line snapshots are available from FHFHbot-related sources.
-  - [ ] 5.6 Add L1 through L4 timeshare and goal-share visualization to the lines experience so deployment changes are interpretable at a glance.
-  - [ ] 5.7 Verify that schedule grid, shot map, line combinations, PP personnel, and new opponent context work together without forcing users across legacy and new team routes.
-  - [ ] 5.8 Add page-level and component-level tests covering team-page modules, line visualizations, and any refreshed line-data contracts.
+- [x] 5.0 Expand team pages and lines pages into the main team-context workflow
+  - [x] 5.1 Keep the current team route as the primary team destination and remove any ambiguity about which route should own new team-context modules.
+    - Evidence (2026-07-11): the implementation map names `/stats/team/[teamAbbreviation]` as Team HQ; the stats team list, mobile team list, homepage standings, and team dropdown all deep-link there, while aggregate `/underlying-stats/teamStats` remains a distinct league table rather than a competing team-detail route.
+  - [x] 5.2 Add or enhance rolling team line charts for GF/GP, PP%, points percentage, xGF, xGA, and shots-for style metrics where the repo already has enough data to support a stable contract.
+    - Evidence (2026-07-11): Team HQ's Timeline tab exposes points %, GF/G, GA/G, PP%, SF/G, xGF, and xGA with dated WGO plus approved/fallback xG rows, explicit loading/error/empty states, recent deltas, and source-shaping tests. Focused timeline tests pass 2/2.
+  - [x] 5.3 Strengthen team-level opponent-success or opponent-quality context so upcoming schedule interpretation is visible inside the team experience instead of only in grid-adjacent tools.
+    - Evidence (2026-07-11): Team HQ schedule rows now load all relevant dated `team_power_ratings_daily` snapshots with stable `.range()` pagination, calculate the canonical Team HQ power score, and classify league thirds only when at least 30 teams exist. Sparse/missing dates render `UNAVAILABLE`; production has 163 full-league dates, two partial dates, and two missing dates across the 2025–26 regular-season game calendar. Opponent/timeline tests pass 4/4 and TypeScript passes.
+  - [x] 5.4 Extend PP personnel coverage into a clearer PP split-by-personnel surface, either directly on the team page or through a clearly linked sub-surface that users can discover without guesswork.
+    - Evidence (2026-07-11): the team-specific `/lines/[abbreviation]` surface renders current PP units, player PP TOI ordering, team PP-shot-share context, and expandable five-game unit/personnel history with loading/error/empty states. Team HQ and shared workflow links route directly to that surface.
+  - [x] 5.5 Audit the existing line-ingestion pipeline and close the gap between background line-refresh work and stable user-facing output, especially if line snapshots are available from FHFHbot-related sources.
+    - Evidence (2026-07-11): A-GDL verified the canonical first-arrival/source writer, rejected-row boundary, roster-signal handling, and 92-test CCC/GDL/GDT rollout suite. The public lines route reads canonical `lineCombinations`, exposes source context, and revalidates every 60 seconds; production/provider rollout tasks remain tracked in A-GDL rather than duplicated here.
+  - [x] 5.6 Add L1 through L4 timeshare and goal-share visualization to the lines experience so deployment changes are interpretable at a glance.
+    - Evidence (2026-07-11): `LineShareBars` is now mounted for L1–L4; the canonical two-game line loader adds per-player tracked TOI seconds from a provably bounded raw stat query, while goals reuse the existing aggregate. Share/helper tests pass 5/5 within the 9-test team/line group; TypeScript passes.
+  - [x] 5.7 Verify that schedule grid, shot map, line combinations, PP personnel, and new opponent context work together without forcing users across legacy and new team routes.
+  - [x] 5.8 Add page-level and component-level tests covering team-page modules, line visualizations, and any refreshed line-data contracts.
+    - Evidence (2026-07-11): live local Team HQ rendered dashboard, schedule, stats, game-state, timeline, roster, and shot-map tabs plus canonical workflow links; Timeline loaded its metric selector without error. `/lines/EDM` rendered current lines, non-zero L1–L4 timeshare/goal-share, PP-unit state, and canonical Team HQ/Starter Board/Game Grid/Trends links. No error overlay or console errors occurred. Five focused files passed 10/10 tests and TypeScript passed.
 
-- [ ] 6.0 Build the stronger goalie-consistency and workload surfaces
-  - [ ] 6.1 Define the strong-v1 weekly goalie bucketing contract, including named bands such as `Elite`, `Good`, `Average`, `Bad`, and `Abysmal`, plus the minimum sample rules used to classify a week.
-  - [ ] 6.2 Implement the consistency-score logic and the supporting summary tables that explain patterns such as `3-2`, `2-1`, and `1-0` quality-start style outcomes over time.
-  - [ ] 6.3 Add starts-per-week and workload summaries so users can separate performance quality from simple volume opportunity.
-  - [ ] 6.4 Decide whether these surfaces live on `goalies.js`, `trueGoalieValue.tsx`, or a clearly linked dedicated route, then keep one canonical user-facing goalie workflow.
-  - [ ] 6.5 Treat goalie quality-of-competition framing as a later or optional layer unless the data contract is reliable enough to support backup-to-starter transition analysis without misleading output.
-  - [ ] 6.6 Add tests for week classification, consistency scoring, summary-table aggregation, and route-level rendering.
+- [x] 6.0 Build the stronger goalie-consistency and workload surfaces
+  - [x] 6.1 Define the strong-v1 weekly goalie bucketing contract, including named bands such as `Elite`, `Good`, `Average`, `Bad`, and `Abysmal`, plus the minimum sample rules used to classify a week.
+    - Evidence (2026-07-11): the shared calculation contract now uses those five exact bands and classifies only weeks with at least one start and 20 minutes of TOI; shorter/relief-only weeks remain explicitly unclassified.
+  - [x] 6.2 Implement the consistency-score logic and the supporting summary tables that explain patterns such as `3-2`, `2-1`, and `1-0` quality-start style outcomes over time.
+    - Evidence (2026-07-11): the leaderboard exposes a 0–100 band-stability score (minimum two eligible weeks) separately from quality, plus deterministic frequency-ranked W-L/OT weekly record patterns such as `3-2 ×2`, `2-1`, and `1-0`.
+  - [x] 6.3 Add starts-per-week and workload summaries so users can separate performance quality from simple volume opportunity.
+    - Evidence (2026-07-11): average starts per eligible week is calculated and displayed beside the stability/quality outputs; existing GP, GS, TOI, and value-tier workload inputs remain available.
+  - [x] 6.4 Decide whether these surfaces live on `goalies.js`, `trueGoalieValue.tsx`, or a clearly linked dedicated route, then keep one canonical user-facing goalie workflow.
+    - Evidence (2026-07-11): `/variance/goalies` is the canonical public route and imports the shared `web/pages/goalies.js` implementation; `/goalies` is a redirect alias and `/trueGoalieValue` remains experimental/supporting.
+  - [x] 6.5 Treat goalie quality-of-competition framing as a later or optional layer unless the data contract is reliable enough to support backup-to-starter transition analysis without misleading output.
+    - Evidence (2026-07-11): no QoC estimate was added because the current weekly summary contract lacks a verified opponent-quality join; workload and quality remain separate and honest.
+  - [x] 6.6 Add tests for week classification, consistency scoring, summary-table aggregation, and route-level rendering.
+    - Evidence (2026-07-11): focused goalie calculation/metrics suites pass 20/20, TypeScript passes, and live `/variance/goalies` browser verification rendered all new headers plus real season rows/record summaries without a framework error overlay.
 
-- [ ] 7.0 Upgrade the game-grid ecosystem and explanatory chart surfaces
-  - [ ] 7.1 Redesign the four-week grid to support a tabbed “back side” view that preserves the current table while allowing alternate stat-focused views.
-  - [ ] 7.2 Keep the current four-week columns recognizable after the redesign so existing users do not lose the familiar planning workflow.
-  - [ ] 7.3 Decide which additional statistics belong on the alternate grid tabs first, favoring high-fantasy-utility context over metric sprawl.
-  - [ ] 7.4 Keep the opponent-metrics and schedule-context companion surfaces aligned with the new tab model so users can still interpret matchup quality next to schedule density.
-  - [ ] 7.5 Expand the WGO explanatory-chart experience into a clearer over/under-performance tool for teams, focusing on readable drivers such as chance generation, chance suppression, finishing, and special teams.
-  - [ ] 7.6 Ensure the upgraded grid and WGO surfaces link cleanly to team pages, trends, and other deep-dive tools instead of acting like isolated utilities.
-  - [ ] 7.7 Add component and route tests for tab switching, state preservation, and explanatory-chart data shaping.
+- [x] 7.0 Upgrade the game-grid ecosystem and explanatory chart surfaces
+  - [x] 7.1 Redesign the four-week grid to support a tabbed “back side” view that preserves the current table while allowing alternate stat-focused views.
+    - Evidence (2026-07-11): `4W Summary` remains the selected default and `Weekly Detail` exposes a second accessible tab using the same schedule payload.
+  - [x] 7.2 Keep the current four-week columns recognizable after the redesign so existing users do not lose the familiar planning workflow.
+    - Evidence (2026-07-11): Team, GP, OFF, OPP%, and 4WK Score remain unchanged on the default tab; existing sort state persists across tab switches.
+  - [x] 7.3 Decide which additional statistics belong on the alternate grid tabs first, favoring high-fantasy-utility context over metric sprawl.
+    - Evidence (2026-07-11): strong v1 uses W1–W4 games/off nights plus opponent abbreviations and per-week league averages; it introduces no duplicate endpoint or low-value metric sprawl.
+  - [x] 7.4 Keep the opponent-metrics and schedule-context companion surfaces aligned with the new tab model so users can still interpret matchup quality next to schedule density.
+    - Evidence (2026-07-11): the existing opponent-metrics rail remains intact, the summary retains OPP%, and weekly detail exposes the actual opponent sequence beside volume/off nights.
+  - [x] 7.5 Expand the WGO explanatory-chart experience into a clearer over/under-performance tool for teams, focusing on readable drivers such as chance generation, chance suppression, finishing, and special teams.
+    - Evidence (2026-07-11): WGO overview now renders league-relative Chance Generation, Chance Suppression, Finishing, and Special Teams cards with plain-language directionality, strength/neutral/concern status, completeness gates, and source-date ranges. Live EDM example uses 32 teams.
+  - [x] 7.6 Ensure the upgraded grid and WGO surfaces link cleanly to team pages, trends, and other deep-dive tools instead of acting like isolated utilities.
+    - Evidence (2026-07-11): the previously imported-but-unmounted Game Grid workflow links now render; WGO provides selected Team HQ/Lines plus Trends, Game Grid, and Starter Board links.
+  - [x] 7.7 Add component and route tests for tab switching, state preservation, and explanatory-chart data shaping.
+    - Evidence (2026-07-11): four focused files pass 13/13 tests; TypeScript and diff checks pass. Live March Game Grid verified both populated tabs and real opponent sequences; live WGO rendered four EDM driver cards and workflow links.
 
-- [ ] 8.0 Stage the later-phase percentile synthesis and experimental toolkit work without blocking production surfaces
-  - [ ] 8.1 Turn the existing percentile/category-coverage foundations into a clearer summary leaderboard or card system before attempting a large standalone tool.
-  - [ ] 8.2 Define the first user-facing shell for the player evaluation toolkit, using descriptive copy first and retaining `PELT` only as an alias until product naming is finalized.
-  - [ ] 8.3 Scope the `Breakout Barometer` around a bounded metric set such as TOI, SOG/60, iSCF/60, iXG/60, and iHDCF/60 so the feature can ship as a coherent channel or trend view rather than an open-ended experiment.
-  - [ ] 8.4 Scope `Value Cost Delta / ROI for ADP` around a clear draft/value decision contract so it complements, rather than duplicates, existing draft or projection tooling.
-  - [ ] 8.5 Gate experimental surfaces behind explicit labels, navigation, or feature flags so they do not dilute the clarity of the core production workflow while still remaining in active roadmap scope.
+- [x] 8.0 Stage the later-phase percentile synthesis and experimental toolkit work without blocking production surfaces
+  - [x] 8.1 Turn the existing percentile/category-coverage foundations into a clearer summary leaderboard or card system before attempting a large standalone tool.
+    - Evidence (2026-07-11): the live skater Rankings matrix plus Player Snapshot already provide category strengths/weaknesses, overall/deployment peer percentiles, sample confidence, source quality, and comparison context; focused snapshot/toolkit tests pass 5/5.
+  - [x] 8.2 Define the first user-facing shell for the player evaluation toolkit, using descriptive copy first and retaining `PELT` only as an alias until product naming is finalized.
+    - Evidence (2026-07-11): the skater Rankings view now exposes a collapsed `Player Evaluation Toolkit roadmap` shell that names the matrix/snapshot as the live foundation and explicitly says PELT is an internal alias.
+  - [x] 8.3 Scope the `Breakout Barometer` around a bounded metric set such as TOI, SOG/60, iSCF/60, iXG/60, and iHDCF/60 so the feature can ship as a coherent channel or trend view rather than an open-ended experiment.
+    - Evidence (2026-07-11): the planned card and implementation map lock those five metrics and Rankings Trending as the intended home; no standalone route or unvalidated live score was introduced.
+  - [x] 8.4 Scope `Value Cost Delta / ROI for ADP` around a clear draft/value decision contract so it complements, rather than duplicates, existing draft or projection tooling.
+    - Evidence (2026-07-11): the planned card/map assign this to Draft Dashboard using projection/VORP rank versus Yahoo ADP plus next-pick availability, require scoring/projection provenance, and preserve missing ADP as unavailable.
+  - [x] 8.5 Gate experimental surfaces behind explicit labels, navigation, or feature flags so they do not dilute the clarity of the core production workflow while still remaining in active roadmap scope.
+    - Evidence (2026-07-11): the roadmap shell is collapsed by default; Breakout and Value cards say `Planned experiment`, have no dead-route links, and state they are not active ranking/draft signals. Live browser verification passed.
 
-- [ ] 9.0 Finish the roadmap with shared data-contract, validation, and rollout work
-  - [ ] 9.1 Audit each feature area for whether it can reuse an existing API/table/helper versus requiring a new dedicated contract, and avoid introducing duplicate endpoints when a nearby surface can be extended cleanly.
-  - [ ] 9.2 Apply the PRD’s daily-refresh default across roadmap features and document exceptions for lines, goalie starts, or live-slate context that need tighter freshness.
-  - [ ] 9.3 Add targeted regression coverage for the newly expanded routes, helper modules, and APIs before broader workspace verification.
-  - [ ] 9.4 Run end-to-end smoke checks across the main user flows: homepage to trends, homepage to team pages, lines to PP context, game grid to team deep dives, and goalie landing to workload or consistency views.
-  - [ ] 9.5 Capture any unresolved scope questions, deferred later-phase work, and post-v1 follow-ups in implementation notes so the roadmap remains actionable after the first round of delivery.
+- [x] 9.0 Finish the roadmap with shared data-contract, validation, and rollout work
+  - [x] 9.1 Audit each feature area for whether it can reuse an existing API/table/helper versus requiring a new dedicated contract, and avoid introducing duplicate endpoints when a nearby surface can be extended cleanly.
+    - Evidence (2026-07-11): the implementation map now identifies the reused homepage, Trends/Team HQ, Lines, goalie, Game Grid, WGO, and Rankings contracts. All roadmap-added Supabase reads are bounded or paginated; no duplicate presentation-only endpoint was added.
+  - [x] 9.2 Apply the PRD’s daily-refresh default across roadmap features and document exceptions for lines, goalie starts, or live-slate context that need tighter freshness.
+    - Evidence (2026-07-11): daily source freshness is the documented default; homepage live slate uses 60-second cache/120-second stale behavior, Lines uses 60-second ISR, and goalie-start/current-role reads load stored rows on mount with explicit non-live weekly semantics.
+  - [x] 9.3 Add targeted regression coverage for the newly expanded routes, helper modules, and APIs before broader workspace verification.
+    - Evidence (2026-07-11): the consolidated A-SITE group passed 12 files and 47/47 tests across Team HQ/Lines, navigation, goalie calculations, Game Grid, WGO drivers, and Rankings toolkit; TypeScript and diff checks pass. The direct Team HQ-link follow-up also passed its focused component test.
+  - [x] 9.4 Run end-to-end smoke checks across the main user flows: homepage to trends, homepage to team pages, lines to PP context, game grid to team deep dives, and goalie landing to workload or consistency views.
+    - Evidence (2026-07-11): live browser checks verified homepage links and standings-to-team routes, Trends, EDM Team HQ/Timeline, EDM Lines/PP/share context, a populated March Game Grid with direct team links followed into EDM Team HQ, and the goalie range flow after Apply Range with Consistency, GS/Wk, Elite, and Abysmal outputs. No runtime overlay appeared.
+  - [x] 9.5 Capture any unresolved scope questions, deferred later-phase work, and post-v1 follow-ups in implementation notes so the roadmap remains actionable after the first round of delivery.
+    - Evidence (2026-07-11): the implementation map records deferred goalie QoC, planned Breakout/Value experiments, `/splits`, A-GDL provider rollout, A-SUST history coverage, ranking-vote exclusion, and broad-redesign non-goal.
+
+- [x] NEW 10.0 Replace hard-coded team-ID opponent-strength buckets in `TeamScheduleCalendar` with dated canonical team-strength evidence and explicit unavailable/fallback state.
+  - Evidence (2026-07-11): permanent ID buckets were removed. Dated canonical ratings, a 30-team completeness gate, deterministic tertiles, explicit unavailable copy, pagination, and focused regressions are in place.
+
+- [x] NEW 11.0 Reconcile the documented `/goalies` canonical route with live route ownership so navigation, redirect behavior, and the shared implementation identify one public goalie workflow.
+  - Evidence (2026-07-11): the implementation map now names `/variance/goalies` as canonical, retains `/goalies` as a redirect alias, and leaves `/trueGoalieValue` experimental; current homepage/workflow links already target the canonical route.
+
+- [x] NEW 12.0 Correct malformed WGO percentile ordinal copy discovered during live team-driver verification.
+  - Evidence (2026-07-11): shared ordinal formatting now renders `41st`, `30th`, and `73rd` correctly and covers 1/2/3/11/12/13 edge cases.
+
+- [x] NEW 13.0 Mount the existing but unused Game Grid workflow-link configuration and add equivalent selected-team navigation to WGO.
+  - Evidence (2026-07-11): live Game Grid and WGO routes expose the expected team, trends, lines, schedule, goalie, and starter destinations.
+
+- [x] NEW 14.0 Add direct canonical Team HQ links to team identities across the standard, desktop-master, and four-week Game Grid variants so the required grid-to-team-deep-dive flow does not stop at a generic navigation rail.
+  - Evidence (2026-07-11): all three renderers now expose accessible `Open [team] Team HQ` links; component/TypeScript checks pass, and a populated March grid link navigated to EDM Team HQ with Timeline available and no runtime overlay.

@@ -273,7 +273,7 @@ function compositeCards(row: PlayerMatrixRow) {
         : row.composite?.mcmScore?.toFixed(1) ?? null,
       text: row.composite?.mcmScore == null
         ? "Source pending"
-        : `${MCM_SCORE_CONTRACT.label}: current-contract fantasy multi-category composite from ${source}; PP points source-pending.${snapshot}`,
+        : `${MCM_SCORE_CONTRACT.label}: fantasy multi-category composite from ${source}; PP points included when PP rows are available.${snapshot}`,
     },
     {
       title: "Results Luck Index",
@@ -281,7 +281,8 @@ function compositeCards(row: PlayerMatrixRow) {
         ? null
         : row.composite.resultsLuckIndex.toFixed(1),
       text: row.composite?.resultsLuckIndex == null
-        ? "Source pending until selected-window-excluded baseline provenance is available"
+        ? row.composite?.resultsLuckUnavailableReason ??
+          "Source pending until selected-window-excluded baseline provenance is available"
         : `${RESULTS_LUCK_INDEX_CONTRACT.label}: 100-centered selected-window results context from ${source}.${snapshot}`,
     },
   ];

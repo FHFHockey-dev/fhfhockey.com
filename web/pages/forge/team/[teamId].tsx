@@ -96,7 +96,7 @@ export default function ForgeTeamDetailPage() {
       fetchCachedJson<unknown>(`/api/team-ratings?date=${encodeURIComponent(date)}`, {
         ttlMs: 60_000
       }),
-      fetchCachedJson<unknown>("/api/v1/trends/team-ctpi", {
+      fetchCachedJson<unknown>(`/api/v1/trends/team-ctpi?date=${encodeURIComponent(date)}`, {
         ttlMs: 60_000
       }),
       fetchCachedJson<unknown>(`/api/v1/start-chart?date=${encodeURIComponent(date)}`, {

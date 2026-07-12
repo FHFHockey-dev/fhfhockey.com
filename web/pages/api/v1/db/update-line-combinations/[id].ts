@@ -13,42 +13,54 @@ import {
 } from "components/LinemateMatrix";
 import adminOnly from "utils/adminOnlyMiddleware";
 
-export default withCronJobAudit(adminOnly(async (req, res) => {
-  const supabase = req.supabase;
-  const gameId = Number(req.query.id);
-  try {
-    const data = await updateLineCombos(gameId, supabase);
-    res.json({
-      message: `Successfully updated the line combinations for game ${gameId}`,
-      success: true,
-      data: {
-        homeTeam: data[0],
-        awayTeam: data[1],
-      },
-    });
-  } catch (e: any) {
-    console.error(e);
-    res.status(400).json({ message: e.message, success: false });
-  }
-}));
+export default withCronJobAudit(
+  adminOnly(async (req, res) => {
+    const supabase = req.supabase;
+    const gameId = Number(req.query.id);
+    try {
+      const data = await updateLineCombos(gameId, supabase);
+      res.json({
+        message: `Successfully updated the line combinations for game ${gameId}`,
+        success: true,
+        data: {
+          homeTeam: data[0],
+          awayTeam: data[1],
+        },
+      });
+    } catch (e: any) {
+      console.error(e);
+      res.status(400).json({ message: e.message, success: false });
+    }
+  }),
+);
 
 export async function updateLineCombos(id: number, supabase: SupabaseClient) {
   const lineCombos = await getLineCombos(id);
+  const observedAt = new Date().toISOString();
+  const sourceUrl = `https://api-web.nhle.com/v1/gamecenter/${id}/boxscore`;
   await Promise.all([
     supabase
-      .from("lineCombinations")
-      .upsert({
-        gameId: id,
-        teamId: lineCombos.homeTeam.id,
-        ...splitPlayers(lineCombos.homeTeam.players),
+      .rpc("upsert_line_combinations_from_source", {
+        p_game_id: id,
+        p_team_id: lineCombos.homeTeam.id,
+        p_source_kind: "gamecenter",
+        p_source_key: "nhl_gamecenter",
+        p_source_url: sourceUrl,
+        p_source_capture_key: null,
+        p_observed_at: observedAt,
+        ...toRpcPlayerArrays(splitPlayers(lineCombos.homeTeam.players)),
       })
       .throwOnError(),
     supabase
-      .from("lineCombinations")
-      .upsert({
-        gameId: id,
-        teamId: lineCombos.awayTeam.id,
-        ...splitPlayers(lineCombos.awayTeam.players),
+      .rpc("upsert_line_combinations_from_source", {
+        p_game_id: id,
+        p_team_id: lineCombos.awayTeam.id,
+        p_source_kind: "gamecenter",
+        p_source_key: "nhl_gamecenter",
+        p_source_url: sourceUrl,
+        p_source_capture_key: null,
+        p_observed_at: observedAt,
+        ...toRpcPlayerArrays(splitPlayers(lineCombos.awayTeam.players)),
       })
       .throwOnError(),
   ]);
@@ -130,4 +142,12 @@ function splitPlayers(players: { id: number; position: string }[]) {
     .map((p) => p.id);
 
   return { forwards, defensemen, goalies };
+}
+
+function toRpcPlayerArrays(arrays: ReturnType<typeof splitPlayers>) {
+  return {
+    p_forwards: arrays.forwards,
+    p_defensemen: arrays.defensemen,
+    p_goalies: arrays.goalies,
+  };
 }

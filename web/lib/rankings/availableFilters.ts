@@ -187,7 +187,7 @@ const GOALIE_METRIC_OPTIONS = [
     label: "Value Signal",
     status: "available",
     description:
-      "Documented saved-goals signal from available cumulative 5v5 GSAx and GSAA.",
+      "Documented saved-goals signal from available cumulative 5v5 GSAx and GSAA; distinct from Relative SV%.",
   },
   {
     value: "high_danger_save_percentage",
@@ -201,16 +201,12 @@ const GOALIE_METRIC_OPTIONS = [
   { value: "start_share", label: "Start Share", status: "available" },
   {
     value: "relative_save_percentage",
-    label: "Relative SV%",
-    status: "source_pending",
-    disabledReason:
-      GOALIE_SOURCE_PENDING_METRIC_CONTRACTS.find(
-        (contract) => contract.metricKey === "relative_save_percentage",
-      )?.reason,
+    label: "Rel SV%",
+    status: "available",
+    description:
+      "5v5 save percentage compared with same-team other-goalie 5v5 save percentage in the selected window.",
   },
-  ...GOALIE_SOURCE_PENDING_METRIC_CONTRACTS.filter(
-    (contract) => contract.metricKey !== "relative_save_percentage",
-  ).map((contract) => ({
+  ...GOALIE_SOURCE_PENDING_METRIC_CONTRACTS.map((contract) => ({
     value: contract.metricKey,
     label: contract.label,
     status: "source_pending" as const,
@@ -232,12 +228,34 @@ const TEAM_METRIC_OPTIONS = [
   { value: "pace_rating", label: "Pace Rating", status: "available" },
   { value: "special_rating", label: "Special Teams", status: "available" },
   { value: "one_goal_game_rate", label: "1-Goal Game Rate", status: "available" },
+  { value: "home_road_point_pct_gap", label: "Home Edge", status: "available" },
   { value: "pp_opportunity_rate", label: "PP Opp/G", status: "available" },
   {
     value: "penalties_taken_per_60",
     label: "Penalties/60",
     status: "available",
     description: "Penalties taken per 60 minutes; lower raw values are better.",
+  },
+  {
+    value: "forward_top_load_index",
+    label: "Forward Top Load",
+    status: "available",
+    description:
+      "Average top forward-line share from durable team_unit_toi pooled player-seconds.",
+  },
+  {
+    value: "defense_pair_top_load_index",
+    label: "Defense Pair Top Load",
+    status: "available",
+    description:
+      "Average top defense-pair share from durable team_unit_toi pooled player-seconds.",
+  },
+  {
+    value: "pp1_pp2_usage_share",
+    label: "PP1/PP2 Usage Share",
+    status: "available",
+    description:
+      "Average PP1 and PP2 share from durable team_unit_toi power-play unit rows.",
   },
   ...TEAM_SOURCE_PENDING_METRIC_CONTRACTS.map((contract) => ({
     value: contract.metricKey,

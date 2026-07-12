@@ -23,9 +23,9 @@ describe("playerOwnership", () => {
   });
 
   it("derives the Yahoo season from the fantasy-calendar year boundary", () => {
-    expect(deriveYahooSeason("2026-03-14")).toBe(2026);
-    expect(deriveYahooSeason("2025-08-27")).toBe(2026);
-    expect(deriveYahooSeason("2025-07-01")).toBe(2025);
+    expect(deriveYahooSeason("2026-03-14")).toBe(2025);
+    expect(deriveYahooSeason("2025-08-27")).toBe(2025);
+    expect(deriveYahooSeason("2025-07-01")).toBe(2024);
   });
 
   it("fetches current ownership snapshots keyed by player id", async () => {

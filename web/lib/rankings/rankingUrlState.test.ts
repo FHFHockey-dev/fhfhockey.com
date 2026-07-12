@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { buildContextualRankingsAvailableFilters } from "./availableFilters";
 import {
   buildClientRankingsRequest,
   buildGoalieMatrixRequestPath,
@@ -13,6 +14,12 @@ import {
 } from "./rankingUrlState";
 
 describe("rankingUrlState", () => {
+  const publishedTeamMetricOptions =
+    buildContextualRankingsAvailableFilters()
+      .entities.find((entity) => entity.value === "teams")
+      ?.filters.metrics.filter((metric) => metric.status === "available")
+      .map((metric) => metric.value) ?? [];
+
   it("normalizes URL query defaults for a first-load skater leaderboard", () => {
     expect(normalizeRankingsFilters({})).toMatchObject({
       entity: "skaters",
@@ -210,7 +217,7 @@ describe("rankingUrlState", () => {
       entity: "goalies",
       team: "DAL",
       search: "Shesterkin",
-      goalie_metric: "xga_per_shot_against",
+      goalie_metric: "relative_save_percentage",
       goalie_role: "g1_workhorse",
     });
     const teamFilters = normalizeRankingsFilters({
@@ -224,7 +231,7 @@ describe("rankingUrlState", () => {
     );
     expect(buildGoalieMatrixRequestPath(goalieFilters)).toContain("team=DAL");
     expect(buildGoalieMatrixRequestPath(goalieFilters)).toContain(
-      "metric=xga_per_shot_against",
+      "metric=relative_save_percentage",
     );
     expect(buildGoalieMatrixRequestPath(goalieFilters)).toContain(
       "role=g1_workhorse",
@@ -233,6 +240,29 @@ describe("rankingUrlState", () => {
     expect(buildTeamMatrixRequestPath(teamFilters)).toContain(
       "metric=home_road_point_pct_gap",
     );
+  });
+
+  it("round-trips every published live team metric through URL state and request paths", () => {
+    expect(publishedTeamMetricOptions).toEqual(
+      expect.arrayContaining([
+        "forward_top_load_index",
+        "defense_pair_top_load_index",
+        "pp1_pp2_usage_share",
+      ]),
+    );
+
+    for (const metric of publishedTeamMetricOptions) {
+      const filters = normalizeRankingsFilters({
+        entity: "teams",
+        team_metric: metric,
+      });
+
+      expect(filters.teamMetric).toBe(metric);
+      expect(buildTeamMatrixRequestPath(filters)).toContain(`metric=${metric}`);
+      expect(buildSnapshotRequestPath({ ...filters, selectedTeam: "CAR" })).toContain(
+        `team_metric=${metric}`,
+      );
+    }
   });
 
   it("serializes the WAR source-pending contract path for every entity type", () => {

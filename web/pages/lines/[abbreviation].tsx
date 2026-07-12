@@ -26,6 +26,8 @@ import { getTeamLogo, getTeams, getCurrentSeason } from "lib/NHL/server";
 import { Team } from "lib/NHL/types";
 import { getLineCombinations } from "components/LineCombinations/utilities";
 import { getLinesSurfaceLinks } from "lib/navigation/siteSurfaceLinks";
+import LineShareBars from "components/LineCombinations/LineShareBars";
+import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
 
 export type PlayerBasic = {
   playerId: number;
@@ -211,6 +213,15 @@ export default function TeamLC({
               />
             </section>
 
+            <LineShareBars
+              lines={[
+                { label: "L1", players: lineCombinations.forwards.line1 },
+                { label: "L2", players: lineCombinations.forwards.line2 },
+                { label: "L3", players: lineCombinations.forwards.line3 },
+                { label: "L4", players: lineCombinations.forwards.line4 }
+              ]}
+            />
+
             {/* mobile only */}
             <section className={styles.defense}>
               <CategoryTitle type="large">DEFENSE</CategoryTitle>
@@ -289,6 +300,12 @@ export default function TeamLC({
               />
             </div>
           ) : null}
+          <SurfaceWorkflowLinks
+            eyebrow="Deployment workflow"
+            title={`Use ${mappedAbbreviation} lines in context`}
+            description="Carry the current combinations into Team HQ, matchup, schedule, and trend decisions."
+            links={getLinesSurfaceLinks(mappedAbbreviation)}
+          />
         </div>
       </Container>
     </TeamColorProvider>

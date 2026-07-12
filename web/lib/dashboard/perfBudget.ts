@@ -13,10 +13,21 @@ export type BudgetEvaluation = {
 
 export const DASHBOARD_ENDPOINT_BUDGETS: EndpointBudget[] = [
   { endpoint: "/api/team-ratings", maxPayloadBytes: 120_000, targetP95Ms: 800 },
+  { endpoint: "/api/v1/forge/players", maxPayloadBytes: 350_000, targetP95Ms: 900 },
   { endpoint: "/api/v1/forge/goalies", maxPayloadBytes: 220_000, targetP95Ms: 800 },
   { endpoint: "/api/v1/start-chart", maxPayloadBytes: 300_000, targetP95Ms: 900 },
   { endpoint: "/api/v1/trends/team-ctpi", maxPayloadBytes: 180_000, targetP95Ms: 800 },
   { endpoint: "/api/v1/trends/skater-power", maxPayloadBytes: 280_000, targetP95Ms: 900 },
+  {
+    endpoint: "/api/v1/transactions/ownership-trends",
+    maxPayloadBytes: 350_000,
+    targetP95Ms: 900
+  },
+  {
+    endpoint: "/api/v1/transactions/ownership-snapshots",
+    maxPayloadBytes: 220_000,
+    targetP95Ms: 800
+  },
   {
     endpoint: "/api/v1/sustainability/trends",
     maxPayloadBytes: 140_000,

@@ -2,7 +2,12 @@
 @use "styles/panel" as panel;
 
 .card {
-  @include panel.panel-shell($radius: 18px, $padding: 0, $variant: standard, $overflow: hidden);
+  @include panel.panel-shell(
+    $radius: 18px,
+    $padding: 0,
+    $variant: standard,
+    $overflow: hidden
+  );
 
   display: grid;
   grid-template-columns: minmax(0, 1fr) 112px;
@@ -73,6 +78,66 @@
   .teamLabel {
     margin-top: 8px;
     font-size: 0.72rem;
+  }
+}
+
+.rail {
+  grid-template-columns: 48px minmax(0, 1fr);
+  min-height: 76px;
+  border-radius: v.$radius-card;
+
+  .content {
+    grid-column: 2;
+    grid-row: 1;
+    gap: 3px;
+    padding: 6px 7px 6px 9px;
+  }
+
+  .teamPane {
+    grid-column: 1;
+    grid-row: 1;
+    align-content: center;
+    padding: 5px;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 0;
+  }
+
+  .teamLogo {
+    width: 30px;
+    height: 30px;
+  }
+
+  .teamLabel,
+  .blurb {
+    display: none;
+  }
+
+  .headline {
+    font-size: 0.72rem;
+    line-height: 1.12;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .meta,
+  .footer {
+    gap: 3px 5px;
+    font-size: 0.5rem;
+  }
+
+  .playerRow {
+    gap: 4px;
+  }
+
+  .playerChip {
+    padding: 1px 4px;
+    font-size: 0.5rem;
+  }
+
+  .lineupGrid {
+    display: none;
   }
 }
 
@@ -327,6 +392,7 @@
   }
 
   .content {
-    padding: v.$mobile-space-md v.$mobile-space-md v.$mobile-space-md calc(v.$mobile-space-md + 12px);
+    padding: v.$mobile-space-md v.$mobile-space-md v.$mobile-space-md
+      calc(v.$mobile-space-md + 12px);
   }
 }

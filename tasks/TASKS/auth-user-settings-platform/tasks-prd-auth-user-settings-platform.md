@@ -1,5 +1,7 @@
 ## Relevant Files
 
+- `.gitignore` - Prevents the removed Yahoo OAuth token export from being tracked again.
+- `web/lib/supabase/Upserts/yahooAuth/token.json` - Deleted tracked Yahoo credential/token artifact; external credentials and tokens were confirmed rotated/re-authorized on 2026-07-11.
 - `migrations/20260326_create_auth_user_settings_platform.sql` - Creates the MVP user tables, deferred-provider tables, indexes, constraints, triggers, and RLS policies described in the PRD.
 - `migrations/20260327_encrypt_connected_account_tokens_with_vault.sql` - Moves provider token material out of plaintext columns and into Supabase Vault-backed secret references.
 - `web/lib/supabase/database-generated.types.ts` - Generated Supabase types that must be updated after the schema migration so app code can use the new tables safely.
@@ -7,6 +9,9 @@
 - `web/lib/supabase/index.ts` - Existing shared Supabase wrapper that may need consolidation or cleanup for global auth/session handling.
 - `web/lib/supabase/public-client.ts` - Public client used in read-only contexts; should remain safe and not gain authenticated user-only responsibilities.
 - `web/lib/supabase/server.ts` - Server-side Supabase client wrapper that will need clear separation between service-role and user-session usage.
+- `web/lib/supabase/server.test.ts` - Verifies privileged client creation is lazy, stable, and cannot fall back to a public key.
+- `web/lib/integrations/yahoo/discovery.ts` - Persists per-user Yahoo discovery data and selects the current NHL game from the canonical `yahoo_game_keys` contract with a safe user-payload fallback.
+- `web/lib/integrations/yahoo/discovery.test.ts` - Covers unordered user-game selection against the canonical Yahoo season plus league/team payload normalization.
 - `web/lib/cron/withCronJobAudit.test.ts` - Tests for audit-log persistence and timing capture in cron/API wrappers that now use the explicit service-role client.
 - `web/__tests__/pages/api/v1/db/update-wgo-averages.route.test.ts` - Route test covering structured dependency-error behavior after the API moved to the explicit service-role client.
 - `web/contexts/AuthProviderContext/index.tsx` - Global auth state provider that must be expanded beyond the current minimal role lookup.
@@ -137,7 +142,7 @@
 
 - [ ] NEW 13.0 Tighten service-role client initialization and configuration guarantees after the explicit-import refactor
   - [ ] NEW 13.1 Confirm `SUPABASE_SERVICE_ROLE_KEY` is configured in every environment that will run service-role API routes and cron jobs.
-  - [ ] NEW 13.2 Replace the current test-safe service-role fallback with a stricter lazy initialization or test bootstrap pattern once env loading is standardized.
+  - [x] NEW 13.2 Replace the current test-safe service-role fallback with strict lazy initialization: imports remain side-effect free, privileged use requires both canonical environment values, and public/test-key fallbacks are rejected. Verified by focused Supabase/Yahoo tests and full TypeScript validation on 2026-07-11.
 
 - [ ] NEW 14.0 Resolve custom SMTP delivery failure for Supabase Auth emails
   - [x] NEW 14.1 Verify the custom SMTP configuration saves successfully and is accepted by Supabase without provider-auth errors.
@@ -146,7 +151,7 @@
   - [x] NEW 14.4 Confirm the configured sender mailbox is allowed to send via the chosen SMTP credentials and is not blocked by provider policy.
   - [ ] NEW 14.5 Send a fresh sign-up verification and password reset email and confirm end-to-end delivery.
 
-- [ ] NEW 15.0 Fix recovery-link handling so password reset links open the reset screen instead of silently signing the user in
+- [x] NEW 15.0 Fix recovery-link handling so password reset links open the reset screen instead of silently signing the user in. Reconciled after all four implementation subtasks, runtime verification 16.0, redirect hardening 18.0/20.0, and 13 focused callback/reset/form tests passed on 2026-07-11.
   - [x] NEW 15.1 Route hash-based Supabase recovery sessions through `/auth/reset-password` in the callback handler.
   - [x] NEW 15.2 Add a regression test covering recovery links that arrive with `access_token` and `refresh_token` in the hash.
   - [x] NEW 15.3 Route code-based Supabase recovery callbacks through `/auth/reset-password` instead of treating them like standard OAuth sign-in.
@@ -199,11 +204,11 @@
   - [x] NEW 24.2 Store per-user Yahoo connection metadata in the connected-account model while keeping token material in the private token store.
   - [x] NEW 24.3 Build the first Yahoo league/team discovery sync so users with multiple Yahoo leagues can choose a default team and active league context.
   - [ ] NEW 24.4 Add guarded refresh controls, cooldown enforcement, and sync-run dedupe to avoid rapid repeated Yahoo sync attempts.
-  - [ ] NEW 24.5 Keep the existing shared Yahoo refresh path untouched in `web/pages/api/v1/db/manual-refresh-yahoo-token.ts`.
+  - [x] NEW 24.5 Keep the existing shared Yahoo refresh path untouched in `web/pages/api/v1/db/manual-refresh-yahoo-token.ts`. Verified on 2026-07-11 that the route has no working-tree diff; the per-user account flow remains isolated under `/api/v1/account/yahoo/*`.
   - [x] NEW 24.6 Drive the `League Settings` tab from synced Yahoo league scoring and roster data for the selected active Yahoo league instead of showing only generic user defaults.
   - [x] NEW 24.7 Add Yahoo league/team dropdown switchers to `League Settings` and `Saved Teams`, backed by `user_provider_preferences.active_context`, so users can quickly swap active leagues without reconnecting.
-  - [ ] NEW 24.8 Support saving imported Yahoo teams into `user_saved_teams` using synced `external_teams.roster_snapshot` plus linked `external_league_key` and `external_team_key`.
-  - [ ] NEW 24.9 Sync and expose Yahoo league standings plus all league teams metadata so the account UI can show the full league field, not only the current user’s owned teams.
+  - [x] NEW 24.8 Support saving imported Yahoo teams into `user_saved_teams` using synced `external_teams.roster_snapshot` plus linked `external_league_key` and `external_team_key`. The account UI now inserts or refreshes the provider-backed saved team with Yahoo roster/settings provenance and preserves default-team semantics; component tests and `tsc --noEmit` pass (2026-07-11).
+  - [x] NEW 24.9 Sync and expose Yahoo league standings plus all league teams metadata so the account UI can show the full league field, not only the current user’s owned teams. Discovery now merges league teams/standings, marks ownership, persists opponent metadata without fetching opponent rosters, and the account UI labels full-field rows while restricting default/context actions to owned teams; 20 focused tests and `tsc --noEmit` pass (2026-07-11).
   - [ ] NEW 24.10 Add on-demand or cached views for other Yahoo teams’ rosters within a synced league.
 
 - [ ] NEW 25.0 Implement the Fantrax connected-account and league-import foundation
@@ -223,9 +228,9 @@
   - [ ] NEW 27.3 Surface Patreon-linked access state and perk eligibility in account settings without making Patreon a primary sign-in provider.
   - [ ] NEW 27.4 Add a manual re-sync path and support-facing status messaging for Patreon entitlement drift or billing-state changes.
 
-- [ ] NEW 29.0 Remove Yahoo OAuth secrets and token artifacts from tracked files, rotate the exposed Yahoo app credentials/tokens, and replace repo-local secret storage with env-only or vault-backed handling.
-  - [ ] NEW 29.1 Delete or quarantine `web/lib/supabase/Upserts/yahooAuth/token.json` from the tracked codebase after rotating the leaked credentials.
-  - [ ] NEW 29.2 Rotate the Yahoo consumer key/secret and refresh any leaked Yahoo user tokens currently present in local env files or tracked artifacts.
+- [x] NEW 29.0 Remove Yahoo OAuth secrets and token artifacts from tracked files, rotate the exposed Yahoo app credentials/tokens, and replace repo-local secret storage with env-only or vault-backed handling.
+  - [x] NEW 29.1 Delete `web/lib/supabase/Upserts/yahooAuth/token.json` from the tracked codebase and add its exact path to `.gitignore`; repository removal is complete, while credential invalidation remains open under 29.2.
+  - [x] NEW 29.2 Rotate the Yahoo consumer key/secret, revoke/re-authorize exposed Yahoo tokens, and update local/deployed secret stores. User supplied the required exact confirmation on 2026-07-11; safe local inspection confirmed non-empty `YFPY_CONSUMER_KEY` and `YFPY_CONSUMER_SECRET` configuration without reading values.
 
 - [ ] NEW 30.0 Complete the manual Yahoo app configuration for the new per-user OAuth callback flow.
   - [ ] NEW 30.1 Verify the Yahoo app redirect URI allows `/api/v1/account/yahoo/callback` for local development.
@@ -238,12 +243,12 @@
   - [ ] NEW 31.1 Apply the migration that exposes `public.upsert_connected_account_tokens_secure(...)`.
   - [ ] NEW 31.2 Redeploy the app so the Yahoo callback uses the public wrapper RPC instead of trying to call the `private` schema directly.
 
-- [ ] NEW 32.0 Investigate why Yahoo discovery is finding leagues but zero owned teams after a successful OAuth callback.
+- [x] NEW 32.0 Investigate why Yahoo discovery is finding leagues but zero owned teams after a successful OAuth callback.
   - [x] NEW 32.1 Validate the shape returned by `yahoo.user.game_teams(...)` for the connected Yahoo account and adjust the team flattening logic if the current parser is reading the wrong nesting level.
-  - [ ] NEW 32.2 Verify the connected-account UI can show discovered Yahoo teams and default-team selection once owned-team parsing is corrected.
+  - [x] NEW 32.2 Verify the connected-account UI can show discovered Yahoo teams and default-team selection once owned-team parsing is corrected. The account component suite verifies connected metadata, league/team rows, and default-team state using normalized Yahoo payloads (2026-07-11).
   - [x] NEW 32.3 Limit Yahoo league discovery to the latest/current Yahoo NHL game season by default instead of importing every historical league the user has ever had.
   - [x] NEW 32.4 Derive Yahoo `league_key` from `team_key` when the team payload omits it, and filter synced leagues to the owned-team league set when team discovery is present.
-  - [ ] NEW 32.5 Evaluate using `public.yahoo_game_keys` as the authoritative current Yahoo NHL game/season source for provider discovery so current-season selection does not depend on per-user `user.games()` ordering.
+  - [x] NEW 32.5 Use `public.yahoo_game_keys` as the bounded authoritative current Yahoo NHL game/season source for provider discovery, with an explicit `user.games()` max-season fallback when the canonical row is unavailable or absent from the connected account. Source provenance is recorded in account metadata; focused tests and `tsc --noEmit` pass (2026-07-11).
 
 - [ ] NEW 33.0 Stop auth/session hydration from blocking the account UI on secondary role lookups after provider redirects.
   - [x] NEW 33.1 Make the auth context publish the authenticated user immediately from the Supabase session before waiting on the optional `public.users` role query.

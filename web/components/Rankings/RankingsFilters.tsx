@@ -59,6 +59,7 @@ const DISPLAY_MODE_OPTIONS = [
 
 const GOALIE_METRIC_LABELS: Record<RankingsFilterState["goalieMetric"], string> = {
   save_percentage: "SV%",
+  relative_save_percentage: "Rel SV%",
   gsax: "GSAx",
   gsaa_per_60: "GSAA/60",
   xga_per_shot_against: "xGA/Shot",
@@ -87,6 +88,9 @@ const TEAM_METRIC_LABELS: Record<RankingsFilterState["teamMetric"], string> = {
   home_road_point_pct_gap: "Home Edge",
   pp_opportunity_rate: "PP Opp/G",
   penalties_taken_per_60: "Penalties/60",
+  forward_top_load_index: "Forward Top Load",
+  defense_pair_top_load_index: "Defense Pair Top Load",
+  pp1_pp2_usage_share: "PP1/PP2 Usage Share",
 };
 
 function deploymentOptions(position: ContextualRankingsPositionFilter) {

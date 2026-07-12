@@ -17,7 +17,7 @@ import HomepagePlayoffBracket from "./HomepagePlayoffBracket";
 import {
   formatLocalStartTime,
   formatPeriodText,
-  getDisplayGameState
+  getDisplayGameState,
 } from "./homepageGameFormatting";
 
 type HomepageGamesSectionProps = {
@@ -31,6 +31,11 @@ type HomepageGamesSectionProps = {
   playoffsActive?: boolean;
   playoffBracket?: PlayoffBracketResponse | null;
   playoffWeekGames?: any[];
+  heroMetrics?: Array<{
+    label: string;
+    value: string;
+    caption: string;
+  }>;
 };
 
 export default function HomepageGamesSection({
@@ -43,16 +48,24 @@ export default function HomepageGamesSection({
   lastUpdatedAt,
   playoffsActive = false,
   playoffBracket = null,
-  playoffWeekGames = []
+  playoffWeekGames = [],
+  heroMetrics = [],
 }: HomepageGamesSectionProps) {
   const liveGames = games.filter(
-    (game) => game.gameState === "LIVE" || game.gameState === "CRIT"
+    (game) => game.gameState === "LIVE" || game.gameState === "CRIT",
   ).length;
   const finalGames = games.filter((game) =>
-    ["OVER", "FINAL", "OFF"].includes(game.gameState)
+    ["OVER", "FINAL", "OFF"].includes(game.gameState),
   ).length;
   const upcomingGames = Math.max(games.length - liveGames - finalGames, 0);
-  const firstScheduledGame = games.find((game) => typeof game.startTimeUTC === "string");
+  const uniqueTeamCount = new Set(
+    games
+      .flatMap((game) => [game?.homeTeam?.abbrev, game?.awayTeam?.abbrev])
+      .filter(Boolean),
+  ).size;
+  const firstScheduledGame = games.find(
+    (game) => typeof game.startTimeUTC === "string",
+  );
   const [scheduleContext, setScheduleContext] = useState<string | null>(null);
 
   useEffect(() => {
@@ -64,18 +77,17 @@ export default function HomepageGamesSection({
     setScheduleContext(formatLocalStartTime(firstScheduledGame.startTimeUTC));
   }, [firstScheduledGame?.startTimeUTC]);
 
-  const heroDescription =
-    playoffsActive
-      ? liveGames > 0
-        ? `${liveGames} playoff game${liveGames === 1 ? "" : "s"} live right now. Track the bracket, tonight's slate, and every best-of-seven race from one surface.`
-        : games.length > 0
-          ? `${games.length} playoff game${games.length === 1 ? "" : "s"} on the board${scheduleContext ? `, starting at ${scheduleContext}` : ""}.`
-          : `No playoff games are scheduled for ${moment(currentDate).format("MMMM D")}, but the bracket stays live with the next series turn already mapped.`
+  const heroDescription = playoffsActive
+    ? liveGames > 0
+      ? `${liveGames} playoff game${liveGames === 1 ? "" : "s"} live right now. Track the bracket, tonight's slate, and every best-of-seven race from one surface.`
       : games.length > 0
-        ? liveGames > 0
-          ? `${liveGames} game${liveGames === 1 ? "" : "s"} live right now. Move from the slate to confirmed starter context and market movement without leaving the homepage flow.`
-          : `${games.length} game${games.length === 1 ? "" : "s"} on the board${scheduleContext ? `, starting at ${scheduleContext}` : ""}.`
-        : `No games are scheduled for ${moment(currentDate).format("MMMM D")}. Use the decision surfaces below to plan your next move before the slate repopulates.`;
+        ? `${games.length} playoff game${games.length === 1 ? "" : "s"} on the board${scheduleContext ? `, starting at ${scheduleContext}` : ""}.`
+        : `No playoff games are scheduled for ${moment(currentDate).format("MMMM D")}, but the bracket stays live with the next series turn already mapped.`
+    : games.length > 0
+      ? liveGames > 0
+        ? `${liveGames} game${liveGames === 1 ? "" : "s"} live right now. Move from the slate to confirmed starter context and market movement without leaving the homepage flow.`
+        : `${games.length} game${games.length === 1 ? "" : "s"} on the board${scheduleContext ? `, starting at ${scheduleContext}` : ""}.`
+      : `No games are scheduled for ${moment(currentDate).format("MMMM D")}. Use the decision surfaces below to plan your next move before the slate repopulates.`;
   const modulePresentation = buildHomepageModulePresentation({
     source: "homepage-games",
     loading,
@@ -85,180 +97,135 @@ export default function HomepageGamesSection({
     maxAgeHours: 8,
     loadingMessage: "Refreshing the slate...",
     emptyMessage: `No games scheduled for ${moment(currentDate).format("MM/DD/YYYY")}.`,
-    staleMessage: "Slate data may be stale. Refresh before making lineup decisions."
+    staleMessage:
+      "Slate data may be stale. Refresh before making lineup decisions.",
   });
 
   return (
     <div className={styles.gameCardsContainer}>
-      <div className={styles.slateHero}>
-        <div className={styles.slateHeroIntro}>
-          <p className={styles.slateEyebrow}>
-            {playoffsActive ? "Stanley Cup Playoffs" : "Fantasy hockey today"}
-          </p>
-          <div className={styles.slateHeroContent}>
-            <h1 className={styles.slateHeadline}>
-              {playoffsActive ? "The Bracket" : "The Slate"}
-            </h1>
-            <div className={styles.slateDescriptionWrap}>
-              <p className={styles.slateDescription}>{heroDescription}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className={styles.slateSummaryRail}>
-          <div className={styles.slateSummaryCard}>
-            <span className={styles.slateSummaryLabel}>Date</span>
-            <strong className={styles.slateSummaryValue}>
-              {moment(currentDate).format("ddd, MMM D")}
-            </strong>
-          </div>
-          <div className={styles.slateSummaryCard}>
-            <span className={styles.slateSummaryLabel}>Slate</span>
-            <strong className={styles.slateSummaryValue}>
-              {games.length} game{games.length === 1 ? "" : "s"}
-            </strong>
-          </div>
-          <div className={styles.slateSummaryCard}>
-            <span className={styles.slateSummaryLabel}>Now</span>
-            <strong className={styles.slateSummaryValue}>
-              {liveGames > 0
-                ? `${liveGames} live`
-                : upcomingGames > 0
-                  ? `${upcomingGames} upcoming`
-                  : `${finalGames} final`}
-            </strong>
-          </div>
-        </div>
-
-        <div className={styles.slateActionRow}>
-          {HOME_SURFACE_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={styles.slateActionLink}
-              aria-label={link.label}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {!playoffsActive ? (
+      <section
+        className={styles.gamesStrip}
+        aria-labelledby="games-strip-heading"
+      >
         <div className={styles.gamesHeader}>
-          <button
-            onClick={() => onChangeDate(-1)}
-            aria-label="Previous Day"
-          ></button>
-          <div className={styles.headerAndDate}>
-            <h1
-              className={
-                gamesHeaderText === "Yesterday's" ||
-                gamesHeaderText === "Tomorrow's"
-                  ? styles.smallerHeader
-                  : ""
-              }
-            >
+          <div className={styles.gamesHeaderTitle}>
+            <h2 id="games-strip-heading">
               {gamesHeaderText} <span>Games</span>
-            </h1>
-            <p className={styles.dateDisplay}>
-              {moment(currentDate).format("M/DD/YYYY")}
-            </p>
+            </h2>
           </div>
-          <button onClick={() => onChangeDate(1)} aria-label="Next Day"></button>
+          {!playoffsActive ? (
+            <button
+              onClick={() => onChangeDate(-1)}
+              aria-label="Previous Day"
+            ></button>
+          ) : null}
+          <div className={styles.headerAndDate}>
+            <span className={styles.dateDisplay}>
+              {moment(currentDate).format("ddd, MMM D")}
+            </span>
+          </div>
+          {!playoffsActive ? (
+            <button
+              onClick={() => onChangeDate(1)}
+              aria-label="Next Day"
+            ></button>
+          ) : null}
+          <div className={styles.gamesSummary} aria-label="Slate summary">
+            <span>
+              <strong>{games.length}</strong>
+              Games
+            </span>
+            <span>
+              <strong>{uniqueTeamCount}</strong>
+              Teams
+            </span>
+            <span>
+              <strong>{liveGames + finalGames}</strong>
+              Games started
+            </span>
+          </div>
         </div>
-      ) : null}
 
-      <div className={styles.gamesContainer}>
-        {modulePresentation.panelState && (
-          <PanelStatus
-            state={modulePresentation.panelState}
-            message={modulePresentation.message ?? ""}
-            className={styles.moduleStatusPanel}
-          />
-        )}
-        {playoffsActive && playoffBracket ? (
-          <HomepagePlayoffBracket
-            currentDate={currentDate}
-            games={games}
-            playoffBracket={playoffBracket}
-            playoffWeekGames={playoffWeekGames}
-          />
-        ) : null}
-        {games.length > 0 ? (
-          !playoffsActive ? (
-            <>
-            <div className={styles.gameColumnLabels}>
-              <span className={styles.homeLabel}>Home</span>
-              <span className={styles.awayLabel}>Away</span>
-            </div>
+        <div className={styles.gamesContainer}>
+          {modulePresentation.panelState && (
+            <PanelStatus
+              state={modulePresentation.panelState}
+              message={modulePresentation.message ?? ""}
+              className={styles.moduleStatusPanel}
+            />
+          )}
+          {playoffsActive && playoffBracket ? (
+            <HomepagePlayoffBracket
+              currentDate={currentDate}
+              games={games}
+              playoffBracket={playoffBracket}
+              playoffWeekGames={playoffWeekGames}
+            />
+          ) : null}
+          {games.length > 0 && !playoffsActive ? (
             <div className={styles.gamesGrid}>
               {games.map((game) => {
-              const homeTeam = game.homeTeam;
-              const awayTeam = game.awayTeam;
+                const homeTeam = game.homeTeam;
+                const awayTeam = game.awayTeam;
                 const homeTeamInfo = teamsInfo[homeTeam.abbrev];
                 const awayTeamInfo = teamsInfo[awayTeam.abbrev];
+                const broadcast = game?.tvBroadcasts?.[0]?.network ?? null;
 
-              if (!homeTeam?.abbrev || !awayTeam?.abbrev) return null;
+                if (!homeTeam?.abbrev || !awayTeam?.abbrev) return null;
 
-              return (
-                <Link
-                  key={game.id}
-                  href={`/game/${game.id}`}
-                  className={styles.gameLink}
-                  passHref
-                >
-                  <div
-                    className={styles.combinedGameCard}
-                    style={
-                      {
+                return (
+                  <Link
+                    key={game.id}
+                    href={`/game/${game.id}`}
+                    className={styles.gameLink}
+                  >
+                    <div
+                      className={styles.combinedGameCard}
+                      style={
+                        {
                           "--home-primary-color":
                             homeTeamInfo?.primaryColor ?? "#888888",
                           "--home-secondary-color":
                             homeTeamInfo?.secondaryColor ?? "#555555",
-                          "--home-jersey-color": homeTeamInfo?.jersey ?? "#cccccc",
+                          "--home-jersey-color":
+                            homeTeamInfo?.jersey ?? "#cccccc",
                           "--away-primary-color":
                             awayTeamInfo?.primaryColor ?? "#888888",
                           "--away-secondary-color":
                             awayTeamInfo?.secondaryColor ?? "#555555",
-                          "--away-jersey-color": awayTeamInfo?.jersey ?? "#cccccc",
+                          "--away-jersey-color":
+                            awayTeamInfo?.jersey ?? "#cccccc",
                           "--home-primary-light-color":
                             homeTeamInfo?.lightColor ?? "#aaaaaa",
                           "--away-primary-light-color":
-                            awayTeamInfo?.lightColor ?? "#aaaaaa"
-                      } as CSSProperties
-                    }
-                  >
-                    <div
-                      className={styles.homeTeamLogo}
-                      title={`HOME ${homeTeam?.abbrev ?? ""} record: ${homeTeam?.record ?? "n/a"}`}
+                            awayTeamInfo?.lightColor ?? "#aaaaaa",
+                        } as CSSProperties
+                      }
                     >
-                      <div className={styles.homeAwayLabel}>HOME</div>
-                      <OptimizedImage
-                        src={getTeamLogoSvg(homeTeam.abbrev)}
-                        className={styles.leftImage}
-                        alt={`${homeTeam.abbrev} logo`}
-                        width={70}
-                        height={70}
-                        priority={false}
-                        fallbackSrc={fallbackNHLLogo}
-                      />
-                      <div className={styles.teamRecord}>
-                        {typeof homeTeam?.record === "string"
-                          ? homeTeam.record
-                          : ""}
-                      </div>
-                    </div>
-                    <div
-                      className={`${styles.teamRecordMobile} ${styles.homeRecord}`}
-                    >
-                      {typeof homeTeam?.record === "string"
-                        ? homeTeam.record
-                        : ""}
-                    </div>
-                    <div className={styles.gameTimeSection}>
-                      <div className={styles.homeScore}>
-                        {homeTeam.score ?? "-"}
+                      <span className={styles.broadcastLabel}>
+                        {broadcast ?? getDisplayGameState(game.gameState)}
+                      </span>
+                      <div
+                        className={styles.awayTeamLogo}
+                        title={`AWAY ${awayTeam?.abbrev ?? ""} record: ${awayTeam?.record ?? "n/a"}`}
+                      >
+                        <OptimizedImage
+                          src={getTeamLogoSvg(awayTeam.abbrev)}
+                          className={styles.leftImage}
+                          alt={`${awayTeam.abbrev} logo`}
+                          width={52}
+                          height={52}
+                          priority={false}
+                          fallbackSrc={fallbackNHLLogo}
+                        />
+                        <strong className={styles.teamAbbreviation}>
+                          {awayTeam.abbrev}
+                        </strong>
+                        <span className={styles.teamRecord}>
+                          {typeof awayTeam?.record === "string"
+                            ? awayTeam.record
+                            : ""}
+                        </span>
                       </div>
                       <div className={styles.gameTimeInfo}>
                         <span className={styles.gameState}>
@@ -270,7 +237,7 @@ export default function HomepageGamesSection({
                                 game?.clock &&
                                   game.clock.inIntermission !== undefined
                                   ? game.clock.inIntermission
-                                  : game?.inIntermission
+                                  : game?.inIntermission,
                               )
                             : getDisplayGameState(game.gameState)}
                         </span>
@@ -288,47 +255,110 @@ export default function HomepageGamesSection({
                               : formatLocalStartTime(game.startTimeUTC)}
                           </span>
                         </ClientOnly>
+                        <span className={styles.matchupDivider}>vs</span>
                       </div>
-                      <div className={styles.awayScore}>
-                        {awayTeam.score ?? "-"}
+                      <div
+                        className={styles.homeTeamLogo}
+                        title={`HOME ${homeTeam?.abbrev ?? ""} record: ${homeTeam?.record ?? "n/a"}`}
+                      >
+                        <OptimizedImage
+                          src={getTeamLogoSvg(homeTeam.abbrev)}
+                          className={styles.rightImage}
+                          alt={`${homeTeam.abbrev} logo`}
+                          width={52}
+                          height={52}
+                          priority={false}
+                          fallbackSrc={fallbackNHLLogo}
+                        />
+                        <strong className={styles.teamAbbreviation}>
+                          {homeTeam.abbrev}
+                        </strong>
+                        <span className={styles.teamRecord}>
+                          {typeof homeTeam?.record === "string"
+                            ? homeTeam.record
+                            : ""}
+                        </span>
                       </div>
+                      {homeTeam.score != null || awayTeam.score != null ? (
+                        <span className={styles.gameScore}>
+                          {awayTeam.score ?? "–"}–{homeTeam.score ?? "–"}
+                        </span>
+                      ) : null}
                     </div>
-                    <div
-                      className={`${styles.teamRecordMobile} ${styles.awayRecord}`}
-                    >
-                      {typeof awayTeam?.record === "string"
-                        ? awayTeam.record
-                        : ""}
-                    </div>
-                    <div
-                      className={styles.awayTeamLogo}
-                      title={`AWAY ${awayTeam?.abbrev ?? ""} record: ${awayTeam?.record ?? "n/a"}`}
-                    >
-                      <div className={styles.homeAwayLabel}>AWAY</div>
-                      <OptimizedImage
-                        src={getTeamLogoSvg(awayTeam.abbrev)}
-                        className={styles.rightImage}
-                        alt={`${awayTeam.abbrev} logo`}
-                        width={70}
-                        height={70}
-                        priority={false}
-                        fallbackSrc={fallbackNHLLogo}
-                      />
-                      <div className={styles.teamRecord}>
-                        {typeof awayTeam?.record === "string"
-                          ? awayTeam.record
-                          : ""}
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
+                  </Link>
+                );
+              })}
             </div>
-            </>
-          ) : null
-        ) : null}
-      </div>
+          ) : null}
+        </div>
+      </section>
+
+      <section className={styles.slateHero} aria-labelledby="slate-heading">
+        <div className={styles.slateHeroIntro}>
+          <p className={styles.slateEyebrow}>Welcome to</p>
+          <h1 id="slate-heading" className={styles.slateHeadline}>
+            {playoffsActive ? "The Bracket" : "The Slate"}
+          </h1>
+          <p className={styles.slateDescription}>
+            Real-time NHL insights.
+            <br />
+            Built for the edge.
+          </p>
+          <div className={styles.slateAccent} aria-hidden="true">
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+          </div>
+        </div>
+
+        <div className={styles.slateDashboard}>
+          <div className={styles.slateSummaryRail}>
+            {heroMetrics.map((metric) => (
+              <div key={metric.label} className={styles.slateSummaryCard}>
+                <span className={styles.metricIcon} aria-hidden="true"></span>
+                <span className={styles.slateSummaryLabel}>{metric.label}</span>
+                <strong className={styles.slateSummaryValue}>
+                  {metric.value}
+                </strong>
+                <small>{metric.caption}</small>
+              </div>
+            ))}
+          </div>
+
+          <div className={styles.edgePanel}>
+            <div className={styles.edgeCopy}>
+              <strong>
+                Today&apos;s <span>Edge</span>
+              </strong>
+              <p>{heroDescription}</p>
+            </div>
+            {lastUpdatedAt ? (
+              <ClientOnly>
+                <div className={styles.dataUpdated}>
+                  <span>Data updated</span>
+                  <small>
+                    <i aria-hidden="true"></i>
+                    {moment(lastUpdatedAt).fromNow()}
+                  </small>
+                </div>
+              </ClientOnly>
+            ) : null}
+          </div>
+        </div>
+
+        <nav className={styles.slateActionRow} aria-label="Homepage tools">
+          {HOME_SURFACE_LINKS.slice(0, 4).map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={styles.slateActionLink}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      </section>
     </div>
   );
 }

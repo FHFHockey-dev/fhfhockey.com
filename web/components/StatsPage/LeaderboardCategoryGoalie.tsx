@@ -19,6 +19,11 @@ const LeaderboardCategoryGoalie: React.FC<LeaderboardCategoryGoalieProps> = ({
   return (
     <div className={styles.card}>
       <h2 className={styles.cardTitle}>{title}</h2>
+      {leaders.length === 0 && (
+        <div className={styles.leaderRow}>
+          <div className={styles.playerDetails}>No goalie data available.</div>
+        </div>
+      )}
       {leaders.map((goalie, index) => {
         const rowClasses =
           index === 0
@@ -39,7 +44,7 @@ const LeaderboardCategoryGoalie: React.FC<LeaderboardCategoryGoalieProps> = ({
             : "-";
         }
         return (
-          <div key={goalie.goalie_id} className={rowClasses}>
+          <div key={`${statKey}-${goalie.goalie_id}-${index}`} className={rowClasses}>
             <div className={styles.cardContainer}>
               <div className={styles.cardLeft}>
                 <Link href={`/stats/player/${goalie.goalie_id}`}>

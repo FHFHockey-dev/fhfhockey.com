@@ -3,8 +3,10 @@ import Head from "next/head";
 import type { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
+import { format, parseISO, startOfWeek } from "date-fns";
 
 import ForgeRouteNav from "components/forge-dashboard/ForgeRouteNav";
+import useSchedule from "components/GameGrid/utils/useSchedule";
 import { useTeamSchedule } from "hooks/useTeamSchedule";
 import { fetchCachedJson } from "lib/dashboard/clientFetchCache";
 import {
@@ -20,6 +22,7 @@ import {
   scoreTopAddsCandidate,
   type TopAddsMode
 } from "lib/dashboard/topAddsRanking";
+import { buildTopAddsScheduleContextMap } from "lib/dashboard/topAddsScheduleContext";
 import { teamsInfo } from "lib/teamsInfo";
 import styles from "styles/ForgeDashboard.module.scss";
 
@@ -199,6 +202,19 @@ export default function ForgePlayerDetailPage() {
     undefined,
     teamMeta ? String(teamMeta.id) : undefined
   );
+  const weekStartDate = useMemo(
+    () => format(startOfWeek(parseISO(date), { weekStartsOn: 1 }), "yyyy-MM-dd"),
+    [date]
+  );
+  const [weekSchedule, weekNumGamesPerDay] = useSchedule(weekStartDate, false);
+  const weekContext = useMemo(() => {
+    if (!teamMeta || mode !== "week") return null;
+    return buildTopAddsScheduleContextMap(
+      weekSchedule,
+      weekNumGamesPerDay,
+      date
+    )[teamMeta.abbrev] ?? null;
+  }, [date, mode, teamMeta, weekNumGamesPerDay, weekSchedule]);
 
   const opportunityScore = useMemo(() => {
     if (!projectionRow || !ownershipContext) return null;
@@ -220,13 +236,13 @@ export default function ForgePlayerDetailPage() {
         hit: projectionRow.hit ?? 0,
         blk: projectionRow.blk ?? 0,
         uncertainty: projectionRow.uncertainty,
-        scheduleGamesRemaining: null,
-        scheduleOffNightsRemaining: null,
-        scheduleLabel: null
+        scheduleGamesRemaining: weekContext?.gamesRemaining ?? null,
+        scheduleOffNightsRemaining: weekContext?.offNightsRemaining ?? null,
+        scheduleLabel: weekContext?.summaryLabel ?? null
       },
       mode as TopAddsMode
     );
-  }, [ownershipContext, playerId, projectionRow, teamMeta?.abbrev, teamMeta?.id]);
+  }, [ownershipContext, playerId, projectionRow, teamMeta?.abbrev, weekContext]);
   const playerDetailReturnHref = useMemo(
     () =>
       Number.isFinite(playerId)
@@ -399,7 +415,12 @@ export default function ForgePlayerDetailPage() {
                         <div className={styles.previewList}>
                           <div className={styles.previewRowStatic}>
                             <strong>{teamMeta?.name ?? projectionRow.team_name ?? "--"}</strong>
-                            <span>{projectionRow.position ?? "--"} • {mode === "week" ? "Weekly stream mode" : "Single-slate mode"}</span>
+                            <span>
+                              {projectionRow.position ?? "--"} • {mode === "week" ? "Weekly stream mode" : "Single-slate mode"}
+                              {mode === "week" && weekContext?.summaryLabel
+                                ? ` • ${weekContext.summaryLabel}`
+                                : ""}
+                            </span>
                           </div>
                         </div>
                       </div>

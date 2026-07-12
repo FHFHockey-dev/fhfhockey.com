@@ -90,11 +90,11 @@ describe("/api/v1/contextual-rankings/available-filters", () => {
       expect.arrayContaining([
         expect.objectContaining({
           value: "shoot_first",
-          label: "Shoot First",
+          label: "Shoot First Proxy",
           status: "available",
         }),
-        expect.objectContaining({ value: "pass_first", label: "Pass First" }),
-        expect.objectContaining({ value: "play_driver", label: "Play Driver" }),
+        expect.objectContaining({ value: "pass_first", label: "Pass First Proxy" }),
+        expect.objectContaining({ value: "play_driver", label: "Play Driver Proxy" }),
       ]),
     );
     expect(goalies.supportedTabs).toEqual(["rankings", "war"]);
@@ -120,14 +120,29 @@ describe("/api/v1/contextual-rankings/available-filters", () => {
     expect(goalies.filters.metrics).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ value: "save_percentage", status: "available" }),
-        expect.objectContaining({ value: "under_pressure", status: "source_pending" }),
+        expect.objectContaining({
+          value: "goalie_value_signal",
+          status: "available",
+          description: expect.stringContaining("distinct from Relative SV%"),
+        }),
+        expect.objectContaining({
+          value: "relative_save_percentage",
+          status: "available",
+        }),
+        expect.objectContaining({
+          value: "under_pressure_profile",
+          status: "source_pending",
+        }),
       ]),
     );
     expect(teams.supportedTabs).toEqual(["rankings", "war"]);
     expect(teams.filters.metrics).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ value: "off_rating", status: "available" }),
-        expect.objectContaining({ value: "home_road_split", status: "source_pending" }),
+        expect.objectContaining({
+          value: "home_road_point_pct_gap",
+          status: "available",
+        }),
       ]),
     );
   });

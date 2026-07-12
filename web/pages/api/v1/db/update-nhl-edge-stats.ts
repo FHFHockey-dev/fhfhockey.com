@@ -81,9 +81,11 @@ type RequestOptions = {
 type DetailFetchResult = {
   rows: NhlEdgeStatsRow[];
   skipped: Array<{
-    entityType: "skater" | "goalie";
-    playerId: number;
+    entityType: "skater" | "goalie" | "team";
+    playerId?: number;
+    teamId?: number;
     fullName: string | null;
+    endpointFamily: NhlEdgeStatsFamily | "skater-detail" | "skater-detail-now" | "goalie-detail" | "goalie-detail-now";
     reason: string;
   }>;
 };
@@ -368,6 +370,10 @@ function isEdgeNotFoundError(error: unknown): boolean {
   return /not found/i.test(message) || /\b404\b/.test(message);
 }
 
+export function buildEdgeUnavailableReason(endpointFamily: string) {
+  return `${endpointFamily} not available`;
+}
+
 async function fetchSkaterDetailRows(args: {
   snapshotDate: string;
   seasonId: number;
@@ -425,7 +431,12 @@ async function fetchSkaterDetailRows(args: {
               entityType: "skater" as const,
               playerId: target.playerId,
               fullName: target.fullName,
-              reason: "Edge detail not available"
+              endpointFamily: (args.nowMode
+                ? "skater-detail-now"
+                : "skater-detail") as NhlEdgeStatsFamily,
+              reason: buildEdgeUnavailableReason(
+                args.nowMode ? "skater-detail-now" : "skater-detail"
+              )
             }
           };
         }
@@ -498,7 +509,12 @@ async function fetchGoalieDetailRows(args: {
               entityType: "goalie" as const,
               playerId: target.playerId,
               fullName: target.fullName,
-              reason: "Edge detail not available"
+              endpointFamily: (args.nowMode
+                ? "goalie-detail-now"
+                : "goalie-detail") as NhlEdgeStatsFamily,
+              reason: buildEdgeUnavailableReason(
+                args.nowMode ? "goalie-detail-now" : "goalie-detail"
+              )
             }
           };
         }
@@ -595,7 +611,8 @@ async function fetchSkaterSupplementalDetailRows(args: {
                 entityType: "skater" as const,
                 playerId: target.playerId,
                 fullName: target.fullName,
-                reason: `${spec.family} not available`
+                endpointFamily: spec.family,
+                reason: buildEdgeUnavailableReason(spec.family)
               }
             };
           }
@@ -619,33 +636,59 @@ async function fetchTeamSupplementalDetailRows(args: {
   targets: TeamTarget[];
   concurrency: number;
   family: NhlEdgeStatsFamily | null;
-}): Promise<NhlEdgeStatsRow[]> {
+}): Promise<DetailFetchResult> {
   const endpointSpecs = TEAM_SUPPLEMENTAL_ENDPOINTS.filter(
     (spec) => args.family == null || spec.family === args.family
   );
   const limit = pLimit(args.concurrency);
-  return Promise.all(
+  const results = await Promise.all(
     args.targets.flatMap((target) =>
       endpointSpecs.map((spec) =>
-        limit(async () =>
-          buildEdgeTeamSupplementalDetailRow({
-            snapshotDate: args.snapshotDate,
-            seasonId: args.seasonId,
-            gameType: args.gameType,
-            teamId: target.teamId,
-            teamName: target.teamName,
-            teamAbbreviation: target.teamAbbreviation,
-            endpointFamily: spec.family,
-            payload: await spec.fetch(
-              target.teamId,
-              args.seasonId,
-              args.gameType
-            )
-          })
-        )
+        limit(async () => {
+          try {
+            return {
+              row: buildEdgeTeamSupplementalDetailRow({
+                snapshotDate: args.snapshotDate,
+                seasonId: args.seasonId,
+                gameType: args.gameType,
+                teamId: target.teamId,
+                teamName: target.teamName,
+                teamAbbreviation: target.teamAbbreviation,
+                endpointFamily: spec.family,
+                payload: await spec.fetch(
+                  target.teamId,
+                  args.seasonId,
+                  args.gameType
+                )
+              }),
+              skipped: null
+            };
+          } catch (error) {
+            if (!isEdgeNotFoundError(error)) {
+              throw error;
+            }
+            return {
+              row: null,
+              skipped: {
+                entityType: "team" as const,
+                teamId: target.teamId,
+                fullName: target.teamName,
+                endpointFamily: spec.family,
+                reason: buildEdgeUnavailableReason(spec.family)
+              }
+            };
+          }
+        })
       )
     )
   );
+
+  return {
+    rows: results.flatMap((result) => (result.row ? [result.row] : [])),
+    skipped: results.flatMap((result) =>
+      result.skipped ? [result.skipped] : []
+    )
+  };
 }
 
 async function fetchGoalieSupplementalDetailRows(args: {
@@ -694,7 +737,8 @@ async function fetchGoalieSupplementalDetailRows(args: {
                 entityType: "goalie" as const,
                 playerId: target.playerId,
                 fullName: target.fullName,
-                reason: `${spec.family} not available`
+                endpointFamily: spec.family,
+                reason: buildEdgeUnavailableReason(spec.family)
               }
             };
           }
@@ -932,7 +976,7 @@ export async function runNhlEdgeStatsSnapshot(
     options.target === "team-supplemental" ||
     teamSupplementalFamily != null
   ) {
-    const teamSupplementalRows = await fetchTeamSupplementalDetailRows({
+    const teamSupplementalResult = await fetchTeamSupplementalDetailRows({
       snapshotDate: options.snapshotDate,
       seasonId,
       gameType: options.gameType,
@@ -940,7 +984,8 @@ export async function runNhlEdgeStatsSnapshot(
       concurrency: options.concurrency,
       family: teamSupplementalFamily
     });
-    rows.push(...teamSupplementalRows);
+    rows.push(...teamSupplementalResult.rows);
+    skippedDetails.push(...teamSupplementalResult.skipped);
     executedTargets.push(teamSupplementalFamily ?? "team-supplemental");
   }
 
@@ -1015,6 +1060,7 @@ export async function runNhlEdgeStatsSnapshot(
       total: skippedDetails.length,
       skaters: skippedDetails.filter((entry) => entry.entityType === "skater").length,
       goalies: skippedDetails.filter((entry) => entry.entityType === "goalie").length,
+      teams: skippedDetails.filter((entry) => entry.entityType === "team").length,
       samples: skippedDetails.slice(0, 15)
     },
     pagination: {

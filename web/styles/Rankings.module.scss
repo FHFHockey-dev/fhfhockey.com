@@ -1382,6 +1382,18 @@ $border-strong: rgba(v.$primary-color, 0.36);
   min-width: 0;
 }
 
+.contextRail {
+  position: sticky;
+  top: 12px;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+
+  .snapshotPanel {
+    position: static;
+  }
+}
+
 .matrixToolbar {
   display: flex;
   align-items: center;
@@ -2133,6 +2145,117 @@ td.stickyPlayerCell {
   line-height: 1.45;
 }
 
+.comparisonPanel {
+  @include panel.panel-shell($radius: v.$radius-md, $padding: 14px, $variant: flat);
+
+  color: $text-strong;
+
+  h2,
+  h3,
+  p,
+  dl {
+    margin: 0;
+  }
+
+  header {
+    margin-bottom: 12px;
+
+    h2 {
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    p {
+      margin-top: 4px;
+      color: $text-soft;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+  }
+}
+
+.comparisonMeta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 10px;
+
+  span {
+    overflow: hidden;
+    border: 1px solid $border-muted;
+    border-radius: 6px;
+    padding: 6px;
+    background: $surface-inset;
+    color: $text-soft;
+    font-size: 10px;
+    font-weight: 900;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+}
+
+.comparisonRows {
+  display: grid;
+  gap: 8px;
+
+  article {
+    border: 1px solid $border-muted;
+    border-radius: 6px;
+    padding: 9px;
+    background: $surface-inset;
+  }
+
+  h3 {
+    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 1.25;
+  }
+
+  dl {
+    display: grid;
+    gap: 7px;
+  }
+
+  dt {
+    color: $text-soft;
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 2px 0 0;
+    color: v.$text-primary;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+}
+
+.comparisonCaveats {
+  margin-top: 12px;
+
+  h3 {
+    margin-bottom: 8px;
+    color: $text-soft;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+
+  li {
+    margin: 5px 0;
+    color: v.$text-primary;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+}
+
 .secondaryTabGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2376,6 +2499,29 @@ td.stickyPlayerCell {
   }
 }
 
+.opportunitySignals {
+  display: flex;
+  min-width: 170px;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+}
+
+.opportunitySignal {
+  border: 1px solid rgba(v.$success-color, 0.48);
+  border-radius: 6px;
+  padding: 3px 6px;
+  background: rgba(v.$success-color, 0.1);
+  color: v.$success-color;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.opportunityEmpty {
+  color: $text-soft;
+}
+
 .deltaPositive {
   color: v.$success-color;
 }
@@ -2440,6 +2586,10 @@ td.stickyPlayerCell {
     position: static;
   }
 
+  .contextRail {
+    position: static;
+  }
+
   .secondaryTabGrid {
     grid-template-columns: 1fr;
   }
@@ -2489,7 +2639,7 @@ td.stickyPlayerCell {
     padding: 7px 9px;
   }
 
-  .snapshotPanel {
+  .contextRail {
     max-height: 100%;
     overflow: auto;
   }

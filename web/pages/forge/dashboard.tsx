@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import type { NextPage } from "next";
 import Head from "next/head";
 import { useRouter } from "next/router";
@@ -18,6 +18,7 @@ import {
   parseForgeTeamParam
 } from "lib/dashboard/forgeLinks";
 import { teamsInfo } from "lib/teamsInfo";
+import { evaluateMixedEffectiveDates } from "lib/dashboard/freshness";
 
 const ForgeDashboardPage: NextPage = () => {
   const router = useRouter();
@@ -42,6 +43,7 @@ const ForgeDashboardPage: NextPage = () => {
   >("all");
   const [insightOwnershipMin, setInsightOwnershipMin] = useState(25);
   const [insightOwnershipMax, setInsightOwnershipMax] = useState(50);
+  const [moduleDates, setModuleDates] = useState<Record<string, string | null>>({});
   const titleRef = useRef<HTMLHeadingElement | null>(null);
   const expansionTextRef = useRef<HTMLSpanElement | null>(null);
   const teamOptions = useMemo(
@@ -103,6 +105,28 @@ const ForgeDashboardPage: NextPage = () => {
       }),
     [selectedDate, selectedPosition, selectedTeam]
   );
+  const updateModuleDate = useCallback((source: string, value: string | null) => {
+    setModuleDates((current) =>
+      current[source] === value ? current : { ...current, [source]: value }
+    );
+  }, []);
+  const mixedDateAudit = useMemo(
+    () =>
+      evaluateMixedEffectiveDates([
+        { source: "team-ratings", label: "Team ratings", date: moduleDates.teamRatings },
+        { source: "team-ctpi", label: "Team momentum", date: moduleDates.teamCtpi },
+        { source: "slate", label: "Slate", date: moduleDates.slate },
+        { source: "goalies", label: "Goalies", date: moduleDates.goalies },
+        { source: "top-adds", label: "Top Adds", date: moduleDates.topAdds },
+        { source: "sustainability", label: "Trust/fade", date: moduleDates.sustainability },
+        { source: "movement", label: "Player movement", date: moduleDates.movement }
+      ]),
+    [moduleDates]
+  );
+
+  useEffect(() => {
+    setModuleDates({});
+  }, [selectedDate]);
   useEffect(() => {
     if (!router.isReady) return;
     setSelectedDate((current) => (current === requestedDate ? current : requestedDate));
@@ -370,6 +394,11 @@ const ForgeDashboardPage: NextPage = () => {
               className={styles.controlCenter}
               aria-label="Forge dashboard"
             >
+              {mixedDateAudit.isMixed ? (
+                <p className={`${styles.panelState} ${styles.panelStateStale}`} role="status">
+                  {mixedDateAudit.message}
+                </p>
+              ) : null}
               <section
                 className={styles.dashboardStage}
                 aria-label="Forge dashboard overview"
@@ -378,6 +407,8 @@ const ForgeDashboardPage: NextPage = () => {
                   <TeamPowerCard
                     date={selectedDate}
                     team={selectedTeam}
+                    onResolvedDate={(value) => updateModuleDate("teamRatings", value)}
+                    onCtpiResolvedDate={(value) => updateModuleDate("teamCtpi", value)}
                   />
                 </div>
 
@@ -385,10 +416,12 @@ const ForgeDashboardPage: NextPage = () => {
                   <SlateStripCard
                     date={selectedDate}
                     team={selectedTeam}
+                    onResolvedDate={(value) => updateModuleDate("slate", value)}
                   />
                   <GoalieRiskCard
                     date={selectedDate}
                     team={selectedTeam}
+                    onResolvedDate={(value) => updateModuleDate("goalies", value)}
                   />
                 </div>
 
@@ -397,6 +430,7 @@ const ForgeDashboardPage: NextPage = () => {
                     date={selectedDate}
                     position={selectedPosition}
                     positionLabel={selectedPositionLabel}
+                    onResolvedDate={(value) => updateModuleDate("topAdds", value)}
                   />
                 </aside>
               </section>
@@ -463,6 +497,7 @@ const ForgeDashboardPage: NextPage = () => {
                       ownershipMin={insightOwnershipMin}
                       ownershipMax={insightOwnershipMax}
                       returnToHref={dashboardReturnHref}
+                      onResolvedDate={(value) => updateModuleDate("sustainability", value)}
                     />
                   </div>
                   <div className={`${styles.panel} ${styles.hotColdPanel}`}>
@@ -473,6 +508,7 @@ const ForgeDashboardPage: NextPage = () => {
                       ownershipMin={insightOwnershipMin}
                       ownershipMax={insightOwnershipMax}
                       returnToHref={dashboardReturnHref}
+                      onResolvedDate={(value) => updateModuleDate("movement", value)}
                     />
                   </div>
                 </div>

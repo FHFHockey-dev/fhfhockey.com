@@ -15,6 +15,7 @@ import {
   persistUnresolvedPlayerNames,
   sendPlayerAliasReviewEmailForQueuedNames,
 } from "lib/sources/lineSourceProcessing";
+import { syncLineCombinationSourceWinners } from "lib/sources/lineSourceLineCombinations";
 import {
   applyLinesCccWrapperOEmbed,
   applyQuotedTweetPreference,
@@ -721,15 +722,36 @@ export default withCronJobAudit(
         row,
       });
     }
+    let lineCombinationSync: Awaited<
+      ReturnType<typeof syncLineCombinationSourceWinners>
+    > & { error?: string } = {
+      sourceRows: 0,
+      eligibleWinners: 0,
+      written: 0,
+      failures: [],
+    };
+    try {
+      lineCombinationSync = await syncLineCombinationSourceWinners({
+        supabase: req.supabase,
+        date: requestedDate,
+      });
+    } catch (error) {
+      lineCombinationSync = {
+        sourceRows: 0,
+        eligibleWinners: 0,
+        written: 0,
+        failures: [],
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
     const unresolvedNamesQueued = await persistUnresolvedPlayerNames({
       supabase: req.supabase,
       rows: rowsToUpsert,
     });
-    const unresolvedNameEmail =
-      await sendPlayerAliasReviewEmailForQueuedNames({
-        req,
-        unresolvedNamesQueued,
-      });
+    const unresolvedNameEmail = await sendPlayerAliasReviewEmailForQueuedNames({
+      req,
+      unresolvedNamesQueued,
+    });
     const processedEventUpdates = parsedCandidates.map((candidate, index) => {
       const event = parsedEvents[index]!;
       return {
@@ -805,6 +827,7 @@ export default withCronJobAudit(
         insufficientTextRejected: insufficientTextRejectedCount,
         duplicatesSkipped: duplicateCaptureKeysSkipped,
         rowsUpserted: rowsToUpsert.length,
+        lineCombinationSync,
         unresolvedNamesQueued,
         unresolvedNameEmail,
         eventsDeferred: deferredEventUpdates.length,
@@ -832,7 +855,7 @@ export default withCronJobAudit(
         matchedPlayerIds: candidate.matchedPlayerIds,
       })),
       message:
-        "line source processor route parsed pending events, upserted rows, and updated source event statuses.",
+        "line source processor route parsed pending events, upserted source snapshots, synchronized eligible first-arrival line combinations, and updated source event statuses.",
     });
   }),
   {

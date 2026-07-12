@@ -16,52 +16,37 @@ export type NavbarItemCategory = {
 };
 
 const ITEMS_DATA: NavbarItem[] = [
-  { type: "link", label: "HOME", href: "/" },
-  {
-    type: "link",
-    label: "UNDERLYING STATS",
-    href: "/underlying-stats",
-    accent: "yellow"
-  },
-  { type: "link", label: "GAME GRID", href: "/game-grid" },
+  { type: "link", label: "Dashboard", href: "/" },
+  { type: "link", label: "Players", href: "/stats" },
+  { type: "link", label: "Teams", href: "/stats" },
   {
     type: "category",
-    label: "TOOLS",
+    label: "Tools",
     items: [
-      { type: "link", label: "STATS", href: "/stats" },
-      { type: "link", label: "TRENDS", href: "/trends" },
-      { type: "link", label: "NHL PREDICTIONS", href: "/nhl-predictions" },
-      { type: "link", label: "LINES", href: "/lines" },
-      { type: "link", label: "LINE COMBO MATRIX", href: "/drm" },
-      { type: "link", label: "SPLITS", href: "/splits" },
+      { type: "link", label: "Game Grid", href: "/game-grid" },
+      { type: "link", label: "Stats", href: "/stats" },
+      { type: "link", label: "Trends", href: "/trends" },
+      { type: "link", label: "NHL Predictions", href: "/nhl-predictions" },
+      { type: "link", label: "Lines", href: "/lines" },
+      { type: "link", label: "Line Combo Matrix", href: "/drm" },
+      { type: "link", label: "Splits", href: "/splits" },
       {
         type: "link",
-        label: "DRAFT DASHBOARD",
+        label: "Draft Dashboard",
         href: "/draft-dashboard"
       }
     ]
   },
   {
-    type: "category",
-    label: "CHARTS",
-    items: [
-      { type: "link", label: "START CHART", href: "/start-chart" },
-      { type: "link", label: "WiGO", href: "/wigoCharts" },
-      { type: "link", label: "SHIFT CHART", href: "/shiftChart" }
-    ]
+    type: "link",
+    label: "Analytics",
+    href: "/underlying-stats"
   },
-  {
-    type: "category",
-    label: "VARIANCE",
-    items: [
-      { type: "link", label: "SKATERS", href: "/variance/skaters" },
-      { type: "link", label: "GOALIES", href: "/variance/goalies" }
-    ]
-  },
-  { type: "link", label: "BLOG", href: "/blog" },
+  { type: "link", label: "Projections", href: "/projections" },
+  { type: "link", label: "News", href: "/news" },
   {
     type: "link",
-    label: "PODCAST",
+    label: "Podcast",
     href: "/podfeed"
   }
 ];

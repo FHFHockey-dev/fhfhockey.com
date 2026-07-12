@@ -17,6 +17,11 @@ import { getTeamAbbreviationById } from "lib/teamsInfo";
 import styles from "./TeamScheduleCalendar.module.scss";
 import { teamsInfo } from "lib/teamsInfo";
 import supabase from "lib/supabase";
+import {
+  buildDatedOpponentStrengthIndex,
+  type OpponentStrengthBand,
+  type TeamPowerRatingRow
+} from "lib/teamOpponentStrength";
 
 interface TeamScheduleCalendarProps {
   games: ScheduleGame[];
@@ -72,7 +77,7 @@ interface EnhancedGameData {
   isPartOfStreak?: boolean;
   streakType?: "win" | "loss";
   streakPosition?: "start" | "middle" | "end" | "single";
-  opponentStrength?: "strong" | "average" | "weak";
+  opponentStrength?: OpponentStrengthBand;
   // Enhanced analytics from wgo_team_stats
   gameStats?: WGOTeamStat;
   performance?: {
@@ -243,6 +248,9 @@ export function TeamScheduleCalendar({
   // Add state for games table data
   const [gamesTableData, setGamesTableData] = useState<any[]>([]);
   const [gamesTableLoading, setGamesTableLoading] = useState(false);
+  const [opponentStrengthIndex, setOpponentStrengthIndex] = useState<
+    Map<string, OpponentStrengthBand>
+  >(new Map());
 
   // Get team abbreviation from ID if not provided
   const teamAbbr =
@@ -351,6 +359,50 @@ export function TeamScheduleCalendar({
     fetchGamesTableData();
   }, [teamId, seasonId]);
 
+  useEffect(() => {
+    let active = true;
+    const gameDates = Array.from(
+      new Set(games.map((game) => game.gameDate.slice(0, 10)))
+    ).sort();
+    if (!gameDates.length) {
+      setOpponentStrengthIndex(new Map());
+      return () => {
+        active = false;
+      };
+    }
+
+    const loadDatedStrength = async () => {
+      const rows: TeamPowerRatingRow[] = [];
+      const pageSize = 1000;
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from("team_power_ratings_daily")
+          .select(
+            "date,team_abbreviation,off_rating,def_rating,pace_rating,pp_tier,pk_tier,trend10"
+          )
+          .in("date", gameDates)
+          .order("date", { ascending: true })
+          .order("team_abbreviation", { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const page = (data ?? []) as TeamPowerRatingRow[];
+        rows.push(...page);
+        if (page.length < pageSize) break;
+        from += pageSize;
+      }
+      if (active) setOpponentStrengthIndex(buildDatedOpponentStrengthIndex(rows));
+    };
+
+    loadDatedStrength().catch((error) => {
+      console.error("Error loading dated opponent strength:", error);
+      if (active) setOpponentStrengthIndex(new Map());
+    });
+    return () => {
+      active = false;
+    };
+  }, [games]);
+
   // Enhanced game result determination with WGO stats integration
   const getGameResult = (game: ScheduleGame): GameResult => {
     const gameDate = new Date(game.gameDate);
@@ -437,19 +489,16 @@ export function TeamScheduleCalendar({
     return isHomeTeam ? "vs" : "@";
   };
 
-  // Enhanced opponent strength analysis using WGO stats
+  // Dated opponent strength uses the same team-power components as Team HQ.
+  // Missing or sparse daily snapshots remain unavailable rather than falling
+  // back to a permanent hard-coded team classification.
   const calculateOpponentStrength = (
-    opponentId: number,
+    opponentAbbreviation: string,
     gameDate: string
-  ): "strong" | "average" | "weak" => {
-    // This would ideally fetch opponent's stats up to the game date
-    // For now, using a simplified approach based on known strong/weak teams
-    const strongTeams = [1, 2, 3, 6, 8, 12, 13, 16, 17, 19, 20, 21, 25, 28];
-    const weakTeams = [4, 5, 7, 11, 14, 15, 18, 22, 23, 26, 27, 29, 30];
-
-    if (strongTeams.includes(opponentId)) return "strong";
-    if (weakTeams.includes(opponentId)) return "weak";
-    return "average";
+  ): OpponentStrengthBand | undefined => {
+    return opponentStrengthIndex.get(
+      `${gameDate}:${opponentAbbreviation.trim().toUpperCase()}`
+    );
   };
 
   // Enhanced game performance analysis
@@ -495,7 +544,7 @@ export function TeamScheduleCalendar({
   const calculateGameRating = (
     result: GameResult,
     performance: any,
-    opponentStrength: "strong" | "average" | "weak"
+    opponentStrength?: OpponentStrengthBand
   ): "excellent" | "good" | "average" | "poor" => {
     if (result === "future") return "average";
 
@@ -539,7 +588,7 @@ export function TeamScheduleCalendar({
 
       const gameDate = format(new Date(game.gameDate), "yyyy-MM-dd");
       const gameDayWGOStat = wgoStats.find((stat) => stat.date === gameDate);
-      const opponentStrength = calculateOpponentStrength(opponent.id, gameDate);
+      const opponentStrength = calculateOpponentStrength(opponentAbbr, gameDate);
 
       // For completed games, try to get home/away from WGO stats for accuracy
       let finalHomeAway = homeAway;
@@ -670,7 +719,7 @@ export function TeamScheduleCalendar({
     });
 
     return results;
-  }, [games, wgoStats, teamId, gamesTableData]);
+  }, [games, wgoStats, teamId, gamesTableData, opponentStrengthIndex]);
 
   // Enhanced calendar data generation with comprehensive analytics
   const calendarData = useMemo(() => {
@@ -1266,7 +1315,7 @@ export function TeamScheduleCalendar({
               <span
                 className={`${styles.value} ${styles[opponentStrength || "average"]}`}
               >
-                {opponentStrength?.toUpperCase()}
+                {opponentStrength?.toUpperCase() ?? "UNAVAILABLE"}
               </span>
             </div>
 
@@ -2192,7 +2241,7 @@ const EnhancedGameStatsSidebar = ({
               <span
                 className={`${styles.value} ${styles[gameData.opponentStrength || "average"]}`}
               >
-                {gameData.opponentStrength?.toUpperCase()}
+                {gameData.opponentStrength?.toUpperCase() ?? "UNAVAILABLE"}
               </span>
             </div>
 

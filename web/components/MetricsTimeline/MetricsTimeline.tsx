@@ -1,17 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  LineChart,
+  CartesianGrid,
+  Legend,
   Line,
+  LineChart,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  ReferenceLine
 } from "recharts";
 import supabase from "lib/supabase";
 import { teamsInfo } from "lib/teamsInfo";
+import {
+  buildMetricsTimelineRows,
+  calculateTimelineDelta,
+  MetricsTimelineMetricKey,
+  MetricsTimelinePoint,
+} from "./metricsTimelineData";
 import styles from "./MetricsTimeline.module.scss";
 
 interface MetricsTimelineProps {
@@ -20,102 +26,277 @@ interface MetricsTimelineProps {
   seasonId?: string;
 }
 
-interface TeamMetric {
-  season_id: number;
-  games_played: number | null;
-  wins: number | null;
-  losses: number | null;
-  ot_losses: number | null;
-  points: number | null;
-  point_pct: number | null;
-  goals_for: number | null;
-  goals_against: number | null;
-  goals_for_per_game: number | null;
-  goals_against_per_game: number | null;
-  power_play_pct: number | null;
-  penalty_kill_pct: number | null;
-  shots_for_per_game: number | null;
-  shots_against_per_game: number | null;
-  faceoff_win_pct: number | null;
-}
+type MetricOption = {
+  key: MetricsTimelineMetricKey;
+  label: string;
+  shortLabel: string;
+  isPercent?: boolean;
+  lowerIsBetter?: boolean;
+  referenceValue?: number;
+};
+
+type XgRow = {
+  game_date: string | null;
+  xg_for: number | null;
+  xg_against: number | null;
+};
+
+const metricOptions: MetricOption[] = [
+  {
+    key: "pointPct",
+    label: "Points %",
+    shortLabel: "Pts %",
+    isPercent: true,
+    referenceValue: 0.5,
+  },
+  {
+    key: "goalsForPerGame",
+    label: "Goals For/Game",
+    shortLabel: "GF/G",
+  },
+  {
+    key: "goalsAgainstPerGame",
+    label: "Goals Against/Game",
+    shortLabel: "GA/G",
+    lowerIsBetter: true,
+  },
+  {
+    key: "powerPlayPct",
+    label: "Power Play %",
+    shortLabel: "PP%",
+    isPercent: true,
+    referenceValue: 0.2,
+  },
+  {
+    key: "shotsForPerGame",
+    label: "Shots For/Game",
+    shortLabel: "SF/G",
+  },
+  {
+    key: "xgf",
+    label: "Expected Goals For",
+    shortLabel: "xGF",
+  },
+  {
+    key: "xga",
+    label: "Expected Goals Against",
+    shortLabel: "xGA",
+    lowerIsBetter: true,
+  },
+];
+
+const getMetricOption = (key: MetricsTimelineMetricKey) =>
+  metricOptions.find((option) => option.key === key) ?? metricOptions[0];
+
+const getMetricValue = (
+  row: MetricsTimelinePoint,
+  key: MetricsTimelineMetricKey
+) => row[key];
+
+const formatValue = (
+  value: number | null | undefined,
+  option: MetricOption
+): string => {
+  if (value == null || Number.isNaN(value)) return "N/A";
+  if (option.isPercent) return `${(value * 100).toFixed(1)}%`;
+  return value.toFixed(2);
+};
+
+const formatDelta = (
+  delta: number | null,
+  option: MetricOption
+): string => {
+  if (delta == null) return "N/A";
+  const sign = delta > 0 ? "+" : "";
+  if (option.isPercent) return `${sign}${(delta * 100).toFixed(1)} pts`;
+  return `${sign}${delta.toFixed(2)}`;
+};
+
+const normalizeXgRows = (rows: readonly XgRow[]) => {
+  const rowsByDate = new Map<string, { date: string; xgf: number; xga: number }>();
+
+  rows.forEach((row) => {
+    if (!row.game_date || row.xg_for == null || row.xg_against == null) return;
+    const date = row.game_date.slice(0, 10);
+
+    if (!rowsByDate.has(date)) {
+      rowsByDate.set(date, {
+        date,
+        xgf: row.xg_for,
+        xga: row.xg_against,
+      });
+    }
+  });
+
+  return Array.from(rowsByDate.values());
+};
 
 const MetricsTimeline: React.FC<MetricsTimelineProps> = ({
   teamId,
   teamAbbrev,
-  seasonId
+  seasonId,
 }) => {
-  const [metrics, setMetrics] = useState<TeamMetric[]>([]);
+  const [rows, setRows] = useState<MetricsTimelinePoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedMetric, setSelectedMetric] =
-    useState<keyof TeamMetric>("point_pct");
+    useState<MetricsTimelineMetricKey>("pointPct");
 
   const teamInfo = teamsInfo[teamAbbrev];
+  const selectedOption = getMetricOption(selectedMetric);
+  const strokeColor = teamInfo?.primaryColor || "#07aae2";
 
   useEffect(() => {
-    if (!teamId) return;
+    if (!teamId || !seasonId) return;
 
+    const teamIdNumber = Number(teamId);
+    const seasonIdNumber = Number(seasonId);
+
+    if (!Number.isFinite(teamIdNumber) || !Number.isFinite(seasonIdNumber)) {
+      setError("Invalid team or season selection.");
+      setLoading(false);
+      return;
+    }
+
+    let isMounted = true;
     setLoading(true);
     setError(null);
 
     const fetchMetrics = async () => {
-      try {
-        let query = supabase
-          .from("team_summary_years")
-          .select("*")
-          .eq("team_id", parseInt(teamId))
-          .order("season_id", { ascending: true });
+      const { data: wgoRows, error: wgoError } = await supabase
+        .from("wgo_team_stats")
+        .select(
+          `
+            date,
+            points,
+            games_played,
+            goals_for_per_game,
+            goals_against_per_game,
+            power_play_pct,
+            shots_for_per_game
+          `
+        )
+        .eq("team_id", teamIdNumber)
+        .eq("season_id", seasonIdNumber)
+        .order("date", { ascending: true });
 
-        // Only filter by season if seasonId is provided
-        if (seasonId) {
-          query = query.eq("season_id", parseInt(seasonId));
-        }
+      if (wgoError) throw wgoError;
 
-        const { data, error: fetchError } = await query;
+      const { data: approvedXgRows, error: approvedXgError } = await supabase
+        .from("nhl_xg_team_game_aggregates")
+        .select("game_date, xg_for, xg_against")
+        .eq("team_id", teamIdNumber)
+        .eq("season_id", seasonIdNumber)
+        .eq("source_model_approved", true)
+        .order("game_date", { ascending: true })
+        .order("feature_version", { ascending: false })
+        .order("updated_at", { ascending: false });
 
-        if (fetchError) {
-          setError(fetchError.message);
-        } else if (data) {
-          setMetrics(data);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
+      if (approvedXgError) throw approvedXgError;
+
+      let xgRows = approvedXgRows ?? [];
+
+      if (xgRows.length === 0) {
+        const { data: fallbackXgRows, error: fallbackXgError } = await supabase
+          .from("nhl_xg_team_game_aggregates")
+          .select("game_date, xg_for, xg_against")
+          .eq("team_id", teamIdNumber)
+          .eq("season_id", seasonIdNumber)
+          .order("game_date", { ascending: true })
+          .order("feature_version", { ascending: false })
+          .order("updated_at", { ascending: false });
+
+        if (fallbackXgError) throw fallbackXgError;
+        xgRows = fallbackXgRows ?? [];
       }
+
+      if (!isMounted) return;
+
+      setRows(
+        buildMetricsTimelineRows({
+          wgoRows: wgoRows ?? [],
+          underlyingRows: normalizeXgRows(xgRows),
+        })
+      );
     };
 
-    fetchMetrics();
+    fetchMetrics()
+      .catch((err) => {
+        if (!isMounted) return;
+        setError(err instanceof Error ? err.message : "An error occurred");
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [teamId, seasonId]);
 
-  const metricOptions = [
-    { key: "point_pct" as keyof TeamMetric, label: "Points %" },
-    { key: "goals_for_per_game" as keyof TeamMetric, label: "Goals For/Game" },
-    {
-      key: "goals_against_per_game" as keyof TeamMetric,
-      label: "Goals Against/Game"
-    },
-    { key: "power_play_pct" as keyof TeamMetric, label: "Power Play %" },
-    { key: "penalty_kill_pct" as keyof TeamMetric, label: "Penalty Kill %" },
-    { key: "shots_for_per_game" as keyof TeamMetric, label: "Shots For/Game" },
-    {
-      key: "shots_against_per_game" as keyof TeamMetric,
-      label: "Shots Against/Game"
-    },
-    { key: "faceoff_win_pct" as keyof TeamMetric, label: "Faceoff Win %" }
-  ];
+  const rowsWithMetric = useMemo(
+    () => rows.filter((row) => getMetricValue(row, selectedMetric) != null),
+    [rows, selectedMetric]
+  );
 
-  const formatValue = (value: number, metric: keyof TeamMetric): string => {
-    if (metric.includes("pct")) {
-      return `${(value * 100).toFixed(1)}%`;
-    }
-    return value.toFixed(2);
-  };
+  const latestRow = rowsWithMetric.at(-1);
+  const bestRow = useMemo(() => {
+    return rowsWithMetric.reduce<MetricsTimelinePoint | null>((best, row) => {
+      if (!best) return row;
+      const rowValue = getMetricValue(row, selectedMetric);
+      const bestValue = getMetricValue(best, selectedMetric);
 
-  const formatSeason = (seasonId: number): string => {
-    const startYear = Math.floor(seasonId / 10000);
-    const endYear = startYear + 1;
-    return `${startYear}-${endYear.toString().slice(-2)}`;
+      if (rowValue == null || bestValue == null) return best;
+      return selectedOption.lowerIsBetter
+        ? rowValue < bestValue
+          ? row
+          : best
+        : rowValue > bestValue
+          ? row
+          : best;
+    }, null);
+  }, [rowsWithMetric, selectedMetric, selectedOption.lowerIsBetter]);
+  const recentRows = rowsWithMetric.slice(-8).reverse();
+  const delta = calculateTimelineDelta({
+    rows,
+    metric: selectedMetric,
+    lookback: 5,
+  });
+  const isPositiveTrend =
+    delta != null &&
+    (selectedOption.lowerIsBetter ? delta < 0 : delta > 0);
+
+  const tooltip = ({
+    active,
+    payload,
+    label,
+  }: {
+    active?: boolean;
+    payload?: Array<{ payload?: MetricsTimelinePoint; value?: unknown }>;
+    label?: string;
+  }) => {
+    if (!active || !payload?.length) return null;
+    const point = payload[0].payload;
+    const value =
+      typeof payload[0].value === "number" ? payload[0].value : null;
+
+    return (
+      <div className={styles.tooltip}>
+        <div className={styles.tooltipDate}>{point?.date ?? label}</div>
+        <div className={styles.tooltipMetric}>
+          {selectedOption.label}: {formatValue(value, selectedOption)}
+        </div>
+        <div className={styles.tooltipMeta}>
+          GF/G {formatValue(point?.goalsForPerGame, getMetricOption("goalsForPerGame"))}
+          {" · "}
+          GA/G{" "}
+          {formatValue(
+            point?.goalsAgainstPerGame,
+            getMetricOption("goalsAgainstPerGame")
+          )}
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -140,7 +321,7 @@ const MetricsTimeline: React.FC<MetricsTimelineProps> = ({
     );
   }
 
-  if (metrics.length === 0) {
+  if (rows.length === 0) {
     return (
       <div className={styles.container}>
         <div className={styles.error}>
@@ -156,9 +337,9 @@ const MetricsTimeline: React.FC<MetricsTimelineProps> = ({
       className={styles.container}
       style={
         {
-          "--team-primary-color": teamInfo?.primaryColor || "#1976d2",
+          "--team-primary-color": strokeColor,
           "--team-secondary-color": teamInfo?.secondaryColor || "#424242",
-          "--team-accent-color": teamInfo?.accent || "#ff9800"
+          "--team-accent-color": teamInfo?.accent || "#d7b645",
         } as React.CSSProperties
       }
     >
@@ -172,8 +353,8 @@ const MetricsTimeline: React.FC<MetricsTimelineProps> = ({
         <select
           id="metric-select"
           value={selectedMetric}
-          onChange={(e) =>
-            setSelectedMetric(e.target.value as keyof TeamMetric)
+          onChange={(event) =>
+            setSelectedMetric(event.target.value as MetricsTimelineMetricKey)
           }
           className={styles.metricSelect}
         >
@@ -187,26 +368,156 @@ const MetricsTimeline: React.FC<MetricsTimelineProps> = ({
 
       <div className={styles.timeline}>
         <div className={styles.timelineHeader}>
-          <h3>{metricOptions.find((m) => m.key === selectedMetric)?.label}</h3>
+          <h3>{selectedOption.label}</h3>
+          <span>{rowsWithMetric.length} games with data</span>
         </div>
 
-        <div className={styles.timelineData}>
-          {metrics.map((metric, index) => (
-            <div key={metric.season_id} className={styles.timelineItem}>
-              <div className={styles.season}>
-                {formatSeason(metric.season_id)}
-              </div>
-              <div className={styles.value}>
-                {metric[selectedMetric] !== null
-                  ? formatValue(
-                      metric[selectedMetric] as number,
-                      selectedMetric
-                    )
-                  : "N/A"}
-              </div>
-              <div className={styles.games}>{metric.games_played || 0} GP</div>
-            </div>
-          ))}
+        {rowsWithMetric.length > 1 ? (
+          <div className={styles.chartShell}>
+            <ResponsiveContainer width="100%" height={340}>
+              <LineChart
+                data={rowsWithMetric}
+                margin={{ top: 16, right: 28, bottom: 8, left: 4 }}
+              >
+                <CartesianGrid stroke="rgba(255, 255, 255, 0.08)" />
+                <XAxis
+                  dataKey="label"
+                  minTickGap={26}
+                  tick={{ fill: "#bdbdbd", fontSize: 12 }}
+                  tickLine={{ stroke: "rgba(255, 255, 255, 0.2)" }}
+                />
+                <YAxis
+                  domain={selectedMetric === "pointPct" ? [0, 1] : ["auto", "auto"]}
+                  tickFormatter={(value) =>
+                    formatValue(Number(value), selectedOption)
+                  }
+                  tick={{ fill: "#bdbdbd", fontSize: 12 }}
+                  tickLine={{ stroke: "rgba(255, 255, 255, 0.2)" }}
+                  width={56}
+                />
+                <Tooltip content={tooltip} />
+                <Legend
+                  wrapperStyle={{ color: "#d8d8d8", paddingTop: 8 }}
+                  formatter={() => selectedOption.label}
+                />
+                {selectedOption.referenceValue != null ? (
+                  <ReferenceLine
+                    y={selectedOption.referenceValue}
+                    stroke="rgba(255, 255, 255, 0.28)"
+                    strokeDasharray="4 4"
+                  />
+                ) : null}
+                <Line
+                  type="monotone"
+                  dataKey={selectedMetric}
+                  name={selectedOption.label}
+                  stroke={strokeColor}
+                  strokeWidth={3}
+                  dot={false}
+                  activeDot={{ r: 5, fill: strokeColor, stroke: "#ffffff" }}
+                  connectNulls
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className={styles.noData}>Not enough data to chart this metric.</div>
+        )}
+
+        <div className={styles.summaryGrid}>
+          <div className={styles.summaryCard}>
+            <span className={styles.summaryLabel}>Latest</span>
+            <strong className={styles.summaryValue}>
+              {formatValue(
+                latestRow ? getMetricValue(latestRow, selectedMetric) : null,
+                selectedOption
+              )}
+            </strong>
+            <span className={styles.summaryMeta}>{latestRow?.date ?? "N/A"}</span>
+          </div>
+          <div className={styles.summaryCard}>
+            <span className={styles.summaryLabel}>Last 5</span>
+            <strong
+              className={`${styles.summaryValue} ${
+                delta == null
+                  ? styles.muted
+                  : isPositiveTrend
+                    ? styles.positive
+                    : styles.negative
+              }`}
+            >
+              {formatDelta(delta, selectedOption)}
+            </strong>
+            <span className={styles.summaryMeta}>Change vs 5 games ago</span>
+          </div>
+          <div className={styles.summaryCard}>
+            <span className={styles.summaryLabel}>Best Game</span>
+            <strong className={styles.summaryValue}>
+              {formatValue(
+                bestRow ? getMetricValue(bestRow, selectedMetric) : null,
+                selectedOption
+              )}
+            </strong>
+            <span className={styles.summaryMeta}>{bestRow?.date ?? "N/A"}</span>
+          </div>
+          <div className={styles.summaryCard}>
+            <span className={styles.summaryLabel}>Coverage</span>
+            <strong className={styles.summaryValue}>{rowsWithMetric.length}</strong>
+            <span className={styles.summaryMeta}>Tracked games</span>
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.tableShell}>
+        <div className={styles.tableHeader}>
+          <h3>Recent Games</h3>
+          <span>{selectedOption.shortLabel} trend sample</span>
+        </div>
+        <div className={styles.tableScroll}>
+          <table className={styles.recentTable}>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>{selectedOption.shortLabel}</th>
+                <th>GF/G</th>
+                <th>GA/G</th>
+                <th>PP%</th>
+                <th>SF/G</th>
+                <th>xGF</th>
+                <th>xGA</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentRows.map((row) => (
+                <tr key={row.date}>
+                  <td>{row.date}</td>
+                  <td>{formatValue(getMetricValue(row, selectedMetric), selectedOption)}</td>
+                  <td>
+                    {formatValue(
+                      row.goalsForPerGame,
+                      getMetricOption("goalsForPerGame")
+                    )}
+                  </td>
+                  <td>
+                    {formatValue(
+                      row.goalsAgainstPerGame,
+                      getMetricOption("goalsAgainstPerGame")
+                    )}
+                  </td>
+                  <td>{formatValue(row.powerPlayPct, getMetricOption("powerPlayPct"))}</td>
+                  <td>
+                    {formatValue(
+                      row.shotsForPerGame,
+                      getMetricOption("shotsForPerGame")
+                    )}
+                  </td>
+                  <td>{formatValue(row.xgf, getMetricOption("xgf"))}</td>
+                  <td>{formatValue(row.xga, getMetricOption("xga"))}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

@@ -31,6 +31,82 @@ type ShiftChartRow = {
   player_type: string | null;
 };
 
+type PlayerPositionFallback = {
+  id: number;
+  fullName: string | null;
+  position: string | null;
+  sweater_number: number | null;
+};
+
+function getPlayerTypeFromPosition(position: string | null | undefined) {
+  const normalized = (position ?? "").toUpperCase();
+  if (["LW", "RW", "C", "L", "R"].includes(normalized)) return "F";
+  if (normalized === "D") return "D";
+  if (normalized === "G") return "G";
+  return null;
+}
+
+async function fetchPlayerPositionFallbacks(playerIds: number[]) {
+  const uniqueIds = Array.from(new Set(playerIds.filter(Number.isFinite)));
+  if (uniqueIds.length === 0) return new Map<number, PlayerPositionFallback>();
+
+  const { data, error } = await supabase
+    .from("players")
+    .select("id,fullName,position,sweater_number")
+    .in("id", uniqueIds);
+
+  if (error) {
+    console.error("Error fetching player position fallbacks:", error);
+    return new Map<number, PlayerPositionFallback>();
+  }
+
+  return new Map(
+    ((data ?? []) as PlayerPositionFallback[]).map((player) => [
+      player.id,
+      player
+    ])
+  );
+}
+
+function applyPlayerPositionFallbacks(
+  playersData: Record<string, any>,
+  fallbackByPlayerId: Map<number, PlayerPositionFallback>
+) {
+  Object.values(playersData).forEach((player: any) => {
+    const fallback = fallbackByPlayerId.get(Number(player.playerId));
+    if (!fallback) return;
+
+    if (!player.primaryPosition && fallback.position) {
+      player.primaryPosition = fallback.position;
+    }
+    if (!player.displayPosition && fallback.position) {
+      player.displayPosition = fallback.position;
+    }
+    if (!player.playerType) {
+      player.playerType = getPlayerTypeFromPosition(
+        player.primaryPosition ?? fallback.position
+      );
+    }
+    if (!player.playerName?.trim() && fallback.fullName) {
+      player.playerName = fallback.fullName;
+    }
+    if (!player.playerAbbrevName?.trim() && fallback.fullName) {
+      const parts = fallback.fullName.split(" ");
+      player.playerAbbrevName =
+        parts.length > 1
+          ? `${parts[0].charAt(0)}. ${parts.slice(1).join(" ")}`
+          : fallback.fullName;
+    }
+    if (!player.lastName && fallback.fullName) {
+      player.lastName =
+        fallback.fullName.split(" ").slice(1).join(" ") || fallback.fullName;
+    }
+    if (player.sweaterNumber == null && fallback.sweater_number != null) {
+      player.sweaterNumber = fallback.sweater_number;
+    }
+  });
+}
+
 // Function to fetch all data for a team within a date range
 async function fetchAllDataForTeam(
   teamId: number,
@@ -199,13 +275,19 @@ export async function fetchAggregatedData(
   );
   const playoffData = allTeamData.filter((item) => item.game_type === "3");
 
-  console.log({ regularSeasonData });
   // Process the fetched data to structure it by player
   const regularSeasonPlayersData = processData(
     regularSeasonData,
     "regularSeason"
   );
   const playoffPlayersData = processData(playoffData, "playoffs");
+  const fallbackByPlayerId = await fetchPlayerPositionFallbacks(
+    allTeamData
+      .map((row) => row.player_id)
+      .filter((playerId): playerId is number => playerId != null)
+  );
+  applyPlayerPositionFallbacks(regularSeasonPlayersData, fallbackByPlayerId);
+  applyPlayerPositionFallbacks(playoffPlayersData, fallbackByPlayerId);
 
   return { regularSeasonPlayersData, playoffPlayersData };
 }
@@ -216,12 +298,20 @@ function processData(data: any[], seasonType: "regularSeason" | "playoffs") {
 
   data.forEach((row) => {
     const playerId = row.player_id;
+    if (playerId == null) return;
+
+    const playerName = [row.player_first_name, row.player_last_name]
+      .filter(Boolean)
+      .join(" ");
+    const playerAbbrevName =
+      row.player_first_name && row.player_last_name
+        ? `${row.player_first_name.charAt(0)}. ${row.player_last_name}`
+        : playerName;
+
     if (!playersData[playerId]) {
       playersData[playerId] = {
-        playerName: `${row.player_first_name} ${row.player_last_name}`,
-        playerAbbrevName: `${row.player_first_name.charAt(0)}. ${
-          row.player_last_name
-        }`,
+        playerName,
+        playerAbbrevName,
         lastName: row.player_last_name,
         playerId: row.player_id,
         teamId: row.team_id,
@@ -269,6 +359,29 @@ function processData(data: any[], seasonType: "regularSeason" | "playoffs") {
       };
     }
 
+    const player = playersData[playerId];
+    if (!player.playerName?.trim() && playerName) {
+      player.playerName = playerName;
+    }
+    if (!player.playerAbbrevName?.trim() && playerAbbrevName) {
+      player.playerAbbrevName = playerAbbrevName;
+    }
+    if (!player.lastName && row.player_last_name) player.lastName = row.player_last_name;
+    if (!player.displayPosition && row.display_position) {
+      player.displayPosition = row.display_position;
+    }
+    if (!player.primaryPosition && row.primary_position) {
+      player.primaryPosition = row.primary_position;
+    }
+    if (!player.playerType && row.player_type) {
+      player.playerType = row.player_type;
+    }
+    if (!player.teamAbbrev && row.team_abbreviation) {
+      player.teamAbbrev = row.team_abbreviation;
+    }
+    if (!player.teamId && row.team_id) player.teamId = row.team_id;
+    if (!player.seasonId && row.season_id) player.seasonId = row.season_id;
+
     const seasonData =
       seasonType === "regularSeason"
         ? playersData[playerId].regularSeasonData
@@ -281,7 +394,7 @@ function processData(data: any[], seasonType: "regularSeason" | "playoffs") {
     seasonData.opponent.push(row.opponent_team_abbreviation);
     seasonData.opponentId.push(row.opponent_team_id);
 
-    Object.entries(row.time_spent_with as Record<string, string>).forEach(
+    Object.entries((row.time_spent_with ?? {}) as Record<string, string>).forEach(
       ([key, value]) => {
         if (!seasonData.timeSpentWith[key]) {
           seasonData.timeSpentWith[key] = parseTime(value);
@@ -343,9 +456,13 @@ function processData(data: any[], seasonType: "regularSeason" | "playoffs") {
   return playersData;
 }
 
-function parseTime(time: string) {
+function parseTime(time: string | null | undefined) {
+  if (!time) return 0;
   const [minutes, seconds] = time.split(":").map(Number);
-  return minutes * 60 + seconds;
+  return (
+    (Number.isFinite(minutes) ? minutes : 0) * 60 +
+    (Number.isFinite(seconds) ? seconds : 0)
+  );
 }
 
 function formatTime(seconds: number) {

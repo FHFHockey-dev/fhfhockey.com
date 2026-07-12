@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import { useRouter } from "next/router";
+import React, { useEffect, useState } from "react";
 import styles from "./TeamTabNavigation.module.scss";
 import { TeamDashboard } from "../TeamDashboard/TeamDashboard";
 import { GameStateAnalysis } from "../GameStateAnalysis/GameStateAnalysis";
@@ -98,6 +99,9 @@ const TABS: Tab[] = [
   }
 ];
 
+const isTabKey = (value: unknown): value is TabKey =>
+  typeof value === "string" && TABS.some((tab) => tab.key === value);
+
 export function TeamTabNavigation({
   teamId,
   teamAbbrev,
@@ -120,6 +124,7 @@ export function TeamTabNavigation({
   onToggleAllSeasons
 }: TeamTabNavigationProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("dashboard");
+  const router = useRouter();
 
   const teamInfo = teamsInfo[teamAbbrev];
 
@@ -130,6 +135,44 @@ export function TeamTabNavigation({
     error: scheduleError,
     record
   } = useTeamSchedule(teamAbbrev, seasonId, teamId);
+
+  useEffect(() => {
+    if (!router.isReady) return;
+    const queryTab = Array.isArray(router.query.tab)
+      ? router.query.tab[0]
+      : router.query.tab;
+
+    if (queryTab == null) {
+      setActiveTab("dashboard");
+      return;
+    }
+
+    if (isTabKey(queryTab)) {
+      setActiveTab(queryTab);
+    }
+  }, [router.isReady, router.query.tab]);
+
+  const handleTabClick = (tabKey: TabKey) => {
+    setActiveTab(tabKey);
+
+    if (!router.isReady) return;
+
+    const nextQuery = { ...router.query };
+    if (tabKey === "dashboard") {
+      delete nextQuery.tab;
+    } else {
+      nextQuery.tab = tabKey;
+    }
+
+    router.replace(
+      {
+        pathname: router.pathname,
+        query: nextQuery
+      },
+      undefined,
+      { shallow: true, scroll: false }
+    );
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -368,7 +411,7 @@ export function TeamTabNavigation({
           {TABS.map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => handleTabClick(tab.key)}
               className={`${styles.tabButton} ${
                 activeTab === tab.key ? styles.active : ""
               }`}

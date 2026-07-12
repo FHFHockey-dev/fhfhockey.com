@@ -16,6 +16,9 @@ export type ScheduledGameRow = {
 export type LineSourceRowForUnresolvedNameReview = {
   capture_key: string;
   source: string;
+  source_group?: string | null;
+  source_key?: string | null;
+  source_account?: string | null;
   source_url: string | null;
   tweet_id: string | null;
   quoted_tweet_id: string | null;
@@ -90,7 +93,9 @@ function resolveRequestBaseUrl(req: {
   return "http://localhost:3000";
 }
 
-export function parseRequestedDate(value: string | string[] | undefined): string {
+export function parseRequestedDate(
+  value: string | string[] | undefined,
+): string {
   const rawValue = Array.isArray(value) ? value[0] : value;
   if (typeof rawValue === "string" && /^\d{4}-\d{2}-\d{2}$/.test(rawValue)) {
     return rawValue;
@@ -105,7 +110,9 @@ export function parseBatchSize(value: string | string[] | undefined): number {
   return Math.min(Math.max(parsed, 1), 100);
 }
 
-export function parseBooleanFlag(value: string | string[] | undefined): boolean {
+export function parseBooleanFlag(
+  value: string | string[] | undefined,
+): boolean {
   const rawValue = Array.isArray(value) ? value[0] : value;
   return rawValue === "1" || rawValue === "true" || rawValue === "yes";
 }
@@ -227,8 +234,7 @@ function isReviewablePlayerName(rawName: string | null | undefined) {
   const trimmed = rawName?.trim() ?? "";
   if (!trimmed) return false;
   if (trimmed.length > 36) return false;
-  if (/https?:|www\.|t\.co|pic\.twitter\.com|@|#|…/.test(trimmed))
-    return false;
+  if (/https?:|www\.|t\.co|pic\.twitter\.com|@|#|…/.test(trimmed)) return false;
   if (/[:]/.test(trimmed)) return false;
   if (!/[A-Za-z]/.test(trimmed)) return false;
   if (/\d/.test(trimmed)) return false;
@@ -237,7 +243,9 @@ function isReviewablePlayerName(rawName: string | null | undefined) {
     if (uppercaseCount > 2) return false;
   }
   if (!/^[A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-öø-ÿ.' -]+$/.test(trimmed)) return false;
-  if (/^(rt|per|confirmed|lineup|lines|starting|goalie|starter)$/i.test(trimmed)) {
+  if (
+    /^(rt|per|confirmed|lineup|lines|starting|goalie|starter)$/i.test(trimmed)
+  ) {
     return false;
   }
   return true;
@@ -323,9 +331,15 @@ export function collectUnresolvedNamesFromLineRows(
         status: "pending",
         metadata: {
           reason,
+          parserReason: reason,
           captureKey: row.capture_key,
           classification: row.classification,
           quotedTweetId: row.quoted_tweet_id,
+          sourceGroup: row.source_group ?? null,
+          sourceKey: row.source_key ?? row.source,
+          sourceAccount:
+            row.source_account ??
+            (row.source === "lines_ccc" ? "CcCMiddleton" : null),
           ...metadata,
         },
         updated_at: new Date().toISOString(),

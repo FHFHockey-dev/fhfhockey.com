@@ -18,9 +18,11 @@ import {
 import {
   getPlayerStatsColumns,
   getPlayerStatsIdentityColumns,
-  type PlayerStatsColumnDefinition
+  type PlayerStatsColumnDefinition,
 } from "./playerStatsColumns";
-import PlayerStatsTableState, { type PlayerStatsTableViewState } from "./PlayerStatsTableState";
+import PlayerStatsTableState, {
+  type PlayerStatsTableViewState,
+} from "./PlayerStatsTableState";
 import styles from "./PlayerStatsTable.module.scss";
 
 export type PlayerStatsTableRow = {
@@ -29,7 +31,7 @@ export type PlayerStatsTableRow = {
 };
 
 export type PlayerStatsTableProps<
-  Row extends PlayerStatsTableRow = PlayerStatsTableRow
+  Row extends PlayerStatsTableRow = PlayerStatsTableRow,
 > = {
   family?: PlayerStatsTableFamily;
   columns?: readonly PlayerStatsColumnDefinition[];
@@ -39,6 +41,9 @@ export type PlayerStatsTableProps<
   pagination?: PlayerStatsTablePaginationMeta | null;
   onSortChange?: (nextSort: PlayerStatsSortState) => void;
   onPageChange?: (page: number) => void;
+  onLoadMore?: () => void;
+  hasMoreRows?: boolean;
+  isLoadingMore?: boolean;
   showRankColumn?: boolean;
   extraColumns?: PlayerStatsColumnDefinition[];
   loadingMoreIndicator?: ReactNode;
@@ -55,6 +60,7 @@ export type PlayerStatsTableProps<
     formattedValue: string;
   }) => ReactNode;
   paginationAriaLabel?: string;
+  renderingStrategy?: "pagination" | "load-more";
   className?: string;
 };
 
@@ -76,7 +82,9 @@ type HeaderState = {
   direction: "asc" | "desc" | null;
 };
 
-function getStickyOffsets(headers: readonly HeaderState[]): Map<string, number> {
+function getStickyOffsets(
+  headers: readonly HeaderState[],
+): Map<string, number> {
   const offsets = new Map<string, number>();
   let currentOffset = 0;
 
@@ -94,18 +102,18 @@ function getStickyOffsets(headers: readonly HeaderState[]): Map<string, number> 
 
 function getNextSortStateForColumn(
   currentSort: PlayerStatsSortState,
-  header: HeaderState
+  header: HeaderState,
 ): PlayerStatsSortState {
   if (currentSort.sortKey === header.column.sortKey) {
     return {
       sortKey: header.column.sortKey,
-      direction: currentSort.direction === "desc" ? "asc" : "desc"
+      direction: currentSort.direction === "desc" ? "asc" : "desc",
     };
   }
 
   return {
     sortKey: header.column.sortKey,
-    direction: "desc"
+    direction: "desc",
   };
 }
 
@@ -118,6 +126,9 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
   pagination,
   onSortChange,
   onPageChange,
+  onLoadMore,
+  hasMoreRows = false,
+  isLoadingMore = false,
   showRankColumn = false,
   extraColumns = [],
   loadingMoreIndicator,
@@ -125,7 +136,8 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
   renderExpandedRow,
   renderCell,
   paginationAriaLabel = "Player stats table pagination",
-  className
+  renderingStrategy = PLAYER_STATS_TABLE_RENDERING_STRATEGY,
+  className,
 }: PlayerStatsTableProps<Row>) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [viewportWidth, setViewportWidth] = useState<number | null>(null);
@@ -171,7 +183,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
 
   if (resolvedColumns == null) {
     throw new Error(
-      "PlayerStatsTable requires either a family or explicit columns."
+      "PlayerStatsTable requires either a family or explicit columns.",
     );
   }
 
@@ -182,18 +194,20 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
     column,
     sortable: true,
     isActive: sortState.sortKey === column.sortKey,
-    direction: sortState.sortKey === column.sortKey ? sortState.direction : null
+    direction:
+      sortState.sortKey === column.sortKey ? sortState.direction : null,
   }));
   const extraHeaderStates: HeaderState[] = extraColumns.map((column) => ({
     column,
     sortable: true,
     isActive: sortState.sortKey === column.sortKey,
-    direction: sortState.sortKey === column.sortKey ? sortState.direction : null
+    direction:
+      sortState.sortKey === column.sortKey ? sortState.direction : null,
   }));
   const mergedHeaders = [
     ...headers.slice(0, identityColumnCount),
     ...extraHeaderStates,
-    ...headers.slice(identityColumnCount)
+    ...headers.slice(identityColumnCount),
   ];
   const visibleHeaders: HeaderState[] = showRankColumn
     ? [
@@ -204,21 +218,26 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
             sortKey: "rank",
             format: "integer",
             align: "center",
-            isIdentity: true
+            isIdentity: true,
           },
           sortable: false,
           isActive: false,
-          direction: null
+          direction: null,
         },
-        ...mergedHeaders
+        ...mergedHeaders,
       ]
     : mergedHeaders;
   const stickyOffsets = getStickyOffsets(visibleHeaders);
   const shouldRenderPagination =
-    PLAYER_STATS_TABLE_RENDERING_STRATEGY === "pagination" &&
+    renderingStrategy === "pagination" &&
     typeof onPageChange === "function" &&
     pagination != null &&
     pagination.totalPages > 1;
+  const shouldRenderLoadMore =
+    renderingStrategy === "load-more" &&
+    typeof onLoadMore === "function" &&
+    hasMoreRows &&
+    pagination != null;
   const visibleRowStart =
     pagination == null || pagination.totalRows === 0
       ? 0
@@ -240,7 +259,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                 const stickyStyle: CSSProperties | undefined = isSticky
                   ? {
                       left: `${stickyOffsets.get(header.column.key) ?? 0}px`,
-                      minWidth: `${STICKY_COLUMN_WIDTHS[header.column.key] ?? 96}px`
+                      minWidth: `${STICKY_COLUMN_WIDTHS[header.column.key] ?? 96}px`,
                     }
                   : undefined;
 
@@ -253,7 +272,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                         `align${capitalize(header.column.align ?? "left")}`
                       ],
                       isSticky ? styles.stickyCell : "",
-                      isRankColumn ? styles.rankHeaderCell : ""
+                      isRankColumn ? styles.rankHeaderCell : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
@@ -269,7 +288,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                         className={styles.headerButton}
                         onClick={() =>
                           onSortChange?.(
-                            getNextSortStateForColumn(sortState, header)
+                            getNextSortStateForColumn(sortState, header),
                           )
                         }
                         aria-pressed={header.isActive}
@@ -278,7 +297,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                         <span>
                           {getVisibleHeaderLabel(
                             header.column.key,
-                            header.column.label
+                            header.column.label,
                           )}
                         </span>
                         <span
@@ -315,13 +334,13 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                         ? String(rowIndex + 1)
                         : formatPlayerStatsValue(
                             rawValue as string | number | null | undefined,
-                            header.column.format
+                            header.column.format,
                           );
                       const isSticky = header.column.isIdentity === true;
                       const stickyStyle: CSSProperties | undefined = isSticky
                         ? {
                             left: `${stickyOffsets.get(header.column.key) ?? 0}px`,
-                            minWidth: `${STICKY_COLUMN_WIDTHS[header.column.key] ?? 96}px`
+                            minWidth: `${STICKY_COLUMN_WIDTHS[header.column.key] ?? 96}px`,
                           }
                         : undefined;
 
@@ -334,7 +353,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                               `align${capitalize(header.column.align ?? "left")}`
                             ],
                             isSticky ? styles.stickyCell : "",
-                            isRankColumn ? styles.rankBodyCell : ""
+                            isRankColumn ? styles.rankBodyCell : "",
                           ]
                             .filter(Boolean)
                             .join(" ")}
@@ -352,7 +371,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                               row,
                               columnKey: header.column.key,
                               rawValue,
-                              formattedValue
+                              formattedValue,
                             })
                           ) : (
                             formattedValue
@@ -374,7 +393,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                               ? ({
                                   width: `${viewportWidth}px`,
                                   minWidth: `${viewportWidth}px`,
-                                  maxWidth: `${viewportWidth}px`
+                                  maxWidth: `${viewportWidth}px`,
                                 } as CSSProperties)
                               : undefined
                           }
@@ -382,7 +401,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                           {renderExpandedRow({
                             row,
                             colSpan: visibleHeaders.length,
-                            viewportWidth
+                            viewportWidth,
                           })}
                         </div>
                       </td>
@@ -426,7 +445,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
               className={styles.paginationButton}
               onClick={() =>
                 onPageChange?.(
-                  Math.min(pagination.page + 1, pagination.totalPages)
+                  Math.min(pagination.page + 1, pagination.totalPages),
                 )
               }
               disabled={pagination.page >= pagination.totalPages}
@@ -434,6 +453,21 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
               Next
             </button>
           </div>
+        </div>
+      ) : null}
+      {shouldRenderLoadMore ? (
+        <div className={styles.footer}>
+          <p className={styles.paginationSummary}>
+            Showing {rows.length} of {pagination.totalRows}
+          </p>
+          <button
+            type="button"
+            className={styles.paginationButton}
+            onClick={onLoadMore}
+            disabled={isLoadingMore}
+          >
+            {isLoadingMore ? "Loading…" : "Load more"}
+          </button>
         </div>
       ) : null}
     </div>

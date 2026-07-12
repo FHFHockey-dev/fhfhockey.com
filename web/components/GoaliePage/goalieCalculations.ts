@@ -10,7 +10,8 @@ import type {
   LeagueWeeklyAverage,
   GoalieGameStat,
   FantasyPointSettings, // Import new type
-  FantasyCountStatKey // Import new type
+  FantasyCountStatKey, // Import new type
+  GoalieWeeklyRecordPattern,
 } from "./goalieTypes";
 
 // --- Constants ---
@@ -30,16 +31,110 @@ export const statMap: Record<NumericGoalieStatKey, "larger" | "smaller"> = {
   savePct: "larger",
   goalsAgainstAverage: "smaller",
   shutouts: "larger",
-  timeOnIce: "larger" // Note: Not typically ranked directly
+  timeOnIce: "larger", // Note: Not typically ranked directly
 };
 
 // Points assigned to performance rankings (weekly vs league average) - KEEP FOR WoW
 export const rankingPoints: Record<Ranking, number> = {
   Elite: 20,
-  Quality: 10,
+  Good: 10,
   Average: 5,
   Bad: 3,
-  "Really Bad": 1
+  Abysmal: 1,
+};
+
+const rankingConsistencyScores: Record<Ranking, number> = {
+  Elite: 100,
+  Good: 75,
+  Average: 50,
+  Bad: 25,
+  Abysmal: 0,
+};
+
+export const GOALIE_WEEK_MINIMUM_SAMPLE = {
+  starts: 1,
+  toiSeconds: 20 * 60,
+} as const;
+
+export const isGoalieWeekEligible = (
+  goalieWeekStat: GoalieWeeklyAggregate,
+): boolean =>
+  (goalieWeekStat.weekly_gs ?? 0) >= GOALIE_WEEK_MINIMUM_SAMPLE.starts &&
+  (goalieWeekStat.weekly_toi_seconds ?? 0) >=
+    GOALIE_WEEK_MINIMUM_SAMPLE.toiSeconds;
+
+export const buildGoalieConsistencySummary = (
+  outcomes: Array<{
+    ranking: Ranking;
+    weeklyStats: GoalieWeeklyAggregate;
+  }>,
+  unclassifiedWeeks = 0,
+): {
+  eligibleWeeks: number;
+  unclassifiedWeeks: number;
+  consistencyScore: number | null;
+  averageStartsPerWeek: number;
+  weeklyRecordPatterns: GoalieWeeklyRecordPattern[];
+} => {
+  const scores = outcomes.map(
+    ({ ranking }) => rankingConsistencyScores[ranking],
+  );
+  const mean =
+    scores.length > 0
+      ? scores.reduce((sum, score) => sum + score, 0) / scores.length
+      : 0;
+  const populationVariance =
+    scores.length > 0
+      ? scores.reduce((sum, score) => sum + (score - mean) ** 2, 0) /
+        scores.length
+      : 0;
+  const populationStdDev = Math.sqrt(populationVariance);
+  const consistencyScore =
+    scores.length >= 2
+      ? Math.round(Math.max(0, 100 - (populationStdDev / 50) * 100))
+      : null;
+  const averageStartsPerWeek =
+    outcomes.length > 0
+      ? outcomes.reduce(
+          (sum, outcome) => sum + (outcome.weeklyStats.weekly_gs ?? 0),
+          0,
+        ) / outcomes.length
+      : 0;
+  const recordCounts = new Map<
+    string,
+    { wins: number; losses: number; count: number }
+  >();
+
+  outcomes.forEach(({ weeklyStats }) => {
+    const wins = Math.max(0, weeklyStats.weekly_wins ?? 0);
+    const losses = Math.max(
+      0,
+      (weeklyStats.weekly_losses ?? 0) + (weeklyStats.weekly_ot_losses ?? 0),
+    );
+    const record = `${wins}-${losses}`;
+    const current = recordCounts.get(record);
+    recordCounts.set(record, {
+      wins,
+      losses,
+      count: (current?.count ?? 0) + 1,
+    });
+  });
+
+  return {
+    eligibleWeeks: outcomes.length,
+    unclassifiedWeeks,
+    consistencyScore,
+    averageStartsPerWeek,
+    weeklyRecordPatterns: Array.from(recordCounts.entries())
+      .map(([record, values]) => ({ record, ...values }))
+      .sort(
+        (a, b) =>
+          b.count - a.count ||
+          b.wins - a.wins ||
+          a.losses - b.losses ||
+          a.record.localeCompare(b.record),
+      ),
+  };
 };
 
 // --- Helper Functions ---
@@ -61,13 +156,13 @@ export const calculateStandardDeviation = (numbers: number[]): number => {
 // Calculate overall stats (Keep)
 const calculateOverallSavePct = (
   totalSaves: number,
-  totalShotsAgainst: number
+  totalShotsAgainst: number,
 ): number => {
   return totalShotsAgainst > 0 ? totalSaves / totalShotsAgainst : 0;
 };
 const calculateOverallGAA = (
   totalGoalsAgainst: number,
-  totalTimeOnIceSeconds: number
+  totalTimeOnIceSeconds: number,
 ): number => {
   return totalTimeOnIceSeconds > 0
     ? (totalGoalsAgainst * 3600) / totalTimeOnIceSeconds
@@ -80,7 +175,7 @@ const calculateOverallGAA = (
  */
 export const calculateGameFantasyPoints = (
   gameStat: GoalieGameStat,
-  settings: FantasyPointSettings
+  settings: FantasyPointSettings,
 ): number => {
   let fPts = 0;
   // Access settings using the FantasyCountStatKey type
@@ -92,12 +187,20 @@ export const calculateGameFantasyPoints = (
   return fPts;
 };
 
+export const classifyGoalieWeekPercentage = (percentage: number): Ranking => {
+  if (percentage >= 80) return "Elite";
+  if (percentage >= 60) return "Good";
+  if (percentage >= 45) return "Average";
+  if (percentage >= 30) return "Bad";
+  return "Abysmal";
+};
+
 // Calculate Weekly Ranking (vs League Average) - Keep for WoW
 export const calculateWeeklyRanking = (
   goalieWeekStat: GoalieWeeklyAggregate,
   leagueAverage: LeagueWeeklyAverage,
   selectedStatKeys: NumericGoalieStatKey[], // e.g., ['saves', 'savePct']
-  statColumns: StatColumn[] // Pass the mapping info
+  statColumns: StatColumn[], // Pass the mapping info
 ): { ranking: Ranking; percentage: number; points: number } => {
   if (selectedStatKeys.length === 0) {
     return { ranking: "Average", percentage: 0, points: rankingPoints.Average };
@@ -151,13 +254,7 @@ export const calculateWeeklyRanking = (
   // Base percentage on comparable stats
   const percentage =
     comparableStats > 0 ? (betterStats / comparableStats) * 100 : 0;
-  let ranking: Ranking;
-
-  if (percentage >= 80) ranking = "Elite";
-  else if (percentage >= 60) ranking = "Quality";
-  else if (percentage >= 45) ranking = "Average";
-  else if (percentage >= 30) ranking = "Bad";
-  else ranking = "Really Bad";
+  const ranking = classifyGoalieWeekPercentage(percentage);
 
   const points = rankingPoints[ranking];
 
@@ -172,7 +269,7 @@ export const calculateWeeklyRanking = (
 const calculatePercentile = (
   value: number,
   sortedValues: number[],
-  direction: "larger" | "smaller"
+  direction: "larger" | "smaller",
 ): number => {
   if (sortedValues.length === 0 || isNaN(value)) {
     return 0; // Or handle as undefined/null
@@ -232,7 +329,7 @@ export const calculateGoalieRankings = (
   statColumns: StatColumn[],
   startWeek: number,
   endWeek: number,
-  fantasyPointSettings: FantasyPointSettings // Pass in the settings
+  fantasyPointSettings: FantasyPointSettings, // Pass in the settings
 ): GoalieRanking[] => {
   if (
     !goalieWeeklyData ||
@@ -286,6 +383,11 @@ export const calculateGoalieRankings = (
       weekCounts: WeekCounts;
       weeklyStatsList: GoalieWeeklyAggregate[]; // Keep for overall stats calc & WoW
       weeklyPoints: number[]; // For WoW variance (based on weekly ranking vs league avg)
+      weeklyOutcomes: Array<{
+        ranking: Ranking;
+        weeklyStats: GoalieWeeklyAggregate;
+      }>;
+      unclassifiedWeeks: number;
       gameFantasyPoints: number[]; // For GoG variance (based on fPts per game)
       gamesInPeriod: GoalieGameStat[]; // Store games (now including fPts)
     }
@@ -298,13 +400,15 @@ export const calculateGoalieRankings = (
       info: {
         playerId: goalieId,
         goalieFullName: firstGame?.goalie_name ?? "Unknown Goalie",
-        team: firstGame?.team ?? undefined // Prefer game data when available
+        team: firstGame?.team ?? undefined, // Prefer game data when available
       },
-      weekCounts: { Elite: 0, Quality: 0, Average: 0, Bad: 0, "Really Bad": 0 },
+      weekCounts: { Elite: 0, Good: 0, Average: 0, Bad: 0, Abysmal: 0 },
       weeklyStatsList: [],
       weeklyPoints: [],
+      weeklyOutcomes: [],
+      unclassifiedWeeks: 0,
       gameFantasyPoints: games.map((g) => g.fantasyPoints ?? 0), // Store calculated fPts
-      gamesInPeriod: games // Store the games associated with this goalie
+      gamesInPeriod: games, // Store the games associated with this goalie
     });
   });
 
@@ -312,7 +416,7 @@ export const calculateGoalieRankings = (
   for (let week = startWeek; week <= endWeek; week++) {
     const leagueAverage = averagesByWeek.get(week);
     const weeklyAggregatesThisWeek = goalieWeeklyData.filter(
-      (agg) => agg.week === week
+      (agg) => agg.week === week,
     );
 
     weeklyAggregatesThisWeek.forEach((goalieStat) => {
@@ -322,15 +426,21 @@ export const calculateGoalieRankings = (
         const currentResult = goalieResults.get(goalieId)!;
 
         // Calculate weekly rank/points for WoW
-        if (leagueAverage) {
+        if (leagueAverage && isGoalieWeekEligible(goalieStat)) {
           const { ranking, points } = calculateWeeklyRanking(
             goalieStat,
             leagueAverage,
             selectedStatKeys, // Use UI selected stats for WoW ranking
-            statColumns
+            statColumns,
           );
           currentResult.weekCounts[ranking]++;
           currentResult.weeklyPoints.push(points);
+          currentResult.weeklyOutcomes.push({
+            ranking,
+            weeklyStats: goalieStat,
+          });
+        } else {
+          currentResult.unclassifiedWeeks++;
         }
 
         // Store weekly stats & update info
@@ -367,9 +477,9 @@ export const calculateGoalieRankings = (
     // Calculate percentage metrics (based on weekly points/ranks)
     const acceptableWeeks =
       result.weekCounts.Elite +
-      result.weekCounts.Quality +
+      result.weekCounts.Good +
       result.weekCounts.Average;
-    const goodWeeks = result.weekCounts.Elite + result.weekCounts.Quality;
+    const goodWeeks = result.weekCounts.Elite + result.weekCounts.Good;
     const percentAcceptableWeeks =
       totalRankedWeeks > 0 ? (acceptableWeeks / totalRankedWeeks) * 100 : 0;
     const percentGoodWeeks =
@@ -409,7 +519,11 @@ export const calculateGoalieRankings = (
 
     const totalWowPoints = result.weeklyPoints.reduce(
       (sum, pts) => sum + pts,
-      0
+      0,
+    );
+    const consistencySummary = buildGoalieConsistencySummary(
+      result.weeklyOutcomes,
+      result.unclassifiedWeeks,
     );
 
     finalRankings.push({
@@ -418,6 +532,11 @@ export const calculateGoalieRankings = (
       team: result.info.team,
       totalPoints: totalWowPoints, // Keep total points based on WoW ranking for now
       weekCounts: result.weekCounts,
+      eligibleWeeks: consistencySummary.eligibleWeeks,
+      unclassifiedWeeks: consistencySummary.unclassifiedWeeks,
+      consistencyScore: consistencySummary.consistencyScore,
+      averageStartsPerWeek: consistencySummary.averageStartsPerWeek,
+      weeklyRecordPatterns: consistencySummary.weeklyRecordPatterns,
       percentAcceptableWeeks: percentAcceptableWeeks,
       percentGoodWeeks: percentGoodWeeks,
       wowVariance: wowVariance, // WoW based on weekly ranking points
@@ -440,7 +559,7 @@ export const calculateGoalieRankings = (
       leagueAverageFantasyPointsPerGame: leagueAvgFantasyPointsPerGame,
       // Percentiles added later
       percentiles: {},
-      averagePercentileRank: 0
+      averagePercentileRank: 0,
     });
   });
 
@@ -514,7 +633,7 @@ export const calculateGoalieRankings = (
             const percentile = calculatePercentile(
               goalieValue,
               sortedValues,
-              direction
+              direction,
             );
             if (!goalie.percentiles) goalie.percentiles = {};
             goalie.percentiles[key] = percentile;
@@ -527,7 +646,7 @@ export const calculateGoalieRankings = (
     finalRankings.forEach((goalie) => {
       if (goalie.percentiles) {
         const validPercentiles = Object.values(goalie.percentiles).filter(
-          (p): p is number => p !== undefined && !isNaN(p)
+          (p): p is number => p !== undefined && !isNaN(p),
         );
         goalie.averagePercentileRank =
           validPercentiles.length > 0

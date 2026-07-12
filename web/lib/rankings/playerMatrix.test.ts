@@ -27,6 +27,7 @@ vi.mock("lib/supabase/server", () => ({
 import {
   buildPlayerMatrixSurface,
   clearPlayerMatrixSurfaceCachesForTests,
+  getResultsLuckUnavailableReasonForComposite,
   parsePlayerMatrixRequest,
 } from "./playerMatrix";
 import type {
@@ -96,6 +97,47 @@ function mockCompositeRows(rows: Array<Record<string, unknown>> = []) {
 }
 
 describe("playerMatrix", () => {
+  it("explains Results Luck null states from baseline provenance", () => {
+    expect(
+      getResultsLuckUnavailableReasonForComposite({
+        results_luck_index: null,
+        components_json: {
+          resultsLuck: {
+            baselineProvenance: {
+              baselineWindowExcluded: false,
+              warnings: ["season_window_has_no_non_overlapping_baseline"],
+            },
+          },
+        },
+      }),
+    ).toBe(
+      "Results Luck unavailable: season windows do not have a selected-window-excluded baseline.",
+    );
+
+    expect(
+      getResultsLuckUnavailableReasonForComposite({
+        results_luck_index: null,
+        components_json: {
+          resultsLuck: {
+            baselineProvenance: {
+              baselineWindowExcluded: false,
+              warnings: ["baseline_window_not_excluded"],
+            },
+          },
+        },
+      }),
+    ).toBe(
+      "Results Luck unavailable: selected-window-excluded baseline was not verified.",
+    );
+
+    expect(
+      getResultsLuckUnavailableReasonForComposite({
+        results_luck_index: 114,
+        components_json: {},
+      }),
+    ).toBeNull();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     clearPlayerMatrixSurfaceCachesForTests();

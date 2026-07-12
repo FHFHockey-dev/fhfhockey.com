@@ -836,13 +836,11 @@ tbody tr:hover .neonBox.fall {
     justify-content: space-between;
     gap: v.$space-md;
     flex-wrap: wrap;
-
   }
   .footNote {
     font-size: v.$mobile-font-size-xxs;
     margin-top: v.$mobile-space-sm;
     margin-bottom: 0;
-  
   }
 }
 
@@ -863,78 +861,378 @@ tbody tr:hover .neonBox.fall {
     border-left-width: 6px;
   }
 }
-  .tableTabs {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    width: calc(100% + (v.$mobile-space-md * 2) - 8px);
-    margin: calc(-1 * v.$mobile-space-md)
-      calc(-1 * v.$mobile-space-md)
-      v.$space-sm
-      calc(-1 * v.$mobile-space-md + 8px);
-    gap: 0;
-    align-items: end;
+.tableTabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: calc(100% + (v.$mobile-space-md * 2) - 8px);
+  margin: calc(-1 * v.$mobile-space-md) calc(-1 * v.$mobile-space-md)
+    v.$space-sm calc(-1 * v.$mobile-space-md + 8px);
+  gap: 0;
+  align-items: end;
+}
+
+.tabButton {
+  letter-spacing: 0.08em;
+  padding: 8px 12px 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 0;
+  border-bottom: none;
+  text-transform: uppercase;
+  font-family: v.$font-family-accent, sans-serif;
+  position: relative;
+  width: 100%;
+  min-height: 38px;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+
+  &:first-child {
+    border-top-left-radius: 0;
+  }
+  &:last-child {
+    border-top-right-radius: 12px;
   }
 
-  .tabButton {
-    letter-spacing: 0.08em;
-    padding: 8px 12px 6px;
-    background: rgba(255, 255, 255, 0.04);
-    border-radius: 0;
-    border-bottom: none;
-    text-transform: uppercase;
-    font-family: v.$font-family-accent, sans-serif;
-    position: relative;
-    width: 100%;
-    min-height: 38px;
-    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.12);
-
-    &:first-child {
-      border-top-left-radius: 0;
-    }
-    &:last-child {
-      border-top-right-radius: 12px;
-    }
-
-    &.active,
-    &.isActive,
-    :global(.active) & {
-      background-color: rgba(255, 255, 255, 0.16);
-      box-shadow:
-        inset 0 -2px 0 rgba(0, 0, 0, 0.2),
-        0 8px 14px rgba(0, 0, 0, 0.25);
-      transform: translateY(1px);
-      z-index: 1;
-    }
+  &.active,
+  &.isActive,
+  :global(.active) & {
+    background-color: rgba(255, 255, 255, 0.16);
+    box-shadow:
+      inset 0 -2px 0 rgba(0, 0, 0, 0.2),
+      0 8px 14px rgba(0, 0, 0, 0.25);
+    transform: translateY(1px);
+    z-index: 1;
   }
+}
 
-  .riseTab {
-    border-color: v.$success-color;
+.riseTab {
+  border-color: v.$success-color;
+  color: v.$success-color;
+  background: rgba(v.$success-color, 0.14);
+
+  &.active,
+  &.isActive,
+  :global(.active) & {
+    background: rgba(v.$success-color, 0.28);
     color: v.$success-color;
-    background: rgba(v.$success-color, 0.14);
-
-    &.active,
-    &.isActive,
-    :global(.active) & {
-      background: rgba(v.$success-color, 0.28);
-      color: v.$success-color;
-      box-shadow:
-        inset 0 -2px 0 rgba(v.$success-color, 0.6),
-        0 8px 14px rgba(0, 0, 0, 0.2);
-    }
+    box-shadow:
+      inset 0 -2px 0 rgba(v.$success-color, 0.6),
+      0 8px 14px rgba(0, 0, 0, 0.2);
   }
+}
 
-  .fallTab {
-    border-color: v.$danger-color;
+.fallTab {
+  border-color: v.$danger-color;
+  color: v.$danger-color;
+  background: rgba(v.$danger-color, 0.14);
+
+  &.active,
+  &.isActive,
+  :global(.active) & {
+    background: rgba(v.$danger-color, 0.28);
     color: v.$danger-color;
-    background: rgba(v.$danger-color, 0.14);
+    box-shadow:
+      inset 0 -2px 0 rgba(v.$danger-color, 0.6),
+      0 8px 14px rgba(0, 0, 0, 0.2);
+  }
+}
+
+// Homepage dashboard treatment: compact, border-led, and data dense.
+.transactionTrends {
+  gap: v.$space-sm;
+  padding: v.$space-sm;
+  border: v.$border-subtle;
+  border-radius: v.$radius-panel;
+  background: v.$background-medium;
+  box-shadow: v.$shadow-panel;
+}
+
+.headerRow {
+  justify-content: space-between;
+  gap: v.$space-sm;
+  padding-bottom: v.$space-sm;
+  border-bottom: 1px solid v.$border-soft;
+}
+
+.titleBlock {
+  display: grid;
+  gap: v.$space-xs;
+}
+
+.title {
+  font-family: v.$font-family-primary, sans-serif;
+  font-weight: v.$font-weight-bold;
+}
+
+.subtitle {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.headerControls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: v.$space-xs;
+  width: auto;
+  margin-left: auto;
+}
+
+.filterLabel {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xxs;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.timeframeButtons {
+  display: flex;
+  width: auto;
+  padding: 2px;
+  gap: 2px;
+  border: 1px solid v.$border-soft;
+  border-radius: v.$radius-control;
+  background: v.$background-dark;
+
+  button {
+    min-width: 38px;
+    min-height: 28px;
+    padding: 0 v.$space-xs;
+    border: 2px solid transparent;
+    border-radius: v.$radius-control;
+    background: transparent;
+    color: v.$text-secondary;
 
     &.active,
     &.isActive,
     :global(.active) & {
-      background: rgba(v.$danger-color, 0.28);
-      color: v.$danger-color;
-      box-shadow:
-        inset 0 -2px 0 rgba(v.$danger-color, 0.6),
-        0 8px 14px rgba(0, 0, 0, 0.2);
+      border-color: v.$primary-color;
+      background: v.$primary-color-opaque;
+      color: v.$color-white;
+      box-shadow: none;
     }
   }
+}
+
+.posButtons {
+  display: flex;
+  flex: 0 1 auto;
+  width: auto;
+  gap: 2px;
+
+  button {
+    min-width: 30px;
+    min-height: 26px;
+    padding: 0 v.$space-xs;
+    border-radius: v.$radius-control;
+    color: v.$text-secondary;
+
+    &.active,
+    &.isActive,
+    :global(.active) & {
+      box-shadow: none;
+      color: v.$color-white;
+    }
+  }
+}
+
+.summaryIntro {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: v.$space-md;
+  max-width: none;
+  margin: 0;
+}
+
+.summaryBody {
+  font-size: v.$font-size-xs;
+}
+
+.summaryGrid {
+  gap: v.$space-sm;
+}
+
+.summaryCard {
+  padding: v.$space-sm v.$space-md v.$space-sm calc(v.$space-md + 8px);
+  border-radius: v.$radius-card;
+  background: v.$background-dark;
+  box-shadow: none;
+
+  &::before {
+    width: 3px;
+    border-radius: v.$radius-card 0 0 v.$radius-card;
+  }
+}
+
+.summaryStat {
+  min-width: 72px;
+  min-height: v.$control-height-sm;
+  border-radius: v.$radius-control;
+}
+
+.desktopTables {
+  gap: v.$space-sm;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.desktopTables .panel,
+.panel {
+  padding: v.$space-sm;
+  border-width: 1px;
+  border-radius: v.$radius-card;
+  background: v.$background-dark;
+  box-shadow: none;
+}
+
+.risersPanel::before,
+.fallersPanel::before {
+  display: none;
+}
+
+.risersPanel {
+  border: 1px solid rgba(v.$success-color, 0.42);
+  border-left: 4px solid v.$success-color;
+  background: v.$background-dark;
+}
+
+.fallersPanel {
+  border: 1px solid rgba(v.$danger-color, 0.42);
+  border-left: 4px solid v.$danger-color;
+  background: v.$background-dark;
+}
+
+.tableTitle {
+  min-height: 24px;
+  padding-bottom: v.$space-xs;
+  border-bottom: 1px solid v.$border-soft;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.08em;
+}
+
+.dataTable {
+  --row-h: 31px;
+
+  thead th {
+    background: v.$background-dark;
+    backdrop-filter: none;
+    color: v.$text-secondary;
+    font-size: v.$font-size-xxs;
+    text-transform: uppercase;
+  }
+
+  tbody td,
+  tbody th {
+    border-bottom-color: v.$border-soft;
+    padding: 2px 4px;
+  }
+}
+
+.rankCell {
+  width: 24px;
+}
+
+.ownCell,
+.ownCellHeader {
+  width: 58px;
+}
+
+.sparkCell {
+  width: 88px;
+}
+
+.playerMeta {
+  font-size: 0.6rem;
+}
+
+.statusPanel {
+  display: grid;
+  place-items: center;
+  min-height: 64px;
+  margin: 0;
+  padding: v.$space-sm;
+  border: 1px dashed v.$border-soft;
+  border-radius: v.$radius-control;
+  background: v.$background-dark;
+}
+
+.playerName {
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    color: v.$primary-color;
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
+}
+
+.neonBox,
+.neonBox.rise,
+.neonBox.fall {
+  box-shadow: none;
+}
+
+.pager {
+  margin: 0;
+  padding-top: v.$space-xs;
+  border-top: 1px solid v.$border-soft;
+}
+
+.footNote {
+  margin: 0;
+}
+
+@media (max-width: #{v.$breakpoint-tablet}) {
+  .headerControls {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .posButtons {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: #{v.$breakpoint-mobile-lg}) {
+  .transactionTrends {
+    gap: v.$mobile-space-md;
+    padding: v.$mobile-space-md;
+  }
+
+  .headerRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .timeframeButtons {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .summaryIntro {
+    grid-template-columns: 1fr;
+    gap: v.$space-xs;
+  }
+
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .summaryCard {
+    padding: v.$mobile-space-sm v.$mobile-space-md;
+  }
+
+  .panel {
+    padding: v.$mobile-space-md;
+  }
+}

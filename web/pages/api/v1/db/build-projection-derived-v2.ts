@@ -68,6 +68,7 @@ type Result = {
   resumeFromDate: string | null;
   nextStartDate: string | null;
   processedDates: string[];
+  deferredDates: string[];
   durationMs: string;
   timedOut: boolean;
   maxDurationMs: string;
@@ -79,6 +80,9 @@ type Result = {
     dataQualityWarnings: Array<{ code: string; message: string; detail?: string }>;
   };
   errors: string[];
+  failedRows: number;
+  failedStages: number;
+  failures: Array<{ date: string; stage: "request" | "player" | "team" | "goalie"; error: string }>;
   dependencyContract?: ReturnType<typeof getRollingForgeStageDependencyContract>;
 };
 
@@ -151,6 +155,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       resumeFromDate: null,
       nextStartDate: null,
       processedDates: [],
+      deferredDates: [],
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       timedOut: false,
       maxDurationMs: formatDurationMsToMMSS(0),
@@ -162,6 +167,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         dataQualityWarnings: []
       },
       errors: ["Method not allowed"],
+      failedRows: 0,
+      failedStages: 1,
+      failures: [{ date: "", stage: "request", error: "Method not allowed" }],
       dependencyContract
     });
   }
@@ -201,6 +209,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       : null;
 
   const errors: string[] = [];
+  const failures: Result["failures"] = [];
   let player = { gamesProcessed: 0, rowsUpserted: 0 };
   let team = { gamesProcessed: 0, rowsUpserted: 0 };
   let goalie = { gamesProcessed: 0, rowsUpserted: 0 };
@@ -224,7 +233,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       player.gamesProcessed += playerResult.gamesProcessed;
       player.rowsUpserted += playerResult.rowsUpserted;
     } catch (e) {
-      errors.push(`${date} player: ${(e as any)?.message ?? String(e)}`);
+      const error = (e as any)?.message ?? String(e);
+      errors.push(`${date} player: ${error}`);
+      failures.push({ date, stage: "player", error });
     }
 
     if (Date.now() > deadlineMs) {
@@ -242,7 +253,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       team.gamesProcessed += teamResult.gamesProcessed;
       team.rowsUpserted += teamResult.rowsUpserted;
     } catch (e) {
-      errors.push(`${date} team: ${(e as any)?.message ?? String(e)}`);
+      const error = (e as any)?.message ?? String(e);
+      errors.push(`${date} team: ${error}`);
+      failures.push({ date, stage: "team", error });
     }
 
     if (Date.now() > deadlineMs) {
@@ -260,7 +273,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       goalie.gamesProcessed += goalieResult.gamesProcessed;
       goalie.rowsUpserted += goalieResult.rowsUpserted;
     } catch (e) {
-      errors.push(`${date} goalie: ${(e as any)?.message ?? String(e)}`);
+      const error = (e as any)?.message ?? String(e);
+      errors.push(`${date} goalie: ${error}`);
+      failures.push({ date, stage: "goalie", error });
     }
 
     processedDates.push(date);
@@ -277,11 +292,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     message: string;
     detail?: string;
   }> = [];
-  if (errors.some((e) => e.startsWith("goalie:"))) {
+  if (failures.some((failure) => failure.stage === "goalie")) {
     dataQualityWarnings.push({
       code: "goalie_derived_failed",
       message: "Goalie derived build failed.",
-      detail: errors.filter((e) => e.startsWith("goalie:")).join(" | ")
+      detail: failures
+        .filter((failure) => failure.stage === "goalie")
+        .map((failure) => `${failure.date}: ${failure.error}`)
+        .join(" | ")
     });
   }
   if (
@@ -310,6 +328,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     resumeFromDate,
     nextStartDate,
     processedDates,
+    deferredDates: nextStartDate
+      ? fullRangeDates.slice(fullRangeDates.indexOf(nextStartDate))
+      : [],
     durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
     timedOut,
     maxDurationMs: bypassMaxDuration
@@ -323,6 +344,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       dataQualityWarnings
     },
     errors,
+    failedRows: 0,
+    failedStages: failures.length,
+    failures: failures.slice(0, 30),
     dependencyContract
   });
 }

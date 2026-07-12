@@ -100,7 +100,10 @@ interface SkaterTrendResponse {
   >;
 }
 
-const PAGE_SIZE = 2000;
+// Keep this at or below Supabase's default PostgREST row cap. A requested
+// page larger than the server cap can look like a short final page and silently
+// truncate the season scan.
+const PAGE_SIZE = 1000;
 const RESPONSE_TTL_MS = 60_000;
 const RECENT_FALLBACK_MAX_DAYS = 3;
 const BLOCKED_FALLBACK_MIN_DAYS = 14;
@@ -590,7 +593,7 @@ export default async function handler(
 
       const response: SkaterTrendResponse = {
         seasonId,
-        generatedAt: new Date().toISOString(),
+        generatedAt: `${resolvedDate}T23:59:59.999Z`,
         requestedDate,
         dateUsed: resolvedDate,
         fallbackApplied: serving.fallbackApplied,

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { runSustainabilityBaselineBacktest } from "./backtest";
+import {
+  runSustainabilityBaselineBacktest,
+  runSustainabilityProbabilityBacktest
+} from "./backtest";
 
 describe("sustainability baseline backtest", () => {
   it("compares the canonical score against simple baseline variants", () => {
@@ -75,5 +78,28 @@ describe("sustainability baseline backtest", () => {
       sampleCount: 1,
       mae: 0.1
     });
+  });
+});
+
+describe("sustainability probability backtest", () => {
+  it("computes multiclass Brier score against a uniform baseline", () => {
+    const result = runSustainabilityProbabilityBacktest([
+      { actualClass: "hot", probabilities: { hot: 0.8, normal: 0.1, cold: 0.1 } },
+      { actualClass: "cold", probabilities: { hot: 0.1, normal: 0.2, cold: 0.7 } }
+    ]);
+
+    expect(result).toEqual([
+      { variant: "sustainability_probability", sampleCount: 2, brier: 0.1 },
+      { variant: "uniform", sampleCount: 2, brier: 0.666667 }
+    ]);
+  });
+
+  it("rejects incomplete or non-normalized probability vectors", () => {
+    expect(
+      runSustainabilityProbabilityBacktest([
+        { actualClass: "hot", probabilities: { hot: 0.8, normal: 0.2 } },
+        { actualClass: "normal", probabilities: { hot: 0.8, normal: 0.8, cold: -0.6 } }
+      ])[0]
+    ).toEqual({ variant: "sustainability_probability", sampleCount: 0, brier: null });
   });
 });

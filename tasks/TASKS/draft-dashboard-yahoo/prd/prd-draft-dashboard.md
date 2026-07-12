@@ -1,5 +1,7 @@
 # Fantasy Hockey Draft Dashboard — Condensed PRD
 
+> **Implementation task list:** `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md`
+
 ## Overview
 A three-panel Draft Dashboard enabling fast, informed drafting with real‑time projections, VORP/VONA/VBD value metrics, roster tracking, and sortable views.
 
@@ -159,4 +161,3 @@ These three items are highest priority for this weekend. After implementing the 
 - 2025-08-22: Added skater scoring stat manager (add/remove, prevents duplicates).
 - 2025-08-22: Added conditional grid-span behavior for expand button (spans two columns only when solitary in last row).
 - 2025-08-22: Added per-stat removal control and styling refinements (divider, inputs, badges).
-

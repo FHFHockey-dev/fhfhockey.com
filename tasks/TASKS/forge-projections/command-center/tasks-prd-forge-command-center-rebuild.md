@@ -102,7 +102,7 @@
 
 - [ ] 9.0 Validate, visually inspect, and prepare promotion
   - [x] 9.1 Run focused command-center tests during implementation.
-  - [ ] 9.2 Run `npm run test:full` from `web/`.
+  - [x] 9.2 Run `npm run test:full` from `web/`. Verified 2026-07-12: 400/400 test files and 1,860/1,860 tests passed in 23.09s.
   - [x] 9.3 Run `npx tsc --noEmit --pretty false` from `web/`.
   - [x] 9.4 Run `npm run build` from `web/`.
   - [ ] 9.5 Start the local dev server and visually verify `/forge/command-center`.

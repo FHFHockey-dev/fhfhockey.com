@@ -110,7 +110,7 @@ describe("skaterCompositeWriter", () => {
   it("calculates bounded percentile-based composite scores", () => {
     expect(calculateOffenseRating(strongPercentiles)).toBe(83.88);
     expect(calculateDefenseRating(strongPercentiles)).toBe(79.25);
-    expect(calculateMcmScore(strongPercentiles)).toBe(86.23);
+    expect(calculateMcmScore(strongPercentiles)).toBe(86.53);
     expect(calculateArchetypeScores(strongPercentiles)).toMatchObject({
       shootFirstScore: 77.3,
       passFirstScore: 71.2,
@@ -135,11 +135,11 @@ describe("skaterCompositeWriter", () => {
     ).toBe("MCM Watch");
   });
 
-  it("requests every live MCM scoring component from the source surfaces without source-pending PP points", () => {
+  it("requests every live MCM scoring component from the source surfaces", () => {
     expect(SKATER_COMPOSITE_SOURCE_METRICS).toEqual(
       expect.arrayContaining([...MCM_COMPONENTS.scoring]),
     );
-    expect(SKATER_COMPOSITE_SOURCE_METRICS).not.toContain("pp_points_per_60");
+    expect(SKATER_COMPOSITE_SOURCE_METRICS).toContain("pp_points_per_60");
   });
 
   it("builds an upsert row with methodology, provenance, and missing luck status", () => {
@@ -168,7 +168,7 @@ describe("skaterCompositeWriter", () => {
       deployment_bucket: "all",
       offense_rating_overall: 83.88,
       defense_rating_overall: 79.25,
-      mcm_score: 86.23,
+      mcm_score: 86.53,
       beast_tier: "BEAST",
       results_luck_index: null,
       methodology_version: "contextual_composites_v1",
@@ -179,14 +179,14 @@ describe("skaterCompositeWriter", () => {
     expect(row.components_json).toMatchObject({
       mcm: {
         liveComponents: {
-          scoring: ["goals_per_60", "primary_assists_per_60", "points_per_60"],
+          scoring: [
+            "goals_per_60",
+            "primary_assists_per_60",
+            "points_per_60",
+            "pp_points_per_60",
+          ],
         },
-        sourcePendingComponents: [
-          {
-            metricKey: "pp_points_per_60",
-            originalRole: "power-play scoring component",
-          },
-        ],
+        sourcePendingComponents: [],
       },
       resultsLuck: {
         signalComponents: [
@@ -214,13 +214,8 @@ describe("skaterCompositeWriter", () => {
       sourceFreshness,
     });
     expect(row.provenance).toMatchObject({
-      sourceMetrics: expect.not.arrayContaining(["pp_points_per_60"]),
-      sourcePendingMetrics: [
-        {
-          metricKey: "pp_points_per_60",
-          originalRole: "power-play scoring component",
-        },
-      ],
+      sourceMetrics: expect.arrayContaining(["pp_points_per_60"]),
+      sourcePendingMetrics: [],
     });
     expect(row.components_json).toMatchObject({
       percentiles: {

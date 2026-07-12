@@ -78,6 +78,10 @@ describe("metricDefinitions", () => {
       sourceExcludes: ["expected_goals"],
     });
     expect(expectedShooting?.availabilityStatus).toBe("available");
+    expect(expectedShooting?.metadata).toMatchObject({
+      denominatorStatus: "verified",
+      xgShotUniverse: "fenwick_unblocked",
+    });
     expect(expectedShooting?.denominatorKey).toBe(
       "individual_unblocked_attempts",
     );
@@ -90,6 +94,10 @@ describe("metricDefinitions", () => {
     );
     expect(sax?.denominatorKey).toBe("individual_unblocked_attempts");
     expect(sax?.availabilityStatus).toBe("available");
+    expect(sax?.metadata).toMatchObject({
+      denominatorStatus: "verified",
+      xgShotUniverse: "fenwick_unblocked",
+    });
     expect(sax?.sourceQualityFlags).toContain(
       "fenwick_xg_denominator_matched",
     );
@@ -111,26 +119,31 @@ describe("metricDefinitions", () => {
     });
   });
 
-  it("keeps PP points source-pending until verified ranking rows exist", () => {
+  it("publishes PP points through verified rolling PP point and PP TOI fields", () => {
     const definition = getContextualRankingMetricDefinition("pp_points_per_60");
 
-    expect(definition?.availabilityStatus).toBe("unavailable");
+    expect(definition?.availabilityStatus).toBe("available");
+    expect(AVAILABLE_CONTEXTUAL_RANKING_METRIC_KEYS).toContain(
+      "pp_points_per_60",
+    );
     expect(definition?.defaultStrengthState).toBe("pp");
     expect(definition?.applicableStrengthStates).toEqual(["pp"]);
-    expect(definition?.sourceTable).toBeNull();
-    expect(definition?.sourceQualityFlags).toContain("source_pending");
+    expect(definition?.sourceTable).toBe("rolling_player_game_metrics");
+    expect(definition?.sourceFields).toContain("pp_points_total_last{n}");
+    expect(definition?.sourceFields).toContain("pp_toi_seconds_total_last{n}");
+    expect(definition?.denominatorKey).toBe("pp_toi_seconds");
+    expect(definition?.sourceQualityFlags).not.toContain("source_pending");
     expect(definition?.metadata).toMatchObject({
-      sourcePendingReason:
-        "Original MCM includes PP points, but the live MCM contract excludes pp_points_per_60 until verified ranking rows are available.",
+      sourcePromotedAt: "2026-06-24",
     });
   });
 
-  it("labels MCM and BEAST as current-contract composites with source-pending PP points excluded", () => {
+  it("labels MCM and BEAST as live composites with PP points included", () => {
     const mcm = getContextualRankingMetricDefinition("mcm_score");
     const beast = getContextualRankingMetricDefinition("beast_tier");
 
-    expect(mcm?.description).toContain("Current-contract");
-    expect(mcm?.formulaDescription).toContain("power-play points are excluded");
+    expect(mcm?.description).not.toContain("Current-contract");
+    expect(mcm?.formulaDescription).toContain("including power-play points");
     expect(mcm?.metadata?.componentMetrics).toEqual([
       "sog_per_60",
       "hits_per_60",
@@ -138,15 +151,12 @@ describe("metricDefinitions", () => {
       "goals_per_60",
       "primary_assists_per_60",
       "points_per_60",
-    ]);
-    expect(mcm?.metadata?.sourcePendingComponents).toEqual([
       "pp_points_per_60",
     ]);
-    expect(beast?.description).toContain("Current-contract");
-    expect(beast?.formulaDescription).toContain("source-pending and excluded");
-    expect(beast?.metadata?.sourcePendingComponents).toEqual([
-      "pp_points_per_60",
-    ]);
+    expect(mcm?.metadata?.sourcePendingComponents).toEqual([]);
+    expect(beast?.description).not.toContain("Current-contract");
+    expect(beast?.formulaDescription).toContain("including power-play points");
+    expect(beast?.metadata?.sourcePendingComponents).toEqual([]);
   });
 
   it("keeps team-without-player relative 5v5 metrics planned until baselines exist", () => {
@@ -157,11 +167,27 @@ describe("metricDefinitions", () => {
     expect(relGf?.sourceTable).toBeNull();
     expect(relGf?.metadata).toMatchObject({
       requiresTeamWithoutPlayerBaseline: true,
+      blockedFromLiveMatrix: true,
+      requiredFields: [
+        "player_5v5_goals_for",
+        "player_5v5_goals_against",
+        "team_without_player_5v5_goals_for",
+        "team_without_player_5v5_goals_against",
+        "matched_team_without_player_toi_seconds",
+      ],
     });
     expect(relXgf?.availabilityStatus).toBe("planned");
     expect(relXgf?.sourceTable).toBeNull();
     expect(relXgf?.metadata).toMatchObject({
       requiresTeamWithoutPlayerBaseline: true,
+      blockedFromLiveMatrix: true,
+      requiredFields: [
+        "player_5v5_xgf",
+        "player_5v5_xga",
+        "team_without_player_5v5_xgf",
+        "team_without_player_5v5_xga",
+        "matched_team_without_player_toi_seconds",
+      ],
     });
   });
 
@@ -172,6 +198,10 @@ describe("metricDefinitions", () => {
     expect(offense?.availabilityStatus).toBe("available");
     expect(offense?.sourceTable).toBe("skater_composite_ratings");
     expect(offense?.denominatorKey).toBe("component_percentiles");
+    expect(offense?.metadata).toMatchObject({
+      signalType: "contextual_descriptive_composite",
+      adjustedImpactStatus: "not_adjusted_impact",
+    });
     expect(offense?.sourceFields).toContain(
       "skater_composite_ratings.offense_rating_overall",
     );
@@ -179,6 +209,13 @@ describe("metricDefinitions", () => {
     expect(defense?.displayName).toBe("Defensive Impact");
     expect(defense?.sourceTable).toBe("skater_composite_ratings");
     expect(defense?.denominatorKey).toBe("component_percentiles");
+    expect(defense?.metadata).toMatchObject({
+      signalType: "contextual_descriptive_composite",
+      adjustedImpactStatus: "blocked_missing_controls",
+    });
+    expect(String(defense?.metadata?.adjustedImpactBoundary)).toMatch(
+      /defense-target controls pass the promotion gate/,
+    );
     expect(defense?.sourceQualityFlags).toContain(
       "context_influenced_unadjusted_on_ice",
     );

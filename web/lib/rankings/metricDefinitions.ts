@@ -91,7 +91,7 @@ function defaultApplicableStrengthStates(
 
 function defaultDenominatorKey(definition: ContextualRankingMetricDefinitionInput) {
   if (definition.metricKey === "expected_shooting_percentage") {
-    return "unblocked_attempts_pending_confirmation";
+    return "individual_unblocked_attempts";
   }
   if (
     definition.metricKey === "goals_above_expected" ||
@@ -121,7 +121,7 @@ function defaultDenominatorDescription(
     return "Total TOI seconds in the selected player-production window.";
   }
   if (definition.metricKey === "expected_shooting_percentage") {
-    return "Pending denominator confirmation; xG-derived shot-quality metrics should use the source model's shot universe.";
+    return "Individual unblocked shot attempts from approved shot-goal xG feature rows.";
   }
   if (definition.metricKey === "mcm_score") {
     return "Weighted component percentiles from published contextual metric components.";
@@ -305,9 +305,8 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     entityType: "skater",
     category: "Special Teams",
     description:
-      "Power-play points per 60 minutes in the selected window; source contract is pending in the current ranking surface.",
-    formulaDescription:
-      "power-play points / power-play TOI seconds * 3600 once verified PP point and PP TOI fields are promoted into the ranking surface.",
+      "Power-play points per 60 minutes in the selected player-production window.",
+    formulaDescription: "power-play points / power-play TOI seconds * 3600",
     higherIsBetter: true,
     defaultStrengthState: "pp",
     defaultPeerGroup: "deployment",
@@ -316,18 +315,24 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     isRateStat: true,
     isPercentileEligible: true,
     phase: "phase_2",
-    availabilityStatus: "unavailable",
-    sourceTable: null,
-    sourceFields: [],
+    availabilityStatus: "available",
+    sourceTable: "rolling_player_game_metrics",
+    sourceFields: [
+      "pp_points_total_last{n}",
+      "pp_toi_seconds_total_last{n}",
+      "pp_points_avg_{baseline_window}",
+      "pp_toi_seconds_avg_{baseline_window}",
+    ],
     applicableStrengthStates: ["pp"],
-    denominatorKey: "pp_toi_seconds_source_pending",
+    denominatorKey: "pp_toi_seconds",
     denominatorDescription:
-      "Verified player power-play TOI seconds in the selected player-production window; not available in the current matrix ranking contract.",
-    sourceQualityFlags: ["source_pending"],
+      "Player power-play TOI seconds in the selected player-production window.",
     metadata: {
-      sourcePendingReason:
-        "Original MCM includes PP points, but the live MCM contract excludes pp_points_per_60 until verified ranking rows are available.",
-      requiredFields: ["power_play_points", "power_play_toi_seconds"],
+      derivedMetric: true,
+      windowSource: "player_last_n_games_played",
+      sourcePromotedAt: "2026-06-24",
+      sourceContract:
+        "rolling_player_game_metrics.pp_points_* divided by pp_toi_seconds_* for PP strength rows.",
     },
   },
   {
@@ -565,6 +570,7 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
       "Individual unblocked shot attempts from approved shot-goal xG feature rows.",
     sourceQualityFlags: ["fenwick_xg_denominator_matched"],
     metadata: {
+      denominatorStatus: "verified",
       xgShotUniverse: "fenwick_unblocked",
       shotAttemptsFieldSemantics:
         "nhl_xg_player_rolling_aggregates.shot_attempts is populated from is_unblocked_shot_attempt=true features.",
@@ -600,6 +606,7 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
       "Individual unblocked shot attempts from approved shot-goal xG feature rows.",
     sourceQualityFlags: ["fenwick_xg_denominator_matched"],
     metadata: {
+      denominatorStatus: "verified",
       dependsOn: ["goals", "ixg", "individual_unblocked_attempts"],
       xgShotUniverse: "fenwick_unblocked",
     },
@@ -730,7 +737,19 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     availabilityStatus: "planned",
     sourceTable: null,
     sourceFields: [],
-    metadata: { requiresTeamWithoutPlayerBaseline: true },
+    metadata: {
+      requiresTeamWithoutPlayerBaseline: true,
+      sourcePendingReason:
+        "Requires matched 5v5 team-without-player goal-share baselines before publishing.",
+      requiredFields: [
+        "player_5v5_goals_for",
+        "player_5v5_goals_against",
+        "team_without_player_5v5_goals_for",
+        "team_without_player_5v5_goals_against",
+        "matched_team_without_player_toi_seconds",
+      ],
+      blockedFromLiveMatrix: true,
+    },
   },
   {
     metricKey: "rel_5v5_xgf_percentage",
@@ -750,7 +769,19 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     availabilityStatus: "planned",
     sourceTable: null,
     sourceFields: [],
-    metadata: { requiresTeamWithoutPlayerBaseline: true },
+    metadata: {
+      requiresTeamWithoutPlayerBaseline: true,
+      sourcePendingReason:
+        "Requires matched 5v5 team-without-player expected-goal-share baselines before publishing.",
+      requiredFields: [
+        "player_5v5_xgf",
+        "player_5v5_xga",
+        "team_without_player_5v5_xgf",
+        "team_without_player_5v5_xga",
+        "matched_team_without_player_toi_seconds",
+      ],
+      blockedFromLiveMatrix: true,
+    },
   },
   {
     metricKey: "offense_rating",
@@ -776,7 +807,10 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
       "skater_composite_ratings.offense_rating_deployment",
     ],
     metadata: {
-      signalType: "contextual_percentile_composite",
+      signalType: "contextual_descriptive_composite",
+      adjustedImpactStatus: "not_adjusted_impact",
+      adjustedImpactBoundary:
+        "Do not promote as isolated offensive talent until adjusted-impact controls pass the promotion gate.",
       componentGroups: [
         "scoring_rate_score",
         "chance_creation_score",
@@ -810,7 +844,10 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     ],
     metadata: {
       labelScope: "Defensive Impact in Context",
-      signalType: "contextual_percentile_composite",
+      signalType: "contextual_descriptive_composite",
+      adjustedImpactStatus: "blocked_missing_controls",
+      adjustedImpactBoundary:
+        "Do not present as isolated defensive talent until adjusted-impact teammate, opponent, score, zone-start, rest, and defense-target controls pass the promotion gate.",
       caveat:
         "Uses context-influenced on-ice defensive inputs and should not be presented as adjusted defensive talent.",
     },
@@ -851,9 +888,9 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     entityType: "skater",
     category: "Fantasy composite",
     description:
-      "Current-contract multi-category fantasy score based on verified live percentile components.",
+      "Multi-category fantasy score based on verified live percentile components.",
     formulaDescription:
-      "Weighted blend of riff score, live scoring score, and live category depth score; power-play points are excluded until pp_points_per_60 source rows are verified.",
+      "Weighted blend of riff score, live scoring score, and live category depth score, including power-play points where PP rows are available.",
     higherIsBetter: true,
     defaultStrengthState: "all",
     defaultPeerGroup: "deployment",
@@ -873,13 +910,14 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
         "goals_per_60",
         "primary_assists_per_60",
         "points_per_60",
+        "pp_points_per_60",
       ],
-      sourcePendingComponents: ["pp_points_per_60"],
+      sourcePendingComponents: [],
       componentCaveats: {
         hits_per_60: "RTSS event; not rink-adjusted in current sources.",
         blocks_per_60: "RTSS event; not rink-adjusted in current sources.",
         pp_points_per_60:
-          "Original MCM component; excluded from the live MCM score until verified source rows exist.",
+          "Original MCM component sourced from rolling PP points and PP TOI fields.",
       },
       signalType: "fantasy_peripheral_composite",
     },
@@ -890,9 +928,9 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     entityType: "skater",
     category: "Fantasy composite",
     description:
-      "Current-contract tier label for qualified multi-category players.",
+      "Tier label for qualified multi-category players.",
     formulaDescription:
-      "Eligibility gates based on verified live MCM percentile thresholds; power-play points are source-pending and excluded.",
+      "Eligibility gates based on verified live MCM percentile thresholds, including power-play points where PP rows are available.",
     higherIsBetter: true,
     defaultStrengthState: "all",
     defaultPeerGroup: "deployment",
@@ -906,12 +944,12 @@ const CONTEXTUAL_RANKING_METRIC_DEFINITION_INPUTS = [
     sourceFields: ["skater_composite_ratings.beast_tier"],
     metadata: {
       allowedTiers: ["MCM Watch", "MCM", "BEAST", "BEAST+"],
-      sourcePendingComponents: ["pp_points_per_60"],
+      sourcePendingComponents: [],
       componentCaveats: {
         hits_per_60: "RTSS event; not rink-adjusted in current sources.",
         blocks_per_60: "RTSS event; not rink-adjusted in current sources.",
         pp_points_per_60:
-          "Original MCM component; excluded from live BEAST gates until verified source rows exist.",
+          "Original MCM component sourced from rolling PP points and PP TOI fields.",
       },
       signalType: "fantasy_peripheral_tier",
     },

@@ -13,7 +13,7 @@ import {
   WeekOption,
   GoalieBaseStats,
   GoalieAverages,
-  SortConfig
+  SortConfig,
 } from "components/GoaliePage/goalieTypes";
 import { calculateWeeklyRanking } from "./goalieCalculations"; // Removed unused rankingPoints import
 
@@ -51,7 +51,7 @@ const GoalieList: FC<Props> = ({
   statColumns,
   loading,
   onBackToLeaderboard,
-  showBackButton = true
+  showBackButton = true,
 }) => {
   // --- Start of Hook Declarations ---
 
@@ -59,7 +59,7 @@ const GoalieList: FC<Props> = ({
     SortConfig<DisplayGoalie>
   >({
     key: "goalieFullName", // Default sort by name
-    direction: "ascending"
+    direction: "ascending",
   });
 
   // Define GoalieBaseStatsExample *before* hooks that depend on it
@@ -81,9 +81,9 @@ const GoalieList: FC<Props> = ({
       savePct: 0,
       goalsAgainstAverage: 0,
       savesPer60: 0,
-      shotsAgainstPer60: 0
+      shotsAgainstPer60: 0,
     }),
-    []
+    [],
   ); // Wrap in useMemo to ensure stable reference for dependency arrays
 
   // Step 1: Calculate internal ranked data (GoalieWeeklyRank)
@@ -96,13 +96,13 @@ const GoalieList: FC<Props> = ({
         aggregate,
         leagueAverage,
         selectedStats,
-        statColumns
+        statColumns,
       );
       return {
         ...aggregate,
         weeklyRank: ranking,
         weeklyRankPercentage: percentage,
-        weeklyRankPoints: points
+        weeklyRankPoints: points,
       };
     });
     // Sort by points descending
@@ -118,13 +118,13 @@ const GoalieList: FC<Props> = ({
         goalieFullName: rankData.goalie_name ?? "Unknown Goalie",
         team: rankData.team ?? undefined,
         ranking: rankData.weeklyRank,
-        percentage: rankData.weeklyRankPercentage
+        percentage: rankData.weeklyRankPercentage,
       };
 
       Object.entries(GoalieBaseStatsExample).forEach(
         ([baseKey, defaultValue]) => {
           const statColumn = statColumns.find(
-            (column) => column.value === baseKey
+            (column) => column.value === baseKey,
           );
           const aggregateKey = statColumn?.dbFieldGoalie;
           const aggregateValue = aggregateKey
@@ -139,7 +139,7 @@ const GoalieList: FC<Props> = ({
           } else {
             (displayGoalie as any)[baseKey] = defaultValue;
           }
-        }
+        },
       );
 
       return displayGoalie as DisplayGoalie;
@@ -174,10 +174,10 @@ const GoalieList: FC<Props> = ({
           // Special sort for Ranking type
           const rankingOrder: Ranking[] = [
             "Elite",
-            "Quality",
+            "Good",
             "Average",
             "Bad",
-            "Really Bad"
+            "Abysmal",
           ];
           const aRankIndex = rankingOrder.indexOf(aValue as Ranking);
           const bRankIndex = rankingOrder.indexOf(bValue as Ranking);
@@ -266,7 +266,7 @@ const GoalieList: FC<Props> = ({
       return { startDate: "N/A", endDate: "N/A" };
     return {
       startDate: format(new Date(week.start), "MM/dd/yyyy"), // Ensure week.start/end are Date objects or parseable strings
-      endDate: format(new Date(week.end), "MM/dd/yyyy")
+      endDate: format(new Date(week.end), "MM/dd/yyyy"),
     };
   }, [week]);
 
@@ -280,7 +280,7 @@ const GoalieList: FC<Props> = ({
         | "team"
         | "percentage"
         | "ranking"
-        | "gameDate" // Keep potential key from GoalieTable
+        | "gameDate", // Keep potential key from GoalieTable
     ) => {
       // Build list of valid keys *based on GoalieBaseStatsExample*
       const validKeys: Array<keyof DisplayGoalie> = [
@@ -289,14 +289,16 @@ const GoalieList: FC<Props> = ({
         "team",
         "percentage",
         "ranking",
-        ...(Object.keys(GoalieBaseStatsExample) as Array<keyof GoalieBaseStats>)
+        ...(Object.keys(GoalieBaseStatsExample) as Array<
+          keyof GoalieBaseStats
+        >),
       ];
 
       // Check if the incoming key is one we can sort DisplayGoalie by
       if (!validKeys.includes(key as keyof DisplayGoalie)) {
         if (key === "gameDate") {
           console.warn(
-            "Sorting by 'gameDate' is not applicable in the weekly GoalieList view."
+            "Sorting by 'gameDate' is not applicable in the weekly GoalieList view.",
           );
         } else {
           console.warn(`Attempted to sort by an unsupported key: ${key}`);
@@ -320,7 +322,7 @@ const GoalieList: FC<Props> = ({
         return { key: sortKey, direction };
       });
     },
-    [GoalieBaseStatsExample] // <-- Added GoalieBaseStatsExample dependency (line 342 warning)
+    [GoalieBaseStatsExample], // <-- Added GoalieBaseStatsExample dependency (line 342 warning)
     // setListSortConfig is stable and doesn't need to be listed
   );
 

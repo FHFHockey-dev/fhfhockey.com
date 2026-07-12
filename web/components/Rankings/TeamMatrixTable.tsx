@@ -50,13 +50,21 @@ function StateBody({ message, colSpan }: { message: string; colSpan: number }) {
 function teamMetricState(
   cell: TeamMatrixResponse["rows"][number]["metrics"][TeamMatrixMetricKey],
   row: TeamMatrixResponse["rows"][number],
+  metricKey: TeamMatrixMetricKey,
   staleSource: boolean,
 ) {
+  const unitCoverage = teamUnitMetricCoverage(row, metricKey);
+  if (unitCoverage?.status === "source_gap") {
+    return { label: "No unit coverage", marker: "?", className: styles.metricStateUnavailable };
+  }
   if (cell.qualifiedPeerCount === 0) {
     return { label: "No sample", marker: "?", className: styles.metricStateUnavailable };
   }
   if (cell.rawValue == null || cell.percentile == null) {
     return { label: "Source pending", marker: "?", className: styles.metricStateUnavailable };
+  }
+  if (unitCoverage?.status === "partial") {
+    return { label: "Partial unit coverage", marker: "!", className: styles.metricStateCaveat };
   }
   if (staleSource) {
     return { label: "Stale source", marker: "~", className: styles.metricStateStale };
@@ -68,6 +76,22 @@ function teamMetricState(
     return { label: "True zero", marker: "0", className: styles.metricStateZero };
   }
   return null;
+}
+
+function teamUnitMetricCoverage(
+  row: TeamMatrixResponse["rows"][number],
+  metricKey: TeamMatrixMetricKey,
+) {
+  switch (metricKey) {
+    case "forward_top_load_index":
+      return row.unitUsage.coverage.forwardTopLoad;
+    case "defense_pair_top_load_index":
+      return row.unitUsage.coverage.defensePairTopLoad;
+    case "pp1_pp2_usage_share":
+      return row.unitUsage.coverage.pp1Pp2UsageShare;
+    default:
+      return null;
+  }
 }
 
 function isStyleDerivedMetric(metricKey: TeamMatrixMetricKey) {
@@ -101,13 +125,20 @@ function TeamMetricCell({
     row.record.styleSnapshotDate != null &&
     row.record.styleSnapshotDate !== row.record.latestPowerDate;
   const staleSource = !unavailable && (staleMatrixSnapshot || staleStyleSource);
-  const state = teamMetricState(cell, row, staleSource);
+  const state = teamMetricState(cell, row, column.metricKey, staleSource);
+  const unitCoverage = teamUnitMetricCoverage(row, column.metricKey);
   const title = [
     column.label,
     cell.formattedValue ? `Value ${cell.formattedValue}` : null,
     cell.rank == null ? null : `Rank ${cell.rank}`,
     cell.percentile == null ? null : `Percentile ${cell.percentile.toFixed(1)}%`,
     column.lowerIsBetter ? "Lower raw values are better" : null,
+    unitCoverage
+      ? `Unit coverage ${unitCoverage.status}; resolved games ${unitCoverage.games}; latest ${unitCoverage.latestDate ?? "none"}`
+      : null,
+    unitCoverage?.warnings.length
+      ? `Unit coverage warnings: ${unitCoverage.warnings.join(", ")}`
+      : null,
     staleMatrixSnapshot ? "Snapshot is older than latest available team matrix snapshot" : null,
     staleStyleSource
       ? `Team style source ${row.record.styleSnapshotDate} differs from team power snapshot ${row.record.latestPowerDate}`
@@ -258,8 +289,8 @@ export default function TeamMatrixTable({
                   </td>
                   <td>
                     <div className={styles.playerCell}>
-                      <strong>{row.style.label}</strong>
-                      <span>{row.style.source}</span>
+                      <strong>{row.style.displayLabel}</strong>
+                      <span>{row.style.interpretation}</span>
                     </div>
                   </td>
                   <td>{row.record.styleGames || "-"}</td>
@@ -290,8 +321,8 @@ export default function TeamMatrixTable({
         </table>
       </div>
       <div className={styles.inlineNotice}>
-        Team style caveat: badges are raw/contextual descriptors, not score- or
-        venue-adjusted team traits.
+        Team style caveat: badges are raw/contextual environment descriptors, not
+        score-, venue-, or opponent-adjusted coach/system claims.
         {payload?.meta.sourceWarnings.length
           ? ` ${payload.meta.sourceWarnings.join(" ")}.`
           : ""}

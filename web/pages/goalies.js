@@ -13,7 +13,7 @@ import {
   GOALIE_ADVANCED_METRICS_SELECT,
   GOALIE_ADVANCED_STRENGTH_OPTIONS,
   applyGoalieValueTiers,
-  buildGoalieAdvancedMetricsRows
+  buildGoalieAdvancedMetricsRows,
 } from "components/GoaliePage/goalieMetrics";
 
 import styles from "styles/Goalies.module.scss";
@@ -23,7 +23,7 @@ import {
   endOfWeek,
   addDays,
   format,
-  startOfWeek
+  startOfWeek,
 } from "date-fns";
 
 const statColumns = [
@@ -38,7 +38,7 @@ const statColumns = [
   { label: "SV%", value: "savePct" },
   { label: "GAA", value: "goalsAgainstAverage" },
   { label: "SO", value: "shutouts" },
-  { label: "TOI", value: "timeOnIce" }
+  { label: "TOI", value: "timeOnIce" },
 ];
 
 const defaultSelectedStats = ["saves", "savePct", "wins"];
@@ -48,87 +48,87 @@ const leaderboardStatColumns = [
     label: "GP",
     value: "gamesPlayed",
     dbFieldGoalie: "weekly_gp",
-    dbFieldAverage: "avg_league_weekly_gp"
+    dbFieldAverage: "avg_league_weekly_gp",
   },
   {
     label: "GS",
     value: "gamesStarted",
     dbFieldGoalie: "weekly_gs",
-    dbFieldAverage: "avg_league_weekly_gs"
+    dbFieldAverage: "avg_league_weekly_gs",
   },
   {
     label: "W",
     value: "wins",
     dbFieldGoalie: "weekly_wins",
     dbFieldAverage: "avg_league_weekly_wins",
-    fantasyStatKey: "win"
+    fantasyStatKey: "win",
   },
   {
     label: "L",
     value: "losses",
     dbFieldGoalie: "weekly_losses",
-    dbFieldAverage: "avg_league_weekly_losses"
+    dbFieldAverage: "avg_league_weekly_losses",
   },
   {
     label: "OTL",
     value: "otLosses",
     dbFieldGoalie: "weekly_ot_losses",
-    dbFieldAverage: "avg_league_weekly_ot_losses"
+    dbFieldAverage: "avg_league_weekly_ot_losses",
   },
   {
     label: "SV",
     value: "saves",
     dbFieldGoalie: "weekly_saves",
     dbFieldAverage: "avg_league_weekly_saves",
-    fantasyStatKey: "save"
+    fantasyStatKey: "save",
   },
   {
     label: "SA",
     value: "shotsAgainst",
     dbFieldGoalie: "weekly_sa",
-    dbFieldAverage: "avg_league_weekly_sa"
+    dbFieldAverage: "avg_league_weekly_sa",
   },
   {
     label: "GA",
     value: "goalsAgainst",
     dbFieldGoalie: "weekly_ga",
     dbFieldAverage: "avg_league_weekly_ga",
-    fantasyStatKey: "goalAgainst"
+    fantasyStatKey: "goalAgainst",
   },
   {
     label: "SV%",
     value: "savePct",
     dbFieldGoalie: "weekly_sv_pct",
     dbFieldAverage: "avg_league_weekly_sv_pct",
-    dbFieldRate: true
+    dbFieldRate: true,
   },
   {
     label: "GAA",
     value: "goalsAgainstAverage",
     dbFieldGoalie: "weekly_gaa",
     dbFieldAverage: "avg_league_weekly_gaa",
-    dbFieldRate: true
+    dbFieldRate: true,
   },
   {
     label: "SO",
     value: "shutouts",
     dbFieldGoalie: "weekly_so",
     dbFieldAverage: "avg_league_weekly_so",
-    fantasyStatKey: "shutout"
+    fantasyStatKey: "shutout",
   },
   {
     label: "TOI",
     value: "timeOnIce",
     dbFieldGoalie: "weekly_toi_seconds",
-    dbFieldAverage: "avg_league_weekly_toi_seconds"
-  }
+    dbFieldAverage: "avg_league_weekly_toi_seconds",
+  },
 ];
 
 const DEFAULT_FANTASY_SETTINGS = {
   goalAgainst: -1,
   save: 0.2,
   shutout: 3,
-  win: 4
+  win: 4,
 };
 
 const NHL_PAGE_SIZE = 100;
@@ -170,16 +170,16 @@ const formatApiDateTime = (value) =>
 
 const buildWeeklySummaryUrl = (weekRange, start, limit) =>
   `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&cayenneExp=gameDate%3C=%22${formatApiDateTime(
-    weekRange.end
+    weekRange.end,
   )}%22%20and%20gameDate%3E=%22${formatApiDateTime(
-    weekRange.start
+    weekRange.start,
   )}%22%20and%20gameTypeId=2`;
 
 const buildGameSummaryUrl = (startDate, endDate, start, limit) =>
   `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22gameDate%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&cayenneExp=gameDate%3C=%22${formatApiDateTime(
-    endDate
+    endDate,
   )}%22%20and%20gameDate%3E=%22${formatApiDateTime(
-    startDate
+    startDate,
   )}%22%20and%20gameTypeId=2`;
 
 const mapWeeklyApiRow = (row, weekRange, weekNumber, matchupSeason) => ({
@@ -204,7 +204,7 @@ const mapWeeklyApiRow = (row, weekRange, weekNumber, matchupSeason) => ({
   weekly_sv_pct: row.savePct ?? null,
   weekly_gaa: row.goalsAgainstAverage ?? null,
   weekly_saves_per_60: null,
-  weekly_sa_per_60: null
+  weekly_sa_per_60: null,
 });
 
 const buildLeagueWeeklyAverage = (rows, weekNumber, matchupSeason) => {
@@ -236,8 +236,8 @@ const buildLeagueWeeklyAverage = (rows, weekNumber, matchupSeason) => {
       shotsAgainst: 0,
       goalsAgainst: 0,
       shutouts: 0,
-      timeOnIce: 0
-    }
+      timeOnIce: 0,
+    },
   );
 
   const goalieCount = rows.length;
@@ -272,7 +272,7 @@ const buildLeagueWeeklyAverage = (rows, weekNumber, matchupSeason) => {
         ? (totals.goalsAgainst * 3600) / totals.timeOnIce
         : 0,
     avg_league_weekly_saves_per_60: 0,
-    avg_league_weekly_sa_per_60: 0
+    avg_league_weekly_sa_per_60: 0,
   };
 };
 
@@ -294,7 +294,7 @@ const mapGameApiRow = (row) => ({
   time_on_ice: row.timeOnIce ?? 0,
   shutouts: row.shutouts ?? 0,
   goals: row.goals ?? 0,
-  assists: row.assists ?? 0
+  assists: row.assists ?? 0,
 });
 
 const buildLeaderboardRankings = async (weekRanges, selectedStats) => {
@@ -306,9 +306,9 @@ const buildLeaderboardRankings = async (weekRanges, selectedStats) => {
   const weeklyPayloads = await Promise.all(
     weekRanges.map((weekRange) =>
       fetchAllNhlPages((start, limit) =>
-        buildWeeklySummaryUrl(weekRange, start, limit)
-      )
-    )
+        buildWeeklySummaryUrl(weekRange, start, limit),
+      ),
+    ),
   );
 
   const goalieWeeklyData = [];
@@ -318,14 +318,14 @@ const buildLeaderboardRankings = async (weekRanges, selectedStats) => {
     const weekRange = weekRanges[index];
     goalieWeeklyData.push(
       ...rows.map((row) =>
-        mapWeeklyApiRow(row, weekRange, weekRange.week, matchupSeason)
-      )
+        mapWeeklyApiRow(row, weekRange, weekRange.week, matchupSeason),
+      ),
     );
 
     const averageRow = buildLeagueWeeklyAverage(
       rows,
       weekRange.week,
-      matchupSeason
+      matchupSeason,
     );
 
     if (averageRow) {
@@ -336,7 +336,7 @@ const buildLeaderboardRankings = async (weekRanges, selectedStats) => {
   const firstWeek = weekRanges[0];
   const lastWeek = weekRanges[weekRanges.length - 1];
   const goalieGameData = await fetchAllNhlPages((start, limit) =>
-    buildGameSummaryUrl(firstWeek.start, lastWeek.end, start, limit)
+    buildGameSummaryUrl(firstWeek.start, lastWeek.end, start, limit),
   );
 
   return calculateRichGoalieRankings(
@@ -347,22 +347,22 @@ const buildLeaderboardRankings = async (weekRanges, selectedStats) => {
     leaderboardStatColumns,
     firstWeek.week,
     lastWeek.week,
-    DEFAULT_FANTASY_SETTINGS
+    DEFAULT_FANTASY_SETTINGS,
   );
 };
 
 const decorateGoalieRanking = (goalie) => ({
   ...goalie,
   eliteWeeks: goalie.weekCounts?.Elite ?? 0,
-  qualityWeeks: goalie.weekCounts?.Quality ?? 0,
+  goodWeeks: goalie.weekCounts?.Good ?? 0,
   averageWeeks: goalie.weekCounts?.Average ?? 0,
   badWeeks: goalie.weekCounts?.Bad ?? 0,
-  reallyBadWeeks: goalie.weekCounts?.["Really Bad"] ?? 0,
+  abysmalWeeks: goalie.weekCounts?.Abysmal ?? 0,
   fantasyPointsAboveAverage:
     goalie.leagueAverageFantasyPointsPerGame !== undefined
       ? goalie.averageFantasyPointsPerGame -
         goalie.leagueAverageFantasyPointsPerGame
-      : Number.NEGATIVE_INFINITY
+      : Number.NEGATIVE_INFINITY,
 });
 
 const leaderboardSortAccessors = {
@@ -370,10 +370,13 @@ const leaderboardSortAccessors = {
   goalieFullName: (goalie) => goalie.goalieFullName ?? "",
   team: (goalie) => goalie.team ?? "",
   eliteWeeks: (goalie) => goalie.eliteWeeks ?? 0,
-  qualityWeeks: (goalie) => goalie.qualityWeeks ?? 0,
+  goodWeeks: (goalie) => goalie.goodWeeks ?? 0,
   averageWeeks: (goalie) => goalie.averageWeeks ?? 0,
   badWeeks: (goalie) => goalie.badWeeks ?? 0,
-  reallyBadWeeks: (goalie) => goalie.reallyBadWeeks ?? 0,
+  abysmalWeeks: (goalie) => goalie.abysmalWeeks ?? 0,
+  consistencyScore: (goalie) =>
+    goalie.consistencyScore ?? Number.NEGATIVE_INFINITY,
+  averageStartsPerWeek: (goalie) => goalie.averageStartsPerWeek ?? 0,
   percentAcceptableWeeks: (goalie) => goalie.percentAcceptableWeeks ?? 0,
   percentGoodWeeks: (goalie) => goalie.percentGoodWeeks ?? 0,
   wowVariance: (goalie) => goalie.wowVariance ?? Number.POSITIVE_INFINITY,
@@ -407,7 +410,7 @@ const leaderboardSortAccessors = {
   shotsAgainstPer60: (goalie) =>
     goalie.totalTimeOnIce > 0
       ? ((goalie.totalShotsAgainst ?? 0) / goalie.totalTimeOnIce) * 60
-      : 0
+      : 0,
 };
 
 const mapRankingToGoalieTableRow = (goalie) => {
@@ -434,7 +437,7 @@ const mapRankingToGoalieTableRow = (goalie) => {
     shotsAgainstPer60:
       totalTimeOnIce > 0
         ? ((goalie.totalShotsAgainst ?? 0) / totalTimeOnIce) * 60
-        : 0
+        : 0,
   };
 };
 
@@ -463,8 +466,8 @@ const buildRangeGoalieAverages = (goalies) => {
       shotsAgainst: 0,
       goalsAgainst: 0,
       shutouts: 0,
-      timeOnIce: 0
-    }
+      timeOnIce: 0,
+    },
   );
   const goalieCount = goalies.length || 1;
   const average = (value) => value / goalieCount;
@@ -495,7 +498,7 @@ const buildRangeGoalieAverages = (goalies) => {
     shotsAgainstPer60:
       totals.timeOnIce > 0
         ? ((totals.shotsAgainst / totals.timeOnIce) * 60).toFixed(2)
-        : "N/A"
+        : "N/A",
   };
 };
 
@@ -517,8 +520,7 @@ const GoalieTrends = () => {
   const [pendingWeeklyView, setPendingWeeklyView] = useState(null);
   const [minimumGamesPlayed, setMinimumGamesPlayed] = useState(0);
   const [minimumGamesPlayedInput, setMinimumGamesPlayedInput] = useState("0");
-  const [minimumGamesPlayedError, setMinimumGamesPlayedError] =
-    useState(null);
+  const [minimumGamesPlayedError, setMinimumGamesPlayedError] = useState(null);
   const [metricsView, setMetricsView] = useState("standard");
   const [advancedGoalieMetrics, setAdvancedGoalieMetrics] = useState([]);
   const [advancedGoalieMetricsLoading, setAdvancedGoalieMetricsLoading] =
@@ -526,23 +528,22 @@ const GoalieTrends = () => {
   const [advancedGoalieMetricsError, setAdvancedGoalieMetricsError] =
     useState(null);
   const [varianceDisplayMode, setVarianceDisplayMode] = useState("raw");
-  const [advancedMetricsStrength, setAdvancedMetricsStrength] =
-    useState("all");
+  const [advancedMetricsStrength, setAdvancedMetricsStrength] = useState("all");
   const [leaderboardSortConfig, setLeaderboardSortConfig] = useState({
     key: "totalPoints",
-    direction: "descending"
+    direction: "descending",
   });
 
   const viewTabs = [
     { id: "leaderboard", label: "Value Overview" },
-    { id: "week", label: "Metrics" }
+    { id: "week", label: "Metrics" },
   ];
 
   useEffect(() => {
     const fetchSeasonData = async () => {
       try {
         const response = await Fetch(
-          "https://api.nhle.com/stats/rest/en/season?sort=%5B%7B%22property%22:%22id%22,%22direction%22:%22DESC%22%7D%5D"
+          "https://api.nhle.com/stats/rest/en/season?sort=%5B%7B%22property%22:%22id%22,%22direction%22:%22DESC%22%7D%5D",
         ).then((res) => res.json());
         let seasonData = response.data[0];
         let seasonStart = parseISO(seasonData.startDate);
@@ -561,15 +562,15 @@ const GoalieTrends = () => {
         const firstSunday = endOfWeek(seasonStart, { weekStartsOn: 1 });
         const firstWeek = {
           start: seasonStart,
-          end: firstSunday
+          end: firstSunday,
         };
 
         const remainingWeeks = eachWeekOfInterval({
           start: addDays(firstSunday, 7),
-          end: seasonEnd
+          end: seasonEnd,
         }).map((weekStart) => ({
           start: startOfWeek(weekStart, { weekStartsOn: 1 }),
-          end: endOfWeek(weekStart, { weekStartsOn: 1 })
+          end: endOfWeek(weekStart, { weekStartsOn: 1 }),
         }));
 
         const allWeeks = [firstWeek, ...remainingWeeks];
@@ -578,17 +579,17 @@ const GoalieTrends = () => {
           allWeeks.map((week, index) => ({
             label: `Week ${index + 1} || ${format(
               week.start,
-              "MM/dd/yyyy"
+              "MM/dd/yyyy",
             )} - ${format(week.end, "MM/dd/yyyy")}`,
-            value: week
-          }))
+            value: week,
+          })),
         );
         setSelectedWeek(allWeeks[0]);
         setSelectedRange({ start: 0, end: allWeeks.length - 1 });
 
         const goalieRankings = await buildLeaderboardRankings(
           allWeeks.map((week, index) => ({ ...week, week: index + 1 })),
-          selectedStats
+          selectedStats,
         );
         setGoalieRankings(goalieRankings.map(decorateGoalieRanking));
       } catch (error) {
@@ -642,7 +643,7 @@ const GoalieTrends = () => {
         const weekIndex = weeks.findIndex(
           (week) =>
             week.value.start.getTime() === selectedWeek.start.getTime() &&
-            week.value.end.getTime() === selectedWeek.end.getTime()
+            week.value.end.getTime() === selectedWeek.end.getTime(),
         );
         const weekNumber = weekIndex >= 0 ? weekIndex + 1 : 1;
         const responseRows = await fetchAllNhlPages((start, limit) =>
@@ -650,11 +651,11 @@ const GoalieTrends = () => {
             {
               start: selectedWeek.start,
               end: selectedWeek.end,
-              week: weekNumber
+              week: weekNumber,
             },
             start,
-            limit
-          )
+            limit,
+          ),
         );
 
         setSingleWeekGoalieData(
@@ -663,16 +664,16 @@ const GoalieTrends = () => {
               row,
               { start: selectedWeek.start, end: selectedWeek.end },
               weekNumber,
-              String(new Date(selectedWeek.start).getFullYear())
-            )
-          )
+              String(new Date(selectedWeek.start).getFullYear()),
+            ),
+          ),
         );
         setSingleWeekLeagueAverage(
           buildLeagueWeeklyAverage(
             responseRows,
             weekNumber,
-            String(new Date(selectedWeek.start).getFullYear())
-          )
+            String(new Date(selectedWeek.start).getFullYear()),
+          ),
         );
         const targetView = pendingWeeklyView ?? "week";
         setView(targetView);
@@ -722,10 +723,7 @@ const GoalieTrends = () => {
   const handleMinimumGamesChange = (event) => {
     const nextValue = event.target.value;
     setMinimumGamesPlayedInput(nextValue);
-    const parsed = parseMinimumGamesPlayedInput(
-      nextValue,
-      minimumGamesPlayed
-    );
+    const parsed = parseMinimumGamesPlayedInput(nextValue, minimumGamesPlayed);
     setMinimumGamesPlayed(parsed.minimumGamesPlayed);
     setMinimumGamesPlayedError(parsed.error);
   };
@@ -735,7 +733,7 @@ const GoalieTrends = () => {
     setSelectedStats((prevSelectedStats) =>
       checked
         ? [...prevSelectedStats, value]
-        : prevSelectedStats.filter((stat) => stat !== value)
+        : prevSelectedStats.filter((stat) => stat !== value),
     );
     setFetchData(true);
   };
@@ -758,7 +756,7 @@ const GoalieTrends = () => {
       const weekIndex = weeks.findIndex(
         (week) =>
           week.value.start.getTime() === activeWeek.start.getTime() &&
-          week.value.end.getTime() === activeWeek.end.getTime()
+          week.value.end.getTime() === activeWeek.end.getTime(),
       );
       const weekNumber = weekIndex >= 0 ? weekIndex + 1 : 1;
       const goalieRankings = await buildLeaderboardRankings(
@@ -766,10 +764,10 @@ const GoalieTrends = () => {
           {
             start: activeWeek.start,
             end: activeWeek.end,
-            week: weekNumber
-          }
+            week: weekNumber,
+          },
         ],
-        selectedStats
+        selectedStats,
       );
 
       setGoalieRankings(goalieRankings.map(decorateGoalieRanking));
@@ -794,16 +792,16 @@ const GoalieTrends = () => {
     try {
       const selectedWeeks = weeks.slice(
         selectedRange.start,
-        selectedRange.end + 1
+        selectedRange.end + 1,
       );
 
       const goalieRankings = await buildLeaderboardRankings(
         selectedWeeks.map((week, index) => ({
           start: week.value.start,
           end: week.value.end,
-          week: selectedRange.start + index + 1
+          week: selectedRange.start + index + 1,
         })),
-        selectedStats
+        selectedStats,
       );
       setGoalieRankings(goalieRankings.map(decorateGoalieRanking));
       setPendingWeeklyView(null);
@@ -822,7 +820,9 @@ const GoalieTrends = () => {
         return {
           key,
           direction:
-            currentConfig.direction === "ascending" ? "descending" : "ascending"
+            currentConfig.direction === "ascending"
+              ? "descending"
+              : "ascending",
         };
       }
 
@@ -831,7 +831,7 @@ const GoalieTrends = () => {
         direction:
           key === "goalieFullName" || key === "team"
             ? "ascending"
-            : "descending"
+            : "descending",
       };
     });
   };
@@ -839,18 +839,18 @@ const GoalieTrends = () => {
   const thresholdFilteredGoalieRankings = useMemo(
     () =>
       goalieRankings.filter(
-        (goalie) => (goalie.totalGamesPlayed ?? 0) >= minimumGamesPlayed
+        (goalie) => (goalie.totalGamesPlayed ?? 0) >= minimumGamesPlayed,
       ),
-    [goalieRankings, minimumGamesPlayed]
+    [goalieRankings, minimumGamesPlayed],
   );
 
   const valueTierGoalieRankings = useMemo(
     () =>
       applyGoalieValueTiers(
         thresholdFilteredGoalieRankings,
-        advancedGoalieMetrics
+        advancedGoalieMetrics,
       ),
-    [advancedGoalieMetrics, thresholdFilteredGoalieRankings]
+    [advancedGoalieMetrics, thresholdFilteredGoalieRankings],
   );
 
   const filteredGoalieRankings = useMemo(() => {
@@ -886,48 +886,50 @@ const GoalieTrends = () => {
   const filteredSingleWeekGoalieData = useMemo(
     () =>
       singleWeekGoalieData.filter(
-        (goalie) => (goalie.weekly_gp ?? 0) >= minimumGamesPlayed
+        (goalie) => (goalie.weekly_gp ?? 0) >= minimumGamesPlayed,
       ),
-    [minimumGamesPlayed, singleWeekGoalieData]
+    [minimumGamesPlayed, singleWeekGoalieData],
   );
 
   const filteredAdvancedGoalieMetrics = useMemo(
     () =>
       advancedGoalieMetrics.filter(
-        (goalie) => goalie.gamesPlayed >= minimumGamesPlayed
+        (goalie) => goalie.gamesPlayed >= minimumGamesPlayed,
       ),
-    [advancedGoalieMetrics, minimumGamesPlayed]
+    [advancedGoalieMetrics, minimumGamesPlayed],
   );
 
   const rangeGoaliesForMetrics = useMemo(
     () => filteredGoalieRankings.map(mapRankingToGoalieTableRow),
-    [filteredGoalieRankings]
+    [filteredGoalieRankings],
   );
 
   const rangeGoalieAverages = useMemo(
     () => buildRangeGoalieAverages(filteredGoalieRankings),
-    [filteredGoalieRankings]
+    [filteredGoalieRankings],
   );
 
   const selectedRangeWindow = useMemo(() => {
-    const selectedWeeks = weeks.slice(selectedRange.start, selectedRange.end + 1);
+    const selectedWeeks = weeks.slice(
+      selectedRange.start,
+      selectedRange.end + 1,
+    );
     return {
-      startDate:
-        selectedWeeks[0]?.value.start.toLocaleDateString() ?? "N/A",
-      endDate:
-        selectedWeeks.at(-1)?.value.end.toLocaleDateString() ?? "N/A"
+      startDate: selectedWeeks[0]?.value.start.toLocaleDateString() ?? "N/A",
+      endDate: selectedWeeks.at(-1)?.value.end.toLocaleDateString() ?? "N/A",
     };
   }, [selectedRange.end, selectedRange.start, weeks]);
 
   const canShowWeeklyViews = Boolean(
-    selectedWeek && singleWeekGoalieData.length > 0 && singleWeekLeagueAverage
+    selectedWeek && singleWeekGoalieData.length > 0 && singleWeekLeagueAverage,
   );
 
   const canShowMetricsView = useSingleWeek
     ? canShowWeeklyViews
     : rangeGoaliesForMetrics.length > 0;
 
-  const activeView = view === "week" && !canShowMetricsView ? "leaderboard" : view;
+  const activeView =
+    view === "week" && !canShowMetricsView ? "leaderboard" : view;
 
   return (
     <div className={styles.pageContainer}>
@@ -1030,7 +1032,7 @@ const GoalieTrends = () => {
                       onChange={(e) =>
                         handleRangeChange(
                           parseInt(e.target.value),
-                          selectedRange.end
+                          selectedRange.end,
                         )
                       }
                     >
@@ -1056,7 +1058,7 @@ const GoalieTrends = () => {
                       onChange={(e) =>
                         handleRangeChange(
                           selectedRange.start,
-                          parseInt(e.target.value)
+                          parseInt(e.target.value),
                         )
                       }
                     >
@@ -1159,7 +1161,9 @@ const GoalieTrends = () => {
             {activeView === "leaderboard" && (
               <>
                 <div className={styles.metricsToolbar}>
-                  <div className={styles.metricsToolbarLabel}>Variance Mode</div>
+                  <div className={styles.metricsToolbarLabel}>
+                    Variance Mode
+                  </div>
                   <div className={styles.metricsSegmentRail}>
                     <button
                       type="button"
@@ -1203,7 +1207,9 @@ const GoalieTrends = () => {
                     <button
                       type="button"
                       className={`${styles.metricsSegment} ${
-                        metricsView === "standard" ? styles.metricsSegmentActive : ""
+                        metricsView === "standard"
+                          ? styles.metricsSegmentActive
+                          : ""
                       }`}
                       onClick={() => setMetricsView("standard")}
                     >
@@ -1212,7 +1218,9 @@ const GoalieTrends = () => {
                     <button
                       type="button"
                       className={`${styles.metricsSegment} ${
-                        metricsView === "advanced" ? styles.metricsSegmentActive : ""
+                        metricsView === "advanced"
+                          ? styles.metricsSegmentActive
+                          : ""
                       }`}
                       onClick={() => setMetricsView("advanced")}
                     >
@@ -1223,16 +1231,16 @@ const GoalieTrends = () => {
 
                 {metricsView === "standard" ? (
                   useSingleWeek ? (
-                  <GoalieList
-                    goalieAggregates={filteredSingleWeekGoalieData}
-                    leagueAverage={singleWeekLeagueAverage}
-                    week={selectedWeek}
-                    selectedStats={selectedStats}
-                    statColumns={leaderboardStatColumns}
-                    loading={loading}
-                    onBackToLeaderboard={() => setView("leaderboard")}
-                    showBackButton={false}
-                  />
+                    <GoalieList
+                      goalieAggregates={filteredSingleWeekGoalieData}
+                      leagueAverage={singleWeekLeagueAverage}
+                      week={selectedWeek}
+                      selectedStats={selectedStats}
+                      statColumns={leaderboardStatColumns}
+                      loading={loading}
+                      onBackToLeaderboard={() => setView("leaderboard")}
+                      showBackButton={false}
+                    />
                   ) : (
                     <GoalieTable
                       goalies={rangeGoaliesForMetrics}
@@ -1250,55 +1258,50 @@ const GoalieTrends = () => {
                       averagesLabel="Range Metrics Averages:"
                     />
                   )
-                ) : (
-                  advancedGoalieMetricsLoading ? (
-                    <p className={styles.loadingMessage}>
-                      Loading advanced goalie metrics...
-                    </p>
-                  ) : advancedGoalieMetricsError ? (
-                    <p className={styles.errorText}>
-                      {advancedGoalieMetricsError}
-                    </p>
-                  ) : advancedGoalieMetrics.length === 0 ? (
-                    <p className={styles.standoutNote}>
-                      No advanced goalie metrics available for the current
-                      season.
-                    </p>
-                  ) : filteredAdvancedGoalieMetrics.length > 0 ? (
-                    <>
-                      <div className={styles.metricsToolbar}>
-                        <div className={styles.metricsToolbarLabel}>
-                          Strength
-                        </div>
-                        <div className={styles.metricsSegmentRail}>
-                          {GOALIE_ADVANCED_STRENGTH_OPTIONS.map((option) => (
-                            <button
-                              key={option.value}
-                              type="button"
-                              className={`${styles.metricsSegment} ${
-                                advancedMetricsStrength === option.value
-                                  ? styles.metricsSegmentActive
-                                  : ""
-                              }`}
-                              onClick={() =>
-                                setAdvancedMetricsStrength(option.value)
-                              }
-                            >
-                              {option.label}
-                            </button>
-                          ))}
-                        </div>
+                ) : advancedGoalieMetricsLoading ? (
+                  <p className={styles.loadingMessage}>
+                    Loading advanced goalie metrics...
+                  </p>
+                ) : advancedGoalieMetricsError ? (
+                  <p className={styles.errorText}>
+                    {advancedGoalieMetricsError}
+                  </p>
+                ) : advancedGoalieMetrics.length === 0 ? (
+                  <p className={styles.standoutNote}>
+                    No advanced goalie metrics available for the current season.
+                  </p>
+                ) : filteredAdvancedGoalieMetrics.length > 0 ? (
+                  <>
+                    <div className={styles.metricsToolbar}>
+                      <div className={styles.metricsToolbarLabel}>Strength</div>
+                      <div className={styles.metricsSegmentRail}>
+                        {GOALIE_ADVANCED_STRENGTH_OPTIONS.map((option) => (
+                          <button
+                            key={option.value}
+                            type="button"
+                            className={`${styles.metricsSegment} ${
+                              advancedMetricsStrength === option.value
+                                ? styles.metricsSegmentActive
+                                : ""
+                            }`}
+                            onClick={() =>
+                              setAdvancedMetricsStrength(option.value)
+                            }
+                          >
+                            {option.label}
+                          </button>
+                        ))}
                       </div>
-                      <GoalieAdvancedMetricsTable
-                        rows={filteredAdvancedGoalieMetrics}
-                        strength={advancedMetricsStrength}
-                      />
-                    </>
-                  ) : (
-                    <p className={styles.standoutNote}>
-                      No goalie metrics available for the current filter.
-                    </p>
-                  )
+                    </div>
+                    <GoalieAdvancedMetricsTable
+                      rows={filteredAdvancedGoalieMetrics}
+                      strength={advancedMetricsStrength}
+                    />
+                  </>
+                ) : (
+                  <p className={styles.standoutNote}>
+                    No goalie metrics available for the current filter.
+                  </p>
                 )}
               </>
             )}
@@ -1315,7 +1318,7 @@ export async function getServerSideProps() {
   return {
     redirect: {
       destination: "/variance/goalies",
-      permanent: false
-    }
+      permanent: false,
+    },
   };
 }

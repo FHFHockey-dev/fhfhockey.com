@@ -1,8 +1,14 @@
 ## Relevant Files
 
 - `web/pages/api/v1/sustainability/recompute.ts` - API route to trigger nightly recompute and append snapshot data.
+- `web/__tests__/pages/api/v1/sustainability/recompute.test.ts` - Route validation for method/date/batch bounds and partial-failure responses.
+- `web/lib/sustainability/recompute.ts` - Bounded active-skater source loading, WGO projection shaping, opponent adjustment, partial-failure isolation, and persistence orchestration.
+- `web/lib/sustainability/recompute.test.ts` - Deterministic snapshot/opponent row and partial-success orchestration coverage.
 - `web/pages/api/v1/sustainability/player/[playerId].ts` - API route to fetch score, probabilities, projections, flags, explanations.
 - `web/pages/api/v1/sustainability/upcoming/[playerId].ts` - API route to fetch per-opponent per-game projections and rollups.
+- `web/lib/sustainability/read.ts` - Bounded public-read assembly for player score/bands/projections and grouped upcoming-game projections.
+- `web/lib/sustainability/read.test.ts` - Stable payload, flags, explanation, calibration-state, and game-grouping coverage.
+- `web/__tests__/pages/api/v1/sustainability/player-read.test.ts` - Player/upcoming route validation, success, and missing-data behavior.
 - `web/lib/sustainability/data.ts` - Data access layer: fetch WGO/NST windows, career baselines, joins, opponent context.
 - `web/lib/sustainability/data.test.ts` - Unit tests for sustainability data-access shaping helpers.
 - `web/lib/sustainability/features.ts` - Feature engineering: rolling windows, z-scores, priors, shrinkage, usage deltas, opponent adjustments, count distributions, and forecast bands/calibration helpers.
@@ -24,8 +30,8 @@
 - `web/lib/sustainability/features.test.ts` - Unit tests covering rate helpers, z-score calculations, rolling-window weighting, empirical-Bayes shrinkage, usage/context deltas, opponent adjustment factors, count-distribution rollups, and forecast band calibration.
 - `web/lib/sustainability/bandCalculator.ts` - Sustainability band and score guardrail calculations used by dashboard/API outputs.
 - `web/lib/sustainability/bandCalculator.test.ts` - Regression tests for band calculation and score guardrail behavior.
-- `web/lib/sustainability/backtest.ts` - Lightweight sustainability baseline comparison helper.
-- `web/lib/sustainability/backtest.test.ts` - Unit tests for sustainability backtest baseline comparisons.
+- `web/lib/sustainability/backtest.ts` - Baseline count-error and multiclass probability/Brier evaluation helpers.
+- `web/lib/sustainability/backtest.test.ts` - Unit tests for count-baseline and probability-calibration metrics.
 - `web/lib/sustainability/dataJoins.ts` - Data-join/runtime shaping helpers for sustainability inputs.
 - `web/lib/sustainability/dataJoins.test.ts` - Regression tests for sustainability data-join behavior.
 - `web/lib/sustainability/featureDictionary.ts` - Canonical feature dictionary for sustainability inputs and explanations.
@@ -35,6 +41,10 @@
 - `web/lib/sustainability/runtimeContract.ts` - Runtime contract for sustainability payloads served to dashboard/API consumers.
 - `web/lib/sustainability/runtimeContract.test.ts` - Unit tests for sustainability runtime contract shape and defaults.
 - `web/lib/sustainability/windows.ts` - Sustainability window constants and helpers.
+- `web/lib/sustainability/windows.test.ts` - Verifies complete paginated snapshot-player loading and position filtering.
+- `web/lib/sustainability/backtestHarness.ts` - Paginated historical projection loader, actual-resolution seam, coverage gate, and metric orchestration.
+- `web/lib/sustainability/backtestHarness.test.ts` - Pagination, unavailable-history, and resolved-outcome harness coverage.
+- `tasks/TASKS/three-pillars-analytics/sustainability/SUSTAINABILITY-RUNBOOK.md` - Consolidated endpoint, feature, backtest-coverage, operations, security, and performance contract.
 - `web/lib/sustainability/model.ts` - Modeling helpers for Hot/Normal/Cold target labeling, future logistic scoring, and projection output shaping.
 - `web/lib/sustainability/model.test.ts` - Unit tests covering canonical sustainability training-target label generation.
 - `web/lib/sustainability/score.ts` - Canonical TypeScript sustainability score builder and flag logic.
@@ -139,29 +149,43 @@
     - [x] A.1.4 Audit the full rolling-player-metrics run path for completeness, logging, retry behavior, batching, null coverage, and accuracy; triage any remaining issues and improve runtime observability where needed.
     - [x] A.1.5 Re-run targeted validations for `rolling_player_game_metrics`, summarize findings/fixes, and resume the main task list at `4.2.2`.
 
-- [ ] 4.0 Persistence and API
+- [x] 4.0 Persistence and API
 - [x] 4.1 Reuse `sustainability_trend_bands` for metric bands; implement upsert API in `persist.ts`.
     - [x] 4.1.1 Write insert/upsert helpers for trend bands keyed by (player_id, snapshot_date, metric_key, window_code).
     - [x] 4.1.2 Add unit tests for idempotency and conflict handling.
-  - [ ] 4.2 Create `sustainability_projections` table migration (SQL) and types; store snapshots and per-opponent breakdowns.
-    - [x] 4.2.1 Author SQL migration in `web/sql/sustainability/001_create_sustainability_projections.sql`.
-    - [ ] 4.2.2 Add TS types/interfaces in `types.ts` and serialization helpers in `persist.ts`.
-  - [ ] 4.3 Implement POST `/api/v1/sustainability/recompute` endpoint.
-    - [ ] 4.3.1 Validate input date; default to yesterday; enforce server-side auth.
-    - [ ] 4.3.2 Orchestrate data->features->models->persist; return summary.
-  - [ ] 4.4 Implement GET `/api/v1/sustainability/player/:playerId` and `/api/v1/sustainability/upcoming/:playerId` endpoints.
-    - [ ] 4.4.1 Support query params window (3/5/10/25/50) and horizon (5/10); validate.
-    - [ ] 4.4.2 Return JSON schema with score, probs, projections, bands, flags, explanations; include metadata.
+- [x] 4.2 Create `sustainability_projections` table migration (SQL) and types; store snapshots and per-opponent breakdowns.
+  - [x] 4.2.1 Author SQL migration in `web/sql/sustainability/001_create_sustainability_projections.sql`.
+  - [x] 4.2.2 Add TS types/interfaces in `types.ts` and serialization helpers in `persist.ts`.
+    - Evidence (2026-07-11): the new typed input contract covers snapshot and opponent-game projections, supported distribution models, bands, rates, TOI, attempts, opponent adjustments, summaries, and metadata. Serialization enforces SQL horizon/band/game-scope invariants; chunked upserts use the full six-column primary-key conflict contract. Persistence tests pass 7/7 and TypeScript passes.
+  - [x] 4.3 Implement POST `/api/v1/sustainability/recompute` endpoint.
+    - [x] 4.3.1 Validate input date; default to yesterday; enforce server-side auth.
+    - [x] 4.3.2 Orchestrate data->features->models->persist; return summary.
+      - Evidence (2026-07-11): the admin/cron-protected POST route validates strict dates, defaults to yesterday UTC, bounds offset/limit to a maximum 50-player page, and supports dry runs. The service-role path loads current skaters with an explicit `.range()`, resolves each latest WGO source row as of the snapshot, uses the shared count-distribution/opponent-adjustment model for 5/10-game and per-opponent rows, upserts on the canonical key, isolates player failures, reports pagination/timing, and returns 207 for partial success. Focused persistence/data/recompute/route tests pass 14/14; the broader pagination regression group passes 17/17 and TypeScript passes.
+  - [x] 4.4 Implement GET `/api/v1/sustainability/player/:playerId` and `/api/v1/sustainability/upcoming/:playerId` endpoints.
+    - [x] 4.4.1 Support query params window (3/5/10/25/50) and horizon (5/10); validate.
+    - [x] 4.4.2 Return JSON schema with score, probs, projections, bands, flags, explanations; include metadata.
+      - Evidence (2026-07-11): public GET routes validate positive player IDs and documented window/horizon/game options, return 404 for absent snapshots, and use bounded score/band/projection reads. The player payload includes score, raw score, bands, projection intervals, flags, top z-driver explanations, and metadata; Hot/Normal/Cold fields are explicitly `pending_calibration` rather than fabricated. Upcoming rows are grouped by game with opponent provenance. Live grants confirm anon/authenticated SELECT-only access, service-role-only writes, and RLS enabled on all three tables. Read/route tests pass 4/4 within the 98-test sustainability suite; TypeScript passes.
 
 - [ ] 5.0 Testing, docs, and performance
-  - [ ] 5.1 Unit tests for data, features, model, and API (Vitest).
-    - [ ] 5.1.1 Add tests: date normalization, window selection, priors/shrinkage, opponent adjustment.
-    - [ ] 5.1.2 Add tests: probability calibration sanity, projection aggregation, API responses.
+  - [x] 5.1 Unit tests for data, features, model, and API (Vitest).
+    - [x] 5.1.1 Add tests: date normalization, window selection, priors/shrinkage, opponent adjustment.
+    - [x] 5.1.2 Add tests: probability calibration sanity, projection aggregation, API responses.
+      - Evidence (2026-07-11): all 24 sustainability library/API test files pass, 98/98 tests total, covering dates, windows/pagination, priors, shrinkage, opponent factors, count distributions/bands, probability model/calibration paths, score guardrails, persistence, recompute, and read APIs. TypeScript passes.
   - [ ] 5.2 Backtest accuracy vs career-only and recent-only baselines (MAE/RMSE; Brier for probs).
     - [ ] 5.2.1 Write a small backtest harness over past snapshots; record metrics.
     - [ ] 5.2.2 Document results and targets in README.
-  - [ ] 5.3 Add README section with endpoint schema and feature dictionary.
-    - [ ] 5.3.1 Document endpoint paths, params, response fields, and examples.
-  - [ ] 5.4 Ensure nightly batch SLA; basic logging and error handling.
-    - [ ] 5.4.1 Add timing logs and error counters; ensure idempotent recompute.
-    - [ ] 5.4.2 Identify slow queries and add indexes if needed.
+  - [x] 5.3 Add README section with endpoint schema and feature dictionary.
+    - [x] 5.3.1 Document endpoint paths, params, response fields, and examples.
+      - Evidence (2026-07-11): the consolidated runbook documents auth, bounded recompute paging/dry-run/partial status, player/upcoming parameters and payloads, pending-calibration behavior, executable feature dictionary ownership, and examples.
+  - [x] 5.4 Ensure nightly batch SLA; basic logging and error handling.
+    - [x] 5.4.1 Add timing logs and error counters; ensure idempotent recompute.
+    - [x] 5.4.2 Identify slow queries and add indexes if needed.
+      - Evidence (2026-07-11): recompute returns route and orchestration timing, processed/inserted counts, page state, and isolated player errors; six-column upserts are idempotent. Live index inventory plus `EXPLAIN` showed index scans for latest-player and exact player/snapshot/horizon/type reads (estimated total costs 2.36/2.37), so no speculative index was added to the currently empty projection table. The runbook records the <15-minute target and measurement procedure.
+
+- [x] NEW 6.0 Prevent silent PostgREST truncation in legacy sustainability score/window rebuild player loading.
+  - [x] NEW 6.1 Page `player_baselines` by stable player order until a short page instead of trusting the default response cap.
+  - [x] NEW 6.2 Add regression coverage proving multi-page aggregation and goalie exclusion remain correct.
+    - Evidence (2026-07-11): `loadPlayersForSnapshot` now requests stable `player_id` pages with `.range()` until a short page, retains only F/D position groups, and supports a test client/page size. The combined score/window/recompute regression group passes 17/17 and TypeScript passes.
+
+- [ ] NEW 7.0 Establish genuine historical projection/actual coverage before publishing calibration or baseline-win claims.
+  - Production evidence (2026-07-11): `sustainability_projections` contains 0 rows, while `sustainability_scores` contains 219,568 rows across 2025-10-14–2026-07-11 and `sustainability_trend_bands` contains 10,849,256 rows across 2024-10-04–2026-07-11. Build/test the bounded harness and document its coverage gate now; leave result/calibration claims pending until prospective or approved backfilled projection snapshots have matured into actual outcomes.

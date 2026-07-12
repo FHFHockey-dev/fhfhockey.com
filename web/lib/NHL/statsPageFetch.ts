@@ -4,7 +4,28 @@ import supabase from "lib/supabase";
 import { getCurrentSeason } from "lib/NHL/server";
 import { SkaterStat, GoalieStat } from "./statsPageTypes";
 
+const GOALIE_TOTALS_SELECT = `
+  goalie_id,
+  goalie_name,
+  team_abbrevs,
+  current_team_abbreviation,
+  season_id,
+  wins,
+  save_pct,
+  goals_against_avg,
+  quality_starts_pct,
+  games_played
+`;
+
+function formatSeasonLabel(seasonId: number | string | null | undefined) {
+  const season = String(seasonId ?? "");
+  if (!/^\d{8}$/.test(season)) return "Season";
+  return `${season.slice(0, 4)}-${season.slice(6, 8)}`;
+}
+
 export async function fetchStatsData(): Promise<{
+  skaterSeasonLabel: string;
+  goalieSeasonLabel: string;
   pointsLeaders: SkaterStat[];
   goalsLeaders: SkaterStat[];
   pppLeaders: SkaterStat[];
@@ -15,6 +36,8 @@ export async function fetchStatsData(): Promise<{
   goalieLeadersQS: GoalieStat[];
 }> {
   const currentSeason = await getCurrentSeason();
+  const skaterSeasonLabel = formatSeasonLabel(currentSeason.seasonId);
+  let goalieSeasonLabel = skaterSeasonLabel;
 
   // Fetch skater stats
   const { data: skaterData, error: skaterError } = await supabase
@@ -43,6 +66,8 @@ export async function fetchStatsData(): Promise<{
   if (skaterError || !skaterData) {
     console.error("Error fetching skater stats:", skaterError);
     return {
+      skaterSeasonLabel,
+      goalieSeasonLabel,
       pointsLeaders: [],
       goalsLeaders: [],
       pppLeaders: [],
@@ -107,27 +132,29 @@ export async function fetchStatsData(): Promise<{
   const bshLeaders = [...skaters].sort((a, b) => b.bsh - a.bsh).slice(0, 5);
 
   // --- Fetch Goalie Stats (including games_played) ---
-  // Note: We now select team_abbrevs from the column "team_abbrevs"
-  const { data: goalieData, error: goalieError } = await supabase
+  let { data: goalieData, error: goalieError } = await supabase
     .from("wgo_goalie_stats_totals")
-    .select(
-      `
-      goalie_id,
-      goalie_name,
-      team_abbrevs,
-      season_id,
-      wins,
-      save_pct,
-      goals_against_avg,
-      quality_starts_pct,
-      games_played
-      `
-    )
+    .select(GOALIE_TOTALS_SELECT)
     .eq("season_id", currentSeason.seasonId);
+
+  if (!goalieError && (!goalieData || goalieData.length === 0)) {
+    const fallback = await supabase
+      .from("wgo_goalie_stats_totals")
+      .select(GOALIE_TOTALS_SELECT)
+      .lte("season_id", currentSeason.seasonId)
+      .order("season_id", { ascending: false })
+      .order("wins", { ascending: false })
+      .limit(250);
+
+    goalieData = fallback.data;
+    goalieError = fallback.error;
+  }
 
   if (goalieError || !goalieData) {
     console.error("Error fetching goalie stats:", goalieError);
     return {
+      skaterSeasonLabel,
+      goalieSeasonLabel,
       pointsLeaders,
       goalsLeaders,
       pppLeaders,
@@ -138,6 +165,9 @@ export async function fetchStatsData(): Promise<{
       goalieLeadersQS: []
     };
   }
+
+  const goalieSeasonId = goalieData[0]?.season_id ?? currentSeason.seasonId;
+  goalieSeasonLabel = formatSeasonLabel(goalieSeasonId);
 
   // Fetch player info for goalies
   const goalieIds = Array.from(
@@ -184,7 +214,8 @@ export async function fetchStatsData(): Promise<{
     .map((row: any) => ({
       goalie_id: row.goalie_id,
       fullName: row.goalie_name || "Unknown",
-      current_team_abbreviation: row.team_abbrevs || "",
+      current_team_abbreviation:
+        row.team_abbrevs || row.current_team_abbreviation || "",
       wins: row.wins || 0,
       save_pct: row.save_pct || 0,
       goals_against_avg: row.goals_against_avg || 0,
@@ -213,6 +244,8 @@ export async function fetchStatsData(): Promise<{
     .slice(0, 5);
 
   return {
+    skaterSeasonLabel,
+    goalieSeasonLabel,
     pointsLeaders,
     goalsLeaders,
     pppLeaders,

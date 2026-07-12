@@ -10,6 +10,8 @@ vi.mock("./rankingQueries", () => ({
 
 import {
   buildTrendingSurface,
+  buildOpportunitySignals,
+  OPPORTUNITY_SIGNAL_CONTRACTS,
   parseTrendingRequest,
 } from "./trending";
 import type {
@@ -234,7 +236,161 @@ describe("trending", () => {
         last20Seconds: 700,
         deltaLast5VsLast20Seconds: 200,
       },
+      opportunitySignals: [
+        expect.objectContaining({
+          type: "toi_up",
+          severity: "high",
+          sourceState: "available",
+        }),
+      ],
       sourceState: "available",
     });
+    expect(response.meta.opportunitySignalContracts).toEqual(
+      OPPORTUNITY_SIGNAL_CONTRACTS,
+    );
+  });
+
+  it("builds typed opportunity signals with source-pending contracts for unsupported histories", () => {
+    const signals = buildOpportunitySignals({
+      toiTrend: {
+        seasonSeconds: 700,
+        last20Seconds: 650,
+        last10Seconds: 760,
+        last5Seconds: 780,
+        deltaLast5VsLast20Seconds: 130,
+      },
+      metrics: [
+        {
+          metricKey: "shot_attempts_per_60",
+          label: "Shot Attempts/60",
+          shortLabel: "Shot Attempts/60",
+          season: null,
+          last20: {
+            value: 12,
+            formattedValue: "12.00",
+            percentile: 50,
+            rank: 20,
+          },
+          last10: null,
+          last5: {
+            value: 18,
+            formattedValue: "18.00",
+            percentile: 81,
+            rank: 4,
+          },
+          deltaLast5VsLast20: 31,
+          deltaLast5VsSeason: null,
+        },
+      ],
+    });
+
+    expect(signals).toEqual([
+      expect.objectContaining({
+        type: "toi_up",
+        severity: "high",
+        evidence: expect.stringContaining("+130s"),
+      }),
+      expect.objectContaining({
+        type: "shot_volume_spike",
+        severity: "high",
+        delta: 31,
+      }),
+    ]);
+    expect(OPPORTUNITY_SIGNAL_CONTRACTS).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "toi_up", sourceState: "available" }),
+        expect.objectContaining({ type: "usage_drop", sourceState: "available" }),
+        expect.objectContaining({
+          type: "shot_volume_spike",
+          sourceState: "available",
+        }),
+        expect.objectContaining({
+          type: "pp1_promotion",
+          sourceState: "source_pending",
+        }),
+        expect.objectContaining({
+          type: "goalie_starter_share_rising",
+          sourceState: "source_pending",
+        }),
+        expect.objectContaining({
+          type: "team_pp_unit_concentration_change",
+          sourceState: "source_pending",
+        }),
+      ]),
+    );
+    expect(OPPORTUNITY_SIGNAL_CONTRACTS.map((contract) => contract.type)).toEqual([
+      "toi_up",
+      "usage_drop",
+      "shot_volume_spike",
+      "pp1_promotion",
+      "pp2_to_pp1_threat",
+      "line_promotion",
+      "pair_promotion",
+      "goalie_starter_share_rising",
+      "goalie_starter_share_falling",
+      "team_top_load_change",
+      "team_pp_unit_concentration_change",
+    ]);
+  });
+
+  it("classifies opportunity signal severity thresholds", () => {
+    expect(
+      buildOpportunitySignals({
+        toiTrend: {
+          seasonSeconds: null,
+          last20Seconds: 700,
+          last10Seconds: null,
+          last5Seconds: 735,
+          deltaLast5VsLast20Seconds: 35,
+        },
+        metrics: [],
+      })[0]?.severity,
+    ).toBe("low");
+    expect(
+      buildOpportunitySignals({
+        toiTrend: {
+          seasonSeconds: null,
+          last20Seconds: 700,
+          last10Seconds: null,
+          last5Seconds: 610,
+          deltaLast5VsLast20Seconds: -90,
+        },
+        metrics: [],
+      })[0],
+    ).toMatchObject({ type: "usage_drop", severity: "medium" });
+    expect(
+      buildOpportunitySignals({
+        toiTrend: {
+          seasonSeconds: null,
+          last20Seconds: 700,
+          last10Seconds: null,
+          last5Seconds: 700,
+          deltaLast5VsLast20Seconds: 0,
+        },
+        metrics: [
+          {
+            metricKey: "sog_per_60",
+            label: "SOG/60",
+            shortLabel: "SOG/60",
+            season: null,
+            last20: {
+              value: 5,
+              formattedValue: "5.00",
+              percentile: 60,
+              rank: 15,
+            },
+            last10: null,
+            last5: {
+              value: 6,
+              formattedValue: "6.00",
+              percentile: 76,
+              rank: 7,
+            },
+            deltaLast5VsLast20: 16,
+            deltaLast5VsSeason: null,
+          },
+        ],
+      })[0],
+    ).toMatchObject({ type: "shot_volume_spike", severity: "medium" });
   });
 });

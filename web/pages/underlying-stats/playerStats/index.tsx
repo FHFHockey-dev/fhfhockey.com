@@ -1,11 +1,10 @@
 import Link from "next/link";
 import {
-  startTransition,
   useEffect,
   useMemo,
   useRef,
   useState,
-  type CSSProperties
+  type CSSProperties,
 } from "react";
 import { useRouter } from "next/router";
 
@@ -16,7 +15,7 @@ import UlsStatusPanel from "components/underlying-stats/UlsStatusPanel";
 import type { PlayerStatsColumnDefinition } from "components/underlying-stats/playerStatsColumns";
 import {
   getPlayerStatsColumns,
-  resolvePlayerStatsTableFamily
+  resolvePlayerStatsTableFamily,
 } from "components/underlying-stats/playerStatsColumns";
 import Spinner from "components/Spinner/Spinner";
 import {
@@ -28,23 +27,23 @@ import {
   getDefaultLandingSortState,
   parsePlayerStatsFilterStateFromQuery,
   serializePlayerStatsFilterStateToQuery,
-  validatePlayerStatsFilterState
+  validatePlayerStatsFilterState,
 } from "lib/underlying-stats/playerStatsFilters";
 import {
   buildGoalieStatsLandingApiPath,
   buildGoalieStatsDetailHref,
-  createDefaultGoalieLandingFilterState
+  createDefaultGoalieLandingFilterState,
 } from "lib/underlying-stats/goalieStatsQueries";
 import {
   buildPlayerStatsLandingApiPath,
   type PlayerStatsLandingApiRow,
-  type PlayerStatsLandingApiResponse
+  type PlayerStatsLandingApiResponse,
 } from "lib/underlying-stats/playerStatsQueries";
 import {
   PLAYER_STATS_CLIENT_CACHE_TTL_MS,
   getPlayerStatsClientCachedResponse,
   isViewOnlyPlayerStatsRequestChange,
-  setPlayerStatsClientCachedResponse
+  setPlayerStatsClientCachedResponse,
 } from "lib/underlying-stats/playerStatsClientCache";
 import type { PlayerStatsLandingFilterState } from "lib/underlying-stats/playerStatsTypes";
 import type { UlsRouteStatus } from "lib/underlying-stats/ulsRouteStatus";
@@ -87,7 +86,7 @@ type LandingSummaryChip =
 
 function buildLandingPageRequestState(
   state: PlayerStatsLandingFilterState,
-  pageSize = INITIAL_LANDING_PLAYER_ROW_COUNT
+  pageSize = INITIAL_LANDING_PLAYER_ROW_COUNT,
 ): PlayerStatsLandingFilterState {
   return {
     ...state,
@@ -95,16 +94,16 @@ function buildLandingPageRequestState(
       ...state.view,
       pagination: {
         page: 1,
-        pageSize
-      }
-    }
+        pageSize,
+      },
+    },
   };
 }
 
 async function fetchLandingApiResponse(
   requestPath: string,
   fallbackErrorMessage: string,
-  signal: AbortSignal
+  signal: AbortSignal,
 ): Promise<PlayerStatsLandingApiResponse> {
   const response = await fetch(requestPath, { signal });
   const payload = (await response.json()) as
@@ -126,11 +125,11 @@ function buildLandingPageProgressLabel(args: {
 }) {
   const remainingRowCount = Math.max(
     args.totalRowCount - args.loadedRowCount,
-    0
+    0,
   );
   const nextChunkSize = Math.min(
     INITIAL_LANDING_PLAYER_ROW_COUNT,
-    remainingRowCount
+    remainingRowCount,
   );
 
   const rowLabel = args.variant === "goalie" ? "goalies" : "rows";
@@ -153,7 +152,7 @@ function buildColdLoadStatus(elapsedMs: number, variant: LandingPageVariant) {
       message: isGoalie
         ? "This first goalie season load is still running on the server. The page has not hung; it is rebuilding the current sorted goalie aggregate from persisted game summaries."
         : "This first season load is still running on the server. The page has not hung; it is rebuilding the current sorted landing aggregate from persisted game summaries.",
-      chipLabel: `Cold load ${formatElapsedSeconds(elapsedMs)}`
+      chipLabel: `Cold load ${formatElapsedSeconds(elapsedMs)}`,
     };
   }
 
@@ -165,7 +164,7 @@ function buildColdLoadStatus(elapsedMs: number, variant: LandingPageVariant) {
       message: isGoalie
         ? "Cold goalie season loads can take around 10 to 20 seconds the first time while the table aggregate warms. Once it completes, repeat loads should be much faster."
         : "Cold season loads can take around 10 to 20 seconds the first time while the table aggregate warms. Once it completes, repeat loads should be much faster.",
-      chipLabel: `Warming ${formatElapsedSeconds(elapsedMs)}`
+      chipLabel: `Warming ${formatElapsedSeconds(elapsedMs)}`,
     };
   }
 
@@ -174,7 +173,9 @@ function buildColdLoadStatus(elapsedMs: number, variant: LandingPageVariant) {
     message: isGoalie
       ? "Building the initial sorted goalie rows for the current query. This can be slow on the first season request."
       : "Building the initial sorted landing rows for the current query. This can be slow on the first season request.",
-    chipLabel: isGoalie ? "Loading first 100 goalies" : "Loading first 100 rows"
+    chipLabel: isGoalie
+      ? "Loading first 100 goalies"
+      : "Loading first 100 rows",
   };
 }
 
@@ -194,31 +195,31 @@ function getLandingPageShell(variant: LandingPageVariant): LandingPageShell {
       emptyRowsMessage:
         "No goalies matched the current filter combination. Widen the scope or reset filters.",
       placeholderMessage:
-        "The goalie landing page is using the dedicated route contract, but native aggregated goalie rows are still pending implementation."
+        "The goalie landing page is using the dedicated route contract, but native aggregated goalie rows are still pending implementation.",
     };
   }
 
   return {
-      title: "Player Underlying Stats | FHFHockey",
-      description:
-        "Compare skaters and goalies across shared underlying-stat views with sortable tables and drill-down player logs.",
-      breadcrumbLabel: "Skater Stats",
-      heroTitle: "Skater Underlying Stats",
-      heroLead:
-        "Sortable skater landing tables with shared season and team filters, staged loading, and optional ratings overlays once the daily skater products are populated.",
-      defaultSpanLabel: "Default Skater Span",
-      activeFamilyLabel: "Current Skater Table",
+    title: "Player Underlying Stats | FHFHockey",
+    description:
+      "Compare skaters and goalies across shared underlying-stat views with sortable tables and drill-down player logs.",
+    breadcrumbLabel: "Skater Stats",
+    heroTitle: "Skater Underlying Stats",
+    heroLead:
+      "Sortable skater landing tables with shared season and team filters, staged loading, and optional ratings overlays once the daily skater products are populated.",
+    defaultSpanLabel: "Default Skater Span",
+    activeFamilyLabel: "Current Skater Table",
     preparingFiltersMessage: "Preparing player underlying stats filters...",
     emptyRowsMessage:
       "No players matched the current filter combination. Widen the scope or reset filters.",
     placeholderMessage:
-      "The landing page is using the server query contract, but native aggregated player rows are still pending implementation."
+      "The landing page is using the server query contract, but native aggregated player rows are still pending implementation.",
   };
 }
 
 function mergeLandingRows(
   currentRows: readonly PlayerStatsLandingApiRow[],
-  incomingRows: readonly PlayerStatsLandingApiRow[]
+  incomingRows: readonly PlayerStatsLandingApiRow[],
 ) {
   const mergedRows = [...currentRows];
   const seenRowKeys = new Set(currentRows.map((row) => row.rowKey));
@@ -240,19 +241,19 @@ type PlayerUnderlyingStatsLandingPageProps = {
 };
 
 export default function PlayerUnderlyingStatsLandingPage({
-  variant = "player"
+  variant = "player",
 }: PlayerUnderlyingStatsLandingPageProps) {
   const router = useRouter();
   const pageShell = useMemo(() => getLandingPageShell(variant), [variant]);
   const defaultLandingState = useMemo(() => {
     if (variant === "goalie") {
       return createDefaultGoalieLandingFilterState({
-        pageSize: INITIAL_LANDING_PLAYER_ROW_COUNT
+        pageSize: INITIAL_LANDING_PLAYER_ROW_COUNT,
       });
     }
 
     return createDefaultLandingFilterState({
-      pageSize: INITIAL_LANDING_PLAYER_ROW_COUNT
+      pageSize: INITIAL_LANDING_PLAYER_ROW_COUNT,
     });
   }, [variant]);
   const [filterState, setFilterState] = useState(defaultLandingState);
@@ -267,7 +268,7 @@ export default function PlayerUnderlyingStatsLandingPage({
   const [loadingElapsedMs, setLoadingElapsedMs] = useState(0);
   const [tableError, setTableError] = useState<string | null>(null);
   const [backgroundLoadError, setBackgroundLoadError] = useState<string | null>(
-    null
+    null,
   );
   const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null);
   const [expandedMetricByRowKey, setExpandedMetricByRowKey] = useState<
@@ -283,7 +284,7 @@ export default function PlayerUnderlyingStatsLandingPage({
         cachedAt: number;
         payload: PlayerStatsLandingApiResponse;
       }
-    >()
+    >(),
   );
 
   useEffect(() => {
@@ -292,7 +293,7 @@ export default function PlayerUnderlyingStatsLandingPage({
     }
 
     const parsedState = buildLandingPageRequestState(
-      parsePlayerStatsFilterStateFromQuery(router.query, defaultLandingState)
+      parsePlayerStatsFilterStateFromQuery(router.query, defaultLandingState),
     );
     const normalizedQueryString =
       buildPlayerStatsSearchParams(parsedState).toString();
@@ -350,21 +351,21 @@ export default function PlayerUnderlyingStatsLandingPage({
   }, [filterState, variant]);
   const validation = useMemo(
     () => validatePlayerStatsFilterState(filterState),
-    [filterState]
+    [filterState],
   );
   const defaultLandingQueryString = useMemo(
     () =>
       buildPlayerStatsSearchParams(
-        buildLandingPageRequestState(defaultLandingState)
+        buildLandingPageRequestState(defaultLandingState),
       ).toString(),
-    [defaultLandingState]
+    [defaultLandingState],
   );
   const activeLandingQueryString = useMemo(
     () =>
       buildPlayerStatsSearchParams(
-        buildLandingPageRequestState(filterState)
+        buildLandingPageRequestState(filterState),
       ).toString(),
-    [filterState]
+    [filterState],
   );
   const canResetFilters =
     activeLandingQueryString !== defaultLandingQueryString;
@@ -388,7 +389,7 @@ export default function PlayerUnderlyingStatsLandingPage({
     }
 
     const nextQueryString = buildPlayerStatsSearchParams(
-      buildLandingPageRequestState(filterState)
+      buildLandingPageRequestState(filterState),
     ).toString();
     if (lastAppliedQueryStringRef.current === nextQueryString) {
       return;
@@ -400,11 +401,11 @@ export default function PlayerUnderlyingStatsLandingPage({
       {
         pathname: router.pathname,
         query: serializePlayerStatsFilterStateToQuery(
-          buildLandingPageRequestState(filterState)
-        )
+          buildLandingPageRequestState(filterState),
+        ),
       },
       undefined,
-      { shallow: true }
+      { shallow: true },
     );
   }, [filterState, router]);
 
@@ -433,105 +434,11 @@ export default function PlayerUnderlyingStatsLandingPage({
 
     const controller = new AbortController();
 
-    const hydrateAllRows = async (
-      partialPayload: PlayerStatsLandingApiResponse
-    ) => {
-      const totalRows = partialPayload.pagination.totalRows;
-      if (partialPayload.rows.length >= totalRows) {
-        setIsLoadingRemainingRows(false);
-        setBackgroundLoadError(null);
-        return;
-      }
-
-      setIsLoadingRemainingRows(true);
-      setBackgroundLoadError(null);
-
-      try {
-        const totalPages = Math.ceil(
-          totalRows / INITIAL_LANDING_PLAYER_ROW_COUNT
-        );
-        let nextRows = [...partialPayload.rows];
-
-        for (let page = 2; page <= totalPages; page += 1) {
-          const nextPageState = {
-            ...buildLandingPageRequestState(filterState),
-            view: {
-              ...filterState.view,
-              pagination: {
-                page,
-                pageSize: INITIAL_LANDING_PLAYER_ROW_COUNT
-              }
-            }
-          };
-          const nextRequestPath =
-            variant === "goalie"
-              ? buildGoalieStatsLandingApiPath(nextPageState)
-              : buildPlayerStatsLandingApiPath(nextPageState);
-          const cachedPageResponse = getPlayerStatsClientCachedResponse({
-            requestPath: nextRequestPath,
-            storagePrefix: LANDING_RESPONSE_CACHE_PREFIX,
-            memoryCache: landingResponseCacheRef.current,
-            ttlMs: PLAYER_STATS_CLIENT_CACHE_TTL_MS
-          });
-          const nextPayload = cachedPageResponse
-            ? cachedPageResponse.payload
-            : await fetchLandingApiResponse(
-                nextRequestPath,
-                variant === "goalie"
-                  ? "Unable to load goalie underlying stats from the server."
-                  : "Unable to load player underlying stats from the server.",
-                controller.signal
-              );
-
-          if (!cachedPageResponse) {
-            setPlayerStatsClientCachedResponse({
-              requestPath: nextRequestPath,
-              storagePrefix: LANDING_RESPONSE_CACHE_PREFIX,
-              memoryCache: landingResponseCacheRef.current,
-              payload: nextPayload
-            });
-          }
-
-          nextRows = mergeLandingRows(nextRows, nextPayload.rows);
-
-          startTransition(() => {
-            setLandingData({
-              ...partialPayload,
-              rows: nextRows,
-              pagination: {
-                ...partialPayload.pagination,
-                page: 1,
-                pageSize: nextRows.length,
-                totalRows,
-                totalPages: totalRows === 0 ? 0 : 1
-              }
-            });
-          });
-        }
-      } catch (error: unknown) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          return;
-        }
-
-        setBackgroundLoadError(
-          error instanceof Error
-            ? error.message
-            : variant === "goalie"
-              ? "Unable to load the remaining goalie rows."
-              : "Unable to load the remaining player rows."
-        );
-      } finally {
-        if (!controller.signal.aborted) {
-          setIsLoadingRemainingRows(false);
-        }
-      }
-    };
-
     const cachedResponse = getPlayerStatsClientCachedResponse({
       requestPath: landingRequestPath,
       storagePrefix: LANDING_RESPONSE_CACHE_PREFIX,
       memoryCache: landingResponseCacheRef.current,
-      ttlMs: PLAYER_STATS_CLIENT_CACHE_TTL_MS
+      ttlMs: PLAYER_STATS_CLIENT_CACHE_TTL_MS,
     });
     if (cachedResponse) {
       setLandingData(cachedResponse.payload);
@@ -550,18 +457,17 @@ export default function PlayerUnderlyingStatsLandingPage({
       variant === "goalie"
         ? "Unable to load goalie underlying stats from the server."
         : "Unable to load player underlying stats from the server.",
-      controller.signal
+      controller.signal,
     )
       .then((nextPayload) => {
         setPlayerStatsClientCachedResponse({
           requestPath: landingRequestPath,
           storagePrefix: LANDING_RESPONSE_CACHE_PREFIX,
           memoryCache: landingResponseCacheRef.current,
-          payload: nextPayload
+          payload: nextPayload,
         });
         setLandingData(nextPayload);
         setLandingDataRequestPath(landingRequestPath);
-        void hydrateAllRows(nextPayload);
       })
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === "AbortError") {
@@ -573,7 +479,7 @@ export default function PlayerUnderlyingStatsLandingPage({
             ? error.message
             : variant === "goalie"
               ? "Unable to load goalie underlying stats from the server."
-              : "Unable to load player underlying stats from the server."
+              : "Unable to load player underlying stats from the server.",
         );
       })
       .finally(() => {
@@ -588,8 +494,92 @@ export default function PlayerUnderlyingStatsLandingPage({
     landingRequestPath,
     router.isReady,
     validation.isValid,
-    variant
+    variant,
   ]);
+
+  const handleLoadMore = async () => {
+    if (
+      landingData == null ||
+      isLoadingRemainingRows ||
+      landingData.rows.length >= landingData.pagination.totalRows
+    ) {
+      return;
+    }
+
+    const nextPage =
+      Math.floor(landingData.rows.length / INITIAL_LANDING_PLAYER_ROW_COUNT) +
+      1;
+    const nextPageState = {
+      ...buildLandingPageRequestState(filterState),
+      view: {
+        ...filterState.view,
+        pagination: {
+          page: nextPage,
+          pageSize: INITIAL_LANDING_PLAYER_ROW_COUNT,
+        },
+      },
+    };
+    const nextRequestPath =
+      variant === "goalie"
+        ? buildGoalieStatsLandingApiPath(nextPageState)
+        : buildPlayerStatsLandingApiPath(nextPageState);
+    const controller = new AbortController();
+
+    setIsLoadingRemainingRows(true);
+    setBackgroundLoadError(null);
+
+    try {
+      const cachedPageCandidate = getPlayerStatsClientCachedResponse({
+        requestPath: nextRequestPath,
+        storagePrefix: LANDING_RESPONSE_CACHE_PREFIX,
+        memoryCache: landingResponseCacheRef.current,
+        ttlMs: PLAYER_STATS_CLIENT_CACHE_TTL_MS,
+      });
+      const cachedPageResponse =
+        cachedPageCandidate?.payload.pagination.page === nextPage
+          ? cachedPageCandidate
+          : null;
+      const nextPayload = cachedPageResponse
+        ? cachedPageResponse.payload
+        : await fetchLandingApiResponse(
+            nextRequestPath,
+            variant === "goalie"
+              ? "Unable to load more goalie underlying stats."
+              : "Unable to load more player underlying stats.",
+            controller.signal,
+          );
+
+      if (!cachedPageResponse) {
+        setPlayerStatsClientCachedResponse({
+          requestPath: nextRequestPath,
+          storagePrefix: LANDING_RESPONSE_CACHE_PREFIX,
+          memoryCache: landingResponseCacheRef.current,
+          payload: nextPayload,
+        });
+      }
+
+      const nextRows = mergeLandingRows(landingData.rows, nextPayload.rows);
+      setLandingData({
+        ...landingData,
+        rows: nextRows,
+        pagination: {
+          ...landingData.pagination,
+          page: 1,
+          pageSize: nextRows.length,
+        },
+      });
+    } catch (error: unknown) {
+      setBackgroundLoadError(
+        error instanceof Error
+          ? error.message
+          : variant === "goalie"
+            ? "Unable to load more goalie rows."
+            : "Unable to load more player rows.",
+      );
+    } finally {
+      setIsLoadingRemainingRows(false);
+    }
+  };
 
   const canRenderStaleLandingData =
     landingData?.rows.length != null &&
@@ -597,7 +587,7 @@ export default function PlayerUnderlyingStatsLandingPage({
     isLoading &&
     isViewOnlyPlayerStatsRequestChange(
       landingDataRequestPath,
-      landingRequestPath
+      landingRequestPath,
     );
   const loadedRowCount = landingData?.rows.length ?? 0;
   const totalRowCount = landingData?.pagination.totalRows ?? loadedRowCount;
@@ -607,7 +597,7 @@ export default function PlayerUnderlyingStatsLandingPage({
     totalRowCount > 0 ? Math.min(loadedRowCount / totalRowCount, 1) : 0;
   const coldLoadStatus = useMemo(
     () => buildColdLoadStatus(loadingElapsedMs, variant),
-    [loadingElapsedMs, variant]
+    [loadingElapsedMs, variant],
   );
 
   useEffect(() => {
@@ -632,18 +622,18 @@ export default function PlayerUnderlyingStatsLandingPage({
     () =>
       buildSeasonOptions(
         filterState.primary.seasonRange.throughSeasonId ??
-          defaultLandingState.primary.seasonRange.throughSeasonId
+          defaultLandingState.primary.seasonRange.throughSeasonId,
       ),
     [
       defaultLandingState.primary.seasonRange.throughSeasonId,
-      filterState.primary.seasonRange.throughSeasonId
-    ]
+      filterState.primary.seasonRange.throughSeasonId,
+    ],
   );
   const teamOptions = useMemo(() => buildTeamOptions(), []);
 
   const tableFamily = resolvePlayerStatsTableFamily(
     filterState.primary.statMode,
-    filterState.primary.displayMode
+    filterState.primary.displayMode,
   );
   const timeframeColumns = useMemo<PlayerStatsColumnDefinition[]>(
     () =>
@@ -656,7 +646,7 @@ export default function PlayerUnderlyingStatsLandingPage({
               sortKey: "windowStartDate",
               format: "date",
               align: "center",
-              isIdentity: true
+              isIdentity: true,
             },
             {
               key: "windowEndDate",
@@ -664,10 +654,10 @@ export default function PlayerUnderlyingStatsLandingPage({
               sortKey: "windowEndDate",
               format: "date",
               align: "center",
-              isIdentity: true
-            }
+              isIdentity: true,
+            },
           ],
-    [filterState.expandable.scope.kind]
+    [filterState.expandable.scope.kind],
   );
   const ratingColumns = useMemo<PlayerStatsColumnDefinition[]>(
     () =>
@@ -704,7 +694,7 @@ export default function PlayerUnderlyingStatsLandingPage({
               align: "right",
             },
           ],
-    [variant]
+    [variant],
   );
   const activeTableFamily = landingData?.family ?? tableFamily;
   const chartMetricColumns = useMemo(
@@ -713,21 +703,21 @@ export default function PlayerUnderlyingStatsLandingPage({
         (column) =>
           column.key !== "playerName" &&
           column.key !== "teamLabel" &&
-          column.key !== "positionCode"
+          column.key !== "positionCode",
       ),
-    [activeTableFamily]
+    [activeTableFamily],
   );
   const defaultExpandedMetricKey = useMemo(
     () =>
       resolveDefaultExpandedMetricKey(
         chartMetricColumns,
-        landingData?.sort.sortKey ?? filterState.view.sort.sortKey
+        landingData?.sort.sortKey ?? filterState.view.sort.sortKey,
       ),
     [
       chartMetricColumns,
       filterState.view.sort.sortKey,
-      landingData?.sort.sortKey
-    ]
+      landingData?.sort.sortKey,
+    ],
   );
 
   const summaryChips: LandingSummaryChip[] = [
@@ -735,29 +725,29 @@ export default function PlayerUnderlyingStatsLandingPage({
       key: "seasonRange",
       label: formatSeasonRange(
         filterState.primary.seasonRange.fromSeasonId,
-        filterState.primary.seasonRange.throughSeasonId
-      )
+        filterState.primary.seasonRange.throughSeasonId,
+      ),
     },
     {
       key: "seasonType",
-      label: formatSeasonType(filterState.primary.seasonType)
+      label: formatSeasonType(filterState.primary.seasonType),
     },
     { key: "strength", label: formatStrength(filterState.primary.strength) },
     {
       key: "scoreState",
-      label: formatScoreState(filterState.primary.scoreState)
+      label: formatScoreState(filterState.primary.scoreState),
     },
     {
       key: "mode",
       label: formatMode(
         filterState.primary.statMode,
-        filterState.primary.displayMode
-      )
+        filterState.primary.displayMode,
+      ),
     },
     { key: "scope", label: formatActiveScope(filterState.expandable.scope) },
     {
       key: "tradeMode",
-      label: formatTradeMode(filterState.expandable.tradeMode, variant)
+      label: formatTradeMode(filterState.expandable.tradeMode, variant),
     },
     {
       key: "rows",
@@ -770,32 +760,32 @@ export default function PlayerUnderlyingStatsLandingPage({
           : `Rows ready (${loadedRowCount}/${totalRowCount})`,
       progress: {
         current: loadedRowCount,
-        total: totalRowCount
-      }
-    }
+        total: totalRowCount,
+      },
+    },
   ];
 
   const tableState =
     !router.isReady || !hasHydratedFromQueryRef.current
       ? {
           kind: "loading" as const,
-          message: pageShell.preparingFiltersMessage
+          message: pageShell.preparingFiltersMessage,
         }
       : !validation.isValid
         ? {
             kind: "warning" as const,
             title: "Invalid filter combination",
-            message: formatLandingValidationMessage(validation.issues)
+            message: formatLandingValidationMessage(validation.issues),
           }
         : isLoading && !canRenderStaleLandingData
           ? {
               kind: "loading" as const,
-              message: coldLoadStatus.message
+              message: coldLoadStatus.message,
             }
           : tableError && !landingData?.rows.length
             ? {
                 kind: "error" as const,
-                message: tableError
+                message: tableError,
               }
             : landingData?.rows.length
               ? null
@@ -803,7 +793,7 @@ export default function PlayerUnderlyingStatsLandingPage({
                   kind: "empty" as const,
                   message: landingData?.placeholder
                     ? pageShell.placeholderMessage
-                    : pageShell.emptyRowsMessage
+                    : pageShell.emptyRowsMessage,
                 };
 
   const pageStatusBanner = tableState
@@ -823,7 +813,7 @@ export default function PlayerUnderlyingStatsLandingPage({
                     ? "Loading goalie rows"
                     : "Loading landing rows",
         message: tableState.message,
-        tone: tableState.kind
+        tone: tableState.kind,
       }
     : tableError && landingData?.rows.length
       ? {
@@ -832,7 +822,7 @@ export default function PlayerUnderlyingStatsLandingPage({
               ? "Using cached goalie rows"
               : "Using cached landing rows",
           message: `${tableError} Showing the last successful result while the refresh failed.`,
-          tone: "warning" as const
+          tone: "warning" as const,
         }
       : canRenderStaleLandingData
         ? {
@@ -842,7 +832,7 @@ export default function PlayerUnderlyingStatsLandingPage({
                 : "Refreshing landing rows",
             message:
               "Updating the current table in the background while preserving the last loaded result.",
-            tone: "loading" as const
+            tone: "loading" as const,
           }
         : null;
 
@@ -870,7 +860,7 @@ export default function PlayerUnderlyingStatsLandingPage({
 
   function handleExpandedRowToggle(
     row: PlayerStatsLandingApiRow,
-    preferredMetricKey?: string
+    preferredMetricKey?: string,
   ) {
     const nextRowKey = row.rowKey;
 
@@ -887,7 +877,7 @@ export default function PlayerUnderlyingStatsLandingPage({
     if (nextMetricKey) {
       setExpandedMetricByRowKey((current) => ({
         ...current,
-        [nextRowKey]: nextMetricKey
+        [nextRowKey]: nextMetricKey,
       }));
     }
 
@@ -912,7 +902,7 @@ export default function PlayerUnderlyingStatsLandingPage({
       defaultSpanLabel={pageShell.defaultSpanLabel}
       defaultSpanValue={formatSeasonRange(
         defaultLandingState.primary.seasonRange.fromSeasonId,
-        defaultLandingState.primary.seasonRange.throughSeasonId
+        defaultLandingState.primary.seasonRange.throughSeasonId,
       )}
       activeFamilyLabel={pageShell.activeFamilyLabel}
       activeFamilyValue={formatTableFamily(tableFamily)}
@@ -934,15 +924,18 @@ export default function PlayerUnderlyingStatsLandingPage({
                           Math.round(
                             (chip.progress.total > 0
                               ? chip.progress.current / chip.progress.total
-                              : rowLoadProgress) * 10000
+                              : rowLoadProgress) * 10000,
                           ) / 100
-                        }%`
+                        }%`,
                       } as CSSProperties)
                     : undefined
                 }
               >
                 {chip.progress ? (
-                  <span className={styles.chipProgressFill} aria-hidden="true" />
+                  <span
+                    className={styles.chipProgressFill}
+                    aria-hidden="true"
+                  />
                 ) : null}
                 <span className={styles.chipLabel}>{chip.label}</span>
               </span>
@@ -1017,15 +1010,15 @@ export default function PlayerUnderlyingStatsLandingPage({
               ...current,
               primary: {
                 ...current.primary,
-                seasonRange: nextRange
+                seasonRange: nextRange,
               },
               view: {
                 ...current.view,
                 pagination: {
                   ...current.view.pagination,
-                  page: 1
-                }
-              }
+                  page: 1,
+                },
+              },
             }))
           }
           onSeasonTypeChange={(seasonType) =>
@@ -1033,15 +1026,15 @@ export default function PlayerUnderlyingStatsLandingPage({
               ...current,
               primary: {
                 ...current.primary,
-                seasonType
+                seasonType,
               },
               view: {
                 ...current.view,
                 pagination: {
                   ...current.view.pagination,
-                  page: 1
-                }
-              }
+                  page: 1,
+                },
+              },
             }))
           }
           onStrengthChange={(strength) =>
@@ -1049,15 +1042,15 @@ export default function PlayerUnderlyingStatsLandingPage({
               ...current,
               primary: {
                 ...current.primary,
-                strength
+                strength,
               },
               view: {
                 ...current.view,
                 pagination: {
                   ...current.view.pagination,
-                  page: 1
-                }
-              }
+                  page: 1,
+                },
+              },
             }))
           }
           onScoreStateChange={(scoreState) =>
@@ -1065,15 +1058,15 @@ export default function PlayerUnderlyingStatsLandingPage({
               ...current,
               primary: {
                 ...current.primary,
-                scoreState
+                scoreState,
               },
               view: {
                 ...current.view,
                 pagination: {
                   ...current.view.pagination,
-                  page: 1
-                }
-              }
+                  page: 1,
+                },
+              },
             }))
           }
           onModeChange={(mode) => {
@@ -1087,7 +1080,7 @@ export default function PlayerUnderlyingStatsLandingPage({
               normalizationResult =
                 applyPlayerStatsModeChange<PlayerStatsLandingFilterState>(
                   current,
-                  mode
+                  mode,
                 );
               const nextState = normalizationResult.state;
 
@@ -1097,13 +1090,13 @@ export default function PlayerUnderlyingStatsLandingPage({
                   ...nextState.view,
                   sort: getDefaultLandingSortState(
                     nextState.primary.statMode,
-                    nextState.primary.displayMode
+                    nextState.primary.displayMode,
                   ),
                   pagination: {
                     ...nextState.view.pagination,
-                    page: 1
-                  }
-                }
+                    page: 1,
+                  },
+                },
               };
             });
 
@@ -1114,19 +1107,19 @@ export default function PlayerUnderlyingStatsLandingPage({
               ...current,
               primary: {
                 ...current.primary,
-                displayMode
+                displayMode,
               },
               view: {
                 ...current.view,
                 sort: getDefaultLandingSortState(
                   current.primary.statMode,
-                  displayMode
+                  displayMode,
                 ),
                 pagination: {
                   ...current.view.pagination,
-                  page: 1
-                }
-              }
+                  page: 1,
+                },
+              },
             }))
           }
           onAdvancedOpenChange={(advancedOpen) =>
@@ -1134,8 +1127,8 @@ export default function PlayerUnderlyingStatsLandingPage({
               ...current,
               expandable: {
                 ...current.expandable,
-                advancedOpen
-              }
+                advancedOpen,
+              },
             }))
           }
           onTeamContextFilterChange={(teamId) =>
@@ -1143,15 +1136,15 @@ export default function PlayerUnderlyingStatsLandingPage({
               ...current,
               expandable: {
                 ...current.expandable,
-                teamId
+                teamId,
               },
               view: {
                 ...current.view,
                 pagination: {
                   ...current.view.pagination,
-                  page: 1
-                }
-              }
+                  page: 1,
+                },
+              },
             }))
           }
           onPositionGroupChange={(positionGroup) =>
@@ -1159,15 +1152,15 @@ export default function PlayerUnderlyingStatsLandingPage({
               ...current,
               expandable: {
                 ...current.expandable,
-                positionGroup
+                positionGroup,
               },
               view: {
                 ...current.view,
                 pagination: {
                   ...current.view.pagination,
-                  page: 1
-                }
-              }
+                  page: 1,
+                },
+              },
             }))
           }
           onVenueChange={(venue) =>
@@ -1175,15 +1168,15 @@ export default function PlayerUnderlyingStatsLandingPage({
               ...current,
               expandable: {
                 ...current.expandable,
-                venue
+                venue,
               },
               view: {
                 ...current.view,
                 pagination: {
                   ...current.view.pagination,
-                  page: 1
-                }
-              }
+                  page: 1,
+                },
+              },
             }))
           }
           onMinimumToiChange={(minimumToiSeconds) =>
@@ -1191,15 +1184,15 @@ export default function PlayerUnderlyingStatsLandingPage({
               ...current,
               expandable: {
                 ...current.expandable,
-                minimumToiSeconds
+                minimumToiSeconds,
               },
               view: {
                 ...current.view,
                 pagination: {
                   ...current.view.pagination,
-                  page: 1
-                }
-              }
+                  page: 1,
+                },
+              },
             }))
           }
           onScopeChange={(scope) =>
@@ -1209,9 +1202,9 @@ export default function PlayerUnderlyingStatsLandingPage({
                 ...current.view,
                 pagination: {
                   ...current.view.pagination,
-                  page: 1
-                }
-              }
+                  page: 1,
+                },
+              },
             }))
           }
           onTradeModeChange={(tradeMode) =>
@@ -1219,15 +1212,15 @@ export default function PlayerUnderlyingStatsLandingPage({
               ...current,
               expandable: {
                 ...current.expandable,
-                tradeMode
+                tradeMode,
               },
               view: {
                 ...current.view,
                 pagination: {
                   ...current.view.pagination,
-                  page: 1
-                }
-              }
+                  page: 1,
+                },
+              },
             }))
           }
         />
@@ -1237,6 +1230,7 @@ export default function PlayerUnderlyingStatsLandingPage({
           sortState={landingData?.sort ?? filterState.view.sort}
           state={tableState}
           pagination={landingData?.pagination ?? null}
+          renderingStrategy="load-more"
           showRankColumn
           extraColumns={[...ratingColumns, ...timeframeColumns]}
           className={styles.tableShell}
@@ -1253,12 +1247,15 @@ export default function PlayerUnderlyingStatsLandingPage({
                   {buildLandingPageProgressLabel({
                     loadedRowCount,
                     totalRowCount,
-                    variant
+                    variant,
                   })}
                 </span>
               </div>
             ) : null
           }
+          hasMoreRows={loadedRowCount < totalRowCount}
+          isLoadingMore={isLoadingRemainingRows}
+          onLoadMore={handleLoadMore}
           onSortChange={(nextSort) =>
             setFilterState((current) => ({
               ...current,
@@ -1267,9 +1264,9 @@ export default function PlayerUnderlyingStatsLandingPage({
                 sort: nextSort,
                 pagination: {
                   ...current.view.pagination,
-                  page: 1
-                }
-              }
+                  page: 1,
+                },
+              },
             }))
           }
           renderCell={({ row, columnKey, formattedValue }) => {
@@ -1359,7 +1356,7 @@ export default function PlayerUnderlyingStatsLandingPage({
                 onMetricChange={(metricKey) =>
                   setExpandedMetricByRowKey((current) => ({
                     ...current,
-                    [row.rowKey]: metricKey
+                    [row.rowKey]: metricKey,
                   }))
                 }
               />
@@ -1369,14 +1366,15 @@ export default function PlayerUnderlyingStatsLandingPage({
 
         {isProgressivelyHydratingRows ? (
           <p className={styles.footnote}>
-            Showing the first {loadedRowCount} of {totalRowCount}
-            rows while the rest load behind the current table.
+            Loading the next batch after the first {loadedRowCount} of{" "}
+            {totalRowCount}
+            rows.
           </p>
         ) : null}
         {backgroundLoadError ? (
           <p className={styles.footnote}>
-            Remaining rows did not finish loading in the background. The current
-            sorted top {loadedRowCount} rows are still available.
+            The next batch did not load. The current sorted top {loadedRowCount}
+            rows are still available; retry with Load more.
           </p>
         ) : null}
       </div>
@@ -1397,7 +1395,7 @@ function buildSeasonOptions(anchorSeasonId: number | null): Array<{
     const seasonId = Number(`${startYear}${startYear + 1}`);
     return {
       value: seasonId,
-      label: formatSeason(seasonId)
+      label: formatSeason(seasonId),
     };
   });
 }
@@ -1406,14 +1404,14 @@ function buildTeamOptions(): Array<{ value: number; label: string }> {
   return Object.values(teamsInfo)
     .map((team) => ({
       value: team.id,
-      label: `${team.abbrev} · ${team.name}`
+      label: `${team.abbrev} · ${team.name}`,
     }))
     .sort((left, right) => left.label.localeCompare(right.label));
 }
 
 function formatSeasonRange(
   fromSeasonId: number | null,
-  throughSeasonId: number | null
+  throughSeasonId: number | null,
 ): string {
   if (!fromSeasonId || !throughSeasonId) {
     return "Season pending";
@@ -1523,7 +1521,7 @@ function formatTableFamily(family: string): string {
 
 function resolveDefaultExpandedMetricKey(
   metricColumns: readonly PlayerStatsColumnDefinition[],
-  activeSortKey: string | null
+  activeSortKey: string | null,
 ): string | null {
   if (metricColumns.length === 0) {
     return null;
@@ -1532,7 +1530,7 @@ function resolveDefaultExpandedMetricKey(
   if (activeSortKey) {
     const matchingMetric = metricColumns.find(
       (column) =>
-        column.sortKey === activeSortKey || column.key === activeSortKey
+        column.sortKey === activeSortKey || column.key === activeSortKey,
     );
     if (matchingMetric) {
       return matchingMetric.key;
@@ -1544,7 +1542,7 @@ function resolveDefaultExpandedMetricKey(
 
 function formatTradeMode(
   tradeMode: string,
-  variant: LandingPageVariant = "player"
+  variant: LandingPageVariant = "player",
 ): string {
   if (variant === "goalie") {
     return tradeMode === "split" ? "Split team rows" : "Combined rows";

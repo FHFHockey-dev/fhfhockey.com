@@ -1,6 +1,21 @@
 # NHL Edge Audit
 
-Last verified live on `2026-04-23`.
+Last verified live on `2026-07-11`.
+
+## Browser-network inventory — 2026-07-11
+
+The current NHL Edge landing, skater, team, goalie, and representative entity-detail routes were loaded in a real browser. Each visible top-level metric tab was selected and its observed `api-web.nhle.com/v1/edge` request recorded. The route inventory did not expose a separate API request for every rendered card; the entity-detail pages still load one consolidated detail payload, while leaderboard tabs use distinct top-10 families.
+
+- Landing: `by-the-numbers/{seasonId}/{gameType}` plus the featured `goalie-detail/{goalieId}/now` payload.
+- Skater landing: `skater-landing/now` and `skater-landing/{seasonId}/{gameType}`.
+- Skater tabs: `skater-shot-speed-top-10/all/max/{seasonId}/{gameType}`, `skater-speed-top-10/all/max/{seasonId}/{gameType}`, `skater-distance-top-10/all/all/total/{seasonId}/{gameType}`, and `skater-shot-location-top-10/all/sog/all/{seasonId}/{gameType}`. The Zone Time tab rendered from already-loaded data during this pass and emitted no additional request.
+- Team landing: `team-landing/now` and `team-landing/{seasonId}/{gameType}`.
+- Team tabs: `team-shot-speed-top-10/all/max/{seasonId}/{gameType}`, `team-skating-speed-top-10/all/max/{seasonId}/{gameType}`, `team-skating-distance-top-10/all/all/total/{seasonId}/{gameType}`, `team-shot-location-top-10/all/sog/all/{seasonId}/{gameType}`, and `team-zone-time-top-10/all/offensive/{seasonId}/{gameType}`.
+- Goalie landing: `goalie-landing/now` and `goalie-landing/{seasonId}/{gameType}`.
+- Goalie tabs: `goalie-shot-location-top-10/save-pctg/all/{seasonId}/{gameType}`, `goalie-5v5-top-10/save-pctg/{seasonId}/{gameType}`, and `goalie-edge-save-pctg-top-10/games/{seasonId}/{gameType}`.
+- Representative visible entity routes loaded only their consolidated season/game-type detail families: `skater-detail/{playerId}/{seasonId}/{gameType}`, `team-detail/{teamId}/{seasonId}/{gameType}`, and `goalie-detail/{goalieId}/{seasonId}/{gameType}`.
+
+The observed naming distinction is important: the skater speed leaderboard is `skater-speed-top-10`, not `skater-skating-speed-top-10`, while the team version is `team-skating-speed-top-10`. These leaderboard families are useful display/context overlays, but the adopted first-class archive remains the consolidated detail families and typed daily metric tables.
 
 ## What this doc is good for right now
 
