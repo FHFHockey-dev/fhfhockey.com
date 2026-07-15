@@ -122,7 +122,7 @@ The seed registry below is a starting classification; verified repository eviden
 
 | ID | Initiative | Domain | Claimed state | Key dependency role |
 |---|---|---|---|---|
-| B-CRON-NST | Cron NST/audit remediation | Operations | 21/39 source rows; 18 open; local review remediation verified, combined schema/production checkpoint pending | Reconciles A-CRON-EMAIL and NST ownership |
+| B-CRON-NST | Cron NST/audit remediation | Operations | 21/41 source rows; 20 open; local review remediation verified except newly discovered deferred SQL-expression runtime blocker; clean-branch/schema-clone validation precedes production | Reconciles A-CRON-EMAIL and NST ownership |
 | B-SUST-BAR | Sustainability Barometer | Analytics/UX | 0/8 | Depends on A-SUST |
 | B-SUST-AUD | Sustainability/trends audit | Analytics | 0/5 | Depends on A-SUST and recovered trends scope |
 | B-GAMEGRID | Game Grid master dashboard | Stats/product | 0/5 | Depends on underlying data/routes |
@@ -154,7 +154,7 @@ The seed registry below is a starting classification; verified repository eviden
 
 Wave A begins with shared foundations and release/correctness signals, then dependent product surfaces:
 
-`A-AUTH → auth-dependent surfaces`; `A-GDL/A-CRON-EMAIL → ingestion/operations`; within cron operations, `A-CRON-EMAIL P0 10.1 → 10.2 → 10.3 → 10.4 → 10.5 → 10.6`, with all literal-bearing jobs held quiesced after 10.4 and restored only per verified Vault-backed batch in 10.5. The breaking season/WGO authorization boundary precedes the combined B-CRON-NST `NEW 29.0`/`31.0`/`32.0` transactional-status-cardinality decision, temporary-branch validation, schema/runtime deployment, and bounded probes; `A-XG-REL → A-XG-TREND → A-PRED`; `A-FORGE-V1 → A-FORGE-CC/A-FORGE-DASH/A-FORGE-P4/A-FORGE-LIVE`; `A-3P → A-SUST → A-US-SOS → A-SITE/A-STYLE`; `B-YAHOO mapping evidence may be audited narrowly to unblock A-DRAFT/A-DRAFT-DEBUG`.
+`A-AUTH → auth-dependent surfaces`; `A-GDL/A-CRON-EMAIL → ingestion/operations`; within cron operations, `A-CRON-EMAIL P0 10.1 → 10.2 → 10.3 → 10.4 → 10.5 → 10.6`, with all literal-bearing jobs held quiesced after 10.4 and restored only per verified Vault-backed batch in 10.5. The breaking season/WGO authorization boundary precedes the combined B-CRON-NST `NEW 29.0`/`31.0`/`32.0` transactional-status-cardinality decision; discovery `NEW 36.0` now precedes ordinary temporary-branch recreation because the authoritative remote migration chain cannot bootstrap a blank database, after which schema/runtime deployment and bounded probes resume. This reorder is evidence-driven and leaves production held. `A-XG-REL → A-XG-TREND → A-PRED`; `A-FORGE-V1 → A-FORGE-CC/A-FORGE-DASH/A-FORGE-P4/A-FORGE-LIVE`; `A-3P → A-SUST → A-US-SOS → A-SITE/A-STYLE`; `B-YAHOO mapping evidence may be audited narrowly to unblock A-DRAFT/A-DRAFT-DEBUG`.
 
 Wave B follows stable foundations:
 
@@ -225,7 +225,7 @@ This table classifies every non-canonical file discovered recursively under `tas
 | `tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 62 checkbox rows |
 | `tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 43 checkbox rows |
 | `tasks/TASKS/cron-operations/tasks-prd-cron-failed-jobs-remediation.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 34 checkbox rows |
-| `tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 39 checkbox rows |
+| `tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 41 checkbox rows |
 | `tasks/TASKS/cron-operations/tasks-prd-nst-api-audit-and-migration.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 46 checkbox rows |
 | `tasks/TASKS/dead-code-cleanup/burn-down-plan.md` | implementation map/architecture plan | B-CLEAN / B-DEAD / B-DRM / B-SKO-BURN | — |
 | `tasks/TASKS/dead-code-cleanup/prd-cleanup-tasks.md` | PRD | B-CLEAN / B-DEAD / B-DRM / B-SKO-BURN | — |
