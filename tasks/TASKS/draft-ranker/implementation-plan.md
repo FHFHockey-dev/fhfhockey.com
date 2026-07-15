@@ -304,7 +304,7 @@ Migration/Rollback/Flag/Approval: Broad release blocked until gate passes.
 Non-goals: Claiming universal fantasy consensus.
 Phase 7 — Exports, operations, and rollout
 Phase contract
-Status: Implementation and local launch QA complete; a reviewed production release artifact, deployment preflight, and the real production cohort observation gates remain open.
+Status: Implementation, local launch QA, reviewed production deployment, and flag-off production smoke are complete; real production cohort observation gates remain open.
 Scope: CSV/JSON, repair tooling, monitoring, security hardening, staged rollout, and end-to-end launch verification.
 Dependencies: Phases 1–6.
 Affected systems: Export routes, admin tools, health scripts, flags, runbooks, tests.
@@ -332,7 +332,7 @@ Security/Observability: Admin/service-only; before/after counts and actor/reason
 Migration/Rollback/Flag/Approval: Destructive repair requires explicit confirmation and backup.
 Non-goals: Unreviewed automatic identity merges.
 DR-072 — Execute staged backfill and rollout
-Status/Scope: In progress. Release infrastructure and product-owner staff-stage approval are complete. The goal-scoped artifact is published in draft PR [#335](https://github.com/FHFHockey-dev/fhfhockey.com/pull/335); its checks passed and its READY flag-off preview passed closed-state smoke. The live production deployment still predates Draft Ranker, so the exact reviewed artifact must reach a READY production deployment with every flag off. Actual staff, allowlisted, authenticated, and public cohort observation windows remain pending named operators, exact cohorts, and real traffic.
+Status/Scope: In progress. Release infrastructure and product-owner staff-stage approval are complete. PR [#335](https://github.com/FHFHockey-dev/fhfhockey.com/pull/335) merged as `722f1dff02b7a4b9486836b386c0b576f57c5cfd`; READY production deployment `dpl_2jLGmBmqwYjXiJJVuLjUMYJLrz4D` serves both feature routes and passed the all-flags-off API, homepage, rendered-browser, and runtime-log smoke test. Previous production deployment `dpl_HgjrBeCQVzDTsgryafBLzmXqGyjH` remains the rollback candidate. Actual staff, allowlisted, authenticated, and public cohort observation windows remain pending named operators, exact cohorts, and real traffic.
 Dependencies/Affected: DR-063, DR-071, and the clean release boundary in [release-manifest.md](./release-manifest.md); entitlements/flags, operational dashboard.
 DB/API/UI: Feature availability only.
 Acceptance/Tests: Before staff exposure, a reviewed goal-scoped artifact has a READY production deployment, the feature routes are available with every flag off, and a production smoke test confirms the closed state. Every personal API enforces the server-side `off`/`staff`/`allowlist`/`authenticated` policy, missing or invalid values fail closed, and aggregate health reports only allowlist counts. The required cohort sizes, durations, latency, support, and integrity gates are frozen in [launch-runbook.md](./launch-runbook.md) and cannot honestly be simulated as completed production observation.
