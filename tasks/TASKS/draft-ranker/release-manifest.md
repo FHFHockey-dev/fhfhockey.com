@@ -8,10 +8,12 @@ Recorded 2026-07-15:
 
 - local branch: `octoberBranch`
 - local base commit: `5743b6d808ff4cd9dd0cb01fef13863ac95f9f6d`
-- approved merge commit: `722f1dff02b7a4b9486836b386c0b576f57c5cfd`
-- current READY production deployment: `dpl_8RitVqdJ9QsRTi11J7xjH66u6cdu`
+- approved Draft Ranker merge commit: `722f1dff02b7a4b9486836b386c0b576f57c5cfd`
+- approved homepage merge commit: `3685ce1ef87bf96bbad6f2fc307a971220428615`
+- current READY production deployment: `dpl_FiCyDfjVX1Dx14yuSoyySGJvGThQ`
+- immediate pre-homepage production deployment: `dpl_8RitVqdJ9QsRTi11J7xjH66u6cdu`
 - prior all-flags-off production deployment: `dpl_2jLGmBmqwYjXiJJVuLjUMYJLrz4D`
-- current production base commit: `722f1dff02b7a4b9486836b386c0b576f57c5cfd`
+- current production source commit: `70c88054df6a4609bb419fa286cac6fc79e44c7a`
 - retained production rollback deployment: `dpl_HgjrBeCQVzDTsgryafBLzmXqGyjH`
 
 The isolated release assembly began from the then-matching local/remote cleanup commit `5743b6d808ff4cd9dd0cb01fef13863ac95f9f6d`, which intentionally contains generated-artifact cleanup. PR #335 later advanced the remote branch to the approved merge commit recorded above without changing the source worktree's unrelated local state. Any later release workspace must begin from its then-current reviewed remote commit and rerun this manifest's classification and verification checks.
@@ -158,6 +160,20 @@ Vercel redeployed the reviewed artifact without a source change:
 - observation gate: continuous 72-hour minimum through `2026-07-18T16:10:46Z`, at least 50 complete account journeys because the cohort has fewer than five accounts, and every staff integrity/latency/health criterion in [launch-runbook.md](./launch-runbook.md).
 
 The beta cohort remains empty. `DRAFT_RANKER_HOMEPAGE_ENABLED`, `DRAFT_RANKER_DISCOVERY_ENABLED`, `DRAFT_RANKER_COMMUNITY_CONTRIBUTION_ENABLED`, and `COMMUNITY_DRAFT_RANKINGS_ENABLED` remain absent/off. Anonymous personal API access returned HTTP 401 `authentication_required`; the public aggregate API returned HTTP 503 `draft_ranker_disabled`; both feature pages and the homepage returned HTTP 200; homepage props still reported `draftRankerHomepageEnabled: false`; and the rendered homepage contained no Draft Ranker prompt. A production browser session visually confirmed sign-in as the allowlisted `TjsUsername` staff account. The new deployment had no grouped runtime error clusters and no error/fatal logs in the post-deploy smoke window.
+
+## Homepage voting and opening-night production evidence
+
+On 2026-07-15 the product owner explicitly approved a narrow exception to the 72-hour/50-journey staff observation gate for the homepage surface only. This approval does not record the staff gate as passed, expand the staff or beta cohort, change the `staff` rollout stage, enable discovery or contribution collection, or open the public Community Ranking. DR-072 remains in progress for every later expansion.
+
+PR [#338](https://github.com/FHFHockey-dev/fhfhockey.com/pull/338) added the opening-night countdown and was merged as `3685ce1ef87bf96bbad6f2fc307a971220428615`; its reviewed source commit is `70c88054df6a4609bb419fa286cac6fc79e44c7a`. All five reported Vercel checks passed. Exact READY preview `dpl_8sW3z1oABqQGAtxopeSnpLXsyWgp` was promoted into production deployment `dpl_FiCyDfjVX1Dx14yuSoyySGJvGThQ`, which records `action: promote`, the exact original preview ID, and source commit `70c88054df6a4609bb419fa286cac6fc79e44c7a`. Vercel marked it READY at approximately `2026-07-15T18:38:50.065Z` and assigned `fhfhockey.com`, `www.fhfhockey.com`, and `fhfhockey.vercel.app` without alias error.
+
+Production-only sensitive `DRAFT_RANKER_HOMEPAGE_ENABLED=true` is the sole newly enabled rollout control. `DRAFT_RANKER_ENABLED=true`, `DRAFT_RANKER_ROLLOUT_STAGE=staff`, and the exact three-account staff allowlist remain unchanged, with cohort fingerprint `08e5ae064daea8389205cbd9bf54a3ce3a1a31f555e7e51a381ca314a61053dd`. The beta cohort remains empty, and `DRAFT_RANKER_DISCOVERY_ENABLED`, `DRAFT_RANKER_COMMUNITY_CONTRIBUTION_ENABLED`, and `COMMUNITY_DRAFT_RANKINGS_ENABLED` remain absent/off.
+
+The countdown reads the real canonical `public.seasons.startDate` value `2026-09-29` for the 2026–27 season. It uses the earliest valid NHL `startTimeUTC` for that date when the official schedule supplies one; because no official puck-drop time is currently available, production displays the date-based countdown and explicitly says the puck-drop time will update when the schedule is available. No dummy player, game, schedule, or migration data was introduced.
+
+Production smoke passed: the homepage returned HTTP 200 and visibly showed the opening-night countdown plus the account-backed Personal Draft Ranker in place of Transaction Trends; exactly one Latest News section remained to the left of League Separation; anonymous `GET /api/v1/draft-ranker` returned HTTP 401 `authentication_required`; anonymous `GET /api/v1/draft-ranker/community` returned HTTP 503 `draft_ranker_disabled`; and Vercel reported no grouped runtime error clusters. Browser console hydration warnings were reproduced with the same ten-message signature on both the immediate pre-homepage production artifact and the new production artifact, so they are recorded as a pre-existing baseline risk rather than a rollout regression.
+
+The first rollback action for a homepage-only incident is to disable `DRAFT_RANKER_HOMEPAGE_ENABLED`, which restores Transaction Trends without changing staff access to the personal Draft Ranker. A broader incident uses the existing stage-off/master-off procedure. Immediate pre-homepage deployment `dpl_8RitVqdJ9QsRTi11J7xjH66u6cdu` and older retained deployment `dpl_HgjrBeCQVzDTsgryafBLzmXqGyjH` remain artifact rollback references.
 
 ## Publication and preview evidence
 
