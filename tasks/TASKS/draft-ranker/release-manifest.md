@@ -8,12 +8,12 @@ Recorded 2026-07-15:
 
 - local branch: `octoberBranch`
 - local base commit: `5743b6d808ff4cd9dd0cb01fef13863ac95f9f6d`
-- current remote branch commit: `5743b6d808ff4cd9dd0cb01fef13863ac95f9f6d`
-- current READY production deployment: `dpl_HgjrBeCQVzDTsgryafBLzmXqGyjH`
-- current production base commit: `dbe50d9ec4ee1788f66451f5dcdfdfbe9005339f`
+- approved merge commit: `722f1dff02b7a4b9486836b386c0b576f57c5cfd`
+- current READY production deployment: `dpl_2jLGmBmqwYjXiJJVuLjUMYJLrz4D`
+- current production base commit: `722f1dff02b7a4b9486836b386c0b576f57c5cfd`
 - retained production rollback deployment: `dpl_HgjrBeCQVzDTsgryafBLzmXqGyjH`
 
-The current remote and local checkpoint commits match. An earlier local/remote sibling split was superseded by remote cleanup commit `5743b6d808ff4cd9dd0cb01fef13863ac95f9f6d`, which intentionally contains generated-artifact cleanup. A release workspace must begin from the then-current reviewed remote commit. Re-run this manifest's classification and verification checks if the remote ref changes.
+The isolated release assembly began from the then-matching local/remote cleanup commit `5743b6d808ff4cd9dd0cb01fef13863ac95f9f6d`, which intentionally contains generated-artifact cleanup. PR #335 later advanced the remote branch to the approved merge commit recorded above without changing the source worktree's unrelated local state. Any later release workspace must begin from its then-current reviewed remote commit and rerun this manifest's classification and verification checks.
 
 ## Included release scope
 
@@ -118,6 +118,8 @@ COMMUNITY_DRAFT_RANKINGS_ENABLED=false
 
 Do not place cohort UUIDs in client-visible variables or source control. Pairwise rate variables may remain absent to use reviewed server defaults.
 
+The server contract treats missing or invalid rollout keys as the same fail-closed state shown above. Production inspection before promotion found all eight Draft Ranker rollout keys absent, including both cohort lists, so no configuration mutation was needed and no user was eligible. Explicitly setting the listed values remains equivalent.
+
 ## Closed-state production smoke test
 
 Before entering a staff UUID or changing the rollout stage:
@@ -135,9 +137,9 @@ Record the exact deployment ID and smoke-test evidence in [progress.md](./progre
 
 ## Current production evidence
 
-The current READY production artifact predates Draft Ranker, and `/draft-rankings` returns 404. A prior remote branch deployment for commit `0ed825fb30f5c6f329cd0dc169d2d9b2ca975e0f` failed TypeScript at `web/lib/draft-ranker/rateLimit.ts:38`. The prepared release contains the reviewed cast that fixes that error and passes the full clean-base build, but the fix is not yet present in a READY remote artifact.
+PR [#335](https://github.com/FHFHockey-dev/fhfhockey.com/pull/335) was approved by the product owner and merged as `722f1dff02b7a4b9486836b386c0b576f57c5cfd`. Its tree exactly matches the approved PR-head tree `21c199f1f00dce7d856fd92fd5bdcffc0d8c6580`. READY preview `dpl_5wzgM43KU7Re4FTZZ8GgHhDQYRmw` was promoted through Vercel into production deployment `dpl_2jLGmBmqwYjXiJJVuLjUMYJLrz4D`, which records `action: promote`, the original preview ID, and the verified merge SHA. Vercel marked it READY at `2026-07-15T15:19:26.084Z` and assigned `fhfhockey.com`, `www.fhfhockey.com`, and `fhfhockey.vercel.app` without alias error.
 
-No deployment or flag change may be represented as complete until the exact release commit and READY deployment are recorded here and in the launch runbook.
+The flag-off production smoke then passed: both feature routes returned HTTP 200; both checked APIs returned HTTP 503 with code `draft_ranker_disabled`; homepage server props reported `draftRankerHomepageEnabled: false`; a rendered browser check found zero Draft Ranker text on the homepage and displayed the real account-backed signed-out page; and deployment-scoped error/fatal logs plus grouped runtime errors were empty. The prior READY production deployment `dpl_HgjrBeCQVzDTsgryafBLzmXqGyjH` remains the retained rollback candidate. No rollout key, cohort UUID, secondary feature flag, or public aggregate flag was enabled.
 
 ## Publication and preview evidence
 
@@ -150,6 +152,19 @@ The authorized scoped release was published on 2026-07-15 without promoting or c
 - GitHub checks: all five reported Vercel checks passed for the product commit
 
 The protected READY preview passed the flag-off closed-state smoke test. `/draft-rankings` and `/community-draft-rankings` each returned HTTP 200; `GET /api/v1/draft-ranker` and `GET /api/v1/draft-ranker/community` each returned HTTP 503 with code `draft_ranker_disabled`; and the homepage server props reported `draftRankerHomepageEnabled: false`. A deployment-scoped query after these requests found no error or fatal runtime logs. No production deployment was promoted, no rollout flag was changed, and no cohort was exposed.
+
+## Merge and promotion evidence
+
+- product-owner approval commit: `963bc33b0abebc4473746fa4f3573b3ce2c607e4`
+- merged pull request: [#335](https://github.com/FHFHockey-dev/fhfhockey.com/pull/335)
+- merge commit: `722f1dff02b7a4b9486836b386c0b576f57c5cfd`
+- approved/merged tree: `21c199f1f00dce7d856fd92fd5bdcffc0d8c6580`
+- promoted READY preview: `dpl_5wzgM43KU7Re4FTZZ8GgHhDQYRmw`
+- READY production deployment: `dpl_2jLGmBmqwYjXiJJVuLjUMYJLrz4D`
+- production operator: `fhfhockey-dev`, with Codex acting under the recorded product-owner approval
+- READY time: `2026-07-15T15:19:26.084Z`
+- retained rollback deployment: `dpl_HgjrBeCQVzDTsgryafBLzmXqGyjH`
+- rollout state: all Draft Ranker keys absent and fail-closed; no cohort exposed
 
 ## Isolated assembly evidence
 
