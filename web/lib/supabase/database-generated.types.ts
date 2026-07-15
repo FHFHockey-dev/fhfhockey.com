@@ -374,6 +374,48 @@ export type Database = {
         }
         Relationships: []
       }
+      draft_ranker_contribution_events: {
+        Row: {
+          after_state: Json
+          before_state: Json
+          contribution_enabled: boolean
+          created_at: string
+          id: string
+          operation_id: string
+          operation_payload_hash: string
+          privacy_policy_version: string | null
+          result: Json
+          update_source: string
+          user_id: string
+        }
+        Insert: {
+          after_state?: Json
+          before_state?: Json
+          contribution_enabled: boolean
+          created_at?: string
+          id?: string
+          operation_id: string
+          operation_payload_hash: string
+          privacy_policy_version?: string | null
+          result?: Json
+          update_source: string
+          user_id: string
+        }
+        Update: {
+          after_state?: Json
+          before_state?: Json
+          contribution_enabled?: boolean
+          created_at?: string
+          id?: string
+          operation_id?: string
+          operation_payload_hash?: string
+          privacy_policy_version?: string | null
+          result?: Json
+          update_source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       draft_ranker_contribution_preferences: {
         Row: {
           consented_at: string | null
@@ -614,12 +656,15 @@ export type Database = {
           expires_at: string
           high_player_id: number
           id: string
+          issue_operation_id: string | null
+          issue_payload_hash: string | null
           issued_at: string
           low_player_id: number
           metadata: Json
           queue_mode: string
           queue_reason: string
           ranking_id: string
+          ranking_version: number | null
           season_id: number
           status: string
           user_id: string
@@ -630,12 +675,15 @@ export type Database = {
           expires_at: string
           high_player_id: number
           id?: string
+          issue_operation_id?: string | null
+          issue_payload_hash?: string | null
           issued_at?: string
           low_player_id: number
           metadata?: Json
           queue_mode: string
           queue_reason: string
           ranking_id: string
+          ranking_version?: number | null
           season_id: number
           status?: string
           user_id: string
@@ -646,12 +694,15 @@ export type Database = {
           expires_at?: string
           high_player_id?: number
           id?: string
+          issue_operation_id?: string | null
+          issue_payload_hash?: string | null
           issued_at?: string
           low_player_id?: number
           metadata?: Json
           queue_mode?: string
           queue_reason?: string
           ranking_id?: string
+          ranking_version?: number | null
           season_id?: number
           status?: string
           user_id?: string
@@ -691,8 +742,11 @@ export type Database = {
         Row: {
           answers: Json
           completed_at: string | null
+          completion_reason: string | null
+          confidence: string
           contradiction_count: number
           created_at: string
+          engine_version: string
           expires_at: string
           fhfh_player_id: number
           id: string
@@ -713,8 +767,11 @@ export type Database = {
         Insert: {
           answers?: Json
           completed_at?: string | null
+          completion_reason?: string | null
+          confidence?: string
           contradiction_count?: number
           created_at?: string
+          engine_version?: string
           expires_at: string
           fhfh_player_id: number
           id?: string
@@ -735,8 +792,11 @@ export type Database = {
         Update: {
           answers?: Json
           completed_at?: string | null
+          completion_reason?: string | null
+          confidence?: string
           contradiction_count?: number
           created_at?: string
+          engine_version?: string
           expires_at?: string
           fhfh_player_id?: number
           id?: string
@@ -764,6 +824,54 @@ export type Database = {
           },
           {
             foreignKeyName: "draft_ranker_placement_sessions_fhfh_player_id_fkey"
+            columns: ["fhfh_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      draft_ranker_player_preferences: {
+        Row: {
+          comparison_requested_at: string | null
+          created_at: string
+          disposition: string | null
+          fhfh_player_id: number
+          ranking_id: string
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comparison_requested_at?: string | null
+          created_at?: string
+          disposition?: string | null
+          fhfh_player_id: number
+          ranking_id: string
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comparison_requested_at?: string | null
+          created_at?: string
+          disposition?: string | null
+          fhfh_player_id?: number
+          ranking_id?: string
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_player_preferences_ranking_owner_fk"
+            columns: ["ranking_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "draft_rankings"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "draft_ranker_player_preferences_fhfh_player_id_fkey"
             columns: ["fhfh_player_id"]
             isOneToOne: false
             referencedRelation: "fhfh_player_identities"
@@ -28099,15 +28207,45 @@ export type Database = {
       }
       statsUpdateStatus: {
         Row: {
+          completed_at: string | null
+          contract_version: number
+          expected_goalie_rows: number | null
+          expected_skater_rows: number | null
+          expected_team_rows: number | null
           gameId: number
+          observed_goalie_rows: number | null
+          observed_skater_rows: number | null
+          observed_team_rows: number | null
+          outcome: string
+          reason: string | null
           updated: boolean
         }
         Insert: {
+          completed_at?: string | null
+          contract_version?: number
+          expected_goalie_rows?: number | null
+          expected_skater_rows?: number | null
+          expected_team_rows?: number | null
           gameId?: number
+          observed_goalie_rows?: number | null
+          observed_skater_rows?: number | null
+          observed_team_rows?: number | null
+          outcome?: string
+          reason?: string | null
           updated?: boolean
         }
         Update: {
+          completed_at?: string | null
+          contract_version?: number
+          expected_goalie_rows?: number | null
+          expected_skater_rows?: number | null
+          expected_team_rows?: number | null
           gameId?: number
+          observed_goalie_rows?: number | null
+          observed_skater_rows?: number | null
+          observed_team_rows?: number | null
+          outcome?: string
+          reason?: string | null
           updated?: boolean
         }
         Relationships: [
@@ -44263,9 +44401,64 @@ export type Database = {
         Args: { job_name_param: string; timeout_interval: string }
         Returns: boolean
       }
+      advance_draft_ranker_placement: {
+        Args: {
+          p_expected_anchor_player_id: number
+          p_expected_question_count: number
+          p_operation_id: string
+          p_operation_payload_hash: string
+          p_session_id: string
+          p_state: Json
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      apply_draft_ranker_player_action: {
+        Args: {
+          p_action: string
+          p_fhfh_player_id: number
+          p_note?: string
+          p_operation_id: string
+          p_priority?: number
+          p_ranking_id: string
+          p_source?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      begin_draft_ranker_placement: {
+        Args: {
+          p_expected_version: number
+          p_fhfh_player_id: number
+          p_operation_id: string
+          p_operation_payload_hash: string
+          p_ranking_id: string
+          p_state: Json
+          p_user_id: string
+        }
+        Returns: Json
+      }
       calculate_goalie_start_projections: {
         Args: { target_date: string }
         Returns: undefined
+      }
+      cancel_draft_ranker_placement: {
+        Args: {
+          p_operation_id: string
+          p_operation_payload_hash: string
+          p_session_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      confirm_draft_ranker_placement: {
+        Args: {
+          p_operation_id: string
+          p_operation_payload_hash: string
+          p_session_id: string
+          p_user_id: string
+        }
+        Returns: Json
       }
       delete_duplicate_players_in_rosters: {
         Args: { _seasonid: number }
@@ -44397,9 +44590,69 @@ export type Database = {
         }
         Returns: Json
       }
+      issue_draft_ranker_pair_prompt: {
+        Args: {
+          p_algorithm_version: string
+          p_expected_version: number
+          p_operation_id: string
+          p_operation_payload_hash: string
+          p_player_a_id: number
+          p_player_b_id: number
+          p_queue_mode: string
+          p_queue_reason: string
+          p_ranking_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      persist_complete_game_stats_v1: {
+        Args: {
+          p_expected_goalie_rows: number
+          p_expected_skater_rows: number
+          p_expected_team_rows: number
+          p_game_id: number
+          p_goalie_rows: Json
+          p_skater_rows: Json
+          p_team_rows: Json
+        }
+        Returns: {
+          completed_at: string
+          contract_version: number
+          expected_goalie_rows: number
+          expected_skater_rows: number
+          expected_team_rows: number
+          game_id: number
+          observed_goalie_rows: number
+          observed_skater_rows: number
+          observed_team_rows: number
+          outcome: string
+          pruned_goalie_rows: number
+          pruned_skater_rows: number
+          pruned_team_rows: number
+        }[]
+      }
       process_team_goalie_projections: {
         Args: { p_date: string; p_game_id: number; p_team_id: number }
         Returns: undefined
+      }
+      quarantine_game_stats_v1: {
+        Args: {
+          p_game_ids: number[]
+          p_reason: string
+        }
+        Returns: {
+          completed_at: string
+          contract_version: number
+          expected_goalie_rows: number
+          expected_skater_rows: number
+          expected_team_rows: number
+          game_id: number
+          observed_goalie_rows: number
+          observed_skater_rows: number
+          observed_team_rows: number
+          outcome: string
+          reason: string
+        }[]
       }
       refresh_team_power_ratings: {
         Args: { date_from?: string; date_to?: string }
@@ -44419,6 +44672,15 @@ export type Database = {
         }
         Returns: Json
       }
+      request_fhfh_player_addition: {
+        Args: {
+          p_candidate_fhfh_player_ids?: number[]
+          p_raw_name: string
+          p_submitted_context?: Json
+          p_user_id: string
+        }
+        Returns: Json
+      }
       rpc_sko_player_series: {
         Args: {
           p_l_cold?: number
@@ -44434,8 +44696,53 @@ export type Database = {
         Args: { mu: number; sigma: number; val: number }
         Returns: number
       }
+      search_fhfh_draft_players: {
+        Args: {
+          p_include_archived?: boolean
+          p_limit?: number
+          p_query: string
+        }
+        Returns: {
+          birth_year: number
+          canonical_name: string
+          canonical_position: string
+          current_organization_name: string
+          current_organization_type: string
+          external_providers: string[]
+          headshot_url: string
+          is_rankable: boolean
+          lifecycle_status: string
+          match_kind: string
+          nhl_player_id: number
+          player_id: number
+          similarity_score: number
+          yahoo_player_id: string
+        }[]
+      }
+      set_draft_ranker_contribution_preference: {
+        Args: {
+          p_contribution_enabled: boolean
+          p_operation_id: string
+          p_operation_payload_hash: string
+          p_privacy_policy_version: string
+          p_update_source: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      submit_draft_ranker_pair_comparison: {
+        Args: {
+          p_client_operation_id: string
+          p_expected_version: number
+          p_operation_payload_hash: string
+          p_outcome: string
+          p_prompt_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       truncate_rolling_player_game_metrics: { Args: never; Returns: undefined }
       unaccent: { Args: { "": string }; Returns: string }
       update_all_wgo_skaters: { Args: never; Returns: undefined }

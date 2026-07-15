@@ -12,6 +12,7 @@ node_modules
 
 # next.js
 .next
+.next-*
 
 # production
 /build
@@ -20,6 +21,8 @@ dist
 # misc
 .DS_Store
 *.pem
+__pycache__/
+*.py[cod]
 web/tasks/
 
 # debug
@@ -37,6 +40,9 @@ yarn-error.log*
 
 # Never track Yahoo OAuth token exports; runtime credentials belong in env/Vault-backed storage.
 web/lib/supabase/Upserts/yahooAuth/token.json
+
+# Supabase CLI link state is local metadata.
+/supabase/.temp/project-ref
 
 # vercel
 .vercel

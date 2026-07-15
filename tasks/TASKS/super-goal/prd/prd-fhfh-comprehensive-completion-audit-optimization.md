@@ -122,7 +122,7 @@ The seed registry below is a starting classification; verified repository eviden
 
 | ID | Initiative | Domain | Claimed state | Key dependency role |
 |---|---|---|---|---|
-| B-CRON-NST | Cron NST/audit remediation | Operations | 21/41 source rows; 20 open; local review remediation verified except newly discovered deferred SQL-expression runtime blocker; clean-branch/schema-clone validation precedes production | Reconciles A-CRON-EMAIL and NST ownership |
+| B-CRON-NST | Cron NST/audit remediation | Operations | 26/47 source rows; 21 open; deferred SQL runtime correction, executable schema-clone proof, exact Draft Ranker completeness, deterministic npm/build staging, and Vercel alias-semantics gates pass; production immutable-convergence/cutover, strict-client typing, and authoritative blank-bootstrap reproducibility remain open | Reconciles A-CRON-EMAIL and NST ownership |
 | B-SUST-BAR | Sustainability Barometer | Analytics/UX | 0/8 | Depends on A-SUST |
 | B-SUST-AUD | Sustainability/trends audit | Analytics | 0/5 | Depends on A-SUST and recovered trends scope |
 | B-GAMEGRID | Game Grid master dashboard | Stats/product | 0/5 | Depends on underlying data/routes |
@@ -132,7 +132,7 @@ The seed registry below is a starting classification; verified repository eviden
 | B-XG-EX | xG release exception resolution | Release/models | Wave B dependency-closed early; 15/15 and paired PRD present | Exception-aware contract unblocked A-XG-REL while preserving production boundary |
 | B-YAHOO | Yahoo ingestion/mapping audit | Yahoo/data | Audit/planning; task list missing | Foundation for Draft Dashboard |
 | B-DRAFT-STYLE | Game Grid/Draft style overhaul | UX | Planned; task list missing | After stable product paths |
-| B-CLEAN | Code cleanup/warning reduction | Maintenance | Planned; task list missing | After active feature stabilization |
+| B-CLEAN | Code cleanup/warning reduction | Maintenance | Active at 5/38; repaired task list exists; cache-history preparation/guarded remote rewrite `NEW 8.1`–`8.4` and checkpoint-commit prevention `NEW 9.0` are verified; local shared-index reconciliation `8.5` is pending | P1 repository-publication safety dependency temporarily precedes B-CRON-NST production cutover; broad warning cleanup remains after active feature stabilization |
 | B-DEAD | Dead-code follow-through | Maintenance | Audit complete; removal untracked | Requires consumer verification/approval for mass removal |
 | B-DRM | Date Range Matrix refactor | Maintenance/product | Planned; task list missing | Current dirty implementation evidence exists |
 | B-SKO-BURN | SKO pipeline burn-down | Models/maintenance | Planned; pair missing or merge | Merge candidate with B-SKO |
@@ -154,7 +154,7 @@ The seed registry below is a starting classification; verified repository eviden
 
 Wave A begins with shared foundations and release/correctness signals, then dependent product surfaces:
 
-`A-AUTH → auth-dependent surfaces`; `A-GDL/A-CRON-EMAIL → ingestion/operations`; within cron operations, `A-CRON-EMAIL P0 10.1 → 10.2 → 10.3 → 10.4 → 10.5 → 10.6`, with all literal-bearing jobs held quiesced after 10.4 and restored only per verified Vault-backed batch in 10.5. The breaking season/WGO authorization boundary precedes the combined B-CRON-NST `NEW 29.0`/`31.0`/`32.0` transactional-status-cardinality decision; discovery `NEW 36.0` now precedes ordinary temporary-branch recreation because the authoritative remote migration chain cannot bootstrap a blank database, after which schema/runtime deployment and bounded probes resume. This reorder is evidence-driven and leaves production held. `A-XG-REL → A-XG-TREND → A-PRED`; `A-FORGE-V1 → A-FORGE-CC/A-FORGE-DASH/A-FORGE-P4/A-FORGE-LIVE`; `A-3P → A-SUST → A-US-SOS → A-SITE/A-STYLE`; `B-YAHOO mapping evidence may be audited narrowly to unblock A-DRAFT/A-DRAFT-DEBUG`.
+`A-AUTH → auth-dependent surfaces`; `A-GDL/A-CRON-EMAIL → ingestion/operations`; within cron operations, `A-CRON-EMAIL P0 10.1 → 10.2 → 10.3 → 10.4 → 10.5 → 10.6`, with all literal-bearing jobs held quiesced after 10.4 and restored only per verified Vault-backed batch in 10.5. The breaking season/WGO authorization boundary precedes the combined B-CRON-NST `NEW 29.0`/`31.0`/`32.0` transactional-status-cardinality decision. Discovery `NEW 36.0` still owns repair and proof of the registered chain's blank bootstrap; the owner-authorized equivalent schema-only production clone separately unblocked isolated option-A runtime/rollback/ACL/cardinality validation and the contiguous production cutover without claiming NEW 36.0 complete. This evidence-driven reorder keeps migration-history repair independent. `A-XG-REL → A-XG-TREND → A-PRED`; `A-FORGE-V1 → A-FORGE-CC/A-FORGE-DASH/A-FORGE-P4/A-FORGE-LIVE`; `A-3P → A-SUST → A-US-SOS → A-SITE/A-STYLE`; `B-YAHOO mapping evidence may be audited narrowly to unblock A-DRAFT/A-DRAFT-DEBUG`.
 
 Wave B follows stable foundations:
 
@@ -225,7 +225,7 @@ This table classifies every non-canonical file discovered recursively under `tas
 | `tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 62 checkbox rows |
 | `tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 43 checkbox rows |
 | `tasks/TASKS/cron-operations/tasks-prd-cron-failed-jobs-remediation.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 34 checkbox rows |
-| `tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 41 checkbox rows |
+| `tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 47 checkbox rows |
 | `tasks/TASKS/cron-operations/tasks-prd-nst-api-audit-and-migration.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 46 checkbox rows |
 | `tasks/TASKS/dead-code-cleanup/burn-down-plan.md` | implementation map/architecture plan | B-CLEAN / B-DEAD / B-DRM / B-SKO-BURN | — |
 | `tasks/TASKS/dead-code-cleanup/prd-cleanup-tasks.md` | PRD | B-CLEAN / B-DEAD / B-DRM / B-SKO-BURN | — |
@@ -369,7 +369,7 @@ This table classifies every non-canonical file discovered recursively under `tas
 | `tasks/TASKS/variance/v2/tasks-prd-variance-goalies-skaters-second-pass.md` | task list | C-VAR | 66 checkbox rows |
 | `tasks/TASKS/variance/v2/variance-runbook.md` | runbook | C-VAR | — |
 | `tasks/TASKS/wigo-charts/prd-wigo-charts-optimization.md` | PRD | C-US | — |
-| `tasks/TASKS/wigo-charts/tasks-prd-wigo-charts-optimization.md` | task list | C-US | 36 checkbox rows |
+| `tasks/TASKS/wigo-charts/tasks-prd-wigo-charts-optimization.md` | task list | C-US | 37 checkbox rows |
 | `tasks/TASKS/xg-model/baseline/tasks-xg-baseline-follow-ups.md` | task list | C-XG | 32 checkbox rows |
 | `tasks/TASKS/xg-model/baseline/tasks-xg-baseline-options.md` | task list | C-XG | 36 checkbox rows |
 | `tasks/TASKS/xg-model/baseline/xg-training-dataset-contract.md` | schema/data contract | C-XG | — |
@@ -415,7 +415,7 @@ This table classifies every non-canonical file discovered recursively under `tas
 | `tasks/TASKS/xg-model/release/prd/prd-xg-release-validation-and-exception-resolution.md` | PRD | A-XG-REL / B-XG-EX | shared pair repaired 2026-07-11 |
 | `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md` | task list | B-YAHOO | missing pair repaired; 58 generated rows |
 | `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md` | task list | B-DRAFT-STYLE | missing pair repaired; 52 generated rows |
-| `tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md` | task list | B-CLEAN | missing pair repaired; 31 generated rows |
+| `tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md` | task list | B-CLEAN | missing pair repaired; 38 current rows after cache-history preservation and checkpoint-commit prevention discoveries; 5/38 verified |
 | `tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md` | task list | B-DEAD | missing pair repaired; 35 generated rows |
 | `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md` | task list | B-DRM | missing pair repaired; 33 generated rows |
 | `tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md` | task list | B-TRENDS | recovered pair; 50 generated rows |

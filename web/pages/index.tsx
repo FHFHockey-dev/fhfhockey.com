@@ -38,6 +38,11 @@ import {
 // Import our chart component
 import TeamStandingsChart from "components/TeamStandingsChart/TeamStandingsChart";
 import TransactionTrends from "components/TransactionTrends/TransactionTrends";
+import HomepageDraftRanker from "components/HomePage/HomepageDraftRanker";
+import {
+  isDraftRankerEnabled,
+  isDraftRankerHomepageEnabled,
+} from "lib/draft-ranker/api";
 
 // Shared debug logger for both server and client
 const debugLog = (...args: any[]) => {
@@ -117,6 +122,7 @@ const Home: NextPage = ({
   recentInjuryNews,
   homepagePlayerCount,
   homepagePulsePoints,
+  draftRankerHomepageEnabled,
 }) => {
   const {
     currentDate,
@@ -198,7 +204,11 @@ const Home: NextPage = ({
           pulsePoints={homepagePulsePoints}
         />
         <ClientOnly>
-          <TransactionTrends />
+          {draftRankerHomepageEnabled ? (
+            <HomepageDraftRanker />
+          ) : (
+            <TransactionTrends />
+          )}
         </ClientOnly>
 
         <section
@@ -614,6 +624,8 @@ export async function getServerSideProps({ req, res }) {
       recentInjuryNews,
       homepagePlayerCount,
       homepagePulsePoints,
+      draftRankerHomepageEnabled:
+        isDraftRankerEnabled() && isDraftRankerHomepageEnabled(),
     },
   };
 }

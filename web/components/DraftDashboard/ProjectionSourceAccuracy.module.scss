@@ -1,0 +1,77 @@
+@use "styles/vars" as v;
+
+.panel {
+  display: grid;
+  gap: v.$space-sm;
+  margin-bottom: v.$space-md;
+  padding: v.$space-md;
+  border: 1px solid v.$border-soft;
+  border-radius: v.$border-radius-md;
+  background: v.$background-dark;
+
+  h2,
+  p {
+    margin: 0;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: v.$space-md;
+
+  p {
+    color: v.$text-secondary;
+    font-size: v.$font-size-xs;
+  }
+}
+
+.toggle {
+  display: flex;
+  gap: 4px;
+
+  button[aria-pressed="true"] {
+    border-color: v.$primary-color;
+    color: v.$primary-color;
+  }
+}
+
+.definition,
+.empty {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.tableWrap {
+  overflow-x: auto;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  caption {
+    padding-bottom: v.$space-xs;
+    color: v.$text-secondary;
+    font-size: v.$font-size-xs;
+    text-align: left;
+  }
+
+  th,
+  td {
+    padding: v.$space-xs;
+    border-bottom: 1px solid v.$border-soft;
+    text-align: right;
+  }
+
+  th:first-child {
+    text-align: left;
+  }
+}
+
+@media (max-width: v.$breakpoint-mobile-max) {
+  .header {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,211 @@
+@use "styles/vars" as v;
+
+.panel {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 20px;
+  border: 1px solid rgba(v.$secondary-color, 0.34);
+  border-radius: 18px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(v.$secondary-color, 0.08),
+      rgba(v.$primary-color, 0.08)
+    ),
+    rgba(v.$background-dark, 0.78);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+
+  h3 {
+    margin: 0;
+    color: v.$color-white;
+    font-family: v.$font-family-accent;
+    font-size: 0.86rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  p {
+    max-width: 720px;
+    margin: 8px 0 0;
+    color: rgba(v.$text-primary, 0.88);
+    line-height: 1.55;
+  }
+}
+
+.status,
+.defaultBadge {
+  align-self: flex-start;
+  padding: 7px 10px;
+  border: 1px solid rgba(v.$secondary-color, 0.34);
+  border-radius: 999px;
+  background: rgba(v.$secondary-color, 0.1);
+  color: v.$color-white;
+  font-family: v.$font-family-accent;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.form,
+.field,
+.summary,
+.leagueGrid,
+.teamList {
+  display: grid;
+  gap: 10px;
+}
+
+.field {
+  color: rgba(v.$text-primary, 0.9);
+
+  > span {
+    font-family: v.$font-family-accent;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  input,
+  textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid rgba(v.$border-secondary, 0.9);
+    border-radius: 12px;
+    background: rgba(v.$background-dark, 0.7);
+    color: v.$text-primary;
+    font: inherit;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+}
+
+.or,
+.hint,
+.leagueMeta {
+  color: rgba(v.$text-primary, 0.68);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.hint {
+  margin: 0;
+}
+
+.primaryButton,
+.teamRow button {
+  width: fit-content;
+  min-height: 40px;
+  padding: 0 15px;
+  border: 1px solid rgba(v.$secondary-color, 0.65);
+  border-radius: 12px;
+  background: rgba(v.$secondary-color, 0.12);
+  color: v.$secondary-color;
+  font-family: v.$font-family-accent;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+}
+
+.error,
+.success,
+.info,
+.empty,
+.summary {
+  padding: 12px 14px;
+  border-radius: 12px;
+  line-height: 1.5;
+}
+
+.error {
+  border: 1px solid rgba(v.$danger-color, 0.45);
+  background: rgba(v.$danger-color-dark, 0.4);
+  color: #ffd9e1;
+}
+
+.success {
+  border: 1px solid rgba(v.$success-color, 0.32);
+  background: rgba(v.$success-color, 0.1);
+  color: #d7ffee;
+}
+
+.info,
+.empty,
+.summary {
+  border: 1px solid rgba(v.$border-secondary, 0.8);
+  background: rgba(v.$background-dark, 0.54);
+  color: rgba(v.$text-primary, 0.9);
+}
+
+.leagueGrid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.leagueCard {
+  padding: 14px;
+  border: 1px solid rgba(v.$border-secondary, 0.82);
+  border-radius: 14px;
+  background: rgba(v.$background-dark, 0.58);
+
+  h4 {
+    margin: 0 0 5px;
+    color: v.$color-white;
+  }
+}
+
+.teamRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(v.$border-secondary, 0.5);
+}
+
+.teamActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.teamRow button {
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+.defaultBadge {
+  border-color: rgba(v.$success-color, 0.32);
+  background: rgba(v.$success-color, 0.1);
+  color: #d7ffee;
+}
+
+@media (max-width: 560px) {
+  .header,
+  .teamRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .teamActions {
+    width: 100%;
+  }
+
+  .primaryButton,
+  .teamRow button {
+    width: 100%;
+  }
+}

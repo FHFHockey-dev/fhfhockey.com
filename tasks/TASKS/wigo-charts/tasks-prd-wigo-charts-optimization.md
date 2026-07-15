@@ -103,3 +103,5 @@
   - [x] 6.3 Add integration-level verification for representative forwards and defensemen with different GP levels, usage profiles, and missing-data scenarios.
   - [x] 6.4 Run targeted Jest suites for transformed utilities and WiGO components, then fix any regressions introduced by the refactor.
   - [x] 6.5 Perform manual desktop and mobile verification of section order, tab behavior, chart states, and cross-surface stat consistency on `/wigoCharts`.
+
+- [ ] NEW 7.0 **P1 table-specific player-radar query contract:** The goalie radar branch currently reuses skater-only `player_id`, text `season`, and optional `position_code` filters even though the authoritative goalie view exposes `goalie_id` plus numeric `season_id` and no `position_code`. Split and narrow the skater/goalie queries so each uses its exact generated column contract; preserve skater behavior, add focused skater/goalie regressions, and include table-specific season-column narrowing in `fetchWigoPlayerStats` for a future strict Supabase client upgrade (discovered 2026-07-14).

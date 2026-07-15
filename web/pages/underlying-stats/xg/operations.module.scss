@@ -1,0 +1,44 @@
+@use "styles/vars" as v;
+@use "styles/panel" as p;
+
+.page { min-height: 100vh; padding: v.$space-md clamp(1rem, 3vw, 2rem); background: v.$background-dark; color: v.$text-primary; }
+.inner { width: min(100%, 1600px); margin: 0 auto; display: grid; gap: v.$space-md; }
+.toolbar, .actions { display: flex; align-items: center; justify-content: space-between; gap: v.$space-sm; flex-wrap: wrap; }
+.header, .panel, .state, .card { @include p.panel-shell($padding: v.$space-md, $variant: soft, $overflow: visible); }
+.header { display: grid; gap: v.$space-xs; }
+.header h1, .panel h2 { margin: 0; color: v.$color-white; font-family: v.$font-family-accent, sans-serif; text-transform: uppercase; letter-spacing: .04em; }
+.header h1 { font-size: clamp(1.5rem, 2.5vw, 2.2rem); }
+.header p, .muted, .timestamp { margin: 0; color: v.$text-secondary; }
+.eyebrow, .card span { color: v.$color-brand-yellow !important; font-family: v.$font-family-accent, sans-serif; font-size: v.$font-size-xxs; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.button, .secondaryButton { min-height: v.$control-height-md; display: inline-flex; align-items: center; padding: 0 v.$space-sm; border: 1px solid v.$color-brand-yellow; border-radius: v.$radius-sm; background: rgba(v.$color-brand-yellow, .15); color: v.$color-brand-yellow; cursor: pointer; font: 700 v.$font-size-xs v.$font-family-accent; text-decoration: none; text-transform: uppercase; }
+.secondaryButton { border-color: v.$border-soft; background: transparent; color: v.$text-secondary; }
+.state[data-tone="error"], .alert[data-tone="error"] { border-color: v.$color-red; }
+.state[data-tone="warn"], .alert[data-tone="warn"] { border-color: v.$color-brand-yellow; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: v.$space-sm; }
+.card { display: grid; gap: v.$space-xs; min-width: 0; }
+.card strong { color: v.$color-white; font: 700 v.$font-size-lg v.$font-family-numbers; overflow-wrap: anywhere; }
+.card small { color: v.$text-secondary; }
+.panel { display: grid; gap: v.$space-md; min-width: 0; }
+.panel h2 { font-size: v.$font-size-md; }
+.twoColumn { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: v.$space-md; }
+.alerts { display: grid; gap: v.$space-xs; }
+.alert { display: grid; grid-template-columns: 70px 1fr; gap: v.$space-sm; padding: v.$space-sm; border: 1px solid v.$border-soft; border-radius: v.$radius-sm; }
+.alert strong { color: v.$color-white; text-transform: uppercase; }
+.definitionList { display: grid; gap: v.$space-xs; margin: 0; }
+.definitionList div { display: flex; justify-content: space-between; gap: v.$space-md; padding-bottom: v.$space-xs; border-bottom: 1px solid v.$border-soft; }
+.definitionList dt { color: v.$text-secondary; }
+.definitionList dd { margin: 0; color: v.$color-white; font-family: v.$font-family-numbers; text-align: right; overflow-wrap: anywhere; }
+.issue { margin: 0; padding: v.$space-sm; border-left: 3px solid v.$color-red; color: v.$text-primary; }
+.tableWrap { overflow: auto; }
+.tableWrap table { width: 100%; min-width: 880px; border-collapse: collapse; }
+.tableWrap th, .tableWrap td { padding: v.$space-sm; border-bottom: 1px solid v.$border-soft; text-align: right; white-space: nowrap; }
+.tableWrap th:first-child, .tableWrap td:first-child, .tableWrap th:nth-child(2), .tableWrap td:nth-child(2) { text-align: left; }
+.tableWrap th { color: v.$color-brand-yellow; font: 700 v.$font-size-xxs v.$font-family-accent; text-transform: uppercase; }
+.tableWrap td { font-family: v.$font-family-numbers; }
+.panel pre { max-height: 360px; margin: 0; overflow: auto; color: v.$text-secondary; font-size: v.$font-size-xs; }
+.source { display: grid; gap: v.$space-xxs; padding-bottom: v.$space-sm; border-bottom: 1px solid v.$border-soft; }
+.source strong { color: v.$color-white; }
+.source span { color: v.$color-brand-yellow; text-transform: uppercase; }
+.source small, .panel li { color: v.$text-secondary; line-height: 1.5; }
+
+@media (max-width: 800px) { .twoColumn { grid-template-columns: 1fr; } .alert { grid-template-columns: 1fr; } }

@@ -37,7 +37,7 @@
     "check:rolling-player-validation-freshness": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/check-rolling-player-validation-freshness.ts",
     "check:rolling-player-disputed-metrics": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/check-rolling-player-disputed-metrics.ts",
     "check:rolling-player-optional-additions": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/check-rolling-player-optional-additions.ts",
-    "build": "NEXT_TELEMETRY_DISABLED=1 next build",
+    "build": "NODE_OPTIONS=--max-old-space-size=6144 NEXT_TELEMETRY_DISABLED=1 next build",
     "postbuild": "next-sitemap",
     "start": "next start",
     "start:3001": "next start -p 3001",

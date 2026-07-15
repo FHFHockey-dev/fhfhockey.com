@@ -1,0 +1,6 @@
+export const FANTRAX_PROVIDER = "fantrax";
+
+export const FANTRAX_IMPORT_MAX_BYTES = 512_000;
+export const FANTRAX_IMPORT_MAX_CSV_ROWS = 10_000;
+export const FANTRAX_IMPORT_MAX_LEAGUES = 50;
+export const FANTRAX_IMPORT_MAX_TEAMS = 250;

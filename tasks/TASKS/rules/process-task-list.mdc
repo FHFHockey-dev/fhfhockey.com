@@ -81,6 +81,13 @@ Guidelines for managing task lists in markdown files to track progress on comple
   - The AI may continue through consecutive low-risk sub-tasks when they are tightly related, remain within the same local context, and do not require user input, manual action, manual verification, or a strategy decision.
   - The AI must pause at meaningful checkpoints for user approval, unless a stricter override below requires specific output or confirmation instead of **"yes"** / **"y"**.
 
+- **Checkpoint staging and commit discipline:** Keep recoverable Git history throughout long-running work instead of accumulating unrelated initiatives in one oversized commit.
+  - After a coherent parent task or independently useful verified milestone is complete, stage and commit that exact scope before switching initiatives or beginning another provider, production, migration, deployment, or history-sensitive operation, unless the shared dirty tree makes a clean isolated commit unsafe.
+  - Prefer small coherent commits over arbitrary micro-commits: every checkpoint must pass its narrow verification and leave source/task-list evidence synchronized.
+  - Stage explicit reviewed paths; do not use broad `git add .`/`git add -A` in a dirty repository. Before committing, inspect the staged path count, staged diff/stat, and unexpected binary or large-file additions.
+  - If staging unexpectedly includes hundreds of paths, large generated payloads, dependency/cache roots, secrets, local metadata, or unrelated work, stop and unstage/reconcile before committing or pushing. Never commit `.pnpm-store`, `.npm-cache`, dependency directories, build outputs, environment files, or credential material.
+  - When an isolated checkpoint commit is temporarily impossible, record the reason and exact intended path set in the task list/diary, preserve a recovery patch or manifest when risk warrants it, and create the checkpoint commit as soon as the scope can be separated safely.
+
 - **Execution pacing:** Do not stop after every sub-task by default.
   - Continue through consecutive low-risk sub-tasks when they are tightly related, can be completed within the same local context, and do not require user input, manual verification, or a strategy decision.
   - Pause when a meaningful checkpoint is reached, including:

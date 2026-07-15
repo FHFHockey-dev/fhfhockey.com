@@ -1,0 +1,115 @@
+@use "styles/vars" as v;
+
+.dialog {
+  width: min(860px, 96vw);
+}
+
+.body {
+  display: grid;
+  gap: v.$space-md;
+}
+
+.section {
+  display: grid;
+  gap: v.$space-sm;
+  padding: v.$space-md;
+  border: 1px solid v.$border-soft;
+  border-radius: v.$border-radius-md;
+  background: v.$background-medium;
+
+  h3,
+  p {
+    margin: 0;
+  }
+
+  textarea,
+  input,
+  select {
+    width: 100%;
+    border: 1px solid v.$border-soft;
+    border-radius: v.$border-radius-sm;
+    background: v.$background-dark;
+    color: v.$text-primary;
+    padding: v.$space-xs;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr)) auto;
+  align-items: end;
+  gap: v.$space-sm;
+
+  label {
+    display: grid;
+    gap: 4px;
+    color: v.$text-secondary;
+    font-size: v.$font-size-xs;
+  }
+}
+
+.sectionHeader,
+.rowActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-sm;
+}
+
+.tradeList {
+  display: grid;
+  gap: v.$space-xs;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: v.$space-sm;
+    padding: v.$space-sm;
+    border: 1px solid v.$border-soft;
+    border-radius: v.$border-radius-sm;
+  }
+}
+
+.success,
+.error,
+.warning {
+  white-space: pre-line;
+  font-size: v.$font-size-xs;
+}
+
+.success {
+  color: v.$success-color;
+}
+
+.error {
+  color: v.$error-color;
+}
+
+.warning {
+  display: block;
+  margin-top: 4px;
+  color: v.$warning-color;
+}
+
+.dangerButton {
+  color: v.$error-color;
+}
+
+@media (max-width: v.$breakpoint-mobile-max) {
+  .formGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .tradeList li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

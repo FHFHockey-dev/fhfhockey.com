@@ -94,6 +94,7 @@ This PRD is based on an audit of the current upstream WiGO path, including:
 16. The system must preserve the existing public route, major WiGO sections, and player selection workflow so the page remains familiar to current users.
 17. The system must log or surface fetch failures consistently without leaving stale prior-player data visible as though it belongs to the current player.
 18. The system must define a clear WiGO section order and responsive layout model so sections can be rearranged without duplicating markup.
+19. Player-radar and aggregate readers must branch on the authoritative skater-versus-goalie schema: skaters use `player_id`, text `season`, and valid position filters; goalies use `goalie_id`, numeric `season_id`, and no nonexistent position filter. Focused regressions must cover both contracts.
 
 ## 6. Non-Goals (Out of Scope)
 - This project will not redesign the full WiGO visual identity from scratch.
