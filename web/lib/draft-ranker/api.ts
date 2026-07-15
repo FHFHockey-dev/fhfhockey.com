@@ -115,6 +115,90 @@ export function isDraftRankerCommunityContributionEnabled(
   );
 }
 
+export function isDraftRankerDiscoveryEnabled(
+  value = process.env.DRAFT_RANKER_DISCOVERY_ENABLED,
+): boolean {
+  return ["1", "true", "yes", "on"].includes(
+    String(value ?? "")
+      .trim()
+      .toLowerCase(),
+  );
+}
+
+export function isCommunityDraftRankingsEnabled(
+  value = process.env.COMMUNITY_DRAFT_RANKINGS_ENABLED,
+): boolean {
+  return ["1", "true", "yes", "on"].includes(
+    String(value ?? "")
+      .trim()
+      .toLowerCase(),
+  );
+}
+
+export type DraftRankerRolloutStage =
+  | "off"
+  | "staff"
+  | "allowlist"
+  | "authenticated";
+
+export function draftRankerRolloutStage(
+  value = process.env.DRAFT_RANKER_ROLLOUT_STAGE,
+): DraftRankerRolloutStage {
+  const stage = String(value ?? "off")
+    .trim()
+    .toLowerCase();
+  return ["off", "staff", "allowlist", "authenticated"].includes(stage)
+    ? (stage as DraftRankerRolloutStage)
+    : "off";
+}
+
+function rolloutUserIds(value: string | undefined): Set<string> {
+  return new Set(
+    String(value ?? "")
+      .split(",")
+      .map((id) => id.trim().toLowerCase())
+      .filter((id) =>
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(
+          id,
+        ),
+      ),
+  );
+}
+
+export function isDraftRankerUserEntitled(
+  userId: string,
+  environment: {
+    DRAFT_RANKER_ROLLOUT_STAGE?: string;
+    DRAFT_RANKER_STAFF_USER_IDS?: string;
+    DRAFT_RANKER_BETA_USER_IDS?: string;
+  } = process.env as {
+    DRAFT_RANKER_ROLLOUT_STAGE?: string;
+    DRAFT_RANKER_STAFF_USER_IDS?: string;
+    DRAFT_RANKER_BETA_USER_IDS?: string;
+  },
+): boolean {
+  const stage = draftRankerRolloutStage(environment.DRAFT_RANKER_ROLLOUT_STAGE);
+  if (stage === "off") return false;
+  if (stage === "authenticated") return true;
+  const normalizedUserId = userId.trim().toLowerCase();
+  const staff = rolloutUserIds(environment.DRAFT_RANKER_STAFF_USER_IDS);
+  if (staff.has(normalizedUserId)) return true;
+  return (
+    stage === "allowlist" &&
+    rolloutUserIds(environment.DRAFT_RANKER_BETA_USER_IDS).has(normalizedUserId)
+  );
+}
+
+export function assertDraftRankerRolloutAccess(userId: string): void {
+  if (!isDraftRankerUserEntitled(userId)) {
+    throw new DraftRankerApiError(
+      403,
+      "forbidden",
+      "The Draft Ranker is not available for this account yet.",
+    );
+  }
+}
+
 export function draftRankerMethodNotAllowed(
   res: NextApiResponse,
   requestId: string,

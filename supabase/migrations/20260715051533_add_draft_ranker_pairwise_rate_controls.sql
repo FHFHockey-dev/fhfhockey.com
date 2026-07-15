@@ -389,8 +389,11 @@ begin
     v_suppression_reason := v_rate_result->>'communitySuppressionReason';
 
     if v_result->>'status' = 'completed' then
-        if coalesce((v_result->>'communityEligible')::boolean, false)
-           and v_suppression_reason is not null then
+        if v_suppression_reason is not null
+           and (
+               coalesce((v_result->>'communityEligible')::boolean, false)
+               or coalesce((v_result->>'communitySuppressed')::boolean, false)
+           ) then
             v_result := v_result || jsonb_build_object(
                 'communityEligible', false,
                 'communityIneligibleReason', v_suppression_reason,

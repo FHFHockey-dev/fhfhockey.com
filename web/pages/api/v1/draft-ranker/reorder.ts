@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { requireApiUser } from "lib/api/requireApiUser";
 import {
+  assertDraftRankerRolloutAccess,
   DraftRankerApiError,
   draftRankerMethodNotAllowed,
   draftRankerRequestId,
@@ -39,17 +40,14 @@ export default async function handler(
       sendDraftRankerError(
         res,
         requestId,
-        new DraftRankerApiError(
-          401,
-          "authentication_required",
-          message,
-        ),
+        new DraftRankerApiError(401, "authentication_required", message),
       );
     },
   });
   if (!user) return;
 
   try {
+    assertDraftRankerRolloutAccess(user.id);
     const input = parseDraftRankerInput(reorderDraftRankingSchema, req.body);
     const result = await reorderDraftRanking(user.id, input);
     return sendDraftRankerData(res, requestId, result);

@@ -71,10 +71,7 @@ export default function AssistedPlacementPanel({
     mutation.error.body.code === "stale_ranking_version";
   const busy = mutation.isPending;
 
-  async function start(
-    playerId: number,
-    roughRange: PlacementRoughRange,
-  ) {
+  async function start(playerId: number, roughRange: PlacementRoughRange) {
     try {
       await mutation.mutateAsync({
         action: "start",
@@ -133,7 +130,9 @@ export default function AssistedPlacementPanel({
         <div className={styles.placementHeader}>
           <div>
             <p className={styles.eyebrow}>Assisted placement</p>
-            <h2 id="placement-heading">Where does {candidate.canonicalName} fit?</h2>
+            <h2 id="placement-heading">
+              Where does {candidate.canonicalName} fit?
+            </h2>
             <p>
               Pick a rough range. A short sequence of real head-to-head choices
               will narrow the exact spot; no answer directly hard-codes a rank.
@@ -149,11 +148,15 @@ export default function AssistedPlacementPanel({
           {candidate.headshotUrl ? (
             <img src={candidate.headshotUrl} alt="" />
           ) : (
-            <span aria-hidden="true">{candidate.canonicalName.slice(0, 1)}</span>
+            <span aria-hidden="true">
+              {candidate.canonicalName.slice(0, 1)}
+            </span>
           )}
           <div>
             <strong>{candidate.canonicalName}</strong>
-            <small>{playerMeta(candidate.position, candidate.organizationName)}</small>
+            <small>
+              {playerMeta(candidate.position, candidate.organizationName)}
+            </small>
           </div>
         </div>
         <fieldset className={styles.rangeChoices} disabled={busy}>
@@ -230,12 +233,16 @@ export default function AssistedPlacementPanel({
             <strong>#{session.state.suggestedRank}</strong>
             <small>{session.state.confidence} confidence</small>
           </div>
-          <div className={styles.neighborStack} aria-label="Suggested neighbors">
+          <div
+            className={styles.neighborStack}
+            aria-label="Suggested neighbors"
+          >
             {session.neighbors?.above ? (
               <div>
                 <span>#{session.neighbors.above.rank}</span>
                 <strong>
-                  {session.neighbors.above.player?.canonical_name ?? "Unknown player"}
+                  {session.neighbors.above.player?.canonical_name ??
+                    "Unknown player"}
                 </strong>
               </div>
             ) : null}
@@ -247,16 +254,27 @@ export default function AssistedPlacementPanel({
               <div>
                 <span>#{session.neighbors.below.rank + 1}</span>
                 <strong>
-                  {session.neighbors.below.player?.canonical_name ?? "Unknown player"}
+                  {session.neighbors.below.player?.canonical_name ??
+                    "Unknown player"}
                 </strong>
               </div>
             ) : null}
           </div>
           <div className={styles.placementConfirmActions}>
-            <button type="button" disabled={busy} onClick={() => finish("confirm")}>
-              {busy ? "Saving…" : `Confirm rank #${session.state.suggestedRank}`}
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => finish("confirm")}
+            >
+              {busy
+                ? "Saving…"
+                : `Confirm rank #${session.state.suggestedRank}`}
             </button>
-            <button type="button" disabled={busy} onClick={() => finish("cancel")}>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => finish("cancel")}
+            >
               Cancel
             </button>
           </div>

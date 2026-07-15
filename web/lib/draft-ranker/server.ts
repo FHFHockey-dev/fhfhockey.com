@@ -338,7 +338,10 @@ export async function applyDraftPlayerAction(
       p_operation_id: input.operationId,
       p_priority: input.priority ?? undefined,
       p_note: input.note ?? undefined,
-      p_source: "draft_ranker_search",
+      p_source:
+        input.sourceContext === "discovery"
+          ? "draft_ranker_discovery"
+          : "draft_ranker_search",
     },
   );
   if (error) throw error;

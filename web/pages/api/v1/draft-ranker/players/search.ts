@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { requireApiUser } from "lib/api/requireApiUser";
 import {
+  assertDraftRankerRolloutAccess,
   DraftRankerApiError,
   draftRankerMethodNotAllowed,
   draftRankerRequestId,
@@ -50,6 +51,7 @@ export default async function handler(
   if (!user) return;
 
   try {
+    assertDraftRankerRolloutAccess(user.id);
     const includeArchivedValue = first(req.query.includeArchived);
     const limitValue = first(req.query.limit);
     const input = parseDraftRankerInput(draftPlayerSearchQuerySchema, {

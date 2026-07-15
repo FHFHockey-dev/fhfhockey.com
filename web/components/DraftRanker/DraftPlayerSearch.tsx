@@ -104,7 +104,10 @@ export default function DraftPlayerSearch({
   }
 
   return (
-    <section className={styles.searchCard} aria-labelledby="player-search-title">
+    <section
+      className={styles.searchCard}
+      aria-labelledby="player-search-title"
+    >
       <div className={styles.searchHeading}>
         <div>
           <p className={styles.eyebrow}>Full player universe</p>
@@ -129,7 +132,8 @@ export default function DraftPlayerSearch({
           <div>
             <h3>Watchlist</h3>
             <span>
-              {watchlistCounts.unplaced} unplaced · {watchlistCounts.placed} placed
+              {watchlistCounts.unplaced} unplaced · {watchlistCounts.placed}{" "}
+              placed
             </span>
           </div>
           <ul>
@@ -167,7 +171,8 @@ export default function DraftPlayerSearch({
                     onPlacePlayer({
                       playerId: item.playerId,
                       canonicalName:
-                        item.player?.canonical_name ?? `Player ${item.playerId}`,
+                        item.player?.canonical_name ??
+                        `Player ${item.playerId}`,
                       position: item.player?.canonical_position ?? null,
                       organizationName:
                         item.player?.current_organization_name ?? null,
@@ -268,7 +273,9 @@ export default function DraftPlayerSearch({
                           <button
                             type="button"
                             disabled={playerActions.action.isPending}
-                            onClick={() => applyAction(player.playerId, "restore")}
+                            onClick={() =>
+                              applyAction(player.playerId, "restore")
+                            }
                           >
                             Restore
                           </button>
@@ -334,7 +341,9 @@ export default function DraftPlayerSearch({
               playerSearch.requestAddition.reset();
             }}
           >
-            {showRequest ? "Cancel request" : "Can’t find the player? Request a review"}
+            {showRequest
+              ? "Cancel request"
+              : "Can’t find the player? Request a review"}
           </button>
           {playerActions.action.error ? (
             <p className={styles.error} role="alert">

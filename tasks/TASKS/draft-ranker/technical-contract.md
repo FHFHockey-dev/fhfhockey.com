@@ -352,8 +352,37 @@ Mutation requests use a UUID `operationId` in the body. The server rejects reuse
 
 - `DRAFT_RANKER_ENABLED` is a server-enforced kill switch and defaults false until rollout.
 - `DRAFT_RANKER_HOMEPAGE_ENABLED`, `DRAFT_RANKER_DISCOVERY_ENABLED`, and `COMMUNITY_DRAFT_RANKINGS_ENABLED` are independent later switches.
+- `DRAFT_RANKER_ROLLOUT_STAGE` is required after the master flag and accepts only `off`, `staff`, `allowlist`, or `authenticated`. Missing or invalid values resolve to `off`. Every personal API checks the authenticated account against this server-only stage; client rendering is not an entitlement.
+- Staff and beta cohorts use exact UUIDs from `DRAFT_RANKER_STAFF_USER_IDS` and `DRAFT_RANKER_BETA_USER_IDS`. The IDs are never returned by health or public APIs; only aggregate allowlist counts may be exposed to operators.
+- `DRAFT_RANKER_COMMUNITY_CONTRIBUTION_ENABLED` is an independent emergency switch. It defaults false; when disabled, valid prompt-issued choices still update personal rankings but are marked ineligible for community aggregation.
+- Pairwise thresholds are server-owned and may be tuned without a migration through `DRAFT_RANKER_QUEUE_HOURLY_LIMIT`, `DRAFT_RANKER_QUEUE_DAILY_LIMIT`, `DRAFT_RANKER_RESPONSE_MINUTE_LIMIT`, `DRAFT_RANKER_RESPONSE_HOURLY_LIMIT`, `DRAFT_RANKER_COMMUNITY_RESPONSE_TEN_MINUTE_LIMIT`, and `DRAFT_RANKER_SAME_PAIR_WEEKLY_LIMIT`. Invalid or out-of-bounds values fall back to reviewed launch defaults.
 - Beta access may additionally require a `user_entitlements` key such as `draft_ranker_beta`.
 - Client rendering flags never substitute for API authorization or server kill switches.
+
+## Discovery and Community aggregate contract
+
+- Discovery is derived, rebuildable evidence. Refreshes never mutate Yahoo, projection, roster, contract, or identity source tables.
+- Every discovery card carries a versioned reason code, source identifiers, source date/observation time, expiry, and stored evidence sufficient to reproduce why it surfaced.
+- Missing, stale, or season-mismatched evidence produces an explicit empty state; it is never backfilled with invented recommendations.
+- Community model inputs are current explicit prompt-issued preferences from accounts with active consent, after per-user/pair dedupe and moderation eligibility. Direct list movement, displacement, skips, and Too Close outcomes are excluded.
+- Community snapshots are immutable and versioned. Public reads expose only aggregate rows and evidence states; raw comparisons, pseudonymous account keys, and user identifiers are prohibited.
+- With insufficient comparison evidence, Yahoo-derived rows are labeled `market_seeded`, not community consensus. Previously-undrafted players use a neutral prior and can enter only through the approved evidence thresholds.
+- Consent withdrawal or account deletion affects the next rebuild; historical immutable snapshots remain operational audit artifacts without user-level data.
+
+## Export contract
+
+- Launch schema identifier is `fhfh-draft-ranking-v1`. CSV has a stable 23-column order; JSON includes schema/season/ranking metadata plus top-250, optional candidate/watchlist arrays, and optional aggregate event summary.
+- Every player row includes stable FHFH identity, list state, rank/order, lifecycle/evidence metadata, and explicit Yahoo ADP availability. Missing, previously-undrafted, and numeric ADP states are not conflated.
+- Export is authenticated and owner-scoped, uses private/no-store responses, and is rate-limited. It never includes raw pairwise prompts, comparisons, consent history, moderation decisions, or another account's data.
+- Candidate, watchlist, and event-summary inclusion is opt-in per request. CSV and JSON are read-only views and do not create a second ranking authority.
+
+## Health and repair contract
+
+- The daily admin health report contains aggregate counts, repairable ranking IDs, bounded identity-review candidates, latest aggregate refresh metadata, and flag state. It does not contain account IDs.
+- Twenty-four-hour limiter totals use exact count queries rather than fetched row length, so platform row caps cannot hide a burst.
+- Ordering normalization is service-role only, requires the current lock version, a UUID operation ID, a reason, and exact `NORMALIZE_ORDERING` confirmation. It locks the ranking, rewrites keys deterministically as `row_number * 1024`, increments the version only on change, and appends immutable before/after evidence.
+- Replaying the same operation and payload returns the prior result. Reusing an operation ID with a different payload conflicts. A stale expected version never repairs silently.
+- Identity tooling may queue review but cannot automatically create, merge, archive, or remap a canonical player. Community rebuild defaults to dry run and writes a new snapshot rather than editing history.
 
 ## Threat model and required mitigations
 
@@ -394,4 +423,3 @@ Before foundation rollout:
 ## DR-003 completion decision
 
 The schema, API, RLS, RPC, idempotency, error, deletion, observability, and rollback boundaries are sufficiently concrete to draft the additive DR-010 identity migration. No live migration may be applied until that migration is presented at the recorded approval checkpoint.
-

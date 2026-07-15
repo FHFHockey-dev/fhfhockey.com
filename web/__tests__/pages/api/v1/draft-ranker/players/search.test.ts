@@ -5,7 +5,9 @@ const { requireApiUserMock, searchDraftPlayersMock } = vi.hoisted(() => ({
   searchDraftPlayersMock: vi.fn(),
 }));
 
-vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: requireApiUserMock }));
+vi.mock("lib/api/requireApiUser", () => ({
+  requireApiUser: requireApiUserMock,
+}));
 vi.mock("lib/draft-ranker/server", () => ({
   searchDraftPlayers: searchDraftPlayersMock,
 }));
@@ -37,6 +39,7 @@ describe("GET /api/v1/draft-ranker/players/search", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.DRAFT_RANKER_ENABLED = "true";
+    process.env.DRAFT_RANKER_ROLLOUT_STAGE = "authenticated";
     requireApiUserMock.mockResolvedValue({ id: "authenticated-owner" });
     searchDraftPlayersMock.mockResolvedValue({
       query: "Elias Pettersson",
@@ -48,6 +51,7 @@ describe("GET /api/v1/draft-ranker/players/search", () => {
   afterEach(() => {
     if (previousFlag === undefined) delete process.env.DRAFT_RANKER_ENABLED;
     else process.env.DRAFT_RANKER_ENABLED = previousFlag;
+    delete process.env.DRAFT_RANKER_ROLLOUT_STAGE;
   });
 
   it("authenticates and passes only bounded search inputs", async () => {
@@ -78,10 +82,7 @@ describe("GET /api/v1/draft-ranker/players/search", () => {
       { q: "McDavid", limit: "1000" },
     ]) {
       const res = response();
-      await handler(
-        { method: "GET", headers: {}, query } as any,
-        res as any,
-      );
+      await handler({ method: "GET", headers: {}, query } as any, res as any);
       expect(res.statusCode).toBe(400);
     }
     expect(searchDraftPlayersMock).not.toHaveBeenCalled();

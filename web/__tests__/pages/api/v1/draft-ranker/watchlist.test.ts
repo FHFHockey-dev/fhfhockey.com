@@ -10,7 +10,9 @@ const {
   requireApiUserMock: vi.fn(),
 }));
 
-vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: requireApiUserMock }));
+vi.mock("lib/api/requireApiUser", () => ({
+  requireApiUser: requireApiUserMock,
+}));
 vi.mock("lib/draft-ranker/server", () => ({
   applyDraftPlayerAction: applyDraftPlayerActionMock,
   loadDraftPlayerActions: loadDraftPlayerActionsMock,
@@ -43,14 +45,19 @@ describe("/api/v1/draft-ranker/watchlist", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.DRAFT_RANKER_ENABLED = "true";
+    process.env.DRAFT_RANKER_ROLLOUT_STAGE = "authenticated";
     requireApiUserMock.mockResolvedValue({ id: "owner-1" });
-    loadDraftPlayerActionsMock.mockResolvedValue({ watchlist: [], preferences: [] });
+    loadDraftPlayerActionsMock.mockResolvedValue({
+      watchlist: [],
+      preferences: [],
+    });
     applyDraftPlayerActionMock.mockResolvedValue({ status: "completed" });
   });
 
   afterEach(() => {
     if (previousFlag === undefined) delete process.env.DRAFT_RANKER_ENABLED;
     else process.env.DRAFT_RANKER_ENABLED = previousFlag;
+    delete process.env.DRAFT_RANKER_ROLLOUT_STAGE;
   });
 
   it("owner-scopes the current watchlist and preferences", async () => {
@@ -87,7 +94,10 @@ describe("/api/v1/draft-ranker/watchlist", () => {
       res as any,
     );
 
-    expect(applyDraftPlayerActionMock).toHaveBeenCalledWith("owner-1", body);
+    expect(applyDraftPlayerActionMock).toHaveBeenCalledWith("owner-1", {
+      ...body,
+      sourceContext: "search",
+    });
     expect(res.statusCode).toBe(200);
   });
 

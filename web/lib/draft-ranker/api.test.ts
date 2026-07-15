@@ -2,9 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   DraftRankerApiError,
+  isCommunityDraftRankingsEnabled,
   isDraftRankerCommunityContributionEnabled,
+  isDraftRankerDiscoveryEnabled,
   isDraftRankerEnabled,
   isDraftRankerHomepageEnabled,
+  isDraftRankerUserEntitled,
+  draftRankerRolloutStage,
   parseDraftRankerInput,
   sendDraftRankerError,
 } from "./api";
@@ -26,6 +30,44 @@ describe("Draft Ranker API contracts", () => {
     }
   });
 
+  it("stages account access from staff through allowlist to authenticated", () => {
+    const staff = "11111111-1111-4111-8111-111111111111";
+    const beta = "22222222-2222-4222-8222-222222222222";
+    const ordinary = "33333333-3333-4333-8333-333333333333";
+    expect(draftRankerRolloutStage(undefined)).toBe("off");
+    expect(draftRankerRolloutStage("unknown")).toBe("off");
+    expect(
+      isDraftRankerUserEntitled(staff, {
+        DRAFT_RANKER_ROLLOUT_STAGE: "staff",
+        DRAFT_RANKER_STAFF_USER_IDS: staff,
+      }),
+    ).toBe(true);
+    expect(
+      isDraftRankerUserEntitled(beta, {
+        DRAFT_RANKER_ROLLOUT_STAGE: "allowlist",
+        DRAFT_RANKER_STAFF_USER_IDS: staff,
+        DRAFT_RANKER_BETA_USER_IDS: beta,
+      }),
+    ).toBe(true);
+    expect(
+      isDraftRankerUserEntitled(ordinary, {
+        DRAFT_RANKER_ROLLOUT_STAGE: "allowlist",
+        DRAFT_RANKER_BETA_USER_IDS: beta,
+      }),
+    ).toBe(false);
+    expect(
+      isDraftRankerUserEntitled(ordinary, {
+        DRAFT_RANKER_ROLLOUT_STAGE: "authenticated",
+      }),
+    ).toBe(true);
+    expect(
+      isDraftRankerUserEntitled(staff, {
+        DRAFT_RANKER_ROLLOUT_STAGE: "off",
+        DRAFT_RANKER_STAFF_USER_IDS: staff,
+      }),
+    ).toBe(false);
+  });
+
   it("keeps the homepage pairwise experience behind its own disabled flag", () => {
     for (const value of [undefined, "", "0", "false", "disabled"]) {
       expect(isDraftRankerHomepageEnabled(value)).toBe(false);
@@ -41,6 +83,24 @@ describe("Draft Ranker API contracts", () => {
     }
     for (const value of ["1", "true", "TRUE", "yes", "on"]) {
       expect(isDraftRankerCommunityContributionEnabled(value)).toBe(true);
+    }
+  });
+
+  it("keeps explainable discovery behind an independent disabled flag", () => {
+    for (const value of [undefined, "", "0", "false", "disabled"]) {
+      expect(isDraftRankerDiscoveryEnabled(value)).toBe(false);
+    }
+    for (const value of ["1", "true", "TRUE", "yes", "on"]) {
+      expect(isDraftRankerDiscoveryEnabled(value)).toBe(true);
+    }
+  });
+
+  it("keeps public Community Rankings behind an independent disabled flag", () => {
+    for (const value of [undefined, "", "0", "false", "disabled"]) {
+      expect(isCommunityDraftRankingsEnabled(value)).toBe(false);
+    }
+    for (const value of ["1", "true", "TRUE", "yes", "on"]) {
+      expect(isCommunityDraftRankingsEnabled(value)).toBe(true);
     }
   });
 

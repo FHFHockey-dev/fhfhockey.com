@@ -126,7 +126,7 @@ DR-023 — Verify ordering and event integrity
 Status/Scope: Completed 2026-07-14; focused SQL, API, component, live rollback-only integrity, and signed-out/authenticated responsive browser coverage pass.
 Dependencies/Affected: DR-020–022; test fixtures and repair checks.
 DB/API/UI: No new feature surface.
-Acceptance/Tests: A rollback-only live probe seeded 313 players and completed 100 randomized atomic moves; validation after every move preserved a unique 313-player total order. All 100 reorder events contained expected/resulting versions, before/after state, operation hashes, and result payloads. Fifty focused automated tests pass. Chrome confirms the real signed-out and authenticated routes render cleanly at desktop and 390x844 mobile widths. A real account-backed board initialized 313 players, persisted edits through reload and sign-out/sign-in, corrected displaced numeric-input state, promoted rank 251 to 250, displaced the prior rank 250 to 251, and preserved the 250/63 split. The repository-wide TypeScript check is currently blocked by five pre-existing errors outside Draft Ranker in `PlayerRadarChart.tsx`, `update-wgo-skaters.ts`, and `fetchWigoPlayerStats.ts`; no focused Draft Ranker test fails.
+Acceptance/Tests: A rollback-only live probe seeded 313 players and completed 100 randomized atomic moves; validation after every move preserved a unique 313-player total order. All 100 reorder events contained expected/resulting versions, before/after state, operation hashes, and result payloads. Fifty focused automated tests pass. Chrome confirms the real signed-out and authenticated routes render cleanly at desktop and 390x844 mobile widths. A real account-backed board initialized 313 players, persisted edits through reload and sign-out/sign-in, corrected displaced numeric-input state, promoted rank 251 to 250, displaced the prior rank 250 to 251, and preserved the 250/63 split. Five repository-wide baseline errors outside Draft Ranker were present at this checkpoint; they were resolved during DR-073, and the final TypeScript/build gate passes.
 Security/Observability: Cross-user validation and reorder returned owner-safe `not_found`; route tests confirm forged user input is ignored. The explicitly approved isolated Auth account was signed out and deleted after verification; all 12 checked account-owned/auth rows and the temporary credential file were confirmed absent.
 Migration/Rollback/Flag/Approval: Launch gate only.
 Non-goals: Full community modeling.
@@ -147,7 +147,7 @@ DR-030 — Build canonical player search and addition requests
 Status/Scope: Completed 2026-07-14; normalized service-side search with disambiguated results and an editorial addition-request workflow.
 Dependencies/Affected: DR-010–011; identity search indexes, API, autocomplete component.
 DB/API/UI: Applied additive migration `20260715024101_add_draft_ranker_player_search.sql`; added service-only search and addition-request RPCs, authenticated search/request endpoints, typed contracts and generated function types, a debounced React Query hook, and the real Draft Ranker search/request UI. Addition requests reuse `fhfh_player_identity_review_queue`; no parallel queue or identity table was created.
-Acceptance/Tests: Exact, prefix, alias, external-ID, and fuzzy search are bounded to 25 results; default results are verified `active_nhl`, `active_prospect`, and `unsigned_relevant` identities, while archived identities require the explicit filter and are non-rankable. Duplicate Elias Pettersson identities remain separately disambiguated. Prospect/organization/lifecycle/Yahoo labels, headshots, and fallbacks render. Seven focused suites pass 33/33 tests. The repository-wide TypeScript check adds no Draft Ranker errors and remains blocked only by the same five unrelated baseline errors. The real signed-out route was rechecked in Chrome; authenticated visual interaction is intentionally deferred to the consolidated Phase 3 verification so no additional temporary account is created for a single task.
+Acceptance/Tests: Exact, prefix, alias, external-ID, and fuzzy search are bounded to 25 results; default results are verified `active_nhl`, `active_prospect`, and `unsigned_relevant` identities, while archived identities require the explicit filter and are non-rankable. Duplicate Elias Pettersson identities remain separately disambiguated. Prospect/organization/lifecycle/Yahoo labels, headshots, and fallbacks render. Seven focused suites pass 33/33 tests. Draft Ranker added no TypeScript errors at this checkpoint; the five unrelated baseline errors then present were resolved during DR-073. The real signed-out route was rechecked in Chrome; authenticated visual interaction was intentionally deferred to the consolidated Phase 3 verification so no additional temporary account was created for a single task.
 Security/Observability: Both RPCs are SECURITY INVOKER and executable only by `service_role`; API ownership comes from `requireApiUser`. Addition requests validate context/candidate IDs, deduplicate per user and normalized name, serialize with an advisory transaction lock, and cap each user at five requests per 24 hours with `Retry-After`. A live service-role probe was rolled back with zero residue. Post-apply security advisors contain no target findings; the two new trigram indexes only have expected pre-traffic unused-index informational notices. A cold live exact-name search completed in approximately 154 ms.
 Migration/Rollback/Flag/Approval: The migration was rehearsed transactionally before apply and its service-role execution was probed transactionally after apply. The two indexes and functions are additive/removable; editorial requests remain retained if the feature is disabled. The Phase 3 inclusion/request-workflow checkpoint was approved. Production `DRAFT_RANKER_ENABLED` remains off.
 Non-goals: Free-form identities.
@@ -155,7 +155,7 @@ DR-031 — Implement watchlist and candidate actions
 Status/Scope: Completed 2026-07-14; watch/unwatch, dismiss, not-relevant, restore, and persisted compare-now intent are owner-backed. The compare-now UI is intentionally withheld until DR-032 can start a real placement session.
 Dependencies/Affected: DR-030; watchlist APIs/hooks/components.
 DB/API/UI: Reused `draft_ranking_watchlist`; applied `20260715025809_add_draft_ranker_player_actions` for separate disposition/compare-intent state and service-only transactional actions, plus `20260715030450_add_draft_ranker_player_preference_fk_index`. Added owner-scoped GET/POST `/api/v1/draft-ranker/watchlist`, typed server/hook contracts, search-result controls, and a visible unplaced watchlist panel.
-Acceptance/Tests: Watchlist membership remains independent of continuous ranking entries, dismiss/not-relevant remove watch state without deleting ranking evidence, restore clears discovery preference, and every action has an idempotent operation event. A full live rollback rehearsal passed watch, replay, dismiss, restore, compare intent, and cross-owner hiding. Nine focused suites pass 45/45 tests; TypeScript adds no Draft Ranker errors and still reports only the five unrelated baseline errors.
+Acceptance/Tests: Watchlist membership remains independent of continuous ranking entries, dismiss/not-relevant remove watch state without deleting ranking evidence, restore clears discovery preference, and every action has an idempotent operation event. A full live rollback rehearsal passed watch, replay, dismiss, restore, compare intent, and cross-owner hiding. Nine focused suites pass 45/45 tests; Draft Ranker added no TypeScript errors, and the five unrelated baseline errors then present were resolved during DR-073.
 Security/Observability: Four owner RLS policies protect preference reads, authenticated raw writes remain revoked, and the action RPC is SECURITY INVOKER/service-role-only. Every mutation writes a `draft_ranking_events` record without changing ordered-rank version state. Post-apply security advisors contain no target finding; the composite FK is covered and only expected pre-traffic unused-index notices remain.
 Migration/Rollback/Flag/Approval: Both migrations are additive and removable before rollout; watchlist/preferences cascade with ranking/account deletion. No special approval was required under the approved Phase 3 plan. Production `DRAFT_RANKER_ENABLED` remains off.
 Non-goals: Automatic rank from watchlist.
@@ -177,7 +177,7 @@ Migration/Rollback/Flag/Approval: UI is controlled by the existing server flag; 
 Non-goals: Community page.
 Phase 4 — Homepage pairwise experience and adaptive queue
 Phase contract
-Status: In progress; DR-040 and DR-041 complete, DR-042 implemented with browser visual verification pending.
+Status: Complete; DR-040 through DR-043 are implemented, verified, and dark-launched behind disabled server flags.
 Scope: Consent-aware comparisons, deterministic matchup queue, homepage card, and animated preview.
 Dependencies: Phases 2–3.
 Affected systems: Comparison services, homepage module boundary, account privacy setting.
@@ -205,24 +205,24 @@ Security/Observability: Server selects eligible prompts; queue diagnostics aggre
 Migration/Rollback/Flag/Approval: Algorithm versioned; roll back to prior queue version.
 Non-goals: Bandits or learned personalization.
 DR-042 — Add homepage pairwise card and preview
-Status/Scope: In verification; contained homepage module with blind default and expandable evidence is implemented, but the required browser visual pass is pending because both available browser backends failed to attach their created tabs to this Codex session.
+Status/Scope: Complete; contained homepage module with blind default, expandable evidence, six modes, and responsive ten-player preview.
 Dependencies/Affected: DR-041; [index.tsx](/Users/tim/Code/fhfhockey.com/web/pages/index.tsx) and existing homepage module/styles.
 DB/API/UI: Queue/comparison calls; ten-player animated list and account prompts.
-Acceptance/Tests: One card only, responsive layout, correct slide/refill animation, no ADP/community anchoring by default.
+Acceptance/Tests: A real flagged server passed signed-out and isolated signed-in desktop/390×844 Chrome verification. The module occupies one card, mobile has no horizontal overflow, and one saved choice moved Tony DeAngelo from No. 250 to No. 249, displaced Dylan Cozens to No. 250, refilled the next matchup and ten-row window, and persisted both order and the reviewed bookmark after reload. Automated component coverage remains green.
 Security/Observability: Signed-in ownership; signed-out state does not create anonymous records.
 Migration/Rollback/Flag/Approval: Separate kill switch; visual approval before broad rollout.
 Non-goals: Rebuilding unrelated homepage sections.
 DR-043 — Add abuse and rate controls
-Status/Scope: Not started; distributed limits, burst checks, cooldowns, and community-eligibility suppression.
+Status/Scope: Complete; distributed queue/response limits, burst checks, repeated-pair moderation, stable retry metadata, and community-only suppression.
 Dependencies/Affected: DR-040–042; database/platform limiter, API middleware, admin diagnostics.
-DB/API/UI: Limit state and 429/retry metadata; personal comparison may remain while community contribution is suppressed.
-Acceptance/Tests: Limits work across instances; retries do not double-count; coordinated pair targeting is flagged.
-Security/Observability: No IP/user secrets in ordinary logs; moderation reason codes.
-Migration/Rollback/Flag/Approval: Thresholds configurable; emergency community contribution kill switch.
+DB/API/UI: Applied `20260715051533_add_draft_ranker_pairwise_rate_controls`; guarded issue/response RPCs return stable 429/Retry-After metadata, while soft decisions retain personal comparison effects and suppress only community eligibility.
+Acceptance/Tests: Exact-migration rollback rehearsal and post-apply probe verify advisory-lock serialization, payload conflicts, replay without double-counting, hard queue/response limits, disabled-collection suppression, automated-burst suppression, repeated-pair targeting, and personal-preference preservation. The current focused/homepage regression pass is 179/179 across 39 files and TypeScript passes.
+Security/Observability: The service-only operational table stores moderation reason codes and window counts but no IP address, user agent, auth header, or request secret. RLS and a restrictive deny policy block browser access; three fixed-search-path SECURITY INVOKER functions are service-role only. Target security advisors are clear.
+Migration/Rollback/Flag/Approval: Six threshold environment variables are bounded with reviewed defaults. `DRAFT_RANKER_COMMUNITY_CONTRIBUTION_ENABLED` is a separate false-by-default emergency switch; the ranker and homepage flags also remain off. Rollback removes only wrappers, limiter, and empty/operational rate history, preserving prompts, comparisons, preferences, and personal order.
 Non-goals: Mature fraud-scoring model.
 Phase 5 — Explainable discovery
 Phase contract
-Status: Not started.
+Status: Complete and dark-launched; production source health currently yields an honest empty state because no current-season projection source is available.
 Scope: Materialize existing-source signals and expose reproducible discovery groups.
 Dependencies: Phases 1–4.
 Affected systems: Projection/Yahoo/roster read paths, discovery tables/services/UI.
@@ -234,32 +234,32 @@ Feature flag: DRAFT_RANKER_DISCOVERY_ENABLED.
 Approval checkpoint: Approval required for conflicting Yahoo/projection ingestion changes.
 Non-goals: News NLP or comprehensive role ML.
 DR-050 — Audit and freeze discovery source contracts
-Status/Scope: Not started; validate current projection, ownership, roster, contract, deployment, and performance freshness.
+Status/Scope: Complete; the exact launch inputs, season rules, freshness windows, null behavior, and ownership boundaries are frozen in [discovery-source-contract.md](./discovery-source-contract.md).
 Dependencies/Affected: Phase 4; projection config and source-health scripts.
 DB/API/UI: Read-only source contract; no UI.
-Acceptance/Tests: Each launch signal has an exact source, season rule, refresh SLA, and null behavior.
+Acceptance/Tests: Each launch signal has an exact source, season rule, refresh SLA, null behavior, reproducible reason code, and prohibited-claim rule. The audit identified a real projection-season mismatch and did not mutate upstream ingestion.
 Security/Observability: Source-health reporting.
 Migration/Rollback/Flag/Approval: No source mutation; escalate conflicts.
 Non-goals: Repairing every upstream source.
 DR-051 — Materialize reproducible discovery signals
-Status/Scope: Not started; projection gap, previously undrafted, cutoff challenger, ownership riser, and opportunity change.
+Status/Scope: Complete; projection gap, previously undrafted, cutoff challenger, ownership riser, and opportunity-change evidence are materialized only when their frozen source rules pass.
 Dependencies/Affected: DR-050; discovery migration/job/service.
-DB/API/UI: Derived signal table/view and audited refresh route.
-Acceptance/Tests: Threshold fixtures reproduce expected membership; expired/stale signals disappear.
+DB/API/UI: Applied `20260715055259_create_draft_ranker_discovery_materialization` and `20260715055404_add_draft_ranker_discovery_foreign_key_indexes`; the service-only audited refresh route writes rebuildable snapshots, source health, and signals.
+Acceptance/Tests: Deterministic fixtures cover thresholds, ordering, expiry, and source mismatch. The first live refresh (`71d1f4a3-4884-4e00-8cd5-ffad73de1789`) inspected 15 real sources and correctly published zero signals rather than relabeling stale projections.
 Security/Observability: Service-only refresh; per-group counts, freshness, failures.
 Migration/Rollback/Flag/Approval: Rebuildable tables; stop cron and clear derived rows if rolled back.
 Non-goals: Editorial claims without stored evidence.
 DR-052 — Build discovery UI and actions
-Status/Scope: Not started; reason cards with compare/watch/dismiss/not-relevant.
+Status/Scope: Complete; owner-specific reason cards support compare, watch, dismiss, and not-relevant actions, with a transparent unavailable/empty state.
 Dependencies/Affected: DR-031, DR-051; DraftRanker discovery components.
 DB/API/UI: Discovery endpoint/action writes.
-Acceptance/Tests: Correct reason, source, freshness, and action persistence; empty/stale states.
+Acceptance/Tests: Component, API, server, and live-SSR checks verify source/freshness wording, action persistence, owner context, empty/stale behavior, and no invented recommendations. DR-073 subsequently completed the fresh responsive browser verification.
 Security/Observability: Owner-specific ranking context stays private.
 Migration/Rollback/Flag/Approval: Feature controlled.
 Non-goals: Infinite player directory.
 Phase 6 — Community Ranking v1
 Phase contract
-Status: Not started.
+Status: Implementation and calibration complete; aggregate publication remains dark-launched behind its independent production flag.
 Scope: Approved regularized Bradley–Terry model, snapshots, public evidence states, and abuse validation.
 Dependencies: Consent/comparison infrastructure and adequate identity quality.
 Affected systems: Community model library/job, aggregate tables, public API/page.
@@ -271,40 +271,40 @@ Feature flag: COMMUNITY_DRAFT_RANKINGS_ENABLED.
 Approval checkpoint: Algorithm already approved; methodology-change approval required later.
 Non-goals: Mature Bayesian or segmented ranking.
 DR-060 — Implement and validate Community v1 offline
-Status/Scope: Not started; regularized BT, decaying market prior, dedupe, evidence tiers, and admission rules.
+Status/Scope: Complete; `regularized-bradley-terry-v1` implements the approved market prior, per-user/pair dedupe, consent/moderation eligibility, evidence states, and admission rules.
 Dependencies/Affected: DR-040, DR-043; model library and reproducible fixtures.
 DB/API/UI: Offline computation only.
-Acceptance/Tests: Opponent-strength fixtures beat raw wins; prior decays; undrafted neutral prior works; one user cannot duplicate a pair.
+Acceptance/Tests: Deterministic tests verify opponent strength, prior decay, neutral previously-undrafted entrants, one preference per user/pair, evidence thresholds, and cutoff admission.
 Security/Observability: Inputs are consent-filtered and pseudonymous within the job.
 Migration/Rollback/Flag/Approval: Model version pinned; no public output yet.
 Non-goals: Precise confidence-interval claims.
 DR-061 — Add community snapshots and audited refresh
-Status/Scope: Not started; aggregate result/evidence/snapshot tables and scheduled refresh.
+Status/Scope: Complete; service-only immutable aggregate snapshots and the audited scheduled refresh are live.
 Dependencies/Affected: DR-060; migration, cron route, `web/vercel.json`, audit wrapper.
-DB/API/UI: Service-only aggregate writes; public-safe reads.
-Acceptance/Tests: Idempotent rebuild, deletion/opt-out rebuild, daily/weekly schedule rules, methodology version.
+DB/API/UI: Applied `20260715061931_create_draft_ranker_community_snapshots` and `20260715062048_add_draft_ranker_community_foreign_key_indexes`; the 12:15 UTC job writes public-safe aggregate rows only.
+Acceptance/Tests: Idempotent rebuild, consent withdrawal/deletion rebuild, daily/weekly cadence, and model-version tests pass. Live snapshot `2dfdff1e-718c-4fec-946f-fd89f48f2a88` contains 1,148 real players, 313 displayable market seeds, and 835 neutral previously-undrafted candidates with zero comparisons honestly labeled as market-seeded.
 Security/Observability: Aggregate thresholds; cron audit with counts/duration/failure.
 Migration/Rollback/Flag/Approval: Stop schedule and disable public flag; retain snapshots.
 Non-goals: Realtime model update per click.
 DR-062 — Build the Community Rankings page
-Status/Scope: Not started; public table, evidence state, confidence, personal delta for signed-in users, and player details.
+Status/Scope: Complete in code and live-data verification; the public table exposes evidence state and confidence, with an owner-only personal delta when signed in.
 Dependencies/Affected: DR-061; /community-draft-rankings, API/components.
 DB/API/UI: Aggregate API only; market-seeded/building/emerging/established labels.
-Acceptance/Tests: No false community claims; undrafted state correct; signed-out/private behavior safe.
+Acceptance/Tests: Component/API tests and a live signed-out response verify 250 distinct ranks, real identity/headshot/ADP data, honest market-seeded wording, previously-undrafted state, optional owner context, and no user identifiers. DR-073 subsequently completed fresh desktop and 430×932 mobile browser verification.
 Security/Observability: Minimum cohorts and no user histories.
 Migration/Rollback/Flag/Approval: Public flag controlled.
 Non-goals: Expert weights or league segments.
 DR-063 — Perform community red-team and calibration gate
-Status/Scope: Not started; synthetic manipulation, sparse graph, deletion, burst, and cutoff testing.
+Status/Scope: Complete; synthetic manipulation, sparse graph, consent removal, burst, cutoff, and coordinated-cohort cases are recorded in tests and [community-ranking-runbook.md](./community-ranking-runbook.md).
 Dependencies/Affected: DR-060–062; scripts/tests/runbook.
 DB/API/UI: No new user feature.
-Acceptance/Tests: Admission thresholds resist documented attacks; output remains labeled honestly with low evidence.
+Acceptance/Tests: Six red-team tests verify duplicate floods collapse, sparse graphs remain unestablished, consent withdrawal rebuilds cleanly, burst evidence is excluded, cutoff admission needs both sides, and moderated cohorts are removed. The runbook discloses the residual distinct-coordinated-account risk.
 Security/Observability: Moderation and exclusion logs verified.
 Migration/Rollback/Flag/Approval: Broad release blocked until gate passes.
 Non-goals: Claiming universal fantasy consensus.
 Phase 7 — Exports, operations, and rollout
 Phase contract
-Status: Not started.
+Status: Implementation and local launch QA complete; a reviewed production release artifact, deployment preflight, and the real production cohort observation gates remain open.
 Scope: CSV/JSON, repair tooling, monitoring, security hardening, staged rollout, and end-to-end launch verification.
 Dependencies: Phases 1–6.
 Affected systems: Export routes, admin tools, health scripts, flags, runbooks, tests.
@@ -316,36 +316,36 @@ Feature flag: All ranker flags staged independently.
 Approval checkpoint: Production rollout approval.
 Non-goals: Phase-8 mature features.
 DR-070 — Implement versioned CSV and JSON exports
-Status/Scope: Not started; schemas approved in DRD-012.
+Status/Scope: Complete; schema `fhfh-draft-ranking-v1` implements the DRD-012 CSV and JSON contracts.
 Dependencies/Affected: Phases 2–6; export library/API/UI.
-DB/API/UI: Read-only owner export endpoints; include-candidates/watchlist options.
-Acceptance/Tests: Stable column order, escaping, schema metadata, ADP tri-state, round-trip JSON fixtures.
+DB/API/UI: The read-only owner endpoint and ranking-page UI support CSV/JSON plus explicit candidate, watchlist, and event-summary options.
+Acceptance/Tests: Unit/API/UI tests verify stable columns, escaping, metadata, ADP evidence state, authentication, privacy wording, and downloads. A live disposable-account export contained 250 top ranks, 64 candidates, one watchlist row, and 13 event summaries with no private comparison evidence.
 Security/Observability: Authenticated owner only; rate-limited; no comparison evidence by default.
 Migration/Rollback/Flag/Approval: No schema migration; flag controlled.
 Non-goals: XLSX.
 DR-071 — Add repair, identity-quality, and health tooling
-Status/Scope: Not started; dry-run checks, normalization, orphan review, aggregate rebuild, and admin controls.
+Status/Scope: Complete; read-only health, deterministic ordering normalization, identity-review queuing, aggregate dry-run rebuild, and exact-confirmation admin controls are implemented.
 Dependencies/Affected: All prior phases; scripts/admin APIs/runbooks.
-DB/API/UI: Admin-only repair functions and status dashboard.
-Acceptance/Tests: Corruption fixtures detected; repairs are deterministic, audited, and idempotent.
+DB/API/UI: Applied `20260715070405_add_draft_ranker_ordering_repair`; the admin-only audited endpoint and daily 12:45 UTC cron report aggregate health without user identifiers.
+Acceptance/Tests: Rollback-only and post-apply probes verify advisory locking, expected-version conflicts, deterministic `row_number * 1024` repair, immutable before/after audit, no-op replay, and operation-payload conflict. Health counts use exact head queries so high-volume rate windows are not truncated.
 Security/Observability: Admin/service-only; before/after counts and actor/reason.
 Migration/Rollback/Flag/Approval: Destructive repair requires explicit confirmation and backup.
 Non-goals: Unreviewed automatic identity merges.
 DR-072 — Execute staged backfill and rollout
-Status/Scope: Not started; staff, allowlisted beta, wider authenticated beta, public aggregate.
-Dependencies/Affected: DR-063, DR-071; entitlements/flags, operational dashboard.
+Status/Scope: In progress. Release infrastructure and product-owner staff-stage approval are complete. The goal-scoped artifact is published in draft PR [#335](https://github.com/FHFHockey-dev/fhfhockey.com/pull/335); its checks passed and its READY flag-off preview passed closed-state smoke. The live production deployment still predates Draft Ranker, so the exact reviewed artifact must reach a READY production deployment with every flag off. Actual staff, allowlisted, authenticated, and public cohort observation windows remain pending named operators, exact cohorts, and real traffic.
+Dependencies/Affected: DR-063, DR-071, and the clean release boundary in [release-manifest.md](./release-manifest.md); entitlements/flags, operational dashboard.
 DB/API/UI: Feature availability only.
-Acceptance/Tests: Each cohort meets error, integrity, latency, and support thresholds before expansion.
+Acceptance/Tests: Before staff exposure, a reviewed goal-scoped artifact has a READY production deployment, the feature routes are available with every flag off, and a production smoke test confirms the closed state. Every personal API enforces the server-side `off`/`staff`/`allowlist`/`authenticated` policy, missing or invalid values fail closed, and aggregate health reports only allowlist counts. The required cohort sizes, durations, latency, support, and integrity gates are frozen in [launch-runbook.md](./launch-runbook.md) and cannot honestly be simulated as completed production observation.
 Security/Observability: Advisor and Postgres patch status reviewed; abuse and deletion metrics monitored.
-Migration/Rollback/Flag/Approval: Immediate kill switches; production rollout approval required.
+Migration/Rollback/Flag/Approval: Immediate kill switches; product-owner staff-stage approval recorded. Release only a reviewed goal-scoped artifact, deploy with all flags off, and retain the last READY production deployment for rollback before changing the staff-stage flag.
 Non-goals: Automatic universal enablement.
 DR-073 — Complete launch QA and rollback drill
-Status/Scope: Not started; full account journey, visual verification, performance, accessibility, and recovery.
+Status/Scope: Complete 2026-07-15; local launch QA, responsive Community/export verification, mobile overflow repair, and live recovery drills pass. Production cohort performance observation remains tracked by DR-072 and is not simulated by this task.
 Dependencies/Affected: DR-070–072; Vitest, Playwright, build, runbooks.
 DB/API/UI: No additional features.
-Acceptance/Tests: Sign in → initialize → reorder → search prospect → place → homepage compare → export → opt out/delete test; build and targeted suites pass.
+Acceptance/Tests: A live disposable account passed sign in → initialize 313 players → persisted reorder → real prospect search/watch → assisted placement → consent/prompt comparison → private export → community owner delta → opt-out rebuild → account deletion with zero residue. A second disposable visual account verified the real 313-player board and export surface, then was deleted with zero Auth or account-owned residue. The focused suite passes 228/228 across 49 files, the affected WIGO regression suites pass 18/18, full TypeScript passes, and `npm run build` completes all 83 static pages plus sitemap generation. Community Ranking and personal export surfaces pass desktop and iPhone 14 Pro Max (430×932) inspection with accessible labels and real data. The mobile document is exactly 430 pixels wide while the 1,050-pixel board remains independently scrollable inside its 428-pixel table viewport.
 Security/Observability: Verify no cross-user access, private comparison leaks, or unaudited privileged jobs.
-Migration/Rollback/Flag/Approval: Demonstrate flag disable and job stop without data loss.
+Migration/Rollback/Flag/Approval: Local all-flags-on verification ended with the server stopped; deployed flags remain off. Flag disablement, dry-run rebuild, deletion, and zero-residue recovery were demonstrated without data loss. Production expansion still requires the recorded approval checklist, named owners and cohort IDs, real traffic, and the required observation windows.
 Non-goals: Deferred mature capabilities.
 Phase 8 — Deferred mature-product capabilities
 Phase contract
