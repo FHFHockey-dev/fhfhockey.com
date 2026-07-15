@@ -83,7 +83,7 @@
 
 .rail {
   grid-template-columns: 48px minmax(0, 1fr);
-  min-height: 76px;
+  min-height: 82px;
   border-radius: v.$radius-card;
 
   .content {
@@ -103,17 +103,26 @@
   }
 
   .teamLogo {
-    width: 30px;
-    height: 30px;
+    width: 34px;
+    height: 34px;
   }
 
   .teamLabel,
-  .blurb {
+  .teamLabel {
     display: none;
   }
 
+  .blurb {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 0.68rem;
+    line-height: 1.2;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
   .headline {
-    font-size: 0.72rem;
+    font-size: 0.82rem;
     line-height: 1.12;
     display: -webkit-box;
     overflow: hidden;
@@ -124,7 +133,7 @@
   .meta,
   .footer {
     gap: 3px 5px;
-    font-size: 0.5rem;
+    font-size: 0.6rem;
   }
 
   .playerRow {
@@ -133,7 +142,7 @@
 
   .playerChip {
     padding: 1px 4px;
-    font-size: 0.5rem;
+    font-size: 0.6rem;
   }
 
   .lineupGrid {
@@ -315,11 +324,23 @@
 }
 
 .sourceLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3em;
+  height: 1.3em;
   color: v.$primary-color;
   font-weight: 600;
+  text-decoration: none;
 
-  &:hover {
+  &:hover,
+  &:focus-visible {
     color: v.$color-white;
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
   }
 }
 

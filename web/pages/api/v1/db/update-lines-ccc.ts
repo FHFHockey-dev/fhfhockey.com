@@ -354,10 +354,17 @@ export default withCronJobAudit(
           quotedTweetResolveFailedCount += 1;
         }
         quoteResolutionState = {
-          status: quotedTweet ? "success" : "failed",
+          status: quotedTweet
+            ? quotedTweet.quotedText
+              ? "success"
+              : "resolved_url_only"
+            : "failed",
           resolvedAt: nowIso,
           quotedTweetId: quotedTweet?.quotedTweetId ?? null,
           quotedTweetUrl: quotedTweet?.quotedTweetUrl ?? null,
+          resolvedUrl: quotedTweet?.resolvedUrl ?? null,
+          quotedAuthorHandle: quotedTweet?.quotedAuthorHandle ?? null,
+          retrievalStatus: quotedTweet?.retrievalStatus ?? "unresolved",
         };
       }
 

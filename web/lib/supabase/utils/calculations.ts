@@ -5,9 +5,9 @@
 // reference only. Do not wire it into FORGE explainability or player-signal UI
 // without a fresh hockey-facing validation pass.
 
-import { CombinedGameLog } from "./types";
+import { LegacySkoCombinedGameLog } from "./types";
 
-export const calculateGameScore = (game: CombinedGameLog): number => {
+export const calculateGameScore = (game: LegacySkoCombinedGameLog): number => {
   const G = game.goals ?? 0;
   const A1 = game.total_primary_assists ?? 0;
   const A2 = game.total_secondary_assists ?? 0;

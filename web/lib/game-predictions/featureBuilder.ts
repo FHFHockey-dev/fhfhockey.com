@@ -9,6 +9,12 @@ import {
   GAME_PREDICTION_FEATURE_SET_VERSION,
   getGamePredictionFeatureSources,
 } from "./featureSources";
+import {
+  buildRosterImpactFeatures,
+  type PlayerImpactRatingInput,
+  type RosterImpactFeatures,
+  type RosterPlayerRow,
+} from "./rosterImpact";
 
 type Tables<T extends keyof Database["public"]["Tables"]> =
   Database["public"]["Tables"][T]["Row"];
@@ -46,6 +52,7 @@ export type TeamPowerRow = Pick<
 export type StandingsRow = Pick<
   Tables<"nhl_standings_details">,
   | "team_abbrev"
+  | "season_id"
   | "date"
   | "games_played"
   | "point_pctg"
@@ -254,6 +261,10 @@ export type GamePredictionFeatureInputs = {
   wgoGoalieRows: WgoGoalieRow[];
   forgeTeamProjectionRows?: ForgeTeamProjectionRow[];
   marketOddsRows?: MarketOddsSnapshotRow[];
+  currentRosterRows?: RosterPlayerRow[];
+  skaterOffenseRatingRows?: PlayerImpactRatingInput[];
+  skaterDefenseRatingRows?: PlayerImpactRatingInput[];
+  goalieRatingRows?: PlayerImpactRatingInput[];
 };
 
 export type SourceCutoff = {
@@ -282,7 +293,10 @@ export type TeamSideFeatures = {
   recentForm: TeamRecentFormFeatures | null;
   ctpi: TeamCtpiFeatures | null;
   scheduleStrength: TeamScheduleStrengthFeatures | null;
+  opponentAdjustedForm: TeamOpponentAdjustedFormFeatures | null;
   forgeProjection: ForgeTeamProjectionFeatures | null;
+  rosterImpact: RosterImpactFeatures;
+  rosterFormBlendWeights: RosterFormBlendWeights;
   goalie: GoalieBlendFeatures;
   lineup: LineupFeatures | null;
 };
@@ -413,6 +427,24 @@ export type TeamScheduleStrengthFeatures = {
   pastOpponentAvgGoalieRating: number | null;
   pastOpponentAvgSpecialRating: number | null;
   pastOpponentCompositeRating: number | null;
+  last5OpponentCompositeRating: number | null;
+  last10OpponentCompositeRating: number | null;
+  last5MinusLast10OpponentCompositeRating: number | null;
+};
+
+export const SOS_ADJUSTED_FORM_VERSION =
+  "sos_adjusted_form_v1_neutral50_goal_diff_div50_xgf_scale_0_05";
+
+export type TeamOpponentAdjustedFormFeatures = {
+  version: typeof SOS_ADJUSTED_FORM_VERSION;
+  rawLast5GoalDifferentialPerGame: number | null;
+  rawLast10GoalDifferentialPerGame: number | null;
+  rawLast5XgfPct: number | null;
+  rawLast10XgfPct: number | null;
+  adjustedLast5GoalDifferentialPerGame: number | null;
+  adjustedLast10GoalDifferentialPerGame: number | null;
+  adjustedLast5XgfPct: number | null;
+  adjustedLast10XgfPct: number | null;
 };
 
 export type ForgeTeamProjectionFeatures = {
@@ -496,8 +528,29 @@ export type MatchupFeatures = {
   homeMinusAwayRecent40XgaPer60: number | null;
   homeMinusAwayCtpi: number | null;
   homeMinusAwayPastOpponentCompositeRating: number | null;
+  homeMinusAwayLast5OpponentCompositeRating: number | null;
+  homeMinusAwayLast10OpponentCompositeRating: number | null;
+  homeMinusAwayAdjustedRecent5GoalDifferentialPerGame: number | null;
+  homeMinusAwayAdjustedRecent10GoalDifferentialPerGame: number | null;
+  homeMinusAwayAdjustedRecent5XgfPct: number | null;
+  homeMinusAwayAdjustedRecent10XgfPct: number | null;
   homeMinusAwayForgeProjectedGoals: number | null;
   homeMinusAwayForgeProjectedShots: number | null;
+  homeMinusAwayRosterOffImpact: number | null;
+  homeMinusAwayRosterDefImpact: number | null;
+  homeMinusAwayRosterGoalieImpact: number | null;
+  homeMinusAwayRosterOffImpactPer60Only: number | null;
+  homeMinusAwayRosterDefImpactPer60Only: number | null;
+  homeMinusAwayRosterGoalieImpactPer60Only: number | null;
+  homeRosterPriorWeight: number;
+  awayRosterPriorWeight: number;
+  homeCurrentFormWeight: number;
+  awayCurrentFormWeight: number;
+  homeMinusAwayWeightedRosterOffImpact: number | null;
+  homeMinusAwayWeightedRosterDefImpact: number | null;
+  homeMinusAwayWeightedRosterGoalieImpact: number | null;
+  homeMinusAwayWeightedRecent10GoalDifferentialPerGame: number | null;
+  homeMinusAwayWeightedRecent10XgfPct: number | null;
   homeMinusAwayWeightedGoalieGsaaPer60: number | null;
   homeMinusAwayGoalieStartUncertainty: number | null;
   homeRestAdvantageDays: number | null;
@@ -530,6 +583,16 @@ export type MarketOddsFeatures = {
 };
 
 export type SeasonPhase = "early" | "middle" | "late" | "playoff";
+
+export const ROSTER_FORM_BLEND_VERSION =
+  "roster_form_blend_v1_gp0_80_20_gp10_70_30_gp25_50_50_gp50_15_85_gp82_10_90";
+
+export type RosterFormBlendWeights = {
+  version: typeof ROSTER_FORM_BLEND_VERSION;
+  gamesPlayedAsOf: number;
+  rosterPriorWeight: number;
+  currentFormWeight: number;
+};
 
 export type SeasonPhaseFeatures = {
   phase: SeasonPhase;
@@ -1003,13 +1066,20 @@ function buildTeamScheduleStrengthFeatures(args: {
       if (!opponentAbbreviation) return null;
       return latestBefore(
         args.teamPowerRows,
-        args.sourceAsOfDate,
+        game.date,
         (row) => row.team_abbreviation === opponentAbbreviation,
       );
     })
     .filter((row): row is TeamPowerRow => row != null);
 
   if (opponentRows.length === 0) return null;
+
+  const last5OpponentCompositeRating = averageNullable(
+    opponentRows.slice(0, 5).map(teamPowerComposite),
+  );
+  const last10OpponentCompositeRating = averageNullable(
+    opponentRows.slice(0, 10).map(teamPowerComposite),
+  );
 
   return {
     sourceMaxDate: latestDateOnly(opponentRows.map((row) => row.date)),
@@ -1028,6 +1098,64 @@ function buildTeamScheduleStrengthFeatures(args: {
     ),
     pastOpponentCompositeRating: averageNullable(
       opponentRows.map(teamPowerComposite),
+    ),
+    last5OpponentCompositeRating,
+    last10OpponentCompositeRating,
+    last5MinusLast10OpponentCompositeRating: subtractNullable(
+      last5OpponentCompositeRating,
+      last10OpponentCompositeRating,
+    ),
+  };
+}
+
+function adjustGoalDifferentialForOpponentQuality(
+  rawValue: number | null,
+  opponentCompositeRating: number | null,
+): number | null {
+  return rawValue == null || opponentCompositeRating == null
+    ? null
+    : rawValue + (opponentCompositeRating - 50) / 50;
+}
+
+function adjustXgfPctForOpponentQuality(
+  rawValue: number | null,
+  opponentCompositeRating: number | null,
+): number | null {
+  if (rawValue == null || opponentCompositeRating == null) return null;
+  return Math.max(
+    0,
+    Math.min(1, rawValue + ((opponentCompositeRating - 50) / 50) * 0.05),
+  );
+}
+
+function buildOpponentAdjustedFormFeatures(
+  recentForm: TeamRecentFormFeatures | null,
+  scheduleStrength: TeamScheduleStrengthFeatures | null,
+): TeamOpponentAdjustedFormFeatures | null {
+  if (!recentForm || !scheduleStrength) return null;
+  return {
+    version: SOS_ADJUSTED_FORM_VERSION,
+    rawLast5GoalDifferentialPerGame: recentForm.last5GoalDifferentialPerGame,
+    rawLast10GoalDifferentialPerGame: recentForm.last10GoalDifferentialPerGame,
+    rawLast5XgfPct: recentForm.last5XgfPct,
+    rawLast10XgfPct: recentForm.last10XgfPct,
+    adjustedLast5GoalDifferentialPerGame:
+      adjustGoalDifferentialForOpponentQuality(
+        recentForm.last5GoalDifferentialPerGame,
+        scheduleStrength.last5OpponentCompositeRating,
+      ),
+    adjustedLast10GoalDifferentialPerGame:
+      adjustGoalDifferentialForOpponentQuality(
+        recentForm.last10GoalDifferentialPerGame,
+        scheduleStrength.last10OpponentCompositeRating,
+      ),
+    adjustedLast5XgfPct: adjustXgfPctForOpponentQuality(
+      recentForm.last5XgfPct,
+      scheduleStrength.last5OpponentCompositeRating,
+    ),
+    adjustedLast10XgfPct: adjustXgfPctForOpponentQuality(
+      recentForm.last10XgfPct,
+      scheduleStrength.last10OpponentCompositeRating,
     ),
   };
 }
@@ -1419,6 +1547,17 @@ function subtractNullable(
   return a == null || b == null ? null : a - b;
 }
 
+function subtractWeightedNullable(
+  homeValue: number | null | undefined,
+  homeWeight: number,
+  awayValue: number | null | undefined,
+  awayWeight: number,
+): number | null {
+  return homeValue == null || awayValue == null
+    ? null
+    : homeValue * homeWeight - awayValue * awayWeight;
+}
+
 function gamesPlayedAsOf(args: {
   teamId: number;
   standings: StandingsFeatures | null;
@@ -1434,6 +1573,42 @@ function gamesPlayedAsOf(args: {
       game.date < args.sourceAsOfDate &&
       (game.homeTeamId === args.teamId || game.awayTeamId === args.teamId),
   ).length;
+}
+
+const ROSTER_FORM_BLEND_CHECKPOINTS = [
+  { gamesPlayed: 0, rosterPriorWeight: 0.8 },
+  { gamesPlayed: 10, rosterPriorWeight: 0.7 },
+  { gamesPlayed: 25, rosterPriorWeight: 0.5 },
+  { gamesPlayed: 50, rosterPriorWeight: 0.15 },
+  { gamesPlayed: 82, rosterPriorWeight: 0.1 },
+] as const;
+
+export function rosterFormBlendWeights(
+  gamesPlayedAsOfValue: number,
+): RosterFormBlendWeights {
+  const gamesPlayed = Math.max(0, Math.min(82, gamesPlayedAsOfValue));
+  const upperIndex = ROSTER_FORM_BLEND_CHECKPOINTS.findIndex(
+    (checkpoint) => checkpoint.gamesPlayed >= gamesPlayed,
+  );
+  const upper =
+    ROSTER_FORM_BLEND_CHECKPOINTS[
+      upperIndex < 0 ? ROSTER_FORM_BLEND_CHECKPOINTS.length - 1 : upperIndex
+    ];
+  const lower =
+    ROSTER_FORM_BLEND_CHECKPOINTS[Math.max(0, upperIndex - 1)] ?? upper;
+  const span = upper.gamesPlayed - lower.gamesPlayed;
+  const progress = span > 0 ? (gamesPlayed - lower.gamesPlayed) / span : 0;
+  const rosterPriorWeight =
+    lower.rosterPriorWeight +
+    (upper.rosterPriorWeight - lower.rosterPriorWeight) * progress;
+  const roundedRosterWeight = Number(rosterPriorWeight.toFixed(6));
+
+  return {
+    version: ROSTER_FORM_BLEND_VERSION,
+    gamesPlayedAsOf: Number(gamesPlayed.toFixed(6)),
+    rosterPriorWeight: roundedRosterWeight,
+    currentFormWeight: Number((1 - roundedRosterWeight).toFixed(6)),
+  };
 }
 
 function deriveSeasonPhase(args: {
@@ -1666,6 +1841,30 @@ export function buildMatchupFeatures(
       home.scheduleStrength?.pastOpponentCompositeRating,
       away.scheduleStrength?.pastOpponentCompositeRating,
     ),
+    homeMinusAwayLast5OpponentCompositeRating: subtractNullable(
+      home.scheduleStrength?.last5OpponentCompositeRating,
+      away.scheduleStrength?.last5OpponentCompositeRating,
+    ),
+    homeMinusAwayLast10OpponentCompositeRating: subtractNullable(
+      home.scheduleStrength?.last10OpponentCompositeRating,
+      away.scheduleStrength?.last10OpponentCompositeRating,
+    ),
+    homeMinusAwayAdjustedRecent5GoalDifferentialPerGame: subtractNullable(
+      home.opponentAdjustedForm?.adjustedLast5GoalDifferentialPerGame,
+      away.opponentAdjustedForm?.adjustedLast5GoalDifferentialPerGame,
+    ),
+    homeMinusAwayAdjustedRecent10GoalDifferentialPerGame: subtractNullable(
+      home.opponentAdjustedForm?.adjustedLast10GoalDifferentialPerGame,
+      away.opponentAdjustedForm?.adjustedLast10GoalDifferentialPerGame,
+    ),
+    homeMinusAwayAdjustedRecent5XgfPct: subtractNullable(
+      home.opponentAdjustedForm?.adjustedLast5XgfPct,
+      away.opponentAdjustedForm?.adjustedLast5XgfPct,
+    ),
+    homeMinusAwayAdjustedRecent10XgfPct: subtractNullable(
+      home.opponentAdjustedForm?.adjustedLast10XgfPct,
+      away.opponentAdjustedForm?.adjustedLast10XgfPct,
+    ),
     homeMinusAwayForgeProjectedGoals: subtractNullable(
       home.forgeProjection?.projectedGoals,
       away.forgeProjection?.projectedGoals,
@@ -1673,6 +1872,65 @@ export function buildMatchupFeatures(
     homeMinusAwayForgeProjectedShots: subtractNullable(
       home.forgeProjection?.projectedShots,
       away.forgeProjection?.projectedShots,
+    ),
+    homeMinusAwayRosterOffImpact: subtractNullable(
+      home.rosterImpact.skaterOffenseImpact,
+      away.rosterImpact.skaterOffenseImpact,
+    ),
+    homeMinusAwayRosterDefImpact: subtractNullable(
+      home.rosterImpact.skaterDefenseImpact,
+      away.rosterImpact.skaterDefenseImpact,
+    ),
+    homeMinusAwayRosterGoalieImpact: subtractNullable(
+      home.rosterImpact.goalieImpact,
+      away.rosterImpact.goalieImpact,
+    ),
+    homeMinusAwayRosterOffImpactPer60Only: subtractNullable(
+      home.rosterImpact.skaterOffensePer60OnlyImpact,
+      away.rosterImpact.skaterOffensePer60OnlyImpact,
+    ),
+    homeMinusAwayRosterDefImpactPer60Only: subtractNullable(
+      home.rosterImpact.skaterDefensePer60OnlyImpact,
+      away.rosterImpact.skaterDefensePer60OnlyImpact,
+    ),
+    homeMinusAwayRosterGoalieImpactPer60Only: subtractNullable(
+      home.rosterImpact.goaliePer60OnlyImpact,
+      away.rosterImpact.goaliePer60OnlyImpact,
+    ),
+    homeRosterPriorWeight: home.rosterFormBlendWeights.rosterPriorWeight,
+    awayRosterPriorWeight: away.rosterFormBlendWeights.rosterPriorWeight,
+    homeCurrentFormWeight: home.rosterFormBlendWeights.currentFormWeight,
+    awayCurrentFormWeight: away.rosterFormBlendWeights.currentFormWeight,
+    homeMinusAwayWeightedRosterOffImpact: subtractWeightedNullable(
+      home.rosterImpact.skaterOffenseImpact,
+      home.rosterFormBlendWeights.rosterPriorWeight,
+      away.rosterImpact.skaterOffenseImpact,
+      away.rosterFormBlendWeights.rosterPriorWeight,
+    ),
+    homeMinusAwayWeightedRosterDefImpact: subtractWeightedNullable(
+      home.rosterImpact.skaterDefenseImpact,
+      home.rosterFormBlendWeights.rosterPriorWeight,
+      away.rosterImpact.skaterDefenseImpact,
+      away.rosterFormBlendWeights.rosterPriorWeight,
+    ),
+    homeMinusAwayWeightedRosterGoalieImpact: subtractWeightedNullable(
+      home.rosterImpact.goalieImpact,
+      home.rosterFormBlendWeights.rosterPriorWeight,
+      away.rosterImpact.goalieImpact,
+      away.rosterFormBlendWeights.rosterPriorWeight,
+    ),
+    homeMinusAwayWeightedRecent10GoalDifferentialPerGame:
+      subtractWeightedNullable(
+        home.recentForm?.last10GoalDifferentialPerGame,
+        home.rosterFormBlendWeights.currentFormWeight,
+        away.recentForm?.last10GoalDifferentialPerGame,
+        away.rosterFormBlendWeights.currentFormWeight,
+      ),
+    homeMinusAwayWeightedRecent10XgfPct: subtractWeightedNullable(
+      home.recentForm?.last10XgfPct,
+      home.rosterFormBlendWeights.currentFormWeight,
+      away.recentForm?.last10XgfPct,
+      away.rosterFormBlendWeights.currentFormWeight,
     ),
     homeMinusAwayWeightedGoalieGsaaPer60: subtractNullable(
       home.goalie.weightedProjectedGsaaPer60,
@@ -1721,7 +1979,9 @@ function buildTeamSideFeatures(args: {
   const standingsRow = latestBefore(
     inputs.standingsRows,
     inputs.sourceAsOfDate,
-    (row) => row.team_abbrev === team.abbreviation,
+    (row) =>
+      row.season_id === inputs.game.seasonId &&
+      row.team_abbrev === team.abbreviation,
   );
   const wgoRow = latestBefore(
     inputs.wgoTeamRows,
@@ -1747,11 +2007,33 @@ function buildTeamSideFeatures(args: {
     teams: [inputs.homeTeam, inputs.awayTeam, ...(inputs.teamRows ?? [])],
     teamPowerRows: inputs.teamPowerRows,
   });
+  const opponentAdjustedForm = buildOpponentAdjustedFormFeatures(
+    recentForm,
+    scheduleStrength,
+  );
   const forgeProjection = buildForgeTeamProjectionFeatures(
     inputs.forgeTeamProjectionRows,
     inputs.game.id,
     team.id,
   );
+  const latestLineCombination = [...inputs.lineCombinationRows]
+    .filter((row) => row.teamId === team.id)
+    .sort((a, b) => b.gameId - a.gameId)[0];
+  const rosterImpact = buildRosterImpactFeatures({
+    teamId: team.id,
+    sourceAsOfDate: inputs.sourceAsOfDate,
+    projectedSkaterIds: latestLineCombination
+      ? [
+          ...((latestLineCombination.forwards ?? []) as number[]),
+          ...((latestLineCombination.defensemen ?? []) as number[]),
+        ]
+      : [],
+    currentRosterRows: inputs.currentRosterRows ?? [],
+    offenseRows: inputs.skaterOffenseRatingRows ?? [],
+    defenseRows: inputs.skaterDefenseRatingRows ?? [],
+    goalieRows: inputs.goalieRatingRows ?? [],
+    specialTeamsContext: teamPowerRow?.special_rating ?? null,
+  });
 
   const standings = buildStandingsFeatures(standingsRow);
   const gamesPlayed = gamesPlayedAsOf({
@@ -1806,6 +2088,27 @@ function buildTeamSideFeatures(args: {
       forgeProjection?.updatedAt?.slice(0, 10) ?? null,
       inputs.sourceAsOfDate,
       "current_prediction_only",
+    ),
+    collectSourceCutoff(
+      sourceCutoffs,
+      "skater_offensive_ratings_daily",
+      rosterImpact.sourceDate,
+      inputs.sourceAsOfDate,
+      "latest_snapshot_strictly_before_source_as_of_date",
+    ),
+    collectSourceCutoff(
+      sourceCutoffs,
+      "skater_defensive_ratings_daily",
+      rosterImpact.sourceDate,
+      inputs.sourceAsOfDate,
+      "latest_snapshot_strictly_before_source_as_of_date",
+    ),
+    collectSourceCutoff(
+      sourceCutoffs,
+      "goalie_ratings_daily",
+      rosterImpact.sourceDate,
+      inputs.sourceAsOfDate,
+      "latest_snapshot_strictly_before_source_as_of_date",
     ),
   ]) {
     pushSourceCutoffWarning(warnings, args.side, cutoff);
@@ -1864,6 +2167,26 @@ function buildTeamSideFeatures(args: {
 
   if (!forgeProjection) {
     fallbackFlags[`${args.side}_forge_projection_fallback`] = true;
+  }
+  if (rosterImpact.source === "unavailable") {
+    missingFeatures.push(`${args.side}.rosterImpact`);
+    fallbackFlags[`${args.side}_roster_impact_unavailable`] = true;
+    warnings.push({
+      code: "missing_roster_impact",
+      message: `No projected-line or current-roster player-impact context was available for ${team.abbreviation}.`,
+      source: "player_impact_ratings",
+    });
+  } else if (
+    rosterImpact.fallbackDerived ||
+    rosterImpact.offenseCoverage < 0.8 ||
+    rosterImpact.defenseCoverage < 0.8
+  ) {
+    fallbackFlags[`${args.side}_roster_impact_fallback`] = true;
+    warnings.push({
+      code: "partial_roster_impact",
+      message: `${team.abbreviation} roster impact uses ${rosterImpact.source} with offense coverage ${rosterImpact.offenseCoverage} and defense coverage ${rosterImpact.defenseCoverage}.`,
+      source: "player_impact_ratings",
+    });
   }
 
   const goalieSelection = buildGoalieBlendFeatures(inputs.goalieStartRows, team.id, {
@@ -2021,7 +2344,10 @@ function buildTeamSideFeatures(args: {
     recentForm,
     ctpi: buildTeamCtpiFeatures(ctpiRow),
     scheduleStrength,
+    opponentAdjustedForm,
     forgeProjection,
+    rosterImpact,
+    rosterFormBlendWeights: rosterFormBlendWeights(gamesPlayed),
     goalie,
     lineup,
   };
@@ -2186,6 +2512,37 @@ export async function persistGamePredictionFeatureSnapshot(
   return data.feature_snapshot_id;
 }
 
+async function fetchLatestPlayerImpactRows(
+  client: SupabaseClient<Database>,
+  table:
+    | "skater_offensive_ratings_daily"
+    | "skater_defensive_ratings_daily"
+    | "goalie_ratings_daily",
+  teamIds: number[],
+  sourceAsOfDate: string,
+): Promise<PlayerImpactRatingInput[]> {
+  const { data: latest, error: latestError } = await client
+    .from(table)
+    .select("snapshot_date")
+    .in("team_id", teamIds)
+    .lt("snapshot_date", sourceAsOfDate)
+    .order("snapshot_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (latestError) throw latestError;
+  if (!latest?.snapshot_date) return [];
+
+  const { data, error } = await client
+    .from(table)
+    .select("player_id,team_id,snapshot_date,rating_raw,sample_toi_seconds,components")
+    .in("team_id", teamIds)
+    .eq("snapshot_date", latest.snapshot_date)
+    .order("player_id", { ascending: true })
+    .limit(200);
+  if (error) throw error;
+  return (data ?? []) as PlayerImpactRatingInput[];
+}
+
 export async function fetchGamePredictionFeatureInputs(
   client: SupabaseClient<Database>,
   gameId: number,
@@ -2295,6 +2652,10 @@ export async function fetchGamePredictionFeatureInputs(
     wgoGoalieResult,
     forgeTeamProjectionResult,
     marketOddsResult,
+    currentRosterResult,
+    skaterOffenseRatingRows,
+    skaterDefenseRatingRows,
+    goalieRatingRows,
   ] = await Promise.all([
     client
       .from("team_power_ratings_daily")
@@ -2307,8 +2668,9 @@ export async function fetchGamePredictionFeatureInputs(
     client
       .from("nhl_standings_details")
       .select(
-        "team_abbrev,date,games_played,point_pctg,win_pctg,goal_differential,l10_games_played,l10_goal_differential",
+        "team_abbrev,season_id,date,games_played,point_pctg,win_pctg,goal_differential,l10_games_played,l10_goal_differential",
       )
+      .eq("season_id", typedGame.seasonId)
       .lt("date", sourceAsOfDate)
       .order("date", { ascending: false })
       .limit(100),
@@ -2403,6 +2765,32 @@ export async function fetchGamePredictionFeatureInputs(
       .lt("captured_at", oddsSourceCutoffAt)
       .order("captured_at", { ascending: false })
       .limit(20),
+    client
+      .from("rosters")
+      .select("playerId,teamId")
+      .eq("seasonId", typedGame.seasonId)
+      .in("teamId", teamIds)
+      .eq("is_current", true)
+      .order("playerId", { ascending: true })
+      .limit(100),
+    fetchLatestPlayerImpactRows(
+      client,
+      "skater_offensive_ratings_daily",
+      teamIds,
+      sourceAsOfDate,
+    ),
+    fetchLatestPlayerImpactRows(
+      client,
+      "skater_defensive_ratings_daily",
+      teamIds,
+      sourceAsOfDate,
+    ),
+    fetchLatestPlayerImpactRows(
+      client,
+      "goalie_ratings_daily",
+      teamIds,
+      sourceAsOfDate,
+    ),
   ]);
 
   for (const result of [
@@ -2419,6 +2807,7 @@ export async function fetchGamePredictionFeatureInputs(
     wgoGoalieResult,
     forgeTeamProjectionResult,
     marketOddsResult,
+    currentRosterResult,
   ]) {
     if (result.error) throw result.error;
   }
@@ -2451,5 +2840,9 @@ export async function fetchGamePredictionFeatureInputs(
     forgeTeamProjectionRows: (forgeTeamProjectionResult.data ??
       []) as ForgeTeamProjectionRow[],
     marketOddsRows: (marketOddsResult.data ?? []) as MarketOddsSnapshotRow[],
+    currentRosterRows: (currentRosterResult.data ?? []) as RosterPlayerRow[],
+    skaterOffenseRatingRows,
+    skaterDefenseRatingRows,
+    goalieRatingRows,
   };
 }

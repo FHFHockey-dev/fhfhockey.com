@@ -426,11 +426,11 @@ describe("/api/v1/forge/players", () => {
         projectionQueryCount += 1;
         const result =
           projectionQueryCount === 1
-            ? { data: [], error: null as const }
+            ? { data: [], error: null }
             : projectionQueryCount === 2
-              ? { count: 0, error: null as const }
+              ? { count: 0, error: null }
               : projectionQueryCount === 3
-                ? { count: 1, error: null as const }
+                ? { count: 1, error: null }
                 : {
                     data: [
                       {
@@ -451,7 +451,7 @@ describe("/api/v1/forge/players", () => {
                         uncertainty: {},
                       },
                     ],
-                    error: null as const,
+                    error: null,
                   };
         return createQueryBuilder(() => result, (column, value) => {
           if (column === "horizon_games") horizonFilters.push(value);

@@ -2,9 +2,15 @@ export type TweetNewsCategory =
   | "LINE COMBINATION"
   | "GOALIE START"
   | "INJURY"
+  | "REPORTED INJURY"
   | "RETURN"
   | "SCRATCHES"
   | "TRANSACTION"
+  | "SIGNING"
+  | "NEWS UPDATE"
+  | "TRADE"
+  | "RETIREMENT"
+  | "LINE CHANGE"
   | "OTHER";
 
 export type TweetNewsRuleConfidence = "auto" | "review" | "support";
@@ -273,6 +279,22 @@ export const tweetNewsPhraseDictionary = [
       "Support phrases should enrich an injury card, not create one unless paired with out/questionable/left practice language.",
   },
   {
+    id: "return-projected-timeline",
+    category: "RETURN",
+    subcategory: "PROJECTED RETURN",
+    confidence: "auto",
+    autoPublish: true,
+    phrases: ["return around", "targeting a return"],
+    regexes: [
+      "\\b(?:puts?|projects?) (?:a |the )?return around\\b",
+      "\\btargeting a return (?:in|around|by)\\b",
+    ],
+    requiredEvidence: ["player"],
+    corpusMatches: 1,
+    notes:
+      "Projected return dates are publishable when the player can be identified; unresolved wrapper tweets remain in review.",
+  },
+  {
     id: "return-available",
     category: "RETURN",
     subcategory: "RETURNING",
@@ -366,6 +388,270 @@ export const tweetNewsPhraseDictionary = [
     notes:
       "Low volume in this corpus, but these phrases are precise enough with player evidence.",
   },
+  {
+    id: "contract-extension-progress",
+    category: "NEWS UPDATE",
+    subcategory: "CONTRACT NEGOTIATION",
+    confidence: "auto",
+    autoPublish: true,
+    phrases: [
+      "getting an extension done",
+      "closing in on a contract extension",
+      "closing in on an extension",
+    ],
+    regexes: [
+      "\\bgetting an extension done\\b",
+      "\\bclosing in on\\b.{0,100}\\b(?:contract )?extension\\b",
+      "\\blanguage and details (?:are |being )?worked on\\b.{0,160}\\bextension\\b",
+    ],
+    requiredEvidence: [],
+    corpusMatches: 2,
+    notes:
+      "Credible contract-progress reporting is publishable as a news update, while completed or officially announced contracts remain signings.",
+  },
+  {
+    id: "signing-official",
+    category: "SIGNING",
+    subcategory: "OFFICIAL SIGNING",
+    confidence: "auto",
+    autoPublish: true,
+    phrases: [
+      "signed",
+      "re-signed",
+      "signs a contract",
+      "signs with",
+      "agrees to a deal",
+      "agreed to terms",
+      "contract settlement",
+      "contract official",
+    ],
+    regexes: [
+      "\\b(?:re-?signed|signed)\\b",
+      "\\bsigns?\\b.{0,80}\\b(?:contract|deal|extension)\\b",
+      "\\bsigns? with\\b",
+      "\\bare signing\\b",
+      "\\bagrees? to\\b.{0,50}\\bdeal\\b",
+      "\\bagreed to terms\\b",
+      "\\bhave a settlement\\b",
+      "\\bsettlement\\b.{0,40}\\b(?:year|years|\\$|million|m\\b)",
+      "\\bcontract official\\b",
+      "\\bofficially announce\\b.{0,50}\\bsigning\\b",
+      "\\bdeal with\\b.{0,100}\\b(?:years?|aav|\\$|million)\\b",
+      "\\b(?:one|two|three|four|five|six|seven|eight)[- ]years?\\b.{0,50}\\b(?:aav|\\$|million)\\b",
+      "\\b\\d+\\s*x\\s*\\$?\\d+(?:\\.\\d+)?\\s*[mk]\\b",
+      "\\b\\d+\\s*x\\s*\\$?\\d+(?:\\.\\d+)?\\b",
+      "\\b\\$?\\d+(?:\\.\\d+)?\\s*[mk]\\s*x\\s*\\d+ years?\\b",
+      "\\b(?:goes to|stays in)\\b.{0,60}\\b\\d+ years?\\b",
+      "\\bto\\b.{0,40}\\b(?:one|two|three|four|five|six|seven|eight) years?\\b.{0,30}\\$",
+    ],
+    requiredEvidence: [],
+    corpusMatches: 97,
+    notes:
+      "Official contract language is sufficiently precise for publication even when a newly signed player is not yet present on the destination roster.",
+  },
+  {
+    id: "trade-official",
+    category: "TRADE",
+    subcategory: "COMPLETED TRADE",
+    confidence: "auto",
+    autoPublish: true,
+    phrases: [
+      "have acquired",
+      "has acquired",
+      "traded to",
+      "in exchange for",
+    ],
+    regexes: [
+      "\\b(?:have|has) acquired\\b",
+      "\\b(?:was|were|has been|have been) traded\\b",
+      "\\btraded\\b.{0,100}\\b(?:to|for)\\b",
+      "\\bin exchange for\\b",
+      "\\btrade details\\b",
+      "\\bacquires?\\b",
+    ],
+    requiredEvidence: [],
+    corpusMatches: 17,
+    notes:
+      "Completed acquisition and exchange language is distinct from trade-talk or no-trade-clause reporting.",
+  },
+  {
+    id: "transaction-offer-sheet",
+    category: "TRANSACTION",
+    subcategory: "OFFER SHEET",
+    confidence: "auto",
+    autoPublish: true,
+    phrases: ["tendered an offer sheet", "offer-sheeting", "matched the offer sheet"],
+    regexes: [
+      "\\btendered an offer sheet\\b",
+      "\\boffer[- ]sheeting\\b",
+      "\\bmatched\\b.{0,50}\\boffer sheet\\b",
+    ],
+    requiredEvidence: [],
+    corpusMatches: 3,
+    notes: "Explicit offer-sheet submissions and match decisions are completed transactions.",
+  },
+  {
+    id: "transaction-arbitration-filed",
+    category: "TRANSACTION",
+    subcategory: "ARBITRATION",
+    confidence: "auto",
+    autoPublish: true,
+    phrases: ["filed for arbitration", "will be filing for arbitration"],
+    regexes: [
+      "\\b(?:has|have) filed for arbitration\\b",
+      "\\bwill be filing\\b.{0,30}\\barbitration\\b",
+      "\\bwill file for arbitration\\b",
+    ],
+    requiredEvidence: [],
+    corpusMatches: 4,
+    notes: "Only player-specific filings qualify; deadline explainers remain excluded.",
+  },
+  {
+    id: "transaction-draft-pick",
+    category: "TRANSACTION",
+    subcategory: "DRAFT PICK",
+    confidence: "auto",
+    autoPublish: true,
+    phrases: ["have selected", "selected overall"],
+    regexes: [
+      "\\bhave selected\\b.{0,100}\\b(?:overall|nhl draft)\\b",
+      "\\bselected\\b.{0,70}\\boverall in the\\b.{0,20}\\bnhl draft\\b",
+    ],
+    requiredEvidence: [],
+    corpusMatches: 1,
+    notes: "Explicit team draft selections are completed roster transactions.",
+  },
+  {
+    id: "reported-injury-awaiting-confirmation",
+    category: "REPORTED INJURY",
+    subcategory: "AWAITING OFFICIAL CONFIRMATION",
+    confidence: "auto",
+    autoPublish: true,
+    phrases: ["report out", "awaiting more information"],
+    regexes: [
+      "\\b(?:there is |there's )?a report\\b.{0,180}\\b(?:torn|ruptured|injur(?:y|ed))\\b",
+      "\\bteam\\b.{0,100}\\baware\\b.{0,100}\\bawaiting (?:more )?(?:information|confirmation)\\b",
+    ],
+    requiredEvidence: [],
+    corpusMatches: 1,
+    notes:
+      "Specific injury reporting may be shown before club confirmation, but must remain visibly distinct from a confirmed injury.",
+  },
+  {
+    id: "injury-surgery-rehab",
+    category: "INJURY",
+    subcategory: "SURGERY / REHAB",
+    confidence: "auto",
+    autoPublish: true,
+    phrases: ["having surgery", "procedure done", "has been rehabbing"],
+    regexes: [
+      "\\b(?:having|undergo(?:ing)?)\\b.{0,40}\\bsurgery\\b",
+      "\\bconfirm(?:s|ed)?\\b.{0,50}\\bsurgery\\b",
+      "\\bprocedure done\\b",
+      "\\bhas been rehabbing\\b",
+      "\\brehabbing (?:his|her|the)\\b",
+    ],
+    requiredEvidence: [],
+    corpusMatches: 3,
+    notes: "Procedure and active-rehabilitation language is current health news.",
+  },
+  {
+    id: "injury-timeline",
+    category: "INJURY",
+    subcategory: "OUT",
+    confidence: "auto",
+    autoPublish: true,
+    phrases: ["will miss at least", "expected to miss"],
+    regexes: [
+      "\\bwill miss at least\\b",
+      "\\bexpected to miss\\b",
+      "\\bwill be out\\b.{0,30}\\b(?:weeks?|months?)\\b",
+    ],
+    requiredEvidence: [],
+    corpusMatches: 1,
+    notes: "Explicit absence timelines are publishable even when player lookup is unavailable.",
+  },
+  {
+    id: "injury-practice-exit-ltir",
+    category: "INJURY",
+    subcategory: "INJURY UPDATE",
+    confidence: "auto",
+    autoPublish: true,
+    phrases: ["leaving practice with an injury", "back on LTIR"],
+    regexes: [
+      "\\bleav(?:es|ing) practice\\b.{0,60}\\binjur",
+      "\\bback on ltir\\b",
+    ],
+    requiredEvidence: [],
+    corpusMatches: 2,
+    notes: "Direct practice exits and confirmed LTIR placement are current injury events.",
+  },
+  {
+    id: "transaction-staffing",
+    category: "TRANSACTION",
+    subcategory: "STAFFING",
+    confidence: "auto",
+    autoPublish: true,
+    phrases: ["named assistant coaches", "named to our coaching staff", "hiring an assistant"],
+    regexes: [
+      "\\bhave named\\b.{0,100}\\bcoaches?\\b",
+      "\\bnamed to (?:our|the) coaching staff\\b",
+      "\\bare hiring\\b.{0,100}\\bcoaching staff\\b",
+    ],
+    requiredEvidence: [],
+    corpusMatches: 3,
+    notes: "Official coaching appointments are completed team transactions.",
+  },
+  {
+    id: "transaction-roster-status",
+    category: "TRANSACTION",
+    subcategory: "ROSTER STATUS",
+    confidence: "auto",
+    autoPublish: true,
+    phrases: ["will not be back", "won't return", "leaving to pursue NHL opportunities"],
+    regexes: [
+      "\\bwill not be back\\b",
+      "\\bwon't return\\b",
+      "\\bleaving\\b.{0,80}\\bto pursue nhl opportunities\\b",
+    ],
+    requiredEvidence: [],
+    corpusMatches: 3,
+    notes: "Direct roster-departure and NHL-arrival statements are actionable status changes.",
+  },
+  {
+    id: "deployment-role-update",
+    category: "LINE CHANGE",
+    subcategory: "PROJECTED ROLE",
+    confidence: "auto",
+    autoPublish: true,
+    phrases: ["play him on the wing", "moving to center", "top-six", "everyday player", "backup goaltender"],
+    regexes: [
+      "\\bplan is to play him on the wing\\b",
+      "\\banticipates moving to c\\b",
+      "\\bviews?\\b.{0,50}\\btop[- ]six\\b",
+      "\\bhe'll be an everyday player\\b",
+      "\\bwill be the\\b.{0,30}\\bbackup goaltender\\b",
+    ],
+    requiredEvidence: [],
+    corpusMatches: 5,
+    notes: "Direct statements about a concrete projected role are fantasy-relevant deployment news.",
+  },
+  {
+    id: "retirement-announced",
+    category: "RETIREMENT",
+    subcategory: "RETIRED",
+    confidence: "auto",
+    autoPublish: true,
+    phrases: ["announces retirement", "has retired", "is retiring"],
+    regexes: [
+      "\\bannounc(?:es|ed|ing) (?:his |her )?retirement\\b",
+      "\\bhas retired\\b",
+      "\\bis retiring\\b",
+    ],
+    requiredEvidence: [],
+    corpusMatches: 1,
+    notes: "Explicit retirement announcements are safe to publish without roster evidence.",
+  },
 ] satisfies TweetNewsPhraseRule[];
 
 export const tweetNewsExclusionRules = [
@@ -380,6 +666,10 @@ export const tweetNewsExclusionRules = [
       "\\bQMJHL\\b",
       "\\bKHL\\b",
       "\\bPWHL\\b",
+      "\\bSHL\\b",
+      "\\bLiiga\\b",
+      "\\bCzechia\\b",
+      "\\bCzech Republic\\b",
     ],
   },
   {
@@ -394,11 +684,31 @@ export const tweetNewsExclusionRules = [
     ],
   },
   {
+    id: "historical-position-usage-recap",
+    reason:
+      "Position-usage and goalie-appearance recaps are reference statistics, not current news cards.",
+    regexes: [
+      "\\bplayed \\d+ games?\\b.{0,180}\\blining ?up\\b",
+      "\\bplayed \\d+ games? in goal\\b.{0,180}\\bstarting \\d+",
+    ],
+  },
+  {
     id: "headline-only-wrapper",
     reason:
       "Wrapper tweets such as 'Lightning lines https://t.co/...' need quoted/oEmbed text before publishing.",
     regexes: [
       "^.{0,80}\\b(?:lines?|goalie|starter|warmups?)\\b\\s+https?://t\\.co/",
+    ],
+  },
+  {
+    id: "roundup-link-or-social-reply",
+    reason:
+      "Roundup links, generic thread promos, condolences, and contextless social replies are not standalone news cards.",
+    regexes: [
+      "^\\s*(?:recap of|the free agents|the trades|substack ongoing thread|recap of today's transactions)\\b",
+      "^\\s*(?:rt )?@[^:]+:\\s*#thanks",
+      "^\\s*@[^ ]+\\s+(?:so sorry|all thoughts)",
+      "\\bdeadline for players to file for arbitration\\b",
     ],
   },
 ] satisfies TweetNewsExclusionRule[];

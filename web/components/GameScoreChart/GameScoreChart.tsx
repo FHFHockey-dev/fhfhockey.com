@@ -6,10 +6,10 @@
 
 import React, { useRef, useEffect } from "react";
 import * as d3 from "d3";
-import { CombinedGameLog } from "lib/supabase/utils/types";
+import { LegacySkoCombinedGameLog } from "lib/supabase/utils/types";
 
 interface GameScoreChartProps {
-  data: CombinedGameLog[];
+  data: LegacySkoCombinedGameLog[];
   width?: number;
   height?: number;
 }
@@ -51,13 +51,13 @@ const GameScoreChart: React.FC<GameScoreChartProps> = ({
 
     // Create line generators
     const actualLine = d3
-      .line<CombinedGameLog>()
+      .line<LegacySkoCombinedGameLog>()
       .x((d) => xScale(new Date(d.date)))
       .y((d) => yScale(d.gameScore ?? 0))
       .curve(d3.curveMonotoneX);
 
     const predictedLine = d3
-      .line<CombinedGameLog>()
+      .line<LegacySkoCombinedGameLog>()
       .x((d) => xScale(new Date(d.date)))
       .y((d) => yScale(d.predictedGameScore ?? 0))
       .curve(d3.curveMonotoneX);

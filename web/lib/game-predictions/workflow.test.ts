@@ -7,6 +7,7 @@ import {
   buildWalkForwardSplits,
   canBootstrapCurrentCompiledBaseline,
   decidePromotion,
+  ensureGamePredictionModelVersionForScoring,
   evaluatePersistedModelVersionPromotionGate,
   generatePregamePredictionsForWindow,
   historicalPregamePredictionCutoffAt,
@@ -85,6 +86,29 @@ function queryBuilder(result: unknown, terminal: "maybeSingle" | "limit") {
 }
 
 describe("game prediction workflow", () => {
+  it("preserves an existing production model-version row during scoring setup", async () => {
+    const upsert = vi.fn();
+    const builder: any = {
+      select: vi.fn(() => builder),
+      eq: vi.fn(() => builder),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { status: "production" },
+        error: null,
+      }),
+    };
+    const from = vi.fn(() => ({ ...builder, upsert }));
+
+    await expect(
+      ensureGamePredictionModelVersionForScoring({
+        client: { from } as any,
+        modelName: BASELINE_MODEL_NAME,
+        modelVersion: BASELINE_MODEL_VERSION,
+        featureSetVersion: GAME_PREDICTION_FEATURE_SET_VERSION,
+      }),
+    ).resolves.toBe("existing");
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
   it("defines repeated same-day pregame refresh windows", () => {
     expect(PREGAME_PREDICTION_REFRESH_POLICY).toMatchObject({
       allowMultipleSameDayRefreshes: true,

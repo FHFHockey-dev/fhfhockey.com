@@ -116,7 +116,7 @@ export interface Player {
  * This is retained for legacy sKO lineage surfaces only.
  */
 
-export interface CombinedGameLog extends PlayerGameLog {
+export interface LegacySkoCombinedGameLog extends PlayerGameLog {
   date: string;
   goals: number;
   assists: number;

@@ -28,7 +28,9 @@ vi.mock("next/router", () => ({
       returnTo: "/forge/dashboard?date=2026-03-14&team=NJD&position=f",
       baseline: "career",
       window: "last10",
-      view: "l30"
+      view: "l30",
+      metricGroup: "finishing",
+      metrics: "shooting_pct,pdo"
     },
     pathname: "/trends/player/[playerId]",
     replace: routerReplace
@@ -56,6 +58,8 @@ vi.mock("lib/supabase", () => {
           assists: 1,
           points: 2,
           shots: 4,
+          shooting_pct: 8,
+          pdo: 99,
           goals_avg_career: 0.5,
           assists_avg_career: 0.6,
           points_avg_career: 1.1,
@@ -63,7 +67,11 @@ vi.mock("lib/supabase", () => {
           goals_avg_last10: 0.7,
           assists_avg_last10: 0.8,
           points_avg_last10: 1.5,
-          shots_avg_last10: 3.8
+          shots_avg_last10: 3.8,
+          shooting_pct_career: 10,
+          shooting_pct_last10: 9,
+          pdo_career: 100,
+          pdo_last10: 99
         },
         {
           game_date: "2026-03-14",
@@ -71,6 +79,8 @@ vi.mock("lib/supabase", () => {
           assists: 1,
           points: 3,
           shots: 5,
+          shooting_pct: 12,
+          pdo: 102,
           goals_avg_career: 0.5,
           assists_avg_career: 0.6,
           points_avg_career: 1.1,
@@ -78,7 +88,11 @@ vi.mock("lib/supabase", () => {
           goals_avg_last10: 0.9,
           assists_avg_last10: 0.9,
           points_avg_last10: 1.8,
-          shots_avg_last10: 4.1
+          shots_avg_last10: 4.1,
+          shooting_pct_career: 10,
+          shooting_pct_last10: 11,
+          pdo_career: 100,
+          pdo_last10: 101
         }
       ],
       error: null
@@ -144,9 +158,27 @@ describe("Trends player detail page", () => {
       screen.getByRole("link", { name: "Back to FORGE Dashboard" }).getAttribute("href")
     ).toBe("/forge/dashboard?date=2026-03-14&team=NJD&position=f");
     expect(screen.getByText("Recent comparison toolkit")).toBeTruthy();
-    expect(screen.getByText(/Strong v1 baselines: Season, 3-Year, Career, Cumulative/i)).toBeTruthy();
+    expect(
+      screen.getByText(
+        /Strong v1 baselines: Season, 3-Year, Career, Cumulative/i
+      )
+    ).toBeTruthy();
     expect(screen.getByRole("button", { name: "L30" })).toBeTruthy();
-    expect(screen.getByText(/Baseline 0\.50/)).toBeTruthy();
+    expect(
+      screen
+        .getByRole("button", { name: "Finishing" })
+        .getAttribute("aria-pressed")
+    ).toBe("true");
+    expect(
+      screen
+        .getByRole("button", { name: "Shooting %" })
+        .getAttribute("aria-pressed")
+    ).toBe("true");
+    expect(
+      screen.getByRole("button", { name: "PDO" }).getAttribute("aria-pressed")
+    ).toBe("true");
+    expect(screen.queryByRole("button", { name: "Goals" })).toBeNull();
+    expect(screen.getByText(/Baseline 10\.0%/)).toBeTruthy();
     expect(routerReplace).not.toHaveBeenCalled();
   });
 });

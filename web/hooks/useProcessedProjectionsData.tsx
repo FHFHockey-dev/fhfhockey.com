@@ -6,36 +6,63 @@ import {
   useMemo,
   useRef,
   useCallback,
-  startTransition
+  startTransition,
 } from "react";
 import { SupabaseClient, PostgrestResponse } from "@supabase/supabase-js"; // prettier-ignore
 import {
   ColumnDef,
   RowData,
   SortingFnOption,
-  GroupColumnDef
+  GroupColumnDef,
 } from "@tanstack/react-table";
 
 // Configuration Imports
 import {
   STATS_MASTER_LIST,
-  StatDefinition
+  StatDefinition,
 } from "lib/projectionsConfig/statsMasterList";
 import {
   PROJECTION_SOURCES_CONFIG,
   ProjectionSourceConfig,
-  SourceStatMapping
 } from "lib/projectionsConfig/projectionSourcesConfig";
 import {
   YAHOO_DRAFT_ANALYSIS_KEYS,
   YAHOO_PLAYER_MAP_KEYS,
-  YAHOO_PLAYERS_TABLE_KEYS
+  YAHOO_PLAYERS_TABLE_KEYS,
 } from "lib/projectionsConfig/yahooConfig";
-import { fetchAllSupabasePages } from "lib/supabase/pagination";
+import {
+  fetchAllSupabaseFilterChunks,
+  fetchAllSupabasePages,
+} from "lib/supabase/pagination";
+import {
+  resolveYahooMappings,
+  type YahooMappingDiagnostics,
+  type YahooPlayerDetailRow,
+  type YahooProjectionIdentityHint,
+} from "lib/draftDashboard/yahooMapping";
+import {
+  buildActiveProjectionSources,
+  buildProjectionInputCacheKey,
+  type CustomAdditionalProjectionSource,
+} from "lib/draftDashboard/customProjectionSources";
+import { calculateWeightedProjection } from "lib/draftDashboard/sourceWeights";
+import {
+  buildProjectionInclusionDiagnostics,
+  type ProjectionInclusionDiagnostics,
+} from "lib/draftDashboard/projectionInclusionDiagnostics";
+import { selectProjectionRowForPlayer } from "lib/draftDashboard/projectionRowSelection";
+import { recalculateFantasyPoints } from "lib/draftDashboard/fantasyPointRecalculation";
+import { deriveShortHandedAssists } from "lib/draftDashboard/derivedProjectionStats";
+import {
+  fetchProjectionSourcesSettled,
+  type ProjectionSourceWarning,
+} from "lib/draftDashboard/projectionSourceSettling";
+export type { CustomAdditionalProjectionSource } from "lib/draftDashboard/customProjectionSources";
 
 // Central constant: current Yahoo game/season prefix for filtering ADP rows.
 // Ensure all yahoo_players and mapping data are restricted to this prefix to avoid prior season leakage.
-export const CURRENT_YAHOO_GAME_PREFIX = "465."; // (Prev season prefix: 453.)
+export const CURRENT_YAHOO_GAME_ID = 465;
+export const CURRENT_YAHOO_GAME_PREFIX = `${CURRENT_YAHOO_GAME_ID}.`; // (Prev season prefix: 453.)
 
 // --- Types ---
 interface RawPlayerStatFromSource {
@@ -122,20 +149,6 @@ export interface RoundSummaryRow {
 
 export type TableDataRow = ProcessedPlayer | RoundSummaryRow;
 
-export interface CustomAdditionalProjectionSource {
-  id: string; // expected to be 'custom_csv'
-  displayName: string; // e.g. 'Custom CSV'
-  playerType: "skater" | "goalie";
-  // Raw row objects shaped similarly to Supabase rows (column names matching statMappings dbColumnName etc.)
-  rows: Array<Record<string, any>>;
-  primaryPlayerIdKey: string; // e.g. 'player_id'
-  originalPlayerNameKey: string; // e.g. 'Player_Name'
-  teamKey?: string;
-  positionKey?: string;
-  statMappings: SourceStatMapping[]; // reuse existing mapping type
-  resolution?: CustomSourceResolutionMeta;
-}
-
 export interface CustomSourceResolutionMeta {
   totalRows: number;
   idMatched: number;
@@ -194,7 +207,13 @@ export interface UseProcessedProjectionsDataReturn {
     total: number;
     bySource: Record<string, number>;
   };
-  customSourceResolutions?: Record<string, CustomSourceResolutionMeta | undefined>;
+  customSourceResolutions?: Record<
+    string,
+    CustomSourceResolutionMeta | undefined
+  >;
+  yahooMappingDiagnostics?: YahooMappingDiagnostics | null;
+  inclusionDiagnostics?: ProjectionInclusionDiagnostics | null;
+  sourceWarnings?: ProjectionSourceWarning[];
 }
 
 // --- Cache Type Definitions ---
@@ -216,6 +235,8 @@ interface CachedFullPlayerData extends BaseCacheSnapshotInfo {
   fantasyPointSettingsSnapshot: string; // Specific to the fully calculated FP data
   showPerGameFantasyPointsSnapshot: boolean; // Added to ensure cache considers this display mode
   refreshKeySnapshot?: number | string;
+  teamCountSnapshot?: number;
+  sourceWarnings: ProjectionSourceWarning[];
 }
 
 interface RawProjectionSourcePlayer extends Record<string, any> {}
@@ -232,6 +253,58 @@ declare module "@tanstack/react-table" {
 interface YahooPlayerDetailData extends Record<string, any> {} // Keep as is
 interface ActualPlayerStatsRow extends Record<string, any> {
   current_team_abbreviation?: string | null; // Add specific known field
+}
+
+function buildYahooProjectionIdentityHints(
+  uniqueNhlPlayerIds: Set<number>,
+  rawProjectionDataBySourceId: Record<
+    string,
+    { data: RawProjectionSourcePlayer[]; config: ProjectionSourceConfig }
+  >,
+  activeSourceConfigs: ProjectionSourceConfig[],
+  activePlayerType: "skater" | "goalie",
+): Map<number, YahooProjectionIdentityHint> {
+  const mutableHints = new Map<
+    number,
+    {
+      playerType: "skater" | "goalie";
+      positions: Set<string>;
+      teams: Set<string>;
+    }
+  >();
+  for (const playerId of uniqueNhlPlayerIds) {
+    mutableHints.set(playerId, {
+      playerType: activePlayerType,
+      positions: new Set(activePlayerType === "goalie" ? ["G"] : []),
+      teams: new Set(),
+    });
+  }
+
+  for (const sourceConfig of activeSourceConfigs) {
+    const rows = rawProjectionDataBySourceId[sourceConfig.id]?.data ?? [];
+    for (const row of rows) {
+      const playerId = Number(row[sourceConfig.primaryPlayerIdKey]);
+      const hint = mutableHints.get(playerId);
+      if (!hint) continue;
+
+      if (sourceConfig.positionKey) {
+        String(row[sourceConfig.positionKey] ?? "")
+          .toUpperCase()
+          .split(/[,/|\s]+/)
+          .map((value) => value.trim())
+          .filter(Boolean)
+          .forEach((value) => hint.positions.add(value));
+      }
+      if (sourceConfig.teamKey) {
+        const team = String(row[sourceConfig.teamKey] ?? "")
+          .trim()
+          .toUpperCase();
+        if (team) hint.teams.add(team);
+      }
+    }
+  }
+
+  return mutableHints;
 }
 
 // --- Constants for Actual Stats ---
@@ -255,9 +328,10 @@ const ACTUAL_STATS_COLUMN_MAP: Record<
     PP_GOALS: "pp_goals",
     PP_ASSISTS: "pp_assists",
     SH_POINTS: "sh_points",
+    SH_GOALS: "sh_goals",
     TIME_ON_ICE_PER_GAME: "toi_per_game", // Assumed in seconds from DB
     FACEOFFS_WON: "total_fow",
-    FACEOFFS_LOST: "total_fol"
+    FACEOFFS_LOST: "total_fol",
   },
   goalie: {
     GAMES_PLAYED: "games_played",
@@ -269,13 +343,13 @@ const ACTUAL_STATS_COLUMN_MAP: Record<
     GOALS_AGAINST_GOALIE: "goals_against",
     GOALS_AGAINST_AVERAGE: "goals_against_avg",
     SAVE_PERCENTAGE: "save_pct", // Assumed decimal like 0.915
-    SHUTOUTS_GOALIE: "shutouts"
-  }
+    SHUTOUTS_GOALIE: "shutouts",
+  },
 };
 
 export function calculateDiffPercentage(
   actual: number | null | undefined,
-  projected: number | null | undefined
+  projected: number | null | undefined,
 ): number | null {
   if (actual == null || projected == null) return null;
   if (projected === 0) {
@@ -290,7 +364,7 @@ export function calculateDiffPercentage(
 async function fetchAllSupabaseData<T extends Record<string, any>>(
   queryBuilder: any,
   selectString: string,
-  opts: { label?: string } = {}
+  opts: { label?: string } = {},
 ): Promise<T[]> {
   const DEV =
     typeof process !== "undefined" && process.env.NODE_ENV !== "production";
@@ -302,7 +376,7 @@ async function fetchAllSupabaseData<T extends Record<string, any>>(
     // Attempt count head request (cheap metadata call)
     const headRes: PostgrestResponse<T> = await queryBuilder.select(
       selectString,
-      { head: true, count: "exact" }
+      { head: true, count: "exact" },
     );
     if (
       (headRes as any)?.count != null &&
@@ -312,39 +386,41 @@ async function fetchAllSupabaseData<T extends Record<string, any>>(
       if (DEV)
         console.log(
           `[fetchAllSupabaseData] head count for ${label}:`,
-          expectedTotal
+          expectedTotal,
         );
     }
   } catch (e) {
     if (DEV)
       console.warn(
         `[fetchAllSupabaseData] head count failed for ${label}`,
-        (e as any)?.message
+        (e as any)?.message,
       );
   }
 
-  const allData = await fetchAllSupabasePages<T>(async ({ from, to, pageIndex }) => {
-    const pageStart =
-      typeof performance !== "undefined" ? performance.now() : Date.now();
-    const { data, error }: PostgrestResponse<T> = await queryBuilder
-      .select(selectString)
-      .range(from, to);
-    if (error) {
-      throw new Error(
-        `Supabase query failed (page ${pageIndex + 1} ${label}): ${error.message}`
-      );
-    }
-    const pageElapsed =
-      (typeof performance !== "undefined" ? performance.now() : Date.now()) -
-      pageStart;
-    if (DEV) {
-      console.log(
-        `[fetchAllSupabaseData] page ${pageIndex + 1} size=${data?.length || 0} elapsed=${pageElapsed.toFixed(1)}ms label=${label}`
-      );
-    }
+  const allData = await fetchAllSupabasePages<T>(
+    async ({ from, to, pageIndex }) => {
+      const pageStart =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
+      const { data, error }: PostgrestResponse<T> = await queryBuilder
+        .select(selectString)
+        .range(from, to);
+      if (error) {
+        throw new Error(
+          `Supabase query failed (page ${pageIndex + 1} ${label}): ${error.message}`,
+        );
+      }
+      const pageElapsed =
+        (typeof performance !== "undefined" ? performance.now() : Date.now()) -
+        pageStart;
+      if (DEV) {
+        console.log(
+          `[fetchAllSupabaseData] page ${pageIndex + 1} size=${data?.length || 0} elapsed=${pageElapsed.toFixed(1)}ms label=${label}`,
+        );
+      }
 
-    return { data: data ?? [], error: null };
-  });
+      return { data: data ?? [], error: null };
+    },
+  );
 
   if (DEV) {
     const totalElapsed =
@@ -353,7 +429,7 @@ async function fetchAllSupabaseData<T extends Record<string, any>>(
     console.log(
       `[fetchAllSupabaseData] complete label=${label} rows=${allData.length}` +
         (expectedTotal != null ? ` expected=${expectedTotal}` : "") +
-        ` total=${totalElapsed.toFixed(1)}ms`
+        ` total=${totalElapsed.toFixed(1)}ms`,
     );
   }
   return allData;
@@ -364,9 +440,9 @@ export function addRoundSummariesToPlayers(
   sortedPlayers: ProcessedPlayer[],
   calculateDiffFn: (
     actual: number | null | undefined,
-    projected: number | null | undefined
+    projected: number | null | undefined,
   ) => number | null,
-  teamCount: number = 12
+  teamCount: number = 12,
 ): TableDataRow[] {
   const finalTableDataWithSummaries: TableDataRow[] = [];
   let currentRoundPlayersBuffer: ProcessedPlayer[] = [];
@@ -402,7 +478,7 @@ export function addRoundSummariesToPlayers(
 
       const totalDiffPercentage = calculateDiffFn(
         roundTotalActualFP,
-        roundTotalProjectedFP
+        roundTotalProjectedFP,
       );
       const projectedPerGame =
         roundTotalProjectedGP > 0
@@ -412,7 +488,7 @@ export function addRoundSummariesToPlayers(
         roundTotalActualGP > 0 ? roundTotalActualFP / roundTotalActualGP : null;
       const diffPercentagePerGame = calculateDiffFn(
         actualPerGame,
-        projectedPerGame
+        projectedPerGame,
       );
 
       finalTableDataWithSummaries.push(...currentRoundPlayersBuffer);
@@ -426,7 +502,7 @@ export function addRoundSummariesToPlayers(
           diffPercentage: totalDiffPercentage,
           projectedPerGame: projectedPerGame,
           actualPerGame: actualPerGame,
-          diffPercentagePerGame: diffPercentagePerGame
+          diffPercentagePerGame: diffPercentagePerGame,
         },
         totalProjectedGP:
           roundTotalProjectedGP > 0 ? roundTotalProjectedGP : null,
@@ -436,7 +512,7 @@ export function addRoundSummariesToPlayers(
         displayTeam: null,
         displayPosition: null,
         combinedStats: {},
-        yahooAvgPick: currentRoundNum * teamCount + 0.00001
+        yahooAvgPick: currentRoundNum * teamCount + 0.00001,
       });
       currentRoundPlayersBuffer = [];
     }
@@ -484,7 +560,7 @@ async function fetchAllSourceData(
   initialRawProjectionDataById?: Record<
     string,
     { data: RawProjectionSourcePlayer[]; config: ProjectionSourceConfig }
-  >
+  >,
 ) {
   let rawProjectionDataBySourceId: Record<
     string,
@@ -499,33 +575,33 @@ async function fetchAllSourceData(
       async (sourceConfig) => {
         const selectKeys = new Set<string>([
           sourceConfig.primaryPlayerIdKey,
-          sourceConfig.originalPlayerNameKey
+          sourceConfig.originalPlayerNameKey,
         ]);
         if (sourceConfig.teamKey) selectKeys.add(sourceConfig.teamKey);
         if (sourceConfig.positionKey) selectKeys.add(sourceConfig.positionKey);
         sourceConfig.statMappings.forEach((mapping) =>
-          selectKeys.add(mapping.dbColumnName)
+          selectKeys.add(mapping.dbColumnName),
         );
         const selectString = Array.from(selectKeys).join(",");
         const queryBuilder = supabaseClient.from(sourceConfig.tableName);
         const allRowsForSource =
           await fetchAllSupabaseData<RawProjectionSourcePlayer>(
             queryBuilder,
-            selectString
+            selectString,
           );
         return {
           sourceId: sourceConfig.id,
           data: allRowsForSource,
-          config: sourceConfig
+          config: sourceConfig,
         };
-      }
+      },
     );
     const fetchedProjectionResults = await Promise.all(projectionDataPromises);
     rawProjectionDataBySourceId = {}; // Initialize
     fetchedProjectionResults.forEach((res) => {
       rawProjectionDataBySourceId[res.sourceId] = {
         data: res.data,
-        config: res.config
+        config: res.config,
       };
     });
   }
@@ -547,34 +623,35 @@ async function fetchAllSourceData(
         : ACTUAL_GOALIE_STATS_TABLE;
 
     const relevantActualStatDbColumns = Object.values(
-      ACTUAL_STATS_COLUMN_MAP[activePlayerType]
+      ACTUAL_STATS_COLUMN_MAP[activePlayerType],
     );
     const definedRelevantActualStatDbColumns =
       relevantActualStatDbColumns.filter(
-        (colName): colName is string => typeof colName === "string"
+        (colName): colName is string => typeof colName === "string",
       );
     const actualStatsSelectColumns = new Set([
       actualStatsPlayerIdColumn,
       ...definedRelevantActualStatDbColumns,
-      "current_team_abbreviation"
+      "current_team_abbreviation",
     ]);
     const actualStatsSelectString = Array.from(actualStatsSelectColumns).join(
-      ","
+      ",",
     );
 
     if (actualStatsSelectColumns.size > 1) {
       try {
-        const queryBuilder = supabaseClient
-          .from(actualStatsTable)
-          .select(actualStatsSelectString)
-          .eq(actualStatsSeasonColumn, actualStatsSeasonValue)
-          .in(actualStatsPlayerIdColumn, Array.from(uniqueNhlPlayerIds));
-
-        const fetchedActualStats =
-          await fetchAllSupabaseData<ActualPlayerStatsRow>(
-            queryBuilder,
-            actualStatsSelectString
-          );
+        const fetchedActualStats = await fetchAllSupabaseFilterChunks<
+          ActualPlayerStatsRow,
+          number
+        >(uniqueNhlPlayerIds, (playerIdChunk, { from, to }) =>
+          supabaseClient
+            .from(actualStatsTable)
+            .select(actualStatsSelectString)
+            .eq(actualStatsSeasonColumn, actualStatsSeasonValue)
+            .in(actualStatsPlayerIdColumn, playerIdChunk)
+            .order(actualStatsPlayerIdColumn, { ascending: true })
+            .range(from, to),
+        );
 
         fetchedActualStats.forEach((row) => {
           const playerIdFromRow = row[actualStatsPlayerIdColumn];
@@ -588,7 +665,7 @@ async function fetchAllSourceData(
         });
       } catch (e: any) {
         console.warn(
-          `Failed to fetch actual stats for ${activePlayerType}: ${e.message}`
+          `Failed to fetch actual stats for ${activePlayerType}: ${e.message}`,
         );
         // Decide if this should throw or just return empty map
       }
@@ -597,82 +674,32 @@ async function fetchAllSourceData(
 
   // 3. Fetch Yahoo NHL Player Map
   const yahooMapSelectString = `${YAHOO_PLAYER_MAP_KEYS.nhlPlayerId}, ${YAHOO_PLAYER_MAP_KEYS.yahooPlayerId}, ${YAHOO_PLAYER_MAP_KEYS.teamAbbreviation}, ${YAHOO_PLAYER_MAP_KEYS.position}, ${YAHOO_PLAYER_MAP_KEYS.nhlPlayerName}, ${YAHOO_PLAYER_MAP_KEYS.yahooPlayerNameInMap}`;
-  const yahooMapQueryBuilder = supabaseClient
-    .from("yahoo_nhl_player_map_mat")
-    .select(yahooMapSelectString)
-    .in(
-      YAHOO_PLAYER_MAP_KEYS.nhlPlayerId,
-      Array.from(uniqueNhlPlayerIds).map(String)
-    );
-  const yahooMapData = await fetchAllSupabaseData<YahooNhlPlayerMapEntry>(
-    yahooMapQueryBuilder,
-    yahooMapSelectString
+  const yahooMapData = await fetchAllSupabaseFilterChunks<
+    YahooNhlPlayerMapEntry,
+    string
+  >(Array.from(uniqueNhlPlayerIds, String), (playerIdChunk, { from, to }) =>
+    supabaseClient
+      .from("yahoo_nhl_player_map_mat")
+      .select(yahooMapSelectString)
+      .in(YAHOO_PLAYER_MAP_KEYS.nhlPlayerId, playerIdChunk)
+      .order(YAHOO_PLAYER_MAP_KEYS.nhlPlayerId, { ascending: true })
+      .order(YAHOO_PLAYER_MAP_KEYS.yahooPlayerId, {
+        ascending: true,
+        nullsFirst: false,
+      })
+      .range(from, to),
   );
-  // --- Business Rule: Only use current-season Yahoo game prefix (e.g. 465.) ---
-  const filteredYahooMapData = (yahooMapData || []).filter((m) => {
-    const yahooId = m[YAHOO_PLAYER_MAP_KEYS.yahooPlayerId];
-    return (
-      typeof yahooId === "string" &&
-      yahooId.startsWith(CURRENT_YAHOO_GAME_PREFIX)
-    );
-  });
-
-  // Fallback safety: if for some reason we have no rows for the current prefix, log a warning and revert to unfiltered to avoid empty ADP data.
-  const effectiveYahooMapData =
-    filteredYahooMapData.length > 0 ? filteredYahooMapData : yahooMapData;
-
-  if (filteredYahooMapData.length === 0) {
-    console.warn(
-      `Yahoo map filter: no entries matched prefix ${CURRENT_YAHOO_GAME_PREFIX}. Using unfiltered data (count=${yahooMapData?.length || 0}).`
-    );
-  }
-
-  // If both 453.* and 465.* rows exist for the same NHL player, prefer 465.*
-  const tempDedupMap = new Map<number, YahooNhlPlayerMapEntry>();
-  for (const m of effectiveYahooMapData) {
-    const nhlIdNum = Number(m[YAHOO_PLAYER_MAP_KEYS.nhlPlayerId]);
-    if (isNaN(nhlIdNum)) continue;
-    const existing = tempDedupMap.get(nhlIdNum);
-    if (!existing) {
-      tempDedupMap.set(nhlIdNum, m);
-      continue;
-    }
-    const existingYahooId = String(
-      existing[YAHOO_PLAYER_MAP_KEYS.yahooPlayerId] || ""
-    );
-    const incomingYahooId = String(
-      m[YAHOO_PLAYER_MAP_KEYS.yahooPlayerId] || ""
-    );
-    const existingIs465 = existingYahooId.startsWith(CURRENT_YAHOO_GAME_PREFIX);
-    const incomingIs465 = incomingYahooId.startsWith(CURRENT_YAHOO_GAME_PREFIX);
-    // Replace if incoming is 465 and existing is not 465.
-    if (!existingIs465 && incomingIs465) {
-      tempDedupMap.set(nhlIdNum, m);
-    }
-  }
-  const nhlToYahooMap = tempDedupMap;
 
   // 4. Fetch Yahoo Player Details
   const uniqueYahooPlayerIdsFromMap = new Set<string>();
-  if (effectiveYahooMapData) {
-    effectiveYahooMapData.forEach((m) => {
+  if (yahooMapData) {
+    yahooMapData.forEach((m) => {
       const yahooId = m[YAHOO_PLAYER_MAP_KEYS.yahooPlayerId];
       if (yahooId) {
         uniqueYahooPlayerIdsFromMap.add(String(yahooId));
       }
     });
   }
-
-  console.log("Debug - Yahoo mapping data:", {
-    yahooMapDataCount: yahooMapData?.length || 0,
-    filteredYahooMapDataCount: filteredYahooMapData.length,
-    usingFiltered: filteredYahooMapData.length > 0,
-    dedupedCount: nhlToYahooMap.size,
-    uniqueYahooPlayerIdsFromMapCount: uniqueYahooPlayerIdsFromMap.size,
-    sampleYahooMapData: effectiveYahooMapData?.slice(0, 3) || [],
-    uniqueNhlPlayerIdsCount: uniqueNhlPlayerIds.size,
-    sampleNhlPlayerIds: Array.from(uniqueNhlPlayerIds).slice(0, 5)
-  });
 
   let yahooPlayersMap = new Map<string, YahooPlayerDetailData>();
   if (uniqueYahooPlayerIdsFromMap.size > 0) {
@@ -694,27 +721,33 @@ async function fetchAllSourceData(
     const results: YahooPlayerDetailData[] = [];
     // Query by player_key for composite IDs (if any)
     if (compositeIds.length) {
-      const q1 = supabaseClient
-        .from("yahoo_players")
-        .select(yahooPlayersSelectString)
-        .eq("game_id", 465)
-        .in(YAHOO_PLAYERS_TABLE_KEYS.primaryKey, compositeIds);
-      const data1 = await fetchAllSupabaseData<YahooPlayerDetailData>(
-        q1,
-        yahooPlayersSelectString
+      const data1 = await fetchAllSupabaseFilterChunks<
+        YahooPlayerDetailData,
+        string
+      >(compositeIds, (playerIdChunk, { from, to }) =>
+        supabaseClient
+          .from("yahoo_players")
+          .select(yahooPlayersSelectString)
+          .eq("game_id", CURRENT_YAHOO_GAME_ID)
+          .in(YAHOO_PLAYERS_TABLE_KEYS.primaryKey, playerIdChunk)
+          .order(YAHOO_PLAYERS_TABLE_KEYS.primaryKey, { ascending: true })
+          .range(from, to),
       );
       if (data1?.length) results.push(...data1);
     }
     // Query by player_id for numeric IDs (if any)
     if (numericIds.length) {
-      const q2 = supabaseClient
-        .from("yahoo_players")
-        .select(yahooPlayersSelectString)
-        .eq("game_id", 465)
-        .in(YAHOO_PLAYERS_TABLE_KEYS.yahooSpecificPlayerId, numericIds);
-      const data2 = await fetchAllSupabaseData<YahooPlayerDetailData>(
-        q2,
-        yahooPlayersSelectString
+      const data2 = await fetchAllSupabaseFilterChunks<
+        YahooPlayerDetailData,
+        string
+      >(numericIds, (playerIdChunk, { from, to }) =>
+        supabaseClient
+          .from("yahoo_players")
+          .select(yahooPlayersSelectString)
+          .eq("game_id", CURRENT_YAHOO_GAME_ID)
+          .in(YAHOO_PLAYERS_TABLE_KEYS.yahooSpecificPlayerId, playerIdChunk)
+          .order(YAHOO_PLAYERS_TABLE_KEYS.primaryKey, { ascending: true })
+          .range(from, to),
       );
       if (data2?.length) results.push(...data2);
     }
@@ -744,26 +777,41 @@ async function fetchAllSourceData(
       if (pid) yahooPlayersMap.set(String(pid), row);
       if (pkey) yahooPlayersMap.set(String(pkey), row);
     }
+  }
 
-    if (process.env.NODE_ENV !== "production") {
-      console.debug("[ADP Debug] Yahoo players fetched", {
-        compositeIds: compositeIds.length,
-        numericIds: numericIds.length,
-        resultRows: results.length,
-        dedupSize: dedup.size,
-        mapSize: yahooPlayersMap.size,
-        sample: Array.from(yahooPlayersMap.entries())
-          .slice(0, 3)
-          .map(([k, v]) => ({ k, adp: (v as any).average_draft_pick }))
-      });
-    }
+  const yahooPlayerDetailsByNumericId = new Map<string, YahooPlayerDetailRow>();
+  for (const row of yahooPlayersMap.values()) {
+    const playerId = String(
+      row[YAHOO_PLAYERS_TABLE_KEYS.yahooSpecificPlayerId] ?? "",
+    ).trim();
+    if (playerId) yahooPlayerDetailsByNumericId.set(playerId, row);
+  }
+  const identityHints = buildYahooProjectionIdentityHints(
+    uniqueNhlPlayerIds,
+    rawProjectionDataBySourceId,
+    activeSourceConfigs,
+    activePlayerType,
+  );
+  const mappingResolution = resolveYahooMappings(
+    yahooMapData,
+    yahooPlayerDetailsByNumericId,
+    identityHints,
+  );
+  const nhlToYahooMap = mappingResolution.mappingsByNhlId as Map<
+    number,
+    YahooNhlPlayerMapEntry
+  >;
+
+  if (process.env.NODE_ENV !== "production") {
+    console.debug("[YahooMappingDiagnostics]", mappingResolution.diagnostics);
   }
 
   return {
     rawProjectionDataBySourceId,
     actualStatsMap,
     nhlToYahooMap,
-    yahooPlayersMap
+    yahooPlayersMap,
+    yahooMappingDiagnostics: mappingResolution.diagnostics,
   };
 }
 
@@ -786,7 +834,7 @@ function processRawDataIntoPlayers(
   customNameIndexBySource: Map<string, Map<string, CustomNameIndexEntry[]>>,
   allowNameFallback: boolean,
   customSourceIds: Set<string>,
-  fallbackUsageTracker: Map<string, Set<number>>
+  fallbackUsageTracker: Map<string, Set<number>>,
 ) {
   const tempProcessedPlayers: ProcessedPlayer[] = [];
   const playersRequiringNameDebug: Array<any> = []; // Use 'any' for now, refine if needed
@@ -822,9 +870,23 @@ function processRawDataIntoPlayers(
       YAHOO_PLAYER_MAP_KEYS.yahooPlayerId
     ]
       ? yahooPlayersMap.get(
-          String(playerYahooMapEntry[YAHOO_PLAYER_MAP_KEYS.yahooPlayerId])
+          String(playerYahooMapEntry[YAHOO_PLAYER_MAP_KEYS.yahooPlayerId]),
         )
       : null;
+    const playerActualStatsRow = actualStatsMap.get(nhlPlayerId);
+    const targetTeamUpper =
+      playerActualStatsRow?.current_team_abbreviation &&
+      typeof playerActualStatsRow.current_team_abbreviation === "string"
+        ? playerActualStatsRow.current_team_abbreviation.toUpperCase()
+        : String(
+            yahooPlayerDetail?.[
+              YAHOO_PLAYERS_TABLE_KEYS.editorialTeamAbbreviation
+            ] ??
+              playerYahooMapEntry?.[YAHOO_PLAYER_MAP_KEYS.teamAbbreviation] ??
+              "",
+          )
+            .trim()
+            .toUpperCase() || null;
 
     let nameFromYahooPlayersTable: string | null = null;
     if (!resolvedName && yahooPlayerDetail) {
@@ -842,12 +904,12 @@ function processRawDataIntoPlayers(
 
     if (!resolvedName) {
       for (const sourceConfig of activeSourceConfigs) {
-        const sourceDataForPlayer = rawProjectionDataBySourceId[
-          sourceConfig.id
-        ]?.data.find(
-          (p: RawProjectionSourcePlayer) =>
-            Number(p[sourceConfig.primaryPlayerIdKey]) === nhlPlayerId
-        );
+        const sourceDataForPlayer = selectProjectionRowForPlayer({
+          rows: rawProjectionDataBySourceId[sourceConfig.id]?.data || [],
+          source: sourceConfig,
+          playerId: nhlPlayerId,
+          currentTeam: targetTeamUpper,
+        });
         const nameFromSrcRaw =
           sourceDataForPlayer?.[sourceConfig.originalPlayerNameKey];
         const nameFromSrc =
@@ -879,33 +941,29 @@ function processRawDataIntoPlayers(
         actual: null,
         diffPercentage: null,
         projectedPerGame: null,
-        actualPerGame: null
+        actualPerGame: null,
       },
       yahooPlayerId: playerYahooMapEntry?.[YAHOO_PLAYER_MAP_KEYS.yahooPlayerId]
         ? String(playerYahooMapEntry[YAHOO_PLAYER_MAP_KEYS.yahooPlayerId])
-        : undefined
+        : undefined,
     };
 
-    const playerActualStatsRow = actualStatsMap.get(nhlPlayerId);
-    const targetTeamUpper =
-      playerActualStatsRow?.current_team_abbreviation &&
-      typeof playerActualStatsRow.current_team_abbreviation === "string"
-        ? playerActualStatsRow.current_team_abbreviation.toUpperCase()
-        : null;
     const fallbackNameKey = allowNameFallback ? stdName(finalName) : "";
     const sourceRowCache = new Map<string, RawProjectionSourcePlayer | null>();
     const getSourceRowForPlayer = (
-      sourceConfig: ProjectionSourceConfig
+      sourceConfig: ProjectionSourceConfig,
     ): RawProjectionSourcePlayer | null => {
       if (sourceRowCache.has(sourceConfig.id)) {
         return sourceRowCache.get(sourceConfig.id) || null;
       }
       const collection =
         rawProjectionDataBySourceId[sourceConfig.id]?.data || [];
-      const directMatch = collection.find(
-        (p: RawProjectionSourcePlayer) =>
-          Number(p[sourceConfig.primaryPlayerIdKey]) === nhlPlayerId
-      );
+      const directMatch = selectProjectionRowForPlayer({
+        rows: collection,
+        source: sourceConfig,
+        playerId: nhlPlayerId,
+        currentTeam: targetTeamUpper,
+      });
       if (directMatch) {
         sourceRowCache.set(sourceConfig.id, directMatch);
         return directMatch;
@@ -931,7 +989,7 @@ function processRawDataIntoPlayers(
       let selected: CustomNameIndexEntry | undefined;
       if (targetTeamUpper) {
         const teamMatches = candidates.filter(
-          (entry) => entry.team === targetTeamUpper
+          (entry) => entry.team === targetTeamUpper,
         );
         if (teamMatches.length === 1) {
           selected = teamMatches[0];
@@ -945,12 +1003,15 @@ function processRawDataIntoPlayers(
         }
       }
       if (!selected) {
-        selected = candidates.reduce((best, entry) => {
-          const gp = entry.gamesPlayed ?? -1;
-          const bestGp = best?.gamesPlayed ?? -1;
-          if (!best || gp > bestGp) return entry;
-          return best;
-        }, undefined as CustomNameIndexEntry | undefined);
+        selected = candidates.reduce(
+          (best, entry) => {
+            const gp = entry.gamesPlayed ?? -1;
+            const bestGp = best?.gamesPlayed ?? -1;
+            if (!best || gp > bestGp) return entry;
+            return best;
+          },
+          undefined as CustomNameIndexEntry | undefined,
+        );
       }
       const fallbackRow = selected?.row || null;
       sourceRowCache.set(sourceConfig.id, fallbackRow);
@@ -998,7 +1059,7 @@ function processRawDataIntoPlayers(
             sourceId: sourceConfig.id,
             sourceDisplayName: sourceConfig.displayName,
             originalPlayerNameInSource:
-              sourceDataForPlayer[sourceConfig.originalPlayerNameKey] || null
+              sourceDataForPlayer[sourceConfig.originalPlayerNameKey] || null,
           });
         }
       });
@@ -1009,7 +1070,7 @@ function processRawDataIntoPlayers(
         nameFromYahooPlayersTable,
         finalNameUsed: finalName,
         nameFromProjectionSource: loggedNameFromProjectionSource,
-        sourcesProvidingThisId: sourcesInfo
+        sourcesProvidingThisId: sourcesInfo,
       });
     }
 
@@ -1023,7 +1084,7 @@ function processRawDataIntoPlayers(
         if (!sourceControl || !sourceControl.isSelected) continue;
 
         const statMapping = sourceConfig.statMappings.find(
-          (m) => m.key === statDef.key
+          (m) => m.key === statDef.key,
         );
         const sourceDataForPlayer = getSourceRowForPlayer(sourceConfig);
 
@@ -1044,43 +1105,39 @@ function processRawDataIntoPlayers(
               value: parsedValue,
               sourceId: sourceConfig.id,
               sourceDisplayName: sourceConfig.displayName,
-              weight: sourceControl.weight
+              weight: sourceControl.weight,
             });
           } else {
             missingFromSelectedForStat.push(
-              `${sourceConfig.displayName} (No Data)`
+              `${sourceConfig.displayName} (No Data)`,
             );
           }
         } else if (statMapping && !sourceDataForPlayer) {
           missingFromSelectedForStat.push(
-            `${sourceConfig.displayName} (Player Not Found In Source)`
+            `${sourceConfig.displayName} (Player Not Found In Source)`,
           );
         }
       }
 
-      let weightedSum = 0;
-      let totalWeight = 0;
       const contributingToAvg: AggregatedStatValue["contributingSources"] = [];
 
       currentStatValues.forEach((item) => {
         if (item.value !== null) {
-          weightedSum += item.value * item.weight;
-          totalWeight += item.weight;
           contributingToAvg.push({
             name: item.sourceDisplayName,
             weight: item.weight,
-            value: item.value
+            value: item.value,
           });
         }
       });
 
-      projectedValue = totalWeight > 0 ? weightedSum / totalWeight : null;
+      projectedValue = calculateWeightedProjection(currentStatValues);
 
       const projectedDetail: AggregatedStatValue = {
         value: projectedValue,
         contributingSources: contributingToAvg,
         missingFromSelectedSources: missingFromSelectedForStat,
-        statDefinition: statDef
+        statDefinition: statDef,
       };
 
       let actualValue: number | null = null;
@@ -1141,7 +1198,7 @@ function processRawDataIntoPlayers(
         projected: projectedValue,
         actual: actualValue,
         diffPercentage: calculateDiffPercentage(actualValue, projectedValue),
-        projectedDetail: projectedDetail
+        projectedDetail: projectedDetail,
       };
     }
 
@@ -1221,7 +1278,7 @@ function processRawDataIntoPlayers(
           .map((s) =>
             String(s || "")
               .trim()
-              .toUpperCase()
+              .toUpperCase(),
           )
           .filter(Boolean);
         if (norm.length) processedPlayer.eligiblePositions = norm;
@@ -1238,7 +1295,7 @@ function processRawDataIntoPlayers(
     // Add derived stat: DEFENSE_POINTS (Defensemen goals + assists)
     try {
       const posStr = String(
-        processedPlayer.displayPosition || ""
+        processedPlayer.displayPosition || "",
       ).toUpperCase();
       const isDefenseman = posStr
         .split(",")
@@ -1260,7 +1317,7 @@ function processRawDataIntoPlayers(
       // Only attach when defenseman to avoid marking FP as "valid" for others
       if (isDefenseman) {
         const dpStatDef = STATS_MASTER_LIST.find(
-          (s) => s.key === "DEFENSE_POINTS"
+          (s) => s.key === "DEFENSE_POINTS",
         )!;
         processedPlayer.combinedStats["DEFENSE_POINTS"] = {
           projected: dpProjected,
@@ -1270,8 +1327,8 @@ function processRawDataIntoPlayers(
             value: dpProjected,
             contributingSources: [],
             missingFromSelectedSources: [],
-            statDefinition: dpStatDef
-          }
+            statDefinition: dpStatDef,
+          },
         };
       }
     } catch (e) {
@@ -1289,10 +1346,8 @@ function processRawDataIntoPlayers(
       const shgAct =
         (processedPlayer.combinedStats as any).SH_GOALS?.actual ?? null;
 
-      const shaProjected =
-        shpProj != null && shgProj != null ? shpProj - shgProj : null;
-      const shaActual =
-        shpAct != null && shgAct != null ? shpAct - shgAct : null;
+      const shaProjected = deriveShortHandedAssists(shpProj, shgProj);
+      const shaActual = deriveShortHandedAssists(shpAct, shgAct);
 
       if (shaProjected != null || shaActual != null) {
         const shaDef = STATS_MASTER_LIST.find((s) => s.key === "SH_ASSISTS");
@@ -1305,8 +1360,8 @@ function processRawDataIntoPlayers(
               value: shaProjected,
               contributingSources: [],
               missingFromSelectedSources: [],
-              statDefinition: shaDef
-            }
+              statDefinition: shaDef,
+            },
           };
         }
       }
@@ -1325,24 +1380,13 @@ function processRawDataIntoPlayers(
       // Read directly from the direct columns using the updated keys
       const modeKeys = YAHOO_DRAFT_ANALYSIS_KEYS[yahooDraftMode];
 
-      // Debug logging to see what's actually in the yahooPlayerDetail
-      console.log("Debug - Yahoo Player Detail:", {
-        playerId: nhlPlayerId,
-        playerName: finalName,
-        yahooPlayerDetail: yahooPlayerDetail,
-        modeKeys: modeKeys,
-        avgPickValue: yahooPlayerDetail[modeKeys.avgPick],
-        avgRoundValue: yahooPlayerDetail[modeKeys.avgRound],
-        pctDraftedValue: yahooPlayerDetail[modeKeys.pctDrafted]
-      });
-
       const rawAvgPick = yahooPlayerDetail[modeKeys.avgPick];
       processedPlayer.yahooAvgPick = parseYahooStat(rawAvgPick);
       processedPlayer.yahooAvgRound = parseYahooStat(
-        yahooPlayerDetail[modeKeys.avgRound]
+        yahooPlayerDetail[modeKeys.avgRound],
       );
       const pctDraftedNum = parseYahooStat(
-        yahooPlayerDetail[modeKeys.pctDrafted]
+        yahooPlayerDetail[modeKeys.pctDrafted],
       );
       processedPlayer.yahooPctDrafted =
         pctDraftedNum !== null ? pctDraftedNum * 100 : null;
@@ -1354,7 +1398,7 @@ function processRawDataIntoPlayers(
         console.warn("[ADP Debug] Failed to parse average_draft_pick value", {
           nhlPlayerId,
           rawAvgPick,
-          finalName
+          finalName,
         });
       }
     }
@@ -1386,7 +1430,7 @@ function processRawDataIntoPlayers(
       : null;
     processedPlayer.fantasyPoints.diffPercentage = calculateDiffPercentage(
       processedPlayer.fantasyPoints.actual,
-      processedPlayer.fantasyPoints.projected
+      processedPlayer.fantasyPoints.projected,
     );
 
     const projectedGP = processedPlayer.combinedStats.GAMES_PLAYED?.projected;
@@ -1412,7 +1456,9 @@ function processRawDataIntoPlayers(
   return { tempProcessedPlayers, playersRequiringNameDebug };
 }
 
-// Async yielding variant to allow mid-loop stale abort & UI responsiveness.
+// Async-compatible wrapper. Run-id checks before and after this synchronous
+// processing pass prevent stale commits; current measured pools do not justify
+// the added complexity of chunking the inner player loop.
 async function processRawDataIntoPlayersAsync(
   uniqueNhlPlayerIds: Set<number>,
   rawProjectionDataBySourceId: Record<
@@ -1431,7 +1477,7 @@ async function processRawDataIntoPlayersAsync(
   customNameIndexBySource: Map<string, Map<string, CustomNameIndexEntry[]>>,
   allowNameFallback: boolean,
   customSourceIds: Set<string>,
-  fallbackUsageTracker: Map<string, Set<number>>
+  fallbackUsageTracker: Map<string, Set<number>>,
 ) {
   return processRawDataIntoPlayers(
     uniqueNhlPlayerIds,
@@ -1448,7 +1494,7 @@ async function processRawDataIntoPlayersAsync(
     customNameIndexBySource,
     allowNameFallback,
     customSourceIds,
-    fallbackUsageTracker
+    fallbackUsageTracker,
   );
 }
 
@@ -1467,7 +1513,7 @@ export const useProcessedProjectionsData = ({
   customAdditionalSource,
   customAdditionalSources,
   refreshKey,
-  allowCustomNameFallback = true
+  allowCustomNameFallback = true,
 }: UseProcessedProjectionsDataProps): UseProcessedProjectionsDataReturn => {
   const [processedPlayers, setProcessedPlayers] = useState<TableDataRow[]>([]);
   const [tableColumns, setTableColumns] = useState<
@@ -1475,15 +1521,31 @@ export const useProcessedProjectionsData = ({
   >([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sourceWarnings, setSourceWarnings] = useState<
+    ProjectionSourceWarning[]
+  >([]);
   const [customFallbackUsageState, setCustomFallbackUsageState] = useState<{
     total: number;
     bySource: Record<string, number>;
   }>({ total: 0, bySource: {} });
+  const [yahooMappingDiagnostics, setYahooMappingDiagnostics] =
+    useState<YahooMappingDiagnostics | null>(null);
+  const [inclusionDiagnostics, setInclusionDiagnostics] =
+    useState<ProjectionInclusionDiagnostics | null>(null);
   const fetchRunIdRef = useRef(0);
   const basePlayersRef = useRef<ProcessedPlayer[] | null>(null);
   const lastBaseKeyRef = useRef<string>("");
   const lastFPKeyRef = useRef<string>("");
   const fallbackLoggedRef = useRef(false);
+  const sourceInputCacheRef = useRef<{
+    key: string;
+    rawProjectionDataById: Record<
+      string,
+      { data: RawProjectionSourcePlayer[]; config: ProjectionSourceConfig }
+    >;
+    fetchedData: Awaited<ReturnType<typeof fetchAllSourceData>>;
+    sourceWarnings: ProjectionSourceWarning[];
+  } | null>(null);
 
   const [statGroupCollapseState, setStatGroupCollapseState] = useState<
     Record<string, boolean>
@@ -1492,7 +1554,7 @@ export const useProcessedProjectionsData = ({
   const toggleStatGroupCollapse = useCallback((groupId: string) => {
     setStatGroupCollapseState((prev) => ({
       ...prev,
-      [groupId]: !prev[groupId]
+      [groupId]: !prev[groupId],
     }));
   }, []);
 
@@ -1534,8 +1596,8 @@ export const useProcessedProjectionsData = ({
       .sort()
       .map(
         (key) =>
-          `${sourceControls[key]?.isSelected}-${sourceControls[key]?.weight}`
-      )
+          `${sourceControls[key]?.isSelected}-${sourceControls[key]?.weight}`,
+      ),
   ]);
 
   const stableFantasyPointSettings = useMemo(() => {
@@ -1550,17 +1612,17 @@ export const useProcessedProjectionsData = ({
     Object.keys(fantasyPointSettings).sort().join(","),
     ...Object.keys(fantasyPointSettings)
       .sort()
-      .map((key) => fantasyPointSettings[key])
+      .map((key) => fantasyPointSettings[key]),
   ]);
 
   // Create stable string representations for cache comparison
   const stableSourceControlsString = useMemo(
     () => JSON.stringify(stableSourceControls),
-    [stableSourceControls]
+    [stableSourceControls],
   );
   const stableFantasyPointSettingsString = useMemo(
     () => JSON.stringify(stableFantasyPointSettings),
-    [stableFantasyPointSettings]
+    [stableFantasyPointSettings],
   );
 
   const stableCustomAdditionalSourcesString = useMemo(() => {
@@ -1568,7 +1630,8 @@ export const useProcessedProjectionsData = ({
       const payload = customAdditionalSources.map((s) => ({
         id: s.id,
         playerType: s.playerType,
-        rowsLen: s.rows?.length || 0
+        rowsLen: s.rows?.length || 0,
+        lastUpdated: s.resolution?.lastUpdated || 0,
       }));
       return JSON.stringify(payload);
     }
@@ -1576,7 +1639,8 @@ export const useProcessedProjectionsData = ({
       return JSON.stringify({
         id: customAdditionalSource.id,
         playerType: customAdditionalSource.playerType,
-        rowsLen: customAdditionalSource.rows?.length || 0
+        rowsLen: customAdditionalSource.rows?.length || 0,
+        lastUpdated: customAdditionalSource.resolution?.lastUpdated || 0,
       });
     }
     return "none";
@@ -1585,27 +1649,28 @@ export const useProcessedProjectionsData = ({
   // Composite keys (lightweight) for detecting FP-only updates (must come after stableCustomAdditionalSourcesString)
   const baseKey = useMemo(
     () =>
-      `${activePlayerType}|${stableSourceControlsString}|${yahooDraftMode}|${currentSeasonId || ""}|${stableCustomAdditionalSourcesString}|${refreshKey ?? ""}`,
+      `${activePlayerType}|${stableSourceControlsString}|${yahooDraftMode}|${currentSeasonId || ""}|${stableCustomAdditionalSourcesString}|${refreshKey ?? ""}|teams:${teamCountForRoundSummaries ?? 12}`,
     [
       activePlayerType,
       stableSourceControlsString,
       yahooDraftMode,
       currentSeasonId,
       stableCustomAdditionalSourcesString,
-      refreshKey
-    ]
+      refreshKey,
+      teamCountForRoundSummaries,
+    ],
   );
   const fpKey = useMemo(
     () =>
       `${baseKey}|fp:${stableFantasyPointSettingsString}|pg:${showPerGameFantasyPoints}`,
-    [baseKey, stableFantasyPointSettingsString, showPerGameFantasyPoints]
+    [baseKey, stableFantasyPointSettingsString, showPerGameFantasyPoints],
   );
 
   useEffect(() => {
     const relevantStatDefsForCollapse = STATS_MASTER_LIST.filter(
       (stat) =>
         (activePlayerType === "skater" && stat.isSkaterStat) ||
-        (activePlayerType === "goalie" && stat.isGoalieStat)
+        (activePlayerType === "goalie" && stat.isGoalieStat),
     );
     const initialCollapseStateForType: Record<string, boolean> = {};
     relevantStatDefsForCollapse.forEach((statDef) => {
@@ -1623,6 +1688,7 @@ export const useProcessedProjectionsData = ({
     const runId = ++fetchRunIdRef.current;
     if (!supabaseClient || !currentSeasonId) {
       setError("Supabase client or current season ID not available in hook.");
+      setSourceWarnings([]);
       setProcessedPlayers([]);
       setTableColumns([]);
       setIsLoading(false);
@@ -1640,7 +1706,7 @@ export const useProcessedProjectionsData = ({
         currentSeasonId,
         styles,
         showPerGameFantasyPoints,
-        togglePerGameFantasyPoints
+        togglePerGameFantasyPoints,
       );
 
     if (!cache.current[cacheTypeKey]) {
@@ -1651,7 +1717,7 @@ export const useProcessedProjectionsData = ({
     // If customAdditionalSource changes, bust caches related to that playerType (simple approach for now)
     const anyCustomForType =
       (customAdditionalSources || []).some(
-        (s) => s.playerType === activePlayerType
+        (s) => s.playerType === activePlayerType,
       ) ||
       (customAdditionalSource &&
         customAdditionalSource.playerType === activePlayerType);
@@ -1673,6 +1739,7 @@ export const useProcessedProjectionsData = ({
       currentTypeCache.full.showPerGameFantasyPointsSnapshot ===
         showPerGameFantasyPoints &&
       currentTypeCache.full.refreshKeySnapshot === refreshKey &&
+      currentTypeCache.full.teamCountSnapshot === teamCountForRoundSummaries &&
       !(customAdditionalSources && customAdditionalSources.length) &&
       !customAdditionalSource // only reuse cache if no custom sources
     ) {
@@ -1684,11 +1751,12 @@ export const useProcessedProjectionsData = ({
         toggleStatGroupCollapse,
         styles,
         showPerGameFantasyPoints,
-        togglePerGameFantasyPoints
+        togglePerGameFantasyPoints,
       );
       setTableColumns(derivedCols);
       setIsLoading(false);
       setError(null);
+      setSourceWarnings(currentTypeCache.full.sourceWarnings ?? []);
       return;
     }
 
@@ -1698,21 +1766,52 @@ export const useProcessedProjectionsData = ({
       lastBaseKeyRef.current === baseKey &&
       lastFPKeyRef.current !== fpKey
     ) {
-      try {
-        // Recalculate fantasy points only (placeholder: full implementation would re-run FP calc using stableFantasyPointSettings)
-        // For now, we simply mark FP key updated to avoid full fetch if nothing structural changed.
-        lastFPKeyRef.current = fpKey;
-        return; // skip heavy work (temporary until FP-only calc extracted)
-      } catch (e) {
-        console.warn(
-          "FP-only recompute failed; falling back to full rebuild",
-          e
-        );
-      }
+      const recalculatedPlayers = recalculateFantasyPoints(
+        basePlayersRef.current,
+        stableFantasyPointSettings,
+      );
+      const sortedPlayers = [...recalculatedPlayers].sort(
+        (left, right) =>
+          (left.yahooAvgPick ?? Infinity) - (right.yahooAvgPick ?? Infinity),
+      );
+      const withSummaries = addRoundSummariesToPlayers(
+        sortedPlayers,
+        calculateDiffPercentage,
+        Math.max(1, teamCountForRoundSummaries ?? 12),
+      );
+      basePlayersRef.current = recalculatedPlayers;
+      lastFPKeyRef.current = fpKey;
+      setProcessedPlayers(withSummaries);
+      setTableColumns(
+        deriveVisibleColumns(
+          generateTableCols(),
+          statGroupCollapseState,
+          toggleStatGroupCollapse,
+          styles,
+          showPerGameFantasyPoints,
+          togglePerGameFantasyPoints,
+        ),
+      );
+      setIsLoading(false);
+      setError(null);
+      setSourceWarnings(currentTypeCache.full?.sourceWarnings ?? []);
+      currentTypeCache.full = {
+        data: withSummaries,
+        sourceControlsSnapshot: stableSourceControlsString,
+        yahooModeSnapshot: yahooDraftMode,
+        currentSeasonIdSnapshot: currentSeasonId,
+        fantasyPointSettingsSnapshot: stableFantasyPointSettingsString,
+        showPerGameFantasyPointsSnapshot: showPerGameFantasyPoints,
+        refreshKeySnapshot: refreshKey,
+        teamCountSnapshot: teamCountForRoundSummaries,
+        sourceWarnings: currentTypeCache.full?.sourceWarnings ?? [],
+      };
+      return;
     }
 
     setIsLoading(true);
     setError(null);
+    setSourceWarnings([]);
     const DEV =
       typeof process !== "undefined" && process.env.NODE_ENV !== "production";
     const phaseMarks: Record<string, number> = {};
@@ -1726,45 +1825,38 @@ export const useProcessedProjectionsData = ({
     const relevantStatDefinitions = STATS_MASTER_LIST.filter(
       (stat) =>
         (activePlayerType === "skater" && stat.isSkaterStat) ||
-        (activePlayerType === "goalie" && stat.isGoalieStat)
+        (activePlayerType === "goalie" && stat.isGoalieStat),
     );
 
     // Assemble active source configs including optional custom source
-    const baseActiveSourceConfigs = PROJECTION_SOURCES_CONFIG.filter(
-      (src) =>
-        src.playerType === activePlayerType &&
-        stableSourceControls[src.id]?.isSelected
-    );
-
-    const augmentedActiveSourceConfigs: ProjectionSourceConfig[] = [
-      ...baseActiveSourceConfigs
-    ];
-    const customById = new Map<string, CustomAdditionalProjectionSource>();
-    (customAdditionalSources || []).forEach((s) => customById.set(s.id, s));
-    if (customAdditionalSource)
-      customById.set(customAdditionalSource.id, customAdditionalSource);
-
-    // Push selected custom sources for this player type
-    for (const s of Array.from(customById.values())) {
-      if (s.playerType !== activePlayerType) continue;
-      const ctrl = stableSourceControls[s.id];
-      if (!ctrl || !ctrl.isSelected) continue;
-      augmentedActiveSourceConfigs.push({
-        id: s.id,
-        displayName: s.displayName,
-        tableName: "__custom_session__",
-        playerType: s.playerType,
-        primaryPlayerIdKey: s.primaryPlayerIdKey,
-        originalPlayerNameKey: s.originalPlayerNameKey,
-        teamKey: s.teamKey,
-        positionKey: s.positionKey,
-        statMappings: s.statMappings
+    const { activeSources: augmentedActiveSourceConfigs, customById } =
+      buildActiveProjectionSources({
+        baseSources: PROJECTION_SOURCES_CONFIG,
+        playerType: activePlayerType,
+        sourceControls: stableSourceControls,
+        customSources: [
+          ...(customAdditionalSources || []),
+          ...(customAdditionalSource ? [customAdditionalSource] : []),
+        ],
       });
-    }
+    const sourceInputCacheKey = buildProjectionInputCacheKey({
+      playerType: activePlayerType,
+      activeSources: augmentedActiveSourceConfigs,
+      season: currentSeasonId,
+      customFingerprint: stableCustomAdditionalSourcesString,
+      refreshKey,
+    });
+    const cachedSourceInput =
+      sourceInputCacheRef.current?.key === sourceInputCacheKey
+        ? sourceInputCacheRef.current
+        : null;
+    let sourceWarningsForRun = cachedSourceInput?.sourceWarnings ?? [];
 
     if (augmentedActiveSourceConfigs.length === 0) {
       setProcessedPlayers([]);
       setTableColumns([]);
+      setInclusionDiagnostics(null);
+      setSourceWarnings([]);
       setIsLoading(false);
       return;
     }
@@ -1773,63 +1865,72 @@ export const useProcessedProjectionsData = ({
     try {
       // Build raw projection data map (skip Supabase fetch for custom source)
       mark("fetch:projectionSources:start");
-      const projectionDataPromises = augmentedActiveSourceConfigs.map(
-        async (sourceConfig) => {
-          // If this ID belongs to a custom in-memory source, return its rows
-          const mem = customById.get(sourceConfig.id);
-          if (mem) {
-            return {
-              sourceId: sourceConfig.id,
-              data: (mem.rows || []) as RawProjectionSourcePlayer[],
-              config: sourceConfig
-            };
-          }
-          const selectKeys = new Set<string>([
-            sourceConfig.primaryPlayerIdKey,
-            sourceConfig.originalPlayerNameKey
-          ]);
-          if (sourceConfig.teamKey) selectKeys.add(sourceConfig.teamKey);
-          if (sourceConfig.positionKey)
-            selectKeys.add(sourceConfig.positionKey);
-          sourceConfig.statMappings.forEach((mapping) =>
-            selectKeys.add(mapping.dbColumnName)
-          );
-          const selectString = Array.from(selectKeys).join(",");
-          const queryBuilder = supabaseClient.from(sourceConfig.tableName);
-          const allRowsForSource =
-            await fetchAllSupabaseData<RawProjectionSourcePlayer>(
-              queryBuilder,
-              selectString,
-              { label: `projection:${sourceConfig.id}` }
-            );
-          return {
-            sourceId: sourceConfig.id,
-            data: allRowsForSource,
-            config: sourceConfig
-          };
-        }
-      );
-
-      const fetchedProjectionResults = await Promise.all(
-        projectionDataPromises
-      );
-      mark("fetch:projectionSources:done");
-      const initialRawProjectionDataById: Record<
+      let initialRawProjectionDataById: Record<
         string,
         { data: RawProjectionSourcePlayer[]; config: ProjectionSourceConfig }
-      > = {};
-      fetchedProjectionResults.forEach((res) => {
-        initialRawProjectionDataById[res.sourceId] = {
-          data: res.data,
-          config: res.config
-        };
-      });
+      >;
+      if (cachedSourceInput) {
+        initialRawProjectionDataById = cachedSourceInput.rawProjectionDataById;
+      } else {
+        const projectionDataPromises = augmentedActiveSourceConfigs.map(
+          async (sourceConfig) => {
+            // If this ID belongs to a custom in-memory source, return its rows
+            const mem = customById.get(sourceConfig.id);
+            if (mem) {
+              return {
+                sourceId: sourceConfig.id,
+                data: (mem.rows || []) as RawProjectionSourcePlayer[],
+                config: sourceConfig,
+              };
+            }
+            const selectKeys = new Set<string>([
+              sourceConfig.primaryPlayerIdKey,
+              sourceConfig.originalPlayerNameKey,
+            ]);
+            if (sourceConfig.teamKey) selectKeys.add(sourceConfig.teamKey);
+            if (sourceConfig.positionKey)
+              selectKeys.add(sourceConfig.positionKey);
+            sourceConfig.statMappings.forEach((mapping) =>
+              selectKeys.add(mapping.dbColumnName),
+            );
+            const selectString = Array.from(selectKeys).join(",");
+            const queryBuilder = supabaseClient.from(sourceConfig.tableName);
+            const allRowsForSource =
+              await fetchAllSupabaseData<RawProjectionSourcePlayer>(
+                queryBuilder,
+                selectString,
+                { label: `projection:${sourceConfig.id}` },
+              );
+            return {
+              sourceId: sourceConfig.id,
+              data: allRowsForSource,
+              config: sourceConfig,
+            };
+          },
+        );
+
+        const settledProjectionResults = await fetchProjectionSourcesSettled(
+          augmentedActiveSourceConfigs,
+          (_source, index) => projectionDataPromises[index],
+        );
+        sourceWarningsForRun = settledProjectionResults.warnings;
+        initialRawProjectionDataById = {};
+        settledProjectionResults.successes.forEach(({ result: res }) => {
+          initialRawProjectionDataById[res.sourceId] = {
+            data: res.data,
+            config: res.config,
+          };
+        });
+      }
+      if (runId === fetchRunIdRef.current) {
+        setSourceWarnings(sourceWarningsForRun);
+      }
+      mark("fetch:projectionSources:done");
 
       // Name disambiguation and merge for any newly added source: map by standardized name to existing ids
       try {
-        const { standardizePlayerName } = await import(
-          "lib/standardization/nameStandardization"
-        );
+        const { standardizePlayerName } =
+          await import("lib/standardization/nameStandardization");
         const mkKey = (s: string) =>
           (s || "")
             .normalize("NFD")
@@ -1937,7 +2038,7 @@ export const useProcessedProjectionsData = ({
             nameMap.get(normalized)!.push({
               row,
               team,
-              gamesPlayed
+              gamesPlayed,
             });
           });
           customNameIndexBySource.set(sourceId, nameMap);
@@ -1966,14 +2067,27 @@ export const useProcessedProjectionsData = ({
 
       // Fetch other data (actuals + Yahoo) using helper
       mark("fetch:aux:start");
-      const fetchedData = await fetchAllSourceData(
-        supabaseClient,
-        augmentedActiveSourceConfigs,
-        uniqueNhlPlayerIds,
-        activePlayerType,
-        currentSeasonId,
-        initialRawProjectionDataById
-      );
+      const fetchedData = cachedSourceInput
+        ? cachedSourceInput.fetchedData
+        : await fetchAllSourceData(
+            supabaseClient,
+            augmentedActiveSourceConfigs,
+            uniqueNhlPlayerIds,
+            activePlayerType,
+            currentSeasonId,
+            initialRawProjectionDataById,
+          );
+      if (!cachedSourceInput) {
+        sourceInputCacheRef.current = {
+          key: sourceInputCacheKey,
+          rawProjectionDataById: initialRawProjectionDataById,
+          fetchedData,
+          sourceWarnings: sourceWarningsForRun,
+        };
+      }
+      if (runId === fetchRunIdRef.current) {
+        setYahooMappingDiagnostics(fetchedData.yahooMappingDiagnostics);
+      }
       mark("fetch:aux:done");
 
       mark("process:players:start");
@@ -1994,10 +2108,23 @@ export const useProcessedProjectionsData = ({
           customNameIndexBySource,
           allowCustomNameFallback,
           customSourceIds,
-          fallbackUsageTracker
+          fallbackUsageTracker,
         );
       if (runId !== fetchRunIdRef.current) return; // stale after processing
       mark("process:players:done");
+      setInclusionDiagnostics(
+        buildProjectionInclusionDiagnostics(
+          augmentedActiveSourceConfigs,
+          fetchedData.rawProjectionDataBySourceId as Record<
+            string,
+            {
+              data: Array<Record<string, unknown>>;
+              config: ProjectionSourceConfig;
+            }
+          >,
+          tempProcessedPlayers.map((player) => player.playerId),
+        ),
+      );
 
       const fallbackUsageBySource: Record<string, number> = {};
       let fallbackTotal = 0;
@@ -2010,22 +2137,22 @@ export const useProcessedProjectionsData = ({
       });
       setCustomFallbackUsageState({
         total: fallbackTotal,
-        bySource: fallbackUsageBySource
+        bySource: fallbackUsageBySource,
       });
-      if (fallbackTotal > 0 && !fallbackLoggedRef.current) {
+      if (DEV && fallbackTotal > 0 && !fallbackLoggedRef.current) {
         try {
           console.log(
             `[ProjectionFallback] Name fallback used for ${fallbackTotal} players`,
-            fallbackUsageBySource
+            fallbackUsageBySource,
           );
         } catch {}
         fallbackLoggedRef.current = true;
       }
 
-      if (playersRequiringNameDebug.length > 0) {
+      if (DEV && playersRequiringNameDebug.length > 0) {
         console.warn(
           "[FHFHockey Debug] Player Name Resolution Issues Encountered (including custom CSV if present):",
-          playersRequiringNameDebug.length
+          playersRequiringNameDebug.length,
         );
       }
 
@@ -2038,7 +2165,7 @@ export const useProcessedProjectionsData = ({
           data: tempProcessedPlayers,
           sourceControlsSnapshot: stableSourceControlsString,
           yahooModeSnapshot: yahooDraftMode,
-          currentSeasonIdSnapshot: currentSeasonId
+          currentSeasonIdSnapshot: currentSeasonId,
         };
       }
 
@@ -2050,7 +2177,7 @@ export const useProcessedProjectionsData = ({
       if (runId !== fetchRunIdRef.current) {
         if (DEV)
           console.debug(
-            "[Projections] Aborted stale run before round summaries"
+            "[Projections] Aborted stale run before round summaries",
           );
         return;
       }
@@ -2058,13 +2185,13 @@ export const useProcessedProjectionsData = ({
       const tableDataWithSummaries = addRoundSummariesToPlayers(
         sortedPlayersForSummary,
         calculateDiffPercentage,
-        Math.max(1, teamCountForRoundSummaries ?? 12)
+        Math.max(1, teamCountForRoundSummaries ?? 12),
       );
       mark("process:roundSummaries:done");
       if (runId !== fetchRunIdRef.current) {
         if (DEV)
           console.debug(
-            "[Projections] Aborted stale run after round summaries"
+            "[Projections] Aborted stale run after round summaries",
           );
         return;
       }
@@ -2084,7 +2211,7 @@ export const useProcessedProjectionsData = ({
           toggleStatGroupCollapse,
           styles,
           showPerGameFantasyPoints,
-          togglePerGameFantasyPoints
+          togglePerGameFantasyPoints,
         );
         setTableColumns(derivedCols);
       });
@@ -2115,14 +2242,16 @@ export const useProcessedProjectionsData = ({
           currentSeasonIdSnapshot: currentSeasonId,
           fantasyPointSettingsSnapshot: stableFantasyPointSettingsString,
           showPerGameFantasyPointsSnapshot: showPerGameFantasyPoints,
-          refreshKeySnapshot: refreshKey
+          refreshKeySnapshot: refreshKey,
+          teamCountSnapshot: teamCountForRoundSummaries,
+          sourceWarnings: sourceWarningsForRun,
         };
       }
       if (runId === fetchRunIdRef.current) setIsLoading(false);
     } catch (err: any) {
       console.error(
         `Error processing ${activePlayerType} projections (custom source aware):`,
-        err
+        err,
       );
       setError(err.message || "Unknown error occurred");
       if (runId === fetchRunIdRef.current) setIsLoading(false);
@@ -2140,7 +2269,7 @@ export const useProcessedProjectionsData = ({
     refreshKey,
     baseKey,
     fpKey,
-    allowCustomNameFallback
+    allowCustomNameFallback,
   ]);
 
   useEffect(() => {
@@ -2153,7 +2282,10 @@ export const useProcessedProjectionsData = ({
     isLoading,
     error,
     customFallbackUsage: customFallbackUsageState,
-    customSourceResolutions
+    customSourceResolutions,
+    yahooMappingDiagnostics,
+    inclusionDiagnostics,
+    sourceWarnings,
   };
 };
 
@@ -2163,7 +2295,7 @@ const deriveVisibleColumns = (
   toggleGroupCollapse: (groupId: string) => void,
   styles: Record<string, string>,
   showPerGameFantasyPoints: boolean,
-  togglePerGameFantasyPoints: () => void
+  togglePerGameFantasyPoints: () => void,
 ): ColumnDef<TableDataRow, any>[] => {
   return allColumns.map((colDef) => {
     const group = colDef as GroupColumnDef<TableDataRow, any>;
@@ -2189,7 +2321,7 @@ const deriveVisibleColumns = (
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              width: "100%"
+              width: "100%",
             }}
           >
             <div style={{ flexGrow: 1 }}>{originalHeader()}</div>
@@ -2210,7 +2342,7 @@ const deriveVisibleColumns = (
         ),
         columns: isCollapsed
           ? subColumns.filter((col) => col.id?.endsWith("_diff"))
-          : subColumns
+          : subColumns,
       } as GroupColumnDef<TableDataRow, any>;
     }
     return colDef;
@@ -2227,16 +2359,16 @@ const generateTableColumns = (
   currentSeasonId: string | undefined,
   styles: Record<string, string>,
   showPerGameFantasyPoints: boolean,
-  togglePerGameFantasyPoints: () => void
+  togglePerGameFantasyPoints: () => void,
 ): ColumnDef<TableDataRow, any>[] => {
   const relevantStatDefinitions = statsMasterList.filter(
     (stat) =>
       (activePlayerType === "skater" && stat.isSkaterStat) ||
-      (activePlayerType === "goalie" && stat.isGoalieStat)
+      (activePlayerType === "goalie" && stat.isGoalieStat),
   );
   const activeSourceConfigsForColumnGen = projectionSourcesConfig.filter(
     (src) =>
-      src.playerType === activePlayerType && sourceControls[src.id]?.isSelected
+      src.playerType === activePlayerType && sourceControls[src.id]?.isSelected,
   );
 
   const newTableColumns: ColumnDef<TableDataRow, any>[] = [];
@@ -2256,7 +2388,7 @@ const generateTableColumns = (
       return (rowData as ProcessedPlayer).fullName;
     },
     meta: { columnType: "text" },
-    enableSorting: true
+    enableSorting: true,
   });
   newTableColumns.push({
     id: "displayTeam",
@@ -2267,7 +2399,7 @@ const generateTableColumns = (
         ? "-"
         : (info.row.original as ProcessedPlayer).displayTeam,
     meta: { columnType: "text" },
-    enableSorting: true
+    enableSorting: true,
   });
   newTableColumns.push({
     id: "displayPosition",
@@ -2281,7 +2413,7 @@ const generateTableColumns = (
       return (rowData as ProcessedPlayer).displayPosition;
     },
     meta: { columnType: "text" },
-    enableSorting: true
+    enableSorting: true,
   });
 
   relevantStatDefinitions.forEach((statDef) => {
@@ -2301,7 +2433,7 @@ const generateTableColumns = (
             .filter(
               (sc) =>
                 sourceControls[sc.id]?.isSelected &&
-                sc.statMappings.some((m) => m.key === statDef.key)
+                sc.statMappings.some((m) => m.key === statDef.key),
             )
             .map((sc) => sc.displayName)
             .join(", ") || "None selected";
@@ -2353,10 +2485,10 @@ const generateTableColumns = (
           },
           meta: {
             columnType: "numeric",
-            higherIsBetter: statDef.higherIsBetter
+            higherIsBetter: statDef.higherIsBetter,
           },
           enableSorting: true,
-          sortUndefined: "last"
+          sortUndefined: "last",
         },
         {
           id: `${statDef.key}_actual`,
@@ -2386,10 +2518,10 @@ const generateTableColumns = (
           },
           meta: {
             columnType: "numeric",
-            higherIsBetter: statDef.higherIsBetter
+            higherIsBetter: statDef.higherIsBetter,
           },
           enableSorting: true,
-          sortUndefined: "last"
+          sortUndefined: "last",
         },
         {
           id: `${statDef.key}_diff`,
@@ -2435,9 +2567,9 @@ const generateTableColumns = (
             );
           },
           meta: { columnType: "numeric", isDiffCell: true },
-          enableSorting: true
-        }
-      ]
+          enableSorting: true,
+        },
+      ],
     });
   });
 
@@ -2446,21 +2578,21 @@ const generateTableColumns = (
       key: "yahooAvgPick",
       header: "ADP",
       decimals: 1,
-      higherIsBetter: false
+      higherIsBetter: false,
     },
     {
       key: "yahooAvgRound",
       header: "Avg Rd",
       decimals: 1,
-      higherIsBetter: false
+      higherIsBetter: false,
     },
     {
       key: "yahooPctDrafted",
       header: "Draft %",
       decimals: 1,
       isPercentage: true,
-      higherIsBetter: true
-    }
+      higherIsBetter: true,
+    },
   ];
   yahooStatConfigs.forEach((yc) => {
     newTableColumns.push({
@@ -2484,10 +2616,10 @@ const generateTableColumns = (
       },
       meta: {
         columnType: "numeric",
-        higherIsBetter: yc.higherIsBetter
+        higherIsBetter: yc.higherIsBetter,
       },
       enableSorting: true,
-      sortUndefined: "last"
+      sortUndefined: "last",
     });
   });
 
@@ -2506,7 +2638,7 @@ const generateTableColumns = (
     },
     meta: { columnType: "numeric", higherIsBetter: false },
     enableSorting: true,
-    sortUndefined: "last"
+    sortUndefined: "last",
   });
 
   newTableColumns.push({
@@ -2524,7 +2656,7 @@ const generateTableColumns = (
     },
     meta: { columnType: "numeric", higherIsBetter: false },
     enableSorting: true,
-    sortUndefined: "last"
+    sortUndefined: "last",
   });
 
   newTableColumns.push({
@@ -2536,7 +2668,7 @@ const generateTableColumns = (
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          width: "100%"
+          width: "100%",
         }}
       >
         <span>Fantasy Pts</span>
@@ -2580,7 +2712,7 @@ const generateTableColumns = (
         },
         meta: { columnType: "numeric", higherIsBetter: true },
         enableSorting: true,
-        sortUndefined: "last"
+        sortUndefined: "last",
       },
       {
         id: "fp_actual",
@@ -2603,7 +2735,7 @@ const generateTableColumns = (
         },
         meta: { columnType: "numeric", higherIsBetter: true },
         enableSorting: true,
-        sortUndefined: "last"
+        sortUndefined: "last",
       },
       {
         id: "fp_diff",
@@ -2658,9 +2790,9 @@ const generateTableColumns = (
           );
         },
         meta: { columnType: "numeric", isDiffCell: true },
-        enableSorting: true
-      }
-    ]
+        enableSorting: true,
+      },
+    ],
   });
   return newTableColumns;
 };

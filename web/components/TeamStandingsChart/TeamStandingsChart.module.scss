@@ -286,8 +286,17 @@
 
   :global(.tick text) {
     fill: rgba(v.$text-secondary, 0.92);
-    font-size: 0.72rem;
+    font-size: 0.78rem;
     font-family: v.$font-family-primary, sans-serif;
+  }
+
+  :global(.axis-label) {
+    fill: rgba(v.$text-primary, 0.94);
+    font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+    font-size: 0.72rem;
+    font-weight: v.$font-weight-semibold;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
 }
 
@@ -540,8 +549,8 @@
   }
 
   .summaryTitle {
-    font-family: v.$font-family-primary, sans-serif;
-    font-size: 0.88rem;
+    font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+    font-size: 0.9rem;
     font-weight: v.$font-weight-bold;
     letter-spacing: 0.12em;
   }
@@ -570,7 +579,7 @@
   }
 
   .chartAndToggles {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 168px;
     gap: v.$space-xs;
     padding: 0 v.$space-xs v.$space-xs;
   }
@@ -592,9 +601,9 @@
 
     select {
       border-left: 0;
-      min-height: 28px;
+      min-height: 30px;
       padding-left: v.$space-xs;
-      font-size: v.$font-size-xxs;
+      font-size: 0.72rem;
     }
   }
 
@@ -603,23 +612,25 @@
   }
 
   .chartContainer {
-    min-height: 252px;
-    height: 252px;
+    min-height: 260px;
+    height: 260px;
   }
 
   .teamToggleDetails {
     @include panel.panel-shell($padding: 0, $variant: soft);
+    min-width: 0;
+    height: 100%;
 
     > summary {
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: space-between;
-      min-height: v.$control-height-md;
+      min-height: 28px;
       padding: 0 v.$space-md;
       color: v.$primary-color;
       cursor: pointer;
       font-family: v.$font-family-accent, sans-serif;
-      font-size: v.$font-size-xs;
+      font-size: 0.6rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
 
@@ -631,12 +642,63 @@
   }
 
   .teamToggles {
-    max-height: 270px;
-    overflow: auto;
+    height: 100%;
+    max-height: none;
+    overflow: hidden;
+    padding: v.$space-xs;
     border: 0;
-    border-top: 1px solid v.$border-soft;
     border-radius: 0;
     box-shadow: none;
+  }
+
+  .toggleButtons {
+    gap: 3px;
+
+    button {
+      min-height: 24px;
+      padding: 0 3px;
+      font-size: 0.65rem;
+    }
+  }
+
+  .toggleList,
+  .toggleColumn {
+    gap: 4px;
+  }
+
+  .toggleColumn strong {
+    margin: 0;
+    font-size: 0.62rem;
+  }
+
+  .divisionGroup {
+    gap: 2px;
+  }
+
+  .divisionTeams {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px;
+  }
+
+  .teamToggle {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    min-height: 22px;
+    padding: 1px;
+
+    input[type="checkbox"] {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+    }
+  }
+
+  .toggleLogo {
+    width: 18px;
+    height: 18px;
   }
 
   @media (max-width: 768px) {
@@ -658,9 +720,24 @@
       grid-template-columns: 1fr;
     }
 
+    .chartAndToggles {
+      grid-template-columns: 1fr;
+    }
+
     .chartContainer {
       min-height: 300px;
       height: 300px;
+    }
+
+    .teamToggleDetails > summary {
+      display: flex;
+    }
+
+    .teamToggles {
+      height: auto;
+      max-height: 360px;
+      overflow: auto;
+      border-top: 1px solid v.$border-soft;
     }
   }
 }

@@ -15,11 +15,9 @@ import SocialMedias from "components/SocialMedias";
 import AuthModal from "components/auth/AuthModal";
 import UserMenu from "components/auth/UserMenu";
 import { useAuth } from "contexts/AuthProviderContext";
-import supabase from "lib/supabase/client";
 
 import styles from "./Header.module.scss";
-// import LOGO from "public/pictures/logo3.png";
-import LOGO from "public/pictures/fhfh-italic.png";
+import LOGO from "public/pictures/FHFHonly.png";
 import UNDERLYING_STATS_LOGO from "public/pictures/ULSlogo.png";
 //         src="/pictures/logo-fhfh.svg"
 
@@ -178,7 +176,7 @@ function Header() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const { navbarRef, isNavbarVisible } = useHideableNavbar();
   const router = useRouter();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, signOut } = useAuth();
   const isUnderlyingStatsRoute =
     router.pathname.startsWith("/underlying-stats");
 
@@ -208,7 +206,7 @@ function Header() {
 
   const handleMobileSignOut = async () => {
     setMenuOpen(false);
-    await supabase.auth.signOut();
+    await signOut();
   };
 
   return (
@@ -230,9 +228,9 @@ function Header() {
           {/* Main Logo Image */}
           <Image
             src={isUnderlyingStatsRoute ? UNDERLYING_STATS_LOGO : LOGO}
-            alt="FHFH logo"
-            width={isUnderlyingStatsRoute ? 270 : 82}
-            height={isUnderlyingStatsRoute ? 35 : 32}
+            alt={isUnderlyingStatsRoute ? "Underlying Stats logo" : "FHFH logo"}
+            width={isUnderlyingStatsRoute ? 194 : 118}
+            height={isUnderlyingStatsRoute ? 29 : 34}
             priority
           />
           {!isUnderlyingStatsRoute ? (
@@ -301,9 +299,6 @@ function Header() {
         ) : (
           <div className={styles.authCtaPlaceholder} aria-hidden="true" />
         )}
-
-        {/* join button */}
-        <button className={styles.join}>JOIN COMMUNITY</button>
 
         {/* burger menu - mobile only (fallback) */}
         {!menuOpen ? (

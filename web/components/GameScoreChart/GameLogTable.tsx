@@ -5,7 +5,7 @@
 // FORGE use because it displays quarantined predictedGameScore outputs.
 
 import React from "react";
-import { CombinedGameLog } from "lib/supabase/utils/types";
+import { LegacySkoCombinedGameLog } from "lib/supabase/utils/types";
 import {
   Table,
   TableBody,
@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 
 interface GameLogTableProps {
-  gameLogs: CombinedGameLog[];
+  gameLogs: LegacySkoCombinedGameLog[];
 }
 
 const GameLogTable: React.FC<GameLogTableProps> = ({ gameLogs }) => {

@@ -44,8 +44,25 @@ export const BASELINE_FEATURE_KEYS = [
   "homeMinusAwayRecent40XgaPer60",
   "homeMinusAwayCtpi",
   "homeMinusAwayPastOpponentCompositeRating",
+  "homeMinusAwayLast5OpponentCompositeRating",
+  "homeMinusAwayLast10OpponentCompositeRating",
+  "homeMinusAwayAdjustedRecent5GoalDifferentialPerGame",
+  "homeMinusAwayAdjustedRecent10GoalDifferentialPerGame",
+  "homeMinusAwayAdjustedRecent5XgfPct",
+  "homeMinusAwayAdjustedRecent10XgfPct",
   "homeMinusAwayForgeProjectedGoals",
   "homeMinusAwayForgeProjectedShots",
+  "homeMinusAwayRosterOffImpact",
+  "homeMinusAwayRosterDefImpact",
+  "homeMinusAwayRosterGoalieImpact",
+  "homeMinusAwayRosterOffImpactPer60Only",
+  "homeMinusAwayRosterDefImpactPer60Only",
+  "homeMinusAwayRosterGoalieImpactPer60Only",
+  "homeMinusAwayWeightedRosterOffImpact",
+  "homeMinusAwayWeightedRosterDefImpact",
+  "homeMinusAwayWeightedRosterGoalieImpact",
+  "homeMinusAwayWeightedRecent10GoalDifferentialPerGame",
+  "homeMinusAwayWeightedRecent10XgfPct",
   "homeMinusAwayWeightedGoalieGsaaPer60",
   "homeMinusAwayGoalieStartUncertainty",
   "homeRestAdvantageDays",
@@ -72,6 +89,23 @@ export const CANDIDATE_ONLY_FEATURE_KEYS: readonly BaselineFeatureKey[] = [
   "homeMinusAwayRecent40GfPct",
   "homeMinusAwayRecent20XgaPer60",
   "homeMinusAwayRecent40XgaPer60",
+  "homeMinusAwayLast5OpponentCompositeRating",
+  "homeMinusAwayLast10OpponentCompositeRating",
+  "homeMinusAwayAdjustedRecent5GoalDifferentialPerGame",
+  "homeMinusAwayAdjustedRecent10GoalDifferentialPerGame",
+  "homeMinusAwayAdjustedRecent5XgfPct",
+  "homeMinusAwayAdjustedRecent10XgfPct",
+  "homeMinusAwayRosterOffImpact",
+  "homeMinusAwayRosterDefImpact",
+  "homeMinusAwayRosterGoalieImpact",
+  "homeMinusAwayRosterOffImpactPer60Only",
+  "homeMinusAwayRosterDefImpactPer60Only",
+  "homeMinusAwayRosterGoalieImpactPer60Only",
+  "homeMinusAwayWeightedRosterOffImpact",
+  "homeMinusAwayWeightedRosterDefImpact",
+  "homeMinusAwayWeightedRosterGoalieImpact",
+  "homeMinusAwayWeightedRecent10GoalDifferentialPerGame",
+  "homeMinusAwayWeightedRecent10XgfPct",
   "homeMinusAwayGoalieStartUncertainty",
   "homeMinusAwayGamesPlayedAsOf",
   "seasonPhaseOrdinal",
@@ -357,7 +391,7 @@ function buildModelAuditMetadata(args: {
     winnerPolicyMode: "report_default_50_and_selected_threshold",
     defaultWinnerThreshold: 0.5,
     selectedWinnerThreshold: args.selectedWinnerThreshold,
-    rosterImpactVersion: "forge_team_projection_v1",
+    rosterImpactVersion: "forge_team_projection_proxy_v1",
     strengthOfScheduleVersion: "past_opponent_power_v1",
     seasonDecayVersion: "none",
     probabilityBlendVersion: "none",
@@ -495,19 +529,24 @@ function buildFeatureNormalization(
   examples: GamePredictionBaselineExample[],
 ): BaselineFeatureNormalization {
   const featureCount = examples[0]?.features.length ?? 0;
+  const totalWeight = examples.reduce(
+    (sum, example) => sum + (example.weight ?? 1),
+    0,
+  );
   const means = Array.from({ length: featureCount }, (_, featureIndex) => {
     const sum = examples.reduce(
-      (total, example) => total + example.features[featureIndex],
+      (total, example) =>
+        total + example.features[featureIndex] * (example.weight ?? 1),
       0,
     );
-    return sum / examples.length;
+    return sum / totalWeight;
   });
   const scales = means.map((mean, featureIndex) => {
     const variance =
       examples.reduce((total, example) => {
         const delta = example.features[featureIndex] - mean;
-        return total + delta * delta;
-      }, 0) / examples.length;
+        return total + delta * delta * (example.weight ?? 1);
+      }, 0) / totalWeight;
     const stdDev = Math.sqrt(variance);
     return stdDev > 1e-9 ? stdDev : 1;
   });
@@ -617,6 +656,26 @@ export function buildBaselineFeatureVector(
       payload.matchup.homeMinusAwayPastOpponentCompositeRating == null
         ? null
         : payload.matchup.homeMinusAwayPastOpponentCompositeRating / 100,
+    homeMinusAwayLast5OpponentCompositeRating:
+      payload.matchup.homeMinusAwayLast5OpponentCompositeRating == null
+        ? null
+        : payload.matchup.homeMinusAwayLast5OpponentCompositeRating / 100,
+    homeMinusAwayLast10OpponentCompositeRating:
+      payload.matchup.homeMinusAwayLast10OpponentCompositeRating == null
+        ? null
+        : payload.matchup.homeMinusAwayLast10OpponentCompositeRating / 100,
+    homeMinusAwayAdjustedRecent5GoalDifferentialPerGame:
+      payload.matchup.homeMinusAwayAdjustedRecent5GoalDifferentialPerGame == null
+        ? null
+        : payload.matchup.homeMinusAwayAdjustedRecent5GoalDifferentialPerGame / 3,
+    homeMinusAwayAdjustedRecent10GoalDifferentialPerGame:
+      payload.matchup.homeMinusAwayAdjustedRecent10GoalDifferentialPerGame == null
+        ? null
+        : payload.matchup.homeMinusAwayAdjustedRecent10GoalDifferentialPerGame / 3,
+    homeMinusAwayAdjustedRecent5XgfPct:
+      payload.matchup.homeMinusAwayAdjustedRecent5XgfPct,
+    homeMinusAwayAdjustedRecent10XgfPct:
+      payload.matchup.homeMinusAwayAdjustedRecent10XgfPct,
     homeMinusAwayForgeProjectedGoals:
       payload.matchup.homeMinusAwayForgeProjectedGoals == null
         ? null
@@ -625,6 +684,30 @@ export function buildBaselineFeatureVector(
       payload.matchup.homeMinusAwayForgeProjectedShots == null
         ? null
         : payload.matchup.homeMinusAwayForgeProjectedShots / 10,
+    homeMinusAwayRosterOffImpact:
+      payload.matchup.homeMinusAwayRosterOffImpact,
+    homeMinusAwayRosterDefImpact:
+      payload.matchup.homeMinusAwayRosterDefImpact,
+    homeMinusAwayRosterGoalieImpact:
+      payload.matchup.homeMinusAwayRosterGoalieImpact,
+    homeMinusAwayRosterOffImpactPer60Only:
+      payload.matchup.homeMinusAwayRosterOffImpactPer60Only,
+    homeMinusAwayRosterDefImpactPer60Only:
+      payload.matchup.homeMinusAwayRosterDefImpactPer60Only,
+    homeMinusAwayRosterGoalieImpactPer60Only:
+      payload.matchup.homeMinusAwayRosterGoalieImpactPer60Only,
+    homeMinusAwayWeightedRosterOffImpact:
+      payload.matchup.homeMinusAwayWeightedRosterOffImpact,
+    homeMinusAwayWeightedRosterDefImpact:
+      payload.matchup.homeMinusAwayWeightedRosterDefImpact,
+    homeMinusAwayWeightedRosterGoalieImpact:
+      payload.matchup.homeMinusAwayWeightedRosterGoalieImpact,
+    homeMinusAwayWeightedRecent10GoalDifferentialPerGame:
+      payload.matchup.homeMinusAwayWeightedRecent10GoalDifferentialPerGame == null
+        ? null
+        : payload.matchup.homeMinusAwayWeightedRecent10GoalDifferentialPerGame / 3,
+    homeMinusAwayWeightedRecent10XgfPct:
+      payload.matchup.homeMinusAwayWeightedRecent10XgfPct,
     homeMinusAwayWeightedGoalieGsaaPer60:
       payload.matchup.homeMinusAwayWeightedGoalieGsaaPer60,
     homeMinusAwayGoalieStartUncertainty:

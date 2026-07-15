@@ -4,6 +4,11 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
 import { DraftSettings, DraftedPlayer, TeamDraftStats } from "./DraftDashboard";
 import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import type { PlayerVorpMetrics } from "hooks/useVORPCalculations";
+import type { KeeperEntry } from "lib/draftDashboard/keepers";
+import {
+  resolvePickOwner,
+  type PickTradeEntry
+} from "lib/draftDashboard/pickTrades";
 import styles from "./DraftBoard.module.scss";
 
 interface DraftBoardProps {
@@ -20,15 +25,9 @@ interface DraftBoardProps {
   availablePlayers?: ProcessedPlayer[];
   allPlayers: ProcessedPlayer[]; // Add this prop for complete player data
   onUpdateTeamName: (teamId: string, newName: string) => void; // Add this prop
-  // NEW: traded pick ownership overrides
-  pickOwnerOverrides?: Record<string, string>;
+  pickTrades?: PickTradeEntry[];
   // NEW: keepers list
-  keepers?: Array<{
-    round: number;
-    pickInRound: number;
-    teamId: string;
-    playerId: string;
-  }>;
+  keepers?: KeeperEntry[];
   // NEW: per-player VORP/value metrics (value used as Score in categories)
   vorpMetrics?: Map<string, PlayerVorpMetrics>;
 }
@@ -53,7 +52,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   availablePlayers = [],
   allPlayers,
   onUpdateTeamName,
-  pickOwnerOverrides = {},
+  pickTrades = [],
   keepers = [],
   vorpMetrics
 }) => {
@@ -282,8 +281,11 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   const renderContributionGrid = () => {
     const teams = draftSettings.draftOrder;
     const maxRounds = roundsToShow; // Use dynamic value instead of hardcoded 17
-    const keeperKeySet = new Set(
-      keepers.map((k) => `${k.round}-${k.pickInRound}`)
+    const keeperByKey = new Map(
+      keepers.map((keeper) => [
+        `${keeper.round}-${keeper.pickInRound}`,
+        keeper
+      ])
     );
 
     // Create grid with teams as rows and rounds as columns
@@ -307,11 +309,21 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
 
         const overallPick = (round - 1) * draftSettings.teamCount + pickInRound;
         const key = `${round}-${pickInRound}`;
-        const ownerTeamId = pickOwnerOverrides[key] || teamId;
+        const keeper = keeperByKey.get(key);
+        const ownership = resolvePickOwner({
+          round,
+          pickInRound,
+          draftOrder: draftSettings.draftOrder,
+          isSnakeDraft,
+          trades: pickTrades,
+          keepers
+        });
+        const ownerTeamId = ownership.currentTeamId;
         const draftedPlayer = draftedPlayers.find(
           (p) => p.pickNumber === overallPick
         );
         const isCurrentPick =
+          !keeper &&
           currentTurn.round === round &&
           currentTurn.pickInRound === pickInRound;
 
@@ -336,13 +348,15 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
           playerData?.fantasyPoints.projected?.toFixed(1) || "N/A";
         const ownerName = teamNameById.get(ownerTeamId) || ownerTeamId;
         const rowTeamName = teamNameById.get(teamId) || teamId;
-        const traded = ownerTeamId !== teamId;
+        const traded = ownership.source === "trade";
         const ownershipLine = traded
           ? `\nTraded: ${rowTeamName} → ${ownerName}`
           : "";
-        const isKeeper = keeperKeySet.has(key);
+        const isKeeper = Boolean(keeper);
         const tooltip = draftedPlayer
-          ? `${playerName}\n${rowTeamName}${ownershipLine}\nRound ${round}, Pick ${pickInRound}\nProjected: ${fantasyPoints} pts`
+          ? isKeeper
+            ? `${playerName}\nKeeper: ${ownerName}\nForfeited round ${round}, pick ${pickInRound}\nProjected: ${fantasyPoints} pts`
+            : `${playerName}\n${rowTeamName}${ownershipLine}\nRound ${round}, Pick ${pickInRound}\nProjected: ${fantasyPoints} pts`
           : isCurrentPick
             ? `Current Pick: ${ownerName}${ownershipLine}\nRound ${round}, Pick ${pickInRound}`
             : `Available Pick${ownershipLine}\nRound ${round}, Pick ${pickInRound}`;
@@ -355,6 +369,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
             data-round={round}
             data-pick={pickInRound}
             data-team={teamId}
+            data-owner={ownerTeamId}
           >
             {isCurrentPick && (
               <div className={styles.currentPickIndicator}>●</div>

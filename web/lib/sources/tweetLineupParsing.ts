@@ -6,6 +6,14 @@ export type TweetOEmbedHtmlData = {
   sourceTweetUrl: string | null;
 };
 
+export type ResolvedTweetReference = {
+  tweetId: string;
+  normalizedUrl: string;
+  resolvedUrl: string;
+  authorHandle: string | null;
+  shortUrl: string | null;
+};
+
 const STATUS_URL_PATTERN =
   /https?:\/\/(?:www\.)?(?:twitter\.com|x\.com)\/[A-Za-z0-9_]+\/status(?:es)?\/\d+/gi;
 const TCO_URL_PATTERN = /https?:\/\/t\.co\/[A-Za-z0-9]+/gi;
@@ -13,6 +21,14 @@ const TCO_URL_PATTERN = /https?:\/\/t\.co\/[A-Za-z0-9]+/gi;
 export function extractTweetIdFromUrl(value: string | null): string | null {
   if (!value) return null;
   return value.match(/\/status(?:es)?\/(\d+)/i)?.[1] ?? null;
+}
+
+export function extractTweetHandleFromUrl(value: string | null): string | null {
+  if (!value) return null;
+  const handle = value.match(
+    /https?:\/\/(?:www\.)?(?:twitter\.com|x\.com)\/([A-Za-z0-9_]+)\/status(?:es)?\/\d+/i,
+  )?.[1];
+  return handle && handle.toLowerCase() !== "i" ? handle : null;
 }
 
 export function normalizeTweetStatusUrl(
@@ -55,18 +71,38 @@ export async function expandRedirectUrl(url: string): Promise<string | null> {
 }
 
 export async function resolveQuotedTweetUrlFromText(text: string): Promise<string | null> {
-  const directStatusUrl = extractStatusUrlsFromText(text)
-    .map((value) => normalizeTweetStatusUrl(value))
-    .find(Boolean);
+  return (await resolveTweetReferenceFromText(text))?.normalizedUrl ?? null;
+}
+
+export async function resolveTweetReferenceFromText(
+  text: string,
+): Promise<ResolvedTweetReference | null> {
+  const directStatusUrl = extractStatusUrlsFromText(text).find((value) =>
+    Boolean(extractTweetIdFromUrl(value)),
+  );
   if (directStatusUrl) {
-    return directStatusUrl;
+    const tweetId = extractTweetIdFromUrl(directStatusUrl)!;
+    return {
+      tweetId,
+      normalizedUrl: normalizeTweetStatusUrl(directStatusUrl, tweetId)!,
+      resolvedUrl: directStatusUrl,
+      authorHandle: extractTweetHandleFromUrl(directStatusUrl),
+      shortUrl: null,
+    };
   }
 
   for (const shortUrl of extractTcoUrlsFromText(text)) {
     const expandedUrl = await expandRedirectUrl(shortUrl);
-    const normalizedUrl = normalizeTweetStatusUrl(expandedUrl);
-    if (normalizedUrl) {
-      return normalizedUrl;
+    const tweetId = extractTweetIdFromUrl(expandedUrl);
+    const normalizedUrl = normalizeTweetStatusUrl(expandedUrl, tweetId);
+    if (expandedUrl && tweetId && normalizedUrl) {
+      return {
+        tweetId,
+        normalizedUrl,
+        resolvedUrl: expandedUrl,
+        authorHandle: extractTweetHandleFromUrl(expandedUrl),
+        shortUrl,
+      };
     }
   }
 

@@ -61,6 +61,15 @@ export async function resetSupabaseBrowserAuthState(
     // Fall through to storage cleanup even if the auth client is already wedged.
   }
 
-  clearMatchingStorage(window.localStorage);
-  clearMatchingStorage(window.sessionStorage);
+  try {
+    clearMatchingStorage(window.localStorage);
+  } catch {
+    // Storage may be unavailable under strict browser privacy settings.
+  }
+
+  try {
+    clearMatchingStorage(window.sessionStorage);
+  } catch {
+    // Storage may be unavailable under strict browser privacy settings.
+  }
 }

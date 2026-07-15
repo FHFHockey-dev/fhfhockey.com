@@ -8,6 +8,10 @@ import {
 } from "lib/dashboard/normalizers";
 import { fetchCachedJson } from "lib/dashboard/clientFetchCache";
 
+// Quarantine-only lineage: this zero-consumer card overlaps the active
+// TeamPowerCard and HotColdCard surfaces. Keep it out of live FORGE composition
+// unless a future task defines a distinct product role and freshness contract.
+
 type Lens = "team" | "skater";
 
 type Mover = {

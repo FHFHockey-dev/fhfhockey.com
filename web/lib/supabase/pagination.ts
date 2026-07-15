@@ -1,4 +1,5 @@
 export const DEFAULT_SUPABASE_PAGE_SIZE = 1000;
+export const DEFAULT_SUPABASE_FILTER_CHUNK_SIZE = 200;
 
 export type SupabaseRange = {
   from: number;
@@ -15,7 +16,7 @@ type SupabasePageResult<T> = {
 type SupabasePageQuery<T> = PromiseLike<SupabasePageResult<T>>;
 
 export type SupabasePageQueryFactory<T> = (
-  range: SupabaseRange
+  range: SupabaseRange,
 ) => SupabasePageQuery<T>;
 
 export type FetchSupabasePagesOptions = {
@@ -28,7 +29,7 @@ export type FetchSupabasePagesOptions = {
     shouldRetry?: (
       error: unknown,
       attempt: number,
-      range: SupabaseRange
+      range: SupabaseRange,
     ) => boolean;
     onRetry?: (args: {
       attempt: number;
@@ -39,9 +40,16 @@ export type FetchSupabasePagesOptions = {
   };
 };
 
+export type FetchSupabaseFilterChunksOptions = Omit<
+  FetchSupabasePagesOptions,
+  "start" | "limit"
+> & {
+  chunkSize?: number;
+};
+
 function normalizePositiveInteger(
   value: number | null | undefined,
-  fallback: number
+  fallback: number,
 ) {
   if (!Number.isFinite(value) || value == null) {
     return fallback;
@@ -58,7 +66,7 @@ export function getSupabaseRange(options?: {
   const pageIndex = Math.max(0, Math.trunc(options?.pageIndex ?? 0));
   const pageSize = normalizePositiveInteger(
     options?.pageSize,
-    DEFAULT_SUPABASE_PAGE_SIZE
+    DEFAULT_SUPABASE_PAGE_SIZE,
   );
   const start = Math.max(0, Math.trunc(options?.start ?? 0));
   const from = start + pageIndex * pageSize;
@@ -77,7 +85,7 @@ export async function fetchSupabasePage<T>(
     pageIndex?: number;
     pageSize?: number;
     start?: number;
-  }
+  },
 ): Promise<T[]> {
   const range = getSupabaseRange(options);
   const { data, error } = await queryFactory(range);
@@ -91,17 +99,15 @@ export async function fetchSupabasePage<T>(
 
 export async function fetchAllSupabasePages<T>(
   queryFactory: SupabasePageQueryFactory<T>,
-  options?: FetchSupabasePagesOptions
+  options?: FetchSupabasePagesOptions,
 ): Promise<T[]> {
   const pageSize = normalizePositiveInteger(
     options?.pageSize,
-    DEFAULT_SUPABASE_PAGE_SIZE
+    DEFAULT_SUPABASE_PAGE_SIZE,
   );
   const start = Math.max(0, Math.trunc(options?.start ?? 0));
   const limit =
-    options?.limit == null
-      ? null
-      : Math.max(0, Math.trunc(options.limit));
+    options?.limit == null ? null : Math.max(0, Math.trunc(options.limit));
 
   const rows: T[] = [];
 
@@ -126,7 +132,7 @@ export async function fetchAllSupabasePages<T>(
     const { data, error } = await fetchSupabasePageWithRetry(
       queryFactory,
       range,
-      options?.retry
+      options?.retry,
     );
 
     if (error) {
@@ -144,10 +150,44 @@ export async function fetchAllSupabasePages<T>(
   return rows;
 }
 
+/**
+ * Fetches a complete result set without serializing an unbounded `.in(...)`
+ * value list into one PostgREST request. Each filter chunk receives its own
+ * ordered range-pagination loop; callers remain responsible for applying a
+ * deterministic `.order(...)` clause in `queryFactory` when a chunk can span
+ * more than one page.
+ */
+export async function fetchAllSupabaseFilterChunks<T, TValue>(
+  values: Iterable<TValue>,
+  queryFactory: (chunk: TValue[], range: SupabaseRange) => SupabasePageQuery<T>,
+  options?: FetchSupabaseFilterChunksOptions,
+): Promise<T[]> {
+  const chunkSize = normalizePositiveInteger(
+    options?.chunkSize,
+    DEFAULT_SUPABASE_FILTER_CHUNK_SIZE,
+  );
+  const uniqueValues = Array.from(new Set(values));
+  const rows: T[] = [];
+
+  for (let index = 0; index < uniqueValues.length; index += chunkSize) {
+    const chunk = uniqueValues.slice(index, index + chunkSize);
+    const chunkRows = await fetchAllSupabasePages<T>(
+      (range) => queryFactory(chunk, range),
+      {
+        pageSize: options?.pageSize,
+        retry: options?.retry,
+      },
+    );
+    rows.push(...chunkRows);
+  }
+
+  return rows;
+}
+
 async function fetchSupabasePageWithRetry<T>(
   queryFactory: SupabasePageQueryFactory<T>,
   range: SupabaseRange,
-  retry: FetchSupabasePagesOptions["retry"]
+  retry: FetchSupabasePagesOptions["retry"],
 ): Promise<SupabasePageResult<T>> {
   const attempts = normalizePositiveInteger(retry?.attempts, 1);
 
@@ -169,7 +209,7 @@ async function fetchSupabasePageWithRetry<T>(
     const delayMs =
       typeof retry?.delayMs === "function"
         ? retry.delayMs(attempt)
-        : retry?.delayMs ?? 0;
+        : (retry?.delayMs ?? 0);
 
     retry?.onRetry?.({
       attempt,

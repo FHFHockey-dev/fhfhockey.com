@@ -10,6 +10,13 @@ import type { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import { toPng } from "html-to-image";
 import type { PlayerVorpMetrics } from "hooks/useVORPCalculations";
 import Image from "next/image";
+import {
+  getEffectiveRosterConfig,
+  getRosterPositions,
+  type ForwardGrouping,
+} from "lib/draftDashboard/forwardGrouping";
+import type { PickTradeEntry } from "lib/draftDashboard/pickTrades";
+import type { DraftConfigurationSummary } from "lib/draftDashboard/summaryConfiguration";
 
 interface DraftSummaryModalProps {
   isOpen: boolean;
@@ -19,6 +26,9 @@ interface DraftSummaryModalProps {
   teamStats: TeamDraftStats[];
   allPlayers: ProcessedPlayer[];
   vorpMetrics?: Map<string, PlayerVorpMetrics>;
+  forwardGrouping?: ForwardGrouping;
+  pickTrades?: PickTradeEntry[];
+  configurationSummary?: DraftConfigurationSummary;
 }
 
 const MAX_TEAMS_PER_ROW = 16;
@@ -31,6 +41,9 @@ export default function DraftSummaryModal({
   teamStats,
   allPlayers,
   vorpMetrics,
+  forwardGrouping = "split",
+  pickTrades = [],
+  configurationSummary,
 }: DraftSummaryModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [viewMode, setViewMode] = useState<"roster" | "recap">("recap");
@@ -110,6 +123,7 @@ export default function DraftSummaryModal({
     };
 
     draftedPlayers.forEach((dp) => {
+      if (dp.isKeeper) return;
       const p = playerMap.get(dp.playerId);
       const overall = dp.pickNumber;
       const adp = getAdp(p);
@@ -232,7 +246,8 @@ export default function DraftSummaryModal({
                 {p?.fullName || dp.playerId}
               </span>
               <span className={styles.pickMeta}>
-                R{dp.round} · P{dp.pickInRound} · #{dp.pickNumber}
+                {dp.isKeeper ? "Keeper · " : ""}R{dp.round} · P{dp.pickInRound}{" "}
+                · #{dp.pickNumber}
               </span>
             </li>
           );
@@ -240,15 +255,20 @@ export default function DraftSummaryModal({
       </ul>
     );
 
-    const rc: any = draftSettings.rosterConfig || {};
+    const rc = getEffectiveRosterConfig(
+      draftSettings.rosterConfig || {},
+      forwardGrouping,
+    );
     const order: Array<{ key: string; label: string; list: DraftedPlayer[] }> =
       [];
 
-    ["C", "LW", "RW", "D"].forEach((pos) => {
-      if (rc[pos] > 0) {
-        order.push({ key: pos, label: pos, list: rosterSlots[pos] || [] });
-      }
-    });
+    getRosterPositions(forwardGrouping)
+      .filter((pos) => pos !== "G")
+      .forEach((pos) => {
+        if (rc[pos] > 0) {
+          order.push({ key: pos, label: pos, list: rosterSlots[pos] || [] });
+        }
+      });
 
     if ((rc.utility || 0) > 0) {
       order.push({
@@ -329,13 +349,14 @@ export default function DraftSummaryModal({
         <div
           key={`${team.teamId}-${dp.pickNumber}`}
           className={`${styles.pickCell} ${posClass}`}
-          title={`${p?.fullName || dp.playerId} • ${pos || "-"} • R${dp.round} P${dp.pickInRound}`}
+          title={`${p?.fullName || dp.playerId} • ${pos || "-"} • ${dp.isKeeper ? "Keeper • " : ""}R${dp.round} P${dp.pickInRound}`}
         >
           <div className={styles.pickTop}>
             <span className={styles.pickRound}>R{dp.round}</span>
             <span className={styles.pickNum}>#{dp.pickNumber}</span>
           </div>
           <div className={styles.pickName}>{p?.fullName || dp.playerId}</div>
+          {dp.isKeeper && <div className={styles.pickMeta}>Keeper</div>}
         </div>,
       );
     }
@@ -406,6 +427,74 @@ export default function DraftSummaryModal({
               Rounds • {leagueLabel}
             </div>
           </div>
+
+          {pickTrades.length > 0 && (
+            <div
+              className={styles.tradeSummary}
+              role="region"
+              aria-label="Traded draft picks"
+            >
+              <strong>Traded picks:</strong>{" "}
+              {pickTrades.map((trade) => (
+                <span key={`${trade.round}-${trade.pickInRound}`}>
+                  R{trade.round} P{trade.pickInRound}: {trade.originalTeamId} →{" "}
+                  {trade.currentTeamId}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {configurationSummary && (
+            <div
+              className={styles.configurationSummary}
+              role="region"
+              aria-label="Draft configuration summary"
+            >
+              <strong>Value configuration</strong>
+              <span>Forwards: {configurationSummary.forwardGrouping}</span>
+              <span>Baseline: {configurationSummary.baselineMode}</span>
+              <span>
+                Personalized replacement:{" "}
+                {configurationSummary.personalizeReplacement ? "on" : "off"}
+              </span>
+              <span>
+                Need weighting:{" "}
+                {configurationSummary.needWeightEnabled ? "on" : "off"}
+                {configurationSummary.needWeightEnabled
+                  ? ` (${configurationSummary.needAlpha.toFixed(2)})`
+                  : ""}
+              </span>
+              <span>
+                Sources:{" "}
+                {
+                  configurationSummary.sources.filter(
+                    (source) => source.enabled,
+                  ).length
+                }
+                /{configurationSummary.sources.length} enabled
+              </span>
+              {configurationSummary.sources.map((source) => (
+                <span key={`${source.playerType}-${source.id}`}>
+                  {source.playerType === "goalie" ? "Goalie" : "Skater"}:{" "}
+                  {source.label}
+                  {source.custom ? " (custom)" : ""} ·{" "}
+                  {source.enabled ? "on" : "off"} · weight{" "}
+                  {source.weight.toFixed(2)}
+                </span>
+              ))}
+              {configurationSummary.customSources.map((source) => (
+                <span key={source.id}>
+                  Custom: {source.label} · {source.totalRows ?? 0} rows ·{" "}
+                  {source.coverage == null
+                    ? "coverage unavailable"
+                    : `${(source.coverage * 100).toFixed(1)}% mapped`}
+                </span>
+              ))}
+              <span className={styles.privacyNote}>
+                Imported CSV row contents are intentionally excluded.
+              </span>
+            </div>
+          )}
 
           {draftWinner && (
             <div

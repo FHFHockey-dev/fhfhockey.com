@@ -374,6 +374,708 @@ export type Database = {
         }
         Relationships: []
       }
+      draft_ranker_contribution_preferences: {
+        Row: {
+          consented_at: string | null
+          contribution_enabled: boolean
+          created_at: string
+          privacy_policy_version: string | null
+          revoked_at: string | null
+          update_source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          consented_at?: string | null
+          contribution_enabled?: boolean
+          created_at?: string
+          privacy_policy_version?: string | null
+          revoked_at?: string | null
+          update_source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          consented_at?: string | null
+          contribution_enabled?: boolean
+          created_at?: string
+          privacy_policy_version?: string | null
+          revoked_at?: string | null
+          update_source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      draft_ranker_pair_comparisons: {
+        Row: {
+          client_operation_id: string
+          community_eligible: boolean
+          community_ineligible_reason: string | null
+          consent_enabled: boolean
+          consent_policy_version: string | null
+          created_at: string
+          high_player_id: number
+          id: string
+          low_player_id: number
+          metadata: Json
+          outcome: string
+          prompt_id: string
+          ranking_id: string
+          ranking_version: number
+          season_id: number
+          user_id: string
+        }
+        Insert: {
+          client_operation_id: string
+          community_eligible?: boolean
+          community_ineligible_reason?: string | null
+          consent_enabled?: boolean
+          consent_policy_version?: string | null
+          created_at?: string
+          high_player_id: number
+          id?: string
+          low_player_id: number
+          metadata?: Json
+          outcome: string
+          prompt_id: string
+          ranking_id: string
+          ranking_version: number
+          season_id: number
+          user_id: string
+        }
+        Update: {
+          client_operation_id?: string
+          community_eligible?: boolean
+          community_ineligible_reason?: string | null
+          consent_enabled?: boolean
+          consent_policy_version?: string | null
+          created_at?: string
+          high_player_id?: number
+          id?: string
+          low_player_id?: number
+          metadata?: Json
+          outcome?: string
+          prompt_id?: string
+          ranking_id?: string
+          ranking_version?: number
+          season_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_pair_comps_prompt_fk"
+            columns: [
+              "prompt_id",
+              "user_id",
+              "ranking_id",
+              "season_id",
+              "low_player_id",
+              "high_player_id",
+            ]
+            isOneToOne: false
+            referencedRelation: "draft_ranker_pair_prompts"
+            referencedColumns: [
+              "id",
+              "user_id",
+              "ranking_id",
+              "season_id",
+              "low_player_id",
+              "high_player_id",
+            ]
+          },
+          {
+            foreignKeyName: "draft_pair_comps_ranking_owner_fk"
+            columns: ["ranking_id", "user_id", "season_id"]
+            isOneToOne: false
+            referencedRelation: "draft_rankings"
+            referencedColumns: ["id", "user_id", "target_season_id"]
+          },
+          {
+            foreignKeyName: "draft_ranker_pair_comparisons_high_player_id_fkey"
+            columns: ["high_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draft_ranker_pair_comparisons_low_player_id_fkey"
+            columns: ["low_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draft_ranker_pair_comparisons_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      draft_ranker_pair_preferences: {
+        Row: {
+          comparison_id: string
+          established_at: string
+          high_player_id: number
+          low_player_id: number
+          preferred_player_id: number
+          ranking_id: string
+          season_id: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comparison_id: string
+          established_at: string
+          high_player_id: number
+          low_player_id: number
+          preferred_player_id: number
+          ranking_id: string
+          season_id: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comparison_id?: string
+          established_at?: string
+          high_player_id?: number
+          low_player_id?: number
+          preferred_player_id?: number
+          ranking_id?: string
+          season_id?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_pair_prefs_comparison_fk"
+            columns: [
+              "comparison_id",
+              "user_id",
+              "ranking_id",
+              "season_id",
+              "low_player_id",
+              "high_player_id",
+            ]
+            isOneToOne: false
+            referencedRelation: "draft_ranker_pair_comparisons"
+            referencedColumns: [
+              "id",
+              "user_id",
+              "ranking_id",
+              "season_id",
+              "low_player_id",
+              "high_player_id",
+            ]
+          },
+          {
+            foreignKeyName: "draft_pair_prefs_ranking_owner_fk"
+            columns: ["ranking_id", "user_id", "season_id"]
+            isOneToOne: false
+            referencedRelation: "draft_rankings"
+            referencedColumns: ["id", "user_id", "target_season_id"]
+          },
+          {
+            foreignKeyName: "draft_ranker_pair_preferences_high_player_id_fkey"
+            columns: ["high_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draft_ranker_pair_preferences_low_player_id_fkey"
+            columns: ["low_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draft_ranker_pair_preferences_preferred_player_id_fkey"
+            columns: ["preferred_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draft_ranker_pair_preferences_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      draft_ranker_pair_prompts: {
+        Row: {
+          algorithm_version: string
+          completed_at: string | null
+          expires_at: string
+          high_player_id: number
+          id: string
+          issued_at: string
+          low_player_id: number
+          metadata: Json
+          queue_mode: string
+          queue_reason: string
+          ranking_id: string
+          season_id: number
+          status: string
+          user_id: string
+        }
+        Insert: {
+          algorithm_version: string
+          completed_at?: string | null
+          expires_at: string
+          high_player_id: number
+          id?: string
+          issued_at?: string
+          low_player_id: number
+          metadata?: Json
+          queue_mode: string
+          queue_reason: string
+          ranking_id: string
+          season_id: number
+          status?: string
+          user_id: string
+        }
+        Update: {
+          algorithm_version?: string
+          completed_at?: string | null
+          expires_at?: string
+          high_player_id?: number
+          id?: string
+          issued_at?: string
+          low_player_id?: number
+          metadata?: Json
+          queue_mode?: string
+          queue_reason?: string
+          ranking_id?: string
+          season_id?: number
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_pair_prompts_ranking_owner_fk"
+            columns: ["ranking_id", "user_id", "season_id"]
+            isOneToOne: false
+            referencedRelation: "draft_rankings"
+            referencedColumns: ["id", "user_id", "target_season_id"]
+          },
+          {
+            foreignKeyName: "draft_ranker_pair_prompts_high_player_id_fkey"
+            columns: ["high_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draft_ranker_pair_prompts_low_player_id_fkey"
+            columns: ["low_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draft_ranker_pair_prompts_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      draft_ranker_placement_sessions: {
+        Row: {
+          answers: Json
+          completed_at: string | null
+          contradiction_count: number
+          created_at: string
+          expires_at: string
+          fhfh_player_id: number
+          id: string
+          interval_high: number
+          interval_low: number
+          issued_anchors: Json
+          plausible_high: number | null
+          plausible_low: number | null
+          question_count: number
+          ranking_id: string
+          ranking_version: number
+          rough_range: string | null
+          status: string
+          suggested_rank: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          completed_at?: string | null
+          contradiction_count?: number
+          created_at?: string
+          expires_at: string
+          fhfh_player_id: number
+          id?: string
+          interval_high: number
+          interval_low: number
+          issued_anchors?: Json
+          plausible_high?: number | null
+          plausible_low?: number | null
+          question_count?: number
+          ranking_id: string
+          ranking_version: number
+          rough_range?: string | null
+          status?: string
+          suggested_rank?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          completed_at?: string | null
+          contradiction_count?: number
+          created_at?: string
+          expires_at?: string
+          fhfh_player_id?: number
+          id?: string
+          interval_high?: number
+          interval_low?: number
+          issued_anchors?: Json
+          plausible_high?: number | null
+          plausible_low?: number | null
+          question_count?: number
+          ranking_id?: string
+          ranking_version?: number
+          rough_range?: string | null
+          status?: string
+          suggested_rank?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_placement_ranking_owner_fk"
+            columns: ["ranking_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "draft_rankings"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "draft_ranker_placement_sessions_fhfh_player_id_fkey"
+            columns: ["fhfh_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      draft_ranking_entries: {
+        Row: {
+          created_at: string
+          fhfh_player_id: number
+          first_interacted_at: string | null
+          last_interacted_at: string | null
+          notes: string | null
+          order_key: number
+          ranking_id: string
+          seed_adp: number | null
+          seed_rank: number | null
+          seed_source: string | null
+          tier: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fhfh_player_id: number
+          first_interacted_at?: string | null
+          last_interacted_at?: string | null
+          notes?: string | null
+          order_key: number
+          ranking_id: string
+          seed_adp?: number | null
+          seed_rank?: number | null
+          seed_source?: string | null
+          tier?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          fhfh_player_id?: number
+          first_interacted_at?: string | null
+          last_interacted_at?: string | null
+          notes?: string | null
+          order_key?: number
+          ranking_id?: string
+          seed_adp?: number | null
+          seed_rank?: number | null
+          seed_source?: string | null
+          tier?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_entries_ranking_owner_fk"
+            columns: ["ranking_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "draft_rankings"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "draft_ranking_entries_fhfh_player_id_fkey"
+            columns: ["fhfh_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      draft_ranking_events: {
+        Row: {
+          after_state: Json
+          before_state: Json
+          created_at: string
+          event_source: string
+          event_type: string
+          expected_version: number | null
+          fhfh_player_id: number | null
+          id: string
+          metadata: Json
+          operation_id: string
+          ranking_id: string
+          resulting_version: number
+          user_id: string
+        }
+        Insert: {
+          after_state?: Json
+          before_state?: Json
+          created_at?: string
+          event_source: string
+          event_type: string
+          expected_version?: number | null
+          fhfh_player_id?: number | null
+          id?: string
+          metadata?: Json
+          operation_id: string
+          ranking_id: string
+          resulting_version: number
+          user_id: string
+        }
+        Update: {
+          after_state?: Json
+          before_state?: Json
+          created_at?: string
+          event_source?: string
+          event_type?: string
+          expected_version?: number | null
+          fhfh_player_id?: number | null
+          id?: string
+          metadata?: Json
+          operation_id?: string
+          ranking_id?: string
+          resulting_version?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_events_ranking_owner_fk"
+            columns: ["ranking_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "draft_rankings"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "draft_ranking_events_fhfh_player_id_fkey"
+            columns: ["fhfh_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      draft_ranking_seed_runs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_summary: Json
+          fallback_count: number
+          id: string
+          invalid_adp_count: number
+          ranking_id: string
+          result_summary: Json
+          seed_revision: string
+          seeded_count: number
+          source_count: number
+          source_season_id: number
+          started_at: string
+          status: string
+          unmapped_count: number
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_summary?: Json
+          fallback_count?: number
+          id?: string
+          invalid_adp_count?: number
+          ranking_id: string
+          result_summary?: Json
+          seed_revision: string
+          seeded_count?: number
+          source_count?: number
+          source_season_id: number
+          started_at?: string
+          status?: string
+          unmapped_count?: number
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_summary?: Json
+          fallback_count?: number
+          id?: string
+          invalid_adp_count?: number
+          ranking_id?: string
+          result_summary?: Json
+          seed_revision?: string
+          seeded_count?: number
+          source_count?: number
+          source_season_id?: number
+          started_at?: string
+          status?: string
+          unmapped_count?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_ranking_seed_runs_source_season_id_fkey"
+            columns: ["source_season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draft_seed_runs_ranking_owner_fk"
+            columns: ["ranking_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "draft_rankings"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      draft_ranking_watchlist: {
+        Row: {
+          created_at: string
+          fhfh_player_id: number
+          note: string | null
+          priority: number | null
+          ranking_id: string
+          reason: string | null
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fhfh_player_id: number
+          note?: string | null
+          priority?: number | null
+          ranking_id: string
+          reason?: string | null
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          fhfh_player_id?: number
+          note?: string | null
+          priority?: number | null
+          ranking_id?: string
+          reason?: string | null
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_ranking_watchlist_fhfh_player_id_fkey"
+            columns: ["fhfh_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draft_watchlist_ranking_owner_fk"
+            columns: ["ranking_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "draft_rankings"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      draft_rankings: {
+        Row: {
+          created_at: string
+          external_context: Json
+          id: string
+          is_default: boolean
+          lock_version: number
+          name: string
+          schema_version: number
+          scoring_profile: Json
+          seed_revision: string | null
+          status: string
+          target_season_id: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          external_context?: Json
+          id?: string
+          is_default?: boolean
+          lock_version?: number
+          name?: string
+          schema_version?: number
+          scoring_profile?: Json
+          seed_revision?: string | null
+          status?: string
+          target_season_id: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          external_context?: Json
+          id?: string
+          is_default?: boolean
+          lock_version?: number
+          name?: string
+          schema_version?: number
+          scoring_profile?: Json
+          seed_revision?: string | null
+          status?: string
+          target_season_id?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_rankings_target_season_id_fkey"
+            columns: ["target_season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entity_metric_rankings: {
         Row: {
           created_at: string
@@ -2044,6 +2746,378 @@ export type Database = {
           {
             foreignKeyName: "team_projections_v2_team_id_fkey"
             columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fhfh_player_external_identities: {
+        Row: {
+          context_key: string
+          created_at: string
+          external_player_id: string
+          fhfh_player_id: number
+          id: string
+          is_primary: boolean
+          match_confidence: number | null
+          match_method: string
+          provider: string
+          season_id: number | null
+          source_provenance: Json
+          updated_at: string
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
+          verified_by_system: string | null
+        }
+        Insert: {
+          context_key?: string
+          created_at?: string
+          external_player_id: string
+          fhfh_player_id: number
+          id?: string
+          is_primary?: boolean
+          match_confidence?: number | null
+          match_method: string
+          provider: string
+          season_id?: number | null
+          source_provenance?: Json
+          updated_at?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+          verified_by_system?: string | null
+        }
+        Update: {
+          context_key?: string
+          created_at?: string
+          external_player_id?: string
+          fhfh_player_id?: number
+          id?: string
+          is_primary?: boolean
+          match_confidence?: number | null
+          match_method?: string
+          provider?: string
+          season_id?: number | null
+          source_provenance?: Json
+          updated_at?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+          verified_by_system?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fhfh_player_external_identities_fhfh_player_id_fkey"
+            columns: ["fhfh_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fhfh_player_external_identities_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fhfh_player_identities: {
+        Row: {
+          birth_date: string | null
+          canonical_name: string
+          canonical_position:
+            | Database["public"]["Enums"]["NHL_Position_Code"]
+            | null
+          created_at: string
+          current_nhl_team_id: number | null
+          current_organization_name: string | null
+          current_organization_type: string
+          first_name: string | null
+          headshot_url: string | null
+          id: number
+          last_name: string | null
+          lifecycle_status: string
+          merged_into_id: number | null
+          nhl_player_id: number | null
+          source_provenance: Json
+          updated_at: string
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          birth_date?: string | null
+          canonical_name: string
+          canonical_position?:
+            | Database["public"]["Enums"]["NHL_Position_Code"]
+            | null
+          created_at?: string
+          current_nhl_team_id?: number | null
+          current_organization_name?: string | null
+          current_organization_type?: string
+          first_name?: string | null
+          headshot_url?: string | null
+          id?: never
+          last_name?: string | null
+          lifecycle_status?: string
+          merged_into_id?: number | null
+          nhl_player_id?: number | null
+          source_provenance?: Json
+          updated_at?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          birth_date?: string | null
+          canonical_name?: string
+          canonical_position?:
+            | Database["public"]["Enums"]["NHL_Position_Code"]
+            | null
+          created_at?: string
+          current_nhl_team_id?: number | null
+          current_organization_name?: string | null
+          current_organization_type?: string
+          first_name?: string | null
+          headshot_url?: string | null
+          id?: never
+          last_name?: string | null
+          lifecycle_status?: string
+          merged_into_id?: number | null
+          nhl_player_id?: number | null
+          source_provenance?: Json
+          updated_at?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fhfh_player_identities_current_nhl_team_id_fkey"
+            columns: ["current_nhl_team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "fhfh_player_identities_current_nhl_team_id_fkey"
+            columns: ["current_nhl_team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "fhfh_player_identities_current_nhl_team_id_fkey"
+            columns: ["current_nhl_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fhfh_player_identities_merged_into_id_fkey"
+            columns: ["merged_into_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fhfh_player_identities_nhl_player_id_fkey"
+            columns: ["nhl_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fhfh_player_identity_aliases: {
+        Row: {
+          alias: string
+          created_at: string
+          fhfh_player_id: number
+          id: string
+          language_code: string | null
+          normalized_alias: string
+          source: string
+          source_provenance: Json
+          updated_at: string
+          verification_status: string
+        }
+        Insert: {
+          alias: string
+          created_at?: string
+          fhfh_player_id: number
+          id?: string
+          language_code?: string | null
+          normalized_alias: string
+          source: string
+          source_provenance?: Json
+          updated_at?: string
+          verification_status?: string
+        }
+        Update: {
+          alias?: string
+          created_at?: string
+          fhfh_player_id?: number
+          id?: string
+          language_code?: string | null
+          normalized_alias?: string
+          source?: string
+          source_provenance?: Json
+          updated_at?: string
+          verification_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fhfh_player_identity_aliases_fhfh_player_id_fkey"
+            columns: ["fhfh_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fhfh_player_identity_review_queue: {
+        Row: {
+          candidate_fhfh_player_ids: number[]
+          created_at: string
+          dedupe_key: string | null
+          id: string
+          raw_name: string | null
+          requested_by: string | null
+          resolution_action: string | null
+          resolution_notes: string | null
+          resolved_fhfh_player_id: number | null
+          review_type: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewed_by_system: string | null
+          source_evidence: Json
+          status: string
+          submitted_context: Json
+          updated_at: string
+        }
+        Insert: {
+          candidate_fhfh_player_ids?: number[]
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          raw_name?: string | null
+          requested_by?: string | null
+          resolution_action?: string | null
+          resolution_notes?: string | null
+          resolved_fhfh_player_id?: number | null
+          review_type: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewed_by_system?: string | null
+          source_evidence?: Json
+          status?: string
+          submitted_context?: Json
+          updated_at?: string
+        }
+        Update: {
+          candidate_fhfh_player_ids?: number[]
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          raw_name?: string | null
+          requested_by?: string | null
+          resolution_action?: string | null
+          resolution_notes?: string | null
+          resolved_fhfh_player_id?: number | null
+          review_type?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewed_by_system?: string | null
+          source_evidence?: Json
+          status?: string
+          submitted_context?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fhfh_player_identity_review_queue_resolved_fhfh_player_id_fkey"
+            columns: ["resolved_fhfh_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fhfh_player_organization_history: {
+        Row: {
+          created_at: string
+          effective_from: string | null
+          effective_to: string | null
+          fhfh_player_id: number
+          id: string
+          is_current: boolean
+          nhl_team_id: number | null
+          organization_name: string
+          organization_type: string
+          source: string
+          source_confidence: number | null
+          source_provenance: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          fhfh_player_id: number
+          id?: string
+          is_current?: boolean
+          nhl_team_id?: number | null
+          organization_name: string
+          organization_type: string
+          source: string
+          source_confidence?: number | null
+          source_provenance?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          fhfh_player_id?: number
+          id?: string
+          is_current?: boolean
+          nhl_team_id?: number | null
+          organization_name?: string
+          organization_type?: string
+          source?: string
+          source_confidence?: number | null
+          source_provenance?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fhfh_player_organization_history_fhfh_player_id_fkey"
+            columns: ["fhfh_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fhfh_player_organization_history_nhl_team_id_fkey"
+            columns: ["nhl_team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "fhfh_player_organization_history_nhl_team_id_fkey"
+            columns: ["nhl_team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "fhfh_player_organization_history_nhl_team_id_fkey"
+            columns: ["nhl_team_id"]
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
@@ -7232,6 +8306,8 @@ export type Database = {
         Row: {
           created_at: string
           feature_version: number
+          flurry_adjusted_goals_saved_above_expected: number | null
+          flurry_adjusted_xg_against: number | null
           game_date: string | null
           game_id: number
           goalie_player_id: number
@@ -7251,6 +8327,8 @@ export type Database = {
         Insert: {
           created_at?: string
           feature_version: number
+          flurry_adjusted_goals_saved_above_expected?: number | null
+          flurry_adjusted_xg_against?: number | null
           game_date?: string | null
           game_id: number
           goalie_player_id: number
@@ -7270,6 +8348,8 @@ export type Database = {
         Update: {
           created_at?: string
           feature_version?: number
+          flurry_adjusted_goals_saved_above_expected?: number | null
+          flurry_adjusted_xg_against?: number | null
           game_date?: string | null
           game_id?: number
           goalie_player_id?: number
@@ -7294,6 +8374,8 @@ export type Database = {
           as_of_game_id: number
           created_at: string
           feature_version: number
+          flurry_adjusted_goals_saved_above_expected: number | null
+          flurry_adjusted_xg_against: number | null
           games_count: number
           goalie_player_id: number
           goals_against: number
@@ -7312,6 +8394,8 @@ export type Database = {
           as_of_game_id: number
           created_at?: string
           feature_version: number
+          flurry_adjusted_goals_saved_above_expected?: number | null
+          flurry_adjusted_xg_against?: number | null
           games_count?: number
           goalie_player_id: number
           goals_against?: number
@@ -7330,6 +8414,8 @@ export type Database = {
           as_of_game_id?: number
           created_at?: string
           feature_version?: number
+          flurry_adjusted_goals_saved_above_expected?: number | null
+          flurry_adjusted_xg_against?: number | null
           games_count?: number
           goalie_player_id?: number
           goals_against?: number
@@ -7595,6 +8681,7 @@ export type Database = {
         Row: {
           created_at: string
           feature_version: number
+          flurry_adjusted_ixg: number | null
           game_date: string | null
           game_id: number
           goals: number
@@ -7612,6 +8699,7 @@ export type Database = {
         Insert: {
           created_at?: string
           feature_version: number
+          flurry_adjusted_ixg?: number | null
           game_date?: string | null
           game_id: number
           goals?: number
@@ -7629,6 +8717,7 @@ export type Database = {
         Update: {
           created_at?: string
           feature_version?: number
+          flurry_adjusted_ixg?: number | null
           game_date?: string | null
           game_id?: number
           goals?: number
@@ -7651,6 +8740,7 @@ export type Database = {
           as_of_game_id: number
           created_at: string
           feature_version: number
+          flurry_adjusted_ixg: number | null
           games_count: number
           goals: number
           ixg: number
@@ -7668,6 +8758,7 @@ export type Database = {
           as_of_game_id: number
           created_at?: string
           feature_version: number
+          flurry_adjusted_ixg?: number | null
           games_count?: number
           goals?: number
           ixg?: number
@@ -7685,6 +8776,7 @@ export type Database = {
           as_of_game_id?: number
           created_at?: string
           feature_version?: number
+          flurry_adjusted_ixg?: number | null
           games_count?: number
           goals?: number
           ixg?: number
@@ -8348,6 +9440,8 @@ export type Database = {
         Row: {
           created_at: string
           feature_version: number
+          flurry_adjusted_xg_against: number | null
+          flurry_adjusted_xg_for: number | null
           game_date: string | null
           game_id: number
           goals_against: number
@@ -8369,6 +9463,8 @@ export type Database = {
         Insert: {
           created_at?: string
           feature_version: number
+          flurry_adjusted_xg_against?: number | null
+          flurry_adjusted_xg_for?: number | null
           game_date?: string | null
           game_id: number
           goals_against?: number
@@ -8390,6 +9486,8 @@ export type Database = {
         Update: {
           created_at?: string
           feature_version?: number
+          flurry_adjusted_xg_against?: number | null
+          flurry_adjusted_xg_for?: number | null
           game_date?: string | null
           game_id?: number
           goals_against?: number
@@ -8416,6 +9514,8 @@ export type Database = {
           as_of_game_id: number
           created_at: string
           feature_version: number
+          flurry_adjusted_xg_against: number | null
+          flurry_adjusted_xg_for: number | null
           games_count: number
           goals_against: number
           goals_for: number
@@ -8435,6 +9535,8 @@ export type Database = {
           as_of_game_id: number
           created_at?: string
           feature_version: number
+          flurry_adjusted_xg_against?: number | null
+          flurry_adjusted_xg_for?: number | null
           games_count?: number
           goals_against?: number
           goals_for?: number
@@ -8454,6 +9556,8 @@ export type Database = {
           as_of_game_id?: number
           created_at?: string
           feature_version?: number
+          flurry_adjusted_xg_against?: number | null
+          flurry_adjusted_xg_for?: number | null
           games_count?: number
           goals_against?: number
           goals_for?: number
@@ -43193,6 +44297,26 @@ export type Database = {
               total_peripherals: number
             }[]
           }
+      get_connected_account_tokens_secure: {
+        Args: { p_connected_account_id: string; p_user_id: string }
+        Returns: {
+          access_token: string
+          connected_account_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          last_refreshed_at: string
+          provider: string
+          provider_user_id: string
+          refresh_expires_at: string
+          refresh_token: string
+          scopes: Json
+          secret_metadata: Json
+          token_type: string
+          updated_at: string
+          user_id: string
+        }[]
+      }
       get_skater_game_score_by_limit: {
         Args: { num_games: number; player_id: number }
         Returns: {
@@ -43261,6 +44385,18 @@ export type Database = {
         }[]
       }
       immutable_unaccent: { Args: { "": string }; Returns: string }
+      initialize_draft_ranking_from_yahoo: {
+        Args: {
+          p_operation_id: string
+          p_operation_payload_hash: string
+          p_scoring_profile?: Json
+          p_seed_revision?: string
+          p_source_yahoo_season?: number
+          p_target_season_id?: number
+          p_user_id: string
+        }
+        Returns: Json
+      }
       process_team_goalie_projections: {
         Args: { p_date: string; p_game_id: number; p_team_id: number }
         Returns: undefined
@@ -43268,6 +44404,20 @@ export type Database = {
       refresh_team_power_ratings: {
         Args: { date_from?: string; date_to?: string }
         Returns: undefined
+      }
+      reorder_draft_ranking: {
+        Args: {
+          p_action: string
+          p_anchor_player_id: number
+          p_expected_version: number
+          p_operation_id: string
+          p_operation_payload_hash: string
+          p_player_id: number
+          p_ranking_id: string
+          p_target_rank: number
+          p_user_id: string
+        }
+        Returns: Json
       }
       rpc_sko_player_series: {
         Args: {
@@ -43331,6 +44481,10 @@ export type Database = {
       upsert_yahoo_players_v3: {
         Args: { players_data: Json[] }
         Returns: undefined
+      }
+      validate_draft_ranking_order: {
+        Args: { p_ranking_id: string; p_user_id: string }
+        Returns: Json
       }
     }
     Enums: {

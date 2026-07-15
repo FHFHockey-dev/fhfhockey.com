@@ -51,12 +51,22 @@ type PlayerTrendPoint = {
   gp: number;
 };
 
-type SeriesPoint = { gp: number; percentile: number };
+type SampleConfidence = "low" | "qualified";
+
+type SeriesPoint = {
+  gp: number;
+  percentile: number;
+  rawPercentile: number;
+  sampleConfidence: SampleConfidence;
+};
 
 interface RankingEntry {
   playerId: number;
   percentile: number;
+  rawPercentile: number;
   gp: number;
+  sampleConfidence: SampleConfidence;
+  minimumSampleGames: number;
   rank: number;
   previousRank: number | null;
   delta: number;
@@ -84,6 +94,11 @@ interface SkaterTrendResponse {
   positionGroup: SkaterPositionGroup;
   limit: number;
   windowSize: SkaterWindowSize;
+  samplePolicy: {
+    minimumGames: number;
+    lowSamplePercentiles: "shrink_to_neutral";
+    suppressLowSampleRankDelta: true;
+  };
   categories: Record<
     SkaterTrendCategoryId,
     Omit<CategoryResult, "includedPlayerIds">
@@ -107,6 +122,7 @@ const PAGE_SIZE = 1000;
 const RESPONSE_TTL_MS = 60_000;
 const RECENT_FALLBACK_MAX_DAYS = 3;
 const BLOCKED_FALLBACK_MIN_DAYS = 14;
+const MIN_TREND_SAMPLE_GAMES = 10;
 const responseCache = new Map<
   string,
   { expiresAt: number; payload: SkaterTrendResponse }
@@ -242,6 +258,25 @@ function computePercentiles(
   return result;
 }
 
+function stabilizePercentileForSample(
+  rawPercentile: number,
+  gamesPlayed: number
+): { percentile: number; sampleConfidence: SampleConfidence } {
+  if (gamesPlayed >= MIN_TREND_SAMPLE_GAMES) {
+    return { percentile: rawPercentile, sampleConfidence: "qualified" };
+  }
+
+  const sampleWeight = Math.max(
+    0,
+    Math.min(1, gamesPlayed / MIN_TREND_SAMPLE_GAMES)
+  );
+  const percentile = 50 + (rawPercentile - 50) * sampleWeight;
+  return {
+    percentile: Math.round(percentile * 100) / 100,
+    sampleConfidence: "low"
+  };
+}
+
 function buildCategoryResult(
   rows: PlayerTrendRow[],
   category: SkaterTrendCategoryDefinition,
@@ -326,12 +361,18 @@ function buildCategoryResult(
     });
     if (entries.length === 0) continue;
     const percentileMap = computePercentiles(entries, category.higherIsBetter);
-    percentileMap.forEach((percentile, playerId) => {
+    percentileMap.forEach((rawPercentile, playerId) => {
       const key = String(playerId);
       if (!series[key]) {
         series[key] = [];
       }
-      series[key].push({ gp, percentile });
+      const stabilized = stabilizePercentileForSample(rawPercentile, gp);
+      series[key].push({
+        gp,
+        percentile: stabilized.percentile,
+        rawPercentile,
+        sampleConfidence: stabilized.sampleConfidence
+      });
     });
   }
 
@@ -379,7 +420,10 @@ function buildCategoryResult(
       return {
         playerId: numericId,
         percentile: latest?.percentile ?? 0,
+        rawPercentile: latest?.rawPercentile ?? 0,
         gp: latest?.gp ?? 0,
+        sampleConfidence: latest?.sampleConfidence ?? "low",
+        minimumSampleGames: MIN_TREND_SAMPLE_GAMES,
         rank: 0,
         previousRank: null,
         delta: 0,
@@ -394,7 +438,11 @@ function buildCategoryResult(
   });
 
   const previousOrder = [...rankings]
-    .filter((entry) => series[String(entry.playerId)].length > 1)
+    .filter((entry) => {
+      const playerSeries = series[String(entry.playerId)];
+      const previous = playerSeries[playerSeries.length - 2];
+      return previous?.sampleConfidence === "qualified";
+    })
     .sort((a, b) => {
       const prevA =
         series[String(a.playerId)][series[String(a.playerId)].length - 2]
@@ -410,6 +458,11 @@ function buildCategoryResult(
   });
 
   rankings.forEach((entry) => {
+    if (entry.sampleConfidence === "low") {
+      entry.previousRank = null;
+      entry.delta = 0;
+      return;
+    }
     const prevRank = previousRankMap.get(entry.playerId) ?? null;
     entry.previousRank = prevRank;
     entry.delta = prevRank === null ? 0 : prevRank - entry.rank;
@@ -601,6 +654,11 @@ export default async function handler(
         positionGroup,
         limit,
         windowSize,
+        samplePolicy: {
+          minimumGames: MIN_TREND_SAMPLE_GAMES,
+          lowSamplePercentiles: "shrink_to_neutral",
+          suppressLowSampleRankDelta: true
+        },
         categories: categories as SkaterTrendResponse["categories"],
         playerMetadata
       };

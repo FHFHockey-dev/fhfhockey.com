@@ -1,3 +1,5 @@
+import { sanitizeCronDiagnostic } from "./statsUpdateSafety";
+
 export type NormalizedDependencyError = {
   kind: "dependency_error";
   source: "supabase_or_proxy" | "unknown";
@@ -9,10 +11,6 @@ export type NormalizedDependencyError = {
   detail: string | null;
   htmlLike: boolean;
 };
-
-function truncate(value: string, max = 240): string {
-  return value.length <= max ? value : `${value.slice(0, max - 1)}…`;
-}
 
 function getRawDependencyMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
@@ -26,7 +24,7 @@ function getRawDependencyMessage(error: unknown): string {
 }
 
 export function normalizeDependencyError(
-  error: unknown
+  error: unknown,
 ): NormalizedDependencyError {
   const rawMessage = getRawDependencyMessage(error);
   const trimmed = rawMessage.trim();
@@ -45,8 +43,8 @@ export function normalizeDependencyError(
       classification: "html_upstream_response",
       message:
         "Upstream dependency returned an HTML error page instead of structured JSON.",
-      detail: truncate(trimmed),
-      htmlLike: true
+      detail: sanitizeCronDiagnostic(trimmed),
+      htmlLike: true,
     };
   }
 
@@ -55,9 +53,10 @@ export function normalizeDependencyError(
       kind: "dependency_error",
       source: "unknown",
       classification: "transport_fetch_failure",
-      message: "Upstream dependency request failed before a structured response was returned.",
-      detail: truncate(trimmed),
-      htmlLike: false
+      message:
+        "Upstream dependency request failed before a structured response was returned.",
+      detail: sanitizeCronDiagnostic(trimmed),
+      htmlLike: false,
     };
   }
 
@@ -65,8 +64,8 @@ export function normalizeDependencyError(
     kind: "dependency_error",
     source: proxyLike ? "supabase_or_proxy" : "unknown",
     classification: "structured_upstream_error",
-    message: truncate(trimmed || "Dependency request failed."),
-    detail: truncate(trimmed) || null,
-    htmlLike: false
+    message: sanitizeCronDiagnostic(trimmed || "Dependency request failed."),
+    detail: trimmed ? sanitizeCronDiagnostic(trimmed) : null,
+    htmlLike: false,
   };
 }

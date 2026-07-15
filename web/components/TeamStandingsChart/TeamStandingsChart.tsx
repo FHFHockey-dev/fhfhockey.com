@@ -120,6 +120,7 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
   // For these metrics, default to 5GM rolling average.
   const [rolling5, setRolling5] = useState(false);
   const [rolling10, setRolling10] = useState(false);
+  const [teamTogglesOpen, setTeamTogglesOpen] = useState(true);
 
   // Team toggles: array of team abbreviations selected for display.
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
@@ -130,7 +131,7 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { width, height } = useResizeObserver(containerRef);
   const chartWidth = width || containerRef.current?.clientWidth || 0;
-  const minimumChartHeight = compact ? 252 : 600;
+  const minimumChartHeight = compact ? 260 : 600;
   const chartHeight = Math.max(
     height || containerRef.current?.clientHeight || 0,
     minimumChartHeight,
@@ -303,7 +304,9 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
     const svg = d3.select(svgEl);
     svg.selectAll("*").remove();
 
-    const margin = { top: 20, right: 30, bottom: 50, left: 60 };
+    const margin = compact
+      ? { top: 16, right: 28, bottom: 38, left: 56 }
+      : { top: 20, right: 30, bottom: 50, left: 60 };
     const innerWidth = Math.max(0, chartWidth - margin.left - margin.right);
     const innerHeight = Math.max(0, chartHeight - margin.top - margin.bottom);
 
@@ -719,6 +722,13 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
       .append("g")
       .attr("transform", `translate(0, ${innerHeight})`)
       .call(xAxis);
+    mainG
+      .append("text")
+      .attr("class", "axis-label")
+      .attr("x", innerWidth / 2)
+      .attr("y", innerHeight + margin.bottom - 5)
+      .attr("text-anchor", "middle")
+      .text("Games");
     // Draw Y axis
     mainG.append("g").call(yAxis);
 
@@ -736,6 +746,7 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
 
       mainG
         .append("text")
+        .attr("class", "axis-label")
         .attr("transform", "rotate(-90)")
         .attr("x", -innerHeight / 2)
         .attr("y", -margin.left + 15)
@@ -765,6 +776,7 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
     selectedTeams,
     chartWidth,
     chartHeight,
+    compact,
   ]);
 
   // -------------------------------
@@ -972,7 +984,10 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
 
           <details
             className={styles.teamToggleDetails}
-            open={compact ? undefined : true}
+            open={teamTogglesOpen}
+            onToggle={(event) =>
+              setTeamTogglesOpen(event.currentTarget.open)
+            }
           >
             <summary>Teams ({selectedTeamCount})</summary>
             <div className={styles.teamToggles}>

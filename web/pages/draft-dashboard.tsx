@@ -17,7 +17,16 @@ export default function DraftDashboardPage() {
   }, []);
 
   if (!isMounted) {
-    return null;
+    return (
+      <main
+        aria-busy="true"
+        aria-labelledby="draft-dashboard-loading-title"
+        style={{ minHeight: "60vh", padding: "32px 24px" }}
+      >
+        <h1 id="draft-dashboard-loading-title">Draft Dashboard</h1>
+        <p role="status">Loading draft tools and projection data…</p>
+      </main>
+    );
   }
 
   return <DraftDashboard />;

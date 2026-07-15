@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DEFAULT_SUPABASE_FILTER_CHUNK_SIZE,
   DEFAULT_SUPABASE_PAGE_SIZE,
+  fetchAllSupabaseFilterChunks,
   fetchAllSupabasePages,
   fetchSupabasePage,
   getSupabaseRange,
@@ -16,14 +18,14 @@ describe("supabase pagination helpers", () => {
       pageSize: DEFAULT_SUPABASE_PAGE_SIZE,
     });
 
-    expect(
-      getSupabaseRange({ pageIndex: 2, pageSize: 50, start: 10 })
-    ).toEqual({
-      from: 110,
-      to: 159,
-      pageIndex: 2,
-      pageSize: 50,
-    });
+    expect(getSupabaseRange({ pageIndex: 2, pageSize: 50, start: 10 })).toEqual(
+      {
+        from: 110,
+        to: 159,
+        pageIndex: 2,
+        pageSize: 50,
+      },
+    );
   });
 
   it("fetches a single page", async () => {
@@ -32,7 +34,7 @@ describe("supabase pagination helpers", () => {
         data: [{ from, to }],
         error: null,
       }),
-      { pageIndex: 1, pageSize: 25 }
+      { pageIndex: 1, pageSize: 25 },
     );
 
     expect(rows).toEqual([{ from: 25, to: 49 }]);
@@ -45,14 +47,11 @@ describe("supabase pagination helpers", () => {
         requestedRanges.push([from, to]);
 
         return {
-          data:
-            pageIndex === 0
-              ? [{ id: 1 }, { id: 2 }]
-              : [{ id: 3 }],
+          data: pageIndex === 0 ? [{ id: 1 }, { id: 2 }] : [{ id: 3 }],
           error: null,
         };
       },
-      { pageSize: 2 }
+      { pageSize: 2 },
     );
 
     expect(requestedRanges).toEqual([
@@ -75,7 +74,7 @@ describe("supabase pagination helpers", () => {
           error: null,
         };
       },
-      { pageSize: 2, limit: 3 }
+      { pageSize: 2, limit: 3 },
     );
 
     expect(requestedRanges).toEqual([
@@ -90,7 +89,7 @@ describe("supabase pagination helpers", () => {
       fetchAllSupabasePages(async () => ({
         data: null,
         error: new Error("db failed"),
-      }))
+      })),
     ).rejects.toThrow("db failed");
   });
 
@@ -107,10 +106,59 @@ describe("supabase pagination helpers", () => {
 
         return { data: [{ id: 1 }], error: null };
       },
-      { pageSize: 2, retry: { attempts: 2 } }
+      { pageSize: 2, retry: { attempts: 2 } },
     );
 
     expect(calls).toBe(2);
     expect(rows).toEqual([{ id: 1 }]);
+  });
+
+  it("chunks large filter sets and paginates every chunk to a short page", async () => {
+    const requests: Array<{ chunk: number[]; from: number; to: number }> = [];
+
+    const rows = await fetchAllSupabaseFilterChunks(
+      [1, 2, 2, 3, 4, 5],
+      async (chunk, { from, to, pageIndex }) => {
+        requests.push({ chunk, from, to });
+        return {
+          data:
+            pageIndex === 0
+              ? chunk.slice(0, 2).map((id) => ({ id }))
+              : chunk.slice(2).map((id) => ({ id })),
+          error: null,
+        };
+      },
+      { chunkSize: 3, pageSize: 2 },
+    );
+
+    expect(requests).toEqual([
+      { chunk: [1, 2, 3], from: 0, to: 1 },
+      { chunk: [1, 2, 3], from: 2, to: 3 },
+      { chunk: [4, 5], from: 0, to: 1 },
+      { chunk: [4, 5], from: 2, to: 3 },
+    ]);
+    expect(rows).toEqual([
+      { id: 1 },
+      { id: 2 },
+      { id: 3 },
+      { id: 4 },
+      { id: 5 },
+    ]);
+  });
+
+  it("uses a bounded default filter chunk size", async () => {
+    const chunkSizes: number[] = [];
+    await fetchAllSupabaseFilterChunks(
+      Array.from(
+        { length: DEFAULT_SUPABASE_FILTER_CHUNK_SIZE + 1 },
+        (_, index) => index,
+      ),
+      async (chunk) => {
+        chunkSizes.push(chunk.length);
+        return { data: [], error: null };
+      },
+    );
+
+    expect(chunkSizes).toEqual([DEFAULT_SUPABASE_FILTER_CHUNK_SIZE, 1]);
   });
 });

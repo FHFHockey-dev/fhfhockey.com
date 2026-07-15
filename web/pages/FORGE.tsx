@@ -213,6 +213,8 @@ const ForgeLandingPage: NextPage = () => {
   );
 
   useEffect(() => {
+    if (!router.isReady) return;
+
     let active = true;
     setLoading(true);
     setError(null);
@@ -479,7 +481,7 @@ const ForgeLandingPage: NextPage = () => {
     return () => {
       active = false;
     };
-  }, [date]);
+  }, [date, router.isReady]);
 
   return (
     <>
@@ -511,10 +513,10 @@ const ForgeLandingPage: NextPage = () => {
                     Games date: {slateDateUsed ?? date}
                   </span>
                   <Link
-                    href={buildForgeHref("/forge/dashboard", { date })}
+                    href={buildForgeHref("/forge/command-center", { date })}
                     className={styles.navLink}
                   >
-                    Open Dashboard
+                    Open Command Center
                   </Link>
                 </div>
               </div>
@@ -712,7 +714,7 @@ const ForgeLandingPage: NextPage = () => {
                     </div>
                     <div className={styles.previewActions}>
                       <Link
-                        href={buildForgeHref("/forge/dashboard", { date })}
+                        href={buildForgeHref("/forge/command-center", { date })}
                         className={styles.slateActionLink}
                       >
                         See All Adds
@@ -802,7 +804,7 @@ const ForgeLandingPage: NextPage = () => {
                     </div>
                     <div className={styles.previewActions}>
                       <Link
-                        href={buildForgeHref("/forge/dashboard", { date })}
+                        href={buildForgeHref("/forge/command-center", { date })}
                         className={styles.slateActionLink}
                       >
                         See Player Calls

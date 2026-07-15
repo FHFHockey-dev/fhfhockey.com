@@ -97,4 +97,86 @@ describe("HomepageStandingsInjuriesSection", () => {
     expect(screen.getByText("Returning")).toBeTruthy();
     expect(screen.getByText("No longer listed on the injury report.")).toBeTruthy();
   });
+
+  it("renders published NewsFeed injury items in the injuries tab", () => {
+    render(
+      <HomepageStandingsInjuriesSection
+        standings={[]}
+        injuries={[]}
+        recentInjuryNews={[
+          {
+            id: "news-1",
+            headline: "Connor Bedard reported injury",
+            blurb: "A lower-body injury has been reported.",
+            category: "REPORTED INJURY",
+            subcategory: "AWAITING OFFICIAL CONFIRMATION",
+            team_abbreviation: "CHI",
+            source_url: "https://x.com/OriginalReporter/status/1",
+            published_at: "2026-07-14T12:00:00.000Z",
+            created_at: "2026-07-14T12:00:00.000Z",
+            players: [
+              {
+                player_id: 1,
+                player_name: "Connor Bedard",
+              },
+            ],
+          } as any,
+        ]}
+        snapshotGeneratedAt="2026-07-14T12:00:00.000Z"
+        standingsError={null}
+        injuriesError={null}
+      />,
+    );
+
+    expect(screen.getByText("Connor Bedard")).toBeTruthy();
+    expect(screen.getByText("Awaiting Official Confirmation")).toBeTruthy();
+    expect(screen.getByText("A lower-body injury has been reported.")).toBeTruthy();
+    expect(
+      screen
+        .getByRole("link", {
+          name: "View original post for Connor Bedard",
+        })
+        .getAttribute("href"),
+    ).toBe("https://x.com/OriginalReporter/status/1");
+  });
+
+  it("renders News Update items in the transactions tab", () => {
+    render(
+      <HomepageStandingsInjuriesSection
+        standings={[]}
+        injuries={[]}
+        recentTransactions={[
+          {
+            id: "news-2",
+            headline: "Mason McTavish extension update",
+            blurb:
+              "Mason McTavish and Anaheim are making progress on a contract extension.",
+            category: "NEWS UPDATE",
+            team_abbreviation: "ANA",
+            published_at: "2026-07-14T12:00:00.000Z",
+            source_url: "https://x.com/OriginalReporter/status/2",
+            players: [{ player_name: "Mason McTavish" }],
+          },
+        ]}
+        snapshotGeneratedAt="2026-07-14T12:00:00.000Z"
+        standingsError={null}
+        injuriesError={null}
+      />,
+    );
+
+    expect(screen.getByText("Mason McTavish")).toBeTruthy();
+    expect(screen.getByText("NEWS UPDATE")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Mason McTavish and Anaheim are making progress on a contract extension.",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen
+        .getByRole("link", {
+          name: "View original post for Mason McTavish",
+        })
+        .getAttribute("href"),
+    ).toBe("https://x.com/OriginalReporter/status/2");
+  });
 });

@@ -58,7 +58,7 @@ function buildNavItems({
     },
     {
       key: "dashboard",
-      label: "Dashboard",
+      label: "Legacy Dashboard",
       href: buildForgeHref("/forge/dashboard", sharedContext)
     },
     {

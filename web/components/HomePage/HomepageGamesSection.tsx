@@ -14,6 +14,8 @@ import { HOME_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import { teamsInfo } from "lib/teamsInfo";
 import styles from "styles/Home.module.scss";
 import HomepagePlayoffBracket from "./HomepagePlayoffBracket";
+import HomepagePulse from "./HomepagePulse";
+import type { HomepagePulsePoint } from "lib/homepagePulse";
 import {
   formatLocalStartTime,
   formatPeriodText,
@@ -36,6 +38,7 @@ type HomepageGamesSectionProps = {
     value: string;
     caption: string;
   }>;
+  pulsePoints?: HomepagePulsePoint[];
 };
 
 export default function HomepageGamesSection({
@@ -50,6 +53,7 @@ export default function HomepageGamesSection({
   playoffBracket = null,
   playoffWeekGames = [],
   heroMetrics = [],
+  pulsePoints = [],
 }: HomepageGamesSectionProps) {
   const liveGames = games.filter(
     (game) => game.gameState === "LIVE" || game.gameState === "CRIT",
@@ -327,6 +331,7 @@ export default function HomepageGamesSection({
           </div>
 
           <div className={styles.edgePanel}>
+            <HomepagePulse initialPoints={pulsePoints} />
             <div className={styles.edgeCopy}>
               <strong>
                 Today&apos;s <span>Edge</span>

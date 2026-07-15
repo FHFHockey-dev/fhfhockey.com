@@ -111,6 +111,25 @@ export function deriveOutcomeFromScore(row: {
   };
 }
 
+export function deriveOutcomeFromPbpGame(row: {
+  id: number;
+  hometeamid: number | null;
+  awayteamid: number | null;
+  hometeamscore: number | null;
+  awayteamscore: number | null;
+  created_at?: string | null;
+}): CompletedGameOutcome | null {
+  if (row.hometeamid == null || row.awayteamid == null) return null;
+  return deriveOutcomeFromScore({
+    game_id: row.id,
+    home_team_id: row.hometeamid,
+    away_team_id: row.awayteamid,
+    home_team_score: row.hometeamscore,
+    away_team_score: row.awayteamscore,
+    updated_at: row.created_at ?? null,
+  });
+}
+
 export function attachOutcomesToPredictions(
   predictions: GamePredictionHistoryRow[],
   outcomes: CompletedGameOutcome[]
@@ -409,20 +428,43 @@ export async function fetchCompletedGameOutcomes(
   gameIds: number[]
 ): Promise<CompletedGameOutcome[]> {
   if (gameIds.length === 0) return [];
-  const { data, error } = await client
-    .from("pp_timeframes")
-    .select("game_id,home_team_id,away_team_id,home_team_score,away_team_score,updated_at")
-    .in("game_id", gameIds);
-  if (error) throw error;
+  const uniqueGameIds = Array.from(new Set(gameIds));
+  const chunks = Array.from(
+    { length: Math.ceil(uniqueGameIds.length / 200) },
+    (_, index) => uniqueGameIds.slice(index * 200, index * 200 + 200),
+  );
+  const outcomesByGameId = new Map<number, CompletedGameOutcome>();
 
-  return ((data ?? []) as Array<{
-    game_id: number;
-    home_team_id: number;
-    away_team_id: number;
-    home_team_score: number | null;
-    away_team_score: number | null;
-    updated_at?: string | null;
-  }>)
-    .map(deriveOutcomeFromScore)
-    .filter((outcome): outcome is CompletedGameOutcome => outcome != null);
+  for (const chunk of chunks) {
+    const { data, error } = await client
+      .from("pp_timeframes")
+      .select("game_id,home_team_id,away_team_id,home_team_score,away_team_score,updated_at")
+      .in("game_id", chunk);
+    if (error) throw error;
+    for (const row of data ?? []) {
+      const outcome = deriveOutcomeFromScore(row);
+      if (outcome) outcomesByGameId.set(outcome.gameId, outcome);
+    }
+  }
+
+  const unresolvedGameIds = uniqueGameIds.filter(
+    (gameId) => !outcomesByGameId.has(gameId),
+  );
+  for (let index = 0; index < unresolvedGameIds.length; index += 200) {
+    const chunk = unresolvedGameIds.slice(index, index + 200);
+    const { data, error } = await client
+      .from("pbp_games")
+      .select("id,hometeamid,awayteamid,hometeamscore,awayteamscore,created_at")
+      .in("id", chunk);
+    if (error) throw error;
+    for (const row of data ?? []) {
+      const outcome = deriveOutcomeFromPbpGame(row);
+      if (outcome) outcomesByGameId.set(outcome.gameId, outcome);
+    }
+  }
+
+  return uniqueGameIds.flatMap((gameId) => {
+    const outcome = outcomesByGameId.get(gameId);
+    return outcome ? [outcome] : [];
+  });
 }

@@ -213,37 +213,51 @@ export default function PlayerInsightCore({
         </div>
 
         <div className={styles.insightTables}>
-          <DenseList columns="minmax(0, 1.1fr) 52px 64px 62px" aria-label="Top sustainable plays">
-            {trustRows.map((row) => (
-              <DenseListRow key={`trust-${row.player_id}`}>
-                <Link href={playerHref(row.player_id)} className={styles.playerListLink}>
-                  <span>
-                    <strong>{row.player_name}</strong>
-                    <small>{positionLabel(row)}</small>
-                  </span>
-                </Link>
-                <strong>{formatScore(row.s_100)}</strong>
-                <span>{formatSigned(row.luck_pressure, 2)}</span>
-                <StatusChip tone="good">Trust</StatusChip>
-              </DenseListRow>
-            ))}
-          </DenseList>
+          <section className={styles.insightListGroup}>
+            <h3>Top Trust / Sustainable Plays</h3>
+            {trustRows.length > 0 ? (
+              <DenseList columns="minmax(0, 1.1fr) 52px 64px 62px" aria-label="Top sustainable plays">
+                {trustRows.map((row) => (
+                  <DenseListRow key={`trust-${row.player_id}`}>
+                    <Link href={playerHref(row.player_id)} className={styles.playerListLink}>
+                      <span>
+                        <strong>{row.player_name}</strong>
+                        <small>{positionLabel(row)}</small>
+                      </span>
+                    </Link>
+                    <strong>{formatScore(row.s_100)}</strong>
+                    <span>{formatSigned(row.luck_pressure, 2)}</span>
+                    <StatusChip tone="good">Trust</StatusChip>
+                  </DenseListRow>
+                ))}
+              </DenseList>
+            ) : (
+              <p className={styles.insightSubstate}>No named sustainable plays are available for this data state.</p>
+            )}
+          </section>
 
-          <DenseList columns="minmax(0, 1.1fr) 52px 64px 62px" aria-label="Regression risk candidates">
-            {fadeRows.map((row) => (
-              <DenseListRow key={`fade-${row.player_id}`}>
-                <Link href={playerHref(row.player_id)} className={styles.playerListLink}>
-                  <span>
-                    <strong>{row.player_name}</strong>
-                    <small>{positionLabel(row)}</small>
-                  </span>
-                </Link>
-                <strong>{formatScore(row.s_100)}</strong>
-                <span>{formatSigned(row.luck_pressure, 2)}</span>
-                <StatusChip tone="danger">Fade</StatusChip>
-              </DenseListRow>
-            ))}
-          </DenseList>
+          <section className={styles.insightListGroup}>
+            <h3>Regression Risk / Fade Candidates</h3>
+            {fadeRows.length > 0 ? (
+              <DenseList columns="minmax(0, 1.1fr) 52px 64px 62px" aria-label="Regression risk candidates">
+                {fadeRows.map((row) => (
+                  <DenseListRow key={`fade-${row.player_id}`}>
+                    <Link href={playerHref(row.player_id)} className={styles.playerListLink}>
+                      <span>
+                        <strong>{row.player_name}</strong>
+                        <small>{positionLabel(row)}</small>
+                      </span>
+                    </Link>
+                    <strong>{formatScore(row.s_100)}</strong>
+                    <span>{formatSigned(row.luck_pressure, 2)}</span>
+                    <StatusChip tone="danger">Fade</StatusChip>
+                  </DenseListRow>
+                ))}
+              </DenseList>
+            ) : (
+              <p className={styles.insightSubstate}>No named regression-risk candidates are available for this data state.</p>
+            )}
+          </section>
         </div>
 
         <DenseList

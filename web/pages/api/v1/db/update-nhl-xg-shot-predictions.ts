@@ -17,6 +17,8 @@ import {
   type PersistedFeatureRow,
   type XgShotPredictionType
 } from "lib/xg/shotFeaturePersistence";
+import { withXgExecutionLeaseApi } from "lib/xg/executionLease";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 const PAGE_SIZE = 1000;
 const DEFAULT_GAME_BATCH_SIZE = 1;
@@ -586,6 +588,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default withCronJobAudit(handler, {
+export default withCronJobAudit(adminOnly(withXgExecutionLeaseApi(handler, {
+  leaseKey: "xg:shot-predictions",
+  ttlSeconds: 1800
+}) as any), {
   jobName: "update-nhl-xg-shot-predictions"
 });

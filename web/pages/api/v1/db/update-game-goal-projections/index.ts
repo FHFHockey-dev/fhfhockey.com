@@ -18,8 +18,16 @@ import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 type ResponseData = {
   success: boolean;
   message: string;
+  modelContract: typeof LEGACY_GAME_GOAL_MODEL_CONTRACT;
   data?: CalculatedGameGoalProjectionData[] | null;
 };
+
+export const LEGACY_GAME_GOAL_MODEL_CONTRACT = {
+  classification: "legacy_team_strength_goal_projection",
+  shotLevelExpectedGoals: false,
+  outputTable: "expected_goals",
+  canonicalShotLevelPipeline: "/api/v1/db/update-nhl-xg-shot-predictions",
+} as const;
 
 /**
  * API handler for updating legacy game-level goal projections.
@@ -33,7 +41,8 @@ const handler = async (
     res.setHeader("Allow", ["POST", "GET"]);
     return res.status(405).json({
       success: false,
-      message: `Method ${req.method} Not Allowed`
+      message: `Method ${req.method} Not Allowed`,
+      modelContract: LEGACY_GAME_GOAL_MODEL_CONTRACT
     });
   }
 
@@ -67,6 +76,7 @@ const handler = async (
     if (!games || games.length === 0) {
       return res.status(200).json({
         success: true,
+        modelContract: LEGACY_GAME_GOAL_MODEL_CONTRACT,
         message:
           date === "all"
             ? "No games found for the entire season."
@@ -86,6 +96,7 @@ const handler = async (
     if (calculatedData.length === 0) {
       return res.status(200).json({
         success: true,
+        modelContract: LEGACY_GAME_GOAL_MODEL_CONTRACT,
         message:
           date === "all"
             ? "No valid games to process for the entire season."
@@ -104,6 +115,7 @@ const handler = async (
 
     return res.status(200).json({
       success: true,
+      modelContract: LEGACY_GAME_GOAL_MODEL_CONTRACT,
       message:
         date === "all"
           ? "Game goal projections for the entire season updated successfully."
@@ -114,7 +126,8 @@ const handler = async (
     console.error("Error updating game goal projections:", error);
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
+      modelContract: LEGACY_GAME_GOAL_MODEL_CONTRACT
     });
   }
 };

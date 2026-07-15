@@ -7,8 +7,7 @@ import PageTitle from "components/PageTitle";
 import ClientOnly from "components/ClientOnly";
 import AuthForm from "components/auth/AuthForm";
 import type { AuthModalMode } from "components/auth/AuthModal";
-import { useUser } from "contexts/AuthProviderContext";
-import supabase from "lib/supabase/client";
+import { useAuth } from "contexts/AuthProviderContext";
 
 import styles from "./Auth.module.scss";
 
@@ -33,7 +32,7 @@ function resolveMode(modeValue: string | string[] | undefined): AuthModalMode {
 
 export default function AuthPage() {
   const router = useRouter();
-  const user = useUser();
+  const { user, signOut } = useAuth();
 
   const mode = useMemo(() => resolveMode(router.query.mode), [router.query.mode]);
   const status = useMemo(() => {
@@ -88,9 +87,16 @@ export default function AuthPage() {
                 <button
                   type="button"
                   className={styles.signOutAction}
-                  onClick={() => void supabase.auth.signOut()}
+                  onClick={() => void signOut()}
                 >
                   Sign Out
+                </button>
+                <button
+                  type="button"
+                  className={styles.signOutAction}
+                  onClick={() => void signOut()}
+                >
+                  Reset Local Auth
                 </button>
               </div>
             </div>

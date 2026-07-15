@@ -41,6 +41,22 @@ export default function ComparePlayersModal({
   leagueType = "points",
 }: Props) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    const timer = window.setTimeout(() => {
+      dialogRef.current
+        ?.querySelector<HTMLElement>("button, [href], input, select")
+        ?.focus();
+    }, 0);
+    return () => {
+      window.clearTimeout(timer);
+      previousFocusRef.current?.focus();
+      previousFocusRef.current = null;
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -311,6 +327,7 @@ export default function ComparePlayersModal({
         <div className={`${modalStyles.header} ${styles.header}`}>
           <h3 className={styles.title}>Compare Players</h3>
           <button
+            type="button"
             onClick={onClose}
             aria-label="Close"
             className={`${modalStyles.closeButton} ${styles.closeBtn}`}

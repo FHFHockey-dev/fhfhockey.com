@@ -132,11 +132,11 @@
   - [x] 8.3 Add drill-down support for a prediction's feature snapshot, source provenance, fallback flags, goalie confirmation state, and model version.
   - [x] 8.4 Add alerts or report flags for schema drift, stale source rows, impossible metric values, starter probability anomalies, and unexplained prediction gaps.
 
-- [ ] 9.0 Verify end-to-end behavior before launch
-  - [ ] 9.1 Run the table-vetting checks against current Supabase data and resolve all blocker findings before training or publishing predictions.
-  - [ ] 9.2 Backtest the baseline with walk-forward or season-held-out validation and document model quality against the baseline acceptance criteria.
+- [x] 9.0 Verify end-to-end behavior before launch. All source, backtest, scoring, public-state, and targeted verification rows are complete; production activation remains intentionally evidence-gated under the owner-approved option-A exception (2026-07-12).
+  - [x] 9.1 Run the table-vetting checks against current Supabase data and resolve all blocker findings before training or publishing predictions. Refreshed audit: 45/45 planned relations, 0 missing key columns, 0 blocker findings; retained warnings are classified by 10.1–10.30 (2026-07-12).
+  - [x] 9.2 Backtest the baseline with walk-forward or season-held-out validation and document model quality against the baseline acceptance criteria. Persisted v4 walk-forward evidence covers 369 games at 55.0136% accuracy, 0.246517 Brier, and 0.686185 log loss versus the goal-differential baseline at 62.3306%, 0.240157, and 0.673927; the model remains a candidate rather than being promoted (2026-07-12).
   - [x] 9.3 Run a dry-run slate prediction that stores feature snapshots, prediction history, latest serving rows, provenance, and job logs.
-  - [ ] 9.4 Verify postgame scoring updates metrics without overwriting historical predictions.
+  - [x] 9.4 Verify postgame scoring updates metrics without overwriting historical predictions. Version-qualified v6/v4 scoring persisted nine segment rows while the 53-row history SHA-256 remained `1798dbb4f36b03882416ff32ac4fb0746a77a9867d5ae4b84d2c48ba73c826c6` before and after (2026-07-12).
   - [x] 9.5 Verify the public page and API handle missing optional goalie/player data, stale sources, no-game days, and incomplete prediction coverage.
   - [x] 9.6 Run the relevant unit/API/UI tests and document any manual validation that remains.
 
@@ -172,9 +172,20 @@
   - [x] 10.29 Treat line-source tables and `lineCombinations` as current/explanation-only unless pregame provenance is added; `lineCombinations` has no `observed_at`, while audited `lines_nhl` and `lines_gdl` include post-start observations.
   - [x] 10.30 Treat FORGE projection tables as optional/current context for backtests unless timestamp-level provenance is added; most audited rows have `as_of_date` on or after the linked game date.
 
-- [ ] 11.0 NEW: Clear launch verification blockers discovered during 9.0
-  - [ ] 11.1 Resolve or explicitly accept the current source-audit warning set before marking 9.1 complete; the refreshed audit found 0 missing relations and 0 missing key columns, but retained identity, freshness, outlier, storage/provenance, and as-of warnings.
-  - [ ] 11.2 Promote or seed a production `game_prediction_model_versions` row after a documented backtest; a production baseline row now exists from slate generation, but it still lacks documented backtest/training metrics.
+- [x] 11.0 NEW: Clear launch verification blockers discovered during 9.0. All runtime/scoring blockers are closed; unsupported production activation is explicitly deferred by the approved evidence gate (2026-07-12).
+  - [x] 11.1 Resolve or explicitly accept the current source-audit warning set before marking 9.1 complete; all retained identity, freshness, outlier, storage/provenance, and as-of warnings map to implemented exclusion, clipping, fallback, provenance, or current-only rules in 10.1–10.30 (2026-07-12).
+  - [x] 11.2 Do not promote or seed a production `game_prediction_model_versions` row until documented evidence supports it. Owner-approved option-A exception: all rows remain non-production because v4 trails the goal-differential baseline, v6/v4 has only 31 evaluated playoff predictions, and compiled v6/v5 has no stored evidence (2026-07-12).
   - [x] 11.3 Run an approved non-dry-run slate generation after source/model readiness so feature snapshots, prediction history, latest serving rows, and cron audit rows are actually written.
-  - [ ] 11.4 Run postgame scoring after stored predictions and completed outcomes exist, then verify metrics are appended/upserted without changing historical prediction payloads.
-  - [ ] 11.5 Reduce or classify the admin health warnings before launch; the current health report shows stale provenance rows and 22 scheduled games without stored predictions.
+  - [x] 11.4 Run postgame scoring after stored predictions and completed outcomes exist, then verify metrics are appended/upserted without changing historical prediction payloads. Nine metrics persisted for 31/53 evaluated v6/v4 playoff predictions; history count/hash and candidate lifecycle status are unchanged, with zero production rows (2026-07-12).
+  - [x] 11.5 Reduce or classify the admin health warnings before launch. The 2026-07-12 offseason window has 0 scheduled/0 missing predictions; stale/null provenance and 415 goalie warnings are explicit source-quality states, market metrics are intentionally suppressed without eligible odds, and the two failed forecast jobs are closed credential-rotation incidents followed by successful same-day runs. Missing production-model status remains isolated in 11.2 (2026-07-12).
+
+- [x] 12.0 NEW: Restore playoff postgame scoring coverage without weakening immutable history or regular-season outcome precedence
+  - [x] 12.1 Query regular-season `pp_timeframes` outcomes first in deduplicated 200-ID chunks, then query unresolved IDs from `pbp_games` in the same bounded chunks; reject incomplete identity, tied, or missing-score rows and preserve request order (2026-07-12).
+  - [x] 12.2 Add regression coverage for playoff outcome normalization, invalid identity rejection, 401-ID chunk boundaries, fallback-only unresolved IDs, and primary-source precedence. Focused evaluation/workflow tests pass 20/20; full prediction-focused group passes 72/72 and TypeScript passes (2026-07-12).
+  - [x] 12.3 Re-run v6 playoff scoring read-only against stored production data. The May 1–June 17 window finds 53 stored predictions and evaluates 31 completed playoff games at 61.2903% accuracy, 0.225645 Brier, 0.643972 log loss, and 0.638655 AUC with `dryRun=true` (2026-07-12).
+
+- [x] 13.0 NEW: Prevent postgame scoring from mutating an existing model version's lifecycle status
+  - [x] 13.1 Preserve any existing candidate/production/retired/rejected model-version row during scoring setup and create a candidate row only when the exact model/version/feature key is absent (2026-07-12).
+  - [x] 13.2 Add a regression proving scoring setup performs no upsert for an existing production row. Evaluation/workflow tests pass 21/21 and TypeScript passes (2026-07-12).
+
+- [x] 14.0 NEW: Reconcile the launch/scoring identity before activating cron or production. Owner selected option A: explicitly persisted legacy v6/v4 candidate metrics, retained zero production rows, and approved an evidence-gated no-production exception until compiled v6/v5 earns adequate in-season validation. Default zero-row v6/v5 scoring is not launch evidence (2026-07-12).

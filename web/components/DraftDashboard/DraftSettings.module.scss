@@ -454,17 +454,8 @@
   margin-top: 0; // remove default spacing between subgroups
 }
 
-/* Make expand button span 2 columns if it is alone on the last row
-   Fixed 8-column grid version (matches column 1 of any row): */
-.scoringGrid > .expandButton:last-child:nth-child(8n + 1) {
-  grid-column: span 2;
-}
-
-/* NOTE: Removed previous broad @media rule that always forced span 2 for the
-   last-child inside scoringSubgroupSplit, because it caused the button to take
-   two columns even when other items were on the same row. If needed for the
-   auto-fill subgroup grids, implement a JS-driven class (e.g. .expandButtonWide)
-   only when detection confirms it starts a new row. */
+/* Expand controls always occupy a complete subgroup row. The grid contract is
+   responsive on its own, so runtime width measurement is intentionally absent. */
 
 .statLabel {
   font-size: v.$font-size-xs;
@@ -646,6 +637,38 @@
 /* Generic small text for inline rows like "None" */
 .smallText {
   font-size: v.$font-size-xs;
+}
+
+.keeperBulkBlock {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+}
+
+.keeperBulkInput {
+  width: 100%;
+  min-height: 84px;
+  resize: vertical;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  background: v.$background-lighter;
+  color: v.$text-primary;
+  padding: 8px;
+  font: inherit;
+}
+
+.keeperFeedbackSuccess,
+.keeperFeedbackError {
+  white-space: pre-line;
+  font-size: v.$font-size-xs;
+}
+
+.keeperFeedbackSuccess {
+  color: v.$success-color;
+}
+
+.keeperFeedbackError {
+  color: v.$error-color;
 }
 
 /* List row for overrides/keepers entries */
@@ -1266,6 +1289,13 @@
   letter-spacing: 0.06em;
   color: v.$primary-color;
   margin: 0 0 v.$space-xs 0;
+}
+
+.sectionHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-sm;
 }
 
 /* Tighter rows inside subsections */

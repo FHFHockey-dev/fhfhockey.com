@@ -564,6 +564,36 @@
   line-height: 1.5;
 }
 
+.yahooRosterPanel {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(v.$border-secondary, 0.72);
+}
+
+.yahooRosterSummary {
+  color: rgba(v.$text-primary, 0.78);
+  font-size: 0.82rem;
+}
+
+.yahooRosterList {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.yahooRosterList li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(v.$background-dark, 0.58);
+}
+
 .savedTeamNotes {
   white-space: pre-wrap;
 }

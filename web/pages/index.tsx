@@ -22,6 +22,7 @@ import { isPlayoffsActive, getPlayoffBracketYear } from "lib/NHL/playoffs";
 import { getPlayoffBracket } from "lib/NHL/server/playoffBracket";
 import { getCurrentSeason } from "lib/NHL/server";
 import { fetchNewsFeedItems } from "lib/newsFeed";
+import { fetchHomepagePulse } from "lib/homepagePulse";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import { checkIsOffseason } from "../hooks/useOffseason";
 import Fetch from "lib/cors-fetch";
@@ -113,7 +114,9 @@ const Home: NextPage = ({
   injuriesLoadError,
   latestNews,
   recentTransactions,
+  recentInjuryNews,
   homepagePlayerCount,
+  homepagePulsePoints,
 }) => {
   const {
     currentDate,
@@ -192,6 +195,7 @@ const Home: NextPage = ({
               caption: "current updates",
             },
           ]}
+          pulsePoints={homepagePulsePoints}
         />
         <ClientOnly>
           <TransactionTrends />
@@ -209,7 +213,7 @@ const Home: NextPage = ({
               <Link href="/news">View all</Link>
             </div>
             <div className={styles.compactNewsList}>
-              {latestNews?.slice(0, 4).map((item) => (
+              {latestNews?.slice(0, 3).map((item) => (
                 <NewsCard key={item.id} compact rail item={item} />
               ))}
               {!latestNews?.length ? (
@@ -225,31 +229,13 @@ const Home: NextPage = ({
               <TeamStandingsChart compact />
             </ClientOnly>
           </div>
-
-          <div className={styles.newsPanel}>
-            <div className={styles.compactPanelHeader}>
-              <h2>
-                News &amp; <span>Updates</span>
-              </h2>
-              <Link href="/news">View all</Link>
-            </div>
-            <div className={styles.compactNewsList}>
-              {latestNews?.slice(4, 8).map((item) => (
-                <NewsCard key={item.id} compact rail item={item} />
-              ))}
-              {latestNews?.length > 0 && latestNews.length <= 4 ? (
-                <p className={styles.inlineEmptyState}>
-                  No additional published updates are available.
-                </p>
-              ) : null}
-            </div>
-          </div>
         </section>
 
         <HomepageStandingsInjuriesSection
           standings={initialStandings}
           injuries={initialInjuries}
           recentTransactions={recentTransactions}
+          recentInjuryNews={recentInjuryNews}
           snapshotGeneratedAt={homepageSnapshotGeneratedAt}
           standingsError={standingsLoadError}
           injuriesError={injuriesLoadError}
@@ -551,7 +537,9 @@ export async function getServerSideProps({ req, res }) {
   const standingsResult = await fetchStandings();
   let latestNews = [];
   let recentTransactions = [];
+  let recentInjuryNews = [];
   let homepagePlayerCount = 0;
+  let homepagePulsePoints = [];
   try {
     const publishedNews = await fetchNewsFeedItems({
       supabase: supabaseServer,
@@ -561,7 +549,24 @@ export async function getServerSideProps({ req, res }) {
     latestNews = publishedNews.slice(0, 8);
     recentTransactions = publishedNews
       .filter((item) =>
-        ["TRANSACTION", "TRADE", "SIGNING", "ROSTER MOVE", "WAIVER"].includes(
+        [
+          "TRANSACTION",
+          "TRADE",
+          "SIGNING",
+          "ROSTER MOVE",
+          "WAIVER",
+          "NEWS UPDATE",
+          "RETIREMENT",
+        ].includes(
+          String(item.category ?? "")
+            .trim()
+            .toUpperCase(),
+        ),
+      )
+      .slice(0, 32);
+    recentInjuryNews = publishedNews
+      .filter((item) =>
+        ["INJURY", "REPORTED INJURY", "RETURN", "RETURNING"].includes(
           String(item.category ?? "")
             .trim()
             .toUpperCase(),
@@ -582,6 +587,15 @@ export async function getServerSideProps({ req, res }) {
     console.error("Error fetching homepage player count:", error.message);
   }
 
+  try {
+    homepagePulsePoints = await fetchHomepagePulse({
+      supabase: supabaseServer,
+      currentDate: today,
+    });
+  } catch (error: any) {
+    console.error("Error fetching homepage pulse:", error.message);
+  }
+
   return {
     props: {
       initialGames: gamesToday,
@@ -597,7 +611,9 @@ export async function getServerSideProps({ req, res }) {
       injuriesLoadError: injuriesResult.error,
       latestNews,
       recentTransactions,
+      recentInjuryNews,
       homepagePlayerCount,
+      homepagePulsePoints,
     },
   };
 }

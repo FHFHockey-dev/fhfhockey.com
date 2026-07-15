@@ -7,6 +7,8 @@ type ForgeRouteContext = {
   slate?: "main" | "all" | null;
   team?: string | null;
   position?: "all" | "f" | "d" | "g" | null;
+  metricGroup?: string | null;
+  metrics?: readonly string[] | null;
   origin?: string | null;
   returnTo?: string | null;
 };
@@ -76,6 +78,17 @@ export function buildForgeHref(
     context.position === "g"
   ) {
     params.set("position", context.position);
+  }
+
+  if (context.metricGroup?.trim()) {
+    params.set("metricGroup", context.metricGroup.trim());
+  }
+
+  const metrics = context.metrics
+    ?.map((metric) => metric.trim())
+    .filter((metric) => metric.length > 0);
+  if (metrics?.length) {
+    params.set("metrics", Array.from(new Set(metrics)).join(","));
   }
 
   if (context.origin) {

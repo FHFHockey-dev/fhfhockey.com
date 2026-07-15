@@ -43,6 +43,34 @@ describe("FORGE landing page", () => {
     cleanup();
   });
 
+  it("waits for router hydration before loading the requested date", async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL) => jsonResponse({}));
+    vi.stubGlobal("fetch", fetchMock);
+    routerState.query = {};
+    routerState.isReady = false;
+
+    const { rerender } = render(<FORGEPage />);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    routerState.query = { date: "2026-03-14" };
+    routerState.isReady = true;
+    rerender(<FORGEPage />);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const requestedUrls = fetchMock.mock.calls.map(([input]) => String(input));
+    const dateScopedUrls = requestedUrls.filter(
+      (url) =>
+        url.includes("/api/v1/start-chart") ||
+        url.includes("/api/v1/forge/players") ||
+        url.includes("/api/v1/sustainability/trends"),
+    );
+    expect(dateScopedUrls.length).toBeGreaterThan(0);
+    expect(
+      dateScopedUrls.every((url) => url.includes("2026-03-14")),
+    ).toBe(true);
+  });
+
   it("renders slate, top adds, and sustainability previews with drill-in links", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
@@ -171,10 +199,21 @@ describe("FORGE landing page", () => {
     expect(
       screen.getByText(/30-day points sample: 420; MAE 1.25/),
     ).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Open Dashboard" })).toBeTruthy();
     expect(
-      screen.getByRole("link", { name: "Dashboard" }).getAttribute("href"),
+      screen.getByRole("link", { name: "Open Command Center" }).getAttribute("href"),
+    ).toBe("/forge/command-center?date=2026-03-14");
+    expect(
+      screen.getByRole("link", { name: "Command Center" }).getAttribute("href"),
+    ).toBe("/forge/command-center?date=2026-03-14");
+    expect(
+      screen.getByRole("link", { name: "Legacy Dashboard" }).getAttribute("href"),
     ).toBe("/forge/dashboard?date=2026-03-14");
+    expect(
+      screen.getByRole("link", { name: "See All Adds" }).getAttribute("href"),
+    ).toBe("/forge/command-center?date=2026-03-14");
+    expect(
+      screen.getByRole("link", { name: "See Player Calls" }).getAttribute("href"),
+    ).toBe("/forge/command-center?date=2026-03-14");
     expect(
       screen.getByRole("link", { name: "Goalie Starts" }).getAttribute("href"),
     ).toBe("/start-chart?date=2026-03-14");

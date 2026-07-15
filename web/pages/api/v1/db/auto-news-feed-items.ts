@@ -1,13 +1,26 @@
 import type { NextApiResponse } from "next";
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
-import { normalizeNewsTeamId } from "lib/newsFeed";
+import {
+  normalizeNewsTeamId,
+  resolveAutomatedNewsCardStatus,
+} from "lib/newsFeed";
 import {
   buildTweetNewsAmbiguousCandidate,
   buildTweetNewsAutomationCandidate,
   type TweetNewsAutomationPlayer,
   type TweetNewsAutomationReviewRow,
 } from "lib/sources/tweetNewsAutomation";
+import {
+  buildTweetNewsInferenceDedupeKey,
+  buildTweetNewsInferenceSources,
+  inferTweetNewsCandidate,
+  isTweetNewsInferenceEnabled,
+  TWEET_NEWS_INFERENCE_PROMPT_VERSION,
+  DEFAULT_TWEET_NEWS_INFERENCE_MODEL,
+  type TweetNewsInferenceResult,
+  type TweetNewsInferenceTeam,
+} from "lib/sources/tweetNewsInference";
 import { syncTweetPatternReviewItems } from "pages/api/v1/db/tweet-pattern-review";
 import adminOnly from "utils/adminOnlyMiddleware";
 
@@ -17,6 +30,15 @@ type ExistingNewsItemRow = {
   card_status: "draft" | "published" | "archived";
   published_at: string | null;
   metadata: Record<string, unknown> | null;
+};
+
+type TweetNewsInferenceStateRow = {
+  id: string;
+  status: "processing" | "published" | "review" | "error";
+  attempts: number;
+  lease_expires_at: string | null;
+  next_attempt_at: string | null;
+  updated_at: string;
 };
 
 function parseLimit(
@@ -99,6 +121,7 @@ async function fetchReviewRows(args: {
         "tweet_id",
         "tweet_url",
         "source_url",
+        "quoted_tweet_url",
         "team_id",
         "team_abbreviation",
         "parser_classification",
@@ -158,17 +181,147 @@ async function fetchPlayers(args: {
     .filter((row) => Number.isFinite(row.id) && row.fullName);
 }
 
-async function fetchValidTeamIds(args: {
+async function fetchTeams(args: {
   supabase: any;
-}): Promise<Set<number>> {
-  const { data, error } = await args.supabase.from("teams" as any).select("id");
+}): Promise<TweetNewsInferenceTeam[]> {
+  const { data, error } = await args.supabase
+    .from("teams" as any)
+    .select("id, abbreviation, name");
   if (error) throw error;
 
-  return new Set(
-    ((data ?? []) as Array<{ id: unknown }>)
-      .map((row) => Number(row.id))
-      .filter((teamId) => Number.isFinite(teamId)),
+  return ((data ?? []) as Array<Record<string, unknown>>)
+    .map((row) => ({
+      id: Number(row.id),
+      abbreviation:
+        typeof row.abbreviation === "string" ? row.abbreviation : "",
+      name: typeof row.name === "string" ? row.name : "",
+    }))
+    .filter(
+      (team) =>
+        Number.isFinite(team.id) && Boolean(team.abbreviation) && Boolean(team.name),
+    );
+}
+
+async function claimTweetNewsInference(args: {
+  supabase: any;
+  row: TweetNewsAutomationReviewRow;
+  dedupeKey: string;
+  model: string;
+  nowIso: string;
+}): Promise<string | null> {
+  const leaseExpiresAt = new Date(
+    Date.parse(args.nowIso) + 3 * 60 * 1000,
+  ).toISOString();
+  const insertPayload = {
+    review_item_id: args.row.id,
+    source_tweet_id: args.row.tweet_id,
+    dedupe_key: args.dedupeKey,
+    status: "processing",
+    attempts: 1,
+    model: args.model,
+    prompt_version: TWEET_NEWS_INFERENCE_PROMPT_VERSION,
+    lease_expires_at: leaseExpiresAt,
+    created_at: args.nowIso,
+    updated_at: args.nowIso,
+  };
+  const { data: inserted, error: insertError } = await args.supabase
+    .from("tweet_news_inference_state" as any)
+    .insert(insertPayload)
+    .select("id")
+    .maybeSingle();
+  if (!insertError && inserted?.id) return String(inserted.id);
+  if (insertError?.code !== "23505") throw insertError;
+
+  const { data: existing, error: existingError } = await args.supabase
+    .from("tweet_news_inference_state" as any)
+    .select(
+      "id, status, attempts, lease_expires_at, next_attempt_at, updated_at",
+    )
+    .eq("dedupe_key", args.dedupeKey)
+    .maybeSingle();
+  if (existingError) throw existingError;
+  const state = existing as TweetNewsInferenceStateRow | null;
+  if (!state || state.status === "published" || state.status === "review") {
+    return null;
+  }
+
+  const nowMs = Date.parse(args.nowIso);
+  const retryAt = Date.parse(
+    state.status === "processing"
+      ? state.lease_expires_at ?? ""
+      : state.next_attempt_at ?? "",
   );
+  if (Number.isFinite(retryAt) && retryAt > nowMs) return null;
+
+  const { data: reclaimed, error: reclaimError } = await args.supabase
+    .from("tweet_news_inference_state" as any)
+    .update({
+      status: "processing",
+      attempts: Math.max(Number(state.attempts) || 0, 0) + 1,
+      error: null,
+      lease_expires_at: leaseExpiresAt,
+      next_attempt_at: null,
+      updated_at: args.nowIso,
+    })
+    .eq("id", state.id)
+    .eq("updated_at", state.updated_at)
+    .select("id")
+    .maybeSingle();
+  if (reclaimError) throw reclaimError;
+  return reclaimed?.id ? String(reclaimed.id) : null;
+}
+
+async function completeTweetNewsInference(args: {
+  supabase: any;
+  stateId: string;
+  result: TweetNewsInferenceResult;
+  candidate: NonNullable<ReturnType<typeof buildTweetNewsAutomationCandidate>>;
+  nowIso: string;
+}): Promise<void> {
+  const { error } = await args.supabase
+    .from("tweet_news_inference_state" as any)
+    .update({
+      status:
+        args.candidate.cardStatus === "published" ? "published" : "review",
+      decision: args.result.decision,
+      category: args.candidate.category,
+      subcategory: args.candidate.subcategory,
+      verification_state: args.result.verificationState,
+      confidence: args.result.confidence,
+      result: args.result,
+      evidence: args.result.evidence,
+      error: null,
+      lease_expires_at: null,
+      next_attempt_at: null,
+      updated_at: args.nowIso,
+    })
+    .eq("id", args.stateId);
+  if (error) throw error;
+}
+
+async function failTweetNewsInference(args: {
+  supabase: any;
+  stateId: string;
+  error: unknown;
+  nowIso: string;
+}): Promise<void> {
+  const nextAttemptAt = new Date(
+    Date.parse(args.nowIso) + 30 * 60 * 1000,
+  ).toISOString();
+  const { error } = await args.supabase
+    .from("tweet_news_inference_state" as any)
+    .update({
+      status: "error",
+      error:
+        args.error instanceof Error
+          ? args.error.message.slice(0, 1000)
+          : String(args.error).slice(0, 1000),
+      lease_expires_at: null,
+      next_attempt_at: nextAttemptAt,
+      updated_at: args.nowIso,
+    })
+    .eq("id", args.stateId);
+  if (error) throw error;
 }
 
 async function fetchExistingNewsItems(args: {
@@ -197,6 +350,10 @@ async function persistAutomatedNewsItem(args: {
   validTeamIds: ReadonlySet<number>;
   nowIso: string;
 }): Promise<{ itemId: string; action: "inserted" | "updated" }> {
+  const cardStatus = resolveAutomatedNewsCardStatus({
+    existingStatus: args.existing?.card_status,
+    candidateStatus: args.candidate.cardStatus,
+  });
   const payload = {
     source_review_item_id: args.candidate.reviewItemId,
     source_tweet_id: args.candidate.sourceTweetId,
@@ -210,7 +367,7 @@ async function persistAutomatedNewsItem(args: {
     blurb: args.candidate.blurb,
     category: args.candidate.category,
     subcategory: args.candidate.subcategory,
-    card_status: args.candidate.cardStatus,
+    card_status: cardStatus,
     observed_at: args.candidate.observedAt,
     published_at:
       args.existing?.published_at ??
@@ -307,13 +464,14 @@ export default withCronJobAudit(
       }),
       fetchPlayers({ supabase: req.supabase }),
     ]);
-    const validTeamIds = await fetchValidTeamIds({ supabase: req.supabase });
+    const teams = await fetchTeams({ supabase: req.supabase });
+    const validTeamIds = new Set(teams.map((team) => team.id));
     const existingByReviewItemId = await fetchExistingNewsItems({
       supabase: req.supabase,
       reviewItemIds: rows.map((row) => row.id),
     });
 
-    const candidates = rows
+    let candidates = rows
       .map((row) => ({
         row,
         candidate:
@@ -340,6 +498,90 @@ export default withCronJobAudit(
           >;
         } => Boolean(entry.candidate),
       );
+    const inferenceEnabled = isTweetNewsInferenceEnabled();
+    const inferenceLimit = Math.min(parseLimit(req.query.inferenceLimit, 8), 12);
+    const inferenceModel =
+      process.env.TWEET_NEWS_INFERENCE_MODEL ??
+      DEFAULT_TWEET_NEWS_INFERENCE_MODEL;
+    let inferenceAttempted = 0;
+    let inferencePublished = 0;
+    let inferenceReview = 0;
+    let inferenceSkippedClaim = 0;
+    let inferenceErrors = 0;
+    const pendingInferenceCompletions = new Map<
+      string,
+      { stateId: string; result: TweetNewsInferenceResult }
+    >();
+
+    if (inferenceEnabled && !dryRun) {
+      const nextCandidates = [...candidates];
+      for (let index = 0; index < nextCandidates.length; index += 1) {
+        if (inferenceAttempted >= inferenceLimit) break;
+        const entry = nextCandidates[index]!;
+        const automation = getAutomationMetadata(entry.candidate.metadata);
+        if (automation?.dictionaryGap !== true) continue;
+        if (
+          !canUpdateExistingNewsItem({
+            existing: existingByReviewItemId.get(entry.row.id) ?? null,
+            reprocess,
+          })
+        ) {
+          continue;
+        }
+
+        const sources = buildTweetNewsInferenceSources(entry.row);
+        if (sources.length === 0) continue;
+        const dedupeKey = buildTweetNewsInferenceDedupeKey({
+          row: entry.row,
+          sources,
+          model: inferenceModel,
+        });
+        const stateId = await claimTweetNewsInference({
+          supabase: req.supabase,
+          row: entry.row,
+          dedupeKey,
+          model: inferenceModel,
+          nowIso,
+        });
+        if (!stateId) {
+          inferenceSkippedClaim += 1;
+          continue;
+        }
+
+        inferenceAttempted += 1;
+        try {
+          const inferred = await inferTweetNewsCandidate({
+            row: entry.row,
+            players,
+            teams,
+            model: inferenceModel,
+            nowIso,
+          });
+          nextCandidates[index] = {
+            row: entry.row,
+            candidate: inferred.candidate,
+          };
+          pendingInferenceCompletions.set(entry.row.id, {
+            stateId,
+            result: inferred.result,
+          });
+          if (inferred.candidate.cardStatus === "published") {
+            inferencePublished += 1;
+          } else {
+            inferenceReview += 1;
+          }
+        } catch (error) {
+          inferenceErrors += 1;
+          await failTweetNewsInference({
+            supabase: req.supabase,
+            stateId,
+            error,
+            nowIso,
+          });
+        }
+      }
+      candidates = nextCandidates;
+    }
     const writableCandidates = candidates.filter(({ row }) =>
       canUpdateExistingNewsItem({
         existing: existingByReviewItemId.get(row.id) ?? null,
@@ -402,6 +644,17 @@ export default withCronJobAudit(
           if (assignmentError) throw assignmentError;
           assignmentsSynced += 1;
         }
+
+        const inferenceCompletion = pendingInferenceCompletions.get(row.id);
+        if (inferenceCompletion) {
+          await completeTweetNewsInference({
+            supabase: req.supabase,
+            stateId: inferenceCompletion.stateId,
+            result: inferenceCompletion.result,
+            candidate,
+            nowIso,
+          });
+        }
       }
     } else {
       publishedCount = writableCandidates.filter(
@@ -434,6 +687,17 @@ export default withCronJobAudit(
         publishedCount,
         draftCount,
         assignmentsSynced,
+        inference: {
+          enabled: inferenceEnabled,
+          model: inferenceModel,
+          promptVersion: TWEET_NEWS_INFERENCE_PROMPT_VERSION,
+          limit: inferenceLimit,
+          attempted: inferenceAttempted,
+          published: inferencePublished,
+          review: inferenceReview,
+          skippedClaim: inferenceSkippedClaim,
+          errors: inferenceErrors,
+        },
       },
       sample,
     });

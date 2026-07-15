@@ -5,6 +5,7 @@ import {
   buildAccountabilitySummary,
   buildBacktestBaselineComparisons,
   buildBacktestPhaseSummaries,
+  buildFeatureSignalSegmentAnalyses,
   buildMarketOddsSourceReadiness,
   buildBacktestPromotionEvidence,
   buildAblationPromotionEvidenceMetricRows,
@@ -12,6 +13,7 @@ import {
   buildBacktestMonitoredSegmentSummaries,
   buildConfidenceCalibrationBuckets,
   buildPredictionCandlestick,
+  BACKTEST_SEASON_RECENCY_WEIGHT_VERSION,
   calibrationMaxGapFromBuckets,
   DEFAULT_BACKTEST_ABLATION_VARIANTS,
   SOURCE_READINESS_GAME_ID_SAMPLE_LIMIT,
@@ -22,12 +24,61 @@ import {
   selectAccuracyLoopSourceReadinessGames,
   selectWalkForwardBacktestGameWindows,
   syntheticBacktestPredictionCutoffAt,
+  trainingSeasonRecencyWeight,
   type AccountabilityGameRow,
   type AccountabilityPredictionRow,
   type BacktestAblationVariant,
   type BacktestAblationComparison,
   type PredictionCandlestick,
 } from "./accountability";
+import { BASELINE_FEATURE_KEYS } from "./baselineModel";
+
+describe("training season recency weighting", () => {
+  it("uses the approved current/prior-season decay schedule", () => {
+    expect(BACKTEST_SEASON_RECENCY_WEIGHT_VERSION).toContain("current_1");
+    expect(trainingSeasonRecencyWeight(20252026, 20252026)).toBe(1);
+    expect(trainingSeasonRecencyWeight(20252026, 20242025)).toBe(0.65);
+    expect(trainingSeasonRecencyWeight(20252026, 20232024)).toBe(0.35);
+    expect(trainingSeasonRecencyWeight(20252026, 20222023)).toBe(0.2);
+    expect(trainingSeasonRecencyWeight(20252026, 20212022)).toBe(0.2);
+  });
+});
+
+describe("feature signal season segments", () => {
+  it("reports each available phase independently and preserves empty phases", () => {
+    const example = (gameId: number, label: 0 | 1, edge: number) => ({
+      gameId,
+      featureSnapshotId: `snapshot-${gameId}`,
+      featureKeys: BASELINE_FEATURE_KEYS,
+      features: BASELINE_FEATURE_KEYS.map((_, index) =>
+        index === 0 ? edge : 0,
+      ),
+      label,
+    });
+    const segments = buildFeatureSignalSegmentAnalyses([
+      { phase: "early", example: example(1, 1, 2) },
+      { phase: "early", example: example(2, 0, -1) },
+      { phase: "middle", example: example(3, 1, 1) },
+    ]);
+
+    expect(segments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          phase: "early",
+          analyzedGames: 2,
+          analysis: expect.objectContaining({ sampleSize: 2 }),
+        }),
+        expect.objectContaining({
+          phase: "middle",
+          analyzedGames: 1,
+          analysis: expect.objectContaining({ sampleSize: 1 }),
+        }),
+        { phase: "late", analyzedGames: 0, analysis: null },
+        { phase: "playoff", analyzedGames: 0, analysis: null },
+      ]),
+    );
+  });
+});
 
 const teamsById = new Map([
   [1, { id: 1, abbreviation: "BOS", name: "Boston Bruins" }],
@@ -597,6 +648,20 @@ describe("game prediction accountability", () => {
             modelWeight: 0.2,
           },
         }),
+        expect.objectContaining({
+          key: "goal_differential_anchor_blend_candidate",
+          probabilityBlend: {
+            method: "goal_differential_anchor",
+            modelWeight: 0.5,
+          },
+        }),
+        expect.objectContaining({
+          key: "standings_point_pct_anchor_blend_candidate",
+          probabilityBlend: {
+            method: "standings_point_pct_anchor",
+            modelWeight: 0.5,
+          },
+        }),
       ]),
     );
     expect(
@@ -905,6 +970,29 @@ describe("game prediction accountability", () => {
       5,
       6,
       7,
+    ]);
+  });
+
+  it("keeps prior-season games in training while holding the target season blind", () => {
+    const games: AccountabilityGameRow[] = [
+      { id: 1, date: "2024-04-01", startTime: "2024-04-01T23:00:00Z", seasonId: 20232024, homeTeamId: 1, awayTeamId: 2, type: 2 },
+      { id: 2, date: "2025-04-01", startTime: "2025-04-01T23:00:00Z", seasonId: 20242025, homeTeamId: 2, awayTeamId: 1, type: 2 },
+      { id: 3, date: "2025-10-10", startTime: "2025-10-10T23:00:00Z", seasonId: 20252026, homeTeamId: 1, awayTeamId: 2, type: 2 },
+      { id: 4, date: "2025-10-12", startTime: "2025-10-12T23:00:00Z", seasonId: 20252026, homeTeamId: 2, awayTeamId: 1, type: 2 },
+    ];
+
+    const window = selectWalkForwardBacktestGameWindows({
+      games,
+      trainStartDate: "2024-01-01",
+      blindDate: "2025-10-01",
+      replayEndDate: "2025-10-31",
+    });
+
+    expect(window.trainingGames.map((game) => game.seasonId)).toEqual([
+      20232024, 20242025,
+    ]);
+    expect(window.replayGames.map((game) => game.seasonId)).toEqual([
+      20252026, 20252026,
     ]);
   });
 

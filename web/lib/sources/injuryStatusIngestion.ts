@@ -1,5 +1,7 @@
 import * as cheerio from "cheerio";
 
+import { sanitizePublicNewsText } from "lib/newsFeed";
+
 import { teamsInfo } from "lib/teamsInfo";
 
 const BELL_MEDIA_INJURIES_URL =
@@ -712,11 +714,18 @@ export function mapPlayerStatusRowsToHomepageRows(
       id: row.player_id,
       displayName: row.player_name
     },
-    status: row.status_state === "returning" ? "Returning" : row.raw_status ?? "Out",
+    status:
+      sanitizePublicNewsText(
+        row.status_state === "returning"
+          ? "Returning"
+          : row.raw_status ?? "Out",
+      ) || "Out",
     description:
-      row.status_state === "returning"
-        ? row.status_detail ?? "No longer listed on the injury report."
-        : row.status_detail,
+      sanitizePublicNewsText(
+        row.status_state === "returning"
+          ? row.status_detail ?? "No longer listed on the injury report."
+          : row.status_detail,
+      ) || null,
     statusState: row.status_state
   }));
 }

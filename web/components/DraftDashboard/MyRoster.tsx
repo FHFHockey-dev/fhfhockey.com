@@ -10,6 +10,11 @@ import styles from "./MyRoster.module.scss";
 // NEW: imports for recommendations
 import { PlayerVorpMetrics } from "hooks/useVORPCalculations";
 import { usePlayerRecommendations } from "hooks/usePlayerRecommendations";
+import {
+  getEffectiveRosterConfig,
+  groupPlayerEligibility,
+  normalizePlayerEligibility
+} from "lib/draftDashboard/forwardGrouping";
 
 interface MyRosterProps {
   myTeamId: string;
@@ -53,8 +58,8 @@ const MyRoster: React.FC<MyRosterProps> = ({
   vorpMetrics,
   needWeightEnabled = false,
   needAlpha = 0.5,
-  posNeeds = {}
-  , forwardGrouping = "split"
+  posNeeds = {},
+  forwardGrouping = "split"
 }) => {
   const [selectedPlayerId, setSelectedPlayerId] = useState<
     number | undefined
@@ -109,7 +114,8 @@ const MyRoster: React.FC<MyRosterProps> = ({
     limit: 10,
     baselineMode: undefined,
     currentPick,
-    teamCount: draftSettings?.teamCount
+    teamCount: draftSettings?.teamCount,
+    forwardGrouping
   });
 
   // Suggested Picks: sorting and selection (persisted)
@@ -264,9 +270,14 @@ const MyRoster: React.FC<MyRosterProps> = ({
     return slotsCount + benchCount;
   }, [selectedTeamStats]);
 
+  const effectiveRosterConfig = useMemo(
+    () => getEffectiveRosterConfig(draftSettings.rosterConfig, forwardGrouping),
+    [draftSettings.rosterConfig, forwardGrouping]
+  );
+
   // Determine positions to show, respecting UTIL as its own card
   const positionsToShow = useMemo(() => {
-    const basePositions = Object.keys(draftSettings.rosterConfig)
+    const basePositions = Object.keys(effectiveRosterConfig)
       .filter((pos) => pos !== "bench")
       .map((pos) =>
         pos.toUpperCase() === "UTILITY" ? "UTILITY" : pos.toUpperCase()
@@ -275,7 +286,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
     const orderFwd = ["FWD", "D", "G", "UTILITY"] as const;
     const order = forwardGrouping === "fwd" ? orderFwd : orderSplit;
     return order.filter((pos) => basePositions.includes(pos));
-  }, [draftSettings.rosterConfig, forwardGrouping]);
+  }, [effectiveRosterConfig, forwardGrouping]);
 
   // Selection for roster player to show eligible targets
   const [selectedRoster, setSelectedRoster] = useState<
@@ -287,18 +298,14 @@ const MyRoster: React.FC<MyRosterProps> = ({
     if (!selectedRoster) return new Set<string>();
     const p = playerMap.get(selectedRoster.playerId);
     if (!p) return new Set();
-    const elig = Array.isArray((p as any).eligiblePositions)
-      ? ((p as any).eligiblePositions as string[])
-      : (p.displayPosition || "").split(",").map((s) => s.trim().toUpperCase());
+    const elig = groupPlayerEligibility(
+      normalizePlayerEligibility(p.displayPosition, p.eligiblePositions),
+      forwardGrouping
+    );
     const targets = new Set<string>();
     elig.forEach((pos) => {
       if (pos === selectedRoster.currentPos) return;
-      if (forwardGrouping === "fwd") {
-        if (["C", "LW", "RW"].includes(pos)) targets.add("FWD");
-        else targets.add(pos);
-      } else {
-        targets.add(pos);
-      }
+      targets.add(pos);
     });
     // All skaters can move to UTILITY if present
     const hasUtility = (draftSettings.rosterConfig as any)?.utility > 0;
@@ -406,7 +413,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
         <div className={styles.slotsList}>
           {positionsToShow.map((pos) => {
             const posKey = pos === "UTILITY" ? "utility" : pos; // for max count lookup
-            const maxCount = (draftSettings.rosterConfig as any)[posKey] || 0;
+            const maxCount = effectiveRosterConfig[posKey] || 0;
             const currentPlayers: DraftedPlayer[] =
               selectedTeamStats?.rosterSlots[pos] || [];
             return (

@@ -116,6 +116,33 @@ describe("Forge dashboard render states", () => {
     expect(screen.getByText("Loading top adds...")).toBeTruthy();
   });
 
+  it("does not mount data modules until the requested route state is applied", async () => {
+    const pendingFetch = vi.fn(
+      (_input: RequestInfo | URL) => new Promise<Response>(() => undefined)
+    );
+    vi.stubGlobal("fetch", pendingFetch);
+    routerState.query = {};
+    routerState.isReady = false;
+
+    const { rerender } = render(<ForgeDashboardPage />);
+
+    expect(screen.getByText("Loading selected dashboard context...")).toBeTruthy();
+    expect(pendingFetch).not.toHaveBeenCalled();
+
+    routerState.query = { date: "2026-02-07" };
+    routerState.isReady = true;
+    rerender(<ForgeDashboardPage />);
+
+    await waitFor(() => expect(pendingFetch).toHaveBeenCalled());
+    const dateScopedUrls = pendingFetch.mock.calls
+      .map(([input]) => String(input))
+      .filter((url) => url.includes("date=") || url.includes("snapshot_date="));
+    expect(dateScopedUrls.length).toBeGreaterThan(0);
+    expect(
+      dateScopedUrls.every((url) => url.includes("2026-02-07"))
+    ).toBe(true);
+  });
+
   it("renders empty states when endpoints return no usable rows", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
@@ -171,6 +198,63 @@ describe("Forge dashboard render states", () => {
     });
   });
 
+  it("keeps placeholder goalie rows out of lead start calls", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/team-ratings")) return jsonResponse([]);
+      if (url.includes("/api/v1/trends/team-ctpi")) {
+        return jsonResponse({ generatedAt: "2026-02-07T12:00:00.000Z", teams: [] });
+      }
+      if (url.includes("/api/v1/start-chart")) {
+        return jsonResponse({ dateUsed: "2026-02-07", games: [] });
+      }
+      if (url.includes("/api/v1/forge/goalies")) {
+        return jsonResponse({
+          asOfDate: "2026-02-07",
+          data: [
+            {
+              goalie_id: 8470001,
+              goalie_name: "Placeholder Goalie",
+              team_abbreviation: "NJD",
+              opponent_team_abbreviation: "NYI",
+              starter_probability: 0.5,
+              proj_win_prob: 0.5,
+              proj_shutout_prob: 0,
+              volatility_index: null,
+              blowup_risk: null,
+              confidence_tier: null,
+              recommendation: null,
+              uncertainty: {}
+            }
+          ]
+        });
+      }
+      if (url.includes("/api/v1/forge/players")) {
+        return jsonResponse(emptyForgePlayersResponse());
+      }
+      if (url.includes("/api/v1/transactions/ownership-trends")) {
+        return jsonResponse(emptyOwnershipResponse());
+      }
+      if (url.includes("/api/v1/sustainability/trends")) {
+        return jsonResponse({ snapshot_date: "2026-02-07", rows: [] });
+      }
+      if (url.includes("/api/v1/trends/skater-power")) {
+        return jsonResponse({ categories: { all: { rankings: [] } }, playerMetadata: {} });
+      }
+      return jsonResponse({}, false);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ForgeDashboardPage />);
+
+    expect(
+      await screen.findByText(/placeholder 50% starter probability/i)
+    ).toBeTruthy();
+    expect(screen.getByText("Placeholder Goalie")).toBeTruthy();
+    expect(screen.getByText("Context unavailable")).toBeTruthy();
+    expect(screen.queryByText("Confidence --")).toBeNull();
+  });
+
   it("warns at page level when module source dates materially diverge", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
@@ -216,6 +300,73 @@ describe("Forge dashboard render states", () => {
         "Dashboard modules are using mixed source dates (2026-02-01 to 2026-02-07, 6 days apart). Review each panel's date before comparing signals."
       )
     ).toBeTruthy();
+  });
+
+  it("suppresses team form and matchup context when their dates do not align with ratings", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/team-ratings")) {
+        return jsonResponse([
+          {
+            teamAbbr: "NJD",
+            date: "2026-02-07",
+            offRating: 82,
+            defRating: 79,
+            paceRating: 80,
+            ppTier: 1,
+            pkTier: 2,
+            trend10: 1.2
+          }
+        ]);
+      }
+      if (url.includes("/api/v1/trends/team-ctpi")) {
+        return jsonResponse({
+          generatedAt: "2026-03-29T12:00:00.000Z",
+          dateUsed: "2026-03-29",
+          teams: [
+            {
+              team: "NJD",
+              ctpi_0_to_100: 88,
+              offense: 90,
+              defense: 82,
+              luck: 70,
+              sparkSeries: []
+            }
+          ]
+        });
+      }
+      if (url.includes("/api/v1/start-chart")) {
+        return jsonResponse({ dateUsed: "2026-02-05", games: [] });
+      }
+      if (url.includes("/api/v1/forge/goalies")) {
+        return jsonResponse({ asOfDate: "2026-02-07", data: [] });
+      }
+      if (url.includes("/api/v1/forge/players")) {
+        return jsonResponse(emptyForgePlayersResponse());
+      }
+      if (url.includes("/api/v1/transactions/ownership-trends")) {
+        return jsonResponse(emptyOwnershipResponse());
+      }
+      if (url.includes("/api/v1/sustainability/trends")) {
+        return jsonResponse({ snapshot_date: "2026-02-07", rows: [] });
+      }
+      if (url.includes("/api/v1/trends/skater-power")) {
+        return jsonResponse({ categories: { all: { rankings: [] } }, playerMetadata: {} });
+      }
+      return jsonResponse({}, false);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ForgeDashboardPage />);
+
+    expect(
+      await screen.findByText(/Team form from 2026-03-29 suppressed; ratings use 2026-02-07/)
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/Game matchups from 2026-02-05 suppressed; ratings use 2026-02-07/)
+    ).toBeTruthy();
+    expect(screen.getAllByText("Form --").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Off slate").length).toBeGreaterThan(0);
   });
 
   it("does not merge Top Adds ownership by matching player name when stable ids differ", async () => {
@@ -857,9 +1008,11 @@ describe("Forge dashboard render states", () => {
 
     render(<ForgeDashboardPage />);
 
-    expect(await screen.findByRole("link", { name: "Dashboard" })).toBeTruthy();
+    expect(await screen.findByRole("link", { name: "Legacy Dashboard" })).toBeTruthy();
     expect(
-      screen.getByRole("link", { name: "Dashboard" }).getAttribute("aria-current")
+      screen
+        .getByRole("link", { name: "Legacy Dashboard" })
+        .getAttribute("aria-current")
     ).toBe("page");
     expect(screen.queryByRole("link", { name: "Team Detail" })).toBeNull();
     expect(screen.getByText("Team Detail").getAttribute("aria-disabled")).toBe("true");
@@ -1544,10 +1697,10 @@ describe("Forge dashboard render states", () => {
     const trustworthyLink = screen.getByRole("link", { name: /Trustworthy Skater/i });
     const heaterLink = screen.getByRole("link", { name: /Heater Skater/i });
     expect(trustworthyLink.getAttribute("href")).toBe(
-      "/trends/player/12?date=2026-02-07&origin=forge-dashboard&returnTo=%2Fforge%2Fdashboard%3Fdate%3D2026-02-07%26team%3Dall%26position%3Dall"
+      "/trends/player/12?date=2026-02-07&metricGroup=finishing&metrics=shooting_pct%2Con_ice_sh_pct%2Cpdo%2Cipp&origin=forge-dashboard&returnTo=%2Fforge%2Fdashboard%3Fdate%3D2026-02-07%26team%3Dall%26position%3Dall"
     );
     expect(heaterLink.getAttribute("href")).toBe(
-      "/trends/player/16?date=2026-02-07&origin=forge-dashboard&returnTo=%2Fforge%2Fdashboard%3Fdate%3D2026-02-07%26team%3Dall%26position%3Dall"
+      "/trends/player/16?date=2026-02-07&metricGroup=finishing&metrics=shooting_pct%2Con_ice_sh_pct%2Cpdo%2Cipp&origin=forge-dashboard&returnTo=%2Fforge%2Fdashboard%3Fdate%3D2026-02-07%26team%3Dall%26position%3Dall"
     );
   });
 
@@ -1717,7 +1870,7 @@ describe("Forge dashboard render states", () => {
       upLinks.some(
         (link) =>
           link.getAttribute("href") ===
-          "/trends/player/101?date=2026-02-07&origin=forge-dashboard&returnTo=%2Fforge%2Fdashboard%3Fdate%3D2026-02-07%26team%3Dall%26position%3Dall"
+          "/trends/player/101?date=2026-02-07&metricGroup=rates&metrics=goals_per_60%2Csog_per_60%2Cixg_per_60&origin=forge-dashboard&returnTo=%2Fforge%2Fdashboard%3Fdate%3D2026-02-07%26team%3Dall%26position%3Dall"
       )
     ).toBe(true);
   });

@@ -41,6 +41,7 @@ const ForgeDashboardPage: NextPage = () => {
   const [selectedPosition, setSelectedPosition] = useState<
     "all" | "f" | "d" | "g"
   >("all");
+  const [routeStateHydrated, setRouteStateHydrated] = useState(false);
   const [insightOwnershipMin, setInsightOwnershipMin] = useState(25);
   const [insightOwnershipMax, setInsightOwnershipMax] = useState(50);
   const [moduleDates, setModuleDates] = useState<Record<string, string | null>>({});
@@ -138,12 +139,14 @@ const ForgeDashboardPage: NextPage = () => {
     setSelectedPosition((current) =>
       requestedPosition && current !== requestedPosition ? requestedPosition : current
     );
+    setRouteStateHydrated(true);
   }, [normalizedRequestedTeam, requestedDate, requestedPosition, router.isReady]);
 
   const routeStateApplied =
     selectedDate === requestedDate &&
     selectedTeam === requestedTeamForState &&
     selectedPosition === requestedPositionForState;
+  const dashboardReady = router.isReady && routeStateHydrated;
 
   useEffect(() => {
     if (!router.isReady || !routeStateApplied) return;
@@ -394,15 +397,17 @@ const ForgeDashboardPage: NextPage = () => {
               className={styles.controlCenter}
               aria-label="Forge dashboard"
             >
-              {mixedDateAudit.isMixed ? (
-                <p className={`${styles.panelState} ${styles.panelStateStale}`} role="status">
-                  {mixedDateAudit.message}
-                </p>
-              ) : null}
-              <section
-                className={styles.dashboardStage}
-                aria-label="Forge dashboard overview"
-              >
+              {dashboardReady ? (
+                <>
+                  {mixedDateAudit.isMixed ? (
+                    <p className={`${styles.panelState} ${styles.panelStateStale}`} role="status">
+                      {mixedDateAudit.message}
+                    </p>
+                  ) : null}
+                  <section
+                    className={styles.dashboardStage}
+                    aria-label="Forge dashboard overview"
+                  >
                 <div className={`${styles.panel} ${styles.teamPowerPanel}`}>
                   <TeamPowerCard
                     date={selectedDate}
@@ -433,12 +438,12 @@ const ForgeDashboardPage: NextPage = () => {
                     onResolvedDate={(value) => updateModuleDate("topAdds", value)}
                   />
                 </aside>
-              </section>
+                  </section>
 
-              <section
-                className={styles.playerInsightBand}
-                aria-label="Player insight core"
-              >
+                  <section
+                    className={styles.playerInsightBand}
+                    aria-label="Player insight core"
+                  >
                 <div className={styles.playerInsightHeader}>
                   <div className={styles.bandIntro}>
                     <p className={styles.bandEyebrow}>Player Calls</p>
@@ -512,7 +517,13 @@ const ForgeDashboardPage: NextPage = () => {
                     />
                   </div>
                 </div>
-              </section>
+                  </section>
+                </>
+              ) : (
+                <p className={styles.panelState} role="status">
+                  Loading selected dashboard context...
+                </p>
+              )}
             </section>
           </div>
         </div>

@@ -355,7 +355,7 @@ describe("baselineDataset", () => {
     expect(reboundDataset.examples.map((example) => example.label)).toEqual([1, 0, 1]);
   });
 
-  it("rejects leaked current-shot event-class features if they are forced back in", () => {
+  it("rejects leaked current-shot outcome features if they are forced back in", () => {
     expect(() =>
       buildEncodedBaselineDataset(
         [createShotRow()],
@@ -366,6 +366,17 @@ describe("baselineDataset", () => {
         }
       )
     ).toThrow("Forbidden baseline feature inputs were requested: shotEventType.");
+
+    expect(() =>
+      buildEncodedBaselineDataset([createShotRow()], {
+        featureSelection: {
+          booleanKeys: ["isShortSideMiss"],
+          categoricalKeys: ["missReasonBucket"],
+        },
+      })
+    ).toThrow(
+      "Forbidden baseline feature inputs were requested: isShortSideMiss, missReasonBucket."
+    );
   });
 
   it("defaults to the first_pass_v1 feature family when no explicit subset is provided", () => {
@@ -379,7 +390,6 @@ describe("baselineDataset", () => {
       "strengthExact:5v5",
       "zoneCode:O",
       "previousEventTypeDescKey:faceoff",
-      "missReasonBucket:unknown",
     ]);
   });
 

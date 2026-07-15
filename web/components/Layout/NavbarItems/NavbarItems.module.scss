@@ -116,7 +116,11 @@ nav.items.large {
     margin: 0;
     list-style-type: none;
     display: flex;
-    gap: clamp(14px, 1.55vw, 26px);
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: clamp(10px, 0.8vw, 16px);
+    width: 100%;
+    height: 58px;
     color: rgba(249, 235, 234, 1);
     font-family:
       roboto condensed,
@@ -127,6 +131,10 @@ nav.items.large {
     text-transform: uppercase;
 
     li {
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+
       &:hover {
         cursor: pointer;
       }
@@ -146,9 +154,8 @@ nav.items.large {
           display: flex;
           justify-content: center;
           align-items: center;
-          padding-top: 5px;
-          padding-bottom: 3px;
-          padding-left: 10px;
+          height: 100%;
+          padding: 0 2px;
           .arrow {
             width: 20px;
             height: 20px;
@@ -178,11 +185,16 @@ nav.items.large {
           .menu_list {
             display: block;
             position: absolute;
+            top: 100%;
+            left: 0;
             z-index: 10;
+            height: auto;
+            width: max-content;
+            min-width: 100%;
+            box-sizing: border-box;
             background-color: $bg-light;
             padding: 5px 10px;
             border-radius: 8px;
-            min-width: 100%;
             li {
               display: block;
               white-space: nowrap;
@@ -195,9 +207,10 @@ nav.items.large {
         position: relative;
 
         a {
-          display: block;
-          padding-top: 19px;
-          padding-bottom: 18px;
+          display: flex;
+          align-items: center;
+          height: 100%;
+          padding: 0 2px;
         }
 
         &.active,
@@ -242,16 +255,16 @@ nav.items.large {
 
 @media (min-width: 800px) and (max-width: 1200px) {
   nav.items.large ul.menu_list {
-    gap: 7px;
-    font-size: 0.54rem;
-    letter-spacing: 0.04em;
+    gap: 4px;
+    font-size: 0.68rem;
+    letter-spacing: 0.035em;
 
     li.category .category_item {
       padding-left: 2px;
 
       .arrow {
-        width: 14px;
-        height: 14px;
+        width: 16px;
+        height: 16px;
       }
     }
   }

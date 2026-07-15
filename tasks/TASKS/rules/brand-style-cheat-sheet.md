@@ -30,7 +30,7 @@ The design language is a futuristic sports analytics terminal. It combines the d
 *   **Body:** `$text-primary` (`#cccccc`) - Standard readability.
 *   **Muted:** `$text-secondary` (`#aaaaaa`) - Labels, secondary info.
 
----
+--- 
 
 ## 3. Typography
 

@@ -25,7 +25,8 @@ A three-panel Draft Dashboard enabling fast, informed drafting with real‑time 
 1) Client‑Side CSV Import (Session‑Local) — NEW IMMEDIATE
 - Goal: Let users import projections CSV (like /pages/db/upsert-projections.tsx) without AdminOnly and without writing to DB. Data should live only for the user’s session.
 - UX Decisions (confirmed):
-  - Import UI will be a modal accessible from the Draft Dashboard header. All settings (e.g., naming teams) will also follow a modal pattern.
+  - Import UI remains a modal accessible from the Draft Dashboard header.
+  - **Owner decision — option A (2026-07-13):** retain the completed inline/collapsible Draft Settings workstation. The earlier all-settings-modal sentence is superseded for this initiative. Workflow-specific CSV import, trade management, player comparison, and draft summary dialogs remain modal; the dedicated `B-DRAFT-STYLE` initiative may reconsider presentation later without reopening A-DRAFT.
 - UI/Flow:
   - Drag‑and‑drop or file picker, header preview, standardization of column names and player names (reuse standardizePlayerName/standardizeColumnName where applicable).
   - Column selection and simple type inference (numeric/text) for parsing only (no schema creation).

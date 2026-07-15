@@ -131,13 +131,18 @@ function findActiveInterval(
 
   const key = `${event.game_id}:${event.period_number}:${playerId}`;
   const intervals = intervalIndex.get(key) ?? [];
+  const eventSecond = event.period_seconds_elapsed;
+  const candidates = intervals.filter(
+    (interval) =>
+      interval.startSecond <= eventSecond && eventSecond <= interval.endSecond
+  );
 
   return (
-    intervals.find(
-      (interval) =>
-        interval.startSecond <= event.period_seconds_elapsed! &&
-        event.period_seconds_elapsed! < interval.endSecond
-    ) ?? null
+    candidates.find((interval) => interval.endSecond === eventSecond) ??
+    candidates.find(
+      (interval) => interval.startSecond <= eventSecond && eventSecond < interval.endSecond
+    ) ??
+    null
   );
 }
 

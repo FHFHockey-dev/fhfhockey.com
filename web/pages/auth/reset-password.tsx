@@ -1,10 +1,16 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 
 import Container from "components/Layout/Container";
 import PageTitle from "components/PageTitle";
 import ClientOnly from "components/ClientOnly";
+import {
+  consumeAuthCallbackLocation,
+  navigateToAuthFallback,
+  sanitizeAuthReturnPath
+} from "lib/supabase/auth-callback-location";
 import supabase from "lib/supabase/client";
 
 import styles from "./ResetPassword.module.scss";
@@ -12,14 +18,7 @@ import styles from "./ResetPassword.module.scss";
 type PageState = "checking" | "ready" | "success" | "error";
 const VALID_OTP_TYPES = new Set(["recovery"]);
 const PASSWORD_UPDATE_TIMEOUT_MS = 15000;
-
-function sanitizeNextPath(nextValue?: string | null) {
-  if (!nextValue || !nextValue.startsWith("/")) {
-    return "/";
-  }
-
-  return nextValue;
-}
+const SAFE_DOCUMENT_TITLE = "Reset Password | FHFHockey";
 
 function getStoredNextPath() {
   if (typeof window === "undefined") {
@@ -105,6 +104,12 @@ async function updatePasswordWithRecoverySession(password: string) {
 
 export default function ResetPasswordPage() {
   const router = useRouter();
+  const replaceRoute = router.replace;
+  const consumedCallbackRef = useRef<
+    ReturnType<typeof consumeAuthCallbackLocation> | null
+  >(null);
+  const sessionLoadRef = useRef<Promise<void> | null>(null);
+  const mountedRef = useRef(false);
   const [pageState, setPageState] = useState<PageState>("checking");
   const [message, setMessage] = useState(
     "Checking your recovery session so you can choose a new password."
@@ -112,41 +117,61 @@ export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [callbackNextPath, setCallbackNextPath] = useState<string | null>(null);
 
   const nextPath = useMemo(() => {
     const nextParam = router.query.next;
-    return sanitizeNextPath(
-      Array.isArray(nextParam) ? nextParam[0] : nextParam || getStoredNextPath() || "/account"
+    return sanitizeAuthReturnPath(
+      Array.isArray(nextParam)
+        ? nextParam[0]
+        : nextParam || getStoredNextPath() || "/account",
+      "/account"
     );
   }, [router.query.next]);
 
   useEffect(() => {
-    if (!router.isReady) {
-      return;
+    mountedRef.current = true;
+    document.title = SAFE_DOCUMENT_TITLE;
+    let callback: ReturnType<typeof consumeAuthCallbackLocation>;
+    try {
+      callback = consumedCallbackRef.current || consumeAuthCallbackLocation();
+      consumedCallbackRef.current = callback;
+    } catch {
+      setPageState("error");
+      setMessage(
+        "FHFH could not safely clear this recovery response. Request a new password reset email and try again."
+      );
+      navigateToAuthFallback((url) => replaceRoute(url));
+      return () => {
+        mountedRef.current = false;
+      };
     }
 
-    let mounted = true;
+    if (callback.nextValue) {
+      setCallbackNextPath(sanitizeAuthReturnPath(callback.nextValue, "/account"));
+    }
 
     async function loadSession() {
-      const url = new URL(window.location.href);
-      const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
-      const code = url.searchParams.get("code");
-      const tokenHash = url.searchParams.get("token_hash") || hashParams.get("token_hash");
-      const verificationType =
-        url.searchParams.get("type") || hashParams.get("type") || "";
-      const accessToken = hashParams.get("access_token");
-      const refreshToken = hashParams.get("refresh_token");
+      const {
+        code,
+        tokenHash,
+        verificationType,
+        accessToken,
+        refreshToken
+      } = callback;
 
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
 
-        if (!mounted) {
+        if (!mountedRef.current) {
           return;
         }
 
         if (error) {
           setPageState("error");
-          setMessage(error.message);
+          setMessage(
+            "This recovery response could not be verified. Request a new password reset email and try again."
+          );
           return;
         }
 
@@ -161,13 +186,15 @@ export default function ResetPasswordPage() {
           type: "recovery"
         });
 
-        if (!mounted) {
+        if (!mountedRef.current) {
           return;
         }
 
         if (error) {
           setPageState("error");
-          setMessage(error.message);
+          setMessage(
+            "This recovery response could not be verified. Request a new password reset email and try again."
+          );
           return;
         }
 
@@ -182,13 +209,15 @@ export default function ResetPasswordPage() {
           refresh_token: refreshToken
         });
 
-        if (!mounted) {
+        if (!mountedRef.current) {
           return;
         }
 
         if (error) {
           setPageState("error");
-          setMessage(error.message);
+          setMessage(
+            "This recovery response could not be verified. Request a new password reset email and try again."
+          );
           return;
         }
 
@@ -199,13 +228,15 @@ export default function ResetPasswordPage() {
 
       const { data, error } = await supabase.auth.getSession();
 
-      if (!mounted) {
+      if (!mountedRef.current) {
         return;
       }
 
       if (error) {
         setPageState("error");
-        setMessage(error.message);
+        setMessage(
+          "FHFH could not read the recovery session. Request a new password reset email and try again."
+        );
         return;
       }
 
@@ -221,10 +252,21 @@ export default function ResetPasswordPage() {
       );
     }
 
-    void loadSession();
+    if (!sessionLoadRef.current) {
+      sessionLoadRef.current = loadSession().catch(() => {
+        if (!mountedRef.current) {
+          return;
+        }
+
+        setPageState("error");
+        setMessage(
+          "This recovery response could not be verified. Request a new password reset email and try again."
+        );
+      });
+    }
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
-      if (!mounted) {
+      if (!mountedRef.current) {
         return;
       }
 
@@ -235,10 +277,10 @@ export default function ResetPasswordPage() {
     });
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
       authListener.subscription.unsubscribe();
     };
-  }, [router.isReady]);
+  }, [replaceRoute]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -279,81 +321,88 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <Container className={styles.container}>
-      <PageTitle>Reset Password</PageTitle>
-      <ClientOnly>
-        <div className={styles.card}>
-          <div className={styles.eyebrow}>Password Reset</div>
-          <h1 className={styles.title}>Choose a new password</h1>
-          <p className={styles.body}>
-            This page completes the second half of the Supabase recovery flow
-            after the email link returns to the site.
-          </p>
+    <>
+      <Head>
+        <title>{SAFE_DOCUMENT_TITLE}</title>
+        <meta name="robots" content="noindex,nofollow" />
+        <meta name="referrer" content="no-referrer" />
+      </Head>
+      <Container className={styles.container}>
+        <PageTitle>Reset Password</PageTitle>
+        <ClientOnly>
+          <div className={styles.card}>
+            <div className={styles.eyebrow}>Password Reset</div>
+            <h1 className={styles.title}>Choose a new password</h1>
+            <p className={styles.body}>
+              This page completes the second half of the Supabase recovery flow
+              after the email link returns to the site.
+            </p>
 
-          <div
-            className={
-              pageState === "error"
-                ? styles.errorNote
-                : pageState === "success"
-                ? styles.successNote
-                : styles.processingNote
-            }
-          >
-            {message}
-          </div>
-
-          {pageState === "ready" ? (
-            <form className={styles.form} onSubmit={(event) => void handleSubmit(event)}>
-              <label className={styles.field}>
-                <span className={styles.fieldLabel}>New Password</span>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  className={styles.input}
-                  autoComplete="new-password"
-                  placeholder="Create a new password"
-                  disabled={isSubmitting}
-                />
-              </label>
-
-              <label className={styles.field}>
-                <span className={styles.fieldLabel}>Confirm Password</span>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                  className={styles.input}
-                  autoComplete="new-password"
-                  placeholder="Confirm your new password"
-                  disabled={isSubmitting}
-                />
-              </label>
-
-              <button
-                type="submit"
-                className={styles.submitButton}
-                disabled={isSubmitting || !password || !confirmPassword}
-              >
-                {isSubmitting ? "Updating..." : "Update Password"}
-              </button>
-            </form>
-          ) : null}
-
-          <div className={styles.actions}>
-            <Link
-              href={pageState === "success" ? nextPath : "/auth"}
-              className={styles.primaryAction}
+            <div
+              className={
+                pageState === "error"
+                  ? styles.errorNote
+                  : pageState === "success"
+                  ? styles.successNote
+                  : styles.processingNote
+              }
             >
-              {pageState === "success" ? "Continue to Site" : "Open Auth"}
-            </Link>
-            <Link href="/" className={styles.secondaryAction}>
-              Return Home
-            </Link>
+              {message}
+            </div>
+
+            {pageState === "ready" ? (
+              <form className={styles.form} onSubmit={(event) => void handleSubmit(event)}>
+                <label className={styles.field}>
+                  <span className={styles.fieldLabel}>New Password</span>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    className={styles.input}
+                    autoComplete="new-password"
+                    placeholder="Create a new password"
+                    disabled={isSubmitting}
+                  />
+                </label>
+
+                <label className={styles.field}>
+                  <span className={styles.fieldLabel}>Confirm Password</span>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    className={styles.input}
+                    autoComplete="new-password"
+                    placeholder="Confirm your new password"
+                    disabled={isSubmitting}
+                  />
+                </label>
+
+                <button
+                  type="submit"
+                  className={styles.submitButton}
+                  disabled={isSubmitting || !password || !confirmPassword}
+                >
+                  {isSubmitting ? "Updating..." : "Update Password"}
+                </button>
+              </form>
+            ) : null}
+
+            <div className={styles.actions}>
+              <Link
+                href={pageState === "success" ? callbackNextPath || nextPath : "/auth"}
+                className={styles.primaryAction}
+              >
+                {pageState === "success" ? "Continue to Site" : "Open Auth"}
+              </Link>
+              <Link href="/" className={styles.secondaryAction}>
+                Return Home
+              </Link>
+            </div>
           </div>
-        </div>
-      </ClientOnly>
-    </Container>
+        </ClientOnly>
+      </Container>
+    </>
   );
 }
 

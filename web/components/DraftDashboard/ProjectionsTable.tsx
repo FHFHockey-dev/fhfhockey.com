@@ -10,6 +10,19 @@ import supabase from "lib/supabase";
 import { STATS_MASTER_LIST } from "lib/projectionsConfig/statsMasterList";
 import type { StatDefinition } from "lib/projectionsConfig/statsMasterList";
 import ComparePlayersModal from "./ComparePlayersModal";
+import type { YahooMappingDiagnostics } from "lib/draftDashboard/yahooMapping";
+import { findMissingProjectionPlayers } from "lib/draftDashboard/projectionCrosscheck";
+import type { SourceRankImpact } from "lib/draftDashboard/sourceRankImpact";
+import type { ProjectionInclusionDiagnostics } from "lib/draftDashboard/projectionInclusionDiagnostics";
+import {
+  diagnoseProjectionVisibility,
+  getProjectionDisplayPosition,
+  matchesProjectionPosition,
+  matchesProjectionSearch,
+} from "lib/draftDashboard/projectionVisibility";
+import { getRosterPositions } from "lib/draftDashboard/forwardGrouping";
+import { fetchAllSupabaseFilterChunks } from "lib/supabase/pagination";
+import { selectLatestSeasonRows } from "lib/draftDashboard/previousSeasonTotals";
 
 interface ProjectionsTableProps {
   players: ProcessedPlayer[];
@@ -45,6 +58,15 @@ interface ProjectionsTableProps {
   // Enabled stat keys coming from DraftSettings (only these show in Stat Columns mode)
   enabledSkaterStatKeys?: string[];
   enabledGoalieStatKeys?: string[];
+  yahooMappingDiagnostics?: Partial<
+    Record<"skater" | "goalie", YahooMappingDiagnostics | null>
+  >;
+  sourceRankImpacts?: Record<string, SourceRankImpact>;
+  inclusionDiagnostics?: Partial<
+    Record<"skater" | "goalie", ProjectionInclusionDiagnostics | null>
+  >;
+  dataNotices?: string[];
+  emptyStateMessage?: string;
 }
 
 type SortableField =
@@ -79,7 +101,12 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   leagueType = "points",
   activeCategoryKeys = [],
   enabledSkaterStatKeys,
-  enabledGoalieStatKeys
+  enabledGoalieStatKeys,
+  yahooMappingDiagnostics,
+  sourceRankImpacts = {},
+  inclusionDiagnostics,
+  dataNotices = [],
+  emptyStateMessage = "No players found matching your filters.",
 }) => {
   const [sortField, setSortField] = useState<SortableField>("yahooAvgPick");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -88,7 +115,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   // Value band scope: overall or per-position (default per-position)
   const [bandScope, setBandScope] = useState<"overall" | "position">(
-    "position"
+    "position",
   );
   // configurable risk standard deviation (in picks)
   const [riskSd, setRiskSd] = useState<number>(12);
@@ -113,11 +140,11 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     try {
       window.localStorage.setItem(
         "projections.favorites",
-        JSON.stringify(Array.from(favoriteIds))
+        JSON.stringify(Array.from(favoriteIds)),
       );
       window.localStorage.setItem(
         "projections.favoritesOnly",
-        String(favoritesOnly)
+        String(favoritesOnly),
       );
     } catch {}
   }, [favoriteIds, favoritesOnly]);
@@ -149,7 +176,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     try {
       window.localStorage.setItem(
         "projections.statColumnsMode",
-        String(statColumnsMode)
+        String(statColumnsMode),
       );
     } catch {}
   }, [statColumnsMode]);
@@ -177,7 +204,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     return () =>
       window.removeEventListener(
         "projections:prorate82",
-        handler as EventListener
+        handler as EventListener,
       );
   }, []);
 
@@ -188,13 +215,13 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     "SHOTS_ON_GOAL",
     "HITS",
     "BLOCKED_SHOTS",
-    "PP_POINTS"
+    "PP_POINTS",
   ];
   const DEFAULT_GOALIE_STAT_KEYS = [
     "WINS_GOALIE",
     "GOALS_AGAINST_AVERAGE",
     "SAVE_PERCENTAGE",
-    "SHUTOUTS_GOALIE"
+    "SHUTOUTS_GOALIE",
   ];
   const statColumns = useMemo(() => {
     if (positionFilter === "G") {
@@ -255,13 +282,27 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   // compare players modal state
   const [compareOpen, setCompareOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [compareSelectionMessage, setCompareSelectionMessage] = useState("");
   const toggleSelected = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    const next = new Set(selectedIds);
+    if (next.has(id)) {
+      next.delete(id);
+      setCompareSelectionMessage("");
+    } else if (next.size >= 2) {
+      setCompareSelectionMessage(
+        "Compare supports exactly two players. Remove one before selecting another.",
+      );
+      return;
+    } else {
+      next.add(id);
+      setCompareSelectionMessage("");
+    }
+    setSelectedIds(next);
+  };
+  const resetComparison = () => {
+    setSelectedIds(new Set());
+    setCompareSelectionMessage("");
+    setCompareOpen(false);
   };
 
   // Expand/collapse and last season totals cache per player
@@ -277,11 +318,13 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     >
   >({});
   const [seasonLoading, setSeasonLoading] = useState<Record<string, boolean>>(
-    {}
+    {},
   );
   const [seasonError, setSeasonError] = useState<Record<string, string | null>>(
-    {}
+    {},
   );
+  const loadedSeasonIdsRef = React.useRef(new Set<string>());
+  const seasonBatchPromiseRef = React.useRef<Promise<void> | null>(null);
 
   const isGoaliePlayer = (player: ProcessedPlayer) => {
     const pos = player.displayPosition?.toUpperCase() || "";
@@ -294,19 +337,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
 
   // Map raw displayPosition to UI display based on forward grouping
   const getDisplayPos = (player: ProcessedPlayer): string => {
-    // Prefer Yahoo eligible positions for display when available
-    const elig = Array.isArray((player as any).eligiblePositions)
-      ? ((player as any).eligiblePositions as string[])
-      : null;
-    const raw = (player.displayPosition || "").toUpperCase();
-    const pretty = elig && elig.length ? elig.join(", ") : raw;
-    if (!pretty) return pretty;
-    if (forwardGrouping !== "fwd") return pretty;
-    const parts = raw.split(",").map((p) => p.trim());
-    if (parts.includes("G")) return "G";
-    if (parts.includes("D")) return "D";
-    if (parts.some((p) => p === "C" || p === "LW" || p === "RW")) return "F";
-    return raw;
+    return getProjectionDisplayPosition(player, forwardGrouping);
   };
 
   const formatSeasonLabel = (season: string | number | null) => {
@@ -320,60 +351,104 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     return s;
   };
 
-  const fetchLastSeasonTotals = async (player: ProcessedPlayer) => {
-    const id = String(player.playerId);
-    if (seasonLoading[id]) return;
-    setSeasonLoading((m) => ({ ...m, [id]: true }));
-    setSeasonError((m) => ({ ...m, [id]: null }));
-    try {
-      if (isGoaliePlayer(player)) {
-        const { data, error } = await supabase
-          .from("wgo_goalie_stats_totals")
-          .select(
-            "season_id, games_played, wins, losses, ot_losses, goals_against_avg, save_pct, shutouts, saves"
-          )
-          .eq("goalie_id", Number(player.playerId))
-          .order("season_id", { ascending: false })
-          .limit(1);
-        if (error) throw error;
-        const row = data?.[0] || null;
-        setSeasonTotals((m) => ({
-          ...m,
-          [id]: row
-            ? {
-                type: "goalie",
-                seasonLabel: formatSeasonLabel(row.season_id),
-                data: row
-              }
-            : null
+  const fetchLastSeasonTotalsBatch = async () => {
+    if (seasonBatchPromiseRef.current) return seasonBatchPromiseRef.current;
+    const pendingPlayers = players.filter(
+      (player) => !loadedSeasonIdsRef.current.has(String(player.playerId)),
+    );
+    if (!pendingPlayers.length) return;
+    const pendingIds = pendingPlayers.map((player) => String(player.playerId));
+    setSeasonLoading((current) => ({
+      ...current,
+      ...Object.fromEntries(pendingIds.map((id) => [id, true])),
+    }));
+    setSeasonError((current) => ({
+      ...current,
+      ...Object.fromEntries(pendingIds.map((id) => [id, null])),
+    }));
+
+    const request = (async () => {
+      try {
+        const skaterIds = pendingPlayers
+          .filter((player) => !isGoaliePlayer(player))
+          .map((player) => Number(player.playerId));
+        const goalieIds = pendingPlayers
+          .filter(isGoaliePlayer)
+          .map((player) => Number(player.playerId));
+        const [skaterRows, goalieRows] = await Promise.all([
+          fetchAllSupabaseFilterChunks<any, number>(skaterIds, (chunk, range) =>
+            supabase
+              .from("wgo_skater_stats_totals")
+              .select(
+                "player_id, season, games_played, goals, assists, points, shots, hits, blocked_shots, pp_points, toi_per_game, plus_minus, shooting_percentage, gw_goals",
+              )
+              .in("player_id", chunk)
+              .order("player_id", { ascending: true })
+              .order("season", { ascending: false })
+              .range(range.from, range.to),
+          ),
+          fetchAllSupabaseFilterChunks<any, number>(goalieIds, (chunk, range) =>
+            supabase
+              .from("wgo_goalie_stats_totals")
+              .select(
+                "goalie_id, season_id, games_played, wins, losses, ot_losses, goals_against_avg, save_pct, shutouts, saves",
+              )
+              .in("goalie_id", chunk)
+              .order("goalie_id", { ascending: true })
+              .order("season_id", { ascending: false })
+              .range(range.from, range.to),
+          ),
+        ]);
+        const latestSkaters = selectLatestSeasonRows(
+          skaterRows,
+          "player_id",
+          "season",
+        );
+        const latestGoalies = selectLatestSeasonRows(
+          goalieRows,
+          "goalie_id",
+          "season_id",
+        );
+        setSeasonTotals((current) => {
+          const next = { ...current };
+          for (const player of pendingPlayers) {
+            const id = String(player.playerId);
+            const row = isGoaliePlayer(player)
+              ? latestGoalies.get(id)
+              : latestSkaters.get(id);
+            next[id] = row
+              ? {
+                  type: isGoaliePlayer(player) ? "goalie" : "skater",
+                  seasonLabel: formatSeasonLabel(
+                    isGoaliePlayer(player) ? row.season_id : row.season,
+                  ),
+                  data: row,
+                }
+              : null;
+            loadedSeasonIdsRef.current.add(id);
+          }
+          return next;
+        });
+      } catch (error: any) {
+        setSeasonError((current) => ({
+          ...current,
+          ...Object.fromEntries(
+            pendingIds.map((id) => [
+              id,
+              error?.message || "Failed to load prior-season totals",
+            ]),
+          ),
         }));
-      } else {
-        const { data, error } = await supabase
-          .from("wgo_skater_stats_totals")
-          .select(
-            "season, games_played, goals, assists, points, shots, hits, blocked_shots, pp_points, toi_per_game, plus_minus, shooting_percentage, gw_goals"
-          )
-          .eq("player_id", Number(player.playerId))
-          .order("season", { ascending: false })
-          .limit(1);
-        if (error) throw error;
-        const row = data?.[0] || null;
-        setSeasonTotals((m) => ({
-          ...m,
-          [id]: row
-            ? {
-                type: "skater",
-                seasonLabel: formatSeasonLabel(row.season),
-                data: row
-              }
-            : null
+      } finally {
+        setSeasonLoading((current) => ({
+          ...current,
+          ...Object.fromEntries(pendingIds.map((id) => [id, false])),
         }));
+        seasonBatchPromiseRef.current = null;
       }
-    } catch (e: any) {
-      setSeasonError((m) => ({ ...m, [id]: e?.message || "Failed to load" }));
-    } finally {
-      setSeasonLoading((m) => ({ ...m, [id]: false }));
-    }
+    })();
+    seasonBatchPromiseRef.current = request;
+    return request;
   };
 
   const toggleExpand = async (player: ProcessedPlayer) => {
@@ -381,7 +456,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     setExpanded((m) => ({ ...m, [id]: !m[id] }));
     const next = !expanded[id];
     if (next && seasonTotals[id] === undefined) {
-      await fetchLastSeasonTotals(player);
+      await fetchLastSeasonTotalsBatch();
     }
   };
 
@@ -399,7 +474,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       if (!Number.isNaN(v) && v > 0) setRiskSd(Math.max(2, Math.min(40, v)));
       // Load position filter
       const savedPos = window.localStorage.getItem(
-        "projections.positionFilter"
+        "projections.positionFilter",
       );
       if (savedPos) setPositionFilter(savedPos);
       // Load sort
@@ -413,16 +488,16 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         "vorp",
         "vona",
         "vbd",
-        "risk"
+        "risk",
       ];
       const savedSortField = window.localStorage.getItem(
-        "projections.sortField"
+        "projections.sortField",
       );
       if (savedSortField && allowedSort.includes(savedSortField)) {
         setSortField(savedSortField as SortableField);
       }
       const savedSortDir = window.localStorage.getItem(
-        "projections.sortDirection"
+        "projections.sortDirection",
       );
       if (savedSortDir === "asc" || savedSortDir === "desc") {
         setSortDirection(savedSortDir);
@@ -452,7 +527,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     try {
       window.localStorage.setItem(
         "projections.hideDrafted",
-        String(hideDrafted)
+        String(hideDrafted),
       );
     } catch {}
   }, [hideDrafted]);
@@ -472,7 +547,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       window.localStorage.setItem("projections.sortField", String(sortField));
       window.localStorage.setItem(
         "projections.sortDirection",
-        String(sortDirection)
+        String(sortDirection),
       );
     } catch {}
   }, [sortField, sortDirection]);
@@ -482,7 +557,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     if (typeof window === "undefined") return;
     try {
       const savedStatKey = window.localStorage.getItem(
-        "projections.statSortKey"
+        "projections.statSortKey",
       );
       if (savedStatKey) setStatSortKey(savedStatKey);
     } catch {}
@@ -514,98 +589,25 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   }, [draftedPlayers]);
 
   const diagnostics = useMemo(() => {
-    const total = players.length;
-    const q = debouncedSearchTerm.toLowerCase();
-    const reasons: Record<string, number> = {};
-    const inc = (k: string) => (reasons[k] = (reasons[k] || 0) + 1);
-    players.forEach((p) => {
-      let excluded = false;
-      if (positionFilter !== "ALL") {
-        const disp = (getDisplayPos(p) || "").toUpperCase();
-        const parts = disp.split(",").map((s) => s.trim());
-        const isGoalie = parts.includes("G");
-        const isDefense = parts.includes("D");
-        const isForwardSplit = parts.some((x) => ["C", "LW", "RW"].includes(x));
-        const isForwardMerged = parts.includes("F");
-        let ok = true;
-        if (positionFilter === "G") ok = isGoalie;
-        else if (positionFilter === "SKATER")
-          ok = !isGoalie && (isDefense || isForwardSplit || isForwardMerged);
-        else if (positionFilter === "FORWARDS")
-          ok =
-            forwardGrouping === "fwd"
-              ? isForwardMerged && !isGoalie
-              : isForwardSplit && !isGoalie;
-        else ok = disp.includes(positionFilter);
-        if (!ok) {
-          inc("positionFilter");
-          excluded = true;
-        }
-      }
-      if (!excluded && q) {
-        const ok =
-          p.fullName.toLowerCase().includes(q) ||
-          (p.displayTeam || "").toLowerCase().includes(q);
-        if (!ok) {
-          inc("searchFilter");
-          excluded = true;
-        }
-      }
-      if (!excluded && hideDrafted) {
-        if (draftedIdSet.has(String(p.playerId))) {
-          inc("hideDrafted");
-          excluded = true;
-        }
-      }
+    return diagnoseProjectionVisibility({
+      players,
+      positionFilter,
+      forwardGrouping,
+      searchTerm: debouncedSearchTerm,
+      hideDrafted,
+      draftedIds: draftedIdSet,
+      favoritesOnly,
+      favoriteIds,
     });
-    const shown = (() => {
-      // Mirror visibility logic (minus sort)
-      let arr = [...players];
-      if (positionFilter !== "ALL") {
-        arr = arr.filter((p) => {
-          const disp = (getDisplayPos(p) || "").toUpperCase();
-          const parts = disp.split(",").map((s) => s.trim());
-          const isGoalie = parts.includes("G");
-          const isDefense = parts.includes("D");
-          const isForwardSplit = parts.some((x) =>
-            ["C", "LW", "RW"].includes(x)
-          );
-          const isForwardMerged = parts.includes("F");
-          if (positionFilter === "G") return isGoalie;
-          if (positionFilter === "SKATER")
-            return (
-              !isGoalie && (isDefense || isForwardSplit || isForwardMerged)
-            );
-          if (positionFilter === "FORWARDS")
-            return forwardGrouping === "fwd"
-              ? isForwardMerged && !isGoalie
-              : isForwardSplit && !isGoalie;
-          return disp.includes(positionFilter);
-        });
-      }
-      if (debouncedSearchTerm) {
-        arr = arr.filter((p) => {
-          const q2 = debouncedSearchTerm.toLowerCase();
-          return (
-            p.fullName.toLowerCase().includes(q2) ||
-            (p.displayTeam || "").toLowerCase().includes(q2)
-          );
-        });
-      }
-      if (hideDrafted) {
-        arr = arr.filter((p) => !draftedIdSet.has(String(p.playerId)));
-      }
-      return arr.length;
-    })();
-    const excluded = Math.max(0, total - shown);
-    return { total, shown, excluded, reasons };
   }, [
     players,
     positionFilter,
     debouncedSearchTerm,
     hideDrafted,
     draftedIdSet,
-    forwardGrouping
+    forwardGrouping,
+    favoriteIds,
+    favoritesOnly,
   ]);
 
   // Build a quick lookup for each player's primary position (first listed)
@@ -648,7 +650,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
           vbd: baseVbd,
           bestPos: metrics.bestPos,
           vbdAdj,
-          value: metrics.value
+          value: metrics.value,
         });
       });
     }
@@ -691,31 +693,15 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     let filtered = [...players];
     // Position filter predicate
     if (positionFilter !== "ALL") {
-      filtered = filtered.filter((p) => {
-        const disp = (getDisplayPos(p) || "").toUpperCase();
-        const parts = disp.split(",").map((s) => s.trim());
-        const isGoalie = parts.includes("G");
-        const isDefense = parts.includes("D");
-        const isForwardSplit = parts.some((x) => ["C", "LW", "RW"].includes(x));
-        const isForwardMerged = parts.includes("F");
-        if (positionFilter === "G") return isGoalie;
-        if (positionFilter === "SKATER")
-          return !isGoalie && (isDefense || isForwardSplit || isForwardMerged);
-        if (positionFilter === "FORWARDS")
-          return forwardGrouping === "fwd"
-            ? isForwardMerged && !isGoalie
-            : isForwardSplit && !isGoalie;
-        return disp.includes(positionFilter);
-      });
+      filtered = filtered.filter((player) =>
+        matchesProjectionPosition(player, positionFilter, forwardGrouping),
+      );
     }
 
     // Apply search filter
     if (debouncedSearchTerm) {
-      const q = debouncedSearchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (player) =>
-          player.fullName.toLowerCase().includes(q) ||
-          player.displayTeam?.toLowerCase().includes(q)
+      filtered = filtered.filter((player) =>
+        matchesProjectionSearch(player, debouncedSearchTerm),
       );
     }
 
@@ -815,7 +801,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     statSortKey,
     favoritesOnly,
     favoriteIds,
-    forwardGrouping
+    forwardGrouping,
   ]);
 
   // Helpers for percentile calculations
@@ -831,7 +817,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     const eligible = filteredAndSortedPlayers.filter(
       (p) =>
         // Exclude already drafted from banding; bands represent remaining pool
-        !draftedIdSet.has(String(p.playerId))
+        !draftedIdSet.has(String(p.playerId)),
     );
 
     // Group values by scope key (ALL or position)
@@ -874,7 +860,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     };
 
     const toBand = (
-      pct: number | null
+      pct: number | null,
     ): "valueSuccess" | "valueWarning" | "valueDanger" | null => {
       if (pct == null) return null;
       // Map deciles to 3 colors: bottom 0-30%=danger, 30-70%=warning, 70-100%=success
@@ -914,7 +900,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     vorpMap,
     bandScope,
     needWeightEnabled,
-    leagueType
+    leagueType,
   ]);
 
   const handleSort = (field: SortableField) => {
@@ -930,7 +916,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
           field === "vbd" ||
           field === "risk"
           ? "desc"
-          : "asc"
+          : "asc",
       );
     }
   };
@@ -947,58 +933,25 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       const uiIds = new Set<string>(pool.map((p) => String(p.playerId)));
 
       // Import config dynamically
-      const { PROJECTION_SOURCES_CONFIG } = await import(
-        "lib/projectionsConfig/projectionSourcesConfig"
+      const { PROJECTION_SOURCES_CONFIG } =
+        await import("lib/projectionsConfig/projectionSourcesConfig");
+
+      const out = await findMissingProjectionPlayers(
+        PROJECTION_SOURCES_CONFIG,
+        uiIds,
+        async ({ tableName, selectColumns, idKey, from, to }) => {
+          const { data, error } = await supabase
+            .from(tableName as any)
+            .select(selectColumns)
+            .not(idKey, "is", null)
+            .order(idKey, { ascending: true })
+            .range(from, to);
+          return {
+            data: (data ?? []) as unknown as Record<string, unknown>[],
+            error,
+          };
+        },
       );
-
-      // Group by tableName to avoid duplicate queries for same table
-      const tableToSourceIds = new Map<string, string[]>();
-      PROJECTION_SOURCES_CONFIG.forEach((cfg) => {
-        const arr = tableToSourceIds.get(cfg.tableName) || [];
-        arr.push(cfg.id);
-        tableToSourceIds.set(cfg.tableName, arr);
-      });
-
-      type Row = {
-        player_id?: number | null;
-        Player_Name?: string | null;
-        Goalie?: string | null;
-      };
-      const missing: Map<number, { name: string | null; sourceIds: string[] }> =
-        new Map();
-
-      for (const [tableName, sourceIds] of tableToSourceIds.entries()) {
-        const { data, error } = await supabase
-          .from(tableName as any)
-          .select("player_id, Player_Name, Goalie")
-          .not("player_id", "is", null);
-        if (error) throw error;
-        (data as Row[]).forEach((r) => {
-          const id = r.player_id != null ? Number(r.player_id) : null;
-          if (id == null || Number.isNaN(id)) return;
-          if (!uiIds.has(String(id))) {
-            const prev = missing.get(id) || {
-              name: r.Player_Name || r.Goalie || null,
-              sourceIds: []
-            };
-            sourceIds.forEach((sid) => {
-              if (!prev.sourceIds.includes(sid)) prev.sourceIds.push(sid);
-            });
-            if (!prev.name && (r.Player_Name || r.Goalie)) {
-              prev.name = (r.Player_Name as any) || (r.Goalie as any) || null;
-            }
-            missing.set(id, prev);
-          }
-        });
-      }
-
-      const out = Array.from(missing.entries())
-        .map(([player_id, info]) => ({
-          player_id,
-          name: info.name || null,
-          sourceIds: info.sourceIds.sort()
-        }))
-        .sort((a, b) => a.player_id - b.player_id);
       setCrosscheckMissing(out);
     } catch (e: any) {
       setCrosscheckError(e?.message || "Cross-check failed");
@@ -1027,7 +980,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   }, [players, forwardGrouping]);
 
   const getAriaSort = (
-    field: SortableField
+    field: SortableField,
   ): "none" | "ascending" | "descending" => {
     if (sortField !== field) return "none";
     return sortDirection === "asc" ? "ascending" : "descending";
@@ -1091,12 +1044,12 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         if (typeof window !== "undefined") {
                           window.localStorage.setItem(
                             "projections.prorate82",
-                            String(next)
+                            String(next),
                           );
                           window.dispatchEvent(
                             new CustomEvent("projections:prorate82", {
-                              detail: { value: next }
-                            })
+                              detail: { value: next },
+                            }),
                           );
                         }
                       } catch {}
@@ -1263,17 +1216,40 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   aria-label="Open compare players"
                   title={
                     selectedIds.size < 2
-                      ? "Select 2+ players in the table"
+                      ? "Select 2 players in the table"
                       : "Compare selected players"
                   }
                 >
                   {`Compare`}
                 </button>
+                {selectedIds.size > 0 && (
+                  <button
+                    type="button"
+                    className={styles.controlToggleBtn}
+                    onClick={resetComparison}
+                    aria-label="Clear comparison selection"
+                  >
+                    Clear
+                  </button>
+                )}
               </div>
+              {compareSelectionMessage && (
+                <span role="status" className={styles.controlHint}>
+                  {compareSelectionMessage}
+                </span>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {dataNotices.length > 0 && (
+        <div className={styles.dataNotice} role="status" aria-live="polite">
+          {dataNotices.map((notice) => (
+            <p key={notice}>{notice}</p>
+          ))}
+        </div>
+      )}
 
       {/* Mini Run Forecast Row */}
       {expectedRuns && (
@@ -1284,10 +1260,10 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
           <div className={styles.miniRunItems}>
             {" "}
             {/* new wrapper */}
-            {["C", "LW", "RW", "D", "G"].map((pos) => {
+            {getRosterPositions(forwardGrouping).map((pos) => {
               const val = Math.max(
                 0,
-                Math.round((expectedRuns.byPos?.[pos] ?? 0) * 10) / 10
+                Math.round((expectedRuns.byPos?.[pos] ?? 0) * 10) / 10,
               );
               const max = Math.max(1, expectedRuns.N || 1);
               const pct = Math.min(100, Math.round((val / max) * 100));
@@ -1564,14 +1540,14 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       handleSort(
                         leagueType === "categories"
                           ? ("score" as any)
-                          : "fantasyPoints"
+                          : "fantasyPoints",
                       )
                     }
                     className={`${styles.sortableHeader} ${styles.colFP}`}
                     aria-sort={getAriaSort(
                       leagueType === "categories"
                         ? ("score" as any)
-                        : "fantasyPoints"
+                        : "fantasyPoints",
                     )}
                     scope="col"
                     title={
@@ -1680,14 +1656,14 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 let arr = [...filteredAndSortedPlayers];
                 if (hideDrafted) {
                   arr = arr.filter(
-                    (p) => !draftedIdSet.has(String(p.playerId))
+                    (p) => !draftedIdSet.has(String(p.playerId)),
                   );
                 } else {
                   const undrafted = arr.filter(
-                    (p) => !draftedIdSet.has(String(p.playerId))
+                    (p) => !draftedIdSet.has(String(p.playerId)),
                   );
                   const drafted = arr.filter((p) =>
-                    draftedIdSet.has(String(p.playerId))
+                    draftedIdSet.has(String(p.playerId)),
                   );
                   arr = [...undrafted, ...drafted];
                 }
@@ -1783,6 +1759,30 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         >
                           {player.fullName}
                         </span>
+                        {sourceRankImpacts[player.playerId] && (
+                          <span
+                            aria-label={`Projection source rank ${
+                              sourceRankImpacts[player.playerId].delta > 0
+                                ? "improved"
+                                : "declined"
+                            } by ${Math.abs(sourceRankImpacts[player.playerId].delta)}`}
+                            title={`Projection-source change moved this player from rank ${sourceRankImpacts[player.playerId].previousRank} to ${sourceRankImpacts[player.playerId].currentRank} within the ${player.displayPosition === "G" ? "goalie" : "skater"} pool.`}
+                            style={{
+                              marginLeft: 6,
+                              color:
+                                sourceRankImpacts[player.playerId].delta > 0
+                                  ? "#6ee7a8"
+                                  : "#ff9a9a",
+                              fontSize: 11,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {sourceRankImpacts[player.playerId].delta > 0
+                              ? "↑"
+                              : "↓"}
+                            {Math.abs(sourceRankImpacts[player.playerId].delta)}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td
@@ -1790,7 +1790,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       title={(() => {
                         const disp = getDisplayPos(player) || "-";
                         const elig = Array.isArray(
-                          (player as any).eligiblePositions
+                          (player as any).eligiblePositions,
                         )
                           ? ((player as any).eligiblePositions as string[])
                           : [];
@@ -1930,7 +1930,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                               style={{
                                 fontSize: 12,
                                 opacity: 0.8,
-                                marginBottom: 6
+                                marginBottom: 6,
                               }}
                             >
                               Last Season: {seasonTotals[key]?.seasonLabel}
@@ -1941,7 +1941,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                                   display: "grid",
                                   gridTemplateColumns:
                                     "repeat(auto-fit, minmax(110px, 1fr))",
-                                  gap: 8
+                                  gap: 8,
                                 }}
                               >
                                 <StatPill
@@ -2006,7 +2006,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                                   display: "grid",
                                   gridTemplateColumns:
                                     "repeat(auto-fit, minmax(130px, 1fr))",
-                                  gap: 8
+                                  gap: 8,
                                 }}
                               >
                                 <StatPill
@@ -2052,12 +2052,12 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         {(() => {
           const anyPlayers = hideDrafted
             ? filteredAndSortedPlayers.some(
-                (p) => !draftedIdSet.has(String(p.playerId))
+                (p) => !draftedIdSet.has(String(p.playerId)),
               )
             : filteredAndSortedPlayers.length > 0;
           return !anyPlayers ? (
             <div className={styles.emptyState}>
-              <p>No players found matching your filters.</p>
+              <p>{emptyStateMessage}</p>
             </div>
           ) : null;
         })()}
@@ -2072,7 +2072,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
             background: "rgba(255,255,255,0.03)",
             border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 6,
-            fontSize: 12
+            fontSize: 12,
           }}
         >
           <div style={{ marginBottom: 4 }}>
@@ -2090,6 +2090,75 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
               ))
             )}
           </div>
+          {yahooMappingDiagnostics && (
+            <div style={{ marginTop: 6, display: "grid", gap: 3 }}>
+              {(["skater", "goalie"] as const).map((playerType) => {
+                const mapping = yahooMappingDiagnostics[playerType];
+                if (!mapping) return null;
+                return (
+                  <div key={playerType}>
+                    Yahoo {playerType}s: selected {mapping.selectedNhlIds} /{" "}
+                    {mapping.projectedNhlIds}; unresolved{" "}
+                    {mapping.unresolvedNhlIds}; unmapped{" "}
+                    {mapping.unmappedNhlIds}; conflicting IDs{" "}
+                    {mapping.conflictingYahooIdNhlIds}; current-game missing{" "}
+                    {mapping.currentGameMissingNhlIds}
+                    {mapping.unresolvedNhlIdSamples.length > 0 && (
+                      <span>
+                        ; review IDs {mapping.unresolvedNhlIdSamples.join(", ")}
+                        {mapping.unresolvedNhlIds >
+                        mapping.unresolvedNhlIdSamples.length
+                          ? ` … +${mapping.unresolvedNhlIds - mapping.unresolvedNhlIdSamples.length}`
+                          : ""}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {inclusionDiagnostics && (
+            <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
+              {(["skater", "goalie"] as const).map((playerType) => {
+                const report = inclusionDiagnostics[playerType];
+                if (!report) return null;
+                return (
+                  <div key={playerType}>
+                    <strong>Projection {playerType} inclusion:</strong> raw rows{" "}
+                    {report.rawRows}; valid-ID rows {report.validIdRows}; unique
+                    IDs {report.uniqueSourcePlayerIds}; processed{" "}
+                    {report.processedPlayers}; invalid IDs{" "}
+                    {report.invalidIdRows}; duplicate rows{" "}
+                    {report.duplicateIdRows}; valid IDs missing from pool{" "}
+                    {report.sourceIdsMissingFromProcessed}.
+                    {report.invalidIdentitySamples.length > 0 && (
+                      <details style={{ marginTop: 3 }}>
+                        <summary>
+                          Identities requiring upstream mapping review (
+                          {report.invalidIdentitySamples.length}
+                          {report.invalidIdRows >
+                          report.invalidIdentitySamples.length
+                            ? ` sampled of ${report.invalidIdRows}`
+                            : ""}
+                          )
+                        </summary>
+                        {report.invalidIdentitySamples.map((issue, index) => (
+                          <div key={`${issue.sourceId}-${index}`}>
+                            {issue.name || "Unnamed row"} — {issue.sourceId}{" "}
+                            (raw ID {String(issue.rawId ?? "null")})
+                          </div>
+                        ))}
+                        <div style={{ opacity: 0.75 }}>
+                          A-DRAFT displays these rows; B-YAHOO owns
+                          authoritative mapping and manual-review persistence.
+                        </div>
+                      </details>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -2116,7 +2185,7 @@ const StatPill = ({ label, value }: { label: string; value: any }) => (
       borderRadius: 6,
       background: "rgba(255,255,255,0.04)",
       border: "1px solid rgba(255,255,255,0.06)",
-      fontSize: 12
+      fontSize: 12,
     }}
     title={`${label}: ${value ?? "-"}`}
     aria-label={`${label} ${value ?? "-"}`}

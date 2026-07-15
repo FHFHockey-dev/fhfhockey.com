@@ -2,12 +2,25 @@
 import React from "react";
 import {
   compressToEncodedURIComponent,
-  decompressFromEncodedURIComponent
+  decompressFromEncodedURIComponent,
 } from "lz-string";
 import type { DraftSettings as DraftSettingsType } from "./DraftDashboard";
 import { PROJECTION_SOURCES_CONFIG } from "lib/projectionsConfig/projectionSourcesConfig";
 import { getDefaultFantasyPointsConfig } from "lib/projectionsConfig/fantasyPointsConfig";
 import { SKATER_LABELS } from "lib/projectionsConfig/skaterScoringLabels";
+import { CUSTOM_CSV_SESSION_KEY } from "lib/draftDashboard/csvImportSession";
+import {
+  getEffectiveSourceShares,
+  normalizeSourceWeights,
+} from "lib/draftDashboard/sourceWeights";
+import {
+  getEffectiveRosterConfig,
+  setForwardRosterTotal,
+} from "lib/draftDashboard/forwardGrouping";
+import type { KeeperEntry } from "lib/draftDashboard/keepers";
+import type { PickTradeEntry } from "lib/draftDashboard/pickTrades";
+import type { DraftCustomSourceMetadata } from "lib/draftDashboard/summaryConfiguration";
+import ManageTradesModal from "./ManageTradesModal";
 import styles from "./DraftSettings.module.scss";
 
 type LeagueType = "points" | "categories";
@@ -29,14 +42,14 @@ interface DraftSettingsProps {
   onForwardGroupingChange?: (mode: "split" | "fwd") => void;
   sourceControls?: Record<string, { isSelected: boolean; weight: number }>;
   onSourceControlsChange?: (
-    next: Record<string, { isSelected: boolean; weight: number }>
+    next: Record<string, { isSelected: boolean; weight: number }>,
   ) => void;
   goalieSourceControls?: Record<
     string,
     { isSelected: boolean; weight: number }
   >;
   onGoalieSourceControlsChange?: (
-    next: Record<string, { isSelected: boolean; weight: number }>
+    next: Record<string, { isSelected: boolean; weight: number }>,
   ) => void;
   goalieScoringCategories?: Record<string, number>;
   onGoalieScoringChange?: (next: Record<string, number>) => void;
@@ -44,29 +57,29 @@ interface DraftSettingsProps {
   onOpenSummary?: () => void;
   onOpenImportCsv?: () => void;
   customSourceLabel?: string;
+  customSourceMetadata?: DraftCustomSourceMetadata[];
   availableSkaterStatKeys?: string[];
   availableGoalieStatKeys?: string[];
   onExportCsv?: () => void;
   onRemoveCustomSource?: (id: string) => void;
   pickOwnerOverrides?: Record<string, string>;
+  pickTrades?: PickTradeEntry[];
   onAddTradedPick?: (
     round: number,
     pickInRound: number,
-    teamId: string
-  ) => void;
+    teamId: string,
+  ) => { ok: boolean; message: string };
+  onImportTradedPicks?: (input: string) => { ok: boolean; message: string };
   onRemoveTradedPick?: (round: number, pickInRound: number) => void;
-  keepers?: Array<{
-    round: number;
-    pickInRound: number;
-    teamId: string;
-    playerId: string;
-  }>;
+  onResetTradedPicks?: () => void;
+  keepers?: KeeperEntry[];
   onAddKeeper?: (
     round: number,
     pickInRound: number,
     teamId: string,
-    playerId: string
-  ) => void;
+    playerId: string,
+  ) => { ok: boolean; message: string };
+  onImportKeepers?: (input: string) => { ok: boolean; message: string };
   onRemoveKeeper?: (round: number, pickInRound: number) => void;
   onBookmarkCreate?: (key: string) => void;
   onBookmarkImport?: (data: any) => void;
@@ -84,7 +97,7 @@ const CAT_KEYS = [
   "PP_POINTS",
   "SHOTS_ON_GOAL",
   "HITS",
-  "BLOCKED_SHOTS"
+  "BLOCKED_SHOTS",
 ] as const;
 
 type CatKey = (typeof CAT_KEYS)[number];
@@ -100,7 +113,7 @@ const GOALIE_LABELS: Record<string, string> = {
   GAMES_PLAYED: "GP",
   LOSSES_GOALIE: "L",
   OTL_GOALIE: "OTL",
-  SHOTS_AGAINST_GOALIE: "SA"
+  SHOTS_AGAINST_GOALIE: "SA",
 };
 
 function getShortLabel(statKey: string): string {
@@ -150,19 +163,24 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   onOpenSummary,
   onOpenImportCsv,
   customSourceLabel,
+  customSourceMetadata = [],
   availableSkaterStatKeys = [],
   availableGoalieStatKeys = [],
   onExportCsv,
   onRemoveCustomSource,
   pickOwnerOverrides = {},
+  pickTrades = [],
   onAddTradedPick,
+  onImportTradedPicks,
   onRemoveTradedPick,
+  onResetTradedPicks,
   keepers = [],
   onAddKeeper,
+  onImportKeepers,
   onRemoveKeeper,
   onBookmarkCreate,
   onBookmarkImport,
-  playersForKeeperAutocomplete
+  playersForKeeperAutocomplete,
 }) => {
   const [collapsed, setCollapsed] = React.useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -185,9 +203,9 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
         s: settings,
         sc: sourceControls,
         gsc: goalieSourceControls,
-        gs: goalieScoringCategories
+        gs: goalieScoringCategories,
       }),
-    [settings, sourceControls, goalieSourceControls, goalieScoringCategories]
+    [settings, sourceControls, goalieSourceControls, goalieScoringCategories],
   );
 
   React.useEffect(() => {
@@ -210,17 +228,28 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     sourceControls,
     goalieSourceControls,
     goalieScoringCategories,
-    computeHash
+    computeHash,
   ]);
 
   const handleTeamCountChange = (count: number) => {
+    if (
+      (keepers.length > 0 || pickTrades.length > 0) &&
+      count !== settings.teamCount
+    ) {
+      setTradeFeedback({
+        ok: false,
+        message:
+          "Remove configured keepers and trades before changing team count.",
+      });
+      return;
+    }
     const newDraftOrder = Array.from(
       { length: count },
-      (_, i) => `Team ${i + 1}`
+      (_, i) => `Team ${i + 1}`,
     );
     onSettingsChange({
       teamCount: count,
-      draftOrder: newDraftOrder
+      draftOrder: newDraftOrder,
     });
 
     if (!newDraftOrder.includes(myTeamId)) {
@@ -229,12 +258,45 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   };
 
   const handleRosterConfigChange = (position: string, count: number) => {
+    const nextRosterConfig =
+      position === "FWD"
+        ? setForwardRosterTotal(settings.rosterConfig, count)
+        : { ...settings.rosterConfig, [position]: count };
+    const nextRoundCount = Object.values(nextRosterConfig).reduce(
+      (sum, value) => sum + value,
+      0,
+    );
+    const latestReservedRound = [...keepers, ...pickTrades].reduce(
+      (latest, entry) => Math.max(latest, entry.round),
+      0,
+    );
+    if (nextRoundCount < latestReservedRound) {
+      setTradeFeedback({
+        ok: false,
+        message: `Roster size cannot be below reserved round ${latestReservedRound}.`,
+      });
+      return;
+    }
+    if (position === "FWD") {
+      onSettingsChange({
+        rosterConfig: nextRosterConfig as any,
+      });
+      return;
+    }
     onSettingsChange({
-      rosterConfig: {
-        ...settings.rosterConfig,
-        [position]: count
-      }
+      rosterConfig: nextRosterConfig as DraftSettingsType["rosterConfig"],
     });
+  };
+
+  const handleSnakeDraftChange = (next: boolean) => {
+    if (pickTrades.length > 0 && next !== isSnakeDraft) {
+      setTradeFeedback({
+        ok: false,
+        message: "Remove configured trades before changing draft order type.",
+      });
+      return;
+    }
+    onSnakeDraftChange(next);
   };
 
   const leagueType: LeagueType = settings.leagueType || "points";
@@ -244,19 +306,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
 
   // 1) Scalar normalization: sum to ~1.00 and keep [0..2] domain
   const normalizeWeights = (
-    controls?: Record<string, { isSelected: boolean; weight: number }>
-  ) => {
-    if (!controls) return controls;
-    const entries = Object.entries(controls);
-    const active = entries.filter(([, v]) => v.isSelected && v.weight > 0);
-    const sum = active.reduce((acc, [, v]) => acc + v.weight, 0);
-    if (sum <= 0) return controls;
-    const next: typeof controls = { ...controls };
-    active.forEach(([k, v]) => {
-      next[k] = { ...v, weight: parseFloat((v.weight / sum).toFixed(3)) };
-    });
-    return next;
-  };
+    controls?: Record<string, { isSelected: boolean; weight: number }>,
+  ) => (controls ? normalizeSourceWeights(controls) : controls);
 
   // 2) Normalized check vs 1.00 (keep 0 as “ok” for empty case)
   const isNormalized = React.useMemo(() => {
@@ -266,25 +317,40 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
         sourceControls
           ? Object.values(sourceControls).reduce(
               (acc, v) => (v.isSelected ? acc + v.weight : acc),
-              0
+              0,
             )
-          : 0
+          : 0,
       ) &&
       approxOne(
         goalieSourceControls
           ? Object.values(goalieSourceControls).reduce(
               (acc, v) => (v.isSelected ? acc + v.weight : acc),
-              0
+              0,
             )
-          : 0
+          : 0,
       )
     );
   }, [sourceControls, goalieSourceControls]);
 
   const DEBOUNCE_MS = 200;
   const toPercent = (scalar: number) => Math.round(scalar * 100);
-  const sharePercent = (scalar: number, total: number, selected: boolean) =>
-    selected && total > 0 ? `${Math.round((scalar / total) * 100)}%` : "-";
+  const sharePercent = (
+    id: string,
+    controls?: Record<string, { isSelected: boolean; weight: number }>,
+    pending: Record<string, number> = {},
+  ) => {
+    if (!controls) return "-";
+    const effectiveControls = Object.fromEntries(
+      Object.entries(controls).map(([sourceId, control]) => [
+        sourceId,
+        typeof pending[sourceId] === "number"
+          ? { ...control, weight: pending[sourceId] }
+          : control,
+      ]),
+    );
+    const share = getEffectiveSourceShares(effectiveControls)[id] || 0;
+    return share > 0 ? `${Math.round(share * 100)}%` : "-";
+  };
   const shareValue = (scalar: number, total: number, selected: boolean) => {
     if (!selected) return 0;
     if (total > 0) {
@@ -296,12 +362,12 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const getPendingScalar = (
     pendingMap: Record<string, number>,
     id: string,
-    fallback: number
+    fallback: number,
   ) => (typeof pendingMap[id] === "number" ? pendingMap[id] : fallback);
   const rebalanceWithAnchor = (
     controls: Record<string, { isSelected: boolean; weight: number }>,
     anchorId: string,
-    rawTarget: number
+    rawTarget: number,
   ) => {
     const existing = controls[anchorId];
     if (!existing) return controls;
@@ -312,20 +378,20 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     if (!existing.isSelected) {
       next[anchorId] = {
         ...existing,
-        weight: parseFloat(sanitized.toFixed(3))
+        weight: parseFloat(sanitized.toFixed(3)),
       };
       return next;
     }
 
     const active = Object.entries(controls).filter(
-      ([id, ctrl]) => id !== anchorId && ctrl.isSelected
+      ([id, ctrl]) => id !== anchorId && ctrl.isSelected,
     );
 
     // Only one active -> force 100% share
     if (active.length === 0) {
       next[anchorId] = {
         ...existing,
-        weight: 1
+        weight: 1,
       };
       return next;
     }
@@ -334,7 +400,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     const anchorRounded = parseFloat(anchorWeight.toFixed(3));
     next[anchorId] = {
       ...existing,
-      weight: anchorRounded
+      weight: anchorRounded,
     };
 
     const remainder = Math.max(0, parseFloat((1 - anchorRounded).toFixed(3)));
@@ -342,7 +408,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       active.forEach(([id, ctrl]) => {
         next[id] = {
           ...ctrl,
-          weight: 0
+          weight: 0,
         };
       });
       return next;
@@ -351,7 +417,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     const weighted = active.map(([id, ctrl]) => ({
       id,
       ctrl,
-      weight: ctrl.weight > 0 ? ctrl.weight : 1
+      weight: ctrl.weight > 0 ? ctrl.weight : 1,
     }));
     let weightSum = weighted.reduce((acc, item) => acc + item.weight, 0);
     if (weightSum <= 0) weightSum = weighted.length;
@@ -362,14 +428,14 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
         value = parseFloat((remainder - allocated).toFixed(3));
       } else {
         value = parseFloat(
-          ((item.weight / weightSum) * remainder || 0).toFixed(3)
+          ((item.weight / weightSum) * remainder || 0).toFixed(3),
         );
         allocated += value;
       }
       if (!Number.isFinite(value) || value < 0) value = 0;
       next[item.id] = {
         ...item.ctrl,
-        weight: value
+        weight: value,
       };
     });
 
@@ -395,8 +461,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
           ...sourceControls,
           [id]: {
             ...existing,
-            weight: parseFloat(clamped.toFixed(3))
-          }
+            weight: parseFloat(clamped.toFixed(3)),
+          },
         };
 
     const pendingUpdates: Record<string, number> = {};
@@ -439,7 +505,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const handleDirectWeightInput = (
     id: string,
     value: number,
-    isGoalie: boolean
+    isGoalie: boolean,
   ) => {
     const numeric = Number.isFinite(value) ? value : 0;
     const clamped = Math.max(0, Math.min(2, numeric)); // scalar domain
@@ -461,20 +527,20 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     if (!sourceControls) return 0;
     return Object.values(sourceControls).reduce(
       (acc, v) => (v.isSelected ? acc + v.weight : acc),
-      0
+      0,
     );
   }, [sourceControls]);
   const totalActiveGoalieSourceWeight = React.useMemo(() => {
     if (!goalieSourceControls) return 0;
     return Object.values(goalieSourceControls).reduce(
       (acc, v) => (v.isSelected ? acc + v.weight : acc),
-      0
+      0,
     );
   }, [goalieSourceControls]);
 
   const handleResetSkaterScoring = () => {
     onSettingsChange({
-      scoringCategories: getDefaultFantasyPointsConfig("skater")
+      scoringCategories: getDefaultFantasyPointsConfig("skater"),
     });
   };
   const handleResetGoalieScoring = () => {
@@ -487,7 +553,10 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   };
 
   const stepRoster = (position: string, delta: number) => {
-    const current = settings.rosterConfig[position];
+    const current =
+      position === "FWD"
+        ? getEffectiveRosterConfig(settings.rosterConfig, "fwd").FWD
+        : settings.rosterConfig[position];
     const max = positionMax[position] ?? 10;
     const next = Math.min(max, Math.max(0, current + delta));
     if (next !== current) handleRosterConfigChange(position, next);
@@ -505,7 +574,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     React.useState<Record<string, number>>({});
   const sourceDebounceTimers = React.useRef<Map<string, number>>(new Map());
   const goalieSourceDebounceTimers = React.useRef<Map<string, number>>(
-    new Map()
+    new Map(),
   );
 
   // Keepers & Traded Picks visibility now controlled by settings.isKeeper
@@ -522,6 +591,16 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const [keeperSelectedPlayerId, setKeeperSelectedPlayerId] = React.useState<
     string | undefined
   >(undefined);
+  const [keeperBulkInput, setKeeperBulkInput] = React.useState("");
+  const [keeperFeedback, setKeeperFeedback] = React.useState<{
+    ok: boolean;
+    message: string;
+  } | null>(null);
+  const [tradeManagerOpen, setTradeManagerOpen] = React.useState(false);
+  const [tradeFeedback, setTradeFeedback] = React.useState<{
+    ok: boolean;
+    message: string;
+  } | null>(null);
   // Separate refs for traded picks vs keeper steppers
   const tradeRoundStepperRef = React.useRef<HTMLDivElement | null>(null);
   const tradePickStepperRef = React.useRef<HTMLDivElement | null>(null);
@@ -546,8 +625,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
           ...goalieSourceControls,
           [id]: {
             ...existing,
-            weight: parseFloat(clamped.toFixed(3))
-          }
+            weight: parseFloat(clamped.toFixed(3)),
+          },
         };
 
     const pendingUpdates: Record<string, number> = {};
@@ -596,18 +675,23 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
 
   // Position-specific maximums (utility limited to 2)
   const positionMax: Record<string, number> = {
-    c: 6,
-    lw: 6,
-    rw: 6,
-    d: 8,
-    g: 4,
-    util: 2,
-    bench: 10
+    C: 6,
+    LW: 6,
+    RW: 6,
+    FWD: 18,
+    D: 8,
+    G: 4,
+    utility: 2,
+    bench: 10,
   };
 
   const totalRosterSpots = Object.values(settings.rosterConfig).reduce(
     (sum, count) => sum + count,
-    0
+    0,
+  );
+  const displayedRosterConfig = getEffectiveRosterConfig(
+    settings.rosterConfig,
+    forwardGrouping,
   );
   const rosterTotalClass =
     totalRosterSpots > 22 ? styles.rosterTotalWarning : "";
@@ -622,7 +706,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
         window.clearTimeout(confirmResetTimeout.current);
       confirmResetTimeout.current = window.setTimeout(
         () => setConfirmReset(false),
-        4000
+        4000,
       );
       return;
     }
@@ -636,7 +720,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       if (confirmResetTimeout.current)
         window.clearTimeout(confirmResetTimeout.current);
     },
-    []
+    [],
   );
 
   // Popover for editing projection weights
@@ -671,7 +755,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     if (!sourceControls || !onSourceControlsChange) return;
     // Detect obvious percent values
     const needsCoerce = Object.values(sourceControls).some(
-      (v) => typeof v.weight === "number" && v.weight > 2.0001
+      (v) => typeof v.weight === "number" && v.weight > 2.0001,
     );
     if (!needsCoerce) return;
 
@@ -681,22 +765,22 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
         {
           ...ctrl,
           weight: parseFloat(
-            (ctrl.weight > 2 ? ctrl.weight / 100 : ctrl.weight).toFixed(3)
-          )
-        }
-      ])
+            (ctrl.weight > 2 ? ctrl.weight / 100 : ctrl.weight).toFixed(3),
+          ),
+        },
+      ]),
     );
     onSourceControlsChange(normalizeWeights(converted)!);
     // eslint-disable-next-line no-console
     console.warn(
-      "[DraftSettings] Coerced incoming skater source weights from percents to scalars."
+      "[DraftSettings] Coerced incoming skater source weights from percents to scalars.",
     );
   }, [sourceControls, onSourceControlsChange]);
 
   React.useEffect(() => {
     if (!goalieSourceControls || !onGoalieSourceControlsChange) return;
     const needsCoerce = Object.values(goalieSourceControls).some(
-      (v) => typeof v.weight === "number" && v.weight > 2.0001
+      (v) => typeof v.weight === "number" && v.weight > 2.0001,
     );
     if (!needsCoerce) return;
 
@@ -706,21 +790,21 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
         {
           ...ctrl,
           weight: parseFloat(
-            (ctrl.weight > 2 ? ctrl.weight / 100 : ctrl.weight).toFixed(3)
-          )
-        }
-      ])
+            (ctrl.weight > 2 ? ctrl.weight / 100 : ctrl.weight).toFixed(3),
+          ),
+        },
+      ]),
     );
     onGoalieSourceControlsChange(normalizeWeights(converted)!);
     // eslint-disable-next-line no-console
     console.warn(
-      "[DraftSettings] Coerced incoming goalie source weights from percents to scalars."
+      "[DraftSettings] Coerced incoming goalie source weights from percents to scalars.",
     );
   }, [goalieSourceControls, onGoalieSourceControlsChange]);
 
   // Order sources: active first, then disabled
   const orderSources = <T extends { isSelected: boolean }>(
-    obj: Record<string, T>
+    obj: Record<string, T>,
   ) => {
     return Object.entries(obj).sort((a, b) => {
       if (a[1].isSelected === b[1].isSelected) return a[0].localeCompare(b[0]);
@@ -736,14 +820,14 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
 
     const chipFor = (
       id: string,
-      ctrl: { isSelected: boolean; weight: number }
+      ctrl: { isSelected: boolean; weight: number },
     ) => {
       const src = PROJECTION_SOURCES_CONFIG.find((s) => s.id === id);
       const isCustom = id.startsWith("custom_csv");
       const displayName = (() => {
         if (!isCustom) return src?.displayName || id;
         try {
-          const raw = sessionStorage.getItem("draft.customCsvList.v2");
+          const raw = sessionStorage.getItem(CUSTOM_CSV_SESSION_KEY);
           if (raw) {
             const list = JSON.parse(raw) as Array<{
               id: string;
@@ -758,13 +842,9 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       const weightScalar = getPendingScalar(
         pendingSourceWeights,
         id,
-        ctrl.weight
+        ctrl.weight,
       );
-      const share = sharePercent(
-        weightScalar,
-        totalActiveSourceWeight,
-        ctrl.isSelected
-      );
+      const share = sharePercent(id, sourceControls, pendingSourceWeights);
       return (
         <div
           key={id}
@@ -819,19 +899,19 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
 
     const chipFor = (
       id: string,
-      ctrl: { isSelected: boolean; weight: number }
+      ctrl: { isSelected: boolean; weight: number },
     ) => {
       const src = PROJECTION_SOURCES_CONFIG.find((s) => s.id === id);
       const displayName = src?.displayName || id;
       const weightScalar = getPendingScalar(
         pendingGoalieSourceWeights,
         id,
-        ctrl.weight
+        ctrl.weight,
       );
       const share = sharePercent(
-        weightScalar,
-        totalActiveGoalieSourceWeight,
-        ctrl.isSelected
+        id,
+        goalieSourceControls,
+        pendingGoalieSourceWeights,
       );
       return (
         <div
@@ -904,7 +984,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     const val = parseFloat(newGoalieStatValue) || 0;
     onGoalieScoringChange({
       ...goalieScoringCategories,
-      [newGoalieStatKey]: val
+      [newGoalieStatKey]: val,
     });
     setNewGoalieStatKey("");
     setNewGoalieStatValue("1");
@@ -929,8 +1009,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     onSettingsChange({
       scoringCategories: {
         ...settings.scoringCategories,
-        [newSkaterStatKey]: val
-      }
+        [newSkaterStatKey]: val,
+      },
     });
     setNewSkaterStatKey("");
     setNewSkaterStatValue("1");
@@ -961,7 +1041,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       baselineMode = ls("draftDashboard.baselineMode") || undefined;
     } catch {}
     return {
-      v: 2, // version for future migrations
+      v: 3,
       ts: Date.now(),
       settings,
       draftedPlayers,
@@ -978,7 +1058,9 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       needAlpha,
       baselineMode,
       keepers,
-      pickOwnerOverrides
+      pickOwnerOverrides,
+      pickTrades,
+      customSourceMetadata,
     };
   }, [
     settings,
@@ -992,7 +1074,9 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     goalieSourceControls,
     goalieScoringCategories,
     keepers,
-    pickOwnerOverrides
+    pickOwnerOverrides,
+    pickTrades,
+    customSourceMetadata,
   ]);
 
   const serializeBookmark = (payload: any): string => {
@@ -1083,7 +1167,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   }, [
     availableSkaterStatKeys,
     availableGoalieStatKeys,
-    settings.categoryWeights
+    settings.categoryWeights,
   ]);
 
   // Removed enforcement of required goalie categories: users may now remove all categories (spec change).
@@ -1096,8 +1180,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     onSettingsChange({
       categoryWeights: {
         ...(settings.categoryWeights || {}),
-        [newCategoryKey]: Number.isFinite(val) ? val : 1
-      }
+        [newCategoryKey]: Number.isFinite(val) ? val : 1,
+      },
     });
     setNewCategoryKey("");
     setNewCategoryWeight("1");
@@ -1156,7 +1240,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
           >
             <button
               className={`${styles.toggleButton} ${!isSnakeDraft ? styles.active : ""}`}
-              onClick={() => onSnakeDraftChange(false)}
+              onClick={() => handleSnakeDraftChange(false)}
               role="tab"
               aria-selected={!isSnakeDraft}
             >
@@ -1164,7 +1248,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
             </button>
             <button
               className={`${styles.toggleButton} ${isSnakeDraft ? styles.active : ""}`}
-              onClick={() => onSnakeDraftChange(true)}
+              onClick={() => handleSnakeDraftChange(true)}
               role="tab"
               aria-selected={isSnakeDraft}
             >
@@ -1233,7 +1317,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                   className={styles.stepButton}
                   onClick={() =>
                     handleTeamCountChange(
-                      Math.max(2, (settings.teamCount || 0) - 1)
+                      Math.max(2, (settings.teamCount || 0) - 1),
                     )
                   }
                   disabled={settings.teamCount <= 2}
@@ -1267,7 +1351,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                   className={styles.stepButton}
                   onClick={() =>
                     handleTeamCountChange(
-                      Math.min(40, (settings.teamCount || 0) + 1)
+                      Math.min(40, (settings.teamCount || 0) + 1),
                     )
                   }
                   disabled={settings.teamCount >= 40}
@@ -1388,12 +1472,12 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                         teamCount: settings.teamCount,
                         leagueType: settings.leagueType,
                         totalRosterSpots: Object.values(
-                          settings.rosterConfig || {}
-                        ).reduce((s: number, v: number) => s + v, 0)
-                      }
+                          settings.rosterConfig || {},
+                        ).reduce((s: number, v: number) => s + v, 0),
+                      },
                     };
                     const blob = new Blob([JSON.stringify(payload, null, 2)], {
-                      type: "application/json"
+                      type: "application/json",
                     });
                     const filename = `draft-settings-${settings.teamCount}teams-${Date.now()}.json`;
                     const url = URL.createObjectURL(blob);
@@ -1454,7 +1538,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
               </div>
             </div>
             <div className={styles.rosterGrid}>
-              {Object.entries(settings.rosterConfig).map(
+              {Object.entries(displayedRosterConfig).map(
                 ([position, count]) => {
                   const max = positionMax[position] ?? 10;
                   return (
@@ -1494,7 +1578,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           onChange={(e) =>
                             handleRosterConfigChange(
                               position,
-                              Number(e.target.value)
+                              Number(e.target.value),
                             )
                           }
                           className={styles.numberInput}
@@ -1512,7 +1596,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                       </div>
                     </div>
                   );
-                }
+                },
               )}
             </div>
             {/* Reset buttons moved under Scoring Categories */}
@@ -1535,35 +1619,27 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                   const goalieEntries = all.filter(([k]) => goalieSet.has(k));
                   const totalCount =
                     skaterEntries.length + goalieEntries.length;
-                  if (totalCount === 0) {
-                    return (
-                      <div className={styles.emptyCategoriesMsg}>
-                        No categories selected. Add categories to enable
-                        category scoring.
-                      </div>
-                    );
-                  }
                   let visibleSkater: [string, number][] = skaterEntries;
                   let visibleGoalie: [string, number][] = goalieEntries;
                   if (!showManageCategories) {
                     const GOALIE_PRIORITY = [
                       "WINS_GOALIE",
                       "SAVES_GOALIE",
-                      "SAVE_PERCENTAGE"
+                      "SAVE_PERCENTAGE",
                     ];
                     const goalieMap = new Map(goalieEntries);
                     const prioritizedGoalie = GOALIE_PRIORITY.filter((k) =>
-                      goalieMap.has(k)
+                      goalieMap.has(k),
                     ).map((k) => [k, goalieMap.get(k)!] as [string, number]);
                     const remainingSkaters = [...skaterEntries];
                     const remainingGoalies = goalieEntries.filter(
-                      ([k]) => !GOALIE_PRIORITY.includes(k)
+                      ([k]) => !GOALIE_PRIORITY.includes(k),
                     );
                     // Build list ensuring prioritized goalie stats show first, then skaters, then remaining goalie
                     const ordered = [
                       ...prioritizedGoalie,
                       ...remainingSkaters,
-                      ...remainingGoalies
+                      ...remainingGoalies,
                     ];
                     // Base collapsed limit
                     const baseLimit = 8;
@@ -1579,10 +1655,10 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                     }
                     const limitedKeys = new Set(limited.map(([k]) => k));
                     visibleSkater = skaterEntries.filter(([k]) =>
-                      limitedKeys.has(k)
+                      limitedKeys.has(k),
                     );
                     visibleGoalie = goalieEntries.filter(([k]) =>
-                      limitedKeys.has(k)
+                      limitedKeys.has(k),
                     );
                   }
                   const renderEntry = (k: string, w: number) => (
@@ -1606,8 +1682,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           onSettingsChange({
                             categoryWeights: {
                               ...(settings.categoryWeights || {}),
-                              [k]: parseFloat(e.target.value)
-                            }
+                              [k]: parseFloat(e.target.value),
+                            },
                           })
                         }
                         className={styles.rangeInput}
@@ -1630,6 +1706,12 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                   );
                   return (
                     <>
+                      {totalCount === 0 && (
+                        <div className={styles.emptyCategoriesMsg}>
+                          No categories selected. Add categories to enable
+                          category scoring.
+                        </div>
+                      )}
                       <div
                         className={styles.subsectionTitle}
                         style={{ marginTop: 4 }}
@@ -1648,7 +1730,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                               className={styles.scoringRow}
                             >
                               {chunk.map(([k, w]) =>
-                                renderEntry(k, w as number)
+                                renderEntry(k, w as number),
                               )}
                             </div>
                           ));
@@ -1678,7 +1760,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                                   className={styles.scoringRow}
                                 >
                                   {chunk.map(([k, w]) =>
-                                    renderEntry(k, w as number)
+                                    renderEntry(k, w as number),
                                   )}
                                 </div>
                               ));
@@ -1786,8 +1868,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                                 onSettingsChange({
                                   scoringCategories: {
                                     ...settings.scoringCategories,
-                                    [stat]: Number(e.target.value)
-                                  }
+                                    [stat]: Number(e.target.value),
+                                  },
                                 })
                               }
                               className={styles.pointsInput}
@@ -1896,7 +1978,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                                 onChange={(e) =>
                                   onGoalieScoringChange({
                                     ...goalieScoringCategories,
-                                    [stat]: Number(e.target.value)
+                                    [stat]: Number(e.target.value),
                                   })
                                 }
                                 className={styles.pointsInput}
@@ -2049,7 +2131,16 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
               <>
                 {/* Traded Picks subsection */}
                 <div className={styles.subsection}>
-                  <div className={styles.subsectionTitle}>Traded Picks</div>
+                  <div className={styles.sectionHeaderRow}>
+                    <div className={styles.subsectionTitle}>Traded Picks</div>
+                    <button
+                      type="button"
+                      className={styles.inlineResetBtn}
+                      onClick={() => setTradeManagerOpen(true)}
+                    >
+                      Manage Trades
+                    </button>
+                  </div>
                   {/* Controls */}
                   <div className={styles.settingRow}>
                     <div className={styles.inlineFormRow}>
@@ -2079,13 +2170,13 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           aria-label="Decrease trade round"
                           onClick={() => {
                             const el = document.getElementById(
-                              "trade-round"
+                              "trade-round",
                             ) as HTMLInputElement | null;
                             if (!el) return;
                             const max = Number(el.max) || 1;
                             const cur = Math.max(
                               1,
-                              Math.min(max, parseInt(el.value || "1", 10))
+                              Math.min(max, parseInt(el.value || "1", 10)),
                             );
                             el.value = String(Math.max(1, cur - 1));
                           }}
@@ -2106,13 +2197,13 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           aria-label="Increase trade round"
                           onClick={() => {
                             const el = document.getElementById(
-                              "trade-round"
+                              "trade-round",
                             ) as HTMLInputElement | null;
                             if (!el) return;
                             const max = Number(el.max) || totalRosterSpots || 1;
                             const cur = Math.max(
                               1,
-                              Math.min(max, parseInt(el.value || "1", 10))
+                              Math.min(max, parseInt(el.value || "1", 10)),
                             );
                             el.value = String(Math.min(max, cur + 1));
                           }}
@@ -2130,14 +2221,14 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           aria-label="Decrease trade pick"
                           onClick={() => {
                             const el = document.getElementById(
-                              "trade-pick"
+                              "trade-pick",
                             ) as HTMLInputElement | null;
                             if (!el) return;
                             const max =
                               Number(el.max) || settings.teamCount || 1;
                             const cur = Math.max(
                               1,
-                              Math.min(max, parseInt(el.value || "1", 10))
+                              Math.min(max, parseInt(el.value || "1", 10)),
                             );
                             el.value = String(Math.max(1, cur - 1));
                           }}
@@ -2158,14 +2249,14 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           aria-label="Increase trade pick"
                           onClick={() => {
                             const el = document.getElementById(
-                              "trade-pick"
+                              "trade-pick",
                             ) as HTMLInputElement | null;
                             if (!el) return;
                             const max =
                               Number(el.max) || settings.teamCount || 1;
                             const cur = Math.max(
                               1,
-                              Math.min(max, parseInt(el.value || "1", 10))
+                              Math.min(max, parseInt(el.value || "1", 10)),
                             );
                             el.value = String(Math.min(max, cur + 1));
                           }}
@@ -2181,22 +2272,22 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           const r = parseInt(
                             (
                               document.getElementById(
-                                "trade-round"
+                                "trade-round",
                               ) as HTMLInputElement
                             )?.value || "",
-                            10
+                            10,
                           );
                           const p = parseInt(
                             (
                               document.getElementById(
-                                "trade-pick"
+                                "trade-pick",
                               ) as HTMLInputElement
                             )?.value || "",
-                            10
+                            10,
                           );
                           const owner = (
                             document.getElementById(
-                              "trade-owner"
+                              "trade-owner",
                             ) as HTMLSelectElement
                           )?.value;
                           if (
@@ -2205,7 +2296,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                             Number.isFinite(p) &&
                             owner
                           ) {
-                            onAddTradedPick(r, p, owner);
+                            setTradeFeedback(onAddTradedPick(r, p, owner));
                           }
                         }}
                       >
@@ -2213,6 +2304,18 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                       </button>
                     </div>
                   </div>
+                  {tradeFeedback && (
+                    <div
+                      className={
+                        tradeFeedback.ok
+                          ? styles.keeperFeedbackSuccess
+                          : styles.keeperFeedbackError
+                      }
+                      role={tradeFeedback.ok ? "status" : "alert"}
+                    >
+                      {tradeFeedback.message}
+                    </div>
+                  )}
                   {/* Traded picks list */}
                   <div className={styles.settingRow}>
                     <div className={styles.mutedSmallLabel}>Traded Picks:</div>
@@ -2241,7 +2344,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                               </button>
                             )}
                           </div>
-                        )
+                        ),
                       )}
                     </div>
                   </div>
@@ -2267,8 +2370,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           id: p.id,
                           fullName: p.fullName,
                           sweaterNumber: p.sweaterNumber ?? undefined,
-                          teamId: p.teamId
-                        })
+                          teamId: p.teamId,
+                        }),
                       )}
                     />
                     <span
@@ -2315,13 +2418,13 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           aria-label="Decrease keeper round"
                           onClick={() => {
                             const el = document.getElementById(
-                              "keeper-round"
+                              "keeper-round",
                             ) as HTMLInputElement | null;
                             if (!el) return;
                             const max = Number(el.max) || 1;
                             const cur = Math.max(
                               1,
-                              Math.min(max, parseInt(el.value || "1", 10))
+                              Math.min(max, parseInt(el.value || "1", 10)),
                             );
                             el.value = String(Math.max(1, cur - 1));
                           }}
@@ -2342,13 +2445,13 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           aria-label="Increase keeper round"
                           onClick={() => {
                             const el = document.getElementById(
-                              "keeper-round"
+                              "keeper-round",
                             ) as HTMLInputElement | null;
                             if (!el) return;
                             const max = Number(el.max) || totalRosterSpots || 1;
                             const cur = Math.max(
                               1,
-                              Math.min(max, parseInt(el.value || "1", 10))
+                              Math.min(max, parseInt(el.value || "1", 10)),
                             );
                             el.value = String(Math.min(max, cur + 1));
                           }}
@@ -2366,14 +2469,14 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           aria-label="Decrease keeper pick"
                           onClick={() => {
                             const el = document.getElementById(
-                              "keeper-pick"
+                              "keeper-pick",
                             ) as HTMLInputElement | null;
                             if (!el) return;
                             const max =
                               Number(el.max) || settings.teamCount || 1;
                             const cur = Math.max(
                               1,
-                              Math.min(max, parseInt(el.value || "1", 10))
+                              Math.min(max, parseInt(el.value || "1", 10)),
                             );
                             el.value = String(Math.max(1, cur - 1));
                           }}
@@ -2394,14 +2497,14 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           aria-label="Increase keeper pick"
                           onClick={() => {
                             const el = document.getElementById(
-                              "keeper-pick"
+                              "keeper-pick",
                             ) as HTMLInputElement | null;
                             if (!el) return;
                             const max =
                               Number(el.max) || settings.teamCount || 1;
                             const cur = Math.max(
                               1,
-                              Math.min(max, parseInt(el.value || "1", 10))
+                              Math.min(max, parseInt(el.value || "1", 10)),
                             );
                             el.value = String(Math.min(max, cur + 1));
                           }}
@@ -2418,22 +2521,22 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           const r = parseInt(
                             (
                               document.getElementById(
-                                "keeper-round"
+                                "keeper-round",
                               ) as HTMLInputElement
                             )?.value || "",
-                            10
+                            10,
                           );
                           const p = parseInt(
                             (
                               document.getElementById(
-                                "keeper-pick"
+                                "keeper-pick",
                               ) as HTMLInputElement
                             )?.value || "",
-                            10
+                            10,
                           );
                           const teamId = (
                             document.getElementById(
-                              "keeper-team"
+                              "keeper-team",
                             ) as HTMLSelectElement
                           )?.value;
                           const playerId = keeperSelectedPlayerId;
@@ -2444,14 +2547,21 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                             teamId &&
                             playerId
                           ) {
-                            onAddKeeper(r, p, teamId, String(playerId));
+                            const result = onAddKeeper(
+                              r,
+                              p,
+                              teamId,
+                              String(playerId),
+                            );
+                            setKeeperFeedback(result);
+                            if (result.ok) setKeeperSelectedPlayerId(undefined);
                           } else {
                             // Pulse invalid inputs to indicate required fields
                             const roundEl = document.getElementById(
-                              "keeper-round"
+                              "keeper-round",
                             ) as HTMLInputElement | null;
                             const pickEl = document.getElementById(
-                              "keeper-pick"
+                              "keeper-pick",
                             ) as HTMLInputElement | null;
                             const pulse = (el: HTMLInputElement | null) => {
                               if (!el) return;
@@ -2463,23 +2573,23 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                               window.setTimeout(
                                 () =>
                                   el.classList.remove(styles.inputErrorPulse),
-                                1000
+                                1000,
                               );
                             };
                             if (!Number.isFinite(r)) pulse(roundEl);
                             if (!Number.isFinite(p)) pulse(pickEl);
                             const pulseGroup = (
-                              groupEl: HTMLDivElement | null
+                              groupEl: HTMLDivElement | null,
                             ) => {
                               if (!groupEl) return;
                               groupEl.classList.remove(
-                                styles.rosterStepperError
+                                styles.rosterStepperError,
                               );
                               (groupEl as any).offsetWidth;
                               groupEl.classList.add(styles.rosterStepperError);
                               window.setTimeout(() => {
                                 groupEl.classList.remove(
-                                  styles.rosterStepperError
+                                  styles.rosterStepperError,
                                 );
                               }, 1000);
                             };
@@ -2492,6 +2602,54 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                       >
                         +
                       </button>
+                    </div>
+                  </div>
+                  <div className={styles.settingRow}>
+                    <div className={styles.keeperBulkBlock}>
+                      <label
+                        htmlFor="keeper-bulk"
+                        className={styles.mutedSmallLabel}
+                      >
+                        Bulk keepers (JSON or CSV: playerId, teamId, round,
+                        pickInRound)
+                      </label>
+                      <textarea
+                        id="keeper-bulk"
+                        className={styles.keeperBulkInput}
+                        value={keeperBulkInput}
+                        onChange={(event) =>
+                          setKeeperBulkInput(event.target.value)
+                        }
+                        rows={4}
+                        placeholder={
+                          "playerId,teamId,round,pickInRound\n8478402,Team 1,3,1"
+                        }
+                      />
+                      <button
+                        type="button"
+                        className={styles.addActionBtn}
+                        disabled={!keeperBulkInput.trim() || !onImportKeepers}
+                        onClick={() => {
+                          if (!onImportKeepers) return;
+                          const result = onImportKeepers(keeperBulkInput);
+                          setKeeperFeedback(result);
+                          if (result.ok) setKeeperBulkInput("");
+                        }}
+                      >
+                        Import Keepers
+                      </button>
+                      {keeperFeedback && (
+                        <div
+                          className={
+                            keeperFeedback.ok
+                              ? styles.keeperFeedbackSuccess
+                              : styles.keeperFeedbackError
+                          }
+                          role={keeperFeedback.ok ? "status" : "alert"}
+                        >
+                          {keeperFeedback.message}
+                        </div>
+                      )}
                     </div>
                   </div>
                   {/* Keepers list */}
@@ -2586,19 +2744,19 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                     .filter(
                       ([id]) =>
                         PROJECTION_SOURCES_CONFIG.some(
-                          (s) => s.id === id && s.playerType === "skater"
-                        ) || id.startsWith("custom_csv")
+                          (s) => s.id === id && s.playerType === "skater",
+                        ) || id.startsWith("custom_csv"),
                     )
                     .map(([id, ctrl]) => {
                       const src = PROJECTION_SOURCES_CONFIG.find(
-                        (s) => s.id === id
+                        (s) => s.id === id,
                       );
                       const isCustom = id.startsWith("custom_csv");
                       const displayName = (() => {
                         if (!isCustom) return src?.displayName || id;
                         try {
                           const raw = sessionStorage.getItem(
-                            "draft.customCsvList.v2"
+                            CUSTOM_CSV_SESSION_KEY,
                           );
                           if (raw) {
                             const list = JSON.parse(raw) as Array<{
@@ -2614,17 +2772,17 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                       const weightScalar = getPendingScalar(
                         pendingSourceWeights,
                         id,
-                        ctrl.weight
+                        ctrl.weight,
                       );
                       const share = sharePercent(
-                        weightScalar,
-                        totalActiveSourceWeight,
-                        ctrl.isSelected
+                        id,
+                        sourceControls,
+                        pendingSourceWeights,
                       );
                       const sliderValue = shareValue(
                         weightScalar,
                         totalActiveSourceWeight,
-                        ctrl.isSelected
+                        ctrl.isSelected,
                       );
                       return (
                         <div
@@ -2646,8 +2804,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                                     ...sourceControls,
                                     [id]: {
                                       isSelected: e.target.checked,
-                                      weight: ctrl.weight
-                                    }
+                                      weight: ctrl.weight,
+                                    },
                                   })
                                 }
                                 aria-label={`Toggle source ${displayName}`}
@@ -2668,7 +2826,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                               onChange={(e) =>
                                 applyDebouncedSourceWeight(
                                   id,
-                                  parseInt(e.target.value, 10) / 100
+                                  parseInt(e.target.value, 10) / 100,
                                 )
                               }
                               disabled={!ctrl.isSelected}
@@ -2688,7 +2846,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                                 handleDirectWeightInput(
                                   id,
                                   parseFloat(e.target.value || "0"),
-                                  false
+                                  false,
                                 )
                               }
                               disabled={!ctrl.isSelected}
@@ -2723,19 +2881,19 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                       .filter(
                         ([id]) =>
                           PROJECTION_SOURCES_CONFIG.some(
-                            (s) => s.id === id && s.playerType === "goalie"
-                          ) || id.startsWith("custom_csv")
+                            (s) => s.id === id && s.playerType === "goalie",
+                          ) || id.startsWith("custom_csv"),
                       )
                       .map(([id, ctrl]) => {
                         const src = PROJECTION_SOURCES_CONFIG.find(
-                          (s) => s.id === id
+                          (s) => s.id === id,
                         );
                         const isCustom = id.startsWith("custom_csv");
                         const displayName = (() => {
                           if (!isCustom) return src?.displayName || id;
                           try {
                             const raw = sessionStorage.getItem(
-                              "draft.customCsvList.v2"
+                              CUSTOM_CSV_SESSION_KEY,
                             );
                             if (raw) {
                               const list = JSON.parse(raw) as Array<{
@@ -2751,17 +2909,17 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                         const weightScalar = getPendingScalar(
                           pendingGoalieSourceWeights,
                           id,
-                          ctrl.weight
+                          ctrl.weight,
                         );
                         const share = sharePercent(
-                          weightScalar,
-                          totalActiveGoalieSourceWeight,
-                          ctrl.isSelected
+                          id,
+                          goalieSourceControls,
+                          pendingGoalieSourceWeights,
                         );
                         const sliderValue = shareValue(
                           weightScalar,
                           totalActiveGoalieSourceWeight,
-                          ctrl.isSelected
+                          ctrl.isSelected,
                         );
                         return (
                           <div
@@ -2783,8 +2941,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                                       ...goalieSourceControls,
                                       [id]: {
                                         isSelected: e.target.checked,
-                                        weight: ctrl.weight
-                                      }
+                                        weight: ctrl.weight,
+                                      },
                                     })
                                   }
                                   aria-label={`Toggle source ${displayName}`}
@@ -2805,7 +2963,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                                 onChange={(e) =>
                                   applyDebouncedGoalieSourceWeight(
                                     id,
-                                    parseInt(e.target.value, 10) / 100
+                                    parseInt(e.target.value, 10) / 100,
                                   )
                                 }
                                 disabled={!ctrl.isSelected}
@@ -2827,7 +2985,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                                   handleDirectWeightInput(
                                     id,
                                     parseFloat(e.target.value || "0"),
-                                    true
+                                    true,
                                   )
                                 }
                                 disabled={!ctrl.isSelected}
@@ -2854,6 +3012,31 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
           </div>
         </div>
       )}
+      <ManageTradesModal
+        open={tradeManagerOpen}
+        onClose={() => setTradeManagerOpen(false)}
+        draftOrder={settings.draftOrder}
+        customTeamNames={customTeamNames}
+        roundCount={totalRosterSpots}
+        trades={pickTrades}
+        keepers={keepers}
+        onSave={(round, pickInRound, owner) =>
+          onAddTradedPick?.(round, pickInRound, owner) || {
+            ok: false,
+            message: "Trade handler is unavailable.",
+          }
+        }
+        onImport={(input) =>
+          onImportTradedPicks?.(input) || {
+            ok: false,
+            message: "Trade import is unavailable.",
+          }
+        }
+        onRemove={(round, pickInRound) =>
+          onRemoveTradedPick?.(round, pickInRound)
+        }
+        onReset={() => onResetTradedPicks?.()}
+      />
     </div>
   );
 };

@@ -5,6 +5,7 @@ import {
   buildGamePredictionFeatureSnapshotPayload,
   buildGoalieBlendFeatures,
   buildScheduleContextFeatures,
+  rosterFormBlendWeights,
   type GamePredictionFeatureInputs,
   type NstTeamGamelogRow,
 } from "./featureBuilder";
@@ -158,8 +159,38 @@ function createInputs(
         sa60: 27,
       },
       {
+        team_abbreviation: "TOR",
+        date: "2026-01-08",
+        off_rating: 60,
+        def_rating: 58,
+        goalie_rating: 57,
+        special_rating: 55,
+        pace_rating: 52,
+        xgf60: 3.4,
+        xga60: 2.4,
+        gf60: 3.5,
+        ga60: 2.5,
+        sf60: 34,
+        sa60: 27,
+      },
+      {
         team_abbreviation: "OTT",
         date: "2026-01-09",
+        off_rating: 44,
+        def_rating: 43,
+        goalie_rating: 42,
+        special_rating: 41,
+        pace_rating: 48,
+        xgf60: 2.3,
+        xga60: 3.3,
+        gf60: 2.4,
+        ga60: 3.4,
+        sf60: 27,
+        sa60: 35,
+      },
+      {
+        team_abbreviation: "OTT",
+        date: "2026-01-05",
         off_rating: 44,
         def_rating: 43,
         goalie_rating: 42,
@@ -176,6 +207,7 @@ function createInputs(
     standingsRows: [
       {
         team_abbrev: "BOS",
+        season_id: 20252026,
         date: "2026-01-09",
         games_played: 40,
         point_pctg: 0.61,
@@ -186,6 +218,7 @@ function createInputs(
       },
       {
         team_abbrev: "MTL",
+        season_id: 20252026,
         date: "2026-01-09",
         games_played: 40,
         point_pctg: 0.48,
@@ -419,6 +452,38 @@ describe("game prediction feature sources", () => {
 });
 
 describe("game prediction feature builder", () => {
+  it("uses a granular games-played curve that retains roster context", () => {
+    expect(rosterFormBlendWeights(0)).toMatchObject({
+      rosterPriorWeight: 0.8,
+      currentFormWeight: 0.2,
+    });
+    expect(rosterFormBlendWeights(10)).toMatchObject({
+      rosterPriorWeight: 0.7,
+      currentFormWeight: 0.3,
+    });
+    expect(rosterFormBlendWeights(25)).toMatchObject({
+      rosterPriorWeight: 0.5,
+      currentFormWeight: 0.5,
+    });
+    expect(rosterFormBlendWeights(50)).toMatchObject({
+      rosterPriorWeight: 0.15,
+      currentFormWeight: 0.85,
+    });
+    expect(rosterFormBlendWeights(82)).toMatchObject({
+      rosterPriorWeight: 0.1,
+      currentFormWeight: 0.9,
+    });
+    expect(rosterFormBlendWeights(100)).toMatchObject({
+      gamesPlayedAsOf: 82,
+      rosterPriorWeight: 0.1,
+      currentFormWeight: 0.9,
+    });
+    expect(rosterFormBlendWeights(37.5)).toMatchObject({
+      rosterPriorWeight: 0.325,
+      currentFormWeight: 0.675,
+    });
+  });
+
   it("computes rest context from prior games", () => {
     const context = buildScheduleContextFeatures({
       game: createInputs().game,
@@ -438,6 +503,56 @@ describe("game prediction feature builder", () => {
 
     expect(payload.away.teamPower?.sourceDate).toBe("2026-01-08");
     expect(payload.away.teamPower?.offRating).toBe(47);
+  });
+
+  it("does not use prior-season standings to classify an early-season game", () => {
+    const payload = buildGamePredictionFeatureSnapshotPayload(
+      createInputs({
+        game: {
+          id: 2025020001,
+          date: "2025-10-07",
+          startTime: "2025-10-07T23:00:00+00:00",
+          seasonId: 20252026,
+          homeTeamId: 1,
+          awayTeamId: 2,
+          type: 2,
+        },
+        sourceAsOfDate: "2025-10-07",
+        priorGames: [],
+        standingsRows: [
+          {
+            team_abbrev: "BOS",
+            season_id: 20242025,
+            date: "2025-04-17",
+            games_played: 82,
+            point_pctg: 0.61,
+            win_pctg: 0.55,
+            goal_differential: 18,
+            l10_games_played: 10,
+            l10_goal_differential: 4,
+          },
+          {
+            team_abbrev: "MTL",
+            season_id: 20242025,
+            date: "2025-04-17",
+            games_played: 82,
+            point_pctg: 0.48,
+            win_pctg: 0.43,
+            goal_differential: -8,
+            l10_games_played: 10,
+            l10_goal_differential: -3,
+          },
+        ],
+      }),
+    );
+
+    expect(payload.home.standings).toBeNull();
+    expect(payload.away.standings).toBeNull();
+    expect(payload.seasonPhase).toMatchObject({
+      phase: "early",
+      homeGamesPlayed: 0,
+      awayGamesPlayed: 0,
+    });
   });
 
   it("builds recent team form from NST gamelog rows", () => {
@@ -501,6 +616,11 @@ describe("game prediction feature builder", () => {
       phase: "middle",
       homeGamesPlayed: 40,
       awayGamesPlayed: 40,
+    });
+    expect(payload.home.rosterFormBlendWeights).toMatchObject({
+      gamesPlayedAsOf: 40,
+      rosterPriorWeight: 0.29,
+      currentFormWeight: 0.71,
     });
     expect(payload.home.recentForm).toMatchObject({
       currentSeasonGames: 2,
@@ -739,18 +859,45 @@ describe("game prediction feature builder", () => {
       ctpi0To100: 48,
     });
     expect(payload.home.scheduleStrength).toMatchObject({
-      sourceMaxDate: "2026-01-09",
+      sourceMaxDate: "2026-01-08",
       pastOpponentGames: 1,
       pastOpponentAvgOffRating: 60,
       pastOpponentCompositeRating: 57.5,
+      last5OpponentCompositeRating: 57.5,
+      last10OpponentCompositeRating: 57.5,
     });
     expect(payload.away.scheduleStrength).toMatchObject({
+      sourceMaxDate: "2026-01-05",
       pastOpponentGames: 1,
       pastOpponentAvgOffRating: 44,
       pastOpponentCompositeRating: 42.5,
+      last5OpponentCompositeRating: 42.5,
+      last10OpponentCompositeRating: 42.5,
+    });
+    expect(payload.home.opponentAdjustedForm).toMatchObject({
+      rawLast10GoalDifferentialPerGame: 1.5,
+      adjustedLast10GoalDifferentialPerGame: 1.65,
+    });
+    expect(payload.home.opponentAdjustedForm?.rawLast10XgfPct).toBeCloseTo(0.56);
+    expect(
+      payload.home.opponentAdjustedForm?.adjustedLast10XgfPct,
+    ).toBeCloseTo(0.5675);
+    expect(payload.away.opponentAdjustedForm).toMatchObject({
+      rawLast10GoalDifferentialPerGame: -2,
+      adjustedLast10GoalDifferentialPerGame: -2.15,
+      rawLast10XgfPct: 0.4,
+      adjustedLast10XgfPct: 0.3925,
     });
     expect(payload.matchup.homeMinusAwayCtpi).toBe(16);
     expect(payload.matchup.homeMinusAwayPastOpponentCompositeRating).toBe(15);
+    expect(payload.matchup.homeMinusAwayLast5OpponentCompositeRating).toBe(15);
+    expect(payload.matchup.homeMinusAwayLast10OpponentCompositeRating).toBe(15);
+    expect(
+      payload.matchup.homeMinusAwayAdjustedRecent10GoalDifferentialPerGame,
+    ).toBeCloseTo(3.8);
+    expect(payload.matchup.homeMinusAwayAdjustedRecent10XgfPct).toBeCloseTo(
+      0.175,
+    );
     expect(payload.matchup.homeMinusAwayForgeProjectedGoals).toBeCloseTo(0.8);
     expect(payload.matchup.homeMinusAwayForgeProjectedShots).toBe(3);
     expect(payload.sourceCutoffs).toEqual(
@@ -761,7 +908,7 @@ describe("game prediction feature builder", () => {
         }),
         expect.objectContaining({
           table: "team_power_ratings_daily",
-          cutoff: "2026-01-09",
+          cutoff: "2026-01-08",
           asOfRule: "strict_before_source_as_of_date_for_schedule_strength",
         }),
         expect.objectContaining({
@@ -1067,6 +1214,60 @@ describe("game prediction feature builder", () => {
         }),
       ]),
     );
+  });
+
+  it("embeds TOI-weighted roster impacts and matchup deltas with truthful source state", () => {
+    const payload = buildGamePredictionFeatureSnapshotPayload(
+      createInputs({
+        currentRosterRows: [
+          { playerId: 10, teamId: 1 },
+          { playerId: 20, teamId: 2 },
+        ],
+        skaterOffenseRatingRows: [
+          { player_id: 10, team_id: 1, snapshot_date: "2026-01-09", rating_raw: 1.2, sample_toi_seconds: 100, components: { shrinkage: 0.5 } },
+          { player_id: 20, team_id: 2, snapshot_date: "2026-01-09", rating_raw: 0.2, sample_toi_seconds: 100, components: { shrinkage: 0.5 } },
+        ],
+        skaterDefenseRatingRows: [
+          { player_id: 10, team_id: 1, snapshot_date: "2026-01-09", rating_raw: 0.5, sample_toi_seconds: 100 },
+          { player_id: 20, team_id: 2, snapshot_date: "2026-01-09", rating_raw: -0.5, sample_toi_seconds: 100 },
+        ],
+        goalieRatingRows: [
+          { player_id: 10, team_id: 1, snapshot_date: "2026-01-09", rating_raw: 0.3, sample_toi_seconds: 100 },
+          { player_id: 20, team_id: 2, snapshot_date: "2026-01-09", rating_raw: -0.2, sample_toi_seconds: 100 },
+        ],
+      }),
+    );
+
+    expect(payload.home.rosterImpact).toMatchObject({
+      source: "projected_lineup",
+      skaterOffenseImpact: 1.2,
+      skaterDefenseImpact: 0.5,
+      fallbackDerived: false,
+    });
+    expect(payload.away.rosterImpact).toMatchObject({
+      source: "current_roster",
+      skaterOffenseImpact: 0.2,
+      skaterDefenseImpact: -0.5,
+      fallbackDerived: true,
+    });
+    expect(payload.matchup).toMatchObject({
+      homeMinusAwayRosterOffImpact: 1,
+      homeMinusAwayRosterDefImpact: 1,
+      homeMinusAwayRosterGoalieImpact: 0.5,
+      homeMinusAwayRosterOffImpactPer60Only: 2,
+      homeRosterPriorWeight: 0.29,
+      awayRosterPriorWeight: 0.29,
+      homeCurrentFormWeight: 0.71,
+      awayCurrentFormWeight: 0.71,
+      homeMinusAwayWeightedRosterOffImpact: 0.29,
+      homeMinusAwayWeightedRosterDefImpact: 0.29,
+      homeMinusAwayWeightedRosterGoalieImpact: 0.145,
+      homeMinusAwayWeightedRecent10GoalDifferentialPerGame: 2.485,
+    });
+    expect(payload.matchup.homeMinusAwayWeightedRecent10XgfPct).toBeCloseTo(
+      0.1136,
+    );
+    expect(payload.fallbackFlags.away_roster_impact_fallback).toBe(true);
   });
 
   it("emits warnings for stale, sparse, and fallback feature sources", () => {

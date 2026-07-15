@@ -6,6 +6,8 @@ import {
   buildSegmentMetrics,
   calculateAuc,
   deriveOutcomeFromScore,
+  deriveOutcomeFromPbpGame,
+  fetchCompletedGameOutcomes,
   type GamePredictionHistoryRow,
 } from "./evaluation";
 
@@ -32,6 +34,97 @@ function createPrediction(
 }
 
 describe("game prediction evaluation", () => {
+  it("derives playoff fallback outcomes from pbp_games identity and scores", () => {
+    expect(
+      deriveOutcomeFromPbpGame({
+        id: 2025030417,
+        hometeamid: 22,
+        awayteamid: 13,
+        hometeamscore: 2,
+        awayteamscore: 1,
+        created_at: "2026-06-18T03:00:00.000Z",
+      }),
+    ).toMatchObject({
+      gameId: 2025030417,
+      homeTeamId: 22,
+      awayTeamId: 13,
+      homeScore: 2,
+      awayScore: 1,
+      homeWon: true,
+    });
+    expect(
+      deriveOutcomeFromPbpGame({
+        id: 2025030418,
+        hometeamid: null,
+        awayteamid: 13,
+        hometeamscore: 3,
+        awayteamscore: 2,
+      }),
+    ).toBeNull();
+  });
+
+  it("fetches regular and playoff outcomes in bounded chunks with primary-source precedence", async () => {
+    const gameIds = Array.from({ length: 401 }, (_, index) => 2025030001 + index);
+    const calls: Array<{ table: string; ids: number[] }> = [];
+    const primaryGameId = gameIds[0];
+    const client = {
+      from(table: string) {
+        return {
+          select() {
+            return {
+              async in(_column: string, ids: number[]) {
+                calls.push({ table, ids: [...ids] });
+                if (table === "pp_timeframes") {
+                  return {
+                    data: ids.includes(primaryGameId)
+                      ? [{
+                          game_id: primaryGameId,
+                          home_team_id: 1,
+                          away_team_id: 2,
+                          home_team_score: 4,
+                          away_team_score: 1,
+                          updated_at: "2026-05-01T03:00:00.000Z",
+                        }]
+                      : [],
+                    error: null,
+                  };
+                }
+                return {
+                  data: ids.map((id) => ({
+                    id,
+                    hometeamid: 10,
+                    awayteamid: 20,
+                    hometeamscore: 2,
+                    awayteamscore: 3,
+                    created_at: "2026-06-18T03:00:00.000Z",
+                  })),
+                  error: null,
+                };
+              },
+            };
+          },
+        };
+      },
+    };
+
+    const outcomes = await fetchCompletedGameOutcomes(client as never, [
+      ...gameIds,
+      primaryGameId,
+    ]);
+
+    expect(calls.filter((call) => call.table === "pp_timeframes")).toHaveLength(3);
+    expect(calls.filter((call) => call.table === "pbp_games")).toHaveLength(2);
+    expect(calls.every((call) => call.ids.length <= 200)).toBe(true);
+    expect(
+      calls
+        .filter((call) => call.table === "pbp_games")
+        .some((call) => call.ids.includes(primaryGameId)),
+    ).toBe(false);
+    expect(outcomes).toHaveLength(401);
+    expect(outcomes[0]).toMatchObject({ gameId: primaryGameId, homeScore: 4, homeWon: true });
+    expect(outcomes[1]).toMatchObject({ gameId: gameIds[1], homeScore: 2, homeWon: false });
+  });
+
   it("derives completed outcomes from score rows", () => {
     expect(
       deriveOutcomeFromScore({

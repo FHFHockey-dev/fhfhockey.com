@@ -605,6 +605,15 @@
   box-shadow: 0 0 0 1px rgba(v.$focus-color, 0.25);
 }
 
+.controlHint {
+  display: block;
+  max-width: 180px;
+  margin-top: 4px;
+  color: v.$warning-color;
+  font-size: v.$font-size-xs;
+  line-height: 1.25;
+}
+
 /* Updated compare checkbox styling for right-most column */
 .compareCheckbox {
   appearance: none;
@@ -1137,6 +1146,24 @@
   color: v.$danger-color;
   text-align: center;
   margin: v.$space-md;
+}
+
+.dataNotice {
+  margin: v.$space-sm v.$space-md 0;
+  padding: v.$space-sm v.$space-md;
+  border: 1px solid rgba(v.$warning-color, 0.4);
+  border-radius: v.$border-radius-sm;
+  background: rgba(v.$warning-color, 0.09);
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+
+  p {
+    margin: 0;
+  }
+
+  p + p {
+    margin-top: v.$space-xxs;
+  }
 }
 
 .emptyState {

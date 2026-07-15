@@ -4,6 +4,7 @@ import {
   dedupeTweetCards,
   mapLineSourceSnapshotRowToCard,
   mapLinesCccRowToCard,
+  sanitizeTwitterEmbedCardForPublic,
   selectFirstArrivalTweetCards,
   type LocalTweetCard,
 } from "../../../pages/twitterEmbeds";
@@ -112,7 +113,7 @@ describe("twitterEmbeds source attribution", () => {
       tweetId: "200",
       authorName: "Beat Writer",
       authorHandle: "BeatWriter",
-      sourceAccount: "CcCMiddleton",
+      sourceAccount: "@BeatWriter",
       tweetUrl: "https://twitter.com/BeatWriter/status/200",
       sourceUrl: "https://twitter.com/BeatWriter/status/200",
       wrapperText: "Original lines enriched",
@@ -130,7 +131,7 @@ describe("twitterEmbeds source attribution", () => {
       tweetId: "400",
       authorName: "Beat Writer",
       authorHandle: "BeatWriter",
-      sourceAccount: "GameDayLines",
+      sourceAccount: "@BeatWriter",
       tweetUrl: "https://twitter.com/BeatWriter/status/400",
       sourceUrl: "https://twitter.com/BeatWriter/status/400",
       wrapperText: "Original lineup enriched",
@@ -155,6 +156,21 @@ describe("twitterEmbeds source attribution", () => {
 
     expect(card.authorName).toBe("Unknown author");
     expect(card.authorHandle).toBe("unknown");
+  });
+
+  it("removes relay identities from serialized public card data", () => {
+    const card = sanitizeTwitterEmbedCardForPublic(
+      mapLineSourceSnapshotRowToCard(buildLineSourceSnapshotRow()),
+    );
+    const serialized = JSON.stringify(card).toLowerCase();
+
+    expect(card).toMatchObject({
+      sourceKey: "original",
+      sourceAccount: "@BeatWriter",
+      tweetUrl: "https://twitter.com/BeatWriter/status/400",
+      alternativeSources: [],
+    });
+    expect(serialized).not.toContain("gamedaylines");
   });
 });
 

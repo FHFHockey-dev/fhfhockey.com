@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
-import { useUser } from "contexts/AuthProviderContext";
-import supabase from "lib/supabase/client";
+import { useAuth } from "contexts/AuthProviderContext";
 
 import styles from "./UserMenu.module.scss";
 
@@ -19,7 +18,7 @@ function getUserInitials(label?: string | null) {
 }
 
 export default function UserMenu() {
-  const user = useUser();
+  const { user, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -55,7 +54,7 @@ export default function UserMenu() {
 
   async function handleSignOut() {
     setOpen(false);
-    await supabase.auth.signOut();
+    await signOut();
   }
 
   return (

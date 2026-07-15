@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import supabase from "lib/supabase/client";
 import { resetSupabaseBrowserAuthState } from "lib/supabase/browser-auth";
+import { sanitizeAuthReturnPath } from "lib/supabase/auth-callback-location";
 
 import type { AuthModalMode } from "./AuthModal";
 import styles from "./AuthForm.module.scss";
@@ -44,8 +45,7 @@ function getCurrentReturnPath() {
     return "/";
   }
 
-  const nextPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-  return nextPath.startsWith("/") ? nextPath : "/";
+  return sanitizeAuthReturnPath(`${window.location.pathname}${window.location.search}`);
 }
 
 function buildCallbackRedirectUrl() {
@@ -54,7 +54,7 @@ function buildCallbackRedirectUrl() {
 
 function buildCallbackRedirectUrlForPath(nextPath: string) {
   const redirectUrl = new URL(getAuthRedirectUrl("/auth/callback"));
-  redirectUrl.searchParams.set("next", nextPath);
+  redirectUrl.searchParams.set("next", sanitizeAuthReturnPath(nextPath));
   return redirectUrl.toString();
 }
 

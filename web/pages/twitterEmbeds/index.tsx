@@ -11,15 +11,10 @@ import {
   selectFirstArrivalBuckets,
   type FirstArrivalCandidate,
 } from "lib/sources/lineSourceFirstArrival";
+import { sanitizePublicNewsText } from "lib/newsFeed";
 import serverClient from "lib/supabase/server";
 
 import styles from "./index.module.scss";
-
-type TwitterEmbedSource = {
-  handle: string;
-  label: string;
-  url: string;
-};
 
 export type LocalTweetCard = {
   key: string;
@@ -54,32 +49,10 @@ export type LocalTweetCard = {
   }>;
 };
 
-const twitterEmbedSources = [
-  {
-    handle: "CcCMiddleton",
-    label: "Posts by CcCMiddleton",
-    url: "https://twitter.com/CcCMiddleton?ref_src=twsrc%5Etfw",
-  },
-  {
-    handle: "GameDayGoalies",
-    label: "Posts by GameDayGoalies",
-    url: "https://x.com/GameDayGoalies",
-  },
-  {
-    handle: "GameDayNewsNHL",
-    label: "Posts by GameDayNewsNHL",
-    url: "https://x.com/GameDayNewsNHL",
-  },
-  {
-    handle: "GameDayLines",
-    label: "Posts by GameDayLines",
-    url: "https://x.com/GameDayLines",
-  },
-] satisfies TwitterEmbedSource[];
-
 const PAGE_REFRESH_INTERVAL_MS = 60_000;
 const retweetingSourceHandles = new Set([
   "cccmiddleton",
+  "linescccmiddleton",
   "gamedaygoalies",
   "gamedaynewsnhl",
   "gamedaylines",
@@ -261,7 +234,11 @@ export function mapLinesCccRowToCard(row: LinesCccPageRow): LocalTweetCard {
       retweetedAttribution?.authorName ?? fallbackAttribution.authorName,
     authorHandle:
       retweetedAttribution?.authorHandle ?? fallbackAttribution.authorHandle,
-    sourceAccount: "CcCMiddleton",
+    sourceAccount:
+      (retweetedAttribution?.authorHandle ?? fallbackAttribution.authorHandle) !==
+      "unknown"
+        ? `@${retweetedAttribution?.authorHandle ?? fallbackAttribution.authorHandle}`
+        : null,
     sourceLabel: row.tweet_posted_label ?? "Unknown date",
     tweetUrl:
       retweetedAttribution?.tweetUrl ??
@@ -318,7 +295,11 @@ export function mapLineSourceSnapshotRowToCard(
       retweetedAttribution?.authorName ?? fallbackAttribution.authorName,
     authorHandle:
       retweetedAttribution?.authorHandle ?? fallbackAttribution.authorHandle,
-    sourceAccount: row.source_account ?? row.source_key,
+    sourceAccount:
+      (retweetedAttribution?.authorHandle ?? fallbackAttribution.authorHandle) !==
+      "unknown"
+        ? `@${retweetedAttribution?.authorHandle ?? fallbackAttribution.authorHandle}`
+        : null,
     sourceLabel: row.tweet_posted_label ?? "Unknown date",
     tweetUrl:
       retweetedAttribution?.tweetUrl ??
@@ -479,6 +460,52 @@ export function dedupeTweetCards(cards: LocalTweetCard[]): LocalTweetCard[] {
   });
 }
 
+function getPublicOriginalTweetUrl(value: string | null): string | null {
+  if (!value) return null;
+  const handle = parseHandleFromTweetUrl(value);
+  if (handle) return value;
+  try {
+    const url = new URL(value);
+    return /(?:^|\.)(?:x|twitter)\.com$/i.test(url.hostname) ? null : value;
+  } catch {
+    return null;
+  }
+}
+
+export function sanitizeTwitterEmbedCardForPublic(
+  card: LocalTweetCard,
+  index = 0,
+): LocalTweetCard {
+  const authorHandle = isRetweetingSourceHandle(card.authorHandle)
+    ? "unknown"
+    : card.authorHandle;
+  const tweetUrl = getPublicOriginalTweetUrl(card.tweetUrl) ?? "#";
+  const sourceUrl = getPublicOriginalTweetUrl(card.sourceUrl);
+  const quotedTweetUrl = getPublicOriginalTweetUrl(card.quotedTweetUrl);
+
+  return {
+    ...card,
+    key: `original-${card.tweetId === "unknown-tweet" ? index : card.tweetId}`,
+    sourceKey: "original",
+    authorName: sanitizePublicNewsText(card.authorName) || "Unknown author",
+    authorHandle,
+    sourceAccount: authorHandle === "unknown" ? null : `@${authorHandle}`,
+    sourceLabel: sanitizePublicNewsText(card.sourceLabel),
+    tweetUrl,
+    sourceUrl,
+    wrapperText: sanitizePublicNewsText(card.wrapperText),
+    quotedAuthorName: card.quotedAuthorName
+      ? sanitizePublicNewsText(card.quotedAuthorName) || null
+      : null,
+    quotedAuthorHandle: isRetweetingSourceHandle(card.quotedAuthorHandle)
+      ? null
+      : card.quotedAuthorHandle,
+    quotedTweetUrl,
+    quotedText: sanitizePublicNewsText(card.quotedText),
+    alternativeSources: [],
+  };
+}
+
 const TwitterEmbedsPage: NextPage<
   InferGetServerSidePropsType<typeof getServerSideProps>
 > = ({ localTweetCards, loadError }) => {
@@ -501,16 +528,6 @@ const TwitterEmbedsPage: NextPage<
       </Head>
       <main className={styles.page}>
         <h1>Twitter Embeds</h1>
-        <section
-          className={styles.timelineSource}
-          aria-label="X timeline source"
-        >
-          {twitterEmbedSources.map((source) => (
-            <a href={source.url} key={source.url}>
-              {source.label}
-            </a>
-          ))}
-        </section>
 
         <section
           className={styles.localCards}
@@ -531,11 +548,17 @@ const TwitterEmbedsPage: NextPage<
               <header className={styles.tweetHeader}>
                 <div>
                   <strong>{tweet.authorName}</strong>{" "}
-                  <a href={`https://twitter.com/${tweet.authorHandle}`}>
-                    @{tweet.authorHandle}
-                  </a>
+                  {tweet.authorHandle !== "unknown" ? (
+                    <a href={`https://twitter.com/${tweet.authorHandle}`}>
+                      @{tweet.authorHandle}
+                    </a>
+                  ) : null}
                 </div>
-                <a href={tweet.tweetUrl}>{tweet.sourceLabel}</a>
+                {tweet.tweetUrl !== "#" ? (
+                  <a href={tweet.tweetUrl}>{tweet.sourceLabel}</a>
+                ) : (
+                  <span>{tweet.sourceLabel}</span>
+                )}
               </header>
               <p className={styles.wrapperText}>{tweet.wrapperText}</p>
               {tweet.quotedText || tweet.quotedTweetUrl ? (
@@ -558,32 +581,8 @@ const TwitterEmbedsPage: NextPage<
               ) : null}
               <footer className={styles.tweetFooter}>
                 {tweet.status}
-                {tweet.sourceAccount ? ` · via ${tweet.sourceAccount}` : ""}
                 {" · "}tweet id {tweet.tweetId}
               </footer>
-              {tweet.alternativeSources.length > 0 ? (
-                <details className={styles.alternativeSources}>
-                  <summary>
-                    {tweet.alternativeSources.length} later source
-                    {tweet.alternativeSources.length === 1 ? "" : "s"} in this
-                    signal bucket
-                  </summary>
-                  <ul>
-                    {tweet.alternativeSources.map((source, index) => (
-                      <li
-                        key={`${source.sourceKey}-${source.tweetUrl}-${index}`}
-                      >
-                        <a href={source.tweetUrl}>
-                          {source.sourceAccount ?? source.sourceKey}
-                        </a>
-                        {source.observedAt
-                          ? ` · observed ${new Date(source.observedAt).toLocaleString()}`
-                          : ""}
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              ) : null}
             </article>
           ))}
         </section>
@@ -638,7 +637,9 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
 
   return {
     props: {
-      localTweetCards: selectFirstArrivalTweetCards(cards).slice(0, 18),
+      localTweetCards: selectFirstArrivalTweetCards(cards)
+        .slice(0, 18)
+        .map(sanitizeTwitterEmbedCardForPublic),
       loadError: loadError || null,
     },
   };

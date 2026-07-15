@@ -202,20 +202,33 @@ export default function TeamPowerCard({
     };
   }, [date]);
 
+  const resolvedDate = rows[0]?.date ?? null;
+  const ctpiDate = ctpiDateUsed ?? ctpiGeneratedAt?.slice(0, 10) ?? null;
+  const isCtpiAligned = Boolean(
+    resolvedDate && ctpiDate && ctpiDate === resolvedDate
+  );
+  const isSlateAligned = Boolean(
+    resolvedDate && slateDateUsed && slateDateUsed === resolvedDate
+  );
+
   const rankedRows = useMemo<TeamPowerRow[]>(() => {
     const filtered = rows.filter((row) =>
       team === "all" ? true : row.teamAbbr.toUpperCase() === team.toUpperCase()
     );
     const ctpiByTeam = new Map(
-      ctpiRows.map((row) => [
-        row.team.toUpperCase(),
-        {
-          score: row.ctpi_0_to_100,
-          delta: computeCtpiDelta(row)
-        }
-      ])
+      isCtpiAligned
+        ? ctpiRows.map((row) => [
+            row.team.toUpperCase(),
+            {
+              score: row.ctpi_0_to_100,
+              delta: computeCtpiDelta(row)
+            }
+          ] as const)
+        : []
     );
-    const matchupByTeam = buildSlateMatchupEdgeMap(slateGames);
+    const matchupByTeam = isSlateAligned
+      ? buildSlateMatchupEdgeMap(slateGames)
+      : new Map<string, { opponentAbbr: string; edge: number }>();
 
     return [...filtered]
       .map((row) => ({
@@ -230,7 +243,7 @@ export default function TeamPowerCard({
         ...row,
         overallRank: index + 1
       }));
-  }, [ctpiRows, date, rows, slateGames, team]);
+  }, [ctpiRows, isCtpiAligned, isSlateAligned, rows, slateGames, team]);
   const visibleRows = useMemo<TeamPowerRow[]>(() => {
     if (team !== "all") return rankedRows;
     if (view === "bottom") {
@@ -243,8 +256,6 @@ export default function TeamPowerCard({
     () => rankedRows.length > 0 && rankedRows.every((row) => Math.abs(row.trend10) < 0.01),
     [rankedRows]
   );
-  const resolvedDate = rows[0]?.date ?? null;
-  const ctpiDate = ctpiGeneratedAt?.slice(0, 10) ?? null;
   const isStale = Boolean(resolvedDate && resolvedDate !== date);
   const metaDate = resolvedDate ?? date;
 
@@ -264,10 +275,12 @@ export default function TeamPowerCard({
         !loading && !error
           ? [
               isStale && resolvedDate ? `Team ratings using ${resolvedDate}` : null,
-              ctpiDate && ctpiDate !== date ? `Team trend from ${ctpiDate}` : null,
+              ctpiDate && resolvedDate && !isCtpiAligned
+                ? `Team trend from ${ctpiDate} suppressed against ratings ${resolvedDate}`
+                : null,
               slateServingMessage ??
-                (slateDateUsed && slateDateUsed !== date
-                  ? `Game matchups from ${slateDateUsed}`
+                (slateDateUsed && resolvedDate && !isSlateAligned
+                  ? `Game matchups from ${slateDateUsed} suppressed against ratings ${resolvedDate}`
                   : null),
               secondaryWarnings.length > 0 ? secondaryWarnings.join(" • ") : null
             ]
@@ -280,6 +293,8 @@ export default function TeamPowerCard({
     ctpiDate,
     error,
     isStale,
+    isCtpiAligned,
+    isSlateAligned,
     loading,
     onStatusChange,
     rankedRows.length,
@@ -318,13 +333,15 @@ export default function TeamPowerCard({
             </p>
           )}
           {(secondaryWarnings.length > 0 ||
-            (ctpiDate != null && ctpiDate !== date) ||
-            (slateDateUsed != null && slateDateUsed !== date)) && (
+            (ctpiDate != null && resolvedDate != null && !isCtpiAligned) ||
+            (slateDateUsed != null && resolvedDate != null && !isSlateAligned)) && (
             <p className={`${styles.panelState} ${styles.panelStateStale}`}>
               {[
-                ctpiDate && ctpiDate !== date ? `Team form from ${ctpiDate}` : null,
-                slateDateUsed && slateDateUsed !== date
-                  ? `Game matchups from ${slateDateUsed}`
+                ctpiDate && resolvedDate && !isCtpiAligned
+                  ? `Team form from ${ctpiDate} suppressed; ratings use ${resolvedDate}`
+                  : null,
+                slateDateUsed && resolvedDate && !isSlateAligned
+                  ? `Game matchups from ${slateDateUsed} suppressed; ratings use ${resolvedDate}`
                   : null,
                 ...secondaryWarnings
               ]

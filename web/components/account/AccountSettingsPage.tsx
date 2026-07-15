@@ -6,21 +6,32 @@ import supabase from "lib/supabase/client";
 import {
   createDefaultUserLeagueSettings,
   type LeagueType,
-  type UserLeagueSettings
+  type UserLeagueSettings,
 } from "lib/user-settings/defaults";
 import {
   mapLeagueSettingsToUserSettingsUpsert,
-  mapUserSettingsRowToLeagueSettings
+  mapUserSettingsRowToLeagueSettings,
 } from "lib/user-settings/mappers";
 import type { Database, Json } from "lib/supabase/database-generated.types";
-import { YAHOO_CONNECT_DEFAULT_NEXT, YAHOO_PROVIDER } from "lib/integrations/yahoo/config";
+import {
+  YAHOO_CONNECT_DEFAULT_NEXT,
+  YAHOO_PROVIDER,
+} from "lib/integrations/yahoo/config";
+
+import FantraxImportPanel from "./FantraxImportPanel";
+import EspnImportPanel from "./EspnImportPanel";
+import PatreonConnectionPanel from "./PatreonConnectionPanel";
 
 import styles from "./AccountSettingsPage.module.scss";
 
 type SavedTeamRow = Database["public"]["Tables"]["user_saved_teams"]["Row"];
-type ConnectedAccountRow = Database["public"]["Tables"]["connected_accounts"]["Row"];
-type ExternalLeagueRow = Database["public"]["Tables"]["external_leagues"]["Row"];
+type ConnectedAccountRow =
+  Database["public"]["Tables"]["connected_accounts"]["Row"];
+type ExternalLeagueRow =
+  Database["public"]["Tables"]["external_leagues"]["Row"];
 type ExternalTeamRow = Database["public"]["Tables"]["external_teams"]["Row"];
+type ProviderSyncRunRow =
+  Database["public"]["Tables"]["provider_sync_runs"]["Row"];
 type UserProviderPreferencesRow =
   Database["public"]["Tables"]["user_provider_preferences"]["Row"];
 type JsonObject = Record<string, Json | undefined>;
@@ -36,81 +47,78 @@ const CONNECTED_ACCOUNT_PROVIDERS = [
     bullets: [
       "Connection lives here, not in core sign-in.",
       "League sync imports league metadata, scoring, roster settings, teams, and team context.",
-      "Refresh controls will use cooldowns and in-flight dedupe to avoid rapid rate-limit pressure."
-    ]
+      "Refresh controls will use cooldowns and in-flight dedupe to avoid rapid rate-limit pressure.",
+    ],
   },
   {
     key: "fantrax",
     name: "Fantrax",
-    status: "Planned",
+    status: "Manual import",
     location: "Account Settings and League Settings",
     summary:
-      "Fantrax support is intentionally staged behind a connector placeholder because public API support is less stable and likely requires a more defensive integration path than Yahoo.",
+      "Fantrax uses owner-supplied CSV/JSON imports through the shared provider model. No Fantrax credentials, scraping, or unofficial session adapter is required.",
     bullets: [
-      "Keep provider auth decoupled from app auth.",
-      "Design assumes multiple leagues and default-team selection.",
-      "Implementation risk stays higher until the supported integration path is confirmed."
-    ]
+      "Manual imports keep provider auth decoupled from app auth.",
+      "Multiple leagues, teams, roster snapshots, and default-team selection are supported.",
+      "Imports are additive/idempotent and recorded with status, failure, dedupe, and cooldown state.",
+    ],
   },
   {
     key: "patreon",
     name: "Patreon",
-    status: "Planned",
+    status: "OAuth link",
     location: "Account Settings",
     summary:
       "Patreon remains an entitlement-linked connected account, not a primary authentication method. The linkage supports paid access checks without requiring matching emails with the site login.",
     bullets: [
       "Patreon connection belongs on the account page, not the auth modal.",
-      "Entitlements remain site-owned even when Patreon identity changes.",
-      "Future anti-sharing rules will prevent duplicate Patreon identity attachment."
-    ]
+      "Generic supporter eligibility is materialized as a site-owned entitlement.",
+      "Stable Patreon identities cannot be attached to multiple FHFH accounts.",
+    ],
   },
   {
     key: "espn",
     name: "ESPN",
-    status: "Deferred",
+    status: "Manual import",
     location: "Account Settings and League Settings",
     summary:
-      "ESPN is reserved as a future-phase provider so the account architecture can support multiple linked leagues and active-team switching without forcing a route change.",
+      "ESPN uses owner-supplied CSV/JSON imports through the shared provider model. No ESPN credentials, browser cookies, scraping, or private endpoints are required.",
     bullets: [
-      "Placeholder aligns with the same connected-account model as Yahoo and Fantrax.",
-      "Future work can add wrapper-based import without reshaping account ownership.",
-      "Default-team and active-context handling should feel identical across providers."
-    ]
-  }
+      "Manual imports keep ESPN identity separate from FHFH site authentication.",
+      "Multiple leagues/teams plus default and active context are supported.",
+      "Matching keys update in place; omitted records are preserved and retries are guarded.",
+    ],
+  },
 ] as const;
 
 const FUTURE_PROVIDER_CONTROL_SURFACES = [
   {
     title: "Linked League and Team Context",
-    body:
-      "Future providers can expose multiple leagues and teams under one connected account. Users need a visible default team plus an in-place active league switcher that does not force a page transition.",
+    body: "Future providers can expose multiple leagues and teams under one connected account. Users need a visible default team plus an in-place active league switcher that does not force a page transition.",
     rows: [
       "Linked leagues: multiple-provider league discovery placeholder",
       "Default team: explicit per-provider default target",
-      "Active league switcher: in-place context change without losing draft/dashboard progress"
-    ]
+      "Active league switcher: in-place context change without losing draft/dashboard progress",
+    ],
   },
   {
     title: "Refresh Preferences and Manual Sync",
-    body:
-      "Provider refresh stays user-controlled. The eventual controls belong here so refresh-on-login behavior, manual refresh, and next allowed sync time are understandable before OAuth is implemented.",
+    body: "Provider refresh stays user-controlled. The eventual controls belong here so refresh-on-login behavior, manual refresh, and next allowed sync time are understandable before OAuth is implemented.",
     rows: [
       "Refresh on sign-in: planned preference toggle",
       "Manual refresh: planned guarded action button",
-      "Next eligible refresh: cooldown-driven availability message"
-    ]
+      "Next eligible refresh: cooldown-driven availability message",
+    ],
   },
   {
     title: "Cooldowns and In-Flight Dedupe",
-    body:
-      "Provider sync jobs need defensive UX. This placeholder makes the future safety model explicit so rapid repeat refreshes and overlapping sync runs are visibly blocked.",
+    body: "Provider sync jobs need defensive UX. This placeholder makes the future safety model explicit so rapid repeat refreshes and overlapping sync runs are visibly blocked.",
     rows: [
       "Cooldown window: planned anti-throttling lockout after a sync run",
       "In-flight dedupe: planned prevention of duplicate refresh jobs",
-      "Last sync state: future success, failure, and running-status summary"
-    ]
-  }
+      "Last sync state: future success, failure, and running-status summary",
+    ],
+  },
 ] as const;
 
 type AccountSection =
@@ -134,101 +142,90 @@ const SECTION_CONFIG: Record<
     label: "Profile",
     description: "Identity, email, avatar, and account summary",
     title: "Profile Overview",
-    body:
-      "This section is the home for your site identity, email-verification state, avatar display, and basic account metadata.",
+    body: "This section is the home for your site identity, email-verification state, avatar display, and basic account metadata.",
     panels: [
       {
         title: "Display Profile",
-        body:
-          "The next slice will load and edit `user_profiles` fields like display name, avatar URL, and timezone."
+        body: "The next slice will load and edit `user_profiles` fields like display name, avatar URL, and timezone.",
       },
       {
         title: "Account Security",
-        body:
-          "Auth provider state is now handled through Supabase Auth. MFA and recovery-state refinements will stay separate from connected fantasy providers."
-      }
-    ]
+        body: "Auth provider state is now handled through Supabase Auth. MFA and recovery-state refinements will stay separate from connected fantasy providers.",
+      },
+    ],
   },
   "league-settings": {
     label: "League Settings",
     description: "Scoring defaults, roster shape, and active league context",
     title: "League Defaults",
-    body:
-      "This section will become the persisted home for fantasy scoring preferences, roster structure, active-context selection, and future refresh controls.",
+    body: "This section will become the persisted home for fantasy scoring preferences, roster structure, active-context selection, and future refresh controls.",
     panels: [
       {
         title: "Scoring and Roster Defaults",
-        body:
-          "The next slices will map `user_settings` directly onto your existing fantasy scoring configuration system without touching Draft Dashboard."
+        body: "The next slices will map `user_settings` directly onto your existing fantasy scoring configuration system without touching Draft Dashboard.",
       },
       {
         title: "Active League Context",
-        body:
-          "The shell already reserves a stable place for active league switching so users can change context later without being pushed through a separate page flow."
-      }
-    ]
+        body: "The shell already reserves a stable place for active league switching so users can change context later without being pushed through a separate page flow.",
+      },
+    ],
   },
   "saved-teams": {
     label: "Saved Teams",
     description: "Manual rosters, defaults, and future synced team choices",
     title: "Saved Teams",
-    body:
-      "This section will hold manual saved teams first, then support default-team selection for imported Yahoo, Fantrax, or future ESPN league/team records.",
+    body: "This section will hold manual saved teams first, then support default-team selection for imported Yahoo, Fantrax, or future ESPN league/team records.",
     panels: [
       {
         title: "Manual Teams",
-        body:
-          "Upcoming work will add list, create, edit, and default-selection behavior for `user_saved_teams`."
+        body: "Upcoming work will add list, create, edit, and default-selection behavior for `user_saved_teams`.",
       },
       {
         title: "Imported Team Targets",
-        body:
-          "This shell also reserves room for future multi-league and multi-team account connections, including default-team selection and in-place active switching."
-      }
-    ]
+        body: "This shell also reserves room for future multi-league and multi-team account connections, including default-team selection and in-place active switching.",
+      },
+    ],
   },
   "connected-accounts": {
     label: "Connected Accounts",
     description: "Yahoo, Fantrax, ESPN, and future provider connections",
     title: "Connected Accounts",
-    body:
-      "Connected fantasy accounts stay separate from core site authentication. This section will host provider connection, sync, refresh, and cooldown controls.",
+    body: "Connected fantasy accounts stay separate from core site authentication. This section will host provider connection, sync, refresh, and cooldown controls.",
     panels: [
       {
         title: "Yahoo and Fantrax",
-        body:
-          "Future work will expose provider status, linked leagues, default team selection, and guarded manual refresh options with cooldown messaging."
+        body: "Future work will expose provider status, linked leagues, default team selection, and guarded manual refresh options with cooldown messaging.",
       },
       {
         title: "ESPN and Future Providers",
-        body:
-          "The data model already leaves room for additional provider connectors without coupling them to the primary auth system."
-      }
-    ]
+        body: "The data model already leaves room for additional provider connectors without coupling them to the primary auth system.",
+      },
+    ],
   },
   patreon: {
     label: "Patreon",
     description: "Entitlements, perk visibility, and linked Patreon state",
     title: "Patreon Entitlements",
-    body:
-      "Patreon remains an optional connected account for perk access, not a primary site login method. This section will later expose membership and entitlement state.",
+    body: "Patreon remains an optional connected account for perk access, not a primary site login method. This section exposes membership, generic supporter eligibility, tier metadata, and sync state.",
     panels: [
       {
         title: "Entitlement Status",
-        body:
-          "Upcoming work will surface site-owned entitlement records separately from the Patreon identity itself."
+        body: "Site-owned generic supporter eligibility is shown separately from the Patreon identity itself; concrete feature grants require an explicit tier policy.",
       },
       {
         title: "Access Boundaries",
-        body:
-          "The planned model keeps Patreon sharing controls and entitlement checks separate from the core user login session."
-      }
-    ]
-  }
+        body: "Stable Patreon identities are single-account constrained, and entitlement checks remain separate from the core user login session.",
+      },
+    ],
+  },
 };
 
-function resolveSection(sectionValue: string | string[] | undefined): AccountSection {
-  const rawSection = Array.isArray(sectionValue) ? sectionValue[0] : sectionValue;
+function resolveSection(
+  sectionValue: string | string[] | undefined,
+): AccountSection {
+  const rawSection = Array.isArray(sectionValue)
+    ? sectionValue[0]
+    : sectionValue;
   if (
     rawSection === "profile" ||
     rawSection === "league-settings" ||
@@ -255,7 +252,11 @@ function getUserInitials(label?: string | null) {
 }
 
 function getSavedTeamNotes(rosterJson: Json) {
-  if (!rosterJson || Array.isArray(rosterJson) || typeof rosterJson !== "object") {
+  if (
+    !rosterJson ||
+    Array.isArray(rosterJson) ||
+    typeof rosterJson !== "object"
+  ) {
     return "";
   }
 
@@ -272,7 +273,7 @@ function formatSavedTeamTimestamp(timestamp: string) {
   return value.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
-    year: "numeric"
+    year: "numeric",
   });
 }
 
@@ -285,7 +286,9 @@ function getSavedTeamLeagueType(settingsSnapshot: Json) {
     return "points";
   }
 
-  return settingsSnapshot.league_type === "categories" ? "categories" : "points";
+  return settingsSnapshot.league_type === "categories"
+    ? "categories"
+    : "points";
 }
 
 function getYahooTeamMetadata(team: ExternalTeamRow) {
@@ -306,9 +309,49 @@ function getYahooTeamStandingRank(team: ExternalTeamRow) {
     return null;
   }
 
-  return typeof standings.rank === "number" || typeof standings.rank === "string"
+  return typeof standings.rank === "number" ||
+    typeof standings.rank === "string"
     ? String(standings.rank)
     : null;
+}
+
+function getYahooTeamRosterRows(rosterSnapshot: Json | null | undefined) {
+  if (!isJsonObject(rosterSnapshot)) {
+    return [];
+  }
+
+  return getJsonArray(rosterSnapshot.players).flatMap((entry, index) => {
+    if (!isJsonObject(entry)) {
+      return [];
+    }
+
+    const player = isJsonObject(entry.player) ? entry.player : entry;
+    const name = isJsonObject(player.name) ? player.name : null;
+    const selectedPosition = isJsonObject(player.selected_position)
+      ? player.selected_position
+      : null;
+    const fullName =
+      getJsonText(name?.full) ||
+      [getJsonText(name?.first), getJsonText(name?.last)]
+        .filter(Boolean)
+        .join(" ") ||
+      getJsonText(player.name) ||
+      getJsonText(player.player_key) ||
+      `Yahoo player ${index + 1}`;
+    const position =
+      getJsonText(selectedPosition?.position) ||
+      getJsonText(player.display_position) ||
+      getJsonText(player.primary_position) ||
+      "—";
+
+    return [
+      {
+        key: getJsonText(player.player_key) || `${fullName}-${index}`,
+        name: fullName,
+        position,
+      },
+    ];
+  });
 }
 
 function getQueryParamValue(value: string | string[] | undefined) {
@@ -348,7 +391,7 @@ function formatPluralSlots(count: string, label: "starting" | "bench") {
 
 function getYahooLeagueMetadataValue(
   league: ExternalLeagueRow | null,
-  key: string
+  key: string,
 ) {
   if (!league || !isJsonObject(league.league_metadata)) {
     return null;
@@ -383,26 +426,31 @@ function getYahooLeagueScoringRows(scoringSettings: Json | null | undefined) {
     modifierMap.set(statId, value);
   });
 
-  return getJsonArray(scoringSettings.stat_categories).flatMap((entry, index) => {
-    if (!isJsonObject(entry)) {
-      return [];
-    }
-
-    const statId = getJsonText(entry.stat_id) || `category-${index}`;
-    const abbreviation = getJsonText(entry.display_name) || getJsonText(entry.abbr);
-    const name = getJsonText(entry.name) || abbreviation || `Stat ${statId}`;
-    const label =
-      abbreviation && abbreviation !== name ? `${name} (${abbreviation})` : name;
-    const modifierValue = modifierMap.get(statId);
-
-    return [
-      {
-        key: statId,
-        label,
-        value: modifierValue ? `${modifierValue} pts` : "Enabled"
+  return getJsonArray(scoringSettings.stat_categories).flatMap(
+    (entry, index) => {
+      if (!isJsonObject(entry)) {
+        return [];
       }
-    ];
-  });
+
+      const statId = getJsonText(entry.stat_id) || `category-${index}`;
+      const abbreviation =
+        getJsonText(entry.display_name) || getJsonText(entry.abbr);
+      const name = getJsonText(entry.name) || abbreviation || `Stat ${statId}`;
+      const label =
+        abbreviation && abbreviation !== name
+          ? `${name} (${abbreviation})`
+          : name;
+      const modifierValue = modifierMap.get(statId);
+
+      return [
+        {
+          key: statId,
+          label,
+          value: modifierValue ? `${modifierValue} pts` : "Enabled",
+        },
+      ];
+    },
+  );
 }
 
 function getYahooLeagueRosterRows(rosterSettings: Json | null | undefined) {
@@ -410,23 +458,25 @@ function getYahooLeagueRosterRows(rosterSettings: Json | null | undefined) {
     return [];
   }
 
-  return getJsonArray(rosterSettings.roster_positions).flatMap((entry, index) => {
-    if (!isJsonObject(entry)) {
-      return [];
-    }
-
-    const position = getJsonText(entry.position) || `Slot ${index + 1}`;
-    const count = getJsonText(entry.count) || "0";
-    const isStarting = getJsonText(entry.is_starting_position) === "1";
-
-    return [
-      {
-        key: `${position}-${index}`,
-        label: position,
-        value: formatPluralSlots(count, isStarting ? "starting" : "bench")
+  return getJsonArray(rosterSettings.roster_positions).flatMap(
+    (entry, index) => {
+      if (!isJsonObject(entry)) {
+        return [];
       }
-    ];
-  });
+
+      const position = getJsonText(entry.position) || `Slot ${index + 1}`;
+      const count = getJsonText(entry.count) || "0";
+      const isStarting = getJsonText(entry.is_starting_position) === "1";
+
+      return [
+        {
+          key: `${position}-${index}`,
+          label: position,
+          value: formatPluralSlots(count, isStarting ? "starting" : "bench"),
+        },
+      ];
+    },
+  );
 }
 
 function buildManualActiveContext() {
@@ -436,7 +486,7 @@ function buildManualActiveContext() {
     external_league_id: null,
     external_team_id: null,
     external_league_key: null,
-    external_team_key: null
+    external_team_key: null,
   };
 }
 
@@ -447,12 +497,12 @@ export default function AccountSettingsPage() {
   const userDisplayName = user?.displayName ?? "";
   const userAvatarUrl = user?.avatarUrl ?? "";
   const [leagueForm, setLeagueForm] = useState<UserLeagueSettings>(
-    createDefaultUserLeagueSettings()
+    createDefaultUserLeagueSettings(),
   );
   const [profileForm, setProfileForm] = useState({
     displayName: "",
     avatarUrl: "",
-    timezone: ""
+    timezone: "",
   });
   const [profileRecordState, setProfileRecordState] = useState<
     "unknown" | "present" | "missing" | "error"
@@ -468,9 +518,11 @@ export default function AccountSettingsPage() {
   const [savedTeamForm, setSavedTeamForm] = useState({
     name: "",
     manualNotes: "",
-    isDefault: false
+    isDefault: false,
   });
-  const [editingSavedTeamId, setEditingSavedTeamId] = useState<string | null>(null);
+  const [editingSavedTeamId, setEditingSavedTeamId] = useState<string | null>(
+    null,
+  );
   const [isSavedTeamsLoading, setIsSavedTeamsLoading] = useState(false);
   const [isSavedTeamSaving, setIsSavedTeamSaving] = useState(false);
   const [profileFeedback, setProfileFeedback] = useState<{
@@ -491,8 +543,16 @@ export default function AccountSettingsPage() {
   const [yahooTeams, setYahooTeams] = useState<ExternalTeamRow[]>([]);
   const [yahooPreferences, setYahooPreferences] =
     useState<UserProviderPreferencesRow | null>(null);
+  const [yahooLatestSyncRun, setYahooLatestSyncRun] =
+    useState<ProviderSyncRunRow | null>(null);
   const [isYahooLoading, setIsYahooLoading] = useState(false);
   const [isYahooActionLoading, setIsYahooActionLoading] = useState(false);
+  const [yahooRosterLoadingTeamId, setYahooRosterLoadingTeamId] = useState<
+    string | null
+  >(null);
+  const [expandedYahooRosterTeamId, setExpandedYahooRosterTeamId] = useState<
+    string | null
+  >(null);
   const [yahooFeedback, setYahooFeedback] = useState<{
     tone: "error" | "success" | "info";
     message: string;
@@ -500,7 +560,7 @@ export default function AccountSettingsPage() {
 
   const activeSection = useMemo(
     () => resolveSection(router.query.section),
-    [router.query.section]
+    [router.query.section],
   );
   const sectionConfig = SECTION_CONFIG[activeSection];
   const resolvedDisplayName =
@@ -508,12 +568,26 @@ export default function AccountSettingsPage() {
     user?.displayName ||
     user?.email ||
     "Authenticated User";
-  const resolvedAvatarUrl = profileForm.avatarUrl.trim() || user?.avatarUrl || "";
+  const resolvedAvatarUrl =
+    profileForm.avatarUrl.trim() || user?.avatarUrl || "";
   const yahooDefaultTeam = useMemo(
     () =>
-      yahooTeams.find((team) => team.id === yahooPreferences?.default_external_team_id) ||
-      null,
-    [yahooPreferences?.default_external_team_id, yahooTeams]
+      yahooTeams.find(
+        (team) => team.id === yahooPreferences?.default_external_team_id,
+      ) || null,
+    [yahooPreferences?.default_external_team_id, yahooTeams],
+  );
+  const yahooRefreshBlocked = Boolean(
+    yahooLatestSyncRun &&
+    (((yahooLatestSyncRun.status === "running" ||
+      yahooLatestSyncRun.status === "queued") &&
+      Date.now() -
+        new Date(
+          yahooLatestSyncRun.started_at || yahooLatestSyncRun.created_at,
+        ).getTime() <
+        15 * 60 * 1000) ||
+      (yahooLatestSyncRun.cooldown_until &&
+        new Date(yahooLatestSyncRun.cooldown_until).getTime() > Date.now())),
   );
   const yahooDefaultLeague = useMemo(
     () =>
@@ -522,9 +596,13 @@ export default function AccountSettingsPage() {
           league.id ===
           (yahooPreferences?.default_external_league_id ||
             yahooDefaultTeam?.external_league_id ||
-            null)
+            null),
       ) || null,
-    [yahooDefaultTeam?.external_league_id, yahooLeagues, yahooPreferences?.default_external_league_id]
+    [
+      yahooDefaultTeam?.external_league_id,
+      yahooLeagues,
+      yahooPreferences?.default_external_league_id,
+    ],
   );
   const activeYahooLeague = useMemo(() => {
     const activeYahooLeagueId =
@@ -542,7 +620,7 @@ export default function AccountSettingsPage() {
     leagueForm.activeContext.external_league_id,
     leagueForm.activeContext.provider,
     yahooDefaultLeague,
-    yahooLeagues
+    yahooLeagues,
   ]);
   const activeYahooTeam = useMemo(() => {
     const activeYahooTeamId =
@@ -552,17 +630,18 @@ export default function AccountSettingsPage() {
 
     return (
       yahooTeams.find(
-        (team) => team.id === activeYahooTeamId && isOwnedYahooTeam(team)
+        (team) => team.id === activeYahooTeamId && isOwnedYahooTeam(team),
       ) ||
       yahooTeams.find(
         (team) =>
           team.id === yahooPreferences?.default_external_team_id &&
           team.external_league_id === activeYahooLeague?.id &&
-          isOwnedYahooTeam(team)
+          isOwnedYahooTeam(team),
       ) ||
       yahooTeams.find(
         (team) =>
-          team.external_league_id === activeYahooLeague?.id && isOwnedYahooTeam(team)
+          team.external_league_id === activeYahooLeague?.id &&
+          isOwnedYahooTeam(team),
       ) ||
       null
     );
@@ -571,15 +650,15 @@ export default function AccountSettingsPage() {
     leagueForm.activeContext.external_team_id,
     leagueForm.activeContext.provider,
     yahooPreferences?.default_external_team_id,
-    yahooTeams
+    yahooTeams,
   ]);
   const yahooLeagueScoringRows = useMemo(
     () => getYahooLeagueScoringRows(activeYahooLeague?.scoring_settings),
-    [activeYahooLeague?.scoring_settings]
+    [activeYahooLeague?.scoring_settings],
   );
   const yahooLeagueRosterRows = useMemo(
     () => getYahooLeagueRosterRows(activeYahooLeague?.roster_settings),
-    [activeYahooLeague?.roster_settings]
+    [activeYahooLeague?.roster_settings],
   );
   const yahooTeamsForActiveLeague = useMemo(
     () =>
@@ -587,20 +666,20 @@ export default function AccountSettingsPage() {
         ? yahooTeams.filter(
             (team) =>
               team.external_league_id === activeYahooLeague.id &&
-              isOwnedYahooTeam(team)
+              isOwnedYahooTeam(team),
           )
         : [],
-    [activeYahooLeague, yahooTeams]
+    [activeYahooLeague, yahooTeams],
   );
 
   function updateSection(section: AccountSection) {
     void router.replace(
       {
         pathname: "/account",
-        query: { section }
+        query: { section },
       },
       undefined,
-      { shallow: true }
+      { shallow: true },
     );
   }
 
@@ -632,7 +711,7 @@ export default function AccountSettingsPage() {
         setProfileRecordState("error");
         setProfileFeedback({
           tone: "error",
-          message: error.message
+          message: error.message,
         });
         setIsProfileLoading(false);
         return;
@@ -642,7 +721,7 @@ export default function AccountSettingsPage() {
       setProfileForm({
         displayName: data?.display_name || userDisplayName || "",
         avatarUrl: data?.avatar_url || userAvatarUrl || "",
-        timezone: data?.timezone || ""
+        timezone: data?.timezone || "",
       });
       setIsProfileLoading(false);
     }
@@ -672,7 +751,7 @@ export default function AccountSettingsPage() {
       const { data, error } = await supabase
         .from("user_settings")
         .select(
-          "league_type, scoring_categories, category_weights, roster_config, ui_preferences, active_context"
+          "league_type, scoring_categories, category_weights, roster_config, ui_preferences, active_context",
         )
         .eq("user_id", currentUserId)
         .maybeSingle();
@@ -685,7 +764,7 @@ export default function AccountSettingsPage() {
         setLeagueRecordState("error");
         setLeagueFeedback({
           tone: "error",
-          message: error.message
+          message: error.message,
         });
         setLeagueForm(createDefaultUserLeagueSettings());
         setIsLeagueLoading(false);
@@ -728,7 +807,7 @@ export default function AccountSettingsPage() {
       if (error) {
         setSavedTeamsFeedback({
           tone: "error",
-          message: error.message
+          message: error.message,
         });
         setSavedTeams([]);
         setIsSavedTeamsLoading(false);
@@ -740,7 +819,7 @@ export default function AccountSettingsPage() {
       if (!editingSavedTeamId) {
         setSavedTeamForm((current) => ({
           ...current,
-          isDefault: nextTeams.length === 0
+          isDefault: nextTeams.length === 0,
         }));
       }
       setIsSavedTeamsLoading(false);
@@ -759,36 +838,50 @@ export default function AccountSettingsPage() {
       setYahooLeagues([]);
       setYahooTeams([]);
       setYahooPreferences(null);
+      setYahooLatestSyncRun(null);
       return;
     }
 
-    const [accountResponse, leagueResponse, teamResponse, preferencesResponse] =
-      await Promise.all([
-        supabase
-          .from("connected_accounts")
-          .select("*")
-          .eq("user_id", userId)
-          .eq("provider", YAHOO_PROVIDER)
-          .maybeSingle(),
-        supabase
-          .from("external_leagues")
-          .select("*")
-          .eq("user_id", userId)
-          .eq("provider", YAHOO_PROVIDER)
-          .order("league_name", { ascending: true }),
-        supabase
-          .from("external_teams")
-          .select("*")
-          .eq("user_id", userId)
-          .eq("provider", YAHOO_PROVIDER)
-          .order("team_name", { ascending: true }),
-        supabase
-          .from("user_provider_preferences")
-          .select("*")
-          .eq("user_id", userId)
-          .eq("provider", YAHOO_PROVIDER)
-          .maybeSingle(),
-      ]);
+    const [
+      accountResponse,
+      leagueResponse,
+      teamResponse,
+      preferencesResponse,
+      syncRunResponse,
+    ] = await Promise.all([
+      supabase
+        .from("connected_accounts")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("provider", YAHOO_PROVIDER)
+        .maybeSingle(),
+      supabase
+        .from("external_leagues")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("provider", YAHOO_PROVIDER)
+        .order("league_name", { ascending: true }),
+      supabase
+        .from("external_teams")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("provider", YAHOO_PROVIDER)
+        .order("team_name", { ascending: true }),
+      supabase
+        .from("user_provider_preferences")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("provider", YAHOO_PROVIDER)
+        .maybeSingle(),
+      supabase
+        .from("provider_sync_runs")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("provider", YAHOO_PROVIDER)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
     if (accountResponse.error) {
       throw accountResponse.error;
@@ -802,11 +895,15 @@ export default function AccountSettingsPage() {
     if (preferencesResponse.error) {
       throw preferencesResponse.error;
     }
+    if (syncRunResponse.error) {
+      throw syncRunResponse.error;
+    }
 
     setYahooConnectedAccount(accountResponse.data);
     setYahooLeagues(leagueResponse.data || []);
     setYahooTeams(teamResponse.data || []);
     setYahooPreferences(preferencesResponse.data);
+    setYahooLatestSyncRun(syncRunResponse.data);
   }
 
   useEffect(() => {
@@ -864,12 +961,17 @@ export default function AccountSettingsPage() {
     return () => {
       isMounted = false;
     };
-  }, [activeSection, router.query.yahoo_message, router.query.yahoo_status, userId]);
+  }, [
+    activeSection,
+    router.query.yahoo_message,
+    router.query.yahoo_status,
+    userId,
+  ]);
 
   function updateProfileField(field: keyof typeof profileForm, value: string) {
     setProfileForm((current) => ({
       ...current,
-      [field]: value
+      [field]: value,
     }));
   }
 
@@ -888,17 +990,17 @@ export default function AccountSettingsPage() {
         user_id: user.id,
         display_name: profileForm.displayName.trim() || null,
         avatar_url: profileForm.avatarUrl.trim() || null,
-        timezone: profileForm.timezone.trim() || null
+        timezone: profileForm.timezone.trim() || null,
       },
       {
-        onConflict: "user_id"
-      }
+        onConflict: "user_id",
+      },
     );
 
     if (error) {
       setProfileFeedback({
         tone: "error",
-        message: error.message
+        message: error.message,
       });
       setIsProfileSaving(false);
       return;
@@ -906,7 +1008,7 @@ export default function AccountSettingsPage() {
 
     setProfileFeedback({
       tone: "success",
-      message: "Profile settings saved."
+      message: "Profile settings saved.",
     });
     setProfileRecordState("present");
     setIsProfileSaving(false);
@@ -918,23 +1020,23 @@ export default function AccountSettingsPage() {
       leagueType: value,
       uiPreferences: {
         ...current.uiPreferences,
-        account_settings_section: "league-settings"
-      }
+        account_settings_section: "league-settings",
+      },
     }));
   }
 
   function updateLeagueNumberField(
     group: "scoringCategories" | "categoryWeights" | "rosterConfig",
     key: string,
-    value: string
+    value: string,
   ) {
     const nextValue = value === "" ? 0 : Number(value);
     setLeagueForm((current) => ({
       ...current,
       [group]: {
         ...current[group],
-        [key]: Number.isFinite(nextValue) ? nextValue : 0
-      }
+        [key]: Number.isFinite(nextValue) ? nextValue : 0,
+      },
     }));
   }
 
@@ -958,18 +1060,18 @@ export default function AccountSettingsPage() {
         ...leagueForm,
         uiPreferences: {
           ...leagueForm.uiPreferences,
-          account_settings_section: "league-settings"
-        }
+          account_settings_section: "league-settings",
+        },
       }),
       {
-        onConflict: "user_id"
-      }
+        onConflict: "user_id",
+      },
     );
 
     if (error) {
       setLeagueFeedback({
         tone: "error",
-        message: error.message
+        message: error.message,
       });
       setIsLeagueSaving(false);
       return;
@@ -977,7 +1079,7 @@ export default function AccountSettingsPage() {
 
     setLeagueFeedback({
       tone: "success",
-      message: "League defaults saved."
+      message: "League defaults saved.",
     });
     setLeagueRecordState("present");
     setIsLeagueSaving(false);
@@ -988,17 +1090,17 @@ export default function AccountSettingsPage() {
     setSavedTeamForm({
       name: "",
       manualNotes: "",
-      isDefault: !nextHasTeams
+      isDefault: !nextHasTeams,
     });
   }
 
   function updateSavedTeamField(
     field: keyof typeof savedTeamForm,
-    value: string | boolean
+    value: string | boolean,
   ) {
     setSavedTeamForm((current) => ({
       ...current,
-      [field]: value
+      [field]: value,
     }));
   }
 
@@ -1028,7 +1130,7 @@ export default function AccountSettingsPage() {
     }
 
     const teamsToClear = savedTeams.filter(
-      (team) => team.is_default && team.id !== nextDefaultId
+      (team) => team.is_default && team.id !== nextDefaultId,
     );
 
     await Promise.all(
@@ -1041,7 +1143,7 @@ export default function AccountSettingsPage() {
         if (error) {
           throw error;
         }
-      })
+      }),
     );
   }
 
@@ -1056,14 +1158,15 @@ export default function AccountSettingsPage() {
     if (!trimmedName) {
       setSavedTeamsFeedback({
         tone: "error",
-        message: "Team name is required."
+        message: "Team name is required.",
       });
       return;
     }
 
     const shouldBeDefault =
       savedTeamForm.isDefault ||
-      (editingSavedTeamId === null && savedTeams.every((team) => !team.is_default));
+      (editingSavedTeamId === null &&
+        savedTeams.every((team) => !team.is_default));
 
     setIsSavedTeamSaving(true);
     setSavedTeamsFeedback(null);
@@ -1084,10 +1187,10 @@ export default function AccountSettingsPage() {
         external_team_key: null,
         external_league_key: null,
         roster_json: {
-          manualNotes: savedTeamForm.manualNotes.trim()
+          manualNotes: savedTeamForm.manualNotes.trim(),
         },
         settings_snapshot: settingsSnapshot,
-        is_default: shouldBeDefault
+        is_default: shouldBeDefault,
       };
 
       if (editingSavedTeamId) {
@@ -1100,7 +1203,9 @@ export default function AccountSettingsPage() {
           throw error;
         }
       } else {
-        const { error } = await supabase.from("user_saved_teams").insert(payload);
+        const { error } = await supabase
+          .from("user_saved_teams")
+          .insert(payload);
 
         if (error) {
           throw error;
@@ -1113,12 +1218,13 @@ export default function AccountSettingsPage() {
         tone: "success",
         message: editingSavedTeamId
           ? "Saved team updated."
-          : "Saved team created."
+          : "Saved team created.",
       });
     } catch (error) {
       setSavedTeamsFeedback({
         tone: "error",
-        message: error instanceof Error ? error.message : "Unable to save team."
+        message:
+          error instanceof Error ? error.message : "Unable to save team.",
       });
     } finally {
       setIsSavedTeamSaving(false);
@@ -1130,7 +1236,7 @@ export default function AccountSettingsPage() {
     setSavedTeamForm({
       name: team.name,
       manualNotes: getSavedTeamNotes(team.roster_json),
-      isDefault: team.is_default
+      isDefault: team.is_default,
     });
     setSavedTeamsFeedback(null);
   }
@@ -1158,18 +1264,20 @@ export default function AccountSettingsPage() {
       if (editingSavedTeamId === team.id) {
         setSavedTeamForm((current) => ({
           ...current,
-          isDefault: true
+          isDefault: true,
         }));
       }
       setSavedTeamsFeedback({
         tone: "success",
-        message: `"${team.name}" is now the default team.`
+        message: `"${team.name}" is now the default team.`,
       });
     } catch (error) {
       setSavedTeamsFeedback({
         tone: "error",
         message:
-          error instanceof Error ? error.message : "Unable to change default team."
+          error instanceof Error
+            ? error.message
+            : "Unable to change default team.",
       });
     }
   }
@@ -1197,12 +1305,13 @@ export default function AccountSettingsPage() {
       }
       setSavedTeamsFeedback({
         tone: "success",
-        message: `"${team.name}" was removed.`
+        message: `"${team.name}" was removed.`,
       });
     } catch (error) {
       setSavedTeamsFeedback({
         tone: "error",
-        message: error instanceof Error ? error.message : "Unable to delete team."
+        message:
+          error instanceof Error ? error.message : "Unable to delete team.",
       });
     }
   }
@@ -1233,7 +1342,9 @@ export default function AccountSettingsPage() {
 
       const payload = await response.json();
       if (!response.ok || !payload.authorizationUrl) {
-        throw new Error(payload.error || "Unable to begin Yahoo authentication.");
+        throw new Error(
+          payload.error || "Unable to begin Yahoo authentication.",
+        );
       }
 
       window.location.assign(payload.authorizationUrl);
@@ -1241,7 +1352,9 @@ export default function AccountSettingsPage() {
       setYahooFeedback({
         tone: "error",
         message:
-          error instanceof Error ? error.message : "Unable to begin Yahoo authentication.",
+          error instanceof Error
+            ? error.message
+            : "Unable to begin Yahoo authentication.",
       });
       setIsYahooActionLoading(false);
     }
@@ -1280,10 +1393,117 @@ export default function AccountSettingsPage() {
     } catch (error) {
       setYahooFeedback({
         tone: "error",
-        message: error instanceof Error ? error.message : "Unable to disconnect Yahoo.",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Unable to disconnect Yahoo.",
       });
     } finally {
       setIsYahooActionLoading(false);
+    }
+  }
+
+  async function handleYahooRefresh() {
+    setYahooFeedback(null);
+    setIsYahooActionLoading(true);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error("You must be signed in before refreshing Yahoo.");
+      }
+
+      const response = await fetch("/api/v1/account/yahoo/refresh", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Unable to refresh Yahoo.");
+      }
+
+      await reloadYahooState();
+      setYahooFeedback({
+        tone: "success",
+        message: payload.message || "Yahoo Fantasy refreshed.",
+      });
+    } catch (error) {
+      setYahooFeedback({
+        tone: "error",
+        message:
+          error instanceof Error ? error.message : "Unable to refresh Yahoo.",
+      });
+    } finally {
+      setIsYahooActionLoading(false);
+    }
+  }
+
+  async function handleYahooTeamRoster(team: ExternalTeamRow) {
+    if (expandedYahooRosterTeamId === team.id) {
+      setExpandedYahooRosterTeamId(null);
+      return;
+    }
+
+    setYahooFeedback(null);
+    setYahooRosterLoadingTeamId(team.id);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error("You must be signed in before loading a Yahoo roster.");
+      }
+
+      const response = await fetch("/api/v1/account/yahoo/team-roster", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ externalTeamId: team.id }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Unable to load the Yahoo roster.");
+      }
+
+      setYahooTeams((currentTeams) =>
+        currentTeams.map((currentTeam) =>
+          currentTeam.id === team.id
+            ? {
+                ...currentTeam,
+                roster_snapshot: payload.rosterSnapshot,
+                updated_at: payload.fetchedAt || currentTeam.updated_at,
+              }
+            : currentTeam,
+        ),
+      );
+      setExpandedYahooRosterTeamId(team.id);
+      setYahooFeedback({
+        tone: "success",
+        message:
+          payload.message ||
+          `Loaded the roster for ${team.team_name || "Yahoo team"}.`,
+      });
+    } catch (error) {
+      setYahooFeedback({
+        tone: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Unable to load the Yahoo roster.",
+      });
+    } finally {
+      setYahooRosterLoadingTeamId(null);
     }
   }
 
@@ -1292,7 +1512,8 @@ export default function AccountSettingsPage() {
       return;
     }
 
-    const league = yahooLeagues.find((item) => item.id === team.external_league_id) || null;
+    const league =
+      yahooLeagues.find((item) => item.id === team.external_league_id) || null;
     const activeContext = {
       provider: YAHOO_PROVIDER,
       source_type: "external-provider",
@@ -1320,22 +1541,24 @@ export default function AccountSettingsPage() {
           },
           {
             onConflict: "user_id,provider",
-          }
+          },
         );
 
       if (preferencesError) {
         throw preferencesError;
       }
 
-      const { error: settingsError } = await supabase.from("user_settings").upsert(
-        {
-          user_id: user.id,
-          active_context: activeContext,
-        },
-        {
-          onConflict: "user_id",
-        }
-      );
+      const { error: settingsError } = await supabase
+        .from("user_settings")
+        .upsert(
+          {
+            user_id: user.id,
+            active_context: activeContext,
+          },
+          {
+            onConflict: "user_id",
+          },
+        );
 
       if (settingsError) {
         throw settingsError;
@@ -1350,7 +1573,9 @@ export default function AccountSettingsPage() {
       setYahooFeedback({
         tone: "error",
         message:
-          error instanceof Error ? error.message : "Unable to update the default Yahoo team.",
+          error instanceof Error
+            ? error.message
+            : "Unable to update the default Yahoo team.",
       });
     } finally {
       setIsYahooActionLoading(false);
@@ -1362,11 +1587,13 @@ export default function AccountSettingsPage() {
       return;
     }
 
-    const league = yahooLeagues.find((item) => item.id === team.external_league_id) || null;
+    const league =
+      yahooLeagues.find((item) => item.id === team.external_league_id) || null;
     if (!league) {
       setSavedTeamsFeedback({
         tone: "error",
-        message: "The Yahoo league for this team is unavailable. Refresh the account state and try again."
+        message:
+          "The Yahoo league for this team is unavailable. Refresh the account state and try again.",
       });
       return;
     }
@@ -1380,17 +1607,18 @@ export default function AccountSettingsPage() {
       const existingSavedTeam = currentSavedTeams.find(
         (savedTeam) =>
           savedTeam.provider === YAHOO_PROVIDER &&
-          savedTeam.external_team_key === team.external_team_key
+          savedTeam.external_team_key === team.external_team_key,
       );
       const shouldBeDefault =
-        existingSavedTeam?.is_default ?? currentSavedTeams.every((savedTeam) => !savedTeam.is_default);
+        existingSavedTeam?.is_default ??
+        currentSavedTeams.every((savedTeam) => !savedTeam.is_default);
 
       if (shouldBeDefault) {
         await Promise.all(
           currentSavedTeams
             .filter(
               (savedTeam) =>
-                savedTeam.is_default && savedTeam.id !== existingSavedTeam?.id
+                savedTeam.is_default && savedTeam.id !== existingSavedTeam?.id,
             )
             .map(async (savedTeam) => {
               const { error } = await supabase
@@ -1401,7 +1629,7 @@ export default function AccountSettingsPage() {
               if (error) {
                 throw error;
               }
-            })
+            }),
         );
       }
 
@@ -1420,9 +1648,9 @@ export default function AccountSettingsPage() {
           scoring_settings: league.scoring_settings,
           roster_settings: league.roster_settings,
           league_metadata: league.league_metadata,
-          imported_at: team.imported_at
+          imported_at: team.imported_at,
         },
-        is_default: shouldBeDefault
+        is_default: shouldBeDefault,
       };
 
       const { error } = existingSavedTeam
@@ -1444,7 +1672,9 @@ export default function AccountSettingsPage() {
       setYahooFeedback({ tone: "success", message });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Unable to save the imported Yahoo team.";
+        error instanceof Error
+          ? error.message
+          : "Unable to save the imported Yahoo team.";
       setSavedTeamsFeedback({ tone: "error", message });
       setYahooFeedback({ tone: "error", message });
     } finally {
@@ -1454,32 +1684,40 @@ export default function AccountSettingsPage() {
 
   function getPreferredYahooTeamForLeague(
     leagueId: string,
-    preferredTeamId?: string | null
+    preferredTeamId?: string | null,
   ) {
-    const teamsForLeague = yahooTeams.filter((team) => team.external_league_id === leagueId);
+    const teamsForLeague = yahooTeams.filter(
+      (team) => team.external_league_id === leagueId,
+    );
 
     return (
       teamsForLeague.find((team) => team.id === preferredTeamId) ||
-      teamsForLeague.find((team) => team.id === yahooPreferences?.default_external_team_id) ||
+      teamsForLeague.find(
+        (team) => team.id === yahooPreferences?.default_external_team_id,
+      ) ||
       teamsForLeague[0] ||
       null
     );
   }
 
-  async function handleSetYahooActiveContext(nextLeagueId: string, nextTeamId?: string) {
+  async function handleSetYahooActiveContext(
+    nextLeagueId: string,
+    nextTeamId?: string,
+  ) {
     if (!user?.id || !yahooConnectedAccount) {
       return;
     }
 
     const trimmedLeagueId = nextLeagueId || "";
     const trimmedTeamId = nextTeamId || "";
-    const nextLeague = yahooLeagues.find((league) => league.id === trimmedLeagueId) || null;
+    const nextLeague =
+      yahooLeagues.find((league) => league.id === trimmedLeagueId) || null;
     const nextTeam =
       (trimmedTeamId &&
         yahooTeams.find(
           (team) =>
             team.id === trimmedTeamId &&
-            (!nextLeague || team.external_league_id === nextLeague.id)
+            (!nextLeague || team.external_league_id === nextLeague.id),
         )) ||
       (nextLeague
         ? getPreferredYahooTeamForLeague(nextLeague.id, trimmedTeamId || null)
@@ -1492,7 +1730,7 @@ export default function AccountSettingsPage() {
           external_league_id: nextLeague.id,
           external_team_id: nextTeam?.id || null,
           external_league_key: nextLeague.external_league_key,
-          external_team_key: nextTeam?.external_team_key || null
+          external_team_key: nextTeam?.external_team_key || null,
         }
       : buildManualActiveContext();
 
@@ -1509,29 +1747,33 @@ export default function AccountSettingsPage() {
             user_id: user.id,
             provider: YAHOO_PROVIDER,
             connected_account_id: yahooConnectedAccount.id,
-            default_external_league_id: yahooPreferences?.default_external_league_id || null,
-            default_external_team_id: yahooPreferences?.default_external_team_id || null,
+            default_external_league_id:
+              yahooPreferences?.default_external_league_id || null,
+            default_external_team_id:
+              yahooPreferences?.default_external_team_id || null,
             refresh_on_login: yahooPreferences?.refresh_on_login ?? false,
-            active_context: activeContext
+            active_context: activeContext,
           },
           {
-            onConflict: "user_id,provider"
-          }
+            onConflict: "user_id,provider",
+          },
         );
 
       if (preferencesError) {
         throw preferencesError;
       }
 
-      const { error: settingsError } = await supabase.from("user_settings").upsert(
-        {
-          user_id: user.id,
-          active_context: activeContext
-        },
-        {
-          onConflict: "user_id"
-        }
-      );
+      const { error: settingsError } = await supabase
+        .from("user_settings")
+        .upsert(
+          {
+            user_id: user.id,
+            active_context: activeContext,
+          },
+          {
+            onConflict: "user_id",
+          },
+        );
 
       if (settingsError) {
         throw settingsError;
@@ -1539,7 +1781,7 @@ export default function AccountSettingsPage() {
 
       setLeagueForm((current) => ({
         ...current,
-        activeContext
+        activeContext,
       }));
       await reloadYahooState();
 
@@ -1549,31 +1791,33 @@ export default function AccountSettingsPage() {
 
       setYahooFeedback({
         tone: "success",
-        message: successMessage
+        message: successMessage,
       });
       setLeagueFeedback({
         tone: "success",
-        message: successMessage
+        message: successMessage,
       });
       setSavedTeamsFeedback({
         tone: "success",
-        message: successMessage
+        message: successMessage,
       });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Unable to update the active Yahoo context.";
+        error instanceof Error
+          ? error.message
+          : "Unable to update the active Yahoo context.";
 
       setYahooFeedback({
         tone: "error",
-        message
+        message,
       });
       setLeagueFeedback({
         tone: "error",
-        message
+        message,
       });
       setSavedTeamsFeedback({
         tone: "error",
-        message
+        message,
       });
     } finally {
       setIsYahooActionLoading(false);
@@ -1582,15 +1826,15 @@ export default function AccountSettingsPage() {
 
   const scoringEntries = useMemo(
     () => Object.entries(leagueForm.scoringCategories),
-    [leagueForm.scoringCategories]
+    [leagueForm.scoringCategories],
   );
   const categoryWeightEntries = useMemo(
     () => Object.entries(leagueForm.categoryWeights),
-    [leagueForm.categoryWeights]
+    [leagueForm.categoryWeights],
   );
   const rosterEntries = useMemo(
     () => Object.entries(leagueForm.rosterConfig),
-    [leagueForm.rosterConfig]
+    [leagueForm.rosterConfig],
   );
 
   return (
@@ -1604,9 +1848,11 @@ export default function AccountSettingsPage() {
           </div>
 
           <div className={styles.nav}>
-            {(Object.entries(SECTION_CONFIG) as Array<
-              [AccountSection, (typeof SECTION_CONFIG)[AccountSection]]
-            >).map(([sectionKey, config]) => (
+            {(
+              Object.entries(SECTION_CONFIG) as Array<
+                [AccountSection, (typeof SECTION_CONFIG)[AccountSection]]
+              >
+            ).map(([sectionKey, config]) => (
               <button
                 key={sectionKey}
                 type="button"
@@ -1614,7 +1860,9 @@ export default function AccountSettingsPage() {
                 onClick={() => updateSection(sectionKey)}
               >
                 <span className={styles.navLabel}>{config.label}</span>
-                <span className={styles.navDescription}>{config.description}</span>
+                <span className={styles.navDescription}>
+                  {config.description}
+                </span>
               </button>
             ))}
           </div>
@@ -1631,7 +1879,9 @@ export default function AccountSettingsPage() {
             <span className={styles.statusPill}>
               Auth: {user?.isEmailVerified ? "verified" : "signed in"}
             </span>
-            <span className={styles.statusPill}>Section: {sectionConfig.label}</span>
+            <span className={styles.statusPill}>
+              Section: {sectionConfig.label}
+            </span>
             <span className={styles.statusPill}>Route shell active</span>
           </div>
 
@@ -1655,7 +1905,9 @@ export default function AccountSettingsPage() {
                       )}
                     </div>
                     <div className={styles.avatarMeta}>
-                      <div className={styles.avatarName}>{resolvedDisplayName}</div>
+                      <div className={styles.avatarName}>
+                        {resolvedDisplayName}
+                      </div>
                       <div className={styles.avatarEmail}>
                         {user?.email || "Signed-in account"}
                       </div>
@@ -1663,7 +1915,9 @@ export default function AccountSettingsPage() {
                   </div>
 
                   {isProfileLoading ? (
-                    <div className={styles.profileLoading}>Loading profile fields...</div>
+                    <div className={styles.profileLoading}>
+                      Loading profile fields...
+                    </div>
                   ) : (
                     <form
                       className={styles.profileForm}
@@ -1671,16 +1925,17 @@ export default function AccountSettingsPage() {
                     >
                       {profileRecordState === "missing" ? (
                         <div className={styles.infoMessage}>
-                          Your profile record is not stored yet. The form is using your
-                          current auth identity as a fallback, and saving will initialize
-                          the profile row.
+                          Your profile record is not stored yet. The form is
+                          using your current auth identity as a fallback, and
+                          saving will initialize the profile row.
                         </div>
                       ) : null}
 
                       {profileRecordState === "error" ? (
                         <div className={styles.errorMessage} role="alert">
-                          We could not load your saved profile row. You can retry by
-                          refreshing or save again to attempt reinitialization.
+                          We could not load your saved profile row. You can
+                          retry by refreshing or save again to attempt
+                          reinitialization.
                         </div>
                       ) : null}
 
@@ -1690,7 +1945,10 @@ export default function AccountSettingsPage() {
                           type="text"
                           value={profileForm.displayName}
                           onChange={(event) =>
-                            updateProfileField("displayName", event.target.value)
+                            updateProfileField(
+                              "displayName",
+                              event.target.value,
+                            )
                           }
                           className={styles.input}
                           placeholder="How your account should appear"
@@ -1733,7 +1991,11 @@ export default function AccountSettingsPage() {
                               ? styles.errorMessage
                               : styles.successMessage
                           }
-                          role={profileFeedback.tone === "error" ? "alert" : undefined}
+                          role={
+                            profileFeedback.tone === "error"
+                              ? "alert"
+                              : undefined
+                          }
                         >
                           {profileFeedback.message}
                         </div>
@@ -1754,10 +2016,14 @@ export default function AccountSettingsPage() {
 
             {activeSection === "league-settings" ? (
               <div className={styles.panel}>
-                <h2 className={styles.panelTitle}>Scoring and Roster Defaults</h2>
+                <h2 className={styles.panelTitle}>
+                  Scoring and Roster Defaults
+                </h2>
 
                 {isLeagueLoading ? (
-                  <div className={styles.profileLoading}>Loading league defaults...</div>
+                  <div className={styles.profileLoading}>
+                    Loading league defaults...
+                  </div>
                 ) : (
                   <form
                     className={styles.settingsForm}
@@ -1765,26 +2031,30 @@ export default function AccountSettingsPage() {
                   >
                     {leagueRecordState === "missing" ? (
                       <div className={styles.infoMessage}>
-                        Your league defaults have not been saved yet. Site defaults are
-                        shown here until you save your first personalized settings row.
+                        Your league defaults have not been saved yet. Site
+                        defaults are shown here until you save your first
+                        personalized settings row.
                       </div>
                     ) : null}
 
                     {leagueRecordState === "error" ? (
                       <div className={styles.errorMessage} role="alert">
-                        We could not load your stored league settings. The form is
-                        showing safe defaults until the next successful save.
+                        We could not load your stored league settings. The form
+                        is showing safe defaults until the next successful save.
                       </div>
                     ) : null}
 
                     <div className={styles.formSection}>
                       <div className={styles.formSectionHeader}>
-                        <h3 className={styles.formSectionTitle}>Imported Yahoo League</h3>
+                        <h3 className={styles.formSectionTitle}>
+                          Imported Yahoo League
+                        </h3>
                         <p className={styles.formSectionBody}>
-                          When your active context points at Yahoo, this imported league is
-                          the source of truth for scoring shape and roster slots. Manual
-                          defaults remain below as a fallback for manual teams and future
-                          unsupported providers.
+                          When your active context points at Yahoo, this
+                          imported league is the source of truth for scoring
+                          shape and roster slots. Manual defaults remain below
+                          as a fallback for manual teams and future unsupported
+                          providers.
                         </p>
                       </div>
 
@@ -1800,7 +2070,8 @@ export default function AccountSettingsPage() {
                                 Selected Yahoo League
                               </span>
                               <span className={styles.yahooLeagueSummaryValue}>
-                                {activeYahooLeague.league_name || "Unnamed Yahoo league"}
+                                {activeYahooLeague.league_name ||
+                                  "Unnamed Yahoo league"}
                               </span>
                               <span className={styles.yahooLeagueSummaryHint}>
                                 Team context:{" "}
@@ -1811,16 +2082,23 @@ export default function AccountSettingsPage() {
                             </div>
 
                             <div className={styles.yahooLeagueSummaryCard}>
-                              <span className={styles.yahooLeagueSummaryLabel}>Season</span>
+                              <span className={styles.yahooLeagueSummaryLabel}>
+                                Season
+                              </span>
                               <span className={styles.yahooLeagueSummaryValue}>
                                 {activeYahooLeague.season_key ||
-                                  getYahooLeagueMetadataValue(activeYahooLeague, "season") ||
+                                  getYahooLeagueMetadataValue(
+                                    activeYahooLeague,
+                                    "season",
+                                  ) ||
                                   "Unknown"}
                               </span>
                               <span className={styles.yahooLeagueSummaryHint}>
                                 Game key:{" "}
-                                {getYahooLeagueMetadataValue(activeYahooLeague, "game_key") ||
-                                  "Unknown"}
+                                {getYahooLeagueMetadataValue(
+                                  activeYahooLeague,
+                                  "game_key",
+                                ) || "Unknown"}
                               </span>
                             </div>
 
@@ -1831,14 +2109,14 @@ export default function AccountSettingsPage() {
                               <span className={styles.yahooLeagueSummaryValue}>
                                 {getYahooLeagueMetadataValue(
                                   activeYahooLeague,
-                                  "scoring_type"
+                                  "scoring_type",
                                 ) || "Unknown"}
                               </span>
                               <span className={styles.yahooLeagueSummaryHint}>
                                 League type:{" "}
                                 {getYahooLeagueMetadataValue(
                                   activeYahooLeague,
-                                  "league_type"
+                                  "league_type",
                                 ) || "Unknown"}
                               </span>
                             </div>
@@ -1848,14 +2126,16 @@ export default function AccountSettingsPage() {
                                 Team Count
                               </span>
                               <span className={styles.yahooLeagueSummaryValue}>
-                                {getYahooLeagueMetadataValue(activeYahooLeague, "num_teams") ||
-                                  "Unknown"}
+                                {getYahooLeagueMetadataValue(
+                                  activeYahooLeague,
+                                  "num_teams",
+                                ) || "Unknown"}
                               </span>
                               <span className={styles.yahooLeagueSummaryHint}>
                                 Current week:{" "}
                                 {getYahooLeagueMetadataValue(
                                   activeYahooLeague,
-                                  "current_week"
+                                  "current_week",
                                 ) || "Unknown"}
                               </span>
                             </div>
@@ -1865,14 +2145,16 @@ export default function AccountSettingsPage() {
                                 Roster Type
                               </span>
                               <span className={styles.yahooLeagueSummaryValue}>
-                                {getYahooLeagueMetadataValue(activeYahooLeague, "roster_type") ||
-                                  "Unknown"}
+                                {getYahooLeagueMetadataValue(
+                                  activeYahooLeague,
+                                  "roster_type",
+                                ) || "Unknown"}
                               </span>
                               <span className={styles.yahooLeagueSummaryHint}>
                                 Weekly deadline:{" "}
                                 {getYahooLeagueMetadataValue(
                                   activeYahooLeague,
-                                  "weekly_deadline"
+                                  "weekly_deadline",
                                 ) || "Unknown"}
                               </span>
                             </div>
@@ -1886,18 +2168,30 @@ export default function AccountSettingsPage() {
                               <div className={styles.yahooLeagueDetailRows}>
                                 {yahooLeagueScoringRows.length > 0 ? (
                                   yahooLeagueScoringRows.map((row) => (
-                                    <div key={row.key} className={styles.yahooLeagueDetailRow}>
-                                      <span className={styles.yahooLeagueDetailLabel}>
+                                    <div
+                                      key={row.key}
+                                      className={styles.yahooLeagueDetailRow}
+                                    >
+                                      <span
+                                        className={
+                                          styles.yahooLeagueDetailLabel
+                                        }
+                                      >
                                         {row.label}
                                       </span>
-                                      <span className={styles.yahooLeagueDetailValue}>
+                                      <span
+                                        className={
+                                          styles.yahooLeagueDetailValue
+                                        }
+                                      >
                                         {row.value}
                                       </span>
                                     </div>
                                   ))
                                 ) : (
                                   <div className={styles.emptyState}>
-                                    No scoring categories were stored for this Yahoo league yet.
+                                    No scoring categories were stored for this
+                                    Yahoo league yet.
                                   </div>
                                 )}
                               </div>
@@ -1910,18 +2204,30 @@ export default function AccountSettingsPage() {
                               <div className={styles.yahooLeagueDetailRows}>
                                 {yahooLeagueRosterRows.length > 0 ? (
                                   yahooLeagueRosterRows.map((row) => (
-                                    <div key={row.key} className={styles.yahooLeagueDetailRow}>
-                                      <span className={styles.yahooLeagueDetailLabel}>
+                                    <div
+                                      key={row.key}
+                                      className={styles.yahooLeagueDetailRow}
+                                    >
+                                      <span
+                                        className={
+                                          styles.yahooLeagueDetailLabel
+                                        }
+                                      >
                                         {row.label}
                                       </span>
-                                      <span className={styles.yahooLeagueDetailValue}>
+                                      <span
+                                        className={
+                                          styles.yahooLeagueDetailValue
+                                        }
+                                      >
                                         {row.value}
                                       </span>
                                     </div>
                                   ))
                                 ) : (
                                   <div className={styles.emptyState}>
-                                    No roster positions were stored for this Yahoo league yet.
+                                    No roster positions were stored for this
+                                    Yahoo league yet.
                                   </div>
                                 )}
                               </div>
@@ -1930,9 +2236,9 @@ export default function AccountSettingsPage() {
                         </div>
                       ) : (
                         <div className={styles.infoMessage}>
-                          No synced Yahoo NHL league is active yet. Connect Yahoo and choose
-                          a default team in Connected Accounts to surface imported scoring
-                          and roster settings here.
+                          No synced Yahoo NHL league is active yet. Connect
+                          Yahoo and choose a default team in Connected Accounts
+                          to surface imported scoring and roster settings here.
                         </div>
                       )}
                     </div>
@@ -1941,9 +2247,9 @@ export default function AccountSettingsPage() {
                       <div className={styles.formSectionHeader}>
                         <h3 className={styles.formSectionTitle}>League Mode</h3>
                         <p className={styles.formSectionBody}>
-                          These defaults persist independently from Draft Dashboard so
-                          users can update account-level scoring without losing page state
-                          elsewhere.
+                          These defaults persist independently from Draft
+                          Dashboard so users can update account-level scoring
+                          without losing page state elsewhere.
                         </p>
                       </div>
 
@@ -1965,18 +2271,22 @@ export default function AccountSettingsPage() {
 
                     <div className={styles.formSection}>
                       <div className={styles.formSectionHeader}>
-                        <h3 className={styles.formSectionTitle}>Points Scoring</h3>
+                        <h3 className={styles.formSectionTitle}>
+                          Points Scoring
+                        </h3>
                         <p className={styles.formSectionBody}>
-                          These values map to the existing `scoringCategories` shape and
-                          remain the active defaults whenever league type is set to
-                          points.
+                          These values map to the existing `scoringCategories`
+                          shape and remain the active defaults whenever league
+                          type is set to points.
                         </p>
                       </div>
 
                       <div className={styles.numericGrid}>
                         {scoringEntries.map(([key, value]) => (
                           <label key={key} className={styles.field}>
-                            <span className={styles.fieldLabel}>Points: {key}</span>
+                            <span className={styles.fieldLabel}>
+                              Points: {key}
+                            </span>
                             <input
                               type="number"
                               step="0.05"
@@ -1985,7 +2295,7 @@ export default function AccountSettingsPage() {
                                 updateLeagueNumberField(
                                   "scoringCategories",
                                   key,
-                                  event.target.value
+                                  event.target.value,
                                 )
                               }
                               className={styles.input}
@@ -1998,18 +2308,22 @@ export default function AccountSettingsPage() {
 
                     <div className={styles.formSection}>
                       <div className={styles.formSectionHeader}>
-                        <h3 className={styles.formSectionTitle}>Category Weights</h3>
+                        <h3 className={styles.formSectionTitle}>
+                          Category Weights
+                        </h3>
                         <p className={styles.formSectionBody}>
-                          These values are stored separately so categories leagues can
-                          reuse the same account-level defaults later without coupling to
-                          the dashboard screen.
+                          These values are stored separately so categories
+                          leagues can reuse the same account-level defaults
+                          later without coupling to the dashboard screen.
                         </p>
                       </div>
 
                       <div className={styles.numericGrid}>
                         {categoryWeightEntries.map(([key, value]) => (
                           <label key={key} className={styles.field}>
-                            <span className={styles.fieldLabel}>Weight: {key}</span>
+                            <span className={styles.fieldLabel}>
+                              Weight: {key}
+                            </span>
                             <input
                               type="number"
                               step="0.1"
@@ -2018,7 +2332,7 @@ export default function AccountSettingsPage() {
                                 updateLeagueNumberField(
                                   "categoryWeights",
                                   key,
-                                  event.target.value
+                                  event.target.value,
                                 )
                               }
                               className={styles.input}
@@ -2031,17 +2345,22 @@ export default function AccountSettingsPage() {
 
                     <div className={styles.formSection}>
                       <div className={styles.formSectionHeader}>
-                        <h3 className={styles.formSectionTitle}>Roster Defaults</h3>
+                        <h3 className={styles.formSectionTitle}>
+                          Roster Defaults
+                        </h3>
                         <p className={styles.formSectionBody}>
-                          These values map to your existing `rosterConfig` shape and give
-                          the future league-sync flow a stable manual fallback.
+                          These values map to your existing `rosterConfig` shape
+                          and give the future league-sync flow a stable manual
+                          fallback.
                         </p>
                       </div>
 
                       <div className={styles.numericGrid}>
                         {rosterEntries.map(([key, value]) => (
                           <label key={key} className={styles.field}>
-                            <span className={styles.fieldLabel}>Roster: {key}</span>
+                            <span className={styles.fieldLabel}>
+                              Roster: {key}
+                            </span>
                             <input
                               type="number"
                               min="0"
@@ -2051,7 +2370,7 @@ export default function AccountSettingsPage() {
                                 updateLeagueNumberField(
                                   "rosterConfig",
                                   key,
-                                  event.target.value
+                                  event.target.value,
                                 )
                               }
                               className={styles.input}
@@ -2064,11 +2383,15 @@ export default function AccountSettingsPage() {
 
                     <div className={styles.formSection}>
                       <div className={styles.formSectionHeader}>
-                        <h3 className={styles.formSectionTitle}>Active League Context</h3>
+                        <h3 className={styles.formSectionTitle}>
+                          Active League Context
+                        </h3>
                         <p className={styles.formSectionBody}>
-                          Use these quick switchers to change the active Yahoo league and
-                          team without reconnecting. The selection persists to both
-                          `user_provider_preferences.active_context` and `user_settings.active_context`.
+                          Use these quick switchers to change the active Yahoo
+                          league and team without reconnecting. The selection
+                          persists to both
+                          `user_provider_preferences.active_context` and
+                          `user_settings.active_context`.
                         </p>
                       </div>
 
@@ -2076,35 +2399,44 @@ export default function AccountSettingsPage() {
                         <div className={styles.yahooContextSwitcher}>
                           <div className={styles.yahooContextGrid}>
                             <label className={styles.field}>
-                              <span className={styles.fieldLabel}>Active Yahoo League</span>
+                              <span className={styles.fieldLabel}>
+                                Active Yahoo League
+                              </span>
                               <select
                                 value={activeYahooLeague?.id || ""}
                                 onChange={(event) =>
-                                  void handleSetYahooActiveContext(event.target.value)
+                                  void handleSetYahooActiveContext(
+                                    event.target.value,
+                                  )
                                 }
                                 className={styles.select}
                                 disabled={isYahooActionLoading}
                               >
                                 {yahooLeagues.map((league) => (
                                   <option key={league.id} value={league.id}>
-                                    {league.league_name || league.external_league_key}
+                                    {league.league_name ||
+                                      league.external_league_key}
                                   </option>
                                 ))}
                               </select>
                             </label>
 
                             <label className={styles.field}>
-                              <span className={styles.fieldLabel}>Active Yahoo Team</span>
+                              <span className={styles.fieldLabel}>
+                                Active Yahoo Team
+                              </span>
                               <select
                                 value={activeYahooTeam?.id || ""}
                                 onChange={(event) =>
                                   void handleSetYahooActiveContext(
                                     activeYahooLeague?.id || "",
-                                    event.target.value
+                                    event.target.value,
                                   )
                                 }
                                 className={styles.select}
-                                disabled={isYahooActionLoading || !activeYahooLeague}
+                                disabled={
+                                  isYahooActionLoading || !activeYahooLeague
+                                }
                               >
                                 {yahooTeamsForActiveLeague.map((team) => (
                                   <option key={team.id} value={team.id}>
@@ -2117,8 +2449,8 @@ export default function AccountSettingsPage() {
                         </div>
                       ) : (
                         <div className={styles.infoMessage}>
-                          Connect Yahoo and import at least one NHL league to enable the
-                          quick context switchers here.
+                          Connect Yahoo and import at least one NHL league to
+                          enable the quick context switchers here.
                         </div>
                       )}
 
@@ -2127,7 +2459,8 @@ export default function AccountSettingsPage() {
                           Source: {leagueForm.activeContext.source_type}
                         </span>
                         <span className={styles.statusPill}>
-                          Provider: {leagueForm.activeContext.provider || "manual"}
+                          Provider:{" "}
+                          {leagueForm.activeContext.provider || "manual"}
                         </span>
                         <span className={styles.statusPill}>
                           League:{" "}
@@ -2151,7 +2484,9 @@ export default function AccountSettingsPage() {
                             ? styles.errorMessage
                             : styles.successMessage
                         }
-                        role={leagueFeedback.tone === "error" ? "alert" : undefined}
+                        role={
+                          leagueFeedback.tone === "error" ? "alert" : undefined
+                        }
                       >
                         {leagueFeedback.message}
                       </div>
@@ -2191,46 +2526,58 @@ export default function AccountSettingsPage() {
                     {yahooConnectedAccount && yahooLeagues.length > 0 ? (
                       <div className={styles.formSection}>
                         <div className={styles.formSectionHeader}>
-                          <h3 className={styles.formSectionTitle}>Active Yahoo Context</h3>
+                          <h3 className={styles.formSectionTitle}>
+                            Active Yahoo Context
+                          </h3>
                           <p className={styles.formSectionBody}>
-                            Manual saved teams can still follow the same active Yahoo
-                            league/team context used elsewhere in the account UI. Use
-                            these dropdowns when you want to switch league focus before
-                            saving or comparing teams.
+                            Manual saved teams can still follow the same active
+                            Yahoo league/team context used elsewhere in the
+                            account UI. Use these dropdowns when you want to
+                            switch league focus before saving or comparing
+                            teams.
                           </p>
                         </div>
 
                         <div className={styles.yahooContextGrid}>
                           <label className={styles.field}>
-                            <span className={styles.fieldLabel}>Active Yahoo League</span>
+                            <span className={styles.fieldLabel}>
+                              Active Yahoo League
+                            </span>
                             <select
                               value={activeYahooLeague?.id || ""}
                               onChange={(event) =>
-                                void handleSetYahooActiveContext(event.target.value)
+                                void handleSetYahooActiveContext(
+                                  event.target.value,
+                                )
                               }
                               className={styles.select}
                               disabled={isYahooActionLoading}
                             >
                               {yahooLeagues.map((league) => (
                                 <option key={league.id} value={league.id}>
-                                  {league.league_name || league.external_league_key}
+                                  {league.league_name ||
+                                    league.external_league_key}
                                 </option>
                               ))}
                             </select>
                           </label>
 
                           <label className={styles.field}>
-                            <span className={styles.fieldLabel}>Active Yahoo Team</span>
+                            <span className={styles.fieldLabel}>
+                              Active Yahoo Team
+                            </span>
                             <select
                               value={activeYahooTeam?.id || ""}
                               onChange={(event) =>
                                 void handleSetYahooActiveContext(
                                   activeYahooLeague?.id || "",
-                                  event.target.value
+                                  event.target.value,
                                 )
                               }
                               className={styles.select}
-                              disabled={isYahooActionLoading || !activeYahooLeague}
+                              disabled={
+                                isYahooActionLoading || !activeYahooLeague
+                              }
                             >
                               {yahooTeamsForActiveLeague.map((team) => (
                                 <option key={team.id} value={team.id}>
@@ -2260,12 +2607,14 @@ export default function AccountSettingsPage() {
 
                     <div className={styles.formSectionHeader}>
                       <h3 className={styles.formSectionTitle}>
-                        {editingSavedTeamId ? "Edit Saved Team" : "Create Saved Team"}
+                        {editingSavedTeamId
+                          ? "Edit Saved Team"
+                          : "Create Saved Team"}
                       </h3>
                       <p className={styles.formSectionBody}>
-                        Manual teams store a lightweight roster note plus a snapshot of
-                        your current league defaults, so future provider sync can coexist
-                        with account-owned teams.
+                        Manual teams store a lightweight roster note plus a
+                        snapshot of your current league defaults, so future
+                        provider sync can coexist with account-owned teams.
                       </p>
                     </div>
 
@@ -2288,7 +2637,10 @@ export default function AccountSettingsPage() {
                       <textarea
                         value={savedTeamForm.manualNotes}
                         onChange={(event) =>
-                          updateSavedTeamField("manualNotes", event.target.value)
+                          updateSavedTeamField(
+                            "manualNotes",
+                            event.target.value,
+                          )
                         }
                         className={styles.textarea}
                         placeholder="Roster reminders, keepers, trade context, or lineup notes"
@@ -2301,7 +2653,10 @@ export default function AccountSettingsPage() {
                         type="checkbox"
                         checked={savedTeamForm.isDefault}
                         onChange={(event) =>
-                          updateSavedTeamField("isDefault", event.target.checked)
+                          updateSavedTeamField(
+                            "isDefault",
+                            event.target.checked,
+                          )
                         }
                         disabled={isSavedTeamSaving}
                       />
@@ -2315,7 +2670,11 @@ export default function AccountSettingsPage() {
                             ? styles.errorMessage
                             : styles.successMessage
                         }
-                        role={savedTeamsFeedback.tone === "error" ? "alert" : undefined}
+                        role={
+                          savedTeamsFeedback.tone === "error"
+                            ? "alert"
+                            : undefined
+                        }
                       >
                         {savedTeamsFeedback.message}
                       </div>
@@ -2348,19 +2707,25 @@ export default function AccountSettingsPage() {
 
                   <div className={styles.savedTeamsList}>
                     <div className={styles.formSectionHeader}>
-                      <h3 className={styles.formSectionTitle}>Saved Team List</h3>
+                      <h3 className={styles.formSectionTitle}>
+                        Saved Team List
+                      </h3>
                       <p className={styles.formSectionBody}>
-                        The default badge marks the team the app should favor when later
-                        provider-linked accounts expose multiple leagues or teams.
+                        The default badge marks the team the app should favor
+                        when later provider-linked accounts expose multiple
+                        leagues or teams.
                       </p>
                     </div>
 
                     {isSavedTeamsLoading ? (
-                      <div className={styles.profileLoading}>Loading saved teams...</div>
+                      <div className={styles.profileLoading}>
+                        Loading saved teams...
+                      </div>
                     ) : savedTeams.length === 0 ? (
                       <div className={styles.emptyState}>
-                        No manual saved teams yet. Create one here to establish a default
-                        team before Yahoo, Fantrax, or ESPN connections are introduced.
+                        No manual saved teams yet. Create one here to establish
+                        a default team before Yahoo, Fantrax, or ESPN
+                        connections are introduced.
                       </div>
                     ) : (
                       <div className={styles.savedTeamsStack}>
@@ -2368,25 +2733,34 @@ export default function AccountSettingsPage() {
                           <div key={team.id} className={styles.savedTeamCard}>
                             <div className={styles.savedTeamHeader}>
                               <div>
-                                <div className={styles.savedTeamName}>{team.name}</div>
+                                <div className={styles.savedTeamName}>
+                                  {team.name}
+                                </div>
                                 <div className={styles.savedTeamMeta}>
-                                  Updated {formatSavedTeamTimestamp(team.updated_at)}
+                                  Updated{" "}
+                                  {formatSavedTeamTimestamp(team.updated_at)}
                                 </div>
                               </div>
                               {team.is_default ? (
-                                <span className={styles.defaultBadge}>Default</span>
+                                <span className={styles.defaultBadge}>
+                                  Default
+                                </span>
                               ) : null}
                             </div>
 
                             <div className={styles.savedTeamNotes}>
-                              {getSavedTeamNotes(team.roster_json) || "No manual notes yet."}
+                              {getSavedTeamNotes(team.roster_json) ||
+                                "No manual notes yet."}
                             </div>
 
                             <div className={styles.savedTeamMetaRow}>
                               <span className={styles.statusPill}>
-                                Snapshot: {getSavedTeamLeagueType(team.settings_snapshot)}
+                                Snapshot:{" "}
+                                {getSavedTeamLeagueType(team.settings_snapshot)}
                               </span>
-                              <span className={styles.statusPill}>Source: manual</span>
+                              <span className={styles.statusPill}>
+                                Source: manual
+                              </span>
                             </div>
 
                             <div className={styles.cardActionRow}>
@@ -2401,7 +2775,9 @@ export default function AccountSettingsPage() {
                                 <button
                                   type="button"
                                   className={styles.secondaryButton}
-                                  onClick={() => void handleSetDefaultSavedTeam(team)}
+                                  onClick={() =>
+                                    void handleSetDefaultSavedTeam(team)
+                                  }
                                 >
                                   Make Default
                                 </button>
@@ -2425,7 +2801,9 @@ export default function AccountSettingsPage() {
 
             {activeSection === "connected-accounts" ? (
               <div className={styles.panel}>
-                <h2 className={styles.panelTitle}>Provider Connection Architecture</h2>
+                <h2 className={styles.panelTitle}>
+                  Provider Connection Architecture
+                </h2>
 
                 {yahooFeedback ? (
                   <div
@@ -2447,7 +2825,9 @@ export default function AccountSettingsPage() {
                     <div key={provider.key} className={styles.providerCard}>
                       <div className={styles.providerHeader}>
                         <div>
-                          <div className={styles.providerName}>{provider.name}</div>
+                          <div className={styles.providerName}>
+                            {provider.name}
+                          </div>
                           <div className={styles.providerLocation}>
                             {provider.location}
                           </div>
@@ -2464,33 +2844,40 @@ export default function AccountSettingsPage() {
                       </div>
 
                       <p className={styles.providerSummary}>
-                        {provider.key === YAHOO_PROVIDER && yahooConnectedAccount
+                        {provider.key === YAHOO_PROVIDER &&
+                        yahooConnectedAccount
                           ? `Connected through account settings. ${yahooTeams.length} Yahoo team${yahooTeams.length === 1 ? "" : "s"} discovered across ${yahooLeagues.length} league${yahooLeagues.length === 1 ? "" : "s"}.`
                           : provider.summary}
                       </p>
 
                       <div className={styles.providerPillRow}>
-                        <span className={styles.statusPill}>Core auth stays separate</span>
                         <span className={styles.statusPill}>
-                          {provider.key === YAHOO_PROVIDER && yahooConnectedAccount
+                          Core auth stays separate
+                        </span>
+                        <span className={styles.statusPill}>
+                          {provider.key === YAHOO_PROVIDER &&
+                          yahooConnectedAccount
                             ? `Last sync ${formatSavedTeamTimestamp(
                                 yahooConnectedAccount.last_synced_at ||
-                                  yahooConnectedAccount.updated_at
+                                  yahooConnectedAccount.updated_at,
                               )}`
                             : "No live token flow yet"}
                         </span>
                         {provider.key === YAHOO_PROVIDER && yahooDefaultTeam ? (
                           <span className={styles.statusPill}>
-                            Default team: {yahooDefaultTeam.team_name || "Yahoo team"}
+                            Default team:{" "}
+                            {yahooDefaultTeam.team_name || "Yahoo team"}
                           </span>
                         ) : null}
                       </div>
 
-                      {provider.key === YAHOO_PROVIDER && yahooConnectedAccount ? (
+                      {provider.key === YAHOO_PROVIDER &&
+                      yahooConnectedAccount ? (
                         <div className={styles.providerBulletList}>
                           <div className={styles.providerBullet}>
                             Connected account label:{" "}
-                            {yahooConnectedAccount.account_label || "Yahoo Fantasy"}
+                            {yahooConnectedAccount.account_label ||
+                              "Yahoo Fantasy"}
                           </div>
                           <div className={styles.providerBullet}>
                             Discovered leagues: {yahooLeagues.length}
@@ -2522,14 +2909,28 @@ export default function AccountSettingsPage() {
                                 Connect Yahoo Fantasy
                               </button>
                             ) : (
-                              <button
-                                type="button"
-                                className={styles.dangerButton}
-                                onClick={() => void handleYahooDisconnect()}
-                                disabled={isYahooActionLoading}
-                              >
-                                Disconnect Yahoo Fantasy
-                              </button>
+                              <>
+                                <button
+                                  type="button"
+                                  className={styles.secondaryButton}
+                                  onClick={() => void handleYahooRefresh()}
+                                  disabled={
+                                    isYahooActionLoading || yahooRefreshBlocked
+                                  }
+                                >
+                                  {yahooLatestSyncRun?.status === "running"
+                                    ? "Yahoo Refresh Running"
+                                    : "Refresh Yahoo Data"}
+                                </button>
+                                <button
+                                  type="button"
+                                  className={styles.dangerButton}
+                                  onClick={() => void handleYahooDisconnect()}
+                                  disabled={isYahooActionLoading}
+                                >
+                                  Disconnect Yahoo Fantasy
+                                </button>
+                              </>
                             )}
                           </div>
                         ) : (
@@ -2540,22 +2941,31 @@ export default function AccountSettingsPage() {
                   ))}
                 </div>
 
+                <FantraxImportPanel />
+
+                <EspnImportPanel />
+
                 {yahooConnectedAccount ? (
                   <div className={styles.providerControlGrid}>
                     <div className={styles.providerControlCard}>
                       <div className={styles.formSectionHeader}>
-                        <h3 className={styles.formSectionTitle}>Yahoo League Discovery</h3>
+                        <h3 className={styles.formSectionTitle}>
+                          Yahoo League Discovery
+                        </h3>
                         <p className={styles.formSectionBody}>
-                          The initial Yahoo sync imports the leagues attached to your
-                          Yahoo account so you can choose a stable default league/team
-                          context without leaving the account page.
+                          The initial Yahoo sync imports the leagues attached to
+                          your Yahoo account so you can choose a stable default
+                          league/team context without leaving the account page.
                         </p>
                       </div>
 
                       <div className={styles.providerControlRows}>
                         {yahooLeagues.length > 0 ? (
                           yahooLeagues.map((league) => (
-                            <div key={league.id} className={styles.providerControlRow}>
+                            <div
+                              key={league.id}
+                              className={styles.providerControlRow}
+                            >
                               {league.league_name || league.external_league_key}
                               {yahooDefaultLeague?.id === league.id
                                 ? " (default league)"
@@ -2564,7 +2974,8 @@ export default function AccountSettingsPage() {
                           ))
                         ) : (
                           <div className={styles.providerControlRow}>
-                            No Yahoo NHL leagues were discovered for this connected account.
+                            No Yahoo NHL leagues were discovered for this
+                            connected account.
                           </div>
                         )}
                       </div>
@@ -2574,9 +2985,9 @@ export default function AccountSettingsPage() {
                       <div className={styles.formSectionHeader}>
                         <h3 className={styles.formSectionTitle}>Yahoo Teams</h3>
                         <p className={styles.formSectionBody}>
-                          Multiple Yahoo leagues and teams are supported. Pick a default
-                          team here and the stored active context will remain stable for
-                          future league-aware screens.
+                          Multiple Yahoo leagues and teams are supported. Pick a
+                          default team here and the stored active context will
+                          remain stable for future league-aware screens.
                         </p>
                       </div>
 
@@ -2585,34 +2996,60 @@ export default function AccountSettingsPage() {
                           yahooTeams.map((team) => {
                             const league =
                               yahooLeagues.find(
-                                (leagueItem) => leagueItem.id === team.external_league_id
+                                (leagueItem) =>
+                                  leagueItem.id === team.external_league_id,
                               ) || null;
                             const savedYahooTeam = savedTeams.find(
                               (savedTeam) =>
                                 savedTeam.provider === YAHOO_PROVIDER &&
-                                savedTeam.external_team_key === team.external_team_key
+                                savedTeam.external_team_key ===
+                                  team.external_team_key,
                             );
                             const isOwnedTeam = isOwnedYahooTeam(team);
                             const standingRank = getYahooTeamStandingRank(team);
+                            const rosterRows = getYahooTeamRosterRows(
+                              team.roster_snapshot,
+                            );
+                            const isRosterExpanded =
+                              expandedYahooRosterTeamId === team.id;
+                            const isRosterLoading =
+                              yahooRosterLoadingTeamId === team.id;
 
                             return (
-                              <div key={team.id} className={styles.providerControlRow}>
-                                <div>{team.team_name || team.external_team_key}</div>
+                              <div
+                                key={team.id}
+                                className={styles.providerControlRow}
+                              >
                                 <div>
-                                  League: {league?.league_name || league?.external_league_key || "Yahoo league"}
+                                  {team.team_name || team.external_team_key}
                                 </div>
                                 <div>
-                                  {isOwnedTeam ? "Owned team" : "League opponent"}
-                                  {standingRank ? ` · Standings rank ${standingRank}` : ""}
+                                  League:{" "}
+                                  {league?.league_name ||
+                                    league?.external_league_key ||
+                                    "Yahoo league"}
+                                </div>
+                                <div>
+                                  {isOwnedTeam
+                                    ? "Owned team"
+                                    : "League opponent"}
+                                  {standingRank
+                                    ? ` · Standings rank ${standingRank}`
+                                    : ""}
                                 </div>
                                 <div className={styles.cardActionRow}>
-                                  {isOwnedTeam && yahooDefaultTeam?.id === team.id ? (
-                                    <span className={styles.defaultBadge}>Default Team</span>
+                                  {isOwnedTeam &&
+                                  yahooDefaultTeam?.id === team.id ? (
+                                    <span className={styles.defaultBadge}>
+                                      Default Team
+                                    </span>
                                   ) : isOwnedTeam ? (
                                     <button
                                       type="button"
                                       className={styles.secondaryButton}
-                                      onClick={() => void handleSetYahooDefaultTeam(team)}
+                                      onClick={() =>
+                                        void handleSetYahooDefaultTeam(team)
+                                      }
                                       disabled={isYahooActionLoading}
                                     >
                                       Set Default Team
@@ -2622,13 +3059,60 @@ export default function AccountSettingsPage() {
                                     <button
                                       type="button"
                                       className={styles.secondaryButton}
-                                      onClick={() => void handleSaveYahooTeam(team)}
+                                      onClick={() =>
+                                        void handleSaveYahooTeam(team)
+                                      }
                                       disabled={isSavedTeamSaving}
                                     >
-                                      {savedYahooTeam ? "Update Saved Team" : "Save Imported Team"}
+                                      {savedYahooTeam
+                                        ? "Update Saved Team"
+                                        : "Save Imported Team"}
+                                    </button>
+                                  ) : null}
+                                  {!isOwnedTeam ? (
+                                    <button
+                                      type="button"
+                                      className={styles.secondaryButton}
+                                      onClick={() =>
+                                        void handleYahooTeamRoster(team)
+                                      }
+                                      disabled={
+                                        isYahooActionLoading ||
+                                        Boolean(yahooRosterLoadingTeamId)
+                                      }
+                                      aria-label={`${
+                                        isRosterExpanded ? "Hide" : "View"
+                                      } ${
+                                        team.team_name || "Yahoo team"
+                                      } roster`}
+                                    >
+                                      {isRosterLoading
+                                        ? "Loading Roster…"
+                                        : isRosterExpanded
+                                          ? "Hide Roster"
+                                          : "View Roster"}
                                     </button>
                                   ) : null}
                                 </div>
+                                {!isOwnedTeam && isRosterExpanded ? (
+                                  <div className={styles.yahooRosterPanel}>
+                                    <div className={styles.yahooRosterSummary}>
+                                      {rosterRows.length > 0
+                                        ? `${rosterRows.length} rostered player${rosterRows.length === 1 ? "" : "s"}`
+                                        : "Yahoo returned an empty roster."}
+                                    </div>
+                                    {rosterRows.length > 0 ? (
+                                      <ul className={styles.yahooRosterList}>
+                                        {rosterRows.map((player) => (
+                                          <li key={player.key}>
+                                            <span>{player.name}</span>
+                                            <span>{player.position}</span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    ) : null}
+                                  </div>
+                                ) : null}
                               </div>
                             );
                           })
@@ -2642,17 +3126,28 @@ export default function AccountSettingsPage() {
 
                     <div className={styles.providerControlCard}>
                       <div className={styles.formSectionHeader}>
-                        <h3 className={styles.formSectionTitle}>Stored Yahoo Context</h3>
+                        <h3 className={styles.formSectionTitle}>
+                          Stored Yahoo Context
+                        </h3>
                         <p className={styles.formSectionBody}>
-                          This is the first-pass connected-account foundation. Manual
-                          refresh, cooldown enforcement, and sync dedupe are still a
-                          separate follow-up slice.
+                          Manual refresh is guarded by one in-flight run per
+                          Yahoo account and a five-minute cooldown after success
+                          or failure.
                         </p>
                       </div>
 
                       <div className={styles.providerControlRows}>
                         <div className={styles.providerControlRow}>
                           Account status: {yahooConnectedAccount.status}
+                        </div>
+                        <div className={styles.providerControlRow}>
+                          Latest refresh:{" "}
+                          {yahooLatestSyncRun?.status || "No manual run"}
+                          {yahooLatestSyncRun?.cooldown_until
+                            ? ` · next eligible ${formatSavedTeamTimestamp(
+                                yahooLatestSyncRun.cooldown_until,
+                              )}`
+                            : ""}
                         </div>
                         <div className={styles.providerControlRow}>
                           Default league:{" "}
@@ -2673,9 +3168,14 @@ export default function AccountSettingsPage() {
 
                 <div className={styles.providerControlGrid}>
                   {FUTURE_PROVIDER_CONTROL_SURFACES.map((surface) => (
-                    <div key={surface.title} className={styles.providerControlCard}>
+                    <div
+                      key={surface.title}
+                      className={styles.providerControlCard}
+                    >
                       <div className={styles.formSectionHeader}>
-                        <h3 className={styles.formSectionTitle}>{surface.title}</h3>
+                        <h3 className={styles.formSectionTitle}>
+                          {surface.title}
+                        </h3>
                         <p className={styles.formSectionBody}>{surface.body}</p>
                       </div>
 
@@ -2694,16 +3194,23 @@ export default function AccountSettingsPage() {
 
             {activeSection === "patreon" ? (
               <div className={styles.panel}>
-                <h2 className={styles.panelTitle}>Patreon Account Link and Entitlements</h2>
+                <h2 className={styles.panelTitle}>
+                  Patreon Account Link and Entitlements
+                </h2>
+
+                <PatreonConnectionPanel />
 
                 <div className={styles.providerControlGrid}>
                   <div className={styles.providerControlCard}>
                     <div className={styles.formSectionHeader}>
-                      <h3 className={styles.formSectionTitle}>Connection Intent</h3>
+                      <h3 className={styles.formSectionTitle}>
+                        Connection Intent
+                      </h3>
                       <p className={styles.formSectionBody}>
-                        Patreon is linked here from account settings only. It should
-                        never become the primary site login path, and it does not need
-                        to share the same email address as the site auth identity.
+                        Patreon is linked here from account settings only. It
+                        should never become the primary site login path, and it
+                        does not need to share the same email address as the
+                        site auth identity.
                       </p>
                     </div>
 
@@ -2712,57 +3219,70 @@ export default function AccountSettingsPage() {
                         Connection location: account settings, not auth modal
                       </div>
                       <div className={styles.providerControlRow}>
-                        Login separation: Patreon identity stays distinct from Supabase
-                        app auth
+                        Login separation: Patreon identity stays distinct from
+                        Supabase app auth
                       </div>
                       <div className={styles.providerControlRow}>
-                        Future action: connect Patreon account to evaluate paid access
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={styles.providerControlCard}>
-                    <div className={styles.formSectionHeader}>
-                      <h3 className={styles.formSectionTitle}>Entitlement Model</h3>
-                      <p className={styles.formSectionBody}>
-                        Site access should be granted from site-owned entitlements, not
-                        directly from the raw Patreon account record. This leaves room for
-                        future sync reconciliation and perk history.
-                      </p>
-                    </div>
-
-                    <div className={styles.providerControlRows}>
-                      <div className={styles.providerControlRow}>
-                        Current entitlement state: placeholder only
-                      </div>
-                      <div className={styles.providerControlRow}>
-                        Perk mapping: future site-owned access tiers and feature flags
-                      </div>
-                      <div className={styles.providerControlRow}>
-                        Last Patreon sync: future membership reconciliation timestamp
+                        Link action: signed Patreon OAuth v2 with identity-only
+                        scope
                       </div>
                     </div>
                   </div>
 
                   <div className={styles.providerControlCard}>
                     <div className={styles.formSectionHeader}>
-                      <h3 className={styles.formSectionTitle}>Anti-Sharing Controls</h3>
+                      <h3 className={styles.formSectionTitle}>
+                        Entitlement Model
+                      </h3>
                       <p className={styles.formSectionBody}>
-                        Patreon account sharing needs explicit protection. The future
-                        model will prevent one Patreon identity from being attached to
-                        multiple user accounts for perk access.
+                        Site access should be granted from site-owned
+                        entitlements, not directly from the raw Patreon account
+                        record. This leaves room for future sync reconciliation
+                        and perk history.
                       </p>
                     </div>
 
                     <div className={styles.providerControlRows}>
                       <div className={styles.providerControlRow}>
-                        Duplicate attachment check: planned single-account Patreon identity rule
+                        Current entitlement state: generic site-owned supporter
+                        eligibility
                       </div>
                       <div className={styles.providerControlRow}>
-                        Access audit trail: future entitlement-change history
+                        Perk mapping: explicit future campaign/tier-to-feature
+                        policy; no inferred grants
                       </div>
                       <div className={styles.providerControlRow}>
-                        Failure state: clear mismatch messaging without blocking core site auth
+                        Last Patreon sync: visible from the membership link
+                        panel
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={styles.providerControlCard}>
+                    <div className={styles.formSectionHeader}>
+                      <h3 className={styles.formSectionTitle}>
+                        Anti-Sharing Controls
+                      </h3>
+                      <p className={styles.formSectionBody}>
+                        Patreon account sharing needs explicit protection. The
+                        current model prevents one stable Patreon identity from
+                        being attached to multiple user accounts for perk
+                        access.
+                      </p>
+                    </div>
+
+                    <div className={styles.providerControlRows}>
+                      <div className={styles.providerControlRow}>
+                        Duplicate attachment check: stable Patreon user and
+                        member IDs are single-account constrained
+                      </div>
+                      <div className={styles.providerControlRow}>
+                        Access audit trail: provider sync runs plus entitlement
+                        timestamps and source reference
+                      </div>
+                      <div className={styles.providerControlRow}>
+                        Failure state: clear mismatch messaging without blocking
+                        core site auth
                       </div>
                     </div>
                   </div>

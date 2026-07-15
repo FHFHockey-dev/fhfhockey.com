@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const accountState = vi.hoisted(() => ({
@@ -13,18 +19,19 @@ const accountState = vi.hoisted(() => ({
   externalTeamsOrder: vi.fn(),
   providerPreferencesMaybeSingle: vi.fn(),
   providerPreferencesUpsert: vi.fn(),
+  providerSyncRunMaybeSingle: vi.fn(),
   savedTeamsRows: [] as Array<any>,
   savedTeamsInsert: vi.fn(),
   savedTeamsUpdate: vi.fn(),
   savedTeamsDelete: vi.fn(),
-  authGetSession: vi.fn()
+  authGetSession: vi.fn(),
 }));
 
 vi.mock("next/router", () => ({
   useRouter: () => ({
     query: accountState.routerQuery,
-    replace: accountState.replace
-  })
+    replace: accountState.replace,
+  }),
 }));
 
 vi.mock("contexts/AuthProviderContext", () => ({
@@ -34,25 +41,25 @@ vi.mock("contexts/AuthProviderContext", () => ({
       email: "tim@example.com",
       displayName: "Tim Tester",
       avatarUrl: null,
-      isEmailVerified: true
-    }
-  })
+      isEmailVerified: true,
+    },
+  }),
 }));
 
 vi.mock("lib/supabase/client", () => ({
   default: {
     auth: {
-      getSession: accountState.authGetSession
+      getSession: accountState.authGetSession,
     },
     from: (table: string) => {
       if (table === "user_profiles") {
         return {
           select: () => ({
             eq: () => ({
-              maybeSingle: accountState.profileMaybeSingle
-            })
+              maybeSingle: accountState.profileMaybeSingle,
+            }),
           }),
-          upsert: accountState.profileUpsert
+          upsert: accountState.profileUpsert,
         };
       }
 
@@ -60,10 +67,10 @@ vi.mock("lib/supabase/client", () => ({
         return {
           select: () => ({
             eq: () => ({
-              maybeSingle: accountState.settingsMaybeSingle
-            })
+              maybeSingle: accountState.settingsMaybeSingle,
+            }),
           }),
-          upsert: accountState.settingsUpsert
+          upsert: accountState.settingsUpsert,
         };
       }
 
@@ -72,10 +79,10 @@ vi.mock("lib/supabase/client", () => ({
           select: () => ({
             eq: (_field: string, _value: string) => ({
               eq: (_nextField: string, _nextValue: string) => ({
-                maybeSingle: accountState.connectedAccountMaybeSingle
-              })
-            })
-          })
+                maybeSingle: accountState.connectedAccountMaybeSingle,
+              }),
+            }),
+          }),
         };
       }
 
@@ -84,10 +91,10 @@ vi.mock("lib/supabase/client", () => ({
           select: () => ({
             eq: (_field: string, _value: string) => ({
               eq: (_nextField: string, _nextValue: string) => ({
-                order: accountState.externalLeaguesOrder
-              })
-            })
-          })
+                order: accountState.externalLeaguesOrder,
+              }),
+            }),
+          }),
         };
       }
 
@@ -96,10 +103,10 @@ vi.mock("lib/supabase/client", () => ({
           select: () => ({
             eq: (_field: string, _value: string) => ({
               eq: (_nextField: string, _nextValue: string) => ({
-                order: accountState.externalTeamsOrder
-              })
-            })
-          })
+                order: accountState.externalTeamsOrder,
+              }),
+            }),
+          }),
         };
       }
 
@@ -108,11 +115,27 @@ vi.mock("lib/supabase/client", () => ({
           select: () => ({
             eq: (_field: string, _value: string) => ({
               eq: (_nextField: string, _nextValue: string) => ({
-                maybeSingle: accountState.providerPreferencesMaybeSingle
-              })
-            })
+                maybeSingle: accountState.providerPreferencesMaybeSingle,
+              }),
+            }),
           }),
-          upsert: accountState.providerPreferencesUpsert
+          upsert: accountState.providerPreferencesUpsert,
+        };
+      }
+
+      if (table === "provider_sync_runs") {
+        return {
+          select: () => ({
+            eq: (_field: string, _value: string) => ({
+              eq: (_nextField: string, _nextValue: string) => ({
+                order: () => ({
+                  limit: () => ({
+                    maybeSingle: accountState.providerSyncRunMaybeSingle,
+                  }),
+                }),
+              }),
+            }),
+          }),
         };
       }
 
@@ -123,19 +146,20 @@ vi.mock("lib/supabase/client", () => ({
               order: () =>
                 Promise.resolve({
                   data: [...accountState.savedTeamsRows].sort((a, b) =>
-                    a.created_at < b.created_at ? 1 : -1
+                    a.created_at < b.created_at ? 1 : -1,
                   ),
-                  error: null
-                })
-            })
+                  error: null,
+                }),
+            }),
           }),
           insert: (payload: any) => {
             accountState.savedTeamsInsert(payload);
             const row = {
-              id: payload.id || `team-${accountState.savedTeamsRows.length + 1}`,
+              id:
+                payload.id || `team-${accountState.savedTeamsRows.length + 1}`,
               created_at: payload.created_at || "2026-03-27T12:00:00.000Z",
               updated_at: payload.updated_at || "2026-03-27T12:00:00.000Z",
-              ...payload
+              ...payload,
             };
             accountState.savedTeamsRows = [row, ...accountState.savedTeamsRows];
             return Promise.resolve({ error: null });
@@ -143,33 +167,34 @@ vi.mock("lib/supabase/client", () => ({
           update: (payload: any) => ({
             eq: (field: string, value: string) => {
               accountState.savedTeamsUpdate(payload, field, value);
-              accountState.savedTeamsRows = accountState.savedTeamsRows.map((row) =>
-                row[field] === value
-                  ? {
-                      ...row,
-                      ...payload,
-                      updated_at: "2026-03-27T13:00:00.000Z"
-                    }
-                  : row
+              accountState.savedTeamsRows = accountState.savedTeamsRows.map(
+                (row) =>
+                  row[field] === value
+                    ? {
+                        ...row,
+                        ...payload,
+                        updated_at: "2026-03-27T13:00:00.000Z",
+                      }
+                    : row,
               );
               return Promise.resolve({ error: null });
-            }
+            },
           }),
           delete: () => ({
             eq: (field: string, value: string) => {
               accountState.savedTeamsDelete(field, value);
               accountState.savedTeamsRows = accountState.savedTeamsRows.filter(
-                (row) => row[field] !== value
+                (row) => row[field] !== value,
               );
               return Promise.resolve({ error: null });
-            }
-          })
+            },
+          }),
         };
       }
 
       throw new Error(`Unexpected table: ${table}`);
-    }
-  }
+    },
+  },
 }));
 
 import AccountSettingsPage from "components/account/AccountSettingsPage";
@@ -187,6 +212,7 @@ describe("AccountSettingsPage profile section", () => {
     accountState.externalTeamsOrder.mockReset();
     accountState.providerPreferencesMaybeSingle.mockReset();
     accountState.providerPreferencesUpsert.mockReset();
+    accountState.providerSyncRunMaybeSingle.mockReset();
     accountState.savedTeamsRows = [];
     accountState.savedTeamsInsert.mockReset();
     accountState.savedTeamsUpdate.mockReset();
@@ -194,38 +220,55 @@ describe("AccountSettingsPage profile section", () => {
     accountState.authGetSession.mockReset();
     accountState.settingsMaybeSingle.mockResolvedValue({
       data: null,
-      error: null
+      error: null,
     });
     accountState.connectedAccountMaybeSingle.mockResolvedValue({
       data: null,
-      error: null
+      error: null,
     });
     accountState.externalLeaguesOrder.mockResolvedValue({
       data: [],
-      error: null
+      error: null,
     });
     accountState.externalTeamsOrder.mockResolvedValue({
       data: [],
-      error: null
+      error: null,
     });
     accountState.providerPreferencesMaybeSingle.mockResolvedValue({
       data: null,
-      error: null
+      error: null,
     });
     accountState.providerPreferencesUpsert.mockResolvedValue({
-      error: null
+      error: null,
+    });
+    accountState.providerSyncRunMaybeSingle.mockResolvedValue({
+      data: null,
+      error: null,
     });
     accountState.authGetSession.mockResolvedValue({
       data: {
         session: {
-          access_token: "session-token"
-        }
-      }
+          access_token: "session-token",
+        },
+      },
     });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          configured: false,
+          account: null,
+          entitlement: null,
+          latestRun: null,
+        }),
+      }),
+    );
   });
 
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
   });
 
   it("loads persisted profile fields into the editor", async () => {
@@ -233,15 +276,17 @@ describe("AccountSettingsPage profile section", () => {
       data: {
         display_name: "Commissioner Tim",
         avatar_url: "https://example.com/tim.png",
-        timezone: "America/Chicago"
+        timezone: "America/Chicago",
       },
-      error: null
+      error: null,
     });
 
     render(<AccountSettingsPage />);
 
     expect(await screen.findByDisplayValue("Commissioner Tim")).toBeTruthy();
-    expect(screen.getByDisplayValue("https://example.com/tim.png")).toBeTruthy();
+    expect(
+      screen.getByDisplayValue("https://example.com/tim.png"),
+    ).toBeTruthy();
     expect(screen.getByDisplayValue("America/Chicago")).toBeTruthy();
     expect(screen.getByAltText("Commissioner Tim")).toBeTruthy();
   });
@@ -249,15 +294,15 @@ describe("AccountSettingsPage profile section", () => {
   it("shows an initialization notice when the profile row is missing", async () => {
     accountState.profileMaybeSingle.mockResolvedValue({
       data: null,
-      error: null
+      error: null,
     });
 
     render(<AccountSettingsPage />);
 
     expect(
       await screen.findByText(
-        "Your profile record is not stored yet. The form is using your current auth identity as a fallback, and saving will initialize the profile row."
-      )
+        "Your profile record is not stored yet. The form is using your current auth identity as a fallback, and saving will initialize the profile row.",
+      ),
     ).toBeTruthy();
     expect(screen.getByDisplayValue("Tim Tester")).toBeTruthy();
   });
@@ -267,9 +312,9 @@ describe("AccountSettingsPage profile section", () => {
       data: {
         display_name: "Tim Tester",
         avatar_url: null,
-        timezone: "America/New_York"
+        timezone: "America/New_York",
       },
-      error: null
+      error: null,
     });
     accountState.profileUpsert.mockResolvedValue({ error: null });
 
@@ -277,10 +322,10 @@ describe("AccountSettingsPage profile section", () => {
 
     await screen.findByDisplayValue("Tim Tester");
     fireEvent.change(screen.getByLabelText("Display Name"), {
-      target: { value: "Tim The Commissioner" }
+      target: { value: "Tim The Commissioner" },
     });
     fireEvent.change(screen.getByLabelText("Timezone"), {
-      target: { value: "America/Chicago" }
+      target: { value: "America/Chicago" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Save Profile" }));
 
@@ -290,11 +335,11 @@ describe("AccountSettingsPage profile section", () => {
           user_id: "user-1",
           display_name: "Tim The Commissioner",
           avatar_url: null,
-          timezone: "America/Chicago"
+          timezone: "America/Chicago",
         },
         {
-          onConflict: "user_id"
-        }
+          onConflict: "user_id",
+        },
       );
     });
 
@@ -303,54 +348,54 @@ describe("AccountSettingsPage profile section", () => {
 
   it("loads persisted league settings into the league editor", async () => {
     accountState.routerQuery = {
-      section: "league-settings"
+      section: "league-settings",
     };
     accountState.profileMaybeSingle.mockResolvedValue({
       data: {
         display_name: "Tim Tester",
         avatar_url: null,
-        timezone: "America/Chicago"
+        timezone: "America/Chicago",
       },
-      error: null
+      error: null,
     });
     accountState.settingsMaybeSingle.mockResolvedValue({
       data: {
         league_type: "categories",
         scoring_categories: {
           GOALS: 5,
-          ASSISTS: 4
+          ASSISTS: 4,
         },
         category_weights: {
           GOALS: 2,
-          HITS: 3
+          HITS: 3,
         },
         roster_config: {
           C: 3,
           bench: 5,
-          utility: 2
+          utility: 2,
         },
         ui_preferences: {
-          account_settings_section: "league-settings"
+          account_settings_section: "league-settings",
         },
         active_context: {
           source_type: "yahoo",
           provider: "yahoo",
           external_team_id: "team-9",
-          external_league_id: "league-2"
-        }
+          external_league_id: "league-2",
+        },
       },
-      error: null
+      error: null,
     });
 
     render(<AccountSettingsPage />);
 
     await waitFor(() => {
       expect(
-        (screen.getByLabelText("League Type") as HTMLSelectElement).value
+        (screen.getByLabelText("League Type") as HTMLSelectElement).value,
       ).toBe("categories");
     });
     expect(
-      (screen.getByLabelText("Points: GOALS") as HTMLInputElement).value
+      (screen.getByLabelText("Points: GOALS") as HTMLInputElement).value,
     ).toBe("5");
     expect(screen.getByText("Source: yahoo")).toBeTruthy();
     expect(screen.getByText("Team: team-9")).toBeTruthy();
@@ -358,48 +403,48 @@ describe("AccountSettingsPage profile section", () => {
 
   it("shows site defaults when the league settings row is missing", async () => {
     accountState.routerQuery = {
-      section: "league-settings"
+      section: "league-settings",
     };
     accountState.profileMaybeSingle.mockResolvedValue({
       data: {
         display_name: "Tim Tester",
         avatar_url: null,
-        timezone: "America/Chicago"
+        timezone: "America/Chicago",
       },
-      error: null
+      error: null,
     });
     accountState.settingsMaybeSingle.mockResolvedValue({
       data: null,
-      error: null
+      error: null,
     });
 
     render(<AccountSettingsPage />);
 
     expect(
       await screen.findByText(
-        "Your league defaults have not been saved yet. Site defaults are shown here until you save your first personalized settings row."
-      )
+        "Your league defaults have not been saved yet. Site defaults are shown here until you save your first personalized settings row.",
+      ),
     ).toBeTruthy();
     expect(
-      (screen.getByLabelText("League Type") as HTMLSelectElement).value
+      (screen.getByLabelText("League Type") as HTMLSelectElement).value,
     ).toBe("points");
   });
 
   it("saves updated league defaults", async () => {
     accountState.routerQuery = {
-      section: "league-settings"
+      section: "league-settings",
     };
     accountState.profileMaybeSingle.mockResolvedValue({
       data: {
         display_name: "Tim Tester",
         avatar_url: null,
-        timezone: "America/Chicago"
+        timezone: "America/Chicago",
       },
-      error: null
+      error: null,
     });
     accountState.settingsMaybeSingle.mockResolvedValue({
       data: null,
-      error: null
+      error: null,
     });
     accountState.settingsUpsert.mockResolvedValue({ error: null });
 
@@ -407,19 +452,21 @@ describe("AccountSettingsPage profile section", () => {
 
     await waitFor(() => {
       expect(
-        (screen.getByLabelText("League Type") as HTMLSelectElement).value
+        (screen.getByLabelText("League Type") as HTMLSelectElement).value,
       ).toBe("points");
     });
     fireEvent.change(screen.getByLabelText("League Type"), {
-      target: { value: "categories" }
+      target: { value: "categories" },
     });
     fireEvent.change(screen.getByLabelText("Points: GOALS"), {
-      target: { value: "4.5" }
+      target: { value: "4.5" },
     });
     fireEvent.change(screen.getByLabelText("Roster: C"), {
-      target: { value: "3" }
+      target: { value: "3" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Save League Defaults" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Save League Defaults" }),
+    );
 
     await waitFor(() => {
       expect(accountState.settingsUpsert).toHaveBeenCalledWith(
@@ -432,7 +479,7 @@ describe("AccountSettingsPage profile section", () => {
             PP_POINTS: 1,
             SHOTS_ON_GOAL: 0.2,
             HITS: 0.2,
-            BLOCKED_SHOTS: 0.25
+            BLOCKED_SHOTS: 0.25,
           },
           category_weights: {
             GOALS: 1,
@@ -443,7 +490,7 @@ describe("AccountSettingsPage profile section", () => {
             BLOCKED_SHOTS: 1,
             WINS_GOALIE: 1,
             SAVES_GOALIE: 1,
-            SAVE_PERCENTAGE: 1
+            SAVE_PERCENTAGE: 1,
           },
           roster_config: {
             C: 3,
@@ -452,11 +499,11 @@ describe("AccountSettingsPage profile section", () => {
             D: 4,
             G: 2,
             bench: 4,
-            utility: 1
+            utility: 1,
           },
           ui_preferences: {
             account_settings_section: "league-settings",
-            league_settings_panel_open: true
+            league_settings_panel_open: true,
           },
           active_context: {
             source_type: "manual",
@@ -464,12 +511,12 @@ describe("AccountSettingsPage profile section", () => {
             external_league_id: null,
             external_team_id: null,
             external_league_key: null,
-            external_team_key: null
-          }
+            external_team_key: null,
+          },
         },
         {
-          onConflict: "user_id"
-        }
+          onConflict: "user_id",
+        },
       );
     });
 
@@ -478,15 +525,15 @@ describe("AccountSettingsPage profile section", () => {
 
   it("surfaces synced Yahoo league scoring and roster data in league settings", async () => {
     accountState.routerQuery = {
-      section: "league-settings"
+      section: "league-settings",
     };
     accountState.profileMaybeSingle.mockResolvedValue({
       data: {
         display_name: "Tim Tester",
         avatar_url: null,
-        timezone: "America/Chicago"
+        timezone: "America/Chicago",
       },
-      error: null
+      error: null,
     });
     accountState.settingsMaybeSingle.mockResolvedValue({
       data: {
@@ -499,10 +546,10 @@ describe("AccountSettingsPage profile section", () => {
           source_type: "external-provider",
           provider: "yahoo",
           external_team_id: "team-1",
-          external_league_id: "league-1"
-        }
+          external_league_id: "league-1",
+        },
       },
-      error: null
+      error: null,
     });
     accountState.connectedAccountMaybeSingle.mockResolvedValue({
       data: {
@@ -516,9 +563,9 @@ describe("AccountSettingsPage profile section", () => {
         metadata: {},
         last_synced_at: "2026-03-27T12:00:00.000Z",
         created_at: "2026-03-27T12:00:00.000Z",
-        updated_at: "2026-03-27T12:00:00.000Z"
+        updated_at: "2026-03-27T12:00:00.000Z",
       },
-      error: null
+      error: null,
     });
     accountState.externalLeaguesOrder.mockResolvedValue({
       data: [
@@ -538,26 +585,26 @@ describe("AccountSettingsPage profile section", () => {
             num_teams: 12,
             current_week: 22,
             roster_type: "date",
-            weekly_deadline: "intraday"
+            weekly_deadline: "intraday",
           },
           scoring_settings: {
             stat_modifiers: {
-              stats: [{ stat: { stat_id: 1, value: "6" } }]
+              stats: [{ stat: { stat_id: 1, value: "6" } }],
             },
-            stat_categories: [{ stat_id: 1, name: "Goals", abbr: "G" }]
+            stat_categories: [{ stat_id: 1, name: "Goals", abbr: "G" }],
           },
           roster_settings: {
             roster_positions: [
               { position: "C", count: 2, is_starting_position: 1 },
-              { position: "BN", count: 4, is_starting_position: 0 }
-            ]
+              { position: "BN", count: 4, is_starting_position: 0 },
+            ],
           },
           imported_at: "2026-03-27T12:00:00.000Z",
           created_at: "2026-03-27T12:00:00.000Z",
-          updated_at: "2026-03-27T12:00:00.000Z"
-        }
+          updated_at: "2026-03-27T12:00:00.000Z",
+        },
       ],
-      error: null
+      error: null,
     });
     accountState.externalTeamsOrder.mockResolvedValue({
       data: [
@@ -573,10 +620,10 @@ describe("AccountSettingsPage profile section", () => {
           roster_snapshot: {},
           imported_at: "2026-03-27T12:00:00.000Z",
           created_at: "2026-03-27T12:00:00.000Z",
-          updated_at: "2026-03-27T12:00:00.000Z"
-        }
+          updated_at: "2026-03-27T12:00:00.000Z",
+        },
       ],
-      error: null
+      error: null,
     });
     accountState.providerPreferencesMaybeSingle.mockResolvedValue({
       data: {
@@ -589,9 +636,9 @@ describe("AccountSettingsPage profile section", () => {
         refresh_on_login: false,
         active_context: {},
         created_at: "2026-03-27T12:00:00.000Z",
-        updated_at: "2026-03-27T12:00:00.000Z"
+        updated_at: "2026-03-27T12:00:00.000Z",
       },
-      error: null
+      error: null,
     });
 
     render(<AccountSettingsPage />);
@@ -608,15 +655,15 @@ describe("AccountSettingsPage profile section", () => {
 
   it("persists active Yahoo league and team changes from league settings", async () => {
     accountState.routerQuery = {
-      section: "league-settings"
+      section: "league-settings",
     };
     accountState.profileMaybeSingle.mockResolvedValue({
       data: {
         display_name: "Tim Tester",
         avatar_url: null,
-        timezone: "America/Chicago"
+        timezone: "America/Chicago",
       },
-      error: null
+      error: null,
     });
     accountState.settingsMaybeSingle.mockResolvedValue({
       data: {
@@ -629,10 +676,10 @@ describe("AccountSettingsPage profile section", () => {
           source_type: "external-provider",
           provider: "yahoo",
           external_team_id: "team-1",
-          external_league_id: "league-1"
-        }
+          external_league_id: "league-1",
+        },
       },
-      error: null
+      error: null,
     });
     accountState.connectedAccountMaybeSingle.mockResolvedValue({
       data: {
@@ -646,9 +693,9 @@ describe("AccountSettingsPage profile section", () => {
         metadata: {},
         last_synced_at: "2026-03-27T12:00:00.000Z",
         created_at: "2026-03-27T12:00:00.000Z",
-        updated_at: "2026-03-27T12:00:00.000Z"
+        updated_at: "2026-03-27T12:00:00.000Z",
       },
-      error: null
+      error: null,
     });
     accountState.externalLeaguesOrder.mockResolvedValue({
       data: [
@@ -665,7 +712,7 @@ describe("AccountSettingsPage profile section", () => {
           roster_settings: {},
           imported_at: "2026-03-27T12:00:00.000Z",
           created_at: "2026-03-27T12:00:00.000Z",
-          updated_at: "2026-03-27T12:00:00.000Z"
+          updated_at: "2026-03-27T12:00:00.000Z",
         },
         {
           id: "league-2",
@@ -680,10 +727,10 @@ describe("AccountSettingsPage profile section", () => {
           roster_settings: {},
           imported_at: "2026-03-27T12:00:00.000Z",
           created_at: "2026-03-27T12:00:00.000Z",
-          updated_at: "2026-03-27T12:00:00.000Z"
-        }
+          updated_at: "2026-03-27T12:00:00.000Z",
+        },
       ],
-      error: null
+      error: null,
     });
     accountState.externalTeamsOrder.mockResolvedValue({
       data: [
@@ -699,7 +746,7 @@ describe("AccountSettingsPage profile section", () => {
           roster_snapshot: {},
           imported_at: "2026-03-27T12:00:00.000Z",
           created_at: "2026-03-27T12:00:00.000Z",
-          updated_at: "2026-03-27T12:00:00.000Z"
+          updated_at: "2026-03-27T12:00:00.000Z",
         },
         {
           id: "team-2",
@@ -713,10 +760,10 @@ describe("AccountSettingsPage profile section", () => {
           roster_snapshot: {},
           imported_at: "2026-03-27T12:00:00.000Z",
           created_at: "2026-03-27T12:00:00.000Z",
-          updated_at: "2026-03-27T12:00:00.000Z"
-        }
+          updated_at: "2026-03-27T12:00:00.000Z",
+        },
       ],
-      error: null
+      error: null,
     });
     accountState.providerPreferencesMaybeSingle.mockResolvedValue({
       data: {
@@ -729,22 +776,22 @@ describe("AccountSettingsPage profile section", () => {
         refresh_on_login: false,
         active_context: {},
         created_at: "2026-03-27T12:00:00.000Z",
-        updated_at: "2026-03-27T12:00:00.000Z"
+        updated_at: "2026-03-27T12:00:00.000Z",
       },
-      error: null
+      error: null,
     });
     accountState.providerPreferencesUpsert.mockResolvedValue({
-      error: null
+      error: null,
     });
     accountState.settingsUpsert.mockResolvedValue({ error: null });
 
     render(<AccountSettingsPage />);
 
     const leagueSelect = (await screen.findByLabelText(
-      "Active Yahoo League"
+      "Active Yahoo League",
     )) as HTMLSelectElement;
     fireEvent.change(leagueSelect, {
-      target: { value: "league-2" }
+      target: { value: "league-2" },
     });
 
     await waitFor(() => {
@@ -762,12 +809,12 @@ describe("AccountSettingsPage profile section", () => {
             external_league_id: "league-2",
             external_team_id: "team-2",
             external_league_key: "465.l.2",
-            external_team_key: "465.l.2.t.7"
-          }
+            external_team_key: "465.l.2.t.7",
+          },
         },
         {
-          onConflict: "user_id,provider"
-        }
+          onConflict: "user_id,provider",
+        },
       );
       expect(accountState.settingsUpsert).toHaveBeenCalledWith(
         {
@@ -778,31 +825,33 @@ describe("AccountSettingsPage profile section", () => {
             external_league_id: "league-2",
             external_team_id: "team-2",
             external_league_key: "465.l.2",
-            external_team_key: "465.l.2.t.7"
-          }
+            external_team_key: "465.l.2.t.7",
+          },
         },
         {
-          onConflict: "user_id"
-        }
+          onConflict: "user_id",
+        },
       );
     });
 
     expect(
-      await screen.findByText("Active Yahoo context updated to Dynasty League / Dynasty Team.")
+      await screen.findByText(
+        "Active Yahoo context updated to Dynasty League / Dynasty Team.",
+      ),
     ).toBeTruthy();
   });
 
   it("lists saved teams and creates a new manual saved team", async () => {
     accountState.routerQuery = {
-      section: "saved-teams"
+      section: "saved-teams",
     };
     accountState.profileMaybeSingle.mockResolvedValue({
       data: {
         display_name: "Tim Tester",
         avatar_url: null,
-        timezone: "America/Chicago"
+        timezone: "America/Chicago",
       },
-      error: null
+      error: null,
     });
     accountState.savedTeamsRows = [
       {
@@ -817,8 +866,8 @@ describe("AccountSettingsPage profile section", () => {
         settings_snapshot: { league_type: "points" },
         is_default: true,
         created_at: "2026-03-20T12:00:00.000Z",
-        updated_at: "2026-03-22T12:00:00.000Z"
-      }
+        updated_at: "2026-03-22T12:00:00.000Z",
+      },
     ];
 
     render(<AccountSettingsPage />);
@@ -828,10 +877,10 @@ describe("AccountSettingsPage profile section", () => {
     expect(screen.getByText("Default")).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText("Team Name"), {
-      target: { value: "Playoff Push" }
+      target: { value: "Playoff Push" },
     });
     fireEvent.change(screen.getByLabelText("Manual Notes"), {
-      target: { value: "Streaming-focused bench." }
+      target: { value: "Streaming-focused bench." },
     });
     fireEvent.click(screen.getByRole("button", { name: "Save Team" }));
 
@@ -843,12 +892,12 @@ describe("AccountSettingsPage profile section", () => {
           source_type: "manual",
           is_default: false,
           roster_json: {
-            manualNotes: "Streaming-focused bench."
+            manualNotes: "Streaming-focused bench.",
           },
           settings_snapshot: expect.objectContaining({
-            league_type: "points"
-          })
-        })
+            league_type: "points",
+          }),
+        }),
       );
     });
 
@@ -858,15 +907,15 @@ describe("AccountSettingsPage profile section", () => {
 
   it("shows Yahoo context switchers on the saved teams tab", async () => {
     accountState.routerQuery = {
-      section: "saved-teams"
+      section: "saved-teams",
     };
     accountState.profileMaybeSingle.mockResolvedValue({
       data: {
         display_name: "Tim Tester",
         avatar_url: null,
-        timezone: "America/Chicago"
+        timezone: "America/Chicago",
       },
-      error: null
+      error: null,
     });
     accountState.connectedAccountMaybeSingle.mockResolvedValue({
       data: {
@@ -880,9 +929,9 @@ describe("AccountSettingsPage profile section", () => {
         metadata: {},
         last_synced_at: "2026-03-27T12:00:00.000Z",
         created_at: "2026-03-27T12:00:00.000Z",
-        updated_at: "2026-03-27T12:00:00.000Z"
+        updated_at: "2026-03-27T12:00:00.000Z",
       },
-      error: null
+      error: null,
     });
     accountState.externalLeaguesOrder.mockResolvedValue({
       data: [
@@ -899,10 +948,10 @@ describe("AccountSettingsPage profile section", () => {
           roster_settings: {},
           imported_at: "2026-03-27T12:00:00.000Z",
           created_at: "2026-03-27T12:00:00.000Z",
-          updated_at: "2026-03-27T12:00:00.000Z"
-        }
+          updated_at: "2026-03-27T12:00:00.000Z",
+        },
       ],
-      error: null
+      error: null,
     });
     accountState.externalTeamsOrder.mockResolvedValue({
       data: [
@@ -918,10 +967,10 @@ describe("AccountSettingsPage profile section", () => {
           roster_snapshot: {},
           imported_at: "2026-03-27T12:00:00.000Z",
           created_at: "2026-03-27T12:00:00.000Z",
-          updated_at: "2026-03-27T12:00:00.000Z"
-        }
+          updated_at: "2026-03-27T12:00:00.000Z",
+        },
       ],
-      error: null
+      error: null,
     });
     accountState.providerPreferencesMaybeSingle.mockResolvedValue({
       data: {
@@ -934,9 +983,9 @@ describe("AccountSettingsPage profile section", () => {
         refresh_on_login: false,
         active_context: {},
         created_at: "2026-03-27T12:00:00.000Z",
-        updated_at: "2026-03-27T12:00:00.000Z"
+        updated_at: "2026-03-27T12:00:00.000Z",
       },
-      error: null
+      error: null,
     });
 
     render(<AccountSettingsPage />);
@@ -949,15 +998,15 @@ describe("AccountSettingsPage profile section", () => {
 
   it("edits a saved team and promotes another team to default", async () => {
     accountState.routerQuery = {
-      section: "saved-teams"
+      section: "saved-teams",
     };
     accountState.profileMaybeSingle.mockResolvedValue({
       data: {
         display_name: "Tim Tester",
         avatar_url: null,
-        timezone: "America/Chicago"
+        timezone: "America/Chicago",
       },
-      error: null
+      error: null,
     });
     accountState.savedTeamsRows = [
       {
@@ -972,7 +1021,7 @@ describe("AccountSettingsPage profile section", () => {
         settings_snapshot: { league_type: "points" },
         is_default: true,
         created_at: "2026-03-20T12:00:00.000Z",
-        updated_at: "2026-03-22T12:00:00.000Z"
+        updated_at: "2026-03-22T12:00:00.000Z",
       },
       {
         id: "team-2",
@@ -986,8 +1035,8 @@ describe("AccountSettingsPage profile section", () => {
         settings_snapshot: { league_type: "categories" },
         is_default: false,
         created_at: "2026-03-24T12:00:00.000Z",
-        updated_at: "2026-03-24T12:00:00.000Z"
-      }
+        updated_at: "2026-03-24T12:00:00.000Z",
+      },
     ];
 
     render(<AccountSettingsPage />);
@@ -996,7 +1045,7 @@ describe("AccountSettingsPage profile section", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]);
     expect(screen.getByDisplayValue("Redraft Flyers")).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Team Name"), {
-      target: { value: "Redraft Rockets" }
+      target: { value: "Redraft Rockets" },
     });
     fireEvent.click(screen.getByLabelText("Set as default team"));
     fireEvent.click(screen.getByRole("button", { name: "Update Saved Team" }));
@@ -1004,18 +1053,18 @@ describe("AccountSettingsPage profile section", () => {
     await waitFor(() => {
       expect(accountState.savedTeamsUpdate).toHaveBeenCalledWith(
         expect.objectContaining({
-          is_default: false
+          is_default: false,
         }),
         "id",
-        "team-1"
+        "team-1",
       );
       expect(accountState.savedTeamsUpdate).toHaveBeenCalledWith(
         expect.objectContaining({
           name: "Redraft Rockets",
-          is_default: true
+          is_default: true,
         }),
         "id",
-        "team-2"
+        "team-2",
       );
     });
 
@@ -1025,15 +1074,15 @@ describe("AccountSettingsPage profile section", () => {
 
   it("deletes a saved team from the manual list", async () => {
     accountState.routerQuery = {
-      section: "saved-teams"
+      section: "saved-teams",
     };
     accountState.profileMaybeSingle.mockResolvedValue({
       data: {
         display_name: "Tim Tester",
         avatar_url: null,
-        timezone: "America/Chicago"
+        timezone: "America/Chicago",
       },
-      error: null
+      error: null,
     });
     accountState.savedTeamsRows = [
       {
@@ -1048,8 +1097,8 @@ describe("AccountSettingsPage profile section", () => {
         settings_snapshot: { league_type: "points" },
         is_default: true,
         created_at: "2026-03-20T12:00:00.000Z",
-        updated_at: "2026-03-22T12:00:00.000Z"
-      }
+        updated_at: "2026-03-22T12:00:00.000Z",
+      },
     ];
 
     render(<AccountSettingsPage />);
@@ -1058,67 +1107,98 @@ describe("AccountSettingsPage profile section", () => {
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 
     await waitFor(() => {
-      expect(accountState.savedTeamsDelete).toHaveBeenCalledWith("id", "team-1");
+      expect(accountState.savedTeamsDelete).toHaveBeenCalledWith(
+        "id",
+        "team-1",
+      );
     });
 
-    expect(await screen.findByText('"Dynasty Squad" was removed.')).toBeTruthy();
+    expect(
+      await screen.findByText('"Dynasty Squad" was removed.'),
+    ).toBeTruthy();
     expect(
       screen.getByText(
-        "No manual saved teams yet. Create one here to establish a default team before Yahoo, Fantrax, or ESPN connections are introduced."
-      )
+        "No manual saved teams yet. Create one here to establish a default team before Yahoo, Fantrax, or ESPN connections are introduced.",
+      ),
     ).toBeTruthy();
   });
 
   it("shows explicit provider architecture cards in connected accounts", async () => {
     accountState.routerQuery = {
-      section: "connected-accounts"
+      section: "connected-accounts",
     };
     accountState.profileMaybeSingle.mockResolvedValue({
       data: {
         display_name: "Tim Tester",
         avatar_url: null,
-        timezone: "America/Chicago"
+        timezone: "America/Chicago",
       },
-      error: null
+      error: null,
     });
 
     render(<AccountSettingsPage />);
 
     expect(await screen.findByText("Yahoo Fantasy")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Connect Yahoo Fantasy" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Connect Yahoo Fantasy" }),
+    ).toBeTruthy();
     expect(screen.getByText("Fantrax")).toBeTruthy();
     expect(screen.getAllByText("Patreon").length).toBeGreaterThan(1);
     expect(screen.getByText("ESPN")).toBeTruthy();
-    expect(screen.getAllByText("No live token flow yet").length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText("No live token flow yet").length,
+    ).toBeGreaterThan(0);
     expect(screen.getByText("Linked League and Team Context")).toBeTruthy();
     expect(
-      screen.getByText(
-        "Refresh on sign-in: planned preference toggle"
-      )
-    ).toBeTruthy();
-    expect(
-      screen.getByText("Cooldown window: planned anti-throttling lockout after a sync run")
+      screen.getByText("Refresh on sign-in: planned preference toggle"),
     ).toBeTruthy();
     expect(
       screen.getByText(
-        "Active league switcher: in-place context change without losing draft/dashboard progress"
-      )
+        "Cooldown window: planned anti-throttling lockout after a sync run",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Active league switcher: in-place context change without losing draft/dashboard progress",
+      ),
     ).toBeTruthy();
   });
 
   it("shows discovered Yahoo leagues and teams when the user is connected", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        message: "Loaded and cached the roster for League Rival.",
+        externalTeamId: "team-2",
+        fetchedAt: "2026-03-27T13:00:00.000Z",
+        rosterSnapshot: {
+          players: [
+            {
+              player_key: "nhl.p.1",
+              name: { full: "Connor Example" },
+              display_position: "C",
+            },
+          ],
+          visibility: "league",
+          fetched_at: "2026-03-27T13:00:00.000Z",
+        },
+        cached: false,
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
     accountState.routerQuery = {
       section: "connected-accounts",
       yahoo_status: "connected",
-      yahoo_message: "Yahoo synced 2 teams across 2 leagues."
+      yahoo_message: "Yahoo synced 2 teams across 2 leagues.",
     };
     accountState.profileMaybeSingle.mockResolvedValue({
       data: {
         display_name: "Tim Tester",
         avatar_url: null,
-        timezone: "America/Chicago"
+        timezone: "America/Chicago",
       },
-      error: null
+      error: null,
     });
     accountState.connectedAccountMaybeSingle.mockResolvedValue({
       data: {
@@ -1132,9 +1212,9 @@ describe("AccountSettingsPage profile section", () => {
         metadata: {},
         last_synced_at: "2026-03-27T12:00:00.000Z",
         created_at: "2026-03-27T12:00:00.000Z",
-        updated_at: "2026-03-27T12:00:00.000Z"
+        updated_at: "2026-03-27T12:00:00.000Z",
       },
-      error: null
+      error: null,
     });
     accountState.externalLeaguesOrder.mockResolvedValue({
       data: [
@@ -1151,10 +1231,10 @@ describe("AccountSettingsPage profile section", () => {
           roster_settings: {},
           imported_at: "2026-03-27T12:00:00.000Z",
           created_at: "2026-03-27T12:00:00.000Z",
-          updated_at: "2026-03-27T12:00:00.000Z"
-        }
+          updated_at: "2026-03-27T12:00:00.000Z",
+        },
       ],
-      error: null
+      error: null,
     });
     accountState.externalTeamsOrder.mockResolvedValue({
       data: [
@@ -1170,7 +1250,7 @@ describe("AccountSettingsPage profile section", () => {
           roster_snapshot: {},
           imported_at: "2026-03-27T12:00:00.000Z",
           created_at: "2026-03-27T12:00:00.000Z",
-          updated_at: "2026-03-27T12:00:00.000Z"
+          updated_at: "2026-03-27T12:00:00.000Z",
         },
         {
           id: "team-2",
@@ -1182,18 +1262,18 @@ describe("AccountSettingsPage profile section", () => {
           team_name: "League Rival",
           team_metadata: {
             is_owned: false,
-            standings: { rank: 1 }
+            standings: { rank: 1 },
           },
           roster_snapshot: {
             players: [],
-            visibility: "not_fetched"
+            visibility: "not_fetched",
           },
           imported_at: "2026-03-27T12:00:00.000Z",
           created_at: "2026-03-27T12:00:00.000Z",
-          updated_at: "2026-03-27T12:00:00.000Z"
-        }
+          updated_at: "2026-03-27T12:00:00.000Z",
+        },
       ],
-      error: null
+      error: null,
     });
     accountState.providerPreferencesMaybeSingle.mockResolvedValue({
       data: {
@@ -1206,24 +1286,47 @@ describe("AccountSettingsPage profile section", () => {
         refresh_on_login: false,
         active_context: {},
         created_at: "2026-03-27T12:00:00.000Z",
-        updated_at: "2026-03-27T12:00:00.000Z"
+        updated_at: "2026-03-27T12:00:00.000Z",
       },
-      error: null
+      error: null,
     });
 
     render(<AccountSettingsPage />);
 
-    expect(await screen.findByText("Yahoo synced 2 teams across 2 leagues.")).toBeTruthy();
-    expect(screen.getByText("Connected account label: Tim's Yahoo")).toBeTruthy();
+    expect(
+      await screen.findByText("Yahoo synced 2 teams across 2 leagues."),
+    ).toBeTruthy();
+    expect(
+      screen.getByText("Connected account label: Tim's Yahoo"),
+    ).toBeTruthy();
     expect(screen.getByText("Keeper League (default league)")).toBeTruthy();
     expect(screen.getByText("Tim's Test Team")).toBeTruthy();
     expect(screen.getByText("League Rival")).toBeTruthy();
     expect(screen.getByText("League opponent · Standings rank 1")).toBeTruthy();
-    expect(screen.getAllByText("Default team: Tim's Test Team").length).toBeGreaterThan(0);
     expect(
-      screen.getByRole("button", { name: "Disconnect Yahoo Fantasy" })
+      screen.getAllByText("Default team: Tim's Test Team").length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("button", { name: "Disconnect Yahoo Fantasy" }),
     ).toBeTruthy();
     expect(screen.getByText("Default Team")).toBeTruthy();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "View League Rival roster" }),
+    );
+
+    expect(await screen.findByText("Connor Example")).toBeTruthy();
+    expect(screen.getByText("1 rostered player")).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/account/yahoo/team-roster",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ externalTeamId: "team-2" }),
+      }),
+    );
+    expect(
+      screen.getByRole("button", { name: "Hide League Rival roster" }),
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Save Imported Team" }));
 
@@ -1236,48 +1339,48 @@ describe("AccountSettingsPage profile section", () => {
           provider: "yahoo",
           external_league_key: "nhl.l.1",
           external_team_key: "nhl.l.1.t.1",
-          is_default: true
-        })
+          is_default: true,
+        }),
       );
     });
     expect(
-      await screen.findByText('"Tim\'s Test Team" was saved from Yahoo.')
+      await screen.findByText('"Tim\'s Test Team" was saved from Yahoo.'),
     ).toBeTruthy();
   });
 
-  it("shows Patreon as an account-linked entitlement placeholder, not site auth", async () => {
+  it("shows Patreon as an account-linked entitlement flow, not site auth", async () => {
     accountState.routerQuery = {
-      section: "patreon"
+      section: "patreon",
     };
     accountState.profileMaybeSingle.mockResolvedValue({
       data: {
         display_name: "Tim Tester",
         avatar_url: null,
-        timezone: "America/Chicago"
+        timezone: "America/Chicago",
       },
-      error: null
+      error: null,
     });
 
     render(<AccountSettingsPage />);
 
-    expect(await screen.findByText("Patreon Account Link and Entitlements")).toBeTruthy();
+    expect(
+      await screen.findByText("Patreon Account Link and Entitlements"),
+    ).toBeTruthy();
     expect(screen.getByText("Connection Intent")).toBeTruthy();
     expect(screen.getByText("Entitlement Model")).toBeTruthy();
     expect(screen.getByText("Anti-Sharing Controls")).toBeTruthy();
     expect(
-      screen.getByText(
-        "Connection location: account settings, not auth modal"
-      )
+      screen.getByText("Connection location: account settings, not auth modal"),
     ).toBeTruthy();
     expect(
       screen.getByText(
-        "Duplicate attachment check: planned single-account Patreon identity rule"
-      )
+        "Duplicate attachment check: stable Patreon user and member IDs are single-account constrained",
+      ),
     ).toBeTruthy();
     expect(
       screen.getByText(
-        "Failure state: clear mismatch messaging without blocking core site auth"
-      )
+        "Failure state: clear mismatch messaging without blocking core site auth",
+      ),
     ).toBeTruthy();
   });
 });

@@ -28,7 +28,7 @@ export default function handler(
   res: NextApiResponse<ResponseBody>,
 ) {
   const expectedSecret = process.env.CRON_SECRET;
-  if (!expectedSecret) {
+  if (!expectedSecret?.trim()) {
     return res
       .status(503)
       .json({ ok: false, error: "CRON_SECRET is not configured" });

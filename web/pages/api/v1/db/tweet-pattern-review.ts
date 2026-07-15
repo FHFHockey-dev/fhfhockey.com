@@ -493,7 +493,9 @@ function buildLinesCccCandidate(row: LinesCccReviewSourceRow): SyncCandidate {
       wrapperAuthorName: fallbackAuthor.authorName,
       wrapperAuthorHandle: fallbackAuthor.sourceHandle,
       quotedAuthorName: row.quoted_author_name,
-      quotedAuthorHandle: row.quoted_author_handle
+      quotedAuthorHandle: row.quoted_author_handle,
+      quotedTweetId: row.quoted_tweet_id,
+      quotedTweetUrl: row.quoted_tweet_url
     },
     reviewed_at: null,
     source_priority: 4
@@ -584,7 +586,9 @@ function buildLineSourceSnapshotCandidate(row: LineSourceSnapshotReviewSourceRow
       wrapperAuthorName: fallbackAuthor.authorName,
       wrapperAuthorHandle: fallbackAuthor.sourceHandle,
       quotedAuthorName: row.quoted_author_name,
-      quotedAuthorHandle: row.quoted_author_handle
+      quotedAuthorHandle: row.quoted_author_handle,
+      quotedTweetId: row.quoted_tweet_id,
+      quotedTweetUrl: row.quoted_tweet_url
     },
     reviewed_at: null,
     source_priority: 4

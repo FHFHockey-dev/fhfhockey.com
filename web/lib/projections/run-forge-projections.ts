@@ -515,6 +515,7 @@ async function fetchLatestLineCombinationForTeam(
 
 async function fetchFallbackSkaterIdsForTeam(
   teamId: number,
+  seasonId: number,
   asOfDate: string,
   maxPlayers = 18,
 ): Promise<number[]> {
@@ -530,6 +531,7 @@ async function fetchFallbackSkaterIdsForTeam(
   const { data, error } = await supabase
     .from("rolling_player_game_metrics")
     .select("player_id,game_date,toi_seconds_avg_last5,toi_seconds_avg_all")
+    .eq("season", seasonId)
     .eq("team_id", teamId)
     .eq("strength_state", "ev")
     .lt("game_date", asOfDate)
@@ -1464,6 +1466,10 @@ export async function runProjectionV2ForDate(
   const metrics: Record<string, any> = {
     as_of_date: asOfDate,
     horizon_games: clampHorizonGames(opts?.horizonGames ?? 1),
+    execution_scope: {
+      mode: opts?.gameIds?.length ? "selected_games" : "full_slate",
+      requested_game_ids: opts?.gameIds ?? [],
+    },
     started_at: new Date().toISOString(),
     skater_rollout: skaterRollout,
     games: 0,
@@ -1561,11 +1567,17 @@ export async function runProjectionV2ForDate(
     const playerDateKey = (playerId: number) => `${playerId}:${asOfDate}`;
     const preflight = await runProjectionPreflightStage(async () => {
       const currentSeasonId = await fetchCurrentSeasonIdForDate(asOfDate);
-      const { data: games, error: gamesErr } = await supabase
+      const { data: gameRows, error: gamesErr } = await supabase
         .from("games")
         .select("id,date,homeTeamId,awayTeamId")
         .eq("date", asOfDate);
       if (gamesErr) throw gamesErr;
+      const requestedGameIds = new Set(
+        (opts?.gameIds ?? []).filter((gameId) => Number.isFinite(gameId)),
+      );
+      const games = ((gameRows ?? []) as GameRow[]).filter(
+        (game) => requestedGameIds.size === 0 || requestedGameIds.has(game.id),
+      );
       const gameIds = ((games ?? []) as GameRow[])
         .map((game) => game.id)
         .filter((id): id is number => Number.isFinite(id));
@@ -1884,6 +1896,7 @@ export async function runProjectionV2ForDate(
               metrics.data_quality.missing_line_combos += 1;
             const fallbackSkaterIds = await fetchFallbackSkaterIdsForTeam(
               teamId,
+              currentSeasonId,
               asOfDate,
               18,
             );
@@ -1984,6 +1997,7 @@ export async function runProjectionV2ForDate(
             const supplementalFallbackSkaterIds =
               await fetchFallbackSkaterIdsForTeam(
                 teamId,
+                currentSeasonId,
                 asOfDate,
                 SKATER_POOL_SUPPLEMENTAL_FETCH_COUNT,
               );

@@ -64,14 +64,17 @@ describe("AuthForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sign In" }));
 
     expect(
-      await screen.findByText(
-        "That email/password combination did not match an active account."
-      )
+      await screen.findByText("That email/password combination did not match an active account.")
     ).toBeTruthy();
     expect(authState.signOut).toHaveBeenCalled();
   });
 
   it("shows verification success state when sign-up returns a user without a session", async () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/forge/dashboard?tab=skaters&code=fake-code#access_token=fake-access"
+    );
     authState.signUp.mockResolvedValue({
       data: {
         user: { id: "user-1" },
@@ -98,9 +101,17 @@ describe("AuthForm", () => {
         "Check your email to verify your account before using protected settings."
       )
     ).toBeTruthy();
+    const signUpRedirect = new URL(authState.signUp.mock.calls[0][0].options.emailRedirectTo);
+    expect(signUpRedirect.searchParams.get("next")).toBe("/forge/dashboard?tab=skaters");
+    expect(signUpRedirect.toString()).not.toContain("fake-");
   });
 
   it("sends recovery emails directly to the reset-password page", async () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/forge/dashboard?tab=skaters&token_hash=fake-hash#refresh_token=fake-refresh"
+    );
     authState.resetPasswordForEmail.mockResolvedValue({
       error: null
     });
@@ -127,11 +138,38 @@ describe("AuthForm", () => {
         "Password reset email sent. Open the recovery link from your inbox to choose a new password."
       )
     ).toBeTruthy();
+    expect(window.localStorage.getItem("fhfh:post-password-reset-next")).toBe(
+      "/forge/dashboard?tab=skaters"
+    );
+  });
+
+  it("never nests current credential material into OAuth return paths", async () => {
+    authState.signInWithOAuth.mockResolvedValue({ data: {}, error: null });
+    window.history.replaceState(
+      {},
+      "",
+      "/account?section=profile&id_token=fake-id#provider_token=fake-provider"
+    );
+
+    render(<AuthForm mode="sign-in" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Continue with Google" }));
+
+    await waitFor(() => {
+      expect(authState.signInWithOAuth).toHaveBeenCalledTimes(1);
+    });
+    const oauthRedirect = new URL(authState.signInWithOAuth.mock.calls[0][0].options.redirectTo);
+    expect(oauthRedirect.searchParams.get("next")).toBe("/account?section=profile");
+    expect(oauthRedirect.toString()).not.toContain("fake-");
   });
 
   it("offers a targeted local auth reset without clearing full browser history", async () => {
+    authState.signOut.mockResolvedValueOnce({
+      error: { message: "Invalid or expired session" }
+    });
     window.localStorage.setItem("sb-test-auth-token", "value");
     window.sessionStorage.setItem("sb-test-code-verifier", "value");
+    window.localStorage.setItem("unrelated-app-session", "preserve-me");
 
     render(<AuthForm mode="sign-in" />);
 
@@ -144,5 +182,7 @@ describe("AuthForm", () => {
     ).toBeTruthy();
     expect(window.localStorage.getItem("sb-test-auth-token")).toBeNull();
     expect(window.sessionStorage.getItem("sb-test-code-verifier")).toBeNull();
+    expect(window.localStorage.getItem("unrelated-app-session")).toBe("preserve-me");
+    expect(authState.signOut).toHaveBeenCalledWith({ scope: "local" });
   });
 });

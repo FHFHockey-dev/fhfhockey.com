@@ -298,6 +298,10 @@ describe("nhlShiftStints", () => {
       startSecond: 0,
       endSecond: 15,
     });
+    expect(findShiftStintAtTime(stints, 1, 15)).toMatchObject({
+      startSecond: 0,
+      endSecond: 15,
+    });
     expect(findShiftStintAtTime(stints, 1, 25)).toMatchObject({
       startSecond: 15,
       endSecond: 50,

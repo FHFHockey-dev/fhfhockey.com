@@ -94,7 +94,8 @@ vi.mock("components/SocialMedias", () => ({
 vi.mock("contexts/AuthProviderContext", () => ({
   useAuth: () => ({
     isLoading: authState.isLoading,
-    user: authState.mockUser
+    user: authState.mockUser,
+    signOut: authState.signOut
   })
 }));
 

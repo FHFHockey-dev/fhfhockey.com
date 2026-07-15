@@ -937,7 +937,7 @@ tbody tr:hover .neonBox.fall {
 
 // Homepage dashboard treatment: compact, border-led, and data dense.
 .transactionTrends {
-  gap: v.$space-sm;
+  gap: v.$space-xs;
   padding: v.$space-sm;
   border: v.$border-subtle;
   border-radius: v.$radius-panel;
@@ -947,9 +947,18 @@ tbody tr:hover .neonBox.fall {
 
 .headerRow {
   justify-content: space-between;
-  gap: v.$space-sm;
-  padding-bottom: v.$space-sm;
+  gap: v.$space-xs;
+  padding-bottom: v.$space-xs;
   border-bottom: 1px solid v.$border-soft;
+}
+
+.trendControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: v.$space-sm;
+  min-width: 0;
 }
 
 .titleBlock {
@@ -958,14 +967,16 @@ tbody tr:hover .neonBox.fall {
 }
 
 .title {
-  font-family: v.$font-family-primary, sans-serif;
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+  font-size: 1rem;
   font-weight: v.$font-weight-bold;
+  line-height: 1.1;
 }
 
 .subtitle {
   margin: 0;
   color: v.$text-secondary;
-  font-size: v.$font-size-xs;
+  font-size: 0.76rem;
 }
 
 .headerControls {
@@ -974,12 +985,12 @@ tbody tr:hover .neonBox.fall {
   justify-content: flex-end;
   gap: v.$space-xs;
   width: auto;
-  margin-left: auto;
+  margin-left: 0;
 }
 
 .filterLabel {
   color: v.$text-secondary;
-  font-size: v.$font-size-xxs;
+  font-size: 0.65rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -1020,8 +1031,8 @@ tbody tr:hover .neonBox.fall {
   gap: 2px;
 
   button {
-    min-width: 30px;
-    min-height: 26px;
+    min-width: 25px;
+    min-height: 24px;
     padding: 0 v.$space-xs;
     border-radius: v.$radius-control;
     color: v.$text-secondary;
@@ -1105,22 +1116,25 @@ tbody tr:hover .neonBox.fall {
 }
 
 .tableTitle {
-  min-height: 24px;
-  padding-bottom: v.$space-xs;
+  min-height: 20px;
+  margin: 0 0 2px;
+  padding-bottom: 2px;
   border-bottom: 1px solid v.$border-soft;
   font-family: v.$font-family-accent, sans-serif;
-  font-size: v.$font-size-xs;
+  font-size: 0.76rem;
   letter-spacing: 0.08em;
 }
 
 .dataTable {
-  --row-h: 31px;
+  --row-h: 28px;
+  font-size: 0.7rem;
 
   thead th {
     background: v.$background-dark;
     backdrop-filter: none;
     color: v.$text-secondary;
-    font-size: v.$font-size-xxs;
+    padding: 2px 4px;
+    font-size: 0.6rem;
     text-transform: uppercase;
   }
 
@@ -1145,7 +1159,7 @@ tbody tr:hover .neonBox.fall {
 }
 
 .playerMeta {
-  font-size: 0.6rem;
+  font-size: 0.62rem;
 }
 
 .statusPanel {
@@ -1181,15 +1195,23 @@ tbody tr:hover .neonBox.fall {
 
 .pager {
   margin: 0;
-  padding-top: v.$space-xs;
+  min-height: 22px;
+  padding-top: 2px;
   border-top: 1px solid v.$border-soft;
 }
 
 .footNote {
   margin: 0;
+  font-size: 0.625rem;
+  line-height: 1.2;
 }
 
 @media (max-width: #{v.$breakpoint-tablet}) {
+  .trendControls {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
   .headerControls {
     align-items: flex-start;
     flex-direction: column;
@@ -1211,6 +1233,11 @@ tbody tr:hover .neonBox.fall {
   .headerRow {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .trendControls {
+    display: grid;
+    gap: v.$mobile-space-xs;
   }
 
   .timeframeButtons {

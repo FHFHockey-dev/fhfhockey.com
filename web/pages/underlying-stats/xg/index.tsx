@@ -1,4 +1,5 @@
 import Head from "next/head";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import UnderlyingStatsNavBar from "components/underlying-stats/UnderlyingStatsNavBar";
@@ -265,13 +266,16 @@ export default function XgUnderlyingStatsLabRoute() {
         <div className={styles.pageInner}>
           <div className={styles.toolbar}>
             <UnderlyingStatsNavBar />
-            <button
-              type="button"
-              className={styles.refreshButton}
-              onClick={() => setRefreshKey((current) => current + 1)}
-            >
-              Refresh
-            </button>
+            <div className={styles.toolbarActions}>
+              <Link href="/underlying-stats/xg/operations" className={styles.refreshButton}>Operations</Link>
+              <button
+                type="button"
+                className={styles.refreshButton}
+                onClick={() => setRefreshKey((current) => current + 1)}
+              >
+                Refresh
+              </button>
+            </div>
           </div>
 
           <section className={styles.header}>

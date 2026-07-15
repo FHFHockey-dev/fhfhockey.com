@@ -113,6 +113,37 @@ Leakage rule:
 - the rebound-creation label may be used only as the supervised target for `prediction_type = "rebound_creation"`
 - it must not be used as a feature for shot-goal xG or other pre-shot scoring models
 
+## Richer Rebound Head Contract (`rebound_rich_labels_v1`)
+
+These heads remain separate offline candidates. They do not replace the approved
+`rebound_creation` task and may not be registered, persisted, or promoted without
+a later explicit production-model checkpoint.
+
+Shared row and sequence contract:
+
+- one row per shot-feature-eligible rebound source (`shot-on-goal`, `missed-shot`, or `blocked-shot`)
+- a bounded three-second look-ahead within the same game and period
+- the next attempt must retain the source possession-sequence identifier and source team
+- opponent control, possession change, stoppage, faceoff, penalty, period/game end, or window expiry censors/terminates the search before a later possession can create a positive label
+- split ownership is copied from the exact frozen champion game-level chronological train/validation/test assignments
+- only source-event features are model inputs; next-event fields are supervised labels/evaluation metadata and never scoring features
+
+Separate targets:
+
+- `conditional_rebound_danger`: among verified same-possession next attempts, `1` when the next attempt is at most 20 feet from net and at most 35 degrees from center; otherwise `0`; rows without verified target geometry are excluded
+- `goalie_freeze_control`: for shot-on-goal sources with a recorded goalie, `1` when a bounded stoppage terminates possession; this is explicitly a public-PBP freeze/covered-puck proxy, not verified tracking truth
+- `conditional_second_chance_xg`: among verified same-possession next unblocked attempts, the binary goal outcome of that next attempt; blocked next attempts and missing targets are excluded
+
+Offline evidence gates require, for both validation and test:
+
+- at least 100 rows and 10 positive labels
+- both Brier score and log loss better than the train-rate constant baseline
+- ROC AUC of at least 0.50
+- no missing source feature keys under the corrected source-feature artifact
+
+Passing these offline gates establishes only that a candidate can be evaluated.
+It does not authorize production persistence, registry activation, or promotion.
+
 ## Season Scope For The First Baseline Comparison
 
 The first baseline comparison is locked to:

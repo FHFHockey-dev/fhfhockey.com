@@ -9,6 +9,12 @@ import {
   standardizeColumnName,
 } from "../../lib/standardization/columnStandardization";
 import modalStyles from "./ModalShell.module.scss";
+import {
+  fetchAllSupabaseFilterChunks,
+  fetchAllSupabasePages,
+} from "lib/supabase/pagination";
+import { getRequiredCsvColumns } from "lib/draftDashboard/csvImportContract";
+import { validateCsvProjectionRows } from "lib/draftDashboard/csvImportValidation";
 
 export type CsvPreviewRow = Record<string, string | number | null>;
 
@@ -19,21 +25,6 @@ type HeaderConfig = {
   status?: "supported" | "unsupported" | "required";
   error?: string | null;
 };
-
-const REQUIRED_SKATER_COLUMNS = [
-  "Player_Name",
-  "Team_Abbreviation",
-  "Position",
-  "Goals",
-  "Assists",
-];
-
-const REQUIRED_GOALIE_COLUMNS = [
-  "Player_Name",
-  "Team_Abbreviation",
-  "Position",
-  "Games_Started_Goalie",
-];
 
 const FIRST_NAME_ALIASES: Record<string, string[]> = {
   nicholas: ["nick", "nicky"],
@@ -240,6 +231,7 @@ export default function ImportCsvModal({
   const [playerHeader, setPlayerHeader] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isParsing, setIsParsing] = useState(false);
+  const [parseIssues, setParseIssues] = useState<string[]>([]);
   const [sourceName, setSourceName] = useState("Custom CSV"); // Default name
   const [dbPlayers, setDbPlayers] = useState<
     Array<{
@@ -267,11 +259,49 @@ export default function ImportCsvModal({
   const [manualSearchInputs, setManualSearchInputs] = useState<
     Record<string, string>
   >({});
-  const loggedTargetsRef = useRef(false);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
-  const REQUIRED_COLUMNS = isGoalieCsv
-    ? REQUIRED_GOALIE_COLUMNS
-    : REQUIRED_SKATER_COLUMNS;
+  const resetImportState = useCallback(() => {
+    setAllRows([]);
+    setRawRows([]);
+    setHeaders([]);
+    setIsGoalieCsv(false);
+    setPlayerHeader(null);
+    setError(null);
+    setIsParsing(false);
+    setParseIssues([]);
+    setSourceName("Custom CSV");
+    setAmbiguousChoices({});
+    setRejectedSuggestions(new Set());
+    setSearchInputs({});
+    setManualSearchInputs({});
+    setForceImportDespiteUnresolved(false);
+    setRequireFullMapping(false);
+    setCollapseHeaderMapping(false);
+    setCollapseUnresolved(false);
+    setCollapseAmbiguities(false);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    resetImportState();
+    onClose();
+  }, [onClose, resetImportState]);
+
+  useEffect(() => {
+    if (!open) return;
+    previouslyFocusedRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    return () => {
+      previouslyFocusedRef.current?.focus();
+      previouslyFocusedRef.current = null;
+    };
+  }, [open]);
+
+  const REQUIRED_COLUMNS = getRequiredCsvColumns(
+    isGoalieCsv ? "goalie" : "skater"
+  );
   const REQUIRED_COLUMN_SET = new Set(REQUIRED_COLUMNS);
 
   const rosterIndex = useMemo(() => {
@@ -346,21 +376,13 @@ export default function ImportCsvModal({
       // Fetch players list for disambiguation (paginated to bypass row limits)
       (async () => {
         try {
-          const pageSize = 1000;
-          let from = 0;
-          let all: any[] = [];
-          while (true) {
-            const { data, error } = await supabase
+          const all = await fetchAllSupabasePages<any>(({ from, to }) =>
+            supabase
               .from("players")
               .select("id, fullName, position, lastName, team_id")
-              .range(from, from + pageSize - 1);
-            if (error) break;
-            if (!data || !data.length) break;
-            all = all.concat(data);
-            if (data.length < pageSize) break;
-            from += pageSize;
-            if (from > 50000) break; // safety cap
-          }
+              .order("id", { ascending: true })
+              .range(from, to),
+          );
           if (all.length) {
             setDbPlayers(
               all.map((r: any) => ({
@@ -375,37 +397,11 @@ export default function ImportCsvModal({
                     : null,
               })),
             );
-            try {
-              console.log(
-                `[ImportCsvModal] Loaded players count: ${all.length}`,
-              );
-            } catch {}
-            // Targeted presence logging for specific players of interest
-            const targets = [
-              "Leo Carlsson",
-              "Adam Larsson",
-              "Cutter Gauthier",
-              "J.T. Miller",
-              "K'Andre Miller",
-            ];
-            targets.forEach((t) => {
-              const matches = all.filter(
-                (p: any) =>
-                  String(p.fullName).toLowerCase() === t.toLowerCase(),
-              );
-              if (matches.length) {
-                console.log(
-                  `[ImportCsvModal] Target player present in DB fetch: ${t} -> IDs: ${matches.map((m: any) => m.id).join(", ")}`,
-                );
-              } else {
-                console.log(
-                  `[ImportCsvModal] Target player NOT found in DB fetch: ${t}`,
-                );
-              }
-            });
           }
-        } catch {
-          // ignore
+        } catch (playerFetchError: any) {
+          setError(
+            `Failed to load the player reference list: ${playerFetchError?.message || "unknown error"}`,
+          );
         }
       })();
     }
@@ -438,11 +434,17 @@ export default function ImportCsvModal({
     if (!missing.length) return;
     (async () => {
       try {
-        const { data, error } = await supabase
-          .from("players")
-          .select("id, fullName, position, lastName, team_id")
-          .in("lastName", missing);
-        if (!error && Array.isArray(data) && data.length) {
+        const data = await fetchAllSupabaseFilterChunks<any, string>(
+          missing,
+          (lastNameChunk, { from, to }) =>
+            supabase
+              .from("players")
+              .select("id, fullName, position, lastName, team_id")
+              .in("lastName", lastNameChunk)
+              .order("id", { ascending: true })
+              .range(from, to),
+        );
+        if (data.length) {
           setDbPlayers((prev) => {
             const seen = new Set(prev.map((p) => p.id));
             const extra = data
@@ -460,14 +462,11 @@ export default function ImportCsvModal({
               }));
             return extra.length ? [...prev, ...extra] : prev;
           });
-          try {
-            console.log(
-              `[ImportCsvModal] Secondary fetch added ${data.length} players (after last-name scan)`,
-            );
-          } catch {}
         }
-      } catch {
-        // swallow
+      } catch (playerFetchError: any) {
+        setError(
+          `Failed to complete the player-name lookup: ${playerFetchError?.message || "unknown error"}`,
+        );
       }
     })();
   }, [open, allRows, rawRows, dbPlayers, playerHeader]);
@@ -477,7 +476,7 @@ export default function ImportCsvModal({
       if (!open) return;
       if (e.key === "Escape") {
         e.stopPropagation();
-        onClose();
+        handleClose();
       }
       if (e.key === "Tab") {
         const el = dialogRef.current;
@@ -505,7 +504,7 @@ export default function ImportCsvModal({
     }
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
-  }, [open, onClose]);
+  }, [handleClose, open]);
 
   const classifyColumn = useCallback(
     (standardized: string) => {
@@ -545,6 +544,11 @@ export default function ImportCsvModal({
         dynamicTyping: true,
         complete: (result) => {
           const data = (result.data || []).filter(Boolean);
+          setParseIssues(
+            (result.errors || []).map((issue) =>
+              `CSV${typeof issue.row === "number" ? ` row ${issue.row + 2}` : ""}: ${issue.message}`
+            )
+          );
           if (!data.length) {
             setError("No rows found in CSV.");
             setIsParsing(false);
@@ -888,6 +892,10 @@ export default function ImportCsvModal({
     (requireFullMapping && resolutionStats.coverage < 1) ||
     (!forceImportDespiteUnresolved &&
       (hasUnresolvedRows || coverageBelowThreshold));
+  const validatedImport = useMemo(
+    () => validateCsvProjectionRows(resolvedRows, REQUIRED_COLUMNS),
+    [resolvedRows, REQUIRED_COLUMNS]
+  );
 
   useEffect(() => {
     if (requireFullMapping) {
@@ -1031,24 +1039,6 @@ export default function ImportCsvModal({
     });
   }, [previewAmbiguities, levenshtein]);
 
-  // Debug: log missing teamAbbrev counts once after suggestions built
-  useEffect(() => {
-    if (!ambiguousWithSuggestions.length) return;
-    try {
-      const total = ambiguousWithSuggestions.reduce(
-        (acc, r) => acc + r.candidates.length,
-        0,
-      );
-      const missing = ambiguousWithSuggestions.reduce(
-        (acc, r) => acc + r.candidates.filter((c) => !c.teamAbbrev).length,
-        0,
-      );
-      console.log(
-        `[ImportCsvModal] Ambiguity candidates: ${total}, missing teamAbbrev: ${missing}`,
-      );
-    } catch {}
-  }, [ambiguousWithSuggestions]);
-
   // Auto resolve perfect unique matches among ambiguous candidates (only if exactly one perfect score)
   useEffect(() => {
     setAmbiguousChoices((prev) => {
@@ -1098,7 +1088,7 @@ export default function ImportCsvModal({
       );
       return;
     }
-    const mapped = resolvedRows;
+    const mapped = validatedImport.acceptedRows as CsvPreviewRow[];
     if (!mapped.length) {
       setError("No rows available to import.");
       return;
@@ -1112,7 +1102,7 @@ export default function ImportCsvModal({
       allowCustomNameFallback: localAllowFallback,
       minimumCoveragePercent: localMinCoverage,
     });
-    try {
+    if (process.env.NODE_ENV !== "production") {
       console.log(
         `[ImportCsvModal] Resolution summary: total=${
           resolutionPayload.totalRows
@@ -1124,7 +1114,7 @@ export default function ImportCsvModal({
           resolutionPayload.invalidIds
         }, coverage=${(resolutionPayload.coverage * 100).toFixed(1)}%`,
       );
-    } catch {}
+    }
     const payload = {
       headers,
       rows: mapped,
@@ -1133,7 +1123,7 @@ export default function ImportCsvModal({
       resolution: resolutionPayload,
     } as const;
     onImported(payload);
-    onClose();
+    handleClose();
   };
 
   const handleHeaderToggle = (idx: number) => {
@@ -1210,32 +1200,6 @@ export default function ImportCsvModal({
     [ambiguousWithSuggestions, ambiguousChoices],
   );
 
-  // Live mapped rows & unmapped count (for banner guard) – lightweight derivation
-  const liveMappedRows = resolvedRows;
-  // One-time targeted mapping logging
-  useEffect(() => {
-    if (loggedTargetsRef.current) return;
-    if (!liveMappedRows.length) return;
-    const targets = ["Leo Carlsson", "Adam Larsson", "Cutter Gauthier"];
-    targets.forEach((t) => {
-      const row = liveMappedRows.find(
-        (r) =>
-          String((r as any).Player_Name || "").toLowerCase() ===
-          t.toLowerCase(),
-      );
-      if (row) {
-        console.log(
-          `[ImportCsvModal] Mapping status for ${t}: player_id=${
-            (row as any).player_id || "NONE"
-          }`,
-        );
-      } else {
-        console.log(`[ImportCsvModal] CSV row not found for target name: ${t}`);
-      }
-    });
-    loggedTargetsRef.current = true;
-  }, [liveMappedRows]);
-
   if (!open) return null;
 
   return (
@@ -1251,7 +1215,7 @@ export default function ImportCsvModal({
             Import Projections (CSV)
           </h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="Close"
             className={modalStyles.closeButton}
           >
@@ -1279,6 +1243,16 @@ export default function ImportCsvModal({
             <p role="alert" style={{ color: "#d32f2f" }}>
               {error}
             </p>
+          )}
+          {parseIssues.length > 0 && (
+            <div role="status" style={{ color: "#ffcc80", fontSize: 12 }}>
+              <strong>Parser warnings: {parseIssues.length}</strong>
+              <ul>
+                {parseIssues.slice(0, 5).map((issue) => (
+                  <li key={issue}>{issue}</li>
+                ))}
+              </ul>
+            </div>
           )}
 
           <div
@@ -1346,6 +1320,13 @@ export default function ImportCsvModal({
                   style={smallSecondaryBtn}
                 >
                   {collapseHeaderMapping ? "Expand" : "Collapse"}
+                </button>
+                <button
+                  type="button"
+                  onClick={resetImportState}
+                  style={smallSecondaryBtn}
+                >
+                  Clear file
                 </button>
               </div>
               {!collapseHeaderMapping && (
@@ -1762,6 +1743,21 @@ export default function ImportCsvModal({
               )}
             </div>
           )}
+          {validatedImport.parsedRows > 0 && (
+            <div role="status" style={{ marginTop: 12, fontSize: 12 }}>
+              Parsed {validatedImport.parsedRows}; accepted{" "}
+              {validatedImport.accepted}; skipped {validatedImport.skipped} ({
+                validatedImport.duplicates
+              } duplicate, {validatedImport.invalid} invalid).
+              {validatedImport.issues.length > 0 && (
+                <ul>
+                  {validatedImport.issues.slice(0, 8).map((issue) => (
+                    <li key={issue}>{issue}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
 
           {ambiguousWithSuggestions.length > 0 && (
             <div style={{ marginTop: 12 }}>
@@ -2137,7 +2133,7 @@ export default function ImportCsvModal({
         <div
           className={`modalFooter ${modalStyles.footer} ${modalStyles.actions}`}
         >
-          <button onClick={onClose} style={secondaryButtonStyle}>
+          <button onClick={handleClose} style={secondaryButtonStyle}>
             Cancel
           </button>
           <button

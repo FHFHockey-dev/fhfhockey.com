@@ -4,6 +4,7 @@ import {
   buildArtifactDriftReport,
   buildTeamSurfaceDriftReport,
   buildXgAggregates,
+  mergeXgFlurryMetadata,
   validateXgAggregateReconciliation,
   xgFeatureEventKey,
   type XgAggregatePredictionRow,
@@ -31,6 +32,51 @@ function prediction(
 }
 
 describe("xG aggregates", () => {
+  it("fails closed when flurry metadata coverage is incomplete", () => {
+    const predictions = [
+      prediction({ event_id: 101 }),
+      prediction({ event_id: 102 }),
+    ];
+
+    expect(() =>
+      mergeXgFlurryMetadata(predictions, [
+        {
+          feature_version: 1,
+          game_id: 2025020001,
+          event_id: 101,
+          flurry_sequence_id: null,
+          flurry_shot_index: null,
+        },
+      ])
+    ).toThrow("Flurry metadata coverage is incomplete for 1/2 approved predictions");
+
+    expect(
+      mergeXgFlurryMetadata(predictions, [
+        {
+          feature_version: 1,
+          game_id: 2025020001,
+          event_id: 101,
+          flurry_sequence_id: null,
+          flurry_shot_index: null,
+        },
+        {
+          feature_version: 1,
+          game_id: 2025020001,
+          event_id: 102,
+          flurry_sequence_id: "sequence-1",
+          flurry_shot_index: 2,
+        },
+      ])
+    ).toEqual([
+      expect.objectContaining({ event_id: 101, flurry_sequence_id: null }),
+      expect.objectContaining({
+        event_id: 102,
+        flurry_sequence_id: "sequence-1",
+        flurry_shot_index: 2,
+      }),
+    ]);
+  });
+
   it("builds team, player, and goalie game aggregates from approved shot-goal rows", () => {
     const result = buildXgAggregates(
       [
@@ -186,6 +232,52 @@ describe("xG aggregates", () => {
     });
   });
 
+  it("persists flurry-adjusted values in parallel without changing raw xG", () => {
+    const result = buildXgAggregates(
+      [
+        prediction({
+          event_id: 101,
+          xg: 0.25,
+          flurry_sequence_id: "sequence-1",
+          flurry_shot_index: 1,
+        }),
+        prediction({
+          event_id: 102,
+          xg: 0.5,
+          flurry_sequence_id: "sequence-1",
+          flurry_shot_index: 2,
+        }),
+      ],
+      [
+        {
+          id: 2025020001,
+          seasonId: 20252026,
+          date: "2025-10-07",
+          homeTeamId: 10,
+          awayTeamId: 20,
+        },
+      ],
+      { generatedAt: "2026-07-12T23:00:00.000Z", rollingWindows: [1] }
+    );
+
+    expect(result.teamGameRows.find((row) => row.team_id === 10)).toMatchObject({
+      xg_for: 0.75,
+      flurry_adjusted_xg_for: 0.625,
+    });
+    expect(result.playerGameRows[0]).toMatchObject({
+      ixg: 0.75,
+      flurry_adjusted_ixg: 0.625,
+    });
+    expect(result.goalieGameRows[0]).toMatchObject({
+      xg_against: 0.75,
+      flurry_adjusted_xg_against: 0.625,
+    });
+    expect(result.teamRollingRows.find((row) => row.team_id === 10)).toMatchObject({
+      xg_for: 0.75,
+      flurry_adjusted_xg_for: 0.625,
+    });
+  });
+
   it("reports aggregate reconciliation issues and unmapped goalie exclusions", () => {
     const predictions = [
       prediction({ event_id: 101, xg: 0.25, label: false, goalie_in_net_id: null }),
@@ -275,6 +367,8 @@ describe("xG aggregates", () => {
             is_home: true,
             xg_for: 2.5,
             xg_against: 1.5,
+            flurry_adjusted_xg_for: 2.25,
+            flurry_adjusted_xg_against: 1.4,
             goals_for: 2,
             goals_against: 1,
             shot_attempts_for: 30,

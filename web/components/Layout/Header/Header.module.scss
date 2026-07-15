@@ -5,7 +5,7 @@
 
 $mobile-header-height: 65px;
 $desktop-header-min-width: 800px;
-$desktop-header-height: 48px;
+$desktop-header-height: 58px;
 
 // Desktop Header (hidden on mobile)
 .header.desktopHeader {
@@ -28,6 +28,7 @@ $desktop-header-height: 48px;
     transition: transform ease 0.3s;
     z-index: 1000;
     padding: 0 clamp(v.$space-lg, 2vw, v.$space-xl);
+    column-gap: 0;
 
     &.hidden {
       transform: translate3d(0, calc(-100% - 2px), 0);
@@ -37,9 +38,9 @@ $desktop-header-height: 48px;
       display: flex;
       flex-direction: column;
       justify-content: center;
-      align-items: center;
-      width: 88px;
-      flex: 0 0 88px;
+      align-items: flex-start;
+      width: 204px;
+      flex: 0 0 204px;
       filter: drop-shadow(0 0 6px rgba(v.$secondary-color, 0.55));
       position: relative;
       margin: 0;
@@ -50,31 +51,42 @@ $desktop-header-height: 48px;
       & > span {
         overflow: visible !important;
       }
+
+      img {
+        width: 118px;
+        height: auto;
+      }
     }
 
     .logo.underlyingStatsLogo {
-      flex-direction: row;
       filter: drop-shadow(0px 1px 4px v.$color-brand-yellow);
+
+      img {
+        width: 194px;
+      }
     }
 
     .logoSubline {
       display: block;
-      margin-top: -3px;
+      width: 118px;
+      margin-top: -1px;
       color: v.$secondary-color;
       font-family: v.$font-family-primary;
-      font-size: 0.4rem;
+      font-size: 0.625rem;
       font-style: italic;
       font-weight: 800;
-      letter-spacing: 0.04em;
-      line-height: 1;
+      letter-spacing: 0.025em;
+      line-height: 1.05;
+      text-align: justify;
+      text-align-last: justify;
       text-transform: uppercase;
       white-space: nowrap;
     }
 
     .nav {
       display: block;
-      flex: 1;
-      margin-left: v.$space-sm;
+      flex: 1 1 auto;
+      margin-left: 0;
       min-width: 0;
 
       ul {
@@ -86,15 +98,16 @@ $desktop-header-height: 48px;
       display: block;
       flex: 0 0 auto;
       width: auto;
-      margin-right: v.$space-sm;
+      margin-left: v.$space-md;
+      margin-right: v.$space-lg;
 
       > :global(div) {
-        gap: 7px;
+        gap: 12px;
       }
 
       :global(img) {
-        width: 15px !important;
-        height: 15px !important;
+        width: 23px !important;
+        height: 23px !important;
       }
     }
 
@@ -111,9 +124,10 @@ $desktop-header-height: 48px;
     }
 
     .bmcWrap {
-      display: none;
+      display: flex;
+      flex: 0 0 auto;
       align-items: center;
-      margin-right: 16px;
+      margin-right: v.$space-lg;
 
       img {
         display: block;
@@ -149,8 +163,8 @@ $desktop-header-height: 48px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      margin-right: 16px;
-      min-height: 30px;
+      margin-right: v.$space-sm;
+      min-height: 28px;
       padding: 0 v.$space-md;
       border-radius: v.$border-radius-sm;
       border: 1px solid v.$primary-color;
@@ -219,26 +233,6 @@ $desktop-header-height: 48px;
       display: none;
     }
 
-    .join {
-      all: unset;
-      display: none;
-      &:hover {
-        cursor: pointer;
-      }
-
-      margin-right: 4%;
-      padding: 4px 4px;
-      font-family: "Roboto Condensed";
-      font-weight: 500;
-      font-size: 1.125rem;
-      filter: drop-shadow(0px 1px 4px white);
-      letter-spacing: 0.01em;
-      border-radius: 8px;
-      border: 1.5px solid #3498db;
-      justify-content: center;
-      align-items: center;
-    }
-
     .menuToggleButton {
       all: unset;
       margin-right: 4%;
@@ -252,8 +246,21 @@ $desktop-header-height: 48px;
       padding-inline: 12px;
 
       .logo {
-        width: 70px;
-        flex-basis: 70px;
+        width: 164px;
+        flex-basis: 164px;
+
+        img {
+          width: 108px;
+        }
+
+        &.underlyingStatsLogo img {
+          width: 154px;
+        }
+      }
+
+      .logoSubline {
+        width: 108px;
+        font-size: 0.575rem;
       }
 
       .nav {
@@ -261,7 +268,17 @@ $desktop-header-height: 48px;
       }
 
       .socials {
-        margin-right: v.$space-sm;
+        margin-left: v.$space-xs;
+        margin-right: v.$space-md;
+
+        :global(img) {
+          width: 20px !important;
+          height: 20px !important;
+        }
+      }
+
+      .bmcWrap {
+        display: none;
       }
 
       .authCta,
@@ -271,7 +288,7 @@ $desktop-header-height: 48px;
 
       .authCta {
         padding-inline: v.$space-xs;
-        font-size: 0.56rem;
+        font-size: 0.62rem;
       }
     }
   }

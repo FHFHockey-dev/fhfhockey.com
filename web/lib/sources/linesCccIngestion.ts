@@ -13,12 +13,10 @@ import {
   resolveTweetNameToRosterEntry,
 } from "lib/sources/lineupSourceIngestion";
 import {
-  expandRedirectUrl,
-  extractStatusUrlsFromText,
-  extractTcoUrlsFromText,
   extractTweetIdFromUrl,
   normalizeTweetStatusUrl,
   parseTweetOEmbedHtml,
+  resolveTweetReferenceFromText,
 } from "lib/sources/tweetLineupParsing";
 
 export type LinesCccNhlFilterStatus =
@@ -167,6 +165,9 @@ export type LinesCccResolvedQuotedTweet = {
   quotedSourceTweetUrl: string | null;
   quotedAuthorName: string | null;
   quotedAuthorHandle: string | null;
+  resolvedUrl: string;
+  shortUrl: string | null;
+  retrievalStatus: "x_api_success" | "oembed_success" | "resolved_url_only";
 };
 
 export type LinesCccWrapperOEmbedBackfillState = {
@@ -260,9 +261,11 @@ const NON_NHL_HANDLE_HINTS: Array<{
 
 function countStructuredPlayerMentions(text: string): number {
   const structuredGroups = extractStructuredPlayerGroupsFromText(text);
-  return structuredGroups.forwards.reduce((sum, line) => sum + line.length, 0) +
+  return (
+    structuredGroups.forwards.reduce((sum, line) => sum + line.length, 0) +
     structuredGroups.defensePairs.reduce((sum, pair) => sum + pair.length, 0) +
-    structuredGroups.goalies.length;
+    structuredGroups.goalies.length
+  );
 }
 
 type PowerPlayUnitLabel = "pp1" | "pp2" | null;
@@ -319,9 +322,7 @@ function escapeRegExp(value: string): string {
 }
 
 function includesNormalizedLabel(text: string, label: string): boolean {
-  return new RegExp(`(?:^|\\s)${escapeRegExp(label)}(?:$|\\s)`, "i").test(
-    text,
-  );
+  return new RegExp(`(?:^|\\s)${escapeRegExp(label)}(?:$|\\s)`, "i").test(text);
 }
 
 function detectNonNhlLeague(text: string): string | null {
@@ -1057,14 +1058,14 @@ function detectPowerPlayUnitLabel(value: string): PowerPlayUnitLabel {
   const normalized = normalizeTextKey(value);
   if (
     /\b(?:pp\s*1|power play\s*1|power-play\s*1|first unit|top unit|unit 1|unite 1|premiere unite|première unité)\b/i.test(
-      normalized
+      normalized,
     )
   ) {
     return "pp1";
   }
   if (
     /\b(?:pp\s*2|power play\s*2|power-play\s*2|second unit|unit 2|unite 2|deuxieme unite|deuxième unité)\b/i.test(
-      normalized
+      normalized,
     )
   ) {
     return "pp2";
@@ -1077,21 +1078,19 @@ function extractPowerPlayUnits(args: {
   rosterEntries: RosterNameEntry[];
 }): ExtractedPowerPlayUnits {
   const labeledUnits = Array.from(
-    args.text.matchAll(/\b(?:pp|power\s*play)\s*([12])\b[:\s-]+([^\n]+)/gi)
+    args.text.matchAll(/\b(?:pp|power\s*play)\s*([12])\b[:\s-]+([^\n]+)/gi),
   )
     .sort((left, right) => Number(left[1] ?? 9) - Number(right[1] ?? 9))
-    .map((match) =>
-      ({
-        label: `pp${match[1] ?? ""}` as PowerPlayUnitLabel,
-        unit: canonicalizeNames(
-          match[2]!
-            .split(/\s*[-–—/\\•]\s*|\s*,\s*/)
-            .map((name) => name.trim())
-            .filter(Boolean),
-          args.rosterEntries,
-        ),
-      })
-    )
+    .map((match) => ({
+      label: `pp${match[1] ?? ""}` as PowerPlayUnitLabel,
+      unit: canonicalizeNames(
+        match[2]!
+          .split(/\s*[-–—/\\•]\s*|\s*,\s*/)
+          .map((name) => name.trim())
+          .filter(Boolean),
+        args.rosterEntries,
+      ),
+    }))
     .filter((entry) => entry.unit.length >= 3)
     .map((entry) => ({
       label: entry.label,
@@ -1106,21 +1105,29 @@ function extractPowerPlayUnits(args: {
       (line) =>
         !/https?:|t\.co|pic\.twitter\.com|^#/.test(line) &&
         !/\b(power play|units?|advantage numérique|avantage numerique|jeu de puissance|vs\.?|contre)\b/i.test(
-          line
-        )
+          line,
+        ),
     )
     .flatMap((line) => {
-      const parsed = extractStructuredPlayerGroupsFromText(line, args.rosterEntries);
+      const parsed = extractStructuredPlayerGroupsFromText(
+        line,
+        args.rosterEntries,
+      );
       return [
-        ...parsed.forwards.map((group) => canonicalizeNames(group, args.rosterEntries)),
-        ...parsed.defensePairs.map((group) => canonicalizeNames(group, args.rosterEntries)),
+        ...parsed.forwards.map((group) =>
+          canonicalizeNames(group, args.rosterEntries),
+        ),
+        ...parsed.defensePairs.map((group) =>
+          canonicalizeNames(group, args.rosterEntries),
+        ),
         ...parsed.goalies
           .map((name) => canonicalizeNames([name], args.rosterEntries))
-          .filter((group) => group.length === 1)
+          .filter((group) => group.length === 1),
       ];
     });
 
-  const unlabeledUnits: Array<{ label: PowerPlayUnitLabel; unit: string[] }> = [];
+  const unlabeledUnits: Array<{ label: PowerPlayUnitLabel; unit: string[] }> =
+    [];
   for (let index = 0; index <= groupedLineTokens.length - 3; index += 1) {
     const first = groupedLineTokens[index];
     const second = groupedLineTokens[index + 1];
@@ -1136,30 +1143,29 @@ function extractPowerPlayUnits(args: {
 
   const dedupedUnits = [...labeledUnits, ...unlabeledUnits].reduce<
     Array<{ label: PowerPlayUnitLabel; unit: string[] }>
-  >(
-    (units, unit) => {
-      const normalizedKey = unit.unit.map((name) => normalizeNameKey(name)).join("|");
-      if (
-        normalizedKey &&
-        !units.some(
-          (existing) =>
-            existing.unit.map((name) => normalizeNameKey(name)).join("|") ===
-            normalizedKey
-        )
-      ) {
-        units.push(unit);
-      }
-      return units;
-    },
-    []
-  );
+  >((units, unit) => {
+    const normalizedKey = unit.unit
+      .map((name) => normalizeNameKey(name))
+      .join("|");
+    if (
+      normalizedKey &&
+      !units.some(
+        (existing) =>
+          existing.unit.map((name) => normalizeNameKey(name)).join("|") ===
+          normalizedKey,
+      )
+    ) {
+      units.push(unit);
+    }
+    return units;
+  }, []);
 
   if (dedupedUnits.length === 0) {
     const orderedRosterHits = dedupeOrderedNames(
       canonicalizeNames(
         extractOrderedRosterHitsFromTweet(args.text, args.rosterEntries),
-        args.rosterEntries
-      )
+        args.rosterEntries,
+      ),
     );
     if (orderedRosterHits.length === 5 || orderedRosterHits.length === 10) {
       const units =
@@ -1181,10 +1187,16 @@ function extractPowerPlayUnits(args: {
     .flatMap((entry) =>
       entry.unit.length === 10
         ? [
-            { label: "pp1" as PowerPlayUnitLabel, unit: entry.unit.slice(0, 5) },
-            { label: "pp2" as PowerPlayUnitLabel, unit: entry.unit.slice(5, 10) },
+            {
+              label: "pp1" as PowerPlayUnitLabel,
+              unit: entry.unit.slice(0, 5),
+            },
+            {
+              label: "pp2" as PowerPlayUnitLabel,
+              unit: entry.unit.slice(5, 10),
+            },
           ]
-        : [entry]
+        : [entry],
     )
     .slice(0, 2);
 
@@ -1192,11 +1204,11 @@ function extractPowerPlayUnits(args: {
     units: flattenedUnits.map((entry) => entry.unit),
     labels:
       flattenedUnits.length === 2
-        ? flattenedUnits.map((entry, index) =>
-            entry.label ?? (index === 0 ? "pp1" : "pp2")
+        ? flattenedUnits.map(
+            (entry, index) => entry.label ?? (index === 0 ? "pp1" : "pp2"),
           )
         : flattenedUnits.map(
-            (entry) => entry.label ?? detectPowerPlayUnitLabel(args.text)
+            (entry) => entry.label ?? detectPowerPlayUnitLabel(args.text),
           ),
   };
 }
@@ -1245,7 +1257,7 @@ function buildStructuredContent(args: {
 > {
   const structured = extractStructuredPlayerGroupsFromText(
     args.text,
-    args.rosterEntries
+    args.rosterEntries,
   );
   let forwards = structured.forwards
     .map((line) => canonicalizeNames(line, args.rosterEntries))
@@ -1277,20 +1289,22 @@ function buildStructuredContent(args: {
     args.classification === "power_play"
       ? []
       : args.text
-    .split(/\n+/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .filter((line) => !/[-–—/\\•]/.test(line))
-    .filter(
-      (line) =>
-        !/\b(lines?|pairings|power play|pp1|pp2|injury|update)\b/i.test(line),
-    )
-    .map(
-      (line) =>
-        resolveTweetNameToRosterEntry(line, args.rosterEntries)?.fullName ??
-        null,
-    )
-    .filter((name): name is string => Boolean(name));
+          .split(/\n+/)
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .filter((line) => !/[-–—/\\•]/.test(line))
+          .filter(
+            (line) =>
+              !/\b(lines?|pairings|power play|pp1|pp2|injury|update)\b/i.test(
+                line,
+              ),
+          )
+          .map(
+            (line) =>
+              resolveTweetNameToRosterEntry(line, args.rosterEntries)
+                ?.fullName ?? null,
+          )
+          .filter((name): name is string => Boolean(name));
 
   if (
     (args.classification === "lineup" ||
@@ -1669,6 +1683,63 @@ export async function fetchLinesCccTweetOEmbedData(
   return result.ok ? result.data : null;
 }
 
+export async function fetchLinesCccTweetApiData(
+  tweetId: string,
+): Promise<LinesCccTweetOEmbedData | null> {
+  const bearerToken =
+    process.env.X_API_BEARER_TOKEN ?? process.env.X_BEARER_TOKEN ?? null;
+  if (!bearerToken) return null;
+
+  const endpoint = new URL(`https://api.x.com/2/tweets/${tweetId}`);
+  endpoint.searchParams.set(
+    "expansions",
+    "author_id,referenced_tweets.id,referenced_tweets.id.author_id",
+  );
+  endpoint.searchParams.set(
+    "tweet.fields",
+    "author_id,created_at,referenced_tweets,text",
+  );
+  endpoint.searchParams.set("user.fields", "name,username");
+
+  const response = await fetch(endpoint, {
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${bearerToken}`,
+      "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",
+    },
+    cache: "no-store",
+  });
+  if (!response.ok) return null;
+
+  const payload = (await response.json()) as {
+    data?: {
+      id?: string;
+      text?: string;
+      author_id?: string;
+      created_at?: string;
+    };
+    includes?: {
+      users?: Array<{ id?: string; name?: string; username?: string }>;
+    };
+  };
+  const post = payload.data;
+  if (!post?.text) return null;
+  const author = payload.includes?.users?.find(
+    (user) => user.id && user.id === post.author_id,
+  );
+
+  return {
+    text: post.text.trim() || null,
+    postedAt: normalizeTweetPostedAt(post.created_at),
+    postedLabel: null,
+    sourceTweetUrl: author?.username
+      ? `https://x.com/${author.username}/status/${tweetId}`
+      : `https://twitter.com/i/web/status/${tweetId}`,
+    authorName: author?.name?.trim() || null,
+    authorHandle: author?.username?.trim() || null,
+  };
+}
+
 export async function fetchLinesCccTweetOEmbedAttempt(
   tweetUrl: string,
 ): Promise<LinesCccTweetOEmbedAttemptResult> {
@@ -1757,57 +1828,33 @@ export function applyLinesCccWrapperOEmbed(args: {
   };
 }
 
-async function resolveQuotedTweetStatusUrlForOEmbed(
-  text: string,
-): Promise<string | null> {
-  const directStatusUrl = extractStatusUrlsFromText(text).find((value) =>
-    Boolean(extractTweetIdFromUrl(value)),
-  );
-  if (directStatusUrl) {
-    return directStatusUrl;
-  }
-
-  for (const shortUrl of extractTcoUrlsFromText(text)) {
-    const expandedUrl = await expandRedirectUrl(shortUrl);
-    if (expandedUrl && extractTweetIdFromUrl(expandedUrl)) {
-      return expandedUrl;
-    }
-  }
-
-  return null;
-}
-
 export async function resolveLinesCccQuotedTweet(args: {
   wrapperText: string;
 }): Promise<LinesCccResolvedQuotedTweet | null> {
-  const quotedTweetStatusUrl = await resolveQuotedTweetStatusUrlForOEmbed(
-    args.wrapperText,
-  );
-  if (!quotedTweetStatusUrl) {
-    return null;
-  }
+  const reference = await resolveTweetReferenceFromText(args.wrapperText);
+  if (!reference) return null;
 
-  const quotedTweetId = extractTweetIdFromUrl(quotedTweetStatusUrl);
-  if (!quotedTweetId) {
-    return null;
-  }
-
-  const quotedTweet = await fetchLinesCccTweetOEmbedData(quotedTweetStatusUrl);
-  if (!quotedTweet) {
-    return null;
-  }
+  const apiTweet = await fetchLinesCccTweetApiData(reference.tweetId);
+  const quotedTweet =
+    apiTweet ?? (await fetchLinesCccTweetOEmbedData(reference.normalizedUrl));
 
   return {
-    quotedTweetId,
-    quotedTweetUrl:
-      normalizeTweetStatusUrl(quotedTweetStatusUrl, quotedTweetId) ??
-      quotedTweetStatusUrl,
-    quotedText: quotedTweet.text,
-    quotedPostedAt: quotedTweet.postedAt,
-    quotedPostedLabel: quotedTweet.postedLabel,
-    quotedSourceTweetUrl: quotedTweet.sourceTweetUrl,
-    quotedAuthorName: quotedTweet.authorName,
-    quotedAuthorHandle: quotedTweet.authorHandle,
+    quotedTweetId: reference.tweetId,
+    quotedTweetUrl: reference.normalizedUrl,
+    quotedText: quotedTweet?.text ?? null,
+    quotedPostedAt: quotedTweet?.postedAt ?? null,
+    quotedPostedLabel: quotedTweet?.postedLabel ?? null,
+    quotedSourceTweetUrl: quotedTweet?.sourceTweetUrl ?? reference.resolvedUrl,
+    quotedAuthorName: quotedTweet?.authorName ?? null,
+    quotedAuthorHandle:
+      quotedTweet?.authorHandle ?? reference.authorHandle ?? null,
+    resolvedUrl: reference.resolvedUrl,
+    shortUrl: reference.shortUrl,
+    retrievalStatus: apiTweet
+      ? "x_api_success"
+      : quotedTweet
+        ? "oembed_success"
+        : "resolved_url_only",
   };
 }
 
@@ -1860,6 +1907,9 @@ export function applyQuotedTweetPreference(args: {
       quotedPostedAt: quotedTweet.quotedPostedAt,
       quotedPostedLabel: quotedTweet.quotedPostedLabel,
       quotedSourceTweetUrl: quotedTweet.quotedSourceTweetUrl,
+      quotedResolvedUrl: quotedTweet.resolvedUrl,
+      quotedShortUrl: quotedTweet.shortUrl,
+      quotedRetrievalStatus: quotedTweet.retrievalStatus,
     },
   };
 

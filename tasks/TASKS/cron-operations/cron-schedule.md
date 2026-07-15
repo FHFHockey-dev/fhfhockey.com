@@ -1567,13 +1567,14 @@ curl -i -sS -m 180 \
 --     $$
 -- );
 
--- 10:12 UTC option-A weekly owner (approved 2026-07-11; NOT ACTIVE):
+-- 10:12 UTC option-A weekly owner (approved 2026-07-11; ACTIVE as job 393):
 -- - runs after the daily writer's 4m30s ceiling plus buffer
 -- - owns only genuine horizon-5 output
 -- - uses a separate run id on the same as-of date
 -- - must use a Vault-backed Authorization header
--- - activation is blocked until the exposed cron credential is rotated and
---   job 308 is migrated away from its plaintext command
+-- - jobs 308 and 393 are active and use the canonical Vault lookup after the
+--   value-free 2026-07-14 rotation/conversion gate
+-- - the commented SQL below is reference-only; production job 393 already exists
 --
 -- SELECT cron.schedule(
 --   'run-forge-projection-v2-weekly',

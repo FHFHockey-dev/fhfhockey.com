@@ -28,21 +28,21 @@
 
 ## Tasks
 
-- [ ] 1.0 Determine whether the current formal parity `FAIL` should remain blocking or be reclassified under approved exception policy
+- [x] 1.0 Determine whether the current formal parity `FAIL` should remain blocking or be reclassified under approved exception policy. Approved-exception classes remain visible but are non-blocking; unapproved drift remains blocking (verified 2026-07-12).
   - [x] 1.1 Reconcile the March 31 formal validation artifact against the approved exception documents and identify exactly which reported failure classes are already exceptioned.
   - [x] 1.2 Decide whether approved-exception classes should still count as blocking parity failures in the formal release artifact.
   - [x] 1.3 Document the release-policy decision, including whether exceptioned drift is acceptable for training use.
 
-- [ ] 2.0 Update the validation and reporting contract if the current fail-state should no longer be blocking
+- [x] 2.0 Update the validation and reporting contract if the current fail-state should no longer be blocking. Current code separates blockers, approved exceptions, and warnings; focused validation tests pass 18/18 (verified 2026-07-12).
   - [x] 2.1 Define the required output shape for release validation so raw failures, true parity bugs, and approved exception classes are reported separately.
   - [x] 2.2 Update `web/lib/supabase/Upserts/nhlXgValidation.ts` and/or `web/scripts/run-nhl-xg-release-validation.ts` so approved exception classes do not appear as unresolved blockers.
   - [x] 2.3 Add tests covering the new release-validation interpretation rules.
 
-- [ ] 3.0 Re-run the formal release batch under the resolved contract
+- [x] 3.0 Re-run the formal release batch under the resolved contract. The v2 artifact records raw PASS, parity WARN, zero blocking mismatches, 1,021 visible approved-exception mismatches, and training-use PASS (verified 2026-07-12).
   - [x] 3.1 Re-run the full release validation batch on the intended training sample.
   - [x] 3.2 Publish a new dated release-validation artifact showing the resolved interpretation.
   - [x] 3.3 Re-review the updated artifact against `tasks/TASKS/xg-model/nhl-api-foundation/validation-checklist.md` and record the final remaining blockers, if any.
 
-- [ ] 4.0 Record the final training-use release verdict
+- [x] 4.0 Record the final training-use release verdict. The dated v2 verdict is `release gate satisfied`, and baseline tasks resumed through completion (verified 2026-07-12).
   - [x] 4.1 Record a new dated release-gate verdict based on the updated release artifact.
   - [x] 4.2 If and only if the verdict is satisfied, resume `tasks/tasks-xg-baseline-options.md` at task `2.0`.

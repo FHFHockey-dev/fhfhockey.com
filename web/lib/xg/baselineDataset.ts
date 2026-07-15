@@ -164,7 +164,6 @@ export const DEFAULT_BOOLEAN_FEATURE_KEYS = [
   "isFlurryShot",
   "isEmptyNetEvent",
   "isOvertimeEvent",
-  "isShortSideMiss",
   "crossedRoyalRoad",
 ] as const satisfies readonly BooleanFeatureKey[];
 
@@ -174,7 +173,6 @@ export const DEFAULT_CATEGORICAL_FEATURE_KEYS = [
   "strengthExact",
   "zoneCode",
   "previousEventTypeDescKey",
-  "missReasonBucket",
 ] as const satisfies readonly CategoricalFeatureKey[];
 
 export const EXPANDED_V2_NUMERIC_FEATURE_KEYS = [
@@ -238,7 +236,11 @@ export const BASELINE_FEATURE_FAMILY_PRESETS = {
   }
 >;
 
-const FORBIDDEN_BASELINE_FEATURE_INPUT_KEYS = new Set(["shotEventType"]);
+const FORBIDDEN_BASELINE_FEATURE_INPUT_KEYS = new Set([
+  "shotEventType",
+  "missReasonBucket",
+  "isShortSideMiss",
+]);
 const FORBIDDEN_BASELINE_FEATURE_KEY_PREFIXES = ["shotEventType:"];
 
 function isFiniteNumber(value: unknown): value is number {

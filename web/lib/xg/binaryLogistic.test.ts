@@ -29,4 +29,24 @@ describe("binaryLogistic", () => {
     expect(probability).toBeGreaterThan(0);
     expect(probability).toBeLessThan(1);
   });
+
+  it("honors positive sample weights without changing the unweighted contract", () => {
+    const weighted = trainBinaryLogisticModel(
+      [
+        { features: [0], label: 0 as const, weight: 1 },
+        { features: [0], label: 1 as const, weight: 9 },
+      ],
+      { iterations: 300, learningRate: 0.1 },
+    );
+    const unweighted = trainBinaryLogisticModel(
+      [
+        { features: [0], label: 0 as const },
+        { features: [0], label: 1 as const },
+      ],
+      { iterations: 300, learningRate: 0.1 },
+    );
+
+    expect(predictBinaryLogisticProbability(weighted, [0])).toBeGreaterThan(0.8);
+    expect(predictBinaryLogisticProbability(unweighted, [0])).toBeCloseTo(0.5, 2);
+  });
 });

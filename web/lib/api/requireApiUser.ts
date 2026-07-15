@@ -7,9 +7,14 @@ type ApiUser = {
   email?: string | null;
 };
 
+type RequireApiUserOptions = {
+  onUnauthorized?: (message: string) => void;
+};
+
 export async function requireApiUser(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
+  options: RequireApiUserOptions = {},
 ): Promise<ApiUser | null> {
   const authorization = req.headers.authorization;
   const accessToken = authorization?.startsWith("Bearer ")
@@ -17,7 +22,11 @@ export async function requireApiUser(
     : "";
 
   if (!accessToken) {
-    res.status(401).json({ error: "Authentication required." });
+    if (options.onUnauthorized) {
+      options.onUnauthorized("Authentication required.");
+    } else {
+      res.status(401).json({ error: "Authentication required." });
+    }
     return null;
   }
 
@@ -25,7 +34,11 @@ export async function requireApiUser(
   const { data, error } = await client.auth.getUser(accessToken);
 
   if (error || !data.user) {
-    res.status(401).json({ error: "Invalid or expired session." });
+    if (options.onUnauthorized) {
+      options.onUnauthorized("Invalid or expired session.");
+    } else {
+      res.status(401).json({ error: "Invalid or expired session." });
+    }
     return null;
   }
 

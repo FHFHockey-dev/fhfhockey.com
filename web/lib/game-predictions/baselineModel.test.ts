@@ -69,6 +69,7 @@ function createPayload(homeOffRating = 60) {
     standingsRows: [
       {
         team_abbrev: "BOS",
+        season_id: 20252026,
         date: "2026-01-09",
         games_played: 40,
         point_pctg: 0.62,
@@ -79,6 +80,7 @@ function createPayload(homeOffRating = 60) {
       },
       {
         team_abbrev: "MTL",
+        season_id: 20252026,
         date: "2026-01-09",
         games_played: 40,
         point_pctg: 0.5,
@@ -142,6 +144,33 @@ describe("game prediction baseline model", () => {
     expect(valueFor("homeMinusAwayRecent20ShotShare")).toBe(0);
     expect(valueFor("homeMinusAwayRecent40ShotShare")).toBe(0);
     expect(valueFor("homeMinusAwayWeightedGoalieGsaaPer60")).toBe(0.4);
+  });
+
+  it("keeps roster/form candidates excluded by default and opt-in for ablations", () => {
+    const payload = createPayload();
+    payload.matchup.homeMinusAwayRosterOffImpact = 1.2;
+    payload.matchup.homeMinusAwayWeightedRecent10GoalDifferentialPerGame = 0.9;
+    const defaultVector = buildBaselineFeatureVector(payload);
+    const candidateVector = buildBaselineFeatureVector(payload, {
+      includeDefaultExcludedFeatureKeys: true,
+    });
+    const valueFor = (vector: number[], featureKey: (typeof BASELINE_FEATURE_KEYS)[number]) =>
+      vector[BASELINE_FEATURE_KEYS.indexOf(featureKey)];
+
+    expect(valueFor(defaultVector, "homeMinusAwayRosterOffImpact")).toBe(0);
+    expect(
+      valueFor(
+        defaultVector,
+        "homeMinusAwayWeightedRecent10GoalDifferentialPerGame",
+      ),
+    ).toBe(0);
+    expect(valueFor(candidateVector, "homeMinusAwayRosterOffImpact")).toBe(1.2);
+    expect(
+      valueFor(
+        candidateVector,
+        "homeMinusAwayWeightedRecent10GoalDifferentialPerGame",
+      ),
+    ).toBe(0.3);
   });
 
   it("creates training examples from feature snapshots and outcomes", () => {
@@ -467,7 +496,7 @@ describe("game prediction baseline model", () => {
       model_audit: {
         winnerPolicyVersion:
           "winner_policy_v1_report_50_and_selected_threshold",
-        rosterImpactVersion: "forge_team_projection_v1",
+        rosterImpactVersion: "forge_team_projection_proxy_v1",
         strengthOfScheduleVersion: "past_opponent_power_v1",
         seasonDecayVersion: "none",
         probabilityBlendVersion: "none",

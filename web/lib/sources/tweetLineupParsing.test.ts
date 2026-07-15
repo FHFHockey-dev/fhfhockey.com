@@ -3,10 +3,12 @@ import { describe, expect, it, vi } from "vitest";
 import {
   extractStatusUrlsFromText,
   extractTcoUrlsFromText,
+  extractTweetHandleFromUrl,
   extractTweetIdFromUrl,
   normalizeTweetStatusUrl,
   parseTweetOEmbedHtml,
-  resolveQuotedTweetUrlFromText
+  resolveQuotedTweetUrlFromText,
+  resolveTweetReferenceFromText
 } from "./tweetLineupParsing";
 
 describe("tweetLineupParsing", () => {
@@ -39,6 +41,11 @@ describe("tweetLineupParsing", () => {
     expect(
       normalizeTweetStatusUrl("https://twitter.com/CcCMiddleton/status/2047809041154625899")
     ).toBe("https://twitter.com/i/web/status/2047809041154625899");
+    expect(
+      extractTweetHandleFromUrl(
+        "https://x.com/NHLBlackhawks/status/2074932007746842910",
+      ),
+    ).toBe("NHLBlackhawks");
   });
 
   it("finds direct status urls and t.co urls in text", () => {
@@ -76,6 +83,20 @@ describe("tweetLineupParsing", () => {
     expect(await resolveQuotedTweetUrlFromText("Lightning lines https://t.co/9cZkBXydVn")).toBe(
       "https://twitter.com/i/web/status/2047808467969220779"
     );
+
+    expect(
+      await resolveTweetReferenceFromText(
+        "Lightning lines https://t.co/9cZkBXydVn",
+      ),
+    ).toEqual({
+      tweetId: "2047808467969220779",
+      normalizedUrl:
+        "https://twitter.com/i/web/status/2047808467969220779",
+      resolvedUrl:
+        "https://twitter.com/BenjaminJReport/status/2047808467969220779",
+      authorHandle: "BenjaminJReport",
+      shortUrl: "https://t.co/9cZkBXydVn",
+    });
 
     vi.unstubAllGlobals();
   });

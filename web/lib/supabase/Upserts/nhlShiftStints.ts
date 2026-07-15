@@ -272,13 +272,16 @@ export function findShiftStintAtTime(
   period: number,
   second: number
 ): NhlShiftStint | null {
+  const candidates = stints.filter(
+    (stint) =>
+      stint.period === period &&
+      stint.startSecond <= second &&
+      second <= stint.endSecond
+  );
   return (
-    stints.find(
-      (stint) =>
-        stint.period === period &&
-        stint.startSecond <= second &&
-        second < stint.endSecond
-    ) ?? null
+    candidates.find((stint) => stint.endSecond === second) ??
+    candidates.find((stint) => stint.startSecond <= second && second < stint.endSecond) ??
+    null
   );
 }
 

@@ -3,6 +3,7 @@ export type BinaryLabel = 0 | 1;
 export type BinaryTrainingExample = {
   features: number[];
   label: BinaryLabel;
+  weight?: number;
 };
 
 export type BinaryLogisticFitOptions = {
@@ -57,6 +58,13 @@ function validateExamples(examples: BinaryTrainingExample[]): number {
       throw new Error("Binary training labels must be 0 or 1.");
     }
 
+    if (
+      example.weight != null &&
+      (!Number.isFinite(example.weight) || example.weight <= 0)
+    ) {
+      throw new Error("Binary training example weights must be positive finite numbers.");
+    }
+
     for (const feature of example.features) {
       if (!Number.isFinite(feature)) {
         throw new Error("Binary training features must be finite numbers.");
@@ -82,6 +90,10 @@ export function trainBinaryLogisticModel(
   const learningRate = options.learningRate ?? 0.05;
   const l1 = options.l1 ?? 0;
   const l2 = options.l2 ?? 0;
+  const totalWeight = examples.reduce(
+    (sum, example) => sum + (example.weight ?? 1),
+    0,
+  );
 
   const weights = Array.from({ length: featureCount }, () => 0);
   let bias = 0;
@@ -94,21 +106,23 @@ export function trainBinaryLogisticModel(
       const score = dotProduct(weights, example.features) + bias;
       const prediction = sigmoid(score);
       const error = prediction - example.label;
+      const exampleWeight = example.weight ?? 1;
 
       for (let featureIndex = 0; featureIndex < featureCount; featureIndex += 1) {
-        gradient[featureIndex] += error * example.features[featureIndex];
+        gradient[featureIndex] +=
+          error * example.features[featureIndex] * exampleWeight;
       }
 
-      biasGradient += error;
+      biasGradient += error * exampleWeight;
     }
 
     for (let featureIndex = 0; featureIndex < featureCount; featureIndex += 1) {
       const penalty = l1 * sign(weights[featureIndex]) + l2 * weights[featureIndex];
       weights[featureIndex] -=
-        learningRate * (gradient[featureIndex] / examples.length + penalty);
+        learningRate * (gradient[featureIndex] / totalWeight + penalty);
     }
 
-    bias -= learningRate * (biasGradient / examples.length);
+    bias -= learningRate * (biasGradient / totalWeight);
   }
 
   return {

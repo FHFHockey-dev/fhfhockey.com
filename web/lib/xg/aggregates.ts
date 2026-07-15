@@ -1,3 +1,5 @@
+import { buildFlurryAdjustedPredictions } from "./flurryAdjusted";
+
 export type XgAggregateGameRow = {
   id: number;
   seasonId: number | null;
@@ -20,6 +22,16 @@ export type XgAggregatePredictionRow = {
   label: boolean | null;
   xg: number;
   model_approved: boolean;
+  flurry_sequence_id?: string | null;
+  flurry_shot_index?: number | null;
+};
+
+export type XgFlurryMetadataRow = {
+  feature_version: number;
+  game_id: number;
+  event_id: number;
+  flurry_sequence_id: string | null;
+  flurry_shot_index: number | null;
 };
 
 export type XgTeamGameAggregateRow = {
@@ -33,6 +45,8 @@ export type XgTeamGameAggregateRow = {
   is_home: boolean | null;
   xg_for: number;
   xg_against: number;
+  flurry_adjusted_xg_for: number;
+  flurry_adjusted_xg_against: number;
   goals_for: number;
   goals_against: number;
   shot_attempts_for: number;
@@ -52,6 +66,7 @@ export type XgPlayerGameAggregateRow = {
   player_id: number;
   team_id: number | null;
   ixg: number;
+  flurry_adjusted_ixg: number;
   goals: number;
   shot_attempts: number;
   source_prediction_type: "shot_goal";
@@ -70,9 +85,11 @@ export type XgGoalieGameAggregateRow = {
   team_id: number | null;
   opponent_team_id: number | null;
   xg_against: number;
+  flurry_adjusted_xg_against: number;
   goals_against: number;
   shots_against: number;
   goals_saved_above_expected: number;
+  flurry_adjusted_goals_saved_above_expected: number;
   source_prediction_type: "shot_goal";
   source_model_approved: true;
   provenance: Record<string, unknown>;
@@ -90,6 +107,8 @@ export type XgTeamRollingAggregateRow = {
   games_count: number;
   xg_for: number;
   xg_against: number;
+  flurry_adjusted_xg_for: number;
+  flurry_adjusted_xg_against: number;
   goals_for: number;
   goals_against: number;
   shot_attempts_for: number;
@@ -109,6 +128,7 @@ export type XgPlayerRollingAggregateRow = {
   window_games: number;
   games_count: number;
   ixg: number;
+  flurry_adjusted_ixg: number;
   goals: number;
   shot_attempts: number;
   provenance: Record<string, unknown>;
@@ -126,9 +146,11 @@ export type XgGoalieRollingAggregateRow = {
   window_games: number;
   games_count: number;
   xg_against: number;
+  flurry_adjusted_xg_against: number;
   goals_against: number;
   shots_against: number;
   goals_saved_above_expected: number;
+  flurry_adjusted_goals_saved_above_expected: number;
   provenance: Record<string, unknown>;
   updated_at: string;
 };
@@ -287,6 +309,50 @@ export function xgFeatureEventKey(args: {
   return `${args.featureVersion}:${args.gameId}:${args.eventId}`;
 }
 
+export function mergeXgFlurryMetadata(
+  predictions: XgAggregatePredictionRow[],
+  metadataRows: XgFlurryMetadataRow[]
+): XgAggregatePredictionRow[] {
+  const metadataByKey = new Map(
+    metadataRows.map((row) => [
+      xgFeatureEventKey({
+        featureVersion: Number(row.feature_version),
+        gameId: Number(row.game_id),
+        eventId: Number(row.event_id),
+      }),
+      {
+        flurry_sequence_id: row.flurry_sequence_id ?? null,
+        flurry_shot_index:
+          row.flurry_shot_index == null ? null : Number(row.flurry_shot_index),
+      },
+    ])
+  );
+  const missingKeys = predictions.flatMap((row) => {
+    const key = xgFeatureEventKey({
+      featureVersion: row.feature_version,
+      gameId: row.game_id,
+      eventId: row.event_id,
+    });
+    return metadataByKey.has(key) ? [] : [key];
+  });
+  if (missingKeys.length > 0) {
+    throw new Error(
+      `Flurry metadata coverage is incomplete for ${missingKeys.length}/${predictions.length} approved predictions; samples=${missingKeys.slice(0, 5).join(",")}`
+    );
+  }
+
+  return predictions.map((row) => ({
+    ...row,
+    ...metadataByKey.get(
+      xgFeatureEventKey({
+        featureVersion: row.feature_version,
+        gameId: row.game_id,
+        eventId: row.event_id,
+      })
+    )!,
+  }));
+}
+
 function opponentTeamId(game: XgAggregateGameRow, teamId: number | null): number | null {
   if (teamId == null) return null;
   if (teamId === game.homeTeamId) return game.awayTeamId ?? null;
@@ -375,6 +441,8 @@ function addTeamGameRow(args: {
     is_home: isHomeTeam(args.game, args.teamId),
     xg_for: 0,
     xg_against: 0,
+    flurry_adjusted_xg_for: 0,
+    flurry_adjusted_xg_against: 0,
     goals_for: 0,
     goals_against: 0,
     shot_attempts_for: 0,
@@ -424,6 +492,8 @@ function buildRollingTeamRows(args: {
           games_count: windowRows.length,
           xg_for: roundMetric(windowRows.reduce((sum, row) => sum + row.xg_for, 0)),
           xg_against: roundMetric(windowRows.reduce((sum, row) => sum + row.xg_against, 0)),
+          flurry_adjusted_xg_for: roundMetric(windowRows.reduce((sum, row) => sum + row.flurry_adjusted_xg_for, 0)),
+          flurry_adjusted_xg_against: roundMetric(windowRows.reduce((sum, row) => sum + row.flurry_adjusted_xg_against, 0)),
           goals_for: windowRows.reduce((sum, row) => sum + row.goals_for, 0),
           goals_against: windowRows.reduce((sum, row) => sum + row.goals_against, 0),
           shot_attempts_for: windowRows.reduce((sum, row) => sum + row.shot_attempts_for, 0),
@@ -474,6 +544,7 @@ function buildRollingPlayerRows(args: {
           window_games: windowGames,
           games_count: windowRows.length,
           ixg: roundMetric(windowRows.reduce((sum, row) => sum + row.ixg, 0)),
+          flurry_adjusted_ixg: roundMetric(windowRows.reduce((sum, row) => sum + row.flurry_adjusted_ixg, 0)),
           goals: windowRows.reduce((sum, row) => sum + row.goals, 0),
           shot_attempts: windowRows.reduce((sum, row) => sum + row.shot_attempts, 0),
           provenance: predictionProvenance({
@@ -512,6 +583,7 @@ function buildRollingGoalieRows(args: {
       for (const windowGames of args.windows) {
         const windowRows = sorted.slice(Math.max(0, index - windowGames + 1), index + 1);
         const xgAgainst = roundMetric(windowRows.reduce((sum, row) => sum + row.xg_against, 0));
+        const flurryAdjustedXgAgainst = roundMetric(windowRows.reduce((sum, row) => sum + row.flurry_adjusted_xg_against, 0));
         const goalsAgainst = windowRows.reduce((sum, row) => sum + row.goals_against, 0);
         out.push({
           model_version: current.model_version,
@@ -524,9 +596,11 @@ function buildRollingGoalieRows(args: {
           window_games: windowGames,
           games_count: windowRows.length,
           xg_against: xgAgainst,
+          flurry_adjusted_xg_against: flurryAdjustedXgAgainst,
           goals_against: goalsAgainst,
           shots_against: windowRows.reduce((sum, row) => sum + row.shots_against, 0),
           goals_saved_above_expected: roundMetric(xgAgainst - goalsAgainst),
+          flurry_adjusted_goals_saved_above_expected: roundMetric(flurryAdjustedXgAgainst - goalsAgainst),
           provenance: predictionProvenance({
             modelVersion: current.model_version,
             featureVersion: current.feature_version,
@@ -555,6 +629,19 @@ export function buildXgAggregates(
   const teamRowsByKey = new Map<string, XgTeamGameAggregateRow>();
   const playerRowsByKey = new Map<string, XgPlayerGameAggregateRow>();
   const goalieRowsByKey = new Map<string, XgGoalieGameAggregateRow>();
+  const flurryAdjustedByEvent = new Map(
+    buildFlurryAdjustedPredictions(
+      predictions
+        .filter((row) => row.prediction_type === "shot_goal" && row.model_approved === true)
+        .map((row) => ({
+          gameId: row.game_id,
+          eventId: row.event_id,
+          rawXg: row.xg,
+          flurrySequenceId: row.flurry_sequence_id ?? null,
+          flurryShotIndex: row.flurry_shot_index ?? null,
+        }))
+    ).map((row) => [`${row.gameId}:${row.eventId}`, row.flurryAdjustedXg])
+  );
 
   for (const prediction of predictions) {
     if (prediction.prediction_type !== "shot_goal" || prediction.model_approved !== true) {
@@ -589,6 +676,9 @@ export function buildXgAggregates(
     const opponentId = opponentTeamId(game, ownerTeamId);
     const isGoal = prediction.label === true ? 1 : 0;
     const xg = Number.isFinite(prediction.xg) ? prediction.xg : 0;
+    const flurryAdjustedXg = flurryAdjustedByEvent.get(
+      `${prediction.game_id}:${prediction.event_id}`
+    ) ?? xg;
     const forRow = addTeamGameRow({
       rowsByKey: teamRowsByKey,
       prediction,
@@ -597,6 +687,9 @@ export function buildXgAggregates(
       generatedAt,
     });
     forRow.xg_for = roundMetric(forRow.xg_for + xg);
+    forRow.flurry_adjusted_xg_for = roundMetric(
+      forRow.flurry_adjusted_xg_for + flurryAdjustedXg
+    );
     forRow.goals_for += isGoal;
     forRow.shot_attempts_for += 1;
 
@@ -609,6 +702,9 @@ export function buildXgAggregates(
         generatedAt,
       });
       againstRow.xg_against = roundMetric(againstRow.xg_against + xg);
+      againstRow.flurry_adjusted_xg_against = roundMetric(
+        againstRow.flurry_adjusted_xg_against + flurryAdjustedXg
+      );
       againstRow.goals_against += isGoal;
       againstRow.shot_attempts_against += 1;
     }
@@ -624,6 +720,7 @@ export function buildXgAggregates(
         player_id: prediction.shooter_player_id,
         team_id: ownerTeamId,
         ixg: 0,
+        flurry_adjusted_ixg: 0,
         goals: 0,
         shot_attempts: 0,
         source_prediction_type: "shot_goal" as const,
@@ -636,6 +733,9 @@ export function buildXgAggregates(
         updated_at: generatedAt,
       };
       current.ixg = roundMetric(current.ixg + xg);
+      current.flurry_adjusted_ixg = roundMetric(
+        current.flurry_adjusted_ixg + flurryAdjustedXg
+      );
       current.goals += isGoal;
       current.shot_attempts += 1;
       playerRowsByKey.set(playerKey, current);
@@ -653,9 +753,11 @@ export function buildXgAggregates(
         team_id: opponentId,
         opponent_team_id: ownerTeamId,
         xg_against: 0,
+        flurry_adjusted_xg_against: 0,
         goals_against: 0,
         shots_against: 0,
         goals_saved_above_expected: 0,
+        flurry_adjusted_goals_saved_above_expected: 0,
         source_prediction_type: "shot_goal" as const,
         source_model_approved: true as const,
         provenance: predictionProvenance({
@@ -666,10 +768,16 @@ export function buildXgAggregates(
         updated_at: generatedAt,
       };
       current.xg_against = roundMetric(current.xg_against + xg);
+      current.flurry_adjusted_xg_against = roundMetric(
+        current.flurry_adjusted_xg_against + flurryAdjustedXg
+      );
       current.goals_against += isGoal;
       current.shots_against += 1;
       current.goals_saved_above_expected = roundMetric(
         current.xg_against - current.goals_against
+      );
+      current.flurry_adjusted_goals_saved_above_expected = roundMetric(
+        current.flurry_adjusted_xg_against - current.goals_against
       );
       goalieRowsByKey.set(goalieKey, current);
     }

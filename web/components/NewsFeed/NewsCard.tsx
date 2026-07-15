@@ -1,12 +1,16 @@
 import type { CSSProperties } from "react";
 import Image from "next/legacy/image";
 
+import ExternalNewsLink from "components/common/ExternalNewsLink";
 import styles from "./NewsCard.module.scss";
 
 import {
   formatNewsFeedLabel,
+  getPublicNewsItemDetails,
+  getPublicNewsSourceAttribution,
   getNewsItemTeamColors,
   normalizeNewsCategory,
+  sanitizePublicNewsText,
   type NewsFeedItem,
 } from "lib/newsFeed";
 import {
@@ -31,7 +35,7 @@ type NewsCardProps = {
     | "card_status"
     | "metadata"
     | "players"
-  >;
+  > & { tweet_url?: string | null };
   compact?: boolean;
   rail?: boolean;
   sourceDisplayNameOverride?: string | null;
@@ -188,10 +192,13 @@ export default function NewsCard({
 }: NewsCardProps) {
   const team = getNewsItemTeamColors(item.team_abbreviation);
   const publishedAt = item.published_at ?? item.created_at ?? null;
+  const publicSource = getPublicNewsSourceAttribution({
+    item: { ...item, tweet_url: item.tweet_url ?? null },
+  });
   const sourceAttribution = formatSourceAttribution(
-    item.source_label,
-    item.source_account,
-    sourceDisplayNameOverride,
+    publicSource.displayName,
+    publicSource.account,
+    sanitizePublicNewsText(sourceDisplayNameOverride),
   );
   const categoryLabel = formatNewsFeedLabel(item.category);
   const subcategoryLabel = item.subcategory
@@ -200,6 +207,7 @@ export default function NewsCard({
   const lineup = isLineupNewsCategory(item.category, item.subcategory)
     ? readLineupCardFromMetadata(item.metadata)
     : null;
+  const details = getPublicNewsItemDetails(item);
 
   return (
     <article
@@ -225,7 +233,9 @@ export default function NewsCard({
           ) : null}
         </div>
 
-        <h2 className={styles.headline}>{item.headline}</h2>
+        <h2 className={styles.headline}>
+          {sanitizePublicNewsText(item.headline)}
+        </h2>
 
         {lineup ? (
           <LineupGrid
@@ -247,15 +257,17 @@ export default function NewsCard({
           </div>
         ) : null}
 
-        <p className={styles.blurb}>{item.blurb}</p>
+        {!lineup ? <p className={styles.blurb}>{details}</p> : null}
 
         <div className={styles.footer}>
           <span>{formatDate(publishedAt)}</span>
           {sourceAttribution ? <span>{sourceAttribution}</span> : null}
-          {item.source_url ? (
-            <a className={styles.sourceLink} href={item.source_url}>
-              Source
-            </a>
+          {publicSource.url ? (
+            <ExternalNewsLink
+              className={styles.sourceLink}
+              href={publicSource.url}
+              label={`View original post for ${sanitizePublicNewsText(item.headline)}`}
+            />
           ) : null}
         </div>
       </div>

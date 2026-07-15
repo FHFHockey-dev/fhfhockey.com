@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import {
   buildCronJobTiming,
   hasCronTimingEnvelope,
-  withCronJobTiming
+  withCronJobTiming,
 } from "lib/cron/timingContract";
 import supabase from "lib/supabase/server";
 
@@ -47,7 +47,8 @@ function inferRowsAffected(body: unknown): number | null {
       "updated",
       "totalUpdates",
       "total_updates",
-      "count"
+      "succeeded",
+      "count",
     ];
 
     for (const k of keys) {
@@ -56,7 +57,8 @@ function inferRowsAffected(body: unknown): number | null {
     }
 
     for (const v of Object.values(obj)) {
-      if (Array.isArray(v) && v.length > 0 && typeof v[0] !== "object") continue;
+      if (Array.isArray(v) && v.length > 0 && typeof v[0] !== "object")
+        continue;
       const nested = visit(v);
       if (nested != null) return nested;
     }
@@ -76,7 +78,7 @@ function inferFailedRows(body: unknown): number | null {
     "errorCount",
     "errorsCount",
     "rowsFailed",
-    "rows_failed"
+    "rows_failed",
   ];
 
   const visit = (obj: any): number | null => {
@@ -110,9 +112,30 @@ function inferFailedRows(body: unknown): number | null {
 function inferFailure(body: unknown): boolean {
   if (!body || typeof body !== "object") return false;
   const b: any = body;
+
   if (b.success === false) return true;
+
+  const normalizedStatus =
+    typeof b.status === "string" ? b.status.trim().toLowerCase() : null;
+  if (
+    normalizedStatus &&
+    ["failure", "failed", "error"].includes(normalizedStatus)
+  ) {
+    return true;
+  }
+
   if (typeof b.error === "string" && b.error.trim()) return true;
-  if (typeof b.message === "string" && /fail|error/i.test(b.message)) return true;
+
+  if (b.success === true) return false;
+  if (
+    normalizedStatus &&
+    ["success", "succeeded", "ok", "passed"].includes(normalizedStatus)
+  ) {
+    return false;
+  }
+
+  if (typeof b.message === "string" && /fail|error/i.test(b.message))
+    return true;
   return false;
 }
 
@@ -124,7 +147,7 @@ function defaultJobName(req: NextApiRequest): string {
 
 export function withCronJobAudit(
   handler: (req: any, res: any) => any,
-  opts?: { jobName?: string }
+  opts?: { jobName?: string },
 ): (req: any, res: any) => Promise<void> {
   return async (req: NextApiRequest, res: NextApiResponse) => {
     const startedAt = Date.now();
@@ -155,12 +178,10 @@ export function withCronJobAudit(
       if (!res.headersSent) {
         const errorBody = withCronJobTiming(
           { success: false, error: (err as any)?.message ?? "Unknown error" },
-          startedAt
+          startedAt,
         );
         capturedBody = errorBody;
-        res
-          .status(500)
-          .json(errorBody);
+        res.status(500).json(errorBody);
       }
     }
 
@@ -168,11 +189,11 @@ export function withCronJobAudit(
     const timing = hasCronTimingEnvelope(capturedBody)
       ? {
           ...capturedBody.timing,
-          source: "audit" as const
+          source: "audit" as const,
         }
       : {
           ...buildCronJobTiming(startedAt, endedAt),
-          source: "audit" as const
+          source: "audit" as const,
         };
     const durationMs = timing.durationMs;
     const statusCode = res.statusCode;
@@ -197,15 +218,25 @@ export function withCronJobAudit(
           thrown != null
             ? ((thrown as any)?.message ?? safeJson(thrown, 2000))
             : null,
-        response: safeJson(capturedBody, 4000)
-      }
+        response: safeJson(capturedBody, 4000),
+      },
     };
 
     try {
       if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
         return;
       }
-      await supabase.from("cron_job_audit").insert(row as any);
+      const { error: auditInsertError } = await supabase
+        .from("cron_job_audit")
+        .insert(row as any);
+      if (auditInsertError) {
+        console.error(
+          "cron_job_audit insert failed",
+          auditInsertError.message ??
+            safeJson(auditInsertError, 2000) ??
+            "Unknown audit insert error",
+        );
+      }
     } catch (e) {
       console.error("cron_job_audit insert failed", (e as any)?.message ?? e);
     }

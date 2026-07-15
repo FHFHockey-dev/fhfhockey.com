@@ -2,6 +2,26 @@
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
+import { buildNhlGameSummaryReportUrl } from "lib/NHL/htmlReports";
+import {
+  assertCompletePlayerGameStatsBatches,
+  assertCompletePlayerGameStatsSource,
+  assertCompleteTeamGameStatsSource,
+  assertMatchingGameIdentity,
+  getGameStatsCompletenessFailureDetails,
+  type GameStatsCompletenessFailureDetails,
+} from "lib/cron/gameStatsCompleteness";
+import {
+  getTransactionalGameStatsFailureDetails,
+  persistCompleteGameStatsTransaction,
+  type TransactionalGameStatsFailureDetails,
+} from "lib/cron/transactionalGameStatsPersistence";
+import {
+  StatsPreWriteQuarantineError,
+  getStatsPreWriteQuarantineFailureDetails,
+  sanitizeCronDiagnostic,
+  type StatsPreWriteQuarantineFailureDetails,
+} from "lib/cron/statsUpdateSafety";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { getCurrentSeason } from "lib/NHL/server";
@@ -9,6 +29,7 @@ import { HTMLElement, parse } from "node-html-parser";
 import { get } from "lib/NHL/base";
 import { updatePlayer } from "./update-player/[playerId]";
 import fetchWithCache from "lib/fetchWithCache";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 /**
  * Query params:
@@ -176,13 +197,8 @@ type PlayerCounts = { [playerId: number]: number };
 
 /////////////// API Route Logic //////////////////
 
-type ProcessedGameTable =
-  | "teamGameStats"
-  | "skatersGameStats"
-  | "goaliesGameStats";
-
 export function isTruthyQueryFlag(
-  value: string | string[] | undefined
+  value: string | string[] | undefined,
 ): boolean {
   if (typeof value === "string") {
     return ["1", "true", "all", "full", "yes"].includes(value.toLowerCase());
@@ -197,7 +213,7 @@ export function isTruthyQueryFlag(
 
 export function resolveSeasonStatsRunMode({
   runMode,
-  fullFlag
+  fullFlag,
 }: {
   runMode?: string;
   fullFlag?: string | string[];
@@ -209,70 +225,150 @@ export function resolveSeasonStatsRunMode({
   return isTruthyQueryFlag(fullFlag) ? "full" : "incremental";
 }
 
-async function getLatestProcessedGameIdForSeasonTable(
-  supabaseClient: SupabaseClient,
-  tableName: ProcessedGameTable,
-  seasonId: string
-): Promise<number | null> {
-  const { data, error } = await supabaseClient
-    .from(tableName)
-    .select("gameId, games!inner(id, seasonId, startTime)")
-    .eq("games.seasonId", seasonId)
-    .lte("games.startTime", new Date().toISOString())
-    .order("id", { foreignTable: "games", ascending: false })
-    .limit(1);
+type PersistedGameCompletenessRow = {
+  id?: unknown;
+  statsUpdateStatus?: unknown;
+};
 
-  if (error) {
-    throw new Error(
-      `Failed to determine latest processed game for ${tableName} in season ${seasonId}: ${error.message}`
+function embeddedRows(value: unknown): Array<Record<string, unknown>> {
+  if (Array.isArray(value)) {
+    return value.filter(
+      (row): row is Record<string, unknown> =>
+        typeof row === "object" && row !== null,
+    );
+  }
+  return typeof value === "object" && value !== null
+    ? [value as Record<string, unknown>]
+    : [];
+}
+
+function isPersistedGameComplete(row: PersistedGameCompletenessRow): boolean {
+  const statusRows = embeddedRows(row.statsUpdateStatus);
+  if (statusRows.length !== 1) return false;
+
+  const status = statusRows[0];
+  const hasCompletionTimestamp =
+    typeof status.completed_at === "string" &&
+    status.completed_at.length > 0 &&
+    Number.isFinite(Date.parse(status.completed_at));
+  if (
+    status.updated !== true ||
+    status.contract_version !== 1 ||
+    !hasCompletionTimestamp
+  ) {
+    return false;
+  }
+
+  if (status.outcome === "quarantined") {
+    return (
+      status.reason === "game_not_finished" &&
+      status.expected_team_rows === 0 &&
+      status.observed_team_rows === 0 &&
+      status.expected_skater_rows === 0 &&
+      status.observed_skater_rows === 0 &&
+      status.expected_goalie_rows === 0 &&
+      status.observed_goalie_rows === 0
     );
   }
 
-  const latestRow = (data as Array<{ gameId?: number }> | null)?.[0];
-  return latestRow?.gameId ?? null;
+  return (
+    status.outcome === "complete" &&
+    status.reason == null &&
+    status.expected_team_rows === 2 &&
+    status.observed_team_rows === status.expected_team_rows &&
+    typeof status.expected_skater_rows === "number" &&
+    status.expected_skater_rows >= 1 &&
+    status.expected_skater_rows <= 100 &&
+    status.observed_skater_rows === status.expected_skater_rows &&
+    typeof status.expected_goalie_rows === "number" &&
+    status.expected_goalie_rows >= 1 &&
+    status.expected_goalie_rows <= 100 &&
+    status.observed_goalie_rows === status.expected_goalie_rows
+  );
 }
 
-async function getLatestFullyProcessedGameIdForSeason(
+async function getEarliestIncompleteOrPendingGameIdForSeason(
   supabaseClient: SupabaseClient,
-  seasonId: string
+  seasonId: string,
 ): Promise<number | null> {
-  const latestIds = await Promise.all(
-    (["teamGameStats", "skatersGameStats", "goaliesGameStats"] as const).map(
-      (tableName) =>
-        getLatestProcessedGameIdForSeasonTable(
-          supabaseClient,
-          tableName,
-          seasonId
-        )
-    )
-  );
+  const pageSize = 1000;
+  const maxPages = 10;
+  const seenPageSignatures = new Set<string>();
+  let previousGameId = 0;
 
-  if (latestIds.some((gameId) => gameId === null)) {
-    return null;
+  for (let currentPage = 0; currentPage < maxPages; currentPage += 1) {
+    const rangeFrom = currentPage * pageSize;
+    const rangeTo = rangeFrom + pageSize - 1;
+    const { data, error } = await supabaseClient
+      .from("games")
+      .select(
+        "id, statsUpdateStatus(updated,outcome,reason,contract_version,expected_team_rows,observed_team_rows,expected_skater_rows,observed_skater_rows,expected_goalie_rows,observed_goalie_rows,completed_at)",
+      )
+      .eq("seasonId", seasonId)
+      .lte("startTime", new Date().toISOString())
+      .order("id", { ascending: true })
+      .limit(1, { foreignTable: "statsUpdateStatus" })
+      .range(rangeFrom, rangeTo);
+
+    if (error) {
+      throw new Error(
+        `Failed to determine incomplete stats games for season ${seasonId}: ${String(
+          (error as { message?: unknown })?.message ?? error,
+        )}`,
+      );
+    }
+    if (!Array.isArray(data)) {
+      throw new Error(
+        "The persisted stats completeness query returned a non-array result.",
+      );
+    }
+
+    const rows = data as PersistedGameCompletenessRow[];
+    for (const row of rows) {
+      const gameId = row.id;
+      if (
+        typeof gameId !== "number" ||
+        !Number.isSafeInteger(gameId) ||
+        gameId <= previousGameId
+      ) {
+        throw new Error(
+          "The persisted stats completeness query returned invalid or non-increasing game IDs.",
+        );
+      }
+      previousGameId = gameId;
+      if (!isPersistedGameComplete(row)) return gameId;
+    }
+
+    if (rows.length < pageSize) return null;
+    const signature = `${rows[0]?.id}:${rows[rows.length - 1]?.id}:${rows.length}`;
+    if (seenPageSignatures.has(signature)) {
+      throw new Error(
+        "The persisted stats completeness query repeated a full page.",
+      );
+    }
+    seenPageSignatures.add(signature);
   }
 
-  const validIds = latestIds.filter(
-    (gameId): gameId is number =>
-      typeof gameId === "number" && Number.isFinite(gameId)
+  throw new Error(
+    `The persisted stats completeness query exceeded ${maxPages} pages for season ${seasonId}.`,
   );
-
-  return validIds.length > 0 ? Math.min(...validIds) : null;
 }
 
 async function fetchFinishedGamesForSeason(
   supabaseClient: SupabaseClient,
   seasonId: string,
-  lastProcessedGameId: number | null
+  minimumGameIdInclusive: number | null,
+  maximumGames: number | null,
 ): Promise<Array<{ id: number }>> {
   console.log(
     `Workspaceing finished game IDs for season ${seasonId}${
-      lastProcessedGameId
-        ? ` after game ${lastProcessedGameId}`
+      minimumGameIdInclusive
+        ? ` from pending ledger game ${minimumGameIdInclusive}`
         : " from season start"
-    } with pagination...`
+    } with pagination...`,
   );
 
-  const pageSize = 1000;
+  const pageSize = Math.min(1000, maximumGames ?? 1000);
   let currentPage = 0;
   let allGamesAccumulator: Array<{ id: number }> = [];
   let keepFetching = true;
@@ -288,26 +384,36 @@ async function fetchFinishedGamesForSeason(
       .lte("startTime", new Date().toISOString())
       .order("id", { ascending: true });
 
-    if (typeof lastProcessedGameId === "number") {
-      query = query.gt("id", lastProcessedGameId);
+    if (typeof minimumGameIdInclusive === "number") {
+      query = query.gte("id", minimumGameIdInclusive);
     }
 
     const { data: gamesOnPage, error: gamesError } = await query.range(
       rangeFrom,
-      rangeTo
+      rangeTo,
     );
 
     if (gamesError) {
       throw new Error(
-        `Database error fetching games page ${currentPage} for season ${seasonId}: ${gamesError.message}`
+        `Database error fetching games page ${currentPage} for season ${seasonId}: ${gamesError.message}`,
       );
     }
 
     if (gamesOnPage && gamesOnPage.length > 0) {
-      allGamesAccumulator = allGamesAccumulator.concat(gamesOnPage);
+      const remaining =
+        maximumGames == null
+          ? gamesOnPage.length
+          : Math.max(0, maximumGames - allGamesAccumulator.length);
+      allGamesAccumulator = allGamesAccumulator.concat(
+        gamesOnPage.slice(0, remaining),
+      );
     }
 
-    if (!gamesOnPage || gamesOnPage.length < pageSize) {
+    if (
+      !gamesOnPage ||
+      gamesOnPage.length < pageSize ||
+      (maximumGames != null && allGamesAccumulator.length >= maximumGames)
+    ) {
       keepFetching = false;
     } else {
       currentPage += 1;
@@ -317,13 +423,10 @@ async function fetchFinishedGamesForSeason(
   return allGamesAccumulator;
 }
 
-async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-    process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+    process.env.SUPABASE_SERVICE_ROLE_KEY || "",
   );
 
   const requestedSeasonId = Array.isArray(req.query.seasonId)
@@ -339,45 +442,53 @@ async function handler(
       : String((await getCurrentSeason()).seasonId);
   const runMode = resolveSeasonStatsRunMode({
     runMode: typeof runModeParam === "string" ? runModeParam : undefined,
-    fullFlag: fullParam
+    fullFlag: fullParam,
   });
 
   // Validate seasonId format (basic check, adjust regex if needed)
   if (!/^\d{8}$/.test(seasonId)) {
     return res.status(400).json({
-      message:
-        "seasonId must be in YYYYYYYY format (e.g., 20242025).",
-      success: false
+      message: "seasonId must be in YYYYYYYY format (e.g., 20242025).",
+      success: false,
     });
   }
 
   if (!requestedSeasonId) {
-    console.log(`No seasonId provided; defaulting to current season ${seasonId}.`);
+    console.log(
+      `No seasonId provided; defaulting to current season ${seasonId}.`,
+    );
   }
 
   console.log(
-    `Received request to update stats for season ${seasonId} in ${runMode} mode.`
+    `Received request to update stats for season ${seasonId} in ${runMode} mode.`,
   );
 
   try {
-    const lastProcessedGameId =
+    const incrementalStartGameId =
       runMode === "incremental"
-        ? await getLatestFullyProcessedGameIdForSeason(supabase, seasonId)
+        ? await getEarliestIncompleteOrPendingGameIdForSeason(
+            supabase,
+            seasonId,
+          )
         : null;
-    const allGamesAccumulator = await fetchFinishedGamesForSeason(
-      supabase,
-      seasonId,
-      lastProcessedGameId
-    );
+    const allGamesAccumulator =
+      runMode === "incremental" && incrementalStartGameId === null
+        ? []
+        : await fetchFinishedGamesForSeason(
+            supabase,
+            seasonId,
+            incrementalStartGameId,
+            runMode === "incremental" ? 10 : null,
+          );
 
     if (allGamesAccumulator.length === 0) {
       console.log(
-        `No finished games found for season ${seasonId} after pagination.`
+        `No finished games found for season ${seasonId} after pagination.`,
       );
       return res.json({
         seasonId,
         mode: runMode,
-        lastProcessedGameId,
+        incrementalStartGameId,
         message:
           runMode === "incremental"
             ? `No new finished games found to update for season ${seasonId}.`
@@ -386,35 +497,65 @@ async function handler(
         processed: 0,
         succeeded: 0,
         failed: 0,
-        failedGameIds: []
+        failedGameIds: [],
       });
     }
 
     console.log(
-      `Found ${allGamesAccumulator.length} finished game(s) to process for season ${seasonId}. Starting update process...`
+      `Found ${allGamesAccumulator.length} finished game(s) to process for season ${seasonId}. Starting update process...`,
     );
 
     // 2. Iterate through each game ID (from the complete list) and update its stats
     let successCount = 0;
     let failureCount = 0;
+    let attemptedCount = 0;
     const failedGameIds: number[] = [];
+    const failures: Array<
+      | TransactionalGameStatsFailureDetails
+      | GameStatsCompletenessFailureDetails
+      | StatsPreWriteQuarantineFailureDetails
+      | {
+          kind: "stats_update_failure";
+          code: "STATS_UPDATE_FAILED";
+          gameId: number;
+          message: string;
+        }
+    > = [];
 
     // Use the accumulated list of all games
     for (const game of allGamesAccumulator) {
       const gameId = game.id;
+      attemptedCount++;
       console.log(`--- Processing Game ID: ${gameId} ---`);
       try {
-        await updateStats(gameId, supabase); // Call the core logic function
+        await updateStats(gameId, supabase);
         console.log(`Successfully updated stats for game ${gameId}.`);
         successCount++;
       } catch (e: any) {
-        console.error(
-          `Failed to update stats for game ${gameId}: ${e.message}`,
-          e.stack ? `\nStack: ${e.stack}` : ""
-        );
         failureCount++;
         failedGameIds.push(gameId);
-        // Continue to the next game even if one fails
+        const failure = getGameStatsCompletenessFailureDetails(e) ??
+          getTransactionalGameStatsFailureDetails(e) ??
+          getStatsPreWriteQuarantineFailureDetails(e) ?? {
+            kind: "stats_update_failure",
+            code: "STATS_UPDATE_FAILED",
+            gameId,
+            message: sanitizeCronDiagnostic(e),
+          };
+        failures.push(failure);
+        console.error("Season stats game update failed.", {
+          gameId,
+          kind: failure.kind,
+          code: failure.code,
+          message:
+            failure.kind === "stats_update_failure"
+              ? failure.message
+              : undefined,
+        });
+        console.log(
+          `Stopping the season run at failed game ${gameId} so the incremental cursor cannot advance past the gap.`,
+        );
+        break;
       }
       console.log(`--- Finished Processing Game ID: ${gameId} ---`);
       // Optional delay
@@ -422,32 +563,48 @@ async function handler(
     }
 
     console.log(
-      `Finished updating stats for season ${seasonId}. Success: ${successCount}, Failed: ${failureCount}`
+      `Finished updating stats for season ${seasonId}. Success: ${successCount}, Failed: ${failureCount}`,
     );
+    const failedRows = failures.reduce(
+      (total, failure) =>
+        total +
+        (failure.kind === "stats_update_failure" ? 1 : failure.requestedRows),
+      0,
+    );
+    const deferredGameIds = allGamesAccumulator
+      .slice(attemptedCount)
+      .map((game) => game.id);
 
     // 3. Return summary response
-    return res.json({
+    const response = {
       seasonId,
       mode: runMode,
-      lastProcessedGameId,
-      message: `Stats update process completed for season ${seasonId}. Processed: ${allGamesAccumulator.length}, Succeeded: ${successCount}, Failed: ${failureCount}.`,
+      incrementalStartGameId,
+      message: `Stats update process completed for season ${seasonId}. Processed: ${attemptedCount}, Succeeded: ${successCount}, Failed: ${failureCount}.`,
       success: failureCount === 0,
-      processed: allGamesAccumulator.length, // Use total count from accumulator
+      processed: attemptedCount,
+      selected: allGamesAccumulator.length,
       succeeded: successCount,
       failed: failureCount,
-      failedGameIds: failedGameIds
-    });
+      failedRows,
+      failedGameIds: failedGameIds,
+      deferredGameIds,
+      failures,
+    };
+
+    return failureCount > 0
+      ? res.status(500).json(response)
+      : res.json(response);
   } catch (e: any) {
     // Catch errors from pagination loop
     const dependencyError = normalizeDependencyError(e);
     console.error(
       `Unhandled error during season update for ${seasonId}: ${dependencyError.message}`,
-      e.stack
     );
     return res.status(500).json({
       message: `An unexpected error occurred: ${dependencyError.message}`,
       success: false,
-      dependencyError
+      dependencyError,
     });
   }
 }
@@ -464,76 +621,68 @@ export async function updateStats(gameId: number, supabase: SupabaseClient) {
   const season: number | undefined = landing?.season;
   const gameIdentifier: number = landing?.id;
 
-  if (!gameState || !season || !gameIdentifier) {
+  assertMatchingGameIdentity({
+    requestedGameId: gameId,
+    landingGameId: gameIdentifier,
+  });
+
+  if (!gameState || !season) {
     throw new Error(
-      `Essential game data (gameState, season, id) missing from landing endpoint for game ${gameId}`
+      `Essential game data (gameState or season) missing from landing endpoint for game ${gameId}`,
     );
-  }
-  if (gameIdentifier !== gameId) {
-    console.warn(
-      `Mismatch between requested gameId (${gameId}) and landing data gameId (${gameIdentifier}). Using landing data ID.`
-    );
-    // gameId = gameIdentifier; // Uncomment to use the API's ID strictly
   }
 
   console.log(`Game ${gameIdentifier}: State=${gameState}, Season=${season}`);
 
   if (!isGameFinished(gameState)) {
     console.warn(
-      `Game ${gameIdentifier} state is '${gameState}', not considered finished by API. Skipping update.`
+      `Game ${gameIdentifier} state is '${gameState}', not considered finished by API. Skipping update.`,
     );
-    throw new Error(
-      `Game ${gameIdentifier} is not finished. gameState: ${gameState}`
-    );
+    throw new StatsPreWriteQuarantineError({
+      kind: "stats_pre_write_quarantine_failure",
+      code: "STATS_PRE_WRITE_QUARANTINE_ELIGIBLE",
+      phase: "pre_write_validation",
+      gameId: gameIdentifier,
+      requestedRows: 1,
+      reason: "game_not_finished",
+      message: `Game ${gameIdentifier} is not finished. gameState: ${gameState}`,
+    });
   }
 
   const rightRail = await get(`/gamecenter/${gameIdentifier}/right-rail`);
-  const teamGameStats: TeamGameStat[] = rightRail?.teamGameStats;
-  if (!teamGameStats || !Array.isArray(teamGameStats)) {
-    console.warn(
-      `teamGameStats missing or invalid in right-rail for game ${gameIdentifier}. Skipping team stats update.`
-    );
-  } else {
-    console.log(`Processing teamGameStats for game ${gameIdentifier}...`);
-    try {
-      const homeTeamGameStats = await processTeamGameStats(
-        gameIdentifier,
-        teamGameStats,
-        true,
-        landing,
-        season.toString(),
-        rightRail
-      );
-      const awayTeamGameStats = await processTeamGameStats(
-        gameIdentifier,
-        teamGameStats,
-        false,
-        landing,
-        season.toString(),
-        rightRail
-      );
-
-      console.log(`Upserting teamGameStats for game ${gameIdentifier}...`);
-      await supabase
-        .from("teamGameStats")
-        .upsert([homeTeamGameStats, awayTeamGameStats])
-        .throwOnError();
-      console.log(
-        `Successfully upserted team game stats for game ${gameIdentifier}`
-      );
-    } catch (teamStatError: any) {
-      console.error(
-        `Error processing/upserting team stats for game ${gameIdentifier}:`,
-        teamStatError
-      );
-      // throw teamStatError; // Uncomment to make the whole game update fail
-    }
-  }
+  const rawTeamGameStats: unknown = rightRail?.teamGameStats;
+  assertCompleteTeamGameStatsSource({
+    gameId: gameIdentifier,
+    teamGameStats: rawTeamGameStats,
+    teamIds: [landing?.homeTeam?.id, landing?.awayTeam?.id],
+  });
+  const teamGameStats = rawTeamGameStats as TeamGameStat[];
+  console.log(`Processing teamGameStats for game ${gameIdentifier}...`);
+  const homeTeamGameStats = await processTeamGameStats(
+    gameIdentifier,
+    teamGameStats,
+    true,
+    landing,
+    season.toString(),
+    rightRail,
+  );
+  const awayTeamGameStats = await processTeamGameStats(
+    gameIdentifier,
+    teamGameStats,
+    false,
+    landing,
+    season.toString(),
+    rightRail,
+  );
 
   console.log(
-    `Workspaceing boxscore for game ${gameIdentifier} (needed for playerByGameStats)...`
+    `Workspaceing boxscore for game ${gameIdentifier} (needed for playerByGameStats)...`,
   );
   const boxscore = await get(`/gamecenter/${gameIdentifier}/boxscore`);
+  assertCompletePlayerGameStatsSource({
+    gameId: gameIdentifier,
+    boxscore,
+  });
 
   const powerPlayAssistsCount: PlayerCounts = {};
   const shorthandedGoalsCount: PlayerCounts = {};
@@ -542,7 +691,7 @@ export async function updateStats(gameId: number, supabase: SupabaseClient) {
   const scoringPeriods = landing?.summary?.scoring;
   if (scoringPeriods && Array.isArray(scoringPeriods)) {
     console.log(
-      `Processing scoring summary from LANDING data for game ${gameIdentifier}...`
+      `Processing scoring summary from LANDING data for game ${gameIdentifier}...`,
     );
     for (const period of scoringPeriods) {
       const goalsInPeriod = period?.goals;
@@ -577,11 +726,11 @@ export async function updateStats(gameId: number, supabase: SupabaseClient) {
       }
     }
     console.log(
-      `Finished processing scoring summary for game ${gameIdentifier}.`
+      `Finished processing scoring summary for game ${gameIdentifier}.`,
     );
   } else {
     console.warn(
-      `Scoring summary not found or invalid in LANDING data for game ${gameIdentifier}. PPP/SHP calculations may be incomplete.`
+      `Scoring summary not found or invalid in LANDING data for game ${gameIdentifier}. PPP/SHP calculations may be incomplete.`,
     );
   }
 
@@ -591,179 +740,35 @@ export async function updateStats(gameId: number, supabase: SupabaseClient) {
   console.log("SHA Counts:", JSON.stringify(shorthandedAssistsCount));
 
   console.log(
-    `Extracting player stats using BOXSCORE data for game ${gameIdentifier}...`
+    `Extracting player stats using BOXSCORE data for game ${gameIdentifier}...`,
   );
   const { skaters, goalies } = getPlayersGameStats(
     boxscore,
     gameIdentifier,
     powerPlayAssistsCount,
     shorthandedGoalsCount,
-    shorthandedAssistsCount
+    shorthandedAssistsCount,
   );
+  assertCompletePlayerGameStatsBatches({
+    gameId: gameIdentifier,
+    skaters,
+    goalies,
+  });
 
   console.log(
-    `Upserting player stats for game ${gameIdentifier} in batches...`
+    `Persisting the complete transactional game-stat manifest for game ${gameIdentifier}...`,
   );
-
-  ///////////////// Skaters Upsert (with fallback) ///////////////
-  if (skaters && skaters.length > 0) {
-    console.log(
-      `Attempting batch upsert for ${skaters.length} skaters for game ${gameIdentifier}...`
-    );
-    try {
-      const { error: skaterBatchError } = await supabase
-        .from("skatersGameStats")
-        .upsert(skaters);
-      if (skaterBatchError) throw skaterBatchError;
-      console.log(
-        `Successfully batch upserted ${skaters.length} skaters for game ${gameIdentifier}.`
-      );
-    } catch (batchError: any) {
-      if (batchError.code === "23503") {
-        // Foreign Key Violation
-        console.warn(
-          `Batch skater upsert failed (FK violation '23503') for game ${gameIdentifier}. Falling back to individual upserts with player updates...`
-        );
-        await upsertPlayersIndividually(
-          supabase,
-          skaters,
-          "skaters",
-          gameIdentifier
-        );
-      } else {
-        console.error(
-          `Error batch upserting skaters for game ${gameIdentifier} (Code: ${batchError.code}):`,
-          batchError
-        );
-        if (skaters.length > 0) {
-          console.error(
-            "Sample failed skater data (batch):",
-            JSON.stringify(skaters[0])
-          );
-        }
-        // Decide if this failure should stop the entire game update
-        throw new Error(
-          `Failed to batch upsert skaters: ${batchError.message}`
-        );
-      }
-    }
-  } else {
-    console.log(`No skaters to upsert for game ${gameIdentifier}.`);
-  }
-
-  ///////////////// Goalies Upsert (with fallback) ///////////////
-  if (goalies && goalies.length > 0) {
-    console.log(
-      `Attempting batch upsert for ${goalies.length} goalies for game ${gameIdentifier}...`
-    );
-    try {
-      const { error: goalieBatchError } = await supabase
-        .from("goaliesGameStats")
-        .upsert(goalies);
-      if (goalieBatchError) throw goalieBatchError;
-      console.log(
-        `Successfully batch upserted ${goalies.length} goalies for game ${gameIdentifier}.`
-      );
-    } catch (batchError: any) {
-      if (batchError.code === "23503") {
-        // Foreign Key Violation
-        console.warn(
-          `Batch goalie upsert failed (FK violation '23503') for game ${gameIdentifier}. Falling back to individual upserts with player updates...`
-        );
-        await upsertPlayersIndividually(
-          supabase,
-          goalies,
-          "goalies",
-          gameIdentifier
-        );
-      } else {
-        console.error(
-          `Error batch upserting goalies for game ${gameIdentifier} (Code: ${batchError.code}):`,
-          batchError
-        );
-        if (goalies.length > 0) {
-          console.error(
-            "Sample failed goalie data (batch):",
-            JSON.stringify(goalies[0])
-          );
-        }
-        // Decide if this failure should stop the entire game update
-        throw new Error(
-          `Failed to batch upsert goalies: ${batchError.message}`
-        );
-      }
-    }
-  } else {
-    console.log(`No goalies to upsert for game ${gameIdentifier}.`);
-  }
+  const manifest = await persistCompleteGameStatsTransaction({
+    supabase,
+    gameId: gameIdentifier,
+    teamRows: [homeTeamGameStats, awayTeamGameStats],
+    skaterRows: skaters,
+    goalieRows: goalies,
+    repairMissingPlayer: (playerId) => updatePlayer(playerId, supabase),
+  });
 
   console.log(`Finished updateStats execution for gameId: ${gameIdentifier}`);
-  // Optional: Add/Update a timestamp in the 'games' table to mark successful update
-  // await supabase.from('games').update({ stats_updated_at: new Date().toISOString() }).eq('id', gameIdentifier);
-}
-
-// Helper for individual upserts on batch FK failure
-async function upsertPlayersIndividually(
-  supabase: SupabaseClient,
-  players: (Skater | Goalie)[],
-  playerType: "skaters" | "goalies",
-  gameId: number
-) {
-  let individualSuccess = 0;
-  let individualFailed = 0;
-  const tableName = `${playerType}GameStats`;
-  console.log(
-    `Starting individual fallback upserts for ${players.length} ${playerType} in game ${gameId}...`
-  );
-
-  for (const player of players) {
-    if (!player?.playerId || !player?.gameId) {
-      console.warn(
-        `Skipping update for invalid ${playerType} object in fallback:`,
-        player
-      );
-      individualFailed++;
-      continue;
-    }
-    try {
-      await supabase.from(tableName).upsert(player).throwOnError();
-      individualSuccess++;
-    } catch (individualError: any) {
-      if (individualError.code === "23503") {
-        console.warn(
-          `Individual ${playerType} FK violation for ${player.playerId}, game ${gameId}. Attempting player update...`
-        );
-        try {
-          await updatePlayer(player.playerId, supabase); // Attempt to add player to 'players' table
-          console.log(
-            `Retrying individual upsert for ${playerType} ${player.playerId}, game ${gameId}...`
-          );
-          await supabase.from(tableName).upsert(player).throwOnError(); // Retry upsert
-          individualSuccess++;
-        } catch (retryError: any) {
-          console.error(
-            `Failed individual retry for ${playerType} ${player.playerId}, game ${gameId} after player update attempt:`,
-            retryError
-          );
-          individualFailed++;
-        }
-      } else {
-        console.error(
-          `Error during individual ${playerType} upsert fallback for ${player.playerId}, game ${gameId}:`,
-          individualError
-        );
-        console.error("Fallback Player data:", JSON.stringify(player));
-        individualFailed++;
-      }
-    }
-  }
-  console.log(
-    `Finished individual fallback for ${playerType} in game ${gameId}. Success: ${individualSuccess}, Failed: ${individualFailed}.`
-  );
-  // Decide if individual failures should cause the overall game update to fail
-  // if (individualFailed > 0) {
-  //    throw new Error(`Failed to upsert ${individualFailed} ${playerType} individually.`);
-  // }
+  return manifest;
 }
 
 ///////////////// Helper Functions //////////////////////////////
@@ -774,7 +779,7 @@ async function processTeamGameStats(
   isHomeTeam: boolean,
   landing: any,
   season: string,
-  rightRail: any
+  rightRail: any,
 ) {
   const getStat = (category: Category): string | number | undefined => {
     const statObj = teamGameStats.find((stat) => stat.category === category);
@@ -794,10 +799,10 @@ async function processTeamGameStats(
     // Log specific missing fields if possible
     console.error(
       `Invalid team data in landing object for game ${gameId}. Home=${isHomeTeam}. Data:`,
-      JSON.stringify(team)
+      JSON.stringify(team),
     );
     throw new Error(
-      `Invalid team data (missing id or score) in landing object for game ${gameId}. Home=${isHomeTeam}`
+      `Invalid team data (missing id or score) in landing object for game ${gameId}. Home=${isHomeTeam}`,
     );
   }
 
@@ -810,13 +815,13 @@ async function processTeamGameStats(
     powerPlayToi = rightRail[teamKey].powerPlayToi;
   } else {
     console.warn(
-      `PP TOI not found directly in rightRail for ${teamKey}, game ${gameId}. Trying HTML fallback.`
+      `PP TOI not found directly in rightRail for ${teamKey}, game ${gameId}. Trying HTML fallback.`,
     );
     try {
       powerPlayToi = await getPPTOI(season, gameId.toString(), isHomeTeam);
     } catch (e: any) {
       console.error(
-        `Failed to fetch/parse PP TOI from HTML for ${teamKey}, game ${gameId}. Defaulting to "00:00". Error: ${e.message}`
+        `Failed to fetch/parse PP TOI from HTML for ${teamKey}, game ${gameId}. Defaulting to "00:00". Error: ${sanitizeCronDiagnostic(e)}`,
       );
       // Do not throw here, default is acceptable
     }
@@ -841,7 +846,7 @@ async function processTeamGameStats(
     takeaways: safeNumber(getStat("takeaways")),
     powerPlay: powerPlayData,
     powerPlayConversion: powerPlayConversionData,
-    powerPlayToi: powerPlayToi // Keep as string "MM:SS"
+    powerPlayToi: powerPlayToi, // Keep as string "MM:SS"
     // Add updated_at timestamp if  table has it
     // updated_at: new Date().toISOString(),
   };
@@ -850,7 +855,7 @@ async function processTeamGameStats(
 async function getPPTOI(
   season: string,
   gameIdString: string,
-  isHome: boolean
+  isHome: boolean,
 ): Promise<string> {
   const slicedGameId = gameIdString.slice(4);
   if (!slicedGameId || slicedGameId.length !== 6) {
@@ -867,8 +872,7 @@ async function getPPTOI(
     }
   } catch (fetchError) {
     console.error(
-      `Failed to fetch HTML report for game ${gameIdString}:`,
-      fetchError
+      `Failed to fetch HTML report for game ${gameIdString}: ${sanitizeCronDiagnostic(fetchError)}`,
     );
     return "00:00";
   }
@@ -878,14 +882,13 @@ async function getPPTOI(
     document = parse(content);
   } catch (parseError) {
     console.error(
-      `Failed to parse HTML report for game ${gameIdString}:`,
-      parseError
+      `Failed to parse HTML report for game ${gameIdString}: ${sanitizeCronDiagnostic(parseError)}`,
     );
     return "00:00";
   }
 
   const rows = document.querySelectorAll(
-    "#PenaltySummary tr.oddColor, #PenaltySummary tr.evenColor"
+    "#PenaltySummary tr.oddColor, #PenaltySummary tr.evenColor",
   );
 
   const PPTOIs: string[] = [];
@@ -899,12 +902,12 @@ async function getPPTOI(
           PPTOIs.push(timeText);
         } else {
           console.warn(
-            `Could not parse valid PPTOI time from '${cells[1].textContent}' in game ${gameIdString}`
+            `Could not parse valid PPTOI time from '${sanitizeCronDiagnostic(cells[1].textContent)}' in game ${gameIdString}`,
           );
         }
       } else {
         console.warn(
-          `Found PPTOI row but unexpected cell structure in game ${gameIdString}`
+          `Found PPTOI row but unexpected cell structure in game ${gameIdString}`,
         );
       }
     }
@@ -912,7 +915,7 @@ async function getPPTOI(
 
   if (PPTOIs.length !== 2) {
     console.error(
-      `Expected 2 PPTOIs from HTML report, found ${PPTOIs.length} for game ${gameIdString}.`
+      `Expected 2 PPTOIs from HTML report, found ${PPTOIs.length} for game ${gameIdString}.`,
     );
     return "00:00";
   }
@@ -922,26 +925,22 @@ async function getPPTOI(
 
 function getChildren(node: HTMLElement): HTMLElement[] {
   return node.childNodes.filter(
-    (n): n is HTMLElement => n instanceof HTMLElement && n.nodeType === 1 // Ensure it's an Element node
+    (n): n is HTMLElement => n instanceof HTMLElement && n.nodeType === 1, // Ensure it's an Element node
   );
 }
 
-// Updated URL format for HTML reports
 const getReportContent = (
-  reportSeasonYear: string, // e.g., "2024"
-  gameIdSuffix: string // e.g., "020001"
+  season: string,
+  gameIdSuffix: string,
 ): Promise<string> => {
-  // Example URL: https://www.nhl.com/scores/htmlreports/20232024/GS020001.HTM
-  // Use the *full* season string (YYYYYYYY) for the folder name
-  const fullSeasonString = `${reportSeasonYear}${
-    parseInt(reportSeasonYear, 10) + 1
-  }`;
-  const reportUrl = `https://www.nhl.com/scores/htmlreports/${fullSeasonString}/GS${gameIdSuffix}.HTM`;
+  const reportUrl = buildNhlGameSummaryReportUrl(season, gameIdSuffix);
   console.log(`Workspaceing HTML Report: ${reportUrl}`);
   try {
     return fetchWithCache(reportUrl, false); // Set cache to false if stats should always be fresh
   } catch (error) {
-    console.error(`Error initiating fetchWithCache for ${reportUrl}:`, error);
+    console.error(
+      `Error initiating fetchWithCache for ${reportUrl}: ${sanitizeCronDiagnostic(error)}`,
+    );
     return Promise.resolve(""); // Return empty string on error to prevent downstream crashes
   }
 };
@@ -951,7 +950,7 @@ function getPlayersGameStats(
   gameId: number,
   powerPlayAssistsCount: PlayerCounts,
   shorthandedGoalsCount: PlayerCounts,
-  shorthandedAssistsCount: PlayerCounts
+  shorthandedAssistsCount: PlayerCounts,
 ): {
   skaters: Skater[];
   goalies: Goalie[];
@@ -965,12 +964,12 @@ function getPlayersGameStats(
     ...(homeTeamStats?.forwards || []),
     ...(awayTeamStats?.forwards || []),
     ...(homeTeamStats?.defense || []),
-    ...(awayTeamStats?.defense || [])
+    ...(awayTeamStats?.defense || []),
   ];
 
   if (apiSkaters.length === 0) {
     console.warn(
-      `No skater data found in boxscore.playerByGameStats for game ${gameId}.`
+      `No skater data found in boxscore.playerByGameStats for game ${gameId}.`,
     );
     // throw new Error(`No skater data found for game ${gameId}`);
   }
@@ -1008,7 +1007,7 @@ function getPlayersGameStats(
         // Defaults - Consider if these can be fetched from elsewhere (PBP data)
         faceoffs: "0/0",
         powerPlayToi: "00:00",
-        shorthandedToi: "00:00"
+        shorthandedToi: "00:00",
 
         // Add updated_at timestamp if table has it
         // updated_at: new Date().toISOString(),
@@ -1019,12 +1018,12 @@ function getPlayersGameStats(
 
   const apiGoalies: ApiGoalieData[] = [
     ...(homeTeamStats?.goalies || []),
-    ...(awayTeamStats?.goalies || [])
+    ...(awayTeamStats?.goalies || []),
   ];
 
   if (apiGoalies.length === 0) {
     console.warn(
-      `No goalie data found in boxscore.playerByGameStats for game ${gameId}.`
+      `No goalie data found in boxscore.playerByGameStats for game ${gameId}.`,
     );
     // Depending on requirements, decide if this is an error or just a warning
     // throw new Error(`No goalie data found for game ${gameId}`);
@@ -1035,7 +1034,7 @@ function getPlayersGameStats(
       if (!player.playerId) {
         console.warn(
           `Skipping goalie entry due to missing playerId in game ${gameId}`,
-          player
+          player,
         );
         return null; // Return null to filter out later
       }
@@ -1055,7 +1054,7 @@ function getPlayersGameStats(
         shorthandedShotsAgainst: player.shorthandedShotsAgainst,
         evenStrengthGoalsAgainst: player.evenStrengthGoalsAgainst,
         powerPlayGoalsAgainst: player.powerPlayGoalsAgainst,
-        shorthandedGoalsAgainst: player.shorthandedGoalsAgainst
+        shorthandedGoalsAgainst: player.shorthandedGoalsAgainst,
 
         // Add updated_at timestamp if your table has it
         // updated_at: new Date().toISOString(),
@@ -1065,12 +1064,12 @@ function getPlayersGameStats(
     .filter((g): g is Goalie => g !== null); // Filter out any null entries from validation
 
   console.log(
-    `Extracted ${skaters.length} skaters and ${goalies.length} goalies for game ${gameId}.`
+    `Extracted ${skaters.length} skaters and ${goalies.length} goalies for game ${gameId}.`,
   );
   return {
     skaters,
-    goalies
+    goalies,
   };
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler));

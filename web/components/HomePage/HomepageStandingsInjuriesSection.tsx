@@ -2,22 +2,72 @@ import { useMemo, useState } from "react";
 import moment from "moment";
 import Link from "next/link";
 
+import ExternalNewsLink from "components/common/ExternalNewsLink";
 import PanelStatus from "components/common/PanelStatus";
 import { buildHomepageModulePresentation } from "lib/dashboard/freshness";
 import OptimizedImage from "components/common/OptimizedImage";
 import { fallbackNHLLogo, getTeamLogoSvg } from "lib/images";
+import {
+  formatNewsFeedLabel,
+  getPublicNewsItemDetails,
+  normalizeNewsCategory,
+  type NewsFeedItem,
+} from "lib/newsFeed";
 import styles from "styles/Home.module.scss";
 
 type HomepageStandingsInjuriesSectionProps = {
   standings: any[];
   injuries: any[];
   recentTransactions?: any[];
+  recentInjuryNews?: NewsFeedItem[];
   snapshotGeneratedAt: string | null;
   standingsError: string | null;
   injuriesError: string | null;
 };
 
 const ROWS_PER_PAGE = 32;
+
+function newsItemToHomepageInjury(item: NewsFeedItem) {
+  const playerNames = item.players
+    .map((player) => player.player_name)
+    .filter(Boolean);
+  const onlyPlayer = item.players.length === 1 ? item.players[0] : null;
+  const category = normalizeNewsCategory(item.category);
+
+  return {
+    key: `news-${item.id}`,
+    date: item.published_at ?? item.created_at,
+    team: item.team_abbreviation ?? "NHL",
+    player: {
+      id: onlyPlayer?.player_id ?? null,
+      displayName: playerNames.join(", ") || item.headline,
+    },
+    status: formatNewsFeedLabel(item.subcategory ?? item.category),
+    description: getPublicNewsItemDetails(item),
+    sourceUrl: item.source_url,
+    statusState:
+      category === "RETURN" || category === "RETURNING"
+        ? "returning"
+        : "injured",
+  };
+}
+
+export function buildHomepageInjuryUpdates(args: {
+  injuries: any[];
+  recentInjuryNews: NewsFeedItem[];
+}) {
+  const newsRows = args.recentInjuryNews.map(newsItemToHomepageInjury);
+  const canonicalRows = (Array.isArray(args.injuries) ? args.injuries : []).map(
+    (injury, index) => ({
+      ...injury,
+      key:
+        injury.key ??
+        `status-${injury.player?.id ?? injury.player?.displayName ?? "unknown"}-${injury.date ?? "unknown"}-${index}`,
+    }),
+  );
+
+  return [...newsRows, ...canonicalRows];
+}
 
 function formatPointPercentage(value: unknown): string {
   const parsed = Number(value);
@@ -28,6 +78,7 @@ export default function HomepageStandingsInjuriesSection({
   standings,
   injuries,
   recentTransactions = [],
+  recentInjuryNews = [],
   snapshotGeneratedAt,
   standingsError,
   injuriesError,
@@ -47,14 +98,19 @@ export default function HomepageStandingsInjuriesSection({
     });
   }, [standings]);
 
-  const currentPageInjuries = useMemo(() => {
-    if (!Array.isArray(injuries)) return [];
+  const injuryUpdates = useMemo(
+    () => buildHomepageInjuryUpdates({ injuries, recentInjuryNews }),
+    [injuries, recentInjuryNews],
+  );
 
-    return injuries.slice(
+  const currentPageInjuries = useMemo(() => {
+    if (!Array.isArray(injuryUpdates)) return [];
+
+    return injuryUpdates.slice(
       injuryPage * ROWS_PER_PAGE,
       (injuryPage + 1) * ROWS_PER_PAGE,
     );
-  }, [injuries, injuryPage]);
+  }, [injuryUpdates, injuryPage]);
 
   const standingsPresentation = buildHomepageModulePresentation({
     source: "homepage-standings",
@@ -68,7 +124,7 @@ export default function HomepageStandingsInjuriesSection({
   const injuriesPresentation = buildHomepageModulePresentation({
     source: "homepage-injuries",
     error: injuriesError,
-    isEmpty: injuries.length === 0 && !injuriesError,
+    isEmpty: injuryUpdates.length === 0 && !injuriesError,
     timestamp: snapshotGeneratedAt,
     maxAgeHours: 18,
     emptyMessage: "No recent injury updates found.",
@@ -237,6 +293,9 @@ export default function HomepageStandingsInjuriesSection({
                           .filter(Boolean)
                           .join(", ")
                       : "";
+                    const details = getPublicNewsItemDetails(transaction);
+                    const sourceLabel =
+                      playerNames || transaction.headline || "news update";
 
                     return (
                       <tr key={transaction.id}>
@@ -263,17 +322,16 @@ export default function HomepageStandingsInjuriesSection({
                           {transaction.category}
                         </td>
                         <td className={styles.descriptionColumn}>
+                          <span className={styles.descriptionContent}>
+                            {details}
+                          </span>
                           {transaction.source_url ? (
-                            <a
+                            <ExternalNewsLink
                               href={transaction.source_url}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              {transaction.headline}
-                            </a>
-                          ) : (
-                            transaction.headline
-                          )}
+                              className={styles.externalNewsLink}
+                              label={`View original post for ${sourceLabel}`}
+                            />
+                          ) : null}
                         </td>
                       </tr>
                     );
@@ -310,7 +368,7 @@ export default function HomepageStandingsInjuriesSection({
                 </tr>
               </thead>
               <tbody>
-                {currentPageInjuries.map((injury, idx) => {
+                {currentPageInjuries.map((injury) => {
                   const teamAbbrev = injury.team?.toUpperCase() ?? "NHL";
                   const playerId = injury.player?.id;
                   const rowClassName =
@@ -323,7 +381,7 @@ export default function HomepageStandingsInjuriesSection({
 
                   return (
                     <tr
-                      key={`${playerId ?? playerName}-${idx}`}
+                      key={injury.key}
                       className={rowClassName}
                     >
                       <td className={styles.dateColumn}>
@@ -355,7 +413,16 @@ export default function HomepageStandingsInjuriesSection({
                         {injury.status ?? "N/A"}
                       </td>
                       <td className={styles.descriptionColumn}>
-                        {injury.description ?? "N/A"}
+                        <span className={styles.descriptionContent}>
+                          {injury.description ?? "N/A"}
+                        </span>
+                        {injury.sourceUrl ? (
+                          <ExternalNewsLink
+                            href={injury.sourceUrl}
+                            className={styles.externalNewsLink}
+                            label={`View original post for ${playerName}`}
+                          />
+                        ) : null}
                       </td>
                     </tr>
                   );
@@ -365,7 +432,7 @@ export default function HomepageStandingsInjuriesSection({
           ) : null}
         </div>
 
-        {activeUpdatesTab === "injuries" && injuries.length > ROWS_PER_PAGE ? (
+        {activeUpdatesTab === "injuries" && injuryUpdates.length > ROWS_PER_PAGE ? (
           <div className={styles.pagination}>
             <button
               onClick={() => setInjuryPage((prev) => Math.max(prev - 1, 0))}
@@ -375,11 +442,13 @@ export default function HomepageStandingsInjuriesSection({
             </button>
             <span>
               Page {injuryPage + 1} of{" "}
-              {Math.ceil(injuries.length / ROWS_PER_PAGE)}
+              {Math.ceil(injuryUpdates.length / ROWS_PER_PAGE)}
             </span>
             <button
               onClick={() => setInjuryPage((prev) => prev + 1)}
-              disabled={injuries.length <= (injuryPage + 1) * ROWS_PER_PAGE}
+              disabled={
+                injuryUpdates.length <= (injuryPage + 1) * ROWS_PER_PAGE
+              }
             >
               Next
             </button>

@@ -16,6 +16,8 @@ export interface StatDefinition {
   defaultVisible?: boolean;
   /** Optional: Category for grouping stats in UI (e.g., "Standard", "Advanced", "Power Play") */
   category?: string;
+  /** Input stat keys for values derived after source aggregation. */
+  derivedFrom?: readonly string[];
   formatter?: (value: number | null | undefined) => string;
 }
 
@@ -29,7 +31,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isSkaterStat: true,
     isGoalieStat: true,
     defaultVisible: true,
-    category: "Standard"
+    category: "Standard",
   },
 
   // --- Skater Stats ---
@@ -41,7 +43,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isSkaterStat: true,
     isGoalieStat: false,
     defaultVisible: true,
-    category: "Standard"
+    category: "Standard",
   },
   {
     key: "DEFENSE_POINTS",
@@ -51,7 +53,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isSkaterStat: true,
     isGoalieStat: false,
     defaultVisible: false,
-    category: "Derived"
+    category: "Derived",
   },
   {
     key: "ASSISTS",
@@ -61,7 +63,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isSkaterStat: true,
     isGoalieStat: false,
     defaultVisible: true,
-    category: "Standard"
+    category: "Standard",
   },
   {
     key: "POINTS",
@@ -71,7 +73,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isSkaterStat: true,
     isGoalieStat: false,
     defaultVisible: true,
-    category: "Standard"
+    category: "Standard",
   },
   {
     key: "PLUS_MINUS",
@@ -81,7 +83,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isSkaterStat: true,
     isGoalieStat: false,
     defaultVisible: true,
-    category: "Standard"
+    category: "Standard",
   },
   {
     key: "SHOTS_ON_GOAL",
@@ -91,7 +93,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isSkaterStat: true,
     isGoalieStat: false,
     defaultVisible: true,
-    category: "Standard"
+    category: "Standard",
   },
   {
     key: "HITS",
@@ -101,7 +103,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isSkaterStat: true,
     isGoalieStat: false,
     defaultVisible: true,
-    category: "Standard"
+    category: "Standard",
   },
   {
     key: "BLOCKED_SHOTS",
@@ -111,7 +113,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isSkaterStat: true,
     isGoalieStat: false,
     defaultVisible: true,
-    category: "Standard"
+    category: "Standard",
   },
   {
     key: "PENALTY_MINUTES",
@@ -121,7 +123,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isSkaterStat: true,
     isGoalieStat: false,
     defaultVisible: true,
-    category: "Standard"
+    category: "Standard",
   },
   {
     key: "PP_POINTS",
@@ -131,7 +133,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isSkaterStat: true,
     isGoalieStat: false,
     defaultVisible: true,
-    category: "Power Play"
+    category: "Power Play",
   },
 
   {
@@ -142,7 +144,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isSkaterStat: true,
     isGoalieStat: false,
     defaultVisible: false, // Often part of PPP, can be enabled
-    category: "Power Play"
+    category: "Power Play",
   },
   {
     key: "PP_ASSISTS",
@@ -152,7 +154,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isSkaterStat: true,
     isGoalieStat: false,
     defaultVisible: false, // Often part of PPP, can be enabled
-    category: "Power Play"
+    category: "Power Play",
   },
 
   {
@@ -162,7 +164,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     higherIsBetter: true,
     isSkaterStat: true,
     isGoalieStat: false,
-    category: "Short Handed"
+    category: "Short Handed",
   },
   {
     key: "SH_GOALS",
@@ -172,7 +174,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isSkaterStat: true,
     isGoalieStat: false,
     defaultVisible: false,
-    category: "Short Handed"
+    category: "Short Handed",
   },
   {
     key: "SH_ASSISTS",
@@ -182,7 +184,8 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isSkaterStat: true,
     isGoalieStat: false,
     defaultVisible: false,
-    category: "Short Handed"
+    category: "Short Handed",
+    derivedFrom: ["SH_POINTS", "SH_GOALS"],
   },
   {
     key: "TIME_ON_ICE_PER_GAME",
@@ -193,7 +196,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isGoalieStat: false,
     decimalPlaces: 2,
     category: "Ice Time",
-    formatter: formatToMMSS
+    formatter: formatToMMSS,
   },
   {
     key: "FACEOFFS_WON",
@@ -202,7 +205,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     higherIsBetter: true,
     isSkaterStat: true,
     isGoalieStat: false,
-    category: "Faceoffs"
+    category: "Faceoffs",
   },
   {
     key: "FACEOFFS_LOST",
@@ -211,7 +214,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     higherIsBetter: false,
     isSkaterStat: true,
     isGoalieStat: false,
-    category: "Faceoffs"
+    category: "Faceoffs",
   },
 
   // --- Goalie Stats ---
@@ -223,7 +226,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isGoalieStat: true,
     isSkaterStat: false,
     defaultVisible: true,
-    category: "Standard Goalie"
+    category: "Standard Goalie",
   },
   {
     key: "LOSSES_GOALIE",
@@ -233,7 +236,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isGoalieStat: true,
     isSkaterStat: false,
     defaultVisible: true,
-    category: "Standard Goalie"
+    category: "Standard Goalie",
   },
   {
     key: "OTL_GOALIE",
@@ -242,7 +245,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     higherIsBetter: false,
     isGoalieStat: true,
     isSkaterStat: false,
-    category: "Standard Goalie"
+    category: "Standard Goalie",
   }, // Overtime Losses
   {
     key: "SAVES_GOALIE",
@@ -252,7 +255,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isGoalieStat: true,
     isSkaterStat: false,
     defaultVisible: true,
-    category: "Standard Goalie"
+    category: "Standard Goalie",
   },
   {
     key: "SHOTS_AGAINST_GOALIE",
@@ -261,7 +264,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     higherIsBetter: false,
     isGoalieStat: true,
     isSkaterStat: false,
-    category: "Standard Goalie"
+    category: "Standard Goalie",
   },
   {
     key: "GOALS_AGAINST_GOALIE",
@@ -271,7 +274,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isGoalieStat: true,
     isSkaterStat: false,
     defaultVisible: true,
-    category: "Standard Goalie"
+    category: "Standard Goalie",
   },
   {
     key: "GOALS_AGAINST_AVERAGE",
@@ -282,7 +285,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isSkaterStat: false,
     decimalPlaces: 2,
     defaultVisible: true,
-    category: "Standard Goalie"
+    category: "Standard Goalie",
   },
   {
     key: "SAVE_PERCENTAGE",
@@ -293,7 +296,7 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isSkaterStat: false,
     decimalPlaces: 3,
     defaultVisible: true,
-    category: "Standard Goalie"
+    category: "Standard Goalie",
   },
   {
     key: "SHUTOUTS_GOALIE",
@@ -303,8 +306,8 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     isGoalieStat: true,
     isSkaterStat: false,
     defaultVisible: true,
-    category: "Standard Goalie"
-  }
+    category: "Standard Goalie",
+  },
 ];
 
 // Helper function to get a stat definition by its key

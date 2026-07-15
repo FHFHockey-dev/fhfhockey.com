@@ -189,3 +189,6 @@
 
 - [ ] NEW 7.0 Establish genuine historical projection/actual coverage before publishing calibration or baseline-win claims.
   - Production evidence (2026-07-11): `sustainability_projections` contains 0 rows, while `sustainability_scores` contains 219,568 rows across 2025-10-14–2026-07-11 and `sustainability_trend_bands` contains 10,849,256 rows across 2024-10-04–2026-07-11. Build/test the bounded harness and document its coverage gate now; leave result/calibration claims pending until prospective or approved backfilled projection snapshots have matured into actual outcomes.
+
+- [ ] NEW 8.0 Populate stable player identity/display names in `/api/v1/sustainability/trends` hot/cold rows consumed by the FORGE Command Center.
+  - Discovery evidence (2026-07-12): selected-date reconciliation returned 25 hot and 25 cold rows for requested `2026-03-14` / resolved `2026-03-07`, but every sampled `player_name` was null, so the Command Center correctly exposes named-row sub-empty states rather than fabricating Trust/Fade candidates. Resolve names through the canonical player identity contract with bounded/paginated reads where applicable, add focused API coverage, and verify named Trust/Fade rows render before closure.

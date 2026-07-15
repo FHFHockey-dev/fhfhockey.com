@@ -15,15 +15,10 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("contexts/AuthProviderContext", () => ({
-  useUser: () => authState.mockUser
-}));
-
-vi.mock("lib/supabase/client", () => ({
-  default: {
-    auth: {
-      signOut: authState.signOut
-    }
-  }
+  useAuth: () => ({
+    user: authState.mockUser,
+    signOut: authState.signOut
+  })
 }));
 
 import UserMenu from "components/auth/UserMenu";

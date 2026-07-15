@@ -4,10 +4,18 @@ import {
   normalizeGoalieResponse,
   normalizeSkaterTrendResponse,
   normalizeStartChartResponse,
-  normalizeSustainabilityResponse
+  normalizeSustainabilityResponse,
+  toFiniteNumber
 } from "./normalizers";
 
 describe("dashboard normalizers", () => {
+  it("preserves nullish and blank numeric fields instead of coercing them to zero", () => {
+    expect(toFiniteNumber(null)).toBeNull();
+    expect(toFiniteNumber(undefined)).toBeNull();
+    expect(toFiniteNumber("")).toBeNull();
+    expect(toFiniteNumber("0")).toBe(0);
+  });
+
   it("normalizes sustainability payloads while dropping incomplete rows", () => {
     const normalized = normalizeSustainabilityResponse({
       requested_snapshot_date: "2026-03-15",

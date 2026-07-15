@@ -179,3 +179,5 @@
 
 - [x] 17.0 **NEW — Stop zero-game offseason projection cron runs from failing a freshness gate that has no applicable slate.** Zero-game projection runs now no-op successfully while scheduled slates retain fail-closed derived freshness (2026-07-12).
   - [x] 17.1 Skip only the projection-derived freshness query/gate on a zero-game slate, retain the blocker for scheduled slates, add both regressions, deploy, and re-run the weekly owner as a truthful no-op. Commit `258cbcb`, 32 focused tests, TypeScript, READY production build, and live HTTP 200/430 ms zero-game evidence pass (2026-07-12).
+
+- [x] 18.0 **NEW — Prevent the retained legacy dashboard rollback from mounting data modules before URL filter hydration.** The initial-only router hydration gate preserves ordinary filter changes while eliminating duplicate today/historical reads; 24/24 dashboard tests, 40/40 combined FORGE route tests, TypeScript, and browser/server-log verification pass (2026-07-12).

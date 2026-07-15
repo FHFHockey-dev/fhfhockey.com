@@ -1,123 +1,269 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
+import {
+  getGameStatsCompletenessFailureDetails,
+  type GameStatsCompletenessFailureDetails,
+} from "lib/cron/gameStatsCompleteness";
+import {
+  getTransactionalGameStatsFailureDetails,
+  quarantineGameStatsBatch,
+  type TransactionalGameStatsFailureDetails,
+} from "lib/cron/transactionalGameStatsPersistence";
+import {
+  assertExactStatsStatusAdvancement,
+  getStatsStatusAdvancementFailureDetails,
+  type StatsStatusAdvancementFailureDetails,
+} from "lib/cron/statsStatusAdvancement";
+import {
+  getStatsPreWriteQuarantineFailureDetails,
+  sanitizeCronDiagnostic,
+  type StatsPreWriteQuarantineFailureDetails,
+} from "lib/cron/statsUpdateSafety";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { updateStats } from "../update-stats/[gameId]";
 
-export default withCronJobAudit(adminOnly(async (req, res) => {
-  const { supabase } = req;
-  const count = req.query.count ? Number(req.query.count) : 5;
-  try {
-    // todo: temporarily disable this as it takes a while to run.
-    // this cause the function execution to timeout
-    // await processGameIDs(); // updating pbp
+const DEFAULT_GAME_COUNT = 5;
+const MIN_GAME_COUNT = 1;
+const MAX_GAME_COUNT = 10;
 
-    //
-    const { data } = await supabase
-      .rpc("get_unupdated_games")
-      .limit(count)
-      .throwOnError();
-    const ids: number[] = data.map((game: any) => game.gameid);
-    if (ids.length === 0) {
-      return res.json({
-        success: true,
-        message: "All game statistics have been successfully updated."
+type StatsUpdateFailure =
+  | TransactionalGameStatsFailureDetails
+  | GameStatsCompletenessFailureDetails
+  | StatsStatusAdvancementFailureDetails
+  | StatsPreWriteQuarantineFailureDetails
+  | {
+      kind: "stats_update_failure";
+      code: "STATS_UPDATE_FAILED";
+      gameId: number;
+      message: string;
+    };
+
+function serializeStatsUpdateFailure(
+  gameId: number,
+  error: unknown,
+): StatsUpdateFailure {
+  return (
+    getGameStatsCompletenessFailureDetails(error) ??
+    getTransactionalGameStatsFailureDetails(error) ??
+    getStatsStatusAdvancementFailureDetails(error) ??
+    getStatsPreWriteQuarantineFailureDetails(error) ?? {
+      kind: "stats_update_failure",
+      code: "STATS_UPDATE_FAILED",
+      gameId,
+      message: sanitizeCronDiagnostic(error),
+    }
+  );
+}
+
+export function parseStatsCronCount(
+  value: string | string[] | undefined,
+): number | null {
+  if (value === undefined) return DEFAULT_GAME_COUNT;
+  if (typeof value !== "string" || !/^[1-9]\d*$/.test(value)) return null;
+
+  const count = Number(value);
+  return Number.isSafeInteger(count) &&
+    count >= MIN_GAME_COUNT &&
+    count <= MAX_GAME_COUNT
+    ? count
+    : null;
+}
+
+export default withCronJobAudit(
+  adminOnly(async (req, res) => {
+    const { supabase } = req;
+    const count = parseStatsCronCount(req.query.count);
+    if (count === null) {
+      return res.status(400).json({
+        message: `count must be an integer from ${MIN_GAME_COUNT} through ${MAX_GAME_COUNT}.`,
+        success: false,
       });
     }
-    console.log(ids);
 
-    // Create an array of promises
-    const updatePromises = ids.map(async (id) => {
-      console.log("updating the stats for game with id " + id);
-      await updateStats(id, supabase);
-      const { error } = await supabase
-        .from("statsUpdateStatus")
-        .update({ updated: true })
-        .eq("gameId", id);
-      if (error) {
-        console.error("Failed to update the stats for game: " + id);
-        throw error;
+    try {
+      // todo: temporarily disable this as it takes a while to run.
+      // this cause the function execution to timeout
+      // await processGameIDs(); // updating pbp
+
+      //
+      const { data } = await supabase
+        .rpc("get_unupdated_games")
+        .limit(count)
+        .throwOnError();
+      if (!Array.isArray(data)) {
+        throw new Error("get_unupdated_games returned a non-array result.");
       }
-      return id;
-    });
-
-    // Wait for all promises to resolve
-    const results = await Promise.allSettled(updatePromises);
-
-    const updatedGameIds = [];
-    for (const result of results) {
-      if (result.status === "fulfilled") {
-        updatedGameIds.push(result.value);
+      const selectedRows = data.slice(0, count) as Array<{ gameid?: unknown }>;
+      const ids = selectedRows.map((game) => game?.gameid);
+      if (
+        ids.some(
+          (gameId) =>
+            typeof gameId !== "number" ||
+            !Number.isSafeInteger(gameId) ||
+            gameId <= 0,
+        ) ||
+        new Set(ids).size !== ids.length
+      ) {
+        throw new Error(
+          "get_unupdated_games returned invalid or duplicate game IDs.",
+        );
       }
-    }
-    const failedGameIds = [
-      ...setDifference(new Set(ids), new Set(updatedGameIds))
-    ];
-    if (failedGameIds.length !== 0) {
-      console.log(results);
-    }
-    const staleCutoff = new Date();
-    staleCutoff.setUTCDate(staleCutoff.getUTCDate() - 30);
-    let quarantinedGameIds: number[] = [];
-    if (failedGameIds.length > 0) {
-      const { data: failedGameMeta, error: failedGameMetaError } = await supabase
-        .from("games")
-        .select("id,date")
-        .in("id", failedGameIds);
-      if (failedGameMetaError) {
-        throw failedGameMetaError;
+      const boundedIds = ids as number[];
+      if (boundedIds.length === 0) {
+        return res.json({
+          success: true,
+          message: "All game statistics have been successfully updated.",
+        });
       }
-      quarantinedGameIds = ((failedGameMeta ?? []) as Array<{
-        id: number;
-        date: string | null;
-      }>)
-        .filter((game) => {
-          if (!game?.date) return false;
-          const gameTime = Date.parse(`${game.date}T00:00:00.000Z`);
-          return Number.isFinite(gameTime) && gameTime < staleCutoff.getTime();
-        })
-        .map((game) => game.id);
+      console.log(boundedIds);
 
-      if (quarantinedGameIds.length > 0) {
-        const { error: quarantineError } = await supabase
-          .from("statsUpdateStatus")
-          .update({ updated: true })
-          .in("gameId", quarantinedGameIds);
-        if (quarantineError) {
-          throw quarantineError;
+      // Create an array of promises
+      const updatePromises = boundedIds.map(async (id) => {
+        console.log("updating the stats for game with id " + id);
+        await updateStats(id, supabase);
+        return id;
+      });
+
+      // Wait for all promises to resolve
+      const results = await Promise.allSettled(updatePromises);
+
+      const updatedGameIds: number[] = [];
+      const failures: StatsUpdateFailure[] = [];
+      for (const [index, result] of results.entries()) {
+        if (result.status === "fulfilled") {
+          updatedGameIds.push(result.value);
+        } else {
+          failures.push(
+            serializeStatsUpdateFailure(boundedIds[index], result.reason),
+          );
         }
       }
+      const failedGameIds = failures.map((failure) => failure.gameId);
+      if (failedGameIds.length !== 0) {
+        console.warn(
+          "Stats backlog games failed and remain subject to explicit retry/quarantine policy.",
+          failures.map(({ kind, code, gameId }) => ({ kind, code, gameId })),
+        );
+      }
+      const staleCutoff = new Date();
+      staleCutoff.setUTCHours(0, 0, 0, 0);
+      staleCutoff.setUTCDate(staleCutoff.getUTCDate() - 30);
+      let quarantinedGameIds: number[] = [];
+      let statusAdvancementFailure: StatsStatusAdvancementFailureDetails | null =
+        null;
+      const quarantineEligibleFailureIds = new Set(
+        failures
+          .filter(
+            (failure) => failure.kind === "stats_pre_write_quarantine_failure",
+          )
+          .map((failure) => failure.gameId),
+      );
+      const quarantineCandidateIds = failedGameIds.filter((gameId) =>
+        quarantineEligibleFailureIds.has(gameId),
+      );
+      if (quarantineCandidateIds.length > 0) {
+        const { data: failedGameMeta, error: failedGameMetaError } =
+          await supabase
+            .from("games")
+            .select("id,date")
+            .in("id", quarantineCandidateIds);
+        if (failedGameMetaError) {
+          throw failedGameMetaError;
+        }
+        const quarantineCandidateMatches = (
+          (failedGameMeta ?? []) as Array<{
+            id: number;
+            date: string | null;
+          }>
+        )
+          .filter((game) => {
+            if (!game?.date) return false;
+            const gameTime = Date.parse(`${game.date}T00:00:00.000Z`);
+            return (
+              Number.isFinite(gameTime) && gameTime < staleCutoff.getTime()
+            );
+          })
+          .map((game) => game.id);
+
+        if (quarantineCandidateMatches.length > 0) {
+          let quarantineData: unknown = null;
+          let quarantineError: unknown = null;
+          try {
+            const quarantineReceipts = await quarantineGameStatsBatch({
+              supabase,
+              gameIds: quarantineCandidateMatches,
+              reason: "game_not_finished",
+            });
+            quarantineData = quarantineReceipts.map((receipt) => ({
+              gameId: receipt.gameId,
+            }));
+          } catch (error) {
+            quarantineError = error;
+          }
+
+          try {
+            quarantinedGameIds = assertExactStatsStatusAdvancement({
+              phase: "stale_quarantine",
+              expectedGameIds: quarantineCandidateMatches,
+              data: quarantineData,
+              error: quarantineError,
+            });
+          } catch (error) {
+            statusAdvancementFailure =
+              getStatsStatusAdvancementFailureDetails(error);
+            quarantinedGameIds = [];
+          }
+        }
+      }
+      const pendingRetryGameIds = failedGameIds.filter(
+        (gameId) => !quarantinedGameIds.includes(gameId),
+      );
+      const failedRows = failures.reduce(
+        (total, failure) =>
+          total +
+          (failure.kind === "stats_update_failure" ? 1 : failure.requestedRows),
+        0,
+      );
+      let operationStatus: "success" | "warning" | "failure" = "success";
+      let message = "Processed stats backlog successfully.";
+      if (pendingRetryGameIds.length > 0) {
+        operationStatus = "failure";
+        message =
+          "Stats backlog processing failed for games that remain pending retry.";
+      } else if (quarantinedGameIds.length > 0) {
+        operationStatus = "warning";
+        message =
+          "Processed stats backlog; some stale games were quarantined from automatic retry.";
+      }
+
+      const response = {
+        success: pendingRetryGameIds.length === 0,
+        operationStatus,
+        message,
+        updatedGameIds,
+        failedGameIds,
+        quarantinedGameIds,
+        pendingRetryGameIds,
+        rowsUpserted: updatedGameIds.length,
+        failedRows,
+        attemptedGameIds: boundedIds,
+        failures,
+        statusAdvancementFailure,
+      };
+
+      if (pendingRetryGameIds.length > 0) {
+        return res.status(500).json(response);
+      }
+
+      return res.json(response);
+    } catch (e: unknown) {
+      const dependencyError = normalizeDependencyError(e);
+      return res.status(500).json({
+        message: dependencyError.message,
+        success: false,
+        operationStatus: "failure",
+        dependencyError,
+      });
     }
-    const pendingRetryGameIds = failedGameIds.filter(
-      (gameId) => !quarantinedGameIds.includes(gameId)
-    );
-    res.json({
-      success: true,
-      operationStatus:
-        pendingRetryGameIds.length > 0 || quarantinedGameIds.length > 0
-          ? "warning"
-          : "success",
-      message:
-        pendingRetryGameIds.length > 0 || quarantinedGameIds.length > 0
-          ? "Processed stats backlog; some games remain pending retry or were quarantined from automatic retry."
-          : "Processed stats backlog successfully.",
-      updatedGameIds,
-      quarantinedGameIds,
-      pendingRetryGameIds,
-      rowsUpserted: updatedGameIds.length,
-      attemptedGameIds: ids
-    });
-  } catch (e: any) {
-    res.status(400).json({ message: e.message, success: false });
-  }
-}));
-
-function setDifference<T>(setA: Set<T>, setB: Set<T>): Set<T> {
-  const difference = new Set<T>();
-
-  setA.forEach((elem) => {
-    if (!setB.has(elem)) {
-      difference.add(elem);
-    }
-  });
-
-  return difference;
-}
+  }),
+);

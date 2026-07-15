@@ -1,15 +1,26 @@
 #!/usr/bin/env python3
-# /Users/tim/Desktop/fhfhockey.com/web/lib/supabase/Upserts/Yahoo/populate_yahoo_nhl_mapping.py
+# Repository-relative Yahoo/NHL mapping utility.
 
 import os
 import logging
 from datetime import datetime
 from dotenv import load_dotenv
 from supabase import create_client, Client
-from fuzzywuzzy import fuzz, process
-import re
 import json
 from pathlib import Path
+
+try:
+    from .player_name_matcher import (
+        NORM_SPEC,
+        best_qualified_name_match,
+        normalize_name,
+    )
+except ImportError:
+    from player_name_matcher import (
+        NORM_SPEC,
+        best_qualified_name_match,
+        normalize_name,
+    )
 
 # -----------------------------------------------------------------------------
 # CONFIG & ENV
@@ -19,96 +30,19 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-ENV_FILE = "/Users/tim/Desktop/fhfhockey.com/web/.env.local"
+ENV_FILE = Path(__file__).resolve().parents[4] / ".env.local"
 load_dotenv(ENV_FILE)
 
 SUPABASE_URL = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY') or os.getenv('NEXT_PUBLIC_SUPABASE_PUBLIC_KEY')
 
-if not all([SUPABASE_URL, SUPABASE_KEY]):
-    logging.error("Missing environment variables. Need NEXT_PUBLIC_SUPABASE_URL and either SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_PUBLIC_KEY")
-    exit(1)
-
-logging.info(f"Using Supabase URL: {SUPABASE_URL}")
-logging.info(f"Using key type: {'SERVICE_ROLE' if os.getenv('SUPABASE_SERVICE_ROLE_KEY') else 'PUBLIC'}")
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase: Client | None = None
+if SUPABASE_URL and SUPABASE_KEY:
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # -----------------------------------------------------------------------------
 # HELPER FUNCTIONS
 # -----------------------------------------------------------------------------
-def load_normalization_spec():
-    spec_path = Path(__file__).resolve().parent / 'player_name_normalization_spec.json'
-    try:
-        with open(spec_path, 'r', encoding='utf-8') as fh:
-            return json.load(fh)
-    except Exception:
-        logging.warning('Could not load normalization spec; falling back to defaults')
-        return {}
-
-
-NORM_SPEC = load_normalization_spec()
-
-def split_name_first_last(name: str):
-    if not name:
-        return '', ''
-    parts = re.sub(r"[\s]+", " ", name.strip()).split(" ")
-    if not parts:
-        return '', ''
-    if len(parts) == 1:
-        return parts[0], parts[0]
-    return " ".join(parts[:-1]), parts[-1]
-
-def last_name_tokens(name: str):
-    _, last = split_name_first_last(name)
-    if not last:
-        return set()
-    subs = re.split(r"[-\s]", last)
-    tokens = set()
-    for s in subs:
-        s = s.strip()
-        if not s:
-            continue
-        tokens.add(normalize_name(s))
-    return tokens
-
-def best_last_name_match(source_name: str, candidates: dict):
-    """Find best candidate by comparing only last name tokens.
-
-    candidates: dict[id] -> player dict with 'name'
-    Returns (id, last_name_score, first_name_score) or (None, None, None)
-    """
-    src_last_tokens = last_name_tokens(source_name)
-    src_first, _ = split_name_first_last(source_name)
-    if not src_last_tokens:
-        return None, None, None
-    best_id = None
-    best_last = -1
-    best_first = -1
-    for pid, p in candidates.items():
-        cand_name = p.get('name') or ''
-        cand_last_tokens = last_name_tokens(cand_name)
-        if not cand_last_tokens:
-            continue
-        max_last = 0
-        for a in src_last_tokens:
-            for b in cand_last_tokens:
-                try:
-                    sc = fuzz.ratio(a, b)
-                except Exception:
-                    sc = 0
-                if sc > max_last:
-                    max_last = sc
-        cand_first, _ = split_name_first_last(cand_name)
-        try:
-            first_sc = fuzz.partial_ratio(src_first, cand_first)
-        except Exception:
-            first_sc = 0
-        if (max_last > best_last) or (max_last == best_last and first_sc > best_first):
-            best_id, best_last, best_first = pid, max_last, first_sc
-    if best_id is None:
-        return None, None, None
-    return best_id, best_last, best_first
 
 def load_name_overrides():
     """Load manual name mapping overrides if present.
@@ -171,28 +105,6 @@ def load_name_overrides():
     
     return forward_overrides, reverse_overrides
 
-
-def normalize_name(name: str) -> str:
-    """Apply normalization rules from spec to produce a canonical key."""
-    if not name:
-        return ""
-    s = name.lower().strip()
-    # remove punctuation
-    punct = NORM_SPEC.get('punctuation_regex', "[.'`-]")
-    s = re.sub(punct, '', s)
-    # replace mapped chars
-    for k, v in NORM_SPEC.get('replace_chars', {}).items():
-        s = s.replace(k, v)
-    # collapse whitespace
-    s = ' '.join(s.split())
-    # strip suffixes
-    for suf in NORM_SPEC.get('strip_suffixes', []):
-        s = re.sub(rf"\s+{re.escape(suf)}$", '', s)
-    # alias map
-    alias = NORM_SPEC.get('alias_map', {})
-    if s in alias:
-        s = alias[s]
-    return s
 
 def get_nhl_players():
     """Fetch NHL player data from projection sources."""
@@ -313,8 +225,6 @@ def analyze_yahoo_to_nhl(nhl_players, yahoo_players, forward_mappings, reverse_o
     reverse_unmatched = []
     reverse_only_matches = []
 
-    nhl_names_list = [p['name'] for p in nhl_players.values()]
-
     for yahoo_id, y in yahoo_players.items():
         raw_name = y['name']
         norm = y['clean_name']
@@ -342,29 +252,16 @@ def analyze_yahoo_to_nhl(nhl_players, yahoo_players, forward_mappings, reverse_o
                 nhl_id = nhl_name_to_id[alias_norm]
                 matched_conf = 100.0
 
-        # Fuzzy fallback
+        # Thresholded fuzzy fallback (Yahoo -> NHL). Both independent name
+        # thresholds must pass; nickname equivalents are canonicalized first.
         if not nhl_id:
-            match_result = process.extractOne(
+            cand_id, ln_score, fn_score = best_qualified_name_match(
                 raw_name,
-                nhl_names_list,
-                scorer=fuzz.token_set_ratio,
-                score_cutoff=85,
+                nhl_players,
             )
-            if match_result:
-                matched_name, conf = match_result
-                # locate NHL id by matched name
-                for pid, p in nhl_players.items():
-                    if p.get('name') == matched_name:
-                        nhl_id = pid
-                        matched_conf = float(conf)
-                        break
-
-        # Liberal last-name-only fallback (Yahoo -> NHL)
-        if not nhl_id:
-            cand_id, ln_score, fn_score = best_last_name_match(raw_name, nhl_players)
-            if cand_id is not None and ln_score is not None and ln_score >= 90:
+            if cand_id is not None:
                 nhl_id = cand_id
-                matched_conf = float(ln_score)
+                matched_conf = float((ln_score * 0.7) + (fn_score * 0.3))
 
         if nhl_id:
             pair = (str(nhl_id), yahoo_id)
@@ -401,7 +298,6 @@ def match_players(nhl_players, yahoo_players, forward_overrides=None):
     
     mappings = []
     unmatched = []
-    yahoo_names = {pid: player['clean_name'] for pid, player in yahoo_players.items()}
     yahoo_name_to_id = {player['clean_name']: pid for pid, player in yahoo_players.items()}
     
     matched_count = 0
@@ -418,19 +314,12 @@ def match_players(nhl_players, yahoo_players, forward_overrides=None):
                 corrected_norm = normalize_name(corrected)
                 yahoo_id = yahoo_name_to_id.get(corrected_norm)
                 if not yahoo_id:
-                    # fallback fuzzy on corrected label
-                    match_corr = process.extractOne(
+                    # A corrected label still uses the same independent fuzzy
+                    # thresholds; manual overrides never enable a weaker path.
+                    yahoo_id, _, _ = best_qualified_name_match(
                         corrected,
-                        [p['name'] for p in yahoo_players.values()],
-                        scorer=fuzz.token_set_ratio,
-                        score_cutoff=80,
+                        yahoo_players,
                     )
-                    if match_corr:
-                        matched_name, _ = match_corr
-                        for pid, p in yahoo_players.items():
-                            if p.get('name') == matched_name:
-                                yahoo_id = pid
-                                break
                 if yahoo_id:
                     yahoo_player = yahoo_players[yahoo_id]
                     mappings.append({
@@ -482,40 +371,13 @@ def match_players(nhl_players, yahoo_players, forward_overrides=None):
                 matched_count += 1
                 continue
 
-        # Fuzzy matching fallback
-        match_result = process.extractOne(
-            raw_nhl_name, 
-            [p['name'] for p in yahoo_players.values()], 
-            scorer=fuzz.token_set_ratio,
-            score_cutoff=85  # High threshold for confidence
+        # Thresholded fuzzy fallback. Last name must score at least 90 and
+        # first name at least 50 after nickname canonicalization.
+        cand_id, ln_score, fn_score = best_qualified_name_match(
+            raw_nhl_name,
+            yahoo_players,
         )
-
-        if match_result:
-            matched_name, confidence = match_result
-            # find the yahoo id for this matched display name
-            yahoo_id = None
-            for pid, p in yahoo_players.items():
-                if p.get('name') == matched_name:
-                    yahoo_id = pid
-                    break
-            if yahoo_id:
-                yahoo_player = yahoo_players[yahoo_id]
-                mappings.append({
-                    'nhl_player_id': str(nhl_id),
-                    'yahoo_player_id': yahoo_id,
-                    'nhl_player_name': nhl_player['name'],
-                    'yahoo_player_name': yahoo_player['name'],
-                    'nhl_team_abbreviation': nhl_player.get('team'),
-                    'yahoo_team': yahoo_player.get('team'),
-                    'mapped_position': nhl_player.get('position'),
-                    'match_confidence': float(confidence),
-                })
-                matched_count += 1
-                continue
-
-        # Liberal last-name-only fallback to cover nickname first-name differences
-        cand_id, ln_score, fn_score = best_last_name_match(raw_nhl_name, yahoo_players)
-        if cand_id is not None and ln_score is not None and ln_score >= 90:
+        if cand_id is not None:
             yahoo_player = yahoo_players[cand_id]
             mappings.append({
                 'nhl_player_id': str(nhl_id),
@@ -525,7 +387,9 @@ def match_players(nhl_players, yahoo_players, forward_overrides=None):
                 'nhl_team_abbreviation': nhl_player.get('team'),
                 'yahoo_team': yahoo_player.get('team'),
                 'mapped_position': nhl_player.get('position'),
-                'match_confidence': float(ln_score),
+                'match_confidence': float((ln_score * 0.7) + (fn_score * 0.3)),
+                'last_name_confidence': float(ln_score),
+                'first_name_confidence': float(fn_score),
             })
             matched_count += 1
             continue
@@ -610,6 +474,13 @@ def upsert_mappings(mappings):
 # -----------------------------------------------------------------------------
 def main():
     start_time = datetime.now()
+
+    if supabase is None:
+        logging.error(
+            "Missing environment variables. Need NEXT_PUBLIC_SUPABASE_URL and "
+            "either SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_PUBLIC_KEY"
+        )
+        return
     
     # 1. Fetch NHL players from projection sources
     nhl_players = get_nhl_players()

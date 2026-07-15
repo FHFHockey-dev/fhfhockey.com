@@ -4,7 +4,7 @@
 
 This feature adds a production-ready authentication and user settings platform to `fhfhockey.com` using Supabase Auth and site-owned application tables.
 
-The goal is to introduce a secure account system without managing raw passwords, give users a clear sign-in/sign-up experience, and establish the minimum data model needed for persistent per-user settings. The MVP focuses on core site authentication, profile/settings storage, and a foundational account settings experience. It also designs, but does not fully implement, future connected-account flows for Yahoo, Fantrax, Patreon, and ESPN.
+The goal is to introduce a secure account system without managing raw passwords, give users a clear sign-in/sign-up experience, and establish the minimum data model needed for persistent per-user settings. The initial MVP focused on core site authentication, profile/settings storage, and a foundational account settings experience. The active super-goal has since expanded that foundation with per-user Yahoo OAuth/sync, credential-free Fantrax and ESPN manual imports, and a local Patreon OAuth v2/member-entitlement implementation. The owner approved live Patreon provider configuration, deployment, and bounded production probes on 2026-07-14 while retaining a generic-supporter-only product-policy exception with no concrete tier-to-feature grants.
 
 This feature must keep core site authentication separate from external fantasy-platform connections. A user should sign into the site with site auth first, then optionally connect external accounts from account or league settings.
 
@@ -65,17 +65,17 @@ This feature must keep core site authentication separate from external fantasy-p
 26. The future Yahoo sync architecture must include sync job state, refresh timestamps, sync errors, and cooldown metadata.
 27. The future system must prevent rapid repeated sync requests by enforcing server-side refresh throttling, cooldown windows, and in-flight job deduplication.
 28. The future system must allow users to choose whether to refresh league data manually or automatically on login, with safeguards against abusive refresh frequency.
-29. The future Fantrax integration must be modeled as a separate provider adapter with provider-specific account, league, and sync records.
-30. The future Patreon integration must be initiated from Account Settings rather than from the primary login flow.
-31. The future Patreon integration must support a site-owned entitlement model so Patreon benefits can be granted or revoked without becoming the site’s core authentication identity.
-32. The future Patreon integration must prevent the same Patreon account email or Patreon member identity from being attached in a way that grants duplicate perk access across multiple site accounts, subject to what Patreon identity fields are reliably available.
+29. The Fantrax integration must remain a separate credential-free provider adapter with provider-specific account, league, team, default/active-context, and sync records.
+30. Patreon linking must be initiated from Account Settings rather than from the primary login flow.
+31. Patreon linking must use the official API v2 identity/member model and materialize only site-owned entitlement state so Patreon never becomes the site’s core authentication identity.
+32. Patreon anti-sharing must use stable Patreon user/member IDs rather than requiring matching email addresses; one provider identity or membership source reference must not grant eligibility across multiple site accounts.
 33. The system must expose enough account and league settings structure to later map saved settings into existing fantasy scoring and roster configuration systems.
 
 ## Non-Goals (Out of Scope)
 
 - Full Yahoo account connection implementation in this phase.
 - Full Fantrax sync implementation in this phase.
-- Full Patreon OAuth implementation in this phase.
+- Concrete Patreon tier-to-feature access mapping or paid-feature grants beyond the owner-approved generic-supporter-only exception.
 - ESPN integration implementation in this phase.
 - Automatic migration of existing local Draft Dashboard session state into account-backed persistence.
 - Any modifications to [DraftDashboard.tsx](/Users/tim/Code/fhfhockey.com/web/components/DraftDashboard/DraftDashboard.tsx) in this phase.
@@ -116,6 +116,15 @@ This feature must keep core site authentication separate from external fantasy-p
 - Existing Yahoo ingestion and token refresh are app-level and must stay intact:
   - [yahooAPI.py](/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/Yahoo/yahooAPI.py)
   - [manual-refresh-yahoo-token.ts](/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/manual-refresh-yahoo-token.ts)
+
+### Implementation reconciliation — 2026-07-14
+
+- Per-user Yahoo OAuth, Vault-backed token handling, league/team discovery, guarded refresh, default/active context, and bounded opponent-roster cache are implemented separately from the app-level ingestion path.
+- Fantrax and ESPN use owner-supplied CSV/JSON through the shared provider tables and deliberately store no provider credentials or browser sessions.
+- Patreon now has a local account-settings-only OAuth v2 flow using `identity` scope, explicit member/tier fields for the configured FHFH campaign, stable-ID anti-sharing, Vault-backed rotating tokens, provider sync runs, generic `patreon_supporter` eligibility, and cascade-backed disconnect cleanup.
+- Patreon does not grant a concrete FHFH feature from a tier. The owner approved a generic-supporter-only exception plus live `PATREON_CLIENT_ID`, `PATREON_CLIENT_SECRET`, `PATREON_CAMPAIGN_ID`, exact callback, deployment, and bounded production verification on 2026-07-14; concrete campaign/tier-to-feature policy remains deferred by explicit exception.
+- OAuth and recovery return handling assigns safe explicit titles, captures only required callback fields, removes query/hash material from the visible pathname and Next.js history state before asynchronous auth work, sanitizes same-origin return paths at their producers and consumers, processes reset payloads once under Strict Mode, and fails closed to credential-free `/auth` navigation if scrubbing fails. Production deployment `dpl_BXxbdjaCrj85guU33rGgS9UoaaS7` verified a callback already scrubbed before Chrome metadata exposure, authenticated fallback/account handoff with clean visible state, clean scoped Vercel/Supabase lifecycle logs, provider-connection removal, exact one-session/refresh-token cleanup, and expiry without reuse of the originally surfaced JWT. The separate PKCE migration remains deferred until confirmation/recovery templates and mailbox-backed email flows are proven compatible.
+- A fresh production browser check on 2026-07-14 exposed a separate expired-session recovery gap: the Patreon API correctly rejected the expired bearer session, but the account/auth shells still rendered the stale verified user and both visible Sign Out controls failed to clear it, leaving `Reset Local Auth` unreachable because `AuthForm` was not rendered. Context-owned sign-out now fails closed before targeted local cleanup, every visible sign-out uses it, and the signed-in `/auth` branch retains a direct reset action. Focused rejected/resolved-error and unrelated-storage-preservation tests pass. Production deployment `dpl_2yad83EZq4A5oiQNovUPocLVxQMg` is READY/aliased; the same browser profile reached the signed-out fallback and a fresh value-free boolean reset proof passed with two deployment-scoped HTTP 200s and no `/auth` runtime error cluster. A separate Chrome-autofill incident exposed a saved FHFH credential in automation output; visible fields were cleared immediately, and the owner subsequently confirmed password rotation, affected-session containment, and saved-credential update/removal. P1 `NEW 48.0` closed after a fresh value-free production proof confirmed signed-out fallback/reset reachability and absence of the stale signed-in branch without snapshots, input-value reads, cookies, or browser-storage inspection.
 
 ### Recommended auth strategy
 
@@ -265,14 +274,16 @@ Yahoo-importable data candidates:
   - validate official auth and data-access support before implementation
   - consider manual import or CSV fallback if official API access proves limited
 
-### Future Patreon architecture
+### Patreon architecture
 
 - Patreon should be connected from Account Settings, not used as site login.
 - A site user may connect Patreon even if the Patreon email differs from the site-login email.
 - Store Patreon connection separately from core auth identity.
 - Materialize Patreon-derived access into a site-owned `user_entitlements` record.
 - Enforce uniqueness on Patreon provider identity fields that reliably identify a single patron account, so one Patreon account cannot be used to confer perks across multiple site accounts.
-- Use Patreon API v2 concepts for long-term design.
+- Use Patreon API v2 `identity` plus the configured campaign membership, request explicit fields, and avoid requiring the optional email scope.
+- Persist access/refresh tokens only through the service-role-only Vault wrappers, save rotated refresh tokens before follow-up provider reads, and remove token secrets through the existing connected-account delete cascade.
+- Materialize a generic `patreon_supporter` status and tier metadata only; require an explicit campaign/tier-to-feature mapping before granting concrete site features.
 
 ## Success Metrics
 
@@ -284,6 +295,7 @@ Yahoo-importable data candidates:
 - No raw passwords are stored outside Supabase Auth.
 - RLS blocks cross-user reads and writes for new account tables.
 - The codebase has a clear path to add Yahoo, Fantrax, Patreon, and ESPN connectors without reworking the core auth model.
+- The local Patreon foundation rejects duplicate stable identities, reports configured-campaign membership/tier/status state, controls manual re-sync attempts, and can disconnect without leaving local entitlement or Vault-token records.
 
 ## Open Questions
 
@@ -292,8 +304,9 @@ Yahoo-importable data candidates:
 3. What exact UI should be used for `League Settings` in MVP: separate page, account sub-tab, or placeholder route?
 4. What should the default refresh cooldown be for future provider syncs, and should different providers have different cooldown rules?
 5. Should the future “refresh on login” behavior always be background-only, or should it ever block page readiness while a sync runs?
-6. Should Patreon perk enforcement key off Patreon member ID only, or also email when available as a secondary fraud-prevention signal?
-7. When switching active league/team context, what unsaved page states should be preserved automatically versus require a confirmation modal?
+6. Resolved on 2026-07-14: Patreon linking and anti-sharing key off stable Patreon user/member IDs; email is not required and the `identity[email]` scope is not requested.
+7. Resolved for this release on 2026-07-14: no Patreon campaign/tier grants a concrete FHFH feature. The integration may materialize generic `patreon_supporter` eligibility and tier metadata only; a future concrete mapping requires a new product decision.
+8. When switching active league/team context, what unsaved page states should be preserved automatically versus require a confirmation modal?
 
 ## Proposed Files
 
@@ -319,4 +332,3 @@ Expected files to create in the first implementation pass:
 - [web/components/account/AccountSettingsPage.tsx](/Users/tim/Code/fhfhockey.com/web/components/account/AccountSettingsPage.tsx)
 - [web/lib/user-settings/defaults.ts](/Users/tim/Code/fhfhockey.com/web/lib/user-settings/defaults.ts)
 - [web/lib/user-settings/mappers.ts](/Users/tim/Code/fhfhockey.com/web/lib/user-settings/mappers.ts)
-

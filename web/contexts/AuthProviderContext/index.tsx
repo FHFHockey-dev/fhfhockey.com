@@ -1,10 +1,18 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState
+} from "react";
 import type {
   Session,
   User as SupabaseUser
 } from "@supabase/supabase-js";
 
 import supabase from "lib/supabase/client";
+import { resetSupabaseBrowserAuthState } from "lib/supabase/browser-auth";
 import { ensureUserRecords } from "lib/user-settings/ensureUserRecords";
 
 type User = {
@@ -22,11 +30,13 @@ type User = {
 type AuthContextValue = {
   isLoading: boolean;
   user: User;
+  signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue>({
   isLoading: true,
-  user: null
+  user: null,
+  signOut: async () => undefined
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -40,6 +50,13 @@ export default function AuthProvider({ children }: Props) {
   const [user, setUser] = useState<User>(null);
   const [isLoading, setIsLoading] = useState(true);
   const ensuredUserIdsRef = useRef<Set<string>>(new Set());
+
+  const signOut = useCallback(async () => {
+    // Fail closed in the rendered shell before touching a remote/expired session.
+    setUser(null);
+    setIsLoading(false);
+    await resetSupabaseBrowserAuthState(supabase);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -113,7 +130,7 @@ export default function AuthProvider({ children }: Props) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading }}>
+    <AuthContext.Provider value={{ user, isLoading, signOut }}>
       {children}
     </AuthContext.Provider>
   );

@@ -26,6 +26,12 @@ $page-max-width: 1600px;
   flex-wrap: wrap;
 }
 
+.toolbarActions {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+}
+
 .header {
   @include p.panel-shell($padding: v.$space-md, $variant: soft, $overflow: visible);
   display: grid;
@@ -94,6 +100,7 @@ $page-max-width: 1600px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  text-decoration: none;
   transition:
     border-color 0.16s ease,
     color 0.16s ease,

@@ -171,6 +171,51 @@ describe("nhlContextualFeatures", () => {
     });
   });
 
+  it("uses the shift ending at an event boundary instead of the post-stoppage shift", () => {
+    const events = parseEvents([
+      {
+        eventId: 150,
+        sortOrder: 150,
+        periodDescriptor: { number: 1, periodType: "REG" },
+        timeInPeriod: "01:00",
+        timeRemaining: "19:00",
+        situationCode: "1551",
+        homeTeamDefendingSide: "left",
+        typeCode: 505,
+        typeDescKey: "goal",
+        details: {
+          eventOwnerTeamId: 10,
+          scoringPlayerId: 91,
+          goalieInNetId: 31,
+          xCoord: 80,
+          yCoord: 4,
+          zoneCode: "O",
+        },
+      },
+    ]);
+    const shiftRows = [
+      createShiftRow({
+        shift_id: 10,
+        player_id: 91,
+        start_seconds: 20,
+        end_seconds: 60,
+        duration_seconds: 40,
+      }),
+      createShiftRow({
+        shift_id: 11,
+        player_id: 91,
+        start_seconds: 60,
+        end_seconds: 100,
+        duration_seconds: 40,
+      }),
+    ] as any[];
+
+    expect(buildContextualFeatureContexts(events, shiftRows, 10, 20)[0]).toMatchObject({
+      eventId: 150,
+      shooterShiftAgeSeconds: 40,
+    });
+  });
+
   it("resets power-play age when the team leaves and later re-enters the advantage", () => {
     const events = parseEvents([
       {

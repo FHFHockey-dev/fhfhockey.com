@@ -50,29 +50,29 @@
   - [x] 2.3 Correct TOI and on-ice exact-count drift caused by shift normalization, stint reconstruction, or strength-segment overlap logic.
   - [x] 2.4 Re-run sampled parity validation and prove that exact families pass or have explicitly approved, documented exceptions.
 
-- [ ] 3.0 Turn the current validation package into a formal release-batch record
+- [x] 3.0 Turn the current validation package into a formal release-batch record. The exception-aware v2 artifact records the complete version tuple, sample, raw/parity disposition, approved exceptions, and training-use PASS (verified 2026-07-12).
   - [x] 3.1 Build or formalize a repeatable validation runner that captures the metadata required by `tasks/TASKS/xg-model/nhl-api-foundation/validation-checklist.md`.
   - [x] 3.2 Run the full release validation batch on the intended training sample with explicit `parser_version`, `strength_version`, `feature_version`, `parity_version`, environment, season range, and commit SHA.
   - [x] 3.3 Publish a dated release-validation artifact that records pass/fail status, approved exceptions if any, and links to supporting audit evidence.
 
-- [ ] 4.0 Re-evaluate the training-use release gate after remediation
+- [x] 4.0 Re-evaluate the training-use release gate after remediation. The v2 blocker review reports none and the dated verdict is `release gate satisfied` for the validated version tuple (verified 2026-07-12).
   - [x] 4.1 Re-review the validation artifact against `tasks/TASKS/xg-model/nhl-api-foundation/validation-checklist.md` and list any remaining blockers.
   - [x] 4.2 Record a new dated release-gate verdict for training use.
-  - [ ] 4.3 If and only if the verdict is satisfied, resume `tasks/tasks-xg-baseline-options.md` at task `2.0`.
+  - [x] 4.3 The satisfied verdict resumed baseline work; the paired canonical baseline-options list is now 36/36 complete (verified 2026-07-12).
 
-- [ ] 5.0 Resolve broad `nst_gamelog_as_counts_oi` exact-parity drift on the legacy-overlap set
+- [x] 5.0 Resolve broad `nst_gamelog_as_counts_oi` exact-parity drift on the legacy-overlap set. True zone-start drift was fixed; residuals are visible approved NHL-correctness divergences under the dated policy (verified 2026-07-12).
   - [x] 5.1 Trace representative `cf/ca`, `ff/fa`, `sf/sa`, `gf/ga`, and zone-start mismatches back to on-ice attribution, event inclusion, or frozen-NST definition differences.
   - [x] 5.2 Decide whether frozen NST on-ice and zone-start definitions must still be matched exactly or should be retired as approved NHL-correctness divergences.
-  - [ ] 5.3 If exact matching remains required, correct the on-ice and zone-start parity logic and rerun sampled validation.
+  - [x] 5.3 Not applicable after 5.2 explicitly retired frozen-NST exact matching. The real zone-start bug was corrected and the rerun reduced mismatches while preserving visible approved divergences (verified 2026-07-12).
 
 - [x] 6.0 Resolve the remaining individual exact-count parity drift after the shift-layer fixes
   - [x] 6.1 Trace the residual `shots_blocked`, `shots`, `icf`, `iff`, faceoff, penalty, hit, giveaway, and takeaway mismatches to exact event-definition differences.
   - [x] 6.2 Decide which remaining residual mismatches are true bugs versus approved NHL-correctness divergences and document the decision.
   - [x] 6.3 Correct any remaining true-bug exact-count drift and rerun sampled validation.
 
-- [ ] 7.0 Normalize legacy null-versus-zero comparison rules in parity validation where the frozen NST surface stores unset exact-count fields as `NULL`
+- [x] 7.0 Normalize legacy null-versus-zero comparison rules in parity validation where the frozen NST surface stores unset exact-count fields as `NULL`. The explicit policy is to keep `NULL` and `0` distinct and classify the visible residual under the approved on-ice exception (verified 2026-07-12).
   - [x] 7.1 Decide whether `NULL` and `0` should compare equal for legacy `counts_oi.shots_blocked`.
-  - [ ] 7.2 If approved, update the parity validator and rerun the sampled comparison so `shots_blocked` does not inflate the on-ice error surface artificially.
+  - [x] 7.2 Not applicable: equality normalization was not approved. The rerun and exact-disposition artifacts intentionally preserve all 156 `shots_blocked` mismatches as visible exception-only drift rather than silently rewriting legacy semantics (verified 2026-07-12).
 
 - [x] 8.0 Fix real on-ice implementation bugs while keeping NHL-derived boundary behavior as the source of truth
   - [x] 8.1 Correct the zone-start logic so it no longer treats every on-ice faceoff as a zone start.

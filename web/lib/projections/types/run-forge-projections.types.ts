@@ -335,6 +335,7 @@ export type ProjectionTotals = {
 export type RunProjectionOptions = {
   deadlineMs?: number;
   horizonGames?: number;
+  gameIds?: number[];
 };
 
 export type RunProjectionResult = {

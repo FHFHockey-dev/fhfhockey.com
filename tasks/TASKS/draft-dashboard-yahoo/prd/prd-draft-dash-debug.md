@@ -4,6 +4,8 @@ Context: Projection source tables are static per season; indices exist on player
 ### Success Metrics
 
 Initial projections load TTFP (time to fantasy points displayed) reduced by >=30% vs baseline.
+
+2026-07-13 reconciliation: this relative target was written without preserving a baseline timing snapshot, so no honest percentage improvement can be calculated retroactively. Owner-approved performance option A accepts the current absolute evidence and grants an exception only for the unprovable historical relative comparison; no `>=30%` claim is made.
 ### Validation Strategy
 
 1. Instrument baseline timings (fetch, process, render) before changes; store in `console.table` snapshot (dev only).
@@ -64,9 +66,9 @@ Issue D: Control Toggle Button Focus Styling
 - Fix: Added `.controlToggleBtnActive, .controlToggleBtn:focus-visible` styling using `$focus-color` with translucent background.
 - Follow-up: Apply `.controlToggleBtnActive` class in JSX where an active state is conceptually applied (pending if not already wired) and test keyboard focus ring.
 
-Issue E: Compare Button Visual Affinity (Pending)
+Issue E: Compare Button Visual Affinity (Completed)
 - Symptom: Compare launch button not yet styled with new yellow/focus-color scheme.
-- Planned: Apply `.compareLaunchButton` class to the toolbar Compare button when `selectedIds.size >= 2` for visual affordance.
+- Fix: The toolbar action uses `.compareLaunchButton`, is enabled only at exactly two selections, and provides visible cap/reset feedback plus keyboard focus styling (verified 2026-07-12).
 
 ---
 
@@ -431,7 +433,7 @@ Definition of done
 
 ## New TODOs (Q4 Roadmap)
 
-- [ ] Bookmarking: snapshot everything
+- [x] Bookmarking: snapshot everything — completed for the current scope with bookmark/session v3 covering draft, keeper/trade, source/custom metadata, grouping/value/need/settings state while excluding private CSV rows/headers; focused privacy/reproducibility regressions pass (2026-07-12).
   - Save/restore a complete session bundle (draft board state, keepers, traded picks, projections source selections + weights, imported CSV(s), settings including forward grouping, need‑weight, baseline mode, category weights, custom team names, position overrides).
   - Files: `DraftDashboard.tsx` (serialize/deserialize), `DraftSettings.tsx` (export/import helpers), `ImportCsvModal.tsx` (persist imported sources), `useProcessedProjectionsData.tsx` (rebuild from snapshot), `localStorage/sessionStorage` keys.
 
@@ -444,20 +446,21 @@ Definition of done
   - Future polish (separate task): swap with an occupied slot, drag‑and‑drop UX, and undo integration.
   - Files: `MyRoster.tsx/.module.scss` (UI + DnD), `DraftDashboard.tsx` (override state + history), `useVORPCalculations.ts` (optional personalized replacement using current filled starters).
 
-- [ ] Multiple user projection sets (multi‑CSV)
+- [x] Multiple user projection sets (multi‑CSV) — completed with versioned tab-scoped multi-entry storage, per-source controls/weights, canonical N-source registration/merge, removal, migration, and focused regressions (2026-07-12).
   - Support importing and enabling multiple custom sources simultaneously; show per‑source controls and weights; de‑dup with name + team; blend in averages.
   - Files: `ImportCsvModal.tsx` (store array `draft.customCsvList.v1`), `DraftDashboard.tsx` (synthesize multiple `customAdditionalSource`s), `useProcessedProjectionsData.tsx` (merge loop already supports N sources), `DraftSettings.tsx` (chips for each custom source).
 
-- [ ] Add SHA derived metric
+- [x] Add SHA derived metric — projected/actual/custom-input contract completed with null-safe non-negative derivation, selector/board/export wiring, and focused regression evidence (2026-07-13).
   - Most sources provide SHP and some SHG. Provide `SHA = SHP - SHG` as a derived projection/actual metric; expose in categories/points selectors.
   - Files: `useProcessedProjectionsData.tsx` (post‑aggregation derivation), `statsMasterList.ts` (new `SHA` definition), `projectionSourcesConfig.ts` (mark derived), `DraftSettings.tsx` (labels), `DraftBoard.tsx` (column), CSV export.
 
-- [ ] Compare Players modal
+- [x] Compare Players modal — completed and regression-verified 2026-07-12.
   - In ProjectionsTable add a multi‑select “Compare” action to open a modal:
     - Metrics table: totals/means per player; highlight deltas and per‑metric winner.
     - Radar/Spider chart: percentile per selected category (respect category weights if in Categories mode).
     - Category win table: which player “wins” each metric; summary of winners.
-  - Files: `ProjectionsTable.tsx` (select state + button), `components/DraftDashboard/ComparePlayersModal.tsx` (new), `hooks/usePercentiles.ts` (new helper), `styles`.
+  - Selection is capped at exactly two with visible feedback and an explicit Clear action. The modal provides initial focus, Tab trapping, Escape/backdrop close, and opener focus restoration.
+  - Files: `ProjectionsTable.tsx` (selection state + actions), `components/DraftDashboard/ComparePlayersModal.tsx` (modal/percentile comparison), tests, and styles.
 
 ---
 
@@ -547,21 +550,21 @@ Context: Projection source tables are static per season; indices exist on player
 
 | Step | Feature | Tier | Status | Notes |
 |------|---------|------|--------|-------|
-| 1 | Parallel source fetch | 1 | TODO | Convert fetch loop -> Promise.allSettled |
-| 2 | Stale run guard | 1 | TODO | runIdRef increment + check before committing state |
-| 3 | FP-only recompute path | 1 | TODO | Detect changes limited to FP settings/per-game toggle |
-| 4 | Debounced sourceControls save | 1 | TODO | Add debounce + prev JSON ref |
-| 5 | Hash composite cache key | 1 | TODO | Implement FNV-1a helper local to hook |
-| 6 | Virtualized projections table | 2 | TODO | Introduce react-virtual; ensure expansion works |
-| 7 | Parallel paginated fetch | 2 | TODO | Count head query + batched ranges |
-| 8 | startTransition for state commit | 2 | TODO | Guard for non-React 18 fallback |
-| 9 | Filter/sort pipeline split | 3 | TODO | Two useMemos; stable identity on filtered array |
-| 10 | Static vs dynamic columns | 3 | TODO | Cache static columns separately |
-| 11 | Chunked processing | 3 | TODO | Only if player count threshold exceeded |
-| 12 | Weight epsilon + intern keys | 3 | TODO | Clean numeric sums; micro-alloc savings |
-| 13 | Worker offload | 4 | Backlog | Build only if Tier 1–3 insufficient |
-| 14 | Adaptive prefetch | 4 | Backlog | Heuristic user behavior based |
-| 15 | Perf telemetry | 4 | Backlog | Dev-mode instrumentation only |
+| 1 | Parallel source fetch | 1 | Implemented | Independent sources run concurrently through `Promise.allSettled`; healthy sources survive partial failure. |
+| 2 | Stale run guard | 1 | Implemented | `fetchRunIdRef` gates diagnostics, processing, summaries, and commits. |
+| 3 | FP-only recompute path | 1 | Implemented | Stable base/FP signatures reuse processed players for scoring-only changes. |
+| 4 | Debounced sourceControls save | 1 | Superseded | `useProjectionSourceAnalysis` no longer owns durable preferences; the dashboard's canonical versioned owner persists them. |
+| 5 | Hash composite cache key | 1 | Evaluated / no change | Stable serialized signatures and a source-input cache already meet the measured recompute budget; an FNV layer would add churn without demonstrated benefit. |
+| 6 | Virtualized projections table | 2 | Optional / not implemented | Retained as an evidence-gated option; no current interaction-budget failure justifies the accessibility/expansion risk. |
+| 7 | Parallel paginated fetch | 2 | Evaluated / sequential | Reads use deterministic short-page pagination plus a head count. Sequential pages preserve correctness and avoid an unproven request burst. |
+| 8 | startTransition for state commit | 2 | Implemented | Final player/column commits are wrapped in React `startTransition`. |
+| 9 | Filter/sort pipeline split | 3 | Evaluated / no change | Current 10,000-player filtering remains well inside the 150ms interaction budget. |
+| 10 | Static vs dynamic columns | 3 | Evaluated / no change | Current column generation is cached/transitioned and has no measured budget failure. |
+| 11 | Chunked processing | 3 | Optional / not implemented | The old log overstated this. Processing is synchronous inside a stale-guarded wrapper; measured source recompute is far below budget. |
+| 12 | Weight epsilon + intern keys | 3 | Evaluated / no change | Canonical weight normalization and null-safe aggregation are tested; no floating-drizzle defect remains. |
+| 13 | Worker offload | 4 | Optional / not implemented | Tier-4 work remains evidence-gated. |
+| 14 | Adaptive prefetch | 4 | Optional / not implemented | Tier-4 work remains evidence-gated. |
+| 15 | Perf telemetry | 4 | Implemented (dev only) | Fetch/process/render phase marks and page timings are emitted only outside production. |
 
 ### Success Metrics
 
@@ -592,6 +595,7 @@ Context: Projection source tables are static per season; indices exist on player
 - 2025-09-15: Added debounced persistence + last non-zero weight restore in `useProjectionSourceAnalysis` (Tier 1: Debounced sourceControls save). 
 - 2025-09-15: Introduced stale run guard scaffolding (runIdRef) and FP-only recompute placeholder + startTransition in `useProcessedProjectionsData` (Tier 1: Stale run guard). 
 - 2025-09-15: Added composite base / FP keys for future FP-only fast path (Tier 1: Hash/composite key groundwork). 
+- 2026-07-13: Reconciled the roadmap to current code. Parallel settled fetch, stale-run protection, FP-only recompute, input caching, deterministic pagination, transitions, and dev timings are present. The historical chunk-yielding statement was incorrect; no periodic yield exists, and none was added because current measured processing/filter work is already far below the interaction budget. Virtualization, worker offload, and adaptive prefetch remain evidence-gated options rather than completion requirements.
 
 - UX: Settings toggle + numeric input(s). If enabled, apply a modifier for D players only (either additive or multiplier); reflect in ProjectionsTable and DraftBoard.
 - Calc: during FP calc, if player assigned/bestPos is D, apply. For Categories, keep separate.
@@ -1864,3 +1868,16 @@ You are inheriting ongoing work on a custom CSV projections import modal for a f
 - Persist manual map (unlocks faster iteration for users handling repeated ambiguous names).
 
 Please proceed with the four enumerated next steps (search prioritization, diff badges, persistence, summary table) while preserving existing logic and minimizing churn to unrelated code.
+
+---
+
+## Super-goal reconciliation — 2026-07-13
+
+- [x] NEW 7.0 Close the incomplete SHA derived-stat contract with current implementation evidence.
+  - [x] NEW 7.1 Use one tested, null-safe, non-negative `SHA = SHP - SHG` derivation for projected and actual values; never fabricate SHA when either input is absent.
+  - [x] NEW 7.2 Include `SH_GOALS` in actual-stat and custom-CSV mappings so actual/custom SHA can be derived when both inputs exist.
+  - [x] NEW 7.3 Verify SHA registry metadata, Points/Categories selectors, Draft Board label/value, and blended CSV export coverage with focused tests or direct evidence.
+  - [x] NEW 7.4 Keep the category selector reachable after all categories are removed so SHA or another metric can restore an empty Categories league.
+- [x] NEW 8.0 Reconcile the historical performance roadmap against current code and measured behavior before closing A-DRAFT-DEBUG.
+  - [x] NEW 8.1 Correct stale implementation claims/TODO statuses and document which Tier 1–3 paths are implemented, superseded, optional, or unnecessary based on current evidence.
+  - [x] NEW 8.2 Record the honest evidence boundary for the historical `>=30%` relative TTFP target, re-run the current absolute interaction/recompute checks, and obtain an owner decision if the missing baseline prevents closure. Owner approved option A on 2026-07-13: current absolute evidence is accepted and the missing historical relative baseline is an explicit exception.

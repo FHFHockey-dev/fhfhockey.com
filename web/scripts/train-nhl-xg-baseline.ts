@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
 import crypto from "crypto";
+import zlib from "zlib";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../lib/supabase/database-generated.types";
@@ -87,6 +88,8 @@ type CliOptions = {
   maxDepth: number | null;
   minChildWeight: number | null;
   numRounds: number | null;
+  challengerDatasetPath: string | null;
+  referenceDatasetArtifact: string | null;
 };
 
 type GameRow = {
@@ -317,6 +320,10 @@ Options:
   --minChildWeight <n>         Optional boosting min-child-weight override
   --numRounds <n>              Optional boosting round-count override
   --outputDir <path>           Output directory. Default: scripts/output/xg-baselines
+  --challengerDatasetPath <path.gz>
+                               Export the exact transformed examples/splits used by this run for offline challengers
+  --referenceDatasetArtifact <path>
+                               Freeze row IDs, row order, games, and split ownership to an existing dataset artifact
   --help                       Show this help
 `);
 }
@@ -669,6 +676,12 @@ function parseCliArgs(argv: string[]): CliOptions {
     maxDepth: options.maxDepth ? Number(options.maxDepth) : null,
     minChildWeight: options.minChildWeight ? Number(options.minChildWeight) : null,
     numRounds: options.numRounds ? Number(options.numRounds) : null,
+    challengerDatasetPath: options.challengerDatasetPath
+      ? path.resolve(options.challengerDatasetPath)
+      : null,
+    referenceDatasetArtifact: options.referenceDatasetArtifact
+      ? path.resolve(options.referenceDatasetArtifact)
+      : null,
   };
 }
 
@@ -973,25 +986,30 @@ async function fetchSelectedGames(
   const rows: GameRow[] = [];
 
   if (options.gameIds?.length) {
-    for (let from = 0; ; from += SUPABASE_PAGE_SIZE) {
-      const { data, error } = await client
-        .from("games")
-        .select("id, date, seasonId, homeTeamId, awayTeamId")
-        .in("id", options.gameIds)
-        .order("date", { ascending: true })
-        .order("id", { ascending: true })
-        .range(from, from + SUPABASE_PAGE_SIZE - 1);
+    for (const gameIdChunk of chunkNumbers(options.gameIds, 200)) {
+      for (let from = 0; ; from += SUPABASE_PAGE_SIZE) {
+        const { data, error } = await client
+          .from("games")
+          .select("id, date, seasonId, homeTeamId, awayTeamId")
+          .in("id", gameIdChunk)
+          .order("date", { ascending: true })
+          .order("id", { ascending: true })
+          .range(from, from + SUPABASE_PAGE_SIZE - 1);
 
-      if (error) {
-        throw error;
-      }
+        if (error) {
+          throw error;
+        }
 
-      rows.push(...((data ?? []) as GameRow[]));
-
-      if ((data?.length ?? 0) < SUPABASE_PAGE_SIZE) {
-        return rows;
+        rows.push(...((data ?? []) as GameRow[]));
+        if ((data?.length ?? 0) < SUPABASE_PAGE_SIZE) break;
       }
     }
+    return rows.sort((left, right) => {
+      const dateCompare = (left.date ?? "9999-12-31").localeCompare(
+        right.date ?? "9999-12-31"
+      );
+      return dateCompare !== 0 ? dateCompare : left.id - right.id;
+    });
   }
 
   for (let from = 0; ; from += SUPABASE_PAGE_SIZE) {
@@ -1314,6 +1332,67 @@ export async function enrichShotRowsWithTrainingContext(
 function writeJsonArtifact(filePath: string, value: unknown): void {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+}
+
+function writeChallengerDataset(args: {
+  filePath: string;
+  sourceCommitSha: string | null;
+  options: CliOptions;
+  splitConfig: BaselineSplitConfig;
+  splitStrategy: string;
+  selectedFeatures: {
+    featureFamily: string;
+    numeric: string[];
+    boolean: string[];
+    categorical: string[];
+  };
+  featureKeys: string[];
+  featureTransforms: FeatureTransforms;
+  examples: EncodedBaselineExample[];
+}): { sha256: string; compressedBytes: number } {
+  const payload = {
+    artifactKind: "nhl_xg_offline_challenger_dataset",
+    artifactVersion: 1,
+    generatedAt: new Date().toISOString(),
+    sourceCommitSha: args.sourceCommitSha,
+    predictionType: args.options.predictionType,
+    seasonScopes: args.options.seasons,
+    testSeasons: args.options.testSeasons,
+    parserVersion: args.options.parserVersion,
+    strengthVersion: args.options.strengthVersion,
+    featureVersion: args.options.featureVersion,
+    randomSeed: args.options.seed,
+    splitConfig: args.splitConfig,
+    splitStrategy: args.splitStrategy,
+    featureFamily: args.selectedFeatures.featureFamily,
+    selectedFeatures: {
+      numeric: args.selectedFeatures.numeric,
+      boolean: args.selectedFeatures.boolean,
+      categorical: args.selectedFeatures.categorical,
+    },
+    featureKeys: args.featureKeys,
+    featureTransforms: args.featureTransforms,
+    examples: args.examples.map((example) => ({
+      rowId: example.rowId,
+      gameId: example.gameId,
+      eventId: example.eventId,
+      seasonId: example.seasonId,
+      gameDate: example.gameDate,
+      split: example.split,
+      label: example.label,
+      strengthState: example.strengthState,
+      isReboundShot: example.isReboundShot,
+      isRushShot: example.isRushShot,
+      features: example.features,
+    })),
+  };
+  const serialized = JSON.stringify(payload);
+  const sha256 = crypto.createHash("sha256").update(serialized).digest("hex");
+  const compressed = zlib.gzipSync(serialized, { level: 9 });
+  fs.mkdirSync(path.dirname(args.filePath), { recursive: true });
+  fs.writeFileSync(args.filePath, new Uint8Array(compressed));
+  fs.writeFileSync(`${args.filePath}.sha256`, `${sha256}  ${path.basename(args.filePath)}\n`, "utf8");
+  return { sha256, compressedBytes: compressed.length };
 }
 
 function roundMetric(value: number | null): number | null {
@@ -1650,6 +1729,16 @@ async function main(): Promise<void> {
   const options = parseCliArgs(process.argv.slice(2));
   const repoRoot = path.resolve(process.cwd(), "..");
   const supabase = createSupabaseClient();
+  const referenceDatasetArtifact = options.referenceDatasetArtifact
+    ? JSON.parse(fs.readFileSync(options.referenceDatasetArtifact, "utf8")) as {
+        rowCount: number;
+        rowIds: string[];
+        splitAssignments: Array<{ gameId: number; split: DatasetSplit }>;
+      }
+    : null;
+  if (referenceDatasetArtifact) {
+    options.gameIds = referenceDatasetArtifact.splitAssignments.map((row) => row.gameId);
+  }
   const splitConfig: BaselineSplitConfig = {
     trainRatio: options.trainRatio,
     validationRatio: options.validationRatio,
@@ -1773,16 +1862,40 @@ async function main(): Promise<void> {
         )
       )
     ).flat();
-    const splitAssignments =
-      options.testSeasons?.length
+    const trainingRows = referenceDatasetArtifact
+      ? (() => {
+          const byRowId = new Map(
+            seasonShotRowsWithTrainingContext.map((row) => [
+              `${row.gameId}:${row.eventId}`,
+              row,
+            ])
+          );
+          const missing = referenceDatasetArtifact.rowIds.filter((rowId) => !byRowId.has(rowId));
+          if (missing.length) {
+            throw new Error(
+              `Reference dataset reconstruction is missing ${missing.length} rows; first IDs: ${missing.slice(0, 10).join(", ")}.`
+            );
+          }
+          const rows = referenceDatasetArtifact.rowIds.map((rowId) => byRowId.get(rowId)!);
+          if (rows.length !== referenceDatasetArtifact.rowCount) {
+            throw new Error(
+              `Reference dataset row-count mismatch: expected ${referenceDatasetArtifact.rowCount}, reconstructed ${rows.length}.`
+            );
+          }
+          return rows;
+        })()
+      : seasonShotRowsWithTrainingContext;
+    const splitAssignments = referenceDatasetArtifact
+      ? referenceDatasetArtifact.splitAssignments
+      : options.testSeasons?.length
         ? buildOutOfTimeGameSplitAssignments({
-            rows: seasonShotRowsWithTrainingContext,
+            rows: trainingRows,
             testSeasons: options.testSeasons,
             splitConfig,
           })
         : undefined;
 
-    const dataset = buildEncodedBaselineDataset(seasonShotRowsWithTrainingContext, {
+    const dataset = buildEncodedBaselineDataset(trainingRows, {
       predictionType: options.predictionType,
       featureFamily: options.featureFamily,
       seed: options.seed,
@@ -1802,7 +1915,7 @@ async function main(): Promise<void> {
     });
     const eligibleRowIds = new Set(dataset.examples.map((example) => example.rowId));
     const featureCoverage = buildXgFeatureCoverageProfile({
-      rows: seasonShotRowsWithTrainingContext.filter((row) =>
+      rows: trainingRows.filter((row) =>
         eligibleRowIds.has(`${row.gameId}:${row.eventId}`)
       ),
       selectedFeatures,
@@ -1816,6 +1929,29 @@ async function main(): Promise<void> {
       selectedFeatures.numeric,
       featureTransforms
     );
+    if (options.challengerDatasetPath) {
+      const exportResult = writeChallengerDataset({
+        filePath: options.challengerDatasetPath,
+        sourceCommitSha: getCommitSha(repoRoot),
+        options,
+        splitConfig,
+        splitStrategy,
+        selectedFeatures,
+        featureKeys: dataset.featureKeys,
+        featureTransforms,
+        examples: transformedExamples,
+      });
+      console.error(
+        JSON.stringify({
+          phase: "export-offline-challenger-dataset",
+          path: options.challengerDatasetPath,
+          sha256: exportResult.sha256,
+          compressedBytes: exportResult.compressedBytes,
+          examples: transformedExamples.length,
+          splitCounts: dataset.splitCounts,
+        })
+      );
+    }
     const trainExamples = transformedExamples
       .filter((example) => example.split === "train")
       .map((example) => ({

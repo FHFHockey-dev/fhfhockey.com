@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import { clearClientFetchCache } from "lib/dashboard/clientFetchCache";
+import type { CommandCenterData } from "lib/dashboard/commandCenterData";
 
 const routerState = vi.hoisted(() => ({
   query: {
@@ -353,6 +354,11 @@ describe("Forge command center page", () => {
     expect(screen.getAllByText("Own 25-50%").length).toBeGreaterThan(0);
     expect(screen.getAllByText("William Nylander").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Frederik Andersen").length).toBeGreaterThan(0);
+    expect(screen.getByText("Top Trust / Sustainable Plays")).toBeTruthy();
+    expect(screen.getByText("Regression Risk / Fade Candidates")).toBeTruthy();
+    expect(
+      screen.getByText("No named regression-risk candidates are available for this data state.")
+    ).toBeTruthy();
 
     const startChartLink = screen.getByRole("link", { name: "Start Chart" });
     expect(startChartLink.getAttribute("href")).toContain("/start-chart?date=2026-03-14");
@@ -407,7 +413,7 @@ describe("Forge command center page", () => {
   });
 
   it("preserves upstream error states when row-driven modules have no rows", async () => {
-    const data = buildCommandData();
+    const data = buildCommandData() as unknown as CommandCenterData;
     data.modules.topAdds = {
       ...data.modules.topAdds,
       status: "error",

@@ -1,10 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 
 import Container from "components/Layout/Container";
 import PageTitle from "components/PageTitle";
 import ClientOnly from "components/ClientOnly";
+import {
+  consumeAuthCallbackLocation,
+  navigateToAuthFallback,
+  sanitizeAuthReturnPath
+} from "lib/supabase/auth-callback-location";
 import supabase from "lib/supabase/client";
 
 import styles from "./Callback.module.scss";
@@ -16,24 +22,7 @@ type CallbackState = {
 };
 
 const VALID_OTP_TYPES = new Set(["email", "recovery", "invite", "email_change"]);
-
-function sanitizeNextPath(nextValue?: string | null) {
-  if (!nextValue || !nextValue.startsWith("/")) {
-    return "/";
-  }
-
-  return nextValue;
-}
-
-function decodeMaybe(value?: string | null) {
-  if (!value) return "";
-
-  try {
-    return decodeURIComponent(value.replace(/\+/g, " "));
-  } catch {
-    return value;
-  }
-}
+const SAFE_DOCUMENT_TITLE = "Completing Authentication | FHFHockey";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -47,45 +36,52 @@ export default function AuthCallbackPage() {
 
   const fallbackNext = useMemo(() => {
     const nextParam = router.query.next;
-    return sanitizeNextPath(
+    return sanitizeAuthReturnPath(
       Array.isArray(nextParam) ? nextParam[0] : nextParam || "/"
     );
   }, [router.query.next]);
 
   useEffect(() => {
-    if (!router.isReady || hasProcessedRef.current || typeof window === "undefined") {
+    if (hasProcessedRef.current || typeof window === "undefined") {
       return;
     }
 
     hasProcessedRef.current = true;
+    document.title = SAFE_DOCUMENT_TITLE;
+    let callback: ReturnType<typeof consumeAuthCallbackLocation>;
+    try {
+      callback = consumeAuthCallbackLocation();
+    } catch {
+      setState({
+        heading: "Authentication failed",
+        message:
+          "FHFH could not safely clear this authentication response. Return to sign in and try again.",
+        tone: "error"
+      });
+      navigateToAuthFallback((url) => router.replace(url));
+      return;
+    }
+
+    const nextPath = sanitizeAuthReturnPath(callback.nextValue || fallbackNext);
+
+    if (callback.hasProviderError) {
+      setState({
+        heading: "Authentication failed",
+        message:
+          "The authentication provider could not complete this request. Return to sign in and try again.",
+        tone: "error"
+      });
+      return;
+    }
 
     async function handleCallback() {
-      const url = new URL(window.location.href);
-      const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
-      const nextPath = sanitizeNextPath(
-        url.searchParams.get("next") || hashParams.get("next") || fallbackNext
-      );
-      const providerError =
-        decodeMaybe(url.searchParams.get("error_description")) ||
-        decodeMaybe(hashParams.get("error_description")) ||
-        decodeMaybe(url.searchParams.get("error")) ||
-        decodeMaybe(hashParams.get("error"));
-
-      if (providerError) {
-        setState({
-          heading: "Authentication failed",
-          message: providerError,
-          tone: "error"
-        });
-        return;
-      }
-
-      const code = url.searchParams.get("code");
-      const tokenHash = url.searchParams.get("token_hash") || hashParams.get("token_hash");
-      const verificationType =
-        url.searchParams.get("type") || hashParams.get("type") || "";
-      const accessToken = hashParams.get("access_token");
-      const refreshToken = hashParams.get("refresh_token");
+      const {
+        code,
+        tokenHash,
+        verificationType,
+        accessToken,
+        refreshToken
+      } = callback;
 
       try {
         if (code) {
@@ -181,55 +177,61 @@ export default function AuthCallbackPage() {
             "This callback did not include a usable auth code, token hash, or session payload. Retry the sign-in flow from the header auth modal.",
           tone: "error"
         });
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Unknown authentication error.";
+      } catch {
         setState({
           heading: "Authentication failed",
-          message,
+          message:
+            "FHFH could not finish this authentication response. Return to sign in and try again.",
           tone: "error"
         });
       }
     }
 
     void handleCallback();
-  }, [fallbackNext, router, router.isReady]);
+  }, [fallbackNext, router]);
 
   return (
-    <Container className={styles.container}>
-      <PageTitle>Auth Callback</PageTitle>
-      <ClientOnly>
-        <div className={styles.card}>
-          <div className={styles.eyebrow}>Auth Callback</div>
-          <h1 className={styles.title}>{state.heading}</h1>
-          <p className={styles.body}>
-            This route handles Google OAuth completion and email-link verification
-            handoff for Supabase Auth.
-          </p>
+    <>
+      <Head>
+        <title>{SAFE_DOCUMENT_TITLE}</title>
+        <meta name="robots" content="noindex,nofollow" />
+        <meta name="referrer" content="no-referrer" />
+      </Head>
+      <Container className={styles.container}>
+        <PageTitle>Auth Callback</PageTitle>
+        <ClientOnly>
+          <div className={styles.card}>
+            <div className={styles.eyebrow}>Auth Callback</div>
+            <h1 className={styles.title}>{state.heading}</h1>
+            <p className={styles.body}>
+              This route handles Google OAuth completion and email-link verification
+              handoff for Supabase Auth.
+            </p>
 
-          <div
-            className={
-              state.tone === "error"
-                ? styles.errorNote
-                : state.tone === "success"
-                ? styles.successNote
-                : styles.processingNote
-            }
-          >
-            {state.message}
-          </div>
+            <div
+              className={
+                state.tone === "error"
+                  ? styles.errorNote
+                  : state.tone === "success"
+                  ? styles.successNote
+                  : styles.processingNote
+              }
+            >
+              {state.message}
+            </div>
 
-          <div className={styles.actions}>
-            <Link href={fallbackNext} className={styles.primaryAction}>
-              Return to Site
-            </Link>
-            <Link href="/auth" className={styles.secondaryAction}>
-              Open Auth Fallback
-            </Link>
+            <div className={styles.actions}>
+              <Link href={fallbackNext} className={styles.primaryAction}>
+                Return to Site
+              </Link>
+              <Link href="/auth" className={styles.secondaryAction}>
+                Open Auth Fallback
+              </Link>
+            </div>
           </div>
-        </div>
-      </ClientOnly>
-    </Container>
+        </ClientOnly>
+      </Container>
+    </>
   );
 }
 

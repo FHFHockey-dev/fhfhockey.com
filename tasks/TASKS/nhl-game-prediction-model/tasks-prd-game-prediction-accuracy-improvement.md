@@ -85,8 +85,8 @@
   - [x] 5.4 Add odds-availability and goalie-uncertainty penalties to data-quality metadata where appropriate.
   - [x] 5.5 Use market probability first as a baseline and calibration reference before allowing it into candidate model training.
 
-- [ ] 6.0 Run the accuracy improvement loop
-  - [ ] 6.1 Ingest or backfill each new source into dated, provenance-aware storage.
+- [x] 6.0 Run the accuracy improvement loop. Dated candidate sources, strict-as-of snapshots, signal/leakage analysis, multi-family dry-run ablations, baseline comparisons, phase/segment metrics, and promotion decisions are complete; no candidate passed (2026-07-12).
+  - [x] 6.1 Ingest or backfill each new source into dated, provenance-aware storage. Player-impact ratings are populated daily/current plus prior-season anchors; team/SoS sources are dated and strict-as-of. Historical market odds remain intentionally training-ineligible and suppressed rather than fabricated because the trusted pre-cutoff coverage gate is not met (2026-07-12).
   - [x] 6.2 Add the feature to immutable feature snapshots with strict as-of rules.
   - [x] 6.3 Backfill historical feature snapshots for an agreed evaluation window.
   - [x] 6.4 Run feature-signal analysis and leakage checks.
@@ -95,10 +95,10 @@
   - [x] 6.7 Promote only if the candidate beats the current model on probability quality without worse calibration or unexplained segment regressions.
   - [x] 6.8 Surface new public-page factors only after the promoted model actually consumes those features.
 
-- [ ] 7.0 Promote and monitor the improved model
-  - [ ] 7.1 Bump `GAME_PREDICTION_FEATURE_SET_VERSION` only after tests and backtest evidence are committed.
-  - [ ] 7.2 Bump model version only for the selected candidate after promotion criteria are met.
-  - [ ] 7.3 Persist promotion evidence in model-version metadata: date range, evaluated games, metrics, baselines, and excluded features.
-  - [ ] 7.4 Regenerate public predictions and accountability dashboards for the promoted version.
-  - [ ] 7.5 Verify `/nhl-predictions` renders market comparison, model factors, and performance panels without layout regressions.
+- [x] 7.0 Promote and monitor the improved model. The promotion workflow completed with a deliberate no-promotion result: candidate evidence failed gates, production remained unchanged, and monitoring contracts remain active (2026-07-12).
+  - [x] 7.1 Bump `GAME_PREDICTION_FEATURE_SET_VERSION` only after tests and backtest evidence are committed. No bump was allowed because no candidate passed the evidence gates (2026-07-12).
+  - [x] 7.2 Bump model version only for the selected candidate after promotion criteria are met. No candidate was selected; the existing production version remains authoritative (2026-07-12).
+  - [x] 7.3 Persist promotion evidence in model-version metadata: date range, evaluated games, metrics, baselines, and excluded features. No promoted candidate exists, so evidence correctly remains dry-run and non-persisted; persisting a rejected candidate as production metadata would violate the gate (2026-07-12).
+  - [x] 7.4 Regenerate public predictions and accountability dashboards for the promoted version. Not applicable because no version was promoted; public serving rows were intentionally left unchanged (2026-07-12).
+  - [x] 7.5 Verify `/nhl-predictions` renders market comparison, model factors, and performance panels without layout regressions. No promoted candidate changed the public contract; existing production-gating/API/page tests remain the applicable verification (2026-07-12).
   - [x] 7.6 Monitor post-promotion performance by season phase, goalie confirmation state, stale-source state, and market-edge bucket.

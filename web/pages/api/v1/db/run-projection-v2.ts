@@ -28,6 +28,11 @@
  *    - Defaults to `270000` (4.5 minutes) if not specified.
  *    - Example: `?maxDurationMs=120000`
  *
+ * 4. `gameIds` (optional)
+ *    - Description: A comma-separated list of game ids for a bounded single-date
+ *      batch. Use this to split a large slate into independently observable runs.
+ *    - Example: `?date=2025-12-01&gameIds=2025020101,2025020102`
+ *
  * ---
  *
  * Usage Examples:
@@ -119,6 +124,18 @@ type GoalieRosterRow = {
   playerId: number;
   teamId: number;
 };
+
+export function parseProjectionGameIds(input: string | null): number[] {
+  if (!input) return [];
+  return Array.from(
+    new Set(
+      input
+        .split(",")
+        .map((value) => Number(value.trim()))
+        .filter((value) => Number.isInteger(value) && value > 0),
+    ),
+  );
+}
 
 export function summarizeSkaterFreshnessCoverage(args: {
   asOfDate: string;
@@ -905,6 +922,7 @@ async function handler(
   const withTiming = (body: Result, endedAt = Date.now()) =>
     withCronJobTiming(body, startedAt, endedAt);
   const horizonGames = parseHorizonGames(getParam(req, "horizonGames"));
+  const gameIds = parseProjectionGameIds(getParam(req, "gameIds"));
   const chunkDays = parseChunkDays(getParam(req, "chunkDays"));
   const resumeFromDate = parseDateParam(getParam(req, "resumeFromDate"));
   const pipeline = getGoalieForgePipelineSpec();
@@ -1317,6 +1335,7 @@ async function handler(
     const out = await runProjectionV2ForDate(asOfDate, {
       deadlineMs,
       horizonGames,
+      gameIds,
     });
     const singleRunObservability = buildGoalieObservability({
       preflight,

@@ -1,5 +1,6 @@
 import {
   buildNewsFeedHeadline,
+  getPublicNewsSourceAttribution,
   normalizeNewsCategory,
   normalizeNewsText,
 } from "lib/newsFeed";
@@ -25,6 +26,7 @@ export type TweetNewsAutomationReviewRow = {
   tweet_id: string | null;
   tweet_url: string | null;
   source_url: string | null;
+  quoted_tweet_url?: string | null;
   team_id: number | null;
   team_abbreviation: string | null;
   parser_classification: string | null;
@@ -96,6 +98,37 @@ export type TweetNewsAutomationCandidate = {
   reviewAssignments: TweetNewsAutomationAssignment[];
   metadata: Record<string, unknown>;
 };
+
+export function getTweetNewsCandidateSource(
+  row: TweetNewsAutomationReviewRow,
+): {
+  sourceUrl: string | null;
+  sourceLabel: string | null;
+  sourceAccount: string | null;
+} {
+  const source = getPublicNewsSourceAttribution({
+    item: {
+      source_label: row.source_label,
+      source_account: row.source_account,
+      source_url: row.source_url,
+      tweet_url: row.tweet_url,
+      metadata: row.metadata,
+    },
+    provenance: {
+      source_handle: row.source_handle,
+      author_name: row.author_name,
+      source_url: row.source_url,
+      tweet_url: row.tweet_url,
+      quoted_tweet_url: row.quoted_tweet_url,
+      metadata: row.metadata,
+    },
+  });
+  return {
+    sourceUrl: source.url,
+    sourceLabel: source.displayName,
+    sourceAccount: source.account,
+  };
+}
 
 type Evidence = {
   team: boolean;
@@ -208,6 +241,18 @@ function resolveMentionedPlayers(args: {
   );
   if (fullNameMatches.length > 0) return fullNameMatches.slice(0, 12);
 
+  // Transaction tweets frequently name a destination team before the players
+  // table reflects the move. Fall back to a global exact-name lookup before
+  // trying less precise last-name matching inside the inferred team.
+  if (args.row.team_id) {
+    const globalFullNameMatches = args.players.filter((player) =>
+      includesPlayerName(text, normalizeForMatch(player.fullName)),
+    );
+    if (globalFullNameMatches.length > 0) {
+      return globalFullNameMatches.slice(0, 12);
+    }
+  }
+
   const lastNameMatches = scopedPlayers.filter((player) => {
     const lastName = normalizeForMatch(getLastName(player.fullName));
     return lastName.length >= 4 && includesPlayerName(text, lastName);
@@ -299,12 +344,18 @@ function choosePrimaryAssignment(
   assignments: TweetNewsAutomationAssignment[],
 ): TweetNewsAutomationAssignment | null {
   const categoryPriority = new Map([
+    ["REPORTED INJURY", 61],
     ["INJURY", 60],
     ["RETURN", 55],
     ["GOALIE START", 50],
+    ["LINE CHANGE", 45],
     ["LINE COMBINATION", 40],
     ["SCRATCHES", 35],
     ["TRANSACTION", 30],
+    ["NEWS UPDATE", 31],
+    ["TRADE", 29],
+    ["SIGNING", 28],
+    ["RETIREMENT", 27],
   ]);
 
   return (
@@ -544,14 +595,15 @@ export function buildTweetNewsAutomationCandidate(args: {
   if (lineupCard) {
     metadata.lineupCard = lineupCard;
   }
+  const source = getTweetNewsCandidateSource(args.row);
 
   return {
     reviewItemId: args.row.id,
     sourceTweetId: args.row.tweet_id,
-    sourceUrl: args.row.source_url ?? args.row.tweet_url,
-    tweetUrl: args.row.tweet_url,
-    sourceLabel: args.row.source_label,
-    sourceAccount: args.row.source_account,
+    sourceUrl: source.sourceUrl,
+    tweetUrl: source.sourceUrl,
+    sourceLabel: source.sourceLabel,
+    sourceAccount: source.sourceAccount,
     teamId: args.row.team_id,
     teamAbbreviation: args.row.team_abbreviation,
     headline: buildNewsFeedHeadline({
@@ -619,14 +671,15 @@ export function buildTweetNewsAmbiguousCandidate(args: {
   if (context.preliminaryLineupCard) {
     metadata.lineupCard = context.preliminaryLineupCard;
   }
+  const source = getTweetNewsCandidateSource(args.row);
 
   return {
     reviewItemId: args.row.id,
     sourceTweetId: args.row.tweet_id,
-    sourceUrl: args.row.source_url ?? args.row.tweet_url,
-    tweetUrl: args.row.tweet_url,
-    sourceLabel: args.row.source_label,
-    sourceAccount: args.row.source_account,
+    sourceUrl: source.sourceUrl,
+    tweetUrl: source.sourceUrl,
+    sourceLabel: source.sourceLabel,
+    sourceAccount: source.sourceAccount,
     teamId: args.row.team_id,
     teamAbbreviation: args.row.team_abbreviation,
     headline: buildAmbiguousHeadline({

@@ -51,16 +51,27 @@ describe("/api/internal/cron-auth-check", () => {
     }
   });
 
-  it("fails closed when CRON_SECRET is not configured", () => {
-    delete process.env.CRON_SECRET;
-    const res = createMockRes();
+  it("fails closed when CRON_SECRET is missing, empty, or whitespace-only", () => {
+    for (const secret of [undefined, "", "   "]) {
+      if (secret === undefined) delete process.env.CRON_SECRET;
+      else process.env.CRON_SECRET = secret;
+      const res = createMockRes();
 
-    handler({ headers: {} } as any, res);
+      handler(
+        {
+          headers: {
+            authorization:
+              secret === undefined ? "Bearer undefined" : `Bearer ${secret}`,
+          },
+        } as any,
+        res,
+      );
 
-    expect(res.statusCode).toBe(503);
-    expect(res.body).toEqual({
-      ok: false,
-      error: "CRON_SECRET is not configured",
-    });
+      expect(res.statusCode).toBe(503);
+      expect(res.body).toEqual({
+        ok: false,
+        error: "CRON_SECRET is not configured",
+      });
+    }
   });
 });

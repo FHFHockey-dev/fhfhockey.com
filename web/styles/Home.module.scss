@@ -8,11 +8,11 @@
 
 .homepage {
   width: min(100%, 1680px);
-  margin: v.$space-sm auto v.$space-md;
+  margin: v.$space-xl auto v.$space-md;
   padding-inline: v.$space-sm;
   box-sizing: border-box;
   display: grid;
-  gap: v.$space-sm;
+  gap: v.$space-md;
 }
 
 .socialMedia {
@@ -101,8 +101,8 @@
 .injuriesHeader h2 {
   margin: 0;
   color: v.$color-white;
-  font-family: v.$font-family-primary, sans-serif;
-  font-size: clamp(0.9rem, 1.3vw, 1.08rem);
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+  font-size: clamp(0.9rem, 1.15vw, 1.08rem);
   font-weight: v.$font-weight-bold;
   letter-spacing: 0.1em;
   line-height: 1.1;
@@ -151,7 +151,7 @@
     border: v.$border-subtle;
     border-radius: v.$radius-control;
     color: v.$text-secondary;
-    font-size: 0.6rem;
+    font-size: 0.68rem;
     letter-spacing: 0.06em;
     line-height: 1.05;
     text-transform: uppercase;
@@ -168,6 +168,7 @@
 
 .gamesContainer {
   min-width: 0;
+  min-height: 94px;
   padding: v.$space-xs;
 }
 
@@ -260,7 +261,7 @@
   left: v.$space-sm;
   overflow: hidden;
   color: v.$text-secondary;
-  font-size: 0.58rem;
+  font-size: 0.65rem;
   line-height: 1;
   text-align: right;
   text-overflow: ellipsis;
@@ -294,7 +295,7 @@
 .teamRecord {
   color: v.$text-secondary;
   font-family: v.$font-family-numbers;
-  font-size: 0.58rem;
+  font-size: 0.65rem;
   white-space: nowrap;
 }
 
@@ -307,7 +308,7 @@
 
 .gameState {
   color: v.$primary-color;
-  font-size: 0.55rem;
+  font-size: 0.64rem;
   font-weight: v.$font-weight-bold;
   text-transform: uppercase;
   white-space: nowrap;
@@ -317,7 +318,7 @@
 .matchupDivider {
   color: v.$text-secondary;
   font-family: v.$font-family-numbers;
-  font-size: 0.55rem;
+  font-size: 0.64rem;
   white-space: nowrap;
 }
 
@@ -514,38 +515,27 @@
     linear-gradient(rgba(v.$primary-color, 0.045) 1px, transparent 1px),
     linear-gradient(90deg, rgba(v.$primary-color, 0.045) 1px, transparent 1px);
   background-size: 28px 22px;
+}
 
-  &::before {
-    content: "";
-    position: absolute;
-    right: 12%;
-    bottom: 26%;
-    left: 8%;
-    height: 2px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      v.$primary-color 24%,
-      v.$secondary-color 72%,
-      transparent
-    );
-    clip-path: polygon(
-      0 60%,
-      8% 52%,
-      14% 70%,
-      23% 28%,
-      32% 62%,
-      44% 42%,
-      55% 58%,
-      66% 18%,
-      77% 72%,
-      88% 38%,
-      100% 52%,
-      100% 100%,
-      0 100%
-    );
-    opacity: 0.64;
-  }
+.homepagePulse {
+  position: absolute;
+  inset: 12% 7% 10%;
+  z-index: 0;
+  width: 86%;
+  height: 78%;
+  overflow: visible;
+  color: v.$primary-color;
+  opacity: 0.62;
+  pointer-events: none;
+}
+
+.homepagePulseLine {
+  fill: none;
+  stroke: url("#homepage-pulse-gradient");
+  stroke-width: 1.5px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 4px rgba(v.$primary-color, 0.25));
 }
 
 .edgeCopy {
@@ -644,7 +634,7 @@
 
 .insightsGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 1.16fr) minmax(0, 1fr);
+  grid-template-columns: minmax(250px, 0.72fr) minmax(0, 1.55fr);
   gap: v.$space-sm;
   align-items: stretch;
   min-width: 0;
@@ -657,26 +647,26 @@
 
 .newsPanel {
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: none;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .compactPanelHeader,
 .standingsHeader,
 .injuriesHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: v.$space-sm;
+  @include panel.panel-header(
+    $padding-y: v.$space-xs,
+    $padding-x: v.$space-sm
+  );
   min-height: 42px;
-  padding: v.$space-xs v.$space-sm;
-  border-bottom: 1px solid v.$border-soft;
-  background: v.$background-dark;
 }
 
 .compactPanelHeader a,
 .panelViewAll {
   color: v.$primary-color;
-  font-size: 0.62rem;
+  font-size: 0.7rem;
   font-weight: v.$font-weight-bold;
   letter-spacing: 0.08em;
   text-decoration: none;
@@ -696,10 +686,14 @@
 
 .compactNewsList {
   display: grid;
-  align-content: start;
+  grid-auto-rows: minmax(82px, 1fr);
+  align-content: stretch;
   gap: v.$space-xs;
+  min-height: 0;
   min-width: 0;
+  overflow-y: auto;
   padding: v.$space-xs;
+  @include v.custom-scrollbar(v.$primary-color, v.$background-dark, 4px);
 
   > article {
     min-width: 0;
@@ -739,7 +733,7 @@
 .panelMeta {
   color: v.$text-secondary;
   font-family: v.$font-family-numbers;
-  font-size: 0.62rem;
+  font-size: 0.7rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -747,20 +741,20 @@
 .updateTabs {
   display: flex;
   gap: v.$space-xs;
-  padding: 2px v.$space-sm;
+  padding: 1px v.$space-sm;
   border-bottom: 1px solid v.$border-soft;
   background: color.adjust(v.$background-dark, $lightness: -2%);
 
   button {
-    min-height: 26px;
-    padding: 0 v.$space-md;
+    min-height: 24px;
+    padding: 0 v.$space-sm;
     border: 2px solid transparent;
     border-radius: v.$radius-control;
     background: transparent;
     color: v.$text-secondary;
     cursor: pointer;
     font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
-    font-size: v.$font-size-xxs;
+    font-size: 0.68rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
 
@@ -784,10 +778,16 @@
 
 .tableWrapper {
   flex: 1;
+  min-height: 0;
   min-width: 0;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   @include v.custom-scrollbar(v.$primary-color, v.$background-dark, 5px);
+}
+
+.standingsContainer .tableWrapper {
+  display: flex;
+  align-items: stretch;
 }
 
 .standingsTable,
@@ -798,19 +798,19 @@
   border-collapse: collapse;
   color: v.$text-primary;
   font-family: v.$font-family-primary;
-  font-size: v.$font-size-xs;
+  font-size: 0.7rem;
   font-variant-numeric: tabular-nums;
 
   thead th {
     position: sticky;
     top: 0;
     z-index: 1;
-    height: 26px;
-    padding: 2px v.$space-xs;
+    height: 24px;
+    padding: 1px v.$space-xs;
     border-bottom: 1px solid rgba(v.$primary-color, 0.36);
     background: v.$background-dark;
     color: v.$text-secondary;
-    font-size: 0.58rem;
+    font-size: 0.62rem;
     font-weight: v.$font-weight-semibold;
     letter-spacing: 0.06em;
     text-align: center;
@@ -833,8 +833,9 @@
 
   tbody td,
   tbody th {
-    height: 24px;
+    height: 18px;
     padding: 1px v.$space-xs;
+    line-height: 1.15;
     text-align: center;
     white-space: nowrap;
   }
@@ -842,12 +843,13 @@
   tbody th {
     color: v.$text-secondary;
     font-family: v.$font-family-numbers;
-    font-size: 0.62rem;
+    font-size: 0.66rem;
     font-weight: v.$font-weight-medium;
   }
 }
 
 .standingsTable {
+  height: 100%;
   min-width: 100%;
   table-layout: fixed;
 
@@ -864,7 +866,7 @@
 
   td:nth-child(n + 3) {
     font-family: v.$font-family-numbers;
-    font-size: 0.64rem;
+    font-size: 0.66rem;
   }
 }
 
@@ -890,8 +892,8 @@
 .standingsTeamLogo,
 .injuryTeamLogo {
   flex: 0 0 auto;
-  width: 18px;
-  height: 18px;
+  width: 15px;
+  height: 15px;
   object-fit: contain;
   filter: drop-shadow(0 2px 4px rgba(v.$color-black, 0.38));
 }
@@ -904,12 +906,33 @@
 
 .injuryTable,
 .transactionTable {
-  min-width: 100%;
+  min-width: 620px;
   table-layout: fixed;
+
+  th:nth-child(1),
+  td:nth-child(1) {
+    width: 60px;
+  }
+
+  th:nth-child(2),
+  td:nth-child(2) {
+    width: 36px;
+    padding-inline: 2px;
+  }
+
+  th:nth-child(3),
+  td:nth-child(3) {
+    width: 19%;
+  }
+
+  th:nth-child(4),
+  td:nth-child(4) {
+    width: 14%;
+  }
 
   tbody td,
   tbody th {
-    height: 24px;
+    height: 18px;
   }
 
   a {
@@ -924,27 +947,27 @@
 }
 
 .dateColumn {
-  width: 58px;
+  width: 60px;
   color: v.$text-secondary;
   font-family: v.$font-family-numbers;
-  font-size: 0.6rem;
+  font-size: 0.65rem;
 }
 
 .teamColumn {
-  width: 38px;
+  width: 36px;
 }
 
 .nameColumn {
-  width: 25%;
-  max-width: 190px;
+  width: 19%;
+  max-width: none;
   overflow: hidden;
   text-align: left !important;
   text-overflow: ellipsis;
 }
 
 .statusColumn {
-  width: 19%;
-  max-width: 130px;
+  width: 14%;
+  max-width: none;
   overflow: hidden;
   font-weight: v.$font-weight-semibold;
   text-overflow: ellipsis;
@@ -952,11 +975,38 @@
 }
 
 .descriptionColumn {
-  max-width: 260px;
-  overflow: hidden;
+  display: table-cell;
+  width: auto;
+  max-width: none;
   color: v.$text-secondary;
+  line-height: 1.3 !important;
+  padding-block: 4px !important;
   text-align: left !important;
-  text-overflow: ellipsis;
+  white-space: normal !important;
+}
+
+.descriptionContent {
+  margin-right: 6px;
+}
+
+.externalNewsLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25em;
+  height: 1.25em;
+  color: v.$primary-color !important;
+  vertical-align: -0.12em;
+
+  &:hover,
+  &:focus-visible {
+    color: v.$color-white !important;
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
 }
 
 .injuredRow .statusColumn {
@@ -972,15 +1022,15 @@
   align-items: center;
   justify-content: space-between;
   gap: v.$space-sm;
-  padding: v.$space-sm v.$space-md;
+  padding: v.$space-xs v.$space-sm;
   border-top: 1px solid v.$border-soft;
   color: v.$text-secondary;
   font-family: v.$font-family-numbers;
-  font-size: v.$font-size-xxs;
+  font-size: 0.65rem;
 
   button {
-    min-height: v.$control-height-sm;
-    padding: 0 v.$space-md;
+    min-height: 24px;
+    padding: 0 v.$space-sm;
     border: v.$border-subtle;
     border-radius: v.$radius-control;
     background: v.$background-dark;
@@ -1016,7 +1066,7 @@
   align-items: center;
   gap: v.$space-xs;
   min-width: 0;
-  min-height: 58px;
+  min-height: 54px;
   padding: v.$space-xs;
   border: v.$border-subtle;
   border-radius: v.$radius-card;
@@ -1053,14 +1103,14 @@
 
   strong {
     color: v.$color-white;
-    font-size: 0.68rem;
+    font-size: 0.72rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
 
   small {
     color: v.$text-secondary;
-    font-size: 0.58rem;
+    font-size: 0.64rem;
     line-height: 1.2;
   }
 }
@@ -1085,55 +1135,6 @@
   border: 0;
 }
 
-@media (max-width: 760px) {
-  .gamesHeader {
-    grid-template-columns: auto auto minmax(128px, auto) auto;
-  }
-
-  .gamesSummary {
-    grid-column: 1 / -1;
-    justify-self: stretch;
-    width: 100%;
-  }
-
-  .insightsGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .leagueChartPanel {
-    grid-column: 1 / -1;
-    grid-row: 1;
-  }
-
-  .quickToolsGrid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 760px) {
-  .homepage {
-    width: 100%;
-    padding-inline: v.$space-sm;
-  }
-
-  .slateHero {
-    grid-template-columns: 1fr;
-  }
-
-  .slateHeroIntro {
-    border-right: 0;
-    border-bottom: 1px solid v.$border-soft;
-  }
-
-  .slateActionRow {
-    left: v.$space-md;
-  }
-
-  .standingsInjuriesContainer {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 1100px) and (min-width: 769px) {
   .quickToolCard {
     grid-template-columns: 1fr;
@@ -1153,7 +1154,7 @@
   }
 
   .gamesHeader {
-    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
   }
 
   .gamesHeaderTitle {
@@ -1161,11 +1162,27 @@
   }
 
   .gamesSummary {
+    grid-column: 1 / -1;
+    justify-self: stretch;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
   }
 
   .slateSummaryRail {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .slateHero {
+    grid-template-columns: 1fr;
+  }
+
+  .slateHeroIntro {
+    border-right: 0;
+    border-bottom: 1px solid v.$border-soft;
+  }
+
+  .slateActionRow {
+    left: v.$space-md;
   }
 
   .slateSummaryCard:nth-child(2) {
@@ -1180,10 +1197,23 @@
     grid-template-columns: 1fr;
   }
 
+  .standingsInjuriesContainer {
+    grid-template-columns: 1fr;
+  }
+
   .leagueChartPanel,
   .newsPanel {
     grid-column: auto;
     grid-row: auto;
+  }
+
+  .newsPanel {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .compactNewsList {
+    overflow-y: visible;
   }
 
   .quickToolsGrid {

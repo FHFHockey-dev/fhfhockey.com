@@ -87,6 +87,21 @@ const buildConfidenceDrivers = (row: NormalizedGoalieProjectionRow): string[] =>
   return drivers.slice(0, 3);
 };
 
+const hasActionableGoalieDecision = (
+  row: NormalizedGoalieProjectionRow
+): boolean => {
+  const hasDecisionMetadata = Boolean(
+    row.confidence_tier ||
+      row.recommendation ||
+      row.volatility_index != null ||
+      row.blowup_risk != null
+  );
+  const hasNonPlaceholderStarterProbability =
+    row.starter_probability != null &&
+    Math.abs(row.starter_probability - 0.5) > 0.001;
+  return hasDecisionMetadata || hasNonPlaceholderStarterProbability;
+};
+
 export default function GoalieRiskCard({
   date,
   team,
@@ -153,8 +168,15 @@ export default function GoalieRiskCard({
     return filtered.sort((a, b) => (b.starter_probability ?? 0) - (a.starter_probability ?? 0));
   }, [rows, team]);
 
-  const spotlightRows = useMemo(() => displayRows.slice(0, 2), [displayRows]);
+  const spotlightRows = useMemo(
+    () => displayRows.filter(hasActionableGoalieDecision).slice(0, 2),
+    [displayRows]
+  );
   const tableRows = useMemo(() => displayRows.slice(0, 8), [displayRows]);
+  const placeholderRowCount = useMemo(
+    () => tableRows.filter((row) => !hasActionableGoalieDecision(row)).length,
+    [tableRows]
+  );
 
   useEffect(() => {
     onResolvedDate?.(asOfDate);
@@ -198,14 +220,23 @@ export default function GoalieRiskCard({
 
       {!loading && !error && tableRows.length > 0 && (
         <>
-          <div className={styles.insightLegend} aria-label="Goalie risk guide">
-            <div className={styles.insightLegendItem}>
-              <span className={`${styles.susBadge} ${styles.susBadgeStable}`}>Starter trust</span>
-              <span className={styles.insightLegendText}>
-                Use these calls to decide who is safer to start and who carries more blow-up risk.
-              </span>
+          {placeholderRowCount > 0 ? (
+            <p className={`${styles.panelState} ${styles.panelStateStale}`} role="status">
+              {placeholderRowCount} goalie {placeholderRowCount === 1 ? "row has" : "rows have"}{" "}
+              placeholder 50% starter probability and incomplete decision metadata. Reference table only; excluded from lead start calls.
+            </p>
+          ) : null}
+
+          {spotlightRows.length > 0 ? (
+            <div className={styles.insightLegend} aria-label="Goalie risk guide">
+              <div className={styles.insightLegendItem}>
+                <span className={`${styles.susBadge} ${styles.susBadgeStable}`}>Starter trust</span>
+                <span className={styles.insightLegendText}>
+                  Use these calls to decide who is safer to start and who carries more blow-up risk.
+                </span>
+              </div>
             </div>
-          </div>
+          ) : null}
 
           {spotlightRows.length > 0 && (
             <div className={styles.goalieSpotlightGrid}>
@@ -307,7 +338,11 @@ export default function GoalieRiskCard({
                           {formatPercent(row.blowup_risk)}
                         </span>
                       </td>
-                      <td>{row.recommendation ?? "--"}</td>
+                      <td>
+                        {hasActionableGoalieDecision(row)
+                          ? row.recommendation ?? "--"
+                          : "Context unavailable"}
+                      </td>
                     </tr>
                   );
                 })}

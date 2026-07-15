@@ -41,23 +41,25 @@ export type RebuildPlayerTrendsOptions = {
   writeFromDate?: string;
 };
 
-function parsePlayerIds(input: unknown): number[] | undefined {
+export function parsePlayerIds(input: unknown): number[] | undefined {
   if (!input) return undefined;
 
+  let parsed: number[];
   if (Array.isArray(input)) {
-    return input
+    parsed = input
       .map((value) => Number(value))
-      .filter((value) => Number.isFinite(value));
-  }
-
-  if (typeof input === "string") {
-    return input
+      .filter((value) => Number.isInteger(value) && value > 0);
+  } else if (typeof input === "string") {
+    parsed = input
       .split(",")
       .map((value) => Number(value.trim()))
-      .filter((value) => Number.isFinite(value));
+      .filter((value) => Number.isInteger(value) && value > 0);
+  } else {
+    return undefined;
   }
 
-  return undefined;
+  const unique = Array.from(new Set(parsed));
+  return unique.length ? unique : undefined;
 }
 
 async function fetchSkaterStats(options: {

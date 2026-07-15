@@ -1,6 +1,6 @@
 # NHL Game Prediction Supabase Source Audit
 
-Generated at: 2026-06-15T21:45:10.666Z
+Generated at: 2026-07-12T21:10:01.901Z
 
 Scope: live schema, source inventory, identity joins, team-power math, NST team-table semantics, WGO/standings semantics, goalie-source semantics, lineup/player-context coverage, prediction storage/provenance fit, representative row-level data quality, and as-of/leakage safety for tasks 1.1 through 1.11 of `tasks/TASKS/nhl-game-prediction-model/tasks-prd-nhl-game-prediction-model.md`.
 
@@ -25,7 +25,7 @@ Metadata mode: management_api_sql
 - Lineup/player-context blockers: 0
 - Lineup/player-context warnings: 4
 - Storage/provenance blockers: 0
-- Storage/provenance warnings: 3
+- Storage/provenance warnings: 2
 - Row-level data-quality blockers: 0
 - Row-level data-quality warnings: 3
 - As-of/leakage blockers: 0
@@ -79,7 +79,6 @@ Metadata mode: management_api_sql
 - No storage/provenance blockers in this pass.
 
 - Storage/provenance warning: `prediction_output_history_contract_check` should be handled before relying on stored prediction history or freshness evidence.
-- Storage/provenance warning: `forge_runs_game_model_metadata_fit_check` should be handled before relying on stored prediction history or freshness evidence.
 - Storage/provenance warning: `source_provenance_snapshots_freshness_contract_check` should be handled before relying on stored prediction history or freshness evidence.
 
 - No row-level data-quality blockers in this pass.
@@ -103,9 +102,9 @@ Metadata mode: management_api_sql
 | --- | --- | --- | ---: | --- | --- | --- |
 | `games` | core | table | 28393 | `date`: 2003-10-08 to 2026-06-17; `startTime`: 2003-10-09 00:00:00+00 to 2026-06-18 00:00:00+00; `created_at`: 2024-01-11 05:42:18.048305+00 to 2026-05-30 03:00:02.397316+00 | None | Schedule identity, home/away teams, season, start time. |
 | `teams` | core | table | 62 | No planned date columns found | None | Team identity and abbreviation mapping. |
-| `players` | core | table | 2922 | `birthDate`: 1969-01-09 to 2007-09-05 | None | Player and goalie identity. |
-| `seasons` | core | table | 108 | No planned date columns found | None | Season identity for schedule joins. |
-| `team_power_ratings_daily` | core | table | 7539 | `date`: 2025-10-07 to 2026-06-15; `created_at`: 2025-12-07 02:26:09.704494+00 to 2026-06-15 09:15:02.952016+00 | None | Primary team-strength ratings and EWMA-derived team features. |
+| `players` | core | table | 3333 | `birthDate`: 1969-01-09 to 2007-09-05 | None | Player and goalie identity. |
+| `seasons` | core | table | 109 | No planned date columns found | None | Season identity for schedule joins. |
+| `team_power_ratings_daily` | core | table | 8403 | `date`: 2025-10-07 to 2026-07-12; `created_at`: 2025-12-07 02:26:09.704494+00 to 2026-07-12 02:48:32.492673+00 | None | Primary team-strength ratings and EWMA-derived team features. |
 | `nst_team_gamelogs_as_counts` | core | table | 2134 | `date`: 2025-10-07 to 2026-04-11 | None | Game-level all-situation NST team counts. |
 | `nst_team_gamelogs_as_rates` | core | table | 1968 | `date`: 2025-10-06 to 2026-04-11 | None | Game-level all-situation NST team rates. |
 | `nst_team_gamelogs_pp_counts` | core | table | 1939 | `date`: 2025-10-06 to 2026-04-11 | None | Game-level power-play NST team counts. |
@@ -118,9 +117,9 @@ Metadata mode: management_api_sql
 | `nst_team_pk` | core | table | 9698 | `date`: 2024-10-04 to 2026-03-21; `created_at`: 2024-10-16 19:59:49.492721 to 2026-03-23 08:10:05.64405; `updated_at`: 2024-10-16 19:59:49.492721 to 2026-03-23 08:10:05.64405 | None | NST team penalty-kill context. |
 | `wgo_team_stats` | core | table | 38472 | `date`: 2010-10-07 to 2026-06-14 | None | WGO team season/day stats including goals, shots, PP/PK, and discipline. |
 | `nhl_standings_details` | core | table | 12448 | `date`: 2024-10-04 to 2026-04-17 | None | Dated standings, l10, home/road, and goal differential context. |
-| `goalie_start_projections` | core | table | 7335 | `game_date`: 2025-10-07 to 2026-06-14; `created_at`: 2025-12-05 18:19:42.841493+00 to 2026-06-14 09:30:01.49883+00; `updated_at`: 2025-12-05 18:19:42.841493+00 to 2026-06-14 09:30:01.49883+00 | None | Starter probability, confirmation status, and projected goalie quality. |
+| `goalie_start_projections` | core | table | 7335 | `game_date`: 2025-10-07 to 2026-06-17; `created_at`: 2025-12-05 18:19:42.841493+00 to 2026-06-17 09:30:01.304673+00; `updated_at`: 2025-12-05 18:19:42.841493+00 to 2026-06-17 09:30:01.304673+00 | None | Starter probability, confirmation status, and projected goalie quality. |
 | `wgo_goalie_stats` | core | table | 139888 | `date`: 1917-12-19 to 2026-06-14 | None | Goalie game/dated stats, rest splits, save percentage, and GAA. |
-| `wgo_goalie_stats_totals` | core | table | 4890 | `updated_at`: 2025-03-25 01:32:39.538+00 to 2026-06-15 08:20:03.017+00 | None | Goalie season totals. |
+| `wgo_goalie_stats_totals` | core | table | 4890 | `updated_at`: 2025-03-25 01:32:39.538+00 to 2026-07-12 08:20:02.624+00 | None | Goalie season totals. |
 | `vw_goalie_stats_unified` | core | view |  | `date`: 2023-01-01 to 2026-06-14 | None | Unified WGO/NST goalie view. |
 | `nst_gamelog_goalie_all_counts` | core | table | 5340 | `date_scraped`: 2024-10-04 to 2026-04-09 | None | NST goalie all-situation counts. |
 | `nst_gamelog_goalie_all_rates` | core | table | 5340 | `date_scraped`: 2024-10-04 to 2026-04-09 | None | NST goalie all-situation rates. |
@@ -136,16 +135,16 @@ Metadata mode: management_api_sql
 | `lines_nhl` | optional | table |  | `snapshot_date`: 2026-04-22 to 2026-04-22; `observed_at`: 2026-04-23 01:00:56.479+00 to 2026-04-23 13:38:04.818+00; `updated_at`: 2026-04-23 01:00:57.372+00 to 2026-04-23 13:38:07.057+00 | None | Historical NHL.com lineup snapshots. |
 | `lines_dfo` | optional | table | 8 | `snapshot_date`: 2026-04-22 to 2026-04-23; `observed_at`: 2026-04-21 14:38:56.544+00 to 2026-04-23 01:40:13.546+00; `updated_at`: 2026-04-23 01:02:05.293+00 to 2026-04-23 14:07:26.073+00 | None | Historical DailyFaceoff lineup snapshots. |
 | `lines_gdl` | optional | table |  | `snapshot_date`: 2026-04-22 to 2026-04-23; `observed_at`: 2026-04-23 00:21:52.907+00 to 2026-04-23 14:07:26.073+00; `tweet_posted_at`: 2026-02-28 00:00:00+00 to 2026-04-20 04:00:00+00; `updated_at`: 2026-04-23 00:21:52.907+00 to 2026-04-23 14:07:26.073+00 | None | Historical GameDayTweets lineup snapshots. |
-| `lines_ccc` | optional | table | 648 | `snapshot_date`: 2026-04-25 to 2026-06-15; `observed_at`: 2026-04-24 21:46:50.425013+00 to 2026-06-15 21:26:25.761549+00; `tweet_posted_at`: 2026-04-24 00:00:00+00 to 2026-06-15 00:00:00+00; `updated_at`: 2026-04-26 18:24:02.161+00 to 2026-06-15 21:26:26.306+00 | None | CCC tweet-derived lineup snapshots. |
+| `lines_ccc` | optional | table | 937 | `snapshot_date`: 2026-04-25 to 2026-07-12; `observed_at`: 2026-04-24 21:46:50.425013+00 to 2026-07-12 18:46:48.216176+00; `tweet_posted_at`: 2026-04-24 00:00:00+00 to 2026-07-12 00:00:00+00; `updated_at`: 2026-04-26 18:24:02.161+00 to 2026-07-12 18:46:49.133+00 | None | CCC tweet-derived lineup snapshots. |
 | `forge_roster_events` | optional | table |  | `created_at`: null to null; `updated_at`: null to null; `effective_from`: null to null; `effective_to`: null to null | None | Injury, lineup, transaction, and goalie-start events. |
-| `forge_player_projections` | optional | table | 24100 | `as_of_date`: 2025-10-07 to 2026-05-10; `created_at`: 2025-12-30 15:09:27.096935+00 to 2026-05-10 22:53:31.085611+00; `updated_at`: 2025-12-30 15:09:27.048+00 to 2026-05-10 22:53:30.857+00 | None | FORGE player-level projection context. |
-| `forge_goalie_projections` | optional | table | 2332 | `as_of_date`: 2025-10-07 to 2026-05-10; `created_at`: 2025-12-30 15:09:30.137261+00 to 2026-05-10 22:53:34.798524+00; `updated_at`: 2025-12-30 15:09:30.09+00 to 2026-05-10 22:53:34.691+00 | None | FORGE goalie projection context. |
-| `forge_team_projections` | optional | table | 2336 | `as_of_date`: 2025-10-07 to 2026-05-10; `created_at`: 2025-12-30 15:09:27.180153+00 to 2026-05-10 22:53:31.230434+00; `updated_at`: 2025-12-30 15:09:27.139+00 to 2026-05-10 22:53:31.159+00 | None | FORGE team-level projection context. |
-| `game_prediction_outputs` | storage | table | 81 | `snapshot_date`: 2026-04-28 to 2026-06-17; `computed_at`: 2026-04-28 11:33:27.011+00 to 2026-06-14 11:45:15.116+00; `updated_at`: 2026-04-28 11:33:28.97+00 to 2026-06-14 11:45:15.787+00 | None | Latest/public game prediction output contract. |
+| `forge_player_projections` | optional | table | 24100 | `as_of_date`: 2025-10-07 to 2026-05-10; `created_at`: 2025-12-30 15:09:27.096935+00 to 2026-07-12 19:48:01.245184+00; `updated_at`: 2025-12-30 15:09:27.048+00 to 2026-07-12 19:48:01.231+00 | None | FORGE player-level projection context. |
+| `forge_goalie_projections` | optional | table | 2332 | `as_of_date`: 2025-10-07 to 2026-05-10; `created_at`: 2025-12-30 15:09:30.137261+00 to 2026-07-12 19:48:01.95262+00; `updated_at`: 2025-12-30 15:09:30.09+00 to 2026-07-12 19:48:01.945+00 | None | FORGE goalie projection context. |
+| `forge_team_projections` | optional | table | 2336 | `as_of_date`: 2025-10-07 to 2026-05-10; `created_at`: 2025-12-30 15:09:27.180153+00 to 2026-07-12 19:48:01.285217+00; `updated_at`: 2025-12-30 15:09:27.139+00 to 2026-07-12 19:48:01.277+00 | None | FORGE team-level projection context. |
+| `game_prediction_outputs` | storage | table | 81 | `snapshot_date`: 2026-04-15 to 2026-06-17; `computed_at`: 2026-04-28 11:33:27.011+00 to 2026-07-12 19:48:02.09216+00; `updated_at`: 2026-04-28 11:33:28.97+00 to 2026-07-12 19:48:02.09216+00 | None | Latest/public game prediction output contract. |
 | `game_prediction_market_odds_snapshots` | core | table |  | `captured_at`: null to null; `requested_date`: null to null; `game_date`: null to null; `event_start_at`: null to null; `created_at`: null to null | None | Append-only market odds observations for baselines, calibration comparison, and pre-cutoff candidate model features. |
 | `player_prediction_outputs` | storage | table |  | `snapshot_date`: null to null; `computed_at`: null to null; `updated_at`: null to null | None | Player prediction output contract. |
-| `forge_runs` | storage | table | 173 | `as_of_date`: 2025-10-07 to 2026-06-01; `created_at`: 2025-12-26 15:43:04.592168+00 to 2026-06-01 10:06:42.345567+00; `updated_at`: 2025-12-26 15:43:04.674+00 to 2026-06-02 11:30:01.938+00 | None | FORGE run metadata and metrics. |
-| `source_provenance_snapshots` | storage | table | 503 | `snapshot_date`: 2026-04-21 to 2026-06-17; `observed_at`: 2026-04-11 23:59:59+00 to 2026-06-14 23:59:59+00; `freshness_expires_at`: 2026-04-21 22:38:56.544+00 to 2026-06-28 00:00:00+00; `updated_at`: 2026-04-21 20:44:16.817+00 to 2026-06-14 11:45:15.813+00 | None | Source freshness/provenance registry. |
+| `forge_runs` | storage | table | 173 | `as_of_date`: 2025-10-07 to 2026-07-12; `created_at`: 2025-12-26 15:43:04.592168+00 to 2026-07-12 19:47:50.211543+00; `updated_at`: 2025-12-26 15:43:04.674+00 to 2026-07-12 19:48:02.141+00 | None | FORGE run metadata and metrics. |
+| `source_provenance_snapshots` | storage | table | 503 | `snapshot_date`: 2026-04-21 to 2026-06-17; `observed_at`: 2026-04-11 23:59:59+00 to 2026-06-17 23:59:59+00; `freshness_expires_at`: 2026-04-21 22:38:56.544+00 to 2026-07-01 00:00:00+00; `updated_at`: 2026-04-21 20:44:16.817+00 to 2026-06-17 11:45:16.086+00 | None | Source freshness/provenance registry. |
 
 ## Identity Join Checks
 
@@ -245,10 +244,10 @@ Accepted/observed line source rows should resolve games where supplied and teams
 [
   {
     "source_name": "lines_ccc",
-    "rows": 307,
+    "rows": 378,
     "missing_team_rows": 0,
     "missing_game_rows": 0,
-    "null_game_id_rows": 93
+    "null_game_id_rows": 164
   },
   {
     "source_name": "lines_dfo",
@@ -314,9 +313,9 @@ Player current team assignments can be optional/stale but should be understood b
 ```json
 [
   {
-    "players": 2922,
+    "players": 3336,
     "null_team_id_rows": 897,
-    "unmapped_team_id_rows": 598
+    "unmapped_team_id_rows": 1011
   }
 ]
 ```
@@ -344,7 +343,7 @@ Core rating/rate fields should be populated and physically plausible.
 ```json
 [
   {
-    "rows": 7955,
+    "rows": 8819,
     "null_off_rating": 0,
     "null_def_rating": 0,
     "null_xgf60": 0,
@@ -368,13 +367,13 @@ Ratings should stay in plausible z-score-derived ranges around 100.
   {
     "min_off_rating": "60.638404491006725",
     "max_off_rating": "140.8521909645749",
-    "avg_off_rating": "99.7129925879143142",
+    "avg_off_rating": "99.6939743027622740",
     "min_def_rating": "64.55796433172318",
     "max_def_rating": "132.88630862411972",
-    "avg_def_rating": "100.3534200675214936",
+    "avg_def_rating": "100.3967497070429458",
     "min_pace_rating": "53.5617391526482",
     "max_pace_rating": "136.6998937744387",
-    "avg_pace_rating": "99.9231535628308723"
+    "avg_pace_rating": "99.8517852819891613"
   }
 ]
 ```
@@ -386,9 +385,9 @@ Offense should increase with xGF; defense should improve as xGA decreases; pace 
 ```json
 [
   {
-    "off_xgf60_corr": 0.946883448618262,
-    "def_xga60_corr": -0.938501174573982,
-    "pace_corr": 0.959288996465686
+    "off_xgf60_corr": 0.947335009326926,
+    "def_xga60_corr": -0.938410990462677,
+    "pace_corr": 0.959277134304249
   }
 ]
 ```
@@ -415,7 +414,7 @@ Power-rating dates should be understood relative to upstream NST/WGO source fres
 ```json
 [
   {
-    "max_power_date": "2026-06-15",
+    "max_power_date": "2026-07-12",
     "max_nst_rates_date": "2026-04-11",
     "max_nst_counts_date": "2026-04-11",
     "max_nst_pp_rates_date": "2026-04-11",
@@ -433,63 +432,63 @@ Recent rating dates should generally include a full NHL team set.
 ```json
 [
   {
-    "date": "2026-06-15",
+    "date": "2026-07-12",
     "team_count": 32
   },
   {
-    "date": "2026-06-14",
+    "date": "2026-07-11",
     "team_count": 32
   },
   {
-    "date": "2026-06-13",
+    "date": "2026-07-10",
     "team_count": 32
   },
   {
-    "date": "2026-06-12",
+    "date": "2026-07-09",
     "team_count": 32
   },
   {
-    "date": "2026-06-11",
+    "date": "2026-07-08",
     "team_count": 32
   },
   {
-    "date": "2026-06-10",
+    "date": "2026-07-07",
     "team_count": 32
   },
   {
-    "date": "2026-06-09",
+    "date": "2026-07-06",
     "team_count": 32
   },
   {
-    "date": "2026-06-08",
+    "date": "2026-07-05",
     "team_count": 32
   },
   {
-    "date": "2026-06-07",
+    "date": "2026-07-04",
     "team_count": 32
   },
   {
-    "date": "2026-06-06",
+    "date": "2026-07-03",
     "team_count": 32
   },
   {
-    "date": "2026-06-05",
+    "date": "2026-07-02",
     "team_count": 32
   },
   {
-    "date": "2026-06-04",
+    "date": "2026-07-01",
     "team_count": 32
   },
   {
-    "date": "2026-06-03",
+    "date": "2026-06-30",
     "team_count": 32
   },
   {
-    "date": "2026-06-02",
+    "date": "2026-06-29",
     "team_count": 32
   },
   {
-    "date": "2026-06-01",
+    "date": "2026-06-28",
     "team_count": 32
   }
 ]
@@ -568,7 +567,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2024-10-04",
     "max_date": "2026-03-21",
     "distinct_dates": 474,
-    "days_since_latest": 86,
+    "days_since_latest": 113,
     "latest_date_team_count": 22
   },
   {
@@ -576,7 +575,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2024-10-04",
     "max_date": "2026-03-21",
     "distinct_dates": 492,
-    "days_since_latest": 86,
+    "days_since_latest": 113,
     "latest_date_team_count": 22
   },
   {
@@ -584,7 +583,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2025-10-07",
     "max_date": "2026-04-11",
     "distinct_dates": 162,
-    "days_since_latest": 65,
+    "days_since_latest": 92,
     "latest_date_team_count": 30
   },
   {
@@ -592,7 +591,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2025-10-06",
     "max_date": "2026-04-11",
     "distinct_dates": 162,
-    "days_since_latest": 65,
+    "days_since_latest": 92,
     "latest_date_team_count": 30
   },
   {
@@ -600,7 +599,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2025-10-06",
     "max_date": "2026-04-11",
     "distinct_dates": 161,
-    "days_since_latest": 65,
+    "days_since_latest": 92,
     "latest_date_team_count": 28
   },
   {
@@ -608,7 +607,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2025-10-06",
     "max_date": "2026-04-11",
     "distinct_dates": 162,
-    "days_since_latest": 65,
+    "days_since_latest": 92,
     "latest_date_team_count": 28
   },
   {
@@ -616,7 +615,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2025-10-06",
     "max_date": "2026-04-11",
     "distinct_dates": 162,
-    "days_since_latest": 65,
+    "days_since_latest": 92,
     "latest_date_team_count": 28
   },
   {
@@ -624,7 +623,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2025-10-06",
     "max_date": "2026-04-11",
     "distinct_dates": 162,
-    "days_since_latest": 65,
+    "days_since_latest": 92,
     "latest_date_team_count": 28
   },
   {
@@ -632,7 +631,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2024-10-04",
     "max_date": "2026-03-21",
     "distinct_dates": 467,
-    "days_since_latest": 86,
+    "days_since_latest": 113,
     "latest_date_team_count": 22
   },
   {
@@ -640,7 +639,7 @@ NST team source latest dates should be explicit so stale tables are not treated 
     "min_date": "2024-10-04",
     "max_date": "2026-03-21",
     "distinct_dates": 469,
-    "days_since_latest": 86,
+    "days_since_latest": 113,
     "latest_date_team_count": 22
   }
 ]
@@ -1998,7 +1997,7 @@ WGO and standings source freshness should be explicit for as-of feature joins.
     "min_date": "2024-10-04",
     "max_date": "2026-04-17",
     "distinct_dates": 389,
-    "days_since_latest": 59,
+    "days_since_latest": 86,
     "latest_date_team_count": 32
   },
   {
@@ -2006,7 +2005,7 @@ WGO and standings source freshness should be explicit for as-of feature joins.
     "min_date": "2010-10-07",
     "max_date": "2026-06-14",
     "distinct_dates": 2734,
-    "days_since_latest": 1,
+    "days_since_latest": 28,
     "latest_date_team_count": 2
   }
 ]
@@ -2132,7 +2131,7 @@ Standings percentage fields, goal-differential rate fields, and sequence ranks s
 ```json
 [
   {
-    "rows": 7579,
+    "rows": 7586,
     "null_start_probability_rows": 0,
     "invalid_start_probability_rows": 0,
     "invalid_l10_start_pct_rows": 0,
@@ -2151,7 +2150,7 @@ Goalie starter probabilities should generally sum to 1 per game/team, and confir
 ```json
 [
   {
-    "game_team_groups": 2832,
+    "game_team_groups": 2834,
     "team_groups_with_probability_sum_issue": 27,
     "team_groups_with_multiple_confirmed_goalies": 0,
     "confirmed_goalies_with_probability_below_one": "0",
@@ -2168,7 +2167,7 @@ Scheduled games in the goalie-projection date range should have goalie candidate
 ```json
 [
   {
-    "team_game_sides": 2832,
+    "team_game_sides": 2834,
     "team_game_sides_missing_goalie_candidates": 0,
     "min_candidate_rows": 1,
     "max_candidate_rows": 5
@@ -2222,7 +2221,7 @@ WGO goalie totals are season-level totals with updated_at but no stat-date key, 
   {
     "rows": 4890,
     "min_updated_at": "2025-03-25 01:32:39.538+00",
-    "max_updated_at": "2026-06-15 08:20:03.017+00",
+    "max_updated_at": "2026-07-12 08:20:02.624+00",
     "null_updated_at_rows": 0
   }
 ]
@@ -2298,7 +2297,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 339,
-    "days_since_latest": 67,
+    "days_since_latest": 94,
     "latest_date_goalie_count": 30
   },
   {
@@ -2306,7 +2305,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 338,
-    "days_since_latest": 67,
+    "days_since_latest": 94,
     "latest_date_goalie_count": 30
   },
   {
@@ -2314,7 +2313,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 335,
-    "days_since_latest": 67,
+    "days_since_latest": 94,
     "latest_date_goalie_count": 30
   },
   {
@@ -2322,7 +2321,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 335,
-    "days_since_latest": 67,
+    "days_since_latest": 94,
     "latest_date_goalie_count": 30
   },
   {
@@ -2330,7 +2329,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 338,
-    "days_since_latest": 67,
+    "days_since_latest": 94,
     "latest_date_goalie_count": 30
   },
   {
@@ -2338,7 +2337,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 334,
-    "days_since_latest": 67,
+    "days_since_latest": 94,
     "latest_date_goalie_count": 30
   },
   {
@@ -2346,7 +2345,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 335,
-    "days_since_latest": 67,
+    "days_since_latest": 94,
     "latest_date_goalie_count": 26
   },
   {
@@ -2354,7 +2353,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 335,
-    "days_since_latest": 67,
+    "days_since_latest": 94,
     "latest_date_goalie_count": 26
   },
   {
@@ -2362,7 +2361,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 335,
-    "days_since_latest": 67,
+    "days_since_latest": 94,
     "latest_date_goalie_count": 26
   },
   {
@@ -2370,7 +2369,7 @@ NST goalie source latest dates should be explicit so stale goalie quality inputs
     "min_date": "2024-10-04",
     "max_date": "2026-04-09",
     "distinct_dates": 335,
-    "days_since_latest": 67,
+    "days_since_latest": 94,
     "latest_date_goalie_count": 26
   }
 ]
@@ -2500,13 +2499,13 @@ Prospective line-source tables should be treated as sparse/current-context input
 [
   {
     "source_name": "lines_ccc",
-    "rows": 307,
-    "observed_or_accepted_rows": 307,
+    "rows": 378,
+    "observed_or_accepted_rows": 378,
     "min_snapshot_date": "2026-04-25",
-    "max_snapshot_date": "2026-06-15",
-    "max_observed_at": "2026-06-15 05:36:40.255559+00",
-    "days_since_latest_observed_at": 0,
-    "null_game_id_rows": 93,
+    "max_snapshot_date": "2026-07-11",
+    "max_observed_at": "2026-07-11 00:11:41.382065+00",
+    "days_since_latest_observed_at": 1,
+    "null_game_id_rows": 164,
     "null_team_id_rows": 0
   },
   {
@@ -2516,7 +2515,7 @@ Prospective line-source tables should be treated as sparse/current-context input
     "min_snapshot_date": "2026-04-22",
     "max_snapshot_date": "2026-04-23",
     "max_observed_at": "2026-04-23 01:40:13.546+00",
-    "days_since_latest_observed_at": 53,
+    "days_since_latest_observed_at": 80,
     "null_game_id_rows": 0,
     "null_team_id_rows": 0
   },
@@ -2527,7 +2526,7 @@ Prospective line-source tables should be treated as sparse/current-context input
     "min_snapshot_date": "2026-04-22",
     "max_snapshot_date": "2026-04-23",
     "max_observed_at": "2026-04-23 14:07:26.073+00",
-    "days_since_latest_observed_at": 53,
+    "days_since_latest_observed_at": 80,
     "null_game_id_rows": 0,
     "null_team_id_rows": 0
   },
@@ -2538,7 +2537,7 @@ Prospective line-source tables should be treated as sparse/current-context input
     "min_snapshot_date": "2026-04-22",
     "max_snapshot_date": "2026-04-22",
     "max_observed_at": "2026-04-23 13:38:04.818+00",
-    "days_since_latest_observed_at": 53,
+    "days_since_latest_observed_at": 80,
     "null_game_id_rows": 0,
     "null_team_id_rows": 0
   }
@@ -2553,11 +2552,11 @@ FORGE player, goalie, and team projection tables are optional context and should
 [
   {
     "source_name": "forge_goalie_projections",
-    "rows": 2571,
+    "rows": 2573,
     "distinct_games": 1084,
     "min_as_of_date": "2025-10-07",
     "max_as_of_date": "2026-05-10",
-    "days_since_latest_as_of_date": 36,
+    "days_since_latest_as_of_date": 63,
     "min_horizon_games": 1,
     "max_horizon_games": 1,
     "null_game_id_rows": 0,
@@ -2565,11 +2564,11 @@ FORGE player, goalie, and team projection tables are optional context and should
   },
   {
     "source_name": "forge_player_projections",
-    "rows": 27702,
+    "rows": 27731,
     "distinct_games": 1087,
     "min_as_of_date": "2025-10-07",
     "max_as_of_date": "2026-05-10",
-    "days_since_latest_as_of_date": 36,
+    "days_since_latest_as_of_date": 63,
     "min_horizon_games": 1,
     "max_horizon_games": 1,
     "null_game_id_rows": 0,
@@ -2577,11 +2576,11 @@ FORGE player, goalie, and team projection tables are optional context and should
   },
   {
     "source_name": "forge_team_projections",
-    "rows": 2579,
+    "rows": 2581,
     "distinct_games": 1087,
     "min_as_of_date": "2025-10-07",
     "max_as_of_date": "2026-05-10",
-    "days_since_latest_as_of_date": 36,
+    "days_since_latest_as_of_date": 63,
     "min_horizon_games": 1,
     "max_horizon_games": 1,
     "null_game_id_rows": 0,
@@ -2619,7 +2618,7 @@ FORGE player, goalie, and team projection tables are optional context and should
     "table_name": "game_prediction_outputs",
     "pk_columns": "{snapshot_date,game_id,model_name,model_version,prediction_scope}",
     "columns": "{snapshot_date,game_id,model_name,model_version,prediction_scope,home_team_id,away_team_id,home_win_probability,away_win_probability,home_expected_goals,away_expected_goals,total_expected_goals,spread_projection,components,provenance,metadata,computed_at,updated_at}",
-    "rows": 92,
+    "rows": 93,
     "pk_includes_computed_at": false,
     "has_prediction_id": false,
     "has_feature_snapshot_id": false,
@@ -2646,7 +2645,7 @@ Prediction output tables should expose probability/output fields plus JSON paylo
 [
   {
     "table_name": "game_prediction_outputs",
-    "rows": 92,
+    "rows": 93,
     "missing_required_columns": 0,
     "null_payload_rows": 0,
     "invalid_probability_rows": 0
@@ -2661,19 +2660,19 @@ Prediction output tables should expose probability/output fields plus JSON paylo
 ]
 ```
 
-### WARN: `forge_runs_game_model_metadata_fit_check`
+### PASS: `forge_runs_game_model_metadata_fit_check`
 
 `forge_runs` can carry run metadata, status, git SHA, and coarse metrics, but game prediction metrics still need explicit model/version/feature-set segmentation if metrics are not populated with that contract.
 
 ```json
 [
   {
-    "rows": 218,
+    "rows": 230,
     "min_as_of_date": "2025-10-07",
-    "max_as_of_date": "2026-06-01",
-    "days_since_latest_as_of_date": 14,
-    "succeeded_rows": 202,
-    "failed_rows": 16,
+    "max_as_of_date": "2026-07-12",
+    "days_since_latest_as_of_date": 0,
+    "succeeded_rows": 211,
+    "failed_rows": 19,
     "empty_metrics_rows": 0,
     "null_git_sha_rows": 148
   }
@@ -2687,14 +2686,14 @@ Prediction output tables should expose probability/output fields plus JSON paylo
 ```json
 [
   {
-    "rows": 504,
+    "rows": 505,
     "distinct_source_names": 18,
     "min_observed_at": "2026-04-11 23:59:59+00",
-    "max_observed_at": "2026-06-14 23:59:59+00",
-    "max_freshness_expires_at": "2026-06-28 00:00:00+00",
-    "null_freshness_rows": 135,
-    "expired_freshness_rows": 339,
-    "non_observed_rows": 175,
+    "max_observed_at": "2026-06-17 23:59:59+00",
+    "max_freshness_expires_at": "2026-07-01 00:00:00+00",
+    "null_freshness_rows": 136,
+    "expired_freshness_rows": 369,
+    "non_observed_rows": 174,
     "empty_payload_rows": 0
   }
 ]
@@ -2774,7 +2773,7 @@ Core recent feature tables should not contain null identity fields, impossible p
 [
   {
     "source_name": "team_power_ratings_daily",
-    "rows": 7955,
+    "rows": 8819,
     "null_identity_rows": 0,
     "invalid_probability_rows": 0,
     "negative_value_rows": 0,
@@ -2798,7 +2797,7 @@ Core recent feature tables should not contain null identity fields, impossible p
   },
   {
     "source_name": "goalie_start_projections",
-    "rows": 7579,
+    "rows": 7586,
     "null_identity_rows": 0,
     "invalid_probability_rows": 0,
     "negative_value_rows": 0,
@@ -2871,9 +2870,9 @@ Each recent game/team side should have reasonably current team-power and standin
 ```json
 [
   {
-    "team_game_sides": 2888,
+    "team_game_sides": 2890,
     "missing_recent_team_power_rows": 56,
-    "missing_recent_standings_rows": 168
+    "missing_recent_standings_rows": 170
   }
 ]
 ```
@@ -2902,7 +2901,7 @@ Historical team features should be joinable from rows dated before the game date
 ```json
 [
   {
-    "team_game_sides": 2888,
+    "team_game_sides": 2890,
     "missing_team_power_before_game_rows": 88,
     "missing_standings_before_game_rows": 0,
     "missing_wgo_before_game_rows": 91,
@@ -2920,12 +2919,12 @@ Historical team features should be joinable from rows dated before the game date
 ```json
 [
   {
-    "rows_joined_to_games": 7579,
+    "rows_joined_to_games": 7586,
     "null_created_at_rows": 0,
     "created_after_start_rows": 5270,
     "updated_after_start_rows": 5270,
     "min_created_at": "2025-12-05 18:19:42.841493+00",
-    "max_created_at": "2026-06-14 09:30:01.49883+00"
+    "max_created_at": "2026-06-17 09:30:01.304673+00"
   }
 ]
 ```
@@ -3003,28 +3002,28 @@ FORGE projections use date-level `as_of_date`; rows on or after the game date ne
 [
   {
     "source_name": "forge_goalie_projections",
-    "rows": 2571,
+    "rows": 2573,
     "null_as_of_date_rows": 0,
-    "rows_joined_to_games": 2571,
-    "as_of_on_or_after_game_date_rows": 2569,
+    "rows_joined_to_games": 2573,
+    "as_of_on_or_after_game_date_rows": 2571,
     "min_as_of_date": "2025-10-07",
     "max_as_of_date": "2026-05-10"
   },
   {
     "source_name": "forge_player_projections",
-    "rows": 27702,
+    "rows": 27731,
     "null_as_of_date_rows": 0,
-    "rows_joined_to_games": 27702,
-    "as_of_on_or_after_game_date_rows": 27682,
+    "rows_joined_to_games": 27731,
+    "as_of_on_or_after_game_date_rows": 27711,
     "min_as_of_date": "2025-10-07",
     "max_as_of_date": "2026-05-10"
   },
   {
     "source_name": "forge_team_projections",
-    "rows": 2579,
+    "rows": 2581,
     "null_as_of_date_rows": 0,
-    "rows_joined_to_games": 2579,
-    "as_of_on_or_after_game_date_rows": 2577,
+    "rows_joined_to_games": 2581,
+    "as_of_on_or_after_game_date_rows": 2579,
     "min_as_of_date": "2025-10-07",
     "max_as_of_date": "2026-05-10"
   }
@@ -3071,7 +3070,7 @@ FORGE projections use date-level `as_of_date`; rows on or after the game date ne
 - Priority: core
 - Relation type: table
 - Metadata mode: management_api_sql
-- Row count: 2922
+- Row count: 3333
 - Planned use: Player and goalie identity.
 - Notes: Goalies are represented as players; player team assignments can be stale.
 - Primary key: `id`
@@ -3087,7 +3086,7 @@ FORGE projections use date-level `as_of_date`; rows on or after the game date ne
 - Priority: core
 - Relation type: table
 - Metadata mode: management_api_sql
-- Row count: 108
+- Row count: 109
 - Planned use: Season identity for schedule joins.
 - Notes: Needed to interpret season IDs in `games` and stat tables.
 - Primary key: `id`
@@ -3103,13 +3102,13 @@ FORGE projections use date-level `as_of_date`; rows on or after the game date ne
 - Priority: core
 - Relation type: table
 - Metadata mode: management_api_sql
-- Row count: 7539
+- Row count: 8403
 - Planned use: Primary team-strength ratings and EWMA-derived team features.
 - Notes: Must be mathematically audited before model use.
 - Primary key: `team_abbreviation`, `date`
 - Foreign keys: None
 - Indexes: `idx_team_power_ratings_daily_date`, `team_power_ratings_daily_pkey`
-- Date coverage: `date`: 2025-10-07 to 2026-06-15; `created_at`: 2025-12-07 02:26:09.704494+00 to 2026-06-15 09:15:02.952016+00
+- Date coverage: `date`: 2025-10-07 to 2026-07-12; `created_at`: 2025-12-07 02:26:09.704494+00 to 2026-07-12 02:48:32.492673+00
 - Planned key columns present: `team_abbreviation`, `date`, `off_rating`, `def_rating`, `xgf60`, `xga60`
 - Planned key columns missing: None
 - Column count: 22
@@ -3317,7 +3316,7 @@ FORGE projections use date-level `as_of_date`; rows on or after the game date ne
 - Primary key: `game_id`, `player_id`
 - Foreign keys: None
 - Indexes: `goalie_start_projections_pkey`, `idx_goalie_start_projections_game`, `idx_goalie_start_projections_player`, `idx_goalie_start_projections_team`
-- Date coverage: `game_date`: 2025-10-07 to 2026-06-14; `created_at`: 2025-12-05 18:19:42.841493+00 to 2026-06-14 09:30:01.49883+00; `updated_at`: 2025-12-05 18:19:42.841493+00 to 2026-06-14 09:30:01.49883+00
+- Date coverage: `game_date`: 2025-10-07 to 2026-06-17; `created_at`: 2025-12-05 18:19:42.841493+00 to 2026-06-17 09:30:01.304673+00; `updated_at`: 2025-12-05 18:19:42.841493+00 to 2026-06-17 09:30:01.304673+00
 - Planned key columns present: `game_id`, `team_id`, `player_id`, `start_probability`, `confirmed_status`
 - Planned key columns missing: None
 - Column count: 12
@@ -3349,7 +3348,7 @@ FORGE projections use date-level `as_of_date`; rows on or after the game date ne
 - Primary key: `goalie_id`, `season_id`
 - Foreign keys: None
 - Indexes: `wgo_goalie_stats_totals_pkey`
-- Date coverage: `updated_at`: 2025-03-25 01:32:39.538+00 to 2026-06-15 08:20:03.017+00
+- Date coverage: `updated_at`: 2025-03-25 01:32:39.538+00 to 2026-07-12 08:20:02.624+00
 - Planned key columns present: `goalie_id`, `season_id`, `save_pct`, `goals_against_avg`
 - Planned key columns missing: None
 - Column count: 29
@@ -3599,13 +3598,13 @@ FORGE projections use date-level `as_of_date`; rows on or after the game date ne
 - Priority: optional
 - Relation type: table
 - Metadata mode: management_api_sql
-- Row count: 648
+- Row count: 937
 - Planned use: CCC tweet-derived lineup snapshots.
 - Notes: Optional source; query only accepted observed NHL rows for model context.
 - Primary key: `capture_key`
 - Foreign keys: `lines_ccc_game_id_fkey: FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE`; `lines_ccc_team_id_fkey: FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE`
 - Indexes: `lines_ccc_game_idx`, `lines_ccc_nhl_filter_status_idx`, `lines_ccc_pkey`, `lines_ccc_quoted_tweet_id_idx`, `lines_ccc_quoted_tweet_id_team_unique_idx`, `lines_ccc_snapshot_date_idx`, `lines_ccc_status_idx`, `lines_ccc_tweet_id_idx`, `lines_ccc_tweet_id_team_unique_idx`
-- Date coverage: `snapshot_date`: 2026-04-25 to 2026-06-15; `observed_at`: 2026-04-24 21:46:50.425013+00 to 2026-06-15 21:26:25.761549+00; `tweet_posted_at`: 2026-04-24 00:00:00+00 to 2026-06-15 00:00:00+00; `updated_at`: 2026-04-26 18:24:02.161+00 to 2026-06-15 21:26:26.306+00
+- Date coverage: `snapshot_date`: 2026-04-25 to 2026-07-12; `observed_at`: 2026-04-24 21:46:50.425013+00 to 2026-07-12 18:46:48.216176+00; `tweet_posted_at`: 2026-04-24 00:00:00+00 to 2026-07-12 00:00:00+00; `updated_at`: 2026-04-26 18:24:02.161+00 to 2026-07-12 18:46:49.133+00
 - Planned key columns present: `capture_key`, `snapshot_date`, `game_id`, `team_id`, `nhl_filter_status`
 - Planned key columns missing: None
 - Column count: 59
@@ -3637,7 +3636,7 @@ FORGE projections use date-level `as_of_date`; rows on or after the game date ne
 - Primary key: `run_id`, `game_id`, `player_id`, `horizon_games`
 - Foreign keys: `player_projections_v2_game_id_fkey: FOREIGN KEY (game_id) REFERENCES games(id)`; `player_projections_v2_opponent_team_id_fkey: FOREIGN KEY (opponent_team_id) REFERENCES teams(id)`; `player_projections_v2_player_id_fkey: FOREIGN KEY (player_id) REFERENCES players(id)`; `player_projections_v2_run_id_fkey: FOREIGN KEY (run_id) REFERENCES forge_runs(run_id)`; `player_projections_v2_team_id_fkey: FOREIGN KEY (team_id) REFERENCES teams(id)`
 - Indexes: `idx_player_projections_v2_as_of_date`, `idx_player_projections_v2_date_horizon`, `idx_player_projections_v2_date_opponent_horizon`, `idx_player_projections_v2_date_team_horizon`, `idx_player_projections_v2_game`, `idx_player_projections_v2_player`, `idx_player_projections_v2_team`, `player_projections_v2_pkey`
-- Date coverage: `as_of_date`: 2025-10-07 to 2026-05-10; `created_at`: 2025-12-30 15:09:27.096935+00 to 2026-05-10 22:53:31.085611+00; `updated_at`: 2025-12-30 15:09:27.048+00 to 2026-05-10 22:53:30.857+00
+- Date coverage: `as_of_date`: 2025-10-07 to 2026-05-10; `created_at`: 2025-12-30 15:09:27.096935+00 to 2026-07-12 19:48:01.245184+00; `updated_at`: 2025-12-30 15:09:27.048+00 to 2026-07-12 19:48:01.231+00
 - Planned key columns present: `run_id`, `game_id`, `player_id`, `team_id`, `horizon_games`
 - Planned key columns missing: None
 - Column count: 26
@@ -3653,7 +3652,7 @@ FORGE projections use date-level `as_of_date`; rows on or after the game date ne
 - Primary key: `run_id`, `game_id`, `goalie_id`, `horizon_games`
 - Foreign keys: `goalie_projections_v2_game_id_fkey: FOREIGN KEY (game_id) REFERENCES games(id)`; `goalie_projections_v2_goalie_id_fkey: FOREIGN KEY (goalie_id) REFERENCES players(id)`; `goalie_projections_v2_opponent_team_id_fkey: FOREIGN KEY (opponent_team_id) REFERENCES teams(id)`; `goalie_projections_v2_run_id_fkey: FOREIGN KEY (run_id) REFERENCES forge_runs(run_id)`; `goalie_projections_v2_team_id_fkey: FOREIGN KEY (team_id) REFERENCES teams(id)`
 - Indexes: `goalie_projections_v2_pkey`, `idx_goalie_projections_v2_as_of_date`, `idx_goalie_projections_v2_date_horizon`, `idx_goalie_projections_v2_date_team_horizon`, `idx_goalie_projections_v2_game`, `idx_goalie_projections_v2_goalie`
-- Date coverage: `as_of_date`: 2025-10-07 to 2026-05-10; `created_at`: 2025-12-30 15:09:30.137261+00 to 2026-05-10 22:53:34.798524+00; `updated_at`: 2025-12-30 15:09:30.09+00 to 2026-05-10 22:53:34.691+00
+- Date coverage: `as_of_date`: 2025-10-07 to 2026-05-10; `created_at`: 2025-12-30 15:09:30.137261+00 to 2026-07-12 19:48:01.95262+00; `updated_at`: 2025-12-30 15:09:30.09+00 to 2026-07-12 19:48:01.945+00
 - Planned key columns present: `run_id`, `game_id`, `goalie_id`, `team_id`, `horizon_games`
 - Planned key columns missing: None
 - Column count: 16
@@ -3669,7 +3668,7 @@ FORGE projections use date-level `as_of_date`; rows on or after the game date ne
 - Primary key: `run_id`, `game_id`, `team_id`, `horizon_games`
 - Foreign keys: `team_projections_v2_game_id_fkey: FOREIGN KEY (game_id) REFERENCES games(id)`; `team_projections_v2_opponent_team_id_fkey: FOREIGN KEY (opponent_team_id) REFERENCES teams(id)`; `team_projections_v2_run_id_fkey: FOREIGN KEY (run_id) REFERENCES forge_runs(run_id)`; `team_projections_v2_team_id_fkey: FOREIGN KEY (team_id) REFERENCES teams(id)`
 - Indexes: `idx_team_projections_v2_as_of_date`, `idx_team_projections_v2_date_horizon`, `idx_team_projections_v2_date_team_horizon`, `idx_team_projections_v2_game`, `idx_team_projections_v2_team`, `team_projections_v2_pkey`
-- Date coverage: `as_of_date`: 2025-10-07 to 2026-05-10; `created_at`: 2025-12-30 15:09:27.180153+00 to 2026-05-10 22:53:31.230434+00; `updated_at`: 2025-12-30 15:09:27.139+00 to 2026-05-10 22:53:31.159+00
+- Date coverage: `as_of_date`: 2025-10-07 to 2026-05-10; `created_at`: 2025-12-30 15:09:27.180153+00 to 2026-07-12 19:48:01.285217+00; `updated_at`: 2025-12-30 15:09:27.139+00 to 2026-07-12 19:48:01.277+00
 - Planned key columns present: `run_id`, `game_id`, `team_id`, `horizon_games`
 - Planned key columns missing: None
 - Column count: 18
@@ -3685,7 +3684,7 @@ FORGE projections use date-level `as_of_date`; rows on or after the game date ne
 - Primary key: `snapshot_date`, `game_id`, `model_name`, `model_version`, `prediction_scope`
 - Foreign keys: `game_prediction_outputs_away_team_id_fkey: FOREIGN KEY (away_team_id) REFERENCES teams(id)`; `game_prediction_outputs_game_id_fkey: FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE`; `game_prediction_outputs_home_team_id_fkey: FOREIGN KEY (home_team_id) REFERENCES teams(id)`
 - Indexes: `game_prediction_outputs_pkey`
-- Date coverage: `snapshot_date`: 2026-04-28 to 2026-06-17; `computed_at`: 2026-04-28 11:33:27.011+00 to 2026-06-14 11:45:15.116+00; `updated_at`: 2026-04-28 11:33:28.97+00 to 2026-06-14 11:45:15.787+00
+- Date coverage: `snapshot_date`: 2026-04-15 to 2026-06-17; `computed_at`: 2026-04-28 11:33:27.011+00 to 2026-07-12 19:48:02.09216+00; `updated_at`: 2026-04-28 11:33:28.97+00 to 2026-07-12 19:48:02.09216+00
 - Planned key columns present: `snapshot_date`, `game_id`, `model_name`, `model_version`, `prediction_scope`
 - Planned key columns missing: None
 - Column count: 18
@@ -3733,7 +3732,7 @@ FORGE projections use date-level `as_of_date`; rows on or after the game date ne
 - Primary key: `run_id`
 - Foreign keys: None
 - Indexes: `idx_projection_runs_v2_as_of_date`, `idx_projection_runs_v2_status`, `projection_runs_v2_pkey`
-- Date coverage: `as_of_date`: 2025-10-07 to 2026-06-01; `created_at`: 2025-12-26 15:43:04.592168+00 to 2026-06-01 10:06:42.345567+00; `updated_at`: 2025-12-26 15:43:04.674+00 to 2026-06-02 11:30:01.938+00
+- Date coverage: `as_of_date`: 2025-10-07 to 2026-07-12; `created_at`: 2025-12-26 15:43:04.592168+00 to 2026-07-12 19:47:50.211543+00; `updated_at`: 2025-12-26 15:43:04.674+00 to 2026-07-12 19:48:02.141+00
 - Planned key columns present: `run_id`, `as_of_date`, `status`, `metrics`
 - Planned key columns missing: None
 - Column count: 8
@@ -3749,7 +3748,7 @@ FORGE projections use date-level `as_of_date`; rows on or after the game date ne
 - Primary key: `snapshot_date`, `source_type`, `entity_type`, `entity_id`, `source_name`, `game_id`
 - Foreign keys: `source_provenance_snapshots_game_id_fkey: FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE`
 - Indexes: `source_provenance_snapshots_pkey`
-- Date coverage: `snapshot_date`: 2026-04-21 to 2026-06-17; `observed_at`: 2026-04-11 23:59:59+00 to 2026-06-14 23:59:59+00; `freshness_expires_at`: 2026-04-21 22:38:56.544+00 to 2026-06-28 00:00:00+00; `updated_at`: 2026-04-21 20:44:16.817+00 to 2026-06-14 11:45:15.813+00
+- Date coverage: `snapshot_date`: 2026-04-21 to 2026-06-17; `observed_at`: 2026-04-11 23:59:59+00 to 2026-06-17 23:59:59+00; `freshness_expires_at`: 2026-04-21 22:38:56.544+00 to 2026-07-01 00:00:00+00; `updated_at`: 2026-04-21 20:44:16.817+00 to 2026-06-17 11:45:16.086+00
 - Planned key columns present: `snapshot_date`, `source_type`, `entity_type`, `entity_id`, `source_name`
 - Planned key columns missing: None
 - Column count: 15

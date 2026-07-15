@@ -6,7 +6,7 @@
 // can silently drop context when timestamps do not match perfectly.
 // @ts-nocheck
 import supabase from "lib/supabase";
-import { CombinedGameLog, PlayerGameLog } from "./types";
+import { LegacySkoCombinedGameLog } from "./types";
 
 /**
  * Fetch the most recent season for a given player.
@@ -14,7 +14,7 @@ import { CombinedGameLog, PlayerGameLog } from "./types";
  * @param player_id - The ID of the player
  * @returns The most recent season as a number or null if not found
  */
-export const fetchMostRecentSeason = async (
+export const fetchLegacySkoMostRecentSeason = async (
   player_id: number
 ): Promise<number | null> => {
   const { data: seasonsData, error: seasonsError } = await supabase
@@ -39,11 +39,11 @@ export const fetchMostRecentSeason = async (
  * @param season_id - The season ID
  * @returns An object containing combined game logs and any error message
  */
-export const fetchGameLogs = async (
+export const fetchLegacySkoGameLogs = async (
   player_id: number,
   season_id: number
 ): Promise<{
-  combinedGameLogs: CombinedGameLog[] | null;
+  combinedGameLogs: LegacySkoCombinedGameLog[] | null;
   error: string | null;
 }> => {
   try {
@@ -80,7 +80,7 @@ export const fetchGameLogs = async (
       wgoGameLogs.length > 0 &&
       skoGameLogs.length > 0
     ) {
-      const combinedLogs: CombinedGameLog[] = wgoGameLogs.map((wgoGame) => {
+      const combinedLogs: LegacySkoCombinedGameLog[] = wgoGameLogs.map((wgoGame) => {
         const skoGame = skoGameLogs.find(
           (sko) =>
             new Date(sko.date).getTime() === new Date(wgoGame.date).getTime()
@@ -131,7 +131,7 @@ export const fetchGameLogs = async (
           rollingCV: undefined,
           confidenceMultiplier: undefined,
           predictedGameScore: undefined,
-        } as CombinedGameLog;
+        } as LegacySkoCombinedGameLog;
       });
 
       return { combinedGameLogs: combinedLogs, error: null };

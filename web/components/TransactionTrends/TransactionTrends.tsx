@@ -154,39 +154,43 @@ export default function TransactionTrends() {
             {windowDays === 1 ? "" : "s"}.
           </p>
         </div>
-        <div
-          className={styles.timeframeButtons}
-          role="group"
-          aria-label="Time windows"
-        >
-          {WINDOWS.map((w) => (
-            <button
-              key={w}
-              className={w === windowDays ? `${styles.isActive} active` : ""}
-              onClick={() => setWindowDays(w)}
+        <div className={styles.trendControls}>
+          <div className={styles.headerControls}>
+            <span className={styles.filterLabel}>Position</span>
+            <div
+              className={styles.posButtons}
+              role="group"
+              aria-label="Position filter"
             >
-              {w}D
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className={styles.headerControls}>
-        <span className={styles.filterLabel}>Position</span>
-        <div
-          className={styles.posButtons}
-          role="group"
-          aria-label="Position filter"
-        >
-          {POSITION_FILTERS.map((p) => (
-            <button
-              key={p || "ALL"}
-              className={p === pos ? `${styles.isActive} active` : ""}
-              onClick={() => setPos(p)}
-              title={p ? `Filter: ${p}` : "All positions"}
-            >
-              {p || "All"}
-            </button>
-          ))}
+              {POSITION_FILTERS.map((p) => (
+                <button
+                  key={p || "ALL"}
+                  className={p === pos ? `${styles.isActive} active` : ""}
+                  onClick={() => setPos(p)}
+                  title={p ? `Filter: ${p}` : "All positions"}
+                >
+                  {p || "All"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div
+            className={styles.timeframeButtons}
+            role="group"
+            aria-label="Time windows"
+          >
+            {WINDOWS.map((w) => (
+              <button
+                key={w}
+                className={
+                  w === windowDays ? `${styles.isActive} active` : ""
+                }
+                onClick={() => setWindowDays(w)}
+              >
+                {w}D
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       {modulePresentation.panelState && (

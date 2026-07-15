@@ -27,15 +27,18 @@ export default function adminOnly(handler: Handler): Handler {
       if (userError) {
         return res.status(401).json({
           message: userError.message,
-          success: false
+          success: false,
         });
       }
 
-      const { data } = await authClient.from("users").select("role").maybeSingle();
+      const { data } = await authClient
+        .from("users")
+        .select("role")
+        .maybeSingle();
       if (data?.role !== "admin") {
         return res.status(403).json({
           message: "You are not an Admin.",
-          success: false
+          success: false,
         });
       }
 
@@ -49,7 +52,12 @@ export default function adminOnly(handler: Handler): Handler {
 }
 
 export function invokedByCron(authHeader: string) {
-  return authHeader === `Bearer ${process.env.CRON_SECRET}`;
+  const cronSecret = process.env.CRON_SECRET;
+  if (typeof cronSecret !== "string" || cronSecret.trim().length === 0) {
+    return false;
+  }
+
+  return authHeader === `Bearer ${cronSecret}`;
 }
 
 function isLocalHostHeader(hostHeader: string | undefined) {
@@ -58,9 +66,15 @@ function isLocalHostHeader(hostHeader: string | undefined) {
   }
 
   const normalizedHost = hostHeader.toLowerCase().split(":")[0];
-  return normalizedHost === "localhost" || normalizedHost === "127.0.0.1" || normalizedHost === "::1";
+  return (
+    normalizedHost === "localhost" ||
+    normalizedHost === "127.0.0.1" ||
+    normalizedHost === "::1"
+  );
 }
 
 export function invokedByLocalDev(req: NextApiRequest) {
-  return process.env.NODE_ENV !== "production" && isLocalHostHeader(req.headers.host);
+  return (
+    process.env.NODE_ENV !== "production" && isLocalHostHeader(req.headers.host)
+  );
 }

@@ -1,6 +1,13 @@
 // hooks/useVORPCalculations.ts
 import { useMemo } from "react";
 import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
+import {
+  buildPositionPools,
+  getEffectiveRosterConfig,
+  getRosterPositions,
+  groupPlayerEligibility,
+  normalizePlayerEligibility
+} from "lib/draftDashboard/forwardGrouping";
 
 export type LeagueType = "points" | "categories";
 
@@ -57,22 +64,6 @@ const UTIL_TO_DEF_ENABLED = false; // if true, allocate UTIL to D as well
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 const __DEV__ = process.env.NODE_ENV !== "production";
-
-// Helper: parse eligible positions from displayPosition
-const parseEligiblePositions = (displayPosition?: string | null): string[] => {
-  if (!displayPosition) return [];
-  const parts = displayPosition.split(",").map((p) => p.trim().toUpperCase());
-  const out: string[] = [];
-  parts.forEach((p) => {
-    if (p === "F") {
-      // Treat F as skater forward eligibility (C/LW/RW)
-      out.push("C", "LW", "RW");
-    } else if (["C", "LW", "RW", "D", "G"].includes(p)) {
-      out.push(p);
-    }
-  });
-  return Array.from(new Set(out));
-};
 
 const clamp = (v: number, lo: number, hi: number) =>
   Math.max(lo, Math.min(hi, v));
@@ -139,11 +130,11 @@ export function useVORPCalculations({
 
     players.forEach((p) => {
       const id = String(p.playerId);
-      const prefer = Array.isArray((p as any).eligiblePositions)
-        ? ((p as any).eligiblePositions as string[])
-        : undefined;
-      const parsed = parseEligiblePositions(p.displayPosition ?? undefined);
-      const elig = prefer && prefer.length ? prefer : parsed;
+      const parsed = normalizePlayerEligibility(
+        p.displayPosition,
+        Array.isArray(p.eligiblePositions) ? p.eligiblePositions : undefined
+      );
+      const elig = groupPlayerEligibility(parsed, forwardGrouping);
       eligibility.set(id, elig);
     });
 
@@ -200,7 +191,7 @@ export function useVORPCalculations({
       });
 
       players.forEach((p) => {
-        const elig = parseEligiblePositions(p.displayPosition);
+        const elig = eligibility.get(String(p.playerId)) ?? [];
         const isG = elig.includes("G");
         allKeys.forEach((k) => {
           if (isGoalieKey(k) !== isG) return;
@@ -255,7 +246,7 @@ export function useVORPCalculations({
       // Compute composite Z-sum per player
       players.forEach((p) => {
         const id = String(p.playerId);
-        const elig = parseEligiblePositions(p.displayPosition);
+        const elig = eligibility.get(String(p.playerId)) ?? [];
         const isG = elig.includes("G");
         const keysForPlayer = allKeys.filter((k) =>
           isG ? isGoalieKey(k) : !isGoalieKey(k)
@@ -340,199 +331,101 @@ export function useVORPCalculations({
     }
 
     const T = draftSettings.teamCount;
-    const starters = draftSettings.rosterConfig; // C,LW,RW,D,G, utility, bench
+    const starters = getEffectiveRosterConfig(
+      draftSettings.rosterConfig,
+      forwardGrouping
+    );
+    const positions = getRosterPositions(forwardGrouping);
     const utilSkater = starters.utility ?? 0;
-
-    // Allocate UTIL across skater positions; default C/LW/RW only (not D)
-    const utilAdj: Record<string, number> = { C: 0, LW: 0, RW: 0, D: 0, G: 0 };
+    const utilAdj: Record<string, number> = Object.fromEntries(
+      positions.map((position) => [position, 0])
+    );
     if (utilSkater > 0) {
-      const groupCount = UTIL_TO_DEF_ENABLED ? 4 : 3;
-      const share = utilSkater / groupCount; // distribute across selected skater roles
-      utilAdj.C = share;
-      utilAdj.LW = share;
-      utilAdj.RW = share;
-      utilAdj.D = UTIL_TO_DEF_ENABLED ? share : 0;
+      if (forwardGrouping === "fwd") {
+        utilAdj.FWD = utilSkater;
+      } else {
+        const groupCount = UTIL_TO_DEF_ENABLED ? 4 : 3;
+        const share = utilSkater / groupCount;
+        utilAdj.C = share;
+        utilAdj.LW = share;
+        utilAdj.RW = share;
+        utilAdj.D = UTIL_TO_DEF_ENABLED ? share : 0;
+      }
     }
 
-    // Group by position and sort by value desc (FULL POOL)
-    const positions = ["C", "LW", "RW", "D", "G"] as const;
-    const byPosFull: Record<string, Array<{ id: string; value: number }>> = {
-      C: [],
-      LW: [],
-      RW: [],
-      D: [],
-      G: []
-    };
-
-    players.forEach((p) => {
-      const id = String(p.playerId);
-      const val = values.get(id) || 0;
-      const elig = eligibility.get(id) || [];
-      elig.forEach((pos) => {
-        byPosFull[pos].push({ id, value: val });
-      });
-    });
-
-    positions.forEach((pos) => {
-      byPosFull[pos].sort((a, b) => b.value - a.value);
-    });
-
-    // If forward grouping is combined, build a merged forward pool (C+LW+RW)
-    const fwdPoolFull = [...byPosFull.C, ...byPosFull.LW, ...byPosFull.RW].sort(
-      (a, b) => b.value - a.value
+    const byPosFull = buildPositionPools(
+      players.map((player) => String(player.playerId)),
+      values,
+      eligibility,
+      forwardGrouping
+    );
+    const byPosAvail = buildPositionPools(
+      availablePlayers.map((player) => String(player.playerId)),
+      values,
+      eligibility,
+      forwardGrouping
     );
 
-    // Replacement indices (0-based) for VORP and VOLS
     const idxVORP: Record<string, number> = {};
     const idxVOLS: Record<string, number> = {};
-
-    positions.forEach((pos) => {
-      const startersPos = (starters as any)[pos] || 0;
-      let effectiveStarters = startersPos;
-      if (personalizeReplacement) {
-        const filled = myFilledSlots[pos] || 0;
-        effectiveStarters = Math.max(0, startersPos - filled);
-      }
-      const vorpRank1Based = T * (effectiveStarters + (utilAdj[pos] || 0)) + 1;
-      const volsRank1Based = T * effectiveStarters;
-      const vorpIdx = Math.max(0, Math.floor(vorpRank1Based) - 1);
-      const volsIdx = Math.max(0, Math.floor(volsRank1Based) - 1);
-      idxVORP[pos] = vorpIdx;
-      idxVOLS[pos] = volsIdx;
-    });
-
-    // For combined forward mode, compute combined starter count for FWD pool
-    const baseFwdStarters =
-      (starters as any).C + (starters as any).LW + (starters as any).RW;
-    const fwdUtilShare = utilAdj.C + utilAdj.LW + utilAdj.RW;
-    let fwdEffectiveBase = baseFwdStarters;
-    if (personalizeReplacement) {
-      const filledFwd =
-        (myFilledSlots.C || 0) +
-        (myFilledSlots.LW || 0) +
-        (myFilledSlots.RW || 0);
-      fwdEffectiveBase = Math.max(0, baseFwdStarters - filledFwd);
+    for (const position of positions) {
+      const starterCount = Math.max(0, Number(starters[position]) || 0);
+      const filled = personalizeReplacement
+        ? Math.max(0, Number(myFilledSlots[position]) || 0)
+        : 0;
+      const remainingStarters = Math.max(0, starterCount - filled);
+      idxVORP[position] = Math.max(
+        0,
+        Math.floor(T * (remainingStarters + (utilAdj[position] || 0)) + 1) - 1
+      );
+      idxVOLS[position] = Math.max(0, Math.floor(T * remainingStarters) - 1);
     }
-    const fwdStarters = fwdEffectiveBase + fwdUtilShare;
-    const fwdIdxVORP = Math.max(0, Math.floor(T * fwdStarters + 1) - 1);
-    const fwdIdxVOLS = Math.max(
-      0,
-      Math.floor(T * (fwdEffectiveBase + fwdUtilShare)) - 1
-    );
 
-    // Replacement values at indices
-    const replacementByPos: Record<string, { vorp: number; vols: number }> = {
-      C: { vorp: 0, vols: 0 },
-      LW: { vorp: 0, vols: 0 },
-      RW: { vorp: 0, vols: 0 },
-      D: { vorp: 0, vols: 0 },
-      G: { vorp: 0, vols: 0 }
-    };
+    const replacementByPos: Record<
+      string,
+      { vorp: number; vols: number }
+    > = {};
+    const replacementPools =
+      baselineMode === "full" ? byPosFull : byPosAvail;
+    for (const position of positions) {
+      const pool = replacementPools[position] ?? [];
+      const vorpIndex = Math.min(
+        idxVORP[position],
+        Math.max(0, pool.length - 1)
+      );
+      const volsIndex = Math.min(
+        idxVOLS[position],
+        Math.max(0, pool.length - 1)
+      );
+      replacementByPos[position] = {
+        vorp: pool[vorpIndex]?.value ?? 0,
+        vols: pool[volsIndex]?.value ?? 0
+      };
+    }
 
-    // AVAILABLE POOL for VONA
-    const byPosAvail: Record<string, Array<{ id: string; value: number }>> = {
-      C: [],
-      LW: [],
-      RW: [],
-      D: [],
-      G: []
-    };
-    availablePlayers.forEach((p) => {
-      const id = String(p.playerId);
-      const val = values.get(id) || 0;
-      const elig = eligibility.get(id) || [];
-      elig.forEach((pos) => {
-        byPosAvail[pos].push({ id, value: val });
+    const currentRankIdx: Record<string, Record<string, number>> =
+      Object.fromEntries(positions.map((position) => [position, {}]));
+    for (const position of positions) {
+      (byPosAvail[position] ?? []).forEach((player, index) => {
+        currentRankIdx[position][player.id] = index;
       });
-    });
-    positions.forEach((pos) =>
-      byPosAvail[pos].sort((a, b) => b.value - a.value)
-    );
+    }
 
-    const fwdPoolAvail = [
-      ...byPosAvail.C,
-      ...byPosAvail.LW,
-      ...byPosAvail.RW
-    ].sort((a, b) => b.value - a.value);
-
-    // Replacement values: ALWAYS from FULL pool (stable, comparable)
-    positions.forEach((pos) => {
-      if (
-        forwardGrouping === "fwd" &&
-        (pos === "C" || pos === "LW" || pos === "RW")
-      ) {
-        const arr = fwdPoolFull;
-        const vorpIdx = Math.min(fwdIdxVORP, Math.max(0, arr.length - 1));
-        const volsIdx = Math.min(fwdIdxVOLS, Math.max(0, arr.length - 1));
-        const vorpVal = arr[vorpIdx]?.value ?? 0;
-        const volsVal = arr[volsIdx]?.value ?? 0;
-        replacementByPos[pos] = { vorp: vorpVal, vols: volsVal };
-      } else {
-        const arr = byPosFull[pos];
-        const vorpIdx = Math.min(idxVORP[pos], Math.max(0, arr.length - 1));
-        const volsIdx = Math.min(idxVOLS[pos], Math.max(0, arr.length - 1));
-        const vorpVal = arr[vorpIdx]?.value ?? 0;
-        const volsVal = arr[volsIdx]?.value ?? 0;
-        replacementByPos[pos] = { vorp: vorpVal, vols: volsVal };
-      }
-    });
-
-    // Build quick index lookup of current rank in available list per pos
-    const currentRankIdx: Record<string, Record<string, number>> = {
-      C: {},
-      LW: {},
-      RW: {},
-      D: {},
-      G: {}
-    };
-    positions.forEach((pos) => {
-      byPosAvail[pos].forEach((p, idx) => {
-        currentRankIdx[pos][p.id] = idx;
-      });
-    });
-
-    // Estimate expected players taken per position in the next N picks using ADP shares
     const N = Math.max(0, Math.floor(picksUntilNext));
-    const adpSorted = [...availablePlayers]
-      .filter((p) => Number.isFinite(p.yahooAvgPick))
-      .sort((a, b) => a.yahooAvgPick! - b.yahooAvgPick!);
-    const topN = adpSorted.slice(0, N);
-
-    const expectedTaken: Record<string, number> = {
-      C: 0,
-      LW: 0,
-      RW: 0,
-      D: 0,
-      G: 0
-    };
-    if (forwardGrouping === "fwd") {
-      let fwdExpected = 0;
-      topN.forEach((p) => {
-        const elig = parseEligiblePositions(p.displayPosition);
-        const isD = elig.includes("D");
-        const isG = elig.includes("G");
-        if (!isD && !isG && elig.length > 0) {
-          fwdExpected += 1;
-        } else if (isD) {
-          expectedTaken.D += 1;
-        } else if (isG) {
-          expectedTaken.G += 1;
-        }
-      });
-      const share = fwdExpected / 3;
-      expectedTaken.C += share;
-      expectedTaken.LW += share;
-      expectedTaken.RW += share;
-    } else {
-      topN.forEach((p) => {
-        const elig = parseEligiblePositions(p.displayPosition);
-        const valid = elig.filter((pos) => positions.includes(pos as any));
-        if (valid.length === 0) return;
-        const frac = 1 / valid.length;
-        valid.forEach((pos) => {
-          expectedTaken[pos] += frac;
-        });
-      });
+    const topN = [...availablePlayers]
+      .filter((player) => Number.isFinite(player.yahooAvgPick))
+      .sort((left, right) => left.yahooAvgPick! - right.yahooAvgPick!)
+      .slice(0, N);
+    const expectedTaken: Record<string, number> = Object.fromEntries(
+      positions.map((position) => [position, 0])
+    );
+    for (const player of topN) {
+      const valid = (eligibility.get(String(player.playerId)) ?? []).filter(
+        (position) => positions.includes(position)
+      );
+      if (!valid.length) continue;
+      const share = 1 / valid.length;
+      for (const position of valid) expectedTaken[position] += share;
     }
 
     // Compute metrics per player, choose best eligible position

@@ -586,6 +586,12 @@ export default function HotColdCard({
                     <Link
                       href={buildForgeHref(`/trends/player/${row.playerId}`, {
                         date,
+                        metricGroup: "rates",
+                        metrics: [
+                          "goals_per_60",
+                          "sog_per_60",
+                          "ixg_per_60"
+                        ],
                         origin: "forge-dashboard",
                         returnTo: returnToHref
                       })}
@@ -672,6 +678,12 @@ export default function HotColdCard({
                     <Link
                       href={buildForgeHref(`/trends/player/${row.playerId}`, {
                         date,
+                        metricGroup: "rates",
+                        metrics: [
+                          "goals_per_60",
+                          "sog_per_60",
+                          "ixg_per_60"
+                        ],
                         origin: "forge-dashboard",
                         returnTo: returnToHref
                       })}

@@ -235,6 +235,30 @@ export async function ensureGamePredictionModelVersion(args: {
   if (error) throw error;
 }
 
+export async function ensureGamePredictionModelVersionForScoring(args: {
+  client: SupabaseClient<Database>;
+  modelName: string;
+  modelVersion: string;
+  featureSetVersion: string;
+}): Promise<"existing" | "created_candidate"> {
+  const { data, error } = await args.client
+    .from("game_prediction_model_versions")
+    .select("status")
+    .eq("model_name", args.modelName)
+    .eq("model_version", args.modelVersion)
+    .eq("feature_set_version", args.featureSetVersion)
+    .maybeSingle();
+  if (error) throw error;
+  if (data) return "existing";
+
+  await ensureGamePredictionModelVersion({
+    ...args,
+    algorithm: "regularized_logistic_baseline",
+    status: "candidate",
+  });
+  return "created_candidate";
+}
+
 export function servingModelVersionPersistenceAction(args: {
   modelName: string;
   modelVersion: string;
@@ -1234,12 +1258,11 @@ export async function scoreGamePredictions(args: {
   });
 
   if (!args.dryRun) {
-    await ensureGamePredictionModelVersion({
+    await ensureGamePredictionModelVersionForScoring({
       client: args.client,
       modelName: args.modelName,
       modelVersion: args.modelVersion,
       featureSetVersion: args.featureSetVersion,
-      algorithm: "regularized_logistic_baseline",
     });
     await persistMetricInserts(args.client, metricRows);
   }

@@ -313,6 +313,7 @@ export async function loadCommandCenterData(
     ),
     requestJson<unknown>(
       buildQuery("/api/v1/trends/skater-power", {
+        date: routeState.date,
         position:
           routeState.position === "d"
             ? "defense"

@@ -15,6 +15,7 @@ import {
   loadXgModelArtifact,
   resolveXgArtifactPredictionType,
 } from "lib/xg/shotFeaturePersistence";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 const MODEL_ARTIFACT_PATH_ENV_VAR = "NHL_XG_MODEL_ARTIFACT_PATH";
 
@@ -120,6 +121,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default withCronJobAudit(handler, {
+export default withCronJobAudit(adminOnly(handler as any), {
   jobName: "register-nhl-xg-model",
 });

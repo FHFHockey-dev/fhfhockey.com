@@ -211,6 +211,7 @@ export type AccountabilityDashboard = {
 
 export type WalkForwardBacktestResult = AccountabilityDashboard & {
   seasonId: number;
+  trainingSeasonIds: number[];
   trainingStartDate: string;
   trainingEndDate: string;
   replayStartDate: string;
@@ -362,12 +363,32 @@ export type BacktestPromotionEvidence = {
 
 type BacktestTrainingExample = GamePredictionBaselineExample & {
   seasonPhase: SeasonPhase;
+  seasonId: number;
 };
+
+export const BACKTEST_SEASON_RECENCY_WEIGHT_VERSION =
+  "training_season_recency_v1_current_1_prev_0_65_prev2_0_35_prev3plus_0_2";
+
+export function trainingSeasonRecencyWeight(
+  targetSeasonId: number,
+  exampleSeasonId: number,
+): number {
+  const targetStartYear = Number(String(targetSeasonId).slice(0, 4));
+  const exampleStartYear = Number(String(exampleSeasonId).slice(0, 4));
+  const seasonsBack = targetStartYear - exampleStartYear;
+  if (!Number.isFinite(seasonsBack) || seasonsBack <= 0) return 1;
+  if (seasonsBack === 1) return 0.65;
+  if (seasonsBack === 2) return 0.35;
+  return 0.2;
+}
 
 type BacktestCandidateModel = BinaryLogisticModel | GamePredictionExtraTreesModel;
 
 type BacktestProbabilityBlend = {
-  method: "training_home_prior";
+  method:
+    | "training_home_prior"
+    | "goal_differential_anchor"
+    | "standings_point_pct_anchor";
   modelWeight: number;
 };
 
@@ -399,7 +420,35 @@ export type GamePredictionFeatureSignalAnalysisResult = {
   analyzedGames: number;
   featureVectorOptions: BaselineFeatureVectorOptions;
   analysis: BaselineFeatureSignalAnalysis;
+  segmentAnalyses: GamePredictionFeatureSignalSegmentAnalysis[];
 };
+
+export type GamePredictionFeatureSignalSegmentAnalysis = {
+  phase: SeasonPhase;
+  analyzedGames: number;
+  analysis: BaselineFeatureSignalAnalysis | null;
+};
+
+export function buildFeatureSignalSegmentAnalyses(
+  examples: Array<{
+    phase: SeasonPhase;
+    example: GamePredictionBaselineExample;
+  }>,
+): GamePredictionFeatureSignalSegmentAnalysis[] {
+  return SEASON_PHASES.map((phase) => {
+    const phaseExamples = examples
+      .filter((entry) => entry.phase === phase)
+      .map((entry) => entry.example);
+    return {
+      phase,
+      analyzedGames: phaseExamples.length,
+      analysis:
+        phaseExamples.length > 0
+          ? analyzeBaselineFeatureSignals(phaseExamples)
+          : null,
+    };
+  });
+}
 
 export type GamePredictionAccuracyImprovementLoopResult = {
   generatedAt: string;
@@ -832,8 +881,15 @@ function smoothedHomeWinRate(
   examples: readonly GamePredictionBaselineExample[],
 ): number {
   if (examples.length === 0) return 0.54;
-  const homeWins = examples.reduce((sum, example) => sum + example.label, 0);
-  return roundProbability((homeWins + 1) / (examples.length + 2));
+  const totalWeight = examples.reduce(
+    (sum, example) => sum + (example.weight ?? 1),
+    0,
+  );
+  const homeWins = examples.reduce(
+    (sum, example) => sum + example.label * (example.weight ?? 1),
+    0,
+  );
+  return roundProbability((homeWins + 1) / (totalWeight + 2));
 }
 
 const RECENT_FORM_FEATURE_KEYS: readonly BaselineFeatureKey[] = [
@@ -856,6 +912,42 @@ const RECENT_FORM_FEATURE_KEYS: readonly BaselineFeatureKey[] = [
   "homeMinusAwayRecent20XgaPer60",
   "homeMinusAwayRecent40XgaPer60",
 ];
+
+const ROSTER_PRIOR_CANDIDATE_FEATURE_KEYS: readonly BaselineFeatureKey[] = [
+  "homeMinusAwayRosterOffImpact",
+  "homeMinusAwayRosterDefImpact",
+  "homeMinusAwayRosterGoalieImpact",
+];
+
+const PER60_ONLY_ROSTER_PRIOR_FEATURE_KEYS: readonly BaselineFeatureKey[] = [
+  "homeMinusAwayRosterOffImpactPer60Only",
+  "homeMinusAwayRosterDefImpactPer60Only",
+  "homeMinusAwayRosterGoalieImpactPer60Only",
+];
+
+const TIME_WEIGHTED_ROSTER_FORM_FEATURE_KEYS: readonly BaselineFeatureKey[] = [
+  "homeMinusAwayWeightedRosterOffImpact",
+  "homeMinusAwayWeightedRosterDefImpact",
+  "homeMinusAwayWeightedRosterGoalieImpact",
+  "homeMinusAwayWeightedRecent10GoalDifferentialPerGame",
+  "homeMinusAwayWeightedRecent10XgfPct",
+];
+
+const SOS_ADJUSTED_FORM_FEATURE_KEYS: readonly BaselineFeatureKey[] = [
+  "homeMinusAwayLast5OpponentCompositeRating",
+  "homeMinusAwayLast10OpponentCompositeRating",
+  "homeMinusAwayAdjustedRecent5GoalDifferentialPerGame",
+  "homeMinusAwayAdjustedRecent10GoalDifferentialPerGame",
+  "homeMinusAwayAdjustedRecent5XgfPct",
+  "homeMinusAwayAdjustedRecent10XgfPct",
+];
+
+function candidateExclusionsExcept(
+  includedKeys: readonly BaselineFeatureKey[],
+): BaselineFeatureKey[] {
+  const included = new Set(includedKeys);
+  return CANDIDATE_ONLY_FEATURE_KEYS.filter((key) => !included.has(key));
+}
 
 export const DEFAULT_BACKTEST_ABLATION_VARIANTS: BacktestAblationVariant[] = [
   {
@@ -951,6 +1043,81 @@ export const DEFAULT_BACKTEST_ABLATION_VARIANTS: BacktestAblationVariant[] = [
     },
   },
   {
+    key: "roster_prior_candidate",
+    label: "Candidate TOI-shrunk roster priors",
+    featureVectorOptions: {
+      includeDefaultExcludedFeatureKeys: true,
+      excludedFeatureKeys: candidateExclusionsExcept(
+        ROSTER_PRIOR_CANDIDATE_FEATURE_KEYS,
+      ),
+    },
+    modelAuditMetadata: {
+      rosterImpactVersion: "player_impact_ratings_v1_toi_weighted",
+      probabilityBlendVersion: "none",
+    },
+  },
+  {
+    key: "per60_only_roster_prior_candidate",
+    label: "Candidate unshrunk per60 roster priors",
+    featureVectorOptions: {
+      includeDefaultExcludedFeatureKeys: true,
+      excludedFeatureKeys: candidateExclusionsExcept(
+        PER60_ONLY_ROSTER_PRIOR_FEATURE_KEYS,
+      ),
+    },
+    modelAuditMetadata: {
+      rosterImpactVersion: "player_impact_ratings_v1_per60_unshrunk",
+      probabilityBlendVersion: "none",
+    },
+  },
+  {
+    key: "time_weighted_roster_form_candidate",
+    label: "Candidate time-weighted roster and current form",
+    featureVectorOptions: {
+      includeDefaultExcludedFeatureKeys: true,
+      excludedFeatureKeys: candidateExclusionsExcept(
+        TIME_WEIGHTED_ROSTER_FORM_FEATURE_KEYS,
+      ),
+    },
+    modelAuditMetadata: {
+      rosterImpactVersion: "player_impact_ratings_v1_toi_weighted",
+      probabilityBlendVersion:
+        "roster_form_blend_v1_gp0_80_20_gp10_70_30_gp25_50_50_gp50_15_85_gp82_10_90",
+    },
+  },
+  {
+    key: "sos_adjusted_form_candidate",
+    label: "Candidate SoS-adjusted current form",
+    featureVectorOptions: {
+      includeDefaultExcludedFeatureKeys: true,
+      excludedFeatureKeys: candidateExclusionsExcept(
+        SOS_ADJUSTED_FORM_FEATURE_KEYS,
+      ),
+    },
+    modelAuditMetadata: {
+      strengthOfScheduleVersion:
+        "sos_adjusted_form_v1_neutral50_goal_diff_div50_xgf_scale_0_05",
+      probabilityBlendVersion: "none",
+    },
+  },
+  {
+    key: "roster_plus_sos_candidate",
+    label: "Candidate roster priors plus SoS-adjusted form",
+    featureVectorOptions: {
+      includeDefaultExcludedFeatureKeys: true,
+      excludedFeatureKeys: candidateExclusionsExcept([
+        ...ROSTER_PRIOR_CANDIDATE_FEATURE_KEYS,
+        ...SOS_ADJUSTED_FORM_FEATURE_KEYS,
+      ]),
+    },
+    modelAuditMetadata: {
+      rosterImpactVersion: "player_impact_ratings_v1_toi_weighted",
+      strengthOfScheduleVersion:
+        "sos_adjusted_form_v1_neutral50_goal_diff_div50_xgf_scale_0_05",
+      probabilityBlendVersion: "none",
+    },
+  },
+  {
     key: "training_home_prior_blend_candidate",
     label: "Training home-prior blend",
     probabilityBlend: {
@@ -960,6 +1127,28 @@ export const DEFAULT_BACKTEST_ABLATION_VARIANTS: BacktestAblationVariant[] = [
     modelAuditMetadata: {
       probabilityBlendVersion: "training_home_prior_blend_v1",
       seasonDecayVersion: "none",
+    },
+  },
+  {
+    key: "goal_differential_anchor_blend_candidate",
+    label: "50/50 model and goal-differential anchor",
+    probabilityBlend: {
+      method: "goal_differential_anchor",
+      modelWeight: 0.5,
+    },
+    modelAuditMetadata: {
+      probabilityBlendVersion: "goal_differential_anchor_blend_v1_model_0_5",
+    },
+  },
+  {
+    key: "standings_point_pct_anchor_blend_candidate",
+    label: "50/50 model and standings-point-% anchor",
+    probabilityBlend: {
+      method: "standings_point_pct_anchor",
+      modelWeight: 0.5,
+    },
+    modelAuditMetadata: {
+      probabilityBlendVersion: "standings_point_pct_anchor_blend_v1_model_0_5",
     },
   },
   {
@@ -2997,6 +3186,7 @@ function toTrainingExample(args: {
   payload: GamePredictionFeatureSnapshotPayload;
   outcome: CompletedGameOutcome;
   featureVectorOptions?: BaselineFeatureVectorOptions;
+  targetSeasonId?: number;
 }): BacktestTrainingExample {
   const example = buildBaselineTrainingDataset(
     [
@@ -3011,6 +3201,11 @@ function toTrainingExample(args: {
   return {
     ...example,
     seasonPhase: args.payload.seasonPhase.phase,
+    seasonId: args.payload.seasonId,
+    weight: trainingSeasonRecencyWeight(
+      args.targetSeasonId ?? args.payload.seasonId,
+      args.payload.seasonId,
+    ),
   };
 }
 
@@ -3218,9 +3413,25 @@ function predictGameWithBacktestModel(args: {
     Math.max(0, args.probabilityBlend.modelWeight),
   );
   const trainingHomeWinRate = roundProbability(args.trainingHomeWinRate ?? 0.54);
+  const blendAnchorProbability =
+    args.probabilityBlend.method === "goal_differential_anchor"
+      ? boundedEdgeProbability(
+          args.payload.matchup.homeMinusAwayGoalDifferential,
+          100,
+          0.53,
+          0.68,
+        )
+      : args.probabilityBlend.method === "standings_point_pct_anchor"
+        ? boundedEdgeProbability(
+            args.payload.matchup.homeMinusAwayPointPctg,
+            0.3,
+            0.53,
+            0.68,
+          )
+        : trainingHomeWinRate;
   const blendedHomeProbability = roundProbability(
-    trainingHomeWinRate +
-      modelWeight * (prediction.homeWinProbability - trainingHomeWinRate),
+    blendAnchorProbability +
+      modelWeight * (prediction.homeWinProbability - blendAnchorProbability),
   );
   const winnerDecisionThreshold = Math.max(
     0.01,
@@ -3245,6 +3456,7 @@ function predictGameWithBacktestModel(args: {
       pre_blend_home_win_probability: prediction.homeWinProbability,
       probability_blend_method: args.probabilityBlend.method,
       probability_blend_model_weight: modelWeight,
+      probability_blend_anchor_probability: blendAnchorProbability,
       training_home_win_rate: trainingHomeWinRate,
       blended_home_win_probability: blendedHomeProbability,
       selected_threshold_predicted_winner_team_id: predictedWinnerTeamId,
@@ -3254,6 +3466,7 @@ function predictGameWithBacktestModel(args: {
       confidence_label: getConfidenceLabel(blendedHomeProbability),
       probability_blend_method: args.probabilityBlend.method,
       probability_blend_model_weight: modelWeight,
+      probability_blend_anchor_probability: blendAnchorProbability,
       training_home_win_rate: trainingHomeWinRate,
       selected_threshold_predicted_winner_team_id: predictedWinnerTeamId,
     },
@@ -3293,7 +3506,10 @@ export async function runGamePredictionFeatureSignalAnalysis(args: {
     includeDefaultExcludedFeatureKeys: true,
   };
 
-  const examples: GamePredictionBaselineExample[] = [];
+  const segmentedExamples: Array<{
+    phase: SeasonPhase;
+    example: GamePredictionBaselineExample;
+  }> = [];
   for (const game of analysisGames) {
     const outcome = outcomesByGameId.get(game.id);
     if (!outcome) continue;
@@ -3303,14 +3519,17 @@ export async function runGamePredictionFeatureSignalAnalysis(args: {
       game.date,
       featureSetVersion,
     );
-    examples.push(
-      toTrainingExample({
+    segmentedExamples.push({
+      phase: payload.seasonPhase.phase,
+      example: toTrainingExample({
         payload,
         outcome,
         featureVectorOptions,
       }),
-    );
+    });
   }
+
+  const examples = segmentedExamples.map((entry) => entry.example);
 
   if (examples.length === 0) {
     throw new Error("No feature examples could be built for signal analysis.");
@@ -3326,6 +3545,7 @@ export async function runGamePredictionFeatureSignalAnalysis(args: {
     analyzedGames: examples.length,
     featureVectorOptions,
     analysis: analyzeBaselineFeatureSignals(examples),
+    segmentAnalyses: buildFeatureSignalSegmentAnalyses(segmentedExamples),
   };
 }
 
@@ -3431,6 +3651,7 @@ async function persistBacktestResult(args: {
         validation_metrics: result.summary as unknown as Json,
         metadata: {
           season_id: result.seasonId,
+          training_season_ids: result.trainingSeasonIds,
           retrain_cadence_games: result.retrainCadenceGames,
           horizon_days: result.horizonDays,
           prediction_snapshots: result.predictionSnapshots,
@@ -3465,6 +3686,7 @@ async function persistBacktestResult(args: {
       status: "completed",
       metrics: result.summary as unknown as Json,
       metadata: {
+        training_season_ids: result.trainingSeasonIds,
         horizon_days: result.horizonDays,
         prediction_snapshots: result.predictionSnapshots,
         baseline_comparisons: result.baselineComparisons ?? [],
@@ -3539,6 +3761,7 @@ async function persistBacktestResult(args: {
 export async function runWalkForwardBacktest(args: {
   client: SupabaseClient<Database>;
   seasonId: number;
+  trainingSeasonIds?: number[];
   gameType?: number;
   modelName?: string;
   modelVersion?: string;
@@ -3571,11 +3794,20 @@ export async function runWalkForwardBacktest(args: {
   const featureSetVersion =
     args.featureSetVersion ?? GAME_PREDICTION_FEATURE_SET_VERSION;
   const retrainCadenceGames = Math.max(1, args.retrainCadenceGames ?? 1);
-  const { games, outcomes } = await fetchCompletedSeasonGames({
-    client: args.client,
-    seasonId: args.seasonId,
-    gameType: args.gameType ?? 2,
-  });
+  const trainingSeasonIds = Array.from(
+    new Set([...(args.trainingSeasonIds ?? []), args.seasonId]),
+  ).sort((left, right) => left - right);
+  const seasonData = await Promise.all(
+    trainingSeasonIds.map((seasonId) =>
+      fetchCompletedSeasonGames({
+        client: args.client,
+        seasonId,
+        gameType: args.gameType ?? 2,
+      }),
+    ),
+  );
+  const games = seasonData.flatMap((entry) => entry.games);
+  const outcomes = seasonData.flatMap((entry) => entry.outcomes);
   const hasBlindWindow = Boolean(args.trainStartDate && args.blindDate);
   const { trainingGames, replayGames } = selectWalkForwardBacktestGameWindows({
     games,
@@ -3641,6 +3873,7 @@ export async function runWalkForwardBacktest(args: {
         payload,
         outcome,
         featureVectorOptions: args.featureVectorOptions,
+        targetSeasonId: args.seasonId,
       }),
     );
   }
@@ -3701,6 +3934,7 @@ export async function runWalkForwardBacktest(args: {
             payload,
             outcome,
             featureVectorOptions: args.featureVectorOptions,
+            targetSeasonId: args.seasonId,
           }),
         );
         addedTrainingGameIds.add(game.id);
@@ -3828,6 +4062,7 @@ export async function runWalkForwardBacktest(args: {
           payload,
           outcome,
           featureVectorOptions: args.featureVectorOptions,
+          targetSeasonId: args.seasonId,
         }),
       );
       replayedSinceRetrain += 1;
@@ -3878,6 +4113,7 @@ export async function runWalkForwardBacktest(args: {
   const result: WalkForwardBacktestResult = {
     ...dashboard,
     seasonId: args.seasonId,
+    trainingSeasonIds,
     trainingStartDate: trainingGames[0]!.date,
     trainingEndDate: trainingGames[trainingGames.length - 1]!.date,
     replayStartDate:
@@ -3898,7 +4134,7 @@ export async function runWalkForwardBacktest(args: {
         args.winnerDecisionThreshold ?? BASELINE_WINNER_DECISION_THRESHOLD,
       rosterImpactVersion: "none",
       strengthOfScheduleVersion: "none",
-      seasonDecayVersion: "none",
+      seasonDecayVersion: BACKTEST_SEASON_RECENCY_WEIGHT_VERSION,
       probabilityBlendVersion: "none",
       ...args.modelAuditMetadata,
       ...(args.probabilityBlend

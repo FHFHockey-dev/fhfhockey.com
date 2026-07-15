@@ -302,4 +302,50 @@ describe("/api/v1/trends/skater-power", () => {
     expect(res.body.windowSize).toBe(20);
     expect(res.body.categories.shotsPer60.rankings[0].latestValue).toBeCloseTo(11.5, 5);
   });
+
+  it("shrinks tiny-sample percentiles toward neutral and suppresses rank deltas", async () => {
+    supabaseState.current = buildSupabaseMock(
+      [8471214, 8471215].flatMap((playerId, playerIndex) =>
+        Array.from({ length: 6 }, (_, index) => ({
+          player_id: playerId,
+          game_date: `2026-04-${String(index + 1).padStart(2, "0")}`,
+          raw_value: playerIndex === 0 ? index + 10 : index + 1,
+          rolling_avg_3: playerIndex === 0 ? index + 10 : index + 1,
+          rolling_avg_5: playerIndex === 0 ? index + 10 : index + 1,
+          rolling_avg_10: playerIndex === 0 ? index + 10 : index + 1,
+          season_id: 20252026,
+          position_code: "C"
+        }))
+      )
+    );
+
+    const req: any = {
+      method: "GET",
+      query: {
+        date: "2026-04-06",
+        position: "forward",
+        window: "1",
+        limit: "10"
+      }
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.samplePolicy).toEqual({
+      minimumGames: 10,
+      lowSamplePercentiles: "shrink_to_neutral",
+      suppressLowSampleRankDelta: true
+    });
+    expect(res.body.categories.shotsPer60.rankings[0]).toMatchObject({
+      percentile: 80,
+      rawPercentile: 100,
+      gp: 6,
+      sampleConfidence: "low",
+      minimumSampleGames: 10,
+      previousRank: null,
+      delta: 0
+    });
+  });
 });

@@ -365,6 +365,13 @@ export default function SustainabilityCard({
                       <Link
                         href={buildForgeHref(`/trends/player/${row.player_id}`, {
                           date,
+                          metricGroup: "finishing",
+                          metrics: [
+                            "shooting_pct",
+                            "on_ice_sh_pct",
+                            "pdo",
+                            "ipp"
+                          ],
                           origin: "forge-dashboard",
                           returnTo: returnToHref
                         })}
@@ -445,6 +452,13 @@ export default function SustainabilityCard({
                       <Link
                         href={buildForgeHref(`/trends/player/${row.player_id}`, {
                           date,
+                          metricGroup: "finishing",
+                          metrics: [
+                            "shooting_pct",
+                            "on_ice_sh_pct",
+                            "pdo",
+                            "ipp"
+                          ],
                           origin: "forge-dashboard",
                           returnTo: returnToHref
                         })}

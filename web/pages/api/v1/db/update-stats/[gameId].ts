@@ -1,6 +1,24 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\api\v1\db\update-stats\[gameId].ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { buildNhlGameSummaryReportUrl } from "lib/NHL/htmlReports";
+import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
+import {
+  assertCompletePlayerGameStatsBatches,
+  assertCompletePlayerGameStatsSource,
+  assertCompleteTeamGameStatsSource,
+  assertMatchingGameIdentity,
+  getGameStatsCompletenessFailureDetails,
+} from "lib/cron/gameStatsCompleteness";
+import {
+  getTransactionalGameStatsFailureDetails,
+  persistCompleteGameStatsTransaction,
+} from "lib/cron/transactionalGameStatsPersistence";
+import {
+  StatsPreWriteQuarantineError,
+  getStatsPreWriteQuarantineFailureDetails,
+  sanitizeCronDiagnostic,
+} from "lib/cron/statsUpdateSafety";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { HTMLElement, parse } from "node-html-parser";
 import { get } from "lib/NHL/base"; // Assuming 'get' fetches and parses JSON
@@ -177,34 +195,59 @@ type PlayerCounts = { [playerId: number]: number };
 
 // --- API Route Logic ---
 
-export default withCronJobAudit(adminOnly(async (req, res) => {
-  const { supabase } = req;
-  const gameId = Number(req.query.gameId);
+export default withCronJobAudit(
+  adminOnly(async (req, res) => {
+    const { supabase } = req;
+    const gameId = Number(req.query.gameId);
 
-  // Corrected NaN check
-  if (isNaN(gameId) || gameId <= 0) {
-    return res.status(400).json({
-      message: "gameId is required and must be a positive number",
-      success: false
-    });
-  }
+    // Corrected NaN check
+    if (!Number.isSafeInteger(gameId) || gameId <= 0) {
+      return res.status(400).json({
+        message: "gameId is required and must be a positive number",
+        success: false,
+      });
+    }
 
-  try {
-    await updateStats(gameId, supabase);
-    return res.json({
-      gameId,
-      message: `Successfully updated stats for game ${gameId}`,
-      success: true
-    });
-  } catch (e: any) {
-    console.error(`Error in route handler for game ${gameId}:`, e);
-    const errorMessage = e.message || "An unknown error occurred.";
-    return res.status(400).json({
-      message: `Failed to update stats for game ${gameId}. ${errorMessage}`,
-      success: false
-    });
-  }
-}));
+    try {
+      await updateStats(gameId, supabase);
+      return res.json({
+        gameId,
+        message: `Successfully updated stats for game ${gameId}`,
+        success: true,
+      });
+    } catch (e: any) {
+      const failure =
+        getGameStatsCompletenessFailureDetails(e) ??
+        getTransactionalGameStatsFailureDetails(e) ??
+        getStatsPreWriteQuarantineFailureDetails(e);
+      if (failure) {
+        console.error("Direct stats game update failed.", {
+          gameId,
+          kind: failure.kind,
+          code: failure.code,
+        });
+        return res.status(500).json({
+          message: `Failed to update stats for game ${gameId}.`,
+          success: false,
+          failure,
+          failedRows: failure.requestedRows,
+        });
+      }
+
+      const dependencyError = normalizeDependencyError(e);
+      console.error("Direct stats dependency failed.", {
+        gameId,
+        classification: dependencyError.classification,
+        message: dependencyError.message,
+      });
+      return res.status(500).json({
+        message: `Failed to update stats for game ${gameId}. ${dependencyError.message}`,
+        success: false,
+        dependencyError,
+      });
+    }
+  }),
+);
 
 // --- Core Stat Update Logic ---
 
@@ -222,70 +265,71 @@ export async function updateStats(gameId: number, supabase: SupabaseClient) {
   const season: number | undefined = landing?.season;
   const gameIdentifier: number = landing?.id;
 
+  assertMatchingGameIdentity({
+    requestedGameId: gameId,
+    landingGameId: gameIdentifier,
+  });
+
   // Validate essential data from landing
-  if (!gameState || !season || !gameIdentifier) {
+  if (!gameState || !season) {
     throw new Error(
-      `Essential game data (gameState, season, id) missing from landing endpoint for game ${gameId}`
-    );
-  }
-  if (gameIdentifier !== gameId) {
-    console.warn(
-      `Mismatch between requested gameId (${gameId}) and landing data gameId (${gameIdentifier}). Using landing data ID.`
+      `Essential game data (gameState or season) missing from landing endpoint for game ${gameId}`,
     );
   }
 
   console.log(`Game ${gameIdentifier}: State=${gameState}, Season=${season}`);
 
   if (!isGameFinished(gameState)) {
-    throw new Error(
-      `Game ${gameIdentifier} is not finished. gameState: ${gameState}`
-    );
+    throw new StatsPreWriteQuarantineError({
+      kind: "stats_pre_write_quarantine_failure",
+      code: "STATS_PRE_WRITE_QUARANTINE_ELIGIBLE",
+      phase: "pre_write_validation",
+      gameId: gameIdentifier,
+      requestedRows: 1,
+      reason: "game_not_finished",
+      message: `Game ${gameIdentifier} is not finished. gameState: ${gameState}`,
+    });
   }
 
   // Fetch teamGameStats from /right-rail
   const rightRail = await get(`/gamecenter/${gameIdentifier}/right-rail`);
   // Consider adding validation for the rightRail object structure
 
-  const teamGameStats: TeamGameStat[] = rightRail?.teamGameStats;
-  if (!teamGameStats || !Array.isArray(teamGameStats)) {
-    console.warn(
-      `teamGameStats missing or invalid in right-rail for game ${gameIdentifier}. Skipping team stats update.`
-    );
-  } else {
-    console.log(`Processing teamGameStats for game ${gameIdentifier}...`);
-    const homeTeamGameStats = await processTeamGameStats(
-      gameIdentifier,
-      teamGameStats,
-      true,
-      landing,
-      season.toString(),
-      rightRail
-    );
-    const awayTeamGameStats = await processTeamGameStats(
-      gameIdentifier,
-      teamGameStats,
-      false,
-      landing,
-      season.toString(),
-      rightRail
-    );
-
-    console.log(`Upserting teamGameStats for game ${gameIdentifier}...`);
-    await supabase
-      .from("teamGameStats")
-      .upsert([homeTeamGameStats, awayTeamGameStats])
-      .throwOnError();
-    console.log(
-      `Successfully upserted team game stats for game ${gameIdentifier}`
-    );
-  }
+  const rawTeamGameStats: unknown = rightRail?.teamGameStats;
+  assertCompleteTeamGameStatsSource({
+    gameId: gameIdentifier,
+    teamGameStats: rawTeamGameStats,
+    teamIds: [landing?.homeTeam?.id, landing?.awayTeam?.id],
+  });
+  const teamGameStats = rawTeamGameStats as TeamGameStat[];
+  console.log(`Processing teamGameStats for game ${gameIdentifier}...`);
+  const homeTeamGameStats = await processTeamGameStats(
+    gameIdentifier,
+    teamGameStats,
+    true,
+    landing,
+    season.toString(),
+    rightRail,
+  );
+  const awayTeamGameStats = await processTeamGameStats(
+    gameIdentifier,
+    teamGameStats,
+    false,
+    landing,
+    season.toString(),
+    rightRail,
+  );
 
   // Fetch boxscore - needed for playerByGameStats
   // (Verify if landing endpoint also contains playerByGameStats reliably)
   console.log(
-    `Workspaceing boxscore for game ${gameIdentifier} (needed for playerByGameStats)...`
+    `Workspaceing boxscore for game ${gameIdentifier} (needed for playerByGameStats)...`,
   );
   const boxscore = await get(`/gamecenter/${gameIdentifier}/boxscore`);
+  assertCompletePlayerGameStatsSource({
+    gameId: gameIdentifier,
+    boxscore,
+  });
   // Add validation for boxscore if needed
 
   // *** Process Scoring Summary for PPA, SHG, SHA using LANDING data ***
@@ -297,7 +341,7 @@ export async function updateStats(gameId: number, supabase: SupabaseClient) {
   const scoringPeriods = landing?.summary?.scoring; // <--- CHANGE: Read from landing
   if (scoringPeriods && Array.isArray(scoringPeriods)) {
     console.log(
-      `Processing scoring summary from LANDING data for game ${gameIdentifier}...`
+      `Processing scoring summary from LANDING data for game ${gameIdentifier}...`,
     ); // Updated log
     for (const period of scoringPeriods) {
       const goalsInPeriod = period?.goals;
@@ -335,12 +379,12 @@ export async function updateStats(gameId: number, supabase: SupabaseClient) {
       }
     } // end periods loop
     console.log(
-      `Finished processing scoring summary for game ${gameIdentifier}.`
+      `Finished processing scoring summary for game ${gameIdentifier}.`,
     );
   } else {
     // This warning now means LANDING data didn't have summary.scoring
     console.warn(
-      `Scoring summary not found or invalid in LANDING data for game ${gameIdentifier}. PPP/SHP calculations may be incomplete.`
+      `Scoring summary not found or invalid in LANDING data for game ${gameIdentifier}. PPP/SHP calculations may be incomplete.`,
     );
   }
 
@@ -352,203 +396,35 @@ export async function updateStats(gameId: number, supabase: SupabaseClient) {
 
   // Extract player stats using BOXSCORE data (which contains playerByGameStats)
   console.log(
-    `Extracting player stats using BOXSCORE data for game ${gameIdentifier}...`
+    `Extracting player stats using BOXSCORE data for game ${gameIdentifier}...`,
   );
   const { skaters, goalies } = getPlayersGameStats(
     boxscore, // Pass boxscore object
     gameIdentifier, // Pass gameId
     powerPlayAssistsCount, // Pass counts derived from landing
     shorthandedGoalsCount,
-    shorthandedAssistsCount
+    shorthandedAssistsCount,
   );
+  assertCompletePlayerGameStatsBatches({
+    gameId: gameIdentifier,
+    skaters,
+    goalies,
+  });
 
-  // Batch upsert player stats
   console.log(
-    `Upserting player stats for game ${gameIdentifier} in batches...`
+    `Persisting the complete transactional game-stat manifest for game ${gameIdentifier}...`,
   );
-
-  // Skaters
-  if (skaters && skaters.length > 0) {
-    console.log(
-      `Attempting batch upsert for ${skaters.length} skaters for game ${gameIdentifier}...`
-    );
-    try {
-      // Attempt efficient batch upsert first
-      const { error: skaterBatchError } = await supabase
-        .from("skatersGameStats")
-        .upsert(skaters);
-      if (skaterBatchError) throw skaterBatchError; // Throw error to be caught below
-      console.log(`Successfully batch upserted ${skaters.length} skaters.`);
-    } catch (batchError: any) {
-      // Check if the batch failed specifically due to a foreign key violation
-      if (batchError.code === "23503") {
-        console.warn(
-          `Batch skater upsert failed (FK violation '23503') for game ${gameIdentifier}. Falling back to individual upserts...`
-        );
-
-        // Fallback: Iterate and upsert individually with the original retry logic
-        for (const player of skaters) {
-          if (!player?.playerId || !player?.gameId) {
-            console.warn(
-              `Skipping update for invalid player object in fallback:`,
-              player
-            );
-            continue;
-          }
-          const playerType = "skaters"; // Define playerType for logging/table name
-          try {
-            // Attempt individual upsert
-            await supabase
-              .from(`${playerType}GameStats`)
-              .upsert(player)
-              .throwOnError();
-          } catch (individualError: any) {
-            // Check for FK violation on individual attempt
-            if (individualError.code === "23503") {
-              console.warn(
-                `Individual skater FK violation for ${player.playerId}, game ${gameId}. Attempting player update...`
-              );
-              try {
-                // Attempt to add/update player in the parent 'players' table
-                await updatePlayer(player.playerId, supabase);
-                console.log(
-                  `Retrying individual upsert for skater ${player.playerId}, game ${gameId}...`
-                );
-                // Retry the individual upsert
-                await supabase
-                  .from(`${playerType}GameStats`)
-                  .upsert(player)
-                  .throwOnError();
-              } catch (retryError: any) {
-                // Log failure even after retry
-                console.error(
-                  `Failed individual retry for skater ${player.playerId}, game ${gameId} after player update attempt:`,
-                  retryError
-                );
-              }
-            } else {
-              // Log other errors during individual fallback upsert
-              console.error(
-                `Error during individual skater upsert fallback for ${player.playerId}, game ${gameId}:`,
-                individualError
-              );
-              console.error("Fallback Player data:", JSON.stringify(player));
-            }
-          }
-        } // End individual fallback loop
-        console.log(
-          `Finished individual fallback upserts for skaters in game ${gameIdentifier}.`
-        );
-      } else {
-        // Log other types of batch errors (timeouts, constraint violations, etc.)
-        console.error(
-          `Error batch upserting skaters for game ${gameIdentifier} (Code: ${batchError.code}):`,
-          batchError
-        );
-        if (skaters.length > 0) {
-          console.error(
-            "Sample failed skater data (batch):",
-            JSON.stringify(skaters[0])
-          );
-        }
-      }
-    } // End Catch Block for batch skaters
-  } else {
-    console.log(`No skaters to upsert for game ${gameIdentifier}.`);
-  }
-
-  // Goalies
-  // --- Goalies ---
-  if (goalies && goalies.length > 0) {
-    console.log(
-      `Attempting batch upsert for ${goalies.length} goalies for game ${gameIdentifier}...`
-    );
-    try {
-      // Attempt efficient batch upsert first
-      const { error: goalieBatchError } = await supabase
-        .from("goaliesGameStats")
-        .upsert(goalies);
-      if (goalieBatchError) throw goalieBatchError;
-      console.log(`Successfully batch upserted ${goalies.length} goalies.`);
-    } catch (batchError: any) {
-      // Check if the batch failed specifically due to a foreign key violation
-      if (batchError.code === "23503") {
-        console.warn(
-          `Batch goalie upsert failed (FK violation '23503') for game ${gameIdentifier}. Falling back to individual upserts...`
-        );
-
-        // Fallback: Iterate and upsert individually with the original retry logic
-        for (const player of goalies) {
-          if (!player?.playerId || !player?.gameId) {
-            console.warn(
-              `Skipping update for invalid goalie object in fallback:`,
-              player
-            );
-            continue;
-          }
-          const playerType = "goalies"; // Define playerType
-          try {
-            // Attempt individual upsert
-            await supabase
-              .from(`${playerType}GameStats`)
-              .upsert(player)
-              .throwOnError();
-          } catch (individualError: any) {
-            // Check for FK violation on individual attempt
-            if (individualError.code === "23503") {
-              console.warn(
-                `Individual goalie FK violation for ${player.playerId}, game ${gameId}. Attempting player update...`
-              );
-              try {
-                // Attempt to add/update player in the parent 'players' table
-                await updatePlayer(player.playerId, supabase);
-                console.log(
-                  `Retrying individual upsert for goalie ${player.playerId}, game ${gameId}...`
-                );
-                // Retry the individual upsert
-                await supabase
-                  .from(`${playerType}GameStats`)
-                  .upsert(player)
-                  .throwOnError();
-              } catch (retryError: any) {
-                // Log failure even after retry
-                console.error(
-                  `Failed individual retry for goalie ${player.playerId}, game ${gameId} after player update attempt:`,
-                  retryError
-                );
-              }
-            } else {
-              // Log other errors during individual fallback upsert
-              console.error(
-                `Error during individual goalie upsert fallback for ${player.playerId}, game ${gameId}:`,
-                individualError
-              );
-              console.error("Fallback Goalie data:", JSON.stringify(player));
-            }
-          }
-        } // End individual goalie fallback loop
-        console.log(
-          `Finished individual fallback upserts for goalies in game ${gameIdentifier}.`
-        );
-      } else {
-        // Log other types of batch errors for goalies
-        console.error(
-          `Error batch upserting goalies for game ${gameIdentifier} (Code: ${batchError.code}):`,
-          batchError
-        );
-        if (goalies.length > 0) {
-          console.error(
-            "Sample failed goalie data (batch):",
-            JSON.stringify(goalies[0])
-          );
-        }
-      }
-    } // End Catch Block for batch goalies
-  } else {
-    console.log(`No goalies to upsert for game ${gameIdentifier}.`);
-  }
+  const manifest = await persistCompleteGameStatsTransaction({
+    supabase,
+    gameId: gameIdentifier,
+    teamRows: [homeTeamGameStats, awayTeamGameStats],
+    skaterRows: skaters,
+    goalieRows: goalies,
+    repairMissingPlayer: (playerId) => updatePlayer(playerId, supabase),
+  });
 
   console.log(`Finished updateStats execution for gameId: ${gameIdentifier}`);
+  return manifest;
 }
 
 // --- Helper Functions ---
@@ -559,7 +435,7 @@ async function processTeamGameStats(
   isHomeTeam: boolean,
   landing: any,
   season: string,
-  rightRail: any
+  rightRail: any,
 ) {
   const getStat = (category: Category): string | number | undefined => {
     const statObj = teamGameStats.find((stat) => stat.category === category);
@@ -577,7 +453,7 @@ async function processTeamGameStats(
     typeof team.score === "undefined"
   ) {
     throw new Error(
-      `Invalid team data in landing object for game ${gameId}. Home=${isHomeTeam}`
+      `Invalid team data in landing object for game ${gameId}. Home=${isHomeTeam}`,
     );
   }
 
@@ -590,13 +466,13 @@ async function processTeamGameStats(
     powerPlayToi = rightRail[teamKey].powerPlayToi;
   } else {
     console.warn(
-      `PP TOI not found directly in rightRail for ${teamKey}, game ${gameId}. Trying HTML fallback.`
+      `PP TOI not found directly in rightRail for ${teamKey}, game ${gameId}. Trying HTML fallback.`,
     );
     try {
       powerPlayToi = await getPPTOI(season, gameId.toString(), isHomeTeam);
     } catch (e: any) {
       console.error(
-        `Failed to fetch/parse PP TOI from HTML for ${teamKey}, game ${gameId}. Defaulting to "00:00". Error: ${e.message}`
+        `Failed to fetch/parse PP TOI from HTML for ${teamKey}, game ${gameId}. Defaulting to "00:00". Error: ${sanitizeCronDiagnostic(e)}`,
       );
     }
   }
@@ -614,14 +490,14 @@ async function processTeamGameStats(
     takeaways: Number(getStat("takeaways") || 0),
     powerPlay: powerPlayData,
     powerPlayConversion: powerPlayConversionData,
-    powerPlayToi: powerPlayToi
+    powerPlayToi: powerPlayToi,
   };
 }
 
 async function getPPTOI(
   season: string,
   gameIdString: string,
-  isHome: boolean
+  isHome: boolean,
 ): Promise<string> {
   const slicedGameId = gameIdString.slice(4);
   if (!slicedGameId || slicedGameId.length !== 6) {
@@ -638,8 +514,7 @@ async function getPPTOI(
     }
   } catch (fetchError) {
     console.error(
-      `Failed to fetch HTML report for game ${gameIdString}:`,
-      fetchError
+      `Failed to fetch HTML report for game ${gameIdString}: ${sanitizeCronDiagnostic(fetchError)}`,
     );
     return "00:00";
   }
@@ -649,14 +524,13 @@ async function getPPTOI(
     document = parse(content);
   } catch (parseError) {
     console.error(
-      `Failed to parse HTML report for game ${gameIdString}:`,
-      parseError
+      `Failed to parse HTML report for game ${gameIdString}: ${sanitizeCronDiagnostic(parseError)}`,
     );
     return "00:00";
   }
 
   const rows = document.querySelectorAll(
-    "#PenaltySummary tr.oddColor, #PenaltySummary tr.evenColor"
+    "#PenaltySummary tr.oddColor, #PenaltySummary tr.evenColor",
   );
 
   const PPTOIs: string[] = [];
@@ -670,12 +544,12 @@ async function getPPTOI(
           PPTOIs.push(timeText);
         } else {
           console.warn(
-            `Could not parse valid PPTOI time from '${cells[1].textContent}' in game ${gameIdString}`
+            `Could not parse valid PPTOI time from '${sanitizeCronDiagnostic(cells[1].textContent)}' in game ${gameIdString}`,
           );
         }
       } else {
         console.warn(
-          `Found PPTOI row but unexpected cell structure in game ${gameIdString}`
+          `Found PPTOI row but unexpected cell structure in game ${gameIdString}`,
         );
       }
     }
@@ -683,7 +557,7 @@ async function getPPTOI(
 
   if (PPTOIs.length !== 2) {
     console.error(
-      `Expected 2 PPTOIs from HTML report, found ${PPTOIs.length} for game ${gameIdString}.`
+      `Expected 2 PPTOIs from HTML report, found ${PPTOIs.length} for game ${gameIdString}.`,
     );
     return "00:00";
   }
@@ -693,20 +567,22 @@ async function getPPTOI(
 
 function getChildren(node: HTMLElement): HTMLElement[] {
   return node.childNodes.filter(
-    (n) => n instanceof HTMLElement
+    (n) => n instanceof HTMLElement,
   ) as HTMLElement[];
 }
 
 const getReportContent = (
   season: string,
-  gameIdSuffix: string
+  gameIdSuffix: string,
 ): Promise<string> => {
-  const reportUrl = `https://www.nhl.com/scores/htmlreports/${season}/GS${gameIdSuffix}.HTM`;
+  const reportUrl = buildNhlGameSummaryReportUrl(season, gameIdSuffix);
   console.log(`Workspaceing HTML Report: ${reportUrl}`); // Corrected log typo
   try {
     return fetchWithCache(reportUrl, false);
   } catch (error) {
-    console.error(`Error during fetchWithCache for ${reportUrl}:`, error);
+    console.error(
+      `Error during fetchWithCache for ${reportUrl}: ${sanitizeCronDiagnostic(error)}`,
+    );
     return Promise.resolve(""); // Return empty string on error to prevent crashes
   }
 };
@@ -716,7 +592,7 @@ function getPlayersGameStats(
   gameId: number,
   powerPlayAssistsCount: PlayerCounts,
   shorthandedGoalsCount: PlayerCounts,
-  shorthandedAssistsCount: PlayerCounts
+  shorthandedAssistsCount: PlayerCounts,
 ): {
   skaters: Skater[];
   goalies: Goalie[];
@@ -730,12 +606,12 @@ function getPlayersGameStats(
     ...(homeTeamStats?.forwards || []),
     ...(awayTeamStats?.forwards || []),
     ...(homeTeamStats?.defense || []),
-    ...(awayTeamStats?.defense || [])
+    ...(awayTeamStats?.defense || []),
   ];
 
   if (apiSkaters.length === 0) {
     console.warn(
-      `No skater data found in boxscore.playerByGameStats for game ${gameId}.`
+      `No skater data found in boxscore.playerByGameStats for game ${gameId}.`,
     );
   }
 
@@ -770,19 +646,19 @@ function getPlayersGameStats(
       // Defaults for stats needing other data sources
       faceoffs: "0/0",
       powerPlayToi: "00:00",
-      shorthandedToi: "00:00"
+      shorthandedToi: "00:00",
     };
     return skaterData;
   });
 
   const apiGoalies: ApiGoalieData[] = [
     ...(homeTeamStats?.goalies || []),
-    ...(awayTeamStats?.goalies || [])
+    ...(awayTeamStats?.goalies || []),
   ];
 
   if (apiGoalies.length === 0) {
     console.warn(
-      `No goalie data found in boxscore.playerByGameStats for game ${gameId}.`
+      `No goalie data found in boxscore.playerByGameStats for game ${gameId}.`,
     );
   }
 
@@ -801,17 +677,17 @@ function getPlayersGameStats(
       shorthandedShotsAgainst: player.shorthandedShotsAgainst,
       evenStrengthGoalsAgainst: player.evenStrengthGoalsAgainst,
       powerPlayGoalsAgainst: player.powerPlayGoalsAgainst,
-      shorthandedGoalsAgainst: player.shorthandedGoalsAgainst
+      shorthandedGoalsAgainst: player.shorthandedGoalsAgainst,
     };
     return goalieData;
   });
 
   console.log(
-    `Extracted ${skaters.length} skaters and ${goalies.length} goalies for game ${gameId}.`
+    `Extracted ${skaters.length} skaters and ${goalies.length} goalies for game ${gameId}.`,
   );
   return {
     skaters,
-    goalies
+    goalies,
   };
 }
 

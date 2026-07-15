@@ -5,6 +5,11 @@
 import { useMemo } from "react";
 import type { ProcessedPlayer } from "./useProcessedProjectionsData";
 import type { PlayerVorpMetrics } from "./useVORPCalculations";
+import {
+  groupPlayerEligibility,
+  normalizePlayerEligibility,
+  type ForwardGrouping
+} from "lib/draftDashboard/forwardGrouping";
 
 export interface Recommendation {
   player: ProcessedPlayer;
@@ -29,6 +34,7 @@ interface Args {
   currentPick?: number; // absolute pick number
   teamCount?: number; // league size for availability heuristic
   leagueType?: "points" | "categories";
+  forwardGrouping?: ForwardGrouping;
 }
 
 const CAT_KEYS = [
@@ -63,7 +69,8 @@ export function usePlayerRecommendations({
   baselineMode,
   currentPick,
   teamCount,
-  leagueType = "points"
+  leagueType = "points",
+  forwardGrouping = "split"
 }: Args) {
   const recommendations = useMemo<Recommendation[]>(() => {
     if (!players || players.length === 0) return [];
@@ -71,9 +78,9 @@ export function usePlayerRecommendations({
     const items: Recommendation[] = players.map((p) => {
       const id = String(p.playerId);
       const vm = vorpMetrics?.get(id);
-      const vbd = vm?.vbd ?? vm?.vorp ?? 0; // fallback if needed
-      const vorp = vm?.vorp;
-      const vona = vm?.vona;
+      const vbd = vm?.vbd ?? vm?.vorp ?? 0;
+      const vorp = vm?.vorp ?? 0;
+      const vona = vm?.vona ?? 0;
 
       // Team needs fit: categories or positional
       let fit = 0;
@@ -85,10 +92,10 @@ export function usePlayerRecommendations({
         }
       } else {
         // positional need: average need across eligible positions
-        const elig = (p.displayPosition || "")
-          .split(",")
-          .map((s) => s.trim().toUpperCase())
-          .filter(Boolean);
+        const elig = groupPlayerEligibility(
+          normalizePlayerEligibility(p.displayPosition, p.eligiblePositions),
+          forwardGrouping
+        );
         if (elig.length > 0) {
           const sum = elig.reduce(
             (acc, pos) => acc + safeNum(posNeeds[pos]),
@@ -114,7 +121,7 @@ export function usePlayerRecommendations({
 
       return {
         player: p,
-        score: vbd,
+        score: 0.7 * vbd + 0.3 * vona,
         vorp,
         vona,
         vbd,
@@ -128,25 +135,26 @@ export function usePlayerRecommendations({
     const maxAbsFit =
       items.reduce((m, r) => Math.max(m, Math.abs(r.fitScore || 0)), 0) || 1;
     for (const r of items) {
-      const fitNorm = (r.fitScore || 0) / maxAbsFit; // -1..1 or 0..1
+      const fitNorm = clamp01((r.fitScore || 0) / maxAbsFit);
+      const baseValue = 0.7 * (r.vbd ?? 0) + 0.3 * (r.vona ?? 0);
       if (needWeightEnabled) {
-        r.score = (1 - needAlpha) * (r.vbd ?? 0) + needAlpha * fitNorm * 10; // scale
+        r.score = baseValue * (1 + clamp01(needAlpha) * fitNorm);
       } else {
-        r.score = r.vbd ?? 0;
+        r.score = baseValue;
       }
       const tags: string[] = [];
-      if ((r.vbd ?? 0) > 0) tags.push("High VBD");
-      if (
-        (r.vorp ?? 0) > 0 &&
-        (baselineMode === "remaining" || baselineMode === "full")
-      )
+      tags.push(`VBD ${(r.vbd ?? 0).toFixed(1)}`);
+      tags.push(`VONA ${(r.vona ?? 0).toFixed(1)}`);
+      if (baselineMode === "remaining" || baselineMode === "full") {
         tags.push(
-          baselineMode === "remaining"
-            ? "Remaining Baseline"
-            : "Full-Pool Baseline"
+          baselineMode === "remaining" ? "Remaining pool" : "Full pool"
         );
-      if (r.fitScore && Math.abs(r.fitScore) > 0.1 * maxAbsFit)
-        tags.push(leagueType === "categories" ? "Cat Fit" : "Team Need Fit");
+      }
+      if (needWeightEnabled && fitNorm > 0) {
+        tags.push(
+          `${leagueType === "categories" ? "Category" : "Roster"} need ${Math.round(fitNorm * 100)}%`
+        );
+      }
       if (typeof (r.player as any).yahooAvgPick === "number") {
         const adp = (r.player as any).yahooAvgPick as number;
         const expPick = currentPick
@@ -180,7 +188,8 @@ export function usePlayerRecommendations({
     baselineMode,
     currentPick,
     teamCount,
-    leagueType
+    leagueType,
+    forwardGrouping
   ]);
 
   return { recommendations };

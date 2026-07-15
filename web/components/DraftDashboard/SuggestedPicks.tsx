@@ -5,6 +5,16 @@ import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import { PlayerVorpMetrics } from "hooks/useVORPCalculations";
 import { usePlayerRecommendations } from "hooks/usePlayerRecommendations";
 import styles from "./SuggestedPicks.module.scss";
+import {
+  getProjectionDisplayPosition,
+  matchesProjectionPosition
+} from "lib/draftDashboard/projectionVisibility";
+import {
+  groupPlayerEligibility,
+  normalizePlayerEligibility,
+  type ForwardGrouping
+} from "lib/draftDashboard/forwardGrouping";
+import { isGlobalShortcutBlockedTarget } from "lib/draftDashboard/keyboardShortcuts";
 
 export interface SuggestedPicksProps {
   players: ProcessedPlayer[]; // available players only
@@ -29,6 +39,9 @@ export interface SuggestedPicksProps {
   // NEW: personalized replacement toggle (upstream state)
   personalizeReplacement?: boolean;
   onPersonalizeReplacementChange?: (enabled: boolean) => void;
+  forwardGrouping?: ForwardGrouping;
+  onComparePlayer?: (playerId: string) => void;
+  compareSelectedIds?: string[];
 }
 
 const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
@@ -50,25 +63,28 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   onDraftPlayer,
   canDraft,
   personalizeReplacement,
-  onPersonalizeReplacementChange
+  onPersonalizeReplacementChange,
+  forwardGrouping = "split",
+  onComparePlayer,
+  compareSelectedIds = []
 }) => {
   // UI state
   type SortField = "rank" | "projFp" | "vorp" | "vbd" | "adp" | "avail" | "fit";
   const [sortField, setSortField] = useState<SortField>(() => {
     if (typeof window !== "undefined") {
       return (
-        (localStorage.getItem("suggested.sortField") as SortField) || "adp"
+        (localStorage.getItem("suggested.sortField") as SortField) || "rank"
       );
     }
-    return "adp";
+    return "rank";
   });
   const [sortDir, setSortDir] = useState<"asc" | "desc">(() => {
     if (typeof window !== "undefined") {
       return (
-        (localStorage.getItem("suggested.sortDir") as "asc" | "desc") || "asc"
+        (localStorage.getItem("suggested.sortDir") as "asc" | "desc") || "desc"
       );
     }
-    return "asc";
+    return "desc";
   });
   const [posFilter, setPosFilter] = useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -163,14 +179,13 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      const tag = (target?.tagName || "").toLowerCase();
-      const isTyping =
-        tag === "input" ||
-        tag === "select" ||
-        tag === "textarea" ||
-        (target as any)?.isContentEditable;
-      if (isTyping || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (
+        isGlobalShortcutBlockedTarget(e.target) ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey
+      )
+        return;
 
       const key = e.key.toLowerCase();
       if (key === "c") {
@@ -227,7 +242,8 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     currentPick,
     teamCount,
     leagueType,
-    catNeeds
+    catNeeds,
+    forwardGrouping
   });
 
   // Availability heuristic: Normal CDF around ADP
@@ -267,10 +283,27 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
       const adp = (r.player as any).yahooAvgPick;
       let availability: number | undefined = r.availability;
       if (typeof adp === "number" && Number.isFinite(adp)) {
-        const z = (nextPickNumber - adp) / riskSd;
+        const z = (adp - nextPickNumber) / riskSd;
         availability = Math.max(0.01, Math.min(0.99, normalCdf(z)));
       }
-      return { ...r, availability };
+      const goneRisk =
+        typeof availability === "number" ? 1 - availability : undefined;
+      const riskBoost =
+        typeof goneRisk === "number"
+          ? 0.25 * goneRisk * Math.max(0, r.vbd ?? 0)
+          : 0;
+      return {
+        ...r,
+        availability,
+        score: r.score + riskBoost,
+        reasonTags:
+          typeof goneRisk === "number"
+            ? [
+                ...(r.reasonTags ?? []),
+                `Gone by next pick ${Math.round(goneRisk * 100)}%`
+              ]
+            : r.reasonTags
+      };
     });
   }, [recommendations, nextPickNumber, riskSd]);
 
@@ -279,10 +312,13 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     if (!rosterVorpEnabled) return withAvail;
     return withAvail.map((r) => {
       const baseVorp = r.vorp ?? 0;
-      const elig = (r.player.displayPosition || "")
-        .split(",")
-        .map((s) => s.trim().toUpperCase())
-        .filter((p) => p && ["C", "LW", "RW", "D", "G"].includes(p));
+      const elig = groupPlayerEligibility(
+        normalizePlayerEligibility(
+          r.player.displayPosition,
+          r.player.eligiblePositions
+        ),
+        forwardGrouping
+      );
       if (elig.length === 0) return { ...r, vorpAdj: baseVorp };
       const avgNeed =
         elig.reduce((acc, pos) => acc + (posNeeds[pos] || 0), 0) /
@@ -292,21 +328,20 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
       const adj = baseVorp * multiplier;
       return { ...r, vorpAdj: adj } as typeof r & { vorpAdj: number };
     });
-  }, [withAvail, rosterVorpEnabled, posNeeds]);
+  }, [forwardGrouping, withAvail, rosterVorpEnabled, posNeeds]);
 
   // Position filter options from players
   const availablePositions = useMemo(() => {
-    const raw = new Set<string>();
-    players.forEach((p) => {
-      p.displayPosition?.split(",")?.forEach((pos) => raw.add(pos.trim()));
-    });
-    // Normalize and de-duplicate by case
-    const normalized = Array.from(raw)
-      .filter(Boolean)
-      .map((s) => s.trim())
-      .filter((s, idx, arr) => arr.findIndex((t) => t.toLowerCase() === s.toLowerCase()) === idx)
-      .sort();
-    const lower = new Set(normalized.map((s) => s.toLowerCase()));
+    const normalized = Array.from(
+      new Set(
+        players
+          .flatMap((player) =>
+            getProjectionDisplayPosition(player, forwardGrouping).split(",")
+          )
+          .map((position) => position.trim())
+          .filter(Boolean)
+      )
+    ).sort();
     const list: string[] = ["ALL"];
     // Prefer composite labels over raw singulars
     list.push("Skater");
@@ -320,39 +355,50 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
       list.push(p);
     });
     return list;
-  }, [players]);
+  }, [forwardGrouping, players]);
+
+  useEffect(() => {
+    const allowed = new Set(availablePositions);
+    setSelectedPositions((previous) => {
+      const next = new Set(Array.from(previous).filter((position) => allowed.has(position)));
+      return next.size === previous.size ? previous : next;
+    });
+    if (!allowed.has(posFilter)) setPosFilter("ALL");
+  }, [availablePositions, posFilter]);
 
   // Apply filters: if multi-select set has items, use it; else fallback to single select
   const filtered = useMemo(() => {
     const source = withRosterAdjustedVorp;
     if (selectedPositions.size > 0) {
       return source.filter((r) => {
-        const posList = (r.player.displayPosition || "")
-          .split(",")
-          .map((p) => p.trim());
-        return posList.some((p) => selectedPositions.has(p));
+        return Array.from(selectedPositions).some((position) =>
+          matchesProjectionPosition(
+            r.player,
+            position === "Goalie"
+              ? "G"
+              : position === "Skater"
+                ? "SKATER"
+                : position,
+            forwardGrouping
+          )
+        );
       });
     }
     if (posFilter === "ALL") return source;
     if (posFilter === "Skater") {
-      return source.filter((r) => {
-        const posList = (r.player.displayPosition || "")
-          .split(",")
-          .map((p) => p.trim().toUpperCase());
-        // Skater encompasses F (C,LW,RW), D, and UTIL
-        return posList.some((p) => p && p !== "G");
-      });
+      return source.filter((r) =>
+        matchesProjectionPosition(r.player, "SKATER", forwardGrouping)
+      );
     }
     if (posFilter === "Goalie") {
       return source.filter((r) =>
-        (r.player.displayPosition || "")
-          .split(",")
-          .map((p) => p.trim().toUpperCase())
-          .includes("G")
+        matchesProjectionPosition(r.player, "G", forwardGrouping)
       );
     }
-    return source.filter((r) => r.player.displayPosition?.includes(posFilter));
-  }, [withRosterAdjustedVorp, posFilter, selectedPositions]);
+    return source.filter((r) =>
+      matchesProjectionPosition(r.player, posFilter, forwardGrouping)
+    );
+  }, [forwardGrouping, withRosterAdjustedVorp, posFilter, selectedPositions]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -372,7 +418,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
       const bFit = b.fitScore ?? 0;
       switch (sortField) {
         case "rank":
-          return 0; // keep incoming order
+          return mul * (a.score - b.score);
         case "projFp":
           return mul * (aFp - bFp);
         case "vorp":
@@ -568,7 +614,10 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
               const name = r.player.fullName || id;
               const team =
                 (r.player as any).teamAbbrev || (r.player as any).team || "";
-              const pos = (r.player.displayPosition || "").split(",")[0];
+              const pos = getProjectionDisplayPosition(
+                r.player,
+                forwardGrouping
+              );
               const posClass =
                 pos === "C"
                   ? styles.posC
@@ -590,6 +639,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
               const avail =
                 typeof r.availability === "number" ? r.availability : undefined;
               const selected = selectedId === id;
+              const compareSelected = compareSelectedIds.includes(id);
               return (
                 <article
                   key={id}
@@ -677,26 +727,20 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                           Draft
                         </button>
                       }
-                      <button
-                        type="button"
-                        className={styles.linkBtn}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // placeholder for future: open player details
-                        }}
-                      >
-                        View
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.linkBtn}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // placeholder for future: context menu / watchlist
-                        }}
-                      >
-                        More
-                      </button>
+                      {onComparePlayer && (
+                        <button
+                          type="button"
+                          className={styles.linkBtn}
+                          aria-pressed={compareSelected}
+                          aria-label={`${compareSelected ? "Remove" : "Add"} ${name} ${compareSelected ? "from" : "to"} comparison`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onComparePlayer(id);
+                          }}
+                        >
+                          {compareSelected ? "Compared" : "Compare"}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </article>

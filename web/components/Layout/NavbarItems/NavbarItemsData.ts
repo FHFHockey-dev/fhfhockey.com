@@ -16,14 +16,17 @@ export type NavbarItemCategory = {
 };
 
 const ITEMS_DATA: NavbarItem[] = [
-  { type: "link", label: "Dashboard", href: "/" },
-  { type: "link", label: "Players", href: "/stats" },
-  { type: "link", label: "Teams", href: "/stats" },
+  { type: "link", label: "Home", href: "/" },
+  {
+    type: "link",
+    label: "Underlying Stats",
+    href: "/underlying-stats",
+  },
+  { type: "link", label: "Game Grid", href: "/game-grid" },
   {
     type: "category",
     label: "Tools",
     items: [
-      { type: "link", label: "Game Grid", href: "/game-grid" },
       { type: "link", label: "Stats", href: "/stats" },
       { type: "link", label: "Trends", href: "/trends" },
       { type: "link", label: "NHL Predictions", href: "/nhl-predictions" },
@@ -33,22 +36,29 @@ const ITEMS_DATA: NavbarItem[] = [
       {
         type: "link",
         label: "Draft Dashboard",
-        href: "/draft-dashboard"
-      }
-    ]
+        href: "/draft-dashboard",
+      },
+    ],
   },
   {
-    type: "link",
-    label: "Analytics",
-    href: "/underlying-stats"
+    type: "category",
+    label: "Charts",
+    items: [
+      { type: "link", label: "Start Chart", href: "/start-chart" },
+      { type: "link", label: "WiGO", href: "/wigoCharts" },
+      { type: "link", label: "Shift Chart", href: "/shiftChart" },
+    ],
   },
-  { type: "link", label: "Projections", href: "/projections" },
-  { type: "link", label: "News", href: "/news" },
   {
-    type: "link",
-    label: "Podcast",
-    href: "/podfeed"
-  }
+    type: "category",
+    label: "Variance",
+    items: [
+      { type: "link", label: "Skaters", href: "/variance/skaters" },
+      { type: "link", label: "Goalies", href: "/variance/goalies" },
+    ],
+  },
+  { type: "link", label: "Blog", href: "/blog" },
+  { type: "link", label: "Podcast", href: "/podfeed" },
 ];
 
 export default ITEMS_DATA;

@@ -863,6 +863,29 @@
   gap: 12px;
 }
 
+.insightListGroup {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(127, 219, 235, 0.12);
+  border-radius: 6px;
+  background: rgba(3, 12, 17, 0.58);
+}
+
+.insightListGroup h3 {
+  margin: 0 0 8px;
+  color: rgba(232, 244, 248, 0.78);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.insightSubstate {
+  margin: 0;
+  color: rgba(232, 244, 248, 0.58);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
 .uncertaintyNote {
   margin: 0;
   color: rgba(232, 244, 248, 0.66);

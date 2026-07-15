@@ -37,8 +37,9 @@
  * - Example:
  *   `/api/v1/db/update-wgo-goalies?runMode=forward&overwrite=false&startDate=2026-01-15`
  * - Notes:
- *   - `overwrite=true` deletes existing rows for each processed date before
- *     re-fetching them.
+ *   - `overwrite=true` acquires and persists the complete replacement first,
+ *     then prunes only stale goalie IDs; acquisition or write failure retains
+ *     the prior rows, and prune failure retains a safe superset.
  *   - `overwrite=false` skips dates that already exist in `wgo_goalie_stats`.
  *   - Default behavior matches the NST endpoints: `incremental` defaults to
  *     `false`; `forward` and `reverse` default to `true`.
@@ -137,13 +138,23 @@ import {
   WGODaysLeftStat,
 } from "lib/NHL/types";
 import { updateAllGoaliesStats } from "lib/supabase/utils/updateAllGoalies";
+import adminOnly from "utils/adminOnlyMiddleware";
+import {
+  classifyWgoGoalieFetchFailure,
+  classifyWgoGoaliePruneFailure,
+  classifyWgoGoalieWriteFailure,
+  fetchRequiredWgoGoaliePage,
+  getWgoGoalieFetchFailureDetails,
+  getWgoGoaliePruneFailureDetails,
+  getWgoGoalieWriteFailureDetails,
+  persistWgoGoalieStatsRecords,
+  sanitizeWgoGoalieDiagnostic,
+  WgoGoalieFetchError,
+  WgoGoaliePruneError,
+  WgoGoalieWriteError,
+} from "lib/cron/wgoGoaliePersistence";
 
 // TO DO - Got more stats from NHL API including the days rest statistics.
-
-// Define the structure of the NHL API response for goalie stats
-interface NHLApiResponse {
-  data: WGOGoalieStat[] | WGOAdvancedGoalieStat[] | WGODaysLeftStat[];
-}
 
 interface SeasonInfo {
   id: number; // Assuming 'id' in your 'seasons' table is the numeric season ID like 20232024
@@ -152,6 +163,75 @@ interface SeasonInfo {
 }
 
 type RunMode = "incremental" | "forward" | "reverse" | "single";
+const WGO_PAGE_LIMIT = 100;
+const WGO_MAX_PAGES = 25;
+type WgoGoalieDateSource = "summary" | "advanced" | "days_rest";
+type WgoGoaliePaginationScope = "date" | "player";
+type WgoGoalieSourcePage = {
+  source: WgoGoalieDateSource;
+  rows: unknown[];
+};
+
+function createWgoGoaliePageHistory(): Record<
+  WgoGoalieDateSource,
+  Set<string>
+> {
+  return {
+    summary: new Set<string>(),
+    advanced: new Set<string>(),
+    days_rest: new Set<string>(),
+  };
+}
+
+function validateWgoGoaliePaginationPage(options: {
+  date: string;
+  pageStart: number;
+  pageLimit: number;
+  pagesRead: number;
+  scope: WgoGoaliePaginationScope;
+  seenPages: Record<WgoGoalieDateSource, Set<string>>;
+  pages: WgoGoalieSourcePage[];
+}): WgoGoalieSourcePage[] {
+  const fullPages = options.pages.filter(
+    (page) => page.rows.length === options.pageLimit,
+  );
+
+  for (const page of options.pages.filter(
+    (candidate) => candidate.rows.length > 0,
+  )) {
+    const fingerprint = JSON.stringify(page.rows);
+    if (options.seenPages[page.source].has(fingerprint)) {
+      const pageKind =
+        page.rows.length === options.pageLimit ? "full" : "non-empty";
+      throw new WgoGoalieFetchError({
+        code: "WGO_GOALIE_FETCH_FAILED",
+        date: options.date,
+        source: page.source,
+        pageStart: options.pageStart,
+        pageLimit: options.pageLimit,
+        upstreamError: new Error(
+          `Refusing repeated ${pageKind} ${page.source} page during WGO ${options.scope} pagination.`,
+        ),
+      });
+    }
+    options.seenPages[page.source].add(fingerprint);
+  }
+
+  if (fullPages.length > 0 && options.pagesRead >= WGO_MAX_PAGES) {
+    throw new WgoGoalieFetchError({
+      code: "WGO_GOALIE_FETCH_FAILED",
+      date: options.date,
+      source: fullPages[0].source,
+      pageStart: options.pageStart,
+      pageLimit: options.pageLimit,
+      upstreamError: new Error(
+        `Refusing WGO ${options.scope} pagination beyond ${WGO_MAX_PAGES} pages while a required source still returns full pages.`,
+      ),
+    });
+  }
+
+  return fullPages;
+}
 
 function parseRunMode(
   value: string | string[] | undefined,
@@ -189,11 +269,42 @@ function parseDateParam(
   return isValid(parsed) ? raw : undefined;
 }
 
+function normalizePositivePlayerId(value: unknown): string | null {
+  if (
+    typeof value !== "string" ||
+    value.length > String(Number.MAX_SAFE_INTEGER).length ||
+    !/^\d+$/.test(value)
+  ) {
+    return null;
+  }
+
+  const playerId = Number(value);
+  return Number.isSafeInteger(playerId) && playerId > 0
+    ? String(playerId)
+    : null;
+}
+
+function filterRowsForRequestedPlayer<T>(
+  rows: T[],
+  requestedPlayerId: string,
+): T[] {
+  return rows.filter((row) => {
+    if (typeof row !== "object" || row === null) return false;
+    const rowPlayerId = (row as { playerId?: unknown }).playerId;
+    const normalizedRowPlayerId =
+      typeof rowPlayerId === "number" && Number.isSafeInteger(rowPlayerId)
+        ? String(rowPlayerId)
+        : normalizePositivePlayerId(rowPlayerId);
+    return normalizedRowPlayerId === requestedPlayerId;
+  });
+}
+
 /**
  * Fetches season details from Supabase based on a specific date.
  * Enhanced to handle offseason periods by using NHL API logic.
  * @param dateString - The date string in 'YYYY-MM-DD' format.
- * @returns A Promise resolving to the SeasonInfo object or null if not found/error.
+ * @returns A Promise resolving to the SeasonInfo object or null when no season applies.
+ * @throws WgoGoalieFetchError when required season metadata cannot be queried.
  */
 async function getSeasonFromDate(
   dateString: string,
@@ -205,9 +316,20 @@ async function getSeasonFromDate(
       .select("id, startDate, regularSeasonEndDate") // Select needed columns
       .lte("startDate", dateString) // Date is on or after season start
       .gte("regularSeasonEndDate", dateString) // Date is on or before regular season end
-      .single(); // Expect only one season for a given regular season date
+      .maybeSingle(); // Zero rows is expected for offseason dates; multiple rows is an error.
 
-    if (directMatch && !directError) {
+    if (directError) {
+      throw new WgoGoalieFetchError({
+        code: "WGO_GOALIE_FETCH_FAILED",
+        date: dateString,
+        source: "season",
+        pageStart: 0,
+        pageLimit: 1,
+        upstreamError: directError,
+      });
+    }
+
+    if (directMatch) {
       // Found a direct match - date falls within a regular season
       return {
         ...directMatch,
@@ -226,11 +348,18 @@ async function getSeasonFromDate(
       .select("id, startDate, regularSeasonEndDate")
       .order("id", { ascending: false }); // Most recent first
 
-    if (seasonsError || !allSeasons || allSeasons.length === 0) {
-      console.error(
-        "Could not fetch seasons for smart detection:",
-        seasonsError?.message,
-      );
+    if (seasonsError) {
+      throw new WgoGoalieFetchError({
+        code: "WGO_GOALIE_FETCH_FAILED",
+        date: dateString,
+        source: "season",
+        pageStart: 0,
+        pageLimit: 1,
+        upstreamError: seasonsError,
+      });
+    }
+
+    if (!allSeasons || allSeasons.length === 0) {
       return null;
     }
 
@@ -297,12 +426,19 @@ async function getSeasonFromDate(
       `Could not determine appropriate season for date: ${dateString}`,
     );
     return null;
-  } catch (err: any) {
-    console.error(
-      `Unexpected error in getSeasonFromDate for ${dateString}:`,
-      err.message,
-    );
-    return null;
+  } catch (error: unknown) {
+    if (error instanceof WgoGoalieFetchError) {
+      throw error;
+    }
+
+    throw new WgoGoalieFetchError({
+      code: "WGO_GOALIE_FETCH_FAILED",
+      date: dateString,
+      source: "season",
+      pageStart: 0,
+      pageLimit: 1,
+      upstreamError: error,
+    });
   }
 }
 
@@ -388,16 +524,27 @@ async function hasExistingGoalieStatsForDate(date: string): Promise<boolean> {
   return (data?.length ?? 0) > 0;
 }
 
-async function deleteGoalieStatsForDate(date: string): Promise<void> {
-  const { error } = await supabase
-    .from("wgo_goalie_stats")
-    .delete()
-    .eq("date", date);
-
-  if (error) {
-    throw new Error(
-      `Failed deleting existing goalie stats for ${date}: ${error.message}`,
-    );
+async function pruneStaleGoalieStatsForDate(
+  date: string,
+  goalieIds: number[],
+  replacementRowsPersisted: number,
+): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from("wgo_goalie_stats")
+      .delete()
+      .eq("date", date)
+      .not("goalie_id", "in", `(${goalieIds.join(",")})`);
+    if (error) {
+      throw error;
+    }
+  } catch (error: unknown) {
+    throw new WgoGoaliePruneError({
+      code: "WGO_GOALIE_PRUNE_FAILED",
+      date,
+      replacementRowsPersisted,
+      upstreamError: error,
+    });
   }
 }
 
@@ -408,33 +555,21 @@ function mapByPlayerId<T extends { playerId: number }>(
 }
 
 async function upsertGoalieStatsRecords(records: any[]): Promise<number> {
-  if (records.length === 0) {
-    return 0;
-  }
-
-  const { error } = await supabase.from("wgo_goalie_stats").upsert(records);
-  if (!error) {
-    return records.length;
-  }
-
-  console.error("Bulk goalie stats upsert failed; retrying row-by-row:", error);
-
-  let upserted = 0;
-  for (const record of records) {
-    const { error: rowError } = await supabase
-      .from("wgo_goalie_stats")
-      .upsert(record);
-    if (rowError) {
-      console.error(
-        `Upsert failed for goalie ${record.goalie_id} on ${record.date} (Season ${record.season_id}):`,
-        rowError.message,
-      );
-      continue;
-    }
-    upserted++;
-  }
-
-  return upserted;
+  return persistWgoGoalieStatsRecords(
+    records,
+    async (rows) => {
+      const { error } = await supabase.from("wgo_goalie_stats").upsert(rows);
+      return error ? { code: error.code, message: error.message } : null;
+    },
+    {
+      onBulkFallbackRecovered: (recovery) => {
+        console.warn(
+          "Bulk goalie stats upsert failed, but bounded row retries recovered every requested row:",
+          recovery,
+        );
+      },
+    },
+  );
 }
 
 /**
@@ -453,6 +588,11 @@ export async function fetchDataForPlayer(
   advancedGoalieStats: WGOAdvancedGoalieStat[];
   daysLeftStats: WGODaysLeftStat[];
 } | null> {
+  const normalizedPlayerId = normalizePositivePlayerId(playerId);
+  if (!normalizedPlayerId) {
+    throw new Error("Invalid playerId. Expected a positive safe integer.");
+  }
+
   // Return null if season context is missing
   let start = 0;
   let moreDataAvailable = true;
@@ -460,8 +600,10 @@ export async function fetchDataForPlayer(
   let advancedGoalieStats: WGOAdvancedGoalieStat[] = [];
   let daysLeftStats: WGODaysLeftStat[] = [];
 
-  const limit = 100;
+  const limit = WGO_PAGE_LIMIT;
   const formattedEndDate = date; // Already should be 'YYYY-MM-DD'
+  let pagesRead = 0;
+  const seenPages = createWgoGoaliePageHistory();
 
   // *** Determine the season based on the end date ***
   const season = await getSeasonFromDate(formattedEndDate);
@@ -472,55 +614,67 @@ export async function fetchDataForPlayer(
     return null; // Indicate failure due to missing season context
   }
   const formattedSeasonStartDate = season.startDate; // Use start date from Supabase
+  void playerName;
 
   while (moreDataAvailable) {
-    const encodedPlayerName = encodeURIComponent(`%${playerName}%`);
-
     // Update the URL to fetch aggregate data up to the specified date within the determined season
     // Include both regular season (gameTypeId=2) and playoff games (gameTypeId=3)
-    const goalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=false&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedEndDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedSeasonStartDate}%22%20and%20(gameTypeId%3D2%20or%20gameTypeId%3D3)%20and%20playerId=%22${playerId}%22`;
-    const advancedGoalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=true&isGame=false&sort=%5B%7B%22property%22:%22qualityStart%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsAgainstAverage%22,%22direction%22:%22ASC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedEndDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedSeasonStartDate}%22%20and%20(gameTypeId%3D2%20or%20gameTypeId%3D3)%20and%20playerId=%22${playerId}%22`;
-    // Note: The daysRestUrl logic might need adjustment depending on its intended use (single date vs aggregate)
-    const daysRestUrl = `https://api.nhle.com/stats/rest/en/goalie/daysrest?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&cayenneExp=gameDate%3C=%22${formattedEndDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedEndDate}%22%20and%20(gameTypeId%3D2%20or%20gameTypeId%3D3)`;
+    const goalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=false&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedEndDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedSeasonStartDate}%22%20and%20(gameTypeId%3D2%20or%20gameTypeId%3D3)%20and%20playerId=%22${normalizedPlayerId}%22`;
+    const advancedGoalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=true&isGame=false&sort=%5B%7B%22property%22:%22qualityStart%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsAgainstAverage%22,%22direction%22:%22ASC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedEndDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedSeasonStartDate}%22%20and%20(gameTypeId%3D2%20or%20gameTypeId%3D3)%20and%20playerId=%22${normalizedPlayerId}%22`;
+    const daysRestUrl = `https://api.nhle.com/stats/rest/en/goalie/daysrest?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&cayenneExp=gameDate%3C=%22${formattedEndDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedEndDate}%22%20and%20(gameTypeId%3D2%20or%20gameTypeId%3D3)%20and%20playerId=%22${normalizedPlayerId}%22`;
 
-    try {
-      const [
-        goalieStatsResponse,
-        advancedGoalieStatsResponse,
-        daysRestResponse,
-      ] = await Promise.all([
-        Fetch(goalieStatsUrl).then(
-          (res) => res.json() as Promise<NHLApiResponse>,
-        ),
-        Fetch(advancedGoalieStatsUrl).then(
-          (res) => res.json() as Promise<NHLApiResponse>,
-        ),
-        Fetch(daysRestUrl).then((res) => res.json() as Promise<NHLApiResponse>),
+    const [goalieStatsPage, advancedGoalieStatsPage, daysRestStatsPage] =
+      await Promise.all([
+        fetchRequiredWgoGoaliePage<WGOGoalieStat>({
+          date: formattedEndDate,
+          source: "summary",
+          pageStart: start,
+          pageLimit: limit,
+          request: () => Fetch(goalieStatsUrl),
+        }),
+        fetchRequiredWgoGoaliePage<WGOAdvancedGoalieStat>({
+          date: formattedEndDate,
+          source: "advanced",
+          pageStart: start,
+          pageLimit: limit,
+          request: () => Fetch(advancedGoalieStatsUrl),
+        }),
+        fetchRequiredWgoGoaliePage<WGODaysLeftStat>({
+          date: formattedEndDate,
+          source: "days_rest",
+          pageStart: start,
+          pageLimit: limit,
+          request: () => Fetch(daysRestUrl),
+        }),
       ]);
 
-      goalieStats = goalieStats.concat(
-        goalieStatsResponse.data as WGOGoalieStat[],
-      );
-      advancedGoalieStats = advancedGoalieStats.concat(
-        advancedGoalieStatsResponse.data as WGOAdvancedGoalieStat[],
-      );
-      daysLeftStats = daysLeftStats.concat(
-        daysRestResponse.data as WGODaysLeftStat[],
-      );
+    pagesRead++;
+    const fullPages = validateWgoGoaliePaginationPage({
+      date: formattedEndDate,
+      pageStart: start,
+      pageLimit: limit,
+      pagesRead,
+      scope: "player",
+      seenPages,
+      pages: [
+        { source: "summary", rows: goalieStatsPage },
+        { source: "advanced", rows: advancedGoalieStatsPage },
+        { source: "days_rest", rows: daysRestStatsPage },
+      ],
+    });
 
-      moreDataAvailable =
-        (goalieStatsResponse.data?.length || 0) === limit ||
-        (advancedGoalieStatsResponse.data?.length || 0) === limit ||
-        (daysRestResponse.data?.length || 0) === limit; // Adjust check for potentially empty data arrays
-      start += limit;
-    } catch (fetchError: any) {
-      console.error(
-        `Error fetching player data for ${playerId} on ${formattedEndDate}:`,
-        fetchError.message,
-      );
-      moreDataAvailable = false; // Stop fetching on error
-      return null; // Indicate failure
-    }
+    goalieStats = goalieStats.concat(
+      filterRowsForRequestedPlayer(goalieStatsPage, normalizedPlayerId),
+    );
+    advancedGoalieStats = advancedGoalieStats.concat(
+      filterRowsForRequestedPlayer(advancedGoalieStatsPage, normalizedPlayerId),
+    );
+    daysLeftStats = daysLeftStats.concat(
+      filterRowsForRequestedPlayer(daysRestStatsPage, normalizedPlayerId),
+    );
+
+    moreDataAvailable = fullPages.length > 0;
+    start += limit;
   }
 
   return {
@@ -535,7 +689,10 @@ export async function fetchDataForPlayer(
  * @param date - The date string 'YYYY-MM-DD' for which to update the stats.
  * @returns An object indicating whether the update was successful along with the fetched stats.
  */
-async function updateGoalieStats(date: string): Promise<{
+async function updateGoalieStats(
+  date: string,
+  options: { pruneExistingAfterWrite?: boolean } = {},
+): Promise<{
   // date is 'YYYY-MM-DD'
   updated: boolean;
   goalieStats: WGOGoalieStat[];
@@ -565,7 +722,7 @@ async function updateGoalieStats(date: string): Promise<{
   const seasonId = season.id; // Use the ID from the 'seasons' table
 
   // Fetch data specifically for this date
-  const dataForDate = await fetchAllDataForDate(formattedDate, 100); // Use the existing fetchAllDataForDate
+  const dataForDate = await fetchAllDataForDate(formattedDate, WGO_PAGE_LIMIT);
   const goalieStats = dataForDate.goalieStats;
   const advancedGoalieStats = dataForDate.advancedGoalieStats;
   const daysRestStats = dataForDate.daysRestStats;
@@ -620,7 +777,49 @@ async function updateGoalieStats(date: string): Promise<{
     };
   });
 
+  if (options.pruneExistingAfterWrite && records.length === 0) {
+    throw new WgoGoalieFetchError({
+      code: "WGO_GOALIE_FETCH_FAILED",
+      date: formattedDate,
+      source: "summary",
+      pageStart: 0,
+      pageLimit: WGO_PAGE_LIMIT,
+      upstreamError: new Error(
+        "Refusing to replace existing goalie stats with an empty acquired summary.",
+      ),
+    });
+  }
+
+  const overwriteGoalieIds = options.pruneExistingAfterWrite
+    ? Array.from(new Set(records.map((record) => Number(record.goalie_id))))
+    : [];
+  if (
+    options.pruneExistingAfterWrite &&
+    overwriteGoalieIds.some(
+      (goalieId) => !Number.isSafeInteger(goalieId) || goalieId <= 0,
+    )
+  ) {
+    throw new WgoGoalieFetchError({
+      code: "WGO_GOALIE_FETCH_FAILED",
+      date: formattedDate,
+      source: "summary",
+      pageStart: 0,
+      pageLimit: WGO_PAGE_LIMIT,
+      upstreamError: new Error(
+        "Refusing to replace existing goalie stats with invalid acquired goalie identifiers.",
+      ),
+    });
+  }
+
   updateCount = await upsertGoalieStatsRecords(records);
+
+  if (options.pruneExistingAfterWrite) {
+    await pruneStaleGoalieStatsForDate(
+      formattedDate,
+      overwriteGoalieIds,
+      updateCount,
+    );
+  }
 
   console.log(
     `Updated ${updateCount} goalie stats for ${formattedDate} (Season ${seasonId})`,
@@ -655,6 +854,8 @@ async function fetchAllDataForDate(
   let goalieStats: WGOGoalieStat[] = [];
   let advancedGoalieStats: WGOAdvancedGoalieStat[] = [];
   let daysRestStats: WGODaysLeftStat[] = [];
+  let pagesRead = 0;
+  const seenPages = createWgoGoaliePageHistory();
   // console.log("Fetching data for date:", formattedDate); // Keep if useful
 
   // Loop to fetch all pages of data from the API
@@ -664,49 +865,53 @@ async function fetchAllDataForDate(
     const advancedGoalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22qualityStart%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsAgainstAverage%22,%22direction%22:%22ASC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=0&cayenneExp=gameDate%3C%3D%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E%3D%22${formattedDate}%22%20and%20(gameTypeId%3D2%20or%20gameTypeId%3D3)`; // Include both regular season and playoffs
     const daysRestUrl = `https://api.nhle.com/stats/rest/en/goalie/daysrest?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&cayenneExp=gameDate%3C%3D%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E%3D%22${formattedDate}%22%20and%20(gameTypeId%3D2%20or%20gameTypeId%3D3)`; // Include both regular season and playoffs
 
-    try {
-      const [
-        goalieStatsResponse,
-        advancedGoalieStatsResponse,
-        daysRestResponse,
-      ] = await Promise.all([
-        Fetch(goalieStatsUrl).then(
-          (res) => res.json() as Promise<NHLApiResponse>,
-        ),
-        Fetch(advancedGoalieStatsUrl).then(
-          (res) => res.json() as Promise<NHLApiResponse>,
-        ),
-        Fetch(daysRestUrl).then((res) => res.json() as Promise<NHLApiResponse>),
+    const [goalieStatsPage, advancedGoalieStatsPage, daysRestStatsPage] =
+      await Promise.all([
+        fetchRequiredWgoGoaliePage<WGOGoalieStat>({
+          date: formattedDate,
+          source: "summary",
+          pageStart: start,
+          pageLimit: limit,
+          request: () => Fetch(goalieStatsUrl),
+        }),
+        fetchRequiredWgoGoaliePage<WGOAdvancedGoalieStat>({
+          date: formattedDate,
+          source: "advanced",
+          pageStart: start,
+          pageLimit: limit,
+          request: () => Fetch(advancedGoalieStatsUrl),
+        }),
+        fetchRequiredWgoGoaliePage<WGODaysLeftStat>({
+          date: formattedDate,
+          source: "days_rest",
+          pageStart: start,
+          pageLimit: limit,
+          request: () => Fetch(daysRestUrl),
+        }),
       ]);
 
-      goalieStats = goalieStats.concat(
-        goalieStatsResponse.data as WGOGoalieStat[],
-      );
-      advancedGoalieStats = advancedGoalieStats.concat(
-        advancedGoalieStatsResponse.data as WGOAdvancedGoalieStat[],
-      );
-      daysRestStats = daysRestStats.concat(
-        daysRestResponse.data as WGODaysLeftStat[],
-      );
+    pagesRead++;
+    const fullPages = validateWgoGoaliePaginationPage({
+      date: formattedDate,
+      pageStart: start,
+      pageLimit: limit,
+      pagesRead,
+      scope: "date",
+      seenPages,
+      pages: [
+        { source: "summary", rows: goalieStatsPage },
+        { source: "advanced", rows: advancedGoalieStatsPage },
+        { source: "days_rest", rows: daysRestStatsPage },
+      ],
+    });
 
-      // Check if the length of *any* response data equals the limit
-      const gsLen = goalieStatsResponse.data?.length ?? 0;
-      const agsLen = advancedGoalieStatsResponse.data?.length ?? 0;
-      const drLen = daysRestResponse.data?.length ?? 0;
+    goalieStats = goalieStats.concat(goalieStatsPage);
+    advancedGoalieStats = advancedGoalieStats.concat(advancedGoalieStatsPage);
+    daysRestStats = daysRestStats.concat(daysRestStatsPage);
 
-      moreDataAvailable =
-        gsLen === limit || agsLen === limit || drLen === limit;
+    moreDataAvailable = fullPages.length > 0;
 
-      start += limit;
-    } catch (fetchError: any) {
-      console.error(
-        `Error fetching data for date ${formattedDate}:`,
-        fetchError.message,
-      );
-      moreDataAvailable = false; // Stop fetching for this date on error
-      // Return potentially partial data collected so far or empty arrays
-      return { goalieStats, advancedGoalieStats, daysRestStats };
-    }
+    start += limit;
   }
 
   return {
@@ -770,6 +975,14 @@ async function updateAllGoalieStatsForSeason(targetSeasonId: number) {
         // console.log(`No updates performed for ${formattedDate}`);
       }
     } catch (e: any) {
+      if (
+        e instanceof WgoGoalieWriteError ||
+        e instanceof WgoGoalieFetchError ||
+        e instanceof WgoGoaliePruneError
+      ) {
+        e.addCompletedRowsBeforeFailure(totalUpdates);
+        throw e;
+      }
       console.error(`Critical error processing ${formattedDate}:`, e.message);
       totalErrors++;
     }
@@ -857,6 +1070,14 @@ async function updateAllHistoricalGoalieStats(): Promise<{
       // Optional: Add a small delay between seasons if needed to avoid rate limits
       // await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
     } catch (e: any) {
+      if (
+        e instanceof WgoGoalieWriteError ||
+        e instanceof WgoGoalieFetchError ||
+        e instanceof WgoGoaliePruneError
+      ) {
+        e.addCompletedRowsBeforeFailure(grandTotalUpdates);
+        throw e;
+      }
       console.error(
         `Critical error during processing of season ${targetSeasonId}:`,
         e.message,
@@ -1001,6 +1222,14 @@ async function updateRecentGoalieStats(): Promise<{
         // console.log(`No data or season found for ${formattedDate}. Skipping.`);
       }
     } catch (e: any) {
+      if (
+        e instanceof WgoGoalieWriteError ||
+        e instanceof WgoGoalieFetchError ||
+        e instanceof WgoGoaliePruneError
+      ) {
+        e.addCompletedRowsBeforeFailure(totalUpdates);
+        throw e;
+      }
       console.error(
         `Critical error processing ${formattedDate} during incremental update:`,
         e.message,
@@ -1143,15 +1372,21 @@ async function runGoalieStatsDateRange(options: {
       if (hasExistingData && !overwrite) {
         skippedDates++;
       } else {
-        if (hasExistingData && overwrite) {
-          await deleteGoalieStatsForDate(formattedDate);
-        }
-
-        const dailyResult = await updateGoalieStats(formattedDate);
+        const dailyResult = await updateGoalieStats(formattedDate, {
+          pruneExistingAfterWrite: hasExistingData && overwrite,
+        });
         totalUpdates += dailyResult.actualUpsertCount;
       }
       processedDates++;
     } catch (error: any) {
+      if (
+        error instanceof WgoGoalieWriteError ||
+        error instanceof WgoGoalieFetchError ||
+        error instanceof WgoGoaliePruneError
+      ) {
+        error.addCompletedRowsBeforeFailure(totalUpdates);
+        throw error;
+      }
       totalErrors++;
       console.error(
         `Error processing ${formattedDate} in ${runMode} mode:`,
@@ -1177,10 +1412,7 @@ async function runGoalieStatsDateRange(options: {
 }
 
 // --- API Handler ---
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse,
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const jobName = "update-all-wgo-goalies";
   const startTime = Date.now();
 
@@ -1191,6 +1423,7 @@ export default async function handler(
   let responseMessage = "";
   let responseData: any = {};
   let responseBody: any = null;
+  let intendedStatusCode = 200;
 
   try {
     const actionParam = req.query.action as string | undefined;
@@ -1352,15 +1585,19 @@ export default async function handler(
           `Invalid date format: ${dateParam}. Expected YYYY-MM-DD.`,
         );
       }
+      const normalizedPlayerId = normalizePositivePlayerId(playerIdParam);
+      if (!normalizedPlayerId) {
+        throw new Error("Invalid playerId. Expected a positive safe integer.");
+      }
       const result = await fetchDataForPlayer(
-        playerIdParam,
+        normalizedPlayerId,
         goalieFullName,
         dateParam,
       );
 
       if (result === null) {
         throw new Error(
-          `Failed to fetch player data for ${playerIdParam} on ${dateParam}, possibly missing season context.`,
+          `Failed to fetch player data for ${normalizedPlayerId} on ${dateParam}, possibly missing season context.`,
         );
       }
 
@@ -1371,7 +1608,7 @@ export default async function handler(
         ...details,
         fetched: rowsAffected > 0,
         dateContext: dateParam,
-        playerId: playerIdParam,
+        playerId: normalizedPlayerId,
       };
       responseData = result;
     }
@@ -1383,53 +1620,89 @@ export default async function handler(
       );
     }
 
-    // --- Send successful response ---
+    // --- Prepare the domain response; send only after audit persistence ---
     responseBody = {
       // Use 500 if process finished with errors
       message: responseMessage,
       success: status === "success",
       data: responseData, // Include detailed result object
     };
-    return res.status(status === "success" ? 200 : 500).json(responseBody);
+    intendedStatusCode = status === "success" ? 200 : 500;
   } catch (err: any) {
     console.error("Error in handler:", err);
-    status = "error";
+    const goalieFailureClassification =
+      classifyWgoGoalieWriteFailure(err) ??
+      classifyWgoGoalieFetchFailure(err) ??
+      classifyWgoGoaliePruneFailure(err);
+    const goalieFailure =
+      getWgoGoalieWriteFailureDetails(err) ??
+      getWgoGoalieFetchFailureDetails(err) ??
+      getWgoGoaliePruneFailureDetails(err);
+    status = goalieFailureClassification?.jobStatus ?? "error";
+    if (err instanceof WgoGoalieWriteError) {
+      rowsAffected = err.details.totalPersistedRows;
+    } else if (err instanceof WgoGoalieFetchError) {
+      rowsAffected = err.details.completedRowsBeforeFailure;
+    } else if (err instanceof WgoGoaliePruneError) {
+      rowsAffected = err.details.totalPersistedRows;
+    }
     // Add error message to details ONLY if not already set by specific actions
-    details = { error: err.message, ...details };
-    if (!res.headersSent) {
-      const statusCode =
-        err.message.includes("Invalid") || err.message.includes("Missing")
-          ? 400
-          : 500;
-      responseBody = { message: err.message, success: false };
-      res.status(statusCode).json(responseBody);
-    }
-  } finally {
-    const elapsedMs = Date.now() - startTime;
-    details = { ...details, processingTimeMs: elapsedMs };
-
-    try {
-      await supabase.from("cron_job_audit").insert([
-        {
-          job_name: jobName,
-          status,
-          rows_affected: rowsAffected,
-          details: {
-            method: req.method ?? null,
-            url: req.url ?? null,
-            statusCode: res.statusCode,
-            durationMs: elapsedMs,
-            error:
-              status === "error"
-                ? (details?.error ?? responseMessage ?? "Unknown error")
-                : null,
-            response: responseBody,
-            context: details,
-          },
-        },
-      ]);
-    } catch (auditErr: any) {
-      console.error("Failed to write audit row:", auditErr.message);
-    }
+    details = {
+      ...details,
+      error: err.message,
+      ...(goalieFailure ?? {}),
+    };
+    intendedStatusCode = goalieFailureClassification
+      ? goalieFailureClassification.httpStatus
+      : err.message.includes("Invalid") || err.message.includes("Missing")
+        ? 400
+        : 500;
+    responseBody = goalieFailureClassification?.response ?? {
+      message: err.message,
+      success: false,
+    };
   }
+
+  const elapsedMs = Date.now() - startTime;
+  details = { ...details, processingTimeMs: elapsedMs };
+
+  try {
+    const { error: auditError } = await supabase.from("cron_job_audit").insert([
+      {
+        job_name: jobName,
+        status,
+        rows_affected: rowsAffected,
+        details: {
+          method: req.method ?? null,
+          url: req.url ?? null,
+          statusCode: intendedStatusCode,
+          intendedStatusCode,
+          durationMs: elapsedMs,
+          error:
+            status === "error"
+              ? (details?.error ?? responseMessage ?? "Unknown error")
+              : null,
+          response: responseBody,
+          context: details,
+        },
+      },
+    ]);
+    if (auditError) {
+      throw auditError;
+    }
+  } catch (auditErr: unknown) {
+    const auditError = sanitizeWgoGoalieDiagnostic(auditErr);
+    console.error("Failed to write audit row:", auditError);
+    return res.status(500).json({
+      message: "Failed to persist the required cron audit row.",
+      success: false,
+      code: "WGO_GOALIE_AUDIT_WRITE_FAILED",
+      intendedStatusCode,
+      auditError,
+    });
+  }
+
+  return res.status(intendedStatusCode).json(responseBody);
 }
+
+export default adminOnly(handler);

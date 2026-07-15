@@ -62,8 +62,8 @@ const NewsPage: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>>
           <p className={styles.eyebrow}>FHFH distilled updates</p>
           <h1 className={styles.title}>Fantasy Hockey News Feed</h1>
           <p className={styles.subtitle}>
-            Reviewed updates from CCC, GDL, and future sources, normalized into reusable player and
-            team news cards for injuries, returns, goalie starts, roster moves, and line changes.
+            Reviewed updates from original public sources, normalized into reusable player and team
+            news cards for injuries, returns, goalie starts, roster moves, and line changes.
           </p>
           <div className={styles.summaryRow}>
             <span className={styles.summaryChip}>{items.length} published cards</span>

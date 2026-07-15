@@ -15,6 +15,7 @@ type RequestWithSupabase = {
   method?: string;
   query: {
     seasonId?: string | string[];
+    trainingSeasonIds?: string | string[];
     gameType?: string | string[];
     modelName?: string | string[];
     modelVersion?: string | string[];
@@ -76,6 +77,7 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
   const result = await runWalkForwardBacktest({
     client: req.supabase,
     seasonId,
+    trainingSeasonIds: readIntegerList(req.query.trainingSeasonIds),
     gameType: readInteger(req.query.gameType),
     modelName: readSingleQueryValue(req.query.modelName) ?? BASELINE_MODEL_NAME,
     modelVersion:

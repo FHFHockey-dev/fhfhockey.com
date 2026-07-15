@@ -99,8 +99,8 @@ The seed registry below is a starting classification; verified repository eviden
 
 | ID | Initiative | Domain | Claimed state | Key dependency role |
 |---|---|---|---|---|
-| A-AUTH | Authentication and user settings | Platform | 15/34 parents | Shared auth/entitlement foundation |
-| A-CRON-EMAIL | Cron audit email failures | Operations | 3/7 parents | Operational visibility; reconcile B-CRON-NST |
+| A-AUTH | Authentication and user settings | Platform | Wave A active; 184/205 rows, 21 open | Shared auth/entitlement foundation; callback, expired-session recovery, and P1 autofill-exposed credential containment are production-verified |
+| A-CRON-EMAIL | Cron audit email failures | Operations | Wave A active; 52/62 rows, 10 open; P1 season-writer/WGO/missing-secret auth boundaries verified locally; P0 finalized after stable redeploy, 59/59 literal-to-Vault conversion, 61/61 activation parity, 47/47 green probes, missing/old rejection and current authorization, canonical-one/candidate-zero cleanup, executable-helper removal, and honest provider/cron-history/WAL/backup/log retention documentation | Operational visibility and credential boundary; reconcile B-CRON-NST |
 | A-GDL | GDL suite ingestion | Data ingestion | 3/10 parents; PRD missing | Shared lines identity/data foundation |
 | A-3P | Three Pillars Analytics | Analytics | 14/17 parents | Umbrella dependency for sustainability/trends |
 | A-SUST | Sustainability model | Analytics | 10/12 parents | Depends on rolling metrics/model contracts |
@@ -108,28 +108,28 @@ The seed registry below is a starting classification; verified repository eviden
 | A-SITE | Site surface expansion roadmap | Site | 4/9 parents | Depends on underlying surfaces |
 | A-STYLE | Style system/underlying restyle | UX | 8/12 parents | Depends on stable routes/components |
 | A-FORGE-V1 | FORGE projection model V1 | Models | 22/40 parents plus skater 4/8 | Shared FORGE model contract |
-| A-FORGE-DASH | FORGE dashboard remediation | UX/models | Wave A complete; 74/74 remediation rows | Option A deployed; credential rotated across Vercel/Vault/60 commands; jobs 308/393 Vault-backed; Top Adds promotion retains the prospective non-zero in-season evidence gate |
-| A-FORGE-CC | FORGE Command Center | Operations/models | 6/9 parents | Depends on pipeline/run ownership |
-| A-FORGE-P4 | FORGE ecosystem pass four | Models | 20/23 parents | Multi-surface remediation |
-| A-FORGE-LIVE | FORGE living pass four | Models | 13/28 parents | Audit/remediation tail |
-| A-PRED | NHL game prediction model | Models | 9/11 plus nested incomplete lists | Depends on ingestion/roster/SOS contracts |
-| A-XG-TREND | xG trending completion | Models | 22/23 parents; PRD missing | Depends on xG/NST foundations |
-| A-XG-REL | xG release remediation | Release/models | 4/8 parents | Release gate; reconcile exception list |
-| A-DRAFT | Draft Dashboard | Yahoo/product | Partially implemented; task list missing | Depends on Yahoo mapping |
-| A-DRAFT-DEBUG | Draft Dashboard debug/performance | Yahoo/product | 1/5 explicit items | Primary-path performance/correctness |
+| A-FORGE-DASH | FORGE dashboard remediation | UX/models | Wave A complete; 75/75 remediation rows | Option A deployed; credential rotated across Vercel/Vault/60 commands; jobs 308/393 Vault-backed; legacy rollback hydration is request-safe; Top Adds promotion retains the prospective non-zero in-season evidence gate |
+| A-FORGE-CC | FORGE Command Center | Operations/models | Wave A complete; 80/80 rows; one-release coexistence promoted | `/FORGE` primary actions use Command Center; `/forge/dashboard` remains labeled rollback; A-SUST owns null-name remediation; final swap is Wave-C NEW-006 |
+| A-FORGE-P4 | FORGE ecosystem pass four | Models | Wave A complete; 91/91 rows | Multi-surface remediation complete; dynamic audit pending |
+| A-FORGE-LIVE | FORGE living pass four | Models | Wave A complete; 63/63 rows; isolated selected-game probe passed at 15.157s | Dynamic Wave-C audit pending |
+| A-PRED | NHL game prediction model | Models | Wave A complete; 228/228 rows across model/accuracy/roster-SOS lists | Candidate metrics persisted immutably; owner-approved evidence gate defers production until v6/v5 validation |
+| A-XG-TREND | xG trending completion | Models | Wave A complete; 170/170 rows; production flurry materialized with raw invariance, corrected candidate shadowed inactive/non-champion, and richer-rebound heads verified offline without promotion | Depends on xG/NST foundations; dynamic Wave-C audit pending |
+| A-XG-REL | xG release remediation | Release/models | Wave A complete; paired lists 47/47 | Training-use gate satisfied with visible approved exceptions; production cutover remains separate |
+| A-DRAFT | Draft Dashboard | Yahoo/product | Wave A complete; 91/91 rows; owner-approved option A retains inline/collapsible settings | Dynamic Wave-C audit pending; B-DRAFT-STYLE may revisit presentation |
+| A-DRAFT-DEBUG | Draft Dashboard debug/performance | Yahoo/product | Wave A complete; 14/14 reconciled rows; SHA complete; owner-approved option-A historical relative TTFP exception | Dynamic Wave-C audit pending |
 
 #### Wave B — plan/start after Wave A
 
 | ID | Initiative | Domain | Claimed state | Key dependency role |
 |---|---|---|---|---|
-| B-CRON-NST | Cron NST/audit remediation | Operations | 0/5 | Reconciles A-CRON-EMAIL and NST ownership |
+| B-CRON-NST | Cron NST/audit remediation | Operations | 21/39 source rows; 18 open; local review remediation verified, combined schema/production checkpoint pending | Reconciles A-CRON-EMAIL and NST ownership |
 | B-SUST-BAR | Sustainability Barometer | Analytics/UX | 0/8 | Depends on A-SUST |
 | B-SUST-AUD | Sustainability/trends audit | Analytics | 0/5 | Depends on A-SUST and recovered trends scope |
 | B-GAMEGRID | Game Grid master dashboard | Stats/product | 0/5 | Depends on underlying data/routes |
 | B-SKO | SKO charts | Models/UX | Planned; task list missing | Reconcile burn-down/modeling scopes |
 | B-START | Start Chart/model | FORGE | Planned; task list missing | Depends on FORGE V1 |
 | B-FORGE-COMBO | FORGE + Trends + Start Chart | Models/product | 0/10 | Depends on A-FORGE-V1, A-XG-TREND, B-START |
-| B-XG-EX | xG release exception resolution | Release/models | 0/4; PRD missing | Follows A-XG-REL |
+| B-XG-EX | xG release exception resolution | Release/models | Wave B dependency-closed early; 15/15 and paired PRD present | Exception-aware contract unblocked A-XG-REL while preserving production boundary |
 | B-YAHOO | Yahoo ingestion/mapping audit | Yahoo/data | Audit/planning; task list missing | Foundation for Draft Dashboard |
 | B-DRAFT-STYLE | Game Grid/Draft style overhaul | UX | Planned; task list missing | After stable product paths |
 | B-CLEAN | Code cleanup/warning reduction | Maintenance | Planned; task list missing | After active feature stabilization |
@@ -154,7 +154,7 @@ The seed registry below is a starting classification; verified repository eviden
 
 Wave A begins with shared foundations and release/correctness signals, then dependent product surfaces:
 
-`A-AUTH → auth-dependent surfaces`; `A-GDL/A-CRON-EMAIL → ingestion/operations`; `A-XG-REL → A-XG-TREND → A-PRED`; `A-FORGE-V1 → A-FORGE-CC/A-FORGE-DASH/A-FORGE-P4/A-FORGE-LIVE`; `A-3P → A-SUST → A-US-SOS → A-SITE/A-STYLE`; `B-YAHOO mapping evidence may be audited narrowly to unblock A-DRAFT/A-DRAFT-DEBUG`.
+`A-AUTH → auth-dependent surfaces`; `A-GDL/A-CRON-EMAIL → ingestion/operations`; within cron operations, `A-CRON-EMAIL P0 10.1 → 10.2 → 10.3 → 10.4 → 10.5 → 10.6`, with all literal-bearing jobs held quiesced after 10.4 and restored only per verified Vault-backed batch in 10.5. The breaking season/WGO authorization boundary precedes the combined B-CRON-NST `NEW 29.0`/`31.0`/`32.0` transactional-status-cardinality decision, temporary-branch validation, schema/runtime deployment, and bounded probes; `A-XG-REL → A-XG-TREND → A-PRED`; `A-FORGE-V1 → A-FORGE-CC/A-FORGE-DASH/A-FORGE-P4/A-FORGE-LIVE`; `A-3P → A-SUST → A-US-SOS → A-SITE/A-STYLE`; `B-YAHOO mapping evidence may be audited narrowly to unblock A-DRAFT/A-DRAFT-DEBUG`.
 
 Wave B follows stable foundations:
 
@@ -200,7 +200,7 @@ This table classifies every non-canonical file discovered recursively under `tas
 |---|---|---|---|
 | `tasks/TASKS/auth-user-settings-platform/docs/auth-provider-manual-config.md` | supporting note/reference | A-AUTH | — |
 | `tasks/TASKS/auth-user-settings-platform/prd/prd-auth-user-settings-platform.md` | PRD | A-AUTH | — |
-| `tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md` | task list | A-AUTH | 168 checkbox rows |
+| `tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md` | task list | A-AUTH | 205 checkbox rows |
 | `tasks/TASKS/contextual-hockey-rankings/2026-06-07-goal.md` | reference/supporting context | C-RANK | — |
 | `tasks/TASKS/contextual-hockey-rankings/gpt-codex-suggested-prompt.md` | reference/supporting context | C-RANK | — |
 | `tasks/TASKS/contextual-hockey-rankings/prd-contextual-hockey-rankings.md` | PRD | C-RANK | — |
@@ -222,10 +222,10 @@ This table classifies every non-canonical file discovered recursively under `tas
 | `tasks/TASKS/cron-operations/prd/prd-cron-audit-and-schedule-optimization.md` | PRD | A-CRON-EMAIL / B-CRON-NST / C-OPS | — |
 | `tasks/TASKS/cron-operations/prd/prd-cron-failed-jobs-remediation.md` | PRD | A-CRON-EMAIL / B-CRON-NST / C-OPS | — |
 | `tasks/TASKS/cron-operations/prd/prd-cron-nst-audit-remediation.md` | PRD | A-CRON-EMAIL / B-CRON-NST / C-OPS | — |
-| `tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 47 checkbox rows |
+| `tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 62 checkbox rows |
 | `tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 43 checkbox rows |
 | `tasks/TASKS/cron-operations/tasks-prd-cron-failed-jobs-remediation.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 34 checkbox rows |
-| `tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 5 checkbox rows |
+| `tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 39 checkbox rows |
 | `tasks/TASKS/cron-operations/tasks-prd-nst-api-audit-and-migration.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 46 checkbox rows |
 | `tasks/TASKS/dead-code-cleanup/burn-down-plan.md` | implementation map/architecture plan | B-CLEAN / B-DEAD / B-DRM / B-SKO-BURN | — |
 | `tasks/TASKS/dead-code-cleanup/prd-cleanup-tasks.md` | PRD | B-CLEAN / B-DEAD / B-DRM / B-SKO-BURN | — |
@@ -236,17 +236,17 @@ This table classifies every non-canonical file discovered recursively under `tas
 | `tasks/TASKS/draft-dashboard-yahoo/docs/yahoo-tables.md` | schema/data contract | A-DRAFT / A-DRAFT-DEBUG / B-YAHOO / B-DRAFT-STYLE | — |
 | `tasks/TASKS/draft-dashboard-yahoo/draft-dashbord-audit.md` | audit/remediation supporting record | A-DRAFT / A-DRAFT-DEBUG / B-YAHOO / B-DRAFT-STYLE | — |
 | `tasks/TASKS/draft-dashboard-yahoo/prd-yahoo-audit.md` | PRD | A-DRAFT / A-DRAFT-DEBUG / B-YAHOO / B-DRAFT-STYLE | — |
-| `tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md` | PRD | A-DRAFT / A-DRAFT-DEBUG / B-YAHOO / B-DRAFT-STYLE | 6 checkbox rows |
+| `tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md` | PRD | A-DRAFT / A-DRAFT-DEBUG / B-YAHOO / B-DRAFT-STYLE | 14 checkbox rows |
 | `tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dashboard.md` | PRD | A-DRAFT / A-DRAFT-DEBUG / B-YAHOO / B-DRAFT-STYLE | — |
 | `tasks/TASKS/draft-dashboard-yahoo/prd/prd-gamegrid-draft-dashboard-style-overhaul.md` | PRD | A-DRAFT / A-DRAFT-DEBUG / B-YAHOO / B-DRAFT-STYLE | — |
 | `tasks/TASKS/forge-projections/command-center/prd-forge-command-center-rebuild.md` | PRD | A-FORGE-CC | — |
-| `tasks/TASKS/forge-projections/command-center/tasks-prd-forge-command-center-rebuild.md` | task list | A-FORGE-CC | 74 checkbox rows |
+| `tasks/TASKS/forge-projections/command-center/tasks-prd-forge-command-center-rebuild.md` | task list | A-FORGE-CC | 80 checkbox rows; Wave A complete under approved one-release coexistence |
 | `tasks/TASKS/forge-projections/context/forge-tables.md` | schema/data contract | A-FORGE-V1 / C-FORGE | — |
 | `tasks/TASKS/forge-projections/context/projection-model-research.md` | research/decision support | A-FORGE-V1 / C-FORGE | — |
 | `tasks/TASKS/forge-projections/context/projectionTableStructure.md` | schema/data contract | A-FORGE-V1 / C-FORGE | — |
 | `tasks/TASKS/forge-projections/dashboard-health/prd/prd-forge-dashboard-component-health.md` | PRD | A-FORGE-DASH / C-FORGE | — |
 | `tasks/TASKS/forge-projections/dashboard-health/prd/prd-forge-dashboard.md` | PRD | A-FORGE-DASH / C-FORGE | — |
-| `tasks/TASKS/forge-projections/dashboard-health/tasks-forge-dashboard-component-remediation.md` | task list | A-FORGE-DASH / C-FORGE | 74 checkbox rows; Wave A complete |
+| `tasks/TASKS/forge-projections/dashboard-health/tasks-forge-dashboard-component-remediation.md` | task list | A-FORGE-DASH / C-FORGE | 75 checkbox rows; Wave A complete |
 | `tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard-component-health.md` | task list | A-FORGE-DASH / C-FORGE | 46 checkbox rows |
 | `tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard.md` | task list | A-FORGE-DASH / C-FORGE | 47 checkbox rows |
 | `tasks/TASKS/forge-projections/docs/FORGE_ECOSYSTEM_ELI5_AUDIT.md` | audit/remediation supporting record | A-FORGE-V1 / C-FORGE | — |
@@ -257,7 +257,7 @@ This table classifies every non-canonical file discovered recursively under `tas
 | `tasks/TASKS/forge-projections/ecosystem-audits/prd/prd-forge-ecosystem-pass-4-audit-remediation.md` | PRD | A-FORGE-P4 / A-FORGE-LIVE / B-FORGE-COMBO / C-FORGE | — |
 | `tasks/TASKS/forge-projections/ecosystem-audits/prd/prd-forge-trends-combo-project.md` | PRD | A-FORGE-P4 / A-FORGE-LIVE / B-FORGE-COMBO / C-FORGE | — |
 | `tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md` | task list | A-FORGE-P4 / A-FORGE-LIVE / B-FORGE-COMBO / C-FORGE | 46 checkbox rows |
-| `tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md` | task list | A-FORGE-P4 / A-FORGE-LIVE / B-FORGE-COMBO / C-FORGE | 90 checkbox rows |
+| `tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md` | task list | A-FORGE-P4 / A-FORGE-LIVE / B-FORGE-COMBO / C-FORGE | 91 checkbox rows |
 | `tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md` | task list | A-FORGE-P4 / A-FORGE-LIVE / B-FORGE-COMBO / C-FORGE | 63 checkbox rows |
 | `tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md` | task list | A-FORGE-P4 / A-FORGE-LIVE / B-FORGE-COMBO / C-FORGE | 37 checkbox rows |
 | `tasks/TASKS/forge-projections/prediction-engine/tasks-prd-forge-prediction-engine-super-task-list.md` | task list | C-FORGE | 101 checkbox rows |
@@ -273,13 +273,13 @@ This table classifies every non-canonical file discovered recursively under `tas
 | `tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md` | task list | A-FORGE-V1 / B-START / C-FORGE | 34 checkbox rows |
 | `tasks/TASKS/forge-projections/v1/tasks-skater-forge.md` | task list | A-FORGE-V1 / B-START / C-FORGE | 55 checkbox rows |
 | `tasks/TASKS/lines-ccc-ingestion/prd-lines-ccc-ingestion.md` | PRD | C-OPS | — |
-| `tasks/TASKS/lines-ccc-ingestion/tasks-prd-lines-ccc-ingestion.md` | task list | C-OPS | 92 checkbox rows |
+| `tasks/TASKS/lines-ccc-ingestion/tasks-prd-lines-ccc-ingestion.md` | task list | C-OPS | 93 checkbox rows |
 | `tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md` | task list | A-GDL | 69 checkbox rows |
 | `tasks/TASKS/nhl-game-prediction-model/prd-nhl-game-prediction-model.md` | PRD | A-PRED | — |
 | `tasks/TASKS/nhl-game-prediction-model/research/deep-research-report.md` | research/decision support | A-PRED | — |
 | `tasks/TASKS/nhl-game-prediction-model/tasks-prd-game-prediction-accuracy-improvement.md` | task list | A-PRED | 49 checkbox rows |
-| `tasks/TASKS/nhl-game-prediction-model/tasks-prd-nhl-game-prediction-model.md` | task list | A-PRED | 107 checkbox rows |
-| `tasks/TASKS/nhl-game-prediction-model/tasks-prd-nhl-game-prediction-roster-sos-model.md` | task list | A-PRED | 60 checkbox rows |
+| `tasks/TASKS/nhl-game-prediction-model/tasks-prd-nhl-game-prediction-model.md` | task list | A-PRED | 115 checkbox rows |
+| `tasks/TASKS/nhl-game-prediction-model/tasks-prd-nhl-game-prediction-roster-sos-model.md` | task list | A-PRED | 64 checkbox rows |
 | `tasks/TASKS/rules/brand-style-cheat-sheet.md` | active process/style reference | CONTROL | — |
 | `tasks/TASKS/rules/create-prd.mdc` | active process/style reference | CONTROL | — |
 | `tasks/TASKS/rules/fhfh-styles.md` | active process/style reference | CONTROL | — |
@@ -406,10 +406,10 @@ This table classifies every non-canonical file discovered recursively under `tas
 | `tasks/TASKS/xg-model/release/tasks-xg-release-exception-resolution.md` | task list | A-XG-REL / B-XG-EX | 15 checkbox rows |
 | `tasks/TASKS/xg-model/release/tasks-xg-release-remediation.md` | task list | A-XG-REL / B-XG-EX | 32 checkbox rows |
 | `tasks/TASKS/xg-model/tasks-nhl-api-xg-model.md` | task list | C-XG | 72 checkbox rows |
-| `tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md` | task list | A-XG-TREND | 150 checkbox rows |
+| `tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md` | task list | A-XG-TREND | 170/170 checkbox rows after live hardening, containment, flurry, and offline rebound findings |
 | `tasks/TASKS/lines-gdl-ingestion/prd/prd-gdl-suite-ingestion.md` | PRD | A-GDL | missing pair repaired 2026-07-11 |
 | `tasks/TASKS/xg-model/trending-model/prd/prd-xg-trending-model-completion.md` | PRD | A-XG-TREND | missing pair repaired 2026-07-11 |
-| `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md` | task list | A-DRAFT | missing pair repaired; 64 generated rows |
+| `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md` | task list | A-DRAFT | missing pair repaired; 91/91 rows complete after verified findings and option-A scope decision |
 | `tasks/TASKS/sko-charts/tasks-prd-sko-charts.md` | task list | B-SKO / B-SKO-BURN | reconciled pair; 53 generated rows |
 | `tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md` | task list | B-START | reconciled pair; 51 generated rows |
 | `tasks/TASKS/xg-model/release/prd/prd-xg-release-validation-and-exception-resolution.md` | PRD | A-XG-REL / B-XG-EX | shared pair repaired 2026-07-11 |

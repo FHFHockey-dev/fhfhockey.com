@@ -8,13 +8,17 @@ import {
   buildArtifactDriftReport,
   buildTeamSurfaceDriftReport,
   buildXgAggregates,
+  mergeXgFlurryMetadata,
   validateXgAggregateReconciliation,
   xgFeatureEventKey,
   type XgArtifactDriftBaseline,
   type XgAggregateGameRow,
   type XgAggregatePredictionRow,
   type XgExternalTeamComparisonRow,
+  type XgFlurryMetadataRow,
 } from "lib/xg/aggregates";
+import { withXgExecutionLeaseApi } from "lib/xg/executionLease";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 const PAGE_SIZE = 1000;
 const DEFAULT_UPSERT_BATCH_SIZE = 500;
@@ -107,6 +111,40 @@ async function fetchApprovedShotGoalPredictions(args: {
   }
 
   return rows;
+}
+
+async function attachFlurryMetadata(
+  predictions: XgAggregatePredictionRow[]
+): Promise<XgAggregatePredictionRow[]> {
+  if (predictions.length === 0) return predictions;
+  const metadataRows: XgFlurryMetadataRow[] = [];
+  const gameIds = Array.from(new Set(predictions.map((row) => row.game_id)));
+  const featureVersions = Array.from(
+    new Set(predictions.map((row) => row.feature_version))
+  );
+
+  for (const gameIdChunk of chunkRows(gameIds, 200)) {
+    for (let from = 0; ; from += PAGE_SIZE) {
+      const { data, error } = await supabase
+        .from("nhl_xg_shot_features" as any)
+        .select(
+          "feature_version,game_id,event_id,flurry_sequence_id,flurry_shot_index"
+        )
+        .in("feature_version", featureVersions)
+        .in("game_id", gameIdChunk)
+        .order("game_id", { ascending: true })
+        .order("event_id", { ascending: true })
+        .range(from, from + PAGE_SIZE - 1);
+      if (error) {
+        throw new Error(`Failed to fetch flurry metadata: ${error.message}`);
+      }
+      if (!data?.length) break;
+      metadataRows.push(...(data as unknown as XgFlurryMetadataRow[]));
+      if (data.length < PAGE_SIZE) break;
+    }
+  }
+
+  return mergeXgFlurryMetadata(predictions, metadataRows);
 }
 
 async function fetchGames(gameIds: number[]): Promise<XgAggregateGameRow[]> {
@@ -363,12 +401,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     parseInteger(firstQueryValue(req.query.upsertBatchSize), DEFAULT_UPSERT_BATCH_SIZE)
   );
 
-  const predictions = await fetchApprovedShotGoalPredictions({
+  const predictions = await attachFlurryMetadata(await fetchApprovedShotGoalPredictions({
     modelVersion,
     featureVersion,
     seasonId,
     limit,
-  });
+  }));
   const games = await fetchGames(predictions.map((row) => row.game_id));
   const aggregates = buildXgAggregates(predictions, games, { rollingWindows });
   const emptyNetEventKeys = await fetchEmptyNetEventKeys({
@@ -514,6 +552,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   });
 }
 
-export default withCronJobAudit(handler, {
+export default withCronJobAudit(adminOnly(withXgExecutionLeaseApi(handler, {
+  leaseKey: "xg:aggregates",
+  ttlSeconds: 1800,
+}) as any), {
   jobName: "update-nhl-xg-aggregates",
 });

@@ -343,6 +343,7 @@ const METRIC_CONFIG = METRIC_GROUPS.flatMap((group) =>
 
 type MetricConfig = (typeof METRIC_CONFIG)[number];
 type MetricKey = MetricConfig["key"];
+type MetricGroupId = (typeof METRIC_GROUPS)[number]["id"];
 type RollingMetricRow = {
   game_date: string;
 } & Record<string, number | null | string>;
@@ -388,6 +389,48 @@ function parseQuickViewMode(input: unknown): PlayerQuickViewId {
     return input;
   }
   return "rolling10";
+}
+
+function getFirstQueryValue(input: unknown): string | undefined {
+  if (Array.isArray(input)) {
+    return typeof input[0] === "string" ? input[0] : undefined;
+  }
+  return typeof input === "string" ? input : undefined;
+}
+
+function parseMetricGroup(input: unknown): MetricGroupId {
+  const candidate = getFirstQueryValue(input);
+  return METRIC_GROUPS.some((group) => group.id === candidate)
+    ? (candidate as MetricGroupId)
+    : "surface";
+}
+
+function getGroupMetricKeys(groupId: MetricGroupId): MetricKey[] {
+  const group = METRIC_GROUPS.find((candidate) => candidate.id === groupId);
+  return group ? group.metrics.map((metric) => metric.key) : [];
+}
+
+function parseMetricSelection(
+  input: unknown,
+  groupId: MetricGroupId
+): MetricKey[] {
+  const allowed = new Set<MetricKey>(getGroupMetricKeys(groupId));
+  const selected = (getFirstQueryValue(input) ?? "")
+    .split(",")
+    .map((metric) => metric.trim())
+    .filter((metric): metric is MetricKey => allowed.has(metric as MetricKey));
+  const unique = Array.from(new Set(selected));
+  return unique.length ? unique : Array.from(allowed);
+}
+
+function metricSelectionsMatch(
+  left: readonly MetricKey[],
+  right: readonly MetricKey[]
+) {
+  return (
+    left.length === right.length &&
+    left.every((metric, index) => metric === right[index])
+  );
 }
 
 function getLegacyScope(scope: RollingWindowMode | BaselineMode): string {
@@ -540,6 +583,7 @@ export default function PlayerTrendPage() {
   const router = useRouter();
   const { playerId } = router.query;
   const hasHydratedUrlState = useRef(false);
+  const isApplyingUrlState = useRef(false);
   const todayEt = useMemo(() => getTodayEt(), []);
   const handoffDate = parseForgeDateParam(router.query.date, todayEt);
   const forgeOrigin = parseForgeOriginParam(router.query.origin);
@@ -557,25 +601,35 @@ export default function PlayerTrendPage() {
     useState<RollingWindowMode>("last5");
   const [quickViewMode, setQuickViewMode] =
     useState<PlayerQuickViewId>("rolling10");
-  const [activeGroup, setActiveGroup] = useState<(typeof METRIC_GROUPS)[number]["id"]>(
-    "surface"
-  );
+  const [activeGroup, setActiveGroup] = useState<MetricGroupId>("surface");
 
   useEffect(() => {
     if (!router.isReady) return;
+    if (hasHydratedUrlState.current) return;
 
     const nextBaseline = parseBaselineMode(router.query.baseline);
     const nextWindow = parseRollingWindowMode(router.query.window);
     const nextQuickView = parseQuickViewMode(router.query.view);
+    const nextMetricGroup = parseMetricGroup(router.query.metricGroup);
+    const nextMetrics = parseMetricSelection(router.query.metrics, nextMetricGroup);
 
+    isApplyingUrlState.current = true;
     setBaselineMode((current) => (current === nextBaseline ? current : nextBaseline));
     setRollingWindowMode((current) => (current === nextWindow ? current : nextWindow));
     setQuickViewMode((current) => (current === nextQuickView ? current : nextQuickView));
+    setActiveGroup((current) =>
+      current === nextMetricGroup ? current : nextMetricGroup
+    );
+    setSelectedMetrics((current) =>
+      metricSelectionsMatch(current, nextMetrics) ? current : nextMetrics
+    );
     hasHydratedUrlState.current = true;
   }, [
     hasHydratedUrlState,
     router.isReady,
     router.query.baseline,
+    router.query.metricGroup,
+    router.query.metrics,
     router.query.view,
     router.query.window
   ]);
@@ -598,20 +652,32 @@ export default function PlayerTrendPage() {
     const currentView = Array.isArray(router.query.view)
       ? router.query.view[0]
       : router.query.view;
+    const currentMetricGroup = getFirstQueryValue(router.query.metricGroup);
+    const currentMetrics = getFirstQueryValue(router.query.metrics);
 
     const queryHasExplicitState =
       typeof currentBaseline === "string" ||
       typeof currentWindow === "string" ||
-      typeof currentView === "string";
+      typeof currentView === "string" ||
+      typeof currentMetricGroup === "string" ||
+      typeof currentMetrics === "string";
     const parsedQueryBaseline = parseBaselineMode(currentBaseline);
     const parsedQueryWindow = parseRollingWindowMode(currentWindow);
     const parsedQueryView = parseQuickViewMode(currentView);
+    const parsedQueryMetricGroup = parseMetricGroup(currentMetricGroup);
+    const parsedQueryMetrics = parseMetricSelection(
+      currentMetrics,
+      parsedQueryMetricGroup
+    );
 
     if (
+      isApplyingUrlState.current &&
       queryHasExplicitState &&
       (parsedQueryBaseline !== baselineMode ||
         parsedQueryWindow !== rollingWindowMode ||
-        parsedQueryView !== quickViewMode)
+        parsedQueryView !== quickViewMode ||
+        parsedQueryMetricGroup !== activeGroup ||
+        !metricSelectionsMatch(parsedQueryMetrics, selectedMetrics))
     ) {
       return;
     }
@@ -619,10 +685,15 @@ export default function PlayerTrendPage() {
     if (
       currentBaseline === baselineMode &&
       currentWindow === rollingWindowMode &&
-      currentView === quickViewMode
+      currentView === quickViewMode &&
+      currentMetricGroup === activeGroup &&
+      currentMetrics === selectedMetrics.join(",")
     ) {
+      isApplyingUrlState.current = false;
       return;
     }
+
+    isApplyingUrlState.current = false;
 
     void router.replace(
       {
@@ -631,7 +702,9 @@ export default function PlayerTrendPage() {
           ...router.query,
           baseline: baselineMode,
           window: rollingWindowMode,
-          view: quickViewMode
+          view: quickViewMode,
+          metricGroup: activeGroup,
+          metrics: selectedMetrics.join(",")
         }
       },
       undefined,
@@ -639,9 +712,11 @@ export default function PlayerTrendPage() {
     );
   }, [
     baselineMode,
+    activeGroup,
     hasHydratedUrlState,
     quickViewMode,
     rollingWindowMode,
+    selectedMetrics,
     router,
     router.isReady,
     router.pathname,
@@ -854,6 +929,11 @@ export default function PlayerTrendPage() {
     );
   };
 
+  const handleMetricGroupChange = (groupId: MetricGroupId) => {
+    setActiveGroup(groupId);
+    setSelectedMetrics(getGroupMetricKeys(groupId));
+  };
+
   const activeGroupMeta = METRIC_GROUPS.find((group) => group.id === activeGroup);
   const handoffContext = useMemo(() => {
     if (forgeOrigin === "forge-dashboard") {
@@ -931,7 +1011,8 @@ export default function PlayerTrendPage() {
                 <button
                   key={group.id}
                   type="button"
-                  onClick={() => setActiveGroup(group.id)}
+                  onClick={() => handleMetricGroupChange(group.id)}
+                  aria-pressed={active}
                   className={`${styles.baselineToggle} ${
                     active ? styles.baselineToggleActive : ""
                   }`}
@@ -951,6 +1032,7 @@ export default function PlayerTrendPage() {
                 key={metric.key}
                 type="button"
                 onClick={() => handleMetricToggle(metric.key)}
+                aria-pressed={active}
                 className={`${styles.metricChip} ${
                   active ? styles.metricChipActive : ""
                 }`}

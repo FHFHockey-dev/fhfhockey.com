@@ -2,6 +2,7 @@
 
 - `tasks/TASKS/forge-projections/command-center/prd-forge-command-center-rebuild.md` - Source PRD for the FORGE Command Center rebuild.
 - `web/pages/forge/command-center.tsx` - New scratch route for the command-center dashboard.
+- `web/pages/FORGE.tsx` - FORGE quick-read landing whose primary dashboard actions now promote Command Center after router hydration.
 - `web/styles/ForgeCommandCenter.module.scss` - New route-specific layout and visual styling for the command center.
 - `web/components/forge-command-center/CommandCenterShell.tsx` - Shared shell, panel, and page-level layout primitives for the new route.
 - `web/components/forge-dashboard/ForgeRouteNav.tsx` - Existing FORGE route-family navigation updated with a non-breaking Command Center link.
@@ -18,6 +19,9 @@
 - `web/lib/dashboard/commandCenterData.test.ts` - Focused tests for normalization, module states, mixed-date aggregation, and top-add filtering.
 - `web/lib/dashboard/forgeLinks.ts` - Existing route-context parser/builder to extend for command-center links if needed.
 - `web/__tests__/pages/forge/command-center.test.tsx` - Page-level tests for rendering, URL filters, state banners, and click-through context.
+- `web/__tests__/pages/FORGE.test.tsx` - Promotion-link and router-hydration regressions for the FORGE quick-read landing.
+- `web/__tests__/pages/forge/player/[playerId].test.tsx` - Shared-nav regression preserving the explicitly labeled legacy rollback route.
+- `web/__tests__/pages/forge/team/[teamId].test.tsx` - Shared-nav regression preserving the explicitly labeled legacy rollback route.
 - `tasks/artifacts/forge-command-center-reconciliation-checklist.md` - Source-to-UI and promotion-gate checklist for the new route.
 
 ### Notes
@@ -81,7 +85,7 @@
   - [x] 6.7 Keep goalie uncertainty and starter-probability language explicit; do not collapse goalie output into a single confident point estimate.
   - [x] 6.8 Ensure player insight and goalie modules show module-level stale/fallback notes.
 
-- [ ] 7.0 Apply the visual system and responsive layout
+- [x] 7.0 Apply the visual system and responsive layout
   - [x] 7.1 Implement the desktop layout around Image #2 as the primary reference and Image #1 as the broader inventory reference.
   - [x] 7.2 Use a dark terminal base with restrained cyan focus, green positive/actionable states, red risk/fade states, yellow/orange caution, and muted gray baseline states.
   - [x] 7.3 Keep dashboard panel radii at `8px` or smaller and avoid cards inside cards.
@@ -89,24 +93,31 @@
   - [x] 7.5 Limit desktop-visible charts to `2` or `3` compact charts at once.
   - [x] 7.6 Implement mobile order: controls, slate/focused matchup, top adds, player insight, goalie risk, team context.
   - [x] 7.7 Convert dense tables into mobile-safe compact rows, accordions, or horizontal-safe lists without hiding core decision labels.
-  - [ ] 7.8 Verify text does not clip, overlap, or overflow in the target desktop, tablet, and mobile viewport sizes.
+  - [x] 7.8 Verify text does not clip, overlap, or overflow in the target desktop, tablet, and mobile viewport sizes. Browser evidence at all six required viewports reported document width equal to client width and zero hidden-overflow text candidates after the goalie-band repair.
 
-- [ ] 8.0 Add tests and source-to-UI reconciliation coverage
+- [x] 8.0 Add tests and source-to-UI reconciliation coverage
   - [x] 8.1 Add `web/__tests__/pages/forge/command-center.test.tsx` for route rendering, empty states, module states, URL filters, and mixed-state banner behavior.
   - [x] 8.2 Add focused `commandCenterData` tests for API normalization and module contract behavior.
   - [x] 8.3 Add tests for top-add ownership defaults and player insight ownership defaults.
   - [x] 8.4 Add tests for click-through context preservation across player, team, start-chart, trends, and goalie links.
   - [x] 8.5 Create `tasks/artifacts/forge-command-center-reconciliation-checklist.md` with source API, source table, rendered value, freshness state, and verification method per module.
-  - [ ] 8.6 Reconcile rendered command-center values against normalized API payloads for Team Power Terminal, Focused Slate Context, Top Adds Watchlist, Player Insight Core, and Goalie Context.
-  - [ ] 8.7 Record any unresolved data trust, stale-state, or route-continuity gaps in the reconciliation checklist before promotion.
+  - [x] 8.6 Reconcile rendered command-center values against normalized API payloads for Team Power Terminal, Focused Slate Context, Top Adds Watchlist, Player Insight Core, and Goalie Context. Verified exact CAR power/top-five, CAR-TBL slate, zero-match Top Adds, selected-date momentum, and CAR goalie values on 2026-07-12.
+  - [x] 8.7 Record any unresolved data trust, stale-state, or route-continuity gaps in the reconciliation checklist before promotion. The selected-date leakage and route-hydration defects were repaired; the remaining sustainability null-name source gap is explicit and tracked under A-SUST NEW 8.0.
 
-- [ ] 9.0 Validate, visually inspect, and prepare promotion
+- [x] 9.0 Validate, visually inspect, and prepare promotion. Owner approved one-release coexistence on 2026-07-12: `/FORGE` primary actions route to Command Center while `/forge/dashboard` remains the labeled rollback route; 40/40 focused route tests, TypeScript, and browser checks pass.
   - [x] 9.1 Run focused command-center tests during implementation.
   - [x] 9.2 Run `npm run test:full` from `web/`. Verified 2026-07-12: 400/400 test files and 1,860/1,860 tests passed in 23.09s.
   - [x] 9.3 Run `npx tsc --noEmit --pretty false` from `web/`.
   - [x] 9.4 Run `npm run build` from `web/`.
-  - [ ] 9.5 Start the local dev server and visually verify `/forge/command-center`.
-  - [ ] 9.6 Capture and inspect screenshots at `1440x900`, `1920x1080`, `390x844`, `430x932`, `768x1024`, and `834x1194`.
-  - [ ] 9.7 Fix any overlapping text, broken responsive behavior, misleading stale state, or incoherent density found during browser verification.
-  - [ ] 9.8 Compare `/forge/command-center` against `/forge/dashboard` and document whether the new route is ready to promote.
-  - [ ] 9.9 Do not replace `/forge/dashboard` until the user approves promotion after reviewing the validated command-center route.
+  - [x] 9.5 Start the local dev server and visually verify `/forge/command-center`. Verified from an isolated release clone on port 3002 because the shared workspace already had an opaque port-3000 server and EMFILE watcher pressure.
+  - [x] 9.6 Capture and inspect screenshots at `1440x900`, `1920x1080`, `390x844`, `430x932`, `768x1024`, and `834x1194`. All six passed after responsive remediation.
+  - [x] 9.7 Fix any overlapping text, broken responsive behavior, misleading stale state, or incoherent density found during browser verification. Repaired desktop goalie clipping/page overflow, error-to-empty masking, route hydration, selected-date leakage, and Player Insight sub-state clarity.
+  - [x] 9.8 Compare `/forge/command-center` against `/forge/dashboard` and document whether the new route is ready to promote. Command Center is responsive with no page-wide overflow at six viewports and explicit mixed/error/partial states; the legacy route forces a 2056px canvas at a 1440px viewport and presents denser loading-first panels. Command Center is ready for owner promotion review with the A-SUST null-name source gap visibly degraded and separately tracked.
+  - [x] 9.9 Do not replace `/forge/dashboard` until the user approves promotion after reviewing the validated command-center route. Owner approved one-release coexistence on 2026-07-12; the landing/default actions now target `/forge/command-center`, and `/forge/dashboard` remains available unchanged as `Legacy Dashboard` rollback.
+
+- [x] NEW 10.0 Preserve upstream error states in Top Adds, Player Insight, and Goalie Context when their rendered row sets are empty; 3-module regression passes.
+- [x] NEW 11.0 Remove desktop goalie-row clipping and page-wide horizontal overflow by giving Player Insight and Goalie Context full-width desktop bands; all six required viewport checks pass.
+- [x] NEW 12.0 Hydrate URL-backed filters before route replacement or data loading so hard reloads preserve date/team/position/slate/mode; unit and real-browser hard-reload checks pass.
+- [x] NEW 13.0 Pass the selected date to the skater-power API so historical Command Center views cannot render later-date momentum; live check returned requested/date-used `2026-03-14` with no fallback.
+- [x] NEW 14.0 Render explicit Top Trust and Regression Risk sub-section headings and empty states when sustainability rows lack display names; focused regression and build pass.
+- [x] NEW 15.0 Prevent the promoted `/FORGE` landing from issuing pre-hydration requests for today's date before loading a requested historical date; the router-ready guard, focused regression, and browser/server-log verification prove only `2026-03-14` date-scoped reads occur.

@@ -7,6 +7,7 @@ import type { Database } from "lib/supabase/database-generated.types";
 import { buildShotFeatureRows, type NhlShotFeatureRow } from "lib/supabase/Upserts/nhlShotFeatureBuilder";
 import type { ParsedNhlPbpEvent } from "lib/supabase/Upserts/nhlPlayByPlayParser";
 import { enrichShotRowsWithPersistedTrainingContext } from "lib/xg/shotFeatureEnrichment";
+import { withXgExecutionLeaseApi } from "lib/xg/executionLease";
 import { upsertXgShotFeatureRows } from "lib/xg/shotFeaturePersistence";
 
 type GameRow = {
@@ -544,6 +545,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default withCronJobAudit(handler, {
+export default withCronJobAudit(withXgExecutionLeaseApi(handler, {
+  leaseKey: "xg:shot-features",
+  ttlSeconds: 1800
+}), {
   jobName: "update-nhl-xg-shot-features"
 });

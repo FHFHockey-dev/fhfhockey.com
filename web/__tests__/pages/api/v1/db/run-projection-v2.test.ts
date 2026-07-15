@@ -53,6 +53,7 @@ vi.mock("lib/projections/run-forge-projections", () => ({
 import handler, {
   buildProjectionDerivedGate,
   buildProjectionInputIngestGate,
+  parseProjectionGameIds,
   summarizeSkaterFreshnessCoverage,
   summarizeGoalieRosterAssignments,
 } from "../../../../../pages/api/v1/db/run-projection-v2";
@@ -87,6 +88,12 @@ function createMockRes() {
 describe("/api/v1/db/run-projection-v2", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("normalizes a bounded single-date game batch without duplicate ids", () => {
+    expect(parseProjectionGameIds("2025020101, 2025020102,2025020101,bad,-1")).toEqual([
+      2025020101, 2025020102,
+    ]);
   });
 
   it("normalizes html upstream dependency failures into structured payloads", async () => {
