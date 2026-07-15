@@ -139,6 +139,18 @@ The current READY production artifact predates Draft Ranker, and `/draft-ranking
 
 No deployment or flag change may be represented as complete until the exact release commit and READY deployment are recorded here and in the launch runbook.
 
+## Publication and preview evidence
+
+The authorized scoped release was published on 2026-07-15 without promoting or changing production:
+
+- branch: `codex/draft-ranker-release-20260715`
+- product commit: `c78059b6de6671a0e594afe1e60d5e42421b5db4`
+- draft pull request: [#335](https://github.com/FHFHockey-dev/fhfhockey.com/pull/335), targeting `octoberBranch`
+- READY preview deployment: `dpl_BSTN4KU4zhqKR8UFkRPFwqKHpMiL`
+- GitHub checks: all five reported Vercel checks passed for the product commit
+
+The protected READY preview passed the flag-off closed-state smoke test. `/draft-rankings` and `/community-draft-rankings` each returned HTTP 200; `GET /api/v1/draft-ranker` and `GET /api/v1/draft-ranker/community` each returned HTTP 503 with code `draft_ranker_disabled`; and the homepage server props reported `draftRankerHomepageEnabled: false`. A deployment-scoped query after these requests found no error or fatal runtime logs. No production deployment was promoted, no rollout flag was changed, and no cohort was exposed.
+
 ## Isolated assembly evidence
 
 On 2026-07-15 the manifest was assembled in a separate clean clone of remote commit `0ed825fb30f5c6f329cd0dc169d2d9b2ca975e0f` on local-only branch `codex/draft-ranker-release-20260715`.
@@ -157,4 +169,4 @@ The clean clone's Corepack bootstrap encountered a package-signing key mismatch 
 
 Immediately before authorized publication, remote `octoberBranch` advanced to cleanup commit `5743b6d808ff4cd9dd0cb01fef13863ac95f9f6d`. The candidate was discarded and rebuilt from a new clean clone of that exact commit. All 102 paths transferred again with zero collisions; 228/228 Draft Ranker tests, 54/54 broader WIGO tests, TypeScript, all 83 static pages, and sitemap generation passed again on the refreshed base.
 
-The isolated branch had not been staged, committed, pushed, or deployed at the time of assembly. On 2026-07-15 the user installed GitHub CLI 2.96.0, authenticated as `TjsUsername` over HTTPS with repository access, and explicitly authorized publishing the prepared Draft Ranker branch and draft PR. The scoped publication workflow may therefore proceed; production deployment and cohort exposure remain separate runbook gates.
+At assembly time the isolated branch had not been staged, committed, pushed, or deployed. The user then installed GitHub CLI 2.96.0, authenticated as `TjsUsername` over HTTPS with repository access, and explicitly authorized publishing the prepared Draft Ranker branch and draft PR. The scoped 102-path change set was staged as 101 Git records because the migration replacement normalized to one rename, committed as `c78059b6de6671a0e594afe1e60d5e42421b5db4`, pushed, and opened as draft PR [#335](https://github.com/FHFHockey-dev/fhfhockey.com/pull/335). Production deployment and cohort exposure remain separate runbook gates.
