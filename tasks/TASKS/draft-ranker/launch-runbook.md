@@ -126,11 +126,29 @@ Database migrations are additive. Routine rollback is flag/job disablement, not 
 - [x] Community red-team calibration passes and residual coordinated-account risk is accepted.
 - [x] Current health report is reviewed; every attention item is documented.
 - [x] The paths in [release-manifest.md](./release-manifest.md) have been assembled from a clean current remote base into a reviewed READY production deployment that serves the feature routes with every rollout flag off.
-- [ ] Named operator, support owner, rollback owner, cohort IDs, and observation window are recorded.
+- [x] Named operator, support owner, rollback owner, cohort IDs, and observation window are recorded.
 - [x] Product owner explicitly approves the production cohort expansion.
 
 Local release evidence on 2026-07-15: 228/228 focused Draft Ranker tests, 18/18 affected WIGO regressions, full TypeScript, and the production build pass. The Community Ranking and authenticated board/export surfaces pass desktop and iPhone 14 Pro Max (430×932) inspection. The mobile document has no page-level horizontal overflow; its wide ranking table remains intentionally and independently scrollable. Two disposable account journeys ended with zero Auth or account-owned residue. Product-owner approval for staff-stage production expansion is recorded.
 
 A read-only Vercel preflight on 2026-07-15 found that the READY production deployment predates Draft Ranker and the live `/draft-rankings` route returns 404. [release-manifest.md](./release-manifest.md) classifies every dirty path and records a clean isolated assembly from current remote base `5743b6d808ff4cd9dd0cb01fef13863ac95f9f6d`: 102 included paths, zero conflicts/collisions, 228/228 Draft Ranker tests, 54/54 broader WIGO tests, passing TypeScript, and a complete 83-page production build.
 
-The scoped product commit `c78059b6de6671a0e594afe1e60d5e42421b5db4` was published in PR [#335](https://github.com/FHFHockey-dev/fhfhockey.com/pull/335), approved by the product owner, and merged as `722f1dff02b7a4b9486836b386c0b576f57c5cfd`. Vercel production deployment `dpl_2jLGmBmqwYjXiJJVuLjUMYJLrz4D` is READY from that exact merge SHA. Both feature routes return HTTP 200, both checked APIs fail closed with HTTP 503 `draft_ranker_disabled`, homepage props keep the module disabled, rendered homepage inspection finds no Draft Ranker exposure, and the production error/fatal log audit is empty. The previous production deployment `dpl_HgjrBeCQVzDTsgryafBLzmXqGyjH` is retained for rollback. All rollout keys remain absent/fail-closed. Staff exposure remains prohibited until the unchecked named-owner, exact cohort UUID, and observation-window item is complete.
+The scoped product commit `c78059b6de6671a0e594afe1e60d5e42421b5db4` was published in PR [#335](https://github.com/FHFHockey-dev/fhfhockey.com/pull/335), approved by the product owner, and merged as `722f1dff02b7a4b9486836b386c0b576f57c5cfd`. Vercel production deployment `dpl_2jLGmBmqwYjXiJJVuLjUMYJLrz4D` was READY from that exact merge SHA and passed the all-flags-off production smoke. The previous production deployment `dpl_HgjrBeCQVzDTsgryafBLzmXqGyjH` remains retained for rollback.
+
+## Staff cohort operational record
+
+The product owner approved staff-stage expansion. On 2026-07-15, the production-only master flag was set to `true`, rollout stage was set to `staff`, and exactly three verified Supabase Auth accounts whose application profile has `public.users.role = 'admin'` were entered in the server-only staff allowlist. The raw UUIDs exist only in Vercel's sensitive production environment configuration and are intentionally excluded from source control and this runbook. The deterministic SHA-256 fingerprint of the newline-delimited, lexicographically sorted cohort UUIDs is `08e5ae064daea8389205cbd9bf54a3ce3a1a31f555e7e51a381ca314a61053dd`.
+
+- operator: Tim Branson;
+- support owner: Tim Branson;
+- rollback owner: Tim Branson;
+- cohort source/count: `public.users.role = 'admin'`, three exact Auth UUIDs;
+- staff deployment: `dpl_8RitVqdJ9QsRTi11J7xjH66u6cdu`, READY from source commit `722f1dff02b7a4b9486836b386c0b576f57c5cfd`;
+- production aliases: `fhfhockey.com`, `www.fhfhockey.com`, and `fhfhockey.vercel.app`;
+- observation start: `2026-07-15T16:10:46Z` (`2026-07-15 12:10:46 EDT`);
+- earliest time-based review: `2026-07-18T16:10:46Z`, after a continuous 72-hour minimum;
+- volume gate: because the verified staff cohort has fewer than five accounts, require at least 50 complete account journeys in addition to the 72-hour minimum and all integrity, privacy, latency, health, deletion, and rollback criteria above;
+- secondary state: beta allowlist empty; homepage, discovery, contribution collection, and public Community Ranking flags remain off;
+- rollback: first set rollout stage `off` and disable the master flag; retain `dpl_HgjrBeCQVzDTsgryafBLzmXqGyjH` as the prior known-good deployment if artifact rollback is required.
+
+The redeployed production artifact is READY. Anonymous `GET /api/v1/draft-ranker` returns HTTP 401 `authentication_required`; anonymous Community Ranking remains closed with HTTP 503 `draft_ranker_disabled`; both feature pages and the homepage return HTTP 200; homepage props keep `draftRankerHomepageEnabled: false`; and rendered homepage inspection finds no Draft Ranker prompt. Production sign-in was visually confirmed for the allowlisted `TjsUsername` staff account. Deployment-scoped error/fatal logs and grouped runtime errors were empty after the smoke requests. Staff observation is now active; allowlist expansion and every secondary flag remain prohibited until the recorded evidence gate is met and reviewed.

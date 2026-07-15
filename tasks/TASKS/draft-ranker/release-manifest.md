@@ -9,7 +9,8 @@ Recorded 2026-07-15:
 - local branch: `octoberBranch`
 - local base commit: `5743b6d808ff4cd9dd0cb01fef13863ac95f9f6d`
 - approved merge commit: `722f1dff02b7a4b9486836b386c0b576f57c5cfd`
-- current READY production deployment: `dpl_2jLGmBmqwYjXiJJVuLjUMYJLrz4D`
+- current READY production deployment: `dpl_8RitVqdJ9QsRTi11J7xjH66u6cdu`
+- prior all-flags-off production deployment: `dpl_2jLGmBmqwYjXiJJVuLjUMYJLrz4D`
 - current production base commit: `722f1dff02b7a4b9486836b386c0b576f57c5cfd`
 - retained production rollback deployment: `dpl_HgjrBeCQVzDTsgryafBLzmXqGyjH`
 
@@ -139,7 +140,24 @@ Record the exact deployment ID and smoke-test evidence in [progress.md](./progre
 
 PR [#335](https://github.com/FHFHockey-dev/fhfhockey.com/pull/335) was approved by the product owner and merged as `722f1dff02b7a4b9486836b386c0b576f57c5cfd`. Its tree exactly matches the approved PR-head tree `21c199f1f00dce7d856fd92fd5bdcffc0d8c6580`. READY preview `dpl_5wzgM43KU7Re4FTZZ8GgHhDQYRmw` was promoted through Vercel into production deployment `dpl_2jLGmBmqwYjXiJJVuLjUMYJLrz4D`, which records `action: promote`, the original preview ID, and the verified merge SHA. Vercel marked it READY at `2026-07-15T15:19:26.084Z` and assigned `fhfhockey.com`, `www.fhfhockey.com`, and `fhfhockey.vercel.app` without alias error.
 
-The flag-off production smoke then passed: both feature routes returned HTTP 200; both checked APIs returned HTTP 503 with code `draft_ranker_disabled`; homepage server props reported `draftRankerHomepageEnabled: false`; a rendered browser check found zero Draft Ranker text on the homepage and displayed the real account-backed signed-out page; and deployment-scoped error/fatal logs plus grouped runtime errors were empty. The prior READY production deployment `dpl_HgjrBeCQVzDTsgryafBLzmXqGyjH` remains the retained rollback candidate. No rollout key, cohort UUID, secondary feature flag, or public aggregate flag was enabled.
+The flag-off production smoke then passed: both feature routes returned HTTP 200; both checked APIs returned HTTP 503 with code `draft_ranker_disabled`; homepage server props reported `draftRankerHomepageEnabled: false`; a rendered browser check found zero Draft Ranker text on the homepage and displayed the real account-backed signed-out page; and deployment-scoped error/fatal logs plus grouped runtime errors were empty. The prior READY production deployment `dpl_HgjrBeCQVzDTsgryafBLzmXqGyjH` remains the retained rollback candidate. No rollout key, cohort UUID, secondary feature flag, or public aggregate flag was enabled during that closed-state checkpoint.
+
+## Staff rollout evidence
+
+After explicit product-owner approval, the exact three-account Supabase admin cohort was recorded in Vercel as the production-only sensitive `DRAFT_RANKER_STAFF_USER_IDS` value. `DRAFT_RANKER_ENABLED=true` and `DRAFT_RANKER_ROLLOUT_STAGE=staff` were set for Production only. The cohort is derived from exact Auth UUID ownership joined to `public.users.role = 'admin'`; its raw identifiers are not stored in this repository. The sorted cohort fingerprint is `08e5ae064daea8389205cbd9bf54a3ce3a1a31f555e7e51a381ca314a61053dd` (SHA-256), and the cohort count is three.
+
+Vercel redeployed the reviewed artifact without a source change:
+
+- staff deployment: `dpl_8RitVqdJ9QsRTi11J7xjH66u6cdu`;
+- action/original deployment: `redeploy` from `dpl_2jLGmBmqwYjXiJJVuLjUMYJLrz4D`;
+- source commit: `722f1dff02b7a4b9486836b386c0b576f57c5cfd`;
+- READY time: `2026-07-15T16:10:46Z`;
+- production aliases: `fhfhockey.com`, `www.fhfhockey.com`, and `fhfhockey.vercel.app`, with no alias error;
+- operator/support/rollback owner: Tim Branson;
+- retained artifact rollback: `dpl_HgjrBeCQVzDTsgryafBLzmXqGyjH`;
+- observation gate: continuous 72-hour minimum through `2026-07-18T16:10:46Z`, at least 50 complete account journeys because the cohort has fewer than five accounts, and every staff integrity/latency/health criterion in [launch-runbook.md](./launch-runbook.md).
+
+The beta cohort remains empty. `DRAFT_RANKER_HOMEPAGE_ENABLED`, `DRAFT_RANKER_DISCOVERY_ENABLED`, `DRAFT_RANKER_COMMUNITY_CONTRIBUTION_ENABLED`, and `COMMUNITY_DRAFT_RANKINGS_ENABLED` remain absent/off. Anonymous personal API access returned HTTP 401 `authentication_required`; the public aggregate API returned HTTP 503 `draft_ranker_disabled`; both feature pages and the homepage returned HTTP 200; homepage props still reported `draftRankerHomepageEnabled: false`; and the rendered homepage contained no Draft Ranker prompt. A production browser session visually confirmed sign-in as the allowlisted `TjsUsername` staff account. The new deployment had no grouped runtime error clusters and no error/fatal logs in the post-deploy smoke window.
 
 ## Publication and preview evidence
 
