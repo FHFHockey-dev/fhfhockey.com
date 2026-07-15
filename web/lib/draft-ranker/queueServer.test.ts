@@ -154,8 +154,8 @@ describe("Draft Ranker queue server", () => {
       data: {
         status: "completed",
         promptId: "33333333-3333-4333-8333-333333333333",
-        lowPlayerId: 20249,
-        highPlayerId: 20250,
+        lowPlayerId: 20001,
+        highPlayerId: 20002,
         expiresAt: "2026-07-15T01:00:00Z",
         idempotentReplay: false,
       },
@@ -169,21 +169,21 @@ describe("Draft Ranker queue server", () => {
       operationId,
     });
     expect(result).toMatchObject({
-      algorithmVersion: "deterministic_v1",
+      algorithmVersion: "deterministic_top_down_v2",
       plannedSlots: 20,
       prompt: {
         category: "personal",
         reasonCode: "adjacent_unresolved",
-        players: [{ playerId: 20249 }, { playerId: 20250 }],
+        players: [{ playerId: 20001 }, { playerId: 20002 }],
       },
     });
     expect(rpcMock).toHaveBeenCalledWith(
       "issue_draft_ranker_pair_prompt_guarded",
       expect.objectContaining({
         p_user_id: "owner-1",
-        p_player_a_id: 20249,
-        p_player_b_id: 20250,
-        p_algorithm_version: "deterministic_v1",
+        p_player_a_id: 20001,
+        p_player_b_id: 20002,
+        p_algorithm_version: "deterministic_top_down_v2",
         p_rate_operation_payload_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
       }),
     );
