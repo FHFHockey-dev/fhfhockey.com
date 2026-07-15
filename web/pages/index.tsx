@@ -122,6 +122,8 @@ const Home: NextPage = ({
   recentInjuryNews,
   homepagePlayerCount,
   homepagePulsePoints,
+  openingNightDate,
+  openingNightStartTime,
   draftRankerHomepageEnabled,
 }) => {
   const {
@@ -202,6 +204,8 @@ const Home: NextPage = ({
             },
           ]}
           pulsePoints={homepagePulsePoints}
+          openingNightDate={openingNightDate}
+          openingNightStartTime={openingNightStartTime}
         />
         <ClientOnly>
           {draftRankerHomepageEnabled ? (
@@ -476,6 +480,30 @@ export async function getServerSideProps({ req, res }) {
   let gamesToday = [];
   let playoffWeekGames = [];
   let nextGameDateFound = today;
+  let openingNightDate = null;
+  let openingNightStartTime = null;
+
+  try {
+    const { data, error } = await supabaseServer
+      .from("seasons")
+      .select("startDate")
+      .gte("startDate", today)
+      .order("startDate", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    openingNightDate = data?.startDate ?? null;
+
+    if (openingNightDate) {
+      const openingNightGames = await fetchGames(openingNightDate);
+      openingNightStartTime = openingNightGames.games
+        .map((game: any) => game?.startTimeUTC)
+        .filter((value: unknown): value is string => typeof value === "string")
+        .sort()[0] ?? null;
+    }
+  } catch (error: any) {
+    console.error("Error fetching the next NHL opening night:", error.message);
+  }
 
   if (isOffseason) {
     console.log("Currently in offseason - skipping game search");
@@ -624,6 +652,8 @@ export async function getServerSideProps({ req, res }) {
       recentInjuryNews,
       homepagePlayerCount,
       homepagePulsePoints,
+      openingNightDate,
+      openingNightStartTime,
       draftRankerHomepageEnabled:
         isDraftRankerEnabled() && isDraftRankerHomepageEnabled(),
     },

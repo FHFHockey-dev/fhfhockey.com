@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import HomepageGamesSection from "./HomepageGamesSection";
 
@@ -16,6 +16,10 @@ vi.mock("components/common/OptimizedImage", () => ({
 }));
 
 describe("HomepageGamesSection", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("shows live period and time remaining instead of a scheduled start time", () => {
     render(
       <HomepageGamesSection
@@ -50,5 +54,34 @@ describe("HomepageGamesSection", () => {
         .getAllByRole("link", { name: /game grid/i })
         .some((link) => link.getAttribute("href") === "/game-grid/7-Day-Forecast")
     ).toBe(true);
+  });
+
+  it("shows a real-data opening night countdown when the offseason slate is empty", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-15T16:00:00.000Z"));
+
+    render(
+      <HomepageGamesSection
+        currentDate="2026-07-15"
+        games={[]}
+        gamesHeaderText="Today's"
+        onChangeDate={() => {}}
+        loading={false}
+        error={null}
+        lastUpdatedAt="2026-07-15T16:00:00.000Z"
+        openingNightDate="2026-09-29"
+      />
+    );
+
+    expect(
+      screen.getByRole("heading", { name: /opening night countdown/i })
+    ).toBeTruthy();
+    expect(screen.getByText(/Sep 29, 2026/)).toBeTruthy();
+    expect(screen.queryByText(/No games scheduled for 07\/15\/2026/i)).toBeNull();
+    expect(
+      screen.getByLabelText(/time remaining until nhl opening night/i)
+    ).toBeTruthy();
+    expect(screen.getByText("75")).toBeTruthy();
+    expect(screen.getByText(/puck-drop time updates when the NHL schedule/i)).toBeTruthy();
   });
 });
