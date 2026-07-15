@@ -132,7 +132,7 @@ The seed registry below is a starting classification; verified repository eviden
 | B-XG-EX | xG release exception resolution | Release/models | Wave B dependency-closed early; 15/15 and paired PRD present | Exception-aware contract unblocked A-XG-REL while preserving production boundary |
 | B-YAHOO | Yahoo ingestion/mapping audit | Yahoo/data | Audit/planning; task list missing | Foundation for Draft Dashboard |
 | B-DRAFT-STYLE | Game Grid/Draft style overhaul | UX | Planned; task list missing | After stable product paths |
-| B-CLEAN | Code cleanup/warning reduction | Maintenance | Active at 5/38; repaired task list exists; cache-history preparation/guarded remote rewrite `NEW 8.1`–`8.4` and checkpoint-commit prevention `NEW 9.0` are verified; local shared-index reconciliation `8.5` is pending | P1 repository-publication safety dependency temporarily precedes B-CRON-NST production cutover; broad warning cleanup remains after active feature stabilization |
+| B-CLEAN | Code cleanup/warning reduction | Maintenance | Active at 12/43; cache-history containment `NEW 8.0–8.5`, checkpoint prevention `NEW 9.0`, generated-build publication containment `NEW 10.0–10.3`, and three-file forward-only bytecode cleanup `NEW 11.0` are verified | Create the exact coherent checkpoint commit before B-CRON-NST production cutover; broad warning cleanup remains after active feature stabilization |
 | B-DEAD | Dead-code follow-through | Maintenance | Audit complete; removal untracked | Requires consumer verification/approval for mass removal |
 | B-DRM | Date Range Matrix refactor | Maintenance/product | Planned; task list missing | Current dirty implementation evidence exists |
 | B-SKO-BURN | SKO pipeline burn-down | Models/maintenance | Planned; pair missing or merge | Merge candidate with B-SKO |
@@ -415,7 +415,7 @@ This table classifies every non-canonical file discovered recursively under `tas
 | `tasks/TASKS/xg-model/release/prd/prd-xg-release-validation-and-exception-resolution.md` | PRD | A-XG-REL / B-XG-EX | shared pair repaired 2026-07-11 |
 | `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md` | task list | B-YAHOO | missing pair repaired; 58 generated rows |
 | `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md` | task list | B-DRAFT-STYLE | missing pair repaired; 52 generated rows |
-| `tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md` | task list | B-CLEAN | missing pair repaired; 38 current rows after cache-history preservation and checkpoint-commit prevention discoveries; 5/38 verified |
+| `tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md` | task list | B-CLEAN | missing pair repaired; 43 current rows after cache-history, checkpoint-prevention, generated-build publication, and older-bytecode discoveries; 12/43 verified |
 | `tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md` | task list | B-DEAD | missing pair repaired; 35 generated rows |
 | `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md` | task list | B-DRM | missing pair repaired; 33 generated rows |
 | `tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md` | task list | B-TRENDS | recovered pair; 50 generated rows |
