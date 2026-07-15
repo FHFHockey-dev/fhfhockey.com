@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import moment from "moment";
+import moment from "moment-timezone";
 import Link from "next/link";
 
 import ExternalNewsLink from "components/common/ExternalNewsLink";
@@ -26,6 +26,15 @@ type HomepageStandingsInjuriesSectionProps = {
 };
 
 const ROWS_PER_PAGE = 32;
+const HOMEPAGE_TIME_ZONE = "America/New_York";
+
+function formatHomepageDate(value: string | null | undefined): string {
+  if (!value) return "N/A";
+  const parsed = moment(value);
+  return parsed.isValid()
+    ? parsed.tz(HOMEPAGE_TIME_ZONE).format("M/D/YY")
+    : "N/A";
+}
 
 function newsItemToHomepageInjury(item: NewsFeedItem) {
   const playerNames = item.players
@@ -300,9 +309,9 @@ export default function HomepageStandingsInjuriesSection({
                     return (
                       <tr key={transaction.id}>
                         <td className={styles.dateColumn}>
-                          {moment(
+                          {formatHomepageDate(
                             transaction.published_at ?? transaction.created_at,
-                          ).format("M/D/YY")}
+                          )}
                         </td>
                         <td className={styles.teamColumn}>
                           <OptimizedImage
@@ -385,9 +394,7 @@ export default function HomepageStandingsInjuriesSection({
                       className={rowClassName}
                     >
                       <td className={styles.dateColumn}>
-                        {injury.date
-                          ? moment(injury.date).format("M/D/YY")
-                          : "N/A"}
+                        {formatHomepageDate(injury.date)}
                       </td>
                       <td className={styles.teamColumn}>
                         <OptimizedImage

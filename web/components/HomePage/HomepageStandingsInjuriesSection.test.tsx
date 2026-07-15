@@ -153,7 +153,7 @@ describe("HomepageStandingsInjuriesSection", () => {
               "Mason McTavish and Anaheim are making progress on a contract extension.",
             category: "NEWS UPDATE",
             team_abbreviation: "ANA",
-            published_at: "2026-07-14T12:00:00.000Z",
+            published_at: "2026-07-15T01:00:00.000Z",
             source_url: "https://x.com/OriginalReporter/status/2",
             players: [{ player_name: "Mason McTavish" }],
           },
@@ -165,6 +165,10 @@ describe("HomepageStandingsInjuriesSection", () => {
     );
 
     expect(screen.getByText("Mason McTavish")).toBeTruthy();
+    const transactionTable = screen.getByRole("table", {
+      name: /recent nhl transactions/i,
+    });
+    expect(within(transactionTable).getByText("7/14/26")).toBeTruthy();
     expect(screen.getByText("NEWS UPDATE")).toBeTruthy();
     expect(
       screen.getByText(
