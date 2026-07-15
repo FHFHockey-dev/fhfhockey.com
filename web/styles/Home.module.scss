@@ -179,6 +179,97 @@
   background: v.$background-dark;
 }
 
+.openingNightCountdown {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(360px, auto);
+  align-items: center;
+  gap: v.$space-lg;
+  min-height: 112px;
+  padding: v.$space-md v.$space-lg;
+  border: 1px solid rgba(v.$primary-color, 0.34);
+  border-radius: v.$radius-card;
+  background:
+    linear-gradient(100deg, rgba(v.$primary-color, 0.14), transparent 46%),
+    radial-gradient(circle at 88% 20%, rgba(v.$primary-color, 0.12), transparent 34%),
+    v.$background-medium;
+}
+
+.openingNightIntro {
+  display: grid;
+  gap: 4px;
+
+  > span,
+  small {
+    color: v.$primary-color;
+    font-size: 0.68rem;
+    font-weight: v.$font-weight-semibold;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  h3,
+  p {
+    margin: 0;
+  }
+
+  h3 {
+    color: v.$color-white;
+    font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+    font-size: clamp(1.15rem, 2vw, 1.55rem);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  p {
+    color: v.$text-primary;
+    font-size: v.$font-size-sm;
+  }
+
+  time {
+    color: v.$color-white;
+    font-family: v.$font-family-numbers;
+    font-weight: v.$font-weight-semibold;
+  }
+
+  small {
+    color: v.$text-secondary;
+    letter-spacing: 0.04em;
+    text-transform: none;
+  }
+}
+
+.countdownGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(64px, 1fr));
+  gap: v.$space-xs;
+}
+
+.countdownUnit {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  min-width: 64px;
+  padding: v.$space-sm;
+  border: 1px solid rgba(v.$border-secondary, 0.86);
+  border-radius: v.$radius-control;
+  background: rgba(v.$background-dark, 0.78);
+
+  strong {
+    color: v.$color-white;
+    font-family: v.$font-family-numbers;
+    font-size: clamp(1.25rem, 2.3vw, 1.75rem);
+    font-weight: v.$font-weight-semibold;
+    line-height: 1;
+  }
+
+  small {
+    color: v.$text-secondary;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+}
+
 .gamesGrid {
   display: flex;
   gap: v.$space-sm;
@@ -1168,6 +1259,11 @@
     width: 100%;
   }
 
+  .openingNightCountdown {
+    grid-template-columns: 1fr;
+    gap: v.$space-md;
+  }
+
   .slateSummaryRail {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1249,6 +1345,14 @@
   .gameLink {
     flex-basis: 142px;
     min-width: 142px;
+  }
+
+  .openingNightCountdown {
+    padding: v.$space-md;
+  }
+
+  .countdownGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .slateHeroIntro {

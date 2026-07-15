@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 
 import Link from "next/link";
 import moment from "moment";
@@ -39,7 +39,16 @@ type HomepageGamesSectionProps = {
     caption: string;
   }>;
   pulsePoints?: HomepagePulsePoint[];
+  openingNightDate?: string | null;
+  openingNightStartTime?: string | null;
 };
+
+const COUNTDOWN_UNITS = [
+  ["days", "Days"],
+  ["hours", "Hours"],
+  ["minutes", "Minutes"],
+  ["seconds", "Seconds"],
+] as const;
 
 export default function HomepageGamesSection({
   currentDate,
@@ -54,6 +63,8 @@ export default function HomepageGamesSection({
   playoffWeekGames = [],
   heroMetrics = [],
   pulsePoints = [],
+  openingNightDate = null,
+  openingNightStartTime = null,
 }: HomepageGamesSectionProps) {
   const liveGames = games.filter(
     (game) => game.gameState === "LIVE" || game.gameState === "CRIT",
@@ -71,6 +82,22 @@ export default function HomepageGamesSection({
     (game) => typeof game.startTimeUTC === "string",
   );
   const [scheduleContext, setScheduleContext] = useState<string | null>(null);
+  const [countdownNow, setCountdownNow] = useState<number | null>(null);
+  const hasOfficialPuckDrop = Boolean(
+    openingNightStartTime && moment(openingNightStartTime).isValid(),
+  );
+  const openingNightTarget = useMemo(() => {
+    const date = openingNightDate?.slice(0, 10);
+    if (!date) return null;
+
+    const scheduledStart = openingNightStartTime
+      ? moment(openingNightStartTime).tz("America/New_York")
+      : null;
+    const target = scheduledStart?.isValid()
+      ? scheduledStart
+      : moment.tz(date, "YYYY-MM-DD", "America/New_York").startOf("day");
+    return target.isValid() ? target : null;
+  }, [openingNightDate, openingNightStartTime]);
 
   useEffect(() => {
     if (!firstScheduledGame?.startTimeUTC) {
@@ -80,6 +107,36 @@ export default function HomepageGamesSection({
 
     setScheduleContext(formatLocalStartTime(firstScheduledGame.startTimeUTC));
   }, [firstScheduledGame?.startTimeUTC]);
+
+  useEffect(() => {
+    if (!openingNightTarget) {
+      setCountdownNow(null);
+      return;
+    }
+
+    const updateCountdown = () => setCountdownNow(Date.now());
+    updateCountdown();
+    const interval = window.setInterval(updateCountdown, 1_000);
+    return () => window.clearInterval(interval);
+  }, [openingNightTarget]);
+
+  const openingNightCountdown = useMemo(() => {
+    if (!openingNightTarget || countdownNow === null) return null;
+    const remaining = Math.max(openingNightTarget.valueOf() - countdownNow, 0);
+
+    return {
+      days: Math.floor(remaining / 86_400_000),
+      hours: Math.floor((remaining % 86_400_000) / 3_600_000),
+      minutes: Math.floor((remaining % 3_600_000) / 60_000),
+      seconds: Math.floor((remaining % 60_000) / 1_000),
+      complete: remaining === 0,
+    };
+  }, [countdownNow, openingNightTarget]);
+  const showOpeningNightCountdown = Boolean(
+    games.length === 0 &&
+      openingNightTarget &&
+      (!openingNightCountdown || !openingNightCountdown.complete),
+  );
 
   const heroDescription = playoffsActive
     ? liveGames > 0
@@ -151,13 +208,59 @@ export default function HomepageGamesSection({
         </div>
 
         <div className={styles.gamesContainer}>
-          {modulePresentation.panelState && (
+          {modulePresentation.panelState &&
+          !(
+            showOpeningNightCountdown &&
+            modulePresentation.panelState === "empty"
+          ) ? (
             <PanelStatus
               state={modulePresentation.panelState}
               message={modulePresentation.message ?? ""}
               className={styles.moduleStatusPanel}
             />
-          )}
+          ) : null}
+          {showOpeningNightCountdown ? (
+            <section
+              className={styles.openingNightCountdown}
+              aria-labelledby="opening-night-countdown-heading"
+            >
+              <div className={styles.openingNightIntro}>
+                <span>Next season</span>
+                <h3 id="opening-night-countdown-heading">
+                  Opening night countdown
+                </h3>
+                <p>
+                  The slate returns on{" "}
+                  <time dateTime={openingNightTarget?.toISOString()}>
+                    {hasOfficialPuckDrop
+                      ? openingNightTarget?.format("MMM D, YYYY · h:mm A z")
+                      : openingNightTarget?.format("MMM D, YYYY")}
+                  </time>
+                  .
+                </p>
+                <small>
+                  {hasOfficialPuckDrop
+                    ? "Puck-drop time from the official NHL schedule."
+                    : "Official season date from the FHFH registry; puck-drop time updates when the NHL schedule is available."}
+                </small>
+              </div>
+              <div
+                className={styles.countdownGrid}
+                aria-label="Time remaining until NHL opening night"
+              >
+                {COUNTDOWN_UNITS.map(([key, label]) => (
+                  <span className={styles.countdownUnit} key={key}>
+                    <strong>
+                      {openingNightCountdown
+                        ? String(openingNightCountdown[key]).padStart(2, "0")
+                        : "--"}
+                    </strong>
+                    <small>{label}</small>
+                  </span>
+                ))}
+              </div>
+            </section>
+          ) : null}
           {playoffsActive && playoffBracket ? (
             <HomepagePlayoffBracket
               currentDate={currentDate}
