@@ -197,10 +197,10 @@ Security/Observability: Explicit opt-in; prompt/user/pair/season validation; no 
 Migration/Rollback/Flag/Approval: Approved privacy direction; flag defaults off.
 Non-goals: Direct edits converted to community evidence.
 DR-041 — Implement deterministic adaptive queue
-Status/Scope: Complete; twenty-slot policy, cooldowns, diversity, and why-selected explanations.
+Status/Scope: Complete; versioned top-down personal review, twenty-slot policy, cooldowns, diversity, and why-selected explanations.
 Dependencies/Affected: DR-031–040; queue library/API.
 DB/API/UI: Prompt queue response includes reason and mode.
-Acceptance/Tests: Mix, repetition, cutoff, position diversity, and quick-five policies pass deterministic fixtures.
+Acceptance/Tests: A fresh personal queue starts with ranks 1 and 2 (the first two Yahoo-ADP-seeded players), advances top-down after each reviewed or skipped adjacent pair, and preserves the existing mix, repetition, cutoff, position-diversity, and quick-five policies in deterministic fixtures.
 Security/Observability: Server selects eligible prompts; queue diagnostics aggregate only.
 Migration/Rollback/Flag/Approval: Algorithm versioned; roll back to prior queue version.
 Non-goals: Bandits or learned personalization.

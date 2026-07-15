@@ -1,4 +1,5 @@
-export const DRAFT_PAIR_QUEUE_ALGORITHM_VERSION = "deterministic_v1";
+export const DRAFT_PAIR_QUEUE_ALGORITHM_VERSION =
+  "deterministic_top_down_v2";
 
 export type DraftPairQueueMode =
   | "improve_ranking"
@@ -182,9 +183,7 @@ export function buildDeterministicDraftPairQueue({
   personal.sort((left, right) => {
     const leftRank = playersById.get(left.playerAId)!.rank;
     const rightRank = playersById.get(right.playerAId)!.rank;
-    const leftCutoff = Math.abs(250 - leftRank);
-    const rightCutoff = Math.abs(250 - rightRank);
-    return leftCutoff - rightCutoff || leftRank - rightRank;
+    return leftRank - rightRank;
   });
 
   const candidates = ordered.filter((player) => player.rank > 250).slice(0, 50);

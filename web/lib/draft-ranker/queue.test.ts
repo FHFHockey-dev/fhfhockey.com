@@ -23,6 +23,39 @@ function players(): DraftPairQueuePlayer[] {
 }
 
 describe("deterministic Draft Ranker pair queue", () => {
+  it("starts a fresh personal queue with the first and second drafted players", () => {
+    const queue = buildDeterministicDraftPairQueue({
+      players: players(),
+      preferences: [],
+      recentPairKeys: new Set(),
+      mode: "improve_ranking",
+    });
+
+    expect(queue[0]).toMatchObject({
+      playerAId: 10_001,
+      playerBId: 10_002,
+      category: "personal",
+      reasonCode: "adjacent_unresolved",
+      reason: "Adjacent ranks 1 and 2 have no explicit comparison.",
+    });
+  });
+
+  it("continues top-down after the prior adjacent pair was reviewed", () => {
+    const queue = buildDeterministicDraftPairQueue({
+      players: players(),
+      preferences: [],
+      recentPairKeys: new Set([canonicalPairKey(10_001, 10_002)]),
+      mode: "improve_ranking",
+    });
+
+    expect(queue[0]).toMatchObject({
+      playerAId: 10_002,
+      playerBId: 10_003,
+      category: "personal",
+      reason: "Adjacent ranks 2 and 3 have no explicit comparison.",
+    });
+  });
+
   it("builds the approved twenty-slot launch mix deterministically", () => {
     const input = {
       players: players(),
