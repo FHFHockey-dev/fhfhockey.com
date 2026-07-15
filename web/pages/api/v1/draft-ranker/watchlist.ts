@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { requireApiUser } from "lib/api/requireApiUser";
 import {
+  assertDraftRankerRolloutAccess,
   DraftRankerApiError,
   draftRankerMethodNotAllowed,
   draftRankerRequestId,
@@ -56,6 +57,7 @@ export default async function handler(
   if (!user) return;
 
   try {
+    assertDraftRankerRolloutAccess(user.id);
     if (req.method === "GET") {
       const input = parseDraftRankerInput(draftPlayerActionsQuerySchema, {
         rankingId: first(req.query.rankingId),

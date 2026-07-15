@@ -53,9 +53,11 @@ describe("DraftRankingTable", () => {
     );
 
     expect(
-      (screen.getByLabelText(
-        "New rank for Nathan MacKinnon",
-      ) as HTMLInputElement).valueAsNumber,
+      (
+        screen.getByLabelText(
+          "New rank for Nathan MacKinnon",
+        ) as HTMLInputElement
+      ).valueAsNumber,
     ).toBe(2);
 
     rerender(
@@ -70,9 +72,11 @@ describe("DraftRankingTable", () => {
     );
 
     expect(
-      (screen.getByLabelText(
-        "New rank for Nathan MacKinnon",
-      ) as HTMLInputElement).valueAsNumber,
+      (
+        screen.getByLabelText(
+          "New rank for Nathan MacKinnon",
+        ) as HTMLInputElement
+      ).valueAsNumber,
     ).toBe(3);
   });
 

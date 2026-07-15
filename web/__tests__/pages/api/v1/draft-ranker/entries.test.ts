@@ -40,6 +40,7 @@ describe("GET /api/v1/draft-ranker/entries", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.DRAFT_RANKER_ENABLED = "true";
+    process.env.DRAFT_RANKER_ROLLOUT_STAGE = "authenticated";
     requireApiUserMock.mockResolvedValue({ id: "authenticated-owner" });
     loadDraftRankingEntriesMock.mockResolvedValue({
       ranking: { id: rankingId, lockVersion: 4 },
@@ -50,6 +51,7 @@ describe("GET /api/v1/draft-ranker/entries", () => {
   afterEach(() => {
     if (previousFlag === undefined) delete process.env.DRAFT_RANKER_ENABLED;
     else process.env.DRAFT_RANKER_ENABLED = previousFlag;
+    delete process.env.DRAFT_RANKER_ROLLOUT_STAGE;
   });
 
   it("ignores forged ownership input and reads for the authenticated account", async () => {

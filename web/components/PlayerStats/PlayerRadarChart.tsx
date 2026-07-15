@@ -290,7 +290,6 @@ export function PlayerRadarChart({
         const tableName = isGoalie
           ? "wgo_goalie_stats_per_game"
           : "wgo_skater_stats_per_game";
-        const positionField = isGoalie ? "position_code" : "position_code";
 
         // Convert season ID to string format for the database query
         const seasonString = currentSeason.seasonId.toString(); // Convert 20242025 to "20242025"
@@ -322,14 +321,19 @@ export function PlayerRadarChart({
         console.log(`Fetching percentiles for season: ${seasonString}`);
 
         // First, get the player's actual values from the per_game view
-        let playerQuery = supabase
-          .from(tableName)
-          .select("*")
-          .eq("player_id", player.id)
-          .eq("season", seasonString)
-          .single();
-
-        const { data: playerData, error: playerError } = await playerQuery;
+        const { data: playerData, error: playerError } = isGoalie
+          ? await supabase
+              .from("wgo_goalie_stats_per_game")
+              .select("*")
+              .eq("goalie_id", player.id)
+              .eq("season_id", currentSeason.seasonId)
+              .single()
+          : await supabase
+              .from("wgo_skater_stats_per_game")
+              .select("*")
+              .eq("player_id", player.id)
+              .eq("season", seasonString)
+              .single();
 
         if (playerError || !playerData) {
           console.error(
@@ -370,18 +374,31 @@ export function PlayerRadarChart({
             `[PlayerRadarChart] Using ${stat} value: ${playerValue} from per_game view`
           );
 
-          let query = supabase
-            .from(tableName)
-            .select(stat)
-            .not(stat, "is", null)
-            .eq("season", seasonString); // Use "season" column with string value
+          let data;
+          let error;
+          if (isGoalie) {
+            const result = await supabase
+              .from("wgo_goalie_stats_per_game")
+              .select(stat)
+              .not(stat, "is", null)
+              .eq("season_id", currentSeason.seasonId);
+            data = result.data;
+            error = result.error;
+          } else {
+            let query = supabase
+              .from("wgo_skater_stats_per_game")
+              .select(stat)
+              .not(stat, "is", null)
+              .eq("season", seasonString);
 
-          // Apply position filter if needed
-          if (positionFilter.length > 0) {
-            query = query.in(positionField, positionFilter);
+            if (positionFilter.length > 0) {
+              query = query.in("position_code", positionFilter);
+            }
+
+            const result = await query;
+            data = result.data;
+            error = result.error;
           }
-
-          const { data, error } = await query;
 
           if (error) {
             console.error(

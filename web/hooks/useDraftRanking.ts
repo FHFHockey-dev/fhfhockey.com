@@ -8,6 +8,7 @@ import type { ReorderDraftRankingInput } from "lib/draft-ranker/contracts";
 
 export type DraftRankingBootstrap = {
   initialized: boolean;
+  discoveryEnabled: boolean;
   pairwiseEnabled: boolean;
   targetSeasonId: number;
   ranking: null | {

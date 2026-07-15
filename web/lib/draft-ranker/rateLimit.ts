@@ -35,7 +35,7 @@ function boundedInteger(
 }
 
 export function draftPairwiseRateLimitConfig(
-  environment: PairwiseRateEnvironment = process.env,
+  environment: PairwiseRateEnvironment = process.env as PairwiseRateEnvironment,
 ): DraftPairwiseRateLimitConfig {
   return {
     queueHourlyLimit: boundedInteger(

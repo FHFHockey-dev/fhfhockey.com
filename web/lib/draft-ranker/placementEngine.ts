@@ -290,17 +290,21 @@ export function answerPlacementEngine(
   entries: PlacementEntry[],
   outcome: PlacementOutcome,
 ): PlacementEngineState {
-  if (state.ready) throw new Error("Placement is already ready for confirmation.");
+  if (state.ready)
+    throw new Error("Placement is already ready for confirmation.");
   const anchor = state.issuedAnchors[state.issuedAnchors.length - 1];
-  if (!anchor || state.answers.some((answer) => answer.sequence === anchor.sequence)) {
+  if (
+    !anchor ||
+    state.answers.some((answer) => answer.sequence === anchor.sequence)
+  ) {
     throw new Error("Placement has no unanswered anchor.");
   }
 
   const contradiction = Boolean(
     anchor.expectedOutcome &&
-      outcome !== "skip" &&
-      outcome !== "too_close" &&
-      outcome !== anchor.expectedOutcome,
+    outcome !== "skip" &&
+    outcome !== "too_close" &&
+    outcome !== anchor.expectedOutcome,
   );
   let next: PlacementEngineState = {
     ...state,
@@ -334,9 +338,15 @@ export function answerPlacementEngine(
 
   if (anchor.mode === "narrow") {
     if (outcome === "target_over_anchor") {
-      next = { ...next, intervalHigh: Math.min(next.intervalHigh, anchor.rank) };
+      next = {
+        ...next,
+        intervalHigh: Math.min(next.intervalHigh, anchor.rank),
+      };
     } else if (outcome === "anchor_over_target") {
-      next = { ...next, intervalLow: Math.max(next.intervalLow, anchor.rank + 1) };
+      next = {
+        ...next,
+        intervalLow: Math.max(next.intervalLow, anchor.rank + 1),
+      };
     } else if (outcome === "too_close") {
       next = {
         ...next,

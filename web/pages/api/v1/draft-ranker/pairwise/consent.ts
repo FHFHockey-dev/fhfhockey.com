@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { requireApiUser } from "lib/api/requireApiUser";
 import {
+  assertDraftRankerRolloutAccess,
   DraftRankerApiError,
   draftRankerMethodNotAllowed,
   draftRankerRequestId,
@@ -49,6 +50,7 @@ export default async function handler(
   if (!user) return;
 
   try {
+    assertDraftRankerRolloutAccess(user.id);
     const data =
       req.method === "GET"
         ? await loadDraftContributionPreference(user.id)

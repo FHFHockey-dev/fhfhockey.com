@@ -44,9 +44,15 @@ describe("DraftContributionConsent", () => {
     configure();
     render(<DraftContributionConsent />);
     expect(hookMock).toHaveBeenCalledWith("user-1", true);
-    expect(screen.getByText(/ranking and comparison history stay private/i)).toBeTruthy();
-    expect(screen.getByText(/Direct list edits, skips, and “too close”/i)).toBeTruthy();
-    expect(screen.getByText(/never publishes your raw comparison history/i)).toBeTruthy();
+    expect(
+      screen.getByText(/ranking and comparison history stay private/i),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/Direct list edits, skips, and “too close”/i),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/never publishes your raw comparison history/i),
+    ).toBeTruthy();
   });
 
   it("starts opted out and saves only an explicit checkbox choice", () => {

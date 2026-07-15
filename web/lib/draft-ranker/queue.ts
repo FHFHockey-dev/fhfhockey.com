@@ -85,13 +85,19 @@ function modeEligible(
   const b = playersById.get(candidate.playerBId)!;
   if (mode === "review_goalies") return candidate.focusPosition === "G";
   if (mode === "place_rookies") {
-    return [a, b].some((player) => player.lifecycleStatus === "active_prospect");
+    return [a, b].some(
+      (player) => player.lifecycleStatus === "active_prospect",
+    );
   }
   if (mode === "find_sleepers") {
-    return candidate.category === "discovery" || candidate.category === "editorial";
+    return (
+      candidate.category === "discovery" || candidate.category === "editorial"
+    );
   }
   if (mode === "resolve_close_calls") {
-    return candidate.category === "validation" || candidate.category === "personal";
+    return (
+      candidate.category === "validation" || candidate.category === "personal"
+    );
   }
   return true;
 }
@@ -141,7 +147,9 @@ export function buildDeterministicDraftPairQueue({
   const ordered = [...players].sort(
     (a, b) => a.rank - b.rank || a.playerId - b.playerId,
   );
-  const playersById = new Map(ordered.map((player) => [player.playerId, player]));
+  const playersById = new Map(
+    ordered.map((player) => [player.playerId, player]),
+  );
   const preferenceByPair = new Map(
     preferences.map((preference) => [
       canonicalPairKey(preference.lowPlayerId, preference.highPlayerId),
@@ -152,7 +160,8 @@ export function buildDeterministicDraftPairQueue({
     (candidate.allowRecentRepeat ||
       !recentPairKeys.has(
         canonicalPairKey(candidate.playerAId, candidate.playerBId),
-      )) && modeEligible(candidate, playersById, mode);
+      )) &&
+    modeEligible(candidate, playersById, mode);
 
   const personal: DraftPairQueueCandidate[] = [];
   for (let index = 0; index < Math.min(249, ordered.length - 1); index += 1) {
@@ -179,12 +188,16 @@ export function buildDeterministicDraftPairQueue({
   });
 
   const candidates = ordered.filter((player) => player.rank > 250).slice(0, 50);
-  const cutoff = ordered.filter((player) => player.rank >= 240 && player.rank <= 250);
+  const cutoff = ordered.filter(
+    (player) => player.rank >= 240 && player.rank <= 250,
+  );
   const discovery: DraftPairQueueCandidate[] = [];
   for (const candidate of candidates) {
     const group = positionGroup(candidate.position);
     const anchor =
-      [...cutoff].reverse().find((player) => positionGroup(player.position) === group) ??
+      [...cutoff]
+        .reverse()
+        .find((player) => positionGroup(player.position) === group) ??
       cutoff[cutoff.length - 1];
     if (!anchor) continue;
     discovery.push(
@@ -212,8 +225,7 @@ export function buildDeterministicDraftPairQueue({
     const high = playersById.get(preference.highPlayerId);
     if (!low || !high) continue;
     const preferred = playersById.get(preference.preferredPlayerId);
-    const other =
-      preference.preferredPlayerId === low.playerId ? high : low;
+    const other = preference.preferredPlayerId === low.playerId ? high : low;
     if (!preferred) continue;
     const contradictory = preferred.rank > other.rank;
     const stale =
@@ -262,11 +274,13 @@ export function buildDeterministicDraftPairQueue({
       ...candidate,
       category: "editorial" as const,
       reasonCode:
-        playersById.get(candidate.playerAId)!.lifecycleStatus === "active_prospect"
+        playersById.get(candidate.playerAId)!.lifecycleStatus ===
+        "active_prospect"
           ? "verified_prospect"
           : "watchlist_interest",
       reason:
-        playersById.get(candidate.playerAId)!.lifecycleStatus === "active_prospect"
+        playersById.get(candidate.playerAId)!.lifecycleStatus ===
+        "active_prospect"
           ? "A verified prospect in the candidate pool has limited personal evidence."
           : "A watched candidate has limited explicit comparison evidence.",
     }));
@@ -290,12 +304,34 @@ export function buildDeterministicDraftPairQueue({
   const target = mode === "quick_five" ? 5 : 20;
   const quotas =
     mode === "quick_five"
-      ? (["personal", "personal", "discovery", "validation", "personal"] as const)
+      ? ([
+          "personal",
+          "personal",
+          "discovery",
+          "validation",
+          "personal",
+        ] as const)
       : ([
-          "personal", "discovery", "personal", "validation", "personal",
-          "editorial", "personal", "discovery", "personal", "validation",
-          "personal", "discovery", "personal", "editorial", "personal",
-          "validation", "personal", "discovery", "personal", "discovery",
+          "personal",
+          "discovery",
+          "personal",
+          "validation",
+          "personal",
+          "editorial",
+          "personal",
+          "discovery",
+          "personal",
+          "validation",
+          "personal",
+          "discovery",
+          "personal",
+          "editorial",
+          "personal",
+          "validation",
+          "personal",
+          "discovery",
+          "personal",
+          "discovery",
         ] as const);
   const selected: DraftPairQueueCandidate[] = [];
   const usedPairs = new Set<string>();
@@ -304,7 +340,12 @@ export function buildDeterministicDraftPairQueue({
   }
   if (selected.length < target) {
     takeDiverse(
-      [...pools.personal, ...pools.discovery, ...pools.validation, ...pools.editorial],
+      [
+        ...pools.personal,
+        ...pools.discovery,
+        ...pools.validation,
+        ...pools.editorial,
+      ],
       target,
       selected,
       usedPairs,

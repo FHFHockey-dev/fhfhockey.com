@@ -6,7 +6,9 @@ const { loadMock, setMock, requireApiUserMock } = vi.hoisted(() => ({
   requireApiUserMock: vi.fn(),
 }));
 
-vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: requireApiUserMock }));
+vi.mock("lib/api/requireApiUser", () => ({
+  requireApiUser: requireApiUserMock,
+}));
 vi.mock("lib/draft-ranker/server", () => ({
   loadDraftContributionPreference: loadMock,
   setDraftContributionPreference: setMock,
@@ -19,9 +21,17 @@ function response() {
     statusCode: 200,
     body: null as any,
     headers: {} as Record<string, string>,
-    status(code: number) { this.statusCode = code; return this; },
-    setHeader(name: string, value: string) { this.headers[name] = value; },
-    json(payload: unknown) { this.body = payload; return this; },
+    status(code: number) {
+      this.statusCode = code;
+      return this;
+    },
+    setHeader(name: string, value: string) {
+      this.headers[name] = value;
+    },
+    json(payload: unknown) {
+      this.body = payload;
+      return this;
+    },
   };
 }
 
@@ -32,6 +42,7 @@ describe("/api/v1/draft-ranker/pairwise/consent", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.DRAFT_RANKER_ENABLED = "true";
+    process.env.DRAFT_RANKER_ROLLOUT_STAGE = "authenticated";
     process.env.DRAFT_RANKER_HOMEPAGE_ENABLED = "true";
     requireApiUserMock.mockResolvedValue({ id: "owner-1" });
     loadMock.mockResolvedValue({ contributionEnabled: false });
@@ -39,13 +50,21 @@ describe("/api/v1/draft-ranker/pairwise/consent", () => {
   });
 
   afterEach(() => {
-    oldRanker === undefined ? delete process.env.DRAFT_RANKER_ENABLED : process.env.DRAFT_RANKER_ENABLED = oldRanker;
-    oldHomepage === undefined ? delete process.env.DRAFT_RANKER_HOMEPAGE_ENABLED : process.env.DRAFT_RANKER_HOMEPAGE_ENABLED = oldHomepage;
+    oldRanker === undefined
+      ? delete process.env.DRAFT_RANKER_ENABLED
+      : (process.env.DRAFT_RANKER_ENABLED = oldRanker);
+    delete process.env.DRAFT_RANKER_ROLLOUT_STAGE;
+    oldHomepage === undefined
+      ? delete process.env.DRAFT_RANKER_HOMEPAGE_ENABLED
+      : (process.env.DRAFT_RANKER_HOMEPAGE_ENABLED = oldHomepage);
   });
 
   it("loads only the authenticated owner's preference", async () => {
     const res = response();
-    await handler({ method: "GET", headers: {}, query: { userId: "forged" } } as any, res as any);
+    await handler(
+      { method: "GET", headers: {}, query: { userId: "forged" } } as any,
+      res as any,
+    );
     expect(loadMock).toHaveBeenCalledWith("owner-1");
     expect(res.statusCode).toBe(200);
   });
@@ -56,11 +75,22 @@ describe("/api/v1/draft-ranker/pairwise/consent", () => {
       operationId: "11111111-1111-4111-8111-111111111111",
     };
     const res = response();
-    await handler({ method: "POST", headers: {}, query: {}, body } as any, res as any);
+    await handler(
+      { method: "POST", headers: {}, query: {}, body } as any,
+      res as any,
+    );
     expect(setMock).toHaveBeenCalledWith("owner-1", body);
 
     const forged = response();
-    await handler({ method: "POST", headers: {}, query: {}, body: { ...body, policyVersion: "forged" } } as any, forged as any);
+    await handler(
+      {
+        method: "POST",
+        headers: {},
+        query: {},
+        body: { ...body, policyVersion: "forged" },
+      } as any,
+      forged as any,
+    );
     expect(forged.statusCode).toBe(400);
   });
 

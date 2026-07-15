@@ -7,7 +7,9 @@ const { loadDraftPlacementMock, mutateDraftPlacementMock, requireApiUserMock } =
     requireApiUserMock: vi.fn(),
   }));
 
-vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: requireApiUserMock }));
+vi.mock("lib/api/requireApiUser", () => ({
+  requireApiUser: requireApiUserMock,
+}));
 vi.mock("lib/draft-ranker/server", () => ({
   loadDraftPlacement: loadDraftPlacementMock,
   mutateDraftPlacement: mutateDraftPlacementMock,
@@ -40,14 +42,18 @@ describe("/api/v1/draft-ranker/placement", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.DRAFT_RANKER_ENABLED = "true";
+    process.env.DRAFT_RANKER_ROLLOUT_STAGE = "authenticated";
     requireApiUserMock.mockResolvedValue({ id: "owner-1" });
     loadDraftPlacementMock.mockResolvedValue({ session: null });
-    mutateDraftPlacementMock.mockResolvedValue({ session: { id: "session-1" } });
+    mutateDraftPlacementMock.mockResolvedValue({
+      session: { id: "session-1" },
+    });
   });
 
   afterEach(() => {
     if (previousFlag === undefined) delete process.env.DRAFT_RANKER_ENABLED;
     else process.env.DRAFT_RANKER_ENABLED = previousFlag;
+    delete process.env.DRAFT_RANKER_ROLLOUT_STAGE;
   });
 
   it("owner-scopes active placement resume", async () => {

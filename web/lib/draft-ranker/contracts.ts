@@ -6,8 +6,7 @@ import { placementRoughRanges } from "./placementEngine";
 
 export const DRAFT_RANKER_TARGET_SEASON_ID = 20262027;
 export const DRAFT_RANKER_SCHEMA_VERSION = 1;
-export const DRAFT_RANKER_CONSENT_POLICY_VERSION =
-  "draft-ranker-community-v1";
+export const DRAFT_RANKER_CONSENT_POLICY_VERSION = "draft-ranker-community-v1";
 
 export const operationContextSchema = z
   .object({
@@ -124,6 +123,7 @@ export const draftPlayerActionSchema = z
       "restore",
       "compare_now",
     ]),
+    sourceContext: z.enum(["search", "discovery"]).optional().default("search"),
     priority: z.number().int().min(1).max(5).nullable().optional(),
     note: z.string().trim().max(500).nullable().optional(),
   })
@@ -132,7 +132,41 @@ export const draftPlayerActionSchema = z
 export type DraftPlayerActionsQuery = z.infer<
   typeof draftPlayerActionsQuerySchema
 >;
-export type DraftPlayerActionInput = z.infer<typeof draftPlayerActionSchema>;
+export type DraftPlayerActionInput = z.input<typeof draftPlayerActionSchema>;
+
+export const draftDiscoveryQuerySchema = z
+  .object({
+    rankingId: z.string().uuid(),
+    limit: z.number().int().min(1).max(50).optional().default(12),
+  })
+  .strict();
+
+export type DraftDiscoveryQuery = z.infer<typeof draftDiscoveryQuerySchema>;
+
+export const communityDraftRankingsQuerySchema = z
+  .object({
+    page: z.number().int().min(1).max(25).optional().default(1),
+    limit: z.number().int().min(10).max(100).optional().default(50),
+  })
+  .strict();
+
+export type CommunityDraftRankingsQuery = z.infer<
+  typeof communityDraftRankingsQuerySchema
+>;
+
+export const draftRankingExportQuerySchema = z
+  .object({
+    rankingId: z.string().uuid(),
+    format: z.enum(["csv", "json"]).default("csv"),
+    includeCandidates: z.boolean().default(false),
+    includeWatchlist: z.boolean().default(false),
+    includeEventSummary: z.boolean().default(false),
+  })
+  .strict();
+
+export type DraftRankingExportQuery = z.infer<
+  typeof draftRankingExportQuerySchema
+>;
 
 export const draftPlacementQuerySchema = z
   .object({
@@ -149,31 +183,39 @@ const placementOperationSchema = z.object({
 });
 
 export const draftPlacementMutationSchema = z.discriminatedUnion("action", [
-  placementOperationSchema.extend({
-    action: z.literal("start"),
-    rankingId: z.string().uuid(),
-    playerId: z.number().int().positive(),
-    expectedVersion: z.number().int().nonnegative(),
-    roughRange: z.enum(placementRoughRanges),
-  }).strict(),
-  placementOperationSchema.extend({
-    action: z.literal("answer"),
-    sessionId: z.string().uuid(),
-    outcome: z.enum([
-      "target_over_anchor",
-      "anchor_over_target",
-      "too_close",
-      "skip",
-    ]),
-  }).strict(),
-  placementOperationSchema.extend({
-    action: z.literal("confirm"),
-    sessionId: z.string().uuid(),
-  }).strict(),
-  placementOperationSchema.extend({
-    action: z.literal("cancel"),
-    sessionId: z.string().uuid(),
-  }).strict(),
+  placementOperationSchema
+    .extend({
+      action: z.literal("start"),
+      rankingId: z.string().uuid(),
+      playerId: z.number().int().positive(),
+      expectedVersion: z.number().int().nonnegative(),
+      roughRange: z.enum(placementRoughRanges),
+    })
+    .strict(),
+  placementOperationSchema
+    .extend({
+      action: z.literal("answer"),
+      sessionId: z.string().uuid(),
+      outcome: z.enum([
+        "target_over_anchor",
+        "anchor_over_target",
+        "too_close",
+        "skip",
+      ]),
+    })
+    .strict(),
+  placementOperationSchema
+    .extend({
+      action: z.literal("confirm"),
+      sessionId: z.string().uuid(),
+    })
+    .strict(),
+  placementOperationSchema
+    .extend({
+      action: z.literal("cancel"),
+      sessionId: z.string().uuid(),
+    })
+    .strict(),
 ]);
 
 export type DraftPlacementQuery = z.infer<typeof draftPlacementQuerySchema>;

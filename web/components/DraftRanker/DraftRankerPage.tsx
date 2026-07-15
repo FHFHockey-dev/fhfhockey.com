@@ -7,7 +7,9 @@ import { useDraftPlacement } from "hooks/useDraftPlacement";
 import { DraftRankerClientError } from "lib/draft-ranker/client";
 
 import DraftPlayerSearch from "./DraftPlayerSearch";
+import DraftDiscovery from "./DraftDiscovery";
 import { DraftContributionConsent } from "./DraftContributionConsent";
+import DraftRankingExport from "./DraftRankingExport";
 import DraftRankingTable from "./DraftRankingTable";
 import styles from "./DraftRanker.module.scss";
 
@@ -166,6 +168,15 @@ export default function DraftRankerPage() {
         }}
       />
 
+      <DraftDiscovery
+        rankingId={ranker.entries.data.ranking.id}
+        enabled={bootstrap.discoveryEnabled}
+        onCompare={(player) => {
+          placement.mutation.reset();
+          setPlacementCandidate(player);
+        }}
+      />
+
       {bootstrap.pairwiseEnabled ? <DraftContributionConsent /> : null}
 
       <AssistedPlacementPanel
@@ -175,7 +186,7 @@ export default function DraftRankerPage() {
         session={
           placement.mutation.data?.session?.status === "active"
             ? placement.mutation.data.session
-            : placement.state.data?.session ?? null
+            : (placement.state.data?.session ?? null)
         }
         mutation={placement.mutation}
         onFinished={() => {
@@ -189,6 +200,8 @@ export default function DraftRankerPage() {
         isSaving={ranker.reorder.isPending}
         onReorder={(action) => ranker.reorder.mutate(action)}
       />
+
+      <DraftRankingExport rankingId={ranker.entries.data.ranking.id} />
     </div>
   );
 }

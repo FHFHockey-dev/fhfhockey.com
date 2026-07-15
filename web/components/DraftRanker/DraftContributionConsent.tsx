@@ -23,8 +23,9 @@ export function DraftContributionConsent() {
           answers never become community wins.
         </p>
         <p>
-          You can opt out at any time. Future community calculations will exclude
-          your evidence, and FHFH never publishes your raw comparison history.
+          You can opt out at any time. Future community calculations will
+          exclude your evidence, and FHFH never publishes your raw comparison
+          history.
         </p>
       </div>
       {consent.state.isLoading ? (

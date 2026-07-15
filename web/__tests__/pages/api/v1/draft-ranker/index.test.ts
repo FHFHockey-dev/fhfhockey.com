@@ -42,6 +42,7 @@ describe("GET /api/v1/draft-ranker", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.DRAFT_RANKER_ENABLED = "true";
+    process.env.DRAFT_RANKER_ROLLOUT_STAGE = "authenticated";
     delete process.env.DRAFT_RANKER_HOMEPAGE_ENABLED;
     requireApiUserMock.mockResolvedValue({ id: "user-1" });
     loadDraftRankerBootstrapMock.mockResolvedValue({
@@ -54,6 +55,7 @@ describe("GET /api/v1/draft-ranker", () => {
   });
 
   afterEach(() => {
+    delete process.env.DRAFT_RANKER_ROLLOUT_STAGE;
     if (previousFlag === undefined) {
       delete process.env.DRAFT_RANKER_ENABLED;
     } else {
@@ -133,6 +135,27 @@ describe("GET /api/v1/draft-ranker", () => {
     expect(loadDraftRankerBootstrapMock).not.toHaveBeenCalled();
   });
 
+  it("fails closed when the master flag is on but rollout stage is omitted", async () => {
+    delete process.env.DRAFT_RANKER_ROLLOUT_STAGE;
+    const req: any = {
+      method: "GET",
+      headers: { "x-request-id": "request-rollout-1" },
+      query: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res as any);
+
+    expect(res.statusCode).toBe(403);
+    expect(res.body).toEqual({
+      error: expect.objectContaining({
+        code: "forbidden",
+        requestId: "request-rollout-1",
+      }),
+    });
+    expect(loadDraftRankerBootstrapMock).not.toHaveBeenCalled();
+  });
+
   it("loads only the authenticated user's bootstrap state", async () => {
     const req: any = {
       method: "GET",
@@ -189,7 +212,9 @@ describe("GET /api/v1/draft-ranker", () => {
     await handler(req, unexpectedRes as any);
 
     expect(unexpectedRes.statusCode).toBe(500);
-    expect(JSON.stringify(unexpectedRes.body)).not.toContain("database-password");
+    expect(JSON.stringify(unexpectedRes.body)).not.toContain(
+      "database-password",
+    );
     errorSpy.mockRestore();
   });
 });
