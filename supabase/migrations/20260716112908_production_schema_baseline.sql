@@ -26,6 +26,7 @@ SET row_security = off;
 --
 
 CREATE SCHEMA IF NOT EXISTS public;
+ALTER SCHEMA public OWNER TO postgres;
 
 -- Provider extensions required by the current public-schema contract.
 CREATE SCHEMA IF NOT EXISTS extensions;
@@ -43385,6 +43386,33 @@ ALTER TABLE public.yahoo_positions ENABLE ROW LEVEL SECURITY;
 --
 -- PostgreSQL database dump complete
 --
+
+-- Provider-created branches carry today's broad postgres/public default grants.
+-- Clear inherited direct grants before replaying the exact per-object production ACLs.
+REVOKE ALL PRIVILEGES ON SCHEMA public FROM PUBLIC, anon, authenticated, service_role;
+REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM anon, authenticated, service_role;
+REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated, service_role;
+
+DO $acl_reset$
+DECLARE
+    routine_record record;
+BEGIN
+    FOR routine_record IN
+        SELECT routine.oid::regprocedure AS signature
+        FROM pg_catalog.pg_proc AS routine
+        JOIN pg_catalog.pg_namespace AS namespace
+          ON namespace.oid = routine.pronamespace
+        WHERE namespace.nspname = 'public'
+          AND routine.prokind = 'f'
+          AND pg_catalog.pg_get_userbyid(routine.proowner) = 'postgres'
+    LOOP
+        EXECUTE pg_catalog.format(
+            'REVOKE ALL PRIVILEGES ON FUNCTION %s FROM anon, authenticated, service_role',
+            routine_record.signature
+        );
+    END LOOP;
+END
+$acl_reset$;
 
 -- Production public-schema privilege baseline.
 REVOKE USAGE ON SCHEMA public FROM PUBLIC;

@@ -55,9 +55,10 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     const baselineHash = createHash("sha256").update(baseline).digest("hex");
 
     expect(baselineHash).toBe(
-      "37d2239a049600452847cd57fcf9e42b04853a8b7ca5877cb29d74230072d740",
+      "9408e85d3267d51da556efbffeb7a1516910a262634de96cdcfa0052b430f182",
     );
     expect(baseline).toContain("CREATE SCHEMA IF NOT EXISTS public;");
+    expect(baseline).toContain("ALTER SCHEMA public OWNER TO postgres;");
     expect(baseline.match(/CREATE EXTENSION IF NOT EXISTS/g)).toHaveLength(12);
     for (const extensionName of [
       "http",
@@ -84,8 +85,15 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     expect(baseline.match(/CREATE SEQUENCE IF NOT EXISTS/g)).toHaveLength(16);
     expect(baseline.match(/CREATE SEQUENCE public\./g)).toHaveLength(41);
     expect(baseline.match(/^GRANT /gm)).toHaveLength(1401);
-    expect(baseline.match(/^REVOKE /gm)).toHaveLength(34);
+    expect(baseline.match(/^REVOKE /gm)).toHaveLength(37);
     expect(baseline.match(/^ALTER DEFAULT PRIVILEGES /gm)).toHaveLength(12);
+    expect(baseline).toContain(
+      "REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM anon, authenticated, service_role;",
+    );
+    expect(baseline).toContain(
+      "REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated, service_role;",
+    );
+    expect(baseline).toContain("DO $acl_reset$");
     expect(baseline).not.toMatch(/^\\(?:restrict|unrestrict)/m);
     expect(baseline).not.toContain("SET transaction_timeout");
     expect(baseline).not.toMatch(/authorization/i);
