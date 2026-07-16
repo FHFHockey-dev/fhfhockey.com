@@ -136,7 +136,7 @@ async function processStoredTweetEvent(args: {
       return {
         success: false,
         status: response.status,
-        error: await response.text(),
+        error: "Processor request failed",
       };
     }
 
@@ -144,11 +144,11 @@ async function processStoredTweetEvent(args: {
       success: true,
       status: response.status,
     };
-  } catch (error) {
+  } catch {
     return {
       success: false,
       status: null,
-      error: error instanceof Error ? error.message : String(error),
+      error: "Processor request failed",
     };
   }
 }

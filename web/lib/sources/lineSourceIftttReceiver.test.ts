@@ -191,7 +191,9 @@ describe("createLineSourceIftttReceiver", () => {
       processor: {
         success: false,
         status: 503,
+        error: "Processor request failed",
       },
     });
+    expect(JSON.stringify(res.body)).not.toContain("processor unavailable");
   });
 });
