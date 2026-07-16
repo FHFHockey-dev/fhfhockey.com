@@ -55,7 +55,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     const baselineHash = createHash("sha256").update(baseline).digest("hex");
 
     expect(baselineHash).toBe(
-      "4b1014ac89b0865764f8937b65bcb12860234d7a0bbcf6be639d7484edcd9400",
+      "37d2239a049600452847cd57fcf9e42b04853a8b7ca5877cb29d74230072d740",
     );
     expect(baseline).toContain("CREATE SCHEMA IF NOT EXISTS public;");
     expect(baseline.match(/CREATE EXTENSION IF NOT EXISTS/g)).toHaveLength(12);
@@ -79,8 +79,13 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     expect(baseline).toContain(
       'CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;',
     );
+    expect(baseline).not.toMatch(/^CREATE EXTENSION .* VERSION /gm);
+    expect(baseline).toContain("SELECT j.jobname::name AS jobname,");
     expect(baseline.match(/CREATE SEQUENCE IF NOT EXISTS/g)).toHaveLength(16);
     expect(baseline.match(/CREATE SEQUENCE public\./g)).toHaveLength(41);
+    expect(baseline.match(/^GRANT /gm)).toHaveLength(1401);
+    expect(baseline.match(/^REVOKE /gm)).toHaveLength(34);
+    expect(baseline.match(/^ALTER DEFAULT PRIVILEGES /gm)).toHaveLength(12);
     expect(baseline).not.toMatch(/^\\(?:restrict|unrestrict)/m);
     expect(baseline).not.toContain("SET transaction_timeout");
     expect(baseline).not.toMatch(/authorization/i);
