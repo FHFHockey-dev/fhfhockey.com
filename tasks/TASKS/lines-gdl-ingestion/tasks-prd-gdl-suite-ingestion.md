@@ -36,7 +36,7 @@
 - `web/pages/api/v1/db/update-line-combinations/[id].ts` - Canonical Gamecenter writer for game/team player-ID arrays.
 - `web/lib/sources/lineSourceLineCombinations.ts` - Paginated winner loading, eligibility mapping, and atomic canonical-write orchestration.
 - `web/lib/sources/lineSourceLineCombinations.test.ts` - Covers complete/goalie-only mapping, exclusions, first arrival, pagination, and RPC writes.
-- `web/supabase/migrations/20260711214500_add_line_combinations_source_provenance.sql` - Additive provenance fields and atomic partial-array upsert RPC.
+- `supabase/migrations/20260716112909_add_line_combinations_source_provenance.sql` - Authoritative-root additive provenance fields and service-role-only atomic partial-array upsert RPC; supersedes the web-scoped draft.
 - `web/lib/supabase/database-generated.types.ts` - Generated contract extended for canonical provenance columns and RPC.
 - `web/pages/lines/index.tsx` - Existing line-combinations consumer surface that may need compatibility checks after source changes.
 
@@ -163,7 +163,7 @@
   - [x] 5.4 Map structured tweet rows into the existing `lineCombinations` flattened player-ID arrays without breaking existing readers.
   - [x] 5.5 Preserve the winning tweet URL and source metadata in additive provenance fields while keeping source snapshots as full audit evidence.
   - [x] 5.6 Add tests for inserting/updating `lineCombinations` from tweet-derived lineup rows.
-    - Evidence (2026-07-11): the generic processor pages all accepted CCC/GDL rows for the requested date until a short page, applies the shared first-arrival selector, accepts only complete 12-forward/6-defense lineup or practice rows and canonical goalie-only rows, and calls an atomic RPC that preserves untouched arrays. The additive migration records source kind/key/URL/capture/observation time; the Gamecenter writer now overwrites provenance truthfully. Focused source/page/route suites pass 28/28 and TypeScript passes. Migration application and live consumer verification remain explicit tasks 10.3/NEW 11.4.
+    - Evidence (2026-07-16): the generic processor pages all accepted CCC/GDL rows for the requested date until a short page, applies the shared first-arrival selector, accepts only complete 12-forward/6-defense lineup or practice rows and canonical goalie-only rows, and calls an atomic RPC that preserves untouched arrays. The production-applied additive migration records source kind/key/URL/capture/observation time; the Gamecenter writer overwrites provenance truthfully. Focused source/page/route suites pass 28/28, TypeScript passes, and production rollout/consumer verification are closed under 10.3/NEW 11.4.
 
 - [ ] 6.0 Verify unresolved-name email alerts are live across sources
   - [x] 6.1 Confirm unresolved-name queue writes include source key, source URL, tweet id, team context, and parser reason for CCC and GDL sources.
@@ -203,14 +203,16 @@
 - [ ] 10.0 Validate end-to-end rollout
   - [x] 10.1 Run focused parser and route tests for CCC and GDL sources.
   - [x] 10.2 Run existing GDT/GDL lineup ingestion tests to ensure current `lines_gdl` behavior is not broken.
-  - [ ] 10.3 Apply SQL in Supabase and verify required indexes/constraints are present.
+  - [x] 10.3 Apply SQL in Supabase and verify required indexes/constraints are present.
+    - Evidence (2026-07-16): the supported baseline plus authoritative-root provenance and trigger-auth deltas replayed on a replacement data-less branch; catalog/constraint/index/policy/ACL/advisor fingerprints passed. Production now lists exact contiguous migrations `20260716112908`–`20260716112910`, all five provenance columns, the service-role-only RPC, and the unchanged canonical `(gameId, teamId)` conflict/index contract.
   - [ ] 10.4 Create and test the three IFTTT applets with one controlled event per GDL account.
   - [ ] 10.5 Process pending events and confirm rows land in source storage, first-arrival display, unresolved-name queue, and `line_combinations` where applicable.
   - [x] 10.6 Verify rejected and ambiguous rows remain visible for audit but do not drive display or `lineCombinations`.
     - Evidence (2026-07-11): the combined CCC/generic-GDL/legacy-GDT parser, receiver, route, first-arrival, canonical-writer, and display suite passes 92/92 across 11 files; TypeScript passes. Route tests retain rejected non-NHL and ambiguous snapshots with rejection status/reasons, while first-arrival and canonical-write tests prove only accepted observed rows can win or mutate `lineCombinations`.
 
-- [ ] NEW 11.0 Reconcile stale snake-case `line_combinations` with canonical `lineCombinations` before enabling tweet-derived writes.
+- [x] NEW 11.0 Reconcile stale snake-case `line_combinations` with canonical `lineCombinations` before enabling tweet-derived writes.
   - [x] NEW 11.1 Correct the derived GDL PRD/task wording and record current writer/consumer evidence for canonical `lineCombinations` ownership.
   - [x] NEW 11.2 Add non-breaking optional provenance columns for source kind/key/URL/capture and observation time to `lineCombinations`, then update generated types.
   - [x] NEW 11.3 Ensure Gamecenter and tweet-derived writers stamp truthful source ownership so a later canonical refresh cannot retain stale tweet provenance.
-  - [ ] NEW 11.4 Verify existing lines, rolling, projection, goalie, Start Chart, and deployment consumers remain compatible; apply/verify the additive migration only through the production checkpoint protocol.
+  - [x] NEW 11.4 Verify existing lines, rolling, projection, goalie, Start Chart, and deployment consumers remain compatible; apply/verify the additive migration only through the production checkpoint protocol.
+    - Evidence (2026-07-16): authoritative-root migration `20260716112909` passed replacement-branch replay, exact catalog/ACL/ownership/static/consumer gates, and production apply. One bounded existing-game request for `2025030416` returned HTTP 200 and left exactly two distinct team rows, both with complete player arrays and truthful Gamecenter provenance; no second provider probe was run. Production recheck confirms five columns, one service-role-only RPC, two provenance-bearing rows, and unchanged NEW 56/57 routines. Guarded `octoberBranch` publication at `09c4d96` and exact Production deployment `dpl_5LADmdbVfdJEzKubKkpR7Yr7zxzk` are READY/current on all five aliases; homepage and missing/current cron auth return 200 and 401/200 with no deployment-scoped runtime errors.

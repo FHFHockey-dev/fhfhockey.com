@@ -101,7 +101,7 @@ The seed registry below is a starting classification; verified repository eviden
 |---|---|---|---|---|
 | A-AUTH | Authentication and user settings | Platform | Wave A active; 184/205 rows, 21 open | Shared auth/entitlement foundation; callback, expired-session recovery, and P1 autofill-exposed credential containment are production-verified |
 | A-CRON-EMAIL | Cron audit email failures | Operations | Wave A active; 52/62 rows, 10 open; P1 season-writer/WGO/missing-secret auth boundaries verified locally; P0 finalized after stable redeploy, 59/59 literal-to-Vault conversion, 61/61 activation parity, 47/47 green probes, missing/old rejection and current authorization, canonical-one/candidate-zero cleanup, executable-helper removal, and honest provider/cron-history/WAL/backup/log retention documentation | Operational visibility and credential boundary; reconcile B-CRON-NST |
-| A-GDL | GDL suite ingestion | Data ingestion | 3/10 parents; PRD missing | Shared lines identity/data foundation |
+| A-GDL | GDL suite ingestion | Data ingestion | Wave A active; 69/74 rows, 5 open. Canonical provenance/RPC migration `20260716112909`, replacement-branch compatibility, production apply, one exact two-team Gamecenter probe, and exact READY/current deployment are verified; only unresolved-name email proof and three controlled IFTTT/end-to-end event checks remain | Shared lines identity/data foundation |
 | A-3P | Three Pillars Analytics | Analytics | 14/17 parents | Umbrella dependency for sustainability/trends |
 | A-SUST | Sustainability model | Analytics | 10/12 parents | Depends on rolling metrics/model contracts |
 | A-US-SOS | Underlying stats remediation/SOS | Stats surfaces | 6/7 parents | Shared underlying-stats foundation |
@@ -122,7 +122,7 @@ The seed registry below is a starting classification; verified repository eviden
 
 | ID | Initiative | Domain | Claimed state | Key dependency role |
 |---|---|---|---|---|
-| B-CRON-NST | Cron NST/audit remediation | Operations | 26/47 source rows; 21 open; deferred SQL runtime correction, executable schema-clone proof, exact Draft Ranker completeness, deterministic npm/build staging, and Vercel alias-semantics gates pass; production immutable-convergence/cutover, strict-client typing, and authoritative blank-bootstrap reproducibility remain open | Reconciles A-CRON-EMAIL and NST ownership |
+| B-CRON-NST | Cron NST/audit remediation | Operations | 55/61 source rows; 6 open. Baseline parents 1.0/2.0 are evidence-reconciled; placeholder `2025030417` remains terminal 0/0/0 and current-season discovery is zero. NEW 36 is complete through immutable old-history archive/checksums, a credential-free current-schema baseline, replacement-branch catalog/ACL/runtime/advisor parity, contiguous production tracking `20260716112908`–`20260716112910`, and guarded authoritative publication at `09c4d96`. NEW 55 preserves all three trigger routes/row bounds with hidden fail-closed canonical-Vault auth and zero target bearer/direct-execution residue. Exact Production deployment `dpl_5LADmdbVfdJEzKubKkpR7Yr7zxzk` is READY/current on five aliases; homepage and missing/current cron auth are 200 and 401/200 with no deployment-scoped errors. NEW 50 remains on its existing natural report/email monitor; NEW 56/57 remain separately gated public-RPC security findings excluded from clean bootstrap. Historical pending remains 14,417 with 16 retained valid completions. Parents 3.0–5.0 remain open | Reconciles A-CRON-EMAIL and NST ownership |
 | B-SUST-BAR | Sustainability Barometer | Analytics/UX | 0/8 | Depends on A-SUST |
 | B-SUST-AUD | Sustainability/trends audit | Analytics | 0/5 | Depends on A-SUST and recovered trends scope |
 | B-GAMEGRID | Game Grid master dashboard | Stats/product | 0/5 | Depends on underlying data/routes |
@@ -132,7 +132,7 @@ The seed registry below is a starting classification; verified repository eviden
 | B-XG-EX | xG release exception resolution | Release/models | Wave B dependency-closed early; 15/15 and paired PRD present | Exception-aware contract unblocked A-XG-REL while preserving production boundary |
 | B-YAHOO | Yahoo ingestion/mapping audit | Yahoo/data | Audit/planning; task list missing | Foundation for Draft Dashboard |
 | B-DRAFT-STYLE | Game Grid/Draft style overhaul | UX | Planned; task list missing | After stable product paths |
-| B-CLEAN | Code cleanup/warning reduction | Maintenance | Active at 12/43; cache-history containment `NEW 8.0–8.5`, checkpoint prevention `NEW 9.0`, generated-build publication containment `NEW 10.0–10.3`, and three-file forward-only bytecode cleanup `NEW 11.0` are verified | Create the exact coherent checkpoint commit before B-CRON-NST production cutover; broad warning cleanup remains after active feature stabilization |
+| B-CLEAN | Code cleanup/warning reduction | Maintenance | Active at 12/43; cache-history containment `NEW 8.0–8.5`, checkpoint prevention `NEW 9.0`, generated-build publication containment `NEW 10.0–10.3`, and three-file forward-only bytecode cleanup `NEW 11.0` are verified and published as exact checkpoint `5743b6d80` | B-CRON-NST production cutover may resume; broad warning cleanup remains after active feature stabilization |
 | B-DEAD | Dead-code follow-through | Maintenance | Audit complete; removal untracked | Requires consumer verification/approval for mass removal |
 | B-DRM | Date Range Matrix refactor | Maintenance/product | Planned; task list missing | Current dirty implementation evidence exists |
 | B-SKO-BURN | SKO pipeline burn-down | Models/maintenance | Planned; pair missing or merge | Merge candidate with B-SKO |
@@ -154,7 +154,7 @@ The seed registry below is a starting classification; verified repository eviden
 
 Wave A begins with shared foundations and release/correctness signals, then dependent product surfaces:
 
-`A-AUTH → auth-dependent surfaces`; `A-GDL/A-CRON-EMAIL → ingestion/operations`; within cron operations, `A-CRON-EMAIL P0 10.1 → 10.2 → 10.3 → 10.4 → 10.5 → 10.6`, with all literal-bearing jobs held quiesced after 10.4 and restored only per verified Vault-backed batch in 10.5. The breaking season/WGO authorization boundary precedes the combined B-CRON-NST `NEW 29.0`/`31.0`/`32.0` transactional-status-cardinality decision. Discovery `NEW 36.0` still owns repair and proof of the registered chain's blank bootstrap; the owner-authorized equivalent schema-only production clone separately unblocked isolated option-A runtime/rollback/ACL/cardinality validation and the contiguous production cutover without claiming NEW 36.0 complete. This evidence-driven reorder keeps migration-history repair independent. `A-XG-REL → A-XG-TREND → A-PRED`; `A-FORGE-V1 → A-FORGE-CC/A-FORGE-DASH/A-FORGE-P4/A-FORGE-LIVE`; `A-3P → A-SUST → A-US-SOS → A-SITE/A-STYLE`; `B-YAHOO mapping evidence may be audited narrowly to unblock A-DRAFT/A-DRAFT-DEBUG`.
+`A-AUTH → auth-dependent surfaces`; `A-GDL/A-CRON-EMAIL → ingestion/operations`; within cron operations, `A-CRON-EMAIL P0 10.1 → 10.2 → 10.3 → 10.4 → 10.5 → 10.6`, with all literal-bearing jobs held quiesced after 10.4 and restored only per verified Vault-backed batch in 10.5. The breaking season/WGO authorization boundary precedes the combined B-CRON-NST `NEW 29.0`/`31.0`/`32.0` transactional-status-cardinality decision. The authorized schema-only production clone first unblocked isolated runtime/rollback/ACL/cardinality validation; later `NEW 36.0` reconciliation archived both historical chains, established the supported baseline-plus-deltas bootstrap, proved replacement-branch parity, repaired production migration tracking, and published the exact deployment. This evidence-driven reorder kept migration-history repair independent until its own gates passed. `A-XG-REL → A-XG-TREND → A-PRED`; `A-FORGE-V1 → A-FORGE-CC/A-FORGE-DASH/A-FORGE-P4/A-FORGE-LIVE`; `A-3P → A-SUST → A-US-SOS → A-SITE/A-STYLE`; `B-YAHOO mapping evidence may be audited narrowly to unblock A-DRAFT/A-DRAFT-DEBUG`.
 
 Wave B follows stable foundations:
 
@@ -225,7 +225,7 @@ This table classifies every non-canonical file discovered recursively under `tas
 | `tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 62 checkbox rows |
 | `tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 43 checkbox rows |
 | `tasks/TASKS/cron-operations/tasks-prd-cron-failed-jobs-remediation.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 34 checkbox rows |
-| `tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 47 checkbox rows |
+| `tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 61 checkbox rows; 55 checked and 6 open |
 | `tasks/TASKS/cron-operations/tasks-prd-nst-api-audit-and-migration.md` | task list | A-CRON-EMAIL / B-CRON-NST / C-OPS | 46 checkbox rows |
 | `tasks/TASKS/dead-code-cleanup/burn-down-plan.md` | implementation map/architecture plan | B-CLEAN / B-DEAD / B-DRM / B-SKO-BURN | — |
 | `tasks/TASKS/dead-code-cleanup/prd-cleanup-tasks.md` | PRD | B-CLEAN / B-DEAD / B-DRM / B-SKO-BURN | — |
@@ -274,7 +274,7 @@ This table classifies every non-canonical file discovered recursively under `tas
 | `tasks/TASKS/forge-projections/v1/tasks-skater-forge.md` | task list | A-FORGE-V1 / B-START / C-FORGE | 55 checkbox rows |
 | `tasks/TASKS/lines-ccc-ingestion/prd-lines-ccc-ingestion.md` | PRD | C-OPS | — |
 | `tasks/TASKS/lines-ccc-ingestion/tasks-prd-lines-ccc-ingestion.md` | task list | C-OPS | 93 checkbox rows |
-| `tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md` | task list | A-GDL | 69 checkbox rows |
+| `tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md` | task list | A-GDL | 74 checkbox rows; 69 checked and 5 open after authoritative-root production rollout |
 | `tasks/TASKS/nhl-game-prediction-model/prd-nhl-game-prediction-model.md` | PRD | A-PRED | — |
 | `tasks/TASKS/nhl-game-prediction-model/research/deep-research-report.md` | research/decision support | A-PRED | — |
 | `tasks/TASKS/nhl-game-prediction-model/tasks-prd-game-prediction-accuracy-improvement.md` | task list | A-PRED | 49 checkbox rows |
