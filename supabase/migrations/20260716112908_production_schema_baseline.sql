@@ -27,6 +27,23 @@ SET row_security = off;
 
 CREATE SCHEMA IF NOT EXISTS public;
 
+-- Provider extensions required by the current public-schema contract.
+CREATE SCHEMA IF NOT EXISTS extensions;
+CREATE SCHEMA IF NOT EXISTS pgsodium;
+
+CREATE EXTENSION IF NOT EXISTS http WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS moddatetime WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS pgjwt WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS pgsodium WITH SCHEMA pgsodium;
+CREATE EXTENSION IF NOT EXISTS supabase_vault WITH SCHEMA vault;
+CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA public;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
+
 
 --
 -- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -

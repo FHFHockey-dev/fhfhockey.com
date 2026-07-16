@@ -55,9 +55,30 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     const baselineHash = createHash("sha256").update(baseline).digest("hex");
 
     expect(baselineHash).toBe(
-      "0cac4c4434d90daed186a08ce3525bdea46afe4f1c98e77c1d1eec06de659de9",
+      "0d65d71dfe988c95b7e4f321b68f4989e703b51ace22894692af05d403d77780",
     );
     expect(baseline).toContain("CREATE SCHEMA IF NOT EXISTS public;");
+    expect(baseline.match(/CREATE EXTENSION IF NOT EXISTS/g)).toHaveLength(12);
+    for (const extensionName of [
+      "http",
+      "moddatetime",
+      "pg_cron",
+      "pg_net",
+      "pg_stat_statements",
+      "pg_trgm",
+      "pgcrypto",
+      "pgjwt",
+      "pgsodium",
+      "supabase_vault",
+      "unaccent",
+    ]) {
+      expect(baseline).toContain(
+        `CREATE EXTENSION IF NOT EXISTS ${extensionName}`,
+      );
+    }
+    expect(baseline).toContain(
+      'CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;',
+    );
     expect(baseline).not.toMatch(/^\\(?:restrict|unrestrict)/m);
     expect(baseline).not.toContain("SET transaction_timeout");
     expect(baseline).not.toMatch(/authorization/i);

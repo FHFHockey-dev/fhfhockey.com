@@ -10,7 +10,7 @@ The active `supabase/migrations/` directory intentionally contains one reviewed 
 
 ## Baseline source and exclusions
 
-The baseline was generated from the 2026-07-16 schema-only production `public` dump (source SHA-256 `90e0b4a9067c1451243c7d976eba478b16dd811a9cee81079619d14969e70970`). It normalizes pg_dump client meta-commands and `CREATE SCHEMA public` for migration replay. Its generated SHA-256 is `0cac4c4434d90daed186a08ce3525bdea46afe4f1c98e77c1d1eec06de659de9`.
+The baseline was generated from the 2026-07-16 schema-only production `public` dump (source SHA-256 `90e0b4a9067c1451243c7d976eba478b16dd811a9cee81079619d14969e70970`). It normalizes pg_dump client meta-commands and `CREATE SCHEMA public` for migration replay. Its generated SHA-256 is `0d65d71dfe988c95b7e4f321b68f4989e703b51ace22894692af05d403d77780`.
 
 Seven exact objects are omitted from the baseline:
 
@@ -32,6 +32,7 @@ The baseline is intentionally schema-only. The archived ledger retains every his
 | Draft Ranker initialization, prospect insertion, and ordering/materialization backfills | Archived; not replayed | Operational data/bootstrap content is outside schema reproducibility and remains absent on a data-less branch. |
 | Cron jobs/schedules | Environment managed; not replayed | The 42-entry ledger contains no `cron.schedule` or `cron.alter_job`; production job definitions/schedules are preserved and verified separately. |
 | Canonical `cron_secret` | Environment managed; never committed | Branch auth tests use only rollback-contained dummy state; production uses the existing unique Vault secret. |
+| Required PostgreSQL extensions | Recreated without values | The baseline declares the exact production extension inventory and schemas needed by public objects; cron jobs, Vault values, and provider configuration are still excluded. |
 | Auth/storage/provider settings and storage buckets | Provider managed; not represented by the `public` schema dump | Compare provider/catalog invariants separately; do not synthesize values in SQL. |
 | Seed file | Disabled | `supabase/config.toml` sets `[db.seed].enabled = false`; no canonical value-bearing seed exists. |
 
