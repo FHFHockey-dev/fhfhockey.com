@@ -70,7 +70,7 @@ begin
   select g."homeTeamId"
   into home_team_id
   from public.games as g
-  where g."gameId" = new."gameId";
+  where g.id = new."gameId";
 
   if home_team_id = new."teamId" then
     request_headers := fhfh_internal.require_cron_request_headers();

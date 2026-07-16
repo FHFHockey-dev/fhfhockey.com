@@ -149,6 +149,8 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     expect(migration).toMatch(
       /if home_team_id = new\."teamId" then[\s\S]+update-player-underlying-stats/i,
     );
+    expect(migration).toContain('where g.id = new."gameId";');
+    expect(migration).not.toContain('where g."gameId" = new."gameId";');
     expect(migration.match(/create trigger /gi)).toHaveLength(3);
 
     for (const functionName of [
