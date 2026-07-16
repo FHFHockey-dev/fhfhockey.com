@@ -10,7 +10,7 @@ The active `supabase/migrations/` directory intentionally contains one reviewed 
 
 ## Baseline source and exclusions
 
-The baseline was generated from the 2026-07-16 schema-only production `public` dump (source SHA-256 `90e0b4a9067c1451243c7d976eba478b16dd811a9cee81079619d14969e70970`). It normalizes pg_dump client meta-commands and `CREATE SCHEMA public` for migration replay. Its generated SHA-256 is `0d65d71dfe988c95b7e4f321b68f4989e703b51ace22894692af05d403d77780`.
+The baseline was generated from the 2026-07-16 schema-only production `public` dump (source SHA-256 `90e0b4a9067c1451243c7d976eba478b16dd811a9cee81079619d14969e70970`). It normalizes pg_dump client meta-commands, `CREATE SCHEMA public`, and only the 16 legacy NST sequences with no `OWNED BY` dependency so repeated remote resets remain executable while all 41 owned sequences stay strict. Its generated SHA-256 is `4b1014ac89b0865764f8937b65bcb12860234d7a0bbcf6be639d7484edcd9400`.
 
 Seven exact objects are omitted from the baseline:
 

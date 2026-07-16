@@ -15049,7 +15049,7 @@ COMMENT ON TABLE public.nhl_xg_transition_game_aggregates IS 'Team/player game a
 -- Name: nst_10gp_gamelog_as_counts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.nst_10gp_gamelog_as_counts_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_as_counts_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -15061,7 +15061,7 @@ CREATE SEQUENCE public.nst_10gp_gamelog_as_counts_id_seq
 -- Name: nst_10gp_gamelog_as_counts_oi_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.nst_10gp_gamelog_as_counts_oi_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_as_counts_oi_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -15073,7 +15073,7 @@ CREATE SEQUENCE public.nst_10gp_gamelog_as_counts_oi_id_seq
 -- Name: nst_10gp_gamelog_as_rates_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.nst_10gp_gamelog_as_rates_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_as_rates_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -15085,7 +15085,7 @@ CREATE SEQUENCE public.nst_10gp_gamelog_as_rates_id_seq
 -- Name: nst_10gp_gamelog_as_rates_oi_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.nst_10gp_gamelog_as_rates_oi_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_as_rates_oi_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -15097,7 +15097,7 @@ CREATE SEQUENCE public.nst_10gp_gamelog_as_rates_oi_id_seq
 -- Name: nst_10gp_gamelog_es_counts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.nst_10gp_gamelog_es_counts_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_es_counts_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -15109,7 +15109,7 @@ CREATE SEQUENCE public.nst_10gp_gamelog_es_counts_id_seq
 -- Name: nst_10gp_gamelog_es_counts_oi_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.nst_10gp_gamelog_es_counts_oi_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_es_counts_oi_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -15121,7 +15121,7 @@ CREATE SEQUENCE public.nst_10gp_gamelog_es_counts_oi_id_seq
 -- Name: nst_10gp_gamelog_es_rates_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.nst_10gp_gamelog_es_rates_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_es_rates_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -15133,7 +15133,7 @@ CREATE SEQUENCE public.nst_10gp_gamelog_es_rates_id_seq
 -- Name: nst_10gp_gamelog_es_rates_oi_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.nst_10gp_gamelog_es_rates_oi_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_es_rates_oi_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -15145,7 +15145,7 @@ CREATE SEQUENCE public.nst_10gp_gamelog_es_rates_oi_id_seq
 -- Name: nst_10gp_gamelog_pk_counts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.nst_10gp_gamelog_pk_counts_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_pk_counts_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -15157,7 +15157,7 @@ CREATE SEQUENCE public.nst_10gp_gamelog_pk_counts_id_seq
 -- Name: nst_10gp_gamelog_pk_counts_oi_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.nst_10gp_gamelog_pk_counts_oi_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_pk_counts_oi_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -15169,7 +15169,7 @@ CREATE SEQUENCE public.nst_10gp_gamelog_pk_counts_oi_id_seq
 -- Name: nst_10gp_gamelog_pk_rates_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.nst_10gp_gamelog_pk_rates_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_pk_rates_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -15181,7 +15181,7 @@ CREATE SEQUENCE public.nst_10gp_gamelog_pk_rates_id_seq
 -- Name: nst_10gp_gamelog_pk_rates_oi_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.nst_10gp_gamelog_pk_rates_oi_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_pk_rates_oi_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -15193,7 +15193,7 @@ CREATE SEQUENCE public.nst_10gp_gamelog_pk_rates_oi_id_seq
 -- Name: nst_10gp_gamelog_pp_counts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.nst_10gp_gamelog_pp_counts_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_pp_counts_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -15205,7 +15205,7 @@ CREATE SEQUENCE public.nst_10gp_gamelog_pp_counts_id_seq
 -- Name: nst_10gp_gamelog_pp_counts_oi_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.nst_10gp_gamelog_pp_counts_oi_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_pp_counts_oi_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -15217,7 +15217,7 @@ CREATE SEQUENCE public.nst_10gp_gamelog_pp_counts_oi_id_seq
 -- Name: nst_10gp_gamelog_pp_rates_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.nst_10gp_gamelog_pp_rates_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_pp_rates_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -15229,7 +15229,7 @@ CREATE SEQUENCE public.nst_10gp_gamelog_pp_rates_id_seq
 -- Name: nst_10gp_gamelog_pp_rates_oi_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.nst_10gp_gamelog_pp_rates_oi_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.nst_10gp_gamelog_pp_rates_oi_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
