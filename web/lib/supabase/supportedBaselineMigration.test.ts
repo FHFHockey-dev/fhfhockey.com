@@ -55,7 +55,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     const baselineHash = createHash("sha256").update(baseline).digest("hex");
 
     expect(baselineHash).toBe(
-      "9408e85d3267d51da556efbffeb7a1516910a262634de96cdcfa0052b430f182",
+      "27067d2221516be147d5cf71492b1fee3f0fd377d0ccd14e49557931ad1b791d",
     );
     expect(baseline).toContain("CREATE SCHEMA IF NOT EXISTS public;");
     expect(baseline).toContain("ALTER SCHEMA public OWNER TO postgres;");
@@ -99,7 +99,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     expect(baseline).not.toMatch(/authorization/i);
     expect(baseline).not.toMatch(/bearer/i);
     expect(baseline).not.toMatch(
-      /CREATE FUNCTION public\.(?:on_new_line_combo|on_new_player_underlying_stats|update_power_play_combinations|update_all_wgo_skaters)\b/i,
+      /CREATE FUNCTION public\.(?:on_new_line_combo|on_new_player_underlying_stats|update_power_play_combinations|update_all_wgo_skaters|get_skater_game_score_by_limit)\b/i,
     );
     expect(baseline).not.toMatch(
       /CREATE TRIGGER (?:after_line_combo_insert|after_player_underlying_stats_insert|update_power_play_combinations_after_line_combo_insert)\b/i,
