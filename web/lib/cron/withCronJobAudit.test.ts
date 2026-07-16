@@ -255,4 +255,30 @@ describe("withCronJobAudit", () => {
 
     expect(insertMock).toHaveBeenCalledTimes(1);
   });
+
+  it("persists the audit before flushing the JSON response", async () => {
+    let resolveInsert: ((value: unknown) => void) | undefined;
+    insertMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveInsert = resolve;
+      }),
+    );
+    const wrapped = withCronJobAudit(
+      async (_req, res) => res.json({ success: true, rowsAffected: 0 }),
+      { jobName: "durable-audit" },
+    );
+    const res = createMockRes();
+
+    const pending = wrapped(createMockReq(), res);
+    await vi.waitFor(() => expect(insertMock).toHaveBeenCalledTimes(1));
+
+    expect(res.headersSent).toBe(false);
+    expect(res.body).toBeUndefined();
+
+    resolveInsert?.({});
+    await pending;
+
+    expect(res.headersSent).toBe(true);
+    expect(res.body).toEqual({ success: true, rowsAffected: 0 });
+  });
 });
