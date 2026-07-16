@@ -3,11 +3,26 @@ const BASE_URL_TWO = "https://api.nhle.com/stats/rest/en";
 
 const DEFAULT_HEADERS = {
   Accept: "application/json",
-  "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)"
+  "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",
 };
 
+export type NhlGamecenterResource = "landing" | "right-rail" | "boxscore";
+
+export class NhlApiHttpError extends Error {
+  readonly status: number;
+  readonly url: string;
+
+  constructor(args: { status: number; url: string; message: string }) {
+    super(args.message);
+    this.name = "NhlApiHttpError";
+    this.status = args.status;
+    this.url = args.url;
+  }
+}
+
 function summarizeHtmlError(value: string): string {
-  const title = value.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim() ?? null;
+  const title =
+    value.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim() ?? null;
   const host = title?.split("|")[0]?.trim() ?? null;
   const code = title?.match(/\|\s*(\d{3})\s*:/)?.[1]?.trim() ?? null;
   const reason =
@@ -18,7 +33,7 @@ function summarizeHtmlError(value: string): string {
     "Upstream returned HTML instead of JSON.",
     code ? `Code ${code}.` : null,
     reason ? `${reason}.` : null,
-    host ? `Host: ${host}.` : null
+    host ? `Host: ${host}.` : null,
   ]
     .filter((part): part is string => Boolean(part))
     .join(" ");
@@ -39,7 +54,7 @@ function tryParseJson<T>(value: string): T | null {
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url, {
     headers: DEFAULT_HEADERS,
-    cache: "no-store"
+    cache: "no-store",
   });
   const contentType = response.headers.get("content-type") ?? "";
   const bodyText = await response.text();
@@ -50,7 +65,11 @@ async function fetchJson<T>(url: string): Promise<T> {
 
   if (!response.ok) {
     if (looksLikeHtml) {
-      throw new Error(`${url} -> ${summarizeHtmlError(bodyText)}`);
+      throw new NhlApiHttpError({
+        status: response.status,
+        url,
+        message: `${url} -> ${summarizeHtmlError(bodyText)}`,
+      });
     }
 
     if (parsed && typeof parsed === "object") {
@@ -61,13 +80,19 @@ async function fetchJson<T>(url: string): Promise<T> {
           : typeof candidate.message === "string"
             ? candidate.message
             : `Request failed with status ${response.status}`;
-      throw new Error(`${url} -> ${message}`);
+      throw new NhlApiHttpError({
+        status: response.status,
+        url,
+        message: `${url} -> ${message}`,
+      });
     }
 
     const bodySummary = trimmed ? ` ${truncate(trimmed)}` : "";
-    throw new Error(
-      `${url} -> Request failed with status ${response.status}.${bodySummary}`
-    );
+    throw new NhlApiHttpError({
+      status: response.status,
+      url,
+      message: `${url} -> Request failed with status ${response.status}.${bodySummary}`,
+    });
   }
 
   if (parsed !== null) {
@@ -79,7 +104,7 @@ async function fetchJson<T>(url: string): Promise<T> {
   }
 
   throw new Error(
-    `${url} -> Expected JSON but received ${contentType || "unknown content type"}`
+    `${url} -> Expected JSON but received ${contentType || "unknown content type"}`,
   );
 }
 
@@ -93,10 +118,30 @@ export function get<T = any>(path: string, debug: boolean = false): Promise<T> {
   if (debug) {
     console.log({ url });
   }
-  return fetchJson<T>(url)
-    .catch((e) => {
-      throw new Error("Failed to fetch " + url + "\n" + e.message);
-    });
+  return fetchJson<T>(url).catch((e) => {
+    if (e instanceof NhlApiHttpError) {
+      throw new NhlApiHttpError({
+        status: e.status,
+        url: e.url,
+        message: "Failed to fetch " + url + "\n" + e.message,
+      });
+    }
+    throw new Error("Failed to fetch " + url + "\n" + e.message);
+  });
+}
+
+export function isNhlGamecenterNotFound(
+  error: unknown,
+  gameId: number,
+  resource: NhlGamecenterResource,
+): error is NhlApiHttpError {
+  return (
+    error instanceof NhlApiHttpError &&
+    error.status === 404 &&
+    Number.isSafeInteger(gameId) &&
+    gameId > 0 &&
+    error.url === `${BASE_URL_ONE}/gamecenter/${gameId}/${resource}`
+  );
 }
 
 /**
@@ -105,7 +150,7 @@ export function get<T = any>(path: string, debug: boolean = false): Promise<T> {
  * @returns
  */
 export function restGet<T = any>(
-  path: string
+  path: string,
 ): Promise<{ data: T[]; total: number }> {
   return fetchJson<{ data: T[]; total: number }>(`${BASE_URL_TWO}${path}`);
 }

@@ -19,6 +19,8 @@ import {
   sanitizeCronDiagnostic,
   type StatsPreWriteQuarantineFailureDetails,
 } from "lib/cron/statsUpdateSafety";
+import { tryFinalizeScheduleNotRealizedGameStats } from "lib/cron/nonRealizedGameStats";
+import { getCurrentSeason } from "lib/NHL/server";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { updateStats } from "../update-stats/[gameId]";
 
@@ -86,12 +88,20 @@ export default withCronJobAudit(
       // await processGameIDs(); // updating pbp
 
       //
+      const currentSeasonId = String((await getCurrentSeason()).seasonId);
+      if (!/^\d{8}$/.test(currentSeasonId)) {
+        throw new Error("Current NHL season ID is not in YYYYYYYY format.");
+      }
       const { data } = await supabase
-        .rpc("get_unupdated_games")
+        .rpc("get_unupdated_games_for_season", {
+          p_season_id: Number(currentSeasonId),
+        })
         .limit(count)
         .throwOnError();
       if (!Array.isArray(data)) {
-        throw new Error("get_unupdated_games returned a non-array result.");
+        throw new Error(
+          "get_unupdated_games_for_season returned a non-array result.",
+        );
       }
       const selectedRows = data.slice(0, count) as Array<{ gameid?: unknown }>;
       const ids = selectedRows.map((game) => game?.gameid);
@@ -105,14 +115,18 @@ export default withCronJobAudit(
         new Set(ids).size !== ids.length
       ) {
         throw new Error(
-          "get_unupdated_games returned invalid or duplicate game IDs.",
+          "get_unupdated_games_for_season returned invalid or duplicate game IDs.",
         );
       }
       const boundedIds = ids as number[];
       if (boundedIds.length === 0) {
         return res.json({
           success: true,
+          seasonId: currentSeasonId,
           message: "All game statistics have been successfully updated.",
+          attemptedGameIds: [],
+          updatedGameIds: [],
+          nonRealizedGameIds: [],
         });
       }
       console.log(boundedIds);
@@ -128,14 +142,31 @@ export default withCronJobAudit(
       const results = await Promise.allSettled(updatePromises);
 
       const updatedGameIds: number[] = [];
+      const nonRealizedGameIds: number[] = [];
       const failures: StatsUpdateFailure[] = [];
       for (const [index, result] of results.entries()) {
         if (result.status === "fulfilled") {
           updatedGameIds.push(result.value);
         } else {
-          failures.push(
-            serializeStatsUpdateFailure(boundedIds[index], result.reason),
-          );
+          const failedGameId = boundedIds[index];
+          try {
+            const receipt = await tryFinalizeScheduleNotRealizedGameStats({
+              supabase,
+              gameId: failedGameId,
+              landingError: result.reason,
+            });
+            if (receipt) {
+              nonRealizedGameIds.push(receipt.gameId);
+              continue;
+            }
+            failures.push(
+              serializeStatsUpdateFailure(failedGameId, result.reason),
+            );
+          } catch (finalizationError) {
+            failures.push(
+              serializeStatsUpdateFailure(failedGameId, finalizationError),
+            );
+          }
         }
       }
       const failedGameIds = failures.map((failure) => failure.gameId);
@@ -234,13 +265,19 @@ export default withCronJobAudit(
         operationStatus = "warning";
         message =
           "Processed stats backlog; some stale games were quarantined from automatic retry.";
+      } else if (nonRealizedGameIds.length > 0) {
+        operationStatus = "warning";
+        message =
+          "Processed current-season stats; some schedule rows were confirmed as not realized.";
       }
 
       const response = {
         success: pendingRetryGameIds.length === 0,
         operationStatus,
+        seasonId: currentSeasonId,
         message,
         updatedGameIds,
+        nonRealizedGameIds,
         failedGameIds,
         quarantinedGameIds,
         pendingRetryGameIds,

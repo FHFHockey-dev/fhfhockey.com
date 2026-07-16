@@ -1,8 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { updateStatsMock } = vi.hoisted(() => ({
-  updateStatsMock: vi.fn(),
-}));
+const { getCurrentSeasonMock, tryFinalizeMock, updateStatsMock } = vi.hoisted(
+  () => ({
+    getCurrentSeasonMock: vi.fn(),
+    tryFinalizeMock: vi.fn(),
+    updateStatsMock: vi.fn(),
+  }),
+);
 
 vi.mock("../../../../../lib/cron/withCronJobAudit", () => ({
   withCronJobAudit: (handler: unknown) => handler,
@@ -14,6 +18,14 @@ vi.mock("../../../../../utils/adminOnlyMiddleware", () => ({
 
 vi.mock("../../../../../pages/api/v1/db/update-stats/[gameId]", () => ({
   updateStats: updateStatsMock,
+}));
+
+vi.mock("../../../../../lib/NHL/server", () => ({
+  getCurrentSeason: getCurrentSeasonMock,
+}));
+
+vi.mock("../../../../../lib/cron/nonRealizedGameStats", () => ({
+  tryFinalizeScheduleNotRealizedGameStats: tryFinalizeMock,
 }));
 
 import { TransactionalGameStatsPersistenceError } from "../../../../../lib/cron/transactionalGameStatsPersistence";
@@ -103,7 +115,7 @@ function createRpcForGameIds(
   const limit = vi.fn(() => builder);
   builder.limit = limit;
   const rpc = vi.fn((functionName: string) => {
-    if (functionName === "get_unupdated_games") return builder;
+    if (functionName === "get_unupdated_games_for_season") return builder;
     if (
       functionName === "quarantine_game_stats_v1" &&
       quarantineResult !== undefined
@@ -121,6 +133,8 @@ function createRpcForGameIds(
 describe("/api/v1/db/cron/update-stats-cron", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20252026 });
+    tryFinalizeMock.mockResolvedValue(null);
   });
 
   it("parses only the documented bounded integer count range", () => {
@@ -462,7 +476,11 @@ describe("/api/v1/db/cron/update-stats-cron", () => {
         },
       ],
     });
-    expect(rpc.rpc).toHaveBeenNthCalledWith(1, "get_unupdated_games");
+    expect(rpc.rpc).toHaveBeenNthCalledWith(
+      1,
+      "get_unupdated_games_for_season",
+      { p_season_id: 20252026 },
+    );
     expect(rpc.rpc).toHaveBeenNthCalledWith(2, "quarantine_game_stats_v1", {
       p_game_ids: [gameId],
       p_reason: "game_not_finished",
@@ -499,6 +517,47 @@ describe("/api/v1/db/cron/update-stats-cron", () => {
       failures: [],
     });
     expect(updateStatsMock).toHaveBeenCalledWith(gameId, req.supabase);
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("reports a confirmed non-realized game separately from persisted updates", async () => {
+    const gameId = 2025030417;
+    const landingError = new Error("typed landing 404");
+    updateStatsMock.mockRejectedValue(landingError);
+    tryFinalizeMock.mockResolvedValue({
+      gameId,
+      outcome: "quarantined",
+      reason: "schedule_not_realized",
+    });
+    const from = vi.fn(() => {
+      throw new Error("Terminalization must not use stale quarantine lookup");
+    });
+    const req: any = {
+      method: "GET",
+      query: { count: "1" },
+      supabase: { rpc: createRpc(gameId), from },
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      operationStatus: "warning",
+      seasonId: "20252026",
+      attemptedGameIds: [gameId],
+      updatedGameIds: [],
+      nonRealizedGameIds: [gameId],
+      failedGameIds: [],
+      pendingRetryGameIds: [],
+      rowsUpserted: 0,
+    });
+    expect(tryFinalizeMock).toHaveBeenCalledWith({
+      supabase: req.supabase,
+      gameId,
+      landingError,
+    });
     expect(from).not.toHaveBeenCalled();
   });
 

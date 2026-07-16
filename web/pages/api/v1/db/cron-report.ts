@@ -1,6 +1,3 @@
-import fs from "fs/promises";
-import path from "path";
-
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
@@ -22,6 +19,7 @@ import {
 import { type CronJobTimingRecord } from "lib/cron/timingContract";
 import { extractAuditTimingRecord } from "lib/cron/cronReportTiming";
 import { buildSqlCronTimingObservation } from "lib/cron/sqlTiming";
+import { readCronScheduleMarkdown } from "lib/cron/cronInventory";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -893,24 +891,6 @@ function expectedRunAtWithinWindow(
     : null;
 }
 
-async function readCronScheduleMarkdown(): Promise<string> {
-  const candidates = [
-    path.resolve(process.cwd(), "tasks/TASKS/cron-operations/cron-schedule.md"),
-  ];
-
-  for (const candidate of candidates) {
-    try {
-      return await fs.readFile(candidate, "utf8");
-    } catch {
-      // continue
-    }
-  }
-
-  throw new Error(
-    "Could not locate cron schedule markdown in tasks/TASKS/cron-operations/cron-schedule.md",
-  );
-}
-
 function parseScheduleJsonEntries(markdown: string): CronScheduleJsonEntry[] {
   const codeFenceMatch = markdown.match(/```json\s*([\s\S]*?)\s*```/i);
   if (!codeFenceMatch?.[1]) {
@@ -1397,9 +1377,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     scheduledJobs = await loadScheduledCronJobs(sinceDate, now);
   } catch (error: any) {
     console.error("Error loading cron schedule:", error?.message ?? error);
-    errors.push(
-      `Failed to parse cron schedule: ${error?.message ?? String(error)}`,
-    );
+    return res.status(500).json({
+      success: false,
+      code: "CRON_SCHEDULE_INVENTORY_UNAVAILABLE",
+      message:
+        "Cron schedule inventory is unavailable; report generation failed closed.",
+    });
+  }
+
+  if (scheduledJobs.length === 0) {
+    console.error("Cron schedule inventory contains zero active jobs.");
+    return res.status(500).json({
+      success: false,
+      code: "CRON_SCHEDULE_INVENTORY_EMPTY",
+      message:
+        "Cron schedule inventory contains zero active jobs; report generation failed closed.",
+    });
   }
 
   const auditRows: AuditRow[] = (audits ?? []).map(

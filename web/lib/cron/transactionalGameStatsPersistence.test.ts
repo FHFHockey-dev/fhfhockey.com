@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  finalizeScheduleNotRealizedGameStats,
   getTransactionalGameStatsFailureDetails,
   persistCompleteGameStatsTransaction,
   quarantineGameStatsBatch,
@@ -47,6 +48,14 @@ function quarantineReceipt(id: number) {
     expected_goalie_rows: 0,
     observed_goalie_rows: 0,
     completed_at: "2026-07-15T01:30:00.000Z",
+  };
+}
+
+function nonRealizedReceipt(overrides: Record<string, unknown> = {}) {
+  return {
+    ...quarantineReceipt(gameId),
+    reason: "schedule_not_realized",
+    ...overrides,
   };
 }
 
@@ -322,6 +331,85 @@ describe("quarantineGameStatsBatch", () => {
       phase: "quarantine_receipt_validation",
       terminalError: {
         code: "INVALID_GAME_STATS_QUARANTINE_RECEIPT",
+      },
+    });
+  });
+});
+
+describe("finalizeScheduleNotRealizedGameStats", () => {
+  it("accepts one exact zero-count terminal receipt", async () => {
+    const client = createSupabase({
+      rpcResults: [{ data: [nonRealizedReceipt()], error: null }],
+    });
+
+    await expect(
+      finalizeScheduleNotRealizedGameStats({
+        supabase: client.supabase,
+        gameId,
+      }),
+    ).resolves.toMatchObject({
+      gameId,
+      outcome: "quarantined",
+      reason: "schedule_not_realized",
+      observedTeamRows: 0,
+      observedSkaterRows: 0,
+      observedGoalieRows: 0,
+    });
+    expect(client.rpc).toHaveBeenCalledWith(
+      "finalize_non_realized_game_stats_v1",
+      { p_game_id: gameId },
+    );
+    expect(client.from).not.toHaveBeenCalled();
+  });
+
+  it("fails closed on a malformed or mismatched terminal receipt", async () => {
+    const client = createSupabase({
+      rpcResults: [
+        {
+          data: [nonRealizedReceipt({ observed_goalie_rows: 1 })],
+          error: null,
+        },
+      ],
+    });
+    const error = await captureRejection(() =>
+      finalizeScheduleNotRealizedGameStats({
+        supabase: client.supabase,
+        gameId,
+      }),
+    );
+
+    expect(getTransactionalGameStatsFailureDetails(error)).toMatchObject({
+      phase: "non_realized_receipt_validation",
+      terminalError: {
+        code: "INVALID_NON_REALIZED_GAME_STATS_RECEIPT",
+      },
+    });
+  });
+
+  it("surfaces a sanitized RPC failure and leaves terminal state unclaimed", async () => {
+    const client = createSupabase({
+      rpcResults: [
+        {
+          data: null,
+          error: {
+            code: "P0001",
+            message: "not old enough at https://example.test/private",
+          },
+        },
+      ],
+    });
+    const error = await captureRejection(() =>
+      finalizeScheduleNotRealizedGameStats({
+        supabase: client.supabase,
+        gameId,
+      }),
+    );
+
+    expect(getTransactionalGameStatsFailureDetails(error)).toMatchObject({
+      phase: "non_realized_rpc",
+      terminalError: {
+        code: "P0001",
+        message: "not old enough at [redacted-url]",
       },
     });
   });

@@ -14,6 +14,7 @@ import {
   getTransactionalGameStatsFailureDetails,
   persistCompleteGameStatsTransaction,
 } from "lib/cron/transactionalGameStatsPersistence";
+import { tryFinalizeScheduleNotRealizedGameStats } from "lib/cron/nonRealizedGameStats";
 import {
   StatsPreWriteQuarantineError,
   getStatsPreWriteQuarantineFailureDetails,
@@ -216,10 +217,32 @@ export default withCronJobAudit(
         success: true,
       });
     } catch (e: any) {
+      let terminalError = e;
+      try {
+        const receipt = await tryFinalizeScheduleNotRealizedGameStats({
+          supabase,
+          gameId,
+          landingError: e,
+        });
+        if (receipt) {
+          return res.json({
+            gameId,
+            message: `Game ${gameId} was confirmed as not realized by the official NHL source.`,
+            success: true,
+            outcome: receipt.outcome,
+            reason: receipt.reason,
+            rowsUpserted: 0,
+            receipt,
+          });
+        }
+      } catch (finalizationError) {
+        terminalError = finalizationError;
+      }
+
       const failure =
-        getGameStatsCompletenessFailureDetails(e) ??
-        getTransactionalGameStatsFailureDetails(e) ??
-        getStatsPreWriteQuarantineFailureDetails(e);
+        getGameStatsCompletenessFailureDetails(terminalError) ??
+        getTransactionalGameStatsFailureDetails(terminalError) ??
+        getStatsPreWriteQuarantineFailureDetails(terminalError);
       if (failure) {
         console.error("Direct stats game update failed.", {
           gameId,
@@ -234,7 +257,7 @@ export default withCronJobAudit(
         });
       }
 
-      const dependencyError = normalizeDependencyError(e);
+      const dependencyError = normalizeDependencyError(terminalError);
       console.error("Direct stats dependency failed.", {
         gameId,
         classification: dependencyError.classification,

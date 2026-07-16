@@ -45221,6 +45221,12 @@ export type Database = {
           gameid: number
         }[]
       }
+      get_unupdated_games_for_season: {
+        Args: { p_season_id: number }
+        Returns: {
+          gameid: number
+        }[]
+      }
       immutable_unaccent: { Args: { "": string }; Returns: string }
       initialize_draft_ranking_from_yahoo: {
         Args: {
@@ -45337,6 +45343,22 @@ export type Database = {
           pruned_goalie_rows: number
           pruned_skater_rows: number
           pruned_team_rows: number
+        }[]
+      }
+      finalize_non_realized_game_stats_v1: {
+        Args: { p_game_id: number }
+        Returns: {
+          completed_at: string
+          contract_version: number
+          expected_goalie_rows: number
+          expected_skater_rows: number
+          expected_team_rows: number
+          game_id: number
+          observed_goalie_rows: number
+          observed_skater_rows: number
+          observed_team_rows: number
+          outcome: string
+          reason: string
         }[]
       }
       process_team_goalie_projections: {
