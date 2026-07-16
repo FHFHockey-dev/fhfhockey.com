@@ -243,4 +243,16 @@ describe("withCronJobAudit", () => {
       "audit insert unavailable",
     );
   });
+
+  it("does not silently skip persistence when runtime configuration is unavailable", async () => {
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const wrapped = withCronJobAudit(
+      async (_req, res) => res.json({ success: true }),
+      { jobName: "runtime-config-audit" },
+    );
+
+    await wrapped(createMockReq(), createMockRes());
+
+    expect(insertMock).toHaveBeenCalledTimes(1);
+  });
 });

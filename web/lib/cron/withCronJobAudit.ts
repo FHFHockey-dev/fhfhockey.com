@@ -223,9 +223,6 @@ export function withCronJobAudit(
     };
 
     try {
-      if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        return;
-      }
       const { error: auditInsertError } = await supabase
         .from("cron_job_audit")
         .insert(row as any);
