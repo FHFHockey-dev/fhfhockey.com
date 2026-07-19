@@ -2,7 +2,7 @@
 
 This plan implements the approved directions in the [decision record](./decision-record.md), is grounded in the [repository audit](./repository-audit.md), and is tracked through [progress.md](./progress.md). Product authority remains [product-strategy.md](./product-strategy.md), with execution governed by [goal-prompt.md](./goal-prompt.md).
 
-Task statuses below are current as of 2026-07-14. Production migration application remains subject to the recorded approval checkpoints.
+Task statuses below are reconciled through 2026-07-18. Historical implementation and migration evidence remains subject to the recorded approval checkpoints; Phase 7 is complete and Phase 8 remains deferred behind separate evidence and approvals.
 Phase 0 — Audit closure and approved decisions
 Phase contract
 Status: Completed 2026-07-14; documentation was reviewed through the implementation-goal handoff, the execution boundary was recorded, and the technical contract was frozen.
@@ -87,7 +87,7 @@ Migration/Rollback/Flag/Approval: Code rollback safe; `DRAFT_RANKER_ENABLED` is 
 Non-goals: New global state or authentication architecture.
 Phase 2 — Seed, continuous ordering, and direct editing
 Phase contract
-Status: In progress; implementation remains staff/beta-disabled pending the Phase 2 launch gate.
+Status: Completed 2026-07-14; DR-020 through DR-023 are implemented and verified. Their later staged exposure was governed by Phase 7 DR-072 rather than an unfinished Phase-2 implementation gate.
 Scope: Idempotent Yahoo seed, sparse ordering RPCs, ranker page, direct manipulation, and conflict behavior.
 Dependencies: Phase 1.
 Affected systems: Ranking RPC migration, API routes, /draft-rankings, hooks/components.
@@ -345,7 +345,7 @@ Dependencies/Affected: DR-070–072; Vitest, Playwright, build, runbooks.
 DB/API/UI: No additional features.
 Acceptance/Tests: A live disposable account passed sign in → initialize 313 players → persisted reorder → real prospect search/watch → assisted placement → consent/prompt comparison → private export → community owner delta → opt-out rebuild → account deletion with zero residue. A second disposable visual account verified the real 313-player board and export surface, then was deleted with zero Auth or account-owned residue. The focused suite passes 228/228 across 49 files, the affected WIGO regression suites pass 18/18, full TypeScript passes, and `npm run build` completes all 83 static pages plus sitemap generation. Community Ranking and personal export surfaces pass desktop and iPhone 14 Pro Max (430×932) inspection with accessible labels and real data. The mobile document is exactly 430 pixels wide while the 1,050-pixel board remains independently scrollable inside its 428-pixel table viewport.
 Security/Observability: Verify no cross-user access, private comparison leaks, or unaudited privileged jobs.
-Migration/Rollback/Flag/Approval: Local all-flags-on verification ended with the server stopped; deployed flags remain off. Flag disablement, dry-run rebuild, deletion, and zero-residue recovery were demonstrated without data loss. Production expansion still requires the recorded approval checklist, named owners and cohort IDs, real traffic, and the required observation windows.
+Migration/Rollback/Flag/Approval: At DR-073's 2026-07-15 local checkpoint, all-flags-on verification ended with the server stopped and deployed flags remained off. Flag disablement, dry-run rebuild, deletion, and zero-residue recovery were demonstrated without data loss. The production expansion then required the recorded approval checklist, named owners and cohort IDs, real traffic, and the required observation window; DR-072 subsequently satisfied that separate gate on 2026-07-17 without enabling any non-homepage secondary flag.
 Non-goals: Deferred mature capabilities.
 Phase 8 — Deferred mature-product capabilities
 Phase contract

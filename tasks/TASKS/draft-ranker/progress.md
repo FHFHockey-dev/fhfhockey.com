@@ -1,4 +1,4 @@
-# Initial Progress State
+# Draft Ranker Progress Record
 
 - **Planning documents:** [Repository audit](./repository-audit.md), [decision record](./decision-record.md), [implementation plan](./implementation-plan.md), [product strategy](./product-strategy.md), and [execution contract](./goal-prompt.md).
 - **Overall objective:** Deliver an account-backed personal NHL draft ranker with a persistent top 250, continuous candidate order, verified broader player universe, assisted placement, homepage pairwise refinement, explainable discovery, and privacy-preserving Community Ranking v1.
@@ -13,7 +13,7 @@
   - Paid or license-restricted player sources.
   - Material changes to Community Ranking methodology.
   - Conflicting Yahoo or projection ingestion changes.
-  - Production rollout.
+  - Any rollout beyond the completed personal-ranker `authenticated` stage or any secondary-flag activation.
 - **Completed task IDs:** DR-001, DR-002, DR-003, DR-010, DR-011, DR-012, DR-013, DR-020, DR-021, DR-022, DR-023, DR-030, DR-031, DR-032, DR-033, DR-040, DR-041, DR-042, DR-043, DR-050, DR-051, DR-052, DR-060, DR-061, DR-062, DR-063, DR-070, DR-071, DR-072, and DR-073.
 - **In-progress tasks:** None in the approved launch plan. Normal authenticated-stage monitoring continues under the runbook; Phase 8 tasks DR-080 through DR-083 remain deferred.
 - **Blockers to current work:** None for Phase 7. Discovery, contribution collection, public Community Ranking, and beta entitlement remain deliberately off rather than blocked.
@@ -25,7 +25,7 @@
   - Inspected relevant live Supabase schema, counts, mappings, functions, policies, and advisors.
   - Resolved architectural decisions A–M.
   - Obtained blanket approval for all recommended product and privacy directions.
-  - Produced dependency-ordered tasks DR-001 through DR-083.
+  - Produced 34 stable dependency-ordered task IDs spanning DR-001 through DR-083.
   - Saved the approved repository audit, decision record, implementation plan, and initial progress state under `tasks/TASKS/draft-ranker/`.
   - Completed DR-002 and recorded the dirty-worktree boundary, canonical migration path, live migration ledger, live schema counts, ADP quality, and advisor baseline in [execution-boundary.md](./execution-boundary.md).
   - Completed DR-003 and froze the schema, API, RLS, RPC, concurrency, idempotency, deletion, feature-flag, threat-model, and verification contracts in [technical-contract.md](./technical-contract.md).
