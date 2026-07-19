@@ -50,7 +50,7 @@ export class SupabaseShiftsAdapter implements ShiftsAdapter {
     const { data, error } = await supabase
       .from("shift_charts")
       .select(
-        "game_id,player_id,team_id,opponent_team_id,game_date,total_es_toi,total_pp_toi"
+        "game_id,player_id,team_id,opponent_team_id,game_date,total_es_toi,total_pp_toi,total_pk_toi"
       )
       .eq("game_id", gameId);
     if (error) throw error;
@@ -93,4 +93,3 @@ export function createSupabaseIngestedDataAdapters(): IngestedDataAdapters {
     goalie: new SupabaseGoalieStatsAdapter()
   };
 }
-

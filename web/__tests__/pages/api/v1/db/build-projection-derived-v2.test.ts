@@ -4,32 +4,34 @@ const {
   auditInsertMock,
   playerBuilderMock,
   teamBuilderMock,
-  goalieBuilderMock
+  goalieBuilderMock,
 } = vi.hoisted(() => ({
   auditInsertMock: vi.fn().mockResolvedValue({ error: null }),
   playerBuilderMock: vi.fn(),
   teamBuilderMock: vi.fn(),
-  goalieBuilderMock: vi.fn()
+  goalieBuilderMock: vi.fn(),
 }));
 
 vi.mock("lib/projections/derived/buildStrengthTablesV2", () => ({
   buildPlayerGameStrengthV2ForDateRange: playerBuilderMock,
-  buildTeamGameStrengthV2ForDateRange: teamBuilderMock
+  buildTeamGameStrengthV2ForDateRange: teamBuilderMock,
 }));
 
 vi.mock("lib/projections/derived/buildGoalieGameV2", () => ({
-  buildGoalieGameV2ForDateRange: goalieBuilderMock
+  buildGoalieGameV2ForDateRange: goalieBuilderMock,
 }));
 
 vi.mock("lib/supabase", () => ({
   default: {
     from: vi.fn(() => ({
-      insert: auditInsertMock
-    }))
-  }
+      insert: auditInsertMock,
+    })),
+  },
 }));
 
-import handler from "../../../../../pages/api/v1/db/build-projection-derived-v2";
+import handler, {
+  previousUtcDate,
+} from "../../../../../pages/api/v1/db/build-projection-derived-v2";
 
 function createMockRes() {
   const res: any = {
@@ -53,7 +55,7 @@ function createMockRes() {
       this.body = payload;
       this.headersSent = true;
       return this;
-    }
+    },
   };
   return res;
 }
@@ -61,7 +63,10 @@ function createMockRes() {
 describe("/api/v1/db/build-projection-derived-v2", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    playerBuilderMock.mockResolvedValue({ gamesProcessed: 1, rowsUpserted: 10 });
+    playerBuilderMock.mockResolvedValue({
+      gamesProcessed: 1,
+      rowsUpserted: 10,
+    });
     teamBuilderMock.mockResolvedValue({ gamesProcessed: 1, rowsUpserted: 4 });
     goalieBuilderMock.mockResolvedValue({ gamesProcessed: 1, rowsUpserted: 2 });
   });
@@ -71,9 +76,9 @@ describe("/api/v1/db/build-projection-derived-v2", () => {
       method: "POST",
       query: {
         startDate: "2026-03-18",
-        endDate: "2026-03-22"
+        endDate: "2026-03-22",
       },
-      body: {}
+      body: {},
     };
     const res = createMockRes();
 
@@ -90,13 +95,19 @@ describe("/api/v1/db/build-projection-derived-v2", () => {
         version: "rolling-forge-operator-order-v1",
         currentStage: {
           id: "projection_derived_build",
-          order: 6
-        }
-      }
+          order: 6,
+        },
+      },
     });
     expect(playerBuilderMock).toHaveBeenCalledTimes(3);
     expect(teamBuilderMock).toHaveBeenCalledTimes(3);
     expect(goalieBuilderMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("defaults an empty scheduled request to the prior UTC slate", () => {
+    expect(previousUtcDate(new Date("2026-03-20T09:50:00Z"))).toBe(
+      "2026-03-19",
+    );
   });
 
   it("returns the next unprocessed date when the deadline is exhausted mid-run", async () => {
@@ -123,8 +134,8 @@ describe("/api/v1/db/build-projection-derived-v2", () => {
         startDate: "2026-03-18",
         endDate: "2026-03-20",
         maxDurationMs: "25",
-        maxDays: "3"
-      }
+        maxDays: "3",
+      },
     };
     const res = createMockRes();
 
@@ -139,14 +150,16 @@ describe("/api/v1/db/build-projection-derived-v2", () => {
   });
 
   it("reports stage failures separately from failed database rows", async () => {
-    goalieBuilderMock.mockRejectedValueOnce(new Error("goalie source unavailable"));
+    goalieBuilderMock.mockRejectedValueOnce(
+      new Error("goalie source unavailable"),
+    );
     const req: any = {
       method: "POST",
       query: {
         startDate: "2026-03-18",
-        endDate: "2026-03-18"
+        endDate: "2026-03-18",
       },
-      body: {}
+      body: {},
     };
     const res = createMockRes();
 
@@ -155,20 +168,54 @@ describe("/api/v1/db/build-projection-derived-v2", () => {
     expect(res.statusCode).toBe(207);
     expect(res.body).toMatchObject({
       success: false,
+      nextStartDate: "2026-03-18",
+      processedDates: [],
       failedRows: 0,
       failedStages: 1,
       failures: [
         {
           date: "2026-03-18",
           stage: "goalie",
-          error: "goalie source unavailable"
-        }
+          error: "goalie source unavailable",
+        },
       ],
       observability: {
         dataQualityWarnings: expect.arrayContaining([
-          expect.objectContaining({ code: "goalie_derived_failed" })
-        ])
-      }
+          expect.objectContaining({ code: "goalie_derived_failed" }),
+        ]),
+      },
     });
+    expect(res.body.deferredDates).toEqual(["2026-03-18"]);
+  });
+
+  it("blocks the dependent team stage and preserves a failed player date", async () => {
+    playerBuilderMock.mockRejectedValueOnce(
+      new Error("shift strength is incomplete"),
+    );
+    const req: any = {
+      method: "POST",
+      query: {
+        startDate: "2026-03-18",
+        endDate: "2026-03-20",
+        maxDays: "3",
+      },
+      body: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(207);
+    expect(res.body.processedDates).toEqual([]);
+    expect(res.body.nextStartDate).toBe("2026-03-18");
+    expect(res.body.failures).toEqual([
+      {
+        date: "2026-03-18",
+        stage: "player",
+        error: "shift strength is incomplete",
+      },
+    ]);
+    expect(teamBuilderMock).not.toHaveBeenCalled();
+    expect(goalieBuilderMock).not.toHaveBeenCalled();
   });
 });

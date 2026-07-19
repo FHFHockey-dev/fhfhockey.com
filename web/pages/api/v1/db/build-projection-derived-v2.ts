@@ -12,7 +12,7 @@
  *
  * 1. `startDate` (optional)
  *    - Description: The start date for the data processing window, in `YYYY-MM-DD` format.
- *    - If omitted, the system defaults to the current date.
+ *    - If omitted, the system defaults to the prior completed UTC slate.
  *    - Example: `?startDate=2025-10-05`
  *
  * 2. `endDate` (optional)
@@ -30,7 +30,7 @@
  *
  * Usage Examples:
  *
- * - To build data for a single day (today):
+ * - To build data for the prior completed UTC slate:
  *   `GET /api/v1/db/build-projection-derived-v2`
  *
  * - To build data for a specific day:
@@ -44,7 +44,7 @@
  * Notes:
  *
  * - The endpoint supports both `GET` and `POST` methods. There is no difference in functionality between them.
- * - The process is broken down into three main parts: player strength, team strength, and goalie game logs. Each part may fail or succeed independently.
+ * - The process is broken down into three ordered parts: player strength, team strength, and goalie game logs. A failed stage retains that date as the resume cursor.
  * - The response payload will detail the outcome of each part, including the number of games processed and rows upserted.
  * - A `207 Multi-Status` response will be returned if any part of the process encounters an error.
  */
@@ -55,7 +55,7 @@ import { getRollingForgeStageDependencyContract } from "lib/rollingForgePipeline
 
 import {
   buildPlayerGameStrengthV2ForDateRange,
-  buildTeamGameStrengthV2ForDateRange
+  buildTeamGameStrengthV2ForDateRange,
 } from "lib/projections/derived/buildStrengthTablesV2";
 import { buildGoalieGameV2ForDateRange } from "lib/projections/derived/buildGoalieGameV2";
 
@@ -77,13 +77,23 @@ type Result = {
   goalie: { gamesProcessed: number; rowsUpserted: number };
   observability: {
     goalieRowsProcessed: number;
-    dataQualityWarnings: Array<{ code: string; message: string; detail?: string }>;
+    dataQualityWarnings: Array<{
+      code: string;
+      message: string;
+      detail?: string;
+    }>;
   };
   errors: string[];
   failedRows: number;
   failedStages: number;
-  failures: Array<{ date: string; stage: "request" | "player" | "team" | "goalie"; error: string }>;
-  dependencyContract?: ReturnType<typeof getRollingForgeStageDependencyContract>;
+  failures: Array<{
+    date: string;
+    stage: "request" | "player" | "team" | "goalie";
+    error: string;
+  }>;
+  dependencyContract?: ReturnType<
+    typeof getRollingForgeStageDependencyContract
+  >;
 };
 
 function getParam(req: NextApiRequest, key: string): string | undefined {
@@ -115,6 +125,12 @@ function isoDateOnly(d: string): string {
   return d.slice(0, 10);
 }
 
+export function previousUtcDate(now = new Date()): string {
+  const previous = new Date(now.getTime());
+  previous.setUTCDate(previous.getUTCDate() - 1);
+  return isoDateOnly(previous.toISOString());
+}
+
 function parseChunkDays(value: string | null): number {
   const n = Number(value ?? 0);
   if (!Number.isFinite(n) || n <= 0) return 0;
@@ -142,7 +158,7 @@ function buildDateRange(start: string, end: string): string[] {
 async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
   const startedAt = Date.now();
   const dependencyContract = getRollingForgeStageDependencyContract(
-    "projection_derived_build"
+    "projection_derived_build",
   );
   if (req.method !== "POST" && req.method !== "GET") {
     res.setHeader("Allow", ["GET", "POST"]);
@@ -164,18 +180,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       goalie: { gamesProcessed: 0, rowsUpserted: 0 },
       observability: {
         goalieRowsProcessed: 0,
-        dataQualityWarnings: []
+        dataQualityWarnings: [],
       },
       errors: ["Method not allowed"],
       failedRows: 0,
       failedStages: 1,
       failures: [{ date: "", stage: "request", error: "Method not allowed" }],
-      dependencyContract
+      dependencyContract,
     });
   }
 
-  const startDate =
-    getParam(req, "startDate") ?? isoDateOnly(new Date().toISOString());
+  const startDate = getParam(req, "startDate") ?? previousUtcDate();
   const endDate = getParam(req, "endDate") ?? startDate;
   const chunkDays = parseChunkDays(getParam(req, "chunkDays") ?? null);
   const explicitMaxDays = parsePositiveInt(getParam(req, "maxDays"));
@@ -184,12 +199,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     (chunkDays === 0 && getParam(req, "resumeFromDate") == null ? 3 : null);
   const resumeFromDate = getParam(req, "resumeFromDate")?.slice(0, 10) ?? null;
   const bypassMaxDuration = parseBooleanParam(
-    getParam(req, "bypassMaxDuration") ?? null
+    getParam(req, "bypassMaxDuration") ?? null,
   );
   const maxDurationMs = Number(getParam(req, "maxDurationMs") ?? 270_000);
   const budgetMs =
-    Number.isFinite(maxDurationMs) && maxDurationMs > 0 ? maxDurationMs : 270_000;
-  const deadlineMs = bypassMaxDuration ? Number.POSITIVE_INFINITY : startedAt + budgetMs;
+    Number.isFinite(maxDurationMs) && maxDurationMs > 0
+      ? maxDurationMs
+      : 270_000;
+  const deadlineMs = bypassMaxDuration
+    ? Number.POSITIVE_INFINITY
+    : startedAt + budgetMs;
   const effectiveStartDate =
     resumeFromDate && resumeFromDate >= startDate && resumeFromDate <= endDate
       ? resumeFromDate
@@ -205,7 +224,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     limitedRangeDates[limitedRangeDates.length - 1] ?? effectiveStartDate;
   const chunkNextStartDate =
     fullRangeDates.length > limitedRangeDates.length
-      ? fullRangeDates[limitedRangeDates.length] ?? null
+      ? (fullRangeDates[limitedRangeDates.length] ?? null)
       : null;
 
   const errors: string[] = [];
@@ -228,7 +247,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       const playerResult = await buildPlayerGameStrengthV2ForDateRange({
         startDate: date,
         endDate: date,
-        deadlineMs
+        deadlineMs,
       });
       player.gamesProcessed += playerResult.gamesProcessed;
       player.rowsUpserted += playerResult.rowsUpserted;
@@ -236,6 +255,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       const error = (e as any)?.message ?? String(e);
       errors.push(`${date} player: ${error}`);
       failures.push({ date, stage: "player", error });
+      nextStartDate = date;
+      break;
     }
 
     if (Date.now() > deadlineMs) {
@@ -248,7 +269,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       const teamResult = await buildTeamGameStrengthV2ForDateRange({
         startDate: date,
         endDate: date,
-        deadlineMs
+        deadlineMs,
       });
       team.gamesProcessed += teamResult.gamesProcessed;
       team.rowsUpserted += teamResult.rowsUpserted;
@@ -256,6 +277,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       const error = (e as any)?.message ?? String(e);
       errors.push(`${date} team: ${error}`);
       failures.push({ date, stage: "team", error });
+      nextStartDate = date;
+      break;
     }
 
     if (Date.now() > deadlineMs) {
@@ -268,7 +291,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       const goalieResult = await buildGoalieGameV2ForDateRange({
         startDate: date,
         endDate: date,
-        deadlineMs
+        deadlineMs,
       });
       goalie.gamesProcessed += goalieResult.gamesProcessed;
       goalie.rowsUpserted += goalieResult.rowsUpserted;
@@ -276,13 +299,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       const error = (e as any)?.message ?? String(e);
       errors.push(`${date} goalie: ${error}`);
       failures.push({ date, stage: "goalie", error });
+      nextStartDate = date;
+      break;
     }
 
     processedDates.push(date);
 
     if (Date.now() > deadlineMs) {
       timedOut = true;
-      nextStartDate = limitedRangeDates[processedDates.length] ?? chunkNextStartDate;
+      nextStartDate =
+        limitedRangeDates[processedDates.length] ?? chunkNextStartDate;
       break;
     }
   }
@@ -299,7 +325,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       detail: failures
         .filter((failure) => failure.stage === "goalie")
         .map((failure) => `${failure.date}: ${failure.error}`)
-        .join(" | ")
+        .join(" | "),
     });
   }
   if (
@@ -309,13 +335,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     dataQualityWarnings.push({
       code: "goalie_games_missing",
       message:
-        "Player/team derived jobs processed games but goalie derived processed none."
+        "Player/team derived jobs processed games but goalie derived processed none.",
     });
   }
   if (goalie.gamesProcessed > 0 && goalie.rowsUpserted === 0) {
     dataQualityWarnings.push({
       code: "goalie_rows_zero",
-      message: "Goalie derived processed games but wrote zero rows."
+      message: "Goalie derived processed games but wrote zero rows.",
     });
   }
 
@@ -341,16 +367,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     goalie,
     observability: {
       goalieRowsProcessed: goalie.rowsUpserted,
-      dataQualityWarnings
+      dataQualityWarnings,
     },
     errors,
     failedRows: 0,
     failedStages: failures.length,
     failures: failures.slice(0, 30),
-    dependencyContract
+    dependencyContract,
   });
 }
 
 export default withCronJobAudit(handler, {
-  jobName: "build-projection-derived-v2"
+  jobName: "build-projection-derived-v2",
 });

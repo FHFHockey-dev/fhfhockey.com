@@ -1,6 +1,8 @@
 import supabase from "lib/supabase/server";
 import { resolveNullableCompatibilityValue } from "lib/rollingPlayerMetricCompatibility";
 import { fetchRecentTeamLineCombinations } from "lib/projections/queries/line-combo-queries";
+import { hasCompleteStoredPbpGame } from "lib/projections/pbpCompletenessServer";
+import { classifyStoredShiftChartStrengthGame } from "lib/projections/shiftChartCompletenessServer";
 // This file is the canonical projection runner that replaced the removed
 // runProjectionV2 shim. Keep cleanup inventory updates alongside
 // lib/projections/compatibilityInventory.ts so surviving compatibility surfaces
@@ -30,7 +32,6 @@ import type {
   LineCombinationWithGameDateRow,
   LineCombinationRow,
   OpponentGoalieContext,
-  PbpGameIdRow,
   PlayerTeamPositionRow,
   ReconciledSkaterVector,
   ReconciliationDistributionValidation,
@@ -456,27 +457,6 @@ export function availabilityMultiplierForEvent(
     default:
       return null;
   }
-}
-
-async function hasPbpGame(gameId: number): Promise<boolean> {
-  assertSupabase();
-  const { data, error } = await supabase
-    .from("pbp_games")
-    .select("id")
-    .eq("id", gameId)
-    .maybeSingle<PbpGameIdRow>();
-  if (error) throw error;
-  return Number.isFinite(data?.id);
-}
-
-async function hasShiftTotals(gameId: number): Promise<boolean> {
-  assertSupabase();
-  const { count, error } = await supabase
-    .from("shift_charts")
-    .select("id", { count: "exact", head: true })
-    .eq("game_id", gameId);
-  if (error) throw error;
-  return (count ?? 0) > 0;
 }
 
 async function fetchLatestLineCombinationForTeam(
@@ -1730,10 +1710,15 @@ export async function runProjectionV2ForDate(
         timedOut = true;
         break gamesLoop;
       }
-      if (!(await hasPbpGame(game.id)))
+      const pbpComplete = await hasCompleteStoredPbpGame(game.id);
+      if (!pbpComplete) {
         metrics.data_quality.missing_pbp_games += 1;
-      if (!(await hasShiftTotals(game.id)))
+      } else if (
+        (await classifyStoredShiftChartStrengthGame({ gameId: game.id }))
+          .status !== "complete"
+      ) {
         metrics.data_quality.missing_shift_totals += 1;
+      }
 
       // Removed: const lineCombos = await fetchLineCombinations(game.id);
       // We now fetch per-team latest LCs inside the loop.

@@ -1,4 +1,8 @@
 import supabase from "lib/supabase/server";
+import {
+  isCompleteStoredPbpEvidence,
+  type ExpectedPbpSourceEvidence,
+} from "lib/projections/pbpCompletenessServer";
 
 import { nhleFetchJson } from "./nhleFetch";
 
@@ -15,10 +19,11 @@ type PbpPlay = {
   details?: Record<string, any>;
 };
 
-type PbpResponse = {
+export type PbpResponse = {
   id: number;
   season: number | string;
   gameType: number;
+  gameState?: string;
   gameDate: string;
   startTimeUTC: string;
   venue?: { default?: string };
@@ -37,13 +42,62 @@ type PbpResponse = {
   plays: PbpPlay[];
 };
 
+export function buildExpectedPbpSourceEvidence(
+  game: PbpResponse,
+): ExpectedPbpSourceEvidence {
+  return {
+    game: {
+      id: game.id,
+      date: game.gameDate,
+      hometeamid: game.homeTeam?.id ?? null,
+      awayteamid: game.awayTeam?.id ?? null,
+      type: game.gameType,
+      season: String(game.season),
+      hometeamabbrev: game.homeTeam?.abbrev ?? null,
+      awayteamabbrev: game.awayTeam?.abbrev ?? null,
+      hometeamscore: game.homeTeam?.score ?? null,
+      awayteamscore: game.awayTeam?.score ?? null,
+    },
+    eventIds: Array.isArray(game.plays)
+      ? game.plays.map((play) => play.eventId)
+      : [],
+  };
+}
+
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
 }
 
 export async function fetchPbpGame(gameId: number): Promise<PbpResponse> {
   return nhleFetchJson<PbpResponse>(
-    `https://api-web.nhle.com/v1/gamecenter/${gameId}/play-by-play`
+    `https://api-web.nhle.com/v1/gamecenter/${gameId}/play-by-play`,
+  );
+}
+
+export function isCompleteFinalPbpPayload(game: PbpResponse): boolean {
+  if (!Array.isArray(game.plays)) return false;
+
+  const eventIds = new Set<number>();
+  let terminalEventCount = 0;
+  for (const play of game.plays) {
+    if (
+      !Number.isSafeInteger(play?.eventId) ||
+      play.eventId <= 0 ||
+      eventIds.has(play.eventId)
+    ) {
+      return false;
+    }
+    eventIds.add(play.eventId);
+    if (play.typeDescKey === "game-end") terminalEventCount += 1;
+  }
+
+  return (
+    (game.gameState === "OFF" || game.gameState === "FINAL") &&
+    isCompleteStoredPbpEvidence(
+      buildExpectedPbpSourceEvidence(game).game,
+      game.plays.length,
+      terminalEventCount,
+    )
   );
 }
 
@@ -51,7 +105,13 @@ export async function upsertPbpGameAndPlays(game: PbpResponse): Promise<{
   playsUpserted: number;
 }> {
   assertSupabase();
+  if (!isCompleteFinalPbpPayload(game)) {
+    throw new Error(
+      `PBP payload is not final and complete for game ${game.id}`,
+    );
+  }
 
+  const persistedAt = new Date().toISOString();
   const gameInfo = {
     id: game.id,
     date: game.gameDate,
@@ -67,14 +127,17 @@ export async function upsertPbpGameAndPlays(game: PbpResponse): Promise<{
     awayteamabbrev: game.awayTeam.abbrev,
     awayteamscore: game.awayTeam.score,
     location: game.venue?.default ?? null,
-    created_at: new Date().toISOString()
+    created_at: persistedAt,
   };
-
-  const { error: gameErr } = await supabase.from("pbp_games").upsert(gameInfo);
-  if (gameErr) throw gameErr;
 
   const plays = (game.plays ?? []).map((play) => {
     const details = play.details ?? {};
+    const typeCode = play.typeCode == null ? null : Number(play.typeCode);
+    if (typeCode != null && !Number.isSafeInteger(typeCode)) {
+      throw new Error(
+        `PBP payload has an invalid type code for game ${game.id}, event ${play.eventId}`,
+      );
+    }
     return {
       id: play.eventId,
       gameid: game.id,
@@ -85,7 +148,7 @@ export async function upsertPbpGameAndPlays(game: PbpResponse): Promise<{
       timeremaining: play.timeRemaining ?? null,
       situationcode: play.situationCode ?? null,
       typedesckey: play.typeDescKey ?? null,
-      typecode: play.typeCode != null ? Number(play.typeCode) : null,
+      typecode: typeCode,
       hometeamdefendingside: play.homeTeamDefendingSide ?? null,
       sortorder: play.sortOrder ?? null,
       eventownerteamid: details.eventOwnerTeamId ?? null,
@@ -116,12 +179,28 @@ export async function upsertPbpGameAndPlays(game: PbpResponse): Promise<{
       xcoord: details.xCoord ?? null,
       ycoord: details.yCoord ?? null,
       reason: details.reason ?? null,
-      updated_at: new Date().toISOString()
+      updated_at: persistedAt,
     };
   });
 
-  if (plays.length === 0) return { playsUpserted: 0 };
-  const { error: playsErr } = await supabase.from("pbp_plays").upsert(plays);
+  // The upstream response is a complete snapshot. Remove the prior game scope
+  // first so corrected or withdrawn events cannot survive a successful refresh.
+  // If a later write fails, the missing terminal play makes stored completeness
+  // fail closed and prevents dependent materialization from using a mixed set.
+  const { error: deleteErr } = await supabase
+    .from("pbp_plays")
+    .delete()
+    .eq("gameid", game.id);
+  if (deleteErr) throw deleteErr;
+
+  const { error: gameErr } = await supabase
+    .from("pbp_games")
+    .upsert(gameInfo, { onConflict: "id" });
+  if (gameErr) throw gameErr;
+
+  const { error: playsErr } = await supabase
+    .from("pbp_plays")
+    .upsert(plays, { onConflict: "gameid,id" });
   if (playsErr) throw playsErr;
 
   return { playsUpserted: plays.length };

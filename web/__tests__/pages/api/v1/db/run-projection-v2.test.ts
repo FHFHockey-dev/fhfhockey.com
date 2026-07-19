@@ -91,9 +91,9 @@ describe("/api/v1/db/run-projection-v2", () => {
   });
 
   it("normalizes a bounded single-date game batch without duplicate ids", () => {
-    expect(parseProjectionGameIds("2025020101, 2025020102,2025020101,bad,-1")).toEqual([
-      2025020101, 2025020102,
-    ]);
+    expect(
+      parseProjectionGameIds("2025020101, 2025020102,2025020101,bad,-1"),
+    ).toEqual([2025020101, 2025020102]);
   });
 
   it("normalizes html upstream dependency failures into structured payloads", async () => {
@@ -203,18 +203,35 @@ describe("/api/v1/db/run-projection-v2", () => {
     });
   });
 
-  it("excludes playoff placeholders without PBP from projection ingest coverage", () => {
+  it("fails when even one actual PBP game lacks complete shift coverage", () => {
     expect(
       buildProjectionInputIngestGate({
         scheduledRecentGames: 10,
         actualPbpGames: 6,
         shiftedActualGames: 5,
+        invalidShiftGames: 0,
         shiftRows: 191,
+      }),
+    ).toMatchObject({
+      status: "FAIL",
+      detail:
+        "scheduled_recent_games=10, actual_pbp_games=6, shifted_actual_games=5, invalid_shift_games=0, shift_coverage=0.83, shift_rows=191",
+    });
+  });
+
+  it("passes only when every actual PBP game has complete shift coverage", () => {
+    expect(
+      buildProjectionInputIngestGate({
+        scheduledRecentGames: 10,
+        actualPbpGames: 6,
+        shiftedActualGames: 6,
+        invalidShiftGames: 0,
+        shiftRows: 220,
       }),
     ).toMatchObject({
       status: "PASS",
       detail:
-        "scheduled_recent_games=10, actual_pbp_games=6, shifted_actual_games=5, shift_coverage=0.83, shift_rows=191",
+        "scheduled_recent_games=10, actual_pbp_games=6, shifted_actual_games=6, invalid_shift_games=0, shift_coverage=1.00, shift_rows=220",
     });
   });
 
@@ -224,6 +241,7 @@ describe("/api/v1/db/run-projection-v2", () => {
         scheduledRecentGames: 10,
         actualPbpGames: 6,
         shiftedActualGames: 3,
+        invalidShiftGames: 0,
         shiftRows: 120,
       }),
     ).toMatchObject({
@@ -231,6 +249,33 @@ describe("/api/v1/db/run-projection-v2", () => {
       action:
         "Run /api/v1/db/ingest-projection-inputs for recent actual game dates.",
     });
+  });
+
+  it("fails closed when scheduled recent games have no terminal PBP evidence", () => {
+    expect(
+      buildProjectionInputIngestGate({
+        scheduledRecentGames: 8,
+        actualPbpGames: 0,
+        shiftedActualGames: 0,
+        invalidShiftGames: 0,
+        shiftRows: 0,
+      }),
+    ).toMatchObject({
+      status: "FAIL",
+      action: expect.stringContaining("complete terminal PBP evidence"),
+    });
+  });
+
+  it("fails projection ingest coverage when any persisted shift game is invalid", () => {
+    expect(
+      buildProjectionInputIngestGate({
+        scheduledRecentGames: 10,
+        actualPbpGames: 6,
+        shiftedActualGames: 6,
+        invalidShiftGames: 1,
+        shiftRows: 220,
+      }),
+    ).toMatchObject({ status: "FAIL" });
   });
 
   it("treats projection-derived freshness as not applicable on a zero-game slate", () => {

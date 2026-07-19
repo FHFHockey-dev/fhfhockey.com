@@ -8,11 +8,11 @@ export type SituationDigits = {
 };
 
 export function parseSituationDigits(
-  situationCode: string | null | undefined
+  situationCode: string | null | undefined,
 ): SituationDigits | null {
   if (!situationCode) return null;
   const s = situationCode.trim();
-  if (s.length !== 4) return null;
+  if (!/^[01][0-6][0-6][01]$/.test(s)) return null;
   // NHL "situationCode" format: A G / A S / H S / H G
   // Examples:
   // - "1551" => away goalie=1, away skaters=5, home skaters=5, home goalie=1 (5v5)
@@ -21,24 +21,18 @@ export function parseSituationDigits(
   const awaySkaters = Number(s[1]);
   const homeSkaters = Number(s[2]);
   const homeGoalie = Number(s[3]);
-  if (
-    !Number.isFinite(awaySkaters) ||
-    !Number.isFinite(homeSkaters) ||
-    !Number.isFinite(awayGoalie) ||
-    !Number.isFinite(homeGoalie)
-  ) {
-    return null;
-  }
   return { awayGoalie, awaySkaters, homeSkaters, homeGoalie };
 }
 
 export function strengthForTeam(
-  digits: SituationDigits | null,
+  digits: SituationDigits,
   teamId: number,
   homeTeamId: number,
-  awayTeamId: number
+  awayTeamId: number,
 ): Strength {
-  if (!digits) return "es";
+  if (teamId !== homeTeamId && teamId !== awayTeamId) {
+    throw new Error("Situation team is not part of the scheduled game");
+  }
   const isHome = teamId === homeTeamId;
   const mySkaters = isHome ? digits.homeSkaters : digits.awaySkaters;
   const oppSkaters = isHome ? digits.awaySkaters : digits.homeSkaters;

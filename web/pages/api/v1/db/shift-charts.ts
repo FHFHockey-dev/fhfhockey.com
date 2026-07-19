@@ -43,6 +43,12 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server";
 import adminOnly from "utils/adminOnlyMiddleware";
+import { buildShiftChartRelationshipUpsert } from "lib/projections/shiftChartRelationshipPayload";
+import {
+  calculateCompletedGameLengthSeconds,
+  formatGameLength,
+  normalizeNhlGameType
+} from "lib/projections/gameLength";
 
 // TODO : integrate home_or_away, opponent_team_id and opponent_team_abbreviation
 
@@ -55,7 +61,7 @@ interface TeamInfo {
 }
 
 interface GameInfo {
-  gameType: string;
+  gameType: string | number;
   gameDate: string;
   homeTeam: TeamDetail;
   awayTeam: TeamDetail;
@@ -102,6 +108,9 @@ interface ConsolidatedPlayerData {
   player_last_name: string;
   team_id: number;
   team_abbreviation: string;
+  home_or_away: "home" | "away";
+  opponent_team_id: number;
+  opponent_team_abbreviation: string;
   shifts: ShiftDetail[];
   pp_shifts: PPShift[];
   es_shifts: ESShift[];
@@ -116,8 +125,8 @@ interface ConsolidatedPlayerData {
   display_position: string | null;
   primary_position: string | null;
   player_type: "G" | "F" | "D" | null;
-  line_combination: string | null;
-  pairing_combination: string | null;
+  line_combination: number | null;
+  pairing_combination: number | null;
 }
 
 interface ShiftDetail {
@@ -153,8 +162,8 @@ interface PlayerInfo {
   id: number;
   toi: string;
   shared_toi: Record<string, string>;
-  line_combination: string | null;
-  pairing_combination: string | null;
+  line_combination: number | null;
+  pairing_combination: number | null;
 }
 
 interface TeamLogs {
@@ -236,8 +245,7 @@ async function getLatestProcessedGameDate(): Promise<string | null> {
       console.warn("No existing records found in shift_charts.");
       return null;
     }
-    console.error("Error fetching latest game_date from shift_charts:", error);
-    return null;
+    throw new Error(`Error fetching latest shift-chart date: ${error.message}`);
   }
 
   return data.game_date || null;
@@ -515,10 +523,14 @@ function generateTeamLogs(
         .sort(
           (a: PlayerInfo, b: PlayerInfo) =>
             parseTime(
-              consolidatedData[`${a.id}`].time_spent_with[`${b.id}`] || "0:00"
+              consolidatedData[`${pivotPlayer.id}`].time_spent_with[
+                `${b.id}`
+              ] || "0:00"
             ) -
             parseTime(
-              consolidatedData[`${a.id}`].time_spent_with[`${b.id}`] || "0:00"
+              consolidatedData[`${pivotPlayer.id}`].time_spent_with[
+                `${a.id}`
+              ] || "0:00"
             )
         )
         .slice(0, 2);
@@ -603,7 +615,7 @@ async function fetchCurrentSeason(): Promise<number> {
   const previousSeason = data.data[1];
   const now = new Date();
   const startDate = new Date(currentSeason.startDate);
-  const endDate = new Date(currentSeason.regularSeasonEndDate);
+  const endDate = new Date(currentSeason.endDate);
   console.log(`Current season ID: ${currentSeason.id}`);
   console.log(`Previous season ID: ${previousSeason.id}`);
 
@@ -668,10 +680,10 @@ async function fetchAllPlayerPositions(): Promise<PlayerPosition[]> {
     const { data, error } = await supabase
       .from("yahoo_positions")
       .select("*")
+      .order("player_key", { ascending: true })
       .range(offset, offset + pageSize - 1);
     if (error) {
-      console.error("Error fetching player positions:", error);
-      fetchMore = false;
+      throw new Error(`Error fetching player positions: ${error.message}`);
     } else {
       allPositions = allPositions.concat(data as PlayerPosition[]);
       offset += pageSize;
@@ -709,35 +721,10 @@ async function fetchGameLength(gameId: number): Promise<string> {
       throw new Error("Invalid game data structure");
     }
 
-    const { periodDescriptor, clock, gameOutcome } = gameData;
-    let totalGameTime = 0;
-
-    if (periodDescriptor.number === 5 && gameOutcome.lastPeriodType === "SO") {
-      totalGameTime = 3 * 20 * 60 + 5 * 60; // 3 regulation periods + overtime
-    } else if (
-      periodDescriptor.number > 3 &&
-      gameOutcome.lastPeriodType === "OT"
-    ) {
-      const timeRemainingParts = clock.timeRemaining.split(":").map(Number);
-      const timeRemainingSeconds =
-        timeRemainingParts[0] * 60 + timeRemainingParts[1];
-      const overtimeSeconds = 5 * 60 - timeRemainingSeconds;
-      totalGameTime = 3 * 20 * 60 + overtimeSeconds; // 3 regulation periods + overtime
-    } else if (
-      periodDescriptor.number === 3 &&
-      gameOutcome.lastPeriodType === "REG"
-    ) {
-      totalGameTime = 3 * 20 * 60; // 3 regulation periods
-    } else {
-      throw new Error("Unexpected game outcome or period descriptor");
-    }
-
-    return `${Math.floor(totalGameTime / 60)}:${
-      totalGameTime % 60 < 10 ? "0" : ""
-    }${totalGameTime % 60}`;
+    return formatGameLength(calculateCompletedGameLengthSeconds(gameData));
   } catch (error) {
     console.error(`Error fetching game length for game ID ${gameId}:`, error);
-    return "60:00"; // Default to 60 minutes if there's an error
+    throw error;
   }
 }
 
@@ -765,11 +752,9 @@ async function upsertShiftChartData(
     .eq("game_id", gameInfo.game_id);
 
   if (ppError) {
-    console.error(
-      `Error fetching power play timeframes for game ID ${gameInfo.game_id}:`,
-      ppError
+    throw new Error(
+      `Error fetching power play timeframes for game ID ${gameInfo.game_id}: ${ppError.message}`
     );
-    // Proceed without power play data
   }
 
   const powerPlays = ppData && ppData.length > 0 ? ppData[0].pp_timeframes : [];
@@ -792,11 +777,21 @@ async function upsertShiftChartData(
     if (!matchedPosition) {
       unmatchedNamesSet.add(playerName);
     }
+    const isHomeTeam = firstShift.teamId === gameInfo.homeTeam.id;
+    const isAwayTeam = firstShift.teamId === gameInfo.awayTeam.id;
+    if (!isHomeTeam && !isAwayTeam) {
+      throw new Error(
+        `Shift team ${firstShift.teamId} is not scheduled for game ${gameInfo.game_id}`
+      );
+    }
+    const opponentTeam = isHomeTeam
+      ? gameInfo.awayTeam
+      : gameInfo.homeTeam;
 
     // Initialize player data in consolidatedData
     consolidatedData[playerKey] = {
       game_id: gameInfo.game_id,
-      game_type: gameInfo.gameType,
+      game_type: normalizeNhlGameType(gameInfo.gameType),
       game_date: gameInfo.gameDate,
       season_id: gameInfo.season_id,
       player_id: playerId,
@@ -804,6 +799,9 @@ async function upsertShiftChartData(
       player_last_name: firstShift.lastName,
       team_id: firstShift.teamId,
       team_abbreviation: firstShift.teamAbbrev,
+      home_or_away: isHomeTeam ? "home" : "away",
+      opponent_team_id: opponentTeam.id,
+      opponent_team_abbreviation: opponentTeam.abbrev,
       shifts: [],
       pp_shifts: [],
       es_shifts: [],
@@ -1033,7 +1031,7 @@ async function upsertShiftChartData(
     for (const line in lines) {
       lines[line].forEach((player: PlayerInfo) => {
         if (consolidatedData[`${player.id}`]) {
-          consolidatedData[`${player.id}`].line_combination = line.toString();
+          consolidatedData[`${player.id}`].line_combination = Number(line);
         }
       });
     }
@@ -1041,61 +1039,30 @@ async function upsertShiftChartData(
     for (const pair in pairs) {
       pairs[pair].forEach((player: PlayerInfo) => {
         if (consolidatedData[`${player.id}`]) {
-          consolidatedData[`${player.id}`].pairing_combination =
-            pair.toString();
+          consolidatedData[`${player.id}`].pairing_combination = Number(pair);
         }
       });
     }
   }
 
   // Prepare Batch Data for Upsert
-  const batchData = Object.values(consolidatedData).map((data) => {
-    const {
-      shifts,
-      pp_shifts,
-      es_shifts,
-      time_spent_with,
-      percent_toi_with,
-      time_spent_with_mixed,
-      percent_toi_with_mixed,
-      ...dataWithoutShifts
-    } = data;
-    return {
-      ...dataWithoutShifts,
-      shift_numbers: shifts.map((shift) => shift.shift_number),
-      periods: shifts.map((shift) => shift.period),
-      start_times: shifts.map((shift) => shift.start_time),
-      end_times: shifts.map((shift) => shift.end_time),
-      durations: shifts.map((shift) => shift.duration),
-      pp_shifts: data.pp_shifts,
-      es_shifts: data.es_shifts,
-      game_toi: data.game_toi, // Already summed during processing
-      shifts: data.shifts, // Include the `shifts` JSONB column
-      total_pp_toi: data.total_pp_toi, // Include `total_pp_toi`
-      total_es_toi: data.total_es_toi, // Include `total_es_toi`
-      time_spent_with: data.time_spent_with, // Include `time_spent_with`
-      percent_toi_with: data.percent_toi_with, // Include `percent_toi_with`
-      time_spent_with_mixed: data.time_spent_with_mixed, // Include `time_spent_with_mixed`
-      percent_toi_with_mixed: data.percent_toi_with_mixed, // Include `percent_toi_with_mixed`
-      line_combination: data.line_combination, // Include `line_combination`
-      pairing_combination: data.pairing_combination // Include `pairing_combination`
-    };
-  });
+  const batchData = Object.values(consolidatedData).map((data) =>
+    buildShiftChartRelationshipUpsert(data)
+  );
 
   let upsertCount = 0;
   if (batchData.length > 0) {
-    const { data: upsertedData, error } = await supabase
+    const { error } = await supabase
       .from("shift_charts")
       .upsert(batchData, {
         onConflict: "game_id,player_id"
       });
 
     if (error) {
-      console.error("Error upserting shift chart data:", error);
-    } else {
-      console.log("Successfully upserted shift chart records.");
-      upsertCount = batchData.length;
+      throw new Error(`Error upserting shift chart data: ${error.message}`);
     }
+    console.log("Successfully upserted shift chart records.");
+    upsertCount = batchData.length;
   }
 
   return { unmatchedNames: Array.from(unmatchedNamesSet), upsertCount };
@@ -1141,8 +1108,7 @@ async function fetchAndStoreShiftCharts(): Promise<{
       const teamSchedule = await fetchTeamSchedule(teamAbbreviation, seasonId);
 
       if (!teamSchedule || !teamSchedule.games) {
-        console.error(`No schedule data found for team: ${teamAbbreviation}`);
-        continue;
+        throw new Error(`No schedule data found for team: ${teamAbbreviation}`);
       }
 
       for (const game of teamSchedule.games) {
@@ -1154,10 +1120,11 @@ async function fetchAndStoreShiftCharts(): Promise<{
           continue;
         }
 
-        // If latestGameDate exists, skip games on or before that date
-        if (latestGameDate && game.gameDate <= latestGameDate) {
+        // Revisit every game on the latest date so a partial same-day write
+        // cannot suppress a later complete relationship materialization.
+        if (latestGameDate && game.gameDate < latestGameDate) {
           console.log(
-            `Skipping game ID: ${game.id} as its gameDate (${game.gameDate}) is on or before the latest processed date (${latestGameDate})`
+            `Skipping game ID: ${game.id} as its gameDate (${game.gameDate}) is before the latest processed date (${latestGameDate})`
           );
           continue;
         }
@@ -1181,14 +1148,12 @@ async function fetchAndStoreShiftCharts(): Promise<{
         const shiftChartData = await fetchShiftChartData(gameId);
 
         if (!shiftChartData || !shiftChartData.data) {
-          console.error(`No shift chart data found for game ID: ${gameId}`);
-          continue;
+          throw new Error(`No shift chart data found for game ID: ${gameId}`);
         }
 
         const gameInfo = gameInfoMap.get(gameId);
         if (!gameInfo) {
-          console.error(`No game info found for game ID: ${gameId}`);
-          continue;
+          throw new Error(`No game info found for game ID: ${gameId}`);
         }
 
         const { unmatchedNames: unmatched, upsertCount } =
@@ -1200,7 +1165,7 @@ async function fetchAndStoreShiftCharts(): Promise<{
         await new Promise((resolve) => setTimeout(resolve, 100));
       } catch (err) {
         console.error(`Error processing game ID ${gameId}:`, err);
-        error = err;
+        throw err;
       }
     }
 

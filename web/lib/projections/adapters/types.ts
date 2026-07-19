@@ -13,6 +13,7 @@ export type ShiftChartRow = {
   game_date: string | null;
   total_es_toi: string | null;
   total_pp_toi: string | null;
+  total_pk_toi: string | null;
 };
 
 export type PbpPlayRow = {
@@ -60,4 +61,3 @@ export type IngestedDataAdapters = {
   pbp: PlayByPlayAdapter;
   goalie: GoalieStatsAdapter;
 };
-

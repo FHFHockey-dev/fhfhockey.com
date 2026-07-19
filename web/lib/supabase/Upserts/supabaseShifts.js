@@ -12,8 +12,6 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 // CHANGED SUPABASE THING
 const supabase = createClient(supabaseUrl, supabaseKey);
-console.log("supabaseUrl", supabaseUrl);
-console.log("supabaseKey", supabaseKey);
 
 // Simplified Fetch (cors-fetch) function for Node.js that isn't imported
 async function Fetch(url) {
@@ -839,7 +837,7 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
     for (const line in lines) {
       lines[line].forEach((player) => {
         if (consolidatedData[player.id]) {
-          consolidatedData[player.id].line_combination = line;
+          consolidatedData[player.id].line_combination = Number(line);
         }
       });
     }
@@ -847,7 +845,7 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
     for (const pair in pairs) {
       pairs[pair].forEach((player) => {
         if (consolidatedData[player.id]) {
-          consolidatedData[player.id].pairing_combination = pair;
+          consolidatedData[player.id].pairing_combination = Number(pair);
         }
       });
     }
@@ -863,6 +861,8 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
       percent_toi_with,
       time_spent_with_mixed,
       percent_toi_with_mixed,
+      total_pp_toi,
+      total_es_toi,
       ...dataWithoutShifts
     } = data;
     return {
@@ -876,8 +876,6 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
       start_times: data.shifts.map((shift) => shift.start_times),
       end_times: data.shifts.map((shift) => shift.end_times),
       durations: data.shifts.map((shift) => shift.durations),
-      total_pp_toi: data.total_pp_toi, // Include `total_pp_toi`
-      total_es_toi: data.total_es_toi, // Include `total_es_toi`
       time_spent_with: data.time_spent_with, // Include `time_spent_with`
       percent_toi_with: data.percent_toi_with, // Include `percent_toi_with`
       time_spent_with_mixed: data.time_spent_with_mixed, // Include `time_spent_with_mixed`
@@ -891,14 +889,13 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
     const { data: upsertedData, error } = await supabase
       .from("shift_charts")
       .upsert(batchData, {
-        onConflict: ["game_id", "player_id"]
+        onConflict: "game_id,player_id"
       });
 
     if (error) {
-      console.error("Error upserting shift chart data:", error);
-    } else {
-      console.log("Successfully upserted shift chart records.");
+      throw new Error(`Error upserting shift chart data: ${error.message}`);
     }
+    console.log("Successfully upserted shift chart records.");
   }
 
   return Array.from(unmatchedNamesSet);

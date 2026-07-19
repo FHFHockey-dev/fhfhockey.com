@@ -72,6 +72,8 @@ import {
   type NormalizedDependencyError,
 } from "lib/cron/normalizeDependencyError";
 import { fetchRecentTeamLineCombinations } from "lib/projections/queries/line-combo-queries";
+import { classifyStoredPbpGames } from "lib/projections/pbpCompletenessServer";
+import { classifyStoredShiftChartStrengthGamesAgainstRawSource } from "lib/projections/shiftChartCompletenessServer";
 import { runProjectionV2ForDate } from "lib/projections/run-forge-projections";
 import {
   LINE_COMBO_STALE_HARD_DAYS,
@@ -194,27 +196,32 @@ export function buildProjectionInputIngestGate(args: {
   scheduledRecentGames: number;
   actualPbpGames: number;
   shiftedActualGames: number;
+  invalidShiftGames: number;
   shiftRows: number;
 }): PreflightGate {
   if (args.actualPbpGames === 0) {
     return {
       gate_key: "projection_input_ingest",
-      status: "PASS",
-      detail: `scheduled_recent_games=${args.scheduledRecentGames}, actual_pbp_games=0, shifted_actual_games=0, shift_coverage=1.00, shift_rows=${args.shiftRows}`,
+      status: args.scheduledRecentGames === 0 ? "PASS" : "FAIL",
+      detail: `scheduled_recent_games=${args.scheduledRecentGames}, actual_pbp_games=0, shifted_actual_games=0, invalid_shift_games=0, shift_coverage=1.00, shift_rows=${args.shiftRows}`,
       action:
-        "No recent games with PBP were found; ingest freshness is not applicable.",
+        args.scheduledRecentGames === 0
+          ? "No recent scheduled games were found; ingest freshness is not applicable."
+          : "No recent scheduled game has complete terminal PBP evidence; run projection-input ingestion and reconcile any canceled/non-realized games.",
     };
   }
 
   const shiftCoverage = args.shiftedActualGames / args.actualPbpGames;
-  const pass = shiftCoverage >= 0.8;
+  const pass =
+    args.shiftedActualGames === args.actualPbpGames &&
+    args.invalidShiftGames === 0;
 
   return {
     gate_key: "projection_input_ingest",
     status: pass ? "PASS" : "FAIL",
-    detail: `scheduled_recent_games=${args.scheduledRecentGames}, actual_pbp_games=${args.actualPbpGames}, shifted_actual_games=${args.shiftedActualGames}, shift_coverage=${shiftCoverage.toFixed(2)}, shift_rows=${args.shiftRows}`,
+    detail: `scheduled_recent_games=${args.scheduledRecentGames}, actual_pbp_games=${args.actualPbpGames}, shifted_actual_games=${args.shiftedActualGames}, invalid_shift_games=${args.invalidShiftGames}, shift_coverage=${shiftCoverage.toFixed(2)}, shift_rows=${args.shiftRows}`,
     action: pass
-      ? "Recent actual-game PBP and shift coverage are sufficient; scheduled playoff placeholders without PBP are excluded from the denominator."
+      ? "Every recent actual game with terminal PBP has complete shift coverage; scheduled playoff placeholders without PBP are excluded from the denominator."
       : "Run /api/v1/db/ingest-projection-inputs for recent actual game dates.",
   };
 }
@@ -602,35 +609,29 @@ export async function runProjectionPreflightChecks(
   );
 
   if (recentGameIds.length > 0) {
-    const { data: pbpRows, error: pbpErr } = await supabase
-      .from("pbp_games")
-      .select("id")
-      .in("id", recentGameIds);
-    if (pbpErr) throw pbpErr;
-    const pbpGameIds = ((pbpRows ?? []) as Array<{ id: number }>)
-      .map((row) => row.id)
-      .filter((id) => Number.isFinite(id));
-    const { data: shiftRows, error: shiftErr } = await supabase
-      .from("shift_charts")
-      .select("game_id")
-      .in("game_id", pbpGameIds.length > 0 ? pbpGameIds : [-1]);
-    if (shiftErr) throw shiftErr;
-    const shiftedActualGameIds = new Set(
-      ((shiftRows ?? []) as Array<{ game_id: number | null }>)
-        .map((row) => row.game_id)
-        .filter(
-          (id): id is number =>
-            typeof id === "number" &&
-            Number.isFinite(id) &&
-            pbpGameIds.includes(id),
-        ),
+    const pbpClassifications = await classifyStoredPbpGames(recentGameIds);
+    const pbpGameIds = recentGameIds.filter(
+      (gameId) => pbpClassifications.get(gameId) === true,
+    );
+    const shiftClassifications =
+      await classifyStoredShiftChartStrengthGamesAgainstRawSource(pbpGameIds);
+    const shiftedActualGames = Array.from(shiftClassifications.values()).filter(
+      (classification) => classification.status === "complete",
+    ).length;
+    const invalidShiftGames = Array.from(shiftClassifications.values()).filter(
+      (classification) => classification.status === "invalid",
+    ).length;
+    const shiftRows = Array.from(shiftClassifications.values()).reduce(
+      (total, classification) => total + classification.rowCount,
+      0,
     );
     gates.push(
       buildProjectionInputIngestGate({
         scheduledRecentGames: recentGameIds.length,
         actualPbpGames: pbpGameIds.length,
-        shiftedActualGames: shiftedActualGameIds.size,
-        shiftRows: (shiftRows ?? []).length,
+        shiftedActualGames,
+        invalidShiftGames,
+        shiftRows,
       }),
     );
   } else {
