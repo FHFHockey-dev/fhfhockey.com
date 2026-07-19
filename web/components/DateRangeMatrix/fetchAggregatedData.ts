@@ -266,13 +266,13 @@ async function fetchScopedGoalieRows(gameIds: number[], playerIds: number[]) {
 function expectedGameIdsForPlayer(
   player: any,
   seasonType: "regularSeason" | "playoffs",
-) {
+): number[] {
   const seasonData =
     seasonType === "regularSeason"
       ? player.regularSeasonData
       : player.playoffData;
   return Array.from(
-    new Set(
+    new Set<number>(
       (Array.isArray(seasonData?.gameIds) ? seasonData.gameIds : [])
         .map(Number)
         .filter((gameId: number) => Number.isInteger(gameId) && gameId > 0),
@@ -408,7 +408,7 @@ async function fetchScopedCardStats(
       ) {
         continue;
       }
-      skatersByPlayerId[playerId] = numericRows.reduce(
+      skatersByPlayerId[playerId] = numericRows.reduce<ScopedSkaterCardStats>(
         (totals, row) => ({
           gamesPlayed: totals.gamesPlayed,
           goals: totals.goals + (row.goals ?? 0),

@@ -228,18 +228,13 @@ export function useDateRangeMatrixData({
   >(null);
   const requestSequence = useRef(0);
 
-  // Resolve team basics from abbreviation
-  const teamId = useMemo(() => {
-    if (!teamAbbreviation) return undefined;
-    const info = (teamsInfo as any)[teamAbbreviation];
-    return info?.id as number | undefined;
-  }, [teamAbbreviation]);
-
-  const teamName = useMemo(() => {
-    if (!teamAbbreviation) return undefined;
-    const info = (teamsInfo as any)[teamAbbreviation];
-    return info?.name as string | undefined;
-  }, [teamAbbreviation]);
+  // Resolve team basics through the same canonical abbreviation as the reader.
+  const canonicalTeamInfo = useMemo(
+    () => teamsInfo[teamAbbreviation?.trim().toUpperCase() ?? ""],
+    [teamAbbreviation],
+  );
+  const teamId = canonicalTeamInfo?.id;
+  const teamName = canonicalTeamInfo?.name;
 
   // Load data depending on source
   useEffect(() => {
@@ -308,19 +303,31 @@ export function useDateRangeMatrixData({
     (async () => {
       try {
         if (source === "raw") {
-          const { toiData, roster, homeAwayInfo, playerATOI } =
-            await getTOIDataForGames(teamAbbreviation, startDate, endDate);
+          const {
+            toiData,
+            roster,
+            homeAwayInfo,
+            playerATOI,
+            coverage: rawCoverage,
+          } = await getTOIDataForGames(
+            teamAbbreviation,
+            startDate,
+            endDate,
+            seasonType,
+          );
           if (!isCurrent()) return;
           setRoster(roster);
           setToiData(toiData);
           setHomeAwayInfo(homeAwayInfo);
           setPlayerATOI(playerATOI);
-          setCoverage({
-            inputRows: roster.length,
-            rosterRows: roster.length,
-            skippedRows: 0,
-          });
-          setStatus(roster.length > 0 ? "success" : "empty");
+          setCoverage(rawCoverage);
+          setStatus(
+            rawCoverage.skippedRows > 0
+              ? "partial"
+              : roster.length > 0
+                ? "success"
+                : "empty",
+          );
         } else {
           const mapped = mapAggregatedPlayers(
             aggregatedData,

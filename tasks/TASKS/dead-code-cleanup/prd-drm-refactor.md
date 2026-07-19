@@ -42,6 +42,7 @@ Visible hook results are keyed to the exact request identity. A team/date/source
 
 ## Updated Files
 - `web/components/DateRangeMatrix/useDateRangeMatrixData.ts` (new)
+- `web/components/DateRangeMatrix/useTOIData.tsx` and focused test (typed complete raw reader and partial-coverage contract)
 - `web/components/DateRangeMatrix/DateRangeMatrixView.tsx` (new)
 - `web/pages/drm.tsx` (updated to use hook + view)
 - `web/components/DateRangeMatrix/DateRangeMatrixForGames.tsx` (refactored to hook)
@@ -62,6 +63,8 @@ Visible hook results are keyed to the exact request identity. A team/date/source
   - `loading, status, error, stale, source, coverage, teamId, teamName, roster, toiData, homeAwayInfo, playerATOI, lines, pairs`
 - View component props mirror hook result values (minus `homeAwayInfo` optional)
 - Aggregate durations are normalized to seconds and relationship/count maps to finite numbers before entering the `PlayerData` contract; invalid player identities are excluded rather than materialized as synthetic ID `0` rows.
+- Raw reads select only generated `shift_charts` fields, constrain canonical team ID/abbreviation plus exact inclusive dates and either the selected regular/playoff game type or a null game type that must remain visible as incomplete coverage, and use deterministic `id`-ordered inclusive short pages until the first short page. Any page error rejects the complete request. Positive row/game/player identities and unique player-game rows are mandatory; team/date/type conflicts, malformed clocks/JSON/partner identities, impossible appearance TOI beyond game length, and contradictory mirrors reject.
+- A raw game is included only when all player rows provide season, selected game type, appearance TOI, game length, and both relationship maps and every unordered player pair has two equal mirrored observations in one persisted relationship category. `home_or_away` is optional because both full relationship writers currently omit it; non-null values must agree, and a home/away row is published only when the game supplies that metadata. Incomplete nullable coverage excludes that entire game and increments genuine skipped-row coverage; observed `00:00` remains a valid zero fact. After bounded player fallback resolves canonical player types, persisted same/mixed category drift is normalized using the writers' forward-versus-non-forward rule, so one pair cannot split across buckets. The reducer publishes one roster row per player, one pair/game fact counted once, exact GP/total TOI/ATOI/line-pair counts, player-relative shared percentages, and canonical team/franchise identity. Unresolved identity metadata rejects.
 - Aggregated reader input is one explicit `{ teamId, seasonId, seasonType, startDate, endDate, gameIds?, homeOrAway?, opponentTeamAbbreviation? }` object. The reader does not recalculate last-N dates. It filters the generated `shift_charts` schema by exact team, season, game type, dates, and optional fixed game IDs; reads all rows through deterministic `id`-ordered short pages; rejects page errors or invalid player/game identities; and returns unique post-filter `matchedGameIds` for truthful coverage copy.
 - Player-master fallbacks use the shared Supabase helper with deterministic `id` ordering and 200-ID filter chunks. A failed chunk rejects the complete request. Last-N schedule lookup database errors also reject so the page can distinguish `error` from a legitimate empty/insufficient schedule.
 - Visible card stats use only the aggregate reader's unique post-filter `matchedGameIds` and the players' exact appearance IDs. Both game and player filters are bounded to 200 IDs, every chunk uses inclusive short-page pagination ordered by compound primary-key identity plus `created_at`, and a later-page error rejects the complete request. A player is published only when there is exactly one valid stat row for every expected appearance and no extra row. Missing, duplicate, malformed, unsafe-identity, or internally contradictory rows produce an explicit unavailable state rather than fabricated zeroes.
@@ -85,6 +88,15 @@ Visible hook results are keyed to the exact request identity. A team/date/source
 
 - The page owns one canonical scope key and exposes aggregate/card data only when the resolved key equals the active key. `useDateRangeMatrixData` independently masks changed request identities, and sequence ownership prevents late aggregate completions from overwriting a newer scope.
 - `LinePairGrid` has no retained result or independent fetch state: it derives lines/pairs/goalies from current props and returns nothing unless status is success/partial, roster is nonempty, and the matching-game count is positive. Focused first-render A-to-B loading, nonzero-to-zero, empty, error, and page-level filter-invalidation regressions pass.
+
+### Raw/aggregate parity and producer findings (NEW 19–20)
+
+- The rebuilt raw contract is intentionally strict, but the active aggregate `processData` reducer still uses `any`, coerces malformed/null durations to zero, accepts malformed relationship keys, and does not reject duplicate player-game or contradictory mirrored observations. NEW 19 owns the shared typed-reduction/parity repair; NEW 10 does not fabricate equality against that known-lax path.
+- `shift_charts` has two incompatible active producer classes: the TypeScript route and legacy JavaScript upsert both write DRM relationship/game/position fields, while projection-input ingestion can insert only strength totals and basic metadata and considers any existing row complete. Such rows cannot prove raw DRM pair semantics and can also make later full enrichment appear unnecessary. NEW 20 owns completeness-aware producer/preflight reconciliation, bounded affected-row inventory, and separately approved production backfill/deployment. Until then the raw contract deliberately includes null-game-type rows in its bounded team/date read and treats every incomplete game as partial rather than zero.
+
+### Raw boundary hardening (NEW 21 — resolved 2026-07-18)
+
+- Unified-hook team metadata uses the same optional-safe trimmed uppercase identity accepted by the raw reader. Duration parsing rejects a reduced clock total that is not a safe integer, and a present game length must be positive. Player-master fallback derives `lastName` from every token after the given name so surname particles match the aggregate fallback contract.
 
 ## UI/UX & Styling
 - Current DRM page uses custom styles (`drm.module.scss`). To align with site-wide design:

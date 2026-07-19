@@ -110,6 +110,7 @@ function rawResult(id: number) {
     team: { id: teamsInfo.EDM.id, name: "EDM" },
     homeAwayInfo: [],
     playerATOI: { [id]: player.ATOI },
+    coverage: { inputRows: 1, rosterRows: 1, skippedRows: 0 },
   };
 }
 
@@ -345,5 +346,66 @@ describe("useDateRangeMatrixData request state", () => {
       expect(result.current.error).toBe("raw request failed");
       expect(result.current.roster).toEqual([]);
     });
+  });
+
+  it("propagates genuine raw coverage and partial status", async () => {
+    getTOIDataForGamesMock.mockResolvedValueOnce({
+      ...rawResult(1),
+      coverage: { inputRows: 3, rosterRows: 1, skippedRows: 2 },
+    });
+
+    const { result } = renderHook(() =>
+      useDateRangeMatrixData({
+        teamAbbreviation: "EDM",
+        startDate: "2025-04-01",
+        endDate: "2025-05-01",
+        mode: "total-toi",
+        source: "raw",
+        seasonType: "playoffs",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+      expect(result.current.status).toBe("partial");
+      expect(result.current.coverage).toEqual({
+        inputRows: 3,
+        rosterRows: 1,
+        skippedRows: 2,
+      });
+    });
+    expect(getTOIDataForGamesMock).toHaveBeenCalledWith(
+      "EDM",
+      "2025-04-01",
+      "2025-05-01",
+      "playoffs",
+    );
+  });
+
+  it("uses a canonical team identity for lowercase raw input metadata", async () => {
+    getTOIDataForGamesMock.mockResolvedValueOnce(rawResult(1));
+
+    const { result } = renderHook(() =>
+      useDateRangeMatrixData({
+        teamAbbreviation: " edm ",
+        startDate: "2025-04-01",
+        endDate: "2025-05-01",
+        mode: "total-toi",
+        source: "raw",
+        seasonType: "regularSeason",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+      expect(result.current.teamId).toBe(teamsInfo.EDM.id);
+      expect(result.current.teamName).toBe(teamsInfo.EDM.name);
+    });
+    expect(getTOIDataForGamesMock).toHaveBeenCalledWith(
+      " edm ",
+      "2025-04-01",
+      "2025-05-01",
+      "regularSeason",
+    );
   });
 });
