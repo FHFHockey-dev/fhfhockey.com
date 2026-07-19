@@ -3,8 +3,13 @@ import supabase from "lib/supabase/public-client";
 import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
 import {
   guardSustainabilityDashboardRow,
-  type SustainabilityGuardrailState
+  type SustainabilityGuardrailState,
 } from "lib/sustainability/guardrails";
+import {
+  fetchSustainabilityTrendIdentity,
+  fetchSustainabilityTrendScores,
+  type SustainabilityTrendScoreRow,
+} from "lib/sustainability/trendsIdentity";
 
 type Direction = "hot" | "cold";
 type WindowCode = "l3" | "l5" | "l10" | "l20";
@@ -27,42 +32,41 @@ function parseDateParam(value?: string | string[]): string {
 function parseEnumParam<T extends string>(
   value: string | string[] | undefined,
   allowed: readonly T[],
-  fallback: T
+  fallback: T,
 ): T {
-  const candidate = typeof value === "string" ? value : value?.[0] ?? "";
-  return (allowed as readonly string[]).includes(candidate) ? (candidate as T) : fallback;
+  const candidate = typeof value === "string" ? value : (value?.[0] ?? "");
+  return (allowed as readonly string[]).includes(candidate)
+    ? (candidate as T)
+    : fallback;
 }
 
-function parseLimitParam(value: string | string[] | undefined, fallback = 50): number {
+function parseLimitParam(
+  value: string | string[] | undefined,
+  fallback = 50,
+): number {
   const candidate = typeof value === "string" ? value : value?.[0];
   const parsed = Number.parseInt(candidate ?? "", 10);
   if (Number.isNaN(parsed)) return fallback;
   return Math.max(1, Math.min(200, parsed));
 }
 
-type ScoreRow = {
-  player_id: number;
-  season_id: number;
-  snapshot_date: string;
-  position_group: string;
-  window_code: string;
-  s_raw: number | null;
-  s_100: number | null;
-  components: Record<string, any> | null;
-};
-
-type BaselineRow = {
-  player_id: number;
-  player_name: string | null;
-  position_code: string | null;
-};
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   try {
     const requestedSnapshot = parseDateParam(req.query.snapshot_date);
-    const windowCode = parseEnumParam<WindowCode>(req.query.window_code, WINDOW_CODES, "l10");
+    const windowCode = parseEnumParam<WindowCode>(
+      req.query.window_code,
+      WINDOW_CODES,
+      "l10",
+    );
     const pos = parseEnumParam<Pos>(req.query.pos, POS_CODES, "all");
-    const direction = parseEnumParam<Direction>(req.query.direction, DIRECTIONS, "hot");
+    const direction = parseEnumParam<Direction>(
+      req.query.direction,
+      DIRECTIONS,
+      "hot",
+    );
     const limit = parseLimitParam(req.query.limit, 50);
 
     const resolveSnapshotDate = async (): Promise<string | null> => {
@@ -111,33 +115,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         pos,
         direction,
         limit,
-        rows: []
+        rows: [],
       });
     }
 
-    let query = (supabase as any)
-      .from("sustainability_scores")
-      .select(
-        [
-          "player_id",
-          "season_id",
-          "snapshot_date",
-          "position_group",
-          "window_code",
-          "s_raw",
-          "s_100",
-          "components"
-        ].join(",")
-      )
-      .eq("snapshot_date", snapshot)
-      .eq("window_code", windowCode);
-
-    if (pos === "F" || pos === "D") {
-      query = query.eq("position_group", pos);
-    }
-
-    const { data: scores, error: scoreError } = await query;
-    if (scoreError) throw scoreError;
+    const scores = await fetchSustainabilityTrendScores(supabase, {
+      snapshotDate: snapshot,
+      windowCode,
+      positionGroup: pos === "F" || pos === "D" ? pos : undefined,
+    });
 
     if (!scores || scores.length === 0) {
       return res.status(200).json({
@@ -153,28 +139,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         pos,
         direction,
         limit,
-        rows: []
+        rows: [],
       });
     }
 
-    const { data: baselineRows, error: baselineError } = await (supabase as any)
-      .from("player_baselines")
-      .select("player_id, player_name, position_code")
-      .eq("snapshot_date", snapshot);
-
-    if (baselineError) {
-      // eslint-disable-next-line no-console
-      console.error("trends baseline lookup error", baselineError);
-    }
-
-    const nameMap = new Map<number, BaselineRow>();
-    for (const row of baselineRows ?? []) {
-      nameMap.set(Number(row.player_id), {
-        player_id: Number(row.player_id),
-        player_name: row.player_name ?? null,
-        position_code: row.position_code ?? null
-      });
-    }
+    const identityMap = await fetchSustainabilityTrendIdentity(
+      supabase,
+      scores,
+      snapshot,
+    );
 
     type RowOut = {
       player_id: number;
@@ -193,63 +166,67 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     let guardrailFiltered = 0;
-    const rows = (scores as ScoreRow[]).map((score): RowOut | null => {
-      const componentsRaw = score.components ?? {};
-      let components =
-        typeof componentsRaw === "string" ? undefined : (componentsRaw as Record<string, any>);
-      if (!components && typeof componentsRaw === "string") {
-        try {
-          components = JSON.parse(componentsRaw);
-        } catch (parseErr) {
-          // eslint-disable-next-line no-console
-          console.warn("Failed to parse components JSON", parseErr);
+    const rows = (scores as SustainabilityTrendScoreRow[])
+      .map((score): RowOut | null => {
+        const componentsRaw = score.components ?? {};
+        let components =
+          typeof componentsRaw === "string"
+            ? undefined
+            : (componentsRaw as Record<string, any>);
+        if (!components && typeof componentsRaw === "string") {
+          try {
+            components = JSON.parse(componentsRaw);
+          } catch (parseErr) {
+            // eslint-disable-next-line no-console
+            console.warn("Failed to parse components JSON", parseErr);
+          }
         }
-      }
-      if (!components) components = {};
+        if (!components) components = {};
 
-      const weights = components?.weights?.luck ?? {};
-      const z_shp = Number(components?.z_shp ?? 0) || 0;
-      const z_oishp = Number(components?.z_oishp ?? 0) || 0;
-      const z_ipp = Number(components?.z_ipp ?? 0) || 0;
-      const z_ppshp = Number(components?.z_ppshp ?? 0) || 0;
+        const weights = components?.weights?.luck ?? {};
+        const z_shp = Number(components?.z_shp ?? 0) || 0;
+        const z_oishp = Number(components?.z_oishp ?? 0) || 0;
+        const z_ipp = Number(components?.z_ipp ?? 0) || 0;
+        const z_ppshp = Number(components?.z_ppshp ?? 0) || 0;
 
-      const luckPressure =
-        -(
-          Number(weights.shp ?? 0) * z_shp +
-          Number(weights.oishp ?? 0) * z_oishp +
-          Number(weights.ipp ?? 0) * z_ipp +
-          Number(weights.ppshp ?? 0) * z_ppshp
-        ) || 0;
+        const luckPressure =
+          -(
+            Number(weights.shp ?? 0) * z_shp +
+            Number(weights.oishp ?? 0) * z_oishp +
+            Number(weights.ipp ?? 0) * z_ipp +
+            Number(weights.ppshp ?? 0) * z_ppshp
+          ) || 0;
 
-      const guarded = guardSustainabilityDashboardRow({
-        sRaw: score.s_raw,
-        s100: score.s_100,
-        luckPressure,
-        components
-      });
-      if (guarded.state === "blocked") {
-        guardrailFiltered += 1;
-        return null;
-      }
+        const guarded = guardSustainabilityDashboardRow({
+          sRaw: score.s_raw,
+          s100: score.s_100,
+          luckPressure,
+          components,
+        });
+        if (guarded.state === "blocked") {
+          guardrailFiltered += 1;
+          return null;
+        }
 
-      const meta = nameMap.get(Number(score.player_id));
+        const identity = identityMap.get(Number(score.player_id));
 
-      return {
-        player_id: Number(score.player_id),
-        player_name: meta?.player_name ?? null,
-        position_group: score.position_group,
-        position_code: meta?.position_code ?? null,
-        window_code: score.window_code,
-        s_100: guarded.s100,
-        luck_pressure: guarded.luckPressure,
-        z_shp: Number(guarded.components.z_shp ?? z_shp) || 0,
-        z_oishp: Number(guarded.components.z_oishp ?? z_oishp) || 0,
-        z_ipp: Number(guarded.components.z_ipp ?? z_ipp) || 0,
-        z_ppshp: Number(guarded.components.z_ppshp ?? z_ppshp) || 0,
-        guardrail_state: guarded.state,
-        guardrail_warnings: guarded.warnings
-      };
-    }).filter((row): row is RowOut => Boolean(row));
+        return {
+          player_id: Number(score.player_id),
+          player_name: identity?.playerName ?? null,
+          position_group: score.position_group,
+          position_code: identity?.positionCode ?? null,
+          window_code: score.window_code,
+          s_100: guarded.s100,
+          luck_pressure: guarded.luckPressure,
+          z_shp: Number(guarded.components.z_shp ?? z_shp) || 0,
+          z_oishp: Number(guarded.components.z_oishp ?? z_oishp) || 0,
+          z_ipp: Number(guarded.components.z_ipp ?? z_ipp) || 0,
+          z_ppshp: Number(guarded.components.z_ppshp ?? z_ppshp) || 0,
+          guardrail_state: guarded.state,
+          guardrail_warnings: guarded.warnings,
+        };
+      })
+      .filter((row): row is RowOut => Boolean(row));
 
     rows.sort((a, b) => {
       return direction === "hot"
@@ -271,11 +248,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       direction,
       limit,
       guardrail_filtered: guardrailFiltered,
-      rows: rows.slice(0, limit)
+      rows: rows.slice(0, limit),
     });
   } catch (error: any) {
     // eslint-disable-next-line no-console
     console.error("trends error", error?.message || error);
-    return res.status(500).json({ success: false, message: error?.message || String(error) });
+    return res
+      .status(500)
+      .json({ success: false, message: error?.message || String(error) });
   }
 }

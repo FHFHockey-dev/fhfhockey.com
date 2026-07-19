@@ -50,6 +50,9 @@
 - `web/lib/sustainability/score.ts` - Canonical TypeScript sustainability score builder and flag logic.
 - `web/pages/api/v1/sustainability/rebuild-priors.ts` - Sustainability priors rebuild route with bounded runtime/error handling.
 - `web/pages/api/v1/sustainability/trends.ts` - Sustainability trends serving route with guarded runtime output.
+- `web/lib/sustainability/trendsIdentity.ts` - Paginated sustainability score loader and bounded canonical player-identity fallback.
+- `web/lib/sustainability/trendsIdentity.test.ts` - Pagination, chunking, and canonical-name precedence coverage for sustainability trends.
+- `web/__tests__/pages/api/v1/sustainability/trends.test.ts` - Route regression proving canonical identity is emitted in hot/cold API rows.
 - `web/components/forge-dashboard/SustainabilityCard.tsx` - Dashboard card for guarded sustainability output.
 - `functions/lib/sustainability/README.md` - Notes for the non-canonical Python sustainability path and current TypeScript ownership.
 - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` - Rolling metrics backfill/upsert pipeline; now also persists explicit season, 3-year, and career averages alongside existing cumulative and rolling-window outputs.
@@ -172,8 +175,8 @@
     - [x] 5.1.2 Add tests: probability calibration sanity, projection aggregation, API responses.
       - Evidence (2026-07-11): all 24 sustainability library/API test files pass, 98/98 tests total, covering dates, windows/pagination, priors, shrinkage, opponent factors, count distributions/bands, probability model/calibration paths, score guardrails, persistence, recompute, and read APIs. TypeScript passes.
   - [ ] 5.2 Backtest accuracy vs career-only and recent-only baselines (MAE/RMSE; Brier for probs).
-    - [ ] 5.2.1 Write a small backtest harness over past snapshots; record metrics.
-    - [ ] 5.2.2 Document results and targets in README.
+    - [x] 5.2.1 Write a small backtest harness over past snapshots; record metrics. Evidence (2026-07-18): the paginated harness evaluates persisted snapshot projections against resolved actuals and career/season/recent/naive baselines, reports MAE/RMSE/bias/sample coverage plus multiclass Brier metrics, and returns an explicit insufficient-history state instead of fabricating results; backtest suites pass 7/7.
+    - [x] 5.2.2 Document results and targets in README. Evidence (2026-07-18): the consolidated runbook records the harness contract, metrics, pagination, zero-row production coverage, pending-calibration response, and the exact prospective-history gate. Parent 5.2 remains open until NEW 7 supplies genuine matured projection/actual evidence.
   - [x] 5.3 Add README section with endpoint schema and feature dictionary.
     - [x] 5.3.1 Document endpoint paths, params, response fields, and examples.
       - Evidence (2026-07-11): the consolidated runbook documents auth, bounded recompute paging/dry-run/partial status, player/upcoming parameters and payloads, pending-calibration behavior, executable feature dictionary ownership, and examples.
@@ -192,3 +195,5 @@
 
 - [ ] NEW 8.0 Populate stable player identity/display names in `/api/v1/sustainability/trends` hot/cold rows consumed by the FORGE Command Center.
   - Discovery evidence (2026-07-12): selected-date reconciliation returned 25 hot and 25 cold rows for requested `2026-03-14` / resolved `2026-03-07`, but every sampled `player_name` was null, so the Command Center correctly exposes named-row sub-empty states rather than fabricating Trust/Fade candidates. Resolve names through the canonical player identity contract with bounded/paginated reads where applicable, add focused API coverage, and verify named Trust/Fade rows render before closure.
+  - Local remediation (2026-07-18): score reads now page in stable 500-row ranges until a short page; exact score-player identities query snapshot baselines and canonical `players` in independent 200-ID chunks; canonical `fullName`/position wins over null or stale baseline metadata. Helper/API suites pass 4/4, backtest suites pass 7/7, and project TypeScript passes. Value-free production reads prove 634/634 selected score IDs are readable from the anon canonical-player contract, while the currently deployed route still returns 25/25 hot and 25/25 cold null names. Exact reviewed code/control scope is preserved locally at checkpoint `0b4a41d55c573f20f2a1c67f8ccf0dcca3b0cdb8`; nothing was pushed or deployed. Keep NEW 8 open until guarded publication/deployment and a named-row route/Command Center probe pass.
+  - Authorization checkpoint (2026-07-18): generic continuation of non-overlapping work did not grant the separately recorded production publication/deployment authority. Safe adjacent Wave-A work is exhausted; this row remains open pending the exact guarded `octoberBranch` publication, isolated production deployment, and bounded hot/cold plus Command Center named-row verification authorization.
