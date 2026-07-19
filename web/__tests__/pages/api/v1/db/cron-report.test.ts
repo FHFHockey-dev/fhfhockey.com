@@ -120,6 +120,7 @@ describe("/api/v1/db/cron-report", () => {
                 statusCode: 200,
                 response: JSON.stringify({
                   success: true,
+                  failedRows: 3,
                   timing: {
                     startedAt: "2026-03-20T12:00:00.000Z",
                     endedAt: "2026-03-20T12:05:01.000Z",
@@ -170,6 +171,8 @@ SELECT cron.schedule(
       counts: expect.objectContaining({
         warnSlow: 1,
         jobsOkLast: 1,
+        totalFailedRows: 3,
+        warnPartialFailure: 1,
       }),
       warnings: {
         slowMsThreshold: 270_000,
@@ -180,6 +183,12 @@ SELECT cron.schedule(
             timer: "05:01",
             denotation: "OPTIMIZE",
           }),
+        ],
+        partialFailureJobs: [
+          {
+            displayName: "run-forge-projection-v2",
+            failedRows: 3,
+          },
         ],
         missingObservationJobs: [],
       },
@@ -271,6 +280,69 @@ SELECT cron.schedule(
         scheduledJobs: 1,
         jobsMissingLast: 0,
         scheduledJobsWithActivity: 1,
+        warnMissingAudit: 1,
+      }),
+    });
+  });
+
+  it("suppresses only the current report's self-audit gap while the wrapper is still writing it", async () => {
+    vi.setSystemTime(new Date("2026-03-20T12:00:30.000Z"));
+
+    cronJobReportSelectMock.mockReturnValue({
+      gte: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({
+          data: [
+            {
+              jobname: "daily-cron-report",
+              scheduled_time: "2026-03-20T12:00:00.000Z",
+              end_time: "2026-03-20T12:00:01.000Z",
+              status: "success",
+              return_message: "1 row",
+              sql_text:
+                "select net.http_get(url:='https://fhfhockey.com/api/v1/db/cron-report');",
+            },
+          ],
+          error: null,
+        }),
+      }),
+    });
+
+    cronJobAuditSelectMock.mockReturnValue({
+      gte: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    });
+
+    readFileMock.mockResolvedValue(`
+\`\`\`json
+[
+  {
+    "jobid": 234,
+    "jobname": "daily-cron-report",
+    "schedule": "0 12 * * *",
+    "run_time_utc": "12:00 UTC",
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/cron-report"
+  }
+]
+\`\`\`
+`);
+
+    const req: any = { method: "GET", query: { preview: "json" } };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      counts: expect.objectContaining({
+        scheduledJobs: 1,
+        scheduledJobsWithActivity: 1,
+        warnMissingAudit: 0,
+      }),
+      warnings: expect.objectContaining({
+        missingObservationJobs: [],
       }),
     });
   });

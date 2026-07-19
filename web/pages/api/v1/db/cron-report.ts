@@ -29,6 +29,7 @@ const supabase = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
 const REPORT_WINDOW_MS = 24 * 60 * 60 * 1000;
+const SELF_AUDIT_WRITE_GRACE_MS = 5 * 60 * 1000;
 const MATCH_WINDOW_MS = 6 * 60 * 60 * 1000;
 const MAX_UNSCHEDULED_ALERTS = 8;
 
@@ -281,6 +282,7 @@ type WarningSummary = {
   slowMsThreshold: number;
   slowJobDenotation: typeof SLOW_JOB_DENOTATION;
   slowJobs: SlowJobWarning[];
+  partialFailureJobs: Array<{ displayName: string; failedRows: number }>;
   missingObservationJobs: Array<{ displayName: string; warnings: string[] }>;
 };
 
@@ -1254,6 +1256,7 @@ function compactUnscheduledRuns(runs: RunDigest[]): RunDigest[] {
 }
 
 function collectMissingObservationWarnings(job: {
+  jobName: string;
   lastStatus: ReportJobStatus;
   runsCount: number;
   auditRunsCount: number;
@@ -1264,6 +1267,7 @@ function collectMissingObservationWarnings(job: {
   auditDataAvailable: boolean;
   latestRunTime: string | null;
   auditGapGraceStartedAt: string | null;
+  observationTime: string;
 }): string[] {
   const warnings: string[] = [];
   const latestRunMs = job.latestRunTime ? Date.parse(job.latestRunTime) : null;
@@ -1276,6 +1280,14 @@ function collectMissingObservationWarnings(job: {
     Number.isFinite(latestRunMs) &&
     Number.isFinite(auditGapGraceMs) &&
     latestRunMs < auditGapGraceMs;
+  const observationMs = Date.parse(job.observationTime);
+  const awaitingCurrentReportSelfAudit =
+    job.jobName === "daily-cron-report" &&
+    latestRunMs != null &&
+    Number.isFinite(latestRunMs) &&
+    Number.isFinite(observationMs) &&
+    observationMs >= latestRunMs &&
+    observationMs - latestRunMs <= SELF_AUDIT_WRITE_GRACE_MS;
 
   if (job.lastStatus === "missing") {
     warnings.push("No cron or audit observation matched this scheduled slot.");
@@ -1286,7 +1298,8 @@ function collectMissingObservationWarnings(job: {
     job.auditRunsCount === 0 &&
     job.method !== "SQL" &&
     job.auditDataAvailable &&
-    !awaitingPostGraceRun
+    !awaitingPostGraceRun &&
+    !awaitingCurrentReportSelfAudit
   ) {
     warnings.push("Cron invoked the route, but no audit payload was recorded.");
   }
@@ -1588,6 +1601,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         : null;
       const benchmarkAnnotations = getBenchmarkAnnotations(job.name);
       const missingObservationWarnings = collectMissingObservationWarnings({
+        jobName: job.name,
         lastStatus,
         runsCount: matchingRuns.length,
         auditRunsCount: matchingAudits.length,
@@ -1598,6 +1612,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         auditDataAvailable,
         latestRunTime: lastRun?.time ?? null,
         auditGapGraceStartedAt,
+        observationTime: now.toISOString(),
       });
 
       const notes: string[] = [];
@@ -1847,6 +1862,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     slowMsThreshold: SLOW_JOB_THRESHOLD_MS,
     slowJobDenotation: SLOW_JOB_DENOTATION,
     slowJobs: WARN_SLOW,
+    partialFailureJobs: WARN_PARTIAL_FAILURE,
     missingObservationJobs,
   };
 
