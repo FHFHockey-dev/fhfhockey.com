@@ -1,0 +1,13 @@
+---
+description: Compatibility pointer to the canonical task-generation rule
+globs:
+alwaysApply: false
+---
+
+# Deprecated duplicate: use the canonical task-generation rule
+
+This path is retained because older prompts and tooling may still reference it. The authoritative rule is:
+
+- `tasks/TASKS/rules/generate-tasks.mdc`
+
+Read and apply that file in full. Do not maintain a second copy of the rule here; the single-source pointer prevents the two paths from drifting.

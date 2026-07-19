@@ -1,2 +1,7 @@
 .vercel
 .ms-playwright
+
+# Playwright writes local run output here; CI uploads these directories as
+# ephemeral failure artifacts rather than source-controlled evidence.
+/test-results/
+/playwright-report/
