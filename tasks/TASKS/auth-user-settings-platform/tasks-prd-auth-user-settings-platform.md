@@ -35,7 +35,7 @@
 - `web/pages/api/v1/account/patreon/*` and `web/__tests__/pages/api/v1/account/patreon/routes.test.ts` - Authenticated Patreon state/connect/resync/disconnect APIs plus signed callback materialization and route/error/cooldown coverage.
 - `web/lib/cron/withCronJobAudit.test.ts` - Tests for audit-log persistence and timing capture in cron/API wrappers that now use the explicit service-role client.
 - `web/__tests__/pages/api/v1/db/update-wgo-averages.route.test.ts` - Route test covering structured dependency-error behavior after the API moved to the explicit service-role client.
-- `web/contexts/AuthProviderContext/index.tsx` - Global auth state provider that must be expanded beyond the current minimal role lookup.
+- `web/contexts/AuthProviderContext/index.tsx` - Global auth state provider with session-first user publication, optional role enrichment, centralized fail-closed sign-out, and targeted local FHFH auth reset.
 - `web/pages/_app.tsx` - App root where auth-aware provider wiring must become global so the header can react to session state on every route.
 - `web/components/Layout/Header/Header.tsx` - Header entry point for the logged-out `Sign-in / Sign-up` button and logged-in avatar menu.
 - `web/components/Layout/Header/Header.module.scss` - Header styling updates for the new auth CTA and avatar/menu affordances.
@@ -58,10 +58,10 @@
 - `web/__tests__/pages/auth/reset-password.test.tsx` - Tests for reset token containment, Strict Mode exactly-once handling, fail-closed behavior, validation, and successful reset.
 - `web/lib/supabase/auth-callback-location.ts` - Structured callback capture, synchronous visible/Next-history scrub, safe return-path sanitizer, and full-navigation fallback.
 - `web/lib/supabase/auth-callback-location.test.ts` - Focused callback-location, stale-history, unsafe-return, and navigation-fallback regressions.
-- `tasks/auth-provider-manual-config.md` - Manual Supabase and Google Cloud configuration checklist for the implemented auth flows.
+- `tasks/TASKS/auth-user-settings-platform/docs/auth-provider-manual-config.md` - Manual Supabase and Google Cloud configuration checklist for the implemented auth flows.
 - `web/pages/account/index.tsx` - Account settings route entry point for authenticated users.
 - `web/__tests__/pages/account/index.test.tsx` - Smoke tests for the authenticated account route shell and unauthenticated fallback prompt.
-- `web/components/account/AccountSettingsPage.tsx` - Main account settings UI for profile, league defaults, saved teams, Yahoo/manual-import provider controls, and the live-ready local Patreon membership panel.
+- `web/components/account/AccountSettingsPage.tsx` - Main account settings UI for profile, league defaults, saved teams, Yahoo/manual-import provider controls, and the production-verified Patreon connection panel.
 - `web/components/account/AccountSettingsPage.module.scss` - Styles for the authenticated account-settings shell and section navigation.
 - `web/__tests__/components/account/AccountSettingsPage.test.tsx` - Component tests for account settings sections, profile editing, empty states, and guarded actions.
 - `web/components/account/FantraxImportPanel.tsx` - Shared configurable credential-free CSV/JSON import panel with stored league/team status, default/active selection, and retry/failure UX.
@@ -78,8 +78,8 @@
 - `web/lib/projectionsConfig/fantasyPointsConfig.ts` - Existing reference for default fantasy scoring that should inform seeded account settings without changing Draft Dashboard behavior.
 - `web/pages/api/` - Existing API route area that may need a small authenticated settings endpoint layer if direct client-table access is not sufficient for some account operations.
 - `tasks/TASKS/rules/fhfh-styles.md` - Local FHFH design-system rules for applying the Neon Noir / Cyberpunk visual language to auth and account surfaces.
-- `tasks/prd-auth-user-settings-platform.md` - Source PRD this task list implements.
-- `tasks/tasks-prd-auth-user-settings-platform.md` - Implementation task list for the feature.
+- `tasks/TASKS/auth-user-settings-platform/prd/prd-auth-user-settings-platform.md` - Source PRD this task list implements.
+- `tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md` - Canonical implementation task list for the feature.
 
 ### Notes
 
@@ -146,14 +146,14 @@
 - [x] 8.0 Migrate ambiguous Supabase imports to explicit client roles discovered during the wrapper audit
   - [x] 8.1 Replace server-side and API-route imports of `lib/supabase` with explicit browser, public, authenticated-token, or service-role clients based on actual access requirements.
 
-- [ ] NEW 9.0 Complete the manual Supabase email-auth delivery configuration required for sign-up verification and password recovery
+- [x] NEW 9.0 Complete the manual Supabase email-auth delivery configuration required for sign-up verification and password recovery. Custom SMTP, successful Supabase handoff, and recipient-side confirmation/recovery receipt are verified; link execution remains separately open under NEW 10.4/14.5 (completed 2026-07-18).
   - [x] NEW 9.1 Enable `Email` auth in the Supabase dashboard for the target environment.
   - [x] NEW 9.2 Confirm that `Confirm email` is enabled so password sign-up requires verification before protected settings access.
   - [x] NEW 9.3 Verify the Supabase auth email templates preserve the app-provided redirect target so verification and recovery links return to the implemented callback/reset flow.
   - [x] NEW 9.4 Verify the Supabase `Site URL` and redirect allow-list entries for localhost, production, and any required preview URLs.
-  - [ ] NEW 9.5 Configure a working SMTP sender or otherwise verify outbound email delivery in the active Supabase environment so sign-up and recovery emails actually arrive. Partial evidence on 2026-07-14: signed-in production inspection confirms custom SMTP is enabled with the saved Private Email host/port/sender configuration; one bounded confirmation request and one recovery request both returned HTTP 200 and Auth logs recorded successful handoff with no SMTP error. Recipient-side Outlook receipt remains unverified because the mailbox is not signed in.
+  - [x] NEW 9.5 Configure a working SMTP sender or otherwise verify outbound email delivery in the active Supabase environment so sign-up and recovery emails actually arrive. Custom SMTP is enabled; bounded confirmation/recovery requests returned HTTP 200 with successful Auth handoff and no SMTP error; a read-only Outlook Inbox listing found the exact signup-confirmation and password-reset deliveries at the recorded 2026-07-14 handoff time. Link opening and lifecycle verification remain separate under NEW 10.4/14.5 (completed 2026-07-18).
 
-- [ ] NEW 10.0 Complete the remaining manual auth-provider configuration and verification checklist documented in `tasks/auth-provider-manual-config.md`
+- [ ] NEW 10.0 Complete the remaining manual auth-provider configuration and verification checklist documented in `tasks/TASKS/auth-user-settings-platform/docs/auth-provider-manual-config.md`
   - [x] NEW 10.1 Confirm required deploy environment values exist and are correct: `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, and `NEXT_PUBLIC_SUPABASE_PUBLIC_KEY`. Signed-in Vercel CLI inspection confirmed all three names are present and scoped to Production, Preview, and Development without exposing values; the authenticated production account/session and owner-scoped Supabase reads prove the deployed URL/key pair is functional against the expected project, while the canonical production auth/account flow proves the site origin is correct (2026-07-13).
   - [x] NEW 10.2 Verify Google Cloud OAuth client configuration, including authorized JavaScript origins and the hosted Supabase callback URI.
   - [ ] NEW 10.3 Run the documented manual verification checklist for Google sign-in on localhost and production. Production evidence on 2026-07-14: after the targeted local-auth reset, Google account selection completed the hosted Supabase callback and restored authenticated `/account`; the verification session was then explicitly logged out as part of NEW 45 containment. Localhost remains unverified.
@@ -175,7 +175,7 @@
 
 - [ ] NEW 14.0 Resolve custom SMTP delivery failure for Supabase Auth emails
   - [x] NEW 14.1 Verify the custom SMTP configuration saves successfully and is accepted by Supabase without provider-auth errors.
-  - [ ] NEW 14.2 Check junk/spam/quarantine and recipient-side filtering for verification and reset emails. Production handoff succeeded for fresh confirmation/recovery messages on 2026-07-14, but the approved Outlook mailbox is not signed in and recipient folders remain a user-owned verification boundary.
+  - [x] NEW 14.2 Check junk/spam/quarantine and recipient-side filtering for verification and reset emails. A bounded read-only Outlook Inbox listing found both exact production signup-confirmation and password-reset deliveries at 2026-07-14 17:48 UTC, proving recipient-side Inbox delivery without relying on junk/quarantine. No message link, identifier, address, or mailbox state was accessed or changed (completed 2026-07-18).
   - [x] NEW 14.3 If delivery still fails, retry with the alternate Namecheap SMTP submission port and security mode combination supported by Private Email.
   - [x] NEW 14.4 Confirm the configured sender mailbox is allowed to send via the chosen SMTP credentials and is not blocked by provider policy.
   - [ ] NEW 14.5 Send a fresh sign-up verification and password reset email and confirm end-to-end delivery. One bounded plus-address confirmation and one exact-account recovery request returned HTTP 200 at 2026-07-14 17:48 UTC; Auth logs recorded `user_confirmation_requested` and `user_recovery_requested` without SMTP errors. Inbox receipt, link clicks, callback/reset rendering, and test-user cleanup remain open.
@@ -343,3 +343,7 @@
   - [x] NEW 47.3 Deploy the bounded recovery fix and verify the already-stale production shell reaches a signed-out recoverable auth form without browser-storage inspection; inspect the target runtime/auth error boundary afterward. Production `dpl_2yad83EZq4A5oiQNovUPocLVxQMg` is READY with five aliases and no alias error. After an autofill snapshot incident was contained separately under NEW 48.0, a fresh value-free boolean proof confirmed the fallback/reset state and deployment-scoped logs showed two HTTP 200s with no `/auth` runtime error cluster (2026-07-14).
 
 - [x] NEW 48.0 **P1 browser-autofill credential exposure containment:** The owner confirmed the FHFH password was rotated, affected sessions were contained, and the saved Chrome credential was updated or removed. A fresh production check then used only value-free boolean assertions—no snapshots, input-value reads, cookies, or browser-storage inspection—and proved `/auth`, the fallback/reset controls, and the signed-out header were reachable while the stale signed-in branch was absent. Both originally visible fields had been cleared immediately, the exposed value was never reused or repeated in repository controls, and the verification tab was finalized (completed 2026-07-14).
+
+- [x] NEW 49.0 Reconcile stale A-AUTH documentation and control paths against the current implementation and verification evidence without closing any external/provider gate: repair the canonical PRD, task-list, and manual-config references; record production Google as verified with localhost still open, production SMTP handoff as verified with then-open Outlook receipt and confirmation/recovery lifecycle, preview auth as conditional, direct reset-route and credential-scrub behavior as implemented, and PKCE as deferred under NEW 46.0. At this documentation-only checkpoint all pre-existing 21 unchecked rows remained open; path, link, count, and scoped diff checks passed with no external mutation. NEW 50.0 later closes only the independently observed receipt rows (completed 2026-07-18).
+
+- [x] NEW 50.0 Reconcile the already-requested production confirmation/recovery deliveries through a bounded read-only Outlook Inbox check: the exact signup-confirmation and password-reset messages are present at the recorded 2026-07-14 handoff time, closing only delivery/receipt rows 9.0/9.5/14.2. Link opening, callback/reset rendering, password update, cleanup, localhost, preview, and PKCE gates remain open; no message identifier, address, link, credential, mailbox state, provider state, session, or production state was accessed or changed (completed 2026-07-18).

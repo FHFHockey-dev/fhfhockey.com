@@ -2,6 +2,8 @@
 
 This note documents the manual setup required for the auth flows now implemented in the app.
 
+Evidence status as of 2026-07-18: production Google OAuth is verified; localhost Google remains open; custom SMTP configuration, Supabase handoff, and Outlook Inbox receipt for both confirmation and recovery are verified; the received-link confirmation/recovery/password-update/cleanup lifecycle remains open; preview auth is required only if previews are intentionally supported. The browser client still uses Supabase JavaScript's default implicit flow. PKCE remains a separate deferred migration under source task `NEW 46.0` and must not be enabled before the email-template and mailbox-backed flows are compatible.
+
 Implemented app routes:
 
 - Production site URL: `https://fhfhockey.com`
@@ -36,14 +38,17 @@ Set:
 Add redirect URLs:
 
 - `https://fhfhockey.com/auth/callback`
+- `https://fhfhockey.com/auth/reset-password`
+- `http://localhost:3000/auth/callback`
+- `http://localhost:3000/auth/reset-password`
 - `http://localhost:3000/**`
-- `https://*-<your-vercel-team-or-account-slug>.vercel.app/**`
+- `https://*-<your-vercel-team-or-account-slug>.vercel.app/**` only if preview auth is intentionally supported
 
 Notes:
 
 - In production, prefer the exact callback path instead of a broad wildcard.
 - The app now uses `redirectTo` URLs that land on `/auth/callback`, then internally forwards users to the right next page.
-- Because the app uses `NEXT_PUBLIC_VERCEL_URL` as a redirect fallback in preview environments, preview URLs must be on the allow list if you want auth to work on previews.
+- Because the app uses `NEXT_PUBLIC_VERCEL_URL` as a redirect fallback in preview environments, preview URLs must be on the allow list only when preview auth is an intended supported behavior.
 
 ### Email auth settings
 
@@ -51,7 +56,7 @@ Recommended:
 
 - Keep `Confirm email` enabled.
 - Use Supabase-managed passwords only. Do not store passwords in app tables.
-- Configure a branded SMTP sender if you want production-ready email delivery and branding.
+- Keep the current custom SMTP sender configured. Production confirmation/recovery requests, Supabase handoff, and recipient-side Outlook Inbox receipt are verified; link completion remains unverified.
 
 ### Email templates
 
@@ -130,36 +135,41 @@ Current flow behavior in code:
   - app calls `supabase.auth.signInWithOAuth({ provider: "google", options.redirectTo: "<app>/auth/callback?next=..." })`
   - Google returns to Supabase callback
   - Supabase redirects to app `/auth/callback`
-  - app exchanges the code and redirects the user back to `next`
+  - the current browser client does not set `flowType`, so Supabase JavaScript's default implicit flow remains active
+  - `/auth/callback` accepts a code, token hash, or fragment session payload, synchronously scrubs query/hash and Next-history state before asynchronous auth work, then returns the user to a sanitized same-origin `next` path
+  - production Google sign-in is verified; localhost remains open
 
 - Email/password sign-up:
   - app calls `supabase.auth.signUp(..., { emailRedirectTo: "<app>/auth/callback?next=..." })`
   - email confirmation link returns to app `/auth/callback`
-  - app verifies the OTP link and redirects the user back to `next`
+  - app accepts the supported code, token-hash, or fragment-session representation, scrubs credential-bearing location/history state synchronously, verifies the response, and redirects to a sanitized `next`
+  - custom SMTP configuration, Supabase handoff, and Outlook Inbox receipt are verified; link opening, callback completion, and cleanup remain open
 
 - Forgot password:
-  - app calls `supabase.auth.resetPasswordForEmail(..., { redirectTo: "<app>/auth/callback?next=/auth/reset-password" })`
-  - recovery link returns to app `/auth/callback`
-  - app verifies recovery and forwards to `/auth/reset-password`
-  - reset page updates the password with `supabase.auth.updateUser({ password })`
+  - app calls `supabase.auth.resetPasswordForEmail(..., { redirectTo: "<app>/auth/reset-password" })`
+  - recovery lands directly on `/auth/reset-password`
+  - the reset page accepts a code, recovery token hash, or fragment session payload and synchronously scrubs credential-bearing location/history state before session processing
+  - after a valid recovery session, the page sends a bounded `PUT` request to Supabase `/auth/v1/user` with the active recovery access token; it does not call `supabase.auth.updateUser`
+  - request/handoff behavior and Outlook Inbox receipt are verified; reset rendering from a real received link, password update, return navigation, and cleanup remain open
 
 ## 4. Manual Verification Checklist
 
-After configuring Supabase and Google, manually verify:
+After configuring Supabase and Google, use this current evidence split:
 
-1. Google sign-in works from `http://localhost:3000`.
-2. Google sign-in works from `https://fhfhockey.com`.
-3. Email/password sign-up sends a verification email.
-4. Clicking the verification email lands on `/auth/callback` and returns the user to the site.
-5. Forgot-password sends a recovery email.
-6. Clicking the recovery email lands on `/auth/reset-password`.
-7. Updating the password on `/auth/reset-password` succeeds and returns the user to the site.
-8. Preview deployments authenticate correctly if you intend to support auth on preview URLs.
+1. **Open:** Google sign-in works from `http://localhost:3000`.
+2. **Verified:** Google sign-in works from `https://fhfhockey.com`.
+3. **Verified for delivery:** Email/password sign-up request, SMTP handoff, and Outlook Inbox receipt succeed.
+4. **Open:** A received verification link lands on `/auth/callback`, completes confirmation, returns safely, and leaves no credential-bearing location/history state.
+5. **Verified for delivery:** Forgot-password request, SMTP handoff, and Outlook Inbox receipt succeed.
+6. **Open:** A received recovery link lands directly on `/auth/reset-password` and renders the reset flow.
+7. **Open:** Updating the password on `/auth/reset-password` through the bounded `/auth/v1/user` request succeeds, returns safely, and is cleaned up.
+8. **Conditional:** Verify preview deployments only if preview auth support is intentionally required.
 
 ## 5. Common Misconfigurations
 
 - `Site URL` is still `http://localhost:3000` in production.
 - Production callback path was not added to Supabase redirect URLs.
+- Production or localhost `/auth/reset-password` path was not added to Supabase redirect URLs.
 - Google `Authorized redirect URIs` points to your app callback instead of the Supabase callback.
 - Google provider is enabled in app code but not enabled in the Supabase dashboard.
 - Email templates still use `{{ .SiteURL }}` and ignore `{{ .RedirectTo }}`.
@@ -170,3 +180,5 @@ After configuring Supabase and Google, manually verify:
 - Supabase Auth: https://supabase.com/docs/guides/auth
 - Supabase Redirect URLs: https://supabase.com/docs/guides/auth/redirect-urls
 - Supabase Google sign-in: https://supabase.com/docs/guides/auth/social-login/auth-google
+- Supabase password-based auth and recovery: https://supabase.com/docs/guides/auth/passwords
+- Supabase PKCE flow: https://supabase.com/docs/guides/auth/sessions/pkce-flow
