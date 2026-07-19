@@ -10,7 +10,7 @@
 | Initiatives identified | Pending final reconciliation |
 | PRDs created/repaired | 5 current |
 | Task lists created/repaired | 10 current |
-| Source/master checkbox rows represented | 4,670/4,670 current imported ledger; 4,054 checked claims and 616 open (86.81% complete; 13.19% open) |
+| Source/master checkbox rows represented | 4,671/4,671 current imported ledger; 4,054 checked claims and 617 open (86.79% complete; 13.21% open) |
 | Wave-A initiatives completed | 14/19 verified |
 | Wave-B initiatives completed | 1/16 verified |
 | Wave-C initiatives audited | 0/final dynamic total |
@@ -259,7 +259,7 @@ Initiative sections pending verified Wave-C audit.
 
 - **PRD:** `tasks/TASKS/dead-code-cleanup/prd-cleanup-tasks.md`
 - **Task list:** `tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md`
-- **Current status:** Wave-B execution is active at 12/43 rows. Cache-history containment, post-reset work preservation, pushed generated-build publication containment, and the separate three-file forward-only bytecode cleanup are verified and published as exact eight-path checkpoint `5743b6d80`. B-CRON-NST production work may resume; broader warning cleanup remains after active-feature stabilization.
+- **Current status:** Wave-B execution is active at 12/44 rows. Cache-history containment, post-reset work preservation, pushed generated-build publication containment, and the separate three-file forward-only bytecode cleanup are verified. NEW 12's isolated no-rewrite reconciliation preserved both histories and all reviewed overlay work, passed 135 focused tests plus TypeScript/format/diff/compile/ancestry/fsck checks, and was normally pushed at `29a3ab212`; shared-checkout mixed synchronization and parity remain before closure.
 - **Goal:** Reduce verified technical noise without speculative rewrites while preserving every unrelated and concurrent implementation artifact.
 - **Implementation/evidence:** The guarded cache-only rewrite removed all `.pnpm-store/**` and `.npm-cache/**` paths while preserving the 181-path pushed project delta, six-path local control delta, and every staged/unstaged/untracked version protected by the rescue bundle, binary patches, and rolling manifests. The owner-run mixed reset succeeded. `HEAD`, tracking, and live remote agree at descendant `92cfab267`; current/tree/reachable cache counts are zero, all 426 final saved files and the 13-path tracked patch are exact in `HEAD`, newer Draft Ranker edits remain untouched, physical caches remain ignored/present, and no reachable blob exceeds 100 MiB.
 - **Prevention improvement:** Source `NEW 9.0` is complete: the governing process now requires explicit-path staging and coherent verified checkpoint commits before changing initiatives or entering risky external/history work, with an immediate stop for unexpectedly large/generated/cache/secret/unrelated staged sets and a recorded dirty-tree recovery fallback.
