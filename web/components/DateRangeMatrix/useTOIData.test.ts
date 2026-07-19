@@ -532,6 +532,21 @@ describe("getTOIDataForGames", () => {
       ],
       message: "invalid game TOI",
     },
+    {
+      name: "empty clock segments",
+      rows: [shiftRow(1, { game_toi: ":" })],
+      message: "invalid game TOI",
+    },
+    {
+      name: "missing trailing clock segment",
+      rows: [shiftRow(1, { game_toi: "1:" })],
+      message: "invalid game TOI",
+    },
+    {
+      name: "unpadded clock segment",
+      rows: [shiftRow(1, { game_toi: "1:2" })],
+      message: "invalid game TOI",
+    },
   ])("fails closed for $name", async ({ rows, message }) => {
     mocks.shiftResponses.push({ data: rows, error: null });
     await expect(

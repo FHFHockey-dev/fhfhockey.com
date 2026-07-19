@@ -29,6 +29,7 @@ export type PlayerData = {
   name: string;
   playerAbbrevName: string;
   lastName: string;
+  sweaterNumber?: number | null;
   totalTOI: number; // Ensure totalTOI is always a number
   timesOnLine: Record<string, number>;
   timesOnPair: Record<string, number>;

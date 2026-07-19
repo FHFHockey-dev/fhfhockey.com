@@ -152,13 +152,11 @@ function parseDurationSeconds(value: unknown): number | null {
     return Number.isSafeInteger(seconds) ? seconds : null;
   }
 
+  if (!/^\d+:[0-5]\d(?::[0-5]\d)?$/.test(normalized)) {
+    return null;
+  }
   const parts = normalized.split(":").map(Number);
-  if (
-    (parts.length !== 2 && parts.length !== 3) ||
-    parts.some((part) => !Number.isSafeInteger(part) || part < 0) ||
-    parts[parts.length - 1] >= 60 ||
-    (parts.length === 3 && parts[1] >= 60)
-  ) {
+  if (parts.some((part) => !Number.isSafeInteger(part))) {
     return null;
   }
   const totalSeconds = parts.reduce((total, part) => total * 60 + part, 0);

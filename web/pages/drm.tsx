@@ -38,6 +38,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import {
   EMPTY_SCOPED_CARD_STATS,
   fetchAggregatedData,
+  type AggregatedMatrixPlayers,
   type ScopedCardStats,
 } from "components/DateRangeMatrix/fetchAggregatedData";
 import Image from "next/image";
@@ -177,8 +178,9 @@ export default function DRMPage() {
   const [resolvedWindowKey, setResolvedWindowKey] = useState<string | null>(
     null,
   );
-  const [regularSeasonData, setRegularSeasonData] = useState<any[]>([]);
-  const [playoffData, setPlayoffData] = useState<any[]>([]);
+  const [regularSeasonData, setRegularSeasonData] =
+    useState<AggregatedMatrixPlayers>({});
+  const [playoffData, setPlayoffData] = useState<AggregatedMatrixPlayers>({});
   const [aggregateStatus, setAggregateStatus] = useState<DRMDataStatus>("idle");
   const [aggregateError, setAggregateError] = useState<string | null>(null);
   const [resolvedAggregateScopeKey, setResolvedAggregateScopeKey] = useState<
@@ -420,8 +422,8 @@ export default function DRMPage() {
       active && requestId === aggregateRequestSequence.current;
 
     const clearAggregateData = () => {
-      setRegularSeasonData([]);
-      setPlayoffData([]);
+      setRegularSeasonData({});
+      setPlayoffData({});
       setGameIds([]);
       setScopedCardStats(EMPTY_SCOPED_CARD_STATS);
     };
@@ -525,7 +527,7 @@ export default function DRMPage() {
             : playoffPlayersData;
         const fallbackGameIds = Object.values(
           selectedPlayersData || {},
-        ).flatMap((player: any) =>
+        ).flatMap((player) =>
           seasonType === "regularSeason"
             ? player.regularSeasonData?.gameIds || []
             : player.playoffData?.gameIds || [],

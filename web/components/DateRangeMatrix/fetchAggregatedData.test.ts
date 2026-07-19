@@ -19,6 +19,7 @@ import {
   SHIFT_CHART_PAGE_SIZE,
   fetchAggregatedData,
 } from "./fetchAggregatedData";
+import { mapAggregatedPlayers } from "./useDateRangeMatrixData";
 
 function buildShiftQuery(log: any) {
   const query = {
@@ -124,6 +125,7 @@ function shiftRow(
     id,
     game_id: 100000 + id,
     game_type: "2",
+    game_date: "2026-03-10",
     player_id: 97,
     player_first_name: "Connor",
     player_last_name: "McDavid",
@@ -148,12 +150,64 @@ function shiftRow(
   };
 }
 
+function completeGameRelationships(
+  rows: Array<Record<string, any>>,
+  sharedByPair: Record<string, string> = {},
+) {
+  return rows.map((row) => {
+    const same: Record<string, string> = {};
+    const mixed: Record<string, string> = {};
+    for (const partner of rows) {
+      if (
+        partner.game_id !== row.game_id ||
+        partner.player_id === row.player_id
+      ) {
+        continue;
+      }
+      const pairKey = [Number(row.player_id), Number(partner.player_id)]
+        .sort((left, right) => left - right)
+        .join("-");
+      const duration =
+        sharedByPair[`${row.game_id}:${pairKey}`] ??
+        sharedByPair[pairKey] ??
+        "00:00";
+      const isSame =
+        (String(row.player_type).toUpperCase() === "F") ===
+        (String(partner.player_type).toUpperCase() === "F");
+      (isSame ? same : mixed)[String(partner.player_id)] = duration;
+    }
+    return {
+      ...row,
+      time_spent_with: same,
+      time_spent_with_mixed: mixed,
+    };
+  });
+}
+
+function teammateRow(
+  id: number,
+  gameId: number,
+  overrides: Partial<Record<string, unknown>> = {},
+) {
+  return shiftRow(id, {
+    game_id: gameId,
+    player_id: 29,
+    player_first_name: "Leon",
+    player_last_name: "Draisaitl",
+    ...overrides,
+  });
+}
+
 const request = {
   teamId: 22,
   seasonId: 20252026,
   startDate: "2026-03-01",
   endDate: "2026-04-01",
   seasonType: "regularSeason" as const,
+};
+
+const filteredRequest = {
+  ...request,
   gameIds: [2025020101, 2025020102],
   homeOrAway: "home" as const,
   opponentTeamAbbreviation: "TOR",
@@ -221,20 +275,94 @@ describe("fetchAggregatedData", () => {
       ["team_id", 22],
       ["season_id", 20252026],
       ["game_type", "2"],
-      ["home_or_away", "home"],
-      ["opponent_team_abbreviation", "TOR"],
     ]);
     expect(shiftQueries[0].gte).toEqual([["game_date", "2026-03-01"]]);
     expect(shiftQueries[0].lte).toEqual([["game_date", "2026-04-01"]]);
-    expect(shiftQueries.map((entry) => entry.in)).toEqual([
-      [["game_id", [2025020101, 2025020102]]],
-      [["game_id", [2025020101, 2025020102]]],
-    ]);
+    expect(shiftQueries.map((entry) => entry.in)).toEqual([[], []]);
     expect(mocks.from).not.toHaveBeenCalledWith("wgo_team_stats");
     expect(result.matchedGameIds).toEqual(
       Array.from(new Set(rows.map((row) => row.game_id))),
     );
   });
+
+  it("applies and revalidates the exact fixed-game, venue, and opponent scope", async () => {
+    const gameId = filteredRequest.gameIds[0];
+    mocks.shiftResponses.push({
+      data: [shiftRow(1, { game_id: gameId })],
+      error: null,
+    });
+
+    const result = await fetchAggregatedData({
+      ...filteredRequest,
+      opponentTeamAbbreviation: " tor ",
+    });
+
+    const shiftQuery = mocks.queryLog.find(
+      (entry) => entry.table === "shift_charts",
+    );
+    expect(shiftQuery.eq).toEqual([
+      ["team_id", 22],
+      ["season_id", 20252026],
+      ["game_type", "2"],
+      ["home_or_away", "home"],
+      ["opponent_team_abbreviation", "TOR"],
+    ]);
+    expect(shiftQuery.in).toEqual([["game_id", [2025020101, 2025020102]]]);
+    expect(result.matchedGameIds).toEqual([gameId]);
+    expect(result.cardStats.scopeGameIds).toEqual([gameId]);
+  });
+
+  it.each([
+    {
+      name: "fixed game-ID",
+      row: shiftRow(1, { game_id: 2025020199 }),
+      message: "fixed game-ID scope",
+    },
+    {
+      name: "home/away",
+      row: shiftRow(1, {
+        game_id: 2025020101,
+        home_or_away: "away",
+      }),
+      message: "active home/away filter",
+    },
+    {
+      name: "missing home/away",
+      row: shiftRow(1, {
+        game_id: 2025020101,
+        home_or_away: null,
+      }),
+      message: "active home/away filter",
+    },
+    {
+      name: "opponent",
+      row: shiftRow(1, {
+        game_id: 2025020101,
+        opponent_team_abbreviation: "CGY",
+      }),
+      message: "active opponent filter",
+    },
+    {
+      name: "missing opponent",
+      row: shiftRow(1, {
+        game_id: 2025020101,
+        opponent_team_abbreviation: null,
+      }),
+      message: "active opponent filter",
+    },
+  ])(
+    "rejects a returned row that escapes the active $name filter",
+    async ({ row, message }) => {
+      mocks.shiftResponses.push({ data: [row], error: null });
+
+      await expect(fetchAggregatedData(filteredRequest)).rejects.toThrow(
+        message,
+      );
+      expect(mocks.from).not.toHaveBeenCalledWith("players");
+      expect(mocks.from).not.toHaveBeenCalledWith("skatersGameStats");
+      expect(mocks.from).not.toHaveBeenCalledWith("goaliesGameStats");
+    },
+  );
 
   it("rejects the complete request when a later page fails", async () => {
     mocks.shiftResponses.push(
@@ -272,6 +400,194 @@ describe("fetchAggregatedData", () => {
     expect(shiftQuery.eq).toContainEqual(["game_type", "3"]);
   });
 
+  it("reduces each mirrored pair-game once through the canonical player contract", async () => {
+    const firstGameId = 2025020101;
+    const secondGameId = 2025020102;
+    mocks.shiftResponses.push({
+      data: completeGameRelationships(
+        [
+          shiftRow(1, {
+            game_id: firstGameId,
+            game_date: "2026-03-10",
+            game_toi: "10:00",
+          }),
+          teammateRow(2, firstGameId, {
+            game_date: "2026-03-10",
+            game_toi: "08:00",
+            line_combination: 2,
+          }),
+          shiftRow(3, {
+            game_id: secondGameId,
+            game_date: "2026-03-12",
+            game_toi: "10:01",
+          }),
+          teammateRow(4, secondGameId, {
+            game_date: "2026-03-12",
+            game_toi: "12:00",
+            line_combination: 2,
+          }),
+        ],
+        {
+          [`${firstGameId}:29-97`]: "05:00",
+          [`${secondGameId}:29-97`]: "04:00",
+        },
+      ),
+      error: null,
+    });
+
+    const result = await fetchAggregatedData({
+      ...request,
+      gameIds: [firstGameId, secondGameId],
+    });
+    const mcdavid = result.regularSeasonPlayersData[97].regularSeasonData;
+    const draisaitl = result.regularSeasonPlayersData[29].regularSeasonData;
+
+    expect(mcdavid).toMatchObject({
+      totalTOI: 1201,
+      gameLength: 7200,
+      GP: 2,
+      ATOI: "10:01",
+      gameIds: [firstGameId, secondGameId],
+      timeSpentWith: { 29: 540 },
+      timesPlayedWith: { 29: 2 },
+      mutualSharedToi: { 29: 540 },
+      timesOnLine: { 1: 2 },
+      percentOfSeason: { 29: 7.5 },
+    });
+    expect(mcdavid.percentToiWith[29]).toBeCloseTo((540 / 1201) * 100);
+    expect(draisaitl).toMatchObject({
+      totalTOI: 1200,
+      GP: 2,
+      ATOI: "10:00",
+      timeSpentWith: { 97: 540 },
+      timesPlayedWith: { 97: 2 },
+      mutualSharedToi: { 97: 540 },
+      timesOnLine: { 2: 2 },
+    });
+    expect(draisaitl.percentToiWith[97]).toBe(45);
+
+    const canonicalRoster = mapAggregatedPlayers(
+      Object.values(result.regularSeasonPlayersData),
+      "regularSeason",
+      "EDM",
+    );
+    expect(canonicalRoster.find((player) => player.id === 97)).toMatchObject({
+      totalTOI: 1201,
+      GP: 2,
+      ATOI: "10:01",
+      timeSpentWith: { 29: 540 },
+      timesPlayedWith: { 29: 2 },
+    });
+  });
+
+  it("retains explicit zero pair observations with finite zero percentages", async () => {
+    const gameId = 2025020101;
+    mocks.shiftResponses.push({
+      data: completeGameRelationships(
+        [
+          shiftRow(1, { game_id: gameId, game_toi: "00:00" }),
+          teammateRow(2, gameId, { game_toi: "00:00" }),
+        ],
+        { [`${gameId}:29-97`]: "00:00" },
+      ),
+      error: null,
+    });
+
+    const result = await fetchAggregatedData({
+      ...request,
+      gameIds: [gameId],
+    });
+    for (const player of Object.values(result.regularSeasonPlayersData)) {
+      const partnerId = player.playerId === 97 ? 29 : 97;
+      expect(player.regularSeasonData.timeSpentWith[partnerId]).toBe(0);
+      expect(player.regularSeasonData.timesPlayedWith[partnerId]).toBe(1);
+      expect(player.regularSeasonData.mutualSharedToi[partnerId]).toBe(0);
+      expect(player.regularSeasonData.percentToiWith[partnerId]).toBe(0);
+      expect(
+        Number.isFinite(player.regularSeasonData.percentToiWith[partnerId]),
+      ).toBe(true);
+    }
+  });
+
+  it("canonicalizes stored relationship drift after fallback resolves player type", async () => {
+    const firstGameId = 2025020101;
+    const secondGameId = 2025020102;
+    const missingForwardMetadata = {
+      primary_position: null,
+      display_position: null,
+      player_type: null,
+      player_first_name: null,
+      player_last_name: null,
+    };
+    mocks.shiftResponses.push({
+      data: [
+        shiftRow(1, {
+          game_id: firstGameId,
+          ...missingForwardMetadata,
+          time_spent_with: {},
+          time_spent_with_mixed: { 29: "05:00" },
+        }),
+        teammateRow(2, firstGameId, {
+          primary_position: "D",
+          display_position: "D",
+          player_type: "D",
+          line_combination: null,
+          pairing_combination: 1,
+          time_spent_with: {},
+          time_spent_with_mixed: { 97: "05:00" },
+        }),
+        shiftRow(3, {
+          game_id: secondGameId,
+          game_date: "2026-03-12",
+          ...missingForwardMetadata,
+          time_spent_with: { 29: "04:00" },
+          time_spent_with_mixed: {},
+        }),
+        teammateRow(4, secondGameId, {
+          game_date: "2026-03-12",
+          primary_position: "D",
+          display_position: "D",
+          player_type: "D",
+          line_combination: null,
+          pairing_combination: 1,
+          time_spent_with: { 97: "04:00" },
+          time_spent_with_mixed: {},
+        }),
+      ],
+      error: null,
+    });
+    mocks.playerResponses.push({
+      data: [
+        {
+          id: 97,
+          fullName: "Connor McDavid",
+          position: "C",
+          sweater_number: 97,
+        },
+      ],
+      error: null,
+    });
+
+    const result = await fetchAggregatedData({
+      ...request,
+      gameIds: [firstGameId, secondGameId],
+    });
+    const forward = result.regularSeasonPlayersData[97];
+    const defense = result.regularSeasonPlayersData[29];
+
+    expect(forward).toMatchObject({
+      playerName: "Connor McDavid",
+      playerType: "F",
+      primaryPosition: "C",
+      sweaterNumber: 97,
+    });
+    expect(forward.regularSeasonData.timeSpentWith).toEqual({});
+    expect(forward.regularSeasonData.timeSpentWithMixed).toEqual({ 29: 540 });
+    expect(defense.regularSeasonData.timeSpentWith).toEqual({});
+    expect(defense.regularSeasonData.timeSpentWithMixed).toEqual({ 97: 540 });
+    expect(forward.regularSeasonData.timesPlayedWith).toEqual({ 29: 2 });
+  });
+
   it("rejects rows whose nullable player identity cannot be aggregated", async () => {
     mocks.shiftResponses.push({
       data: [shiftRow(1, { player_id: null })],
@@ -279,7 +595,7 @@ describe("fetchAggregatedData", () => {
     });
 
     await expect(fetchAggregatedData(request)).rejects.toThrow(
-      "missing a player identity",
+      "invalid player ID",
     );
     expect(mocks.from).not.toHaveBeenCalledWith("players");
   });
@@ -292,12 +608,222 @@ describe("fetchAggregatedData", () => {
         error: null,
       });
 
-      await expect(fetchAggregatedData(request)).rejects.toThrow("invalid one");
+      await expect(fetchAggregatedData(request)).rejects.toThrow(
+        "invalid player ID",
+      );
       expect(mocks.from).not.toHaveBeenCalledWith("players");
       expect(mocks.from).not.toHaveBeenCalledWith("skatersGameStats");
       expect(mocks.from).not.toHaveBeenCalledWith("goaliesGameStats");
     },
   );
+
+  it.each([
+    {
+      name: "null appearance clock",
+      rows: [shiftRow(1, { game_toi: null })],
+      message: "invalid game TOI",
+    },
+    {
+      name: "malformed appearance clock",
+      rows: [shiftRow(1, { game_toi: "abc:30" })],
+      message: "invalid game TOI",
+    },
+    {
+      name: "empty clock segments",
+      rows: [shiftRow(1, { game_toi: ":" })],
+      message: "invalid game TOI",
+    },
+    {
+      name: "missing trailing clock segment",
+      rows: [shiftRow(1, { game_toi: "1:" })],
+      message: "invalid game TOI",
+    },
+    {
+      name: "unpadded clock segment",
+      rows: [shiftRow(1, { game_toi: "1:2" })],
+      message: "invalid game TOI",
+    },
+    {
+      name: "overflowing appearance clock",
+      rows: [shiftRow(1, { game_toi: "9007199254740991:00" })],
+      message: "invalid game TOI",
+    },
+    {
+      name: "zero game length",
+      rows: [shiftRow(1, { game_toi: "00:00", game_length: "00:00" })],
+      message: "invalid game length",
+    },
+    {
+      name: "appearance beyond game length",
+      rows: [shiftRow(1, { game_toi: "61:00", game_length: "60:00" })],
+      message: "game TOI exceeds game length",
+    },
+    {
+      name: "array relationship JSON",
+      rows: [shiftRow(1, { time_spent_with: [] })],
+      message: "invalid same-position relationship",
+    },
+    {
+      name: "nonpositive relationship key",
+      rows: [shiftRow(1, { time_spent_with: { 0: "00:00" } })],
+      message: "invalid same-position relationship partner",
+    },
+    {
+      name: "self relationship key",
+      rows: [shiftRow(1, { time_spent_with: { 97: "00:00" } })],
+      message: "invalid same-position relationship partner",
+    },
+    {
+      name: "malformed relationship clock",
+      rows: [shiftRow(1, { time_spent_with: { 29: "00:99" } })],
+      message: "invalid same-position relationship duration",
+    },
+    {
+      name: "unknown relationship partner",
+      rows: [shiftRow(1, { time_spent_with: { 29: "00:00" } })],
+      message: "relationship to an unknown player",
+    },
+    {
+      name: "duplicate row identity",
+      rows: [shiftRow(1, { game_id: 2025020101 }), teammateRow(1, 2025020101)],
+      message: "duplicate row ID",
+    },
+    {
+      name: "duplicate player-game identity",
+      rows: [
+        shiftRow(1, { game_id: 2025020101 }),
+        shiftRow(2, { game_id: 2025020101 }),
+      ],
+      message: "duplicate player-game",
+    },
+    {
+      name: "missing mirrored observation",
+      rows: [
+        shiftRow(1, {
+          game_id: 2025020101,
+          time_spent_with: { 29: "05:00" },
+        }),
+        teammateRow(2, 2025020101),
+      ],
+      message: "missing mirrored relationship",
+    },
+    {
+      name: "mismatched mirrored seconds",
+      rows: [
+        shiftRow(1, {
+          game_id: 2025020101,
+          time_spent_with: { 29: "05:00" },
+        }),
+        teammateRow(2, 2025020101, {
+          time_spent_with: { 97: "04:00" },
+        }),
+      ],
+      message: "contradictory mirrored relationships",
+    },
+    {
+      name: "mismatched mirrored categories",
+      rows: [
+        shiftRow(1, {
+          game_id: 2025020101,
+          time_spent_with: { 29: "05:00" },
+        }),
+        teammateRow(2, 2025020101, {
+          time_spent_with: {},
+          time_spent_with_mixed: { 97: "05:00" },
+        }),
+      ],
+      message: "contradictory mirrored relationships",
+    },
+    {
+      name: "duplicate relationship categories",
+      rows: [
+        shiftRow(1, {
+          game_id: 2025020101,
+          time_spent_with: { 29: "05:00" },
+          time_spent_with_mixed: { 29: "05:00" },
+        }),
+        teammateRow(2, 2025020101, {
+          time_spent_with: { 97: "05:00" },
+        }),
+      ],
+      message: "contradictory relationship categories",
+    },
+    {
+      name: "relationship beyond appearance",
+      rows: completeGameRelationships(
+        [
+          shiftRow(1, { game_id: 2025020101, game_toi: "04:00" }),
+          teammateRow(2, 2025020101, { game_toi: "10:00" }),
+        ],
+        { "29-97": "05:00" },
+      ),
+      message: "relationship TOI exceeds a player appearance",
+    },
+    {
+      name: "invalid line assignment",
+      rows: [shiftRow(1, { line_combination: 5 })],
+      message: "invalid line combination",
+    },
+    {
+      name: "assignment and player-type conflict",
+      rows: [
+        shiftRow(1, {
+          primary_position: "D",
+          display_position: "D",
+          player_type: "D",
+          line_combination: 1,
+        }),
+      ],
+      message: "assignments conflict with player type",
+    },
+    {
+      name: "returned scope conflict",
+      rows: [shiftRow(1, { season_id: 20242025 })],
+      message: "conflicts with the selected scope",
+    },
+  ])("fails closed for $name", async ({ rows, message }) => {
+    mocks.shiftResponses.push({ data: rows, error: null });
+
+    await expect(fetchAggregatedData(request)).rejects.toThrow(message);
+    expect(mocks.from).not.toHaveBeenCalledWith("skatersGameStats");
+    expect(mocks.from).not.toHaveBeenCalledWith("goaliesGameStats");
+  });
+
+  it("rejects an unexpected player fallback identity", async () => {
+    mocks.shiftResponses.push({ data: [shiftRow(1)], error: null });
+    mocks.playerResponses.push({
+      data: [
+        {
+          id: 98,
+          fullName: "Unexpected Player",
+          position: "C",
+          sweater_number: 98,
+        },
+      ],
+      error: null,
+    });
+
+    await expect(fetchAggregatedData(request)).rejects.toThrow(
+      "unexpected identity",
+    );
+    expect(mocks.from).not.toHaveBeenCalledWith("skatersGameStats");
+  });
+
+  it("rejects a duplicate player fallback identity", async () => {
+    mocks.shiftResponses.push({ data: [shiftRow(1)], error: null });
+    const fallback = {
+      id: 97,
+      fullName: "Connor McDavid",
+      position: "C",
+      sweater_number: 97,
+    };
+    mocks.playerResponses.push({ data: [fallback, fallback], error: null });
+
+    await expect(fetchAggregatedData(request)).rejects.toThrow(
+      "unexpected identity",
+    );
+    expect(mocks.from).not.toHaveBeenCalledWith("skatersGameStats");
+  });
 
   it("chunks every player fallback lookup within the bounded ID limit", async () => {
     mocks.shiftResponses.push({
@@ -369,7 +895,7 @@ describe("fetchAggregatedData", () => {
     const secondGameId = 2025020102;
     const unmatchedRequestedGameId = 2025020103;
     mocks.shiftResponses.push({
-      data: [
+      data: completeGameRelationships([
         shiftRow(1, { game_id: firstGameId }),
         shiftRow(2, { game_id: secondGameId }),
         shiftRow(3, {
@@ -392,7 +918,7 @@ describe("fetchAggregatedData", () => {
           player_type: "G",
           line_combination: null,
         }),
-      ],
+      ]),
       error: null,
     });
     mocks.skaterResponses.push({
@@ -502,12 +1028,12 @@ describe("fetchAggregatedData", () => {
   it("keeps an injured player's stats to only their appearances inside a sparse matched scope", async () => {
     const gameIds = [2025020101, 2025020102, 2025020103];
     mocks.shiftResponses.push({
-      data: [
+      data: completeGameRelationships([
         shiftRow(1, { game_id: gameIds[0], player_id: 98 }),
         shiftRow(2, { game_id: gameIds[1], player_id: 98 }),
         shiftRow(3, { game_id: gameIds[2], player_id: 98 }),
         shiftRow(4, { game_id: gameIds[2], player_id: 97 }),
-      ],
+      ]),
       error: null,
     });
     const statsRow = (gameId: number, playerId: number) => ({
@@ -559,7 +1085,7 @@ describe("fetchAggregatedData", () => {
   it("leaves semantically contradictory skater and goalie rows unavailable", async () => {
     const gameId = 2025020101;
     mocks.shiftResponses.push({
-      data: [
+      data: completeGameRelationships([
         shiftRow(1, { game_id: gameId, player_id: 97 }),
         shiftRow(2, {
           game_id: gameId,
@@ -577,7 +1103,7 @@ describe("fetchAggregatedData", () => {
           player_type: "G",
           line_combination: null,
         }),
-      ],
+      ]),
       error: null,
     });
     mocks.skaterResponses.push({
@@ -631,7 +1157,7 @@ describe("fetchAggregatedData", () => {
     const firstGameId = 2025020101;
     const secondGameId = 2025020102;
     mocks.shiftResponses.push({
-      data: [
+      data: completeGameRelationships([
         shiftRow(1, { game_id: firstGameId, player_id: 97 }),
         shiftRow(2, { game_id: secondGameId, player_id: 97 }),
         shiftRow(3, { game_id: firstGameId, player_id: 98 }),
@@ -640,7 +1166,7 @@ describe("fetchAggregatedData", () => {
         shiftRow(6, { game_id: secondGameId, player_id: 99 }),
         shiftRow(7, { game_id: firstGameId, player_id: 100 }),
         shiftRow(8, { game_id: secondGameId, player_id: 100 }),
-      ],
+      ]),
       error: null,
     });
     const zeroRow = (gameId: number, playerId: number, created_at: string) => ({
@@ -751,6 +1277,12 @@ describe("fetchAggregatedData", () => {
     await expect(
       fetchAggregatedData({ ...request, gameIds: [] }),
     ).rejects.toThrow("valid fixed game-ID scope");
+    await expect(
+      fetchAggregatedData({
+        ...request,
+        homeOrAway: "sideways" as "home",
+      }),
+    ).rejects.toThrow("valid home/away filter");
     expect(mocks.from).not.toHaveBeenCalled();
   });
 });

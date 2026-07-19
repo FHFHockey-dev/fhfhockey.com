@@ -3,6 +3,7 @@
 
 import supabase from "lib/supabase";
 import type { Database } from "lib/supabase/database-generated.types";
+import { teamsInfo } from "lib/teamsInfo";
 import {
   DEFAULT_SUPABASE_FILTER_CHUNK_SIZE,
   DEFAULT_SUPABASE_PAGE_SIZE,
@@ -20,6 +21,7 @@ type ShiftChartRow = Pick<
   | "id"
   | "game_id"
   | "game_type"
+  | "game_date"
   | "player_id"
   | "player_first_name"
   | "player_last_name"
@@ -32,15 +34,124 @@ type ShiftChartRow = Pick<
   | "display_position"
   | "primary_position"
   | "time_spent_with"
-  | "percent_toi_with"
   | "time_spent_with_mixed"
-  | "percent_toi_with_mixed"
   | "game_length"
   | "line_combination"
   | "pairing_combination"
   | "season_id"
   | "player_type"
 >;
+
+type MatrixSeasonType = "regularSeason" | "playoffs";
+type MatrixGameType = "2" | "3";
+type MatrixPlayerType = "F" | "D" | "G";
+type RelationshipKind = "same" | "mixed";
+
+type NormalizedAggregateShiftRow = {
+  rowId: number;
+  gameId: number;
+  gameType: MatrixGameType;
+  gameDate: string;
+  seasonId: number;
+  playerId: number;
+  gameToiSeconds: number;
+  gameLengthSeconds: number;
+  homeOrAway: "home" | "away" | null;
+  opponentTeamAbbreviation: string | null;
+  opponentTeamId: number | null;
+  firstName: string | null;
+  lastName: string | null;
+  primaryPosition: string | null;
+  displayPosition: string | null;
+  playerType: MatrixPlayerType | null;
+  lineCombination: number | null;
+  pairingCombination: number | null;
+  sameRelationships: Map<number, number>;
+  mixedRelationships: Map<number, number>;
+};
+
+type AggregatePairGameFact = {
+  gameId: number;
+  firstPlayerId: number;
+  secondPlayerId: number;
+  seconds: number;
+};
+
+type AggregatePlayerAccumulator = {
+  playerId: number;
+  firstName: string | null;
+  lastName: string | null;
+  primaryPosition: string | null;
+  displayPosition: string | null;
+  playerType: MatrixPlayerType | null;
+  gamesPlayed: Set<number>;
+  totalToiSeconds: number;
+  totalGameLengthSeconds: number;
+  gameIds: number[];
+  homeOrAway: Array<"home" | "away" | null>;
+  opponent: Array<string | null>;
+  opponentId: Array<number | null>;
+  timesOnLine: Record<string, number>;
+  timesOnPair: Record<string, number>;
+  timeSpentWith: Record<number, number>;
+  timeSpentWithMixed: Record<number, number>;
+  timesPlayedWith: Record<number, number>;
+  mutualSharedToi: Record<number, number>;
+};
+
+export type AggregatedMatrixSeasonData = {
+  totalTOI: number;
+  gameLength: number;
+  gamesPlayed: Set<number>;
+  ATOI: string;
+  gameIds: number[];
+  homeOrAway: Array<"home" | "away" | null>;
+  opponent: Array<string | null>;
+  opponentId: Array<number | null>;
+  timeSpentWith: Record<number, number>;
+  timeSpentWithMixed: Record<number, number>;
+  timesPlayedWith: Record<number, number>;
+  mutualSharedToi: Record<number, number>;
+  percentToiWith: Record<number, number>;
+  percentToiWithMixed: Record<number, number>;
+  percentOfSeason: Record<number, number>;
+  timesOnLine: Record<string, number>;
+  timesOnPair: Record<string, number>;
+  GP: number;
+};
+
+export type AggregatedMatrixPlayer = {
+  playerName: string;
+  playerAbbrevName: string;
+  lastName: string;
+  playerId: number;
+  teamId: number;
+  teamAbbrev: string;
+  franchiseId: number;
+  displayPosition: string;
+  primaryPosition: string;
+  sweaterNumber: number | null;
+  seasonId: number;
+  playerType: MatrixPlayerType;
+  comboPoints: number;
+  regularSeasonData: AggregatedMatrixSeasonData;
+  playoffData: AggregatedMatrixSeasonData;
+};
+
+export type AggregatedMatrixPlayers = Record<number, AggregatedMatrixPlayer>;
+
+type AggregateReductionScope = {
+  teamId: number;
+  teamAbbreviation: string;
+  franchiseId: number;
+  seasonId: number;
+  gameType: MatrixGameType;
+  startDate: string;
+  endDate: string;
+  gameIds: ReadonlySet<number> | null;
+  homeOrAway: "home" | "away" | null;
+  opponentTeamAbbreviation: string | null;
+};
 
 type PlayerPositionFallback = Pick<
   Database["public"]["Tables"]["players"]["Row"],
@@ -114,16 +225,218 @@ export type FetchAggregatedDataRequest = {
   opponentTeamAbbreviation?: string;
 };
 
-function getPlayerTypeFromPosition(position: string | null | undefined) {
-  const normalized = (position ?? "").toUpperCase();
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function isValidIsoDate(value: unknown): value is string {
+  if (typeof value !== "string" || !ISO_DATE_PATTERN.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+function readPositiveSafeInteger(value: unknown, label: string): number {
+  if (!Number.isSafeInteger(value) || Number(value) <= 0) {
+    throw new Error(`Shift-chart data contains an invalid ${label}.`);
+  }
+  return Number(value);
+}
+
+function readOptionalPositiveSafeInteger(
+  value: unknown,
+  label: string,
+): number | null {
+  return value == null ? null : readPositiveSafeInteger(value, label);
+}
+
+function readOptionalText(value: unknown, label: string): string | null {
+  if (value == null) return null;
+  if (typeof value !== "string") {
+    throw new Error(`Shift-chart data contains invalid ${label}.`);
+  }
+  return value.trim() || null;
+}
+
+function parseDurationSeconds(value: unknown): number | null {
+  if (typeof value === "number") {
+    return Number.isSafeInteger(value) && value >= 0 ? value : null;
+  }
+  if (typeof value !== "string" || value.trim() === "") return null;
+
+  const normalized = value.trim();
+  if (/^\d+$/.test(normalized)) {
+    const seconds = Number(normalized);
+    return Number.isSafeInteger(seconds) ? seconds : null;
+  }
+
+  if (!/^\d+:[0-5]\d(?::[0-5]\d)?$/.test(normalized)) {
+    return null;
+  }
+  const parts = normalized.split(":").map(Number);
+  if (parts.some((part) => !Number.isSafeInteger(part))) {
+    return null;
+  }
+  const seconds = parts.reduce((total, part) => total * 60 + part, 0);
+  return Number.isSafeInteger(seconds) ? seconds : null;
+}
+
+function readRequiredDuration(value: unknown, label: string): number {
+  const seconds = parseDurationSeconds(value);
+  if (seconds == null) {
+    throw new Error(`Shift-chart data contains invalid ${label}.`);
+  }
+  return seconds;
+}
+
+function readRelationshipMap(
+  value: unknown,
+  playerId: number,
+  label: string,
+): Map<number, number> {
+  if (value == null || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`Shift-chart data contains invalid ${label}.`);
+  }
+
+  const relationships = new Map<number, number>();
+  for (const [rawPartnerId, rawDuration] of Object.entries(value)) {
+    if (!/^[1-9]\d*$/.test(rawPartnerId)) {
+      throw new Error(`Shift-chart data contains an invalid ${label} partner.`);
+    }
+    const partnerId = Number(rawPartnerId);
+    if (
+      !Number.isSafeInteger(partnerId) ||
+      partnerId <= 0 ||
+      partnerId === playerId
+    ) {
+      throw new Error(`Shift-chart data contains an invalid ${label} partner.`);
+    }
+    const seconds = parseDurationSeconds(rawDuration);
+    if (seconds == null) {
+      throw new Error(
+        `Shift-chart data contains an invalid ${label} duration.`,
+      );
+    }
+    relationships.set(partnerId, seconds);
+  }
+  return relationships;
+}
+
+function readPlayerType(value: unknown): MatrixPlayerType | null {
+  if (value == null || value === "") return null;
+  if (typeof value !== "string") {
+    throw new Error("Shift-chart data contains an invalid player type.");
+  }
+  const normalized = value.trim().toUpperCase();
+  if (normalized === "F" || normalized === "D" || normalized === "G") {
+    return normalized;
+  }
+  throw new Error("Shift-chart data contains an invalid player type.");
+}
+
+function getPlayerTypeFromPosition(
+  position: string | null | undefined,
+): MatrixPlayerType | null {
+  const normalized = (position ?? "").trim().toUpperCase();
   if (["LW", "RW", "C", "L", "R"].includes(normalized)) return "F";
   if (normalized === "D") return "D";
   if (normalized === "G") return "G";
   return null;
 }
 
+function readCombination(
+  value: unknown,
+  maximum: number,
+  label: string,
+): number | null {
+  if (value == null) return null;
+  if (
+    !Number.isInteger(value) ||
+    Number(value) < 1 ||
+    Number(value) > maximum
+  ) {
+    throw new Error(`Shift-chart data contains an invalid ${label}.`);
+  }
+  return Number(value);
+}
+
+function canonicalRelationshipKind(
+  firstPlayerType: MatrixPlayerType,
+  secondPlayerType: MatrixPlayerType,
+): RelationshipKind {
+  return (firstPlayerType === "F") === (secondPlayerType === "F")
+    ? "same"
+    : "mixed";
+}
+
+function relationshipObservation(
+  row: NormalizedAggregateShiftRow,
+  partnerId: number,
+): { kind: RelationshipKind; seconds: number } | null {
+  const hasSame = row.sameRelationships.has(partnerId);
+  const hasMixed = row.mixedRelationships.has(partnerId);
+  if (hasSame && hasMixed) {
+    throw new Error(
+      "Shift-chart data contains contradictory relationship categories.",
+    );
+  }
+  if (hasSame) {
+    return { kind: "same", seconds: row.sameRelationships.get(partnerId)! };
+  }
+  if (hasMixed) {
+    return { kind: "mixed", seconds: row.mixedRelationships.get(partnerId)! };
+  }
+  return null;
+}
+
+function incrementNumericRecord(
+  record: Record<number, number>,
+  key: number,
+  amount: number,
+) {
+  record[key] = (record[key] ?? 0) + amount;
+}
+
+function incrementStringRecord(
+  record: Record<string, number>,
+  key: number,
+  amount: number,
+) {
+  const normalizedKey = String(key);
+  record[normalizedKey] = (record[normalizedKey] ?? 0) + amount;
+}
+
+function formatClock(seconds: number): string {
+  const rounded = Math.max(0, Math.round(seconds));
+  const minutes = Math.floor(rounded / 60);
+  const remainingSeconds = rounded % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(
+    remainingSeconds,
+  ).padStart(2, "0")}`;
+}
+
+function abbreviatedName(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/);
+  return parts.length > 1
+    ? `${parts[0].charAt(0)}. ${parts.slice(1).join(" ")}`
+    : fullName;
+}
+
+function lastNameFromFullName(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/);
+  return parts.length > 1 ? parts.slice(1).join(" ") : fullName;
+}
+
 async function fetchPlayerPositionFallbacks(playerIds: number[]) {
-  const uniqueIds = Array.from(new Set(playerIds.filter(Number.isFinite)));
+  const uniqueIds = Array.from(
+    new Set(
+      playerIds.filter(
+        (playerId) => Number.isSafeInteger(playerId) && playerId > 0,
+      ),
+    ),
+  );
   if (uniqueIds.length === 0) return new Map<number, PlayerPositionFallback>();
 
   const fallbackRows = await fetchAllSupabaseFilterChunks<
@@ -138,46 +451,16 @@ async function fetchPlayerPositionFallbacks(playerIds: number[]) {
       .range(from, to),
   );
 
-  return new Map(fallbackRows.map((player) => [player.id, player]));
-}
-
-function applyPlayerPositionFallbacks(
-  playersData: Record<string, any>,
-  fallbackByPlayerId: Map<number, PlayerPositionFallback>,
-) {
-  Object.values(playersData).forEach((player: any) => {
-    const fallback = fallbackByPlayerId.get(Number(player.playerId));
-    if (!fallback) return;
-
-    if (!player.primaryPosition && fallback.position) {
-      player.primaryPosition = fallback.position;
+  const requested = new Set(uniqueIds);
+  const fallbackByPlayerId = new Map<number, PlayerPositionFallback>();
+  for (const fallback of fallbackRows) {
+    const playerId = readPositiveSafeInteger(fallback.id, "fallback player ID");
+    if (!requested.has(playerId) || fallbackByPlayerId.has(playerId)) {
+      throw new Error("Player fallback data contains an unexpected identity.");
     }
-    if (!player.displayPosition && fallback.position) {
-      player.displayPosition = fallback.position;
-    }
-    if (!player.playerType) {
-      player.playerType = getPlayerTypeFromPosition(
-        player.primaryPosition ?? fallback.position,
-      );
-    }
-    if (!player.playerName?.trim() && fallback.fullName) {
-      player.playerName = fallback.fullName;
-    }
-    if (!player.playerAbbrevName?.trim() && fallback.fullName) {
-      const parts = fallback.fullName.split(" ");
-      player.playerAbbrevName =
-        parts.length > 1
-          ? `${parts[0].charAt(0)}. ${parts.slice(1).join(" ")}`
-          : fallback.fullName;
-    }
-    if (!player.lastName && fallback.fullName) {
-      player.lastName =
-        fallback.fullName.split(" ").slice(1).join(" ") || fallback.fullName;
-    }
-    if (player.sweaterNumber == null && fallback.sweater_number != null) {
-      player.sweaterNumber = fallback.sweater_number;
-    }
-  });
+    fallbackByPlayerId.set(playerId, fallback);
+  }
+  return fallbackByPlayerId;
 }
 
 function chunkPositiveIntegers(values: Iterable<number>) {
@@ -264,20 +547,14 @@ async function fetchScopedGoalieRows(gameIds: number[], playerIds: number[]) {
 }
 
 function expectedGameIdsForPlayer(
-  player: any,
-  seasonType: "regularSeason" | "playoffs",
+  player: AggregatedMatrixPlayer,
+  seasonType: MatrixSeasonType,
 ): number[] {
   const seasonData =
     seasonType === "regularSeason"
       ? player.regularSeasonData
       : player.playoffData;
-  return Array.from(
-    new Set<number>(
-      (Array.isArray(seasonData?.gameIds) ? seasonData.gameIds : [])
-        .map(Number)
-        .filter((gameId: number) => Number.isInteger(gameId) && gameId > 0),
-    ),
-  );
+  return Array.from(new Set(seasonData.gameIds));
 }
 
 function exactRowsForPlayer<TRow extends { gameId: number; playerId: number }>(
@@ -312,22 +589,6 @@ function finiteNonNegative(value: unknown) {
   return Number.isFinite(numberValue) && numberValue >= 0 ? numberValue : null;
 }
 
-function parseDurationSeconds(value: string | null | undefined) {
-  if (!value) return null;
-  const parts = value.split(":").map(Number);
-  if (
-    (parts.length !== 2 && parts.length !== 3) ||
-    parts.some(
-      (part) => !Number.isFinite(part) || !Number.isInteger(part) || part < 0,
-    ) ||
-    parts[parts.length - 1] >= 60 ||
-    (parts.length === 3 && parts[1] >= 60)
-  ) {
-    return null;
-  }
-  return parts.reduce((total, part) => total * 60 + part, 0);
-}
-
 function parseSaveShotsAgainst(value: string) {
   const match = /^\s*(\d+)\s*[/\-]\s*(\d+)\s*$/.exec(value);
   if (!match) return null;
@@ -339,8 +600,8 @@ function parseSaveShotsAgainst(value: string) {
 
 async function fetchScopedCardStats(
   matchedGameIds: number[],
-  selectedPlayersData: Record<string, any>,
-  seasonType: "regularSeason" | "playoffs",
+  selectedPlayersData: AggregatedMatrixPlayers,
+  seasonType: MatrixSeasonType,
 ): Promise<ScopedCardStats> {
   const scopeGameIds = Array.from(new Set(matchedGameIds)).sort(
     (left, right) => left - right,
@@ -349,17 +610,11 @@ async function fetchScopedCardStats(
 
   const players = Object.values(selectedPlayersData);
   const skaterIds = players
-    .filter(
-      (player: any) =>
-        player.playerType !== "G" && player.primaryPosition !== "G",
-    )
-    .map((player: any) => Number(player.playerId));
+    .filter((player) => player.playerType !== "G")
+    .map((player) => player.playerId);
   const goalieIds = players
-    .filter(
-      (player: any) =>
-        player.playerType === "G" || player.primaryPosition === "G",
-    )
-    .map((player: any) => Number(player.playerId));
+    .filter((player) => player.playerType === "G")
+    .map((player) => player.playerId);
 
   const [skaterRows, goalieRows] = await Promise.all([
     fetchScopedSkaterRows(scopeGameIds, skaterIds),
@@ -369,12 +624,10 @@ async function fetchScopedCardStats(
   const skatersByPlayerId: Record<number, ScopedSkaterCardStats> = {};
   const goaliesByPlayerId: Record<number, ScopedGoalieCardStats> = {};
 
-  for (const player of players as any[]) {
-    const playerId = Number(player.playerId);
-    if (!Number.isSafeInteger(playerId) || playerId <= 0) continue;
+  for (const player of players) {
+    const playerId = player.playerId;
     const expectedGameIds = expectedGameIdsForPlayer(player, seasonType);
-    const isGoalie =
-      player.playerType === "G" || player.primaryPosition === "G";
+    const isGoalie = player.playerType === "G";
 
     if (!isGoalie) {
       const exactRows = exactRowsForPlayer(
@@ -475,6 +728,542 @@ async function fetchScopedCardStats(
   return { scopeGameIds, skatersByPlayerId, goaliesByPlayerId };
 }
 
+function normalizeAggregateRows(
+  rows: ShiftChartRow[],
+  scope: AggregateReductionScope,
+): {
+  rows: NormalizedAggregateShiftRow[];
+  pairGameFacts: AggregatePairGameFact[];
+} {
+  const seenRowIds = new Set<number>();
+  const seenPlayerGames = new Set<string>();
+  const rowsByGame = new Map<number, NormalizedAggregateShiftRow[]>();
+
+  for (const row of rows) {
+    const rowId = readPositiveSafeInteger(row.id, "row ID");
+    const gameId = readPositiveSafeInteger(row.game_id, "game ID");
+    const playerId = readPositiveSafeInteger(row.player_id, "player ID");
+    const teamId = readPositiveSafeInteger(row.team_id, "team ID");
+    const seasonId = readPositiveSafeInteger(row.season_id, "season ID");
+
+    if (seenRowIds.has(rowId)) {
+      throw new Error("Shift-chart data contains a duplicate row ID.");
+    }
+    seenRowIds.add(rowId);
+
+    const playerGameKey = `${gameId}:${playerId}`;
+    if (seenPlayerGames.has(playerGameKey)) {
+      throw new Error("Shift-chart data contains a duplicate player-game row.");
+    }
+    seenPlayerGames.add(playerGameKey);
+
+    if (teamId !== scope.teamId || seasonId !== scope.seasonId) {
+      throw new Error("Shift-chart data conflicts with the selected scope.");
+    }
+    if (scope.gameIds && !scope.gameIds.has(gameId)) {
+      throw new Error(
+        "Shift-chart data conflicts with the fixed game-ID scope.",
+      );
+    }
+    if (row.game_type !== scope.gameType) {
+      throw new Error(
+        "Shift-chart data conflicts with the selected season type.",
+      );
+    }
+    if (
+      !isValidIsoDate(row.game_date) ||
+      row.game_date < scope.startDate ||
+      row.game_date > scope.endDate
+    ) {
+      throw new Error("Shift-chart data contains an invalid scoped game date.");
+    }
+
+    const teamAbbreviation = readOptionalText(
+      row.team_abbreviation,
+      "team abbreviation",
+    )?.toUpperCase();
+    if (teamAbbreviation !== scope.teamAbbreviation) {
+      throw new Error("Shift-chart data conflicts with the canonical team.");
+    }
+
+    let homeOrAway: "home" | "away" | null = null;
+    const homeOrAwayText = readOptionalText(
+      row.home_or_away,
+      "home/away metadata",
+    );
+    if (homeOrAwayText) {
+      const normalized = homeOrAwayText.toLowerCase();
+      if (normalized !== "home" && normalized !== "away") {
+        throw new Error(
+          "Shift-chart data contains invalid home/away metadata.",
+        );
+      }
+      homeOrAway = normalized;
+    }
+    if (scope.homeOrAway && homeOrAway !== scope.homeOrAway) {
+      throw new Error(
+        "Shift-chart data conflicts with the active home/away filter.",
+      );
+    }
+
+    const opponentTeamAbbreviation =
+      readOptionalText(
+        row.opponent_team_abbreviation,
+        "opponent team abbreviation",
+      )?.toUpperCase() ?? null;
+    if (
+      scope.opponentTeamAbbreviation &&
+      opponentTeamAbbreviation !== scope.opponentTeamAbbreviation
+    ) {
+      throw new Error(
+        "Shift-chart data conflicts with the active opponent filter.",
+      );
+    }
+    const opponentTeamId = readOptionalPositiveSafeInteger(
+      row.opponent_team_id,
+      "opponent team ID",
+    );
+    const gameToiSeconds = readRequiredDuration(row.game_toi, "game TOI");
+    const gameLengthSeconds = readRequiredDuration(
+      row.game_length,
+      "game length",
+    );
+    if (gameLengthSeconds === 0) {
+      throw new Error("Shift-chart data contains an invalid game length.");
+    }
+    if (gameToiSeconds > gameLengthSeconds) {
+      throw new Error("Shift-chart game TOI exceeds game length.");
+    }
+
+    const normalizedRow: NormalizedAggregateShiftRow = {
+      rowId,
+      gameId,
+      gameType: row.game_type,
+      gameDate: row.game_date,
+      seasonId,
+      playerId,
+      gameToiSeconds,
+      gameLengthSeconds,
+      homeOrAway,
+      opponentTeamAbbreviation,
+      opponentTeamId,
+      firstName: readOptionalText(row.player_first_name, "player first name"),
+      lastName: readOptionalText(row.player_last_name, "player last name"),
+      primaryPosition: readOptionalText(
+        row.primary_position,
+        "player primary position",
+      ),
+      displayPosition: readOptionalText(
+        row.display_position,
+        "player display position",
+      ),
+      playerType: readPlayerType(row.player_type),
+      lineCombination: readCombination(
+        row.line_combination,
+        4,
+        "line combination",
+      ),
+      pairingCombination: readCombination(
+        row.pairing_combination,
+        3,
+        "pairing combination",
+      ),
+      sameRelationships: readRelationshipMap(
+        row.time_spent_with,
+        playerId,
+        "same-position relationship",
+      ),
+      mixedRelationships: readRelationshipMap(
+        row.time_spent_with_mixed,
+        playerId,
+        "mixed-position relationship",
+      ),
+    };
+    const gameRows = rowsByGame.get(gameId) ?? [];
+    gameRows.push(normalizedRow);
+    rowsByGame.set(gameId, gameRows);
+  }
+
+  const normalizedRows: NormalizedAggregateShiftRow[] = [];
+  const pairGameFacts: AggregatePairGameFact[] = [];
+  const orderedGames = [...rowsByGame.entries()].sort(
+    ([leftGameId, leftRows], [rightGameId, rightRows]) =>
+      leftRows[0].gameDate.localeCompare(rightRows[0].gameDate) ||
+      leftGameId - rightGameId,
+  );
+
+  for (const [gameId, gameRows] of orderedGames) {
+    const playerIds = new Set(gameRows.map((row) => row.playerId));
+    for (const row of gameRows) {
+      for (const relationships of [
+        row.sameRelationships,
+        row.mixedRelationships,
+      ]) {
+        relationships.forEach((_seconds, partnerId) => {
+          if (!playerIds.has(partnerId)) {
+            throw new Error(
+              "Shift-chart data contains a relationship to an unknown player.",
+            );
+          }
+        });
+      }
+    }
+
+    const gameDates = new Set(gameRows.map((row) => row.gameDate));
+    const gameLengths = new Set(gameRows.map((row) => row.gameLengthSeconds));
+    const homeAwayValues = new Set(gameRows.map((row) => row.homeOrAway));
+    const opponentAbbreviations = new Set(
+      gameRows.map((row) => row.opponentTeamAbbreviation),
+    );
+    const opponentIds = new Set(gameRows.map((row) => row.opponentTeamId));
+    if (
+      gameDates.size !== 1 ||
+      gameLengths.size !== 1 ||
+      homeAwayValues.size !== 1 ||
+      opponentAbbreviations.size !== 1 ||
+      opponentIds.size !== 1
+    ) {
+      throw new Error("Shift-chart player rows disagree on game metadata.");
+    }
+
+    const orderedRows = [...gameRows].sort(
+      (left, right) => left.playerId - right.playerId,
+    );
+    for (let firstIndex = 0; firstIndex < orderedRows.length; firstIndex += 1) {
+      for (
+        let secondIndex = firstIndex + 1;
+        secondIndex < orderedRows.length;
+        secondIndex += 1
+      ) {
+        const first = orderedRows[firstIndex];
+        const second = orderedRows[secondIndex];
+        const firstObservation = relationshipObservation(
+          first,
+          second.playerId,
+        );
+        const secondObservation = relationshipObservation(
+          second,
+          first.playerId,
+        );
+        if (!firstObservation || !secondObservation) {
+          throw new Error(
+            "Shift-chart data is missing mirrored relationship coverage.",
+          );
+        }
+        if (
+          firstObservation.kind !== secondObservation.kind ||
+          firstObservation.seconds !== secondObservation.seconds
+        ) {
+          throw new Error(
+            "Shift-chart data contains contradictory mirrored relationships.",
+          );
+        }
+        if (
+          firstObservation.seconds > first.gameToiSeconds ||
+          firstObservation.seconds > second.gameToiSeconds
+        ) {
+          throw new Error(
+            "Shift-chart relationship TOI exceeds a player appearance.",
+          );
+        }
+        pairGameFacts.push({
+          gameId,
+          firstPlayerId: first.playerId,
+          secondPlayerId: second.playerId,
+          seconds: firstObservation.seconds,
+        });
+      }
+    }
+    normalizedRows.push(...gameRows);
+  }
+
+  normalizedRows.sort(
+    (left, right) =>
+      left.gameDate.localeCompare(right.gameDate) ||
+      left.gameId - right.gameId ||
+      left.rowId - right.rowId,
+  );
+  return { rows: normalizedRows, pairGameFacts };
+}
+
+function resolveCanonicalPlayerMetadata(
+  player: AggregatePlayerAccumulator,
+  fallback: PlayerPositionFallback | undefined,
+): {
+  name: string;
+  lastName: string;
+  primaryPosition: string;
+  displayPosition: string;
+  playerType: MatrixPlayerType;
+  sweaterNumber: number | null;
+} {
+  const fallbackName = readOptionalText(
+    fallback?.fullName,
+    "fallback player name",
+  );
+  const rowName =
+    player.firstName && player.lastName
+      ? `${player.firstName} ${player.lastName}`
+      : null;
+  const name = rowName || fallbackName;
+  const fallbackPosition = readOptionalText(
+    fallback?.position,
+    "fallback player position",
+  )?.toUpperCase();
+  const primaryPosition =
+    player.primaryPosition?.toUpperCase() ||
+    fallbackPosition ||
+    player.displayPosition?.toUpperCase() ||
+    null;
+  const displayPosition =
+    player.displayPosition?.toUpperCase() || primaryPosition;
+  const derivedPlayerType = getPlayerTypeFromPosition(primaryPosition);
+  const playerType = player.playerType ?? derivedPlayerType;
+  const lastName =
+    player.lastName ||
+    (fallbackName ? lastNameFromFullName(fallbackName) : null);
+
+  if (
+    !name ||
+    !lastName ||
+    !primaryPosition ||
+    !displayPosition ||
+    !playerType ||
+    (derivedPlayerType && derivedPlayerType !== playerType)
+  ) {
+    throw new Error(
+      "Shift-chart data cannot resolve canonical player metadata.",
+    );
+  }
+  if (
+    (Object.keys(player.timesOnLine).length > 0 && playerType !== "F") ||
+    (Object.keys(player.timesOnPair).length > 0 && playerType !== "D")
+  ) {
+    throw new Error(
+      "Shift-chart line or pair assignments conflict with player type.",
+    );
+  }
+
+  let sweaterNumber: number | null = null;
+  if (fallback?.sweater_number != null) {
+    if (
+      !Number.isSafeInteger(fallback.sweater_number) ||
+      fallback.sweater_number < 0
+    ) {
+      throw new Error(
+        "Player fallback data contains an invalid sweater number.",
+      );
+    }
+    sweaterNumber = fallback.sweater_number;
+  }
+
+  return {
+    name,
+    lastName,
+    primaryPosition,
+    displayPosition,
+    playerType,
+    sweaterNumber,
+  };
+}
+
+function emptyAggregatedSeasonData(): AggregatedMatrixSeasonData {
+  return {
+    totalTOI: 0,
+    gameLength: 0,
+    gamesPlayed: new Set<number>(),
+    ATOI: "00:00",
+    gameIds: [],
+    homeOrAway: [],
+    opponent: [],
+    opponentId: [],
+    timeSpentWith: {},
+    timeSpentWithMixed: {},
+    timesPlayedWith: {},
+    mutualSharedToi: {},
+    percentToiWith: {},
+    percentToiWithMixed: {},
+    percentOfSeason: {},
+    timesOnLine: {},
+    timesOnPair: {},
+    GP: 0,
+  };
+}
+
+function buildAggregatedPlayers(
+  normalizedRows: NormalizedAggregateShiftRow[],
+  pairGameFacts: AggregatePairGameFact[],
+  fallbackByPlayerId: Map<number, PlayerPositionFallback>,
+  seasonType: MatrixSeasonType,
+  scope: AggregateReductionScope,
+): AggregatedMatrixPlayers {
+  const accumulators = new Map<number, AggregatePlayerAccumulator>();
+  for (const row of normalizedRows) {
+    const accumulator = accumulators.get(row.playerId) ?? {
+      playerId: row.playerId,
+      firstName: null,
+      lastName: null,
+      primaryPosition: null,
+      displayPosition: null,
+      playerType: null,
+      gamesPlayed: new Set<number>(),
+      totalToiSeconds: 0,
+      totalGameLengthSeconds: 0,
+      gameIds: [],
+      homeOrAway: [],
+      opponent: [],
+      opponentId: [],
+      timesOnLine: {},
+      timesOnPair: {},
+      timeSpentWith: {},
+      timeSpentWithMixed: {},
+      timesPlayedWith: {},
+      mutualSharedToi: {},
+    };
+    if (row.firstName) accumulator.firstName = row.firstName;
+    if (row.lastName) accumulator.lastName = row.lastName;
+    if (row.primaryPosition) accumulator.primaryPosition = row.primaryPosition;
+    if (row.displayPosition) accumulator.displayPosition = row.displayPosition;
+    if (
+      row.playerType &&
+      accumulator.playerType &&
+      row.playerType !== accumulator.playerType
+    ) {
+      throw new Error("Shift-chart data contains conflicting player types.");
+    }
+    if (row.playerType) accumulator.playerType = row.playerType;
+    accumulator.gamesPlayed.add(row.gameId);
+    accumulator.gameIds.push(row.gameId);
+    accumulator.totalToiSeconds += row.gameToiSeconds;
+    accumulator.totalGameLengthSeconds += row.gameLengthSeconds;
+    accumulator.homeOrAway.push(row.homeOrAway);
+    accumulator.opponent.push(row.opponentTeamAbbreviation);
+    accumulator.opponentId.push(row.opponentTeamId);
+    if (row.lineCombination != null) {
+      incrementStringRecord(accumulator.timesOnLine, row.lineCombination, 1);
+    }
+    if (row.pairingCombination != null) {
+      incrementStringRecord(accumulator.timesOnPair, row.pairingCombination, 1);
+    }
+    accumulators.set(row.playerId, accumulator);
+  }
+
+  const canonicalMetadata = new Map(
+    [...accumulators.values()].map((player) => [
+      player.playerId,
+      resolveCanonicalPlayerMetadata(
+        player,
+        fallbackByPlayerId.get(player.playerId),
+      ),
+    ]),
+  );
+
+  for (const fact of pairGameFacts) {
+    const first = accumulators.get(fact.firstPlayerId)!;
+    const second = accumulators.get(fact.secondPlayerId)!;
+    const kind = canonicalRelationshipKind(
+      canonicalMetadata.get(fact.firstPlayerId)!.playerType,
+      canonicalMetadata.get(fact.secondPlayerId)!.playerType,
+    );
+    const firstTarget =
+      kind === "same" ? first.timeSpentWith : first.timeSpentWithMixed;
+    const secondTarget =
+      kind === "same" ? second.timeSpentWith : second.timeSpentWithMixed;
+    incrementNumericRecord(firstTarget, second.playerId, fact.seconds);
+    incrementNumericRecord(secondTarget, first.playerId, fact.seconds);
+    incrementNumericRecord(first.timesPlayedWith, second.playerId, 1);
+    incrementNumericRecord(second.timesPlayedWith, first.playerId, 1);
+    incrementNumericRecord(
+      first.mutualSharedToi,
+      second.playerId,
+      fact.seconds,
+    );
+    incrementNumericRecord(
+      second.mutualSharedToi,
+      first.playerId,
+      fact.seconds,
+    );
+  }
+
+  const playersData: AggregatedMatrixPlayers = {};
+  for (const player of [...accumulators.values()].sort(
+    (left, right) => left.playerId - right.playerId,
+  )) {
+    const metadata = canonicalMetadata.get(player.playerId)!;
+    const percentToiWith = Object.fromEntries(
+      Object.entries(player.timeSpentWith).map(([partnerId, seconds]) => [
+        Number(partnerId),
+        player.totalToiSeconds > 0
+          ? (seconds / player.totalToiSeconds) * 100
+          : 0,
+      ]),
+    );
+    const percentToiWithMixed = Object.fromEntries(
+      Object.entries(player.timeSpentWithMixed).map(([partnerId, seconds]) => [
+        Number(partnerId),
+        player.totalToiSeconds > 0
+          ? (seconds / player.totalToiSeconds) * 100
+          : 0,
+      ]),
+    );
+    const percentOfSeason = Object.fromEntries(
+      Object.entries(player.timeSpentWith).map(([partnerId, seconds]) => [
+        Number(partnerId),
+        player.totalGameLengthSeconds > 0
+          ? (seconds / player.totalGameLengthSeconds) * 100
+          : 0,
+      ]),
+    );
+    const activeSeasonData: AggregatedMatrixSeasonData = {
+      totalTOI: player.totalToiSeconds,
+      gameLength: player.totalGameLengthSeconds,
+      gamesPlayed: new Set(player.gamesPlayed),
+      ATOI:
+        player.gamesPlayed.size > 0
+          ? formatClock(player.totalToiSeconds / player.gamesPlayed.size)
+          : "00:00",
+      gameIds: [...player.gameIds],
+      homeOrAway: [...player.homeOrAway],
+      opponent: [...player.opponent],
+      opponentId: [...player.opponentId],
+      timeSpentWith: { ...player.timeSpentWith },
+      timeSpentWithMixed: { ...player.timeSpentWithMixed },
+      timesPlayedWith: { ...player.timesPlayedWith },
+      mutualSharedToi: { ...player.mutualSharedToi },
+      percentToiWith,
+      percentToiWithMixed,
+      percentOfSeason,
+      timesOnLine: { ...player.timesOnLine },
+      timesOnPair: { ...player.timesOnPair },
+      GP: player.gamesPlayed.size,
+    };
+    playersData[player.playerId] = {
+      playerName: metadata.name,
+      playerAbbrevName: abbreviatedName(metadata.name),
+      lastName: metadata.lastName,
+      playerId: player.playerId,
+      teamId: scope.teamId,
+      teamAbbrev: scope.teamAbbreviation,
+      franchiseId: scope.franchiseId,
+      displayPosition: metadata.displayPosition,
+      primaryPosition: metadata.primaryPosition,
+      sweaterNumber: metadata.sweaterNumber,
+      seasonId: scope.seasonId,
+      playerType: metadata.playerType,
+      comboPoints: 0,
+      regularSeasonData:
+        seasonType === "regularSeason"
+          ? activeSeasonData
+          : emptyAggregatedSeasonData(),
+      playoffData:
+        seasonType === "playoffs"
+          ? activeSeasonData
+          : emptyAggregatedSeasonData(),
+    };
+  }
+  return playersData;
+}
+
 // Function to fetch all data for a team within a date range
 async function fetchAllDataForTeam(
   teamId: number,
@@ -489,7 +1278,7 @@ async function fetchAllDataForTeam(
   },
 ) {
   const fieldsToSelect =
-    "id,game_id,game_type,player_id,player_first_name,player_last_name,team_id,team_abbreviation,game_toi,home_or_away,opponent_team_abbreviation,opponent_team_id,display_position,primary_position,time_spent_with,percent_toi_with,time_spent_with_mixed,percent_toi_with_mixed,game_length,line_combination,pairing_combination,season_id,player_type";
+    "id,game_id,game_type,game_date,player_id,player_first_name,player_last_name,team_id,team_abbreviation,game_toi,home_or_away,opponent_team_abbreviation,opponent_team_id,display_position,primary_position,time_spent_with,time_spent_with_mixed,game_length,line_combination,pairing_combination,season_id,player_type";
 
   return fetchAllSupabasePages<ShiftChartRow>(({ from, to }) => {
     let query = supabase
@@ -537,9 +1326,34 @@ export async function fetchAggregatedData(request: FetchAggregatedDataRequest) {
   if (!Number.isSafeInteger(seasonId) || seasonId <= 0) {
     throw new Error("A valid season ID is required to fetch matrix data.");
   }
-  if (!startDate || !endDate || startDate > endDate) {
+  if (
+    !isValidIsoDate(startDate) ||
+    !isValidIsoDate(endDate) ||
+    startDate > endDate
+  ) {
     throw new Error("A valid matrix date range is required.");
   }
+  if (seasonType !== "regularSeason" && seasonType !== "playoffs") {
+    throw new Error("A valid matrix season type is required.");
+  }
+  if (homeOrAway !== "" && homeOrAway !== "home" && homeOrAway !== "away") {
+    throw new Error("A valid home/away filter is required.");
+  }
+
+  const canonicalTeamEntry = Object.entries(teamsInfo).find(
+    ([, team]) => team.id === teamId,
+  );
+  if (!canonicalTeamEntry) {
+    throw new Error("A canonical team is required to fetch matrix data.");
+  }
+  const [teamAbbreviation, canonicalTeam] = canonicalTeamEntry;
+  const gameType: MatrixGameType = seasonType === "regularSeason" ? "2" : "3";
+  const scopedHomeOrAway = homeOrAway || null;
+  if (typeof opponentTeamAbbreviation !== "string") {
+    throw new Error("A valid opponent-team filter is required.");
+  }
+  const scopedOpponentTeamAbbreviation =
+    opponentTeamAbbreviation.trim().toUpperCase() || null;
 
   const scopedGameIds =
     gameIds == null ? undefined : Array.from(new Set(gameIds));
@@ -558,64 +1372,46 @@ export async function fetchAggregatedData(request: FetchAggregatedDataRequest) {
   const allTeamData = await fetchAllDataForTeam(
     teamId,
     seasonId,
-    seasonType === "regularSeason" ? "2" : "3",
+    gameType,
     startDate,
     endDate,
     {
       gameIds: scopedGameIds,
-      homeOrAway: homeOrAway || undefined,
-      opponentTeamAbbreviation: opponentTeamAbbreviation || undefined,
+      homeOrAway: scopedHomeOrAway || undefined,
+      opponentTeamAbbreviation: scopedOpponentTeamAbbreviation || undefined,
     },
   );
 
-  if (
-    allTeamData.some(
-      (row) =>
-        !Number.isSafeInteger(row.player_id) || Number(row.player_id) <= 0,
-    )
-  ) {
-    throw new Error(
-      "Shift-chart data is missing a player identity or has an invalid one.",
-    );
-  }
-  if (
-    allTeamData.some(
-      (row) => !Number.isSafeInteger(row.game_id) || row.game_id <= 0,
-    )
-  ) {
-    throw new Error("Shift-chart data is missing a valid game identity.");
-  }
-
-  const matchedGameIds = Array.from(
-    new Set(allTeamData.map((row) => row.game_id)),
-  );
-
-  // Get unique player IDs from the data
-
-  // Fetch data for each player based on season type
-  const regularSeasonData = allTeamData.filter(
-    (item) => item.game_type === "2",
-  );
-  const playoffData = allTeamData.filter((item) => item.game_type === "3");
-
-  // Process the fetched data to structure it by player
-  const regularSeasonPlayersData = processData(
-    regularSeasonData,
-    "regularSeason",
-  );
-  const playoffPlayersData = processData(playoffData, "playoffs");
+  const scope: AggregateReductionScope = {
+    teamId,
+    teamAbbreviation,
+    franchiseId: canonicalTeam.franchiseId,
+    seasonId,
+    gameType,
+    startDate,
+    endDate,
+    gameIds: scopedGameIds ? new Set(scopedGameIds) : null,
+    homeOrAway: scopedHomeOrAway,
+    opponentTeamAbbreviation: scopedOpponentTeamAbbreviation,
+  };
+  const normalized = normalizeAggregateRows(allTeamData, scope);
   const fallbackByPlayerId = await fetchPlayerPositionFallbacks(
-    allTeamData
-      .map((row) => row.player_id)
-      .filter((playerId): playerId is number => playerId != null),
+    normalized.rows.map((row) => row.playerId),
   );
-  applyPlayerPositionFallbacks(regularSeasonPlayersData, fallbackByPlayerId);
-  applyPlayerPositionFallbacks(playoffPlayersData, fallbackByPlayerId);
-
-  const selectedPlayersData =
-    seasonType === "regularSeason"
-      ? regularSeasonPlayersData
-      : playoffPlayersData;
+  const selectedPlayersData = buildAggregatedPlayers(
+    normalized.rows,
+    normalized.pairGameFacts,
+    fallbackByPlayerId,
+    seasonType,
+    scope,
+  );
+  const regularSeasonPlayersData: AggregatedMatrixPlayers =
+    seasonType === "regularSeason" ? selectedPlayersData : {};
+  const playoffPlayersData: AggregatedMatrixPlayers =
+    seasonType === "playoffs" ? selectedPlayersData : {};
+  const matchedGameIds = Array.from(
+    new Set(normalized.rows.map((row) => row.gameId)),
+  ).sort((left, right) => left - right);
   const cardStats = await fetchScopedCardStats(
     matchedGameIds,
     selectedPlayersData,
@@ -628,184 +1424,4 @@ export async function fetchAggregatedData(request: FetchAggregatedDataRequest) {
     matchedGameIds,
     cardStats,
   };
-}
-
-// Function to process the aggregated data and calculate metrics
-function processData(data: any[], seasonType: "regularSeason" | "playoffs") {
-  const playersData: any = {};
-
-  data.forEach((row) => {
-    const playerId = row.player_id;
-    if (playerId == null) return;
-
-    const playerName = [row.player_first_name, row.player_last_name]
-      .filter(Boolean)
-      .join(" ");
-    const playerAbbrevName =
-      row.player_first_name && row.player_last_name
-        ? `${row.player_first_name.charAt(0)}. ${row.player_last_name}`
-        : playerName;
-
-    if (!playersData[playerId]) {
-      playersData[playerId] = {
-        playerName,
-        playerAbbrevName,
-        lastName: row.player_last_name,
-        playerId: row.player_id,
-        teamId: row.team_id,
-        teamAbbrev: row.team_abbreviation,
-        displayPosition: row.display_position,
-        primaryPosition: row.primary_position,
-        seasonId: row.season_id,
-        playerType: row.player_type,
-        regularSeasonData: {
-          totalTOI: 0,
-          gameLength: 0,
-          gamesPlayed: new Set<number>(),
-          ATOI: "00:00",
-          gameIds: [],
-          homeOrAway: [],
-          opponent: [],
-          opponentId: [],
-          timeSpentWith: {} as Record<string, number>,
-          timeSpentWithMixed: {} as Record<string, number>,
-          timesPlayedWith: {} as Record<string, number>,
-          percentToiWith: {} as Record<string, number>,
-          percentToiWithMixed: {} as Record<string, number>,
-          percentOfSeason: {} as Record<string, number>,
-          timesOnLine: { 1: 0, 2: 0, 3: 0, 4: 0 },
-          timesOnPair: { 1: 0, 2: 0, 3: 0 },
-        },
-        playoffData: {
-          totalTOI: 0,
-          gameLength: 0,
-          gamesPlayed: new Set<number>(),
-          ATOI: "00:00",
-          gameIds: [],
-          homeOrAway: [],
-          opponent: [],
-          opponentId: [],
-          timeSpentWith: {} as Record<string, number>,
-          timeSpentWithMixed: {} as Record<string, number>,
-          timesPlayedWith: {} as Record<string, number>,
-          percentToiWith: {} as Record<string, number>,
-          percentToiWithMixed: {} as Record<string, number>,
-          percentOfSeason: {} as Record<string, number>,
-          timesOnLine: { 1: 0, 2: 0, 3: 0, 4: 0 },
-          timesOnPair: { 1: 0, 2: 0, 3: 0 },
-        },
-      };
-    }
-
-    const player = playersData[playerId];
-    if (!player.playerName?.trim() && playerName) {
-      player.playerName = playerName;
-    }
-    if (!player.playerAbbrevName?.trim() && playerAbbrevName) {
-      player.playerAbbrevName = playerAbbrevName;
-    }
-    if (!player.lastName && row.player_last_name)
-      player.lastName = row.player_last_name;
-    if (!player.displayPosition && row.display_position) {
-      player.displayPosition = row.display_position;
-    }
-    if (!player.primaryPosition && row.primary_position) {
-      player.primaryPosition = row.primary_position;
-    }
-    if (!player.playerType && row.player_type) {
-      player.playerType = row.player_type;
-    }
-    if (!player.teamAbbrev && row.team_abbreviation) {
-      player.teamAbbrev = row.team_abbreviation;
-    }
-    if (!player.teamId && row.team_id) player.teamId = row.team_id;
-    if (!player.seasonId && row.season_id) player.seasonId = row.season_id;
-
-    const seasonData =
-      seasonType === "regularSeason"
-        ? playersData[playerId].regularSeasonData
-        : playersData[playerId].playoffData;
-
-    seasonData.totalTOI += parseTime(row.game_toi);
-    seasonData.gameLength += parseTime(row.game_length);
-    seasonData.gamesPlayed.add(row.game_id);
-    seasonData.homeOrAway.push(row.home_or_away);
-    seasonData.opponent.push(row.opponent_team_abbreviation);
-    seasonData.opponentId.push(row.opponent_team_id);
-
-    Object.entries(
-      (row.time_spent_with ?? {}) as Record<string, string>,
-    ).forEach(([key, value]) => {
-      if (!seasonData.timeSpentWith[key]) {
-        seasonData.timeSpentWith[key] = parseTime(value);
-        seasonData.timesPlayedWith[key] = 1;
-      } else {
-        seasonData.timeSpentWith[key] += parseTime(value);
-        seasonData.timesPlayedWith[key] += 1;
-      }
-    });
-
-    Object.entries(
-      (row.time_spent_with_mixed as Record<string, string>) || {},
-    ).forEach(([key, value]) => {
-      if (!seasonData.timeSpentWithMixed[key]) {
-        seasonData.timeSpentWithMixed[key] = parseTime(value);
-      } else {
-        seasonData.timeSpentWithMixed[key] += parseTime(value);
-      }
-    });
-
-    if (row.player_type === "F" && row.line_combination) {
-      seasonData.timesOnLine[row.line_combination] += 1;
-    } else if (row.player_type === "D" && row.pairing_combination) {
-      seasonData.timesOnPair[row.pairing_combination] += 1;
-    }
-  });
-
-  Object.values(playersData).forEach((player: any) => {
-    const seasonData =
-      seasonType === "regularSeason"
-        ? player.regularSeasonData
-        : player.playoffData;
-
-    seasonData.GP = seasonData.gamesPlayed.size;
-    seasonData.gameIds = Array.from(seasonData.gamesPlayed);
-    if (seasonData.GP > 0) {
-      seasonData.ATOI = formatTime(seasonData.totalTOI / seasonData.GP);
-    } else {
-      seasonData.ATOI = "00:00";
-    }
-
-    Object.keys(seasonData.timeSpentWith).forEach((key) => {
-      seasonData.percentToiWith[key] =
-        (seasonData.timeSpentWith[key] / seasonData.totalTOI) * 100;
-      seasonData.percentOfSeason[key] =
-        (seasonData.timeSpentWith[key] / seasonData.gameLength) * 100;
-    });
-
-    Object.keys(seasonData.timeSpentWithMixed).forEach((key) => {
-      seasonData.percentToiWithMixed[key] =
-        (seasonData.timeSpentWithMixed[key] / seasonData.totalTOI) * 100;
-    });
-
-    seasonData.totalTOI = formatTime(seasonData.totalTOI);
-    seasonData.gameLength = formatTime(seasonData.gameLength);
-  });
-
-  return playersData;
-}
-
-function parseTime(time: string | null | undefined) {
-  if (!time) return 0;
-  const [minutes, seconds] = time.split(":").map(Number);
-  return (
-    (Number.isFinite(minutes) ? minutes : 0) * 60 +
-    (Number.isFinite(seconds) ? seconds : 0)
-  );
-}
-
-function formatTime(seconds: number) {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
 }

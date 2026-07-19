@@ -7,6 +7,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { teamsInfo } from "lib/teamsInfo";
+import type { AggregatedMatrixSeasonData } from "./fetchAggregatedData";
 import type { PlayerData } from "./utilities";
 import {
   mapAggregatedPlayers,
@@ -29,41 +30,86 @@ afterEach(() => {
   cleanup();
 });
 
+function aggregatedSeasonData(
+  overrides: Partial<AggregatedMatrixSeasonData> = {},
+): AggregatedMatrixSeasonData {
+  return {
+    totalTOI: 0,
+    gameLength: 0,
+    gamesPlayed: new Set<number>(),
+    ATOI: "00:00",
+    gameIds: [],
+    homeOrAway: [],
+    opponent: [],
+    opponentId: [],
+    timeSpentWith: {},
+    timeSpentWithMixed: {},
+    timesPlayedWith: {},
+    mutualSharedToi: {},
+    percentToiWith: {},
+    percentToiWithMixed: {},
+    percentOfSeason: {},
+    timesOnLine: {},
+    timesOnPair: {},
+    GP: 0,
+    ...overrides,
+  };
+}
+
 const aggregatedPlayer: AggregatedDRMPlayer = {
   playerId: 97,
   teamId: teamsInfo.EDM.id,
+  teamAbbrev: "EDM",
+  franchiseId: teamsInfo.EDM.franchiseId,
   playerName: "Connor McDavid",
   playerAbbrevName: "C. McDavid",
   lastName: "McDavid",
   primaryPosition: "C",
   displayPosition: "C",
+  sweaterNumber: 97,
+  seasonId: 20252026,
   playerType: "F",
-  regularSeasonData: {
-    totalTOI: "20:00",
+  comboPoints: 0,
+  regularSeasonData: aggregatedSeasonData({
+    totalTOI: 1200,
+    gameLength: 7200,
+    gamesPlayed: new Set([2025020001, 2025020002]),
     GP: 2,
     ATOI: "10:00",
-    timesOnLine: { 1: "2" },
+    gameIds: [2025020001, 2025020002],
+    homeOrAway: ["home", "away"],
+    opponent: ["CGY", "VAN"],
+    opponentId: [20, 23],
+    timesOnLine: { 1: 2 },
     timesOnPair: {},
-    percentToiWith: { 29: "71.5" },
-    percentToiWithMixed: { 29: 73 },
-    timeSpentWith: { 29: "858" },
-    timeSpentWithMixed: { 29: 876 },
-    timesPlayedWith: { 29: "2" },
-    percentOfSeason: { 29: "35.75" },
-  },
-  playoffData: {
-    totalTOI: "10:30",
+    percentToiWith: { 29: 71.5 },
+    percentToiWithMixed: { 2: 73 },
+    timeSpentWith: { 29: 858 },
+    timeSpentWithMixed: { 2: 876 },
+    timesPlayedWith: { 2: 2, 29: 2 },
+    mutualSharedToi: { 2: 876, 29: 858 },
+    percentOfSeason: { 29: 35.75 },
+  }),
+  playoffData: aggregatedSeasonData({
+    totalTOI: 630,
+    gameLength: 3600,
+    gamesPlayed: new Set([2025030001]),
     GP: 1,
     ATOI: "10:30",
-    timesOnLine: { 2: "1" },
+    gameIds: [2025030001],
+    homeOrAway: ["home"],
+    opponent: ["LAK"],
+    opponentId: [26],
+    timesOnLine: { 2: 1 },
     timesOnPair: {},
-    percentToiWith: { 29: "48.25" },
-    percentToiWithMixed: { 29: "50" },
-    timeSpentWith: { 29: "304" },
-    timeSpentWithMixed: { 29: "315" },
-    timesPlayedWith: { 29: "1" },
-    percentOfSeason: { 29: "24.125" },
-  },
+    percentToiWith: { 29: 48.25 },
+    percentToiWithMixed: { 2: 50 },
+    timeSpentWith: { 29: 304 },
+    timeSpentWithMixed: { 2: 315 },
+    timesPlayedWith: { 2: 1, 29: 1 },
+    mutualSharedToi: { 2: 315, 29: 304 },
+    percentOfSeason: { 29: 24.125 },
+  }),
 };
 const aggregatedPlayers = [aggregatedPlayer];
 
@@ -115,11 +161,11 @@ function rawResult(id: number) {
 }
 
 describe("mapAggregatedPlayers", () => {
-  it("selects and normalizes the regular-season bucket", () => {
+  it("projects the typed regular-season bucket without coercion", () => {
     const [player] = mapAggregatedPlayers(
       aggregatedPlayers,
       "regularSeason",
-      "EDM",
+      " edm ",
     );
 
     expect(player).toMatchObject({
@@ -129,10 +175,12 @@ describe("mapAggregatedPlayers", () => {
       totalTOI: 1200,
       GP: 2,
       ATOI: "10:00",
+      sweaterNumber: 97,
       timesOnLine: { 1: 2 },
       percentToiWith: { 29: 71.5 },
       timeSpentWith: { 29: 858 },
       timesPlayedWith: { 29: 2 },
+      mutualSharedToi: { 29: 858 },
     });
   });
 
@@ -150,14 +198,36 @@ describe("mapAggregatedPlayers", () => {
     });
   });
 
-  it("skips rows without a valid player identity", () => {
-    expect(
+  it("fails closed instead of skipping an invalid player identity", () => {
+    const invalidPlayer = {
+      ...aggregatedPlayer,
+      playerId: null,
+    } as unknown as AggregatedDRMPlayer;
+
+    expect(() =>
+      mapAggregatedPlayers([invalidPlayer], "regularSeason", "EDM"),
+    ).toThrow("invalid player identity");
+  });
+
+  it("fails closed on canonical team identity drift", () => {
+    const mismatchedPlayer = {
+      ...aggregatedPlayer,
+      teamId: teamsInfo.CGY.id,
+    };
+
+    expect(() =>
+      mapAggregatedPlayers([mismatchedPlayer], "regularSeason", "EDM"),
+    ).toThrow("canonical team identity");
+  });
+
+  it("fails closed on duplicate player identities", () => {
+    expect(() =>
       mapAggregatedPlayers(
-        [{ ...aggregatedPlayer, playerId: null }],
+        [aggregatedPlayer, { ...aggregatedPlayer }],
         "regularSeason",
         "EDM",
       ),
-    ).toEqual([]);
+    ).toThrow("duplicate player identity");
   });
 });
 

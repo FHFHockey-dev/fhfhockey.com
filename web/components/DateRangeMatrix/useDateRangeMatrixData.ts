@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { teamsInfo } from "lib/teamsInfo";
 import { calculateLinesAndPairs } from "./lineCombinationHelper";
+import type { AggregatedMatrixPlayer } from "./fetchAggregatedData";
 import { getTOIDataForGames } from "./useTOIData";
 import type { Mode, TOIData } from "./index";
 import type { PlayerData } from "./utilities";
@@ -21,35 +22,7 @@ export type DRMDataCoverage = {
   skippedRows: number;
 };
 
-type AggregatedSeasonData = {
-  totalTOI?: unknown;
-  timesOnLine?: unknown;
-  timesOnPair?: unknown;
-  percentToiWith?: unknown;
-  percentToiWithMixed?: unknown;
-  timeSpentWith?: unknown;
-  timeSpentWithMixed?: unknown;
-  GP?: unknown;
-  timesPlayedWith?: unknown;
-  ATOI?: unknown;
-  percentOfSeason?: unknown;
-};
-
-export type AggregatedDRMPlayer = {
-  playerId?: unknown;
-  teamId?: unknown;
-  franchiseId?: unknown;
-  primaryPosition?: unknown;
-  sweaterNumber?: unknown;
-  playerName?: unknown;
-  playerAbbrevName?: unknown;
-  lastName?: unknown;
-  displayPosition?: unknown;
-  comboPoints?: unknown;
-  playerType?: unknown;
-  regularSeasonData?: AggregatedSeasonData;
-  playoffData?: AggregatedSeasonData;
-};
+export type AggregatedDRMPlayer = AggregatedMatrixPlayer;
 
 const EMPTY_AGGREGATED_DATA: AggregatedDRMPlayer[] = [];
 const EMPTY_COVERAGE: DRMDataCoverage = {
@@ -87,96 +60,68 @@ export type UseDRMReturn = {
   pairs: PlayerData[][];
 };
 
-function toFiniteNumber(value: unknown): number | undefined {
-  if (
-    value === null ||
-    value === undefined ||
-    typeof value === "boolean" ||
-    (typeof value === "string" && value.trim() === "")
-  ) {
-    return undefined;
-  }
-  const numeric = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(numeric) ? numeric : undefined;
-}
-
-function toText(value: unknown, fallback = ""): string {
-  return typeof value === "string" ? value : fallback;
-}
-
-function durationToSeconds(value: unknown): number {
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : 0;
-  }
-  if (typeof value !== "string" || value.trim() === "") return 0;
-
-  const parts = value.split(":").map(Number);
-  if (parts.some((part) => !Number.isFinite(part))) return 0;
-  return parts.reduce((total, part) => total * 60 + part, 0);
-}
-
-function normalizeNumericRecord<Key extends string | number = number>(
-  value: unknown,
-): Record<Key, number> {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return {} as Record<Key, number>;
-  }
-
-  const entries = Object.entries(value).flatMap(([key, rawValue]) => {
-    const numeric = toFiniteNumber(rawValue);
-    return numeric === undefined ? [] : [[key, numeric] as const];
-  });
-  return Object.fromEntries(entries) as Record<Key, number>;
-}
-
 export function mapAggregatedPlayers(
   aggregatedData: AggregatedDRMPlayer[],
   seasonType: DRMSeasonType,
   teamAbbreviation: string,
 ): PlayerData[] {
-  const teamInfo = teamsInfo[teamAbbreviation];
+  const canonicalTeamAbbreviation = teamAbbreviation.trim().toUpperCase();
+  const teamInfo = teamsInfo[canonicalTeamAbbreviation];
+  if (!teamInfo) {
+    throw new Error("Aggregated matrix data requires a canonical team.");
+  }
   const seasonKey =
     seasonType === "playoffs" ? "playoffData" : "regularSeasonData";
+  const seenPlayerIds = new Set<number>();
 
-  return aggregatedData.flatMap((item) => {
-    const id = toFiniteNumber(item.playerId);
-    if (id === undefined) return [];
+  return aggregatedData.map((item) => {
+    if (!Number.isSafeInteger(item.playerId) || item.playerId <= 0) {
+      throw new Error(
+        "Aggregated matrix data contains an invalid player identity.",
+      );
+    }
+    if (seenPlayerIds.has(item.playerId)) {
+      throw new Error(
+        "Aggregated matrix data contains a duplicate player identity.",
+      );
+    }
+    seenPlayerIds.add(item.playerId);
+    if (
+      item.teamId !== teamInfo.id ||
+      item.franchiseId !== teamInfo.franchiseId ||
+      item.teamAbbrev.trim().toUpperCase() !== canonicalTeamAbbreviation
+    ) {
+      throw new Error(
+        "Aggregated matrix data does not match the canonical team identity.",
+      );
+    }
 
-    const seasonData = item[seasonKey] ?? {};
-    const position = toText(item.primaryPosition);
-    const name = toText(item.playerName);
-
-    return [
-      {
-        id,
-        teamId: toFiniteNumber(item.teamId) ?? teamInfo?.id ?? 0,
-        franchiseId:
-          teamInfo?.franchiseId ?? toFiniteNumber(item.franchiseId) ?? 0,
-        position,
-        name,
-        playerAbbrevName: toText(item.playerAbbrevName, name),
-        lastName: toText(item.lastName, name),
-        totalTOI: durationToSeconds(seasonData.totalTOI),
-        timesOnLine: normalizeNumericRecord<string>(seasonData.timesOnLine),
-        timesOnPair: normalizeNumericRecord<string>(seasonData.timesOnPair),
-        percentToiWith: normalizeNumericRecord(seasonData.percentToiWith),
-        percentToiWithMixed: normalizeNumericRecord(
-          seasonData.percentToiWithMixed,
-        ),
-        timeSpentWith: normalizeNumericRecord(seasonData.timeSpentWith),
-        timeSpentWithMixed: normalizeNumericRecord(
-          seasonData.timeSpentWithMixed,
-        ),
-        GP: toFiniteNumber(seasonData.GP) ?? 0,
-        timesPlayedWith: normalizeNumericRecord(seasonData.timesPlayedWith),
-        ATOI: toText(seasonData.ATOI, "00:00"),
-        percentOfSeason: normalizeNumericRecord(seasonData.percentOfSeason),
-        displayPosition: toText(item.displayPosition, position),
-        mutualSharedToi: {},
-        comboPoints: toFiniteNumber(item.comboPoints) ?? 0,
-        playerType: toText(item.playerType) || undefined,
-      },
-    ];
+    const seasonData = item[seasonKey];
+    return {
+      id: item.playerId,
+      teamId: item.teamId,
+      franchiseId: item.franchiseId,
+      position: item.primaryPosition,
+      name: item.playerName,
+      playerAbbrevName: item.playerAbbrevName,
+      lastName: item.lastName,
+      sweaterNumber: item.sweaterNumber,
+      totalTOI: seasonData.totalTOI,
+      timesOnLine: { ...seasonData.timesOnLine },
+      timesOnPair: { ...seasonData.timesOnPair },
+      percentToiWith: { ...seasonData.percentToiWith },
+      percentToiWithMixed: { ...seasonData.percentToiWithMixed },
+      timeSpentWith: { ...seasonData.timeSpentWith },
+      timeSpentWithMixed: { ...seasonData.timeSpentWithMixed },
+      GP: seasonData.GP,
+      timesPlayedWith: { ...seasonData.timesPlayedWith },
+      ATOI: seasonData.ATOI,
+      percentOfSeason: { ...seasonData.percentOfSeason },
+      displayPosition: item.displayPosition,
+      mutualSharedToi: { ...seasonData.mutualSharedToi },
+      comboPoints: item.comboPoints,
+      playerType: item.playerType,
+    };
   });
 }
 
@@ -339,7 +284,7 @@ export function useDateRangeMatrixData({
           // For aggregated flow, upstream already has per-player ATOI; expose as map
           const map: Record<number, string> = {};
           mapped.forEach((p) => {
-            map[p.id] = p.ATOI || "0:00";
+            map[p.id] = p.ATOI;
           });
           setPlayerATOI(map);
           setToiData([]); // DateRangeMatrixInternal uses percentToiWith, so raw toi grid can be empty
