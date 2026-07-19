@@ -409,3 +409,20 @@
   color: v.$text-button;
   border-radius: v.$radius-sm;
 }
+
+.scopeSummary,
+.linePairNotice {
+  margin: v.$space-sm 0 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  line-height: 1.4;
+}
+
+.scopeSummary {
+  padding: 0 v.$space-sm;
+}
+
+.linePairNotice {
+  padding: v.$space-lg;
+  text-align: center;
+}

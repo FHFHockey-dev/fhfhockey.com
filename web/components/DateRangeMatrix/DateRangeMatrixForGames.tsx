@@ -15,14 +15,27 @@ export default function DateRangeMatrixForGames({
   endDate,
   mode,
 }: DateRangeMatrixForGamesProps) {
-  const { loading, teamId, teamName, roster, toiData, playerATOI, lines, pairs } =
-    useDateRangeMatrixData({
-      teamAbbreviation,
-      startDate,
-      endDate,
-      mode,
-      source: "raw",
-    });
+  const {
+    loading,
+    status,
+    error,
+    stale,
+    source,
+    coverage,
+    teamId,
+    teamName,
+    roster,
+    toiData,
+    playerATOI,
+    lines,
+    pairs,
+  } = useDateRangeMatrixData({
+    teamAbbreviation,
+    startDate,
+    endDate,
+    mode,
+    source: "raw",
+  });
 
   if (!teamId || !teamName) return null;
 
@@ -35,6 +48,11 @@ export default function DateRangeMatrixForGames({
       mode={mode}
       playerATOI={playerATOI}
       loading={loading}
+      status={status}
+      error={error}
+      stale={stale}
+      source={source}
+      coverage={coverage}
       lines={lines}
       pairs={pairs}
     />

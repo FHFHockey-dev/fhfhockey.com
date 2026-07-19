@@ -3,7 +3,8 @@
 
 import { teamsInfo } from "lib/teamsInfo";
 import supabase from "lib/supabase";
-import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
+import type { Database } from "lib/supabase/database-generated.types";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 
 // TYPES
 export type Shift = {
@@ -33,8 +34,8 @@ export type PlayerData = {
   timesOnPair: Record<string, number>;
   percentToiWith: Record<number, number>;
   percentToiWithMixed: Record<number, number>;
-  timeSpentWith: Record<number, string>;
-  timeSpentWithMixed: Record<number, string>;
+  timeSpentWith: Record<number, number>;
+  timeSpentWithMixed: Record<number, number>;
   GP: number;
   timesPlayedWith: Record<number, number>;
   ATOI: string;
@@ -99,14 +100,14 @@ export const getTeamColors = (teamId: number) => {
       primary: team.primaryColor,
       secondary: team.secondaryColor,
       jersey: team.jersey,
-      accentColor: team.accent
+      accentColor: team.accent,
     };
   }
   return {
     primary: "#000000", // default to black if not found
     secondary: "#FFFFFF", // default to white if not found
     jersey: "#000000", // default to black if not found
-    accentColor: "#000000" // default to black if not found
+    accentColor: "#000000", // default to black if not found
   };
 };
 
@@ -117,55 +118,127 @@ export const getFranchiseIdByTeamAbbreviation = (teamAbbreviation: string) => {
   );
 };
 
-// Get the date range for the last n games within a specific season
-export async function getDateRangeForGames(teamId: number, gamesBack: number) {
-  // Fetch the current season to get the season ID
-  const currentSeason = await fetchCurrentSeason();
-  const seasonId = currentSeason.id;
+type WgoTeamGameRow = Pick<
+  Database["public"]["Tables"]["wgo_team_stats"]["Row"],
+  "id" | "game_id" | "date"
+>;
 
-  console.log(
-    `Fetching date range for ${gamesBack} games for team ID ${teamId}...`
+export type DateRangeForGamesRequest = {
+  teamId: number;
+  seasonId: number;
+  seasonType: "regularSeason" | "playoffs";
+  gamesBack: 7 | 14 | 30;
+  scopeStartDate: string;
+  scopeEndDate: string;
+};
+
+export type DateRangeForGamesResult = {
+  startDate: string;
+  endDate: string;
+  gameIds: number[];
+  requestedGameCount: number;
+  resolvedGameCount: number;
+};
+
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function isValidIsoDate(value: unknown): value is string {
+  if (typeof value !== "string" || !ISO_DATE_PATTERN.test(value)) {
+    return false;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+// Resolve the selected team's fixed last-N completed-game window. Home/away and
+// opponent filters intentionally remain outside this resolver (Option A).
+export async function getDateRangeForGames(
+  request: DateRangeForGamesRequest,
+): Promise<DateRangeForGamesResult | null> {
+  const {
+    teamId,
+    seasonId,
+    seasonType,
+    gamesBack,
+    scopeStartDate,
+    scopeEndDate,
+  } = request;
+
+  if (!Number.isInteger(teamId) || teamId <= 0) {
+    throw new Error("A valid team ID is required to resolve a game window.");
+  }
+  if (!Number.isInteger(seasonId) || seasonId <= 0) {
+    throw new Error("A valid season ID is required to resolve a game window.");
+  }
+  if (!([7, 14, 30] as const).includes(gamesBack)) {
+    throw new Error("The game window must be L7, L14, or L30.");
+  }
+  if (seasonType !== "regularSeason" && seasonType !== "playoffs") {
+    throw new Error(
+      "A valid season type is required to resolve a game window.",
+    );
+  }
+  if (
+    !isValidIsoDate(scopeStartDate) ||
+    !isValidIsoDate(scopeEndDate) ||
+    scopeStartDate > scopeEndDate
+  ) {
+    throw new Error("A valid season-type date scope is required.");
+  }
+
+  const rows = await fetchAllSupabasePages<WgoTeamGameRow>(
+    ({ from, to }) =>
+      supabase
+        .from("wgo_team_stats")
+        .select("id,game_id,date")
+        .eq("team_id", teamId)
+        .eq("season_id", seasonId)
+        .gte("date", scopeStartDate)
+        .lte("date", scopeEndDate)
+        .order("date", { ascending: false })
+        .order("game_id", { ascending: false, nullsFirst: false })
+        .order("id", { ascending: false })
+        .range(from, to),
+    { pageSize: gamesBack, limit: gamesBack },
   );
 
-  // Fetch the game dates for the team within the current season, ordered by date descending
-  const { data, error } = await supabase
-    .from("wgo_team_stats")
-    .select("date")
-    .eq("team_id", teamId)
-    .eq("season_id", seasonId) // Filter by season ID
-    .order("date", { ascending: false });
-
-  if (error) {
-    console.error("Error fetching team stats:", error);
+  if (rows.length < gamesBack) {
     return null;
   }
 
-  if (!data || data.length === 0) {
-    console.warn(
-      `No data found for team with ID ${teamId} in season ${seasonId}.`
-    );
-    return null;
-  }
-
-  // Log each row and its date in descending order
-  console.log(`Fetched ${data.length} rows for team ID ${teamId}`);
-  data.forEach((row, index) => {
-    console.log(`Row ${index + 1}: Date = ${row.date} // teamId = ${teamId}`);
+  const seenGameIds = new Set<number>();
+  const games = rows.map((row) => {
+    const rowId = Number(row.id);
+    const gameId = Number(row.game_id);
+    if (!Number.isInteger(rowId) || rowId <= 0) {
+      throw new Error("The completed-game ledger contains an invalid row ID.");
+    }
+    if (row.game_id == null || !Number.isInteger(gameId) || gameId <= 0) {
+      throw new Error("The completed-game ledger contains an invalid game ID.");
+    }
+    if (!isValidIsoDate(row.date)) {
+      throw new Error("The completed-game ledger contains an invalid date.");
+    }
+    if (seenGameIds.has(gameId)) {
+      throw new Error(
+        "The completed-game ledger contains a duplicate game ID.",
+      );
+    }
+    seenGameIds.add(gameId);
+    return { gameId, date: row.date };
   });
 
-  // Slice the first `gamesBack` number of rows
-  const selectedGames = data.slice(0, gamesBack);
-
-  if (selectedGames.length < gamesBack) {
-    console.warn(`Team has played fewer than ${gamesBack} games.`);
-    return null;
-  }
-
-  // Determine the start and end dates
-  const startDate = selectedGames[selectedGames.length - 1].date;
-  const endDate = selectedGames[0].date;
-
-  console.log(`Start date: ${startDate}, End date: ${endDate}`);
-
-  return { startDate, endDate };
+  return {
+    startDate: games[games.length - 1].date,
+    endDate: games[0].date,
+    gameIds: games.map((game) => game.gameId),
+    requestedGameCount: gamesBack,
+    resolvedGameCount: games.length,
+  };
 }
