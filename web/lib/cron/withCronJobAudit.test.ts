@@ -243,4 +243,42 @@ describe("withCronJobAudit", () => {
       "audit insert unavailable",
     );
   });
+
+  it("does not silently skip persistence when runtime configuration is unavailable", async () => {
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const wrapped = withCronJobAudit(
+      async (_req, res) => res.json({ success: true }),
+      { jobName: "runtime-config-audit" },
+    );
+
+    await wrapped(createMockReq(), createMockRes());
+
+    expect(insertMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("persists the audit before flushing the JSON response", async () => {
+    let resolveInsert: ((value: unknown) => void) | undefined;
+    insertMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveInsert = resolve;
+      }),
+    );
+    const wrapped = withCronJobAudit(
+      async (_req, res) => res.json({ success: true, rowsAffected: 0 }),
+      { jobName: "durable-audit" },
+    );
+    const res = createMockRes();
+
+    const pending = wrapped(createMockReq(), res);
+    await vi.waitFor(() => expect(insertMock).toHaveBeenCalledTimes(1));
+
+    expect(res.headersSent).toBe(false);
+    expect(res.body).toBeUndefined();
+
+    resolveInsert?.({});
+    await pending;
+
+    expect(res.headersSent).toBe(true);
+    expect(res.body).toEqual({ success: true, rowsAffected: 0 });
+  });
 });

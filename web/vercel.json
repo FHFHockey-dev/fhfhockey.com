@@ -74,6 +74,14 @@
       "schedule": "*/30 * * * *"
     },
     {
+      "path": "/api/v1/db/refresh-draft-ranker-community?scheduled=true",
+      "schedule": "15 12 * * *"
+    },
+    {
+      "path": "/api/v1/db/draft-ranker-health",
+      "schedule": "45 12 * * *"
+    },
+    {
       "path": "/api/v1/db/cron-report",
       "schedule": "0 13 * * *"
     }

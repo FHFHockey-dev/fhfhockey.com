@@ -32,7 +32,13 @@ export type TransactionalGameStatsFailurePhase =
   | "persistence_rpc_retry"
   | "receipt_validation"
   | "quarantine_rpc"
-  | "quarantine_receipt_validation";
+  | "quarantine_receipt_validation"
+  | "non_realized_rpc"
+  | "non_realized_receipt_validation";
+
+export type GameStatsQuarantineReason =
+  | "game_not_finished"
+  | "schedule_not_realized";
 
 export interface TransactionalGameStatsFailureDetails {
   kind: "transactional_game_stats_persistence_failure";
@@ -68,7 +74,7 @@ export interface CompleteGameStatsManifestReceipt {
 export interface QuarantinedGameStatsManifestReceipt {
   gameId: number;
   outcome: "quarantined";
-  reason: "game_not_finished";
+  reason: GameStatsQuarantineReason;
   contractVersion: 1;
   expectedTeamRows: 0;
   observedTeamRows: 0;
@@ -647,6 +653,84 @@ export async function quarantineGameStatsBatch(args: {
   }
 
   return receipts.sort((left, right) => left.gameId - right.gameId);
+}
+
+export async function finalizeScheduleNotRealizedGameStats(args: {
+  supabase: SupabaseClient;
+  gameId: number;
+}): Promise<QuarantinedGameStatsManifestReceipt> {
+  if (!Number.isSafeInteger(args.gameId) || args.gameId <= 0) {
+    throw createFailure({
+      phase: "validation",
+      gameId: args.gameId,
+      terminalError: {
+        code: "INVALID_NON_REALIZED_GAME_STATS_ID",
+        message: "Expected one positive game ID.",
+      },
+    });
+  }
+
+  let data: unknown = null;
+  let error: unknown = null;
+  try {
+    const result = await args.supabase.rpc(
+      "finalize_non_realized_game_stats_v1",
+      { p_game_id: args.gameId },
+    );
+    data = result.data;
+    error = result.error;
+  } catch (rpcError) {
+    error = rpcError;
+  }
+
+  if (error) {
+    throw createFailure({
+      phase: "non_realized_rpc",
+      gameId: args.gameId,
+      terminalError: error,
+    });
+  }
+
+  const row = Array.isArray(data) && data.length === 1 ? data[0] : null;
+  const valid =
+    isRecord(row) &&
+    row.game_id === args.gameId &&
+    row.outcome === "quarantined" &&
+    row.reason === "schedule_not_realized" &&
+    row.contract_version === 1 &&
+    row.expected_team_rows === 0 &&
+    row.observed_team_rows === 0 &&
+    row.expected_skater_rows === 0 &&
+    row.observed_skater_rows === 0 &&
+    row.expected_goalie_rows === 0 &&
+    row.observed_goalie_rows === 0 &&
+    isCompletionTimestamp(row.completed_at);
+
+  if (!valid || !isRecord(row)) {
+    throw createFailure({
+      phase: "non_realized_receipt_validation",
+      gameId: args.gameId,
+      terminalError: {
+        code: "INVALID_NON_REALIZED_GAME_STATS_RECEIPT",
+        message:
+          "Terminalization RPC did not return exactly one matching schedule-not-realized manifest receipt.",
+      },
+    });
+  }
+
+  return {
+    gameId: args.gameId,
+    outcome: "quarantined",
+    reason: "schedule_not_realized",
+    contractVersion: 1,
+    expectedTeamRows: 0,
+    observedTeamRows: 0,
+    expectedSkaterRows: 0,
+    observedSkaterRows: 0,
+    expectedGoalieRows: 0,
+    observedGoalieRows: 0,
+    completedAt: row.completed_at as string,
+  };
 }
 
 export function getTransactionalGameStatsFailureDetails(

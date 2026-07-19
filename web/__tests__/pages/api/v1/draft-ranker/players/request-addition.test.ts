@@ -5,7 +5,9 @@ const { requestAdditionMock, requireApiUserMock } = vi.hoisted(() => ({
   requireApiUserMock: vi.fn(),
 }));
 
-vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: requireApiUserMock }));
+vi.mock("lib/api/requireApiUser", () => ({
+  requireApiUser: requireApiUserMock,
+}));
 vi.mock("lib/draft-ranker/server", () => ({
   requestDraftPlayerAddition: requestAdditionMock,
 }));
@@ -38,6 +40,7 @@ describe("POST /api/v1/draft-ranker/players/request-addition", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.DRAFT_RANKER_ENABLED = "true";
+    process.env.DRAFT_RANKER_ROLLOUT_STAGE = "authenticated";
     requireApiUserMock.mockResolvedValue({ id: "authenticated-owner" });
     requestAdditionMock.mockResolvedValue({
       status: "completed",
@@ -50,6 +53,7 @@ describe("POST /api/v1/draft-ranker/players/request-addition", () => {
   afterEach(() => {
     if (previousFlag === undefined) delete process.env.DRAFT_RANKER_ENABLED;
     else process.env.DRAFT_RANKER_ENABLED = previousFlag;
+    delete process.env.DRAFT_RANKER_ROLLOUT_STAGE;
   });
 
   it("derives request ownership from auth and returns 201 for a new request", async () => {
@@ -71,10 +75,7 @@ describe("POST /api/v1/draft-ranker/players/request-addition", () => {
     expect(res.statusCode).toBe(400);
     expect(requestAdditionMock).not.toHaveBeenCalled();
 
-    await handler(
-      { method: "POST", headers: {}, body } as any,
-      res as any,
-    );
+    await handler({ method: "POST", headers: {}, body } as any, res as any);
     expect(requestAdditionMock).toHaveBeenCalledWith(
       "authenticated-owner",
       expect.objectContaining(body),
@@ -90,7 +91,11 @@ describe("POST /api/v1/draft-ranker/players/request-addition", () => {
     );
     const res = response();
     await handler(
-      { method: "POST", headers: {}, body: { rawName: "Real Prospect" } } as any,
+      {
+        method: "POST",
+        headers: {},
+        body: { rawName: "Real Prospect" },
+      } as any,
       res as any,
     );
     expect(res.statusCode).toBe(429);
@@ -101,7 +106,11 @@ describe("POST /api/v1/draft-ranker/players/request-addition", () => {
     delete process.env.DRAFT_RANKER_ENABLED;
     const res = response();
     await handler(
-      { method: "POST", headers: {}, body: { rawName: "Real Prospect" } } as any,
+      {
+        method: "POST",
+        headers: {},
+        body: { rawName: "Real Prospect" },
+      } as any,
       res as any,
     );
     expect(res.statusCode).toBe(503);

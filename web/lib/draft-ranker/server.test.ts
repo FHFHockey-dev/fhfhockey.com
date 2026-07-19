@@ -465,7 +465,9 @@ describe("Draft Ranker server ownership queries", () => {
       playerId: 11,
       disposition: "dismissed",
     });
-    for (const record of queryLog.filter((entry) => entry.table !== "draft_rankings")) {
+    for (const record of queryLog.filter(
+      (entry) => entry.table !== "draft_rankings",
+    )) {
       expect(record.filters).toEqual(
         expect.arrayContaining([
           ["ranking_id", "ranking-1"],
@@ -501,7 +503,24 @@ describe("Draft Ranker server ownership queries", () => {
         p_ranking_id: "ranking-1",
         p_fhfh_player_id: 10,
         p_action: "watch",
+        p_source: "draft_ranker_search",
       }),
+    );
+
+    rpcMock.mockResolvedValueOnce({
+      data: { status: "completed", action: "dismiss", playerId: 10 },
+      error: null,
+    });
+    await applyDraftPlayerAction("authenticated-owner", {
+      rankingId: "ranking-1",
+      playerId: 10,
+      action: "dismiss",
+      operationId: "22222222-2222-4222-8222-222222222222",
+      sourceContext: "discovery",
+    });
+    expect(rpcMock).toHaveBeenLastCalledWith(
+      "apply_draft_ranker_player_action",
+      expect.objectContaining({ p_source: "draft_ranker_discovery" }),
     );
   });
 
@@ -743,7 +762,8 @@ describe("Draft Ranker server ownership queries", () => {
     ).rejects.toMatchObject({
       statusCode: 409,
       code: "idempotency_conflict",
-      message: "Another placement is already active. Resume or cancel it first.",
+      message:
+        "Another placement is already active. Resume or cancel it first.",
       details: {
         reason: "active_placement_exists",
         sessionId: "existing-session",

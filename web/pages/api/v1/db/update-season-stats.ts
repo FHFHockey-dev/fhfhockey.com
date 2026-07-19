@@ -22,6 +22,7 @@ import {
   sanitizeCronDiagnostic,
   type StatsPreWriteQuarantineFailureDetails,
 } from "lib/cron/statsUpdateSafety";
+import { tryFinalizeScheduleNotRealizedGameStats } from "lib/cron/nonRealizedGameStats";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { getCurrentSeason } from "lib/NHL/server";
@@ -261,7 +262,9 @@ function isPersistedGameComplete(row: PersistedGameCompletenessRow): boolean {
 
   if (status.outcome === "quarantined") {
     return (
-      status.reason === "game_not_finished" &&
+      ["game_not_finished", "schedule_not_realized"].includes(
+        String(status.reason),
+      ) &&
       status.expected_team_rows === 0 &&
       status.observed_team_rows === 0 &&
       status.expected_skater_rows === 0 &&
@@ -498,6 +501,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         succeeded: 0,
         failed: 0,
         failedGameIds: [],
+        nonRealizedGameIds: [],
       });
     }
 
@@ -510,6 +514,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     let failureCount = 0;
     let attemptedCount = 0;
     const failedGameIds: number[] = [];
+    const nonRealizedGameIds: number[] = [];
     const failures: Array<
       | TransactionalGameStatsFailureDetails
       | GameStatsCompletenessFailureDetails
@@ -532,15 +537,34 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         console.log(`Successfully updated stats for game ${gameId}.`);
         successCount++;
       } catch (e: any) {
+        let terminalError = e;
+        try {
+          const receipt = await tryFinalizeScheduleNotRealizedGameStats({
+            supabase,
+            gameId,
+            landingError: e,
+          });
+          if (receipt) {
+            nonRealizedGameIds.push(receipt.gameId);
+            successCount++;
+            console.warn(
+              `Game ${gameId} was terminalized as schedule_not_realized.`,
+            );
+            continue;
+          }
+        } catch (finalizationError) {
+          terminalError = finalizationError;
+        }
+
         failureCount++;
         failedGameIds.push(gameId);
-        const failure = getGameStatsCompletenessFailureDetails(e) ??
-          getTransactionalGameStatsFailureDetails(e) ??
-          getStatsPreWriteQuarantineFailureDetails(e) ?? {
+        const failure = getGameStatsCompletenessFailureDetails(terminalError) ??
+          getTransactionalGameStatsFailureDetails(terminalError) ??
+          getStatsPreWriteQuarantineFailureDetails(terminalError) ?? {
             kind: "stats_update_failure",
             code: "STATS_UPDATE_FAILED",
             gameId,
-            message: sanitizeCronDiagnostic(e),
+            message: sanitizeCronDiagnostic(terminalError),
           };
         failures.push(failure);
         console.error("Season stats game update failed.", {
@@ -588,6 +612,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       failed: failureCount,
       failedRows,
       failedGameIds: failedGameIds,
+      nonRealizedGameIds,
       deferredGameIds,
       failures,
     };

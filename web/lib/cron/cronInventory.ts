@@ -27,12 +27,27 @@ export type CronInventoryJob = {
   notes: string[];
 };
 
+export const CRON_SCHEDULE_RELATIVE_PATH =
+  "tasks/TASKS/cron-operations/cron-schedule.md";
+
+export function getCronScheduleCandidates(
+  cwd: string = process.cwd(),
+): string[] {
+  return Array.from(
+    new Set([
+      path.resolve(cwd, CRON_SCHEDULE_RELATIVE_PATH),
+      path.resolve(cwd, "..", CRON_SCHEDULE_RELATIVE_PATH),
+    ]),
+  );
+}
+
 const JSON_JOB_ROUTE_ALIASES: Record<string, string> = {
   "update-games-job": "/api/v1/db/update-games",
   "update-teams-job": "/api/v1/db/update-teams",
   "update-players-job": "/api/v1/db/update-players",
   "update-line-combinations-all": "/api/v1/db/update-line-combinations",
-  "update-lineup-deployment-tallies": "/api/v1/db/update-lineup-deployment-tallies",
+  "update-lineup-deployment-tallies":
+    "/api/v1/db/update-lineup-deployment-tallies",
   "update-player-trend-metrics": "/api/v1/db/update-player-trend-metrics",
   "update-power-play-combinations": "/api/v1/db/update-power-play-combinations",
   "update-rolling-player-averages": "/api/v1/db/update-rolling-player-averages",
@@ -41,7 +56,7 @@ const JSON_JOB_ROUTE_ALIASES: Record<string, string> = {
   "build-forge-derived-v2": "/api/v1/db/build-projection-derived-v2",
   "run-forge-projection-v2": "/api/v1/db/run-projection-v2",
   "run-projection-accuracy": "/api/v1/db/run-projection-accuracy",
-  "daily-cron-report": "/api/v1/db/cron-report"
+  "daily-cron-report": "/api/v1/db/cron-report",
 };
 
 function truncateText(value: string, maxLen = 180): string {
@@ -57,7 +72,7 @@ function classifyExecutionShape(args: {
     (note) =>
       note.includes("404 not found") ||
       note.includes("not working") ||
-      note.includes("broken")
+      note.includes("broken"),
   );
 
   if (hasBrokenNote) {
@@ -75,9 +90,10 @@ function classifyExecutionShape(args: {
   return "wrapper-dependent";
 }
 
-export function parseUrlPieces(
-  rawUrl: string | null
-): { route: string | null; routePath: string | null } {
+export function parseUrlPieces(rawUrl: string | null): {
+  route: string | null;
+  routePath: string | null;
+} {
   if (!rawUrl) {
     return { route: null, routePath: null };
   }
@@ -86,12 +102,12 @@ export function parseUrlPieces(
     const parsed = new URL(rawUrl);
     return {
       route: `${parsed.pathname}${parsed.search}`,
-      routePath: parsed.pathname
+      routePath: parsed.pathname,
     };
   } catch {
     return {
       route: rawUrl,
-      routePath: rawUrl.split("?")[0] ?? rawUrl
+      routePath: rawUrl.split("?")[0] ?? rawUrl,
     };
   }
 }
@@ -109,7 +125,7 @@ export function parseCronInvocation(sqlText: string | null): {
       url: null,
       route: null,
       routePath: null,
-      sqlText: null
+      sqlText: null,
     };
   }
 
@@ -130,7 +146,7 @@ export function parseCronInvocation(sqlText: string | null): {
             .replace(/\s+/g, " ")
             .trim()
             .replace(/^'(.*)'$/, "$1"),
-          180
+          180,
         )
       : null;
 
@@ -139,13 +155,14 @@ export function parseCronInvocation(sqlText: string | null): {
     url,
     route,
     routePath,
-    sqlText: normalizedSqlText
+    sqlText: normalizedSqlText,
   };
 }
 
-export function parseScheduleTimeParts(
-  cronExpression: string
-): { minute: number | null; hour: number | null } {
+export function parseScheduleTimeParts(cronExpression: string): {
+  minute: number | null;
+  hour: number | null;
+} {
   const parts = cronExpression.trim().split(/\s+/);
   if (parts.length < 2) {
     return { minute: null, hour: null };
@@ -156,7 +173,7 @@ export function parseScheduleTimeParts(
 
   return {
     minute: Number.isInteger(minute) ? minute : null,
-    hour: Number.isInteger(hour) ? hour : null
+    hour: Number.isInteger(hour) ? hour : null,
   };
 }
 
@@ -182,45 +199,51 @@ export function normalizeCronScheduleMarkdown(markdown: string): string {
     .join("\n");
 }
 
-export function parseCronInventoryFromMarkdown(markdown: string): CronInventoryJob[] {
+export function parseCronInventoryFromMarkdown(
+  markdown: string,
+): CronInventoryJob[] {
   const normalized = normalizeCronScheduleMarkdown(markdown);
   const scheduleRegex =
     /((?:[^\S\r\n]*[A-Z][^\n]*\n)*)[^\S\r\n]*SELECT\s+cron\.schedule\(\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*([\s\S]*?)\);\s*/gi;
 
-  const sqlJobs = Array.from(normalized.matchAll(scheduleRegex)).map((match, index) => {
-    const noteBlock = match[1] ?? "";
-    const notes = noteBlock
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => Boolean(line));
-    const name = match[2]?.trim() ?? "";
-    const cronExpression = match[3]?.trim() ?? "";
-    const body = match[4]?.trim() ?? "";
-    const invocation = parseCronInvocation(body);
-    const { hour, minute } = parseScheduleTimeParts(cronExpression);
+  const sqlJobs = Array.from(normalized.matchAll(scheduleRegex)).map(
+    (match, index) => {
+      const noteBlock = match[1] ?? "";
+      const notes = noteBlock
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => Boolean(line));
+      const name = match[2]?.trim() ?? "";
+      const cronExpression = match[3]?.trim() ?? "";
+      const body = match[4]?.trim() ?? "";
+      const invocation = parseCronInvocation(body);
+      const { hour, minute } = parseScheduleTimeParts(cronExpression);
 
-    return {
-      key: `${name}__${cronExpression}__${invocation.method}__${index}`,
-      name,
-      cronExpression,
-      scheduleTimeDisplay: formatScheduleTime(cronExpression),
-      utcHour: hour,
-      utcMinute: minute,
-      slotIndex:
-        hour != null && minute != null ? hour * 60 + minute : Number.MAX_SAFE_INTEGER,
-      sortOrder: index,
-      method: invocation.method,
-      executionShape: classifyExecutionShape({
+      return {
+        key: `${name}__${cronExpression}__${invocation.method}__${index}`,
+        name,
+        cronExpression,
+        scheduleTimeDisplay: formatScheduleTime(cronExpression),
+        utcHour: hour,
+        utcMinute: minute,
+        slotIndex:
+          hour != null && minute != null
+            ? hour * 60 + minute
+            : Number.MAX_SAFE_INTEGER,
+        sortOrder: index,
         method: invocation.method,
-        notes
-      }),
-      url: invocation.url,
-      route: invocation.route,
-      routePath: invocation.routePath,
-      sqlText: invocation.sqlText,
-      notes
-    } satisfies CronInventoryJob;
-  });
+        executionShape: classifyExecutionShape({
+          method: invocation.method,
+          notes,
+        }),
+        url: invocation.url,
+        route: invocation.route,
+        routePath: invocation.routePath,
+        sqlText: invocation.sqlText,
+        notes,
+      } satisfies CronInventoryJob;
+    },
+  );
 
   const jsonJobs = parseCronInventoryJsonJobs(markdown, sqlJobs);
   const jobs = jsonJobs.length > 0 ? jsonJobs : sqlJobs;
@@ -236,7 +259,7 @@ export function parseCronInventoryFromMarkdown(markdown: string): CronInventoryJ
 
 function parseCronInventoryJsonJobs(
   markdown: string,
-  sqlJobs: CronInventoryJob[]
+  sqlJobs: CronInventoryJob[],
 ): CronInventoryJob[] {
   const jsonMatch = markdown.match(/```json\s*([\s\S]*?)```/i);
   if (!jsonMatch?.[1]) return [];
@@ -262,11 +285,13 @@ function parseCronInventoryJsonJobs(
     .map((row, index) => {
       const definition =
         sqlJobs.find(
-          (job) => job.name === row.jobname && job.cronExpression === row.schedule
+          (job) =>
+            job.name === row.jobname && job.cronExpression === row.schedule,
         ) ??
         sqlJobs.find((job) => job.name === row.jobname) ??
         null;
-      const rawRoute = row.route ?? row.url ?? JSON_JOB_ROUTE_ALIASES[row.jobname!] ?? null;
+      const rawRoute =
+        row.route ?? row.url ?? JSON_JOB_ROUTE_ALIASES[row.jobname!] ?? null;
       const parsedRoute = parseUrlPieces(rawRoute);
       const routePath = definition?.routePath ?? parsedRoute.routePath;
       const route = definition?.route ?? parsedRoute.route;
@@ -277,14 +302,18 @@ function parseCronInventoryJsonJobs(
           : "UNKNOWN");
       const { hour, minute } = parseScheduleTimeParts(row.schedule!);
       return {
-        key: definition?.key ?? `${row.jobname}__${row.schedule}__JSON__${index}`,
+        key:
+          definition?.key ?? `${row.jobname}__${row.schedule}__JSON__${index}`,
         name: row.jobname!,
         cronExpression: row.schedule!,
-        scheduleTimeDisplay: row.run_time_utc ?? formatScheduleTime(row.schedule!),
+        scheduleTimeDisplay:
+          row.run_time_utc ?? formatScheduleTime(row.schedule!),
         utcHour: hour,
         utcMinute: minute,
         slotIndex:
-          hour != null && minute != null ? hour * 60 + minute : Number.MAX_SAFE_INTEGER,
+          hour != null && minute != null
+            ? hour * 60 + minute
+            : Number.MAX_SAFE_INTEGER,
         sortOrder: index,
         method,
         executionShape:
@@ -299,15 +328,13 @@ function parseCronInventoryJsonJobs(
         route,
         routePath,
         sqlText: definition?.sqlText ?? null,
-        notes: ["Parsed from ALL CRON JOBS JSON inventory."]
+        notes: ["Parsed from ALL CRON JOBS JSON inventory."],
       } satisfies CronInventoryJob;
     });
 }
 
 export async function readCronScheduleMarkdown(): Promise<string> {
-  const candidates = [
-    path.resolve(process.cwd(), "tasks/TASKS/cron-operations/cron-schedule.md")
-  ];
+  const candidates = getCronScheduleCandidates();
 
   for (const candidate of candidates) {
     try {
@@ -317,7 +344,9 @@ export async function readCronScheduleMarkdown(): Promise<string> {
     }
   }
 
-  throw new Error("Could not locate rules/cron-schedule.md");
+  throw new Error(
+    `Could not locate ${CRON_SCHEDULE_RELATIVE_PATH} from the current or parent runtime root`,
+  );
 }
 
 export async function loadCronInventory(): Promise<CronInventoryJob[]> {

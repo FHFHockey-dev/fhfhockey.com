@@ -154,11 +154,15 @@ export function withCronJobAudit(
     const jobName = opts?.jobName ?? defaultJobName(req);
 
     let capturedBody: unknown = null;
+    let pendingResponse:
+      | { kind: "json" | "send"; body: unknown }
+      | null = null;
 
     const originalJson = res.json.bind(res);
     res.json = ((body: any) => {
       capturedBody = body;
-      return originalJson(body);
+      pendingResponse = { kind: "json", body };
+      return res;
     }) as any;
 
     const originalSend =
@@ -166,7 +170,8 @@ export function withCronJobAudit(
     if (originalSend) {
       res.send = ((body: any) => {
         if (capturedBody == null) capturedBody = body;
-        return originalSend(body);
+        pendingResponse = { kind: "send", body };
+        return res;
       }) as any;
     }
 
@@ -223,22 +228,37 @@ export function withCronJobAudit(
     };
 
     try {
-      if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        return;
-      }
-      const { error: auditInsertError } = await supabase
-        .from("cron_job_audit")
-        .insert(row as any);
-      if (auditInsertError) {
+      try {
+        const { error: auditInsertError } = await supabase
+          .from("cron_job_audit")
+          .insert(row as any);
+        if (auditInsertError) {
+          console.error(
+            "cron_job_audit insert failed",
+            auditInsertError.message ??
+              safeJson(auditInsertError, 2000) ??
+              "Unknown audit insert error",
+          );
+        }
+      } catch (e) {
         console.error(
           "cron_job_audit insert failed",
-          auditInsertError.message ??
-            safeJson(auditInsertError, 2000) ??
-            "Unknown audit insert error",
+          (e as any)?.message ?? e,
         );
       }
-    } catch (e) {
-      console.error("cron_job_audit insert failed", (e as any)?.message ?? e);
+    } finally {
+      const responseToFlush = pendingResponse as
+        | { kind: "json" | "send"; body: unknown }
+        | null;
+      res.json = originalJson as any;
+      if (originalSend) {
+        res.send = originalSend as any;
+      }
+      if (responseToFlush?.kind === "json") {
+        originalJson(responseToFlush.body);
+      } else if (responseToFlush?.kind === "send" && originalSend) {
+        originalSend(responseToFlush.body);
+      }
     }
   };
 }

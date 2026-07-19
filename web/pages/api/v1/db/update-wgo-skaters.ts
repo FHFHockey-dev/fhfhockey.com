@@ -70,6 +70,7 @@
 
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server";
+import type { Database } from "lib/supabase/database-generated.types";
 import Fetch from "lib/cors-fetch";
 import {
   format,
@@ -117,6 +118,11 @@ type SkaterDbRecord = {
   player_name: string;
   date: string;
 };
+
+type RegularSeasonSkaterInsert =
+  Database["public"]["Tables"]["wgo_skater_stats"]["Insert"];
+type PlayoffSkaterInsert =
+  Database["public"]["Tables"]["wgo_skater_stats_playoffs"]["Insert"];
 
 type AllSkaterStats = {
   skaterStats: WGOSummarySkaterStat[];
@@ -834,9 +840,21 @@ async function processAndUpsertGameTypeData(
     for (let i = 0; i < recordsToUpsert.length; i += CHUNK_SIZE) {
       const chunk = recordsToUpsert.slice(i, i + CHUNK_SIZE);
 
-      const { error } = await supabase.from(tableName).upsert(chunk, {
-        onConflict: "player_id, date",
-      });
+      // Narrow the dynamic table before calling the generated Supabase overload.
+      // Both destinations consume the same NHL mapper, while their generated
+      // insert types differ for a few database-coerced time fields.
+      const { error } =
+        tableName === "wgo_skater_stats"
+          ? await supabase
+              .from("wgo_skater_stats")
+              .upsert(chunk as RegularSeasonSkaterInsert[], {
+                onConflict: "player_id, date",
+              })
+          : await supabase
+              .from("wgo_skater_stats_playoffs")
+              .upsert(chunk as PlayoffSkaterInsert[], {
+                onConflict: "player_id, date",
+              });
 
       if (error) {
         console.error(

@@ -56,7 +56,14 @@ export function useDraftPlayerActions(rankingId: string, enabled = true) {
           body: JSON.stringify({ ...input, rankingId }),
         },
       ),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey }),
+        queryClient.invalidateQueries({
+          queryKey: ["draft-ranker", "discovery", rankingId],
+        }),
+      ]);
+    },
   });
 
   return { state, action };

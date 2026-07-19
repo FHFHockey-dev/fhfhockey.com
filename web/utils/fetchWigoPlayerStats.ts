@@ -517,12 +517,20 @@ export async function fetchPlayerGameLogForStat(
         `Workspaceing game log for ${statLabel} (Player ${playerId}, Season ${seasonId}) from ${table}.${statColumn} using date='${dateColumn}' and season='${seasonColumn}'` // Log which columns are used
       );
 
-      const { data, error } = await supabase
-        .from(table)
-        .select(`${dateColumn}, ${statColumn}`)
-        .eq("player_id", playerId)
-        .eq(seasonColumn, seasonId) // Use correct season column
-        .order(dateColumn, { ascending: true });
+      const { data, error } =
+        table === "wgo_skater_stats"
+          ? await supabase
+              .from("wgo_skater_stats")
+              .select(`date, ${statColumn}`)
+              .eq("player_id", playerId)
+              .eq("season_id", seasonId)
+              .order("date", { ascending: true })
+          : await supabase
+              .from(table)
+              .select(`date_scraped, ${statColumn}`)
+              .eq("player_id", playerId)
+              .eq("season", seasonId)
+              .order("date_scraped", { ascending: true });
 
       if (error) throw error;
 

@@ -51,5 +51,6 @@ describe("NewsCard", () => {
     );
     expect(sourceLink.getAttribute("target")).toBe("_blank");
     expect(screen.queryByText("Source")).toBeNull();
+    expect(screen.getByText("7/14/2026, 2:19:20 PM")).toBeTruthy();
   });
 });

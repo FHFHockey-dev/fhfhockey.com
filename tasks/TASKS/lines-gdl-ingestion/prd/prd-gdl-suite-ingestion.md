@@ -4,7 +4,7 @@
 
 The GDL Suite initiative expands FHFH's tweet-derived lineup ingestion beyond the existing Complete Hockey News (`CCC`) path to three GameDay accounts: `GameDayGoalies`, `GameDayLines`, and `GameDayNewsNHL`. It must preserve every source event for audit while presenting and writing the earliest valid source for a team/date/game/signal bucket.
 
-The generic raw-event, receiver, parser, and snapshot foundation is already implemented through `line_source_ifttt_events`, `line_source_snapshots`, the source-specific IFTTT routes, and `/api/v1/db/update-line-sources`. Remaining work generalizes `/twitterEmbeds`, integrates safe winners into canonical `lineCombinations`, verifies unresolved-name review, improves parser coverage from harvested evidence, adds roster-move signals and operational backfill support, and validates the complete rollout.
+The generic raw-event, receiver, parser, snapshot, first-arrival display, canonical `lineCombinations`, parser-coverage, roster-move, and bounded-backfill foundations are implemented. The authoritative schema/provenance rollout and a Gamecenter consumer probe are production-verified. Remaining work is the explicit production/provider checkpoint: unresolved-name email proof, three IFTTT applets, and one controlled event per account through the bounded end-to-end evidence flow.
 
 This PRD was derived from `tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md`, the completed Lines/CCC initiative, and current repository implementation because the initiative previously had no dedicated PRD.
 
@@ -55,6 +55,7 @@ This PRD was derived from `tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-i
 25. Operator documentation must include IFTTT configuration, pending/accepted/rejected/winner queries, `lineCombinations` verification, retry/backfill behavior, and the cron safety-net recommendation.
 26. End-to-end validation must cover source receivers, parser/classification cases, duplicates, quotes, rejected/ambiguous rows, schema indexes/constraints, first-arrival display, unresolved-name handling, and `lineCombinations` output.
 27. Production/provider actions—including IFTTT applet creation, live controlled events, deployed secrets, SQL application, or production email verification—must use the super-goal pause/manual-action protocol.
+28. The external IFTTT receiver must never return or log a raw downstream processor response body or exception message; failed `process=true` follow-up may expose only a stable error classification and bounded HTTP status while leaving the raw event retryable.
 
 ## Non-Goals (Out of Scope)
 
@@ -99,4 +100,4 @@ This PRD was derived from `tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-i
 
 1. Whether high-confidence goalie-only snapshots should directly update the existing `goalies` field or remain a separate canonical starter signal must be resolved from current writer/consumer evidence before implementation.
 2. Whether non-winning snapshots appear inline or only on a debug/detail surface may be chosen during `/twitterEmbeds` implementation as long as provenance remains accessible.
-3. Live IFTTT applet, deployed-secret, production SQL, and email verification remain manual checkpoints and do not authorize exposing credentials in task artifacts or chat.
+3. Live IFTTT applet, deployed-secret, controlled-event, and email verification remain manual checkpoints and do not authorize exposing credentials in task artifacts or chat. Production SQL/provenance rollout is complete.

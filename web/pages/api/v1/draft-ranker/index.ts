@@ -2,11 +2,13 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { requireApiUser } from "lib/api/requireApiUser";
 import {
+  assertDraftRankerRolloutAccess,
   DraftRankerApiError,
   draftRankerMethodNotAllowed,
   draftRankerRequestId,
   handleDraftRankerError,
   isDraftRankerEnabled,
+  isDraftRankerDiscoveryEnabled,
   isDraftRankerHomepageEnabled,
   sendDraftRankerData,
   sendDraftRankerError,
@@ -40,11 +42,7 @@ export default async function handler(
       sendDraftRankerError(
         res,
         requestId,
-        new DraftRankerApiError(
-          401,
-          "authentication_required",
-          message,
-        ),
+        new DraftRankerApiError(401, "authentication_required", message),
       );
     },
   });
@@ -53,9 +51,11 @@ export default async function handler(
   }
 
   try {
+    assertDraftRankerRolloutAccess(user.id);
     const bootstrap = await loadDraftRankerBootstrap(user.id);
     return sendDraftRankerData(res, requestId, {
       ...bootstrap,
+      discoveryEnabled: isDraftRankerDiscoveryEnabled(),
       pairwiseEnabled: isDraftRankerHomepageEnabled(),
     });
   } catch (error) {

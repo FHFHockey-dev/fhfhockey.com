@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { requireApiUser } from "lib/api/requireApiUser";
 import {
+  assertDraftRankerRolloutAccess,
   DraftRankerApiError,
   draftRankerMethodNotAllowed,
   draftRankerRequestId,
@@ -45,11 +46,15 @@ export default async function handler(
   if (!user) return;
 
   try {
+    assertDraftRankerRolloutAccess(user.id);
     const input = parseDraftRankerInput(draftPairQueueSchema, req.body);
     return sendDraftRankerData(
       res,
       requestId,
-      await issueNextDraftPairPrompt(user.id, input),
+      await issueNextDraftPairPrompt(user.id, {
+        ...input,
+        mode: input.mode ?? "improve_ranking",
+      }),
     );
   } catch (error) {
     return handleDraftRankerError(res, requestId, error);

@@ -5,8 +5,12 @@ const { issueMock, requireApiUserMock } = vi.hoisted(() => ({
   requireApiUserMock: vi.fn(),
 }));
 
-vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: requireApiUserMock }));
-vi.mock("lib/draft-ranker/server", () => ({ issueNextDraftPairPrompt: issueMock }));
+vi.mock("lib/api/requireApiUser", () => ({
+  requireApiUser: requireApiUserMock,
+}));
+vi.mock("lib/draft-ranker/server", () => ({
+  issueNextDraftPairPrompt: issueMock,
+}));
 
 import handler from "../../../../../../pages/api/v1/draft-ranker/pairwise/queue";
 
@@ -15,9 +19,17 @@ function response() {
     statusCode: 200,
     body: null as any,
     headers: {} as Record<string, string>,
-    status(code: number) { this.statusCode = code; return this; },
-    setHeader(name: string, value: string) { this.headers[name] = value; },
-    json(payload: unknown) { this.body = payload; return this; },
+    status(code: number) {
+      this.statusCode = code;
+      return this;
+    },
+    setHeader(name: string, value: string) {
+      this.headers[name] = value;
+    },
+    json(payload: unknown) {
+      this.body = payload;
+      return this;
+    },
   };
 }
 
@@ -28,6 +40,7 @@ describe("/api/v1/draft-ranker/pairwise/queue", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.DRAFT_RANKER_ENABLED = "true";
+    process.env.DRAFT_RANKER_ROLLOUT_STAGE = "authenticated";
     process.env.DRAFT_RANKER_HOMEPAGE_ENABLED = "true";
     requireApiUserMock.mockResolvedValue({ id: "owner-1" });
     issueMock.mockResolvedValue({ prompt: { promptId: "prompt-1" } });
@@ -36,7 +49,9 @@ describe("/api/v1/draft-ranker/pairwise/queue", () => {
   afterEach(() => {
     if (oldRanker === undefined) delete process.env.DRAFT_RANKER_ENABLED;
     else process.env.DRAFT_RANKER_ENABLED = oldRanker;
-    if (oldHomepage === undefined) delete process.env.DRAFT_RANKER_HOMEPAGE_ENABLED;
+    delete process.env.DRAFT_RANKER_ROLLOUT_STAGE;
+    if (oldHomepage === undefined)
+      delete process.env.DRAFT_RANKER_HOMEPAGE_ENABLED;
     else process.env.DRAFT_RANKER_HOMEPAGE_ENABLED = oldHomepage;
   });
 
@@ -64,14 +79,24 @@ describe("/api/v1/draft-ranker/pairwise/queue", () => {
     };
     const selected = response();
     await handler(
-      { method: "POST", headers: {}, query: {}, body: { ...common, playerAId: 1 } } as any,
+      {
+        method: "POST",
+        headers: {},
+        query: {},
+        body: { ...common, playerAId: 1 },
+      } as any,
       selected as any,
     );
     expect(selected.statusCode).toBe(400);
 
     const mode = response();
     await handler(
-      { method: "POST", headers: {}, query: {}, body: { ...common, mode: "random" } } as any,
+      {
+        method: "POST",
+        headers: {},
+        query: {},
+        body: { ...common, mode: "random" },
+      } as any,
       mode as any,
     );
     expect(mode.statusCode).toBe(400);
@@ -80,7 +105,10 @@ describe("/api/v1/draft-ranker/pairwise/queue", () => {
   it("fails closed unless both server flags are enabled", async () => {
     delete process.env.DRAFT_RANKER_HOMEPAGE_ENABLED;
     const res = response();
-    await handler({ method: "POST", headers: {}, query: {}, body: {} } as any, res as any);
+    await handler(
+      { method: "POST", headers: {}, query: {}, body: {} } as any,
+      res as any,
+    );
     expect(res.statusCode).toBe(503);
     expect(requireApiUserMock).not.toHaveBeenCalled();
   });

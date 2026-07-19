@@ -5,13 +5,13 @@ const {
   cronJobAuditSelectMock,
   cronJobAuditInsertMock,
   resendSendMock,
-  readFileMock
+  readFileMock,
 } = vi.hoisted(() => ({
   cronJobReportSelectMock: vi.fn(),
   cronJobAuditSelectMock: vi.fn(),
   cronJobAuditInsertMock: vi.fn(),
   resendSendMock: vi.fn(),
-  readFileMock: vi.fn()
+  readFileMock: vi.fn(),
 }));
 
 vi.mock("@supabase/supabase-js", () => ({
@@ -19,39 +19,39 @@ vi.mock("@supabase/supabase-js", () => ({
     from: vi.fn((table: string) => {
       if (table === "cron_job_report") {
         return {
-          select: cronJobReportSelectMock
+          select: cronJobReportSelectMock,
         };
       }
       if (table === "cron_job_audit") {
         return {
-          select: cronJobAuditSelectMock
+          select: cronJobAuditSelectMock,
         };
       }
       throw new Error(`Unexpected table ${table}`);
-    })
-  }))
+    }),
+  })),
 }));
 
 vi.mock("lib/supabase/server", () => ({
   default: {
     from: vi.fn(() => ({
-      insert: cronJobAuditInsertMock
-    }))
-  }
+      insert: cronJobAuditInsertMock,
+    })),
+  },
 }));
 
 vi.mock("resend", () => ({
   Resend: vi.fn(() => ({
     emails: {
-      send: resendSendMock
-    }
-  }))
+      send: resendSendMock,
+    },
+  })),
 }));
 
 vi.mock("fs/promises", () => ({
   default: {
-    readFile: readFileMock
-  }
+    readFile: readFileMock,
+  },
 }));
 
 import handler from "../../../../../pages/api/v1/db/cron-report";
@@ -69,7 +69,7 @@ function createMockRes() {
       this.body = payload;
       this.headersSent = true;
       return this;
-    }
+    },
   };
 
   return res;
@@ -97,12 +97,12 @@ describe("/api/v1/db/cron-report", () => {
               status: "success",
               return_message: "UPDATE 42",
               sql_text:
-                "select net.http_post(url:='https://fhfhockey.com/api/v1/db/run-projection-v2');"
-            }
+                "select net.http_post(url:='https://fhfhockey.com/api/v1/db/run-projection-v2');",
+            },
           ],
-          error: null
-        })
-      })
+          error: null,
+        }),
+      }),
     });
 
     cronJobAuditSelectMock.mockReturnValue({
@@ -124,15 +124,15 @@ describe("/api/v1/db/cron-report", () => {
                     startedAt: "2026-03-20T12:00:00.000Z",
                     endedAt: "2026-03-20T12:05:01.000Z",
                     durationMs: 301_000,
-                    timer: "05:01"
-                  }
-                })
-              }
-            }
+                    timer: "05:01",
+                  },
+                }),
+              },
+            },
           ],
-          error: null
-        })
-      })
+          error: null,
+        }),
+      }),
     });
 
     readFileMock.mockResolvedValue(`
@@ -144,7 +144,10 @@ SELECT cron.schedule(
 `);
 
     cronJobAuditInsertMock.mockResolvedValue({});
-    resendSendMock.mockResolvedValue({ data: { id: "email_123" }, error: null });
+    resendSendMock.mockResolvedValue({
+      data: { id: "email_123" },
+      error: null,
+    });
   });
 
   it("returns enriched warning and benchmark payloads for slow jobs with audit timing", async () => {
@@ -157,16 +160,16 @@ SELECT cron.schedule(
     expect(resendSendMock).toHaveBeenCalledTimes(1);
     expect(resendSendMock.mock.calls[0]?.[0]).toMatchObject({
       from: "audit-report@fhfhockey.com",
-      subject: expect.stringContaining("Daily Cron Report")
+      subject: expect.stringContaining("Daily Cron Report"),
     });
     expect(res.body).toMatchObject({
       success: true,
       jobRunDetailsEmailResult: expect.objectContaining({
-        suppressed: true
+        suppressed: true,
       }),
       counts: expect.objectContaining({
         warnSlow: 1,
-        jobsOkLast: 1
+        jobsOkLast: 1,
       }),
       warnings: {
         slowMsThreshold: 270_000,
@@ -175,20 +178,20 @@ SELECT cron.schedule(
           expect.objectContaining({
             displayName: "run-forge-projection-v2",
             timer: "05:01",
-            denotation: "OPTIMIZE"
-          })
+            denotation: "OPTIMIZE",
+          }),
         ],
-        missingObservationJobs: []
+        missingObservationJobs: [],
       },
       benchmark: {
         annotatedJobCount: 1,
         bottleneckJobs: [
           expect.objectContaining({
-            displayName: "run-forge-projection-v2"
-          })
+            displayName: "run-forge-projection-v2",
+          }),
         ],
-        missingObservationJobs: []
-      }
+        missingObservationJobs: [],
+      },
     });
   });
 
@@ -206,21 +209,21 @@ SELECT cron.schedule(
               status: "success",
               return_message: "1 row",
               sql_text:
-                "select net.http_get(url:='https://fhfhockey.com/api/v1/db/cron-report');"
-            }
+                "select net.http_get(url:='https://fhfhockey.com/api/v1/db/cron-report');",
+            },
           ],
-          error: null
-        })
-      })
+          error: null,
+        }),
+      }),
     });
 
     cronJobAuditSelectMock.mockReturnValue({
       gte: vi.fn().mockReturnValue({
         order: vi.fn().mockResolvedValue({
           data: [],
-          error: null
-        })
-      })
+          error: null,
+        }),
+      }),
     });
 
     readFileMock.mockResolvedValue(`
@@ -267,8 +270,8 @@ SELECT cron.schedule(
       counts: expect.objectContaining({
         scheduledJobs: 1,
         jobsMissingLast: 0,
-        scheduledJobsWithActivity: 1
-      })
+        scheduledJobsWithActivity: 1,
+      }),
     });
   });
 
@@ -284,12 +287,48 @@ SELECT cron.schedule(
       dryRun: true,
       preview: "json",
       auditEmailResult: expect.objectContaining({
-        dryRun: true
+        dryRun: true,
       }),
       jobRunDetailsEmailResult: expect.objectContaining({
         suppressed: true,
-        dryRun: true
-      })
+        dryRun: true,
+      }),
+    });
+    expect(resendSendMock).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the packaged cron schedule inventory is unavailable", async () => {
+    readFileMock.mockRejectedValue(new Error("ENOENT"));
+
+    const req: any = { method: "GET", query: { preview: "json" } };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({
+      success: false,
+      code: "CRON_SCHEDULE_INVENTORY_UNAVAILABLE",
+      message:
+        "Cron schedule inventory is unavailable; report generation failed closed.",
+    });
+    expect(resendSendMock).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the packaged cron schedule inventory has no active jobs", async () => {
+    readFileMock.mockResolvedValue("# No active jobs");
+
+    const req: any = { method: "GET", query: { preview: "json" } };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({
+      success: false,
+      code: "CRON_SCHEDULE_INVENTORY_EMPTY",
+      message:
+        "Cron schedule inventory contains zero active jobs; report generation failed closed.",
     });
     expect(resendSendMock).not.toHaveBeenCalled();
   });
@@ -308,12 +347,12 @@ SELECT cron.schedule(
               status: "success",
               return_message: "1 row",
               sql_text:
-                "select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-shifts?action=all');"
-            }
+                "select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-shifts?action=all');",
+            },
           ],
-          error: null
-        })
-      })
+          error: null,
+        }),
+      }),
     });
 
     cronJobAuditSelectMock.mockReturnValue({
@@ -330,13 +369,13 @@ SELECT cron.schedule(
                 url: "/api/v1/db/update-shifts?action=all",
                 statusCode: 200,
                 durationMs: 301000,
-                response: JSON.stringify({ success: true, rowsUpserted: 10 })
-              }
-            }
+                response: JSON.stringify({ success: true, rowsUpserted: 10 }),
+              },
+            },
           ],
-          error: null
-        })
-      })
+          error: null,
+        }),
+      }),
     });
 
     readFileMock.mockResolvedValue(`
@@ -364,11 +403,11 @@ SELECT cron.schedule(
     expect(res.body).toMatchObject({
       counts: expect.objectContaining({
         jobsOkLast: 1,
-        warnMissingAudit: 0
+        warnMissingAudit: 0,
       }),
       warnings: expect.objectContaining({
-        missingObservationJobs: []
-      })
+        missingObservationJobs: [],
+      }),
     });
   });
 
@@ -386,12 +425,12 @@ SELECT cron.schedule(
               status: "success",
               return_message: "1 row",
               sql_text:
-                "select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-nst-current-season');"
-            }
+                "select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-nst-current-season');",
+            },
           ],
-          error: null
-        })
-      })
+          error: null,
+        }),
+      }),
     });
 
     cronJobAuditSelectMock.mockReturnValue({
@@ -408,13 +447,13 @@ SELECT cron.schedule(
                 url: "/api/v1/db/cron-report?preview=json",
                 statusCode: 200,
                 durationMs: 100,
-                response: JSON.stringify({ success: true, dryRun: true })
-              }
-            }
+                response: JSON.stringify({ success: true, dryRun: true }),
+              },
+            },
           ],
-          error: null
-        })
-      })
+          error: null,
+        }),
+      }),
     });
 
     readFileMock.mockResolvedValue(`
@@ -442,11 +481,11 @@ SELECT cron.schedule(
     expect(res.body).toMatchObject({
       counts: expect.objectContaining({
         jobsOkLast: 1,
-        warnMissingAudit: 0
+        warnMissingAudit: 0,
       }),
       warnings: expect.objectContaining({
-        missingObservationJobs: []
-      })
+        missingObservationJobs: [],
+      }),
     });
   });
 });

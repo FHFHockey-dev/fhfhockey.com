@@ -1,3 +1,5 @@
+const path = require("path");
+
 const CMS_URL = process.env.CMS_URL;
 const isProd = process.env.NODE_ENV === "production";
 const preserveDistDir = process.env.PRESERVE_NEXT_DIST === "1";
@@ -5,8 +7,14 @@ const preserveDistDir = process.env.PRESERVE_NEXT_DIST === "1";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   cleanDistDir: !preserveDistDir,
+  outputFileTracingRoot: path.join(__dirname, ".."),
+  outputFileTracingIncludes: {
+    "/api/v1/db/cron-report": [
+      "../tasks/TASKS/cron-operations/cron-schedule.md",
+    ],
+  },
   eslint: {
-    ignoreDuringBuilds: true
+    ignoreDuringBuilds: true,
   },
   transpilePackages: ["@portabletext/react", "@portabletext/toolkit"],
   images: {
@@ -21,25 +29,25 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "images.unsplash.com"
+        hostname: "images.unsplash.com",
       },
       {
         protocol: "https",
-        hostname: "cdn.sanity.io"
+        hostname: "cdn.sanity.io",
       },
       {
         protocol: "https",
-        hostname: "nhl.bamcontent.com"
+        hostname: "nhl.bamcontent.com",
       },
       {
         protocol: "https",
-        hostname: "assets.nhle.com"
-      }
-    ]
+        hostname: "assets.nhle.com",
+      },
+    ],
   },
   reactStrictMode: true,
   watchOptions: {
-    pollIntervalMs: 1000
+    pollIntervalMs: 1000,
   },
   webpack(config, { dev }) {
     if (dev) {
@@ -49,37 +57,37 @@ const nextConfig = {
         "**/coverage/**",
         "**/storybook-static/**",
         "**/tasks/artifacts/**",
-        "**/package-lock 2.json"
+        "**/package-lock 2.json",
       ];
       const existingIgnored = config.watchOptions?.ignored;
       const existingIgnoredGlobs = Array.isArray(existingIgnored)
         ? existingIgnored.filter(
-            (entry) => typeof entry === "string" && entry.length > 0
+            (entry) => typeof entry === "string" && entry.length > 0,
           )
         : typeof existingIgnored === "string" && existingIgnored.length > 0
           ? [existingIgnored]
           : [];
       config.watchOptions = {
         ...config.watchOptions,
-        ignored: [...existingIgnoredGlobs, ...ignored]
+        ignored: [...existingIgnoredGlobs, ...ignored],
       };
     }
     return config;
   },
   // swcMinify: false, // Default is true, sticking to standard
   experimental: {
-    externalDir: true
+    externalDir: true,
   },
   async rewrites() {
     return [
       {
         source: "/studio",
-        destination: `${CMS_URL}/studio`
+        destination: `${CMS_URL}/studio`,
       },
       {
         source: "/studio/:path*",
-        destination: `${CMS_URL}/studio/:path*`
-      }
+        destination: `${CMS_URL}/studio/:path*`,
+      },
     ];
   },
   async redirects() {
@@ -88,10 +96,10 @@ const nextConfig = {
         source: "/game-grid",
         // not the url to change button label
         destination: "/game-grid/7-Day-Forecast",
-        permanent: false
-      }
+        permanent: false,
+      },
     ];
-  }
+  },
 };
 
 module.exports = nextConfig;

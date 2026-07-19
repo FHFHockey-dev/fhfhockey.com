@@ -1,8 +1,12 @@
+import path from "path";
+
 import { describe, expect, it } from "vitest";
 
 import {
   formatScheduleTime,
-  parseCronInventoryFromMarkdown
+  getCronScheduleCandidates,
+  parseCronInventoryFromMarkdown,
+  readCronScheduleMarkdown,
 } from "lib/cron/cronInventory";
 
 describe("cronInventory", () => {
@@ -39,29 +43,44 @@ describe("cronInventory", () => {
     expect(inventory.map((job) => job.name)).toEqual([
       "broken-job",
       "post-job",
-      "sql-refresh"
+      "sql-refresh",
     ]);
     expect(inventory[0]).toMatchObject({
       method: "GET",
       executionShape: "currently non-runnable in local/dev",
       route: "/api/v1/db/update-shifts?action=all",
-      routePath: "/api/v1/db/update-shifts"
+      routePath: "/api/v1/db/update-shifts",
     });
     expect(inventory[1]).toMatchObject({
       method: "POST",
       executionShape: "HTTP route",
-      route: "/api/v1/db/run-projection-v2"
+      route: "/api/v1/db/run-projection-v2",
     });
     expect(inventory[2]).toMatchObject({
       method: "SQL",
       executionShape: "SQL-only",
-      sqlText: "REFRESH MATERIALIZED VIEW player_stats_unified;"
+      sqlText: "REFRESH MATERIALIZED VIEW player_stats_unified;",
     });
   });
 
   it("formats cron slots as UTC HH:MM strings", () => {
     expect(formatScheduleTime("5 9 * * *")).toBe("09:05 UTC");
     expect(formatScheduleTime("invalid")).toBe("invalid");
+  });
+
+  it("resolves the canonical schedule from repository-root and web-root runtimes", () => {
+    const webRoot = path.resolve("/workspace/repository/web");
+
+    expect(getCronScheduleCandidates(webRoot)).toEqual([
+      path.resolve(webRoot, "tasks/TASKS/cron-operations/cron-schedule.md"),
+      path.resolve(webRoot, "../tasks/TASKS/cron-operations/cron-schedule.md"),
+    ]);
+  });
+
+  it("loads a non-empty canonical schedule from the current workspace runtime", async () => {
+    const markdown = await readCronScheduleMarkdown();
+
+    expect(parseCronInventoryFromMarkdown(markdown).length).toBeGreaterThan(0);
   });
 
   it("uses active JSON inventory rows when SQL blocks are absent", () => {
@@ -140,7 +159,7 @@ SELECT cron.schedule(
       method: "GET",
       executionShape: "HTTP route",
       route: "/api/v1/db/cron-report",
-      routePath: "/api/v1/db/cron-report"
+      routePath: "/api/v1/db/cron-report",
     });
   });
 });

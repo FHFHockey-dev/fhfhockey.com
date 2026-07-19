@@ -23,6 +23,39 @@ function players(): DraftPairQueuePlayer[] {
 }
 
 describe("deterministic Draft Ranker pair queue", () => {
+  it("starts a fresh personal queue with the first and second drafted players", () => {
+    const queue = buildDeterministicDraftPairQueue({
+      players: players(),
+      preferences: [],
+      recentPairKeys: new Set(),
+      mode: "improve_ranking",
+    });
+
+    expect(queue[0]).toMatchObject({
+      playerAId: 10_001,
+      playerBId: 10_002,
+      category: "personal",
+      reasonCode: "adjacent_unresolved",
+      reason: "Adjacent ranks 1 and 2 have no explicit comparison.",
+    });
+  });
+
+  it("continues top-down after the prior adjacent pair was reviewed", () => {
+    const queue = buildDeterministicDraftPairQueue({
+      players: players(),
+      preferences: [],
+      recentPairKeys: new Set([canonicalPairKey(10_001, 10_002)]),
+      mode: "improve_ranking",
+    });
+
+    expect(queue[0]).toMatchObject({
+      playerAId: 10_002,
+      playerBId: 10_003,
+      category: "personal",
+      reason: "Adjacent ranks 2 and 3 have no explicit comparison.",
+    });
+  });
+
   it("builds the approved twenty-slot launch mix deterministically", () => {
     const input = {
       players: players(),
@@ -36,13 +69,27 @@ describe("deterministic Draft Ranker pair queue", () => {
 
     expect(second).toEqual(first);
     expect(first).toHaveLength(20);
-    expect(first.filter((item) => item.category === "personal")).toHaveLength(10);
-    expect(first.filter((item) => item.category === "discovery")).toHaveLength(5);
-    expect(first.filter((item) => item.category === "validation")).toHaveLength(3);
-    expect(first.filter((item) => item.category === "editorial")).toHaveLength(2);
-    expect(new Set(first.map((item) => canonicalPairKey(item.playerAId, item.playerBId))).size).toBe(20);
+    expect(first.filter((item) => item.category === "personal")).toHaveLength(
+      10,
+    );
+    expect(first.filter((item) => item.category === "discovery")).toHaveLength(
+      5,
+    );
+    expect(first.filter((item) => item.category === "validation")).toHaveLength(
+      3,
+    );
+    expect(first.filter((item) => item.category === "editorial")).toHaveLength(
+      2,
+    );
+    expect(
+      new Set(
+        first.map((item) => canonicalPairKey(item.playerAId, item.playerBId)),
+      ).size,
+    ).toBe(20);
     for (let index = 3; index < first.length; index += 1) {
-      const groups = first.slice(index - 3, index + 1).map((item) => item.focusPosition);
+      const groups = first
+        .slice(index - 3, index + 1)
+        .map((item) => item.focusPosition);
       expect(
         groups[0] !== "mixed" && groups.every((group) => group === groups[0]),
       ).toBe(false);
@@ -66,7 +113,9 @@ describe("deterministic Draft Ranker pair queue", () => {
       recentPairKeys: new Set([blocked]),
       mode: "improve_ranking",
     });
-    expect(next.map((item) => canonicalPairKey(item.playerAId, item.playerBId))).not.toContain(blocked);
+    expect(
+      next.map((item) => canonicalPairKey(item.playerAId, item.playerBId)),
+    ).not.toContain(blocked);
   });
 
   it("allows explicit contradiction revalidation despite ordinary cooldown", () => {
@@ -76,7 +125,10 @@ describe("deterministic Draft Ranker pair queue", () => {
       preferredPlayerId: 10_101,
       establishedAt: "2026-07-14T00:00:00Z",
     };
-    const key = canonicalPairKey(preference.lowPlayerId, preference.highPlayerId);
+    const key = canonicalPairKey(
+      preference.lowPlayerId,
+      preference.highPlayerId,
+    );
     const queue = buildDeterministicDraftPairQueue({
       players: players(),
       preferences: [preference],
@@ -96,10 +148,16 @@ describe("deterministic Draft Ranker pair queue", () => {
 
   it("supports a bounded quick-five and goalie-only mode", () => {
     const quick = buildDeterministicDraftPairQueue({
-      players: players(), preferences: [], recentPairKeys: new Set(), mode: "quick_five",
+      players: players(),
+      preferences: [],
+      recentPairKeys: new Set(),
+      mode: "quick_five",
     });
     const goalies = buildDeterministicDraftPairQueue({
-      players: players(), preferences: [], recentPairKeys: new Set(), mode: "review_goalies",
+      players: players(),
+      preferences: [],
+      recentPairKeys: new Set(),
+      mode: "review_goalies",
     });
     expect(quick).toHaveLength(5);
     expect(goalies.length).toBeGreaterThan(0);
@@ -108,8 +166,13 @@ describe("deterministic Draft Ranker pair queue", () => {
 
   it("includes goalie and defense discovery when eligible", () => {
     const discovery = buildDeterministicDraftPairQueue({
-      players: players(), preferences: [], recentPairKeys: new Set(), mode: "find_sleepers",
-    }).filter((item) => item.category === "discovery" || item.category === "editorial");
+      players: players(),
+      preferences: [],
+      recentPairKeys: new Set(),
+      mode: "find_sleepers",
+    }).filter(
+      (item) => item.category === "discovery" || item.category === "editorial",
+    );
     expect(discovery.some((item) => item.focusPosition === "G")).toBe(true);
     expect(discovery.some((item) => item.focusPosition === "D")).toBe(true);
   });

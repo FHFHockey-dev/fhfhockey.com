@@ -5,7 +5,9 @@ const { requireApiUserMock, reorderDraftRankingMock } = vi.hoisted(() => ({
   reorderDraftRankingMock: vi.fn(),
 }));
 
-vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: requireApiUserMock }));
+vi.mock("lib/api/requireApiUser", () => ({
+  requireApiUser: requireApiUserMock,
+}));
 vi.mock("lib/draft-ranker/server", () => ({
   reorderDraftRanking: reorderDraftRankingMock,
 }));
@@ -46,6 +48,7 @@ describe("POST /api/v1/draft-ranker/reorder", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.DRAFT_RANKER_ENABLED = "true";
+    process.env.DRAFT_RANKER_ROLLOUT_STAGE = "authenticated";
     requireApiUserMock.mockResolvedValue({ id: "user-1" });
     reorderDraftRankingMock.mockResolvedValue({
       status: "completed",
@@ -59,6 +62,7 @@ describe("POST /api/v1/draft-ranker/reorder", () => {
   afterEach(() => {
     if (previousFlag === undefined) delete process.env.DRAFT_RANKER_ENABLED;
     else process.env.DRAFT_RANKER_ENABLED = previousFlag;
+    delete process.env.DRAFT_RANKER_ROLLOUT_STAGE;
   });
 
   it("uses the authenticated owner and returns the resulting version", async () => {

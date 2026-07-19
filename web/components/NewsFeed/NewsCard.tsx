@@ -42,11 +42,21 @@ type NewsCardProps = {
   onLineupGoalieSlotClick?: (slotIndex: number) => void;
 };
 
+const NEWS_TIMESTAMP_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/New_York",
+  year: "numeric",
+  month: "numeric",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  second: "2-digit",
+});
+
 function formatDate(value: string | null | undefined): string {
   if (!value) return "Draft";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString();
+  return NEWS_TIMESTAMP_FORMATTER.format(date);
 }
 
 function LineupSlot({

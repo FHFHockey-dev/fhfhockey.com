@@ -320,7 +320,8 @@ $desktop-header-height: 58px;
   height: auto;
   // Include the safe-area inset space in the min height so the nav hugs the bottom
   min-height: calc(60px + env(safe-area-inset-bottom, 0px));
-  width: 100%;
+  max-width: 100vw;
+  width: auto;
 
   // Extend the background past the bottom edge to cover iOS bottom bar gaps
   &::after {
@@ -358,6 +359,7 @@ $desktop-header-height: 58px;
   justify-content: space-around;
   align-items: center;
   max-width: 100%;
+  width: 100%;
   margin: 0 auto;
   padding: 6px 8px;
   // Ensure content clears the bottom safe area on modern iOS

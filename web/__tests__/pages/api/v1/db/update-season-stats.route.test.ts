@@ -20,7 +20,8 @@ vi.mock("../../../../../lib/NHL/server", () => ({
   getCurrentSeason: getCurrentSeasonMock,
 }));
 
-vi.mock("../../../../../lib/NHL/base", () => ({
+vi.mock("../../../../../lib/NHL/base", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../../../lib/NHL/base")>()),
   get: getMock,
 }));
 
@@ -34,6 +35,7 @@ vi.mock("../../../../../utils/adminOnlyMiddleware", () => ({
 
 import gameHandler from "../../../../../pages/api/v1/db/update-stats/[gameId]";
 import seasonHandler from "../../../../../pages/api/v1/db/update-season-stats";
+import { NhlApiHttpError } from "../../../../../lib/NHL/base";
 
 function createMockRes() {
   return {
@@ -189,7 +191,9 @@ function completeManifest(
   };
 }
 
-function quarantinedManifest(): Record<string, unknown> {
+function quarantinedManifest(
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
   return completeManifest({
     outcome: "quarantined",
     reason: "game_not_finished",
@@ -199,7 +203,12 @@ function quarantinedManifest(): Record<string, unknown> {
     observed_skater_rows: 0,
     expected_goalie_rows: 0,
     observed_goalie_rows: 0,
+    ...overrides,
   });
+}
+
+function nonRealizedManifest(): Record<string, unknown> {
+  return quarantinedManifest({ reason: "schedule_not_realized" });
 }
 
 function completeRpcReceipt(
@@ -224,6 +233,26 @@ function completeRpcReceipt(
   };
 }
 
+function nonRealizedRpcReceipt(
+  gameId: number,
+  overrides: Record<string, unknown> = {},
+) {
+  return {
+    game_id: gameId,
+    outcome: "quarantined",
+    reason: "schedule_not_realized",
+    contract_version: 1,
+    expected_team_rows: 0,
+    observed_team_rows: 0,
+    expected_skater_rows: 0,
+    observed_skater_rows: 0,
+    expected_goalie_rows: 0,
+    observed_goalie_rows: 0,
+    completed_at: completionTimestamp,
+    ...overrides,
+  };
+}
+
 function createStatsSupabase(args: {
   gameId: number;
   gameIds?: number[];
@@ -236,6 +265,8 @@ function createStatsSupabase(args: {
   manifestByGameId?: Record<number, Record<string, unknown> | null>;
   rpcError?: unknown;
   rpcReceiptOverrides?: Record<string, unknown>;
+  nonRealizedRpcError?: unknown;
+  nonRealizedRpcReceiptOverrides?: Record<string, unknown>;
 }) {
   const gamesGte = vi.fn();
   let minimumGameId: number | null = null;
@@ -321,6 +352,19 @@ function createStatsSupabase(args: {
     throw new Error(`Unexpected table ${table}`);
   });
   const rpc = vi.fn(async (name: string, params: Record<string, unknown>) => {
+    if (name === "finalize_non_realized_game_stats_v1") {
+      if (args.nonRealizedRpcError) {
+        return { data: null, error: args.nonRealizedRpcError };
+      }
+      return {
+        data: [
+          nonRealizedRpcReceipt(params.p_game_id as number, {
+            ...args.nonRealizedRpcReceiptOverrides,
+          }),
+        ],
+        error: null,
+      };
+    }
     if (name !== "persist_complete_game_stats_v1") {
       throw new Error(`Unexpected RPC ${name}`);
     }
@@ -349,6 +393,22 @@ function createStatsSupabase(args: {
     gamesRange,
     playerLimit,
   };
+}
+
+function mockTripleNotFound(gameId: number) {
+  getMock.mockImplementation(async (path: string) => {
+    const match = path.match(
+      /^\/gamecenter\/(\d+)\/(landing|right-rail|boxscore)$/,
+    );
+    if (!match || Number(match[1]) !== gameId) {
+      throw new Error(`Unexpected NHL path ${path}`);
+    }
+    throw new NhlApiHttpError({
+      status: 404,
+      url: `https://api-web.nhle.com/v1${path}`,
+      message: "official gamecenter resource not found",
+    });
+  });
 }
 
 function mockGoalieGameData(gameId: number) {
@@ -783,16 +843,25 @@ describe("/api/v1/db/update-season-stats route", () => {
     expect(client.gamesGte).toHaveBeenCalledWith(incompleteGameId);
   });
 
-  it("treats exact v1 complete and safe quarantine manifests as terminal", async () => {
+  it("treats exact v1 complete and both allowlisted zero-count quarantine manifests as terminal", async () => {
     const completeGameId = 2025020013;
     const quarantinedGameId = 2025020014;
-    const pendingGameId = 2025020015;
+    const nonRealizedGameId = 2025020015;
+    const pendingGameId = 2025020016;
     mockFinishedGamesData();
     const client = createStatsSupabase({
       gameId: completeGameId,
-      gameIds: [completeGameId, quarantinedGameId, pendingGameId],
+      gameIds: [
+        completeGameId,
+        quarantinedGameId,
+        nonRealizedGameId,
+        pendingGameId,
+      ],
       includeGamesQuery: true,
       quarantinedGameId,
+      manifestByGameId: {
+        [nonRealizedGameId]: nonRealizedManifest(),
+      },
       earliestPendingGameId: pendingGameId,
     });
     createClientMock.mockReturnValue(client.supabase);
@@ -815,6 +884,42 @@ describe("/api/v1/db/update-season-stats route", () => {
     });
     expect(client.gamesGte).toHaveBeenCalledWith(pendingGameId);
     expect(client.rpc).toHaveBeenCalledOnce();
+  });
+
+  it("terminalizes an exact triple-404 season row and advances truthfully", async () => {
+    const gameId = 2025030417;
+    mockTripleNotFound(gameId);
+    const client = createStatsSupabase({
+      gameId,
+      includeGamesQuery: true,
+    });
+    createClientMock.mockReturnValue(client.supabase);
+    const res = createMockRes();
+
+    await seasonHandler(
+      {
+        method: "GET",
+        query: { seasonId: "20252026", runMode: "full" },
+      } as any,
+      res,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      processed: 1,
+      succeeded: 1,
+      failed: 0,
+      failedGameIds: [],
+      nonRealizedGameIds: [gameId],
+      failures: [],
+    });
+    expect(client.rpc).toHaveBeenCalledOnce();
+    expect(client.rpc).toHaveBeenCalledWith(
+      "finalize_non_realized_game_stats_v1",
+      { p_game_id: gameId },
+    );
+    expect(client.from).not.toHaveBeenCalledWith("players");
   });
 
   it("does not trust a legacy updated=true row as a terminal manifest", async () => {
@@ -1138,6 +1243,75 @@ describe("/api/v1/db/update-stats/[gameId] route", () => {
     });
     expect(client.from).toHaveBeenCalledWith("players");
     expect(client.rpc).toHaveBeenCalledOnce();
+  });
+
+  it("returns a truthful zero-write success for an exact triple-404 schedule row", async () => {
+    const gameId = 2025030417;
+    mockTripleNotFound(gameId);
+    const client = createStatsSupabase({
+      gameId,
+      includeGamesQuery: false,
+    });
+    const res = createMockRes();
+
+    await gameHandler(
+      {
+        method: "GET",
+        query: { gameId: String(gameId) },
+        supabase: client.supabase,
+      } as any,
+      res,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      gameId,
+      outcome: "quarantined",
+      reason: "schedule_not_realized",
+      rowsUpserted: 0,
+      receipt: {
+        gameId,
+        expectedTeamRows: 0,
+        expectedSkaterRows: 0,
+        expectedGoalieRows: 0,
+      },
+    });
+    expect(client.rpc).toHaveBeenCalledWith(
+      "finalize_non_realized_game_stats_v1",
+      { p_game_id: gameId },
+    );
+    expect(client.from).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the non-realized RPC receipt is malformed", async () => {
+    const gameId = 2025030417;
+    mockTripleNotFound(gameId);
+    const client = createStatsSupabase({
+      gameId,
+      includeGamesQuery: false,
+      nonRealizedRpcReceiptOverrides: { observed_goalie_rows: 1 },
+    });
+    const res = createMockRes();
+
+    await gameHandler(
+      {
+        method: "GET",
+        query: { gameId: String(gameId) },
+        supabase: client.supabase,
+      } as any,
+      res,
+    );
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toMatchObject({
+      success: false,
+      failure: {
+        kind: "transactional_game_stats_persistence_failure",
+        phase: "non_realized_receipt_validation",
+        gameId,
+      },
+    });
   });
 
   it("classifies missing direct-route teamGameStats as HTTP 500", async () => {
