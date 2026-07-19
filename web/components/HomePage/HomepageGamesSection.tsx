@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 
 import Link from "next/link";
-import moment from "moment";
+import moment from "moment-timezone";
 import "moment-timezone";
 
 import ClientOnly from "components/ClientOnly";
@@ -134,8 +134,8 @@ export default function HomepageGamesSection({
   }, [countdownNow, openingNightTarget]);
   const showOpeningNightCountdown = Boolean(
     games.length === 0 &&
-      openingNightTarget &&
-      (!openingNightCountdown || !openingNightCountdown.complete),
+    openingNightTarget &&
+    (!openingNightCountdown || !openingNightCountdown.complete),
   );
 
   const heroDescription = playoffsActive
@@ -148,7 +148,7 @@ export default function HomepageGamesSection({
       ? liveGames > 0
         ? `${liveGames} game${liveGames === 1 ? "" : "s"} live right now. Move from the slate to confirmed starter context and market movement without leaving the homepage flow.`
         : `${games.length} game${games.length === 1 ? "" : "s"} on the board${scheduleContext ? `, starting at ${scheduleContext}` : ""}.`
-      : `No games are scheduled for ${moment(currentDate).format("MMMM D")}. Use the decision surfaces below to plan your next move before the slate repopulates.`;
+      : `No games are scheduled for ${moment(currentDate).format("MMMM D")}.\nUse the tools below to plan your next move before the slate repopulates.`;
   const modulePresentation = buildHomepageModulePresentation({
     source: "homepage-games",
     loading,
@@ -407,9 +407,9 @@ export default function HomepageGamesSection({
             {playoffsActive ? "The Bracket" : "The Slate"}
           </h1>
           <p className={styles.slateDescription}>
-            Real-time NHL insights.
+            Real-Time NHL Analytics.
             <br />
-            Built for the edge.
+            Built for Fantasy.
           </p>
           <div className={styles.slateAccent} aria-hidden="true">
             <i></i>
