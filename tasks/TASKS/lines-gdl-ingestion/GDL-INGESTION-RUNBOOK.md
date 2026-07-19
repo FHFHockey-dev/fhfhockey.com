@@ -4,10 +4,10 @@
 
 Create one X/Twitter-to-Webhooks applet for each account. Use `POST`, content type `application/json`, and the matching deployed secret in the `x-fhfh-ifttt-secret` header. Do not put secrets in the URL or this document.
 
-| Watched account | Webhooks URL | Secret environment variable |
-|---|---|---|
+| Watched account  | Webhooks URL                                                                   | Secret environment variable           |
+| ---------------- | ------------------------------------------------------------------------------ | ------------------------------------- |
 | `GameDayGoalies` | `https://fhfhockey.com/api/v1/sources/ifttt/gamedaygoalies-tweet?process=true` | `IFTTT_GAMEDAYGOALIES_WEBHOOK_SECRET` |
-| `GameDayLines` | `https://fhfhockey.com/api/v1/sources/ifttt/gamedaylines-tweet?process=true` | `IFTTT_GAMEDAYLINES_WEBHOOK_SECRET` |
+| `GameDayLines`   | `https://fhfhockey.com/api/v1/sources/ifttt/gamedaylines-tweet?process=true`   | `IFTTT_GAMEDAYLINES_WEBHOOK_SECRET`   |
 | `GameDayNewsNHL` | `https://fhfhockey.com/api/v1/sources/ifttt/gamedaynewsnhl-tweet?process=true` | `IFTTT_GAMEDAYNEWSNHL_WEBHOOK_SECRET` |
 
 Use this body shape with the corresponding IFTTT ingredients:
@@ -24,6 +24,23 @@ Use this body shape with the corresponding IFTTT ingredients:
 ```
 
 Change only `source_account` for the other two applets. The receiver stores the raw event before attempting `process=true`; a processor failure leaves the event pending/retryable and does not reject the webhook.
+
+## Four-app receiver-secret rotation manifest
+
+The production containment checkpoint covers all four currently connected X-to-Webhooks applets. Treat these as four explicit bindings; never copy current or replacement values into this runbook, commands, screenshots, chat, or durable evidence.
+
+| Existing applet      | Receiver path                                             | Vercel environment variable           |
+| -------------------- | --------------------------------------------------------- | ------------------------------------- |
+| `Lines CcCMiddleton` | `/api/v1/sources/ifttt/ccc-tweet?process=true`            | `IFTTT_CCC_WEBHOOK_SECRET`            |
+| `GameDayGoalies`     | `/api/v1/sources/ifttt/gamedaygoalies-tweet?process=true` | `IFTTT_GAMEDAYGOALIES_WEBHOOK_SECRET` |
+| `GameDayLines`       | `/api/v1/sources/ifttt/gamedaylines-tweet?process=true`   | `IFTTT_GAMEDAYLINES_WEBHOOK_SECRET`   |
+| `GameDayNewsNHL`     | `/api/v1/sources/ifttt/gamedaynewsnhl-tweet?process=true` | `IFTTT_GAMEDAYNEWSNHL_WEBHOOK_SECRET` |
+
+After explicit production authorization, inventory the four variable names and environments without reading values, prepare one coordinated replacement set without assuming the bindings share a value, update the applicable Vercel environments and all four applet headers, and redeploy. For every route, an empty JSON probe with the retired binding must return 401 and the replacement binding must pass authorization but fail payload validation with 400; neither probe may write an event. Re-audit only the header name and nonblank state after proof. If any binding, environment, applet state, or route differs from this manifest, stop before mutation.
+
+## Value-free IFTTT support request
+
+The provider case must identify the account through the signed-in support workflow but contain no Webhooks key, key-bearing URL, receiver secret, request body, or saved browser value. State only that multiple documented key regenerations followed by a Webhooks remove/reconnect produced distinct current keys while unique bounded requests using prior generations still received the provider's authorization-success classification. Request account-level invalidation of every historical Webhooks service key and written confirmation that only the current generation remains valid. Preserve only the support case reference and redacted status in the diary.
 
 ## Bounded catch-up and cron safety net
 

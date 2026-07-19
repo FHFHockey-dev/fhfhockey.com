@@ -95,7 +95,7 @@ async function processStoredTweetEvent(args: {
     limit: "1",
     reprocess: "true",
     tweetId: args.tweetId,
-    date: getProcessorDate()
+    date: getProcessorDate(),
   });
   const url = `${getBaseUrl(args.req)}/api/v1/db/update-lines-ccc?${params.toString()}`;
   const headers: Record<string, string> = {};
@@ -107,26 +107,26 @@ async function processStoredTweetEvent(args: {
   try {
     const response = await fetch(url, {
       method: "POST",
-      headers
+      headers,
     });
 
     if (!response.ok) {
       return {
         success: false,
         status: response.status,
-        error: await response.text()
+        error: "Processor request failed",
       };
     }
 
     return {
       success: true,
-      status: response.status
+      status: response.status,
     };
-  } catch (error) {
+  } catch {
     return {
       success: false,
       status: null,
-      error: error instanceof Error ? error.message : String(error)
+      error: "Processor request failed",
     };
   }
 }
@@ -138,19 +138,19 @@ function formatSupabaseError(error: unknown): string {
     code: record.code,
     message: record.message,
     details: record.details,
-    hint: record.hint
+    hint: record.hint,
   });
 }
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<ResponseBody>
+  res: NextApiResponse<ResponseBody>,
 ) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({
       success: false,
-      error: "Method not allowed"
+      error: "Method not allowed",
     });
   }
 
@@ -158,14 +158,14 @@ export default async function handler(
   if (!expectedSecret) {
     return res.status(500).json({
       success: false,
-      error: "IFTTT_CCC_WEBHOOK_SECRET is not configured"
+      error: "IFTTT_CCC_WEBHOOK_SECRET is not configured",
     });
   }
 
   if (!secretsMatch(getSecretFromRequest(req), expectedSecret)) {
     return res.status(401).json({
       success: false,
-      error: "Unauthorized"
+      error: "Unauthorized",
     });
   }
 
@@ -174,23 +174,28 @@ export default async function handler(
   const linkToTweet = getBodyValue(req.body, [
     "link_to_tweet",
     "linkToTweet",
-    "LinkToTweet"
+    "LinkToTweet",
   ]);
-  const createdAt = getBodyValue(req.body, ["created_at", "createdAt", "CreatedAt"]);
+  const createdAt = getBodyValue(req.body, [
+    "created_at",
+    "createdAt",
+    "CreatedAt",
+  ]);
   const tweetEmbedCode = getBodyValue(req.body, [
     "tweet_embed_code",
     "tweetEmbedCode",
-    "TweetEmbedCode"
+    "TweetEmbedCode",
   ]);
   const sourceAccount =
-    getBodyValue(req.body, ["source_account", "sourceAccount"]) ?? "CcCMiddleton";
+    getBodyValue(req.body, ["source_account", "sourceAccount"]) ??
+    "CcCMiddleton";
   const tweetId = extractTweetId(linkToTweet);
   const shouldProcessImmediately = parseBooleanQueryFlag(req.query.process);
 
   if (!linkToTweet && !text) {
     return res.status(400).json({
       success: false,
-      error: "Expected at least link_to_tweet or text in request body"
+      error: "Expected at least link_to_tweet or text in request body",
     });
   }
 
@@ -206,13 +211,13 @@ export default async function handler(
     created_at_label: createdAt,
     processing_status: "pending",
     raw_payload: req.body && typeof req.body === "object" ? req.body : {},
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
   };
 
   const query = supabase.from("lines_ccc_ifttt_events" as any);
   const { error } = tweetId
     ? await query.upsert(row as any, {
-        onConflict: "tweet_id"
+        onConflict: "tweet_id",
       })
     : await query.insert(row as any);
 
@@ -220,7 +225,7 @@ export default async function handler(
     console.error("IFTTT CCC tweet ingest failed:", formatSupabaseError(error));
     return res.status(500).json({
       success: false,
-      error: "Failed to store IFTTT event"
+      error: "Failed to store IFTTT event",
     });
   }
 
@@ -237,6 +242,6 @@ export default async function handler(
     success: true,
     tweetId,
     processingStatus: processor ? "processed_attempted" : "pending",
-    ...(processor ? { processor } : {})
+    ...(processor ? { processor } : {}),
   });
 }
