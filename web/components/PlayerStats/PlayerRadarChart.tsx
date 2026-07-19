@@ -7,12 +7,12 @@ import {
   LineElement,
   Filler,
   Tooltip,
-  Legend
+  Legend,
 } from "chart.js";
 import styles from "./PlayerStats.module.scss";
 import {
   formatStatValue,
-  STAT_DISPLAY_NAMES as SHARED_STAT_DISPLAY_NAMES
+  STAT_DISPLAY_NAMES as SHARED_STAT_DISPLAY_NAMES,
 } from "./types";
 import supabase from "../../lib/supabase";
 import useCurrentSeason from "../../hooks/useCurrentSeason";
@@ -23,7 +23,7 @@ ChartJS.register(
   LineElement,
   Filler,
   Tooltip,
-  Legend
+  Legend,
 );
 
 interface GameLogEntry {
@@ -73,32 +73,32 @@ const STAT_CALCULATION_METHODS: Record<string, StatCalculationInfo> = {
   giveaways: {
     method: "per_game",
     description: "Giveaways per game",
-    isInverted: true
+    isInverted: true,
   },
   penalties: {
     method: "per_game",
     description: "Penalties per game",
-    isInverted: true
+    isInverted: true,
   },
   penalty_minutes: {
     method: "per_game",
     description: "Penalty minutes per game",
-    isInverted: true
+    isInverted: true,
   },
 
   // Percentage stats (weighted average)
   shooting_percentage: {
     method: "percentage",
-    description: "Shooting percentage (weighted)"
+    description: "Shooting percentage (weighted)",
   },
   save_pct: { method: "percentage", description: "Save percentage (weighted)" },
   fow_percentage: {
     method: "percentage",
-    description: "Faceoff win percentage (weighted)"
+    description: "Faceoff win percentage (weighted)",
   },
   sat_pct: {
     method: "percentage",
-    description: "Shot attempt percentage (weighted)"
+    description: "Shot attempt percentage (weighted)",
   },
   cf_pct: { method: "percentage", description: "Corsi For percentage" },
   ff_pct: { method: "percentage", description: "Fenwick For percentage" },
@@ -106,70 +106,70 @@ const STAT_CALCULATION_METHODS: Record<string, StatCalculationInfo> = {
   gf_pct: { method: "percentage", description: "Goals For percentage" },
   xgf_pct: {
     method: "percentage",
-    description: "Expected Goals For percentage"
+    description: "Expected Goals For percentage",
   },
 
   // Time-based stats
   toi_per_game: {
     method: "per_game",
-    description: "Time on ice per game (seconds)"
+    description: "Time on ice per game (seconds)",
   },
   pp_toi_per_game: {
     method: "per_game",
-    description: "Power play time on ice per game"
+    description: "Power play time on ice per game",
   },
 
   // Per 60 minute stats
   goals_per_60: { method: "per_60", description: "Goals per 60 minutes" },
   total_assists_per_60: {
     method: "per_60",
-    description: "Assists per 60 minutes"
+    description: "Assists per 60 minutes",
   },
   total_points_per_60: {
     method: "per_60",
-    description: "Points per 60 minutes"
+    description: "Points per 60 minutes",
   },
   shots_per_60: { method: "per_60", description: "Shots per 60 minutes" },
   ixg_per_60: {
     method: "per_60",
-    description: "Individual expected goals per 60 minutes"
+    description: "Individual expected goals per 60 minutes",
   },
   icf_per_60: {
     method: "per_60",
-    description: "Individual Corsi For per 60 minutes"
+    description: "Individual Corsi For per 60 minutes",
   },
   hdcf_per_60: {
     method: "per_60",
-    description: "High danger chances for per 60 minutes"
+    description: "High danger chances for per 60 minutes",
   },
   hdca_per_60: {
     method: "per_60",
     description: "High danger chances against per 60 minutes",
-    isInverted: true
+    isInverted: true,
   },
   hits_per_60: { method: "per_60", description: "Hits per 60 minutes" },
   pim_per_60: {
     method: "per_60",
     description: "Penalty minutes per 60 minutes",
-    isInverted: true
+    isInverted: true,
   },
 
   // Goalie stats
   goals_against_avg: {
     method: "rate",
     description: "Goals against average",
-    isInverted: true
+    isInverted: true,
   },
   wins: { method: "rate", description: "Win rate (wins per game)" },
   saves: { method: "per_game", description: "Saves per game" },
-  shutouts: { method: "rate", description: "Shutout rate (shutouts per game)" }
+  shutouts: { method: "rate", description: "Shutout rate (shutouts per game)" },
 };
 
 // Updated position categories based on your clarification
 const POSITION_CATEGORIES = {
   forward: ["C", "LW", "RW", "W", "F", "L", "R"], // Include both old and new formats
   defenseman: ["D", "LD", "RD"],
-  goalie: ["G", "GK", "GOALIE"]
+  goalie: ["G", "GK", "GOALIE"],
 };
 
 // Function to normalize position codes
@@ -181,7 +181,7 @@ const normalizePosition = (position: string): string => {
     R: "RW",
     F: "C", // Generic forward becomes center
     GK: "G",
-    GOALIE: "G"
+    GOALIE: "G",
   };
   return positionMap[pos] || pos;
 };
@@ -191,7 +191,7 @@ const normalizePosition = (position: string): string => {
 const calculateFallbackPercentile = (
   stat: string,
   value: number,
-  playerCategory: string
+  playerCategory: string,
 ): number => {
   // These are very basic fallback thresholds - should be replaced with real data
   const basicThresholds: Record<
@@ -203,20 +203,20 @@ const calculateFallbackPercentile = (
       goals: { elite: 0.5, good: 0.3, average: 0.15 },
       assists: { elite: 0.6, good: 0.4, average: 0.2 },
       shots: { elite: 3.0, good: 2.2, average: 1.5 },
-      hits: { elite: 2.0, good: 1.5, average: 1.0 }
+      hits: { elite: 2.0, good: 1.5, average: 1.0 },
     },
     defenseman: {
       points: { elite: 0.6, good: 0.4, average: 0.2 },
       goals: { elite: 0.2, good: 0.1, average: 0.05 },
       assists: { elite: 0.5, good: 0.3, average: 0.15 },
       blocked_shots: { elite: 2.0, good: 1.5, average: 1.0 },
-      hits: { elite: 2.5, good: 1.8, average: 1.2 }
+      hits: { elite: 2.5, good: 1.8, average: 1.2 },
     },
     goalie: {
       save_pct: { elite: 0.92, good: 0.91, average: 0.9 },
       goals_against_avg: { elite: 2.5, good: 2.8, average: 3.2 },
-      wins: { elite: 0.65, good: 0.5, average: 0.35 }
-    }
+      wins: { elite: 0.65, good: 0.5, average: 0.35 },
+    },
   };
 
   const thresholds = basicThresholds[playerCategory]?.[stat];
@@ -244,7 +244,7 @@ export function PlayerRadarChart({
   playoffGameLog,
   selectedStats,
   isGoalie,
-  showPlayoffData
+  showPlayoffData,
 }: PlayerRadarChartProps) {
   const [comparisonType, setComparisonType] =
     useState<ComparisonType>("position");
@@ -338,7 +338,7 @@ export function PlayerRadarChart({
         if (playerError || !playerData) {
           console.error(
             `Error fetching player data from ${tableName}:`,
-            playerError
+            playerError,
           );
           setUsingFallback(true);
           return;
@@ -346,7 +346,7 @@ export function PlayerRadarChart({
 
         console.log(
           `[PlayerRadarChart] Player data from ${tableName}:`,
-          playerData
+          playerData,
         );
 
         // Store player values for display - filter to only numeric stats
@@ -371,7 +371,7 @@ export function PlayerRadarChart({
           }
 
           console.log(
-            `[PlayerRadarChart] Using ${stat} value: ${playerValue} from per_game view`
+            `[PlayerRadarChart] Using ${stat} value: ${playerValue} from per_game view`,
           );
 
           let data;
@@ -403,7 +403,7 @@ export function PlayerRadarChart({
           if (error) {
             console.error(
               `Error fetching ${stat} data for season ${seasonString}:`,
-              error
+              error,
             );
             continue;
           }
@@ -426,10 +426,10 @@ export function PlayerRadarChart({
               if (isInverted) {
                 // For inverted stats (lower is better)
                 const betterCount = values.filter(
-                  (v) => v < playerValue
+                  (v) => v < playerValue,
                 ).length;
                 const equalCount = values.filter(
-                  (v) => v === playerValue
+                  (v) => v === playerValue,
                 ).length;
 
                 // Percentile: what percentage of players this player is better than
@@ -442,7 +442,7 @@ export function PlayerRadarChart({
                 // For normal stats (higher is better)
                 const worseCount = values.filter((v) => v < playerValue).length;
                 const equalCount = values.filter(
-                  (v) => v === playerValue
+                  (v) => v === playerValue,
                 ).length;
 
                 // Percentile: what percentage of players this player is better than
@@ -451,7 +451,7 @@ export function PlayerRadarChart({
                 // Rank: 1st place goes to highest value
                 // Count how many have strictly higher values, then add 1
                 const betterCount = values.filter(
-                  (v) => v > playerValue
+                  (v) => v > playerValue,
                 ).length;
                 rank = betterCount + 1;
               }
@@ -460,7 +460,7 @@ export function PlayerRadarChart({
               newRankings[stat] = { rank, total: values.length };
 
               console.log(
-                `${stat}: ${playerValue} -> ${percentile.toFixed(1)}% (rank ${rank}/${values.length})`
+                `${stat}: ${playerValue} -> ${percentile.toFixed(1)}% (rank ${rank}/${values.length})`,
               );
             }
           }
@@ -471,7 +471,7 @@ export function PlayerRadarChart({
           setNhlRankings(newRankings);
           setUsingFallback(false);
           console.log(
-            `Successfully calculated percentiles for ${Object.keys(newPercentiles).length} stats`
+            `Successfully calculated percentiles for ${Object.keys(newPercentiles).length} stats`,
           );
         } else {
           console.warn("No valid percentile data calculated");
@@ -490,8 +490,8 @@ export function PlayerRadarChart({
       isGoalie,
       comparisonType,
       playerCategory,
-      currentSeason?.seasonId
-    ]
+      currentSeason?.seasonId,
+    ],
   );
 
   // Calculate percentiles using database or fallback
@@ -505,7 +505,7 @@ export function PlayerRadarChart({
       // Fallback to simplified calculation
       return calculateFallbackPercentile(stat, value, playerCategory);
     },
-    [databasePercentiles, usingFallback, playerCategory]
+    [databasePercentiles, usingFallback, playerCategory],
   );
 
   const radarData = useMemo(() => {
@@ -515,7 +515,7 @@ export function PlayerRadarChart({
 
     const gamesPlayed = log.reduce(
       (sum, game) => sum + (game.games_played || 0),
-      0
+      0,
     );
 
     const averages: { [key: string]: number } = {};
@@ -527,7 +527,7 @@ export function PlayerRadarChart({
       const statInfo = STAT_CALCULATION_METHODS[stat];
       calculationMethods[stat] = statInfo || {
         method: "per_game",
-        description: "Per game average"
+        description: "Per game average",
       };
 
       // Calculate stat value based on its calculation method
@@ -543,7 +543,7 @@ export function PlayerRadarChart({
           const weights = log.map((game) => game.games_played || 1);
           const weightedSum = values.reduce(
             (sum, val, idx) => sum + val * weights[idx],
-            0
+            0,
           );
           const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
           averages[stat] = totalWeight > 0 ? weightedSum / totalWeight : 0;
@@ -574,11 +574,11 @@ export function PlayerRadarChart({
       if (stat === "shooting_percentage") {
         const totalGoals = log.reduce(
           (sum, game) => sum + (Number(game.goals) || 0),
-          0
+          0,
         );
         const totalShots = log.reduce(
           (sum, game) => sum + (Number(game.shots) || 0),
-          0
+          0,
         );
         averages[stat] = totalShots > 0 ? (totalGoals / totalShots) * 100 : 0;
       }
@@ -588,7 +588,7 @@ export function PlayerRadarChart({
     });
 
     const labels = selectedStats.map(
-      (stat) => SHARED_STAT_DISPLAY_NAMES[stat] || stat
+      (stat) => SHARED_STAT_DISPLAY_NAMES[stat] || stat,
     );
     const data = selectedStats.map((stat) => percentiles[stat] || 0);
 
@@ -610,12 +610,12 @@ export function PlayerRadarChart({
           pointHoverBorderColor: isGoalie ? "#ef4444" : "#14a2d2",
           pointHoverBorderWidth: 3,
           pointRadius: 5,
-          pointHoverRadius: 7
-        }
+          pointHoverRadius: 7,
+        },
       ],
       averages,
       percentiles,
-      calculationMethods
+      calculationMethods,
     };
   }, [
     gameLog,
@@ -624,7 +624,7 @@ export function PlayerRadarChart({
     isGoalie,
     player.fullName,
     showPlayoffData,
-    calculatePercentile
+    calculatePercentile,
   ]);
 
   // Get comparison description
@@ -647,7 +647,7 @@ export function PlayerRadarChart({
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        display: false
+        display: false,
       },
       tooltip: {
         backgroundColor: "rgba(26, 29, 33, 0.95)",
@@ -660,11 +660,11 @@ export function PlayerRadarChart({
         titleFont: {
           size: 14,
           weight: 600,
-          family: "'Roboto Condensed', sans-serif"
+          family: "'Roboto Condensed', sans-serif",
         },
         bodyFont: {
           size: 13,
-          family: "'Roboto Condensed', sans-serif"
+          family: "'Roboto Condensed', sans-serif",
         },
         displayColors: true,
         boxWidth: 12,
@@ -692,17 +692,17 @@ export function PlayerRadarChart({
               `Value: ${formattedValue}`,
               `Percentile: ${percentile.toFixed(0)}%`,
               `Method: ${calcMethod?.description || "Per game"}`,
-              `Comparison: ${getComparisonDescription()}`
+              `Comparison: ${getComparisonDescription()}`,
             ];
           },
           labelColor: (context: any) => ({
             borderColor: isGoalie ? "#ef4444" : "#14a2d2",
             backgroundColor: isGoalie ? "#ef4444" : "#14a2d2",
             borderWidth: 2,
-            borderRadius: 2
-          })
-        }
-      }
+            borderRadius: 2,
+          }),
+        },
+      },
     },
     scales: {
       r: {
@@ -713,68 +713,46 @@ export function PlayerRadarChart({
           stepSize: 20,
           font: {
             size: 11,
-            family: "'Roboto Condensed', sans-serif"
+            family: "'Roboto Condensed', sans-serif",
           },
           color: "#9ca3af",
           backdropColor: "transparent",
           callback: function (value: any) {
             return `${value}%`;
-          }
+          },
         },
         grid: {
           color: "rgba(156, 163, 175, 0.2)",
-          lineWidth: 1
+          lineWidth: 1,
         },
         angleLines: {
           color: "rgba(156, 163, 175, 0.25)",
-          lineWidth: 1
+          lineWidth: 1,
         },
         pointLabels: {
           font: {
             size: 12,
             weight: 600,
-            family: "'Roboto Condensed', sans-serif"
+            family: "'Roboto Condensed', sans-serif",
           },
           color: "#cccccc",
-          padding: 8
-        }
-      }
+          padding: 8,
+        },
+      },
     },
     elements: {
       point: {
         radius: 4,
         hoverRadius: 6,
         borderWidth: 2,
-        hoverBorderWidth: 3
+        hoverBorderWidth: 3,
       },
       line: {
         borderWidth: 2.5,
-        tension: 0.1
-      }
-    }
+        tension: 0.1,
+      },
+    },
   };
-
-  // Supabase data fetching effect
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!player.id) return;
-
-      // Example query - adjust as needed
-      const { data, error } = await supabase
-        .from("wgo_skater_stats_per_game")
-        .select("*")
-        .eq("player_id", player.id);
-
-      if (error) {
-        console.error("Error fetching player data:", error);
-      } else {
-        console.log("Player data:", data);
-        // Process and integrate data as needed
-      }
-    };
-
-    fetchData();
-  }, [player.id]);
 
   // Fetch percentiles on mount and when comparison type or other dependencies change
   useEffect(() => {
@@ -789,7 +767,7 @@ export function PlayerRadarChart({
 
       // Extract stats to calculate percentiles for
       const statsToFetch = selectedStats.filter(
-        (stat) => STAT_CALCULATION_METHODS[stat]
+        (stat) => STAT_CALCULATION_METHODS[stat],
       );
 
       // Prepare player values for percentile calculation
@@ -798,7 +776,7 @@ export function PlayerRadarChart({
         const values = gameLog.map((game) => Number(game[stat]) || 0);
         const gamesPlayed = gameLog.reduce(
           (sum, game) => sum + (game.games_played || 0),
-          0
+          0,
         );
 
         // Calculate the same way we do in radarData
@@ -816,11 +794,11 @@ export function PlayerRadarChart({
             const weights = gameLog.map((game) => game.games_played || 1);
             const weightedSum = values.reduce(
               (sum, val, idx) => sum + val * weights[idx],
-              0
+              0,
             );
             const totalWeight = weights.reduce(
               (sum, weight) => sum + weight,
-              0
+              0,
             );
             calculatedValue = totalWeight > 0 ? weightedSum / totalWeight : 0;
             break;
@@ -843,11 +821,11 @@ export function PlayerRadarChart({
         } else if (stat === "shooting_percentage") {
           const totalGoals = gameLog.reduce(
             (sum, game) => sum + (Number(game.goals) || 0),
-            0
+            0,
           );
           const totalShots = gameLog.reduce(
             (sum, game) => sum + (Number(game.shots) || 0),
-            0
+            0,
           );
           calculatedValue =
             totalShots > 0 ? (totalGoals / totalShots) * 100 : 0;
@@ -864,13 +842,13 @@ export function PlayerRadarChart({
               ? values.reduce((sum, val) => sum + val, 0)
               : "N/A",
           calculatedValue,
-          formattedValue: formatStatValue(calculatedValue, stat)
+          formattedValue: formatStatValue(calculatedValue, stat),
         });
       });
 
       console.log(
         `[PlayerRadarChart] Final playerValues for percentile calculation:`,
-        playerValues
+        playerValues,
       );
 
       fetchPercentiles(statsToFetch, playerValues);
@@ -882,7 +860,7 @@ export function PlayerRadarChart({
     isGoalie,
     comparisonType,
     currentSeason?.seasonId, // Added currentSeason as dependency
-    fetchPercentiles
+    fetchPercentiles,
   ]);
 
   if (!radarData || gameLog.length === 0) {
@@ -920,7 +898,7 @@ export function PlayerRadarChart({
                   fontStyle: "italic",
                   display: "flex",
                   alignItems: "center",
-                  gap: "0.5rem"
+                  gap: "0.5rem",
                 }}
               >
                 <div
@@ -930,7 +908,7 @@ export function PlayerRadarChart({
                     border: "2px solid #14a2d2",
                     borderTop: "2px solid transparent",
                     borderRadius: "50%",
-                    animation: "spin 1s linear infinite"
+                    animation: "spin 1s linear infinite",
                   }}
                 />
                 Calculating...
@@ -977,7 +955,7 @@ export function PlayerRadarChart({
               fontSize: "0.8em",
               color: "#f97316",
               marginTop: "0.5rem",
-              fontStyle: "italic"
+              fontStyle: "italic",
             }}
           >
             ⚠️ Using simplified percentile calculations. Database queries failed

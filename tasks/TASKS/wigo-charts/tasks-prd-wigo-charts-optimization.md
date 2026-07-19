@@ -8,7 +8,9 @@
 - `web/hooks/useWigoPlayerDashboard.ts` - Proposed new page-level data hook for selected player, season, branding, aggregates, and statuses.
 - `web/hooks/useWigoPlayerDashboard.test.ts` - Unit tests for the new page-level WiGO data orchestration hook.
 - `web/utils/fetchWigoPlayerStats.ts` - Core WiGO aggregate, totals, and stat drilldown fetch helpers that need normalization cleanup.
-- `web/utils/fetchWigoPlayerStats.test.ts` - Unit tests for aggregate transforms, unit normalization, and fallback behavior.
+- `web/utils/fetchWigoPlayerStats.test.ts` - Unit tests for aggregate transforms, unit normalization, fallbacks, and table-specific game-log query contracts.
+- `web/components/PlayerStats/PlayerRadarChart.tsx` - Skater/goalie radar percentile reader with table-specific player, season, and cohort filters.
+- `web/components/PlayerStats/PlayerRadarChart.test.tsx` - Focused regressions for the exact skater and goalie generated-schema query contracts.
 - `web/utils/fetchWigoPercentiles.ts` - Percentile cohort fetch layer that should be optimized and aligned to a canonical stat contract.
 - `web/utils/fetchWigoPercentiles.test.ts` - Unit tests for percentile fetch shaping and stat field mapping.
 - `web/utils/fetchWigoRatingStats.ts` - Ratings data fetch layer that currently scans all strengths and should be optimized or cached.
@@ -104,4 +106,4 @@
   - [x] 6.4 Run targeted Jest suites for transformed utilities and WiGO components, then fix any regressions introduced by the refactor.
   - [x] 6.5 Perform manual desktop and mobile verification of section order, tab behavior, chart states, and cross-surface stat consistency on `/wigoCharts`.
 
-- [ ] NEW 7.0 **P1 table-specific player-radar query contract:** The goalie radar branch currently reuses skater-only `player_id`, text `season`, and optional `position_code` filters even though the authoritative goalie view exposes `goalie_id` plus numeric `season_id` and no `position_code`. Split and narrow the skater/goalie queries so each uses its exact generated column contract; preserve skater behavior, add focused skater/goalie regressions, and include table-specific season-column narrowing in `fetchWigoPlayerStats` for a future strict Supabase client upgrade (discovered 2026-07-14).
+- [x] NEW 7.0 **P1 table-specific player-radar query contract:** The radar now uses exact generated-schema branches: skaters query `player_id`, text `season`, and optional `position_code`; goalies query `goalie_id` plus numeric `season_id` with no nonexistent position filter. The redundant unconditional skater read was removed, and `fetchWigoPlayerStats` now narrows WGO `date`/`season_id` separately from NST `date_scraped`/`season`. Evidence (2026-07-18): focused Vitest passes 2 files/7 tests; full TypeScript, scoped legacy-config ESLint, and scoped diff checks pass.
