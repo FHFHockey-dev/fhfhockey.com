@@ -112,19 +112,22 @@ interface NHLApiResponse {
   data: any[];
 }
 
-type SkaterDbRecord = {
-  [key: string]: any;
-  player_id: number;
-  player_name: string;
-  date: string;
-};
-
 type RegularSeasonSkaterInsert =
   Database["public"]["Tables"]["wgo_skater_stats"]["Insert"];
 type PlayoffSkaterInsert =
   Database["public"]["Tables"]["wgo_skater_stats_playoffs"]["Insert"];
+type SkaterStatsTable = "wgo_skater_stats" | "wgo_skater_stats_playoffs";
+type SkaterWriteBatch =
+  | {
+      tableName: "wgo_skater_stats";
+      records: RegularSeasonSkaterInsert[];
+    }
+  | {
+      tableName: "wgo_skater_stats_playoffs";
+      records: PlayoffSkaterInsert[];
+    };
 
-type AllSkaterStats = {
+export type AllSkaterStats = {
   skaterStats: WGOSummarySkaterStat[];
   skatersBio: WGOSkatersBio[];
   miscSkaterStats: WGORealtimeSkaterStat[];
@@ -297,12 +300,42 @@ async function getSeasonFromDate(dateString: string): Promise<{
   }
 }
 
+function removeUndefinedProperties<T extends object>(record: T): T {
+  for (const key in record) {
+    if (record[key] === undefined) {
+      delete record[key];
+    }
+  }
+  return record;
+}
+
+function toOptionalText(
+  value: number | null | undefined,
+): string | null | undefined {
+  return value == null ? value : String(value);
+}
+
+function mapApiDataToDbRecord(
+  stat: WGOSummarySkaterStat,
+  allData: DataMaps,
+  formattedDate: string,
+  seasonId: number | undefined,
+  tableName: "wgo_skater_stats",
+): RegularSeasonSkaterInsert;
+function mapApiDataToDbRecord(
+  stat: WGOSummarySkaterStat,
+  allData: DataMaps,
+  formattedDate: string,
+  seasonId: number | undefined,
+  tableName: "wgo_skater_stats_playoffs",
+): PlayoffSkaterInsert;
 function mapApiDataToDbRecord(
   stat: WGOSummarySkaterStat,
   allData: DataMaps,
   formattedDate: string,
   seasonId?: number,
-): SkaterDbRecord {
+  tableName: SkaterStatsTable = "wgo_skater_stats",
+): RegularSeasonSkaterInsert | PlayoffSkaterInsert {
   const bioStats = allData.bioMap.get(stat.playerId);
   const miscStats = allData.miscMap.get(stat.playerId);
   const faceOffStat = allData.faceOffMap.get(stat.playerId);
@@ -319,7 +352,7 @@ function mapApiDataToDbRecord(
   const shotTypeStat = allData.shotTypeMap.get(stat.playerId);
   const timeOnIceStat = allData.timeOnIceMap.get(stat.playerId);
 
-  const record: SkaterDbRecord = {
+  const regularSeasonRecord = {
     player_id: stat.playerId,
     player_name: stat.skaterFullName,
     date: formattedDate,
@@ -563,14 +596,35 @@ function mapApiDataToDbRecord(
     shifts: timeOnIceStat?.shifts,
     shifts_per_game: timeOnIceStat?.shiftsPerGame,
     time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift,
-  };
-  if (seasonId) {
-    record.season_id = seasonId;
+    ...(seasonId ? { season_id: seasonId } : {}),
+  } satisfies RegularSeasonSkaterInsert;
+
+  if (tableName === "wgo_skater_stats") {
+    return removeUndefinedProperties(regularSeasonRecord);
   }
-  Object.keys(record).forEach(
-    (key) => record[key] === undefined && delete record[key],
-  );
-  return record;
+
+  const playoffRecord = {
+    ...regularSeasonRecord,
+    es_toi_per_game: toOptionalText(regularSeasonRecord.es_toi_per_game),
+    ev_time_on_ice: toOptionalText(regularSeasonRecord.ev_time_on_ice),
+    ev_time_on_ice_per_game: toOptionalText(
+      regularSeasonRecord.ev_time_on_ice_per_game,
+    ),
+    ot_time_on_ice: toOptionalText(regularSeasonRecord.ot_time_on_ice),
+    ot_time_on_ice_per_game: toOptionalText(
+      regularSeasonRecord.ot_time_on_ice_per_game,
+    ),
+    pp_toi: toOptionalText(regularSeasonRecord.pp_toi),
+    pp_toi_per_game: toOptionalText(regularSeasonRecord.pp_toi_per_game),
+    sh_time_on_ice: toOptionalText(regularSeasonRecord.sh_time_on_ice),
+    sh_toi_per_game: toOptionalText(regularSeasonRecord.sh_toi_per_game),
+    time_on_ice_per_shift: toOptionalText(
+      regularSeasonRecord.time_on_ice_per_shift,
+    ),
+    toi_per_game_5v5: toOptionalText(regularSeasonRecord.toi_per_game_5v5),
+  } satisfies PlayoffSkaterInsert;
+
+  return removeUndefinedProperties(playoffRecord);
 }
 
 async function fetchDataForGameType(
@@ -776,9 +830,9 @@ async function fetchDataForGameType(
   return allData;
 }
 
-async function processAndUpsertGameTypeData(
+export async function processAndUpsertGameTypeData(
   allData: AllSkaterStats,
-  tableName: "wgo_skater_stats" | "wgo_skater_stats_playoffs",
+  tableName: SkaterStatsTable,
   formattedDate: string,
   seasonId?: number,
 ): Promise<number> {
@@ -822,11 +876,34 @@ async function processAndUpsertGameTypeData(
     timeOnIceMap: new Map(allData.timeOnIceStats.map((s) => [s.playerId, s])),
   };
 
-  let recordsToUpsert: SkaterDbRecord[];
+  let writeBatch: SkaterWriteBatch;
   try {
-    recordsToUpsert = allData.skaterStats.map((stat) =>
-      mapApiDataToDbRecord(stat, dataMaps, formattedDate, seasonId),
-    );
+    writeBatch =
+      tableName === "wgo_skater_stats"
+        ? {
+            tableName,
+            records: allData.skaterStats.map((stat) =>
+              mapApiDataToDbRecord(
+                stat,
+                dataMaps,
+                formattedDate,
+                seasonId,
+                tableName,
+              ),
+            ),
+          }
+        : {
+            tableName,
+            records: allData.skaterStats.map((stat) =>
+              mapApiDataToDbRecord(
+                stat,
+                dataMaps,
+                formattedDate,
+                seasonId,
+                tableName,
+              ),
+            ),
+          };
   } catch (error) {
     throw new WgoDateProcessingError(
       "transform_failure",
@@ -835,24 +912,19 @@ async function processAndUpsertGameTypeData(
     );
   }
 
-  if (recordsToUpsert.length > 0) {
+  if (writeBatch.records.length > 0) {
     const CHUNK_SIZE = 500;
-    for (let i = 0; i < recordsToUpsert.length; i += CHUNK_SIZE) {
-      const chunk = recordsToUpsert.slice(i, i + CHUNK_SIZE);
-
-      // Narrow the dynamic table before calling the generated Supabase overload.
-      // Both destinations consume the same NHL mapper, while their generated
-      // insert types differ for a few database-coerced time fields.
+    for (let i = 0; i < writeBatch.records.length; i += CHUNK_SIZE) {
       const { error } =
-        tableName === "wgo_skater_stats"
+        writeBatch.tableName === "wgo_skater_stats"
           ? await supabase
               .from("wgo_skater_stats")
-              .upsert(chunk as RegularSeasonSkaterInsert[], {
+              .upsert(writeBatch.records.slice(i, i + CHUNK_SIZE), {
                 onConflict: "player_id, date",
               })
           : await supabase
               .from("wgo_skater_stats_playoffs")
-              .upsert(chunk as PlayoffSkaterInsert[], {
+              .upsert(writeBatch.records.slice(i, i + CHUNK_SIZE), {
                 onConflict: "player_id, date",
               });
 
@@ -868,10 +940,10 @@ async function processAndUpsertGameTypeData(
       }
     }
     console.log(
-      `Successfully upserted ${recordsToUpsert.length} records to ${tableName} for ${formattedDate}`,
+      `Successfully upserted ${writeBatch.records.length} records to ${tableName} for ${formattedDate}`,
     );
   }
-  return recordsToUpsert.length;
+  return writeBatch.records.length;
 }
 
 /**
