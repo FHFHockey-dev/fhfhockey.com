@@ -628,6 +628,37 @@
 > owned by audited POST job 392 at `12:00`. The deployed writer probes passed;
 > offseason trend serving remains truthfully blocked on the latest played date.
 
+## Inbound scheduled-route authentication boundary
+
+The machine-checked inventory in `web/lib/cron/cronAuditCoverage.ts` and
+`web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts` freezes the
+2026-07-18 pre-rollout contract:
+
+- 59 active HTTP jobs resolve to 52 unique Pages API routes with no missing
+  route owner.
+- 17 routes already use the fail-closed `adminOnly` admin-or-exact-cron
+  boundary; one destructive internal sheet-sync route intentionally uses an
+  exact-`CRON_SECRET`-only guard; 34 routes remain explicitly unprotected and
+  pending route-by-route migration.
+- Static non-cron consumers are classified as 5 browser-admin-only routes,
+  11 internal-server-only routes, 4 routes with both browser-admin and internal
+  callers, and 32 cron-only routes. The manifest names every non-cron source
+  file so later protection cannot silently break an admin surface or chained
+  server call.
+- There is no approved public unauthenticated exception. The target is
+  `adminOnly` for every scheduled writer except the existing internal
+  cron-secret-only sheet sync.
+
+Rollout must remain route-by-route. Before wrapping a route, verify all named
+browser callers supply an authenticated admin bearer, all named server callers
+forward the exact cron bearer without logging it, and focused production-mode
+tests prove missing/invalid rejection plus cron/admin admission. Deploy a small
+coherent batch, run value-free 401/200 checks, then observe the scheduled audit
+before continuing. If a caller contract fails, roll back only that route's
+wrapper/caller batch to the preceding deployment; do not roll back the rotated
+secret, Vault-backed cron commands, or unrelated protected routes. A bulk
+cross-route enforcement change remains a breaking-contract checkpoint.
+
 
 
 ----------------------------------------------------------------------------------
