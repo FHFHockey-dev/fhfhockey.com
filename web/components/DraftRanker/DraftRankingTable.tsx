@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useMemo, useState, type DragEvent, type FormEvent } from "react";
 
 import type { DraftRankingEntry } from "hooks/useDraftRanking";
@@ -28,6 +28,7 @@ export default function DraftRankingTable({
   const [page, setPage] = useState(1);
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [draggedPlayerId, setDraggedPlayerId] = useState<number | null>(null);
+  const shouldReduceMotion = useReducedMotion();
 
   const visiblePool = useMemo(
     () =>
@@ -129,7 +130,7 @@ export default function DraftRankingTable({
               const selected = selectedPlayerId === entry.playerId;
               return (
                 <motion.tr
-                  layout
+                  layout={!shouldReduceMotion}
                   key={entry.playerId}
                   draggable={!isSaving}
                   onDragStart={() => setDraggedPlayerId(entry.playerId)}
