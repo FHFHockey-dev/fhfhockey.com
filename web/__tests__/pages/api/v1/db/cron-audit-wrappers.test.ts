@@ -77,9 +77,9 @@ describe("scheduled cron audit coverage", () => {
       ),
     ).toBe(59);
     expect(modeCounts).toEqual({
-      "admin-or-cron": 17,
+      "admin-or-cron": 19,
       "cron-secret-only": 1,
-      unprotected: 34,
+      unprotected: 32,
     });
     expect(callerCounts).toEqual({
       "browser-admin": 5,
@@ -109,10 +109,8 @@ describe("scheduled cron audit coverage", () => {
       .map((finding) => finding.routePath);
 
     expect(unprotectedRoutes).toEqual([
-      "/api/v1/db/build-projection-derived-v2",
       "/api/v1/db/calculate-wigo-stats",
       "/api/v1/db/cron-report",
-      "/api/v1/db/ingest-projection-inputs",
       "/api/v1/db/run-fetch-wgo-data",
       "/api/v1/db/run-projection-accuracy",
       "/api/v1/db/run-projection-v2",
