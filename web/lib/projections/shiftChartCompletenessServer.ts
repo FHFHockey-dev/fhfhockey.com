@@ -19,6 +19,8 @@ type NhlApiShiftRow = Pick<
 
 export const NHL_API_SHIFT_PLAYER_MANIFEST_SELECT =
   "shift_id,game_id,player_id,team_id";
+export const SHIFT_CHART_STRENGTH_OWNERSHIP_FILTER =
+  "total_es_toi.not.is.null,total_pp_toi.not.is.null,total_pk_toi.not.is.null";
 
 const MIN_COMPLETED_GAME_PLAYERS_PER_TEAM = 5;
 
@@ -107,6 +109,7 @@ export async function fetchShiftChartStrengthRowsForGame(
       .from("shift_charts")
       .select(SHIFT_CHART_STRENGTH_SELECT)
       .eq("game_id", gameId)
+      .or(SHIFT_CHART_STRENGTH_OWNERSHIP_FILTER)
       .order("id", { ascending: true })
       .range(from, to),
   );
@@ -137,6 +140,7 @@ export async function classifyStoredShiftChartStrengthGames(
       .from("shift_charts")
       .select(SHIFT_CHART_STRENGTH_SELECT)
       .in("game_id", chunk)
+      .or(SHIFT_CHART_STRENGTH_OWNERSHIP_FILTER)
       .order("id", { ascending: true })
       .range(from, to),
   );

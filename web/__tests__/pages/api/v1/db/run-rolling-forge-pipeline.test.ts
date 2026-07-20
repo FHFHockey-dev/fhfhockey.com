@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("utils/adminOnlyMiddleware", () => ({
+  default: (handler: any) => handler,
+}));
+
 const {
   updateGamesMock,
   updateTeamsMock,
@@ -12,6 +16,7 @@ const {
   updatePowerPlayCombinationsMock,
   updateRollingPlayerAveragesMock,
   ingestProjectionInputsMock,
+  shiftChartsMock,
   buildProjectionDerivedMock,
   updateGoalieProjectionsV2Mock,
   runProjectionV2Mock,
@@ -50,6 +55,7 @@ const {
     updatePowerPlayCombinationsMock: vi.fn(successResponder),
     updateRollingPlayerAveragesMock: vi.fn(successResponder),
     ingestProjectionInputsMock: vi.fn(successResponder),
+    shiftChartsMock: vi.fn(successResponder),
     buildProjectionDerivedMock: vi.fn(successResponder),
     updateGoalieProjectionsV2Mock: vi.fn(successResponder),
     runProjectionV2Mock: vi.fn(successResponder),
@@ -96,6 +102,9 @@ vi.mock("../../../../../pages/api/v1/db/update-rolling-player-averages", () => (
 }));
 vi.mock("../../../../../pages/api/v1/db/ingest-projection-inputs", () => ({
   default: ingestProjectionInputsMock
+}));
+vi.mock("../../../../../pages/api/v1/db/shift-charts", () => ({
+  default: shiftChartsMock
 }));
 vi.mock("../../../../../pages/api/v1/db/build-projection-derived-v2", () => ({
   default: buildProjectionDerivedMock
@@ -190,6 +199,10 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       startDate: "2026-02-28",
       endDate: "2026-03-14"
     });
+    expect(shiftChartsMock.mock.calls[0]?.[0]).toMatchObject({
+      method: "POST",
+      query: { gameId: "all" }
+    });
     expect(buildProjectionDerivedMock.mock.calls[0]?.[0]?.query).toMatchObject({
       startDate: "2026-03-07",
       endDate: "2026-03-13"
@@ -273,7 +286,7 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         blockingIssueCount: 0
       },
       dependencyContract: {
-        version: "rolling-forge-operator-order-v1",
+        version: "rolling-forge-operator-order-v2",
         healthyRunRule: expect.any(String),
         validationRule: expect.any(String),
         stages: expect.arrayContaining([
@@ -282,12 +295,16 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
           expect.objectContaining({ id: "contextual_builders", order: 3 }),
           expect.objectContaining({ id: "rolling_player_recompute", order: 4 }),
           expect.objectContaining({ id: "projection_input_ingest", order: 5 }),
-          expect.objectContaining({ id: "projection_derived_build", order: 6 }),
-          expect.objectContaining({ id: "projection_execution", order: 7 })
+          expect.objectContaining({
+            id: "projection_relationship_build",
+            order: 6
+          }),
+          expect.objectContaining({ id: "projection_derived_build", order: 7 }),
+          expect.objectContaining({ id: "projection_execution", order: 8 })
         ])
       },
       pipeline: {
-        version: "rolling-forge-pipeline-v3"
+        version: "rolling-forge-pipeline-v4"
       }
     });
     expect(res.body.stages.map((stage: any) => stage.id)).toEqual([
@@ -296,11 +313,80 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       "contextual_builders",
       "rolling_player_recompute",
       "projection_input_ingest",
+      "projection_relationship_build",
       "projection_derived_build",
       "projection_execution",
       "downstream_projection_consumers",
       "monitoring"
     ]);
+  });
+
+  it("lets the implicit Vercel schedule use the durable projection backlog", async () => {
+    const req: any = {
+      method: "GET",
+      query: {
+        mode: "daily_incremental",
+        includeAccuracy: "false",
+        stopOnFailure: "false"
+      },
+      url: "/api/v1/db/run-rolling-forge-pipeline?mode=daily_incremental&includeAccuracy=false&stopOnFailure=false"
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(ingestProjectionInputsMock).toHaveBeenCalledTimes(1);
+    expect(ingestProjectionInputsMock.mock.calls[0]?.[0]).toMatchObject({
+      method: "POST",
+      query: {}
+    });
+    expect(ingestProjectionInputsMock.mock.calls[0]?.[0]?.query).not.toHaveProperty(
+      "startDate"
+    );
+    expect(ingestProjectionInputsMock.mock.calls[0]?.[0]?.query).not.toHaveProperty(
+      "maxGames"
+    );
+    expect(shiftChartsMock.mock.invocationCallOrder[0]).toBeGreaterThan(
+      ingestProjectionInputsMock.mock.invocationCallOrder[0]
+    );
+    expect(buildProjectionDerivedMock.mock.invocationCallOrder[0]).toBeGreaterThan(
+      shiftChartsMock.mock.invocationCallOrder[0]
+    );
+    expect(buildProjectionDerivedMock.mock.calls[0]?.[0]).toMatchObject({
+      method: "POST",
+      query: {}
+    });
+    expect(res.body.executionControls.stopOnFailure).toBe(true);
+  });
+
+  it("fails the implicit schedule closed before derived work when relationships fail", async () => {
+    shiftChartsMock.mockImplementationOnce(async (_req: any, res: any) => {
+      res.status(500).json({ success: false, message: "relationship failed" });
+    });
+    const req: any = {
+      method: "GET",
+      query: {
+        mode: "daily_incremental",
+        stopOnFailure: "false"
+      },
+      url: "/api/v1/db/run-rolling-forge-pipeline?mode=daily_incremental&stopOnFailure=false"
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(207);
+    expect(ingestProjectionInputsMock).toHaveBeenCalledTimes(1);
+    expect(shiftChartsMock).toHaveBeenCalledTimes(1);
+    expect(buildProjectionDerivedMock).not.toHaveBeenCalled();
+    expect(runProjectionV2Mock).not.toHaveBeenCalled();
+    expect(res.body.executionControls.stopOnFailure).toBe(true);
+    expect(
+      res.body.stages.find(
+        (stage: any) => stage.id === "projection_derived_build"
+      )
+    ).toMatchObject({ status: "skipped" });
   });
 
   it("stops after a blocking stage failure and skips the remaining stages", async () => {
@@ -397,7 +483,7 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
     );
   });
 
-  it("keeps stage 8 accuracy-only after retiring the legacy start-chart materializer", async () => {
+  it("keeps the downstream stage accuracy-only after retiring the legacy start-chart materializer", async () => {
     const req: any = {
       method: "GET",
       query: {

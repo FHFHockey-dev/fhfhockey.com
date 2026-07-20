@@ -2,9 +2,57 @@ import { describe, expect, it } from "vitest";
 
 import {
   calculateCompletedGameLengthSeconds,
+  formatCompletedPbpGameLength,
   formatGameLength,
   normalizeNhlGameType,
 } from "./gameLength";
+import type { PbpResponse } from "./ingest/pbp";
+
+function finalPbp(args: {
+  gameType?: number;
+  period?: number;
+  periodType?: string;
+  timeRemaining?: string;
+} = {}): PbpResponse {
+  const period = args.period ?? 3;
+  const periodType = args.periodType ?? "REG";
+  return {
+    id: 2025020001,
+    season: 20252026,
+    gameType: args.gameType ?? 2,
+    gameState: "FINAL",
+    gameDate: "2025-10-07",
+    startTimeUTC: "2025-10-07T23:00:00Z",
+    awayTeam: {
+      id: 1,
+      abbrev: "AAA",
+      commonName: { default: "Away" },
+      score: 2,
+    },
+    homeTeam: {
+      id: 2,
+      abbrev: "BBB",
+      commonName: { default: "Home" },
+      score: 3,
+    },
+    plays: [
+      {
+        eventId: 1,
+        typeDescKey: "period-start",
+        periodDescriptor: { number: period, periodType },
+        timeInPeriod: "00:00",
+        timeRemaining: "20:00",
+      },
+      {
+        eventId: 2,
+        typeDescKey: "game-end",
+        periodDescriptor: { number: period, periodType },
+        timeInPeriod: "20:00",
+        timeRemaining: args.timeRemaining ?? "00:00",
+      },
+    ],
+  };
+}
 
 describe("completed NHL game length", () => {
   it("normalizes numeric schedule game types for the text database contract", () => {
@@ -52,6 +100,27 @@ describe("completed NHL game length", () => {
 
     expect(seconds).toBe(5354);
     expect(formatGameLength(seconds)).toBe("89:14");
+  });
+
+  it("derives persisted game length from the exact final PBP terminal", () => {
+    expect(formatCompletedPbpGameLength(finalPbp())).toBe("60:00");
+    expect(
+      formatCompletedPbpGameLength(
+        finalPbp({
+          gameType: 3,
+          period: 5,
+          periodType: "OT",
+          timeRemaining: "10:46",
+        }),
+      ),
+    ).toBe("89:14");
+
+    expect(() =>
+      formatCompletedPbpGameLength({
+        ...finalPbp(),
+        gameState: "LIVE",
+      }),
+    ).toThrow("PBP is not final and complete");
   });
 
   it("fails closed on malformed or impossible clocks", () => {

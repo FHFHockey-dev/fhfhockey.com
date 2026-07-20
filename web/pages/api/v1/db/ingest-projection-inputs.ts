@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import adminOnly from "utils/adminOnlyMiddleware";
 import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
@@ -17,13 +18,25 @@ import {
   buildExpectedPbpSourceEvidence,
   fetchPbpGame,
   isCompleteFinalPbpPayload,
-  upsertPbpGameAndPlays,
 } from "lib/projections/ingest/pbp";
 import {
   buildShiftStrengthUpserts,
-  fetchAllNhleShiftChartsForGame,
-  replaceShiftStrengthRowsForGame,
+  fetchAllNhleShiftChartsSnapshotForGame,
 } from "lib/projections/ingest/shifts";
+import { captureProjectionRawSourceSnapshots } from "lib/projections/ingest/rawSnapshotPersistence";
+import {
+  buildProjectionInputRpcPayload,
+  persistProjectionGameInputs,
+  readProjectionInputManifest,
+} from "lib/projections/ingest/projectionInputPersistence";
+import {
+  acquireProjectionPipelineLease,
+  advanceProjectionPipelineLease,
+  buildProjectionPipelineOperationKey,
+  finishProjectionPipelineLease,
+  readOldestProjectionPipelineBacklog,
+  type ProjectionPipelineLease,
+} from "lib/projections/projectionPipelineState";
 
 type Result = {
   success: boolean;
@@ -41,6 +54,14 @@ type Result = {
   pbpPlaysUpserted: number;
   shiftRowsUpserted: number;
   rowsUpserted: number;
+  gamesVerified: number;
+  gamesIdempotent: number;
+  pbpPlaysVerified: number;
+  shiftRowsVerified: number;
+  rowsVerified: number;
+  pbpPlaysPruned: number;
+  shiftRowsPruned: number;
+  rowsPruned: number;
   failedRows: number;
   skipped: number;
   skipReasons: {
@@ -61,6 +82,7 @@ type Result = {
   maxGames: number | null;
   nextGameId: number | null;
   lastCompletedGameId: number | null;
+  durableOperationAlreadyComplete?: boolean;
   errors: Array<{
     gameId: number;
     date: string;
@@ -70,8 +92,12 @@ type Result = {
       | "precheck_shifts"
       | "fetch_pbp"
       | "fetch_shifts"
-      | "upsert_pbp"
-      | "upsert_shifts";
+      | "capture_raw_sources"
+      | "persist_inputs"
+      | "verify_pbp"
+      | "verify_shifts"
+      | "advance_cursor"
+      | "finish_cursor";
     message: string;
   }>;
   dependencyContract?: ReturnType<
@@ -201,6 +227,14 @@ async function handler(
         pbpPlaysUpserted: 0,
         shiftRowsUpserted: 0,
         rowsUpserted: 0,
+        gamesVerified: 0,
+        gamesIdempotent: 0,
+        pbpPlaysVerified: 0,
+        shiftRowsVerified: 0,
+        rowsVerified: 0,
+        pbpPlaysPruned: 0,
+        shiftRowsPruned: 0,
+        rowsPruned: 0,
         failedRows: 0,
         skipped: 0,
         skipReasons: {
@@ -225,8 +259,10 @@ async function handler(
     );
   }
 
-  const startDate = getParam(req, "startDate") ?? previousUtcDate();
-  const endDate = getParam(req, "endDate") ?? startDate;
+  const requestedStartDate = getParam(req, "startDate");
+  const requestedEndDate = getParam(req, "endDate");
+  let startDate = requestedStartDate ?? previousUtcDate();
+  let endDate = requestedEndDate ?? startDate;
   const fullRequestedRange = buildDateRange(startDate, endDate);
   if (fullRequestedRange.length === 0) {
     return res.status(400).json(
@@ -246,6 +282,14 @@ async function handler(
         pbpPlaysUpserted: 0,
         shiftRowsUpserted: 0,
         rowsUpserted: 0,
+        gamesVerified: 0,
+        gamesIdempotent: 0,
+        pbpPlaysVerified: 0,
+        shiftRowsVerified: 0,
+        rowsVerified: 0,
+        pbpPlaysPruned: 0,
+        shiftRowsPruned: 0,
+        rowsPruned: 0,
         failedRows: 0,
         skipped: 0,
         skipReasons: {
@@ -290,9 +334,50 @@ async function handler(
     ? Number.POSITIVE_INFINITY
     : startedAt + budgetMs;
 
+  const useDurableScheduledCursor =
+    requestedStartDate == null &&
+    requestedEndDate == null &&
+    resumeFromDate == null &&
+    resumeFromGameId == null &&
+    chunkDays === 0 &&
+    maxGames == null &&
+    !force;
+  let pipelineLease: ProjectionPipelineLease | null = null;
+  let durableResumeFromDate = resumeFromDate;
+  let durableResumeFromGameId = resumeFromGameId;
+  if (useDurableScheduledCursor) {
+    assertSupabase();
+    const backlog = await readOldestProjectionPipelineBacklog({
+      supabase,
+      throughDate: endDate,
+    });
+    if (backlog) {
+      startDate = backlog.rangeStartDate;
+      endDate = backlog.rangeEndDate;
+    }
+    const operationKey =
+      backlog?.operationKey ??
+      buildProjectionPipelineOperationKey({
+        startDate,
+        endDate,
+        force: false,
+      });
+    pipelineLease = await acquireProjectionPipelineLease({
+      supabase,
+      operationKey,
+      rangeStartDate: startDate,
+      rangeEndDate: endDate,
+      initialCursorDate: startDate,
+    });
+    durableResumeFromDate = pipelineLease.cursorDate ?? startDate;
+    durableResumeFromGameId = pipelineLease.cursorGameId;
+  }
+
   const effectiveStartDate =
-    resumeFromDate && resumeFromDate >= startDate && resumeFromDate <= endDate
-      ? resumeFromDate
+    durableResumeFromDate &&
+    durableResumeFromDate >= startDate &&
+    durableResumeFromDate <= endDate
+      ? durableResumeFromDate
       : startDate;
   const fullRangeDates = buildDateRange(effectiveStartDate, endDate);
   const limitedRangeDates =
@@ -306,10 +391,18 @@ async function handler(
 
   const allGames = await listGamesInRange(effectiveStartDate, effectiveEndDate);
   const resumeIndex =
-    resumeFromGameId == null
+    durableResumeFromGameId == null
       ? 0
-      : allGames.findIndex((game) => game.id === resumeFromGameId);
-  if (resumeFromGameId != null && resumeIndex < 0) {
+      : allGames.findIndex((game) => game.id === durableResumeFromGameId);
+  if (durableResumeFromGameId != null && resumeIndex < 0) {
+    if (pipelineLease) {
+      pipelineLease = await finishProjectionPipelineLease({
+        supabase,
+        lease: pipelineLease,
+        outcome: "failed",
+        failureCode: "cursor_game_not_in_range",
+      });
+    }
     return res.status(400).json(
       withTiming({
         success: false,
@@ -329,6 +422,14 @@ async function handler(
         pbpPlaysUpserted: 0,
         shiftRowsUpserted: 0,
         rowsUpserted: 0,
+        gamesVerified: 0,
+        gamesIdempotent: 0,
+        pbpPlaysVerified: 0,
+        shiftRowsVerified: 0,
+        rowsVerified: 0,
+        pbpPlaysPruned: 0,
+        shiftRowsPruned: 0,
+        rowsPruned: 0,
         failedRows: 1,
         skipped: 0,
         skipReasons: {
@@ -342,7 +443,7 @@ async function handler(
         lastCompletedGameId: null,
         errors: [
           {
-            gameId: resumeFromGameId,
+            gameId: durableResumeFromGameId,
             date: effectiveStartDate,
             stage: "list_games",
             message:
@@ -354,6 +455,11 @@ async function handler(
     );
   }
   const cursorGames = allGames.slice(Math.max(0, resumeIndex));
+  const nextCursorByGameId = new Map<number, { id: number; date: string }>();
+  cursorGames.forEach((game, index) => {
+    const next = cursorGames[index + 1];
+    if (next) nextCursorByGameId.set(game.id, next);
+  });
   const games =
     typeof maxGames === "number" && maxGames > 0
       ? cursorGames.slice(0, maxGames)
@@ -370,7 +476,7 @@ async function handler(
     startDate: effectiveStartDate,
     endDate: effectiveEndDate,
     chunkDays,
-    resumeFromDate,
+    resumeFromDate: durableResumeFromDate,
     nextStartDate: chunkNextStartDate,
     durationMs: formatDurationMsToMMSS(0),
     timedOut: false,
@@ -383,6 +489,14 @@ async function handler(
     pbpPlaysUpserted: 0,
     shiftRowsUpserted: 0,
     rowsUpserted: 0,
+    gamesVerified: 0,
+    gamesIdempotent: 0,
+    pbpPlaysVerified: 0,
+    shiftRowsVerified: 0,
+    rowsVerified: 0,
+    pbpPlaysPruned: 0,
+    shiftRowsPruned: 0,
+    rowsPruned: 0,
     failedRows: 0,
     skipped: 0,
     skipReasons: {
@@ -405,6 +519,15 @@ async function handler(
     dependencyContract,
   };
 
+  if (pipelineLease?.status === "complete") {
+    return res.status(200).json(
+      withTiming({
+        ...result,
+        durableOperationAlreadyComplete: true,
+      }),
+    );
+  }
+
   for (const g of games) {
     if (Date.now() > deadlineMs) {
       result.success = false;
@@ -418,8 +541,11 @@ async function handler(
       | "precheck_shifts"
       | "fetch_pbp"
       | "fetch_shifts"
-      | "upsert_pbp"
-      | "upsert_shifts" = "precheck_pbp";
+      | "capture_raw_sources"
+      | "persist_inputs"
+      | "verify_pbp"
+      | "verify_shifts"
+      | "advance_cursor" = "precheck_pbp";
     try {
       const gameId = g.id;
       stage = "precheck_pbp";
@@ -430,7 +556,9 @@ async function handler(
         throw new Error(`PBP is not final and complete for game ${gameId}`);
       }
       stage = "fetch_shifts";
-      const sourceShiftRows = await fetchAllNhleShiftChartsForGame(gameId);
+      const shiftSnapshot =
+        await fetchAllNhleShiftChartsSnapshotForGame(gameId);
+      const sourceShiftRows = shiftSnapshot.rows;
       const expectedPlayerIds = sourceShiftRows.map((row) => row.playerId);
       stage = "precheck_shifts";
       const shiftsExist = force
@@ -446,11 +574,49 @@ async function handler(
       // matches the authoritative NHL source. Reconcile the exact PBP scope on
       // every selected run, then rebuild shift-strength totals from that same
       // source payload so upstream corrections cannot leave derived rows stale.
-      stage = "upsert_pbp";
-      const pbpUpsert = await upsertPbpGameAndPlays(sharedPbp);
-      result.pbpGamesUpserted += 1;
-      result.pbpPlaysUpserted += pbpUpsert.playsUpserted;
-      result.rowsUpserted += 1 + pbpUpsert.playsUpserted;
+      stage = "capture_raw_sources";
+      const rawSnapshots = await captureProjectionRawSourceSnapshots({
+        supabase,
+        gameId,
+        pbp: sharedPbp,
+        shiftPayload: shiftSnapshot.rawPayload,
+      });
+      stage = "persist_inputs";
+      const currentManifest = await readProjectionInputManifest({
+        supabase,
+        gameId,
+      });
+      const inputPayload = buildProjectionInputRpcPayload({
+        gameId,
+        pbp: sharedPbp,
+        shiftSourceRows: sourceShiftRows,
+        strengthRows: shiftUpserts,
+        rawSnapshots,
+        expectedCurrentInputFingerprint:
+          currentManifest?.inputFingerprint ?? null,
+      });
+      const receipt = await persistProjectionGameInputs({
+        supabase,
+        payload: inputPayload,
+      });
+      result.gamesVerified += 1;
+      result.pbpPlaysVerified += receipt.playCount;
+      result.shiftRowsVerified += receipt.strengthCount;
+      result.rowsVerified += 1 + receipt.playCount + receipt.strengthCount;
+      result.pbpPlaysPruned += receipt.prunedPlayRows;
+      result.shiftRowsPruned += receipt.prunedStrengthRows;
+      result.rowsPruned +=
+        receipt.prunedPlayRows + receipt.prunedStrengthRows;
+      if (receipt.idempotent) {
+        result.gamesIdempotent += 1;
+      } else {
+        result.pbpGamesUpserted += 1;
+        result.pbpPlaysUpserted += receipt.playCount;
+        result.shiftRowsUpserted += receipt.strengthCount;
+        result.rowsUpserted += 1 + receipt.playCount + receipt.strengthCount;
+      }
+
+      stage = "verify_pbp";
       if (
         !(await hasCompleteStoredPbpGame(
           gameId,
@@ -462,13 +628,7 @@ async function handler(
         );
       }
 
-      stage = "upsert_shifts";
-      const shiftUpsert = await replaceShiftStrengthRowsForGame(
-        gameId,
-        shiftUpserts,
-      );
-      result.shiftRowsUpserted += shiftUpsert.rowsUpserted;
-      result.rowsUpserted += shiftUpsert.rowsUpserted;
+      stage = "verify_shifts";
       if (!(await hasCompleteShiftTotals(gameId, expectedPlayerIds))) {
         throw new Error(
           `Shift-strength post-write verification failed for game ${gameId}`,
@@ -477,6 +637,17 @@ async function handler(
 
       result.gamesProcessed += 1;
       result.lastCompletedGameId = gameId;
+
+      const nextCursor = nextCursorByGameId.get(gameId);
+      if (pipelineLease && nextCursor) {
+        stage = "advance_cursor";
+        pipelineLease = await advanceProjectionPipelineLease({
+          supabase,
+          lease: pipelineLease,
+          nextCursorDate: nextCursor.date,
+          nextCursorGameId: nextCursor.id,
+        });
+      }
 
       if (
         debug &&
@@ -494,12 +665,36 @@ async function handler(
       }
     } catch (e) {
       if (
+        !useDurableScheduledCursor &&
         (stage === "fetch_pbp" || stage === "fetch_shifts") &&
         isUnavailableGamecenterFeedError(e)
       ) {
         result.skipped += 1;
         result.skipReasons.gamecenterFeedUnavailable += 1;
         result.lastCompletedGameId = g.id;
+        const nextCursor = nextCursorByGameId.get(g.id);
+        if (pipelineLease && nextCursor) {
+          try {
+            pipelineLease = await advanceProjectionPipelineLease({
+              supabase,
+              lease: pipelineLease,
+              nextCursorDate: nextCursor.date,
+              nextCursorGameId: nextCursor.id,
+            });
+          } catch (cursorError) {
+            result.success = false;
+            result.errors.push({
+              gameId: g.id,
+              date: g.date,
+              stage: "advance_cursor",
+              message: (cursorError as any)?.message ?? String(cursorError),
+            });
+            result.failedRows = result.errors.length;
+            result.nextStartDate = g.date;
+            result.nextGameId = g.id;
+            break;
+          }
+        }
         if (
           debug &&
           result.debug &&
@@ -531,11 +726,36 @@ async function handler(
     }
   }
 
+  if (pipelineLease) {
+    try {
+      pipelineLease = await finishProjectionPipelineLease({
+        supabase,
+        lease: pipelineLease,
+        outcome: result.success ? "complete" : "failed",
+        ...(result.success
+          ? {}
+          : {
+              failureCode: result.timedOut
+                ? "deadline_reached"
+                : "projection_input_failed",
+            }),
+      });
+    } catch (cursorError) {
+      result.success = false;
+      result.errors.push({
+        gameId: result.nextGameId ?? result.lastCompletedGameId ?? -1,
+        date: result.nextStartDate ?? effectiveStartDate,
+        stage: "finish_cursor",
+        message: (cursorError as any)?.message ?? String(cursorError),
+      });
+    }
+  }
+
   result.failedRows = result.errors.length;
   result.durationMs = formatDurationMsToMMSS(Date.now() - startedAt);
   return res.status(200).json(withTiming(result));
 }
 
-export default withCronJobAudit(handler, {
+export default withCronJobAudit(adminOnly(handler as any), {
   jobName: "ingest-projection-inputs",
 });

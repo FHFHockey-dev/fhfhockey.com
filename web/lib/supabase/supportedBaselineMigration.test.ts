@@ -20,7 +20,7 @@ const readMigration = (name: string) =>
   readFileSync(path.join(migrationRoot, name), "utf8");
 
 describe("supported Supabase schema-baseline reconciliation", () => {
-  it("keeps only the reviewed baseline and two post-baseline deltas active", () => {
+  it("keeps only the reviewed baseline and supported post-baseline deltas active", () => {
     expect(
       readdirSync(migrationRoot)
         .filter((name) => name.endsWith(".sql"))
@@ -29,6 +29,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260716112908_production_schema_baseline.sql",
       "20260716112909_add_line_combinations_source_provenance.sql",
       "20260716112910_harden_line_combination_trigger_auth.sql",
+      "20260720105524_add_projection_materialization_transactions.sql",
     ]);
 
     expect(

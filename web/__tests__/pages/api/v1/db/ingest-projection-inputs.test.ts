@@ -1,24 +1,42 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("utils/adminOnlyMiddleware", () => ({
+  default: (handler: any) => handler,
+}));
+
 const {
   auditInsertMock,
+  acquireProjectionPipelineLeaseMock,
+  advanceProjectionPipelineLeaseMock,
+  buildProjectionPipelineOperationKeyMock,
+  buildProjectionInputRpcPayloadMock,
   buildShiftStrengthUpsertsMock,
+  captureProjectionRawSourceSnapshotsMock,
   fetchPbpGameMock,
   fetchShiftRowsMock,
   hasCompleteStoredPbpGameMock,
   isCompleteFinalPbpPayloadMock,
-  replaceShiftStrengthRowsForGameMock,
-  upsertPbpGameAndPlaysMock,
+  persistProjectionGameInputsMock,
+  readProjectionInputManifestMock,
+  readOldestProjectionPipelineBacklogMock,
+  finishProjectionPipelineLeaseMock,
   state,
 } = vi.hoisted(() => ({
   auditInsertMock: vi.fn().mockResolvedValue({ error: null }),
+  acquireProjectionPipelineLeaseMock: vi.fn(),
+  advanceProjectionPipelineLeaseMock: vi.fn(),
+  buildProjectionPipelineOperationKeyMock: vi.fn(),
+  buildProjectionInputRpcPayloadMock: vi.fn(),
   buildShiftStrengthUpsertsMock: vi.fn(),
+  captureProjectionRawSourceSnapshotsMock: vi.fn(),
   fetchPbpGameMock: vi.fn(),
   fetchShiftRowsMock: vi.fn(),
   hasCompleteStoredPbpGameMock: vi.fn(),
   isCompleteFinalPbpPayloadMock: vi.fn(),
-  replaceShiftStrengthRowsForGameMock: vi.fn(),
-  upsertPbpGameAndPlaysMock: vi.fn(),
+  persistProjectionGameInputsMock: vi.fn(),
+  readProjectionInputManifestMock: vi.fn(),
+  readOldestProjectionPipelineBacklogMock: vi.fn(),
+  finishProjectionPipelineLeaseMock: vi.fn(),
   state: {
     pbpComplete: new Set<number>(),
     pbpEventIds: new Map<number, number[]>(),
@@ -45,7 +63,6 @@ vi.mock("lib/projections/ingest/pbp", () => ({
   }),
   fetchPbpGame: fetchPbpGameMock,
   isCompleteFinalPbpPayload: isCompleteFinalPbpPayloadMock,
-  upsertPbpGameAndPlays: upsertPbpGameAndPlaysMock,
 }));
 
 vi.mock("lib/projections/pbpCompletenessServer", () => ({
@@ -54,8 +71,27 @@ vi.mock("lib/projections/pbpCompletenessServer", () => ({
 
 vi.mock("lib/projections/ingest/shifts", () => ({
   buildShiftStrengthUpserts: buildShiftStrengthUpsertsMock,
-  fetchAllNhleShiftChartsForGame: fetchShiftRowsMock,
-  replaceShiftStrengthRowsForGame: replaceShiftStrengthRowsForGameMock,
+  fetchAllNhleShiftChartsSnapshotForGame: fetchShiftRowsMock,
+}));
+
+vi.mock("lib/projections/ingest/rawSnapshotPersistence", () => ({
+  captureProjectionRawSourceSnapshots:
+    captureProjectionRawSourceSnapshotsMock,
+}));
+
+vi.mock("lib/projections/ingest/projectionInputPersistence", () => ({
+  buildProjectionInputRpcPayload: buildProjectionInputRpcPayloadMock,
+  persistProjectionGameInputs: persistProjectionGameInputsMock,
+  readProjectionInputManifest: readProjectionInputManifestMock,
+}));
+
+vi.mock("lib/projections/projectionPipelineState", () => ({
+  acquireProjectionPipelineLease: acquireProjectionPipelineLeaseMock,
+  advanceProjectionPipelineLease: advanceProjectionPipelineLeaseMock,
+  buildProjectionPipelineOperationKey: buildProjectionPipelineOperationKeyMock,
+  finishProjectionPipelineLease: finishProjectionPipelineLeaseMock,
+  readOldestProjectionPipelineBacklog:
+    readOldestProjectionPipelineBacklogMock,
 }));
 
 const games = Array.from({ length: 7 }, (_, index) => ({
@@ -103,6 +139,7 @@ function sourceShiftRows(gameId: number) {
       teamAbbrev: "AAA",
       firstName: "Home",
       lastName: "Player",
+      shiftNumber: 1,
       period: 1,
       startTime: "0:00",
       endTime: "0:30",
@@ -116,6 +153,7 @@ function sourceShiftRows(gameId: number) {
       teamAbbrev: "BBB",
       firstName: "Away",
       lastName: "Player",
+      shiftNumber: 1,
       period: 1,
       startTime: "0:00",
       endTime: "0:30",
@@ -129,6 +167,7 @@ function sourceShiftRows(gameId: number) {
       teamAbbrev: "AAA",
       firstName: "Home",
       lastName: "Player",
+      shiftNumber: 2,
       period: 1,
       startTime: "0:30",
       endTime: "1:00",
@@ -244,6 +283,7 @@ vi.mock("lib/supabase/server", () => ({
             gameId = value;
             return query;
           }),
+          or: vi.fn(() => query),
           order: vi.fn(() => query),
           range: vi.fn(async () => ({
             data:
@@ -300,6 +340,45 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
     state.pbpEventIds.clear();
     state.shiftComplete.clear();
     state.storedShiftRows.clear();
+    readOldestProjectionPipelineBacklogMock.mockResolvedValue(null);
+    buildProjectionPipelineOperationKeyMock.mockImplementation(
+      ({ startDate, endDate, force }: any) =>
+        `${force ? "force" : "canonical"}:${startDate}:${endDate}`,
+    );
+    acquireProjectionPipelineLeaseMock.mockImplementation(
+      async (args: any) => ({
+        pipelineKey: "projection_input_ingest",
+        scopeKey: "completed_game_slates",
+        operationKey: args.operationKey,
+        revision: 1,
+        status: "running",
+        cursorGameId: null,
+        cursorDate: args.initialCursorDate,
+        rangeStartDate: args.rangeStartDate,
+        rangeEndDate: args.rangeEndDate,
+        leaseOwner: "scheduled-test-owner",
+        leaseExpiresAt: "2026-07-20T10:10:00.000Z",
+        lastError: null,
+        updatedAt: "2026-07-20T10:00:00.000Z",
+      }),
+    );
+    advanceProjectionPipelineLeaseMock.mockImplementation(
+      async ({ lease, nextCursorDate, nextCursorGameId }: any) => ({
+        ...lease,
+        revision: lease.revision + 1,
+        cursorDate: nextCursorDate,
+        cursorGameId: nextCursorGameId,
+      }),
+    );
+    finishProjectionPipelineLeaseMock.mockImplementation(
+      async ({ lease, outcome }: any) => ({
+        ...lease,
+        revision: lease.revision + 1,
+        status: outcome,
+        leaseOwner: null,
+        leaseExpiresAt: null,
+      }),
+    );
     fetchPbpGameMock.mockImplementation(async (gameId: number) =>
       pbpPayload(gameId),
     );
@@ -314,16 +393,12 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
         );
       },
     );
-    fetchShiftRowsMock.mockImplementation(async (gameId: number) =>
-      sourceShiftRows(gameId),
-    );
-    upsertPbpGameAndPlaysMock.mockImplementation(async (payload: any) => {
-      state.pbpComplete.add(payload.id);
-      state.pbpEventIds.set(
-        payload.id,
-        payload.plays.map((play: any) => play.eventId),
-      );
-      return { playsUpserted: 5 };
+    fetchShiftRowsMock.mockImplementation(async (gameId: number) => {
+      const rows = sourceShiftRows(gameId);
+      return {
+        rows,
+        rawPayload: { total: rows.length, data: rows, source: "json-api" },
+      };
     });
     buildShiftStrengthUpsertsMock.mockImplementation(
       (gameId: number, _pbp: any, rows: any[]) =>
@@ -334,11 +409,49 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
           }),
         ),
     );
-    replaceShiftStrengthRowsForGameMock.mockImplementation(
-      async (gameId: number) => {
-        state.shiftComplete.add(gameId);
-        state.storedShiftRows.delete(gameId);
-        return { rowsUpserted: 2 };
+    readProjectionInputManifestMock.mockResolvedValue(null);
+    captureProjectionRawSourceSnapshotsMock.mockImplementation(
+      async ({ gameId }: any) => ({
+        gameId,
+        pbp: {
+          rawPayloadId: gameId * 10 + 1,
+          snapshotVersion: 3,
+          payloadHash: "c".repeat(64),
+        },
+        shifts: {
+          rawPayloadId: gameId * 10 + 2,
+          snapshotVersion: 4,
+          payloadHash: "d".repeat(64),
+        },
+      }),
+    );
+    buildProjectionInputRpcPayloadMock.mockImplementation((args: any) => ({
+      ...args,
+      inputFingerprint: `fingerprint-${args.gameId}`,
+      playRows: args.pbp.plays,
+      strengthRows: args.strengthRows,
+    }));
+    persistProjectionGameInputsMock.mockImplementation(
+      async ({ payload }: any) => {
+        state.pbpComplete.add(payload.gameId);
+        state.pbpEventIds.set(
+          payload.gameId,
+          payload.pbp.plays.map((play: any) => play.eventId),
+        );
+        state.shiftComplete.add(payload.gameId);
+        state.storedShiftRows.delete(payload.gameId);
+        return {
+          gameId: payload.gameId,
+          inputStatus: "complete",
+          inputFingerprint: payload.inputFingerprint,
+          inputVersion: 1,
+          playCount: payload.playRows.length,
+          strengthCount: payload.strengthRows.length,
+          prunedPlayRows: 0,
+          prunedStrengthRows: 0,
+          idempotent: false,
+          completedAt: "2026-07-20T10:00:00.000Z",
+        };
       },
     );
   });
@@ -365,18 +478,194 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
       gamesProcessed: 7,
       skipped: 0,
       pbpGamesUpserted: 7,
+      gamesVerified: 7,
+      gamesIdempotent: 0,
+      pbpPlaysVerified: 14,
+      shiftRowsVerified: 14,
+      rowsVerified: 35,
+      pbpPlaysPruned: 0,
+      shiftRowsPruned: 0,
+      rowsPruned: 0,
       shiftRowsUpserted: 14,
     });
     expect(fetchPbpGameMock).toHaveBeenCalledTimes(7);
     expect(fetchShiftRowsMock).toHaveBeenCalledTimes(7);
-    expect(upsertPbpGameAndPlaysMock).toHaveBeenCalledTimes(7);
-    expect(replaceShiftStrengthRowsForGameMock).toHaveBeenCalledTimes(7);
+    expect(readProjectionInputManifestMock).toHaveBeenCalledTimes(7);
+    expect(captureProjectionRawSourceSnapshotsMock).toHaveBeenCalledTimes(7);
+    expect(buildProjectionInputRpcPayloadMock).toHaveBeenCalledTimes(7);
+    expect(persistProjectionGameInputsMock).toHaveBeenCalledTimes(7);
   });
 
   it("uses the previous UTC date for an empty scheduled request", () => {
     expect(previousUtcDate(new Date("2026-03-20T09:45:00Z"))).toBe(
       "2026-03-19",
     );
+  });
+
+  it("durably advances every default scheduled game before completing its lease", async () => {
+    const req: any = { method: "POST", query: {}, body: {} };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(acquireProjectionPipelineLeaseMock).toHaveBeenCalledTimes(1);
+    expect(advanceProjectionPipelineLeaseMock).toHaveBeenCalledTimes(6);
+    expect(
+      advanceProjectionPipelineLeaseMock.mock.calls.map(
+        ([call]) => call.nextCursorGameId,
+      ),
+    ).toEqual([102, 103, 104, 105, 106, 107]);
+    expect(finishProjectionPipelineLeaseMock).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: "complete" }),
+    );
+  });
+
+  it("resumes the oldest failed scheduled slate after the UTC date changes", async () => {
+    readOldestProjectionPipelineBacklogMock.mockResolvedValueOnce({
+      operationKey: "canonical:2026-03-20:2026-03-20",
+      rangeStartDate: "2026-03-20",
+      rangeEndDate: "2026-03-20",
+      cursorDate: "2026-03-20",
+      cursorGameId: 103,
+      status: "failed",
+    });
+    acquireProjectionPipelineLeaseMock.mockImplementationOnce(
+      async (args: any) => ({
+        pipelineKey: "projection_input_ingest",
+        scopeKey: "completed_game_slates",
+        operationKey: args.operationKey,
+        revision: 8,
+        status: "running",
+        cursorGameId: 103,
+        cursorDate: "2026-03-20",
+        rangeStartDate: args.rangeStartDate,
+        rangeEndDate: args.rangeEndDate,
+        leaseOwner: "scheduled-test-owner",
+        leaseExpiresAt: "2026-07-20T10:10:00.000Z",
+        lastError: null,
+        updatedAt: "2026-07-20T10:00:00.000Z",
+      }),
+    );
+    const req: any = { method: "POST", query: {}, body: {} };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(readOldestProjectionPipelineBacklogMock).toHaveBeenCalledWith(
+      expect.objectContaining({ throughDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) }),
+    );
+    expect(buildProjectionPipelineOperationKeyMock).not.toHaveBeenCalled();
+    expect(acquireProjectionPipelineLeaseMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        operationKey: "canonical:2026-03-20:2026-03-20",
+        rangeStartDate: "2026-03-20",
+        rangeEndDate: "2026-03-20",
+        initialCursorDate: "2026-03-20",
+      }),
+    );
+    expect(fetchPbpGameMock.mock.calls[0]?.[0]).toBe(103);
+    expect(res.body).toMatchObject({
+      startDate: "2026-03-20",
+      endDate: "2026-03-20",
+      resumeFromDate: "2026-03-20",
+      gamesProcessed: 5,
+    });
+  });
+
+  it("retains the exact scheduled game cursor when a later game fails", async () => {
+    fetchPbpGameMock.mockImplementation(async (gameId: number) => {
+      if (gameId === 103) throw new Error("bounded test failure");
+      return pbpPayload(gameId);
+    });
+    const req: any = { method: "POST", query: {}, body: {} };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.body).toMatchObject({
+      success: false,
+      nextGameId: 103,
+      lastCompletedGameId: 102,
+    });
+    expect(advanceProjectionPipelineLeaseMock).toHaveBeenCalledTimes(2);
+    expect(finishProjectionPipelineLeaseMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        outcome: "failed",
+        failureCode: "projection_input_failed",
+        lease: expect.objectContaining({ cursorGameId: 103 }),
+      }),
+    );
+  });
+
+  it("fails closed at the exact scheduled cursor on a Gamecenter 404", async () => {
+    fetchPbpGameMock.mockImplementation(async (gameId: number) => {
+      if (gameId === 103) {
+        throw new Error(
+          `NHL API HTTP 404 Not Found: /gamecenter/${gameId}/play-by-play`,
+        );
+      }
+      return pbpPayload(gameId);
+    });
+    const req: any = { method: "POST", query: {}, body: {} };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.body).toMatchObject({
+      success: false,
+      skipped: 0,
+      skipReasons: { gamecenterFeedUnavailable: 0 },
+      nextGameId: 103,
+      lastCompletedGameId: 102,
+      errors: [
+        expect.objectContaining({
+          gameId: 103,
+          stage: "fetch_pbp",
+          message: "NHL API HTTP 404 Not Found: /gamecenter/103/play-by-play",
+        }),
+      ],
+    });
+    expect(advanceProjectionPipelineLeaseMock).toHaveBeenCalledTimes(2);
+    expect(finishProjectionPipelineLeaseMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        outcome: "failed",
+        failureCode: "projection_input_failed",
+        lease: expect.objectContaining({ cursorGameId: 103 }),
+      }),
+    );
+  });
+
+  it("preserves explicit historical Gamecenter 404 skips", async () => {
+    fetchPbpGameMock.mockRejectedValueOnce(
+      new Error("NHL API HTTP 404 Not Found: /gamecenter/101/play-by-play"),
+    );
+    const req: any = {
+      method: "POST",
+      query: {
+        startDate: "2026-03-20",
+        endDate: "2026-03-20",
+        maxGames: "2",
+      },
+      body: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.body).toMatchObject({
+      success: true,
+      gamesProcessed: 1,
+      skipped: 1,
+      skipReasons: { gamecenterFeedUnavailable: 1 },
+      lastCompletedGameId: 102,
+      errors: [],
+    });
+    expect(fetchPbpGameMock.mock.calls.map(([gameId]) => gameId)).toEqual([
+      101, 102,
+    ]);
+    expect(acquireProjectionPipelineLeaseMock).not.toHaveBeenCalled();
+    expect(advanceProjectionPipelineLeaseMock).not.toHaveBeenCalled();
   });
 
   it("accepts the returned game cursor and continues deterministically", async () => {
@@ -420,18 +709,66 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
     await handler(req, res);
 
     expect(fetchPbpGameMock).toHaveBeenCalledTimes(1);
-    expect(upsertPbpGameAndPlaysMock).toHaveBeenCalledWith(pbpPayload(101));
     expect(buildShiftStrengthUpsertsMock).toHaveBeenCalledWith(
       101,
       pbpPayload(101),
       sourceShiftRows(101),
     );
-    expect(replaceShiftStrengthRowsForGameMock).toHaveBeenCalledWith(
-      101,
-      expect.arrayContaining([
+    expect(buildProjectionInputRpcPayloadMock).toHaveBeenCalledWith({
+      gameId: 101,
+      pbp: pbpPayload(101),
+      shiftSourceRows: sourceShiftRows(101),
+      strengthRows: expect.arrayContaining([
         expect.objectContaining({ game_id: 101, player_id: 1011 }),
       ]),
+      rawSnapshots: {
+        gameId: 101,
+        pbp: {
+          rawPayloadId: 1011,
+          snapshotVersion: 3,
+          payloadHash: "c".repeat(64),
+        },
+        shifts: {
+          rawPayloadId: 1012,
+          snapshotVersion: 4,
+          payloadHash: "d".repeat(64),
+        },
+      },
+      expectedCurrentInputFingerprint: null,
+    });
+    expect(persistProjectionGameInputsMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails closed before normalized persistence when raw snapshot capture fails", async () => {
+    captureProjectionRawSourceSnapshotsMock.mockRejectedValueOnce(
+      new Error("PROJECTION_RAW_SNAPSHOT_NOT_CURRENT"),
     );
+    const req: any = {
+      method: "POST",
+      query: {
+        startDate: "2026-03-20",
+        endDate: "2026-03-20",
+        maxGames: "1",
+      },
+      body: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.body).toMatchObject({
+      success: false,
+      gamesProcessed: 0,
+      nextGameId: 101,
+      errors: [
+        expect.objectContaining({
+          gameId: 101,
+          stage: "capture_raw_sources",
+          message: "PROJECTION_RAW_SNAPSHOT_NOT_CURRENT",
+        }),
+      ],
+    });
+    expect(persistProjectionGameInputsMock).not.toHaveBeenCalled();
   });
 
   it("repairs a DRM-only partial row instead of accepting any row", async () => {
@@ -455,30 +792,15 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
 
     await handler(req, res);
 
-    expect(upsertPbpGameAndPlaysMock).toHaveBeenCalledTimes(1);
-    expect(replaceShiftStrengthRowsForGameMock).toHaveBeenCalledTimes(1);
+    expect(persistProjectionGameInputsMock).toHaveBeenCalledTimes(1);
     expect(res.body.shiftRowsUpserted).toBe(2);
   });
 
-  it("refreshes complete stored PBP and shifts from one authoritative source snapshot", async () => {
-    state.pbpComplete.add(101);
-    state.shiftComplete.add(101);
-    const corrected = {
-      ...pbpPayload(101),
-      plays: [
-        { eventId: 1, typeDescKey: "shot-on-goal" },
-        { eventId: 3, typeDescKey: "goal" },
-        { eventId: 4, typeDescKey: "game-end" },
-      ],
-    };
-    fetchPbpGameMock.mockResolvedValueOnce(corrected);
-    upsertPbpGameAndPlaysMock.mockImplementationOnce(async (payload: any) => {
-      state.pbpComplete.add(payload.id);
-      state.pbpEventIds.set(
-        payload.id,
-        payload.plays.map((play: any) => play.eventId),
-      );
-      return { playsUpserted: payload.plays.length };
+  it("passes the current manifest fingerprint into the atomic CAS payload", async () => {
+    const currentFingerprint = "a".repeat(64);
+    readProjectionInputManifestMock.mockResolvedValueOnce({
+      inputFingerprint: currentFingerprint,
+      inputVersion: 7,
     });
     const req: any = {
       method: "POST",
@@ -493,18 +815,142 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
 
     await handler(req, res);
 
-    expect(upsertPbpGameAndPlaysMock).toHaveBeenCalledWith(corrected);
+    expect(buildProjectionInputRpcPayloadMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        gameId: 101,
+        expectedCurrentInputFingerprint: currentFingerprint,
+      }),
+    );
+    expect(persistProjectionGameInputsMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports idempotent receipts as verified without mutation attempts", async () => {
+    state.pbpComplete.add(101);
+    state.pbpEventIds.set(101, [1, 2]);
+    state.shiftComplete.add(101);
+    persistProjectionGameInputsMock.mockResolvedValueOnce({
+      gameId: 101,
+      inputStatus: "complete",
+      inputFingerprint: "fingerprint-101",
+      inputVersion: 1,
+      playCount: 2,
+      strengthCount: 2,
+      prunedPlayRows: 0,
+      prunedStrengthRows: 0,
+      idempotent: true,
+      completedAt: "2026-07-20T10:00:00.000Z",
+    });
+    const req: any = {
+      method: "POST",
+      query: {
+        startDate: "2026-03-20",
+        endDate: "2026-03-20",
+        maxGames: "1",
+      },
+      body: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.body).toMatchObject({
+      success: true,
+      gamesProcessed: 1,
+      pbpGamesUpserted: 0,
+      pbpPlaysUpserted: 0,
+      shiftRowsUpserted: 0,
+      rowsUpserted: 0,
+      gamesVerified: 1,
+      gamesIdempotent: 1,
+      pbpPlaysVerified: 2,
+      shiftRowsVerified: 2,
+      rowsVerified: 5,
+      pbpPlaysPruned: 0,
+      shiftRowsPruned: 0,
+      rowsPruned: 0,
+    });
+  });
+
+  it("preserves verified and pruned evidence for mutating receipts", async () => {
+    state.pbpComplete.add(101);
+    state.pbpEventIds.set(101, [1, 2]);
+    state.shiftComplete.add(101);
+    persistProjectionGameInputsMock.mockResolvedValueOnce({
+      gameId: 101,
+      inputStatus: "complete",
+      inputFingerprint: "fingerprint-101",
+      inputVersion: 2,
+      playCount: 2,
+      strengthCount: 2,
+      prunedPlayRows: 3,
+      prunedStrengthRows: 1,
+      idempotent: false,
+      completedAt: "2026-07-20T10:00:00.000Z",
+    });
+    const req: any = {
+      method: "POST",
+      query: {
+        startDate: "2026-03-20",
+        endDate: "2026-03-20",
+        maxGames: "1",
+      },
+      body: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.body).toMatchObject({
+      success: true,
+      pbpGamesUpserted: 1,
+      pbpPlaysUpserted: 2,
+      shiftRowsUpserted: 2,
+      rowsUpserted: 5,
+      gamesVerified: 1,
+      gamesIdempotent: 0,
+      pbpPlaysVerified: 2,
+      shiftRowsVerified: 2,
+      rowsVerified: 5,
+      pbpPlaysPruned: 3,
+      shiftRowsPruned: 1,
+      rowsPruned: 4,
+    });
+  });
+
+  it("refreshes complete stored PBP and shifts from one authoritative source snapshot", async () => {
+    state.pbpComplete.add(101);
+    state.shiftComplete.add(101);
+    const corrected = {
+      ...pbpPayload(101),
+      plays: [
+        { eventId: 1, typeDescKey: "shot-on-goal" },
+        { eventId: 3, typeDescKey: "goal" },
+        { eventId: 4, typeDescKey: "game-end" },
+      ],
+    };
+    fetchPbpGameMock.mockResolvedValueOnce(corrected);
+    const req: any = {
+      method: "POST",
+      query: {
+        startDate: "2026-03-20",
+        endDate: "2026-03-20",
+        maxGames: "1",
+      },
+      body: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
     expect(buildShiftStrengthUpsertsMock).toHaveBeenCalledWith(
       101,
       corrected,
       sourceShiftRows(101),
     );
-    expect(replaceShiftStrengthRowsForGameMock).toHaveBeenCalledWith(
-      101,
-      expect.arrayContaining([
-        expect.objectContaining({ game_id: 101, player_id: 1011 }),
-      ]),
+    expect(buildProjectionInputRpcPayloadMock).toHaveBeenCalledWith(
+      expect.objectContaining({ gameId: 101, pbp: corrected }),
     );
+    expect(persistProjectionGameInputsMock).toHaveBeenCalledTimes(1);
     expect(res.body).toMatchObject({
       success: true,
       gamesProcessed: 1,
@@ -565,9 +1011,8 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
       message: "PBP is not final and complete for game 101",
     });
     expect(res.body.nextGameId).toBe(101);
-    expect(upsertPbpGameAndPlaysMock).not.toHaveBeenCalled();
     expect(buildShiftStrengthUpsertsMock).not.toHaveBeenCalled();
-    expect(replaceShiftStrengthRowsForGameMock).not.toHaveBeenCalled();
+    expect(persistProjectionGameInputsMock).not.toHaveBeenCalled();
   });
 
   it("validates the complete shift payload before replacing stored PBP", async () => {
@@ -598,8 +1043,8 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
         }),
       ],
     });
-    expect(upsertPbpGameAndPlaysMock).not.toHaveBeenCalled();
-    expect(replaceShiftStrengthRowsForGameMock).not.toHaveBeenCalled();
+    expect(readProjectionInputManifestMock).not.toHaveBeenCalled();
+    expect(persistProjectionGameInputsMock).not.toHaveBeenCalled();
   });
 
   it("does not mutate PBP when the shift source is unavailable", async () => {
@@ -624,12 +1069,23 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
       stage: "fetch_shifts",
       message: "shift source unavailable",
     });
-    expect(upsertPbpGameAndPlaysMock).not.toHaveBeenCalled();
-    expect(replaceShiftStrengthRowsForGameMock).not.toHaveBeenCalled();
+    expect(readProjectionInputManifestMock).not.toHaveBeenCalled();
+    expect(persistProjectionGameInputsMock).not.toHaveBeenCalled();
   });
 
   it("requires exact stored event identity parity after PBP replacement", async () => {
-    upsertPbpGameAndPlaysMock.mockResolvedValueOnce({ playsUpserted: 2 });
+    persistProjectionGameInputsMock.mockResolvedValueOnce({
+      gameId: 101,
+      inputStatus: "complete",
+      inputFingerprint: "fingerprint-101",
+      inputVersion: 1,
+      playCount: 2,
+      strengthCount: 2,
+      prunedPlayRows: 0,
+      prunedStrengthRows: 0,
+      idempotent: false,
+      completedAt: "2026-07-20T10:00:00.000Z",
+    });
     const req: any = {
       method: "POST",
       query: {
@@ -649,9 +1105,75 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
     );
     expect(res.body.errors[0]).toMatchObject({
       gameId: 101,
-      stage: "upsert_pbp",
+      stage: "verify_pbp",
       message: "PBP post-write verification failed for game 101",
     });
-    expect(replaceShiftStrengthRowsForGameMock).not.toHaveBeenCalled();
+  });
+
+  it("holds the game cursor when the atomic input RPC fails", async () => {
+    persistProjectionGameInputsMock.mockRejectedValueOnce(
+      new Error("transaction rejected"),
+    );
+    const req: any = {
+      method: "POST",
+      query: {
+        startDate: "2026-03-20",
+        endDate: "2026-03-20",
+        maxGames: "2",
+      },
+      body: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.body).toMatchObject({
+      success: false,
+      gamesProcessed: 0,
+      lastCompletedGameId: null,
+      nextGameId: 101,
+      errors: [
+        expect.objectContaining({
+          gameId: 101,
+          stage: "persist_inputs",
+          message: "transaction rejected",
+        }),
+      ],
+    });
+    expect(persistProjectionGameInputsMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("holds the game cursor when the current manifest cannot be read", async () => {
+    readProjectionInputManifestMock.mockRejectedValueOnce(
+      new Error("manifest unavailable"),
+    );
+    const req: any = {
+      method: "POST",
+      query: {
+        startDate: "2026-03-20",
+        endDate: "2026-03-20",
+        resumeFromGameId: "103",
+        maxGames: "2",
+      },
+      body: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.body).toMatchObject({
+      success: false,
+      gamesProcessed: 0,
+      lastCompletedGameId: null,
+      nextGameId: 103,
+      errors: [
+        expect.objectContaining({
+          gameId: 103,
+          stage: "persist_inputs",
+          message: "manifest unavailable",
+        }),
+      ],
+    });
+    expect(persistProjectionGameInputsMock).not.toHaveBeenCalled();
   });
 });

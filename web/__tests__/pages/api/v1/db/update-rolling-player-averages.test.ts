@@ -199,7 +199,7 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
         freshnessBlockers: 0
       }),
       dependencyContract: {
-        version: "rolling-forge-operator-order-v1",
+        version: "rolling-forge-operator-order-v2",
         currentStage: {
           id: "rolling_player_recompute",
           order: 4

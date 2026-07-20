@@ -1,3 +1,5 @@
+import type { PbpResponse } from "./ingest/pbp";
+
 type CompletedGameLengthSource = {
   gameType?: number | string | null;
   periodDescriptor?: {
@@ -69,4 +71,31 @@ export function formatGameLength(seconds: number): string {
     throw new Error("Invalid game length");
   }
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+export function formatCompletedPbpGameLength(pbp: PbpResponse): string {
+  if (
+    (pbp.gameState !== "FINAL" && pbp.gameState !== "OFF") ||
+    !Array.isArray(pbp.plays) ||
+    pbp.plays.length <= 1
+  ) {
+    throw new Error(`PBP is not final and complete for game ${pbp.id}`);
+  }
+  const terminalPlays = pbp.plays.filter(
+    (play) => play.typeDescKey === "game-end",
+  );
+  if (terminalPlays.length !== 1) {
+    throw new Error(`Invalid final PBP terminal for game ${pbp.id}`);
+  }
+  const terminal = terminalPlays[0];
+  return formatGameLength(
+    calculateCompletedGameLengthSeconds({
+      gameType: pbp.gameType,
+      periodDescriptor: { number: terminal.periodDescriptor?.number },
+      clock: { timeRemaining: terminal.timeRemaining },
+      gameOutcome: {
+        lastPeriodType: terminal.periodDescriptor?.periodType,
+      },
+    }),
+  );
 }

@@ -1,31 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const {
-  state,
-  playerDeleteEqMock,
-  playerUpsertMock,
-  teamDeleteEqMock,
-  teamUpsertMock,
-} = vi.hoisted(() => {
-  const state = {
+const { state, mutationMock, orMock } = vi.hoisted(() => ({
+  state: {
+    games: [] as any[],
     shifts: [] as any[],
     rawShifts: [] as any[],
     plays: [] as any[],
-    playerStrengthRows: [] as any[],
     pbpGame: null as any,
-    playerDeleteError: null as Error | null,
-    teamDeleteError: null as Error | null,
-  };
-  return {
-    state,
-    playerDeleteEqMock: vi.fn(async () => ({
-      error: state.playerDeleteError,
-    })),
-    playerUpsertMock: vi.fn().mockResolvedValue({ error: null }),
-    teamDeleteEqMock: vi.fn(async () => ({ error: state.teamDeleteError })),
-    teamUpsertMock: vi.fn().mockResolvedValue({ error: null }),
-  };
-});
+  },
+  mutationMock: vi.fn(),
+  orMock: vi.fn(),
+}));
 
 const game = {
   id: 2025020001,
@@ -42,6 +27,10 @@ vi.mock("lib/supabase/server", () => ({
         gte: vi.fn(() => query),
         lte: vi.fn(() => query),
         eq: vi.fn(() => query),
+        or: vi.fn((filter: string) => {
+          orMock(filter);
+          return query;
+        }),
         in: vi.fn(() => query),
         order: vi.fn(() => query),
         maybeSingle: vi.fn(async () => ({
@@ -49,7 +38,7 @@ vi.mock("lib/supabase/server", () => ({
           error: null,
         })),
         range: vi.fn(async () => {
-          if (table === "games") return { data: [game], error: null };
+          if (table === "games") return { data: state.games, error: null };
           if (table === "shift_charts") {
             return { data: state.shifts, error: null };
           }
@@ -59,21 +48,12 @@ vi.mock("lib/supabase/server", () => ({
           if (table === "pbp_plays") {
             return { data: state.plays, error: null };
           }
-          if (table === "forge_player_game_strength") {
-            return { data: state.playerStrengthRows, error: null };
-          }
           return { data: [], error: null };
         }),
-        delete: vi.fn(() => ({
-          eq:
-            table === "forge_team_game_strength"
-              ? teamDeleteEqMock
-              : playerDeleteEqMock,
-        })),
-        upsert:
-          table === "forge_team_game_strength"
-            ? teamUpsertMock
-            : playerUpsertMock,
+        delete: mutationMock,
+        insert: mutationMock,
+        update: mutationMock,
+        upsert: mutationMock,
       };
       return query;
     }),
@@ -81,8 +61,10 @@ vi.mock("lib/supabase/server", () => ({
 }));
 
 import {
-  buildPlayerGameStrengthV2ForDateRange,
-  buildTeamGameStrengthV2ForDateRange,
+  fetchProjectionDerivedGamesForDateRange,
+  preparePlayerGameStrengthV2,
+  prepareTeamGameStrengthV2,
+  type ProjectionPlayerStrengthRow,
 } from "./buildStrengthTablesV2";
 
 function completeShiftRows() {
@@ -125,25 +107,6 @@ function completeRawShiftRows() {
   }));
 }
 
-function completePlayerStrengthRows() {
-  return completeShiftRows().map((row) => ({
-    game_id: game.id,
-    player_id: row.player_id,
-    team_id: row.team_id,
-    opponent_team_id: row.opponent_team_id,
-    game_date: game.date,
-    toi_es_seconds: 600,
-    toi_pp_seconds: 0,
-    toi_pk_seconds: 0,
-    shots_es: 0,
-    shots_pp: 0,
-    shots_pk: 0,
-    goals_es: 0,
-    goals_pp: 0,
-    goals_pk: 0,
-  }));
-}
-
 function completePlay() {
   return {
     id: 1,
@@ -155,6 +118,7 @@ function completePlay() {
     scoringplayerid: null,
     assist1playerid: null,
     assist2playerid: null,
+    goalieinnetid: 20,
   };
 }
 
@@ -169,6 +133,7 @@ function completeGameEndPlay() {
     scoringplayerid: null,
     assist1playerid: null,
     assist2playerid: null,
+    goalieinnetid: null,
   };
 }
 
@@ -187,129 +152,104 @@ function completePbpGame() {
   };
 }
 
-describe("derived strength fail-closed contracts", () => {
+describe("derived strength preparation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    state.games = [game];
     state.shifts = completeShiftRows();
     state.rawShifts = completeRawShiftRows();
     state.plays = [completePlay(), completeGameEndPlay()];
-    state.playerStrengthRows = [];
     state.pbpGame = completePbpGame();
-    state.playerDeleteError = null;
-    state.teamDeleteError = null;
   });
 
-  it("rejects a partial strength game before any player upsert", async () => {
+  it("discovers games with bounded paginated reads", async () => {
+    await expect(
+      fetchProjectionDerivedGamesForDateRange({
+        startDate: game.date,
+        endDate: game.date,
+      }),
+    ).resolves.toEqual([game]);
+  });
+
+  it("rejects a partial strength source without any pre-delete or upsert", async () => {
     state.shifts[0] = { ...state.shifts[0], total_pk_toi: null };
-
-    await expect(
-      buildPlayerGameStrengthV2ForDateRange({
-        startDate: game.date,
-        endDate: game.date,
-      }),
-    ).rejects.toThrow("Shift-strength rows are partial");
-    expect(teamDeleteEqMock).toHaveBeenCalledWith("game_id", game.id);
-    expect(playerDeleteEqMock).toHaveBeenCalledWith("game_id", game.id);
-    expect(playerUpsertMock).not.toHaveBeenCalled();
+    await expect(preparePlayerGameStrengthV2({ game })).rejects.toThrow(
+      "Shift-strength rows are partial",
+    );
+    expect(mutationMock).not.toHaveBeenCalled();
   });
 
-  it("stops before source materialization when exact-scope invalidation fails", async () => {
-    state.teamDeleteError = new Error("team scope delete failed");
-
-    await expect(
-      buildPlayerGameStrengthV2ForDateRange({
-        startDate: game.date,
-        endDate: game.date,
-      }),
-    ).rejects.toThrow("team scope delete failed");
-    expect(playerDeleteEqMock).not.toHaveBeenCalled();
-    expect(playerUpsertMock).not.toHaveBeenCalled();
-    expect(teamUpsertMock).not.toHaveBeenCalled();
-  });
-
-  it("rejects empty PBP instead of materializing zero counting stats", async () => {
+  it("rejects incomplete PBP instead of preparing zero counting stats", async () => {
     state.plays = [];
-
-    await expect(
-      buildPlayerGameStrengthV2ForDateRange({
-        startDate: game.date,
-        endDate: game.date,
-      }),
-    ).rejects.toThrow("PBP evidence is incomplete");
-    expect(playerUpsertMock).not.toHaveBeenCalled();
+    await expect(preparePlayerGameStrengthV2({ game })).rejects.toThrow(
+      "PBP evidence is incomplete",
+    );
+    expect(mutationMock).not.toHaveBeenCalled();
   });
 
-  it.each([
-    ["missing", null],
-    ["malformed", "bad"],
-  ])(
-    "rejects a %s situation on a countable event while allowing null game-end metadata",
-    async (_label, situationcode) => {
-      state.plays = [
-        { ...completePlay(), situationcode },
-        completeGameEndPlay(),
-      ];
-
-      await expect(
-        buildPlayerGameStrengthV2ForDateRange({
-          startDate: game.date,
-          endDate: game.date,
-        }),
-      ).rejects.toThrow("Countable PBP event is incomplete");
-      expect(playerUpsertMock).not.toHaveBeenCalled();
-    },
-  );
-
-  it("preserves valid zero strength clocks as numeric zero", async () => {
-    await expect(
-      buildPlayerGameStrengthV2ForDateRange({
-        startDate: game.date,
-        endDate: game.date,
-      }),
-    ).resolves.toEqual({ gamesProcessed: 1, rowsUpserted: 10 });
-
-    expect(playerUpsertMock).toHaveBeenCalledWith(
-      expect.arrayContaining([
-        expect.objectContaining({
-          player_id: 10,
-          toi_pp_seconds: 0,
-          toi_pk_seconds: 60,
-        }),
-      ]),
-      { onConflict: "game_id,player_id" },
+  it("rejects malformed situation metadata on a countable event", async () => {
+    state.plays = [
+      { ...completePlay(), situationcode: "bad" },
+      completeGameEndPlay(),
+    ];
+    await expect(preparePlayerGameStrengthV2({ game })).rejects.toThrow(
+      "Countable PBP event is incomplete",
     );
   });
 
-  it("rejects nullable player metrics before team aggregation", async () => {
-    state.playerStrengthRows = completePlayerStrengthRows();
-    state.playerStrengthRows[0] = {
-      ...state.playerStrengthRows[0],
-      toi_es_seconds: null,
-    };
-
-    await expect(
-      buildTeamGameStrengthV2ForDateRange({
-        startDate: game.date,
-        endDate: game.date,
-      }),
-    ).rejects.toThrow("Incomplete ES TOI player-strength metric");
-    expect(teamDeleteEqMock).toHaveBeenCalledWith("game_id", game.id);
-    expect(teamUpsertMock).not.toHaveBeenCalled();
+  it("prepares deterministic player rows without mutating derived tables", async () => {
+    const result = await preparePlayerGameStrengthV2({ game });
+    expect(result.rows).toHaveLength(10);
+    expect(result.rows.map((row) => row.player_id)).toEqual([
+      10, 11, 12, 13, 14, 20, 21, 22, 23, 24,
+    ]);
+    expect(result.rows[0]).toMatchObject({
+      game_id: game.id,
+      player_id: 10,
+      toi_es_seconds: 600,
+      toi_pp_seconds: 0,
+      toi_pk_seconds: 60,
+      shots_es: 1,
+    });
+    expect(mutationMock).not.toHaveBeenCalled();
+    expect(orMock).toHaveBeenCalledWith(
+      "total_es_toi.not.is.null,total_pp_toi.not.is.null,total_pk_toi.not.is.null",
+    );
   });
 
-  it("rejects stale extra derived players before team aggregation", async () => {
-    state.playerStrengthRows = completePlayerStrengthRows();
-    state.playerStrengthRows.push({
-      ...state.playerStrengthRows[0],
-      player_id: 999,
+  it("reduces the prepared player scope into exactly two team rows", async () => {
+    const player = await preparePlayerGameStrengthV2({ game });
+    const teams = prepareTeamGameStrengthV2({
+      game,
+      playerRows: player.rows,
     });
-
-    await expect(
-      buildTeamGameStrengthV2ForDateRange({
-        startDate: game.date,
-        endDate: game.date,
+    expect(teams).toHaveLength(2);
+    expect(teams).toEqual([
+      expect.objectContaining({
+        team_id: 1,
+        opponent_team_id: 2,
+        shots_es: 1,
       }),
-    ).rejects.toThrow("Stale player-strength player set");
-    expect(teamUpsertMock).not.toHaveBeenCalled();
+      expect.objectContaining({
+        team_id: 2,
+        opponent_team_id: 1,
+        shots_es: 0,
+      }),
+    ]);
+  });
+
+  it("fails team preparation on a stale or duplicate player identity", async () => {
+    const player = await preparePlayerGameStrengthV2({ game });
+    const duplicate = {
+      ...player.rows[0],
+      team_id: 2,
+      opponent_team_id: 1,
+    } as ProjectionPlayerStrengthRow;
+    expect(() =>
+      prepareTeamGameStrengthV2({
+        game,
+        playerRows: [...player.rows, duplicate],
+      }),
+    ).toThrow("Invalid player-strength identity");
   });
 });
