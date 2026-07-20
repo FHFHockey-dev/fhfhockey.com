@@ -22,10 +22,21 @@ function functionSql(name: string): string {
 describe("projection materialization transaction migration", () => {
   it("is additive, bounded, and creates service-only RLS state", () => {
     expect(migrationSql).not.toMatch(/\b(drop table|truncate table)\b/i);
+    expect(migrationSql).toMatch(/\nbegin;\n\nset lock_timeout = '5s';/);
     expect(migrationSql).toContain("set lock_timeout = '5s'");
     expect(migrationSql).toContain("set statement_timeout = '120s'");
     expect(migrationSql).toContain("reset lock_timeout;");
     expect(migrationSql).toContain("reset statement_timeout;");
+    expect(migrationSql).toMatch(/reset statement_timeout;\n\ncommit;\s*$/);
+
+    const transactionStart = migrationSql.indexOf("\nbegin;\n");
+    const rawWriteLock = migrationSql.indexOf(
+      "lock table public.nhl_api_game_payloads_raw in share row exclusive mode",
+    );
+    const transactionCommit = migrationSql.lastIndexOf("\ncommit;");
+    expect(transactionStart).toBeGreaterThanOrEqual(0);
+    expect(rawWriteLock).toBeGreaterThan(transactionStart);
+    expect(transactionCommit).toBeGreaterThan(rawWriteLock);
 
     for (const tableName of [
       "nhl_api_game_payload_snapshot_heads",

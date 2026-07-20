@@ -2,6 +2,8 @@
 -- game-scoped write one exact, locked transaction. The new state tables are
 -- service-only; no browser role receives a policy or object privilege.
 
+begin;
+
 set lock_timeout = '5s';
 set statement_timeout = '120s';
 
@@ -4134,3 +4136,5 @@ grant execute on function public.advance_projection_pipeline_state_v1(
 
 reset lock_timeout;
 reset statement_timeout;
+
+commit;
