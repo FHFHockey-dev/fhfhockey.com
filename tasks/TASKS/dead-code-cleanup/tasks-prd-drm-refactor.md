@@ -66,12 +66,12 @@
   - [ ] 2.5 Add a bounded QA comparison path for representative teams/date ranges and document expected source differences rather than forcing false equality.
   - [x] 2.6 Return explicit loading, empty, partial, stale, and error state plus source/coverage metadata. The unified hook/view expose idle/loading/success/empty/partial/error states, stale-request containment, exact source identity, coverage metadata, and visible diagnostics; focused hook/page/view tests pass in the 9-file/115-test DRM group (verified 2026-07-21).
 
-- [ ] 3.0 Finish page/view wiring and controls
-  - [ ] 3.1 Ensure `drm.tsx` uses the unified hook and props-only view without duplicate derivation or unstable object construction.
-  - [ ] 3.2 Preserve both horizontal TeamSelect and physical TeamDropdown with synchronized canonical abbreviation state and accessible labels.
+- [x] 3.0 Finish page/view wiring and controls. All five children are evidence-closed by the unified immutable hook/view contract, synchronized selectors, deterministic URL/season/source ownership, portal-safe DatePicker behavior, and stale/mixed-result regressions; the focused control group passes 5 files/41 tests (verified 2026-07-21).
+  - [x] 3.1 Ensure `drm.tsx` uses the unified hook and props-only view without duplicate derivation or unstable object construction. The page calls one `useDateRangeMatrixData` owner, forwards its canonical roster/lines/pairs/state/coverage into props-only renderers, and retains stable memoized aggregate/request identities under NEW 9/18/56 (verified 2026-07-21).
+  - [x] 3.2 Preserve both horizontal TeamSelect and physical TeamDropdown with synchronized canonical abbreviation state and accessible labels. Both selectors read/write the same sanitized URL-backed team identity; native label/ARIA and canonical-or-empty selection regressions pass (verified 2026-07-21).
   - [x] 3.3 Keep date range, season type, mode, and source/QA URL state deterministic and restorable. Exact URL hydration/canonicalization, historical-season lookup, selected-season raw/aggregate constraints, and production-mode historical/default browser proof pass under NEW 16 (verified 2026-07-21).
-  - [ ] 3.4 Fix datepicker clipping with portal and/or scoped overflow/z-index behavior that works on desktop and mobile.
-  - [ ] 3.5 Verify invalid ranges, no schedule/data, team changes, source changes, and rapid control changes do not leave stale or mixed results.
+  - [x] 3.4 Fix datepicker clipping with portal and/or scoped overflow/z-index behavior that works on desktop and mobile. NEW 15's local portal hooks, themed in-viewport calendar, Escape focus restoration, responsive breakpoints, and six-width Chromium proof close the contract (verified 2026-07-21).
+  - [x] 3.5 Verify invalid ranges, no schedule/data, team changes, source changes, and rapid control changes do not leave stale or mixed results. Exact page/hook regressions cover missing/reversed ranges, empty/error/partial states, team/source/season changes, late aggregate and rolling responses, filter invalidation, and manual-Custom races; the focused 5-file/41-test group passes (verified 2026-07-21).
 
 - [ ] 4.0 Complete presentation, accessibility, and performance polish
   - [ ] 4.1 Align typography, spacing, colors, controls, page header, loading/empty states, and focus styles with current FHFH tokens without redesigning the matrix.
