@@ -75,8 +75,7 @@ vi.mock("lib/projections/ingest/shifts", () => ({
 }));
 
 vi.mock("lib/projections/ingest/rawSnapshotPersistence", () => ({
-  captureProjectionRawSourceSnapshots:
-    captureProjectionRawSourceSnapshotsMock,
+  captureProjectionRawSourceSnapshots: captureProjectionRawSourceSnapshotsMock,
 }));
 
 vi.mock("lib/projections/ingest/projectionInputPersistence", () => ({
@@ -90,8 +89,7 @@ vi.mock("lib/projections/projectionPipelineState", () => ({
   advanceProjectionPipelineLease: advanceProjectionPipelineLeaseMock,
   buildProjectionPipelineOperationKey: buildProjectionPipelineOperationKeyMock,
   finishProjectionPipelineLease: finishProjectionPipelineLeaseMock,
-  readOldestProjectionPipelineBacklog:
-    readOldestProjectionPipelineBacklogMock,
+  readOldestProjectionPipelineBacklog: readOldestProjectionPipelineBacklogMock,
 }));
 
 const games = Array.from({ length: 7 }, (_, index) => ({
@@ -502,6 +500,39 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
     );
   });
 
+  it.each([
+    ["2026-02-30", "2026-03-01"],
+    ["not-a-date", "2026-03-01"],
+    ["2026-03-21", "2026-03-20"],
+  ])(
+    "rejects invalid calendar range %s through %s before source work",
+    async (startDate, endDate) => {
+      const req: any = {
+        method: "POST",
+        query: { startDate, endDate },
+        body: {},
+      };
+      const res = createMockRes();
+
+      await handler(req, res);
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toMatchObject({
+        success: false,
+        errors: [
+          expect.objectContaining({
+            stage: "list_games",
+            message: "Invalid startDate/endDate range",
+          }),
+        ],
+      });
+      expect(fetchPbpGameMock).not.toHaveBeenCalled();
+      expect(fetchShiftRowsMock).not.toHaveBeenCalled();
+      expect(captureProjectionRawSourceSnapshotsMock).not.toHaveBeenCalled();
+      expect(persistProjectionGameInputsMock).not.toHaveBeenCalled();
+    },
+  );
+
   it("durably advances every default scheduled game before completing its lease", async () => {
     const req: any = { method: "POST", query: {}, body: {} };
     const res = createMockRes();
@@ -553,7 +584,9 @@ describe("/api/v1/db/ingest-projection-inputs", () => {
     await handler(req, res);
 
     expect(readOldestProjectionPipelineBacklogMock).toHaveBeenCalledWith(
-      expect.objectContaining({ throughDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) }),
+      expect.objectContaining({
+        throughDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      }),
     );
     expect(buildProjectionPipelineOperationKeyMock).not.toHaveBeenCalled();
     expect(acquireProjectionPipelineLeaseMock).toHaveBeenCalledWith(

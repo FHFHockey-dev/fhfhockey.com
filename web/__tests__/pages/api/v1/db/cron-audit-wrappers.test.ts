@@ -77,9 +77,9 @@ describe("scheduled cron audit coverage", () => {
       ),
     ).toBe(59);
     expect(modeCounts).toEqual({
-      "admin-or-cron": 19,
+      "admin-or-cron": 20,
       "cron-secret-only": 1,
-      unprotected: 32,
+      unprotected: 31,
     });
     expect(callerCounts).toEqual({
       "browser-admin": 5,
@@ -122,7 +122,6 @@ describe("scheduled cron audit coverage", () => {
       "/api/v1/db/update-nst-gamelog",
       "/api/v1/db/update-nst-goalies",
       "/api/v1/db/update-nst-team-daily",
-      "/api/v1/db/update-PbP",
       "/api/v1/db/update-player-trend-metrics",
       "/api/v1/db/update-rolling-player-averages",
       "/api/v1/db/update-sko-stats",

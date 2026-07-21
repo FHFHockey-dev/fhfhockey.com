@@ -7,6 +7,7 @@ const routeSources = [
   "ingest-projection-inputs.ts",
   "build-projection-derived-v2.ts",
   "run-rolling-forge-pipeline.ts",
+  "update-PbP.ts",
 ].map((fileName) => ({
   fileName,
   source: readFileSync(
@@ -23,8 +24,21 @@ describe("projection materialization route authorization", () => {
         'import adminOnly from "utils/adminOnlyMiddleware"',
       );
       expect(source).toMatch(
-        /export default withCronJobAudit\(adminOnly\(handler as any\), \{/,
+        /export default withCronJobAudit\(\s*adminOnly\([A-Za-z][A-Za-z0-9]* as any\),\s*\{/,
       );
     },
   );
+
+  it("keeps the update-PbP adapter on the named raw canonical handler", () => {
+    const source = routeSources.find(
+      ({ fileName }) => fileName === "update-PbP.ts",
+    )?.source;
+
+    expect(source).toContain("ingestProjectionInputsHandler,");
+    expect(source).toContain('from "./ingest-projection-inputs"');
+    expect(source).toContain("return ingestProjectionInputsHandler(");
+    expect(source).not.toMatch(
+      /import\s+ingestProjectionInputsHandler\s+from\s+["']\.\/ingest-projection-inputs["']/,
+    );
+  });
 });

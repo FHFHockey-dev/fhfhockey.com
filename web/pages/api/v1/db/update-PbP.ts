@@ -1,90 +1,196 @@
 /**
- * API Endpoint: /api/v1/db/update-PbP
+ * One-release compatibility adapter for the historical update-PbP route.
  *
- * Description:
- * This endpoint is responsible for fetching, processing, and storing play-by-play (PbP) data from the NHL's public APIs
- * into the Supabase `pbp_plays` table. It can be used to backfill data for a specific date range, update a single game,
- * run a full historical import, or process the previous day's games.
- *
- * ---
- *
- * URL Query Parameters:
- *
- * 1. `startDate` & `endDate` (optional)
- *    - Description: Defines a date range for which to fetch PbP data. The system will find all games between these
- *      two dates (inclusive) and ingest their data. Both parameters must be provided together.
- *    - Format: `YYYY-MM-DD`
- *    - Example URL:
- *      `http://localhost:3000/api/v1/db/update-PbP?startDate=2025-10-05&endDate=2025-10-12`
- *      This will process all games from October 5th, 2025, to October 12th, 2025.
- *
- * 2. `gameId` (optional)
- *    - Description: Specifies a single, specific NHL game ID to process, or triggers processing for the previous day.
- *    - Format: A 10-digit NHL game ID, or the literal string `recent`.
- *    - Example (Single Game):
- *      `http://localhost:3000/api/v1/db/update-PbP?gameId=2023020418`
- *      This will process only the game with the ID `2023020418`.
- *    - Example (Previous Day):
- *      `http://localhost:3000/api/v1/db/update-PbP?gameId=recent`
- *      This will process all games from yesterday (relative to the server's current date). This is ideal for cron jobs.
- *
- * 3. `games=all` (optional)
- *    - Description: A flag that triggers a full historical data import. This will fetch PbP data for all games
- *      in the entire season and should be used with caution as it can be a very long-running process.
- *    - Format: The literal string `all`.
- *    - Example URL:
- *      `http://localhost:3000/api/v1/db/update-PbP?games=all`
- *
- * ---
- *
- * Notes:
- *
- * - If no parameters are provided, the function defaults to processing games for the current day.
- * - The endpoint supports both `GET` and `POST` methods.
- * - This is a data ingestion endpoint and is a prerequisite for building derived projection data.
+ * Bounded requests are delegated to the canonical projection-input ingestion
+ * handler so PBP and shift inputs share the same raw snapshots, transaction,
+ * manifest, and verification boundary. The legacy full-history mode remains
+ * available behind the route's admin/cron authorization boundary until its
+ * callers and replacement backfill contract are separately approved.
  */
-// /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/v1/db/update-PbP.ts
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import type { Database } from "lib/supabase/database-generated.types";
 import type { NextApiRequest, NextApiResponse } from "next";
+import adminOnly from "utils/adminOnlyMiddleware";
+
+import {
+  ingestProjectionInputsHandler,
+  previousUtcDate,
+} from "./ingest-projection-inputs";
+
+type AuthorizedRequest = NextApiRequest & {
+  supabase?: SupabaseClient<Database>;
+};
+
+type AdapterResponse = {
+  message?: string;
+  success?: boolean;
+  mode?: "legacy-games-all";
+};
+
+const CONTROL_KEYS = ["gameId", "startDate", "endDate", "games"] as const;
+
+function queryString(req: NextApiRequest, key: string): string | undefined {
+  const value = req.query[key];
+  if (typeof value === "string" && value.trim()) return value.trim();
+  return undefined;
+}
+
+function currentUtcDate(now = new Date()): string {
+  return now.toISOString().slice(0, 10);
+}
+
+function parseExactGameId(value: string): number | null {
+  if (!/^\d{10}$/.test(value)) return null;
+  const gameId = Number(value);
+  return Number.isSafeInteger(gameId) && gameId > 0 ? gameId : null;
+}
+
+function canonicalRequest(
+  req: NextApiRequest,
+  query: Record<string, string>,
+): NextApiRequest {
+  return Object.assign(Object.create(req), {
+    query,
+    // The legacy route has always accepted its controls from the query string.
+    // Clear the body so unrelated fields cannot override this bounded mapping.
+    body: {},
+  }) as NextApiRequest;
+}
+
+async function resolveGameDate(
+  req: AuthorizedRequest,
+  gameId: number,
+): Promise<{ date: string | null; error: unknown | null }> {
+  if (!req.supabase) {
+    return {
+      date: null,
+      error: new Error("Authorized Supabase client not available"),
+    };
+  }
+
+  const { data, error } = await req.supabase
+    .from("games")
+    .select("id,date")
+    .eq("id", gameId)
+    .maybeSingle();
+  if (error) return { date: null, error };
+
+  const date = typeof data?.date === "string" ? data.date.slice(0, 10) : null;
+  return { date, error: null };
+}
+
+async function delegateCanonicalRange(
+  req: NextApiRequest,
+  res: NextApiResponse,
+  query: Record<string, string>,
+) {
+  return ingestProjectionInputsHandler(
+    canonicalRequest(req, query),
+    res as any,
+  );
+}
 
 async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<{ message: string }>
+  req: AuthorizedRequest,
+  res: NextApiResponse<AdapterResponse>,
 ) {
+  if (req.method !== "GET" && req.method !== "POST") {
+    res.setHeader("Allow", ["GET", "POST"]);
+    return res.status(405).json({
+      success: false,
+      message: "Method not allowed",
+    });
+  }
+
+  const repeatedControl = CONTROL_KEYS.find((key) =>
+    Array.isArray(req.query[key]),
+  );
+  if (repeatedControl) {
+    return res.status(400).json({
+      success: false,
+      message: `${repeatedControl} must be supplied at most once`,
+    });
+  }
+
+  const requestedGameId = queryString(req, "gameId");
+  const requestedStartDate = queryString(req, "startDate");
+  const requestedEndDate = queryString(req, "endDate");
+  const requestedGames = queryString(req, "games");
+
   try {
-    // Dynamically import the fetchPbP module (adjust the path if necessary)
-    const { main } = await import("lib/supabase/Upserts/fetchPbP");
-
-    if (req.query.gameId === "recent") {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split("T")[0];
-
-      await main(false, undefined, yesterdayStr, yesterdayStr);
-
-      return res.status(200).json({
-        message: `Play-by-play data processed successfully for previous day: ${yesterdayStr}`
+    // Keep the historical precedence: `recent` ignores all other controls.
+    if (requestedGameId === "recent") {
+      const date = previousUtcDate();
+      return delegateCanonicalRange(req, res, {
+        startDate: date,
+        endDate: date,
       });
     }
 
-    const gameId = req.query.gameId ? String(req.query.gameId) : undefined;
-    const fullProcess = req.query.games === "all";
-    const startDate = req.query.startDate
-      ? String(req.query.startDate)
-      : undefined;
-    const endDate = req.query.endDate ? String(req.query.endDate) : undefined;
+    // A numeric legacy game request becomes an exact one-game canonical range.
+    // resumeFromGameId prevents another same-date game from being selected.
+    if (requestedGameId) {
+      const gameId = parseExactGameId(requestedGameId);
+      if (gameId == null) {
+        return res.status(400).json({
+          success: false,
+          message: "gameId must be a 10-digit NHL game ID or recent",
+        });
+      }
 
-    // Invoke the main function with the parameter
-    await main(fullProcess, gameId, startDate, endDate);
+      const game = await resolveGameDate(req, gameId);
+      if (game.error) {
+        console.error("Unable to resolve play-by-play game date", game.error);
+        return res.status(500).json({
+          success: false,
+          message: "Unable to resolve the requested game",
+        });
+      }
+      if (!game.date) {
+        return res.status(404).json({
+          success: false,
+          message: "Requested game was not found",
+        });
+      }
 
-    res.status(200).json({
-      message: `Play-by-play data processed successfully. (Full process: ${fullProcess}, Start Date: ${startDate}, End Date: ${endDate})`
+      return delegateCanonicalRange(req, res, {
+        startDate: game.date,
+        endDate: game.date,
+        resumeFromGameId: String(gameId),
+        maxGames: "1",
+      });
+    }
+
+    // Preserve the documented legacy full-history contract for one release.
+    // It is no longer reachable anonymously because adminOnly wraps this route.
+    if (requestedGames === "all") {
+      const { main } = await import("lib/supabase/Upserts/fetchPbP");
+      await main(true, undefined, requestedStartDate, requestedEndDate);
+      return res.status(200).json({
+        success: true,
+        mode: "legacy-games-all",
+        message: "Play-by-play full-history compatibility run completed",
+      });
+    }
+
+    // Preserve the old start-only behavior by bounding it at today's UTC date.
+    // An endDate without a startDate was historically ignored in favor of today.
+    const startDate = requestedStartDate ?? currentUtcDate();
+    const endDate = requestedStartDate
+      ? (requestedEndDate ?? currentUtcDate())
+      : startDate;
+    return delegateCanonicalRange(req, res, { startDate, endDate });
+  } catch (error) {
+    console.error("Error processing play-by-play data", error);
+    return res.status(500).json({
+      success: false,
+      message: "Play-by-play processing failed",
     });
-  } catch (error: any) {
-    console.error("Error processing play-by-play data:", error);
-    res.status(500).json({ message: `Error: ${error.message}` });
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any), {
+  jobName: "update-PbP",
+});

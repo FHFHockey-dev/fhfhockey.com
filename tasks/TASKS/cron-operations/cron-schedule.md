@@ -632,13 +632,13 @@
 
 The machine-checked inventory in `web/lib/cron/cronAuditCoverage.ts` and
 `web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts` freezes the
-2026-07-18 pre-rollout contract:
+2026-07-21 post-projection-route-hardening contract:
 
 - 59 active HTTP jobs resolve to 52 unique Pages API routes with no missing
   route owner.
-- 17 routes already use the fail-closed `adminOnly` admin-or-exact-cron
+- 20 routes already use the fail-closed `adminOnly` admin-or-exact-cron
   boundary; one destructive internal sheet-sync route intentionally uses an
-  exact-`CRON_SECRET`-only guard; 34 routes remain explicitly unprotected and
+  exact-`CRON_SECRET`-only guard; 31 routes remain explicitly unprotected and
   pending route-by-route migration.
 - Static non-cron consumers are classified as 5 browser-admin-only routes,
   11 internal-server-only routes, 4 routes with both browser-admin and internal
@@ -1014,7 +1014,10 @@ curl -i -sS -m 180 \
 -- |||||||||||||||||||||||||||||||||  03:15 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
--- STATUS: 404 NOT FOUND
+-- HISTORICAL STATUS: an earlier probe returned 404. Later production evidence
+-- returned HTTP 200; the active inventory above is authoritative. Job 16 now
+-- reaches a compatibility adapter, while final ordering, single audit ownership,
+-- and cross-provider scheduler ownership remain open under B-DRM NEW 38/49–51.
 -- SELECT cron.schedule(
 --     'update-shift-charts',
 --     '45 7 * * *', -- 07:45 UTC

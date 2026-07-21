@@ -136,6 +136,13 @@ function isoDateOnly(d: string): string {
   return d.slice(0, 10);
 }
 
+function parseIsoCalendarDate(value: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime())) return null;
+  return isoDateOnly(date.toISOString()) === value ? date : null;
+}
+
 export function previousUtcDate(now = new Date()): string {
   const previous = new Date(now.getTime());
   previous.setUTCDate(previous.getUTCDate() - 1);
@@ -150,10 +157,9 @@ function parseChunkDays(value: string | null): number {
 
 function buildDateRange(start: string, end: string): string[] {
   const out: string[] = [];
-  const startDate = new Date(`${start}T00:00:00.000Z`);
-  const endDate = new Date(`${end}T00:00:00.000Z`);
-  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()))
-    return out;
+  const startDate = parseIsoCalendarDate(start);
+  const endDate = parseIsoCalendarDate(end);
+  if (!startDate || !endDate) return out;
   for (let d = startDate; d <= endDate; d.setUTCDate(d.getUTCDate() + 1)) {
     out.push(isoDateOnly(d.toISOString()));
   }
@@ -198,7 +204,7 @@ async function listGamesInRange(startDate: string, endDate: string) {
   );
 }
 
-async function handler(
+export async function ingestProjectionInputsHandler(
   req: NextApiRequest,
   res: NextApiResponse<CronTimedResponse<Result>>,
 ) {
@@ -605,8 +611,7 @@ async function handler(
       result.rowsVerified += 1 + receipt.playCount + receipt.strengthCount;
       result.pbpPlaysPruned += receipt.prunedPlayRows;
       result.shiftRowsPruned += receipt.prunedStrengthRows;
-      result.rowsPruned +=
-        receipt.prunedPlayRows + receipt.prunedStrengthRows;
+      result.rowsPruned += receipt.prunedPlayRows + receipt.prunedStrengthRows;
       if (receipt.idempotent) {
         result.gamesIdempotent += 1;
       } else {
@@ -756,6 +761,9 @@ async function handler(
   return res.status(200).json(withTiming(result));
 }
 
-export default withCronJobAudit(adminOnly(handler as any), {
-  jobName: "ingest-projection-inputs",
-});
+export default withCronJobAudit(
+  adminOnly(ingestProjectionInputsHandler as any),
+  {
+    jobName: "ingest-projection-inputs",
+  },
+);
