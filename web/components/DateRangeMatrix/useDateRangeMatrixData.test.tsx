@@ -524,6 +524,7 @@ describe("useDateRangeMatrixData request state", () => {
       "2025-04-01",
       "2025-05-01",
       "playoffs",
+      undefined,
     );
   });
 
@@ -582,6 +583,7 @@ describe("useDateRangeMatrixData request state", () => {
       "2025-04-01",
       "2025-05-01",
       "regularSeason",
+      undefined,
     );
   });
 });

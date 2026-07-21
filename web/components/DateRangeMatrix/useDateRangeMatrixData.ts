@@ -32,6 +32,7 @@ type UseDRMParams = {
   endDate: string | undefined; // YYYY-MM-DD
   mode: Mode;
   source: Source;
+  seasonId?: number;
   seasonType?: DRMSeasonType;
   aggregatedData?: AggregatedDRMPlayer[]; // when source === 'aggregated'
   aggregateStatus?: DRMDataStatus;
@@ -127,6 +128,7 @@ export function useDateRangeMatrixData({
   endDate,
   mode,
   source,
+  seasonId,
   seasonType = "regularSeason",
   aggregatedData = EMPTY_AGGREGATED_DATA,
   aggregateStatus = "success",
@@ -141,6 +143,7 @@ export function useDateRangeMatrixData({
       startDate,
       endDate,
       source,
+      seasonId,
       seasonType,
       aggregatedData,
       aggregateStatus,
@@ -153,6 +156,7 @@ export function useDateRangeMatrixData({
       startDate,
       endDate,
       source,
+      seasonId,
       seasonType,
       aggregatedData,
       aggregateStatus,
@@ -262,6 +266,7 @@ export function useDateRangeMatrixData({
             startDate,
             endDate,
             seasonType,
+            seasonId,
           );
           if (!isCurrent()) return;
           setRoster(roster);
@@ -331,6 +336,7 @@ export function useDateRangeMatrixData({
     startDate,
     endDate,
     source,
+    seasonId,
     seasonType,
     aggregatedData,
     aggregateStatus,

@@ -26,7 +26,7 @@ vi.mock("pages/api/v1/db/update-player/[playerId]", () => ({
   updatePlayer: mocks.updatePlayer,
 }));
 
-import { getCurrentSeason } from "./index";
+import { getCurrentSeason, getSeasonById } from "./index";
 
 type SeasonRow = {
   endDate: string;
@@ -131,5 +131,47 @@ describe("getCurrentSeason", () => {
       seasonEndDate: "2026-06-25T00:00:00.000Z",
     });
     expect(mocks.restGet).not.toHaveBeenCalled();
+  });
+});
+
+describe("getSeasonById", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("uses one exact season-ID row without an unbounded scan", async () => {
+    const row: SeasonRow = {
+      id: 20242025,
+      startDate: "2024-10-04T00:00:00.000Z",
+      regularSeasonEndDate: "2025-04-17T00:00:00.000Z",
+      endDate: "2025-06-17T00:00:00.000Z",
+      numberOfGames: 1312,
+    };
+    const query = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      maybeSingle: vi.fn(),
+    };
+    query.select.mockReturnValue(query);
+    query.eq.mockReturnValue(query);
+    query.maybeSingle.mockResolvedValue({ data: row, error: null });
+    mocks.from.mockImplementation((table: string) => {
+      if (table !== "seasons") throw new Error(`Unexpected table: ${table}`);
+      return query;
+    });
+
+    await expect(getSeasonById(20242025)).resolves.toEqual(row);
+    expect(query.select).toHaveBeenCalledWith(
+      "id,startDate,regularSeasonEndDate,endDate,numberOfGames",
+    );
+    expect(query.eq).toHaveBeenCalledWith("id", 20242025);
+    expect(query.maybeSingle).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects unsafe season identities before querying", async () => {
+    await expect(getSeasonById(Number.NaN)).rejects.toThrow(
+      "A valid season ID is required.",
+    );
+    expect(mocks.from).not.toHaveBeenCalled();
   });
 });

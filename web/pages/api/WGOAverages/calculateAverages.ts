@@ -9,7 +9,7 @@ dotenv.config();
 // Initialize Supabase client
 const supabase: SupabaseClient = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL as string,
-  process.env.SUPABASE_SERVICE_ROLE_KEY as string
+  process.env.SUPABASE_SERVICE_ROLE_KEY as string,
 );
 
 // Define Types for Clarity
@@ -166,7 +166,7 @@ const safeDivide = (numerator: number, denominator: number): number => {
 // Function to calculate summed stats and averages
 const calculateAveragedStats = (
   seasons: SeasonStats[],
-  isCareer: boolean
+  isCareer: boolean,
 ): { averages: any; numberOfSeasons: number } => {
   const numberOfSeasons = seasons.length;
 
@@ -312,7 +312,7 @@ const calculateAveragedStats = (
     "usat_percentage_close",
     "usat_percentage_tied",
     "secondary_assists_5v5",
-    "primary_assists_5v5"
+    "primary_assists_5v5",
   ];
 
   sumDividedBySeasonsStats.forEach((stat) => {
@@ -331,7 +331,7 @@ const calculateAveragedStats = (
     "sh_toi_per_game",
     "penalty_seconds_per_game",
     "sh_time_on_ice_pct_per_game",
-    "pp_toi_pct_per_game"
+    "pp_toi_pct_per_game",
   ];
 
   const totalGamesPlayed = totals["games_played"] || 1; // Prevent division by zero
@@ -358,7 +358,7 @@ const calculateAveragedStats = (
     if (stat === "penalty_minutes") {
       averages["penalty_minutes_per_toi_avg"] = safeDivide(
         totals[stat] || 0,
-        totalToiSeconds
+        totalToiSeconds,
       );
     }
   });
@@ -370,12 +370,12 @@ const calculateAveragedStats = (
     fow_percentage: () =>
       safeDivide(
         totals["fow"] || 0,
-        (totals["fow"] || 0) + (totals["fol"] || 0)
+        (totals["fow"] || 0) + (totals["fol"] || 0),
       ),
     d_zone_fo_percentage: () =>
       safeDivide(
         totals["d_zone_fow"] || 0,
-        (totals["d_zone_fow"] || 0) + (totals["d_zone_fol"] || 0)
+        (totals["d_zone_fow"] || 0) + (totals["d_zone_fol"] || 0),
       ),
     ev_faceoff_percentage: () =>
       safeDivide(totals["ev_fow"] || 0, totals["ev_faceoffs"] || 1),
@@ -390,7 +390,7 @@ const calculateAveragedStats = (
     es_goals_for_percentage: () =>
       safeDivide(
         totals["es_goals_for"] || 0,
-        (totals["es_goals_for"] || 0) + (totals["es_goals_against"] || 0)
+        (totals["es_goals_for"] || 0) + (totals["es_goals_against"] || 0),
       ),
     sh_shooting_percentage: () =>
       safeDivide(totals["sh_goals"] || 0, totals["sh_shots"] || 1),
@@ -406,7 +406,7 @@ const calculateAveragedStats = (
           (totals["sh_goals_for"] || 0) +
           (totals["es_goals_against"] || 0) +
           (totals["pp_goals_against"] || 0) +
-          (totals["sh_goals_against"] || 0)
+          (totals["sh_goals_against"] || 0),
       ),
     on_ice_shooting_pct: () =>
       safeDivide(totals["sat_for"] || 0, totals["goals_for"] || 1),
@@ -415,8 +415,8 @@ const calculateAveragedStats = (
     sat_pct: () =>
       safeDivide(
         totals["sat_for"] || 0,
-        (totals["sat_for"] || 0) + (totals["sat_against"] || 0)
-      )
+        (totals["sat_for"] || 0) + (totals["sat_against"] || 0),
+      ),
   };
 
   for (const [key, value] of Object.entries(percentageCalculations)) {
@@ -432,7 +432,7 @@ const calculateAveragedStats = (
     "skater_shooting_plus_save_pct_5v5",
     "o_zone_start_pct_5v5",
     "on_ice_shooting_pct_5v5",
-    "zone_start_pct_5v5"
+    "zone_start_pct_5v5",
   ];
 
   additionalPercentageStats.forEach((stat) => {
@@ -468,7 +468,7 @@ const calculateAveragedStats = (
     "goals_5v5",
     "points_5v5",
     "primary_assists_5v5",
-    "secondary_assists_5v5"
+    "secondary_assists_5v5",
   ];
 
   per60Stats.forEach((stat) => {
@@ -490,7 +490,7 @@ const calculateAveragedStats = (
 // Function to process and upsert averages into a specified table
 const processAndUpsertAverages = async (isCareer: boolean) => {
   console.log(
-    `\nStarting ${isCareer ? "Career" : "Three-Year"} Averages Calculation...`
+    `\nStarting ${isCareer ? "Career" : "Three-Year"} Averages Calculation...`,
   );
 
   // Fetch all players
@@ -514,7 +514,7 @@ const processAndUpsertAverages = async (isCareer: boolean) => {
       weight,
       height,
       birth_country
-    `
+    `,
     )
     .neq("player_id", null)
     .order("player_id", { ascending: true });
@@ -655,7 +655,7 @@ const processAndUpsertAverages = async (isCareer: boolean) => {
         usat_percentage_tied,
         secondary_assists_5v5,
         primary_assists_5v5
-      `
+      `,
       )
       .eq("player_id", player.player_id)
       .order("season", { ascending: false });
@@ -663,7 +663,7 @@ const processAndUpsertAverages = async (isCareer: boolean) => {
     if (seasonsError) {
       console.error(
         `Error fetching seasons for player ${player.player_id}:`,
-        seasonsError
+        seasonsError,
       );
       continue;
     }
@@ -685,7 +685,7 @@ const processAndUpsertAverages = async (isCareer: boolean) => {
     // Calculate averages
     const { averages, numberOfSeasons } = calculateAveragedStats(
       relevantSeasons,
-      isCareer
+      isCareer,
     );
 
     // Prepare data for upsert
@@ -707,7 +707,7 @@ const processAndUpsertAverages = async (isCareer: boolean) => {
       height: player.height,
       birth_country: player.birth_country,
       number_of_seasons: numberOfSeasons,
-      ...averages
+      ...averages,
     };
 
     // Determine target table
@@ -723,22 +723,22 @@ const processAndUpsertAverages = async (isCareer: boolean) => {
     if (upsertError) {
       console.error(
         `Error upserting data for player ${player.player_id} in ${targetTable}:`,
-        upsertError
+        upsertError,
       );
     } else {
       console.log(
-        `Successfully upserted data for player ${player.player_id} in ${targetTable}`
+        `Successfully upserted data for player ${player.player_id} in ${targetTable}`,
       );
     }
   }
 
   console.log(
-    `\n${isCareer ? "Career" : "Three-Year"} Averages Calculation Completed.`
+    `\n${isCareer ? "Career" : "Three-Year"} Averages Calculation Completed.`,
   );
 };
 
 // Main Execution Function
-const main = async () => {
+export const main = async () => {
   console.log("Starting Averages Calculations...");
 
   // Calculate Career Averages
@@ -750,12 +750,16 @@ const main = async () => {
   console.log("\nAll calculations completed successfully.");
 };
 
-// Run the script
-main()
-  .then(() => {
-    process.exit(0);
-  })
-  .catch((error) => {
-    console.error("Error during calculations:", error);
-    process.exit(1);
-  });
+// This legacy module lives under pages/api, so Next imports it while building
+// and starting the application. Never run the write-heavy batch merely because
+// the module was imported. Manual script callers must opt in explicitly.
+if (process.env.RUN_WGO_AVERAGES_SCRIPT === "true") {
+  main()
+    .then(() => {
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error("Error during calculations:", error);
+      process.exit(1);
+    });
+}

@@ -403,6 +403,7 @@ async function buildRawResult(
   startDate: string,
   endDate: string,
   expectedGameType: "2" | "3",
+  expectedSeasonId?: number,
 ): Promise<RawTOIDataResult> {
   const teamInfo = teamsInfo[canonicalTeamAbbreviation];
   const seenRowIds = new Set<number>();
@@ -446,6 +447,9 @@ async function buildRawResult(
     let seasonId: number | null = null;
     if (row.season_id != null) {
       seasonId = readPositiveSafeInteger(row.season_id, "season ID");
+      if (expectedSeasonId != null && seasonId !== expectedSeasonId) {
+        throw new Error("Shift-chart data conflicts with the selected season.");
+      }
     }
 
     let homeOrAway: "home" | "away" | null = null;
@@ -898,6 +902,7 @@ export async function getTOIDataForGames(
   startDate: string,
   endDate: string,
   seasonType: RawSeasonType = "regularSeason",
+  seasonId?: number,
 ): Promise<RawTOIDataResult> {
   const canonicalTeamAbbreviation = teamAbbreviation.trim().toUpperCase();
   const teamInfo = teamsInfo[canonicalTeamAbbreviation];
@@ -914,20 +919,28 @@ export async function getTOIDataForGames(
   if (seasonType !== "regularSeason" && seasonType !== "playoffs") {
     throw new Error("A valid matrix season type is required.");
   }
+  if (seasonId != null && (!Number.isSafeInteger(seasonId) || seasonId <= 0)) {
+    throw new Error("A valid matrix season ID is required.");
+  }
   const gameType = seasonType === "playoffs" ? "3" : "2";
 
   const rows = await fetchAllSupabasePages<RawShiftChartRow>(
-    ({ from, to }) =>
-      supabase
+    ({ from, to }) => {
+      let query = supabase
         .from("shift_charts")
         .select(RAW_SHIFT_CHART_FIELDS)
         .eq("team_abbreviation", canonicalTeamAbbreviation)
         .eq("team_id", teamInfo.id)
-        .or(`game_type.eq.${gameType},game_type.is.null`)
+        .or(`game_type.eq.${gameType},game_type.is.null`);
+      if (seasonId != null) {
+        query = query.or(`season_id.eq.${seasonId},season_id.is.null`);
+      }
+      return query
         .gte("game_date", startDate)
         .lte("game_date", endDate)
         .order("id", { ascending: true })
-        .range(from, to),
+        .range(from, to);
+    },
     { pageSize: RAW_SHIFT_CHART_PAGE_SIZE },
   );
 
@@ -937,6 +950,7 @@ export async function getTOIDataForGames(
     startDate,
     endDate,
     gameType,
+    seasonId,
   );
 }
 

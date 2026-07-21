@@ -30,8 +30,8 @@ import {
   getDateRangeForGames,
 } from "components/DateRangeMatrix/utilities";
 import styles from "components/DateRangeMatrix/drm.module.scss";
-import { queryTypes, useQueryState } from "next-usequerystate";
-import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
+import { useUrlQueryState } from "hooks/useUrlQueryState";
+import { fetchCurrentSeason, fetchSeasonById } from "utils/fetchCurrentSeason";
 import { teamsInfo } from "lib/teamsInfo";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -46,6 +46,61 @@ import Image from "next/image";
 type TeamAbbreviation = Extract<keyof typeof teamsInfo, string>; // remove implicit number from index signature
 type DRMTimeFrame = "L7" | "L14" | "L30" | "Totals" | "Custom";
 type RollingTimeFrame = Extract<DRMTimeFrame, "L7" | "L14" | "L30">;
+type DRMSource = "aggregated" | "raw";
+type DRMSeasonType = "regularSeason" | "playoffs";
+
+const DRM_TIME_FRAMES: readonly DRMTimeFrame[] = [
+  "L7",
+  "L14",
+  "L30",
+  "Totals",
+  "Custom",
+];
+const DRM_SEASON_ID_PATTERN = /^(\d{4})(\d{4})$/;
+const DRM_QUERY_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function sanitizeTeam(value: string | null): TeamAbbreviation | "" {
+  const candidate = value?.trim().toUpperCase() ?? "";
+  return Object.prototype.hasOwnProperty.call(teamsInfo, candidate)
+    ? (candidate as TeamAbbreviation)
+    : "";
+}
+
+export function sanitizeDRMMode(value: string | null): Mode {
+  return (DATERANGE_MATRIX_MODES.find((option) => option.value === value)
+    ?.value ?? DATERANGE_MATRIX_MODES[0].value) as Mode;
+}
+
+export function sanitizeDRMSeasonId(value: string | null): number | null {
+  if (!value) return null;
+  const match = DRM_SEASON_ID_PATTERN.exec(value);
+  if (!match || Number(match[2]) !== Number(match[1]) + 1) return null;
+  return Number(value);
+}
+
+function sanitizeSeasonType(value: string | null): DRMSeasonType {
+  return value === "playoffs" ? "playoffs" : "regularSeason";
+}
+
+function sanitizeSource(value: string | null): DRMSource {
+  return value === "raw" ? "raw" : "aggregated";
+}
+
+function sanitizeTimeFrame(
+  value: string | null,
+  hasRestoredDate: boolean,
+): DRMTimeFrame {
+  if (DRM_TIME_FRAMES.includes(value as DRMTimeFrame)) {
+    return value as DRMTimeFrame;
+  }
+  return hasRestoredDate ? "Custom" : "Totals";
+}
+
+function parseQueryDate(value: string | null): Date | undefined {
+  if (!value || !DRM_QUERY_DATE_PATTERN.test(value)) return undefined;
+  const parsed = parseDRMDate(value);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+}
 
 function isRollingTimeFrame(
   timeFrame: DRMTimeFrame,
@@ -156,35 +211,70 @@ const DRM_CONTROL_IDS = {
   startDate: "drm-start-date",
   endDate: "drm-end-date",
   matrixLayout: "drm-matrix-layout",
+  source: "drm-source",
 } as const;
 
 export default function DRMPage() {
-  const [dateRangeMatrixMode, setDateRangeMatrixMode] = useQueryState(
-    "daterange-matrix-mode",
-    queryTypes.string.withDefault(DATERANGE_MATRIX_MODES[0].value),
+  const [dateRangeMatrixModeQ, setDateRangeMatrixMode, modeQueryReady] =
+    useUrlQueryState("daterange-matrix-mode", DATERANGE_MATRIX_MODES[0].value);
+  // URL query state for the complete restorable matrix scope.
+  const [teamQ, setTeamQ, teamQueryReady] = useUrlQueryState("team");
+  const [startQ, setStartQ, startQueryReady] = useUrlQueryState("start");
+  const [endQ, setEndQ, endQueryReady] = useUrlQueryState("end");
+  const [opponentQ, setOpponentQ, opponentQueryReady] =
+    useUrlQueryState("opponent");
+  const [homeAwayQ, setHomeAwayQ, homeAwayQueryReady] =
+    useUrlQueryState("homeAway");
+  const [seasonQ, setSeasonQ, seasonQueryReady] = useUrlQueryState("season");
+  const [seasonTypeQ, setSeasonTypeQ, seasonTypeQueryReady] =
+    useUrlQueryState("seasonType");
+  const [timeFrameQ, setTimeFrameQ, timeFrameQueryReady] = useUrlQueryState(
+    "timeframe",
+    "Totals",
   );
-  const [selectedTeam, setSelectedTeam] = useState<TeamAbbreviation | "">("");
-  // URL query state for team and dates/opponent/homeAway
-  const [teamQ, setTeamQ] = useQueryState("team", queryTypes.string);
-  const [startQ, setStartQ] = useQueryState("start", queryTypes.string);
-  const [endQ, setEndQ] = useQueryState("end", queryTypes.string);
-  const [opponentQ, setOpponentQ] = useQueryState(
-    "opponent",
-    queryTypes.string,
+  const [sourceQ, setSourceQ, sourceQueryReady] = useUrlQueryState("source");
+  const queryStateReady =
+    modeQueryReady &&
+    teamQueryReady &&
+    startQueryReady &&
+    endQueryReady &&
+    opponentQueryReady &&
+    homeAwayQueryReady &&
+    seasonQueryReady &&
+    seasonTypeQueryReady &&
+    timeFrameQueryReady &&
+    sourceQueryReady;
+  const dateRangeMatrixMode = sanitizeDRMMode(dateRangeMatrixModeQ);
+  const restoredStartDate = useMemo(() => parseQueryDate(startQ), [startQ]);
+  const restoredEndDate = useMemo(() => parseQueryDate(endQ), [endQ]);
+  const initialTimeFrame = sanitizeTimeFrame(
+    timeFrameQ,
+    restoredStartDate != null || restoredEndDate != null,
   );
-  const [homeAwayQ, setHomeAwayQ] = useQueryState(
-    "homeAway",
-    queryTypes.string,
-  );
+  const selectedTeam = sanitizeTeam(teamQ);
+  const opponent = sanitizeTeam(opponentQ);
+  const homeOrAway =
+    homeAwayQ === "home" || homeAwayQ === "away" ? homeAwayQ : "";
+  const seasonType = sanitizeSeasonType(seasonTypeQ);
+  const source = sanitizeSource(sourceQ);
+  const timeFrame = initialTimeFrame;
+  const startDate = restoredStartDate;
+  const endDate = restoredEndDate;
   // Ensure runtime value always stays a string (never number)
   const setTeamSafe = (val: string | TeamAbbreviation | null) => {
-    if (!val) {
-      setSelectedTeam("");
-      return;
-    }
-    setSelectedTeam(val as TeamAbbreviation);
+    const team = sanitizeTeam(val == null ? null : String(val));
+    setTeamQ(team || null);
   };
+  const setStartDate = useCallback(
+    (date: Date | undefined) => setStartQ(toDateKey(date) || null),
+    [setStartQ],
+  );
+  const setEndDate = useCallback(
+    (date: Date | undefined) => setEndQ(toDateKey(date) || null),
+    [setEndQ],
+  );
   const [seasonId, setSeasonId] = useState<number | null>(null);
+  const [seasonError, setSeasonError] = useState<string | null>(null);
   const [gameIds, setGameIds] = useState<number[]>([]);
   const [resolvedWindowGameIds, setResolvedWindowGameIds] = useState<number[]>(
     [],
@@ -206,13 +296,6 @@ export default function DRMPage() {
   const [scopedCardStats, setScopedCardStats] = useState<ScopedCardStats>(
     EMPTY_SCOPED_CARD_STATS,
   );
-  const [seasonType, setSeasonType] = useState<"regularSeason" | "playoffs">(
-    "regularSeason",
-  );
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [opponent, setOpponent] = useState<string>("");
-  const [homeOrAway, setHomeOrAway] = useState<"home" | "away" | "">("");
   const [regularSeasonDateRange, setRegularSeasonDateRange] = useState<
     { start: Date; end: Date } | undefined
   >(undefined);
@@ -221,90 +304,130 @@ export default function DRMPage() {
   >(undefined);
   const dateRangeRequestSequence = useRef(0);
   const aggregateRequestSequence = useRef(0);
+  const resolvedSeasonIdRef = useRef<number | null>(null);
 
   // State for timeframe selection
-  const [timeFrame, setTimeFrame] = useState<DRMTimeFrame>("Totals");
-  const timeFrameRef = useRef<DRMTimeFrame>("Totals");
-  const selectTimeFrame = useCallback((nextTimeFrame: DRMTimeFrame) => {
-    if (timeFrameRef.current === nextTimeFrame) return;
-    dateRangeRequestSequence.current += 1;
-    timeFrameRef.current = nextTimeFrame;
-    setResolvedWindowGameIds((currentIds) =>
-      currentIds.length === 0 ? currentIds : [],
-    );
-    setResolvedWindowKey(null);
-    setTimeFrame(nextTimeFrame);
-  }, []);
-
-  // Sync in: apply initial query values to state
-  useEffect(() => {
-    if (teamQ && teamQ !== selectedTeam) {
-      setSelectedTeam(teamQ as TeamAbbreviation);
-    }
-  }, [teamQ]);
+  const timeFrameRef = useRef<DRMTimeFrame>(initialTimeFrame);
+  const selectTimeFrame = useCallback(
+    (nextTimeFrame: DRMTimeFrame) => {
+      if (timeFrameRef.current === nextTimeFrame) return;
+      dateRangeRequestSequence.current += 1;
+      timeFrameRef.current = nextTimeFrame;
+      setResolvedWindowGameIds((currentIds) =>
+        currentIds.length === 0 ? currentIds : [],
+      );
+      setResolvedWindowKey(null);
+      setTimeFrameQ(nextTimeFrame);
+    },
+    [setTimeFrameQ],
+  );
 
   useEffect(() => {
-    if (opponentQ !== undefined && opponentQ !== opponent) {
-      setOpponent(opponentQ || "");
-    }
-  }, [opponentQ]);
+    timeFrameRef.current = timeFrame;
+  }, [timeFrame]);
 
   useEffect(() => {
-    if (homeAwayQ !== undefined && homeAwayQ !== homeOrAway) {
-      const val = homeAwayQ === "home" || homeAwayQ === "away" ? homeAwayQ : "";
-      setHomeOrAway(val);
-    }
-  }, [homeAwayQ]);
-
+    if (!queryStateReady) return;
+    const canonicalTeam = sanitizeTeam(teamQ);
+    if (teamQ && canonicalTeam !== teamQ) setTeamQ(canonicalTeam || null);
+  }, [queryStateReady, teamQ, setTeamQ]);
   useEffect(() => {
-    // Parse start/end from query on first load or when changed externally
-    if (startQ) {
-      const d = parseDRMDate(startQ);
-      if (!Number.isNaN(d.getTime())) setStartDate(d);
+    if (!queryStateReady) return;
+    const canonicalOpponent = sanitizeTeam(opponentQ);
+    if (opponentQ && canonicalOpponent !== opponentQ) {
+      setOpponentQ(canonicalOpponent || null);
     }
-    if (endQ) {
-      const d = parseDRMDate(endQ);
-      if (!Number.isNaN(d.getTime())) setEndDate(d);
+  }, [opponentQ, queryStateReady, setOpponentQ]);
+  useEffect(() => {
+    if (!queryStateReady) return;
+    if (homeAwayQ && homeAwayQ !== homeOrAway) {
+      setHomeAwayQ(homeOrAway || null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startQ, endQ]);
+  }, [homeAwayQ, homeOrAway, queryStateReady, setHomeAwayQ]);
+  useEffect(() => {
+    if (queryStateReady && seasonTypeQ && seasonTypeQ !== seasonType) {
+      setSeasonTypeQ(seasonType);
+    }
+  }, [queryStateReady, seasonType, seasonTypeQ, setSeasonTypeQ]);
+  useEffect(() => {
+    if (queryStateReady && sourceQ && sourceQ !== source) setSourceQ(source);
+  }, [queryStateReady, source, sourceQ, setSourceQ]);
+  useEffect(() => {
+    if (queryStateReady && timeFrameQ && timeFrameQ !== timeFrame) {
+      setTimeFrameQ(timeFrame);
+    }
+  }, [queryStateReady, timeFrame, timeFrameQ, setTimeFrameQ]);
+  useEffect(() => {
+    if (queryStateReady && seasonQ && sanitizeDRMSeasonId(seasonQ) == null) {
+      setSeasonQ(null);
+    }
+  }, [queryStateReady, seasonQ, setSeasonQ]);
+  useEffect(() => {
+    if (queryStateReady && startQ && !restoredStartDate) setStartQ(null);
+  }, [queryStateReady, restoredStartDate, setStartQ, startQ]);
+  useEffect(() => {
+    if (queryStateReady && endQ && !restoredEndDate) setEndQ(null);
+  }, [endQ, queryStateReady, restoredEndDate, setEndQ]);
 
   useEffect(() => {
     let active = true;
     async function fetchSeason() {
-      const currentSeason = await fetchCurrentSeason();
-      if (!active) return;
-      setSeasonId(currentSeason.id);
+      if (!queryStateReady) return;
+      const requestedSeasonId = sanitizeDRMSeasonId(seasonQ);
+      if (
+        requestedSeasonId &&
+        requestedSeasonId === resolvedSeasonIdRef.current
+      ) {
+        return;
+      }
+      try {
+        setSeasonError(null);
+        const currentSeason = requestedSeasonId
+          ? await fetchSeasonById(requestedSeasonId)
+          : await fetchCurrentSeason();
+        if (!active) return;
+        resolvedSeasonIdRef.current = currentSeason.id;
+        setSeasonId(currentSeason.id);
+        if (!requestedSeasonId) setSeasonQ(String(currentSeason.id));
 
-      const regularSeasonStartDate = parseDRMDate(currentSeason.startDate);
-      const regularSeasonEndDate = parseDRMDate(
-        currentSeason.regularSeasonEndDate,
-      );
-      const playoffsStartDate = new Date(regularSeasonEndDate);
-      playoffsStartDate.setDate(playoffsStartDate.getDate() + 1);
-      const playoffsEndDate = parseDRMDate(currentSeason.endDate);
+        const regularSeasonStartDate = parseDRMDate(currentSeason.startDate);
+        const regularSeasonEndDate = parseDRMDate(
+          currentSeason.regularSeasonEndDate,
+        );
+        const playoffsStartDate = new Date(regularSeasonEndDate);
+        playoffsStartDate.setDate(playoffsStartDate.getDate() + 1);
+        const playoffsEndDate = parseDRMDate(currentSeason.endDate);
 
-      setRegularSeasonDateRange({
-        start: regularSeasonStartDate,
-        end: regularSeasonEndDate,
-      });
-      setPlayoffDateRange({
-        start: playoffsStartDate,
-        end: playoffsEndDate,
-      });
+        setRegularSeasonDateRange({
+          start: regularSeasonStartDate,
+          end: regularSeasonEndDate,
+        });
+        setPlayoffDateRange({
+          start: playoffsStartDate,
+          end: playoffsEndDate,
+        });
 
-      if (timeFrameRef.current !== "Custom") {
-        setStartDate(regularSeasonStartDate);
-        setEndDate(regularSeasonEndDate);
+        if (timeFrameRef.current !== "Custom") {
+          setStartDate(regularSeasonStartDate);
+          setEndDate(regularSeasonEndDate);
+        }
+      } catch {
+        if (!active) return;
+        resolvedSeasonIdRef.current = null;
+        setSeasonId(null);
+        setRegularSeasonDateRange(undefined);
+        setPlayoffDateRange(undefined);
+        setSeasonError("Unable to resolve the selected season.");
       }
     }
     fetchSeason();
     return () => {
       active = false;
     };
-  }, []);
+  }, [queryStateReady, seasonQ, setEndDate, setSeasonQ, setStartDate]);
 
   useEffect(() => {
+    if (!queryStateReady) return;
     const requestId = ++dateRangeRequestSequence.current;
     let active = true;
     const isCurrent = () =>
@@ -397,12 +520,15 @@ export default function DRMPage() {
       active = false;
     };
   }, [
+    queryStateReady,
     timeFrame,
     seasonType,
     selectedTeam,
     seasonId,
     regularSeasonDateRange,
     playoffDateRange,
+    setStartDate,
+    setEndDate,
   ]);
 
   const startStr = toDateKey(startDate);
@@ -447,11 +573,18 @@ export default function DRMPage() {
     };
 
     async function fetchGames() {
-      if (!selectedTeam || !seasonId) {
+      if (source !== "aggregated") {
         clearAggregateData();
         setResolvedAggregateScopeKey(null);
         setAggregateStatus("idle");
         setAggregateError(null);
+        return;
+      }
+      if (!selectedTeam || !seasonId) {
+        clearAggregateData();
+        setResolvedAggregateScopeKey(null);
+        setAggregateStatus(seasonError ? "error" : "idle");
+        setAggregateError(seasonError);
         return;
       }
 
@@ -584,7 +717,9 @@ export default function DRMPage() {
     };
   }, [
     selectedTeam,
+    source,
     seasonId,
+    seasonError,
     startDate,
     endDate,
     timeFrame,
@@ -600,7 +735,7 @@ export default function DRMPage() {
     newSeasonType: "regularSeason" | "playoffs",
   ) => {
     selectTimeFrame("Totals");
-    setSeasonType(newSeasonType);
+    setSeasonTypeQ(newSeasonType);
     if (newSeasonType === "regularSeason") {
       setStartDate(regularSeasonDateRange?.start);
       setEndDate(regularSeasonDateRange?.end);
@@ -620,7 +755,7 @@ export default function DRMPage() {
     setEndDate(date ?? undefined);
   };
 
-  const mode = dateRangeMatrixMode as Mode;
+  const mode = dateRangeMatrixMode;
 
   // Default to the "Five Hole Fantasy Hockey" logo and colors if no team is selected
   const teamId = selectedTeam
@@ -658,6 +793,7 @@ export default function DRMPage() {
           ? "Custom start date must not follow the end date."
           : null;
   const scopeSummary =
+    seasonError ??
     customRangeError ??
     (fixedWindowResolved &&
     (visibleAggregateStatus === "success" ||
@@ -668,27 +804,15 @@ export default function DRMPage() {
         ? `Custom range: ${startStr} through ${endStr} (inclusive).`
         : null);
 
-  // Sync out: push team/date/opponent/homeAway to URL when local state changes
   useEffect(() => {
-    if (selectedTeam) setTeamQ(selectedTeam);
-    else setTeamQ(null);
-  }, [selectedTeam, setTeamQ]);
-  useEffect(() => {
-    if (startStr) setStartQ(startStr);
-    else setStartQ(null);
-  }, [startStr, setStartQ]);
-  useEffect(() => {
-    if (endStr) setEndQ(endStr);
-    else setEndQ(null);
-  }, [endStr, setEndQ]);
-  useEffect(() => {
-    if (opponent) setOpponentQ(opponent);
-    else setOpponentQ(null);
-  }, [opponent, setOpponentQ]);
-  useEffect(() => {
-    if (homeOrAway) setHomeAwayQ(homeOrAway);
-    else setHomeAwayQ(null);
-  }, [homeOrAway, setHomeAwayQ]);
+    if (
+      queryStateReady &&
+      dateRangeMatrixModeQ &&
+      dateRangeMatrixModeQ !== mode
+    ) {
+      setDateRangeMatrixMode(mode);
+    }
+  }, [dateRangeMatrixModeQ, mode, queryStateReady, setDateRangeMatrixMode]);
   const aggregatedForHook = useMemo(() => {
     if (!aggregateResultIsCurrent) return [];
     return seasonType === "regularSeason"
@@ -701,7 +825,8 @@ export default function DRMPage() {
     startDate: startStr,
     endDate: endStr,
     mode,
-    source: "aggregated",
+    source,
+    seasonId: seasonId ?? undefined,
     seasonType,
     aggregatedData: aggregatedForHook,
     aggregateStatus: visibleAggregateStatus,
@@ -711,6 +836,7 @@ export default function DRMPage() {
       : EMPTY_AGGREGATE_COVERAGE,
   });
   const linePairVisible =
+    source === "aggregated" &&
     timeFrame !== "Custom" &&
     (rollingGamesBack == null || fixedWindowResolved) &&
     aggregateResultIsCurrent &&
@@ -835,7 +961,7 @@ export default function DRMPage() {
                 name="team"
                 selectedTeam={(selectedTeam || "") as string}
                 onSelect={(team) => {
-                  setSelectedTeam(team as TeamAbbreviation);
+                  setTeamSafe(team);
                 }}
               />
             </div>
@@ -852,7 +978,10 @@ export default function DRMPage() {
                 name="opponent"
                 selectedTeam={(opponent || "") as string}
                 onSelect={(opp) => {
-                  setOpponent(opp == null ? "" : String(opp));
+                  const nextOpponent = sanitizeTeam(
+                    opp == null ? null : String(opp),
+                  );
+                  setOpponentQ(nextOpponent || null);
                 }}
               />
             </div>
@@ -905,7 +1034,7 @@ export default function DRMPage() {
           {scopeSummary ? (
             <p
               className={styles.scopeSummary}
-              role={customRangeError ? "alert" : "status"}
+              role={seasonError || customRangeError ? "alert" : "status"}
             >
               {scopeSummary}
             </p>
@@ -927,13 +1056,15 @@ export default function DRMPage() {
               <p className={styles.linePairNotice} role="status">
                 {timeFrame === "Custom"
                   ? "Line and goalie stat cards are unavailable for Custom ranges; the matrix uses the selected dates."
-                  : visibleAggregateStatus === "loading" ||
-                      drmData.status === "loading"
-                    ? "Updating line and goalie stat cards for the selected matrix scope."
-                    : visibleAggregateStatus === "error" ||
-                        drmData.status === "error"
-                      ? "Line and goalie stat cards are unavailable while the matrix scope cannot be loaded."
-                      : "No matching line or goalie stat cards are available for this matrix scope."}
+                  : source === "raw"
+                    ? "Line and goalie stat cards are unavailable in the raw QA source; the matrix uses exact shift-chart rows."
+                    : visibleAggregateStatus === "loading" ||
+                        drmData.status === "loading"
+                      ? "Updating line and goalie stat cards for the selected matrix scope."
+                      : visibleAggregateStatus === "error" ||
+                          drmData.status === "error"
+                        ? "Line and goalie stat cards are unavailable while the matrix scope cannot be loaded."
+                        : "No matching line or goalie stat cards are available for this matrix scope."}
               </p>
             )}
           </div>
@@ -961,7 +1092,7 @@ export default function DRMPage() {
               <button
                 type="button"
                 onClick={() =>
-                  setHomeOrAway(homeOrAway === "home" ? "" : "home")
+                  setHomeAwayQ(homeOrAway === "home" ? null : "home")
                 }
                 className={`${styles.button} ${homeOrAway === "home" ? styles.active : ""}`}
                 aria-pressed={homeOrAway === "home"}
@@ -972,7 +1103,7 @@ export default function DRMPage() {
               <button
                 type="button"
                 onClick={() =>
-                  setHomeOrAway(homeOrAway === "away" ? "" : "away")
+                  setHomeAwayQ(homeOrAway === "away" ? null : "away")
                 }
                 className={`${styles.button} ${homeOrAway === "away" ? styles.active : ""}`}
                 aria-pressed={homeOrAway === "away"}
@@ -1002,6 +1133,23 @@ export default function DRMPage() {
                     {option.label}
                   </option>
                 ))}
+              </select>
+            </div>
+            <div className={styles.selectWrapper}>
+              <label htmlFor={DRM_CONTROL_IDS.source} className={styles.label}>
+                Data source
+              </label>
+              <select
+                id={DRM_CONTROL_IDS.source}
+                name="source"
+                value={source}
+                onChange={(event) =>
+                  setSourceQ(sanitizeSource(event.target.value))
+                }
+                className={styles.datePickerInput}
+              >
+                <option value="aggregated">Aggregated</option>
+                <option value="raw">Raw QA</option>
               </select>
             </div>
           </div>

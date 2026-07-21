@@ -11,13 +11,13 @@ import {
   ScheduleData,
   Season,
   Team,
-  GameData
+  GameData,
 } from "lib/NHL/types";
 import supabase from "lib/supabase/public-client";
 import {
   activeTeamAbbreviations,
   legacyTeamIdToAbbr,
-  teamsInfo
+  teamsInfo,
 } from "lib/teamsInfo";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import supabaseServer from "lib/supabase/server";
@@ -36,7 +36,7 @@ function buildStaticTeamsFallback(): Team[] {
         id: info.id,
         name: info.name,
         abbreviation,
-        logo: getTeamLogo(abbreviation)
+        logo: getTeamLogo(abbreviation),
       };
     })
     .sort((a, b) => a.id - b.id);
@@ -45,7 +45,7 @@ function buildStaticTeamsFallback(): Team[] {
 export async function getPlayerGameLog(
   id: number | string,
   seasonId: number | string,
-  gameType: number | string = 2
+  gameType: number | string = 2,
 ): Promise<PlayerGameLog[]> {
   try {
     const data =
@@ -83,7 +83,7 @@ export async function getPlayer(id: number): Promise<Player> {
     teamName: data.teams?.name,
     teamAbbreviation: data.teams?.abbreviation,
     age: differenceInYears(new Date(), new Date(data.players?.birthDate ?? "")),
-    ...data.players
+    ...data.players,
   } as Player;
 }
 
@@ -109,7 +109,7 @@ export async function getTeams(seasonId?: number): Promise<Team[]> {
     console.warn("Team lookup failed; falling back to static team catalog.", {
       seasonId,
       message: normalized.message,
-      detail: normalized.detail
+      detail: normalized.detail,
     });
     return buildStaticTeamsFallback();
   }
@@ -130,7 +130,7 @@ export async function getTeams(seasonId?: number): Promise<Team[]> {
       id: canonicalId,
       name: info.name,
       abbreviation,
-      logo: getTeamLogo(abbreviation)
+      logo: getTeamLogo(abbreviation),
     };
     const existing = canonical.get(canonicalId);
     if (!existing || team.id === canonicalId) {
@@ -147,7 +147,7 @@ export async function getTeams(seasonId?: number): Promise<Team[]> {
         id: info.id,
         name: info.name,
         abbreviation,
-        logo: getTeamLogo(abbreviation)
+        logo: getTeamLogo(abbreviation),
       });
     }
   }
@@ -179,7 +179,7 @@ export async function getCurrentSeason(): Promise<Season> {
     lastNumberOfGames: lastSeason.numberOfGames,
     slice: function (arg0: number, arg1: number): string {
       return "";
-    }
+    },
   });
 
   try {
@@ -193,7 +193,9 @@ export async function getCurrentSeason(): Promise<Season> {
       throw error;
     }
     if (!data || data.length === 0) {
-      throw new Error("Cannot find the current season (no rows in seasons table).");
+      throw new Error(
+        "Cannot find the current season (no rows in seasons table).",
+      );
     }
 
     const currentSeason = data[0];
@@ -205,8 +207,8 @@ export async function getCurrentSeason(): Promise<Season> {
       "Primary season lookup failed; falling back to NHL season feed.",
       {
         message: normalized.message,
-        detail: normalized.detail
-      }
+        detail: normalized.detail,
+      },
     );
   }
 
@@ -231,10 +233,14 @@ export async function getCurrentSeason(): Promise<Season> {
       return start <= now && now <= end;
     });
     const startedIndex = seasons.findIndex(
-      (season) => new Date(season.startDate) <= now
+      (season) => new Date(season.startDate) <= now,
     );
     const resolvedIndex =
-      currentIndex !== -1 ? currentIndex : startedIndex !== -1 ? startedIndex : 0;
+      currentIndex !== -1
+        ? currentIndex
+        : startedIndex !== -1
+          ? startedIndex
+          : 0;
     const currentSeason = seasons[resolvedIndex];
     const lastSeason = seasons[resolvedIndex + 1] ?? currentSeason;
 
@@ -242,6 +248,27 @@ export async function getCurrentSeason(): Promise<Season> {
   } catch (fallbackError: any) {
     throw new Error(`Cannot fetch seasons: ${fallbackError.message}`);
   }
+}
+
+export type SeasonDetails = Pick<
+  Tables<"seasons">,
+  "id" | "startDate" | "regularSeasonEndDate" | "endDate" | "numberOfGames"
+>;
+
+export async function getSeasonById(
+  seasonId: number,
+): Promise<SeasonDetails | null> {
+  if (!Number.isSafeInteger(seasonId) || seasonId <= 0) {
+    throw new Error("A valid season ID is required.");
+  }
+
+  const { data, error } = await supabase
+    .from("seasons")
+    .select("id,startDate,regularSeasonEndDate,endDate,numberOfGames")
+    .eq("id", seasonId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
 }
 
 export async function getSeasons(): Promise<Season[]> {
@@ -259,7 +286,7 @@ export async function getSeasons(): Promise<Season[]> {
 
     slice: function (arg0: number, arg1: number): string {
       return "";
-    }
+    },
   }));
   return data;
 }
@@ -280,12 +307,12 @@ export async function getAllPlayers(seasonId?: number): Promise<Player[]> {
     ...player.players!,
     age: differenceInYears(
       new Date(),
-      new Date(player.players?.birthDate ?? "")
+      new Date(player.players?.birthDate ?? ""),
     ),
     sweaterNumber: player.sweaterNumber,
     teamId: player.teams?.id,
     teamAbbreviation: player.teams?.abbreviation,
-    teamName: player.teams?.name
+    teamName: player.teams?.name,
   }));
 }
 
@@ -304,11 +331,11 @@ async function getTeamsMap(): Promise<Record<number, Team>> {
       id: info.id,
       name: info.name,
       abbreviation,
-      logo: getTeamLogo(abbreviation)
+      logo: getTeamLogo(abbreviation),
     };
     map[Number(legacyId)] = {
       ...canonical,
-      id: Number(legacyId)
+      id: Number(legacyId),
     };
   });
   return map;
@@ -341,24 +368,24 @@ type GameWeek = {
  */
 export async function getSchedule(
   startDate: string,
-  opts: { includeOdds?: boolean } = {}
+  opts: { includeOdds?: boolean } = {},
 ) {
   const includeOdds = opts.includeOdds !== false;
   const { gameWeek } = await get<{ gameWeek: GameWeek }>(
-    `/schedule/${startDate}`
+    `/schedule/${startDate}`,
   );
   const teams = await getTeamsMap();
   const TEAM_DAY_DATA: ScheduleData["data"] = {};
   const numGamesPerDay: number[] = [];
   const result = {
     data: TEAM_DAY_DATA,
-    numGamesPerDay
+    numGamesPerDay,
   };
 
   // Get number of games per day
   DAYS.forEach((item) => {
     numGamesPerDay.push(
-      gameWeek.find((day) => day.dayAbbrev === item)?.numberOfGames ?? 0
+      gameWeek.find((day) => day.dayAbbrev === item)?.numberOfGames ?? 0,
     );
   });
 
@@ -376,7 +403,7 @@ export async function getSchedule(
     const { data: oddsData, error } = await supabase
       .from("expected_goals")
       .select(
-        "game_id, home_win_odds, away_win_odds, home_api_win_odds, away_api_win_odds"
+        "game_id, home_win_odds, away_win_odds, home_api_win_odds, away_api_win_odds",
       )
       .in("game_id", gameIds);
 
@@ -384,7 +411,7 @@ export async function getSchedule(
       const normalized = normalizeDependencyError(error);
       console.warn("Win odds lookup failed; continuing without odds.", {
         message: normalized.message,
-        detail: normalized.detail
+        detail: normalized.detail,
       });
     }
 
@@ -418,14 +445,14 @@ export async function getSchedule(
           id: homeTeam.id,
           score: homeTeam.score,
           winOdds: homeWinOdds,
-          apiWinOdds: homeApiWinOdds
+          apiWinOdds: homeApiWinOdds,
         },
         awayTeam: {
           id: awayTeam.id,
           score: awayTeam.score,
           winOdds: awayWinOdds,
-          apiWinOdds: awayApiWinOdds
-        }
+          apiWinOdds: awayApiWinOdds,
+        },
       };
 
       if (!TEAM_DAY_DATA[homeTeam.id]) TEAM_DAY_DATA[homeTeam.id] = {};

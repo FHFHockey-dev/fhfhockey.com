@@ -6,17 +6,27 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { useCallback, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import DRMPage, { parseDRMDate, toDateKey } from "pages/drm";
+import DRMPage, {
+  parseDRMDate,
+  sanitizeDRMMode,
+  sanitizeDRMSeasonId,
+  toDateKey,
+} from "pages/drm";
 
 const mocks = vi.hoisted(() => ({
   fetchAggregatedData: vi.fn(),
   fetchCurrentSeason: vi.fn(),
+  fetchSeasonById: vi.fn(),
   getDateRangeForGames: vi.fn(),
   datePickerProps: vi.fn(),
   linePairGridProps: vi.fn(),
   setDateRangeMatrixMode: vi.fn(),
+  setQueryState: vi.fn(),
   useDateRangeMatrixData: vi.fn(),
+  queryReady: true,
+  queryValues: {} as Record<string, string | null>,
   canonicalLines: [[{ id: 9001 }]],
   canonicalPairs: [[{ id: 9002 }]],
 }));
@@ -54,6 +64,7 @@ vi.mock("components/DateRangeMatrix/utilities", () => ({
 
 vi.mock("utils/fetchCurrentSeason", () => ({
   fetchCurrentSeason: mocks.fetchCurrentSeason,
+  fetchSeasonById: mocks.fetchSeasonById,
 }));
 
 vi.mock("components/TeamSelect", () => ({
@@ -164,27 +175,49 @@ vi.mock("next/image", () => ({
   default: ({ alt }: { alt: string }) => <span role="img" aria-label={alt} />,
 }));
 
-vi.mock("next-usequerystate", () => ({
-  queryTypes: {
-    string: {
-      withDefault: () => ({}),
-    },
+vi.mock("hooks/useUrlQueryState", () => ({
+  useUrlQueryState: (key: string, defaultValue: string | null = null) => {
+    const fallback = defaultValue;
+    const [value, setValue] = useState<string | null>(
+      mocks.queryValues[key] ?? fallback,
+    );
+    const setter = useCallback(
+      (nextValue: string | null) => {
+        mocks.queryValues[key] = nextValue;
+        mocks.setQueryState(key, nextValue);
+        if (key === "daterange-matrix-mode") {
+          mocks.setDateRangeMatrixMode(nextValue);
+        }
+        setValue(nextValue ?? fallback);
+      },
+      [fallback, key],
+    );
+    return [value, setter, mocks.queryReady];
   },
-  useQueryState: (key: string) => [
-    key === "daterange-matrix-mode" ? "line-combination" : null,
-    key === "daterange-matrix-mode" ? mocks.setDateRangeMatrixMode : vi.fn(),
-  ],
 }));
 
 afterEach(() => cleanup());
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.queryReady = true;
+  for (const key of Object.keys(mocks.queryValues)) {
+    delete mocks.queryValues[key];
+  }
+  mocks.queryValues["daterange-matrix-mode"] = "line-combination";
   mocks.fetchCurrentSeason.mockResolvedValue({
     id: 20252026,
     startDate: "2025-10-01T00:00:00.000Z",
     regularSeasonEndDate: "2026-04-15T00:00:00.000Z",
     endDate: "2026-06-24T00:00:00.000Z",
+    playoffsStartDate: Date.UTC(1999, 0, 1),
+    playoffsEndDate: Date.UTC(1999, 0, 2),
+  });
+  mocks.fetchSeasonById.mockResolvedValue({
+    id: 20242025,
+    startDate: "2024-10-04T00:00:00.000Z",
+    regularSeasonEndDate: "2025-04-17T00:00:00.000Z",
+    endDate: "2025-06-17T00:00:00.000Z",
     playoffsStartDate: Date.UTC(1999, 0, 1),
     playoffsEndDate: Date.UTC(1999, 0, 2),
   });
@@ -293,6 +326,147 @@ describe("DRMPage latest-request ownership", () => {
     expect(toDateKey(parseDRMDate("2026-03-10T00:00:00.000Z"))).toBe(
       "2026-03-10",
     );
+  });
+
+  it("sanitizes unsupported mode and season query values", () => {
+    expect(sanitizeDRMMode("total-toi")).toBe("total-toi");
+    expect(sanitizeDRMMode("not-a-mode")).toBe("line-combination");
+    expect(sanitizeDRMSeasonId("20242025")).toBe(20242025);
+    expect(sanitizeDRMSeasonId("20242026")).toBeNull();
+    expect(sanitizeDRMSeasonId("../../20242025")).toBeNull();
+  });
+
+  it("restores a historical Custom raw-QA scope without current-season overwrite", async () => {
+    Object.assign(mocks.queryValues, {
+      "daterange-matrix-mode": "total-toi",
+      team: "edm",
+      season: "20242025",
+      seasonType: "playoffs",
+      timeframe: "Custom",
+      source: "raw",
+      start: "2025-05-01",
+      end: "2025-05-12",
+    });
+
+    render(<DRMPage />);
+
+    await waitFor(() =>
+      expect(mocks.fetchSeasonById).toHaveBeenCalledWith(20242025),
+    );
+    await waitFor(() => {
+      const latest = mocks.useDateRangeMatrixData.mock.calls.at(-1)?.[0];
+      expect(latest).toEqual(
+        expect.objectContaining({
+          teamAbbreviation: "EDM",
+          seasonId: 20242025,
+          seasonType: "playoffs",
+          source: "raw",
+          mode: "total-toi",
+          startDate: "2025-05-01",
+          endDate: "2025-05-12",
+        }),
+      );
+    });
+    expect(mocks.fetchCurrentSeason).not.toHaveBeenCalled();
+    expect(mocks.fetchAggregatedData).not.toHaveBeenCalled();
+    expect(
+      screen
+        .getByRole("button", { name: "Custom" })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
+    expect(screen.getByLabelText("Data source")).toHaveProperty("value", "raw");
+  });
+
+  it("does not clear restored Custom dates before query hydration completes", async () => {
+    Object.assign(mocks.queryValues, {
+      team: "EDM",
+      season: "20242025",
+      timeframe: "Custom",
+      source: "raw",
+      start: "2025-05-01",
+      end: "2025-05-12",
+    });
+    mocks.queryReady = false;
+
+    const { rerender } = render(<DRMPage />);
+
+    expect(mocks.setQueryState).not.toHaveBeenCalledWith("start", null);
+    expect(mocks.setQueryState).not.toHaveBeenCalledWith("end", null);
+    mocks.queryReady = true;
+    rerender(<DRMPage />);
+
+    await waitFor(() => {
+      const latest = mocks.useDateRangeMatrixData.mock.calls.at(-1)?.[0];
+      expect(latest).toEqual(
+        expect.objectContaining({
+          startDate: "2025-05-01",
+          endDate: "2025-05-12",
+          source: "raw",
+        }),
+      );
+    });
+  });
+
+  it("uses restored season bounds and identity for aggregated reads", async () => {
+    Object.assign(mocks.queryValues, {
+      team: "EDM",
+      season: "20242025",
+      seasonType: "regularSeason",
+      timeframe: "Totals",
+      source: "aggregated",
+    });
+    mocks.fetchAggregatedData.mockResolvedValue(aggregateResponse(97));
+
+    render(<DRMPage />);
+
+    await waitFor(() =>
+      expect(mocks.fetchAggregatedData).toHaveBeenCalledWith(
+        expect.objectContaining({
+          teamId: 22,
+          seasonId: 20242025,
+          seasonType: "regularSeason",
+          startDate: "2024-10-04",
+          endDate: "2025-04-17",
+        }),
+      ),
+    );
+    expect(mocks.fetchCurrentSeason).not.toHaveBeenCalled();
+  });
+
+  it("canonicalizes invalid URL controls before any team-scoped read", async () => {
+    Object.assign(mocks.queryValues, {
+      "daterange-matrix-mode": "unsafe-mode",
+      team: "../../EDM",
+      opponent: "not-a-team",
+      season: "20242026",
+      seasonType: "postseason-ish",
+      timeframe: "Forever",
+      source: "legacy",
+      homeAway: "neutral",
+      start: "2025-02-31",
+      end: "not-a-date",
+    });
+
+    render(<DRMPage />);
+    await waitFor(() => expect(mocks.fetchCurrentSeason).toHaveBeenCalled());
+    await waitFor(() => {
+      expect(mocks.setQueryState).toHaveBeenCalledWith("team", null);
+      expect(mocks.setQueryState).toHaveBeenCalledWith("opponent", null);
+      expect(mocks.setQueryState).toHaveBeenCalledWith("season", null);
+      expect(mocks.setQueryState).toHaveBeenCalledWith(
+        "seasonType",
+        "regularSeason",
+      );
+      expect(mocks.setQueryState).toHaveBeenCalledWith("timeframe", "Totals");
+      expect(mocks.setQueryState).toHaveBeenCalledWith("source", "aggregated");
+      expect(mocks.setQueryState).toHaveBeenCalledWith("homeAway", null);
+      expect(mocks.setQueryState).toHaveBeenCalledWith("start", null);
+      expect(mocks.setQueryState).toHaveBeenCalledWith("end", null);
+      expect(mocks.setDateRangeMatrixMode).toHaveBeenCalledWith(
+        "line-combination",
+      );
+    });
+    expect(mocks.fetchAggregatedData).not.toHaveBeenCalled();
   });
 
   it("exposes labeled controls with pressed-state semantics", async () => {
