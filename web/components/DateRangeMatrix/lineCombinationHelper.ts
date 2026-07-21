@@ -10,35 +10,37 @@ export type LinePairResult = {
 
 export const calculateLinesAndPairs = (
   aggregatedData: PlayerData[],
-  mode: "line-combination" | "full-roster"
+  mode: "line-combination" | "full-roster",
 ): LinePairResult => {
-  const calculateComboPoints = (player: PlayerData) => {
+  const withComboPoints = (player: PlayerData): PlayerData => {
     const timesOnLine = player.timesOnLine || {};
     const timesOnPair = player.timesOnPair || {};
-    player.comboPoints =
-      (timesOnLine["1"] || 0) * 4 +
-      (timesOnLine["2"] || 0) * 3 +
-      (timesOnLine["3"] || 0) * 2 +
-      (timesOnLine["4"] || 0) * 1 +
-      (timesOnPair["1"] || 0) * 3 +
-      (timesOnPair["2"] || 0) * 2 +
-      (timesOnPair["3"] || 0) * 1;
-    return player;
+    return {
+      ...player,
+      comboPoints:
+        (timesOnLine["1"] || 0) * 4 +
+        (timesOnLine["2"] || 0) * 3 +
+        (timesOnLine["3"] || 0) * 2 +
+        (timesOnLine["4"] || 0) * 1 +
+        (timesOnPair["1"] || 0) * 3 +
+        (timesOnPair["2"] || 0) * 2 +
+        (timesOnPair["3"] || 0) * 1,
+    };
   };
 
   const sortedRoster = aggregatedData
-    .map(calculateComboPoints)
+    .map(withComboPoints)
     .sort((a, b) => (b.comboPoints ?? 0) - (a.comboPoints ?? 0));
 
   const assignGroups = (
     players: PlayerData[],
     groupSize: number,
-    assignedPlayers: Set<number>
+    assignedPlayers: Set<number>,
   ): PlayerData[] => {
     if (players.length === 0) return [];
 
     const pivotPlayer = players.find(
-      (player) => !assignedPlayers.has(player.id)
+      (player) => !assignedPlayers.has(player.id),
     );
     if (!pivotPlayer) return [];
 
@@ -46,7 +48,7 @@ export const calculateLinesAndPairs = (
 
     const group: PlayerData[] = [pivotPlayer];
     const remainingPlayers = players.filter(
-      (player) => !assignedPlayers.has(player.id)
+      (player) => !assignedPlayers.has(player.id),
     );
 
     remainingPlayers.sort((a, b) => {
@@ -85,10 +87,10 @@ export const calculateLinesAndPairs = (
   };
 
   const forwards = sortedRoster.filter(
-    (player) => (player.playerType || getSkaterType(player)) === "F"
+    (player) => (player.playerType || getSkaterType(player)) === "F",
   );
   const defensemen = sortedRoster.filter(
-    (player) => (player.playerType || getSkaterType(player)) === "D"
+    (player) => (player.playerType || getSkaterType(player)) === "D",
   );
 
   // Assign all forwards to lines
@@ -99,7 +101,7 @@ export const calculateLinesAndPairs = (
       forwards.splice(
         0,
         forwards.length,
-        ...forwards.filter((player) => !assignedPlayers.has(player.id))
+        ...forwards.filter((player) => !assignedPlayers.has(player.id)),
       );
     } else {
       break;
@@ -114,7 +116,7 @@ export const calculateLinesAndPairs = (
       defensemen.splice(
         0,
         defensemen.length,
-        ...defensemen.filter((player) => !assignedPlayers.has(player.id))
+        ...defensemen.filter((player) => !assignedPlayers.has(player.id)),
       );
     } else {
       break;

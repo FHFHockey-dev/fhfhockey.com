@@ -3,28 +3,39 @@
 
 .gridContainer {
   display: grid;
-  grid-template-columns: repeat(3, 1fr) min-content repeat(2, 1fr);
-  grid-template-rows: min-content repeat(4, 1fr);
+  grid-template-columns: minmax(0, 3fr) min-content minmax(0, 2fr);
   gap: v.$space-sm;
   height: 100%;
   box-sizing: border-box;
   position: relative;
 }
 
+.forwardColumn,
+.defenseColumn {
+  min-width: 0;
+}
+
+.forwardLines,
+.defensePairs {
+  display: grid;
+  gap: v.$space-sm;
+}
+
+.forwardLine {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: v.$space-sm;
+}
+
+.defensePair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: v.$space-sm;
+}
+
 .sectionLabel {
   text-align: center;
   color: v.$text-secondary;
-  grid-column: span 3;
-  margin: 0;
-  line-height: 1;
-  padding-bottom: v.$space-xs;
-  font-family: v.$font-family-accent;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.defenseLabel {
-  grid-column: 5 / span 2;
   margin: 0;
   line-height: 1;
   padding-bottom: v.$space-xs;
@@ -34,10 +45,10 @@
 }
 
 .goalieContainer {
-  grid-column: 5 / span 2;
   display: grid;
   grid-template-rows: min-content 1fr;
   align-items: center;
+  margin-top: v.$space-sm;
 }
 
 .goalieLabel {
@@ -62,8 +73,7 @@
 .divider {
   background-color: v.$border-secondary;
   width: 2px;
-  grid-column: 4 / 5;
-  grid-row: 2 / 6;
+  align-self: stretch;
 }
 
 .goalies .goalieCard {

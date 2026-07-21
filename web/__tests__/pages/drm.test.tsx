@@ -14,7 +14,10 @@ const mocks = vi.hoisted(() => ({
   fetchAggregatedData: vi.fn(),
   fetchCurrentSeason: vi.fn(),
   getDateRangeForGames: vi.fn(),
+  linePairGridProps: vi.fn(),
   useDateRangeMatrixData: vi.fn(),
+  canonicalLines: [[{ id: 9001 }]],
+  canonicalPairs: [[{ id: 9002 }]],
 }));
 
 vi.mock("components/DateRangeMatrix/index", () => ({
@@ -70,9 +73,14 @@ vi.mock("components/DateRangeMatrix/TeamDropdown", () => ({
 }));
 
 vi.mock("components/DateRangeMatrix/LinePairGrid", () => ({
-  default: ({ scopeKey }: { scopeKey: string }) => (
-    <div data-testid="line-pair-grid" data-scope-key={scopeKey} />
-  ),
+  default: (props: {
+    scopeKey: string;
+    lines: unknown[][];
+    pairs: unknown[][];
+  }) => {
+    mocks.linePairGridProps(props);
+    return <div data-testid="line-pair-grid" data-scope-key={props.scopeKey} />;
+  },
 }));
 
 vi.mock("components/DateRangeMatrix/DateRangeMatrixView", () => ({
@@ -162,8 +170,8 @@ beforeEach(() => {
       toiData: [],
       homeAwayInfo: [],
       playerATOI: {},
-      lines: [],
-      pairs: [],
+      lines: roster.length > 0 ? mocks.canonicalLines : [],
+      pairs: roster.length > 0 ? mocks.canonicalPairs : [],
     };
   });
 });
@@ -520,6 +528,22 @@ describe("DRMPage latest-request ownership", () => {
     const changedScopeKey = changedGrid.getAttribute("data-scope-key");
     expect(changedScopeKey).toContain(":home:");
     expect(changedScopeKey).not.toBe(initialScopeKey);
+  });
+
+  it("forwards the hook's canonical line and pair groups to the line-card renderer", async () => {
+    mocks.fetchAggregatedData.mockResolvedValue(aggregateResponse(97));
+
+    render(<DRMPage />);
+    await waitForSeasonInitialization();
+    fireEvent.click(screen.getByRole("button", { name: "Select EDM" }));
+
+    await screen.findByTestId("line-pair-grid");
+    expect(mocks.linePairGridProps).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        lines: mocks.canonicalLines,
+        pairs: mocks.canonicalPairs,
+      }),
+    );
   });
 
   it("does not reuse another team's resolved rolling IDs while its new window loads", async () => {

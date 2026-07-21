@@ -50,6 +50,22 @@ function roster(prefix: string): PlayerData[] {
   ];
 }
 
+function canonicalGroups(playerRoster: PlayerData[]): {
+  lines: PlayerData[][];
+  pairs: PlayerData[][];
+} {
+  const forwards = playerRoster.filter(
+    (candidate) => candidate.playerType === "F",
+  );
+  const defensemen = playerRoster.filter(
+    (candidate) => candidate.playerType === "D",
+  );
+  return {
+    lines: forwards.length > 0 ? [forwards] : [],
+    pairs: defensemen.length > 0 ? [defensemen] : [],
+  };
+}
+
 function exactStats(): ScopedCardStats {
   return {
     scopeGameIds: [101, 102],
@@ -106,6 +122,7 @@ describe("LinePairGrid scoped card metrics", () => {
         scopeKey="team-10|games-101-102"
         status="success"
         roster={roster("Exact")}
+        {...canonicalGroups(roster("Exact"))}
         scopeGameCount={2}
         cardStats={exactStats()}
       />,
@@ -140,6 +157,7 @@ describe("LinePairGrid scoped card metrics", () => {
         scopeKey="team-10|games-101-102"
         status="success"
         roster={roster("Missing")}
+        {...canonicalGroups(roster("Missing"))}
         scopeGameCount={2}
         cardStats={emptyStats()}
       />,
@@ -161,6 +179,114 @@ describe("LinePairGrid scoped card metrics", () => {
   });
 });
 
+describe("LinePairGrid canonical group presentation", () => {
+  it("renders three defense pairs when the canonical scope has zero forward lines", () => {
+    const defenders = [
+      player(11, "Defense D1", "D", "D"),
+      player(12, "Defense D2", "D", "D"),
+      player(13, "Defense D3", "D", "D"),
+      player(14, "Defense D4", "D", "D"),
+      player(15, "Defense D5", "D", "D"),
+      player(16, "Defense D6", "D", "D"),
+      player(17, "Defense Overflow One", "D", "D"),
+      player(18, "Defense Overflow Two", "D", "D"),
+    ];
+    const pairs = [
+      defenders.slice(0, 2),
+      defenders.slice(2, 4),
+      defenders.slice(4, 6),
+      defenders.slice(6, 8),
+    ];
+    const originalPairOrder = pairs.map((pair) => pair.map(({ id }) => id));
+
+    render(
+      <LinePairGrid
+        scopeKey="partial-defense-only"
+        status="success"
+        roster={[player(19, "Scope Goalie", "G", "G")]}
+        lines={[]}
+        pairs={pairs}
+        scopeGameCount={2}
+        cardStats={emptyStats()}
+      />,
+    );
+
+    expect(screen.queryByTestId("forward-line")).toBeNull();
+    expect(screen.getAllByTestId("defense-pair")).toHaveLength(3);
+    defenders.slice(0, 6).forEach(({ lastName }) => {
+      expect(screen.getByText(lastName)).not.toBeNull();
+    });
+    expect(screen.queryByText("Overflow One")).toBeNull();
+    expect(screen.queryByText("Overflow Two")).toBeNull();
+    expect(screen.getByText("Goalie")).not.toBeNull();
+    expect(pairs.map((pair) => pair.map(({ id }) => id))).toEqual(
+      originalPairOrder,
+    );
+  });
+
+  it("renders one forward line and two defense pairs independently", () => {
+    const left = player(21, "Forward Left", "LW", "F");
+    const center = player(22, "Forward Center", "C", "F");
+    const right = player(23, "Forward Right", "RW", "F");
+    const lines = [[right, left, center]];
+    const defenders = [
+      player(24, "Defense Alpha", "D", "D"),
+      player(25, "Defense Bravo", "D", "D"),
+      player(26, "Defense Charlie", "D", "D"),
+      player(27, "Defense Delta", "D", "D"),
+    ];
+    const pairs = [defenders.slice(0, 2), defenders.slice(2, 4)];
+    const originalLineOrder = lines[0].map(({ id }) => id);
+
+    render(
+      <LinePairGrid
+        scopeKey="partial-one-line-two-pairs"
+        status="partial"
+        roster={[]}
+        lines={lines}
+        pairs={pairs}
+        scopeGameCount={1}
+        cardStats={emptyStats()}
+      />,
+    );
+
+    const renderedLine = screen.getByTestId("forward-line");
+    expect(screen.getAllByTestId("forward-line")).toHaveLength(1);
+    expect(screen.getAllByTestId("defense-pair")).toHaveLength(2);
+    expect(renderedLine.textContent?.indexOf("Left")).toBeLessThan(
+      renderedLine.textContent?.indexOf("Center") ?? -1,
+    );
+    expect(renderedLine.textContent?.indexOf("Center")).toBeLessThan(
+      renderedLine.textContent?.indexOf("Right") ?? -1,
+    );
+    defenders.forEach(({ lastName }) => {
+      expect(screen.getByText(lastName)).not.toBeNull();
+    });
+    expect(lines[0].map(({ id }) => id)).toEqual(originalLineOrder);
+  });
+
+  it("caps forward lines independently of defense-pair availability", () => {
+    const lines = Array.from({ length: 5 }, (_, index) => [
+      player(30 + index, `Forward Line${index + 1}`, "C", "F"),
+    ]);
+
+    render(
+      <LinePairGrid
+        scopeKey="forward-cap"
+        status="success"
+        roster={[]}
+        lines={lines}
+        pairs={[]}
+        scopeGameCount={1}
+        cardStats={emptyStats()}
+      />,
+    );
+
+    expect(screen.getAllByTestId("forward-line")).toHaveLength(4);
+    expect(screen.queryByText("Line5")).toBeNull();
+  });
+});
+
 describe("LinePairGrid scope transitions", () => {
   it("removes scope A cards immediately when scope B starts loading", () => {
     const { rerender } = render(
@@ -168,6 +294,7 @@ describe("LinePairGrid scope transitions", () => {
         scopeKey="scope-a"
         status="success"
         roster={roster("Alpha")}
+        {...canonicalGroups(roster("Alpha"))}
         scopeGameCount={2}
         cardStats={emptyStats()}
       />,
@@ -180,6 +307,7 @@ describe("LinePairGrid scope transitions", () => {
         scopeKey="scope-b"
         status="loading"
         roster={roster("Alpha")}
+        {...canonicalGroups(roster("Alpha"))}
         scopeGameCount={0}
         cardStats={emptyStats()}
       />,
@@ -196,6 +324,7 @@ describe("LinePairGrid scope transitions", () => {
         scopeKey="scope-a"
         status="success"
         roster={alphaRoster}
+        {...canonicalGroups(alphaRoster)}
         scopeGameCount={2}
         cardStats={emptyStats()}
       />,
@@ -208,6 +337,8 @@ describe("LinePairGrid scope transitions", () => {
         scopeKey="scope-a"
         status="empty"
         roster={[]}
+        lines={[]}
+        pairs={[]}
         scopeGameCount={0}
         cardStats={emptyStats()}
       />,
@@ -220,6 +351,7 @@ describe("LinePairGrid scope transitions", () => {
         scopeKey="scope-a-empty-count"
         status="success"
         roster={alphaRoster}
+        {...canonicalGroups(alphaRoster)}
         scopeGameCount={0}
         cardStats={emptyStats()}
       />,
@@ -232,6 +364,7 @@ describe("LinePairGrid scope transitions", () => {
         scopeKey="scope-a-retry"
         status="success"
         roster={alphaRoster}
+        {...canonicalGroups(alphaRoster)}
         scopeGameCount={2}
         cardStats={emptyStats()}
       />,
@@ -243,6 +376,7 @@ describe("LinePairGrid scope transitions", () => {
         scopeKey="scope-a-retry"
         status="error"
         roster={alphaRoster}
+        {...canonicalGroups(alphaRoster)}
         scopeGameCount={0}
         cardStats={emptyStats()}
       />,

@@ -866,6 +866,8 @@ export default function DRMPage() {
                 scopeKey={activeAggregateScopeKey}
                 status={drmData.status}
                 roster={drmData.roster}
+                lines={drmData.lines}
+                pairs={drmData.pairs}
                 scopeGameCount={visibleGameIds.length}
                 cardStats={visibleCardStats}
               />
