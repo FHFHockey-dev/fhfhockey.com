@@ -117,4 +117,65 @@ describe("calculateLinesAndPairs", () => {
     expect(fullRosterResult.lines).toHaveLength(5);
     expect(fullRosterResult.pairs).toHaveLength(4);
   });
+
+  it("uses canonical player IDs when combo and shared-TOI scores tie", () => {
+    const forwards = Array.from({ length: 6 }, (_, index) =>
+      player(index + 1, `Forward ${index + 1}`, "C", "F", 1),
+    );
+    forwards[0].mutualSharedToi = { 2: 10, 3: 20, 4: 20, 5: 0, 6: 0 };
+
+    const expected = [
+      [1, 3, 4],
+      [2, 5, 6],
+    ];
+    const ordered = calculateLinesAndPairs(forwards, "full-roster");
+    const reversed = calculateLinesAndPairs(
+      [...forwards].reverse(),
+      "full-roster",
+    );
+
+    expect(ordered.lines.map((line) => line.map(({ id }) => id))).toEqual(
+      expected,
+    );
+    expect(reversed.lines.map((line) => line.map(({ id }) => id))).toEqual(
+      expected,
+    );
+  });
+
+  it("requires complete groups and excludes goalies and unknown roles", () => {
+    const multiPositionForward = {
+      ...player(1, "Multi Position", "C/RW", "F", 20),
+      displayPosition: "C/RW",
+    };
+    const roster = [
+      multiPositionForward,
+      player(2, "Forward Two", "LW", "F", 19),
+      player(3, "Forward Three", "RW", "F", 18),
+      player(4, "Unpaired Forward", "C", "F", 17),
+      player(101, "Defense One", "D", "D", 16),
+      player(102, "Defense Two", "D", "D", 15),
+      player(103, "Unpaired Defense", "D", "D", 14),
+      player(201, "Excluded Goalie", "G", "G", 100),
+      {
+        ...player(301, "Unknown Role", "X", "F", 99),
+        playerType: undefined,
+        displayPosition: "X",
+      },
+    ];
+
+    const result = calculateLinesAndPairs(roster, "full-roster");
+
+    expect(result.lines.map((line) => line.map(({ id }) => id))).toEqual([
+      [1, 2, 3],
+    ]);
+    expect(result.pairs.map((pair) => pair.map(({ id }) => id))).toEqual([
+      [101, 102],
+    ]);
+    expect(result.lines.flat()).not.toContainEqual(
+      expect.objectContaining({ id: 201 }),
+    );
+    expect(result.lines.flat()).not.toContainEqual(
+      expect.objectContaining({ id: 301 }),
+    );
+  });
 });

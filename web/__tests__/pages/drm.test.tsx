@@ -377,6 +377,63 @@ describe("DRMPage latest-request ownership", () => {
     expect(screen.getByLabelText("Data source")).toHaveProperty("value", "raw");
   });
 
+  it("switches QA sources without changing the bounded team, season, or dates", async () => {
+    Object.assign(mocks.queryValues, {
+      team: "EDM",
+      season: "20242025",
+      seasonType: "playoffs",
+      timeframe: "Custom",
+      source: "aggregated",
+      start: "2025-05-01",
+      end: "2025-05-12",
+    });
+    mocks.fetchAggregatedData.mockResolvedValue(aggregateResponse(97));
+
+    render(<DRMPage />);
+
+    await waitFor(() =>
+      expect(mocks.useDateRangeMatrixData).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          teamAbbreviation: "EDM",
+          seasonId: 20242025,
+          seasonType: "playoffs",
+          source: "aggregated",
+          startDate: "2025-05-01",
+          endDate: "2025-05-12",
+        }),
+      ),
+    );
+
+    fireEvent.change(screen.getByLabelText("Data source"), {
+      target: { value: "raw" },
+    });
+
+    await waitFor(() =>
+      expect(mocks.useDateRangeMatrixData).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          teamAbbreviation: "EDM",
+          seasonId: 20242025,
+          seasonType: "playoffs",
+          source: "raw",
+          startDate: "2025-05-01",
+          endDate: "2025-05-12",
+        }),
+      ),
+    );
+    expect(mocks.setQueryState).toHaveBeenCalledWith("source", "raw");
+    expect(mocks.queryValues).toEqual(
+      expect.objectContaining({
+        team: "EDM",
+        season: "20242025",
+        seasonType: "playoffs",
+        timeframe: "Custom",
+        source: "raw",
+        start: "2025-05-01",
+        end: "2025-05-12",
+      }),
+    );
+  });
+
   it("does not clear restored Custom dates before query hydration completes", async () => {
     Object.assign(mocks.queryValues, {
       team: "EDM",

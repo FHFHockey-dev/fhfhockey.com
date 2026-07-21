@@ -8,6 +8,10 @@ export type LinePairResult = {
   pairs: PlayerData[][];
 };
 
+function compareCanonicalPlayerOrder(a: PlayerData, b: PlayerData): number {
+  return (b.comboPoints ?? 0) - (a.comboPoints ?? 0) || a.id - b.id;
+}
+
 export const calculateLinesAndPairs = (
   aggregatedData: PlayerData[],
   mode: "line-combination" | "full-roster",
@@ -30,7 +34,7 @@ export const calculateLinesAndPairs = (
 
   const sortedRoster = aggregatedData
     .map(withComboPoints)
-    .sort((a, b) => (b.comboPoints ?? 0) - (a.comboPoints ?? 0));
+    .sort(compareCanonicalPlayerOrder);
 
   const assignGroups = (
     players: PlayerData[],
@@ -60,7 +64,7 @@ export const calculateLinesAndPairs = (
         (pivotPlayer.mutualSharedToi && pivotPlayer.mutualSharedToi[b.id]) ??
         (pivotPlayer.percentToiWith && pivotPlayer.percentToiWith[b.id]) ??
         0;
-      return mutualToiB - mutualToiA;
+      return mutualToiB - mutualToiA || compareCanonicalPlayerOrder(a, b);
     });
 
     for (let i = 0; i < groupSize - 1; i++) {
