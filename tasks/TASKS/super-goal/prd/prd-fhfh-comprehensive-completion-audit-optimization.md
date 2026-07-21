@@ -140,6 +140,8 @@ The seed registry below is a starting classification; verified repository eviden
 | B-SKO-BURN | SKO pipeline burn-down | Models/maintenance | Explicitly merged into repaired B-SKO pair; 0/53 shared rows complete | Shares B-SKO execution and evidence |
 | B-TRENDS | Trends scope recovery | Analytics | Empty PRD recovered and task list generated; 0/50 rows complete | Cross-cutting dependency for combo/audit |
 
+Latest guarded publication: exact checkpoint `36b3c38bf1db495b411b64fdf5dc8545ca9b434a` publishes the fail-closed 84-job cross-provider scheduler inventory, shared runtime-budget evidence, NEW 54/55 validation, B-CRON-NST NEW 61 discovery, and B-CLEAN NEW 13–17 forward generated-state containment. A normal push and fresh fetch prove local/tracking/live `octoberBranch` equality with zero divergence; no provider owner, schedule, deployment, database, or credential changed.
+
 #### Wave C — completed claims requiring audit
 
 | ID | Initiative group | Included claimed-complete initiatives |
