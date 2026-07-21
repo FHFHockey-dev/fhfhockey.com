@@ -150,6 +150,8 @@ Latest B-DRM group-2 publication: exact checkpoint `ef24b24e5d98ebe3bcad9c49ec6e
 
 Latest B-DRM group-4 closure: base 4.0–4.4 and NEW 62–63 are evidence-closed through the existing responsive/accessibility/browser/request-ownership proof, a narrow shared-token correction for active selector/tooltip/position-badge styles, and exact dormant-wrapper memo dependencies. Three target Sass modules compile under bundled Node 24; complete DRM tests pass 10 files/135 tests; full TypeScript and Prettier pass; isolated lint has zero findings; stable rerender/mode/source/filter evidence proves bounded fetches and no demonstrated real-roster bottleneck justifies virtualization.
 
+Latest B-DRM group-4 publication: exact checkpoint `d45240f398152d5dbd7f399669e2fea41e2bea25` is published on `octoberBranch` through a normal non-force push. Fresh local/tracking/live equality and zero divergence pass; its ten-path scope contains only the reviewed presentation/performance corrections and synchronized canonical controls.
+
 #### Wave C — completed claims requiring audit
 
 | ID | Initiative group | Included claimed-complete initiatives |
