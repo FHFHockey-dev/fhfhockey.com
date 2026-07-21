@@ -43,27 +43,41 @@ function TeamSelect({
   };
 
   return (
-    <div className={classNames(className, styles.container)}>
+    <div
+      className={classNames(className, styles.container)}
+      role="group"
+      aria-label="Team selection"
+    >
       <button
+        type="button"
         className={styles.button}
-        title="show previous"
+        aria-label="Show previous teams"
+        title="Show previous teams"
         onClick={onPreviousClick}
       >
-        <Image alt="go previous" src={ARROW} width={16} height={16} />
+        <Image alt="" src={ARROW} width={16} height={16} />
       </button>
       {/* logos */}
-      <div ref={logosRef} className={styles.logos}>
+      <div
+        ref={logosRef}
+        className={styles.logos}
+        role="group"
+        aria-label="Available teams"
+      >
         {teams.map(({ abbreviation, name }) => (
           <button
+            type="button"
             key={abbreviation}
             title={name}
+            aria-label={`Select ${name}`}
+            aria-pressed={abbreviation === team}
             className={classNames(styles.logo, {
               [styles.active]: abbreviation === team,
             })}
             onClick={() => onTeamChange(abbreviation)}
           >
             <Image
-              alt={abbreviation}
+              alt=""
               src={getTeamLogo(abbreviation)}
               width={60}
               height={40}
@@ -73,8 +87,14 @@ function TeamSelect({
           </button>
         ))}
       </div>
-      <button className={styles.button} title="show next" onClick={onNextClick}>
-        <Image alt="go next" src={ARROW} width={16} height={16} />
+      <button
+        type="button"
+        className={styles.button}
+        aria-label="Show next teams"
+        title="Show next teams"
+        onClick={onNextClick}
+      >
+        <Image alt="" src={ARROW} width={16} height={16} />
       </button>
     </div>
   );

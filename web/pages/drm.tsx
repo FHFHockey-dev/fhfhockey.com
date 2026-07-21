@@ -24,7 +24,6 @@ import {
 import TeamSelect from "components/TeamSelect";
 import TeamDropdown from "components/DateRangeMatrix/TeamDropdown";
 import LinePairGrid from "components/DateRangeMatrix/LinePairGrid";
-import Select from "components/Select";
 import {
   getTeamColors,
   getDateRangeForGames,
@@ -143,6 +142,15 @@ const DEFAULT_COLORS = {
   jersey: "#FFFFFF",
   accentColor: "#404040",
 };
+
+const DRM_CONTROL_IDS = {
+  timeframeLabel: "drm-timeframe-label",
+  team: "drm-team",
+  opponent: "drm-opponent",
+  startDate: "drm-start-date",
+  endDate: "drm-end-date",
+  matrixLayout: "drm-matrix-layout",
+} as const;
 
 export default function DRMPage() {
   const [dateRangeMatrixMode, setDateRangeMatrixMode] = useQueryState(
@@ -713,7 +721,7 @@ export default function DRMPage() {
         }}
       />
 
-      <h4 className={styles.pageTitle}>
+      <h1 className={styles.pageTitle}>
         <Image
           src={logo}
           alt={
@@ -738,55 +746,60 @@ export default function DRMPage() {
               : " Matrix"}
           </span>
         </span>
-      </h4>
+      </h1>
 
       <div className={styles.columnsContainer}>
         <div className={styles.leftColumn}>
           <div className={styles.options1}>
             <div className={styles.timeFrameGroup}>
-              <label className={styles.label}>Timeframe</label>
+              <span
+                id={DRM_CONTROL_IDS.timeframeLabel}
+                className={styles.label}
+              >
+                Timeframe
+              </span>
               <div
                 className={styles.timeFrameToggle}
-                role="tablist"
-                aria-label="Select timeframe"
+                role="group"
+                aria-labelledby={DRM_CONTROL_IDS.timeframeLabel}
               >
                 <button
+                  type="button"
                   className={`${styles.button} ${timeFrame === "L7" ? styles.active : ""}`}
                   onClick={() => selectTimeFrame("L7")}
-                  role="tab"
-                  aria-selected={timeFrame === "L7"}
+                  aria-pressed={timeFrame === "L7"}
                 >
                   L7
                 </button>
                 <button
+                  type="button"
                   className={`${styles.button} ${timeFrame === "L14" ? styles.active : ""}`}
                   onClick={() => selectTimeFrame("L14")}
-                  role="tab"
-                  aria-selected={timeFrame === "L14"}
+                  aria-pressed={timeFrame === "L14"}
                 >
                   L14
                 </button>
                 <button
+                  type="button"
                   className={`${styles.button} ${timeFrame === "L30" ? styles.active : ""}`}
                   onClick={() => selectTimeFrame("L30")}
-                  role="tab"
-                  aria-selected={timeFrame === "L30"}
+                  aria-pressed={timeFrame === "L30"}
                 >
                   L30
                 </button>
                 <button
+                  type="button"
                   className={`${styles.button} ${timeFrame === "Totals" ? styles.active : ""}`}
                   onClick={() => selectTimeFrame("Totals")}
-                  role="tab"
-                  aria-selected={timeFrame === "Totals"}
+                  aria-pressed={timeFrame === "Totals"}
                 >
                   Season
                 </button>
                 <button
+                  type="button"
                   className={`${styles.button} ${timeFrame === "Custom" ? styles.active : ""}`}
                   onClick={() => selectTimeFrame("Custom")}
-                  role="tab"
-                  aria-selected={timeFrame === "Custom"}
+                  aria-pressed={timeFrame === "Custom"}
                 >
                   Custom
                 </button>
@@ -794,37 +807,49 @@ export default function DRMPage() {
             </div>
 
             <div className={styles.dropdownGroup}>
-              <label htmlFor="teamDropdown" className={styles.label}>
+              <label htmlFor={DRM_CONTROL_IDS.team} className={styles.label}>
                 Team
               </label>
               <TeamDropdown
+                id={DRM_CONTROL_IDS.team}
+                name="team"
                 selectedTeam={(selectedTeam || "") as string}
                 onSelect={(team) => {
                   setSelectedTeam(team as TeamAbbreviation);
                 }}
-                className={`${styles.select} ${styles.teamDropdown}`}
+                className={styles.teamDropdown}
               />
             </div>
 
             <div className={styles.dropdownGroup}>
-              <label htmlFor="opponentDropdown" className={styles.label}>
+              <label
+                htmlFor={DRM_CONTROL_IDS.opponent}
+                className={styles.label}
+              >
                 Opponent
               </label>
               <TeamDropdown
+                id={DRM_CONTROL_IDS.opponent}
+                name="opponent"
                 selectedTeam={(opponent || "") as string}
                 onSelect={(opp) => {
                   setOpponent(opp == null ? "" : String(opp));
                 }}
-                className={`${styles.select} ${styles.teamDropdown}`}
+                className={styles.teamDropdown}
               />
             </div>
 
             <div className={styles.datePickerGroup}>
               <div className={styles.datePicker}>
-                <label htmlFor="startDate" className={styles.label}>
+                <label
+                  htmlFor={DRM_CONTROL_IDS.startDate}
+                  className={styles.label}
+                >
                   Start Date
                 </label>
                 <DatePicker
+                  id={DRM_CONTROL_IDS.startDate}
+                  name="start"
                   selected={startDate}
                   onChange={handleManualStartDateChange}
                   withPortal
@@ -835,10 +860,15 @@ export default function DRMPage() {
                 />
               </div>
               <div className={styles.datePicker}>
-                <label htmlFor="endDate" className={styles.label}>
+                <label
+                  htmlFor={DRM_CONTROL_IDS.endDate}
+                  className={styles.label}
+                >
                   End Date
                 </label>
                 <DatePicker
+                  id={DRM_CONTROL_IDS.endDate}
+                  name="end"
                   selected={endDate}
                   onChange={handleManualEndDateChange}
                   withPortal
@@ -891,42 +921,67 @@ export default function DRMPage() {
           <div className={styles.options2}>
             <div className={styles.buttonsContainer}>
               <button
+                type="button"
                 onClick={() => handleSeasonTypeChange("regularSeason")}
                 className={`${styles.button} ${seasonType === "regularSeason" ? styles.active : ""}`}
+                aria-pressed={seasonType === "regularSeason"}
               >
                 Regular Season
               </button>
               <button
+                type="button"
                 onClick={() => handleSeasonTypeChange("playoffs")}
                 className={`${styles.button} ${seasonType === "playoffs" ? styles.active : ""}`}
+                aria-pressed={seasonType === "playoffs"}
               >
                 Playoffs
               </button>
               <button
+                type="button"
                 onClick={() =>
                   setHomeOrAway(homeOrAway === "home" ? "" : "home")
                 }
                 className={`${styles.button} ${homeOrAway === "home" ? styles.active : ""}`}
+                aria-pressed={homeOrAway === "home"}
                 title="Home games only"
               >
                 Home
               </button>
               <button
+                type="button"
                 onClick={() =>
                   setHomeOrAway(homeOrAway === "away" ? "" : "away")
                 }
                 className={`${styles.button} ${homeOrAway === "away" ? styles.active : ""}`}
+                aria-pressed={homeOrAway === "away"}
                 title="Away games only"
               >
                 Away
               </button>
             </div>
-            <Select
-              options={DATERANGE_MATRIX_MODES}
-              option={mode}
-              onOptionChange={(newOption) => setDateRangeMatrixMode(newOption)}
-              className={styles.selectWrapper}
-            />
+            <div className={styles.selectWrapper}>
+              <label
+                htmlFor={DRM_CONTROL_IDS.matrixLayout}
+                className={styles.label}
+              >
+                Matrix layout
+              </label>
+              <select
+                id={DRM_CONTROL_IDS.matrixLayout}
+                name="daterange-matrix-mode"
+                value={mode}
+                onChange={(event) =>
+                  setDateRangeMatrixMode(event.target.value as Mode)
+                }
+                className={styles.datePickerInput}
+              >
+                {DATERANGE_MATRIX_MODES.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className={styles.dateRangeMatrixContainer}>
             {drmData.teamId && drmData.teamName ? (

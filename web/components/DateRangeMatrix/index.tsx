@@ -1,17 +1,22 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\DateRangeMatrix\index.tsx
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  type KeyboardEvent as ReactKeyboardEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import classNames from "classnames";
 import {
   isForward,
   isDefense,
   getColor,
   parseTime,
-  PlayerData
+  PlayerData,
 } from "./utilities";
 import styles from "./index.module.scss";
-import Tooltip from "components/Tooltip";
 import { teamsInfo } from "lib/teamsInfo";
 import { useTOI } from "./useTOIData";
 
@@ -63,7 +68,7 @@ type Props = {
 export const OPTIONS = [
   { label: "Line Combination", value: "line-combination" },
   { label: "Total TOI", value: "total-toi" },
-  { label: "Full Roster", value: "full-roster" }
+  { label: "Full Roster", value: "full-roster" },
 ] as const;
 
 export default function DateRangeMatrix({
@@ -73,7 +78,7 @@ export default function DateRangeMatrix({
   startDate,
   endDate,
   lines,
-  pairs
+  pairs,
 }: Props) {
   const [loading, setLoading] = useState<boolean>(true);
   // Always call hook (React rule) with a string; pass empty string if no id
@@ -83,7 +88,7 @@ export default function DateRangeMatrix({
     rawTeam,
     loadingData,
     rawHomeAwayInfo,
-    rawPlayerATOI
+    rawPlayerATOI,
   ] = useTOI((id as string) || "", startDate, endDate);
   const toiData = id ? rawToiData : [];
   const rosters = id ? rawRosters : [];
@@ -102,10 +107,10 @@ export default function DateRangeMatrix({
       Object.fromEntries(
         Object.entries(playerATOI).map(([key, value]) => [
           Number(key),
-          String(value)
-        ])
+          String(value),
+        ]),
       ),
-    [playerATOI]
+    [playerATOI],
   );
 
   const sortedRoster = useMemo(() => {
@@ -133,7 +138,7 @@ export default function DateRangeMatrix({
       displayPosition: item.displayPosition ?? item.primaryPosition ?? "",
       mutualSharedToi: {},
       comboPoints: item.comboPoints || 0,
-      playerType: item.playerType
+      playerType: item.playerType,
     }));
     // console.log("Sorted Roster in DateRangeMatrix:", roster);
     return roster;
@@ -180,7 +185,7 @@ export default function DateRangeMatrix({
 
 function sortByFullRoster(
   players: PlayerData[],
-  linesAndPairs: { lines: PlayerData[][]; pairs: PlayerData[][] }
+  linesAndPairs: { lines: PlayerData[][]; pairs: PlayerData[][] },
 ): PlayerData[] {
   const { lines, pairs } = linesAndPairs;
 
@@ -190,7 +195,7 @@ function sortByFullRoster(
   const remainingPlayers = players.filter(
     (player) =>
       !linePlayers.some((lp) => lp.id === player.id) &&
-      !pairPlayers.some((pp) => pp.id === player.id)
+      !pairPlayers.some((pp) => pp.id === player.id),
   );
 
   const sortedRemainingPlayers = remainingPlayers.sort((a, b) => {
@@ -203,7 +208,7 @@ function sortByFullRoster(
 }
 
 function sortByTotalTOI(players: PlayerData[]): PlayerData[] {
-  return players.sort((a, b) => {
+  return [...players].sort((a, b) => {
     const atoia = parseTime(a.ATOI);
     const atoib = parseTime(b.ATOI);
     return atoib - atoia;
@@ -212,7 +217,7 @@ function sortByTotalTOI(players: PlayerData[]): PlayerData[] {
 
 function sortByLineCombination(
   players: PlayerData[],
-  linesAndPairs: { lines: PlayerData[][]; pairs: PlayerData[][] }
+  linesAndPairs: { lines: PlayerData[][]; pairs: PlayerData[][] },
 ): PlayerData[] {
   const { lines, pairs } = linesAndPairs;
 
@@ -224,7 +229,7 @@ function sortByLineCombination(
   const remainingPlayers = players.filter(
     (player) =>
       !flattenedLines.some((lp) => lp.id === player.id) &&
-      !flattenedPairs.some((pp) => pp.id === player.id)
+      !flattenedPairs.some((pp) => pp.id === player.id),
   );
 
   const finalSortedPlayers = [...sortedPlayers, ...remainingPlayers];
@@ -245,6 +250,15 @@ type DateRangeMatrixInternalProps = {
   pairs: PlayerData[][];
 };
 
+type CellIdentity = {
+  rowPlayerId: number;
+  columnPlayerId: number;
+};
+
+function getCellKey(rowPlayerId: number, columnPlayerId: number): string {
+  return `${rowPlayerId}:${columnPlayerId}`;
+}
+
 export function DateRangeMatrixInternal({
   teamId,
   teamName,
@@ -255,13 +269,16 @@ export function DateRangeMatrixInternal({
   playerATOI,
   loading,
   lines,
-  pairs
+  pairs,
 }: DateRangeMatrixInternalProps) {
-  const [selectedCell, setSelectedCell] = useState({ row: -1, col: -1 });
+  const [rovingCell, setRovingCell] = useState<CellIdentity | null>(null);
+  const [focusedCell, setFocusedCell] = useState<CellIdentity | null>(null);
+  const [hoveredCell, setHoveredCell] = useState<CellIdentity | null>(null);
+  const cellRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const containerClass = classNames(styles.container, {
     [styles.totalToiMode]: mode === "total-toi",
-    [styles.fullRosterMode]: mode === "full-roster"
+    [styles.fullRosterMode]: mode === "full-roster",
   });
 
   const sortedRoster = useMemo(() => {
@@ -287,79 +304,200 @@ export function DateRangeMatrixInternal({
     return sum / sortedRoster.length;
   }, [sortedRoster]);
 
+  const rosterPlayerIds = useMemo(
+    () => new Set(sortedRoster.map(({ id }) => id)),
+    [sortedRoster],
+  );
+  const defaultCell = useMemo<CellIdentity | null>(() => {
+    const firstPlayerId = sortedRoster[0]?.id;
+    return firstPlayerId === undefined
+      ? null
+      : {
+          rowPlayerId: firstPlayerId,
+          columnPlayerId: firstPlayerId,
+        };
+  }, [sortedRoster]);
+  const isCellAvailable = (cell: CellIdentity | null): cell is CellIdentity =>
+    cell !== null &&
+    rosterPlayerIds.has(cell.rowPlayerId) &&
+    rosterPlayerIds.has(cell.columnPlayerId);
+
+  useEffect(() => {
+    const remainsAvailable = (cell: CellIdentity | null) =>
+      cell !== null &&
+      rosterPlayerIds.has(cell.rowPlayerId) &&
+      rosterPlayerIds.has(cell.columnPlayerId);
+
+    setRovingCell((current) =>
+      remainsAvailable(current) ? current : defaultCell,
+    );
+    setFocusedCell((current) => (remainsAvailable(current) ? current : null));
+    setHoveredCell((current) => (remainsAvailable(current) ? current : null));
+  }, [defaultCell, rosterPlayerIds]);
+
+  const effectiveRovingCell = isCellAvailable(rovingCell)
+    ? rovingCell
+    : defaultCell;
+  const activeCell = isCellAvailable(hoveredCell)
+    ? hoveredCell
+    : isCellAvailable(focusedCell)
+      ? focusedCell
+      : null;
+  const matrixId = `date-range-matrix-${teamId}`;
+
+  const moveCellFocus = (
+    event: ReactKeyboardEvent<HTMLDivElement>,
+    row: number,
+    col: number,
+  ) => {
+    const lastIndex = sortedRoster.length - 1;
+    let nextRow = row;
+    let nextCol = col;
+
+    switch (event.key) {
+      case "ArrowUp":
+        nextRow = Math.max(0, row - 1);
+        break;
+      case "ArrowDown":
+        nextRow = Math.min(lastIndex, row + 1);
+        break;
+      case "ArrowLeft":
+        nextCol = Math.max(0, col - 1);
+        break;
+      case "ArrowRight":
+        nextCol = Math.min(lastIndex, col + 1);
+        break;
+      case "Home":
+        nextCol = 0;
+        break;
+      case "End":
+        nextCol = lastIndex;
+        break;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    const nextRowPlayer = sortedRoster[nextRow];
+    const nextColumnPlayer = sortedRoster[nextCol];
+    if (!nextRowPlayer || !nextColumnPlayer) return;
+
+    const nextCell = {
+      rowPlayerId: nextRowPlayer.id,
+      columnPlayerId: nextColumnPlayer.id,
+    };
+    setRovingCell(nextCell);
+    cellRefs.current
+      .get(getCellKey(nextRowPlayer.id, nextColumnPlayer.id))
+      ?.focus();
+  };
+
   return (
-    <section id={`date-range-matrix-${teamId}`} className={containerClass}>
+    <section id={matrixId} className={containerClass}>
       <div
         className={classNames(styles.grid, "content")}
+        role="grid"
+        aria-label={`${teamName} shared ice time matrix`}
+        aria-rowcount={sortedRoster.length + 1}
+        aria-colcount={sortedRoster.length + 1}
         style={{
           gridTemplateRows: `var(--player-info-size) repeat(${sortedRoster.length}, 1fr)`,
-          gridTemplateColumns: `var(--player-info-size) repeat(${sortedRoster.length}, 1fr)`
+          gridTemplateColumns: `var(--player-info-size) repeat(${sortedRoster.length}, 1fr)`,
         }}
       >
-        {sortedRoster.length > 0 &&
-          new Array(sortedRoster.length + 1).fill(0).map((_, row) => {
-            if (row === 0) {
-              return [
-                <div key="left-up"></div>,
-                ...sortedRoster.map((player: PlayerData, col: number) => (
-                  <div
-                    key={player.id}
-                    className={classNames(styles.topPlayerName, {
-                      [styles.active]: col === selectedCell.col - 1
-                    })}
-                  >
-                    <div className={styles.inner}>
-                      {player.playerAbbrevName}
-                    </div>
-                  </div>
-                ))
-              ];
-            } else {
-              return new Array(sortedRoster.length + 1)
-                .fill(0)
-                .map((_, col) => {
-                  const p1 = sortedRoster[col - 1];
-                  const p2 = sortedRoster[row - 1];
+        {sortedRoster.length > 0 && (
+          <>
+            <div className={styles.row} role="row" aria-rowindex={1}>
+              <div
+                className={styles.cornerCell}
+                role="columnheader"
+                aria-colindex={1}
+                aria-label="Players"
+              />
+              {sortedRoster.map((player: PlayerData, col: number) => (
+                <div
+                  key={player.id}
+                  id={`${matrixId}-column-${player.id}`}
+                  role="columnheader"
+                  aria-colindex={col + 2}
+                  aria-label={player.name}
+                  className={classNames(styles.topPlayerName, {
+                    [styles.active]: activeCell?.columnPlayerId === player.id,
+                  })}
+                >
+                  <div className={styles.inner}>{player.playerAbbrevName}</div>
+                </div>
+              ))}
+            </div>
 
-                  if (col === 0) {
-                    return (
-                      <div
-                        key={p2.id}
-                        className={classNames(styles.leftPlayerName, {
-                          [styles.active]: selectedCell.row === row
-                        })}
-                      >
-                        {p2.playerAbbrevName}
-                      </div>
-                    );
-                  } else {
-                    if (col !== 0 && row !== 0) {
-                      const isSelf = p1.id === p2.id;
-                      const sharedToi = isSelf
-                        ? parseFloat(playerATOI[p1.id])
-                        : p1.percentToiWith[p2.id] || 0;
+            {sortedRoster.map((rowPlayer, row) => (
+              <div
+                className={styles.row}
+                role="row"
+                aria-rowindex={row + 2}
+                key={`row-${rowPlayer.id}`}
+              >
+                <div
+                  id={`${matrixId}-row-${rowPlayer.id}`}
+                  role="rowheader"
+                  aria-colindex={1}
+                  aria-label={rowPlayer.name}
+                  className={classNames(styles.leftPlayerName, {
+                    [styles.active]: activeCell?.rowPlayerId === rowPlayer.id,
+                  })}
+                >
+                  {rowPlayer.playerAbbrevName}
+                </div>
 
-                      return (
-                        <Cell
-                          key={`${p1.id}-${p2.id}`}
-                          teamAvgToi={avgSharedToi}
-                          sharedToi={sharedToi}
-                          p1={p1}
-                          p2={p2}
-                          highlight={isSelf}
-                          onPointerEnter={() => setSelectedCell({ row, col })}
-                          onPointerLeave={() =>
-                            setSelectedCell({ row: -1, col: -1 })
-                          }
-                          isSelf={isSelf}
-                          ATOI={isSelf ? p1.ATOI : undefined}
-                        />
-                      );
-                    }
-                  }
-                });
-            }
-          })}
+                {sortedRoster.map((columnPlayer, col) => {
+                  const isSelf = columnPlayer.id === rowPlayer.id;
+                  const sharedToi = isSelf
+                    ? parseFloat(playerATOI[columnPlayer.id])
+                    : columnPlayer.percentToiWith[rowPlayer.id] || 0;
+                  const cellKey = getCellKey(rowPlayer.id, columnPlayer.id);
+                  const cellIdentity = {
+                    rowPlayerId: rowPlayer.id,
+                    columnPlayerId: columnPlayer.id,
+                  };
+
+                  return (
+                    <Cell
+                      key={`${columnPlayer.id}-${rowPlayer.id}`}
+                      cellRef={(node) => {
+                        if (node) cellRefs.current.set(cellKey, node);
+                        else cellRefs.current.delete(cellKey);
+                      }}
+                      rowIndex={row + 2}
+                      colIndex={col + 2}
+                      tabIndex={
+                        effectiveRovingCell?.rowPlayerId === rowPlayer.id &&
+                        effectiveRovingCell?.columnPlayerId === columnPlayer.id
+                          ? 0
+                          : -1
+                      }
+                      teamAvgToi={avgSharedToi}
+                      sharedToi={sharedToi}
+                      p1={columnPlayer}
+                      p2={rowPlayer}
+                      highlight={isSelf}
+                      onPointerEnter={() => setHoveredCell(cellIdentity)}
+                      onPointerLeave={() => setHoveredCell(null)}
+                      onFocus={() => {
+                        setRovingCell(cellIdentity);
+                        setHoveredCell(null);
+                        setFocusedCell(cellIdentity);
+                      }}
+                      onBlur={() => setFocusedCell(null)}
+                      onKeyDown={(event) => moveCellFocus(event, row, col)}
+                      isSelf={isSelf}
+                      ATOI={isSelf ? columnPlayer.ATOI : undefined}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </section>
   );
@@ -370,8 +508,15 @@ type CellProps = {
   sharedToi: number;
   p1: PlayerData;
   p2: PlayerData;
+  cellRef?: (node: HTMLDivElement | null) => void;
+  rowIndex: number;
+  colIndex: number;
+  tabIndex: number;
   onPointerEnter?: () => void;
   onPointerLeave?: () => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
+  onKeyDown?: (event: ReactKeyboardEvent<HTMLDivElement>) => void;
   highlight: boolean;
   isSelf: boolean;
   ATOI?: string;
@@ -382,47 +527,65 @@ function Cell({
   sharedToi,
   p1,
   p2,
+  cellRef,
+  rowIndex,
+  colIndex,
+  tabIndex,
   highlight,
   onPointerEnter = () => {},
   onPointerLeave = () => {},
+  onFocus = () => {},
+  onBlur = () => {},
+  onKeyDown = () => {},
   isSelf,
-  ATOI
+  ATOI,
 }: CellProps) {
   const mixedToi = p1.percentToiWithMixed?.[p2.id] || 0;
   const effectiveToi = sharedToi || mixedToi;
   const opacity = (isSelf ? 1 : effectiveToi / 100) * 1.5;
   const color = getColor(p1.position, p2.position);
+  const meaning = isSelf
+    ? `${formatATOI(ATOI ?? "")} ATOI`
+    : `${effectiveToi.toFixed(2)}% Shared Ice Time`;
+  const accessibleName = isSelf
+    ? `${p1.name} average time on ice`
+    : `${p2.name} with ${p1.name}`;
+  const tooltipId = `matrix-cell-${p2.id}-${p1.id}-meaning`;
 
   return (
     <div
+      ref={cellRef}
+      role="gridcell"
+      aria-rowindex={rowIndex}
+      aria-colindex={colIndex}
+      aria-label={accessibleName}
+      aria-describedby={tooltipId}
+      tabIndex={tabIndex}
       className={classNames(styles.cell, { [styles.highlight]: highlight })}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      onKeyDown={onKeyDown}
     >
-      <Tooltip
-        onHoverText={
-          isSelf
-            ? `${formatATOI(ATOI || "N/A")} ATOI`
-            : `${effectiveToi.toFixed(2)}% Shared Ice Time`
-        }
-        style={{ width: "100%", height: "100%" }}
-      >
-        <div
-          className={styles.content}
-          style={{
-            opacity: opacity,
-            backgroundColor: color
-          }}
-        ></div>
-      </Tooltip>
+      <span id={tooltipId} role="tooltip" className={styles.cellTooltip}>
+        {meaning}
+      </span>
+      <div
+        className={styles.content}
+        aria-hidden="true"
+        style={{
+          opacity: opacity,
+          backgroundColor: color,
+        }}
+      ></div>
     </div>
   );
 }
 
 function formatATOI(atoi: string): string {
-  const [minutes, rest] = atoi.split(":");
-  const seconds = rest ? rest.split(".")[0] : "00";
-  return `${minutes}:${seconds}`;
+  const match = /^(\d+):([0-5]\d)(?:\.\d+)?$/.exec(atoi);
+  return match ? `${match[1]}:${match[2]}` : "N/A";
 }
 
 // At the bottom or top of your file
