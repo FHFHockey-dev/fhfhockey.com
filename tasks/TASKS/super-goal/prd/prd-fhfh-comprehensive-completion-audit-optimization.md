@@ -142,6 +142,8 @@ The seed registry below is a starting classification; verified repository eviden
 
 Latest guarded publication: exact checkpoint `36b3c38bf1db495b411b64fdf5dc8545ca9b434a` publishes the fail-closed 84-job cross-provider scheduler inventory, shared runtime-budget evidence, NEW 54/55 validation, B-CRON-NST NEW 61 discovery, and B-CLEAN NEW 13–17 forward generated-state containment. A normal push and fresh fetch prove local/tracking/live `octoberBranch` equality with zero divergence; no provider owner, schedule, deployment, database, or credential changed.
 
+Latest B-DRM accessibility publication: exact checkpoint `46400a3639557b6742af14a6f55339abcfa3d393` publishes NEW 14/57–59 through a normal non-force push. A second fetch proves local/tracking/live equality with zero divergence; NEW 15 responsive/DatePicker and NEW 16 URL-state work remain open, and no external system changed.
+
 #### Wave C — completed claims requiring audit
 
 | ID | Initiative group | Included claimed-complete initiatives |
