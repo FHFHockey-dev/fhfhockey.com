@@ -29,6 +29,8 @@ export type TOIData = {
   p2: PlayerData;
 };
 
+const EMPTY_PLAYER_ATOI: Readonly<Record<number, string>> = Object.freeze({});
+
 export function generateKey(p1: number, p2: number): string {
   return p1 > p2 ? `${p1}-${p2}` : `${p2}-${p1}`;
 }
@@ -94,7 +96,7 @@ export default function DateRangeMatrix({
   const rosters = id ? rawRosters : [];
   const team = id ? rawTeam : null;
   const homeAwayInfo = id ? rawHomeAwayInfo : [];
-  const playerATOI = id ? rawPlayerATOI : {};
+  const playerATOI = id ? rawPlayerATOI : EMPTY_PLAYER_ATOI;
 
   const teamId = id ? teamsInfo[id]?.id : undefined;
 
@@ -140,9 +142,8 @@ export default function DateRangeMatrix({
       comboPoints: item.comboPoints || 0,
       playerType: item.playerType,
     }));
-    // console.log("Sorted Roster in DateRangeMatrix:", roster);
     return roster;
-  }, [aggregatedData, startDate, endDate]); // Make sure startDate and endDate are dependencies
+  }, [aggregatedData]);
 
   const fullRoster = useMemo(() => {
     if (mode === "line-combination") {
@@ -233,7 +234,6 @@ function sortByLineCombination(
   );
 
   const finalSortedPlayers = [...sortedPlayers, ...remainingPlayers];
-  // console.log("Sorted Players by Line Combination:", finalSortedPlayers);
   return finalSortedPlayers;
 }
 

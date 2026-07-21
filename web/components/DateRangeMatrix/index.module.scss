@@ -217,8 +217,8 @@
         visibility: hidden;
         opacity: 0;
         white-space: nowrap;
-        background-color: #555;
-        color: #fff;
+        background-color: vars.$background-lighter;
+        color: vars.$text-primary;
         text-align: center;
         border-radius: 6px;
         padding: 5px;
@@ -238,7 +238,8 @@
           margin-left: -2.5px;
           border-width: 5px;
           border-style: solid;
-          border-color: #555 transparent transparent transparent;
+          border-color: vars.$background-lighter transparent transparent
+            transparent;
         }
       }
 

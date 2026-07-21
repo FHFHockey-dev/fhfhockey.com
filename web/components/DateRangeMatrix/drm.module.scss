@@ -251,7 +251,7 @@
   }
 
   select:focus {
-    border-color: #07aae2;
+    border-color: v.$border-accent;
   }
 
   select:focus-visible {
@@ -260,15 +260,15 @@
   }
 
   select option {
-    background-color: #404040;
-    color: white;
+    background-color: v.$background-lighter;
+    color: v.$text-button;
     padding: 10px;
     font-family: "Roboto Condensed", sans-serif; /* Apply font to options */
   }
 
   select option:hover {
-    background-color: #07aae2;
-    color: white;
+    background-color: v.$secondary-color;
+    color: v.$text-button;
   }
 }
 
