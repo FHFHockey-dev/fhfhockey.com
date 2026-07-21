@@ -652,7 +652,9 @@ async function fetchAllPlayerPositions(): Promise<PlayerPosition[]> {
   return allPositions;
 }
 
-async function fetchCurrentRelationshipRosterPositions(gameId: number): Promise<{
+async function fetchCurrentRelationshipRosterPositions(
+  gameId: number,
+): Promise<{
   expectedPbpRawPayloadHash: string;
   positions: Map<number, RelationshipRosterPosition>;
 }> {
@@ -788,7 +790,9 @@ async function upsertShiftChartData(
     const opponentTeam = isHomeTeam ? gameInfo.awayTeam : gameInfo.homeTeam;
     const resolvedPosition = resolvedPositionsByPlayer.get(playerId);
     if (!resolvedPosition) {
-      throw new Error(`Missing resolved relationship position for player ${playerId}`);
+      throw new Error(
+        `Missing resolved relationship position for player ${playerId}`,
+      );
     }
 
     // Initialize player data in consolidatedData
@@ -1120,9 +1124,8 @@ async function fetchAndStoreShiftCharts(
           throw new Error(`No PBP source found for game ID: ${gameId}`);
         }
 
-        const currentRoster = await fetchCurrentRelationshipRosterPositions(
-          gameId,
-        );
+        const currentRoster =
+          await fetchCurrentRelationshipRosterPositions(gameId);
 
         const {
           unmatchedNames: unmatched,
@@ -1185,9 +1188,13 @@ async function fetchAndStoreShiftCharts(
   }
 }
 
-// API Handler
+type ShiftChartsAuditOwner = "self" | "caller";
 
-export default adminOnly(async (req: NextApiRequest, res: NextApiResponse) => {
+async function handleShiftChartsRequest(
+  req: NextApiRequest,
+  res: NextApiResponse,
+  auditOwner: ShiftChartsAuditOwner,
+) {
   const jobName = "update-shift-charts";
   const startTime = Date.now();
   let status: "success" | "error" = "success";
@@ -1273,37 +1280,54 @@ export default adminOnly(async (req: NextApiRequest, res: NextApiResponse) => {
     };
     res.status(500).json(responseBody);
   } finally {
-    if (res.statusCode >= 400) {
-      status = "error";
-      details = {
-        ...details,
-        error:
-          details?.error ??
-          responseBody?.error ??
-          responseBody?.message ??
-          `Request failed with HTTP ${res.statusCode}`,
-      };
-    }
-    try {
-      await supabase.from("cron_job_audit").insert([
-        {
-          job_name: jobName,
-          status,
-          rows_affected: rowsAffected,
-          details: {
-            method: req.method ?? null,
-            url: req.url ?? null,
-            statusCode: res.statusCode,
-            durationMs: Date.now() - startTime,
-            error:
-              status === "error" ? (details?.error ?? "Unknown error") : null,
-            response: responseBody,
-            context: details,
+    if (auditOwner === "self") {
+      if (res.statusCode >= 400) {
+        status = "error";
+        details = {
+          ...details,
+          error:
+            details?.error ??
+            responseBody?.error ??
+            responseBody?.message ??
+            `Request failed with HTTP ${res.statusCode}`,
+        };
+      }
+      try {
+        await supabase.from("cron_job_audit").insert([
+          {
+            job_name: jobName,
+            status,
+            rows_affected: rowsAffected,
+            details: {
+              method: req.method ?? null,
+              url: req.url ?? null,
+              statusCode: res.statusCode,
+              durationMs: Date.now() - startTime,
+              error:
+                status === "error" ? (details?.error ?? "Unknown error") : null,
+              response: responseBody,
+              context: details,
+            },
           },
-        },
-      ]);
-    } catch (auditErr) {
-      console.error("Failed to write audit row:", auditErr);
+        ]);
+      } catch (auditErr) {
+        console.error("Failed to write audit row:", auditErr);
+      }
     }
   }
-});
+}
+
+// The compatibility adapter already owns auth and auditing. Calling this
+// explicit delegate avoids both a second auth boundary and a duplicate row.
+export function delegatedShiftChartsHandler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
+  return handleShiftChartsRequest(req, res, "caller");
+}
+
+function directShiftChartsHandler(req: NextApiRequest, res: NextApiResponse) {
+  return handleShiftChartsRequest(req, res, "self");
+}
+
+export default adminOnly(directShiftChartsHandler);

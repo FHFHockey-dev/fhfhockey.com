@@ -1,8 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { auditInsertMock, serviceFromMock } = vi.hoisted(() => ({
+const {
+  auditInsertMock,
+  fetchAllSupabasePagesMock,
+  getCurrentSeasonMock,
+  selectPendingRelationshipGameIdsMock,
+  serviceFromMock,
+  yahooPositionsRangeMock,
+} = vi.hoisted(() => ({
   auditInsertMock: vi.fn(),
+  fetchAllSupabasePagesMock: vi.fn(),
+  getCurrentSeasonMock: vi.fn(),
+  selectPendingRelationshipGameIdsMock: vi.fn(),
   serviceFromMock: vi.fn(),
+  yahooPositionsRangeMock: vi.fn(),
 }));
 
 vi.mock("lib/supabase/server", () => ({
@@ -15,9 +26,11 @@ vi.mock("utils/adminOnlyMiddleware", () => ({
   default: (handler: unknown) => handler,
 }));
 
-vi.mock("lib/NHL/server", () => ({ getCurrentSeason: vi.fn() }));
+vi.mock("lib/NHL/server", () => ({
+  getCurrentSeason: getCurrentSeasonMock,
+}));
 vi.mock("lib/supabase/pagination", () => ({
-  fetchAllSupabasePages: vi.fn(),
+  fetchAllSupabasePages: fetchAllSupabasePagesMock,
 }));
 vi.mock("lib/projections/shiftChartRelationshipPayload", () => ({
   buildShiftChartRelationshipUpsert: vi.fn(),
@@ -36,14 +49,15 @@ vi.mock("lib/projections/ingest/pbp", () => ({
 }));
 vi.mock("lib/projections/relationshipMaterialization", () => ({
   persistShiftChartRelationships: vi.fn(),
-  selectPendingRelationshipGameIds: vi.fn(),
+  selectPendingRelationshipGameIds: selectPendingRelationshipGameIdsMock,
 }));
 vi.mock("lib/projections/gameLength", () => ({
   formatCompletedPbpGameLength: vi.fn(),
   normalizeNhlGameType: vi.fn(),
 }));
 
-import handler from "../../../../../pages/api/v1/db/shift-charts";
+import directShiftChartsHandler from "../../../../../pages/api/v1/db/shift-charts";
+import updateShiftsHandler from "../../../../../pages/api/v1/db/update-shifts";
 
 function createMockRes() {
   return {
@@ -66,9 +80,20 @@ describe("shift-chart cron audit truth", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     auditInsertMock.mockResolvedValue({ error: null });
+    fetchAllSupabasePagesMock.mockResolvedValue([]);
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20252026 });
+    selectPendingRelationshipGameIdsMock.mockReturnValue([]);
+    yahooPositionsRangeMock.mockResolvedValue({ data: [], error: null });
     serviceFromMock.mockImplementation((table: string) => {
       if (table === "cron_job_audit") {
         return { insert: auditInsertMock };
+      }
+      if (table === "yahoo_positions") {
+        return {
+          select: () => ({
+            order: () => ({ range: yahooPositionsRangeMock }),
+          }),
+        };
       }
       throw new Error(`Unexpected service-role table: ${table}`);
     });
@@ -106,7 +131,7 @@ describe("shift-chart cron audit truth", () => {
       } as any;
       const res = createMockRes();
 
-      await handler(req, res);
+      await directShiftChartsHandler(req, res);
 
       expect(res.statusCode).toBe(statusCode);
       expect(res.body).toEqual({ message, success: false });
@@ -125,4 +150,70 @@ describe("shift-chart cron audit truth", () => {
       ]);
     },
   );
+
+  it("lets the compatibility adapter own exactly one success audit row", async () => {
+    const req = {
+      method: "GET",
+      query: {},
+      url: "/api/v1/db/update-shifts?action=all",
+    } as any;
+    const res = createMockRes();
+
+    await updateShiftsHandler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual(
+      expect.objectContaining({
+        success: true,
+        rowsAffected: 0,
+        rowsVerified: 0,
+        rowsPruned: 0,
+      }),
+    );
+    expect(auditInsertMock).toHaveBeenCalledOnce();
+    expect(auditInsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        job_name: "update-shift-charts",
+        status: "success",
+        rows_affected: 0,
+        details: expect.objectContaining({
+          method: "POST",
+          url: "/api/v1/db/update-shifts?action=all",
+          statusCode: 200,
+          failedRows: null,
+        }),
+      }),
+    );
+  });
+
+  it("lets the compatibility adapter own exactly one truthful failure audit row", async () => {
+    const req = {
+      method: "GET",
+      query: { gameId: "invalid" },
+      url: "/api/v1/db/update-shifts?action=all&gameId=invalid",
+    } as any;
+    const res = createMockRes();
+
+    await updateShiftsHandler(req, res);
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toEqual({
+      message: "Invalid gameId.",
+      success: false,
+    });
+    expect(auditInsertMock).toHaveBeenCalledOnce();
+    expect(auditInsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        job_name: "update-shift-charts",
+        status: "failure",
+        rows_affected: null,
+        details: expect.objectContaining({
+          method: "POST",
+          url: "/api/v1/db/update-shifts?action=all&gameId=invalid",
+          statusCode: 400,
+          failedRows: null,
+        }),
+      }),
+    );
+  });
 });
