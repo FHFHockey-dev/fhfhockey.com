@@ -36,6 +36,7 @@ type UseDRMParams = {
   aggregatedData?: AggregatedDRMPlayer[]; // when source === 'aggregated'
   aggregateStatus?: DRMDataStatus;
   aggregateError?: string | null;
+  aggregateCoverage?: DRMDataCoverage;
 };
 
 export type UseDRMReturn = {
@@ -130,7 +131,10 @@ export function useDateRangeMatrixData({
   aggregatedData = EMPTY_AGGREGATED_DATA,
   aggregateStatus = "success",
   aggregateError = null,
+  aggregateCoverage,
 }: UseDRMParams): UseDRMReturn {
+  const aggregateInputRows = aggregateCoverage?.inputRows;
+  const aggregateSkippedRows = aggregateCoverage?.skippedRows;
   const requestIdentity = useMemo(
     () => ({
       teamAbbreviation,
@@ -141,6 +145,8 @@ export function useDateRangeMatrixData({
       aggregatedData,
       aggregateStatus,
       aggregateError,
+      aggregateInputRows,
+      aggregateSkippedRows,
     }),
     [
       teamAbbreviation,
@@ -151,6 +157,8 @@ export function useDateRangeMatrixData({
       aggregatedData,
       aggregateStatus,
       aggregateError,
+      aggregateInputRows,
+      aggregateSkippedRows,
     ],
   );
   const [loading, setLoading] = useState<boolean>(false);
@@ -284,12 +292,13 @@ export function useDateRangeMatrixData({
           setPlayerATOI(map);
           setToiData([]); // DateRangeMatrixInternal uses percentToiWith, so raw toi grid can be empty
           setHomeAwayInfo([]);
-          const skippedRows = Math.max(
+          const mappingSkippedRows = Math.max(
             0,
             aggregatedData.length - mapped.length,
           );
+          const skippedRows = (aggregateSkippedRows ?? 0) + mappingSkippedRows;
           setCoverage({
-            inputRows: aggregatedData.length,
+            inputRows: aggregateInputRows ?? aggregatedData.length,
             rosterRows: mapped.length,
             skippedRows,
           });
@@ -326,6 +335,8 @@ export function useDateRangeMatrixData({
     aggregatedData,
     aggregateStatus,
     aggregateError,
+    aggregateInputRows,
+    aggregateSkippedRows,
     requestIdentity,
   ]);
 

@@ -401,8 +401,8 @@ export function DateRangeMatrixInternal({
         aria-rowcount={sortedRoster.length + 1}
         aria-colcount={sortedRoster.length + 1}
         style={{
-          gridTemplateRows: `var(--player-info-size) repeat(${sortedRoster.length}, 1fr)`,
-          gridTemplateColumns: `var(--player-info-size) repeat(${sortedRoster.length}, 1fr)`,
+          gridTemplateRows: `var(--player-info-size) repeat(${sortedRoster.length}, minmax(var(--matrix-cell-min), 1fr))`,
+          gridTemplateColumns: `var(--player-info-size) repeat(${sortedRoster.length}, minmax(var(--matrix-cell-min), 1fr))`,
         }}
       >
         {sortedRoster.length > 0 && (

@@ -19,6 +19,7 @@ import {
 import DateRangeMatrixView from "components/DateRangeMatrix/DateRangeMatrixView";
 import {
   useDateRangeMatrixData,
+  type DRMDataCoverage,
   type DRMDataStatus,
 } from "components/DateRangeMatrix/useDateRangeMatrixData";
 import TeamSelect from "components/TeamSelect";
@@ -59,6 +60,11 @@ function gamesBackForTimeFrame(timeFrame: RollingTimeFrame): 7 | 14 | 30 {
 }
 
 const DATE_KEY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})(?:$|T)/;
+const EMPTY_AGGREGATE_COVERAGE: DRMDataCoverage = {
+  inputRows: 0,
+  rosterRows: 0,
+  skippedRows: 0,
+};
 
 export function parseDRMDate(value: string | number) {
   if (typeof value === "string") {
@@ -191,6 +197,9 @@ export default function DRMPage() {
   const [playoffData, setPlayoffData] = useState<AggregatedMatrixPlayers>({});
   const [aggregateStatus, setAggregateStatus] = useState<DRMDataStatus>("idle");
   const [aggregateError, setAggregateError] = useState<string | null>(null);
+  const [aggregateCoverage, setAggregateCoverage] = useState<DRMDataCoverage>(
+    EMPTY_AGGREGATE_COVERAGE,
+  );
   const [resolvedAggregateScopeKey, setResolvedAggregateScopeKey] = useState<
     string | null
   >(null);
@@ -434,6 +443,7 @@ export default function DRMPage() {
       setPlayoffData({});
       setGameIds([]);
       setScopedCardStats(EMPTY_SCOPED_CARD_STATS);
+      setAggregateCoverage(EMPTY_AGGREGATE_COVERAGE);
     };
 
     async function fetchGames() {
@@ -514,6 +524,7 @@ export default function DRMPage() {
           playoffPlayersData,
           matchedGameIds,
           cardStats = EMPTY_SCOPED_CARD_STATS,
+          coverage = EMPTY_AGGREGATE_COVERAGE,
         } = await fetchAggregatedData({
           teamId: teamsInfo[teamKey].id,
           seasonId,
@@ -528,6 +539,7 @@ export default function DRMPage() {
         setRegularSeasonData(regularSeasonPlayersData);
         setPlayoffData(playoffPlayersData);
         setScopedCardStats(cardStats);
+        setAggregateCoverage(coverage);
 
         const selectedPlayersData =
           seasonType === "regularSeason"
@@ -551,9 +563,11 @@ export default function DRMPage() {
         setGameIds(uniqueMatchedGameIds);
         setResolvedAggregateScopeKey(requestScopeKey);
         setAggregateStatus(
-          Object.values(selectedPlayersData || {}).length > 0
-            ? "success"
-            : "empty",
+          coverage.skippedRows > 0
+            ? "partial"
+            : Object.values(selectedPlayersData || {}).length > 0
+              ? "success"
+              : "empty",
         );
       } catch (error) {
         if (!isCurrent()) return;
@@ -646,7 +660,9 @@ export default function DRMPage() {
   const scopeSummary =
     customRangeError ??
     (fixedWindowResolved &&
-    (visibleAggregateStatus === "success" || visibleAggregateStatus === "empty")
+    (visibleAggregateStatus === "success" ||
+      visibleAggregateStatus === "partial" ||
+      visibleAggregateStatus === "empty")
       ? `Matrix scope: ${visibleGameIds.length} matching games within last ${rollingGamesBack} team games.`
       : timeFrame === "Custom" && startStr && endStr
         ? `Custom range: ${startStr} through ${endStr} (inclusive).`
@@ -690,12 +706,16 @@ export default function DRMPage() {
     aggregatedData: aggregatedForHook,
     aggregateStatus: visibleAggregateStatus,
     aggregateError: visibleAggregateError,
+    aggregateCoverage: aggregateResultIsCurrent
+      ? aggregateCoverage
+      : EMPTY_AGGREGATE_COVERAGE,
   });
   const linePairVisible =
     timeFrame !== "Custom" &&
     (rollingGamesBack == null || fixedWindowResolved) &&
     aggregateResultIsCurrent &&
-    visibleAggregateStatus === "success" &&
+    (visibleAggregateStatus === "success" ||
+      visibleAggregateStatus === "partial") &&
     visibleGameIds.length > 0 &&
     (drmData.status === "success" || drmData.status === "partial") &&
     drmData.roster.length > 0;
@@ -817,7 +837,6 @@ export default function DRMPage() {
                 onSelect={(team) => {
                   setSelectedTeam(team as TeamAbbreviation);
                 }}
-                className={styles.teamDropdown}
               />
             </div>
 
@@ -835,7 +854,6 @@ export default function DRMPage() {
                 onSelect={(opp) => {
                   setOpponent(opp == null ? "" : String(opp));
                 }}
-                className={styles.teamDropdown}
               />
             </div>
 
@@ -856,7 +874,9 @@ export default function DRMPage() {
                   selectsStart
                   startDate={startDate}
                   endDate={endDate}
-                  className={`${styles.select} ${styles.datePickerInput}`}
+                  className={styles.datePickerInput}
+                  wrapperClassName={styles.datePickerWrapper}
+                  calendarClassName={styles.datePickerCalendar}
                 />
               </div>
               <div className={styles.datePicker}>
@@ -875,7 +895,9 @@ export default function DRMPage() {
                   selectsEnd
                   startDate={startDate}
                   endDate={endDate}
-                  className={`${styles.select} ${styles.datePickerInput}`}
+                  className={styles.datePickerInput}
+                  wrapperClassName={styles.datePickerWrapper}
+                  calendarClassName={styles.datePickerCalendar}
                 />
               </div>
             </div>

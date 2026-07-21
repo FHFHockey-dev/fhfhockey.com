@@ -65,9 +65,10 @@
 // New two-column container spanning controls and content
 .columnsContainer {
   width: 95%;
+  min-width: 0;
   margin: v.$space-md auto;
   display: grid;
-  grid-template-columns: 3fr 2fr; // 60/40
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); // 60/40
   column-gap: v.$space-md;
   row-gap: v.$space-md;
   align-items: start;
@@ -78,6 +79,7 @@
 .leftColumn,
 .rightColumn {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: v.$space-md;
 }
@@ -92,6 +94,7 @@
 .linePairGrid,
 .dateRangeMatrixContainer {
   width: 100%;
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
@@ -103,6 +106,7 @@
   .columnsContainer {
     grid-template-columns: 1fr;
   }
+
   .rightColumn {
     border-left: 0;
     padding-left: 0;
@@ -113,9 +117,11 @@
 .options1 {
   @include v.component-wrapper;
   padding: v.$space-sm;
-  // Equal columns
+  // Date controls need more room than the single-value selectors.
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns:
+    minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr)
+    minmax(0, 1.75fr);
   column-gap: v.$space-sm;
   align-items: stretch;
   min-height: 75px;
@@ -153,17 +159,6 @@
   }
 }
 
-// Stack controls on smaller screens
-@media only screen and (max-width: v.$screen-medium-max) {
-  .options1,
-  .options2 {
-    flex: 0 0 100%;
-    max-width: 100%;
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
-
 .dropdownGroup {
   flex-direction: column;
   align-items: center;
@@ -185,11 +180,6 @@
   justify-content: space-evenly;
 }
 
-// Ensure datepicker popper appears above surrounding content
-.datePickerGroup .react-datepicker-popper {
-  z-index: 10000;
-}
-
 .label {
   font-size: v.$font-size-sm;
   font-weight: 600;
@@ -201,6 +191,8 @@
 
 .datePicker {
   display: flex;
+  flex: 1 1 0;
+  min-width: 0;
   flex-direction: column;
   gap: v.$space-xxs;
   justify-content: center;
@@ -259,8 +251,12 @@
   }
 
   select:focus {
-    outline: none;
     border-color: #07aae2;
+  }
+
+  select:focus-visible {
+    outline: 3px solid v.$focus-color;
+    outline-offset: 2px;
   }
 
   select option {
@@ -276,11 +272,15 @@
   }
 }
 
-/* Override the day, day-name, and time-name styles */
-.datePickerGroup {
-  .react-datepicker__day-name,
-  .react-datepicker__day,
-  .react-datepicker__time-name {
+/*
+ * React DatePicker renders its portal outside this page tree. The local
+ * calendar class travels with that portal, while only library descendants
+ * opt out of CSS-module hashing.
+ */
+.datePickerCalendar {
+  :global(.react-datepicker__day-name),
+  :global(.react-datepicker__day),
+  :global(.react-datepicker__time-name) {
     color: v.$text-primary; /* Change text color to site token */
     background-color: v.$background-medium; /* Change background color */
     border-radius: 5px; /* Add some border-radius */
@@ -289,39 +289,28 @@
   }
 
   /* Override selected day */
-  .react-datepicker__day--selected,
-  .react-datepicker__day--keyboard-selected {
+  :global(.react-datepicker__day--selected),
+  :global(.react-datepicker__day--keyboard-selected) {
     background-color: v.$primary-color; /* Selected day background color */
     color: v.$text-button; /* Selected day text color */
   }
 
   /* Override hover effect */
-  .react-datepicker__day:hover {
+  :global(.react-datepicker__day:hover) {
     background-color: v.$secondary-color; /* Hover background color */
     color: v.$text-button; /* Hover text color */
   }
+}
 
-  /* Adjust the date picker input */
-  .react-datepicker-wrapper input {
-    width: 100%;
-    padding: v.$space-sm v.$space-md;
-    border: 1px solid v.$border-secondary;
-    border-radius: v.$border-radius-md;
-    background-color: v.$background-medium;
-    color: v.$text-primary;
-    font-family: v.$font-family-primary;
-    font-size: v.$font-size-sm;
-    cursor: pointer;
-
-    &:focus {
-      outline: none;
-      border-color: v.$primary-color;
-    }
-  }
+.datePickerWrapper {
+  display: block;
+  width: 100%;
 }
 
 .datePickerInput {
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   background-color: v.$background-medium;
   border: 1px solid v.$border-secondary;
   border-radius: v.$border-radius-md;
@@ -330,6 +319,17 @@
   line-height: calc(var(--control-h) - 2px);
   color: v.$text-primary;
   font-family: v.$font-family-primary;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+
+  &:focus {
+    border-color: v.$primary-color;
+  }
+
+  &:focus-visible {
+    outline: 3px solid v.$focus-color;
+    outline-offset: 2px;
+  }
 }
 
 .datePickers {
@@ -349,6 +349,7 @@
   justify-content: space-between;
   gap: v.$space-md;
   margin-left: v.$space-sm;
+  flex-wrap: wrap;
 }
 
 .button {
@@ -391,6 +392,7 @@
 
 .timeFrameToggle {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-start;
   gap: 2px;
   margin: 0;
@@ -400,6 +402,8 @@
   padding: 2px;
 }
 .timeFrameToggle .button {
+  flex: 1 1 3rem;
+  min-width: 0;
   background: transparent;
   border: 0;
   color: v.$text-secondary;
@@ -425,4 +429,80 @@
 .linePairNotice {
   padding: v.$space-lg;
   text-align: center;
+}
+
+// Reflow controls into real grid columns on tablets. The prior
+// flex-direction declaration could not affect the grid-based options1 panel.
+@media only screen and (max-width: 1200px) {
+  .options1 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    > *:not(:first-child) {
+      border-left: 0;
+      padding-left: 0;
+    }
+  }
+}
+
+@media only screen and (max-width: v.$screen-medium-max) {
+  .options2 {
+    flex: 0 0 100%;
+    max-width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .selectWrapper {
+    width: 100%;
+  }
+
+  .buttonsContainer {
+    margin-left: 0;
+  }
+}
+
+@media only screen and (max-width: v.$screen-small-max) {
+  .columnsContainer {
+    width: calc(100% - (2 * v.$space-sm));
+    margin: v.$space-sm auto;
+  }
+
+  .options1 {
+    grid-template-columns: minmax(0, 1fr);
+
+    > *:not(:first-child) {
+      border-top: 1px solid v.$border-secondary;
+      padding-top: v.$space-sm;
+    }
+  }
+
+  .dropdownGroup,
+  .datePicker,
+  .timeFrameGroup {
+    align-items: stretch;
+    margin-left: 0;
+  }
+
+  .dropdownGroup .label,
+  .datePicker .label,
+  .timeFrameGroup .label {
+    margin: 0;
+    min-width: auto;
+    text-align: left;
+  }
+
+  .datePickerGroup {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .timeFrameToggle {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .buttonsContainer {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

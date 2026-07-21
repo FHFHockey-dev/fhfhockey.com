@@ -295,3 +295,27 @@
   border-radius: v.$radius-xs;
   font-size: v.$font-size-xs;
 }
+
+@media only screen and (max-width: v.$screen-medium-max) {
+  .gridContainer {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+
+  .divider {
+    width: 100%;
+    height: 1px;
+  }
+}
+
+@media only screen and (max-width: v.$screen-small-max) {
+  .forwardLine,
+  .defensePair,
+  .goalieCards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

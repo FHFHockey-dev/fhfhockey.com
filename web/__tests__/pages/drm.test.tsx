@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   fetchAggregatedData: vi.fn(),
   fetchCurrentSeason: vi.fn(),
   getDateRangeForGames: vi.fn(),
+  datePickerProps: vi.fn(),
   linePairGridProps: vi.fn(),
   setDateRangeMatrixMode: vi.fn(),
   useDateRangeMatrixData: vi.fn(),
@@ -115,27 +116,48 @@ vi.mock("react-datepicker", () => ({
     name,
     selected,
     onChange,
+    className,
+    wrapperClassName,
+    calendarClassName,
+    withPortal,
   }: {
     id: string;
     name: string;
     selected?: Date;
     onChange: (date: Date | null) => void;
-  }) => (
-    <input
-      id={id}
-      name={name}
-      type="date"
-      value={
-        selected
-          ? `${selected.getFullYear()}-${String(selected.getMonth() + 1).padStart(2, "0")}-${String(selected.getDate()).padStart(2, "0")}`
-          : ""
-      }
-      onChange={(event) => {
-        const [year, month, day] = event.target.value.split("-").map(Number);
-        onChange(event.target.value ? new Date(year, month - 1, day) : null);
-      }}
-    />
-  ),
+    className?: string;
+    wrapperClassName?: string;
+    calendarClassName?: string;
+    withPortal?: boolean;
+  }) => {
+    mocks.datePickerProps({
+      id,
+      className,
+      wrapperClassName,
+      calendarClassName,
+      withPortal,
+    });
+
+    return (
+      <input
+        id={id}
+        name={name}
+        type="date"
+        className={className}
+        data-wrapper-class={wrapperClassName}
+        data-calendar-class={calendarClassName}
+        value={
+          selected
+            ? `${selected.getFullYear()}-${String(selected.getMonth() + 1).padStart(2, "0")}-${String(selected.getDate()).padStart(2, "0")}`
+            : ""
+        }
+        onChange={(event) => {
+          const [year, month, day] = event.target.value.split("-").map(Number);
+          onChange(event.target.value ? new Date(year, month - 1, day) : null);
+        }}
+      />
+    );
+  },
 }));
 
 vi.mock("next/image", () => ({
@@ -302,8 +324,27 @@ describe("DRMPage latest-request ownership", () => {
     expect(opponent.getAttribute("name")).toBe("opponent");
     expect(startDate.id).toBe("drm-start-date");
     expect(startDate.getAttribute("name")).toBe("start");
+    expect(startDate.className).not.toContain("undefined");
+    expect(startDate.className).not.toBe("");
+    expect(startDate.getAttribute("data-wrapper-class")).toBeTruthy();
+    expect(startDate.getAttribute("data-calendar-class")).toBeTruthy();
     expect(endDate.id).toBe("drm-end-date");
     expect(endDate.getAttribute("name")).toBe("end");
+    expect(endDate.className).not.toContain("undefined");
+    expect(endDate.getAttribute("data-wrapper-class")).toBeTruthy();
+    expect(endDate.getAttribute("data-calendar-class")).toBeTruthy();
+    expect(mocks.datePickerProps).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "drm-start-date",
+        withPortal: true,
+      }),
+    );
+    expect(mocks.datePickerProps).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "drm-end-date",
+        withPortal: true,
+      }),
+    );
     expect(matrixLayout.tagName).toBe("SELECT");
     expect(matrixLayout.id).toBe("drm-matrix-layout");
     expect(matrixLayout.getAttribute("name")).toBe("daterange-matrix-mode");
@@ -615,6 +656,31 @@ describe("DRMPage latest-request ownership", () => {
         pairs: mocks.canonicalPairs,
       }),
     );
+  });
+
+  it("keeps usable aggregate data visible while propagating skipped-game coverage", async () => {
+    mocks.fetchAggregatedData.mockResolvedValue({
+      ...aggregateResponse(97, [2025021007]),
+      coverage: { inputRows: 3, rosterRows: 1, skippedRows: 2 },
+    });
+
+    render(<DRMPage />);
+    await waitForSeasonInitialization();
+    fireEvent.click(screen.getByRole("button", { name: "Select EDM" }));
+
+    await waitFor(() => {
+      const latest = mocks.useDateRangeMatrixData.mock.calls.at(-1)?.[0];
+      expect(latest.aggregateStatus).toBe("partial");
+      expect(latest.aggregateCoverage).toEqual({
+        inputRows: 3,
+        rosterRows: 1,
+        skippedRows: 2,
+      });
+      expect(latest.aggregatedData).toEqual([
+        expect.objectContaining({ playerId: 97 }),
+      ]);
+    });
+    expect(mocks.linePairGridProps).toHaveBeenCalled();
   });
 
   it("does not reuse another team's resolved rolling IDs while its new window loads", async () => {

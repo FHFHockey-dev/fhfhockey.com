@@ -73,6 +73,7 @@ type NormalizedShiftRow = {
   playerId: number;
   gameToi: number | null;
   gameLength: number | null;
+  appearanceExceedsGameLength: boolean;
   homeOrAway: "home" | "away" | null;
   firstName: string | null;
   lastName: string | null;
@@ -467,9 +468,6 @@ async function buildRawResult(
     if (gameLength === 0) {
       throw new Error("Shift-chart data contains an invalid game length.");
     }
-    if (gameToi != null && gameLength != null && gameToi > gameLength) {
-      throw new Error("Shift-chart game TOI exceeds game length.");
-    }
 
     const normalized: NormalizedShiftRow = {
       rowId,
@@ -481,6 +479,8 @@ async function buildRawResult(
       playerId,
       gameToi,
       gameLength,
+      appearanceExceedsGameLength:
+        gameToi != null && gameLength != null && gameToi > gameLength,
       homeOrAway,
       firstName: readOptionalText(row.player_first_name, "player first name"),
       lastName: readOptionalText(row.player_last_name, "player last name"),
@@ -535,6 +535,11 @@ async function buildRawResult(
   );
 
   for (const [gameId, gameRows] of orderedGames) {
+    if (gameRows.some((row) => row.appearanceExceedsGameLength)) {
+      skippedRows += gameRows.length;
+      continue;
+    }
+
     const playerIds = new Set(gameRows.map((row) => row.playerId));
     for (const row of gameRows) {
       for (const relationships of [
@@ -627,9 +632,8 @@ async function buildRawResult(
             firstObservation.seconds > (first.gameToi ?? 0) ||
             firstObservation.seconds > (second.gameToi ?? 0)
           ) {
-            throw new Error(
-              "Shift-chart relationship TOI exceeds a player appearance.",
-            );
+            incomplete = true;
+            break;
           }
           gameFacts.push({
             gameId,
@@ -863,13 +867,11 @@ async function buildRawResult(
         left.firstPlayerId - right.firstPlayerId ||
         left.secondPlayerId - right.secondPlayerId,
     )
-    .map(
-      (pair): TOIData => ({
-        toi: pair.seconds,
-        p1: rosterByPlayerId.get(pair.firstPlayerId)!,
-        p2: rosterByPlayerId.get(pair.secondPlayerId)!,
-      }),
-    );
+    .map((pair): TOIData => ({
+      toi: pair.seconds,
+      p1: rosterByPlayerId.get(pair.firstPlayerId)!,
+      p2: rosterByPlayerId.get(pair.secondPlayerId)!,
+    }));
   const playerATOI = Object.fromEntries(
     roster.map((player) => [player.id, player.ATOI]),
   );

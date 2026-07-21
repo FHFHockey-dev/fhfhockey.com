@@ -101,6 +101,12 @@ describe("DateRangeMatrixInternal accessibility", () => {
     });
     expect(grid.getAttribute("aria-rowcount")).toBe("3");
     expect(grid.getAttribute("aria-colcount")).toBe("3");
+    expect(grid.style.gridTemplateRows).toContain(
+      "minmax(var(--matrix-cell-min), 1fr)",
+    );
+    expect(grid.style.gridTemplateColumns).toContain(
+      "minmax(var(--matrix-cell-min), 1fr)",
+    );
     expect(screen.getAllByRole("row")).toHaveLength(3);
     expect(
       screen.getByRole("columnheader", { name: "Connor McDavid" }),

@@ -527,6 +527,37 @@ describe("useDateRangeMatrixData request state", () => {
     );
   });
 
+  it("propagates aggregate skipped-game coverage without remapping it away", async () => {
+    const { result } = renderHook(() =>
+      useDateRangeMatrixData({
+        teamAbbreviation: "EDM",
+        startDate: "2026-03-01",
+        endDate: "2026-03-31",
+        mode: "total-toi",
+        source: "aggregated",
+        seasonType: "regularSeason",
+        aggregatedData: aggregatedPlayers,
+        aggregateStatus: "partial",
+        aggregateCoverage: {
+          inputRows: 4,
+          rosterRows: 1,
+          skippedRows: 3,
+        },
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+      expect(result.current.status).toBe("partial");
+      expect(result.current.coverage).toEqual({
+        inputRows: 4,
+        rosterRows: 1,
+        skippedRows: 3,
+      });
+      expect(result.current.roster).toHaveLength(1);
+    });
+  });
+
   it("uses a canonical team identity for lowercase raw input metadata", async () => {
     getTOIDataForGamesMock.mockResolvedValueOnce(rawResult(1));
 
