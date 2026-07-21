@@ -146,6 +146,8 @@ Latest B-DRM local closure: NEW 16 restores and sanitizes complete query state t
 
 Latest B-DRM group-2 closure: base 2.0/2.1/2.4/2.5 and NEW 61 are evidence-closed. Raw and aggregate readers preserve one strict selected-scope/identity contract, feed one pure shared grouping helper, and use canonical score/ID tie-breaks that are input-order invariant. Full-group thresholds, line/pair caps, multi-position forwards, goalie/unknown exclusion, incomplete groups, and caller immutability pass focused regressions. A production-mode aggregate-to-raw switch preserved the exact Edmonton 2024–25 playoff/custom/date/total-TOI URL and ended in the same honest empty state with zero console/runtime errors; raw QA intentionally omits aggregate-only cards and source-specific coverage differences remain explicit.
 
+Latest B-DRM group-2 publication: exact checkpoint `ef24b24e5d98ebe3bcad9c49ec6ea1e3fbc4592e` is published on `octoberBranch` through a normal non-force push. Fresh local/tracking/live equality and zero divergence pass; the eight-path scope contains only the reviewed deterministic grouping, same-scope QA regression, and synchronized canonical controls.
+
 #### Wave C — completed claims requiring audit
 
 | ID | Initiative group | Included claimed-complete initiatives |
