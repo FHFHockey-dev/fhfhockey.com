@@ -152,6 +152,9 @@ Features (illustrative)
 Horizon aggregation
 - For each upcoming game, compute opponent-adjusted distribution; roll up to 5- and 10-game totals with uncertainty propagation.
 
+Scheduled ownership
+- B-CRON-NST NEW 61 exclusively owns the cross-provider natural-schedule finding: pg_cron and Vercel currently overlap same-domain priors and window-z work. A-SUST retains its 85/89 source count; later sustainability stages must not consume an interleaved generation after the authoritative-owner or non-overlapping-scope cutover.
+
 ### Persistence (Proposed)
 
 - Continue using `sustainability_trend_bands` for per-metric, per-window bands:

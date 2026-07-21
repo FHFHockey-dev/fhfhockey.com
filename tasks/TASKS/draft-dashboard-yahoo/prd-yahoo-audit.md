@@ -550,7 +550,7 @@ Completed items (observed)
 - Adaptive split-on-failure backoff that shrinks batch sizes on rate-limit and retries before long pauses.
 - Retry-After header handling for numeric and HTTP-date formats.
 - Pacing controls (min interval + optional per-minute cap) to avoid burst throttling.
-- Structured telemetry to `yahoo_historical_progress.log` and run logging to `yahoo_historical.log`.
+- Structured telemetry to local-only `yahoo_historical_progress.log` and run logging to ignored, untracked `yahoo_historical.log`; neither output is a source artifact.
 - Robust extraction for percent_owned/name/player_id across multiple Yahoo response shapes.
 - Upsert retry with exponential backoff for Supabase writes.
 - Diagnostic helper `dump_sample_for_first_key()` for response-shape inspection.
@@ -585,7 +585,7 @@ Key files & logs (repo-relative):
 - `web/lib/supabase/Upserts/Yahoo/player_name_normalization_spec.json` (normalization)
 - `migrations/20250827_yahoo_upsert_and_mapping.sql` (migration sketch)
 - `tasks/TASKS/draft-dashboard-yahoo/prd-yahoo-audit.md` (this PRD)
-- Telemetry/logs at repo root: `yahoo_historical_progress.log`, `yahoo_historical.log`
+- Local-only telemetry/logs at repo root: `yahoo_historical_progress.log`, `yahoo_historical.log` (ignored/untracked; durable conclusions belong in task/runbook evidence)
 - Upstream TS invoker: `web/pages/api/v1/db/update-yahoo-players.ts`
 
 Step-by-step instructions for the assistant/LLM

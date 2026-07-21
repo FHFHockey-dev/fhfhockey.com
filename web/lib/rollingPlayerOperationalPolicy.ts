@@ -5,6 +5,8 @@ export type RollingExecutionProfile =
 
 export type RollingForgePipelineMode = RollingExecutionProfile;
 
+export const PROJECTION_ROUTE_DEFAULT_BUDGET_MS = 270_000;
+
 export const ROLLING_EXECUTION_PROFILE_DEFAULTS: Record<
   RollingExecutionProfile,
   {
@@ -18,20 +20,20 @@ export const ROLLING_EXECUTION_PROFILE_DEFAULTS: Record<
     playerConcurrency: 4,
     upsertBatchSize: 500,
     upsertConcurrency: 4,
-    skipDiagnostics: true
+    skipDiagnostics: true,
   },
   overnight: {
     playerConcurrency: 4,
     upsertBatchSize: 250,
     upsertConcurrency: 2,
-    skipDiagnostics: true
+    skipDiagnostics: true,
   },
   targeted_repair: {
     playerConcurrency: 4,
     upsertBatchSize: 500,
     upsertConcurrency: 4,
-    skipDiagnostics: true
-  }
+    skipDiagnostics: true,
+  },
 };
 
 export const ROLLING_EXECUTION_PROFILE_BUDGETS_MS: Record<
@@ -40,7 +42,7 @@ export const ROLLING_EXECUTION_PROFILE_BUDGETS_MS: Record<
 > = {
   daily_incremental: 270000,
   overnight: 1800000,
-  targeted_repair: 600000
+  targeted_repair: 600000,
 };
 
 export const ROLLING_FORGE_PIPELINE_BUDGETS_MS: Record<
@@ -49,12 +51,12 @@ export const ROLLING_FORGE_PIPELINE_BUDGETS_MS: Record<
 > = {
   daily_incremental: 270000,
   overnight: 5400000,
-  targeted_repair: 900000
+  targeted_repair: 900000,
 };
 
 export function parseRollingExecutionProfile(
   value: string | null | undefined,
-  fallback: RollingExecutionProfile = "daily_incremental"
+  fallback: RollingExecutionProfile = "daily_incremental",
 ): RollingExecutionProfile {
   if (
     value === "daily_incremental" ||
@@ -67,7 +69,7 @@ export function parseRollingExecutionProfile(
 }
 
 export function isRollingExecutionProfile(
-  value: string | null | undefined
+  value: string | null | undefined,
 ): value is RollingExecutionProfile {
   return (
     value === "daily_incremental" ||

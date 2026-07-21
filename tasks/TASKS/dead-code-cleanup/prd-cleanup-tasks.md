@@ -69,6 +69,10 @@ Reduce technical noise (lint warnings, repetitive code patterns) to improve deve
 - 2025-09-11: Refactored scroll timeout handling in stats page (removed scrollTimeoutRef; localized cleanup) to satisfy hook dependency warning gracefully.
 - 2025-09-11: Hook pass: added missing dependency (selectedStats) to season data effect in goalies page.
  - 2025-09-11: Hook pass: moved FIRSTNAME_ALIASES to module scope in `pages/db/upsert-projections.tsx` eliminating missing-dep warning without expanding callback deps.
+- 2026-07-21: Removed two pre-existing `supabase/.temp` CLI internal-state files from tracking while retaining their physical ignored local copies; official Supabase guidance identifies `.temp/` as non-committable local state.
+- 2026-07-21: Corrected stale Playwright publication state by removing the four canonical generated `web/test-results` files from Git tracking while retaining their physical ignored local copies; exact-path review found no non-test consumer, `git ls-files web/test-results` is empty, and CI's separate ephemeral failure uploads remain unchanged.
+- 2026-07-21: Completed the repository-wide Supabase CLI-state pass by untracking eleven additional duplicated `.temp` files across the nested Supabase and legacy web roots, adding the missing narrow web-root ignore rule, and retaining every physical local copy.
+- 2026-07-21: Forward-untracked seven generated development/log/audit outputs and added exact ignore rules while retaining local copies. A value-free sensitivity review found no high-confidence or current local credential in the historical Yahoo log, so no history rewrite is warranted.
 
 ## Acceptance Criteria
 - Build passes with zero new errors

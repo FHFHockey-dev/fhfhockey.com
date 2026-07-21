@@ -1519,7 +1519,7 @@ Total files: 845
 - web/lib/supabase/shotsByCoord.js
 - web/lib/supabase/signInWithGitHub.ts
 - web/lib/supabase/sosStandings.js
-- web/lib/supabase/sosStandings.log
+- web/lib/supabase/sosStandings.log (historical inventory; forward-untracked 2026-07-21)
 - web/lib/supabase/test.json
 - web/lib/supabase/utils/calculations.ts
 - web/lib/supabase/utils/constants.ts
@@ -1908,4 +1908,4 @@ Total files: 845
 - webhooks/app.js
 - webhooks/package-lock.json
 - webhooks/package.json
-- yahoo_historical.log
+- yahoo_historical.log (historical inventory; forward-untracked 2026-07-21)

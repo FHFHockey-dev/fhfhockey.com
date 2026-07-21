@@ -84,6 +84,7 @@ import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { FORGE_COMPATIBILITY_INVENTORY } from "lib/projections/compatibilityInventory";
 import { getGoalieForgePipelineSpec } from "lib/projections/goaliePipeline";
 import { getRollingForgeStageDependencyContract } from "lib/rollingForgePipeline";
+import { PROJECTION_ROUTE_DEFAULT_BUDGET_MS } from "lib/rollingPlayerOperationalPolicy";
 import supabase from "lib/supabase/server";
 
 type PreflightGate = {
@@ -1027,8 +1028,12 @@ async function handler(
   const asOfDate = dateParam ?? isoDateOnly(new Date().toISOString());
   const startDate = startDateParam ?? asOfDate;
   const endDate = endDateParam ?? asOfDate;
-  const maxDurationMs = Number(getParam(req, "maxDurationMs") ?? 270_000);
-  const budgetMs = Number.isFinite(maxDurationMs) ? maxDurationMs : 270_000;
+  const maxDurationMs = Number(
+    getParam(req, "maxDurationMs") ?? PROJECTION_ROUTE_DEFAULT_BUDGET_MS,
+  );
+  const budgetMs = Number.isFinite(maxDurationMs)
+    ? maxDurationMs
+    : PROJECTION_ROUTE_DEFAULT_BUDGET_MS;
   const deadlineMs = startedAt + budgetMs;
   let preflight = defaultPreflight;
 

@@ -145,7 +145,7 @@ These had no inbound imports in the custom graph and were also reported by `knip
 | `web/tmp-run-sync.ts`, `web/tmp-test-sheets.mjs`, `web/tmp-check-games.ts`, `web/tmp-check-pbp-games.ts`, `web/tmp-check-pbp-structure.js`, `web/tmp-check-seasons.js`, `web/tmp/**` | Temporary investigation scripts/artifacts. | Delete or move durable findings into `tasks/artifacts`. |
 | `web/debug-goalies.ts` | Manual goalie debug script. | Delete if no longer used. |
 | `web/web/scripts/output/**` | Nested generated model/output artifacts under duplicated `web/web` path. | Treat as generated artifacts; decide whether to archive outside source control. |
-| `yahoo_historical.log` | Historical Yahoo ingest log. | Delete from repo if not needed for an audit trail; logs should not be source files. |
+| `yahoo_historical.log` | Historical Yahoo ingest log. | Forward-untracked and ignored on 2026-07-21 while its physical local copy remains; value-free sensitivity review found no high-confidence/current credential and did not justify history rewriting. |
 | `check_db.js`, `find_templates.py`, `fix_templates.py`, `safe_properties.py`, `update_game_page.py`, `fix_terminal.sh` | One-off maintenance scripts. | Keep only if documented; otherwise delete/archive. |
 | `underlying-stats/**` at repo root | Older standalone service/types parallel to `web/lib/underlying-stats`. | No runtime linkage found. Candidate delete after confirming it is not used by external scripts. |
 
