@@ -24,6 +24,7 @@ import { buildShiftChartRelationshipUpsert } from "./shiftChartRelationshipPaylo
 
 const GAME_ID = 2025020001;
 const INPUT_FINGERPRINT = "1".repeat(64);
+const PBP_RAW_PAYLOAD_HASH = "4".repeat(64);
 const PBP_SOURCE_HASH = "3".repeat(64);
 const SHIFT_SOURCE_HASH = "2".repeat(64);
 
@@ -78,6 +79,7 @@ describe("relationship materialization", () => {
         input_fingerprint: INPUT_FINGERPRINT,
         input_status: "complete",
         input_version: 3,
+        pbp_raw_payload_hash: PBP_RAW_PAYLOAD_HASH,
         pbp_source_hash: PBP_SOURCE_HASH,
         shift_source_hash: SHIFT_SOURCE_HASH,
       },
@@ -118,7 +120,7 @@ describe("relationship materialization", () => {
             relationship_status: "complete",
             relationship_input_fingerprint: INPUT_FINGERPRINT,
             relationship_algorithm_version:
-              "shift_relationship_materializer_v2_pbp_bound",
+              "shift_relationship_materializer_v3_position_bound",
           },
           {
             game_id: 20,
@@ -181,6 +183,37 @@ describe("relationship materialization", () => {
     ).toEqual([GAME_ID]);
   });
 
+  it.each([
+    ["missing display", { display_position: null }],
+    ["missing primary", { primary_position: null }],
+    ["missing type", { player_type: null }],
+    ["primary alias", { primary_position: "L", display_position: "LW" }],
+    ["primary lowercase", { primary_position: "c" }],
+    ["primary whitespace", { primary_position: " C " }],
+    ["display alias", { display_position: "L", primary_position: "LW" }],
+    ["display missing primary", { display_position: "LW" }],
+    ["cross-type display", { display_position: "C,D" }],
+  ])(
+    "rejects %s position metadata before any database read or RPC",
+    async (_name, mutation) => {
+      const row = relationshipRow(10);
+      Object.assign(row, mutation);
+
+      await expect(
+        persistShiftChartRelationships({
+          expectedPbpRawPayloadHash: PBP_RAW_PAYLOAD_HASH,
+          gameId: GAME_ID,
+          sourcePbpHash: PBP_SOURCE_HASH,
+          sourceShiftHash: SHIFT_SOURCE_HASH,
+          rows: [row],
+        }),
+      ).rejects.toThrow("Invalid relationship replacement scope");
+
+      expect(mocks.from).not.toHaveBeenCalled();
+      expect(mocks.rpc).not.toHaveBeenCalled();
+    },
+  );
+
   it("binds exact relationship replacement to the current input fingerprint", async () => {
     const rows = [relationshipRow(20), relationshipRow(10)];
     mocks.rpc.mockImplementation(async (_name, args) => ({
@@ -205,6 +238,7 @@ describe("relationship materialization", () => {
 
     await expect(
       persistShiftChartRelationships({
+        expectedPbpRawPayloadHash: PBP_RAW_PAYLOAD_HASH,
         gameId: GAME_ID,
         sourcePbpHash: PBP_SOURCE_HASH,
         sourceShiftHash: SHIFT_SOURCE_HASH,
@@ -235,6 +269,7 @@ describe("relationship materialization", () => {
   it("rejects a source correction that has not entered the input manifest", async () => {
     await expect(
       persistShiftChartRelationships({
+        expectedPbpRawPayloadHash: PBP_RAW_PAYLOAD_HASH,
         gameId: GAME_ID,
         sourcePbpHash: PBP_SOURCE_HASH,
         sourceShiftHash: "4".repeat(64),
@@ -250,6 +285,7 @@ describe("relationship materialization", () => {
   it("rejects a PBP correction that has not entered the input manifest", async () => {
     await expect(
       persistShiftChartRelationships({
+        expectedPbpRawPayloadHash: PBP_RAW_PAYLOAD_HASH,
         gameId: GAME_ID,
         sourcePbpHash: "4".repeat(64),
         sourceShiftHash: SHIFT_SOURCE_HASH,
@@ -285,11 +321,26 @@ describe("relationship materialization", () => {
 
     await expect(
       persistShiftChartRelationships({
+        expectedPbpRawPayloadHash: PBP_RAW_PAYLOAD_HASH,
         gameId: GAME_ID,
         sourcePbpHash: PBP_SOURCE_HASH,
         sourceShiftHash: SHIFT_SOURCE_HASH,
         rows: [relationshipRow(10)],
       }),
     ).rejects.toThrow("Invalid relationship receipt");
+  });
+
+  it("rejects a raw PBP roster snapshot race before RPC", async () => {
+    await expect(
+      persistShiftChartRelationships({
+        expectedPbpRawPayloadHash: "5".repeat(64),
+        gameId: GAME_ID,
+        sourcePbpHash: PBP_SOURCE_HASH,
+        sourceShiftHash: SHIFT_SOURCE_HASH,
+        rows: [relationshipRow(10)],
+      }),
+    ).rejects.toThrow("Raw PBP snapshot does not match relationship roster");
+
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 });

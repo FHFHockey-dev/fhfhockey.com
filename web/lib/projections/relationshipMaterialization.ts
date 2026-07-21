@@ -1,15 +1,17 @@
 import supabase from "lib/supabase/server";
 
 import { sha256CanonicalJson } from "./materializationFingerprint";
+import { isCompleteRelationshipPlayerPosition } from "./relationshipPlayerPosition";
 import type { ShiftChartRelationshipUpsert } from "./shiftChartRelationshipPayload";
 
 export const SHIFT_RELATIONSHIP_ALGORITHM_VERSION =
-  "shift_relationship_materializer_v2_pbp_bound";
+  "shift_relationship_materializer_v3_position_bound";
 
 type MaterializationStatus = {
   input_fingerprint: string;
   input_status: string;
   input_version: number;
+  pbp_raw_payload_hash: string;
   pbp_source_hash: string;
   shift_source_hash: string;
 };
@@ -172,6 +174,7 @@ export function buildShiftRelationshipFingerprint(args: {
 }
 
 export async function persistShiftChartRelationships(args: {
+  expectedPbpRawPayloadHash: string;
   gameId: number;
   sourcePbpHash: string;
   sourceShiftHash: string;
@@ -179,6 +182,10 @@ export async function persistShiftChartRelationships(args: {
   algorithmVersion?: string;
 }): Promise<ShiftRelationshipReceipt> {
   const gameId = requirePositiveInteger(args.gameId, "game ID");
+  const expectedPbpRawPayloadHash = requireHash(
+    args.expectedPbpRawPayloadHash,
+    "expected raw PBP payload hash",
+  );
   const sourcePbpHash = requireHash(args.sourcePbpHash, "PBP source hash");
   const sourceShiftHash = requireHash(
     args.sourceShiftHash,
@@ -196,7 +203,8 @@ export async function persistShiftChartRelationships(args: {
       (row) =>
         Number(row.game_id) !== gameId ||
         !Number.isSafeInteger(Number(row.player_id)) ||
-        Number(row.player_id) <= 0,
+        Number(row.player_id) <= 0 ||
+        !isCompleteRelationshipPlayerPosition(row),
     ) ||
     new Set(rows.map((row) => Number(row.player_id))).size !== rows.length
   ) {
@@ -211,7 +219,7 @@ export async function persistShiftChartRelationships(args: {
   const { data: statusData, error: statusError } = await db
     .from("projection_game_materialization_status")
     .select(
-      "input_fingerprint,input_status,input_version,pbp_source_hash,shift_source_hash",
+      "input_fingerprint,input_status,input_version,pbp_raw_payload_hash,pbp_source_hash,shift_source_hash",
     )
     .eq("game_id", gameId)
     .maybeSingle();
@@ -230,6 +238,14 @@ export async function persistShiftChartRelationships(args: {
     status.input_fingerprint,
     "stored input fingerprint",
   );
+  if (
+    requireHash(status.pbp_raw_payload_hash, "stored raw PBP payload hash") !==
+    expectedPbpRawPayloadHash
+  ) {
+    throw new Error(
+      `Raw PBP snapshot does not match relationship roster for game ${gameId}`,
+    );
+  }
   if (
     requireHash(status.pbp_source_hash, "stored PBP source hash") !==
     sourcePbpHash

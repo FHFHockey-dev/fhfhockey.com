@@ -239,7 +239,7 @@ describe("/api/v1/db/build-projection-derived-v2", () => {
         relationship_status: "complete",
         relationship_input_fingerprint: "a".repeat(64),
         relationship_algorithm_version:
-          "shift_relationship_materializer_v2_pbp_bound",
+          "shift_relationship_materializer_v3_position_bound",
         derived_status: "pending",
         derived_input_fingerprint: null,
         derived_algorithm_version: null,

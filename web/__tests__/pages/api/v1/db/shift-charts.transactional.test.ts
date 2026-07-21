@@ -12,6 +12,15 @@ describe("shift-chart relationship transaction wiring", () => {
     expect(routeSource).toContain("buildShiftRelationshipStrengthSegments(");
     expect(routeSource).toContain("sourcePbpHash: buildProjectionPbpSourceHash(pbp)");
     expect(routeSource).toContain("sourceShiftHash: shiftChartData.sourceShiftHash");
+    expect(routeSource).toContain("fetchCurrentRelationshipRosterPositions(");
+    expect(routeSource).toContain("pbp_raw_payload_hash");
+    expect(routeSource).toContain("source_play_by_play_hash");
+    expect(routeSource).toContain("buildRelationshipRosterPositionMap({");
+    expect(routeSource).toContain("resolveRelationshipPlayerPosition({");
+    expect(routeSource).toContain("expectedPbpRawPayloadHash,");
+    expect(routeSource.indexOf("resolvedPositionsByPlayer.set(")).toBeLessThan(
+      routeSource.indexOf("buildShiftRelationshipStrengthSegments("),
+    );
     expect(routeSource).not.toContain('.from("pp_timeframes")');
     expect(routeSource).not.toContain("/boxscore");
     expect(routeSource).not.toContain("@ts-nocheck");

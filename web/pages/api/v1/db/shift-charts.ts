@@ -69,6 +69,12 @@ import {
   type RelationshipQueueStatus,
 } from "lib/projections/relationshipMaterialization";
 import {
+  buildRelationshipRosterPositionMap,
+  resolveRelationshipPlayerPosition,
+  type RelationshipRosterPosition,
+  type ResolvedRelationshipPlayerPosition,
+} from "lib/projections/relationshipPlayerPosition";
+import {
   formatCompletedPbpGameLength,
   normalizeNhlGameType,
 } from "lib/projections/gameLength";
@@ -146,9 +152,9 @@ interface ConsolidatedPlayerData {
   game_toi: string;
   total_pp_toi: string;
   total_es_toi: string;
-  display_position: string | null;
-  primary_position: string | null;
-  player_type: "G" | "F" | "D" | null;
+  display_position: string;
+  primary_position: string;
+  player_type: "G" | "F" | "D";
   line_combination: number | null;
   pairing_combination: number | null;
 }
@@ -321,26 +327,6 @@ function formatDuration(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
   return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
-}
-
-/**
- * Determines the player type based on position.
- * @param primaryPosition - Primary position code.
- * @param displayPosition - Display position code.
- * @returns "G", "F", "D", or null.
- */
-function getPlayerType(
-  primaryPosition: string | null,
-  displayPosition: string | null,
-): "G" | "F" | "D" | null {
-  if (primaryPosition === "G" || displayPosition === "G") {
-    return "G";
-  } else if (isForward(primaryPosition)) {
-    return "F";
-  } else if (isDefense(primaryPosition)) {
-    return "D";
-  }
-  return null;
 }
 
 /**
@@ -666,6 +652,50 @@ async function fetchAllPlayerPositions(): Promise<PlayerPosition[]> {
   return allPositions;
 }
 
+async function fetchCurrentRelationshipRosterPositions(gameId: number): Promise<{
+  expectedPbpRawPayloadHash: string;
+  positions: Map<number, RelationshipRosterPosition>;
+}> {
+  const db = supabase as any;
+  const { data: status, error: statusError } = await db
+    .from("projection_game_materialization_status")
+    .select("game_id,input_status,pbp_raw_payload_hash")
+    .eq("game_id", gameId)
+    .maybeSingle();
+  if (statusError) throw statusError;
+  if (
+    !status ||
+    status.game_id !== gameId ||
+    status.input_status !== "complete" ||
+    typeof status.pbp_raw_payload_hash !== "string" ||
+    !/^[a-f0-9]{64}$/.test(status.pbp_raw_payload_hash)
+  ) {
+    throw new Error(`Projection inputs are not complete for game ${gameId}`);
+  }
+
+  const rows = await fetchAllSupabasePages<RelationshipRosterPosition>(
+    ({ from, to }) =>
+      db
+        .from("nhl_api_game_roster_spots")
+        .select(
+          "game_id,player_id,team_id,position_code,source_play_by_play_hash",
+        )
+        .eq("game_id", gameId)
+        .eq("source_play_by_play_hash", status.pbp_raw_payload_hash)
+        .order("player_id", { ascending: true })
+        .range(from, to),
+  );
+
+  return {
+    expectedPbpRawPayloadHash: status.pbp_raw_payload_hash,
+    positions: buildRelationshipRosterPositionMap({
+      expectedPbpRawPayloadHash: status.pbp_raw_payload_hash,
+      gameId,
+      rows,
+    }),
+  };
+}
+
 /**
  * Upserts shift chart data into the Supabase `shift_charts` table.
  * @param shiftChartData - Shift chart data.
@@ -677,16 +707,61 @@ async function upsertShiftChartData(
   shiftChartData: ShiftChartData,
   gameInfo: GameInfo,
   playerPositions: PlayerPosition[],
+  rosterPositions: Map<number, RelationshipRosterPosition>,
+  expectedPbpRawPayloadHash: string,
   pbp: PbpResponse,
 ): Promise<{
   unmatchedNames: string[];
+  positionFallbackNames: string[];
   upsertCount: number;
   verifiedCount: number;
   prunedCount: number;
   idempotent: boolean;
 }> {
   const unmatchedNamesSet = new Set<string>();
+  const positionFallbackNamesSet = new Set<string>();
   const consolidatedData: Record<string, ConsolidatedPlayerData> = {};
+
+  // Use groupBy to group shifts by playerId
+  const shiftsByPlayer = groupBy(
+    shiftChartData.data,
+    (shift) => shift.playerId,
+  );
+
+  // Resolve the complete roster-bound position scope before any relationship
+  // calculation so missing or stale evidence cannot produce partial work.
+  const resolvedPositionsByPlayer = new Map<
+    number,
+    ResolvedRelationshipPlayerPosition
+  >();
+  for (const [playerId, shifts] of shiftsByPlayer.entries()) {
+    const firstShift = shifts[0];
+    const playerName = `${firstShift.firstName} ${firstShift.lastName}`;
+    const matchedPosition = playerPositions.find(
+      (position) => position.full_name === playerName,
+    );
+    if (!matchedPosition) unmatchedNamesSet.add(playerName);
+    if (
+      firstShift.teamId !== gameInfo.homeTeam.id &&
+      firstShift.teamId !== gameInfo.awayTeam.id
+    ) {
+      throw new Error(
+        `Shift team ${firstShift.teamId} is not scheduled for game ${gameInfo.game_id}`,
+      );
+    }
+    const resolvedPosition = resolveRelationshipPlayerPosition({
+      expectedPbpRawPayloadHash,
+      gameId: gameInfo.game_id,
+      playerId,
+      rosterPosition: rosterPositions.get(playerId),
+      teamId: firstShift.teamId,
+      yahooPosition: matchedPosition,
+    });
+    if (resolvedPosition.source === "nhl_roster") {
+      positionFallbackNamesSet.add(playerName);
+    }
+    resolvedPositionsByPlayer.set(playerId, resolvedPosition);
+  }
 
   const gameLength = formatCompletedPbpGameLength(pbp);
   const strengthSegmentsByPlayer = groupBy(
@@ -698,24 +773,11 @@ async function upsertShiftChartData(
     (segment) => segment.playerId,
   );
 
-  // Use groupBy to group shifts by playerId
-  const shiftsByPlayer = groupBy(
-    shiftChartData.data,
-    (shift) => shift.playerId,
-  );
-
   // Process each player's shifts
   for (const [playerId, shifts] of shiftsByPlayer.entries()) {
     const playerKey = `${playerId}`;
     const firstShift = shifts[0]; // Assuming all shifts have consistent player info
 
-    const playerName = `${firstShift.firstName} ${firstShift.lastName}`;
-    const matchedPosition = playerPositions.find(
-      (pos) => pos.full_name === playerName,
-    );
-    if (!matchedPosition) {
-      unmatchedNamesSet.add(playerName);
-    }
     const isHomeTeam = firstShift.teamId === gameInfo.homeTeam.id;
     const isAwayTeam = firstShift.teamId === gameInfo.awayTeam.id;
     if (!isHomeTeam && !isAwayTeam) {
@@ -724,6 +786,10 @@ async function upsertShiftChartData(
       );
     }
     const opponentTeam = isHomeTeam ? gameInfo.awayTeam : gameInfo.homeTeam;
+    const resolvedPosition = resolvedPositionsByPlayer.get(playerId);
+    if (!resolvedPosition) {
+      throw new Error(`Missing resolved relationship position for player ${playerId}`);
+    }
 
     // Initialize player data in consolidatedData
     consolidatedData[playerKey] = {
@@ -750,18 +816,9 @@ async function upsertShiftChartData(
       game_toi: "0:00",
       total_pp_toi: "0:00",
       total_es_toi: "0:00",
-      display_position: matchedPosition
-        ? matchedPosition.display_position
-        : null,
-      primary_position: matchedPosition
-        ? matchedPosition.primary_position
-        : null,
-      player_type: matchedPosition
-        ? getPlayerType(
-            matchedPosition.primary_position,
-            matchedPosition.display_position,
-          )
-        : null,
+      display_position: resolvedPosition.displayPosition,
+      primary_position: resolvedPosition.primaryPosition,
+      player_type: resolvedPosition.playerType,
       line_combination: null,
       pairing_combination: null,
     };
@@ -937,6 +994,7 @@ async function upsertShiftChartData(
   );
 
   const receipt = await persistShiftChartRelationships({
+    expectedPbpRawPayloadHash,
     gameId: gameInfo.game_id,
     sourcePbpHash: buildProjectionPbpSourceHash(pbp),
     sourceShiftHash: shiftChartData.sourceShiftHash,
@@ -950,6 +1008,7 @@ async function upsertShiftChartData(
 
   return {
     unmatchedNames: Array.from(unmatchedNamesSet),
+    positionFallbackNames: Array.from(positionFallbackNamesSet),
     upsertCount,
     verifiedCount,
     prunedCount: receipt.prunedRows,
@@ -970,6 +1029,7 @@ async function fetchAndStoreShiftCharts(
   success: boolean;
   message: string;
   unmatchedNames: string[];
+  positionFallbackNames: string[];
   totalRowsUpserted: number;
   totalRowsVerified: number;
   totalRowsPruned: number;
@@ -989,6 +1049,7 @@ async function fetchAndStoreShiftCharts(
     // Fetch all player positions once for the selected scope.
     const playerPositions = await fetchAllPlayerPositions();
     const unmatchedNames: string[] = [];
+    const positionFallbackNames: string[] = [];
 
     if (targetGameId != null) {
       const pbp = await fetchPbpGame(targetGameId);
@@ -1059,8 +1120,13 @@ async function fetchAndStoreShiftCharts(
           throw new Error(`No PBP source found for game ID: ${gameId}`);
         }
 
+        const currentRoster = await fetchCurrentRelationshipRosterPositions(
+          gameId,
+        );
+
         const {
           unmatchedNames: unmatched,
+          positionFallbackNames: positionFallbacks,
           upsertCount,
           verifiedCount,
           prunedCount,
@@ -1069,9 +1135,12 @@ async function fetchAndStoreShiftCharts(
           shiftChartData,
           gameInfo,
           playerPositions,
+          currentRoster.positions,
+          currentRoster.expectedPbpRawPayloadHash,
           pbp,
         );
         unmatchedNames.push(...unmatched);
+        positionFallbackNames.push(...positionFallbacks);
         totalRowsUpserted += upsertCount;
         totalRowsVerified += verifiedCount;
         totalRowsPruned += prunedCount;
@@ -1093,6 +1162,7 @@ async function fetchAndStoreShiftCharts(
         ? error.message || "An error occurred."
         : "Successfully processed all shift charts.",
       unmatchedNames: Array.from(new Set(unmatchedNames)),
+      positionFallbackNames: Array.from(new Set(positionFallbackNames)),
       totalRowsUpserted,
       totalRowsVerified,
       totalRowsPruned,
@@ -1105,6 +1175,7 @@ async function fetchAndStoreShiftCharts(
       success: false,
       message: err.message || "An unexpected error occurred.",
       unmatchedNames: [],
+      positionFallbackNames: [],
       totalRowsUpserted,
       totalRowsVerified,
       totalRowsPruned,
@@ -1158,6 +1229,7 @@ export default adminOnly(async (req: NextApiRequest, res: NextApiResponse) => {
     rowsAffected = result.totalRowsUpserted;
     details = {
       unmatchedNames: result.unmatchedNames,
+      positionFallbackNames: result.positionFallbackNames,
       durationMs: Date.now() - startTime,
       rowsVerified: result.totalRowsVerified,
       rowsPruned: result.totalRowsPruned,
@@ -1168,6 +1240,7 @@ export default adminOnly(async (req: NextApiRequest, res: NextApiResponse) => {
         message: result.message,
         success: true,
         unmatchedNames: result.unmatchedNames,
+        positionFallbackNames: result.positionFallbackNames,
         rowsAffected,
         rowsVerified: result.totalRowsVerified,
         rowsPruned: result.totalRowsPruned,
@@ -1182,6 +1255,7 @@ export default adminOnly(async (req: NextApiRequest, res: NextApiResponse) => {
         message: result.message,
         success: false,
         unmatchedNames: result.unmatchedNames,
+        positionFallbackNames: result.positionFallbackNames,
         rowsAffected,
         rowsVerified: result.totalRowsVerified,
         rowsPruned: result.totalRowsPruned,
