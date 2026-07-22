@@ -409,3 +409,7 @@ For each major system, the audit must run this pattern:
 - Should the future unified dashboard expose intermediate calculation steps directly in the UI, or only raw inputs plus final outputs?
 - Should the post-audit regression suite be built inside `web/tests` only, or should SQL validation assets also live under a dedicated audit folder?
 - Are there cron jobs or external scripts outside the scanned paths that feed these same tables and should be included before audit execution begins?
+
+## 14. Execution Checkpoint — 2026-07-22
+
+The canonical player/team/rolling/FORGE validation cohort and its dependent definition-drift, overlap, and consolidation deliverables are complete. The audit remains active at 42/55 with 13 open: existing NEW 2/6 and trace-discovered NEW 7–13 are explicit formula, provenance, schedule, history, scoring, adapter, and accuracy gates. The consolidation recommendation is evidence-only; it does not authorize deletion, historical rewrites, model promotion, or production mutation.
