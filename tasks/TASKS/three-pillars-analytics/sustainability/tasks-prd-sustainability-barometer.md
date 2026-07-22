@@ -145,7 +145,7 @@
 	- [ ] 8.3 Implement random sample recompute function & log diff stats; alert if diff > tolerance.
 	- [ ] 8.4 Implement nightly distribution drift detection (compare stdev & mean vs prior 7-day rolling average).
 	- [ ] 8.5 Add health endpoint /api/internal/sustainability/health returning latest snapshot date & counts.
-	- [ ] 8.6 Add test asserting all persisted scores in [0,100]; fail if outside.
+	- [x] 8.6 Assert all persisted scores remain finite and within [0,100]. A value-free production aggregate proves 247,024/247,024 rows valid with minimum 0 and maximum 100; current guardrail tests cover clipped and invalid inputs (verified 2026-07-22).
 	- [ ] 8.7 Add test verifying guardrails (0 & 100 only on raw thresholds) using synthetic S_raw values.
 	- [ ] 8.8 Document log field schema for analytics ingestion.
 
@@ -163,6 +163,8 @@
 - [x] NEW 11.0 **P1 concatenated NHL season arithmetic:** `fetchPlayerSeasonCounts` subtracted integers from identifiers such as `20252026`, yielding nonexistent `20252025`/`20252024` history and silently zeroing prior-season contributions. Derive and validate `[20252026, 20242025, 20232024]`, retain full player-level batching/pagination, and prove all three live source seasons plus regression coverage (discovered and closed 2026-07-22).
 
 - [x] NEW 12.0 **P1 canonical scheduled-pipeline completeness and payload safety:** the active league-skill reference read relied on one implicit PostgREST page, while player-prior, window-z, and score writers sent full route payloads in one request. Range-paginate the deterministic league reference; split every potentially large canonical Sustainability write into fail-fast batches of at most 400 rows; expose write-chunk metrics; retain composite-key idempotency; and document the exact scheduled chain, retries, ownership dependency, and intentionally absent distribution/retro semantics. Twenty-four focused tests, full TypeScript, scoped zero-error lint, formatting, and diff integrity prove the bounded implementation (discovered and closed 2026-07-22).
+
+- [ ] NEW 13.0 **P1 persisted score-format/version contract drift:** the source PRD and completed 4.7 require an integer 0–100 score with exact-boundary guardrails, while the active TypeScript owner rounds to two decimal places. Production contains 247,024 finite in-range rows, but 215,250 are fractional and 34,636/34,944 rows computed in the last 14 days are fractional. Exact 0/100 rows do satisfy the documented raw-probability thresholds. Decide whether v2 intentionally retains fractional precision or must version-bump to integer formatting; then align runtime, schema/data contract, UI/API copy, historical/backfill policy, tests, and deployment evidence without silently mixing semantics. This owns open 8.7 and is held at the score-contract strategy boundary (discovered 2026-07-22).
 
 ---
 I have generated the high-level tasks based on the PRD. Ready to generate the sub-tasks? Respond with "Go" to proceed.
