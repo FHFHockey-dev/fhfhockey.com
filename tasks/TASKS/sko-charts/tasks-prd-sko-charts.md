@@ -38,7 +38,7 @@
   - [x] 1.5 Verify active consumers use the canonical API/data contract and append legacy direct-table consumers as remediation/quarantine tasks. Evidence (2026-07-22): supported Trends pages use rolling/FORGE contracts and do not import the SKO reader bundle or legacy score helpers; the orphaned prediction components/API are recorded as P2 NEW 9.4 and remain quarantined.
 
 - [ ] 2.0 Verify and finish source-stat, prediction, and metrics persistence
-  - [ ] 2.1 Reconcile live schemas/migrations for `sko_skater_stats`, `sko_skater_years`, `predictions_sko`, and `predictions_sko_metrics` with generated types and code.
+  - [x] 2.1 Reconcile live schemas/migrations for `sko_skater_stats`, `sko_skater_years`, `predictions_sko`, and `predictions_sko_metrics` with generated types and code. Evidence (2026-07-22): read-only live catalog, production-baseline DDL, generated types, and runtime references agree on three present tables and their exact keys/RLS/read policies; `predictions_sko_metrics` is absent from all four and remains an unimplemented planned contract documented in `sko-ownership-contract.md`.
   - [ ] 2.2 Apply or repair missing migrations through the Supabase workflow, including RLS/API exposure appropriate to admin writers and read-only consumers.
   - [ ] 2.3 Verify `update-sko-stats` handles schema drift explicitly, paginates complete source reads, and does not silently skip model-required fields.
   - [ ] 2.4 Make prediction/metric upserts idempotent by stable player/as-of/horizon/model identity and preserve evaluation history.

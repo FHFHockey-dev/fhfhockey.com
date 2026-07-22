@@ -41,6 +41,19 @@ Status: Reconciliation complete; no SKO score family is promoted as a canonical 
 - Production pg_cron job 321 calls `update-sko-stats` at `30 10 * * *`; job 327 calls `update-predictions-sko` at `45 10 * * *`. Both are active and both use an Authorization header derived from Vault `cron_secret` without exposing its value.
 - No tracked supported route consumes the legacy GameScore/characteristic helper family.
 
+## Live schema reconciliation
+
+Read-only production catalog evidence, `supabase/migrations/20260716112908_production_schema_baseline.sql`, generated TypeScript types, and current runtime references agree on this exact state:
+
+| Relation                  | Live/baseline/type contract                                                                                                          | RLS/read policy                                     | Runtime disposition                                                  |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------- | -------------------------------------------------------------------- |
+| `predictions_sko`         | 13 columns; primary key `(player_id, as_of_date, horizon_games)`; positive-horizon check; required model name/version and timestamps | RLS enabled; SELECT allowed to `anon,authenticated` | Active quarantined reader and protected compatibility writer         |
+| `sko_skater_stats`        | 28 columns; primary key `(player_id, date, season_id)`                                                                               | RLS enabled; SELECT allowed to `anon,authenticated` | Active protected source-ingest writer plus legacy readers            |
+| `sko_skater_years`        | 21 columns; primary key `(player_id, season)`                                                                                        | RLS enabled; SELECT allowed to `anon,authenticated` | Legacy updater/read helper only                                      |
+| `predictions_sko_metrics` | Absent from live catalog, production baseline, generated types, and runtime code; named only in requirements/modeling notes          | Not applicable                                      | Missing planned contract; no migration is inferred by reconciliation |
+
+No live relation, policy, migration, type, or runtime reference supports the historical `predictions_next_game` proposal.
+
 ## Frozen boundary pending NEW work
 
 - Do not call the moving-average v0.2 score, the legacy GameScore × characteristic multiplier, or the deleted offline ML × stability output the single canonical SKO model.
