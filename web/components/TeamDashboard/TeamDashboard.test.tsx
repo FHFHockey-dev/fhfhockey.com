@@ -402,6 +402,89 @@ describe("TeamDashboard season and request ownership", () => {
     expect(fromMock).not.toHaveBeenCalled();
   });
 
+  it.each([
+    {
+      label: "partial team ID",
+      teamId: "22suffix",
+      teamAbbrev: "EDM",
+      seasonId: "20242025",
+      message: "Team dashboard requires a valid team selection.",
+    },
+    {
+      label: "non-numeric team ID",
+      teamId: "NaN",
+      teamAbbrev: "EDM",
+      seasonId: "20242025",
+      message: "Team dashboard requires a valid team selection.",
+    },
+    {
+      label: "leading-zero team ID",
+      teamId: "022",
+      teamAbbrev: "EDM",
+      seasonId: "20242025",
+      message: "Team dashboard requires a valid team selection.",
+    },
+    {
+      label: "mismatched known team pair",
+      teamId: "6",
+      teamAbbrev: "EDM",
+      seasonId: "20242025",
+      message: "Team dashboard requires a valid team selection.",
+    },
+    {
+      label: "unknown abbreviation",
+      teamId: "22",
+      teamAbbrev: "XXX",
+      seasonId: "20242025",
+      message: "Team dashboard requires a valid team selection.",
+    },
+    {
+      label: "inherited object key",
+      teamId: "22",
+      teamAbbrev: "toString",
+      seasonId: "20242025",
+      message: "Team dashboard requires a valid team selection.",
+    },
+    {
+      label: "partial season ID",
+      teamId: "22",
+      teamAbbrev: "EDM",
+      seasonId: "20242025suffix",
+      message: "Team dashboard requires a valid season selection.",
+    },
+    {
+      label: "non-numeric season ID",
+      teamId: "22",
+      teamAbbrev: "EDM",
+      seasonId: "not-a-season",
+      message: "Team dashboard requires a valid season selection.",
+    },
+    {
+      label: "non-consecutive season ID",
+      teamId: "22",
+      teamAbbrev: "EDM",
+      seasonId: "20242024",
+      message: "Team dashboard requires a valid season selection.",
+    },
+  ])(
+    "rejects $label before any query",
+    async ({ teamId, teamAbbrev, seasonId, message }) => {
+      useCurrentSeasonQueryMock.mockReturnValue(pendingSeasonQuery());
+
+      render(
+        <TeamDashboard
+          teamId={teamId}
+          teamAbbrev={teamAbbrev}
+          seasonId={seasonId}
+        />,
+      );
+
+      expect(await screen.findByText(message)).toBeTruthy();
+      expect(fromMock).not.toHaveBeenCalled();
+      expect(fetchWithCacheMock).not.toHaveBeenCalled();
+    },
+  );
+
   it("ignores an older request after a team and season change", async () => {
     useCurrentSeasonQueryMock.mockReturnValue(pendingSeasonQuery());
     const older = createDeferred<SummaryResult>();
@@ -471,6 +554,14 @@ describe("TeamDashboard season and request ownership", () => {
     );
 
     expect(await screen.findByText("No standings data available")).toBeTruthy();
+    expect(queries.team_summary_years[0].eq).toHaveBeenCalledWith(
+      "team_id",
+      22,
+    );
+    expect(queries.team_summary_years[0].eq).toHaveBeenCalledWith(
+      "season_id",
+      20242025,
+    );
     for (const query of queries.nst_team_5v5) {
       expect(query.gte).toHaveBeenCalledWith("date", "2024-10-01");
       expect(query.lte).toHaveBeenCalledWith("date", "2025-04-30");

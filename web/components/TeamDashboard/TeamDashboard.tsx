@@ -123,12 +123,25 @@ interface LeagueRankings {
   pp_goals_for_rank: number;
   pp_goals_against_rank: number;
   sh_goals_for_rank: number;
-  team_save_pct_rank: number;
-  team_gaa_rank: number;
-  team_shutouts_rank: number;
   scf_pct_rank: number;
   xgf_rank: number;
   xga_rank: number;
+}
+
+function parsePositiveInteger(value: string | undefined): number | null {
+  if (!value || !/^[1-9]\d*$/.test(value)) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) ? parsed : null;
+}
+
+function parseSeasonId(value: string | undefined): number | null {
+  if (!value || !/^[1-9]\d{7}$/.test(value)) return null;
+  const parsed = Number(value);
+  const startYear = Number(value.slice(0, 4));
+  const endYear = Number(value.slice(4));
+  return Number.isSafeInteger(parsed) && endYear === startYear + 1
+    ? parsed
+    : null;
 }
 
 function formatOrdinal(value: number | null | undefined): string {
@@ -186,8 +199,14 @@ export function TeamDashboard({
     string | null
   >(null);
 
-  const teamInfo = teamsInfo[teamAbbrev];
+  const teamInfo = Object.prototype.hasOwnProperty.call(teamsInfo, teamAbbrev)
+    ? teamsInfo[teamAbbrev]
+    : undefined;
   const franchiseId = teamInfo?.franchiseId;
+  const parsedTeamId = parsePositiveInteger(teamId);
+  const parsedSeasonId = parseSeasonId(effectiveSeasonId);
+  const teamSelectionIsValid =
+    parsedTeamId !== null && teamInfo?.id === parsedTeamId;
   const hasExplicitSeasonId = Boolean(seasonId);
   const seasonLookupIsPending =
     !hasExplicitSeasonId && currentSeasonQuery.isPending;
@@ -227,16 +246,15 @@ export function TeamDashboard({
       setGameRecordsCount(0);
     };
 
-    const fetchTeamData = async () => {
+    const fetchTeamData = async (
+      validatedTeamId: number,
+      validatedSeasonId: number,
+    ) => {
+      const validatedSeasonIdString = validatedSeasonId.toString();
       try {
         setIsLoading(true);
         setError(null);
         clearDashboardData();
-
-        // Type guard to ensure we have a valid season ID
-        if (!effectiveSeasonId) {
-          throw new Error("No valid season ID available");
-        }
 
         // Fetch standings data from team_summary_years for more accurate official stats
         const { data: summaryData, error: summaryError } = await supabase
@@ -257,8 +275,8 @@ export function TeamDashboard({
             power_play_pct
           `,
           )
-          .eq("team_id", parseInt(teamId))
-          .eq("season_id", parseInt(effectiveSeasonId))
+          .eq("team_id", validatedTeamId)
+          .eq("season_id", validatedSeasonId)
           .single();
 
         if (!ownsRequest) return;
@@ -285,7 +303,7 @@ export function TeamDashboard({
           `,
           )
           .eq("team_abbrev", teamAbbrev)
-          .eq("season_id", parseInt(effectiveSeasonId))
+          .eq("season_id", validatedSeasonId)
           .order("date", { ascending: false })
           .limit(1);
 
@@ -305,7 +323,7 @@ export function TeamDashboard({
               : selectedRegularSeasonEndDate.split("T")[0];
         } else {
           // Fallback date ranges based on season ID
-          const seasonYear = parseInt(effectiveSeasonId.slice(0, 4));
+          const seasonYear = Number(validatedSeasonIdString.slice(0, 4));
           startDate = `${seasonYear}-10-01`; // Typical season start
           endDate = includePlayoffs
             ? `${seasonYear + 1}-06-30` // End of playoffs
@@ -351,8 +369,8 @@ export function TeamDashboard({
             sh_goals_against
           `,
           )
-          .eq("team_id", parseInt(teamId))
-          .eq("season_id", parseInt(effectiveSeasonId))
+          .eq("team_id", validatedTeamId)
+          .eq("season_id", validatedSeasonId)
           .order("date", { ascending: false })
           .limit(1);
 
@@ -499,13 +517,13 @@ export function TeamDashboard({
             const today = new Date().toISOString().split("T")[0];
             const regularSeasonEndDate =
               selectedRegularSeasonEndDate?.split("T")[0] ||
-              `${parseInt(effectiveSeasonId.slice(0, 4)) + 1}-04-30`;
+              `${Number(validatedSeasonIdString.slice(0, 4)) + 1}-04-30`;
             const goalieEndDate =
               today < regularSeasonEndDate ? today : regularSeasonEndDate;
             const goalieWindowHasStarted = goalieEndDate >= startDate;
 
             // Fetch team schedule to get total games played
-            const scheduleUrl = `https://api-web.nhle.com/v1/club-schedule-season/${teamAbbrev}/${effectiveSeasonId}`;
+            const scheduleUrl = `https://api-web.nhle.com/v1/club-schedule-season/${teamAbbrev}/${validatedSeasonIdString}`;
             const scheduleResponse = goalieWindowHasStarted
               ? await fetchWithCache(scheduleUrl)
               : { games: [] };
@@ -669,7 +687,7 @@ export function TeamDashboard({
               points
             `,
             )
-            .eq("season_id", parseInt(effectiveSeasonId));
+            .eq("season_id", validatedSeasonId);
 
           if (!ownsRequest) return;
           if (allTeamsError) throw allTeamsError;
@@ -695,7 +713,7 @@ export function TeamDashboard({
               l10_ot_losses
             `,
               )
-              .eq("season_id", parseInt(effectiveSeasonId))
+              .eq("season_id", validatedSeasonId)
               .order("date", { ascending: false })
               .limit(32); // Get latest for each team
 
@@ -741,7 +759,7 @@ export function TeamDashboard({
               sh_goals_for
             `,
               )
-              .eq("season_id", parseInt(effectiveSeasonId))
+              .eq("season_id", validatedSeasonId)
               .order("date", { ascending: false });
 
           if (!ownsRequest) return;
@@ -770,7 +788,7 @@ export function TeamDashboard({
 
             // Extract current team's values
             const currentTeamData = allTeamsSummary.find(
-              (team) => team.team_id === parseInt(teamId),
+              (team) => team.team_id === validatedTeamId,
             );
             const currentTeamStandings = allTeamsStandings?.find(
               (team) => team.team_abbrev === teamAbbrev,
@@ -783,7 +801,7 @@ export function TeamDashboard({
 
             // Get special teams for current team
             const currentTeamSpecialTeams = allTeamsSpecialTeams?.find(
-              (team) => team.team_id === parseInt(teamId),
+              (team) => team.team_id === validatedTeamId,
             );
 
             if (currentTeamData) {
@@ -1065,21 +1083,6 @@ export function TeamDashboard({
                   allShGoalsFor,
                   true,
                 ),
-                team_save_pct_rank: calculateRank(
-                  (goaltendingStats?.save_pct || 0) * 100,
-                  [90, 91, 92, 93],
-                  true,
-                ), // Placeholder - would need league goalie data
-                team_gaa_rank: calculateRank(
-                  goaltendingStats?.gaa || 0,
-                  [2.5, 2.7, 3.0, 3.2],
-                  false,
-                ), // Placeholder - would need league goalie data
-                team_shutouts_rank: calculateRank(
-                  goaltendingStats?.shutouts || 0,
-                  [3, 4, 5, 6],
-                  true,
-                ), // Placeholder - would need league goalie data
                 scf_pct_rank: scfPctRank,
                 xgf_rank: xgfRank,
                 xga_rank: xgaRank,
@@ -1120,7 +1123,15 @@ export function TeamDashboard({
       return;
     }
 
-    if (!teamId || !teamAbbrev) {
+    if (parsedSeasonId === null) {
+      clearDashboardData();
+      setIsLoading(false);
+      setError("Team dashboard requires a valid season selection.");
+      setSettledRequestIdentity(requestIdentity);
+      return;
+    }
+
+    if (!teamSelectionIsValid || parsedTeamId === null) {
       clearDashboardData();
       setIsLoading(false);
       setError("Team dashboard requires a valid team selection.");
@@ -1128,7 +1139,7 @@ export function TeamDashboard({
       return;
     }
 
-    void fetchTeamData();
+    void fetchTeamData(parsedTeamId, parsedSeasonId);
     return () => {
       ownsRequest = false;
     };
@@ -1138,12 +1149,15 @@ export function TeamDashboard({
     effectiveSeasonId,
     franchiseId,
     includePlayoffs,
+    parsedSeasonId,
+    parsedTeamId,
     requestIdentity,
     seasonLookupIsError,
     seasonLookupIsPending,
     selectedRegularSeasonEndDate,
     selectedRegularSeasonStartDate,
     selectedSeasonEndDate,
+    teamSelectionIsValid,
   ]);
 
   const formatStreak = (code: string, count: number) => {
@@ -1220,9 +1234,6 @@ export function TeamDashboard({
       scf_pct: leagueRankings.scf_pct_rank,
       xgf: leagueRankings.xgf_rank,
       xga: leagueRankings.xga_rank,
-      team_save_pct: leagueRankings.team_save_pct_rank,
-      team_gaa: leagueRankings.team_gaa_rank,
-      team_shutouts: leagueRankings.team_shutouts_rank,
     };
 
     return rankMap[statName] || 16; // Default to middle if stat not found
