@@ -350,15 +350,10 @@ export const useTeamSchedule = (
           standingsDetails: null,
         });
 
-        console.log("🔍 Fetching schedule from database:", {
-          teamId: validatedTeamId,
-          seasonId: validatedSeasonId,
-        });
-
         // Fetch games where the team is either home or away
         const { data: gamesData, error: gamesError } = await supabase
           .from("games")
-          .select("*")
+          .select("id,seasonId,type,date,startTime,homeTeamId,awayTeamId")
           .eq("seasonId", validatedSeasonId)
           .or(
             `homeTeamId.eq.${validatedTeamId},awayTeamId.eq.${validatedTeamId}`,
@@ -366,177 +361,179 @@ export const useTeamSchedule = (
           .order("date", { ascending: true });
 
         if (!ownsRequest) return;
-        if (gamesError) {
-          console.error("❌ Error fetching games:", gamesError);
-          throw gamesError;
-        }
-
-        console.log("✅ Fetched games from DB:", gamesData?.length || 0);
+        if (gamesError) throw gamesError;
 
         // Transform database games to match the expected interface
-        const transformedGames: ScheduleGame[] = (gamesData || []).map(
-          (game) => {
-            const gameSeasonId = Number(game.seasonId);
-            const homeTeamInfo = resolveScheduleGameTeamIdentity(
-              game.homeTeamId,
-              gameSeasonId,
-            );
-            const awayTeamInfo = resolveScheduleGameTeamIdentity(
-              game.awayTeamId,
-              gameSeasonId,
-            );
+        const baseGames: ScheduleGame[] = (gamesData || []).map((game) => {
+          const gameSeasonId = Number(game.seasonId);
+          const homeTeamInfo = resolveScheduleGameTeamIdentity(
+            game.homeTeamId,
+            gameSeasonId,
+          );
+          const awayTeamInfo = resolveScheduleGameTeamIdentity(
+            game.awayTeamId,
+            gameSeasonId,
+          );
 
-            return {
-              id: Number(game.id),
-              season: Number(game.seasonId),
-              gameType: game.type || 2, // Regular season default
-              gameDate: game.date,
-              venue: {
-                default: "TBD", // Would need venue lookup
+          return {
+            id: Number(game.id),
+            season: Number(game.seasonId),
+            gameType: game.type || 2, // Regular season default
+            gameDate: game.date,
+            venue: {
+              default: "TBD", // Would need venue lookup
+            },
+            startTimeUTC: game.startTime,
+            easternUTCOffset: "-05:00",
+            venueUTCOffset: "-05:00",
+            tvBroadcasts: [],
+            gameState: "UNKNOWN", // We'll determine this from date and scores
+            gameScheduleState: "OK",
+            homeTeam: {
+              id: game.homeTeamId,
+              placeName: {
+                default: homeTeamInfo?.name || `Team ${game.homeTeamId}`,
               },
-              startTimeUTC: game.startTime,
-              easternUTCOffset: "-05:00",
-              venueUTCOffset: "-05:00",
-              tvBroadcasts: [],
-              gameState: "UNKNOWN", // We'll determine this from date and scores
-              gameScheduleState: "OK",
-              homeTeam: {
-                id: game.homeTeamId,
-                placeName: {
-                  default: homeTeamInfo?.name || `Team ${game.homeTeamId}`,
-                },
-                abbrev:
-                  homeTeamInfo?.abbreviation || `T${game.homeTeamId}`,
-                logo: "",
-                darkLogo: "",
+              abbrev: homeTeamInfo?.abbreviation || `T${game.homeTeamId}`,
+              logo: "",
+              darkLogo: "",
+            },
+            awayTeam: {
+              id: game.awayTeamId,
+              placeName: {
+                default: awayTeamInfo?.name || `Team ${game.awayTeamId}`,
               },
-              awayTeam: {
-                id: game.awayTeamId,
-                placeName: {
-                  default: awayTeamInfo?.name || `Team ${game.awayTeamId}`,
-                },
-                abbrev:
-                  awayTeamInfo?.abbreviation || `T${game.awayTeamId}`,
-                logo: "",
-                darkLogo: "",
-              },
-            };
-          },
-        );
+              abbrev: awayTeamInfo?.abbreviation || `T${game.awayTeamId}`,
+              logo: "",
+              darkLogo: "",
+            },
+          };
+        });
+
+        setState({
+          identity: requestIdentity,
+          games: baseGames,
+          loading: false,
+          error: null,
+          record: null,
+          standingsDetails: null,
+        });
 
         // Fetch game scores from teamGameStats
-        const gameIds = transformedGames.map((g) => g.id);
+        let nextGames = baseGames;
+        const gameIds = baseGames.map((game) => game.id);
         if (gameIds.length > 0) {
-          const { data: gameStatsData, error: gameStatsError } = await supabase
-            .from("teamGameStats")
-            .select("*")
-            .in("gameId", gameIds);
+          try {
+            const { data: gameStatsData, error: gameStatsError } =
+              await supabase
+                .from("teamGameStats")
+                .select("gameId,teamId,score")
+                .in("gameId", gameIds);
 
-          if (!ownsRequest) return;
-          if (gameStatsError) {
-            console.warn("⚠️ Error fetching game stats:", gameStatsError);
-          } else {
-            // Add scores to games
-            transformedGames.forEach((game) => {
+            if (!ownsRequest) return;
+            if (gameStatsError) throw gameStatsError;
+            nextGames = baseGames.map((game) => {
               const homeStats = gameStatsData?.find(
                 (stat) =>
-                  stat.gameId === game.id &&
-                  stat.teamId === game.homeTeam.id,
+                  stat.gameId === game.id && stat.teamId === game.homeTeam.id,
               );
               const awayStats = gameStatsData?.find(
                 (stat) =>
-                  stat.gameId === game.id &&
-                  stat.teamId === game.awayTeam.id,
+                  stat.gameId === game.id && stat.teamId === game.awayTeam.id,
               );
 
               if (homeStats && awayStats) {
-                game.homeTeamScore = homeStats.score;
-                game.awayTeamScore = awayStats.score;
-                game.gameState = "FINAL";
-              } else {
-                // Check if game is in the future
-                const gameDate = new Date(game.gameDate);
-                const today = new Date();
-                game.gameState = gameDate > today ? "FUT" : "UNKNOWN";
+                return {
+                  ...game,
+                  homeTeamScore: homeStats.score,
+                  awayTeamScore: awayStats.score,
+                  gameState: "FINAL",
+                };
               }
+
+              const gameDate = new Date(game.gameDate);
+              return {
+                ...game,
+                gameState: gameDate > new Date() ? "FUT" : "UNKNOWN",
+              };
             });
+
+            setState((currentState) =>
+              currentState.identity === requestIdentity
+                ? { ...currentState, games: nextGames }
+                : currentState,
+            );
+          } catch {
+            if (!ownsRequest) return;
+            console.warn("Unable to enrich team schedule scores.");
           }
         }
 
         let nextRecord: TeamRecord | null = null;
         let nextStandingsDetails: TeamStandingsDetails | null = null;
         if (recordAsOfDateIsValid) {
-          let standingsQuery = supabase
-            .from("nhl_standings_details")
-            .select(
-              "season_id,date,team_abbrev,home_wins,home_losses,home_ot_losses,home_games_played,road_wins,road_losses,road_ot_losses,road_games_played,wins,losses,ot_losses,points,games_played,goal_differential,goal_for,goal_against,streak_code,streak_count,l10_wins,l10_losses,l10_ot_losses,l10_games_played,l10_points,l10_goal_differential,home_goals_for,home_goals_against,road_goals_for,road_goals_against,league_sequence,regulation_wins,regulation_plus_ot_wins,shootout_wins",
-            )
-            .eq("season_id", validatedSeasonId)
-            .eq("team_abbrev", validatedTeamAbbreviation);
+          try {
+            let standingsQuery = supabase
+              .from("nhl_standings_details")
+              .select(
+                "season_id,date,team_abbrev,home_wins,home_losses,home_ot_losses,home_games_played,road_wins,road_losses,road_ot_losses,road_games_played,wins,losses,ot_losses,points,games_played,goal_differential,goal_for,goal_against,streak_code,streak_count,l10_wins,l10_losses,l10_ot_losses,l10_games_played,l10_points,l10_goal_differential,home_goals_for,home_goals_against,road_goals_for,road_goals_against,league_sequence,regulation_wins,regulation_plus_ot_wins,shootout_wins",
+              )
+              .eq("season_id", validatedSeasonId)
+              .eq("team_abbrev", validatedTeamAbbreviation);
 
-          if (validatedRecordAsOfDate !== null) {
-            standingsQuery = standingsQuery.lte(
-              "date",
-              validatedRecordAsOfDate,
-            );
-          }
+            if (validatedRecordAsOfDate !== null) {
+              standingsQuery = standingsQuery.lte(
+                "date",
+                validatedRecordAsOfDate,
+              );
+            }
 
-          const { data: standingsData, error: standingsError } =
-            await standingsQuery.order("date", { ascending: false }).limit(1);
+            const { data: standingsData, error: standingsError } =
+              await standingsQuery.order("date", { ascending: false }).limit(1);
 
-          if (!ownsRequest) return;
-          if (standingsError) {
-            console.warn(
-              "⚠️ Error fetching standings for record:",
-              standingsError,
-            );
-          } else if (standingsData && standingsData.length > 0) {
-            const latestStandings = standingsData[0];
-            nextStandingsDetails = latestStandings as TeamStandingsDetails;
-            nextRecord = {
-              wins: latestStandings.wins ?? 0,
-              losses: latestStandings.losses ?? 0,
-              otLosses: latestStandings.ot_losses ?? 0,
-              points: latestStandings.points ?? 0,
-              regulationWins: latestStandings.regulation_wins ?? 0,
-              overtimeWins:
-                (latestStandings.regulation_plus_ot_wins ?? 0) -
-                (latestStandings.regulation_wins ?? 0),
-              shootoutWins: latestStandings.shootout_wins ?? 0,
-            };
+            if (!ownsRequest) return;
+            if (standingsError) throw standingsError;
+            if (standingsData && standingsData.length > 0) {
+              const latestStandings = standingsData[0];
+              nextStandingsDetails = latestStandings as TeamStandingsDetails;
+              nextRecord = {
+                wins: latestStandings.wins ?? 0,
+                losses: latestStandings.losses ?? 0,
+                otLosses: latestStandings.ot_losses ?? 0,
+                points: latestStandings.points ?? 0,
+                regulationWins: latestStandings.regulation_wins ?? 0,
+                overtimeWins:
+                  (latestStandings.regulation_plus_ot_wins ?? 0) -
+                  (latestStandings.regulation_wins ?? 0),
+                shootoutWins: latestStandings.shootout_wins ?? 0,
+              };
+            }
+          } catch {
+            if (!ownsRequest) return;
+            console.warn("Unable to enrich team schedule standings.");
           }
         }
 
         if (!ownsRequest) return;
         setState({
           identity: requestIdentity,
-          games: transformedGames,
+          games: nextGames,
           loading: false,
           error: null,
           record: nextRecord,
           standingsDetails: nextStandingsDetails,
         });
-      } catch (err) {
+      } catch {
         if (!ownsRequest) return;
-        console.error("❌ Error in fetchScheduleFromDb:", err);
+        console.error("Unable to load team schedule.");
         setState({
           identity: requestIdentity,
           games: [],
           loading: false,
-          error:
-            err instanceof Error
-              ? err.message
-              : "Failed to fetch schedule from database",
+          error: "Schedule unavailable.",
           record: null,
           standingsDetails: null,
         });
-      } finally {
-        if (!ownsRequest) return;
-        setState((currentState) =>
-          currentState.identity === requestIdentity && currentState.loading
-            ? { ...currentState, loading: false }
-            : currentState,
-        );
       }
     };
 

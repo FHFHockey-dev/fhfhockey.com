@@ -840,12 +840,15 @@ describe("useTeamSchedule", () => {
 
     rerender({ teamAbbr: "BOS", teamId: "6" });
     await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.error).toBe("new request failed");
+    expect(result.current.error).toBe("Schedule unavailable.");
+    expect(result.current.error).not.toContain("new request failed");
+    expect(console.error).toHaveBeenCalledOnce();
+    expect(console.error).toHaveBeenCalledWith("Unable to load team schedule.");
 
     act(() => olderGames.resolve({ data: [gameFixture()], error: null }));
     await act(async () => Promise.resolve());
 
-    expect(result.current.error).toBe("new request failed");
+    expect(result.current.error).toBe("Schedule unavailable.");
     expect(result.current.games).toEqual([]);
     expect(result.current.loading).toBe(false);
     expect(
@@ -907,6 +910,51 @@ describe("useTeamSchedule", () => {
     expect(result.current.games).toEqual([]);
   });
 
+  it("publishes exact-column core games before optional enrichment settles", async () => {
+    useCurrentSeasonQueryMock.mockReturnValue(pendingSeasonQuery());
+    const scores = createDeferred<QueryResult>();
+    const queries = installTableResults({
+      games: [{ data: [gameFixture()], error: null }],
+      teamGameStats: [scores.promise],
+      nhl_standings_details: [emptyResult],
+    });
+
+    const { result } = renderHook(() =>
+      useTeamSchedule("EDM", "20242025", "22"),
+    );
+
+    await waitFor(() => expect(queries.teamGameStats[0].in).toHaveBeenCalled());
+    expect(result.current.loading).toBe(false);
+    expect(result.current.games).toHaveLength(1);
+    expect(result.current.games[0].gameState).toBe("UNKNOWN");
+    expect(queries.games[0].select).toHaveBeenCalledWith(
+      "id,seasonId,type,date,startTime,homeTeamId,awayTeamId",
+    );
+    expect(queries.teamGameStats[0].select).toHaveBeenCalledWith(
+      "gameId,teamId,score",
+    );
+    expect(
+      fromMock.mock.calls.some(([table]) => table === "nhl_standings_details"),
+    ).toBe(false);
+
+    act(() =>
+      scores.resolve({
+        data: [
+          { gameId: 2024020001, teamId: 22, score: 4 },
+          { gameId: 2024020001, teamId: 6, score: 2 },
+        ],
+        error: null,
+      }),
+    );
+
+    await waitFor(() =>
+      expect(result.current.games[0].gameState).toBe("FINAL"),
+    );
+    expect(result.current.games[0].homeTeamScore).toBe(4);
+    expect(result.current.games[0].awayTeamScore).toBe(2);
+    expect(result.current.loading).toBe(false);
+  });
+
   it("retains games but no record when optional enrichment queries fail", async () => {
     useCurrentSeasonQueryMock.mockReturnValue(pendingSeasonQuery());
     const scoreError = new Error("score lookup failed");
@@ -927,5 +975,13 @@ describe("useTeamSchedule", () => {
     expect(result.current.error).toBeNull();
     expect(result.current.record).toBeNull();
     expect(console.warn).toHaveBeenCalledTimes(2);
+    expect(console.warn).toHaveBeenNthCalledWith(
+      1,
+      "Unable to enrich team schedule scores.",
+    );
+    expect(console.warn).toHaveBeenNthCalledWith(
+      2,
+      "Unable to enrich team schedule standings.",
+    );
   });
 });
