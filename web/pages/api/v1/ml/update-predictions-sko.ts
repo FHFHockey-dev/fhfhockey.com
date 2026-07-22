@@ -557,6 +557,7 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
       horizon,
       players: playerIds.length,
       upserts,
+      rowsUpserted: upserts,
       ...runDiagnostics,
       duration: `${durationSec}s`,
       message: `Refreshed sKO predictions for ${playerIds.length} skaters (${upserts} rows) as of ${asOfDate} in ${durationSec}s`,
@@ -566,6 +567,7 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
     if (isPredictionsSkoDependencyError(error)) {
       return res.status(error.statusCode).json({
         success: false,
+        rowsUpserted: 0,
         message: error.issue.message,
         prerequisite: error.issue,
         dependencyError: {
@@ -588,6 +590,7 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
     console.error("update-predictions-sko error", error?.message ?? error);
     return res.status(500).json({
       success: false,
+      rowsUpserted: runDiagnostics?.write.upsertedRows ?? 0,
       message: dependencyError.message,
       dependencyError,
       ...(runDiagnostics ?? {}),

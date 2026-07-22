@@ -162,10 +162,74 @@ describe("/api/v1/ml/get-predictions-sko", () => {
         earliestAsOfDate: "2026-03-19",
         latestAsOfDate: "2026-03-19",
         latestUpdatedAt: "2026-03-19T10:00:00Z",
+        ageDaysFromToday: expect.any(Number),
       },
     });
     expect(res.headers["Cache-Control"]).toBe(
       "s-maxage=60, stale-while-revalidate=300",
     );
+  });
+
+  it("returns an explicit complete empty page", async () => {
+    const query = createQuery({ data: [], error: null, count: 0 });
+    serverReadonlyClientMock.from.mockReturnValue(query);
+    const req: any = { method: "GET", query: {} };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      count: 0,
+      rows: [],
+      partial: false,
+      coverage: { returned: 0, total: 0 },
+      pagination: {
+        page: 1,
+        pageSize: 500,
+        total: 0,
+        hasPrevious: false,
+        hasMore: false,
+      },
+      freshness: {
+        scope: "page",
+        earliestAsOfDate: null,
+        latestAsOfDate: null,
+        latestUpdatedAt: null,
+        ageDaysFromToday: null,
+      },
+    });
+  });
+
+  it("keeps raw dependency details out of the public error contract and sanitizes logs", async () => {
+    const query = createQuery({
+      data: [],
+      error: {
+        message:
+          "select failed at https://example.supabase.co/rest/v1 with Bearer fake-token",
+      },
+      count: null,
+    });
+    serverReadonlyClientMock.from.mockReturnValue(query);
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const req: any = { method: "GET", query: {} };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({
+      success: false,
+      code: "prediction_data_unavailable",
+      error: "Prediction data is temporarily unavailable.",
+    });
+    const logged = JSON.stringify(consoleError.mock.calls);
+    expect(logged).toContain("[redacted-url]");
+    expect(logged).toContain("Bearer [redacted]");
+    expect(logged).not.toContain("fake-token");
+    expect(logged).not.toContain("example.supabase.co");
   });
 });

@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
+import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import serverReadonlyClient from "lib/supabase/serverReadonly";
 
 const DEFAULT_PAGE_SIZE = 500;
@@ -12,19 +13,19 @@ function parseString(value: unknown): string | undefined {
 }
 
 function parseIso(value: unknown, name: string): string | undefined {
-  value = parseString(value);
-  if (!value) return undefined;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+  const parsedValue = parseString(value);
+  if (!parsedValue) return undefined;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(parsedValue)) {
     throw new InvalidQueryError(`${name} must be a YYYY-MM-DD date.`);
   }
-  const parsed = new Date(`${value}T00:00:00.000Z`);
+  const parsed = new Date(`${parsedValue}T00:00:00.000Z`);
   if (
     Number.isNaN(parsed.getTime()) ||
-    parsed.toISOString().slice(0, 10) !== value
+    parsed.toISOString().slice(0, 10) !== parsedValue
   ) {
     throw new InvalidQueryError(`${name} must be a real YYYY-MM-DD date.`);
   }
-  return value;
+  return parsedValue;
 }
 
 function parsePositiveInt(
@@ -203,10 +204,13 @@ export default async function handler(
     if (err instanceof InvalidQueryError) {
       return res.status(400).json({ success: false, error: err.message });
     }
+    const dependencyError = normalizeDependencyError(err);
     // eslint-disable-next-line no-console
-    console.error("get-predictions-sko error", err?.message || err);
-    return res
-      .status(500)
-      .json({ success: false, error: err?.message || String(err) });
+    console.error("get-predictions-sko dependency error", dependencyError);
+    return res.status(500).json({
+      success: false,
+      code: "prediction_data_unavailable",
+      error: "Prediction data is temporarily unavailable.",
+    });
   }
 }

@@ -125,6 +125,7 @@ describe("/api/v1/ml/update-predictions-sko", () => {
 
     expect(res.statusCode).toBe(424);
     expect(res.body.success).toBe(false);
+    expect(res.body.rowsUpserted).toBe(0);
     expect(res.body.prerequisite).toEqual(issue);
     expect(res.body.dependencyError.message).toBe(issue.message);
   });
@@ -215,6 +216,7 @@ describe("/api/v1/ml/update-predictions-sko", () => {
       success: true,
       players: 1,
       upserts: 1,
+      rowsUpserted: 1,
       partial: true,
       model: { name: "baseline-moving-average", version: "v0.2" },
       coverage: {
