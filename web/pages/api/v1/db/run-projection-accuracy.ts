@@ -41,6 +41,16 @@ type AccuracyResultRow = {
   created_at: string;
 };
 
+type SkaterActualMatchDiagnostics = {
+  projectionRows: number;
+  eligibleSameDateRows: number;
+  matchedActualRows: number;
+  missingActualRows: number;
+  wrongDateRows: number;
+  invalidIdentityRows: number;
+  actualMatchRate: number | null;
+};
+
 type AggregateStats = {
   accuracy_avg: number;
   mae: number;
@@ -257,6 +267,52 @@ type MetricComparison = {
 
 const DEFAULT_OFFSET_DAYS = 1;
 const DEFAULT_RANGE_BUDGET_MS = 240_000;
+
+export function buildSkaterActualMatchDiagnostics(args: {
+  playerProjections: Array<Record<string, unknown>>;
+  validGameIds: ReadonlySet<number>;
+  skaterActuals: ReadonlyMap<string, unknown>;
+}): SkaterActualMatchDiagnostics {
+  let eligibleSameDateRows = 0;
+  let matchedActualRows = 0;
+  let wrongDateRows = 0;
+  let invalidIdentityRows = 0;
+
+  for (const row of args.playerProjections) {
+    const gameId = Number(row.game_id);
+    const playerId = Number(row.player_id);
+    if (
+      row.game_id == null ||
+      row.player_id == null ||
+      !Number.isFinite(gameId) ||
+      !Number.isFinite(playerId)
+    ) {
+      invalidIdentityRows += 1;
+      continue;
+    }
+    if (!args.validGameIds.has(gameId)) {
+      wrongDateRows += 1;
+      continue;
+    }
+    eligibleSameDateRows += 1;
+    if (args.skaterActuals.has(`${gameId}:${playerId}`)) {
+      matchedActualRows += 1;
+    }
+  }
+
+  return {
+    projectionRows: args.playerProjections.length,
+    eligibleSameDateRows,
+    matchedActualRows,
+    missingActualRows: eligibleSameDateRows - matchedActualRows,
+    wrongDateRows,
+    invalidIdentityRows,
+    actualMatchRate:
+      eligibleSameDateRows > 0
+        ? matchedActualRows / eligibleSameDateRows
+        : null,
+  };
+}
 const BATCH_SIZE = 800;
 const GOALIE_LAUNCH_GATE_THRESHOLDS = {
   min_sample_count_30d: 100,
@@ -1525,6 +1581,7 @@ async function runAccuracyForDate(
   skaterRows: number;
   goalieRows: number;
   totalRows: number;
+  skaterActualMatchDiagnostics: SkaterActualMatchDiagnostics;
   goalieMatchDiagnostics: {
     goalieProjectionCount: number;
     goalieActualCount: number;
@@ -1589,6 +1646,11 @@ async function runAccuracyForDate(
   const skaterActuals = await fetchSkaterActualsByPlayerDate({
     actualDate,
     playerIds: projectedPlayerIds,
+  });
+  const skaterActualMatchDiagnostics = buildSkaterActualMatchDiagnostics({
+    playerProjections,
+    validGameIds,
+    skaterActuals,
   });
 
   const skaterResults: AccuracyResultRow[] = [];
@@ -2238,6 +2300,7 @@ async function runAccuracyForDate(
   const calibrationSummary = {
     actual_date: actualDate,
     projection_date: projectionDate,
+    skater_actual_match_diagnostics: skaterActualMatchDiagnostics,
     skater: skaterCoverageSummary,
     skater_role_bucket_diagnostics: skaterRoleBucketDiagnostics,
     skater_role_bucket_interval_calibration_diagnostics:
@@ -2280,6 +2343,7 @@ async function runAccuracyForDate(
     skaterRows: skaterResults.length,
     goalieRows: goalieResults.length,
     totalRows: allResults.length,
+    skaterActualMatchDiagnostics,
     goalieMatchDiagnostics: {
       goalieProjectionCount: goalieProjectionRows.length,
       goalieActualCount,
@@ -2542,6 +2606,10 @@ export default withCronJobAudit(
           status: result.totalRows > 0 ? "ready" : "empty",
           rowCounts: {
             skaterRows: result.skaterRows,
+            skaterEligibleRows:
+              result.skaterActualMatchDiagnostics.eligibleSameDateRows,
+            skaterMissingActualRows:
+              result.skaterActualMatchDiagnostics.missingActualRows,
             goalieRows: result.goalieRows,
             totalRows: result.totalRows,
           },
@@ -2555,6 +2623,7 @@ export default withCronJobAudit(
         skaterRows: result.skaterRows,
         goalieRows: result.goalieRows,
         totalRows: result.totalRows,
+        skaterActualMatchDiagnostics: result.skaterActualMatchDiagnostics,
         goalieMatchDiagnostics: result.goalieMatchDiagnostics,
         goalieHoldoutComparison: result.goalieHoldoutComparison,
         goalieStatDiagnostics: result.goalieStatDiagnostics,

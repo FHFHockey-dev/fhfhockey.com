@@ -30,7 +30,7 @@ vi.mock("../../../../../pages/api/v1/db/run-projection-v2", () => ({
   runProjectionPreflightChecks: runProjectionPreflightChecksMock
 }));
 
-import handler from "../../../../../pages/api/v1/db/run-projection-accuracy";
+import handler, { buildSkaterActualMatchDiagnostics } from "../../../../../pages/api/v1/db/run-projection-accuracy";
 
 function createMockRes() {
   const res: any = {
@@ -159,5 +159,28 @@ describe("/api/v1/db/run-projection-accuracy", () => {
         "Projection freshness checks failed. Resolve upstream dependencies or use bypassPreflight=true to override."
     });
     expect(requireLatestSucceededRunIdMock).not.toHaveBeenCalled();
+  });
+
+  it("reports selected-run actual coverage without counting wrong-date projections", () => {
+    const diagnostics = buildSkaterActualMatchDiagnostics({
+      playerProjections: [
+        { game_id: 1, player_id: 10 },
+        { game_id: 1, player_id: 11 },
+        { game_id: 2, player_id: 12 },
+        { game_id: 1, player_id: null },
+      ],
+      validGameIds: new Set([1]),
+      skaterActuals: new Map([["1:10", { shots: 3 }]]),
+    });
+
+    expect(diagnostics).toEqual({
+      projectionRows: 4,
+      eligibleSameDateRows: 2,
+      matchedActualRows: 1,
+      missingActualRows: 1,
+      wrongDateRows: 1,
+      invalidIdentityRows: 1,
+      actualMatchRate: 0.5,
+    });
   });
 });
