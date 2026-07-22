@@ -1,5 +1,7 @@
 # sKO Predictive Modeling Plan 
 
+> **Historical implementation status (2026-07-22):** The local `web/scripts/modeling/*` implementation described below was deliberately removed by commit `abbc01e8c5dc99e1544594e0c72bdecd0a013ea8`. Retained output artifacts and `functions/lib/sko_pipeline.py` do not prove that those stages remain executable. Use `sko-ownership-contract.md` and the reconciled task list for current ownership; restore or replace the pipeline only through NEW 9.3.
+
 ## What We’re Trying To Do
 - Predict which skaters will keep scoring well (points production) using past seasons and early-season data.
 - Turn those predictions into a simple, single number called sKO: the Sustainability K‑Value Outlook.
@@ -159,4 +161,3 @@
 - Avoid leaking future info: all features for a given prediction must come from data before that prediction date.
 - Use time‑series cross‑validation (forward chaining) and group by player to avoid overfitting individuals.
 - Start with ElasticNet/GBM — simple, strong, and transparent — then consider a small neural net if it clearly helps.
-

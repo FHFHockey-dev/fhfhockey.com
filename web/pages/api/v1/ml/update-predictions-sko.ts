@@ -7,7 +7,7 @@ import {
   assertPredictionsSkoPrerequisites,
   isPredictionsSkoDependencyError
 } from "lib/ml/predictionsSkoDependencyChecks";
-import serviceRoleClient from "lib/supabase/server";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 /**
  * Query params:
@@ -39,8 +39,6 @@ const DEFAULT_STABILITY_WINDOW = 10;
 const DEFAULT_HORIZON = 5;
 const MAX_GAMES_PER_PLAYER = 60;
 const UPSERT_BATCH_SIZE = 200;
-
-// Removed admin-only middleware; this route now runs unauthenticated
 
 function parseString(value: unknown): string | undefined {
   if (Array.isArray(value)) return value[0];
@@ -214,7 +212,11 @@ function buildPredictionRecord(
   } satisfies PredictionsInsert;
 }
 
-const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+type RequestWithSupabase = NextApiRequest & {
+  supabase: SupabaseClient<Database>;
+};
+
+const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
   const startWall = Date.now();
   const startHr = process.hrtime.bigint();
   const debugParam = (req.query?.debug ?? (req.body as any)?.debug) as
@@ -234,8 +236,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       .json({ success: false, message: "Method not allowed" });
   }
 
-  // Use service role client directly (unauthenticated route)
-  const admin = serviceRoleClient;
+  const admin = req.supabase;
 
   try {
     const body =
@@ -446,6 +447,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default withCronJobAudit(handler, {
+export default withCronJobAudit(adminOnly(handler as any), {
   jobName: "update-predictions-sko"
 });

@@ -5172,14 +5172,14 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [ ] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0050` (original L82) — 8.4 Record older proposed views/tables as merged, superseded, or deferred and update both PRDs plus master records.
 - [ ] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0051` (original L86) — NEW 9.0 Append every verified defect, data gap, manual dependency, open model question, and optimization discovered during execution here before closure.
 
-### Source: `tasks/TASKS/sko-charts/tasks-prd-sko-charts.md` (53 rows)
+### Source: `tasks/TASKS/sko-charts/tasks-prd-sko-charts.md` (58 rows)
 
 - [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0001` (original L32) — 1.0 Reconcile sKO definition, ownership, and route/data contracts
-- [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0002` (original L33) — 1.1 Map both PRDs, modeling notes, burn-down plan, Sustainability, Trends, and current code into one ownership matrix.
-- [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0003` (original L34) — 1.2 Mark `prd-sko.md` superseded for production score definition while preserving its research requirements under Sustainability/Trends.
+- [x] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0002` (original L33) — 1.1 Map both PRDs, modeling notes, burn-down plan, Sustainability, Trends, and current code into one ownership matrix. Evidence: `sko-ownership-contract.md` records the bounded ownership/classification matrix (2026-07-22).
+- [x] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0003` (original L34) — 1.2 Mark `prd-sko.md` superseded for production score definition while preserving its research requirements under Sustainability/Trends. Evidence: residual-P/60 remains superseded research assigned to Sustainability/Trends, not the live writer (2026-07-22).
 - [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0004` (original L35) — 1.3 Freeze the current contract: GameScore, per-game characteristic value, rolling CV window, empirical/fallback thresholds, smooth `[0.8,1.0]` confidence multiplier, and stability-adjusted score.
 - [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0005` (original L36) — 1.4 Define canonical grains, identifiers, as-of date, model version, horizon, provenance, freshness, and fallback semantics for predictions and metrics.
-- [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0006` (original L37) — 1.5 Verify active consumers use the canonical API/data contract and append legacy direct-table consumers as remediation/quarantine tasks.
+- [x] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0006` (original L37) — 1.5 Verify active consumers use the canonical API/data contract and append legacy direct-table consumers as remediation/quarantine tasks. Evidence: supported Trends owns rolling/FORGE; the unmounted SKO reader/UI bundle remains quarantined under NEW 9.4 (2026-07-22).
 - [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0007` (original L39) — 2.0 Verify and finish source-stat, prediction, and metrics persistence
 - [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0008` (original L40) — 2.1 Reconcile live schemas/migrations for `sko_skater_stats`, `sko_skater_years`, `predictions_sko`, and `predictions_sko_metrics` with generated types and code.
 - [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0009` (original L41) — 2.2 Apply or repair missing migrations through the Supabase workflow, including RLS/API exposure appropriate to admin writers and read-only consumers.
@@ -5227,6 +5227,11 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0051` (original L89) — 8.4 Verify no secrets/local absolute paths are committed and generated artifacts are intentional and bounded.
 - [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0052` (original L90) — 8.5 Synchronize both PRDs, modeling notes, burn-down plan, this list, and master ledger with final evidence.
 - [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0053` (original L94) — NEW 9.0 Append every verified defect, manual/provider dependency, model question, and optimization discovered during execution here before closure.
+- [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0054` (live NEW) — NEW 9.1 **P0 public privileged prediction writer:** fail-close `/api/v1/ml/update-predictions-sko` behind the shared admin/cron boundary and prove missing/invalid credentials cannot reach prerequisites or writes.
+- [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0055` (live NEW) — NEW 9.2 **P1 production-score contract split:** reconcile the live moving-average v0.2 writer, quarantined GameScore/characteristic-value utilities, and offline ML × stability path under an honest versioned ownership decision.
+- [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0056` (live NEW) — NEW 9.3 **P1 documented modeling pipeline is absent:** reconcile burn-down commit `abbc01e8c5dc99e1544594e0c72bdecd0a013ea8`, the remaining external HTTP orchestrator, retained artifacts, and stale executable-owner claims.
+- [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0057` (live NEW) — NEW 9.4 **P2 prediction reader/UI is orphaned from supported Trends:** keep the unreferenced reader bundle quarantined or deliberately reintegrate it only after model/data promotion.
+- [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0058` (live NEW) — NEW 9.5 **P0 public privileged SKO source-ingest writer:** fail-close `/api/v1/db/update-sko-stats` behind the shared admin/cron boundary and prove missing/invalid credentials cannot reach source or write work.
 
 ### Source: `tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md` (50 rows)
 

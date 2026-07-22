@@ -25,6 +25,7 @@ import {
   WGOToiSkaterStat,
   WGOSkaterStat
 } from "lib/NHL/types";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 /**
  * Query params:
@@ -1775,6 +1776,15 @@ async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  if (req.method !== "GET" && req.method !== "POST") {
+    res.setHeader("Allow", ["GET", "POST"]);
+    res.status(405).json({
+      message: `Method ${req.method ?? "unknown"} Not Allowed`,
+      success: false
+    });
+    return;
+  }
+
   try {
     const dateParam = req.query.date;
     const playerIdParam = req.query.playerId;
@@ -1886,4 +1896,4 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

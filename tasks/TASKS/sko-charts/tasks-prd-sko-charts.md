@@ -5,6 +5,7 @@
 - `tasks/TASKS/sko-charts/prd-sko-charts.md` - Current stability-CV sKO product/model PRD.
 - `tasks/TASKS/sko-charts/prd-sko.md` - Earlier residual-P/60 sustainability concept retained as research input.
 - `tasks/TASKS/sko-charts/sko-modeling-notes.md` - Modeling analysis and embedded checklist.
+- `tasks/TASKS/sko-charts/sko-ownership-contract.md` - Reconciled PRD/runtime/formula/data/consumer/caller ownership matrix and promotion boundary.
 - `tasks/TASKS/dead-code-cleanup/burn-down-plan.md` - Legacy SKO simplification and retirement scope merged here.
 - `web/pages/skoCharts.tsx` - Quarantined legacy route.
 - `web/pages/trends/index.tsx` - Current prediction leaderboard and Trends entry surface.
@@ -14,15 +15,15 @@
 - `web/pages/api/v1/db/update-sko-stats.ts` - SKO source-stat ingestion route.
 - `web/lib/supabase/utils/statistics.ts` - Characteristic-value, threshold, rolling, and confidence helpers.
 - `web/lib/supabase/utils/calculations.ts` - Stable baseline GameScore calculation.
-- `web/scripts/modeling/` - Backfill, training, scoring, upload, and artifact pipeline.
-- `functions/api/sko_pipeline.py` - Monolithic pipeline proxy requiring segmentation or retirement.
+- `web/scripts/output/sko_*` - Retained generated artifacts from the deleted modeling implementation.
+- `functions/lib/sko_pipeline.py` - External HTTP stage orchestrator requiring owner/stage verification or retirement.
 - `web/components/Predictions/` - Reusable prediction UI.
 - `web/lib/supabase/database-generated.types.ts` - Current SKO/prediction schema type evidence.
 
 ### Notes
 
 - This list repairs the missing pair for both SKO PRDs and explicitly merges the SKO burn-down scope.
-- Canonical behavior follows the later/current stability path: `sKO = GameScore × confidence multiplier`, using rolling characteristic value and empirical thresholds. The earlier residual-P/60 proposal is research input for Sustainability/Trends, not a competing production score.
+- The later stability-CV path remains the governing promotion requirement, but it is not current production behavior: the live compatibility writer persists a separate `baseline-moving-average` v0.2 score, the legacy GameScore/characteristic helpers are quarantined, and the offline ML scripts were deleted. NEW 9.2 owns the product-contract decision. The earlier residual-P/60 proposal remains Sustainability/Trends research, not a competing production score.
 - `/skoCharts` is labeled legacy. New product work belongs on Trends/current prediction surfaces unless evidence proves a unique supported-route requirement.
 - Historical checkmarks remain claims pending implementation and runtime/data verification.
 - Unbounded Supabase history/player scans must paginate until a short page or use verified server-side aggregates.
@@ -30,11 +31,11 @@
 ## Tasks
 
 - [ ] 1.0 Reconcile sKO definition, ownership, and route/data contracts
-  - [ ] 1.1 Map both PRDs, modeling notes, burn-down plan, Sustainability, Trends, and current code into one ownership matrix.
-  - [ ] 1.2 Mark `prd-sko.md` superseded for production score definition while preserving its research requirements under Sustainability/Trends.
+  - [x] 1.1 Map both PRDs, modeling notes, burn-down plan, Sustainability, Trends, and current code into one ownership matrix. Evidence (2026-07-22): `sko-ownership-contract.md` classifies every PRD, formula family, table/API, retained/deleted pipeline artifact, supported Trends surface, quarantine surface, and active caller without promoting incompatible implementations.
+  - [x] 1.2 Mark `prd-sko.md` superseded for production score definition while preserving its research requirements under Sustainability/Trends. Evidence (2026-07-22): the older PRD remains explicitly superseded research; residual-P/60 work stays with Sustainability/Trends and is not relabeled as the live SKO writer.
   - [ ] 1.3 Freeze the current contract: GameScore, per-game characteristic value, rolling CV window, empirical/fallback thresholds, smooth `[0.8,1.0]` confidence multiplier, and stability-adjusted score.
   - [ ] 1.4 Define canonical grains, identifiers, as-of date, model version, horizon, provenance, freshness, and fallback semantics for predictions and metrics.
-  - [ ] 1.5 Verify active consumers use the canonical API/data contract and append legacy direct-table consumers as remediation/quarantine tasks.
+  - [x] 1.5 Verify active consumers use the canonical API/data contract and append legacy direct-table consumers as remediation/quarantine tasks. Evidence (2026-07-22): supported Trends pages use rolling/FORGE contracts and do not import the SKO reader bundle or legacy score helpers; the orphaned prediction components/API are recorded as P2 NEW 9.4 and remain quarantined.
 
 - [ ] 2.0 Verify and finish source-stat, prediction, and metrics persistence
   - [ ] 2.1 Reconcile live schemas/migrations for `sko_skater_stats`, `sko_skater_years`, `predictions_sko`, and `predictions_sko_metrics` with generated types and code.
@@ -92,3 +93,8 @@
 ## NEW Tasks
 
 - [ ] NEW 9.0 Append every verified defect, manual/provider dependency, model question, and optimization discovered during execution here before closure.
+  - [ ] NEW 9.1 **P0 public privileged prediction writer:** `/api/v1/ml/update-predictions-sko` accepts unauthenticated GET/POST requests and executes reads/upserts with the service-role client. Wrap the mutation route in the shared fail-closed admin/cron boundary and prove missing/invalid credentials cannot reach prerequisites or writes (discovered 2026-07-22).
+  - [ ] NEW 9.2 **P1 production-score contract split:** the current writer persists `baseline-moving-average` v0.2 from recent points averages and points standard deviation, while the reconciled PRD calls quarantined GameScore/characteristic-value utilities the current stability-CV contract and the offline scripts describe ML-prediction × stability. Freeze one explicitly versioned product contract or keep each implementation quarantined with honest naming before closing definition/ownership work (discovered 2026-07-22).
+  - [ ] NEW 9.3 **P1 documented modeling pipeline is no longer present:** commit `abbc01e8c5dc99e1544594e0c72bdecd0a013ea8` deliberately deleted `web/scripts/modeling/*`, but both PRDs, modeling notes, the task list, and tracked output artifacts still describe those scripts as executable owners. Reconcile the external `functions/lib/sko_pipeline.py` HTTP orchestrator and retained artifacts with an explicit restore, replacement, or historical-only disposition before pipeline/modeling tasks can close (discovered 2026-07-22).
+  - [ ] NEW 9.4 **P2 prediction reader/UI is orphaned from supported Trends:** `PredictionsLeaderboard`, `InfoPopover`, `SkoExplainer`, and `usePredictionsSko` have no tracked page consumer, while `/trends` explicitly defers prediction-vs-actual/candlestick model surfaces and uses FORGE/rolling data instead. Keep the reader bundle quarantined or deliberately reintegrate it only after the score/data contract is promoted (discovered 2026-07-22).
+  - [ ] NEW 9.5 **P0 public privileged SKO source-ingest writer:** `/api/v1/db/update-sko-stats` accepts unauthenticated requests and invokes broad `sko_skater_stats` service-role writes. Wrap the route in the shared fail-closed admin/cron boundary and prove missing/invalid credentials cannot reach season/source/write work (discovered 2026-07-22).

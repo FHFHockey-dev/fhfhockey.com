@@ -1,6 +1,8 @@
 # PRD: sKO Charts — Player Evaluation and Prediction
 
 > **Reconciled implementation task list:** `tasks/TASKS/sko-charts/tasks-prd-sko-charts.md`
+>
+> **Runtime status (2026-07-22):** This is the governing promotion/requirements PRD, not proof of current production formula ownership. Current supported Trends uses rolling/FORGE data; legacy GameScore/characteristic helpers and `predictions_sko` remain quarantined, the active compatibility writer persists a separate moving-average v0.2 score, and the documented local modeling scripts were deleted. See `sko-ownership-contract.md` and NEW 9.2–9.4.
 
 ## 1) Purpose
 - Provide a clear, reproducible method to evaluate per-game player performance and stabilize predictions by leveraging consistency (CV) from characteristic game patterns.
