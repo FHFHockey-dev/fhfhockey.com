@@ -82,7 +82,7 @@ No live relation, policy, migration, type, or runtime reference supports the his
 
 ## Burn-down inventory and classification
 
-- Bounded tracked-file, import, route, cron, script, function-entrypoint, schema/type, and Git-history searches re-verify every grouped SKO artifact in the ownership matrix. Base 7.1/7.2 close on classification evidence, not deletion or promotion.
+- Bounded tracked-file, import, route, cron, script, function-entrypoint, schema/type, and Git-history searches re-verify every grouped SKO artifact in the ownership matrix. Exact checkpoint `eca9fee58e902625b3171427fc0b69d1b6619918` publishes base 7.1/7.2 closure on classification evidence, not deletion or promotion.
 - The active writers, admin/cron caller, dependency check, and source-ownership registry remain operational compatibility controls. The public reader and prediction UI remain quarantined; current Trends/FORGE remain their supported replacement boundary.
 - The nested `web/web/scripts/output/` directory contains four tracked, unreferenced artifacts totaling about 10.5 MB. Its three parquet hashes differ from the canonical-path copies; both timing CSVs share the empty-file hash. B-DEAD already recommends an archive decision. NEW 9.12 keeps all four intact pending intentional retention/version provenance under 8.4.
 
