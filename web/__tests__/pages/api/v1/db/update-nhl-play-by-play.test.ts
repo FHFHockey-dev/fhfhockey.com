@@ -66,6 +66,7 @@ describe("/api/v1/db/update-nhl-play-by-play", () => {
         eventCount: 318,
         shiftCount: 706,
         rawEndpointsStored: 4,
+        idempotent: false,
       },
     ]);
   });
@@ -86,7 +87,7 @@ describe("/api/v1/db/update-nhl-play-by-play", () => {
     expect(res.statusCode).toBe(200);
     expect(ingestNhlApiRawGamesMock).toHaveBeenCalledWith(
       expect.anything(),
-      [2025021103]
+      [2025021103],
     );
     expect(res.body).toMatchObject({
       success: true,
@@ -96,7 +97,8 @@ describe("/api/v1/db/update-nhl-play-by-play", () => {
       seasonId: 20252026,
       requestedGameCount: 1,
       gameIds: [2025021103],
-      rowsUpserted: 1068,
+      rowsUpserted: 1064,
+      rowsVerified: 1068,
     });
   });
 

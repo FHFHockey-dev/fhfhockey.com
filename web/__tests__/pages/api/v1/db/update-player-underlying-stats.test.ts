@@ -89,6 +89,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
           eventCount: 326,
           shiftCount: 774,
           rawEndpointsStored: 4,
+          idempotent: false,
         },
       ],
       failures: [],
@@ -138,9 +139,9 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
       processedGameCount: 1,
       failedGameCount: 0,
       gameIds: [2025020955],
-      rawRowsUpserted: 1144,
+      rawRowsUpserted: 1140,
       summaryRowsUpserted: 1,
-      rowsUpserted: 1145,
+      rowsUpserted: 1141,
       warmedLandingCache: true,
       results: [
         {
@@ -149,10 +150,47 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
           eventCount: 326,
           shiftCount: 774,
           rawEndpointsStored: 4,
+          idempotent: false,
         },
       ],
       message:
         "Player underlying stats ingest completed. Raw NHL gamecenter payloads were refreshed first, then per-game player underlying summaries were rebuilt.",
+    });
+  });
+
+  it("reports an idempotent raw replay as zero writes while rebuilding the player summary", async () => {
+    ingestNhlApiRawGamesBestEffortMock.mockResolvedValue({
+      results: [
+        {
+          gameId: 2025020955,
+          rosterCount: 40,
+          eventCount: 326,
+          shiftCount: 774,
+          rawEndpointsStored: 4,
+          idempotent: true,
+        },
+      ],
+      failures: [],
+    });
+
+    const { req, res } = createMockApiContext({
+      query: {
+        gameId: "2025020955",
+      },
+    });
+
+    await handler(req as never, res as never);
+
+    expect(res.body).toMatchObject({
+      rawRowsUpserted: 0,
+      summaryRowsUpserted: 1,
+      rowsUpserted: 1,
+      results: [
+        {
+          gameId: 2025020955,
+          idempotent: true,
+        },
+      ],
     });
   });
 
@@ -200,6 +238,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
           eventCount: 600,
           shiftCount: 1200,
           rawEndpointsStored: 8,
+          idempotent: false,
         },
       ],
       failures: [],
@@ -246,9 +285,9 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
       processedGameCount: 1,
       failedGameCount: 0,
       gameIds: [2025021184, 2025021196],
-      rawRowsUpserted: 1888,
+      rawRowsUpserted: 1880,
       summaryRowsUpserted: 2,
-      rowsUpserted: 1890,
+      rowsUpserted: 1882,
       warmedLandingCache: true,
       results: [
         {
@@ -257,6 +296,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
           eventCount: 600,
           shiftCount: 1200,
           rawEndpointsStored: 8,
+          idempotent: false,
         },
       ],
       message:
@@ -283,6 +323,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
             eventCount: 20,
             shiftCount: 30,
             rawEndpointsStored: 4,
+            idempotent: false,
           },
           {
             gameId: 2025021196,
@@ -290,6 +331,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
             eventCount: 50,
             shiftCount: 60,
             rawEndpointsStored: 4,
+            idempotent: false,
           },
         ],
         failures: [],
@@ -302,6 +344,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
             eventCount: 80,
             shiftCount: 90,
             rawEndpointsStored: 4,
+            idempotent: false,
           },
         ],
         failures: [],
@@ -365,9 +408,9 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
       processedGameCount: 3,
       failedGameCount: 0,
       gameIds: [2025021184, 2025021196, 2025021197],
-      rawRowsUpserted: 462,
+      rawRowsUpserted: 450,
       summaryRowsUpserted: 3,
-      rowsUpserted: 465,
+      rowsUpserted: 453,
       warmedLandingCache: true,
       results: [
         {
@@ -376,6 +419,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
           eventCount: 20,
           shiftCount: 30,
           rawEndpointsStored: 4,
+          idempotent: false,
         },
         {
           gameId: 2025021196,
@@ -383,6 +427,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
           eventCount: 50,
           shiftCount: 60,
           rawEndpointsStored: 4,
+          idempotent: false,
         },
         {
           gameId: 2025021197,
@@ -390,6 +435,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
           eventCount: 80,
           shiftCount: 90,
           rawEndpointsStored: 4,
+          idempotent: false,
         },
       ],
       message:
@@ -415,6 +461,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
           eventCount: 20,
           shiftCount: 30,
           rawEndpointsStored: 4,
+          idempotent: false,
         },
       ],
       failures: [{ gameId: 2025021196, message: "TypeError: fetch failed" }],
@@ -461,9 +508,9 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
       failedGameIds: [2025021196],
       failures: [{ gameId: 2025021196, message: "TypeError: fetch failed" }],
       gameIds: [2025021184, 2025021196],
-      rawRowsUpserted: 64,
+      rawRowsUpserted: 60,
       summaryRowsUpserted: 1,
-      rowsUpserted: 65,
+      rowsUpserted: 61,
       warmedLandingCache: false,
       results: [
         {
@@ -472,6 +519,7 @@ describe("/api/v1/db/update-player-underlying-stats", () => {
           eventCount: 20,
           shiftCount: 30,
           rawEndpointsStored: 4,
+          idempotent: false,
         },
       ],
       message:

@@ -5,6 +5,7 @@ import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import serviceRoleClient from "lib/supabase/server";
 import { ingestNhlApiRawGamesBestEffort } from "lib/supabase/Upserts/nhlRawGamecenter.mjs";
+import { summarizeNhlRawGamecenterIngestResults } from "lib/supabase/Upserts/nhlRawGamecenterTelemetry";
 
 import {
   fetchSeasonGoalieSummaryGameIdSet,
@@ -36,6 +37,7 @@ export type RawIngestBatchResult = {
     eventCount: number;
     shiftCount: number;
     rawEndpointsStored: number;
+    idempotent: boolean;
   }>;
   failures: Array<{ gameId: number; message: string }>;
   processedGameIds: number[];
@@ -493,23 +495,6 @@ export async function selectMissingTeamSummaryGameIds(args: {
   return missingGameIds;
 }
 
-function sumRowsAffected(results: Array<{
-  rosterCount: number;
-  eventCount: number;
-  shiftCount: number;
-  rawEndpointsStored: number;
-}>) {
-  return results.reduce(
-    (total, result) =>
-      total +
-      result.rosterCount +
-      result.eventCount +
-      result.shiftCount +
-      result.rawEndpointsStored,
-    0
-  );
-}
-
 export async function runRawIngestAndRefreshBatches(args: {
   gameIdBatches: readonly number[][];
   seasonId: number;
@@ -533,7 +518,8 @@ export async function runRawIngestAndRefreshBatches(args: {
     const rawIngest = await ingestNhlApiRawGamesBestEffort(serviceRoleClient, batchGameIds);
     const rawResults = rawIngest.results;
     aggregatedResults.push(...rawResults);
-    rawRowsUpserted += sumRowsAffected(rawResults);
+    rawRowsUpserted +=
+      summarizeNhlRawGamecenterIngestResults(rawResults).rowsUpserted;
     failures.push(...rawIngest.failures);
 
     const successfulGameIds = rawResults

@@ -89,6 +89,7 @@ describe("/api/v1/db/update-goalie-underlying-stats", () => {
           eventCount: 326,
           shiftCount: 774,
           rawEndpointsStored: 4,
+          idempotent: false,
         },
       ],
       failures: [],
@@ -140,9 +141,9 @@ describe("/api/v1/db/update-goalie-underlying-stats", () => {
       processedGameCount: 1,
       failedGameCount: 0,
       gameIds: [2025020955],
-      rawRowsUpserted: 1144,
+      rawRowsUpserted: 1140,
       summaryRowsUpserted: 6,
-      rowsUpserted: 1150,
+      rowsUpserted: 1146,
       warmedLandingCache: true,
       results: [
         {
@@ -151,10 +152,47 @@ describe("/api/v1/db/update-goalie-underlying-stats", () => {
           eventCount: 326,
           shiftCount: 774,
           rawEndpointsStored: 4,
+          idempotent: false,
         },
       ],
       message:
         "Goalie underlying stats ingest completed. Raw NHL gamecenter payloads were refreshed first, then goalie-only underlying summary partitions were rebuilt and upserted.",
+    });
+  });
+
+  it("reports an idempotent raw replay as zero writes while rebuilding the goalie summary", async () => {
+    ingestNhlApiRawGamesBestEffortMock.mockResolvedValue({
+      results: [
+        {
+          gameId: 2025020955,
+          rosterCount: 40,
+          eventCount: 326,
+          shiftCount: 774,
+          rawEndpointsStored: 4,
+          idempotent: true,
+        },
+      ],
+      failures: [],
+    });
+
+    const { req, res } = createMockApiContext({
+      query: {
+        gameId: "2025020955",
+      },
+    });
+
+    await handler(req as never, res as never);
+
+    expect(res.body).toMatchObject({
+      rawRowsUpserted: 0,
+      summaryRowsUpserted: 6,
+      rowsUpserted: 6,
+      results: [
+        {
+          gameId: 2025020955,
+          idempotent: true,
+        },
+      ],
     });
   });
 
@@ -177,6 +215,7 @@ describe("/api/v1/db/update-goalie-underlying-stats", () => {
             eventCount: 20,
             shiftCount: 30,
             rawEndpointsStored: 4,
+            idempotent: false,
           },
           {
             gameId: 2025021196,
@@ -184,6 +223,7 @@ describe("/api/v1/db/update-goalie-underlying-stats", () => {
             eventCount: 50,
             shiftCount: 60,
             rawEndpointsStored: 4,
+            idempotent: false,
           },
         ],
         failures: [],
@@ -196,6 +236,7 @@ describe("/api/v1/db/update-goalie-underlying-stats", () => {
             eventCount: 80,
             shiftCount: 90,
             rawEndpointsStored: 4,
+            idempotent: false,
           },
         ],
         failures: [],
@@ -263,9 +304,9 @@ describe("/api/v1/db/update-goalie-underlying-stats", () => {
       processedGameCount: 3,
       failedGameCount: 0,
       gameIds: [2025021184, 2025021196, 2025021197],
-      rawRowsUpserted: 462,
+      rawRowsUpserted: 450,
       summaryRowsUpserted: 6,
-      rowsUpserted: 468,
+      rowsUpserted: 456,
       warmedLandingCache: true,
       results: [
         {
@@ -274,6 +315,7 @@ describe("/api/v1/db/update-goalie-underlying-stats", () => {
           eventCount: 20,
           shiftCount: 30,
           rawEndpointsStored: 4,
+          idempotent: false,
         },
         {
           gameId: 2025021196,
@@ -281,6 +323,7 @@ describe("/api/v1/db/update-goalie-underlying-stats", () => {
           eventCount: 50,
           shiftCount: 60,
           rawEndpointsStored: 4,
+          idempotent: false,
         },
         {
           gameId: 2025021197,
@@ -288,6 +331,7 @@ describe("/api/v1/db/update-goalie-underlying-stats", () => {
           eventCount: 80,
           shiftCount: 90,
           rawEndpointsStored: 4,
+          idempotent: false,
         },
       ],
       message:

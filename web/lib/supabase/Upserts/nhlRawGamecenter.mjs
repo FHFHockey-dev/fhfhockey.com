@@ -3,10 +3,21 @@ import { parse as parseHtml } from "node-html-parser";
 
 export const PARSER_VERSION = 1;
 export const STRENGTH_VERSION = 1;
+export const NORMALIZATION_MATERIALIZER_VERSION =
+  "nhl-gamecenter-normalizer-v1";
+export const NORMALIZATION_PARSER_FINGERPRINT = crypto
+  .createHash("sha256")
+  .update(
+    `parser:${PARSER_VERSION}|strength:${STRENGTH_VERSION}|materializer:${NORMALIZATION_MATERIALIZER_VERSION}`,
+  )
+  .digest("hex");
 export const DEFAULT_FETCH_RETRIES = 3;
 export const DEFAULT_FETCH_TIMEOUT_MS = 20_000;
 export const DEFAULT_RETRY_DELAY_MS = 500;
 export const DEFAULT_GAME_INGEST_RETRIES = 2;
+
+const MAX_NORMALIZATION_RPC_BYTES = 12_000_000;
+const SHA256_HEX = /^[0-9a-f]{64}$/;
 
 const SHOT_LIKE_TYPES = new Set([
   "goal",
@@ -22,7 +33,10 @@ const HTML_SHIFT_EVENT_LABELS = {
 };
 
 function sha256Json(payload) {
-  return crypto.createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+  return crypto
+    .createHash("sha256")
+    .update(JSON.stringify(payload))
+    .digest("hex");
 }
 
 function sleep(ms) {
@@ -126,7 +140,12 @@ function isRetryableFetchError(error) {
 }
 
 export async function fetchJsonWithRetry(url, options = {}) {
-  return fetchWithRetry(url, options, "json", "application/json,text/plain,*/*");
+  return fetchWithRetry(
+    url,
+    options,
+    "json",
+    "application/json,text/plain,*/*",
+  );
 }
 
 export async function fetchTextWithRetry(url, options = {}) {
@@ -134,11 +153,16 @@ export async function fetchTextWithRetry(url, options = {}) {
     url,
     options,
     "text",
-    "text/html,application/xhtml+xml,text/plain,*/*"
+    "text/html,application/xhtml+xml,text/plain,*/*",
   );
 }
 
-async function fetchWithRetry(url, options = {}, responseType = "json", acceptHeader) {
+async function fetchWithRetry(
+  url,
+  options = {},
+  responseType = "json",
+  acceptHeader,
+) {
   const retries = options.retries ?? DEFAULT_FETCH_RETRIES;
   const timeoutMs = options.timeoutMs ?? DEFAULT_FETCH_TIMEOUT_MS;
   const retryDelayMs = options.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS;
@@ -174,11 +198,14 @@ async function fetchWithRetry(url, options = {}, responseType = "json", acceptHe
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error(`Failed to fetch ${url}`);
+  throw lastError instanceof Error
+    ? lastError
+    : new Error(`Failed to fetch ${url}`);
 }
 
 function buildTeamMetadata(game, teamSide) {
-  const team = teamSide === "away" ? game.awayTeam ?? null : game.homeTeam ?? null;
+  const team =
+    teamSide === "away" ? (game.awayTeam ?? null) : (game.homeTeam ?? null);
   return {
     teamId: team?.id ?? null,
     teamAbbrev:
@@ -200,7 +227,9 @@ function buildHtmlShiftReportUrls(gameId, seasonId) {
 }
 
 function parseHtmlShiftPlayerHeading(headingText) {
-  const match = normalizeWhitespace(headingText).match(/^(\d+)\s+([^,]+),\s*(.+)$/);
+  const match = normalizeWhitespace(headingText).match(
+    /^(\d+)\s+([^,]+),\s*(.+)$/,
+  );
   if (!match) return null;
   return {
     sweaterNumber: Number(match[1]),
@@ -218,11 +247,13 @@ function normalizeNameKey(value) {
 }
 
 function resolveHtmlShiftPlayer(game, teamId, parsedHeading) {
-  const roster = (game.rosterSpots ?? []).filter((spot) => spot.teamId === teamId);
+  const roster = (game.rosterSpots ?? []).filter(
+    (spot) => spot.teamId === teamId,
+  );
   if (!roster.length) return null;
 
   const sweaterMatches = roster.filter(
-    (spot) => Number(spot.sweaterNumber) === parsedHeading.sweaterNumber
+    (spot) => Number(spot.sweaterNumber) === parsedHeading.sweaterNumber,
   );
   if (sweaterMatches.length === 1) return sweaterMatches[0];
 
@@ -233,12 +264,12 @@ function resolveHtmlShiftPlayer(game, teamId, parsedHeading) {
   const exactNameMatches = namePool.filter(
     (spot) =>
       normalizeNameKey(spot.firstName?.default ?? "") === firstNameKey &&
-      normalizeNameKey(spot.lastName?.default ?? "") === lastNameKey
+      normalizeNameKey(spot.lastName?.default ?? "") === lastNameKey,
   );
   if (exactNameMatches.length) return exactNameMatches[0];
 
   const lastNameMatches = namePool.filter(
-    (spot) => normalizeNameKey(spot.lastName?.default ?? "") === lastNameKey
+    (spot) => normalizeNameKey(spot.lastName?.default ?? "") === lastNameKey,
   );
   if (lastNameMatches.length) return lastNameMatches[0];
 
@@ -289,14 +320,24 @@ function parseHtmlShiftReportRows(html, game, teamSide, shiftIdStart = 1) {
   for (let i = 0; i < headingIndexes.length; i += 1) {
     const headingIndex = headingIndexes[i];
     const nextHeadingIndex = headingIndexes[i + 1] ?? rows.length;
-    const headingCell = rows[headingIndex].querySelector('td[class*="playerHeading"]');
+    const headingCell = rows[headingIndex].querySelector(
+      'td[class*="playerHeading"]',
+    );
     const parsedHeading = parseHtmlShiftPlayerHeading(headingCell?.text ?? "");
     if (!parsedHeading) continue;
 
-    const rosterSpot = resolveHtmlShiftPlayer(game, teamMeta.teamId, parsedHeading);
+    const rosterSpot = resolveHtmlShiftPlayer(
+      game,
+      teamMeta.teamId,
+      parsedHeading,
+    );
     if (!rosterSpot?.playerId) continue;
 
-    for (let rowIndex = headingIndex + 1; rowIndex < nextHeadingIndex; rowIndex += 1) {
+    for (
+      let rowIndex = headingIndex + 1;
+      rowIndex < nextHeadingIndex;
+      rowIndex += 1
+    ) {
       const cells = rows[rowIndex].querySelectorAll("td");
       if (cells.length !== 6) continue;
 
@@ -354,11 +395,19 @@ export async function fetchShiftCharts(gameId, fetchOptions = {}) {
   return { total: rows.length, data: rows };
 }
 
-async function fetchShiftChartsWithFallback(gameId, seasonId, game, landing, fetchOptions = {}) {
+async function fetchShiftChartsWithFallback(
+  gameId,
+  seasonId,
+  game,
+  landing,
+  fetchOptions = {},
+) {
   const jsonPayload = await fetchShiftCharts(gameId, fetchOptions);
   if (
     jsonPayload.total > 0 ||
-    !FINISHED_GAME_STATES.has(normalizeWhitespace(landing?.gameState).toUpperCase())
+    !FINISHED_GAME_STATES.has(
+      normalizeWhitespace(landing?.gameState).toUpperCase(),
+    )
   ) {
     return {
       ...jsonPayload,
@@ -382,7 +431,7 @@ async function fetchShiftChartsWithFallback(gameId, seasonId, game, landing, fet
           homeHtmlResult.value,
           game,
           "home",
-          visitorRows.nextShiftId
+          visitorRows.nextShiftId,
         )
       : { rows: [], nextShiftId: visitorRows.nextShiftId };
 
@@ -410,7 +459,9 @@ async function fetchShiftChartsWithFallback(gameId, seasonId, game, landing, fet
       homeUrl: htmlReportUrls.home,
       visitorError:
         visitorHtmlResult.status === "rejected"
-          ? String(visitorHtmlResult.reason?.message ?? visitorHtmlResult.reason)
+          ? String(
+              visitorHtmlResult.reason?.message ?? visitorHtmlResult.reason,
+            )
           : null,
       homeError:
         homeHtmlResult.status === "rejected"
@@ -436,7 +487,7 @@ export async function fetchNhlApiRawGamePayloads(gameId, fetchOptions = {}) {
     Number(pbp.season),
     pbp,
     landing,
-    fetchOptions
+    fetchOptions,
   );
 
   return {
@@ -470,7 +521,7 @@ export async function upsertInBatches(
   table,
   rows,
   onConflict,
-  batchSize = 500
+  batchSize = 500,
 ) {
   let count = 0;
   for (let i = 0; i < rows.length; i += batchSize) {
@@ -483,10 +534,12 @@ export async function upsertInBatches(
 }
 
 export async function insertPayloadSnapshot(supabase, row) {
-  const { error } = await supabase.from("nhl_api_game_payloads_raw").upsert(row, {
-    onConflict: "game_id,endpoint,payload_hash",
-    ignoreDuplicates: true,
-  });
+  const { error } = await supabase
+    .from("nhl_api_game_payloads_raw")
+    .upsert(row, {
+      onConflict: "game_id,endpoint,payload_hash",
+      ignoreDuplicates: true,
+    });
   if (error) throw error;
 }
 
@@ -505,7 +558,6 @@ export function normalizeRosterSpots(game, pbpHash) {
     position_code: spot.positionCode ?? null,
     headshot_url: spot.headshot ?? null,
     raw_spot: spot,
-    updated_at: new Date().toISOString(),
   }));
 }
 
@@ -521,7 +573,7 @@ export function normalizePbpEvents(game, pbpHash) {
       parsedSituation,
       details.eventOwnerTeamId ?? null,
       homeTeamId,
-      awayTeamId
+      awayTeamId,
     );
     const typeDescKey = play.typeDescKey ?? null;
 
@@ -590,7 +642,6 @@ export function normalizePbpEvents(game, pbpHash) {
       away_score: details.awayScore ?? null,
       home_sog: details.homeSOG ?? null,
       away_sog: details.awaySOG ?? null,
-      updated_at: new Date().toISOString(),
     };
   });
 }
@@ -625,8 +676,293 @@ export function normalizeShiftRows(game, shiftPayload, shiftHash) {
     event_details: shift.eventDetails ?? null,
     hex_value: shift.hexValue ?? null,
     raw_shift: shift,
-    updated_at: new Date().toISOString(),
   }));
+}
+
+function isRecord(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function toError(error, fallback) {
+  if (error instanceof Error) return error;
+  if (isRecord(error) && typeof error.message === "string") {
+    return new Error(error.message);
+  }
+  return new Error(fallback);
+}
+
+function isPositiveSafeInteger(value) {
+  return Number.isSafeInteger(value) && value > 0;
+}
+
+function isNonnegativeSafeInteger(value) {
+  return Number.isSafeInteger(value) && value >= 0;
+}
+
+function withoutVolatileTimestamps(row) {
+  const { created_at: _createdAt, updated_at: _updatedAt, ...stableRow } = row;
+  return stableRow;
+}
+
+function normalizeScopeRows(rows, identityKey, maxRows, label) {
+  if (!Array.isArray(rows) || rows.length > maxRows) {
+    throw new Error(`${label} row count exceeds ${maxRows}`);
+  }
+
+  const identities = new Set();
+  const normalized = rows.map((row) => {
+    if (!isRecord(row)) {
+      throw new Error(`${label} contains a non-object row`);
+    }
+    const stableRow = withoutVolatileTimestamps(row);
+    const identity = stableRow[identityKey];
+    if (!isPositiveSafeInteger(identity) || identities.has(identity)) {
+      throw new Error(`${label} contains an invalid or duplicate identity`);
+    }
+    identities.add(identity);
+    return stableRow;
+  });
+
+  return normalized.sort(
+    (left, right) => left[identityKey] - right[identityKey],
+  );
+}
+
+export function buildNormalizedGameScope(args) {
+  if (
+    !isPositiveSafeInteger(args.gameId) ||
+    !isPositiveSafeInteger(args.seasonId) ||
+    typeof args.gameDate !== "string" ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(args.gameDate) ||
+    !SHA256_HEX.test(args.pbpPayloadHash) ||
+    !SHA256_HEX.test(args.shiftPayloadHash)
+  ) {
+    throw new Error(
+      "Normalized Gamecenter scope has an invalid source identity",
+    );
+  }
+
+  const rosterRows = normalizeScopeRows(
+    args.rosterRows,
+    "player_id",
+    100,
+    "Normalized Gamecenter roster",
+  );
+  const eventRows = normalizeScopeRows(
+    args.eventRows,
+    "event_id",
+    2_000,
+    "Normalized Gamecenter events",
+  );
+  const shiftRows = normalizeScopeRows(
+    args.shiftRows,
+    "shift_id",
+    20_000,
+    "Normalized Gamecenter shifts",
+  );
+
+  for (const row of rosterRows) {
+    if (
+      row.game_id !== args.gameId ||
+      row.season_id !== args.seasonId ||
+      row.game_date !== args.gameDate ||
+      row.source_play_by_play_hash !== args.pbpPayloadHash ||
+      row.parser_version !== PARSER_VERSION
+    ) {
+      throw new Error("Normalized Gamecenter roster scope is inconsistent");
+    }
+  }
+  for (const row of eventRows) {
+    if (
+      row.game_id !== args.gameId ||
+      row.season_id !== args.seasonId ||
+      row.game_date !== args.gameDate ||
+      row.source_play_by_play_hash !== args.pbpPayloadHash ||
+      row.parser_version !== PARSER_VERSION ||
+      row.strength_version !== STRENGTH_VERSION
+    ) {
+      throw new Error("Normalized Gamecenter event scope is inconsistent");
+    }
+  }
+  for (const row of shiftRows) {
+    if (
+      row.game_id !== args.gameId ||
+      row.season_id !== args.seasonId ||
+      row.game_date !== args.gameDate ||
+      row.source_shiftcharts_hash !== args.shiftPayloadHash ||
+      row.parser_version !== PARSER_VERSION
+    ) {
+      throw new Error("Normalized Gamecenter shift scope is inconsistent");
+    }
+  }
+
+  const byteLength = Buffer.byteLength(
+    JSON.stringify({ rosterRows, eventRows, shiftRows }),
+    "utf8",
+  );
+  if (byteLength > MAX_NORMALIZATION_RPC_BYTES) {
+    throw new Error(
+      `Normalized Gamecenter RPC payload exceeds ${MAX_NORMALIZATION_RPC_BYTES} bytes`,
+    );
+  }
+
+  return {
+    gameId: args.gameId,
+    seasonId: args.seasonId,
+    gameDate: args.gameDate,
+    pbpPayloadHash: args.pbpPayloadHash,
+    shiftPayloadHash: args.shiftPayloadHash,
+    parserFingerprint: NORMALIZATION_PARSER_FINGERPRINT,
+    parserVersion: PARSER_VERSION,
+    strengthVersion: STRENGTH_VERSION,
+    materializerVersion: NORMALIZATION_MATERIALIZER_VERSION,
+    rosterRows,
+    eventRows,
+    shiftRows,
+  };
+}
+
+export async function readNormalizedGameManifest(supabase, gameId) {
+  if (!isPositiveSafeInteger(gameId)) {
+    throw new Error(
+      "Normalized Gamecenter manifest read has an invalid game identity",
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("nhl_api_game_normalization_status")
+    .select("normalization_fingerprint,normalization_version")
+    .eq("game_id", gameId)
+    .maybeSingle();
+  if (error) {
+    throw toError(error, "Normalized Gamecenter manifest read failed");
+  }
+  if (data == null) return null;
+  if (
+    !isRecord(data) ||
+    !SHA256_HEX.test(data.normalization_fingerprint) ||
+    !isPositiveSafeInteger(data.normalization_version)
+  ) {
+    throw new Error("Normalized Gamecenter manifest is invalid");
+  }
+
+  return {
+    normalizationFingerprint: data.normalization_fingerprint,
+    normalizationVersion: data.normalization_version,
+  };
+}
+
+function parseNormalizationReceipt(data, scope, expectedCurrentManifest) {
+  if (!Array.isArray(data) || data.length !== 1 || !isRecord(data[0])) {
+    throw new Error(
+      "Normalized Gamecenter RPC did not return exactly one receipt",
+    );
+  }
+  const row = data[0];
+  if (
+    row.game_id !== scope.gameId ||
+    row.normalization_status !== "complete" ||
+    !isPositiveSafeInteger(row.normalization_version) ||
+    !SHA256_HEX.test(row.normalization_fingerprint) ||
+    !SHA256_HEX.test(row.source_fingerprint) ||
+    row.parser_fingerprint !== scope.parserFingerprint ||
+    !isPositiveSafeInteger(row.pbp_raw_payload_id) ||
+    !isPositiveSafeInteger(row.pbp_raw_snapshot_version) ||
+    row.pbp_raw_payload_hash !== scope.pbpPayloadHash ||
+    !isPositiveSafeInteger(row.shift_raw_payload_id) ||
+    !isPositiveSafeInteger(row.shift_raw_snapshot_version) ||
+    row.shift_raw_payload_hash !== scope.shiftPayloadHash ||
+    row.expected_roster_rows !== scope.rosterRows.length ||
+    row.observed_roster_rows !== scope.rosterRows.length ||
+    row.expected_event_rows !== scope.eventRows.length ||
+    row.observed_event_rows !== scope.eventRows.length ||
+    row.expected_shift_rows !== scope.shiftRows.length ||
+    row.observed_shift_rows !== scope.shiftRows.length ||
+    !isNonnegativeSafeInteger(row.pruned_roster_rows) ||
+    !isNonnegativeSafeInteger(row.pruned_event_rows) ||
+    !isNonnegativeSafeInteger(row.pruned_shift_rows) ||
+    typeof row.idempotent !== "boolean" ||
+    typeof row.completed_at !== "string" ||
+    Number.isNaN(Date.parse(row.completed_at)) ||
+    (expectedCurrentManifest == null &&
+      (row.normalization_version !== 1 || row.idempotent)) ||
+    (expectedCurrentManifest != null &&
+      row.idempotent &&
+      (row.normalization_version !==
+        expectedCurrentManifest.normalizationVersion ||
+        row.normalization_fingerprint !==
+          expectedCurrentManifest.normalizationFingerprint ||
+        row.pruned_roster_rows !== 0 ||
+        row.pruned_event_rows !== 0 ||
+        row.pruned_shift_rows !== 0)) ||
+    (expectedCurrentManifest != null &&
+      !row.idempotent &&
+      row.normalization_version !==
+        expectedCurrentManifest.normalizationVersion + 1)
+  ) {
+    throw new Error("Normalized Gamecenter RPC returned an invalid receipt");
+  }
+
+  return {
+    gameId: row.game_id,
+    normalizationStatus: row.normalization_status,
+    normalizationVersion: row.normalization_version,
+    normalizationFingerprint: row.normalization_fingerprint,
+    sourceFingerprint: row.source_fingerprint,
+    parserFingerprint: row.parser_fingerprint,
+    pbpRawPayloadId: row.pbp_raw_payload_id,
+    pbpRawSnapshotVersion: row.pbp_raw_snapshot_version,
+    shiftRawPayloadId: row.shift_raw_payload_id,
+    shiftRawSnapshotVersion: row.shift_raw_snapshot_version,
+    rosterCount: row.observed_roster_rows,
+    eventCount: row.observed_event_rows,
+    shiftCount: row.observed_shift_rows,
+    prunedRosterRows: row.pruned_roster_rows,
+    prunedEventRows: row.pruned_event_rows,
+    prunedShiftRows: row.pruned_shift_rows,
+    idempotent: row.idempotent,
+    completedAt: row.completed_at,
+  };
+}
+
+export async function persistNormalizedGameScope(
+  supabase,
+  scope,
+  expectedCurrentManifest,
+) {
+  let result;
+  try {
+    result = await supabase.rpc("persist_nhl_api_gamecenter_normalized_v1", {
+      p_game_id: scope.gameId,
+      p_season_id: scope.seasonId,
+      p_game_date: scope.gameDate,
+      p_expected_pbp_payload_hash: scope.pbpPayloadHash,
+      p_expected_shift_payload_hash: scope.shiftPayloadHash,
+      p_expected_current_fingerprint:
+        expectedCurrentManifest?.normalizationFingerprint ?? null,
+      p_expected_current_version:
+        expectedCurrentManifest?.normalizationVersion ?? null,
+      p_parser_fingerprint: scope.parserFingerprint,
+      p_parser_version: scope.parserVersion,
+      p_strength_version: scope.strengthVersion,
+      p_materializer_version: scope.materializerVersion,
+      p_roster_rows: scope.rosterRows,
+      p_event_rows: scope.eventRows,
+      p_shift_rows: scope.shiftRows,
+      p_expected_roster_rows: scope.rosterRows.length,
+      p_expected_event_rows: scope.eventRows.length,
+      p_expected_shift_rows: scope.shiftRows.length,
+    });
+  } catch (error) {
+    throw toError(error, "Normalized Gamecenter RPC failed");
+  }
+  if (!isRecord(result)) {
+    throw new Error("Normalized Gamecenter RPC returned an invalid result");
+  }
+  if (result.error) {
+    throw toError(result.error, "Normalized Gamecenter RPC failed");
+  }
+  return parseNormalizationReceipt(result.data, scope, expectedCurrentManifest);
 }
 
 export async function ingestNhlApiRawGame(supabase, gameId) {
@@ -678,51 +1014,51 @@ export async function ingestNhlApiRawGame(supabase, gameId) {
 
   const rosterRows = normalizeRosterSpots(
     fetched.payloads.playByPlay,
-    fetched.hashes.playByPlay
+    fetched.hashes.playByPlay,
   );
   const eventRows = normalizePbpEvents(
     fetched.payloads.playByPlay,
-    fetched.hashes.playByPlay
+    fetched.hashes.playByPlay,
   );
   const shiftRows = normalizeShiftRows(
     fetched.payloads.playByPlay,
     fetched.payloads.shiftcharts,
-    fetched.hashes.shiftcharts
+    fetched.hashes.shiftcharts,
   );
 
-  const rosterCount = rosterRows.length
-    ? await upsertInBatches(
-        supabase,
-        "nhl_api_game_roster_spots",
-        rosterRows,
-        "game_id,player_id"
-      )
-    : 0;
-
-  const eventCount = eventRows.length
-    ? await upsertInBatches(
-        supabase,
-        "nhl_api_pbp_events",
-        eventRows,
-        "game_id,event_id"
-      )
-    : 0;
-
-  const shiftCount = shiftRows.length
-    ? await upsertInBatches(
-        supabase,
-        "nhl_api_shift_rows",
-        shiftRows,
-        "game_id,shift_id"
-      )
-    : 0;
+  const normalizedScope = buildNormalizedGameScope({
+    gameId,
+    seasonId: fetched.seasonId,
+    gameDate: fetched.gameDate,
+    pbpPayloadHash: fetched.hashes.playByPlay,
+    shiftPayloadHash: fetched.hashes.shiftcharts,
+    rosterRows,
+    eventRows,
+    shiftRows,
+  });
+  const expectedCurrentManifest = await readNormalizedGameManifest(
+    supabase,
+    gameId,
+  );
+  const normalizationReceipt = await persistNormalizedGameScope(
+    supabase,
+    normalizedScope,
+    expectedCurrentManifest,
+  );
 
   return {
     gameId,
-    rosterCount,
-    eventCount,
-    shiftCount,
+    rosterCount: normalizationReceipt.rosterCount,
+    eventCount: normalizationReceipt.eventCount,
+    shiftCount: normalizationReceipt.shiftCount,
     rawEndpointsStored: 4,
+    normalizationVersion: normalizationReceipt.normalizationVersion,
+    normalizationFingerprint: normalizationReceipt.normalizationFingerprint,
+    sourceFingerprint: normalizationReceipt.sourceFingerprint,
+    prunedRosterRows: normalizationReceipt.prunedRosterRows,
+    prunedEventRows: normalizationReceipt.prunedEventRows,
+    prunedShiftRows: normalizationReceipt.prunedShiftRows,
+    idempotent: normalizationReceipt.idempotent,
   };
 }
 
@@ -751,16 +1087,24 @@ async function ingestNhlApiRawGameWithRetry(supabase, gameId, options = {}) {
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error(`Failed to ingest raw NHL game ${gameId}`);
+  throw lastError instanceof Error
+    ? lastError
+    : new Error(`Failed to ingest raw NHL game ${gameId}`);
 }
 
-export async function ingestNhlApiRawGamesBestEffort(supabase, gameIds, options = {}) {
+export async function ingestNhlApiRawGamesBestEffort(
+  supabase,
+  gameIds,
+  options = {},
+) {
   const results = [];
   const failures = [];
 
   for (const gameId of gameIds) {
     try {
-      results.push(await ingestNhlApiRawGameWithRetry(supabase, gameId, options));
+      results.push(
+        await ingestNhlApiRawGameWithRetry(supabase, gameId, options),
+      );
     } catch (error) {
       failures.push({
         gameId,
