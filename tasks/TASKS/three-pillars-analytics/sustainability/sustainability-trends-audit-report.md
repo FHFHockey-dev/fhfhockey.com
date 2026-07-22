@@ -269,3 +269,5 @@ The supporting 19-row volatility/elasticity plan is now 17/19 complete from the 
 The Sandbox consumes those rows alongside game history, renders actual points and interval bands with hot/cold/normal states, and exposes metric/window/view controls using the updated module styles. Four focused calculator, persistence, read-route, authorization, and bulk-route files pass 14/14 tests, while the canonical runbook documents scheduling, API/audit contracts, bounded paging/retries, and bulk parameters.
 
 Only the frontend parent and its supporting boxscore/fantasy correlation child remain open: fantasy score and boxscore context are available as inputs and summaries, but the UI has no explicit correlation statistic or correlation display. No formula, schema, data, runtime, deployment, or external-state change is authorized by this evidence reconciliation.
+
+Exact checkpoint `fdc5e8a0f98c24b44189b5d3fd003bbe75d08c59` publishes the 17-row plan reconciliation with source/master 17/19 and global 4,404/4,874 parity.

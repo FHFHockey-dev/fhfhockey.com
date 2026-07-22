@@ -120,6 +120,7 @@ Additional initiative sections remain pending verified Wave-A/B completion and W
 - **Current status:** The supporting plan is 17/19 complete. This cohort raises global parity to 4,404/4,874 with 470 open = 90.36% complete / 9.64% open.
 - **Verified implementation:** `sustainability_trend_bands`, the calculator/service pair, public read plus protected recompute APIs, raw one-game and l3/l5/l10/l20 chart series, metric/window/view controls, updated Sandbox styles, four focused calculator/persistence/API files passing 14/14 tests, and the scheduled/bulk runbook satisfy 17 previously unchecked rows.
 - **Preserved open work:** The frontend parent and correlation child remain open because the current fantasy-score and boxscore context does not calculate or display an explicit correlation statistic. No runtime or external state changed in this reconciliation.
+- **Publication:** Exact checkpoint `fdc5e8a0f98c24b44189b5d3fd003bbe75d08c59` publishes the 17-row cohort through guarded normal push with exact source/master parity.
 
 ### Game Grid Master Dashboard (`B-GAMEGRID`)
 
