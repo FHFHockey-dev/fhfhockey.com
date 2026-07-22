@@ -2,7 +2,7 @@
 
 Date: 2026-07-22
 
-Status: Phase 1 evidence complete; Phase 2 requires the PRD review checkpoint.
+Status: Phases 1–2 evidence complete; Phase 3 requires the PRD review checkpoint.
 
 ## Evidence boundary
 
@@ -70,7 +70,7 @@ Left to right:
 4. Current Week Summary: `GP`, `OFF`, `Score`.
 5. Four Week Forecast: `4WK GP`, `4WK OFF`, `Opp %`, `4WK Score`.
 
-The grouped 4WK expand/collapse control sits at the boundary immediately after current Score and before the first four-week value. Expanded state exposes all four values. Collapsed state may replace the group with one narrow marker, but the default expanded/collapsed choice remains a Phase-2 review decision from the PRD; it must not be silently inferred from the current component's collapsed default.
+The grouped 4WK expand/collapse control sits at the boundary immediately after current Score and before the first four-week value. Expanded state exposes all four values. Collapsed state may replace the group with one narrow marker. The owner-approved default is expanded; Phase 3 must change the current component's collapsed default explicitly and cover it rather than inheriting it silently.
 
 Current tracked code differs from this contract: its OMT order is xGF/xGA/SF/SA/GF/GA/W%, it places the three-column 4WK group before current GP/OFF/Score, it omits 4WK Score, and its 4WK GP header is only a collapse control. These are already owned by base implementation rows 3.2, 3.4, 4.3, and 4.4.
 
@@ -82,15 +82,42 @@ Current tracked code differs from this contract: its OMT order is xGF/xGA/SF/SA/
 - Sticky offsets derive from actual rendered column widths; no duplicated shadow table may own different sort/collapse state.
 - Phase 4/5 viewport verification may narrow the sticky set only if the complete left block demonstrably prevents usable schedule scanning at the supported desktop breakpoint. Any narrowing must be reviewed as a contract amendment.
 
+## Approved Phase-1 decisions
+
+On 2026-07-22 the owner approved the recommended defaults and authorized Phase 2:
+
+- the desktop 4WK group will start expanded when Phase 3 reconciles the master table;
+- top/bottom schedule emphasis will stay on the Score cell plus a restrained edge, not tint the full row;
+- desktop vertical orientation remains a named legacy fallback through Phases 2–4;
+- the already-live desktop path will be updated directly without a second feature flag.
+
+This approval resolves the NEW 2 disposition decision but does not close NEW 2: the fallback must remain explicitly named and verified through the later structural and breakpoint phases before the initiative can claim complete desktop replacement.
+
+## Phase 2 shell evidence
+
+The tracked shell already satisfies the Phase-2 implementation contract, so no speculative CSS rewrite was required:
+
+- `GameGrid.module.scss` uses the shared flat dark canvas and panel surfaces, compact connected spacing, bordered framing, striped table rows, subtle group separators, and restrained accents.
+- `gameGridHeaderContent` and `controlsBar` form the compact title/command plane. Date navigation and the 7/10-day segmented control use the exact `GameGrid` control anatomy named as canonical by `fhfh-styles.md`.
+- OMT, weekly, 4WG, and master headers retain the same solid dark surface, uppercase compact typography, border, and sticky treatment.
+- Team logos, matchup icons, home/away cues, day-state colors, hover states, and visible keyboard focus remain intact.
+- Existing `vars.scss` tokens, the shared panel module, and existing mixins are sufficient; Phase 2 introduces no new token, framework, or dependency.
+
+The focused contract group remains 3 files / 9 tests. Full TypeScript passes. The development server compiles `/game-grid/7-Day-Forecast` and returns HTTP 200. Automated Chromium screenshots are blocked by the documented macOS sandbox (`MachPortRendezvousServer ... Permission denied`) even with the repository's workspace browser fallback; visual, sticky-scroll, and responsive browser proof therefore remain Phase-3/5 review evidence and are not claimed here.
+
 ## Findings and review gates
 
 - NEW 1: the master path consumes `statsLoading` but drops `statsError`; a failed OMT query becomes ordinary `-` values. Later implementation must expose a stable, value-free unavailable state while preserving the rest of the master row.
-- NEW 2: desktop vertical orientation bypasses the master architecture. The owner must approve retaining it as a named fallback or retiring it before Phase 3 can claim complete desktop replacement.
+- NEW 2: desktop vertical orientation bypasses the master architecture. The owner approved retaining it as a named legacy fallback through Phases 2–4; later structural and breakpoint verification still must prove that boundary before closure.
 - NEW 3: the task list's obsolete Jest command is corrected to the repository's Vitest command and closed as documentation-only work.
-- PRD review still needs the initial 4WK collapsed/expanded choice, Score-cell versus full-row highlight scope, and NEW 2 orientation disposition before Phase 2/3 behavior is finalized.
+- Phase-1 review resolved initial 4WK state, Score-cell highlight scope, NEW 2 orientation disposition, and feature-flag strategy. Phase 3 remains paused for review of the Phase-2 shell evidence before structural reconciliation begins.
 
 ## Verification
 
 - `npm test -- --run components/GameGrid/SortableHeaders.test.tsx components/GameGrid/utils/FourWeekGrid.test.tsx components/GameGrid/utils/fourWeekGridViews.test.ts`
 - Result: 3 files / 9 tests passed on 2026-07-22.
-- The proof covers stable non-day sort/switch semantics and the existing four-week summary/detail data contract. It is not visual, sticky-scroll, master-order, collapse, or breakpoint runtime proof; those remain later phase work.
+- `npx tsc --noEmit`
+- Result: passed on 2026-07-22.
+- `npm run dev:stable` plus `curl http://localhost:3000/game-grid/7-Day-Forecast`
+- Result: Next.js compiled the route and returned HTTP 200 on 2026-07-22.
+- The proof covers the existing shell/control implementation, stable non-day sort/switch semantics, and the current four-week summary/detail data contract. It is not visual, sticky-scroll, master-order, collapse, or responsive browser proof; Chromium launch was sandbox-blocked and those remain later phase work.
