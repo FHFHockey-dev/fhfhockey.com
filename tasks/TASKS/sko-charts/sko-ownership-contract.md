@@ -63,6 +63,13 @@ No live relation, policy, migration, type, or runtime reference supports the his
 - Focused helper/route regressions pass 2 files/11 tests, including full/short-page continuation, the exact 28-key payload, derived-field arithmetic, one-attempt batching, schema-error propagation, and authorization/method boundaries. Full TypeScript passes.
 - Exact implementation/control commit `77485503560498750a0f8e023e55fb646be98456` is published on `octoberBranch`; fresh fetch proves local/tracking/live equality.
 
+## Prediction persistence evidence
+
+- The live table and active writer both use `(player_id, as_of_date, horizon_games)` as the sole identity/conflict target. `model_name` and `model_version` are required payload fields but not key fields, so a second model identity at the same player/date/horizon overwrites the first. NEW 9.7 keeps the canonical grain and any migration/backfill decision open.
+- Production currently contains only `baseline-moving-average` `v0.2`: 6,328 rows across 303 players from 2025-10-16 through 2026-07-22. This single observed identity does not prove the current key can preserve future challenger or version history.
+- The writer now paginates ordered discovery rows until a short page, deduplicates/sorts the complete player set, and applies an optional player limit only afterward with `partial=true` when selection is intentionally bounded. Per-player queries select the latest 60 rows descending and restore chronological model input. The stable response reports model identity, discovery/selection/processing/skips, source rows/cutoff/lag, series lengths, and attempted/completed write progress. The focused route/helper suite passes 6/6 and full TypeScript passes; NEW 9.8 is complete without changing data, schema, schedule, or model semantics.
+- The 2026-07-22 daily run wrote 107 rows stamped `as_of_date=2026-07-22`, while the newest qualifying `player_stats_unified` source date is 2026-04-16. NEW 9.9 keeps the product/operations freshness policy open; no existing evidence authorizes an offseason lag threshold or data rewrite.
+
 ## Frozen boundary pending NEW work
 
 - Do not call the moving-average v0.2 score, the legacy GameScore × characteristic multiplier, or the deleted offline ML × stability output the single canonical SKO model.

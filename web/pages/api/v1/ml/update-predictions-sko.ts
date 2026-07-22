@@ -5,7 +5,7 @@ import type { Database } from "lib/supabase/database-generated.types";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import {
   assertPredictionsSkoPrerequisites,
-  isPredictionsSkoDependencyError
+  isPredictionsSkoDependencyError,
 } from "lib/ml/predictionsSkoDependencyChecks";
 import adminOnly from "utils/adminOnlyMiddleware";
 
@@ -38,7 +38,10 @@ const DEFAULT_LOOKBACK_DAYS = 120;
 const DEFAULT_STABILITY_WINDOW = 10;
 const DEFAULT_HORIZON = 5;
 const MAX_GAMES_PER_PLAYER = 60;
+const PLAYER_DISCOVERY_PAGE_SIZE = 1000;
 const UPSERT_BATCH_SIZE = 200;
+const MODEL_NAME = "baseline-moving-average";
+const MODEL_VERSION = "v0.2";
 
 function parseString(value: unknown): string | undefined {
   if (Array.isArray(value)) return value[0];
@@ -52,7 +55,7 @@ function parseNumber(value: unknown): number | undefined {
 
 function parsePositiveInt(
   value: unknown,
-  fallback?: number
+  fallback?: number,
 ): number | undefined {
   const parsed = parseNumber(value);
   if (parsed === undefined) return fallback;
@@ -107,7 +110,7 @@ function smoothstepMultiplier(
   t1: number,
   t2: number,
   min = 0.8,
-  max = 1.0
+  max = 1.0,
 ): number {
   if (
     !Number.isFinite(cv) ||
@@ -132,25 +135,46 @@ function chunk<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
-async function fetchPlayers(query: any, limit?: number): Promise<number[]> {
-  const request = limit ? query.limit(limit) : query;
-  const res = await request;
-  const data = (res?.data ?? []) as Array<{
-    player_id?: number | string | null;
-  }>;
-  const error = (res as any)?.error;
-  if (error) throw error;
-  const ids = data
-    .map((row): number => Number(row.player_id))
-    .filter((id): id is number => Number.isInteger(id) && id > 0);
-  return Array.from(new Set(ids)).sort((a, b) => a - b);
+type PlayerDiscoveryPage = {
+  data: Array<{ player_id?: number | string | null }> | null;
+  error: unknown;
+};
+
+export async function fetchPlayerIdsPaginated(
+  loadPage: (from: number, to: number) => PromiseLike<PlayerDiscoveryPage>,
+  pageSize = PLAYER_DISCOVERY_PAGE_SIZE,
+): Promise<{ playerIds: number[]; pages: number; rowsScanned: number }> {
+  const playerIds = new Set<number>();
+  let pages = 0;
+  let rowsScanned = 0;
+
+  for (let from = 0; ; from += pageSize) {
+    const res = await loadPage(from, from + pageSize - 1);
+    const data = (res?.data ?? []) as Array<{
+      player_id?: number | string | null;
+    }>;
+    if (res?.error) throw res.error;
+    pages += 1;
+    rowsScanned += data.length;
+    for (const row of data) {
+      const playerId = Number(row.player_id);
+      if (Number.isInteger(playerId) && playerId > 0) playerIds.add(playerId);
+    }
+    if (data.length < pageSize) break;
+  }
+
+  return {
+    playerIds: Array.from(playerIds).sort((a, b) => a - b),
+    pages,
+    rowsScanned,
+  };
 }
 
-async function fetchPlayerSeries(
+export async function fetchPlayerSeries(
   client: SupabaseClient<Database>,
   playerId: number,
   asOfDate: string,
-  startDate: string
+  startDate: string,
 ): Promise<PlayerStatsRow[]> {
   const { data, error } = await client
     .from("player_stats_unified")
@@ -159,10 +183,82 @@ async function fetchPlayerSeries(
     .lte("date", asOfDate)
     .gte("date", startDate)
     .eq("games_played", 1)
-    .order("date", { ascending: true })
+    .order("date", { ascending: false })
     .limit(MAX_GAMES_PER_PLAYER);
   if (error) throw error;
-  return (data as PlayerStatsRow[] | null) ?? [];
+  return ((data as PlayerStatsRow[] | null) ?? []).slice().reverse();
+}
+
+function sourceLagDays(asOfDate: string, latestSourceDate: string | null) {
+  if (!latestSourceDate) return null;
+  return Math.round(
+    (Date.parse(`${asOfDate}T00:00:00Z`) -
+      Date.parse(`${latestSourceDate}T00:00:00Z`)) /
+      86_400_000,
+  );
+}
+
+type PredictionRunDiagnostics = {
+  partial: boolean;
+  model: { name: string; version: string };
+  coverage: {
+    discoveredPlayers: number;
+    selectedPlayers: number;
+    processedPlayers: number;
+    skippedNoSeries: number;
+    discoveryPages: number;
+    discoveryRows: number;
+    sourceRows: number;
+    minSeriesLength: number;
+    maxSeriesLength: number;
+  };
+  source: {
+    requestedAsOfDate: string;
+    lookbackStartDate: string;
+    earliestDate: string | null;
+    latestDate: string | null;
+    lagDays: number | null;
+  };
+  write: {
+    attemptedRows: number;
+    upsertedRows: number;
+    batchesCompleted: number;
+    partial: boolean;
+  };
+};
+
+function emptyDiagnostics(
+  asOfDate: string,
+  lookbackStartDate: string,
+): PredictionRunDiagnostics {
+  return {
+    partial: false,
+    model: { name: MODEL_NAME, version: MODEL_VERSION },
+    coverage: {
+      discoveredPlayers: 0,
+      selectedPlayers: 0,
+      processedPlayers: 0,
+      skippedNoSeries: 0,
+      discoveryPages: 0,
+      discoveryRows: 0,
+      sourceRows: 0,
+      minSeriesLength: 0,
+      maxSeriesLength: 0,
+    },
+    source: {
+      requestedAsOfDate: asOfDate,
+      lookbackStartDate,
+      earliestDate: null,
+      latestDate: null,
+      lagDays: null,
+    },
+    write: {
+      attemptedRows: 0,
+      upsertedRows: 0,
+      batchesCompleted: 0,
+      partial: false,
+    },
+  };
 }
 
 function buildPredictionRecord(
@@ -170,7 +266,7 @@ function buildPredictionRecord(
   asOfDate: string,
   horizon: number,
   pointsSeries: number[],
-  stabilityWindow: number
+  stabilityWindow: number,
 ): PredictionsInsert {
   const last5 = pointsSeries.slice(-5);
   const last10 = pointsSeries.slice(-10);
@@ -207,8 +303,8 @@ function buildPredictionRecord(
       : null,
     sko: Number.isFinite(sko) ? sko : null,
     top_features: null,
-    model_name: "baseline-moving-average",
-    model_version: "v0.2"
+    model_name: MODEL_NAME,
+    model_version: MODEL_VERSION,
   } satisfies PredictionsInsert;
 }
 
@@ -225,6 +321,7 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
   const debug = debugParam === "1" || debugParam === "true";
 
   const phases: Record<string, number> = {};
+  let runDiagnostics: PredictionRunDiagnostics | null = null;
   const mark = (name: string) => {
     phases[name] = Date.now() - startWall;
   };
@@ -255,14 +352,14 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
     const stabilityWindow =
       parsePositiveInt(
         queryAccessor("stabilityWindow"),
-        DEFAULT_STABILITY_WINDOW
+        DEFAULT_STABILITY_WINDOW,
       ) ?? DEFAULT_STABILITY_WINDOW;
     const batchSize =
       parsePositiveInt(
-        queryAccessor("batchSize") ?? queryAccessor("limitPlayers")
+        queryAccessor("batchSize") ?? queryAccessor("limitPlayers"),
       ) ?? undefined;
     const seasonCutoff = parseIsoDate(
-      parseString(queryAccessor("seasonCutoff"))
+      parseString(queryAccessor("seasonCutoff")),
     );
     const playerIdsFilter =
       parsePlayerIds(queryAccessor("playerId")) ??
@@ -275,31 +372,44 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
       seasonCutoff && seasonCutoff > lookbackStartIso
         ? seasonCutoff
         : lookbackStartIso;
+    runDiagnostics = emptyDiagnostics(asOfDate, effectiveStartIso);
 
     await assertPredictionsSkoPrerequisites({
       asOfDate,
-      startDate: effectiveStartIso
+      startDate: effectiveStartIso,
     });
 
-    let playerIds: number[];
+    let discoveredPlayerIds: number[];
     if (playerIdsFilter?.length) {
-      playerIds = playerIdsFilter;
+      discoveredPlayerIds = playerIdsFilter;
     } else {
-      const baseQuery = admin
-        .from("player_stats_unified")
-        .select("player_id")
-        .lte("date", asOfDate)
-        .gte("date", effectiveStartIso)
-        .eq("games_played", 1)
-        .not("player_id", "is", null)
-        .order("player_id", { ascending: true });
-      playerIds = await fetchPlayers(baseQuery, batchSize);
+      const discovery = await fetchPlayerIdsPaginated((from, to) =>
+        admin
+          .from("player_stats_unified")
+          .select("player_id,date")
+          .lte("date", asOfDate)
+          .gte("date", effectiveStartIso)
+          .eq("games_played", 1)
+          .not("player_id", "is", null)
+          .order("player_id", { ascending: true })
+          .order("date", { ascending: true })
+          .range(from, to),
+      );
+      discoveredPlayerIds = discovery.playerIds;
+      runDiagnostics.coverage.discoveryPages = discovery.pages;
+      runDiagnostics.coverage.discoveryRows = discovery.rowsScanned;
     }
+    runDiagnostics.coverage.discoveredPlayers = discoveredPlayerIds.length;
+    const playerIds = batchSize
+      ? discoveredPlayerIds.slice(0, batchSize)
+      : discoveredPlayerIds;
+    runDiagnostics.coverage.selectedPlayers = playerIds.length;
+    runDiagnostics.partial = playerIds.length < discoveredPlayerIds.length;
     mark("phase_player_discovery");
 
     if (!playerIds.length) {
       const totalMsEmpty = Number(
-        (process.hrtime.bigint() - startHr) / BigInt(1_000_000)
+        (process.hrtime.bigint() - startHr) / BigInt(1_000_000),
       );
       phases.total = totalMsEmpty;
       return res.status(200).json({
@@ -308,14 +418,11 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
         horizon,
         players: 0,
         upserts: 0,
+        ...runDiagnostics,
         duration: `${(totalMsEmpty / 1000).toFixed(2)}s`,
         message: `No eligible skaters found for ${asOfDate}`,
-        ...(debug ? { timings: phases } : {})
+        ...(debug ? { timings: phases } : {}),
       });
-    }
-
-    if (batchSize && playerIds.length > batchSize) {
-      playerIds = playerIds.slice(0, batchSize);
     }
 
     const predictionRecords: PredictionsInsert[] = [];
@@ -324,6 +431,10 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
     let totalProcessMs = 0;
     let maxSeriesLength = 0;
     let minSeriesLength = Number.POSITIVE_INFINITY;
+    let skippedNoSeries = 0;
+    let sourceRows = 0;
+    let earliestSourceDate: string | null = null;
+    let latestSourceDate: string | null = null;
     const PROGRESS_INTERVAL = 50;
 
     for (let i = 0; i < playerIds.length; i++) {
@@ -333,14 +444,32 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
         admin,
         playerId,
         asOfDate,
-        effectiveStartIso
+        effectiveStartIso,
       );
       const fetchEnd = Date.now();
       playerSeriesQueries += 1;
       totalSeriesFetchMs += fetchEnd - fetchStart;
-      if (!series.length) continue;
+      if (!series.length) {
+        skippedNoSeries += 1;
+        continue;
+      }
       const processStart = Date.now();
       const pointsSeries = series.map((row) => Number(row.points ?? 0));
+      sourceRows += series.length;
+      const seriesEarliestDate = series[0]?.date ?? null;
+      const seriesLatestDate = series[series.length - 1]?.date ?? null;
+      if (
+        seriesEarliestDate &&
+        (!earliestSourceDate || seriesEarliestDate < earliestSourceDate)
+      ) {
+        earliestSourceDate = seriesEarliestDate;
+      }
+      if (
+        seriesLatestDate &&
+        (!latestSourceDate || seriesLatestDate > latestSourceDate)
+      ) {
+        latestSourceDate = seriesLatestDate;
+      }
       maxSeriesLength = Math.max(maxSeriesLength, pointsSeries.length);
       minSeriesLength = Math.min(minSeriesLength, pointsSeries.length);
       const record = buildPredictionRecord(
@@ -348,7 +477,7 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
         asOfDate,
         horizon,
         pointsSeries,
-        stabilityWindow
+        stabilityWindow,
       );
       predictionRecords.push(record);
       totalProcessMs += Date.now() - processStart;
@@ -360,10 +489,20 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
             totalSeriesFetchMs / playerSeriesQueries
           ).toFixed(2)} avgProcessMs=${(
             totalProcessMs / playerSeriesQueries
-          ).toFixed(2)}`
+          ).toFixed(2)}`,
         );
       }
     }
+    runDiagnostics.coverage.processedPlayers = predictionRecords.length;
+    runDiagnostics.coverage.skippedNoSeries = skippedNoSeries;
+    runDiagnostics.coverage.sourceRows = sourceRows;
+    runDiagnostics.coverage.maxSeriesLength = maxSeriesLength;
+    runDiagnostics.coverage.minSeriesLength =
+      minSeriesLength === Number.POSITIVE_INFINITY ? 0 : minSeriesLength;
+    runDiagnostics.source.earliestDate = earliestSourceDate;
+    runDiagnostics.source.latestDate = latestSourceDate;
+    runDiagnostics.source.lagDays = sourceLagDays(asOfDate, latestSourceDate);
+    runDiagnostics.write.attemptedRows = predictionRecords.length;
     mark("phase_series_and_build");
 
     let upserts = 0;
@@ -377,11 +516,13 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
       if (error) throw error;
       upserts += batch.length;
       batchDurations.push(Date.now() - bStart);
+      runDiagnostics.write.upsertedRows = upserts;
+      runDiagnostics.write.batchesCompleted = batchDurations.length;
     }
     mark("phase_upserts");
 
     const totalMs = Number(
-      (process.hrtime.bigint() - startHr) / BigInt(1_000_000)
+      (process.hrtime.bigint() - startHr) / BigInt(1_000_000),
     );
     phases.total = totalMs;
     phases.avg_player_fetch_ms = playerSeriesQueries
@@ -398,14 +539,14 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
       ? Number(
           (
             batchDurations.reduce((a, b) => a + b, 0) / batchDurations.length
-          ).toFixed(2)
+          ).toFixed(2),
         )
       : 0;
 
     // Server log summary
     // eslint-disable-next-line no-console
     console.log(
-      `[update-predictions-sko] completed players=${playerIds.length} upserts=${upserts} totalMs=${totalMs} avgFetchMs=${phases.avg_player_fetch_ms} avgProcessMs=${phases.avg_player_process_ms} batches=${batchDurations.length}`
+      `[update-predictions-sko] completed players=${playerIds.length} upserts=${upserts} totalMs=${totalMs} avgFetchMs=${phases.avg_player_fetch_ms} avgProcessMs=${phases.avg_player_process_ms} batches=${batchDurations.length}`,
     );
 
     res.setHeader("X-Execution-Time-ms", String(totalMs));
@@ -416,9 +557,10 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
       horizon,
       players: playerIds.length,
       upserts,
+      ...runDiagnostics,
       duration: `${durationSec}s`,
       message: `Refreshed sKO predictions for ${playerIds.length} skaters (${upserts} rows) as of ${asOfDate} in ${durationSec}s`,
-      ...(debug ? { timings: phases } : {})
+      ...(debug ? { timings: phases } : {}),
     });
   } catch (error: any) {
     if (isPredictionsSkoDependencyError(error)) {
@@ -432,21 +574,27 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
           classification: "structured_upstream_error",
           message: error.issue.message,
           detail: error.issue.detail,
-          htmlLike: false
-        }
+          htmlLike: false,
+        },
       });
     }
     const dependencyError = normalizeDependencyError(error);
+    if (runDiagnostics) {
+      runDiagnostics.partial = true;
+      runDiagnostics.write.partial =
+        runDiagnostics.write.upsertedRows < runDiagnostics.write.attemptedRows;
+    }
     // eslint-disable-next-line no-console
     console.error("update-predictions-sko error", error?.message ?? error);
     return res.status(500).json({
       success: false,
       message: dependencyError.message,
-      dependencyError
+      dependencyError,
+      ...(runDiagnostics ?? {}),
     });
   }
 };
 
 export default withCronJobAudit(adminOnly(handler as any), {
-  jobName: "update-predictions-sko"
+  jobName: "update-predictions-sko",
 });
