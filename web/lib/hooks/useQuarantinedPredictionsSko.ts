@@ -26,7 +26,7 @@ type Options = {
   limit?: number;
 };
 
-export function usePredictionsSko(opts: Options = {}) {
+export function useQuarantinedPredictionsSko(opts: Options = {}) {
   const [data, setData] = useState<PredictionRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

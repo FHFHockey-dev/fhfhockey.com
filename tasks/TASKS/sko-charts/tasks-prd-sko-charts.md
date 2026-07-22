@@ -80,7 +80,7 @@
 - [ ] 7.0 Execute the SKO legacy burn-down safely
   - [x] 7.1 Re-verify every burn-down file/consumer against current imports, routes, cron, scripts, and runtime ownership. Evidence (2026-07-22): bounded file/import/caller/history searches cover the quarantined route/formulas/reader/UI, active protected writers and admin/cron callers, external HTTP orchestrator, deleted modeling executables, retained canonical-path outputs, and the previously omitted nested output copies now owned by NEW 9.12.
   - [x] 7.2 Classify each artifact as canonical, compatibility-only, quarantine, generated evidence, or deletion candidate and record its replacement. Evidence (2026-07-22): `sko-ownership-contract.md` assigns every grouped surface to supported adjacent ownership, operational compatibility, quarantine, deleted history, retained evidence, missing proposal, or archive/removal decision; no artifact is promoted or deleted by classification.
-  - [ ] 7.3 Narrow/rename legacy SKO fetch utilities so they cannot be mistaken for approved contracts.
+  - [x] 7.3 Narrow/rename legacy SKO fetch utilities so they cannot be mistaken for approved contracts. Evidence (2026-07-22): the sole unmounted SKO reader hook is now `useQuarantinedPredictionsSko` at an equally explicit path; its only caller imports that name, the old symbol/path have no runtime references, and the quarantine registry enumerates the hook plus all three UI components. The registry test and full TypeScript pass.
   - [ ] 7.4 Remove only proven-unused files; mass deletion/route removal requires the super-goal checkpoint.
   - [ ] 7.5 Verify navigation, APIs, cron inventory, build resolution, and Trends after each cleanup batch.
 

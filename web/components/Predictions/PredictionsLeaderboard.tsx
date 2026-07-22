@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  usePredictionsSko,
+  useQuarantinedPredictionsSko,
   type PredictionRow
-} from "lib/hooks/usePredictionsSko";
+} from "lib/hooks/useQuarantinedPredictionsSko";
 import supabase from "lib/supabase/client";
 import type {
   PlayerInfoRow,
@@ -29,7 +29,7 @@ export default function PredictionsLeaderboard({
     data: rows,
     loading,
     error
-  } = usePredictionsSko({
+  } = useQuarantinedPredictionsSko({
     asOfDate: asOfDate ?? undefined,
     limit,
     order: "desc"
@@ -82,7 +82,7 @@ export default function PredictionsLeaderboard({
   }, [asOfDate, sparklineDays]);
 
   const enableSpark = !!asOfDate && playerIds.length > 0;
-  const { data: sparkRows } = usePredictionsSko(
+  const { data: sparkRows } = useQuarantinedPredictionsSko(
     enableSpark
       ? {
           since: cutoffIso,
@@ -209,7 +209,7 @@ export default function PredictionsLeaderboard({
         <div className={styles.errorActions}>
           <button
             onClick={() => {
-              // bumping retryKey will cause parent callers using usePredictionsSko to re-run (they observe query string changes)
+              // bumping retryKey will cause parent callers using useQuarantinedPredictionsSko to re-run (they observe query string changes)
               setRetryKey((k) => k + 1);
               // naive retry by reloading the page-level API endpoint
               fetch(`/api/v1/ml/get-predictions-sko?limit=${limit}`).catch(
