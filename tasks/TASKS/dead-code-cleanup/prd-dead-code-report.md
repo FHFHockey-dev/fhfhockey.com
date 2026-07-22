@@ -197,3 +197,5 @@ These were flagged by the import graph or `knip`, but should not be deleted base
 | `/trendsTestingGrounds` | Unlinked but now read-only; mutation was removed during the Sustainability audit. | Keep as an explicitly quarantined diagnostics surface until its remaining checks move to tests/admin/runbook ownership. |
 
 No route, component, script, operational entrypoint, or generated artifact changed in this refresh.
+
+Exact checkpoint `146ca692faf8b3469c05c91912a1e72ce90dcaa3` publishes the 11-row current-state reconciliation with source/master 11/35 and global 4,431/4,874 parity.
