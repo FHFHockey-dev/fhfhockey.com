@@ -73,6 +73,18 @@ The generated manifest at `sustainability-trends-inventory.json` is produced by 
 - **Classification boundary:** current-production status requires direct scheduled-route evidence from `web/vercel.json`; names and imports alone never prove ownership. The 147 unresolved entries remain `unclear` until their owning family audit supplies dependency/runtime evidence.
 - **Family semantics:** memberships overlap intentionally because shared helpers, schemas, and tests can serve multiple systems. The family totals therefore are not expected to sum to 1,052.
 
+## First dependency and data-object ownership map
+
+The generated map at `sustainability-trends-dependency-map.json` is produced by `web/scripts/audit-sustainability-trends-dependencies.mjs` from the immutable inventory. It records direct local imports, literal `/api` route references, literal Supabase `.from()`/`.rpc()` references, and SQL `CREATE TABLE/VIEW` declarations. Each mapped surface retains its inventory ID and status so family audits can trace page → API → helper/job → data-object paths without losing provenance.
+
+- **Determinism:** two consecutive runs produce the same summary and SHA-256 `3614e6e55913b6f12b9f7a4f4f9a4401742eb0e627bd4e64b5b067bd68da5375`.
+- **Dependency coverage:** 753 surfaces expose at least one dependency/data edge or are page/API entry points; the map contains 1,872 local dependency edges and 263 literal API edges. Of those API edges, 245 resolve directly to tracked route files and 18 remain unresolved literals for family review.
+- **Data-object evidence:** 395 tables, views, or RPCs retain exact reader, writer, declaration, invocation, and evidence-origin arrays. Static evidence finds reads for 95 objects, writes for 45, declarations for 380, and 14 RPC names; these counts overlap.
+- **Ownership classes:** 107 raw sources, 11 derived aggregates, 33 snapshots, 1 cached output, 10 presentation outputs, and 233 unknown/mixed objects. `unknown_mixed` is a complete classification, not a correctness claim; it prevents silent ownership assumptions until the relevant family trace proves semantics.
+- **Dynamic boundary:** 52 dynamic `.from()`/`.rpc()` references across 31 files are counted at their call sites but not assigned an object name. Dynamic imports, constructed API paths, and runtime dispatch likewise remain family-audit work.
+
+This closes the first cross-system map only. It does not close family-specific formula, freshness, validation, consolidation, or deletion rows.
+
 ## Finding register
 
 | Finding                                | Severity | Scope | Status | Required decision/evidence                                                                                                |
