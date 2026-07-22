@@ -1,5 +1,9 @@
 # PRD: Unified Team, Skater, and Goalie Trends Surface
 
+> **Reconciled implementation task list:** `tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md`
+>
+> **Current reconciliation status (2026-07-22):** 28/50 rows are evidence-complete from the canonical Sustainability/Trends inventory, dependency map, family audits, exact traces, and published regressions. Current route/metric/window/read/team/skater/goalie/context/URL/cache ownership is verified. The remaining 22 rows retain real typed-warning, failure-isolation/stale-state, mixed-recency, hydration, UX/accessibility/performance/browser, and final synchronization work.
+
 ## Introduction/Overview
 
 `/trends` is FHFH's movement-first analytics surface. It answers what is changing recently for teams, skaters, and goalies through comparable rolling windows, percentiles, ranks, risers/fallers, hot/cold direction, and concise short-horizon context. It must remain distinct from `/underlying-stats` (current-state intelligence and diagnosis) and `/trendsSandbox` (sustainability/expectation lab).

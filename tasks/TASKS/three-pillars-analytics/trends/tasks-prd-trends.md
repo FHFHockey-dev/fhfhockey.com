@@ -23,58 +23,67 @@
 ## Tasks
 
 - [ ] 1.0 Reconcile route ownership and current implementation
-  - [ ] 1.1 Map every recovered PRD requirement to current page, API, metric registry, loader, style, test, and source table/view.
-  - [ ] 1.2 Verify `/trends`, Underlying Stats, Trends Sandbox, FORGE, Start Chart, and SKO ownership boundaries and append conflicting live behavior as `NEW` tasks.
-  - [ ] 1.3 Classify `placeholder.tsx`, duplicated styles/components, and legacy prediction helpers as active, compatibility, quarantine, or cleanup candidates with consumer evidence.
-  - [ ] 1.4 Record a dependency graph for rolling data, identity, metric definitions, projections, schedule, and section loading.
+  - [x] 1.1 Map every recovered PRD requirement to current page, API, metric registry, loader, style, test, and source table/view.
+  - [x] 1.2 Verify `/trends`, Underlying Stats, Trends Sandbox, FORGE, Start Chart, and SKO ownership boundaries and append conflicting live behavior as `NEW` tasks.
+  - [x] 1.3 Classify `placeholder.tsx`, duplicated styles/components, and legacy prediction helpers as active, compatibility, quarantine, or cleanup candidates with consumer evidence.
+  - [x] 1.4 Record a dependency graph for rolling data, identity, metric definitions, projections, schedule, and section loading.
+  - Evidence (1.1–1.4, 2026-07-22): the canonical Sustainability/Trends inventory and dependency map cover 1,052 surfaces, local/API/data edges, every current page/API/registry/loader/test/source, and classify canonical `/trends`, Underlying Stats, the active Sandbox, alternate placeholder, read-only Testing Grounds, player detail, FORGE/Start, and quarantined SKO without duplicating ownership.
 
 - [ ] 2.0 Freeze shared entity/metric/window contracts
-  - [ ] 2.1 Audit team, skater, and goalie metric registries for directionality, grain, units, source, window, minimum sample, availability, and explanation.
-  - [ ] 2.2 Centralize percentile/rank semantics so higher displayed percentile means better after lower-is-better normalization.
+  - [x] 2.1 Audit team, skater, and goalie metric registries for directionality, grain, units, source, window, minimum sample, availability, and explanation.
+  - [x] 2.2 Centralize percentile/rank semantics so higher displayed percentile means better after lower-is-better normalization.
   - [ ] 2.3 Define current/prior comparison point, delta, sample/confidence, date/generated time, season, team attribution, and warning fields in typed API contracts.
-  - [ ] 2.4 Verify player windows follow player games and team/goalie windows follow documented observations without cross-entity semantic drift.
-  - [ ] 2.5 Add deterministic tests for directionality, ties, minimum sample, missing values, window ordering, traded players, and small peer groups.
+  - [x] 2.4 Verify player windows follow player games and team/goalie windows follow documented observations without cross-entity semantic drift.
+  - [x] 2.5 Add deterministic tests for directionality, ties, minimum sample, missing values, window ordering, traded players, and small peer groups.
+  - Evidence (2.1/2.2/2.4/2.5, 2026-07-22): audited team/skater/goalie registries and percentile helpers record direction, units, windows, samples, availability, and explanations; lower-is-better normalization, player-game windows, observation-based team/goalie windows, ties/missing/small-sample ordering, and traded-player identity are covered by the published metric/trace regressions.
 
 - [ ] 3.0 Verify complete, fresh, canonical data access
-  - [ ] 3.1 Inventory every table/view/RPC read per Trends API/detail route and prove its result bound or add explicit pagination.
-  - [ ] 3.2 Reconcile team/player/goalie identity, season, date, position, and team context across rolling, ratings, projections, starts, and metadata.
+  - [x] 3.1 Inventory every table/view/RPC read per Trends API/detail route and prove its result bound or add explicit pagination.
+  - [x] 3.2 Reconcile team/player/goalie identity, season, date, position, and team context across rolling, ratings, projections, starts, and metadata.
   - [ ] 3.3 Return coverage counts, source date/generated time, fallback, stale, partial, and unavailable-table state from APIs.
-  - [ ] 3.4 Replace or bound player-detail direct client reads that duplicate canonical API logic or risk page-cap truncation.
-  - [ ] 3.5 Add API tests for full paging, empty/stale/partial sources, invalid filters, fallback dates, and structured errors.
+  - [x] 3.4 Replace or bound player-detail direct client reads that duplicate canonical API logic or risk page-cap truncation.
+  - [x] 3.5 Add API tests for full paging, empty/stale/partial sources, invalid filters, fallback dates, and structured errors.
+  - Evidence (3.1/3.2/3.4/3.5, 2026-07-22): the dependency map records all five Trends APIs and player-detail reads; team-power and player-detail multi-page traces prove rows beyond 1,000 participate, identities/dates/seasons/positions are reconciled, and focused API regressions cover bounds, invalid inputs, empty/fallback/stale/partial/error contracts.
 
 - [ ] 4.0 Complete team movement workflow
-  - [ ] 4.1 Verify team offense, defense, PP, PK, pace/control, CTPI, and SOS movement metrics use aligned dates and definitions.
+  - [x] 4.1 Verify team offense, defense, PP, PK, pace/control, CTPI, and SOS movement metrics use aligned dates and definitions.
   - [ ] 4.2 Provide movers/rank/percentile/delta charts and tables with sample/freshness context and qualified empty states.
-  - [ ] 4.3 Keep deeper team diagnosis routed to Underlying Stats while preserving current metric/date/team handoff.
-  - [ ] 4.4 Verify team metadata/colors/logos are normalized once and not remapped inconsistently per section.
+  - [x] 4.3 Keep deeper team diagnosis routed to Underlying Stats while preserving current metric/date/team handoff.
+  - [x] 4.4 Verify team metadata/colors/logos are normalized once and not remapped inconsistently per section.
+  - Evidence (4.1/4.3/4.4, 2026-07-22): exact team traces distinguish aligned movement percentiles, CTPI, SOS, and persisted current-state ratings; `/trends` routes deeper diagnosis to Underlying Stats, while shared canonical team identity/metadata supplies colors/logos and date/team handoff.
 
 - [ ] 5.0 Complete skater movement workflow
-  - [ ] 5.1 Verify approved production, shot/xG, playmaking, usage, physical, defense/context, and luck/regression categories against rolling support totals.
-  - [ ] 5.2 Provide position/group, window, metric, team, and search filters with URL restoration and honest availability.
-  - [ ] 5.3 Verify player detail shows selected metric/window/date context, explanations, sample/freshness, and linked deeper diagnosis without N+1 reads.
-  - [ ] 5.4 Add regression coverage for player game-window semantics, denominator-matched rates, traded players, zero/null, and fallback source behavior.
+  - [x] 5.1 Verify approved production, shot/xG, playmaking, usage, physical, defense/context, and luck/regression categories against rolling support totals.
+  - [x] 5.2 Provide position/group, window, metric, team, and search filters with URL restoration and honest availability.
+  - [x] 5.3 Verify player detail shows selected metric/window/date context, explanations, sample/freshness, and linked deeper diagnosis without N+1 reads.
+  - [x] 5.4 Add regression coverage for player game-window semantics, denominator-matched rates, traded players, zero/null, and fallback source behavior.
+  - Evidence (5.1–5.4, 2026-07-22): player-detail/rolling audits map all category registries to support totals; URL-owned filters and quick views restore context; deterministic pagination avoids N+1/page-cap loss; published rolling regressions cover last-N semantics, denominators, team changes, zero/null, and fallbacks while NEW 10 retains historical repair.
 
 - [ ] 6.0 Complete goalie movement workflow
-  - [ ] 6.1 Verify goalie performance/workload/start-role metric separation and source coverage.
+  - [x] 6.1 Verify goalie performance/workload/start-role metric separation and source coverage.
   - [ ] 6.2 Add comparable windows, rank/percentile deltas, movers, workload/share, volatility/confidence, and qualified state communication.
-  - [ ] 6.3 Ensure starter probability is labeled as role context and never blended silently into save-performance percentiles.
-  - [ ] 6.4 Add goalie identity, minimum sample, lower-is-better, fallback, missing start source, and volatility tests.
+  - [x] 6.3 Ensure starter probability is labeled as role context and never blended silently into save-performance percentiles.
+  - [x] 6.4 Add goalie identity, minimum sample, lower-is-better, fallback, missing start source, and volatility tests.
+  - Evidence (6.1/6.3/6.4, 2026-07-22): the goalie registry/API and exact Dostal trace keep save performance, workload, and start role separate; starter probability remains labeled context, and focused contracts cover identity, minimum sample, lower-is-better normalization, missing/fallback source, and volatility/uncertainty.
 
 - [ ] 7.0 Integrate short-horizon context without corrupting trends
-  - [ ] 7.1 Verify Start Chart/FORGE rows include aligned `dateUsed`, model/run, source, freshness, fallback, and uncertainty.
-  - [ ] 7.2 Keep projection/start/opponent context visually and mathematically separate from historical trend ranks/percentiles.
+  - [x] 7.1 Verify Start Chart/FORGE rows include aligned `dateUsed`, model/run, source, freshness, fallback, and uncertainty.
+  - [x] 7.2 Keep projection/start/opponent context visually and mathematically separate from historical trend ranks/percentiles.
   - [ ] 7.3 Apply mixed-recency invalidation/downgrade when projection, CTPI, team power, and trend dates are not safely aligned.
-  - [ ] 7.4 Preserve query-driven handoff from FORGE to the relevant Trends player/metric context.
+  - [x] 7.4 Preserve query-driven handoff from FORGE to the relevant Trends player/metric context.
+  - Evidence (7.1/7.2/7.4, 2026-07-22): canonical Start Chart/FORGE readers expose requested/resolved date, run/model/source/freshness/fallback/uncertainty; `/trends` presents this as a separate runway from historical percentiles, and FORGE/player links preserve date/player/metric query context.
 
 - [ ] 8.0 Harden page filters, loading, error, stale, and cache behavior
-  - [ ] 8.1 Serialize/restore global and entity filters deterministically and validate unsupported combinations.
+  - [x] 8.1 Serialize/restore global and entity filters deterministically and validate unsupported combinations.
   - [ ] 8.2 Make team, skater, goalie, projection, and schedule sections independently load/retry/fail without blanking the shell.
   - [ ] 8.3 Preserve last-success data only with visible stale/error time/source state.
-  - [ ] 8.4 Deduplicate in-flight requests and verify cache keys/TTLs include every contract-affecting parameter.
+  - [x] 8.4 Deduplicate in-flight requests and verify cache keys/TTLs include every contract-affecting parameter.
+  - Evidence (8.1/8.4, 2026-07-22): page/player URL state deterministically owns entity/window/metric/team/search selection; API and aggregate-loader traces verify parameterized cache keys, fifteen-minute TTLs, and in-flight dedupe on current cached Trends readers.
   - [ ] 8.5 Prevent hydration/filter/date mismatch between SSR defaults and client state.
 
 - [ ] 9.0 Verify UX, accessibility, responsive behavior, and performance
-  - [ ] 9.1 Align movement-first hierarchy, entity grammar, metric explanations, sample/date labels, drill-ins, and sustainability-lab links.
+  - [x] 9.1 Align movement-first hierarchy, entity grammar, metric explanations, sample/date labels, drill-ins, and sustainability-lab links.
+  - Evidence (9.1, 2026-07-22): the canonical route audit records the movement-first team/skater/goalie hierarchy, shared metric explanations and date/sample context, Underlying Stats/player/FORGE drill-ins, and the separate Sustainability Lab link/ownership boundary.
   - [ ] 9.2 Verify keyboard filters/search/tables/charts, focus, labels/tooltips, color-independent movement, contrast, zoom, and mobile layouts.
   - [ ] 9.3 Measure API/query volume, page load, filter changes, chart/table rendering, and bundle/runtime cost; remediate verified bottlenecks.
   - [ ] 9.4 Run focused unit/API/component checks, TypeScript/build validation, and browser verification across representative states.
