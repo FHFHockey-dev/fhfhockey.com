@@ -176,3 +176,24 @@ These were flagged by the import graph or `knip`, but should not be deleted base
 - `npx knip --production --no-progress --reporter compact` completed only with `npm_config_cache=/tmp/npm-cache` because the default npm cache has root-owned files.
 - The first `knip` conclusion should be filtered: it reports Sass alias false positives and test/script entrypoints as unused.
 - No files were deleted in this pass; this document is an audit update only.
+
+## 2026-07-22 Current-State Refresh
+
+- `rg --files` now counts 3,401 tracked paths, 2,050 web source/style files, 331 page entrypoints, and 256 API entrypoints. The current boundary also includes 48 package scripts, 20 Vercel cron definitions, the separately verified 64 active pg_cron jobs, one GitHub workflow, and distinct `functions` (53 files), `webhooks` (4), and `cms` (22) roots.
+- Temporary-cache `knip` 5.88.1 completed `--production --no-progress --reporter compact` and returned the expected findings exit with 173 unused-file candidates. Tests, scripts, generated/framework/config entrypoints, separate apps, operational modules, and 126 Sass-alias resolution failures remain explicit false-positive classes; the raw count is not a deletion list.
+- All original page, hidden-surface, operational, component/utility, and generated/temp candidate families were compared to current files, navigation/config, the latest SKO/DRM/CLEAN classifications, and the current scan. The named legacy component families remain candidates, but old upserts and operational modules retain manual/external-caller uncertainty and cannot pass the no-consumer or deletion gate from `knip` alone.
+- The 24 previously tracked generated-state artifacts remain absent from Git and narrowly ignored. Their producers and durable conclusions remain; the four duplicated nested SKO outputs remain tracked and open behind their separate retention/version-provenance decision.
+
+### Named stub/development route dispositions
+
+| Route | Current evidence | Disposition |
+| --- | --- | --- |
+| `/FantasyPowerRankings`, `/PowerRankings` | Both files still return empty elements; no navigation/config/runtime-link consumer. | High-confidence delete candidates; removal waits for the route-family approval gate. |
+| `/test` | Still renders only `h` and calls line-combination code on mount; no product/config consumer. | Delete or convert its useful assertion to a test after approval. |
+| `/testLogoMaker` | Unlinked hard-coded manual logo selector; the reusable logo component is separate. | Move useful examples to tests/docs or delete the route after approval. |
+| `/cssTestingGrounds` | Current reviewed/approved style-system catalog and referenced smoke surface. | Keep and document as a supported review surface; not dead. |
+| `/statsPlaceholder` | Hidden legacy SoS/team-stats implementation with no product link; canonical `/stats` and `/underlying-stats` replacements exist. | Redirect/delete decision remains approval-gated; retain until replacement parity is explicitly accepted. |
+| `/xGoalsPage` | Unlinked thin prototype wrapper; component retention is a separate question. | Delete the route after approval, preserving the component only if another consumer is chosen. |
+| `/trendsTestingGrounds` | Unlinked but now read-only; mutation was removed during the Sustainability audit. | Keep as an explicitly quarantined diagnostics surface until its remaining checks move to tests/admin/runbook ownership. |
+
+No route, component, script, operational entrypoint, or generated artifact changed in this refresh.
