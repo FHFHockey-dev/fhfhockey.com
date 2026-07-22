@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import supabase from "lib/supabase";
 import { teamsInfo } from "lib/teamsInfo";
-import useCurrentSeason from "hooks/useCurrentSeason";
+import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
 import fetchWithCache from "lib/fetchWithCache";
 import { GameByGameTimeline } from "./GameByGameTimeline";
 import { AdvancedL10Metrics } from "./AdvancedL10Metrics";
@@ -136,7 +136,8 @@ export function TeamDashboard({
   teamAbbrev,
   seasonId,
 }: TeamDashboardProps) {
-  const currentSeason = useCurrentSeason();
+  const currentSeasonQuery = useCurrentSeasonQuery();
+  const currentSeason = currentSeasonQuery.data ?? undefined;
   const effectiveSeasonId = seasonId || currentSeason?.seasonId?.toString();
 
   const [standingsData, setStandingsData] = useState<StandingsData | null>(
@@ -160,6 +161,8 @@ export function TeamDashboard({
   const teamInfo = teamsInfo[teamAbbrev];
 
   useEffect(() => {
+    let ownsRequest = true;
+
     const fetchTeamData = async () => {
       try {
         setIsLoading(true);
@@ -193,6 +196,7 @@ export function TeamDashboard({
           .eq("season_id", parseInt(effectiveSeasonId))
           .single();
 
+        if (!ownsRequest) return;
         if (summaryError) throw summaryError;
 
         // Fetch current standings position from nhl_standings_details (for division rank, streak, etc.)
@@ -220,6 +224,7 @@ export function TeamDashboard({
           .order("date", { ascending: false })
           .limit(1);
 
+        if (!ownsRequest) return;
         if (standingsError) throw standingsError;
 
         // Fetch 5v5 advanced stats and calculate season averages weighted by games played
@@ -267,6 +272,7 @@ export function TeamDashboard({
           .lte("date", endDate)
           .order("date", { ascending: true }); // Get all records to calculate proper averages
 
+        if (!ownsRequest) return;
         if (stats5v5Error) throw stats5v5Error;
 
         // Fetch special teams stats from wgo_team_stats (latest available)
@@ -288,6 +294,7 @@ export function TeamDashboard({
           .order("date", { ascending: false })
           .limit(1);
 
+        if (!ownsRequest) return;
         if (specialTeamsError) throw specialTeamsError;
 
         // Process standings data combining team_summary_years and nhl_standings_details
@@ -435,6 +442,7 @@ export function TeamDashboard({
             // Fetch team schedule to get total games played
             const scheduleUrl = `https://api-web.nhle.com/v1/club-schedule-season/${teamAbbrev}/${effectiveSeasonId}`;
             const scheduleResponse = await fetchWithCache(scheduleUrl);
+            if (!ownsRequest) return;
             const completedGames = scheduleResponse.games.filter(
               (game: any) =>
                 game.gameType === 2 && game.gameDate.split("T")[0] <= today,
@@ -443,11 +451,13 @@ export function TeamDashboard({
             // Fetch goalie data from NHL API
             const goalieUrl = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameDate<='${today}' and gameDate>='${seasonStart}' and gameTypeId=2`;
             const goalieResponse = await fetchWithCache(goalieUrl);
+            if (!ownsRequest) return;
 
             // Also fetch advanced goalie stats for quality starts
             const advancedGoalieUrl = `https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=true&isGame=true&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameDate<='${today}' and gameDate>='${seasonStart}' and gameTypeId=2`;
             const advancedGoalieResponse =
               await fetchWithCache(advancedGoalieUrl);
+            if (!ownsRequest) return;
 
             if (goalieResponse.data && goalieResponse.data.length > 0) {
               const goalieData = goalieResponse.data;
@@ -542,6 +552,7 @@ export function TeamDashboard({
               });
             }
           } catch (error) {
+            if (!ownsRequest) return;
             console.error("Error fetching goaltending data:", error);
             setGoaltendingStats(null);
           }
@@ -585,6 +596,7 @@ export function TeamDashboard({
             )
             .eq("season_id", parseInt(effectiveSeasonId));
 
+          if (!ownsRequest) return;
           if (allTeamsError) throw allTeamsError;
 
           // Get all teams' standings data for positional rankings
@@ -612,6 +624,7 @@ export function TeamDashboard({
               .order("date", { ascending: false })
               .limit(32); // Get latest for each team
 
+          if (!ownsRequest) return;
           if (allStandingsError) throw allStandingsError;
 
           // Get all teams' advanced stats using the same date range logic
@@ -637,6 +650,7 @@ export function TeamDashboard({
               .lte("date", endDate)
               .order("date", { ascending: false });
 
+          if (!ownsRequest) return;
           if (allAdvancedError) throw allAdvancedError;
 
           // Get all teams' special teams data
@@ -655,6 +669,7 @@ export function TeamDashboard({
               .eq("season_id", parseInt(effectiveSeasonId))
               .order("date", { ascending: false });
 
+          if (!ownsRequest) return;
           if (allSpecialTeamsError) throw allSpecialTeamsError;
 
           if (allTeamsSummary && summaryData) {
@@ -997,21 +1012,53 @@ export function TeamDashboard({
             }
           }
         } catch (rankingsError) {
+          if (!ownsRequest) return;
           console.error("Error calculating league rankings:", rankingsError);
           setLeagueRankings(null);
         }
       } catch (err) {
+        if (!ownsRequest) return;
         setError(err instanceof Error ? err.message : "An error occurred");
         console.error("Error fetching team dashboard data:", err);
       } finally {
-        setIsLoading(false);
+        if (ownsRequest) setIsLoading(false);
       }
     };
 
-    if (teamId && teamAbbrev && effectiveSeasonId) {
-      fetchTeamData();
+    if (!effectiveSeasonId) {
+      if (currentSeasonQuery.isPending) {
+        setIsLoading(true);
+        setError(null);
+      } else {
+        setIsLoading(false);
+        setError(
+          currentSeasonQuery.isError
+            ? "Unable to load the current season."
+            : "Team dashboard requires a season selection.",
+        );
+      }
+      return;
     }
-  }, [teamId, teamAbbrev, effectiveSeasonId, includePlayoffs, currentSeason]);
+
+    if (!teamId || !teamAbbrev) {
+      setIsLoading(false);
+      setError("Team dashboard requires a valid team selection.");
+      return;
+    }
+
+    void fetchTeamData();
+    return () => {
+      ownsRequest = false;
+    };
+  }, [
+    teamId,
+    teamAbbrev,
+    effectiveSeasonId,
+    includePlayoffs,
+    currentSeason,
+    currentSeasonQuery.isError,
+    currentSeasonQuery.isPending,
+  ]);
 
   const formatStreak = (code: string, count: number) => {
     const streakType = code === "W" ? "Win" : code === "L" ? "Loss" : "OT Loss";

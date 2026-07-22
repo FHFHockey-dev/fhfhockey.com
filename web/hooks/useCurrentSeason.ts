@@ -4,8 +4,8 @@ import { getCurrentSeason } from "lib/NHL/client";
 
 export const currentSeasonQueryKey = ["currentSeason"] as const;
 
-export default function useCurrentSeason() {
-  const { data } = useQuery<Season | null>({
+export function useCurrentSeasonQuery() {
+  return useQuery<Season | null>({
     queryKey: currentSeasonQueryKey,
     queryFn: async () => {
       try {
@@ -17,7 +17,7 @@ export default function useCurrentSeason() {
 
         console.warn(
           "useCurrentSeason received an invalid season payload; leaving season unset.",
-          season
+          season,
         );
         return null;
       } catch (error) {
@@ -26,8 +26,12 @@ export default function useCurrentSeason() {
       }
     },
     staleTime: 1000 * 60 * 60,
-    gcTime: 1000 * 60 * 60 * 6
+    gcTime: 1000 * 60 * 60 * 6,
   });
+}
+
+export default function useCurrentSeason() {
+  const { data } = useCurrentSeasonQuery();
 
   return data ?? undefined;
 }
