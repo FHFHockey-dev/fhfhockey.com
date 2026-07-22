@@ -13,6 +13,9 @@ const {
 } = require("date-fns");
 const ProgressBar = require("progress");
 const { parse } = require("path");
+const {
+  createSeasonAwareWriterTeams
+} = require("../../NHL/seasonAwareWriterTeams.cjs");
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -29,43 +32,6 @@ async function Fetch(url) {
   }
   return response.json();
 }
-
-// Team Information
-const teamsInfo = {
-  NJD: { name: "New Jersey Devils", franchiseId: 23, id: 1 },
-  NYI: { name: "New York Islanders", franchiseId: 22, id: 2 },
-  NYR: { name: "New York Rangers", franchiseId: 10, id: 3 },
-  PHI: { name: "Philadelphia Flyers", franchiseId: 16, id: 4 },
-  PIT: { name: "Pittsburgh Penguins", franchiseId: 17, id: 5 },
-  BOS: { name: "Boston Bruins", franchiseId: 6, id: 6 },
-  BUF: { name: "Buffalo Sabres", franchiseId: 19, id: 7 },
-  MTL: { name: "Montréal Canadiens", franchiseId: 1, id: 8 },
-  OTT: { name: "Ottawa Senators", franchiseId: 30, id: 9 },
-  TOR: { name: "Toronto Maple Leafs", franchiseId: 5, id: 10 },
-  CAR: { name: "Carolina Hurricanes", franchiseId: 26, id: 12 },
-  FLA: { name: "Florida Panthers", franchiseId: 33, id: 13 },
-  TBL: { name: "Tampa Bay Lightning", franchiseId: 31, id: 14 },
-  WSH: { name: "Washington Capitals", franchiseId: 24, id: 15 },
-  CHI: { name: "Chicago Blackhawks", franchiseId: 11, id: 16 },
-  DET: { name: "Detroit Red Wings", franchiseId: 12, id: 17 },
-  NSH: { name: "Nashville Predators", franchiseId: 34, id: 18 },
-  STL: { name: "St. Louis Blues", franchiseId: 18, id: 19 },
-  CGY: { name: "Calgary Flames", franchiseId: 21, id: 20 },
-  COL: { name: "Colorado Avalanche", franchiseId: 27, id: 21 },
-  EDM: { name: "Edmonton Oilers", franchiseId: 25, id: 22 },
-  VAN: { name: "Vancouver Canucks", franchiseId: 20, id: 23 },
-  ANA: { name: "Anaheim Ducks", franchiseId: 32, id: 24 },
-  DAL: { name: "Dallas Stars", franchiseId: 15, id: 25 },
-  LAK: { name: "Los Angeles Kings", franchiseId: 14, id: 26 },
-  SJS: { name: "San Jose Sharks", franchiseId: 29, id: 28 },
-  CBJ: { name: "Columbus Blue Jackets", franchiseId: 36, id: 29 },
-  MIN: { name: "Minnesota Wild", franchiseId: 37, id: 30 },
-  WPG: { name: "Winnipeg Jets", franchiseId: 35, id: 52 },
-  ARI: { name: "Arizona Coyotes", franchiseId: 28, id: 53 },
-  VGK: { name: "Vegas Golden Knights", franchiseId: 38, id: 54 },
-  SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 },
-  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 }
-};
 
 // Fetch NHL Seasons
 async function fetchNHLSeasons() {
@@ -1233,6 +1199,7 @@ async function main() {
     if (!currentSeason) {
       throw new Error("Current season could not be determined.");
     }
+    const teamsInfo = createSeasonAwareWriterTeams(currentSeason.id);
 
     console.log(`Current Season: ${currentSeason.formattedSeasonId}`);
 
