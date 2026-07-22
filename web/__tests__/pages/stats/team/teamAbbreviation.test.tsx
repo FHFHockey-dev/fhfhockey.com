@@ -31,7 +31,7 @@ vi.mock("lib/NHL/server", () => ({ getTeams: vi.fn() }));
 import TeamStatsPage, {
   formatOrdinal,
   getServerSideProps,
-} from "./[teamAbbreviation]";
+} from "../../../../pages/stats/team/[teamAbbreviation]";
 
 function emptyQuery() {
   const chain: any = {};
