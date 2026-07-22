@@ -14,6 +14,11 @@ import styles from "./start-chart.module.scss";
 
 import { teamsInfo } from "lib/teamsInfo";
 import type { TeamPowerSnapshotLike } from "lib/dashboard/teamContext";
+import {
+  formatStartChartFantasyScoringContract,
+  START_CHART_FANTASY_SCORING_CONTRACT,
+  type StartChartFantasyScoringContract
+} from "lib/projections/startChartFantasyScoring";
 
 type StartChartPlayer = {
   player_id: number;
@@ -61,6 +66,7 @@ type ApiResponse = {
   players: StartChartPlayer[];
   ctpi: ({ date: string } & Record<string, number | null>)[];
   games: GameRow[];
+  fantasyScoringContract?: StartChartFantasyScoringContract;
 };
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -405,6 +411,10 @@ export default function StartChartPage() {
   const togglePos = (pos: string) =>
     setPosFilter((prev) => ({ ...prev, [pos]: !prev[pos] }));
 
+  const fantasyScoringDescription = formatStartChartFantasyScoringContract(
+    data?.fantasyScoringContract ?? START_CHART_FANTASY_SCORING_CONTRACT
+  );
+
   return (
     <div className={styles.page}>
       <Head>
@@ -593,7 +603,7 @@ export default function StartChartPage() {
             </div>
             <div className={styles.legendItem}>
               <strong>PTS (Fantasy Points):</strong> Projected fantasy points
-              based on standard scoring (G=3, A=2, SOG=0.4, etc.).
+              using {fantasyScoringDescription}.
             </div>
             <div className={styles.legendItem}>
               <strong>MATCHUP:</strong> A 0-100 grade indicating the

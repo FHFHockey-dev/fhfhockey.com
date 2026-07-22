@@ -8,6 +8,10 @@ import {
   fetchTeamRatings,
   type TeamRating as TeamPowerRating
 } from "lib/teamRatingsService";
+import {
+  computeStartChartFantasyPoints,
+  START_CHART_FANTASY_SCORING_CONTRACT
+} from "lib/projections/startChartFantasyScoring";
 import { requireLatestSucceededRunId } from "pages/api/v1/projections/_helpers";
 
 type ProjectionRow = {
@@ -99,12 +103,6 @@ const computeMatchupGrade = (
   const grade = 100 - (xga60 - 2.5) * 22.5;
   return Math.min(95, Math.max(5, grade));
 };
-
-const computeFantasyPoints = (args: {
-  goals: number;
-  assists: number;
-  shots: number;
-}) => Number((args.goals * 3 + args.assists * 2 + args.shots * 0.5).toFixed(3));
 
 async function fetchFallbackRunWithPlayerData(
   targetDate: string
@@ -462,6 +460,8 @@ export default async function handler(
             (p.proj_shots_es ?? 0) +
             (p.proj_shots_pp ?? 0) +
             (p.proj_shots_pk ?? 0);
+          const powerPlayPoints =
+            (p.proj_goals_pp ?? 0) + (p.proj_assists_pp ?? 0);
           const matchupGrade = opponentAbbrev
             ? computeMatchupGrade(teamRatingsByAbbrev.get(opponentAbbrev))
             : null;
@@ -476,10 +476,13 @@ export default async function handler(
             opponent_abbrev: opponentAbbrev,
             team_id: p.team_id,
             team_abbrev: teamAbbrev,
-            proj_fantasy_points: computeFantasyPoints({
+            proj_fantasy_points: computeStartChartFantasyPoints({
               goals,
               assists,
-              shots
+              powerPlayPoints,
+              shotsOnGoal: shots,
+              hits: p.proj_hits ?? 0,
+              blockedShots: p.proj_blocks ?? 0
             }),
             proj_goals: goals,
             proj_assists: assists,
@@ -661,6 +664,7 @@ export default async function handler(
         skaterSource: "forge_player_projections",
         goalieSource: "goalie_start_projections",
         legacyPlayerProjectionsUsed: false,
+        fantasyScoringContract: START_CHART_FANTASY_SCORING_CONTRACT,
         projections: playersWithGames.length,
         players: playersWithGames,
         ctpi,

@@ -285,6 +285,18 @@ describe("/api/v1/start-chart", () => {
       projectionRunId: "run-123",
       skaterSource: "forge_player_projections",
       goalieSource: "goalie_start_projections",
+      fantasyScoringContract: {
+        version: "fhfh-default-skater-v1",
+        label: "FHFH default skater",
+        weights: {
+          goals: 3,
+          assists: 2,
+          powerPlayPoints: 1,
+          shotsOnGoal: 0.2,
+          hits: 0.2,
+          blockedShots: 0.25
+        }
+      },
       compatibilityInventory: {
         inventoryVersion: "forge-compatibility-inventory-v2",
         canonicalSkaterSource: "forge_player_projections",
@@ -312,7 +324,7 @@ describe("/api/v1/start-chart", () => {
     expect(skater.proj_goals).toBeCloseTo(0.6, 6);
     expect(skater.proj_assists).toBeCloseTo(0.6, 6);
     expect(skater.proj_shots).toBeCloseTo(3.5, 6);
-    expect(skater.proj_fantasy_points).toBeCloseTo(4.75, 6);
+    expect(skater.proj_fantasy_points).toBeCloseTo(4.22, 6);
     expect(fromMock.mock.calls.map((call) => call[0])).not.toContain(
       "player_projections"
     );
