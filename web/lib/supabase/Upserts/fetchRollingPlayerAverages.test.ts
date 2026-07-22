@@ -23,6 +23,8 @@ let initAccumulator: typeof import("./fetchRollingPlayerAverages").__testables.i
 let normalizeStrengthStates: typeof import("./fetchRollingPlayerAverages").__testables.normalizeStrengthStates;
 let normalizePlayerIdList: typeof import("./fetchRollingPlayerAverages").__testables.normalizePlayerIdList;
 let shouldUseDateScopedPlayerSelection: typeof import("./fetchRollingPlayerAverages").__testables.shouldUseDateScopedPlayerSelection;
+let buildPlayerHistoryReadOptions: typeof import("./fetchRollingPlayerAverages").__testables.buildPlayerHistoryReadOptions;
+let isWithinRequestedWriteWindow: typeof import("./fetchRollingPlayerAverages").__testables.isWithinRequestedWriteWindow;
 let shouldWarnAboutDisabledImplicitAutoResume: typeof import("./fetchRollingPlayerAverages").__testables.shouldWarnAboutDisabledImplicitAutoResume;
 let filterPlayerIdsForResume: typeof import("./fetchRollingPlayerAverages").__testables.filterPlayerIdsForResume;
 let splitRollingUpsertRowForDurableStorage: typeof import("./fetchRollingPlayerAverages").__testables.splitRollingUpsertRowForDurableStorage;
@@ -48,6 +50,8 @@ beforeAll(async () => {
       normalizeStrengthStates,
       normalizePlayerIdList,
       shouldUseDateScopedPlayerSelection,
+      buildPlayerHistoryReadOptions,
+      isWithinRequestedWriteWindow,
       shouldWarnAboutDisabledImplicitAutoResume,
       filterPlayerIdsForResume,
       splitRollingUpsertRowForDurableStorage,
@@ -1740,6 +1744,27 @@ describe("fetchRollingPlayerAverages upsertRollingPlayerMetricsBatch", () => {
 });
 
 describe("fetchRollingPlayerAverages resume behavior", () => {
+  it("reads complete prior history while keeping the requested write window bounded", () => {
+    const options = {
+      season: 20252026,
+      startDate: "2026-03-10",
+      endDate: "2026-03-14",
+      strengths: ["all" as const],
+      maxPlayers: 25
+    };
+
+    expect(buildPlayerHistoryReadOptions(options)).toEqual({
+      season: 20252026,
+      endDate: "2026-03-14",
+      strengths: ["all"],
+      maxPlayers: 25
+    });
+    expect(isWithinRequestedWriteWindow("2026-03-09", options)).toBe(false);
+    expect(isWithinRequestedWriteWindow("2026-03-10", options)).toBe(true);
+    expect(isWithinRequestedWriteWindow("2026-03-14", options)).toBe(true);
+    expect(isWithinRequestedWriteWindow("2026-03-15", options)).toBe(false);
+  });
+
   it("uses date-scoped player selection only for incremental date-bounded runs", () => {
     expect(
       shouldUseDateScopedPlayerSelection({

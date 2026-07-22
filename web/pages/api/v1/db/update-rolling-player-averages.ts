@@ -89,6 +89,7 @@ type ResponseBody = {
   executionScope?: {
     startDate: string | null;
     endDate: string | null;
+    historyReadMode: "full_selected_scope_through_end_date";
     implicitDailyWindowApplied: boolean;
     windowDays: number | null;
     smokeTestComparable: boolean;
@@ -290,6 +291,7 @@ function buildExecutionScopeSummary(args: {
   return {
     startDate: args.startDate ?? null,
     endDate: args.endDate ?? null,
+    historyReadMode: "full_selected_scope_through_end_date" as const,
     implicitDailyWindowApplied: args.implicitDailyWindowApplied,
     windowDays,
     smokeTestComparable,

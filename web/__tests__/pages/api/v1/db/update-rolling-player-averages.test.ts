@@ -279,6 +279,7 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
       executionScope: {
         startDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
         endDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+        historyReadMode: "full_selected_scope_through_end_date",
         implicitDailyWindowApplied: true,
         windowDays: 15,
         smokeTestComparable: false,
