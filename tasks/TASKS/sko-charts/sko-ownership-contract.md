@@ -38,7 +38,7 @@ Status: Reconciliation complete; no SKO score family is promoted as a canonical 
 
 - Current supported Trends pages do not import `PredictionsLeaderboard`, `InfoPopover`, `SkoExplainer`, or `usePredictionsSko` and do not call either SKO API.
 - The prediction reader bundle is internally API-backed rather than a direct-table browser consumer, but it is unmounted and remains quarantined.
-- Its sole fetch hook is explicitly named and stored as `useQuarantinedPredictionsSko`; the only caller imports that symbol, the old production-sounding hook path/symbol have no runtime reference, and the registry enumerates the hook, leaderboard, info popover, and explainer. This closes 7.3 without mounting, promoting, or deleting the bundle.
+- Exact checkpoint `b04938a9ddf30ff3af4e259ace8731c5bc655fa7` explicitly names and stores the sole fetch hook as `useQuarantinedPredictionsSko`; the only caller imports that symbol, the old production-sounding hook path/symbol have no runtime reference, and the registry enumerates the hook, leaderboard, info popover, and explainer. This closes 7.3 without mounting, promoting, or deleting the bundle.
 - The admin `/db` action calls `update-predictions-sko` through `doPOST`, which supplies the signed-in session bearer token.
 - Production pg_cron job 321 calls `update-sko-stats` at `30 10 * * *`; job 327 calls `update-predictions-sko` at `45 10 * * *`. Both are active and both use an Authorization header derived from Vault `cron_secret` without exposing its value.
 - No tracked supported route consumes the legacy GameScore/characteristic helper family.
