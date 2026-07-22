@@ -40,6 +40,14 @@ The route currently projects goals, assists, points, shots, power-play points, h
 - Returns opponent-game projection rows grouped by game, including team/opponent provenance and snapshot metadata.
 - Returns `404` when no upcoming projections exist.
 
+### Internal health
+
+`GET /api/internal/sustainability/health`
+
+- Auth: existing admin/cron middleware; the public Supabase key cannot invoke it.
+- Returns `generatedAt` plus exact `rowCount` and nullable `latestSnapshotDate` values for `sustainability_scores`, `sustainability_trend_bands`, and `sustainability_projections`.
+- An empty table is reported as zero rows with a null latest date. Any failed table read fails the request; partial health is not reported as success.
+
 ## Feature dictionary
 
 The executable dictionary is `web/lib/sustainability/featureDictionary.ts`. Its stable groups are recent rate, baseline rate, z-score, percentile, usage delta, context delta, opponent adjustment, reliability, and sample weight. Each entry declares its unit, primary source tables, description, and whether the score requires it. New production features must be added there before they are exposed in explanations or model metadata.
@@ -59,11 +67,11 @@ Primary data ownership:
 
 Production coverage measured 2026-07-11:
 
-| Table | Rows | Date span | Distinct players |
-|---|---:|---|---:|
-| `sustainability_scores` | 219,568 | 2025-10-14–2026-07-11 | 694 |
-| `sustainability_trend_bands` | 10,849,256 | 2024-10-04–2026-07-11 | 1,293 |
-| `sustainability_projections` | 0 | none | 0 |
+| Table                        |       Rows | Date span             | Distinct players |
+| ---------------------------- | ---------: | --------------------- | ---------------: |
+| `sustainability_scores`      |    219,568 | 2025-10-14–2026-07-11 |              694 |
+| `sustainability_trend_bands` | 10,849,256 | 2024-10-04–2026-07-11 |            1,293 |
+| `sustainability_projections` |          0 | none                  |                0 |
 
 Therefore no projection MAE/RMSE, baseline-win, or Brier claim is currently publishable. The API deliberately reports pending calibration. Close the gate only after real projection snapshots have matured through their 5/10-game horizons, actual outcomes are resolved without leakage, and held-out metrics plus sample/date/player coverage are recorded. Do not substitute scores or trend bands for absent historical projections.
 
@@ -83,6 +91,21 @@ The jobs are deliberately idempotent on their documented composite keys. Potenti
 These independently scheduled routes are not an atomic all-stage orchestrator. Authoritative schedule ownership and cross-job ordering remain tracked under B-CRON-NST NEW 61. Empirical distribution-snapshot/quintile persistence and config-triggered retro recompute queues are not implemented by this chain and must not be inferred from trend-band output.
 
 The legacy Python Sustainability package is offline-only. Its pure scoring functions may be used for fixtures and analysis, but its persistence, incremental, snapshot, run-log, lock, and retro entry points fail closed. Do not restore Python database writes or schedule those modules without a new approved ownership decision and executable schema proof.
+
+### Operational response and audit field schema
+
+Every audited scheduled Sustainability route returns a JSON response with:
+
+- `success`: boolean terminal outcome.
+- `timing.startedAt`, `timing.endedAt`: ISO-8601 timestamps.
+- `timing.durationMs`: nonnegative elapsed milliseconds.
+- `timing.timer`: zero-padded `MMSS` display value.
+- Run identity as applicable: `season`, `season_id`, `snapshot_date`, `start_date`, `dry`/`dry_run`, `run_all`, `offset`, and `limit`.
+- Work evidence as applicable: `processed_players`/`processed`, `rows_built`, `rows_upserted`, `rows_upserted_or_built`, `write_chunks`, `batches_processed`, `snapshots_processed`, `computed_bands`, and `updated_bands`.
+- Bounded diagnostics as applicable: `sample`, `summaries`, and `errors`.
+- Failed prerequisites: `message`, `prerequisite`, and `dependencyError` with `kind`, `source`, `classification`, `message`, nullable `detail`, and `htmlLike`.
+
+`withCronJobAudit` persists the corresponding `cron_job_audit` record with `job_name`, terminal `status`, inferred `rows_affected`, and `details.method`, `details.url`, `details.statusCode`, `details.durationMs`, the normalized `details.timing` record (including `source`), `details.rowsUpserted`, `details.failedRows`, bounded `details.error`, and a bounded serialized `details.response`. Analytics consumers must treat absent route-specific counters as null/not-applicable, not zero, and must use `status` plus HTTP status rather than inferring success from row count. Do not add credentials, authorization headers, database URLs, or provider values to route responses or audit details.
 
 - Target: full active-skater nightly recompute under 15 minutes. Process bounded pages and aggregate route timing from each response; do not send one unbounded request.
 - Partial failures are returned per player and can be retried with the same snapshot/date/page. Composite-key upserts prevent duplicates.
