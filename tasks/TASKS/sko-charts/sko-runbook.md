@@ -72,3 +72,9 @@ Do not POST to `/sko/pipeline` or `/sko/pipeline-step`, invoke the compatibility
 - The local hardening changes no database row, schema, deployment alias, route mapping, schedule, artifact, or credential. A code rollback is a normal reviewed revert, but must never restore fail-open auth or false-success behavior.
 - There is no data rollback procedure because no approved stage writes exist. Any future stage owner must define atomic outputs, run identity, idempotency, partial-failure recovery, and rollback before first execution.
 - Production route restoration must first prove fail-closed 401 behavior, honest unavailable-stage behavior, exact source deployment, bounded runtime, and zero unintended stage work.
+
+## Latest bounded deployment evidence
+
+- Exact checkpoint `053f3558fdd1d99759aa087a60f369e21813fb64` is READY as branch deployment `dpl_EDiTZFRS1LASCS5iLFC4SWpqHQVm` (`target=null`).
+- GET-only checks on its branch alias return 200 for `/api/healthz` and Vercel 404 for `/sko/pipeline`; no POST, auth-path request, or stage execution occurred.
+- Customer Production remains on the separately recorded older source and was not changed. The branch proof validates buildability and preserved non-reachability, not an operational pipeline.
