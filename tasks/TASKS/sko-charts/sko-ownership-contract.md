@@ -86,6 +86,13 @@ No live relation, policy, migration, type, or runtime reference supports the his
 - The active writers, admin/cron caller, dependency check, and source-ownership registry remain operational compatibility controls. The public reader and prediction UI remain quarantined; current Trends/FORGE remain their supported replacement boundary.
 - The nested `web/web/scripts/output/` directory contains four tracked, unreferenced artifacts totaling about 10.5 MB. Its three parquet hashes differ from the canonical-path copies; both timing CSVs share the empty-file hash. B-DEAD already recommends an archive decision. NEW 9.12 keeps all four intact pending intentional retention/version provenance under 8.4.
 
+## External pipeline reachability and failure contract
+
+- `functions/vercel.json` gives Python functions a 240-second/1,024-MB limit and maps `/sko/pipeline` to `/api/sko/pipeline/index.py`, which does not exist. The exact READY Production functions deployment `dpl_3mN6xSDiuWachTogRGbuEJbi71m6` at source `258cbcbc05b897a73db9e710b6fcb22c5f3a5a3b` serves `/api/healthz` as 200 but `/sko/pipeline` as Vercel 404. No pipeline request was sent.
+- Local inbound/outbound code now requires a nonblank `SKO_PIPELINE_SECRET`, rejects missing/invalid bearers and unknown stages before work, and always forwards bearer auth for allowed requests. Six focused tests prove missing-secret/no-request, unknown-stage/no-request, valid sanitized/authenticated forwarding, inbound 401s, and placeholder behavior; NEW 9.13 is locally complete without route restoration or execution.
+- The repository exposes no executable backfill/train/score/upload implementation after the deliberate modeling-script deletion. `/sko/pipeline-step` now returns honest 501 `implemented=false` after valid auth rather than accepted/success. NEW 9.14 is complete; Production remains untouched/404 and NEW 9.3 retains the restore/replace/historical-only decision.
+- `sko-runbook.md` records environment names only, jobs 321/327, four named timeouts versus the platform cap, absent metric/cleanup/state owners, safe checks, forbidden operational calls, artifacts, failures, and rollback prerequisites. Base 4.1/8.1 close on truthful inventory, not operability.
+
 ## Verification
 
 - Complete reads of both SKO PRDs, modeling notes, the historical burn-down plan, the reconciled task list, current quarantine/ownership registries, route implementations, supported Trends consumers, schema baseline/types, and relevant Git deletion history.

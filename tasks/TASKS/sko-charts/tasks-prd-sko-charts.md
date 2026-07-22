@@ -6,6 +6,7 @@
 - `tasks/TASKS/sko-charts/prd-sko.md` - Earlier residual-P/60 sustainability concept retained as research input.
 - `tasks/TASKS/sko-charts/sko-modeling-notes.md` - Modeling analysis and embedded checklist.
 - `tasks/TASKS/sko-charts/sko-ownership-contract.md` - Reconciled PRD/runtime/formula/data/consumer/caller ownership matrix and promotion boundary.
+- `tasks/TASKS/sko-charts/sko-runbook.md` - Truthful compatibility-pipeline environment, schedule, stage, timeout, artifact, failure, and rollback inventory.
 - `tasks/TASKS/dead-code-cleanup/burn-down-plan.md` - Legacy SKO simplification and retirement scope merged here.
 - `web/pages/skoCharts.tsx` - Quarantined legacy route.
 - `web/pages/trends/index.tsx` - Current prediction leaderboard and Trends entry surface.
@@ -54,7 +55,7 @@
   - [ ] 3.7 Test rolling/partial windows, empirical quantiles/fallbacks, smoothstep bounds, characteristic scores, feature exports, and determinism.
 
 - [ ] 4.0 Segment the long-running pipeline into durable operational stages
-  - [ ] 4.1 Inventory backfill, feature, train, score, metric, upload, and cleanup dependencies, runtimes, and artifacts.
+  - [x] 4.1 Inventory backfill, feature, train, score, metric, upload, and cleanup dependencies, runtimes, and artifacts. Evidence (2026-07-22): `sko-runbook.md` records the four sequencer names/timeouts against the 240-second platform cap, absent executors/metric/cleanup owners, deleted scripts, retained canonical/nested artifacts, active compatibility writers/schedules, and missing run/retry/resume/lock/state contracts without claiming operability.
   - [ ] 4.2 Replace monolithic execution with bounded idempotent stages that fit current runtime limits and resume from persisted state.
   - [ ] 4.3 Define stable inputs/outputs, artifact version/checksum, run identity, retry, partial-failure state, and stale-run recovery.
   - [ ] 4.4 Chain stages through existing cron/orchestration; a new paid queue/workflow is a strategy checkpoint.
@@ -84,7 +85,7 @@
   - [ ] 7.5 Verify navigation, APIs, cron inventory, build resolution, and Trends after each cleanup batch.
 
 - [ ] 8.0 Add runbook, monitoring, and end-to-end evidence
-  - [ ] 8.1 Document environment names only, stage commands, schedules, artifacts, state files, expected rows, retries, rollback, and failures.
+  - [x] 8.1 Document environment names only, stage commands, schedules, artifacts, state files, expected rows, retries, rollback, and failures. Evidence (2026-07-22): `sko-runbook.md` names only `CRON_SECRET`, `SKO_PIPELINE_ENDPOINT`, `SKO_PIPELINE_SECRET`, and Vault `cron_secret`; records jobs 321/327, safe test/health commands, unavailable operational commands/expected rows, retained artifacts, no retry/state guarantees, exact failure semantics, and rollback prerequisites.
   - [ ] 8.2 Monitor last success, freshness, player/prediction coverage, schema drift, errors, artifact mismatch, and stalled stages.
   - [ ] 8.3 Verify source ingest → staged pipeline → persistence → read API → Trends UI on a bounded date.
   - [ ] 8.4 Verify no secrets/local absolute paths are committed and generated artifacts are intentional and bounded.
@@ -105,3 +106,5 @@
   - [x] NEW 9.10 **P1 overprivileged public reader and credential-prefix logging:** `get-predictions-sko` now uses only the existing public read-only server client under the verified public SELECT policy; all service-role resolution, JWT decoding, credential-source warnings, and key-prefix logging are removed. Static scans plus the focused reader suite prove the bounded route no longer references or logs credentials (discovered and completed 2026-07-22).
   - [x] NEW 9.11 **P2 capped and identity-incomplete prediction response:** the reader now enforces strict dates/ranges/positive identifiers/order and bounded pages, selects exact-count deterministic ranges, includes `model_name`, `model_version`, and `updated_at`, and returns explicit page-scoped freshness/coverage/pagination/partial metadata. The dedicated reader suite passes 8/8 and the combined reader/writer group passes 2 files/14 tests plus full TypeScript (discovered and completed 2026-07-22).
   - [ ] NEW 9.12 **P2 duplicated unowned generated SKO artifacts:** four tracked files under the duplicated `web/web/scripts/output/` path have no runtime or documentation consumer; three parquet files differ from their newer canonical-path counterparts while the one-byte timing CSV is identical. The existing B-DEAD report already classifies the nested directory as an archive/removal decision. Preserve both evidence sets until retention/version provenance is approved under 8.4; do not infer deletion from generated naming alone (discovered 2026-07-22).
+  - [x] NEW 9.13 **P1 latent fail-open external pipeline authorization:** inbound Flask auth and the outbound sequencer now both require a nonblank `SKO_PIPELINE_SECRET`; missing config stops before dependency/network work, invalid/missing bearers remain 401, approved stages always forward the bearer, and unknown stages stop before requests. Focused tests pass 6/6; the Production route remains 404 and was not restored or invoked (discovered and completed 2026-07-22).
+  - [x] NEW 9.14 **P1 miswired and false-success pipeline surface:** the unrouted placeholder now returns honest 501 `implemented=false` after valid auth instead of 200 accepted, while invalid stages remain 400. The Production mapping remains intentionally untouched/404 and NEW 9.3 retains the restore/replace/retire decision. Focused Flask/helper tests pass 6/6 (discovered and completed 2026-07-22).

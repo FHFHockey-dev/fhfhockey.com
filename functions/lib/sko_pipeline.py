@@ -9,6 +9,7 @@ from typing import Any, Dict, Iterable, List
 import requests
 
 DEFAULT_STEPS: tuple[str, ...] = ("backfill", "train", "score", "upload")
+ALLOWED_STEPS = frozenset(DEFAULT_STEPS)
 STEP_TIMEOUTS: dict[str, int] = {
     "backfill": 120,
     "train": 240,
@@ -88,7 +89,7 @@ def _post_step(endpoint: str, headers: Dict[str, str], payload: Dict[str, Any], 
 def trigger_sko_step_forward(payload: Dict[str, Any] | None = None) -> Dict[str, Any]:
     """Invoke the sKO pipeline in segmented fashion to stay within runtime limits."""
 
-    endpoint = os.environ.get("SKO_PIPELINE_ENDPOINT")
+    endpoint = (os.environ.get("SKO_PIPELINE_ENDPOINT") or "").strip()
     if not endpoint:
         return {
             "success": False,
@@ -96,13 +97,27 @@ def trigger_sko_step_forward(payload: Dict[str, Any] | None = None) -> Dict[str,
             "steps": [],
         }
 
-    headers: Dict[str, str] = {"Content-Type": "application/json"}
-    secret = os.environ.get("SKO_PIPELINE_SECRET")
-    if secret:
-        headers["Authorization"] = f"Bearer {secret}"
+    secret = (os.environ.get("SKO_PIPELINE_SECRET") or "").strip()
+    if not secret:
+        return {
+            "success": False,
+            "message": "SKO pipeline authentication is not configured.",
+            "steps": [],
+        }
+
+    headers: Dict[str, str] = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {secret}",
+    }
 
     payload = payload or {}
     steps = _normalize_steps(payload)
+    if any(step not in ALLOWED_STEPS for step in steps):
+        return {
+            "success": False,
+            "message": "Unsupported SKO pipeline step requested.",
+            "steps": [],
+        }
     sanitized_payload = _sanitize_payload(payload)
 
     results: list[Dict[str, Any]] = []
