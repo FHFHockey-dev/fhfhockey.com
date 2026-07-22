@@ -23,7 +23,7 @@
 
 ## Tasks
 
-- [ ] 1.0 Reconcile both PRDs with current Start Chart/FORGE ownership
+- [x] 1.0 Reconcile both PRDs with current Start Chart/FORGE ownership
   - [x] 1.1 Map every requested table, view, job, utility, endpoint, UI control, metric, and acceptance criterion to current equivalents.
   - [x] 1.2 Record requests satisfied by existing FORGE, team-power, rolling-metric, sustainability, goalie-start, or scoring-profile contracts and avoid duplicate schema.
   - [x] 1.3 Record Daily MVP precedence: one chosen-date slate, no off-night/bench factors, deterministic output by model version.

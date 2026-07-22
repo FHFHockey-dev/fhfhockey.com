@@ -199,3 +199,5 @@ These were flagged by the import graph or `knip`, but should not be deleted base
 No route, component, script, operational entrypoint, or generated artifact changed in this refresh.
 
 Exact checkpoint `146ca692faf8b3469c05c91912a1e72ce90dcaa3` publishes the 11-row current-state reconciliation with source/master 11/35 and global 4,431/4,874 parity.
+
+The 2026-07-22 parent-parity reconciliation closes parent 2.0 because all four generated/debris classification, cleanup, ignore, and no-consumer children are verified. B-DEAD is now 12/35 with 23 open; no additional file or route was removed.

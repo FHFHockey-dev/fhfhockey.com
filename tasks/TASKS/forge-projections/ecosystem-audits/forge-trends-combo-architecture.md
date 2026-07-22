@@ -1,5 +1,9 @@
 # FORGE + Trends + Start Chart Combo Dashboard
 
+## Current completion boundary (2026-07-22)
+
+The information architecture/data contracts, shared loading/cache layer, unified team-power views, FORGE-first player/goalie projections, and team/skater trend/search sections are complete as defined by their fully verified child rows. The source list is 30/37 with seven open: legacy dead-code removal, the validation parent, response-size/pagination verification, empty/off-season load testing, cron-table freshness, and measured median-load evidence. Those remaining runtime and cleanup gates are not inferred from architecture completion.
+
 ## 1.1 Route + rendering strategy
 
 ### Proposed route

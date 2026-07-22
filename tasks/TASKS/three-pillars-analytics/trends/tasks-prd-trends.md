@@ -22,7 +22,7 @@
 
 ## Tasks
 
-- [ ] 1.0 Reconcile route ownership and current implementation
+- [x] 1.0 Reconcile route ownership and current implementation
   - [x] 1.1 Map every recovered PRD requirement to current page, API, metric registry, loader, style, test, and source table/view.
   - [x] 1.2 Verify `/trends`, Underlying Stats, Trends Sandbox, FORGE, Start Chart, and SKO ownership boundaries and append conflicting live behavior as `NEW` tasks.
   - [x] 1.3 Classify `placeholder.tsx`, duplicated styles/components, and legacy prediction helpers as active, compatibility, quarantine, or cleanup candidates with consumer evidence.
@@ -52,7 +52,7 @@
   - [x] 4.4 Verify team metadata/colors/logos are normalized once and not remapped inconsistently per section.
   - Evidence (4.1/4.3/4.4, 2026-07-22): exact team traces distinguish aligned movement percentiles, CTPI, SOS, and persisted current-state ratings; `/trends` routes deeper diagnosis to Underlying Stats, while shared canonical team identity/metadata supplies colors/logos and date/team handoff.
 
-- [ ] 5.0 Complete skater movement workflow
+- [x] 5.0 Complete skater movement workflow
   - [x] 5.1 Verify approved production, shot/xG, playmaking, usage, physical, defense/context, and luck/regression categories against rolling support totals.
   - [x] 5.2 Provide position/group, window, metric, team, and search filters with URL restoration and honest availability.
   - [x] 5.3 Verify player detail shows selected metric/window/date context, explanations, sample/freshness, and linked deeper diagnosis without N+1 reads.

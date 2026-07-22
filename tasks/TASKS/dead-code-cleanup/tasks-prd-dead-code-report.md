@@ -26,7 +26,7 @@
   - [x] 1.3 Compare every 2026 audit candidate to current evidence and classify it as active, hidden supported, admin/operational, compatibility/redirect, quarantine, generated/temp, uncertain, or high-confidence dead.
   - [ ] 1.4 Add changed/new candidates and remove disproven claims with evidence; do not carry old `knip` flags forward automatically.
 
-- [ ] 2.0 Handle obvious temporary/generated debris separately
+- [x] 2.0 Handle obvious temporary/generated debris separately
   - [x] 2.1 Classify root/temp/debug scripts, duplicated generated-output paths, logs, and test-result artifacts by current package/workflow/documentation usage.
   - [x] 2.2 Move durable findings into existing runbooks/tasks and delete only proven temporary files in small reviewable batches.
   - [x] 2.3 Add/adjust ignore rules for regenerated logs/results only after confirming they are not intentional committed fixtures.

@@ -6523,3 +6523,9 @@
 
 - **Publication / equality:** Exact six-document checkpoint `146ca692faf8b3469c05c91912a1e72ce90dcaa3` (`docs(cleanup): refresh dead-code evidence`) publishes 11 evidence-backed closures, source/master 11/35, and global 4,431/4,874 = 90.91%. Fresh-parent equality at `fbffe81098ee10e9ed2d5e1984570f738f8a4497`, exact text-only staging, diff/credential-shape integrity, one-ahead/zero-behind proof, guarded normal push, and post-push local/tracking/live equality pass.
 - **Boundary / next action:** No deletion or runtime/external mutation occurred. Route removal, hidden-product disposition, external/manual callers, retained SKO artifacts, security ownership, and final verification stay open; continue with the next non-gated multi-row cohort.
+
+## Entry 0647 — 2026-07-22 cross-initiative parent-parity cohort
+
+- **Efficiency cohort:** Reconciled the imported ledger for unchecked parents whose complete child sets already carry direct evidence. Closed ten contradictory parent rows in one documentation-only batch: B-FORGE-COMBO 1.0–5.0; B-TRENDS 1.0/5.0; B-START 1.0; B-DEAD 2.0; and B-CRON-NST 4.0.
+- **Result:** B-FORGE-COMBO is 30/37, B-TRENDS 30/50, B-START 26/51, B-DEAD 12/35, and B-CRON-NST 58/66. Global parity is 4,441/4,874 with 433 open = 91.12% complete / 8.88% open; severity remains P0 20/13, P1 146/103, P2 139/123, and P3 22/21.
+- **Truthful remainder / boundary:** No child, implementation, test, formula, schema, data, route, schedule, deployment, provider, credential, shared checkout, stash, or external state changed. The seven B-FORGE-COMBO cleanup/performance/runtime rows and every other named gate remain open. Publish one coherent checkpoint and one receipt, then select the next multi-row implementation or evidence cohort by closure yield.

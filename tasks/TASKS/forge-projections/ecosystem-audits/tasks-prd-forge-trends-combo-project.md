@@ -33,33 +33,33 @@
 
 ## Tasks
 
-- [ ] 1.0 Define combined dashboard information architecture and data contracts
+- [x] 1.0 Define combined dashboard information architecture and data contracts
   - [x] 1.1 Confirm final route name and whether the page is SSR, CSR, or hybrid.
   - [x] 1.2 Define canonical data shapes for team power, projections, and trends.
   - [x] 1.3 Decide whether legacy `player_projections` stays as fallback or is removed.
   - [x] 1.4 Align date semantics across sources (today vs latest available vs yesterday).
   - [x] 1.5 Document required filters (date, team, search, position, projection source).
 
-- [ ] 2.0 Build unified data loading layer and cache strategy
+- [x] 2.0 Build unified data loading layer and cache strategy
   - [x] 2.1 Create shared fetch utilities/hooks for CTPI, team power, SOS, skater trends, FORGE projections, and start-chart schedule data.
   - [x] 2.2 Add caching/memoization to avoid duplicate API calls across sections.
   - [x] 2.3 Normalize team metadata via `teamsInfo` (abbr/name/colors) in one place.
   - [x] 2.4 Add loading/error boundary handling per section with consistent empty states.
 
-- [ ] 3.0 Consolidate team power views (CTPI + power ratings + SOS)
+- [x] 3.0 Consolidate team power views (CTPI + power ratings + SOS)
   - [x] 3.1 Merge CTPI ladder and power ratings table into a single canonical table.
   - [x] 3.2 Integrate SOS metrics into the combined team table and cards.
   - [x] 3.3 Reuse CTPI sparkline + hot/cold streaks as sidebar components.
   - [x] 3.4 Expose component ratings (finishing/goalie/danger/special/discipline) in expanded rows or tooltips.
 
-- [ ] 4.0 Consolidate player/goalie projections and matchup context
+- [x] 4.0 Consolidate player/goalie projections and matchup context
   - [x] 4.1 Build unified projections section using FORGE as primary source.
   - [x] 4.2 Wire goalie starts and win/shutout probabilities into projections view.
   - [x] 4.3 Add games remaining + opponent context to projection rows.
   - [x] 4.4 Add toggle for legacy projections if retained (side-by-side or switch).
   - [x] 4.5 Ensure uncertainty bands render consistently across skaters/goalies.
 
-- [ ] 5.0 Consolidate trend charts (team + skater) and search
+- [x] 5.0 Consolidate trend charts (team + skater) and search
   - [x] 5.1 Embed team trend charts with category tabs and brush controls.
   - [x] 5.2 Embed skater trend charts with position + window controls.
   - [x] 5.3 Reuse player search/autocomplete and link to player trend pages.

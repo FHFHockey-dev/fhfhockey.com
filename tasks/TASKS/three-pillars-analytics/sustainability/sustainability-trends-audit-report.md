@@ -255,12 +255,14 @@ The target is one shared data/model layer with multiple purpose-specific views, 
 
 The completed inventory, dependency map, static family audits, exact validation traces, definition register, and consolidation decision are now imported into their previously unchecked downstream implementation pairs rather than re-audited:
 
-- **B-START:** 25/51 complete. Closed evidence covers PRD/runtime ownership, current schema/input equivalents, schedule/team/player/goalie utility consumption, versioned read-time scoring, canonical API/UI fields and states, source ordering, exact player/team/goalie reconciliation, aligned drill-in metadata, and retired legacy materialization. The 26 open rows retain formula/schema/history, manual override, runbook, latency, accessibility, and full end-to-end gates.
-- **B-TRENDS:** 28/50 complete. Closed evidence covers route/dependency ownership, entity metrics/windows, complete/bounded reads, identity, team/skater/goalie workflows, projection-vs-history separation, query handoff, URL/cache behavior, and movement hierarchy. The 22 open rows retain typed warning completeness, independent section failure/stale preservation, mixed-recency invalidation, hydration, broader accessibility/performance/browser, and final synchronization.
+- **B-START:** 26/51 complete. Closed evidence covers the now-complete ownership/reconciliation parent plus current schema/input equivalents, schedule/team/player/goalie utility consumption, versioned read-time scoring, canonical API/UI fields and states, source ordering, exact player/team/goalie reconciliation, aligned drill-in metadata, and retired legacy materialization. The 25 open rows retain formula/schema/history, manual override, runbook, latency, accessibility, and full end-to-end gates.
+- **B-TRENDS:** 30/50 complete. Closed evidence covers the now-complete route-ownership and skater-workflow parents, entity metrics/windows, complete/bounded reads, identity, team/skater/goalie workflows, projection-vs-history separation, query handoff, URL/cache behavior, and movement hierarchy. The 20 open rows retain typed warning completeness, independent section failure/stale preservation, mixed-recency invalidation, hydration, broader accessibility/performance/browser, and final synchronization.
 
 This cohort adds no new runtime claim and authorizes no schema, writer, historical repair, deployment, provider, or deletion action. It removes duplicate unchecked work already proved by this report while preserving every known NEW 6–13 and downstream open gate.
 
 Exact checkpoint `d474ae206d1df074b401346ec22dabc96bc4c3aa` publishes the 53-row downstream reconciliation with exact B-START 25/51, B-TRENDS 28/50, and global 4,387/4,874 source/master parity.
+
+The 2026-07-22 parent-parity cohort subsequently closes only parents whose complete child sets are already evidenced above, bringing B-START to 26/51 and B-TRENDS to 30/50 without changing any runtime claim or open gate.
 
 ## Sustainability trends-plan implementation reconciliation
 

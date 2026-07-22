@@ -1326,7 +1326,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md::C0001` (original L41) — 1.0 Build the remediation baseline from the March 29 and March 31, 2026 cron emails and map every scoped issue to its owning route, audit source, and failure category. The paired durable failure inventory plus shared PRD map every scoped category to its owning route/audit source and remediation requirement (verified 2026-07-15).
 - [x] `SRC::tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md::C0002` (original L42) — 2.0 Migrate all scoped NST routes to the new authenticated `data.naturalstattrick.com` integration with fail-fast configuration handling and secret-safe logging. The dedicated NST migration list is fully complete; active direct routes use the shared authenticated client, retained proxy/legacy ownership is explicit, and current client/gamelog gates pass (verified 2026-07-15).
 - [ ] `SRC::tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md::C0003` (original L43) — 3.0 Normalize audit production and cron-report correlation for cron-scheduled Supabase-writing routes so missing-audit and false-failure cases are eliminated.
-- [ ] `SRC::tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md::C0004` (original L44) — 4.0 Fix the live non-NST application failures and partial-success classification problems that currently prevent a clean cron health report.
+- [x] `SRC::tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md::C0004` (original L44) — 4.0 Fix the live non-NST application failures and partial-success classification problems that currently prevent a clean cron health report.
 - [ ] `SRC::tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md::C0005` (original L45) — 5.0 Re-run targeted route validation and the end-to-end cron email process, then confirm the post-remediation report is accurate and stable.
 - [x] `SRC::tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md::C0006` (live NEW) — NEW 4.1 **P1 immutable-unaccent production failure:** dedicated production migration, exact catalog/empty-search-path/qualified-call/dictionary contract, three parity probes, 6/6 healthy dependent indexes, zero target advisor/log error, and five-table rollback-only indexed-write proof pass (verified 2026-07-15).
 - [x] `SRC::tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md::C0007` (live NEW) — NEW 4.2 **P1 skater-game-stats ownership failure:** promoted production game `2025030416` completed atomically with exact 2/36/4 rows and a successful audit under the bounded exact-FK parent-repair contract (verified 2026-07-15).
@@ -1927,29 +1927,29 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 
 ### Source: `tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md` (37 rows)
 
-- [ ] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0001` (original L36) — 1.0 Define combined dashboard information architecture and data contracts
+- [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0001` (original L36) — 1.0 Define combined dashboard information architecture and data contracts
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0002` (original L37) — 1.1 Confirm final route name and whether the page is SSR, CSR, or hybrid.
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0003` (original L38) — 1.2 Define canonical data shapes for team power, projections, and trends.
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0004` (original L39) — 1.3 Decide whether legacy `player_projections` stays as fallback or is removed.
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0005` (original L40) — 1.4 Align date semantics across sources (today vs latest available vs yesterday).
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0006` (original L41) — 1.5 Document required filters (date, team, search, position, projection source).
-- [ ] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0007` (original L43) — 2.0 Build unified data loading layer and cache strategy
+- [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0007` (original L43) — 2.0 Build unified data loading layer and cache strategy
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0008` (original L44) — 2.1 Create shared fetch utilities/hooks for CTPI, team power, SOS, skater trends, FORGE projections, and start-chart schedule data.
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0009` (original L45) — 2.2 Add caching/memoization to avoid duplicate API calls across sections.
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0010` (original L46) — 2.3 Normalize team metadata via `teamsInfo` (abbr/name/colors) in one place.
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0011` (original L47) — 2.4 Add loading/error boundary handling per section with consistent empty states.
-- [ ] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0012` (original L49) — 3.0 Consolidate team power views (CTPI + power ratings + SOS)
+- [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0012` (original L49) — 3.0 Consolidate team power views (CTPI + power ratings + SOS)
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0013` (original L50) — 3.1 Merge CTPI ladder and power ratings table into a single canonical table.
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0014` (original L51) — 3.2 Integrate SOS metrics into the combined team table and cards.
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0015` (original L52) — 3.3 Reuse CTPI sparkline + hot/cold streaks as sidebar components.
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0016` (original L53) — 3.4 Expose component ratings (finishing/goalie/danger/special/discipline) in expanded rows or tooltips.
-- [ ] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0017` (original L55) — 4.0 Consolidate player/goalie projections and matchup context
+- [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0017` (original L55) — 4.0 Consolidate player/goalie projections and matchup context
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0018` (original L56) — 4.1 Build unified projections section using FORGE as primary source.
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0019` (original L57) — 4.2 Wire goalie starts and win/shutout probabilities into projections view.
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0020` (original L58) — 4.3 Add games remaining + opponent context to projection rows.
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0021` (original L59) — 4.4 Add toggle for legacy projections if retained (side-by-side or switch).
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0022` (original L60) — 4.5 Ensure uncertainty bands render consistently across skaters/goalies.
-- [ ] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0023` (original L62) — 5.0 Consolidate trend charts (team + skater) and search
+- [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0023` (original L62) — 5.0 Consolidate trend charts (team + skater) and search
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0024` (original L63) — 5.1 Embed team trend charts with category tabs and brush controls.
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0025` (original L64) — 5.2 Embed skater trend charts with position + window controls.
 - [x] `SRC::tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md::C0026` (original L65) — 5.3 Reuse player search/autocomplete and link to player trend pages.
@@ -4764,7 +4764,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0003` (original L25) — 1.2 Enumerate pages/API routes, navigation, dynamic links/imports, package scripts, cron schedules, Vercel rewrites, GitHub workflows, separate apps, and documented external callers.
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0004` (original L26) — 1.3 Compare every 2026 audit candidate to current evidence and classify it as active, hidden supported, admin/operational, compatibility/redirect, quarantine, generated/temp, uncertain, or high-confidence dead.
 - [ ] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0005` (original L27) — 1.4 Add changed/new candidates and remove disproven claims with evidence; do not carry old `knip` flags forward automatically.
-- [ ] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0006` (original L29) — 2.0 Handle obvious temporary/generated debris separately
+- [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0006` (original L29) — 2.0 Handle obvious temporary/generated debris separately
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0007` (original L30) — 2.1 Classify root/temp/debug scripts, duplicated generated-output paths, logs, and test-result artifacts by current package/workflow/documentation usage.
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0008` (original L31) — 2.2 Move durable findings into existing runbooks/tasks and delete only proven temporary files in small reviewable batches.
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0009` (original L32) — 2.3 Add/adjust ignore rules for regenerated logs/results only after confirming they are not intentional committed fixtures.
@@ -5120,7 +5120,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 
 ### Source: `tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md` (51 rows)
 
-- [ ] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0001` (original L26) — 1.0 Reconcile both PRDs with current Start Chart/FORGE ownership
+- [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0001` (original L26) — 1.0 Reconcile both PRDs with current Start Chart/FORGE ownership
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0002` (original L27) — 1.1 Map every requested table, view, job, utility, endpoint, UI control, metric, and acceptance criterion to current equivalents.
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0003` (original L28) — 1.2 Record requests satisfied by existing FORGE, team-power, rolling-metric, sustainability, goalie-start, or scoring-profile contracts and avoid duplicate schema.
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0004` (original L29) — 1.3 Record Daily MVP precedence: one chosen-date slate, no off-night/bench factors, deterministic output by model version.
@@ -5245,7 +5245,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 
 ### Source: `tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md` (50 rows)
 
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0001` (original L25) — 1.0 Reconcile route ownership and current implementation
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0001` (original L25) — 1.0 Reconcile route ownership and current implementation
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0002` (original L26) — 1.1 Map every recovered PRD requirement to current page, API, metric registry, loader, style, test, and source table/view.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0003` (original L27) — 1.2 Verify `/trends`, Underlying Stats, Trends Sandbox, FORGE, Start Chart, and SKO ownership boundaries and append conflicting live behavior as `NEW` tasks.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0004` (original L28) — 1.3 Classify `placeholder.tsx`, duplicated styles/components, and legacy prediction helpers as active, compatibility, quarantine, or cleanup candidates with consumer evidence.
@@ -5267,7 +5267,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [ ] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0020` (original L47) — 4.2 Provide movers/rank/percentile/delta charts and tables with sample/freshness context and qualified empty states.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0021` (original L48) — 4.3 Keep deeper team diagnosis routed to Underlying Stats while preserving current metric/date/team handoff.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0022` (original L49) — 4.4 Verify team metadata/colors/logos are normalized once and not remapped inconsistently per section.
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0023` (original L51) — 5.0 Complete skater movement workflow
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0023` (original L51) — 5.0 Complete skater movement workflow
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0024` (original L52) — 5.1 Verify approved production, shot/xG, playmaking, usage, physical, defense/context, and luck/regression categories against rolling support totals.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0025` (original L53) — 5.2 Provide position/group, window, metric, team, and search filters with URL restoration and honest availability.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0026` (original L54) — 5.3 Verify player detail shows selected metric/window/date context, explanations, sample/freshness, and linked deeper diagnosis without N+1 reads.
