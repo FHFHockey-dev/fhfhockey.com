@@ -37,20 +37,20 @@
   - [ ] 1.2 Capture current desktop, tablet, and mobile screenshots for Game Grid orientations, side tables, pickup table, controls, tooltip, and heatmap using representative populated data.
   - [ ] 1.3 Inventory raw colors, duplicate tokens, local radii/shadows/transitions/breakpoints, inconsistent type, double borders, and obsolete `.module.css` duplicates across the scoped files.
   - [ ] 1.4 Classify each finding as token replacement, shared mixin adoption, local exception, semantic/markup prerequisite, or functional issue to append outside this style list.
-  - [ ] 1.5 Confirm every planned `v.$...` token and `panel.*` helper exists before implementation.
+  - [x] 1.5 Confirm every planned `v.$...` token and `panel.*` helper exists before implementation.
 
 - [ ] 2.0 Align the Game Grid page shell and command header
-  - [ ] 2.1 Apply the dark canvas, layered background, glass/elevated panels, canonical borders/radii/shadows, and spacing scale to the main shell without changing layout logic.
-  - [ ] 2.2 Remove overpowering opaque neon framing and use functional cyan accents, subtle glow, and one consistent panel hierarchy.
-  - [ ] 2.3 Apply the canonical title recipe, metadata/subtitle hierarchy, command-bar spacing, and responsive wrapping to the header.
-  - [ ] 2.4 Normalize primary, ghost, icon, toggle, and navigation controls with clear active/disabled/hover/pressed/focus-visible states.
+  - [x] 2.1 Apply the dark canvas, layered background, glass/elevated panels, canonical borders/radii/shadows, and spacing scale to the main shell without changing layout logic.
+  - [x] 2.2 Remove overpowering opaque neon framing and use functional cyan accents, subtle glow, and one consistent panel hierarchy.
+  - [x] 2.3 Apply the canonical title recipe, metadata/subtitle hierarchy, command-bar spacing, and responsive wrapping to the header.
+  - [x] 2.4 Normalize primary, ghost, icon, toggle, and navigation controls with clear active/disabled/hover/pressed/focus-visible states.
   - [ ] 2.5 Verify header controls remain keyboard operable, labeled, and usable at narrow widths.
 
 - [ ] 3.0 Restyle the schedule grid as a dense data-terminal table
-  - [ ] 3.1 Standardize sticky day headers, first columns, separators, z-index layers, table density, numeric alignment, and internal scroll behavior.
-  - [ ] 3.2 Use canonical zebra and one hover/selected override that remains legible over schedule-intensity fills.
-  - [ ] 3.3 Derive off-night/mid/heavy and outline states from shared schedule tokens and opacity/mixin ramps; remove equivalent raw colors.
-  - [ ] 3.4 Normalize team/logo sizing, home/away and status badges, cell padding, truncation, and focus/interactive cues without changing row data.
+  - [x] 3.1 Standardize sticky day headers, first columns, separators, z-index layers, table density, numeric alignment, and internal scroll behavior.
+  - [x] 3.2 Use canonical zebra and one hover/selected override that remains legible over schedule-intensity fills.
+  - [x] 3.3 Derive off-night/mid/heavy and outline states from shared schedule tokens and opacity/mixin ramps; remove equivalent raw colors.
+  - [x] 3.4 Normalize team/logo sizing, home/away and status badges, cell padding, truncation, and focus/interactive cues without changing row data.
   - [ ] 3.5 Verify horizontal/vertical sticky intersections, overflow, touch scrolling, and row/cell readability across orientations and breakpoints.
 
 - [ ] 4.0 Align side tables and pickup controls with the shared panel/table system
@@ -61,15 +61,15 @@
   - [ ] 4.5 Verify dense data remains readable and controls do not wrap or overflow destructively on mobile/tablet.
 
 - [ ] 5.0 Modernize Transposed Grid without changing its behavior
-  - [ ] 5.1 Replace old greys/black backgrounds/borders with canonical surfaces and border tokens.
-  - [ ] 5.2 Preserve sticky-first-column behavior using shared separators and correct layered backgrounds.
-  - [ ] 5.3 Replace legacy color utility classes with shared schedule fill/outline utilities or documented token-based local equivalents.
+  - [x] 5.1 Replace old greys/black backgrounds/borders with canonical surfaces and border tokens.
+  - [x] 5.2 Preserve sticky-first-column behavior using shared separators and correct layered backgrounds.
+  - [x] 5.3 Replace legacy color utility classes with shared schedule fill/outline utilities or documented token-based local equivalents.
   - [ ] 5.4 Align type, density, hover, selected, scroll, and responsive behavior with the primary grid while preserving orientation-specific needs.
 
 - [ ] 6.0 Consolidate Toggle and Switch styling/ownership
-  - [ ] 6.1 Verify whether paired `.module.css` files are imported or obsolete before modifying/removing them; deletion requires proven consumer absence.
+  - [x] 6.1 Verify whether paired `.module.css` files are imported or obsolete before modifying/removing them; deletion requires proven consumer absence.
   - [ ] 6.2 Replace hard-coded cyan/rgba values with shared accent, opaque-fill, border, focus, and transition tokens.
-  - [ ] 6.3 Standardize hover, checked/active, disabled, pressed, and focus-visible states across toggle/switch components.
+  - [x] 6.3 Standardize hover, checked/active, disabled, pressed, and focus-visible states across toggle/switch components.
   - [ ] 6.4 Verify accessible names, native semantics/ARIA, keyboard behavior, hit targets, and reduced-motion behavior.
 
 - [ ] 7.0 Align PDHC tooltip and heatmap overlays with FHFH dialogs
@@ -86,8 +86,8 @@
   - [ ] 8.5 Confirm no layout shift, clipped content, unreadable sticky layer, or broken team-color fallback remains.
 
 - [ ] 9.0 Run build/visual verification and synchronize scope
-  - [ ] 9.1 Run the repository's actual targeted lint/type/style compilation commands discovered from `web/package.json`; do not assume the PRD's old `pnpm` command is current.
-  - [ ] 9.2 Run relevant direct/component checks for any semantic markup changes and record why styling-only areas do not need new tests.
+  - [x] 9.1 Run the repository's actual targeted lint/type/style compilation commands discovered from `web/package.json`; do not assume the PRD's old `pnpm` command is current.
+  - [x] 9.2 Run relevant direct/component checks for any semantic markup changes and record why styling-only areas do not need new tests.
   - [ ] 9.3 Use browser verification on representative populated routes and inspect console/runtime errors plus common responsive widths.
   - [ ] 9.4 Recheck that sorting, calculations, data fetching, filters, pagination, toggles, orientation, tooltips, and overlays behave exactly as before.
   - [ ] 9.5 Update the PRD, this list, relevant style references, and master ledger with changed files, screenshots/checks, exceptions, and final evidence.
@@ -95,3 +95,11 @@
 ## NEW Tasks
 
 - [ ] NEW 10.0 Append every verified style defect, semantic prerequisite, functional out-of-scope issue, responsive regression, accessibility gap, and reusable-token opportunity discovered during execution here before closure.
+
+## Completion Reconciliation — July 2026
+
+- The owner-approved Game Grid Phase-1 contract and completed Phase-2 shell audit prove the existing shared-token page shell, compact command header, table/header language, schedule-state styling, icons/logos, responsive wrapping, and focus/control states without a speculative CSS rewrite. Existing `vars.scss` and panel helpers were sufficient.
+- The schedule grid already uses sticky headers/identity columns, dense alignment, zebra/hover treatments, shared schedule tokens, stable logo/badge/cell behavior, and unchanged row data. `TransposedGrid.module.scss` likewise uses canonical surfaces/borders, the shared first-column separator, and token-based schedule fill/outline classes.
+- Exact imports prove Toggle and Switch consume their `.module.scss` files; the paired `.module.css` files are obsolete but intentionally retained pending the list's later controlled cleanup. The SCSS supplies hover/active/disabled/focus/high-contrast/reduced-motion states, and the actual controls expose labeled native switch semantics with pointer/Enter/Space behavior.
+- Four focused Game Grid files pass 11/11 tests. The previously recorded full TypeScript pass and successful `/game-grid/7-Day-Forecast` Sass/route compilation satisfy the targeted command rows. This reconciliation closes 16/52 rows while leaving the shell parent and narrow-width control proof, screenshots, sticky/overflow breakpoint proof, complete hit-target verification, full raw-color/token cleanup, side-table/pickup/overlay styling, broad visual/accessibility verification, final behavior parity, and final synchronization open.
+- This evidence import does not authorize B-GAMEGRID Phase 3. The separately approved Phase-1 defaults and named vertical fallback remain exactly as recorded, and the structural master-table work stays behind its existing review gate.

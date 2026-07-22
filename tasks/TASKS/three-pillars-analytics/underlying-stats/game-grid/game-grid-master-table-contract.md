@@ -121,3 +121,9 @@ The focused contract group remains 3 files / 9 tests. Full TypeScript passes. Th
 - `npm run dev:stable` plus `curl http://localhost:3000/game-grid/7-Day-Forecast`
 - Result: Next.js compiled the route and returned HTTP 200 on 2026-07-22.
 - The proof covers the existing shell/control implementation, stable non-day sort/switch semantics, and the current four-week summary/detail data contract. It is not visual, sticky-scroll, master-order, collapse, or responsive browser proof; Chromium launch was sandbox-blocked and those remain later phase work.
+
+## Downstream style-overhaul reconciliation
+
+The approved Phase-1 defaults, completed Phase-2 shell evidence, and earlier Game Grid semantic-control cleanup satisfy 16 previously unchecked rows in the separate 52-row Draft Dashboard style-overhaul list. The imported closure covers token/helper sufficiency; implemented shell/header style children except narrow-width proof; existing dense schedule-grid styling except cross-breakpoint visual proof; Transposed Grid surfaces/sticky separator/token fills; obsolete paired CSS import classification; switch/toggle visual states; and targeted command/test execution. The current focused group is 4 files / 11 tests passing.
+
+The style source remains 16/52. Narrow-width control usability, complete hit-target proof, baseline screenshots, broad raw-color/local-token cleanup, side tables and Player Pickup, complete Transposed responsiveness, remaining toggle literals, PDHC overlays, full accessibility/visual review, end-to-end behavior parity, and final synchronization stay open. This downstream reconciliation does not satisfy or authorize B-GAMEGRID Phase 3.
