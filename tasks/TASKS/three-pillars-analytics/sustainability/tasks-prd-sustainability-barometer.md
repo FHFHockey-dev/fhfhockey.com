@@ -17,6 +17,11 @@
 - `web/pages/api/v1/sustainability/rebuild-priors.ts` - Audited prior route with bounded player batches, timing, and write-chunk counts.
 - `web/pages/api/v1/sustainability/rebuild-window-z.ts` - Audited window-z route with prerequisite, batch, timing, and write-chunk evidence.
 - `web/pages/api/v1/sustainability/rebuild-score.ts` - Audited score route with prerequisite, batch, timing, and write-chunk evidence.
+- `web/pages/api/v1/sustainability/trends.ts` - Existing dashboard leaderboard-like route using the canonical l3/l5/l10/l20 score contract.
+- `web/lib/sustainability/read.ts` - Existing single-window player and upcoming-projection read contract.
+- `web/lib/sustainability/health.ts` - Exact-count/latest-snapshot health reader for canonical Sustainability outputs.
+- `web/pages/api/internal/sustainability/health.ts` - Admin/cron-protected Sustainability health endpoint.
+- `web/lib/sustainability/health.test.ts` - Exact-count, empty-table, and fail-closed health-reader regressions.
 - `tasks/TASKS/three-pillars-analytics/sustainability/SUSTAINABILITY-RUNBOOK.md` - Canonical scheduled chain, retry/failure, ownership, and unsupported-feature boundary.
 - `web/lib/supabase/pagination.ts` - Shared verified range-pagination and bounded filter-chunk helpers.
 - `supabase/migrations/20260716112908_production_schema_baseline.sql` - Authoritative baseline for canonical Sustainability tables, keys, grants, and indexes.
@@ -121,6 +126,7 @@
 	- [x] 5.10 Document the canonical scheduled route chain, exact retry identity, prerequisite/failure behavior, bounded read/write contracts, B-CRON-NST NEW 61 ownership dependency, Python offline-only boundary, and unimplemented distribution/retro semantics in the existing Sustainability runbook (verified 2026-07-22).
 
 - [ ] 6.0 API Integration (Player Summary Extension & Leaderboard Endpoint)
+	- Dependency order: resolve NEW 14 window/route ownership → implement 6.1/6.2 → verify 6.3 and secure 6.4 → add 6.5 → close 6.6/6.7.
 	- [ ] 6.1 Extend existing player summary data access layer to join most recent GAME, G5, G10, STD scores (by game_date or season_id if STD).
 	- [ ] 6.2 Implement leaderboard endpoint with parameters: window_type, min_games, min_score, rookie_only, page, page_size.
 	- [ ] 6.3 Add query optimization: composite index usage; verify EXPLAIN plan.
@@ -144,7 +150,7 @@
 	- [ ] 8.2 Add anomaly detector (|z_raw|>5) increment counters; persist extreme_flag in row.
 	- [ ] 8.3 Implement random sample recompute function & log diff stats; alert if diff > tolerance.
 	- [ ] 8.4 Implement nightly distribution drift detection (compare stdev & mean vs prior 7-day rolling average).
-	- [ ] 8.5 Add health endpoint /api/internal/sustainability/health returning latest snapshot date & counts.
+	- [x] 8.5 Add health endpoint `/api/internal/sustainability/health` returning exact row counts and latest snapshot dates for the canonical score, trend-band, and projection outputs. The route is GET-only and protected by the existing admin/cron boundary; focused empty-table/error tests, TypeScript, lint, formatting, and diff integrity pass (verified 2026-07-22).
 	- [x] 8.6 Assert all persisted scores remain finite and within [0,100]. A value-free production aggregate proves 247,024/247,024 rows valid with minimum 0 and maximum 100; current guardrail tests cover clipped and invalid inputs (verified 2026-07-22).
 	- [ ] 8.7 Add test verifying guardrails (0 & 100 only on raw thresholds) using synthetic S_raw values.
 	- [ ] 8.8 Document log field schema for analytics ingestion.
@@ -165,6 +171,8 @@
 - [x] NEW 12.0 **P1 canonical scheduled-pipeline completeness and payload safety:** the active league-skill reference read relied on one implicit PostgREST page, while player-prior, window-z, and score writers sent full route payloads in one request. Range-paginate the deterministic league reference; split every potentially large canonical Sustainability write into fail-fast batches of at most 400 rows; expose write-chunk metrics; retain composite-key idempotency; and document the exact scheduled chain, retries, ownership dependency, and intentionally absent distribution/retro semantics. Twenty-four focused tests, full TypeScript, scoped zero-error lint, formatting, and diff integrity prove the bounded implementation (discovered and closed 2026-07-22).
 
 - [ ] NEW 13.0 **P1 persisted score-format/version contract drift:** the source PRD and completed 4.7 require an integer 0–100 score with exact-boundary guardrails, while the active TypeScript owner rounds to two decimal places. Production contains 247,024 finite in-range rows, but 215,250 are fractional and 34,636/34,944 rows computed in the last 14 days are fractional. Exact 0/100 rows do satisfy the documented raw-probability thresholds. Decide whether v2 intentionally retains fractional precision or must version-bump to integer formatting; then align runtime, schema/data contract, UI/API copy, historical/backfill policy, tests, and deployment evidence without silently mixing semantics. This owns open 8.7 and is held at the score-contract strategy boundary (discovered 2026-07-22).
+
+- [ ] NEW 14.0 **P1 canonical API/window ownership drift:** the source 6.x contract names nonexistent draft paths and requires a joined `GAME/G5/G10/STD` player summary plus a paginated/filterable leaderboard. Current production code instead exposes a single-window player route, an upcoming-projection route, an entity-sandbox route, and a dashboard trends route using `l3/l5/l10/l20` with different filters and no ETag, version/config hash, or authenticated optional components. Decide the canonical window taxonomy and whether to extend, version, or replace an existing route without breaking current FORGE/dashboard consumers; then implement 6.1–6.7 in the recorded dependency order (discovered 2026-07-22).
 
 ---
 I have generated the high-level tasks based on the PRD. Ready to generate the sub-tasks? Respond with "Go" to proceed.
