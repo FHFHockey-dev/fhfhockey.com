@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { buildEndpointScanSummary } from "lib/api/scanSummary";
+import { resolveLatestStartedSeasonIdForDate } from "lib/NHL/server";
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { buildRequestedDateServingState } from "lib/dashboard/freshness";
@@ -328,24 +329,6 @@ function extractDegradedProjectionContext(
   };
 }
 
-async function fetchCurrentSeasonIdForDate(asOfDate: string): Promise<number> {
-  if (!supabase) throw new Error("Supabase server client not available");
-  const asOfTimestamp = `${asOfDate}T23:59:59.999Z`;
-  const { data, error } = await supabase
-    .from("seasons")
-    .select("id")
-    .lte("startDate", asOfTimestamp)
-    .order("startDate", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw error;
-  const seasonId = Number((data as any)?.id);
-  if (!Number.isFinite(seasonId)) {
-    throw new Error(`Unable to resolve season id for date=${asOfDate}`);
-  }
-  return seasonId;
-}
-
 async function fetchActiveRosterPlayerIdSet(
   seasonId: number,
 ): Promise<Set<number>> {
@@ -524,7 +507,10 @@ export default async function handler(
       missingRequestedHorizon = (count ?? 0) > 0;
     }
 
-    const currentSeasonId = await fetchCurrentSeasonIdForDate(resolvedDate);
+    const currentSeasonId = await resolveLatestStartedSeasonIdForDate(
+      resolvedDate,
+      supabase,
+    );
     const activeRosterPlayerIds =
       await fetchActiveRosterPlayerIdSet(currentSeasonId);
     if (activeRosterPlayerIds.size > 0) {

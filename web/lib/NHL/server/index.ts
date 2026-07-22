@@ -1,6 +1,7 @@
 // C:\Users\timbr\Desktop\FHFH\fhfhockey.com-3\web\lib\NHL\server\index.ts
 
 import { differenceInYears } from "date-fns";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { get, restGet } from "lib/NHL/base";
 import {
   Boxscore,
@@ -21,7 +22,7 @@ import {
 } from "lib/teamsInfo";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import supabaseServer from "lib/supabase/server";
-import { Tables } from "lib/supabase/database-generated.types";
+import type { Database, Tables } from "lib/supabase/database-generated.types";
 import { updatePlayer } from "pages/api/v1/db/update-player/[playerId]";
 
 function buildStaticTeamsFallback(): Team[] {
@@ -254,6 +255,53 @@ export type SeasonDetails = Pick<
   Tables<"seasons">,
   "id" | "startDate" | "regularSeasonEndDate" | "endDate" | "numberOfGames"
 >;
+
+const EXACT_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function toEndOfDayUtc(date: string): string {
+  if (!EXACT_DATE_PATTERN.test(date)) {
+    throw new Error("A valid date in YYYY-MM-DD format is required.");
+  }
+
+  const parsedDate = new Date(`${date}T00:00:00.000Z`);
+  if (
+    Number.isNaN(parsedDate.getTime()) ||
+    parsedDate.toISOString().slice(0, 10) !== date
+  ) {
+    throw new Error("A valid date in YYYY-MM-DD format is required.");
+  }
+
+  return `${date}T23:59:59.999Z`;
+}
+
+export async function getLatestStartedSeasonForDate(
+  date: string,
+  client: SupabaseClient<Database> = supabase,
+): Promise<SeasonDetails | null> {
+  const endOfDayUtc = toEndOfDayUtc(date);
+  const { data, error } = await client
+    .from("seasons")
+    .select("id,startDate,regularSeasonEndDate,endDate,numberOfGames")
+    .lte("startDate", endOfDayUtc)
+    .order("startDate", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function resolveLatestStartedSeasonIdForDate(
+  date: string,
+  client: SupabaseClient<Database> = supabase,
+): Promise<number> {
+  const season = await getLatestStartedSeasonForDate(date, client);
+  const seasonId = Number(season?.id);
+  if (!Number.isSafeInteger(seasonId) || seasonId <= 0) {
+    throw new Error(`Unable to resolve season id for date=${date}`);
+  }
+  return seasonId;
+}
 
 export async function getSeasonById(
   seasonId: number,

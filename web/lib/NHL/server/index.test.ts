@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "lib/supabase/database-generated.types";
 
 const mocks = vi.hoisted(() => ({
   from: vi.fn(),
@@ -26,7 +28,12 @@ vi.mock("pages/api/v1/db/update-player/[playerId]", () => ({
   updatePlayer: mocks.updatePlayer,
 }));
 
-import { getCurrentSeason, getSeasonById } from "./index";
+import {
+  getCurrentSeason,
+  getLatestStartedSeasonForDate,
+  getSeasonById,
+  resolveLatestStartedSeasonIdForDate,
+} from "./index";
 
 type SeasonRow = {
   endDate: string;
@@ -70,6 +77,59 @@ function createSeasonQuery(sourceRows: readonly SeasonRow[]) {
   }));
 
   return query;
+}
+
+function createLatestStartedSeasonClient(
+  sourceRows: readonly SeasonRow[],
+  queryError: Error | null = null,
+) {
+  let rows = [...sourceRows];
+  const query = {
+    select: vi.fn(),
+    lte: vi.fn(),
+    order: vi.fn(),
+    limit: vi.fn(),
+    maybeSingle: vi.fn(),
+  };
+
+  query.select.mockImplementation(() => query);
+  query.lte.mockImplementation((column: string, value: string) => {
+    if (column === "startDate") {
+      rows = rows.filter((row) => row.startDate <= value);
+    }
+    return query;
+  });
+  query.order.mockImplementation(
+    (column: string, options: { ascending: boolean }) => {
+      if (column === "startDate") {
+        rows.sort((left, right) =>
+          options.ascending
+            ? left.startDate.localeCompare(right.startDate)
+            : right.startDate.localeCompare(left.startDate),
+        );
+      }
+      return query;
+    },
+  );
+  query.limit.mockImplementation((limit: number) => {
+    rows = rows.slice(0, limit);
+    return query;
+  });
+  query.maybeSingle.mockImplementation(async () => ({
+    data: queryError ? null : (rows[0] ?? null),
+    error: queryError,
+  }));
+
+  const from = vi.fn((table: string) => {
+    if (table !== "seasons") throw new Error(`Unexpected table: ${table}`);
+    return query;
+  });
+
+  return {
+    client: { from } as unknown as SupabaseClient<Database>,
+    from,
+    query,
+  };
 }
 
 describe("getCurrentSeason", () => {
@@ -131,6 +191,121 @@ describe("getCurrentSeason", () => {
       seasonEndDate: "2026-06-25T00:00:00.000Z",
     });
     expect(mocks.restGet).not.toHaveBeenCalled();
+  });
+});
+
+describe("latest-started season resolution", () => {
+  const seasons: SeasonRow[] = [
+    {
+      id: 20262027,
+      startDate: "2026-10-06T00:00:00.000Z",
+      regularSeasonEndDate: "2027-04-15T00:00:00.000Z",
+      endDate: "2027-06-25T00:00:00.000Z",
+      numberOfGames: 1312,
+    },
+    {
+      id: 20252026,
+      startDate: "2025-10-07T00:00:00.000Z",
+      regularSeasonEndDate: "2026-04-16T00:00:00.000Z",
+      endDate: "2026-06-25T00:00:00.000Z",
+      numberOfGames: 1312,
+    },
+    {
+      id: 20242025,
+      startDate: "2024-10-04T00:00:00.000Z",
+      regularSeasonEndDate: "2025-04-17T00:00:00.000Z",
+      endDate: "2025-06-17T00:00:00.000Z",
+      numberOfGames: 1312,
+    },
+    {
+      id: 20232024,
+      startDate: "2023-10-10T00:00:00.000Z",
+      regularSeasonEndDate: "2024-04-18T00:00:00.000Z",
+      endDate: "2024-06-24T00:00:00.000Z",
+      numberOfGames: 1312,
+    },
+  ];
+
+  it.each([
+    ["2025-03-14", 20242025],
+    ["2026-07-21", 20252026],
+    ["2026-10-06", 20262027],
+  ])(
+    "uses persisted season starts for selected date %s",
+    async (date, expectedSeasonId) => {
+      const { client, from, query } = createLatestStartedSeasonClient(seasons);
+
+      await expect(
+        resolveLatestStartedSeasonIdForDate(date, client),
+      ).resolves.toBe(expectedSeasonId);
+      expect(from).toHaveBeenCalledOnce();
+      expect(from).toHaveBeenCalledWith("seasons");
+      expect(query.select).toHaveBeenCalledWith(
+        "id,startDate,regularSeasonEndDate,endDate,numberOfGames",
+      );
+      expect(query.lte).toHaveBeenCalledWith(
+        "startDate",
+        `${date}T23:59:59.999Z`,
+      );
+      expect(query.order).toHaveBeenCalledWith("startDate", {
+        ascending: false,
+      });
+      expect(query.limit).toHaveBeenCalledWith(1);
+      expect(query.maybeSingle).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("accepts a real leap-day date", async () => {
+    const { client, from } = createLatestStartedSeasonClient(seasons);
+
+    await expect(
+      resolveLatestStartedSeasonIdForDate("2024-02-29", client),
+    ).resolves.toBe(20232024);
+    expect(from).toHaveBeenCalledOnce();
+  });
+
+  it.each(["2026-02-30", "2025-02-29", "2026-2-07", "not-a-date"])(
+    "rejects invalid selected date %s before querying",
+    async (date) => {
+      const { client, from } = createLatestStartedSeasonClient(seasons);
+
+      await expect(getLatestStartedSeasonForDate(date, client)).rejects.toThrow(
+        "A valid date in YYYY-MM-DD format is required.",
+      );
+      expect(from).not.toHaveBeenCalled();
+    },
+  );
+
+  it("returns null for dates before the earliest persisted season", async () => {
+    const { client, query } = createLatestStartedSeasonClient(seasons);
+
+    await expect(
+      getLatestStartedSeasonForDate("2000-01-01", client),
+    ).resolves.toBeNull();
+    expect(query.limit).toHaveBeenCalledWith(1);
+    expect(query.maybeSingle).toHaveBeenCalledOnce();
+  });
+
+  it("fails the ID resolver when no persisted season has started", async () => {
+    const { client } = createLatestStartedSeasonClient(seasons);
+
+    await expect(
+      resolveLatestStartedSeasonIdForDate("2000-01-01", client),
+    ).rejects.toThrow("Unable to resolve season id for date=2000-01-01");
+  });
+
+  it("propagates a bounded query error", async () => {
+    const queryError = new Error("season lookup failed");
+    const { client, query } = createLatestStartedSeasonClient(
+      seasons,
+      queryError,
+    );
+
+    await expect(
+      getLatestStartedSeasonForDate("2026-07-21", client),
+    ).rejects.toBe(queryError);
+    expect(query.limit).toHaveBeenCalledWith(1);
+    expect(query.maybeSingle).toHaveBeenCalledOnce();
   });
 });
 

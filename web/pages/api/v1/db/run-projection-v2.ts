@@ -71,6 +71,7 @@ import {
   normalizeDependencyError,
   type NormalizedDependencyError,
 } from "lib/cron/normalizeDependencyError";
+import { resolveLatestStartedSeasonIdForDate } from "lib/NHL/server";
 import { fetchRecentTeamLineCombinations } from "lib/projections/queries/line-combo-queries";
 import { classifyStoredPbpGames } from "lib/projections/pbpCompletenessServer";
 import { classifyStoredShiftChartStrengthGamesAgainstRawSource } from "lib/projections/shiftChartCompletenessServer";
@@ -112,10 +113,6 @@ type GoalieObservability = {
   skaterRowsProcessed: number;
   skaterFreshnessFailureCount: number;
   dataQualityWarnings: DataQualityWarning[];
-};
-
-type SeasonIdRow = {
-  id: number | string | null;
 };
 
 type GoaliePlayerRow = {
@@ -378,23 +375,6 @@ function addDays(dateStr: string, delta: number): string {
   const d = new Date(`${dateStr}T00:00:00.000Z`);
   d.setUTCDate(d.getUTCDate() + delta);
   return isoDateOnly(d.toISOString());
-}
-
-async function fetchSeasonIdForDate(asOfDate: string): Promise<number> {
-  const asOfTimestamp = `${asOfDate}T23:59:59.999Z`;
-  const { data, error } = await supabase
-    .from("seasons")
-    .select("id")
-    .lte("startDate", asOfTimestamp)
-    .order("startDate", { ascending: false })
-    .limit(1)
-    .maybeSingle<SeasonIdRow>();
-  if (error) throw error;
-  const seasonId = Number(data?.id);
-  if (!Number.isFinite(seasonId)) {
-    throw new Error(`Unable to resolve season id for as_of_date=${asOfDate}`);
-  }
-  return seasonId;
 }
 
 export function summarizeGoalieRosterAssignments(args: {
@@ -721,7 +701,10 @@ export async function runProjectionPreflightChecks(
   // 1) Missing recent goalie-game rows for teams on the target slate.
   // 2) Outdated players.team_id mappings for likely goalie candidates from latest line combos.
   if (scheduledTeamIds.length > 0) {
-    const seasonId = await fetchSeasonIdForDate(asOfDate);
+    const seasonId = await resolveLatestStartedSeasonIdForDate(
+      asOfDate,
+      supabase,
+    );
     const staleWindowStart = addDays(asOfDate, -30);
     const { data: recentGoalieRows, error: recentGoalieErr } = await supabase
       .from("forge_goalie_game")

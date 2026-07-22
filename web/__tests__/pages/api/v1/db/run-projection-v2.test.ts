@@ -17,6 +17,12 @@ vi.mock("lib/supabase", () => ({
 vi.mock("lib/supabase/server", () => ({
   default: {
     from: vi.fn((table: string) => {
+      if (table === "cron_job_audit") {
+        return {
+          insert: auditInsertMock,
+        };
+      }
+
       if (table === "games") {
         gamesEqMock.mockResolvedValue({
           data: null,

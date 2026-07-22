@@ -4,53 +4,69 @@ import { cleanup, render, screen } from "@testing-library/react";
 
 import { clearClientFetchCache } from "lib/dashboard/clientFetchCache";
 
+const routerState = vi.hoisted(() => ({
+  query: {
+    teamId: "NJD",
+    date: "2026-03-14",
+  },
+}));
+const useTeamScheduleMock = vi.hoisted(() => vi.fn());
+const getLatestStartedSeasonForDateMock = vi.hoisted(() => vi.fn());
+
 vi.mock("next/head", () => ({
-  default: ({ children }: { children: React.ReactNode }) => <>{children}</>
+  default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 vi.mock("next/router", () => ({
-  useRouter: () => ({
-    query: {
-      teamId: "NJD",
-      date: "2026-03-14"
-    }
-  })
+  useRouter: () => routerState,
 }));
 
 vi.mock("hooks/useTeamSchedule", () => ({
-  useTeamSchedule: () => ({
-    games: [
-      {
-        id: 1,
-        gameDate: "2026-03-15",
-        homeTeam: { abbrev: "NJD" },
-        awayTeam: { abbrev: "NYI" }
-      },
-      {
-        id: 2,
-        gameDate: "2026-03-17",
-        homeTeam: { abbrev: "BOS" },
-        awayTeam: { abbrev: "NJD" }
-      }
-    ],
-    loading: false,
-    error: null,
-    record: {
-      wins: 40,
-      losses: 23,
-      otLosses: 5,
-      points: 85
-    }
-  })
+  useTeamSchedule: useTeamScheduleMock,
 }));
 
-import ForgeTeamDetailPage from "../../../../pages/forge/team/[teamId]";
+vi.mock("lib/NHL/server", () => ({
+  getLatestStartedSeasonForDate: getLatestStartedSeasonForDateMock,
+}));
 
-function jsonResponse(data: unknown, ok = true, status = ok ? 200 : 500): Response {
+import ForgeTeamDetailPage, {
+  getServerSideProps,
+} from "../../../../pages/forge/team/[teamId]";
+
+const scheduleResult = {
+  games: [
+    {
+      id: 1,
+      gameDate: "2026-03-15",
+      homeTeam: { abbrev: "NJD" },
+      awayTeam: { abbrev: "NYI" },
+    },
+    {
+      id: 2,
+      gameDate: "2026-03-17",
+      homeTeam: { abbrev: "BOS" },
+      awayTeam: { abbrev: "NJD" },
+    },
+  ],
+  loading: false,
+  error: null,
+  record: {
+    wins: 40,
+    losses: 23,
+    otLosses: 5,
+    points: 85,
+  },
+};
+
+function jsonResponse(
+  data: unknown,
+  ok = true,
+  status = ok ? 200 : 500,
+): Response {
   return {
     ok,
     status,
-    json: async () => data
+    json: async () => data,
   } as Response;
 }
 
@@ -58,6 +74,13 @@ describe("FORGE team detail page", () => {
   beforeEach(() => {
     clearClientFetchCache();
     vi.restoreAllMocks();
+    routerState.query = {
+      teamId: "NJD",
+      date: "2026-03-14",
+    };
+    useTeamScheduleMock.mockReset();
+    useTeamScheduleMock.mockReturnValue(scheduleResult);
+    getLatestStartedSeasonForDateMock.mockReset();
   });
 
   afterEach(() => {
@@ -77,8 +100,8 @@ describe("FORGE team detail page", () => {
             paceRating: 80,
             ppTier: 1,
             pkTier: 2,
-            trend10: 1.8
-          }
+            trend10: 1.8,
+          },
         ]);
       }
       if (url.includes("/api/v1/trends/team-ctpi")) {
@@ -89,10 +112,10 @@ describe("FORGE team detail page", () => {
               ctpi_0_to_100: 67,
               sparkSeries: [
                 { date: "2026-03-10", value: 62 },
-                { date: "2026-03-14", value: 67 }
-              ]
-            }
-          ]
+                { date: "2026-03-14", value: 67 },
+              ],
+            },
+          ],
         });
       }
       if (url.includes("/api/v1/start-chart")) {
@@ -104,10 +127,22 @@ describe("FORGE team detail page", () => {
               date: "2026-03-14",
               homeTeamId: 1,
               awayTeamId: 2,
-              homeRating: { offRating: 84, defRating: 81, paceRating: 80, ppTier: 1, pkTier: 2 },
-              awayRating: { offRating: 79, defRating: 77, paceRating: 78, ppTier: 2, pkTier: 2 }
-            }
-          ]
+              homeRating: {
+                offRating: 84,
+                defRating: 81,
+                paceRating: 80,
+                ppTier: 1,
+                pkTier: 2,
+              },
+              awayRating: {
+                offRating: 79,
+                defRating: 77,
+                paceRating: 78,
+                ppTier: 2,
+                pkTier: 2,
+              },
+            },
+          ],
         });
       }
       return jsonResponse({}, false);
@@ -115,7 +150,7 @@ describe("FORGE team detail page", () => {
 
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<ForgeTeamDetailPage />);
+    render(<ForgeTeamDetailPage scheduleSeasonId="20252026" />);
 
     expect(await screen.findByText("Current Team Context")).toBeTruthy();
     expect(screen.getByText("Upcoming Games and Record")).toBeTruthy();
@@ -126,28 +161,33 @@ describe("FORGE team detail page", () => {
         .getAllByRole("link", { name: "Legacy Dashboard" })
         .some(
           (link) =>
-            link.getAttribute("href") === "/forge/dashboard?date=2026-03-14&team=NJD"
-        )
+            link.getAttribute("href") ===
+            "/forge/dashboard?date=2026-03-14&team=NJD",
+        ),
     ).toBe(true);
     expect(
       screen
         .getAllByRole("link", { name: "Start Chart" })
         .some(
           (link) =>
-            link.getAttribute("href") === "/start-chart?date=2026-03-14&team=NJD"
-        )
+            link.getAttribute("href") ===
+            "/start-chart?date=2026-03-14&team=NJD",
+        ),
     ).toBe(true);
     expect(
       screen
         .getAllByRole("link", { name: "Trends" })
         .some(
-          (link) => link.getAttribute("href") === "/trends?date=2026-03-14&team=NJD"
-        )
+          (link) =>
+            link.getAttribute("href") === "/trends?date=2026-03-14&team=NJD",
+        ),
     ).toBe(true);
-    expect(screen.getByRole("link", { name: "Quick Read" }).getAttribute("href")).toBe(
-      "/FORGE?date=2026-03-14&team=NJD"
-    );
+    expect(
+      screen.getByRole("link", { name: "Quick Read" }).getAttribute("href"),
+    ).toBe("/FORGE?date=2026-03-14&team=NJD");
     expect(screen.getByRole("link", { name: "Underlying Stats" })).toBeTruthy();
+    expect(useTeamScheduleMock).toHaveBeenCalledWith("NJD", "20252026", "1");
+    expect(screen.getByText("Schedule season: 20252026")).toBeTruthy();
   });
 
   it("degrades locally when team context is stale or a supporting feed is unavailable", async () => {
@@ -163,8 +203,8 @@ describe("FORGE team detail page", () => {
             paceRating: 80,
             ppTier: 1,
             pkTier: 2,
-            trend10: 1.8
-          }
+            trend10: 1.8,
+          },
         ]);
       }
       if (url.includes("/api/v1/trends/team-ctpi")) {
@@ -178,11 +218,98 @@ describe("FORGE team detail page", () => {
 
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<ForgeTeamDetailPage />);
+    render(<ForgeTeamDetailPage scheduleSeasonId="20252026" />);
 
-    expect(await screen.findByText("Using latest available team ratings from 2026-03-12.")).toBeTruthy();
+    expect(
+      await screen.findByText(
+        "Using latest available team ratings from 2026-03-12.",
+      ),
+    ).toBeTruthy();
     expect(screen.getByText("CTPI unavailable for this date.")).toBeTruthy();
-    expect(screen.getByText("Matchup edge unavailable for this date.")).toBeTruthy();
-    expect(screen.getAllByText("Upcoming Games and Record").length).toBeGreaterThan(0);
+    expect(
+      screen.getByText("Matchup edge unavailable for this date."),
+    ).toBeTruthy();
+    expect(
+      screen.getAllByText("Upcoming Games and Record").length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("resolves the persisted schedule season from the exact requested route date", async () => {
+    getLatestStartedSeasonForDateMock.mockResolvedValue({ id: 20232024 });
+
+    const result = await getServerSideProps({
+      query: {
+        teamId: "NJD",
+        date: "2024-03-14",
+        resolvedDate: "2026-03-14",
+      },
+    } as unknown as Parameters<typeof getServerSideProps>[0]);
+
+    expect(getLatestStartedSeasonForDateMock).toHaveBeenCalledWith(
+      "2024-03-14",
+    );
+    expect(result).toEqual({
+      props: {
+        scheduleSeasonId: "20232024",
+      },
+    });
+  });
+
+  it("fails the selected-date schedule closed when no persisted season exists", async () => {
+    getLatestStartedSeasonForDateMock.mockResolvedValue(null);
+    const result = await getServerSideProps({
+      query: {
+        teamId: "NJD",
+        date: "2024-03-14",
+      },
+    } as unknown as Parameters<typeof getServerSideProps>[0]);
+
+    expect(result).toEqual({
+      props: {
+        scheduleSeasonId: null,
+      },
+    });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {})),
+    );
+    render(<ForgeTeamDetailPage scheduleSeasonId={null} />);
+
+    expect(screen.getByText("Schedule season: unavailable")).toBeTruthy();
+    expect(useTeamScheduleMock).toHaveBeenCalledWith("NJD", "unavailable", "1");
+    expect(
+      useTeamScheduleMock.mock.calls.every(
+        ([, seasonId]) => seasonId !== undefined,
+      ),
+    ).toBe(true);
+  });
+
+  it("records one bounded diagnostic when selected-date season lookup fails", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    getLatestStartedSeasonForDateMock.mockRejectedValue(
+      new Error("provider detail must remain internal"),
+    );
+
+    await expect(
+      getServerSideProps({
+        query: {
+          teamId: "NJD",
+          date: "2024-03-14",
+        },
+      } as unknown as Parameters<typeof getServerSideProps>[0]),
+    ).resolves.toEqual({
+      props: {
+        scheduleSeasonId: null,
+      },
+    });
+
+    expect(warnSpy).toHaveBeenCalledOnce();
+    expect(warnSpy).toHaveBeenCalledWith(
+      "Forge team detail schedule season lookup failed.",
+    );
+    expect(warnSpy.mock.calls.flat().join(" ")).not.toContain(
+      "provider detail",
+    );
   });
 });

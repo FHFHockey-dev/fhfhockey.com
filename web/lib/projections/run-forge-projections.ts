@@ -1,4 +1,5 @@
 import supabase from "lib/supabase/server";
+import { resolveLatestStartedSeasonIdForDate } from "lib/NHL/server";
 import { resolveNullableCompatibilityValue } from "lib/rollingPlayerMetricCompatibility";
 import { fetchRecentTeamLineCombinations } from "lib/projections/queries/line-combo-queries";
 import { hasCompleteStoredPbpGame } from "lib/projections/pbpCompletenessServer";
@@ -41,7 +42,6 @@ import type {
   RosterEventRow,
   RunProjectionOptions,
   RunProjectionResult,
-  SeasonIdRow,
   SkaterOnIceContextProfile,
   SkaterPpOpportunityAllocation,
   SkaterRestScheduleAdjustment,
@@ -543,24 +543,6 @@ async function fetchFallbackSkaterIdsForTeam(
     })
     .slice(0, Math.max(1, Math.floor(maxPlayers)))
     .map(([playerId]) => playerId);
-}
-
-async function fetchCurrentSeasonIdForDate(asOfDate: string): Promise<number> {
-  assertSupabase();
-  const asOfTimestamp = `${asOfDate}T23:59:59.999Z`;
-  const { data, error } = await supabase
-    .from("seasons")
-    .select("id")
-    .lte("startDate", asOfTimestamp)
-    .order("startDate", { ascending: false })
-    .limit(1)
-    .maybeSingle<SeasonIdRow>();
-  if (error) throw error;
-  const seasonId = Number(data?.id);
-  if (!Number.isFinite(seasonId)) {
-    throw new Error(`Unable to resolve season id for as_of_date=${asOfDate}`);
-  }
-  return seasonId;
 }
 
 async function fetchActiveRosterSkaterIdsForTeamSeason(
@@ -1546,7 +1528,10 @@ export async function runProjectionV2ForDate(
     const teamDateKey = (teamId: number) => `${teamId}:${asOfDate}`;
     const playerDateKey = (playerId: number) => `${playerId}:${asOfDate}`;
     const preflight = await runProjectionPreflightStage(async () => {
-      const currentSeasonId = await fetchCurrentSeasonIdForDate(asOfDate);
+      const currentSeasonId = await resolveLatestStartedSeasonIdForDate(
+        asOfDate,
+        supabase,
+      );
       const { data: gameRows, error: gamesErr } = await supabase
         .from("games")
         .select("id,date,homeTeamId,awayTeamId")
