@@ -5220,3 +5220,11 @@
 - **Boundary state:** No wrapper, route, product surface, provider, production system, database, deployment, credential, schedule, customer alias, shared checkout, retained stash, or remote Git state changed during this reconciliation.
 - **Exact next action:** Run mechanical source/master parity, stable-ID, diff-integrity, and generated/path/secret checks; fresh-fetch and require exact equality; publish this documentation-only closure normally without force and record equality. Then continue dependency-eligible non-overlapping work while retaining the explicit group-5 retirement and final all-state browser gates.
 - **Restart instruction:** Follow the recovery banner, read Entries 0465–0467, verify isolated/local/live equality, preserve A-GDL NEW 18, and resume at the documentation-only publication gate.
+
+## Entry 0468 — 2026-07-21 20:02 EDT B-DRM integrated-evidence publication receipt
+
+- **Publication:** Exact six-document checkpoint `80529dbf35bad04019a4ac57a65fff59541d8513` (`docs(drm): reconcile integrated verification evidence`) was created after source/master parity, stable-ID uniqueness, diff integrity, and fresh parent equality passed. A second fresh fetch preserved the exact parent; the normal non-force push succeeded.
+- **Equality:** Post-push local HEAD, tracking ref, and live `FETCH_HEAD` all equal `80529dbf35bad04019a4ac57a65fff59541d8513` with zero ahead/behind and a clean isolated checkout.
+- **Current controls:** B-DRM is 63/89; imported parity is 4,112/4,720 checked with 608 open = 87.12% complete / 12.88% open. Group 5 retirement remains approval-gated; final browser/runtime rows 6.2/6.3 and parent 6.0 remain open rather than overclaimed.
+- **Exact next action:** Resume the next dependency-eligible non-overlapping super-goal task while retaining A-GDL NEW 18's IFTTT engineering bookmark and B-DRM's explicit wrapper-retirement/final-browser gates. Re-enter B-DRM only with the recorded approval or when a complete all-state browser sweep can be performed in a fresh browser turn.
+- **Restart instruction:** Follow the recovery banner, read Entries 0466–0468, verify isolated/local/live equality, and select the next dependency-eligible task without crossing an unapproved external or deletion boundary.
