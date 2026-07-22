@@ -91,6 +91,12 @@ function extractSkaterModelMetadata(uncertainty: unknown): SkaterModelMetadata {
 function extractSkaterConfidenceDrivers(uncertainty: unknown) {
   const model = (uncertainty as any)?.model ?? {};
   const selection = model.skater_selection ?? {};
+  const powerPlay = selection.pp_opportunity ?? model.pp_opportunity ?? {};
+  const opponentGoalie =
+    selection.opponent_goalie_context ?? model.opponent_goalie_context ?? {};
+  const teamLevel =
+    selection.team_level_context ?? model.team_level_context ?? {};
+  const restSchedule = selection.rest_schedule ?? model.rest_schedule ?? {};
   return {
     role: {
       evenStrength:
@@ -103,30 +109,22 @@ function extractSkaterConfidenceDrivers(uncertainty: unknown) {
       ),
     },
     powerPlay: {
-      allocatedShare: parseFiniteNumber(
-        model.pp_opportunity?.allocated_player_pp_share,
-      ),
-      teamTargetSeconds: parseFiniteNumber(
-        model.pp_opportunity?.team_pp_target_seconds,
-      ),
+      allocatedShare: parseFiniteNumber(powerPlay.allocated_player_pp_share),
+      teamTargetSeconds: parseFiniteNumber(powerPlay.team_pp_target_seconds),
     },
     matchup: {
       opponentGoalieGoalRateMultiplier: parseFiniteNumber(
-        model.opponent_goalie_context?.goal_rate_multiplier,
+        opponentGoalie.goal_rate_multiplier,
       ),
       opponentStarterCertainty: parseFiniteNumber(
-        model.opponent_goalie_context?.starter_certainty,
+        opponentGoalie.starter_certainty,
       ),
-      opponentDefenseEdge: parseFiniteNumber(
-        model.team_level_context?.opponent_defense_edge,
-      ),
+      opponentDefenseEdge: parseFiniteNumber(teamLevel.opponent_defense_edge),
     },
     rest: {
-      teamRestDays: parseFiniteNumber(model.rest_schedule?.team_rest_days),
-      opponentRestDays: parseFiniteNumber(
-        model.rest_schedule?.opponent_rest_days,
-      ),
-      restDelta: parseFiniteNumber(model.rest_schedule?.rest_delta),
+      teamRestDays: parseFiniteNumber(restSchedule.team_rest_days),
+      opponentRestDays: parseFiniteNumber(restSchedule.opponent_rest_days),
+      restDelta: parseFiniteNumber(restSchedule.rest_delta),
     },
   };
 }

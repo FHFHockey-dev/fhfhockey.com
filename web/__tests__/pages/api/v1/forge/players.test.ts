@@ -157,20 +157,20 @@ describe("/api/v1/forge/players", () => {
                           scenario_count: 2,
                         },
                       },
-                    },
-                    pp_opportunity: {
-                      allocated_player_pp_share: 0.62,
-                      team_pp_target_seconds: 320,
-                    },
-                    opponent_goalie_context: {
-                      goal_rate_multiplier: 1.04,
-                      starter_certainty: 0.8,
-                    },
-                    team_level_context: { opponent_defense_edge: 0.12 },
-                    rest_schedule: {
-                      team_rest_days: 2,
-                      opponent_rest_days: 1,
-                      rest_delta: 1,
+                      pp_opportunity: {
+                        allocated_player_pp_share: 0.62,
+                        team_pp_target_seconds: 320,
+                      },
+                      opponent_goalie_context: {
+                        goal_rate_multiplier: 1.04,
+                        starter_certainty: 0.8,
+                      },
+                      team_level_context: { opponent_defense_edge: 0.12 },
+                      rest_schedule: {
+                        team_rest_days: 2,
+                        opponent_rest_days: 1,
+                        rest_delta: 1,
+                      },
                     },
                   },
                   pts: { p10: 0, p50: 1, p90: 3 },
@@ -291,9 +291,13 @@ describe("/api/v1/forge/players", () => {
       },
       confidenceDrivers: {
         role: { evenStrength: "L1", unitTier: "PP1" },
-        powerPlay: { allocatedShare: 0.62 },
-        matchup: { opponentStarterCertainty: 0.8 },
-        rest: { teamRestDays: 2, opponentRestDays: 1 },
+        powerPlay: { allocatedShare: 0.62, teamTargetSeconds: 320 },
+        matchup: {
+          opponentGoalieGoalRateMultiplier: 1.04,
+          opponentStarterCertainty: 0.8,
+          opponentDefenseEdge: 0.12,
+        },
+        rest: { teamRestDays: 2, opponentRestDays: 1, restDelta: 1 },
       },
       projectionRange: {
         points: { floor: 0, typical: 1, ceiling: 3 },
