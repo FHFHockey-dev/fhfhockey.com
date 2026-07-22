@@ -216,6 +216,7 @@ export default function ForgePlayerDetailPage({
     teamMeta?.abbrev ?? "",
     scheduleSeasonId ?? UNAVAILABLE_SCHEDULE_SEASON,
     teamMeta ? String(teamMeta.id) : undefined,
+    date,
   );
   const weekStartDate = useMemo(
     () =>

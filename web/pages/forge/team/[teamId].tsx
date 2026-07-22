@@ -94,6 +94,7 @@ export default function ForgeTeamDetailPage({
     teamAbbr,
     scheduleSeasonId ?? UNAVAILABLE_SCHEDULE_SEASON,
     teamMeta ? String(teamMeta.id) : undefined,
+    date,
   );
 
   useEffect(() => {

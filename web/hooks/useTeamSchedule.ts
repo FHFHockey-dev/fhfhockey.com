@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
 import supabase from "lib/supabase";
+import { isRealUtcDateOnly } from "lib/dashboard/forgeLinks";
 import {
   getTeamAbbreviationById,
   getTeamInfoById,
@@ -88,6 +89,8 @@ type ScheduleResolution =
       error: null;
       teamId: number;
       seasonId: number;
+      recordAsOfDate: string | null;
+      recordAsOfDateIsValid: boolean;
     };
 
 const TEAM_SELECTION_ERROR = "A valid team selection is required.";
@@ -117,6 +120,7 @@ function buildScheduleResolution({
   currentSeasonId,
   seasonLookupIsPending,
   seasonLookupIsError,
+  recordAsOfDate,
 }: {
   teamAbbr: string;
   teamId: string | undefined;
@@ -124,7 +128,10 @@ function buildScheduleResolution({
   currentSeasonId: number | undefined;
   seasonLookupIsPending: boolean;
   seasonLookupIsError: boolean;
+  recordAsOfDate: string | undefined;
 }): ScheduleResolution {
+  const recordDateIdentity =
+    recordAsOfDate === undefined ? "latest" : recordAsOfDate;
   const parsedTeamId = parsePositiveInteger(teamId);
   const teamInfo = Object.prototype.hasOwnProperty.call(teamsInfo, teamAbbr)
     ? teamsInfo[teamAbbr]
@@ -133,7 +140,12 @@ function buildScheduleResolution({
   if (parsedTeamId === null || teamInfo?.id !== parsedTeamId) {
     return {
       kind: "terminal",
-      identity: JSON.stringify(["invalid-team", teamAbbr, teamId ?? ""]),
+      identity: JSON.stringify([
+        "invalid-team",
+        teamAbbr,
+        teamId ?? "",
+        recordDateIdentity,
+      ]),
       error: TEAM_SELECTION_ERROR,
     };
   }
@@ -145,7 +157,12 @@ function buildScheduleResolution({
     if (seasonLookupIsPending) {
       return {
         kind: "pending",
-        identity: JSON.stringify(["pending-season", teamAbbr, parsedTeamId]),
+        identity: JSON.stringify([
+          "pending-season",
+          teamAbbr,
+          parsedTeamId,
+          recordDateIdentity,
+        ]),
         error: null,
       };
     }
@@ -153,7 +170,12 @@ function buildScheduleResolution({
     if (seasonLookupIsError) {
       return {
         kind: "terminal",
-        identity: JSON.stringify(["season-error", teamAbbr, parsedTeamId]),
+        identity: JSON.stringify([
+          "season-error",
+          teamAbbr,
+          parsedTeamId,
+          recordDateIdentity,
+        ]),
         error: CURRENT_SEASON_ERROR,
       };
     }
@@ -170,17 +192,31 @@ function buildScheduleResolution({
         teamAbbr,
         parsedTeamId,
         seasonToUse ?? "",
+        recordDateIdentity,
       ]),
       error: SEASON_SELECTION_ERROR,
     };
   }
 
+  const recordAsOfDateIsValid =
+    recordAsOfDate === undefined || isRealUtcDateOnly(recordAsOfDate);
+
   return {
     kind: "ready",
-    identity: JSON.stringify([teamAbbr, parsedTeamId, parsedSeasonId]),
+    identity: JSON.stringify([
+      teamAbbr,
+      parsedTeamId,
+      parsedSeasonId,
+      recordDateIdentity,
+    ]),
     error: null,
     teamId: parsedTeamId,
     seasonId: parsedSeasonId,
+    recordAsOfDate:
+      recordAsOfDateIsValid && recordAsOfDate !== undefined
+        ? recordAsOfDate
+        : null,
+    recordAsOfDateIsValid,
   };
 }
 
@@ -188,6 +224,7 @@ export const useTeamSchedule = (
   teamAbbr: string,
   seasonId?: string,
   teamId?: string,
+  recordAsOfDate?: string,
 ) => {
   const [state, setState] = useState<ScheduleState>({
     identity: null,
@@ -204,6 +241,7 @@ export const useTeamSchedule = (
     currentSeasonId: currentSeasonQuery.data?.seasonId,
     seasonLookupIsPending: currentSeasonQuery.isPending,
     seasonLookupIsError: currentSeasonQuery.isError,
+    recordAsOfDate,
   });
   const resolutionKind = resolution.kind;
   const requestIdentity = resolution.identity;
@@ -212,6 +250,10 @@ export const useTeamSchedule = (
     resolution.kind === "ready" ? resolution.teamId : null;
   const validatedSeasonId =
     resolution.kind === "ready" ? resolution.seasonId : null;
+  const validatedRecordAsOfDate =
+    resolution.kind === "ready" ? resolution.recordAsOfDate : null;
+  const recordAsOfDateIsValid =
+    resolution.kind === "ready" && resolution.recordAsOfDateIsValid;
 
   useEffect(() => {
     let ownsRequest = true;
@@ -351,36 +393,46 @@ export const useTeamSchedule = (
           }
         }
 
-        // Calculate record from team stats instead of game results
-        // This will be more accurate as it comes from the database
         let nextRecord: TeamRecord | null = null;
-        const { data: teamStatsData, error: teamStatsError } = await supabase
-          .from("wgo_team_stats")
-          .select("*")
-          .eq("team_id", validatedTeamId)
-          .eq("season_id", validatedSeasonId)
-          .order("date", { ascending: false })
-          .limit(1);
+        if (recordAsOfDateIsValid) {
+          let standingsQuery = supabase
+            .from("nhl_standings_details")
+            .select(
+              "date,wins,losses,ot_losses,points,regulation_wins,regulation_plus_ot_wins,shootout_wins",
+            )
+            .eq("season_id", validatedSeasonId)
+            .eq("team_abbrev", teamAbbr);
 
-        if (!ownsRequest) return;
-        if (teamStatsError) {
-          console.warn(
-            "⚠️ Error fetching team stats for record:",
-            teamStatsError,
-          );
-        } else if (teamStatsData && teamStatsData.length > 0) {
-          const latestStats = teamStatsData[0];
-          nextRecord = {
-            wins: latestStats.wins || 0,
-            losses: latestStats.losses || 0,
-            otLosses: latestStats.ot_losses || 0,
-            points: latestStats.points || 0,
-            regulationWins: latestStats.wins_in_regulation || 0,
-            overtimeWins:
-              (latestStats.regulation_and_ot_wins || 0) -
-              (latestStats.wins_in_regulation || 0),
-            shootoutWins: latestStats.wins_in_shootout || 0,
-          };
+          if (validatedRecordAsOfDate !== null) {
+            standingsQuery = standingsQuery.lte(
+              "date",
+              validatedRecordAsOfDate,
+            );
+          }
+
+          const { data: standingsData, error: standingsError } =
+            await standingsQuery.order("date", { ascending: false }).limit(1);
+
+          if (!ownsRequest) return;
+          if (standingsError) {
+            console.warn(
+              "⚠️ Error fetching standings for record:",
+              standingsError,
+            );
+          } else if (standingsData && standingsData.length > 0) {
+            const latestStandings = standingsData[0];
+            nextRecord = {
+              wins: latestStandings.wins ?? 0,
+              losses: latestStandings.losses ?? 0,
+              otLosses: latestStandings.ot_losses ?? 0,
+              points: latestStandings.points ?? 0,
+              regulationWins: latestStandings.regulation_wins ?? 0,
+              overtimeWins:
+                (latestStandings.regulation_plus_ot_wins ?? 0) -
+                (latestStandings.regulation_wins ?? 0),
+              shootoutWins: latestStandings.shootout_wins ?? 0,
+            };
+          }
         }
 
         if (!ownsRequest) return;
@@ -423,8 +475,11 @@ export const useTeamSchedule = (
     requestIdentity,
     resolutionKind,
     terminalError,
+    teamAbbr,
     validatedSeasonId,
     validatedTeamId,
+    validatedRecordAsOfDate,
+    recordAsOfDateIsValid,
   ]);
 
   const ownsCurrentIdentity = state.identity === requestIdentity;

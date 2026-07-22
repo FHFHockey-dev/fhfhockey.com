@@ -4,12 +4,16 @@ import { cleanup, render, screen } from "@testing-library/react";
 
 import { clearClientFetchCache } from "lib/dashboard/clientFetchCache";
 
-const routerState = vi.hoisted(() => ({
-  query: {
-    teamId: "NJD",
-    date: "2026-03-14",
-  },
-}));
+const routerState = vi.hoisted(
+  (): {
+    query: { teamId: string; date: string; resolvedDate?: string };
+  } => ({
+    query: {
+      teamId: "NJD",
+      date: "2026-03-14",
+    },
+  }),
+);
 const useTeamScheduleMock = vi.hoisted(() => vi.fn());
 const getLatestStartedSeasonForDateMock = vi.hoisted(() => vi.fn());
 
@@ -186,8 +190,36 @@ describe("FORGE team detail page", () => {
       screen.getByRole("link", { name: "Quick Read" }).getAttribute("href"),
     ).toBe("/FORGE?date=2026-03-14&team=NJD");
     expect(screen.getByRole("link", { name: "Underlying Stats" })).toBeTruthy();
-    expect(useTeamScheduleMock).toHaveBeenCalledWith("NJD", "20252026", "1");
+    expect(useTeamScheduleMock).toHaveBeenCalledWith(
+      "NJD",
+      "20252026",
+      "1",
+      "2026-03-14",
+    );
     expect(screen.getByText("Schedule season: 20252026")).toBeTruthy();
+  });
+
+  it("uses the requested route date for the record instead of resolved context", () => {
+    routerState.query.resolvedDate = "2026-03-12";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {})),
+    );
+
+    render(<ForgeTeamDetailPage scheduleSeasonId="20252026" />);
+
+    expect(useTeamScheduleMock).toHaveBeenCalledWith(
+      "NJD",
+      "20252026",
+      "1",
+      "2026-03-14",
+    );
+    expect(useTeamScheduleMock).not.toHaveBeenCalledWith(
+      "NJD",
+      "20252026",
+      "1",
+      "2026-03-12",
+    );
   });
 
   it("degrades locally when team context is stale or a supporting feed is unavailable", async () => {
@@ -277,7 +309,12 @@ describe("FORGE team detail page", () => {
     render(<ForgeTeamDetailPage scheduleSeasonId={null} />);
 
     expect(screen.getByText("Schedule season: unavailable")).toBeTruthy();
-    expect(useTeamScheduleMock).toHaveBeenCalledWith("NJD", "unavailable", "1");
+    expect(useTeamScheduleMock).toHaveBeenCalledWith(
+      "NJD",
+      "unavailable",
+      "1",
+      "2026-03-14",
+    );
     expect(
       useTeamScheduleMock.mock.calls.every(
         ([, seasonId]) => seasonId !== undefined,

@@ -4,13 +4,22 @@ import { cleanup, render, screen } from "@testing-library/react";
 
 import { clearClientFetchCache } from "lib/dashboard/clientFetchCache";
 
-const routerState = vi.hoisted(() => ({
-  query: {
-    playerId: "88",
-    date: "2026-03-14",
-    mode: "tonight",
-  },
-}));
+const routerState = vi.hoisted(
+  (): {
+    query: {
+      playerId: string;
+      date: string;
+      mode: string;
+      resolvedDate?: string;
+    };
+  } => ({
+    query: {
+      playerId: "88",
+      date: "2026-03-14",
+      mode: "tonight",
+    },
+  }),
+);
 const useTeamScheduleMock = vi.hoisted(() => vi.fn());
 const getLatestStartedSeasonForDateMock = vi.hoisted(() => vi.fn());
 
@@ -194,8 +203,74 @@ describe("FORGE player detail page", () => {
     ).toBe(
       "/trends/player/88?date=2026-03-14&origin=forge-player-detail&returnTo=%2Fforge%2Fplayer%2F88%3Fdate%3D2026-03-14%26mode%3Dtonight",
     );
-    expect(useTeamScheduleMock).toHaveBeenCalledWith("NJD", "20252026", "1");
+    expect(useTeamScheduleMock).toHaveBeenCalledWith(
+      "NJD",
+      "20252026",
+      "1",
+      "2026-03-14",
+    );
     expect(screen.getByText("Schedule season: 20252026")).toBeTruthy();
+  });
+
+  it("uses the requested route date instead of resolved or projection dates", async () => {
+    routerState.query.resolvedDate = "2026-03-13";
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/forge/players")) {
+        return jsonResponse({
+          asOfDate: "2026-03-12",
+          data: [
+            {
+              player_id: 88,
+              player_name: "Top Add",
+              team_name: "New Jersey Devils",
+              position: "C",
+              pts: 2.7,
+              ppp: 0.8,
+              sog: 3.6,
+              hit: 0.4,
+              blk: 0.2,
+              uncertainty: 0.3,
+            },
+          ],
+        });
+      }
+      if (url.includes("/api/v1/transactions/ownership-snapshots")) {
+        return jsonResponse({ players: [] });
+      }
+      if (url.includes("/api/v1/transactions/ownership-trends")) {
+        return jsonResponse({
+          success: true,
+          selectedPlayers: [],
+          risers: [],
+          fallers: [],
+        });
+      }
+      return jsonResponse({}, false);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ForgePlayerDetailPage scheduleSeasonId="20252026" />);
+
+    expect(await screen.findByText("Top Add")).toBeTruthy();
+    expect(useTeamScheduleMock).toHaveBeenCalledWith(
+      "NJD",
+      "20252026",
+      "1",
+      "2026-03-14",
+    );
+    expect(useTeamScheduleMock).not.toHaveBeenCalledWith(
+      "NJD",
+      "20252026",
+      "1",
+      "2026-03-12",
+    );
+    expect(useTeamScheduleMock).not.toHaveBeenCalledWith(
+      "NJD",
+      "20252026",
+      "1",
+      "2026-03-13",
+    );
   });
 
   it("keeps projection detail visible when ownership context is unavailable", async () => {
@@ -358,6 +433,7 @@ describe("FORGE player detail page", () => {
       "",
       "unavailable",
       undefined,
+      "2026-03-14",
     );
     expect(
       useTeamScheduleMock.mock.calls.every(

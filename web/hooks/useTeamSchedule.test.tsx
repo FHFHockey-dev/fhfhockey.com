@@ -46,6 +46,7 @@ function createThenableQuery(result: QueryResult | Promise<QueryResult>) {
   const query: any = {};
   query.select = vi.fn(() => query);
   query.eq = vi.fn(() => query);
+  query.lte = vi.fn(() => query);
   query.or = vi.fn(() => query);
   query.order = vi.fn(() => query);
   query.in = vi.fn(() => query);
@@ -123,6 +124,20 @@ function gameFixture(overrides: Record<string, unknown> = {}) {
     startTime: "2025-01-16T00:00:00Z",
     homeTeamId: 22,
     awayTeamId: 6,
+    ...overrides,
+  };
+}
+
+function standingsFixture(overrides: Record<string, unknown> = {}) {
+  return {
+    date: "2025-01-15",
+    wins: 28,
+    losses: 13,
+    ot_losses: 3,
+    points: 59,
+    regulation_wins: 22,
+    regulation_plus_ot_wins: 25,
+    shootout_wins: 3,
     ...overrides,
   };
 }
@@ -221,7 +236,7 @@ describe("useTeamSchedule", () => {
       useCurrentSeasonQueryMock.mockReturnValue(seasonQuery);
       const queries = installTableResults({
         games: [emptyResult],
-        wgo_team_stats: [emptyResult],
+        nhl_standings_details: [emptyResult],
       });
 
       const { result } = renderHook(() =>
@@ -235,15 +250,15 @@ describe("useTeamSchedule", () => {
       expect(queries.games[0].or).toHaveBeenCalledWith(
         "homeTeamId.eq.22,awayTeamId.eq.22",
       );
-      expect(queries.wgo_team_stats[0].eq).toHaveBeenNthCalledWith(
+      expect(queries.nhl_standings_details[0].eq).toHaveBeenNthCalledWith(
         1,
-        "team_id",
-        22,
-      );
-      expect(queries.wgo_team_stats[0].eq).toHaveBeenNthCalledWith(
-        2,
         "season_id",
         20242025,
+      );
+      expect(queries.nhl_standings_details[0].eq).toHaveBeenNthCalledWith(
+        2,
+        "team_abbrev",
+        "EDM",
       );
     },
   );
@@ -254,7 +269,7 @@ describe("useTeamSchedule", () => {
     );
     const queries = installTableResults({
       games: [emptyResult],
-      wgo_team_stats: [emptyResult],
+      nhl_standings_details: [emptyResult],
     });
 
     const { result } = renderHook(() => useTeamSchedule("EDM", "", "22"));
@@ -262,7 +277,7 @@ describe("useTeamSchedule", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(queries.games[0].eq).toHaveBeenCalledWith("seasonId", 20252026);
-    expect(queries.wgo_team_stats[0].eq).toHaveBeenCalledWith(
+    expect(queries.nhl_standings_details[0].eq).toHaveBeenCalledWith(
       "season_id",
       20252026,
     );
@@ -283,7 +298,7 @@ describe("useTeamSchedule", () => {
     } satisfies SeasonQueryState);
     const queries = installTableResults({
       games: [emptyResult],
-      wgo_team_stats: [emptyResult],
+      nhl_standings_details: [emptyResult],
     });
 
     const { result } = renderHook(() =>
@@ -294,7 +309,7 @@ describe("useTeamSchedule", () => {
 
     expect(result.current.error).toBeNull();
     expect(queries.games[0].eq).toHaveBeenCalledWith("seasonId", 20252026);
-    expect(queries.wgo_team_stats[0].eq).toHaveBeenCalledWith(
+    expect(queries.nhl_standings_details[0].eq).toHaveBeenCalledWith(
       "season_id",
       20252026,
     );
@@ -352,7 +367,7 @@ describe("useTeamSchedule", () => {
     useCurrentSeasonQueryMock.mockImplementation(() => seasonQuery);
     installTableResults({
       games: [emptyResult],
-      wgo_team_stats: [emptyResult],
+      nhl_standings_details: [emptyResult],
     });
 
     const { result, rerender } = renderHook(() =>
@@ -366,6 +381,189 @@ describe("useTeamSchedule", () => {
 
     expect(result.current.loading).toBe(false);
     expect(fromMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("uses the latest bounded standings snapshot on or before the requested date", async () => {
+    useCurrentSeasonQueryMock.mockReturnValue(pendingSeasonQuery());
+    const queries = installTableResults({
+      games: [emptyResult],
+      nhl_standings_details: [
+        {
+          data: [standingsFixture()],
+          error: null,
+        },
+      ],
+    });
+
+    const { result } = renderHook(() =>
+      useTeamSchedule("EDM", "20242025", "22", "2025-01-15"),
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const standingsQuery = queries.nhl_standings_details[0];
+    expect(standingsQuery.select).toHaveBeenCalledWith(
+      "date,wins,losses,ot_losses,points,regulation_wins,regulation_plus_ot_wins,shootout_wins",
+    );
+    expect(standingsQuery.eq).toHaveBeenNthCalledWith(1, "season_id", 20242025);
+    expect(standingsQuery.eq).toHaveBeenNthCalledWith(2, "team_abbrev", "EDM");
+    expect(standingsQuery.lte).toHaveBeenCalledOnce();
+    expect(standingsQuery.lte).toHaveBeenCalledWith("date", "2025-01-15");
+    expect(standingsQuery.order).toHaveBeenCalledWith("date", {
+      ascending: false,
+    });
+    expect(standingsQuery.limit).toHaveBeenCalledWith(1);
+    expect(result.current.record).toEqual({
+      wins: 28,
+      losses: 13,
+      otLosses: 3,
+      points: 59,
+      regulationWins: 22,
+      overtimeWins: 3,
+      shootoutWins: 3,
+    });
+  });
+
+  it("refetches the same team for a changed date and rejects the stale record owner", async () => {
+    useCurrentSeasonQueryMock.mockReturnValue(pendingSeasonQuery());
+    const olderRecord = createDeferred<QueryResult>();
+    const queries = installTableResults({
+      games: [emptyResult, emptyResult],
+      nhl_standings_details: [
+        olderRecord.promise,
+        {
+          data: [
+            standingsFixture({
+              date: "2025-02-15",
+              wins: 35,
+              points: 74,
+            }),
+          ],
+          error: null,
+        },
+      ],
+    });
+
+    const { result, rerender } = renderHook(
+      ({ recordDate }) => useTeamSchedule("EDM", "20242025", "22", recordDate),
+      { initialProps: { recordDate: "2025-01-15" } },
+    );
+
+    await waitFor(() =>
+      expect(queries.nhl_standings_details[0].lte).toHaveBeenCalledWith(
+        "date",
+        "2025-01-15",
+      ),
+    );
+
+    rerender({ recordDate: "2025-02-15" });
+
+    expect(result.current).toEqual({
+      games: [],
+      loading: true,
+      error: null,
+      record: null,
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(queries.nhl_standings_details[1].lte).toHaveBeenCalledWith(
+      "date",
+      "2025-02-15",
+    );
+    expect(result.current.record?.wins).toBe(35);
+    expect(result.current.record?.points).toBe(74);
+
+    act(() =>
+      olderRecord.resolve({
+        data: [standingsFixture({ wins: 28, points: 59 })],
+        error: null,
+      }),
+    );
+    await act(async () => Promise.resolve());
+
+    expect(result.current.record?.wins).toBe(35);
+    expect(result.current.record?.points).toBe(74);
+  });
+
+  it.each([
+    ["before first season snapshot", "20242025", "2024-09-01", 20242025],
+    ["unsupported earlier season", "20232024", "2024-03-14", 20232024],
+  ])(
+    "returns no record for %s",
+    async (_label, seasonId, recordDate, numericSeasonId) => {
+      useCurrentSeasonQueryMock.mockReturnValue(pendingSeasonQuery());
+      const queries = installTableResults({
+        games: [emptyResult],
+        nhl_standings_details: [emptyResult],
+      });
+
+      const { result } = renderHook(() =>
+        useTeamSchedule("EDM", seasonId, "22", recordDate),
+      );
+
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      const standingsQuery = queries.nhl_standings_details[0];
+      expect(standingsQuery.eq).toHaveBeenCalledWith(
+        "season_id",
+        numericSeasonId,
+      );
+      expect(standingsQuery.lte).toHaveBeenCalledWith("date", recordDate);
+      expect(result.current.error).toBeNull();
+      expect(result.current.record).toBeNull();
+    },
+  );
+
+  it.each(["2025-02-29", "2025-04-31", "2025-1-15", "not-a-date", ""])(
+    "preserves games but skips standings for invalid explicit record date %j",
+    async (recordDate) => {
+      useCurrentSeasonQueryMock.mockReturnValue(pendingSeasonQuery());
+      installTableResults({
+        games: [{ data: [gameFixture()], error: null }],
+        teamGameStats: [emptyResult],
+      });
+
+      const { result } = renderHook(() =>
+        useTeamSchedule("EDM", "20242025", "22", recordDate),
+      );
+
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      expect(result.current.games).toHaveLength(1);
+      expect(result.current.error).toBeNull();
+      expect(result.current.record).toBeNull();
+      expect(
+        fromMock.mock.calls.some(
+          ([table]) => table === "nhl_standings_details",
+        ),
+      ).toBe(false);
+    },
+  );
+
+  it("keeps omitted record dates on the latest-snapshot path", async () => {
+    useCurrentSeasonQueryMock.mockReturnValue(pendingSeasonQuery());
+    const queries = installTableResults({
+      games: [emptyResult],
+      nhl_standings_details: [
+        {
+          data: [standingsFixture({ date: "2025-04-17" })],
+          error: null,
+        },
+      ],
+    });
+
+    const { result } = renderHook(() =>
+      useTeamSchedule("EDM", "20242025", "22"),
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(queries.nhl_standings_details[0].lte).not.toHaveBeenCalled();
+    expect(queries.nhl_standings_details[0].order).toHaveBeenCalledWith(
+      "date",
+      { ascending: false },
+    );
+    expect(queries.nhl_standings_details[0].limit).toHaveBeenCalledWith(1);
+    expect(result.current.record?.points).toBe(59);
   });
 
   it("immediately masks a rich prior request and replaces it with empty data", async () => {
@@ -383,7 +581,7 @@ describe("useTeamSchedule", () => {
           error: null,
         },
       ],
-      wgo_team_stats: [
+      nhl_standings_details: [
         {
           data: [
             {
@@ -391,9 +589,9 @@ describe("useTeamSchedule", () => {
               losses: 15,
               ot_losses: 5,
               points: 65,
-              wins_in_regulation: 25,
-              regulation_and_ot_wins: 28,
-              wins_in_shootout: 2,
+              regulation_wins: 25,
+              regulation_plus_ot_wins: 28,
+              shootout_wins: 2,
             },
           ],
           error: null,
@@ -423,7 +621,9 @@ describe("useTeamSchedule", () => {
     act(() => nextGames.resolve(emptyResult));
     await waitFor(() =>
       expect(
-        fromMock.mock.calls.filter(([table]) => table === "wgo_team_stats"),
+        fromMock.mock.calls.filter(
+          ([table]) => table === "nhl_standings_details",
+        ),
       ).toHaveLength(2),
     );
     act(() => nextRecord.resolve(emptyResult));
@@ -466,7 +666,7 @@ describe("useTeamSchedule", () => {
       fromMock.mock.calls.some(([table]) => table === "teamGameStats"),
     ).toBe(false);
     expect(
-      fromMock.mock.calls.some(([table]) => table === "wgo_team_stats"),
+      fromMock.mock.calls.some(([table]) => table === "nhl_standings_details"),
     ).toBe(false);
   });
 
@@ -515,7 +715,7 @@ describe("useTeamSchedule", () => {
     await act(async () => Promise.resolve());
 
     expect(
-      fromMock.mock.calls.some(([table]) => table === "wgo_team_stats"),
+      fromMock.mock.calls.some(([table]) => table === "nhl_standings_details"),
     ).toBe(false);
     expect(result.current.loading).toBe(false);
     expect(result.current.games).toEqual([]);
@@ -528,7 +728,7 @@ describe("useTeamSchedule", () => {
     installTableResults({
       games: [{ data: [gameFixture()], error: null }],
       teamGameStats: [{ data: null, error: scoreError }],
-      wgo_team_stats: [{ data: null, error: recordError }],
+      nhl_standings_details: [{ data: null, error: recordError }],
     });
 
     const { result } = renderHook(() =>
