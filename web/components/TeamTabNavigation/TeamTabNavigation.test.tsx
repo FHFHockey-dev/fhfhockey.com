@@ -51,6 +51,7 @@ vi.mock("../TeamScheduleCalendar/TeamScheduleCalendar", () => ({
     teamId: number | string;
     teamAbbreviation: string;
     seasonId: string;
+    standingsDetails?: { team_abbrev: string } | null;
   }) => {
     calendarPropsMock(props);
     return (
@@ -70,6 +71,7 @@ const baseScheduleResult = {
   loading: false,
   error: null,
   record: null,
+  standingsDetails: null,
 };
 
 const baseProps = {
@@ -122,8 +124,10 @@ describe("TeamTabNavigation schedule identity", () => {
   });
 
   it("preserves an ordinary current-team schedule identity", () => {
+    const standingsDetails = { team_abbrev: "EDM" };
     useTeamScheduleMock.mockReturnValue({
       ...baseScheduleResult,
+      standingsDetails,
       scheduleTeam: { id: 22, abbreviation: "EDM" },
     });
 
@@ -141,6 +145,7 @@ describe("TeamTabNavigation schedule identity", () => {
       teamId: 22,
       teamAbbreviation: "EDM",
       seasonId: "20252026",
+      standingsDetails,
     });
   });
 

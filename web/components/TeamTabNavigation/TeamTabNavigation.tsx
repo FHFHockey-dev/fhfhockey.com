@@ -133,7 +133,7 @@ export function TeamTabNavigation({
     games,
     loading: scheduleLoading,
     error: scheduleError,
-    record,
+    standingsDetails,
     scheduleTeam
   } = useTeamSchedule(teamAbbrev, seasonId, teamId);
 
@@ -205,7 +205,7 @@ export function TeamTabNavigation({
             seasonId={seasonId}
             loading={scheduleLoading}
             error={scheduleError}
-            record={record}
+            standingsDetails={standingsDetails}
           />
         );
 

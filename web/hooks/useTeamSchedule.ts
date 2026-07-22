@@ -64,12 +64,48 @@ export interface TeamRecord {
   shootoutWins?: number;
 }
 
+export interface TeamStandingsDetails {
+  season_id: number;
+  date: string;
+  team_abbrev: string;
+  home_wins: number;
+  home_losses: number;
+  home_ot_losses: number;
+  home_games_played: number;
+  road_wins: number;
+  road_losses: number;
+  road_ot_losses: number;
+  road_games_played: number;
+  wins: number;
+  losses: number;
+  ot_losses: number;
+  points: number;
+  games_played: number;
+  goal_differential: number;
+  goal_for: number;
+  goal_against: number;
+  streak_code: string | null;
+  streak_count: number | null;
+  l10_wins: number | null;
+  l10_losses: number | null;
+  l10_ot_losses: number | null;
+  l10_games_played: number | null;
+  l10_points: number | null;
+  l10_goal_differential: number | null;
+  home_goals_for: number | null;
+  home_goals_against: number | null;
+  road_goals_for: number | null;
+  road_goals_against: number | null;
+  league_sequence: number | null;
+}
+
 type ScheduleState = {
   identity: string | null;
   games: ScheduleGame[];
   loading: boolean;
   error: string | null;
   record: TeamRecord | null;
+  standingsDetails: TeamStandingsDetails | null;
 };
 
 type ScheduleResolution =
@@ -254,6 +290,7 @@ export const useTeamSchedule = (
     loading: true,
     error: null,
     record: null,
+    standingsDetails: null,
   });
   const currentSeasonQuery = useCurrentSeasonQuery();
   const resolution = buildScheduleResolution({
@@ -294,6 +331,7 @@ export const useTeamSchedule = (
         loading: resolutionKind === "pending",
         error: terminalError,
         record: null,
+        standingsDetails: null,
       });
 
       return () => {
@@ -309,6 +347,7 @@ export const useTeamSchedule = (
           loading: true,
           error: null,
           record: null,
+          standingsDetails: null,
         });
 
         console.log("🔍 Fetching schedule from database:", {
@@ -425,11 +464,12 @@ export const useTeamSchedule = (
         }
 
         let nextRecord: TeamRecord | null = null;
+        let nextStandingsDetails: TeamStandingsDetails | null = null;
         if (recordAsOfDateIsValid) {
           let standingsQuery = supabase
             .from("nhl_standings_details")
             .select(
-              "date,wins,losses,ot_losses,points,regulation_wins,regulation_plus_ot_wins,shootout_wins",
+              "season_id,date,team_abbrev,home_wins,home_losses,home_ot_losses,home_games_played,road_wins,road_losses,road_ot_losses,road_games_played,wins,losses,ot_losses,points,games_played,goal_differential,goal_for,goal_against,streak_code,streak_count,l10_wins,l10_losses,l10_ot_losses,l10_games_played,l10_points,l10_goal_differential,home_goals_for,home_goals_against,road_goals_for,road_goals_against,league_sequence,regulation_wins,regulation_plus_ot_wins,shootout_wins",
             )
             .eq("season_id", validatedSeasonId)
             .eq("team_abbrev", validatedTeamAbbreviation);
@@ -452,6 +492,7 @@ export const useTeamSchedule = (
             );
           } else if (standingsData && standingsData.length > 0) {
             const latestStandings = standingsData[0];
+            nextStandingsDetails = latestStandings as TeamStandingsDetails;
             nextRecord = {
               wins: latestStandings.wins ?? 0,
               losses: latestStandings.losses ?? 0,
@@ -473,6 +514,7 @@ export const useTeamSchedule = (
           loading: false,
           error: null,
           record: nextRecord,
+          standingsDetails: nextStandingsDetails,
         });
       } catch (err) {
         if (!ownsRequest) return;
@@ -486,6 +528,7 @@ export const useTeamSchedule = (
               ? err.message
               : "Failed to fetch schedule from database",
           record: null,
+          standingsDetails: null,
         });
       } finally {
         if (!ownsRequest) return;
@@ -550,6 +593,7 @@ export const useTeamSchedule = (
         loading: state.loading,
         error: state.error,
         record: state.record,
+        standingsDetails: state.standingsDetails,
         scheduleTeam,
       }
     : {

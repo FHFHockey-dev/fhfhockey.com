@@ -130,7 +130,17 @@ function gameFixture(overrides: Record<string, unknown> = {}) {
 
 function standingsFixture(overrides: Record<string, unknown> = {}) {
   return {
+    season_id: 20242025,
     date: "2025-01-15",
+    team_abbrev: "EDM",
+    home_wins: 15,
+    home_losses: 6,
+    home_ot_losses: 1,
+    home_games_played: 22,
+    road_wins: 13,
+    road_losses: 7,
+    road_ot_losses: 2,
+    road_games_played: 22,
     wins: 28,
     losses: 13,
     ot_losses: 3,
@@ -138,6 +148,23 @@ function standingsFixture(overrides: Record<string, unknown> = {}) {
     regulation_wins: 22,
     regulation_plus_ot_wins: 25,
     shootout_wins: 3,
+    games_played: 44,
+    goal_differential: 20,
+    goal_for: 150,
+    goal_against: 130,
+    streak_code: "W",
+    streak_count: 2,
+    l10_wins: 7,
+    l10_losses: 2,
+    l10_ot_losses: 1,
+    l10_games_played: 10,
+    l10_points: 15,
+    l10_goal_differential: 8,
+    home_goals_for: 80,
+    home_goals_against: 60,
+    road_goals_for: 70,
+    road_goals_against: 70,
+    league_sequence: 6,
     ...overrides,
   };
 }
@@ -547,7 +574,7 @@ describe("useTeamSchedule", () => {
 
     const standingsQuery = queries.nhl_standings_details[0];
     expect(standingsQuery.select).toHaveBeenCalledWith(
-      "date,wins,losses,ot_losses,points,regulation_wins,regulation_plus_ot_wins,shootout_wins",
+      "season_id,date,team_abbrev,home_wins,home_losses,home_ot_losses,home_games_played,road_wins,road_losses,road_ot_losses,road_games_played,wins,losses,ot_losses,points,games_played,goal_differential,goal_for,goal_against,streak_code,streak_count,l10_wins,l10_losses,l10_ot_losses,l10_games_played,l10_points,l10_goal_differential,home_goals_for,home_goals_against,road_goals_for,road_goals_against,league_sequence,regulation_wins,regulation_plus_ot_wins,shootout_wins",
     );
     expect(standingsQuery.eq).toHaveBeenNthCalledWith(1, "season_id", 20242025);
     expect(standingsQuery.eq).toHaveBeenNthCalledWith(2, "team_abbrev", "EDM");
@@ -565,6 +592,13 @@ describe("useTeamSchedule", () => {
       regulationWins: 22,
       overtimeWins: 3,
       shootoutWins: 3,
+    });
+    expect(result.current.standingsDetails).toMatchObject({
+      season_id: 20242025,
+      team_abbrev: "EDM",
+      home_wins: 15,
+      road_wins: 13,
+      league_sequence: 6,
     });
   });
 
@@ -607,6 +641,7 @@ describe("useTeamSchedule", () => {
       loading: true,
       error: null,
       record: null,
+      standingsDetails: null,
       scheduleTeam: { id: 22, abbreviation: "EDM" },
     });
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -616,6 +651,7 @@ describe("useTeamSchedule", () => {
     );
     expect(result.current.record?.wins).toBe(35);
     expect(result.current.record?.points).toBe(74);
+    expect(result.current.standingsDetails?.date).toBe("2025-02-15");
 
     act(() =>
       olderRecord.resolve({
@@ -627,6 +663,7 @@ describe("useTeamSchedule", () => {
 
     expect(result.current.record?.wins).toBe(35);
     expect(result.current.record?.points).toBe(74);
+    expect(result.current.standingsDetails?.date).toBe("2025-02-15");
   });
 
   it.each([
@@ -761,6 +798,7 @@ describe("useTeamSchedule", () => {
       loading: true,
       error: null,
       record: null,
+      standingsDetails: null,
       scheduleTeam: { id: 6, abbreviation: "BOS" },
     });
 
@@ -780,6 +818,7 @@ describe("useTeamSchedule", () => {
       loading: false,
       error: null,
       record: null,
+      standingsDetails: null,
       scheduleTeam: { id: 6, abbreviation: "BOS" },
     });
   });

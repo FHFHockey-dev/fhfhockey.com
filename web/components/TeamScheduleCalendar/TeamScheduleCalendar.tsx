@@ -8,11 +8,9 @@ import {
   isToday
 } from "date-fns";
 import {
-  useTeamSchedule,
   ScheduleGame,
-  TeamRecord
+  TeamStandingsDetails
 } from "hooks/useTeamSchedule";
-import { useTeamStatsFromDb } from "hooks/useTeamStatsFromDb";
 import { getTeamAbbreviationById } from "lib/teamsInfo";
 import styles from "./TeamScheduleCalendar.module.scss";
 import { teamsInfo } from "lib/teamsInfo";
@@ -22,6 +20,10 @@ import {
   type OpponentStrengthBand,
   type TeamPowerRatingRow
 } from "lib/teamOpponentStrength";
+import {
+  useTeamScheduleWgoStats,
+  type ScheduleWgoTeamStat
+} from "hooks/useTeamScheduleWgoStats";
 
 interface TeamScheduleCalendarProps {
   games: ScheduleGame[];
@@ -30,43 +32,10 @@ interface TeamScheduleCalendarProps {
   seasonId: string;
   loading?: boolean;
   error?: string | null;
-  record?: TeamRecord | null;
+  standingsDetails?: TeamStandingsDetails | null;
 }
 
-// Enhanced types for comprehensive game analysis
-interface WGOTeamStat {
-  id: number;
-  team_id: number;
-  franchise_name: string;
-  date: string;
-  games_played: number;
-  wins: number;
-  losses: number;
-  ot_losses: number;
-  points: number;
-  goals_for: number;
-  goals_against: number;
-  goals_for_per_game: number;
-  goals_against_per_game: number;
-  shots_for_per_game: number;
-  shots_against_per_game: number;
-  faceoff_win_pct: number;
-  penalty_kill_pct: number;
-  power_play_pct: number;
-  hits: number;
-  blocked_shots: number;
-  takeaways: number;
-  giveaways: number;
-  penalty_minutes: number;
-  pp_opportunities: number;
-  game_id: number;
-  opponent_id: number;
-  // Advanced analytics fields
-  sat_pct?: number;
-  shooting_pct_5v5?: number;
-  save_pct_5v5?: number;
-  zone_start_pct_5v5?: number;
-}
+type WGOTeamStat = ScheduleWgoTeamStat;
 
 interface EnhancedGameData {
   game: ScheduleGame;
@@ -157,76 +126,10 @@ interface CalendarStats {
 
 type GameResult = "win" | "loss" | "otLoss" | "future" | null;
 
-// New: Type for nhl_standings_details
-interface NHLStandingsDetails {
-  season_id: number;
-  date: string;
-  team_abbrev: string;
-  home_wins: number;
-  home_losses: number;
-  home_ot_losses: number;
-  home_games_played: number;
-  road_wins: number;
-  road_losses: number;
-  road_ot_losses: number;
-  road_games_played: number;
-  wins: number;
-  losses: number;
-  ot_losses: number;
-  points: number;
-  games_played: number;
-  goal_differential: number;
-  goal_for: number;
-  goal_against: number;
-  streak_code: string | null;
-  streak_count: number | null;
-  l10_wins: number | null;
-  l10_losses: number | null;
-  l10_ot_losses: number | null;
-  l10_games_played: number | null;
-  l10_points: number | null;
-  l10_goal_differential: number | null;
-  home_goals_for: number | null;
-  home_goals_against: number | null;
-  road_goals_for: number | null;
-  road_goals_against: number | null;
-  league_sequence: number | null;
-}
-
-// New: Hook to fetch latest nhl_standings_details for a team/season
-function useNHLStandingsDetails(teamAbbr: string, seasonId: string) {
-  const [details, setDetails] = useState<NHLStandingsDetails | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!teamAbbr || !seasonId) return;
-    setLoading(true);
-    setError(null);
-    const fetchDetails = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("nhl_standings_details")
-          .select("*")
-          .eq("team_abbrev", teamAbbr)
-          .eq("season_id", Number(seasonId))
-          .order("date", { ascending: false })
-          .limit(1)
-          .single();
-        if (error) throw error;
-        setDetails(data as NHLStandingsDetails);
-      } catch (err: any) {
-        setError(err.message || "Failed to fetch standings details");
-        setDetails(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDetails();
-  }, [teamAbbr, seasonId]);
-
-  return { details, loading, error };
-}
+const EMPTY_OPPONENT_STRENGTH_INDEX = new Map<
+  string,
+  OpponentStrengthBand
+>();
 
 export function TeamScheduleCalendar({
   games,
@@ -235,22 +138,31 @@ export function TeamScheduleCalendar({
   seasonId,
   loading = false,
   error = null,
-  record
+  standingsDetails = null
 }: TeamScheduleCalendarProps) {
   const [showInfo, setShowInfo] = useState(false);
   const [selectedGame, setSelectedGame] = useState<ScheduleGame | null>(null);
   const [hoveredGame, setHoveredGame] = useState<EnhancedGameData | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [debug] = useState(true); // Enable debug mode to diagnose streak issue
-  const [wgoStats, setWgoStats] = useState<WGOTeamStat[]>([]);
-  const [statsLoading, setStatsLoading] = useState(false);
-
-  // Add state for games table data
-  const [gamesTableData, setGamesTableData] = useState<any[]>([]);
-  const [gamesTableLoading, setGamesTableLoading] = useState(false);
-  const [opponentStrengthIndex, setOpponentStrengthIndex] = useState<
-    Map<string, OpponentStrengthBand>
-  >(new Map());
+  const { stats: wgoStats } = useTeamScheduleWgoStats(teamId, seasonId);
+  const opponentStrengthRequestIdentity = useMemo(
+    () =>
+      JSON.stringify([
+        String(teamId),
+        seasonId,
+        games.map((game) => [game.id, game.gameDate]),
+      ]),
+    [games, seasonId, teamId]
+  );
+  const [opponentStrengthState, setOpponentStrengthState] = useState<{
+    identity: string | null;
+    index: Map<string, OpponentStrengthBand>;
+  }>({ identity: null, index: EMPTY_OPPONENT_STRENGTH_INDEX });
+  const opponentStrengthIndex =
+    opponentStrengthState.identity === opponentStrengthRequestIdentity
+      ? opponentStrengthState.index
+      : EMPTY_OPPONENT_STRENGTH_INDEX;
 
   // Get team abbreviation from ID if not provided
   const teamAbbr =
@@ -258,114 +170,34 @@ export function TeamScheduleCalendar({
 
   const teamInfo = teamsInfo[teamAbbreviation];
 
-  // Use Supabase data for accurate team stats
-  const {
-    teamStats,
-    record: dbRecord,
-    loading: teamStatsLoading
-  } = useTeamStatsFromDb(teamId, seasonId);
+  const teamStats = wgoStats;
 
   const today = startOfDay(new Date());
 
-  // Use database record if available, fallback to NHL API record
-  const finalRecord = dbRecord || record;
-
-  // New: Fetch nhl_standings_details
-  const {
-    details: standingsDetails,
-    loading: standingsLoading,
-    error: standingsError
-  } = useNHLStandingsDetails(teamAbbr, seasonId);
-
-  // Helper function to determine home/away from WGO stats using games table
+  // Use the parent-owned schedule for WGO home/away mapping.
   const getHomeAwayFromWGOStat = (wgoStat: WGOTeamStat): "vs" | "@" | null => {
     if (!wgoStat.game_id) return null;
 
-    const gameTableEntry = gamesTableData.find(
+    const gameTableEntry = games.find(
       (game) => game.id === wgoStat.game_id
     );
 
     if (!gameTableEntry) return null;
 
-    const isHomeTeam = gameTableEntry.homeTeamId === Number(teamId);
+    const isHomeTeam = gameTableEntry.homeTeam.id === Number(teamId);
     return isHomeTeam ? "vs" : "@";
   };
 
-  // Enhanced: Fetch comprehensive wgo_team_stats data
-  React.useEffect(() => {
-    const fetchWGOStats = async () => {
-      if (!teamId || !seasonId) return;
-
-      setStatsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from("wgo_team_stats")
-          .select(
-            `
-            *
-          `
-          )
-          .eq("team_id", Number(teamId))
-          .eq("season_id", Number(seasonId))
-          .order("date", { ascending: true });
-
-        if (error) {
-          console.error("Error fetching WGO stats:", error);
-          return;
-        }
-
-        if (data) {
-          setWgoStats(data as WGOTeamStat[]);
-        }
-      } catch (err) {
-        console.error("Error in WGO stats fetch:", err);
-      } finally {
-        setStatsLoading(false);
-      }
-    };
-
-    fetchWGOStats();
-  }, [teamId, seasonId]);
-
-  // Add useEffect to fetch games table data for home/away mapping
-  useEffect(() => {
-    const fetchGamesTableData = async () => {
-      if (!teamId || !seasonId) return;
-
-      setGamesTableLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from("games")
-          .select("id, homeTeamId, awayTeamId, date")
-          .eq("seasonId", Number(seasonId))
-          .or(`homeTeamId.eq.${Number(teamId)},awayTeamId.eq.${Number(teamId)}`)
-          .order("date", { ascending: true });
-
-        if (error) {
-          console.error("Error fetching games table data:", error);
-          return;
-        }
-
-        if (data) {
-          setGamesTableData(data);
-        }
-      } catch (err) {
-        console.error("Error in games table fetch:", err);
-      } finally {
-        setGamesTableLoading(false);
-      }
-    };
-
-    fetchGamesTableData();
-  }, [teamId, seasonId]);
-
   useEffect(() => {
     let active = true;
+    setOpponentStrengthState({
+      identity: opponentStrengthRequestIdentity,
+      index: EMPTY_OPPONENT_STRENGTH_INDEX
+    });
     const gameDates = Array.from(
       new Set(games.map((game) => game.gameDate.slice(0, 10)))
     ).sort();
     if (!gameDates.length) {
-      setOpponentStrengthIndex(new Map());
       return () => {
         active = false;
       };
@@ -391,17 +223,27 @@ export function TeamScheduleCalendar({
         if (page.length < pageSize) break;
         from += pageSize;
       }
-      if (active) setOpponentStrengthIndex(buildDatedOpponentStrengthIndex(rows));
+      if (active) {
+        setOpponentStrengthState({
+          identity: opponentStrengthRequestIdentity,
+          index: buildDatedOpponentStrengthIndex(rows)
+        });
+      }
     };
 
     loadDatedStrength().catch((error) => {
       console.error("Error loading dated opponent strength:", error);
-      if (active) setOpponentStrengthIndex(new Map());
+      if (active) {
+        setOpponentStrengthState({
+          identity: opponentStrengthRequestIdentity,
+          index: EMPTY_OPPONENT_STRENGTH_INDEX
+        });
+      }
     });
     return () => {
       active = false;
     };
-  }, [games]);
+  }, [games, opponentStrengthRequestIdentity]);
 
   // Enhanced game result determination with WGO stats integration
   const getGameResult = (game: ScheduleGame): GameResult => {
@@ -719,7 +561,7 @@ export function TeamScheduleCalendar({
     });
 
     return results;
-  }, [games, wgoStats, teamId, gamesTableData, opponentStrengthIndex]);
+  }, [games, wgoStats, teamId, opponentStrengthIndex]);
 
   // Enhanced calendar data generation with comprehensive analytics
   const calendarData = useMemo(() => {
