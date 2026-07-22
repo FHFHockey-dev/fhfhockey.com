@@ -251,7 +251,7 @@ Imported source ledger after pair repair and live discovery: **4,715 rows** from
 
 Current reconciled ledger after B-CLEAN writer-authority/quarantine-fixture closure: **4,832 rows** from **76 files** (**4,211 checked claims; 621 unchecked**), or **87.15% complete / 12.85% open**. This current line supersedes the earlier inline count while preserving its discovery narrative; B-CLEAN NEW 7/19–20/26/40–42/45/50/62–64/66/76–77/81–87/92/100–101/105/107, B-DRM NEW 29, and executable B-DRM NEW 64/66/75 remain open.
 
-Latest B-CLEAN publication evidence: exact 25-path checkpoint `54752940f4bcb3ea96f468f13fda7c485a8692ec` publishes NEW 98/99/102/103/106's historical team updater/reader/route/dependency and fixture closures with synchronized controls. Guarded exact-parent staging, generated/cache/binary/size/value-free/integrity gates, one-ahead/zero-behind proof, normal non-force push, and fresh local/tracking/live equality pass. NEW 104/108 are locally verified successors; NEW 105/107 remain separate.
+Latest B-CLEAN publication evidence: exact 12-path checkpoint `773beb7ce429cca482348fa8d02e8dea2ab4a52b` publishes NEW 104/108's season-aware writer authority and zero-noise quarantine fixture with synchronized controls. Guarded exact-parent staging, generated/cache/binary/size/value-free/integrity gates, 3 files/33 tests with zero stderr, full TypeScript, syntax checks, one-ahead/zero-behind proof, normal non-force push, and fresh local/tracking/live equality pass. It supersedes historical-team checkpoint `54752940f4bcb3ea96f468f13fda7c485a8692ec`; NEW 105/107 remain separate.
 
 ### Source: `tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md` (208 rows)
 
