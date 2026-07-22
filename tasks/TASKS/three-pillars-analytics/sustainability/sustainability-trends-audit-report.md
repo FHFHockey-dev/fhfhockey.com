@@ -259,3 +259,5 @@ The completed inventory, dependency map, static family audits, exact validation 
 - **B-TRENDS:** 28/50 complete. Closed evidence covers route/dependency ownership, entity metrics/windows, complete/bounded reads, identity, team/skater/goalie workflows, projection-vs-history separation, query handoff, URL/cache behavior, and movement hierarchy. The 22 open rows retain typed warning completeness, independent section failure/stale preservation, mixed-recency invalidation, hydration, broader accessibility/performance/browser, and final synchronization.
 
 This cohort adds no new runtime claim and authorizes no schema, writer, historical repair, deployment, provider, or deletion action. It removes duplicate unchecked work already proved by this report while preserving every known NEW 6–13 and downstream open gate.
+
+Exact checkpoint `d474ae206d1df074b401346ec22dabc96bc4c3aa` publishes the 53-row downstream reconciliation with exact B-START 25/51, B-TRENDS 28/50, and global 4,387/4,874 source/master parity.
