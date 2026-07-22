@@ -881,7 +881,6 @@ const ProjectionsPage: NextPage = () => {
       togglePerGameFantasyPoints,
       expandedRows,
       toggleRowExpansion
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     ]
   );
 

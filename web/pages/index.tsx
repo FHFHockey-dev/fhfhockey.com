@@ -47,7 +47,6 @@ import {
 // Shared debug logger for both server and client
 const debugLog = (...args: any[]) => {
   if (process.env.NODE_ENV !== "production") {
-    // eslint-disable-next-line no-console
     console.log(...args);
   }
 };

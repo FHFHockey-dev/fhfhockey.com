@@ -534,7 +534,7 @@ function ShiftChart() {
     if (!selectedDate && !gameId) {
       fetchMostRecentGame();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Mount-only bootstrap writes selectedDate/gameId and must not rerun after those writes.
   }, []);
 
   // Fetch the season start date when the component mounts
@@ -1147,7 +1147,7 @@ function ShiftChart() {
     if (selectedTime != null) {
       sortPlayersByTimeAndPosition(selectedTime);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Run only for selectedTime; this recreated sorter mutates playerData and would retrigger the effect.
   }, [selectedTime]);
 
   //////////////////////////////////////////////////////////////////////////////////////

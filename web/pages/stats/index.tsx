@@ -66,7 +66,6 @@ export default function StatsPage({
   // Dev logging wrapper (suppressed in production)
   const debugLog = (...args: any[]) => {
     if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
       console.log(...args);
     }
   };
@@ -150,7 +149,6 @@ export default function StatsPage({
       if (hoverTimeout) clearTimeout(hoverTimeout);
       if (leaveTimeout) clearTimeout(leaveTimeout);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- no dependencies; on unmount only
   }, []);
 
   const generateTeamColorStyles = (): React.CSSProperties => {
