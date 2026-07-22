@@ -261,3 +261,11 @@ The completed inventory, dependency map, static family audits, exact validation 
 This cohort adds no new runtime claim and authorizes no schema, writer, historical repair, deployment, provider, or deletion action. It removes duplicate unchecked work already proved by this report while preserving every known NEW 6–13 and downstream open gate.
 
 Exact checkpoint `d474ae206d1df074b401346ec22dabc96bc4c3aa` publishes the 53-row downstream reconciliation with exact B-START 25/51, B-TRENDS 28/50, and global 4,387/4,874 source/master parity.
+
+## Sustainability trends-plan implementation reconciliation
+
+The supporting 19-row volatility/elasticity plan is now 17/19 complete from the same audited runtime and test evidence. The deployed model contract is `sustainability_trend_bands` keyed by player, metric, window, and snapshot; `bandService` owns bounded source reads and composite-key persistence; the public read/protected mutation APIs expose player/date/metric/window selection and bounded bulk rebuilding. The calculator produces l3/l5/l10/l20 prior-blended intervals, z-scores, percentiles, and exposure metadata over raw one-game inputs, so the required one-game plus 3/5/10 views are present while l20 remains additive.
+
+The Sandbox consumes those rows alongside game history, renders actual points and interval bands with hot/cold/normal states, and exposes metric/window/view controls using the updated module styles. Four focused calculator, persistence, read-route, authorization, and bulk-route files pass 14/14 tests, while the canonical runbook documents scheduling, API/audit contracts, bounded paging/retries, and bulk parameters.
+
+Only the frontend parent and its supporting boxscore/fantasy correlation child remain open: fantasy score and boxscore context are available as inputs and summaries, but the UI has no explicit correlation statistic or correlation display. No formula, schema, data, runtime, deployment, or external-state change is authorized by this evidence reconciliation.

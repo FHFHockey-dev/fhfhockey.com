@@ -3272,25 +3272,25 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 
 ### Source: `tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md` (19 rows)
 
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0001` (original L12) — Data model decision for storing per-player per-metric volatility/band snapshots.
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0002` (original L13) — Next.js API endpoint(s) for band recomputation & retrieval.
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0003` (original L14) — Define request parameters & payload shape (player, metric set, windows, snapshot date).
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0004` (original L15) — Implement Supabase queries aggregating 1/3/5/10 game windows.
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0005` (original L16) — Compute volatility stats (mean, variance, percentiles, blended weights).
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0006` (original L17) — Persist results (table or JSON storage) for UI consumption.
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0001` (original L12) — Data model decision for storing per-player per-metric volatility/band snapshots.
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0002` (original L13) — Next.js API endpoint(s) for band recomputation & retrieval.
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0003` (original L14) — Define request parameters & payload shape (player, metric set, windows, snapshot date).
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0004` (original L15) — Implement Supabase queries aggregating 1/3/5/10 game windows.
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0005` (original L16) — Compute volatility stats (mean, variance, percentiles, blended weights).
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0006` (original L17) — Persist results (table or JSON storage) for UI consumption.
 - [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0007` (original L18) — Frontend updates in `trendsSandbox.tsx`.
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0008` (original L19) — Hook into new API to load band + metric series for selected player/season.
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0009` (original L20) — Normalize and combine metric series for visualization (shared scale or multi-axis approach).
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0010` (original L21) — Render elasticity bands + actual series with color-coded segments.
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0011` (original L22) — Surface 1-game dots, plus rolling averages (3/5/10) simultaneously or via toggles.
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0012` (original L23) — Add controls to choose metrics, windows, and visualization options.
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0008` (original L19) — Hook into new API to load band + metric series for selected player/season.
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0009` (original L20) — Normalize and combine metric series for visualization (shared scale or multi-axis approach).
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0010` (original L21) — Render elasticity bands + actual series with color-coded segments.
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0011` (original L22) — Surface 1-game dots, plus rolling averages (3/5/10) simultaneously or via toggles.
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0012` (original L23) — Add controls to choose metrics, windows, and visualization options.
 - [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0013` (original L24) — Display supporting boxscore + fantasy score summaries and correlations.
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0014` (original L25) — SCSS updates in `web/pages/trends/sandbox.module.scss` aligning with new visuals.
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0015` (original L26) — Unit/integration tests for API computations (targeted utility functions).
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0016` (original L27) — Documentation updates:
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0017` (original L28) — Finalize volatility/band formula reference.
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0018` (original L29) — Usage guide describing cron flow and API contract.
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0019` (original L30) — Document bulk rebuild endpoint (`POST /api/v1/sustainability/rebuild-trend-bands`) parameters (offset, limit, dry-run, game_limit).
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0014` (original L25) — SCSS updates in `web/pages/trends/sandbox.module.scss` aligning with new visuals.
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0015` (original L26) — Unit/integration tests for API computations (targeted utility functions).
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0016` (original L27) — Documentation updates:
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0017` (original L28) — Finalize volatility/band formula reference.
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0018` (original L29) — Usage guide describing cron flow and API contract.
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0019` (original L30) — Document bulk rebuild endpoint (`POST /api/v1/sustainability/rebuild-trend-bands`) parameters (offset, limit, dry-run, game_limit).
 
 ### Source: `tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md` (94 rows)
 
