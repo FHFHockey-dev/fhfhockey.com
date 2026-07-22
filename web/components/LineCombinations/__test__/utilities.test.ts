@@ -3,8 +3,35 @@ import { lineCombos_2023020951_2023020970 } from "./LineCombinationsData";
 import {
   aggregateSkaterToiSeconds,
   convertToLines,
-  getLineChanges
+  getLineChanges,
+  resolveLineCombinationSourceContext
 } from "../utilities";
+
+describe("resolveLineCombinationSourceContext", () => {
+  test("returns the exact requested source identity", () => {
+    expect(
+      resolveLineCombinationSourceContext({
+        requestedTeamId: 59,
+        requestedSeasonId: 20242025,
+        sourceTeamId: 59,
+        sourceSeasonId: 20242025
+      })
+    ).toEqual({ teamId: 59, seasonId: 20242025 });
+  });
+
+  test.each([
+    { sourceTeamId: 68, sourceSeasonId: 20242025 },
+    { sourceTeamId: 59, sourceSeasonId: 20252026 }
+  ])("rejects mismatched source context %#", (source) => {
+    expect(() =>
+      resolveLineCombinationSourceContext({
+        requestedTeamId: 59,
+        requestedSeasonId: 20242025,
+        ...source
+      })
+    ).toThrow("Line combination source context does not match the request.");
+  });
+});
 
 describe("aggregateSkaterToiSeconds", () => {
   test("sums tracked game TOI for each player", () => {

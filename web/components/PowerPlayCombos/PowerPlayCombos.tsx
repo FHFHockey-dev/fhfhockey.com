@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
 import supabase from "lib/supabase/client";
-import useCurrentSeason from "hooks/useCurrentSeason";
+import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
 import type { Database } from "lib/supabase/database-generated.types";
 import styles from "./PowerPlayCombos.module.scss";
 
@@ -44,18 +44,33 @@ type UnitsHistoryMap = Record<number, UnitHistoryEntry[]>;
 type Props = {
   teamId: number;
   gameId: number;
+  seasonId?: number;
   teamAbbreviation?: string;
 };
+
+type CurrentGameRow = Pick<
+  Database["public"]["Tables"]["games"]["Row"],
+  "id" | "startTime" | "seasonId" | "homeTeamId" | "awayTeamId"
+>;
 
 const UNIT_ORDER = [1, 2, 3] as const;
 
 export default function PowerPlayCombos({
   teamId,
   gameId,
+  seasonId: sourceSeasonId,
   teamAbbreviation
 }: Props) {
-  const season = useCurrentSeason();
-  const seasonId = season?.seasonId;
+  const currentSeasonQuery = useCurrentSeasonQuery();
+  const seasonId = sourceSeasonId ?? currentSeasonQuery.data?.seasonId;
+  const seasonLookupIsPending =
+    sourceSeasonId === undefined && currentSeasonQuery.isPending;
+  const seasonLookupIsError =
+    sourceSeasonId === undefined && currentSeasonQuery.isError;
+  const shotShareTeamAbbreviation =
+    teamAbbreviation && seasonId === currentSeasonQuery.data?.seasonId
+      ? teamAbbreviation
+      : undefined;
   const [units, setUnits] = useState<UnitsMap>({});
   const [history, setHistory] = useState<UnitsHistoryMap>({});
   const [ppShotShareByPlayerId, setPpShotShareByPlayerId] = useState<
@@ -79,7 +94,22 @@ export default function PowerPlayCombos({
   }, []);
 
   useEffect(() => {
-    if (!seasonId || !teamId || !gameId) {
+    if (!teamId || !gameId) {
+      return;
+    }
+
+    if (!seasonId) {
+      setUnits({});
+      setHistory({});
+      setExpandedUnit(null);
+      setLoading(seasonLookupIsPending);
+      setError(
+        seasonLookupIsPending
+          ? null
+          : seasonLookupIsError
+            ? "Unable to determine the current NHL season."
+            : "Power play data requires a season."
+      );
       return;
     }
 
@@ -88,6 +118,24 @@ export default function PowerPlayCombos({
       setLoading(true);
       setError(null);
       try {
+        const { data: currentGameInfo, error: currentGameError } =
+          await supabase
+            .from("games")
+            .select("id, startTime, seasonId, homeTeamId, awayTeamId")
+            .eq("id", gameId)
+            .single();
+        if (currentGameError) throw currentGameError;
+
+        const currentGame = currentGameInfo as CurrentGameRow | null;
+        if (
+          !currentGame ||
+          currentGame.seasonId !== seasonId ||
+          (currentGame.homeTeamId !== teamId &&
+            currentGame.awayTeamId !== teamId)
+        ) {
+          throw new Error("Power play source context does not match the game.");
+        }
+
         const { data: rosterData, error: rosterError } = await supabase
           .from("rosters")
           .select("playerId, sweaterNumber")
@@ -181,16 +229,13 @@ export default function PowerPlayCombos({
         let unitsHistory: UnitsHistoryMap = {};
 
         if (playerIds.length > 0) {
-          const { data: currentGameInfo } = await supabase
-            .from("games")
-            .select("id, startTime")
-            .eq("id", gameId);
-          const currentStartTime = currentGameInfo?.[0]?.startTime ?? null;
+          const currentStartTime = currentGame.startTime;
 
           let gamesQuery = supabase
             .from("games")
             .select("id, startTime")
             .or(`homeTeamId.eq.${teamId},awayTeamId.eq.${teamId}`)
+            .eq("seasonId", seasonId)
             .neq("id", gameId)
             .order("startTime", { ascending: false });
 
@@ -286,14 +331,14 @@ export default function PowerPlayCombos({
     return () => {
       cancelled = true;
     };
-  }, [seasonId, teamId, gameId]);
+  }, [gameId, seasonId, seasonLookupIsError, seasonLookupIsPending, teamId]);
 
   useEffect(() => {
-    if (!teamAbbreviation) {
+    if (!shotShareTeamAbbreviation) {
       setPpShotShareByPlayerId({});
       return;
     }
-    const activeTeamAbbreviation: string = teamAbbreviation;
+    const activeTeamAbbreviation: string = shotShareTeamAbbreviation;
 
     let cancelled = false;
 
@@ -331,7 +376,7 @@ export default function PowerPlayCombos({
     return () => {
       cancelled = true;
     };
-  }, [teamAbbreviation]);
+  }, [shotShareTeamAbbreviation]);
 
   const unitNumbers = useMemo(
     () => UNIT_ORDER.filter((unit) => (units[unit] ?? []).length > 0),

@@ -4,13 +4,15 @@ import { NUM_PLAYERS_PER_LINE } from "components/LinemateMatrix";
 import { addHours } from "date-fns";
 import { getCurrentSeason } from "lib/NHL/server";
 import supabase from "lib/supabase";
-import { GoalieStats, SkaterStats } from "pages/lines/[abbreviation]";
+import type { GoalieStats, SkaterStats } from "pages/lines/[abbreviation]";
 import { parseTime } from "utils/getPowerPlayBlocks";
 
-type LineCombinations = {
+export type LineCombinations = {
   game: {
     id: number;
     startTime: string;
+    teamId: number;
+    seasonId: number;
   };
   promotions: LineChangeInfo[];
   demotions: LineChangeInfo[];
@@ -49,6 +51,29 @@ export function aggregateSkaterToiSeconds(
   return totals;
 }
 
+export function resolveLineCombinationSourceContext({
+  requestedTeamId,
+  requestedSeasonId,
+  sourceTeamId,
+  sourceSeasonId
+}: {
+  requestedTeamId: number;
+  requestedSeasonId: number;
+  sourceTeamId: number;
+  sourceSeasonId: number;
+}) {
+  if (
+    sourceTeamId !== requestedTeamId ||
+    sourceSeasonId !== requestedSeasonId
+  ) {
+    throw new Error(
+      "Line combination source context does not match the request."
+    );
+  }
+
+  return { teamId: sourceTeamId, seasonId: sourceSeasonId };
+}
+
 // Type Guard Function
 function isNonEmptyArray(goalie: any[] | null): goalie is any[] {
   return goalie !== null && goalie.length > 0;
@@ -59,12 +84,15 @@ export async function getLineCombinations(
   seasonId?: number
 ): Promise<LineCombinations> {
   try {
+    const seasonToUse = seasonId ?? (await getCurrentSeason()).seasonId;
+
     const { data: rawLineCombinations } = await supabase
       .from("lineCombinations")
       .select(
-        "gameId, teamId, forwards, defensemen, goalies, ...games (startTime)"
+        "gameId, teamId, forwards, defensemen, goalies, game:games!inner(startTime, seasonId)"
       )
       .eq("teamId", teamId)
+      .eq("games.seasonId", seasonToUse)
       .order("games(startTime)", { ascending: false })
       .limit(10)
       .returns<any>() // will be fixed after upgrading supabase-js
@@ -79,7 +107,10 @@ export async function getLineCombinations(
 
     // Parse the forwards, defensemen, and goalies fields from strings to number arrays
     const lineCombinations = rawLineCombinations.map((combo: any) => ({
-      ...combo,
+      gameId: combo.gameId,
+      teamId: combo.teamId,
+      startTime: combo.game?.startTime,
+      seasonId: combo.game?.seasonId,
       forwards: Array.isArray(combo.forwards)
         ? combo.forwards
             .map((id: string) => {
@@ -119,9 +150,6 @@ export async function getLineCombinations(
     }));
 
     debugLineCombinationsLog("Parsed Line Combinations:", lineCombinations);
-
-    // Determine which season to use for downstream queries
-    const seasonToUse = seasonId ?? (await getCurrentSeason()).seasonId;
 
     // Fetch player info
     const { data: playerId_sweaterNumber } = await supabase
@@ -301,10 +329,18 @@ export async function getLineCombinations(
       goalies: result.goalies,
     });
 
+    const sourceContext = resolveLineCombinationSourceContext({
+      requestedTeamId: teamId,
+      requestedSeasonId: seasonToUse,
+      sourceTeamId: currentLine.teamId,
+      sourceSeasonId: currentLine.seasonId
+    });
+
     // Assign game info
     result.game = {
       id: currentLine.gameId,
       startTime: currentLine.startTime,
+      ...sourceContext
     };
 
     // Assign promotions and demotions
