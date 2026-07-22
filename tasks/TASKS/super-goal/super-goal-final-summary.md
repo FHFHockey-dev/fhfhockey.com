@@ -120,6 +120,7 @@ Additional initiative sections remain pending verified Wave-A/B completion and W
 - **Current status:** 30/37 verified with seven open. Parents 1.0–5.0 now reflect their 22 already-verified architecture, loading/cache, team-power, projections, and trend/search children.
 - **Preserved open work:** Legacy dead-code removal remains approval/migration-gated. Response-size/pagination verification, empty/off-season load testing, cron-table freshness, measured median load time, and their validation parent remain open.
 - **Boundary:** This reconciliation changes no runtime, API, data, schedule, deployment, or legacy route; it only removes contradictory unchecked parent state.
+- **Parent-parity publication:** Exact checkpoint `1ffaa7fc3e9370f2fe5ea175befa96de3ad9bb98` publishes all ten source/master parent closures and the 4,441/4,874 global ledger through guarded normal push.
 
 ### Sustainability volatility/elasticity plan reconciliation
 
