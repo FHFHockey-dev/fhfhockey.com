@@ -72,6 +72,7 @@ No live relation, policy, migration, type, or runtime reference supports the his
 - The 2026-07-22 daily run wrote 107 rows stamped `as_of_date=2026-07-22`, while the newest qualifying `player_stats_unified` source date is 2026-04-16. NEW 9.9 keeps the product/operations freshness policy open; no existing evidence authorizes an offseason lag threshold or data rewrite.
 - The public reader now uses only the existing read-only server client under live public SELECT RLS. Service-role resolution, JWT inspection, credential-source warnings, and key-prefix logs are absent; NEW 9.10 is complete.
 - Strict real-date/range/id/order/page validation precedes data work. Exact-count ranges use stable as-of/player/horizon ordering, cap page size at 2,000 for compatibility with the dormant sparkline caller, include model name/version and both timestamps, and return page-scoped freshness plus coverage/has-more/partial metadata. The direct reader suite passes 8/8, the combined reader/writer group passes 2 files/14 tests, and full TypeScript passes; exact checkpoint `531b35476436fd221efad83b79c6870fda6db516` publishes base 5.2 and NEW 9.10/9.11 while 5.3/5.5 retain source-warning and broader empty/stale/consumer evidence.
+- The reader's generic catch currently returns and logs the database client's raw error message. P2 NEW 9.15 owns a stable public 500 contract, sanitized server diagnostics, and empty/error-state regressions before API error/test rows can close.
 
 ## Frozen boundary pending NEW work
 
