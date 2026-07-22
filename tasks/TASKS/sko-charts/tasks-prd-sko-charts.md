@@ -75,7 +75,7 @@
   - [ ] 6.3 Build MAE/MAPE and margin-of-error history after persisted metric coverage is verified.
   - [ ] 6.4 Add explicit loading, empty, stale, sparse, partial, unavailable-model, and error states.
   - [ ] 6.5 Verify responsive, keyboard/accessibility, chart labeling/tooltips, and color-independent status.
-  - [ ] 6.6 Ensure legacy `/skoCharts` links do not imply quarantined behavior is supported.
+  - [x] 6.6 Ensure legacy `/skoCharts` links do not imply quarantined behavior is supported. Evidence (2026-07-22): exact page/component/lib link and router scans find no tracked runtime caller to `/skoCharts`; the retained route is `noindex,nofollow`, titles itself Legacy, states that it is quarantined/not trusted/not live FORGE, and links out only to FORGE Dashboard and Trends.
 
 - [ ] 7.0 Execute the SKO legacy burn-down safely
   - [x] 7.1 Re-verify every burn-down file/consumer against current imports, routes, cron, scripts, and runtime ownership. Evidence (2026-07-22): bounded file/import/caller/history searches cover the quarantined route/formulas/reader/UI, active protected writers and admin/cron callers, external HTTP orchestrator, deleted modeling executables, retained canonical-path outputs, and the previously omitted nested output copies now owned by NEW 9.12.
