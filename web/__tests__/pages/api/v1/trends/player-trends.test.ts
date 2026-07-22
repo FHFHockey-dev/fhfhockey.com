@@ -43,8 +43,10 @@ vi.mock("../../../../../lib/supabase/server", () => ({
 }));
 
 import handler, {
+  normalizePlayoffSkaterTrendRow,
   parsePlayerIds,
 } from "../../../../../pages/api/v1/trends/player-trends";
+import { buildPlayerTrendRecords } from "../../../../../lib/trends/playerTrendCalculator";
 
 function createMockRes() {
   return {
@@ -72,6 +74,41 @@ describe("player trend rebuild batching", () => {
 
   it("leaves an empty chunk unspecified so the route retains full-scope semantics", () => {
     expect(parsePlayerIds([])).toBeUndefined();
+  });
+});
+
+describe("player trend playoff source normalization", () => {
+  it("converts playoff TOI seconds while retaining full regular-season accumulators", () => {
+    const regularRow = {
+      player_id: 8478402,
+      date: "2026-04-16",
+      season_id: 20252026,
+      position_code: "C",
+      games_played: 1,
+      shots: 4,
+      toi_per_game: 20,
+    } as any;
+    const playoffRow = normalizePlayoffSkaterTrendRow({
+      player_id: 8478402,
+      date: "2026-05-08",
+      season_id: 20252026,
+      position_code: "C",
+      games_played: 1,
+      shots: 4,
+      toi_per_game: 1203,
+    } as any);
+
+    const records = buildPlayerTrendRecords([regularRow, playoffRow], {
+      emitFromDate: "2026-05-01",
+    });
+    const shotRate = records.find(
+      (record) => record.metric_key === "shots_per_60",
+    );
+
+    expect(playoffRow.toi_per_game).toBeCloseTo(20.05, 6);
+    expect(shotRate?.raw_value).toBeCloseTo(11.970075, 6);
+    expect(shotRate?.average_value).toBeCloseTo(11.985037, 6);
+    expect(shotRate?.sample_size).toBe(2);
   });
 });
 

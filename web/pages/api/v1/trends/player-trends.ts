@@ -13,6 +13,8 @@ import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 
 type PlayerStatsRow =
   Database["public"]["Views"]["player_stats_unified"]["Row"];
+type PlayoffSkaterStatsRow =
+  Database["public"]["Tables"]["wgo_skater_stats_playoffs"]["Row"];
 type GoalieStatsRow =
   Database["public"]["Views"]["goalie_stats_unified"]["Row"];
 
@@ -90,6 +92,22 @@ function isDateOnly(value: unknown): value is string {
   }
 
   return !Number.isNaN(Date.parse(`${value}T00:00:00.000Z`));
+}
+
+export function normalizePlayoffSkaterTrendRow(
+  row: PlayoffSkaterStatsRow,
+): PlayerStatsRow {
+  const rawToiSeconds =
+    row.toi_per_game == null ? null : Number(row.toi_per_game);
+  const toiMinutes =
+    rawToiSeconds != null && Number.isFinite(rawToiSeconds)
+      ? rawToiSeconds / 60
+      : null;
+
+  return {
+    ...row,
+    toi_per_game: toiMinutes,
+  } as unknown as PlayerStatsRow;
 }
 
 async function fetchSkaterStats(options: {
@@ -186,7 +204,9 @@ async function fetchPlayoffSkaterStats(options: {
       break;
     }
 
-    results.push(...(data as unknown as PlayerStatsRow[]));
+    results.push(
+      ...(data as PlayoffSkaterStatsRow[]).map(normalizePlayoffSkaterTrendRow),
+    );
 
     if (data.length < PAGE_SIZE) {
       break;
