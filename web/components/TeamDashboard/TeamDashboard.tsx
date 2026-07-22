@@ -15,9 +15,9 @@ interface TeamDashboardProps {
 }
 
 interface StandingsData {
-  division_sequence: number;
-  conference_sequence: number;
-  league_sequence: number;
+  division_sequence: number | null;
+  conference_sequence: number | null;
+  league_sequence: number | null;
   points: number;
   wins: number;
   losses: number;
@@ -131,6 +131,31 @@ interface LeagueRankings {
   xga_rank: number;
 }
 
+function formatOrdinal(value: number | null | undefined): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return "N/A";
+  }
+
+  const remainder100 = Math.abs(value) % 100;
+  if (remainder100 >= 11 && remainder100 <= 13) return `${value}th`;
+
+  switch (Math.abs(value) % 10) {
+    case 1:
+      return `${value}st`;
+    case 2:
+      return `${value}nd`;
+    case 3:
+      return `${value}rd`;
+    default:
+      return `${value}th`;
+  }
+}
+
+function formatPerGame(total: number, gamesPlayed: number): string {
+  if (!Number.isFinite(total) || !Number.isFinite(gamesPlayed)) return "N/A";
+  return gamesPlayed > 0 ? (total / gamesPlayed).toFixed(2) : "N/A";
+}
+
 export function TeamDashboard({
   teamId,
   teamAbbrev,
@@ -157,16 +182,56 @@ export function TeamDashboard({
   const [error, setError] = useState<string | null>(null);
   const [gameRecordsCount, setGameRecordsCount] = useState<number>(0);
   const [includePlayoffs, setIncludePlayoffs] = useState<boolean>(false);
+  const [settledRequestIdentity, setSettledRequestIdentity] = useState<
+    string | null
+  >(null);
 
   const teamInfo = teamsInfo[teamAbbrev];
+  const franchiseId = teamInfo?.franchiseId;
+  const hasExplicitSeasonId = Boolean(seasonId);
+  const seasonLookupIsPending =
+    !hasExplicitSeasonId && currentSeasonQuery.isPending;
+  const seasonLookupIsError =
+    !hasExplicitSeasonId && currentSeasonQuery.isError;
+  const currentSeasonMatchesSelection =
+    currentSeason?.seasonId?.toString() === effectiveSeasonId;
+  const selectedRegularSeasonStartDate = currentSeasonMatchesSelection
+    ? currentSeason?.regularSeasonStartDate
+    : undefined;
+  const selectedRegularSeasonEndDate = currentSeasonMatchesSelection
+    ? currentSeason?.regularSeasonEndDate
+    : undefined;
+  const selectedSeasonEndDate = currentSeasonMatchesSelection
+    ? currentSeason?.seasonEndDate
+    : undefined;
+  const requestIdentity = JSON.stringify([
+    teamId,
+    teamAbbrev,
+    effectiveSeasonId ?? "",
+    includePlayoffs,
+    selectedRegularSeasonStartDate ?? "",
+    selectedRegularSeasonEndDate ?? "",
+    selectedSeasonEndDate ?? "",
+  ]);
 
   useEffect(() => {
     let ownsRequest = true;
+
+    const clearDashboardData = () => {
+      setStandingsData(null);
+      setTeamStats(null);
+      setSpecialTeamsStats(null);
+      setGoaltendingStats(null);
+      setRecentPerformance(null);
+      setLeagueRankings(null);
+      setGameRecordsCount(0);
+    };
 
     const fetchTeamData = async () => {
       try {
         setIsLoading(true);
         setError(null);
+        clearDashboardData();
 
         // Type guard to ensure we have a valid season ID
         if (!effectiveSeasonId) {
@@ -232,15 +297,12 @@ export function TeamDashboard({
         let startDate: string;
         let endDate: string;
 
-        if (
-          currentSeason?.regularSeasonStartDate &&
-          currentSeason?.regularSeasonEndDate
-        ) {
-          startDate = currentSeason.regularSeasonStartDate.split("T")[0];
+        if (selectedRegularSeasonStartDate && selectedRegularSeasonEndDate) {
+          startDate = selectedRegularSeasonStartDate.split("T")[0];
           endDate =
-            includePlayoffs && currentSeason?.seasonEndDate
-              ? currentSeason.seasonEndDate.split("T")[0]
-              : currentSeason.regularSeasonEndDate.split("T")[0];
+            includePlayoffs && selectedSeasonEndDate
+              ? selectedSeasonEndDate.split("T")[0]
+              : selectedRegularSeasonEndDate.split("T")[0];
         } else {
           // Fallback date ranges based on season ID
           const seasonYear = parseInt(effectiveSeasonId.slice(0, 4));
@@ -301,9 +363,9 @@ export function TeamDashboard({
         if (summaryData) {
           const standingsRecord = standings?.[0];
           setStandingsData({
-            division_sequence: standingsRecord?.division_sequence || 0,
-            conference_sequence: standingsRecord?.conference_sequence || 0,
-            league_sequence: standingsRecord?.league_sequence || 0,
+            division_sequence: standingsRecord?.division_sequence ?? null,
+            conference_sequence: standingsRecord?.conference_sequence ?? null,
+            league_sequence: standingsRecord?.league_sequence ?? null,
             points: summaryData.points || 0,
             wins: summaryData.wins || 0,
             losses: summaryData.losses || 0,
@@ -431,32 +493,42 @@ export function TeamDashboard({
         }
 
         // Fetch goaltending data using NHL API and process team goalie statistics
-        const franchiseId = teamInfo?.franchiseId;
         if (franchiseId) {
           try {
-            // Calculate date range for current season with fallbacks
+            // Keep regular-season goalie windows inside the selected season.
             const today = new Date().toISOString().split("T")[0];
-            const seasonStart =
-              currentSeason?.regularSeasonStartDate?.split("T")[0] || startDate;
+            const regularSeasonEndDate =
+              selectedRegularSeasonEndDate?.split("T")[0] ||
+              `${parseInt(effectiveSeasonId.slice(0, 4)) + 1}-04-30`;
+            const goalieEndDate =
+              today < regularSeasonEndDate ? today : regularSeasonEndDate;
+            const goalieWindowHasStarted = goalieEndDate >= startDate;
 
             // Fetch team schedule to get total games played
             const scheduleUrl = `https://api-web.nhle.com/v1/club-schedule-season/${teamAbbrev}/${effectiveSeasonId}`;
-            const scheduleResponse = await fetchWithCache(scheduleUrl);
+            const scheduleResponse = goalieWindowHasStarted
+              ? await fetchWithCache(scheduleUrl)
+              : { games: [] };
             if (!ownsRequest) return;
             const completedGames = scheduleResponse.games.filter(
               (game: any) =>
-                game.gameType === 2 && game.gameDate.split("T")[0] <= today,
+                game.gameType === 2 &&
+                game.gameDate.split("T")[0] >= startDate &&
+                game.gameDate.split("T")[0] <= goalieEndDate,
             ).length;
 
             // Fetch goalie data from NHL API
-            const goalieUrl = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameDate<='${today}' and gameDate>='${seasonStart}' and gameTypeId=2`;
-            const goalieResponse = await fetchWithCache(goalieUrl);
+            const goalieUrl = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameDate<='${goalieEndDate}' and gameDate>='${startDate}' and gameTypeId=2`;
+            const goalieResponse = goalieWindowHasStarted
+              ? await fetchWithCache(goalieUrl)
+              : { data: [] };
             if (!ownsRequest) return;
 
             // Also fetch advanced goalie stats for quality starts
-            const advancedGoalieUrl = `https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=true&isGame=true&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameDate<='${today}' and gameDate>='${seasonStart}' and gameTypeId=2`;
-            const advancedGoalieResponse =
-              await fetchWithCache(advancedGoalieUrl);
+            const advancedGoalieUrl = `https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=true&isGame=true&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameDate<='${goalieEndDate}' and gameDate>='${startDate}' and gameTypeId=2`;
+            const advancedGoalieResponse = goalieWindowHasStarted
+              ? await fetchWithCache(advancedGoalieUrl)
+              : { data: [] };
             if (!ownsRequest) return;
 
             if (goalieResponse.data && goalieResponse.data.length > 0) {
@@ -488,7 +560,10 @@ export function TeamDashboard({
                     savePct: goalie.savePct,
                     gaa: goalie.goalsAgainstAverage,
                     shutouts: goalie.shutouts,
-                    workloadShare: (goalie.gamesStarted / completedGames) * 100,
+                    workloadShare:
+                      completedGames > 0
+                        ? (goalie.gamesStarted / completedGames) * 100
+                        : 0,
                     qualityStarts: advancedStats?.qualityStart || 0,
                     qualityStartsPct: advancedStats?.qualityStartsPct || 0,
                   };
@@ -1021,28 +1096,35 @@ export function TeamDashboard({
         setError(err instanceof Error ? err.message : "An error occurred");
         console.error("Error fetching team dashboard data:", err);
       } finally {
-        if (ownsRequest) setIsLoading(false);
+        if (ownsRequest) {
+          setSettledRequestIdentity(requestIdentity);
+          setIsLoading(false);
+        }
       }
     };
 
     if (!effectiveSeasonId) {
-      if (currentSeasonQuery.isPending) {
+      clearDashboardData();
+      if (seasonLookupIsPending) {
         setIsLoading(true);
         setError(null);
       } else {
         setIsLoading(false);
         setError(
-          currentSeasonQuery.isError
+          seasonLookupIsError
             ? "Unable to load the current season."
             : "Team dashboard requires a season selection.",
         );
+        setSettledRequestIdentity(requestIdentity);
       }
       return;
     }
 
     if (!teamId || !teamAbbrev) {
+      clearDashboardData();
       setIsLoading(false);
       setError("Team dashboard requires a valid team selection.");
+      setSettledRequestIdentity(requestIdentity);
       return;
     }
 
@@ -1054,10 +1136,14 @@ export function TeamDashboard({
     teamId,
     teamAbbrev,
     effectiveSeasonId,
+    franchiseId,
     includePlayoffs,
-    currentSeason,
-    currentSeasonQuery.isError,
-    currentSeasonQuery.isPending,
+    requestIdentity,
+    seasonLookupIsError,
+    seasonLookupIsPending,
+    selectedRegularSeasonEndDate,
+    selectedRegularSeasonStartDate,
+    selectedSeasonEndDate,
   ]);
 
   const formatStreak = (code: string, count: number) => {
@@ -1142,7 +1228,7 @@ export function TeamDashboard({
     return rankMap[statName] || 16; // Default to middle if stat not found
   };
 
-  if (isLoading) {
+  if (isLoading || settledRequestIdentity !== requestIdentity) {
     return (
       <div className={styles.container}>
         <div className={styles.loading}>
@@ -1241,27 +1327,13 @@ export function TeamDashboard({
                     <div className={styles.positionSummary}>
                       <div className={styles.positionStat}>
                         <span className={styles.positionValue}>
-                          {standingsData.league_sequence}
-                          {standingsData.league_sequence === 1
-                            ? "st"
-                            : standingsData.league_sequence === 2
-                              ? "nd"
-                              : standingsData.league_sequence === 3
-                                ? "rd"
-                                : "th"}
+                          {formatOrdinal(standingsData.league_sequence)}
                         </span>
                         <span className={styles.positionLabel}>NHL</span>
                       </div>
                       <div className={styles.positionStat}>
                         <span className={styles.positionValue}>
-                          {standingsData.conference_sequence}
-                          {standingsData.conference_sequence === 1
-                            ? "st"
-                            : standingsData.conference_sequence === 2
-                              ? "nd"
-                              : standingsData.conference_sequence === 3
-                                ? "rd"
-                                : "th"}
+                          {formatOrdinal(standingsData.conference_sequence)}
                         </span>
                         <span className={styles.positionLabel}>
                           {standingsData.conference_name}
@@ -1269,14 +1341,7 @@ export function TeamDashboard({
                       </div>
                       <div className={styles.positionStat}>
                         <span className={styles.positionValue}>
-                          {standingsData.division_sequence}
-                          {standingsData.division_sequence === 1
-                            ? "st"
-                            : standingsData.division_sequence === 2
-                              ? "nd"
-                              : standingsData.division_sequence === 3
-                                ? "rd"
-                                : "th"}
+                          {formatOrdinal(standingsData.division_sequence)}
                         </span>
                         <span className={styles.positionLabel}>
                           {standingsData.division_name}
@@ -1327,10 +1392,10 @@ export function TeamDashboard({
                             <span
                               className={`${styles.statValue} ${getRankingBasedColor(getStatRank("goals_per_game"))}`}
                             >
-                              {(
-                                standingsData.goal_for /
-                                standingsData.games_played
-                              ).toFixed(2)}
+                              {formatPerGame(
+                                standingsData.goal_for,
+                                standingsData.games_played,
+                              )}
                             </span>
                             <span
                               className={`${styles.rankValue} ${getRankingColor(leagueRankings.goals_per_game_rank)}`}
@@ -1346,10 +1411,10 @@ export function TeamDashboard({
                             <span
                               className={`${styles.statValue} ${getRankingBasedColor(getStatRank("goals_against_per_game"))}`}
                             >
-                              {(
-                                standingsData.goal_against /
-                                standingsData.games_played
-                              ).toFixed(2)}
+                              {formatPerGame(
+                                standingsData.goal_against,
+                                standingsData.games_played,
+                              )}
                             </span>
                             <span
                               className={`${styles.rankValue} ${getRankingColor(leagueRankings.goals_against_per_game_rank)}`}
@@ -1669,8 +1734,8 @@ export function TeamDashboard({
                     </div>
                   </div>
                 ) : (
-                  <div className={styles.rankingsLoading}>
-                    Loading league rankings...
+                  <div className={styles.noData}>
+                    No league rankings available
                   </div>
                 )}
               </>
@@ -1697,7 +1762,7 @@ export function TeamDashboard({
                 className={`${styles.toggleButton} ${!includePlayoffs ? styles.active : ""}`}
                 onClick={() => setIncludePlayoffs(false)}
               >
-                Exhibition
+                Regular Season
               </button>
               <button
                 className={`${styles.toggleButton} ${includePlayoffs ? styles.active : ""}`}
@@ -2038,10 +2103,7 @@ export function TeamDashboard({
                 </div>
               </>
             ) : (
-              <div className={styles.loadingState}>
-                <div className={styles.loadingSpinner}></div>
-                <span>Loading goaltending data...</span>
-              </div>
+              <div className={styles.noData}>No goaltending data available</div>
             )}
           </div>
         </div>
