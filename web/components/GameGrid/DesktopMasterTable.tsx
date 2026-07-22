@@ -692,9 +692,7 @@ export default function DesktopMasterTable({
                         size="small"
                         checked={!isExcluded}
                         onChange={() => toggleExcludedDay(weekDay)}
-                        aria-label={`${
-                          isExcluded ? "Include" : "Mute"
-                        } ${String(day)} games`}
+                        aria-label={`Include ${String(day)} games`}
                       />
                     </div>
                   )}

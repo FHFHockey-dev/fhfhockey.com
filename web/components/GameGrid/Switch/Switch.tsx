@@ -27,6 +27,7 @@ function Switch({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
+      if (e.repeat) return;
       if (!disabled && onClick) {
         onClick();
       }

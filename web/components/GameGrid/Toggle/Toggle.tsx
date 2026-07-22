@@ -19,11 +19,12 @@ export default function Toggle({
   "aria-label": ariaLabel,
   "aria-describedby": ariaDescribedby,
   className,
-  size = "medium"
+  size = "medium",
 }: ToggleProps) {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
+      if (e.repeat) return;
       if (!disabled) {
         onChange();
       }
@@ -38,11 +39,7 @@ export default function Toggle({
   };
 
   return (
-    <label
-      className={`${styles.switch} ${styles[size]} ${className || ""}`}
-      aria-label={ariaLabel}
-      aria-describedby={ariaDescribedby}
-    >
+    <label className={`${styles.switch} ${styles[size]} ${className || ""}`}>
       <input
         type="checkbox"
         checked={checked}
@@ -54,6 +51,8 @@ export default function Toggle({
       <span
         className={`${styles.slider} ${styles.round}`}
         role="switch"
+        aria-label={ariaLabel}
+        aria-describedby={ariaDescribedby}
         aria-checked={checked}
         aria-disabled={disabled}
         tabIndex={disabled ? -1 : 0}
