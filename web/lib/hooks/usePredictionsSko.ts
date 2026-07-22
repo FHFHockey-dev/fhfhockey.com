@@ -10,7 +10,10 @@ export interface PredictionRow {
   stability_multiplier: number | null;
   sko: number | null;
   top_features: any | null;
+  model_name: string;
+  model_version: string;
   created_at: string;
+  updated_at: string;
 }
 
 type Options = {
@@ -45,7 +48,7 @@ export function usePredictionsSko(opts: Options = {}) {
     opts.horizon,
     opts.limit,
     opts.order,
-    opts.playerIds?.join(",")
+    opts.playerIds?.join(","),
   ]);
 
   useEffect(() => {
