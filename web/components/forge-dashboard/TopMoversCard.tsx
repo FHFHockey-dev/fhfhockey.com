@@ -7,6 +7,7 @@ import {
   normalizeTeamMoversResponse
 } from "lib/dashboard/normalizers";
 import { fetchCachedJson } from "lib/dashboard/clientFetchCache";
+import { fallbackTeamLogo } from "lib/images";
 
 // Quarantine-only lineage: this zero-consumer card overlaps the active
 // TeamPowerCard and HotColdCard surfaces. Keep it out of live FORGE composition
@@ -31,8 +32,6 @@ type TopMoversCardProps = {
     empty: boolean;
   }) => void;
 };
-
-const DEFAULT_TEAM_LOGO = "/teamLogos/default.png";
 
 const mapPosition = (position: TopMoversCardProps["position"]): "forward" | "defense" | "all" => {
   if (position === "d") return "defense";
@@ -113,7 +112,7 @@ export default function TopMoversCard({
             return {
               id: String(row.playerId),
               name: meta?.fullName ?? `Player ${row.playerId}`,
-              logo: meta?.imageUrl ?? DEFAULT_TEAM_LOGO,
+              logo: meta?.imageUrl ?? fallbackTeamLogo,
               delta: Number(row.delta ?? 0),
               current: undefined
             } as Mover;

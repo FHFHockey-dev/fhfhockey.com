@@ -5,6 +5,7 @@ import Link from "next/link";
 import styles from "styles/Stats.module.scss";
 import { SkaterStat } from "lib/NHL/statsPageTypes";
 import Segment from "./Segment";
+import LeaderboardHeadshot from "./LeaderboardHeadshot";
 
 interface LeaderboardCategoryProps {
   title: string;
@@ -132,19 +133,11 @@ const LeaderboardCategory: React.FC<LeaderboardCategoryProps> = ({
             <div className={styles.cardContainer}>
               <div className={styles.cardLeft}>
                 <Link href={`/stats/player/${player.player_id}`}>
-                  <img
-                    src={
-                      player.image_url ||
-                      `https://cms.nhl.bamgrid.com/images/headshots/current/168x168/${player.player_id}.jpg`
-                    }
-                    alt={player.fullName}
+                  <LeaderboardHeadshot
+                    imageUrl={player.image_url}
+                    playerId={player.player_id}
+                    playerName={player.fullName}
                     className={styles.playerHeadshot}
-                    loading="lazy"
-                    decoding="async"
-                    style={{ cursor: "pointer" }}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = "none";
-                    }}
                   />
                 </Link>
               </div>

@@ -27,6 +27,7 @@ import {
   Tooltip
 } from "recharts";
 import TopMovers from "components/TopMovers/TopMovers";
+import { fallbackTeamLogo } from "lib/images";
 import styles from "./index.module.scss";
 
 type PlayerListItem = {
@@ -196,7 +197,7 @@ function SparkMini({
     </svg>
   );
 }
-const DEFAULT_TEAM_LOGO = "/teamLogos/default.png";
+const DEFAULT_TEAM_LOGO = fallbackTeamLogo;
 const DEFAULT_PLAYER_IMAGE = DEFAULT_TEAM_LOGO;
 
 const CHART_COLOR_PALETTE = [

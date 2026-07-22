@@ -33,6 +33,7 @@ import {
 import { useRouter } from "next/router";
 import supabase from "lib/supabase";
 import { getTeamAbbreviationById } from "lib/teamsInfo";
+import { fallbackTeamLogo } from "lib/images";
 import {
   LineChart,
   Line,
@@ -143,7 +144,7 @@ const CHART_COLORS = ["#2563eb", "#16a34a", "#f97316", "#ef4444", "#8b5cf6"];
 const getChartColor = (index: number): string =>
   CHART_COLORS[index % CHART_COLORS.length];
 
-const DEFAULT_TEAM_LOGO = "/teamLogos/default.png";
+const DEFAULT_TEAM_LOGO = fallbackTeamLogo;
 const DEFAULT_PLAYER_IMAGE = DEFAULT_TEAM_LOGO;
 const TREND_LINE_LIMIT = 8;
 

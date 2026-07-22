@@ -1,14 +1,8 @@
 import React, { useState, useEffect } from "react";
 import supabase from "lib/supabase";
 import useCurrentSeason from "hooks/useCurrentSeason";
+import { buildPlayerHeadshotSources } from "lib/images";
 import styles from "./TeamDashboard.module.scss";
-
-const PLAYER_HEADSHOT_PLACEHOLDER = "/pictures/player-placeholder.jpg";
-const TRUSTED_PLAYER_HEADSHOT_HOSTS = new Set([
-  "assets.nhle.com",
-  "cms.nhl.bamgrid.com",
-  "nhl.bamcontent.com",
-]);
 
 interface TeamLeadersProps {
   teamAbbrev: string;
@@ -30,55 +24,7 @@ interface TeamLeadersData {
   bshLeaders: PlayerLeader[];
 }
 
-function normalizePlayerHeadshotSource(source: string | null | undefined) {
-  const trimmed = source?.trim();
-  if (!trimmed) return null;
-
-  if (
-    trimmed.startsWith("/") &&
-    !trimmed.startsWith("//") &&
-    !trimmed.includes("\\")
-  ) {
-    return trimmed;
-  }
-
-  try {
-    const url = new URL(trimmed);
-    if (
-      url.protocol === "https:" &&
-      TRUSTED_PLAYER_HEADSHOT_HOSTS.has(url.hostname)
-    ) {
-      return url.toString();
-    }
-  } catch {
-    // Invalid or relative non-root sources fall through to the official fallback.
-  }
-
-  return null;
-}
-
-export function buildLeaderHeadshotSources(
-  imageUrl: string | null | undefined,
-  playerId: number,
-): string[] {
-  const primarySource = normalizePlayerHeadshotSource(imageUrl);
-  const sources = [
-    primarySource === PLAYER_HEADSHOT_PLACEHOLDER ? null : primarySource,
-  ];
-
-  if (Number.isSafeInteger(playerId) && playerId > 0) {
-    sources.push(
-      `https://cms.nhl.bamgrid.com/images/headshots/current/168x168/${playerId}.jpg`,
-    );
-  }
-
-  sources.push(PLAYER_HEADSHOT_PLACEHOLDER);
-
-  return sources.filter(
-    (source, index, candidates): source is string =>
-      Boolean(source) && candidates.indexOf(source) === index,
-  );
-}
+export const buildLeaderHeadshotSources = buildPlayerHeadshotSources;
 
 function LeaderHeadshot({
   imageUrl,
@@ -87,7 +33,7 @@ function LeaderHeadshot({
   imageUrl?: string | null;
   playerId: number;
 }) {
-  const sources = buildLeaderHeadshotSources(imageUrl, playerId);
+  const sources = buildPlayerHeadshotSources(imageUrl, playerId);
   const [headshotState, setHeadshotState] = useState({
     sourceIndex: 0,
     exhausted: false,

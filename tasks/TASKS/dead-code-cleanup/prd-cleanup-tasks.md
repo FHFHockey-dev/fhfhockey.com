@@ -9,7 +9,7 @@ Reduce technical noise (lint warnings, repetitive code patterns) to improve deve
 - 0 TypeScript build errors (current full no-emit check passes).
 - ≥ 25% warning reduction inside each declared first-pass scope. The first current scope removes 5/5 Game Grid ARIA-role warnings (100%). The baseline-compatible directory invocation now covers 1,499 files with 127 warnings; the extension-complete JS/JSX/TS/TSX core covers 1,500 files with 129 warnings. The sole delta is `components/PoissonDistributionChart.jsx` with two raw-image warnings. Because the recorded 1,497-file pre-change snapshot used the directory invocation, only the stable five-to-zero ARIA cluster is presented as a like-for-like reduction.
 - 100% elimination of `jsx-a11y/role-supports-aria-props` warnings without suppression (current core baseline: 5 → 0).
-- Establish and directly verify a safe `OptimizedImage` fallback/dimension contract before further raw-image migration; NEW 22/23 are verified and NEW 25/45 retain the separate TeamLeaders and residual-fallback boundaries.
+- Establish and directly verify a safe `OptimizedImage` fallback/dimension contract before further raw-image migration; NEW 22/23/25/45/50 and base image-pilot task 4.0 are verified, while broad raw-image migration remains out of scope.
 - Remove stale lint directives and document only genuinely intentional exhaustive-deps omissions with local evidence. The original NEW 21 four-directive cohort is complete; broader rule-policy/config/formatting follow-ups remain NEW 40–42.
 
 ## In Scope (Phase 1)
@@ -25,7 +25,7 @@ Reduce technical noise (lint warnings, repetitive code patterns) to improve deve
    - Convert useMemo/useCallback dependency arrays to minimal sets (avoid extra rerenders) where flagged as “unnecessary dependency”
 5. Pilot `<Image />` migration
    - The existing `components/common/OptimizedImage.tsx` wrapper now enforces explicit dimensions or `fill`, owns a keyed one-attempt fallback state, composes caller error handlers, and has direct regressions.
-   - Retain raw images whose source/domain/dimensions are unresolved, including Team Leaders, until NEW 25 is decided; prefer known-size local pilot images after wrapper proof.
+   - Retain raw images only where an explicit source-domain boundary requires them; TeamLeaders, Stats leaderboards, and TopMovers now document that boundary and provide intrinsic dimensions plus bounded tracked fallbacks.
 6. Introduce ESLint rule tuning (optional incremental)
    - Consider local disable for large data-mapping debug logs if performance unaffected
 7. Ref cleanup warnings (Stats page) – ensure cleanup uses saved local variable; remove warnings.
@@ -52,7 +52,7 @@ Reduce technical noise (lint warnings, repetitive code patterns) to improve deve
 1. a11y-switch-fix plus sortable-column semantics (DONE locally with direct shared-control and browser evidence)
 2. stats-ref-cleanup adjustments (verified complete; the original stale disables are removed under NEW 21 and both stats-logo fallback paths are repaired under NEW 23)
 3. repair and directly test the existing OptimizedImage wrapper (DONE — NEW 22 and base 4.1)
-4. pilot image replacements (PARTIAL — extracted homepage standings/injury/game logos and the mobile/desktop stats paths are migrated; Team Leaders and residual fallback constraints remain NEW 25/45)
+4. pilot image replacements (DONE — homepage standings/injury/game logos, mobile/desktop stats logos, TeamLeaders, residual team-logo callers, and shared Stats leaderboard headshots have verified dimensions/fallbacks; broad migration remains a non-goal)
 5. hook-deps-pass-1 (missing deps) + justifications
 6. hook-deps-pass-2 (remove unnecessary deps)
 7. annotate intentional suppressions
@@ -135,6 +135,7 @@ Reduce technical noise (lint warnings, repetitive code patterns) to improve deve
 - 2026-07-22: Exact eight-path checkpoint `2ba29106c48c18d0ffb8dd18cfa583143aeeefaf` publishes NEW 85–87 through a guarded normal push. Fresh parent equality, exact staging, cache/generated/value-free/integrity gates, and post-push local/tracking/live equality pass with zero divergence and a clean isolated checkout.
 - 2026-07-22: PowerPlayCombos NEW 62/64 close locally. Named season state prevents terminal infinite loading; the server helper now inner-filters and validates exact source team/season, returns that identity with the source game, and the page passes it unchanged. PowerPlay rejects mismatched game context before roster work, constrains roster/history to that source, and fetches optional shot share only for the resolved current season. Two files/14 focused tests, full TypeScript, zero-error scoped lint, new-test formatting, baseline-aware legacy formatting, diff integrity, official PostgREST `!inner` guidance, and value-free live 200/exact-context probes pass. B-CLEAN is 113/143 with 30 open; global parity is 4,228/4,835 with 607 open = 87.45% complete / 12.55% open. Severity is P0 15/10, P1 120/92, P2 133/118, and P3 21/20.
 - 2026-07-22: Exact 11-path checkpoint `76e9b5d4d6bf0e521af9651c72748ace12fe2797` publishes PowerPlayCombos NEW 62/64 through a guarded normal push. Fresh parent equality, exact text-only staging, generated/cache/binary/size/value-free and diff-integrity gates, one-ahead/zero-behind proof, and post-push local/tracking/live equality pass with a clean isolated checkout.
+- 2026-07-22: Image-pilot base 4.0/4.3/4.4/6.0/6.2/6.3 and P2 NEW 45/50 close locally. The tracked FHFH logo replaces every named nonexistent `default.png` path across active callers and the quarantined Forge card; one validated helper owns absent/unsafe local abbreviations, TopMovers and D3 own bounded raw/SVG fallbacks, and three Stats leaderboards share trusted 168×168 headshot ownership through CMS, tracked placeholder, identity reset, and terminal exhaustion. Five files/25 tests, full TypeScript, zero-error scoped lint with one pre-existing Trends hook warning, clean new/shared formatting, baseline-aware legacy formatting, exact fallback/raw-owner scans, and diff integrity pass. B-CLEAN is 121/143 with 22 open; global parity is 4,236/4,835 with 599 open = 87.61% complete / 12.39% open. Severity is P0 15/10, P1 120/92, P2 133/120, and P3 21/20.
 - 2026-07-22: Exact 12-path checkpoint `773beb7ce429cca482348fa8d02e8dea2ab4a52b` publishes NEW 104/108 through a guarded normal non-force push. Fresh parent equality at `ffb5ffc42e041e16c4a409a6810bb76c6301041e`, exact staged scope, generated/cache/binary/size/value-free and diff-integrity gates, 3 files/33 tests with zero stderr, full TypeScript, syntax checks, one-ahead/zero-behind proof, and post-push local/tracking/live equality all pass with a clean isolated checkout.
 
 ## Acceptance Criteria
@@ -169,4 +170,4 @@ Tracking representative warnings to address or justify. The current core baselin
 | components/WiGO/NameSearchBar.tsx | current lint clean | resolved | Current filtered-player ownership no longer warns |
 | components/WiGO/PerGameStatsTable.tsx | current lint clean | resolved | Current player identity dependencies no longer warn |
 
-Next dependency-eligible local pass selects the largest coherent non-strategy B-CLEAN batch while trueGoalieValue NEW 63/66, lint-policy NEW 20/40/41, production repair NEW 105, and broad-history NEW 107 retain their separate decision/approval boundaries. NEW 45/50 retain the residual logo/headshot cohorts.
+Next dependency-eligible local pass selects the largest coherent non-strategy B-CLEAN batch while trueGoalieValue NEW 63/66, lint-policy NEW 20/40/41, production repair NEW 105, and broad-history NEW 107 retain their separate decision/approval boundaries.

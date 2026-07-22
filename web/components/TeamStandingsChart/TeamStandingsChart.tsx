@@ -9,6 +9,8 @@ import { teamsInfo, teamNameToAbbreviationMap } from "lib/teamsInfo";
 import publicSupabase from "lib/supabase/public-client";
 import styles from "./TeamStandingsChart.module.scss";
 import Fetch from "lib/cors-fetch";
+import OptimizedImage from "components/common/OptimizedImage";
+import { fallbackTeamLogo, getLocalTeamLogoPath } from "lib/images";
 import {
   getMetricValue,
   getYDomainMax,
@@ -568,7 +570,10 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
             const lastPoint = s.data[s.data.length - 1];
             teamG
               .append("svg:image")
-              .attr("xlink:href", `/teamLogos/${abbr || "default"}.png`)
+              .attr("xlink:href", getLocalTeamLogoPath(abbr))
+              .on("error", function () {
+                d3.select(this).attr("xlink:href", fallbackTeamLogo);
+              })
               .attr("x", xScale(lastPoint.gamesPlayed) + 5)
               .attr("y", yScale(getMetricValue(lastPoint[metric], metric)) - 10)
               .attr("width", 20)
@@ -632,7 +637,10 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
         const lastPoint = sortedData[sortedData.length - 1];
         teamG
           .append("svg:image")
-          .attr("xlink:href", `/teamLogos/${abbr || "default"}.png`)
+          .attr("xlink:href", getLocalTeamLogoPath(abbr))
+          .on("error", function () {
+            d3.select(this).attr("xlink:href", fallbackTeamLogo);
+          })
           .attr("x", xScale(lastPoint.gamesPlayed) + 5)
           .attr("y", () =>
             metric === "pointPct"
@@ -1016,9 +1024,12 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
                                 }
                               }}
                             />
-                            <img
-                              src={`/teamLogos/${abbr ?? "default"}.png`}
+                            <OptimizedImage
+                              src={getLocalTeamLogoPath(abbr)}
                               alt={abbr}
+                              width={26}
+                              height={26}
+                              fallbackSrc={fallbackTeamLogo}
                               className={styles.toggleLogo}
                             />
                           </label>
@@ -1047,9 +1058,12 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
                                 }
                               }}
                             />
-                            <img
-                              src={`/teamLogos/${abbr ?? "default"}.png`}
+                            <OptimizedImage
+                              src={getLocalTeamLogoPath(abbr)}
                               alt={abbr}
+                              width={26}
+                              height={26}
+                              fallbackSrc={fallbackTeamLogo}
                               className={styles.toggleLogo}
                             />
                           </label>

@@ -6,6 +6,8 @@ import clsx from "clsx";
 import useCurrentSeason from "hooks/useCurrentSeason";
 import { teamsInfo } from "lib/teamsInfo";
 import PanelStatus from "components/common/PanelStatus";
+import { getLocalTeamLogoPath } from "lib/images";
+import OptimizedImage from "components/common/OptimizedImage";
 
 // TO DO
 // integrate week score, dynamic. if toggle turns off a day, update score
@@ -1112,8 +1114,8 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                       <div className={styles.leftNamePart}>
                         {teamAbbr ? (
                           <span className={styles.teamLogoSmall}>
-                            <Image
-                              src={`/teamLogos/${teamAbbr ?? "default"}.png`}
+                            <OptimizedImage
+                              src={getLocalTeamLogoPath(teamAbbr)}
                               alt={teamAbbr}
                               width={20}
                               height={20}
@@ -1443,8 +1445,8 @@ const MobileTable: React.FC<MobileTableProps> = ({
                     {" "}
                     {/* Team */}
                     {teamAbbr ? (
-                      <Image
-                        src={`/teamLogos/${teamAbbr ?? "default"}.png`}
+                      <OptimizedImage
+                        src={getLocalTeamLogoPath(teamAbbr)}
                         alt={teamAbbr}
                         width={25}
                         height={25}
