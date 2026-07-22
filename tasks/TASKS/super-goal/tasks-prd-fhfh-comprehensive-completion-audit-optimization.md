@@ -5172,7 +5172,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [ ] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0050` (original L82) — 8.4 Record older proposed views/tables as merged, superseded, or deferred and update both PRDs plus master records.
 - [ ] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0051` (original L86) — NEW 9.0 Append every verified defect, data gap, manual dependency, open model question, and optimization discovered during execution here before closure.
 
-### Source: `tasks/TASKS/sko-charts/tasks-prd-sko-charts.md` (58 rows)
+### Source: `tasks/TASKS/sko-charts/tasks-prd-sko-charts.md` (59 rows)
 
 - [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0001` (original L32) — 1.0 Reconcile sKO definition, ownership, and route/data contracts
 - [x] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0002` (original L33) — 1.1 Map both PRDs, modeling notes, burn-down plan, Sustainability, Trends, and current code into one ownership matrix. Evidence: `sko-ownership-contract.md` records the bounded ownership/classification matrix (2026-07-22).
@@ -5183,7 +5183,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0007` (original L39) — 2.0 Verify and finish source-stat, prediction, and metrics persistence
 - [x] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0008` (original L40) — 2.1 Reconcile live schemas/migrations for `sko_skater_stats`, `sko_skater_years`, `predictions_sko`, and `predictions_sko_metrics` with generated types and code. Evidence: live catalog/baseline/types/runtime agree on three present relations; metrics is consistently absent and remains planned (2026-07-22).
 - [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0009` (original L41) — 2.2 Apply or repair missing migrations through the Supabase workflow, including RLS/API exposure appropriate to admin writers and read-only consumers.
-- [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0010` (original L42) — 2.3 Verify `update-sko-stats` handles schema drift explicitly, paginates complete source reads, and does not silently skip model-required fields.
+- [x] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0010` (original L42) — 2.3 Verify `update-sko-stats` handles schema drift explicitly, paginates complete source reads, and does not silently skip model-required fields. Evidence: explicit 16-family cursors, exact typed 28-column batch, canonical season identity, derived required fields, and fail-closed errors pass 2 files/11 tests plus TypeScript (2026-07-22).
 - [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0011` (original L43) — 2.4 Make prediction/metric upserts idempotent by stable player/as-of/horizon/model identity and preserve evaluation history.
 - [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0012` (original L44) — 2.5 Add freshness, row-count, missing-player, and partial-write diagnostics for every persistence stage.
 - [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0013` (original L46) — 3.0 Complete the modeling and explanation backlog under frozen contracts
@@ -5232,6 +5232,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0056` (live NEW) — NEW 9.3 **P1 documented modeling pipeline is absent:** reconcile burn-down commit `abbc01e8c5dc99e1544594e0c72bdecd0a013ea8`, the remaining external HTTP orchestrator, retained artifacts, and stale executable-owner claims.
 - [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0057` (live NEW) — NEW 9.4 **P2 prediction reader/UI is orphaned from supported Trends:** keep the unreferenced reader bundle quarantined or deliberately reintegrate it only after model/data promotion.
 - [ ] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0058` (live NEW) — NEW 9.5 **P0 public privileged SKO source-ingest writer:** local and exact branch-deployment 401/401/405 proof passes at `d20296a3238d376061a1e5bda100cc499b6f61b3`; Production-target deployment/proof remains open.
+- [x] `SRC::tasks/TASKS/sko-charts/tasks-prd-sko-charts.md::C0059` (live NEW) — NEW 9.6 **P1 source-ingest schema-learning and season-identity defect:** one typed exact-28-column mapper, canonical date-season resolution, required-field derivation, one-attempt batching, and fail-closed tests replace the 236-field/error-learning path (completed 2026-07-22).
 
 ### Source: `tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md` (50 rows)
 

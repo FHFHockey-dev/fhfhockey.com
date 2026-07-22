@@ -54,6 +54,14 @@ Read-only production catalog evidence, `supabase/migrations/20260716112908_produ
 
 No live relation, policy, migration, type, or runtime reference supports the historical `predictions_next_game` proposal.
 
+## Source-ingest persistence contract
+
+- The active `update-sko-stats` date path paginates all 16 NHL source families with the same explicit `start`/`limit` cursor and continues until every family returns a short page.
+- Date windows pass their canonical season ID directly; date-only runs resolve the latest started canonical NHL season for the requested date. No historical `sko_skater_stats` preload participates in season identity or row construction.
+- One typed mapper emits exactly the 28 live `sko_skater_stats` columns. It derives `time_on_ice`, `ipp`, and `sog_per_60`, preserves zero values, and maps the six supported 5v5 assist fields.
+- One batch upsert is attempted per date. Any schema/write error fails closed; the writer no longer learns the schema by retrying and dropping server-rejected fields.
+- Focused helper/route regressions pass 2 files/11 tests, including full/short-page continuation, the exact 28-key payload, derived-field arithmetic, one-attempt batching, schema-error propagation, and authorization/method boundaries. Full TypeScript passes.
+
 ## Frozen boundary pending NEW work
 
 - Do not call the moving-average v0.2 score, the legacy GameScore × characteristic multiplier, or the deleted offline ML × stability output the single canonical SKO model.
