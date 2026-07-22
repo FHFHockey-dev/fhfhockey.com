@@ -3,6 +3,13 @@ import supabase from "lib/supabase";
 import useCurrentSeason from "hooks/useCurrentSeason";
 import styles from "./TeamDashboard.module.scss";
 
+const PLAYER_HEADSHOT_PLACEHOLDER = "/pictures/player-placeholder.jpg";
+const TRUSTED_PLAYER_HEADSHOT_HOSTS = new Set([
+  "assets.nhle.com",
+  "cms.nhl.bamgrid.com",
+  "nhl.bamcontent.com",
+]);
+
 interface TeamLeadersProps {
   teamAbbrev: string;
   seasonId?: string;
@@ -23,6 +30,102 @@ interface TeamLeadersData {
   bshLeaders: PlayerLeader[];
 }
 
+function normalizePlayerHeadshotSource(source: string | null | undefined) {
+  const trimmed = source?.trim();
+  if (!trimmed) return null;
+
+  if (
+    trimmed.startsWith("/") &&
+    !trimmed.startsWith("//") &&
+    !trimmed.includes("\\")
+  ) {
+    return trimmed;
+  }
+
+  try {
+    const url = new URL(trimmed);
+    if (
+      url.protocol === "https:" &&
+      TRUSTED_PLAYER_HEADSHOT_HOSTS.has(url.hostname)
+    ) {
+      return url.toString();
+    }
+  } catch {
+    // Invalid or relative non-root sources fall through to the official fallback.
+  }
+
+  return null;
+}
+
+export function buildLeaderHeadshotSources(
+  imageUrl: string | null | undefined,
+  playerId: number,
+): string[] {
+  const primarySource = normalizePlayerHeadshotSource(imageUrl);
+  const sources = [
+    primarySource === PLAYER_HEADSHOT_PLACEHOLDER ? null : primarySource,
+  ];
+
+  if (Number.isSafeInteger(playerId) && playerId > 0) {
+    sources.push(
+      `https://cms.nhl.bamgrid.com/images/headshots/current/168x168/${playerId}.jpg`,
+    );
+  }
+
+  sources.push(PLAYER_HEADSHOT_PLACEHOLDER);
+
+  return sources.filter(
+    (source, index, candidates): source is string =>
+      Boolean(source) && candidates.indexOf(source) === index,
+  );
+}
+
+function LeaderHeadshot({
+  imageUrl,
+  playerId,
+}: {
+  imageUrl?: string | null;
+  playerId: number;
+}) {
+  const sources = buildLeaderHeadshotSources(imageUrl, playerId);
+  const [headshotState, setHeadshotState] = useState({
+    sourceIndex: 0,
+    exhausted: false,
+  });
+  const activeSource = sources[headshotState.sourceIndex];
+
+  if (headshotState.exhausted || !activeSource) return null;
+
+  return (
+    // The validated CMS fallback host is not in Next remotePatterns, so this
+    // bounded raw image intentionally owns its complete fallback sequence.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      key={activeSource}
+      src={activeSource}
+      alt=""
+      width={80}
+      height={80}
+      loading="lazy"
+      decoding="async"
+      referrerPolicy="no-referrer"
+      className={styles.playerHeadshot}
+      onError={() => {
+        setHeadshotState((current) => {
+          if (current.sourceIndex + 1 < sources.length) {
+            return {
+              sourceIndex: current.sourceIndex + 1,
+              exhausted: false,
+            };
+          }
+
+          return { ...current, exhausted: true };
+        });
+      }}
+    />
+  );
+}
+
 export function TeamLeaders({ teamAbbrev, seasonId }: TeamLeadersProps) {
   const currentSeason = useCurrentSeason();
   const effectiveSeasonId = seasonId || currentSeason?.seasonId?.toString();
@@ -32,14 +135,22 @@ export function TeamLeaders({ teamAbbrev, seasonId }: TeamLeadersProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isCurrentRequest = true;
+
+    if (!teamAbbrev || !effectiveSeasonId) {
+      setLeadersData(null);
+      setIsLoading(false);
+      setError("Team leaders require a team and season selection.");
+
+      return () => {
+        isCurrentRequest = false;
+      };
+    }
+
     const fetchTeamLeaders = async () => {
       try {
         setIsLoading(true);
         setError(null);
-
-        if (!effectiveSeasonId) {
-          throw new Error("No valid season ID available");
-        }
 
         // Convert season ID to the format used in wgo_skater_stats_totals (e.g., "20242025")
         const formattedSeasonId =
@@ -61,33 +172,41 @@ export function TeamLeaders({ teamAbbrev, seasonId }: TeamLeadersProps) {
             blocked_shots,
             shots,
             hits
-          `
+          `,
           )
           .eq("current_team_abbreviation", teamAbbrev)
           .eq("season", formattedSeasonId)
           .gte("games_played", 5); // Minimum 5 games played to qualify
 
         if (skatersError) throw skatersError;
+        if (!isCurrentRequest) return;
 
         if (!skatersData || skatersData.length === 0) {
           setLeadersData({
             pointsLeaders: [],
             goalsLeaders: [],
-            bshLeaders: []
+            bshLeaders: [],
           });
           return;
         }
 
         // Fetch player images separately
         const playerIds = skatersData.map((player) => player.player_id);
-        const { data: playersData } = await supabase
+        const { data: playersData, error: playersError } = await supabase
           .from("players")
           .select("id, image_url")
           .in("id", playerIds);
 
+        if (!isCurrentRequest) return;
+        if (playersError) {
+          console.warn(
+            "Team leader image metadata is unavailable; using fallback images.",
+          );
+        }
+
         // Create a map of player_id to image_url for quick lookup
         const playerImageMap = new Map(
-          playersData?.map((p) => [p.id, p.image_url]) || []
+          playersData?.map((p) => [p.id, p.image_url]) || [],
         );
 
         // Calculate BSH (Blocked Shots + Shots + Hits) for each player
@@ -97,7 +216,7 @@ export function TeamLeaders({ teamAbbrev, seasonId }: TeamLeadersProps) {
           bsh:
             (player.blocked_shots || 0) +
             (player.shots || 0) +
-            (player.hits || 0)
+            (player.hits || 0),
         }));
 
         // Get top 3 in each category
@@ -110,7 +229,7 @@ export function TeamLeaders({ teamAbbrev, seasonId }: TeamLeadersProps) {
             position_code: p.position_code,
             value: p.points || 0,
             games_played: p.games_played || 0,
-            image_url: p.image_url
+            image_url: p.image_url,
           }));
 
         const goalsLeaders = [...playersWithBSH]
@@ -122,7 +241,7 @@ export function TeamLeaders({ teamAbbrev, seasonId }: TeamLeadersProps) {
             position_code: p.position_code,
             value: p.goals || 0,
             games_played: p.games_played || 0,
-            image_url: p.image_url
+            image_url: p.image_url,
           }));
 
         const bshLeaders = [...playersWithBSH]
@@ -134,32 +253,36 @@ export function TeamLeaders({ teamAbbrev, seasonId }: TeamLeadersProps) {
             position_code: p.position_code,
             value: p.bsh,
             games_played: p.games_played || 0,
-            image_url: p.image_url
+            image_url: p.image_url,
           }));
 
-        setLeadersData({
-          pointsLeaders,
-          goalsLeaders,
-          bshLeaders
-        });
+        if (isCurrentRequest) {
+          setLeadersData({
+            pointsLeaders,
+            goalsLeaders,
+            bshLeaders,
+          });
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-        console.error("Error fetching team leaders:", err);
+        if (isCurrentRequest) {
+          setError(err instanceof Error ? err.message : "An error occurred");
+          console.error("Error fetching team leaders:", err);
+        }
       } finally {
-        setIsLoading(false);
+        if (isCurrentRequest) {
+          setIsLoading(false);
+        }
       }
     };
 
-    if (teamAbbrev && effectiveSeasonId) {
-      fetchTeamLeaders();
-    }
-  }, [teamAbbrev, effectiveSeasonId, currentSeason]);
+    void fetchTeamLeaders();
 
-  const renderLeaderCategory = (
-    title: string,
-    leaders: PlayerLeader[],
-    statName: string
-  ) => (
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [teamAbbrev, effectiveSeasonId]);
+
+  const renderLeaderCategory = (title: string, leaders: PlayerLeader[]) => (
     <div className={styles.leaderCategory}>
       <h4 className={styles.categoryTitle}>{title}</h4>
       <div className={styles.leadersList}>
@@ -167,16 +290,10 @@ export function TeamLeaders({ teamAbbrev, seasonId }: TeamLeadersProps) {
           leaders.map((leader, index) => (
             <div key={leader.player_id} className={styles.leaderItem}>
               <div className={styles.playerHeadshotContainer}>
-                <img
-                  src={
-                    leader.image_url ||
-                    `https://cms.nhl.bamgrid.com/images/headshots/current/168x168/${leader.player_id}.jpg`
-                  }
-                  alt={leader.player_name || "Player"}
-                  className={styles.playerHeadshot}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
+                <LeaderHeadshot
+                  key={`${leader.player_id}:${leader.image_url ?? ""}`}
+                  imageUrl={leader.image_url}
+                  playerId={leader.player_id}
                 />
                 <div className={styles.leaderRank}>{index + 1}</div>
               </div>
@@ -228,17 +345,9 @@ export function TeamLeaders({ teamAbbrev, seasonId }: TeamLeadersProps) {
       <div className={styles.leadersGrid}>
         {leadersData && (
           <>
-            {renderLeaderCategory(
-              "Points Leaders",
-              leadersData.pointsLeaders,
-              "PTS"
-            )}
-            {renderLeaderCategory(
-              "Goals Leaders",
-              leadersData.goalsLeaders,
-              "G"
-            )}
-            {renderLeaderCategory("BSH Leaders", leadersData.bshLeaders, "BSH")}
+            {renderLeaderCategory("Points Leaders", leadersData.pointsLeaders)}
+            {renderLeaderCategory("Goals Leaders", leadersData.goalsLeaders)}
+            {renderLeaderCategory("BSH Leaders", leadersData.bshLeaders)}
           </>
         )}
       </div>

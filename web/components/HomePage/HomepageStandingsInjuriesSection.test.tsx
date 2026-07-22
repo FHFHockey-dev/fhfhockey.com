@@ -1,10 +1,15 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import HomepageStandingsInjuriesSection from "./HomepageStandingsInjuriesSection";
 
-vi.mock("components/common/OptimizedImage", () => ({
-  default: ({ alt }: { alt: string }) => <img alt={alt} />
+vi.mock("next/image", () => ({
+  default: ({ priority, fill: _fill, ...props }: any) =>
+    createElement("img", {
+      ...props,
+      loading: props.loading ?? (priority ? "eager" : "lazy"),
+    }),
 }));
 
 describe("HomepageStandingsInjuriesSection", () => {
@@ -14,7 +19,7 @@ describe("HomepageStandingsInjuriesSection", () => {
       team: "BOS",
       player: { displayName: `Player ${index + 1}` },
       status: "Out",
-      description: "Lower body"
+      description: "Lower body",
     }));
 
     render(
@@ -27,7 +32,7 @@ describe("HomepageStandingsInjuriesSection", () => {
             losses: 20,
             otLosses: 5,
             points: 85,
-            teamLogo: "/logos/b.svg"
+            teamLogo: "/logos/b.svg",
           },
           {
             leagueSequence: 1,
@@ -36,20 +41,36 @@ describe("HomepageStandingsInjuriesSection", () => {
             losses: 18,
             otLosses: 4,
             points: 88,
-            teamLogo: "/logos/a.svg"
-          }
+            teamLogo: "/logos/a.svg",
+          },
         ]}
         injuries={injuries}
         snapshotGeneratedAt="2026-04-08T12:00:00.000Z"
         standingsError={null}
         injuriesError={null}
-      />
+      />,
     );
 
-    const standingsTable = screen.getByRole("table", { name: /nhl league standings/i });
+    const standingsTable = screen.getByRole("table", {
+      name: /nhl league standings/i,
+    });
     const standingsRows = within(standingsTable).getAllByRole("row");
     expect(within(standingsRows[1]).getByText("1")).toBeTruthy();
     expect(within(standingsRows[1]).getByText("Team A")).toBeTruthy();
+    const teamALogo = within(standingsRows[1]).getByRole("img", {
+      name: "Team A logo",
+    });
+    expect(teamALogo.getAttribute("src")).toBe("/logos/a.svg");
+    expect(teamALogo.getAttribute("width")).toBe("22");
+    expect(teamALogo.getAttribute("height")).toBe("22");
+    expect(teamALogo.getAttribute("loading")).toBe("lazy");
+
+    fireEvent.error(teamALogo);
+    expect(
+      within(standingsRows[1])
+        .getByRole("img", { name: "Team A logo" })
+        .getAttribute("src"),
+    ).toBe("https://assets.nhle.com/logos/nhl/svg/NHL_light.svg");
 
     expect(screen.getByText("Player 1")).toBeTruthy();
     expect(screen.queryByText("Player 33")).toBeNull();
@@ -68,10 +89,12 @@ describe("HomepageStandingsInjuriesSection", () => {
         snapshotGeneratedAt="2026-04-08T12:00:00.000Z"
         standingsError="Standings are unavailable right now."
         injuriesError={null}
-      />
+      />,
     );
 
-    expect(screen.getByText("Standings are unavailable right now.")).toBeTruthy();
+    expect(
+      screen.getByText("Standings are unavailable right now."),
+    ).toBeTruthy();
   });
 
   it("renders returning player statuses distinctly", () => {
@@ -85,17 +108,19 @@ describe("HomepageStandingsInjuriesSection", () => {
             player: { id: 7, displayName: "Andrei Vasilevskiy" },
             status: "Returning",
             description: "No longer listed on the injury report.",
-            statusState: "returning"
-          }
+            statusState: "returning",
+          },
         ]}
         snapshotGeneratedAt="2026-04-22T12:00:00.000Z"
         standingsError={null}
         injuriesError={null}
-      />
+      />,
     );
 
     expect(screen.getByText("Returning")).toBeTruthy();
-    expect(screen.getByText("No longer listed on the injury report.")).toBeTruthy();
+    expect(
+      screen.getByText("No longer listed on the injury report."),
+    ).toBeTruthy();
   });
 
   it("renders published NewsFeed injury items in the injuries tab", () => {
@@ -130,7 +155,9 @@ describe("HomepageStandingsInjuriesSection", () => {
 
     expect(screen.getByText("Connor Bedard")).toBeTruthy();
     expect(screen.getByText("Awaiting Official Confirmation")).toBeTruthy();
-    expect(screen.getByText("A lower-body injury has been reported.")).toBeTruthy();
+    expect(
+      screen.getByText("A lower-body injury has been reported."),
+    ).toBeTruthy();
     expect(
       screen
         .getByRole("link", {

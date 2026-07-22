@@ -7,7 +7,7 @@ import ClientOnly from "components/ClientOnly";
 import OptimizedImage from "components/common/OptimizedImage";
 import {
   type PlayoffBracketResponse,
-  type PlayoffBracketSeries
+  type PlayoffBracketSeries,
 } from "lib/NHL/server/playoffBracket";
 import { fallbackNHLLogo, getTeamLogoSvg } from "lib/images";
 import { teamsInfo } from "lib/teamsInfo";
@@ -15,7 +15,7 @@ import { teamsInfo } from "lib/teamsInfo";
 import {
   formatPlayoffCenterLine,
   isFinalGameState,
-  isLiveGameState
+  isLiveGameState,
 } from "./homepageGameFormatting";
 import styles from "./HomepagePlayoffBracket.module.scss";
 
@@ -68,31 +68,41 @@ const EAST_FINAL_LETTER = "M";
 const WEST_FINAL_LETTER = "N";
 const CUP_FINAL_LETTER = "O";
 
+const BRACKET_LOGO_DIMENSIONS = { width: 1993, height: 266 } as const;
+const BRACKET_LOGO_SIZES = "(max-width: 540px) 78vw, 420px";
+const SERIES_LOGO_DIMENSIONS: Partial<
+  Record<string, { width: number; height: number }>
+> = {
+  [EAST_FINAL_LETTER]: { width: 883, height: 251 },
+  [WEST_FINAL_LETTER]: { width: 940, height: 250 },
+  [CUP_FINAL_LETTER]: { width: 361, height: 537 },
+};
+const DEFAULT_SERIES_LOGO_DIMENSIONS = { width: 120, height: 64 } as const;
+const SERIES_LOGO_SIZES = "120px";
+
 function getSeriesByLetter(
   series: PlayoffBracketSeries[],
-  letter: string
+  letter: string,
 ): PlayoffBracketSeries | null {
   return series.find((entry) => entry.seriesLetter === letter) ?? null;
 }
 
-function getSeriesGroup(
-  series: PlayoffBracketSeries[],
-  letters: string[]
-) {
+function getSeriesGroup(series: PlayoffBracketSeries[], letters: string[]) {
   return letters
     .map((letter) => getSeriesByLetter(series, letter))
     .filter((entry): entry is PlayoffBracketSeries => entry !== null);
 }
 
-function getSeriesGames(
-  games: PlayoffGame[],
-  seriesLetter: string
-) {
+function getSeriesGames(games: PlayoffGame[], seriesLetter: string) {
   return games
     .filter((game) => game.seriesStatus?.seriesLetter === seriesLetter)
     .sort((left, right) => {
-      const leftTime = left.startTimeUTC ? new Date(left.startTimeUTC).getTime() : 0;
-      const rightTime = right.startTimeUTC ? new Date(right.startTimeUTC).getTime() : 0;
+      const leftTime = left.startTimeUTC
+        ? new Date(left.startTimeUTC).getTime()
+        : 0;
+      const rightTime = right.startTimeUTC
+        ? new Date(right.startTimeUTC).getTime()
+        : 0;
       return leftTime - rightTime;
     });
 }
@@ -100,10 +110,10 @@ function getSeriesGames(
 function getDisplayGameForSeries(
   seriesLetter: string,
   currentGames: PlayoffGame[],
-  weekGames: PlayoffGame[]
+  weekGames: PlayoffGame[],
 ) {
   const currentGame = currentGames.find(
-    (game) => game.seriesStatus?.seriesLetter === seriesLetter
+    (game) => game.seriesStatus?.seriesLetter === seriesLetter,
   );
   if (currentGame) {
     return currentGame;
@@ -111,7 +121,7 @@ function getDisplayGameForSeries(
 
   const scheduledGames = getSeriesGames(weekGames, seriesLetter);
   const nextUpcoming = scheduledGames.find(
-    (game) => !isFinalGameState(game.gameState)
+    (game) => !isFinalGameState(game.gameState),
   );
 
   return nextUpcoming ?? scheduledGames.at(-1) ?? null;
@@ -120,7 +130,8 @@ function getDisplayGameForSeries(
 function getSeriesWins(series: PlayoffBracketSeries, game: PlayoffGame | null) {
   return {
     topSeedWins: game?.seriesStatus?.topSeedWins ?? series.topSeedWins ?? 0,
-    bottomSeedWins: game?.seriesStatus?.bottomSeedWins ?? series.bottomSeedWins ?? 0
+    bottomSeedWins:
+      game?.seriesStatus?.bottomSeedWins ?? series.bottomSeedWins ?? 0,
   };
 }
 
@@ -137,9 +148,13 @@ function getSeriesHref(game: PlayoffGame | null) {
 
 function getTeamScoreForSeriesTeam(
   seriesTeamAbbrev: string | undefined,
-  gameTeam: PlayoffGame["homeTeam"] | PlayoffGame["awayTeam"] | undefined
+  gameTeam: PlayoffGame["homeTeam"] | PlayoffGame["awayTeam"] | undefined,
 ) {
-  if (!seriesTeamAbbrev || !gameTeam?.abbrev || typeof gameTeam.score !== "number") {
+  if (
+    !seriesTeamAbbrev ||
+    !gameTeam?.abbrev ||
+    typeof gameTeam.score !== "number"
+  ) {
     return null;
   }
 
@@ -148,9 +163,12 @@ function getTeamScoreForSeriesTeam(
 
 function getDisplayedSeriesScore(
   seriesTeamAbbrev: string | undefined,
-  game: PlayoffGame | null
+  game: PlayoffGame | null,
 ) {
-  if (!game || (!isLiveGameState(game.gameState) && !isFinalGameState(game.gameState))) {
+  if (
+    !game ||
+    (!isLiveGameState(game.gameState) && !isFinalGameState(game.gameState))
+  ) {
     return null;
   }
 
@@ -179,7 +197,7 @@ function getSeriesCardVariantClass(series: PlayoffBracketSeries) {
 function renderProgressDots(
   teamColor: string,
   wins: number,
-  direction: "top" | "bottom"
+  direction: "top" | "bottom",
 ) {
   const filledCount = Math.min(wins, 3);
   const dots = Array.from({ length: 3 }, (_, index) => {
@@ -201,7 +219,7 @@ function renderProgressDots(
 function PlayoffSeriesCard({
   series,
   currentGames,
-  weekGames
+  weekGames,
 }: {
   series: PlayoffBracketSeries;
   currentGames: PlayoffGame[];
@@ -209,7 +227,11 @@ function PlayoffSeriesCard({
 }) {
   const topSeedTeam = series.topSeedTeam;
   const bottomSeedTeam = series.bottomSeedTeam;
-  const game = getDisplayGameForSeries(series.seriesLetter, currentGames, weekGames);
+  const game = getDisplayGameForSeries(
+    series.seriesLetter,
+    currentGames,
+    weekGames,
+  );
 
   if (!topSeedTeam?.abbrev || !bottomSeedTeam?.abbrev) {
     return <PlayoffPlaceholderCard series={series} />;
@@ -232,7 +254,9 @@ function PlayoffSeriesCard({
           "--top-team-color":
             topSeedInfo?.lightColor ?? topSeedInfo?.primaryColor ?? "#7aa7ff",
           "--bottom-team-color":
-            bottomSeedInfo?.lightColor ?? bottomSeedInfo?.primaryColor ?? "#ff8e8e"
+            bottomSeedInfo?.lightColor ??
+            bottomSeedInfo?.primaryColor ??
+            "#ff8e8e",
         } as CSSProperties
       }
     >
@@ -242,14 +266,18 @@ function PlayoffSeriesCard({
             <OptimizedImage
               src={getTeamLogoSvg(topSeedTeam.abbrev)}
               alt={`${topSeedTeam.abbrev} logo`}
-              width={42}
-              height={42}
+              width={48}
+              height={32}
               fallbackSrc={fallbackNHLLogo}
               className={styles.seriesTeamLogo}
             />
             <div className={styles.seriesTeamText}>
-              <span className={styles.seriesTeamAbbrev}>{topSeedTeam.abbrev}</span>
-              <span className={styles.seriesTeamSeed}>({series.topSeedRankAbbrev})</span>
+              <span className={styles.seriesTeamAbbrev}>
+                {topSeedTeam.abbrev}
+              </span>
+              <span className={styles.seriesTeamSeed}>
+                ({series.topSeedRankAbbrev})
+              </span>
             </div>
           </div>
           <span
@@ -274,14 +302,18 @@ function PlayoffSeriesCard({
             <OptimizedImage
               src={getTeamLogoSvg(bottomSeedTeam.abbrev)}
               alt={`${bottomSeedTeam.abbrev} logo`}
-              width={42}
-              height={42}
+              width={48}
+              height={32}
               fallbackSrc={fallbackNHLLogo}
               className={styles.seriesTeamLogo}
             />
             <div className={styles.seriesTeamText}>
-              <span className={styles.seriesTeamAbbrev}>{bottomSeedTeam.abbrev}</span>
-              <span className={styles.seriesTeamSeed}>({series.bottomSeedRankAbbrev})</span>
+              <span className={styles.seriesTeamAbbrev}>
+                {bottomSeedTeam.abbrev}
+              </span>
+              <span className={styles.seriesTeamSeed}>
+                ({series.bottomSeedRankAbbrev})
+              </span>
             </div>
           </div>
           <span
@@ -296,13 +328,15 @@ function PlayoffSeriesCard({
         {renderProgressDots(
           topSeedInfo?.lightColor ?? topSeedInfo?.primaryColor ?? "#7aa7ff",
           topSeedWins,
-          "top"
+          "top",
         )}
         <span className={styles.seriesClincherDot} />
         {renderProgressDots(
-          bottomSeedInfo?.lightColor ?? bottomSeedInfo?.primaryColor ?? "#ff8e8e",
+          bottomSeedInfo?.lightColor ??
+            bottomSeedInfo?.primaryColor ??
+            "#ff8e8e",
           bottomSeedWins,
-          "bottom"
+          "bottom",
         )}
       </div>
     </div>
@@ -321,8 +355,12 @@ function PlayoffSeriesCard({
 
 function PlayoffPlaceholderCard({ series }: { series: PlayoffBracketSeries }) {
   const variantClass = getSeriesCardVariantClass(series);
-  const showConferenceLogoOnly = series.seriesAbbrev === "CF" && Boolean(series.seriesLogo);
+  const showConferenceLogoOnly =
+    series.seriesAbbrev === "CF" && Boolean(series.seriesLogo);
   const showTitle = !showConferenceLogoOnly;
+  const logoDimensions =
+    SERIES_LOGO_DIMENSIONS[series.seriesLetter] ??
+    DEFAULT_SERIES_LOGO_DIMENSIONS;
 
   return (
     <div
@@ -330,16 +368,18 @@ function PlayoffPlaceholderCard({ series }: { series: PlayoffBracketSeries }) {
     >
       <div className={styles.placeholderInner}>
         {!showConferenceLogoOnly ? (
-          <span className={styles.placeholderAbbrev}>{series.seriesAbbrev}</span>
+          <span className={styles.placeholderAbbrev}>
+            {series.seriesAbbrev}
+          </span>
         ) : null}
         {series.seriesLogo ? (
           <OptimizedImage
             src={series.seriesLogo}
             alt={series.seriesTitle}
             className={`${styles.placeholderLogo} ${showConferenceLogoOnly ? styles.conferencePlaceholderLogo : ""}`}
-            width={120}
-            height={64}
-            unoptimized
+            width={logoDimensions.width}
+            height={logoDimensions.height}
+            sizes={SERIES_LOGO_SIZES}
             fallbackSrc={fallbackNHLLogo}
           />
         ) : (
@@ -358,14 +398,20 @@ function getRailDayGroups(games: PlayoffGame[]) {
 
   [...games]
     .sort((left, right) => {
-      const leftTime = left.startTimeUTC ? new Date(left.startTimeUTC).getTime() : 0;
-      const rightTime = right.startTimeUTC ? new Date(right.startTimeUTC).getTime() : 0;
+      const leftTime = left.startTimeUTC
+        ? new Date(left.startTimeUTC).getTime()
+        : 0;
+      const rightTime = right.startTimeUTC
+        ? new Date(right.startTimeUTC).getTime()
+        : 0;
       return leftTime - rightTime;
     })
     .forEach((game) => {
       const key =
         game.scheduleDate ||
-        (game.startTimeUTC ? moment(game.startTimeUTC).format("YYYY-MM-DD") : "unscheduled");
+        (game.startTimeUTC
+          ? moment(game.startTimeUTC).format("YYYY-MM-DD")
+          : "unscheduled");
 
       if (!grouped.has(key)) {
         grouped.set(key, []);
@@ -380,7 +426,7 @@ function getRailDayGroups(games: PlayoffGame[]) {
       key: date,
       label: moment(date).format("ddd, MMM D"),
       subtitle: index === 0 ? "Today" : index === 1 ? "Tomorrow" : "Next",
-      games: groupedGames
+      games: groupedGames,
     }));
 }
 
@@ -406,10 +452,12 @@ function TodaySeriesRail({ games }: { games: PlayoffGame[] }) {
 
           <div className={styles.railDayGames}>
             {group.games.map((game) => {
-              const homeAbbrev = game.homeTeam?.abbrev ?? "HOME";
-              const awayAbbrev = game.awayTeam?.abbrev ?? "AWAY";
-              const homeInfo = teamsInfo[homeAbbrev];
-              const awayInfo = teamsInfo[awayAbbrev];
+              const homeAbbrev = game.homeTeam?.abbrev;
+              const awayAbbrev = game.awayTeam?.abbrev;
+              const homeLabel = homeAbbrev ?? "HOME";
+              const awayLabel = awayAbbrev ?? "AWAY";
+              const homeInfo = homeAbbrev ? teamsInfo[homeAbbrev] : undefined;
+              const awayInfo = awayAbbrev ? teamsInfo[awayAbbrev] : undefined;
 
               return (
                 <Link
@@ -419,9 +467,13 @@ function TodaySeriesRail({ games }: { games: PlayoffGame[] }) {
                   style={
                     {
                       "--rail-home-color":
-                        homeInfo?.lightColor ?? homeInfo?.primaryColor ?? "#7aa7ff",
+                        homeInfo?.lightColor ??
+                        homeInfo?.primaryColor ??
+                        "#7aa7ff",
                       "--rail-away-color":
-                        awayInfo?.lightColor ?? awayInfo?.primaryColor ?? "#ff8e8e"
+                        awayInfo?.lightColor ??
+                        awayInfo?.primaryColor ??
+                        "#ff8e8e",
                     } as CSSProperties
                   }
                 >
@@ -433,28 +485,36 @@ function TodaySeriesRail({ games }: { games: PlayoffGame[] }) {
                   <div className={styles.railTeams}>
                     <div className={styles.railTeam}>
                       <OptimizedImage
-                        src={getTeamLogoSvg(awayAbbrev)}
-                        alt={`${awayAbbrev} logo`}
-                        width={28}
+                        src={
+                          awayAbbrev
+                            ? getTeamLogoSvg(awayAbbrev)
+                            : fallbackNHLLogo
+                        }
+                        alt={awayAbbrev ? `${awayAbbrev} logo` : ""}
+                        width={42}
                         height={28}
                         fallbackSrc={fallbackNHLLogo}
                         className={styles.railTeamLogo}
                       />
-                      <span className={styles.railTeamAbbrev}>{awayAbbrev}</span>
+                      <span className={styles.railTeamAbbrev}>{awayLabel}</span>
                       <span className={styles.railScore}>
                         {game.awayTeam?.score ?? "-"}
                       </span>
                     </div>
                     <div className={styles.railTeam}>
                       <OptimizedImage
-                        src={getTeamLogoSvg(homeAbbrev)}
-                        alt={`${homeAbbrev} logo`}
-                        width={28}
+                        src={
+                          homeAbbrev
+                            ? getTeamLogoSvg(homeAbbrev)
+                            : fallbackNHLLogo
+                        }
+                        alt={homeAbbrev ? `${homeAbbrev} logo` : ""}
+                        width={42}
                         height={28}
                         fallbackSrc={fallbackNHLLogo}
                         className={styles.railTeamLogo}
                       />
-                      <span className={styles.railTeamAbbrev}>{homeAbbrev}</span>
+                      <span className={styles.railTeamAbbrev}>{homeLabel}</span>
                       <span className={styles.railScore}>
                         {game.homeTeam?.score ?? "-"}
                       </span>
@@ -476,7 +536,7 @@ function RoundColumn({
   series,
   currentGames,
   weekGames,
-  align = "start"
+  align = "start",
 }: {
   title: string;
   roundKey: "roundOne" | "roundTwo" | "conferenceFinal";
@@ -508,7 +568,7 @@ export default function HomepagePlayoffBracket({
   currentDate,
   games,
   playoffBracket,
-  playoffWeekGames
+  playoffWeekGames,
 }: HomepagePlayoffBracketProps) {
   const series = playoffBracket.series ?? [];
   const westRoundOne = getSeriesGroup(series, WEST_ROUND_ONE_LETTERS);
@@ -532,7 +592,9 @@ export default function HomepagePlayoffBracket({
         </div>
       </div>
 
-      <TodaySeriesRail games={playoffWeekGames.length > 0 ? playoffWeekGames : games} />
+      <TodaySeriesRail
+        games={playoffWeekGames.length > 0 ? playoffWeekGames : games}
+      />
 
       <div className={styles.bracketBrand}>
         {playoffBracket.bracketLogo ? (
@@ -540,9 +602,9 @@ export default function HomepagePlayoffBracket({
             src={playoffBracket.bracketLogo}
             alt="Stanley Cup Playoffs bracket"
             className={styles.bracketLogo}
-            width={420}
-            height={80}
-            unoptimized
+            width={BRACKET_LOGO_DIMENSIONS.width}
+            height={BRACKET_LOGO_DIMENSIONS.height}
+            sizes={BRACKET_LOGO_SIZES}
             fallbackSrc={fallbackNHLLogo}
           />
         ) : (
@@ -582,7 +644,13 @@ export default function HomepagePlayoffBracket({
 
         <section className={styles.cupBoard}>
           <span className={styles.roundLabel}>SCF</span>
-          {cupFinal ? <PlayoffSeriesCard series={cupFinal} currentGames={games} weekGames={playoffWeekGames} /> : null}
+          {cupFinal ? (
+            <PlayoffSeriesCard
+              series={cupFinal}
+              currentGames={games}
+              weekGames={playoffWeekGames}
+            />
+          ) : null}
         </section>
 
         <section className={`${styles.conferenceBoard} ${styles.eastBoard}`}>
