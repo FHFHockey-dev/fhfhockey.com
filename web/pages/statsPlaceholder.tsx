@@ -4,7 +4,7 @@ import React, { useMemo, useState, useRef } from "react";
 import { NextSeo } from "next-seo";
 
 import Container from "components/Layout/Container";
-import { getTeams } from "lib/NHL/server";
+import { getCurrentSeason, getTeams } from "lib/NHL/server";
 import StrengthOfSchedule from "components/TeamLandingPage/StrengthOfSchedule";
 import { Team } from "lib/NHL/types";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
@@ -13,17 +13,18 @@ import supabase from "lib/supabase";
 import GoalieTrends from "components/TeamLandingPage/goalieTrends";
 
 import { fetchAllRows } from "utils/fetchAllRows";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
+import {
+  buildCanonicalSosRankings,
+  type CanonicalSosRanking,
+  type SosStandingRow,
+} from "lib/trends/strengthOfSchedule";
 
 type StatsProps = {
   teams: Team[];
-  pastSoSRankings: SoS[];
-  futureSoSRankings: SoS[];
+  pastSoSRankings: CanonicalSosRanking[];
+  futureSoSRankings: CanonicalSosRanking[];
   teamPowerRankings: PowerRanking[];
-};
-
-type SoS = {
-  team: string;
-  sos: number;
 };
 
 type PowerRanking = {
@@ -38,7 +39,7 @@ function Stats({
   teams,
   pastSoSRankings,
   futureSoSRankings,
-  teamPowerRankings
+  teamPowerRankings,
 }: StatsProps) {
   const size = useScreenSize();
   const isMobileView = size.screen === BreakPoint.s;
@@ -47,7 +48,7 @@ function Stats({
     direction: Direction;
   }>({
     key: "",
-    direction: "ascending"
+    direction: "ascending",
   });
   const [sortedTeamPowerRankings, setSortedTeamPowerRankings] =
     useState(teamPowerRankings);
@@ -56,13 +57,13 @@ function Stats({
     if (sortedTeamPowerRankings.length > 0) {
       // Sort teams by powerScore in descending order
       const sorted = [...sortedTeamPowerRankings].sort(
-        (a, b) => b.power_score - a.power_score
+        (a, b) => b.power_score - a.power_score,
       );
 
       // Assign ranks
       return sorted.map((team, index) => ({
         ...team,
-        rank: index + 1
+        rank: index + 1,
       }));
     } else {
       return [];
@@ -146,7 +147,7 @@ function Stats({
           style={{
             display: "flex",
             alignItems: "flex-start",
-            flexDirection: isMobileView ? "column" : "row"
+            flexDirection: isMobileView ? "column" : "row",
           }}
         >
           {isMobileView && (
@@ -235,7 +236,7 @@ function Stats({
                         style={{
                           width: "22px",
                           height: "22px",
-                          marginRight: "10px"
+                          marginRight: "10px",
                         }}
                       />
                       {team.team_name}
@@ -295,25 +296,30 @@ function Stats({
 }
 
 export async function getStaticProps() {
-  // 1. Fetch current season's teams
-  const teams: Team[] = await getTeams();
+  // 1. Resolve one started season and its canonical current team membership.
+  const currentSeason = await getCurrentSeason();
+  const teams: Team[] = await getTeams(currentSeason.seasonId, {
+    mode: "current-canonical",
+  });
 
-  // 2. Fetch sos_standings data with necessary fields, including game_date
-  const sosStandingsData = await fetchAllRows<any>(
-    supabase,
-    "sos_standings",
-    `
-      team_id,
-      team_name,
-      game_date,
-      past_opponent_total_wins,
-      past_opponent_total_losses,
-      past_opponent_total_ot_losses,
-      future_opponent_total_wins,
-      future_opponent_total_losses,
-      future_opponent_total_ot_losses
-    `
-  );
+  // 2. Fetch only that season, using deterministic pagination.
+  let sosStandingsData: SosStandingRow[] = [];
+  try {
+    sosStandingsData = await fetchAllSupabasePages<SosStandingRow>(
+      ({ from, to }) =>
+        supabase
+          .from("sos_standings")
+          .select(
+            "season_id,team_id,team_name,team_abbrev,game_date,past_opponent_total_wins,past_opponent_total_losses,past_opponent_total_ot_losses,future_opponent_total_wins,future_opponent_total_losses,future_opponent_total_ot_losses",
+          )
+          .eq("season_id", currentSeason.seasonId)
+          .order("game_date", { ascending: true })
+          .order("team_id", { ascending: true })
+          .range(from, to),
+    );
+  } catch (error) {
+    console.error("Unable to load current-season sos_standings data.", error);
+  }
 
   if (!sosStandingsData || sosStandingsData.length === 0) {
     console.error("No sos_standings data found.");
@@ -322,114 +328,17 @@ export async function getStaticProps() {
         teams,
         pastSoSRankings: [],
         futureSoSRankings: [],
-        teamPowerRankings: []
+        teamPowerRankings: [],
       },
-      revalidate: 3600 // Revalidate every hour
+      revalidate: 3600, // Revalidate every hour
     };
   }
 
-  // 3. Group data by team_id
-  const sosStandingsPerTeam = new Map<number, any[]>();
+  // 3. Canonical team membership owns identity and excludes retired IDs.
+  const { past: pastSoSRankings, future: futureSoSRankings } =
+    buildCanonicalSosRankings(sosStandingsData, teams);
 
-  sosStandingsData.forEach((standing: any) => {
-    const teamId = standing.team_id;
-    let teamStandings = sosStandingsPerTeam.get(teamId);
-    if (!teamStandings) {
-      teamStandings = [];
-      sosStandingsPerTeam.set(teamId, teamStandings);
-    }
-    teamStandings.push(standing);
-  });
-
-  // 4. Prepare SoS Rankings using the latest valid data per team
-  const pastSoSRankings: SoS[] = [];
-  const futureSoSRankings: SoS[] = [];
-
-  sosStandingsPerTeam.forEach((standingsList: any[], teamId: number) => {
-    // Sort standingsList by game_date descending
-    standingsList.sort(
-      (a, b) =>
-        new Date(b.game_date).getTime() - new Date(a.game_date).getTime()
-    );
-
-    let validStanding = null;
-
-    for (const standing of standingsList) {
-      const {
-        past_opponent_total_wins,
-        past_opponent_total_losses,
-        past_opponent_total_ot_losses,
-        future_opponent_total_wins,
-        future_opponent_total_losses,
-        future_opponent_total_ot_losses
-      } = standing;
-
-      const pastTotalsSum =
-        past_opponent_total_wins +
-        past_opponent_total_losses +
-        past_opponent_total_ot_losses;
-      const futureTotalsSum =
-        future_opponent_total_wins +
-        future_opponent_total_losses +
-        future_opponent_total_ot_losses;
-
-      if (pastTotalsSum !== 0 || futureTotalsSum !== 0) {
-        validStanding = standing;
-        break; // Exit the loop as we've found the latest valid standing
-      }
-    }
-
-    if (validStanding) {
-      const {
-        team_name,
-        past_opponent_total_wins,
-        past_opponent_total_losses,
-        past_opponent_total_ot_losses,
-        future_opponent_total_wins,
-        future_opponent_total_losses,
-        future_opponent_total_ot_losses
-      } = validStanding;
-
-      // Calculate past SoS (Opponent Winning Percentage)
-      const pastTotalGames =
-        past_opponent_total_wins +
-        past_opponent_total_losses +
-        past_opponent_total_ot_losses;
-      const pastOWP =
-        pastTotalGames > 0 ? past_opponent_total_wins / pastTotalGames : 0;
-
-      pastSoSRankings.push({
-        team: team_name,
-        sos: parseFloat(pastOWP.toFixed(3))
-      });
-
-      // Calculate future SoS
-      const futureTotalGames =
-        future_opponent_total_wins +
-        future_opponent_total_losses +
-        future_opponent_total_ot_losses;
-      const futureOWP =
-        futureTotalGames > 0
-          ? future_opponent_total_wins / futureTotalGames
-          : 0;
-
-      futureSoSRankings.push({
-        team: team_name,
-        sos: parseFloat(futureOWP.toFixed(3))
-      });
-    } else {
-      // If no valid standing found, log a warning
-      console.warn(
-        `No valid standings with non-zero opponent totals found for team_id ${teamId}`
-      );
-    }
-  });
-
-  // 5. Sort the SoS rankings
-  pastSoSRankings.sort((a, b) => b.sos - a.sos);
-  futureSoSRankings.sort((a, b) => b.sos - a.sos);
-
-  // 6. Fetch Power Rankings from Supabase
+  // 4. Fetch Power Rankings from Supabase
   const powerRankingsData = await fetchAllRows<any>(
     supabase,
     "power_rankings",
@@ -437,7 +346,7 @@ export async function getStaticProps() {
       team_id,
       team_name,
       power_score
-    `
+    `,
   );
 
   if (!powerRankingsData || powerRankingsData.length === 0) {
@@ -447,17 +356,17 @@ export async function getStaticProps() {
         teams,
         pastSoSRankings,
         futureSoSRankings,
-        teamPowerRankings: []
+        teamPowerRankings: [],
       },
-      revalidate: 3600 // Revalidate every hour
+      revalidate: 3600, // Revalidate every hour
     };
   }
 
-  // 7. Process Power Rankings
+  // 5. Process Power Rankings
   const teamPowerRankings = powerRankingsData.map((team: any) => ({
     team_id: team.team_id,
     team_name: team.team_name,
-    power_score: team.power_score
+    power_score: team.power_score,
   }));
 
   return {
@@ -465,9 +374,9 @@ export async function getStaticProps() {
       teams,
       pastSoSRankings,
       futureSoSRankings,
-      teamPowerRankings
+      teamPowerRankings,
     },
-    revalidate: 3600 // 1 hour in seconds
+    revalidate: 3600, // 1 hour in seconds
   };
 }
 

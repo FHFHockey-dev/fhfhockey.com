@@ -31,11 +31,11 @@ function resolveSelectedDayIndex(selectedDate: string): number {
 function isEligibleGameForSeason(
   game: ScheduleArray[number][DAY_ABBREVIATION],
   selectedSeasonId: number,
-): boolean {
+): game is NonNullable<ScheduleArray[number][DAY_ABBREVIATION]> {
   return Boolean(
     game &&
-      game.season === selectedSeasonId &&
-      isRegularSeasonOrPlayoffGameType(game.gameType),
+    game.season === selectedSeasonId &&
+    isRegularSeasonOrPlayoffGameType(game.gameType),
   );
 }
 
