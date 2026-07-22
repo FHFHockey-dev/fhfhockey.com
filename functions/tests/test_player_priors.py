@@ -1,8 +1,9 @@
 import pytest
 
 from lib.sustainability.config_loader import load_config
+from lib.sustainability.offline import OfflinePersistenceDisabledError
 from lib.sustainability.priors import LeaguePriorRow
-from lib.sustainability.player_priors import compute_player_posteriors, summarize_player_posteriors
+from lib.sustainability.player_priors import compute_player_posteriors, summarize_player_posteriors, upsert_player_priors
 
 
 def _mk_prior_map():
@@ -132,6 +133,11 @@ def test_player_posteriors_no_history_reproducible():
     assert out1 == out2
     summary = summarize_player_posteriors(out1)
     assert summary["rookie_players"] == 1
+
+
+def test_player_prior_persistence_fails_closed():
+    with pytest.raises(OfflinePersistenceDisabledError):
+        upsert_player_priors(None, [{"player_id": 1}])
 
 
 if __name__ == "__main__":

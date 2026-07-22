@@ -5,7 +5,7 @@ Responsibilities:
   * Apply multi-season weights (default target: 0.6, prev1: 0.3, prev2: 0.1) with re-normalization if seasons missing.
   * Compute blended successes & trials and Beta posterior means using league priors.
   * Flag rookies (no prior season data) for downstream usage.
-  * Provide upsert stub for `player_priors_cache` (ON CONFLICT update semantics).
+  * Reject persistence because TypeScript/Supabase owns production priors.
 
 Metrics handled mirror league priors: sh_pct, oish_pct, ipp.
 
@@ -35,17 +35,12 @@ from collections import defaultdict
 
 from .priors import LeaguePriorRow
 from .config_loader import SustainabilityConfig
+from .offline import reject_persistence
 
 PLAYER_PRIOR_METRICS = ["sh_pct", "oish_pct", "ipp"]
 DEFAULT_SEASON_WEIGHTS = [0.6, 0.3, 0.1]  # target, prev1, prev2
 
 logger = logging.getLogger("sustainability.player_priors")
-
-try:  # optional db adapter
-    from . import db_adapter
-except Exception:  # pragma: no cover
-    db_adapter = None  # type: ignore
-
 
 def fetch_player_season_rows(db_client, season_ids: List[int]) -> Iterable[Dict[str, Any]]:
     """Placeholder multi-season fetch.
@@ -57,9 +52,6 @@ def fetch_player_season_rows(db_client, season_ids: List[int]) -> Iterable[Dict[
         getter = getattr(db_client, "fetch_player_season_rows", None)
         if callable(getter):
             return getter(season_ids)
-    if db_adapter is not None:
-        # Not implemented in adapter yet; return empty
-        return []
     return []
 
 
@@ -186,19 +178,10 @@ def compute_player_posteriors(
 
 
 def upsert_player_priors(db_client, rows: List[Dict[str, Any]]) -> int:
-    """Persist player priors (stub)."""
+    """Reject legacy Python prior persistence; TypeScript owns production writes."""
     if not rows:
         return 0
-    if db_client is not None:
-        up = getattr(db_client, "upsert_player_priors", None)
-        if callable(up):
-            return up(rows)
-    # Attempt module-level adapter
-    try:  # pragma: no cover (depends on runtime env)
-        from . import db_adapter as _dba
-        return _dba.upsert_player_priors(rows)  # type: ignore[attr-defined]
-    except Exception:
-        return len(rows)
+    reject_persistence()
 
 
 def summarize_player_posteriors(rows: List[Dict[str, Any]]) -> Dict[str, Any]:

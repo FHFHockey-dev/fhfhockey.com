@@ -1,4 +1,7 @@
+import pytest
+
 from lib.sustainability.orchestrator import orchestrate_full_run
+from lib.sustainability.pipeline import OfflinePersistenceDisabledError
 from lib.sustainability.config_loader import SustainabilityConfig, DEFAULT_CONFIG
 
 
@@ -37,16 +40,14 @@ def test_snapshot_reuse_assigns_quintiles():
         {'player_id':1,'season_id':2025,'position_code':'F','game_id':'G2','game_date':'2025-01-03','shots':2,'goals':0,'onice_goals_for':1,'onice_shots_for':10,'points':0,'ixg':0.3,'icf':3,'hdcf':1},
     ]
     # Call with build_snapshot False so orchestrator attempts reuse
-    res = orchestrate_full_run(
-        season_id=2025,
-        games=games,
-        db_client=FakeDBReuse(),
-        cfg=_cfg(),
-        persist=True,
-        build_snapshot=False,
-        assign_tiers=True,
-        reuse_snapshot=True,
-    )
-    d = res.to_dict()
-    assert 'snapshot_reuse' in d['phases']
-    assert d['phases']['snapshot_reuse']['status'] == 'reused'
+    with pytest.raises(OfflinePersistenceDisabledError):
+        orchestrate_full_run(
+            season_id=2025,
+            games=games,
+            db_client=FakeDBReuse(),
+            cfg=_cfg(),
+            persist=True,
+            build_snapshot=False,
+            assign_tiers=True,
+            reuse_snapshot=True,
+        )

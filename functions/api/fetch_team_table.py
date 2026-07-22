@@ -13,7 +13,7 @@ from lib.env_loader import ensure_loaded_for
 
 # Optional DB access for dynamic season discovery
 try:
-    from lib.sustainability.db_adapter import get_conn  # uses SUPABASE_DB_URL
+    from lib.postgres import get_conn  # uses SUPABASE_DB_URL
 except Exception:  # pragma: no cover
     get_conn = None  # type: ignore
 

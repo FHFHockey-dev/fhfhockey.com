@@ -25,8 +25,8 @@ from dataclasses import dataclass, asdict
 from typing import Any, Dict, Iterable, List, Optional
 
 from .pipeline import run_full_scoring_pipeline
+from .offline import OFFLINE_PERSISTENCE_MESSAGE, OfflinePersistenceDisabledError
 from .config_loader import load_config, SustainabilityConfig
-from . import db_adapter
 from .distribution import assign_quintiles
 
 
@@ -64,13 +64,23 @@ def orchestrate_full_run(
     enqueue_retro_on_config_change: bool = True,
     previous_config_hash: str | None = None,
 ) -> OrchestratorResult:
+    if (
+        persist
+        or incremental
+        or persist_snapshot
+        or use_lock
+        or log_run
+        or previous_config_hash is not None
+    ):
+        raise OfflinePersistenceDisabledError(OFFLINE_PERSISTENCE_MESSAGE)
+
     t0 = time.time()
     started_iso = None
     finished_iso = None
     lock_acquired = False
     try_release_lock = False
     if use_lock and persist:
-        getter = getattr(db_client, "acquire_run_lock", None) if db_client else db_adapter.acquire_run_lock
+        getter = getattr(db_client, "acquire_run_lock", None) if db_client else None
         if callable(getter):
             try:
                 lock_acquired = getter(lock_timeout_seconds)
@@ -91,7 +101,7 @@ def orchestrate_full_run(
     # Incremental filter: if enabled and DB accessible, drop games with game_date <= last processed
     game_list = list(games)
     if incremental and persist:
-        getter = getattr(db_client, "fetch_max_barometer_game_date", None) if db_client else db_adapter.fetch_max_barometer_game_date
+        getter = getattr(db_client, "fetch_max_barometer_game_date", None) if db_client else None
         try:
             last_date = getter(cfg.model_version, "GAME") if callable(getter) else None
         except Exception:
@@ -129,7 +139,7 @@ def orchestrate_full_run(
             db_snapshot = {
                 **snapshot,
             }
-            saver = getattr(db_client, "upsert_distribution_snapshot", None) if db_client else db_adapter.upsert_distribution_snapshot
+            saver = getattr(db_client, "upsert_distribution_snapshot", None) if db_client else None
             if callable(saver):
                 saver(db_snapshot)
                 phases["snapshot_persist"] = {"status": "ok"}
@@ -138,7 +148,7 @@ def orchestrate_full_run(
 
     # Snapshot reuse path (5.4/5.5): if we did not build a snapshot but want tiers, try fetching existing
     if reuse_snapshot and assign_tiers and not snapshot and persist and build_snapshot is False:
-        fetcher = getattr(db_client, "fetch_latest_distribution_snapshot", None) if db_client else db_adapter.fetch_latest_distribution_snapshot
+        fetcher = getattr(db_client, "fetch_latest_distribution_snapshot", None) if db_client else None
         try:
             existing = fetcher(snapshot_window_type, cfg.model_version, cfg.config_hash) if callable(fetcher) else None
         except Exception:  # pragma: no cover
@@ -183,7 +193,7 @@ def orchestrate_full_run(
             "status": "ok",
             "meta_json": {"phases": phases},
         }
-        saver = getattr(db_client, "insert_run_log", None) if db_client else db_adapter.insert_run_log
+        saver = getattr(db_client, "insert_run_log", None) if db_client else None
         if callable(saver):
             try:
                 saver(entry)
@@ -191,7 +201,7 @@ def orchestrate_full_run(
             except Exception as e:  # pragma: no cover
                 phases["run_log"] = {"status": "error", "error": str(e)}
     if try_release_lock:
-        rel = getattr(db_client, "release_run_lock", None) if db_client else db_adapter.release_run_lock
+        rel = getattr(db_client, "release_run_lock", None) if db_client else None
         if callable(rel):
             try:
                 rel()
@@ -200,7 +210,7 @@ def orchestrate_full_run(
 
     # Retro recompute enqueue if config changed (Task 5.6 placeholder)
     if enqueue_retro_on_config_change and persist and previous_config_hash and previous_config_hash != cfg.config_hash:
-        enq = getattr(db_client, "enqueue_retro_task", None) if db_client else db_adapter.enqueue_retro_task
+        enq = getattr(db_client, "enqueue_retro_task", None) if db_client else None
         if callable(enq):
             try:
                 enq("config_change", None, season_id)

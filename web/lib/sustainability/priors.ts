@@ -1,6 +1,10 @@
 // web/lib/sustainability/priors.ts
 
 import supabase from "lib/supabase/server";
+import {
+  fetchAllSupabaseFilterChunks,
+  fetchAllSupabasePages,
+} from "lib/supabase/pagination";
 
 // Types
 export type StatCode = "shp" | "oishp" | "ipp" | "ppshp"; // ppshp = power play shooting %
@@ -12,7 +16,7 @@ export const ROOKIE_FALLBACK_MIN_TRIALS: Record<StatCode, number> = {
   shp: 100,
   oishp: 150,
   ipp: 40,
-  ppshp: 25
+  ppshp: 25,
 };
 
 export function toPosGroup(position_code: string | null): PosGroup | null {
@@ -22,30 +26,49 @@ export function toPosGroup(position_code: string | null): PosGroup | null {
   return null; // exclude goalies & anything else
 }
 
+export function getPriorSeasonIds(seasonIdNow: number): number[] {
+  const startYear = Math.trunc(seasonIdNow / 10_000);
+  const endYear = seasonIdNow % 10_000;
+  if (endYear !== startYear + 1) {
+    throw new Error(`Invalid NHL season identifier: ${seasonIdNow}`);
+  }
+  return [0, 1, 2].map(
+    (yearsBack) => (startYear - yearsBack) * 10_000 + (endYear - yearsBack),
+  );
+}
+
 // Helper: aggregate league means (pooled) for a season + position group
 export async function fetchLeagueMeans(
   season_id: number,
-  posGroup: PosGroup
+  posGroup: PosGroup,
+  options: { client?: any; pageSize?: number } = {},
 ): Promise<Record<StatCode, number>> {
+  const client = options.client ?? supabase;
   const posCodes = posGroup === "F" ? ["C", "LW", "RW"] : ["D"];
-  const { data, error } = await (supabase as any)
-    .from("player_totals_unified")
-    .select(
-      [
-        "goals",
-        "shots",
-        "nst_oi_gf",
-        "nst_oi_sf",
-        "points_5v5",
-        "pp_goals",
-        "pp_shots",
-        "season_id",
-        "position_code"
-      ].join(",")
-    )
-    .eq("season_id", season_id)
-    .in("position_code", posCodes);
-  if (error) throw error;
+  const data = await fetchAllSupabasePages<any>(
+    ({ from, to }) =>
+      client
+        .from("player_totals_unified")
+        .select(
+          [
+            "player_id",
+            "goals",
+            "shots",
+            "nst_oi_gf",
+            "nst_oi_sf",
+            "points_5v5",
+            "pp_goals",
+            "pp_shots",
+            "season_id",
+            "position_code",
+          ].join(","),
+        )
+        .eq("season_id", season_id)
+        .in("position_code", posCodes)
+        .order("player_id", { ascending: true })
+        .range(from, to),
+    { pageSize: options.pageSize },
+  );
 
   let g_sum = 0,
     sh_sum = 0,
@@ -73,7 +96,7 @@ export async function fetchLeagueMeans(
 
 export function betaFromMuK(
   mu: number,
-  k: number
+  k: number,
 ): {
   alpha0: number;
   beta0: number;
@@ -88,7 +111,13 @@ export function betaFromMuK(
 // Fetch per-player counts across last 3 seasons
 export async function fetchPlayerSeasonCounts(
   seasonIdNow: number,
-  options: { offset?: number; limit?: number } = {}
+  options: {
+    offset?: number;
+    limit?: number;
+    client?: any;
+    pageSize?: number;
+    filterChunkSize?: number;
+  } = {},
 ): Promise<
   Array<{
     player_id: number;
@@ -101,34 +130,63 @@ export async function fetchPlayerSeasonCounts(
     }>;
   }>
 > {
-  const seasonIds = [seasonIdNow, seasonIdNow - 1, seasonIdNow - 2];
-  let query = (supabase as any)
-    .from("player_totals_unified")
-    .select(
-      [
-        "player_id",
-        "season_id",
-        "position_code",
-        "goals",
-        "shots",
-        "nst_oi_gf",
-        "nst_oi_sf",
-        "points_5v5",
-        "pp_goals",
-        "pp_shots"
-      ].join(",")
-    )
-    .in("season_id", seasonIds)
-    .not("player_id", "is", null)
-    .order("player_id", { ascending: true })
-    .order("season_id", { ascending: false });
-  if (options.limit != null) {
-    const offset = Math.max(0, options.offset ?? 0);
-    const limit = Math.max(1, options.limit);
-    query = query.range(offset, offset + limit - 1);
-  }
-  const { data, error } = await query;
-  if (error) throw error;
+  const client = options.client ?? supabase;
+  const seasonIds = getPriorSeasonIds(seasonIdNow);
+  const identityRows = await fetchAllSupabasePages<any>(
+    ({ from, to }) =>
+      client
+        .from("player_totals_unified")
+        .select("player_id,position_code")
+        .eq("season_id", seasonIdNow)
+        .not("player_id", "is", null)
+        .order("player_id", { ascending: true })
+        .range(from, to),
+    { pageSize: options.pageSize },
+  );
+
+  const playerIds = Array.from(
+    new Set(
+      identityRows
+        .filter((row) => toPosGroup(row.position_code) !== null)
+        .map((row) => Number(row.player_id))
+        .filter(Number.isFinite),
+    ),
+  ).sort((left, right) => left - right);
+  const offset = Math.max(0, options.offset ?? 0);
+  const selectedPlayerIds =
+    options.limit == null
+      ? playerIds.slice(offset)
+      : playerIds.slice(offset, offset + Math.max(1, options.limit));
+
+  const data = await fetchAllSupabaseFilterChunks<any, number>(
+    selectedPlayerIds,
+    (chunk, { from, to }) =>
+      client
+        .from("player_totals_unified")
+        .select(
+          [
+            "player_id",
+            "season_id",
+            "position_code",
+            "goals",
+            "shots",
+            "nst_oi_gf",
+            "nst_oi_sf",
+            "points_5v5",
+            "pp_goals",
+            "pp_shots",
+          ].join(","),
+        )
+        .in("season_id", seasonIds)
+        .in("player_id", chunk)
+        .order("player_id", { ascending: true })
+        .order("season_id", { ascending: false })
+        .range(from, to),
+    {
+      chunkSize: options.filterChunkSize,
+      pageSize: options.pageSize,
+    },
+  );
 
   const byPlayer: Map<
     number,
@@ -153,7 +211,7 @@ export async function fetchPlayerSeasonCounts(
     if (!byPlayer.has(pid)) {
       byPlayer.set(pid, {
         position_group: pg,
-        seasons: {}
+        seasons: {},
       });
     }
     const bucket = byPlayer.get(pid)!;
@@ -169,7 +227,7 @@ export async function fetchPlayerSeasonCounts(
         shp: { s: 0, n: 0 },
         oishp: { s: 0, n: 0 },
         ipp: { s: 0, n: 0 },
-        ppshp: { s: 0, n: 0 }
+        ppshp: { s: 0, n: 0 },
       };
     }
     const rec = bucket.seasons[sid];
@@ -203,19 +261,17 @@ export async function fetchPlayerSeasonCounts(
   }> = [];
 
   for (const [pid, val] of byPlayer.entries()) {
-    const seasonsArr = [seasonIdNow, seasonIdNow - 1, seasonIdNow - 2].map(
-      (sid) => ({
-        season_id: sid,
-        shp: val.seasons[sid]?.shp || { s: 0, n: 0 },
-        oishp: val.seasons[sid]?.oishp || { s: 0, n: 0 },
-        ipp: val.seasons[sid]?.ipp || { s: 0, n: 0 },
-        ppshp: val.seasons[sid]?.ppshp || { s: 0, n: 0 }
-      })
-    );
+    const seasonsArr = seasonIds.map((sid) => ({
+      season_id: sid,
+      shp: val.seasons[sid]?.shp || { s: 0, n: 0 },
+      oishp: val.seasons[sid]?.oishp || { s: 0, n: 0 },
+      ipp: val.seasons[sid]?.ipp || { s: 0, n: 0 },
+      ppshp: val.seasons[sid]?.ppshp || { s: 0, n: 0 },
+    }));
     result.push({
       player_id: pid,
       position_group: val.position_group,
-      seasons: seasonsArr
+      seasons: seasonsArr,
     });
   }
   return result;
@@ -227,14 +283,14 @@ export function blendCounts(
     oishp: { s: number; n: number };
     ipp: { s: number; n: number };
     ppshp: { s: number; n: number };
-  }>
+  }>,
 ): Record<StatCode, { s: number; n: number }> {
   const weights = [0.6, 0.3, 0.1];
   const out: Record<StatCode, { s: number; n: number }> = {
     shp: { s: 0, n: 0 },
     oishp: { s: 0, n: 0 },
     ipp: { s: 0, n: 0 },
-    ppshp: { s: 0, n: 0 }
+    ppshp: { s: 0, n: 0 },
   };
   for (let i = 0; i < seasons.length && i < weights.length; i++) {
     const w = weights[i];
@@ -254,7 +310,7 @@ export function betaPosterior(
   alpha0: number,
   beta0: number,
   s: number,
-  n: number
+  n: number,
 ): {
   post_alpha: number;
   post_beta: number;
@@ -281,7 +337,7 @@ export function applyPositionLeagueFallback(
   prior: { alpha0: number; beta0: number },
   stat: StatCode,
   trials: number,
-  minTrials: Partial<Record<StatCode, number>> = ROOKIE_FALLBACK_MIN_TRIALS
+  minTrials: Partial<Record<StatCode, number>> = ROOKIE_FALLBACK_MIN_TRIALS,
 ) {
   const threshold = Math.max(0, Number(minTrials[stat] ?? 0));
   if (!Number.isFinite(trials) || trials >= threshold || threshold <= 0) {
@@ -289,7 +345,7 @@ export function applyPositionLeagueFallback(
       alpha0: prior.alpha0,
       beta0: prior.beta0,
       fallback_weight: 0,
-      adjusted_k: prior.alpha0 + prior.beta0
+      adjusted_k: prior.alpha0 + prior.beta0,
     };
   }
 
@@ -303,7 +359,7 @@ export function applyPositionLeagueFallback(
     alpha0,
     beta0,
     fallback_weight: Number(missingShare.toFixed(6)),
-    adjusted_k: Number(boostedK.toFixed(6))
+    adjusted_k: Number(boostedK.toFixed(6)),
   };
 }
 
@@ -313,7 +369,7 @@ export async function upsertLeaguePriors(
   season_id: number,
   posGroup: PosGroup,
   k: { shp: number; oishp: number; ipp: number; ppshp?: number },
-  opts: { dry?: boolean } = {}
+  opts: { dry?: boolean } = {},
 ): Promise<
   Array<{
     season_id: number;
@@ -337,7 +393,7 @@ export async function upsertLeaguePriors(
       k: kVal,
       league_mu: mu,
       alpha0,
-      beta0
+      beta0,
     };
   });
 
@@ -356,7 +412,7 @@ export async function upsertPlayerPosteriors(
   k: { shp: number; oishp: number; ipp: number },
   dryRun = false,
   leaguePriors?: Map<string, { alpha0: number; beta0: number }>,
-  options: { offset?: number; limit?: number } = {}
+  options: { offset?: number; limit?: number } = {},
 ): Promise<{ inserted: number; sample: any[] }> {
   let leagueMap = leaguePriors;
   if (!leagueMap) {
@@ -369,7 +425,7 @@ export async function upsertPlayerPosteriors(
     for (const r of leagueRows ?? []) {
       leagueMap.set(`${r.position_group}|${r.stat_code}`, {
         alpha0: r.alpha0,
-        beta0: r.beta0
+        beta0: r.beta0,
       });
     }
   }
@@ -382,20 +438,15 @@ export async function upsertPlayerPosteriors(
         shp: s.shp,
         oishp: s.oishp,
         ipp: s.ipp,
-        ppshp: (s as any).ppshp || { s: 0, n: 0 }
-      }))
+        ppshp: (s as any).ppshp || { s: 0, n: 0 },
+      })),
     );
     (Object.keys(blended) as StatCode[]).forEach((stat) => {
       const b = blended[stat];
       const prior = leagueMap!.get(`${rec.position_group}|${stat}`);
       if (!prior) return;
       const fallback = applyPositionLeagueFallback(prior, stat, b.n);
-      const post = betaPosterior(
-        fallback.alpha0,
-        fallback.beta0,
-        b.s,
-        b.n
-      );
+      const post = betaPosterior(fallback.alpha0, fallback.beta0, b.s, b.n);
       upsertRows.push({
         player_id: rec.player_id,
         season_id,
@@ -407,7 +458,7 @@ export async function upsertPlayerPosteriors(
         post_beta: Number(post.post_beta.toFixed(6)),
         post_mean: Number(post.post_mean.toFixed(8)),
         post_var: Number(post.post_var.toFixed(10)),
-        n_effective: Number(b.n.toFixed(6))
+        n_effective: Number(b.n.toFixed(6)),
       });
     });
   }
@@ -416,7 +467,7 @@ export async function upsertPlayerPosteriors(
     const { error: upErr } = await (supabase as any)
       .from("sustainability_player_priors")
       .upsert(upsertRows, {
-        onConflict: "player_id,season_id,position_group,stat_code"
+        onConflict: "player_id,season_id,position_group,stat_code",
       });
     if (upErr) throw upErr;
   }
@@ -465,19 +516,20 @@ export async function ensureTables() {
   n_effective      NUMERIC NOT NULL,
   computed_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (player_id, season_id, position_group, stat_code)
-);`
+);`,
   ];
   // Without a SQL execution function, we optimistically rely on tables existing.
   // If you have a custom RPC (e.g., exec_sql) you could call it here.
   // eslint-disable-next-line no-console
   console.log(
-    "ensureTables: (best-effort) DDL prepared but not executed via public anon key"
+    "ensureTables: (best-effort) DDL prepared but not executed via public anon key",
   );
   return ddlStatements.join("\n\n");
 }
 
 export default {
   toPosGroup,
+  getPriorSeasonIds,
   fetchLeagueMeans,
   betaFromMuK,
   fetchPlayerSeasonCounts,
@@ -486,5 +538,5 @@ export default {
   applyPositionLeagueFallback,
   upsertLeaguePriors,
   upsertPlayerPosteriors,
-  ensureTables
+  ensureTables,
 };

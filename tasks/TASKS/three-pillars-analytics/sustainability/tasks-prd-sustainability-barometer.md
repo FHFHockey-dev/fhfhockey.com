@@ -4,6 +4,13 @@
 - `migrations/sql/2025xxxx_create_priors_tables.sql` - Migration: create `priors_cache`, `player_priors_cache`, config, distribution, queue, barometer tables.
 - `migrations/sql/2025xxxx_seed_sigma_constants.sql` - Migration: seed fixed standard deviation constants (initial SD mode = fixed).
 - `functions/lib/sustainability/config_loader.py` - Load active model configuration (weights, toggles, constants) from DB.
+- `functions/lib/postgres.py` - Domain-neutral Postgres connection helper used by the unrelated NST Python endpoint.
+- `functions/lib/sustainability/README.md` - Canonical TypeScript ownership and Python offline-only boundary.
+- `functions/lib/sustainability/offline.py` - Shared fail-closed exception used by every retired Python persistence/orchestration entry point.
+- `web/lib/sustainability/priors.ts` - Canonical paginated league/player prior reads and Supabase upserts.
+- `web/lib/sustainability/priors.test.ts` - Pagination, player-batch, and concatenated-season identity regressions.
+- `web/lib/supabase/pagination.ts` - Shared verified range-pagination and bounded filter-chunk helpers.
+- `supabase/migrations/20260716112908_production_schema_baseline.sql` - Authoritative baseline for canonical Sustainability tables, keys, grants, and indexes.
 - `functions/lib/env_loader.py` - Local helper to ingest `web/.env.local` for SUPABASE_DB_URL & related secrets in dev without exporting.
 - `functions/lib/sustainability/priors.py` - League × position prior (Beta) computation utilities.
 - `functions/lib/sustainability/player_priors.py` - Multi-season blending + posterior mean calculation.
@@ -38,14 +45,14 @@
 
 ## Tasks
 
-- [ ] 1.0 Database Schema & Migrations. The migration drafts exist, but current authoritative-schema reconciliation is open under 1.7 and NEW 10.0; do not treat conceptual inspection as executable schema proof.
+- [x] 1.0 Database Schema & Migrations. Option A makes the deployed TypeScript/Supabase contract canonical; the production catalog, checked-in baseline, generated types, primary keys, uniqueness, and barometer indexes were verified 2026-07-22 without a schema mutation.
 	- [x] 1.1 Draft DDL for `priors_cache`, `player_priors_cache`, `model_player_game_barometers`, `model_sustainability_config`, `sustainability_distribution_snapshots`, `sustainability_recompute_queue` per PRD.
 	- [x] 1.2 Add NOT NULL / PK / indexes (player_id + window_type + game_date, season_id + position_code + stat_code).
 	- [x] 1.3 Add partial index for `model_player_game_barometers(window_type='GAME')` to speed leaderboard.
 	- [x] 1.4 Create migration file `2025xxxx_create_priors_tables.sql` (Consolidated into `20250928_create_sustainability_core_tables.sql`; no separate stub needed.)
 	- [x] 1.5 Create migration file `2025xxxx_seed_sigma_constants.sql` (Seed initial fixed SD constants).
 	- [x] 1.6 Create migration file `2025xxxx_seed_config.sql` with initial model configuration (model_version=1).
-    - [ ] 1.7 Run migrations locally & verify schema (indexes, constraints). Static audit finds the draft files, but conceptual inspection is not execution proof and the authoritative production baseline diverges from four proposed table names; reconcile under NEW 10.0 before closure. Notes:
+    - [x] 1.7 Verify the authoritative schema, indexes, and constraints. The checked-in production baseline and a value-free live catalog query prove canonical `sustainability_priors`, `sustainability_player_priors`, and `model_player_game_barometers` columns, both prior primary keys, the barometer uniqueness contract, and nine supporting indexes (verified 2026-07-22). Legacy draft-only table names are superseded rather than migrated. Notes:
                 * Core tables present: priors_cache, player_priors_cache, sustainability_sigma_constants, model_sustainability_config,
                     model_player_game_barometers, sustainability_distribution_snapshots, sustainability_recompute_queue.
                 * Primary keys correct; composite PK for priors_cache (season_id, position_code, stat_code) and player_priors_cache (player_id, season_id, stat_code).
@@ -67,14 +74,14 @@
 	- [x] 2.8 Implement loader for fixed SD constants table (or embedded JSON) returning dict keyed by metric × position_code. (Added `load_sd_constants` with graceful fallback merge.)
 	- [x] 2.9 Add validation: raise if any required metric weight missing while toggle indicates active. (Added `cross_validate_weights_vs_toggles` + tests.)
 
-- [ ] 3.0 Prior & Posterior Computation Modules (League + Player)
+- [x] 3.0 Prior & Posterior Computation Modules (League + Player). The canonical TypeScript implementation now performs complete paginated league aggregation, current-player batching, three-season history reads, and exact Supabase upserts; 14 focused prior/pagination tests and live source/schema counts pass (verified 2026-07-22).
 	- [x] 3.1 Implement `priors.py` function `compute_league_beta_priors(season_id)` returning list of {season_id, position_code, stat_code, alpha0, beta0, k, league_mu}. (Added `priors.py` + unit tests `test_priors.py`.)
-	- [ ] 3.2 Add query to aggregate successes/trials for sh_pct, oish_pct, ipp from a current canonical stats source. The current adapter still labels its SQL a stub and targets absent `hockey_player_season_aggregates`; reconcile under NEW 10.0 (audit 2026-07-22).
-	- [ ] 3.3 Implement a batch upsert for the authoritative priors table. The adapter targets absent `priors_cache` while current production owns `sustainability_priors`; reconcile schema and writer ownership under NEW 10.0 (audit 2026-07-22).
-	- [ ] 3.4 Implement multi-season data fetch for each player (current + last two seasons) with successes/trials per stat. The current production path remains an explicit placeholder returning an empty iterable; fixture grouping alone is not fetch implementation evidence (audit 2026-07-22).
+	- [x] 3.2 Aggregate successes/trials for shp, oishp, ipp, and ppshp from canonical `player_totals_unified`. `fetchLeagueMeans` now range-paginates every ordered row before pooling counts (verified 2026-07-22).
+	- [x] 3.3 Upsert league priors to authoritative `sustainability_priors` on `(season_id, position_group, stat_code)`; the live schema has 22 rows and the exact primary key (verified 2026-07-22).
+	- [x] 3.4 Fetch complete current plus prior-two-season player counts. Current-season identities are fully paginated, offset/limit is applied to players rather than raw season rows, and selected IDs are fetched through bounded filter chunks with per-chunk pagination (verified 2026-07-22).
 	- [x] 3.5 Implement weight normalization if seasons missing (rookie case) and set rookie_status flag. (Automatic normalization logic + rookie detection.)
 	- [x] 3.6 Calculate posterior mean with Beta update using league prior (store model_version from config). (Posterior math in `compute_player_posteriors`.)
-	- [x] 3.7 Upsert player_priors_cache rows (post_mean, successes_blend, trials_blend, rookie_status). (Stub `upsert_player_priors`.)
+	- [x] 3.7 Upsert canonical `sustainability_player_priors` rows with blended/posterior fields on the deployed composite primary key. Production currently contains 5,152 rows (verified 2026-07-22).
 	- [x] 3.8 Add unit tests for: correct Beta posterior when no history; correct weighted blend with partial seasons; reproducibility. (Added tests in `test_player_priors.py` including reproducibility & rookie summary.)
 	- [x] 3.9 Add logging summary (#players processed, rookies, changes vs prior run). (Added `summarize_player_posteriors` & `log_player_posteriors_summary`.)
 
@@ -142,7 +149,9 @@
 	- [ ] 9.6 Add unit tests for version upgrade path (old rows untouched, new rows new version).
 	- [ ] 9.7 Document versioning policy & A/B expansion path (future) in README or PRD appendix.
 
-- [ ] NEW 10.0 **P1 canonical schema/adapter ownership drift:** reconcile the legacy Python Barometer prototype with the authoritative Supabase schema and active TypeScript Sustainability pipeline before enabling orchestration. The production baseline contains `sustainability_priors`/`sustainability_player_priors` and only a subset of the draft PRD tables; Python adapters target absent `priors_cache`, `sustainability_distribution_snapshots`, `sustainability_recompute_queue`, and a nonexistent aggregate source, while `upsert_barometers` names columns absent from the deployed `model_player_game_barometers` contract. Select one canonical owner, fail closed rather than silently returning zero, add exact adapter/schema tests, and require executable migration/runtime evidence before closing 1.0/1.7/3.0/3.2–3.4/5.x/9.x (discovered 2026-07-22).
+- [x] NEW 10.0 **P1 canonical schema/adapter ownership drift:** Option A is implemented. TypeScript/Supabase is the sole production owner; the disconnected Python adapter is removed after its only unrelated consumer moved to a domain-neutral connection helper, Python configuration/prior helpers require explicit injected clients, and Python persistence/incremental/snapshot/log/lock/retro paths fail closed while pure scoring remains offline. The current Supabase catalog, baseline, generated types, 21 focused Python tests, 14 TypeScript prior/pagination tests, TypeScript, lint, and compilation prove the boundary (closed 2026-07-22).
+
+- [x] NEW 11.0 **P1 concatenated NHL season arithmetic:** `fetchPlayerSeasonCounts` subtracted integers from identifiers such as `20252026`, yielding nonexistent `20252025`/`20252024` history and silently zeroing prior-season contributions. Derive and validate `[20252026, 20242025, 20232024]`, retain full player-level batching/pagination, and prove all three live source seasons plus regression coverage (discovered and closed 2026-07-22).
 
 ---
 I have generated the high-level tasks based on the PRD. Ready to generate the sub-tasks? Respond with "Go" to proceed.
