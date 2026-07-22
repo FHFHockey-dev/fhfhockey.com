@@ -10,7 +10,7 @@
 | Initiatives identified | Pending final reconciliation |
 | PRDs created/repaired | 5 current |
 | Task lists created/repaired | 10 current |
-| Source/master checkbox rows represented | 4,835/4,835 current imported ledger; 4,236 checked claims and 599 open (87.61% complete; 12.39% open) |
+| Source/master checkbox rows represented | 4,835/4,835 current imported ledger; 4,238 checked claims and 597 open (87.65% complete; 12.35% open) |
 | Wave-A initiatives completed | 14/19 verified |
 | Wave-B initiatives completed | 1/16 verified |
 | Wave-C initiatives audited | 0/final dynamic total |
@@ -261,7 +261,7 @@ Initiative sections pending verified Wave-C audit.
 
 - **PRD:** `tasks/TASKS/dead-code-cleanup/prd-cleanup-tasks.md`
 - **Task list:** `tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md`
-- **Current status:** Wave-B execution is active at 121/143 rows with 22 open. Historical team identity, TeamScheduleCalendar NEW 81/82, TeamStatsPage NEW 76/77/83/84, useTeamSchedule NEW 85–87, PowerPlayCombos NEW 62/64, and image-pilot base rows plus NEW 45/50 are published complete. Existing-row repair NEW 105 and broader all-seasons relocation NEW 107 remain separate. NEW 7/19–20/26/40–42/63/66/105/107 and broader hook/noise/toolchain/integrated-verification work remain open.
+- **Current status:** Wave-B execution is active at 123/143 rows with 20 open. Historical team identity, TeamScheduleCalendar NEW 81/82, TeamStatsPage NEW 76/77/83/84, useTeamSchedule NEW 85–87, PowerPlayCombos NEW 62/64, image-pilot base rows plus NEW 45/50, and base duplicate-ownership/architecture-boundary rows 5.1/5.4 are complete. Base 5.2 remains coupled to NEW 40/41; existing-row repair NEW 105 and broader all-seasons relocation NEW 107 remain separate. NEW 7/19–20/26/40–42/63/66/105/107 and broader hook/noise/toolchain work remain open.
 - **PowerPlay source/terminal closure:** Named season-query state preserves pending loading and terminates successful absence/error without invalid database requests. The line-combination helper uses a documented inner relationship filter, validates returned source team/season, and carries it with the game; the page and PowerPlay roster/history paths consume only that identity, and mismatched game context fails before roster work. Two files/14 focused tests, full TypeScript, zero-error scoped lint, diff integrity, and value-free live REST 200/exact-context probes pass.
 - **PowerPlay publication:** Exact checkpoint `76e9b5d4d6bf0e521af9651c72748ace12fe2797` publishes the five implementation/test paths and six synchronized controls through a normal non-force push; fresh local/tracking/live equality and zero divergence pass.
 - **Schedule-hook readiness/error closure:** The active games and score queries select only consumed fields. Core failures expose stable copy and exactly one fixed diagnostic. Current-identity games publish with core loading complete before deferred optional score/standings enrichment; optional failures retain the schedule and emit fixed value-free warnings. Five consumer files/79 tests, a focused 51-test rerun, full TypeScript, zero-error scoped lint, formatting, and diff integrity pass.
