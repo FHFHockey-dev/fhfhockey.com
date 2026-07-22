@@ -240,6 +240,91 @@ describe("/api/v1/db/update-team-power-ratings", () => {
     expect(res.body.executionScope.windowDays).toBeGreaterThan(1);
   });
 
+  it("repairs the prior date before writing today's scheduled snapshot", async () => {
+    countState.value = 32;
+    const today = new Date().toISOString().slice(0, 10);
+    const previousDate = new Date(`${today}T00:00:00.000Z`);
+    previousDate.setUTCDate(previousDate.getUTCDate() - 1);
+    const yesterday = previousDate.toISOString().slice(0, 10);
+    const repairedRating = {
+      team_abbreviation: "ANA",
+      date: yesterday,
+      off_rating: 111,
+      def_rating: 99,
+      pace_rating: 101,
+      xgf60: 3.6,
+      gf60: 3.1,
+      sf60: 31,
+      xga60: 2.8,
+      ga60: 2.7,
+      sa60: 29,
+      pace60: 60,
+      finishing_rating: 102,
+      goalie_rating: 103,
+      danger_rating: 104,
+      special_rating: 105,
+      discipline_rating: 106,
+      variance_flag: 0,
+      trend10: 7,
+    };
+
+    fetchGameLogsMock.mockResolvedValue([
+      { team_abbreviation: "ANA", date: yesterday, data_mode: "all" },
+    ]);
+    fetchAllRatingsMock.mockImplementation((_supabase, _table, targetDate) =>
+      Promise.resolve(targetDate === today ? [repairedRating] : []),
+    );
+    calculateEwmaMock.mockImplementation((_games, targetDate) =>
+      targetDate === yesterday
+        ? { team_abbreviation: "ANA", date: yesterday }
+        : null,
+    );
+    calculateFinalRatingMock.mockReturnValue(repairedRating);
+
+    const req: any = {
+      method: "GET",
+      query: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      startDate: yesterday,
+      endDate: today,
+      processedDays: 2,
+      executionScope: {
+        requestedDate: today,
+        startDate: yesterday,
+        endDate: today,
+        windowDays: 2,
+        tableWasEmpty: false,
+        smokeTestMode: false,
+        autoBackfillApplied: false,
+        lateArrivalRepairApplied: true,
+        explicitRangeApplied: false,
+        smokeTestComparable: false,
+      },
+    });
+    expect(fetchGameLogsMock).toHaveBeenCalledTimes(2);
+    expect(upsertMock).toHaveBeenCalledTimes(2);
+    expect(upsertMock.mock.calls[0]?.[0]).toEqual([
+      expect.objectContaining({
+        team_abbreviation: "ANA",
+        date: yesterday,
+        off_rating: 111,
+      }),
+    ]);
+    expect(upsertMock.mock.calls[1]?.[0]).toEqual([
+      expect.objectContaining({
+        team_abbreviation: "ANA",
+        date: today,
+        off_rating: 111,
+      }),
+    ]);
+  });
+
   it("recomputes stored trend10 from played snapshots instead of stale stored rows", async () => {
     countState.value = 32;
 
