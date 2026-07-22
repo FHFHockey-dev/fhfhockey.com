@@ -17,6 +17,7 @@
 - `web/styles/_panel.scss` - Shared panel and framing mixins that should inform the redesigned shell and tables.
 - `web/components/GameGrid/GameGrid.test.tsx` - Potential component-level regression coverage if the refactor introduces testable rendering or interaction seams.
 - `web/components/PlayerPickupTable/PlayerPickupTable.test.tsx` - Potential regression coverage for the later visual-state or interaction updates.
+- `tasks/TASKS/three-pillars-analytics/underlying-stats/game-grid/game-grid-master-table-contract.md` - Phase 1 current-path/data/sorting inventory, target column/sticky contract, findings, and review gates.
 
 ### Notes
 
@@ -24,16 +25,16 @@
 - Preserve all existing score calculations, schedule calculations, data sources, and ranking logic unless a later approved task explicitly changes them.
 - The desktop master table is the primary architecture target. Mobile and tablet should keep separate collapsible sections during this project.
 - Unit tests should typically be placed alongside the code files they are testing.
-- Use `npx jest [optional/path/to/test/file]` to run tests. Running without a path executes all tests found by the Jest configuration.
+- Use `npm test -- --run [optional/path/to/test/file]` to run Vitest once from `web/`.
 
 ## Tasks
 
-- [ ] 1.0 Audit the current Game Grid architecture and define the unified desktop master-table contract.
-  - [ ] 1.1 Inventory the current desktop and mobile/tablet render paths in `GameGrid.tsx`, including where OMT, GG, and 4WG are composed and how orientation changes are handled.
-  - [ ] 1.2 Document the current row data dependencies for OMT metrics, weekly schedule cells, current-week summary values, and four-week metrics so the unified table can reuse existing calculations.
-  - [ ] 1.3 Identify which current sorting behaviors must be preserved and explicitly mark the day columns as non-sortable in the new contract.
-  - [ ] 1.4 Define the final desktop column order and grouped column boundaries, including where the single team identity column, current-week summary block, and 4WG collapse marker will sit.
-  - [ ] 1.5 Decide which columns or wrappers should remain sticky during horizontal scrolling on desktop, starting with the left-side summary context and team identity column.
+- [x] 1.0 Audit the current Game Grid architecture and define the unified desktop master-table contract. The current/target path, data, sorting, column, sticky, finding, and review-gate contract is recorded without changing runtime behavior (verified 2026-07-22).
+  - [x] 1.1 Inventory the current desktop and mobile/tablet render paths in `GameGrid.tsx`, including where OMT, GG, and 4WG are composed and how orientation changes are handled. The contract distinguishes mobile `<480`, tablet `480–1023`, desktop-horizontal master, and desktop-vertical three-rail paths; NEW 2 preserves the unresolved vertical disposition (verified 2026-07-22).
+  - [x] 1.2 Document the current row data dependencies for OMT metrics, weekly schedule cells, current-week summary values, and four-week metrics so the unified table can reuse existing calculations. Exact hook/helper/source owners and unchanged formulas are recorded for every block, including Player Pickup's separate adapter (verified 2026-07-22).
+  - [x] 1.3 Identify which current sorting behaviors must be preserved and explicitly mark the day columns as non-sortable in the new contract. Team-ascending default, numeric default direction, alphabetical ties, missing-last behavior, all intended sortable metrics, and switch-only day headers are explicit (verified 2026-07-22).
+  - [x] 1.4 Define the final desktop column order and grouped column boundaries, including where the single team identity column, current-week summary block, and 4WG collapse marker will sit. The contract fixes OMT → Team → 7/10 days → current GP/OFF/Score → four-week GP/OFF/Opp%/Score, with the group control at the post-Score boundary (verified 2026-07-22).
+  - [x] 1.5 Decide which columns or wrappers should remain sticky during horizontal scrolling on desktop, starting with the left-side summary context and team identity column. All seven OMT columns plus Team stay left-sticky and both header rows stay vertically persistent, subject only to later supported-breakpoint evidence and reviewed amendment (verified 2026-07-22).
 
 - [ ] 2.0 Redesign the page shell, `dashboardHeader`, and shared table visual language using existing style tokens and required button/toggle rules.
   - [ ] 2.1 Update `GameGrid.module.scss` to establish the new page background, lighter table surface, row striping, subtle separators, and shared panel framing using `vars.scss` and `_panel.scss`.
@@ -64,3 +65,7 @@
   - [ ] 5.3 Refresh `PlayerPickupTable.tsx` and `PlayerPickupTable.module.scss` so the bottom table matches the updated page shell, table typography, borders, and control styling.
   - [ ] 5.4 Run targeted regression checks for sorting, collapse behavior, score display, sticky headers, and layout behavior across desktop, tablet, and mobile breakpoints.
   - [ ] 5.5 Add or update component-level regression tests if the refactor introduces stable seams for interaction or rendering coverage.
+
+- [ ] NEW 1.0 **P1 desktop master opponent-metrics failure is indistinguishable from legitimate missing values:** `useOpponentMetricsData` exposes a stable error, but `GameGrid` passes only loading/data into `DesktopMasterTable`, which renders ordinary dashes after failure. Preserve the schedule/4WG row while exposing a value-free unavailable state and add a focused failure regression before closing the merged desktop path (discovered 2026-07-22).
+- [ ] NEW 2.0 **P2 desktop vertical orientation bypasses the master-table contract:** `>=1024px` horizontal uses `DesktopMasterTable`, while the existing orientation control routes vertical users back to separate OMT/TransposedGrid/4WG rails. Approve a named supported fallback or retirement/alignment path before claiming complete desktop replacement; preserve current behavior until that decision (discovered 2026-07-22).
+- [x] NEW 3.0 **P3 stale Jest verification instruction:** the task list now names the repository-owned Vitest one-shot command, and the focused current-contract group passes 3 files/9 tests (verified 2026-07-22).

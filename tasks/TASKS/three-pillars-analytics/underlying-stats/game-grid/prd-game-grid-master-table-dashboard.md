@@ -218,3 +218,9 @@ Each phase should stop for review before moving to the next phase. The implement
 3. Which left-side columns should remain sticky during horizontal scroll on desktop if making the entire OMT block sticky is too heavy for the layout?
 4. Should score-based top-10 and bottom-10 highlighting apply only to the `Score` column, or should it also influence the full row treatment?
 5. Is a temporary feature flag or route-level toggle desired during Phase 2 and Phase 3, or should the new desktop table replace the old layout directly once each phase is approved?
+
+## 10. Execution Checkpoint — 2026-07-22
+
+Phase 1 is evidence-complete in `game-grid-master-table-contract.md`. Current tracked code already has a desktop-horizontal `DesktopMasterTable`, but it is a partial implementation rather than proof that phases 2–5 are complete. The fixed target order is OMT metrics → one Team identity → existing 7/10 day cells → current GP/OFF/Score → four-week GP/OFF/Opp%/Score; day columns remain non-sortable, intended non-day values remain sortable, and the seven OMT columns plus Team are the initial left-sticky block. Mobile/tablet remain separate compositions.
+
+The audit records P1 NEW 1 for the master path suppressing the OMT error state, P2 NEW 2 for desktop vertical orientation bypassing the master architecture, and closed P3 NEW 3 for the stale Jest command. Existing target-order, missing 4WK Score/sort, and group-boundary mismatches stay owned by base implementation tasks rather than duplicate findings. B-GAMEGRID is active at 7/35 with 28 open. No phase-2 styling or runtime implementation begins until the required Phase-1 review checkpoint resolves the initial 4WK state, highlight scope, and NEW 2 orientation disposition.
