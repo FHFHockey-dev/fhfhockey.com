@@ -135,6 +135,7 @@ Additional initiative sections remain pending verified Wave-A/B completion and W
 - **Current status:** The source is 16/52 with 36 open. This evidence-only cohort raises global parity to 4,420/4,874 with 454 open = 90.69% complete / 9.31% open.
 - **Imported evidence:** The owner-approved Phase-1 decisions, completed Phase-2 shell contract, existing shared-token schedule/Transposed styles, obsolete CSS import proof, switch/toggle state cleanup, 4 files/11 passing focused tests, prior full TypeScript pass, and successful route/Sass compilation satisfy 16 duplicate style rows.
 - **Preserved open work:** Narrow-width control usability, complete hit-target proof, screenshots and sticky/overflow breakpoint proof, full raw-color/token cleanup, side-table/Player Pickup/PDHC styling, broad visual/accessibility verification, final behavior parity, and final synchronization remain open. B-GAMEGRID Phase 3 remains separately gated and was not authorized or changed.
+- **Publication:** Exact checkpoint `6792f37faaea877cc637cec70442e6b46e40a430` publishes the 16-row cohort through guarded normal push with exact source/master parity.
 
 ## Underlying stats and site surfaces
 
