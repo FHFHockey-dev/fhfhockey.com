@@ -2867,6 +2867,7 @@
   ```
 
   Do not run pull, merge, rebase, `--hard`, checkout/restore, clean, or delete any cache/build/worktree path.
+
 - **Exact next action after output:** Require both refs to equal `0ed825fb3`, staged/scoped/cache counts to be zero, and compare every current path against the 62-path patch plus 49-file manifest while treating only verified newer concurrent edits as forward progress. Close source `10.3`/parent `10.0`, master `C0042`/`C0039`/`NEW-008`, update counts/PRD/final summary/diary, then perform the separate three-file P2 forward cleanup when safely isolated and resume Entry 0225's B-CRON-NST production preflight.
 - **Restart instruction:** Resume at post-mixed-reset preservation proof after the complete command output. Do not mutate production first.
 
@@ -6084,3 +6085,11 @@
 
 - **Publication / equality:** Exact six-path checkpoint `92b9a64c7b85d2f649810da4f5e0a5ef0e348478` (`docs(sustainability): initialize trends audit report`) publishes the canonical report, source 1.1/1.7 closure, and synchronized controls. Fresh parent equality at `62943b6582ea6a75e03945d37f07e82adee260af`, exact staging, diff integrity, report Prettier, normal non-force push, and post-push local/tracking/live equality pass with a clean isolated checkout.
 - **Verified state / next action:** B-SUST-AUD is 2/42; global parity is 4,252/4,842 = 87.81%, with all 4,842 stable IDs unique. Publish this receipt, then construct 1.2–1.4 from tracked files plus dependency evidence; use `unclear` rather than inferring runtime ownership from filenames.
+
+## Entry 0578 — 2026-07-22 B-SUST-AUD tracked inventory/classification local closure
+
+- **Inventory implementation:** Added a reproducible tracked-file generator and canonical JSON manifest. The generator combines explicit PRD seeds, relevant tracked path and SQL-content matches, recursive local imports, and directly related tests/stories. It emits stable audit IDs, exact paths, surface kinds, overlapping family memberships, required runtime statuses, and inclusion evidence without treating filenames or import reachability as production proof.
+- **Determinism / evidence:** Two consecutive runs emit the same 1,052 records and SHA-256 `dc7fa2f3a95444a04f2a30b9fefc8b228257d80f54824c8ca138da7e7bb859b4`. Surface kinds are 73 APIs/jobs, 117 components, 2 documentation files, 323 helpers/data modules, 27 pages, 59 scripts, 89 SQL/migrations, 1 story, 53 styles, and 308 tests. Overlapping family memberships are trends 99, sustainability 230, team power 38, start/rolling 102, FORGE 191, and legacy/adjacent 412.
+- **Classification / boundary:** All 1,052 entries are classified as 5 current production, 7 active experiment, 78 legacy, 815 adjacent dependency, or 147 unclear. Current production requires direct scheduled-route evidence from `web/vercel.json`; the 147 unresolved surfaces remain `unclear` for family-level dependency audit. Source/master 1.2–1.4 close; 1.0 remains open for dependency/table maps. B-SUST-AUD is 5/42; global parity is 4,255/4,842 with 587 open = 87.88% complete / 12.12% open.
+- **Provider / mutation boundary:** Ryan's IFTTT escalation remains bookmarked under open A-GDL NEW 18; the precautionary/no-known-leak clarification supplies no provider invalidation or old-key rejection. No runtime, schema, production, provider, mailbox, credential, deployment, schedule, shared-checkout, or stash state changed.
+- **Exact next action:** Format/check the generator and manifest, rerun generation and prove the recorded hash, verify source/master/stable-ID parity and diff integrity, then fresh-fetch and publish the exact inventory/report/control scope through a guarded normal push. After its receipt, build B-SUST-AUD 1.5/1.6 from the manifest, resolving dependency and table ownership conservatively.

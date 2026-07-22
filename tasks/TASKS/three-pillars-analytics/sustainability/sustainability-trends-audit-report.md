@@ -54,14 +54,24 @@ Complete one row per system family and add metric-level rows whenever one family
 
 ## Family worksheet index
 
-| Family                                          | Scope                                                                                                  | Inventory           | Dependency map                    | Validation                     | Consolidation status              |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------- | --------------------------------- | ------------------------------ | --------------------------------- |
-| Trends / skater trend metrics                   | Pages, trend APIs, calculators, percentile/config utilities, `player_trend_metrics`                    | Pending `1.2`–`1.4` | Pending `1.5`–`1.6` / `2.1`–`2.6` | Pending `2.7`                  | Pending `2.8` / `5.7`–`5.8`       |
-| Sustainability / baselines / bands / scores     | Score/prior/window/band readers and writers, baseline rebuilds, public/internal APIs                   | Pending `1.2`–`1.4` | Pending `1.5`–`1.6` / `2.4`–`2.6` | Pending `2.7`                  | Pending `2.8` / `5.7`–`5.8`       |
-| Team power / underlying / matchup               | Underlying pages, power writers, service/math helpers, CTPI/SOS                                        | Pending `1.2`–`1.4` | Pending `3.1`–`3.4`               | Pending `3.5`                  | Pending `3.6`–`3.7` / `5.7`–`5.8` |
-| Start-chart / rolling metrics / legacy averages | Start chart, rolling builders, player/goalie projections, WIGO/nearby average systems                  | Pending `1.2`–`1.4` | Pending `4.1`–`4.5`               | Pending `4.6`                  | Pending `4.7` / `5.7`–`5.8`       |
-| FORGE projections / accuracy                    | FORGE UI/read APIs, run pipeline, goalie stages, result/accuracy/calibration tables                    | Pending `1.2`–`1.4` | Pending `5.1`–`5.5`               | Pending `5.6`                  | Pending `5.7`–`5.8`               |
-| Legacy / adjacent systems                       | Tracked experiments, alternate pages, archived schema evidence, tests, and SQL that overlap materially | Pending `1.2`–`1.4` | Pending per owning family         | Pending where still executable | Pending `5.7`–`5.8`               |
+| Family                                          | Scope                                                                                                  | Inventory                        | Dependency map                    | Validation                     | Consolidation status              |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------- | --------------------------------- | ------------------------------ | --------------------------------- |
+| Trends / skater trend metrics                   | Pages, trend APIs, calculators, percentile/config utilities, `player_trend_metrics`                    | Complete; 99 family memberships  | Pending `1.5`–`1.6` / `2.1`–`2.6` | Pending `2.7`                  | Pending `2.8` / `5.7`–`5.8`       |
+| Sustainability / baselines / bands / scores     | Score/prior/window/band readers and writers, baseline rebuilds, public/internal APIs                   | Complete; 230 family memberships | Pending `1.5`–`1.6` / `2.4`–`2.6` | Pending `2.7`                  | Pending `2.8` / `5.7`–`5.8`       |
+| Team power / underlying / matchup               | Underlying pages, power writers, service/math helpers, CTPI/SOS                                        | Complete; 38 family memberships  | Pending `3.1`–`3.4`               | Pending `3.5`                  | Pending `3.6`–`3.7` / `5.7`–`5.8` |
+| Start-chart / rolling metrics / legacy averages | Start chart, rolling builders, player/goalie projections, WIGO/nearby average systems                  | Complete; 102 family memberships | Pending `4.1`–`4.5`               | Pending `4.6`                  | Pending `4.7` / `5.7`–`5.8`       |
+| FORGE projections / accuracy                    | FORGE UI/read APIs, run pipeline, goalie stages, result/accuracy/calibration tables                    | Complete; 191 family memberships | Pending `5.1`–`5.5`               | Pending `5.6`                  | Pending `5.7`–`5.8`               |
+| Legacy / adjacent systems                       | Tracked experiments, alternate pages, archived schema evidence, tests, and SQL that overlap materially | Complete; 412 family memberships | Pending per owning family         | Pending where still executable | Pending `5.7`–`5.8`               |
+
+## Tracked inventory and classification
+
+The generated manifest at `sustainability-trends-inventory.json` is produced by `web/scripts/audit-sustainability-trends-inventory.mjs`. It starts from explicit PRD surfaces, adds relevant tracked path and SQL-content matches, follows recursive local imports, and includes directly related tests and stories. Every record carries a stable audit ID, exact repository path, surface kind, one or more family memberships, runtime status, and inclusion evidence.
+
+- **Determinism:** two consecutive runs produced 1,052 records and SHA-256 `dc7fa2f3a95444a04f2a30b9fefc8b228257d80f54824c8ca138da7e7bb859b4`.
+- **Surface kinds:** 73 APIs/jobs, 117 components, 2 documentation files, 323 helpers/data modules, 27 pages, 59 scripts, 89 SQL/migrations, 1 story, 53 styles, and 308 tests.
+- **Runtime status:** 5 current production, 7 active experiment, 78 legacy, 815 adjacent dependency, and 147 unclear.
+- **Classification boundary:** current-production status requires direct scheduled-route evidence from `web/vercel.json`; names and imports alone never prove ownership. The 147 unresolved entries remain `unclear` until their owning family audit supplies dependency/runtime evidence.
+- **Family semantics:** memberships overlap intentionally because shared helpers, schemas, and tests can serve multiple systems. The family totals therefore are not expected to sum to 1,052.
 
 ## Finding register
 
