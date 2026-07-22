@@ -6463,3 +6463,8 @@
 
 - **Evidence / closure:** Exact page/component/lib searches find no tracked `href`, router push/replace, or other runtime caller to `/skoCharts`. The retained lineage route is `noindex,nofollow`; its title and visible copy say Legacy, quarantined, not trusted, and not live FORGE; its only exits are the supported FORGE Dashboard and Trends routes. Close only 6.6 without editing or deleting the page.
 - **Counts / boundary / next action:** Source/master B-SKO parity is 21/68 with 47 open. Global parity is 4,333/4,874 with 541 open = 88.90% complete / 11.10% open; severity remains P0 20/13, P1 146/103, P2 139/123, and P3 22/21. No runtime code, link, route, consumer, writer, row, schema, policy, schedule, deployment, Production, provider, credential, or artifact changed. Publish this evidence-only checkpoint, then continue decision-independent SKO work while all existing gates remain open.
+
+## Entry 0636 — 2026-07-22 B-SKO legacy-route link publication receipt
+
+- **Publication / equality:** Exact six-document checkpoint `40fed86e8325aa6ee8ad882aba91548cf2e21dcc` (`docs(sko): verify legacy route quarantine links`) publishes base 6.6 evidence closure and synchronized source/master/report/PRD/final-summary/diary controls. Fresh-parent equality at `9caa834dd09594daa22fb1be359ed8ee58d6007e`, exact text-only staging, diff/credential-shape integrity, guarded normal push, and post-push local/tracking/live equality pass.
+- **Boundary / next action:** Counts remain B-SKO 21/68 and global 4,333/4,874; severity remains P0 20/13, P1 146/103, P2 139/123, and P3 22/21. No route, runtime code, external system, or shared checkout changed. Publish this receipt, then continue independent SKO evidence while all existing decision and external gates remain open.
