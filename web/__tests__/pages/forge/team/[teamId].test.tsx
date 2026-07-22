@@ -199,6 +199,73 @@ describe("FORGE team detail page", () => {
     expect(screen.getByText("Schedule season: 20252026")).toBeTruthy();
   });
 
+  it("uses the resolved historical source team for home-game labels", async () => {
+    routerState.query = {
+      teamId: "UTA",
+      date: "2024-03-14",
+    };
+    useTeamScheduleMock.mockReturnValue({
+      games: [
+        {
+          id: 3,
+          gameDate: "2024-03-15",
+          homeTeam: { id: 53, abbrev: "ARI" },
+          awayTeam: { id: 6, abbrev: "BOS" },
+        },
+        {
+          id: 4,
+          gameDate: "2024-03-16",
+          homeTeam: { id: 22, abbrev: "EDM" },
+          awayTeam: { id: 53, abbrev: "ARI" },
+        },
+      ],
+      loading: false,
+      error: null,
+      record: null,
+      scheduleTeam: { id: 53, abbreviation: "ARI" },
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/team-ratings")) {
+          return jsonResponse([
+            {
+              teamAbbr: "UTA",
+              date: "2024-03-14",
+              offRating: 80,
+              defRating: 80,
+              paceRating: 80,
+              ppTier: 2,
+              pkTier: 2,
+              trend10: 0,
+            },
+          ]);
+        }
+        if (url.includes("/api/v1/trends/team-ctpi")) {
+          return jsonResponse({ teams: [] });
+        }
+        if (url.includes("/api/v1/start-chart")) {
+          return jsonResponse({ dateUsed: "2024-03-14", games: [] });
+        }
+        return jsonResponse({}, false);
+      }),
+    );
+
+    render(<ForgeTeamDetailPage scheduleSeasonId="20232024" />);
+
+    expect(await screen.findByText("Current Team Context")).toBeTruthy();
+    expect(screen.getByText("vs BOS")).toBeTruthy();
+    expect(screen.getByText("@ EDM")).toBeTruthy();
+    expect(screen.queryByText("@ ARI")).toBeNull();
+    expect(useTeamScheduleMock).toHaveBeenCalledWith(
+      "UTA",
+      "20232024",
+      "68",
+      "2024-03-14",
+    );
+  });
+
   it("uses the requested route date for the record instead of resolved context", () => {
     routerState.query.resolvedDate = "2026-03-12";
     vi.stubGlobal(

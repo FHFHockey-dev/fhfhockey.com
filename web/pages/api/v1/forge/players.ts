@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { buildEndpointScanSummary } from "lib/api/scanSummary";
 import { resolveLatestStartedSeasonIdForDate } from "lib/NHL/server";
+import { resolveProjectionTeamIdentity } from "lib/NHL/seasonAwareScheduleTeam";
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { buildRequestedDateServingState } from "lib/dashboard/freshness";
@@ -428,11 +429,14 @@ export default async function handler(
 
     const selectQuery = `
         player_id,
+        team_id,
         players!player_id (
           fullName,
           position
         ),
         teams!team_id (
+          id,
+          abbreviation,
           name
         ),
         proj_goals_es,
@@ -507,12 +511,16 @@ export default async function handler(
       missingRequestedHorizon = (count ?? 0) > 0;
     }
 
-    const currentSeasonId = await resolveLatestStartedSeasonIdForDate(
+    const resolvedSeasonId = await resolveLatestStartedSeasonIdForDate(
       resolvedDate,
       supabase,
     );
+    const requestedSeasonId =
+      resolvedDate === targetDate
+        ? resolvedSeasonId
+        : await resolveLatestStartedSeasonIdForDate(targetDate, supabase);
     const activeRosterPlayerIds =
-      await fetchActiveRosterPlayerIdSet(currentSeasonId);
+      await fetchActiveRosterPlayerIdSet(resolvedSeasonId);
     if (activeRosterPlayerIds.size > 0) {
       projectionsRaw = projectionsRaw.filter((row: any) =>
         activeRosterPlayerIds.has(Number(row?.player_id)),
@@ -520,6 +528,16 @@ export default async function handler(
     }
 
     const projections = projectionsRaw.map((row: any) => {
+      const teamIdentity = resolveProjectionTeamIdentity(
+        row.team_id,
+        row.teams,
+        resolvedSeasonId,
+      );
+      if (!teamIdentity) {
+        throw new Error(
+          "Projection team identity is invalid for the resolved season.",
+        );
+      }
       const degradedProjectionContext = extractDegradedProjectionContext(
         row.uncertainty,
       );
@@ -541,6 +559,7 @@ export default async function handler(
         player_id: row.player_id,
         player_name: row.players?.fullName,
         team_name: row.teams?.name,
+        teamIdentity,
         position: row.players?.position,
         g,
         a,
@@ -620,6 +639,8 @@ export default async function handler(
       runId,
       asOfDate: resolvedDate,
       requestedDate: targetDate,
+      requestedSeasonId,
+      resolvedSeasonId,
       horizonGames,
       fallbackApplied,
       degradedProjectionSummary,

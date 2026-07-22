@@ -90,6 +90,7 @@ export default function ForgeTeamDetailPage({
     loading: scheduleLoading,
     error: scheduleError,
     record,
+    scheduleTeam,
   } = useTeamSchedule(
     teamAbbr,
     scheduleSeasonId ?? UNAVAILABLE_SCHEDULE_SEASON,
@@ -409,7 +410,9 @@ export default function ForgeTeamDetailPage({
                         <p className={styles.previewSubheading}>Next Five</p>
                         <div className={styles.previewList}>
                           {upcomingGames.map((game) => {
-                            const isHome = game.homeTeam.abbrev === teamAbbr;
+                            const isHome = scheduleTeam
+                              ? game.homeTeam.id === scheduleTeam.id
+                              : game.homeTeam.abbrev === teamAbbr;
                             const opponent = isHome
                               ? game.awayTeam.abbrev
                               : game.homeTeam.abbrev;

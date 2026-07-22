@@ -171,6 +171,7 @@ describe("useTeamSchedule", () => {
         loading: true,
         error: null,
         record: null,
+        scheduleTeam: null,
       });
       expect(fromMock).not.toHaveBeenCalled();
     },
@@ -188,6 +189,7 @@ describe("useTeamSchedule", () => {
       loading: false,
       error: "A valid NHL season is required.",
       record: null,
+      scheduleTeam: null,
     });
     expect(fromMock).not.toHaveBeenCalled();
   });
@@ -206,6 +208,7 @@ describe("useTeamSchedule", () => {
       loading: false,
       error: "Unable to determine the current NHL season.",
       record: null,
+      scheduleTeam: null,
     });
     expect(result.current.error).not.toContain("provider detail");
     expect(fromMock).not.toHaveBeenCalled();
@@ -223,6 +226,7 @@ describe("useTeamSchedule", () => {
       loading: false,
       error: "A valid team selection is required.",
       record: null,
+      scheduleTeam: null,
     });
     expect(fromMock).not.toHaveBeenCalled();
   });
@@ -340,7 +344,12 @@ describe("useTeamSchedule", () => {
     ["inherited abbreviation", "toString", "20242025", "22"],
     ["mismatched pair", "EDM", "20242025", "6"],
     ["legacy UTA id 53", "UTA", "20242025", "53"],
+    ["legacy UTA id 53", "UTA", "20232024", "53"],
     ["legacy UTA id 59", "UTA", "20242025", "59"],
+    ["historical ARI pair", "ARI", "20232024", "53"],
+    ["wrong-season UTA id 59", "UTA", "20252026", "59"],
+    ["wrong-season ARI id 53", "ARI", "20242025", "53"],
+    ["unsupported pre-2023 UTA lineage", "UTA", "20222023", "68"],
     ["partial season", "EDM", "2024", "22"],
     ["leading-zero season", "EDM", "020242025", "22"],
     ["nonnumeric season", "EDM", "abcdefgh", "22"],
@@ -361,6 +370,141 @@ describe("useTeamSchedule", () => {
       expect(fromMock).not.toHaveBeenCalled();
     },
   );
+
+  it.each([
+    {
+      label: "current UTA alias over 2023-24 Arizona",
+      teamAbbr: "UTA",
+      seasonId: "20232024",
+      teamId: "68",
+      sourceTeamId: 53,
+      standingsAbbr: "ARI",
+      sourceAbbr: "ARI",
+      sourceName: "Arizona Coyotes",
+    },
+    {
+      label: "current UTA alias over 2024-25 Utah Hockey Club",
+      teamAbbr: "UTA",
+      seasonId: "20242025",
+      teamId: "68",
+      sourceTeamId: 59,
+      standingsAbbr: "UTA",
+      sourceAbbr: "UTA",
+      sourceName: "Utah Hockey Club",
+    },
+    {
+      label: "current 2025-26 Utah Mammoth identity",
+      teamAbbr: "UTA",
+      seasonId: "20252026",
+      teamId: "68",
+      sourceTeamId: 68,
+      standingsAbbr: "UTA",
+      sourceAbbr: "UTA",
+      sourceName: "Utah Mammoth",
+    },
+  ])(
+    "resolves $label without weakening the requested pair",
+    async ({
+      teamAbbr,
+      seasonId,
+      teamId,
+      sourceTeamId,
+      standingsAbbr,
+      sourceAbbr,
+      sourceName,
+    }) => {
+      useCurrentSeasonQueryMock.mockReturnValue(pendingSeasonQuery());
+      const numericSeasonId = Number(seasonId);
+      const gameId = numericSeasonId * 10000 + 1;
+      const queries = installTableResults({
+        games: [
+          {
+            data: [
+              gameFixture({
+                id: gameId,
+                seasonId: numericSeasonId,
+                homeTeamId: sourceTeamId,
+              }),
+            ],
+            error: null,
+          },
+        ],
+        teamGameStats: [
+          {
+            data: [
+              { gameId, teamId: sourceTeamId, score: 4 },
+              { gameId, teamId: 6, score: 2 },
+            ],
+            error: null,
+          },
+        ],
+        nhl_standings_details: [emptyResult],
+      });
+
+      const { result } = renderHook(() =>
+        useTeamSchedule(teamAbbr, seasonId, teamId),
+      );
+
+      expect(result.current.scheduleTeam).toEqual({
+        id: sourceTeamId,
+        abbreviation: sourceAbbr,
+      });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      expect(queries.games[0].or).toHaveBeenCalledWith(
+        `homeTeamId.eq.${sourceTeamId},awayTeamId.eq.${sourceTeamId}`,
+      );
+      expect(queries.nhl_standings_details[0].eq).toHaveBeenNthCalledWith(
+        2,
+        "team_abbrev",
+        standingsAbbr,
+      );
+      expect(result.current.games[0].homeTeam).toMatchObject({
+        id: sourceTeamId,
+        abbrev: sourceAbbr,
+        placeName: { default: sourceName },
+      });
+      expect(result.current.scheduleTeam).toEqual({
+        id: sourceTeamId,
+        abbreviation: sourceAbbr,
+      });
+      expect(result.current.games[0].homeTeamScore).toBe(4);
+      expect(result.current.games[0].awayTeamScore).toBe(2);
+      expect(result.current.games[0].gameState).toBe("FINAL");
+    },
+  );
+
+  it("labels a relocated historical opponent with its season identity", async () => {
+    useCurrentSeasonQueryMock.mockReturnValue(pendingSeasonQuery());
+    installTableResults({
+      games: [
+        {
+          data: [
+            gameFixture({
+              seasonId: 20232024,
+              homeTeamId: 22,
+              awayTeamId: 53,
+            }),
+          ],
+          error: null,
+        },
+      ],
+      teamGameStats: [emptyResult],
+      nhl_standings_details: [emptyResult],
+    });
+
+    const { result } = renderHook(() =>
+      useTeamSchedule("EDM", "20232024", "22"),
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.games[0].awayTeam).toMatchObject({
+      id: 53,
+      abbrev: "ARI",
+      placeName: { default: "Arizona Coyotes" },
+    });
+  });
 
   it("does not refetch an explicit season when current-season status settles", async () => {
     let seasonQuery: SeasonQueryState = pendingSeasonQuery();
@@ -463,6 +607,7 @@ describe("useTeamSchedule", () => {
       loading: true,
       error: null,
       record: null,
+      scheduleTeam: { id: 22, abbreviation: "EDM" },
     });
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(queries.nhl_standings_details[1].lte).toHaveBeenCalledWith(
@@ -616,6 +761,7 @@ describe("useTeamSchedule", () => {
       loading: true,
       error: null,
       record: null,
+      scheduleTeam: { id: 6, abbreviation: "BOS" },
     });
 
     act(() => nextGames.resolve(emptyResult));
@@ -634,6 +780,7 @@ describe("useTeamSchedule", () => {
       loading: false,
       error: null,
       record: null,
+      scheduleTeam: { id: 6, abbreviation: "BOS" },
     });
   });
 

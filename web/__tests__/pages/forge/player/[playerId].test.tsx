@@ -21,6 +21,7 @@ const routerState = vi.hoisted(
   }),
 );
 const useTeamScheduleMock = vi.hoisted(() => vi.fn());
+const useScheduleMock = vi.hoisted(() => vi.fn());
 const getLatestStartedSeasonForDateMock = vi.hoisted(() => vi.fn());
 
 vi.mock("next/head", () => ({
@@ -32,27 +33,7 @@ vi.mock("next/router", () => ({
 }));
 
 vi.mock("components/GameGrid/utils/useSchedule", () => ({
-  default: () => [
-    [
-      {
-        teamId: 1,
-        SAT: {
-          id: 10,
-          gameType: 2,
-          homeTeam: { id: 1 },
-          awayTeam: { id: 2 },
-        },
-        SUN: {
-          id: 11,
-          gameType: 2,
-          homeTeam: { id: 3 },
-          awayTeam: { id: 1 },
-        },
-      },
-    ],
-    [10, 10, 10, 10, 10, 4, 4],
-    false,
-  ],
+  default: useScheduleMock,
 }));
 
 vi.mock("hooks/useTeamSchedule", () => ({
@@ -80,6 +61,43 @@ const scheduleResult = {
   error: null,
 };
 
+const currentWeekScheduleResult = [
+  [
+    {
+      teamId: 1,
+      SAT: {
+        id: 10,
+        season: 20252026,
+        gameType: 2,
+        homeTeam: { id: 1 },
+        awayTeam: { id: 2 },
+      },
+      SUN: {
+        id: 11,
+        season: 20252026,
+        gameType: 2,
+        homeTeam: { id: 3 },
+        awayTeam: { id: 1 },
+      },
+    },
+  ],
+  [10, 10, 10, 10, 10, 4, 4],
+  false,
+] as const;
+
+const njdTeamIdentity = {
+  source: {
+    id: 1,
+    abbreviation: "NJD",
+    name: "New Jersey Devils",
+  },
+  canonical: {
+    id: 1,
+    abbreviation: "NJD",
+    name: "New Jersey Devils",
+  },
+};
+
 function jsonResponse(
   data: unknown,
   ok = true,
@@ -103,6 +121,8 @@ describe("FORGE player detail page", () => {
     };
     useTeamScheduleMock.mockReset();
     useTeamScheduleMock.mockReturnValue(scheduleResult);
+    useScheduleMock.mockReset();
+    useScheduleMock.mockReturnValue(currentWeekScheduleResult);
     getLatestStartedSeasonForDateMock.mockReset();
   });
 
@@ -116,11 +136,16 @@ describe("FORGE player detail page", () => {
       if (url.includes("/api/v1/forge/players")) {
         return jsonResponse({
           asOfDate: "2026-03-14",
+          requestedDate: "2026-03-14",
+          requestedSeasonId: 20252026,
+          resolvedSeasonId: 20252026,
+          horizonGames: 1,
           data: [
             {
               player_id: 88,
               player_name: "Top Add",
               team_name: "New Jersey Devils",
+              teamIdentity: njdTeamIdentity,
               position: "C",
               pts: 2.7,
               ppp: 0.8,
@@ -212,6 +237,313 @@ describe("FORGE player detail page", () => {
     expect(screen.getByText("Schedule season: 20252026")).toBeTruthy();
   });
 
+  it.each([
+    {
+      date: "2024-03-14",
+      seasonId: "20232024",
+      source: { id: 53, abbreviation: "ARI", name: "Arizona Coyotes" },
+    },
+    {
+      date: "2025-03-14",
+      seasonId: "20242025",
+      source: { id: 59, abbreviation: "UTA", name: "Utah Hockey Club" },
+    },
+    {
+      date: "2026-03-14",
+      seasonId: "20252026",
+      source: { id: 68, abbreviation: "UTA", name: "Utah Mammoth" },
+    },
+  ])(
+    "preserves $source.name display identity while routing through canonical UTA/68",
+    async ({ date, seasonId, source }) => {
+      routerState.query = {
+        playerId: "88",
+        date,
+        mode: "tonight",
+      };
+      useTeamScheduleMock.mockReturnValue({
+        games: [
+          {
+            id: 3,
+            gameDate: date,
+            homeTeam: { id: source.id, abbrev: source.abbreviation },
+            awayTeam: { id: 6, abbrev: "BOS" },
+          },
+        ],
+        loading: false,
+        error: null,
+        scheduleTeam: source,
+      });
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (input: RequestInfo | URL) => {
+          const url = String(input);
+          if (url.includes("/api/v1/forge/players")) {
+            return jsonResponse({
+              asOfDate: date,
+              requestedDate: date,
+              requestedSeasonId: Number(seasonId),
+              resolvedSeasonId: Number(seasonId),
+              horizonGames: 1,
+              data: [
+                {
+                  player_id: 88,
+                  player_name: "Relocated Player",
+                  team_name: source.name,
+                  teamIdentity: {
+                    source,
+                    canonical: {
+                      id: 68,
+                      abbreviation: "UTA",
+                      name: "Utah Mammoth",
+                    },
+                  },
+                  position: "C",
+                  pts: 2.1,
+                  ppp: 0.4,
+                  sog: 3.2,
+                  hit: 0.5,
+                  blk: 0.3,
+                  uncertainty: 0.2,
+                },
+              ],
+            });
+          }
+          if (url.includes("/api/v1/transactions/ownership-snapshots")) {
+            return jsonResponse({ players: [] });
+          }
+          if (url.includes("/api/v1/transactions/ownership-trends")) {
+            return jsonResponse({
+              success: true,
+              selectedPlayers: [],
+              risers: [],
+              fallers: [],
+            });
+          }
+          return jsonResponse({}, false);
+        }),
+      );
+
+      render(<ForgePlayerDetailPage scheduleSeasonId={seasonId} />);
+
+      expect(await screen.findByText("Relocated Player")).toBeTruthy();
+      expect(screen.getByText(source.name)).toBeTruthy();
+      expect(screen.getByText("vs BOS")).toBeTruthy();
+      expect(useTeamScheduleMock).toHaveBeenCalledWith(
+        "UTA",
+        seasonId,
+        "68",
+        date,
+      );
+    },
+  );
+
+  it("validates fallback projection identity against the resolved season while scheduling the requested season", async () => {
+    routerState.query = {
+      playerId: "88",
+      date: "2025-03-14",
+      mode: "tonight",
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/v1/forge/players")) {
+          return jsonResponse({
+            asOfDate: "2024-03-14",
+            requestedDate: "2025-03-14",
+            requestedSeasonId: 20242025,
+            resolvedSeasonId: 20232024,
+            horizonGames: 1,
+            data: [
+              {
+                player_id: 88,
+                player_name: "Fallback Arizona Player",
+                team_name: "Arizona Coyotes",
+                teamIdentity: {
+                  source: {
+                    id: 53,
+                    abbreviation: "ARI",
+                    name: "Arizona Coyotes",
+                  },
+                  canonical: {
+                    id: 68,
+                    abbreviation: "UTA",
+                    name: "Utah Mammoth",
+                  },
+                },
+                position: "C",
+                pts: 2.1,
+                ppp: 0.4,
+                sog: 3.2,
+                hit: 0.5,
+                blk: 0.3,
+                uncertainty: 0.2,
+              },
+            ],
+          });
+        }
+        if (url.includes("/api/v1/transactions/ownership-trends")) {
+          return jsonResponse({ success: true, selectedPlayers: [] });
+        }
+        if (url.includes("/api/v1/transactions/ownership-snapshots")) {
+          return jsonResponse({ players: [] });
+        }
+        return jsonResponse({}, false);
+      }),
+    );
+
+    render(<ForgePlayerDetailPage scheduleSeasonId="20242025" />);
+
+    expect(await screen.findByText("Fallback Arizona Player")).toBeTruthy();
+    expect(screen.getByText("Arizona Coyotes")).toBeTruthy();
+    expect(useTeamScheduleMock).toHaveBeenCalledWith(
+      "UTA",
+      "20242025",
+      "68",
+      "2025-03-14",
+    );
+  });
+
+  it("rejects a source identity from the wrong resolved season", async () => {
+    routerState.query = {
+      playerId: "88",
+      date: "2025-03-14",
+      mode: "tonight",
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/v1/forge/players")) {
+          return jsonResponse({
+            asOfDate: "2025-03-14",
+            requestedDate: "2025-03-14",
+            requestedSeasonId: 20242025,
+            resolvedSeasonId: 20242025,
+            horizonGames: 1,
+            data: [
+              {
+                player_id: 88,
+                player_name: "Wrong Era Player",
+                team_name: "Arizona Coyotes",
+                teamIdentity: {
+                  source: {
+                    id: 53,
+                    abbreviation: "ARI",
+                    name: "Arizona Coyotes",
+                  },
+                  canonical: {
+                    id: 68,
+                    abbreviation: "UTA",
+                    name: "Utah Mammoth",
+                  },
+                },
+                position: "C",
+                pts: 2.1,
+                ppp: 0.4,
+                sog: 3.2,
+                hit: 0.5,
+                blk: 0.3,
+                uncertainty: 0.2,
+              },
+            ],
+          });
+        }
+        if (url.includes("/api/v1/transactions/ownership-trends")) {
+          return jsonResponse({ success: true, selectedPlayers: [] });
+        }
+        if (url.includes("/api/v1/transactions/ownership-snapshots")) {
+          return jsonResponse({ players: [] });
+        }
+        return jsonResponse({}, false);
+      }),
+    );
+
+    render(<ForgePlayerDetailPage scheduleSeasonId="20242025" />);
+
+    expect(await screen.findByText("Wrong Era Player")).toBeTruthy();
+    expect(useTeamScheduleMock).toHaveBeenLastCalledWith(
+      "",
+      "20242025",
+      undefined,
+      "2025-03-14",
+    );
+    expect(screen.queryByRole("link", { name: "Team Detail" })).toBeNull();
+  });
+
+  it("fails route and schedule identity closed when structured identity is mismatched", async () => {
+    routerState.query = {
+      playerId: "88",
+      date: "2024-03-14",
+      mode: "tonight",
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/v1/forge/players")) {
+          return jsonResponse({
+            asOfDate: "2024-03-14",
+            requestedDate: "2024-03-14",
+            requestedSeasonId: 20232024,
+            resolvedSeasonId: 20232024,
+            horizonGames: 1,
+            data: [
+              {
+                player_id: 88,
+                player_name: "Invalid Identity",
+                team_name: "Arizona Coyotes",
+                teamIdentity: {
+                  source: {
+                    id: 53,
+                    abbreviation: "ARI",
+                    name: "Arizona Coyotes",
+                  },
+                  canonical: {
+                    id: 1,
+                    abbreviation: "NJD",
+                    name: "New Jersey Devils",
+                  },
+                },
+                position: "C",
+                pts: 2.1,
+                ppp: 0.4,
+                sog: 3.2,
+                hit: 0.5,
+                blk: 0.3,
+                uncertainty: 0.2,
+              },
+            ],
+          });
+        }
+        if (url.includes("/api/v1/transactions/ownership-snapshots")) {
+          return jsonResponse({ players: [] });
+        }
+        if (url.includes("/api/v1/transactions/ownership-trends")) {
+          return jsonResponse({
+            success: true,
+            selectedPlayers: [],
+            risers: [],
+            fallers: [],
+          });
+        }
+        return jsonResponse({}, false);
+      }),
+    );
+
+    render(<ForgePlayerDetailPage scheduleSeasonId="20232024" />);
+
+    expect(await screen.findByText("Invalid Identity")).toBeTruthy();
+    expect(useTeamScheduleMock).toHaveBeenLastCalledWith(
+      "",
+      "20232024",
+      undefined,
+      "2024-03-14",
+    );
+    expect(screen.queryByRole("link", { name: "Team Detail" })).toBeNull();
+  });
+
   it("uses the requested route date instead of resolved or projection dates", async () => {
     routerState.query.resolvedDate = "2026-03-13";
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
@@ -219,11 +551,16 @@ describe("FORGE player detail page", () => {
       if (url.includes("/api/v1/forge/players")) {
         return jsonResponse({
           asOfDate: "2026-03-12",
+          requestedDate: "2026-03-14",
+          requestedSeasonId: 20252026,
+          resolvedSeasonId: 20252026,
+          horizonGames: 1,
           data: [
             {
               player_id: 88,
               player_name: "Top Add",
               team_name: "New Jersey Devils",
+              teamIdentity: njdTeamIdentity,
               position: "C",
               pts: 2.7,
               ppp: 0.8,
@@ -279,11 +616,16 @@ describe("FORGE player detail page", () => {
       if (url.includes("/api/v1/forge/players")) {
         return jsonResponse({
           asOfDate: "2026-03-12",
+          requestedDate: "2026-03-14",
+          requestedSeasonId: 20252026,
+          resolvedSeasonId: 20252026,
+          horizonGames: 1,
           data: [
             {
               player_id: 88,
               player_name: "Top Add",
               team_name: "New Jersey Devils",
+              teamIdentity: njdTeamIdentity,
               position: "C",
               pts: 2.7,
               ppp: 0.8,
@@ -333,11 +675,16 @@ describe("FORGE player detail page", () => {
       if (url.includes("/api/v1/forge/players")) {
         return jsonResponse({
           asOfDate: "2026-03-14",
+          requestedDate: "2026-03-14",
+          requestedSeasonId: 20252026,
+          resolvedSeasonId: 20252026,
+          horizonGames: 5,
           data: [
             {
               player_id: 88,
               player_name: "Top Add",
               team_name: "New Jersey Devils",
+              teamIdentity: njdTeamIdentity,
               position: "C",
               pts: 2.7,
               ppp: 0.8,
@@ -374,6 +721,213 @@ describe("FORGE player detail page", () => {
         String(input).includes("horizon=5"),
       ),
     ).toBe(true);
+  });
+
+  it("masks a prior same-season week until the selected-date schedule settles", async () => {
+    routerState.query = {
+      playerId: "88",
+      date: "2026-03-14",
+      mode: "week",
+    };
+    let selectedScheduleResult: unknown = currentWeekScheduleResult;
+    useScheduleMock.mockImplementation(() => selectedScheduleResult);
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/forge/players")) {
+        const requestedDate = new URL(url, "http://localhost").searchParams.get(
+          "date",
+        );
+        return jsonResponse({
+          asOfDate: requestedDate,
+          requestedDate,
+          requestedSeasonId: 20252026,
+          resolvedSeasonId: 20252026,
+          horizonGames: 5,
+          data: [
+            {
+              player_id: 88,
+              player_name: `Week ${requestedDate}`,
+              team_name: "New Jersey Devils",
+              teamIdentity: njdTeamIdentity,
+              position: "C",
+              pts: 2.7,
+              ppp: 0.8,
+              sog: 3.6,
+              hit: 0.4,
+              blk: 0.2,
+              uncertainty: 0.3,
+            },
+          ],
+        });
+      }
+      if (url.includes("/api/v1/transactions/ownership-snapshots")) {
+        return jsonResponse({ players: [{ playerId: 88, ownership: 42 }] });
+      }
+      if (url.includes("/api/v1/transactions/ownership-trends")) {
+        return jsonResponse({
+          success: true,
+          selectedPlayers: [
+            { playerId: 88, latest: 42, delta: 5, sparkline: [] },
+          ],
+        });
+      }
+      return jsonResponse({}, false);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { rerender } = render(
+      <ForgePlayerDetailPage scheduleSeasonId="20252026" />,
+    );
+
+    expect(
+      await screen.findByText(/Weekly stream mode • 2G • 2 off/),
+    ).toBeTruthy();
+
+    selectedScheduleResult = [
+      currentWeekScheduleResult[0],
+      currentWeekScheduleResult[1],
+      true,
+    ];
+    routerState.query = {
+      playerId: "88",
+      date: "2026-03-21",
+      mode: "week",
+    };
+    rerender(<ForgePlayerDetailPage scheduleSeasonId="20252026" />);
+
+    expect(await screen.findByText("Week 2026-03-21")).toBeTruthy();
+    expect(screen.queryByText(/Weekly stream mode • 2G • 2 off/)).toBeNull();
+
+    selectedScheduleResult = [
+      [
+        {
+          teamId: 1,
+          SUN: {
+            id: 13,
+            season: 20252026,
+            gameType: 2,
+            homeTeam: { id: 1 },
+            awayTeam: { id: 2 },
+          },
+        },
+      ],
+      [10, 10, 10, 10, 10, 10, 4],
+      false,
+    ];
+    rerender(<ForgePlayerDetailPage scheduleSeasonId="20252026" />);
+
+    expect(
+      await screen.findByText(/Weekly stream mode • 1G • 1 off/),
+    ).toBeTruthy();
+    expect(useScheduleMock).toHaveBeenCalledWith("2026-03-09", false);
+    expect(useScheduleMock).toHaveBeenCalledWith("2026-03-16", false);
+  });
+
+  it("uses the historical Arizona source schedule for 2023-24 weekly scoring", async () => {
+    const date = "2024-03-14";
+    routerState.query = {
+      playerId: "88",
+      date,
+      mode: "week",
+    };
+    useScheduleMock.mockReturnValue([
+      [
+        {
+          teamId: 53,
+          FRI: {
+            id: 12,
+            season: 20232024,
+            gameType: 2,
+            homeTeam: { id: 53 },
+            awayTeam: { id: 6 },
+          },
+        },
+      ],
+      [12, 12, 12, 12, 7, 12, 12],
+      false,
+    ]);
+    useTeamScheduleMock.mockReturnValue({
+      games: [
+        {
+          id: 12,
+          gameDate: "2024-03-15",
+          homeTeam: { id: 53, abbrev: "ARI" },
+          awayTeam: { id: 6, abbrev: "BOS" },
+        },
+      ],
+      loading: false,
+      error: null,
+      scheduleTeam: {
+        id: 53,
+        abbreviation: "ARI",
+        name: "Arizona Coyotes",
+      },
+    });
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/forge/players")) {
+        return jsonResponse({
+          asOfDate: date,
+          requestedDate: date,
+          requestedSeasonId: 20232024,
+          resolvedSeasonId: 20232024,
+          horizonGames: 5,
+          data: [
+            {
+              player_id: 88,
+              player_name: "Historical Streamer",
+              team_name: "Arizona Coyotes",
+              teamIdentity: {
+                source: {
+                  id: 53,
+                  abbreviation: "ARI",
+                  name: "Arizona Coyotes",
+                },
+                canonical: {
+                  id: 68,
+                  abbreviation: "UTA",
+                  name: "Utah Mammoth",
+                },
+              },
+              position: "C",
+              pts: 2.7,
+              ppp: 0.8,
+              sog: 3.6,
+              hit: 0.4,
+              blk: 0.2,
+              uncertainty: 0.3,
+            },
+          ],
+        });
+      }
+      if (url.includes("/api/v1/transactions/ownership-snapshots")) {
+        return jsonResponse({ players: [{ playerId: 88, ownership: 42 }] });
+      }
+      if (url.includes("/api/v1/transactions/ownership-trends")) {
+        return jsonResponse({
+          success: true,
+          selectedPlayers: [
+            { playerId: 88, latest: 42, delta: 5, sparkline: [] },
+          ],
+        });
+      }
+      return jsonResponse({}, false);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ForgePlayerDetailPage scheduleSeasonId="20232024" />);
+
+    expect(await screen.findByText("Historical Streamer")).toBeTruthy();
+    expect(screen.getByText("Arizona Coyotes")).toBeTruthy();
+    expect(screen.getByText(/Weekly stream mode • 1G • 1 off/)).toBeTruthy();
+    expect(screen.getByText("vs BOS")).toBeTruthy();
+    expect(useScheduleMock).toHaveBeenCalledWith("2024-03-11", false);
+    expect(useTeamScheduleMock).toHaveBeenCalledWith(
+      "UTA",
+      "20232024",
+      "68",
+      date,
+    );
   });
 
   it("resolves the persisted schedule season from the exact requested route date", async () => {

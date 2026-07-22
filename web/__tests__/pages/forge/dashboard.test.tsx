@@ -57,6 +57,8 @@ function emptyForgePlayersResponse(date = "2026-02-07") {
   return {
     asOfDate: date,
     requestedDate: date,
+    requestedSeasonId: 20252026,
+    resolvedSeasonId: 20252026,
     horizonGames: 1,
     data: []
   };
@@ -389,11 +391,18 @@ describe("Forge dashboard render states", () => {
         return jsonResponse({
           asOfDate: "2026-02-07",
           requestedDate: "2026-02-07",
+          requestedSeasonId: 20252026,
+          resolvedSeasonId: 20252026,
+          horizonGames: 1,
           data: [
             {
               player_id: 100,
               player_name: "Same Name",
-              team_name: "NJD",
+              team_name: "New Jersey Devils",
+              teamIdentity: {
+                source: { id: 1, abbreviation: "NJD", name: "New Jersey Devils" },
+                canonical: { id: 1, abbreviation: "NJD", name: "New Jersey Devils" }
+              },
               position: "C",
               pts: 2,
               ppp: 0,
@@ -1333,12 +1342,18 @@ describe("Forge dashboard render states", () => {
         return jsonResponse({
           asOfDate: "2026-02-07",
           requestedDate: "2026-02-07",
+          requestedSeasonId: 20252026,
+          resolvedSeasonId: 20252026,
           horizonGames: url.includes("horizon=5") ? 5 : 1,
           data: [
             {
               player_id: 11,
               player_name: "Mason Lohrei",
               team_name: "Boston Bruins",
+              teamIdentity: {
+                source: { id: 6, abbreviation: "BOS", name: "Boston Bruins" },
+                canonical: { id: 6, abbreviation: "BOS", name: "Boston Bruins" }
+              },
               position: "D",
               pts: 2.4,
               ppp: 0.6,
@@ -1351,6 +1366,10 @@ describe("Forge dashboard render states", () => {
               player_id: 12,
               player_name: "Leo Carlsson",
               team_name: "Anaheim Ducks",
+              teamIdentity: {
+                source: { id: 24, abbreviation: "ANA", name: "Anaheim Ducks" },
+                canonical: { id: 24, abbreviation: "ANA", name: "Anaheim Ducks" }
+              },
               position: "C",
               pts: 2.1,
               ppp: 0.4,
@@ -1363,6 +1382,18 @@ describe("Forge dashboard render states", () => {
               player_id: 13,
               player_name: "Victor Olofsson",
               team_name: "Vegas Golden Knights",
+              teamIdentity: {
+                source: {
+                  id: 54,
+                  abbreviation: "VGK",
+                  name: "Vegas Golden Knights"
+                },
+                canonical: {
+                  id: 54,
+                  abbreviation: "VGK",
+                  name: "Vegas Golden Knights"
+                }
+              },
               position: "LW",
               pts: 1.8,
               ppp: 0.5,

@@ -3,10 +3,10 @@ import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
 import supabase from "lib/supabase";
 import { isRealUtcDateOnly } from "lib/dashboard/forgeLinks";
 import {
-  getTeamAbbreviationById,
-  getTeamInfoById,
-  teamsInfo,
-} from "lib/teamsInfo";
+  resolveScheduleGameTeamIdentity,
+  resolveScheduleTeamSelection,
+} from "lib/NHL/seasonAwareScheduleTeam";
+import { teamsInfo } from "lib/teamsInfo";
 
 export interface ScheduleGame {
   id: number;
@@ -88,6 +88,7 @@ type ScheduleResolution =
       identity: string;
       error: null;
       teamId: number;
+      teamAbbreviation: string;
       seasonId: number;
       recordAsOfDate: string | null;
       recordAsOfDateIsValid: boolean;
@@ -198,6 +199,25 @@ function buildScheduleResolution({
     };
   }
 
+  const teamSelection = resolveScheduleTeamSelection(
+    teamAbbr,
+    parsedTeamId,
+    parsedSeasonId,
+  );
+  if (!teamSelection) {
+    return {
+      kind: "terminal",
+      identity: JSON.stringify([
+        "invalid-team-season",
+        teamAbbr,
+        parsedTeamId,
+        parsedSeasonId,
+        recordDateIdentity,
+      ]),
+      error: TEAM_SELECTION_ERROR,
+    };
+  }
+
   const recordAsOfDateIsValid =
     recordAsOfDate === undefined || isRealUtcDateOnly(recordAsOfDate);
 
@@ -205,12 +225,14 @@ function buildScheduleResolution({
     kind: "ready",
     identity: JSON.stringify([
       teamAbbr,
-      parsedTeamId,
+      teamSelection.source.id,
+      teamSelection.source.abbreviation,
       parsedSeasonId,
       recordDateIdentity,
     ]),
     error: null,
-    teamId: parsedTeamId,
+    teamId: teamSelection.source.id,
+    teamAbbreviation: teamSelection.source.abbreviation,
     seasonId: parsedSeasonId,
     recordAsOfDate:
       recordAsOfDateIsValid && recordAsOfDate !== undefined
@@ -248,6 +270,8 @@ export const useTeamSchedule = (
   const terminalError = resolution.error;
   const validatedTeamId =
     resolution.kind === "ready" ? resolution.teamId : null;
+  const validatedTeamAbbreviation =
+    resolution.kind === "ready" ? resolution.teamAbbreviation : null;
   const validatedSeasonId =
     resolution.kind === "ready" ? resolution.seasonId : null;
   const validatedRecordAsOfDate =
@@ -261,6 +285,7 @@ export const useTeamSchedule = (
     if (
       resolutionKind !== "ready" ||
       validatedTeamId === null ||
+      validatedTeamAbbreviation === null ||
       validatedSeasonId === null
     ) {
       setState({
@@ -312,13 +337,15 @@ export const useTeamSchedule = (
         // Transform database games to match the expected interface
         const transformedGames: ScheduleGame[] = (gamesData || []).map(
           (game) => {
-            // Get proper team info using the teamsInfo functions
-            const homeTeamInfo = getTeamInfoById(game.homeTeamId);
-            const awayTeamInfo = getTeamInfoById(game.awayTeamId);
-            const homeTeamAbbrev =
-              getTeamAbbreviationById(game.homeTeamId) || `T${game.homeTeamId}`;
-            const awayTeamAbbrev =
-              getTeamAbbreviationById(game.awayTeamId) || `T${game.awayTeamId}`;
+            const gameSeasonId = Number(game.seasonId);
+            const homeTeamInfo = resolveScheduleGameTeamIdentity(
+              game.homeTeamId,
+              gameSeasonId,
+            );
+            const awayTeamInfo = resolveScheduleGameTeamIdentity(
+              game.awayTeamId,
+              gameSeasonId,
+            );
 
             return {
               id: Number(game.id),
@@ -339,7 +366,8 @@ export const useTeamSchedule = (
                 placeName: {
                   default: homeTeamInfo?.name || `Team ${game.homeTeamId}`,
                 },
-                abbrev: homeTeamAbbrev,
+                abbrev:
+                  homeTeamInfo?.abbreviation || `T${game.homeTeamId}`,
                 logo: "",
                 darkLogo: "",
               },
@@ -348,7 +376,8 @@ export const useTeamSchedule = (
                 placeName: {
                   default: awayTeamInfo?.name || `Team ${game.awayTeamId}`,
                 },
-                abbrev: awayTeamAbbrev,
+                abbrev:
+                  awayTeamInfo?.abbreviation || `T${game.awayTeamId}`,
                 logo: "",
                 darkLogo: "",
               },
@@ -372,11 +401,13 @@ export const useTeamSchedule = (
             transformedGames.forEach((game) => {
               const homeStats = gameStatsData?.find(
                 (stat) =>
-                  stat.gameId === game.id && stat.teamId === game.homeTeam.id,
+                  stat.gameId === game.id &&
+                  stat.teamId === game.homeTeam.id,
               );
               const awayStats = gameStatsData?.find(
                 (stat) =>
-                  stat.gameId === game.id && stat.teamId === game.awayTeam.id,
+                  stat.gameId === game.id &&
+                  stat.teamId === game.awayTeam.id,
               );
 
               if (homeStats && awayStats) {
@@ -401,7 +432,7 @@ export const useTeamSchedule = (
               "date,wins,losses,ot_losses,points,regulation_wins,regulation_plus_ot_wins,shootout_wins",
             )
             .eq("season_id", validatedSeasonId)
-            .eq("team_abbrev", teamAbbr);
+            .eq("team_abbrev", validatedTeamAbbreviation);
 
           if (validatedRecordAsOfDate !== null) {
             standingsQuery = standingsQuery.lte(
@@ -475,17 +506,32 @@ export const useTeamSchedule = (
     requestIdentity,
     resolutionKind,
     terminalError,
-    teamAbbr,
     validatedSeasonId,
     validatedTeamId,
+    validatedTeamAbbreviation,
     validatedRecordAsOfDate,
     recordAsOfDateIsValid,
   ]);
 
   const ownsCurrentIdentity = state.identity === requestIdentity;
+  const scheduleTeam =
+    resolutionKind === "ready" &&
+    validatedTeamId !== null &&
+    validatedTeamAbbreviation !== null
+      ? {
+          id: validatedTeamId,
+          abbreviation: validatedTeamAbbreviation,
+        }
+      : null;
 
   if (resolutionKind === "pending") {
-    return { games: [], loading: true, error: null, record: null };
+    return {
+      games: [],
+      loading: true,
+      error: null,
+      record: null,
+      scheduleTeam: null,
+    };
   }
 
   if (resolutionKind === "terminal") {
@@ -494,6 +540,7 @@ export const useTeamSchedule = (
       loading: false,
       error: terminalError,
       record: null,
+      scheduleTeam: null,
     };
   }
 
@@ -503,6 +550,13 @@ export const useTeamSchedule = (
         loading: state.loading,
         error: state.error,
         record: state.record,
+        scheduleTeam,
       }
-    : { games: [], loading: true, error: null, record: null };
+    : {
+        games: [],
+        loading: true,
+        error: null,
+        record: null,
+        scheduleTeam,
+      };
 };

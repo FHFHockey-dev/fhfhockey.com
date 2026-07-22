@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { format, parseISO, startOfWeek } from "date-fns";
 
@@ -8,18 +8,21 @@ import { fetchCachedJson } from "lib/dashboard/clientFetchCache";
 import { buildForgeHref } from "lib/dashboard/forgeLinks";
 import {
   deriveYahooSeason,
-  fetchOwnershipSnapshotMap
+  fetchOwnershipSnapshotMap,
 } from "lib/dashboard/playerOwnership";
 import {
   rankTopAddsCandidates,
   type TopAddsCandidateInput,
-  type TopAddsMode
+  type TopAddsMode,
 } from "lib/dashboard/topAddsRanking";
 import {
   buildTopAddsScheduleContextMap,
-  type TopAddsScheduleContextMap
+  type TopAddsScheduleContextMap,
 } from "lib/dashboard/topAddsScheduleContext";
-import { teamsInfo } from "lib/teamsInfo";
+import {
+  type ProjectionTeamIdentity,
+  validateProjectionTeamIdentityForSeason,
+} from "lib/NHL/seasonAwareScheduleTeam";
 import styles from "styles/ForgeDashboard.module.scss";
 
 type TopAddsRailProps = {
@@ -46,12 +49,15 @@ type ProjectionRow = {
   hit: number;
   blk: number;
   uncertainty: unknown;
+  teamIdentity?: ProjectionTeamIdentity | null;
   degradedProjectionContext?: TopAddsCandidateInput["degradedProjectionContext"];
 };
 
 type ProjectionResponse = {
   asOfDate: string | null;
   requestedDate: string | null;
+  requestedSeasonId?: number | null;
+  resolvedSeasonId?: number | null;
   horizonGames: number;
   degradedProjectionSummary?: {
     degradedPlayerCount: number;
@@ -99,6 +105,8 @@ type OwnershipResponse = {
   fallers?: OwnershipTrendRow[];
 };
 
+type TopAddsScheduleState = "idle" | "pending" | "ready" | "unavailable";
+
 const DEFAULT_MIN_OWNERSHIP = 25;
 const DEFAULT_MAX_OWNERSHIP = 75;
 const MAX_VISIBLE_ADDS = 6;
@@ -107,7 +115,7 @@ const MAX_ADD_INSPECTORS = 2;
 
 function areScheduleMapsEqual(
   left: TopAddsScheduleContextMap,
-  right: TopAddsScheduleContextMap
+  right: TopAddsScheduleContextMap,
 ): boolean {
   const leftKeys = Object.keys(left);
   const rightKeys = Object.keys(right);
@@ -129,56 +137,98 @@ function areScheduleMapsEqual(
 
 function TopAddsWeekScheduleBridge({
   date,
-  onContextChange
+  seasonId,
+  onContextChange,
 }: {
   date: string;
+  seasonId: number | null;
   onContextChange: (payload: {
     contextMap: TopAddsScheduleContextMap;
-    loading: boolean;
+    state: Exclude<TopAddsScheduleState, "idle">;
   }) => void;
 }) {
   const weekStartDate = useMemo(
     () =>
-      format(
-        startOfWeek(parseISO(date), { weekStartsOn: 1 }),
-        "yyyy-MM-dd"
-      ),
-    [date]
+      format(startOfWeek(parseISO(date), { weekStartsOn: 1 }), "yyyy-MM-dd"),
+    [date],
   );
   const [weekSchedule, weekNumGamesPerDay, scheduleLoading] = useSchedule(
     weekStartDate,
-    false
+    false,
   );
+  const requestKey = weekStartDate;
+  const ownershipRef = useRef({
+    requestKey,
+    isInitialRequest: true,
+    observedLoading: false,
+  });
+
+  if (ownershipRef.current.requestKey !== requestKey) {
+    ownershipRef.current = {
+      requestKey,
+      isInitialRequest: false,
+      observedLoading: false,
+    };
+  }
+  if (scheduleLoading) {
+    ownershipRef.current.observedLoading = true;
+  }
+
+  const ownsCurrentSchedule =
+    seasonId !== null &&
+    !scheduleLoading &&
+    (ownershipRef.current.observedLoading ||
+      ownershipRef.current.isInitialRequest);
 
   useEffect(() => {
     onContextChange({
-      contextMap: buildTopAddsScheduleContextMap(
-        weekSchedule,
-        weekNumGamesPerDay,
-        date
-      ),
-      loading: scheduleLoading
+      contextMap: ownsCurrentSchedule
+        ? buildTopAddsScheduleContextMap(
+            weekSchedule,
+            weekNumGamesPerDay,
+            date,
+            seasonId,
+          )
+        : {},
+      state:
+        seasonId === null
+          ? "unavailable"
+          : ownsCurrentSchedule
+            ? "ready"
+            : "pending",
     });
-  }, [date, onContextChange, scheduleLoading, weekNumGamesPerDay, weekSchedule]);
+  }, [
+    date,
+    onContextChange,
+    ownsCurrentSchedule,
+    seasonId,
+    weekNumGamesPerDay,
+    weekSchedule,
+  ]);
 
   return null;
 }
 
-function resolveTeamAbbr(
-  teamAbbrev: string | null | undefined,
-  teamName: string | null | undefined
-): string | null {
-  if (teamAbbrev && teamAbbrev.trim().length > 0) {
-    return teamAbbrev.trim().toUpperCase();
+function resolveSelectedScheduleSeasonId(
+  response: ProjectionResponse | null,
+  selectedDate: string,
+  mode: TopAddsMode,
+): number | null {
+  const seasonId = response?.requestedSeasonId;
+  if (
+    response?.requestedDate !== selectedDate ||
+    response?.horizonGames !== (mode === "week" ? 5 : 1) ||
+    !Number.isSafeInteger(seasonId)
+  ) {
+    return null;
   }
 
-  const normalizedName = (teamName ?? "").trim().toLowerCase();
-  if (!normalizedName) return null;
-
-  const match = Object.values(teamsInfo).find(
-    (team) => team.name.toLowerCase() === normalizedName
-  );
-  return match?.abbrev ?? null;
+  const seasonText = String(seasonId);
+  const startYear = Number(seasonText.slice(0, 4));
+  const endYear = Number(seasonText.slice(4));
+  return /^\d{8}$/.test(seasonText) && endYear === startYear + 1
+    ? Number(seasonId)
+    : null;
 }
 
 function formatSigned(value: number | null | undefined, suffix = ""): string {
@@ -223,29 +273,40 @@ function extractUncertaintyPenalty(value: unknown): number | null {
     return null;
   }
 
-  const roleContinuity = (skaterSelection as Record<string, unknown>).role_continuity;
+  const roleContinuity = (skaterSelection as Record<string, unknown>)
+    .role_continuity;
   if (!roleContinuity || typeof roleContinuity !== "object") {
     return null;
   }
 
-  const volatilityIndex = (roleContinuity as Record<string, unknown>).volatility_index;
+  const volatilityIndex = (roleContinuity as Record<string, unknown>)
+    .volatility_index;
   return typeof volatilityIndex === "number" && Number.isFinite(volatilityIndex)
     ? volatilityIndex
     : null;
 }
 
-function matchesPosition(position: string | null | undefined, filter: TopAddsRailProps["position"]): boolean {
+function matchesPosition(
+  position: string | null | undefined,
+  filter: TopAddsRailProps["position"],
+): boolean {
   const normalized = (position ?? "").toUpperCase();
   if (filter === "all") return true;
-  if (filter === "f") return !normalized.includes("D") && !normalized.includes("G");
+  if (filter === "f")
+    return !normalized.includes("D") && !normalized.includes("G");
   if (filter === "d") return normalized.includes("D");
   if (filter === "g") return normalized.includes("G");
   return true;
 }
 
-function getOwnershipRows(response: OwnershipResponse | null): OwnershipTrendRow[] {
+function getOwnershipRows(
+  response: OwnershipResponse | null,
+): OwnershipTrendRow[] {
   if (!response) return [];
-  if (Array.isArray(response.selectedPlayers) && response.selectedPlayers.length > 0) {
+  if (
+    Array.isArray(response.selectedPlayers) &&
+    response.selectedPlayers.length > 0
+  ) {
     return response.selectedPlayers;
   }
   return [...(response.risers ?? []), ...(response.fallers ?? [])];
@@ -256,13 +317,15 @@ export default function TopAddsRail({
   position,
   positionLabel,
   onResolvedDate,
-  onStatusChange
+  onStatusChange,
 }: TopAddsRailProps) {
   const [mode, setMode] = useState<TopAddsMode>("tonight");
   const [minOwnership, setMinOwnership] = useState(DEFAULT_MIN_OWNERSHIP);
   const [maxOwnership, setMaxOwnership] = useState(DEFAULT_MAX_OWNERSHIP);
   const [projectionResponse, setProjectionResponse] =
     useState<ProjectionResponse | null>(null);
+  const [projectionResponseSelectionKey, setProjectionResponseSelectionKey] =
+    useState<string | null>(null);
   const [ownershipResponse, setOwnershipResponse] =
     useState<OwnershipResponse | null>(null);
   const [ownershipSnapshotMap, setOwnershipSnapshotMap] = useState<
@@ -270,32 +333,53 @@ export default function TopAddsRail({
   >({});
   const [scheduleContextMap, setScheduleContextMap] =
     useState<TopAddsScheduleContextMap>({});
-  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleState, setScheduleState] =
+    useState<TopAddsScheduleState>("idle");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const expectedHorizon = mode === "week" ? 5 : 1;
+  const projectionSelectionKey = `${date}:${expectedHorizon}:${position}`;
+  const activeProjectionResponse =
+    projectionResponseSelectionKey === projectionSelectionKey
+      ? projectionResponse
+      : null;
+  const projectionSelectionPending =
+    projectionResponseSelectionKey !== projectionSelectionKey;
   const handleWeekContextChange = useCallback(
     ({
       contextMap,
-      loading: loadingValue
+      state,
     }: {
       contextMap: TopAddsScheduleContextMap;
-      loading: boolean;
+      state: Exclude<TopAddsScheduleState, "idle">;
     }) => {
       setScheduleContextMap((current) =>
-        areScheduleMapsEqual(current, contextMap) ? current : contextMap
+        areScheduleMapsEqual(current, contextMap) ? current : contextMap,
       );
-      setScheduleLoading((current) =>
-        current === loadingValue ? current : loadingValue
-      );
+      setScheduleState((current) => (current === state ? current : state));
     },
-    []
+    [],
   );
+  const selectedScheduleSeasonId = resolveSelectedScheduleSeasonId(
+    activeProjectionResponse,
+    date,
+    mode,
+  );
+  const projectionResponseOwnsSelection =
+    activeProjectionResponse?.requestedDate === date &&
+    activeProjectionResponse.horizonGames === expectedHorizon;
+  const projectionContractError =
+    activeProjectionResponse && !projectionResponseOwnsSelection
+      ? "Projection response does not match the selected date and horizon."
+      : null;
+  const effectiveError = projectionSelectionPending
+    ? null
+    : (error ?? projectionContractError);
 
   useEffect(() => {
     if (mode !== "week") {
       setScheduleContextMap({});
-      setScheduleLoading(false);
-      return;
+      setScheduleState("idle");
     }
   }, [mode]);
 
@@ -315,25 +399,35 @@ export default function TopAddsRail({
     let active = true;
     setLoading(true);
     setError(null);
+    setOwnershipResponse(null);
+    setOwnershipSnapshotMap({});
 
     const projectionParams = new URLSearchParams();
     projectionParams.set("date", date);
-    projectionParams.set("horizon", mode === "tonight" ? "1" : "5");
+    projectionParams.set("horizon", String(expectedHorizon));
 
     fetchCachedJson<ProjectionResponse>(
       `/api/v1/forge/players?${projectionParams.toString()}`,
       {
-        ttlMs: 60_000
-      }
+        ttlMs: 60_000,
+      },
     )
       .then(async (projectionPayload) => {
         if (!active) return;
         setProjectionResponse(projectionPayload);
+        setProjectionResponseSelectionKey(projectionSelectionKey);
+
+        if (
+          projectionPayload.requestedDate !== date ||
+          projectionPayload.horizonGames !== expectedHorizon
+        ) {
+          return;
+        }
 
         if (projectionPayload.diagnostics?.state === "blocked") {
           setError(
             projectionPayload.diagnostics.message ??
-              "The requested projection horizon is unavailable."
+              "The requested projection horizon is unavailable.",
           );
           setOwnershipResponse(null);
           setOwnershipSnapshotMap({});
@@ -344,13 +438,13 @@ export default function TopAddsRail({
           new Set(
             (projectionPayload.data ?? [])
               .map((row) => row.player_id)
-              .filter((playerId) => Number.isFinite(playerId))
-          )
+              .filter((playerId) => Number.isFinite(playerId)),
+          ),
         );
 
         if (projectedPlayerIds.length === 0) {
           const ownershipParams = new URLSearchParams({
-            window: "5"
+            window: "5",
           });
           if (position !== "all") {
             ownershipParams.set("pos", position.toUpperCase());
@@ -358,8 +452,8 @@ export default function TopAddsRail({
           const ownershipPayload = await fetchCachedJson<OwnershipResponse>(
             `/api/v1/transactions/ownership-trends?${ownershipParams.toString()}`,
             {
-              ttlMs: 60_000
-            }
+              ttlMs: 60_000,
+            },
           );
           if (!active) return;
           setOwnershipResponse(ownershipPayload);
@@ -371,7 +465,7 @@ export default function TopAddsRail({
           window: "5",
           playerIds: projectedPlayerIds.join(","),
           season: String(deriveYahooSeason(date)),
-          includeFlat: "1"
+          includeFlat: "1",
         });
         if (position !== "all") {
           ownershipParams.set("pos", position.toUpperCase());
@@ -380,16 +474,18 @@ export default function TopAddsRail({
         const ownershipPayload = await fetchCachedJson<OwnershipResponse>(
           `/api/v1/transactions/ownership-trends?${ownershipParams.toString()}`,
           {
-            ttlMs: 60_000
-          }
+            ttlMs: 60_000,
+          },
         );
         const coveredPlayerIds = new Set(
           getOwnershipRows(ownershipPayload)
             .map((row) => row.playerId)
-            .filter((playerId): playerId is number => Number.isFinite(playerId))
+            .filter((playerId): playerId is number =>
+              Number.isFinite(playerId),
+            ),
         );
         const missingSnapshotIds = projectedPlayerIds.filter(
-          (playerId) => !coveredPlayerIds.has(playerId)
+          (playerId) => !coveredPlayerIds.has(playerId),
         );
         const snapshotMap =
           missingSnapshotIds.length > 0
@@ -408,6 +504,7 @@ export default function TopAddsRail({
             : "Failed to load top-adds rail.";
         setError(message);
         setProjectionResponse(null);
+        setProjectionResponseSelectionKey(projectionSelectionKey);
         setOwnershipResponse(null);
         setOwnershipSnapshotMap({});
       })
@@ -419,10 +516,12 @@ export default function TopAddsRail({
     return () => {
       active = false;
     };
-  }, [date, mode, position]);
+  }, [date, expectedHorizon, position, projectionSelectionKey]);
 
   const candidateInputs = useMemo(() => {
-    const projections = projectionResponse?.data ?? [];
+    const projections = projectionResponseOwnsSelection
+      ? (activeProjectionResponse?.data ?? [])
+      : [];
     const ownershipRows = getOwnershipRows(ownershipResponse);
     const ownershipByPlayerId = new Map<number, OwnershipTrendRow>();
 
@@ -433,61 +532,63 @@ export default function TopAddsRail({
     });
 
     return projections.flatMap<TopAddsCandidateInput>((row) => {
-        const ownershipRow = ownershipByPlayerId.get(row.player_id);
-        if (!matchesPosition(row.position, position)) return [];
+      const ownershipRow = ownershipByPlayerId.get(row.player_id);
+      if (!matchesPosition(row.position, position)) return [];
 
-        const ownership =
-          ownershipRow?.latest ?? ownershipSnapshotMap[row.player_id] ?? null;
-        if (ownership == null) return [];
-        if (ownership < minOwnership || ownership > maxOwnership) return [];
+      const teamIdentity = validateProjectionTeamIdentityForSeason(
+        row.teamIdentity,
+        activeProjectionResponse?.resolvedSeasonId ?? Number.NaN,
+      );
+      if (!teamIdentity) return [];
 
-        const teamAbbr = resolveTeamAbbr(
-          ownershipRow?.teamAbbrev ?? null,
-          row.team_name
-        );
-        const scheduleContext = teamAbbr
-          ? scheduleContextMap[teamAbbr]
-          : undefined;
+      const ownership =
+        ownershipRow?.latest ?? ownershipSnapshotMap[row.player_id] ?? null;
+      if (ownership == null) return [];
+      if (ownership < minOwnership || ownership > maxOwnership) return [];
 
-        const candidate: TopAddsCandidateInput = {
-          playerId: row.player_id,
-          name: row.player_name ?? ownershipRow?.name ?? `Player ${row.player_id}`,
-          team:
-            ownershipRow?.teamAbbrev ??
-            ownershipRow?.teamFullName ??
-            row.team_name,
-          teamAbbr,
-          position: row.position ?? ownershipRow?.displayPosition ?? null,
-          headshot: ownershipRow?.headshot ?? null,
-          ownership,
-          ownershipTimeline: ownershipRow?.sparkline ?? [],
-          delta: ownershipRow?.delta ?? 0,
-          projectionPts: row.pts ?? 0,
-          ppp: row.ppp ?? 0,
-          sog: row.sog ?? 0,
-          hit: row.hit ?? 0,
-          blk: row.blk ?? 0,
-          uncertainty: extractUncertaintyPenalty(row.uncertainty),
-          degradedProjectionContext: row.degradedProjectionContext ?? null,
-          scheduleGamesRemaining: scheduleContext?.gamesRemaining ?? null,
-          scheduleOffNightsRemaining: scheduleContext?.offNightsRemaining ?? null,
-          scheduleLabel: scheduleContext?.summaryLabel ?? null
-        };
+      const teamAbbr = teamIdentity.canonical.abbreviation;
+      const scheduleContext = scheduleContextMap[teamAbbr];
 
-        return [candidate];
-      });
+      const candidate: TopAddsCandidateInput = {
+        playerId: row.player_id,
+        name:
+          row.player_name ?? ownershipRow?.name ?? `Player ${row.player_id}`,
+        team: teamIdentity.source.name,
+        teamAbbr,
+        position: row.position ?? ownershipRow?.displayPosition ?? null,
+        headshot: ownershipRow?.headshot ?? null,
+        ownership,
+        ownershipTimeline: ownershipRow?.sparkline ?? [],
+        delta: ownershipRow?.delta ?? 0,
+        projectionPts: row.pts ?? 0,
+        ppp: row.ppp ?? 0,
+        sog: row.sog ?? 0,
+        hit: row.hit ?? 0,
+        blk: row.blk ?? 0,
+        uncertainty: extractUncertaintyPenalty(row.uncertainty),
+        degradedProjectionContext: row.degradedProjectionContext ?? null,
+        scheduleGamesRemaining: scheduleContext?.gamesRemaining ?? null,
+        scheduleOffNightsRemaining: scheduleContext?.offNightsRemaining ?? null,
+        scheduleLabel: scheduleContext?.summaryLabel ?? null,
+      };
+
+      return [candidate];
+    });
   }, [
     maxOwnership,
     minOwnership,
     ownershipResponse,
     ownershipSnapshotMap,
     position,
-    projectionResponse,
-    scheduleContextMap
+    activeProjectionResponse,
+    projectionResponseOwnsSelection,
+    scheduleContextMap,
   ]);
 
   const missingOwnershipCount = useMemo(() => {
-    const projections = projectionResponse?.data ?? [];
+    const projections = projectionResponseOwnsSelection
+      ? (activeProjectionResponse?.data ?? [])
+      : [];
     const ownershipByPlayerId = new Map<number, OwnershipTrendRow>();
 
     getOwnershipRows(ownershipResponse).forEach((row) => {
@@ -502,62 +603,70 @@ export default function TopAddsRail({
       const snapshotOwnership = ownershipSnapshotMap[row.player_id] ?? null;
       return ownershipRow || snapshotOwnership != null ? count : count + 1;
     }, 0);
-  }, [ownershipResponse, ownershipSnapshotMap, position, projectionResponse?.data]);
+  }, [
+    ownershipResponse,
+    ownershipSnapshotMap,
+    position,
+    activeProjectionResponse?.data,
+    projectionResponseOwnsSelection,
+  ]);
 
   const candidates = useMemo(() => {
-    return rankTopAddsCandidates(candidateInputs, mode)
-      .slice(0, MAX_VISIBLE_ADDS);
+    return rankTopAddsCandidates(candidateInputs, mode).slice(
+      0,
+      MAX_VISIBLE_ADDS,
+    );
   }, [candidateInputs, mode]);
 
   const visibleDegradedCandidateCount = useMemo(
     () =>
       candidates.filter(
-        (candidate) => candidate.degradedProjectionContext?.isDegraded
+        (candidate) => candidate.degradedProjectionContext?.isDegraded,
       ).length,
-    [candidates]
+    [candidates],
   );
 
   const staleMessage =
-    !loading && !error
+    !loading && !effectiveError
       ? [
-          projectionResponse?.asOfDate && projectionResponse.asOfDate !== date
-            ? `Top Adds using ${projectionResponse.asOfDate}`
+          activeProjectionResponse?.asOfDate &&
+          activeProjectionResponse.asOfDate !== date
+            ? `Top Adds using ${activeProjectionResponse.asOfDate}`
             : null,
-          projectionResponse?.degradedProjectionSummary?.note ?? null,
+          activeProjectionResponse?.degradedProjectionSummary?.note ?? null,
           visibleDegradedCandidateCount > 0
             ? `${visibleDegradedCandidateCount} visible add card${visibleDegradedCandidateCount === 1 ? "" : "s"} has less certain role data than usual.`
             : null,
           missingOwnershipCount > 0
             ? `Ownership is missing for ${missingOwnershipCount} projected candidates, so they are hidden by this ownership range.`
-            : null
+            : null,
         ]
           .filter(Boolean)
           .join(" • ") || null
       : null;
 
   useEffect(() => {
-    onResolvedDate?.(projectionResponse?.asOfDate ?? null);
-  }, [onResolvedDate, projectionResponse?.asOfDate]);
+    onResolvedDate?.(activeProjectionResponse?.asOfDate ?? null);
+  }, [activeProjectionResponse?.asOfDate, onResolvedDate]);
+
+  const panelLoading =
+    loading ||
+    projectionSelectionPending ||
+    (mode === "week" && scheduleState === "pending");
 
   useEffect(() => {
     onStatusChange?.({
-      loading: loading || (mode === "week" && scheduleLoading),
-      error,
+      loading: panelLoading,
+      error: effectiveError,
       staleMessage,
-      empty:
-        !loading &&
-        !(mode === "week" && scheduleLoading) &&
-        !error &&
-        candidates.length === 0
+      empty: !panelLoading && !effectiveError && candidates.length === 0,
     });
   }, [
     candidates.length,
-    error,
-    loading,
-    mode,
+    effectiveError,
     onStatusChange,
-    scheduleLoading,
-    staleMessage
+    panelLoading,
+    staleMessage,
   ]);
 
   return (
@@ -565,6 +674,7 @@ export default function TopAddsRail({
       {mode === "week" ? (
         <TopAddsWeekScheduleBridge
           date={date}
+          seasonId={selectedScheduleSeasonId}
           onContextChange={handleWeekContextChange}
         />
       ) : null}
@@ -606,7 +716,12 @@ export default function TopAddsRail({
           </span>
           {mode === "week" && (
             <span className={styles.topAddsChip}>
-              {scheduleLoading ? "Loading schedule..." : "Schedule included"}
+              {selectedScheduleSeasonId === null ||
+              scheduleState === "unavailable"
+                ? "Schedule unavailable"
+                : scheduleState === "ready"
+                  ? "Schedule included"
+                  : "Loading schedule..."}
             </span>
           )}
         </div>
@@ -632,7 +747,7 @@ export default function TopAddsRail({
               value={minOwnership}
               onChange={(event) =>
                 setMinOwnership(
-                  Math.min(Number(event.target.value), maxOwnership)
+                  Math.min(Number(event.target.value), maxOwnership),
                 )
               }
               aria-label="Minimum ownership"
@@ -649,7 +764,7 @@ export default function TopAddsRail({
               value={maxOwnership}
               onChange={(event) =>
                 setMaxOwnership(
-                  Math.max(Number(event.target.value), minOwnership)
+                  Math.max(Number(event.target.value), minOwnership),
                 )
               }
               aria-label="Maximum ownership"
@@ -658,20 +773,22 @@ export default function TopAddsRail({
         </div>
       </div>
 
-      {loading && <p className={styles.panelState}>Loading top adds...</p>}
-      {!loading && error && <p className={styles.panelState}>Error: {error}</p>}
-      {!loading && !error && staleMessage && (
+      {panelLoading && <p className={styles.panelState}>Loading top adds...</p>}
+      {!panelLoading && effectiveError && (
+        <p className={styles.panelState}>Error: {effectiveError}</p>
+      )}
+      {!panelLoading && !effectiveError && staleMessage && (
         <p className={`${styles.panelState} ${styles.panelStateStale}`}>
           {staleMessage}
         </p>
       )}
-      {!loading && !error && candidates.length === 0 && (
+      {!panelLoading && !effectiveError && candidates.length === 0 && (
         <p className={styles.panelState}>
           No add candidates for this ownership band yet.
         </p>
       )}
 
-      {!loading && !error && candidates.length > 0 && (
+      {!panelLoading && !effectiveError && candidates.length > 0 && (
         <div className={styles.topAddsList}>
           <p className={styles.compactChartNote}>
             Higher add scores combine opportunity, recent demand, projection,
@@ -683,7 +800,7 @@ export default function TopAddsRail({
               href={buildForgeHref(`/forge/player/${candidate.playerId}`, {
                 date,
                 mode,
-                resolvedDate: projectionResponse?.asOfDate
+                resolvedDate: activeProjectionResponse?.asOfDate,
               })}
               className={styles.topAddsCandidateCard}
             >
@@ -713,20 +830,20 @@ export default function TopAddsRail({
                   Own <strong>{candidate.ownership.toFixed(0)}%</strong>
                 </span>
                 <span>
-                  Demand <strong>{formatSigned(candidate.delta, " pts")}</strong>
+                  Demand{" "}
+                  <strong>{formatSigned(candidate.delta, " pts")}</strong>
                 </span>
                 <span>
-                  Points <strong>{formatProjection(candidate.projectionPts)}</strong>
+                  Points{" "}
+                  <strong>{formatProjection(candidate.projectionPts)}</strong>
                 </span>
                 <span>
-                  Add score <strong>{formatProjection(candidate.score.total)}</strong>
+                  Add score{" "}
+                  <strong>{formatProjection(candidate.score.total)}</strong>
                 </span>
                 {mode === "week" && (
                   <span>
-                    Week{" "}
-                    <strong>
-                      {candidate.scheduleLabel ?? "--"}
-                    </strong>
+                    Week <strong>{candidate.scheduleLabel ?? "--"}</strong>
                   </span>
                 )}
               </div>
@@ -756,35 +873,52 @@ export default function TopAddsRail({
                     emptyClassName={styles.sparkEmpty}
                   />
                 ) : (
-                  <span className={styles.compactChartNote}>No chart needed</span>
+                  <span className={styles.compactChartNote}>
+                    No chart needed
+                  </span>
                 )}
               </div>
 
               <div className={styles.topAddsCandidateReasons}>
-                <span>Demand {formatProjection(candidate.score.trendStrengthScore)}</span>
-                <span>Availability {formatProjection(candidate.score.ownershipBiasScore)}</span>
-                <span>Projection {formatProjection(candidate.score.projectionSupportScore)}</span>
+                <span>
+                  Demand {formatProjection(candidate.score.trendStrengthScore)}
+                </span>
+                <span>
+                  Availability{" "}
+                  {formatProjection(candidate.score.ownershipBiasScore)}
+                </span>
+                <span>
+                  Projection{" "}
+                  {formatProjection(candidate.score.projectionSupportScore)}
+                </span>
                 {mode === "week" && (
-                  <span>Schedule {formatProjection(candidate.score.scheduleContextScore)}</span>
+                  <span>
+                    Schedule{" "}
+                    {formatProjection(candidate.score.scheduleContextScore)}
+                  </span>
                 )}
-                <span>Risk {formatProjection(candidate.score.riskPenaltyScore)}</span>
+                <span>
+                  Risk {formatProjection(candidate.score.riskPenaltyScore)}
+                </span>
               </div>
 
               {index < MAX_ADD_INSPECTORS && (
                 <div
                   className={styles.topAddsInspector}
-                aria-label={`${candidate.name} score inspector`}
-              >
-                <div className={styles.topAddsInspectorHeader}>
+                  aria-label={`${candidate.name} score inspector`}
+                >
+                  <div className={styles.topAddsInspectorHeader}>
                     <strong>Why This Add</strong>
                     <span>The plain reasons behind the score</span>
                   </div>
                   <div className={styles.topAddsInspectorGrid}>
                     <div className={styles.topAddsInspectorBlock}>
-                      <span className={styles.topAddsInspectorEyebrow}>Fantasy Line</span>
+                      <span className={styles.topAddsInspectorEyebrow}>
+                        Fantasy Line
+                      </span>
                       <p className={styles.topAddsInspectorText}>
-                        Projected {formatProjection(candidate.projectionPts)} pts • PP{" "}
-                        {formatProjection(candidate.ppp)} • SOG{" "}
+                        Projected {formatProjection(candidate.projectionPts)}{" "}
+                        pts • PP {formatProjection(candidate.ppp)} • SOG{" "}
                         {formatProjection(candidate.sog)}
                       </p>
                       <p className={styles.topAddsInspectorText}>
@@ -795,21 +929,48 @@ export default function TopAddsRail({
                       </p>
                       {mode === "week" && (
                         <p className={styles.topAddsInspectorText}>
-                          Week {candidate.scheduleGamesRemaining ?? 0} games • Off-nights{" "}
-                          {candidate.scheduleOffNightsRemaining ?? 0}
+                          Week {candidate.scheduleGamesRemaining ?? 0} games •
+                          Off-nights {candidate.scheduleOffNightsRemaining ?? 0}
                         </p>
                       )}
                     </div>
 
                     <div className={styles.topAddsInspectorBlock}>
-                      <span className={styles.topAddsInspectorEyebrow}>Add Score</span>
+                      <span className={styles.topAddsInspectorEyebrow}>
+                        Add Score
+                      </span>
                       <div className={styles.topAddsInspectorBreakdown}>
-                        <span>Demand {formatSignedContribution(candidate.score.trendStrengthScore)}</span>
-                        <span>Available {formatSignedContribution(candidate.score.ownershipBiasScore)}</span>
-                        <span>Projection {formatSignedContribution(candidate.score.projectionSupportScore)}</span>
-                        <span>Schedule {formatSignedContribution(candidate.score.scheduleContextScore)}</span>
-                        <span>Risk -{formatProjection(candidate.score.riskPenaltyScore)}</span>
-                        <span>Total {formatProjection(candidate.score.total)}</span>
+                        <span>
+                          Demand{" "}
+                          {formatSignedContribution(
+                            candidate.score.trendStrengthScore,
+                          )}
+                        </span>
+                        <span>
+                          Available{" "}
+                          {formatSignedContribution(
+                            candidate.score.ownershipBiasScore,
+                          )}
+                        </span>
+                        <span>
+                          Projection{" "}
+                          {formatSignedContribution(
+                            candidate.score.projectionSupportScore,
+                          )}
+                        </span>
+                        <span>
+                          Schedule{" "}
+                          {formatSignedContribution(
+                            candidate.score.scheduleContextScore,
+                          )}
+                        </span>
+                        <span>
+                          Risk -
+                          {formatProjection(candidate.score.riskPenaltyScore)}
+                        </span>
+                        <span>
+                          Total {formatProjection(candidate.score.total)}
+                        </span>
                       </div>
                     </div>
                   </div>
