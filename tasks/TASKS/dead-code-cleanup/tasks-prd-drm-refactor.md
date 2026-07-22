@@ -85,10 +85,10 @@
   - [ ] 5.3 Reconcile `useTOIData`, LinePairGrid fetches, and legacy default wrapper paths with the unified contract and remove only proven duplicates.
 
 - [ ] 6.0 Run targeted and integrated verification
-  - [ ] 6.1 Run focused helper/hook/component tests, TypeScript checks, and SCSS/build validation using current package commands.
+  - [x] 6.1 Run focused helper/hook/component tests, TypeScript checks, and SCSS/build validation using current package commands. The complete DRM group passes 10 files/135 tests; full TypeScript, changed-code Prettier, zero-finding isolated lint, three-module bundled-Node-24 Sass compilation, and the successful 83-page production build/static generation gate pass (verified 2026-07-21).
   - [ ] 6.2 Browser-verify representative regular/playoff date ranges, raw/aggregated QA, modes, both selectors, datepicker, loading/empty/error, and responsive widths.
   - [ ] 6.3 Confirm no maximum-update-depth error, duplicate fetch storm, missing player, mixed source, stale result, console error, or sticky/overflow regression.
-  - [ ] 6.4 Update the PRD, this list, Relevant Files, dead-code disposition, and master ledger with parity/performance/test evidence.
+  - [x] 6.4 Update the PRD, this list, Relevant Files, dead-code disposition, and master ledger with parity/performance/test evidence. The source PRD/list, master PRD/list, final summary, and diary agree on 61/89 before this row's closure, zero-consumer wrapper retention pending explicit retirement approval, group-2/group-4 evidence, verification results, and exact publication receipts (verified 2026-07-21).
 
 ## NEW Tasks
 
