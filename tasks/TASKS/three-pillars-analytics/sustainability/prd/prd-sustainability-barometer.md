@@ -445,3 +445,7 @@ function formatScore(raw: number): number {
 Model Version: 1 (initial)  
 Prepared for: Sustainability Barometer MVP  
 Status: Draft Ready for Task Breakdown  
+
+## 24. Super-goal audit update (2026-07-22)
+
+The source task list is an in-progress 37/89 implementation, not an unstarted eight-row initiative. Current configuration and pure rolling/scoring cohorts pass 28 focused Python tests plus module compilation, so parents 2.0 and 4.0 are reconciled complete. The malformed checked 1.0 parent is normalized open, conceptual-only 1.7 and stub-backed 3.2–3.4 are reopened, and P1 NEW 10 records a material ownership mismatch: the legacy Python adapter targets several absent draft tables/columns while the authoritative production schema and active TypeScript Sustainability pipeline use different canonical contracts. Dependency order is schema/owner decision and exact adapter contract → executable migration/runtime proof → pipeline/API/UI/observability/versioning; no database or production mutation is part of this audit.

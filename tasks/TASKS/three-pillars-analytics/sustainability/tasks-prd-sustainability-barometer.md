@@ -38,14 +38,14 @@
 
 ## Tasks
 
--- [x] 1.0 Database Schema & Migrations ✅ (All subtasks 1.1–1.9 complete; migrations added and documented.)
+- [ ] 1.0 Database Schema & Migrations. The migration drafts exist, but current authoritative-schema reconciliation is open under 1.7 and NEW 10.0; do not treat conceptual inspection as executable schema proof.
 	- [x] 1.1 Draft DDL for `priors_cache`, `player_priors_cache`, `model_player_game_barometers`, `model_sustainability_config`, `sustainability_distribution_snapshots`, `sustainability_recompute_queue` per PRD.
 	- [x] 1.2 Add NOT NULL / PK / indexes (player_id + window_type + game_date, season_id + position_code + stat_code).
 	- [x] 1.3 Add partial index for `model_player_game_barometers(window_type='GAME')` to speed leaderboard.
 	- [x] 1.4 Create migration file `2025xxxx_create_priors_tables.sql` (Consolidated into `20250928_create_sustainability_core_tables.sql`; no separate stub needed.)
 	- [x] 1.5 Create migration file `2025xxxx_seed_sigma_constants.sql` (Seed initial fixed SD constants).
 	- [x] 1.6 Create migration file `2025xxxx_seed_config.sql` with initial model configuration (model_version=1).
-    - [x] 1.7 Run migrations locally & verify schema (indexes, constraints) — Verified DDL conceptually (no live DB run in this environment). Notes:
+    - [ ] 1.7 Run migrations locally & verify schema (indexes, constraints). Static audit finds the draft files, but conceptual inspection is not execution proof and the authoritative production baseline diverges from four proposed table names; reconcile under NEW 10.0 before closure. Notes:
                 * Core tables present: priors_cache, player_priors_cache, sustainability_sigma_constants, model_sustainability_config,
                     model_player_game_barometers, sustainability_distribution_snapshots, sustainability_recompute_queue.
                 * Primary keys correct; composite PK for priors_cache (season_id, position_code, stat_code) and player_priors_cache (player_id, season_id, stat_code).
@@ -56,7 +56,7 @@
     - [x] 1.8 (Optional) Add foreign key constraints (player_id → players) if table exists and performance acceptable.
 	- [x] 1.9 Document schema decisions in PRD appendices / update task list (Added: FK optional rationale, uniqueness strategy, partial indexes justification, rookie_status index deferred until profiling.)
 
-- [ ] 2.0 Configuration & Constants Initialization
+- [x] 2.0 Configuration & Constants Initialization. All nine children are implemented; the current configuration/constants, deterministic-hash, fallback, validation, scoring, and benchmark group passes within 28 focused tests and Python compilation (verified 2026-07-22).
 	- [x] 2.1 Implement `config_loader.py` to fetch active config row (latest active TRUE and highest model_version).
 	- [x] 2.2 Validate presence of required keys (weights, toggles, constants, k_r map, c, sd_mode, freshness_days) (Enhanced validation added: k_r coverage, guardrails bounds, freshness_days > 0).
 	- [x] 2.3 Implement hash generation (stable JSON canonicalization + SHA256) for config_hash. (Added `build_config_hash_payload` to isolate semantic fields; refactored `load_config`.)
@@ -69,16 +69,16 @@
 
 - [ ] 3.0 Prior & Posterior Computation Modules (League + Player)
 	- [x] 3.1 Implement `priors.py` function `compute_league_beta_priors(season_id)` returning list of {season_id, position_code, stat_code, alpha0, beta0, k, league_mu}. (Added `priors.py` + unit tests `test_priors.py`.)
-	- [x] 3.2 Add query to aggregate successes/trials for sh_pct, oish_pct, ipp from canonical stats source (player_totals_unified or fallback join strategy). (Stub `fetch_league_aggregates` + DB adapter integration attempts real query if SUPABASE_DB_URL set.)
-	- [x] 3.3 Implement upsert for priors_cache (batch insert ON CONFLICT update if league_mu changes). (Stub now routes to `db_adapter.upsert_league_priors` when available; otherwise no-op.)
-	- [x] 3.4 Implement multi-season data fetch for each player (current + last two seasons) with successes/trials per stat. (Stub fetch + grouping implemented in `player_priors.py`.)
+	- [ ] 3.2 Add query to aggregate successes/trials for sh_pct, oish_pct, ipp from a current canonical stats source. The current adapter still labels its SQL a stub and targets absent `hockey_player_season_aggregates`; reconcile under NEW 10.0 (audit 2026-07-22).
+	- [ ] 3.3 Implement a batch upsert for the authoritative priors table. The adapter targets absent `priors_cache` while current production owns `sustainability_priors`; reconcile schema and writer ownership under NEW 10.0 (audit 2026-07-22).
+	- [ ] 3.4 Implement multi-season data fetch for each player (current + last two seasons) with successes/trials per stat. The current production path remains an explicit placeholder returning an empty iterable; fixture grouping alone is not fetch implementation evidence (audit 2026-07-22).
 	- [x] 3.5 Implement weight normalization if seasons missing (rookie case) and set rookie_status flag. (Automatic normalization logic + rookie detection.)
 	- [x] 3.6 Calculate posterior mean with Beta update using league prior (store model_version from config). (Posterior math in `compute_player_posteriors`.)
 	- [x] 3.7 Upsert player_priors_cache rows (post_mean, successes_blend, trials_blend, rookie_status). (Stub `upsert_player_priors`.)
 	- [x] 3.8 Add unit tests for: correct Beta posterior when no history; correct weighted blend with partial seasons; reproducibility. (Added tests in `test_player_priors.py` including reproducibility & rookie summary.)
 	- [x] 3.9 Add logging summary (#players processed, rookies, changes vs prior run). (Added `summarize_player_posteriors` & `log_player_posteriors_summary`.)
 
-- [ ] 4.0 Rolling Window & Scoring Engine (Reliability, Soft Clip, Contributions)
+- [x] 4.0 Rolling Window & Scoring Engine (Reliability, Soft Clip, Contributions). All twelve children have current deterministic coverage; the complete configuration/prior/window/scoring/finishing/benchmark group passes 28 focused tests and Python compilation (verified 2026-07-22).
 	- [x] 4.1 Implement `windows.py` to build GAME, G5, G10, STD aggregates with freshness filter (<= freshness_days default 45).
 	- [x] 4.2 Provide builder returning exposures & rates for each metric (shots, goals, on-ice GF/SF, points, ixG, ICF, HDCF, minutes if needed). (Implemented via `windows.py` & verified in tests.)
 	- [x] 4.3 Implement scoring util: raw z (luck metrics) vs posterior baseline; raw z (stabilizers) vs position mean/σ. (Implemented as `zscores.annotate_zscores` for rate metrics sh_pct, oish_pct, ipp.)
@@ -142,6 +142,7 @@
 	- [ ] 9.6 Add unit tests for version upgrade path (old rows untouched, new rows new version).
 	- [ ] 9.7 Document versioning policy & A/B expansion path (future) in README or PRD appendix.
 
+- [ ] NEW 10.0 **P1 canonical schema/adapter ownership drift:** reconcile the legacy Python Barometer prototype with the authoritative Supabase schema and active TypeScript Sustainability pipeline before enabling orchestration. The production baseline contains `sustainability_priors`/`sustainability_player_priors` and only a subset of the draft PRD tables; Python adapters target absent `priors_cache`, `sustainability_distribution_snapshots`, `sustainability_recompute_queue`, and a nonexistent aggregate source, while `upsert_barometers` names columns absent from the deployed `model_player_game_barometers` contract. Select one canonical owner, fail closed rather than silently returning zero, add exact adapter/schema tests, and require executable migration/runtime evidence before closing 1.0/1.7/3.0/3.2–3.4/5.x/9.x (discovered 2026-07-22).
+
 ---
 I have generated the high-level tasks based on the PRD. Ready to generate the sub-tasks? Respond with "Go" to proceed.
-
