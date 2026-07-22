@@ -75,8 +75,9 @@ function readBearerToken(req: NextApiRequest): string {
 }
 
 function secretsMatch(received: string, expected: string): boolean {
-  const receivedBuffer = Buffer.from(received);
-  const expectedBuffer = Buffer.from(expected);
+  const encoder = new TextEncoder();
+  const receivedBuffer = encoder.encode(received);
+  const expectedBuffer = encoder.encode(expected);
   return (
     receivedBuffer.length === expectedBuffer.length &&
     timingSafeEqual(receivedBuffer, expectedBuffer)
