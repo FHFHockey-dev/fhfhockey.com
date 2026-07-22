@@ -103,7 +103,7 @@ async function syncCurrentRosterMemberships(args: {
 }
 
 async function getAllPlayers(seasonId?: number) {
-  const teams = await getTeams(seasonId);
+  const teams = await getTeams(seasonId, { mode: "current-canonical" });
   const tasks = teams.map((team) => async () => {
     try {
       const { forwards, defensemen, goalies } = await get(

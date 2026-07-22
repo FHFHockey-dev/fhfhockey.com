@@ -31,7 +31,11 @@ vi.mock("pages/api/v1/db/update-player/[playerId]", () => ({
 import {
   getCurrentSeason,
   getLatestStartedSeasonForDate,
+  getSchedule,
   getSeasonById,
+  getTeams,
+  isValidNhlSeasonId,
+  resolveCanonicalTeamLineage,
   resolveLatestStartedSeasonIdForDate,
 } from "./index";
 
@@ -131,6 +135,310 @@ function createLatestStartedSeasonClient(
     query,
   };
 }
+
+function createTeamsQuery(args: {
+  rows?: Array<{
+    abbreviation: string;
+    created_at: string;
+    id: number;
+    name: string;
+  }> | null;
+  error?: unknown;
+}) {
+  const query = {
+    select: vi.fn(),
+    eq: vi.fn(),
+  };
+  query.select.mockReturnValue(query);
+  query.eq.mockResolvedValue({
+    data: args.rows === undefined ? [] : args.rows,
+    error: args.error ?? null,
+  });
+  return query;
+}
+
+describe("getTeams", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it.each([20232024, 20242025, 20252026])(
+    "accepts consecutive eight-digit season ID %i",
+    (seasonId) => {
+      expect(isValidNhlSeasonId(seasonId)).toBe(true);
+    },
+  );
+
+  it.each([
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    2024202,
+    202420250,
+    20242026,
+    9007199254740992,
+  ])("rejects invalid season ID %s", (seasonId) => {
+    expect(isValidNhlSeasonId(seasonId)).toBe(false);
+  });
+
+  it.each([
+    [53, "ARI", { id: 68, abbreviation: "UTA" }],
+    [59, "UTA", { id: 68, abbreviation: "UTA" }],
+    [68, "UTA", { id: 68, abbreviation: "UTA" }],
+    [1, "NJD", { id: 1, abbreviation: "NJD" }],
+    [54, "VGK", { id: 54, abbreviation: "VGK" }],
+  ])(
+    "resolves canonical lineage for %i/%s",
+    (teamId, abbreviation, expected) => {
+      expect(
+        resolveCanonicalTeamLineage(teamId as number, abbreviation as string),
+      ).toEqual(expected);
+    },
+  );
+
+  it.each([
+    [53, "UTA"],
+    [59, "ARI"],
+    [68, "ARI"],
+    [11, "ATL"],
+    [999, "ZZZ"],
+  ])("rejects unknown lineage %i/%s", (teamId, abbreviation) => {
+    expect(
+      resolveCanonicalTeamLineage(teamId as number, abbreviation as string),
+    ).toBeNull();
+  });
+
+  it("returns only exact persisted membership and preserves retired identities", async () => {
+    const query = createTeamsQuery({
+      rows: [
+        {
+          id: 59,
+          name: "Utah Hockey Club",
+          abbreviation: "UTA",
+          created_at: "2024-01-01T00:00:00.000Z",
+        },
+        {
+          id: 1,
+          name: "New Jersey Devils",
+          abbreviation: "NJD",
+          created_at: "2024-01-01T00:00:00.000Z",
+        },
+        {
+          id: 53,
+          name: "Arizona Coyotes",
+          abbreviation: "ARI",
+          created_at: "2024-01-01T00:00:00.000Z",
+        },
+      ],
+    });
+    mocks.from.mockImplementation((table: string) => {
+      if (table !== "teams") throw new Error(`Unexpected table: ${table}`);
+      return query;
+    });
+
+    await expect(getTeams(20232024)).resolves.toEqual([
+      {
+        id: 1,
+        name: "New Jersey Devils",
+        abbreviation: "NJD",
+        logo: "/teamLogos/NJD.png",
+      },
+      {
+        id: 53,
+        name: "Arizona Coyotes",
+        abbreviation: "ARI",
+        logo: "/teamLogos/ARI.png",
+      },
+      {
+        id: 59,
+        name: "Utah Hockey Club",
+        abbreviation: "UTA",
+        logo: "/teamLogos/UTA.png",
+      },
+    ]);
+    expect(query.select).toHaveBeenCalledWith(
+      "id, name, abbreviation, team_season!inner()",
+    );
+    expect(query.eq).toHaveBeenCalledWith("team_season.seasonId", 20232024);
+  });
+
+  it("returns an empty exact season without padding or static fallback", async () => {
+    const query = createTeamsQuery({ rows: [] });
+    mocks.from.mockReturnValue(query);
+
+    await expect(getTeams(19981999)).resolves.toEqual([]);
+  });
+
+  it("propagates an exact lookup failure", async () => {
+    const lookupError = new Error("team lookup failed");
+    const query = createTeamsQuery({ rows: null, error: lookupError });
+    mocks.from.mockReturnValue(query);
+
+    await expect(getTeams(20242025)).rejects.toBe(lookupError);
+  });
+
+  it("rejects invalid explicit seasons before any lookup", async () => {
+    await expect(getTeams(20242026)).rejects.toThrow(
+      "A valid consecutive eight-digit season ID is required.",
+    );
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+
+  it("keeps the no-season path current-canonical and pads the active catalog", async () => {
+    const seasonsQuery = createSeasonQuery([
+      {
+        id: 20252026,
+        startDate: "2025-10-07T00:00:00.000Z",
+        regularSeasonEndDate: "2026-04-16T00:00:00.000Z",
+        endDate: "2026-06-25T00:00:00.000Z",
+        numberOfGames: 1312,
+      },
+      {
+        id: 20242025,
+        startDate: "2024-10-04T00:00:00.000Z",
+        regularSeasonEndDate: "2025-04-17T00:00:00.000Z",
+        endDate: "2025-06-17T00:00:00.000Z",
+        numberOfGames: 1312,
+      },
+    ]);
+    const teamsQuery = createTeamsQuery({
+      rows: [
+        {
+          id: 59,
+          name: "Utah Hockey Club",
+          abbreviation: "UTA",
+          created_at: "2024-01-01T00:00:00.000Z",
+        },
+      ],
+    });
+    mocks.from.mockImplementation((table: string) => {
+      if (table === "seasons") return seasonsQuery;
+      if (table === "teams") return teamsQuery;
+      throw new Error(`Unexpected table: ${table}`);
+    });
+
+    const teams = await getTeams();
+
+    expect(teamsQuery.eq).toHaveBeenCalledWith(
+      "team_season.seasonId",
+      20252026,
+    );
+    expect(teams.some((team) => team.id === 53 || team.id === 59)).toBe(false);
+    expect(teams.find((team) => team.id === 68)).toEqual({
+      id: 68,
+      name: "Utah Mammoth",
+      abbreviation: "UTA",
+      logo: "/teamLogos/UTA.png",
+    });
+    expect(teams.length).toBeGreaterThan(1);
+  });
+
+  it("retains the static fallback only for current-canonical lookups", async () => {
+    const query = createTeamsQuery({
+      rows: null,
+      error: new Error("team lookup failed"),
+    });
+    mocks.from.mockReturnValue(query);
+
+    const teams = await getTeams(20252026, { mode: "current-canonical" });
+
+    expect(teams.length).toBeGreaterThan(1);
+    expect(teams.find((team) => team.id === 68)?.name).toBe("Utah Mammoth");
+  });
+});
+
+describe("getSchedule", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("builds the same schedule without loading an unused team directory", async () => {
+    mocks.get.mockResolvedValue({
+      gameWeek: [
+        {
+          date: "2026-01-05",
+          dayAbbrev: "MON",
+          numberOfGames: 1,
+          games: [
+            {
+              id: 2025020601,
+              season: 20252026,
+              awayTeam: { id: 53, abbrev: "ARI", score: 2 },
+              homeTeam: { id: 68, abbrev: "UTA", score: 3 },
+            },
+          ],
+        },
+      ],
+    });
+
+    const result = await getSchedule("2026-01-05", { includeOdds: false });
+
+    expect(mocks.get).toHaveBeenCalledWith("/schedule/2026-01-05");
+    expect(mocks.from).not.toHaveBeenCalled();
+    expect(result.numGamesPerDay).toEqual([1, 0, 0, 0, 0, 0, 0]);
+    expect(result.data[53].MON).toMatchObject({
+      id: 2025020601,
+      homeTeam: { id: 68, score: 3 },
+      awayTeam: { id: 53, score: 2 },
+    });
+    expect(result.data[68].MON).toEqual(result.data[53].MON);
+  });
+
+  it("keeps the default expected-goals source call and odds mapping", async () => {
+    mocks.get.mockResolvedValue({
+      gameWeek: [
+        {
+          date: "2026-01-05",
+          dayAbbrev: "MON",
+          numberOfGames: 1,
+          games: [
+            {
+              id: 2025020601,
+              season: 20252026,
+              awayTeam: { id: 1, abbrev: "NJD", score: 2 },
+              homeTeam: { id: 2, abbrev: "NYI", score: 3 },
+            },
+          ],
+        },
+      ],
+    });
+    const oddsQuery = {
+      select: vi.fn(),
+      in: vi.fn(),
+    };
+    oddsQuery.select.mockReturnValue(oddsQuery);
+    oddsQuery.in.mockResolvedValue({
+      data: [
+        {
+          game_id: 2025020601,
+          home_win_odds: 0.6,
+          away_win_odds: 0.4,
+          home_api_win_odds: 0.58,
+          away_api_win_odds: 0.42,
+        },
+      ],
+      error: null,
+    });
+    mocks.from.mockImplementation((table: string) => {
+      if (table !== "expected_goals") {
+        throw new Error(`Unexpected table: ${table}`);
+      }
+      return oddsQuery;
+    });
+
+    const result = await getSchedule("2026-01-05");
+
+    expect(mocks.from).toHaveBeenCalledOnce();
+    expect(mocks.from).toHaveBeenCalledWith("expected_goals");
+    expect(oddsQuery.select).toHaveBeenCalledWith(
+      "game_id, home_win_odds, away_win_odds, home_api_win_odds, away_api_win_odds",
+    );
+    expect(oddsQuery.in).toHaveBeenCalledWith("game_id", [2025020601]);
+    expect(result.data[2].MON).toMatchObject({
+      homeTeam: { winOdds: 0.6, apiWinOdds: 0.58 },
+      awayTeam: { winOdds: 0.4, apiWinOdds: 0.42 },
+    });
+  });
+});
 
 describe("getCurrentSeason", () => {
   beforeEach(() => {

@@ -310,7 +310,7 @@ export default withCronJobAudit(
     const sourceKeys = parseOptionalSourceKeys(req.query.sourceKey);
     const currentSeason = await getCurrentSeason();
     const teamDirectory = buildTeamDirectory(
-      await getTeams(currentSeason.seasonId),
+      await getTeams(currentSeason.seasonId, { mode: "current-canonical" }),
     );
     const scheduledGames = await fetchScheduledGamesForDate({
       supabase: req.supabase,

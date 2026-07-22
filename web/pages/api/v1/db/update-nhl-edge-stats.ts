@@ -45,7 +45,11 @@ import {
   getEdgeTeamZoneTimeDetails,
   type EdgeGameType
 } from "lib/NHL/edge";
-import { getCurrentSeason, getTeams } from "lib/NHL/server";
+import {
+  getCurrentSeason,
+  getTeams,
+  type GetTeamsMode,
+} from "lib/NHL/server";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import supabase from "lib/supabase/server";
 
@@ -533,11 +537,12 @@ async function fetchGoalieDetailRows(args: {
 async function fetchTeamDetailRows(args: {
   snapshotDate: string;
   seasonId: number;
+  teamsMode: GetTeamsMode;
   gameType: EdgeGameType;
   teamId: number | null;
   nowMode?: boolean;
 }): Promise<NhlEdgeStatsRow[]> {
-  const teams = await getTeams(args.seasonId);
+  const teams = await getTeams(args.seasonId, { mode: args.teamsMode });
   const targets =
     args.teamId != null
       ? teams.filter((team) => team.id === args.teamId)
@@ -825,12 +830,17 @@ export async function runNhlEdgeStatsSnapshot(
   }
 
   const options = parseRequest(req, overrides);
-  const currentSeason =
-    options.seasonId > 0 ? { seasonId: options.seasonId } : await getCurrentSeason();
+  const hasExplicitSeasonOverride = options.seasonId > 0;
+  const currentSeason = hasExplicitSeasonOverride
+    ? { seasonId: options.seasonId }
+    : await getCurrentSeason();
   const seasonId = currentSeason.seasonId;
+  const teamsMode: GetTeamsMode = hasExplicitSeasonOverride
+    ? "season-exact"
+    : "current-canonical";
   const rosterTargets = await getCurrentRosterTargets();
   const { skaters, goalies } = splitRosterTargets(rosterTargets);
-  const teams = await getTeams(seasonId);
+  const teams = await getTeams(seasonId, { mode: teamsMode });
 
   const selectedSkaters =
     options.playerId != null
@@ -858,6 +868,7 @@ export async function runNhlEdgeStatsSnapshot(
     const teamRows = await fetchTeamDetailRows({
       snapshotDate: options.snapshotDate,
       seasonId,
+      teamsMode,
       gameType: options.gameType,
       teamId: options.teamId
     });
@@ -869,6 +880,7 @@ export async function runNhlEdgeStatsSnapshot(
     const teamNowRows = await fetchTeamDetailRows({
       snapshotDate: options.snapshotDate,
       seasonId,
+      teamsMode,
       gameType: options.gameType,
       teamId: options.teamId,
       nowMode: true

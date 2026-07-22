@@ -152,7 +152,9 @@ export default withCronJobAudit(
         });
       }
       const currentSeason = await getCurrentSeason();
-      const teams = await getTeams(currentSeason.seasonId);
+      const teams = await getTeams(currentSeason.seasonId, {
+        mode: "current-canonical",
+      });
       const teamDirectory = buildTeamDirectory(teams);
 
       const scheduledGames = await fetchScheduledGamesForDate({

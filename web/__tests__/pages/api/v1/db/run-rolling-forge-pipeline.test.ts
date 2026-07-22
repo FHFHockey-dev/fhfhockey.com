@@ -78,9 +78,11 @@ vi.mock("lib/supabase", () => ({
 
 vi.mock("lib/supabase/server", () => ({
   default: {
-    from: vi.fn(() => ({
-      select: gamesSelectMock
-    }))
+    from: vi.fn((table: string) =>
+      table === "cron_job_audit"
+        ? { insert: auditInsertMock }
+        : { select: gamesSelectMock }
+    )
   }
 }));
 

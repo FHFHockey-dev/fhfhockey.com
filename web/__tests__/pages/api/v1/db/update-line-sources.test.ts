@@ -479,6 +479,10 @@ describe("/api/v1/db/update-line-sources", () => {
 
     await handler(req, res);
 
+    expect(mocks.getTeams).toHaveBeenCalledWith(20252026, {
+      mode: "current-canonical",
+    });
+
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({
       success: true,

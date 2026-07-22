@@ -15,11 +15,7 @@ import {
   GameData,
 } from "lib/NHL/types";
 import supabase from "lib/supabase/public-client";
-import {
-  activeTeamAbbreviations,
-  legacyTeamIdToAbbr,
-  teamsInfo,
-} from "lib/teamsInfo";
+import { activeTeamAbbreviations, teamsInfo } from "lib/teamsInfo";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import supabaseServer from "lib/supabase/server";
 import type { Database, Tables } from "lib/supabase/database-generated.types";
@@ -41,6 +37,48 @@ function buildStaticTeamsFallback(): Team[] {
       };
     })
     .sort((a, b) => a.id - b.id);
+}
+
+export type GetTeamsMode = "current-canonical" | "season-exact";
+
+export type GetTeamsOptions = {
+  mode?: GetTeamsMode;
+};
+
+export function isValidNhlSeasonId(seasonId: number): boolean {
+  if (!Number.isSafeInteger(seasonId)) return false;
+
+  const value = String(seasonId);
+  if (!/^\d{8}$/.test(value)) return false;
+
+  const startYear = Number(value.slice(0, 4));
+  const endYear = Number(value.slice(4));
+  return endYear === startYear + 1;
+}
+
+export type CanonicalTeamLineage = {
+  id: number;
+  abbreviation: keyof typeof teamsInfo;
+};
+
+export function resolveCanonicalTeamLineage(
+  teamId: number,
+  abbreviation: string,
+): CanonicalTeamLineage | null {
+  if (
+    (teamId === 53 && abbreviation === "ARI") ||
+    (teamId === 59 && abbreviation === "UTA") ||
+    (teamId === 68 && abbreviation === "UTA")
+  ) {
+    return { id: 68, abbreviation: "UTA" };
+  }
+
+  const abbreviationKey = abbreviation as keyof typeof teamsInfo;
+  if (!activeTeamAbbreviations.has(abbreviationKey)) return null;
+
+  const team = teamsInfo[abbreviationKey];
+  if (team.id !== teamId) return null;
+  return { id: team.id, abbreviation: abbreviationKey };
 }
 
 export async function getPlayerGameLog(
@@ -92,40 +130,68 @@ export async function getPlayer(id: number): Promise<Player> {
  * Server only
  * @returns
  */
-export async function getTeams(seasonId?: number): Promise<Team[]> {
-  if (seasonId === undefined) {
-    seasonId = (await getCurrentSeason()).seasonId;
+export async function getTeams(
+  seasonId?: number,
+  options: GetTeamsOptions = {},
+): Promise<Team[]> {
+  if (seasonId !== undefined && !isValidNhlSeasonId(seasonId)) {
+    throw new Error("A valid consecutive eight-digit season ID is required.");
   }
 
-  const { data: teams, error } = (await supabase
-    .from("teams")
-    .select("id, name, abbreviation, team_season!inner()")
-    .eq("team_season.seasonId", seasonId)) as unknown as {
-    data: Tables<"teams">[] | null;
-    error?: unknown;
-  };
+  const mode =
+    options.mode ??
+    (seasonId === undefined ? "current-canonical" : "season-exact");
+  const resolvedSeasonId = seasonId ?? (await getCurrentSeason()).seasonId;
 
-  if (error || !Array.isArray(teams)) {
-    const normalized = normalizeDependencyError(error ?? "Missing team rows");
+  if (!isValidNhlSeasonId(resolvedSeasonId)) {
+    throw new Error("A valid consecutive eight-digit season ID is required.");
+  }
+
+  let teams: Tables<"teams">[];
+  try {
+    const result = (await supabase
+      .from("teams")
+      .select("id, name, abbreviation, team_season!inner()")
+      .eq("team_season.seasonId", resolvedSeasonId)) as unknown as {
+      data: Tables<"teams">[] | null;
+      error?: unknown;
+    };
+
+    if (result.error) throw result.error;
+    if (!Array.isArray(result.data)) throw new Error("Missing team rows");
+    teams = result.data;
+  } catch (error: unknown) {
+    if (mode === "season-exact") throw error;
+
+    const normalized = normalizeDependencyError(error);
     console.warn("Team lookup failed; falling back to static team catalog.", {
-      seasonId,
+      seasonId: resolvedSeasonId,
       message: normalized.message,
       detail: normalized.detail,
     });
     return buildStaticTeamsFallback();
   }
 
+  if (mode === "season-exact") {
+    return teams
+      .map((team) => ({
+        id: team.id,
+        name: team.name,
+        abbreviation: team.abbreviation,
+        logo: getTeamLogo(team.abbreviation),
+      }))
+      .sort((a, b) => a.id - b.id);
+  }
+
   const canonical = new Map<number, Team>();
 
   for (const team of teams) {
-    const overrideAbbr = legacyTeamIdToAbbr[team.id];
-    const derivedAbbr = overrideAbbr ?? team.abbreviation;
-    if (!activeTeamAbbreviations.has(derivedAbbr as keyof typeof teamsInfo)) {
-      continue;
-    }
-    const abbr = derivedAbbr as keyof typeof teamsInfo;
+    const lineage = resolveCanonicalTeamLineage(team.id, team.abbreviation);
+    if (!lineage) continue;
+
+    const abbr = lineage.abbreviation;
     const info = teamsInfo[abbr];
-    const canonicalId = info.id;
+    const canonicalId = lineage.id;
     const abbreviation = info.abbrev ?? String(abbr);
     const normalized: Team = {
       id: canonicalId,
@@ -364,31 +430,6 @@ export async function getAllPlayers(seasonId?: number): Promise<Player[]> {
   }));
 }
 
-async function getTeamsMap(): Promise<Record<number, Team>> {
-  const teams = await getTeams();
-  const map: any = {};
-  teams.forEach((team) => {
-    map[team.id] = team;
-  });
-  Object.entries(legacyTeamIdToAbbr).forEach(([legacyId, abbrKey]) => {
-    const abbr = abbrKey as keyof typeof teamsInfo;
-    const info = teamsInfo[abbr];
-    if (!info) return;
-    const abbreviation = info.abbrev ?? String(abbr);
-    const canonical = map[info.id] ?? {
-      id: info.id,
-      name: info.name,
-      abbreviation,
-      logo: getTeamLogo(abbreviation),
-    };
-    map[Number(legacyId)] = {
-      ...canonical,
-      id: Number(legacyId),
-    };
-  });
-  return map;
-}
-
 type GameWeek = {
   date: string;
   dayAbbrev: DAY_ABBREVIATION;
@@ -422,7 +463,6 @@ export async function getSchedule(
   const { gameWeek } = await get<{ gameWeek: GameWeek }>(
     `/schedule/${startDate}`,
   );
-  const teams = await getTeamsMap();
   const TEAM_DAY_DATA: ScheduleData["data"] = {};
   const numGamesPerDay: number[] = [];
   const result = {
@@ -472,10 +512,9 @@ export async function getSchedule(
   const tasksForOneWeek = gameWeek.map((day) => async () => {
     const tasksForOneDay = day.games.map((game) => async () => {
       const { homeTeam, awayTeam } = game;
-      // Do not skip games if a team is missing from the DB teams map.
-      // Schedules should still include those team IDs (e.g., new/rebranded teams like UTA 68),
-      // and the client can provide fallback team metadata via teamsInfo/useTeamsMap.
-      // Keeping this logic ensures we don't drop entire games (which also hides the opponent's entry).
+      // Preserve the source schedule's team IDs, including relocated or newly
+      // branded teams such as UTA 68. Client metadata can fall back through
+      // teamsInfo/useTeamsMap without hiding either side of the game.
 
       // Fetch win odds from the oddsByGameId (optional)
       const odds = includeOdds ? oddsByGameId[game.id] : null;
