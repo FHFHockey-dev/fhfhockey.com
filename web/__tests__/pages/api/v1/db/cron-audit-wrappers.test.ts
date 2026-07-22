@@ -77,9 +77,9 @@ describe("scheduled cron audit coverage", () => {
       ),
     ).toBe(59);
     expect(modeCounts).toEqual({
-      "admin-or-cron": 20,
+      "admin-or-cron": 26,
       "cron-secret-only": 1,
-      unprotected: 31,
+      unprotected: 25,
     });
     expect(callerCounts).toEqual({
       "browser-admin": 5,
@@ -114,7 +114,6 @@ describe("scheduled cron audit coverage", () => {
       "/api/v1/db/run-fetch-wgo-data",
       "/api/v1/db/run-projection-accuracy",
       "/api/v1/db/run-projection-v2",
-      "/api/v1/db/sustainability/rebuild-baselines",
       "/api/v1/db/update-game-goal-projections",
       "/api/v1/db/update-goalie-projections-v2",
       "/api/v1/db/update-nhl-edge-stats",
@@ -126,7 +125,6 @@ describe("scheduled cron audit coverage", () => {
       "/api/v1/db/update-rolling-player-averages",
       "/api/v1/db/update-sko-stats",
       "/api/v1/db/update-team-ctpi-daily",
-      "/api/v1/db/update-team-power-ratings",
       "/api/v1/db/update-team-sos",
       "/api/v1/db/update-team-yearly-summary",
       "/api/v1/db/update-wgo-averages",
@@ -136,10 +134,6 @@ describe("scheduled cron audit coverage", () => {
       "/api/v1/db/update-yahoo-players",
       "/api/v1/db/update-yahoo-weeks",
       "/api/v1/ml/update-predictions-sko",
-      "/api/v1/sustainability/rebuild-priors",
-      "/api/v1/sustainability/rebuild-score",
-      "/api/v1/sustainability/rebuild-trend-bands",
-      "/api/v1/sustainability/rebuild-window-z",
     ]);
     expect(
       authFindings.every(

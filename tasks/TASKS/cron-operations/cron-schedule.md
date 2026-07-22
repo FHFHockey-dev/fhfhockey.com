@@ -284,7 +284,8 @@
     "run_time_utc": "10:15 UTC",
     "active": true,
     "method": "GET",
-    "route": "/api/v1/db/update-team-power-ratings"
+    "route": "/api/v1/db/update-team-power-ratings",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 389,
@@ -430,7 +431,8 @@
     "run_time_utc": "10:40 UTC",
     "active": true,
     "method": "GET",
-    "route": "/api/v1/db/sustainability/rebuild-baselines"
+    "route": "/api/v1/db/sustainability/rebuild-baselines",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 374,
@@ -447,7 +449,8 @@
     "run_time_utc": "10:42 UTC",
     "active": true,
     "method": "GET",
-    "route": "/api/v1/sustainability/rebuild-priors?season=current"
+    "route": "/api/v1/sustainability/rebuild-priors?season=current",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 370,
@@ -456,7 +459,8 @@
     "run_time_utc": "10:43 UTC",
     "active": true,
     "method": "GET",
-    "route": "/api/v1/sustainability/rebuild-window-z?season=current&runAll=true"
+    "route": "/api/v1/sustainability/rebuild-window-z?season=current&runAll=true",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 371,
@@ -465,7 +469,8 @@
     "run_time_utc": "10:44 UTC",
     "active": true,
     "method": "GET",
-    "route": "/api/v1/sustainability/rebuild-score?season=current&runAll=true"
+    "route": "/api/v1/sustainability/rebuild-score?season=current&runAll=true",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 327,
@@ -483,7 +488,8 @@
     "run_time_utc": "10:46 UTC",
     "active": true,
     "method": "GET",
-    "route": "/api/v1/sustainability/rebuild-trend-bands?runAll=true"
+    "route": "/api/v1/sustainability/rebuild-trend-bands?runAll=true",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 328,

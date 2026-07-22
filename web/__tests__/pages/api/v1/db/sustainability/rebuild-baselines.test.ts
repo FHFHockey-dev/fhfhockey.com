@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("utils/adminOnlyMiddleware", () => ({
+  default: (handler: any) => handler
+}));
+
 const { assertBaselinesPrerequisitesMock, issue } = vi.hoisted(() => ({
   assertBaselinesPrerequisitesMock: vi.fn(),
   issue: {

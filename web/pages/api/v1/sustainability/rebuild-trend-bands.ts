@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
+import adminOnly from "utils/adminOnlyMiddleware";
 import supabase from "lib/supabase/server";
 import {
   computeAndStoreTrendBands,
@@ -288,4 +289,4 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

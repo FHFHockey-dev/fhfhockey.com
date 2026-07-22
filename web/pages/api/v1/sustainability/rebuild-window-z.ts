@@ -4,6 +4,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
+import adminOnly from "utils/adminOnlyMiddleware";
 import {
   rebuildBetaWindowZForSnapshot,
   loadPlayersForSnapshot,
@@ -146,4 +147,4 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

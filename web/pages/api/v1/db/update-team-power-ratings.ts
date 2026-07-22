@@ -1,5 +1,6 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
+import adminOnly from "utils/adminOnlyMiddleware";
 import supabase from "lib/supabase/server";
 import { fetchCurrentSeason } from "../../../../utils/fetchCurrentSeason";
 import {
@@ -369,4 +370,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

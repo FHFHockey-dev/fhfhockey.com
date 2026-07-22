@@ -1,6 +1,7 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { NextApiRequest, NextApiResponse } from "next";
+import adminOnly from "utils/adminOnlyMiddleware";
 import supabase from "lib/supabase/server";
 import {
   buildBaselinePayload,
@@ -426,4 +427,4 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

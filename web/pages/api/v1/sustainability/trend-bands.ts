@@ -7,6 +7,7 @@ import {
   parseWindowParam
 } from "lib/sustainability/bandService";
 import type { Database } from "lib/supabase/database-generated.types";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 type TrendBandRow =
   Database["public"]["Tables"]["sustainability_trend_bands"]["Row"];
@@ -124,13 +125,15 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
+const handleAuthorizedRecompute = adminOnly(handlePost as any);
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   if (req.method === "GET" || req.method === "POST") {
     if (shouldRecompute(req.method, req.query)) {
-      return handlePost(req, res);
+      return handleAuthorizedRecompute(req as any, res);
     }
     return handleGet(req, res);
   }
