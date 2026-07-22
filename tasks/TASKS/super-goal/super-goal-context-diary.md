@@ -6473,3 +6473,8 @@
 
 - **Verification / closure:** Exact static traces preserve no supported Trends/FORGE import and no legacy-route link; the cron report still owns both compatibility routes and the admin UI still calls the protected prediction writer. Previously completed reader/writer/audit evidence passes 3 files/24 tests, the quarantine registry passes 1/1, and full TypeScript resolves the renamed hook. Close 7.5 for this cleanup batch while 7.4 and NEW 9.4 retain any deletion decision.
 - **Counts / boundary / next action:** Source/master B-SKO parity is 22/68 with 46 open. Global parity is 4,334/4,874 with 540 open = 88.92% complete / 11.08% open; severity remains P0 20/13, P1 146/103, P2 139/123, and P3 22/21. No code, route, consumer, writer, row, schema, policy, schedule, deployment, Production, provider, credential, or artifact changed in this evidence slice. Publish this checkpoint, then continue decision-independent SKO work while all gates remain open.
+
+## Entry 0638 — 2026-07-22 B-SKO post-rename verification publication receipt
+
+- **Publication / equality:** Exact six-document checkpoint `af7b4d8ca65bfc13ce217274c0789b050a05e5a4` (`docs(sko): close post-rename verification`) publishes base 7.5 evidence closure and synchronized controls. Fresh-parent equality at `5f6158ff07db9713518347ab2c0c3703206b88eb`, exact text-only staging, diff/credential-shape integrity, guarded normal push, and post-push local/tracking/live equality pass.
+- **Boundary / next action:** Counts remain B-SKO 22/68 and global 4,334/4,874; severity remains P0 20/13, P1 146/103, P2 139/123, and P3 22/21. No runtime or external state changed. Publish this receipt, then continue independent SKO work while every existing decision/external gate remains open.
