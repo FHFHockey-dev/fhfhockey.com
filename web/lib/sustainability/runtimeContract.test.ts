@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   SUSTAINABILITY_SCORE_MODEL_VERSION,
+  SUSTAINABILITY_SCORE_PROVENANCE_VERSION,
   SUSTAINABILITY_TREND_BAND_MODEL_VERSION,
   buildSustainabilityConfigHash,
 } from "./runtimeContract";
@@ -9,6 +10,9 @@ import {
 describe("sustainability runtime contract", () => {
   it("publishes stable model versions and order-insensitive config hashes", () => {
     expect(SUSTAINABILITY_SCORE_MODEL_VERSION).toBe("sustainability_score_v2");
+    expect(SUSTAINABILITY_SCORE_PROVENANCE_VERSION).toBe(
+      "sustainability_score_provenance_v2",
+    );
     expect(SUSTAINABILITY_TREND_BAND_MODEL_VERSION).toBe(
       "sustainability_trend_bands_v2",
     );

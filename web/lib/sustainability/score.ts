@@ -7,6 +7,7 @@ import { WindowCode } from "lib/sustainability/windows";
 import { upsertRowsInChunks } from "./persist";
 import {
   SUSTAINABILITY_SCORE_MODEL_VERSION,
+  SUSTAINABILITY_SCORE_PROVENANCE_VERSION,
   buildSustainabilityConfigHash
 } from "./runtimeContract";
 import {
@@ -67,11 +68,19 @@ export async function fetchSkillLeagueRef(
 export async function fetchSkillWindowRates(
   player_id: number,
   snapshot_date: string,
-  nGames: number
-): Promise<{ ixg60: number; icf60: number; hdcf60: number }> {
-  const { data, error } = await (supabase as any)
+  nGames: number,
+  options: { client?: any } = {}
+): Promise<{
+  ixg60: number;
+  icf60: number;
+  hdcf60: number;
+  sourceDate: string | null;
+  appearanceCount: number;
+}> {
+  const client = options.client ?? (supabase as any);
+  const { data, error } = await client
     .from("player_stats_unified")
-    .select("nst_ixg, nst_icf, nst_hdcf, nst_toi")
+    .select("date, nst_ixg, nst_icf, nst_hdcf, nst_toi")
     .eq("player_id", player_id)
     .lte("date", snapshot_date)
     .order("date", { ascending: false })
@@ -91,7 +100,48 @@ export async function fetchSkillWindowRates(
   return {
     ixg60: (3600 * ixg) / denom,
     icf60: (3600 * icf) / denom,
-    hdcf60: (3600 * hdcf) / denom
+    hdcf60: (3600 * hdcf) / denom,
+    sourceDate:
+      data?.[0]?.date == null ? null : String(data[0].date).slice(0, 10),
+    appearanceCount: data?.length ?? 0
+  };
+}
+
+function dateAgeDays(requestedDate: string, observedDate: string | null) {
+  if (!observedDate) return null;
+  const requestedMs = Date.parse(`${requestedDate}T00:00:00Z`);
+  const observedMs = Date.parse(`${observedDate}T00:00:00Z`);
+  if (!Number.isFinite(requestedMs) || !Number.isFinite(observedMs)) {
+    return null;
+  }
+  return Math.round((requestedMs - observedMs) / 86_400_000);
+}
+
+export function buildScoreSourceCutoffs(args: {
+  snapshotDate: string;
+  playerStatsSourceDate: string | null;
+  seasonId: number;
+}) {
+  return {
+    version: SUSTAINABILITY_SCORE_PROVENANCE_VERSION,
+    requested: {
+      snapshot_date: args.snapshotDate
+    },
+    observed: {
+      player_stats_unified: args.playerStatsSourceDate
+    },
+    derived: {
+      sustainability_window_z: args.snapshotDate
+    },
+    scopes: {
+      player_totals_unified_season_id: args.seasonId
+    },
+    age_days: {
+      player_stats_unified: dateAgeDays(
+        args.snapshotDate,
+        args.playerStatsSourceDate
+      )
+    }
   };
 }
 
@@ -171,13 +221,14 @@ export async function buildScoreForPlayerWindow(
   const components = {
     modelVersion: SUSTAINABILITY_SCORE_MODEL_VERSION,
     configHash: buildSustainabilityConfigHash({ weights, window }),
-    sourceCutoffs: {
-      sustainability_window_z: snapshot_date,
-      player_stats_unified: snapshot_date,
-      player_totals_unified: season_id
-    },
+    sourceCutoffs: buildScoreSourceCutoffs({
+      snapshotDate: snapshot_date,
+      playerStatsSourceDate: rates.sourceDate,
+      seasonId: season_id
+    }),
     warnings: [
       ...missingLuckStats.map((stat) => `missing_window_z_${stat}`),
+      ...(rates.sourceDate ? [] : ["missing_player_stats_source_date"]),
       ...guardrailWarnings
     ],
     fallbackFlags: {
