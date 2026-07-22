@@ -1,6 +1,7 @@
 import React, { useLayoutEffect, useRef } from "react";
 import OptimizedImage from "components/common/OptimizedImage";
 import Link from "next/link";
+import { fallbackTeamLogo } from "lib/images";
 import styles from "./MobileTeamList.module.scss";
 
 interface TeamListItem {
@@ -36,7 +37,7 @@ export default function MobileTeamList({
   animationState,
   onTeamMouseEnter,
   onTeamMouseLeave,
-  generateTeamColorStyles
+  generateTeamColorStyles,
 }: MobileTeamListProps) {
   const headerRef = useRef<HTMLDivElement | null>(null);
   const gridRef = useRef<HTMLDivElement | null>(null);
@@ -123,13 +124,17 @@ export default function MobileTeamList({
                 onMouseEnter={() => onTeamMouseEnter(team.abbreviation)}
               >
                 <OptimizedImage
-                  src={`/teamLogos/${team.abbreviation ?? "default"}.png`}
+                  src={
+                    team.abbreviation
+                      ? `/teamLogos/${team.abbreviation}.png`
+                      : fallbackTeamLogo
+                  }
                   alt={team.name}
                   className={styles.teamLogo}
                   width={45}
                   height={45}
                   priority={false}
-                  fallbackSrc="/teamLogos/default.png"
+                  fallbackSrc={fallbackTeamLogo}
                 />
               </Link>
             ))}

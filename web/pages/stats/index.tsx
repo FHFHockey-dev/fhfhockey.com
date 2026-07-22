@@ -11,8 +11,10 @@ import GoalieShareChart from "components/GoalieShareChart";
 import { StatsProps } from "lib/NHL/statsPageTypes";
 import { fetchStatsData } from "lib/NHL/statsPageFetch";
 import PlayerSearchBar from "components/StatsPage/PlayerSearchBar";
+import OptimizedImage from "components/common/OptimizedImage";
 import Link from "next/link";
 import supabase from "lib/supabase";
+import { fallbackTeamLogo } from "lib/images";
 import { getCurrentSeason } from "lib/NHL/client";
 import {
   getTeamAbbreviationById,
@@ -488,17 +490,19 @@ export default function StatsPage({
                     onMouseEnter={() => handleTeamMouseEnter(team.abbreviation)}
                   >
                     <div className={styles.teamLogoContainer}>
-                      <img
-                        src={`/teamLogos/${team.abbreviation ?? "default"}.png`}
+                      <OptimizedImage
+                        src={
+                          team.abbreviation
+                            ? `/teamLogos/${team.abbreviation}.png`
+                            : fallbackTeamLogo
+                        }
                         alt={team.name}
                         className={styles.teamLogo}
                         width={45}
                         height={45}
                         loading="lazy"
                         decoding="async"
-                        onError={(e) => {
-                          e.currentTarget.src = "/teamLogos/default.png";
-                        }}
+                        fallbackSrc={fallbackTeamLogo}
                       />
                     </div>
                     <span className={styles.teamAbbreviation}>

@@ -9,7 +9,7 @@ Reduce technical noise (lint warnings, repetitive code patterns) to improve deve
 - 0 TypeScript build errors (current full no-emit check passes).
 - ≥ 25% warning reduction inside each declared first-pass scope. The first current scope removes 5/5 Game Grid ARIA-role warnings (100%). The baseline-compatible directory invocation now covers 1,499 files with 127 warnings; the extension-complete JS/JSX/TS/TSX core covers 1,500 files with 129 warnings. The sole delta is `components/PoissonDistributionChart.jsx` with two raw-image warnings. Because the recorded 1,497-file pre-change snapshot used the directory invocation, only the stable five-to-zero ARIA cluster is presented as a like-for-like reduction.
 - 100% elimination of `jsx-a11y/role-supports-aria-props` warnings without suppression (current core baseline: 5 → 0).
-- Establish and directly verify a safe `OptimizedImage` fallback/dimension contract before further raw-image migration; NEW 22/23/25 remain open.
+- Establish and directly verify a safe `OptimizedImage` fallback/dimension contract before further raw-image migration; NEW 22/23 are verified and NEW 25/45 retain the separate TeamLeaders and residual-fallback boundaries.
 - Remove stale lint directives and document only genuinely intentional exhaustive-deps omissions with local evidence. The original NEW 21 four-directive cohort is complete; broader rule-policy/config/formatting follow-ups remain NEW 40–42.
 
 ## In Scope (Phase 1)
@@ -24,7 +24,7 @@ Reduce technical noise (lint warnings, repetitive code patterns) to improve deve
 4. Unnecessary deps removal
    - Convert useMemo/useCallback dependency arrays to minimal sets (avoid extra rerenders) where flagged as “unnecessary dependency”
 5. Pilot `<Image />` migration
-   - Audit and repair the existing `components/common/OptimizedImage.tsx` wrapper before expanding it; caller error handlers currently can override fallback and no default-size contract exists.
+   - The existing `components/common/OptimizedImage.tsx` wrapper now enforces explicit dimensions or `fill`, owns a keyed one-attempt fallback state, composes caller error handlers, and has direct regressions.
    - Retain raw images whose source/domain/dimensions are unresolved, including Team Leaders, until NEW 25 is decided; prefer known-size local pilot images after wrapper proof.
 6. Introduce ESLint rule tuning (optional incremental)
    - Consider local disable for large data-mapping debug logs if performance unaffected
@@ -50,9 +50,9 @@ Reduce technical noise (lint warnings, repetitive code patterns) to improve deve
 
 ## Task Breakdown (Actionable Tickets)
 1. a11y-switch-fix plus sortable-column semantics (DONE locally with direct shared-control and browser evidence)
-2. stats-ref-cleanup adjustments (verified complete; the original stale disables are removed under NEW 21 and the image fallback remains NEW 23 work)
-3. repair and directly test the existing OptimizedImage wrapper (OPEN — NEW 22)
-4. pilot image replacements (PARTIAL — extracted homepage standings/injury/game logos are migrated; stats fallback and Team Leaders constraints remain NEW 23/25)
+2. stats-ref-cleanup adjustments (verified complete; the original stale disables are removed under NEW 21 and both stats-logo fallback paths are repaired under NEW 23)
+3. repair and directly test the existing OptimizedImage wrapper (DONE — NEW 22 and base 4.1)
+4. pilot image replacements (PARTIAL — extracted homepage standings/injury/game logos and the mobile/desktop stats paths are migrated; Team Leaders and residual fallback constraints remain NEW 25/45)
 5. hook-deps-pass-1 (missing deps) + justifications
 6. hook-deps-pass-2 (remove unnecessary deps)
 7. annotate intentional suppressions
@@ -76,6 +76,8 @@ Reduce technical noise (lint warnings, repetitive code patterns) to improve deve
 - 2026-07-22: Dependency order is baseline/claim reconciliation → correctness/accessibility → stale suppression cleanup → wrapper/fallback proof → bounded image/hook batches → reproducible lint/toolchain contract → integrated verification. The first implementation scope was reordered ahead of hook/image candidates because all five correctness-class ARIA warnings shared one semantic repair. Native headers plus labeled actions, clipped/forced-colors focus, and render-safe parent state passed the initial gate. Final review registered and closed NEW 36–39 before publication: all three day-toggle views now use the stable `Include … games` on-state meaning, ascending/descending arrows match `aria-sort`, and both shared switch controls cancel repeated Enter/Space without extra callbacks. The corrected scope passes 2 files/6 focused tests, strict changed-scope lint at 0/0, full TypeScript, bundled-Node-24 Sass, Prettier, diff integrity, clean real-browser interaction from the unchanged layout/focus slice, and independent no-finding re-review. Fresh exact legacy-config/no-auto-fix reruns close NEW 44 with two explicit denominators: the baseline-compatible directory invocation is 1,499 files, 0 errors, and 127 warnings (64 hook dependencies, 59 raw images, four anonymous defaults, zero ARIA-role warnings), while the extension-complete JS/JSX/TS/TSX core is 1,500 files, 0 errors, and 129 warnings (64 hooks, 61 raw images, four anonymous defaults, zero ARIA). The only extension delta is `components/PoissonDistributionChart.jsx` and its two raw-image warnings. Because the directory denominator includes two zero-warning tests absent from its 1,497-file pre-change snapshot, only the stable five-to-zero ARIA cluster is compared like-for-like.
 - 2026-07-22: NEW 21 removed exactly four behavior-neutral unused directives from homepage/stats/projections and retained the two active shift-chart hook suppressions with concrete mount-only/state-writing justifications. The four-page strict rerun has zero errors/unused directives and six unrelated warnings; one homepage regression and full TypeScript pass. A full core strict inventory expands the remaining rule-policy-dependent cohort to 37 directives, while `useVORPCalculations` adds two unused and four unknown-rule directives outside that denominator; these stay open under NEW 40/41. Direct Prettier checks expose pre-existing whole-file drift on the three legacy pages, retained separately under NEW 42 instead of creating formatting churn.
 - 2026-07-22: Final publication review registered and closed NEW 43/44: historical checkpoint `36b3c38...` is labeled as historical scheduler/generated-state evidence, every current control distinguishes the 1,499-file/127-warning baseline-compatible invocation from the extension-complete 1,500-file/129-warning core audit, and exact NEW 21 checkpoint `11c51736c764b3df7b2d0da7920c93c0f2a91337` is now the latest B-CLEAN publication.
+- 2026-07-22: The bounded stats-fallback audit registered separate P2 NEW 45 for residual nonexistent team-logo fallback paths outside the two stats callers. This preserves NEW 23 as a narrow mobile/desktop stats repair and keeps TeamLeaders NEW 25 plus broad image migration outside that slice.
+- 2026-07-22: Base 4.1 and NEW 22/23 close through an explicit sized-or-fill wrapper union/runtime guard, keyed primary/fallback reset, one-attempt terminal fallback, caller notification, decorative-alt preservation, and one canonical tracked local team-logo fallback in both stats render paths. The complete five-file group passes 20 tests; full TypeScript, zero-finding scoped legacy-config ESLint, targeted Prettier, diff integrity, React review, and independent no-blocker review pass. An 8 GiB production build completed type validation and optimized compilation before `/lines` prerender failed only because the isolated checkout intentionally lacks its two required Supabase environment bindings; the default 4 GiB attempt had first exhausted the heap. No secret was copied and broader page/browser verification remains open under 6.2.
 
 ## Acceptance Criteria
 - Build passes with zero new errors
@@ -109,4 +111,4 @@ Tracking representative warnings to address or justify. The current core baselin
 | components/WiGO/NameSearchBar.tsx | current lint clean | resolved | Current filtered-player ownership no longer warns |
 | components/WiGO/PerGameStatsTable.tsx | current lint clean | resolved | Current player identity dependencies no longer warn |
 
-Next dependency-eligible local pass starts with NEW 22/23 wrapper/fallback correctness. NEW 20 remains a material package-manager/toolchain strategy checkpoint; NEW 40/41 depend on that lint-policy decision, and NEW 42 remains separately scoped formatting work.
+Next dependency-eligible local pass continues with base 4.2 and NEW 25's bounded migrated-logo/source-contract audit before any broader image rollout. NEW 20 remains a material package-manager/toolchain strategy checkpoint; NEW 40/41 depend on that lint-policy decision, NEW 42 remains separately scoped formatting work, and NEW 45 owns residual nonexistent fallback paths outside stats.

@@ -4,5 +4,7 @@
 export const getTeamLogoSvg = (abbrev: string) =>
   `https://assets.nhle.com/logos/nhl/svg/${abbrev}_light.svg`;
 
+export const fallbackTeamLogo = "/teamLogos/FHFH.png";
+
 export const fallbackNHLLogo =
   "https://assets.nhle.com/logos/nhl/svg/NHL_light.svg";
