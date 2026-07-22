@@ -2,6 +2,7 @@
 
 - `tasks/prd-sustainability-trends-audit.md` - Source PRD that defines the audit scope, validation method, and consolidation goals.
 - `tasks/tasks-prd-sustainability-trends-audit.md` - Execution checklist for the audit work.
+- `tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-audit-report.md` - Canonical working audit worksheet, glossary, family index, findings, validation evidence, and consolidation register.
 - `web/pages/trends/index.tsx` - Primary trends dashboard page and likely consolidation anchor for trend-related UI.
 - `web/pages/trends/placeholder.tsx` - Older or alternate trends dashboard implementation that may duplicate current logic.
 - `web/pages/trendsSandbox.tsx` - Sandbox page for player trend and sustainability exploration with direct Supabase reads.
@@ -78,13 +79,13 @@
 ## Tasks
 
 - [ ] 1.0 Build the master audit inventory and system-family map
-  - [ ] 1.1 Read the PRD and create a working audit worksheet that mirrors the required output sections: page purpose, helpers, APIs, source tables, target tables, validation steps, overlap findings, and consolidation recommendation.
+  - [x] 1.1 Read the PRD and create a working audit worksheet that mirrors the required output sections: page purpose, helpers, APIs, source tables, target tables, validation steps, overlap findings, and consolidation recommendation. The canonical incremental report includes stable audit IDs, runtime status, trigger/auth/freshness/formula fields, evidence states, finding links, and guarded recommendation criteria (verified 2026-07-22).
   - [ ] 1.2 Build the full in-scope file inventory covering pages, APIs, helper libraries, background jobs, SQL assets, and tests for trend, sustainability, baseline, rolling-average, projection, and power-rating logic.
   - [ ] 1.3 Group the inventory into system families: trends, sustainability, team power/underlying stats, start-chart/rolling metrics, FORGE, and legacy/adjacent systems.
   - [ ] 1.4 Mark each inventoried file as current production, active experiment, legacy, adjacent dependency, or unclear.
   - [ ] 1.5 Create the first dependency map linking each page to its APIs, each API to its helper modules, and each helper/job to its read and write tables.
   - [ ] 1.6 Create a table ownership map that classifies each relevant Supabase table/view as raw source, derived aggregate, snapshot, cached output, presentation output, or unknown/mixed.
-  - [ ] 1.7 Create the audit glossary template that will be reused for each system to define “trend,” “baseline,” “projection,” “typical performance,” sample windows, and output type.
+  - [x] 1.7 Create the audit glossary template that will be reused for each system to define “trend,” “baseline,” “projection,” “typical performance,” sample windows, and output type. The report also requires snapshot, sustainability, power, and accuracy/calibration semantics so cross-family terms cannot be compared without units, population, horizon, provenance, and leakage boundaries (verified 2026-07-22).
 
 - [ ] 2.0 Audit the trends and sustainability systems end to end
   - [ ] 2.1 Audit `web/pages/trends/index.tsx`, `web/pages/trends/placeholder.tsx`, `web/pages/trendsSandbox.tsx`, `web/pages/trendsTestingGrounds.tsx`, and `web/pages/trends/player/[playerId].tsx` for user-facing outputs, imports, dependency paths, and overlap.
