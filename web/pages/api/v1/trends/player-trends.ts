@@ -1,12 +1,15 @@
+import { timingSafeEqual } from "crypto";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import supabase from "lib/supabase/server";
 import type { Database } from "lib/supabase/database-generated.types";
+import { resolvePlayerTrendWriteFromDate } from "lib/trends/playerTrendRebuildScope";
 import {
   GOALIE_TREND_REQUIRED_COLUMNS,
   SKATER_TREND_REQUIRED_COLUMNS,
   buildPlayerTrendRecords,
 } from "lib/trends/playerTrendCalculator";
+import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 
 type PlayerStatsRow =
   Database["public"]["Views"]["player_stats_unified"]["Row"];
@@ -28,11 +31,12 @@ interface FetchResponse {
   data: any[];
 }
 
-const DEFAULT_START_DATE = "2023-01-01";
 const SKATER_SELECT_COLUMNS = SKATER_TREND_REQUIRED_COLUMNS.join(",");
 const GOALIE_SELECT_COLUMNS = GOALIE_TREND_REQUIRED_COLUMNS.join(",");
 const PAGE_SIZE = 1000;
 const UPSERT_BATCH_SIZE = 500;
+const MAX_REBUILD_PLAYER_IDS = 250;
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export type RebuildPlayerTrendsOptions = {
   startDate: string;
@@ -60,6 +64,31 @@ export function parsePlayerIds(input: unknown): number[] | undefined {
 
   const unique = Array.from(new Set(parsed));
   return unique.length ? unique : undefined;
+}
+
+function readBearerToken(req: NextApiRequest): string {
+  const authorization = req.headers.authorization;
+  if (typeof authorization !== "string") return "";
+  return authorization.startsWith("Bearer ")
+    ? authorization.slice("Bearer ".length)
+    : "";
+}
+
+function secretsMatch(received: string, expected: string): boolean {
+  const receivedBuffer = Buffer.from(received);
+  const expectedBuffer = Buffer.from(expected);
+  return (
+    receivedBuffer.length === expectedBuffer.length &&
+    timingSafeEqual(receivedBuffer, expectedBuffer)
+  );
+}
+
+function isDateOnly(value: unknown): value is string {
+  if (typeof value !== "string" || !DATE_ONLY_PATTERN.test(value)) {
+    return false;
+  }
+
+  return !Number.isNaN(Date.parse(`${value}T00:00:00.000Z`));
 }
 
 async function fetchSkaterStats(options: {
@@ -300,29 +329,79 @@ export async function rebuildPlayerTrends({
 }
 
 async function handlePost(req: NextApiRequest, res: NextApiResponse) {
-  const startDate =
-    typeof req.body?.startDate === "string" && req.body.startDate.length > 0
-      ? req.body.startDate
-      : DEFAULT_START_DATE;
+  const expectedSecret = process.env.CRON_SECRET;
+  if (!expectedSecret?.trim()) {
+    return res.status(503).json({
+      success: false,
+      message: "Trend rebuild authorization is not configured",
+    });
+  }
 
-  const rawSeasonId =
-    req.body?.seasonId !== undefined && req.body.seasonId !== null
-      ? Number(req.body.seasonId)
-      : undefined;
-  const seasonId = Number.isFinite(rawSeasonId) ? rawSeasonId : undefined;
-  const playerIds = parsePlayerIds(req.body?.playerIds);
-  const writeFromDate =
-    typeof req.body?.writeFromDate === "string" &&
-    req.body.writeFromDate.length > 0
-      ? req.body.writeFromDate.slice(0, 10)
-      : undefined;
+  if (!secretsMatch(readBearerToken(req), expectedSecret)) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized",
+    });
+  }
 
   try {
+    const season = await fetchCurrentSeason();
+    const today = new Date().toISOString().slice(0, 10);
+    const seasonStart = season.startDate.slice(0, 10);
+    const earliestWriteDate = resolvePlayerTrendWriteFromDate(today);
+    const requestedSeasonId =
+      req.body?.seasonId === undefined || req.body?.seasonId === null
+        ? season.id
+        : Number(req.body.seasonId);
+    const requestedStartDate = req.body?.startDate ?? seasonStart;
+    const requestedWriteFromDate = req.body?.writeFromDate ?? earliestWriteDate;
+    const playerIds = parsePlayerIds(req.body?.playerIds);
+
+    if (
+      !Number.isSafeInteger(requestedSeasonId) ||
+      requestedSeasonId !== season.id
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Trend rebuilds are limited to the current season",
+      });
+    }
+
+    if (!isDateOnly(requestedStartDate) || requestedStartDate !== seasonStart) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Trend rebuild source data must begin at the current season start",
+      });
+    }
+
+    if (
+      !isDateOnly(requestedWriteFromDate) ||
+      requestedWriteFromDate < earliestWriteDate ||
+      requestedWriteFromDate > today
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Trend rebuild writes are limited to the current repair window",
+      });
+    }
+
+    if (
+      req.body?.playerIds !== undefined &&
+      (!playerIds || playerIds.length > MAX_REBUILD_PLAYER_IDS)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: `Trend rebuild player scope must contain 1-${MAX_REBUILD_PLAYER_IDS} valid IDs`,
+      });
+    }
+
     const response = await rebuildPlayerTrends({
-      startDate,
-      seasonId,
+      startDate: seasonStart,
+      seasonId: season.id,
       playerIds,
-      writeFromDate,
+      writeFromDate: requestedWriteFromDate,
     });
     return res.status(200).json(response);
   } catch (error: any) {
