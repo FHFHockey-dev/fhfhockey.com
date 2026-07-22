@@ -5,6 +5,7 @@ import {
   fetchAllSupabaseFilterChunks,
   fetchAllSupabasePages,
 } from "lib/supabase/pagination";
+import { upsertRowsInChunks } from "lib/sustainability/persist";
 
 // Types
 export type StatCode = "shp" | "oishp" | "ipp" | "ppshp"; // ppshp = power play shooting %
@@ -413,7 +414,7 @@ export async function upsertPlayerPosteriors(
   dryRun = false,
   leaguePriors?: Map<string, { alpha0: number; beta0: number }>,
   options: { offset?: number; limit?: number } = {},
-): Promise<{ inserted: number; sample: any[] }> {
+): Promise<{ inserted: number; chunks: number; sample: any[] }> {
   let leagueMap = leaguePriors;
   if (!leagueMap) {
     const { data: leagueRows, error: leagueErr } = await (supabase as any)
@@ -463,16 +464,23 @@ export async function upsertPlayerPosteriors(
     });
   }
 
+  let chunks = 0;
   if (!dryRun && upsertRows.length) {
-    const { error: upErr } = await (supabase as any)
-      .from("sustainability_player_priors")
-      .upsert(upsertRows, {
-        onConflict: "player_id,season_id,position_group,stat_code",
-      });
-    if (upErr) throw upErr;
+    const result = await upsertRowsInChunks({
+      rows: upsertRows,
+      upsert: (chunk) =>
+        (supabase as any).from("sustainability_player_priors").upsert(chunk, {
+          onConflict: "player_id,season_id,position_group,stat_code",
+        }),
+    });
+    chunks = result.chunks;
   }
 
-  return { inserted: upsertRows.length, sample: upsertRows.slice(0, 5) };
+  return {
+    inserted: upsertRows.length,
+    chunks,
+    sample: upsertRows.slice(0, 5),
+  };
 }
 
 // Inline sanity: posterior mean test

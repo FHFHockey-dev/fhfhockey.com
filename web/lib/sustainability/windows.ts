@@ -3,6 +3,7 @@
 import supabase from "lib/supabase/server";
 import { toPosGroup, PosGroup, StatCode } from "lib/sustainability/priors";
 import type { CanonicalSustainabilityWindowCode } from "lib/predictions/rollingWindows";
+import { upsertRowsInChunks } from "lib/sustainability/persist";
 
 export type WindowCode = CanonicalSustainabilityWindowCode;
 const EPS = 1e-9;
@@ -241,15 +242,18 @@ export async function rebuildBetaWindowZForSnapshot(
     }
   }
 
+  let chunks = 0;
   if (!dry && rows.length) {
-    const { error } = await (supabase as any)
-      .from("sustainability_window_z")
-      .upsert(rows, {
-        onConflict: "player_id,snapshot_date,window_code,stat_code"
-      });
-    if (error) throw error;
+    const result = await upsertRowsInChunks({
+      rows,
+      upsert: (chunk) =>
+        (supabase as any).from("sustainability_window_z").upsert(chunk, {
+          onConflict: "player_id,snapshot_date,window_code,stat_code"
+        })
+    });
+    chunks = result.chunks;
   }
-  return { count: rows.length, sample: rows.slice(0, 5) };
+  return { count: rows.length, chunks, sample: rows.slice(0, 5) };
 }
 
 export async function loadPlayersForSnapshot(

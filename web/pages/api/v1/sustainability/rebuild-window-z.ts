@@ -69,6 +69,7 @@ async function handler(
       : [offset];
 
     let totalCount = 0;
+    let totalWriteChunks = 0;
     let totalPlayers = 0;
     let sample: any[] = [];
 
@@ -78,7 +79,11 @@ async function handler(
         continue;
       }
 
-      const { count, sample: batchSample } = await rebuildBetaWindowZForSnapshot(
+      const {
+        count,
+        chunks,
+        sample: batchSample
+      } = await rebuildBetaWindowZForSnapshot(
         season,
         snapshot,
         batch,
@@ -89,6 +94,7 @@ async function handler(
       );
 
       totalCount += count;
+      totalWriteChunks += chunks;
       totalPlayers += batch.length;
       if (!sample.length && batchSample?.length) {
         sample = batchSample;
@@ -97,15 +103,16 @@ async function handler(
 
     const duration_s = ((Date.now() - started) / 1000).toFixed(2);
     return res.status(200).json(withTiming({
-      success: true,
-      season,
-      snapshot_date: snapshot,
-      dry,
-      run_all: runAll,
-      processed_players: totalPlayers,
-      rows_upserted_or_built: totalCount,
-      batches_processed: batchOffsets.length,
-      sample,
+        success: true,
+        season,
+        snapshot_date: snapshot,
+        dry,
+        run_all: runAll,
+        processed_players: totalPlayers,
+        rows_upserted_or_built: totalCount,
+        write_chunks: totalWriteChunks,
+        batches_processed: batchOffsets.length,
+        sample,
       duration_s
     }));
   } catch (e: any) {

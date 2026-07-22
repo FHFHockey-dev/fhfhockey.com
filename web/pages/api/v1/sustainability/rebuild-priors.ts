@@ -76,7 +76,7 @@ async function handler(
         )
       : undefined;
 
-    const { inserted, sample } = await upsertPlayerPosteriors(
+    const { inserted, chunks, sample } = await upsertPlayerPosteriors(
       season,
       k,
       dry,
@@ -95,6 +95,7 @@ async function handler(
         limit,
         k,
         inserted_player_rows: inserted,
+        write_chunks: chunks,
         sample,
         duration_s
       }));

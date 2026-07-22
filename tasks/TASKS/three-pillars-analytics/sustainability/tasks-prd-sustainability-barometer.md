@@ -9,6 +9,15 @@
 - `functions/lib/sustainability/offline.py` - Shared fail-closed exception used by every retired Python persistence/orchestration entry point.
 - `web/lib/sustainability/priors.ts` - Canonical paginated league/player prior reads and Supabase upserts.
 - `web/lib/sustainability/priors.test.ts` - Pagination, player-batch, and concatenated-season identity regressions.
+- `web/lib/sustainability/persist.ts` - Shared fail-fast bounded upsert helper for canonical Sustainability writers.
+- `web/lib/sustainability/persist.test.ts` - Chunk boundaries, conflict keys, idempotency, and fail-fast persistence regressions.
+- `web/lib/sustainability/score.ts` - Canonical paginated league-reference reads, score construction, and bounded score writes.
+- `web/lib/sustainability/score.test.ts` - Complete ordered league-reference pagination regression.
+- `web/lib/sustainability/windows.ts` - Canonical rolling-window construction and bounded window-z persistence.
+- `web/pages/api/v1/sustainability/rebuild-priors.ts` - Audited prior route with bounded player batches, timing, and write-chunk counts.
+- `web/pages/api/v1/sustainability/rebuild-window-z.ts` - Audited window-z route with prerequisite, batch, timing, and write-chunk evidence.
+- `web/pages/api/v1/sustainability/rebuild-score.ts` - Audited score route with prerequisite, batch, timing, and write-chunk evidence.
+- `tasks/TASKS/three-pillars-analytics/sustainability/SUSTAINABILITY-RUNBOOK.md` - Canonical scheduled chain, retry/failure, ownership, and unsupported-feature boundary.
 - `web/lib/supabase/pagination.ts` - Shared verified range-pagination and bounded filter-chunk helpers.
 - `supabase/migrations/20260716112908_production_schema_baseline.sql` - Authoritative baseline for canonical Sustainability tables, keys, grants, and indexes.
 - `functions/lib/env_loader.py` - Local helper to ingest `web/.env.local` for SUPABASE_DB_URL & related secrets in dev without exporting.
@@ -102,14 +111,14 @@
 - [ ] 5.0 Nightly Pipeline Orchestration & Retro Recompute Queue
 	- [ ] 5.1 Implement `pipeline.py` main orchestration run: load config → priors → player priors → new games → windows → scoring → persistence. (In progress: added `orchestrator.py` with `orchestrate_full_run` performing full scoring flow & returning structured summary; pending: incremental new game detection, run logging persistence, DB locking, retro queue trigger.)
 	- [ ] 5.2 Add function to detect new games (max game_date processed per window_type) to limit scope.
-	- [ ] 5.3 Bulk insert barometer rows (single COPY/UNNEST style if supported; else batched transactions).
+	- [x] 5.3 Bulk insert canonical score-pipeline rows in bounded transactions. The active TypeScript owner splits player-prior, window-z, score, projection, and trend-band upserts into fail-fast batches of at most 400 rows and reports write-chunk counts from the three core bulk-writer routes (verified 2026-07-22; legacy draft-only barometer persistence remains superseded by Option A).
 	- [ ] 5.4 Generate distribution snapshot (GAME window) percentiles & summary stats using `distribution.py`.
 	- [ ] 5.5 Persist snapshot; update quintile mapping for *new* rows only.
 	- [ ] 5.6 Implement retro recompute queue insertion when model_version or config_hash changes.
 	- [ ] 5.7 Implement worker `retro_recompute.py` to process queue entries in small batches (idempotent, backoff on errors).
 	- [ ] 5.8 Add logging & metrics (duration per phase, inserted row count, anomalies, extremes).
 	- [ ] 5.9 Integration test: run full pipeline on fixture dataset & assert deterministic outputs.
-	- [ ] 5.10 Document operational runbook (retry strategy, failure modes) inside code comments / README section.
+	- [x] 5.10 Document the canonical scheduled route chain, exact retry identity, prerequisite/failure behavior, bounded read/write contracts, B-CRON-NST NEW 61 ownership dependency, Python offline-only boundary, and unimplemented distribution/retro semantics in the existing Sustainability runbook (verified 2026-07-22).
 
 - [ ] 6.0 API Integration (Player Summary Extension & Leaderboard Endpoint)
 	- [ ] 6.1 Extend existing player summary data access layer to join most recent GAME, G5, G10, STD scores (by game_date or season_id if STD).
@@ -152,6 +161,8 @@
 - [x] NEW 10.0 **P1 canonical schema/adapter ownership drift:** Option A is implemented. TypeScript/Supabase is the sole production owner; the disconnected Python adapter is removed after its only unrelated consumer moved to a domain-neutral connection helper, Python configuration/prior helpers require explicit injected clients, and Python persistence/incremental/snapshot/log/lock/retro paths fail closed while pure scoring remains offline. The current Supabase catalog, baseline, generated types, 21 focused Python tests, 14 TypeScript prior/pagination tests, TypeScript, lint, and compilation prove the boundary (closed 2026-07-22).
 
 - [x] NEW 11.0 **P1 concatenated NHL season arithmetic:** `fetchPlayerSeasonCounts` subtracted integers from identifiers such as `20252026`, yielding nonexistent `20252025`/`20252024` history and silently zeroing prior-season contributions. Derive and validate `[20252026, 20242025, 20232024]`, retain full player-level batching/pagination, and prove all three live source seasons plus regression coverage (discovered and closed 2026-07-22).
+
+- [x] NEW 12.0 **P1 canonical scheduled-pipeline completeness and payload safety:** the active league-skill reference read relied on one implicit PostgREST page, while player-prior, window-z, and score writers sent full route payloads in one request. Range-paginate the deterministic league reference; split every potentially large canonical Sustainability write into fail-fast batches of at most 400 rows; expose write-chunk metrics; retain composite-key idempotency; and document the exact scheduled chain, retries, ownership dependency, and intentionally absent distribution/retro semantics. Twenty-four focused tests, full TypeScript, scoped zero-error lint, formatting, and diff integrity prove the bounded implementation (discovered and closed 2026-07-22).
 
 ---
 I have generated the high-level tasks based on the PRD. Ready to generate the sub-tasks? Respond with "Go" to proceed.

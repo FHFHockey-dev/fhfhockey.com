@@ -76,7 +76,11 @@ describe("/api/v1/sustainability/rebuild-priors", () => {
     assertPriorsPrerequisitesMock.mockResolvedValue(undefined);
     ensureTablesMock.mockResolvedValue(undefined);
     upsertLeaguePriorsMock.mockResolvedValue([]);
-    upsertPlayerPosteriorsMock.mockResolvedValue({ inserted: 0, sample: [] });
+    upsertPlayerPosteriorsMock.mockResolvedValue({
+      inserted: 500,
+      chunks: 2,
+      sample: []
+    });
   });
 
   it("returns a structured prerequisite failure when unified totals are missing", async () => {
@@ -115,7 +119,9 @@ describe("/api/v1/sustainability/rebuild-priors", () => {
     expect(res.body).toMatchObject({
       success: true,
       offset: 250,
-      limit: 125
+      limit: 125,
+      inserted_player_rows: 500,
+      write_chunks: 2
     });
   });
 });

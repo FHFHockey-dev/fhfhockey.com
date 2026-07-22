@@ -86,19 +86,20 @@ async function handler(
       }
     }
 
-    const { inserted } = await upsertScores(rows, dry);
+    const { inserted, chunks } = await upsertScores(rows, dry);
     const duration_s = ((Date.now() - t0) / 1000).toFixed(2);
     return res.status(200).json(withTiming({
-      success: true,
-      season,
-      snapshot_date: snapshot,
-      dry,
-      run_all: runAll,
-      processed_players: totalPlayers,
-      rows_built: rows.length,
-      rows_upserted: inserted,
-      batches_processed: batchOffsets.length,
-      sample: rows.slice(0, 5),
+        success: true,
+        season,
+        snapshot_date: snapshot,
+        dry,
+        run_all: runAll,
+        processed_players: totalPlayers,
+        rows_built: rows.length,
+        rows_upserted: inserted,
+        write_chunks: chunks,
+        batches_processed: batchOffsets.length,
+        sample: rows.slice(0, 5),
       duration_s
     }));
   } catch (e: any) {

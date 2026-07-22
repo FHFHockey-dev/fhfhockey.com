@@ -3,11 +3,31 @@ import {
   SUSTAINABILITY_PROJECTION_ON_CONFLICT,
   TREND_BAND_ON_CONFLICT,
   toSustainabilityProjectionRow,
+  upsertRowsInChunks,
   upsertSustainabilityProjectionRows,
   upsertTrendBandRows,
   type SustainabilityProjectionRow,
   type TrendBandRow
 } from "./persist";
+
+describe("upsertRowsInChunks", () => {
+  it("rejects invalid chunk sizes and stops on the first failed chunk", async () => {
+    const upsert = vi
+      .fn()
+      .mockResolvedValueOnce({ error: null })
+      .mockResolvedValueOnce({ error: new Error("write failed") });
+
+    await expect(
+      upsertRowsInChunks({ rows: [1], chunkSize: 0, upsert })
+    ).rejects.toThrow("positive safe integer");
+    await expect(
+      upsertRowsInChunks({ rows: [1, 2, 3, 4, 5], chunkSize: 2, upsert })
+    ).rejects.toThrow("write failed");
+    expect(upsert).toHaveBeenCalledTimes(2);
+    expect(upsert).toHaveBeenNthCalledWith(1, [1, 2]);
+    expect(upsert).toHaveBeenNthCalledWith(2, [3, 4]);
+  });
+});
 
 function buildRow(index: number): TrendBandRow {
   return {

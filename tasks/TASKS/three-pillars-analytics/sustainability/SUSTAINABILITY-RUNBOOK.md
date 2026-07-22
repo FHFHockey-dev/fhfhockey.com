@@ -69,6 +69,21 @@ Therefore no projection MAE/RMSE, baseline-win, or Brier claim is currently publ
 
 ## Operations and performance
 
+### Canonical scheduled score chain
+
+The production owner is the TypeScript/Supabase route chain in `web/vercel.json`:
+
+1. `rebuild-priors` builds league and player priors for the current season.
+2. Three ordered `rebuild-window-z` pages process offsets 0, 250, and 500.
+3. Three ordered `rebuild-score` pages process the same offsets.
+4. Four `rebuild-trend-bands` pages process offsets 0, 250, 500, and 750.
+
+The jobs are deliberately idempotent on their documented composite keys. Potentially large source reads use deterministic range pagination, filtered player IDs are bounded in chunks, and production writes are split into at most 400 rows per PostgREST upsert. Route responses report timing, processed/built/upserted counts, write-chunk counts where the route owns a bulk write, and structured prerequisite or partial-failure details. Retry a failed page with the same season, snapshot date, offset, and limit; do not skip to a downstream stage after a prerequisite failure.
+
+These independently scheduled routes are not an atomic all-stage orchestrator. Authoritative schedule ownership and cross-job ordering remain tracked under B-CRON-NST NEW 61. Empirical distribution-snapshot/quintile persistence and config-triggered retro recompute queues are not implemented by this chain and must not be inferred from trend-band output.
+
+The legacy Python Sustainability package is offline-only. Its pure scoring functions may be used for fixtures and analysis, but its persistence, incremental, snapshot, run-log, lock, and retro entry points fail closed. Do not restore Python database writes or schedule those modules without a new approved ownership decision and executable schema proof.
+
 - Target: full active-skater nightly recompute under 15 minutes. Process bounded pages and aggregate route timing from each response; do not send one unbounded request.
 - Partial failures are returned per player and can be retried with the same snapshot/date/page. Composite-key upserts prevent duplicates.
 - Reads are bounded by exact player/snapshot/window/horizon keys and limits. Potentially large historical reads use `.range()` until a short page.

@@ -1,8 +1,10 @@
 // web/lib/sustainability/score.ts
 
 import supabase from "lib/supabase/server";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { PosGroup } from "lib/sustainability/priors";
 import { WindowCode } from "lib/sustainability/windows";
+import { upsertRowsInChunks } from "./persist";
 import {
   SUSTAINABILITY_SCORE_MODEL_VERSION,
   buildSustainabilityConfigHash
@@ -18,15 +20,25 @@ const EPS = 1e-9;
 export type SkillCode = "ixg60" | "icf60" | "hdcf60";
 
 // League references (mu, sigma) for each stabilizer stat per season x position group
-export async function fetchSkillLeagueRef(season_id: number, pg: PosGroup) {
-  const { data, error } = await (supabase as any)
-    .from("player_totals_unified")
-    .select(
-      "position_code, nst_ixg_per_60, nst_icf_per_60, nst_hdcf_per_60, season_id"
-    )
-    .eq("season_id", season_id)
-    .in("position_code", pg === "F" ? ["C", "LW", "RW"] : ["D"]);
-  if (error) throw error;
+export async function fetchSkillLeagueRef(
+  season_id: number,
+  pg: PosGroup,
+  options: { client?: any; pageSize?: number } = {}
+) {
+  const client = options.client ?? (supabase as any);
+  const data = await fetchAllSupabasePages<any>(
+    ({ from, to }) =>
+      client
+        .from("player_totals_unified")
+        .select(
+          "player_id, position_code, nst_ixg_per_60, nst_icf_per_60, nst_hdcf_per_60, season_id"
+        )
+        .eq("season_id", season_id)
+        .in("position_code", pg === "F" ? ["C", "LW", "RW"] : ["D"])
+        .order("player_id", { ascending: true })
+        .range(from, to),
+    { pageSize: options.pageSize }
+  );
   const vals = {
     ixg60: [] as number[],
     icf60: [] as number[],
@@ -201,12 +213,14 @@ export async function buildScoreForPlayerWindow(
 }
 
 export async function upsertScores(rows: any[], dry = false) {
-  if (dry || !rows.length) return { inserted: 0 };
-  const { error } = await (supabase as any)
-    .from("sustainability_scores")
-    .upsert(rows, { onConflict: "player_id,snapshot_date,window_code" });
-  if (error) throw error;
-  return { inserted: rows.length };
+  if (dry || !rows.length) return { inserted: 0, chunks: 0 };
+  return upsertRowsInChunks({
+    rows,
+    upsert: (chunk) =>
+      (supabase as any).from("sustainability_scores").upsert(chunk, {
+        onConflict: "player_id,snapshot_date,window_code"
+      })
+  });
 }
 
 export default {
