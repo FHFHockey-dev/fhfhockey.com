@@ -115,7 +115,7 @@
 
 - [ ] 5.0 Nightly Pipeline Orchestration & Retro Recompute Queue
 	- [ ] 5.1 Implement `pipeline.py` main orchestration run: load config → priors → player priors → new games → windows → scoring → persistence. (In progress: added `orchestrator.py` with `orchestrate_full_run` performing full scoring flow & returning structured summary; pending: incremental new game detection, run logging persistence, DB locking, retro queue trigger.)
-	- [ ] 5.2 Add function to detect new games (max game_date processed per window_type) to limit scope.
+	- [x] 5.2 Compare the newest `player_stats_unified` source date with the newest persisted score `sourceCutoffs.observed.player_stats_source_date`; skip already-processed source work before prerequisites/builds and retain explicit `force=true` replay behavior (verified 2026-07-23).
 	- [x] 5.3 Bulk insert canonical score-pipeline rows in bounded transactions. The active TypeScript owner splits player-prior, window-z, score, projection, and trend-band upserts into fail-fast batches of at most 400 rows and reports write-chunk counts from the three core bulk-writer routes (verified 2026-07-22; legacy draft-only barometer persistence remains superseded by Option A).
 	- [ ] 5.4 Generate distribution snapshot (GAME window) percentiles & summary stats using `distribution.py`.
 	- [ ] 5.5 Persist snapshot; update quintile mapping for *new* rows only.

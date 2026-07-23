@@ -6754,3 +6754,8 @@
 
 - **Evidence / boundary:** The verified named phase/write/anomaly/extreme/replay/drift telemetry closes 5.8. Incremental detection, distribution persistence, retro processing, and full-fixture orchestration remain explicitly open.
 - **Controls:** B-SUST-BAR is 77/94 with 17 open. Raw parity is 4,595/4,897; actionable parity is 4,595/4,891 with 296 open = 93.95% complete / 6.05% open. Severity remains unchanged. No code, data, schema, schedule, provider, deployment, Production, credential, shared checkout, Vercel build, or push changed.
+
+## Entry 0687 — 2026-07-23 B-SUST-BAR incremental source gate
+
+- **Implementation / verification:** Score rebuild compares newest player-stat source date with persisted canonical source cutoffs, skips duplicate source work before prerequisites/builds, and preserves explicit `force=true` replay. The focused incremental/route/observability group passes 3 files/8 tests plus TypeScript and diff integrity.
+- **Controls:** Closed 5.2, bringing B-SUST-BAR to 78/94 with 16 open. Raw parity is 4,596/4,897; actionable parity is 4,596/4,891 with 295 open = 93.97% complete / 6.03% open. Severity remains unchanged. No data, schema, schedule, provider, deployment, Production, credential, shared checkout, Vercel build, or push changed.

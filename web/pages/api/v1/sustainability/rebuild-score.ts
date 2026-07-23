@@ -25,6 +25,7 @@ import {
 } from "lib/sustainability/observability";
 import supabase from "lib/supabase/server";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
+import { detectSustainabilitySourceAdvance } from "lib/sustainability/incremental";
 
 async function handler(
   req: NextApiRequest,
@@ -45,6 +46,24 @@ async function handler(
     const snapshot = String(
       req.query.snapshot_date || new Date().toISOString().slice(0, 10),
     );
+    const force =
+      req.query.force === "1" || req.query.force === "true";
+    const sourceAdvance = force
+      ? null
+      : await detectSustainabilitySourceAdvance(supabase);
+    finishPhase("incremental_source");
+    if (sourceAdvance && !sourceAdvance.shouldProcess) {
+      return res.status(200).json(
+        withTiming({
+          success: true,
+          skipped: true,
+          reason: sourceAdvance.reason,
+          snapshot_date: snapshot,
+          source_advance: sourceAdvance,
+          phase_timings_ms: phaseTimingsMs,
+        }),
+      );
+    }
     await assertScorePrerequisites(season, snapshot);
     finishPhase("prerequisites");
     const dry = req.query.dry === "1" || req.query.dry === "true";
@@ -187,6 +206,8 @@ async function handler(
         season,
         snapshot_date: snapshot,
         dry,
+        force,
+        source_advance: sourceAdvance,
         run_all: runAll,
         processed_players: totalPlayers,
         rows_built: rows.length,
