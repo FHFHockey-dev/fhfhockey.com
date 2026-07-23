@@ -483,7 +483,6 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
       totalProcessMs += Date.now() - processStart;
 
       if (debug && (i + 1) % PROGRESS_INTERVAL === 0) {
-        // eslint-disable-next-line no-console
         console.log(
           `[update-predictions-sko] progress ${i + 1}/${playerIds.length} avgFetchMs=${(
             totalSeriesFetchMs / playerSeriesQueries
@@ -544,7 +543,6 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
       : 0;
 
     // Server log summary
-    // eslint-disable-next-line no-console
     console.log(
       `[update-predictions-sko] completed players=${playerIds.length} upserts=${upserts} totalMs=${totalMs} avgFetchMs=${phases.avg_player_fetch_ms} avgProcessMs=${phases.avg_player_process_ms} batches=${batchDurations.length}`,
     );
@@ -586,7 +584,6 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
       runDiagnostics.write.partial =
         runDiagnostics.write.upsertedRows < runDiagnostics.write.attemptedRows;
     }
-    // eslint-disable-next-line no-console
     console.error("update-predictions-sko error", error?.message ?? error);
     return res.status(500).json({
       success: false,

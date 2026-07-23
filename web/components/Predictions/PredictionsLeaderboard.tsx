@@ -58,7 +58,6 @@ export default function PredictionsLeaderboard({
         .limit(playerIds.length);
       if (!active) return;
       if (playerErr) {
-        // eslint-disable-next-line no-console
         console.error("PredictionsLeaderboard player info error", playerErr);
         setPlayerInfo({});
         return;
@@ -149,7 +148,6 @@ export default function PredictionsLeaderboard({
     if (process.env.NODE_ENV === "development") {
       const firstPid = Object.keys(acc)[0];
       if (firstPid) {
-        // eslint-disable-next-line no-console
         console.log("[sparkline-debug] pid", firstPid, acc[Number(firstPid)]);
       }
       // Additional summary for first few players to inspect variability
@@ -168,7 +166,6 @@ export default function PredictionsLeaderboard({
           const uniq = new Set(values.map((v) => v.toFixed(4))).size;
           return { pid, n: arr.length, min, max, range, uniq };
         });
-      // eslint-disable-next-line no-console
       console.log("[sparkline-summary]", summaries);
     }
     previousSparkMap.current = acc;

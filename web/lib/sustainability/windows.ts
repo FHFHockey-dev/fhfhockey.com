@@ -40,7 +40,6 @@ export async function fetchPriors(
       !Number.isFinite(k) ||
       alpha0 + beta0 <= 0
     ) {
-      // eslint-disable-next-line no-console
       console.warn(
         "[fetchPriors] skipping invalid prior row",
         season_id,
@@ -184,7 +183,6 @@ export async function rebuildBetaWindowZForSnapshot(
           !Number.isFinite(prior.k) ||
           prior.alpha0 + prior.beta0 <= 0
         ) {
-          // eslint-disable-next-line no-console
           console.warn(
             "[rebuildBetaWindowZForSnapshot] invalid prior encountered",
             pid,
@@ -315,7 +313,6 @@ export async function ensureWindowTable() {
 CREATE INDEX IF NOT EXISTS idx_suswinz_season ON sustainability_window_z (season_id);
 CREATE INDEX IF NOT EXISTS idx_suswinz_player ON sustainability_window_z (player_id);`;
   // best-effort: log DDL
-  // eslint-disable-next-line no-console
   console.log("ensureWindowTable DDL prepared (not executed with anon key)");
   return ddl;
 }

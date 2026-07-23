@@ -62,7 +62,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=900");
     return res.status(200).json({ success: true, ...payload });
   } catch (error: any) {
-    // eslint-disable-next-line no-console
     console.error("game-predictions latest error", error?.message ?? error);
     return res.status(500).json({
       success: false,

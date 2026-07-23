@@ -61,7 +61,6 @@ const PRIOR_STARTS = 25; // starts prior for GAA regression
 const UTIL_TO_DEF_ENABLED = false; // if true, allocate UTIL to D as well
 
 // Debug guard; logs only in development
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 const __DEV__ = process.env.NODE_ENV !== "production";
 
@@ -150,7 +149,6 @@ export function useVORPCalculations({
         | null = null;
       if (prorate82) {
         try {
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
           const mod = require("lib/projectionsConfig/proration");
           computeProrated = mod.computeProratedFantasyPoints;
         } catch {
@@ -305,10 +303,8 @@ export function useVORPCalculations({
 
       // Dev-only: log a couple μ/σ for sanity on first render
       // Avoid noise by logging once per module load
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       if (__DEV__ && !globalThis.__VORP_Z_DEBUG_LOGGED__) {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         globalThis.__VORP_Z_DEBUG_LOGGED__ = true;
         const sampleSkaterCats = ["GOALS", "ASSISTS", "SHOTS_ON_GOAL"];
@@ -323,9 +319,7 @@ export function useVORPCalculations({
         const goalieDump = sampleGoalieCats
           .filter((k) => k in muGoalie)
           .map((k) => ({ k, mu: muGoalie[k], sd: sdGoalie[k] }));
-        // eslint-disable-next-line no-console
         console.log("[VORP] Z-scale (skater):", skaterDump);
-        // eslint-disable-next-line no-console
         console.log("[VORP] Z-scale (goalie):", goalieDump);
       }
     }

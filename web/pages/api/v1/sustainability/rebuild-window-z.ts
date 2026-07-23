@@ -135,7 +135,6 @@ async function handler(
         }));
     }
     const dependencyError = normalizeDependencyError(e);
-    // eslint-disable-next-line no-console
     console.error("rebuild-window-z error", e?.message || e);
     return res
       .status(500)

@@ -39,7 +39,6 @@ export default function SearchBox({ onSelect }: Props) {
         }))
       );
     } catch (e) {
-      // eslint-disable-next-line no-console
       console.error("Player search error", e);
       setSearchResults([]);
     } finally {

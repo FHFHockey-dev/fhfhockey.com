@@ -41,7 +41,7 @@
     "postbuild": "next-sitemap",
     "start": "next start",
     "start:3001": "next start -p 3001",
-    "lint": "next lint",
+    "lint": "eslint --report-unused-disable-directives-severity warn pages components lib hooks",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "test": "vitest",

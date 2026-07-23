@@ -156,7 +156,6 @@ export default async function handler(
     res.setHeader("X-Execution-Time-ms", String(totalMs));
 
     // Value-free server-side performance log.
-    // eslint-disable-next-line no-console
     console.log(
       `[get-predictions-sko] success rows=${data?.length ?? 0} totalMs=${totalMs} queryMs=${phase.query_ms}`,
     );
@@ -205,7 +204,6 @@ export default async function handler(
       return res.status(400).json({ success: false, error: err.message });
     }
     const dependencyError = normalizeDependencyError(err);
-    // eslint-disable-next-line no-console
     console.error("get-predictions-sko dependency error", dependencyError);
     return res.status(500).json({
       success: false,

@@ -177,7 +177,6 @@ export default async function handler(
           try {
             components = JSON.parse(componentsRaw);
           } catch (parseErr) {
-            // eslint-disable-next-line no-console
             console.warn("Failed to parse components JSON", parseErr);
           }
         }
@@ -251,7 +250,6 @@ export default async function handler(
       rows: rows.slice(0, limit),
     });
   } catch (error: any) {
-    // eslint-disable-next-line no-console
     console.error("trends error", error?.message || error);
     return res
       .status(500)

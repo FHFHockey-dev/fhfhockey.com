@@ -490,7 +490,6 @@ function __sanity() {
   const { alpha0, beta0 } = betaFromMuK(mu, k); // 20 & 180
   const { post_mean } = betaPosterior(alpha0, beta0, 10, 100); // (20+10)/(200+100)=0.10
   if (Math.abs(post_mean - 0.1) > 1e-6) {
-    // eslint-disable-next-line no-console
     console.warn("Sanity check failed for betaPosterior");
   }
 }
@@ -528,7 +527,6 @@ export async function ensureTables() {
   ];
   // Without a SQL execution function, we optimistically rely on tables existing.
   // If you have a custom RPC (e.g., exec_sql) you could call it here.
-  // eslint-disable-next-line no-console
   console.log(
     "ensureTables: (best-effort) DDL prepared but not executed via public anon key",
   );

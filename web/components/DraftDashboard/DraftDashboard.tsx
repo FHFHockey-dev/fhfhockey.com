@@ -1990,7 +1990,6 @@ const DraftDashboard: React.FC = () => {
             // Reset history since imported state may not map cleanly
             setDraftHistory([]);
           } catch (e) {
-            // eslint-disable-next-line no-console
             console.error("Failed to apply imported bookmark", e);
           }
         }}

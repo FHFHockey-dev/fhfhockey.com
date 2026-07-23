@@ -116,7 +116,6 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       rows
     });
   } catch (error: any) {
-    // eslint-disable-next-line no-console
     console.error("trend-bands recompute error", error?.message ?? error);
     return res.status(500).json({
       success: false,

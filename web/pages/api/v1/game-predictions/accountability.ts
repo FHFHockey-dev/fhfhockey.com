@@ -87,7 +87,6 @@ export default async function handler(
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=900");
     return res.status(200).json({ success: true, ...payload });
   } catch (error: any) {
-    // eslint-disable-next-line no-console
     console.error(
       "game-predictions accountability error",
       error?.message ?? error,

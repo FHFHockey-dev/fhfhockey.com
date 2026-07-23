@@ -210,7 +210,6 @@ async function handler(
             summaries.push({ player_id: playerId, bands_computed: rows.length });
           }
         } catch (error: any) {
-          // eslint-disable-next-line no-console
           console.error(
             "trend-band bulk error",
             playerId,
@@ -277,7 +276,6 @@ async function handler(
         }));
     }
     const dependencyError = normalizeDependencyError(error);
-    // eslint-disable-next-line no-console
     console.error("rebuild-trend-bands error", error?.message ?? error);
     return res
       .status(500)

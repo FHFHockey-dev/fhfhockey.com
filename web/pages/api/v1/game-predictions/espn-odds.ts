@@ -64,7 +64,6 @@ export default async function handler(
         dates,
       });
     } catch (error: any) {
-      // eslint-disable-next-line no-console
       console.warn(
         "game-predictions persisted odds lookup failed",
         error?.message ?? error,
@@ -88,7 +87,6 @@ export default async function handler(
       odds,
     });
   } catch (error: any) {
-    // eslint-disable-next-line no-console
     console.error("game-predictions ESPN odds error", error?.message ?? error);
     return res.status(502).json({
       success: false,
