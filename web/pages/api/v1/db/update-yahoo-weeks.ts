@@ -1,35 +1,15 @@
 // web/pages/api/v1/db/update-yahoo-weeks.ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import {
+  loadYahooGlobalCredentials,
+  persistYahooGlobalTokens,
+} from "lib/integrations/yahoo/globalCredentials";
 import type { NextApiRequest, NextApiResponse } from "next";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 import YahooFantasy from "yahoo-fantasy";
 import { parseISO } from "date-fns";
 import adminOnly from "utils/adminOnlyMiddleware";
-
-interface YahooCredentials {
-  id: number;
-  consumer_key: string;
-  consumer_secret: string;
-  access_token: string;
-  refresh_token: string;
-}
-
-async function getYahooAPICredentials(
-  supabase: SupabaseClient
-): Promise<YahooCredentials> {
-  const { data, error } = await supabase
-    .from("yahoo_api_credentials")
-    .select("id, consumer_key, consumer_secret, access_token, refresh_token")
-    .single();
-
-  if (error || !data) {
-    throw new Error(
-      `Failed to fetch Yahoo API credentials: ${error?.message || "No data"}`
-    );
-  }
-  return data;
-}
 
 async function handler(
   req: NextApiRequest,
@@ -48,7 +28,7 @@ async function handler(
 
   try {
     // 1. Get creds & init YahooFantasy
-    const creds = await getYahooAPICredentials(supabase);
+    const creds = await loadYahooGlobalCredentials(supabase);
     const yf = new YahooFantasy(
       creds.consumer_key,
       creds.consumer_secret,
@@ -60,14 +40,10 @@ async function handler(
         refresh_token: string;
       }) => {
         // Persist refreshed tokens
-        await supabase
-          .from("yahoo_api_credentials")
-          .update({
-            access_token,
-            refresh_token,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", creds.id);
+        await persistYahooGlobalTokens(supabase, creds.id, {
+          access_token,
+          refresh_token,
+        });
       }
     );
     yf.setUserToken(creds.access_token);
@@ -122,11 +98,12 @@ async function handler(
       success: true,
       message: `Upserted ${payload.length} week(s) for game_key=${key}`
     });
-  } catch (err: any) {
-    console.error("Error updating yahoo matchup weeks:", err);
-    return res
-      .status(500)
-      .json({ success: false, message: err.message || String(err) });
+  } catch {
+    console.error("Yahoo matchup week update failed.");
+    return res.status(500).json({
+      success: false,
+      message: "Yahoo matchup week update failed",
+    });
   }
 }
 

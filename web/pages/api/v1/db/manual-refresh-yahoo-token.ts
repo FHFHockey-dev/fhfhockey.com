@@ -1,5 +1,9 @@
 // pages/api/v1/db/manual-refresh-token.ts
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import {
+  loadYahooGlobalCredentials,
+  persistYahooGlobalTokens,
+} from "lib/integrations/yahoo/globalCredentials";
 import { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
 import YahooFantasy from "yahoo-fantasy";
@@ -18,12 +22,10 @@ async function handler(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const { data: yahooCredentials, error } = await supabase
-    .from("yahoo_api_credentials")
-    .select("*")
-    .single();
-
-  if (error || !yahooCredentials) {
+  let yahooCredentials;
+  try {
+    yahooCredentials = await loadYahooGlobalCredentials(supabase);
+  } catch {
     return res.status(500).json({ error: "Failed to fetch Yahoo credentials" });
   }
 
@@ -37,14 +39,10 @@ async function handler(
       access_token: string;
       refresh_token: string;
     }) => {
-      await supabase
-        .from("yahoo_api_credentials")
-        .update({
-          access_token,
-          refresh_token,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", yahooCredentials.id);
+      await persistYahooGlobalTokens(supabase, yahooCredentials.id, {
+        access_token,
+        refresh_token,
+      });
     }
   );
 

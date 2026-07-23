@@ -1,36 +1,15 @@
 // /web/pages/api/v1/db/update-yahoo-players.ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import {
+  loadYahooGlobalCredentials,
+  persistYahooGlobalTokens,
+} from "lib/integrations/yahoo/globalCredentials";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import YahooFantasy from "yahoo-fantasy";
 import { format } from "date-fns";
 import adminOnly from "utils/adminOnlyMiddleware";
-
-interface YahooCredentials {
-  id: number;
-  consumer_key: string;
-  consumer_secret: string;
-  access_token: string;
-  refresh_token: string;
-}
-
-async function getYahooAPICredentials(
-  supabase: SupabaseClient
-): Promise<YahooCredentials> {
-  const { data, error } = await supabase
-    .from("yahoo_api_credentials")
-    .select("id, consumer_key, consumer_secret, access_token, refresh_token")
-    .single();
-
-  if (error || !data) {
-    throw new Error(
-      `Failed to fetch Yahoo API credentials: ${error?.message || "No data"}`
-    );
-  }
-
-  return data;
-}
 
 async function getPlayerKeys(
   supabase: SupabaseClient,
@@ -211,7 +190,7 @@ async function handler(
   console.log("Starting update-yahoo-players handler.");
 
   try {
-    const creds = await getYahooAPICredentials(supabase);
+    const creds = await loadYahooGlobalCredentials(supabase);
 
     // Allow explicit override of gameId via query or JSON body for one-off runs
     // e.g. GET /api/v1/db/update-yahoo-players?gameId=465
@@ -238,10 +217,7 @@ async function handler(
           .single();
 
         if (gameErr) {
-          console.warn(
-            "Could not determine active game_id from yahoo_game_keys:",
-            gameErr.message || gameErr
-          );
+          console.warn("Yahoo active game lookup failed.");
         } else if (gameRow && gameRow.game_id) {
           gameId = String(gameRow.game_id);
           season = gameRow.season ? Number(gameRow.season) : undefined;
@@ -249,11 +225,8 @@ async function handler(
             `Detected active NHL game_id=${gameId}, season=${season}`
           );
         }
-      } catch (e) {
-        console.warn(
-          "Error while querying yahoo_game_keys for active season:",
-          e
-        );
+      } catch {
+        console.warn("Yahoo active game lookup failed.");
       }
     }
 
@@ -268,21 +241,11 @@ async function handler(
         refresh_token: string;
       }) => {
         console.log("Refreshing tokens...");
-        const { error } = await supabase
-          .from("yahoo_api_credentials")
-          .update({
-            access_token,
-            refresh_token,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", creds.id);
-
-        if (error) {
-          console.error("Failed to persist refreshed tokens:", error);
-          throw error;
-        } else {
-          console.log("Tokens refreshed and stored.");
-        }
+        await persistYahooGlobalTokens(supabase, creds.id, {
+          access_token,
+          refresh_token,
+        });
+        console.log("Tokens refreshed and stored.");
       }
     );
 
@@ -330,7 +293,7 @@ async function handler(
             await new Promise<void>((resolve, reject) => {
               yf.refreshToken((err: any) => {
                 if (err) {
-                  console.error("Failed to refresh token explicitly:", err);
+                  console.error("Yahoo token refresh failed.");
                   reject(err);
                 } else {
                   console.log("Token refreshed explicitly.");
@@ -361,10 +324,9 @@ async function handler(
             `No data returned for batch starting with: ${batchKeys[0]}`
           );
         }
-      } catch (err: any) {
+      } catch {
         console.error(
-          `Failed fetching batch starting with ${batchKeys[0]}:`,
-          err.message || err
+          `Yahoo player batch failed at record ${i + 1}.`,
         );
         continue; // continue with next batch
       }
@@ -408,10 +370,7 @@ async function handler(
           .in("player_key", chunk as string[]);
 
         if (keyFetchErr) {
-          console.warn(
-            "Could not fetch existing yahoo_players for player_key check:",
-            keyFetchErr.message || keyFetchErr
-          );
+          console.warn("Yahoo existing-player lookup failed.");
           continue;
         }
 
@@ -436,8 +395,8 @@ async function handler(
           });
         }
       });
-    } catch (e) {
-      console.warn("Error during existing player_key reconciliation:", e);
+    } catch {
+      console.warn("Yahoo existing-player reconciliation failed.");
       // non-fatal: continue and let RPC handle any remaining conflicts
     }
 
@@ -462,11 +421,8 @@ async function handler(
         });
 
         if (error) {
-          console.error(
-            `RPC batch call failed for batch starting at record ${i + 1}:`,
-            error
-          );
-          throw new Error(`RPC batch failed: ${error.message}`);
+          console.error(`Yahoo player RPC batch ${i + 1} failed.`);
+          throw new Error("Yahoo player persistence failed.");
         } else {
           console.log(`RPC Batch ${i + 1} successful.`);
         }
@@ -491,10 +447,10 @@ async function handler(
           signal: controller.signal as any,
         })
           .then(() => console.log('Triggered sheet sync endpoint'))
-          .catch((e) => console.warn('Sheet sync trigger failed (non-fatal):', e?.message || e))
+          .catch(() => console.warn('Sheet sync trigger failed (non-fatal).'))
           .finally(() => clearTimeout(timeout));
-      } catch (e: any) {
-        console.warn('Could not trigger sheet sync (non-fatal):', e?.message || e);
+      } catch {
+        console.warn('Could not trigger sheet sync (non-fatal).');
       }
 
       return res.status(200).json({
@@ -506,11 +462,12 @@ async function handler(
     return res
       .status(200)
       .json({ success: true, message: "No player data retrieved to process." });
-  } catch (err: any) {
-    console.error("🚨 API error encountered:", err);
-    // Ensure the error message is captured
-    const errorMessage = err instanceof Error ? err.message : String(err);
-    return res.status(500).json({ success: false, message: errorMessage });
+  } catch {
+    console.error("Yahoo player update failed.");
+    return res.status(500).json({
+      success: false,
+      message: "Yahoo player update failed",
+    });
   }
 }
 

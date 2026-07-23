@@ -5,7 +5,8 @@
 | Domain | Current owner | Persistence / consumer boundary |
 | --- | --- | --- |
 | Per-user OAuth, discovery, refresh, league/team sync | `web/lib/integrations/yahoo/{config,oauth,discovery,refresh,teamRoster}.ts` and `/api/v1/account/yahoo/*` | Owner-scoped connected-account metadata, private token storage, provider preferences/sync runs, external leagues/teams, and roster cache. This is separate from the global ingestion credential. |
-| Global game metadata and player keys | `web/lib/supabase/Upserts/Yahoo/yahooAPIgameIds.py` and `yahooApiPlayerKeys.py` | `yahoo_game_keys` and `yahoo_player_keys`; retained maintenance owners, not browser code. |
+| Global ingestion credential | `web/lib/integrations/yahoo/globalCredentials.ts` | Sole active route owner for exact-column service-role reads, complete-row validation, and fail-closed refreshed-token persistence. The three active scheduled/manual routes import it; no browser route or public key owns global credentials. |
+| Global game metadata and player keys | `web/lib/supabase/Upserts/Yahoo/yahooAPIgameIds.py` and `yahooApiPlayerKeys.py` | `yahoo_game_keys` and `yahoo_player_keys`; retained unscheduled maintenance alternatives with explicit `YFPY_*` compatibility configuration, not canonical credential or browser owners. |
 | Matchup weeks | `/api/v1/db/update-yahoo-weeks` | Canonical normalized `yahoo_matchup_weeks`; the legacy game-key script still embeds week JSON and remains a consolidation gap. |
 | Current Yahoo player detail | `/api/v1/db/update-yahoo-players` | Batches 25 keys, defensively normalizes Yahoo response shapes, and calls `upsert_yahoo_players_v3`; `yahooAPI.py` remains a legacy maintenance alternative. |
 | Ownership history/backfill | `yahooHistoricalOwnership.py` plus the v3 RPC | `yahoo_player_ownership_history`/`yahoo_player_ownership_daily`; current UI trend code still reads `yahoo_players.ownership_timeline`, so normalized-history cutover remains open. |
@@ -29,7 +30,7 @@ The authoritative pre-baseline production ledger preserves the 2025 ownership/hi
 
 ## Configuration and artifact boundary
 
-Server runtime names are `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, and Yahoo credential aliases `YAHOO_CONSUMER_KEY`/`YAHOO_CONSUMER_SECRET` with `YFPY_*` compatibility. Python maintenance additionally supports explicit bounded backfill controls (`YFPY_GAME_ID`, `YFPY_LEAGUE_ID`, `YFPY_MAX_KEYS_PER_REQUEST`, and `YHO_*`). The deleted token JSON remains absent and exactly ignored.
+Active global ingestion routes use `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and the private `yahoo_api_credentials` row only through `globalCredentials.ts`; `CRON_SECRET` remains their caller-auth boundary. Per-user OAuth separately accepts server-only `YAHOO_CONSUMER_KEY`/`YAHOO_CONSUMER_SECRET` with `YFPY_*` compatibility. Unscheduled Python maintenance alternatives retain explicit `YFPY_*`/`YHO_*` configuration and bounded backfill controls, but are not canonical scheduled/global credential owners. The deleted token JSON remains absent and exactly ignored.
 
 Tracked generated/review artifacts are the normalization spec, mapping TODO/reverse/unmatched JSON files, generated database types, production-ledger migrations, and focused migration/matcher tests. They are evidence or reviewed inputs, not permission to run a provider call, database write, promotion, or cleanup.
 
@@ -46,4 +47,4 @@ Yahoo ownership timeline -> ownership APIs -> Command Center and analytics consu
 
 ## Current verified gaps
 
-The current scan found: unauthenticated global maintenance routes (locally remediated, deployment proof pending); a now-removed public-key fallback in the Python mapping writer; split global configuration/token persistence; non-atomic v3 latest/history behavior and an ambiguous legacy RPC overload; hard-coded/current-season and retry/completeness gaps in legacy ingestion; legacy/normalized mapping and ownership-history cutover drift; missing production RLS/API/advisor proof for the global Yahoo objects; and two stale archived-migration test paths now repaired. These are owned by NEW 9.1–9.7 in the source list.
+The current scan found: unauthenticated global maintenance routes (locally remediated, deployment proof pending); a now-removed public-key fallback in the Python mapping writer; non-atomic v3 latest/history behavior and an ambiguous legacy RPC overload; hard-coded/current-season and retry/completeness gaps in legacy ingestion; legacy/normalized mapping and ownership-history cutover drift; missing production RLS/API/advisor proof for the global Yahoo objects; and two stale archived-migration test paths now repaired. Active global configuration/token persistence is consolidated and legacy Python alternatives are explicitly unscheduled/quarantined under closed NEW 9.4. The remaining gaps are owned by NEW 9.1/9.3/9.5/9.6 in the source list.

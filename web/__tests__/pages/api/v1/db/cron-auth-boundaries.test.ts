@@ -263,6 +263,33 @@ describe("season and WGO cron authorization boundaries", () => {
     );
   });
 
+  it("fails closed and redacts missing global Yahoo configuration across every active route", async () => {
+    createClientMock.mockReturnValue({
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({
+          single: vi.fn().mockResolvedValue({
+            data: null,
+            error: { message: "database detail with sensitive-fragment" },
+          }),
+        })),
+      })),
+    });
+
+    for (const route of yahooProtectedRoutes) {
+      const res = createMockRes();
+
+      await route.handler(
+        createReq(route as any, "Bearer configured-test-secret"),
+        res,
+      );
+
+      expect(res.statusCode, route.name).toBe(500);
+      expect(JSON.stringify(res.body), route.name).not.toContain(
+        "sensitive-fragment",
+      );
+    }
+  });
+
   it("allows the exact configured cron bearer into both route handlers", async () => {
     for (const route of protectedRoutes) {
       const res = createMockRes();
