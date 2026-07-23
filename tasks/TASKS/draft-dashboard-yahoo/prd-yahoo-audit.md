@@ -2,6 +2,10 @@
 
 > **Implementation task list:** `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md`
 
+## 2026-07-22 current-state overlay
+
+The authoritative current inventory is `tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md`; it supersedes this 2025 file inventory where paths, schema, or ownership differ. The implementation list is 23/65 with 42 open. Current verified ownership/inventory, credential-artifact containment, per-user private-token boundary, minimal refresh response, batched detail extraction, normalized history schema, identity normalization/review, cron correlation, downstream diagnostics/states/contracts, local verification, and archived migration-test fixtures are reconciled. Seven NEW rows preserve the discovered route-auth deployment gate, locally removed public-key writer fallback, non-atomic writer/history drift, split credential configuration, incomplete fixed-season ingestion lifecycle, schema/read/security-proof cutover, and closed test-path repair. No Yahoo provider call or database write was executed in this cohort.
+
 Version: 2025-08-27
 Author: Automated Audit (GitHub Copilot)
 Scope: Comprehensive lighthouse pass across Yahoo-related ingestion, transformation, persistence, and mapping utilities.

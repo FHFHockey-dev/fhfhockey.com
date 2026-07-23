@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const migrationSql = readFileSync(
   resolve(
     process.cwd(),
-    "../supabase/migrations/20260714224513_stage_yahoo_identity_mapping_review.sql",
+    "../supabase/migration-archive/pre-baseline-20260716/production-ledger/20260714224513_stage_yahoo_identity_mapping_review.sql",
   ),
   "utf8",
 );

@@ -5,6 +5,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import YahooFantasy from "yahoo-fantasy";
 import { format } from "date-fns";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 interface YahooCredentials {
   id: number;
@@ -513,4 +514,4 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

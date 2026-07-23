@@ -87,6 +87,13 @@ class PlayerNameMatcherTests(unittest.TestCase):
         self.assertNotIn("process.extractOne", mapping_job)
         self.assertNotIn("best_last_name_match", mapping_job)
 
+    def test_mapping_writer_requires_service_role_credentials(self):
+        mapping_job = (
+            Path(__file__).resolve().parent / "populate_yahoo_nhl_mapping.py"
+        ).read_text(encoding="utf-8")
+        self.assertIn("os.getenv('SUPABASE_SERVICE_ROLE_KEY')", mapping_job)
+        self.assertNotIn("NEXT_PUBLIC_SUPABASE_PUBLIC_KEY", mapping_job)
+
 
 if __name__ == "__main__":
     unittest.main()

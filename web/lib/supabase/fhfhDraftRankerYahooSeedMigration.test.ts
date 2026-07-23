@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const migrationSql = readFileSync(
   resolve(
     process.cwd(),
-    "../supabase/migrations/20260715012955_initialize_draft_ranker_from_yahoo_adp.sql",
+    "../supabase/migration-archive/pre-baseline-20260716/production-ledger/20260715012955_initialize_draft_ranker_from_yahoo_adp.sql",
   ),
   "utf8",
 );

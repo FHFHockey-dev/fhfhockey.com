@@ -77,9 +77,9 @@ describe("scheduled cron audit coverage", () => {
       ),
     ).toBe(59);
     expect(modeCounts).toEqual({
-      "admin-or-cron": 26,
+      "admin-or-cron": 30,
       "cron-secret-only": 1,
-      unprotected: 25,
+      unprotected: 21,
     });
     expect(callerCounts).toEqual({
       "browser-admin": 5,
@@ -123,7 +123,6 @@ describe("scheduled cron audit coverage", () => {
       "/api/v1/db/update-nst-team-daily",
       "/api/v1/db/update-player-trend-metrics",
       "/api/v1/db/update-rolling-player-averages",
-      "/api/v1/db/update-sko-stats",
       "/api/v1/db/update-team-ctpi-daily",
       "/api/v1/db/update-team-sos",
       "/api/v1/db/update-team-yearly-summary",
@@ -131,9 +130,6 @@ describe("scheduled cron audit coverage", () => {
       "/api/v1/db/update-wgo-goalie-totals",
       "/api/v1/db/update-wgo-skaters",
       "/api/v1/db/update-wgo-totals",
-      "/api/v1/db/update-yahoo-players",
-      "/api/v1/db/update-yahoo-weeks",
-      "/api/v1/ml/update-predictions-sko",
     ]);
     expect(
       authFindings.every(

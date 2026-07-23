@@ -34,7 +34,7 @@ ENV_FILE = Path(__file__).resolve().parents[4] / ".env.local"
 load_dotenv(ENV_FILE)
 
 SUPABASE_URL = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY') or os.getenv('NEXT_PUBLIC_SUPABASE_PUBLIC_KEY')
+SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
 
 supabase: Client | None = None
 if SUPABASE_URL and SUPABASE_KEY:
@@ -478,7 +478,7 @@ def main():
     if supabase is None:
         logging.error(
             "Missing environment variables. Need NEXT_PUBLIC_SUPABASE_URL and "
-            "either SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_PUBLIC_KEY"
+            "SUPABASE_SERVICE_ROLE_KEY"
         )
         return
     
