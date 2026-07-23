@@ -8,18 +8,18 @@ import adminOnly from "utils/adminOnlyMiddleware";
 import {
   rebuildBetaWindowZForSnapshot,
   loadPlayersForSnapshot,
-  ensureWindowTable
+  ensureWindowTable,
 } from "lib/sustainability/windows";
 import { StatCode } from "lib/sustainability/priors";
 import { resolveSeasonId } from "lib/sustainability/resolveSeasonId";
 import {
   assertWindowZPrerequisites,
-  isSustainabilityDependencyError
+  isSustainabilityDependencyError,
 } from "lib/sustainability/dependencyChecks";
 
 async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<CronTimedResponse<Record<string, unknown>>>
+  res: NextApiResponse<CronTimedResponse<Record<string, unknown>>>,
 ) {
   const started = Date.now();
   const withTiming = (body: Record<string, unknown>, endedAt = Date.now()) =>
@@ -27,7 +27,7 @@ async function handler(
   try {
     const season = await resolveSeasonId(req.query.season);
     const snapshot = String(
-      req.query.snapshot_date || new Date().toISOString().slice(0, 10)
+      req.query.snapshot_date || new Date().toISOString().slice(0, 10),
     );
     await assertWindowZPrerequisites(season, snapshot);
     const dry = req.query.dry === "1" || req.query.dry === "true";
@@ -46,7 +46,7 @@ async function handler(
       { code: "l3", n: 3 },
       { code: "l5", n: 5 },
       { code: "l10", n: 10 },
-      { code: "l20", n: 20 }
+      { code: "l20", n: 20 },
     ] as const;
 
     // Optional filter: ?stat=shp or ?stat=ipp, supports comma list
@@ -65,7 +65,7 @@ async function handler(
     const batchOffsets = runAll
       ? Array.from(
           { length: Math.ceil(ids.length / limit) },
-          (_, index) => index * limit
+          (_, index) => index * limit,
         )
       : [offset];
 
@@ -83,7 +83,7 @@ async function handler(
       const {
         count,
         chunks,
-        sample: batchSample
+        sample: batchSample,
       } = await rebuildBetaWindowZForSnapshot(
         season,
         snapshot,
@@ -91,7 +91,7 @@ async function handler(
         posMap,
         windows as any,
         statList,
-        dry
+        dry,
       );
 
       totalCount += count;
@@ -103,7 +103,8 @@ async function handler(
     }
 
     const duration_s = ((Date.now() - started) / 1000).toFixed(2);
-    return res.status(200).json(withTiming({
+    return res.status(200).json(
+      withTiming({
         success: true,
         season,
         snapshot_date: snapshot,
@@ -114,13 +115,13 @@ async function handler(
         write_chunks: totalWriteChunks,
         batches_processed: batchOffsets.length,
         sample,
-      duration_s
-    }));
+        duration_s,
+      }),
+    );
   } catch (e: any) {
     if (isSustainabilityDependencyError(e)) {
-      return res
-        .status(e.statusCode)
-        .json(withTiming({
+      return res.status(e.statusCode).json(
+        withTiming({
           success: false,
           message: e.issue.message,
           prerequisite: e.issue,
@@ -130,19 +131,20 @@ async function handler(
             classification: "structured_upstream_error",
             message: e.issue.message,
             detail: e.issue.detail,
-            htmlLike: false
-          }
-        }));
+            htmlLike: false,
+          },
+        }),
+      );
     }
     const dependencyError = normalizeDependencyError(e);
     console.error("rebuild-window-z error", e?.message || e);
-    return res
-      .status(500)
-      .json(withTiming({
+    return res.status(500).json(
+      withTiming({
         success: false,
         message: dependencyError.message,
-        dependencyError
-      }));
+        dependencyError,
+      }),
+    );
   }
 }
 

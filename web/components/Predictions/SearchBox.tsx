@@ -35,8 +35,8 @@ export default function SearchBox({ onSelect }: Props) {
       setSearchResults(
         ((data ?? []) as PlayerSearchResult[]).map((row) => ({
           ...row,
-          fullName: row.fullName ?? `Player #${row.id}`
-        }))
+          fullName: row.fullName ?? `Player #${row.id}`,
+        })),
       );
     } catch (e) {
       console.error("Player search error", e);
@@ -53,7 +53,7 @@ export default function SearchBox({ onSelect }: Props) {
       setShowResults(true);
       executeSearch(value.trim());
     },
-    [executeSearch]
+    [executeSearch],
   );
 
   useEffect(() => {
@@ -95,7 +95,7 @@ export default function SearchBox({ onSelect }: Props) {
                 <span>
                   {[
                     lookupTeamLabel(player.team_id) ?? "",
-                    player.position ?? ""
+                    player.position ?? "",
                   ]
                     .filter(Boolean)
                     .join(" · ")}

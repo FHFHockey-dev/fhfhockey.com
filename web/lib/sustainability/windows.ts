@@ -13,7 +13,7 @@ const EPS = 1e-9;
 export async function fetchPriors(
   season_id: number,
   pg: PosGroup,
-  statCodes: StatCode[]
+  statCodes: StatCode[],
 ): Promise<Record<StatCode, { alpha0: number; beta0: number; k: number }>> {
   const { data, error } = await (supabase as any)
     .from("sustainability_priors")
@@ -29,11 +29,8 @@ export async function fetchPriors(
         ? Number.NaN
         : Number(r.alpha0);
     const beta0 =
-      r.beta0 === null || r.beta0 === undefined
-        ? Number.NaN
-        : Number(r.beta0);
-    const k =
-      r.k === null || r.k === undefined ? Number.NaN : Number(r.k);
+      r.beta0 === null || r.beta0 === undefined ? Number.NaN : Number(r.beta0);
+    const k = r.k === null || r.k === undefined ? Number.NaN : Number(r.k);
     if (
       !Number.isFinite(alpha0) ||
       !Number.isFinite(beta0) ||
@@ -47,14 +44,14 @@ export async function fetchPriors(
         r.stat_code,
         alpha0,
         beta0,
-        k
+        k,
       );
       continue;
     }
     out[r.stat_code] = {
       alpha0,
       beta0,
-      k
+      k,
     };
   }
   return out;
@@ -69,7 +66,7 @@ export async function fetchPriors(
 export async function fetchWindowCountsAll(
   player_id: number,
   snapshot_date: string,
-  nGames: number
+  nGames: number,
 ): Promise<
   Record<
     StatCode,
@@ -89,8 +86,8 @@ export async function fetchWindowCountsAll(
         "nst_oi_sf",
         "points_5v5",
         "pp_goals",
-        "pp_shots"
-      ].join(",")
+        "pp_shots",
+      ].join(","),
     )
     .eq("player_id", player_id)
     .lte("date", snapshot_date)
@@ -117,7 +114,7 @@ export async function fetchWindowCountsAll(
     shp: { s: g, n: sh },
     oishp: { s: gf, n: sf },
     ipp: { s: p5, n: gf },
-    ppshp: { s: ppg, n: pps }
+    ppshp: { s: ppg, n: pps },
   } as Record<StatCode, { s: number; n: number }>;
 }
 
@@ -126,7 +123,7 @@ export function ebZ_generic(
   n: number,
   alpha0: number,
   beta0: number,
-  k: number
+  k: number,
 ) {
   const priorMean = alpha0 / (alpha0 + beta0);
   const priorVar =
@@ -138,7 +135,7 @@ export function ebZ_generic(
       priorVar,
       shrink: 1,
       varMixed: priorVar,
-      z: 0
+      z: 0,
     };
   }
   const p_hat = s / n;
@@ -156,7 +153,7 @@ export async function rebuildBetaWindowZForSnapshot(
   posByPlayer: Map<number, PosGroup>,
   windows: Array<{ code: WindowCode; n: number }>,
   statCodes: StatCode[] = ["shp", "oishp", "ipp", "ppshp"],
-  dry = false
+  dry = false,
 ) {
   // Preload priors for both position groups
   const priorsByPos: Record<
@@ -164,7 +161,7 @@ export async function rebuildBetaWindowZForSnapshot(
     Record<StatCode, { alpha0: number; beta0: number; k: number }>
   > = {
     F: await fetchPriors(season_id, "F", statCodes),
-    D: await fetchPriors(season_id, "D", statCodes)
+    D: await fetchPriors(season_id, "D", statCodes),
   } as any;
 
   const rows: any[] = [];
@@ -187,21 +184,20 @@ export async function rebuildBetaWindowZForSnapshot(
             "[rebuildBetaWindowZForSnapshot] invalid prior encountered",
             pid,
             stat,
-            prior
+            prior,
           );
           continue;
         }
         const c = counts[stat];
         const successesRaw =
           c && Number.isFinite(Number(c.s)) ? Number(c.s) : 0;
-        const trialsRaw =
-          c && Number.isFinite(Number(c.n)) ? Number(c.n) : 0;
+        const trialsRaw = c && Number.isFinite(Number(c.n)) ? Number(c.n) : 0;
         const { p_hat, priorMean, priorVar, shrink, varMixed, z } = ebZ_generic(
           successesRaw,
           trialsRaw,
           prior.alpha0,
           prior.beta0,
-          prior.k
+          prior.k,
         );
         const rate = Number.isFinite(p_hat) ? Number(p_hat.toFixed(8)) : 0;
         const prior_mean = Number.isFinite(priorMean)
@@ -234,7 +230,7 @@ export async function rebuildBetaWindowZForSnapshot(
           k: prior.k,
           shrink: shrink_out,
           var_mixed,
-          eb_z
+          eb_z,
         });
       }
     }
@@ -246,8 +242,8 @@ export async function rebuildBetaWindowZForSnapshot(
       rows,
       upsert: (chunk) =>
         (supabase as any).from("sustainability_window_z").upsert(chunk, {
-          onConflict: "player_id,snapshot_date,window_code,stat_code"
-        })
+          onConflict: "player_id,snapshot_date,window_code,stat_code",
+        }),
     });
     chunks = result.chunks;
   }
@@ -256,7 +252,7 @@ export async function rebuildBetaWindowZForSnapshot(
 
 export async function loadPlayersForSnapshot(
   snapshot_date: string,
-  options: { client?: any; pageSize?: number } = {}
+  options: { client?: any; pageSize?: number } = {},
 ) {
   const client = options.client ?? (supabase as any);
   const pageSize = Math.max(1, Math.min(1000, options.pageSize ?? 1000));
@@ -312,8 +308,6 @@ export async function ensureWindowTable() {
 );
 CREATE INDEX IF NOT EXISTS idx_suswinz_season ON sustainability_window_z (season_id);
 CREATE INDEX IF NOT EXISTS idx_suswinz_player ON sustainability_window_z (player_id);`;
-  // best-effort: log DDL
-  console.log("ensureWindowTable DDL prepared (not executed with anon key)");
   return ddl;
 }
 
@@ -323,5 +317,5 @@ export default {
   ebZ_generic,
   rebuildBetaWindowZForSnapshot,
   loadPlayersForSnapshot,
-  ensureWindowTable
+  ensureWindowTable,
 };

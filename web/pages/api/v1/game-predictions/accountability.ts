@@ -73,7 +73,7 @@ export default async function handler(
       modelName: firstParam(req.query.modelName) ?? BASELINE_MODEL_NAME,
       modelVersion: latestBacktest
         ? requestedModelVersion
-        : requestedModelVersion ?? BASELINE_MODEL_VERSION,
+        : (requestedModelVersion ?? BASELINE_MODEL_VERSION),
       featureSetVersion:
         firstParam(req.query.featureSetVersion) ??
         GAME_PREDICTION_FEATURE_SET_VERSION,

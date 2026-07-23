@@ -6,7 +6,7 @@ import {
   getEffectiveRosterConfig,
   getRosterPositions,
   groupPlayerEligibility,
-  normalizePlayerEligibility
+  normalizePlayerEligibility,
 } from "lib/draftDashboard/forwardGrouping";
 
 export type LeagueType = "points" | "categories";
@@ -120,7 +120,7 @@ export function useVORPCalculations({
   myFilledSlots = {},
   personalizeReplacement = false,
   prorate82 = false,
-  fantasyPointSettings = {}
+  fantasyPointSettings = {},
 }: UseVORPParams): UseVORPResult {
   return useMemo(() => {
     // Value per player (points or categories composite)
@@ -131,7 +131,7 @@ export function useVORPCalculations({
       const id = String(p.playerId);
       const parsed = normalizePlayerEligibility(
         p.displayPosition,
-        Array.isArray(p.eligiblePositions) ? p.eligiblePositions : undefined
+        Array.isArray(p.eligiblePositions) ? p.eligiblePositions : undefined,
       );
       const elig = groupPlayerEligibility(parsed, forwardGrouping);
       eligibility.set(id, elig);
@@ -144,7 +144,7 @@ export function useVORPCalculations({
         | ((
             p: ProcessedPlayer,
             enable: boolean,
-            scoring?: Record<string, number>
+            scoring?: Record<string, number>,
           ) => number | null)
         | null = null;
       if (prorate82) {
@@ -174,7 +174,7 @@ export function useVORPCalculations({
         "PP_POINTS",
         "SHOTS_ON_GOAL",
         "HITS",
-        "BLOCKED_SHOTS"
+        "BLOCKED_SHOTS",
       ];
       const allKeys: string[] = Object.keys(categoryWeights || {}).length
         ? Object.keys(categoryWeights || {})
@@ -232,7 +232,7 @@ export function useVORPCalculations({
           "GAMES_STARTED_GOALIE",
           "GAMES_GOALIE",
           "GAMES_PLAYED_GOALIE",
-          "GP_GOALIE"
+          "GP_GOALIE",
         ];
         for (const k of keys) {
           const v = cs[k]?.projected;
@@ -247,7 +247,7 @@ export function useVORPCalculations({
         const elig = eligibility.get(String(p.playerId)) ?? [];
         const isG = elig.includes("G");
         const keysForPlayer = allKeys.filter((k) =>
-          isG ? isGoalieKey(k) : !isGoalieKey(k)
+          isG ? isGoalieKey(k) : !isGoalieKey(k),
         );
         if (keysForPlayer.length === 0) {
           values.set(id, 0);
@@ -311,7 +311,7 @@ export function useVORPCalculations({
         const sampleGoalieCats = [
           "SAVE_PERCENTAGE",
           "GOALS_AGAINST_AVERAGE",
-          "WINS_GOALIE"
+          "WINS_GOALIE",
         ];
         const skaterDump = sampleSkaterCats
           .filter((k) => k in muSkater)
@@ -327,12 +327,12 @@ export function useVORPCalculations({
     const T = draftSettings.teamCount;
     const starters = getEffectiveRosterConfig(
       draftSettings.rosterConfig,
-      forwardGrouping
+      forwardGrouping,
     );
     const positions = getRosterPositions(forwardGrouping);
     const utilSkater = starters.utility ?? 0;
     const utilAdj: Record<string, number> = Object.fromEntries(
-      positions.map((position) => [position, 0])
+      positions.map((position) => [position, 0]),
     );
     if (utilSkater > 0) {
       if (forwardGrouping === "fwd") {
@@ -351,13 +351,13 @@ export function useVORPCalculations({
       players.map((player) => String(player.playerId)),
       values,
       eligibility,
-      forwardGrouping
+      forwardGrouping,
     );
     const byPosAvail = buildPositionPools(
       availablePlayers.map((player) => String(player.playerId)),
       values,
       eligibility,
-      forwardGrouping
+      forwardGrouping,
     );
 
     const idxVORP: Record<string, number> = {};
@@ -370,35 +370,33 @@ export function useVORPCalculations({
       const remainingStarters = Math.max(0, starterCount - filled);
       idxVORP[position] = Math.max(
         0,
-        Math.floor(T * (remainingStarters + (utilAdj[position] || 0)) + 1) - 1
+        Math.floor(T * (remainingStarters + (utilAdj[position] || 0)) + 1) - 1,
       );
       idxVOLS[position] = Math.max(0, Math.floor(T * remainingStarters) - 1);
     }
 
-    const replacementByPos: Record<
-      string,
-      { vorp: number; vols: number }
-    > = {};
-    const replacementPools =
-      baselineMode === "full" ? byPosFull : byPosAvail;
+    const replacementByPos: Record<string, { vorp: number; vols: number }> = {};
+    const replacementPools = baselineMode === "full" ? byPosFull : byPosAvail;
     for (const position of positions) {
       const pool = replacementPools[position] ?? [];
       const vorpIndex = Math.min(
         idxVORP[position],
-        Math.max(0, pool.length - 1)
+        Math.max(0, pool.length - 1),
       );
       const volsIndex = Math.min(
         idxVOLS[position],
-        Math.max(0, pool.length - 1)
+        Math.max(0, pool.length - 1),
       );
       replacementByPos[position] = {
         vorp: pool[vorpIndex]?.value ?? 0,
-        vols: pool[volsIndex]?.value ?? 0
+        vols: pool[volsIndex]?.value ?? 0,
       };
     }
 
-    const currentRankIdx: Record<string, Record<string, number>> =
-      Object.fromEntries(positions.map((position) => [position, {}]));
+    const currentRankIdx: Record<
+      string,
+      Record<string, number>
+    > = Object.fromEntries(positions.map((position) => [position, {}]));
     for (const position of positions) {
       (byPosAvail[position] ?? []).forEach((player, index) => {
         currentRankIdx[position][player.id] = index;
@@ -411,11 +409,11 @@ export function useVORPCalculations({
       .sort((left, right) => left.yahooAvgPick! - right.yahooAvgPick!)
       .slice(0, N);
     const expectedTaken: Record<string, number> = Object.fromEntries(
-      positions.map((position) => [position, 0])
+      positions.map((position) => [position, 0]),
     );
     for (const player of topN) {
       const valid = (eligibility.get(String(player.playerId)) ?? []).filter(
-        (position) => positions.includes(position)
+        (position) => positions.includes(position),
       );
       if (!valid.length) continue;
       const share = 1 / valid.length;
@@ -445,7 +443,7 @@ export function useVORPCalculations({
         if (arr && arr.length > 0 && Number.isFinite(curIdx)) {
           const nextRank = Math.min(
             arr.length - 1,
-            Math.floor((curIdx as number) + (expectedTaken[pos] || 0))
+            Math.floor((curIdx as number) + (expectedTaken[pos] || 0)),
           );
           const nextBaselineVal = arr[nextRank]?.value ?? 0;
           const vona = val - nextBaselineVal;
@@ -477,7 +475,7 @@ export function useVORPCalculations({
         vona: bestVona,
         vbd,
         bestPos,
-        eligible: elig
+        eligible: elig,
       });
     });
 
@@ -485,7 +483,7 @@ export function useVORPCalculations({
       playerMetrics,
       replacementByPos,
       expectedTakenByPos: expectedTaken,
-      expectedN: N
+      expectedN: N,
     };
   }, [
     players,
@@ -499,6 +497,6 @@ export function useVORPCalculations({
     personalizeReplacement,
     myFilledSlots,
     prorate82,
-    fantasyPointSettings
+    fantasyPointSettings,
   ]);
 }

@@ -525,11 +525,6 @@ export async function ensureTables() {
   PRIMARY KEY (player_id, season_id, position_group, stat_code)
 );`,
   ];
-  // Without a SQL execution function, we optimistically rely on tables existing.
-  // If you have a custom RPC (e.g., exec_sql) you could call it here.
-  console.log(
-    "ensureTables: (best-effort) DDL prepared but not executed via public anon key",
-  );
   return ddlStatements.join("\n\n");
 }
 

@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   useQuarantinedPredictionsSko,
-  type PredictionRow
+  type PredictionRow,
 } from "lib/hooks/useQuarantinedPredictionsSko";
 import supabase from "lib/supabase/client";
 import type {
   PlayerInfoRow,
   PlayerPredictionDatum,
-  SparklinePoint
+  SparklinePoint,
 } from "lib/trends/skoTypes";
 import { lookupTeamLabel } from "lib/trends/skoUtils";
 import PlayerTable from "./PlayerTable";
@@ -22,27 +22,27 @@ type Props = {
 export default function PredictionsLeaderboard({
   asOfDate,
   limit = 30,
-  sparklineDays = 45
+  sparklineDays = 45,
 }: Props) {
   // Headline rows for a single date
   const {
     data: rows,
     loading,
-    error
+    error,
   } = useQuarantinedPredictionsSko({
     asOfDate: asOfDate ?? undefined,
     limit,
-    order: "desc"
+    order: "desc",
   });
 
   const playerIds = useMemo(
     () => Array.from(new Set(rows.map((r) => r.player_id))).filter(Boolean),
-    [rows]
+    [rows],
   );
 
   // Player info (names/teams/positions)
   const [playerInfo, setPlayerInfo] = useState<Record<number, PlayerInfoRow>>(
-    {}
+    {},
   );
   useEffect(() => {
     let active = true;
@@ -63,7 +63,7 @@ export default function PredictionsLeaderboard({
         return;
       }
       const map = Object.fromEntries(
-        ((data ?? []) as PlayerInfoRow[]).map((row) => [Number(row.id), row])
+        ((data ?? []) as PlayerInfoRow[]).map((row) => [Number(row.id), row]),
       );
       setPlayerInfo(map);
     })();
@@ -88,9 +88,9 @@ export default function PredictionsLeaderboard({
           until: asOfDate ?? undefined,
           playerIds: playerIds.length ? playerIds : undefined,
           order: "asc",
-          limit: 2000
+          limit: 2000,
         }
-      : {}
+      : {},
   );
   const previousSparkMap = useRef<Record<number, SparklinePoint[]>>({});
   const sparklineMap = useMemo(() => {
@@ -144,30 +144,6 @@ export default function PredictionsLeaderboard({
       acc[pid].push({ date, value });
       if (acc[pid].length > 45) acc[pid] = acc[pid].slice(acc[pid].length - 45);
     }
-    // Dev debug: log one example player's sparkline to inspect variability
-    if (process.env.NODE_ENV === "development") {
-      const firstPid = Object.keys(acc)[0];
-      if (firstPid) {
-        console.log("[sparkline-debug] pid", firstPid, acc[Number(firstPid)]);
-      }
-      // Additional summary for first few players to inspect variability
-      const summaries = Object.entries(acc)
-        .slice(0, 5)
-        .map(([pid, arr]) => {
-          const values = arr
-            .map((p) => p.value)
-            .filter((v): v is number => v != null && !Number.isNaN(v));
-          if (!values.length) {
-            return { pid, n: arr.length, empty: true };
-          }
-          const min = Math.min(...values);
-          const max = Math.max(...values);
-          const range = max - min;
-          const uniq = new Set(values.map((v) => v.toFixed(4))).size;
-          return { pid, n: arr.length, min, max, range, uniq };
-        });
-      console.log("[sparkline-summary]", summaries);
-    }
     previousSparkMap.current = acc;
     return acc;
   }, [sparkRows, enableSpark]);
@@ -185,7 +161,7 @@ export default function PredictionsLeaderboard({
         predPoints: row.pred_points ?? null,
         stability: row.stability_multiplier ?? null,
         asOfDate: row.as_of_date,
-        sparkline: sparklineMap[row.player_id] ?? []
+        sparkline: sparklineMap[row.player_id] ?? [],
       };
     });
   }, [rows, playerInfo, sparklineMap]);
@@ -210,7 +186,7 @@ export default function PredictionsLeaderboard({
               setRetryKey((k) => k + 1);
               // naive retry by reloading the page-level API endpoint
               fetch(`/api/v1/ml/get-predictions-sko?limit=${limit}`).catch(
-                () => {}
+                () => {},
               );
             }}
           >

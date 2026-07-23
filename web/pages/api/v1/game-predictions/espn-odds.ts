@@ -23,7 +23,9 @@ function getServerClient(): SupabaseClient<Database> {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY;
 
   if (!url || !key) {
-    throw new Error("Supabase credentials missing for game prediction odds API.");
+    throw new Error(
+      "Supabase credentials missing for game prediction odds API.",
+    );
   }
 
   serverClient = createClient<Database>(url, key, {

@@ -177,4 +177,4 @@ The historical representative table remains for traceability. The complete curre
 | components/WiGO/NameSearchBar.tsx | current lint clean | resolved | Current filtered-player ownership no longer warns |
 | components/WiGO/PerGameStatsTable.tsx | current lint clean | resolved | Current player identity dependencies no longer warn |
 
-Next dependency-eligible local pass selects the largest coherent non-strategy cohort while trueGoalieValue NEW 63/66, lint-policy NEW 20/40/41, production repair NEW 105, and broad-history NEW 107 retain their separate decision/approval boundaries.
+The low-risk-noise parent and legacy-formatting boundary are complete. Four sparkline/DDL diagnostics were removed; guarded development and value-free operational timing/progress logs remain intentional. The twelve recorded code/test files are normalized, with 10 files/44 tests, full TypeScript, targeted Prettier, zero-error scoped lint with two unchanged advisories, and diff integrity green. B-CLEAN is 144/150 with six open: NEW 7/20/63/66/105/107 retain continuous-discovery, dependency-strategy, trueGoalieValue, production-repair, and broad-history boundaries.
