@@ -2,7 +2,7 @@
 
 Date: 2026-07-22
 
-Status: Phases 1–2 evidence complete; Phase 3 requires the PRD review checkpoint.
+Status: Phases 1–4 evidence complete; Phase 5 remains open.
 
 ## Evidence boundary
 
@@ -58,7 +58,7 @@ The route defaults to horizontal orientation. The orientation control can still 
 - Missing numeric values sort after present values in both directions.
 - Mobile/tablet fallback tables retain their existing independent sort state until their later visual-alignment phase.
 
-The current master already defaults to Team ascending and keeps day headers non-sortable, but current 4WK GP has no sort action and 4WK Score is computed but not rendered. Base tasks 3.4 and 4.3 own those already-specified gaps.
+The master defaults to Team ascending, keeps day headers non-sortable, and now exposes sort actions for all intended OMT/current/4WK values, including 4WK GP and 4WK Score.
 
 ## Unified desktop column contract
 
@@ -72,7 +72,7 @@ Left to right:
 
 The grouped 4WK expand/collapse control sits at the boundary immediately after current Score and before the first four-week value. Expanded state exposes all four values. Collapsed state may replace the group with one narrow marker. The owner-approved default is expanded; Phase 3 must change the current component's collapsed default explicitly and cover it rather than inheriting it silently.
 
-Current tracked code differs from this contract: its OMT order is xGF/xGA/SF/SA/GF/GA/W%, it places the three-column 4WK group before current GP/OFF/Score, it omits 4WK Score, and its 4WK GP header is only a collapse control. These are already owned by base implementation rows 3.2, 3.4, 4.3, and 4.4.
+The tracked desktop-horizontal implementation now matches this order. The four-value 4WK group starts expanded and collapses to one narrow marker after current Score.
 
 ## Sticky and scroll contract
 
@@ -107,10 +107,19 @@ The focused contract group remains 3 files / 9 tests. Full TypeScript passes. Th
 
 ## Findings and review gates
 
-- NEW 1: the master path consumes `statsLoading` but drops `statsError`; a failed OMT query becomes ordinary `-` values. Later implementation must expose a stable, value-free unavailable state while preserving the rest of the master row.
+- NEW 1: closed. The master consumes `statsError`, presents a value-free unavailable notice, avoids showing metric emphasis/value remnants, and preserves schedule/current/4WK content.
 - NEW 2: desktop vertical orientation bypasses the master architecture. The owner approved retaining it as a named legacy fallback through Phases 2–4; later structural and breakpoint verification still must prove that boundary before closure.
 - NEW 3: the task list's obsolete Jest command is corrected to the repository's Vitest command and closed as documentation-only work.
-- Phase-1 review resolved initial 4WK state, Score-cell highlight scope, NEW 2 orientation disposition, and feature-flag strategy. Phase 3 remains paused for review of the Phase-2 shell evidence before structural reconciliation begins.
+- Phase-1 review resolved initial 4WK state, Score-cell highlight scope, NEW 2 orientation disposition, and feature-flag strategy. The owner then authorized Phases 3–4 as one implementation/review cohort; Phase 5 remains separately gated.
+
+## Phases 3–4 implementation evidence
+
+- Desktop-horizontal uses one ordered table: xGF/xGA/GF/GA/SF/SA/W% → Team → 7/10 days → current GP/OFF/Score → 4WK GP/OFF/Opp%/Score.
+- Team remains the ascending default; every intended non-day value is sortable, missing values remain last, ties remain Team-ascending, and day/date headers remain non-sortable.
+- 4WK starts expanded, exposes four sortable values, and collapses through an independently accessible boundary control.
+- Current Score alone receives top/bottom-ten fill, with a restrained left-edge marker; the previous full-row tint is removed.
+- The vertical desktop control is explicitly `Legacy Vertical`, returns through `Master Table`, and introduces no feature flag.
+- Focused verification passes 3 files/11 tests, full TypeScript passes, and the compiled `/game-grid/7-Day-Forecast` route returns HTTP 200. Phase 5 still owns cross-breakpoint browser/visual proof and Player Pickup alignment.
 
 ## Verification
 

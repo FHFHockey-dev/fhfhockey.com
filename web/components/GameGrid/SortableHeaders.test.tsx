@@ -15,6 +15,7 @@ import DesktopMasterTable from "./DesktopMasterTable";
 import Header from "./Header";
 import switchStyles from "./Switch/Switch.module.scss";
 import TransposedGrid from "./TransposedGrid";
+import { OPPONENT_METRIC_COLUMNS } from "./utils/useOpponentMetricsData";
 
 const { dateRangeState } = vi.hoisted(() => ({
   dateRangeState: {
@@ -248,6 +249,7 @@ describe("Game Grid sortable column headers", () => {
           avgWinPct: null,
         }}
         opponentMetricsLoading={false}
+        opponentMetricsError={null}
         fourWeekSummaryByTeamId={{}}
         fourWeekAverages={{
           gamesPlayed: null,
@@ -279,5 +281,146 @@ describe("Game Grid sortable column headers", () => {
         .getByRole("switch", { name: `Include ${firstDay} games` })
         .getAttribute("aria-checked"),
     ).toBe("false");
+  });
+
+  it("enforces the approved desktop master order and expanded four-week controls", () => {
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
+
+    render(
+      <DesktopMasterTable
+        start="2026-01-05"
+        extended={false}
+        scheduleRows={[]}
+        gamesPerDay={[0, 0, 0, 0, 0, 0, 0]}
+        excludedDays={[]}
+        setExcludedDays={vi.fn()}
+        opponentMetricsByTeamId={{}}
+        opponentMetricColumns={OPPONENT_METRIC_COLUMNS}
+        opponentLeagueAverages={{
+          avgXgf: null,
+          avgXga: null,
+          avgSf: null,
+          avgSa: null,
+          avgGoalFor: null,
+          avgGoalAgainst: null,
+          avgWinPct: null,
+        }}
+        opponentMetricsLoading={false}
+        opponentMetricsError={null}
+        fourWeekSummaryByTeamId={{}}
+        fourWeekAverages={{
+          gamesPlayed: null,
+          offNights: null,
+          avgOpponentPointPct: null,
+          score: null,
+        }}
+      />,
+    );
+
+    const sortLabels = screen
+      .getAllByRole("button")
+      .map((button) => button.getAttribute("aria-label"))
+      .filter((label): label is string => label?.startsWith("Sort by ") === true)
+      .map((label) => label.replace(/ (ascending|descending)$/, ""));
+
+    expect(sortLabels).toEqual([
+      "Sort by xGF",
+      "Sort by xGA",
+      "Sort by GF",
+      "Sort by GA",
+      "Sort by SF",
+      "Sort by SA",
+      "Sort by W%",
+      "Sort by Team",
+      "Sort by GP",
+      "Sort by OFF",
+      "Sort by Score",
+      "Sort by 4WK GP",
+      "Sort by 4WK OFF",
+      "Sort by Opp %",
+      "Sort by 4WK Score",
+    ]);
+    expect(screen.queryByRole("button", { name: /^Sort by MON/ })).toBeNull();
+
+    const collapse = screen.getByRole("button", {
+      name: "Collapse four-week columns",
+    });
+    expect(collapse.getAttribute("aria-expanded")).toBe("true");
+    fireEvent.click(collapse);
+
+    expect(
+      screen.queryByRole("button", { name: /^Sort by 4WK GP/ }),
+    ).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Expand four-week columns" }),
+    ).toBeTruthy();
+  });
+
+  it("keeps the master row available when opponent metrics fail", () => {
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
+
+    render(
+      <DesktopMasterTable
+        start="2026-01-05"
+        extended={false}
+        scheduleRows={[
+          {
+            teamId: 1,
+            totalGamesPlayed: 3,
+            totalOffNights: 2,
+            weekScore: 4.2,
+          } as never,
+        ]}
+        gamesPerDay={[0, 0, 0, 0, 0, 0, 0]}
+        excludedDays={[]}
+        setExcludedDays={vi.fn()}
+        opponentMetricsByTeamId={{}}
+        opponentMetricColumns={OPPONENT_METRIC_COLUMNS}
+        opponentLeagueAverages={{
+          avgXgf: null,
+          avgXga: null,
+          avgSf: null,
+          avgSa: null,
+          avgGoalFor: null,
+          avgGoalAgainst: null,
+          avgWinPct: null,
+        }}
+        opponentMetricsLoading={false}
+        opponentMetricsError="provider detail must not render"
+        fourWeekSummaryByTeamId={{
+          1: {
+            gamesPlayed: 12,
+            offNights: 5,
+            avgOpponentPointPct: 0.5,
+            score: 1.5,
+          },
+        }}
+        fourWeekAverages={{
+          gamesPlayed: 12,
+          offNights: 5,
+          avgOpponentPointPct: 0.5,
+          score: 0,
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("status").textContent).toContain(
+      "Opponent metrics unavailable",
+    );
+    expect(screen.queryByText("provider detail must not render")).toBeNull();
+    expect(screen.getByRole("link", { name: "Open Team HQ" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Sort by 4WK Score/ })).toBeTruthy();
   });
 });

@@ -1142,6 +1142,15 @@
   padding: 0 v.$space-sm v.$space-sm;
 }
 
+.masterMetricsUnavailable {
+  margin: 0 v.$space-sm v.$space-xs;
+  padding: v.$space-xs v.$space-sm;
+  border-left: 3px solid v.$schedule-yellow;
+  background: rgba(v.$schedule-yellow, 0.08);
+  color: rgba(v.$color-white, 0.88);
+  font-size: 0.72rem;
+}
+
 .masterTableScroll {
   overflow-x: auto;
   overflow-y: auto;
@@ -1675,6 +1684,27 @@
   border-left: 1px solid rgba(v.$color-blue-300, 0.18);
 }
 
+.masterFourWeekHeaderActions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22px;
+  min-height: 56px;
+}
+
+.masterFourWeekCollapseControl {
+  border: 0;
+  border-left: 1px solid rgba(v.$color-blue-300, 0.18);
+  background: transparent;
+  color: v.$color-blue-300;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    background: rgba(v.$primary-color, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(v.$primary-color, 0.26);
+  }
+}
+
 .masterFourWeekLead {
   border-left: 1px solid rgba(v.$color-blue-300, 0.24);
 }
@@ -1709,20 +1739,6 @@
   border-right: 1px solid rgba(v.$color-blue-300, 0.18);
 }
 
-.masterRowBest td {
-  background-image: linear-gradient(
-    rgba(v.$schedule-green, 0.08),
-    rgba(v.$schedule-green, 0.08)
-  );
-}
-
-.masterRowWorst td {
-  background-image: linear-gradient(
-    rgba(v.$schedule-red, 0.08),
-    rgba(v.$schedule-red, 0.08)
-  );
-}
-
 .masterRowBest td:first-child {
   box-shadow: inset 6px 0 0 rgba(v.$schedule-green, 0.95);
 }
@@ -1731,35 +1747,16 @@
   box-shadow: inset 6px 0 0 rgba(v.$schedule-red, 0.95);
 }
 
-.masterRowBest td.masterTeamCell {
-  box-shadow:
-    inset 6px 0 0 rgba(v.$schedule-green, 0.95),
-    inset -2px 0 0 rgba(v.$secondary-color, 0.2);
+.masterScoreBest {
+  background: rgba(v.$schedule-green, 0.17) !important;
+  color: #7cffcb !important;
+  box-shadow: inset 0 0 0 1px rgba(v.$schedule-green, 0.62);
 }
 
-.masterRowWorst td.masterTeamCell {
-  box-shadow:
-    inset 6px 0 0 rgba(v.$schedule-red, 0.95),
-    inset -2px 0 0 rgba(v.$secondary-color, 0.2);
-}
-
-.masterRowBest:hover td {
-  background-image: linear-gradient(
-    rgba(v.$schedule-green, 0.11),
-    rgba(v.$schedule-green, 0.11)
-  );
-}
-
-.masterRowWorst:hover td {
-  background-image: linear-gradient(
-    rgba(v.$schedule-red, 0.11),
-    rgba(v.$schedule-red, 0.11)
-  );
-}
-
-.masterRowBest td.masterSummaryScore,
-.masterRowWorst td.masterSummaryScore {
-  text-shadow: none;
+.masterScoreWorst {
+  background: rgba(v.$schedule-red, 0.17) !important;
+  color: #ff8f8f !important;
+  box-shadow: inset 0 0 0 1px rgba(v.$schedule-red, 0.62);
 }
 
 .masterTotalsRow td {

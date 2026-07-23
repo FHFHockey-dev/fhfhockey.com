@@ -1387,7 +1387,13 @@ function GameGridInternal({
                 className={styles.orientationToggleButton}
                 onClick={handleOrientationToggle}
               >
-                {orientation === "horizontal" ? "Vertical" : "Horizontal"}
+                {isDesktop
+                  ? orientation === "horizontal"
+                    ? "Legacy Vertical"
+                    : "Master Table"
+                  : orientation === "horizontal"
+                    ? "Vertical"
+                    : "Horizontal"}
               </button>
             </div>
           </div>
@@ -1487,6 +1493,7 @@ function GameGridInternal({
                   opponentMetricColumns={opponentMetricsData.metricColumns}
                   opponentLeagueAverages={opponentMetricsData.leagueAverages}
                   opponentMetricsLoading={opponentMetricsData.statsLoading}
+                  opponentMetricsError={opponentMetricsData.statsError}
                   fourWeekSummaryByTeamId={fourWeekSummaryByTeamId}
                   fourWeekAverages={fourWeekAverages}
                 />

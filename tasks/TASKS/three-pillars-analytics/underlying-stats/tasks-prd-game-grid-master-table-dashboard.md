@@ -43,21 +43,21 @@
   - [x] 2.4 Existing team logos, matchup home/away cues, day-state colors, and control iconography remain intact with the current dense spacing, contrast, hover, and focus treatments (verified 2026-07-22).
   - [x] 2.5 Existing shared tokens and mixins are sufficient; Phase 2 adds no new SCSS variables, hard-coded canonical tokens, dependency, or style framework (verified 2026-07-22).
 
-- [ ] 3.0 Build the unified desktop master-table scaffold with the agreed column order, sorting behavior, and single team identity column.
-  - [ ] 3.1 Create the desktop master-table structure in `GameGrid.tsx` using one row per team and one shared header row for all desktop columns.
-  - [ ] 3.2 Arrange the desktop column groups in the approved order: OMT metrics, team identity, day columns, current-week summary, and 4WG columns.
-  - [ ] 3.3 Remove redundant repeated team-logo columns from the merged desktop layout and preserve a single `firstcolumnContent`-style identity area for each row.
-  - [ ] 3.4 Wire alphabetical-by-team default sorting into the unified desktop table and enable clickable sorting for intended non-day columns only.
-  - [ ] 3.5 Keep the day columns visible but intentionally non-sortable, including any necessary header-state treatment so that behavior is clear.
-  - [ ] 3.6 Keep the previous mobile/tablet composition intact while scoping the master-table scaffold to desktop behavior only.
+- [x] 3.0 Build the unified desktop master-table scaffold with the agreed column order, sorting behavior, and single team identity column. The desktop-horizontal path now implements the complete contract without changing the smaller-breakpoint compositions (verified 2026-07-22).
+  - [x] 3.1 `DesktopMasterTable` owns one table/header/body and one row per current team on the existing `>=1024px` horizontal branch (verified 2026-07-22).
+  - [x] 3.2 Column groups now render OMT → Team → 7/10 days → current GP/OFF/Score → 4WK GP/OFF/Opp%/Score (verified 2026-07-22).
+  - [x] 3.3 The master row retains exactly one linked team-logo identity cell; no repeated OMT/4WG identity columns exist on the desktop-horizontal path (verified 2026-07-22).
+  - [x] 3.4 Team remains the ascending default; every OMT/current/4WK value is sortable with missing-last and Team-ascending ties, including newly exposed 4WK GP and Score controls (verified 2026-07-22).
+  - [x] 3.5 Day/date headers remain non-sortable and retain only the existing 7-day include/exclude switches; the focused regression asserts the absence of day sort controls (verified 2026-07-22).
+  - [x] 3.6 The master remains limited to desktop-horizontal; mobile/tablet stay on their existing separate compositions and desktop vertical is explicitly named `Legacy Vertical` (verified 2026-07-22).
 
-- [ ] 4.0 Merge OMT, GG, and 4WG presentation into the desktop master table, including grouped 4WG collapse behavior and score highlighting.
-  - [ ] 4.1 Reuse current OMT metric data in the unified desktop row model without changing the underlying opponent-metric query or calculations.
-  - [ ] 4.2 Reuse the existing weekly schedule cell rendering and current-week summary values (`GP`, `OFF`, `Score`) inside the desktop master table without changing scoring behavior.
-  - [ ] 4.3 Reuse the existing four-week values in the unified row model and place the 4WG group to the right of the current-week summary block.
-  - [ ] 4.4 Add a grouped 4WG expand/collapse affordance at the approved boundary, and ensure the control clearly communicates the collapsed versus expanded state.
-  - [ ] 4.5 Add subtle top-10 and bottom-10 score highlighting using restrained green/red treatments that do not overwhelm row readability.
-  - [ ] 4.6 Verify that the desktop unified table still retains logos, key schedule icons, and readable group separation once all three data areas are merged.
+- [x] 4.0 Merge OMT, GG, and 4WG presentation into the desktop master table, including grouped 4WG collapse behavior and score highlighting. The existing data owners now feed one ordered desktop row with the approved interaction and emphasis boundaries (verified 2026-07-22).
+  - [x] 4.1 The unchanged opponent-metrics hook/query/calculations feed the reordered xGF/xGA/GF/GA/SF/SA/W% block (verified 2026-07-22).
+  - [x] 4.2 Existing `MatchUpCell`, GP/OFF helpers, score formula, exclusion, preseason, logo, and icon behavior remain the weekly owners inside the master row (verified 2026-07-22).
+  - [x] 4.3 Existing four-week GP/OFF/Opp%/Score values now render to the right of current Score, including the previously computed but omitted 4WK Score (verified 2026-07-22).
+  - [x] 4.4 The 4WK group starts expanded with four sortable values; a separate boundary control exposes explicit expanded/collapsed names and a narrow collapsed marker (verified 2026-07-22).
+  - [x] 4.5 Top/bottom-ten emphasis is limited to the current Score cell plus a restrained first-edge marker; full-row tinting is removed and partial datasets cannot receive overlapping best/worst classes (verified 2026-07-22).
+  - [x] 4.6 Static component/render review plus the focused master regression verifies one linked logo, reused matchup cells/icons, exact group order, and group separators; route Sass compilation returns HTTP 200 (verified 2026-07-22).
 
 - [ ] 5.0 Polish the experience across breakpoints and refresh the Player Pickup Table styling to match the new dashboard UI.
   - [ ] 5.1 Update the separate mobile/tablet collapsible sections so they inherit the new dashboard shell, header styling, row striping, and spacing without adopting the desktop master-table structure.
@@ -66,6 +66,6 @@
   - [ ] 5.4 Run targeted regression checks for sorting, collapse behavior, score display, sticky headers, and layout behavior across desktop, tablet, and mobile breakpoints.
   - [ ] 5.5 Add or update component-level regression tests if the refactor introduces stable seams for interaction or rendering coverage.
 
-- [ ] NEW 1.0 **P1 desktop master opponent-metrics failure is indistinguishable from legitimate missing values:** `useOpponentMetricsData` exposes a stable error, but `GameGrid` passes only loading/data into `DesktopMasterTable`, which renders ordinary dashes after failure. Preserve the schedule/4WG row while exposing a value-free unavailable state and add a focused failure regression before closing the merged desktop path (discovered 2026-07-22).
-- [ ] NEW 2.0 **P2 desktop vertical orientation bypasses the master-table contract:** `>=1024px` horizontal uses `DesktopMasterTable`, while the existing orientation control routes vertical users back to separate OMT/TransposedGrid/4WG rails. The owner approved retaining this as a named legacy fallback through Phases 2–4; preserve that boundary and verify it across later structural/breakpoint work before claiming complete desktop replacement (decision recorded 2026-07-22).
+- [x] NEW 1.0 **P1 desktop master opponent-metrics failure is indistinguishable from legitimate missing values:** the master now consumes `statsError`, displays a stable value-free unavailable notice, suppresses stale-looking metric values/emphasis, and preserves the schedule/current/4WK row; the focused failure regression passes (verified 2026-07-22).
+- [ ] NEW 2.0 **P2 desktop vertical orientation bypasses the master-table contract:** `>=1024px` horizontal uses `DesktopMasterTable`, while the existing orientation control routes vertical users back to separate OMT/TransposedGrid/4WG rails. The approved Phase-3/4 implementation preserves and names this `Legacy Vertical` with a `Master Table` return label and no second flag; Phase 5 still owns final breakpoint proof before closure (updated 2026-07-22).
 - [x] NEW 3.0 **P3 stale Jest verification instruction:** the task list now names the repository-owned Vitest one-shot command, and the focused current-contract group passes 3 files/9 tests (verified 2026-07-22).

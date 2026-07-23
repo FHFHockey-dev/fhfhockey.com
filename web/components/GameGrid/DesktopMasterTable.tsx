@@ -46,6 +46,7 @@ type DesktopMasterTableProps = {
   opponentMetricColumns: OpponentMetricColumn[];
   opponentLeagueAverages: Record<keyof OpponentMetricAverages, number | null>;
   opponentMetricsLoading: boolean;
+  opponentMetricsError: string | null;
   fourWeekSummaryByTeamId: Record<number, FourWeekSummary>;
   fourWeekAverages: FourWeekSummary;
 };
@@ -233,6 +234,7 @@ export default function DesktopMasterTable({
   opponentMetricColumns,
   opponentLeagueAverages,
   opponentMetricsLoading,
+  opponentMetricsError,
   fourWeekSummaryByTeamId,
   fourWeekAverages,
 }: DesktopMasterTableProps) {
@@ -244,7 +246,7 @@ export default function DesktopMasterTable({
     key: "teamName",
     direction: "ascending",
   });
-  const [isFourWeekCollapsed, setIsFourWeekCollapsed] = useState(true);
+  const [isFourWeekCollapsed, setIsFourWeekCollapsed] = useState(false);
   const [containerWidth, setContainerWidth] = useState(0);
   const [stickyHeader, setStickyHeader] = useState<StickyHeaderState>({
     active: false,
@@ -357,6 +359,7 @@ export default function DesktopMasterTable({
       new Set(
         [...scoreRanking.entries()]
           .sort((a, b) => a[1] - b[1])
+          .filter(([, rank]) => rank > 10)
           .slice(-10)
           .map(([teamId]) => teamId),
       ),
@@ -405,7 +408,7 @@ export default function DesktopMasterTable({
     teamId: number,
     value: number | null,
   ) => {
-    if (typeof value !== "number") return undefined;
+    if (opponentMetricsError || typeof value !== "number") return undefined;
 
     const bestRank = opponentMetricRankMaps[key]?.best.get(teamId);
     if (bestRank != null) {
@@ -455,12 +458,15 @@ export default function DesktopMasterTable({
     });
   };
 
-  const fourWeekColumnSpan = isFourWeekCollapsed ? 1 : 3;
+  const fourWeekColumnSpan = isFourWeekCollapsed ? 1 : 4;
   const baseColumnWidths = useMemo(() => {
     const widths = [
       ...Array(opponentMetricColumns.length).fill(MASTER_METRIC_COL_BASE_WIDTH),
       MASTER_TEAM_COL_BASE_WIDTH,
       ...Array(dayKeys.length).fill(MASTER_DAY_COL_BASE_WIDTH),
+      MASTER_SUMMARY_COL_BASE_WIDTH,
+      MASTER_SUMMARY_COL_BASE_WIDTH,
+      MASTER_SCORE_COL_BASE_WIDTH,
     ];
 
     if (isFourWeekCollapsed) {
@@ -470,14 +476,9 @@ export default function DesktopMasterTable({
         MASTER_FOUR_WEEK_COL_BASE_WIDTH,
         MASTER_FOUR_WEEK_COL_BASE_WIDTH,
         MASTER_FOUR_WEEK_COL_BASE_WIDTH,
+        MASTER_FOUR_WEEK_COL_BASE_WIDTH,
       );
     }
-
-    widths.push(
-      MASTER_SUMMARY_COL_BASE_WIDTH,
-      MASTER_SUMMARY_COL_BASE_WIDTH,
-      MASTER_SCORE_COL_BASE_WIDTH,
-    );
 
     return widths;
   }, [dayKeys.length, isFourWeekCollapsed, opponentMetricColumns.length]);
@@ -519,6 +520,11 @@ export default function DesktopMasterTable({
     headerKey?: string,
   ) => {
     const isSorted = sortConfig.key === key;
+    const nextDirection = isSorted
+      ? sortConfig.direction === "ascending"
+        ? "descending"
+        : "ascending"
+      : getDefaultDirection(key);
     const directionGlyph =
       isSorted && sortConfig.direction === "ascending" ? "▲" : "▼";
 
@@ -535,11 +541,7 @@ export default function DesktopMasterTable({
           type="button"
           className={styles.masterSortButton}
           onClick={() => handleSort(key)}
-          aria-label={`Sort by ${label} ${
-            isSorted && sortConfig.direction === "ascending"
-              ? "descending"
-              : "ascending"
-          }`}
+          aria-label={`Sort by ${label} ${nextDirection}`}
         >
           <span>{label}</span>
           {isSorted && (
@@ -590,26 +592,26 @@ export default function DesktopMasterTable({
           <span className={styles.masterSectionLabel}>Game Grid</span>
         </th>
         <th
+          colSpan={3}
+          className={clsx(
+            styles.masterSectionBanner,
+            styles.masterSectionBannerSummary,
+          )}
+        >
+          <span className={styles.masterSectionLabel}>Week Summary</span>
+        </th>
+        <th
           colSpan={fourWeekColumnSpan}
           className={clsx(
             styles.masterSectionBanner,
             styles.masterSectionBannerFourWeek,
             isFourWeekCollapsed && styles.masterSectionBannerCollapsed,
+            styles.masterSectionBannerEnd,
           )}
         >
           <span className={styles.masterSectionLabel}>
             {isFourWeekCollapsed ? "4WK" : "Four Week Forecast"}
           </span>
-        </th>
-        <th
-          colSpan={3}
-          className={clsx(
-            styles.masterSectionBanner,
-            styles.masterSectionBannerSummary,
-            styles.masterSectionBannerEnd,
-          )}
-        >
-          <span className={styles.masterSectionLabel}>Week Summary</span>
         </th>
       </tr>
       <tr className={styles.masterHeaderMetricRow}>
@@ -701,6 +703,27 @@ export default function DesktopMasterTable({
             </th>
           );
         })}
+        {renderSortableHeader(
+          "GP",
+          "totalGamesPlayed",
+          styles.masterBlueHeader,
+          undefined,
+          `${keyPrefix}totalGamesPlayed`,
+        )}
+        {renderSortableHeader(
+          "OFF",
+          "totalOffNights",
+          clsx(styles.masterBlueHeader, styles.masterGroupEdge),
+          undefined,
+          `${keyPrefix}totalOffNights`,
+        )}
+        {renderSortableHeader(
+          "Score",
+          "weekScore",
+          clsx(styles.masterSummaryScore, styles.masterScoreHeader),
+          undefined,
+          `${keyPrefix}weekScore`,
+        )}
         {!isFourWeekCollapsed && (
           <>
             <th
@@ -711,16 +734,42 @@ export default function DesktopMasterTable({
                 styles.masterFourWeekColumn,
               )}
             >
-              <button
-                type="button"
-                className={styles.masterCollapseButton}
-                onClick={() => setIsFourWeekCollapsed((value) => !value)}
-                aria-expanded={!isFourWeekCollapsed}
-                aria-label="Collapse four-week columns"
-              >
-                <span>4WK GP</span>
-                <span aria-hidden="true">⏴|⏵</span>
-              </button>
+              <div className={styles.masterFourWeekHeaderActions}>
+                <button
+                  type="button"
+                  className={styles.masterSortButton}
+                  onClick={() => handleSort("fourWeekGamesPlayed")}
+                  aria-label={`Sort by 4WK GP ${
+                    sortConfig.key === "fourWeekGamesPlayed"
+                      ? sortConfig.direction === "ascending"
+                        ? "descending"
+                        : "ascending"
+                      : getDefaultDirection("fourWeekGamesPlayed")
+                  }`}
+                >
+                  <span>4WK GP</span>
+                  {sortConfig.key === "fourWeekGamesPlayed" && (
+                    <span
+                      className={clsx(
+                        styles.masterSortGlyph,
+                        styles.masterSortGlyphActive,
+                      )}
+                      aria-hidden="true"
+                    >
+                      {sortConfig.direction === "ascending" ? "▲" : "▼"}
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className={styles.masterFourWeekCollapseControl}
+                  onClick={() => setIsFourWeekCollapsed(true)}
+                  aria-expanded={true}
+                  aria-label="Collapse four-week columns"
+                >
+                  <span aria-hidden="true">◂</span>
+                </button>
+              </div>
             </th>
             {renderSortableHeader(
               "4WK OFF",
@@ -735,6 +784,13 @@ export default function DesktopMasterTable({
               clsx(styles.masterFourWeekHeader, styles.masterGroupEdge),
               undefined,
               `${keyPrefix}fourWeekOpponentPointPct`,
+            )}
+            {renderSortableHeader(
+              "4WK Score",
+              "fourWeekScore",
+              clsx(styles.masterFourWeekHeader, styles.masterGroupEdge),
+              undefined,
+              `${keyPrefix}fourWeekScore`,
             )}
           </>
         )}
@@ -762,27 +818,6 @@ export default function DesktopMasterTable({
               <span aria-hidden="true">◂|▸</span>
             </button>
           </th>
-        )}
-        {renderSortableHeader(
-          "GP",
-          "totalGamesPlayed",
-          styles.masterBlueHeader,
-          undefined,
-          `${keyPrefix}totalGamesPlayed`,
-        )}
-        {renderSortableHeader(
-          "OFF",
-          "totalOffNights",
-          clsx(styles.masterBlueHeader, styles.masterGroupEdge),
-          undefined,
-          `${keyPrefix}totalOffNights`,
-        )}
-        {renderSortableHeader(
-          "Score",
-          "weekScore",
-          clsx(styles.masterSummaryScore, styles.masterScoreHeader),
-          undefined,
-          `${keyPrefix}weekScore`,
         )}
       </tr>
     </thead>
@@ -906,6 +941,12 @@ export default function DesktopMasterTable({
 
   return (
     <div className={styles.masterTableShell}>
+      {opponentMetricsError && (
+        <div className={styles.masterMetricsUnavailable} role="status">
+          Opponent metrics unavailable. Schedule and four-week data remain
+          available.
+        </div>
+      )}
       {stickyHeader.active && (
         <div
           className={styles.masterStickyHeaderOverlay}
@@ -961,6 +1002,8 @@ export default function DesktopMasterTable({
                 >
                   {opponentMetricsLoading
                     ? "..."
+                    : opponentMetricsError
+                      ? "-"
                     : formatMetricValue(
                         column.key,
                         opponentLeagueAverages[column.key],
@@ -990,6 +1033,24 @@ export default function DesktopMasterTable({
                   {gamesPerDay[index] ?? "-"}
                 </td>
               ))}
+              <td
+                data-intensity={getCurrentSummaryIntensity(
+                  "gp",
+                  totalLeagueGames,
+                )}
+              >
+                {totalLeagueGames}
+              </td>
+              <td
+                className={styles.masterGroupEdge}
+                data-intensity={getCurrentSummaryIntensity(
+                  "off",
+                  totalLeagueOffNights,
+                )}
+              >
+                {totalLeagueOffNights}
+              </td>
+              <td className={styles.masterSummaryScore}>-</td>
               {!isFourWeekCollapsed && (
                 <>
                   <td className={styles.masterFourWeekLeadCell}>
@@ -1010,32 +1071,24 @@ export default function DesktopMasterTable({
                       fourWeekAverages.avgOpponentPointPct,
                     )}
                   </td>
+                  <td
+                    className={clsx(
+                      styles.masterFourWeekCell,
+                      styles.masterGroupEdge,
+                    )}
+                  >
+                    {formatMetricValue(
+                      "fourWeekScore",
+                      fourWeekAverages.score,
+                    )}
+                  </td>
                 </>
               )}
               {isFourWeekCollapsed && (
                 <td className={styles.masterCollapseSpacer}></td>
               )}
-              <td
-                data-intensity={getCurrentSummaryIntensity(
-                  "gp",
-                  totalLeagueGames,
-                )}
-              >
-                {totalLeagueGames}
-              </td>
-              <td
-                className={styles.masterGroupEdge}
-                data-intensity={getCurrentSummaryIntensity(
-                  "off",
-                  totalLeagueOffNights,
-                )}
-              >
-                {totalLeagueOffNights}
-              </td>
-              <td className={styles.masterSummaryScore}>-</td>
             </tr>
             {sortedRows.map((row) => {
-              const rank = scoreRanking.get(row.teamId) ?? 16;
               const isTopTen = topTenTeams.has(row.teamId);
               const isBottomTen = bottomTenTeams.has(row.teamId);
               const rowHighlightClass = isTopTen
@@ -1064,6 +1117,8 @@ export default function DesktopMasterTable({
                     >
                       {opponentMetricsLoading
                         ? "..."
+                        : opponentMetricsError
+                          ? "-"
                         : formatMetricValue(
                             column.key,
                             row.opponentMetrics[column.key],
@@ -1132,31 +1187,6 @@ export default function DesktopMasterTable({
                       </td>
                     );
                   })}
-                  {!isFourWeekCollapsed && (
-                    <>
-                      <td className={styles.masterFourWeekLeadCell}>
-                        {formatMetricValue(
-                          "fourWeekGamesPlayed",
-                          row.fourWeekGamesPlayed,
-                        )}
-                      </td>
-                      <td className={styles.masterFourWeekCell}>
-                        {formatMetricValue(
-                          "fourWeekOffNights",
-                          row.fourWeekOffNights,
-                        )}
-                      </td>
-                      <td className={styles.masterFourWeekCell}>
-                        {formatMetricValue(
-                          "fourWeekOpponentPointPct",
-                          row.fourWeekOpponentPointPct,
-                        )}
-                      </td>
-                    </>
-                  )}
-                  {isFourWeekCollapsed && (
-                    <td className={styles.masterCollapseSpacer}></td>
-                  )}
                   <td
                     data-intensity={getCurrentSummaryIntensity(
                       "gp",
@@ -1177,12 +1207,48 @@ export default function DesktopMasterTable({
                   <td
                     className={clsx(
                       styles.masterSummaryScore,
-                      styles[`rank-color-${rank}`],
-                      rowHighlightClass,
+                      isTopTen && styles.masterScoreBest,
+                      isBottomTen && styles.masterScoreWorst,
                     )}
                   >
                     {row.weekScore === -100 ? "-" : row.weekScore.toFixed(1)}
                   </td>
+                  {!isFourWeekCollapsed && (
+                    <>
+                      <td className={styles.masterFourWeekLeadCell}>
+                        {formatMetricValue(
+                          "fourWeekGamesPlayed",
+                          row.fourWeekGamesPlayed,
+                        )}
+                      </td>
+                      <td className={styles.masterFourWeekCell}>
+                        {formatMetricValue(
+                          "fourWeekOffNights",
+                          row.fourWeekOffNights,
+                        )}
+                      </td>
+                      <td className={styles.masterFourWeekCell}>
+                        {formatMetricValue(
+                          "fourWeekOpponentPointPct",
+                          row.fourWeekOpponentPointPct,
+                        )}
+                      </td>
+                      <td
+                        className={clsx(
+                          styles.masterFourWeekCell,
+                          styles.masterGroupEdge,
+                        )}
+                      >
+                        {formatMetricValue(
+                          "fourWeekScore",
+                          row.fourWeekScore,
+                        )}
+                      </td>
+                    </>
+                  )}
+                  {isFourWeekCollapsed && (
+                    <td className={styles.masterCollapseSpacer}></td>
+                  )}
                 </tr>
               );
             })}
