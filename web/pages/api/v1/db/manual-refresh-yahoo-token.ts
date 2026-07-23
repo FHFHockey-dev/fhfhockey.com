@@ -2,19 +2,19 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import {
   loadYahooGlobalCredentials,
-  persistYahooGlobalTokens,
+  persistYahooGlobalTokens
 } from "lib/integrations/yahoo/globalCredentials";
 import { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
 import YahooFantasy from "yahoo-fantasy";
 import adminOnly from "utils/adminOnlyMiddleware";
+import { withYahooRetry } from "lib/integrations/yahoo/ingestionLifecycle";
 
-async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (!["GET", "POST"].includes(req.method || "")) {
-    return res.status(405).json({ success: false, message: "Method Not Allowed" });
+    return res
+      .status(405)
+      .json({ success: false, message: "Method Not Allowed" });
   }
 
   const supabase = createClient(
@@ -41,7 +41,7 @@ async function handler(
     }) => {
       await persistYahooGlobalTokens(supabase, yahooCredentials.id, {
         access_token,
-        refresh_token,
+        refresh_token
       });
     }
   );
@@ -49,16 +49,28 @@ async function handler(
   yf.setUserToken(yahooCredentials.access_token);
   yf.setRefreshToken(yahooCredentials.refresh_token);
 
+  let retries = 0;
+  let rateLimitEvents = 0;
   try {
-    await yf.games.user(); // trivial call to trigger refresh
+    await withYahooRetry(() => yf.games.user(), {
+      maxAttempts: 3,
+      onRetry: ({ rateLimited }) => {
+        retries += 1;
+        if (rateLimited) rateLimitEvents += 1;
+      }
+    }); // trivial call to trigger refresh
     return res.status(200).json({
       success: true,
       refreshed: true,
-      refreshedAt: new Date().toISOString()
+      refreshedAt: new Date().toISOString(),
+      retries,
+      rateLimitEvents
     });
   } catch {
     return res.status(500).json({
       success: false,
+      retries,
+      rateLimitEvents,
       error: "Yahoo token refresh failed"
     });
   }

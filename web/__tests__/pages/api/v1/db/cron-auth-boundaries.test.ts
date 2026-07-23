@@ -256,6 +256,8 @@ describe("season and WGO cron authorization boundaries", () => {
     expect(res.statusCode).toBe(500);
     expect(res.body).toEqual({
       success: false,
+      retries: 0,
+      rateLimitEvents: 0,
       error: "Yahoo token refresh failed",
     });
     expect(JSON.stringify(auditInsertMock.mock.calls)).not.toContain(

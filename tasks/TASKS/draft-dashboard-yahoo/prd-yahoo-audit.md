@@ -182,6 +182,8 @@ Recommendations (P0):
 - Fallback if percent_owned structure changes: search array for `value` property or handle object format.
 - Add per-player error catch to continue within batch.
 
+Current lifecycle update (2026-07-23): the active player-detail route now discovers the newest database-owned NHL game unless an explicit maintenance override is supplied, reads scoped keys through deterministic complete Supabase pagination, uses bounded transient-only retry with jitter/`Retry-After`, and emits machine-readable processed/succeeded/failed/omitted/retry/rate-limit/completeness state into the shared durable cron audit. Partial results never deactivate players. The live cron's `gameId=465`, legacy provider-key completeness/deactivation/change detection, and atomic latest/history writer remain open boundaries.
+
 ### 6.8 `manual-refresh-yahoo-token.ts`
 Issues:
 - No auth/role guard; potential misuse.

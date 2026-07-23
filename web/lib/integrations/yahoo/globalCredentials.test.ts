@@ -145,4 +145,36 @@ describe("Yahoo global credential owner", () => {
       );
     }
   });
+
+  it("keeps the canonical player job season-aware, completely paginated, and observable", () => {
+    const source = fs.readFileSync(
+      path.join(process.cwd(), "pages/api/v1/db/update-yahoo-players.ts"),
+      "utf8",
+    );
+
+    expect(source).toContain("selectCanonicalYahooGame");
+    expect(source).toContain("fetchAllSupabasePages");
+    expect(source).toContain('.order("player_key", { ascending: true })');
+    expect(source).toContain("withYahooRetry");
+    expect(source).toContain("completeSnapshot");
+    expect(source).toContain("rateLimitEvents");
+    expect(source).toContain("deactivationApplied: false");
+    expect(source).not.toContain("fallback: full pagination scan");
+  });
+
+  it("keeps every active global provider call on bounded retry telemetry", () => {
+    for (const route of [
+      "manual-refresh-yahoo-token.ts",
+      "update-yahoo-players.ts",
+      "update-yahoo-weeks.ts",
+    ]) {
+      const source = fs.readFileSync(
+        path.join(process.cwd(), "pages/api/v1/db", route),
+        "utf8",
+      );
+      expect(source, route).toContain("withYahooRetry");
+      expect(source, route).toContain("rateLimitEvents");
+      expect(source, route).toContain("retries");
+    }
+  });
 });

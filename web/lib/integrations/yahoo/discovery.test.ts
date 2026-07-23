@@ -6,6 +6,12 @@ import {
   selectLatestYahooGames,
   selectYahooGamesForCanonicalSeason,
 } from "./discovery";
+import {
+  getYahooRetryAfterMs,
+  isRetryableYahooError,
+  selectCanonicalYahooGame,
+  withYahooRetry,
+} from "./ingestionLifecycle";
 
 describe("Yahoo discovery helpers", () => {
   it("keeps only the latest Yahoo game season for sync", () => {
@@ -61,7 +67,7 @@ describe("Yahoo discovery helpers", () => {
         game_id: 500,
         game_key: "500",
         season: 2026,
-      })
+      }),
     ).toEqual([{ game_key: "500", game_id: 500, season: "2026", code: "nhl" }]);
   });
 
@@ -75,11 +81,73 @@ describe("Yahoo discovery helpers", () => {
         [
           { team_key: "500.l.1.t.2", standings: { rank: 1 } },
           { team_key: "500.l.1.t.1", standings: { rank: 2 } },
-        ]
-      )
+        ],
+      ),
     ).toEqual([
-      expect.objectContaining({ team_key: "500.l.1.t.1", standings: { rank: 2 } }),
-      expect.objectContaining({ team_key: "500.l.1.t.2", standings: { rank: 1 } }),
+      expect.objectContaining({
+        team_key: "500.l.1.t.1",
+        standings: { rank: 2 },
+      }),
+      expect.objectContaining({
+        team_key: "500.l.1.t.2",
+        standings: { rank: 1 },
+      }),
     ]);
+  });
+
+  it("selects the newest canonical game deterministically", () => {
+    expect(
+      selectCanonicalYahooGame([
+        { game_id: 465, season: 2025, is_game_over: true },
+        { game_id: 500, season: 2026, is_offseason: true },
+        { game_id: null, season: 2027 },
+      ]),
+    ).toEqual({ game_id: 500, season: 2026, is_offseason: true });
+  });
+
+  it("retries transient Yahoo failures with Retry-After but fails fast on auth", async () => {
+    const sleeps: number[] = [];
+    const retryEvents: Array<{ rateLimited: boolean }> = [];
+    let calls = 0;
+
+    await expect(
+      withYahooRetry(
+        async () => {
+          calls += 1;
+          if (calls === 1) {
+            throw {
+              status: 429,
+              response: { headers: { "retry-after": "2" } },
+            };
+          }
+          return "ok";
+        },
+        {
+          random: () => 0.5,
+          sleep: async (delayMs) => {
+            sleeps.push(delayMs);
+          },
+          onRetry: (event) => retryEvents.push(event),
+        },
+      ),
+    ).resolves.toBe("ok");
+
+    expect(sleeps).toEqual([2000]);
+    expect(retryEvents).toEqual([
+      expect.objectContaining({ rateLimited: true }),
+    ]);
+    expect(getYahooRetryAfterMs({ headers: { "Retry-After": "3" } }, 0)).toBe(
+      3000,
+    );
+    expect(isRetryableYahooError({ statusCode: 503 })).toBe(true);
+
+    calls = 0;
+    await expect(
+      withYahooRetry(async () => {
+        calls += 1;
+        throw { status: 401 };
+      }),
+    ).rejects.toEqual({ status: 401 });
+    expect(calls).toBe(1);
   });
 });

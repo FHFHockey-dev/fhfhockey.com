@@ -3,18 +3,16 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import {
   loadYahooGlobalCredentials,
-  persistYahooGlobalTokens,
+  persistYahooGlobalTokens
 } from "lib/integrations/yahoo/globalCredentials";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
 import YahooFantasy from "yahoo-fantasy";
 import { parseISO } from "date-fns";
 import adminOnly from "utils/adminOnlyMiddleware";
+import { withYahooRetry } from "lib/integrations/yahoo/ingestionLifecycle";
 
-async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (!["GET", "POST"].includes(req.method || "")) {
     return res
       .status(405)
@@ -25,6 +23,8 @@ async function handler(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
+  let retries = 0;
+  let rateLimitEvents = 0;
 
   try {
     // 1. Get creds & init YahooFantasy
@@ -42,7 +42,7 @@ async function handler(
         // Persist refreshed tokens
         await persistYahooGlobalTokens(supabase, creds.id, {
           access_token,
-          refresh_token,
+          refresh_token
         });
       }
     );
@@ -58,7 +58,16 @@ async function handler(
     }
 
     // 3. Fetch weeks from Yahoo API
-    const response = await yf.game.game_weeks(game_key);
+    const response = await withYahooRetry<any>(
+      () => yf.game.game_weeks(game_key),
+      {
+        maxAttempts: 3,
+        onRetry: ({ rateLimited }) => {
+          retries += 1;
+          if (rateLimited) rateLimitEvents += 1;
+        }
+      }
+    );
     const {
       game_key: key,
       game_id,
@@ -96,13 +105,24 @@ async function handler(
 
     return res.status(200).json({
       success: true,
+      status: "success",
+      processed: payload.length,
+      succeeded: payload.length,
+      failedRows: 0,
+      omitted: 0,
+      retries,
+      rateLimitEvents,
+      completeSnapshot: true,
       message: `Upserted ${payload.length} week(s) for game_key=${key}`
     });
   } catch {
     console.error("Yahoo matchup week update failed.");
     return res.status(500).json({
       success: false,
-      message: "Yahoo matchup week update failed",
+      status: "failure",
+      retries,
+      rateLimitEvents,
+      message: "Yahoo matchup week update failed"
     });
   }
 }
