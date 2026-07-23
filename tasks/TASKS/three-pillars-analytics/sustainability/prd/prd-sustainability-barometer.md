@@ -35,8 +35,8 @@ FR8. System MUST apply soft clipping to raw z via z_soft = c * tanh(z_raw / c) w
 FR9. System MUST compute finishing residual components (goals − ixG) and (goals_per_60 − ixG_per_60) if feature toggle use_finishing_residuals=true (default ON per decision 1.2) and incorporate as negative regressors or log but exclude if disabled.
 FR10. System MUST treat PDO parts (oiSH%, oiSV%) separately (NOT aggregated PDO) per selection (1.3=C); combined PDO is NOT included to avoid double weighting.
 FR11. System MUST include stabilizer metrics (definition below) as positive contributors (ixG/60, ICF/60, HDCF/60) — all standardized to position-season; additional optional (xGF%, SCF%, shot volume) may be toggled in later iteration (config flags default false if not yet selected). (See §5.)
-FR12. System MUST compute final logistic score S_raw = sigmoid( Σ_i weight_i * (r_i * z_soft_i) ), scaled to S = round(S_raw *100) with guardrails (only show 100 if S_raw≥0.995; only show 0 if ≤0.005).
-FR13. System MUST persist both S_raw (float) and S (int 0–100) plus sustainability_quintile (0–4) computed from nightly distribution (quantile-based dynamic tiers).
+FR12. Canonical v2 MUST persist the contribution sum as score logit `s_raw`, transform it through `P = sigmoid(s_raw)`, and persist `s_100 = round(P * 100, 2)`. Exact endpoint values remain reserved: 100 is valid only when `P≥0.995`, and 0 only when `P≤0.005`. Consumers may round for presentation but must not rewrite the persisted two-decimal contract.
+FR13. System MUST persist both `s_raw` (float logit) and `s_100` (numeric 0–100). Dynamic quintiles remain a separate distribution feature and must not be inferred from integer rounding.
 FR14. System MUST record component details in JSON: per metric {metric_code, z_raw, z_soft, r, n, weight, contrib}.
 FR15. System MUST mark status='provisional' if exposures below heuristic sufficiency yet still produce a score (no hard gating; FR16 handles variance broadening implicitly via reliability r).
 FR16. System MUST treat IPP gracefully when on-ice GF=0: use posterior mean only (no deviation; z_raw=0, r=0, flag neutral_component=true) per decision (6.3=B).
@@ -278,7 +278,7 @@ z_soft = c * tanh(z_raw / c) (monotone, symmetric, rank preserving in finite z r
 contrib_i = weight_i * (r_i * z_soft_i)
 
 ### 13.7 Final Score
-S_raw = sigmoid( Σ contrib_i ) ; S = integer formatting (see FR12).
+`s_raw = Σ contrib_i`; `P = sigmoid(s_raw)`; `s_100 = round(P * 100, 2)` (see FR12).
 
 ### 13.8 Handling Zero or Sparse Exposure
 If n=0 (e.g., IPP when on-ice GF=0): set z_raw=0, z_soft=0, r=0, neutral flag; metric does not shift score.
@@ -435,9 +435,7 @@ function runNightlySustainabilityJob(targetSeason):
 ### 23.3 Score Formatting Function
 ```ts
 function formatScore(raw: number): number {
-  if (raw >= 0.995) return 100;
-  if (raw <= 0.005) return 0;
-  return Math.round(raw * 100);
+  return Number((raw * 100).toFixed(2));
 }
 ```
 
@@ -455,3 +453,9 @@ The source task list is an in-progress 37/89 implementation, not an unstarted ei
 Owner-approved Option A makes the existing TypeScript/Supabase Sustainability implementation the only production contract. Canonical priors are read from `player_totals_unified` and written to `sustainability_priors` plus `sustainability_player_priors`; production scoring remains under `web/lib/sustainability/*` and `web/pages/api/v1/sustainability/*`. Python retains deterministic offline math, fixture, benchmark, and comparison value, but its disconnected database adapter is retired and every persistence/orchestration switch fails closed.
 
 The canonical prior reads must range-paginate ordered source rows and split large player-ID filters into bounded chunks. Offset and limit apply to current-season player identities before fetching all three complete NHL seasons. NHL season identifiers are concatenated year pairs, so prior seasons are derived component-wise (`20252026` → `20242025` → `20232024`), never by integer subtraction. The production catalog and checked-in schema baseline are authoritative over legacy draft table names.
+
+## 26. Canonical v2 score-format decision (2026-07-23)
+
+Fractional two-decimal `s_100` is the canonical persisted v2 contract. It preserves information for ranking and calibration while compact UI surfaces remain free to round at presentation time. `s_raw` is the pre-sigmoid contribution sum/logit, not the probability itself; `sigmoid(s_raw)` produces the probability scaled into `s_100`.
+
+A value-free production aggregate over 249,520 rows finds 217,724 fractional scores and 144,832 rows explicitly stamped `sustainability_score_v2`. All 20,563 exact 100 rows have `sigmoid(s_raw)≥0.995`, and all 8,754 exact zero rows have `sigmoid(s_raw)≤0.005`; there are zero invalid exact endpoints. Existing fractional and exact rows therefore satisfy one numeric v2 contract and require no historical rewrite. Runtime constants publish precision 2 and the 0.005/0.995 endpoint thresholds; persisted-row guardrails replace an unqualified exact endpoint with its two-decimal probability score and emit a warning. Synthetic writer/reader boundary coverage plus the existing score suite proves the contract.
