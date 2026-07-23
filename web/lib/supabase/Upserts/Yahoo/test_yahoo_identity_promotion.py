@@ -77,10 +77,43 @@ class YahooIdentityPromotionGeneratorTests(unittest.TestCase):
 
 
 class YahooIdentityPromotionMigrationTests(unittest.TestCase):
-    migration_path = (
+    ledger_dir = (
         Path(__file__).resolve().parents[5]
-        / "supabase/migrations/20260715010036_promote_approved_yahoo_identity_matches.sql"
+        / "supabase/migration-archive/pre-baseline-20260716/production-ledger"
     )
+    migration_path = (
+        ledger_dir / "20260715010036_promote_approved_yahoo_identity_matches.sql"
+    )
+
+    def test_canonical_contract_retains_scope_lineage_and_review_evidence(self):
+        registry_sql = (
+            self.ledger_dir
+            / "20260714223013_create_fhfh_player_identity_registry.sql"
+        ).read_text(encoding="utf-8")
+        staging_sql = (
+            self.ledger_dir
+            / "20260714224513_stage_yahoo_identity_mapping_review.sql"
+        ).read_text(encoding="utf-8")
+        promotion_sql = self.migration_path.read_text(encoding="utf-8")
+        combined = "\n".join((registry_sql, staging_sql, promotion_sql))
+
+        for contract in (
+            "context_key",
+            "season_id",
+            "match_method",
+            "match_confidence",
+            "verification_status",
+            "source_provenance",
+            "verified_at",
+            "verified_by_system",
+            "resolution_notes",
+            "review_manifest_sha256",
+            "merged_into_id",
+            "'superseded'",
+            "created_at",
+            "updated_at",
+        ):
+            self.assertIn(contract, combined)
 
     def test_committed_manifest_is_complete_unique_and_hash_verified(self):
         sql = self.migration_path.read_text(encoding="utf-8")

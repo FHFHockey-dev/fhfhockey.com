@@ -1,13 +1,16 @@
 import unittest
 from pathlib import Path
 import sys
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import populate_yahoo_nhl_mapping as mapping_job
 from player_name_matcher import (
     MIN_FIRST_NAME_SCORE,
     MIN_LAST_NAME_SCORE,
     best_qualified_name_match,
+    best_qualified_player_match,
     normalize_given_names,
     score_name_parts,
 )
@@ -78,14 +81,87 @@ class PlayerNameMatcherTests(unittest.TestCase):
             (None, None, None),
         )
 
-    def test_mapping_job_uses_only_the_thresholded_fuzzy_matcher(self):
+    def test_context_evidence_resolves_duplicate_qualified_names(self):
+        match = best_qualified_player_match(
+            {
+                "name": "Alex Smith",
+                "team": "NJD",
+                "position": "D",
+                "active": True,
+            },
+            {
+                "wrong": {
+                    "name": "Alex Smith",
+                    "team": "NYR",
+                    "position": "C",
+                    "active": True,
+                },
+                "right": {
+                    "name": "Alex Smith",
+                    "team": "NJD",
+                    "position": "LD",
+                    "active": True,
+                },
+            },
+        )
+        self.assertEqual(match[0:3], ("right", 100, 100))
+        self.assertTrue(match[3]["team_match"])
+        self.assertTrue(match[3]["position_cluster_match"])
+        self.assertTrue(match[3]["active_match"])
+
+    def test_unscored_duplicate_candidates_remain_unresolved(self):
+        self.assertEqual(
+            best_qualified_player_match(
+                {"name": "Alex Smith"},
+                {
+                    "one": {"name": "Alex Smith"},
+                    "two": {"name": "Alex Smith"},
+                },
+            ),
+            (None, None, None, {}),
+        )
+
+    def test_provider_identity_is_explicit_scored_evidence(self):
+        match = best_qualified_player_match(
+            {"name": "Alex Smith", "provider_id": "42"},
+            {
+                "other": {"name": "Alex Smith", "provider_id": "41"},
+                "same": {"name": "Alex Smith", "provider_id": "42"},
+            },
+        )
+        self.assertEqual(match[0], "same")
+        self.assertTrue(match[3]["provider_id_match"])
+        self.assertEqual(match[3]["context_score"], 8)
+
+    def test_mapping_job_uses_only_the_contextual_thresholded_matcher(self):
         mapping_job = (
             Path(__file__).resolve().parent / "populate_yahoo_nhl_mapping.py"
         ).read_text(encoding="utf-8")
-        self.assertEqual(mapping_job.count("best_qualified_name_match("), 3)
+        self.assertEqual(mapping_job.count("best_qualified_player_match("), 5)
+        self.assertNotIn("best_qualified_name_match(", mapping_job)
         self.assertNotIn("score_cutoff=", mapping_job)
         self.assertNotIn("process.extractOne", mapping_job)
         self.assertNotIn("best_last_name_match", mapping_job)
+
+    def test_unmatched_analysis_has_no_database_side_effect(self):
+        class NoDatabaseCalls:
+            def table(self, *_args, **_kwargs):
+                raise AssertionError("matching attempted a database call")
+
+        with patch.object(mapping_job, "supabase", NoDatabaseCalls()):
+            mappings, unmatched = mapping_job.match_players(
+                {
+                    1: {
+                        "name": "No Match",
+                        "team": "NJD",
+                        "position": "D",
+                    }
+                },
+                {},
+            )
+
+        self.assertEqual(mappings, [])
+        self.assertEqual(len(unmatched), 1)
 
     def test_mapping_writer_requires_service_role_credentials(self):
         mapping_job = (
@@ -107,6 +183,11 @@ class PlayerNameMatcherTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         self.assertIn('os.getenv("YAHOO_MAPPING_WRITE_ENABLED") == "1"', mapping_job)
+        self.assertEqual(mapping_job.count("insert_unmatched(unmatched)"), 2)
+        self.assertGreater(
+            mapping_job.rindex("insert_unmatched(unmatched)"),
+            mapping_job.index('os.getenv("YAHOO_MAPPING_WRITE_ENABLED") == "1"'),
+        )
         self.assertIn(
             'os.getenv("YAHOO_HISTORICAL_WRITE_ENABLED") != "1"',
             historical_job,

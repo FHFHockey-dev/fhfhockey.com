@@ -141,3 +141,112 @@ def best_qualified_name_match(
         return None, None, None
 
     return best[3], best[1], best[2]
+
+
+def _position_cluster(value: object) -> str:
+    normalized = _normalize_text(str(value or ""))
+    if normalized in {"g", "goalie", "goaltender"}:
+        return "goalie"
+    if normalized in {
+        "d",
+        "defense",
+        "defenceman",
+        "defenseman",
+        "ld",
+        "rd",
+    }:
+        return "defense"
+    if normalized in {
+        "c",
+        "center",
+        "centre",
+        "f",
+        "forward",
+        "lw",
+        "left wing",
+        "rw",
+        "right wing",
+    }:
+        return "forward"
+    return ""
+
+
+def best_qualified_player_match(
+    source: Mapping[str, Any],
+    candidates: Mapping[Hashable, Mapping[str, Any]],
+    *,
+    min_last_name_score: int = MIN_LAST_NAME_SCORE,
+    min_first_name_score: int = MIN_FIRST_NAME_SCORE,
+) -> tuple[Hashable | None, int | None, int | None, dict[str, Any]]:
+    """Return one name-qualified candidate with explicit contextual evidence.
+
+    Name thresholds remain mandatory. Team, position cluster, active state, and
+    provider identity can only rank candidates that already satisfy them. An
+    equal best score stays unresolved.
+    """
+    source_name = str(source.get("name") or "")
+    source_team = _normalize_text(str(source.get("team") or ""))
+    source_position = _position_cluster(source.get("position"))
+    source_active = source.get("active")
+    source_provider_id = str(source.get("provider_id") or "")
+    qualified: list[tuple[float, int, int, str, Hashable, dict[str, Any]]] = []
+
+    for candidate_id, candidate in candidates.items():
+        last_score, first_score = score_name_parts(
+            source_name,
+            str(candidate.get("name") or ""),
+        )
+        if (
+            last_score < min_last_name_score
+            or first_score < min_first_name_score
+        ):
+            continue
+
+        candidate_team = _normalize_text(str(candidate.get("team") or ""))
+        candidate_position = _position_cluster(candidate.get("position"))
+        candidate_active = candidate.get("active")
+        candidate_provider_id = str(candidate.get("provider_id") or "")
+        evidence = {
+            "name_score": round((last_score * 0.7) + (first_score * 0.3), 2),
+            "team_match": bool(source_team and source_team == candidate_team),
+            "position_cluster_match": bool(
+                source_position and source_position == candidate_position
+            ),
+            "active_match": bool(
+                isinstance(source_active, bool)
+                and isinstance(candidate_active, bool)
+                and source_active == candidate_active
+            ),
+            "provider_id_match": bool(
+                source_provider_id
+                and source_provider_id == candidate_provider_id
+            ),
+        }
+        context_score = (
+            (4 if evidence["team_match"] else 0)
+            + (2 if evidence["position_cluster_match"] else 0)
+            + (1 if evidence["active_match"] else 0)
+            + (8 if evidence["provider_id_match"] else 0)
+        )
+        evidence["context_score"] = context_score
+        total_score = evidence["name_score"] + context_score
+        qualified.append(
+            (
+                total_score,
+                last_score,
+                first_score,
+                str(candidate_id),
+                candidate_id,
+                evidence,
+            )
+        )
+
+    if not qualified:
+        return None, None, None, {}
+
+    qualified.sort(key=lambda match: match[:4], reverse=True)
+    best = qualified[0]
+    if len(qualified) > 1 and qualified[1][:3] == best[:3]:
+        return None, None, None, {}
+
+    return best[4], best[1], best[2], best[5]
