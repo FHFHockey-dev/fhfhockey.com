@@ -7,11 +7,11 @@ import {
   fetchLeagueAverages,
   fetchTeamScores,
   Game
-} from "./fetchData";
+} from "lib/gameGoalProjections/fetchData";
 import {
   buildGameGoalProjections,
   CalculatedGameGoalProjectionData
-} from "./calculations";
+} from "lib/gameGoalProjections/calculations";
 import supabase from "lib/supabase/server";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 

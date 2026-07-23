@@ -12,7 +12,7 @@ import {
   computeStartChartFantasyPoints,
   START_CHART_FANTASY_SCORING_CONTRACT
 } from "lib/projections/startChartFantasyScoring";
-import { requireLatestSucceededRunId } from "pages/api/v1/projections/_helpers";
+import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
 
 type ProjectionRow = {
   run_id: string;

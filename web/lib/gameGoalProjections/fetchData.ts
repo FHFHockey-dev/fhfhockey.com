@@ -1,4 +1,4 @@
-// pages/api/v1/db/update-game-goal-projections/fetchData.ts
+// Legacy game-goal projection data access.
 
 import supabase from "lib/supabase/public-client";
 import { teamsInfo } from "lib/teamsInfo";

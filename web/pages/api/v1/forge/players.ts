@@ -7,7 +7,7 @@ import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { buildRequestedDateServingState } from "lib/dashboard/freshness";
 import { buildCanonicalReaderCompatibility } from "lib/projections/compatibilityInventory";
-import { requireLatestSucceededRunId } from "pages/api/v1/projections/_helpers";
+import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
 
 type LineComboRecencyClass = "FRESH" | "SOFT_STALE" | "HARD_STALE" | "MISSING";
 

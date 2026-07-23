@@ -1,4 +1,4 @@
-// pages/api/v1/db/update-game-goal-projections/utils.ts
+// Legacy game-goal projection utilities.
 
 /**
  * Calculates the Poisson probability for a given number of events (k) and expected events (lambda).

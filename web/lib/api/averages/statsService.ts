@@ -1,4 +1,4 @@
-// /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/Averages/statsService.ts
+// Shared averages API service.
 
 import {
   YearlyCounts,

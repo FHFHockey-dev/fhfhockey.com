@@ -10,9 +10,9 @@ const {
   resolveLatestStartedSeasonIdForDateMock: vi.fn(),
 }));
 
-vi.mock("pages/api/v1/projections/_helpers", async () => {
+vi.mock("lib/projections/apiHelpers", async () => {
   const actual = await vi.importActual<any>(
-    "pages/api/v1/projections/_helpers",
+    "lib/projections/apiHelpers",
   );
   return {
     ...actual,

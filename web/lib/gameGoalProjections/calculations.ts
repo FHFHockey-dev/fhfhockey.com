@@ -1,4 +1,4 @@
-// pages/api/v1/db/update-game-goal-projections/calculations.ts
+// Legacy game-goal projection calculations.
 
 import { poissonProbability } from "./utils";
 import { Game, TeamScores, mapAbbreviationToId } from "./fetchData";

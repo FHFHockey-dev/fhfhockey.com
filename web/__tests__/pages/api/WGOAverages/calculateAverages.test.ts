@@ -28,7 +28,7 @@ describe("legacy WGO averages module lifecycle", () => {
       .mockImplementation((() => undefined) as never);
 
     const averagesModule =
-      await import("../../../../pages/api/WGOAverages/calculateAverages");
+      await import("../../../../scripts/WGOAverages/calculateAverages");
 
     expect(averagesModule.main).toBeTypeOf("function");
     expect(exit).not.toHaveBeenCalled();

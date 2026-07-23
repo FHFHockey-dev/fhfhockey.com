@@ -1,4 +1,4 @@
-// /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/Averages/types.ts
+// Shared averages API types.
 
 export type Data = {
   // Counting Stats

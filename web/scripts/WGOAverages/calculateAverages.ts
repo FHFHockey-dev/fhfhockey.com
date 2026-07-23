@@ -1,4 +1,4 @@
-// calculateAverages.ts
+// Opt-in legacy WGO averages maintenance script.
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
@@ -750,9 +750,7 @@ export const main = async () => {
   console.log("\nAll calculations completed successfully.");
 };
 
-// This legacy module lives under pages/api, so Next imports it while building
-// and starting the application. Never run the write-heavy batch merely because
-// the module was imported. Manual script callers must opt in explicitly.
+// Manual script callers must opt in explicitly.
 if (process.env.RUN_WGO_AVERAGES_SCRIPT === "true") {
   main()
     .then(() => {

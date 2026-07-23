@@ -22,7 +22,7 @@ vi.mock("lib/supabase/server", () => ({
   default: {}
 }));
 
-vi.mock("../../../../../pages/api/v1/projections/_helpers", () => ({
+vi.mock("lib/projections/apiHelpers", () => ({
   requireLatestSucceededRunId: requireLatestSucceededRunIdMock
 }));
 

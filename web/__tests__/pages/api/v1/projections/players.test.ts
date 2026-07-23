@@ -4,8 +4,8 @@ const { fromMock } = vi.hoisted(() => ({
   fromMock: vi.fn()
 }));
 
-vi.mock("pages/api/v1/projections/_helpers", async () => {
-  const actual = await vi.importActual<any>("pages/api/v1/projections/_helpers");
+vi.mock("lib/projections/apiHelpers", async () => {
+  const actual = await vi.importActual<any>("lib/projections/apiHelpers");
   return {
     ...actual,
     requireLatestSucceededRunId: vi.fn(async () => "run-123")

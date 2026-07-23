@@ -1,11 +1,11 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/Averages/[playerId].ts
 
 import type { NextApiRequest, NextApiResponse } from "next";
-import { Response } from "./types";
+import { Response } from "lib/api/averages/types";
 import {
   getAggregatedCountsData,
   getAggregatedRatesData
-} from "./statsService";
+} from "lib/api/averages/statsService";
 
 export default async function handler(
   req: NextApiRequest,

@@ -1,4 +1,4 @@
-// /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/Averages/helpers.ts
+// Shared averages API parsing helpers.
 
 import { HTMLElement, parse } from "node-html-parser";
 import { buildNstUrlString, fetchNstTextWithCacheByUrl } from "lib/nst/client";

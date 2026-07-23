@@ -10,7 +10,7 @@ import {
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import supabase from "lib/supabase/server";
-import { requireLatestSucceededRunId } from "pages/api/v1/projections/_helpers";
+import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
 import { runProjectionPreflightChecks } from "./run-projection-v2";
 import {
   computeAccuracyScore,

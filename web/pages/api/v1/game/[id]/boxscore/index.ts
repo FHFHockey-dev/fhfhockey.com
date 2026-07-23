@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Boxscore } from "lib/NHL/types";
-import { Response } from "pages/api/_types";
+import { Response } from "lib/api/types";
 import { getBoxscore } from "lib/NHL/server";
 
 export default async function handler(

@@ -10,7 +10,7 @@ import {
   dateSchema,
   getQueryStringParam,
   requireLatestSucceededRunId
-} from "pages/api/v1/projections/_helpers";
+} from "lib/projections/apiHelpers";
 
 const querySchema = z.object({
   date: dateSchema.optional(),
