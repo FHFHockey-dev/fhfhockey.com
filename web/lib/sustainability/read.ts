@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, Json } from "lib/supabase/database-generated.types";
+import { SUSTAINABILITY_SCORE_WINDOW_CODES } from "./runtimeContract";
 
 type SustainabilityClient = SupabaseClient<Database>;
 type ScoreRow = Database["public"]["Tables"]["sustainability_scores"]["Row"];
@@ -150,6 +151,66 @@ export async function getPlayerSustainabilityPayload(args: {
     score,
     bands: (bandResult.data as BandRow[] | null) ?? [],
     projections: (projectionResult.data as ProjectionRow[] | null) ?? []
+  });
+}
+
+export function shapePlayerSustainabilitySummaryPayload(args: {
+  playerId: number;
+  rows: ScoreRow[];
+}) {
+  const latestByWindow = new Map<string, ScoreRow>();
+  for (const row of args.rows) {
+    const current = latestByWindow.get(row.window_code);
+    if (!current || row.snapshot_date > current.snapshot_date) {
+      latestByWindow.set(row.window_code, row);
+    }
+  }
+  const windows = SUSTAINABILITY_SCORE_WINDOW_CODES.flatMap((windowCode) => {
+    const row = latestByWindow.get(windowCode);
+    if (!row) return [];
+    const components = asRecord(row.components);
+    return [{
+      window_code: windowCode,
+      snapshot_date: row.snapshot_date,
+      season_id: row.season_id,
+      position_group: row.position_group,
+      s_raw: row.s_raw,
+      s_100: row.s_100,
+      model_version: components.modelVersion ?? null,
+      config_hash: components.configHash ?? null
+    }];
+  });
+
+  if (windows.length === 0) return null;
+  return {
+    player_id: args.playerId,
+    snapshot_date: windows.reduce(
+      (latest, row) => row.snapshot_date > latest ? row.snapshot_date : latest,
+      windows[0].snapshot_date
+    ),
+    window_contract: [...SUSTAINABILITY_SCORE_WINDOW_CODES],
+    windows
+  };
+}
+
+export async function getPlayerSustainabilitySummaryPayload(args: {
+  client: SustainabilityClient;
+  playerId: number;
+}) {
+  const result = await args.client
+    .from("sustainability_scores")
+    .select(
+      "player_id, season_id, snapshot_date, position_group, window_code, s_raw, s_100, components, computed_at"
+    )
+    .eq("player_id", args.playerId)
+    .in("window_code", [...SUSTAINABILITY_SCORE_WINDOW_CODES])
+    .order("snapshot_date", { ascending: false })
+    .order("window_code", { ascending: true })
+    .limit(100);
+  if (result.error) throw result.error;
+  return shapePlayerSustainabilitySummaryPayload({
+    playerId: args.playerId,
+    rows: (result.data ?? []) as ScoreRow[]
   });
 }
 

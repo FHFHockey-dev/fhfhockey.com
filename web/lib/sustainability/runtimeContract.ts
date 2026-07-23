@@ -7,6 +7,12 @@ export const SUSTAINABILITY_EXACT_SCORE_PROBABILITY_THRESHOLDS = {
   lower: 0.005,
   upper: 0.995
 } as const;
+export const SUSTAINABILITY_SCORE_WINDOW_CODES = [
+  "l3",
+  "l5",
+  "l10",
+  "l20"
+] as const;
 
 function stableStringify(value: unknown): string {
   if (value == null || typeof value !== "object") return JSON.stringify(value);

@@ -459,3 +459,9 @@ The canonical prior reads must range-paginate ordered source rows and split larg
 Fractional two-decimal `s_100` is the canonical persisted v2 contract. It preserves information for ranking and calibration while compact UI surfaces remain free to round at presentation time. `s_raw` is the pre-sigmoid contribution sum/logit, not the probability itself; `sigmoid(s_raw)` produces the probability scaled into `s_100`.
 
 A value-free production aggregate over 249,520 rows finds 217,724 fractional scores and 144,832 rows explicitly stamped `sustainability_score_v2`. All 20,563 exact 100 rows have `sigmoid(s_raw)≥0.995`, and all 8,754 exact zero rows have `sigmoid(s_raw)≤0.005`; there are zero invalid exact endpoints. Existing fractional and exact rows therefore satisfy one numeric v2 contract and require no historical rewrite. Runtime constants publish precision 2 and the 0.005/0.995 endpoint thresholds; persisted-row guardrails replace an unqualified exact endpoint with its two-decimal probability score and emit a warning. Synthetic writer/reader boundary coverage plus the existing score suite proves the contract.
+
+## 27. Canonical API/window decision (2026-07-23)
+
+The deployed `l3`, `l5`, `l10`, and `l20` rolling windows are the canonical public taxonomy. The draft-only `GAME`, `G5`, `G10`, and `STD` labels are retired rather than mapped ambiguously onto production data.
+
+The existing player route remains backward compatible in its default single-window mode and gains additive `summary=true` behavior. That summary returns the deterministic latest score for each canonical window plus stored model/config provenance. Leaderboard filters, pagination/index proof, authenticated component expansion, ETag behavior, and API documentation remain explicitly open under 6.2–6.7 and NEW 14.

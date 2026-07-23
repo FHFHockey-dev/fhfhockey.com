@@ -4,6 +4,7 @@ import {
   SUSTAINABILITY_SCORE_MODEL_VERSION,
   SUSTAINABILITY_EXACT_SCORE_PROBABILITY_THRESHOLDS,
   SUSTAINABILITY_SCORE_PRECISION,
+  SUSTAINABILITY_SCORE_WINDOW_CODES,
   SUSTAINABILITY_SCORE_PROVENANCE_VERSION,
   SUSTAINABILITY_TREND_BAND_MODEL_VERSION,
   buildSustainabilityConfigHash,
@@ -17,6 +18,12 @@ describe("sustainability runtime contract", () => {
       lower: 0.005,
       upper: 0.995,
     });
+    expect(SUSTAINABILITY_SCORE_WINDOW_CODES).toEqual([
+      "l3",
+      "l5",
+      "l10",
+      "l20",
+    ]);
     expect(SUSTAINABILITY_SCORE_PROVENANCE_VERSION).toBe(
       "sustainability_score_provenance_v2",
     );

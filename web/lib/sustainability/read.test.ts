@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   shapePlayerSustainabilityPayload,
+  shapePlayerSustainabilitySummaryPayload,
   shapeUpcomingSustainabilityPayload
 } from "./read";
 
@@ -83,5 +84,42 @@ describe("sustainability read contracts", () => {
     });
     expect(payload.games).toHaveLength(1);
     expect(payload.games[0]?.projections).toHaveLength(2);
+  });
+
+  it("selects the latest score for each canonical summary window", () => {
+    const row = {
+      player_id: 1,
+      season_id: 20252026,
+      position_group: "F",
+      s_raw: 1,
+      s_100: 73,
+      components: {
+        modelVersion: "sustainability_score_v2",
+        configHash: "fnv1a_test"
+      },
+      computed_at: "2026-03-21T00:00:00.000Z"
+    };
+    const payload = shapePlayerSustainabilitySummaryPayload({
+      playerId: 1,
+      rows: [
+        { ...row, window_code: "l10", snapshot_date: "2026-03-20" },
+        { ...row, window_code: "l3", snapshot_date: "2026-03-21" },
+        { ...row, window_code: "l10", snapshot_date: "2026-03-19" },
+        { ...row, window_code: "l20", snapshot_date: "2026-03-18" }
+      ]
+    });
+
+    expect(payload?.window_contract).toEqual(["l3", "l5", "l10", "l20"]);
+    expect(payload?.snapshot_date).toBe("2026-03-21");
+    expect(payload?.windows.map((item) => item.window_code)).toEqual([
+      "l3",
+      "l10",
+      "l20"
+    ]);
+    expect(payload?.windows[1]).toMatchObject({
+      snapshot_date: "2026-03-20",
+      model_version: "sustainability_score_v2",
+      config_hash: "fnv1a_test"
+    });
   });
 });

@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { playerReadMock, upcomingReadMock } = vi.hoisted(() => ({
+const { playerReadMock, playerSummaryMock, upcomingReadMock } = vi.hoisted(() => ({
   playerReadMock: vi.fn(),
+  playerSummaryMock: vi.fn(),
   upcomingReadMock: vi.fn()
 }));
 
 vi.mock("lib/sustainability/read", () => ({
   getPlayerSustainabilityPayload: playerReadMock,
+  getPlayerSustainabilitySummaryPayload: playerSummaryMock,
   getUpcomingSustainabilityPayload: upcomingReadMock
 }));
 
@@ -48,5 +50,26 @@ describe("sustainability read routes", () => {
     const res = createRes();
     await upcomingHandler({ method: "GET", query: { playerId: "1", games: "5" } } as any, res);
     expect(res.statusCode).toBe(404);
+  });
+
+  it("returns the canonical l3/l5/l10/l20 summary without changing the single-window contract", async () => {
+    playerSummaryMock.mockResolvedValue({
+      player_id: 1,
+      snapshot_date: "2026-03-21",
+      window_contract: ["l3", "l5", "l10", "l20"],
+      windows: [{ window_code: "l10", s_100: 72.4 }]
+    });
+    const res = createRes();
+    await playerHandler(
+      { method: "GET", query: { playerId: "1", summary: "true" } } as any,
+      res
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(playerSummaryMock).toHaveBeenCalledWith(
+      expect.objectContaining({ playerId: 1 })
+    );
+    expect(playerReadMock).not.toHaveBeenCalled();
+    expect(res.body.window_contract).toEqual(["l3", "l5", "l10", "l20"]);
   });
 });
