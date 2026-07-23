@@ -41,6 +41,53 @@ type AccuracyResultRow = {
   created_at: string;
 };
 
+type ProjectionResultReplacementReceipt = {
+  deleted?: number;
+  inserted?: number;
+  asOfDate?: string;
+  actualDate?: string;
+  sourceRunId?: string;
+};
+
+export async function replaceProjectionResultsAtomic(
+  client: {
+    rpc: (
+      name: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: { message?: string } | null }>;
+  },
+  args: {
+    asOfDate: string;
+    actualDate: string;
+    sourceRunId: string;
+    rows: AccuracyResultRow[];
+  },
+): Promise<ProjectionResultReplacementReceipt> {
+  const { data, error } = await client.rpc(
+    "replace_forge_projection_results_atomic",
+    {
+      p_as_of_date: args.asOfDate,
+      p_actual_date: args.actualDate,
+      p_source_run_id: args.sourceRunId,
+      p_rows: args.rows,
+    },
+  );
+  if (error) {
+    throw new Error("Atomic projection-result replacement failed.");
+  }
+
+  const receipt = data as ProjectionResultReplacementReceipt | null;
+  if (
+    receipt?.inserted !== args.rows.length ||
+    receipt.asOfDate !== args.asOfDate ||
+    receipt.actualDate !== args.actualDate ||
+    receipt.sourceRunId !== args.sourceRunId
+  ) {
+    throw new Error("Atomic projection-result replacement receipt mismatch.");
+  }
+  return receipt;
+}
+
 type SkaterActualMatchDiagnostics = {
   projectionRows: number;
   eligibleSameDateRows: number;
@@ -2129,16 +2176,12 @@ async function runAccuracyForDate(
   }
 
   const allResults = [...skaterResults, ...goalieResults];
-  if (allResults.length > 0) {
-    for (const batch of chunk(allResults, BATCH_SIZE)) {
-      const { error } = await supabase
-        .from("forge_projection_results")
-        .upsert(batch, {
-          onConflict: "as_of_date,actual_date,player_id,game_id,player_type",
-        });
-      if (error) throw error;
-    }
-  }
+  await replaceProjectionResultsAtomic(supabase as any, {
+    asOfDate: projectionDate,
+    actualDate,
+    sourceRunId: runId,
+    rows: allResults,
+  });
 
   const overallAgg = computeAggregate(allResults);
   const skaterAgg = computeAggregate(skaterResults);

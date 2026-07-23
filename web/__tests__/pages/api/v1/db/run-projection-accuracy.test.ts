@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -30,7 +33,10 @@ vi.mock("../../../../../pages/api/v1/db/run-projection-v2", () => ({
   runProjectionPreflightChecks: runProjectionPreflightChecksMock
 }));
 
-import handler, { buildSkaterActualMatchDiagnostics } from "../../../../../pages/api/v1/db/run-projection-accuracy";
+import handler, {
+  buildSkaterActualMatchDiagnostics,
+  replaceProjectionResultsAtomic
+} from "../../../../../pages/api/v1/db/run-projection-accuracy";
 
 function createMockRes() {
   const res: any = {
@@ -182,5 +188,93 @@ describe("/api/v1/db/run-projection-accuracy", () => {
       invalidIdentityRows: 1,
       actualMatchRate: 0.5,
     });
+  });
+
+  it("atomically replaces an empty canonical result scope so stale rerun rows are removed", async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: {
+        deleted: 4,
+        inserted: 0,
+        asOfDate: "2026-03-19",
+        actualDate: "2026-03-20",
+        sourceRunId: "latest-run",
+      },
+      error: null,
+    });
+
+    await expect(
+      replaceProjectionResultsAtomic(
+        { rpc },
+        {
+          asOfDate: "2026-03-19",
+          actualDate: "2026-03-20",
+          sourceRunId: "latest-run",
+          rows: [],
+        },
+      ),
+    ).resolves.toMatchObject({ deleted: 4, inserted: 0 });
+    expect(rpc).toHaveBeenCalledWith(
+      "replace_forge_projection_results_atomic",
+      expect.objectContaining({
+        p_as_of_date: "2026-03-19",
+        p_actual_date: "2026-03-20",
+        p_source_run_id: "latest-run",
+        p_rows: [],
+      }),
+    );
+  });
+
+  it("fails closed when the replacement receipt identifies a stale run", async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: {
+        deleted: 1,
+        inserted: 0,
+        asOfDate: "2026-03-19",
+        actualDate: "2026-03-20",
+        sourceRunId: "stale-run",
+      },
+      error: null,
+    });
+
+    await expect(
+      replaceProjectionResultsAtomic(
+        { rpc },
+        {
+          asOfDate: "2026-03-19",
+          actualDate: "2026-03-20",
+          sourceRunId: "latest-run",
+          rows: [],
+        },
+      ),
+    ).rejects.toThrow("Atomic projection-result replacement receipt mismatch.");
+  });
+
+  it("keeps atomic result replacement service-only and latest-run scoped", () => {
+    const repoRoot =
+      path.basename(process.cwd()) === "web"
+        ? path.resolve(process.cwd(), "..")
+        : process.cwd();
+    const sql = readFileSync(
+      path.join(
+        repoRoot,
+        "supabase/migrations/20260723121407_replace_forge_projection_results_atomic.sql",
+      ),
+      "utf8",
+    );
+
+    expect(sql).toContain(
+      "create or replace function public.replace_forge_projection_results_atomic(",
+    );
+    expect(sql).toContain("security invoker");
+    expect(sql).toContain("set search_path = pg_catalog");
+    expect(sql).toMatch(
+      /select run_id[\s\S]*status = 'succeeded'[\s\S]*order by created_at desc[\s\S]*limit 1/,
+    );
+    expect(
+      sql.indexOf("delete from public.forge_projection_results"),
+    ).toBeLessThan(sql.indexOf("insert into public.forge_projection_results"));
+    expect(sql).not.toMatch(/exception\s+when\s+others/i);
+    expect(sql).toContain("from public, anon, authenticated");
+    expect(sql).toContain("to service_role");
   });
 });
