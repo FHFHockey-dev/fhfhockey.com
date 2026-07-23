@@ -65,7 +65,8 @@ export default function TopMoversCard({
     const skaterParams = new URLSearchParams({
       position: mapPosition(position),
       window: "3",
-      limit: "60"
+      limit: "60",
+      seriesGames: "1"
     });
 
     Promise.all([

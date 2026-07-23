@@ -93,6 +93,7 @@ interface SkaterTrendResponse {
   };
   positionGroup: SkaterPositionGroup;
   limit: number;
+  seriesGames: number;
   windowSize: SkaterWindowSize;
   samplePolicy: {
     minimumGames: number;
@@ -123,6 +124,8 @@ const RESPONSE_TTL_MS = 60_000;
 const RECENT_FALLBACK_MAX_DAYS = 3;
 const BLOCKED_FALLBACK_MIN_DAYS = 14;
 const MIN_TREND_SAMPLE_GAMES = 10;
+const DEFAULT_SERIES_GAMES = 40;
+const MAX_SERIES_GAMES = 82;
 const responseCache = new Map<
   string,
   { expiresAt: number; payload: SkaterTrendResponse }
@@ -143,6 +146,14 @@ function parseLimit(input: unknown): number {
     return Math.min(Math.round(candidate), MAX_SKATER_LIMIT);
   }
   return DEFAULT_SKATER_LIMIT;
+}
+
+function parseSeriesGames(input: unknown): number {
+  const candidate = Number(Array.isArray(input) ? input[0] : input);
+  if (Number.isFinite(candidate) && candidate > 0) {
+    return Math.min(Math.round(candidate), MAX_SERIES_GAMES);
+  }
+  return DEFAULT_SERIES_GAMES;
 }
 
 function parsePositionGroup(input: unknown): SkaterPositionGroup {
@@ -281,7 +292,8 @@ function buildCategoryResult(
   rows: PlayerTrendRow[],
   category: SkaterTrendCategoryDefinition,
   windowSize: SkaterWindowSize,
-  limit: number
+  limit: number,
+  seriesGames: number
 ): CategoryResult {
   const byPlayer = new Map<number, PlayerTrendPoint[]>();
 
@@ -475,7 +487,7 @@ function buildCategoryResult(
   allowedIds.forEach((playerId) => {
     const key = String(playerId);
     if (series[key]) {
-      limitedSeries[key] = series[key];
+      limitedSeries[key] = series[key].slice(-seriesGames);
     }
   });
 
@@ -577,6 +589,7 @@ export default async function handler(
 
   try {
     const limit = parseLimit(req.query.limit);
+    const seriesGames = parseSeriesGames(req.query.seriesGames);
     const windowSize = parseWindowSize(req.query.window);
     const positionGroup = parsePositionGroup(req.query.position);
     const requestedDateRaw = String(
@@ -585,7 +598,9 @@ export default async function handler(
     const requestedDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDateRaw)
       ? requestedDateRaw
       : new Date().toISOString().slice(0, 10);
-    const cacheKey = `${positionGroup}:${windowSize}:${limit}:${requestedDate}`;
+    const cacheKey =
+      `${positionGroup}:${windowSize}:${limit}:` +
+      `${seriesGames}:${requestedDate}`;
     const nowMs = Date.now();
     const cached = responseCache.get(cacheKey);
     if (cached && cached.expiresAt > nowMs) {
@@ -627,7 +642,13 @@ export default async function handler(
             latestIncludedDate = row.game_date;
           }
         }
-        const result = buildCategoryResult(rows, category, windowSize, limit);
+        const result = buildCategoryResult(
+          rows,
+          category,
+          windowSize,
+          limit,
+          seriesGames
+        );
         categories[category.id] = {
           series: result.series,
           rankings: result.rankings
@@ -653,6 +674,7 @@ export default async function handler(
         serving,
         positionGroup,
         limit,
+        seriesGames,
         windowSize,
         samplePolicy: {
           minimumGames: MIN_TREND_SAMPLE_GAMES,
@@ -678,6 +700,7 @@ export default async function handler(
     return res.status(200).json(response);
   } catch (error: any) {
     const limit = parseLimit(req.query.limit);
+    const seriesGames = parseSeriesGames(req.query.seriesGames);
     const windowSize = parseWindowSize(req.query.window);
     const positionGroup = parsePositionGroup(req.query.position);
     const requestedDateRaw = String(
@@ -686,7 +709,9 @@ export default async function handler(
     const requestedDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDateRaw)
       ? requestedDateRaw
       : new Date().toISOString().slice(0, 10);
-    const cacheKey = `${positionGroup}:${windowSize}:${limit}:${requestedDate}`;
+    const cacheKey =
+      `${positionGroup}:${windowSize}:${limit}:` +
+      `${seriesGames}:${requestedDate}`;
     inFlight.delete(cacheKey);
     console.error("skater-power API error", error);
     return res.status(500).json({

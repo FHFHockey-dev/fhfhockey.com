@@ -2,7 +2,7 @@
 
 ## Current completion boundary (2026-07-22)
 
-The information architecture/data contracts, shared loading/cache layer, unified team-power views, FORGE-first player/goalie projections, and team/skater trend/search sections are complete as defined by their fully verified child rows. The source list is 30/37 with seven open: legacy dead-code removal, the validation parent, response-size/pagination verification, empty/off-season load testing, cron-table freshness, and measured median-load evidence. Those remaining runtime and cleanup gates are not inferred from architecture completion.
+The information architecture/data contracts, shared loading/cache layer, unified team-power views, FORGE-first player/goalie projections, and team/skater trend/search sections are complete as defined by their fully verified child rows. The source list is 34/38 with four open. Response-size inspection, empty/off-season behavior, cron freshness, and measured median-load evidence are reconciled; the one live payload breach has a bounded local `seriesGames` repair and remains open under NEW 8.0 until exact deployment and Production remeasurement. Legacy dead-code removal, its route parent, and the validation parent remain gated rather than inferred complete.
 
 ## 1.1 Route + rendering strategy
 
@@ -186,6 +186,10 @@ type SkaterTrendSeries = {
 };
 ```
 
+The skater response also returns `seriesGames` at the top level. It caps only
+the serialized tail of each series; percentile/ranking math continues to use
+the complete selected-season history.
+
 ### SOS row
 ```ts
 type SosRow = {
@@ -264,7 +268,7 @@ type SosRow = {
   - `fetchTeamTrends()` → `/api/v1/trends/team-power`
   - `fetchTeamCtpi()` → `/api/v1/trends/team-ctpi`
   - `fetchTeamSos()` → `/api/v1/trends/team-sos`
-  - `fetchSkaterTrends({ position, window, limit })` → `/api/v1/trends/skater-power`
+  - `fetchSkaterTrends({ position, window, limit, seriesGames })` → `/api/v1/trends/skater-power`
   - `fetchForgePlayers(date)` → `/api/v1/forge/players?date=`
   - `fetchStartChart(date)` → `/api/v1/start-chart?date=`
   - `fetchTeamRatings(date)` → `/api/team-ratings?date=`

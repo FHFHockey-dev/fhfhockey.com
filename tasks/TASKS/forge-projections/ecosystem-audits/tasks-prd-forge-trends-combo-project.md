@@ -72,7 +72,11 @@
   - [ ] 6.4 Audit for dead code and remove unused components once migration is complete.
 
 - [ ] 7.0 Validation, performance tuning, and cron dependency check
-  - [ ] 7.1 Verify API response sizes and add pagination/limits where needed.
-- [ ] 7.2 Load-test with empty data and off-season scenarios.
-- [ ] 7.3 Validate cron table freshness against `tasks/TASKS/cron-operations/cron-schedule.md`.
-- [ ] 7.4 Confirm median dashboard load time under the target thresholds.
+  - [x] 7.1 Verify API response sizes and add pagination/limits where needed. A value-free Production probe measured all nine budgeted dashboard routes; eight passed and `skater-power?limit=60` exceeded its 280,000-byte budget at 383,242 bytes. The route now accepts bounded `seriesGames` history while retaining full-history rankings; actual consumers request 40 chart points, 10 Hot/Cold points, or one movers point. The regression uses a full 60-player/82-game input, verifies the existing 50-player cap plus one-point caller contract, and keeps serialized output within 280,000 bytes. NEW 8.0 retains deployment/Production remeasurement.
+- [x] 7.2 Load-test with empty data and off-season scenarios. The complete 26-test dashboard page suite covers empty endpoint payloads, blocked/degraded weekly and stale fallback states, independent module states, and usable shell rendering; the production remediation closeout separately records the truthful 52,153-game/zero-eligible-write offseason no-op.
+- [x] 7.3 Validate cron table freshness against `tasks/TASKS/cron-operations/cron-schedule.md`. The reconciled production chain remains WGO 09:35 → incremental NST 09:55 → CTPI 10:10 → team power 10:15, full NST 10:55, and player trends 12:00; bounded production probes verified 32 CTPI teams, 32 distinct non-zero team trends, and explicit latest-eligible offseason blocking.
+- [x] 7.4 Confirm median dashboard load time under the target thresholds. The preserved 10-run warm-cache artifact records 1,142.85 ms median dashboard-ready time against the 2,500 ms target, with 400.3 ms median load-event time; current 7-file/58-test validation and full TypeScript pass.
+
+## NEW Tasks
+
+- [ ] NEW 8.0 **P1 deployed skater-trend response-budget gate:** current customer Production returns 383,242 bytes for the former largest dashboard shape against the 280,000-byte budget. The local forward repair adds a cache-keyed 1–82 `seriesGames` contract, preserves full-history ranking math, and sends only each caller's needed history. Keep open until the exact artifact is deployed and a value-free Production remeasurement proves all nine dashboard routes within their declared budgets without contract regression (discovered and locally remediated 2026-07-22).

@@ -177,7 +177,8 @@ export default function HotColdCard({
       date,
       position: toPositionParam(position),
       window: "5",
-      limit: "40"
+      limit: "40",
+      seriesGames: "10"
     });
 
     fetchCachedJson<unknown>(`/api/v1/trends/skater-power?${query.toString()}`, {

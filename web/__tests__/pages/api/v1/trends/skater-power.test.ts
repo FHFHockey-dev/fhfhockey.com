@@ -303,6 +303,97 @@ describe("/api/v1/trends/skater-power", () => {
     expect(res.body.categories.shotsPer60.rankings[0].latestValue).toBeCloseTo(11.5, 5);
   });
 
+  it("bounds returned series history without changing full-history rankings", async () => {
+    supabaseState.current = buildSupabaseMock(
+      [8471214, 8471215].flatMap((playerId, playerIndex) =>
+        Array.from({ length: 50 }, (_, index) => ({
+          player_id: playerId,
+          game_date: `2026-${String(Math.floor(index / 28) + 1).padStart(
+            2,
+            "0"
+          )}-${String((index % 28) + 1).padStart(2, "0")}`,
+          raw_value: playerIndex === 0 ? index + 100 : index + 1,
+          rolling_avg_3: playerIndex === 0 ? index + 100 : index + 1,
+          rolling_avg_5: playerIndex === 0 ? index + 100 : index + 1,
+          rolling_avg_10: playerIndex === 0 ? index + 100 : index + 1,
+          season_id: 20252026,
+          position_code: "C"
+        }))
+      )
+    );
+
+    const req: any = {
+      method: "GET",
+      query: {
+        date: "2026-02-22",
+        position: "forward",
+        window: "1",
+        limit: "10",
+        seriesGames: "12"
+      }
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.seriesGames).toBe(12);
+    expect(res.body.categories.shotsPer60.rankings[0]).toMatchObject({
+      playerId: 8471214,
+      gp: 50,
+      rank: 1
+    });
+    expect(res.body.categories.shotsPer60.series["8471214"]).toHaveLength(12);
+    expect(res.body.categories.shotsPer60.series["8471214"][0].gp).toBe(39);
+    expect(res.body.categories.shotsPer60.series["8471214"][11].gp).toBe(50);
+  });
+
+  it("keeps the largest dashboard caller below its response budget", async () => {
+    const rows = Array.from({ length: 60 }, (_, playerIndex) =>
+      Array.from({ length: 82 }, (_, gameIndex) => ({
+        player_id: 8_470_000 + playerIndex,
+        game_date: new Date(Date.UTC(2026, 0, gameIndex + 1))
+          .toISOString()
+          .slice(0, 10),
+        raw_value: playerIndex * 100 + gameIndex,
+        rolling_avg_3: playerIndex * 100 + gameIndex,
+        rolling_avg_5: playerIndex * 100 + gameIndex,
+        rolling_avg_10: playerIndex * 100 + gameIndex,
+        season_id: 20252026,
+        position_code: "C"
+      }))
+    ).flat();
+    supabaseState.current = buildSupabaseMock(rows);
+
+    const req: any = {
+      method: "GET",
+      query: {
+        date: "2026-03-23",
+        position: "forward",
+        window: "3",
+        limit: "60",
+        seriesGames: "1"
+      }
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.limit).toBe(50);
+    expect(res.body.seriesGames).toBe(1);
+    expect(
+      Object.values(res.body.categories).every((category: any) =>
+        Object.values(category.series).every(
+          (points: any) => Array.isArray(points) && points.length <= 1
+        )
+      )
+    ).toBe(true);
+    expect(
+      Buffer.byteLength(JSON.stringify(res.body), "utf8")
+    ).toBeLessThanOrEqual(280_000);
+  });
+
   it("shrinks tiny-sample percentiles toward neutral and suppresses rank deltas", async () => {
     supabaseState.current = buildSupabaseMock(
       [8471214, 8471215].flatMap((playerId, playerIndex) =>

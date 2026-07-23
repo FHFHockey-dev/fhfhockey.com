@@ -1,5 +1,9 @@
 # PRD: FORGE + Trends + Start Chart Combo Dashboard
 
+## 2026-07-22 validation overlay
+
+The implementation list is 34/38 with four open. All nine declared dashboard response budgets were measured value-free against customer Production: eight pass, while the former largest `skater-power` caller returned 383,242 bytes against 280,000. The local route now bounds serialized series history independently from full-history ranking math, and each consumer requests only the points it renders; 7 files/58 tests plus full TypeScript pass. Existing artifacts also close empty/off-season behavior, the reconciled production cron/freshness chain, and a 1,142.85 ms warm-cache median dashboard-ready time against the 2,500 ms target. NEW 8.0 keeps exact deployment and Production payload remeasurement open; legacy removal remains separately gated.
+
 ## 1) One-liner
 Create a single master dashboard that merges FORGE projections, Trends (CTPI + skater/team trends), Start Chart projections/goalie starts, and Underlying Stats (team power ratings), eliminating duplicate views while keeping all core insights.
 

@@ -53,6 +53,7 @@ export type SkaterTrendsResponse = {
   generatedAt: string;
   positionGroup: "forward" | "defense" | "all";
   limit: number;
+  seriesGames: number;
   windowSize: number;
   categories: Record<string, unknown>;
   playerMetadata: Record<
@@ -282,12 +283,14 @@ export const fetchSkaterTrends = (params: {
   position?: "forward" | "defense" | "all";
   window?: 1 | 3 | 5 | 10 | 20;
   limit?: number;
+  seriesGames?: number;
 }): Promise<SkaterTrendsResponse> =>
   fetchCachedJson<SkaterTrendsResponse>(
     buildQuery("/api/v1/trends/skater-power", {
       position: params.position,
       window: params.window,
-      limit: params.limit
+      limit: params.limit,
+      seriesGames: params.seriesGames
     }),
     { ttlMs: TREND_TTL_MS }
   );
@@ -391,7 +394,8 @@ export const loadTrendsDashboardData = async (
     fetchSkaterTrends({
       position: skaterPosition,
       window: skaterWindow,
-      limit: skaterLimit
+      limit: skaterLimit,
+      seriesGames: 40
     }),
     fetchGoalieTrends({
       date: params.date,
