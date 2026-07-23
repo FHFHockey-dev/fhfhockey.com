@@ -876,6 +876,10 @@ const DraftDashboard: React.FC = () => {
     isSnakeDraft,
     myTeamId,
     customTeamNames,
+    forwardGrouping,
+    keepers,
+    pickOwnerOverrides,
+    pickTrades,
   ]);
 
   // Calculate current turn and team

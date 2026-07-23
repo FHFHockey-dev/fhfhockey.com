@@ -972,10 +972,6 @@ const ProjectionsPage: NextPage = () => {
   }, [
     skaterTabData,
     goalieTabData,
-    showPerGameFantasyPoints,
-    togglePerGameFantasyPoints,
-    expandedRows,
-    toggleRowExpansion,
     overallColumns // Add overallColumns as a dependency here
   ]);
 

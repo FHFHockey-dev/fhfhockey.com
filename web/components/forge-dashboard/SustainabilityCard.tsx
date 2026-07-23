@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import OwnershipSparkline from "components/TransactionTrends/OwnershipSparkline";
 import styles from "styles/ForgeDashboard.module.scss";
@@ -244,26 +244,29 @@ export default function SustainabilityCard({
     ownershipFilterActive && missingOwnershipCount > 0
       ? `Ownership is missing for ${missingOwnershipCount} players, so those rows stay visible even if they fall outside the range.`
       : null;
-  const withinOwnershipBand = (playerId: number) => {
-    if (!ownershipFilterActive) return true;
-    const ownership = ownershipMap[playerId]?.ownership;
-    if (ownership == null) return true;
-    return ownership >= ownershipMin && ownership <= ownershipMax;
-  };
+  const withinOwnershipBand = useCallback(
+    (playerId: number) => {
+      if (!ownershipFilterActive) return true;
+      const ownership = ownershipMap[playerId]?.ownership;
+      if (ownership == null) return true;
+      return ownership >= ownershipMin && ownership <= ownershipMax;
+    },
+    [ownershipFilterActive, ownershipMap, ownershipMax, ownershipMin]
+  );
 
   const sustainableRows = useMemo(
     () =>
       coldRows
         .filter((row) => row.player_name && withinOwnershipBand(row.player_id))
         .slice(0, 5),
-    [coldRows, ownershipMap, ownershipMax, ownershipMin, ownershipWarning]
+    [coldRows, withinOwnershipBand]
   );
   const riskRows = useMemo(
     () =>
       hotRows
         .filter((row) => row.player_name && withinOwnershipBand(row.player_id))
         .slice(0, 5),
-    [hotRows, ownershipMap, ownershipMax, ownershipMin, ownershipWarning]
+    [hotRows, withinOwnershipBand]
   );
   const isStale = Boolean(snapshotDate && snapshotDate !== date);
   const metaSnapshot = snapshotDate ?? date;

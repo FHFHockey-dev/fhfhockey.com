@@ -121,7 +121,7 @@ export default function PlayerStatsPage({
       POSITION_STAT_CONFIGS[pos as keyof typeof POSITION_STAT_CONFIGS] ||
       POSITION_STAT_CONFIGS.C
     );
-  }, [player?.position]);
+  }, [player]);
 
   // Initialize selected stats based on position
   React.useEffect(() => {

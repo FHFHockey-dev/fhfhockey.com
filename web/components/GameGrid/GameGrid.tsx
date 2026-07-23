@@ -295,8 +295,8 @@ function GameGridInternal({
   }, [
     excludedDays,
     currentSchedule,
-    currentNumGamesPerDay,
-    regularNumGamesPerDay
+    regularNumGamesPerDay,
+    teams
   ]);
 
   // Detect if this week contains any preseason games

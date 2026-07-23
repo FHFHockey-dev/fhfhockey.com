@@ -14,6 +14,14 @@ import { computeDiffColumn } from "components/WiGO/tableUtils";
 import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
 import { getWigoSurfaceLinks } from "lib/navigation/siteSurfaceLinks";
 
+type TabKey = "overview" | "trends" | "percentiles" | "comparison";
+const VALID_TABS: TabKey[] = [
+  "overview",
+  "trends",
+  "percentiles",
+  "comparison",
+];
+
 const WigoCharts: React.FC = () => {
   const [leftTimeframe, setLeftTimeframe] =
     useState<keyof TableAggregateData>("STD");
@@ -35,13 +43,6 @@ const WigoCharts: React.FC = () => {
     handlePlayerSelect,
     updateUrlWith,
   } = useWigoPlayerDashboard();
-  type TabKey = "overview" | "trends" | "percentiles" | "comparison";
-  const validTabs: TabKey[] = [
-    "overview",
-    "trends",
-    "percentiles",
-    "comparison",
-  ];
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
 
   // Sync tab from URL on mount/change
@@ -50,7 +51,7 @@ const WigoCharts: React.FC = () => {
       ? new URLSearchParams(window.location.search).get("tab")
       : null;
     if (!t) return;
-    if (validTabs.includes(t as TabKey)) setActiveTab(t as TabKey);
+    if (VALID_TABS.includes(t as TabKey)) setActiveTab(t as TabKey);
   }, []);
 
   useEffect(() => {

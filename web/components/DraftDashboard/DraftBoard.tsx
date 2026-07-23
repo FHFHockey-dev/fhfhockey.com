@@ -43,6 +43,16 @@ type SortField =
   | "teamVorp"
   | `dynamic:${string}`;
 
+const DEBUG = process.env.NODE_ENV !== "production";
+const CORE_CAT_UPPER = [
+  "GOALS",
+  "ASSISTS",
+  "PP_POINTS",
+  "SHOTS_ON_GOAL",
+  "HITS",
+  "BLOCKED_SHOTS"
+];
+
 const DraftBoard: React.FC<DraftBoardProps> = ({
   draftSettings,
   draftedPlayers,
@@ -56,7 +66,6 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   keepers = [],
   vorpMetrics
 }) => {
-  const DEBUG = process.env.NODE_ENV !== "production";
   const [sortField, setSortField] = useState<SortField>("projectedPoints");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [showAllCategories, setShowAllCategories] = useState(false);
@@ -470,14 +479,6 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   };
 
   // Determine dynamic category keys from settings (exclude the six core)
-  const CORE_CAT_UPPER = [
-    "GOALS",
-    "ASSISTS",
-    "PP_POINTS",
-    "SHOTS_ON_GOAL",
-    "HITS",
-    "BLOCKED_SHOTS"
-  ];
   const dynamicCategoryKeys = useMemo(() => {
     const keys = Object.keys(draftSettings.categoryWeights || {});
     return keys.filter((k) => !CORE_CAT_UPPER.includes(k));
@@ -492,7 +493,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
     ) {
       setShowAllCategories(true);
     }
-  }, [dynamicCategoryKeys, draftSettings.leagueType]);
+  }, [dynamicCategoryKeys, draftSettings.leagueType, showAllCategories]);
 
   // Calculate team category totals for the leaderboard table
   const teamStatsWithCategories = useMemo(() => {
@@ -742,6 +743,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   }, [
     teamStatsWithCategories,
     draftSettings.teamCount,
+    draftSettings.leagueType,
     sortField,
     sortDirection
   ]);

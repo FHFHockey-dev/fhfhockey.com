@@ -140,6 +140,7 @@ Reduce technical noise (lint warnings, repetitive code patterns) to improve deve
 - 2026-07-22: Exact 20-path checkpoint `b648a7e812ef2c2145a182b50047e6c78e42fea2` publishes the bounded image pilot and NEW 45/50 through a guarded normal push. Fresh parent equality, exact text-only staging, generated/cache/binary/size/value-free and diff-integrity gates, one-ahead/zero-behind proof, and post-push local/tracking/live equality pass with a clean isolated checkout.
 - 2026-07-22: Base 5.1 and 5.4 reconcile complete from the accumulated implementation record. Persisted-season, season-aware schedule-team, headshot-source, and local-logo behavior each have one shared owner only where identity and behavior match; completed slices are targeted repairs and preserve every lint/toolchain, broad-hook, legacy-route, production-row, and all-seasons relocation strategy boundary. Base 5.2 remains open with NEW 40/41 because the residual debug/operational log inventory requires an explicit no-console/toolchain disposition rather than bulk deletion. B-CLEAN is 123/143 with 20 open; global parity is 4,238/4,835 with 597 open = 87.65% complete / 12.35% open.
 - 2026-07-22: Exact 12-path checkpoint `773beb7ce429cca482348fa8d02e8dea2ab4a52b` publishes NEW 104/108 through a guarded normal non-force push. Fresh parent equality at `ffb5ffc42e041e16c4a409a6810bb76c6301041e`, exact staged scope, generated/cache/binary/size/value-free and diff-integrity gates, 3 files/33 tests with zero stderr, full TypeScript, syntax checks, one-ahead/zero-behind proof, and post-push local/tracking/live equality all pass with a clean isolated checkout.
+- 2026-07-22: Base 3.0–3.5 and P1 NEW 26 close as one current-core dependency cohort. The drifted pre-fix inventory was 75 reproducible exhaustive-deps warnings across TypeScript and JavaScript; both baseline-compatible and extension-complete scans now report zero. Thirty-seven files use exact dependencies, module-owned pure helpers/constants, value-stable settings, callback/effect ownership, and only two new narrowly justified Shift Chart omissions. Seven focused files pass 34/34, full TypeScript passes, changed-file lint has zero errors, and the Goalie Trends duplicate stale-span request is removed. B-CLEAN is 132/145 with 13 open.
 
 ## Acceptance Criteria
 - Build passes with zero new errors
@@ -158,8 +159,8 @@ Reduce technical noise (lint warnings, repetitive code patterns) to improve deve
 ---
 Generated: 2025-09-11
 
-## Hook Audit (Current 2026-07-21 Snapshot)
-Tracking representative warnings to address or justify. The current core baseline has 64 exhaustive-deps warnings; this table is a bounded cohort, not the complete inventory.
+## Hook Audit (Closed 2026-07-22)
+The historical representative table remains for traceability. The complete current core now has zero `react-hooks/exhaustive-deps` warnings under both supported scans.
 | File (excerpt) | Line | Type | Action Plan |
 |----------------|------|------|-------------|
 | pages/db/upsert-projections.tsx | 248 | (resolved) | Moved FIRSTNAME_ALIASES to module scope; callback no longer needs dep |
@@ -173,4 +174,4 @@ Tracking representative warnings to address or justify. The current core baselin
 | components/WiGO/NameSearchBar.tsx | current lint clean | resolved | Current filtered-player ownership no longer warns |
 | components/WiGO/PerGameStatsTable.tsx | current lint clean | resolved | Current player identity dependencies no longer warn |
 
-Next dependency-eligible local pass selects the largest coherent non-strategy B-CLEAN batch while trueGoalieValue NEW 63/66, lint-policy NEW 20/40/41, production repair NEW 105, and broad-history NEW 107 retain their separate decision/approval boundaries.
+Next dependency-eligible local pass selects the largest coherent non-strategy cohort while trueGoalieValue NEW 63/66, lint-policy NEW 20/40/41, production repair NEW 105, and broad-history NEW 107 retain their separate decision/approval boundaries.

@@ -48,7 +48,7 @@ export function useQuarantinedPredictionsSko(opts: Options = {}) {
     opts.horizon,
     opts.limit,
     opts.order,
-    opts.playerIds?.join(","),
+    opts.playerIds,
   ]);
 
   useEffect(() => {

@@ -179,7 +179,7 @@ const usePlayerWeeklyStats = ({
     playerId,
     seasonStartDate,
     seasonEndDate,
-    JSON.stringify(fantasyPointSettings),
+    fantasyPointSettings,
     isEnabled,
     statDbColumnMap
   ]); // Include statDbColumnMap

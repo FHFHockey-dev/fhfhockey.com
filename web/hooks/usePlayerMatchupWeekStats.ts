@@ -178,7 +178,7 @@ const usePlayerMatchupWeekStats = ({
   }, [
     playerId,
     season,
-    JSON.stringify(fantasyPointSettings),
+    fantasyPointSettings,
     isEnabled,
     statDbColumnMap
   ]);

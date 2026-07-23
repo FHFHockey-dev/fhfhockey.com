@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import debounce from "utils/debounce";
 
 enum BreakPoint {
@@ -21,8 +21,8 @@ const getSize = () => {
 const useScreenSize = () => {
   const [screenSize, setScreenSize] = useState(getSize);
 
-  const handleResize = useCallback(
-    debounce(() => {
+  const handleResize = useMemo(
+    () => debounce(() => {
       setScreenSize(getSize());
     }, 200),
     []

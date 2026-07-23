@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\PlayerPPTOIPerGameChart\PPTOIChart.tsx
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import supabase from "lib/supabase";
 import styles from "styles/PPTOIChart.module.scss";
@@ -26,6 +26,27 @@ interface PPTOIChartProps {
   teamAbbreviation: string;
 }
 
+const sanitizeName = (name: string) =>
+  name.replace(/\u001a©/g, "é").normalize("NFC");
+
+const sanitizeForCss = (name: string) => name.replace(/[^a-zA-Z0-9\-_]/g, "-");
+
+const onHover = (player: string) => {
+  const sanitizedPlayer = sanitizeForCss(player);
+  d3.selectAll(".line-segment").style("opacity", 0.04);
+  d3.selectAll(".player-dot").style("opacity", 0.04);
+  d3.selectAll(".player-label").style("opacity", 0.04);
+  d3.selectAll(`.line-segment.${sanitizedPlayer}`).style("opacity", 1);
+  d3.selectAll(`.player-dot.${sanitizedPlayer}`).style("opacity", 1);
+  d3.selectAll(`.player-label.${sanitizedPlayer}`).style("opacity", 1);
+};
+
+const onLeave = () => {
+  d3.selectAll(".line-segment").style("opacity", 1);
+  d3.selectAll(".player-dot").style("opacity", 1);
+  d3.selectAll(".player-label").style("opacity", 1);
+};
+
 const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
   const chartRef = useRef<SVGSVGElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -45,29 +66,7 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
   const marginBottom = 30;
   const marginLeft = 40; // Adjusted margin
 
-  useEffect(() => {
-    if (teamAbbreviation) {
-      fetchAllPlayerData(teamAbbreviation);
-    }
-  }, [teamAbbreviation]);
-
-  useEffect(() => {
-    if (monthData.length > 0) {
-      updateChartForCurrentMonth(allData); // Update the chart whenever the month changes
-    }
-  }, [currentMonthIndex, selectedPlayers, monthData, viewMode]);
-
-  const sanitizeName = (name: string) => {
-    return name
-      .replace(/\u001a©/g, "é") // Replace corrupted character sequences with correct characters
-      .normalize("NFC"); // Normalize the string to ensure consistent encoding
-  };
-
-  const sanitizeForCss = (name: string) => {
-    return name.replace(/[^a-zA-Z0-9\-_]/g, "-"); // Replace all non-alphanumeric characters with a hyphen
-  };
-
-  const fetchAllPlayerData = async (abbreviation: string) => {
+  const fetchAllPlayerData = useCallback(async (abbreviation: string) => {
     const fetchedRawData: RawPlayerData[] = [];
     let from = 0;
     const pageSize = 1000;
@@ -157,55 +156,15 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
     );
     setCurrentMonthIndex(defaultMonthIndex !== -1 ? defaultMonthIndex : 0);
 
-    // Defer the chart update until after the state has been updated
-    setTimeout(() => {
-      updateChartForCurrentMonth(sanitizedData);
-    }, 0); // Delay to ensure states are set
-
     // console.log("Unique Months: ", uniqueMonths);
     // console.log("Month Dates: ", monthDates); // Check if December is included here
     // console.log(
     //   "Sanitized data dates:",
     //   sanitizedData.map((d) => d.date)
     // ); // This should show you the correctly adjusted months
-  };
+  }, []);
 
-  const updateChartForCurrentMonth = (data: PlayerData[]) => {
-    if (monthData.length === 0 || currentMonthIndex < 0) return; // Guard against empty monthData or invalid index
-
-    const currentMonth = monthData[currentMonthIndex];
-    if (!currentMonth) return; // Ensure currentMonth is defined
-
-    // console.log("Current Month Index:", currentMonthIndex);
-    // console.log("Current Month:", currentMonth);
-
-    if (viewMode === "month") {
-      const filteredData = data.filter(
-        (d) =>
-          d.date.getFullYear() === currentMonth.getFullYear() &&
-          d.date.getMonth() === currentMonth.getMonth()
-      );
-
-      // console.log("Filtered Data for Current Month:", filteredData);
-
-      drawChart(filteredData);
-    } else {
-      // Group by month
-      const filteredData = data.filter((d) =>
-        monthData.some(
-          (m) =>
-            d.date.getFullYear() === m.getFullYear() &&
-            d.date.getMonth() === m.getMonth()
-        )
-      );
-
-      console.log("Filtered Data for Full Season:", filteredData);
-
-      drawChart(filteredData, true);
-    }
-  };
-
-  const drawChart = (data: PlayerData[], groupByMonth = false) => {
+  const drawChart = useCallback((data: PlayerData[], groupByMonth = false) => {
     // console.log("Drawing chart with data:", data);
 
     const svg = d3.select(chartRef.current);
@@ -493,7 +452,44 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
       .append("span")
       .style("color", "white")
       .text((d) => d.label);
-  };
+  }, [currentMonthIndex, monthData, selectedPlayers, viewMode]);
+
+  const updateChartForCurrentMonth = useCallback((data: PlayerData[]) => {
+    if (monthData.length === 0 || currentMonthIndex < 0) return;
+
+    const currentMonth = monthData[currentMonthIndex];
+    if (!currentMonth) return;
+
+    if (viewMode === "month") {
+      const filteredData = data.filter(
+        (datum) =>
+          datum.date.getFullYear() === currentMonth.getFullYear() &&
+          datum.date.getMonth() === currentMonth.getMonth()
+      );
+      drawChart(filteredData);
+    } else {
+      const filteredData = data.filter((datum) =>
+        monthData.some(
+          (month) =>
+            datum.date.getFullYear() === month.getFullYear() &&
+            datum.date.getMonth() === month.getMonth()
+        )
+      );
+      drawChart(filteredData, true);
+    }
+  }, [currentMonthIndex, drawChart, monthData, viewMode]);
+
+  useEffect(() => {
+    if (teamAbbreviation) {
+      fetchAllPlayerData(teamAbbreviation);
+    }
+  }, [fetchAllPlayerData, teamAbbreviation]);
+
+  useEffect(() => {
+    if (monthData.length > 0) {
+      updateChartForCurrentMonth(allData);
+    }
+  }, [allData, monthData, updateChartForCurrentMonth]);
 
   const handlePlayerSelection = (player: string) => {
     setSelectedPlayers((prevSelectedPlayers) =>
@@ -501,24 +497,6 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
         ? prevSelectedPlayers.filter((p) => p !== player)
         : [...prevSelectedPlayers, player]
     );
-  };
-
-  const onHover = (player: string) => {
-    const sanitizedPlayer = sanitizeForCss(player);
-
-    d3.selectAll(".line-segment").style("opacity", 0.04);
-    d3.selectAll(".player-dot").style("opacity", 0.04);
-    d3.selectAll(".player-label").style("opacity", 0.04);
-
-    d3.selectAll(`.line-segment.${sanitizedPlayer}`).style("opacity", 1);
-    d3.selectAll(`.player-dot.${sanitizedPlayer}`).style("opacity", 1);
-    d3.selectAll(`.player-label.${sanitizedPlayer}`).style("opacity", 1);
-  };
-
-  const onLeave = () => {
-    d3.selectAll(".line-segment").style("opacity", 1);
-    d3.selectAll(".player-dot").style("opacity", 1);
-    d3.selectAll(".player-label").style("opacity", 1);
   };
 
   const handleSelectAllForwards = () => {

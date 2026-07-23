@@ -246,7 +246,10 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
       ),
     enabled: typeof seasonId === "number" && typeof playerId === "number"
   });
-  const allPlayersStats: PlayerRawStats[] = percentileCohort?.stats ?? [];
+  const allPlayersStats = useMemo<PlayerRawStats[]>(
+    () => percentileCohort?.stats ?? [],
+    [percentileCohort?.stats]
+  );
   const usingFallbackSeason =
     (percentileCohort?.appliedSeasonId ?? seasonId) !==
     (percentileCohort?.requestedSeasonId ?? seasonId);

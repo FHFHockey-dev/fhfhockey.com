@@ -756,7 +756,13 @@ function InnerShotVisualizationControls({
       .attr("font-size", 12)
       .attr("fill", "#fff")
       .text("Opponent Event Frequency");
-  }, [opponentShotData, oppLegendRef, scaleValues.opponent, alwaysShowLegend]);
+  }, [
+    opponentShotData,
+    oppLegendRef,
+    scaleValues.opponent,
+    scaleValues.team.max,
+    alwaysShowLegend
+  ]);
 
   if (!legendsReady) {
     return null; // or a loading spinner/component

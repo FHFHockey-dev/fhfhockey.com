@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 
 import { useAuth } from "contexts/AuthProviderContext";
@@ -830,9 +830,9 @@ export default function AccountSettingsPage() {
     return () => {
       isMounted = false;
     };
-  }, [activeSection, userId]);
+  }, [activeSection, editingSavedTeamId, userId]);
 
-  async function reloadYahooState() {
+  const reloadYahooState = useCallback(async () => {
     if (!userId) {
       setYahooConnectedAccount(null);
       setYahooLeagues([]);
@@ -904,7 +904,7 @@ export default function AccountSettingsPage() {
     setYahooTeams(teamResponse.data || []);
     setYahooPreferences(preferencesResponse.data);
     setYahooLatestSyncRun(syncRunResponse.data);
-  }
+  }, [userId]);
 
   useEffect(() => {
     if (
@@ -965,6 +965,7 @@ export default function AccountSettingsPage() {
     activeSection,
     router.query.yahoo_message,
     router.query.yahoo_status,
+    reloadYahooState,
     userId,
   ]);
 

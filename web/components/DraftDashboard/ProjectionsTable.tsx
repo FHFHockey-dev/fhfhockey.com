@@ -1,6 +1,6 @@
 // components/DraftDashboard/ProjectionsTable.tsx
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { DraftedPlayer } from "./DraftDashboard";
 // Import ProcessedPlayer from the correct location
 import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
@@ -77,6 +77,22 @@ type SortableField =
   | "vona"
   | "vbd"
   | "risk";
+
+const DEFAULT_SKATER_STAT_KEYS = [
+  "GOALS",
+  "ASSISTS",
+  "POINTS",
+  "SHOTS_ON_GOAL",
+  "HITS",
+  "BLOCKED_SHOTS",
+  "PP_POINTS",
+];
+const DEFAULT_GOALIE_STAT_KEYS = [
+  "WINS_GOALIE",
+  "GOALS_AGAINST_AVERAGE",
+  "SAVE_PERCENTAGE",
+  "SHUTOUTS_GOALIE",
+];
 
 const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   players,
@@ -208,21 +224,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       );
   }, []);
 
-  const DEFAULT_SKATER_STAT_KEYS = [
-    "GOALS",
-    "ASSISTS",
-    "POINTS",
-    "SHOTS_ON_GOAL",
-    "HITS",
-    "BLOCKED_SHOTS",
-    "PP_POINTS",
-  ];
-  const DEFAULT_GOALIE_STAT_KEYS = [
-    "WINS_GOALIE",
-    "GOALS_AGAINST_AVERAGE",
-    "SAVE_PERCENTAGE",
-    "SHUTOUTS_GOALIE",
-  ];
   const statColumns = useMemo(() => {
     if (positionFilter === "G") {
       const src = enabledGoalieStatKeys
@@ -336,9 +337,11 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   };
 
   // Map raw displayPosition to UI display based on forward grouping
-  const getDisplayPos = (player: ProcessedPlayer): string => {
-    return getProjectionDisplayPosition(player, forwardGrouping);
-  };
+  const getDisplayPos = useCallback(
+    (player: ProcessedPlayer): string =>
+      getProjectionDisplayPosition(player, forwardGrouping),
+    [forwardGrouping],
+  );
 
   const formatSeasonLabel = (season: string | number | null) => {
     if (season == null) return "";
@@ -574,7 +577,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   useEffect(() => {
     // Exit stat sort when leaving stat columns mode
     if (!statColumnsMode && statSortKey) setStatSortKey("");
-  }, [statColumnsMode]);
+  }, [statColumnsMode, statSortKey]);
 
   useEffect(() => {
     const id = setTimeout(() => setDebouncedSearchTerm(searchTerm), 150);
@@ -618,7 +621,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       if (first) m.set(String(p.playerId), first);
     });
     return m;
-  }, [players, forwardGrouping]);
+  }, [getDisplayPos, players]);
 
   // Precompute VORP/VONA/VBD for quick lookup (with need-adjusted VBD when enabled)
   const vorpMap = useMemo(() => {
@@ -801,16 +804,20 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     statSortKey,
     favoritesOnly,
     favoriteIds,
+    getDisplayPos,
     forwardGrouping,
   ]);
 
   // Helpers for percentile calculations
-  const getPrimaryPos = (p: ProcessedPlayer, bestPos?: string): string => {
-    if (bandScope === "overall") return "ALL";
-    if (bestPos) return bestPos;
-    const first = getDisplayPos(p)?.split(",")[0]?.trim();
-    return first || "ALL";
-  };
+  const getPrimaryPos = useCallback(
+    (p: ProcessedPlayer, bestPos?: string): string => {
+      if (bandScope === "overall") return "ALL";
+      if (bestPos) return bestPos;
+      const first = getDisplayPos(p)?.split(",")[0]?.trim();
+      return first || "ALL";
+    },
+    [bandScope, getDisplayPos],
+  );
 
   const percentileBands = useMemo(() => {
     // Consider only players left in the list
@@ -897,8 +904,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     return { vbdBandById, valBandById };
   }, [
     filteredAndSortedPlayers,
+    draftedIdSet,
+    getPrimaryPos,
     vorpMap,
-    bandScope,
     needWeightEnabled,
     leagueType,
   ]);
@@ -977,7 +985,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       }
     });
     return Array.from(positions).sort();
-  }, [players, forwardGrouping]);
+  }, [getDisplayPos, players]);
 
   const getAriaSort = (
     field: SortableField,

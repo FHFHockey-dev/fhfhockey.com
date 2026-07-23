@@ -18,16 +18,15 @@ export const useDashboardData = (
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const key = useMemo(
-    () =>
-      JSON.stringify({
-        date: params.date,
-        skaterPosition: params.skaterPosition,
-        skaterWindow: params.skaterWindow,
-        skaterLimit: params.skaterLimit,
-        sustainabilityWindow: params.sustainabilityWindow,
-        sustainabilityLimit: params.sustainabilityLimit
-      }),
+  const memoParams = useMemo<DashboardDataParams>(
+    () => ({
+      date: params.date,
+      skaterPosition: params.skaterPosition,
+      skaterWindow: params.skaterWindow,
+      skaterLimit: params.skaterLimit,
+      sustainabilityWindow: params.sustainabilityWindow,
+      sustainabilityLimit: params.sustainabilityLimit
+    }),
     [
       params.date,
       params.skaterPosition,
@@ -37,8 +36,6 @@ export const useDashboardData = (
       params.sustainabilityLimit
     ]
   );
-  const memoParams = useMemo(() => params, [key]);
-
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
@@ -62,7 +59,7 @@ export const useDashboardData = (
     return () => {
       isMounted = false;
     };
-  }, [key, memoParams]);
+  }, [memoParams]);
 
   return { data, error, isLoading };
 };

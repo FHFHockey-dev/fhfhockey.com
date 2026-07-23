@@ -328,8 +328,9 @@ function ShiftChart() {
         );
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Keep request identity tied to gameId; referenced helpers are render-invariant transforms and state setters.
     [enqueueSnackbar]
-  ); // Empty dependency array to prevent infinite loop
+  );
 
   // Fetches and processes player data for a given game ID
   const fetchPlayerData = async (gameId) => {
@@ -415,7 +416,7 @@ function ShiftChart() {
   };
 
   // Fetches the start date of the most recent season from the 'seasons' table
-  const fetchSeasonStartDate = async () => {
+  const fetchSeasonStartDate = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("seasons")
@@ -436,10 +437,10 @@ function ShiftChart() {
         variant: "error"
       });
     }
-  };
+  }, [enqueueSnackbar]);
 
   // Fetches games for the selected date using the NHL API schedule endpoint
-  const getGamesByDate = async (date) => {
+  const getGamesByDate = useCallback(async (date) => {
     try {
       setIsLoading(true);
       const response = await Fetch(
@@ -485,7 +486,7 @@ function ShiftChart() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [enqueueSnackbar]);
 
   // Automatically load the most recent finished game on first mount
   const fetchMostRecentGame = useCallback(async () => {
@@ -540,14 +541,14 @@ function ShiftChart() {
   // Fetch the season start date when the component mounts
   useEffect(() => {
     fetchSeasonStartDate();
-  }, []);
+  }, [fetchSeasonStartDate]);
 
   // Fetch games whenever the selected date changes
   useEffect(() => {
     if (selectedDate) {
       getGamesByDate(selectedDate);
     }
-  }, [selectedDate]);
+  }, [getGamesByDate, selectedDate]);
 
   // Calculates the total game time in minutes and seconds, excluding shootout
   const calculateTotalGameTime = (gameDetails) => {
@@ -1096,6 +1097,7 @@ function ShiftChart() {
       isOvertime
     );
     setTimestamps(newTimestamps);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Pure timestamp generation is intentionally keyed only by its two scalar inputs.
   }, [totalGameTimeInSeconds, isOvertime]);
 
   // fetch date and games on initial load

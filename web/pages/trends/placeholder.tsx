@@ -1624,7 +1624,7 @@ export default function TrendsIndexPage() {
       if (valA > valB) return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
-  }, [ctpiScores, teamTrends, sortConfig]);
+  }, [ctpiScores, sosRatings, sortConfig, teamTrends]);
   const hotTeams = useMemo(
     () =>
       powerBoard

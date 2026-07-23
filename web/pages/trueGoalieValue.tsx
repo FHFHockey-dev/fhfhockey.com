@@ -417,7 +417,7 @@ const GoalieTrends: FC = () => {
 
     fetchRangeData();
     // Dependencies: Run when range, options, or mode change.
-  }, [selectedRange, weekOptions, useSingleWeek]);
+  }, [currentSeason?.seasonId, selectedRange, weekOptions, useSingleWeek]);
 
   useEffect(() => {
     // Conditions to skip fetching single week data

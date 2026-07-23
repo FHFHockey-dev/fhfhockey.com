@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   BarChart,
   Bar,
@@ -77,11 +77,7 @@ export function GameStateAnalysis({
 
   const teamInfo = teamsInfo[teamAbbrev];
 
-  useEffect(() => {
-    fetchGameStateData();
-  }, [teamId, teamAbbrev, seasonId]);
-
-  const fetchGameStateData = async () => {
+  const fetchGameStateData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -282,7 +278,11 @@ export function GameStateAnalysis({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [seasonId, teamAbbrev, teamId]);
+
+  useEffect(() => {
+    fetchGameStateData();
+  }, [fetchGameStateData]);
 
   const processSituationData = (
     rawData: any,

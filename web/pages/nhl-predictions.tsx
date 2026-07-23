@@ -1003,7 +1003,10 @@ export default function NhlPredictionsPage({
     };
   }, []);
 
-  const predictions = payload?.predictions ?? [];
+  const predictions = useMemo(
+    () => payload?.predictions ?? [],
+    [payload?.predictions]
+  );
   const slateLabel = useMemo(() => {
     if (!predictions.length) return "Upcoming NHL Games";
     const dates = Array.from(

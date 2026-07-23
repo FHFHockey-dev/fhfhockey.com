@@ -71,7 +71,7 @@ export default function PredictionsLeaderboard({
     return () => {
       active = false;
     };
-  }, [playerIds.join(",")]);
+  }, [playerIds]);
 
   // Sparkline window
   const cutoffIso = useMemo(() => {

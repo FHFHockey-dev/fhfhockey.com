@@ -1,13 +1,37 @@
 // goalieTrends.js
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-1\web\pages\goalieTrends.js
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { teamsInfo } from "lib/teamsInfo";
 import Fetch from "lib/cors-fetch";
 import styles from "styles/GoalieTrends.module.scss";
 import fetchWithCache from "lib/fetchWithCache"; // Adjust the path as necessary
 import DoughnutChart from "./DoughnutChart";
 import GoalieWorkloadBars from "./GoalieWorkloadBars";
+
+const processGoalieData = (goalieData, totalGames) => {
+  const processedData = {};
+  for (const goalie of goalieData) {
+    const gamesPlayed = goalie.gamesStarted;
+    processedData[goalie.playerId] = {
+      goalieId: goalie.playerId,
+      goalieFullName: goalie.goalieFullName,
+      lastName: goalie.lastName,
+      gamesPlayed,
+      wins: goalie.wins,
+      losses: goalie.losses,
+      otLosses: goalie.otLosses,
+      shotsAgainst: goalie.shotsAgainst,
+      goalsAgainst: goalie.goalsAgainst,
+      savePercentage: goalie.savePct,
+      shutouts: goalie.shutouts,
+      goalsAgainstAverage: goalie.goalsAgainstAverage,
+      percentage: (gamesPlayed / totalGames) * 100
+    };
+  }
+
+  return { totalGames, goalies: Object.values(processedData) };
+};
 
 const GoalieTrends = () => {
   const [currentSeasonInfo, setCurrentSeasonInfo] = useState({});
@@ -24,7 +48,7 @@ const GoalieTrends = () => {
     return sortedTeamAbbrevs[0]; // This will ensure  first team alphabetically is the default
   });
 
-  const fetchCurrentSeasonInfo = async () => {
+  const fetchCurrentSeasonInfo = useCallback(async () => {
     const url = `https://api.nhle.com/stats/rest/en/season?sort=[{"property":"id","direction":"DESC"}]`;
     try {
       const response = await Fetch(url).then((res) => res.json());
@@ -34,9 +58,9 @@ const GoalieTrends = () => {
     } catch (error) {
       console.error("Failed to fetch current NHL season info:", error);
     }
-  };
+  }, []);
 
-  const fetchGameDatesForAllTeams = async () => {
+  const fetchGameDatesForAllTeams = useCallback(async () => {
     let gameDates = {};
     const fetchPromises = Object.keys(teamsInfo).map(async (teamAbbrev) => {
       const url = `https://api-web.nhle.com/v1/club-schedule-season/${teamAbbrev}/${currentSeasonInfo.id}`;
@@ -54,9 +78,9 @@ const GoalieTrends = () => {
     await Promise.all(fetchPromises);
     setTeamGameDates(gameDates);
     console.log("Filtered Team Game Dates:", gameDates); // Log filtered dates for debugging
-  };
+  }, [currentSeasonInfo.id]);
 
-  const calculateStartDate = (teamAbbrev, span) => {
+  const calculateStartDate = useCallback((teamAbbrev, span) => {
     // Ensure dates are sorted from oldest to newest
     const dates = teamGameDates[teamAbbrev]
       ? teamGameDates[teamAbbrev].sort((a, b) => new Date(b) - new Date(a))
@@ -89,9 +113,9 @@ const GoalieTrends = () => {
     }
 
     return dates[startDateIndex];
-  };
+  }, [teamGameDates]);
 
-  const fetchGoalieStatsForSelectedSpan = async () => {
+  const fetchGoalieStatsForSelectedSpan = useCallback(async () => {
     const endDate = new Date().toISOString().split("T")[0]; // End date as today
     const goalieStatsPromises = Object.entries(teamsInfo).map(
       async ([teamAbbrev, { franchiseId }]) => {
@@ -136,56 +160,13 @@ const GoalieTrends = () => {
         error
       );
     }
-  };
+  }, [calculateStartDate, selectedGameSpan, teamGameDates]);
 
   const handleGameSpanChange = (event) => {
     setSelectedGameSpan(event.target.value);
-    // Fetch goalie stats based on the newly selected game span
-    fetchGoalieStatsForSelectedSpan();
   };
 
-  const processGoalieData = (goalieData, totalGames) => {
-    let processedData = {};
-    // console.log("Goalie Data:", goalieData); // Log the goalie data for debugging
-    for (const goalie of goalieData) {
-      const goalieId = goalie.playerId;
-      const goalieFullName = goalie.goalieFullName;
-      const lastName = goalie.lastName;
-      const gamesPlayed = goalie.gamesStarted;
-      const wins = goalie.wins;
-      const losses = goalie.losses;
-      const otLosses = goalie.otLosses;
-      const shotsAgainst = goalie.shotsAgainst;
-      const goalsAgainst = goalie.goalsAgainst;
-      const savePercentage = goalie.savePct;
-      const shutouts = goalie.shutouts;
-      const goalsAgainstAverage = goalie.goalsAgainstAverage;
-      const percentage = (gamesPlayed / totalGames) * 100; // Calculate percentage of games played
-      processedData[goalieId] = {
-        goalieId,
-        goalieFullName,
-        lastName,
-        gamesPlayed,
-        wins,
-        losses,
-        otLosses,
-        shotsAgainst,
-        goalsAgainst,
-        savePercentage,
-        shutouts,
-        goalsAgainstAverage,
-        percentage
-      };
-    }
-    console.log("Processed Goalie Stats:", processedData);
-
-    return {
-      totalGames,
-      goalies: Object.values(processedData)
-    };
-  };
-
-  const logTeamGamesAndGoalieStarts = () => {
+  const logTeamGamesAndGoalieStarts = useCallback(() => {
     const today = new Date().toISOString().split("T")[0]; // Get today's date in ISO format
 
     Object.entries(goalieStats).forEach(([teamAbbrev, data]) => {
@@ -208,7 +189,7 @@ const GoalieTrends = () => {
         );
       }
     });
-  };
+  }, [goalieStats, teamGameDates]);
 
   // Handle change for the selected team in the dropdown
   const handleTeamChange = (event) => {
@@ -224,24 +205,24 @@ const GoalieTrends = () => {
     if (!loading && Object.keys(goalieStats).length > 0) {
       logTeamGamesAndGoalieStarts();
     }
-  }, [goalieStats, loading]);
+  }, [goalieStats, loading, logTeamGamesAndGoalieStarts]);
 
   useEffect(() => {
     fetchCurrentSeasonInfo();
-  }, []);
+  }, [fetchCurrentSeasonInfo]);
 
   useEffect(() => {
     if (currentSeasonInfo.startDate) {
       setLoading(true);
       fetchGameDatesForAllTeams().finally(() => setLoading(false));
     }
-  }, [currentSeasonInfo.startDate]);
+  }, [currentSeasonInfo.startDate, fetchGameDatesForAllTeams]);
 
   useEffect(() => {
     if (!loading && Object.keys(teamGameDates).length > 0) {
       fetchGoalieStatsForSelectedSpan();
     }
-  }, [loading, selectedGameSpan, teamGameDates]);
+  }, [fetchGoalieStatsForSelectedSpan, loading, selectedGameSpan, teamGameDates]);
 
   if (loading) return <div>Loading...</div>;
 

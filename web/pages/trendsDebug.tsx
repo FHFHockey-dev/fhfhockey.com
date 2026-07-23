@@ -978,8 +978,14 @@ export default function TrendsDebugPage() {
 
   const validationLoading = scopeValidationLoading || detailValidationLoading;
 
-  const storedRows = validationPayload?.stored?.rowHistory ?? [];
-  const recomputedRows = validationPayload?.recomputed?.rowHistory ?? [];
+  const storedRows = useMemo(
+    () => validationPayload?.stored?.rowHistory ?? [],
+    [validationPayload?.stored?.rowHistory]
+  );
+  const recomputedRows = useMemo(
+    () => validationPayload?.recomputed?.rowHistory ?? [],
+    [validationPayload?.recomputed?.rowHistory]
+  );
 
   const storedRowMap = useMemo(() => {
     const map = new Map<string, RowLike>();

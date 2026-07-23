@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\PlayerPPTOIPerGameChart\PlayerPPTOIPerGameChart.tsx
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
 import { useRouter } from "next/router";
 import supabase from "lib/supabase";
@@ -47,6 +47,28 @@ interface CustomDataPoint {
   rank: number;
 }
 
+const getRank = (
+  date: string,
+  playerDataMap: { [key: string]: PlayerData[] },
+  player: string
+): number => {
+  const playersOnDate = Object.keys(playerDataMap)
+    .map((playerName) => {
+      const playerData = playerDataMap[playerName].find(
+        (datum) => datum.date === date
+      );
+      return {
+        playerName,
+        pp_toi_pct_per_game: playerData ? playerData.pp_toi_pct_per_game : 0,
+      };
+    })
+    .sort(
+      (a, b) => (b.pp_toi_pct_per_game || 0) - (a.pp_toi_pct_per_game || 0)
+    );
+
+  return playersOnDate.findIndex((entry) => entry.playerName === player) + 1;
+};
+
 const PlayerPPTOIPerGameChart: React.FC = () => {
   const router = useRouter();
   const { teamAbbreviation } = router.query;
@@ -56,44 +78,7 @@ const PlayerPPTOIPerGameChart: React.FC = () => {
     new Set()
   );
 
-  useEffect(() => {
-    if (teamAbbreviation) {
-      fetchAllPlayerData(teamAbbreviation as string);
-    }
-  }, [teamAbbreviation]);
-
-  const fetchAllPlayerData = async (abbreviation: string) => {
-    let allData: PlayerData[] = [];
-    let from = 0;
-    const step = 1000;
-
-    while (true) {
-      const { data, error } = await supabase
-        .from("sko_pp_stats")
-        .select("player_id, player_name, date, pp_toi_pct_per_game")
-        .eq("team_abbrev", abbreviation)
-        .range(from, from + step - 1);
-
-      if (error) {
-        console.error("Error fetching player data:", error);
-        break;
-      }
-
-      if (data.length === 0) break;
-
-      // @ts-expect-error
-      allData = [...allData, ...data];
-
-      if (data.length < step) break;
-
-      from += step;
-    }
-
-    console.log(`Total records fetched: ${allData.length}`);
-    processChartData(allData);
-  };
-
-  const processChartData = (data: PlayerData[]) => {
+  const processChartData = useCallback((data: PlayerData[]) => {
     console.log("Raw Data:", data);
 
     const playerDataMap = data.reduce(
@@ -155,29 +140,43 @@ const PlayerPPTOIPerGameChart: React.FC = () => {
     });
 
     setLoading(false);
-  };
+  }, []);
 
-  const getRank = (
-    date: string,
-    playerDataMap: { [key: string]: PlayerData[] },
-    player: string
-  ): number => {
-    const playersOnDate = Object.keys(playerDataMap)
-      .map((playerName) => {
-        const playerData = playerDataMap[playerName].find(
-          (d) => d.date === date
-        );
-        return {
-          playerName,
-          pp_toi_pct_per_game: playerData ? playerData.pp_toi_pct_per_game : 0,
-        };
-      })
-      .sort(
-        (a, b) => (b.pp_toi_pct_per_game || 0) - (a.pp_toi_pct_per_game || 0)
-      );
+  const fetchAllPlayerData = useCallback(async (abbreviation: string) => {
+    let allData: PlayerData[] = [];
+    let from = 0;
+    const step = 1000;
 
-    return playersOnDate.findIndex((p) => p.playerName === player) + 1;
-  };
+    while (true) {
+      const { data, error } = await supabase
+        .from("sko_pp_stats")
+        .select("player_id, player_name, date, pp_toi_pct_per_game")
+        .eq("team_abbrev", abbreviation)
+        .range(from, from + step - 1);
+
+      if (error) {
+        console.error("Error fetching player data:", error);
+        break;
+      }
+
+      if (data.length === 0) break;
+
+      // @ts-expect-error
+      allData = [...allData, ...data];
+
+      if (data.length < step) break;
+      from += step;
+    }
+
+    console.log(`Total records fetched: ${allData.length}`);
+    processChartData(allData);
+  }, [processChartData]);
+
+  useEffect(() => {
+    if (teamAbbreviation) {
+      fetchAllPlayerData(teamAbbreviation as string);
+    }
+  }, [fetchAllPlayerData, teamAbbreviation]);
 
   const getLineColor = (dataPoints: CustomDataPoint[]): string[] => {
     return dataPoints.map((point) => {

@@ -145,19 +145,6 @@ const TeamStatsModule = ({ selectedTeamId }) => {
     });
   }
 
-  const fetchSelectedTeamStats = useCallback(async () => {
-    // Assuming team.id is the correct identifier for fetching stats
-    const stats = await fetchTeamStats(team.franchiseId, team.id);
-    if (stats) {
-      setSelectedTeamStats(stats.lastTenGames[0]);
-    }
-  }, [team]);
-
-  useEffect(() => {
-    fetchSelectedTeamStats();
-  }, [fetchSelectedTeamStats]);
-
-
   const fetchGameStats = useCallback(async (gameId, teamId) => {
     const boxscoreUrl = `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`;
   
@@ -235,6 +222,17 @@ const TeamStatsModule = ({ selectedTeamId }) => {
       return null;
     }
   }, [fetchGameStats]); // Add dependencies if necessary
+
+  const fetchSelectedTeamStats = useCallback(async () => {
+    const stats = await fetchTeamStats(team.franchiseId, team.id);
+    if (stats) {
+      setSelectedTeamStats(stats.lastTenGames[0]);
+    }
+  }, [fetchTeamStats, team]);
+
+  useEffect(() => {
+    fetchSelectedTeamStats();
+  }, [fetchSelectedTeamStats]);
 
   const fetchBasicTeamData = useCallback(async () => {
     const teamsUrl = "https://api.nhle.com/stats/rest/en/franchise?sort=fullName&include=lastSeason.id&include=firstSeason.id";

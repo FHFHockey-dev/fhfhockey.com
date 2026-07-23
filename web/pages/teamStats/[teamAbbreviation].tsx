@@ -4,7 +4,7 @@
 // I think pbp_plays and pbp_games are incomplete
 // We will have to redo the fetching of the data and upserting to the supabase table
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import type { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import supabase from "lib/supabase";
@@ -111,13 +111,49 @@ const TeamDetail = () => {
     [season: string]: { [key: string]: number | string };
   }>({});
 
-  useEffect(() => {
-    if (teamAbbreviation) {
-      fetchTeamStats(teamAbbreviation);
-    }
-  }, [teamAbbreviation]);
+  const aggregateStatsBySeason = useCallback((data: any[]) => {
+    const aggregated = data.reduce(
+      (acc, item) => {
+        const seasonId = item.season_id.toString();
+        const season = `${seasonId.slice(2, 4)}-${seasonId.slice(6, 8)}`;
 
-  const fetchTeamStats = async (abbreviation: string) => {
+        if (!acc[season]) {
+          acc[season] = curatedFields.reduce(
+            (fields, field) => {
+              fields[field.key] = 0;
+              return fields;
+            },
+            {} as { [key: string]: number }
+          );
+          acc[season].count = 0;
+        }
+
+        curatedFields.forEach((field) => {
+          acc[season][field.key] += item[field.key] || 0;
+        });
+        acc[season].count += 1;
+
+        return acc;
+      },
+      {} as {
+        [season: string]: { [key: string]: number | string; count: number };
+      }
+    );
+
+    Object.keys(aggregated).forEach((season) => {
+      averagingFields.forEach((field) => {
+        if (aggregated[season][field]) {
+          aggregated[season][field] =
+            aggregated[season][field] / aggregated[season].count;
+        }
+      });
+      delete aggregated[season].count;
+    });
+
+    setAggregatedStats(aggregated);
+  }, []);
+
+  const fetchTeamStats = useCallback(async (abbreviation: string) => {
     const teamInfo = teamsInfo[abbreviation];
     if (!teamInfo) return;
 
@@ -133,50 +169,13 @@ const TeamDetail = () => {
       aggregateStatsBySeason(data);
     }
     setLoading(false);
-  };
+  }, [aggregateStatsBySeason]);
 
-  const aggregateStatsBySeason = (data: any[]) => {
-    const aggregated = data.reduce(
-      (acc, item) => {
-        const seasonId = item.season_id.toString();
-        const season = `${seasonId.slice(2, 4)}-${seasonId.slice(6, 8)}`;
-
-        if (!acc[season]) {
-          acc[season] = curatedFields.reduce(
-            (fields, field) => {
-              fields[field.key] = 0;
-              return fields;
-            },
-            {} as { [key: string]: number }
-          );
-          acc[season].count = 0; // Count of records for averaging purposes
-        }
-
-        curatedFields.forEach((field) => {
-          acc[season][field.key] += item[field.key] || 0;
-        });
-        acc[season].count += 1;
-
-        return acc;
-      },
-      {} as {
-        [season: string]: { [key: string]: number | string; count: number };
-      }
-    );
-
-    // Compute averages for specific fields
-    Object.keys(aggregated).forEach((season) => {
-      averagingFields.forEach((field) => {
-        if (aggregated[season][field]) {
-          aggregated[season][field] =
-            aggregated[season][field] / aggregated[season].count;
-        }
-      });
-      delete aggregated[season].count; // Remove the count after use
-    });
-
-    setAggregatedStats(aggregated);
-  };
+  useEffect(() => {
+    if (teamAbbreviation) {
+      fetchTeamStats(teamAbbreviation);
+    }
+  }, [fetchTeamStats, teamAbbreviation]);
 
   if (loading) return <div className={styles.loading}>Loading...</div>;
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from "chart.js";
 import { teamsInfo } from "../../lib/teamsInfo";
@@ -43,6 +43,33 @@ interface TeamGoalieStats {
 
 type SpanType = "L10" | "L20" | "L30" | "Season";
 
+function inferCurrentSeasonId(): number {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth() + 1;
+  const startYear = month >= 9 ? year : year - 1;
+  return Number(`${startYear}${startYear + 1}`);
+}
+
+function unwrapProxyPayload(payload: any, context: string): any {
+  if (payload?.success === false) {
+    throw new Error(`${context}: ${payload.message || "Unknown proxy error"}`);
+  }
+  return payload;
+}
+
+const sleep = (ms: number) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+
+function isRateLimitError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error.message.includes("429") || error.message.includes("rate limited"))
+  );
+}
+
 const GoalieShareChart: React.FC = () => {
   const [seasonData, setSeasonData] = useState<SeasonData | null>(null);
   const [teamGameData, setTeamGameData] = useState<TeamGameData>({});
@@ -58,41 +85,15 @@ const GoalieShareChart: React.FC = () => {
   const hasInitialized = useRef(false);
   const hasLoggedRateLimit = useRef(false);
 
-  const inferCurrentSeasonId = (): number => {
-    const now = new Date();
-    const year = now.getUTCFullYear();
-    const month = now.getUTCMonth() + 1;
-    const startYear = month >= 9 ? year : year - 1;
-    const endYear = startYear + 1;
-    return Number(`${startYear}${endYear}`);
-  };
-
-  const unwrapProxyPayload = (payload: any, context: string): any => {
-    if (payload?.success === false) {
-      throw new Error(`${context}: ${payload.message || "Unknown proxy error"}`);
-    }
-    return payload;
-  };
-
-  const sleep = (ms: number) =>
-    new Promise((resolve) => {
-      setTimeout(resolve, ms);
-    });
-
-  const isRateLimitError = (error: unknown): boolean => {
-    if (!(error instanceof Error)) return false;
-    return error.message.includes("429") || error.message.includes("rate limited");
-  };
-
-  const logRateLimitOnce = () => {
+  const logRateLimitOnce = useCallback(() => {
     if (hasLoggedRateLimit.current) return;
     hasLoggedRateLimit.current = true;
     console.warn(
       "NHL API rate-limited some requests (429). Showing partial goalie data."
     );
-  };
+  }, []);
 
-  const fetchJsonWithRetry = async (
+  const fetchJsonWithRetry = useCallback(async (
     url: string,
     context: string,
     maxAttempts = 2
@@ -131,7 +132,7 @@ const GoalieShareChart: React.FC = () => {
       return null;
     }
     throw lastError;
-  };
+  }, [logRateLimitOnce]);
 
   // Check if mobile on mount and window resize
   useEffect(() => {
@@ -145,67 +146,7 @@ const GoalieShareChart: React.FC = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  useEffect(() => {
-    if (hasInitialized.current) return;
-    hasInitialized.current = true;
-
-    const fetchSeasonData = async () => {
-      try {
-        const seasonParams = new URLSearchParams({
-          sort: '[{"property":"id","direction":"DESC"}]'
-        });
-        const response = await fetchJsonWithRetry(
-          `https://api.nhle.com/stats/rest/en/season?${seasonParams.toString()}`,
-          "Season request failed"
-        );
-        if (!response) {
-          throw new Error("Season request rate-limited");
-        }
-        const payload = unwrapProxyPayload(response, "Season request failed");
-
-        const seasons = Array.isArray(payload?.data) ? payload.data : [];
-        const firstSeason = seasons[0];
-        if (!firstSeason?.id || !firstSeason?.startDate) {
-          throw new Error("Season API returned an unexpected payload shape");
-        }
-
-        const seasonId = firstSeason.id;
-        const startDate = firstSeason.startDate.split("T")[0];
-
-        await fetchGameDatesForAllTeams(seasonId);
-        setSeasonData({ seasonId, startDate });
-      } catch (error) {
-        if (!isRateLimitError(error)) {
-          console.error("Error fetching season data:", error);
-        }
-
-        // Fallback when season endpoint is blocked/rate-limited.
-        const fallbackSeasonId = inferCurrentSeasonId();
-        try {
-          await fetchGameDatesForAllTeams(fallbackSeasonId);
-          setSeasonData({
-            seasonId: fallbackSeasonId,
-            startDate: `${String(fallbackSeasonId).slice(0, 4)}-09-01`
-          });
-        } catch (fallbackError) {
-          if (!isRateLimitError(fallbackError)) {
-            console.error("Fallback season fetch failed:", fallbackError);
-          }
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchSeasonData();
-  }, []);
-
-  useEffect(() => {
-    if (Object.keys(teamGameData).length > 0) {
-      fetchAllGoalieData();
-    }
-  }, [selectedSpan, teamGameData]);
-
-  const fetchGameDatesForAllTeams = async (seasonId: number): Promise<void> => {
+  const fetchGameDatesForAllTeams = useCallback(async (seasonId: number): Promise<void> => {
     const gameData: TeamGameData = {};
     const teamAbbrevs = Object.keys(teamsInfo);
     const chunkSize = 2;
@@ -244,9 +185,9 @@ const GoalieShareChart: React.FC = () => {
     }
 
     setTeamGameData(gameData);
-  };
+  }, [fetchJsonWithRetry]);
 
-  const calculateGameSpan = (
+  const calculateGameSpan = useCallback((
     teamGames: GameData[]
   ): { startDate: string; endDate: string } => {
     if (!teamGames?.length) {
@@ -285,13 +226,49 @@ const GoalieShareChart: React.FC = () => {
     endIndex = Math.min(endIndex, gameCount - 1);
     endDate = teamGames[endIndex]?.gameDate || "";
     return { startDate, endDate };
-  };
+  }, [selectedSpan]);
 
   const handleSpanButtonClick = (span: SpanType): void => {
     setSelectedSpan(span);
   };
 
-  const fetchAllGoalieData = async (): Promise<void> => {
+  const fetchGoalieData = useCallback(async (
+    franchiseId: number,
+    startDate: string,
+    endDate: string
+  ): Promise<GoalieData[]> => {
+    const cayenneExp = `franchiseId=${franchiseId} and gameDate<="${endDate}" and gameDate>="${startDate}" and gameTypeId=2`;
+    const params = new URLSearchParams({
+      isAggregate: "true",
+      isGame: "true",
+      start: "0",
+      limit: "50",
+      factCayenneExp: "gamesPlayed>=1",
+      cayenneExp
+    });
+    const url = `https://api.nhle.com/stats/rest/en/goalie/summary?${params.toString()}`;
+
+    try {
+      const data = unwrapProxyPayload(
+        await fetchJsonWithRetry(
+          url,
+          `Goalie request failed for franchiseId ${franchiseId}`
+        ),
+        `Goalie request failed for franchiseId ${franchiseId}`
+      );
+      return Array.isArray(data?.data) ? data.data : [];
+    } catch (error) {
+      if (!isRateLimitError(error)) {
+        console.error(
+          `Error fetching goalie data for franchiseId ${franchiseId}:`,
+          error
+        );
+      }
+      return [];
+    }
+  }, [fetchJsonWithRetry]);
+
+  const fetchAllGoalieData = useCallback(async (): Promise<void> => {
     setLoading(true);
     const allGoalieStats: TeamGoalieStats = {};
 
@@ -336,43 +313,56 @@ const GoalieShareChart: React.FC = () => {
 
     setGoalieStats(allGoalieStats);
     setLoading(false);
-  };
+  }, [calculateGameSpan, fetchGoalieData, teamGameData]);
 
-  const fetchGoalieData = async (
-    franchiseId: number,
-    startDate: string,
-    endDate: string
-  ): Promise<GoalieData[]> => {
-    const cayenneExp = `franchiseId=${franchiseId} and gameDate<="${endDate}" and gameDate>="${startDate}" and gameTypeId=2`;
-    const params = new URLSearchParams({
-      isAggregate: "true",
-      isGame: "true",
-      start: "0",
-      limit: "50",
-      factCayenneExp: "gamesPlayed>=1",
-      cayenneExp
-    });
-    const url = `https://api.nhle.com/stats/rest/en/goalie/summary?${params.toString()}`;
+  useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
 
-    try {
-      const data = unwrapProxyPayload(
-        await fetchJsonWithRetry(
-          url,
-          `Goalie request failed for franchiseId ${franchiseId}`
-        ),
-        `Goalie request failed for franchiseId ${franchiseId}`
-      );
-      return Array.isArray(data?.data) ? data.data : [];
-    } catch (error) {
-      if (!isRateLimitError(error)) {
-        console.error(
-          `Error fetching goalie data for franchiseId ${franchiseId}:`,
-          error
+    const fetchSeasonData = async () => {
+      try {
+        const seasonParams = new URLSearchParams({
+          sort: '[{"property":"id","direction":"DESC"}]'
+        });
+        const response = await fetchJsonWithRetry(
+          `https://api.nhle.com/stats/rest/en/season?${seasonParams.toString()}`,
+          "Season request failed"
         );
+        if (!response) throw new Error("Season request rate-limited");
+        const payload = unwrapProxyPayload(response, "Season request failed");
+        const firstSeason = Array.isArray(payload?.data) ? payload.data[0] : null;
+        if (!firstSeason?.id || !firstSeason?.startDate) {
+          throw new Error("Season API returned an unexpected payload shape");
+        }
+        await fetchGameDatesForAllTeams(firstSeason.id);
+        setSeasonData({
+          seasonId: firstSeason.id,
+          startDate: firstSeason.startDate.split("T")[0]
+        });
+      } catch (error) {
+        if (!isRateLimitError(error)) console.error("Error fetching season data:", error);
+        const fallbackSeasonId = inferCurrentSeasonId();
+        try {
+          await fetchGameDatesForAllTeams(fallbackSeasonId);
+          setSeasonData({
+            seasonId: fallbackSeasonId,
+            startDate: `${String(fallbackSeasonId).slice(0, 4)}-09-01`
+          });
+        } catch (fallbackError) {
+          if (!isRateLimitError(fallbackError)) {
+            console.error("Fallback season fetch failed:", fallbackError);
+          }
+          setLoading(false);
+        }
       }
-      return [];
-    }
-  };
+    };
+
+    fetchSeasonData();
+  }, [fetchGameDatesForAllTeams, fetchJsonWithRetry]);
+
+  useEffect(() => {
+    if (Object.keys(teamGameData).length > 0) fetchAllGoalieData();
+  }, [fetchAllGoalieData, teamGameData]);
 
   const generateChartData = (teamAbbrev: string) => {
     const teamStats = goalieStats[teamAbbrev];

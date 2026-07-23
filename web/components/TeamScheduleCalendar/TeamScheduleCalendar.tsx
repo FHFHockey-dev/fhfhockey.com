@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   format,
   startOfDay,
@@ -172,21 +172,24 @@ export function TeamScheduleCalendar({
 
   const teamStats = wgoStats;
 
-  const today = startOfDay(new Date());
+  const today = useMemo(() => startOfDay(new Date()), []);
 
   // Use the parent-owned schedule for WGO home/away mapping.
-  const getHomeAwayFromWGOStat = (wgoStat: WGOTeamStat): "vs" | "@" | null => {
-    if (!wgoStat.game_id) return null;
+  const getHomeAwayFromWGOStat = useCallback(
+    (wgoStat: WGOTeamStat): "vs" | "@" | null => {
+      if (!wgoStat.game_id) return null;
 
-    const gameTableEntry = games.find(
-      (game) => game.id === wgoStat.game_id
-    );
+      const gameTableEntry = games.find(
+        (game) => game.id === wgoStat.game_id
+      );
 
-    if (!gameTableEntry) return null;
+      if (!gameTableEntry) return null;
 
-    const isHomeTeam = gameTableEntry.homeTeam.id === Number(teamId);
-    return isHomeTeam ? "vs" : "@";
-  };
+      const isHomeTeam = gameTableEntry.homeTeam.id === Number(teamId);
+      return isHomeTeam ? "vs" : "@";
+    },
+    [games, teamId]
+  );
 
   useEffect(() => {
     let active = true;
@@ -246,7 +249,7 @@ export function TeamScheduleCalendar({
   }, [games, opponentStrengthRequestIdentity]);
 
   // Enhanced game result determination with WGO stats integration
-  const getGameResult = (game: ScheduleGame): GameResult => {
+  const getGameResult = useCallback((game: ScheduleGame): GameResult => {
     const gameDate = new Date(game.gameDate);
     const isGameInFuture = gameDate > today;
 
@@ -322,7 +325,7 @@ export function TeamScheduleCalendar({
     }
 
     return null;
-  };
+  }, [teamId, teamStats, today, wgoStats]);
 
   // Enhanced home/away determination using game_id mapping
   const determineHomeAway = async (game: ScheduleGame): Promise<"vs" | "@"> => {
@@ -334,17 +337,19 @@ export function TeamScheduleCalendar({
   // Dated opponent strength uses the same team-power components as Team HQ.
   // Missing or sparse daily snapshots remain unavailable rather than falling
   // back to a permanent hard-coded team classification.
-  const calculateOpponentStrength = (
-    opponentAbbreviation: string,
-    gameDate: string
-  ): OpponentStrengthBand | undefined => {
-    return opponentStrengthIndex.get(
-      `${gameDate}:${opponentAbbreviation.trim().toUpperCase()}`
-    );
-  };
+  const calculateOpponentStrength = useCallback(
+    (
+      opponentAbbreviation: string,
+      gameDate: string
+    ): OpponentStrengthBand | undefined =>
+      opponentStrengthIndex.get(
+        `${gameDate}:${opponentAbbreviation.trim().toUpperCase()}`
+      ),
+    [opponentStrengthIndex]
+  );
 
   // Enhanced game performance analysis
-  const analyzeGamePerformance = (wgoStat: WGOTeamStat, result: GameResult) => {
+  const analyzeGamePerformance = useCallback((wgoStat: WGOTeamStat, result: GameResult) => {
     if (!wgoStat) return null;
 
     // Calculate game-specific stats (differential from previous game)
@@ -380,7 +385,7 @@ export function TeamScheduleCalendar({
       giveaways: wgoStat.giveaways || 0,
       penaltyMinutes: wgoStat.penalty_minutes || 0
     };
-  };
+  }, [wgoStats]);
 
   // Enhanced game rating calculation
   const calculateGameRating = (
@@ -561,7 +566,15 @@ export function TeamScheduleCalendar({
     });
 
     return results;
-  }, [games, wgoStats, teamId, opponentStrengthIndex]);
+  }, [
+    analyzeGamePerformance,
+    calculateOpponentStrength,
+    games,
+    getGameResult,
+    getHomeAwayFromWGOStat,
+    teamId,
+    wgoStats
+  ]);
 
   // Enhanced calendar data generation with comprehensive analytics
   const calendarData = useMemo(() => {
@@ -852,7 +865,11 @@ export function TeamScheduleCalendar({
     };
 
     return { months, stats };
-  }, [gamesWithResults, wgoStats, teamId, standingsDetails]);
+  }, [
+    gamesWithResults,
+    getHomeAwayFromWGOStat,
+    standingsDetails
+  ]);
 
   // Create seamless overlay style for a streak
   const createStreakOverlay = (
