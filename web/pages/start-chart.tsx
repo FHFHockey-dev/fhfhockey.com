@@ -19,6 +19,8 @@ import {
   formatStartChartFantasyScoringContract,
   START_CHART_FANTASY_SCORING_CONTRACT,
   type StartChartFantasyScoringContract,
+  type StartChartPositionRanks,
+  type StartChartRankingContract,
 } from "lib/projections/startChartFantasyScoring";
 
 type StartChartPlayer = {
@@ -38,6 +40,7 @@ type StartChartPlayer = {
   start_probability?: number | null;
   projected_gsaa?: number | null;
   games_remaining_week?: number;
+  position_ranks: StartChartPositionRanks;
 };
 
 type TeamRating = TeamPowerSnapshotLike;
@@ -68,6 +71,7 @@ type ApiResponse = {
   ctpi: ({ date: string } & Record<string, number | null>)[];
   games: GameRow[];
   fantasyScoringContract?: StartChartFantasyScoringContract;
+  rankingContract?: StartChartRankingContract;
 };
 
 const fetcher = async (url: string) => {
@@ -344,12 +348,12 @@ export default function StartChartPage() {
     POSITION_ORDER.forEach((pos) => {
       map.set(
         pos,
-        (map.get(pos) ?? []).sort((a, b) => {
-          if (pos === "G") {
-            return (b.start_probability ?? 0) - (a.start_probability ?? 0);
-          }
-          return (b.proj_fantasy_points ?? 0) - (a.proj_fantasy_points ?? 0);
-        }),
+        (map.get(pos) ?? []).sort(
+          (a, b) =>
+            (a.position_ranks[pos] ?? Number.MAX_SAFE_INTEGER) -
+              (b.position_ranks[pos] ?? Number.MAX_SAFE_INTEGER) ||
+            a.player_id - b.player_id,
+        ),
       );
     });
     return map;
@@ -755,7 +759,9 @@ export default function StartChartPage() {
                     <div className={styles.card} key={`${pos}-${p.player_id}`}>
                       <div className={styles.header}>
                         <div className={styles.name} title={p.name}>
-                          {p.name}
+                          {p.position_ranks[pos] != null
+                            ? `#${p.position_ranks[pos]} ${p.name}`
+                            : p.name}
                         </div>
                         <div className={styles.meta}>
                           <span>

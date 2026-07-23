@@ -93,6 +93,7 @@ describe("StartChartPage", () => {
           proj_shots: 3.5,
           matchup_grade: 62,
           games_remaining_week: 3,
+          position_ranks: { C: 1 },
         },
       ],
       games: [
@@ -109,6 +110,7 @@ describe("StartChartPage", () => {
 
     render(<StartChartPage />);
 
+    expect(screen.getByText("#1 Nick Suzuki")).toBeTruthy();
     const gameFilter = screen.getByRole("button", {
       name: /MTL at TOR; apply game filter/,
     });

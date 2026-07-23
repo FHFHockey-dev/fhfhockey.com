@@ -9,8 +9,10 @@ import {
   type TeamRating as TeamPowerRating,
 } from "lib/teamRatingsService";
 import {
+  addStartChartPositionRanks,
   computeStartChartFantasyPoints,
   START_CHART_FANTASY_SCORING_CONTRACT,
+  START_CHART_RANKING_CONTRACT,
 } from "lib/projections/startChartFantasyScoring";
 import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
 
@@ -759,12 +761,14 @@ export default async function handler(
       });
 
       // Attach games remaining to players
-      const playersWithGames = players.map((p) => ({
-        ...p,
-        games_remaining_week: p.team_id
-          ? (gamesRemainingMap.get(p.team_id) ?? 0)
-          : 0,
-      }));
+      const playersWithGames = addStartChartPositionRanks(
+        players.map((p) => ({
+          ...p,
+          games_remaining_week: p.team_id
+            ? (gamesRemainingMap.get(p.team_id) ?? 0)
+            : 0,
+        })),
+      );
       const eligiblePlayers = playersWithGames
         .filter(
           (player) =>
@@ -883,6 +887,7 @@ export default async function handler(
         goalieSource: "goalie_start_projections",
         legacyPlayerProjectionsUsed: false,
         fantasyScoringContract: START_CHART_FANTASY_SCORING_CONTRACT,
+        rankingContract: START_CHART_RANKING_CONTRACT,
         request: {
           mode: request.mode,
           profile: request.profile,

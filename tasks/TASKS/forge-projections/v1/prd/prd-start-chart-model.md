@@ -2,7 +2,7 @@
 
 > **Reconciliation status:** supporting input to `tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md`. Where this document proposes roster-size sit/start or streamer behavior, the Daily MVP PRD takes precedence and keeps rankings scoped to one chosen date without bench/off-night factors.
 >
-> **2026-07-23 checkpoint:** Start Chart remains a read-only wrapper over the latest succeeded canonical FORGE run. The supported control surface is one date, points mode, `fhfh-default-skater-v1`, optional position, and bounded pagination; tau/risk/alternate-model controls remain explicitly unavailable. The current source list is 32/51, with independent formula, schema/history, manual override, retry, and browser accessibility gates still open.
+> **2026-07-23 checkpoint:** Start Chart remains a read-only wrapper over the latest succeeded canonical FORGE run. The supported control surface is one date, points mode, `fhfh-default-skater-v1`, optional position, and bounded pagination; tau/risk/alternate-model controls remain explicitly unavailable. Versioned server-owned competition ranks now cover each eligible position, with canonical synthetic projection coverage retained in FORGE. The current source list is 35/52, with independent formula, schema/history, manual override, retry, and browser accessibility gates still open.
 
 # Context - Table Schema Ledger File:
 ** Markdown File with the Schemas for all Team tables in the Supabase **

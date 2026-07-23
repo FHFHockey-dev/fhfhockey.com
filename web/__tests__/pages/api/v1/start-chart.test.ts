@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { addStartChartPositionRanks } from "lib/projections/startChartFantasyScoring";
 
 const { fromMock, fetchCurrentSeasonMock, fetchTeamRatingsMock } = vi.hoisted(
   () => ({
@@ -96,6 +97,47 @@ function createMockRes() {
 }
 
 describe("/api/v1/start-chart", () => {
+  it("assigns deterministic competition ranks per eligible position", () => {
+    const ranked = addStartChartPositionRanks([
+      {
+        player_id: 30,
+        positions: ["C", "RW"],
+        proj_fantasy_points: 4.5,
+      },
+      {
+        player_id: 10,
+        positions: ["C"],
+        proj_fantasy_points: 4.5,
+      },
+      {
+        player_id: 20,
+        positions: ["C"],
+        proj_fantasy_points: 4,
+      },
+      {
+        player_id: 40,
+        positions: ["G"],
+        proj_fantasy_points: null,
+        start_probability: null,
+      },
+    ]);
+
+    expect(
+      ranked.map(({ player_id, position_ranks }) => ({
+        player_id,
+        position_ranks,
+      })),
+    ).toEqual([
+      { player_id: 30, position_ranks: { C: 1, RW: 1 } },
+      { player_id: 10, position_ranks: { C: 1 } },
+      { player_id: 20, position_ranks: { C: 3 } },
+      { player_id: 40, position_ranks: {} },
+    ]);
+    expect(addStartChartPositionRanks([...ranked].reverse())).toEqual(
+      [...ranked].reverse(),
+    );
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     fetchCurrentSeasonMock.mockResolvedValue({ id: 20252026 });
@@ -302,6 +344,19 @@ describe("/api/v1/start-chart", () => {
           blockedShots: 0.25,
         },
       },
+      rankingContract: {
+        version: "start-chart-ranking-v1",
+        scope: "eligible_position",
+        tieMethod: "competition",
+        scoreFields: {
+          skater: "proj_fantasy_points",
+          goalie: "start_probability",
+        },
+        unavailable: {
+          categoryMode: true,
+          riskP75: true,
+        },
+      },
       compatibilityInventory: {
         inventoryVersion: "forge-compatibility-inventory-v2",
         canonicalSkaterSource: "forge_player_projections",
@@ -342,6 +397,7 @@ describe("/api/v1/start-chart", () => {
     expect(skater.proj_assists).toBeCloseTo(0.6, 6);
     expect(skater.proj_shots).toBeCloseTo(3.5, 6);
     expect(skater.proj_fantasy_points).toBeCloseTo(4.22, 6);
+    expect(skater.position_ranks).toEqual({ C: 1 });
     expect(fromMock.mock.calls.map((call) => call[0])).not.toContain(
       "player_projections",
     );

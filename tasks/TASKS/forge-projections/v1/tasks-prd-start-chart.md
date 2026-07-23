@@ -53,8 +53,9 @@
   - [x] 4.3 Apply small-sample career/archetype shrinkage and sustainability adjustments with component/fallback metadata.
   - [x] 4.4 Compute points-mode values from the selected profile and preserve stat means/variance for explanation and later category mode.
   - Evidence (4.3/4.4, 2026-07-22): FORGE owns low-sample shrinkage, sustainability/context drivers, raw stat means, and uncertainty; the versioned `fhfh-default-skater-v1` read-time adapter computes visible G/A/PPP/SOG/HIT/BLK points without rewriting canonical projections.
-  - [ ] 4.5 Produce deterministic rank/ties and deliberate unavailable states for deferred categories/risk-P75 behavior.
-  - [ ] 4.6 Add synthetic/seeded tests for math, fallbacks, position priors, clips, and determinism.
+  - [x] 4.5 Produce deterministic rank/ties and deliberate unavailable states for deferred categories/risk-P75 behavior.
+  - [x] 4.6 Add synthetic/seeded tests for math, fallbacks, position priors, clips, and determinism.
+  - Evidence (4.5/4.6, 2026-07-23): the API assigns deterministic competition ranks per eligible position from canonical points/start-probability values, returns a versioned ranking contract with category/P75 unavailable states, and the UI consumes server ranks. Focused API/UI coverage passes 13/13; the canonical synthetic FORGE math/fallback/position-prior/clip/determinism cohort passes 88/88; full TypeScript passes.
 
 - [ ] 5.0 Verify and finish APIs and logging
   - [x] 5.1 Reconcile current routes with requested projections, rankings, rates, and metrics contracts; consolidate ownership rather than overlap endpoints.
@@ -96,3 +97,4 @@
 ## NEW Tasks
 
 - [ ] NEW 9.0 Append every verified defect, data gap, manual dependency, open model question, and optimization discovered during execution here before closure.
+- [x] NEW 9.1 **P2 missing runtime server-rank contract:** source controls claimed server ranks while the API returned no ranks and the UI independently sorted floating-point values. One versioned API contract now owns eligible-position competition ranks, deterministic player-ID tie order, multi-position membership, null-score exclusion, and explicit category/P75 deferral; focused regressions pass (closed 2026-07-23).

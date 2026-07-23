@@ -264,6 +264,8 @@ Exact checkpoint `d474ae206d1df074b401346ec22dabc96bc4c3aa` publishes the 53-row
 
 The 2026-07-22 parent-parity cohort subsequently closes only parents whose complete child sets are already evidenced above, bringing B-START to 26/51 and B-TRENDS to 30/50 without changing any runtime claim or open gate.
 
+The 2026-07-23 ranking checkpoint brings B-START to 35/52. Start Chart now consumes a versioned server-owned eligible-position competition-rank contract over canonical FORGE points/start probabilities, including deterministic ties, multi-position membership, null-score exclusion, and explicit category/P75 deferral. The focused API/UI group passes 13/13, the canonical synthetic FORGE math/fallback/position-prior/clip/determinism cohort passes 88/88, and no projection formula, stored row, schema, or external state changed.
+
 ## Sustainability trends-plan implementation reconciliation
 
 The supporting 19-row volatility/elasticity plan is now 17/19 complete from the same audited runtime and test evidence. The deployed model contract is `sustainability_trend_bands` keyed by player, metric, window, and snapshot; `bandService` owns bounded source reads and composite-key persistence; the public read/protected mutation APIs expose player/date/metric/window selection and bounded bulk rebuilding. The calculator produces l3/l5/l10/l20 prior-blended intervals, z-scores, percentiles, and exposure metadata over raw one-game inputs, so the required one-game plus 3/5/10 views are present while l20 remains additive.

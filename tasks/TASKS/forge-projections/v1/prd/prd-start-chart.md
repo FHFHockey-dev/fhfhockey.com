@@ -2,7 +2,7 @@ You are GPT-5 Codex. Implement the Start Chart DAILY MVP exactly as specified.
 
 > **Reconciled implementation task list:** `tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md`
 >
-> **Current reconciliation status (2026-07-23):** 32/51 rows are evidence-complete. The canonical Sustainability/Trends/FORGE audit proves Start Chart is a one-date presentation adapter over FORGE, verifies current schema/input/utility/API/UI/schedule and exact player/team/goalie traces, and keeps the retired independent writer/materialization retired. Strict reader validation, honest unsupported-control states, measured 351-player latency, operator documentation, and the targeted verification parent now close. The remaining 19 rows are genuine formula/schema/override/retry/accessibility, history-repair, and browser-verification gates; this status does not authorize new persistence or model ownership.
+> **Current reconciliation status (2026-07-23):** 35/52 rows are evidence-complete. The canonical Sustainability/Trends/FORGE audit proves Start Chart is a one-date presentation adapter over FORGE, verifies current schema/input/utility/API/UI/schedule and exact player/team/goalie traces, and keeps the retired independent writer/materialization retired. Strict reader validation, versioned server-owned position ranks/ties, honest unsupported-control states, canonical synthetic math coverage, measured 351-player latency, operator documentation, and the targeted verification parent now close. The remaining 17 rows are genuine formula/schema/override/retry/accessibility, history-repair, and browser-verification gates; this status does not authorize new persistence or model ownership.
 
 Title
 Start Chart — Daily Fantasy Hockey Start/Sit Rankings
