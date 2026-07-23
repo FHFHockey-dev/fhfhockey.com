@@ -4611,7 +4611,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md::C0169` — 25.6 NEW: Guard model-registration and shot-prediction writers; promoted production `dpl_8AiEssYqAd3MRt5KDx6M1D9Fx6E6` rejects unauthenticated calls with HTTP 401 (2026-07-12).
 - [x] `SRC::tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md::C0170` — 27.3 NEW: Correct offline bounded-time evidence to use persisted period elapsed time; initial fail-closed artifact trained no heads, corrected rerun produced 145,050 labels, and TypeScript/12 focused tests pass (2026-07-12).
 
-### Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md` (144 rows)
+### Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md` (145 rows)
 
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md::C0001` (original L27) — 1.0 Establish current warning/error baseline and ownership. Evidence: declared, strict, and full-core paths plus the ownership/dependency graph are recorded; the selected semantic ARIA scope is verified without suppression (2026-07-22).
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md::C0002` (original L28) — 1.1 Discover the repository's actual lint/type/build commands and run the narrowest baseline that reports file/rule/count without auto-fix. Evidence: deprecated/conflicting `next lint`, missing ESLint-9 flat config, explicit legacy-config/no-fix fallback, direct TypeScript, Vitest, Prettier, and bundled-Node-24 Sass paths were verified (2026-07-22).
@@ -4757,6 +4757,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md::C0142` (live NEW) — NEW 110.0 **P2 NEW 92 same-root historical weekly player schedule-context omission:** selected-season historical context, request-owned Top Adds data, unique eligible-game inventory, and truthful pending/unavailable states now cover both weekly callers with wrong-era/cross-season/stale-response regressions (verified 2026-07-22).
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md::C0143` (live NEW) — NEW 111.0 **P2 NEW 110 same-root TypeScript guard narrowing gap:** the eligible-game runtime guard now exposes its non-null guarantee as a strict type predicate; weekly regressions and full TypeScript pass (verified 2026-07-22).
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md::C0144` (live NEW) — NEW 112.0 **P1 TeamStatsPage regression file deployed as a Next.js page:** the Vitest-only regression is relocated from the deployable `pages` tree to canonical `__tests__`; direct 3/3 proof and exact route-tree absence pass (verified 2026-07-22).
+- [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md::C0145` (live NEW) — NEW 113.0 **P3 actionable-ledger denominator regression:** all 76 imported sources were scanned for fenced checklist rows; exactly six unchecked placeholders occur inside the `generate-tasks.mdc` output example and no others. Raw source parity retains them, but actionable progress excludes them as already classified non-work (verified 2026-07-22).
 
 ### Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md` (35 rows)
 
