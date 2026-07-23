@@ -63,6 +63,12 @@ function extractPercentOwned(player: any): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function parseOptionalNumber(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const parsed = typeof value === "string" ? parseFloat(value) : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function prepareRpcPayload(
   player: any,
   currentDate: string,
@@ -70,25 +76,24 @@ function prepareRpcPayload(
   season?: number
 ) {
   const val = extractPercentOwned(player);
-  const currentOwnershipValue = val != null && Number.isFinite(val) ? val : 0; // keep your legacy numeric fields non-null
-
-  // One-day entry for JSONB append; empty array if no valid reading (offseason)
-  const timelineEntry =
-    val != null && Number.isFinite(val)
-      ? [{ date: currentDate, value: val }]
-      : [];
 
   return {
     player_key: player.player_key,
     player_id: player.player_id,
     player_name: player.name?.full || null,
-    draft_analysis: player.draft_analysis || {},
-    average_draft_pick: parseFloat(player.draft_analysis?.average_pick || "0"),
-    average_draft_round: parseFloat(
-      player.draft_analysis?.average_round || "0"
+    draft_analysis: player.draft_analysis ?? null,
+    average_draft_pick: parseOptionalNumber(
+      player.draft_analysis?.average_pick
     ),
-    average_draft_cost: parseFloat(player.draft_analysis?.average_cost || "0"),
-    percent_drafted: parseFloat(player.draft_analysis?.percent_drafted || "0"),
+    average_draft_round: parseOptionalNumber(
+      player.draft_analysis?.average_round
+    ),
+    average_draft_cost: parseOptionalNumber(
+      player.draft_analysis?.average_cost
+    ),
+    percent_drafted: parseOptionalNumber(
+      player.draft_analysis?.percent_drafted
+    ),
     editorial_player_key: player.editorial_player_key || null,
     editorial_team_abbreviation: player.editorial_team_abbr || null,
     editorial_team_full_name: player.editorial_team_full_name || null,
@@ -98,8 +103,8 @@ function prepareRpcPayload(
     injury_note: player.injury_note || null,
     full_name: player.name?.full || null,
 
-    // numeric column
-    percent_ownership: val != null && Number.isFinite(val) ? val : undefined, // let SQL skip if null/undefined
+    percent_ownership: val,
+    snapshot_status: val == null ? "omitted" : "observed",
 
     game_id: gameId || null,
     season: season ?? null,
@@ -110,12 +115,6 @@ function prepareRpcPayload(
     uniform_number: player.uniform_number
       ? parseInt(player.uniform_number)
       : null,
-
-    // timeline append support
-    ownership_timeline: timelineEntry,
-
-    // existing append helpers (used by RPC)
-    current_ownership_value: currentOwnershipValue,
     current_date: currentDate
   };
 }
@@ -314,55 +313,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     }
 
     const dedupedRpcPayloads = dedupeByPlayerKey(allRpcPayloads);
-    const completeSnapshot = failedRows === 0 && omitted === 0;
-
-    // Fetch existing rows by player_key in pages to merge fields when Yahoo
-    // returns nulls for certain fields. We intentionally avoid changing
-    // payload.player_key or reconciling by player_id so new season-prefixed
-    // keys will be inserted as new rows.
-    try {
-      const existingByKey = new Map<string, any>();
-      const keys = dedupedRpcPayloads.map((p) => p.player_key);
-      const pageSize = 1000;
-      for (let s = 0; s < keys.length; s += pageSize) {
-        const chunk = keys.slice(s, s + pageSize);
-        const { data: existingRows, error: keyFetchErr } = await supabase
-          .from("yahoo_players")
-          .select(
-            "player_key, player_id, player_name, draft_analysis, percent_ownership, editorial_player_key, editorial_team_abbreviation, editorial_team_full_name, eligible_positions, display_position, headshot_url, injury_note, full_name, position_type, status, status_full, last_updated, uniform_number"
-          )
-          .in("player_key", chunk as string[]);
-
-        if (keyFetchErr) {
-          console.warn("Yahoo existing-player lookup failed.");
-          continue;
-        }
-
-        if (existingRows && existingRows.length) {
-          existingRows.forEach((r: any) =>
-            existingByKey.set(String(r.player_key), r)
-          );
-        }
-      }
-
-      // Merge non-null DB-provided values into payloads for the same player_key
-      // (do NOT rewrite payload.player_key to a different value).
-      dedupedRpcPayloads.forEach((p) => {
-        if (existingByKey.has(p.player_key)) {
-          const existing = existingByKey.get(p.player_key)!;
-          Object.keys(existing).forEach((k) => {
-            const pp: any = p;
-            const ex: any = existing;
-            if (pp[k] == null && ex[k] != null) {
-              pp[k] = ex[k];
-            }
-          });
-        }
-      });
-    } catch {
-      console.warn("Yahoo existing-player reconciliation failed.");
-      // non-fatal: continue and let RPC handle any remaining conflicts
-    }
+    const providerComplete = failedRows === 0 && omitted === 0;
+    let ownershipHistoryUpserted = 0;
+    let draftHistoryUpserted = 0;
+    let ownershipOmitted = 0;
 
     if (dedupedRpcPayloads.length) {
       console.log(
@@ -377,19 +331,28 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           )}`
         );
 
-        // Call the new function 'upsert_yahoo_players_v3' which supports
-        // per-season rows via player_key and accepts game_id/season in
-        // each payload.
-        const { error } = await supabase.rpc("upsert_yahoo_players_v3", {
-          players_data: batch
-        });
+        const { data, error } = await supabase.rpc(
+          "upsert_yahoo_players_atomic" as any,
+          { players_data: batch } as any
+        );
 
         if (error) {
           console.error(`Yahoo player RPC batch ${i + 1} failed.`);
           throw new Error("Yahoo player persistence failed.");
-        } else {
-          console.log(`RPC Batch ${i + 1} successful.`);
         }
+
+        const result = data as unknown as {
+          processed?: number;
+          ownershipHistoryUpserted?: number;
+          draftHistoryUpserted?: number;
+          ownershipOmitted?: number;
+        };
+        if (result?.processed !== batch.length) {
+          throw new Error("Yahoo player persistence count mismatch.");
+        }
+        ownershipHistoryUpserted += result.ownershipHistoryUpserted ?? 0;
+        draftHistoryUpserted += result.draftHistoryUpserted ?? 0;
+        ownershipOmitted += result.ownershipOmitted ?? 0;
 
         await new Promise((resolve) => setTimeout(resolve, 500)); // Keep delay between batches
       }
@@ -417,6 +380,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         console.warn("Could not trigger sheet sync (non-fatal).");
       }
 
+      const completeSnapshot = providerComplete && ownershipOmitted === 0;
       return res.status(200).json({
         success: true,
         status: completeSnapshot ? "success" : "partial",
@@ -427,7 +391,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         succeeded: dedupedRpcPayloads.length,
         rowsUpserted: dedupedRpcPayloads.length,
         failedRows,
-        omitted,
+        omitted: omitted + ownershipOmitted,
+        providerOmitted: omitted,
+        ownershipOmitted,
+        ownershipHistoryUpserted,
+        draftHistoryUpserted,
         retries,
         rateLimitEvents,
         completeSnapshot,
@@ -447,9 +415,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       rowsUpserted: 0,
       failedRows,
       omitted,
+      providerOmitted: omitted,
+      ownershipOmitted: 0,
+      ownershipHistoryUpserted: 0,
+      draftHistoryUpserted: 0,
       retries,
       rateLimitEvents,
-      completeSnapshot,
+      completeSnapshot: false,
       deactivationApplied: false,
       message:
         failedRows > 0
