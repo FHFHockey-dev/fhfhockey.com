@@ -1,14 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  DASHBOARD_SECTIONS,
   loadTrendsDashboardData,
+  mergeDashboardSections,
   type DashboardData,
-  type DashboardDataParams
+  type DashboardDataParams,
+  type DashboardSection
 } from "lib/dashboard/dataFetchers";
 
 export type DashboardDataState = {
   data: DashboardData | null;
   error: Error | null;
   isLoading: boolean;
+  loadingSections: DashboardSection[];
+  sectionErrors: DashboardData["sectionErrors"];
+  retrySection: (section: DashboardSection) => void;
 };
 
 export const useDashboardData = (
@@ -16,7 +22,9 @@ export const useDashboardData = (
 ): DashboardDataState => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<Error | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loadingSections, setLoadingSections] = useState<DashboardSection[]>([]);
+  const dataRef = useRef<DashboardData | null>(null);
+  const requestEpochRef = useRef(0);
 
   const memoParams = useMemo<DashboardDataParams>(
     () => ({
@@ -36,30 +44,59 @@ export const useDashboardData = (
       params.sustainabilityLimit
     ]
   );
+  const loadSections = useCallback(
+    (sections: DashboardSection[], epoch: number) => {
+      setLoadingSections((current) => [
+        ...new Set([...current, ...sections])
+      ]);
+      setError(null);
+
+      loadTrendsDashboardData(memoParams, {
+        sections,
+        base: dataRef.current
+      })
+        .then((response) => {
+          if (requestEpochRef.current !== epoch) return;
+          setData((current) => {
+            const merged = mergeDashboardSections(current, response, sections);
+            dataRef.current = merged;
+            return merged;
+          });
+        })
+        .catch((err) => {
+          if (requestEpochRef.current !== epoch) return;
+          setError(err as Error);
+        })
+        .finally(() => {
+          if (requestEpochRef.current !== epoch) return;
+          setLoadingSections((current) =>
+            current.filter((section) => !sections.includes(section))
+          );
+        });
+    },
+    [memoParams]
+  );
+
   useEffect(() => {
-    let isMounted = true;
-    setIsLoading(true);
+    const epoch = requestEpochRef.current + 1;
+    requestEpochRef.current = epoch;
     setError(null);
+    DASHBOARD_SECTIONS.forEach((section) => loadSections([section], epoch));
+  }, [loadSections]);
 
-    loadTrendsDashboardData(memoParams)
-      .then((response) => {
-        if (!isMounted) return;
-        setData(response);
-      })
-      .catch((err) => {
-        if (!isMounted) return;
-        setError(err as Error);
-        setData(null);
-      })
-      .finally(() => {
-        if (!isMounted) return;
-        setIsLoading(false);
-      });
+  const retrySection = useCallback(
+    (section: DashboardSection) => {
+      loadSections([section], requestEpochRef.current);
+    },
+    [loadSections]
+  );
 
-    return () => {
-      isMounted = false;
-    };
-  }, [memoParams]);
-
-  return { data, error, isLoading };
+  return {
+    data,
+    error,
+    isLoading: loadingSections.length > 0,
+    loadingSections,
+    sectionErrors: data?.sectionErrors ?? {},
+    retrySection
+  };
 };

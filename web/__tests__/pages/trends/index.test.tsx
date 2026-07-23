@@ -1,9 +1,17 @@
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
 const teamTrendsFixture = vi.hoisted(() => ({
   value: { generatedAt: "", categories: {} } as any
+}));
+
+const dashboardStateFixture = vi.hoisted(() => ({
+  sectionErrors: {} as Record<string, string>,
+  loadingSections: [] as string[],
+  sectionUpdatedAt: {} as Record<string, string>,
+  sectionResolvedFor: {} as Record<string, string>,
+  retrySection: vi.fn()
 }));
 
 class ResizeObserverMock {
@@ -59,6 +67,9 @@ vi.mock("hooks/useDashboardData", () => ({
   useDashboardData: () => ({
     isLoading: false,
     error: null,
+    loadingSections: dashboardStateFixture.loadingSections,
+    sectionErrors: dashboardStateFixture.sectionErrors,
+    retrySection: dashboardStateFixture.retrySection,
     data: {
       teamRatings: [],
       teamCtpi: { teams: [] },
@@ -67,6 +78,8 @@ vi.mock("hooks/useDashboardData", () => ({
       forgePlayers: { data: [] },
       forgeGoalies: { data: [] },
       startChart: { players: [], games: [] },
+      sectionUpdatedAt: dashboardStateFixture.sectionUpdatedAt,
+      sectionResolvedFor: dashboardStateFixture.sectionResolvedFor,
       teamMeta: {},
       skaterTrends: {
         playerMetadata: {
@@ -152,13 +165,20 @@ vi.mock("lib/supabase", () => ({
   }
 }));
 
-import TrendsDashboardPage from "../../../pages/trends/index";
+import TrendsDashboardPage, {
+  getServerSideProps
+} from "../../../pages/trends/index";
 
 describe("Trends dashboard", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.stubGlobal("ResizeObserver", ResizeObserverMock);
     teamTrendsFixture.value = { generatedAt: "", categories: {} };
+    dashboardStateFixture.sectionErrors = {};
+    dashboardStateFixture.loadingSections = [];
+    dashboardStateFixture.sectionUpdatedAt = {};
+    dashboardStateFixture.sectionResolvedFor = {};
+    dashboardStateFixture.retrySection.mockReset();
   });
 
   afterEach(() => {
@@ -177,6 +197,12 @@ describe("Trends dashboard", () => {
     expect(screen.getByText("goalie share chart")).toBeTruthy();
     expect(screen.getByText("No team trend history yet.")).toBeTruthy();
     expect(screen.getByText("Source update unavailable")).toBeTruthy();
+  });
+
+  it("uses a valid query date as the server-rendered dashboard date", async () => {
+    await expect(
+      getServerSideProps({ query: { date: "2026-04-08" } } as any)
+    ).resolves.toEqual({ props: { initialDate: "2026-04-08" } });
   });
 
   it("renders team rankings, movers, deltas, sample context, and source freshness", () => {
@@ -227,5 +253,23 @@ describe("Trends dashboard", () => {
     expect(screen.getByText("▼3.2%")).toBeTruthy();
     expect(screen.getByText("Rolling percentile by games played")).toBeTruthy();
     expect(screen.getByText("Source updated 2026-04-08")).toBeTruthy();
+  });
+
+  it("keeps stale section data visible with source context and a scoped retry", () => {
+    dashboardStateFixture.sectionErrors = {
+      team: "team sources are temporarily unavailable"
+    };
+    dashboardStateFixture.sectionUpdatedAt = {
+      team: "2026-04-08T15:30:00.000Z"
+    };
+    dashboardStateFixture.sectionResolvedFor = { team: "2026-04-08" };
+
+    render(<TrendsDashboardPage initialDate="2026-04-09" />);
+
+    expect(
+      screen.getByText(/Showing the last successful data from 2026-04-08 15:30/i)
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Retry Team trends" }));
+    expect(dashboardStateFixture.retrySection).toHaveBeenCalledWith("team");
   });
 });

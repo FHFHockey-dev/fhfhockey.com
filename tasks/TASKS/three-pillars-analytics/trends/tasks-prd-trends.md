@@ -73,13 +73,13 @@
   - [x] 7.4 Preserve query-driven handoff from FORGE to the relevant Trends player/metric context.
   - Evidence (7.1/7.2/7.4, 2026-07-22): canonical Start Chart/FORGE readers expose requested/resolved date, run/model/source/freshness/fallback/uncertainty; `/trends` presents this as a separate runway from historical percentiles, and FORGE/player links preserve date/player/metric query context.
 
-- [ ] 8.0 Harden page filters, loading, error, stale, and cache behavior
+- [x] 8.0 Harden page filters, loading, error, stale, and cache behavior. Evidence: five named sections load and settle independently, scoped retries execute only their owned sources, last-success data retains explicit attempt/source context, and valid query dates own both SSR and client state (verified 2026-07-22).
   - [x] 8.1 Serialize/restore global and entity filters deterministically and validate unsupported combinations.
-  - [ ] 8.2 Make team, skater, goalie, projection, and schedule sections independently load/retry/fail without blanking the shell.
-  - [ ] 8.3 Preserve last-success data only with visible stale/error time/source state.
+  - [x] 8.2 Make team, skater, goalie, projection, and schedule sections independently load/retry/fail without blanking the shell. Evidence: each section owns a lazy request group, settles without awaiting slower peers, reports stable failure state, and exposes a section-only retry; the hook regression proves team data renders while schedule is still pending (verified 2026-07-22).
+  - [x] 8.3 Preserve last-success data only with visible stale/error time/source state. Evidence: failed fields merge over the prior section snapshot, while the page names the failed section, last-success timestamp, resolved parameters, and retry state instead of clearing the shell or exposing raw errors (verified 2026-07-22).
   - [x] 8.4 Deduplicate in-flight requests and verify cache keys/TTLs include every contract-affecting parameter.
-  - Evidence (8.1/8.4, 2026-07-22): page/player URL state deterministically owns entity/window/metric/team/search selection; API and aggregate-loader traces verify parameterized cache keys, fifteen-minute TTLs, and in-flight dedupe on current cached Trends readers.
-  - [ ] 8.5 Prevent hydration/filter/date mismatch between SSR defaults and client state.
+  - Evidence (8.1–8.5, 2026-07-22): page/player URL state deterministically owns entity/window/metric/team/search selection; API and aggregate-loader traces verify parameterized cache keys, TTLs, and in-flight dedupe; focused hook/page regressions prove independent settlement, stale retention, scoped retry, and SSR query-date ownership.
+  - [x] 8.5 Prevent hydration/filter/date mismatch between SSR defaults and client state. Evidence: one strict calendar-date normalizer owns both server query resolution and client route synchronization; invalid query dates fall back before render (verified 2026-07-22).
 
 - [ ] 9.0 Verify UX, accessibility, responsive behavior, and performance
   - [x] 9.1 Align movement-first hierarchy, entity grammar, metric explanations, sample/date labels, drill-ins, and sustainability-lab links.
@@ -92,3 +92,4 @@
 ## NEW Tasks
 
 - [ ] NEW 10.0 Append every verified data gap, metric conflict, pagination defect, mixed-recency issue, UX/accessibility finding, and optimization discovered during execution here before closure.
+- [x] NEW 11.0 **P2 scoped-retry eager-source execution:** the first resilience draft constructed every source promise before checking its selected section, causing non-selected retries to issue requests and rejected promises to escape. Request groups are now lazy; the focused regression proves a team retry does not start unrelated sources and the final 5-test group has zero unhandled errors (verified 2026-07-22).

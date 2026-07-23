@@ -34,6 +34,7 @@ import { useRouter } from "next/router";
 import supabase from "lib/supabase";
 import { getTeamAbbreviationById } from "lib/teamsInfo";
 import { fallbackTeamLogo } from "lib/images";
+import type { DashboardSection } from "lib/dashboard/dataFetchers";
 import {
   LineChart,
   Line,
@@ -154,8 +155,18 @@ type TrendsPageProps = {
   initialDate: string;
 };
 
+const normalizeDashboardDate = (value: unknown): string | null => {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return null;
+  }
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value
+    ? null
+    : value;
+};
+
 const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
-  const [date] = useState(initialDate ?? getTodayEt);
+  const [date, setDate] = useState(initialDate ?? getTodayEt);
   const [projectionSource, setProjectionSource] = useState<"forge" | "legacy">(
     "forge"
   );
@@ -179,11 +190,23 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
   const [results, setResults] = useState<PlayerSearchRow[]>([]);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
-  const { data, error, isLoading } = useDashboardData({
+  const {
+    data,
+    error,
+    loadingSections,
+    sectionErrors,
+    retrySection
+  } = useDashboardData({
     date,
     skaterPosition,
     skaterWindow
   });
+
+  useEffect(() => {
+    if (router.isReady === false) return;
+    const queryDate = normalizeDashboardDate(router.query.date);
+    if (queryDate && queryDate !== date) setDate(queryDate);
+  }, [date, router.isReady, router.query.date]);
 
   const forgeRows = useMemo<ForgeProjectionRow[]>(() => {
     const raw = data?.forgePlayers?.data ?? [];
@@ -740,6 +763,33 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
     );
   };
 
+  const renderSectionNotice = (
+    section: DashboardSection,
+    label: string
+  ) => {
+    const sectionError = sectionErrors[section];
+    if (!sectionError) return null;
+    const updatedAt = data?.sectionUpdatedAt?.[section];
+    const resolvedFor = data?.sectionResolvedFor?.[section];
+    return (
+      <div className={styles.sectionNotice} role="status">
+        <span>
+          {updatedAt
+            ? `${label} refresh failed. Showing the last successful data from ${updatedAt.slice(0, 16).replace("T", " ")}${resolvedFor ? ` for ${resolvedFor}` : ""}.`
+            : `${label} data is temporarily unavailable.`}
+        </span>
+        <button
+          type="button"
+          className={styles.retryButton}
+          disabled={loadingSections.includes(section)}
+          onClick={() => retrySection(section)}
+        >
+          {loadingSections.includes(section) ? "Retrying…" : `Retry ${label}`}
+        </button>
+      </div>
+    );
+  };
+
   return (
     <>
       <Head>
@@ -931,6 +981,13 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
             </div>
           </header>
 
+          {error && (
+            <p className={styles.errorText} role="alert">
+              The dashboard refresh could not start. Existing section data remains
+              available where possible.
+            </p>
+          )}
+
           <section className={`${styles.panel} ${styles.movementSection}`}>
             <div className={styles.panelHeader}>
               <div>
@@ -1016,11 +1073,13 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                     ))}
                   </div>
 
-                  {error && teamTrendSeries.series.length === 0 ? (
+                  {renderSectionNotice("team", "Team trends")}
+                  {sectionErrors.team && teamTrendSeries.series.length === 0 ? (
                     <p className={styles.errorText}>
-                      Failed to load team trends: {error.message}
+                      Team trend history is unavailable.
                     </p>
-                  ) : teamTrendSeries.series.length === 0 && isLoading ? (
+                  ) : teamTrendSeries.series.length === 0 &&
+                    loadingSections.includes("team") ? (
                     <p className={styles.loadingText}>
                       Loading team directionality…
                     </p>
@@ -1055,7 +1114,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                             </div>
                           </div>
                         </div>
-                        {isLoading && (
+                        {loadingSections.includes("team") && (
                           <p className={styles.refreshText}>
                             Refreshing team trends…
                           </p>
@@ -1109,7 +1168,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                           <div className={styles.panelBody}>
                             {teamMovementMovers.improved.length === 0 &&
                             teamMovementMovers.degraded.length === 0 &&
-                            isLoading ? (
+                            loadingSections.includes("team") ? (
                               <p className={styles.loadingText}>
                                 Loading team movers…
                               </p>
@@ -1262,11 +1321,13 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                     </div>
                   </div>
 
-                  {error && skaterTrendSeries.series.length === 0 ? (
+                  {renderSectionNotice("skater", "Skater trends")}
+                  {sectionErrors.skater && skaterTrendSeries.series.length === 0 ? (
                     <p className={styles.errorText}>
-                      Failed to load skater trends: {error.message}
+                      Skater trend history is unavailable.
                     </p>
-                  ) : skaterTrendSeries.series.length === 0 && isLoading ? (
+                  ) : skaterTrendSeries.series.length === 0 &&
+                    loadingSections.includes("skater") ? (
                     <p className={styles.loadingText}>Loading skater trends…</p>
                   ) : skaterTrendSeries.series.length === 0 ? (
                     <p className={styles.emptyText}>
@@ -1285,7 +1346,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                             lens.
                           </p>
                         </div>
-                        {isLoading && (
+                        {loadingSections.includes("skater") && (
                           <p className={styles.refreshText}>
                             Refreshing skater trends…
                           </p>
@@ -1375,11 +1436,13 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                     </div>
                   </div>
 
-                  {error && goalieTrendSeries.series.length === 0 ? (
+                  {renderSectionNotice("goalie", "Goalie trends")}
+                  {sectionErrors.goalie && goalieTrendSeries.series.length === 0 ? (
                     <p className={styles.errorText}>
-                      Failed to load goalie trends: {error.message}
+                      Goalie trend history is unavailable.
                     </p>
-                  ) : goalieTrendSeries.series.length === 0 && isLoading ? (
+                  ) : goalieTrendSeries.series.length === 0 &&
+                    loadingSections.includes("goalie") ? (
                     <p className={styles.loadingText}>Loading goalie trends…</p>
                   ) : goalieTrendSeries.series.length === 0 ? (
                     <p className={styles.emptyText}>
@@ -1398,7 +1461,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                             lens.
                           </p>
                         </div>
-                        {isLoading && (
+                        {loadingSections.includes("goalie") && (
                           <p className={styles.refreshText}>
                             Refreshing goalie trends…
                           </p>
@@ -1525,11 +1588,13 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                     Use this after the movement read to see who still has slate
                     runway.
                   </p>
-                  {error && projectionRows.length === 0 ? (
+                  {renderSectionNotice("projection", "Projections")}
+                  {sectionErrors.projection && projectionRows.length === 0 ? (
                     <p className={styles.errorText}>
-                      Failed to load projections: {error.message}
+                      Projection data is unavailable.
                     </p>
-                  ) : projectionRows.length === 0 && isLoading ? (
+                  ) : projectionRows.length === 0 &&
+                    loadingSections.includes("projection") ? (
                     <p className={styles.loadingText}>Loading projections…</p>
                   ) : projectionRows.length === 0 ? (
                     <p className={styles.emptyText}>
@@ -1537,7 +1602,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                     </p>
                   ) : (
                     <>
-                      {isLoading && (
+                      {loadingSections.includes("projection") && (
                         <p className={styles.refreshText}>
                           Refreshing projections…
                         </p>
@@ -1594,11 +1659,13 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                     Start probability, win runway, and shutout ceiling to
                     support the goalie movement view.
                   </p>
-                  {error && goalieRows.length === 0 ? (
+                  {renderSectionNotice("schedule", "Goalie starts")}
+                  {sectionErrors.schedule && goalieRows.length === 0 ? (
                     <p className={styles.errorText}>
-                      Failed to load goalie starts: {error.message}
+                      Goalie start data is unavailable.
                     </p>
-                  ) : goalieRows.length === 0 && isLoading ? (
+                  ) : goalieRows.length === 0 &&
+                    loadingSections.includes("schedule") ? (
                     <p className={styles.loadingText}>Loading goalie starts…</p>
                   ) : goalieRows.length === 0 ? (
                     <p className={styles.emptyText}>
@@ -1606,7 +1673,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                     </p>
                   ) : (
                     <>
-                      {isLoading && (
+                      {loadingSections.includes("schedule") && (
                         <p className={styles.refreshText}>
                           Refreshing goalie starts…
                         </p>
@@ -1714,8 +1781,8 @@ export default TrendsDashboardPage;
 
 export const getServerSideProps: GetServerSideProps<
   TrendsPageProps
-> = async () => {
-  const date = getTodayEt();
+> = async ({ query }) => {
+  const date = normalizeDashboardDate(query.date) ?? getTodayEt();
   return {
     props: {
       initialDate: date

@@ -174,6 +174,16 @@ export type DashboardDataParams = {
   sustainabilityLimit?: number;
 };
 
+export const DASHBOARD_SECTIONS = [
+  "team",
+  "skater",
+  "goalie",
+  "projection",
+  "schedule"
+] as const;
+
+export type DashboardSection = (typeof DASHBOARD_SECTIONS)[number];
+
 export type DashboardData = {
   date: string;
   teamRatings: TeamRating[];
@@ -189,6 +199,9 @@ export type DashboardData = {
     hot: SustainabilityTrendsResponse;
     cold: SustainabilityTrendsResponse;
   };
+  sectionErrors: Partial<Record<DashboardSection, string>>;
+  sectionUpdatedAt: Partial<Record<DashboardSection, string>>;
+  sectionResolvedFor: Partial<Record<DashboardSection, string>>;
   teamMeta: Record<
     string,
     {
@@ -365,7 +378,11 @@ export const fetchSustainabilityTrends = (params: {
   );
 
 export const loadTrendsDashboardData = async (
-  params: DashboardDataParams
+  params: DashboardDataParams,
+  options: {
+    sections?: DashboardSection[];
+    base?: DashboardData | null;
+  } = {}
 ): Promise<DashboardData> => {
   const skaterPosition = params.skaterPosition ?? "forward";
   const skaterWindow = params.skaterWindow ?? 1;
@@ -374,75 +391,257 @@ export const loadTrendsDashboardData = async (
   const sustainabilityLimit = params.sustainabilityLimit ?? 15;
   const sustainabilityPosition = toSustainabilityPosition(skaterPosition);
 
-  const [
-    teamRatings,
-    teamTrends,
-    teamCtpi,
-    teamSos,
-    skaterTrends,
-    goalieTrends,
-    forgePlayers,
-    forgeGoalies,
-    startChart,
-    sustainabilityHot,
-    sustainabilityCold
-  ] = await Promise.all([
-    fetchTeamRatings(params.date),
-    fetchTeamTrends(),
-    fetchTeamCtpi(),
-    fetchTeamSos(),
-    fetchSkaterTrends({
-      position: skaterPosition,
-      window: skaterWindow,
+  const emptyServing = {} as RequestedDateServingState;
+  const base: DashboardData = options.base ?? {
+    date: params.date,
+    teamRatings: [],
+    teamTrends: {
+      seasonId: 0,
+      generatedAt: "",
+      categories: {} as TeamTrendsResponse["categories"]
+    },
+    teamCtpi: { seasonId: 0, generatedAt: "", teams: [] },
+    teamSos: { seasonId: 0, generatedAt: "", teams: [] },
+    skaterTrends: {
+      seasonId: 0,
+      generatedAt: "",
+      positionGroup: skaterPosition,
       limit: skaterLimit,
-      seriesGames: 40
-    }),
-    fetchGoalieTrends({
-      date: params.date,
-      window: skaterWindow === 20 ? 10 : skaterWindow,
-      limit: skaterLimit
-    }),
-    fetchForgePlayers(params.date),
-    fetchForgeGoalies(params.date),
-    fetchStartChart(params.date),
-    fetchSustainabilityTrends({
-      date: params.date,
-      direction: "hot",
-      pos: sustainabilityPosition,
-      window: sustainabilityWindow,
-      limit: sustainabilityLimit
-    }),
-    fetchSustainabilityTrends({
-      date: params.date,
-      direction: "cold",
-      pos: sustainabilityPosition,
-      window: sustainabilityWindow,
-      limit: sustainabilityLimit
-    })
+      seriesGames: 40,
+      windowSize: skaterWindow,
+      categories: {},
+      playerMetadata: {}
+    },
+    goalieTrends: {
+      seasonId: 0,
+      generatedAt: "",
+      requestedDate: params.date,
+      dateUsed: "",
+      fallbackApplied: false,
+      serving: emptyServing,
+      limit: skaterLimit,
+      windowSize: skaterWindow === 20 ? 10 : skaterWindow,
+      categories: {} as GoalieTrendsResponse["categories"],
+      playerMetadata: {}
+    },
+    forgePlayers: {
+      durationMs: "",
+      runId: 0,
+      asOfDate: "",
+      requestedDate: params.date,
+      fallbackApplied: false,
+      serving: emptyServing,
+      data: []
+    },
+    forgeGoalies: {
+      durationMs: "",
+      runId: "",
+      asOfDate: "",
+      horizonGames: 1,
+      requestedDate: params.date,
+      fallbackApplied: false,
+      serving: emptyServing,
+      data: []
+    },
+    startChart: {
+      dateUsed: "",
+      requestedDate: params.date,
+      fallbackApplied: false,
+      serving: emptyServing,
+      projections: 0,
+      players: [],
+      ctpi: [],
+      games: []
+    },
+    sustainability: {
+      hot: {
+        success: false,
+        snapshot_date: params.date,
+        window_code: sustainabilityWindow,
+        pos: sustainabilityPosition,
+        direction: "hot",
+        limit: sustainabilityLimit,
+        rows: []
+      },
+      cold: {
+        success: false,
+        snapshot_date: params.date,
+        window_code: sustainabilityWindow,
+        pos: sustainabilityPosition,
+        direction: "cold",
+        limit: sustainabilityLimit,
+        rows: []
+      }
+    },
+    sectionErrors: {},
+    sectionUpdatedAt: {},
+    sectionResolvedFor: {},
+    teamMeta: {}
+  };
+  const next: DashboardData = {
+    ...base,
+    date: params.date,
+    sustainability: { ...base.sustainability },
+    sectionErrors: { ...base.sectionErrors },
+    sectionUpdatedAt: { ...base.sectionUpdatedAt },
+    sectionResolvedFor: { ...base.sectionResolvedFor }
+  };
+  const sections = new Set(options.sections ?? DASHBOARD_SECTIONS);
+
+  const applySection = async <T extends readonly unknown[]>(
+    section: DashboardSection,
+    getRequests: () => { [K in keyof T]: Promise<T[K]> },
+    apply: (values: { [K in keyof T]: T[K] | undefined }) => void
+  ) => {
+    if (!sections.has(section)) return;
+    const settled = await Promise.allSettled(getRequests());
+    const values = settled.map((result) =>
+      result.status === "fulfilled" ? result.value : undefined
+    ) as unknown as { [K in keyof T]: T[K] | undefined };
+    apply(values);
+    if (settled.some((result) => result.status === "rejected")) {
+      next.sectionErrors[section] = `${section} sources are temporarily unavailable`;
+      return;
+    }
+    delete next.sectionErrors[section];
+    next.sectionUpdatedAt[section] = new Date().toISOString();
+    next.sectionResolvedFor[section] =
+      section === "skater"
+        ? `${params.date}; ${skaterPosition}; ${skaterWindow} GP`
+        : section === "goalie"
+          ? `${params.date}; ${skaterWindow === 20 ? 10 : skaterWindow} GP`
+          : params.date;
+  };
+
+  await Promise.all([
+    applySection(
+      "team",
+      () => [
+        fetchTeamRatings(params.date),
+        fetchTeamTrends(),
+        fetchTeamCtpi(),
+        fetchTeamSos()
+      ] as const,
+      ([teamRatings, teamTrends, teamCtpi, teamSos]) => {
+        if (teamRatings) next.teamRatings = teamRatings;
+        if (teamTrends) next.teamTrends = teamTrends;
+        if (teamCtpi) next.teamCtpi = teamCtpi;
+        if (teamSos) next.teamSos = teamSos;
+      }
+    ),
+    applySection(
+      "skater",
+      () => [
+        fetchSkaterTrends({
+          position: skaterPosition,
+          window: skaterWindow,
+          limit: skaterLimit,
+          seriesGames: 40
+        }),
+        fetchSustainabilityTrends({
+          date: params.date,
+          direction: "hot",
+          pos: sustainabilityPosition,
+          window: sustainabilityWindow,
+          limit: sustainabilityLimit
+        }),
+        fetchSustainabilityTrends({
+          date: params.date,
+          direction: "cold",
+          pos: sustainabilityPosition,
+          window: sustainabilityWindow,
+          limit: sustainabilityLimit
+        })
+      ] as const,
+      ([skaterTrends, sustainabilityHot, sustainabilityCold]) => {
+        if (skaterTrends) next.skaterTrends = skaterTrends;
+        if (sustainabilityHot) next.sustainability.hot = sustainabilityHot;
+        if (sustainabilityCold) next.sustainability.cold = sustainabilityCold;
+      }
+    ),
+    applySection(
+      "goalie",
+      () => [
+        fetchGoalieTrends({
+          date: params.date,
+          window: skaterWindow === 20 ? 10 : skaterWindow,
+          limit: skaterLimit
+        })
+      ] as const,
+      ([goalieTrends]) => {
+        if (goalieTrends) next.goalieTrends = goalieTrends;
+      }
+    ),
+    applySection(
+      "projection",
+      () => [fetchForgePlayers(params.date)] as const,
+      ([forgePlayers]) => {
+        if (forgePlayers) next.forgePlayers = forgePlayers;
+      }
+    ),
+    applySection(
+      "schedule",
+      () =>
+        [fetchForgeGoalies(params.date), fetchStartChart(params.date)] as const,
+      ([forgeGoalies, startChart]) => {
+        if (forgeGoalies) next.forgeGoalies = forgeGoalies;
+        if (startChart) next.startChart = startChart;
+      }
+    )
   ]);
 
-  return {
-    date: params.date,
-    teamRatings,
-    teamTrends,
-    teamCtpi,
-    teamSos,
-    skaterTrends,
-    goalieTrends,
-    forgePlayers,
-    forgeGoalies,
-    startChart,
-    sustainability: {
-      hot: sustainabilityHot,
-      cold: sustainabilityCold
-    },
-    teamMeta: buildTeamMetaIndex({
-      teamRatings,
-      teamCtpi,
-      teamSos,
-      startChart
-    })
+  next.teamMeta = buildTeamMetaIndex(next);
+  return next;
+};
+
+export const mergeDashboardSections = (
+  current: DashboardData | null,
+  response: DashboardData,
+  sections: DashboardSection[]
+): DashboardData => {
+  if (!current) return response;
+  const merged: DashboardData = {
+    ...current,
+    date: response.date,
+    sustainability: { ...current.sustainability },
+    sectionErrors: { ...current.sectionErrors },
+    sectionUpdatedAt: { ...current.sectionUpdatedAt },
+    sectionResolvedFor: { ...current.sectionResolvedFor }
   };
+
+  sections.forEach((section) => {
+    if (section === "team") {
+      merged.teamRatings = response.teamRatings;
+      merged.teamTrends = response.teamTrends;
+      merged.teamCtpi = response.teamCtpi;
+      merged.teamSos = response.teamSos;
+    } else if (section === "skater") {
+      merged.skaterTrends = response.skaterTrends;
+      merged.sustainability = response.sustainability;
+    } else if (section === "goalie") {
+      merged.goalieTrends = response.goalieTrends;
+    } else if (section === "projection") {
+      merged.forgePlayers = response.forgePlayers;
+    } else {
+      merged.forgeGoalies = response.forgeGoalies;
+      merged.startChart = response.startChart;
+    }
+
+    if (response.sectionErrors[section]) {
+      merged.sectionErrors[section] = response.sectionErrors[section];
+    } else {
+      delete merged.sectionErrors[section];
+    }
+    if (response.sectionUpdatedAt[section]) {
+      merged.sectionUpdatedAt[section] = response.sectionUpdatedAt[section];
+    }
+    if (response.sectionResolvedFor[section]) {
+      merged.sectionResolvedFor[section] = response.sectionResolvedFor[section];
+    }
+  });
+
+  merged.teamMeta = buildTeamMetaIndex(merged);
+  return merged;
 };
 
 // Deprecated compatibility export for older callers. Prefer loadTrendsDashboardData

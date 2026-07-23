@@ -1282,6 +1282,33 @@
   color: v.$danger-color;
 }
 
+.sectionNotice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  border: 1px solid rgba(v.$danger-color, 0.45);
+  border-radius: 0.5rem;
+  color: v.$text-secondary;
+}
+
+.retryButton {
+  flex: 0 0 auto;
+  border: 1px solid v.$secondary-color;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  background: transparent;
+  color: v.$secondary-color;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.6;
+  }
+}
+
 .emptyText {
   color: v.$text-secondary;
 }
