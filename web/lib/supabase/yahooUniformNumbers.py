@@ -18,47 +18,23 @@ logging.basicConfig(
     ]
 )
 
-# Load environment variables from .env.local
-ENV_FILE = "/Users/tim/Desktop/FHFH/fhfhockey.com/web/.env.local"
-load_dotenv(ENV_FILE)
+# This duplicate maintenance path is intentionally opt-in. The scheduled
+# TypeScript player-detail owner already persists uniform numbers.
+MAINTENANCE_ENABLED = os.getenv("YAHOO_UNIFORM_NUMBERS_MAINTENANCE") == "1"
+ENV_FILE = os.getenv("YFPY_ENV_FILE")
+load_dotenv(ENV_FILE if ENV_FILE else None)
 
 # Constants from environment variables
 SUPABASE_URL = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
 YFPY_CONSUMER_KEY = os.getenv('YFPY_CONSUMER_KEY')
 YFPY_CONSUMER_SECRET = os.getenv('YFPY_CONSUMER_SECRET')
+GAME_ID = os.getenv("YFPY_GAME_ID")
+LEAGUE_ID = os.getenv("YFPY_LEAGUE_ID")
+ENV_FILE_LOCATION = Path(os.getenv("YFPY_ENV_DIR", str(Path.cwd())))
 
-# Validate environment variables
-if not all([SUPABASE_URL, SUPABASE_KEY, YFPY_CONSUMER_KEY, YFPY_CONSUMER_SECRET]):
-    logging.error("One or more environment variables are missing. Please check your .env.local file.")
-    exit(1)
-
-# Initialize Supabase client
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# Yahoo API Constants
-GAME_ID = '465'  # Update this with your actual game ID
-LEAGUE_ID = '858'  # Update this with your actual league ID
-ENV_FILE_LOCATION = Path("/Users/tim/Desktop/FHFH/fhfhockey.com/web/")
-
-
-# Initialize YahooFantasySportsQuery
-# auth_dir = 'C:/Users/timbr/Desktop/FHFH/fhfhockey.com-3/web/lib/supabase/Upserts/yahooAuth'
-yahoo_query = YahooFantasySportsQuery(
-    league_id=LEAGUE_ID,
-    game_code="nhl",
-    game_id=GAME_ID,
-    yahoo_consumer_key=YFPY_CONSUMER_KEY,
-    yahoo_consumer_secret=YFPY_CONSUMER_SECRET,
-    save_token_data_to_env_file=False,
-    env_file_location=ENV_FILE_LOCATION
-)
-
-# Save token data (if applicable)
-yahoo_query.save_access_token_data_to_env_file(
-    env_file_location=ENV_FILE_LOCATION,
-    env_file_name='.env.local'
-)
+supabase: Client | None = None
+yahoo_query: YahooFantasySportsQuery | None = None
 
 # Function to upsert uniform numbers into Supabase
 def upsert_uniform_numbers(players_batch: list):
@@ -122,6 +98,37 @@ def fetch_and_upsert_uniform_numbers():
         logging.error(f"Error fetching uniform numbers: {e}")
 
 def main():
+    global supabase, yahoo_query
+    if not MAINTENANCE_ENABLED:
+        raise SystemExit(
+            "Set YAHOO_UNIFORM_NUMBERS_MAINTENANCE=1 for explicit maintenance."
+        )
+    if not all([
+        SUPABASE_URL,
+        SUPABASE_KEY,
+        YFPY_CONSUMER_KEY,
+        YFPY_CONSUMER_SECRET,
+        GAME_ID,
+        LEAGUE_ID,
+    ]):
+        raise SystemExit(
+            "Server credentials plus YFPY_GAME_ID and YFPY_LEAGUE_ID are required."
+        )
+
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    yahoo_query = YahooFantasySportsQuery(
+        league_id=LEAGUE_ID,
+        game_code="nhl",
+        game_id=GAME_ID,
+        yahoo_consumer_key=YFPY_CONSUMER_KEY,
+        yahoo_consumer_secret=YFPY_CONSUMER_SECRET,
+        save_token_data_to_env_file=False,
+        env_file_location=ENV_FILE_LOCATION
+    )
+    yahoo_query.save_access_token_data_to_env_file(
+        env_file_location=ENV_FILE_LOCATION,
+        env_file_name='.env.local'
+    )
     fetch_and_upsert_uniform_numbers()
 
 if __name__ == '__main__':

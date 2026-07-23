@@ -177,4 +177,19 @@ describe("Yahoo global credential owner", () => {
       expect(source, route).toContain("retries");
     }
   });
+
+  it("keeps the sheet-sync mutation exact-cron-only and value-free on failure", () => {
+    const source = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "pages/api/internal/sync-yahoo-players-to-sheet.ts",
+      ),
+      "utf8",
+    );
+
+    expect(source).toContain("process.env.CRON_SECRET");
+    expect(source).toContain('"Yahoo sheet sync failed"');
+    expect(source).not.toContain("e?.message");
+    expect(source).not.toContain("String(e)");
+  });
 });

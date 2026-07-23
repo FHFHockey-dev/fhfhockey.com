@@ -499,8 +499,13 @@ def main():
     # 3. Match players using fuzzy name matching (with overrides)
     mappings, unmatched = match_players(nhl_players, yahoo_players, forward_overrides)
     
-    # 4. Upsert mappings to database
-    upsert_mappings(mappings)
+    # 4. Persistence is a separate explicit maintenance action.
+    if os.getenv("YAHOO_MAPPING_WRITE_ENABLED") == "1":
+        upsert_mappings(mappings)
+    else:
+        logging.info(
+            "Mapping write skipped; set YAHOO_MAPPING_WRITE_ENABLED=1 to apply."
+        )
     
     # 5. Output unmatched list to terminal and JSON for review (forward: NHL -> Yahoo)
     try:

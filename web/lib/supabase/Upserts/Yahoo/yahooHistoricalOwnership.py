@@ -700,6 +700,10 @@ def main(sample_player_limit: Optional[int] = None,
 
 # ---------- CLI ----------
 if __name__ == '__main__':
+    if os.getenv("YAHOO_HISTORICAL_WRITE_ENABLED") != "1":
+        raise SystemExit(
+            "Set YAHOO_HISTORICAL_WRITE_ENABLED=1 for explicit backfill writes."
+        )
     sample_player_limit = int(os.getenv('YHO_SAMPLE_PLAYER_LIMIT', '0')) or None
     sample_weeks_limit  = int(os.getenv('YHO_SAMPLE_WEEKS_LIMIT', '0')) or None
     batch_size = int(os.getenv('YHO_BATCH_SIZE', '25'))

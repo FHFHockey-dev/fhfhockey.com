@@ -11,7 +11,7 @@
 | Current Yahoo player detail | `/api/v1/db/update-yahoo-players` | Discovers the newest database-owned NHL game unless an explicit maintenance override is supplied, completely paginates its keys, batches 25, retries transient Yahoo failures, and reports completeness/partial counts. Local code targets the unapplied atomic writer from migration `20260723113533`; Production remains on `upsert_yahoo_players_v3` until separately authorized rollout and rollback proof. `yahooAPI.py` remains a legacy maintenance alternative. |
 | Ownership history/backfill | `yahooHistoricalOwnership.py` plus the v3 RPC | `yahoo_player_ownership_history`/`yahoo_player_ownership_daily`; current UI trend code still reads `yahoo_players.ownership_timeline`, so normalized-history cutover remains open. |
 | Draft history | Production-ledger migrations for `yahoo_player_draft_analysis_history` | Table/index exist, but the active v3 writer does not append this history and therefore is not a complete atomic latest+history owner. |
-| Uniform numbers | Current player-detail payload plus `yahooUniformNumbers.py` | The standalone script remains a quarantined duplicate with historical path assumptions. |
+| Uniform numbers | Current player-detail payload | The scheduled TypeScript pipeline is authoritative. `yahooUniformNumbers.py` is an unscheduled opt-in maintenance fallback with no machine path/current ID default or import-time client; it requires explicit maintenance, game, league, and server credential configuration. |
 | Yahoo ↔ NHL mapping | `player_name_normalization_spec.json`, `player_name_matcher.py`, `populate_yahoo_nhl_mapping.py`, and `generate_yahoo_identity_promotion.py` | Deterministic normalization/exact/alias/thresholded-fuzzy review feeds legacy map/unmatched objects and the service-role-only FHFH identity review/promotion contract. Draft Dashboard resolves current-game collisions fail closed. |
 | Sheet export | `/api/internal/sync-yahoo-players-to-sheet` | Exact-cron-secret-only internal route called by the global player writer. |
 
@@ -23,14 +23,14 @@ The authoritative pre-baseline production ledger preserves the 2025 ownership/hi
 
 ## Routes, schedules, and callers
 
-- Active pg_cron: `update-yahoo-matchup-dates` at 07:20 UTC calls `/api/v1/db/update-yahoo-weeks?game_key=nhl`; `update-yahoo-players` at 08:40 UTC calls `/api/v1/db/update-yahoo-players?gameId=465`; `sync-yahoo-players-to-sheet` at 08:55 UTC calls the internal sheet route. Vault-backed callers already send the cron bearer.
+- Active pg_cron: `update-yahoo-matchup-dates` at 07:20 UTC calls `/api/v1/db/update-yahoo-weeks?game_key=nhl`; `update-yahoo-players` at 08:40 UTC calls `/api/v1/db/update-yahoo-players?gameId=465`; `sync-yahoo-players-to-sheet` at 08:55 UTC calls the exact-cron-only internal sheet route. Vault-backed callers already send the cron bearer; sheet failures now return/log fixed value-free copy.
 - Manual global refresh: `/api/v1/db/manual-refresh-yahoo-token`; no static browser caller was found.
 - Per-user routes: connect, callback, refresh, disconnect, and team-roster are authenticated owner-scoped account surfaces.
 - Direct table/API consumers: Draft Dashboard processing and diagnostics; Draft Ranker discovery/community/export; Command Center ownership context; Start Chart; Player Pickup; team stats; True Goalie Value; Variance; projection administration; matchup-week hooks; ownership snapshots/trends; sheet synchronization; and cron reporting.
 
 ## Configuration and artifact boundary
 
-Active global ingestion routes use `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and the private `yahoo_api_credentials` row only through `globalCredentials.ts`; `CRON_SECRET` remains their caller-auth boundary. Per-user OAuth separately accepts server-only `YAHOO_CONSUMER_KEY`/`YAHOO_CONSUMER_SECRET` with `YFPY_*` compatibility. Unscheduled Python maintenance alternatives retain explicit `YFPY_*`/`YHO_*` configuration and bounded backfill controls, but are not canonical scheduled/global credential owners. The deleted token JSON remains absent and exactly ignored.
+Active global ingestion routes use `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and the private `yahoo_api_credentials` row only through `globalCredentials.ts`; `CRON_SECRET` remains their caller-auth boundary. Per-user OAuth separately accepts server-only `YAHOO_CONSUMER_KEY`/`YAHOO_CONSUMER_SECRET` with `YFPY_*` compatibility. Unscheduled Python mapping, historical backfill, and duplicate uniform maintenance paths require their exact write-enable variables plus server-only configuration and are not canonical scheduled/global credential owners. The deleted token JSON remains absent and exactly ignored.
 
 Tracked generated/review artifacts are the normalization spec, mapping TODO/reverse/unmatched JSON files, generated database types, production-ledger migrations, and focused migration/matcher tests. They are evidence or reviewed inputs, not permission to run a provider call, database write, promotion, or cleanup.
 

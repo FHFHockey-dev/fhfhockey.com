@@ -94,6 +94,32 @@ class PlayerNameMatcherTests(unittest.TestCase):
         self.assertIn("os.getenv('SUPABASE_SERVICE_ROLE_KEY')", mapping_job)
         self.assertNotIn("NEXT_PUBLIC_SUPABASE_PUBLIC_KEY", mapping_job)
 
+    def test_maintenance_writers_require_explicit_opt_in(self):
+        yahoo_dir = Path(__file__).resolve().parent
+        mapping_job = (yahoo_dir / "populate_yahoo_nhl_mapping.py").read_text(
+            encoding="utf-8"
+        )
+        historical_job = (yahoo_dir / "yahooHistoricalOwnership.py").read_text(
+            encoding="utf-8"
+        )
+        uniform_job = (
+            yahoo_dir.parent.parent / "yahooUniformNumbers.py"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn('os.getenv("YAHOO_MAPPING_WRITE_ENABLED") == "1"', mapping_job)
+        self.assertIn(
+            'os.getenv("YAHOO_HISTORICAL_WRITE_ENABLED") != "1"',
+            historical_job,
+        )
+        self.assertIn(
+            'os.getenv("YAHOO_UNIFORM_NUMBERS_MAINTENANCE") == "1"',
+            uniform_job,
+        )
+        self.assertIn('os.getenv("YFPY_GAME_ID")', uniform_job)
+        self.assertIn('os.getenv("YFPY_LEAGUE_ID")', uniform_job)
+        self.assertNotIn("/Users/tim/", uniform_job)
+        self.assertNotIn("GAME_ID = '465'", uniform_job)
+
 
 if __name__ == "__main__":
     unittest.main()
