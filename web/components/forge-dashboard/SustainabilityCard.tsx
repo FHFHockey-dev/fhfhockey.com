@@ -2,6 +2,10 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import OwnershipSparkline from "components/TransactionTrends/OwnershipSparkline";
+import SustainabilityBadge from "components/sustainability/SustainabilityBadge";
+import SustainabilitySparkline from "components/sustainability/SustainabilitySparkline";
+import SustainabilityTooltip from "components/sustainability/SustainabilityTooltip";
+import { buildSustainabilityThresholds } from "components/sustainability/formatting";
 import styles from "styles/ForgeDashboard.module.scss";
 import { buildForgeHref } from "lib/dashboard/forgeLinks";
 import type {
@@ -38,11 +42,6 @@ const toPosParam = (position: SustainabilityCardProps["position"]): "all" | "F" 
   if (position === "f") return "F";
   if (position === "d") return "D";
   return "all";
-};
-
-const formatScore = (value: number | null | undefined) => {
-  if (value == null || Number.isNaN(value)) return "--";
-  return value.toFixed(1);
 };
 
 const formatSigned = (value: number | null | undefined) => {
@@ -272,6 +271,10 @@ export default function SustainabilityCard({
   const metaSnapshot = snapshotDate ?? date;
   const trustworthyGuide = describePlayerSignalFrame("trustworthy");
   const overheatedGuide = describePlayerSignalFrame("overheated");
+  const scoreThresholds = useMemo(
+    () => buildSustainabilityThresholds([...hotRows, ...coldRows].map((row) => row.s_100)),
+    [coldRows, hotRows]
+  );
 
   useEffect(() => {
     onResolvedDate?.(snapshotDate);
@@ -391,7 +394,11 @@ export default function SustainabilityCard({
                           <span className={styles.susBadge}>
                             5D {formatOwnershipDelta(ownershipContext?.delta)}
                           </span>
-                          <span className={styles.susBadge}>Trust {formatScore(row.s_100)}</span>
+                          <SustainabilityBadge
+                            score={row.s_100}
+                            thresholds={scoreThresholds}
+                            status={row.status}
+                          />
                           {row.guardrail_state === "degraded" && (
                             <span className={`${styles.susBadge} ${styles.susBadgeRisk}`}>
                               Check role
@@ -431,6 +438,7 @@ export default function SustainabilityCard({
                             />
                           </div>
                         ) : null}
+                        <SustainabilitySparkline points={row.score_history} />
                         <span className={styles.susReason}>
                           {getReasonText(row, "sustainable")}
                         </span>
@@ -438,6 +446,7 @@ export default function SustainabilityCard({
                           Open trend detail
                         </span>
                       </Link>
+                      <SustainabilityTooltip components={row.component_breakdown} />
                     </li>
                   );
                 })}
@@ -478,7 +487,11 @@ export default function SustainabilityCard({
                           <span className={styles.susBadge}>
                             5D {formatOwnershipDelta(ownershipContext?.delta)}
                           </span>
-                          <span className={styles.susBadge}>Trust {formatScore(row.s_100)}</span>
+                          <SustainabilityBadge
+                            score={row.s_100}
+                            thresholds={scoreThresholds}
+                            status={row.status}
+                          />
                           {row.guardrail_state === "degraded" && (
                             <span className={`${styles.susBadge} ${styles.susBadgeRisk}`}>
                               Check role
@@ -518,6 +531,7 @@ export default function SustainabilityCard({
                             />
                           </div>
                         ) : null}
+                        <SustainabilitySparkline points={row.score_history} />
                         <span className={styles.susReason}>
                           {getReasonText(row, "unsustainable")}
                         </span>
@@ -525,6 +539,7 @@ export default function SustainabilityCard({
                           Open trend detail
                         </span>
                       </Link>
+                      <SustainabilityTooltip components={row.component_breakdown} />
                     </li>
                   );
                 })}

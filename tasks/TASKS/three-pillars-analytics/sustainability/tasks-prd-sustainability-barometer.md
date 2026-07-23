@@ -135,15 +135,15 @@
 	- [x] 6.6 Cover canonical filters, deterministic score/player ordering, rookie/minimum-game behavior, response pagination, authorization, ETag headers, and 304 handling in the focused 3-file/10-test group (verified 2026-07-23).
 	- [x] 6.7 Document player summary, leaderboard parameters, exact rookie/minimum-game semantics, caching, component authorization, pagination, and composite-index proof in `web/README.md` (verified 2026-07-23).
 
-- [ ] 7.0 Frontend UI Components (Badge, Sparkline, Tooltip Integration)
-	- [ ] 7.1 Implement `SustainabilityBadge` with tier color mapping (dynamic quantile labels) & accessible text.
-	- [ ] 7.2 Implement `SustainabilitySparkline` fed by last N GAME scores (fallback skeleton if insufficient data).
-	- [ ] 7.3 Implement `SustainabilityTooltip` showing component table (metric label, contrib, z_raw, z_soft, r, n) sorted by |contrib| desc.
-	- [ ] 7.4 Integrate badge + sparkline into player list table columns; ensure responsive layout.
-	- [ ] 7.5 Add formatting utilities (score formatting, percent to color scale) in `formatting.ts` with tests.
-	- [ ] 7.6 Add loading / provisional state (display italic label or icon if status='provisional').
-	- [ ] 7.7 Add unit tests (JSDOM / component tests) for rendering states & tooltip accessibility.
-	- [ ] 7.8 Add storybook or minimal stories (if storybook present) for design QA.
+- [x] 7.0 Frontend UI Components (Badge, Sparkline, Tooltip Integration). The canonical dashboard player surface now consumes reusable, tested Sustainability signal components (verified 2026-07-23).
+	- [x] 7.1 Implement `SustainabilityBadge` with dynamically derived lower/upper quantile tiers, token-backed colors, formatted score, and complete accessible text (verified 2026-07-23).
+	- [x] 7.2 Implement `SustainabilitySparkline` from the last ten canonical-window scores over a bounded 90-day, chunked/paginated history read, with a truthful insufficient-data fallback (verified 2026-07-23).
+	- [x] 7.3 Implement an accessible disclosure/table tooltip showing metric, contribution, canonical z values, and explicit unavailable reliability/sample fields sorted by absolute contribution (verified 2026-07-23).
+	- [x] 7.4 Integrate badge, score sparkline, and component disclosure into both Trust/Fade player lists without nesting interactive controls inside player links (verified 2026-07-23).
+	- [x] 7.5 Add tested Sustainability score formatting, quantile thresholds, and tier mapping in `components/sustainability/formatting.ts` (verified 2026-07-23).
+	- [x] 7.6 Surface guardrail-degraded rows as italic, explicitly announced provisional badges and retain the existing loading/error/empty states (verified 2026-07-23).
+	- [x] 7.7 Add a shared JSDOM component suite covering dynamic/provisional badge semantics, sparkline/fallback accessibility, and contribution sorting; focused integration/helper/normalizer coverage passes 4 files/39 tests (verified 2026-07-23).
+	- [x] 7.8 Add the Storybook `Sustainability/Player signal` story covering ready/provisional badges, score history, and component disclosure (verified 2026-07-23).
 
 - [ ] 8.0 Observability & QA (Logging, Snapshots, Random Recompute, Assertions)
 	- [ ] 8.1 Implement structured logging (phase timings, anomaly counts) in pipeline.

@@ -1,0 +1,61 @@
+@use "styles/vars" as v;
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 7px;
+  border: 1px solid v.$border-secondary;
+  border-radius: 999px;
+  font: 600 0.62rem/1 v.$font-family-accent, sans-serif;
+  text-transform: uppercase;
+}
+
+.durable { color: v.$success-color; border-color: v.$success-color; }
+.balanced { color: v.$text-secondary; }
+.volatile { color: v.$warning-color; border-color: v.$warning-color; }
+.provisional { font-style: italic; opacity: 0.82; }
+.provisional em { margin-left: 4px; font: inherit; text-transform: none; }
+
+.sparkline {
+  width: 84px;
+  height: 24px;
+  overflow: visible;
+}
+.sparkline polyline {
+  fill: none;
+  stroke: v.$primary-color;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.sparkFallback {
+  min-width: 84px;
+  color: v.$text-secondary;
+  font-size: 0.62rem;
+  font-style: italic;
+}
+
+.tooltip {
+  position: relative;
+  padding: 0 0.45rem 0.3rem;
+  color: v.$text-secondary;
+  font-size: 0.65rem;
+}
+.tooltip summary {
+  width: fit-content;
+  cursor: pointer;
+  color: v.$primary-color;
+}
+.tooltip table {
+  margin-top: 0.35rem;
+  width: 100%;
+  border-collapse: collapse;
+  background: v.$background-dark;
+}
+.tooltip caption { text-align: left; padding: 0.3rem; }
+.tooltip th, .tooltip td {
+  padding: 0.25rem;
+  border: 1px solid v.$border-secondary;
+  text-align: right;
+}
+.tooltip th:first-child { text-align: left; }
