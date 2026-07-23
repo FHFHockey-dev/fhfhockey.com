@@ -271,6 +271,14 @@ Do not perform a broad rewrite merely because an alternative architecture is cle
 
 Continue through adjacent low-risk tasks without stopping after every sub-task. Pause when required by the governing process or when any of these apply:
 
+Control hosted build cost as part of checkpoint discipline:
+
+- Run `npm run build` locally in the isolated checkout for routine production-build verification.
+- Do not trigger a Vercel build merely to verify a commit, documentation update, or intermediate checkpoint.
+- Trigger Preview or Production builds only when a meaningful bundled checkpoint requires hosted runtime, environment, alias, or deployment evidence and the applicable external-action approval is in place.
+- Batch compatible verified changes into that checkpoint and reuse an existing exact READY artifact when Vercel supports doing so without rebuilding.
+- Because pushes to a Vercel-connected branch build by default, hold documentation-only/control receipts locally for the next meaningful bundled checkpoint unless a verified project-level ignore rule will skip that push.
+
 - destructive or irreversible data/schema change
 - broad architecture replacement or cross-system rewrite
 - breaking public/API/data contract change

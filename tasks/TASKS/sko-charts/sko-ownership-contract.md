@@ -79,6 +79,8 @@ No live relation, policy, migration, type, or runtime reference supports the his
 
 ## Frozen boundary pending NEW work
 
+- Exact commit `b4aeea8f9af6229aa64f75e4b311b1218a5afb4c` is READY/Production as deployment `dpl_4q8GM1wqTbHR3NbnxRxAakdLEvJr`. Both privileged Next.js writers return 401 for missing/invalid authorization and current Vault-backed authorization reaches safe 405 method validation through unsupported PUT. No writer executed, the bounded relevant runtime-error query is empty, and NEW 9.1/9.5 are closed (2026-07-23).
+
 - Do not call the moving-average v0.2 score, the legacy GameScore × characteristic multiplier, or the deleted offline ML × stability output the single canonical SKO model.
 - Do not restore deleted modeling scripts, create `predictions_next_game`, promote prediction UI, reinterpret stored rows, or change schedules as part of reconciliation alone.
 - Mutation endpoints must fail closed before any prerequisite/source query or service-role write.

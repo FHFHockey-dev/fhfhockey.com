@@ -2,7 +2,7 @@
 
 ## Current completion boundary (2026-07-22)
 
-The information architecture/data contracts, shared loading/cache layer, unified team-power views, FORGE-first player/goalie projections, and team/skater trend/search sections are complete as defined by their fully verified child rows. The source list is 34/38 with four open. Response-size inspection, empty/off-season behavior, cron freshness, and measured median-load evidence are reconciled. The one live payload breach is repaired at exact commit `9a1adb2f0daa3ce3e7274cd085902f1b086aa0de`; target-null deployment `dpl_DNbHyah58BezABc2ppN4sUyDCvcc` is READY and returns the three real `seriesGames` caller shapes at 85,699–201,317 bytes, below the 280,000-byte budget, with no bounded error logs. NEW 8.0 remains open only for separately authorized customer-Production targeting and all-nine-route remeasurement. Legacy dead-code removal, its route parent, and the validation parent remain gated rather than inferred complete.
+The information architecture/data contracts, shared loading/cache layer, unified team-power views, FORGE-first player/goalie projections, team/skater trend/search sections, and validation/performance parent are complete as defined by their verified child rows. The source list is 36/38 with two open. Exact commit `b4aeea8f9af6229aa64f75e4b311b1218a5afb4c`, containing the bounded-series repair, is READY/Production as `dpl_4q8GM1wqTbHR3NbnxRxAakdLEvJr`; all nine declared value-free payload probes return 200 at 29–85,963 bytes within budget, and the bounded relevant runtime-error query is empty. Only legacy dead-code removal and its route parent remain gated.
 
 ## 1.1 Route + rendering strategy
 
