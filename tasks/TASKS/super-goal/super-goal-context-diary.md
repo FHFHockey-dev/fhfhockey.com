@@ -6759,3 +6759,8 @@
 
 - **Implementation / verification:** Score rebuild compares newest player-stat source date with persisted canonical source cutoffs, skips duplicate source work before prerequisites/builds, and preserves explicit `force=true` replay. The focused incremental/route/observability group passes 3 files/8 tests plus TypeScript and diff integrity.
 - **Controls:** Closed 5.2, bringing B-SUST-BAR to 78/94 with 16 open. Raw parity is 4,596/4,897; actionable parity is 4,596/4,891 with 295 open = 93.97% complete / 6.03% open. Severity remains unchanged. No data, schema, schedule, provider, deployment, Production, credential, shared checkout, Vercel build, or push changed.
+
+## Entry 0688 — 2026-07-23 B-SUST-BAR distribution calculation
+
+- **Implementation / verification:** Complete score runs emit deterministic per-window count/min/max/mean/population-stdev plus interpolated p10/p25/p50/p75/p90. The focused distribution/incremental/observability/route group passes 4 files/10 tests plus TypeScript and diff integrity.
+- **Controls:** Closed 5.4 while 5.5 remains open, bringing B-SUST-BAR to 79/94 with 15 open. Raw parity is 4,597/4,897; actionable parity is 4,597/4,891 with 294 open = 93.99% complete / 6.01% open. Severity remains unchanged. No data, schema, schedule, provider, deployment, Production, credential, shared checkout, Vercel build, or push changed.

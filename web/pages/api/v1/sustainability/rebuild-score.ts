@@ -26,6 +26,7 @@ import {
 import supabase from "lib/supabase/server";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { detectSustainabilitySourceAdvance } from "lib/sustainability/incremental";
+import { buildSustainabilityDistributionSnapshot } from "lib/sustainability/distribution";
 
 async function handler(
   req: NextApiRequest,
@@ -123,6 +124,19 @@ async function handler(
       }
     }
     finishPhase("build_scores");
+    const distributionSnapshot = runAll
+      ? Object.fromEntries(
+          windows.map((window) => [
+            window.code,
+            buildSustainabilityDistributionSnapshot(
+              rows
+                .filter((row) => row.window_code === window.code)
+                .map((row) => row.s_100)
+            )
+          ])
+        )
+      : null;
+    finishPhase("distribution_snapshot");
 
     const sampleSize = Math.max(0, Math.min(25, Number(req.query.verify_sample ?? 10)));
     const sampledRows = [...rows]
@@ -198,6 +212,7 @@ async function handler(
       anomaly_count: anomalyCount,
       recompute_verification: recomputeVerification,
       distribution_drift: distributionDrift,
+      distribution_snapshot: distributionSnapshot,
       phase_timings_ms: phaseTimingsMs,
     });
     return res.status(200).json(
@@ -216,6 +231,7 @@ async function handler(
         anomaly_count: anomalyCount,
         recompute_verification: recomputeVerification,
         distribution_drift: distributionDrift,
+        distribution_snapshot: distributionSnapshot,
         phase_timings_ms: phaseTimingsMs,
         batches_processed: batchOffsets.length,
         sample: rows.slice(0, 5),
