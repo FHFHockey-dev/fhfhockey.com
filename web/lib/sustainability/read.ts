@@ -1,12 +1,18 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, Json } from "lib/supabase/database-generated.types";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
+import { getPriorSeasonIds } from "./priors";
 import { SUSTAINABILITY_SCORE_WINDOW_CODES } from "./runtimeContract";
 
 type SustainabilityClient = SupabaseClient<Database>;
 type ScoreRow = Database["public"]["Tables"]["sustainability_scores"]["Row"];
 type BandRow = Database["public"]["Tables"]["sustainability_trend_bands"]["Row"];
 type ProjectionRow = Database["public"]["Tables"]["sustainability_projections"]["Row"];
+type PlayerTotalRow = Pick<
+  Database["public"]["Views"]["player_totals_unified"]["Row"],
+  "player_id" | "player_name" | "position_code" | "season_id" | "games_played"
+>;
 
 function asRecord(value: Json | null): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -211,6 +217,130 @@ export async function getPlayerSustainabilitySummaryPayload(args: {
   return shapePlayerSustainabilitySummaryPayload({
     playerId: args.playerId,
     rows: (result.data ?? []) as ScoreRow[]
+  });
+}
+
+export type SustainabilityLeaderboardOptions = {
+  windowCode: typeof SUSTAINABILITY_SCORE_WINDOW_CODES[number];
+  minGames: number;
+  minScore: number;
+  rookieOnly: boolean;
+  page: number;
+  pageSize: number;
+  includeComponents: boolean;
+};
+
+export function shapeSustainabilityLeaderboardPayload(args: {
+  snapshotDate: string;
+  seasonId: number;
+  scoreRows: ScoreRow[];
+  playerTotalRows: PlayerTotalRow[];
+  options: SustainabilityLeaderboardOptions;
+}) {
+  const currentTotals = new Map<number, PlayerTotalRow>();
+  const priorPlayers = new Set<number>();
+  for (const row of args.playerTotalRows) {
+    if (row.player_id == null || row.season_id == null) continue;
+    if (row.season_id === args.seasonId) {
+      currentTotals.set(row.player_id, row);
+    } else if ((row.games_played ?? 0) > 0) {
+      priorPlayers.add(row.player_id);
+    }
+  }
+
+  const filtered = args.scoreRows
+    .map((row) => {
+      const totals = currentTotals.get(row.player_id);
+      const components = asRecord(row.components);
+      return {
+        player_id: row.player_id,
+        player_name: totals?.player_name ?? null,
+        position_code: totals?.position_code ?? null,
+        position_group: row.position_group,
+        season_id: row.season_id,
+        snapshot_date: row.snapshot_date,
+        window_code: row.window_code,
+        games_played: totals?.games_played ?? 0,
+        rookie_status: totals != null && !priorPlayers.has(row.player_id),
+        s_raw: row.s_raw,
+        s_100: row.s_100,
+        model_version: components.modelVersion ?? null,
+        config_hash: components.configHash ?? null,
+        ...(args.options.includeComponents ? { components } : {})
+      };
+    })
+    .filter((row) => row.games_played >= args.options.minGames)
+    .filter((row) => !args.options.rookieOnly || row.rookie_status)
+    .sort((left, right) => right.s_100 - left.s_100 || left.player_id - right.player_id);
+  const start = (args.options.page - 1) * args.options.pageSize;
+
+  return {
+    snapshot_date: args.snapshotDate,
+    season_id: args.seasonId,
+    window_code: args.options.windowCode,
+    filters: {
+      min_games: args.options.minGames,
+      min_score: args.options.minScore,
+      rookie_only: args.options.rookieOnly
+    },
+    pagination: {
+      page: args.options.page,
+      page_size: args.options.pageSize,
+      total: filtered.length,
+      total_pages: Math.ceil(filtered.length / args.options.pageSize)
+    },
+    rows: filtered.slice(start, start + args.options.pageSize)
+  };
+}
+
+export async function getSustainabilityLeaderboardPayload(args: {
+  client: SustainabilityClient;
+  options: SustainabilityLeaderboardOptions;
+}) {
+  const latestResult = await args.client
+    .from("sustainability_scores")
+    .select("snapshot_date, season_id")
+    .eq("window_code", args.options.windowCode)
+    .order("snapshot_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (latestResult.error) throw latestResult.error;
+  if (!latestResult.data) return null;
+
+  const snapshotDate = latestResult.data.snapshot_date;
+  const seasonId = latestResult.data.season_id;
+  const seasonIds = getPriorSeasonIds(seasonId);
+  const [scoreRows, playerTotalRows] = await Promise.all([
+    fetchAllSupabasePages<ScoreRow>(({ from, to }) =>
+      args.client
+        .from("sustainability_scores")
+        .select(
+          "player_id, season_id, snapshot_date, position_group, window_code, s_raw, s_100, components, computed_at"
+        )
+        .eq("snapshot_date", snapshotDate)
+        .eq("window_code", args.options.windowCode)
+        .gte("s_100", args.options.minScore)
+        .order("s_100", { ascending: false })
+        .order("player_id", { ascending: true })
+        .range(from, to)
+    ),
+    fetchAllSupabasePages<PlayerTotalRow>(({ from, to }) =>
+      args.client
+        .from("player_totals_unified")
+        .select("player_id, player_name, position_code, season_id, games_played")
+        .in("season_id", seasonIds)
+        .order("season_id", { ascending: false })
+        .order("player_id", { ascending: true })
+        .range(from, to)
+    )
+  ]);
+
+  return shapeSustainabilityLeaderboardPayload({
+    snapshotDate,
+    seasonId,
+    scoreRows,
+    playerTotalRows,
+    options: args.options
   });
 }
 

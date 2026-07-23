@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   shapePlayerSustainabilityPayload,
   shapePlayerSustainabilitySummaryPayload,
+  shapeSustainabilityLeaderboardPayload,
   shapeUpcomingSustainabilityPayload
 } from "./read";
 
@@ -121,5 +122,84 @@ describe("sustainability read contracts", () => {
       model_version: "sustainability_score_v2",
       config_hash: "fnv1a_test"
     });
+  });
+
+  it("filters and paginates the canonical leaderboard deterministically", () => {
+    const score = {
+      season_id: 20252026,
+      snapshot_date: "2026-03-21",
+      position_group: "F",
+      window_code: "l10",
+      s_raw: 1,
+      components: {
+        modelVersion: "sustainability_score_v2",
+        configHash: "fnv1a_test"
+      },
+      computed_at: "2026-03-21T00:00:00.000Z"
+    };
+    const payload = shapeSustainabilityLeaderboardPayload({
+      snapshotDate: "2026-03-21",
+      seasonId: 20252026,
+      scoreRows: [
+        { ...score, player_id: 3, s_100: 80 },
+        { ...score, player_id: 1, s_100: 80 },
+        { ...score, player_id: 2, s_100: 70 }
+      ],
+      playerTotalRows: [
+        {
+          player_id: 1,
+          player_name: "One",
+          position_code: "C",
+          season_id: 20252026,
+          games_played: 8
+        },
+        {
+          player_id: 2,
+          player_name: "Two",
+          position_code: "D",
+          season_id: 20252026,
+          games_played: 3
+        },
+        {
+          player_id: 3,
+          player_name: "Three",
+          position_code: "C",
+          season_id: 20252026,
+          games_played: 10
+        },
+        {
+          player_id: 3,
+          player_name: "Three",
+          position_code: "C",
+          season_id: 20242025,
+          games_played: 2
+        }
+      ],
+      options: {
+        windowCode: "l10",
+        minGames: 5,
+        minScore: 50,
+        rookieOnly: true,
+        page: 1,
+        pageSize: 1,
+        includeComponents: false
+      }
+    });
+
+    expect(payload.pagination).toEqual({
+      page: 1,
+      page_size: 1,
+      total: 1,
+      total_pages: 1
+    });
+    expect(payload.rows[0]).toMatchObject({
+      player_id: 1,
+      player_name: "One",
+      games_played: 8,
+      rookie_status: true,
+      model_version: "sustainability_score_v2",
+      config_hash: "fnv1a_test"
+    });
+    expect(payload.rows[0]).not.toHaveProperty("components");
   });
 });

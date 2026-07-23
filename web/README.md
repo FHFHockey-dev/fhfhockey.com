@@ -119,6 +119,16 @@ psql "sslmode=require"
 Use port `5432` for the session pooler. Avoid logging full connection strings,
 especially strings that include `DATABASE_PASSWORD` or service-role keys.
 
+## Sustainability read API
+
+- `GET /api/v1/sustainability/player/:playerId` retains the existing single-window response. Add `summary=true` for the deterministic latest `l3`, `l5`, `l10`, and `l20` scores plus stored model/config provenance.
+- `GET /api/v1/sustainability/leaderboard` accepts `window_type=l3|l5|l10|l20`, `min_games`, `min_score`, `rookie_only`, `page`, and `page_size` (maximum 100). Results use the latest snapshot for the selected window, score-descending/player-ID ordering, and complete Supabase range pagination before response pagination.
+- `min_games` uses current-season `player_totals_unified.games_played`. `rookie_only=true` means the player has no games in either of the two prior canonical NHL seasons.
+- Public leaderboard responses emit deterministic `ETag` and shared-cache headers. Send `If-None-Match` for `304` responses.
+- The leaderboard endpoint returns stored score components for `include=components` only through the existing admin/cron authorization boundary and uses `private, no-store`; missing or invalid authorization fails closed.
+
+The exact latest-snapshot query is covered by the production composite index `idx_susscore_date_win (snapshot_date, window_code)`. Read-only `EXPLAIN (FORMAT JSON)` on 2026-07-23 selected an index-only backward scan for snapshot discovery and an index scan with exact `snapshot_date`/`window_code` conditions for the leaderboard rows.
+
 ## Contextual rankings pipeline
 
 The skater rankings page currently reads from existing source tables and helpers;

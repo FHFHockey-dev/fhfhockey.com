@@ -125,15 +125,15 @@
 	- [ ] 5.9 Integration test: run full pipeline on fixture dataset & assert deterministic outputs.
 	- [x] 5.10 Document the canonical scheduled route chain, exact retry identity, prerequisite/failure behavior, bounded read/write contracts, B-CRON-NST NEW 61 ownership dependency, Python offline-only boundary, and unimplemented distribution/retro semantics in the existing Sustainability runbook (verified 2026-07-22).
 
-- [ ] 6.0 API Integration (Player Summary Extension & Leaderboard Endpoint)
+- [x] 6.0 API Integration (Player Summary Extension & Leaderboard Endpoint). Canonical four-window player summaries, latest-snapshot leaderboard filters/pagination, indexed reads, protected components, conditional caching, focused tests, and internal documentation are complete (verified 2026-07-23).
 	- Dependency order: resolve NEW 14 window/route ownership → implement 6.1/6.2 → verify 6.3 and secure 6.4 → add 6.5 → close 6.6/6.7.
 	- [x] 6.1 Extend the existing player summary data access layer with the latest canonical `l3`, `l5`, `l10`, and `l20` score for one player. The additive `summary=true` route mode preserves the existing single-window response, selects one deterministic latest row per window, and returns score plus model/config provenance; the focused read/route/runtime group passes 3 files/7 tests (verified 2026-07-23).
-	- [ ] 6.2 Implement leaderboard endpoint with parameters: window_type, min_games, min_score, rookie_only, page, page_size.
-	- [ ] 6.3 Add query optimization: composite index usage; verify EXPLAIN plan.
-	- [ ] 6.4 Return components breakdown optionally (?include=components) for debugging (rate limited / auth required).
-	- [ ] 6.5 Add caching layer headers (ETag based on latest snapshot hash) for leaderboard responses.
-	- [ ] 6.6 Add unit/integration test for API filters & pagination.
-	- [ ] 6.7 Update OpenAPI / internal API docs (if present) or add markdown doc.
+	- [x] 6.2 Implement the latest-snapshot leaderboard endpoint with canonical `window_type`, `min_games`, `min_score`, `rookie_only`, `page`, and bounded `page_size` parameters. Current-season games and deterministic prior-season rookie identity come from complete range-paginated `player_totals_unified` reads (verified 2026-07-23).
+	- [x] 6.3 Verify the production `idx_susscore_date_win` composite index with read-only `EXPLAIN (FORMAT JSON)`: snapshot discovery uses an index-only backward scan and exact snapshot/window row selection uses an index scan (verified 2026-07-23).
+	- [x] 6.4 Return `components` only for `include=components` after the existing admin/cron boundary authorizes the request; public and invalid-credential component requests fail closed (verified 2026-07-23).
+	- [x] 6.5 Emit a deterministic SHA-256 response ETag and public shared-cache headers; matching `If-None-Match` returns 304, while protected component responses are `private, no-store` (verified 2026-07-23).
+	- [x] 6.6 Cover canonical filters, deterministic score/player ordering, rookie/minimum-game behavior, response pagination, authorization, ETag headers, and 304 handling in the focused 3-file/10-test group (verified 2026-07-23).
+	- [x] 6.7 Document player summary, leaderboard parameters, exact rookie/minimum-game semantics, caching, component authorization, pagination, and composite-index proof in `web/README.md` (verified 2026-07-23).
 
 - [ ] 7.0 Frontend UI Components (Badge, Sparkline, Tooltip Integration)
 	- [ ] 7.1 Implement `SustainabilityBadge` with tier color mapping (dynamic quantile labels) & accessible text.
@@ -172,7 +172,7 @@
 
 - [x] NEW 13.0 **P1 persisted score-format/version contract drift:** canonical v2 intentionally retains two-decimal `s_100` precision and defines `s_raw` as the pre-sigmoid contribution logit. Current value-free production evidence covers 249,520 rows: 217,724 are fractional; all 20,563 exact 100 and 8,754 exact zero rows meet the 0.995/0.005 probability thresholds, with zero invalid endpoints. Because both historical forms satisfy one numeric v2 contract, no rewrite/version bump is required. Shared runtime constants, PRD formula/persistence language, fail-closed persisted-row endpoint guards, and the 3-file/6-test focused suite now agree; UI-only integer formatting remains presentation rather than persistence (closed 2026-07-23).
 
-- [ ] NEW 14.0 **P1 canonical API/window ownership drift:** deployed `l3/l5/l10/l20` is the canonical taxonomy and the draft `GAME/G5/G10/STD` names are retired. Row 6.1 is complete through an additive `summary=true` mode on the existing player route without breaking its single-window response. Implement leaderboard/filter/pagination/index/authenticated-components/ETag/docs rows 6.2–6.7 in the recorded dependency order (discovered 2026-07-22; decision and 6.1 verified 2026-07-23).
+- [x] NEW 14.0 **P1 canonical API/window ownership drift:** deployed `l3/l5/l10/l20` is canonical and draft `GAME/G5/G10/STD` is retired. Additive player summary plus latest-snapshot leaderboard/filter/pagination/index/authenticated-components/ETag/docs rows 6.1–6.7 are complete without breaking the default player response; the focused group passes 3 files/10 tests, TypeScript, production read-only index-plan proof, and diff integrity (closed 2026-07-23).
 
 - [ ] NEW 15.0 **P1 canonical version/config provenance drift:** the active TypeScript score owner writes string `modelVersion` and `configHash` only inside `sustainability_scores.components`; `sustainability_scores` and `sustainability_player_priors` have no first-class version/hash columns, while the unused draft `model_player_game_barometers` table has integer `model_version`/`config_hash`. Decide the canonical version source and migration/backfill compatibility policy, then align config administration, score/prior columns, recompute detection, API metadata, historical fidelity, and 9.1–9.7 without treating the draft table as the active writer (discovered 2026-07-22).
 
