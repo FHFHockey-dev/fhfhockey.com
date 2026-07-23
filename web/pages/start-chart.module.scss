@@ -29,12 +29,18 @@
 }
 
 .chartTitle {
+  margin: 0;
   font-family: v.$font-family-accent, sans-serif;
   font-size: v.$font-size-md;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: v.$color-white;
+}
+
+.chartGraphic {
+  flex: 1;
+  min-height: 0;
 }
 
 /* =================== Game Strip =================== */
@@ -76,6 +82,10 @@
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
+  appearance: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
 
   &::before {
     content: "";
@@ -91,6 +101,11 @@
     &::before {
       opacity: 0.2;
     }
+  }
+
+  &:focus-visible {
+    outline: 3px solid v.$primary-color;
+    outline-offset: 2px;
   }
 
   &.selected {
@@ -284,19 +299,30 @@
   font-style: italic;
   cursor: help;
   transition: all 0.2s ease;
+  list-style: none;
 
-  &:hover {
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  &:hover,
+  &:focus-visible {
     border-color: v.$primary-color;
     color: v.$primary-color;
     background: rgba(v.$primary-color, 0.1);
   }
 
-  &:hover + .legendTooltip {
-    display: block;
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
   }
+}
+
+.legendContainer[open] .legendTooltip {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
 .legendTooltip {
@@ -401,8 +427,25 @@
   }
 }
 
+.selectInput {
+  @extend .search;
+  min-width: 140px;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.75;
+  }
+}
+
 .rangeInput {
   accent-color: v.$primary-color;
+}
+
+.controlNote {
+  flex-basis: 100%;
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
 }
 
 /* =================== Columns Grid =================== */
@@ -483,6 +526,11 @@
 
   /* Use the accent color for the header text */
   color: var(--accent);
+
+  h2 {
+    margin: 0;
+    font: inherit;
+  }
 }
 
 .pill {
@@ -678,6 +726,15 @@ $neon-strip-width: 8px;
   padding: v.$space-sm;
 }
 
+.requestState {
+  grid-column: 1 / -1;
+  padding: v.$space-md;
+  border: 1px solid v.$danger-color;
+  border-radius: v.$radius-md;
+  color: v.$text-primary;
+  background: rgba(v.$danger-color, 0.12);
+}
+
 .gamesRemaining {
   margin-top: v.$space-sm;
   padding-top: v.$space-xs;
@@ -765,7 +822,8 @@ $neon-strip-width: 8px;
     }
 
     .search,
-    .dateInput {
+    .dateInput,
+    .selectInput {
       width: 100%;
       min-width: 0;
     }
@@ -802,5 +860,16 @@ $neon-strip-width: 8px;
 
   .cardList {
     max-height: 400px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gameCard,
+  .goalieSegment,
+  .legendIcon,
+  .legendTooltip,
+  .card,
+  .card::after {
+    transition: none;
   }
 }

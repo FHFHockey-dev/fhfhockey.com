@@ -6,11 +6,11 @@ import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import { teamsInfo } from "lib/teamsInfo";
 import {
   fetchTeamRatings,
-  type TeamRating as TeamPowerRating
+  type TeamRating as TeamPowerRating,
 } from "lib/teamRatingsService";
 import {
   computeStartChartFantasyPoints,
-  START_CHART_FANTASY_SCORING_CONTRACT
+  START_CHART_FANTASY_SCORING_CONTRACT,
 } from "lib/projections/startChartFantasyScoring";
 import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
 
@@ -57,6 +57,181 @@ type CtpiRow = { date: string; ctpi_0_to_100: number | null };
 const RESPONSE_TTL_MS = 60_000;
 const responseCache = new Map<string, { expiresAt: number; payload: any }>();
 const inFlight = new Map<string, Promise<any>>();
+const SUPPORTED_POSITIONS = new Set(["C", "LW", "RW", "D", "G"]);
+
+type StartChartRequest = {
+  date: string;
+  mode: "points";
+  profile: string;
+  position: string | null;
+  modelVersion: "latest";
+  page: number;
+  pageSize: number;
+  paginationRequested: boolean;
+};
+
+type QueryError = {
+  status: number;
+  code: "invalid_parameter" | "control_unavailable";
+  field: string;
+  message: string;
+};
+
+const isCalendarDate = (value: string): boolean => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return (
+    !Number.isNaN(parsed.getTime()) &&
+    parsed.toISOString().slice(0, 10) === value
+  );
+};
+
+const singleQueryValue = (
+  value: string | string[] | undefined,
+): string | null => (typeof value === "string" ? value : null);
+
+function parseStartChartRequest(
+  query: NextApiRequest["query"],
+  today: string,
+): { value: StartChartRequest } | { error: QueryError } {
+  for (const field of [
+    "date",
+    "mode",
+    "profile",
+    "position",
+    "model_version",
+    "page",
+    "page_size",
+    "tau",
+    "risk",
+  ] as const) {
+    if (Array.isArray(query[field])) {
+      return {
+        error: {
+          status: 400,
+          code: "invalid_parameter",
+          field,
+          message: `${field} must be provided at most once`,
+        },
+      };
+    }
+  }
+
+  const date = singleQueryValue(query.date) ?? today;
+  if (!isCalendarDate(date)) {
+    return {
+      error: {
+        status: 400,
+        code: "invalid_parameter",
+        field: "date",
+        message: "date must be a real calendar date in YYYY-MM-DD format",
+      },
+    };
+  }
+
+  const mode = singleQueryValue(query.mode) ?? "points";
+  if (mode !== "points") {
+    return {
+      error: {
+        status: 422,
+        code: "control_unavailable",
+        field: "mode",
+        message: "Only points mode is currently available",
+      },
+    };
+  }
+
+  const profile =
+    singleQueryValue(query.profile) ??
+    START_CHART_FANTASY_SCORING_CONTRACT.version;
+  if (profile !== START_CHART_FANTASY_SCORING_CONTRACT.version) {
+    return {
+      error: {
+        status: 422,
+        code: "control_unavailable",
+        field: "profile",
+        message: `Only ${START_CHART_FANTASY_SCORING_CONTRACT.version} is currently available`,
+      },
+    };
+  }
+
+  for (const field of ["tau", "risk"] as const) {
+    if (query[field] !== undefined) {
+      return {
+        error: {
+          status: 422,
+          code: "control_unavailable",
+          field,
+          message: `${field} is owned by the canonical FORGE model and is not a Start Chart override`,
+        },
+      };
+    }
+  }
+
+  const modelVersion = singleQueryValue(query.model_version) ?? "latest";
+  if (modelVersion !== "latest") {
+    return {
+      error: {
+        status: 422,
+        code: "control_unavailable",
+        field: "model_version",
+        message: "Start Chart serves the latest succeeded canonical FORGE run",
+      },
+    };
+  }
+
+  const position = singleQueryValue(query.position)?.toUpperCase() ?? null;
+  if (position && !SUPPORTED_POSITIONS.has(position)) {
+    return {
+      error: {
+        status: 400,
+        code: "invalid_parameter",
+        field: "position",
+        message: "position must be one of C, LW, RW, D, or G",
+      },
+    };
+  }
+
+  const paginationRequested =
+    query.page !== undefined || query.page_size !== undefined;
+  const pageRaw = singleQueryValue(query.page) ?? "1";
+  const pageSizeRaw = singleQueryValue(query.page_size) ?? "100";
+  const page = Number(pageRaw);
+  const pageSize = Number(pageSizeRaw);
+  if (!Number.isInteger(page) || page < 1) {
+    return {
+      error: {
+        status: 400,
+        code: "invalid_parameter",
+        field: "page",
+        message: "page must be a positive integer",
+      },
+    };
+  }
+  if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 200) {
+    return {
+      error: {
+        status: 400,
+        code: "invalid_parameter",
+        field: "page_size",
+        message: "page_size must be an integer from 1 through 200",
+      },
+    };
+  }
+
+  return {
+    value: {
+      date,
+      mode: "points",
+      profile,
+      position,
+      modelVersion: "latest",
+      page,
+      pageSize,
+      paginationRequested,
+    },
+  };
+}
 
 const fallbackDate = (dateStr: string) => {
   const d = new Date(dateStr);
@@ -96,7 +271,7 @@ const findAbbrev = (teamId: number): string | null => {
 };
 
 const computeMatchupGrade = (
-  rating: TeamPowerRating | undefined
+  rating: TeamPowerRating | undefined,
 ): number | null => {
   const xga60 = rating?.components?.xga60;
   if (xga60 == null || Number.isNaN(xga60)) return null;
@@ -105,7 +280,7 @@ const computeMatchupGrade = (
 };
 
 async function fetchFallbackRunWithPlayerData(
-  targetDate: string
+  targetDate: string,
 ): Promise<{ runId: string; asOfDate: string } | null> {
   const { data: candidates, error: candidatesError } = await supabase
     .from("forge_runs")
@@ -139,14 +314,12 @@ async function fetchFallbackRunWithPlayerData(
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ error: "Method not allowed" });
   }
-
-  const dateParam = typeof req.query.date === "string" ? req.query.date : null;
 
   // Use EST for "today" to avoid UTC rollover issues late at night
   const now = new Date();
@@ -154,7 +327,7 @@ export default async function handler(
     timeZone: "America/New_York",
     year: "numeric",
     month: "2-digit",
-    day: "2-digit"
+    day: "2-digit",
   }).formatToParts(now);
 
   const y = parts.find((p) => p.type === "year")?.value;
@@ -162,8 +335,20 @@ export default async function handler(
   const d = parts.find((p) => p.type === "day")?.value;
   const today = `${y}-${m}-${d}`;
 
-  const initialDate = dateParam || today;
-  const cacheKey = `date:${initialDate}`;
+  const parsedRequest = parseStartChartRequest(req.query, today);
+  if ("error" in parsedRequest) {
+    const { status, ...error } = parsedRequest.error;
+    return res.status(status).json({ error });
+  }
+
+  const request = parsedRequest.value;
+  const initialDate = request.date;
+  const cacheKey = [
+    `date:${initialDate}`,
+    `position:${request.position ?? "all"}`,
+    `page:${request.paginationRequested ? request.page : "all"}`,
+    `pageSize:${request.paginationRequested ? request.pageSize : "all"}`,
+  ].join("|");
 
   try {
     const nowMs = Date.now();
@@ -204,7 +389,7 @@ export default async function handler(
             projections: null,
             goalies: null,
             games: [] as any[],
-            runId: null
+            runId: null,
           };
         }
 
@@ -241,7 +426,7 @@ export default async function handler(
                 proj_hits,
                 proj_blocks,
                 proj_pim
-              `
+              `,
             )
             .eq("run_id", runId)
             .eq("horizon_games", 1)
@@ -253,7 +438,7 @@ export default async function handler(
         const { data: goalieRows, error: gProjErr } = await supabase
           .from("goalie_start_projections")
           .select(
-            "game_id, team_id, player_id, start_probability, projected_gsaa_per_60, confirmed_status"
+            "game_id, team_id, player_id, start_probability, projected_gsaa_per_60, confirmed_status",
           )
           .in("game_id", gameIds);
         if (gProjErr) throw gProjErr;
@@ -262,7 +447,7 @@ export default async function handler(
           projections: projRows,
           goalies: goalieRows as GoalieRow[] | null,
           games,
-          runId
+          runId,
         };
       };
 
@@ -274,7 +459,7 @@ export default async function handler(
             goalies: null,
             games: [] as any[],
             dateUsed: initialDate,
-            runId: null
+            runId: null,
           };
         }
 
@@ -282,7 +467,7 @@ export default async function handler(
           projections,
           goalies,
           games: gameRows,
-          runId
+          runId,
         } = await fetchForDate(fallback.asOfDate);
 
         return {
@@ -290,7 +475,7 @@ export default async function handler(
           goalies,
           games: gameRows,
           dateUsed: fallback.asOfDate,
-          runId
+          runId,
         };
       };
 
@@ -298,7 +483,7 @@ export default async function handler(
         projections: projRows,
         goalies: goalieRows,
         games: gameRows,
-        runId
+        runId,
       } = await fetchForDate(initialDate);
       const requestedGamesCount = gameRows?.length ?? 0;
       projectionRunId = runId;
@@ -352,7 +537,7 @@ export default async function handler(
         strategy: fallbackApplied ? fallbackStrategy : "requested_date",
         requestedScheduledGames: requestedGamesCount,
         resolvedScheduledGames: gameRows?.length ?? 0,
-        sourceLabel: "Start-chart slate"
+        sourceLabel: "Start-chart slate",
       });
 
       if (
@@ -371,54 +556,68 @@ export default async function handler(
           skaterSource: "forge_player_projections",
           goalieSource: "goalie_start_projections",
           legacyPlayerProjectionsUsed: false,
-          projections: [],
+          fantasyScoringContract: START_CHART_FANTASY_SCORING_CONTRACT,
+          request: {
+            mode: request.mode,
+            profile: request.profile,
+            position: request.position,
+            modelVersion: request.modelVersion,
+          },
+          pagination: {
+            page: request.page,
+            pageSize: request.paginationRequested ? request.pageSize : 0,
+            totalPlayers: 0,
+            totalPages: 0,
+          },
+          projections: 0,
           players: [],
-          ctpi: []
+          ctpi: [],
+          games: [],
         };
       }
 
-    // Fetch mapping for the players in projections
-    const playerIds = [
-      ...(projRows ?? []).map((p) => p.player_id),
-      ...(goalieRows ?? []).map((g) => g.player_id)
-    ];
-    const { data: mappingRows, error: mapError } = await supabase
-      .from("yahoo_nhl_player_map_mat")
-      .select("nhl_player_id, yahoo_player_id")
-      .in("nhl_player_id", playerIds.map(String));
+      // Fetch mapping for the players in projections
+      const playerIds = [
+        ...(projRows ?? []).map((p) => p.player_id),
+        ...(goalieRows ?? []).map((g) => g.player_id),
+      ];
+      const { data: mappingRows, error: mapError } = await supabase
+        .from("yahoo_nhl_player_map_mat")
+        .select("nhl_player_id, yahoo_player_id")
+        .in("nhl_player_id", playerIds.map(String));
 
-    if (mapError) console.error("Mapping fetch error", mapError);
+      if (mapError) console.error("Mapping fetch error", mapError);
 
-    const nhlToYahoo = new Map<number, number>();
-    const yahooPlayerIds: number[] = [];
+      const nhlToYahoo = new Map<number, number>();
+      const yahooPlayerIds: number[] = [];
 
-    (mappingRows ?? []).forEach((m: any) => {
-      const nhl = Number(m.nhl_player_id);
-      const yahoo = Number(m.yahoo_player_id);
-      if (!isNaN(nhl) && !isNaN(yahoo)) {
-        nhlToYahoo.set(nhl, yahoo);
-        yahooPlayerIds.push(yahoo);
-      }
-    });
+      (mappingRows ?? []).forEach((m: any) => {
+        const nhl = Number(m.nhl_player_id);
+        const yahoo = Number(m.yahoo_player_id);
+        if (!isNaN(nhl) && !isNaN(yahoo)) {
+          nhlToYahoo.set(nhl, yahoo);
+          yahooPlayerIds.push(yahoo);
+        }
+      });
 
-    // Grab ONLY the relevant Yahoo players (avoid 1000 row limit)
-    const { data: yahooPlayers, error: ypError } = await supabase
-      .from("yahoo_players")
-      .select(
-        "player_id, player_name, full_name, eligible_positions, percent_ownership, ownership_timeline"
-      )
-      .eq("season", yahooSeason)
-      .in("player_id", yahooPlayerIds.map(String));
+      // Grab ONLY the relevant Yahoo players (avoid 1000 row limit)
+      const { data: yahooPlayers, error: ypError } = await supabase
+        .from("yahoo_players")
+        .select(
+          "player_id, player_name, full_name, eligible_positions, percent_ownership, ownership_timeline",
+        )
+        .eq("season", yahooSeason)
+        .in("player_id", yahooPlayerIds.map(String));
 
-    if (ypError) throw ypError;
+      if (ypError) throw ypError;
 
-    const yahooMap = new Map<number, YahooPlayerRow>();
-    (yahooPlayers ?? []).forEach((row) => {
-      const key = Number(row.player_id);
-      if (!Number.isNaN(key)) {
-        yahooMap.set(key, row as YahooPlayerRow);
-      }
-    });
+      const yahooMap = new Map<number, YahooPlayerRow>();
+      (yahooPlayers ?? []).forEach((row) => {
+        const key = Number(row.player_id);
+        if (!Number.isNaN(key)) {
+          yahooMap.set(key, row as YahooPlayerRow);
+        }
+      });
 
       const gameMap = new Map<
         number,
@@ -430,7 +629,7 @@ export default async function handler(
 
       const ratings = await fetchTeamRatings(dateUsed);
       const teamRatingsByAbbrev = new Map(
-        ratings.map((rating) => [rating.teamAbbr, rating] as const)
+        ratings.map((rating) => [rating.teamAbbr, rating] as const),
       );
 
       const players = [];
@@ -482,12 +681,12 @@ export default async function handler(
               powerPlayPoints,
               shotsOnGoal: shots,
               hits: p.proj_hits ?? 0,
-              blockedShots: p.proj_blocks ?? 0
+              blockedShots: p.proj_blocks ?? 0,
             }),
             proj_goals: goals,
             proj_assists: assists,
             proj_shots: shots,
-            matchup_grade: matchupGrade
+            matchup_grade: matchupGrade,
           });
         }
       }
@@ -526,20 +725,20 @@ export default async function handler(
             proj_goals: null,
             proj_assists: null,
             proj_shots: null,
-            matchup_grade: null
+            matchup_grade: null,
           });
         }
       }
 
-    // Calculate games remaining this week (until Sunday)
-    // Use UTC to avoid timezone shifts causing "today" to be "yesterday"
-    const d = new Date(`${dateUsed}T00:00:00Z`);
-    const day = d.getUTCDay(); // 0 is Sunday
-    const diff = day === 0 ? 0 : 7 - day; // days until next Sunday
+      // Calculate games remaining this week (until Sunday)
+      // Use UTC to avoid timezone shifts causing "today" to be "yesterday"
+      const d = new Date(`${dateUsed}T00:00:00Z`);
+      const day = d.getUTCDay(); // 0 is Sunday
+      const diff = day === 0 ? 0 : 7 - day; // days until next Sunday
 
-    const sunday = new Date(d);
-    sunday.setUTCDate(d.getUTCDate() + diff);
-    const sundayStr = sunday.toISOString().slice(0, 10);
+      const sunday = new Date(d);
+      sunday.setUTCDate(d.getUTCDate() + diff);
+      const sundayStr = sunday.toISOString().slice(0, 10);
 
       const { data: weekGames } = await supabase
         .from("games")
@@ -551,107 +750,126 @@ export default async function handler(
       (weekGames ?? []).forEach((g) => {
         gamesRemainingMap.set(
           g.homeTeamId,
-          (gamesRemainingMap.get(g.homeTeamId) ?? 0) + 1
+          (gamesRemainingMap.get(g.homeTeamId) ?? 0) + 1,
         );
         gamesRemainingMap.set(
           g.awayTeamId,
-          (gamesRemainingMap.get(g.awayTeamId) ?? 0) + 1
+          (gamesRemainingMap.get(g.awayTeamId) ?? 0) + 1,
         );
       });
 
-    // Attach games remaining to players
+      // Attach games remaining to players
       const playersWithGames = players.map((p) => ({
         ...p,
         games_remaining_week: p.team_id
           ? (gamesRemainingMap.get(p.team_id) ?? 0)
-          : 0
+          : 0,
       }));
+      const eligiblePlayers = playersWithGames
+        .filter(
+          (player) =>
+            !request.position || player.positions.includes(request.position),
+        )
+        .sort((left, right) => left.player_id - right.player_id);
+      const totalPlayers = eligiblePlayers.length;
+      const totalPages = request.paginationRequested
+        ? Math.ceil(totalPlayers / request.pageSize)
+        : totalPlayers > 0
+          ? 1
+          : 0;
+      const responsePlayers = request.paginationRequested
+        ? eligiblePlayers.slice(
+            (request.page - 1) * request.pageSize,
+            request.page * request.pageSize,
+          )
+        : eligiblePlayers;
 
-    // CTPI sparkline (history for teams playing on dateUsed)
-    const startRange = shiftDate(dateUsed, -30); // last 30 days for sparkline
+      // CTPI sparkline (history for teams playing on dateUsed)
+      const startRange = shiftDate(dateUsed, -30); // last 30 days for sparkline
 
-    // Identify teams playing on the target date (dateUsed)
-    const teamsPlayingTodayIds = new Set<number>();
-    (gameRows ?? []).forEach((g: any) => {
-      teamsPlayingTodayIds.add(g.homeTeamId);
-      teamsPlayingTodayIds.add(g.awayTeamId);
-    });
+      // Identify teams playing on the target date (dateUsed)
+      const teamsPlayingTodayIds = new Set<number>();
+      (gameRows ?? []).forEach((g: any) => {
+        teamsPlayingTodayIds.add(g.homeTeamId);
+        teamsPlayingTodayIds.add(g.awayTeamId);
+      });
 
-    const teamsPlayingTodayAbbrevs = new Set<string>();
-    teamsPlayingTodayIds.forEach((id) => {
-      const abbrev = findAbbrev(id);
-      if (abbrev) teamsPlayingTodayAbbrevs.add(abbrev);
-    });
+      const teamsPlayingTodayAbbrevs = new Set<string>();
+      teamsPlayingTodayIds.forEach((id) => {
+        const abbrev = findAbbrev(id);
+        if (abbrev) teamsPlayingTodayAbbrevs.add(abbrev);
+      });
 
-    const { data: ctpiRows, error: ctpiError } = await supabase
-      .from("team_ctpi_daily")
-      .select("date, team, ctpi_0_to_100")
-      .gte("date", startRange)
-      .order("date", { ascending: true });
-    if (ctpiError) throw ctpiError;
+      const { data: ctpiRows, error: ctpiError } = await supabase
+        .from("team_ctpi_daily")
+        .select("date, team, ctpi_0_to_100")
+        .gte("date", startRange)
+        .order("date", { ascending: true });
+      if (ctpiError) throw ctpiError;
 
-    const ctpiMap = new Map<string, Record<string, number>>(); // date -> { team: value }
+      const ctpiMap = new Map<string, Record<string, number>>(); // date -> { team: value }
 
-    (ctpiRows as any[] | null)?.forEach((row) => {
-      if (!row.date || !row.team) return;
-      if (!teamsPlayingTodayAbbrevs.has(row.team)) return; // Only care about teams playing today
+      (ctpiRows as any[] | null)?.forEach((row) => {
+        if (!row.date || !row.team) return;
+        if (!teamsPlayingTodayAbbrevs.has(row.team)) return; // Only care about teams playing today
 
-      if (!ctpiMap.has(row.date)) ctpiMap.set(row.date, {});
-      const dateEntry = ctpiMap.get(row.date)!;
+        if (!ctpiMap.has(row.date)) ctpiMap.set(row.date, {});
+        const dateEntry = ctpiMap.get(row.date)!;
 
-      if (typeof row.ctpi_0_to_100 === "number") {
-        dateEntry[row.team] = row.ctpi_0_to_100;
-      }
-    });
+        if (typeof row.ctpi_0_to_100 === "number") {
+          dateEntry[row.team] = row.ctpi_0_to_100;
+        }
+      });
 
-    const ctpi = Array.from(ctpiMap.entries())
-      .map(([date, values]) => ({
-        date,
-        ...values
-      }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+      const ctpi = Array.from(ctpiMap.entries())
+        .map(([date, values]) => ({
+          date,
+          ...values,
+        }))
+        .sort((a, b) => a.date.localeCompare(b.date));
 
-    // Enrich games with ratings and goalie info
-    const enrichedGames = (gameRows ?? []).map((g: any) => {
-      const homeAbbrev = findAbbrev(g.homeTeamId);
-      const awayAbbrev = findAbbrev(g.awayTeamId);
-      const homeRating = ratings.find((r) => r.teamAbbr === homeAbbrev);
-      const awayRating = ratings.find((r) => r.teamAbbr === awayAbbrev);
+      // Enrich games with ratings and goalie info
+      const enrichedGames = (gameRows ?? []).map((g: any) => {
+        const homeAbbrev = findAbbrev(g.homeTeamId);
+        const awayAbbrev = findAbbrev(g.awayTeamId);
+        const homeRating = ratings.find((r) => r.teamAbbr === homeAbbrev);
+        const awayRating = ratings.find((r) => r.teamAbbr === awayAbbrev);
 
-      const gameGoalies = goalieRows?.filter((gr) => gr.game_id === g.id) || [];
+        const gameGoalies =
+          goalieRows?.filter((gr) => gr.game_id === g.id) || [];
 
-      const processGoalie = (gr: GoalieRow) => {
-        const yahooId = nhlToYahoo.get(Number(gr.player_id));
-        const yp = yahooId ? yahooMap.get(yahooId) : undefined;
-        return {
-          ...gr,
-          name: yp?.player_name ?? yp?.full_name ?? "Unknown Goalie",
-          percent_ownership: yp?.percent_ownership ?? null
+        const processGoalie = (gr: GoalieRow) => {
+          const yahooId = nhlToYahoo.get(Number(gr.player_id));
+          const yp = yahooId ? yahooMap.get(yahooId) : undefined;
+          return {
+            ...gr,
+            name: yp?.player_name ?? yp?.full_name ?? "Unknown Goalie",
+            percent_ownership: yp?.percent_ownership ?? null,
+          };
         };
-      };
 
-      const homeGoalies = gameGoalies
-        .filter((gr) => gr.team_id === g.homeTeamId)
-        .map(processGoalie)
-        .sort(
-          (a, b) => (b.start_probability ?? 0) - (a.start_probability ?? 0)
-        );
+        const homeGoalies = gameGoalies
+          .filter((gr) => gr.team_id === g.homeTeamId)
+          .map(processGoalie)
+          .sort(
+            (a, b) => (b.start_probability ?? 0) - (a.start_probability ?? 0),
+          );
 
-      const awayGoalies = gameGoalies
-        .filter((gr) => gr.team_id === g.awayTeamId)
-        .map(processGoalie)
-        .sort(
-          (a, b) => (b.start_probability ?? 0) - (a.start_probability ?? 0)
-        );
+        const awayGoalies = gameGoalies
+          .filter((gr) => gr.team_id === g.awayTeamId)
+          .map(processGoalie)
+          .sort(
+            (a, b) => (b.start_probability ?? 0) - (a.start_probability ?? 0),
+          );
 
-      return {
-        ...g,
-        homeRating,
-        awayRating,
-        homeGoalies,
-        awayGoalies
-      };
-    });
+        return {
+          ...g,
+          homeRating,
+          awayRating,
+          homeGoalies,
+          awayGoalies,
+        };
+      });
 
       return {
         dateUsed,
@@ -665,10 +883,24 @@ export default async function handler(
         goalieSource: "goalie_start_projections",
         legacyPlayerProjectionsUsed: false,
         fantasyScoringContract: START_CHART_FANTASY_SCORING_CONTRACT,
-        projections: playersWithGames.length,
-        players: playersWithGames,
+        request: {
+          mode: request.mode,
+          profile: request.profile,
+          position: request.position,
+          modelVersion: request.modelVersion,
+        },
+        pagination: {
+          page: request.page,
+          pageSize: request.paginationRequested
+            ? request.pageSize
+            : totalPlayers,
+          totalPlayers,
+          totalPages,
+        },
+        projections: responsePlayers.length,
+        players: responsePlayers,
         ctpi,
-        games: enrichedGames
+        games: enrichedGames,
       };
     })();
 
@@ -678,7 +910,7 @@ export default async function handler(
 
     responseCache.set(cacheKey, {
       payload,
-      expiresAt: Date.now() + RESPONSE_TTL_MS
+      expiresAt: Date.now() + RESPONSE_TTL_MS,
     });
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=60");
     return res.status(200).json(payload);

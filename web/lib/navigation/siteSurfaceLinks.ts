@@ -99,6 +99,12 @@ export const UNDERLYING_STATS_SURFACE_LINKS: SiteSurfaceLink[] = [
 
 export const START_CHART_SURFACE_LINKS: SiteSurfaceLink[] = [
   {
+    href: "/forge/command-center",
+    label: "FORGE Command Center",
+    description:
+      "Open the canonical projection run, freshness, and model context.",
+  },
+  {
     href: "/splits",
     label: "Splits",
     description: "Open player-vs-team and L10 matchup context for the slate.",

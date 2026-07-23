@@ -58,21 +58,23 @@
 
 - [ ] 5.0 Verify and finish APIs and logging
   - [x] 5.1 Reconcile current routes with requested projections, rankings, rates, and metrics contracts; consolidate ownership rather than overlap endpoints.
-  - [ ] 5.2 Validate date, profile, mode, position, tau, risk, pagination, and model version with structured 4xx errors.
+  - [x] 5.2 Validate date, profile, mode, position, tau, risk, pagination, and model version with structured 4xx errors.
   - [x] 5.3 Return identity, projected stats/value, PP/line role, multipliers, sources, freshness, fallbacks, and drivers in one response.
   - [ ] 5.4 Persist prediction/outcome rows idempotently and calculate MAE/MAPE with explicit samples/unavailable states.
   - [x] 5.5 Test schema, pagination, determinism, invalid inputs, empty slate, stale/partial sources, and logging reconciliation.
   - Evidence (5.1/5.3/5.5, 2026-07-22): `/api/v1/start-chart` is the sole slate reader over canonical FORGE outputs; focused route/normalizer/scoring tests cover canonical-source metadata, requested/resolved fallback, empty data, response invariants, versioned scoring, and retired-materializer exclusion.
-  - [ ] 5.6 Verify P95 under four seconds for at least 100 players or remediate the measured blocker.
+  - [x] 5.6 Verify P95 under four seconds for at least 100 players or remediate the measured blocker.
+  - Evidence (5.2/5.6, 2026-07-23): the canonical reader validates real dates, points/default-profile/latest-run ownership, positions, optional bounded pagination, and explicitly unavailable tau/risk/alternate-model controls before data access. Focused structured-error/filter/pagination coverage passes; ten value-free Production reads of the 351-player 2026-03-14 slate measured 257 ms P95 against the four-second requirement.
 
 - [ ] 6.0 Verify and finish the Daily Start Chart UI
   - [x] 6.1 Default date to today and support one-date slates with position tabs and server ranks.
   - [x] 6.2 Render Rank, Name, Team, Opponent, goalie, one-game slate, value, PP probability/unit, line role, and honest context tags.
-  - [ ] 6.3 Support date, tau, points mode, profile, and available risk controls; render unavailable states for deferred modes.
+  - [x] 6.3 Support date, tau, points mode, profile, and available risk controls; render unavailable states for deferred modes.
   - [x] 6.4 Explain usage, PP1, opponent PK/defense, goalie, sustainability, freshness, and fallback priors.
   - [x] 6.5 Handle loading, empty date, stale/partial inputs, missing goalie, failed API, and fallback-derived rows honestly.
   - Evidence (6.1/6.2/6.4/6.5, 2026-07-22): the current page and production trace verify today/one-date selection, positions/ranks, game/team/opponent/goalie/value/role context, returned scoring/source/fallback metadata, and explicit loading/error/no-games/no-players/fallback presentation.
   - [ ] 6.6 Verify keyboard/table semantics, tooltips, color-independent tags, responsive/mobile layout, URL state, and FORGE navigation.
+  - Evidence (6.3, 2026-07-23): the page exposes the canonical points/profile contract, synchronizes the selected date into the URL, and explicitly identifies tau, category, and P75 risk controls as FORGE-owned/unavailable rather than inventing a second projection engine. Keyboard-native game filters, metric disclosure, chart labeling, and FORGE navigation are implemented and unit-covered, but 6.6 remains open because the local Chromium visual pass was blocked by the macOS browser sandbox.
 
 - [ ] 7.0 Verify starter refresh, scheduling, and operator behavior
   - [x] 7.1 Reconcile nightly/hourly requirements with cron and establish source-refresh → projection → Start Chart ordering.
@@ -80,14 +82,16 @@
   - Evidence (7.1/7.2, 2026-07-22): the canonical eight-stage pipeline/caller map records source→rolling/team/goalie→FORGE→accuracy ordering, and the goalie trace distinguishes shared start prior from FORGE scenario probability with recent/season share, schedule context, fallback, and clipping ownership.
   - [ ] 7.3 Provide a secured manual override with actor/time/source provenance, validation, and rollback.
   - [ ] 7.4 Add idempotent retry, partial-success classification, audit rows, counts, freshness, and actionable failures.
-  - [ ] 7.5 Document environment names, schedules, backfill/smoke commands, expected rows, failures, and rollback without secrets.
+  - [x] 7.5 Document environment names, schedules, backfill/smoke commands, expected rows, failures, and rollback without secrets.
+  - Evidence (7.5, 2026-07-23): `web/README.md` now records the public read contract, server-only environment names, active 10:05 UTC schedule, daily/overnight/targeted modes, value-free smoke, bounded authorized repair, 200/207 interpretation, audit/count/freshness checks, and non-destructive rollback boundary without embedding credentials.
 
-- [ ] 8.0 Run end-to-end verification and synchronize ownership
-  - [ ] 8.1 Run targeted unit/contract tests, TypeScript checks, and seeded-date API/UI smoke verification.
+- [x] 8.0 Run end-to-end verification and synchronize ownership
+  - [x] 8.1 Run targeted unit/contract tests, TypeScript checks, and seeded-date API/UI smoke verification.
   - [x] 8.2 Reconcile prediction sums/values and rows against inputs for representative forwards, defensemen, and goalies.
   - [x] 8.3 Verify Dashboard/Trends/FORGE drill-ins use the same date/model/source metadata and do not mix stale recencies.
   - [x] 8.4 Record older proposed views/tables as merged, superseded, or deferred and update both PRDs plus master records.
   - Evidence (8.2–8.4, 2026-07-22): exact May-10 player/team/goalie arithmetic, Start Chart UI scoring, canonical run/date/source metadata, and cross-surface links reconcile; the audit marks the former writer/`player_projections` path retired and all older requested views as reused, merged, deferred, or absent without creating duplicates.
+  - Evidence (8.1, 2026-07-23): the focused API/UI group passes 2 files/12 tests, full TypeScript passes, targeted lint has zero errors, Prettier and bundled-Node-24 Sass pass, and value-free seeded Production reads return 182, 351, and 91 players across three dates. The separate full browser accessibility/responsive gate remains open under 6.6.
 
 ## NEW Tasks
 

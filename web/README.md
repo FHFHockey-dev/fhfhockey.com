@@ -129,6 +129,35 @@ especially strings that include `DATABASE_PASSWORD` or service-role keys.
 
 The exact latest-snapshot query is covered by the production composite index `idx_susscore_date_win (snapshot_date, window_code)`. Read-only `EXPLAIN (FORMAT JSON)` on 2026-07-23 selected an index-only backward scan for snapshot discovery and an index scan with exact `snapshot_date`/`window_code` conditions for the leaderboard rows.
 
+## Start Chart operations
+
+`GET /api/v1/start-chart` is a read-only one-date presentation adapter over the latest succeeded canonical FORGE run. It accepts a real `date=YYYY-MM-DD`, `mode=points`, `profile=fhfh-default-skater-v1`, `model_version=latest`, optional `position=C|LW|RW|D|G`, and optional `page`/`page_size` (maximum 200). Tau, category, alternate profile, risk, and pinned model-version overrides fail with a structured `422` because Start Chart does not own a second projection model.
+
+The canonical refresh is `GET /api/v1/db/run-rolling-forge-pipeline`. It requires an admin bearer token or the exact `CRON_SECRET`, uses server-only `NEXT_PUBLIC_SUPABASE_URL` plus `SUPABASE_SERVICE_ROLE_KEY`, and writes one `cron_job_audit` row through `withCronJobAudit`. The active Vercel caller runs `daily_incremental` at `05 10 * * *` UTC with downstream reconciliation enabled, accuracy disabled, and non-blocking-stage continuation enabled.
+
+- `daily_incremental` is the normal bounded current-date refresh.
+- `overnight` is the broader operator profile and must be invoked intentionally.
+- `targeted_repair` requires explicit `date`, `startDate`, and `endDate` bounds.
+
+Use a value-free read smoke without authorization:
+
+```bash
+curl --fail --silent --show-error \
+  "https://fhfhockey.com/api/v1/start-chart?date=2026-02-07&mode=points&model_version=latest&page=1&page_size=100" \
+  | jq '{dateUsed, projectionRunId, projections, pagination, serving}'
+```
+
+For an authorized bounded repair, keep the credential in the environment and do not print it:
+
+```bash
+curl --fail --silent --show-error \
+  -H "Authorization: Bearer ${CRON_SECRET}" \
+  "https://fhfhockey.com/api/v1/db/run-rolling-forge-pipeline?mode=targeted_repair&date=2026-02-07&startDate=2026-02-07&endDate=2026-02-07&includeDownstream=true&includeAccuracy=false&stopOnFailure=true" \
+  | jq '{success, mode, dateWindow, durationMs, runtimeBudget, scanSummary, stages}'
+```
+
+A `200` means every blocking stage succeeded; `207` is an intentional partial-success receipt and must be reviewed by stage before retry. Retry the same bounded window only after confirming no stage widened its requested scope. Verify the matching `cron_job_audit` row, expected player/run counts, source freshness, and `/api/v1/start-chart` resolved date/run before treating the repair as complete. Roll back application behavior by restoring the prior exact deployment; persisted projection repair requires a separately approved, date/run-scoped correction rather than a destructive blanket delete.
+
 ## Contextual rankings pipeline
 
 The skater rankings page currently reads from existing source tables and helpers;

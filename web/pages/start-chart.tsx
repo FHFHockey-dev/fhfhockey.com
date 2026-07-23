@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Head from "next/head";
+import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
 import { START_CHART_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import useSWR from "swr";
 import {
@@ -8,7 +9,7 @@ import {
   ResponsiveContainer,
   Tooltip,
   XAxis,
-  YAxis
+  YAxis,
 } from "recharts";
 import styles from "./start-chart.module.scss";
 
@@ -17,7 +18,7 @@ import type { TeamPowerSnapshotLike } from "lib/dashboard/teamContext";
 import {
   formatStartChartFantasyScoringContract,
   START_CHART_FANTASY_SCORING_CONTRACT,
-  type StartChartFantasyScoringContract
+  type StartChartFantasyScoringContract,
 } from "lib/projections/startChartFantasyScoring";
 
 type StartChartPlayer = {
@@ -69,7 +70,14 @@ type ApiResponse = {
   fantasyScoringContract?: StartChartFantasyScoringContract;
 };
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+const fetcher = async (url: string) => {
+  const response = await fetch(url);
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(payload?.error?.message ?? "Start Chart request failed");
+  }
+  return payload;
+};
 
 const POSITION_ORDER = ["C", "LW", "RW", "D", "G"] as const;
 
@@ -82,7 +90,7 @@ const getColorDistance = (hex1: string, hex2: string) => {
   const g2 = parseInt(hex2.slice(3, 5), 16);
   const b2 = parseInt(hex2.slice(5, 7), 16);
   return Math.sqrt(
-    Math.pow(r1 - r2, 2) + Math.pow(g1 - g2, 2) + Math.pow(b1 - b2, 2)
+    Math.pow(r1 - r2, 2) + Math.pow(g1 - g2, 2) + Math.pow(b1 - b2, 2),
   );
 };
 
@@ -171,9 +179,11 @@ const RenderGoalie = ({ goalies }: { goalies?: GoalieInfo[] }) => {
             style={{
               width: `${prob}%`,
               backgroundColor: hexToRgba(barColor, 0.4),
-              borderColor: barColor
+              borderColor: barColor,
             }}
             title={`${g.name} (${prob.toFixed(0)}%)`}
+            role="img"
+            aria-label={`${g.name}, ${prob.toFixed(0)} percent start probability`}
           >
             {showText && prob > 20 && (
               <span className={styles.goalieSegmentText}>
@@ -189,7 +199,7 @@ const RenderGoalie = ({ goalies }: { goalies?: GoalieInfo[] }) => {
 
 const RenderRating = ({
   rating,
-  opponentRating
+  opponentRating,
 }: {
   rating?: TeamRating;
   opponentRating?: TeamRating;
@@ -256,17 +266,29 @@ export default function StartChartPage() {
     LW: true,
     RW: true,
     D: true,
-    G: true
+    G: true,
   });
 
-  const { data, isLoading, mutate } = useSWR<ApiResponse>(
+  const { data, error, isLoading } = useSWR<ApiResponse>(
     `/api/v1/start-chart?date=${date}`,
-    fetcher
+    fetcher,
   );
 
   useEffect(() => {
-    mutate();
-  }, [date, mutate]);
+    const queryDate = new URLSearchParams(window.location.search).get("date");
+    if (queryDate && /^\d{4}-\d{2}-\d{2}$/.test(queryDate)) {
+      setDate((currentDate) =>
+        queryDate === currentDate ? currentDate : queryDate,
+      );
+    }
+  }, []);
+
+  const selectDate = (nextDate: string) => {
+    setDate(nextDate);
+    const url = new URL(window.location.href);
+    url.searchParams.set("date", nextDate);
+    window.history.replaceState(window.history.state, "", url);
+  };
 
   const filteredByUi = useMemo(() => {
     if (!data?.players) return [];
@@ -306,7 +328,7 @@ export default function StartChartPage() {
     search,
     posFilter,
     selectedGameId,
-    data?.games
+    data?.games,
   ]);
 
   const playersByPos = useMemo(() => {
@@ -327,7 +349,7 @@ export default function StartChartPage() {
             return (b.start_probability ?? 0) - (a.start_probability ?? 0);
           }
           return (b.proj_fantasy_points ?? 0) - (a.proj_fantasy_points ?? 0);
-        })
+        }),
       );
     });
     return map;
@@ -404,7 +426,7 @@ export default function StartChartPage() {
 
     return [
       Math.max(0, Math.floor(min - 5)),
-      Math.min(100, Math.ceil(max + 5))
+      Math.min(100, Math.ceil(max + 5)),
     ];
   }, [ctpiData, teamsPlaying]);
 
@@ -412,7 +434,7 @@ export default function StartChartPage() {
     setPosFilter((prev) => ({ ...prev, [pos]: !prev[pos] }));
 
   const fantasyScoringDescription = formatStartChartFantasyScoringContract(
-    data?.fantasyScoringContract ?? START_CHART_FANTASY_SCORING_CONTRACT
+    data?.fantasyScoringContract ?? START_CHART_FANTASY_SCORING_CONTRACT,
   );
 
   return (
@@ -423,71 +445,94 @@ export default function StartChartPage() {
 
       <section className={styles.chartPanel}>
         <div className={styles.chartHeader}>
-          <div className={styles.chartTitle}>CTPI Pulse</div>
+          <h1 className={styles.chartTitle}>Start Chart · CTPI Pulse</h1>
           <div className={styles.meta}>Date: {data?.dateUsed ?? date}</div>
         </div>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={ctpiData} margin={{ right: 20 }}>
-            <XAxis
-              dataKey="date"
-              tick={{ fill: "#9ea7b3" }}
-              padding={{ right: 20 }}
-            />
-            <YAxis domain={yAxisDomain} width={30} tick={{ fill: "#9ea7b3" }} />
-            <Tooltip
-              contentStyle={{
-                background: "rgba(0,0,0,0.8)",
-                border: "1px solid #333",
-                color: "#fff"
-              }}
-              labelStyle={{ color: "#fff" }}
-            />
-            {teamsPlaying.map((abbrev) => {
-              return (
-                <Line
-                  key={abbrev}
-                  type="monotone"
-                  dataKey={abbrev}
-                  stroke={teamColors[abbrev] ?? "#fff"}
-                  strokeWidth={2}
-                  dot={(props: any) => {
-                    const isLast = props.index === ctpiData.length - 1;
-                    return (
-                      <CustomDot {...props} dataKey={abbrev} isLast={isLast} />
-                    );
-                  }}
-                  activeDot={{ r: 4 }}
-                  name={abbrev}
-                />
-              );
-            })}
-          </LineChart>
-        </ResponsiveContainer>
+        <div
+          className={styles.chartGraphic}
+          role="img"
+          aria-label={`Thirty-day team power trend for ${
+            teamsPlaying.length
+              ? teamsPlaying.join(", ")
+              : "the selected slate; no trend data available"
+          }`}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={ctpiData} margin={{ right: 20 }}>
+              <XAxis
+                dataKey="date"
+                tick={{ fill: "#9ea7b3" }}
+                padding={{ right: 20 }}
+              />
+              <YAxis
+                domain={yAxisDomain}
+                width={30}
+                tick={{ fill: "#9ea7b3" }}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: "rgba(0,0,0,0.8)",
+                  border: "1px solid #333",
+                  color: "#fff",
+                }}
+                labelStyle={{ color: "#fff" }}
+              />
+              {teamsPlaying.map((abbrev) => {
+                return (
+                  <Line
+                    key={abbrev}
+                    type="monotone"
+                    dataKey={abbrev}
+                    stroke={teamColors[abbrev] ?? "#fff"}
+                    strokeWidth={2}
+                    dot={(props: any) => {
+                      const isLast = props.index === ctpiData.length - 1;
+                      return (
+                        <CustomDot
+                          {...props}
+                          dataKey={abbrev}
+                          isLast={isLast}
+                        />
+                      );
+                    }}
+                    activeDot={{ r: 4 }}
+                    name={abbrev}
+                  />
+                );
+              })}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </section>
 
       {/* Game Strip */}
       {data?.games && data.games.length > 0 && (
-        <section className={styles.gameStrip}>
+        <section className={styles.gameStrip} aria-label="Games on this slate">
           {data.games.map((g) => {
             const home = Object.values(teamsInfo).find(
-              (t) => t.id === g.homeTeamId
+              (t) => t.id === g.homeTeamId,
             );
             const away = Object.values(teamsInfo).find(
-              (t) => t.id === g.awayTeamId
+              (t) => t.id === g.awayTeamId,
             );
             const isSelected = selectedGameId === g.id;
 
             return (
-              <div
+              <button
+                type="button"
                 key={g.id}
                 className={`${styles.gameCard} ${
                   isSelected ? styles.selected : ""
                 }`}
                 onClick={() => setSelectedGameId(isSelected ? null : g.id)}
+                aria-pressed={isSelected}
+                aria-label={`${away?.abbrev ?? "Away"} at ${
+                  home?.abbrev ?? "Home"
+                }; ${isSelected ? "remove" : "apply"} game filter`}
                 style={
                   {
                     "--away-color": away?.primaryColor ?? "#333",
-                    "--home-color": home?.primaryColor ?? "#333"
+                    "--home-color": home?.primaryColor ?? "#333",
                   } as React.CSSProperties
                 }
               >
@@ -539,15 +584,17 @@ export default function StartChartPage() {
                   </div>
                   <RenderGoalie goalies={g.homeGoalies} />
                 </div>
-              </div>
+              </button>
             );
           })}
         </section>
       )}
 
-      <section className={styles.filters}>
+      <section className={styles.filters} aria-label="Start Chart controls">
         <div className={styles.filterGroup}>
+          <label htmlFor="start-chart-search">Player</label>
           <input
+            id="start-chart-search"
             className={styles.search}
             placeholder="Player name..."
             value={search}
@@ -556,12 +603,13 @@ export default function StartChartPage() {
         </div>
 
         <div className={styles.filterGroup}>
-          <label>Date</label>
+          <label htmlFor="start-chart-date">Date</label>
           <input
+            id="start-chart-date"
             type="date"
             className={styles.dateInput}
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => selectDate(e.target.value)}
           />
         </div>
 
@@ -582,8 +630,11 @@ export default function StartChartPage() {
         </div>
 
         <div className={styles.filterGroup}>
-          <label>Ownership ≤ {ownershipMax}%</label>
+          <label htmlFor="start-chart-ownership">
+            Ownership ≤ {ownershipMax}%
+          </label>
           <input
+            id="start-chart-ownership"
             className={styles.rangeInput}
             type="range"
             min={0}
@@ -593,8 +644,36 @@ export default function StartChartPage() {
           />
         </div>
 
-        <div className={styles.legendContainer}>
-          <div className={styles.legendIcon}>i</div>
+        <div className={styles.filterGroup}>
+          <label htmlFor="start-chart-mode">Mode</label>
+          <select id="start-chart-mode" className={styles.selectInput} disabled>
+            <option>Points</option>
+          </select>
+        </div>
+
+        <div className={styles.filterGroup}>
+          <label htmlFor="start-chart-profile">Profile</label>
+          <select
+            id="start-chart-profile"
+            className={styles.selectInput}
+            disabled
+          >
+            <option>
+              {data?.fantasyScoringContract?.label ??
+                START_CHART_FANTASY_SCORING_CONTRACT.label}
+            </option>
+          </select>
+        </div>
+
+        <p className={styles.controlNote}>
+          Tau, category mode, and P75 risk controls are unavailable here; the
+          canonical FORGE run owns model parameters and uncertainty.
+        </p>
+
+        <details className={styles.legendContainer}>
+          <summary className={styles.legendIcon} aria-label="Explain metrics">
+            i
+          </summary>
           <div className={styles.legendTooltip}>
             <div className={styles.legendItem}>
               <strong>CTPI (Cumulative Team Power Index):</strong> Measures
@@ -614,12 +693,22 @@ export default function StartChartPage() {
               on Goal for this specific game.
             </div>
           </div>
-        </div>
+        </details>
       </section>
 
-      <section className={styles.columns}>
+      <section
+        className={styles.columns}
+        aria-label="Start Chart rankings by position"
+        aria-busy={isLoading}
+      >
+        {error ? (
+          <div className={styles.requestState} role="alert">
+            Start Chart is unavailable: {error.message}
+          </div>
+        ) : null}
         {data?.games && data.games.length > 0 && data.players.length === 0 && (
           <div
+            role="status"
             style={{
               gridColumn: "1 / -1",
               padding: "2rem",
@@ -628,7 +717,7 @@ export default function StartChartPage() {
               background: "rgba(255, 107, 107, 0.1)",
               border: "1px solid rgba(255, 107, 107, 0.3)",
               borderRadius: "8px",
-              marginBottom: "1rem"
+              marginBottom: "1rem",
             }}
           >
             <strong>No Player Projections Found</strong>
@@ -643,15 +732,22 @@ export default function StartChartPage() {
           const className = `${styles.column} ${
             styles[`pos${pos as typeof pos}`]
           }`;
+          const headingId = `start-chart-position-${pos}`;
           return (
-            <div className={className} key={pos}>
+            <section
+              className={className}
+              key={pos}
+              aria-labelledby={headingId}
+            >
               <div className={styles.columnHeader}>
-                <span>{pos}</span>
+                <h2 id={headingId}>{pos}</h2>
                 <span className={styles.pill}>{list.length}</span>
               </div>
               <div className={styles.cardList}>
                 {isLoading ? (
-                  <div className={styles.meta}>Loading...</div>
+                  <div className={styles.meta} role="status">
+                    Loading...
+                  </div>
                 ) : list.length === 0 ? (
                   <div className={styles.emptyState}>No players.</div>
                 ) : (
@@ -768,10 +864,16 @@ export default function StartChartPage() {
                   ))
                 )}
               </div>
-            </div>
+            </section>
           );
         })}
       </section>
+
+      <SurfaceWorkflowLinks
+        title="Continue in FORGE"
+        description="Start Chart is the one-date presentation layer over canonical FORGE projections."
+        links={START_CHART_SURFACE_LINKS}
+      />
     </div>
   );
 }

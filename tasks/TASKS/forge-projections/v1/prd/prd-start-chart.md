@@ -2,7 +2,7 @@ You are GPT-5 Codex. Implement the Start Chart DAILY MVP exactly as specified.
 
 > **Reconciled implementation task list:** `tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md`
 >
-> **Current reconciliation status (2026-07-22):** 25/51 rows are evidence-complete. The canonical Sustainability/Trends/FORGE audit proves Start Chart is a one-date presentation adapter over FORGE, verifies current schema/input/utility/API/UI/schedule and exact player/team/goalie traces, and keeps the retired independent writer/materialization retired. The remaining 26 rows are genuine formula/schema/override/runbook/performance/accessibility, history-repair, and full verification gates; this status does not authorize new persistence or model ownership.
+> **Current reconciliation status (2026-07-23):** 32/51 rows are evidence-complete. The canonical Sustainability/Trends/FORGE audit proves Start Chart is a one-date presentation adapter over FORGE, verifies current schema/input/utility/API/UI/schedule and exact player/team/goalie traces, and keeps the retired independent writer/materialization retired. Strict reader validation, honest unsupported-control states, measured 351-player latency, operator documentation, and the targeted verification parent now close. The remaining 19 rows are genuine formula/schema/override/retry/accessibility, history-repair, and browser-verification gates; this status does not authorize new persistence or model ownership.
 
 Title
 Start Chart — Daily Fantasy Hockey Start/Sit Rankings
@@ -112,3 +112,11 @@ Begin now by generating:
 - SQL migrations for starts, scoring_profiles, model_params and initial indexes.
 - SQL for vw_schedule_day and vw_team_strength_state_daily.
 - TypeScript modules for math utilities and API route scaffolds for /projections and /rankings with input validation.
+
+## Canonical reader/control and operations checkpoint (2026-07-23)
+
+Start Chart remains a presentation adapter over the latest succeeded FORGE run. Its reader now rejects invalid dates, positions, and pagination with structured `400` responses; accepts only points mode, `fhfh-default-skater-v1`, and latest-run ownership; and returns structured `422` responses for tau, risk, alternate profile/mode, or pinned-model overrides that would create a second model contract.
+
+The page exposes the supported points/profile contract and selected date, synchronizes date state to the URL, and renders unavailable model controls explicitly. Keyboard-native game filters, metric disclosure, chart labeling, and direct FORGE navigation are implemented and unit-covered. A local macOS Chromium sandbox blocked the final desktop/mobile visual pass, so the broader accessibility/responsive row remains open rather than inferred.
+
+The focused API/UI group passes 2 files/12 tests, TypeScript, zero-error targeted lint, formatting, and bundled-Node-24 Sass. Value-free Production reads cover three seeded dates; the largest returns 351 players, and ten samples measure 257 ms P95. `web/README.md` owns the environment-name, active-schedule, bounded repair, smoke, expected-receipt, failure, and rollback runbook.
