@@ -100,6 +100,12 @@ interface SkaterTrendResponse {
     lowSamplePercentiles: "shrink_to_neutral";
     suppressLowSampleRankDelta: true;
   };
+  coverage: {
+    categoryCount: number;
+    playerCount: number;
+    partial: boolean;
+  };
+  warnings: string[];
   categories: Record<
     SkaterTrendCategoryId,
     Omit<CategoryResult, "includedPlayerIds">
@@ -664,6 +670,12 @@ export default async function handler(
         requestedDate,
         resolvedDate
       });
+      const warnings = [
+        ...(serving.message ? [serving.message] : []),
+        ...(playerIdsNeeded.size === 0
+          ? ["No qualified skater trend rows are available for this scope."]
+          : [])
+      ];
 
       const response: SkaterTrendResponse = {
         seasonId,
@@ -681,6 +693,12 @@ export default async function handler(
           lowSamplePercentiles: "shrink_to_neutral",
           suppressLowSampleRankDelta: true
         },
+        coverage: {
+          categoryCount: SKATER_TREND_CATEGORIES.length,
+          playerCount: playerIdsNeeded.size,
+          partial: playerIdsNeeded.size === 0 || serving.status !== "requested_date"
+        },
+        warnings,
         categories: categories as SkaterTrendResponse["categories"],
         playerMetadata
       };

@@ -29,21 +29,21 @@
   - [x] 1.4 Record a dependency graph for rolling data, identity, metric definitions, projections, schedule, and section loading.
   - Evidence (1.1–1.4, 2026-07-22): the canonical Sustainability/Trends inventory and dependency map cover 1,052 surfaces, local/API/data edges, every current page/API/registry/loader/test/source, and classify canonical `/trends`, Underlying Stats, the active Sandbox, alternate placeholder, read-only Testing Grounds, player detail, FORGE/Start, and quarantined SKO without duplicating ownership.
 
-- [ ] 2.0 Freeze shared entity/metric/window contracts
+- [x] 2.0 Freeze shared entity/metric/window contracts. Evidence: all five aggregate APIs and their client types now carry canonical entity/window semantics plus explicit comparison, sample, source-date, coverage, fallback/partial, and warning fields (verified 2026-07-22).
   - [x] 2.1 Audit team, skater, and goalie metric registries for directionality, grain, units, source, window, minimum sample, availability, and explanation.
   - [x] 2.2 Centralize percentile/rank semantics so higher displayed percentile means better after lower-is-better normalization.
-  - [ ] 2.3 Define current/prior comparison point, delta, sample/confidence, date/generated time, season, team attribution, and warning fields in typed API contracts.
+  - [x] 2.3 Define current/prior comparison point, delta, sample/confidence, date/generated time, season, team attribution, and warning fields in typed API contracts. Evidence: ranking entries retain current/previous rank, delta, GP/sample policy, identity/team metadata, and the typed aggregate responses now include season, source date/generated time, serving/fallback, coverage, partial, and fixed warning fields (verified 2026-07-22).
   - [x] 2.4 Verify player windows follow player games and team/goalie windows follow documented observations without cross-entity semantic drift.
   - [x] 2.5 Add deterministic tests for directionality, ties, minimum sample, missing values, window ordering, traded players, and small peer groups.
-  - Evidence (2.1/2.2/2.4/2.5, 2026-07-22): audited team/skater/goalie registries and percentile helpers record direction, units, windows, samples, availability, and explanations; lower-is-better normalization, player-game windows, observation-based team/goalie windows, ties/missing/small-sample ordering, and traded-player identity are covered by the published metric/trace regressions.
+  - Evidence (2.1–2.5, 2026-07-22): audited registries and percentile helpers record direction, units, windows, samples, availability, and explanations; typed APIs now bind comparison/sample/source/coverage/warning semantics; lower-is-better normalization, player-game windows, observation-based team/goalie windows, ties/missing/small-sample ordering, and traded-player identity have focused proof.
 
-- [ ] 3.0 Verify complete, fresh, canonical data access
+- [x] 3.0 Verify complete, fresh, canonical data access. Evidence: every aggregate/detail read is bounded, canonical identity is reconciled, and all five aggregate APIs expose explicit source-date, coverage, fallback/partial, and warning state with focused regressions (verified 2026-07-22).
   - [x] 3.1 Inventory every table/view/RPC read per Trends API/detail route and prove its result bound or add explicit pagination.
   - [x] 3.2 Reconcile team/player/goalie identity, season, date, position, and team context across rolling, ratings, projections, starts, and metadata.
-  - [ ] 3.3 Return coverage counts, source date/generated time, fallback, stale, partial, and unavailable-table state from APIs.
+  - [x] 3.3 Return coverage counts, source date/generated time, fallback, stale, partial, and unavailable-table state from APIs. Evidence: team power now uses its latest source row rather than request time and reports per-source rows/team/category coverage; CTPI, SoS, skater, and goalie responses expose their source/resolved dates, counts, partial/fallback state, and fixed warnings (verified 2026-07-22).
   - [x] 3.4 Replace or bound player-detail direct client reads that duplicate canonical API logic or risk page-cap truncation.
   - [x] 3.5 Add API tests for full paging, empty/stale/partial sources, invalid filters, fallback dates, and structured errors.
-  - Evidence (3.1/3.2/3.4/3.5, 2026-07-22): the dependency map records all five Trends APIs and player-detail reads; team-power and player-detail multi-page traces prove rows beyond 1,000 participate, identities/dates/seasons/positions are reconciled, and focused API regressions cover bounds, invalid inputs, empty/fallback/stale/partial/error contracts.
+  - Evidence (3.1–3.5, 2026-07-22): the dependency map records all five Trends APIs and player-detail reads; multi-page traces prove rows beyond 1,000 participate; identities/dates/seasons/positions are reconciled; and 14 focused API/hook/page regressions cover bounds, source dates, coverage, invalid inputs, empty/fallback/stale/partial/error contracts.
 
 - [x] 4.0 Complete team movement workflow. Evidence: aligned team metrics, canonical metadata/handoffs, and the current team workspace now jointly provide ranked percentile lines, explicit deltas, labeled risers/fallers, GP sample context, source-update date, and qualified loading/empty states (verified 2026-07-22).
   - [x] 4.1 Verify team offense, defense, PP, PK, pace/control, CTPI, and SOS movement metrics use aligned dates and definitions.

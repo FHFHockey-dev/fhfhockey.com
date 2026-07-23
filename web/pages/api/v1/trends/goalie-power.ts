@@ -80,6 +80,12 @@ interface GoalieTrendResponse {
   };
   limit: number;
   windowSize: GoalieWindowSize;
+  coverage: {
+    categoryCount: number;
+    playerCount: number;
+    partial: boolean;
+  };
+  warnings: string[];
   categories: Record<
     GoalieTrendCategoryId,
     Omit<CategoryResult, "includedPlayerIds">
@@ -563,6 +569,12 @@ export default async function handler(
         requestedDate,
         resolvedDate
       });
+      const warnings = [
+        ...(serving.message ? [serving.message] : []),
+        ...(playerIdsNeeded.size === 0
+          ? ["No qualified goalie trend rows are available for this scope."]
+          : [])
+      ];
 
       const response: GoalieTrendResponse = {
         seasonId,
@@ -573,6 +585,12 @@ export default async function handler(
         serving,
         limit,
         windowSize,
+        coverage: {
+          categoryCount: GOALIE_TREND_CATEGORIES.length,
+          playerCount: playerIdsNeeded.size,
+          partial: playerIdsNeeded.size === 0 || serving.status !== "requested_date"
+        },
+        warnings,
         categories: categories as GoalieTrendResponse["categories"],
         playerMetadata
       };

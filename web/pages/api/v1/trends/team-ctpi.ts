@@ -9,6 +9,7 @@ import {
 } from "lib/trends/ctpi";
 import { type CtpiScore } from "lib/trends/ctpi";
 import { buildRequestedDateServingState } from "lib/dashboard/freshness";
+import { ACTIVE_TEAM_ABBREVIATIONS } from "lib/trends/teamMetricConfig";
 
 dotenv.config({ path: "./../../../.env.local" });
 
@@ -313,6 +314,8 @@ export default async function handler(
         ? "latest_available_with_data"
         : "requested_date"
     });
+    const partial =
+      ctpi.length < ACTIVE_TEAM_ABBREVIATIONS.length || fallbackApplied;
 
     res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=60");
     return res.status(200).json({
@@ -328,6 +331,20 @@ export default async function handler(
         computedAt,
         rowCount: sourceRowCount
       },
+      coverage: {
+        expectedTeams: ACTIVE_TEAM_ABBREVIATIONS.length,
+        teamCount: ctpi.length,
+        sourceRowCount,
+        partial
+      },
+      warnings: [
+        ...(fallbackApplied
+          ? ["CTPI is using the latest available fallback date."]
+          : []),
+        ...(ctpi.length < ACTIVE_TEAM_ABBREVIATIONS.length
+          ? ["CTPI team coverage is incomplete."]
+          : [])
+      ],
       teams: ctpi
     });
   } catch (error: any) {

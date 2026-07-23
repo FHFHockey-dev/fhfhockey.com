@@ -187,6 +187,10 @@ describe("/api/v1/trends/skater-power", () => {
     expect(res.body.serving.gapDays).toBeGreaterThanOrEqual(14);
     expect(res.body.serving.message).toContain("materially stale");
     expect(res.body.generatedAt).toBe("2025-10-16T23:59:59.999Z");
+    expect(res.body.coverage).toMatchObject({ playerCount: 1, partial: true });
+    expect(res.body.warnings).toEqual([
+      expect.stringContaining("materially stale")
+    ]);
   });
 
   it("returns requested-date serving when the latest scope matches the dashboard date", async () => {
@@ -234,6 +238,8 @@ describe("/api/v1/trends/skater-power", () => {
     });
     expect(res.body.serving.gapDays).toBe(0);
     expect(res.body.generatedAt).toBe("2026-02-08T23:59:59.999Z");
+    expect(res.body.coverage).toMatchObject({ playerCount: 1, partial: false });
+    expect(res.body.warnings).toEqual([]);
   });
 
   it("continues past the default 1000-row PostgREST page cap", async () => {

@@ -16,12 +16,32 @@ import { getTeamMetaByAbbr, getTeamMetaById } from "./teamMetadata";
 export type TeamTrendsResponse = {
   seasonId: number;
   generatedAt: string;
+  dateUsed: string | null;
+  coverage: {
+    expectedTeams: number;
+    teamsWithData: number;
+    categoryCount: number;
+    sourceRows: Record<string, number>;
+    partial: boolean;
+  };
+  warnings: string[];
   categories: Record<TrendCategoryId, CategoryComputationResult>;
 };
 
 export type CtpiResponse = {
   seasonId: number;
   generatedAt: string;
+  requestedDate: string;
+  dateUsed: string;
+  fallbackApplied: boolean;
+  serving: RequestedDateServingState;
+  coverage: {
+    expectedTeams: number;
+    teamCount: number;
+    sourceRowCount: number;
+    partial: boolean;
+  };
+  warnings: string[];
   teams: Array<{
     team: string;
     ctpi_0_to_100: number;
@@ -37,6 +57,14 @@ export type CtpiResponse = {
 export type SosResponse = {
   seasonId: number;
   generatedAt: string;
+  dateUsed: string | null;
+  coverage: {
+    expectedTeams: number;
+    teamCount: number;
+    sourceRowCount: number;
+    partial: boolean;
+  };
+  warnings: string[];
   teams: Array<{
     team: string;
     teamId: number;
@@ -55,6 +83,21 @@ export type SkaterTrendsResponse = {
   limit: number;
   seriesGames: number;
   windowSize: number;
+  requestedDate: string;
+  dateUsed: string;
+  fallbackApplied: boolean;
+  serving: RequestedDateServingState;
+  samplePolicy: {
+    minimumGames: number;
+    lowSamplePercentiles: "shrink_to_neutral";
+    suppressLowSampleRankDelta: true;
+  };
+  coverage: {
+    categoryCount: number;
+    playerCount: number;
+    partial: boolean;
+  };
+  warnings: string[];
   categories: Record<string, unknown>;
   playerMetadata: Record<
     string,
@@ -77,6 +120,12 @@ export type GoalieTrendsResponse = {
   serving: RequestedDateServingState;
   limit: number;
   windowSize: number;
+  coverage: {
+    categoryCount: number;
+    playerCount: number;
+    partial: boolean;
+  };
+  warnings: string[];
   categories: Record<
     GoalieTrendCategoryId,
     {
@@ -398,10 +447,46 @@ export const loadTrendsDashboardData = async (
     teamTrends: {
       seasonId: 0,
       generatedAt: "",
+      dateUsed: null,
+      coverage: {
+        expectedTeams: 32,
+        teamsWithData: 0,
+        categoryCount: 0,
+        sourceRows: {},
+        partial: true
+      },
+      warnings: [],
       categories: {} as TeamTrendsResponse["categories"]
     },
-    teamCtpi: { seasonId: 0, generatedAt: "", teams: [] },
-    teamSos: { seasonId: 0, generatedAt: "", teams: [] },
+    teamCtpi: {
+      seasonId: 0,
+      generatedAt: "",
+      requestedDate: params.date,
+      dateUsed: "",
+      fallbackApplied: false,
+      serving: emptyServing,
+      coverage: {
+        expectedTeams: 32,
+        teamCount: 0,
+        sourceRowCount: 0,
+        partial: true
+      },
+      warnings: [],
+      teams: []
+    },
+    teamSos: {
+      seasonId: 0,
+      generatedAt: "",
+      dateUsed: null,
+      coverage: {
+        expectedTeams: 32,
+        teamCount: 0,
+        sourceRowCount: 0,
+        partial: true
+      },
+      warnings: [],
+      teams: []
+    },
     skaterTrends: {
       seasonId: 0,
       generatedAt: "",
@@ -409,6 +494,17 @@ export const loadTrendsDashboardData = async (
       limit: skaterLimit,
       seriesGames: 40,
       windowSize: skaterWindow,
+      requestedDate: params.date,
+      dateUsed: "",
+      fallbackApplied: false,
+      serving: emptyServing,
+      samplePolicy: {
+        minimumGames: 3,
+        lowSamplePercentiles: "shrink_to_neutral",
+        suppressLowSampleRankDelta: true
+      },
+      coverage: { categoryCount: 0, playerCount: 0, partial: true },
+      warnings: [],
       categories: {},
       playerMetadata: {}
     },
@@ -421,6 +517,8 @@ export const loadTrendsDashboardData = async (
       serving: emptyServing,
       limit: skaterLimit,
       windowSize: skaterWindow === 20 ? 10 : skaterWindow,
+      coverage: { categoryCount: 0, playerCount: 0, partial: true },
+      warnings: [],
       categories: {} as GoalieTrendsResponse["categories"],
       playerMetadata: {}
     },

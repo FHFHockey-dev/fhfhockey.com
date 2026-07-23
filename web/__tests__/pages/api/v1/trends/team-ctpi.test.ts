@@ -129,8 +129,17 @@ describe("/api/v1/trends/team-ctpi", () => {
         sourceDate: "2026-02-01",
         computedAt: "2026-02-02T12:00:00.000Z",
         rowCount: 1001
+      },
+      coverage: {
+        expectedTeams: 32,
+        teamCount: 32,
+        sourceRowCount: 1001,
+        partial: true
       }
     });
+    expect(res.body.warnings).toEqual([
+      "CTPI is using the latest available fallback date."
+    ]);
     expect(res.body.teams).toHaveLength(32);
   });
 });

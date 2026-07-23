@@ -121,5 +121,17 @@ describe("/api/v1/trends/team-power", () => {
     expect(res.body.categories.offense.rankings).toEqual(
       expect.arrayContaining([expect.objectContaining({ team: "TOR" })]),
     );
+    expect(res.body.generatedAt).toBe("2026-03-15T23:59:59.999Z");
+    expect(res.body.dateUsed).toBe("2026-03-15");
+    expect(res.body.coverage).toEqual({
+      expectedTeams: 32,
+      teamsWithData: 2,
+      categoryCount: 4,
+      sourceRows: { as: 1001, pp: 0, pk: 0, wgo: 0 },
+      partial: true,
+    });
+    expect(res.body.warnings).toEqual([
+      "Team trend coverage is incomplete for the current season.",
+    ]);
   });
 });

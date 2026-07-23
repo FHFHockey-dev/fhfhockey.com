@@ -188,6 +188,13 @@ export default async function handler(
     const seasonId = season.id;
     const seasonStart = season.startDate;
     const seasonEnd = season.endDate || season.regularSeasonEndDate;
+    const sourceRows: Record<MetricSource, number> = {
+      as: 0,
+      pp: 0,
+      pk: 0,
+      wgo: 0,
+    };
+    let dateUsed: string | null = null;
 
     for (const source of Object.keys(SOURCE_TABLES) as MetricSource[]) {
       const rows = await fetchRowsForSource(
@@ -196,6 +203,11 @@ export default async function handler(
         seasonStart,
         seasonEnd,
       );
+      sourceRows[source] = rows.length;
+      rows.forEach((row) => {
+        const rowDate = typeof row.date === "string" ? row.date.slice(0, 10) : null;
+        if (rowDate && (!dateUsed || rowDate > dateUsed)) dateUsed = rowDate;
+      });
       ingestRows(rows, source, teamGameMap);
     }
 
@@ -208,11 +220,26 @@ export default async function handler(
 
     const categoryResults: Record<TrendCategoryId, CategoryComputationResult> =
       computeCategoryResults(teamGameMap);
+    const teamsWithData = Array.from(teamGameMap.values()).filter(
+      (teamDates) => teamDates.size > 0,
+    ).length;
+    const partial = teamsWithData < ACTIVE_TEAM_ABBREVIATIONS.length;
 
     res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=60");
     return res.status(200).json({
       seasonId,
-      generatedAt: new Date().toISOString(),
+      generatedAt: dateUsed ? `${dateUsed}T23:59:59.999Z` : new Date().toISOString(),
+      dateUsed,
+      coverage: {
+        expectedTeams: ACTIVE_TEAM_ABBREVIATIONS.length,
+        teamsWithData,
+        categoryCount: TEAM_TREND_CATEGORIES.length,
+        sourceRows,
+        partial,
+      },
+      warnings: partial
+        ? ["Team trend coverage is incomplete for the current season."]
+        : [],
       categories: categoryResults,
     });
   } catch (error: any) {
