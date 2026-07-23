@@ -992,6 +992,11 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                       <div className={styles.panelMeta}>
                         Recent directionality first
                       </div>
+                      <div className={styles.panelMeta}>
+                        {data?.teamTrends?.generatedAt
+                          ? `Source updated ${data.teamTrends.generatedAt.slice(0, 10)}`
+                          : "Source update unavailable"}
+                      </div>
                     </div>
                   </div>
 

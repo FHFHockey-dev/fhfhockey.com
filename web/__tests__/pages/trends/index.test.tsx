@@ -2,6 +2,16 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 
+const teamTrendsFixture = vi.hoisted(() => ({
+  value: { generatedAt: "", categories: {} } as any
+}));
+
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
 vi.mock("next/head", () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
@@ -25,6 +35,18 @@ vi.mock("next/link", () => ({
   )
 }));
 
+vi.mock("recharts", () => ({
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  LineChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Line: () => null,
+  XAxis: () => null,
+  YAxis: () => null,
+  Tooltip: () => null,
+  Legend: () => null
+}));
+
 vi.mock("components/SurfaceWorkflowLinks", () => ({
   default: () => <div>workflow links</div>
 }));
@@ -41,7 +63,7 @@ vi.mock("hooks/useDashboardData", () => ({
       teamRatings: [],
       teamCtpi: { teams: [] },
       teamSos: { teams: [] },
-      teamTrends: { categories: {} },
+      teamTrends: teamTrendsFixture.value,
       forgePlayers: { data: [] },
       forgeGoalies: { data: [] },
       startChart: { players: [], games: [] },
@@ -135,10 +157,13 @@ import TrendsDashboardPage from "../../../pages/trends/index";
 describe("Trends dashboard", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.stubGlobal("ResizeObserver", ResizeObserverMock);
+    teamTrendsFixture.value = { generatedAt: "", categories: {} };
   });
 
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
   });
 
   it("renders recent-form summary cards and goalie workload context", () => {
@@ -150,5 +175,57 @@ describe("Trends dashboard", () => {
     expect(screen.getByText(/Last Year stays out of strong v1/i)).toBeTruthy();
     expect(screen.getByText("Goalie Workload Share")).toBeTruthy();
     expect(screen.getByText("goalie share chart")).toBeTruthy();
+    expect(screen.getByText("No team trend history yet.")).toBeTruthy();
+    expect(screen.getByText("Source update unavailable")).toBeTruthy();
+  });
+
+  it("renders team rankings, movers, deltas, sample context, and source freshness", () => {
+    teamTrendsFixture.value = {
+      generatedAt: "2026-04-08T15:00:00.000Z",
+      categories: {
+        offense: {
+          rankings: [
+            {
+              team: "CAR",
+              percentile: 88.5,
+              gp: 78,
+              rank: 1,
+              previousRank: 3,
+              delta: 4.5
+            },
+            {
+              team: "ANA",
+              percentile: 24.2,
+              gp: 78,
+              rank: 32,
+              previousRank: 29,
+              delta: -3.2
+            }
+          ],
+          series: {
+            CAR: [
+              { gp: 77, percentile: 84 },
+              { gp: 78, percentile: 88.5 }
+            ],
+            ANA: [
+              { gp: 77, percentile: 27.4 },
+              { gp: 78, percentile: 24.2 }
+            ]
+          }
+        }
+      }
+    };
+
+    render(<TrendsDashboardPage initialDate="2026-04-08" />);
+
+    expect(screen.getByText("Team Risers And Fallers")).toBeTruthy();
+    expect(screen.getByText("Most Improved (last 5 GP)")).toBeTruthy();
+    expect(screen.getByText("Most Degraded (last 5 GP)")).toBeTruthy();
+    expect(screen.getAllByText("CAR").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("ANA").length).toBeGreaterThan(0);
+    expect(screen.getByText("▲4.5%")).toBeTruthy();
+    expect(screen.getByText("▼3.2%")).toBeTruthy();
+    expect(screen.getByText("Rolling percentile by games played")).toBeTruthy();
+    expect(screen.getByText("Source updated 2026-04-08")).toBeTruthy();
   });
 });

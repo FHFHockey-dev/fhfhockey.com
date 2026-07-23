@@ -63,6 +63,11 @@ This PRD recovers the previously empty Trends scope from the Three Pillars PRD, 
 30. Non-trivial windowing, percentile, directionality, fallback, identity, and source-alignment logic must have focused tests; visual-only changes may use direct verification.
 31. The implementation must preserve compatibility for current FORGE/Command Center links and query-driven metric handoff where approved.
 
+## Current Verified Status — 2026-07-22
+
+- B-TRENDS is 32/50 with 18 open. The team movement workflow is complete: the canonical page exposes percentile trend lines, ranked current values, arrow/value deltas, labeled five-game risers/fallers, GP sample context, explicit source update/unavailable copy, and qualified loading/empty states. The focused page suite passes 2/2, full TypeScript passes, and scoped lint has zero errors.
+- Typed warning completeness, independent section failure/stale preservation, goalie volatility/confidence, mixed-recency invalidation, hydration, broader accessibility/performance/browser verification, and final synchronization remain open.
+
 ## Non-Goals (Out of Scope)
 
 - Replacing `/underlying-stats` as the team intelligence landing or raw table explorer.

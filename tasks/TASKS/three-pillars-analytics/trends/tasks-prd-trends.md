@@ -45,12 +45,12 @@
   - [x] 3.5 Add API tests for full paging, empty/stale/partial sources, invalid filters, fallback dates, and structured errors.
   - Evidence (3.1/3.2/3.4/3.5, 2026-07-22): the dependency map records all five Trends APIs and player-detail reads; team-power and player-detail multi-page traces prove rows beyond 1,000 participate, identities/dates/seasons/positions are reconciled, and focused API regressions cover bounds, invalid inputs, empty/fallback/stale/partial/error contracts.
 
-- [ ] 4.0 Complete team movement workflow
+- [x] 4.0 Complete team movement workflow. Evidence: aligned team metrics, canonical metadata/handoffs, and the current team workspace now jointly provide ranked percentile lines, explicit deltas, labeled risers/fallers, GP sample context, source-update date, and qualified loading/empty states (verified 2026-07-22).
   - [x] 4.1 Verify team offense, defense, PP, PK, pace/control, CTPI, and SOS movement metrics use aligned dates and definitions.
-  - [ ] 4.2 Provide movers/rank/percentile/delta charts and tables with sample/freshness context and qualified empty states.
+  - [x] 4.2 Provide movers/rank/percentile/delta charts and tables with sample/freshness context and qualified empty states. Evidence: the team workspace renders percentile trend lines, top ranks, arrow/value deltas, labeled five-game risers/fallers, GP context, explicit source update/unavailable copy, and loading/empty branches; the focused page suite passes 2/2 (verified 2026-07-22).
   - [x] 4.3 Keep deeper team diagnosis routed to Underlying Stats while preserving current metric/date/team handoff.
   - [x] 4.4 Verify team metadata/colors/logos are normalized once and not remapped inconsistently per section.
-  - Evidence (4.1/4.3/4.4, 2026-07-22): exact team traces distinguish aligned movement percentiles, CTPI, SOS, and persisted current-state ratings; `/trends` routes deeper diagnosis to Underlying Stats, while shared canonical team identity/metadata supplies colors/logos and date/team handoff.
+  - Evidence (4.1–4.4, 2026-07-22): exact team traces distinguish aligned movement percentiles, CTPI, SOS, and persisted current-state ratings; `/trends` renders directly tested rank/mover/delta/sample/freshness/empty states and routes deeper diagnosis to Underlying Stats, while shared canonical team identity/metadata supplies colors/logos and date/team handoff.
 
 - [x] 5.0 Complete skater movement workflow
   - [x] 5.1 Verify approved production, shot/xG, playmaking, usage, physical, defense/context, and luck/regression categories against rolling support totals.
