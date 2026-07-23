@@ -2,7 +2,7 @@
 
 ## 2026-07-22 master-table checkpoint
 
-The approved combined Phases 3–4 cohort is implemented on desktop-horizontal: one OMT/Team/schedule/current/4WK table, contract order, all intended non-day sorts, expanded-by-default four-value 4WK group, Score-only rank emphasis plus edge, and a truthful OMT-unavailable state. Desktop vertical remains explicitly named `Legacy Vertical`; mobile/tablet compositions are unchanged and no second feature flag was added. The focused group passes 3 files/11 tests, full TypeScript passes, and route/Sass compilation returns HTTP 200. Phase 5 remains open.
+The approved combined Phases 3–4 cohort is implemented on desktop-horizontal: one OMT/Team/schedule/current/4WK table, contract order, all intended non-day sorts, expanded-by-default four-value 4WK group, Score-only rank emphasis plus edge, and a truthful OMT-unavailable state. Desktop vertical remains explicitly named `Legacy Vertical`; mobile/tablet compositions are unchanged and no second feature flag was added. The focused group passes 3 files/11 tests; the stale tab identifier found by the production build is repaired, and Next type checking plus optimized compilation pass. Phase 5 remains open.
 
 ## Status (Updated)
 

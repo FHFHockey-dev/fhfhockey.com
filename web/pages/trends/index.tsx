@@ -192,6 +192,8 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
   const [activeIndex, setActiveIndex] = useState(-1);
   const [results, setResults] = useState<PlayerSearchRow[]>([]);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const goalieShareRef = useRef<HTMLElement | null>(null);
+  const [showGoalieShare, setShowGoalieShare] = useState(false);
   const router = useRouter();
   const {
     data,
@@ -210,6 +212,26 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
     const queryDate = normalizeDashboardDate(router.query.date);
     if (queryDate && queryDate !== date) setDate(queryDate);
   }, [date, router.isReady, router.query.date]);
+
+  useEffect(() => {
+    const node = goalieShareRef.current;
+    if (!node) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setShowGoalieShare(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShowGoalieShare(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "300px 0px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   const forgeRows = useMemo<ForgeProjectionRow[]>(() => {
     const raw = data?.forgePlayers?.data ?? [];
@@ -847,6 +869,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                       <input
                         ref={inputRef}
                         type="text"
+                        aria-label="Search players"
                         placeholder="Search by player name"
                         value={query}
                         onChange={(event) => setQuery(event.target.value)}
@@ -1138,7 +1161,11 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                             Refreshing team trends…
                           </p>
                         )}
-                        <div className={styles.chartBody}>
+                        <div
+                          className={styles.chartBody}
+                          role="img"
+                          aria-label={`${activeTeamCategory.label} team percentile trend lines by games played`}
+                        >
                           <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={teamTrendSeries.series}>
                               <XAxis dataKey="gp" />
@@ -1370,8 +1397,12 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                             Refreshing skater trends…
                           </p>
                         )}
-                        <ResponsiveContainer width="100%" height={260}>
-                          <LineChart data={skaterTrendSeries.series}>
+                        <div
+                          role="img"
+                          aria-label={`${activeSkaterLabel} skater percentile trend lines by games played`}
+                        >
+                          <ResponsiveContainer width="100%" height={260}>
+                            <LineChart data={skaterTrendSeries.series}>
                             <XAxis dataKey="gp" />
                             <YAxis domain={[0, 100]} />
                             <Tooltip />
@@ -1385,8 +1416,9 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                                 stroke={getChartColor(idx)}
                               />
                             ))}
-                          </LineChart>
-                        </ResponsiveContainer>
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1485,8 +1517,12 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                             Refreshing goalie trends…
                           </p>
                         )}
-                        <ResponsiveContainer width="100%" height={260}>
-                          <LineChart data={goalieTrendSeries.series}>
+                        <div
+                          role="img"
+                          aria-label={`${activeGoalieLabel} goalie percentile trend lines by games played`}
+                        >
+                          <ResponsiveContainer width="100%" height={260}>
+                            <LineChart data={goalieTrendSeries.series}>
                             <XAxis dataKey="gp" />
                             <YAxis domain={[0, 100]} />
                             <Tooltip />
@@ -1500,8 +1536,9 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                                 stroke={getChartColor(idx)}
                               />
                             ))}
-                          </LineChart>
-                        </ResponsiveContainer>
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1630,6 +1667,9 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                         </p>
                       )}
                       <table className={styles.table}>
+                        <caption className={styles.srOnly}>
+                          Projection runway leaders for {date}
+                        </caption>
                         <thead>
                           <tr>
                             <th className={styles.thLeft}>Player</th>
@@ -1703,6 +1743,9 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                         </p>
                       )}
                       <table className={styles.table}>
+                        <caption className={styles.srOnly}>
+                          Goalie start runway leaders for {date}
+                        </caption>
                         <thead>
                           <tr>
                             <th className={styles.thLeft}>Goalie</th>
@@ -1782,7 +1825,10 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
             </div>
           </section>
 
-          <section className={`${styles.panel} ${styles.goalieSharePanel}`}>
+          <section
+            ref={goalieShareRef}
+            className={`${styles.panel} ${styles.goalieSharePanel}`}
+          >
             <div className={styles.panelHeader}>
               <h2 className={styles.panelTitle}>Goalie Workload Share</h2>
               <span className={styles.panelMeta}>L10 to season</span>
@@ -1792,7 +1838,13 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                 Use the existing goalie-share chart here as the workload context
                 companion to the goalie starts table.
               </p>
-              <GoalieShareChart />
+              {showGoalieShare ? (
+                <GoalieShareChart />
+              ) : (
+                <p className={styles.loadingText}>
+                  Goalie workload chart loads when this section enters view.
+                </p>
+              )}
             </div>
           </section>
         </main>

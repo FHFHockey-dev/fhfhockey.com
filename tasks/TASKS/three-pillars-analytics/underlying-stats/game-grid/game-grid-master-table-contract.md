@@ -110,6 +110,7 @@ The focused contract group remains 3 files / 9 tests. Full TypeScript passes. Th
 - NEW 1: closed. The master consumes `statsError`, presents a value-free unavailable notice, avoids showing metric emphasis/value remnants, and preserves schedule/current/4WK content.
 - NEW 2: desktop vertical orientation bypasses the master architecture. The owner approved retaining it as a named legacy fallback through Phases 2–4; later structural and breakpoint verification still must prove that boundary before closure.
 - NEW 3: the task list's obsolete Jest command is corrected to the repository's Vitest command and closed as documentation-only work.
+- NEW 4: the Phase-3/4 page now renders the declared typed `VALID_TABS` constant; Next type checking and optimized compilation no longer fail on the stale identifier.
 - Phase-1 review resolved initial 4WK state, Score-cell highlight scope, NEW 2 orientation disposition, and feature-flag strategy. The owner then authorized Phases 3–4 as one implementation/review cohort; Phase 5 remains separately gated.
 
 ## Phases 3–4 implementation evidence

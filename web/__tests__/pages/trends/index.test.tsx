@@ -1,6 +1,6 @@
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 
 const teamTrendsFixture = vi.hoisted(() => ({
   value: { generatedAt: "", categories: {} } as any
@@ -245,6 +245,41 @@ describe("Trends dashboard", () => {
     expect(screen.getByText("goalie share chart")).toBeTruthy();
     expect(screen.getByText("No team trend history yet.")).toBeTruthy();
     expect(screen.getByText("Source update unavailable")).toBeTruthy();
+  });
+
+  it("defers the goalie workload chart until its section approaches the viewport", () => {
+    let notifyIntersection: IntersectionObserverCallback = () => undefined;
+    class IntersectionObserverMock {
+      constructor(callback: IntersectionObserverCallback) {
+        notifyIntersection = callback;
+      }
+      observe() {}
+      disconnect() {}
+      unobserve() {}
+      takeRecords() {
+        return [];
+      }
+      root = null;
+      rootMargin = "300px 0px";
+      thresholds = [0];
+    }
+    vi.stubGlobal("IntersectionObserver", IntersectionObserverMock);
+
+    render(<TrendsDashboardPage initialDate="2026-04-08" />);
+
+    expect(screen.queryByText("goalie share chart")).toBeNull();
+    expect(
+      screen.getByText("Goalie workload chart loads when this section enters view.")
+    ).toBeTruthy();
+
+    act(() => {
+      notifyIntersection(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        {} as IntersectionObserver
+      );
+    });
+
+    expect(screen.getByText("goalie share chart")).toBeTruthy();
   });
 
   it("uses a valid query date as the server-rendered dashboard date", async () => {

@@ -81,7 +81,7 @@ const WigoCharts: React.FC = () => {
 
   const renderTabs = () => (
     <div className={styles.mobileTabsBar}>
-      {validTabs.map((t) => (
+      {VALID_TABS.map((t) => (
         <button
           key={t}
           className={t === activeTab ? styles.activeTab : styles.tabBtn}

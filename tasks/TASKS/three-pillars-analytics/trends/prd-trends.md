@@ -65,8 +65,8 @@ This PRD recovers the previously empty Trends scope from the Three Pillars PRD, 
 
 ## Current Verified Status — 2026-07-22
 
-- B-TRENDS is 45/51 with six open. Typed comparison/source/coverage/warning contracts, complete reads, team/skater/goalie workflows, safe short-horizon separation, five-section resilience, and query-date ownership are complete. Goalie rows expose normalized volatility/sample confidence, while one typed recency contract downgrades projection/start context when resolved dates diverge by more than three days. The latest focused helper/hook/page group passes 7/7 and full TypeScript passes.
-- Broader accessibility/performance/browser verification, final synchronization, and the continuous NEW-work parent remain open.
+- B-TRENDS is complete at 52/52. Typed comparison/source/coverage/warning contracts, complete reads, team/skater/goalie workflows, safe short-horizon separation, five-section resilience, query-date ownership, normalized goalie confidence, accessibility, responsive browser proof, and final synchronization are complete.
+- Browser tracing found the below-fold goalie workload chart launching 32 team-schedule requests on initial load; near-viewport mounting now defers that fanout and its focused regression passes. The final helper/hook/page group passes 8/8; scoped lint has zero errors; Next type checking and optimized compilation pass before static export reaches the unrelated `/lines` environment/data boundary.
 
 ## Non-Goals (Out of Scope)
 
