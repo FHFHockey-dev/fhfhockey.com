@@ -18,6 +18,7 @@ import {
   assertScorePrerequisites,
   isSustainabilityDependencyError,
 } from "lib/sustainability/dependencyChecks";
+import { countExtremeSustainabilityRows } from "lib/sustainability/observability";
 
 async function handler(
   req: NextApiRequest,
@@ -26,12 +27,20 @@ async function handler(
   const t0 = Date.now();
   const withTiming = (body: Record<string, unknown>, endedAt = Date.now()) =>
     withCronJobTiming(body, t0, endedAt);
+  const phaseTimingsMs: Record<string, number> = {};
+  let phaseStarted = t0;
+  const finishPhase = (phase: string) => {
+    const ended = Date.now();
+    phaseTimingsMs[phase] = ended - phaseStarted;
+    phaseStarted = ended;
+  };
   try {
     const season = await resolveSeasonId(req.query.season);
     const snapshot = String(
       req.query.snapshot_date || new Date().toISOString().slice(0, 10),
     );
     await assertScorePrerequisites(season, snapshot);
+    finishPhase("prerequisites");
     const dry = req.query.dry === "1" || req.query.dry === "true";
     const limit = Number(req.query.limit || 250);
     const offset = Number(req.query.offset || 0);
@@ -42,6 +51,7 @@ async function handler(
       req.query.run_all === "true";
 
     const { ids, posMap } = await loadPlayersForSnapshot(snapshot);
+    finishPhase("load_players");
     const batchOffsets = runAll
       ? Array.from(
           { length: Math.ceil(ids.length / limit) },
@@ -54,6 +64,7 @@ async function handler(
       F: await fetchSkillLeagueRef(season, "F"),
       D: await fetchSkillLeagueRef(season, "D"),
     } as any;
+    finishPhase("league_references");
 
     const windows = [
       { code: "l3", n: 3 },
@@ -86,9 +97,22 @@ async function handler(
         }
       }
     }
+    finishPhase("build_scores");
 
     const { inserted, chunks } = await upsertScores(rows, dry);
+    finishPhase("persist_scores");
+    const anomalyCount = countExtremeSustainabilityRows(rows);
     const duration_s = ((Date.now() - t0) / 1000).toFixed(2);
+    console.info("sustainability_rebuild_score", {
+      season,
+      snapshot_date: snapshot,
+      dry,
+      processed_players: totalPlayers,
+      rows_built: rows.length,
+      rows_upserted: inserted,
+      anomaly_count: anomalyCount,
+      phase_timings_ms: phaseTimingsMs,
+    });
     return res.status(200).json(
       withTiming({
         success: true,
@@ -100,6 +124,8 @@ async function handler(
         rows_built: rows.length,
         rows_upserted: inserted,
         write_chunks: chunks,
+        anomaly_count: anomalyCount,
+        phase_timings_ms: phaseTimingsMs,
         batches_processed: batchOffsets.length,
         sample: rows.slice(0, 5),
         duration_s,

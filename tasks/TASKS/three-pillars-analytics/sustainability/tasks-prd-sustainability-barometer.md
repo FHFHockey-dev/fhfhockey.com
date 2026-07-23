@@ -146,8 +146,8 @@
 	- [x] 7.8 Add the Storybook `Sustainability/Player signal` story covering ready/provisional badges, score history, and component disclosure (verified 2026-07-23).
 
 - [ ] 8.0 Observability & QA (Logging, Snapshots, Random Recompute, Assertions)
-	- [ ] 8.1 Implement structured logging (phase timings, anomaly counts) in pipeline.
-	- [ ] 8.2 Add anomaly detector (|z_raw|>5) increment counters; persist extreme_flag in row.
+	- [x] 8.1 The canonical score pipeline emits one structured event and audited response fields with named prerequisite/player/reference/build/persist phase timings, processed/written counts, and anomaly count (verified 2026-07-23).
+	- [x] 8.2 Detect finite pre-clamp raw z values with `|z|>5`, persist `extremeFlag`, sorted metric names, and threshold in canonical score components, and report the exact extreme-row count from each score rebuild (verified 2026-07-23).
 	- [ ] 8.3 Implement random sample recompute function & log diff stats; alert if diff > tolerance.
 	- [ ] 8.4 Implement nightly distribution drift detection (compare stdev & mean vs prior 7-day rolling average).
 	- [x] 8.5 Add health endpoint `/api/internal/sustainability/health` returning exact row counts and latest snapshot dates for the canonical score, trend-band, and projection outputs. The route is GET-only and protected by the existing admin/cron boundary; focused empty-table/error tests, TypeScript, lint, formatting, and diff integrity pass (verified 2026-07-22).

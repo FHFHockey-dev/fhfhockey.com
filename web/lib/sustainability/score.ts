@@ -14,6 +14,7 @@ import {
   applySustainabilityScoreGuardrails,
   clampSustainabilityZScore
 } from "./guardrails";
+import { buildSustainabilityExtremeMetadata } from "./observability";
 
 const EPS = 1e-9;
 
@@ -188,8 +189,10 @@ export async function buildScoreForPlayerWindow(
     .in("stat_code", ["shp", "oishp", "ipp", "ppshp"]);
   if (error) throw error;
   const zmap: Record<string, number> = {};
+  const rawZMap: Record<string, number> = {};
   const guardrailWarnings: string[] = [];
   for (const r of zrows ?? []) {
+    rawZMap[`z_${r.stat_code}`] = Number(r.eb_z);
     zmap[r.stat_code] = clampSustainabilityZScore(
       Number(r.eb_z),
       `window_z_${r.stat_code}`,
@@ -234,6 +237,7 @@ export async function buildScoreForPlayerWindow(
     fallbackFlags: {
       missing_luck_stats: missingLuckStats.length > 0
     },
+    ...buildSustainabilityExtremeMetadata(rawZMap),
     z_shp: zmap["shp"] ?? 0,
     z_oishp: zmap["oishp"] ?? 0,
     z_ipp: zmap["ipp"] ?? 0,
