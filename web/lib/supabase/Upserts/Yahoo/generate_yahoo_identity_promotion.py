@@ -28,8 +28,9 @@ from player_name_matcher import (
 )
 
 
-GENERATOR_VERSION = "dr011-yahoo-name-review-v1"
-REVIEW_ACTOR = "user_approved:dr_011_bulk_review_90_50_v1"
+GENERATOR_VERSION = "dr011-yahoo-name-review-v2"
+REVIEW_ACTOR = "user_approved:dr_011_bulk_review_90_50_v2"
+GENERATION_MODES = ("incremental", "recompute-all")
 
 
 def fetch_all(
@@ -203,6 +204,51 @@ def manifest_sha256(manifest: list[dict[str, Any]]) -> str:
     return hashlib.sha256(canonical).hexdigest()
 
 
+def select_manifest_for_mode(
+    manifest: list[dict[str, Any]],
+    *,
+    mode: str,
+    baseline_manifest: Iterable[dict[str, Any]] | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, int]]:
+    """Select new/changed candidates or an explicit complete recompute.
+
+    Removed baseline identities are reported for review and never emitted as a
+    deletion or supersession. The rendered SQL separately fails closed on
+    verified/manual identity conflicts.
+    """
+    if mode not in GENERATION_MODES:
+        raise ValueError(f"Unsupported generation mode: {mode}")
+    if mode == "recompute-all":
+        return list(manifest), {"recompute_rows": len(manifest)}
+    if baseline_manifest is None:
+        raise ValueError("Incremental mode requires a baseline manifest.")
+
+    baseline_rows = list(baseline_manifest)
+    baseline_by_yahoo_id = {
+        str(row["yahoo_player_id"]): row
+        for row in baseline_rows
+    }
+    if len(baseline_by_yahoo_id) != len(baseline_rows):
+        raise ValueError("Baseline manifest contains duplicate Yahoo IDs.")
+    current_by_yahoo_id = {
+        str(row["yahoo_player_id"]): row
+        for row in manifest
+    }
+    selected = [
+        row
+        for row in manifest
+        if baseline_by_yahoo_id.get(str(row["yahoo_player_id"])) != row
+    ]
+    metrics = {
+        "incremental_new_or_changed": len(selected),
+        "incremental_unchanged": len(manifest) - len(selected),
+        "removed_requires_review": len(
+            set(baseline_by_yahoo_id) - set(current_by_yahoo_id)
+        ),
+    }
+    return selected, metrics
+
+
 def _sql_text(value: str) -> str:
     return "'" + value.replace("'", "''") + "'"
 
@@ -211,6 +257,8 @@ def render_migration(
     manifest: list[dict[str, Any]],
     metrics: dict[str, int],
     manifest_hash: str,
+    *,
+    expected_pending_count: int | None = None,
 ) -> str:
     values = ",\n".join(
         "    ("
@@ -223,9 +271,11 @@ def render_migration(
         for row in manifest
     )
     expected_count = len(manifest)
-    remaining_pending = metrics["single_candidate_failures"] + metrics[
-        "ambiguous_yahoo_ids"
-    ]
+    remaining_pending = (
+        expected_pending_count
+        if expected_pending_count is not None
+        else metrics["single_candidate_failures"] + metrics["ambiguous_yahoo_ids"]
+    )
 
     return f"""-- DR-011: promote the explicitly approved Yahoo identity matches.
 -- Generator: {GENERATOR_VERSION}
@@ -528,7 +578,11 @@ $verify_promotion$;
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--manifest-output", type=Path)
+    parser.add_argument("--mode", choices=GENERATION_MODES, default="recompute-all")
+    parser.add_argument("--baseline-manifest", type=Path)
     parser.add_argument("--expected-count", type=int, required=True)
+    parser.add_argument("--expected-pending-count", type=int)
     parser.add_argument("--force", action="store_true")
     return parser.parse_args()
 
@@ -554,16 +608,46 @@ def main() -> None:
         "yahoo_player_id",
     )
     manifest, metrics = build_manifest(mapping_rows)
-    if len(manifest) != args.expected_count:
+    baseline_manifest = None
+    if args.mode == "incremental":
+        if args.baseline_manifest is None or args.expected_pending_count is None:
+            raise SystemExit(
+                "Incremental mode requires --baseline-manifest and "
+                "--expected-pending-count."
+            )
+        baseline_manifest = json.loads(
+            args.baseline_manifest.read_text(encoding="utf-8")
+        )
+        if not isinstance(baseline_manifest, list):
+            raise SystemExit("Baseline manifest must be a JSON array.")
+    selected_manifest, selection_metrics = select_manifest_for_mode(
+        manifest,
+        mode=args.mode,
+        baseline_manifest=baseline_manifest,
+    )
+    metrics.update(selection_metrics)
+    if not selected_manifest:
+        raise SystemExit("Selected manifest is empty; no migration is required.")
+    if len(selected_manifest) != args.expected_count:
         raise SystemExit(
-            f"Qualified manifest has {len(manifest)} rows, expected "
+            f"Selected manifest has {len(selected_manifest)} rows, expected "
             f"{args.expected_count}; refusing to write migration."
         )
-    manifest_hash = manifest_sha256(manifest)
+    manifest_hash = manifest_sha256(selected_manifest)
     args.output.write_text(
-        render_migration(manifest, metrics, manifest_hash),
+        render_migration(
+            selected_manifest,
+            metrics,
+            manifest_hash,
+            expected_pending_count=args.expected_pending_count,
+        ),
         encoding="utf-8",
     )
+    if args.manifest_output is not None:
+        args.manifest_output.write_text(
+            json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
     print(
         json.dumps(
             {

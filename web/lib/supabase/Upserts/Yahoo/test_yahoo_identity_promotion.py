@@ -10,6 +10,7 @@ from generate_yahoo_identity_promotion import (
     build_manifest,
     manifest_sha256,
     render_migration,
+    select_manifest_for_mode,
 )
 
 
@@ -60,6 +61,85 @@ class YahooIdentityPromotionGeneratorTests(unittest.TestCase):
         self.assertIn("truncate table approved_yahoo_identity_matches", sql)
         self.assertIn("remaining pending review count drifted from 2", sql)
         self.assertNotIn("security definer", sql.lower())
+
+    def test_incremental_mode_selects_only_new_or_changed_candidates(self):
+        baseline = [
+            self.manifest_row(1, "100", 100, 100, "exact_normalized"),
+            self.manifest_row(2, "101", 100, 100, "exact_normalized"),
+            self.manifest_row(3, "removed", 100, 100, "exact_normalized"),
+        ]
+        current = [
+            baseline[0],
+            self.manifest_row(2, "101", 100, 92, "fuzzy_qualified"),
+            self.manifest_row(4, "102", 100, 100, "exact_normalized"),
+        ]
+
+        selected, metrics = select_manifest_for_mode(
+            current,
+            mode="incremental",
+            baseline_manifest=baseline,
+        )
+
+        self.assertEqual(
+            [row["yahoo_player_id"] for row in selected],
+            ["101", "102"],
+        )
+        self.assertEqual(metrics["incremental_new_or_changed"], 2)
+        self.assertEqual(metrics["incremental_unchanged"], 1)
+        self.assertEqual(metrics["removed_requires_review"], 1)
+
+    def test_recompute_all_mode_selects_the_complete_manifest(self):
+        manifest = [
+            self.manifest_row(1, "100", 100, 100, "exact_normalized"),
+            self.manifest_row(2, "101", 100, 92, "fuzzy_qualified"),
+        ]
+        selected, metrics = select_manifest_for_mode(
+            manifest,
+            mode="recompute-all",
+        )
+        self.assertEqual(selected, manifest)
+        self.assertEqual(metrics, {"recompute_rows": 2})
+
+    def test_rendered_recompute_fails_closed_on_approved_mapping_conflicts(self):
+        manifest = [
+            self.manifest_row(1, "100", 100, 100, "exact_normalized"),
+        ]
+        sql = render_migration(
+            manifest,
+            {
+                "single_candidate_failures": 0,
+                "ambiguous_yahoo_ids": 0,
+            },
+            manifest_sha256(manifest),
+        )
+        self.assertIn("mapping.fhfh_player_id <> identity.id", sql)
+        self.assertIn("mapping.verification_status = 'review_required'", sql)
+        self.assertIn(
+            "mapping.source_provenance->>'review_manifest_sha256'",
+            sql,
+        )
+        self.assertIn(
+            "mapping.verification_status = 'verified'\n"
+            "                  and mapping.source_provenance->>"
+            "'review_manifest_sha256'",
+            sql,
+        )
+
+    @staticmethod
+    def manifest_row(
+        nhl_player_id: int,
+        yahoo_player_id: str,
+        last_name_score: int,
+        first_name_score: int,
+        match_kind: str,
+    ) -> dict[str, int | str]:
+        return {
+            "nhl_player_id": nhl_player_id,
+            "yahoo_player_id": yahoo_player_id,
+            "last_name_score": last_name_score,
+            "first_name_score": first_name_score,
+            "match_kind": match_kind,
+        }
 
     @staticmethod
     def row(
