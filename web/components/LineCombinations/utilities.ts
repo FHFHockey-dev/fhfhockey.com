@@ -92,8 +92,8 @@ export async function getLineCombinations(
         "gameId, teamId, forwards, defensemen, goalies, game:games!inner(startTime, seasonId)"
       )
       .eq("teamId", teamId)
-      .eq("games.seasonId", seasonToUse)
-      .order("games(startTime)", { ascending: false })
+      .eq("game.seasonId", seasonToUse)
+      .order("game(startTime)", { ascending: false })
       .limit(10)
       .returns<any>() // will be fixed after upgrading supabase-js
       .throwOnError();
@@ -250,7 +250,7 @@ export async function getLineCombinations(
             lineCombinations.map((game: any) => game.gameId)
           )
           .eq("playerId", id)
-          .eq("games.seasonId", seasonToUse)
+          .eq("game.seasonId", seasonToUse)
           .order("game(startTime)", { ascending: false })
           .returns<any[]>()
           .throwOnError()

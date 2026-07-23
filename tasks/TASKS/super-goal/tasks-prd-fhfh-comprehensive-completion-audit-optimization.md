@@ -2286,7 +2286,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-skater-forge.md::C0054` (original L93) — 8.3 Define acceptance criteria and rollback triggers for production enablement.
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-skater-forge.md::C0055` (original L94) — 8.4 Publish post-launch monitoring checklist and weekly recalibration cadence.
 
-### Source: `tasks/TASKS/lines-ccc-ingestion/tasks-prd-lines-ccc-ingestion.md` (93 rows)
+### Source: `tasks/TASKS/lines-ccc-ingestion/tasks-prd-lines-ccc-ingestion.md` (94 rows)
 
 - [x] `SRC::tasks/TASKS/lines-ccc-ingestion/tasks-prd-lines-ccc-ingestion.md::C0001` (original L120) — 1.0 Analyze CCC source shape and finalize ingestion contract
 - [x] `SRC::tasks/TASKS/lines-ccc-ingestion/tasks-prd-lines-ccc-ingestion.md::C0002` (original L121) — 1.1 Capture representative CCC examples covering direct tweets, quote tweets, repost-style items if discoverable, NHL teams, and non-NHL leagues.
@@ -2381,6 +2381,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/lines-ccc-ingestion/tasks-prd-lines-ccc-ingestion.md::C0091` (original L221) — 12.6 Wire the first consumer into the line-combinations landing page so players can show news-derived status pills.
 - [x] `SRC::tasks/TASKS/lines-ccc-ingestion/tasks-prd-lines-ccc-ingestion.md::C0092` (original L222) — 12.7 Extend distilled news flags into additional site surfaces such as team line pages, homepage status modules, and player pages.
 - [x] `SRC::tasks/TASKS/lines-ccc-ingestion/tasks-prd-lines-ccc-ingestion.md::C0093` (live NEW) — 13.0 NEW **P1 X API timestamp parser build blocker:** Repair the undefined `parseTimestampToIso` reference in `web/lib/sources/linesCccIngestion.ts` using the existing honest explicit-timezone timestamp contract, add focused X API created-at valid/invalid regression coverage, and verify the CCC/GDL source tests, project TypeScript, and production build before resuming A-AUTH 45.4 deployment. Reused `normalizeTweetPostedAt` so only explicit-timezone values are canonicalized, updated required quote-provenance fixtures, and added direct valid/invalid X API timestamp coverage. Verification: 37 focused tests pass, project TypeScript passes, scoped legacy-config ESLint passes with zero warnings, local `npm run build` passes, and Vercel deployment `dpl_BXxbdjaCrj85guU33rGgS9UoaaS7` is READY and aliased to production (2026-07-14).
+- [x] `SRC::tasks/TASKS/lines-ccc-ingestion/tasks-prd-lines-ccc-ingestion.md::C0094` (live NEW) — 14.0 NEW **P0 Lines static-generation build blocker:** alias-consistent PostgREST embeds and verified public player/news reads restore all 83 static pages and the complete production build; focused proof passes 8/8 and TypeScript passes (verified 2026-07-22).
 
 ### Source: `tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md` (85 rows)
 
@@ -5303,7 +5304,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0045` (original L77) — 9.1 Align movement-first hierarchy, entity grammar, metric explanations, sample/date labels, drill-ins, and sustainability-lab links.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0046` (original L78) — 9.2 Keyboard/search/chart/table/mobile accessibility passes desktop and 390px browser proof with zero overlay, console error, or overflow (verified 2026-07-22).
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0047` (original L79) — 9.3 Initial 32-team goalie schedule fanout is deferred until the below-fold workload section approaches viewport (verified 2026-07-22).
-- [x] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0048` (original L80) — 9.4 Focused proof passes 8/8; scoped lint is error-free; type/optimized compile and representative browser gates pass before unrelated `/lines` static-export environment failure (verified 2026-07-22).
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0048` (original L80) — 9.4 Focused proof passes 8/8; scoped lint is error-free; TypeScript, complete production build, and representative browser gates pass after the separately recorded Lines repair (verified 2026-07-22).
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0049` (original L81) — 9.5 Source/master/PRD/final-summary/diary and canonical FORGE/rolling ownership are synchronized (verified 2026-07-22).
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0050` (original L85) — NEW 10.0 Both execution-time findings are recorded and closed under NEW 11/12 (verified 2026-07-22).
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md::C0051` (live NEW) — NEW 11.0 **P2 scoped-retry eager-source execution:** request groups are lazy so a section-only retry cannot start or leak failures from non-selected sources; final focused proof has zero unhandled errors (verified 2026-07-22).

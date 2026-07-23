@@ -6,6 +6,8 @@ Build a new `lines_ccc` ingestion path for locally configured X/Twitter embed so
 
 The goal is to poll selected public hockey accounts, enrich concrete tweet URLs with X/Twitter oEmbed when possible, parse lineup, practice-line, power-play, goalie-start, injury, return, and transaction signals, reconcile names against roster data, and persist transparent historical rows in Supabase table `public.lines_ccc`.
 
+Current verified status (2026-07-22): the implementation list is complete at 94/94. The public Lines consumer now uses alias-consistent PostgREST queries and verified anonymous read contracts for player/news enrichment, so static generation no longer depends on a service-role secret. The focused utility suite passes 8/8, TypeScript passes, and the complete production build generates all 83 static pages plus the sitemap.
+
 CCC has a different source shape than GameDayTweets. CCC frequently quote-tweets source accounts and may repost AHL, ECHL, and other non-NHL league content. The implementation must analyze that tweet style before finalizing the SQL table or parser contract.
 
 ## Goals
