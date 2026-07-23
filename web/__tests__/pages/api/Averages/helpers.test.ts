@@ -18,7 +18,7 @@ vi.mock("lib/nst/client", () => ({
   fetchNstTextWithCacheByUrl: fetchNstTextWithCacheByUrlMock
 }));
 
-import { fetchPlayerData } from "./helpers";
+import { fetchPlayerData } from "../../../../pages/api/Averages/helpers";
 
 describe("fetchPlayerData", () => {
   beforeEach(() => {

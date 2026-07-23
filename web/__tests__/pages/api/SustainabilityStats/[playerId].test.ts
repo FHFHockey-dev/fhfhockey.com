@@ -13,7 +13,7 @@ vi.mock("lib/NHL/server", () => ({
   getPlayer: getPlayerMock
 }));
 
-import handler from "./[playerId]";
+import handler from "../../../../pages/api/SustainabilityStats/[playerId]";
 
 function createMockRes() {
   return {

@@ -8,7 +8,7 @@ vi.mock("lib/nst/client", () => ({
   fetchNstTextByUrl: fetchNstTextByUrlMock
 }));
 
-import handler from "./fetch_team_table";
+import handler from "../../../pages/api/fetch_team_table";
 
 function createMockRes() {
   return {
