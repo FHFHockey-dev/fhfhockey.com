@@ -1,6 +1,13 @@
 // components/GameGrid/PDHC/Tooltip.tsx
 
-import React, { ReactNode, useState, useRef, useEffect } from "react";
+import React, {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import styles from "styles/pdhcTooltip.module.scss";
 import { teamsInfo } from "lib/teamsInfo";
 
@@ -14,43 +21,43 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children, teamId }) => {
   const [visible, setVisible] = useState(false);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const targetRef = useRef<HTMLDivElement | null>(null);
+  const dialogId = useId();
 
-  // Detect if device is mobile based on screen width
-  const isMobile = typeof window !== "undefined" && window.innerWidth <= 600;
+  const closeTooltip = useCallback((restoreFocus = true) => {
+    setVisible(false);
+    if (restoreFocus) {
+      requestAnimationFrame(() => targetRef.current?.focus());
+    }
+  }, []);
 
-  // Toggle tooltip visibility on click
-  const toggleTooltip = () => {
-    setVisible((prev) => !prev);
-  };
-
-  // Close tooltip when clicking outside
-  useEffect(() => {
-    if (!visible) return;
-
-    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-      const tooltipElement = tooltipRef.current;
-
-      if (tooltipElement && !tooltipElement.contains(event.target as Node)) {
-        setVisible(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("touchstart", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
-    };
-  }, [visible]);
-
-  // Escape key handler for accessibility
   useEffect(() => {
     if (!visible) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setVisible(false);
+        event.preventDefault();
+        closeTooltip();
+        return;
+      }
+
+      if (event.key !== "Tab" || !tooltipRef.current) return;
+
+      const focusableElements =
+        tooltipRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (!firstElement) {
+        event.preventDefault();
+        tooltipRef.current.focus();
+      } else if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
       }
     };
 
@@ -59,12 +66,14 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children, teamId }) => {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [visible]);
+  }, [closeTooltip, visible]);
 
-  // Focus management for accessibility
   useEffect(() => {
     if (visible && tooltipRef.current) {
-      tooltipRef.current.focus();
+      const firstFocusable = tooltipRef.current.querySelector<HTMLElement>(
+        "button:not([disabled])",
+      );
+      (firstFocusable ?? tooltipRef.current).focus();
     }
   }, [visible]);
 
@@ -82,8 +91,8 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children, teamId }) => {
       "--primary-color": teamInfo.primaryColor,
       "--secondary-color": teamInfo.secondaryColor,
       "--accent-color": teamInfo.accent,
-      "--alt-color": teamInfo.alt
-    })
+      "--alt-color": teamInfo.alt,
+    }),
   } as React.CSSProperties;
 
   return (
@@ -95,42 +104,49 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children, teamId }) => {
             className={`${styles.backdrop} ${
               visible ? styles.visible : styles.hidden
             }`}
-            onClick={() => setVisible(false)} // Close on backdrop click
+            onClick={() => closeTooltip()}
             aria-hidden="true"
           ></div>
-          {/* Tooltip content */}
           <div
             className={`${styles.tooltipContent} ${
               visible ? styles.visible : styles.hidden
             }`}
             ref={tooltipRef}
-            role="tooltip"
-            id="tooltip-content"
-            tabIndex={-1} // Make it focusable
+            role="dialog"
+            aria-modal="true"
+            aria-label="Game probability details"
+            id={dialogId}
+            tabIndex={-1}
             style={tooltipStyles}
-            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+            onClick={(event) => event.stopPropagation()}
           >
-            {/* Close button on mobile */}
-            {isMobile && (
-              <button
-                className={styles.closeButton}
-                onClick={() => setVisible(false)}
-                aria-label="Close"
-              >
-                ×
-              </button>
-            )}
+            <button
+              type="button"
+              className={styles.closeButton}
+              onClick={() => closeTooltip()}
+              aria-label="Close game probability details"
+            >
+              ×
+            </button>
             {content}
-            {!isMobile && <div className={styles.tooltipArrow} />}
           </div>
         </>
       )}
       <div
         className={styles.tooltipWrapper}
-        onClick={toggleTooltip} // Toggle on click
+        onClick={() => setVisible((previous) => !previous)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            if (!event.repeat) setVisible((previous) => !previous);
+          }
+        }}
         ref={targetRef}
+        role="button"
         tabIndex={0}
-        aria-describedby="tooltip-content"
+        aria-haspopup="dialog"
+        aria-expanded={visible}
+        aria-controls={dialogId}
       >
         {children}
       </div>

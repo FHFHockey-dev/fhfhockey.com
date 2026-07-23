@@ -235,3 +235,20 @@ Also check for SCSS compilation errors by ensuring the Next build/lint succeeds;
 - Keep class names stable when possible to minimize blast radius.
 - Prefer token-driven values and mixins over one-off numbers; where you must use a number (e.g., pixel-perfect grid cell sizing), document why in the PR summary (not inline comments).
 - Avoid introducing new global styles; keep changes scoped to modules unless the style is truly global and reusable.
+
+---
+
+## July 2026 execution checkpoint
+
+The bounded style/accessibility cohort is recorded in
+`tasks/TASKS/draft-dashboard-yahoo/gamegrid-draft-dashboard-style-audit-report.md`.
+It confirms that the side-table and Player Pickup styles already consume the shared
+panel/control/scrollbar grammar, normalizes Toggle/Switch transition and color
+ownership, and repairs the PDHC overlay's dialog semantics and focus lifecycle.
+The feature-specific Poisson scale and team-color CSS-variable hooks remain local by
+design. No new shared token was warranted.
+
+Targeted component, TypeScript, Sass, and three-width browser evidence is recorded
+there. Offseason-empty production data prevents claiming the remaining populated
+orientation, Player Pickup, and live-overlay visual gates; those rows remain open
+with the separately gated Game Grid Phase-5 proof.

@@ -1,5 +1,4 @@
 @use "styles/vars" as v;
-@use "sass:color";
 @use "sass:map";
 
 // Modern design tokens
@@ -8,24 +7,21 @@ $toggle-sizes: (
     width: 29px,
     height: 16px,
     thumb-size: 12px,
-    thumb-offset: 2px
+    thumb-offset: 2px,
   ),
   medium: (
     width: 41px,
     height: 22px,
     thumb-size: 18px,
-    thumb-offset: 2px
+    thumb-offset: 2px,
   ),
   large: (
     width: 53px,
     height: 28px,
     thumb-size: 24px,
-    thumb-offset: 2px
-  )
+    thumb-offset: 2px,
+  ),
 );
-
-$transition-duration: 0.3s;
-$transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
 
 .switch {
   position: relative;
@@ -54,11 +50,11 @@ $transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
     );
     border: 1px solid rgba(v.$color-white, 0.2);
     border-radius: 34px;
-    transition: all $transition-duration $transition-timing;
+    transition: all v.$transition-duration v.$transition-easing;
     backdrop-filter: blur(8px);
     box-shadow:
-      0 2px 4px rgba(0, 0, 0, 0.1),
-      inset 0 1px 2px rgba(255, 255, 255, 0.1);
+      0 2px 4px rgba(v.$color-black, 0.1),
+      inset 0 1px 2px rgba(v.$color-white, 0.1);
 
     // Modern focus states
     &:focus-visible {
@@ -79,7 +75,7 @@ $transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
       border-color: rgba(v.$secondary-color, 0.3);
       transform: translateY(-1px);
       box-shadow:
-        0 4px 8px rgba(0, 0, 0, 0.15),
+        0 4px 8px rgba(v.$color-black, 0.15),
         inset 0 1px 2px rgba(v.$color-white, 0.1);
     }
 
@@ -109,9 +105,9 @@ $transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
         rgba(v.$color-white, 0.85)
       );
       border-radius: 50%;
-      transition: all $transition-duration $transition-timing;
+      transition: all v.$transition-duration v.$transition-easing;
       box-shadow:
-        0 2px 4px rgba(0, 0, 0, 0.2),
+        0 2px 4px rgba(v.$color-black, 0.2),
         inset 0 1px 2px rgba(v.$color-white, 0.8);
       z-index: 2;
     }
@@ -156,6 +152,7 @@ $transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
       .slider {
         width: $width;
         height: $height;
+        min-height: 24px;
         left: 0;
 
         &::before {
@@ -179,8 +176,8 @@ $transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
       &:hover {
         transform: none;
         box-shadow:
-          0 2px 4px rgba(0, 0, 0, 0.1),
-          inset 0 1px 2px rgba(255, 255, 255, 0.1);
+          0 2px 4px rgba(v.$color-black, 0.1),
+          inset 0 1px 2px rgba(v.$color-white, 0.1);
       }
     }
   }
@@ -191,7 +188,7 @@ $transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
       border-width: 2px;
 
       &::before {
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+        box-shadow: 0 1px 2px rgba(v.$color-black, 0.8);
       }
     }
   }
@@ -201,6 +198,11 @@ $transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
     .slider,
     .slider::before {
       transition: none;
+    }
+
+    .slider:focus-visible,
+    .slider:active::after {
+      animation: none;
     }
   }
 }
@@ -246,7 +248,7 @@ $transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
   background: rgba(v.$secondary-color, 0.3);
   transform: translate(-50%, -50%) scale(0);
   opacity: 0;
-  transition: all 0.3s ease;
+  transition: all v.$transition-duration v.$transition-easing;
   pointer-events: none;
   z-index: 1;
 }
