@@ -151,6 +151,7 @@ Additional initiative sections remain pending verified Wave-A/B completion and W
 - **Implementation/evidence:** The canonical audit classifies the scoped recipes and exceptions. Existing Opponent Metrics, Four Week Grid, and Player Pickup shared panel/control/state ownership closes without duplicate churn. Toggle/Switch now use canonical transition and literal color tokens, retain 24px targets, and suppress interaction animation under reduced motion. NEW 11 repairs PDHC as a uniquely owned modal dialog with keyboard activation, persistent close, viewport-contained scrolling, focus entry/trap/return, and Escape/backdrop dismissal while preserving team-color hooks and the feature-specific Poisson scale.
 - **Verification:** Four focused files pass 12/12; TypeScript, targeted lint, the normalized-file Prettier gate, and four direct Sass compilations pass. The two legacy-format files avoid unrelated whole-file churn. Browser inspection at 1440, 834, and 390 px finds no body/main overflow or runtime errors on the current production route.
 - **Preserved open work:** The offseason-empty route cannot prove populated orientation, Player Pickup, or live PDHC visuals. Full raw-literal cleanup, remaining reference/baseline work, broad accessibility comparison, and B-GAMEGRID Phase 5 remain open; no Phase-5 row is claimed.
+- **Publication:** Exact checkpoint `0edb33e5182bbaeca6fbe5c259831db796466930` publishes the 17-row cohort through a guarded normal push with exact source/master parity.
 
 ## Underlying stats and site surfaces
 
