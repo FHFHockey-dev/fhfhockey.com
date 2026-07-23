@@ -145,11 +145,11 @@
 	- [x] 7.7 Add a shared JSDOM component suite covering dynamic/provisional badge semantics, sparkline/fallback accessibility, and contribution sorting; focused integration/helper/normalizer coverage passes 4 files/39 tests (verified 2026-07-23).
 	- [x] 7.8 Add the Storybook `Sustainability/Player signal` story covering ready/provisional badges, score history, and component disclosure (verified 2026-07-23).
 
-- [ ] 8.0 Observability & QA (Logging, Snapshots, Random Recompute, Assertions)
+- [x] 8.0 Observability & QA (Logging, Snapshots, Random Recompute, Assertions). Canonical score telemetry, extremes, replay verification, nightly drift, health, range/boundary guards, and operational documentation are complete (verified 2026-07-23).
 	- [x] 8.1 The canonical score pipeline emits one structured event and audited response fields with named prerequisite/player/reference/build/persist phase timings, processed/written counts, and anomaly count (verified 2026-07-23).
 	- [x] 8.2 Detect finite pre-clamp raw z values with `|z|>5`, persist `extremeFlag`, sorted metric names, and threshold in canonical score components, and report the exact extreme-row count from each score rebuild (verified 2026-07-23).
-	- [ ] 8.3 Implement random sample recompute function & log diff stats; alert if diff > tolerance.
-	- [ ] 8.4 Implement nightly distribution drift detection (compare stdev & mean vs prior 7-day rolling average).
+	- [x] 8.3 Randomly sample at most 25 rebuilt rows, compare against stored same-snapshot/window/player values before persistence, report requested/compared/missing/max/mean diff, and emit a fixed alert when the 0.01 tolerance is exceeded (verified 2026-07-23).
+	- [x] 8.4 The existing active nightly `runAll=true` score job now range-paginates the complete current/prior-seven-day `l10` population, compares mean/stdev with the prior daily average, and reports/alerts beyond a five-point tolerance without adding a cron or flag (verified 2026-07-23).
 	- [x] 8.5 Add health endpoint `/api/internal/sustainability/health` returning exact row counts and latest snapshot dates for the canonical score, trend-band, and projection outputs. The route is GET-only and protected by the existing admin/cron boundary; focused empty-table/error tests, TypeScript, lint, formatting, and diff integrity pass (verified 2026-07-22).
 	- [x] 8.6 Assert all persisted scores remain finite and within [0,100]. A value-free production aggregate proves 247,024/247,024 rows valid with minimum 0 and maximum 100; current guardrail tests cover clipped and invalid inputs (verified 2026-07-22).
 	- [x] 8.7 Verify exact-endpoint guardrails with synthetic `s_raw` values. Canonical v2 keeps two-decimal fractional persistence; unqualified stored 0/100 values are replaced with the derived fractional score and warned, while threshold-qualified endpoints remain exact. The focused score/guardrail/runtime suite passes 6/6 (verified 2026-07-23).

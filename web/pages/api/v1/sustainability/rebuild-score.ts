@@ -19,6 +19,12 @@ import {
   isSustainabilityDependencyError,
 } from "lib/sustainability/dependencyChecks";
 import { countExtremeSustainabilityRows } from "lib/sustainability/observability";
+import {
+  compareSustainabilityDistributionDrift,
+  compareSustainabilityScoreSample
+} from "lib/sustainability/observability";
+import supabase from "lib/supabase/server";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 
 async function handler(
   req: NextApiRequest,
@@ -99,9 +105,69 @@ async function handler(
     }
     finishPhase("build_scores");
 
+    const sampleSize = Math.max(0, Math.min(25, Number(req.query.verify_sample ?? 10)));
+    const sampledRows = [...rows]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, sampleSize);
+    const sampledPlayerIds = Array.from(
+      new Set(sampledRows.map((row) => row.player_id))
+    );
+    const storedResult = sampledPlayerIds.length
+      ? await supabase
+          .from("sustainability_scores")
+          .select("player_id, snapshot_date, window_code, s_raw, s_100")
+          .eq("snapshot_date", snapshot)
+          .in("player_id", sampledPlayerIds)
+      : { data: [], error: null };
+    if (storedResult.error) throw storedResult.error;
+    const recomputeVerification = compareSustainabilityScoreSample(
+      sampledRows,
+      storedResult.data ?? []
+    );
+    finishPhase("verify_sample");
+
     const { inserted, chunks } = await upsertScores(rows, dry);
     finishPhase("persist_scores");
     const anomalyCount = countExtremeSustainabilityRows(rows);
+    let distributionDrift: Record<string, unknown> | null = null;
+    if (runAll && !dry) {
+      const start = new Date(`${snapshot}T00:00:00.000Z`);
+      start.setUTCDate(start.getUTCDate() - 7);
+      const historyRows = await fetchAllSupabasePages<{
+        snapshot_date: string;
+        s_100: number;
+      }>(({ from, to }) =>
+        supabase
+          .from("sustainability_scores")
+          .select("snapshot_date, s_100")
+          .gte("snapshot_date", start.toISOString().slice(0, 10))
+          .lte("snapshot_date", snapshot)
+          .eq("window_code", "l10")
+          .order("snapshot_date", { ascending: true })
+          .order("player_id", { ascending: true })
+          .range(from, to)
+      );
+      const byDate = new Map<string, number[]>();
+      for (const row of historyRows) {
+        const values = byDate.get(row.snapshot_date) ?? [];
+        values.push(row.s_100);
+        byDate.set(row.snapshot_date, values);
+      }
+      distributionDrift = compareSustainabilityDistributionDrift(
+        byDate.get(snapshot) ?? [],
+        [...byDate.entries()]
+          .filter(([date]) => date !== snapshot)
+          .map(([, values]) => values)
+      );
+      finishPhase("distribution_drift");
+    }
+    if (recomputeVerification.alert || distributionDrift?.status === "alert") {
+      console.warn("sustainability_observability_alert", {
+        snapshot_date: snapshot,
+        recompute_verification: recomputeVerification,
+        distribution_drift: distributionDrift,
+      });
+    }
     const duration_s = ((Date.now() - t0) / 1000).toFixed(2);
     console.info("sustainability_rebuild_score", {
       season,
@@ -111,6 +177,8 @@ async function handler(
       rows_built: rows.length,
       rows_upserted: inserted,
       anomaly_count: anomalyCount,
+      recompute_verification: recomputeVerification,
+      distribution_drift: distributionDrift,
       phase_timings_ms: phaseTimingsMs,
     });
     return res.status(200).json(
@@ -125,6 +193,8 @@ async function handler(
         rows_upserted: inserted,
         write_chunks: chunks,
         anomaly_count: anomalyCount,
+        recompute_verification: recomputeVerification,
+        distribution_drift: distributionDrift,
         phase_timings_ms: phaseTimingsMs,
         batches_processed: batchOffsets.length,
         sample: rows.slice(0, 5),

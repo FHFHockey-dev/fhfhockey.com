@@ -6744,3 +6744,8 @@
 
 - **Implementation:** Score rebuilds now emit named phase timings plus processed, built, written, chunk, and anomaly counts. Raw finite `|z|>5` signals are detected before clipping and persisted as canonical component-level extreme metadata.
 - **Verification / controls:** The focused observability/score/guardrail/route group passes 4 files/8 tests plus TypeScript and diff integrity, closing 8.1–8.2 while 8.3–8.4 stay open. B-SUST-BAR is 73/94 with 21 open. Raw parity is 4,591/4,897; actionable parity is 4,591/4,891 with 300 open = 93.87% complete / 6.13% open. Severity remains P0 25/20, P1 156/116, P2 142/129, P3 26/26. No data, schema, provider, schedule, deployment, Production, credential, shared checkout, Vercel build, or push changed.
+
+## Entry 0685 — 2026-07-23 B-SUST-BAR observability completion
+
+- **Verification / drift:** Each rebuild samples at most 25 computed rows against stored same-snapshot identities, reports baseline gaps/max/mean differences, and alerts past 0.01. The existing nightly full score run range-paginates current/prior-seven-day `l10` rows after persistence and compares mean/stdev against daily baselines with a five-point threshold.
+- **Controls:** The focused 4-file/10-test group plus TypeScript and diff integrity closes 8.0/8.3/8.4, bringing B-SUST-BAR to 76/94 with 18 open. Raw parity is 4,594/4,897; actionable parity is 4,594/4,891 with 297 open = 93.93% complete / 6.07% open. Severity remains P0 25/20, P1 156/116, P2 142/129, P3 26/26. No data, schema, schedule, provider, deployment, Production, credential, shared checkout, Vercel build, or push changed.
