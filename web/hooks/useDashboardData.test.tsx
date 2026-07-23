@@ -12,6 +12,7 @@ const jsonResponse = (value: unknown, status = 200) =>
 describe("useDashboardData", () => {
   let failTeamTrends = false;
   let teamVersion = 1;
+  let teamDate = "2026-04-08";
   let releaseSchedule: () => void;
   let scheduleGate: Promise<void>;
 
@@ -19,6 +20,7 @@ describe("useDashboardData", () => {
     clearClientFetchCache();
     failTeamTrends = false;
     teamVersion = 1;
+    teamDate = "2026-04-08";
     scheduleGate = new Promise((resolve) => {
       releaseSchedule = resolve;
     });
@@ -32,6 +34,15 @@ describe("useDashboardData", () => {
           return jsonResponse({
             seasonId: 20252026,
             generatedAt: `fresh-${teamVersion}`,
+            dateUsed: teamDate,
+            coverage: {
+              expectedTeams: 32,
+              teamsWithData: 32,
+              categoryCount: 4,
+              sourceRows: {},
+              partial: false,
+            },
+            warnings: [],
             categories: {},
           });
         }
@@ -168,6 +179,7 @@ describe("useDashboardData", () => {
 
     failTeamTrends = false;
     teamVersion = 2;
+    teamDate = "2026-03-20";
     clearClientFetchCache();
     const fetchMock = vi.mocked(fetch);
     const callsBeforeRetry = fetchMock.mock.calls.length;
@@ -176,6 +188,10 @@ describe("useDashboardData", () => {
     await waitFor(() => {
       expect(result.current.sectionErrors.team).toBeUndefined();
       expect(result.current.data?.teamTrends.generatedAt).toBe("fresh-2");
+      expect(result.current.data?.recency).toMatchObject({
+        status: "mixed",
+        gapDays: 19,
+      });
     });
     expect(
       fetchMock.mock.calls.slice(callsBeforeRetry).map(([input]) =>

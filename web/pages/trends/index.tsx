@@ -117,6 +117,9 @@ type TrendRankingRow = {
   previousRank: number | null;
   delta: number;
   latestValue: number | null;
+  sampleSize?: number;
+  confidence?: "low" | "medium" | "high";
+  volatility?: number | null;
 };
 
 type SkaterRankingRow = TrendRankingRow;
@@ -745,6 +748,12 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                       <p className={styles.skaterMeta}>
                         {meta?.teamAbbrev ?? "FA"}
                         {meta?.position ? ` · ${meta.position}` : ""}
+                        {row.confidence
+                          ? ` · ${row.confidence} confidence (${row.sampleSize ?? 0} GP)`
+                          : ""}
+                        {row.volatility !== null && row.volatility !== undefined
+                          ? ` · volatility ${row.volatility.toFixed(1)}`
+                          : ""}
                       </p>
                     </div>
                   </div>
@@ -986,6 +995,16 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
               The dashboard refresh could not start. Existing section data remains
               available where possible.
             </p>
+          )}
+
+          {data?.recency?.status === "mixed" && (
+            <div className={styles.sectionNotice} role="alert">
+              <span>
+                {data.recency.warning} Observed source-date gap: {data.recency.gapDays}
+                days.
+              </span>
+              <span className={styles.panelMeta}>Mixed dates · downgraded</span>
+            </div>
           )}
 
           <section className={`${styles.panel} ${styles.movementSection}`}>
@@ -1564,6 +1583,9 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                   <h2 className={styles.panelTitle}>
                     Projection Runway ({projectionSource.toUpperCase()})
                   </h2>
+                  {data?.recency?.status === "mixed" && (
+                    <span className={styles.panelMeta}>Context downgraded</span>
+                  )}
                   <div className={styles.tabRow}>
                     <button
                       type="button"
@@ -1652,7 +1674,9 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
               >
                 <div className={styles.panelHeader}>
                   <h2 className={styles.panelTitle}>Goalie Start Runway</h2>
-                  <span className={styles.panelMeta}>Top 8</span>
+                  <span className={styles.panelMeta}>
+                    {data?.recency?.status === "mixed" ? "Downgraded" : "Top 8"}
+                  </span>
                 </div>
                 <div className={styles.panelBody}>
                   <p className={styles.summaryBandCopy}>

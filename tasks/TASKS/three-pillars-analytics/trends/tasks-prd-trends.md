@@ -59,19 +59,19 @@
   - [x] 5.4 Add regression coverage for player game-window semantics, denominator-matched rates, traded players, zero/null, and fallback source behavior.
   - Evidence (5.1–5.4, 2026-07-22): player-detail/rolling audits map all category registries to support totals; URL-owned filters and quick views restore context; deterministic pagination avoids N+1/page-cap loss; published rolling regressions cover last-N semantics, denominators, team changes, zero/null, and fallbacks while NEW 10 retains historical repair.
 
-- [ ] 6.0 Complete goalie movement workflow
+- [x] 6.0 Complete goalie movement workflow. Evidence: comparable performance/workload windows, percentile/rank movement, workload/start context, normalized volatility, sample confidence, source coverage, and qualified states are implemented and directly tested (verified 2026-07-22).
   - [x] 6.1 Verify goalie performance/workload/start-role metric separation and source coverage.
-  - [ ] 6.2 Add comparable windows, rank/percentile deltas, movers, workload/share, volatility/confidence, and qualified state communication.
+  - [x] 6.2 Add comparable windows, rank/percentile deltas, movers, workload/share, volatility/confidence, and qualified state communication. Evidence: the API derives 10-observation percentile volatility and low/medium/high sample confidence, while the goalie workspace renders both beside existing window/rank/delta movement and separate workload/start context; focused helper/page proof passes (verified 2026-07-22).
   - [x] 6.3 Ensure starter probability is labeled as role context and never blended silently into save-performance percentiles.
   - [x] 6.4 Add goalie identity, minimum sample, lower-is-better, fallback, missing start source, and volatility tests.
-  - Evidence (6.1/6.3/6.4, 2026-07-22): the goalie registry/API and exact Dostal trace keep save performance, workload, and start role separate; starter probability remains labeled context, and focused contracts cover identity, minimum sample, lower-is-better normalization, missing/fallback source, and volatility/uncertainty.
+  - Evidence (6.1–6.4, 2026-07-22): the goalie registry/API and exact Dostal trace keep save performance, workload, and start role separate; starter probability remains labeled context; normalized volatility/sample-confidence is visible; and focused contracts cover identity, minimum sample, lower-is-better, missing/fallback source, and uncertainty.
 
-- [ ] 7.0 Integrate short-horizon context without corrupting trends
+- [x] 7.0 Integrate short-horizon context without corrupting trends. Evidence: projection/start context remains separate, preserves canonical handoff, and is explicitly downgraded whenever resolved source dates exceed the three-day safe-alignment window (verified 2026-07-22).
   - [x] 7.1 Verify Start Chart/FORGE rows include aligned `dateUsed`, model/run, source, freshness, fallback, and uncertainty.
   - [x] 7.2 Keep projection/start/opponent context visually and mathematically separate from historical trend ranks/percentiles.
-  - [ ] 7.3 Apply mixed-recency invalidation/downgrade when projection, CTPI, team power, and trend dates are not safely aligned.
+  - [x] 7.3 Apply mixed-recency invalidation/downgrade when projection, CTPI, team power, and trend dates are not safely aligned. Evidence: one typed recency contract compares team power, CTPI, SoS, skater/goalie trends, FORGE, and Start Chart resolved dates; gaps over three days publish a fixed warning and downgrade projection/start labels, with a 19-day regression (verified 2026-07-22).
   - [x] 7.4 Preserve query-driven handoff from FORGE to the relevant Trends player/metric context.
-  - Evidence (7.1/7.2/7.4, 2026-07-22): canonical Start Chart/FORGE readers expose requested/resolved date, run/model/source/freshness/fallback/uncertainty; `/trends` presents this as a separate runway from historical percentiles, and FORGE/player links preserve date/player/metric query context.
+  - Evidence (7.1–7.4, 2026-07-22): canonical readers expose requested/resolved date, run/model/source/freshness/fallback/uncertainty; `/trends` keeps the runway separate from historical percentiles, downgrades unsafe mixed-date context, and preserves date/player/metric handoff.
 
 - [x] 8.0 Harden page filters, loading, error, stale, and cache behavior. Evidence: five named sections load and settle independently, scoped retries execute only their owned sources, last-success data retains explicit attempt/source context, and valid query dates own both SSR and client state (verified 2026-07-22).
   - [x] 8.1 Serialize/restore global and entity filters deterministically and validate unsupported combinations.

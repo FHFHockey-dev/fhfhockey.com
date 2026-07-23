@@ -9,6 +9,8 @@ import {
   GOALIE_TREND_CATEGORIES,
   GOALIE_WINDOW_OPTIONS,
   MAX_GOALIE_LIMIT,
+  summarizeGoalieTrendConfidence,
+  type GoalieTrendConfidence,
   type GoalieTrendCategoryDefinition,
   type GoalieTrendCategoryId,
   type GoalieWindowSize
@@ -58,6 +60,9 @@ interface RankingEntry {
   previousRank: number | null;
   delta: number;
   latestValue: number | null;
+  sampleSize: number;
+  confidence: GoalieTrendConfidence;
+  volatility: number | null;
 }
 
 interface CategoryResult {
@@ -326,6 +331,9 @@ function buildCategoryResult(
       const numericId = Number(playerId);
       const latest = points[points.length - 1];
       const sourceList = byPlayer.get(numericId);
+      const confidence = summarizeGoalieTrendConfidence(
+        points.map((point) => point.percentile)
+      );
       const latestValue =
         sourceList && sourceList.length > 0
           ? (() => {
@@ -362,7 +370,8 @@ function buildCategoryResult(
         rank: 0,
         previousRank: null,
         delta: 0,
-        latestValue
+        latestValue,
+        ...confidence
       };
     }
   );

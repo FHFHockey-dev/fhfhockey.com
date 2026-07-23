@@ -138,6 +138,9 @@ export type GoalieTrendsResponse = {
         previousRank: number | null;
         delta: number;
         latestValue: number | null;
+        sampleSize: number;
+        confidence: "low" | "medium" | "high";
+        volatility: number | null;
       }>;
     }
   >;
@@ -233,6 +236,13 @@ export const DASHBOARD_SECTIONS = [
 
 export type DashboardSection = (typeof DASHBOARD_SECTIONS)[number];
 
+export type DashboardRecencyState = {
+  status: "aligned" | "mixed" | "insufficient";
+  gapDays: number | null;
+  sourceDates: Record<string, string>;
+  warning: string | null;
+};
+
 export type DashboardData = {
   date: string;
   teamRatings: TeamRating[];
@@ -251,6 +261,7 @@ export type DashboardData = {
   sectionErrors: Partial<Record<DashboardSection, string>>;
   sectionUpdatedAt: Partial<Record<DashboardSection, string>>;
   sectionResolvedFor: Partial<Record<DashboardSection, string>>;
+  recency: DashboardRecencyState;
   teamMeta: Record<
     string,
     {
@@ -324,6 +335,53 @@ const buildTeamMetaIndex = (input: {
   });
 
   return metaIndex;
+};
+
+export const buildDashboardRecencyState = (
+  data: Pick<
+    DashboardData,
+    | "teamTrends"
+    | "teamCtpi"
+    | "teamSos"
+    | "skaterTrends"
+    | "goalieTrends"
+    | "forgePlayers"
+    | "forgeGoalies"
+    | "startChart"
+  >
+): DashboardRecencyState => {
+  const candidates: Record<string, string | null | undefined> = {
+    teamPower: data.teamTrends.dateUsed,
+    ctpi: data.teamCtpi.dateUsed,
+    teamSos: data.teamSos.dateUsed,
+    skaterTrends: data.skaterTrends.dateUsed,
+    goalieTrends: data.goalieTrends.dateUsed,
+    forgePlayers: data.forgePlayers.asOfDate,
+    forgeGoalies: data.forgeGoalies.asOfDate,
+    startChart: data.startChart.dateUsed
+  };
+  const sourceDates = Object.fromEntries(
+    Object.entries(candidates).filter((entry): entry is [string, string] =>
+      /^\d{4}-\d{2}-\d{2}$/.test(entry[1] ?? "")
+    )
+  );
+  const times = Object.values(sourceDates).map((date) =>
+    Date.parse(`${date}T00:00:00.000Z`)
+  );
+  if (times.length < 2) {
+    return { status: "insufficient", gapDays: null, sourceDates, warning: null };
+  }
+  const gapDays = Math.round((Math.max(...times) - Math.min(...times)) / 86_400_000);
+  if (gapDays <= 3) {
+    return { status: "aligned", gapDays, sourceDates, warning: null };
+  }
+  return {
+    status: "mixed",
+    gapDays,
+    sourceDates,
+    warning:
+      "Source dates are not safely aligned; projection and start context is downgraded until the feeds converge."
+  };
 };
 
 export const fetchTeamTrends = (): Promise<TeamTrendsResponse> =>
@@ -574,6 +632,12 @@ export const loadTrendsDashboardData = async (
     sectionErrors: {},
     sectionUpdatedAt: {},
     sectionResolvedFor: {},
+    recency: {
+      status: "insufficient",
+      gapDays: null,
+      sourceDates: {},
+      warning: null
+    },
     teamMeta: {}
   };
   const next: DashboardData = {
@@ -689,6 +753,7 @@ export const loadTrendsDashboardData = async (
   ]);
 
   next.teamMeta = buildTeamMetaIndex(next);
+  next.recency = buildDashboardRecencyState(next);
   return next;
 };
 
@@ -739,6 +804,7 @@ export const mergeDashboardSections = (
   });
 
   merged.teamMeta = buildTeamMetaIndex(merged);
+  merged.recency = buildDashboardRecencyState(merged);
   return merged;
 };
 

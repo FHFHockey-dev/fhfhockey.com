@@ -11,6 +11,12 @@ const dashboardStateFixture = vi.hoisted(() => ({
   loadingSections: [] as string[],
   sectionUpdatedAt: {} as Record<string, string>,
   sectionResolvedFor: {} as Record<string, string>,
+  recency: {
+    status: "aligned",
+    gapDays: 0,
+    sourceDates: {},
+    warning: null
+  } as any,
   retrySection: vi.fn()
 }));
 
@@ -78,8 +84,44 @@ vi.mock("hooks/useDashboardData", () => ({
       forgePlayers: { data: [] },
       forgeGoalies: { data: [] },
       startChart: { players: [], games: [] },
+      goalieTrends: {
+        playerMetadata: {
+          "30": {
+            id: 30,
+            fullName: "Stable Goalie",
+            position: "G",
+            teamAbbrev: "CAR",
+            imageUrl: null
+          }
+        },
+        categories: {
+          savePct: {
+            rankings: [
+              {
+                playerId: 30,
+                percentile: 91.2,
+                gp: 10,
+                rank: 1,
+                previousRank: 2,
+                delta: 1,
+                latestValue: 0.921,
+                sampleSize: 10,
+                confidence: "high",
+                volatility: 5.7
+              }
+            ],
+            series: {
+              "30": [
+                { gp: 9, percentile: 85.5 },
+                { gp: 10, percentile: 91.2 }
+              ]
+            }
+          }
+        }
+      },
       sectionUpdatedAt: dashboardStateFixture.sectionUpdatedAt,
       sectionResolvedFor: dashboardStateFixture.sectionResolvedFor,
+      recency: dashboardStateFixture.recency,
       teamMeta: {},
       skaterTrends: {
         playerMetadata: {
@@ -178,6 +220,12 @@ describe("Trends dashboard", () => {
     dashboardStateFixture.loadingSections = [];
     dashboardStateFixture.sectionUpdatedAt = {};
     dashboardStateFixture.sectionResolvedFor = {};
+    dashboardStateFixture.recency = {
+      status: "aligned",
+      gapDays: 0,
+      sourceDates: {},
+      warning: null
+    };
     dashboardStateFixture.retrySection.mockReset();
   });
 
@@ -271,5 +319,25 @@ describe("Trends dashboard", () => {
     ).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Retry Team trends" }));
     expect(dashboardStateFixture.retrySection).toHaveBeenCalledWith("team");
+  });
+
+  it("shows goalie confidence and downgrades mixed-date context", () => {
+    dashboardStateFixture.recency = {
+      status: "mixed",
+      gapDays: 19,
+      sourceDates: { teamPower: "2026-03-20", startChart: "2026-04-08" },
+      warning:
+        "Source dates are not safely aligned; projection and start context is downgraded until the feeds converge."
+    };
+
+    render(<TrendsDashboardPage initialDate="2026-04-08" />);
+    fireEvent.click(screen.getByRole("tab", { name: "Goalies" }));
+
+    expect(screen.getByText(/high confidence \(10 GP\)/i)).toBeTruthy();
+    expect(screen.getByText(/volatility 5.7/i)).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toMatch(
+      /Observed source-date gap:\s*19\s*days/i
+    );
+    expect(screen.getAllByText(/downgraded/i).length).toBeGreaterThan(0);
   });
 });
