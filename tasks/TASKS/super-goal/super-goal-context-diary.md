@@ -6749,3 +6749,8 @@
 
 - **Verification / drift:** Each rebuild samples at most 25 computed rows against stored same-snapshot identities, reports baseline gaps/max/mean differences, and alerts past 0.01. The existing nightly full score run range-paginates current/prior-seven-day `l10` rows after persistence and compares mean/stdev against daily baselines with a five-point threshold.
 - **Controls:** The focused 4-file/10-test group plus TypeScript and diff integrity closes 8.0/8.3/8.4, bringing B-SUST-BAR to 76/94 with 18 open. Raw parity is 4,594/4,897; actionable parity is 4,594/4,891 with 297 open = 93.93% complete / 6.07% open. Severity remains P0 25/20, P1 156/116, P2 142/129, P3 26/26. No data, schema, schedule, provider, deployment, Production, credential, shared checkout, Vercel build, or push changed.
+
+## Entry 0686 — 2026-07-23 B-SUST-BAR pipeline telemetry reconciliation
+
+- **Evidence / boundary:** The verified named phase/write/anomaly/extreme/replay/drift telemetry closes 5.8. Incremental detection, distribution persistence, retro processing, and full-fixture orchestration remain explicitly open.
+- **Controls:** B-SUST-BAR is 77/94 with 17 open. Raw parity is 4,595/4,897; actionable parity is 4,595/4,891 with 296 open = 93.95% complete / 6.05% open. Severity remains unchanged. No code, data, schema, schedule, provider, deployment, Production, credential, shared checkout, Vercel build, or push changed.

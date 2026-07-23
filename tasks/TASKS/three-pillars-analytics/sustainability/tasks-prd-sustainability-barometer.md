@@ -121,7 +121,7 @@
 	- [ ] 5.5 Persist snapshot; update quintile mapping for *new* rows only.
 	- [ ] 5.6 Implement retro recompute queue insertion when model_version or config_hash changes.
 	- [ ] 5.7 Implement worker `retro_recompute.py` to process queue entries in small batches (idempotent, backoff on errors).
-	- [ ] 5.8 Add logging & metrics (duration per phase, inserted row count, anomalies, extremes).
+	- [x] 5.8 Canonical score rebuilds emit structured named phase durations, processed/built/written/chunk counts, pre-clamp extreme-row counts, replay diff statistics, and distribution-drift status through fixed audited fields (verified 2026-07-23).
 	- [ ] 5.9 Integration test: run full pipeline on fixture dataset & assert deterministic outputs.
 	- [x] 5.10 Document the canonical scheduled route chain, exact retry identity, prerequisite/failure behavior, bounded read/write contracts, B-CRON-NST NEW 61 ownership dependency, Python offline-only boundary, and unimplemented distribution/retro semantics in the existing Sustainability runbook (verified 2026-07-22).
 
