@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import puppeteer from "puppeteer-core";
 import { createClient } from "@supabase/supabase-js";
+import { hasValidBearerToken } from "./auth.js";
 
 dotenv.config();
 
@@ -16,13 +17,13 @@ const supabaseServer = createClient(supabaseUrl, supabaseKey);
 
 // Middleware to check if the request is from an admin
 function adminOnly(req, res, next) {
-  // Implement your admin check logic here
-  const auth = req.get("authorization") ?? "";
-  const token = auth.split(" ").at(-1);
-  if (token === process.env.CRON_SECRET) {
+  if (hasValidBearerToken(req.get("authorization"), process.env.CRON_SECRET)) {
     next();
   } else {
-    res.json({ error: "Failed to do the operation you are not an admin." });
+    res.status(401).json({
+      success: false,
+      error: "Unauthorized."
+    });
   }
 }
 app.get("/hello", (req, res) => {
@@ -48,10 +49,9 @@ app.post("/on-new-line-combo", adminOnly, async (req, res) => {
     });
   } catch (e) {
     console.error(e);
-    res.json({
-      error:
-        `Failed to handle the line combo ${teamId}-${gameId} error: ` +
-        e.message
+    res.status(500).json({
+      success: false,
+      error: "Line-combination webhook processing failed."
     });
   }
 });

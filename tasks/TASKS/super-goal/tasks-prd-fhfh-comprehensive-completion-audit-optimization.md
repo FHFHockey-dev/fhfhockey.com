@@ -4799,13 +4799,16 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [ ] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0026` (original L53) — 6.0 Audit admin/operational and separate-project security/ownership
 - [ ] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0027` (original L54) — 6.1 Verify `/db`, admin CSV/alias tools, cron APIs, webhooks, `functions`, and CMS are authenticated, deployed, documented, and owned or explicitly retired.
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0028` (original L55) — 6.2 Do not delete operational routes based on app import graphs; correlate with cron inventory, provider callbacks, external scheduler, and deployment configs.
-- [ ] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0029` (original L56) — 6.3 Add security/remediation tasks for reachable hidden tools lacking adequate authorization.
+- [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0029` (original L56) — 6.3 Bounded operational review registered NEW 8.1–8.3 before local remediation and separated exact deployment/ownership proof (verified 2026-07-25).
 - [ ] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0030` (original L58) — 7.0 Final cleanup verification and synchronization
 - [ ] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0031` (original L59) — 7.1 Re-run import/knip/route inventories and explain remaining intentional flags/false positives.
 - [ ] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0032` (original L60) — 7.2 Run targeted tests, type/build checks, and direct route/navigation smoke verification proportional to removed batches.
 - [ ] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0033` (original L61) — 7.3 Confirm no unresolved import, missing Sass module, package-script failure, route dead end, cron gap, or deployment entrypoint removal.
 - [ ] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0034` (original L62) — 7.4 Update the audit PRD, file inventory, this list, owning initiative lists, and master ledger with final dispositions/evidence.
 - [ ] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0035` (original L66) — NEW 8.0 Append every newly discovered candidate, hidden consumer, security gap, uncertain external dependency, and cleanup optimization here before closure.
+- [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0036` (live NEW) — NEW 8.1 P0 standalone webhook auth/error and Next.js Puppeteer endpoint/raw-error disclosure are locally repaired with 2/2 direct auth tests, parse, TypeScript, scoped lint/helper-format, and integrity proof (verified 2026-07-25).
+- [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0037` (live NEW) — NEW 8.2 P1 `/db` now waits for resolved admin state, denies the operational shell to other users, and skips initial operational reads outside admin state (verified 2026-07-25).
+- [ ] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0038` (live NEW) — NEW 8.3 P1 identify or retire the standalone webhook deployment, deploy NEW 8.1/8.2, run value-free runtime proof, and reconcile functions/CMS live ownership.
 
 ### Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md` (110 rows)
 

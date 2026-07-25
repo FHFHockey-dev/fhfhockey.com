@@ -11,7 +11,7 @@ import {
   TextField
 } from "@mui/material";
 import Link from "next/link";
-import { useUser } from "contexts/AuthProviderContext"; // Assuming you have this for role checking
+import { useAuth } from "contexts/AuthProviderContext";
 
 import Grid from "@mui/material/Unstable_Grid2"; // Grid version 2
 
@@ -81,7 +81,7 @@ function clearPendingNstBackfill() {
 
 export default function Page() {
   const { enqueueSnackbar } = useSnackbar();
-  const user = useUser(); // Get user from context
+  const { isLoading: isAuthLoading, user } = useAuth();
   const isAdmin = user?.role === "admin";
 
   const [numPlayers, setNumPlayers] = useState(0);
@@ -328,6 +328,8 @@ export default function Page() {
   }
 
   useEffect(() => {
+    if (!isAdmin) return;
+
     const pendingBackfill = readPendingNstBackfill();
     setPendingNstBackfill(pendingBackfill);
 
@@ -339,7 +341,7 @@ export default function Page() {
         setNstTeamStatsEndDateInput("");
       }
     }
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
     return () => {
@@ -702,6 +704,8 @@ export default function Page() {
   }
 
   useEffect(() => {
+    if (!isAdmin) return;
+
     (async () => {
       const { count: numPlayers } = await supabase
         .from("players")
@@ -718,10 +722,10 @@ export default function Page() {
         .select("id", { count: "exact", head: true });
       setNumTeams(numTeams ?? 0);
     })();
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
-    if (!season?.seasonId) return;
+    if (!isAdmin || !season?.seasonId) return;
     (async () => {
       const { count: numGames } = await supabase
         .from("games")
@@ -737,7 +741,29 @@ export default function Page() {
         .order("date", { ascending: false });
       setGames(finishedGames?.slice(0, 20) ?? []);
     })();
-  }, [season?.seasonId]);
+  }, [isAdmin, season?.seasonId]);
+
+  if (isAuthLoading) {
+    return (
+      <Container>
+        <TextBanner text="Checking administrator access…" />
+      </Container>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <Container>
+        <TextBanner text="Administrator access required" />
+        <Typography>
+          Sign in with an administrator account to use database operations.
+        </Typography>
+        <Link href="/" passHref legacyBehavior>
+          <Button component="a">Return home</Button>
+        </Link>
+      </Container>
+    );
+  }
 
   return (
     <Container>
