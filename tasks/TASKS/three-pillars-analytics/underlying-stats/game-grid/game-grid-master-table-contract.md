@@ -2,7 +2,7 @@
 
 Date: 2026-07-22
 
-Status: Phases 1–4 evidence complete; Phase 5 remains open.
+Status: Complete. Phases 1–5 and subsequent TypeScript-regression evidence pass.
 
 ## Evidence boundary
 
@@ -30,7 +30,7 @@ Principal evidence:
 | Tablet `480–1023px`, horizontal | Three-part layout: OMT rail, weekly grid, 4WG rail                                                 | Preserve while applying later shared visual language.                                                                              |
 | Tablet `480–1023px`, vertical   | OMT rail, `TransposedGrid`, 4WG rail                                                               | Preserve while applying later shared visual language.                                                                              |
 | Desktop `>=1024px`, horizontal  | Existing `DesktopMasterTable`                                                                      | Reconcile to the contract below; its presence alone does not close implementation phases 2–5.                                      |
-| Desktop `>=1024px`, vertical    | OMT rail, `TransposedGrid`, 4WG rail                                                               | Open NEW 2 disposition gate: retain as an explicit fallback or retire only with approval before claiming full desktop replacement. |
+| Desktop `>=1024px`, vertical    | OMT rail, `TransposedGrid`, 4WG rail                                                               | Retained and verified as the explicitly named `Legacy Vertical` fallback with no second feature flag.                               |
 
 The route defaults to horizontal orientation. The orientation control can still move desktop users off the master path.
 
@@ -91,7 +91,7 @@ On 2026-07-22 the owner approved the recommended defaults and authorized Phase 2
 - desktop vertical orientation remains a named legacy fallback through Phases 2–4;
 - the already-live desktop path will be updated directly without a second feature flag.
 
-This approval resolves the NEW 2 disposition decision but does not close NEW 2: the fallback must remain explicitly named and verified through the later structural and breakpoint phases before the initiative can claim complete desktop replacement.
+The later structural and breakpoint cohort verifies this approved boundary and closes NEW 2.
 
 ## Phase 2 shell evidence
 
@@ -108,10 +108,10 @@ The focused contract group remains 3 files / 9 tests. Full TypeScript passes. Th
 ## Findings and review gates
 
 - NEW 1: closed. The master consumes `statsError`, presents a value-free unavailable notice, avoids showing metric emphasis/value remnants, and preserves schedule/current/4WK content.
-- NEW 2: desktop vertical orientation bypasses the master architecture. The owner approved retaining it as a named legacy fallback through Phases 2–4; later structural and breakpoint verification still must prove that boundary before closure.
+- NEW 2: closed. Exact layout-policy coverage proves `<1024px` stacked, `>=1024px` horizontal master, and `>=1024px` named `Legacy Vertical` fallback behavior without a second flag.
 - NEW 3: the task list's obsolete Jest command is corrected to the repository's Vitest command and closed as documentation-only work.
 - NEW 4: the Phase-3/4 page now renders the declared typed `VALID_TABS` constant; Next type checking and optimized compilation no longer fail on the stale identifier.
-- Phase-1 review resolved initial 4WK state, Score-cell highlight scope, NEW 2 orientation disposition, and feature-flag strategy. The owner then authorized Phases 3–4 as one implementation/review cohort; Phase 5 remains separately gated.
+- Phase-1 review resolved initial 4WK state, Score-cell highlight scope, NEW 2 orientation disposition, and feature-flag strategy. The owner authorized Phases 3–4 as one cohort and Phase 5 as local-only verification; both are complete.
 
 ## Phases 3–4 implementation evidence
 
@@ -120,7 +120,7 @@ The focused contract group remains 3 files / 9 tests. Full TypeScript passes. Th
 - 4WK starts expanded, exposes four sortable values, and collapses through an independently accessible boundary control.
 - Current Score alone receives top/bottom-ten fill, with a restrained left-edge marker; the previous full-row tint is removed.
 - The vertical desktop control is explicitly `Legacy Vertical`, returns through `Master Table`, and introduces no feature flag.
-- Focused verification passes 3 files/11 tests, full TypeScript passes, and the compiled `/game-grid/7-Day-Forecast` route returns HTTP 200. Phase 5 still owns cross-breakpoint browser/visual proof and Player Pickup alignment.
+- Focused Phase-3/4 verification passes 3 files/11 tests, full TypeScript passes, and the compiled `/game-grid/7-Day-Forecast` route returns HTTP 200. Phase 5's breakpoint and Player Pickup evidence is recorded below.
 
 ## Phase 5 breakpoint and follow-through evidence
 

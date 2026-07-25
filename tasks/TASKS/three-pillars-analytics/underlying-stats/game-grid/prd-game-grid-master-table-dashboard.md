@@ -223,7 +223,7 @@ Each phase should stop for review before moving to the next phase. The implement
 
 ## 10. Implementation Status — 2026-07-22
 
-The owner approved the recommended defaults, then authorized Phases 3–4 as one cohort. The desktop-horizontal table now matches the required OMT → Team → schedule → current summary → 4WG order; 4WG starts expanded with all four sortable values; rank emphasis is confined to Score plus a restrained edge; OMT failures are truthful without hiding schedule data; and desktop vertical remains the named `Legacy Vertical` fallback with no second feature flag. Focused verification passes 3 files/11 tests, full TypeScript passes, and the compiled route returns HTTP 200. Phase 5 remains open for smaller-breakpoint/Player Pickup polish and final breakpoint verification.
+The owner approved the recommended defaults, authorized Phases 3–4 as one cohort, and authorized Phase 5 for local-only verification. The desktop-horizontal table matches the required OMT → Team → schedule → current summary → 4WG order; 4WG starts expanded with all four sortable values; rank emphasis is confined to Score plus a restrained edge; OMT failures are truthful without hiding schedule data; and desktop vertical remains the named `Legacy Vertical` fallback with no second feature flag. The final cohort preserves smaller-breakpoint stacking, Player Pickup ownership, readable desktop minimums, and the exact 1023/1024 boundary.
 
 ## 10. Execution Checkpoint — 2026-07-22
 
@@ -231,7 +231,7 @@ Phase 1 is evidence-complete in `game-grid-master-table-contract.md`. Current tr
 
 The audit records P1 NEW 1 for the master path suppressing the OMT error state, P2 NEW 2 for desktop vertical orientation bypassing the master architecture, closed P3 NEW 3 for the stale Jest command, and closed P0 NEW 4 for the stale tab identifier that blocked production compilation. Existing target-order, missing 4WK Score/sort, and group-boundary mismatches stay owned by base implementation tasks rather than duplicate findings.
 
-The owner approved the Phase-1 recommendations and then authorized Phases 3–4 as one cohort on 2026-07-22. Desktop-horizontal now implements the exact OMT/Team/schedule/current/4WK order, expanded four-value 4WK group, all intended non-day sorts, Score-only rank emphasis plus edge, named `Legacy Vertical` fallback, and truthful OMT failure state without a second flag. Focused tests pass 3 files/11 tests; the stale tab identifier found by the production build is repaired, and Next type checking plus optimized compilation pass. B-GAMEGRID is active at 29/36 with 7 open; Phase 5 and NEW 2 final breakpoint proof remain review-gated.
+The owner approved the Phase-1 recommendations, Phases 3–4 as one cohort on 2026-07-22, and Phase 5 for local-only verification. Desktop-horizontal implements the exact OMT/Team/schedule/current/4WK order, expanded four-value 4WK group, all intended non-day sorts, Score-only rank emphasis plus edge, named `Legacy Vertical` fallback, and truthful OMT failure state without a second flag. Phase 5 closes the final breakpoint, scrolling, responsive-ownership, Player Pickup, and NEW 2 proof; the later P1 NEW 5 repair restores repository TypeScript verification. B-GAMEGRID is complete at 37/37.
 
 ## 11. Completion Verification Repair — 2026-07-25
 
