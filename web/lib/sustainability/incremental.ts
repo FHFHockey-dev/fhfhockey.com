@@ -2,12 +2,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, Json } from "lib/supabase/database-generated.types";
 
-function sourceDateFromComponents(value: Json | null): string | null {
+export function sourceDateFromComponents(value: Json | null): string | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const cutoffs = value.sourceCutoffs;
   if (!cutoffs || typeof cutoffs !== "object" || Array.isArray(cutoffs)) return null;
   const observed = cutoffs.observed;
   if (!observed || typeof observed !== "object" || Array.isArray(observed)) return null;
+  if (typeof observed.player_stats_unified === "string") {
+    return observed.player_stats_unified;
+  }
   return typeof observed.player_stats_source_date === "string"
     ? observed.player_stats_source_date
     : null;

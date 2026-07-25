@@ -315,7 +315,7 @@ export async function getSustainabilityLeaderboardPayload(args: {
       args.client
         .from("sustainability_scores")
         .select(
-          "player_id, season_id, snapshot_date, position_group, window_code, s_raw, s_100, components, computed_at"
+          "player_id, season_id, snapshot_date, position_group, window_code, s_raw, s_100, components, computed_at, model_version, config_hash"
         )
         .eq("snapshot_date", snapshotDate)
         .eq("window_code", args.options.windowCode)

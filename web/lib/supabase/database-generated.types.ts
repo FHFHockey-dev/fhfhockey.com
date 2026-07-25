@@ -7021,11 +7021,13 @@ export type Database = {
       model_sustainability_config: {
         Row: {
           active: boolean
+          config_hash: string
           constants_json: Json
           created_at: string
           freshness_days: number
           id: number
           model_version: number
+          score_model_version: string
           sd_mode: string
           toggles_json: Json
           updated_at: string
@@ -7033,11 +7035,13 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          config_hash: string
           constants_json: Json
           created_at?: string
           freshness_days?: number
           id?: number
           model_version: number
+          score_model_version: string
           sd_mode: string
           toggles_json: Json
           updated_at?: string
@@ -7045,11 +7049,13 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          config_hash?: string
           constants_json?: Json
           created_at?: string
           freshness_days?: number
           id?: number
           model_version?: number
+          score_model_version?: string
           sd_mode?: string
           toggles_json?: Json
           updated_at?: string
@@ -28892,6 +28898,8 @@ export type Database = {
       sustainability_player_priors: {
         Row: {
           computed_at: string
+          config_hash: string
+          model_version: string
           n_effective: number
           player_id: number
           position_group: string
@@ -28906,6 +28914,8 @@ export type Database = {
         }
         Insert: {
           computed_at?: string
+          config_hash: string
+          model_version: string
           n_effective: number
           player_id: number
           position_group: string
@@ -28920,6 +28930,8 @@ export type Database = {
         }
         Update: {
           computed_at?: string
+          config_hash?: string
+          model_version?: string
           n_effective?: number
           player_id?: number
           position_group?: string
@@ -29109,6 +29121,8 @@ export type Database = {
         Row: {
           components: Json
           computed_at: string
+          config_hash: string
+          model_version: string
           player_id: number
           position_group: string
           s_100: number
@@ -29120,6 +29134,8 @@ export type Database = {
         Insert: {
           components: Json
           computed_at?: string
+          config_hash: string
+          model_version: string
           player_id: number
           position_group: string
           s_100: number
@@ -29131,6 +29147,8 @@ export type Database = {
         Update: {
           components?: Json
           computed_at?: string
+          config_hash?: string
+          model_version?: string
           player_id?: number
           position_group?: string
           s_100?: number
@@ -29138,6 +29156,51 @@ export type Database = {
           season_id?: number
           snapshot_date?: string
           window_code?: string
+        }
+        Relationships: []
+      }
+      sustainability_recompute_queue: {
+        Row: {
+          attempts: number
+          completed_at: string | null
+          config_hash: string
+          config_revision: number
+          cursor: Json | null
+          enqueued_at: string
+          id: number
+          last_error: string | null
+          model_version: string
+          reason: string
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          completed_at?: string | null
+          config_hash: string
+          config_revision: number
+          cursor?: Json | null
+          enqueued_at?: string
+          id?: number
+          last_error?: string | null
+          model_version: string
+          reason: string
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          completed_at?: string | null
+          config_hash?: string
+          config_revision?: number
+          cursor?: Json | null
+          enqueued_at?: string
+          id?: number
+          last_error?: string | null
+          model_version?: string
+          reason?: string
+          started_at?: string | null
+          status?: string
         }
         Relationships: []
       }
@@ -45079,6 +45142,20 @@ export type Database = {
       acquire_lock: {
         Args: { job_name_param: string; timeout_interval: string }
         Returns: boolean
+      }
+      activate_sustainability_config: {
+        Args: {
+          p_config_hash: string
+          p_config_revision: number
+          p_constants: Json
+          p_freshness_days: number
+          p_model_version: string
+          p_reason?: string
+          p_sd_mode: string
+          p_toggles: Json
+          p_weights: Json
+        }
+        Returns: Json
       }
       advance_draft_ranker_placement: {
         Args: {

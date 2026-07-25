@@ -9,8 +9,7 @@ import { loadPlayersForSnapshot } from "lib/sustainability/windows";
 import {
   fetchSkillLeagueRef,
   buildScoreForPlayerWindow,
-  upsertScores,
-  DEFAULT_WEIGHTS,
+  upsertScores
 } from "lib/sustainability/score";
 import { PosGroup } from "lib/sustainability/priors";
 import { resolveSeasonId } from "lib/sustainability/resolveSeasonId";
@@ -27,6 +26,7 @@ import supabase from "lib/supabase/server";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { detectSustainabilitySourceAdvance } from "lib/sustainability/incremental";
 import { buildSustainabilityDistributionSnapshot } from "lib/sustainability/distribution";
+import { loadActiveSustainabilityConfig } from "lib/sustainability/config";
 
 async function handler(
   req: NextApiRequest,
@@ -67,6 +67,8 @@ async function handler(
     }
     await assertScorePrerequisites(season, snapshot);
     finishPhase("prerequisites");
+    const activeConfig = await loadActiveSustainabilityConfig(supabase);
+    finishPhase("active_config");
     const dry = req.query.dry === "1" || req.query.dry === "true";
     const limit = Number(req.query.limit || 250);
     const offset = Number(req.query.offset || 0);
@@ -117,7 +119,11 @@ async function handler(
             pg,
             w,
             refs[pg],
-            DEFAULT_WEIGHTS,
+            activeConfig.weights,
+            {
+              modelVersion: activeConfig.modelVersion,
+              configHash: activeConfig.configHash
+            }
           );
           rows.push(row);
         }
@@ -223,6 +229,9 @@ async function handler(
         dry,
         force,
         source_advance: sourceAdvance,
+        config_revision: activeConfig.configRevision,
+        model_version: activeConfig.modelVersion,
+        config_hash: activeConfig.configHash,
         run_all: runAll,
         processed_players: totalPlayers,
         rows_built: rows.length,

@@ -155,14 +155,14 @@
 	- [x] 8.7 Verify exact-endpoint guardrails with synthetic `s_raw` values. Canonical v2 keeps two-decimal fractional persistence; unqualified stored 0/100 values are replaced with the derived fractional score and warned, while threshold-qualified endpoints remain exact. The focused score/guardrail/runtime suite passes 6/6 (verified 2026-07-23).
 	- [x] 8.8 Document the exact scheduled-route response and `cron_job_audit` field schema, nullable/not-applicable counter semantics, success interpretation, bounded diagnostic fields, and forbidden secret values in the canonical runbook (verified 2026-07-22).
 
-- [ ] 9.0 Configuration Management & Versioning (DB-backed weights, toggles, model_version tracking)
-	- [ ] 9.1 Implement admin (internal) function to insert new config version (deactivate previous) with validation.
-	- [ ] 9.2 Add model_version stamping to every persisted barometer row and player_priors row.
-	- [ ] 9.3 Add config_hash to barometer rows; test reproducibility of hash after reorder of JSON keys.
-	- [ ] 9.4 Implement detection logic: if active config model_version > last processed version → enqueue retro recompute.
-	- [ ] 9.5 Add migration or script to bump version and verify pipeline picks up new config.
-	- [ ] 9.6 Add unit tests for version upgrade path (old rows untouched, new rows new version).
-	- [ ] 9.7 Document versioning policy & A/B expansion path (future) in README or PRD appendix.
+- [x] 9.0 Configuration Management & Versioning. The local canonical v2 migration, config loader, first-class score/prior provenance, version-triggered queue receipt, generated types, tests, and runbook policy are complete; NEW 15 retains executable/application proof (verified 2026-07-25).
+	- [x] 9.1 Add service-only `activate_sustainability_config` with exact +1 revision validation, one-active-row locking, canonical weight/config validation, previous-row deactivation, and one transactional recompute receipt (verified 2026-07-25).
+	- [x] 9.2 Add nonblank first-class string `model_version` to canonical `sustainability_scores` and `sustainability_player_priors`; new score/prior writers stamp the loaded active v2 identity (verified 2026-07-25).
+	- [x] 9.3 Add first-class `config_hash` to canonical score/prior rows and configuration. Stable recursive-key hashing reproduces canonical `fnv1a_91691726` independent of JSON key order and fails closed on mismatch (verified 2026-07-25).
+	- [x] 9.4 Config activation enqueues one unique queued/running recompute identity under the same transaction after the exact revision advances; no silent active-version drift is possible (verified locally 2026-07-25).
+	- [x] 9.5 CLI-generated migration `20260725223034_add_sustainability_version_provenance.sql` preserves v1 as legacy, seeds compatible canonical revision 2, and makes score/prior routes load that active config before writes (verified locally 2026-07-25).
+	- [x] 9.6 Focused config/migration/route/read/provenance coverage proves legacy rows are retained, new rows carry first-class v2 identity, tampered/incompatible config fails closed, and exactly one active row is required (verified 2026-07-25).
+	- [x] 9.7 The canonical versioning, historical-fidelity, recompute, and future A/B promotion policy is documented in `web/README.md`, the PRD, and the Sustainability runbook (verified 2026-07-25).
 
 - [x] NEW 10.0 **P1 canonical schema/adapter ownership drift:** Option A is implemented. TypeScript/Supabase is the sole production owner; the disconnected Python adapter is removed after its only unrelated consumer moved to a domain-neutral connection helper, Python configuration/prior helpers require explicit injected clients, and Python persistence/incremental/snapshot/log/lock/retro paths fail closed while pure scoring remains offline. The current Supabase catalog, baseline, generated types, 21 focused Python tests, 14 TypeScript prior/pagination tests, TypeScript, lint, and compilation prove the boundary (closed 2026-07-22).
 
@@ -174,7 +174,9 @@
 
 - [x] NEW 14.0 **P1 canonical API/window ownership drift:** deployed `l3/l5/l10/l20` is canonical and draft `GAME/G5/G10/STD` is retired. Additive player summary plus latest-snapshot leaderboard/filter/pagination/index/authenticated-components/ETag/docs rows 6.1–6.7 are complete without breaking the default player response; the focused group passes 3 files/10 tests, TypeScript, production read-only index-plan proof, and diff integrity (closed 2026-07-23).
 
-- [ ] NEW 15.0 **P1 canonical version/config provenance drift:** the active TypeScript score owner writes string `modelVersion` and `configHash` only inside `sustainability_scores.components`; `sustainability_scores` and `sustainability_player_priors` have no first-class version/hash columns, while the unused draft `model_player_game_barometers` table has integer `model_version`/`config_hash`. Decide the canonical version source and migration/backfill compatibility policy, then align config administration, score/prior columns, recompute detection, API metadata, historical fidelity, and 9.1–9.7 without treating the draft table as the active writer (discovered 2026-07-22).
+- [ ] NEW 15.0 **P1 canonical version/config provenance drift:** the local canonical repair is complete. CLI-generated migration `20260725223034` preserves existing score components when present, labels the remaining score/prior history `legacy_unversioned`, adds first-class version/hash columns, constrains one active compatible v2 config, removes browser mutation grants, creates a forced-RLS service-only recompute queue, and exposes one security-invoker fixed-search-path activation RPC. Score/prior routes load and validate the active config before writes, response telemetry exposes its revision/version/hash, generated types agree, and 9 focused files/26 tests plus full TypeScript pass. Keep the root open for executable migration/rollback/ACL/queue proof on an authorized isolated database, exact Production application before code publication, and bounded worker/replay evidence; do not treat the unused draft barometer table as canonical (updated 2026-07-25).
+
+- [x] NEW 16.0 **P1 canonical source-advance provenance key drift:** incremental detection read obsolete `observed.player_stats_source_date` while current provenance writes `observed.player_stats_unified`, forcing already-processed sources down the fail-open path. Read the canonical key first, retain the old key only as compatibility, and cover both shapes directly (discovered and closed 2026-07-25).
 
 ---
 I have generated the high-level tasks based on the PRD. Ready to generate the sub-tasks? Respond with "Go" to proceed.

@@ -122,6 +122,14 @@ especially strings that include `DATABASE_PASSWORD` or service-role keys.
 ## Sustainability read API
 
 - `GET /api/v1/sustainability/player/:playerId` retains the existing single-window response. Add `summary=true` for the deterministic latest `l3`, `l5`, `l10`, and `l20` scores plus stored model/config provenance.
+
+### Sustainability version/config policy
+
+- `sustainability_score_v2` is the canonical TypeScript score model. Its compatible configuration revision uses stable recursive-key hashing; revision 2 is `fnv1a_91691726`.
+- Every new `sustainability_scores` and `sustainability_player_priors` row carries first-class `model_version` and `config_hash`. Existing rows keep embedded component provenance where present; otherwise migration labels them `legacy_unversioned` without rewriting values.
+- Configuration changes use the service-role-only `activate_sustainability_config` RPC. It requires an exact +1 revision, validates the canonical nested weight shape, deactivates the previous row, activates one new row, and enqueues one recompute receipt transactionally.
+- A future A/B candidate must use a new model/config identity and offline comparison first. It becomes active only through the same RPC after explicit methodology approval; historical rows remain unchanged unless the queued bounded recompute is separately executed.
+- Deploy the schema migration before publishing code that reads the new first-class columns. Migration application, queued worker execution, and retro history writes remain separate approval gates.
 - `GET /api/v1/sustainability/leaderboard` accepts `window_type=l3|l5|l10|l20`, `min_games`, `min_score`, `rookie_only`, `page`, and `page_size` (maximum 100). Results use the latest snapshot for the selected window, score-descending/player-ID ordering, and complete Supabase range pagination before response pagination.
 - `min_games` uses current-season `player_totals_unified.games_played`. `rookie_only=true` means the player has no games in either of the two prior canonical NHL seasons.
 - Public leaderboard responses emit deterministic `ETag` and shared-cache headers. Send `If-None-Match` for `304` responses.

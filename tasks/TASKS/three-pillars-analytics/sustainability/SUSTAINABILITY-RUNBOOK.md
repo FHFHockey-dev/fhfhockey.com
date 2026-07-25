@@ -113,3 +113,10 @@ Every audited scheduled Sustainability route returns a JSON response with:
 - Live index verification on 2026-07-11 confirmed the player/date index serves latest-snapshot lookup and the primary key serves exact player/snapshot/horizon/type reads. `EXPLAIN` selected index scans with estimated total costs 2.36 and 2.37 respectively. No speculative index was added to an empty projection table.
 - RLS is enabled on score, band, and projection tables. `anon`/`authenticated` have SELECT only; service role owns writes.
 - Investigate only measured regressions: record route timing, row counts, failures, paging state, query plan, and table cardinality before proposing an index or schema change.
+## Version/config activation
+
+- Canonical score/prior writers require exactly one active `sustainability_score_v2` configuration and verify its stable hash before any write.
+- Activate a new revision only through service-role RPC `activate_sustainability_config`; revisions advance exactly by one and activation plus recompute receipt insertion are one transaction.
+- Existing history is immutable by default. `legacy_unversioned` identifies rows without reconstructable provenance; never relabel those rows as v2 without a bounded recompute.
+- After migration application, verify one active config, browser mutation denial, service execution, one queued receipt, rollback, and exact replay before publishing dependent application code.
+- Queue processing is not implicit authorization for historical writes. Run bounded workers only after the corresponding mutation approval, with cursor, retry, idempotency, and old-row preservation evidence.

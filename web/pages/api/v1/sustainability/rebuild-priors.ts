@@ -17,6 +17,8 @@ import {
   assertPriorsPrerequisites,
   isSustainabilityDependencyError
 } from "lib/sustainability/dependencyChecks";
+import supabase from "lib/supabase/server";
+import { loadActiveSustainabilityConfig } from "lib/sustainability/config";
 
 function parseBoundedInt(value: string | string[] | undefined, fallback: number, max: number) {
   const candidate = Array.isArray(value) ? value[0] : value;
@@ -35,6 +37,7 @@ async function handler(
   try {
     const season = await resolveSeasonId(req.query.season);
     await assertPriorsPrerequisites(season);
+    const activeConfig = await loadActiveSustainabilityConfig(supabase);
     const dry =
       req.query.dry === "1" ||
       req.query.dry === "true" ||
@@ -82,7 +85,14 @@ async function handler(
       k,
       dry,
       dryPriorMap,
-      { offset, limit }
+      {
+        offset,
+        limit,
+        provenance: {
+          modelVersion: activeConfig.modelVersion,
+          configHash: activeConfig.configHash
+        }
+      }
     );
 
     const duration_s = ((Date.now() - started) / 1000).toFixed(2);
@@ -95,6 +105,9 @@ async function handler(
         offset,
         limit,
         k,
+        config_revision: activeConfig.configRevision,
+        model_version: activeConfig.modelVersion,
+        config_hash: activeConfig.configHash,
         inserted_player_rows: inserted,
         write_chunks: chunks,
         sample,

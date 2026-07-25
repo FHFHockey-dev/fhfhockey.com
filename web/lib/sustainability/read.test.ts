@@ -21,6 +21,8 @@ describe("sustainability read contracts", () => {
         window_code: "l10",
         s_raw: 1.2,
         s_100: 65,
+        model_version: "sustainability_score_v2",
+        config_hash: "fnv1a_91691726",
         components: { z_shp: 1.4, z_ixg60: -0.2 },
         computed_at: "2026-03-21T00:00:00.000Z"
       },
@@ -98,6 +100,8 @@ describe("sustainability read contracts", () => {
         modelVersion: "sustainability_score_v2",
         configHash: "fnv1a_test"
       },
+      model_version: "sustainability_score_v2",
+      config_hash: "fnv1a_test",
       computed_at: "2026-03-21T00:00:00.000Z"
     };
     const payload = shapePlayerSustainabilitySummaryPayload({
@@ -135,6 +139,8 @@ describe("sustainability read contracts", () => {
         modelVersion: "sustainability_score_v2",
         configHash: "fnv1a_test"
       },
+      model_version: "sustainability_score_v2",
+      config_hash: "fnv1a_test",
       computed_at: "2026-03-21T00:00:00.000Z"
     };
     const payload = shapeSustainabilityLeaderboardPayload({

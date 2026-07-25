@@ -6,9 +6,9 @@ import { PosGroup } from "lib/sustainability/priors";
 import { WindowCode } from "lib/sustainability/windows";
 import { upsertRowsInChunks } from "./persist";
 import {
+  SUSTAINABILITY_SCORE_CONFIG_HASH,
   SUSTAINABILITY_SCORE_MODEL_VERSION,
-  SUSTAINABILITY_SCORE_PROVENANCE_VERSION,
-  buildSustainabilityConfigHash
+  SUSTAINABILITY_SCORE_PROVENANCE_VERSION
 } from "./runtimeContract";
 import {
   applySustainabilityScoreGuardrails,
@@ -177,7 +177,8 @@ export async function buildScoreForPlayerWindow(
     icf60: { mu: number; sig: number };
     hdcf60: { mu: number; sig: number };
   },
-  weights: WeightConfig = DEFAULT_WEIGHTS
+  weights: WeightConfig = DEFAULT_WEIGHTS,
+  provenance?: { modelVersion: string; configHash: string }
 ) {
   // luck z's (pull from existing window z table)
   const { data: zrows, error } = await (supabase as any)
@@ -221,9 +222,13 @@ export async function buildScoreForPlayerWindow(
     weights.skill.ixg60 * z_ixg +
     weights.skill.icf60 * z_icf +
     weights.skill.hdcf60 * z_hdc;
+  const modelVersion =
+    provenance?.modelVersion ?? SUSTAINABILITY_SCORE_MODEL_VERSION;
+  const configHash =
+    provenance?.configHash ?? SUSTAINABILITY_SCORE_CONFIG_HASH;
   const components = {
-    modelVersion: SUSTAINABILITY_SCORE_MODEL_VERSION,
-    configHash: buildSustainabilityConfigHash({ weights, window }),
+    modelVersion,
+    configHash,
     sourceCutoffs: buildScoreSourceCutoffs({
       snapshotDate: snapshot_date,
       playerStatsSourceDate: rates.sourceDate,
@@ -261,7 +266,9 @@ export async function buildScoreForPlayerWindow(
       window_code: window.code,
       s_raw: guardedScore.sRaw,
       s_100: guardedScore.s100,
-      components: guardedScore.components
+      components: guardedScore.components,
+      model_version: modelVersion,
+      config_hash: configHash
     },
     sample: { rates, zmap }
   };

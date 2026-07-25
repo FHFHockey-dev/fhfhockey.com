@@ -6,6 +6,10 @@ import {
   fetchAllSupabasePages,
 } from "lib/supabase/pagination";
 import { upsertRowsInChunks } from "lib/sustainability/persist";
+import {
+  SUSTAINABILITY_SCORE_CONFIG_HASH,
+  SUSTAINABILITY_SCORE_MODEL_VERSION
+} from "lib/sustainability/runtimeContract";
 
 // Types
 export type StatCode = "shp" | "oishp" | "ipp" | "ppshp"; // ppshp = power play shooting %
@@ -413,7 +417,11 @@ export async function upsertPlayerPosteriors(
   k: { shp: number; oishp: number; ipp: number },
   dryRun = false,
   leaguePriors?: Map<string, { alpha0: number; beta0: number }>,
-  options: { offset?: number; limit?: number } = {},
+  options: {
+    offset?: number;
+    limit?: number;
+    provenance?: { modelVersion: string; configHash: string };
+  } = {},
 ): Promise<{ inserted: number; chunks: number; sample: any[] }> {
   let leagueMap = leaguePriors;
   if (!leagueMap) {
@@ -460,6 +468,12 @@ export async function upsertPlayerPosteriors(
         post_mean: Number(post.post_mean.toFixed(8)),
         post_var: Number(post.post_var.toFixed(10)),
         n_effective: Number(b.n.toFixed(6)),
+        model_version:
+          options.provenance?.modelVersion ??
+          SUSTAINABILITY_SCORE_MODEL_VERSION,
+        config_hash:
+          options.provenance?.configHash ??
+          SUSTAINABILITY_SCORE_CONFIG_HASH,
       });
     });
   }
