@@ -63,7 +63,7 @@
   - [x] 4.1 Apply consistent panel framing/title treatment to Opponent Metrics, Four Week Grid, and Player Pickup containers.
   - [x] 4.2 Normalize table headers, row heights, zebra/hover, sortable controls, selected metrics, numeric columns, pagination, and empty/loading/error states.
   - [x] 4.3 Normalize selects, inputs, filters, buttons, chips, and metric selectors with shared backgrounds, borders, typography, focus rings, and disabled states.
-  - [ ] 4.4 Replace raw colors and WebKit-only scrollbar fragments with tokens and the shared scrollbar mixin.
+  - [x] 4.4 Replace raw colors and WebKit-only scrollbar fragments with tokens and the shared scrollbar mixin (verified 2026-07-25: all literal white/black alpha sources in the three side-table modules use shared tokens, no WebKit-only scrollbar fragment remains, and all three modules compile directly).
   - [ ] 4.5 Verify dense data remains readable and controls do not wrap or overflow destructively on mobile/tablet.
 
 - [ ] 5.0 Modernize Transposed Grid without changing its behavior
@@ -118,3 +118,4 @@
 - NEW 11.0 repairs the PDHC overlay as a bounded modal dialog with unique ownership, a keyboard-operable trigger, persistent close action, focus entry/trap/return, Escape/backdrop dismissal, shared scrolling/breakpoint treatment, and a token-owned neutral fallback. The feature-specific Poisson scale and team-color variables remain intentionally local.
 - Four focused files pass 12/12 tests; TypeScript, targeted lint, the normalized-file Prettier gate, and four direct Sass compilations pass. The legacy Poisson/PRD files retain their parent-proven whole-file format instead of introducing unrelated normalization churn. Browser inspection at 1440, 834, and 390 px finds no body/main overflow or runtime error on the current production route. Offseason-empty data leaves populated orientation, Player Pickup, and live-overlay visual proof open.
 - Exact checkpoint `0edb33e5182bbaeca6fbe5c259831db796466930` publishes this 17-row cohort through a guarded normal push.
+- The Phase-4 side-table cleanup replaces every literal white/black alpha source in Opponent Metrics, Four Week Grid, and Player Pickup with `v.$color-white` / `v.$color-black`. The exact scoped scan finds zero raw hex, literal RGB/RGBA source, or WebKit-only scrollbar fragment; the existing shared scrollbar mixins remain the sole scrollbar owners and all three Sass modules compile directly.

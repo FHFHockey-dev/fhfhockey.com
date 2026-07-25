@@ -23,6 +23,7 @@ Date: 2026-07-22
 | Poisson probability ramp literals are feature-specific visualization colors                                      | Local exception              | Retained; they encode the chart scale rather than the shared shell                                                                                                                         |
 | The paired Toggle/Switch `.module.css` files have no consumers                                                   | Controlled cleanup candidate | Retained until the separately tracked cleanup disposition                                                                                                                                  |
 | Current production route is offseason-empty                                                                      | Evidence limitation          | Desktop/tablet/mobile shell and overflow proof captured; populated schedule, orientation, Player Pickup, and live PDHC visual proof remain open                                            |
+| Side-table literal white/black alpha sources                                                                      | Token replacement            | Opponent Metrics, Four Week Grid, and Player Pickup now use shared white/black tokens; exact scoped raw-color/WebKit-scrollbar scan is empty                                                |
 
 No new shared token or mixin was added: the verified needs were already served by canonical tokens, and no new semantic value had two independent consumers.
 
@@ -37,3 +38,4 @@ The canonical recipes above directly satisfy task 1.1. The published shell/heade
 - Style safety: the Tooltip and Poisson modules compile directly with Sass; the Toggle/Switch modules are included in the final style compilation group.
 - Browser evidence: `/game-grid/7-Day-Forecast` was inspected at 1440×900, 834×1112, and 390×844. Body and main client/scroll widths matched at every width, the primary grid stayed readable inside its owned surface, controls retained accessible names, and the browser error log was empty.
 - Scope: no sorting, schedule calculations, data fetching, pagination, orientation logic, schema, data, provider, or production state changed.
+- Side-table token cleanup: the exact three-module scan finds zero raw hex, literal RGB/RGBA color source, or WebKit-only scrollbar fragment; direct bundled-Node-24 Sass compilation passes for all three modules.

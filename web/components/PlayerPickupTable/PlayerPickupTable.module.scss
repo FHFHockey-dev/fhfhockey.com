@@ -653,11 +653,11 @@ $selected-border-width: 2px; // The width of the indicator
     padding: v.$space-xs v.$space-md;
     background: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.08),
-      rgba(255, 255, 255, 0.04)
+      rgba(v.$color-white, 0.08),
+      rgba(v.$color-white, 0.04)
     );
     color: v.$text-secondary;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(v.$color-white, 0.15);
     backdrop-filter: blur(12px);
     transition: all v.$transition-duration v.$transition-easing;
     position: relative;
@@ -678,13 +678,13 @@ $selected-border-width: 2px; // The width of the indicator
     &:hover:not(:disabled) {
       background: linear-gradient(
         135deg,
-        rgba(255, 255, 255, 0.12),
-        rgba(255, 255, 255, 0.08)
+        rgba(v.$color-white, 0.12),
+        rgba(v.$color-white, 0.08)
       );
       color: v.$text-color-primary;
       border-color: rgba(v.$secondary-color, 0.3);
       box-shadow:
-        0 10px 15px rgba(0, 0, 0, 0.1),
+        0 10px 15px rgba(v.$color-black, 0.1),
         0 0 20px rgba(v.$secondary-color, 0.2);
       &::before {
         opacity: 1;
@@ -932,11 +932,11 @@ $selected-border-width: 2px; // The width of the indicator
   padding: v.$space-sm v.$space-lg;
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.08),
-    rgba(255, 255, 255, 0.04)
+    rgba(v.$color-white, 0.08),
+    rgba(v.$color-white, 0.04)
   );
   color: v.$text-secondary;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(v.$color-white, 0.15);
   backdrop-filter: blur(12px);
   transition: all v.$transition-duration v.$transition-easing;
   position: relative;
@@ -944,13 +944,13 @@ $selected-border-width: 2px; // The width of the indicator
   &:hover:not(:disabled) {
     background: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.12),
-      rgba(255, 255, 255, 0.08)
+      rgba(v.$color-white, 0.12),
+      rgba(v.$color-white, 0.08)
     );
     color: v.$text-color-primary;
     border-color: rgba(v.$secondary-color, 0.3);
     box-shadow:
-      0 10px 15px rgba(0, 0, 0, 0.1),
+      0 10px 15px rgba(v.$color-black, 0.1),
       0 0 20px rgba(v.$secondary-color, 0.2);
   }
   align-self: center; // Center the button horizontally within the filters container
@@ -1030,7 +1030,7 @@ $selected-border-width: 2px; // The width of the indicator
   outline: none;
   // Subtle left accent on the first cell that does not affect layout
   table tr > td:first-child {
-    box-shadow: inset 2px 0 0 rgba(0, 0, 0, 0.06);
+    box-shadow: inset 2px 0 0 rgba(v.$color-black, 0.06);
   }
   @include v.custom-scrollbar(v.$secondary-color, v.$background-medium);
 }
@@ -1205,7 +1205,7 @@ $selected-border-width: 2px; // The width of the indicator
       text-align: center;
       border-bottom: 2px solid v.$secondary-color;
       white-space: nowrap; // Prevent header text wrapping
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+      text-shadow: 0 2px 4px rgba(v.$color-black, 0.5);
     }
   }
   tbody {
@@ -1220,9 +1220,9 @@ $selected-border-width: 2px; // The width of the indicator
       --accent-color: #{v.$primary-color};
 
       &:hover {
-        background-color: rgba(255, 255, 255, 0.03);
+        background-color: rgba(v.$color-white, 0.03);
         box-shadow:
-          inset 0 0 20px rgba(0, 0, 0, 0.5),
+          inset 0 0 20px rgba(v.$color-black, 0.5),
           0 0 15px rgba(var(--accent-color), 0.15);
         z-index: 1;
         transform: scale(1.005);
@@ -1236,7 +1236,7 @@ $selected-border-width: 2px; // The width of the indicator
       td {
         padding: 6px 6px;
         border: none;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(v.$color-white, 0.05);
         vertical-align: middle;
         font-size: 13px;
         box-sizing: border-box;
@@ -1359,8 +1359,8 @@ $selected-border-width: 2px; // The width of the indicator
   transition: all v.$transition-duration v.$transition-easing; // Transition border color
 
   // Add transparent border by default to reserve space
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(v.$color-white, 0.1);
+  background: rgba(v.$color-black, 0.2);
 
   // Apply border color only when selected class is present
   &.selectedBox {
@@ -1392,11 +1392,11 @@ $selected-border-width: 2px; // The width of the indicator
     padding: v.$space-xs v.$space-md;
     background: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.08),
-      rgba(255, 255, 255, 0.04)
+      rgba(v.$color-white, 0.08),
+      rgba(v.$color-white, 0.04)
     );
     color: v.$text-secondary;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(v.$color-white, 0.15);
     backdrop-filter: blur(12px);
     transition: all v.$transition-duration v.$transition-easing;
     position: relative;
@@ -1416,13 +1416,13 @@ $selected-border-width: 2px; // The width of the indicator
     &:hover:not(:disabled) {
       background: linear-gradient(
         135deg,
-        rgba(255, 255, 255, 0.12),
-        rgba(255, 255, 255, 0.08)
+        rgba(v.$color-white, 0.12),
+        rgba(v.$color-white, 0.08)
       );
       color: v.$text-color-primary;
       border-color: rgba(v.$secondary-color, 0.3);
       box-shadow:
-        0 10px 15px rgba(0, 0, 0, 0.1),
+        0 10px 15px rgba(v.$color-black, 0.1),
         0 0 20px rgba(v.$secondary-color, 0.2);
       &::before {
         opacity: 1;
@@ -1599,7 +1599,7 @@ $selected-border-width: 2px; // The width of the indicator
   border-radius: 6px;
   padding: 5px;
   min-width: 55px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 2px rgba(v.$color-black, 0.3);
   flex-grow: 1;
   flex-basis: 0;
   transition: opacity v.$transition-duration v.$transition-easing;
