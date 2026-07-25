@@ -9,9 +9,11 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import YahooFantasy from "yahoo-fantasy";
 import { format } from "date-fns";
+import { randomUUID } from "node:crypto";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import {
+  fetchCompleteYahooPlayerKeySnapshot,
   selectCanonicalYahooGame,
   withYahooRetry,
 } from "lib/integrations/yahoo/ingestionLifecycle";
@@ -25,18 +27,17 @@ import {
 
 async function getPlayerKeys(
   supabase: SupabaseClient<Database>,
-  gameId?: string,
+  gameId: number,
 ): Promise<string[]> {
   const rows = await fetchAllSupabasePages<{ player_key: string }>(
     ({ from, to }) => {
-      let query = supabase
+      return supabase
         .from("yahoo_player_keys")
         .select("player_key")
-        .order("player_key", { ascending: true });
-      if (gameId) {
-        query = query.like("player_key", `${gameId}.%`);
-      }
-      return query.range(from, to) as any;
+        .eq("game_id", gameId)
+        .eq("is_active", true)
+        .order("player_key", { ascending: true })
+        .range(from, to) as any;
     },
     { pageSize: 1000 },
   );
@@ -63,45 +64,49 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     // Allow explicit override of gameId via query or JSON body for one-off runs
     // e.g. GET /api/v1/db/update-yahoo-players?gameId=465
-    let gameId: string | undefined = undefined;
-    let season: number | undefined = undefined;
-
     const overrideGameId =
       (req.query?.gameId as string) ||
       (req.body && (req.body.gameId as string));
-    if (overrideGameId) {
-      gameId = overrideGameId;
-      console.log(`Using override gameId from request: ${gameId}`);
-    } else {
-      const { data: gameRows, error: gameErr } = await supabase
-        .from("yahoo_game_keys")
-        .select(
-          "game_id, game_key, season, is_offseason, is_game_over, current_week",
-        )
-        .eq("code", "nhl")
-        .order("season", { ascending: false })
-        .order("game_id", { ascending: false })
-        .limit(10);
-      if (gameErr) {
-        throw new Error("Yahoo canonical game lookup failed.");
-      }
-
-      const gameRow = selectCanonicalYahooGame(
-        (gameRows ?? []).map((row) => ({
-          ...row,
-          is_offseason:
-            row.is_offseason == null ? null : Boolean(row.is_offseason),
-          is_game_over:
-            row.is_game_over == null ? null : Boolean(row.is_game_over),
-        })),
-      );
-      if (!gameRow) {
-        throw new Error("Yahoo canonical game is unavailable.");
-      }
-      gameId = String(gameRow.game_id);
-      season = gameRow.season ? Number(gameRow.season) : undefined;
-      console.log(`Detected canonical NHL game_id=${gameId}, season=${season}`);
+    if (overrideGameId && !/^\d+$/.test(overrideGameId)) {
+      throw new Error("Yahoo game override is invalid.");
     }
+
+    let gameQuery = supabase
+      .from("yahoo_game_keys")
+      .select(
+        "game_id, game_key, season, is_offseason, is_game_over, current_week",
+      )
+      .eq("code", "nhl");
+    gameQuery = overrideGameId
+      ? gameQuery.eq("game_id", Number(overrideGameId)).limit(1)
+      : gameQuery
+          .order("season", { ascending: false })
+          .order("game_id", { ascending: false })
+          .limit(10);
+    const { data: gameRows, error: gameErr } = await gameQuery;
+    if (gameErr) {
+      throw new Error("Yahoo canonical game lookup failed.");
+    }
+
+    const gameRow = selectCanonicalYahooGame(
+      (gameRows ?? []).map((row) => ({
+        ...row,
+        is_offseason:
+          row.is_offseason == null ? null : Boolean(row.is_offseason),
+        is_game_over:
+          row.is_game_over == null ? null : Boolean(row.is_game_over),
+      })),
+    );
+    if (!gameRow) {
+      throw new Error("Yahoo canonical game is unavailable.");
+    }
+    const gameId = Number(gameRow.game_id);
+    const season = gameRow.season ? Number(gameRow.season) : undefined;
+    console.log(
+      `${
+        overrideGameId ? "Using override" : "Detected canonical"
+      } NHL game_id=${gameId}, season=${season}`,
+    );
 
     const yf = new YahooFantasy(
       creds.consumer_key,
@@ -125,6 +130,58 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     yf.setUserToken(creds.access_token);
     yf.setRefreshToken(creds.refresh_token);
 
+    let retries = 0;
+    let rateLimitEvents = 0;
+    const keySnapshot = await fetchCompleteYahooPlayerKeySnapshot(
+      String(gameId),
+      (url) =>
+        withYahooRetry(() => (yf as any).api((yf as any).GET, url), {
+          maxAttempts: 3,
+          onRetry: ({ rateLimited }) => {
+            retries += 1;
+            if (rateLimited) rateLimitEvents += 1;
+          },
+        }),
+    );
+    if (!keySnapshot.players.length) {
+      throw new Error("Yahoo complete player-key snapshot is empty.");
+    }
+
+    const snapshotId = randomUUID();
+    const { data: keyReceiptData, error: keyReceiptError } = await supabase.rpc(
+      "replace_yahoo_player_keys_snapshot",
+      {
+        p_game_id: gameId,
+        p_snapshot_id: snapshotId,
+        p_players: keySnapshot.players,
+      },
+    );
+    if (keyReceiptError) {
+      throw new Error("Yahoo player-key snapshot persistence failed.");
+    }
+    const keyReceipt = keyReceiptData as {
+      snapshotId?: string;
+      gameId?: number;
+      sourceCount?: number;
+      added?: number;
+      reactivated?: number;
+      changed?: number;
+      deactivated?: number;
+      replayed?: boolean;
+    } | null;
+    if (
+      keyReceipt?.snapshotId !== snapshotId ||
+      keyReceipt.gameId !== gameId ||
+      keyReceipt.sourceCount !== keySnapshot.players.length ||
+      !Number.isFinite(keyReceipt.added) ||
+      !Number.isFinite(keyReceipt.reactivated) ||
+      !Number.isFinite(keyReceipt.changed) ||
+      !Number.isFinite(keyReceipt.deactivated) ||
+      keyReceipt.replayed !== false
+    ) {
+      throw new Error("Yahoo player-key snapshot receipt is invalid.");
+    }
+
     const playerKeys = await getPlayerKeys(supabase, gameId);
     console.log(`Fetched ${playerKeys.length} player keys.`);
 
@@ -142,7 +199,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         retries: 0,
         rateLimitEvents: 0,
         completeSnapshot: true,
-        deactivationApplied: false,
+        keySnapshotId: snapshotId,
+        keyPagesFetched: keySnapshot.pagesFetched,
+        keyAdded: keyReceipt.added,
+        keyReactivated: keyReceipt.reactivated,
+        keyChanged: keyReceipt.changed,
+        keyDeactivated: keyReceipt.deactivated,
+        deactivationApplied: true,
         message: "No player keys found.",
       });
     }
@@ -154,9 +217,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const currentDate = format(new Date(), "yyyy-MM-dd");
     let failedRows = 0;
     let omitted = 0;
-    let retries = 0;
-    let rateLimitEvents = 0;
-
     for (let i = 0; i < playerKeys.length; i += BATCH_SIZE) {
       const batchKeys = playerKeys.slice(i, i + BATCH_SIZE);
       console.log(
@@ -209,7 +269,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
               prepareYahooPlayerAtomicPayload(
                 playerData,
                 currentDate,
-                gameId,
+                String(gameId),
                 season,
               ),
             ); // Pass current date + season context
@@ -309,7 +369,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         retries,
         rateLimitEvents,
         completeSnapshot,
-        deactivationApplied: false,
+        keySnapshotId: snapshotId,
+        keyPagesFetched: keySnapshot.pagesFetched,
+        keyAdded: keyReceipt.added,
+        keyReactivated: keyReceipt.reactivated,
+        keyChanged: keyReceipt.changed,
+        keyDeactivated: keyReceipt.deactivated,
+        deactivationApplied: true,
         message: `Processed ${dedupedRpcPayloads.length} players via RPC.`,
       });
     }
@@ -332,7 +398,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       retries,
       rateLimitEvents,
       completeSnapshot: false,
-      deactivationApplied: false,
+      keySnapshotId: snapshotId,
+      keyPagesFetched: keySnapshot.pagesFetched,
+      keyAdded: keyReceipt.added,
+      keyReactivated: keyReceipt.reactivated,
+      keyChanged: keyReceipt.changed,
+      keyDeactivated: keyReceipt.deactivated,
+      deactivationApplied: true,
       message:
         failedRows > 0
           ? "Yahoo player batches failed."

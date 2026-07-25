@@ -7,6 +7,8 @@ import {
   selectYahooGamesForCanonicalSeason,
 } from "./discovery";
 import {
+  extractYahooPlayerKeyPage,
+  fetchCompleteYahooPlayerKeySnapshot,
   getYahooRetryAfterMs,
   isRetryableYahooError,
   selectCanonicalYahooGame,
@@ -149,5 +151,132 @@ describe("Yahoo discovery helpers", () => {
       }),
     ).rejects.toEqual({ status: 401 });
     expect(calls).toBe(1);
+  });
+
+  it("extracts and completely paginates a deterministic Yahoo player-key snapshot", async () => {
+    const page = (players: Array<[string, string, string]>) => ({
+      fantasy_content: {
+        game: [
+          { game_id: "465" },
+          {
+            players: Object.fromEntries([
+              ...players.map(([playerKey, playerId, full], index) => [
+                String(index),
+                {
+                  player: [
+                    [
+                      { player_key: playerKey },
+                      { player_id: playerId },
+                      { name: { full } },
+                    ],
+                  ],
+                },
+              ]),
+              ["count", players.length],
+            ]),
+          },
+        ],
+      },
+    });
+    const requestedUrls: string[] = [];
+    const responses = [
+      page([
+        ["465.p.2", "2", "Player Two"],
+        ["465.p.1", "1", "Player One"],
+      ]),
+      page([["465.p.3", "3", "Player Three"]]),
+    ];
+
+    await expect(
+      fetchCompleteYahooPlayerKeySnapshot(
+        "465",
+        async (url) => {
+          requestedUrls.push(url);
+          return responses.shift();
+        },
+        { pageSize: 2 },
+      ),
+    ).resolves.toEqual({
+      players: [
+        {
+          player_key: "465.p.1",
+          player_id: 1,
+          player_name: "Player One",
+        },
+        {
+          player_key: "465.p.2",
+          player_id: 2,
+          player_name: "Player Two",
+        },
+        {
+          player_key: "465.p.3",
+          player_id: 3,
+          player_name: "Player Three",
+        },
+      ],
+      pagesFetched: 2,
+    });
+    expect(requestedUrls).toEqual([
+      expect.stringContaining("/players;start=0;count=2"),
+      expect.stringContaining("/players;start=2;count=2"),
+    ]);
+  });
+
+  it("fails closed on malformed, repeated, or non-terminating key pages", async () => {
+    expect(() =>
+      extractYahooPlayerKeyPage({
+        fantasy_content: { game: [{ game_id: "465" }] },
+      }),
+    ).toThrow("collection is missing");
+
+    const fullPage = {
+      fantasy_content: {
+        game: [
+          {},
+          {
+            players: {
+              0: {
+                player: [[{ player_key: "465.p.1" }, { player_id: "1" }]],
+              },
+              count: 1,
+            },
+          },
+        ],
+      },
+    };
+    await expect(
+      fetchCompleteYahooPlayerKeySnapshot("465", async () => fullPage, {
+        pageSize: 1,
+      }),
+    ).rejects.toThrow("repeated a key");
+    await expect(
+      fetchCompleteYahooPlayerKeySnapshot(
+        "465",
+        async (url) => ({
+          fantasy_content: {
+            game: [
+              {},
+              {
+                players: {
+                  0: {
+                    player: [
+                      [
+                        {
+                          player_key: `465.p.${
+                            Number(url.match(/start=(\d+)/)?.[1] ?? 0) + 1
+                          }`,
+                        },
+                      ],
+                    ],
+                  },
+                  count: 1,
+                },
+              },
+            ],
+          },
+        }),
+        { pageSize: 1, maxPages: 2 },
+      ),
+    ).rejects.toThrow("exceeded its safety bound");
   });
 });

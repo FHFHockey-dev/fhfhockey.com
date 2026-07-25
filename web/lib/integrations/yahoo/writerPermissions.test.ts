@@ -90,6 +90,30 @@ describe("Yahoo player writer permissions", () => {
     expect(repair).not.toContain("grant execute");
   });
 
+  it("reconciles complete player-key snapshots atomically and service-only", () => {
+    const sql = readFileSync(
+      path.join(
+        repoRoot,
+        "supabase/migrations/20260725220704_reconcile_yahoo_player_key_snapshots.sql",
+      ),
+      "utf8",
+    );
+
+    expect(sql).toContain(
+      "create or replace function public.replace_yahoo_player_keys_snapshot",
+    );
+    expect(sql).toContain("security invoker");
+    expect(sql).toContain("set search_path = pg_catalog");
+    expect(sql).toContain("pg_advisory_xact_lock");
+    expect(sql).toContain("Yahoo snapshot must contain players.");
+    expect(sql).toContain("Yahoo snapshot player rows are invalid.");
+    expect(sql).toContain("and not exists");
+    expect(sql).toContain("is_active = false");
+    expect(sql).toContain("from public, anon, authenticated");
+    expect(sql).toContain("to service_role");
+    expect(sql).not.toMatch(/exception\s+when\s+others/i);
+  });
+
   it("keeps the active route on explicit omission semantics and the atomic writer", () => {
     const source = readFileSync(
       path.join(repoRoot, "web/pages/api/v1/db/update-yahoo-players.ts"),
@@ -107,6 +131,9 @@ describe("Yahoo player writer permissions", () => {
     expect(source).toContain("persistYahooPlayerPayloadBatch");
     expect(source).toContain("ownershipOmitted");
     expect(source).toContain("draftHistoryUpserted");
+    expect(source).toContain("fetchCompleteYahooPlayerKeySnapshot");
+    expect(source).toContain('"replace_yahoo_player_keys_snapshot"');
+    expect(source).toContain('.eq("is_active", true)');
     expect(source).not.toContain("currentOwnershipValue");
     expect(source).not.toContain('from("yahoo_players")');
     expect(writer).not.toContain('"upsert_yahoo_players_atomic" as any');
@@ -119,6 +146,7 @@ describe("Yahoo player writer permissions", () => {
     );
 
     expect(generatedTypes).toContain("upsert_yahoo_players_atomic: {");
+    expect(generatedTypes).toContain("replace_yahoo_player_keys_snapshot: {");
     expect(generatedTypes).toContain("Args: { players_data: Json[] }");
     expect(generatedTypes).toContain("Returns: Json");
   });

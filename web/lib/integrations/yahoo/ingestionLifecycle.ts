@@ -20,10 +20,139 @@ type YahooRetryOptions = {
   }) => void;
 };
 
+export type YahooPlayerKeySnapshotRow = {
+  player_key: string;
+  player_id: number | null;
+  player_name: string | null;
+};
+
+type YahooPlayerKeySnapshot = {
+  players: YahooPlayerKeySnapshotRow[];
+  pagesFetched: number;
+};
+
+type YahooPlayerKeyPaginationOptions = {
+  pageSize?: number;
+  maxPages?: number;
+};
+
 function finiteNumber(value: unknown): number | null {
   if (value == null || value === "") return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value != null && typeof value === "object" && !Array.isArray(value);
+}
+
+function findNestedValue(value: unknown, key: string): unknown {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findNestedValue(item, key);
+      if (found !== undefined) return found;
+    }
+    return undefined;
+  }
+  if (!isRecord(value)) return undefined;
+  if (value[key] !== undefined) return value[key];
+  for (const nested of Object.values(value)) {
+    const found = findNestedValue(nested, key);
+    if (found !== undefined) return found;
+  }
+  return undefined;
+}
+
+export function extractYahooPlayerKeyPage(
+  response: unknown,
+): YahooPlayerKeySnapshotRow[] {
+  if (!isRecord(response) || !isRecord(response.fantasy_content)) {
+    throw new Error("Yahoo player-key page is malformed.");
+  }
+
+  const gameParts = Array.isArray(response.fantasy_content.game)
+    ? response.fantasy_content.game
+    : [response.fantasy_content.game];
+  const holder = gameParts.find(
+    (part) => isRecord(part) && isRecord(part.players),
+  );
+  if (!isRecord(holder) || !isRecord(holder.players)) {
+    throw new Error("Yahoo player-key collection is missing.");
+  }
+
+  const rows = Object.entries(holder.players)
+    .filter(([key]) => /^\d+$/.test(key))
+    .map(([, entry]) => {
+      const playerKey = findNestedValue(entry, "player_key");
+      if (typeof playerKey !== "string" || !/^\d+\.p\.\d+$/.test(playerKey)) {
+        throw new Error("Yahoo player-key row is malformed.");
+      }
+
+      const rawPlayerId = findNestedValue(entry, "player_id");
+      const playerId = finiteNumber(rawPlayerId);
+      const rawName = findNestedValue(entry, "name");
+      const playerName =
+        isRecord(rawName) && typeof rawName.full === "string"
+          ? rawName.full.trim() || null
+          : null;
+
+      return {
+        player_key: playerKey,
+        player_id: playerId == null ? null : Math.trunc(playerId),
+        player_name: playerName,
+      };
+    });
+
+  const uniqueKeys = new Set(rows.map((row) => row.player_key));
+  if (uniqueKeys.size !== rows.length) {
+    throw new Error("Yahoo player-key page contains duplicate keys.");
+  }
+  return rows;
+}
+
+export async function fetchCompleteYahooPlayerKeySnapshot(
+  gameId: string,
+  requestPage: (url: string) => Promise<unknown>,
+  options: YahooPlayerKeyPaginationOptions = {},
+): Promise<YahooPlayerKeySnapshot> {
+  if (!/^\d+$/.test(gameId)) {
+    throw new Error("Yahoo game ID is invalid.");
+  }
+
+  const pageSize = Math.min(
+    25,
+    Math.max(1, Math.trunc(options.pageSize ?? 25)),
+  );
+  const maxPages = Math.max(1, Math.trunc(options.maxPages ?? 200));
+  const players: YahooPlayerKeySnapshotRow[] = [];
+  const seen = new Set<string>();
+
+  for (let page = 0; page < maxPages; page += 1) {
+    const start = page * pageSize;
+    const url =
+      `https://fantasysports.yahooapis.com/fantasy/v2/game/${gameId}` +
+      `/players;start=${start};count=${pageSize}`;
+    const pageRows = extractYahooPlayerKeyPage(await requestPage(url));
+
+    for (const row of pageRows) {
+      if (seen.has(row.player_key)) {
+        throw new Error("Yahoo player-key pagination repeated a key.");
+      }
+      seen.add(row.player_key);
+      players.push(row);
+    }
+
+    if (pageRows.length < pageSize) {
+      return {
+        players: players.sort((left, right) =>
+          left.player_key.localeCompare(right.player_key),
+        ),
+        pagesFetched: page + 1,
+      };
+    }
+  }
+
+  throw new Error("Yahoo player-key pagination exceeded its safety bound.");
 }
 
 export function selectCanonicalYahooGame<T extends YahooGameRow>(

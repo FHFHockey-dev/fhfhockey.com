@@ -39196,22 +39196,70 @@ export type Database = {
       }
       yahoo_player_keys: {
         Row: {
+          game_id: number | null
+          is_active: boolean
           last_updated: string
+          last_seen_at: string | null
           player_id: number | null
           player_key: string
           player_name: string | null
+          snapshot_id: string | null
         }
         Insert: {
+          game_id?: never
+          is_active?: boolean
           last_updated?: string
+          last_seen_at?: string | null
           player_id?: number | null
           player_key: string
           player_name?: string | null
+          snapshot_id?: string | null
         }
         Update: {
+          game_id?: never
+          is_active?: boolean
           last_updated?: string
+          last_seen_at?: string | null
           player_id?: number | null
           player_key?: string
           player_name?: string | null
+          snapshot_id?: string | null
+        }
+        Relationships: []
+      }
+      yahoo_player_key_snapshots: {
+        Row: {
+          added_count: number
+          changed_count: number
+          created_at: string
+          deactivated_count: number
+          game_id: number
+          payload_hash: string
+          reactivated_count: number
+          snapshot_id: string
+          source_count: number
+        }
+        Insert: {
+          added_count: number
+          changed_count: number
+          created_at?: string
+          deactivated_count: number
+          game_id: number
+          payload_hash: string
+          reactivated_count: number
+          snapshot_id: string
+          source_count: number
+        }
+        Update: {
+          added_count?: number
+          changed_count?: number
+          created_at?: string
+          deactivated_count?: number
+          game_id?: number
+          payload_hash?: string
+          reactivated_count?: number
+          snapshot_id?: string
+          source_count?: number
         }
         Relationships: []
       }
@@ -45531,6 +45579,14 @@ export type Database = {
           }
       upsert_yahoo_players_atomic: {
         Args: { players_data: Json[] }
+        Returns: Json
+      }
+      replace_yahoo_player_keys_snapshot: {
+        Args: {
+          p_game_id: number
+          p_players: Json
+          p_snapshot_id: string
+        }
         Returns: Json
       }
       upsert_yahoo_players_v3: {
