@@ -45529,6 +45529,10 @@ export type Database = {
               error: true
             } & "Could not choose the best candidate function between: public.upsert_players_batch(players_data => jsonb), public.upsert_players_batch(players_data => _jsonb). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
           }
+      upsert_yahoo_players_atomic: {
+        Args: { players_data: Json[] }
+        Returns: Json
+      }
       upsert_yahoo_players_v3: {
         Args: { players_data: Json[] }
         Returns: undefined

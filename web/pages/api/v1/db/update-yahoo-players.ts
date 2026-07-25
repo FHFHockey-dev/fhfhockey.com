@@ -3,7 +3,7 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import {
   loadYahooGlobalCredentials,
-  persistYahooGlobalTokens
+  persistYahooGlobalTokens,
 } from "lib/integrations/yahoo/globalCredentials";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
@@ -13,12 +13,19 @@ import adminOnly from "utils/adminOnlyMiddleware";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import {
   selectCanonicalYahooGame,
-  withYahooRetry
+  withYahooRetry,
 } from "lib/integrations/yahoo/ingestionLifecycle";
+import type { Database } from "lib/supabase/database-generated.types";
+import {
+  dedupeYahooPlayerPayloads,
+  persistYahooPlayerPayloadBatch,
+  prepareYahooPlayerAtomicPayload,
+  type YahooPlayerAtomicPayload,
+} from "lib/integrations/yahoo/playerWriter";
 
 async function getPlayerKeys(
-  supabase: SupabaseClient,
-  gameId?: string
+  supabase: SupabaseClient<Database>,
+  gameId?: string,
 ): Promise<string[]> {
   const rows = await fetchAllSupabasePages<{ player_key: string }>(
     ({ from, to }) => {
@@ -31,92 +38,10 @@ async function getPlayerKeys(
       }
       return query.range(from, to) as any;
     },
-    { pageSize: 1000 }
+    { pageSize: 1000 },
   );
 
   return Array.from(new Set(rows.map((row) => row.player_key).filter(Boolean)));
-}
-
-// Handles Yahoo "percent_owned" in array/object/primitive forms.
-// Returns a number (0-100) or null if unknown/offseason.
-function extractPercentOwned(player: any): number | null {
-  const po = player?.percent_owned;
-  if (!po) return null;
-
-  // Array shape: find the first element with a numeric "value" / "Value"
-  if (Array.isArray(po)) {
-    const item = po.find((x: any) => x && (x.value != null || x.Value != null));
-    const v = item?.value ?? item?.Value;
-    const n = typeof v === "string" ? parseFloat(v) : Number(v);
-    return Number.isFinite(n) ? n : null;
-  }
-
-  // Object shape: { coverage_type, value, delta }
-  if (typeof po === "object") {
-    const v = (po as any).value ?? (po as any).Value;
-    const n = typeof v === "string" ? parseFloat(v) : Number(v);
-    return Number.isFinite(n) ? n : null;
-  }
-
-  // Primitive shape: "37" | 37
-  const n = typeof po === "string" ? parseFloat(po) : Number(po);
-  return Number.isFinite(n) ? n : null;
-}
-
-function parseOptionalNumber(value: unknown): number | null {
-  if (value == null || value === "") return null;
-  const parsed = typeof value === "string" ? parseFloat(value) : Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function prepareRpcPayload(
-  player: any,
-  currentDate: string,
-  gameId?: string,
-  season?: number
-) {
-  const val = extractPercentOwned(player);
-
-  return {
-    player_key: player.player_key,
-    player_id: player.player_id,
-    player_name: player.name?.full || null,
-    draft_analysis: player.draft_analysis ?? null,
-    average_draft_pick: parseOptionalNumber(
-      player.draft_analysis?.average_pick
-    ),
-    average_draft_round: parseOptionalNumber(
-      player.draft_analysis?.average_round
-    ),
-    average_draft_cost: parseOptionalNumber(
-      player.draft_analysis?.average_cost
-    ),
-    percent_drafted: parseOptionalNumber(
-      player.draft_analysis?.percent_drafted
-    ),
-    editorial_player_key: player.editorial_player_key || null,
-    editorial_team_abbreviation: player.editorial_team_abbr || null,
-    editorial_team_full_name: player.editorial_team_full_name || null,
-    eligible_positions: player.eligible_positions || [],
-    display_position: player.display_position || null,
-    headshot_url: player.headshot?.url || null,
-    injury_note: player.injury_note || null,
-    full_name: player.name?.full || null,
-
-    percent_ownership: val,
-    snapshot_status: val == null ? "omitted" : "observed",
-
-    game_id: gameId || null,
-    season: season ?? null,
-    position_type: player.position_type || null,
-    status: player.status || null,
-    status_full: player.status_full || null,
-    last_updated: new Date().toISOString(),
-    uniform_number: player.uniform_number
-      ? parseInt(player.uniform_number)
-      : null,
-    current_date: currentDate
-  };
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -126,9 +51,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       .json({ success: false, message: "Method Not Allowed" });
   }
 
-  const supabase = createClient(
+  const supabase = createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
   console.log("Starting update-yahoo-players handler.");
@@ -151,7 +76,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const { data: gameRows, error: gameErr } = await supabase
         .from("yahoo_game_keys")
         .select(
-          "game_id, game_key, season, is_offseason, is_game_over, current_week"
+          "game_id, game_key, season, is_offseason, is_game_over, current_week",
         )
         .eq("code", "nhl")
         .order("season", { ascending: false })
@@ -161,7 +86,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         throw new Error("Yahoo canonical game lookup failed.");
       }
 
-      const gameRow = selectCanonicalYahooGame(gameRows ?? []);
+      const gameRow = selectCanonicalYahooGame(
+        (gameRows ?? []).map((row) => ({
+          ...row,
+          is_offseason:
+            row.is_offseason == null ? null : Boolean(row.is_offseason),
+          is_game_over:
+            row.is_game_over == null ? null : Boolean(row.is_game_over),
+        })),
+      );
       if (!gameRow) {
         throw new Error("Yahoo canonical game is unavailable.");
       }
@@ -175,7 +108,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       creds.consumer_secret,
       async ({
         access_token,
-        refresh_token
+        refresh_token,
       }: {
         access_token: string;
         refresh_token: string;
@@ -183,10 +116,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         console.log("Refreshing tokens...");
         await persistYahooGlobalTokens(supabase, creds.id, {
           access_token,
-          refresh_token
+          refresh_token,
         });
         console.log("Tokens refreshed and stored.");
-      }
+      },
     );
 
     yf.setUserToken(creds.access_token);
@@ -210,12 +143,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         rateLimitEvents: 0,
         completeSnapshot: true,
         deactivationApplied: false,
-        message: "No player keys found."
+        message: "No player keys found.",
       });
     }
 
     const subresources = ["draft_analysis", "percent_owned"];
-    const allRpcPayloads: ReturnType<typeof prepareRpcPayload>[] = []; // Store payloads for RPC
+    const allRpcPayloads: YahooPlayerAtomicPayload[] = [];
 
     const BATCH_SIZE = 25;
     const currentDate = format(new Date(), "yyyy-MM-dd");
@@ -229,8 +162,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       console.log(
         `Fetching players ${i + 1}-${Math.min(
           i + BATCH_SIZE,
-          playerKeys.length
-        )}/${playerKeys.length}`
+          playerKeys.length,
+        )}/${playerKeys.length}`,
       );
 
       try {
@@ -259,32 +192,37 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             onRetry: ({ rateLimited }) => {
               retries += 1;
               if (rateLimited) rateLimitEvents += 1;
-            }
-          }
+            },
+          },
         );
 
         if (players && players.length) {
           const returnedKeys = new Set(
             players
               .map((playerData: any) => String(playerData?.player_key ?? ""))
-              .filter(Boolean)
+              .filter(Boolean),
           );
           omitted += batchKeys.filter((key) => !returnedKeys.has(key)).length;
           players.forEach((playerData: any) => {
             if (!playerData?.player_key) return;
             allRpcPayloads.push(
-              prepareRpcPayload(playerData, currentDate, gameId, season)
+              prepareYahooPlayerAtomicPayload(
+                playerData,
+                currentDate,
+                gameId,
+                season,
+              ),
             ); // Pass current date + season context
             console.log(
               `Player payload queued: ${
                 playerData.name?.full || playerData.player_key
-              }`
+              }`,
             );
           });
         } else {
           omitted += batchKeys.length;
           console.warn(
-            `No data returned for batch starting with: ${batchKeys[0]}`
+            `No data returned for batch starting with: ${batchKeys[0]}`,
           );
         }
       } catch {
@@ -294,7 +232,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
 
       await new Promise((r) =>
-        setTimeout(r, 450 + Math.floor(Math.random() * 200))
+        setTimeout(r, 450 + Math.floor(Math.random() * 200)),
       );
     }
 
@@ -302,17 +240,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     // Deduplicate payloads by player_key so we keep one payload per canonical
     // player_key (which includes the game/season prefix). This avoids
     // collapsing different-season entries that share the same player_id.
-    function dedupeByPlayerKey(arr: ReturnType<typeof prepareRpcPayload>[]) {
-      const map = new Map<string, ReturnType<typeof prepareRpcPayload>>();
-      arr.forEach((p) => {
-        const key = String(p.player_key);
-        // keep the last occurrence (overwrite)
-        map.set(key, p);
-      });
-      return Array.from(map.values());
-    }
-
-    const dedupedRpcPayloads = dedupeByPlayerKey(allRpcPayloads);
+    const dedupedRpcPayloads = dedupeYahooPlayerPayloads(allRpcPayloads);
     const providerComplete = failedRows === 0 && omitted === 0;
     let ownershipHistoryUpserted = 0;
     let draftHistoryUpserted = 0;
@@ -320,45 +248,27 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     if (dedupedRpcPayloads.length) {
       console.log(
-        `Upserting ${dedupedRpcPayloads.length} players to Supabase in batches (deduped from ${allRpcPayloads.length}).`
+        `Upserting ${dedupedRpcPayloads.length} players to Supabase in batches (deduped from ${allRpcPayloads.length}).`,
       );
       for (let i = 0; i < dedupedRpcPayloads.length; i += RPC_BATCH_SIZE) {
         const batch = dedupedRpcPayloads.slice(i, i + RPC_BATCH_SIZE);
         console.log(
           `Upserting batch ${i + 1}-${Math.min(
             i + RPC_BATCH_SIZE,
-            dedupedRpcPayloads.length
-          )}`
+            dedupedRpcPayloads.length,
+          )}`,
         );
 
-        const { data, error } = await supabase.rpc(
-          "upsert_yahoo_players_atomic" as any,
-          { players_data: batch } as any
-        );
-
-        if (error) {
-          console.error(`Yahoo player RPC batch ${i + 1} failed.`);
-          throw new Error("Yahoo player persistence failed.");
-        }
-
-        const result = data as unknown as {
-          processed?: number;
-          ownershipHistoryUpserted?: number;
-          draftHistoryUpserted?: number;
-          ownershipOmitted?: number;
-        };
-        if (result?.processed !== batch.length) {
-          throw new Error("Yahoo player persistence count mismatch.");
-        }
-        ownershipHistoryUpserted += result.ownershipHistoryUpserted ?? 0;
-        draftHistoryUpserted += result.draftHistoryUpserted ?? 0;
-        ownershipOmitted += result.ownershipOmitted ?? 0;
+        const result = await persistYahooPlayerPayloadBatch(supabase, batch);
+        ownershipHistoryUpserted += result.ownershipHistoryUpserted;
+        draftHistoryUpserted += result.draftHistoryUpserted;
+        ownershipOmitted += result.ownershipOmitted;
 
         await new Promise((resolve) => setTimeout(resolve, 500)); // Keep delay between batches
       }
 
       console.log(
-        `Successfully processed all ${allRpcPayloads.length} player payloads via RPC.`
+        `Successfully processed all ${allRpcPayloads.length} player payloads via RPC.`,
       );
 
       // Fire-and-forget trigger to sync Google Sheet. Do not block response.
@@ -371,7 +281,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         fetch(targetUrl, {
           method: "POST",
           headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
-          signal: controller.signal as any
+          signal: controller.signal as any,
         })
           .then(() => console.log("Triggered sheet sync endpoint"))
           .catch(() => console.warn("Sheet sync trigger failed (non-fatal)."))
@@ -400,7 +310,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         rateLimitEvents,
         completeSnapshot,
         deactivationApplied: false,
-        message: `Processed ${dedupedRpcPayloads.length} players via RPC.`
+        message: `Processed ${dedupedRpcPayloads.length} players via RPC.`,
       });
     }
 
@@ -426,13 +336,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       message:
         failedRows > 0
           ? "Yahoo player batches failed."
-          : "Yahoo omitted all requested player data."
+          : "Yahoo omitted all requested player data.",
     });
   } catch {
     console.error("Yahoo player update failed.");
     return res.status(500).json({
       success: false,
-      message: "Yahoo player update failed"
+      message: "Yahoo player update failed",
     });
   }
 }
