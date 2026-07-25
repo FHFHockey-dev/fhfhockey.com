@@ -396,6 +396,7 @@ function GameGridInternal({
   const handleOrientationToggle = () => {
     setOrientation(orientation === "horizontal" ? "vertical" : "horizontal");
   };
+  const isDesktop = useIsDesktop();
   const gridLayout = getGameGridLayout(isDesktop, orientation);
 
   const handleSortToggle = (
@@ -756,7 +757,6 @@ function GameGridInternal({
   }, [fourWeekLoading, teamDataWithAverages]);
 
   const isMobile = useIsMobile();
-  const isDesktop = useIsDesktop();
   const [showMobileTips, setShowMobileTips] = useState(false);
   const [showWeekScoreHelp, setShowWeekScoreHelp] = useState(false);
   const [isBottomDrawerOpen, setIsBottomDrawerOpen] = useState(false);
