@@ -22,14 +22,15 @@ Date: 2026-07-22
 | PDHC JavaScript supplied raw neutral fallback colors even though the rendered state requires valid team metadata | Token replacement            | Removed; intentional team CSS-variable hooks remain and shared SCSS fallbacks own neutral UI colors                                                                                        |
 | Poisson probability ramp literals are feature-specific visualization colors                                      | Local exception              | Retained; they encode the chart scale rather than the shared shell                                                                                                                         |
 | The paired Toggle/Switch `.module.css` files have no consumers                                                   | Controlled cleanup candidate | Retained until the separately tracked cleanup disposition                                                                                                                                  |
-| Current production route is offseason-empty                                                                      | Evidence limitation          | Desktop/tablet/mobile shell and overflow proof captured; populated schedule, orientation, Player Pickup, and live PDHC visual proof remain open                                            |
+| Current production route is offseason-empty                                                                      | Evidence limitation          | Superseded by local populated in-season browser proof; Player Pickup returned a valid empty result, so populated pickup rows remain unproven                                                |
+| Populated desktop legacy-vertical mode compresses/clips its side and transposed tables without an owning scroller | Responsive defect            | Registered as P2 NEW 12.0 before remediation, then repaired with readable fixed-minimum rails and a bounded container-owned desktop scroller                                                |
 | Side-table literal white/black alpha sources                                                                      | Token replacement            | Opponent Metrics, Four Week Grid, and Player Pickup now use shared white/black tokens; exact scoped raw-color/WebKit-scrollbar scan is empty                                                |
 
 No new shared token or mixin was added: the verified needs were already served by canonical tokens, and no new semantic value had two independent consumers.
 
 ## Control reconciliation — 2026-07-25
 
-The canonical recipes above directly satisfy task 1.1. The published shell/header evidence already satisfies every child of 2.0, so the parent now matches its complete child set. Populated screenshots, Phase-5 responsive workflow proof, raw-literal cleanup, and broader behavior parity remain open.
+The canonical recipes above directly satisfy task 1.1. The published shell/header evidence already satisfies every child of 2.0, so the parent now matches its complete child set. Populated in-season browser proof closes the schedule, side-table, transposed-grid, residual clipping/team-color, and representative-route rows. Populated Player Pickup rows, full-scope token cleanup, broad accessibility comparison, screenshot reconciliation, and complete behavior parity remain open.
 
 ## Verification
 
@@ -39,3 +40,6 @@ The canonical recipes above directly satisfy task 1.1. The published shell/heade
 - Browser evidence: `/game-grid/7-Day-Forecast` was inspected at 1440×900, 834×1112, and 390×844. Body and main client/scroll widths matched at every width, the primary grid stayed readable inside its owned surface, controls retained accessible names, and the browser error log was empty.
 - Scope: no sorting, schedule calculations, data fetching, pagination, orientation logic, schema, data, provider, or production state changed.
 - Side-table token cleanup: the exact three-module scan finds zero raw hex, literal RGB/RGBA color source, or WebKit-only scrollbar fragment; direct bundled-Node-24 Sass compilation passes for all three modules.
+- Populated responsive proof: 32 NHL teams render across seven in-season days at 1440×900, 834×1112, and 390×844. Master and stacked modes have zero body overflow; controls remain inside the viewport; Week Score and the live 68.6%/31.4% PDHC heatmap stay bounded; Escape restores heatmap-trigger focus; and browser error logs are empty.
+- Legacy-vertical repair: desktop rails retain 320px / 1320px / 280px readable minimums inside one owned horizontal scroller (1295px client, 1968px scroll width). Trackpad scrolling reaches the right rail, body overflow remains zero, and post-fix tablet/mobile layouts remain stacked.
+- Regression proof: `SortableHeaders.test.tsx`, `SwitchToggle.test.tsx`, and `FourWeekGrid.test.tsx` pass 12/12; `GameGrid.module.scss` compiles directly under bundled Node 24; scoped lint and diff integrity pass.

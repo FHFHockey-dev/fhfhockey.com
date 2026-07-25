@@ -52,25 +52,25 @@
   - [x] 2.5 Verify header controls remain keyboard operable, labeled, and usable at narrow widths.
   - Evidence (2.0, 2026-07-25): all five implementation children are directly verified by the published style/accessibility cohort; parent state now matches its complete child set without extending into Phase-5 populated visual proof.
 
-- [ ] 3.0 Restyle the schedule grid as a dense data-terminal table
+- [x] 3.0 Restyle the schedule grid as a dense data-terminal table
   - [x] 3.1 Standardize sticky day headers, first columns, separators, z-index layers, table density, numeric alignment, and internal scroll behavior.
   - [x] 3.2 Use canonical zebra and one hover/selected override that remains legible over schedule-intensity fills.
   - [x] 3.3 Derive off-night/mid/heavy and outline states from shared schedule tokens and opacity/mixin ramps; remove equivalent raw colors.
   - [x] 3.4 Normalize team/logo sizing, home/away and status badges, cell padding, truncation, and focus/interactive cues without changing row data.
-  - [ ] 3.5 Verify horizontal/vertical sticky intersections, overflow, touch scrolling, and row/cell readability across orientations and breakpoints.
+  - [x] 3.5 Verify horizontal/vertical sticky intersections, overflow, touch scrolling, and row/cell readability across orientations and breakpoints.
 
-- [ ] 4.0 Align side tables and pickup controls with the shared panel/table system
+- [x] 4.0 Align side tables and pickup controls with the shared panel/table system
   - [x] 4.1 Apply consistent panel framing/title treatment to Opponent Metrics, Four Week Grid, and Player Pickup containers.
   - [x] 4.2 Normalize table headers, row heights, zebra/hover, sortable controls, selected metrics, numeric columns, pagination, and empty/loading/error states.
   - [x] 4.3 Normalize selects, inputs, filters, buttons, chips, and metric selectors with shared backgrounds, borders, typography, focus rings, and disabled states.
   - [x] 4.4 Replace raw colors and WebKit-only scrollbar fragments with tokens and the shared scrollbar mixin (verified 2026-07-25: all literal white/black alpha sources in the three side-table modules use shared tokens, no WebKit-only scrollbar fragment remains, and all three modules compile directly).
-  - [ ] 4.5 Verify dense data remains readable and controls do not wrap or overflow destructively on mobile/tablet.
+  - [x] 4.5 Verify dense data remains readable and controls do not wrap or overflow destructively on mobile/tablet.
 
-- [ ] 5.0 Modernize Transposed Grid without changing its behavior
+- [x] 5.0 Modernize Transposed Grid without changing its behavior
   - [x] 5.1 Replace old greys/black backgrounds/borders with canonical surfaces and border tokens.
   - [x] 5.2 Preserve sticky-first-column behavior using shared separators and correct layered backgrounds.
   - [x] 5.3 Replace legacy color utility classes with shared schedule fill/outline utilities or documented token-based local equivalents.
-  - [ ] 5.4 Align type, density, hover, selected, scroll, and responsive behavior with the primary grid while preserving orientation-specific needs.
+  - [x] 5.4 Align type, density, hover, selected, scroll, and responsive behavior with the primary grid while preserving orientation-specific needs.
 
 - [x] 6.0 Consolidate Toggle and Switch styling/ownership
   - [x] 6.1 Verify whether paired `.module.css` files are imported or obsolete before modifying/removing them; deletion requires proven consumer absence.
@@ -89,12 +89,12 @@
   - [x] 8.2 Add shared tokens/mixins only when at least two consumers need the same semantic value and update style documentation if behavior changes.
   - [ ] 8.3 Verify text/icon/control/table contrast, focus visibility, color-independent state, reduced motion, zoom/reflow, touch targets, and screen-reader semantics.
   - [ ] 8.4 Compare desktop/tablet/mobile screenshots against the Draft Dashboard reference grammar and correct material inconsistencies without broad unrelated churn.
-  - [ ] 8.5 Confirm no layout shift, clipped content, unreadable sticky layer, or broken team-color fallback remains.
+  - [x] 8.5 Confirm no layout shift, clipped content, unreadable sticky layer, or broken team-color fallback remains.
 
 - [ ] 9.0 Run build/visual verification and synchronize scope
   - [x] 9.1 Run the repository's actual targeted lint/type/style compilation commands discovered from `web/package.json`; do not assume the PRD's old `pnpm` command is current.
   - [x] 9.2 Run relevant direct/component checks for any semantic markup changes and record why styling-only areas do not need new tests.
-  - [ ] 9.3 Use browser verification on representative populated routes and inspect console/runtime errors plus common responsive widths.
+  - [x] 9.3 Use browser verification on representative populated routes and inspect console/runtime errors plus common responsive widths.
   - [ ] 9.4 Recheck that sorting, calculations, data fetching, filters, pagination, toggles, orientation, tooltips, and overlays behave exactly as before.
   - [x] 9.5 Update the PRD, this list, relevant style references, and master ledger with changed files, screenshots/checks, exceptions, and final evidence.
 
@@ -102,6 +102,7 @@
 
 - [ ] NEW 10.0 Append every verified style defect, semantic prerequisite, functional out-of-scope issue, responsive regression, accessibility gap, and reusable-token opportunity discovered during execution here before closure.
 - [x] NEW 11.0 Repair the PDHC overlay's modal semantics and interaction contract: unique ownership IDs, keyboard-operable trigger, focus entry/trap/return, persistent close control, Escape dismissal, and viewport-safe scrolling.
+- [x] NEW 12.0 **P2 desktop legacy-vertical rail compression:** representative 1440×900 populated browser evidence shows the seven-column Opponent Metrics rail and wide transposed schedule compressed/clipped without an owning horizontal scroller. Preserve the named legacy fallback while giving the three-rail composition a container-owned minimum width and internal horizontal scrolling; re-prove readable cells, intact side panels, zero body overflow, and touch/trackpad reachability.
 
 ## Completion Reconciliation — July 2026
 
@@ -119,3 +120,4 @@
 - Four focused files pass 12/12 tests; TypeScript, targeted lint, the normalized-file Prettier gate, and four direct Sass compilations pass. The legacy Poisson/PRD files retain their parent-proven whole-file format instead of introducing unrelated normalization churn. Browser inspection at 1440, 834, and 390 px finds no body/main overflow or runtime error on the current production route. Offseason-empty data leaves populated orientation, Player Pickup, and live-overlay visual proof open.
 - Exact checkpoint `0edb33e5182bbaeca6fbe5c259831db796466930` publishes this 17-row cohort through a guarded normal push.
 - The Phase-4 side-table cleanup replaces every literal white/black alpha source in Opponent Metrics, Four Week Grid, and Player Pickup with `v.$color-white` / `v.$color-black`. The exact scoped scan finds zero raw hex, literal RGB/RGBA source, or WebKit-only scrollbar fragment; the existing shared scrollbar mixins remain the sole scrollbar owners and all three Sass modules compile directly.
+- Populated in-season browser proof at 1440×900, 834×1112, and 390×844 verifies the master, stacked, side-table, control, Week Score, and live PDHC heatmap surfaces with zero body overflow or browser errors. NEW 12 repairs the one discovered desktop legacy-vertical defect with a container-owned horizontal scroller and readable 320px / 1320px / 280px rails; trackpad scrolling reaches the right rail while the tablet/mobile stacked policy remains unchanged. The focused Game Grid group passes 12/12 and bundled-Node-24 Sass compilation plus diff integrity pass. Player Pickup returned a valid empty result, so populated pickup rows and full behavior parity remain open under 1.2/9.4.

@@ -56,6 +56,16 @@
     gap: v.$space-lg;
     flex: 1 1 auto;
     min-height: 0;
+
+    &[data-grid-layout="legacy-vertical"] {
+      grid-template-columns: 320px 1320px 280px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      overscroll-behavior-x: contain;
+      scrollbar-gutter: stable;
+      padding-bottom: v.$space-xs;
+      @include v.custom-scrollbar(v.$primary-color, v.$background-medium);
+    }
   }
 }
 
