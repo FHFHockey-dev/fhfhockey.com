@@ -11,7 +11,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { DAY_ABBREVIATION } from "lib/NHL/types";
 
 import DateRangeTeamGrid from "./DateRangeTeamGrid";
-import DesktopMasterTable from "./DesktopMasterTable";
+import DesktopMasterTable, {
+  distributeMasterTableWidths,
+} from "./DesktopMasterTable";
+import {
+  getGameGridLayout,
+  isGameGridDesktopViewport,
+} from "./GameGrid";
 import Header from "./Header";
 import switchStyles from "./Switch/Switch.module.scss";
 import TransposedGrid from "./TransposedGrid";
@@ -51,6 +57,23 @@ afterEach(() => {
 });
 
 describe("Game Grid sortable column headers", () => {
+  it("keeps the master breakpoint and legacy vertical fallback explicit", () => {
+    expect(isGameGridDesktopViewport(1023)).toBe(false);
+    expect(isGameGridDesktopViewport(1024)).toBe(true);
+    expect(getGameGridLayout(false, "horizontal")).toBe("stacked");
+    expect(getGameGridLayout(false, "vertical")).toBe("stacked");
+    expect(getGameGridLayout(true, "horizontal")).toBe("master");
+    expect(getGameGridLayout(true, "vertical")).toBe("legacy-vertical");
+  });
+
+  it("preserves master-column minimums and expands only with extra space", () => {
+    expect(distributeMasterTableWidths([50, 72, 80], 180)).toEqual([
+      50, 72, 80,
+    ]);
+    expect(distributeMasterTableWidths([50, 50], 103)).toEqual([52, 51]);
+    expect(distributeMasterTableWidths([], 500)).toEqual([]);
+  });
+
   it("keeps Header sorting on native columnheaders for pointer and keyboard users", () => {
     const setSortKeys = vi.fn();
     const setExcludedDays = vi.fn();

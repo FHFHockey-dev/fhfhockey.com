@@ -122,6 +122,13 @@ The focused contract group remains 3 files / 9 tests. Full TypeScript passes. Th
 - The vertical desktop control is explicitly `Legacy Vertical`, returns through `Master Table`, and introduces no feature flag.
 - Focused verification passes 3 files/11 tests, full TypeScript passes, and the compiled `/game-grid/7-Day-Forecast` route returns HTTP 200. Phase 5 still owns cross-breakpoint browser/visual proof and Player Pickup alignment.
 
+## Phase 5 breakpoint and follow-through evidence
+
+- One explicit layout policy now owns the boundary: `<1024px` uses the separate stacked composition, `>=1024px` horizontal uses the master table, and `>=1024px` vertical remains `Legacy Vertical`. The existing orientation control and direct path remain; no second feature flag was added.
+- The master allocator preserves its canonical per-column minimums when their total exceeds the container, allowing the existing internal horizontal scroller and sticky OMT/Team offsets to work without destructive compression. It distributes extra width deterministically only when the container is wider.
+- Opponent Metrics and Four Week Grid already share the canonical panel/header, zebra/hover, numeric, breakpoint, sticky, and scrollbar recipes. Player Pickup already shares the panel, toolbar, dense table, control/focus, responsive card-table, pagination, and scrollbar recipes. Direct Sass compilation verifies all four scoped modules; duplicate restyling was unnecessary.
+- The focused Game Grid group passes 3 files/12 tests, including exact 1023/1024 policy, desktop vertical fallback, width allocation, sorting, collapse, score, and switch behavior. TypeScript, targeted lint, direct Sass compilation, and diff integrity pass. No production build was run.
+
 ## Verification
 
 - `npm test -- --run components/GameGrid/SortableHeaders.test.tsx components/GameGrid/utils/FourWeekGrid.test.tsx components/GameGrid/utils/fourWeekGridViews.test.ts`

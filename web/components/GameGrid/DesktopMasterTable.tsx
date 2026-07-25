@@ -194,14 +194,17 @@ function toRankMaps(entries: TeamNumeric[], bestDirection: "asc" | "desc") {
   return { best, worst };
 }
 
-function distributeWidths(baseWidths: number[], targetWidth: number): number[] {
+export function distributeMasterTableWidths(
+  baseWidths: number[],
+  targetWidth: number,
+): number[] {
   if (!baseWidths.length) return [];
 
-  if (targetWidth <= 0) {
+  const totalBaseWidth = baseWidths.reduce((sum, width) => sum + width, 0);
+  if (targetWidth <= totalBaseWidth) {
     return baseWidths;
   }
 
-  const totalBaseWidth = baseWidths.reduce((sum, width) => sum + width, 0);
   const scaledWidths = baseWidths.map(
     (width) => (width / totalBaseWidth) * targetWidth,
   );
@@ -484,7 +487,7 @@ export default function DesktopMasterTable({
   }, [dayKeys.length, isFourWeekCollapsed, opponentMetricColumns.length]);
 
   const columnWidths = useMemo(
-    () => distributeWidths(baseColumnWidths, containerWidth),
+    () => distributeMasterTableWidths(baseColumnWidths, containerWidth),
     [baseColumnWidths, containerWidth],
   );
 

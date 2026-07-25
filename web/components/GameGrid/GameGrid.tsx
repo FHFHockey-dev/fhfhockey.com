@@ -85,6 +85,19 @@ type TeamWeekData = {
 };
 
 export type GameGridMode = "7-Day-Forecast" | "10-Day-Forecast";
+export const GAME_GRID_DESKTOP_BREAKPOINT = 1024;
+
+export function isGameGridDesktopViewport(viewportWidth: number) {
+  return viewportWidth >= GAME_GRID_DESKTOP_BREAKPOINT;
+}
+
+export function getGameGridLayout(
+  isDesktop: boolean,
+  orientation: "horizontal" | "vertical",
+) {
+  if (!isDesktop) return "stacked";
+  return orientation === "horizontal" ? "master" : "legacy-vertical";
+}
 
 type GameGridProps = {
   mode: GameGridMode;
@@ -116,7 +129,7 @@ function useIsDesktop() {
 
   useEffect(() => {
     function handleResize() {
-      setIsDesktop(window.innerWidth >= 1024);
+      setIsDesktop(isGameGridDesktopViewport(window.innerWidth));
     }
 
     handleResize();
@@ -383,6 +396,7 @@ function GameGridInternal({
   const handleOrientationToggle = () => {
     setOrientation(orientation === "horizontal" ? "vertical" : "horizontal");
   };
+  const gridLayout = getGameGridLayout(isDesktop, orientation);
 
   const handleSortToggle = (
     key: "totalOffNights" | "totalGamesPlayed" | "weekScore"
@@ -1476,8 +1490,8 @@ function GameGridInternal({
         </div>
 
         {/* New 3-Column Dashboard Layout */}
-        <div className={styles.dashboardLayout}>
-          {isDesktop && orientation === "horizontal" ? (
+        <div className={styles.dashboardLayout} data-grid-layout={gridLayout}>
+          {gridLayout === "master" ? (
             <div className={styles.desktopMasterSection}>
               <div className={styles.scheduleGridContainer}>
                 {legendBar}
