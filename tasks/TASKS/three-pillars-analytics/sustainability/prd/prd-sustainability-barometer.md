@@ -346,6 +346,8 @@ function runNightlySustainabilityJob(targetSeason):
   enqueueRetroIfConfigChanged(cfg)
 ```
 
+Canonical implementation note (2026-07-25): TypeScript/Supabase owns this flow. Config activation inserts one service-only resumable queue receipt. A protected worker claims one job with `SKIP LOCKED` and executes exactly one bounded priors, window-z, score, transactional distribution/quintile finalization, or trend-band stage per request. Complete score populations persist exact version/config/season/date/window snapshots and zero-based quintiles; failures retain only a fixed code and capped exponential retry. The independent production schedules remain unchanged until B-CRON-NST NEW 61 selects final ownership. Migration application and executable database proof remain gated by NEW 15.
+
 ## 15. API Changes
 - Extend existing player summary response: add { sustainability: { game: {score, raw, quintile}, g5: {...}, g10: {...}, std: {...} } }.
 - New endpoint: GET /api/sustainability/leaderboard?window=G10&min_games=5&min_score=60 (returns paginated list with filtering).

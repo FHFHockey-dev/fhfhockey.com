@@ -103,7 +103,7 @@ export async function getPlayerSustainabilityPayload(args: {
   const windowCode = `l${args.window}`;
   const scoreResult = await args.client
     .from("sustainability_scores")
-    .select("player_id, season_id, snapshot_date, position_group, window_code, s_raw, s_100, components, computed_at")
+    .select("player_id, season_id, snapshot_date, position_group, window_code, s_raw, s_100, components, computed_at, model_version, config_hash, sustainability_quintile")
     .eq("player_id", args.playerId)
     .eq("window_code", windowCode)
     .order("snapshot_date", { ascending: false })
@@ -174,7 +174,6 @@ export function shapePlayerSustainabilitySummaryPayload(args: {
   const windows = SUSTAINABILITY_SCORE_WINDOW_CODES.flatMap((windowCode) => {
     const row = latestByWindow.get(windowCode);
     if (!row) return [];
-    const components = asRecord(row.components);
     return [{
       window_code: windowCode,
       snapshot_date: row.snapshot_date,
@@ -182,8 +181,9 @@ export function shapePlayerSustainabilitySummaryPayload(args: {
       position_group: row.position_group,
       s_raw: row.s_raw,
       s_100: row.s_100,
-      model_version: components.modelVersion ?? null,
-      config_hash: components.configHash ?? null
+      sustainability_quintile: row.sustainability_quintile,
+      model_version: row.model_version,
+      config_hash: row.config_hash
     }];
   });
 
@@ -206,7 +206,7 @@ export async function getPlayerSustainabilitySummaryPayload(args: {
   const result = await args.client
     .from("sustainability_scores")
     .select(
-      "player_id, season_id, snapshot_date, position_group, window_code, s_raw, s_100, components, computed_at"
+      "player_id, season_id, snapshot_date, position_group, window_code, s_raw, s_100, components, computed_at, model_version, config_hash, sustainability_quintile"
     )
     .eq("player_id", args.playerId)
     .in("window_code", [...SUSTAINABILITY_SCORE_WINDOW_CODES])
@@ -315,7 +315,7 @@ export async function getSustainabilityLeaderboardPayload(args: {
       args.client
         .from("sustainability_scores")
         .select(
-          "player_id, season_id, snapshot_date, position_group, window_code, s_raw, s_100, components, computed_at, model_version, config_hash"
+          "player_id, season_id, snapshot_date, position_group, window_code, s_raw, s_100, components, computed_at, model_version, config_hash, sustainability_quintile"
         )
         .eq("snapshot_date", snapshotDate)
         .eq("window_code", args.options.windowCode)

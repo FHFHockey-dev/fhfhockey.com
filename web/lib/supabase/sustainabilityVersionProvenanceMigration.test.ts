@@ -46,10 +46,45 @@ describe("Sustainability version provenance migration", () => {
     expect(migrationSql).toContain(
       "alter table public.sustainability_recompute_queue force row level security",
     )
+    expect(migrationSql).toContain(
+      "create or replace function public.claim_sustainability_recompute_queue",
+    )
+    expect(migrationSql).toContain("for update skip locked")
+    expect(migrationSql).toContain(
+      "create or replace function public.advance_sustainability_recompute_queue",
+    )
+    expect(migrationSql).toContain("next_attempt_at")
+    expect(migrationSql).toContain(
+      "create or replace function public.finalize_sustainability_score_snapshot",
+    )
+    expect(migrationSql).toContain("ntile(5)")
+    expect(migrationSql).toContain("percentile_cont(0.80)")
+    expect(migrationSql).toMatch(
+      /revoke all on function public\.finalize_sustainability_score_snapshot[\s\S]+from public, anon, authenticated/,
+    )
+    expect(migrationSql).toMatch(
+      /grant execute on function public\.finalize_sustainability_score_snapshot[\s\S]+to service_role/,
+    )
     expect(migrationSql).toContain("'sustainability_score_v2'")
     expect(migrationSql).toContain("'fnv1a_91691726'")
     expect(migrationSql).not.toMatch(
       /delete\s+from\s+public\.(sustainability_scores|sustainability_player_priors)/i,
+    )
+  })
+
+  it("persists canonical distributions and bounded score quintiles service-only", () => {
+    expect(migrationSql).toContain(
+      "create table if not exists public.sustainability_distribution_snapshots",
+    )
+    expect(migrationSql).toContain("sustainability_quintile smallint")
+    expect(migrationSql).toContain(
+      "sustainability_quintile between 0 and 4",
+    )
+    expect(migrationSql).toMatch(
+      /revoke all on table public\.sustainability_distribution_snapshots[\s\S]+from public, anon, authenticated/,
+    )
+    expect(migrationSql).toMatch(
+      /grant select, insert, update on table public\.sustainability_distribution_snapshots[\s\S]+to service_role/,
     )
   })
 })

@@ -27,7 +27,7 @@ function parseBoundedInt(value: string | string[] | undefined, fallback: number,
   return Math.max(0, Math.min(max, Math.floor(parsed)));
 }
 
-async function handler(
+export async function rebuildPriorsHandler(
   req: NextApiRequest,
   res: NextApiResponse<CronTimedResponse<Record<string, unknown>>>
 ) {
@@ -143,6 +143,6 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(adminOnly(handler as any), {
+export default withCronJobAudit(adminOnly(rebuildPriorsHandler as any), {
   jobName: "rebuild-sustainability-priors"
 });

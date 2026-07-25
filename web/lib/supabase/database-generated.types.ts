@@ -28895,6 +28895,54 @@ export type Database = {
           },
         ]
       }
+      sustainability_distribution_snapshots: {
+        Row: {
+          config_hash: string
+          config_revision: number
+          created_at: string
+          maximum: number
+          mean: number
+          minimum: number
+          model_version: string
+          percentiles: Json
+          population_count: number
+          season_id: number
+          snapshot_date: string
+          stdev: number
+          window_code: string
+        }
+        Insert: {
+          config_hash: string
+          config_revision: number
+          created_at?: string
+          maximum: number
+          mean: number
+          minimum: number
+          model_version: string
+          percentiles: Json
+          population_count: number
+          season_id: number
+          snapshot_date: string
+          stdev: number
+          window_code: string
+        }
+        Update: {
+          config_hash?: string
+          config_revision?: number
+          created_at?: string
+          maximum?: number
+          mean?: number
+          minimum?: number
+          model_version?: string
+          percentiles?: Json
+          population_count?: number
+          season_id?: number
+          snapshot_date?: string
+          stdev?: number
+          window_code?: string
+        }
+        Relationships: []
+      }
       sustainability_player_priors: {
         Row: {
           computed_at: string
@@ -29129,6 +29177,7 @@ export type Database = {
           s_raw: number
           season_id: number
           snapshot_date: string
+          sustainability_quintile: number | null
           window_code: string
         }
         Insert: {
@@ -29142,6 +29191,7 @@ export type Database = {
           s_raw: number
           season_id: number
           snapshot_date: string
+          sustainability_quintile?: number | null
           window_code: string
         }
         Update: {
@@ -29155,6 +29205,7 @@ export type Database = {
           s_raw?: number
           season_id?: number
           snapshot_date?: string
+          sustainability_quintile?: number | null
           window_code?: string
         }
         Relationships: []
@@ -29170,6 +29221,7 @@ export type Database = {
           id: number
           last_error: string | null
           model_version: string
+          next_attempt_at: string
           reason: string
           started_at: string | null
           status: string
@@ -29184,6 +29236,7 @@ export type Database = {
           id?: number
           last_error?: string | null
           model_version: string
+          next_attempt_at?: string
           reason: string
           started_at?: string | null
           status?: string
@@ -29198,6 +29251,7 @@ export type Database = {
           id?: number
           last_error?: string | null
           model_version?: string
+          next_attempt_at?: string
           reason?: string
           started_at?: string | null
           status?: string
@@ -45157,6 +45211,15 @@ export type Database = {
         }
         Returns: Json
       }
+      advance_sustainability_recompute_queue: {
+        Args: {
+          p_completed: boolean
+          p_cursor: Json
+          p_error?: string
+          p_id: number
+        }
+        Returns: Database["public"]["Tables"]["sustainability_recompute_queue"]["Row"][]
+      }
       advance_draft_ranker_placement: {
         Args: {
           p_expected_anchor_player_id: number
@@ -45197,6 +45260,20 @@ export type Database = {
       calculate_goalie_start_projections: {
         Args: { target_date: string }
         Returns: undefined
+      }
+      claim_sustainability_recompute_queue: {
+        Args: never
+        Returns: Database["public"]["Tables"]["sustainability_recompute_queue"]["Row"][]
+      }
+      finalize_sustainability_score_snapshot: {
+        Args: {
+          p_config_hash: string
+          p_config_revision: number
+          p_model_version: string
+          p_season_id: number
+          p_snapshot_date: string
+        }
+        Returns: Json
       }
       cancel_draft_ranker_placement: {
         Args: {

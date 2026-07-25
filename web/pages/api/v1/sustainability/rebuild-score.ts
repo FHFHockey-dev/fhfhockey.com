@@ -25,10 +25,15 @@ import {
 import supabase from "lib/supabase/server";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { detectSustainabilitySourceAdvance } from "lib/sustainability/incremental";
-import { buildSustainabilityDistributionSnapshot } from "lib/sustainability/distribution";
+import {
+  assignSustainabilityQuintiles,
+  buildSustainabilityDistributionSnapshot,
+  persistSustainabilityDistributionSnapshots,
+  toSustainabilityDistributionSnapshotRows
+} from "lib/sustainability/distribution";
 import { loadActiveSustainabilityConfig } from "lib/sustainability/config";
 
-async function handler(
+export async function rebuildScoreHandler(
   req: NextApiRequest,
   res: NextApiResponse<CronTimedResponse<Record<string, unknown>>>,
 ) {
@@ -101,7 +106,7 @@ async function handler(
       { code: "l20", n: 20 },
     ] as const;
 
-    const rows: any[] = [];
+    let rows: any[] = [];
     let totalPlayers = 0;
 
     for (const batchOffset of batchOffsets) {
@@ -142,6 +147,19 @@ async function handler(
           ])
         )
       : null;
+    if (distributionSnapshot) {
+      rows = assignSustainabilityQuintiles(rows, distributionSnapshot);
+    }
+    const distributionRows = distributionSnapshot
+      ? toSustainabilityDistributionSnapshotRows({
+          configRevision: activeConfig.configRevision,
+          modelVersion: activeConfig.modelVersion,
+          configHash: activeConfig.configHash,
+          seasonId: season,
+          snapshotDate: snapshot,
+          snapshots: distributionSnapshot
+        })
+      : [];
     finishPhase("distribution_snapshot");
 
     const sampleSize = Math.max(0, Math.min(25, Number(req.query.verify_sample ?? 10)));
@@ -167,6 +185,13 @@ async function handler(
 
     const { inserted, chunks } = await upsertScores(rows, dry);
     finishPhase("persist_scores");
+    const persistedDistributionSnapshots =
+      await persistSustainabilityDistributionSnapshots({
+        client: supabase,
+        rows: distributionRows,
+        dry
+      });
+    finishPhase("persist_distribution_snapshot");
     const anomalyCount = countExtremeSustainabilityRows(rows);
     let distributionDrift: Record<string, unknown> | null = null;
     if (runAll && !dry) {
@@ -219,6 +244,7 @@ async function handler(
       recompute_verification: recomputeVerification,
       distribution_drift: distributionDrift,
       distribution_snapshot: distributionSnapshot,
+      distribution_snapshots_persisted: persistedDistributionSnapshots,
       phase_timings_ms: phaseTimingsMs,
     });
     return res.status(200).json(
@@ -241,6 +267,7 @@ async function handler(
         recompute_verification: recomputeVerification,
         distribution_drift: distributionDrift,
         distribution_snapshot: distributionSnapshot,
+        distribution_snapshots_persisted: persistedDistributionSnapshots,
         phase_timings_ms: phaseTimingsMs,
         batches_processed: batchOffsets.length,
         sample: rows.slice(0, 5),
@@ -277,4 +304,4 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(adminOnly(handler as any));
+export default withCronJobAudit(adminOnly(rebuildScoreHandler as any));

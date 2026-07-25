@@ -89,7 +89,7 @@ async function fetchPlayerIds(
   );
 }
 
-async function handler(
+export async function rebuildTrendBandsHandler(
   req: NextApiRequest,
   res: NextApiResponse<CronTimedResponse<Record<string, unknown>>>,
 ) {
@@ -295,4 +295,4 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(adminOnly(handler as any));
+export default withCronJobAudit(adminOnly(rebuildTrendBandsHandler as any));
