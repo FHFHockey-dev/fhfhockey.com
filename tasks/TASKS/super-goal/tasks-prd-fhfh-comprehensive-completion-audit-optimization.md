@@ -5184,13 +5184,13 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [ ] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0030` (original L59) — 5.4 Persist prediction/outcome rows idempotently and calculate MAE/MAPE with explicit samples/unavailable states.
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0031` (original L60) — 5.5 Test schema, pagination, determinism, invalid inputs, empty slate, stale/partial sources, and logging reconciliation.
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0032` (original L61) — 5.6 Verify P95 under four seconds for at least 100 players or remediate the measured blocker (verified 2026-07-23: 351 players, 257 ms P95).
-- [ ] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0033` (original L63) — 6.0 Verify and finish the Daily Start Chart UI
+- [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0033` (original L63) — 6.0 Verify and finish the Daily Start Chart UI (verified 2026-07-25).
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0034` (original L64) — 6.1 Default date to today and support one-date slates with position tabs and server ranks.
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0035` (original L65) — 6.2 Render Rank, Name, Team, Opponent, goalie, one-game slate, value, PP probability/unit, line role, and honest context tags.
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0036` (original L66) — 6.3 Support date, tau, points mode, profile, and available risk controls; render unavailable states for deferred modes (verified 2026-07-23).
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0037` (original L67) — 6.4 Explain usage, PP1, opponent PK/defense, goalie, sustainability, freshness, and fallback priors.
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0038` (original L68) — 6.5 Handle loading, empty date, stale/partial inputs, missing goalie, failed API, and fallback-derived rows honestly.
-- [ ] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0039` (original L69) — 6.6 Verify keyboard/table semantics, tooltips, color-independent tags, responsive/mobile layout, URL state, and FORGE navigation.
+- [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0039` (original L69) — 6.6 Verify keyboard/table semantics, tooltips, color-independent tags, responsive/mobile layout, URL state, and FORGE navigation (verified 2026-07-25).
 - [ ] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0040` (original L71) — 7.0 Verify starter refresh, scheduling, and operator behavior
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0041` (original L72) — 7.1 Reconcile nightly/hourly requirements with cron and establish source-refresh → projection → Start Chart ordering.
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0042` (original L73) — 7.2 Verify projected goalie probability uses recent share, back-to-back, home, form, and clipping only when no stronger source exists.
@@ -5204,6 +5204,9 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0050` (original L82) — 8.4 Record older proposed views/tables as merged, superseded, or deferred and update both PRDs plus master records.
 - [ ] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0051` (original L86) — NEW 9.0 Append every verified defect, data gap, manual dependency, open model question, and optimization discovered during execution here before closure.
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0052` (live NEW) — NEW 9.1 **P2 missing runtime server-rank contract:** one versioned API contract now owns eligible-position competition ranks, deterministic player-ID tie order, multi-position membership, null-score exclusion, and explicit category/P75 deferral; focused regressions pass (closed 2026-07-23).
+- [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0053` (live NEW) — NEW 9.2 **P1 duplicate populated-slate React keys broke matchup filtering:** composite player/team/opponent keys plus focused and populated browser proof remove stale off-game cards and duplicate-key errors (closed 2026-07-25).
+- [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0054` (live NEW) — NEW 9.3 **P2 Recharts dot props spread the reserved React key:** the renderer now passes `key` directly; populated final runtime logs are empty (closed 2026-07-25).
+- [ ] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0055` (live NEW) — NEW 9.4 **P1 Production Start Chart deployment drift:** batch the verified local reader/rank/responsive/key repairs into a meaningful publication, then repeat value-free populated desktop/mobile proof without a standalone hosted build (discovered 2026-07-25).
 
 ### Source: `tasks/TASKS/sko-charts/tasks-prd-sko-charts.md` (68 rows)
 

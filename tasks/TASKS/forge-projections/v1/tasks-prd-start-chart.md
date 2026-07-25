@@ -67,15 +67,15 @@
   - [x] 5.6 Verify P95 under four seconds for at least 100 players or remediate the measured blocker.
   - Evidence (5.2/5.6, 2026-07-23): the canonical reader validates real dates, points/default-profile/latest-run ownership, positions, optional bounded pagination, and explicitly unavailable tau/risk/alternate-model controls before data access. Focused structured-error/filter/pagination coverage passes; ten value-free Production reads of the 351-player 2026-03-14 slate measured 257 ms P95 against the four-second requirement.
 
-- [ ] 6.0 Verify and finish the Daily Start Chart UI
+- [x] 6.0 Verify and finish the Daily Start Chart UI
   - [x] 6.1 Default date to today and support one-date slates with position tabs and server ranks.
   - [x] 6.2 Render Rank, Name, Team, Opponent, goalie, one-game slate, value, PP probability/unit, line role, and honest context tags.
   - [x] 6.3 Support date, tau, points mode, profile, and available risk controls; render unavailable states for deferred modes.
   - [x] 6.4 Explain usage, PP1, opponent PK/defense, goalie, sustainability, freshness, and fallback priors.
   - [x] 6.5 Handle loading, empty date, stale/partial inputs, missing goalie, failed API, and fallback-derived rows honestly.
   - Evidence (6.1/6.2/6.4/6.5, 2026-07-22): the current page and production trace verify today/one-date selection, positions/ranks, game/team/opponent/goalie/value/role context, returned scoring/source/fallback metadata, and explicit loading/error/no-games/no-players/fallback presentation.
-  - [ ] 6.6 Verify keyboard/table semantics, tooltips, color-independent tags, responsive/mobile layout, URL state, and FORGE navigation.
-  - Evidence (6.3, 2026-07-23): the page exposes the canonical points/profile contract, synchronizes the selected date into the URL, and explicitly identifies tau, category, and P75 risk controls as FORGE-owned/unavailable rather than inventing a second projection engine. Keyboard-native game filters, metric disclosure, chart labeling, and FORGE navigation are implemented and unit-covered, but 6.6 remains open because the local Chromium visual pass was blocked by the macOS browser sandbox.
+  - [x] 6.6 Verify keyboard/table semantics, tooltips, color-independent tags, responsive/mobile layout, URL state, and FORGE navigation.
+  - Evidence (6.3/6.6, 2026-07-25): the page exposes the canonical points/profile contract, synchronizes the selected date into the URL, and explicitly identifies tau, category, and P75 risk controls as FORGE-owned/unavailable rather than inventing a second projection engine. A populated 351-player browser pass proves native labeled controls and game buttons, keyboard metric disclosure, text-bearing context/stat tags, direct FORGE navigation, 1440×900 desktop and 390-class mobile reflow, one-column mobile rankings, horizontally scrollable game cards, and zero body overflow. The duplicate player/card and chart-dot key defects discovered during the pass are repaired under NEW 9.2/9.3; the final desktop/mobile runtime log set is empty.
 
 - [ ] 7.0 Verify starter refresh, scheduling, and operator behavior
   - [x] 7.1 Reconcile nightly/hourly requirements with cron and establish source-refresh → projection → Start Chart ordering.
@@ -98,3 +98,6 @@
 
 - [ ] NEW 9.0 Append every verified defect, data gap, manual dependency, open model question, and optimization discovered during execution here before closure.
 - [x] NEW 9.1 **P2 missing runtime server-rank contract:** source controls claimed server ranks while the API returned no ranks and the UI independently sorted floating-point values. One versioned API contract now owns eligible-position competition ranks, deterministic player-ID tie order, multi-position membership, null-score exclusion, and explicit category/P75 deferral; focused regressions pass (closed 2026-07-23).
+- [x] NEW 9.2 **P1 duplicate populated-slate React keys broke matchup filtering:** a real 351-player slate contains same-player projections for multiple team/game contexts. Player-only keys emitted duplicate-key errors and left stale off-game cards after selecting a matchup. Keys now include player, team, and opponent identity; the focused duplicate fixture and populated mobile/desktop filter prove off-game rows disappear with empty final runtime logs (closed 2026-07-25).
+- [x] NEW 9.3 **P2 Recharts dot props spread the reserved React key:** the populated CTPI chart emitted a development runtime error because the renderer spread a props object containing `key`. The renderer now passes `key` directly and spreads only remaining props; the final populated browser log set is empty (closed 2026-07-25).
+- [ ] NEW 9.4 **P1 Production Start Chart deployment drift:** customer Production still resolves source commit `b4aeea8f9af6229aa64f75e4b311b1218a5afb4c`, predating the locally verified reader/rank/responsive/key repairs. Keep open for one meaningful batched publication, exact deployment receipt, and value-free populated desktop/mobile repeat; do not trigger a standalone hosted build (discovered 2026-07-25).

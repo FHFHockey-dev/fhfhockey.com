@@ -95,6 +95,23 @@ describe("StartChartPage", () => {
           games_remaining_week: 3,
           position_ranks: { C: 1 },
         },
+        {
+          player_id: 8478402,
+          name: "Nick Suzuki",
+          positions: ["C"],
+          ownership: 25,
+          percent_ownership: 25,
+          opponent_abbrev: "COL",
+          team_id: 52,
+          team_abbrev: "WPG",
+          proj_fantasy_points: 3.2,
+          proj_goals: 0.3,
+          proj_assists: 0.4,
+          proj_shots: 2.5,
+          matchup_grade: 52,
+          games_remaining_week: 2,
+          position_ranks: { C: 2 },
+        },
       ],
       games: [
         {
@@ -102,6 +119,14 @@ describe("StartChartPage", () => {
           date: "2026-02-07",
           homeTeamId: 10,
           awayTeamId: 8,
+          homeGoalies: [],
+          awayGoalies: [],
+        },
+        {
+          id: 1002,
+          date: "2026-02-07",
+          homeTeamId: 52,
+          awayTeamId: 21,
           homeGoalies: [],
           awayGoalies: [],
         },
@@ -115,8 +140,10 @@ describe("StartChartPage", () => {
       name: /MTL at TOR; apply game filter/,
     });
     expect(gameFilter.getAttribute("aria-pressed")).toBe("false");
+    expect(screen.getByText("WPG vs COL")).toBeTruthy();
     fireEvent.click(gameFilter);
     expect(gameFilter.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.queryByText("WPG vs COL")).toBeNull();
 
     expect(screen.getByLabelText("Mode").hasAttribute("disabled")).toBe(true);
     expect(screen.getByLabelText("Profile").hasAttribute("disabled")).toBe(

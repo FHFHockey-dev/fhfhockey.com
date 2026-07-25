@@ -490,10 +490,12 @@ export default function StartChartPage() {
                     stroke={teamColors[abbrev] ?? "#fff"}
                     strokeWidth={2}
                     dot={(props: any) => {
+                      const { key, ...dotProps } = props;
                       const isLast = props.index === ctpiData.length - 1;
                       return (
                         <CustomDot
-                          {...props}
+                          key={key}
+                          {...dotProps}
                           dataKey={abbrev}
                           isLast={isLast}
                         />
@@ -756,7 +758,12 @@ export default function StartChartPage() {
                   <div className={styles.emptyState}>No players.</div>
                 ) : (
                   list.map((p) => (
-                    <div className={styles.card} key={`${pos}-${p.player_id}`}>
+                    <div
+                      className={styles.card}
+                      key={`${pos}-${p.player_id}-${p.team_id ?? "unknown"}-${
+                        p.opponent_abbrev ?? "unknown"
+                      }`}
+                    >
                       <div className={styles.header}>
                         <div className={styles.name} title={p.name}>
                           {p.position_ranks[pos] != null
