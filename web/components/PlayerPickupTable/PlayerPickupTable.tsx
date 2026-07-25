@@ -260,8 +260,20 @@ export type PlayerPickupTableProps = {
 // Helper Functions & Hooks
 // ---------------------------
 
-const getNhlSeasonIdFromYahooSeasonYear = (yahooSeasonYear: number): string =>
-  `${yahooSeasonYear - 1}${yahooSeasonYear}`;
+export const getYahooSeasonStartYear = (
+  seasonId: string | number | null | undefined
+): number | null => {
+  if (seasonId === null || seasonId === undefined) return null;
+  const seasonIdAsString = String(seasonId);
+  if (!/^\d{8}$/.test(seasonIdAsString)) return null;
+
+  const startYear = Number(seasonIdAsString.slice(0, 4));
+  return Number.isNaN(startYear) ? null : startYear;
+};
+
+export const getNhlSeasonIdFromYahooSeasonYear = (
+  yahooSeasonYear: number
+): string => `${yahooSeasonYear}${yahooSeasonYear + 1}`;
 
 const chunkArray = <T,>(items: T[], chunkSize: number): T[][] => {
   if (items.length === 0) return [];
@@ -726,10 +738,14 @@ const Filters: React.FC<FiltersProps> = ({
               <div className={styles.filterContainerMobile}>
                 <div className={styles.filterRowMobileCombined}>
                   <div className={styles.compactField}>
-                    <label className={styles.labelMobile}>
+                    <label
+                      className={styles.labelMobile}
+                      htmlFor="pickup-ownership-threshold"
+                    >
                       Own %: {ownershipThreshold}%
                     </label>
                     <input
+                      id="pickup-ownership-threshold"
                       type="range"
                       min="0"
                       max="100"
@@ -746,8 +762,14 @@ const Filters: React.FC<FiltersProps> = ({
                       styles.compactFieldInline
                     )}
                   >
-                    <label className={styles.labelMobile}>Team:</label>
+                    <label
+                      className={styles.labelMobile}
+                      htmlFor="pickup-team-filter"
+                    >
+                      Team:
+                    </label>
                     <select
+                      id="pickup-team-filter"
                       value={teamFilter}
                       onChange={(e) => setTeamFilter(e.target.value)}
                       className={styles.selectMobile}
@@ -783,10 +805,14 @@ const Filters: React.FC<FiltersProps> = ({
               <div className={styles.filterContainer}>
                 <div className={styles.filterRowGridTop}>
                   <div className={styles.filterRow}>
-                    <label className={styles.label}>
+                    <label
+                      className={styles.label}
+                      htmlFor="pickup-ownership-threshold"
+                    >
                       Ownership %: {ownershipThreshold}%
                     </label>
                     <input
+                      id="pickup-ownership-threshold"
                       type="range"
                       min="0"
                       max="100"
@@ -798,8 +824,14 @@ const Filters: React.FC<FiltersProps> = ({
                     />
                   </div>
                   <div className={clsx(styles.filterRow, styles.filterRowTeam)}>
-                    <label className={styles.label}>Team:</label>
+                    <label
+                      className={styles.label}
+                      htmlFor="pickup-team-filter"
+                    >
+                      Team:
+                    </label>
                     <select
+                      id="pickup-team-filter"
                       value={teamFilter}
                       onChange={(e) => setTeamFilter(e.target.value)}
                       className={styles.select}
@@ -982,6 +1014,45 @@ interface PlayerTableCommonProps {
   selectedMetrics: Record<MetricKey, boolean>;
 }
 
+type SortableHeaderProps = {
+  column: SortKey;
+  label: string;
+  sortKey: SortKey;
+  sortOrder: "asc" | "desc";
+  handleSort: (column: SortKey) => void;
+};
+
+const SortableHeader: React.FC<SortableHeaderProps> = ({
+  column,
+  label,
+  sortKey,
+  sortOrder,
+  handleSort
+}) => {
+  const isActive = sortKey === column;
+  const ariaSort = isActive
+    ? sortOrder === "asc"
+      ? "ascending"
+      : "descending"
+    : "none";
+
+  return (
+    <th aria-sort={ariaSort}>
+      <button
+        type="button"
+        className={styles.sortButton}
+        onClick={() => handleSort(column)}
+        aria-label={`Sort by ${label}${isActive ? `, currently ${ariaSort}` : ""}`}
+      >
+        {label}
+        <span aria-hidden="true">
+          {isActive ? (sortOrder === "desc" ? " ▼" : " ▲") : ""}
+        </span>
+      </button>
+    </th>
+  );
+};
+
 // --- DesktopTable, MobileTable, PaginationControls (No changes needed in these child components) ---
 interface DesktopTableProps extends PlayerTableCommonProps {}
 const DesktopTable: React.FC<DesktopTableProps> = ({
@@ -1017,58 +1088,38 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
       <table className={styles.table}>
         <thead>
           <tr>
-            <th onClick={() => handleSort("nhl_player_name")}>
-              Name{" "}
-              {sortKey === "nhl_player_name"
-                ? sortOrder === "desc"
-                  ? "▼"
-                  : "▲"
-                : ""}
-            </th>
-            <th onClick={() => handleSort("nhl_team_abbreviation")}>
-              Team{" "}
-              {sortKey === "nhl_team_abbreviation"
-                ? sortOrder === "desc"
-                  ? "▼"
-                  : "▲"
-                : ""}
-            </th>
-            <th onClick={() => handleSort("percent_ownership")}>
-              Own %{" "}
-              {sortKey === "percent_ownership"
-                ? sortOrder === "desc"
-                  ? "▼"
-                  : "▲"
-                : ""}
-            </th>
+            <SortableHeader
+              column="nhl_player_name"
+              label="Name"
+              {...{ sortKey, sortOrder, handleSort }}
+            />
+            <SortableHeader
+              column="nhl_team_abbreviation"
+              label="Team"
+              {...{ sortKey, sortOrder, handleSort }}
+            />
+            <SortableHeader
+              column="percent_ownership"
+              label="Own %"
+              {...{ sortKey, sortOrder, handleSort }}
+            />
             <th>Pos.</th>
-            <th onClick={() => handleSort("off_nights")}>
-              Off-Nights{" "}
-              {sortKey === "off_nights"
-                ? sortOrder === "desc"
-                  ? "▼"
-                  : "▲"
-                : ""}
-            </th>
-            {/* Sorting GP% might need direct access to percentile or raw value */}
-            <th onClick={() => handleSort("percent_games")}>
-              GP%{" "}
-              {sortKey === "percent_games"
-                ? sortOrder === "desc"
-                  ? "▼"
-                  : "▲"
-                : ""}
-            </th>
+            <SortableHeader
+              column="off_nights"
+              label="Off-Nights"
+              {...{ sortKey, sortOrder, handleSort }}
+            />
+            <SortableHeader
+              column="percent_games"
+              label="GP%"
+              {...{ sortKey, sortOrder, handleSort }}
+            />
             <th>Metrics</th>
-            {/* Use dynamic header text, keep sort key as 'composite' for the score column */}
-            <th onClick={() => handleSort("composite")}>
-              {scoreHeader}{" "}
-              {sortKey === "composite"
-                ? sortOrder === "desc"
-                  ? "▼"
-                  : "▲"
-                : ""}
-            </th>
+            <SortableHeader
+              column="composite"
+              label={scoreHeader}
+              {...{ sortKey, sortOrder, handleSort }}
+            />
           </tr>
         </thead>
         <tbody>
@@ -1295,55 +1346,43 @@ const MobileTable: React.FC<MobileTableProps> = ({
     <div className={styles.containerMobile}>
       <table className={styles.tableMobile}>
         <colgroup>
-          <col style={{ width: "5%" }} /> <col style={{ width: "35%" }} />
-          <col style={{ width: "10%" }} /> <col style={{ width: "10%" }} />
-          <col style={{ width: "15%" }} /> <col style={{ width: "10%" }} />
+          <col style={{ width: "5%" }} />
+          <col style={{ width: "35%" }} />
+          <col style={{ width: "10%" }} />
+          <col style={{ width: "10%" }} />
+          <col style={{ width: "15%" }} />
+          <col style={{ width: "10%" }} />
           <col style={{ width: "15%" }} />
         </colgroup>
         <thead>
           <tr>
-            <th></th> {/* Expand Button */}
-            <th onClick={() => handleSort("nhl_player_name")}>
-              Name{" "}
-              {sortKey === "nhl_player_name"
-                ? sortOrder === "desc"
-                  ? "▼"
-                  : "▲"
-                : ""}
-            </th>
-            <th onClick={() => handleSort("nhl_team_abbreviation")}>
-              Team{" "}
-              {sortKey === "nhl_team_abbreviation"
-                ? sortOrder === "desc"
-                  ? "▼"
-                  : "▲"
-                : ""}
-            </th>
-            <th onClick={() => handleSort("percent_ownership")}>
-              Own{" "}
-              {sortKey === "percent_ownership"
-                ? sortOrder === "desc"
-                  ? "▼"
-                  : "▲"
-                : ""}
-            </th>
+            <th aria-label="Player details"></th>
+            <SortableHeader
+              column="nhl_player_name"
+              label="Name"
+              {...{ sortKey, sortOrder, handleSort }}
+            />
+            <SortableHeader
+              column="nhl_team_abbreviation"
+              label="Team"
+              {...{ sortKey, sortOrder, handleSort }}
+            />
+            <SortableHeader
+              column="percent_ownership"
+              label="Own"
+              {...{ sortKey, sortOrder, handleSort }}
+            />
             <th>Pos.</th>
-            <th onClick={() => handleSort("off_nights")}>
-              Offs{" "}
-              {sortKey === "off_nights"
-                ? sortOrder === "desc"
-                  ? "▼"
-                  : "▲"
-                : ""}
-            </th>
-            <th onClick={() => handleSort("composite")}>
-              {scoreHeaderMobile}{" "}
-              {sortKey === "composite"
-                ? sortOrder === "desc"
-                  ? "▼"
-                  : "▲"
-                : ""}
-            </th>
+            <SortableHeader
+              column="off_nights"
+              label="Offs"
+              {...{ sortKey, sortOrder, handleSort }}
+            />
+            <SortableHeader
+              column="composite"
+              label={scoreHeaderMobile}
+              {...{ sortKey, sortOrder, handleSort }}
+            />
           </tr>
         </thead>
         <tbody>
@@ -1355,7 +1394,7 @@ const MobileTable: React.FC<MobileTableProps> = ({
               player.current_team_abbreviation || player.yahoo_team,
               player.yahoo_team
             );
-            const isExpanded = expanded[player.nhl_player_id];
+            const isExpanded = expanded[player.nhl_player_id] ?? false;
 
             // Determine styling based on filter mode and active selections for this player
             const isMetricSelected = (key: MetricKey) =>
@@ -1405,10 +1444,12 @@ const MobileTable: React.FC<MobileTableProps> = ({
                   <td>
                     {/* Expand Button */}
                     <button
+                      type="button"
                       onClick={() => toggleExpand(player.nhl_player_id)}
                       className={styles.expandButton}
                       aria-expanded={isExpanded}
                       aria-controls={`details-${player.nhl_player_id}`}
+                      aria-label={`${isExpanded ? "Collapse" : "Expand"} details for ${player.nhl_player_name}`}
                     >
                       {isExpanded ? "−" : "+"}
                     </button>
@@ -1468,8 +1509,8 @@ const MobileTable: React.FC<MobileTableProps> = ({
                     {player.eligible_positions?.join(", ") ||
                       (player.player_type === "goalie" ? "G" : "N/A")}
                   </td>
-                  <td> {getOffNightsForPlayer(player)} </td>
-                  <td> {player.displayScore.toFixed(1)} </td>{" "}
+                  <td>{getOffNightsForPlayer(player)}</td>
+                  <td>{player.displayScore.toFixed(1)}</td>
                   {/* Use displayScore */}
                 </tr>
                 {/* Expanded Row */}
@@ -1623,22 +1664,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   }, []);
 
   const yahooSeasonYear = useMemo(() => {
-    if (!currentSeasonInfo?.seasonId) return null;
-    const seasonIdAsString = String(currentSeasonInfo.seasonId);
-    if (seasonIdAsString.length < 4) return null;
-
-    const startYear = Number(seasonIdAsString.slice(0, 4));
-    if (Number.isNaN(startYear)) return null;
-
-    const seasonEndDate = currentSeasonInfo.seasonEndDate
-      ? new Date(currentSeasonInfo.seasonEndDate)
-      : null;
-    const isOffSeason =
-      seasonEndDate !== null &&
-      !Number.isNaN(seasonEndDate.getTime()) &&
-      Date.now() > seasonEndDate.getTime();
-
-    return isOffSeason ? startYear + 1 : startYear;
+    return getYahooSeasonStartYear(currentSeasonInfo?.seasonId);
   }, [currentSeasonInfo]);
 
   // --- States ---

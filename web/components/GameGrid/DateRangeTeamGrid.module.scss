@@ -47,14 +47,14 @@
   gap: v.$space-xs;
   padding: 8px 12px;
   border-radius: v.$border-radius-md;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(v.$color-white, 0.14);
   color: v.$text-primary;
   text-decoration: none;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-family: v.$font-family-accent, sans-serif;
   font-size: 0.85rem;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(v.$color-white, 0.04);
 
   &:hover {
     color: v.$primary-color;
@@ -71,7 +71,7 @@
   overflow-x: auto;
   overflow-y: hidden;
   border-radius: v.$border-radius-lg;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(v.$color-white, 0.12);
   background: v.$background-medium;
   box-shadow: v.$box-shadow-default;
   @include v.custom-scrollbar(
@@ -157,8 +157,8 @@
   top: 0;
   z-index: 3;
   height: 28px;
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(v.$color-black, 0.55);
+  border: 1px solid rgba(v.$color-white, 0.08);
   border-radius: 3px;
   color: v.$text-secondary;
   font-family: v.$font-family-numbers, v.$font-family-primary, sans-serif;
@@ -242,7 +242,7 @@
   z-index: 4;
   width: var(--col-team);
   min-width: var(--col-team);
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(v.$color-black, 0.72);
 }
 
 .rangeTable thead th:nth-child(2),
@@ -252,7 +252,7 @@
   z-index: 4;
   width: var(--col-metric);
   min-width: var(--col-metric);
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(v.$color-black, 0.72);
 }
 
 .rangeTable thead th:nth-child(3),
@@ -262,7 +262,7 @@
   z-index: 4;
   width: var(--col-metric);
   min-width: var(--col-metric);
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(v.$color-black, 0.72);
 }
 
 .rangeTable thead th:nth-child(4),
@@ -272,7 +272,7 @@
   z-index: 4;
   width: var(--col-metric);
   min-width: var(--col-metric);
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(v.$color-black, 0.72);
 }
 
 .rangeTable thead th:nth-child(5),
@@ -282,7 +282,7 @@
   z-index: 4;
   width: var(--col-metric);
   min-width: var(--col-metric);
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(v.$color-black, 0.72);
 }
 
 .teamCell {
@@ -309,7 +309,7 @@
   font-family: v.$font-family-numbers, v.$font-family-primary, sans-serif;
   font-size: 0.8rem;
   color: v.$text-primary;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(v.$color-white, 0.08);
   border-radius: 3px;
 }
 
@@ -326,8 +326,8 @@
   width: 100%;
   height: 100%;
   border-radius: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(v.$color-white, 0.12);
+  background: rgba(v.$color-white, 0.06);
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -349,8 +349,8 @@
 }
 
 .normalNight {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(v.$color-white, 0.06);
+  border-color: rgba(v.$color-white, 0.12);
 }
 
 .preseasonGame {

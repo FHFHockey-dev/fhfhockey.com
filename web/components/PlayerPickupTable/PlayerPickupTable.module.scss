@@ -1201,7 +1201,7 @@ $selected-border-width: 2px; // The width of the indicator
       text-transform: uppercase;
       height: v.$table-header-height; // Use variable if defined
       padding: v.$table-cell-padding; // Use variable if defined
-      cursor: pointer;
+      cursor: default;
       text-align: center;
       border-bottom: 2px solid v.$secondary-color;
       white-space: nowrap; // Prevent header text wrapping
@@ -1505,7 +1505,7 @@ $selected-border-width: 2px; // The width of the indicator
       text-align: center;
       border-right: 1px solid v.$border-color-primary; // Vertical separator lines
       white-space: nowrap;
-      cursor: pointer;
+      cursor: default;
       &:first-child {
         // Expand button column
         text-align: center;
@@ -1568,6 +1568,28 @@ $selected-border-width: 2px; // The width of the indicator
       padding: 15px 10px; // More padding for expanded content
       border: none; // No internal borders for expanded cell
     }
+  }
+}
+
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring-desktop;
   }
 }
 

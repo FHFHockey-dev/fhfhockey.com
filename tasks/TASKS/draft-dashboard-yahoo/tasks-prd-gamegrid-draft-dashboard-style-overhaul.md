@@ -36,9 +36,9 @@
 
 ## Tasks
 
-- [ ] 1.0 Establish the canonical style checklist and baseline evidence
+- [x] 1.0 Establish the canonical style checklist and baseline evidence
   - [x] 1.1 Read the three FHFH style references, `vars.scss`, `_panel.scss`, and relevant Draft Dashboard modules; record the exact surface, type, spacing, border, focus, table, badge, control, modal, scrollbar, and responsive recipes to reuse.
-  - [ ] 1.2 Capture current desktop, tablet, and mobile screenshots for Game Grid orientations, side tables, pickup table, controls, tooltip, and heatmap using representative populated data.
+  - [x] 1.2 Capture current desktop, tablet, and mobile screenshots for Game Grid orientations, side tables, pickup table, controls, tooltip, and heatmap using representative populated data.
   - [x] 1.3 Inventory raw colors, duplicate tokens, local radii/shadows/transitions/breakpoints, inconsistent type, double borders, and obsolete `.module.css` duplicates across the scoped files.
   - [x] 1.4 Classify each finding as token replacement, shared mixin adoption, local exception, semantic/markup prerequisite, or functional issue to append outside this style list.
   - [x] 1.5 Confirm every planned `v.$...` token and `panel.*` helper exists before implementation.
@@ -84,25 +84,27 @@
   - [x] 7.3 Verify contrast, placement, viewport collision/overflow, focus entry/trap/return, Escape/close behavior, and mobile scrolling.
   - [x] 7.4 Avoid canonicalizing feature-specific heatmap/tooltip internals that do not belong in the shared modal shell.
 
-- [ ] 8.0 Reconcile token drift and responsive/accessibility quality
-  - [ ] 8.1 Re-run raw-color and token-usage scans; document intentional literals and remove duplicate local design tokens where a canonical value exists.
+- [x] 8.0 Reconcile token drift and responsive/accessibility quality
+  - [x] 8.1 Re-run raw-color and token-usage scans; document intentional literals and remove duplicate local design tokens where a canonical value exists.
   - [x] 8.2 Add shared tokens/mixins only when at least two consumers need the same semantic value and update style documentation if behavior changes.
-  - [ ] 8.3 Verify text/icon/control/table contrast, focus visibility, color-independent state, reduced motion, zoom/reflow, touch targets, and screen-reader semantics.
-  - [ ] 8.4 Compare desktop/tablet/mobile screenshots against the Draft Dashboard reference grammar and correct material inconsistencies without broad unrelated churn.
+  - [x] 8.3 Verify text/icon/control/table contrast, focus visibility, color-independent state, reduced motion, zoom/reflow, touch targets, and screen-reader semantics.
+  - [x] 8.4 Compare desktop/tablet/mobile screenshots against the Draft Dashboard reference grammar and correct material inconsistencies without broad unrelated churn.
   - [x] 8.5 Confirm no layout shift, clipped content, unreadable sticky layer, or broken team-color fallback remains.
 
-- [ ] 9.0 Run build/visual verification and synchronize scope
+- [x] 9.0 Run build/visual verification and synchronize scope
   - [x] 9.1 Run the repository's actual targeted lint/type/style compilation commands discovered from `web/package.json`; do not assume the PRD's old `pnpm` command is current.
   - [x] 9.2 Run relevant direct/component checks for any semantic markup changes and record why styling-only areas do not need new tests.
   - [x] 9.3 Use browser verification on representative populated routes and inspect console/runtime errors plus common responsive widths.
-  - [ ] 9.4 Recheck that sorting, calculations, data fetching, filters, pagination, toggles, orientation, tooltips, and overlays behave exactly as before.
+  - [x] 9.4 Recheck that sorting, calculations, data fetching, filters, pagination, toggles, orientation, tooltips, and overlays behave exactly as before.
   - [x] 9.5 Update the PRD, this list, relevant style references, and master ledger with changed files, screenshots/checks, exceptions, and final evidence.
 
 ## NEW Tasks
 
-- [ ] NEW 10.0 Append every verified style defect, semantic prerequisite, functional out-of-scope issue, responsive regression, accessibility gap, and reusable-token opportunity discovered during execution here before closure.
+- [x] NEW 10.0 Append every verified style defect, semantic prerequisite, functional out-of-scope issue, responsive regression, accessibility gap, and reusable-token opportunity discovered during execution here before closure.
 - [x] NEW 11.0 Repair the PDHC overlay's modal semantics and interaction contract: unique ownership IDs, keyboard-operable trigger, focus entry/trap/return, persistent close control, Escape dismissal, and viewport-safe scrolling.
 - [x] NEW 12.0 **P2 desktop legacy-vertical rail compression:** representative 1440×900 populated browser evidence shows the seven-column Opponent Metrics rail and wide transposed schedule compressed/clipped without an owning horizontal scroller. Preserve the named legacy fallback while giving the three-rail composition a container-owned minimum width and internal horizontal scrolling; re-prove readable cells, intact side panels, zero body overflow, and touch/trackpad reachability.
+- [x] NEW 13.0 **P1 offseason Player Pickup season-identity mismatch:** the 2025–26 UI derives Yahoo season `2026` after the season end, while Production stores all 1,494 scoped `yahoo_players` rows under start-year season `2025`, including 599 default-eligible ownership rows. Establish one start-year Yahoo season contract, preserve the corresponding `20252026` NHL aggregate identity, add regression coverage, and re-prove populated pickup filtering/pagination across desktop/mobile without changing data.
+- [x] NEW 14.0 **P2 Player Pickup control/table semantics:** populated browser accessibility evidence shows the ownership range and team select lack programmatic labels, while clickable sortable column headers are pointer-only `<th>` elements. Preserve the exact filter/sort contract while adding native label association, button semantics, sort state, keyboard focus, and regression/browser proof.
 
 ## Completion Reconciliation — July 2026
 
@@ -121,3 +123,4 @@
 - Exact checkpoint `0edb33e5182bbaeca6fbe5c259831db796466930` publishes this 17-row cohort through a guarded normal push.
 - The Phase-4 side-table cleanup replaces every literal white/black alpha source in Opponent Metrics, Four Week Grid, and Player Pickup with `v.$color-white` / `v.$color-black`. The exact scoped scan finds zero raw hex, literal RGB/RGBA source, or WebKit-only scrollbar fragment; the existing shared scrollbar mixins remain the sole scrollbar owners and all three Sass modules compile directly.
 - Populated in-season browser proof at 1440×900, 834×1112, and 390×844 verifies the master, stacked, side-table, control, Week Score, and live PDHC heatmap surfaces with zero body overflow or browser errors. NEW 12 repairs the one discovered desktop legacy-vertical defect with a container-owned horizontal scroller and readable 320px / 1320px / 280px rails; trackpad scrolling reaches the right rail while the tablet/mobile stacked policy remains unchanged. The focused Game Grid group passes 12/12 and bundled-Node-24 Sass compilation plus diff integrity pass. Player Pickup returned a valid empty result, so populated pickup rows and full behavior parity remain open under 1.2/9.4.
+- Final Player Pickup proof resolves that limitation. The canonical Yahoo season is the eight-digit NHL season's start year, preserving the matching `20252026` aggregate identity after season end. Production aggregates show 1,494 scoped rows and 599 default-eligible rows; the repaired UI renders 528 results and 25 rows/page. Desktop/mobile browser checks exercise ascending name sort, ANA filtering (19/19 rows), reset, page 2/22, labeled range/select controls, focusable `aria-sort` buttons, contextual disclosure state, 320px reflow, and empty fresh error logs. The exact scoped scan contains zero literal white/black RGBA channels after shared-token replacement; feature-specific schedule/team/error ramps and local size constants remain classified exceptions. Eight focused files pass 27/27; TypeScript, scoped lint, three Sass compilations, new-test formatting, and diff integrity pass. B-DRAFT-STYLE is complete.
