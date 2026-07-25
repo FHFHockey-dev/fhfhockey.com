@@ -2791,7 +2791,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-averages.md::C0002` (original L83) — Design new Supabase table schema for rolling outputs.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-averages.md::C0003` (original L84) — Define transformation flow (data fetch ordering, joins, rolling algorithm).
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-averages.md::C0004` (original L85) — Implement Next.js API endpoint, leveraging shared utilities where possible.
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-averages.md::C0005` (original L86) — Add validation/logging & update cron orchestration (if required).
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-averages.md::C0005` (original L86) — Method/scope/profile validation, structured phase/freshness/runtime summaries, durable cron audit wrapping, and the active bounded 08:15 UTC daily caller are verified through direct 15/15 route and 4/4 audit-inventory tests (closed 2026-07-25).
 
 ### Source: `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-audit-pass-2-trends-debug.md` (48 rows)
 
