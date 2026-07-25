@@ -201,3 +201,9 @@ No route, component, script, operational entrypoint, or generated artifact chang
 Exact checkpoint `146ca692faf8b3469c05c91912a1e72ce90dcaa3` publishes the 11-row current-state reconciliation with source/master 11/35 and global 4,431/4,874 parity.
 
 The 2026-07-22 parent-parity reconciliation closes parent 2.0 because all four generated/debris classification, cleanup, ignore, and no-consumer children are verified. B-DEAD is now 12/35 with 23 open; no additional file or route was removed.
+
+## 2026-07-25 Candidate Delta Reconciliation
+
+A fresh `knip` 5.88.1 production scan reports 174 raw unused-file candidates and 127 unresolved Sass-alias imports. The one-candidate increase from the published 173-row baseline is not treated as proof of deadness. Bounded source/history review keeps the renamed SKO reader and prediction UI in their existing B-SKO quarantine, keeps test/script-owned Sustainability and operational modules as explicit entrypoints/false positives, and removes moved API helpers from dead-code consideration because current imports consume their new library paths. No newly verified defect requires a duplicate NEW row; existing B-SKO, B-CLEAN, and route-removal gates retain their ownership.
+
+This closes changed/new-candidate disposition row 1.4 and baseline parent 1.0 without deleting or modifying a route, component, utility, dependency, or external system. B-DEAD is 14/35 with 21 open.

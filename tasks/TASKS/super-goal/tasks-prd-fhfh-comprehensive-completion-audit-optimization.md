@@ -4770,11 +4770,11 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 
 ### Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md` (35 rows)
 
-- [ ] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0001` (original L23) — 1.0 Refresh the dead-code evidence baseline
+- [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0001` (original L23) — 1.0 Refresh the dead-code evidence baseline. Current production scan plus bounded post-baseline delta classification pass without promoting raw flags to deletion claims (verified 2026-07-25).
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0002` (original L24) — 1.1 Re-run source inventory/import graph and current `knip --production` using repository conventions; exclude generated/vendor/cache/test false positives explicitly.
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0003` (original L25) — 1.2 Enumerate pages/API routes, navigation, dynamic links/imports, package scripts, cron schedules, Vercel rewrites, GitHub workflows, separate apps, and documented external callers.
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0004` (original L26) — 1.3 Compare every 2026 audit candidate to current evidence and classify it as active, hidden supported, admin/operational, compatibility/redirect, quarantine, generated/temp, uncertain, or high-confidence dead.
-- [ ] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0005` (original L27) — 1.4 Add changed/new candidates and remove disproven claims with evidence; do not carry old `knip` flags forward automatically.
+- [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0005` (original L27) — 1.4 Current `knip` reports 174 raw candidates/127 Sass-alias failures; bounded delta review retains SKO quarantine and test/script/operational false positives while excluding moved, currently imported API helpers. No deletion follows from the raw-count increase (verified 2026-07-25).
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0006` (original L29) — 2.0 Handle obvious temporary/generated debris separately
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0007` (original L30) — 2.1 Classify root/temp/debug scripts, duplicated generated-output paths, logs, and test-result artifacts by current package/workflow/documentation usage.
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0008` (original L31) — 2.2 Move durable findings into existing runbooks/tasks and delete only proven temporary files in small reviewable batches.
