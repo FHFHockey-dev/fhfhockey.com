@@ -37,18 +37,20 @@
 ## Tasks
 
 - [ ] 1.0 Establish the canonical style checklist and baseline evidence
-  - [ ] 1.1 Read the three FHFH style references, `vars.scss`, `_panel.scss`, and relevant Draft Dashboard modules; record the exact surface, type, spacing, border, focus, table, badge, control, modal, scrollbar, and responsive recipes to reuse.
+  - [x] 1.1 Read the three FHFH style references, `vars.scss`, `_panel.scss`, and relevant Draft Dashboard modules; record the exact surface, type, spacing, border, focus, table, badge, control, modal, scrollbar, and responsive recipes to reuse.
   - [ ] 1.2 Capture current desktop, tablet, and mobile screenshots for Game Grid orientations, side tables, pickup table, controls, tooltip, and heatmap using representative populated data.
   - [x] 1.3 Inventory raw colors, duplicate tokens, local radii/shadows/transitions/breakpoints, inconsistent type, double borders, and obsolete `.module.css` duplicates across the scoped files.
   - [x] 1.4 Classify each finding as token replacement, shared mixin adoption, local exception, semantic/markup prerequisite, or functional issue to append outside this style list.
   - [x] 1.5 Confirm every planned `v.$...` token and `panel.*` helper exists before implementation.
+  - Evidence (1.1, 2026-07-25): `gamegrid-draft-dashboard-style-audit-report.md` records the exact canonical surface, panel, dense-table, control, scrollbar, breakpoint, and dialog recipes derived from the named shared references. Populated screenshot coverage remains separately open under 1.2.
 
-- [ ] 2.0 Align the Game Grid page shell and command header
+- [x] 2.0 Align the Game Grid page shell and command header
   - [x] 2.1 Apply the dark canvas, layered background, glass/elevated panels, canonical borders/radii/shadows, and spacing scale to the main shell without changing layout logic.
   - [x] 2.2 Remove overpowering opaque neon framing and use functional cyan accents, subtle glow, and one consistent panel hierarchy.
   - [x] 2.3 Apply the canonical title recipe, metadata/subtitle hierarchy, command-bar spacing, and responsive wrapping to the header.
   - [x] 2.4 Normalize primary, ghost, icon, toggle, and navigation controls with clear active/disabled/hover/pressed/focus-visible states.
   - [x] 2.5 Verify header controls remain keyboard operable, labeled, and usable at narrow widths.
+  - Evidence (2.0, 2026-07-25): all five implementation children are directly verified by the published style/accessibility cohort; parent state now matches its complete child set without extending into Phase-5 populated visual proof.
 
 - [ ] 3.0 Restyle the schedule grid as a dense data-terminal table
   - [x] 3.1 Standardize sticky day headers, first columns, separators, z-index layers, table density, numeric alignment, and internal scroll behavior.

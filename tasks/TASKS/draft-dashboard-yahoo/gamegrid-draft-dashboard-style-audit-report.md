@@ -26,6 +26,10 @@ Date: 2026-07-22
 
 No new shared token or mixin was added: the verified needs were already served by canonical tokens, and no new semantic value had two independent consumers.
 
+## Control reconciliation — 2026-07-25
+
+The canonical recipes above directly satisfy task 1.1. The published shell/header evidence already satisfies every child of 2.0, so the parent now matches its complete child set. Populated screenshots, Phase-5 responsive workflow proof, raw-literal cleanup, and broader behavior parity remain open.
+
 ## Verification
 
 - Component behavior: `Tooltip.test.tsx`, `SwitchToggle.test.tsx`, `SortableHeaders.test.tsx`, and `FourWeekGrid.test.tsx` pass 12/12.

@@ -1,6 +1,8 @@
 # PRD: GameGrid Style Refactor to Draft Dashboard Brand
 
 > **Implementation task list:** `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md`
+>
+> **2026-07-25 status:** 35/53 rows verified with 18 open. The canonical recipe checklist and shell/header parent now reconcile to their direct published evidence; populated screenshot, Phase-5 responsive/Player Pickup, raw-literal, and broad behavior-parity gates remain open.
 
 ## Purpose
 Refactor the **GameGrid** UI styles so the page is visually indistinguishable from the **Draft Dashboard** brand (“Neon Noir Analytics”), while preserving existing behaviors, data, and layout logic.
