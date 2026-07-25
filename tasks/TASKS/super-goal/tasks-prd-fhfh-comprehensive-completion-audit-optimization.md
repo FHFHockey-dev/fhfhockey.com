@@ -3280,13 +3280,13 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0004` (original L15) — Implement Supabase queries aggregating 1/3/5/10 game windows.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0005` (original L16) — Compute volatility stats (mean, variance, percentiles, blended weights).
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0006` (original L17) — Persist results (table or JSON storage) for UI consumption.
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0007` (original L18) — Frontend updates in `trendsSandbox.tsx`.
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0007` (original L18) — Frontend updates in `trendsSandbox.tsx`. The completed workbench now includes explicit paired metric/fantasy correlation and boxscore context (verified 2026-07-25).
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0008` (original L19) — Hook into new API to load band + metric series for selected player/season.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0009` (original L20) — Normalize and combine metric series for visualization (shared scale or multi-axis approach).
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0010` (original L21) — Render elasticity bands + actual series with color-coded segments.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0011` (original L22) — Surface 1-game dots, plus rolling averages (3/5/10) simultaneously or via toggles.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0012` (original L23) — Add controls to choose metrics, windows, and visualization options.
-- [ ] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0013` (original L24) — Display supporting boxscore + fantasy score summaries and correlations.
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0013` (original L24) — Display supporting boxscore + fantasy score summaries and correlations. Complete-pair sample, averages, Pearson `r`/`r²`, and per-game boxscore summaries are explicit; fewer than three pairs remain unavailable (verified 2026-07-25).
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0014` (original L25) — SCSS updates in `web/pages/trends/sandbox.module.scss` aligning with new visuals.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0015` (original L26) — Unit/integration tests for API computations (targeted utility functions).
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0016` (original L27) — Documentation updates:

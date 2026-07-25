@@ -63,6 +63,52 @@ export function pearson(x: number[], y: number[]): { r: number; r2: number } {
   return { r, r2: r * r };
 }
 
+export function summarizePairedCorrelation(
+  pairs: Array<{
+    x: number | null | undefined;
+    y: number | null | undefined;
+  }>
+): {
+  sampleSize: number;
+  xMean: number | null;
+  yMean: number | null;
+  r: number | null;
+  r2: number | null;
+} {
+  const validPairs = pairs.filter(
+    (
+      pair
+    ): pair is {
+      x: number;
+      y: number;
+    } =>
+      typeof pair.x === "number" &&
+      Number.isFinite(pair.x) &&
+      typeof pair.y === "number" &&
+      Number.isFinite(pair.y)
+  );
+  const x = validPairs.map((pair) => pair.x);
+  const y = validPairs.map((pair) => pair.y);
+
+  if (validPairs.length < 3) {
+    return {
+      sampleSize: validPairs.length,
+      xMean: x.length ? mean(x) : null,
+      yMean: y.length ? mean(y) : null,
+      r: null,
+      r2: null
+    };
+  }
+
+  const correlation = pearson(x, y);
+  return {
+    sampleSize: validPairs.length,
+    xMean: mean(x),
+    yMean: mean(y),
+    ...correlation
+  };
+}
+
 export function linearRegression(x: number[], y: number[]) {
   if (x.length !== y.length) throw new Error("linreg: length mismatch");
   const n = x.length;

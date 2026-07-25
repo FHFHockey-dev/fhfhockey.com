@@ -3,7 +3,13 @@ import * as d3 from "d3";
 import { format } from "date-fns";
 import { useRouter } from "next/router";
 import type { StreakSegment, StreakType, TrendDataBundle } from "lib/trends/types";
-import { buildTrendData, rollingAverage, winsorize } from "lib/trends/utils";
+import {
+  buildTrendData,
+  mean,
+  rollingAverage,
+  summarizePairedCorrelation,
+  winsorize
+} from "lib/trends/utils";
 
 import { TRENDS_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import supabase from "lib/supabase/client";
@@ -2367,6 +2373,30 @@ export default function TrendsSandboxPage() {
     });
   }, [entityType, scoreHistoryData, skaterTrendRows, windowCode]);
 
+  const skaterCorrelationSummary = useMemo(() => {
+    if (entityType !== "skater" || !skaterTrendRows.length) return null;
+
+    const metricLabel =
+      entityConfig.metrics.find((metric) => metric.key === selectedMetric)?.label ??
+      "Selected Metric";
+
+    return {
+      metricLabel,
+      isFantasySelfCorrelation: selectedMetric === "fantasy_score",
+      ...summarizePairedCorrelation(
+        skaterTrendRows.map((row) => ({
+          x: getSkaterMetricValue(row, selectedMetric),
+          y: row.fantasyScore
+        }))
+      ),
+      pointsPerGame: mean(skaterTrendRows.map((row) => row.totalPoints)),
+      shotsPerGame: mean(skaterTrendRows.map((row) => row.shots)),
+      hitsPerGame: mean(skaterTrendRows.map((row) => row.hits)),
+      blocksPerGame: mean(skaterTrendRows.map((row) => row.blocks)),
+      ppPointsPerGame: mean(skaterTrendRows.map((row) => row.ppPoints))
+    };
+  }, [entityConfig.metrics, entityType, selectedMetric, skaterTrendRows]);
+
   const leaderboard = useMemo(() => {
     const rows = scoreData?.rows ?? [];
     return {
@@ -2779,6 +2809,87 @@ export default function TrendsSandboxPage() {
               </li>
             ))}
           </ul>
+        </article>
+
+        <article className={`${styles.surfaceCard} ${styles.metricShelfCard}`}>
+          <div className={styles.surfaceCardHeader}>
+            <h2 className={styles.surfaceCardTitle}>Boxscore + Fantasy Correlation</h2>
+            <span className={styles.surfaceCardMeta}>
+              {skaterCorrelationSummary
+                ? `${skaterCorrelationSummary.sampleSize} paired games`
+                : "Skaters only"}
+            </span>
+          </div>
+          {entityType !== "skater" ? (
+            <div className={styles.bandEmpty}>
+              This correlation view is intentionally skater-only. Goalie support is deferred to
+              its separate UI contract.
+            </div>
+          ) : !selectedEntity ? (
+            <div className={styles.bandEmpty}>
+              Select a skater to compare the focus metric with fantasy score and boxscore context.
+            </div>
+          ) : skaterCorrelationSummary ? (
+            <>
+              <div className={styles.detailGrid}>
+                <div>
+                  <strong>{skaterCorrelationSummary.metricLabel} Avg</strong>
+                  <span>{formatNumber(skaterCorrelationSummary.xMean, 2)}</span>
+                </div>
+                <div>
+                  <strong>Fantasy Score Avg</strong>
+                  <span>{formatNumber(skaterCorrelationSummary.yMean, 2)}</span>
+                </div>
+                <div>
+                  <strong>Pearson r</strong>
+                  <span>
+                    {skaterCorrelationSummary.isFantasySelfCorrelation &&
+                    skaterCorrelationSummary.r != null
+                      ? "1.00 (same series)"
+                      : formatNumber(skaterCorrelationSummary.r, 2)}
+                  </span>
+                </div>
+                <div>
+                  <strong>r²</strong>
+                  <span>
+                    {skaterCorrelationSummary.isFantasySelfCorrelation &&
+                    skaterCorrelationSummary.r2 != null
+                      ? "1.00 (same series)"
+                      : formatNumber(skaterCorrelationSummary.r2, 2)}
+                  </span>
+                </div>
+                <div>
+                  <strong>Points / Game</strong>
+                  <span>{formatNumber(skaterCorrelationSummary.pointsPerGame, 2)}</span>
+                </div>
+                <div>
+                  <strong>Shots / Game</strong>
+                  <span>{formatNumber(skaterCorrelationSummary.shotsPerGame, 2)}</span>
+                </div>
+                <div>
+                  <strong>Hits / Game</strong>
+                  <span>{formatNumber(skaterCorrelationSummary.hitsPerGame, 2)}</span>
+                </div>
+                <div>
+                  <strong>Blocks / Game</strong>
+                  <span>{formatNumber(skaterCorrelationSummary.blocksPerGame, 2)}</span>
+                </div>
+                <div>
+                  <strong>PPP / Game</strong>
+                  <span>{formatNumber(skaterCorrelationSummary.ppPointsPerGame, 2)}</span>
+                </div>
+              </div>
+              {skaterCorrelationSummary.sampleSize < 3 && (
+                <div className={styles.bandEmpty}>
+                  Pearson r and r² require at least three games with both values present.
+                </div>
+              )}
+            </>
+          ) : (
+            <div className={styles.bandEmpty}>
+              No paired game history is available for this skater and metric.
+            </div>
+          )}
         </article>
       </section>
 

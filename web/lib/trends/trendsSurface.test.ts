@@ -8,6 +8,7 @@ import {
   isLockedPlayerBaselineMode,
   isPlayerQuickViewId
 } from "./trendsSurface";
+import { summarizePairedCorrelation } from "./utils";
 
 describe("trendsSurface helpers", () => {
   it("formats skater window labels consistently", () => {
@@ -118,6 +119,38 @@ describe("trendsSurface helpers", () => {
     expect(cards[2]).toMatchObject({
       categoryId: "powerPlayTime",
       label: "PP Usage"
+    });
+  });
+
+  it("summarizes only complete metric/fantasy pairs and reports sample size", () => {
+    expect(
+      summarizePairedCorrelation([
+        { x: 1, y: 2 },
+        { x: null, y: 3 },
+        { x: 2, y: 4 },
+        { x: 3, y: 6 }
+      ])
+    ).toEqual({
+      sampleSize: 3,
+      xMean: 2,
+      yMean: 4,
+      r: 1,
+      r2: 1
+    });
+  });
+
+  it("does not publish a correlation below three paired games", () => {
+    expect(
+      summarizePairedCorrelation([
+        { x: 1, y: 2 },
+        { x: 2, y: 4 }
+      ])
+    ).toMatchObject({
+      sampleSize: 2,
+      xMean: 1.5,
+      yMean: 3,
+      r: null,
+      r2: null
     });
   });
 });
