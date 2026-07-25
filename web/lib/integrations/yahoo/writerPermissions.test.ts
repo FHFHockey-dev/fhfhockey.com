@@ -65,6 +65,25 @@ describe("Yahoo player writer permissions", () => {
     expect(sql).toContain("to service_role");
   });
 
+  it("repairs the draft-history conflict target without weakening the writer", () => {
+    const repair = readFileSync(
+      path.join(
+        repoRoot,
+        "supabase/migrations/20260725200808_fix_yahoo_player_writer_captured_at.sql",
+      ),
+      "utf8",
+    );
+
+    expect(repair).toContain("pg_get_functiondef(function_oid)");
+    expect(repair).toContain("snapshot_captured_at timestamptz");
+    expect(repair).toContain(
+      "snapshot_captured_at := snapshot_date::timestamp at time zone",
+    );
+    expect(repair).toContain("execute definition");
+    expect(repair).not.toContain("security definer");
+    expect(repair).not.toContain("grant execute");
+  });
+
   it("keeps the active route on explicit omission semantics and the atomic writer", () => {
     const source = readFileSync(
       path.join(repoRoot, "web/pages/api/v1/db/update-yahoo-players.ts"),
