@@ -12,7 +12,7 @@
 | Ownership history/backfill | `yahoo_player_ownership_history` plus the atomic writer | Canonical daily history retains stable player/date identity. Local migration `20260725235646` exposes one read-only security-invoker compatibility view, and named historical UI/API/export readers now consume its normalized alias; Production application and reader-parity proof remain open. |
 | Draft history | Production-ledger migrations for `yahoo_player_draft_analysis_history` | Table/index exist, but the active v3 writer does not append this history and therefore is not a complete atomic latest+history owner. |
 | Uniform numbers | Current player-detail payload | The scheduled TypeScript pipeline is authoritative. `yahooUniformNumbers.py` is an unscheduled opt-in maintenance fallback with no machine path/current ID default or import-time client; it requires explicit maintenance, game, league, and server credential configuration. |
-| Yahoo ↔ NHL mapping | `player_name_normalization_spec.json`, `player_name_matcher.py`, `populate_yahoo_nhl_mapping.py`, and `generate_yahoo_identity_promotion.py` | Deterministic exact/manual/alias stages precede thresholded fuzzy matching; ambiguous candidates use explicit team/position-cluster/active/provider evidence and ties remain unresolved. Analysis is side-effect-free unless the exact write opt-in is set. The canonical FHFH external-identity/review contract owns scoped confidence, method, verification/supersession, provenance/version, actor, timestamp, merge-lineage, and resolution-note persistence. Explicit incremental mode selects new/changed candidates from a full baseline and reports removals without mutation; recompute-all emits the complete manifest and its SQL fails closed on verified identity conflicts. |
+| Yahoo ↔ NHL mapping | Canonical FHFH external identities plus legacy `yahoo_nhl_player_map` compatibility rows | Deterministic exact/manual/alias stages precede thresholded fuzzy matching; ambiguous candidates use explicit evidence and ties remain unresolved. The 1,857 legacy rows are all distinct but contain 771 repeated Yahoo/NHL ID pairs and 12 null Yahoo IDs, so they are not assigned a fabricated unique key. Local migration `20260726000603` replaces browser access to the materialized cache with a security-invoker base-table view while preserving service refresh ownership. |
 | Sheet export | `/api/internal/sync-yahoo-players-to-sheet` | Exact-cron-secret-only internal route called by the global player writer. |
 
 ## Current schema and migration evidence
@@ -43,6 +43,7 @@ global Yahoo credential -> game metadata -> matchup weeks
 per-user OAuth token -> current Yahoo game -> leagues/teams/rosters -> account UI
 FHFH identity + Yahoo latest fields -> Draft Dashboard / Draft Ranker / Start Chart
 Yahoo normalized ownership history -> read-only compatibility view -> ownership APIs, Draft surfaces, Start Chart, and analytics consumers
+Yahoo/NHL base mapping -> security-invoker compatibility view -> projections, ownership, Draft, and variance consumers
 ```
 
 ## Current verified gaps

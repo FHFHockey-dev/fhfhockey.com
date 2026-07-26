@@ -679,7 +679,7 @@ async function fetchAllSourceData(
     string
   >(Array.from(uniqueNhlPlayerIds, String), (playerIdChunk, { from, to }) =>
     supabaseClient
-      .from("yahoo_nhl_player_map_mat")
+      .from("yahoo_nhl_player_map_read")
       .select(yahooMapSelectString)
       .in(YAHOO_PLAYER_MAP_KEYS.nhlPlayerId, playerIdChunk)
       .order(YAHOO_PLAYER_MAP_KEYS.nhlPlayerId, { ascending: true })

@@ -253,7 +253,7 @@ describe("/api/v1/start-chart", () => {
           error: null,
         }));
       }
-      if (table === "yahoo_nhl_player_map_mat") {
+      if (table === "yahoo_nhl_player_map_read") {
         return createQueryBuilder(() => ({
           data: [
             { nhl_player_id: "8478402", yahoo_player_id: "5001" },
@@ -463,7 +463,7 @@ describe("/api/v1/start-chart", () => {
           error: null,
         }));
       }
-      if (table === "yahoo_nhl_player_map_mat") {
+      if (table === "yahoo_nhl_player_map_read") {
         return createQueryBuilder(() => ({
           data: [{ nhl_player_id: "8478402", yahoo_player_id: "5001" }],
           error: null,

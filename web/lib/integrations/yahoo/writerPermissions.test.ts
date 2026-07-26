@@ -131,6 +131,45 @@ describe("Yahoo player writer permissions", () => {
     }
   });
 
+  it("keeps browser Yahoo read surfaces select-only with one proven name identity", () => {
+    const migration = readFileSync(
+      path.join(
+        repoRoot,
+        "supabase/migrations/20260726000603_harden_yahoo_read_surfaces.sql",
+      ),
+      "utf8",
+    );
+
+    expect(migration).toContain("alter column player_id set not null");
+    expect(migration).toContain(
+      "create unique index yahoo_names_player_id_key",
+    );
+    expect(migration).toContain("create view public.yahoo_nhl_player_map_read");
+    expect(migration).toContain("with (security_invoker = true)");
+    expect(migration).toContain("from public.yahoo_nhl_player_map as mapping");
+    expect(migration).toContain("create policy public_read");
+    expect(migration).toContain("relation.relname in (");
+    expect(migration).toContain("or not relation.relrowsecurity");
+    expect(migration).toContain("from public, anon, authenticated");
+    expect(migration).toContain("to anon, authenticated");
+    expect(migration).not.toMatch(
+      /grant\s+(insert|update|delete|truncate|trigger|references|all)/i,
+    );
+
+    for (const relativePath of [
+      "web/components/PlayerPickupTable/PlayerPickupTable.tsx",
+      "web/hooks/useProcessedProjectionsData.tsx",
+      "web/pages/api/v1/start-chart.ts",
+      "web/pages/api/v1/transactions/ownership-snapshots.ts",
+      "web/pages/api/v1/transactions/ownership-trends.ts",
+      "web/pages/variance/skaters.tsx",
+    ]) {
+      const source = readFileSync(path.join(repoRoot, relativePath), "utf8");
+      expect(source).toContain("yahoo_nhl_player_map_read");
+      expect(source).not.toContain('.from("yahoo_nhl_player_map_mat")');
+    }
+  });
+
   it("reconciles complete player-key snapshots atomically and service-only", () => {
     const sql = readFileSync(
       path.join(

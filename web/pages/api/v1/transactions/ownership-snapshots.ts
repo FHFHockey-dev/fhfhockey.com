@@ -87,7 +87,7 @@ async function resolveYahooPlayerIds(
   const byNhlId = new Map<string, string>();
   for (const idChunk of chunk(playerIds)) {
     const { data, error } = await supabase
-      .from("yahoo_nhl_player_map_mat")
+      .from("yahoo_nhl_player_map_read")
       .select("nhl_player_id, yahoo_player_id")
       .in("nhl_player_id", idChunk);
     if (error) throw error;

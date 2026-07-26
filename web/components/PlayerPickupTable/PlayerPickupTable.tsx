@@ -1801,10 +1801,10 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           );
         }
 
-        // Query `yahoo_nhl_player_map_mat` with pagination
+        // Query the RLS-backed Yahoo/NHL compatibility view with pagination
         while (true) {
           const { data, error, count } = await publicSupabase
-            .from("yahoo_nhl_player_map_mat")
+            .from("yahoo_nhl_player_map_read")
             .select("*", { count: "exact" })
             .range(from, from + supabasePageSize - 1);
 

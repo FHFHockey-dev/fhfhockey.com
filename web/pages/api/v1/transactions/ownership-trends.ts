@@ -131,7 +131,7 @@ async function fetchYahooToNhlMap(
   const map: YahooToNhlMap = new Map();
   for (const idChunk of chunk(uniqueIds, MAP_CHUNK_SIZE)) {
     const { data, error } = await supabase
-      .from("yahoo_nhl_player_map_mat")
+      .from("yahoo_nhl_player_map_read")
       .select("nhl_player_id, yahoo_player_id")
       .in("yahoo_player_id", idChunk.map(String));
     if (error) throw error;

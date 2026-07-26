@@ -45191,6 +45191,46 @@ export type Database = {
         }
         Relationships: []
       }
+      yahoo_nhl_player_map_read: {
+        Row: {
+          assists: number | null
+          blocked_shots: number | null
+          eligible_positions: Json | null
+          goals: number | null
+          goals_against_avg: number | null
+          hits: number | null
+          injury_note: string | null
+          losses: number | null
+          mapped_position: string | null
+          nhl_player_id: string | null
+          nhl_player_name: string | null
+          nhl_team_abbreviation: string | null
+          normalized_position: string | null
+          normalized_team: string | null
+          penalty_minutes: number | null
+          percent_games: number | null
+          percent_ownership: number | null
+          player_position: string | null
+          player_type: string | null
+          points: number | null
+          pp_points: number | null
+          quality_start: number | null
+          save_pct: number | null
+          saves: number | null
+          sh_points: number | null
+          shots: number | null
+          shots_against: number | null
+          shutouts: number | null
+          status: string | null
+          status_full: string | null
+          total_fow: number | null
+          wins: number | null
+          yahoo_player_id: string | null
+          yahoo_player_name: string | null
+          yahoo_team: string | null
+        }
+        Relationships: []
+      }
       yahoo_players_with_normalized_history: {
         Row: {
           average_draft_cost: number | null
