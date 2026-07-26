@@ -45191,6 +45191,37 @@ export type Database = {
         }
         Relationships: []
       }
+      yahoo_players_with_normalized_history: {
+        Row: {
+          average_draft_cost: number | null
+          average_draft_pick: number | null
+          average_draft_round: number | null
+          display_position: string | null
+          draft_analysis: Json | null
+          editorial_player_key: string | null
+          editorial_team_abbreviation: string | null
+          editorial_team_full_name: string | null
+          eligible_positions: Json | null
+          full_name: string | null
+          game_id: number | null
+          headshot_url: string | null
+          injury_note: string | null
+          last_updated: string | null
+          normalized_ownership_timeline: Json | null
+          ownership_timeline: Json | null
+          percent_drafted: number | null
+          percent_ownership: number | null
+          player_id: string | null
+          player_key: string | null
+          player_name: string | null
+          position_type: string | null
+          season: number | null
+          status: string | null
+          status_full: string | null
+          uniform_number: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       acquire_lock: {

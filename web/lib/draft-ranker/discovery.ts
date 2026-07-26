@@ -382,7 +382,7 @@ export function buildOwnershipRiserSignals(args: {
           : "ownership_gain_top_decile",
         reason_text: `Yahoo ownership increased ${row.delta.toFixed(1)} percentage points over seven days.`,
         source_keys: [
-          row.candidate.sourceKey ?? "yahoo_players.ownership_timeline",
+          row.candidate.sourceKey ?? "yahoo_player_ownership_history",
         ],
         source_date: row.latest.date,
         source_observed_at: `${row.latest.date}T23:59:59.999Z`,

@@ -16,7 +16,7 @@ describe("ownership-trends data contract", () => {
     const seasons: number[] = [];
     const supabase = {
       from(table: string) {
-        expect(table).toBe("yahoo_players");
+        expect(table).toBe("yahoo_players_with_normalized_history");
         return {
           from: 0,
           to: 0,

@@ -262,7 +262,7 @@ describe("/api/v1/start-chart", () => {
           error: null,
         }));
       }
-      if (table === "yahoo_players") {
+      if (table === "yahoo_players_with_normalized_history") {
         return createQueryBuilder(() => ({
           data: [
             {
@@ -469,7 +469,7 @@ describe("/api/v1/start-chart", () => {
           error: null,
         }));
       }
-      if (table === "yahoo_players") {
+      if (table === "yahoo_players_with_normalized_history") {
         return createQueryBuilder(() => ({
           data: [
             {

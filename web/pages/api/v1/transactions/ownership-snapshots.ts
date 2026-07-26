@@ -120,8 +120,10 @@ async function resolveYahooPlayerIds(
       const yahooRows: any[] = [];
       for (const nameChunk of chunk(names, 100)) {
         const { data, error: yahooError } = await supabase
-          .from("yahoo_players")
-          .select("player_id, full_name, player_name, ownership_timeline, season")
+          .from("yahoo_players_with_normalized_history")
+          .select(
+            "player_id, full_name, player_name, ownership_timeline:normalized_ownership_timeline, season"
+          )
           .in("full_name", nameChunk)
           .order("player_id", { ascending: true })
           .order("season", { ascending: true, nullsFirst: true })
@@ -194,8 +196,10 @@ export default async function handler(
       const loaded: Array<Record<string, unknown>> = [];
       for (const idChunk of chunk(yahooPlayerIds)) {
         let query = supabase
-          .from("yahoo_players")
-          .select("player_id, percent_ownership, ownership_timeline, season")
+          .from("yahoo_players_with_normalized_history")
+          .select(
+            "player_id, percent_ownership, ownership_timeline:normalized_ownership_timeline, season"
+          )
           .in("player_id", idChunk)
           .order("player_id", { ascending: true })
           .order("season", { ascending: true, nullsFirst: true })

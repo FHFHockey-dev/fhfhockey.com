@@ -604,9 +604,9 @@ export default async function handler(
 
       // Grab ONLY the relevant Yahoo players (avoid 1000 row limit)
       const { data: yahooPlayers, error: ypError } = await supabase
-        .from("yahoo_players")
+        .from("yahoo_players_with_normalized_history")
         .select(
-          "player_id, player_name, full_name, eligible_positions, percent_ownership, ownership_timeline",
+          "player_id, player_name, full_name, eligible_positions, percent_ownership, ownership_timeline:normalized_ownership_timeline",
         )
         .eq("season", yahooSeason)
         .in("player_id", yahooPlayerIds.map(String));

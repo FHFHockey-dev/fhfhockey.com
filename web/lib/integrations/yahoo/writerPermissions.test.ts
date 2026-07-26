@@ -90,6 +90,47 @@ describe("Yahoo player writer permissions", () => {
     expect(repair).not.toContain("grant execute");
   });
 
+  it("keeps historical ownership readers on the normalized daily source", () => {
+    const migration = readFileSync(
+      path.join(
+        repoRoot,
+        "supabase/migrations/20260725235646_add_normalized_yahoo_ownership_reader.sql",
+      ),
+      "utf8",
+    );
+
+    expect(migration).toContain(
+      "create view public.yahoo_players_with_normalized_history",
+    );
+    expect(migration).toContain("with (security_invoker = true)");
+    expect(migration).toContain(
+      "from public.yahoo_player_ownership_history as history",
+    );
+    expect(migration).toContain(
+      "where history.player_key = players.player_key",
+    );
+    expect(migration).toContain(
+      "grant select on public.yahoo_players_with_normalized_history",
+    );
+    expect(migration).not.toMatch(/grant\s+(insert|update|delete|all)/i);
+
+    for (const relativePath of [
+      "web/components/PlayerPickupTable/PlayerPickupTable.tsx",
+      "web/lib/draft-ranker/discoveryServer.ts",
+      "web/lib/sync/syncYahooPlayersToSheet.ts",
+      "web/pages/api/v1/start-chart.ts",
+      "web/pages/api/v1/transactions/ownership-snapshots.ts",
+      "web/pages/api/v1/transactions/ownership-trends.ts",
+      "web/pages/variance/skaters.tsx",
+    ]) {
+      const source = readFileSync(path.join(repoRoot, relativePath), "utf8");
+      expect(source).toContain("yahoo_players_with_normalized_history");
+      expect(source).toContain(
+        "ownership_timeline:normalized_ownership_timeline",
+      );
+    }
+  });
+
   it("reconciles complete player-key snapshots atomically and service-only", () => {
     const sql = readFileSync(
       path.join(

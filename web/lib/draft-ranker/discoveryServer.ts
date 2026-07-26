@@ -145,9 +145,9 @@ async function loadYahooEvidence(args: {
   const priorSeason = yahooPriorSeason(args.targetSeasonId);
   const yahooRows = await fetchAll<YahooPlayerRow>((from, to) =>
     args.client
-      .from("yahoo_players")
+      .from("yahoo_players_with_normalized_history")
       .select(
-        "player_key,draft_analysis,average_draft_pick,ownership_timeline,last_updated,season",
+        "player_key,draft_analysis,average_draft_pick,ownership_timeline:normalized_ownership_timeline,last_updated,season",
       )
       .eq("season", priorSeason)
       .order("player_key", { ascending: true })
@@ -189,7 +189,7 @@ async function loadYahooEvidence(args: {
     ownership.push({
       fhfhPlayerId,
       timeline: parseTimeline(row.ownership_timeline),
-      sourceKey: "yahoo_players.ownership_timeline",
+      sourceKey: "yahoo_player_ownership_history",
     });
   }
 
@@ -222,8 +222,8 @@ async function loadYahooEvidence(args: {
       ? []
       : [
           sourceDate
-            ? "ownership_timeline_stale"
-            : "ownership_timeline_missing",
+            ? "normalized_ownership_history_stale"
+            : "normalized_ownership_history_missing",
         ],
     metadata: {
       priorYahooSeason: priorSeason,
