@@ -1,6 +1,6 @@
 # sKO Predictive Modeling Plan 
 
-> **Historical implementation status (2026-07-22):** The local `web/scripts/modeling/*` implementation described below was deliberately removed by commit `abbc01e8c5dc99e1544594e0c72bdecd0a013ea8`. Retained output artifacts and `functions/lib/sko_pipeline.py` do not prove that those stages remain executable. Use `sko-ownership-contract.md` and the reconciled task list for current ownership; restore or replace the pipeline only through NEW 9.3.
+> **Historical implementation status (2026-07-28):** The owner authorized this modeling family as historical-only quarantine. The local `web/scripts/modeling/*` implementation described below was deliberately removed by commit `abbc01e8c5dc99e1544594e0c72bdecd0a013ea8`; retained outputs and `functions/lib/sko_pipeline.py` are evidence/compatibility artifacts, not executable model stages. The checklist below records the historical plan and does not claim supported runtime completion. Any future model requires a new approved product/data contract rather than restoration inferred from this document.
 
 ## What We’re Trying To Do
 - Predict which skaters will keep scoring well (points production) using past seasons and early-season data.

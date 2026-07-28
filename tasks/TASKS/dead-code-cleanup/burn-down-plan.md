@@ -1,6 +1,6 @@
 # Burn Down / Simplify sKO Predictions Pipeline (v2 Plan)
 
-> **Execution mapping:** SKO-specific burn-down work is merged into `tasks/TASKS/sko-charts/tasks-prd-sko-charts.md`; this document remains the historical simplification plan and source inventory.
+> **Execution mapping (2026-07-28):** SKO-specific burn-down work is merged into `tasks/TASKS/sko-charts/tasks-prd-sko-charts.md`. The owner authorized historical-only quarantine instead of this v2 replacement; this document remains source inventory and a historical alternative, not implementation or restoration authority.
 
 Date: 2025-09-28
 Owner: (you)

@@ -2,7 +2,7 @@
 
 Date: 2026-07-22
 
-Status: inventory and failure-response runbook only. There is no approved executable SKO modeling pipeline.
+Status: inventory and failure-response runbook only. The owner authorized the absent modeling pipeline as historical-only on 2026-07-28; there is no approved executable SKO modeling pipeline.
 
 ## Ownership and boundaries
 
@@ -11,7 +11,7 @@ Status: inventory and failure-response runbook only. There is no approved execut
 - `update-predictions-sko` is the protected moving-average v0.2 compatibility writer. Production pg_cron job 327 calls it at `45 10 * * *` with the same header source.
 - `functions/lib/sko_pipeline.py` is only an HTTP sequencer. It contains no feature, training, scoring, metric, upload, cleanup, queue, lock, or persistence implementation.
 - `functions/api/index.py` contains dormant Flask routes. The exact Production functions deployment currently serves `/api/healthz` but not `/sko/pipeline`; the configured pipeline destination is absent and returns Vercel 404.
-- Restoring a route, stage executor, modeling implementation, schedule, or consumer requires the NEW 9.3 ownership decision and separate deployment/data authorization.
+- Restoring a route, stage executor, modeling implementation, schedule, or consumer would require a new approved initiative plus separate deployment/data authorization; NEW 9.3 closed by choosing no restoration.
 
 ## Environment names
 

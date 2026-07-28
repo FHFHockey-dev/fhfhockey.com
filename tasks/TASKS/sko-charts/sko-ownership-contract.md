@@ -1,8 +1,8 @@
 # SKO Ownership and Runtime Contract
 
-Date: 2026-07-22
+Date: 2026-07-28
 
-Status: Reconciliation complete; no SKO score family is promoted as a canonical supported product contract.
+Status: Owner-authorized historical-only disposition complete; no SKO score family is promoted as a canonical supported product contract.
 
 ## Decision hierarchy
 
@@ -11,6 +11,13 @@ Status: Reconciliation complete; no SKO score family is promoted as a canonical 
 3. `prd-sko.md` is superseded research input. Its residual-P/60 model belongs only in Sustainability/Trends research unless separately promoted.
 4. `sko-modeling-notes.md` and the old modeling sections of `prd-sko-charts.md` are historical plans: the referenced `web/scripts/modeling/*` executables were deliberately deleted by commit `abbc01e8c5dc99e1544594e0c72bdecd0a013ea8`.
 5. `dead-code-cleanup/burn-down-plan.md` is an unimplemented historical alternative, not an approved v2 runtime. No tracked `predictions_next_game` table or generated type exists.
+
+## Owner-authorized historical-only disposition
+
+- On 2026-07-28 the owner chose historical-only quarantine rather than restoration or replacement of the deleted offline modeling pipeline.
+- Legacy GameScore/characteristic-value, deleted ML × stability, and residual-P/60 families remain non-authoritative. The active `baseline-moving-average` v0.2 writer/read API remains compatibility-only until separate safe-retirement, identity, freshness, schema, and production gates close.
+- The orphaned prediction reader/UI bundle remains explicitly quarantined and unmounted. It is neither reintegrated nor deleted by this decision; supported Trends remains rolling/FORGE.
+- Retained generated artifacts remain evidence only. No route, model, schema, row, schedule, deployment, or artifact changed under this disposition.
 
 ## Ownership matrix
 
@@ -40,7 +47,7 @@ Status: Reconciliation complete; no SKO score family is promoted as a canonical 
 - The prediction reader bundle is internally API-backed rather than a direct-table browser consumer, but it is unmounted and remains quarantined.
 - Exact checkpoint `b04938a9ddf30ff3af4e259ace8731c5bc655fa7` explicitly names and stores the sole fetch hook as `useQuarantinedPredictionsSko`; the only caller imports that symbol, the old production-sounding hook path/symbol have no runtime reference, and the registry enumerates the hook, leaderboard, info popover, and explainer. This closes 7.3 without mounting, promoting, or deleting the bundle.
 - Exact checkpoint `40fed86e8325aa6ee8ad882aba91548cf2e21dcc` records page/component/lib link and router scans with no tracked runtime caller to `/skoCharts`. The route is `noindex,nofollow`, disclaims live FORGE support, and links out only to `/forge/dashboard` and `/trends`, closing 6.6 without removing the lineage page.
-- Exact checkpoint `af7b4d8ca65bfc13ce217274c0789b050a05e5a4` records post-rename verification: no supported Trends/FORGE import of the bundle, both routes preserved in cron-report ownership, the admin caller preserved to the protected prediction writer, the 3-file/24-test reader/writer/audit cohort plus 1/1 registry test passing, and the renamed module resolving through full TypeScript. This closes 7.5 for the bounded cleanup batch while 7.4/NEW 9.4 retain deletion ownership.
+- Exact checkpoint `af7b4d8ca65bfc13ce217274c0789b050a05e5a4` records post-rename verification: no supported Trends/FORGE import of the bundle, both routes preserved in cron-report ownership, the admin caller preserved to the protected prediction writer, the 3-file/24-test reader/writer/audit cohort plus 1/1 registry test passing, and the renamed module resolving through full TypeScript. This closes 7.5 for the bounded cleanup batch. Deletion remains separately approval-gated under 7.4; NEW 9.4 later closes by retaining the bundle in quarantine.
 - The admin `/db` action calls `update-predictions-sko` through `doPOST`, which supplies the signed-in session bearer token.
 - Production pg_cron job 321 calls `update-sko-stats` at `30 10 * * *`; job 327 calls `update-predictions-sko` at `45 10 * * *`. Both are active and both use an Authorization header derived from Vault `cron_secret` without exposing its value.
 - No tracked supported route consumes the legacy GameScore/characteristic helper family.
@@ -77,14 +84,14 @@ No live relation, policy, migration, type, or runtime reference supports the his
 - Strict real-date/range/id/order/page validation precedes data work. Exact-count ranges use stable as-of/player/horizon ordering, cap page size at 2,000 for compatibility with the dormant sparkline caller, include model name/version and both timestamps, and return page-scoped freshness plus coverage/has-more/partial metadata. Exact checkpoint `531b35476436fd221efad83b79c6870fda6db516` publishes base 5.2 and NEW 9.10/9.11; 5.3 retains the separate source-warning/model-promotion dependency.
 - Exact checkpoint `fe4ba751942e001ab8f8fba7b8c5ec458694e9df` makes the reader expose only stable `prediction_data_unavailable` public text and logs normalized diagnostics whose bearer values and URLs are redacted. Complete empty pages and explicit stale/partial metadata are covered; the protected writer exposes `rowsUpserted` on success/failure for the unchanged timed audit wrapper. The combined reader/writer/audit group passes 3 files/24 tests plus full TypeScript, explicit-config scoped ESLint, and Prettier, closing base 5.4/5.5 and P2 NEW 9.15.
 
-## Frozen boundary pending NEW work
+## Frozen historical-only boundary
 
 - Exact commit `b4aeea8f9af6229aa64f75e4b311b1218a5afb4c` is READY/Production as deployment `dpl_4q8GM1wqTbHR3NbnxRxAakdLEvJr`. Both privileged Next.js writers return 401 for missing/invalid authorization and current Vault-backed authorization reaches safe 405 method validation through unsupported PUT. No writer executed, the bounded relevant runtime-error query is empty, and NEW 9.1/9.5 are closed (2026-07-23).
 
 - Do not call the moving-average v0.2 score, the legacy GameScore × characteristic multiplier, or the deleted offline ML × stability output the single canonical SKO model.
 - Do not restore deleted modeling scripts, create `predictions_next_game`, promote prediction UI, reinterpret stored rows, or change schedules as part of reconciliation alone.
 - Mutation endpoints must fail closed before any prerequisite/source query or service-role write.
-- Keep Sustainability, current Trends, FORGE, and SKO names/outputs distinct until NEW 9.2 records a versioned product decision.
+- Keep Sustainability, current Trends, FORGE, and every quarantined SKO family distinct. NEW 9.2 closes through non-promotion, not through a new canonical formula.
 
 ## Burn-down inventory and classification
 
@@ -96,7 +103,7 @@ No live relation, policy, migration, type, or runtime reference supports the his
 
 - `functions/vercel.json` gives Python functions a 240-second/1,024-MB limit and maps `/sko/pipeline` to `/api/sko/pipeline/index.py`, which does not exist. The exact READY Production functions deployment `dpl_3mN6xSDiuWachTogRGbuEJbi71m6` at source `258cbcbc05b897a73db9e710b6fcb22c5f3a5a3b` serves `/api/healthz` as 200 but `/sko/pipeline` as Vercel 404. No pipeline request was sent.
 - Local inbound/outbound code now requires a nonblank `SKO_PIPELINE_SECRET`, rejects missing/invalid bearers and unknown stages before work, and always forwards bearer auth for allowed requests. Six focused tests prove missing-secret/no-request, unknown-stage/no-request, valid sanitized/authenticated forwarding, inbound 401s, and placeholder behavior. Exact checkpoint `053f3558fdd1d99759aa087a60f369e21813fb64` is READY as branch deployment `dpl_EDiTZFRS1LASCS5iLFC4SWpqHQVm`; GET-only health is 200 and `/sko/pipeline` remains 404, so NEW 9.13 closes without route restoration or execution.
-- The repository exposes no executable backfill/train/score/upload implementation after the deliberate modeling-script deletion. `/sko/pipeline-step` now returns honest 501 `implemented=false` after valid auth rather than accepted/success. NEW 9.14 is complete; Production remains untouched/404 and NEW 9.3 retains the restore/replace/historical-only decision.
+- The repository exposes no executable backfill/train/score/upload implementation after the deliberate modeling-script deletion. `/sko/pipeline-step` now returns honest 501 `implemented=false` after valid auth rather than accepted/success. NEW 9.14 is complete; Production remains untouched/404, and NEW 9.3 closes through the owner-authorized historical-only disposition without restoration.
 - `sko-runbook.md` records environment names only, jobs 321/327, four named timeouts versus the platform cap, absent metric/cleanup/state owners, safe checks, forbidden operational calls, artifacts, failures, and rollback prerequisites. Exact checkpoint `053f3558fdd1d99759aa087a60f369e21813fb64` publishes base 4.1/8.1 closure on truthful inventory, not operability.
 
 ## Verification

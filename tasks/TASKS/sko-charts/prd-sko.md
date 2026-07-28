@@ -1,6 +1,6 @@
 SKO (Sustainability KPI Overview)
 
-> **Production-definition status:** superseded research input. The reconciled implementation list is `tasks/TASKS/sko-charts/tasks-prd-sko-charts.md`; current production behavior follows the later stability-CV contract in `prd-sko-charts.md`. Residual-P/60 ideas remain Sustainability/Trends research rather than a competing score.
+> **Production-definition status (2026-07-28):** superseded research input. The owner-authorized historical-only disposition does not promote this residual-P/60 proposal or the later stability-CV proposal. Residual-P/60 remains Sustainability/Trends research; the active moving-average v0.2 writer is compatibility-only and not this score.
 
 Working name options
 	•	sKO — Sustainability K‑Score & Outlook (my vote: short, pronounceable, keeps “KO” branding)
