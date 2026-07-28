@@ -144,7 +144,7 @@ These had no inbound imports in the custom graph and were also reported by `knip
 | --- | --- | --- |
 | `web/tmp-run-sync.ts`, `web/tmp-test-sheets.mjs`, `web/tmp-check-games.ts`, `web/tmp-check-pbp-games.ts`, `web/tmp-check-pbp-structure.js`, `web/tmp-check-seasons.js`, `web/tmp/**` | Temporary investigation scripts/artifacts. | Delete or move durable findings into `tasks/artifacts`. |
 | `web/debug-goalies.ts` | Manual goalie debug script. | Delete if no longer used. |
-| `web/web/scripts/output/**` | Nested generated model/output artifacts under duplicated `web/web` path. | Treat as generated artifacts; decide whether to archive outside source control. |
+| `web/web/scripts/output/**` | Nested generated model/output artifacts under duplicated `web/web` path. | Retain as owner-authorized historical SKO evidence; any future removal requires a new explicit checkpoint. |
 | `yahoo_historical.log` | Historical Yahoo ingest log. | Forward-untracked and ignored on 2026-07-21 while its physical local copy remains; value-free sensitivity review found no high-confidence/current credential and did not justify history rewriting. |
 | `check_db.js`, `find_templates.py`, `fix_templates.py`, `safe_properties.py`, `update_game_page.py`, `fix_terminal.sh` | One-off maintenance scripts. | Keep only if documented; otherwise delete/archive. |
 | `underlying-stats/**` at repo root | Older standalone service/types parallel to `web/lib/underlying-stats`. | No runtime linkage found. Candidate delete after confirming it is not used by external scripts. |
@@ -168,7 +168,7 @@ These were flagged by the import graph or `knip`, but should not be deleted base
 2. Delete temporary/debug routes or protect them: `testLogoMaker`, `cssTestingGrounds`, `trendsTestingGrounds`, `trendsDebug`, `twitterEmbeds`.
 3. Decide legacy product replacements, then delete or redirect: `goalies`, `trueGoalieValue`, `buyLowSellHigh`, `teamStats`, `projections`, `FORGE`, `skoCharts`.
 4. Remove the dead component clusters once their pages are deleted: legacy sKO/prediction, WiGO chart, goalie utility, old upsert helper clusters.
-5. Clean temporary/generated root files and nested generated outputs.
+5. Clean temporary/generated root files; preserve the explicitly retained historical SKO outputs.
 6. Re-run `knip --production` and a focused build/test pass after each cleanup batch.
 
 ## Verification Notes
@@ -182,7 +182,7 @@ These were flagged by the import graph or `knip`, but should not be deleted base
 - `rg --files` now counts 3,401 tracked paths, 2,050 web source/style files, 331 page entrypoints, and 256 API entrypoints. The current boundary also includes 48 package scripts, 20 Vercel cron definitions, the separately verified 64 active pg_cron jobs, one GitHub workflow, and distinct `functions` (53 files), `webhooks` (4), and `cms` (22) roots.
 - Temporary-cache `knip` 5.88.1 completed `--production --no-progress --reporter compact` and returned the expected findings exit with 173 unused-file candidates. Tests, scripts, generated/framework/config entrypoints, separate apps, operational modules, and 126 Sass-alias resolution failures remain explicit false-positive classes; the raw count is not a deletion list.
 - All original page, hidden-surface, operational, component/utility, and generated/temp candidate families were compared to current files, navigation/config, the latest SKO/DRM/CLEAN classifications, and the current scan. The named legacy component families remain candidates, but old upserts and operational modules retain manual/external-caller uncertainty and cannot pass the no-consumer or deletion gate from `knip` alone.
-- The 24 previously tracked generated-state artifacts remain absent from Git and narrowly ignored. Their producers and durable conclusions remain; the four duplicated nested SKO outputs remain tracked and open behind their separate retention/version-provenance decision.
+- The 24 previously tracked generated-state artifacts remain absent from Git and narrowly ignored. Their producers and durable conclusions remain; the four duplicated nested SKO outputs remain tracked as owner-authorized historical evidence with exact hash/size and secret/path-scan provenance.
 
 ### Named stub/development route dispositions
 
