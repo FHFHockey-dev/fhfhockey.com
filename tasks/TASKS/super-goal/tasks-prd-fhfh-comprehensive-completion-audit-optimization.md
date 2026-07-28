@@ -2726,7 +2726,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0004` (original L107) — Transparency-history UI retired with the orphaned prediction surface; no history is claimed (disposition 2026-07-28).
 - [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0005` (original L108) — No executable modeling pipeline survives to segment (disposition 2026-07-28).
 - [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0006` (original L109) — Deleted modeling README is not restored; compatibility runbook ownership remains separate (disposition 2026-07-28).
-- [ ] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0007` (original L381) — Harden endpoint with paging/batching and concurrency controls. _(Batch upserts + limit parameters in place; still need request throttling/run manifests.)_
+- [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0007` (original L381) — Harden endpoint with paging/batching and concurrency controls. _(Complete source pagination and bounded batch upserts are paired with an owner-safe cross-instance lease, stale-run recovery, and a durable per-model/date/horizon run manifest. Local candidate migration `20260728225806` remains application-gated.)_
 - [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0008` (original L382) — Add auth/secret check for write operations.
 - [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0009` (original L383) — Support `playerId` filter for on-demand updates.
 - [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0010` (original L384) — Current compatibility runs use `withCronJobAudit` for timed success/failure metadata and row counts (verified 2026-07-22).
@@ -2742,7 +2742,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0020` (original L397) — Implement `/trends/player/[playerId]` detail view with zoomable, brushable projected vs actual lines, candlestick overlay (green under/ red over) and crosshair cursor.
 - [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0021` (original L398) — Wire player search + row click-through from the Trends index to the player detail experience, keeping query params in sync.
 - [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0022` (original L400) — Active production job 327 calls the protected compatibility writer at `45 10 * * *` with Vault-backed authorization (verified value-free 2026-07-22).
-- [ ] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0023` (original L401) — Alerting if failure or unusually low updated rows.
+- [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0023` (original L401) — Alerting if failure or unusually low updated rows. _(Stable health codes classify failed/partial writes as errors and selected-versus-written shortfalls as warnings; the verdict and exact diagnostics are returned, persisted in the run manifest, and emitted to runtime logs. Offseason zero-row freshness policy remains separately open.)_
 - [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0024` (original L402) — One-season backfill script that runs under 15s to seed historical features (`backfill_seasons.py` + manifest).
 - [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0025` (original L403) — Deleted offline scorer/uploader is not restored; the v0.2 compatibility writer remains separately owned (disposition 2026-07-28).
 

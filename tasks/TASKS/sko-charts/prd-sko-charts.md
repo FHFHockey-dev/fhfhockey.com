@@ -383,7 +383,7 @@ Do not execute the former restore/segment/upload/UI handoff. The owner-authorize
 
 ## 13) Expanded TODOs (Delta)
 - API
-  - [ ] Harden endpoint with paging/batching and concurrency controls. *(Batch upserts + limit parameters in place; still need request throttling/run manifests.)*
+  - [x] Harden endpoint with paging/batching and concurrency controls. *(Complete source pagination and bounded batch upserts are paired with an owner-safe cross-instance lease, stale-run recovery, and a durable per-model/date/horizon run manifest. Local candidate migration `20260728225806` remains application-gated.)*
   - [x] Add auth/secret check for write operations.
   - [x] Support `playerId` filter for on-demand updates.
   - [x] Log run metadata to `cron_job_audit`/`job_run_details`. *(Current compatibility evidence: `withCronJobAudit` owns timed success/failure records and row counts; verified 2026-07-22.)*
@@ -403,7 +403,7 @@ Do not execute the former restore/segment/upload/UI handoff. The owner-authorize
   - [x] Wire player search + row click-through from the Trends index to the player detail experience, keeping query params in sync.
 - Ops
   - [x] Nightly job to call `/api/v1/ml/update-predictions-sko` post-games. *(Current compatibility evidence: active production pg_cron job 327 calls the protected writer at `45 10 * * *` with a Vault-backed Authorization header; verified value-free 2026-07-22.)*
-  - [ ] Alerting if failure or unusually low updated rows.
+  - [x] Alerting if failure or unusually low updated rows. *(Stable health codes classify failed/partial writes as errors and selected-versus-written shortfalls as warnings; the verdict and exact diagnostics are returned, persisted in the run manifest, and emitted to runtime logs. Offseason zero-row freshness policy remains separately open.)*
   - [x] One-season backfill script that runs under 15s to seed historical features (`backfill_seasons.py` + manifest).
   - [x] Lightweight nightly scorer/uploader (<300s) leveraging cached models + append-only features. *(Historical-only disposition 2026-07-28: the deleted offline scorer/uploader is not restored; the v0.2 compatibility writer remains separately owned.)*
 

@@ -18,7 +18,8 @@ Status: Owner-authorized historical-only disposition complete; no SKO score fami
 - Legacy GameScore/characteristic-value, deleted ML × stability, and residual-P/60 families remain non-authoritative. The active `baseline-moving-average` v0.2 writer/read API remains compatibility-only until separate safe-retirement, identity, freshness, schema, and production gates close.
 - The orphaned prediction reader/UI bundle remains explicitly quarantined and unmounted. It is neither reintegrated nor deleted by this decision; supported Trends remains rolling/FORGE.
 - Retained generated artifacts remain evidence only. No route, model, schema, row, schedule, deployment, or artifact changed under this disposition.
-- The follow-on imported-reference reconciliation closes 15/17 previously open PRD rows and all 17 modeling-note rows through the same non-implementation disposition or existing compatibility audit/schedule evidence. `prd-sko-charts.md` is now 23/25; endpoint concurrency/run-manifest hardening and failure/low-row alerting remain open.
+- The follow-on imported-reference reconciliation closed 15/17 previously open PRD rows and all 17 modeling-note rows through the same non-implementation disposition or existing compatibility audit/schedule evidence.
+- Local compatibility hardening now closes the remaining two imported PRD rows: candidate migration `20260728225806` adds a service-only durable lease/latest-run manifest, while the protected writer returns, persists, and logs stable failure/partial/selected-versus-written health verdicts. `prd-sko-charts.md` is 25/25. Canonical 2.5/8.2 remain open for source-ingest coverage, migration application, schema/artifact monitoring, approved offseason freshness policy, and production observation.
 
 ## Ownership matrix
 

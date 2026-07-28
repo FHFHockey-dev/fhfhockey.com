@@ -43,7 +43,7 @@
   - [ ] 2.2 Apply or repair missing migrations through the Supabase workflow, including RLS/API exposure appropriate to admin writers and read-only consumers.
   - [x] 2.3 Verify `update-sko-stats` handles schema drift explicitly, paginates complete source reads, and does not silently skip model-required fields. Evidence (2026-07-22): all 16 NHL families share explicit cursor pagination; the active path emits one typed exact-28-column batch with canonical season identity and derived time-on-ice/IPP/SOG-per-60 fields; schema/write errors fail closed instead of triggering field-dropping retries. Focused helper/route tests pass 2 files/11 tests and full TypeScript passes.
   - [ ] 2.4 Make prediction/metric upserts idempotent by stable player/as-of/horizon/model identity and preserve evaluation history.
-  - [ ] 2.5 Add freshness, row-count, missing-player, and partial-write diagnostics for every persistence stage.
+  - [ ] 2.5 Add freshness, row-count, missing-player, and partial-write diagnostics for every persistence stage. Local progress (2026-07-28): the compatibility prediction writer now persists exact coverage/source/write diagnostics and stable failure/partial/low-row health codes under a durable run manifest. Keep open for the source-ingest stage and approved offseason freshness policy.
 
 - [x] 3.0 Complete the modeling and explanation backlog under frozen contracts. Disposition evidence (2026-07-28): the owner authorized the deleted offline modeling family as historical-only quarantine; this closes the retired backlog without claiming implementation or model promotion.
   - [x] 3.1 Add LightGBM and XGBoost challengers only after dependency/runtime review; pin versions and use identical season splits/leakage rules. Disposition: retired with the deleted modeling pipeline; any future challenger requires a new approved model contract.
@@ -86,7 +86,7 @@
 
 - [ ] 8.0 Add runbook, monitoring, and end-to-end evidence
   - [x] 8.1 Document environment names only, stage commands, schedules, artifacts, state files, expected rows, retries, rollback, and failures. Evidence (2026-07-22): `sko-runbook.md` names only `CRON_SECRET`, `SKO_PIPELINE_ENDPOINT`, `SKO_PIPELINE_SECRET`, and Vault `cron_secret`; records jobs 321/327, safe test/health commands, unavailable operational commands/expected rows, retained artifacts, no retry/state guarantees, exact failure semantics, and rollback prerequisites.
-  - [ ] 8.2 Monitor last success, freshness, player/prediction coverage, schema drift, errors, artifact mismatch, and stalled stages.
+  - [ ] 8.2 Monitor last success, freshness, player/prediction coverage, schema drift, errors, artifact mismatch, and stalled stages. Local progress (2026-07-28): candidate migration `20260728225806` records last success/failure/error, lease heartbeat/expiry, attempt count, response diagnostics, and health alerts for the compatibility writer. Keep open for migration application, schema/artifact signals, approved freshness policy, and production observation.
   - [ ] 8.3 Verify source ingest → staged pipeline → persistence → read API → Trends UI on a bounded date.
   - [ ] 8.4 Verify no secrets/local absolute paths are committed and generated artifacts are intentional and bounded.
   - [ ] 8.5 Synchronize both PRDs, modeling notes, burn-down plan, this list, and master ledger with final evidence.

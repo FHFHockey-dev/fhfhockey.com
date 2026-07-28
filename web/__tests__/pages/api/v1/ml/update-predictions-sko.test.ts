@@ -3,12 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   assertPredictionsSkoPrerequisitesMock,
   authGetUserMock,
+  serviceRoleRpcMock,
   serviceRoleClientMock,
   issue,
 } = vi.hoisted(() => ({
   assertPredictionsSkoPrerequisitesMock: vi.fn(),
   authGetUserMock: vi.fn(),
-  serviceRoleClientMock: { from: vi.fn() },
+  serviceRoleRpcMock: vi.fn(),
+  serviceRoleClientMock: { from: vi.fn(), rpc: vi.fn() },
   issue: {
     code: "missing_player_stats_unified",
     message:
@@ -49,6 +51,7 @@ import handler, {
   fetchPlayerSeries,
 } from "../../../../../pages/api/v1/ml/update-predictions-sko";
 import { PredictionsSkoDependencyError } from "../../../../../lib/ml/predictionsSkoDependencyChecks";
+import { buildPredictionsSkoHealth } from "../../../../../lib/ml/predictionsSkoRunControl";
 
 function createMockRes() {
   return {
@@ -78,6 +81,20 @@ describe("/api/v1/ml/update-predictions-sko", () => {
       error: { message: "Invalid bearer token" },
     });
     assertPredictionsSkoPrerequisitesMock.mockResolvedValue(undefined);
+    serviceRoleClientMock.rpc.mockImplementation(serviceRoleRpcMock);
+    serviceRoleRpcMock.mockImplementation(async (name: string) => ({
+      data:
+        name === "acquire_sko_prediction_run"
+          ? [
+              {
+                acquired: true,
+                lease_expires_at: "2026-03-21T12:15:00Z",
+                attempt_count: 3,
+              },
+            ]
+          : true,
+      error: null,
+    }));
   });
 
   it.each([
@@ -240,10 +257,74 @@ describe("/api/v1/ml/update-predictions-sko", () => {
         batchesCompleted: 1,
         partial: false,
       },
+      health: { status: "ok", alerts: [] },
+      runManifest: {
+        runKey: "sko-predictions:baseline-moving-average:v0.2:2026-03-21:5",
+        attempt: 3,
+        state: "succeeded",
+      },
     });
     expect(upsert).toHaveBeenCalledWith(
       [expect.objectContaining({ player_id: 2 })],
       { onConflict: "player_id,as_of_date,horizon_games" },
     );
+    expect(serviceRoleRpcMock.mock.calls.map((call) => call[0])).toEqual([
+      "acquire_sko_prediction_run",
+      "finish_sko_prediction_run",
+    ]);
+  });
+
+  it("rejects an overlapping run before dependency or write work", async () => {
+    serviceRoleRpcMock.mockResolvedValueOnce({
+      data: [
+        {
+          acquired: false,
+          lease_expires_at: "2026-03-21T12:15:00Z",
+          attempt_count: 3,
+        },
+      ],
+      error: null,
+    });
+    const req: any = {
+      method: "POST",
+      headers: { authorization: "Bearer current-secret" },
+      query: { asOfDate: "2026-03-21" },
+      body: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toMatchObject({
+      success: false,
+      retryable: true,
+      runKey: "sko-predictions:baseline-moving-average:v0.2:2026-03-21:5",
+      leaseExpiresAt: "2026-03-21T12:15:00Z",
+    });
+    expect(assertPredictionsSkoPrerequisitesMock).not.toHaveBeenCalled();
+    expect(serviceRoleClientMock.from).not.toHaveBeenCalled();
+  });
+
+  it("classifies selected rows that produced no writes as a warning", () => {
+    expect(
+      buildPredictionsSkoHealth(
+        {
+          success: true,
+          coverage: { selectedPlayers: 2 },
+          write: { attemptedRows: 0, upsertedRows: 0, partial: false },
+        },
+        200,
+      ),
+    ).toEqual({
+      status: "warning",
+      alerts: [
+        {
+          code: "low_rows_written",
+          severity: "warning",
+          message: "Only 0 rows were written for 2 selected players.",
+        },
+      ],
+    });
   });
 });

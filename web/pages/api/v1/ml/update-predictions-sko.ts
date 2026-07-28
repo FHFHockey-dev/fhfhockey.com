@@ -7,6 +7,7 @@ import {
   assertPredictionsSkoPrerequisites,
   isPredictionsSkoDependencyError,
 } from "lib/ml/predictionsSkoDependencyChecks";
+import { withPredictionsSkoRunControl } from "lib/ml/predictionsSkoRunControl";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 /**
@@ -595,6 +596,9 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
   }
 };
 
-export default withCronJobAudit(adminOnly(handler as any), {
-  jobName: "update-predictions-sko",
-});
+export default withCronJobAudit(
+  adminOnly(withPredictionsSkoRunControl(handler as any) as any),
+  {
+    jobName: "update-predictions-sko",
+  },
+);
