@@ -2190,6 +2190,232 @@
   }
 }
 
+// Mobile standings and roster updates: match the compact, low-chrome language
+// used by the surrounding homepage intelligence modules.
+@media (max-width: #{v.$breakpoint-tablet}) {
+  .standingsInjuriesContainer {
+    gap: v.$space-sm;
+  }
+
+  .standingsContainer,
+  .injuriesContainer {
+    min-height: 0;
+    border-color: rgba(v.$primary-color, 0.22);
+    background: v.$surface-0;
+    box-shadow: none;
+  }
+
+  .standingsHeader,
+  .injuriesHeader {
+    align-items: center;
+    min-height: 44px;
+    padding: 5px v.$space-sm;
+    border-bottom-color: rgba(v.$primary-color, 0.16);
+    background: color.adjust(v.$surface-0, $lightness: -1%);
+
+    h2 {
+      max-width: none;
+      font-size: clamp(0.76rem, 3.35vw, 0.92rem);
+      font-weight: v.$font-weight-medium;
+      letter-spacing: 0.075em;
+      line-height: 1.05;
+    }
+  }
+
+  .panelMeta,
+  .panelViewAll {
+    font-size: 0.58rem;
+    font-weight: v.$font-weight-medium;
+    letter-spacing: 0.075em;
+  }
+
+  .updateTabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    padding: 5px 6px;
+    border-bottom-color: rgba(v.$color-white, 0.08);
+    background: transparent;
+
+    button {
+      min-height: 34px;
+      padding: 0 v.$space-xs;
+      border: 1px solid rgba(v.$color-white, 0.1);
+      border-radius: 5px;
+      background: rgba(v.$color-white, 0.018);
+      font-size: 0.6rem;
+      font-weight: v.$font-weight-medium;
+      letter-spacing: 0.075em;
+    }
+  }
+
+  .updateTabs .activeTab {
+    border-color: rgba(v.$primary-color, 0.58);
+    background: rgba(v.$primary-color, 0.085);
+    box-shadow: inset 0 -1px 0 rgba(v.$primary-color, 0.32);
+    color: v.$primary-color;
+  }
+
+  .standingsTable,
+  .injuryTable,
+  .transactionTable {
+    background: transparent;
+
+    thead th {
+      height: 27px;
+      border-bottom-color: rgba(v.$primary-color, 0.24);
+      background: color.adjust(v.$surface-0, $lightness: -1%);
+      color: v.$color-neutral-400;
+      font-weight: v.$font-weight-medium;
+      letter-spacing: 0.055em;
+    }
+
+    tbody tr {
+      border-bottom-color: rgba(v.$color-white, 0.065);
+
+      &:nth-child(even) {
+        background: rgba(v.$color-white, 0.01);
+      }
+    }
+  }
+
+  .standingsTable {
+    font-size: 0.66rem;
+
+    tbody td,
+    tbody th {
+      height: 25px;
+      color: v.$text-primary;
+      font-size: 0.64rem;
+      font-weight: v.$font-weight-regular;
+    }
+
+    tbody th,
+    td:nth-child(n + 3) {
+      font-family: v.$font-family-numbers;
+      font-size: 0.62rem;
+    }
+
+    .teamLink {
+      gap: 3px;
+      line-height: 1.05;
+    }
+
+    .standingsTeamLogo {
+      width: 13px;
+      height: 13px;
+      filter: none;
+    }
+
+    .standingsTeamNameSpan {
+      color: v.$color-neutral-200;
+    }
+  }
+
+  .injuryTable,
+  .transactionTable {
+    thead th {
+      height: 28px;
+      padding: 2px 3px;
+      font-size: 0.56rem;
+    }
+
+    tbody tr:not(.expandedUpdateRow) {
+      min-height: 44px;
+      background: transparent;
+    }
+
+    tbody td,
+    tbody th {
+      height: 44px;
+      padding: 3px;
+      font-size: 0.64rem;
+      font-weight: v.$font-weight-regular;
+    }
+  }
+
+  .injuryTeamLogo {
+    width: 14px;
+    height: 14px;
+    filter: none;
+  }
+
+  .dateColumn {
+    color: v.$color-neutral-400;
+    font-size: 0.58rem !important;
+  }
+
+  .nameColumn {
+    color: v.$color-neutral-200;
+  }
+
+  .statusColumn {
+    color: v.$primary-color;
+    font-size: 0.56rem !important;
+    font-weight: v.$font-weight-medium !important;
+    letter-spacing: 0.025em;
+  }
+
+  .descriptionColumn {
+    overflow: visible;
+  }
+
+  .expandUpdateButton {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+
+    > span[aria-hidden="true"] {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border: 1px solid rgba(v.$primary-color, 0.38);
+      border-radius: 50%;
+      background: rgba(v.$primary-color, 0.035);
+      font-size: 0.92rem;
+      line-height: 1;
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: transparent;
+
+      > span[aria-hidden="true"] {
+        border-color: v.$primary-color;
+        background: rgba(v.$primary-color, 0.1);
+      }
+    }
+  }
+
+  .expandedUpdateRow {
+    border-left-width: 2px;
+    background: rgba(v.$primary-color, 0.055) !important;
+  }
+
+  .expandedUpdateCell {
+    padding: v.$space-sm !important;
+    color: v.$color-neutral-200;
+    font-size: 0.72rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .pagination {
+    padding: 5px 6px;
+    border-top-color: rgba(v.$color-white, 0.08);
+    background: transparent;
+
+    button {
+      min-height: 34px;
+      border-color: rgba(v.$primary-color, 0.28);
+      background: rgba(v.$color-white, 0.018);
+    }
+  }
+}
+
 @media (max-width: 375px) {
   .slateHeroIntro {
     grid-template-columns: 92px minmax(0, 1fr);
