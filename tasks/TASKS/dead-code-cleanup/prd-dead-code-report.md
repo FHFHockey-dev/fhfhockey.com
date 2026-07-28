@@ -126,7 +126,7 @@ These had no inbound imports in the custom graph and were also reported by `knip
 
 | Files | Likely intent | Evidence | Recommendation |
 | --- | --- | --- | --- |
-| `web/components/DateRangeMatrix/DateRangeMatrixForGames.tsx` | Wrapper to embed DRM by team/date/mode. | No inbound imports; current `/drm` imports `DateRangeMatrix` directly. | Delete unless planned for game detail embedding. |
+| `web/components/DateRangeMatrix/DateRangeMatrixForGames.tsx` and the default export in `web/components/DateRangeMatrix/index.tsx` | Legacy wrappers around the unified raw/view and matrix-renderer paths. | Neither default wrapper has a runtime consumer; `/drm` uses `useDateRangeMatrixData`, `DateRangeMatrixView`, and props-only `LinePairGrid` directly. | Retain unchanged in quarantine; delete only after future explicit product-scope approval. |
 | `web/components/PlayerPPTOIPerGameChart/PlayerPPTOIPerGameChart.tsx` | Old per-player PP TOI chart. | No inbound imports; reads `sko_pp_stats` directly. | Delete. |
 | `web/components/TeamLandingPage/teamStats.js` and `teamStats.scss` | React Router-era team stats module. | Imports `react-router-dom`, local `teamsInfo`, and CSS path inconsistent with Next app. No inbound imports. | Delete. |
 | `web/components/TeamStatCard/*` | Standalone team stat card. | No inbound imports. | Delete unless Storybook coverage is desired. |
