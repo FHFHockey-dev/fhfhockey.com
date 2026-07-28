@@ -39,7 +39,8 @@
   - Evidence (2.1–2.5, 2026-07-27): schema/type/runtime traces identify `forge_runs`, player/team/goalie projections, goalie starts, games, CTPI, mappings, scoring config, results, and accuracy ownership. Current Start Chart needs no duplicate migration: `goalie_start_projections` is uniquely keyed by game/player, canonical projections are keyed by run/game/entity/horizon and reference `forge_runs`, and the read-time scoring profile is versioned independently. Prediction-result repair remains owned by 5.4/B-SUST-AUD NEW 13, while tau/elasticity/model-parameter promotion remains owned by 4.1; neither is misclassified as missing wrapper schema. Complete/bounded readers plus requested/resolved/source metadata remain recorded.
 
 - [ ] 3.0 Verify and finish recency, usage, opponent, goalie, and distribution utilities
-  - [ ] 3.1 Centralize/test decay, effective sample size, weighted dispersion, slope, shrinkage, clipping, and goalie finishing multipliers.
+  - [x] 3.1 Centralize/test decay, effective sample size, weighted dispersion, slope, shrinkage, clipping, and goalie finishing multipliers.
+  - Evidence (3.1, 2026-07-27): `web/lib/math/utils.ts` now owns finite-safe exponential decay/Kish effective-sample bookkeeping, decay-weighted population dispersion, index-preserving OLS slope, explicit effective-sample/prior shrinkage, clipping, and bounded goalie finishing primitives. The focused deterministic suite passes 7/7 and full TypeScript passes; no projection formula, model parameter, persistence, or second Start Chart engine changed.
   - [x] 3.2 Build/verify date-scoped schedule rows with opponent, venue, prior game, rest, and back-to-back flags.
   - [x] 3.3 Build/verify as-of-safe team strength by 5v5/PP/PK with nearest-prior and league/season fallback.
   - [x] 3.4 Build/verify player state rates, usage, PP1 probability, line role, recent TOI change, and position priors.
