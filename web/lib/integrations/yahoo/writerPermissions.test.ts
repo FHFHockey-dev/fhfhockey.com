@@ -152,6 +152,9 @@ describe("Yahoo player writer permissions", () => {
     expect(migration).toContain("or not relation.relrowsecurity");
     expect(migration).toContain("from public, anon, authenticated");
     expect(migration).toContain("to anon, authenticated");
+    expect(migration).toMatch(
+      /grant select on table[\s\S]*public\.yahoo_nhl_player_map_mat[\s\S]*to anon, authenticated/,
+    );
     expect(migration).not.toMatch(
       /grant\s+(insert|update|delete|truncate|trigger|references|all)/i,
     );

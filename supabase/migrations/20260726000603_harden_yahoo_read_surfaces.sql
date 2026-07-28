@@ -115,6 +115,7 @@ from public, anon, authenticated;
 grant select on table
   public.yahoo_names,
   public.yahoo_nhl_player_map,
+  public.yahoo_nhl_player_map_mat,
   public.yahoo_nhl_player_map_read,
   public.yahoo_players,
   public.yahoo_positions
