@@ -38,7 +38,7 @@
   - [x] 2.5 Require pagination or server aggregates for historical player/team/goalie inputs and record coverage/freshness.
   - Evidence (2.1–2.5, 2026-07-27): schema/type/runtime traces identify `forge_runs`, player/team/goalie projections, goalie starts, games, CTPI, mappings, scoring config, results, and accuracy ownership. Current Start Chart needs no duplicate migration: `goalie_start_projections` is uniquely keyed by game/player, canonical projections are keyed by run/game/entity/horizon and reference `forge_runs`, and the read-time scoring profile is versioned independently. Prediction-result repair remains owned by 5.4/B-SUST-AUD NEW 13, while tau/elasticity/model-parameter promotion remains owned by 4.1; neither is misclassified as missing wrapper schema. Complete/bounded readers plus requested/resolved/source metadata remain recorded.
 
-- [ ] 3.0 Verify and finish recency, usage, opponent, goalie, and distribution utilities
+- [x] 3.0 Verify and finish recency, usage, opponent, goalie, and distribution utilities. Canonical FORGE owns the date-scoped schedule/team/player/goalie inputs, while shared finite-safe math now owns recency, shrinkage, clipping, count means, and evidence-gated distribution selection without creating a second Start Chart engine (verified 2026-07-27).
   - [x] 3.1 Centralize/test decay, effective sample size, weighted dispersion, slope, shrinkage, clipping, and goalie finishing multipliers.
   - Evidence (3.1, 2026-07-27): `web/lib/math/utils.ts` now owns finite-safe exponential decay/Kish effective-sample bookkeeping, decay-weighted population dispersion, index-preserving OLS slope, explicit effective-sample/prior shrinkage, clipping, and bounded goalie finishing primitives. The focused deterministic suite passes 7/7 and full TypeScript passes; no projection formula, model parameter, persistence, or second Start Chart engine changed.
   - [x] 3.2 Build/verify date-scoped schedule rows with opponent, venue, prior game, rest, and back-to-back flags.
@@ -46,7 +46,8 @@
   - [x] 3.4 Build/verify player state rates, usage, PP1 probability, line role, recent TOI change, and position priors.
   - [x] 3.5 Build/verify goalie save/start-share projection and uncertainty, honoring confirmed starters and fallback/source state.
   - Evidence (3.2–3.5, 2026-07-22): the eight-stage FORGE dependency trace and exact player/team/goalie cohort verify schedule/rest, state-aware team context, rolling usage/role/PP inputs, goalie-start priors, fallback/source state, and uncertainty as canonical inputs consumed—not reimplemented—by Start Chart.
-  - [ ] 3.6 Implement/test Poisson means and negative-binomial selection for overdispersed stats.
+  - [x] 3.6 Implement/test Poisson means and negative-binomial selection for overdispersed stats.
+  - Evidence (3.6, 2026-07-27): the shared math owner converts non-negative rate/TOI/context inputs into finite Poisson means, defaults to Poisson when recent mean/variance evidence is absent or unusable, requires Fano above the PRD threshold, and fits negative-binomial size as `mean² / (variance - mean)`. The focused suite passes 11/11, full TypeScript, targeted lint, and formatting. Runtime projections remain Poisson until separately open 4.1/4.2 provide versioned per-stat dispersion inputs and integrate the selector.
 
 - [ ] 4.0 Verify and finish deterministic daily projection math
   - [ ] 4.1 Freeze versioned baselines, clip bounds, tau defaults, position elasticities, assist shares, risk parameters, and scoring defaults.

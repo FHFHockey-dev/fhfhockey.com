@@ -5,6 +5,8 @@ import {
   decayBlend,
   ewsd,
   goalieFinishMult,
+  poissonMeanFromRate,
+  selectCountDistribution,
   shrinkage,
   slope,
 } from "./utils";
@@ -70,6 +72,41 @@ describe("projection math utilities", () => {
     expect(shrinkage(null, 4, 3, 1)).toBe(4);
     expect(shrinkage(10, null, 3, 1)).toBe(10);
     expect(shrinkage(null, null, 3, 1)).toBeNull();
+  });
+
+  it("converts a per-60 rate into a finite context-adjusted Poisson mean", () => {
+    expect(poissonMeanFromRate(12, 20, 1.5)).toBeCloseTo(6);
+    expect(poissonMeanFromRate(-1, 20)).toBeNull();
+    expect(poissonMeanFromRate(12, Number.NaN)).toBeNull();
+  });
+
+  it("keeps Poisson when dispersion evidence is absent or below threshold", () => {
+    expect(selectCountDistribution(2.5, null, null)).toEqual({
+      model: "poisson",
+      mean: 2.5,
+      fanoFactor: null,
+      dispersionSize: null,
+    });
+    expect(selectCountDistribution(2.5, 2, 2.5)).toEqual({
+      model: "poisson",
+      mean: 2.5,
+      fanoFactor: 1.25,
+      dispersionSize: null,
+    });
+  });
+
+  it("selects negative binomial and fits size for proven overdispersion", () => {
+    expect(selectCountDistribution(3, 2, 6)).toEqual({
+      model: "negative-binomial",
+      mean: 3,
+      fanoFactor: 3,
+      dispersionSize: 1,
+    });
+  });
+
+  it("fails closed on an invalid projected mean", () => {
+    expect(selectCountDistribution(-1, 2, 6)).toBeNull();
+    expect(selectCountDistribution(Number.NaN, 2, 6)).toBeNull();
   });
 
   it("clips ordered or reversed bounds and handles invalid inputs", () => {

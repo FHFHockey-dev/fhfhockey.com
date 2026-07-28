@@ -1,4 +1,4 @@
-// Utility helpers for projection math primitives (decay weights, clipping, goalie multipliers).
+// Utility helpers for projection math primitives (decay weights, count distributions, clipping, goalie multipliers).
 
 export interface DecaySample {
   /** Stat observation value */
@@ -15,6 +15,22 @@ export interface DecayBlendResult {
   effectiveSampleSize: number;
   sampleCount: number;
 }
+
+export type CountDistributionSelection =
+  | {
+      model: "poisson";
+      mean: number;
+      fanoFactor: number | null;
+      dispersionSize: null;
+    }
+  | {
+      model: "negative-binomial";
+      mean: number;
+      fanoFactor: number;
+      dispersionSize: number;
+    };
+
+export const DEFAULT_OVERDISPERSION_FANO_THRESHOLD = 1.25;
 
 /**
  * Exponential decay weighted blend of samples where weights are exp(-daysAgo / tauDays).
@@ -172,6 +188,94 @@ export function shrinkage(
     (nEff / denominator) * (recent as number) +
     (k / denominator) * (prior as number)
   );
+}
+
+/**
+ * Convert a non-negative per-60 rate and relevant minutes into a Poisson mean.
+ * The optional combined context multiplier must already be owned by the caller's
+ * versioned projection contract.
+ */
+export function poissonMeanFromRate(
+  ratePer60: number,
+  toiMinutes: number,
+  contextMultiplier = 1,
+): number | null {
+  if (
+    !Number.isFinite(ratePer60) ||
+    ratePer60 < 0 ||
+    !Number.isFinite(toiMinutes) ||
+    toiMinutes < 0 ||
+    !Number.isFinite(contextMultiplier) ||
+    contextMultiplier < 0
+  ) {
+    return null;
+  }
+
+  return (ratePer60 / 60) * toiMinutes * contextMultiplier;
+}
+
+/**
+ * Select a count distribution only when recent sample evidence proves
+ * overdispersion. Missing or unusable dispersion evidence stays Poisson.
+ *
+ * Negative-binomial size uses r = sampleMean² / (sampleVariance - sampleMean).
+ */
+export function selectCountDistribution(
+  projectedMean: number,
+  recentSampleMean: number | null | undefined,
+  recentSampleVariance: number | null | undefined,
+  fanoThreshold = DEFAULT_OVERDISPERSION_FANO_THRESHOLD,
+): CountDistributionSelection | null {
+  if (!Number.isFinite(projectedMean) || projectedMean < 0) return null;
+
+  const hasSampleEvidence =
+    typeof recentSampleMean === "number" &&
+    Number.isFinite(recentSampleMean) &&
+    recentSampleMean > 0 &&
+    typeof recentSampleVariance === "number" &&
+    Number.isFinite(recentSampleVariance) &&
+    recentSampleVariance >= 0;
+  if (!hasSampleEvidence) {
+    return {
+      model: "poisson",
+      mean: projectedMean,
+      fanoFactor: null,
+      dispersionSize: null,
+    };
+  }
+
+  const threshold =
+    Number.isFinite(fanoThreshold) && fanoThreshold > 1
+      ? fanoThreshold
+      : DEFAULT_OVERDISPERSION_FANO_THRESHOLD;
+  const sampleMean = recentSampleMean as number;
+  const sampleVariance = recentSampleVariance as number;
+  const fanoFactor = sampleVariance / sampleMean;
+  const dispersionSize =
+    sampleVariance > sampleMean
+      ? (sampleMean * sampleMean) / (sampleVariance - sampleMean)
+      : null;
+
+  if (
+    fanoFactor <= threshold ||
+    dispersionSize === null ||
+    !Number.isFinite(dispersionSize) ||
+    dispersionSize <= 0
+  ) {
+    return {
+      model: "poisson",
+      mean: projectedMean,
+      fanoFactor,
+      dispersionSize: null,
+    };
+  }
+
+  return {
+    model: "negative-binomial",
+    mean: projectedMean,
+    fanoFactor,
+    dispersionSize,
+  };
 }
 
 /** Clamp x to the [lo, hi] interval (order-agnostic, swallows NaN) */
