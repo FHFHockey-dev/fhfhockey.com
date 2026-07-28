@@ -169,13 +169,13 @@
 
 @media (max-width: vars.$breakpoint-mobile-lg) {
   .container .footer.homepageFooter {
-    padding: vars.$space-lg vars.$space-md;
+    padding: vars.$space-md vars.$space-sm;
   }
 
   .homepageFooterInner {
     grid-template-columns: 1fr;
     justify-items: center;
-    gap: vars.$space-md;
+    gap: vars.$space-sm;
     text-align: center;
 
     > nav {
@@ -183,7 +183,25 @@
       grid-row: auto;
       flex-wrap: wrap;
       justify-content: center;
-      gap: vars.$space-md;
+      gap: vars.$space-sm vars.$space-md;
+    }
+  }
+
+  .homepageFooterBrand {
+    gap: vars.$space-xs;
+
+    .footerLogoDefault {
+      width: 96px !important;
+      height: 29px !important;
+    }
+
+    .footerLogoDefault svg {
+      width: 96px;
+      height: auto;
+    }
+
+    small {
+      font-size: 0.48rem;
     }
   }
 }

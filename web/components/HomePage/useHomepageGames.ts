@@ -71,7 +71,16 @@ export function useHomepageGames({
             return {
               id: game.id,
               clock: liveData.clock || null,
-              periodDescriptor: liveData.periodDescriptor || null
+              periodDescriptor: liveData.periodDescriptor || null,
+              homeShotsOnGoal:
+                typeof liveData?.homeTeam?.sog === "number"
+                  ? liveData.homeTeam.sog
+                  : null,
+              awayShotsOnGoal:
+                typeof liveData?.awayTeam?.sog === "number"
+                  ? liveData.awayTeam.sog
+                  : null,
+              shotsUpdatedAt: new Date().toISOString()
             };
           });
 
@@ -97,7 +106,20 @@ export function useHomepageGames({
                 game.periodDescriptor ||
                 (game.period || game.periodType
                   ? { number: game.period, periodType: game.periodType }
-                  : null)
+                  : null),
+              analytics: {
+                ...(game.analytics || {}),
+                ...(overlay.homeShotsOnGoal != null
+                  ? { homeShotsOnGoal: overlay.homeShotsOnGoal }
+                  : {}),
+                ...(overlay.awayShotsOnGoal != null
+                  ? { awayShotsOnGoal: overlay.awayShotsOnGoal }
+                  : {}),
+                ...(overlay.homeShotsOnGoal != null ||
+                overlay.awayShotsOnGoal != null
+                  ? { shotsUpdatedAt: overlay.shotsUpdatedAt }
+                  : {})
+              }
             };
           }
 

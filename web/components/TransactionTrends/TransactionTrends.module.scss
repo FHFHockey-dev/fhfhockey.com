@@ -158,6 +158,10 @@
   display: none;
 }
 
+.mobileTrends {
+  display: none;
+}
+
 .statusPanel {
   margin-top: v.$space-sm;
 }
@@ -861,6 +865,82 @@ tbody tr:hover .neonBox.fall {
     border-left-width: 6px;
   }
 }
+
+@media (max-width: #{v.$breakpoint-mobile-lg}) {
+  .transactionTrends {
+    gap: v.$space-sm;
+    padding: v.$space-sm;
+    border-color: rgba(v.$color-white, 0.1);
+    background: v.$surface-0;
+    box-shadow: none;
+  }
+
+  .headerRow {
+    gap: v.$space-sm;
+    border-bottom-color: rgba(v.$color-white, 0.08);
+  }
+
+  .subtitle {
+    color: v.$color-neutral-400;
+  }
+
+  .timeframeButtons {
+    border-color: rgba(v.$color-white, 0.1);
+    background: transparent;
+  }
+
+  .mobileTabs .panel {
+    padding: v.$space-sm v.$space-sm v.$space-sm
+      calc(v.$space-sm + 3px);
+    border: 0;
+    border-left: 3px solid v.$success-color;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .mobileTabs .fallersPanel {
+    border-left-color: v.$danger-color;
+  }
+
+  .mobileTabs .dataTable {
+    --row-h: 48px;
+
+    tbody td,
+    tbody th {
+      height: 48px;
+      border-bottom: 1px solid rgba(v.$color-white, 0.07);
+    }
+  }
+
+  .mobileTabs .neonBox,
+  .mobileTabs .neonBox.rise,
+  .mobileTabs .neonBox.fall {
+    border: 0;
+    background: transparent;
+  }
+
+  .mobileTabs .ownCell .rise,
+  .mobileTabs .deltaCell .rise {
+    color: v.$success-color;
+  }
+
+  .mobileTabs .ownCell .fall,
+  .mobileTabs .deltaCell .fall {
+    color: v.$danger-color;
+  }
+
+  .tableTabs {
+    margin-bottom: v.$space-sm;
+  }
+
+  .tabButton {
+    border-top: 0;
+    border-right: 0;
+    border-left: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+}
 .tableTabs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -964,6 +1044,31 @@ tbody tr:hover .neonBox.fall {
 .titleBlock {
   display: grid;
   gap: v.$space-xs;
+}
+
+.titleLine {
+  display: flex;
+  align-items: center;
+  gap: v.$space-md;
+}
+
+.viewAllLink {
+  color: v.$primary-color;
+  font-size: 0.68rem;
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  &:hover,
+  &:focus-visible {
+    color: v.$color-white;
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
 }
 
 .title {
@@ -1226,40 +1331,394 @@ tbody tr:hover .neonBox.fall {
 
 @media (max-width: #{v.$breakpoint-mobile-lg}) {
   .transactionTrends {
-    gap: v.$mobile-space-md;
-    padding: v.$mobile-space-md;
+    gap: v.$space-sm;
+    padding: v.$space-sm;
+    overflow: hidden;
+    border-color: rgba(v.$primary-color, 0.22);
+    background: v.$surface-0;
+    box-shadow: none;
   }
 
   .headerRow {
     align-items: flex-start;
     flex-direction: column;
+    gap: v.$space-sm;
+    padding-bottom: v.$space-sm;
+    border-bottom-color: rgba(v.$color-white, 0.1);
+  }
+
+  .titleBlock,
+  .titleLine {
+    width: 100%;
+  }
+
+  .titleLine {
+    justify-content: space-between;
+    gap: v.$space-sm;
+  }
+
+  .title {
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+  }
+
+  .viewAllLink {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 v.$space-xs;
+  }
+
+  .subtitle {
+    color: v.$color-neutral-400;
+    font-size: 0.76rem;
+    line-height: 1.35;
   }
 
   .trendControls {
     display: grid;
-    gap: v.$mobile-space-xs;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    gap: v.$space-sm;
+  }
+
+  .headerControls {
+    width: 100%;
+    gap: v.$space-xs;
+  }
+
+  .filterLabel {
+    font-size: 0.68rem;
+  }
+
+  .posButtons {
+    gap: 3px;
+
+    button {
+      min-width: 0;
+      min-height: 44px;
+      padding: 0 2px;
+      border-color: rgba(v.$color-white, 0.18);
+      background: rgba(v.$color-white, 0.035);
+      color: v.$color-neutral-400;
+
+      &.isActive,
+      :global(.active) & {
+        border-color: v.$primary-color;
+        background: rgba(v.$primary-color, 0.15);
+        color: v.$color-white;
+      }
+    }
   }
 
   .timeframeButtons {
     width: 100%;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+    border-color: rgba(v.$color-white, 0.18);
+    background: rgba(v.$color-white, 0.025);
+
+    button {
+      min-height: 42px;
+      border-width: 1px;
+      border-color: transparent;
+      border-radius: 0;
+
+      & + button {
+        border-left-color: rgba(v.$color-white, 0.12);
+      }
+
+      &.isActive,
+      :global(.active) & {
+        border-color: v.$primary-color;
+        background: rgba(v.$primary-color, 0.18);
+      }
+    }
   }
 
-  .summaryIntro {
-    grid-template-columns: 1fr;
-    gap: v.$space-xs;
+  .desktopTables,
+  .mobileTabs {
+    display: none;
   }
 
-  .summaryGrid {
-    grid-template-columns: 1fr;
+  .mobileTrends {
+    display: grid;
+    gap: v.$space-sm;
+    width: 100%;
+    min-width: 0;
   }
 
-  .summaryCard {
-    padding: v.$mobile-space-sm v.$mobile-space-md;
+  .mobileDirectionNav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+
+    button {
+      min-width: 0;
+      min-height: 42px;
+      padding: 0 v.$space-sm;
+      border: 1px solid rgba(v.$color-white, 0.16);
+      border-radius: v.$radius-control;
+      background: rgba(v.$color-white, 0.025);
+      color: v.$color-neutral-400;
+      font-family: v.$font-family-accent, sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+
+      &.isActive {
+        border-color: v.$primary-color;
+        background: rgba(v.$primary-color, 0.14);
+        color: v.$primary-color;
+      }
+
+      &:focus-visible {
+        outline: 2px solid v.$primary-color;
+        outline-offset: 2px;
+      }
+    }
   }
 
-  .panel {
-    padding: v.$mobile-space-md;
+  .mobileTrendPanel {
+    --trend-accent: #{v.$primary-color};
+
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid rgba(v.$color-white, 0.1);
+    border-radius: v.$radius-card;
+    background: rgba(v.$background-dark, 0.68);
+
+    &::before {
+      content: "";
+      position: absolute;
+      z-index: 1;
+      inset: 0 0 auto;
+      height: 4px;
+      border-radius: v.$radius-card v.$radius-card 0 0;
+      background: var(--trend-accent);
+      pointer-events: none;
+    }
+  }
+
+  .mobileRisersPanel {
+    --trend-accent: #{v.$success-color};
+  }
+
+  .mobileFallersPanel {
+    --trend-accent: #{v.$danger-color};
+  }
+
+  .mobilePanelTitle {
+    margin: 0;
+    padding: 8px 10px 6px;
+    color: v.$color-neutral-200;
+    font-family: v.$font-family-primary, sans-serif;
+    font-size: 0.72rem;
+    font-weight: v.$font-weight-semibold;
+    letter-spacing: 0.08em;
+    line-height: 1.2;
+    text-transform: uppercase;
+
+    &:focus-visible {
+      outline: 2px solid v.$primary-color;
+      outline-offset: -2px;
+    }
+  }
+
+  .mobilePlayerList {
+    margin: 0;
+    padding: 0 8px;
+    list-style: none;
+  }
+
+  .mobilePlayerRow {
+    display: grid;
+    grid-template-columns:
+      16px 34px minmax(0, 1fr) 42px minmax(56px, 72px)
+      54px;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    min-height: 52px;
+    border-top: 1px solid rgba(v.$color-white, 0.07);
+    font-variant-numeric: tabular-nums;
+
+    > * {
+      min-width: 0;
+    }
+  }
+
+  .mobileRank {
+    color: v.$color-neutral-200;
+    font-family: v.$font-family-numbers;
+    font-size: 0.72rem;
+    text-align: center;
+  }
+
+  .mobileHeadshot {
+    width: 34px;
+    height: 38px;
+    align-self: end;
+    object-fit: contain;
+    object-position: center bottom;
+  }
+
+  .mobileHeadshotFallback {
+    align-self: center;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(v.$color-white, 0.08);
+  }
+
+  .mobilePlayerIdentity {
+    display: grid;
+    gap: 2px;
+    overflow: hidden;
+  }
+
+  .mobilePlayerName {
+    overflow: hidden;
+    color: v.$color-neutral-200;
+    font-size: 0.72rem;
+    font-weight: v.$font-weight-medium;
+    line-height: 1.15;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:focus-visible {
+      outline: 2px solid v.$primary-color;
+      outline-offset: 1px;
+    }
+  }
+
+  .mobilePlayerMeta {
+    overflow: hidden;
+    color: v.$text-secondary;
+    font-size: 0.6rem;
+    letter-spacing: 0.04em;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .mobileOwnership {
+    display: grid;
+    justify-items: start;
+    gap: 1px;
+
+    strong {
+      color: v.$color-neutral-200;
+      font-family: v.$font-family-numbers;
+      font-size: 0.72rem;
+      font-weight: v.$font-weight-semibold;
+    }
+
+    small {
+      color: v.$text-secondary;
+      font-size: 0.54rem;
+      letter-spacing: 0.08em;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+  }
+
+  .mobileSparkline {
+    height: 34px;
+  }
+
+  .mobileSparkSvg {
+    display: block;
+    width: 100%;
+    height: 34px;
+  }
+
+  .mobileDelta {
+    font-family: v.$font-family-numbers;
+    font-size: 0.66rem;
+    font-weight: v.$font-weight-semibold;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .mobileRiseRow .mobileDelta {
+    color: v.$success-color;
+  }
+
+  .mobileFallRow .mobileDelta {
+    color: v.$danger-color;
+  }
+
+  .sparkPath {
+    filter: none;
+  }
+
+  .sparkArea {
+    fill-opacity: 0.12;
+  }
+
+  .statusPanel {
+    min-height: 72px;
+    padding: v.$space-md v.$space-sm;
+    border: 1px solid rgba(v.$color-white, 0.1);
+    border-radius: v.$radius-card;
+    background: rgba(v.$background-dark, 0.58);
+    color: v.$color-neutral-400;
+    font-size: 0.78rem;
+  }
+
+  .pager {
+    display: none;
+  }
+
+  .footNote {
+    color: v.$text-secondary;
+    font-size: 0.62rem;
+    line-height: 1.3;
+  }
+}
+
+@media (max-width: #{v.$breakpoint-mobile-sm}) {
+  .transactionTrends {
+    padding: 7px;
+  }
+
+  .mobilePlayerList {
+    padding: 0 6px;
+  }
+
+  .mobilePlayerRow {
+    grid-template-columns:
+      14px 30px minmax(0, 1fr) 38px minmax(48px, 56px)
+      49px;
+    gap: 4px;
+    min-height: 50px;
+  }
+
+  .mobileHeadshot {
+    width: 30px;
+    height: 34px;
+  }
+
+  .mobilePlayerName {
+    font-size: 0.68rem;
+  }
+
+  .mobilePlayerMeta {
+    font-size: 0.56rem;
+  }
+
+  .mobileOwnership strong,
+  .mobileRank {
+    font-size: 0.66rem;
+  }
+
+  .mobileDelta {
+    font-size: 0.61rem;
   }
 }

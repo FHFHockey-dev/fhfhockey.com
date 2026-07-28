@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import moment from "moment-timezone";
 import Link from "next/link";
 
@@ -96,6 +96,18 @@ export default function HomepageStandingsInjuriesSection({
   const [activeUpdatesTab, setActiveUpdatesTab] = useState<
     "transactions" | "injuries"
   >(() => (recentTransactions.length > 0 ? "transactions" : "injuries"));
+  const [expandedUpdateKey, setExpandedUpdateKey] = useState<string | null>(
+    null,
+  );
+
+  const selectUpdatesTab = (tab: "transactions" | "injuries") => {
+    setActiveUpdatesTab(tab);
+    setExpandedUpdateKey(null);
+  };
+
+  const toggleUpdate = (key: string) => {
+    setExpandedUpdateKey((current) => (current === key ? null : key));
+  };
 
   const sortedStandings = useMemo(() => {
     if (!Array.isArray(standings)) return [];
@@ -254,7 +266,7 @@ export default function HomepageStandingsInjuriesSection({
             className={
               activeUpdatesTab === "transactions" ? styles.activeTab : ""
             }
-            onClick={() => setActiveUpdatesTab("transactions")}
+            onClick={() => selectUpdatesTab("transactions")}
           >
             Transactions
           </button>
@@ -263,7 +275,7 @@ export default function HomepageStandingsInjuriesSection({
             role="tab"
             aria-selected={activeUpdatesTab === "injuries"}
             className={activeUpdatesTab === "injuries" ? styles.activeTab : ""}
-            onClick={() => setActiveUpdatesTab("injuries")}
+            onClick={() => selectUpdatesTab("injuries")}
           >
             Injuries
           </button>
@@ -290,7 +302,10 @@ export default function HomepageStandingsInjuriesSection({
                     <th scope="col">Team</th>
                     <th scope="col">Player / update</th>
                     <th scope="col">Type</th>
-                    <th scope="col">Details</th>
+                    <th scope="col">
+                      <span className={styles.desktopDetailsLabel}>Details</span>
+                      <span className={styles.mobileExpandLabel}>Expand</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -305,44 +320,87 @@ export default function HomepageStandingsInjuriesSection({
                     const details = getPublicNewsItemDetails(transaction);
                     const sourceLabel =
                       playerNames || transaction.headline || "news update";
+                    const updateKey = `transaction-${transaction.id}`;
+                    const detailId = `${updateKey.replace(
+                      /[^a-zA-Z0-9_-]/g,
+                      "-",
+                    )}-details`;
+                    const isExpanded = expandedUpdateKey === updateKey;
 
                     return (
-                      <tr key={transaction.id}>
-                        <td className={styles.dateColumn}>
-                          {formatHomepageDate(
-                            transaction.published_at ?? transaction.created_at,
-                          )}
-                        </td>
-                        <td className={styles.teamColumn}>
-                          <OptimizedImage
-                            className={styles.injuryTeamLogo}
-                            src={getTeamLogoSvg(teamAbbrev)}
-                            alt={`${teamAbbrev} logo`}
-                            width={24}
-                            height={24}
-                            priority={false}
-                            fallbackSrc={fallbackNHLLogo}
-                          />
-                        </td>
-                        <td className={styles.nameColumn}>
-                          {playerNames || transaction.headline}
-                        </td>
-                        <td className={styles.statusColumn}>
-                          {transaction.category}
-                        </td>
-                        <td className={styles.descriptionColumn}>
-                          <span className={styles.descriptionContent}>
-                            {details}
-                          </span>
-                          {transaction.source_url ? (
-                            <ExternalNewsLink
-                              href={transaction.source_url}
-                              className={styles.externalNewsLink}
-                              label={`View original post for ${sourceLabel}`}
+                      <Fragment key={transaction.id}>
+                        <tr>
+                          <td className={styles.dateColumn}>
+                            {formatHomepageDate(
+                              transaction.published_at ??
+                                transaction.created_at,
+                            )}
+                          </td>
+                          <td className={styles.teamColumn}>
+                            <OptimizedImage
+                              className={styles.injuryTeamLogo}
+                              src={getTeamLogoSvg(teamAbbrev)}
+                              alt={`${teamAbbrev} logo`}
+                              width={24}
+                              height={24}
+                              priority={false}
+                              fallbackSrc={fallbackNHLLogo}
                             />
-                          ) : null}
-                        </td>
-                      </tr>
+                          </td>
+                          <td className={styles.nameColumn}>
+                            {playerNames || transaction.headline}
+                          </td>
+                          <td className={styles.statusColumn}>
+                            {transaction.category}
+                          </td>
+                          <td className={styles.descriptionColumn}>
+                            <span className={styles.desktopUpdateDetails}>
+                              <span className={styles.descriptionContent}>
+                                {details}
+                              </span>
+                              {transaction.source_url ? (
+                                <ExternalNewsLink
+                                  href={transaction.source_url}
+                                  className={styles.externalNewsLink}
+                                  label={`View original post for ${sourceLabel}`}
+                                />
+                              ) : null}
+                            </span>
+                            <button
+                              type="button"
+                              className={styles.expandUpdateButton}
+                              aria-expanded={isExpanded}
+                              aria-controls={detailId}
+                              onClick={() => toggleUpdate(updateKey)}
+                            >
+                              <span aria-hidden="true">
+                                {isExpanded ? "−" : "+"}
+                              </span>
+                              <span className={styles.visuallyHidden}>
+                                {isExpanded ? "Collapse" : "Expand"} update for{" "}
+                                {sourceLabel}
+                              </span>
+                            </button>
+                          </td>
+                        </tr>
+                        {isExpanded ? (
+                          <tr
+                            id={detailId}
+                            className={styles.expandedUpdateRow}
+                          >
+                            <td colSpan={5} className={styles.expandedUpdateCell}>
+                              <span>{details}</span>
+                              {transaction.source_url ? (
+                                <ExternalNewsLink
+                                  href={transaction.source_url}
+                                  className={styles.externalNewsLink}
+                                  label={`View original post for ${sourceLabel}`}
+                                />
+                              ) : null}
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
                     );
                   })}
                 </tbody>
@@ -372,7 +430,8 @@ export default function HomepageStandingsInjuriesSection({
                     Status
                   </th>
                   <th scope="col" className={styles.descriptionColumn}>
-                    Details
+                    <span className={styles.desktopDetailsLabel}>Details</span>
+                    <span className={styles.mobileExpandLabel}>Expand</span>
                   </th>
                 </tr>
               </thead>
@@ -387,51 +446,87 @@ export default function HomepageStandingsInjuriesSection({
                         ? styles.injuredRow
                         : "";
                   const playerName = injury.player?.displayName ?? "N/A";
+                  const updateKey = `injury-${injury.key}`;
+                  const detailId = `${updateKey.replace(
+                    /[^a-zA-Z0-9_-]/g,
+                    "-",
+                  )}-details`;
+                  const isExpanded = expandedUpdateKey === updateKey;
 
                   return (
-                    <tr
-                      key={injury.key}
-                      className={rowClassName}
-                    >
-                      <td className={styles.dateColumn}>
-                        {formatHomepageDate(injury.date)}
-                      </td>
-                      <td className={styles.teamColumn}>
-                        <OptimizedImage
-                          className={styles.injuryTeamLogo}
-                          src={getTeamLogoSvg(teamAbbrev)}
-                          alt={`${teamAbbrev} logo`}
-                          width={24}
-                          height={24}
-                          priority={false}
-                          fallbackSrc={fallbackNHLLogo}
-                        />
-                      </td>
-                      <td className={styles.nameColumn}>
-                        {playerId ? (
-                          <Link href={`/stats/player/${playerId}`}>
-                            {playerName}
-                          </Link>
-                        ) : (
-                          playerName
-                        )}
-                      </td>
-                      <td className={styles.statusColumn}>
-                        {injury.status ?? "N/A"}
-                      </td>
-                      <td className={styles.descriptionColumn}>
-                        <span className={styles.descriptionContent}>
-                          {injury.description ?? "N/A"}
-                        </span>
-                        {injury.sourceUrl ? (
-                          <ExternalNewsLink
-                            href={injury.sourceUrl}
-                            className={styles.externalNewsLink}
-                            label={`View original post for ${playerName}`}
+                    <Fragment key={injury.key}>
+                      <tr className={rowClassName}>
+                        <td className={styles.dateColumn}>
+                          {formatHomepageDate(injury.date)}
+                        </td>
+                        <td className={styles.teamColumn}>
+                          <OptimizedImage
+                            className={styles.injuryTeamLogo}
+                            src={getTeamLogoSvg(teamAbbrev)}
+                            alt={`${teamAbbrev} logo`}
+                            width={24}
+                            height={24}
+                            priority={false}
+                            fallbackSrc={fallbackNHLLogo}
                           />
-                        ) : null}
-                      </td>
-                    </tr>
+                        </td>
+                        <td className={styles.nameColumn}>
+                          {playerId ? (
+                            <Link href={`/stats/player/${playerId}`}>
+                              {playerName}
+                            </Link>
+                          ) : (
+                            playerName
+                          )}
+                        </td>
+                        <td className={styles.statusColumn}>
+                          {injury.status ?? "N/A"}
+                        </td>
+                        <td className={styles.descriptionColumn}>
+                          <span className={styles.desktopUpdateDetails}>
+                            <span className={styles.descriptionContent}>
+                              {injury.description ?? "N/A"}
+                            </span>
+                            {injury.sourceUrl ? (
+                              <ExternalNewsLink
+                                href={injury.sourceUrl}
+                                className={styles.externalNewsLink}
+                                label={`View original post for ${playerName}`}
+                              />
+                            ) : null}
+                          </span>
+                          <button
+                            type="button"
+                            className={styles.expandUpdateButton}
+                            aria-expanded={isExpanded}
+                            aria-controls={detailId}
+                            onClick={() => toggleUpdate(updateKey)}
+                          >
+                            <span aria-hidden="true">
+                              {isExpanded ? "−" : "+"}
+                            </span>
+                            <span className={styles.visuallyHidden}>
+                              {isExpanded ? "Collapse" : "Expand"} update for{" "}
+                              {playerName}
+                            </span>
+                          </button>
+                        </td>
+                      </tr>
+                      {isExpanded ? (
+                        <tr id={detailId} className={styles.expandedUpdateRow}>
+                          <td colSpan={5} className={styles.expandedUpdateCell}>
+                            <span>{injury.description ?? "N/A"}</span>
+                            {injury.sourceUrl ? (
+                              <ExternalNewsLink
+                                href={injury.sourceUrl}
+                                className={styles.externalNewsLink}
+                                label={`View original post for ${playerName}`}
+                              />
+                            ) : null}
+                          </td>
+                        </tr>
+                      ) : null}
+                    </Fragment>
                   );
                 })}
               </tbody>

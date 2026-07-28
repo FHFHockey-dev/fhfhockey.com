@@ -41,6 +41,10 @@ export type PublicPredictionMatchup = {
   awayGoalieName: string | null;
   homeGoalieId: number | null;
   awayGoalieId: number | null;
+  homeProjectedGoals: number | null;
+  awayProjectedGoals: number | null;
+  homeProjectedShots: number | null;
+  awayProjectedShots: number | null;
   optionalPlayerImpactAvailable: boolean;
 };
 
@@ -277,6 +281,10 @@ function buildMatchup(
     awayGoalieName: payload.away.goalie.topGoalieName,
     homeGoalieId: payload.home.goalie.topGoalieId,
     awayGoalieId: payload.away.goalie.topGoalieId,
+    homeProjectedGoals: payload.home.forgeProjection?.projectedGoals ?? null,
+    awayProjectedGoals: payload.away.forgeProjection?.projectedGoals ?? null,
+    homeProjectedShots: payload.home.forgeProjection?.projectedShots ?? null,
+    awayProjectedShots: payload.away.forgeProjection?.projectedShots ?? null,
     optionalPlayerImpactAvailable: Boolean(
       payload.home.lineup || payload.away.lineup,
     ),

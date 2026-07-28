@@ -1,6 +1,12 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { createElement } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import HomepageStandingsInjuriesSection from "./HomepageStandingsInjuriesSection";
 
@@ -13,6 +19,10 @@ vi.mock("next/image", () => ({
 }));
 
 describe("HomepageStandingsInjuriesSection", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it("sorts standings by league rank and paginates injury rows", () => {
     const injuries = Array.from({ length: 33 }, (_, index) => ({
       date: `2026-04-${String((index % 9) + 1).padStart(2, "0")}`,
@@ -209,5 +219,117 @@ describe("HomepageStandingsInjuriesSection", () => {
         })
         .getAttribute("href"),
     ).toBe("https://x.com/OriginalReporter/status/2");
+  });
+
+  it("expands one mobile update at a time and resets expansion on tab changes", () => {
+    render(
+      <HomepageStandingsInjuriesSection
+        standings={[]}
+        injuries={[
+          {
+            key: "injury-1",
+            date: "2026-07-14",
+            team: "CHI",
+            player: { displayName: "Connor Bedard" },
+            status: "Out",
+            description: "Injury detail",
+          },
+        ]}
+        recentTransactions={[
+          {
+            id: "transaction-1",
+            headline: "First transaction",
+            blurb: "First transaction detail",
+            category: "SIGNING",
+            team_abbreviation: "BOS",
+            published_at: "2026-07-14T12:00:00.000Z",
+            players: [{ player_name: "Player One" }],
+          },
+          {
+            id: "transaction-2",
+            headline: "Second transaction",
+            blurb: "Second transaction detail",
+            category: "TRADE",
+            team_abbreviation: "NYR",
+            published_at: "2026-07-14T13:00:00.000Z",
+            players: [{ player_name: "Player Two" }],
+          },
+        ]}
+        snapshotGeneratedAt="2026-07-14T12:00:00.000Z"
+        standingsError={null}
+        injuriesError={null}
+      />,
+    );
+
+    const firstExpand = screen.getByRole("button", {
+      name: "Expand update for Player One",
+    });
+    const secondExpand = screen.getByRole("button", {
+      name: "Expand update for Player Two",
+    });
+    expect(firstExpand.getAttribute("aria-expanded")).toBe("false");
+
+    fireEvent.click(firstExpand);
+    expect(
+      screen.getByRole("button", {
+        name: "Collapse update for Player One",
+      }).getAttribute("aria-expanded"),
+    ).toBe("true");
+
+    fireEvent.click(secondExpand);
+    expect(
+      screen.getByRole("button", {
+        name: "Expand update for Player One",
+      }).getAttribute("aria-expanded"),
+    ).toBe("false");
+    expect(
+      screen.getByRole("button", {
+        name: "Collapse update for Player Two",
+      }).getAttribute("aria-expanded"),
+    ).toBe("true");
+
+    fireEvent.click(screen.getByRole("tab", { name: "Injuries" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Transactions" }));
+    expect(
+      screen.getByRole("button", {
+        name: "Expand update for Player Two",
+      }).getAttribute("aria-expanded"),
+    ).toBe("false");
+  });
+
+  it("renders all 32 standings rows with the complete mobile column set", () => {
+    const standings = Array.from({ length: 32 }, (_, index) => ({
+      leagueSequence: index + 1,
+      teamName: `Team ${index + 1}`,
+      teamAbbreviation: `T${index + 1}`,
+      gamesPlayed: 82,
+      wins: 40,
+      losses: 30,
+      otLosses: 12,
+      points: 92,
+      pointPercentage: 0.561,
+      streak: "W2",
+      teamLogo: `/logos/${index + 1}.svg`,
+    }));
+
+    render(
+      <HomepageStandingsInjuriesSection
+        standings={standings}
+        injuries={[]}
+        snapshotGeneratedAt="2026-07-14T12:00:00.000Z"
+        standingsError={null}
+        injuriesError={null}
+      />,
+    );
+
+    const table = screen.getByRole("table", {
+      name: /nhl league standings/i,
+    });
+    expect(within(table).getAllByRole("row")).toHaveLength(33);
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual(["#", "Team", "GP", "W", "L", "OTL", "PTS", "P%", "STRK"]);
   });
 });
