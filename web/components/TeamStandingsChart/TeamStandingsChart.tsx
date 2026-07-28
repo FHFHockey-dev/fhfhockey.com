@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import * as d3 from "d3";
 import { format, isAfter } from "date-fns";
 import PanelStatus from "components/common/PanelStatus";
+import OptimizedImage from "components/common/OptimizedImage";
 import useCurrentSeason from "hooks/useCurrentSeason";
 import useResizeObserver from "hooks/useResizeObserver";
 import { buildHomepageModulePresentation } from "lib/dashboard/freshness";
@@ -14,6 +15,10 @@ import {
   getYDomainMax,
   type NumericMetric,
 } from "./metricUtils";
+import {
+  buildGameAxisTicks,
+  getAvailableSeasonGameRange,
+} from "./chartUtils";
 
 // -------------------------------
 // TYPE DEFINITIONS
@@ -104,6 +109,12 @@ type TeamStandingsChartProps = {
   compact?: boolean;
 };
 
+const DIVISION_ORDER = ["Atlantic", "Metropolitan", "Central", "Pacific"];
+const CONFERENCE_LABELS: Record<string, string> = {
+  E: "Eastern",
+  W: "Western",
+};
+
 const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
   const season = useCurrentSeason();
   const [data, setData] = useState<Map<string, TeamData[]>>(new Map());
@@ -131,7 +142,7 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { width, height } = useResizeObserver(containerRef);
   const chartWidth = width || containerRef.current?.clientWidth || 0;
-  const minimumChartHeight = compact ? 260 : 600;
+  const minimumChartHeight = compact ? 220 : 600;
   const chartHeight = Math.max(
     height || containerRef.current?.clientHeight || 0,
     minimumChartHeight,
@@ -305,27 +316,19 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
     svg.selectAll("*").remove();
 
     const margin = compact
-      ? { top: 16, right: 28, bottom: 38, left: 56 }
+      ? { top: 12, right: 28, bottom: 34, left: 48 }
       : { top: 20, right: 30, bottom: 50, left: 60 };
     const innerWidth = Math.max(0, chartWidth - margin.left - margin.right);
     const innerHeight = Math.max(0, chartHeight - margin.top - margin.bottom);
 
-    let maxGames = 0;
-    data.forEach((teamData) => {
-      if (teamData.length > 0) {
-        const firstRecord = teamData[0];
-        if (
-          (selectedConference === "All" ||
-            firstRecord.conference === selectedConference) &&
-          (selectedDivision === "All" ||
-            firstRecord.division === selectedDivision)
-        ) {
-          const teamMax = d3.max(teamData, (d) => d.gamesPlayed) || 0;
-          if (teamMax > maxGames) maxGames = teamMax;
-        }
-      }
-    });
-    if (maxGames === 0) maxGames = 1;
+    const maxGames = Math.max(
+      1,
+      getAvailableSeasonGameRange(
+        data.values(),
+        selectedConference,
+        selectedDivision,
+      ),
+    );
 
     const xScale = d3
       .scaleLinear()
@@ -717,7 +720,9 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
     });
 
     // Draw X axis
-    const xAxis = d3.axisBottom(xScale).ticks(10);
+    const xAxis = d3
+      .axisBottom(xScale)
+      .tickValues(buildGameAxisTicks(maxGames));
     mainG
       .append("g")
       .attr("transform", `translate(0, ${innerHeight})`)
@@ -728,7 +733,7 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
       .attr("x", innerWidth / 2)
       .attr("y", innerHeight + margin.bottom - 5)
       .attr("text-anchor", "middle")
-      .text("Games");
+      .text("Games Played");
     // Draw Y axis
     mainG.append("g").call(yAxis);
 
@@ -780,8 +785,33 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
   ]);
 
   // -------------------------------
-  // TEAM TOGGLE PANEL – Sorted by Division in 2 Columns
+  // TEAM TOGGLE PANEL – Sorted by Division
   // -------------------------------
+  const conferenceOptions = useMemo(() => {
+    const conferences = new Set<string>();
+    data.forEach((teamData) => {
+      const conference = teamData[0]?.conference;
+      if (conference && conference !== "N/A") {
+        conferences.add(conference);
+      }
+    });
+    return Array.from(conferences).sort();
+  }, [data]);
+
+  const divisionOptions = useMemo(() => {
+    const divisions = new Set<string>();
+    data.forEach((teamData) => {
+      const division = teamData[0]?.division;
+      if (division && division !== "N/A") {
+        divisions.add(division);
+      }
+    });
+    return Array.from(divisions).sort(
+      (left, right) =>
+        DIVISION_ORDER.indexOf(left) - DIVISION_ORDER.indexOf(right),
+    );
+  }, [data]);
+
   const teamsByDivision = useMemo(() => {
     const divisions: { [key: string]: string[] } = {};
     data.forEach((teamData, teamName) => {
@@ -805,10 +835,6 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
     return divisions;
   }, [data, selectedConference, selectedDivision]);
 
-  // Define the two columns for team toggles.
-  const leftDivisions = ["Atlantic", "Central"];
-  const rightDivisions = ["Metropolitan", "Pacific"];
-
   const selectAllTeams = () => {
     const allTeams: string[] = [];
     Object.values(teamsByDivision).forEach((arr) => allTeams.push(...arr));
@@ -828,8 +854,9 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
     staleMessage: "Standings chart data may be stale.",
   });
   const selectedTeamCount = selectedTeams.length;
-  const summaryLabel =
-    metric === "points"
+  const summaryLabel = compact
+    ? "League separation"
+    : metric === "points"
       ? "League separation"
       : metric === "pointPct"
         ? "Performance vs .500"
@@ -897,24 +924,37 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
               <div className={styles.filterField}>
                 <label>Conference:</label>
                 <select
+                  aria-label="Conference"
                   value={selectedConference}
                   onChange={(e) => setSelectedConference(e.target.value)}
                 >
                   <option value="All">All</option>
+                  {conferenceOptions.map((conference) => (
+                    <option key={conference} value={conference}>
+                      {CONFERENCE_LABELS[conference] ?? conference}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className={styles.filterField}>
                 <label>Division:</label>
                 <select
+                  aria-label="Division"
                   value={selectedDivision}
                   onChange={(e) => setSelectedDivision(e.target.value)}
                 >
                   <option value="All">All</option>
+                  {divisionOptions.map((division) => (
+                    <option key={division} value={division}>
+                      {division}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className={styles.filterField}>
                 <label>Metric:</label>
                 <select
+                  aria-label="Metric"
                   value={metric}
                   onChange={(e) => {
                     setMetric(e.target.value as NumericMetric);
@@ -996,68 +1036,38 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
                 <button onClick={clearAllTeams}>Clear All</button>
               </div>
               <div className={styles.toggleList}>
-                <div className={styles.toggleColumn}>
-                  {leftDivisions.map((div) => (
-                    <div key={div} className={styles.divisionGroup}>
-                      <strong>{div}</strong>
-                      <div className={styles.divisionTeams}>
-                        {teamsByDivision[div]?.map((abbr) => (
-                          <label key={abbr} className={styles.teamToggle}>
-                            <input
-                              type="checkbox"
-                              checked={selectedTeams.includes(abbr)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedTeams((prev) => [...prev, abbr]);
-                                } else {
-                                  setSelectedTeams((prev) =>
-                                    prev.filter((t) => t !== abbr),
-                                  );
-                                }
-                              }}
-                            />
-                            <img
-                              src={`/teamLogos/${abbr ?? "default"}.png`}
-                              alt={abbr}
-                              className={styles.toggleLogo}
-                            />
-                          </label>
-                        ))}
-                      </div>
+                {DIVISION_ORDER.map((div) => (
+                  <div key={div} className={styles.divisionGroup}>
+                    <strong>{div === "Metropolitan" ? "Metro" : div}</strong>
+                    <div className={styles.divisionTeams}>
+                      {teamsByDivision[div]?.map((abbr) => (
+                        <label key={abbr} className={styles.teamToggle}>
+                          <input
+                            type="checkbox"
+                            checked={selectedTeams.includes(abbr)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedTeams((prev) => [...prev, abbr]);
+                              } else {
+                                setSelectedTeams((prev) =>
+                                  prev.filter((t) => t !== abbr),
+                                );
+                              }
+                            }}
+                          />
+                          <OptimizedImage
+                            src={`/teamLogos/${abbr ?? "default"}.png`}
+                            alt={abbr}
+                            className={styles.toggleLogo}
+                            width={32}
+                            height={32}
+                            fallbackSrc="/teamLogos/FHFH.png"
+                          />
+                        </label>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                <div className={styles.toggleColumn}>
-                  {rightDivisions.map((div) => (
-                    <div key={div} className={styles.divisionGroup}>
-                      <strong>{div === "Metropolitan" ? "Metro" : div}</strong>
-                      <div className={styles.divisionTeams}>
-                        {teamsByDivision[div]?.map((abbr) => (
-                          <label key={abbr} className={styles.teamToggle}>
-                            <input
-                              type="checkbox"
-                              checked={selectedTeams.includes(abbr)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedTeams((prev) => [...prev, abbr]);
-                                } else {
-                                  setSelectedTeams((prev) =>
-                                    prev.filter((t) => t !== abbr),
-                                  );
-                                }
-                              }}
-                            />
-                            <img
-                              src={`/teamLogos/${abbr ?? "default"}.png`}
-                              alt={abbr}
-                              className={styles.toggleLogo}
-                            />
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             </div>
           </details>

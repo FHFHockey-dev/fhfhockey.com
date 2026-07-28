@@ -1,15 +1,13 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/index.tsx
 // @ts-nocheck
 import type { NextPage } from "next";
+import { useState } from "react";
 import Head from "next/head";
-import Image from "next/image";
 import Link from "next/link";
 import { NextSeo } from "next-seo";
 import moment from "moment";
 import "moment-timezone"; // Import moment-timezone
 
-import Banner from "../components/Banner";
-import SocialMedias from "components/SocialMedias";
 import Container from "components/Layout/Container";
 import ClientOnly from "components/ClientOnly";
 import styles from "../styles/Home.module.scss";
@@ -23,6 +21,7 @@ import { getPlayoffBracket } from "lib/NHL/server/playoffBracket";
 import { getCurrentSeason } from "lib/NHL/server";
 import { fetchNewsFeedItems } from "lib/newsFeed";
 import { fetchHomepagePulse } from "lib/homepagePulse";
+import { enrichHomepageGames } from "lib/homepageGameAnalytics";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import { checkIsOffseason } from "../hooks/useOffseason";
 import Fetch from "lib/cors-fetch";
@@ -51,57 +50,6 @@ const debugLog = (...args: any[]) => {
     console.log(...args);
   }
 };
-
-const QUICK_TOOLS = [
-  {
-    label: "Player Search",
-    description: "Profiles and player metrics",
-    href: "/stats",
-    icon: "/pictures/IconSearch.png",
-  },
-  {
-    label: "Team Analytics",
-    description: "Team trends and performance",
-    href: "/underlying-stats/teamStats",
-    icon: "/pictures/teamsTable.png",
-  },
-  {
-    label: "Projections Dashboard",
-    description: "Season outlooks and forecasts",
-    href: "/projections",
-    icon: "/pictures/chart-line-bar.png",
-  },
-  {
-    label: "Game Grid",
-    description: "Weekly schedule planning",
-    href: "/game-grid/7-Day-Forecast",
-    icon: "/pictures/gameGrid.png",
-  },
-  {
-    label: "Fantasy Tools",
-    description: "Draft and roster workspace",
-    href: "/draft-dashboard",
-    icon: "/pictures/playersTable.png",
-  },
-  {
-    label: "Advanced Stats",
-    description: "Underlying team signals",
-    href: "/underlying-stats",
-    icon: "/pictures/statsIcon.png",
-  },
-  {
-    label: "Line Combinations",
-    description: "Current deployment context",
-    href: "/lines",
-    icon: "/pictures/lineCombosIcon.png",
-  },
-  {
-    label: "Goalie View",
-    description: "Workload and variance",
-    href: "/variance/goalies",
-    icon: "/pictures/injured.png",
-  },
-] as const;
 
 // DEV NOTE:
 // Integrate Live Period/Time Clock instead of just displaying "LIVE" for live games
@@ -138,6 +86,8 @@ const Home: NextPage = ({
     initialGames,
     nextGameDate,
   });
+  const [expandedNewsId, setExpandedNewsId] = useState<string | null>(null);
+  const homepageNewsItems = latestNews?.slice(0, 5) ?? [];
 
   return (
     <Container className={styles.homeContainer}>
@@ -159,10 +109,6 @@ const Home: NextPage = ({
           content="ilj1AkBDPlpfcKH8A0zBJUdKtcUjE8TKIyCLa6buHxk"
         />
       </Head>
-      <Banner className={styles.socialMedia}>
-        <SocialMedias />
-      </Banner>
-
       <div className={styles.homepage}>
         <HomepageGamesSection
           currentDate={currentDate}
@@ -177,23 +123,16 @@ const Home: NextPage = ({
           playoffWeekGames={playoffWeekGames}
           heroMetrics={[
             {
-              label: "Teams",
-              value: Array.isArray(initialStandings)
-                ? String(initialStandings.length)
-                : "0",
-              caption: "in standings",
-            },
-            {
               label: "Players",
               value: String(homepagePlayerCount ?? 0),
               caption: "indexed",
             },
             {
-              label: "Transactions",
+              label: "News",
               value: Array.isArray(recentTransactions)
                 ? String(recentTransactions.length)
                 : "0",
-              caption: "latest updates",
+              caption: "updates",
             },
             {
               label: "Injuries",
@@ -227,15 +166,37 @@ const Home: NextPage = ({
               <Link href="/news">View all</Link>
             </div>
             <div className={styles.compactNewsList}>
-              {latestNews?.slice(0, 3).map((item) => (
-                <NewsCard key={item.id} compact rail item={item} />
-              ))}
-              {!latestNews?.length ? (
+              {homepageNewsItems.map((item) => {
+                const itemKey = String(
+                  item.id ??
+                    item.source_url ??
+                    item.tweet_url ??
+                    `${item.published_at ?? item.created_at}-${item.headline}`,
+                );
+
+                return (
+                  <NewsCard
+                    key={itemKey}
+                    compact
+                    rail
+                    item={item}
+                    expanded={expandedNewsId === itemKey}
+                    onExpandedChange={(expanded) =>
+                      setExpandedNewsId(expanded ? itemKey : null)
+                    }
+                  />
+                );
+              })}
+              {!homepageNewsItems.length ? (
                 <p className={styles.inlineEmptyState}>
                   No published news cards are available right now.
                 </p>
               ) : null}
             </div>
+            <Link href="/news" className={styles.newsBottomAction}>
+              <span>View all news</span>
+              <span aria-hidden="true">›</span>
+            </Link>
           </div>
 
           <div className={styles.leagueChartPanel}>
@@ -254,38 +215,6 @@ const Home: NextPage = ({
           standingsError={standingsLoadError}
           injuriesError={injuriesLoadError}
         />
-
-        <section
-          className={styles.quickTools}
-          aria-labelledby="quick-tools-heading"
-        >
-          <div className={styles.compactPanelHeader}>
-            <h2 id="quick-tools-heading">
-              Quick <span>Tools</span>
-            </h2>
-          </div>
-          <div className={styles.quickToolsGrid}>
-            {QUICK_TOOLS.map((tool) => (
-              <Link
-                key={tool.href}
-                href={tool.href}
-                className={styles.quickToolCard}
-              >
-                <Image
-                  src={tool.icon}
-                  alt=""
-                  width={28}
-                  height={28}
-                  className={styles.quickToolIcon}
-                />
-                <span>
-                  <strong>{tool.label}</strong>
-                  <small>{tool.description}</small>
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
       </div>
     </Container>
   );
@@ -569,6 +498,14 @@ export async function getServerSideProps({ req, res }) {
     } catch (error: any) {
       console.error("Error fetching playoff bracket:", error.message);
     }
+  }
+
+  if (gamesToday.length > 0) {
+    gamesToday = await enrichHomepageGames({
+      supabase: supabaseServer,
+      games: gamesToday,
+      date: nextGameDateFound,
+    });
   }
 
   const injuriesResult = await fetchInjuries();

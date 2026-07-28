@@ -1,4 +1,6 @@
-// Next.js API route at
+import { enrichHomepageGames } from "lib/homepageGameAnalytics";
+import supabaseServer from "lib/supabase/server";
+
 export default async function handler(req, res) {
   const { date } = req.query;
   const requestedDate = Array.isArray(date) ? date[0] : date;
@@ -22,8 +24,14 @@ export default async function handler(req, res) {
     const gameWeek = Array.isArray(schedule?.gameWeek) ? schedule.gameWeek : [];
     const dateSchedule =
       gameWeek.find((entry) => entry?.date === requestedDate) || gameWeek[0];
+    const games = Array.isArray(dateSchedule?.games) ? dateSchedule.games : [];
+    const enrichedGames = await enrichHomepageGames({
+      supabase: supabaseServer,
+      games,
+      date: requestedDate,
+    });
 
-    res.status(200).json(Array.isArray(dateSchedule?.games) ? dateSchedule.games : []);
+    res.status(200).json(enrichedGames);
   } catch (error) {
     res.status(502).json({ error: "Error fetching games" });
   }

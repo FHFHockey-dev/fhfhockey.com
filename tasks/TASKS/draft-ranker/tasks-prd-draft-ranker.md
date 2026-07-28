@@ -15,6 +15,7 @@
 - `tasks/TASKS/draft-ranker/discovery-source-contract.md` — Frozen discovery inputs, freshness, thresholds, and prohibited claims.
 - `tasks/TASKS/draft-ranker/dr-010-migration-review.md`, `dr-011-yahoo-mapping-review.md`, and `dr-012-migration-review.md` — Migration and identity evidence.
 - `web/lib/draft-ranker/`, `web/pages/api/v1/draft-ranker/`, `web/components/DraftRanker/`, and focused tests — Core implementation and regression ownership.
+- `web/.env.development.local` — Ignored localhost-only master/stage override used to expose the authenticated personal ranker in development; never committed or promoted.
 - `supabase/migrations/` Draft Ranker migrations — Additive identity, ownership, ordering, search, placement, comparison, discovery, community, and repair schema.
 
 ### Notes
@@ -109,3 +110,4 @@
 ## NEW Tasks
 
 - [x] NEW DR-078 Reconcile authoritative PR #352 after the pre-commit mailbox checkpoint exposed newer rollout evidence: merge the exact 2026-07-17 authenticated-stage record, close DR-072/Phase 7 from aggregate-only proof, retain every secondary flag and Phase 8 gate, and reclassify the five deferred Phase 8 rows into Wave B without inspecting personal choices or mutating production (completed 2026-07-18).
+- [x] NEW DR-079 Enable and verify the existing personal Draft Ranker on localhost without changing the page or production: keep the two required master/stage settings only in ignored `.env.development.local`; start the installed Next binary with process-level Watchpack polling without changing pnpm's dependency-build approval policy; pass the intended 2-file/18-test flag/API suite with the retained ignored clone explicitly excluded after its duplicate 4-file/36-test discovery; prove anonymous API denial is `401 authentication_required` rather than the disabled `503`; prove both Draft Ranker and home pages return meaningful 200 responses without disabled copy, a framework error overlay, or recurring watcher errors; and confirm the signed-in existing board renders read-only without initialize/reorder/watchlist/pairwise/export actions (completed 2026-07-20).

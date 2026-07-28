@@ -150,6 +150,15 @@
   }
 }
 
+.railMobileHeadline,
+.mobileTimestamp,
+.expandedTimestamp,
+.mobileMetaDivider,
+.railDisclosureButton,
+.railDetails {
+  display: none;
+}
+
 .content {
   position: relative;
   display: grid;
@@ -415,5 +424,291 @@
   .content {
     padding: v.$mobile-space-md v.$mobile-space-md v.$mobile-space-md
       calc(v.$mobile-space-md + 12px);
+  }
+
+  .rail {
+    grid-template-columns: 44px minmax(0, 1fr);
+    min-height: 86px;
+
+    .teamPane {
+      grid-column: 1;
+      grid-row: 1;
+      display: grid;
+      grid-template-columns: 1fr;
+      align-content: center;
+      gap: 0;
+      padding: 4px;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 0;
+    }
+
+    .teamLogo {
+      width: 32px;
+      height: 32px;
+    }
+
+    .content {
+      grid-column: 2;
+      grid-row: 1;
+      gap: 3px;
+      padding: 7px 8px;
+    }
+
+    .meta,
+    .footer {
+      font-size: 0.64rem;
+    }
+
+    .headline {
+      font-size: 0.84rem;
+    }
+
+    .blurb {
+      font-size: 0.72rem;
+      line-height: 1.25;
+    }
+  }
+}
+
+@media (max-width: v.$breakpoint-mobile-max) {
+  .rail {
+    grid-template-columns: 56px minmax(0, 1fr) 44px;
+    align-items: stretch;
+    min-height: 96px;
+    border: 0;
+    border-bottom: 1px solid rgba(v.$color-white, 0.09);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+
+    &:last-child {
+      border-bottom: 0;
+    }
+
+    &.railNoDisclosure {
+      grid-template-columns: 56px minmax(0, 1fr);
+    }
+
+    .teamPane {
+      grid-column: 1;
+      grid-row: 1;
+      display: flex;
+      align-self: stretch;
+      align-items: center;
+      justify-content: center;
+      padding: v.$space-xs;
+      border: 0;
+      background: transparent;
+    }
+
+    .teamLogo {
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      filter: drop-shadow(0 4px 8px rgba(v.$color-black, 0.38));
+
+      > span {
+        width: 100% !important;
+        height: 100% !important;
+      }
+    }
+
+    .content {
+      align-content: center;
+      gap: 6px;
+      min-width: 0;
+      padding: v.$space-sm 2px v.$space-sm v.$space-xs;
+      background: transparent;
+
+      &::before {
+        display: none;
+      }
+    }
+
+    .meta {
+      gap: 4px 7px;
+      color: v.$color-neutral-400;
+      font-size: 0.68rem;
+      font-weight: v.$font-weight-semibold;
+      letter-spacing: 0.09em;
+    }
+
+    .metaStrong {
+      color: v.$primary-color;
+    }
+
+    .mobileMetaDivider {
+      display: inline;
+      color: v.$color-neutral-400;
+    }
+
+    .categoryLabel {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 1px 8px;
+      border: 1px solid rgba(v.$primary-color, 0.38);
+      border-radius: 999px;
+      background: rgba(v.$primary-color, 0.055);
+      color: v.$primary-color;
+      line-height: 1;
+    }
+
+    .subcategoryLabel {
+      display: none;
+    }
+
+    .headline {
+      color: v.$color-brand-white;
+      font-size: 1rem;
+      font-weight: v.$font-weight-medium;
+      line-height: 1.18;
+      -webkit-line-clamp: 2;
+    }
+
+    .railDesktopHeadline,
+    .desktopTimestamp {
+      display: none;
+    }
+
+    .railMobileHeadline,
+    .mobileTimestamp {
+      display: inline;
+    }
+
+    .blurb {
+      display: none;
+    }
+
+    .playerRow {
+      display: none;
+    }
+
+    .railDetails {
+      padding-top: 2px;
+
+      &[hidden] {
+        display: none;
+      }
+
+      &:not([hidden]) {
+        display: block;
+      }
+
+      p {
+        margin: 0;
+        color: v.$color-neutral-400;
+        font-size: 0.82rem;
+        line-height: 1.42;
+      }
+    }
+
+    .footer {
+      gap: 4px 8px;
+      color: v.$color-neutral-400;
+      font-size: 0.66rem;
+      line-height: 1.2;
+    }
+
+    .sourceLink {
+      color: v.$primary-color;
+    }
+  }
+
+  .rail.expanded {
+    background: rgba(v.$primary-color, 0.025);
+
+    .headline {
+      display: block;
+      overflow: visible;
+      -webkit-line-clamp: unset;
+    }
+
+    .mobileTimestamp {
+      display: none;
+    }
+
+    .expandedTimestamp {
+      display: inline;
+    }
+
+    .railDisclosureButton {
+      border-color: rgba(v.$primary-color, 0.52);
+      background: rgba(v.$primary-color, 0.085);
+    }
+  }
+
+  .railDisclosureButton {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: start;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    margin: v.$space-sm v.$space-xs 0 0;
+    padding: 0;
+    border: 1px solid rgba(v.$color-white, 0.18);
+    border-radius: v.$radius-control;
+    background: rgba(v.$color-white, 0.025);
+    color: v.$primary-color;
+    font: inherit;
+    font-size: 1.45rem;
+    font-weight: 300;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover {
+      border-color: rgba(v.$primary-color, 0.58);
+      background: rgba(v.$primary-color, 0.08);
+    }
+
+    &:focus-visible {
+      outline: 2px solid v.$primary-color;
+      outline-offset: 2px;
+    }
+  }
+}
+
+@media (max-width: 360px) {
+  .rail {
+    grid-template-columns: 48px minmax(0, 1fr) 44px;
+
+    &.railNoDisclosure {
+      grid-template-columns: 48px minmax(0, 1fr);
+    }
+
+    .teamPane {
+      padding: 6px;
+    }
+
+    .teamLogo {
+      width: 34px;
+      height: 34px;
+    }
+
+    .content {
+      padding-left: 6px;
+    }
+
+    .meta {
+      gap: 3px 5px;
+      font-size: 0.63rem;
+    }
+
+    .categoryLabel {
+      padding-inline: 6px;
+    }
+
+    .headline {
+      font-size: 0.9rem;
+    }
+
+    .footer {
+      font-size: 0.61rem;
+    }
   }
 }

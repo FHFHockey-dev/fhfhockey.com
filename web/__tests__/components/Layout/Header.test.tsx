@@ -41,9 +41,15 @@ vi.mock("components/Layout/MobileMenu", () => ({
     onAuthClick,
     showAccountControls,
     accountUser,
-    onSignOut
+    onSignOut,
+    entryPoint,
+    visible,
   }: any) => (
-    <div data-testid="mobile-menu">
+    <div
+      data-testid="mobile-menu"
+      data-entry-point={entryPoint}
+      data-visible={String(visible)}
+    >
       {showAuthButton ? (
         <button
           type="button"
@@ -150,6 +156,23 @@ describe("Header auth entry", () => {
     expect(
       screen.getByRole("heading", { name: "Sign in to your account" })
     ).toBeDefined();
+  });
+
+  it("opens the shared mobile menu at the requested entry point", () => {
+    render(<Header />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Search players" }));
+    expect(screen.getByTestId("mobile-menu").dataset.entryPoint).toBe("search");
+    expect(screen.getByTestId("mobile-menu").dataset.visible).toBe("true");
+
+    fireEvent.click(screen.getByRole("button", { name: "Tools" }));
+    expect(screen.getByTestId("mobile-menu").dataset.entryPoint).toBe("tools");
+
+    fireEvent.click(screen.getByRole("button", { name: "More" }));
+    expect(screen.getByTestId("mobile-menu").dataset.entryPoint).toBe("default");
+
+    fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
+    expect(screen.getByTestId("mobile-menu").dataset.entryPoint).toBe("default");
   });
 
   it("renders the logged-in user menu instead of the logged-out CTA", () => {

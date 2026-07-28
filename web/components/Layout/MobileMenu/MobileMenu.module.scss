@@ -306,6 +306,15 @@
   position: relative;
 }
 
+.navigationSection:focus {
+  outline: none;
+}
+
+.navigationSection:focus-visible {
+  outline: 2px solid v.$secondary-color;
+  outline-offset: -2px;
+}
+
 .searchInputWrapper {
   position: relative;
   background: v.$background-light;
