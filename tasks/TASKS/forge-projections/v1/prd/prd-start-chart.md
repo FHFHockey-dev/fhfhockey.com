@@ -2,7 +2,7 @@ You are GPT-5 Codex. Implement the Start Chart DAILY MVP exactly as specified.
 
 > **Reconciled implementation task list:** `tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md`
 >
-> **Current reconciliation status (2026-07-25):** 39/55 rows are evidence-complete. The canonical Sustainability/Trends/FORGE audit proves Start Chart is a one-date presentation adapter over FORGE, verifies current schema/input/utility/API/UI/schedule and exact player/team/goalie traces, and keeps the retired independent writer/materialization retired. Strict reader validation, versioned server-owned position ranks/ties, honest unsupported-control states, canonical synthetic math coverage, measured 351-player latency, operator documentation, and populated desktop/mobile accessibility and responsive behavior now close. The browser pass also repaired duplicate player/card keys and reserved chart-dot key spreading. The remaining 16 rows are genuine formula/schema/override/retry/history gates plus exact Production publication of the verified local UI; this status does not authorize new persistence or model ownership or a standalone hosted build.
+> **Current reconciliation status (2026-07-27):** 42/55 rows are evidence-complete. The canonical Sustainability/Trends/FORGE audit proves Start Chart is a one-date presentation adapter over FORGE, verifies current schema/input/utility/API/UI/schedule and exact player/team/goalie traces, and keeps the retired independent writer/materialization retired. The schema-foundation group now closes without duplicate DDL: goalie starts use game/player identity, canonical projections use run/game/entity/horizon identity, and the read-time scoring profile is independently versioned. Formula/model-parameter, result-history, override/retry, and exact Production-publication gates remain separate. This status does not authorize new persistence or model ownership or a standalone hosted build.
 
 Title
 Start Chart — Daily Fantasy Hockey Start/Sit Rankings
@@ -112,6 +112,10 @@ Begin now by generating:
 - SQL migrations for starts, scoring_profiles, model_params and initial indexes.
 - SQL for vw_schedule_day and vw_team_strength_state_daily.
 - TypeScript modules for math utilities and API route scaffolds for /projections and /rankings with input validation.
+
+## Reconciled schema ownership (2026-07-27)
+
+The deliverables above describe the original greenfield proposal. The supported implementation reuses canonical FORGE rather than creating parallel `starts`, `predictions`, `outcomes`, `scoring_profiles`, or `model_params` ownership for Start Chart. `goalie_start_projections` owns the game/player start prior; `forge_runs` owns run identity; player, team, and goalie projections use run/game/entity/horizon keys; and `fhfh-default-skater-v1` owns read-time scoring. Result exact-replacement/history remains under the existing accuracy migration gate, while tau, elasticity, and other formula parameters remain under the explicit model-contract decision. No additional Start Chart schema is missing for the current wrapper.
 
 ## Canonical reader/control and operations checkpoint (2026-07-23)
 

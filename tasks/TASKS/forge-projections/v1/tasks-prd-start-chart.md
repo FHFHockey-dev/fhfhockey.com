@@ -30,13 +30,13 @@
   - [x] 1.4 Add targeted tasks for genuine contract gaps with downstream-consumer evidence.
   - Evidence (1.1–1.4, 2026-07-22): the canonical Sustainability/Trends audit maps Start Chart as a one-date UI adapter over FORGE, classifies every current/retired table, route, writer, caller, and dependency, and preserves genuine rolling/provenance/result gaps under existing NEW 10–13 rather than duplicating schema or model ownership.
 
-- [ ] 2.0 Verify and complete data/schema foundations
+- [x] 2.0 Verify and complete data/schema foundations
   - [x] 2.1 Verify equivalents for projected/confirmed starts, scoring profiles, model parameters, player projections, predictions, outcomes, and metrics against migrations/types.
-  - [ ] 2.2 Add only missing columns, constraints, indexes, RLS/API exposure, and ownership through forward migrations; breaking replacements require approval.
-  - [ ] 2.3 Define stable grains/uniqueness for game-team starts, player-game-model predictions, outcomes, profiles, and parameter versions.
+  - [x] 2.2 Add only missing columns, constraints, indexes, RLS/API exposure, and ownership through forward migrations; breaking replacements require approval.
+  - [x] 2.3 Define stable grains/uniqueness for game-team starts, player-game-model predictions, outcomes, profiles, and parameter versions.
   - [x] 2.4 Verify schedule, team strength by state, PP usage, player rates/usage/lines, goalie form, discipline, sustainability, and identity joins.
   - [x] 2.5 Require pagination or server aggregates for historical player/team/goalie inputs and record coverage/freshness.
-  - Evidence (2.1/2.4/2.5, 2026-07-22): schema/type/runtime traces identify `forge_runs`, player/team/goalie projections, goalie starts, games, CTPI, mappings, scoring config, results, and accuracy ownership; complete/bounded readers plus requested/resolved/source metadata are recorded, with known historical coverage gaps retained under NEW 10/13.
+  - Evidence (2.1–2.5, 2026-07-27): schema/type/runtime traces identify `forge_runs`, player/team/goalie projections, goalie starts, games, CTPI, mappings, scoring config, results, and accuracy ownership. Current Start Chart needs no duplicate migration: `goalie_start_projections` is uniquely keyed by game/player, canonical projections are keyed by run/game/entity/horizon and reference `forge_runs`, and the read-time scoring profile is versioned independently. Prediction-result repair remains owned by 5.4/B-SUST-AUD NEW 13, while tau/elasticity/model-parameter promotion remains owned by 4.1; neither is misclassified as missing wrapper schema. Complete/bounded readers plus requested/resolved/source metadata remain recorded.
 
 - [ ] 3.0 Verify and finish recency, usage, opponent, goalie, and distribution utilities
   - [ ] 3.1 Centralize/test decay, effective sample size, weighted dispersion, slope, shrinkage, clipping, and goalie finishing multipliers.

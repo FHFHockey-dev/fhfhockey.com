@@ -267,6 +267,8 @@ The 2026-07-22 parent-parity cohort subsequently closes only parents whose compl
 
 The 2026-07-23 ranking checkpoint brings B-START to 35/52. Start Chart now consumes a versioned server-owned eligible-position competition-rank contract over canonical FORGE points/start probabilities, including deterministic ties, multi-position membership, null-score exclusion, and explicit category/P75 deferral. The focused API/UI group passes 13/13, the canonical synthetic FORGE math/fallback/position-prior/clip/determinism cohort passes 88/88, and no projection formula, stored row, schema, or external state changed.
 
+The 2026-07-27 schema-ownership trace closes B-START 2.0/2.2/2.3 without adding duplicate persistence. The supported grains are game/player for goalie-start priors and run/game/entity/horizon for canonical FORGE projections, with a separately versioned read-time scoring profile. Accuracy-result repair stays under 5.4/NEW 13 and model-parameter promotion stays under 4.1, preserving Start Chart as a UI-specific wrapper rather than a second projection engine.
+
 ## Sustainability trends-plan implementation reconciliation
 
 The supporting 19-row volatility/elasticity plan is complete at 19/19 from audited runtime and test evidence. The deployed model contract is `sustainability_trend_bands` keyed by player, metric, window, and snapshot; `bandService` owns bounded source reads and composite-key persistence; the public read/protected mutation APIs expose player/date/metric/window selection and bounded bulk rebuilding. The calculator produces l3/l5/l10/l20 prior-blended intervals, z-scores, percentiles, and exposure metadata over raw one-game inputs, so the required one-game plus 3/5/10 views are present while l20 remains additive.
