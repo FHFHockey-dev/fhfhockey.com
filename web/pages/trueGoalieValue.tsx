@@ -26,7 +26,7 @@ import type {
 } from "components/GoaliePage/goalieTypes";
 import { calculateGoalieRankings } from "components/GoaliePage/goalieCalculations";
 import { fetchAllPages } from "utils/fetchAllPages";
-import useCurrentSeason from "hooks/useCurrentSeason";
+import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
 
 // --- Constants ---
 const STAT_COLUMNS: StatColumn[] = [
@@ -115,7 +115,11 @@ export interface SortConfig<T> {
 
 // --- Component Definition ---
 const GoalieTrends: FC = () => {
-  const currentSeason = useCurrentSeason(); // Use the hook to get season data
+  const {
+    data: currentSeason,
+    isPending: currentSeasonPending,
+    isError: currentSeasonFailed
+  } = useCurrentSeasonQuery();
 
   // --- State Definitions ---
   const [weekOptions, setWeekOptions] = useState<WeekOption[]>([]);
@@ -175,12 +179,25 @@ const GoalieTrends: FC = () => {
   // --- Effects ---
   // Effect 1: Fetch Week Options once the currentSeason is loaded
   useEffect(() => {
-    // Don't run if the season hasn't been loaded yet
-    if (!currentSeason) {
-      setLoading(true); // Keep loading indicator on
+    if (currentSeasonPending) {
+      setLoading(true);
       setLoadingMessage("Loading current season...");
       return;
     }
+
+    if (!currentSeason) {
+      setLoading(false);
+      setLoadingMessage("");
+      setWeekOptions([]);
+      setError(
+        currentSeasonFailed
+          ? "Unable to load the current season."
+          : "No current season is available."
+      );
+      return;
+    }
+
+    let active = true;
 
     const fetchOptions = async () => {
       setLoading(true);
@@ -204,6 +221,7 @@ const GoalieTrends: FC = () => {
           .eq("season", targetSeasonForYahooWeeks) // Use dynamically determined season
           .order("week", { ascending: true });
 
+        if (!active) return;
         if (weekError) throw weekError;
 
         const validWeeksData =
@@ -248,18 +266,23 @@ const GoalieTrends: FC = () => {
           );
         }
       } catch (err: any) {
+        if (!active) return;
         console.error("Error loading matchup weeks:", err);
         setError(err.message || "Failed to load week options.");
       } finally {
-        // Set loading false ONLY after options (or error) are processed
-        setLoading(false);
-        setLoadingMessage(""); // Clear message
+        if (active) {
+          setLoading(false);
+          setLoadingMessage("");
+        }
       }
     };
 
     fetchOptions();
-    // Depend on currentSeason object. This effect runs when currentSeason is fetched.
-  }, [currentSeason]);
+
+    return () => {
+      active = false;
+    };
+  }, [currentSeason, currentSeasonFailed, currentSeasonPending]);
 
   // Effect to fetch Range Data (Aggregates and Games) - No changes needed here from previous version
   useEffect(() => {
@@ -286,6 +309,8 @@ const GoalieTrends: FC = () => {
       }
       return;
     }
+
+    let active = true;
 
     const fetchRangeData = async () => {
       setLoading(true);
@@ -351,6 +376,7 @@ const GoalieTrends: FC = () => {
             fetchAllPages<LeagueWeeklyAverage>(avgAggQuery),
             fetchAllPages<GoalieGameStat>(gameDataQuery)
           ]);
+        if (!active) return;
         console.log("Finished parallel fetchAllPages.");
 
         // 3. Filter and set state using the complete data sets
@@ -403,6 +429,7 @@ const GoalieTrends: FC = () => {
         setLeagueWeeklyAverages(validAverageData);
         setGoalieGameData(validGameData);
       } catch (err: any) {
+        if (!active) return;
         console.error("Error fetching range data:", err);
         setError(err.message || "Failed to fetch range data.");
         // Clear data on error
@@ -410,13 +437,18 @@ const GoalieTrends: FC = () => {
         setLeagueWeeklyAverages(null);
         setGoalieGameData(null);
       } finally {
-        setLoading(false);
-        setLoadingMessage("");
+        if (active) {
+          setLoading(false);
+          setLoadingMessage("");
+        }
       }
     };
 
     fetchRangeData();
-    // Dependencies: Run when range, options, or mode change.
+
+    return () => {
+      active = false;
+    };
   }, [currentSeason?.seasonId, selectedRange, weekOptions, useSingleWeek]);
 
   useEffect(() => {
@@ -439,6 +471,8 @@ const GoalieTrends: FC = () => {
       return;
     }
 
+    let active = true;
+
     const fetchSingleWeekData = async () => {
       setSingleWeekLoading(true); // Use specific loading flag
       setLoadingMessage(
@@ -459,6 +493,7 @@ const GoalieTrends: FC = () => {
           .eq("matchup_season", season)
           .eq("week", weekNum);
 
+        if (!active) return;
         if (goalieError) throw goalieError;
 
         // Fetch league average for the specific week (should be one row)
@@ -469,6 +504,7 @@ const GoalieTrends: FC = () => {
           .eq("week", weekNum)
           .maybeSingle(); // Expect 0 or 1 row
 
+        if (!active) return;
         if (averageError) throw averageError;
 
         console.log(
@@ -489,18 +525,25 @@ const GoalieTrends: FC = () => {
         setSingleWeekGoalieData(validGoalieData);
         setSingleWeekLeagueAverage(averageData); // Set directly (null if not found)
       } catch (err: any) {
+        if (!active) return;
         console.error("Error fetching single week data:", err);
         setSingleWeekError(err.message || "Failed to fetch single week data.");
         setSingleWeekGoalieData(null);
         setSingleWeekLeagueAverage(null);
       } finally {
-        setSingleWeekLoading(false);
-        setLoadingMessage(""); // Clear message
+        if (active) {
+          setSingleWeekLoading(false);
+          setLoadingMessage("");
+        }
       }
     };
 
     fetchSingleWeekData();
-  }, [selectedWeekIndex, weekOptions, useSingleWeek]); // Dependencies
+
+    return () => {
+      active = false;
+    };
+  }, [selectedWeekIndex, weekOptions, useSingleWeek]);
 
   const calculatedLeaderboardRankings = useMemo((): GoalieRanking[] => {
     if (
