@@ -403,7 +403,7 @@ Do not execute the former restore/segment/upload/UI handoff. The owner-authorize
   - [x] Wire player search + row click-through from the Trends index to the player detail experience, keeping query params in sync.
 - Ops
   - [x] Nightly job to call `/api/v1/ml/update-predictions-sko` post-games. *(Current compatibility evidence: active production pg_cron job 327 calls the protected writer at `45 10 * * *` with a Vault-backed Authorization header; verified value-free 2026-07-22.)*
-  - [x] Alerting if failure or unusually low updated rows. *(Stable health codes classify failed/partial writes as errors and selected-versus-written shortfalls as warnings; the verdict and exact diagnostics are returned, persisted in the run manifest, and emitted to runtime logs. Offseason zero-row freshness policy remains separately open.)*
+  - [x] Alerting if failure or unusually low updated rows. *(Stable health codes classify failed/partial writes as errors and selected-versus-written shortfalls as warnings; the verdict and exact diagnostics are returned, persisted in the run manifest, emitted to runtime logs, and surfaced by the existing daily cron operator email. Offseason zero-row freshness policy remains separately open.)*
   - [x] One-season backfill script that runs under 15s to seed historical features (`backfill_seasons.py` + manifest).
   - [x] Lightweight nightly scorer/uploader (<300s) leveraging cached models + append-only features. *(Historical-only disposition 2026-07-28: the deleted offline scorer/uploader is not restored; the v0.2 compatibility writer remains separately owned.)*
 

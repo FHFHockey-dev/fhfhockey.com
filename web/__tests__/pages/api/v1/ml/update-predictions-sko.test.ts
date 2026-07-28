@@ -258,6 +258,7 @@ describe("/api/v1/ml/update-predictions-sko", () => {
         partial: false,
       },
       health: { status: "ok", alerts: [] },
+      warnings: [],
       runManifest: {
         runKey: "sko-predictions:baseline-moving-average:v0.2:2026-03-21:5",
         attempt: 3,

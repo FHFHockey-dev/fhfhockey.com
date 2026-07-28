@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { NextApiHandler, NextApiRequest } from "next";
+import type { NextApiHandler, NextApiRequest, NextApiResponse } from "next";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "lib/supabase/database-generated.types";
@@ -177,11 +177,15 @@ export function withPredictionsSkoRunControl(
       if (heartbeatError) throw heartbeatError;
       const health = buildPredictionsSkoHealth(capturedBody, res.statusCode);
       const succeeded = health.status !== "error";
+      const warnings = health.alerts
+        .filter((alert) => alert.severity === "warning")
+        .map((alert) => ({ code: alert.code, message: alert.message }));
       const responseBody =
         capturedBody && typeof capturedBody === "object"
           ? {
               ...capturedBody,
               health,
+              warnings,
               runManifest: {
                 runKey,
                 attempt: acquired.attempt_count,
