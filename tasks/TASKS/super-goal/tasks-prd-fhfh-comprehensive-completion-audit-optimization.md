@@ -2720,38 +2720,38 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 
 ### Source: `tasks/TASKS/sko-charts/prd-sko-charts.md` (25 rows)
 
-- [ ] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0001` (original L104) — Integrate LightGBM / XGBoost into `train.py` and export gain-based feature importances for UI use.
-- [ ] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0002` (original L105) — Extend `score.py` to emit per-player `top_features` JSON so Trends cards can surface driver stats.
-- [ ] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0003` (original L106) — Deploy Supabase migrations for `predictions_sko` / `predictions_sko_metrics` and enable `upload_predictions.py` to upsert nightly outputs.
-- [ ] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0004` (original L107) — Build transparency history charts (MAE/MAPE over time + MoE bands) once metrics land in Supabase.
-- [ ] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0005` (original L108) — Refactor pipeline into <300s Vercel-friendly slices (seasonal backfill, scoring, upload) and chain invocations for cron.
-- [ ] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0006` (original L109) — Document nightly runbook + alerting plan in `web/scripts/modeling/README.md` and related ops docs.
+- [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0001` (original L104) — LightGBM/XGBoost trainer work retired with the deleted offline pipeline; no model is promoted (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0002` (original L105) — `top_features` scorer/UI work retired with the deleted scorer and orphaned UI (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0003` (original L106) — Historical metrics-schema/uploader proposal retired; current compatibility schema gates remain separate (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0004` (original L107) — Transparency-history UI retired with the orphaned prediction surface; no history is claimed (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0005` (original L108) — No executable modeling pipeline survives to segment (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0006` (original L109) — Deleted modeling README is not restored; compatibility runbook ownership remains separate (disposition 2026-07-28).
 - [ ] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0007` (original L381) — Harden endpoint with paging/batching and concurrency controls. _(Batch upserts + limit parameters in place; still need request throttling/run manifests.)_
 - [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0008` (original L382) — Add auth/secret check for write operations.
 - [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0009` (original L383) — Support `playerId` filter for on-demand updates.
-- [ ] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0010` (original L384) — Log run metadata to `cron_job_audit`/`job_run_details`.
-- [ ] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0011` (original L386) — Replace baseline blend with ElasticNet/LightGBM predictions using `player_stats_unified` features.
-- [ ] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0012` (original L387) — Persist top feature contributions per prediction (e.g., SHAP or GBDT feature gain) into `top_features` JSONB.
-- [ ] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0013` (original L388) — Implement in-season rolling backtest (cutoff 2024-12-31; start 2025-01-01; step + retrain).
-- [ ] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0014` (original L390) — Add team/opponent strength, schedule density, home/away.
-- [ ] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0015` (original L391) — Ensure centered share features and pos/neg splits for stability scoring.
+- [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0010` (original L384) — Current compatibility runs use `withCronJobAudit` for timed success/failure metadata and row counts (verified 2026-07-22).
+- [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0011` (original L386) — Replacement ML model retired; v0.2 remains compatibility-only (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0012` (original L387) — Feature-contribution persistence retired with the deleted scorer (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0013` (original L388) — Rolling backtest retired with the deleted pipeline (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0014` (original L390) — Team/opponent/schedule offline feature work retired (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0015` (original L391) — Centered-share feature work remains research, not a promoted model requirement (disposition 2026-07-28).
 - [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0016` (original L393) — Build `web/pages/trends/index.tsx` consuming `predictions_sko` with sKO tooltip and sorting. _(MVP shipped with search, sorting, sparkline + status chips.)_
-- [ ] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0017` (original L394) — Add mini driver list (top*features) and sparkline trend. *(Sparkline live; awaiting top*features exposure from modeling pipeline.)*
+- [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0017` (original L394) — Driver-list work retired with the orphaned prediction UI; no driver UI is claimed (disposition 2026-07-28).
 - [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0018` (original L395) — Surface transparency widgets (latest MAE/MAPE, MoE bands, historical accuracy trend) so users can track model quality over time. _(Metrics cards sourced from `predictions_sko_metrics`.)_
 - [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0019` (original L396) — Add day-step simulation control on the Trends landing page that triggers the nightly pipeline (step forward + retrain) for controlled backtests.
 - [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0020` (original L397) — Implement `/trends/player/[playerId]` detail view with zoomable, brushable projected vs actual lines, candlestick overlay (green under/ red over) and crosshair cursor.
 - [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0021` (original L398) — Wire player search + row click-through from the Trends index to the player detail experience, keeping query params in sync.
-- [ ] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0022` (original L400) — Nightly job to call `/api/v1/ml/update-predictions-sko` post-games.
+- [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0022` (original L400) — Active production job 327 calls the protected compatibility writer at `45 10 * * *` with Vault-backed authorization (verified value-free 2026-07-22).
 - [ ] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0023` (original L401) — Alerting if failure or unusually low updated rows.
 - [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0024` (original L402) — One-season backfill script that runs under 15s to seed historical features (`backfill_seasons.py` + manifest).
-- [ ] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0025` (original L403) — Lightweight nightly scorer/uploader (<300s) leveraging cached models + append-only features.
+- [x] `SRC::tasks/TASKS/sko-charts/prd-sko-charts.md::C0025` (original L403) — Deleted offline scorer/uploader is not restored; the v0.2 compatibility writer remains separately owned (disposition 2026-07-28).
 
 ### Source: `tasks/TASKS/sko-charts/sko-modeling-notes.md` (37 rows)
 
 - [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0001` (original L75) — Finalize target(s): next‑5‑game total points plus category totals (goals, assists, PP points, shots, hits, blocks).
 - [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0002` (original L76) — Define time windows: 5/10/20 game rolling features; stability window = 10 games.
 - [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0003` (original L77) — Confirm sources: favor `player_stats_unified`; avoid `sko_skater_years`.
-- [ ] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0004` (original L78) — Add basic team/opponent strength (if available) and schedule density features. _(Schedule density + rest flags are in place; team/opponent strength still pending.)_
+- [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0004` (original L78) — Team/opponent/schedule offline feature work retired (disposition 2026-07-28).
 - [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0005` (original L81) — Build a time‑series safe feature builder that only uses data up to each prediction date.
 - [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0006` (original L82) — Engineer centered share metrics and split positive/negative magnitudes where applicable.
 - [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0007` (original L83) — Generate rolling aggregates and rates (per‑60, per‑game) from recent windows.
@@ -2759,32 +2759,32 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0009` (original L85) — Append-only support & seasonal backfill (`backfill_seasons.py`) keep runs <15s per season with state tracking.
 - [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0010` (original L88) — Train ElasticNet baseline; log MAE/RMSE/Spearman on holdout.
 - [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0011` (original L89) — Train Gradient Boosting (scikit-learn GBRT); compare performance and feature importance.
-- [ ] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0012` (original L90) — Add LightGBM / XGBoost variants with persisted models + gain-based feature importances.
-- [ ] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0013` (original L91) — Optional: small MLP; compare stability and generalization.
-- [ ] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0014` (original L92) — Optional: quantile model for prediction intervals.
-- [ ] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0015` (original L93) — Capture per-target accuracy metrics (MAE, MAPE, hit-rate within MOE bands) for points and each category stat.
+- [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0012` (original L90) — LightGBM/XGBoost variants retired; no challenger is promoted (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0013` (original L91) — Optional MLP retired as historical research (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0014` (original L92) — Optional quantile model retired as historical research (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0015` (original L93) — Per-target evaluation retired with the absent pipeline; no metrics are claimed (disposition 2026-07-28).
 - [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0016` (original L97) — Compute CV (characteristic value) per game, 10‑game rolling average.
 - [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0017` (original L98) — Map to a smooth stability factor (0.8–1.0) using empirical thresholds.
 - [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0018` (original L99) — Combine with ML predictions and normalize to a sensible sKO scale. _(Implemented in `score.py`; outputs parquet with stability multiplier + sKO.)_
-- [ ] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0019` (original L102) — Persist nightly accuracy summaries (points + category stats) into a `predictions_sko_metrics` table. _(Uploader scaffolding ready; needs nightly trigger + Supabase schema deployment.)_
-- [ ] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0020` (original L103) — Expose rolling accuracy history and margin-of-error bands in the Trends UI. _(Metrics cards exist; timeline charts pending.)_
-- [ ] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0021` (original L104) — Alert if accuracy regresses beyond agreed thresholds.
+- [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0019` (original L102) — Requirements-only metrics persistence retired; no table is created (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0020` (original L103) — Accuracy-history UI retired with the orphaned surface (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0021` (original L104) — Offline-model alert retired; compatibility monitoring remains separately open (disposition 2026-07-28).
 - [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0022` (original L107) — Build incremental append workflow: feature builder supports min/max dates, player filters, and seasonal backfill manifests.
 - [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0023` (original L108) — Add scoring script to populate `predictions_sko` with ML outputs (points × stability).
-- [ ] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0024` (original L110) — Simulate nightly cadence: `step_forward.py` iterates day-by-day, timing incremental runs (outputs `web/scripts/output/sko_step_timings.csv`). _(Script present; serverless trigger still timing out.)_
-- [ ] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0025` (original L113) — Cutoff = 2024‑12‑31; start predictions at 2025‑01‑01.
-- [ ] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0026` (original L114) — Predict 5 games ahead; step forward one game; retrain or warm‑update.
-- [ ] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0027` (original L115) — Capture accuracy metrics over time; log drift or degradation.
-- [ ] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0028` (original L118) — Create `predictions_sko` table in Supabase: player*id, as_of_date, horizon, pred_points_5, stability, sKO, top_features, created_at. *(Migration drafted in `migrations/20250924_create_predictions_sko.sql`; needs review + deploy.)\_
-- [ ] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0029` (original L119) — Write uploader to refresh predictions nightly. _(Uploader script ready; waiting on table deployment + cron.)_
+- [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0024` (original L110) — Deleted step-forward executor is not restored (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0025` (original L113) — Historical backtest cutoff retired (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0026` (original L114) — Historical five-game retraining loop retired (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0027` (original L115) — Historical drift/evaluation loop retired (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0028` (original L118) — Proposed historical table shape is not promoted; live compatibility schema remains separately governed (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0029` (original L119) — Deleted offline uploader is not restored (disposition 2026-07-28).
 - [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0030` (original L122) — Fetch and list players with sKO, sortable.
 - [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0031` (original L123) — Add tooltip: “Sustainability K‑Value Outlook…” with a short 1–2 sentence explainer.
 - [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0032` (original L124) — Show small trend sparkline. _(Driver stats pending `top_features`.)_
 - [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0033` (original L125) — Link to detailed player view with richer charts (sparkline, D3 candlestick, crosshair, transparency cards).
 - [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0034` (original L126) — Modularize UI under `components/Predictions/` for reuse and easier testing.
-- [ ] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0035` (original L129) — Keep this document updated as we tweak targets and features.
-- [ ] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0036` (original L130) — Add a short README in the modeling folder with run commands.
-- [ ] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0037` (original L131) — Schedule the nightly job and set alerts if the pipeline fails.
+- [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0035` (original L129) — Modeling notes updated with the authoritative historical-only disposition (2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0036` (original L130) — Deleted modeling folder/README is not restored (disposition 2026-07-28).
+- [x] `SRC::tasks/TASKS/sko-charts/sko-modeling-notes.md::C0037` (original L131) — Offline pipeline is not scheduled; compatibility schedule/monitoring remain separately owned (disposition 2026-07-28).
 
 ### Source: `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-averages.md` (5 rows)
 

@@ -73,11 +73,13 @@
 
 # Engineering Checklist & TODOs
 
+The unchecked historical modeling/UI rows below close only through the owner-authorized 2026-07-28 historical-only disposition. They do not claim that deleted scripts, models, metrics, UI, or schedules were implemented or promoted.
+
 ## Phase 1 — Data + Definitions
 - [x] Finalize target(s): next‑5‑game total points plus category totals (goals, assists, PP points, shots, hits, blocks).
 - [x] Define time windows: 5/10/20 game rolling features; stability window = 10 games.
 - [x] Confirm sources: favor `player_stats_unified`; avoid `sko_skater_years`.
-- [ ] Add basic team/opponent strength (if available) and schedule density features. *(Schedule density + rest flags are in place; team/opponent strength still pending.)*
+- [x] Add basic team/opponent strength (if available) and schedule density features. *(Historical-only disposition: retired offline feature work.)*
 
 ## Phase 2 — Feature Pipeline (Python script)
 - [x] Build a time‑series safe feature builder that only uses data up to each prediction date.
@@ -89,11 +91,11 @@
 ## Phase 3 — Baselines + Models
 - [x] Train ElasticNet baseline; log MAE/RMSE/Spearman on holdout.
 - [x] Train Gradient Boosting (scikit-learn GBRT); compare performance and feature importance.
-- [ ] Add LightGBM / XGBoost variants with persisted models + gain-based feature importances.
-- [ ] Optional: small MLP; compare stability and generalization.
-- [ ] Optional: quantile model for prediction intervals.
-- [ ] Capture per-target accuracy metrics (MAE, MAPE, hit-rate within MOE bands) for points and each category stat.
-  - Progress: ElasticNet + scikit-learn GBRT pipelines implemented in `web/scripts/modeling/train.py`, metrics saved to `web/scripts/output/sko_metrics.parquet`; LightGBM integration + Supabase logging remain.
+- [x] Add LightGBM / XGBoost variants with persisted models + gain-based feature importances. *(Historical-only disposition: no challenger is promoted.)*
+- [x] Optional: small MLP; compare stability and generalization. *(Historical-only disposition: retired research candidate.)*
+- [x] Optional: quantile model for prediction intervals. *(Historical-only disposition: retired research candidate.)*
+- [x] Capture per-target accuracy metrics (MAE, MAPE, hit-rate within MOE bands) for points and each category stat. *(Historical-only disposition: retired with the absent evaluation pipeline; no metrics are claimed.)*
+  - Historical snapshot: ElasticNet + scikit-learn GBRT pipelines and output metrics existed before the modeling scripts were deleted; LightGBM and Supabase logging were not promoted.
 
 ## Phase 4 — Stability + sKO Fusion
 - [x] Compute CV (characteristic value) per game, 10‑game rolling average.
@@ -101,36 +103,36 @@
 - [x] Combine with ML predictions and normalize to a sensible sKO scale. *(Implemented in `score.py`; outputs parquet with stability multiplier + sKO.)*
 
 ## Phase 5 — Transparency & Ops
-- [ ] Persist nightly accuracy summaries (points + category stats) into a `predictions_sko_metrics` table. *(Uploader scaffolding ready; needs nightly trigger + Supabase schema deployment.)*
-- [ ] Expose rolling accuracy history and margin-of-error bands in the Trends UI. *(Metrics cards exist; timeline charts pending.)*
-- [ ] Alert if accuracy regresses beyond agreed thresholds.
-  - Progress: Training run emits holdout prediction snapshots for downstream upload (`web/scripts/output/sko_holdout_predictions.parquet`).
-  - Progress: Upload script (`web/scripts/modeling/upload_predictions.py`) prepares Supabase upserts for metrics/predictions once tables are available.
+- [x] Persist nightly accuracy summaries (points + category stats) into a `predictions_sko_metrics` table. *(Historical-only disposition: the requirements-only metrics contract is not created.)*
+- [x] Expose rolling accuracy history and margin-of-error bands in the Trends UI. *(Historical-only disposition: the orphaned prediction UI is not reintegrated.)*
+- [x] Alert if accuracy regresses beyond agreed thresholds. *(Historical-only disposition: retired offline-model alert; active compatibility monitoring remains separately open.)*
+  - Historical snapshot: retained holdout prediction artifacts are evidence only, not a current upload source.
+  - Historical snapshot: the deleted upload script is not a current Supabase writer.
 - [x] Build incremental append workflow: feature builder supports min/max dates, player filters, and seasonal backfill manifests.
 - [x] Add scoring script to populate `predictions_sko` with ML outputs (points × stability).
   - Progress: `web/scripts/modeling/score.py` loads latest features, applies stability multipliers, and writes predictions to parquet for upload.
-- [ ] Simulate nightly cadence: `step_forward.py` iterates day-by-day, timing incremental runs (outputs `web/scripts/output/sko_step_timings.csv`). *(Script present; serverless trigger still timing out.)*
+- [x] Simulate nightly cadence: `step_forward.py` iterates day-by-day, timing incremental runs (outputs `web/scripts/output/sko_step_timings.csv`). *(Historical-only disposition: the deleted step-forward executor is not restored.)*
 
 ## Phase 5 — In‑Season Rolling Backtest
-- [ ] Cutoff = 2024‑12‑31; start predictions at 2025‑01‑01.
-- [ ] Predict 5 games ahead; step forward one game; retrain or warm‑update.
-- [ ] Capture accuracy metrics over time; log drift or degradation.
+- [x] Cutoff = 2024‑12‑31; start predictions at 2025‑01‑01. *(Historical-only disposition: retired backtest scope.)*
+- [x] Predict 5 games ahead; step forward one game; retrain or warm‑update. *(Historical-only disposition: retired backtest scope.)*
+- [x] Capture accuracy metrics over time; log drift or degradation. *(Historical-only disposition: retired evaluation scope.)*
 
 ## Phase 6 — Storage + API
-- [ ] Create `predictions_sko` table in Supabase: player_id, as_of_date, horizon, pred_points_5, stability, sKO, top_features, created_at. *(Migration drafted in `migrations/20250924_create_predictions_sko.sql`; needs review + deploy.)*
-- [ ] Write uploader to refresh predictions nightly. *(Uploader script ready; waiting on table deployment + cron.)*
+- [x] Create `predictions_sko` table in Supabase: player_id, as_of_date, horizon, pred_points_5, stability, sKO, top_features, created_at. *(Historical-only disposition: this proposed shape is not promoted; the distinct live compatibility table remains governed by the ownership contract.)*
+- [x] Write uploader to refresh predictions nightly. *(Historical-only disposition: the deleted offline uploader is not restored.)*
 
 ## Phase 7 — UI (`web/pages/trends/index.tsx`)
 - [x] Fetch and list players with sKO, sortable.
 - [x] Add tooltip: “Sustainability K‑Value Outlook…” with a short 1–2 sentence explainer.
-- [x] Show small trend sparkline. *(Driver stats pending `top_features`.)*
+- [x] Show small trend sparkline. *(Historical snapshot: the sparkline existed; later driver-stat work is retired with the orphaned prediction UI.)*
 - [x] Link to detailed player view with richer charts (sparkline, D3 candlestick, crosshair, transparency cards).
 - [x] Modularize UI under `components/Predictions/` for reuse and easier testing.
 
 ## Phase 8 — Docs & Ops
-- [ ] Keep this document updated as we tweak targets and features.
-- [ ] Add a short README in the modeling folder with run commands.
-- [ ] Schedule the nightly job and set alerts if the pipeline fails.
+- [x] Keep this document updated as we tweak targets and features. *(Updated 2026-07-28 with the authoritative historical-only disposition.)*
+- [x] Add a short README in the modeling folder with run commands. *(Historical-only disposition: the deleted modeling folder is not restored.)*
+- [x] Schedule the nightly job and set alerts if the pipeline fails. *(Historical-only disposition: the offline pipeline is not scheduled; active compatibility schedule/monitoring remain separately owned.)*
 
 # Recent Progress (2025-09-25)
 - Hardened `/api/v1/ml/update-predictions-sko` with admin middleware, optional shared secret, batching, and player filters for safe manual runs.
@@ -140,20 +142,9 @@
 - `score.py` loads latest models, applies smoothstep stability multipliers (player p50/p90 CV), and writes sKO-ready parquet for upload.
 - Trends index + player detail pages render sparkline history, candlestick projections, search/stepper controls, and early transparency cards using local parquet artifacts.
 
-# Outstanding Gaps & Risks
-- LightGBM / XGBoost still missing; without feature importances we cannot surface `top_features` in the UI.
-- Transparency timeline (MAE/MAPE history) not yet built; blocked on metrics ingestion to Supabase.
-- Vercel worker (`functions/api/sko_pipeline.py`) currently proxies the long pipeline and hits a ~15s timeout; need sub-300s segmented workflow.
-- Supabase tables (`predictions_sko`, `predictions_sko_metrics`) pending migration approval; uploader remains dormant.
-- Step-forward simulation OK locally but serverless trigger returns 500 due to runtime; needs refactor before enabling cron.
+# Historical Gaps and Next Actions (retired 2026-07-28)
 
-# Next Actions
-1. Integrate LightGBM / XGBoost into `train.py`, persist models, and capture gain-based feature importances.
-2. Extend `score.py` to emit per-player `top_features` JSON and ensure schema matches UI expectations.
-3. Apply Supabase migrations (`migrations/20250924_create_predictions_sko.sql`, forthcoming metrics table) then enable `upload_predictions.py` to upsert.
-4. Rework serverless orchestration: chain seasonal backfill, date-slice scoring, and uploads into <300s Vercel invocations.
-5. Build transparency history chart (MAE/MAPE bands) in Trends UI once metrics table populated.
-6. Document cron + alerting runbook in `web/scripts/modeling/README.md` after pipeline stabilizes.
+The former LightGBM/feature-importance, metrics-table/timeline, segmented-worker, upload, backtest, and modeling-folder runbook actions are retired by the owner-authorized historical-only disposition. Do not restore or execute them from this document. The reconciled task list exclusively owns current compatibility endpoint hardening, alerting, identity, freshness, retention, and safe-retirement work.
 
 ---
 

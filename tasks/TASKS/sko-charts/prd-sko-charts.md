@@ -102,18 +102,19 @@ Notes:
 - ElasticNet + scikit-learn GBRT baselines train across points and category targets; scoring computes stability multipliers and writes sKO-ready parquet artifacts.
 - Trends index and player detail pages feature search, step-forward controls, sparkline history, D3 candlestick comparison, and transparency cards powered by local parquet outputs. The Trends index now uses modular components in `components/Predictions/` for easier reuse and testing.
   - Predictions leaderboard now fetches via `/api/v1/ml/get-predictions-sko` and `usePredictionsSko`, not direct Supabase queries in the page.
-- Serverless proxy (`functions/api/sko_pipeline.py`) deployed on Vercel; currently proxies the long pipeline and surfaces timeouts that guide upcoming segmentation work.
+- Historical snapshot: `functions/api/sko_pipeline.py` was described as a deployed proxy. Current ownership evidence classifies it as an HTTP compatibility orchestrator with no executable model stages, and the Production route remains 404.
 
 ## 12) Outstanding Tasks
-- [ ] Integrate LightGBM / XGBoost into `train.py` and export gain-based feature importances for UI use.
-- [ ] Extend `score.py` to emit per-player `top_features` JSON so Trends cards can surface driver stats.
-- [ ] Deploy Supabase migrations for `predictions_sko` / `predictions_sko_metrics` and enable `upload_predictions.py` to upsert nightly outputs.
-- [ ] Build transparency history charts (MAE/MAPE over time + MoE bands) once metrics land in Supabase.
-- [ ] Refactor pipeline into <300s Vercel-friendly slices (seasonal backfill, scoring, upload) and chain invocations for cron.
-- [ ] Document nightly runbook + alerting plan in `web/scripts/modeling/README.md` and related ops docs.
+- [x] Integrate LightGBM / XGBoost into `train.py` and export gain-based feature importances for UI use. *(Historical-only disposition 2026-07-28: retired with the deleted offline trainer; no model is promoted.)*
+- [x] Extend `score.py` to emit per-player `top_features` JSON so Trends cards can surface driver stats. *(Historical-only disposition 2026-07-28: retired with the deleted scorer and orphaned UI.)*
+- [x] Deploy Supabase migrations for `predictions_sko` / `predictions_sko_metrics` and enable `upload_predictions.py` to upsert nightly outputs. *(Historical-only disposition 2026-07-28: this offline schema/uploader proposal is retired; current compatibility schema gates remain in the reconciled task list.)*
+- [x] Build transparency history charts (MAE/MAPE over time + MoE bands) once metrics land in Supabase. *(Historical-only disposition 2026-07-28: retired with the orphaned prediction UI; no history is claimed.)*
+- [x] Refactor pipeline into <300s Vercel-friendly slices (seasonal backfill, scoring, upload) and chain invocations for cron. *(Historical-only disposition 2026-07-28: no executable modeling pipeline survives to segment.)*
+- [x] Document nightly runbook + alerting plan in `web/scripts/modeling/README.md` and related ops docs. *(Historical-only disposition 2026-07-28: the deleted modeling-folder README is not restored; the compatibility runbook remains separate.)*
 
-## Handoff Prompt
-Next contributor: modeling backfill now populates seasonal parquet (2022-23 onward), ElasticNet + scikit-learn GBRT models train/score with stability multipliers, and the Trends UI renders sparkline + candlestick views from local artifacts. LightGBM/XGBoost integration, `top_features` export, Supabase migrations, and accuracy history visualizations remain open. The Vercel `sko_pipeline` endpoint currently times out (~15s) because it runs the full pipeline—split work into <300s slices (seasonal backfill, scoring, upload) before wiring cron. Once Supabase tables are deployed, hook `upload_predictions.py` to publish predictions/metrics, then surface top drivers and accuracy timelines in the UI. Keep env secrets trimmed, update `sko_backfill_state.json` when rerunning seasonal slices, and coordinate with the Trends endpoint before flipping production traffic to ML outputs.
+## Historical Handoff Prompt (superseded 2026-07-28)
+
+Do not execute the former restore/segment/upload/UI handoff. The owner-authorized historical-only disposition retires that offline modeling path without promotion. Current compatibility identity, freshness, endpoint-hardening, alerting, retention, and safe-retirement work is owned only by the reconciled task list and ownership contract.
 
 ## Context
 ### SQL tables:
@@ -385,26 +386,26 @@ Next contributor: modeling backfill now populates seasonal parquet (2022-23 onwa
   - [ ] Harden endpoint with paging/batching and concurrency controls. *(Batch upserts + limit parameters in place; still need request throttling/run manifests.)*
   - [x] Add auth/secret check for write operations.
   - [x] Support `playerId` filter for on-demand updates.
-  - [ ] Log run metadata to `cron_job_audit`/`job_run_details`.
+  - [x] Log run metadata to `cron_job_audit`/`job_run_details`. *(Current compatibility evidence: `withCronJobAudit` owns timed success/failure records and row counts; verified 2026-07-22.)*
 - Modeling Script (follow-up)
-  - [ ] Replace baseline blend with ElasticNet/LightGBM predictions using `player_stats_unified` features.
-  - [ ] Persist top feature contributions per prediction (e.g., SHAP or GBDT feature gain) into `top_features` JSONB.
-  - [ ] Implement in-season rolling backtest (cutoff 2024-12-31; start 2025-01-01; step + retrain).
+  - [x] Replace baseline blend with ElasticNet/LightGBM predictions using `player_stats_unified` features. *(Historical-only disposition 2026-07-28: no replacement model is promoted.)*
+  - [x] Persist top feature contributions per prediction (e.g., SHAP or GBDT feature gain) into `top_features` JSONB. *(Historical-only disposition 2026-07-28: retired with the deleted scorer.)*
+  - [x] Implement in-season rolling backtest (cutoff 2024-12-31; start 2025-01-01; step + retrain). *(Historical-only disposition 2026-07-28: retired with the deleted backtest pipeline.)*
 - Data
-  - [ ] Add team/opponent strength, schedule density, home/away.
-  - [ ] Ensure centered share features and pos/neg splits for stability scoring.
+  - [x] Add team/opponent strength, schedule density, home/away. *(Historical-only disposition 2026-07-28: retired offline feature work.)*
+  - [x] Ensure centered share features and pos/neg splits for stability scoring. *(Historical-only disposition 2026-07-28: retained as research, not a promoted model requirement.)*
 - UI
   - [x] Build `web/pages/trends/index.tsx` consuming `predictions_sko` with sKO tooltip and sorting. *(MVP shipped with search, sorting, sparkline + status chips.)*
-  - [ ] Add mini driver list (top_features) and sparkline trend. *(Sparkline live; awaiting top_features exposure from modeling pipeline.)*
+  - [x] Add mini driver list (top_features) and sparkline trend. *(Historical-only disposition 2026-07-28: the orphaned prediction UI is not reintegrated; no driver list is claimed.)*
   - [x] Surface transparency widgets (latest MAE/MAPE, MoE bands, historical accuracy trend) so users can track model quality over time. *(Metrics cards sourced from `predictions_sko_metrics`.)*
   - [x] Add day-step simulation control on the Trends landing page that triggers the nightly pipeline (step forward + retrain) for controlled backtests.
   - [x] Implement `/trends/player/[playerId]` detail view with zoomable, brushable projected vs actual lines, candlestick overlay (green under/ red over) and crosshair cursor.
   - [x] Wire player search + row click-through from the Trends index to the player detail experience, keeping query params in sync.
 - Ops
-  - [ ] Nightly job to call `/api/v1/ml/update-predictions-sko` post-games.
+  - [x] Nightly job to call `/api/v1/ml/update-predictions-sko` post-games. *(Current compatibility evidence: active production pg_cron job 327 calls the protected writer at `45 10 * * *` with a Vault-backed Authorization header; verified value-free 2026-07-22.)*
   - [ ] Alerting if failure or unusually low updated rows.
   - [x] One-season backfill script that runs under 15s to seed historical features (`backfill_seasons.py` + manifest).
-  - [ ] Lightweight nightly scorer/uploader (<300s) leveraging cached models + append-only features.
+  - [x] Lightweight nightly scorer/uploader (<300s) leveraging cached models + append-only features. *(Historical-only disposition 2026-07-28: the deleted offline scorer/uploader is not restored; the v0.2 compatibility writer remains separately owned.)*
 
 ---
 
