@@ -7,6 +7,81 @@ $mobile-header-height: 65px;
 $desktop-header-min-width: 800px;
 $desktop-header-height: 58px;
 
+.mobileHeader {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: grid;
+  grid-template-columns: 52px 1fr 52px;
+  align-items: center;
+  min-height: 52px;
+  padding: 4px max(4px, env(safe-area-inset-right, 0px)) 4px
+    max(4px, env(safe-area-inset-left, 0px));
+  border-bottom: 1px solid rgba(v.$color-brand-primary, 0.24);
+  background:
+    linear-gradient(180deg, rgba(v.$color-white, 0.025), transparent),
+    rgba(v.$surface-0, 0.96);
+  box-shadow: 0 10px 24px -22px rgba(v.$color-black, 0.95);
+  backdrop-filter: blur(16px);
+
+  @media only screen and (min-width: $desktop-header-min-width) {
+    display: none;
+  }
+}
+
+.mobileHeaderAction {
+  @include v.reset-button;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  justify-self: center;
+  border-radius: v.$radius-control;
+  color: v.$color-brand-white;
+  cursor: pointer;
+
+  img {
+    filter: brightness(0) invert(1);
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(v.$primary-color, 0.12);
+    color: v.$primary-color;
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: -2px;
+  }
+}
+
+.mobileHeaderLogo {
+  position: relative;
+  display: block;
+  width: 86px;
+  height: 38px;
+  justify-self: center;
+  overflow: hidden;
+  color: v.$primary-color;
+  line-height: 1;
+
+  img {
+    position: absolute;
+    top: -28px;
+    left: -31px;
+    width: 149px;
+    max-width: none;
+    height: auto;
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 3px;
+  }
+}
+
 // Desktop Header (hidden on mobile)
 .header.desktopHeader {
   display: none;
@@ -310,10 +385,10 @@ $desktop-header-height: 58px;
   left: 0;
   right: 0;
   z-index: 1000;
-  background: linear-gradient(180deg, rgba(24, 24, 24, 0.95) 0%, #181818 100%);
+  background: rgba(v.$surface-0, 0.97);
   backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(v.$primary-color, 0.18);
+  box-shadow: 0 -10px 24px -22px rgba(v.$color-black, 0.95);
   will-change: transform;
 
   // More compact design for mobile browsers
@@ -383,7 +458,7 @@ $desktop-header-height: 58px;
   align-items: center;
   justify-content: center;
   padding: 6px 8px;
-  border-radius: 12px;
+  border-radius: v.$radius-control;
   transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
   cursor: pointer;
   min-width: 44px; // Slightly smaller but still accessible
@@ -406,7 +481,7 @@ $desktop-header-height: 58px;
   }
 
   &.active {
-    background: rgba(7, 170, 226, 0.15);
+    background: rgba(v.$primary-color, 0.08);
 
     .bottomNavIcon img {
       filter: brightness(0) saturate(100%) invert(54%) sepia(75%)
@@ -449,7 +524,7 @@ $desktop-header-height: 58px;
 }
 
 .bottomNavLabel {
-  font-size: 9px; // Smaller text
+  font-size: 10px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.8);
   transition: all 0.25s ease;

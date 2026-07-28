@@ -54,6 +54,51 @@ The design language is a futuristic sports analytics terminal. It combines the d
 
 ## 4. UI Components & SCSS Patterns
 
+### HARD NO: “Toenail” Accent Borders
+
+Never create an accent by coloring only a thin edge of a rounded panel border
+when it produces curved hooks or nail-like fragments at the corners. This
+“toenail” treatment is not part of the FHFH brand system.
+
+Use a continuous, solid accent rail instead:
+
+* The rail may sit along a side or across the top.
+* Its ends follow the panel radius, creating the approved rounded
+  semi-circle/cap treatment.
+* The solid accent fills the rail from rounded end to rounded end; never show
+  only the short curved corner portions.
+* Keep the normal panel border neutral.
+* Fill the complete accent track; do not leave hollow rounded-border
+  fragments.
+* Do not use a gradient or glow to fake the rail.
+
+```scss
+.accentPanel {
+  --accent: #{v.$primary-color};
+  position: relative;
+  overflow: hidden;
+  border: v.$border-subtle;
+  border-radius: v.$radius-card;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    border-radius: v.$radius-card v.$radius-card 0 0;
+    background: var(--accent);
+    pointer-events: none;
+  }
+}
+
+.accentPanel--side::before {
+  inset: 0 auto 0 0;
+  width: 4px;
+  height: auto;
+  border-radius: v.$radius-card 0 0 v.$radius-card;
+}
+```
+
 ### A. The "Glass Panel" (Container)
 Used for high-level containers and overlays.
 ```scss

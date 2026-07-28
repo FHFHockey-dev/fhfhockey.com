@@ -42,10 +42,10 @@ const BOTTOM_NAV_ITEMS = [
     icon: "/pictures/statsIcon.png",
   },
   {
-    id: "lines",
-    label: "Lines",
-    href: "/lines",
-    icon: "/pictures/lineCombosIcon.png",
+    id: "tools",
+    label: "Tools",
+    href: "#",
+    icon: "/pictures/playersTable.png",
   },
   {
     id: "more",
@@ -55,7 +55,13 @@ const BOTTOM_NAV_ITEMS = [
   },
 ];
 
-function BottomNavigation({ onMoreClick }: { onMoreClick: () => void }) {
+function BottomNavigation({
+  onMoreClick,
+  onToolsClick,
+}: {
+  onMoreClick: () => void;
+  onToolsClick: () => void;
+}) {
   const router = useRouter();
   const [offset, setOffset] = useState(0);
   const [supportsDynamicVH, setSupportsDynamicVH] = useState(false);
@@ -92,6 +98,10 @@ function BottomNavigation({ onMoreClick }: { onMoreClick: () => void }) {
   }, []);
 
   const handleNavClick = (item: (typeof BOTTOM_NAV_ITEMS)[0]) => {
+    if (item.id === "tools") {
+      onToolsClick();
+      return;
+    }
     if (item.id === "more") {
       onMoreClick();
     }
@@ -115,16 +125,20 @@ function BottomNavigation({ onMoreClick }: { onMoreClick: () => void }) {
       : undefined;
 
   return (
-    <nav className={styles.bottomNav} style={navStyle}>
+    <nav
+      className={styles.bottomNav}
+      style={navStyle}
+      aria-label="Primary mobile navigation"
+    >
       <div className={styles.bottomNavContainer}>
         {BOTTOM_NAV_ITEMS.map((item) => (
           <div key={item.id} className={styles.bottomNavItem}>
-            {item.id === "more" ? (
+            {item.id === "more" || item.id === "tools" ? (
               <button
                 onClick={() => handleNavClick(item)}
                 className={classNames(
                   styles.bottomNavButton,
-                  styles.moreButton,
+                  item.id === "more" ? styles.moreButton : undefined,
                 )}
                 aria-label={item.label}
               >
@@ -173,6 +187,9 @@ function BurgerButton({ onClick }: { onClick: () => void }) {
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuEntryPoint, setMenuEntryPoint] = useState<
+    "default" | "tools" | "search"
+  >("default");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const { navbarRef, isNavbarVisible } = useHideableNavbar();
   const router = useRouter();
@@ -207,6 +224,11 @@ function Header() {
   const handleMobileSignOut = async () => {
     setMenuOpen(false);
     await signOut();
+  };
+
+  const openMobileMenu = (entryPoint: "default" | "tools" | "search") => {
+    setMenuEntryPoint(entryPoint);
+    setMenuOpen(true);
   };
 
   return (
@@ -323,11 +345,60 @@ function Header() {
         )}
       </header>
 
+      <header className={styles.mobileHeader}>
+        <button
+          type="button"
+          className={styles.mobileHeaderAction}
+          onClick={() => openMobileMenu("default")}
+          aria-label="Open menu"
+        >
+          <Image
+            src="/pictures/burgerMenu.svg"
+            alt=""
+            width={22}
+            height={16}
+          />
+        </button>
+        <Link href="/" className={styles.mobileHeaderLogo} aria-label="FHFH home">
+          <Image
+            src="/pictures/fhfhMobileHeaderLogo.png"
+            alt="FHFH Hockey Analytics"
+            width={1536}
+            height={1024}
+            priority
+          />
+        </Link>
+        <button
+          type="button"
+          className={styles.mobileHeaderAction}
+          onClick={() => openMobileMenu("search")}
+          aria-label="Search players"
+        >
+          <svg
+            width="21"
+            height="21"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      </header>
+
       {/* Mobile Bottom Navigation (hidden during screenshots via ?isScreenshot=1) */}
       {!isScreenshot && (
         <ClientOnly>
           <div className={styles.mobileNavWrapper}>
-            <BottomNavigation onMoreClick={() => setMenuOpen(!menuOpen)} />
+            <BottomNavigation
+              onToolsClick={() => openMobileMenu("tools")}
+              onMoreClick={() => openMobileMenu("default")}
+            />
           </div>
         </ClientOnly>
       )}
@@ -335,6 +406,7 @@ function Header() {
       <ClientOnly>
         <MobileMenu
           visible={menuOpen}
+          entryPoint={menuEntryPoint}
           onItemClick={onItemClick}
           onAuthClick={handleMobileAuthClick}
           onSignOut={handleMobileSignOut}

@@ -60,6 +60,10 @@ When styling or re-styling a page:
 
 Avoid these as defaults unless a documented exception is justified:
 
+- **HARD NO — “toenail” accent borders:** do not color only a thin top border
+  whose rounded corners leave small curved hooks, claws, or nail-like fragments
+  at the ends of a panel. Do not simulate an accent rail by changing one edge
+  of the panel border when the result is a hollow rounded outline.
 - gradient-heavy page shells
 - panel backgrounds that look glossy, cloudy, or airbrushed
 - purple-on-black neon treatment as a generic fallback
@@ -69,6 +73,53 @@ Avoid these as defaults unless a documented exception is justified:
 - glow on every border, button, or active state
 - multiple unrelated accent colors fighting on the same surface
 - one-off local control styling that does not match the system
+
+### 2.7 Canonical Accent Rail
+
+When a panel needs a directional or semantic accent, use a filled accent rail:
+
+- The rail is a continuous solid fill, not a colored fragment of the panel
+  outline.
+- It may run vertically along one side or horizontally across the top.
+- Its outside ends follow the panel radius, producing the approved
+  semi-circle/rounded-cap relationship.
+- The accent must fill the rail from rounded end to rounded end; never leave
+  only the short curved corner portions visible.
+- The panel retains its neutral structural border beneath or around the rail.
+- Keep the rail restrained and structural: no gradient, broken line, detached
+  corner fragments, or default glow.
+- A top rail should fill the complete top accent track inside the rounded
+  corners; a side rail should fill the complete side accent track inside the
+  rounded corners.
+
+Canonical implementation shape:
+
+```scss
+.accentPanel {
+  --accent: #{v.$primary-color};
+  position: relative;
+  overflow: hidden;
+  border: v.$border-subtle;
+  border-radius: v.$radius-card;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    border-radius: v.$radius-card v.$radius-card 0 0;
+    background: var(--accent);
+    pointer-events: none;
+  }
+}
+
+.accentPanel--side::before {
+  inset: 0 auto 0 0;
+  width: 4px;
+  height: auto;
+  border-radius: v.$radius-card 0 0 v.$radius-card;
+}
+```
 
 ## 3. Codex Role And Output Expectation
 

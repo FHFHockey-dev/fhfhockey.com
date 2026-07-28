@@ -40,6 +40,122 @@ interface ApiResponse {
 
 const WINDOWS = [1, 3, 5, 10];
 const POSITION_FILTERS = ["", "F", "C", "LW", "RW", "D", "G"] as const;
+const HOMEPAGE_MOBILE_ROW_LIMIT = 5;
+
+type TrendDirection = "risers" | "fallers";
+
+function MobileTrendPanel({
+  direction,
+  players,
+  windowDays,
+}: {
+  direction: TrendDirection;
+  players: TrendPlayer[];
+  windowDays: number;
+}) {
+  const isRise = direction === "risers";
+  const variant = isRise ? "rise" : "fall";
+  const title = isRise ? "Top Risers" : "Top Fallers";
+
+  return (
+    <section
+      id={`mobile-${direction}-panel`}
+      className={`${styles.mobileTrendPanel} ${
+        isRise ? styles.mobileRisersPanel : styles.mobileFallersPanel
+      }`}
+      aria-labelledby={`mobile-${direction}-heading`}
+    >
+      <h3
+        id={`mobile-${direction}-heading`}
+        className={styles.mobilePanelTitle}
+        tabIndex={-1}
+      >
+        {title} ({windowDays}D)
+      </h3>
+      <ol className={styles.mobilePlayerList}>
+        {players.slice(0, HOMEPAGE_MOBILE_ROW_LIMIT).map((player, index) => (
+          <li
+            key={player.playerKey}
+            className={`${styles.mobilePlayerRow} ${
+              isRise ? styles.mobileRiseRow : styles.mobileFallRow
+            }`}
+          >
+            <span className={styles.mobileRank} aria-hidden="true">
+              {index + 1}
+            </span>
+            {player.headshot ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={player.headshot}
+                alt=""
+                className={styles.mobileHeadshot}
+                loading="lazy"
+              />
+            ) : (
+              <span
+                className={`${styles.mobileHeadshot} ${styles.mobileHeadshotFallback}`}
+                aria-hidden="true"
+              />
+            )}
+            <span className={styles.mobilePlayerIdentity}>
+              {player.playerId ? (
+                <Link
+                  href={`/trends/player/${player.playerId}`}
+                  className={styles.mobilePlayerName}
+                >
+                  {player.name}
+                </Link>
+              ) : (
+                <span className={styles.mobilePlayerName}>{player.name}</span>
+              )}
+              <span className={styles.mobilePlayerMeta}>
+                {Array.isArray(player.eligiblePositions) &&
+                player.eligiblePositions.length
+                  ? player.eligiblePositions.join(", ")
+                  : player.displayPosition || ""}
+                {(player.teamAbbrev || player.teamFullName) &&
+                (player.displayPosition ||
+                  (player.eligiblePositions &&
+                    player.eligiblePositions.length))
+                  ? " • "
+                  : ""}
+                {player.teamAbbrev || player.teamFullName || ""}
+              </span>
+            </span>
+            <span className={styles.mobileOwnership}>
+              <strong>{player.latest.toFixed(0)}%</strong>
+              <small>Own</small>
+            </span>
+            <span className={styles.mobileSparkline}>
+              <OwnershipSparkline
+                points={player.sparkline}
+                variant={variant}
+                width={100}
+                height={40}
+                baseline
+                svgClassName={styles.mobileSparkSvg}
+                baselineClassName={styles.sparkBaseline}
+                areaClassName={styles.sparkArea}
+                pathClassName={styles.sparkPath}
+                riseClassName={styles.rise}
+                fallClassName={styles.fall}
+              />
+            </span>
+            <span
+              className={styles.mobileDelta}
+              aria-label={`${isRise ? "Up" : "Down"} ${Math.abs(
+                player.delta,
+              ).toFixed(1)} percentage points`}
+            >
+              <span aria-hidden="true">{isRise ? "▲" : "▼"}</span>{" "}
+              {Math.abs(player.delta).toFixed(1)}%
+            </span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
 
 function summarizeTransactionTrendError(status: number, body: string): string {
   if (status === 503) {
@@ -124,6 +240,13 @@ export default function TransactionTrends() {
     setOffset(0);
   }, [activeTable]);
 
+  const focusMobilePanel = (direction: TrendDirection) => {
+    setActiveTable(direction);
+    const heading = document.getElementById(`mobile-${direction}-heading`);
+    heading?.focus({ preventScroll: true });
+    heading?.scrollIntoView?.({ block: "nearest" });
+  };
+
   const modulePresentation = buildHomepageModulePresentation({
     source: "transaction-trends",
     loading,
@@ -139,6 +262,11 @@ export default function TransactionTrends() {
     emptyMessage: "No ownership movement is available right now.",
     staleMessage: "Ownership movement may be stale.",
   });
+  const supportingCopy =
+    windowDays === 1
+      ? "Ownership movement over the last day."
+      : `Ownership movement over the last ${windowDays} days.`;
+
   return (
     <section
       className={styles.transactionTrends}
@@ -146,13 +274,15 @@ export default function TransactionTrends() {
     >
       <div className={styles.headerRow}>
         <div className={styles.titleBlock}>
-          <h2 id="trends-heading" className={styles.title}>
-            Transaction <span>Trends</span>
-          </h2>
-          <p className={styles.subtitle}>
-            Ownership movement over the last {windowDays} day
-            {windowDays === 1 ? "" : "s"}.
-          </p>
+          <div className={styles.titleLine}>
+            <h2 id="trends-heading" className={styles.title}>
+              Transaction <span>Trends</span>
+            </h2>
+            <Link href="/trends" className={styles.viewAllLink}>
+              View all
+            </Link>
+          </div>
+          <p className={styles.subtitle}>{supportingCopy}</p>
         </div>
         <div className={styles.trendControls}>
           <div className={styles.headerControls}>
@@ -504,216 +634,41 @@ export default function TransactionTrends() {
               </table>
             </div>
           </div>
-          <div className={`${styles.tablesWrapper} ${styles.mobileTabs}`}>
+          <div className={styles.mobileTrends}>
             <div
-              className={`${styles.panel} ${
-                activeTable === "risers"
-                  ? styles.risersPanel
-                  : styles.fallersPanel
-              }`}
+              className={styles.mobileDirectionNav}
+              role="group"
+              aria-label="Trend direction"
             >
-              <div className={styles.tableTabs} role="tablist">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTable === "risers"}
-                  className={`${styles.tabButton} ${styles.riseTab} ${
-                    activeTable === "risers" ? "active" : ""
-                  }`}
-                  onClick={() => setActiveTable("risers")}
-                >
-                  Risers
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTable === "fallers"}
-                  className={`${styles.tabButton} ${styles.fallTab} ${
-                    activeTable === "fallers" ? "active" : ""
-                  }`}
-                  onClick={() => setActiveTable("fallers")}
-                >
-                  Fallers
-                </button>
-              </div>
-              <h3 className={styles.tableTitle}>
-                {activeTable === "risers"
-                  ? `Top Risers (Δ ${data.windowDays}D)`
-                  : `Top Fallers (Δ ${data.windowDays}D)`}
-              </h3>
-              <table
-                className={styles.dataTable}
-                aria-label={
-                  activeTable === "risers"
-                    ? "Top ownership risers"
-                    : "Top ownership fallers"
-                }
+              <button
+                type="button"
+                aria-pressed={activeTable === "risers"}
+                aria-controls="mobile-risers-panel"
+                className={activeTable === "risers" ? styles.isActive : ""}
+                onClick={() => focusMobilePanel("risers")}
               >
-                <thead>
-                  <tr>
-                    <th scope="col" className={styles.rankCell}>
-                      #
-                    </th>
-                    <th scope="col">Player</th>
-                    <th scope="col" className={styles.ownCellHeader}>
-                      Own %
-                    </th>
-                    <th scope="col" className={styles.sparkCell}>
-                      Trend
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      Δ
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(activeTable === "risers" ? data.risers : data.fallers).map(
-                    (p, idx) => (
-                      <tr key={p.playerKey}>
-                        <th scope="row" className={styles.rankCell}>
-                          {offset + idx + 1}
-                        </th>
-                        <td className={styles.playerCell}>
-                          <div className={styles.rowBox}>
-                            {p.headshot ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={p.headshot}
-                                alt=""
-                                className={styles.headshot}
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div
-                                className={styles.headshot}
-                                style={{ background: "#333" }}
-                              />
-                            )}
-                            <div className={styles.playerTextWrap}>
-                              <span className={styles.playerText}>
-                                {p.playerId ? (
-                                  <Link
-                                    href={`/trends/player/${p.playerId}`}
-                                    className={styles.playerName}
-                                  >
-                                    {p.name}
-                                  </Link>
-                                ) : (
-                                  <span className={styles.playerName}>
-                                    {p.name}
-                                  </span>
-                                )}
-                                {(p.displayPosition ||
-                                  p.teamFullName ||
-                                  p.teamAbbrev ||
-                                  p.eligiblePositions ||
-                                  p.uniformNumber !== undefined) && (
-                                  <span
-                                    className={`${styles.playerMeta} ${p.teamAbbrev ? styles.hasAbbrev : ""}`}
-                                  >
-                                    {Array.isArray(p.eligiblePositions) &&
-                                    p.eligiblePositions.length
-                                      ? p.eligiblePositions.join(", ")
-                                      : p.displayPosition || ""}
-                                    {(p.teamFullName || p.teamAbbrev) &&
-                                    (p.displayPosition ||
-                                      (p.eligiblePositions &&
-                                        p.eligiblePositions.length))
-                                      ? " • "
-                                      : ""}
-                                    {p.teamFullName ? (
-                                      <span className={styles.teamFullName}>
-                                        {p.teamFullName}
-                                      </span>
-                                    ) : null}
-                                    {p.teamAbbrev ? (
-                                      <span className={styles.teamAbbrev}>
-                                        {p.teamAbbrev}
-                                      </span>
-                                    ) : null}
-                                    {typeof p.uniformNumber === "number"
-                                      ? ` • #${p.uniformNumber}`
-                                      : ""}
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                          </div>
-                        </td>
-                        <td className={styles.ownCell}>
-                          <div
-                            className={`${styles.neonBox} ${
-                              activeTable === "risers"
-                                ? styles.rise
-                                : styles.fall
-                            }`}
-                          >
-                            {p.latest.toFixed(1)}%
-                          </div>
-                        </td>
-                        <td className={styles.sparkCell}>
-                          <div
-                            className={`${styles.neonBox} ${
-                              activeTable === "risers"
-                                ? styles.rise
-                                : styles.fall
-                            }`}
-                          >
-                            <OwnershipSparkline
-                              points={p.sparkline}
-                              variant={
-                                activeTable === "risers" ? "rise" : "fall"
-                              }
-                              width={100}
-                              height={40}
-                              baseline
-                              svgClassName={styles.sparkSvg}
-                              baselineClassName={styles.sparkBaseline}
-                              areaClassName={styles.sparkArea}
-                              pathClassName={styles.sparkPath}
-                              riseClassName={styles.rise}
-                              fallClassName={styles.fall}
-                            />
-                          </div>
-                        </td>
-                        <td className={styles.deltaCell}>
-                          <div
-                            className={`${styles.neonBox} ${
-                              activeTable === "risers"
-                                ? styles.rise
-                                : styles.fall
-                            } ${styles.deltaBox}`}
-                          >
-                            <div className={styles.deltaSparkBackdrop}>
-                              <OwnershipSparkline
-                                points={p.sparkline}
-                                variant={
-                                  activeTable === "risers" ? "rise" : "fall"
-                                }
-                                width={100}
-                                height={40}
-                                baseline
-                                svgClassName={styles.sparkSvg}
-                                baselineClassName={styles.sparkBaseline}
-                                areaClassName={styles.sparkArea}
-                                pathClassName={styles.sparkPath}
-                                riseClassName={styles.rise}
-                                fallClassName={styles.fall}
-                              />
-                            </div>
-                            <div className={styles.deltaContent}>
-                              {activeTable === "risers" && p.delta > 0
-                                ? `+${p.delta.toFixed(1)}%`
-                                : `${p.delta.toFixed(1)}%`}
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    ),
-                  )}
-                </tbody>
-              </table>
+                Risers
+              </button>
+              <button
+                type="button"
+                aria-pressed={activeTable === "fallers"}
+                aria-controls="mobile-fallers-panel"
+                className={activeTable === "fallers" ? styles.isActive : ""}
+                onClick={() => focusMobilePanel("fallers")}
+              >
+                Fallers
+              </button>
             </div>
+            <MobileTrendPanel
+              direction="risers"
+              players={data.risers}
+              windowDays={data.windowDays}
+            />
+            <MobileTrendPanel
+              direction="fallers"
+              players={data.fallers}
+              windowDays={data.windowDays}
+            />
           </div>
         </>
       )}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { animated, useTransition } from "@react-spring/web";
 import { useRouter } from "next/router";
 import Link from "next/link";
@@ -22,6 +22,7 @@ type MobileMenuProps = {
   showAuthButton?: boolean;
   showAccountControls?: boolean;
   visible: boolean;
+  entryPoint?: "default" | "tools" | "search";
 };
 
 interface PlayerResult {
@@ -108,13 +109,16 @@ function MobileMenu({
   onSignOut,
   showAccountControls = false,
   showAuthButton = false,
-  visible
+  visible,
+  entryPoint = "default",
 }: MobileMenuProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<PlayerResult[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const navigationSectionRef = useRef<HTMLDivElement | null>(null);
 
   const transitions = useTransition(visible, {
     from: {
@@ -147,6 +151,25 @@ function MobileMenu({
       document.body.style.overflow = "";
     };
   }, [visible]);
+
+  useEffect(() => {
+    if (!visible || entryPoint === "default") return;
+
+    const frame = window.requestAnimationFrame(() => {
+      if (entryPoint === "search") {
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      navigationSectionRef.current?.scrollIntoView({
+        block: "start",
+        behavior: "smooth",
+      });
+      navigationSectionRef.current?.focus({ preventScroll: true });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [entryPoint, visible]);
 
   // Handle player search with debouncing
   useEffect(() => {
@@ -295,6 +318,7 @@ function MobileMenu({
                 <div className={styles.searchContainer}>
                   <div className={styles.searchInputWrapper}>
                     <input
+                      ref={searchInputRef}
                       type="text"
                       placeholder="Search players..."
                       value={searchQuery}
@@ -356,7 +380,12 @@ function MobileMenu({
               </div>
 
               {/* Navigation Grid */}
-              <div className={styles.navigationSection}>
+              <div
+                ref={navigationSectionRef}
+                className={styles.navigationSection}
+                tabIndex={-1}
+                data-menu-section="tools"
+              >
                 <h3 className={styles.sectionTitle}>Navigation</h3>
                 <div className={styles.iconGrid}>
                   {NAVIGATION_ITEMS.map((item) => (

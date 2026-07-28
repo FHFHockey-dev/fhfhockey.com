@@ -19,7 +19,7 @@ export const HOME_SURFACE_LINKS: SiteSurfaceLink[] = [
   },
   {
     href: "/trends",
-    label: "Trends Dashboard",
+    label: "Trends",
     description: "Scan recent form, skater movers, and workload context.",
   },
   {
