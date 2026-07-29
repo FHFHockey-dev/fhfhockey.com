@@ -530,8 +530,8 @@ async function fetchMetricRows(
       .eq("season_id", seasonId)
       .gte("game_date", seasonStart)
       .lte("game_date", asOfDate)
+      .order("game_date", { ascending: false })
       .order("player_id", { ascending: true })
-      .order("game_date", { ascending: true })
       .range(from, from + PAGE_SIZE - 1);
 
     if (positions && positions.length > 0) {

@@ -65,6 +65,7 @@ function createMockRes() {
 function buildSupabaseMock(
   metricRows: Array<Record<string, unknown>>,
   rangeCalls: Array<[number, number]> = [],
+  orderCalls: Array<[string, Record<string, unknown> | undefined]> = [],
 ) {
   return {
     from(table: string) {
@@ -87,7 +88,11 @@ function buildSupabaseMock(
           in() {
             return this;
           },
-          order() {
+          order(
+            column: string,
+            options?: Record<string, unknown>,
+          ) {
+            orderCalls.push([column, options]);
             return this;
           },
           range(from: number, to: number) {
@@ -251,6 +256,9 @@ describe("/api/v1/trends/skater-power", () => {
 
   it("continues past the default 1000-row PostgREST page cap", async () => {
     const rangeCalls: Array<[number, number]> = [];
+    const orderCalls: Array<
+      [string, Record<string, unknown> | undefined]
+    > = [];
     supabaseState.current = buildSupabaseMock(
       Array.from({ length: 1001 }, (_, index) => ({
         player_id: 8_470_000 + index,
@@ -263,6 +271,7 @@ describe("/api/v1/trends/skater-power", () => {
         position_code: "C",
       })),
       rangeCalls,
+      orderCalls,
     );
 
     const req: any = {
@@ -282,6 +291,10 @@ describe("/api/v1/trends/skater-power", () => {
     expect(res.body.dateUsed).toBe("2026-02-09");
     expect(rangeCalls).toContainEqual([0, 999]);
     expect(rangeCalls).toContainEqual([1000, 1999]);
+    expect(orderCalls.slice(0, 2)).toEqual([
+      ["game_date", { ascending: false }],
+      ["player_id", { ascending: true }],
+    ]);
   });
 
   it("supports a 20-game window by averaging the trailing raw values", async () => {

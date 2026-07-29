@@ -1,6 +1,6 @@
 # FORGE Command Center Reconciliation Checklist
 
-Status: validation complete; owner promotion decision pending. Source-to-render and six-viewport checks completed 2026-07-12.
+Status: Wave-C evidence review active; owner final-route decision pending. Source-to-render and six-viewport checks completed 2026-07-12; runtime evidence refreshed 2026-07-29.
 
 | Module | Source APIs | Source Tables | Rendered Values To Reconcile | Freshness State | Verification Method | Status |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -19,3 +19,5 @@ Promotion evidence and remaining gaps:
 - Local verification used the isolated release clone on port `3002` because the shared workspace already had an opaque port-3000 dev server and EMFILE watcher noise. The current production build passed; its only transient output was the existing podcast-feed network timeout fallback.
 - Focused verification passes 12/12, TypeScript passes, the full suite passes 400 files/1,860 tests, and the post-repair production build passes.
 - `/forge/dashboard` remains the rollback/reference route until the user explicitly approves promotion.
+- Seven-day Vercel evidence records 11 HTTP-200 and one HTTP-500 skater-power responses plus three statement-timeout error events, most recently 2026-07-29 on `shots_per_60`. The local query-order repair uses the existing `(metric_key, game_date DESC)` index with incremental sort; direct and Command Center tests pass 14/14, but deployment/live proof remains open.
+- Sustainability recorded 40 successful responses in the bounded runtime evidence. Static `/forge/command-center` pageviews require authenticated Web Analytics and were not available in either browser session, so the final coexistence-versus-route-swap decision remains approval-gated.

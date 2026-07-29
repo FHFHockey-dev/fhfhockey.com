@@ -380,3 +380,7 @@ The page must not imply that a successful downstream accuracy refresh makes stal
    - Recommended default: coexist for one release cycle.
 6. Should the implementation include any formula changes to top-add scoring, sustainability, goalie risk, or team power?
    - Recommended default: no formula changes in this PRD; preserve current math and improve composition/trust presentation first.
+
+## 10. Dynamic Audit Reconciliation
+
+The 2026-07-29 Wave-C review preserves the approved one-release coexistence and labeled `/forge/dashboard` rollback route. Current seven-day runtime evidence contains 11 successful and one failed skater-power response, with three clustered `shots_per_60` statement timeouts; an index-aligned local pagination-order repair and 14/14 focused tests pass, but guarded deployment/live verification remains required. Sustainability recorded 40 successful responses, while static pageview evidence requires authenticated Vercel Web Analytics. The final route decision and A-SUST named-row deployment proof remain explicit external gates.
