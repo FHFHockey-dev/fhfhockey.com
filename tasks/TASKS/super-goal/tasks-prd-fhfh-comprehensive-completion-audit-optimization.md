@@ -2206,7 +2206,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md::C0039` (original L118) — 5.6 Implement backtest report job (at least last 30 days): MAE for shots/goals, interval coverage, and a stored artifact (table row or file path)
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md::C0040` (original L119) — 5.7 Document ops runbooks (how to run locally, how to backfill, how to debug missing data) and keep PRD open questions updated
 
-### Source: `tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md` (34 rows)
+### Source: `tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md` (36 rows)
 
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md::C0001` (original L41) — 1.0 Phase 1 - Rename Entrypoint And Build Safety Net
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md::C0002` (original L42) — 1.1 Inventory all repository references to `runProjectionV2.ts` / `runProjectionV2ForDate` and freeze a checklist for code, tests, scripts, and docs updates. [Deps: none] [Files: `web/**`, `tasks/**`, `*.md`, `fix_terminal.sh`] [AC: checklist enumerates every affected reference class and is attached in this task file or implementation notes]
@@ -2242,6 +2242,8 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md::C0032` (original L78) — 7.2 Run deterministic parity checks comparing baseline vs modularized outputs for fixed fixture dates, covering `forge_player_projections`, `forge_team_projections`, `forge_goalie_projections`, and uncertainty metadata payload keys. [Deps: 7.1] [Files: parity test artifacts] [AC: no meaningful drift; any tolerated epsilon must be explicitly documented and approved]
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md::C0033` (original L79) — 7.3 Run repository-level type/import integrity validation (`tsc`/build/lint as applicable) to confirm no unresolved imports after rename and extraction. [Deps: 7.1] [Files: repo config + touched modules] [AC: zero unresolved import/type errors in touched scope]
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md::C0034` (original L80) — 7.4 Capture migration report summary (files moved/created, import updates, validation outcomes, unresolved risks) and attach to PR/task notes for implementation workflow handoff. [Deps: 7.2, 7.3] [Files: PR description or task notes] [AC: report includes parity evidence and explicit residual-risk list]
+- [ ] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md::C0035` (live NEW) — NEW 8.0 **P2 unfinished stage-oriented decomposition:** the 4,893-line orchestrator still owns active query, calculation, persistence, and metrics logic, while its five named stage helpers remain pass-through wrappers.
+- [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md::C0036` (live NEW) — NEW 8.1 **P3 current-status and path reconciliation:** accepted rename/module/parity work is separated from the remaining structural gap; duplicate/stale active-file entries and parity-status drift are corrected.
 
 ### Source: `tasks/TASKS/forge-projections/v1/tasks-skater-forge.md` (55 rows)
 

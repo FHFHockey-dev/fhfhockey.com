@@ -7163,3 +7163,11 @@
 - **Verification:** The focused goalie model, pipeline, canonical API, and dashboard cohort passes four files/35 tests. Full TypeScript, zero-error scoped lint, source/master 56/56 parity, raw-error scan, and diff integrity pass.
 - **Controls / counts:** C-FORGE 5.4.1 closes. Raw parity is 4,826/4,962 with 136 unchecked = 97.26%; actionable parity is 4,826/4,956 with 130 open = 97.38% complete / 2.62% open. Severity is P0 28/23, P1 186/148, P2 155/147, P3 38/38.
 - **Boundary / next action:** The promotion/runtime evidence gate remains unchanged. No formula, writer, data, schema, migration, schedule, build, deployment, provider, credential, shared checkout, push, or stash changed. Preserve this locally, then audit C-FORGE 5.4.2 run modularization.
+
+## Entry 0754 — 2026-07-29 C-FORGE modularization completion-gap reconciliation
+
+- **Verified retained work:** The runner rename, extracted types/constants/utilities/query/calculator modules, compatibility inventory, module-import tests, and owner-approved `<=0.005` parity evidence remain present. The stable API route continues importing `runProjectionV2ForDate` from the renamed module.
+- **Open finding:** P2 NEW 8.0 records that the 4,893-line orchestrator still owns active query, calculation, persistence, and metrics logic. Its preflight, skater, goalie, persistence, and finalization “stage” helpers merely execute callbacks, so the PRD's stage-composition structural success metric is not complete. C-FORGE 5.4.2 remains open; no broad refactor or math change was attempted in this bounded audit.
+- **Closed finding:** P3 NEW 8.1 reconciles the PRD/list status, canonical paths, duplicate relevant-file entries, and accepted parity label. Source/master is 35/36.
+- **Counts / boundary:** Raw parity is 4,827/4,964 with 137 unchecked = 97.24%; actionable parity is 4,827/4,958 with 131 open = 97.36% complete / 2.64% open. Severity is P0 28/23, P1 186/148, P2 156/147, P3 39/39. No formula, output, writer, data, schema, migration, schedule, build, deployment, provider, credential, shared checkout, push, or stash changed.
+- **Next action:** Preserve the truthful modularization checkpoint, then continue C-FORGE 5.4.3 while NEW 8.0 remains an explicit bounded structural backlog item.
