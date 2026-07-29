@@ -244,4 +244,35 @@ describe("/api/v1/runs/latest", () => {
       "using latest succeeded run run-good as the actionable state"
     );
   });
+
+  it("redacts dependency details from internal-error responses", async () => {
+    fromMock.mockImplementation(() =>
+      createQueryBuilder(() => ({
+        data: null,
+        error: {
+          message: "private forge_runs relation denied Bearer secret"
+        }
+      }))
+    );
+    const res = createMockRes();
+
+    await handler(
+      {
+        method: "GET",
+        query: { date: "2026-03-20" }
+      } as any,
+      res
+    );
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toMatchObject({
+      error: "LATEST_FORGE_RUN_UNAVAILABLE",
+      scanSummary: {
+        status: "blocked",
+        notes: ["Latest FORGE run metadata is temporarily unavailable."]
+      }
+    });
+    expect(JSON.stringify(res.body)).not.toContain("secret");
+    expect(JSON.stringify(res.body)).not.toContain("private forge_runs");
+  });
 });

@@ -212,7 +212,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .status(500)
       .json({
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
-        error: (e as any)?.message ?? String(e),
+        error: "LATEST_FORGE_RUN_UNAVAILABLE",
         scanSummary: buildEndpointScanSummary({
           surface: "latest_run_reader",
           requestedDate: getQueryStringParam(req.query.date) ?? null,
@@ -221,7 +221,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           status: "blocked",
           rowCounts: {},
           blockingIssueCount: 1,
-          notes: [(e as any)?.message ?? String(e)]
+          notes: ["Latest FORGE run metadata is temporarily unavailable."]
         })
       });
   }
