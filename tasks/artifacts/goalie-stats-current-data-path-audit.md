@@ -1,5 +1,7 @@
 # Goalie Stats Current Data Path Audit (`1.1`)
 
+> **Historical scope:** This audit records the pre-implementation state. Dedicated goalie landing/detail/chart routes now exist and wrap the shared player-underlying aggregation engine; current ownership lives in the canonical goalie PRD, task list, and runbook.
+
 ## Findings
 
 ### 1. There is no dedicated goalie route or goalie API surface yet.

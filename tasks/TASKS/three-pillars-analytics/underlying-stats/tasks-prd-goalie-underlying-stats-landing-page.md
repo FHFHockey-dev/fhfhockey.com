@@ -1,19 +1,15 @@
 ## Relevant Files
 
 - `web/pages/underlying-stats/goalieStats/index.tsx` - Dedicated goalie landing page route and page-level state orchestration.
-- `web/pages/underlying-stats/goalieStats/index.test.tsx` - Landing-page route tests for goalie-first loading, filters, and table rendering.
+- `web/__tests__/pages/underlying-stats/goalieStats/index.test.tsx` - Landing-page route tests for goalie-first loading, filters, and table rendering.
 - `web/pages/underlying-stats/goalieStats/[playerId].tsx` - Dedicated goalie detail page route and goalie drill-down surface.
-- `web/pages/underlying-stats/goalieStats/[playerId].test.tsx` - Detail-page tests for goalie-specific routing and preserved filter context.
-- `web/pages/underlying-stats/goalieStats/goalieStats.module.scss` - Dedicated goalie page styles aligned to the current FHFH surface system.
+- `web/__tests__/pages/underlying-stats/goalieStats/[playerId].test.tsx` - Detail-page tests for goalie-specific routing and preserved filter context.
 - `web/pages/api/v1/underlying-stats/goalies.ts` - Dedicated goalie landing API wrapper over the shared aggregation engine.
 - `web/pages/api/v1/underlying-stats/goalies/[playerId].ts` - Dedicated goalie detail API wrapper over the shared detail aggregation engine.
 - `web/pages/api/v1/underlying-stats/goalies/[playerId]/chart.ts` - Dedicated goalie chart API wrapper if expandable-row charts are retained on the goalie landing page.
 - `web/lib/underlying-stats/goalieStatsQueries.ts` - Goalie-specific API path builders, request parsing, and response contracts.
-- `web/lib/underlying-stats/goalieStatsFilters.ts` - Goalie-first filter defaults, normalization, URL serialization, and validation rules.
-- `web/lib/underlying-stats/goalieStatsTypes.ts` - Dedicated goalie surface types if a wrapper contract is introduced over the shared player-underlying types.
 - `web/lib/underlying-stats/goalieStatsServer.ts` - Goalie route wrapper layer delegating to shared player-underlying aggregation logic.
 - `web/lib/underlying-stats/goalieStatsQueries.test.ts` - Unit tests for goalie route parsing, path building, and response contracts.
-- `web/lib/underlying-stats/goalieStatsFilters.test.ts` - Unit tests for goalie filter compatibility, scope exclusivity, and URL-state behavior.
 - `web/lib/underlying-stats/goalieStatsServer.test.ts` - Unit tests proving the goalie wrapper correctly reuses the shared aggregation pipeline.
 - `web/lib/underlying-stats/playerStatsLandingServer.ts` - Shared source-of-truth aggregation engine already computing goalie metrics and likely requiring targeted reuse hooks.
 - `web/lib/underlying-stats/playerStatsSummaryRefresh.ts` - Shared summary refresh and cache warm path that must remain canonical for goalie reads.
@@ -30,7 +26,8 @@
 - `web/__tests__/pages/underlying-stats/playerStats/index.test.tsx` - Shared landing-page tests covering the dedicated goalie variant's API namespace, goalie-only control surface, staged-loading behavior, sort-default persistence, and landing filter serialization.
 - `web/pages/underlying-stats/playerStats/index.tsx` - Shared landing page shell now parameterized for goalie-first defaults, metadata, and dedicated goalie landing fetch orchestration.
 - `web/pages/underlying-stats/playerStats/playerStats.module.scss` - Shared landing page styles supporting the goalie-first hero lead copy.
-- `tasks/prd-goalie-underlying-stats-landing-page.md` - Source PRD for this task list.
+- `tasks/TASKS/three-pillars-analytics/underlying-stats/prd/prd-goalie-underlying-stats-landing-page.md` - Source PRD for this task list.
+- `tasks/TASKS/three-pillars-analytics/underlying-stats/goalie-underlying-stats-runbook.md` - Current operator routes, auth boundary, refresh recipes, and read verification.
 - `tasks/artifacts/goalie-stats-current-data-path-audit.md` - `1.1` audit of the current shared goalie landing/detail/chart read path through the player-underlying routes and server modules.
 - `tasks/artifacts/goalie-stats-column-audit.md` - `1.2` comparison of current shared goalie counts/rates columns against the dedicated goalie PRD requirements.
 - `tasks/artifacts/goalie-stats-filter-semantics-audit.md` - `1.3` audit of current goalie filter semantics, including shared scope behavior and unsupported strength/score-state gaps.
@@ -97,3 +94,6 @@
   - [x] NEW 6.7 Fix the workspace `Build web (typecheck)` task configuration so it runs from the `web` package directory instead of the repo root.
 
 Validation note: a fresh local Next server returned `200` responses for representative non-default goalie strength and score-state queries (`allStrengths + leading`, `fiveOnFourPP + withinOne`, `againstEmptyNet + trailing`) after enabling local direct Postgres reads when `SUPABASE_DB_URL` is configured. The focused goalie/shared underlying-stats regression suite passed in full (`6` files, `63` tests). Residual risk remains in the shared pipeline coupling, and the workspace build task now launches from `web/` correctly but still surfaces unrelated pre-existing Next prerender missing-page failures during full export.
+
+- [x] NEW 7.0 **P1 — Redact public goalie dependency failures.** Landing, detail, and chart 500 responses now expose only route-stable unavailable codes while server logs retain original diagnostics; bounded unsupported-filter 400 details remain unchanged. Direct regressions cover all three routes (discovered and completed 2026-07-29).
+- [x] NEW 7.1 **P3 — Reconcile current goalie ownership documentation.** The PRD records shipped wrapper/shared-engine ownership and resolved product decisions; the runbook uses repository-relative commands and names the current reader boundary; the source map names only current paths; and the five pre-implementation audit artifacts are explicitly historical rather than current runtime claims (discovered and completed 2026-07-29).

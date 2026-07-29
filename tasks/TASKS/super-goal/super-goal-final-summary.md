@@ -461,6 +461,12 @@ Remaining cleanup and reference initiative sections are pending verified Wave-B 
 - **Contract:** Landing-only v1 is authoritative and complete. The dedicated team detail route remains explicitly deferred; no legacy route is promoted. The source PRD now records the shipped status and canonical paths.
 - **Verification / controls:** The focused six-file/26-test initiative cohort, full TypeScript, scoped lint with zero errors, source/master 68/68 parity, and diff integrity pass. Dynamic audit 5.3.2 closes. Raw parity is 4,810/4,951 with 141 unchecked = 97.15%; actionable parity is 4,810/4,945 with 135 open = 97.27% complete / 2.73% open. Severity is P0 28/23, P1 183/145, P2 152/144, P3 34/34. No writer, data, schema, migration, build, deployment, provider, schedule, credential, shared checkout, push, or stash changed.
 
+### C-US Goalie Underlying Stats audit
+
+- **Repair:** Dedicated goalie landing, detail, and chart 500 responses now expose only route-stable unavailable codes; bounded unsupported-filter 400 details remain and server logs retain diagnostics.
+- **Contract:** The goalie-first routes remain wrappers over the canonical shared, completely paginated/chunked aggregation engine. The PRD, runbook, source map, and five pre-implementation artifacts now distinguish shipped ownership from historical rationale.
+- **Verification / controls:** The scoped seven-file/20-test cohort, full TypeScript, zero-error scoped lint, formatting, source/master 46/46 parity, and diff integrity pass. Dynamic audit 5.3.3 closes. Raw parity is 4,813/4,953 with 140 unchecked = 97.17%; actionable parity is 4,813/4,947 with 134 open = 97.29% complete / 2.71% open. Severity is P0 28/23, P1 184/146, P2 152/144, P3 35/35. No formula, writer, data, schema, migration, build, deployment, provider, schedule, credential, shared checkout, push, or stash changed.
+
 ## Completion-gate evidence
 
 All charter questions remain open until source/master synchronization, Wave A/B completion, Wave C audit/remediation, cross-initiative verification, cleanup, diary finalization, and evidence population are complete.

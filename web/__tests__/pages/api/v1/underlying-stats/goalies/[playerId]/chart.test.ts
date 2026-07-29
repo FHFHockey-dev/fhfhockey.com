@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("lib/underlying-stats/playerStatsLandingServer", () => ({
   buildPlayerStatsLandingChartFromState: vi.fn(),
@@ -41,6 +41,10 @@ function createMockApiContext(args?: {
 describe("/api/v1/underlying-stats/goalies/[playerId]/chart", () => {
   beforeEach(() => {
     vi.mocked(buildPlayerStatsLandingChartFromState).mockReset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("returns the shared goalie chart payload unchanged for chart requests", async () => {
@@ -140,5 +144,30 @@ describe("/api/v1/underlying-stats/goalies/[playerId]/chart", () => {
         }),
       ],
     });
+  });
+
+  it("redacts dependency details from chart 500 responses", async () => {
+    const error = new Error("goalie chart dependency detail");
+    vi.mocked(buildPlayerStatsLandingChartFromState).mockRejectedValue(error);
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const { req, res } = createMockApiContext({
+      query: {
+        playerId: "8475883",
+      },
+    });
+
+    await handler(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.body).toEqual({
+      error: "Unable to build goalie chart underlying stats.",
+      issues: ["GOALIE_CHART_UNDERLYING_STATS_UNAVAILABLE"],
+    });
+    expect(consoleError).toHaveBeenCalledWith(
+      "Failed to build goalie chart underlying stats",
+      error,
+    );
   });
 });

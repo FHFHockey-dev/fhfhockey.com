@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("lib/underlying-stats/playerStatsLandingServer", () => ({
   buildPlayerStatsLandingAggregationFromState: vi.fn(),
@@ -43,6 +43,10 @@ describe("/api/v1/underlying-stats/goalies", () => {
     vi.mocked(buildPlayerStatsLandingAggregationFromState).mockReset();
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("returns the shared goalie counts payload unchanged for landing requests", async () => {
     vi.mocked(buildPlayerStatsLandingAggregationFromState).mockResolvedValue({
       family: "goalieCounts",
@@ -83,7 +87,7 @@ describe("/api/v1/underlying-stats/goalies", () => {
           statMode: "goalies",
           displayMode: "counts",
         }),
-      })
+      }),
     );
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.body).toMatchObject({
@@ -139,7 +143,7 @@ describe("/api/v1/underlying-stats/goalies", () => {
           statMode: "goalies",
           displayMode: "rates",
         }),
-      })
+      }),
     );
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.body).toMatchObject({
@@ -153,5 +157,28 @@ describe("/api/v1/underlying-stats/goalies", () => {
         }),
       ],
     });
+  });
+
+  it("redacts dependency details from landing 500 responses", async () => {
+    const error = new Error("goalie landing dependency detail");
+    vi.mocked(buildPlayerStatsLandingAggregationFromState).mockRejectedValue(
+      error,
+    );
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const { req, res } = createMockApiContext();
+
+    await handler(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.body).toEqual({
+      error: "Unable to build goalie underlying stats.",
+      issues: ["GOALIE_UNDERLYING_STATS_UNAVAILABLE"],
+    });
+    expect(consoleError).toHaveBeenCalledWith(
+      "Failed to build goalie underlying stats",
+      error,
+    );
   });
 });
