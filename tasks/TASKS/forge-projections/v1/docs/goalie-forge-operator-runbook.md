@@ -161,5 +161,6 @@ Rollback to `baseline` if the active 14-day MAE/RMSE regresses, interval coverag
 - Keep a deployed candidate unchanged while evidence accumulates. A code-complete shadow report does not count as 14 elapsed observation days.
 
 ## Related Docs
-- `tasks/tasks-goalie-forge.md`
-- `tasks/goalie-forge.md`
+- `tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md`
+- `tasks/TASKS/forge-projections/v1/goalie-forge.md`
+- `tasks/TASKS/forge-projections/v1/prd/goalie-forge-implementation-plan.md`

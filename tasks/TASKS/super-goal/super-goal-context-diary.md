@@ -7155,3 +7155,11 @@
 - **Verification:** The focused five-file repair cohort passes 19/19; the complete active WiGO cohort passes 18 files/53 tests. Full TypeScript, zero-error scoped lint, exact raw-error and legacy-consumer scans, source/master parity, and diff integrity pass.
 - **Controls / counts:** Source/master is 40/40. WiGO 5.3.6 and parent C-US 5.3 close. Raw parity is 4,823/4,960 with 137 unchecked = 97.24%; actionable parity is 4,823/4,954 with 131 open = 97.36% complete / 2.64% open. Severity is P0 28/23, P1 185/147, P2 155/147, P3 37/37.
 - **Boundary / next action:** No legacy deletion, formula, writer, data, schema, migration, schedule, build, deployment, provider, credential, shared checkout, push, or stash changed. Preserve this as a local checkpoint, then begin C-FORGE 5.4.1 with a bounded read-only goalie-FORGE implementation/runbook audit.
+
+## Entry 0753 — 2026-07-29 C-FORGE goalie nested implementation/runbook closure
+
+- **Architecture:** The canonical goalie model, run orchestrator, starter-prior writer, `/api/v1/forge/goalies` reader, legacy-dashboard risk card, accuracy/calibration pipeline, and operator runbook remain the shipped ownership chain. Existing uncertainty, top-two starter scenarios, fallback diagnostics, and model-promotion evidence gates remain unchanged.
+- **Findings / repair:** P1 NEW 9.0 replaces raw fetch URL/status/dependency details on the public goalie-risk card with a stable unavailable state. P3 NEW 9.1 reconciles shipped phases, bounded research exclusions, canonical source/runbook paths, and explicitly historical planning/handoff/cron records.
+- **Verification:** The focused goalie model, pipeline, canonical API, and dashboard cohort passes four files/35 tests. Full TypeScript, zero-error scoped lint, source/master 56/56 parity, raw-error scan, and diff integrity pass.
+- **Controls / counts:** C-FORGE 5.4.1 closes. Raw parity is 4,826/4,962 with 136 unchecked = 97.26%; actionable parity is 4,826/4,956 with 130 open = 97.38% complete / 2.62% open. Severity is P0 28/23, P1 186/148, P2 155/147, P3 38/38.
+- **Boundary / next action:** The promotion/runtime evidence gate remains unchanged. No formula, writer, data, schema, migration, schedule, build, deployment, provider, credential, shared checkout, push, or stash changed. Preserve this locally, then audit C-FORGE 5.4.2 run modularization.

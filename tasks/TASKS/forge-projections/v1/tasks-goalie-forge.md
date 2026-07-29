@@ -1,7 +1,9 @@
 ## Relevant Files
 
-- `tasks/goalie-forge.md` - Source PRD for goalie modeling requirements, standards, and release phases.
-- `tasks/goalie-forge-operator-runbook.md` - Manual operator runbook for refresh/backfill order, timeout bypass usage, and validation checklist.
+**Status (2026-07-29):** Complete at 56/56 after dynamic audit. The progress snapshot, handoff prompt, and cron catalog below are historical implementation records; current repository paths and the operator runbook define active ownership.
+
+- `tasks/TASKS/forge-projections/v1/goalie-forge.md` - Source PRD for goalie modeling requirements, standards, and release phases.
+- `tasks/TASKS/forge-projections/v1/docs/goalie-forge-operator-runbook.md` - Manual operator runbook for refresh/backfill order, timeout bypass usage, and validation checklist.
 - `web/lib/projections/run-forge-projections.ts` - Main FORGE projection orchestrator where goalie starter and projection logic runs.
 - `web/lib/projections/runProjectionV2.test.ts` - Unit tests for starter candidate filtering and probability edge-cases (B2B, stale goalies, legacy team leakage).
 - `web/lib/projections/goalieModel.ts` - Goalie-specific modeling logic for priors, volatility, risk, and recommendations.
@@ -85,6 +87,9 @@
   - [x] 8.1 Add a game ticker above `.goalieDisclosure` showing all games for the selected day, modeled after `.gameStrip` in `web/pages/start-chart.tsx`.
   - [x] 8.2 Ensure opposing goalies' likely-starter `proj_win_prob` sums to 100% per game (or explicitly allocate residual starter mass to backup scenarios).
   - [x] 8.3 Rename uncertainty label text from `(Low/Typical/High)` to `(Floor/Typical/Ceiling)` in goalie and skater uncertainty blocks.
+
+- [x] NEW 9.0 **P1 public goalie-dashboard error containment:** the legacy FORGE dashboard goalie-risk card now renders a stable unavailable message instead of exposing fetch URLs, HTTP status text, or dependency details.
+- [x] NEW 9.1 **P3 implementation/runbook ownership reconciliation:** the implementation plan records shipped phases and bounded research exclusions; source-task and runbook links now resolve to canonical repository paths, with planning-era handoff/cron material explicitly historical.
 
 ## Progress Snapshot (For Next Codex Chat)
 

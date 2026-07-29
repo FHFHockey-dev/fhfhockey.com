@@ -452,8 +452,16 @@ describe("Forge dashboard render states", () => {
     render(<ForgeDashboardPage />);
 
     await waitFor(() => {
-      const allErrors = screen.getAllByText(/Error: Request failed \(500\)/i);
-      expect(allErrors.length).toBeGreaterThanOrEqual(5);
+      expect(
+        screen.getByText("Goalie projections are unavailable right now.")
+      ).toBeTruthy();
+      expect(
+        screen.queryByText(/forge\/goalies.*Request failed|Request failed.*forge\/goalies/i)
+      ).toBeNull();
+      const remainingLegacyErrors = screen.getAllByText(
+        /Error: Request failed \(500\)/i
+      );
+      expect(remainingLegacyErrors.length).toBeGreaterThanOrEqual(4);
     });
   });
 

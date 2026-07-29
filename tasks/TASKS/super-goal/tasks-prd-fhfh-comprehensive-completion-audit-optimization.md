@@ -208,7 +208,7 @@
     - [x] 5.3.5 Audit Mobile Stats optimization across supported entity routes.
     - [x] 5.3.6 Audit WiGO charts optimization and remaining legacy ownership. Evidence: canonical metadata/data/query/section ownership remains intact; P1 NEW 7.1 contains public dependency details, P2 NEW 7.2 makes shared cohort pagination deterministic, and P3 NEW 7.3 reconciles current decisions plus historical-only legacy quarantine. The focused five-file/19-test repair cohort and complete active WiGO suite pass with TypeScript, scoped lint, source/master parity, and diff integrity (completed 2026-07-29).
   - [ ] 5.4 `C-FORGE` Audit and remediate completed goalie, modularization, dashboard, pass-three, and prediction-engine work.
-    - [ ] 5.4.1 Audit Goalie FORGE nested implementation and operator runbook.
+    - [x] 5.4.1 Audit Goalie FORGE nested implementation and operator runbook. Evidence: canonical model/writer/reader/dashboard/accuracy ownership remains intact; P1 NEW 9.0 contains public goalie-card dependency details and P3 NEW 9.1 reconciles shipped phases, exclusions, paths, and historical planning records. The focused four-file/35-test cohort, TypeScript, scoped lint, source/master parity, and diff integrity pass (completed 2026-07-29).
     - [ ] 5.4.2 Audit FORGE run modularization after current pipeline changes.
     - [ ] 5.4.3 Audit FORGE dashboard refresh after A-FORGE-DASH remediation.
     - [ ] 5.4.4 Audit dashboard component-health claims after latest remediation.
@@ -2104,7 +2104,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md::C0017` (original L520) — Add nightly scheduler wiring (Vercel cron or GitHub Actions) with `withCronJobAudit`.
 - [x] `SRC::tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md::C0018` (original L521) — Implement backtest report job (last 30 days, MAE + interval coverage) and store a report artifact.
 
-### Source: `tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md` (54 rows)
+### Source: `tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md` (56 rows)
 
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md::C0001` (original L34) — 1.0 Harden goalie starter probability modeling and candidate hygiene
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md::C0002` (original L35) — 1.1 Add strict candidate filtering to current-team active goalies (`players.team_id` + `position='G'`) with explicit override exceptions.
@@ -2160,6 +2160,8 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md::C0052` (original L85) — 8.1 Add a game ticker above `.goalieDisclosure` showing all games for the selected day, modeled after `.gameStrip` in `web/pages/start-chart.tsx`.
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md::C0053` (original L86) — 8.2 Ensure opposing goalies' likely-starter `proj_win_prob` sums to 100% per game (or explicitly allocate residual starter mass to backup scenarios).
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md::C0054` (original L87) — 8.3 Rename uncertainty label text from `(Low/Typical/High)` to `(Floor/Typical/Ceiling)` in goalie and skater uncertainty blocks.
+- [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md::C0055` (live NEW) — NEW 9.0 **P1 public goalie-dashboard error containment:** the legacy FORGE dashboard goalie-risk card renders a stable unavailable message instead of exposing fetch URLs, HTTP status text, or dependency details.
+- [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md::C0056` (live NEW) — NEW 9.1 **P3 implementation/runbook ownership reconciliation:** shipped phases and bounded research exclusions are explicit; source-task and runbook links resolve to canonical paths, and planning-era handoff/cron material is labeled historical.
 
 ### Source: `tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md` (40 rows)
 
