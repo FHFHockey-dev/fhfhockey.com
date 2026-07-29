@@ -19,6 +19,7 @@ import {
 import { buildShotFeatureRows } from "../lib/supabase/Upserts/nhlShotFeatureBuilder";
 import { buildNstParityMetrics } from "../lib/supabase/Upserts/nhlNstParityMetrics";
 import type { Database } from "../lib/supabase/database-generated.types";
+import { normalizeReleaseArtifactReference } from "../lib/xg/releaseArtifactReference";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
 
@@ -155,9 +156,9 @@ Options:
   --strengthVersion <n>       Strength version metadata
   --featureVersion <n>        Feature version metadata
   --parityVersion <n>         Parity version metadata
-  --manualAuditRef <path>     Manual audit artifact path for metadata
+  --manualAuditRef <path>     Repository-relative manual audit artifact path
   --approvedExceptionRefs <csv>
-                              Artifact paths documenting approved exceptions
+                              Repository-relative approved-exception artifact paths
   --output <path>             Optional markdown output path
   --help                      Show this help
 `);
@@ -442,6 +443,13 @@ ${dispositionLines.join("\n")}
 async function main(): Promise<void> {
   const options = parseCliArgs(process.argv.slice(2));
   const repoRoot = path.resolve(process.cwd(), "..");
+  const manualAuditRef = normalizeReleaseArtifactReference(
+    options.manualAuditRef,
+    repoRoot,
+  );
+  const approvedExceptionRefs = options.approvedExceptionRefs
+    .map((reference) => normalizeReleaseArtifactReference(reference, repoRoot))
+    .filter((reference): reference is string => reference != null);
   const dbConfig = readDbConfigFromEnv();
 
   const client = new Client({
@@ -697,8 +705,8 @@ async function main(): Promise<void> {
         featureVersion: options.featureVersion,
         parityVersion: options.parityVersion,
         sourceCodeCommitSha: getCommitSha(repoRoot),
-        manualAuditRef: options.manualAuditRef,
-        approvedExceptionRefs: options.approvedExceptionRefs,
+        manualAuditRef,
+        approvedExceptionRefs,
       },
       overallResult: trainingUseReleaseResult,
       rawValidationResult,

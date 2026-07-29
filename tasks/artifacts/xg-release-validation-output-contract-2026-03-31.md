@@ -150,6 +150,8 @@ Each approved-exception entry must include:
 
 If approved exceptions are present, they must be visible here rather than counted as unresolved blockers.
 
+All governing and manual-audit artifact references must be repository-relative. The runner may accept an absolute path only when it resolves inside the current repository, in which case it must serialize the repository-relative form; machine-local external paths must fail closed.
+
 ### 7. Manual Audit References
 
 Must include:
