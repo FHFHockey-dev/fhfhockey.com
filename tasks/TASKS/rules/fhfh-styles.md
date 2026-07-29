@@ -1298,6 +1298,7 @@ Required shared anatomy:
 3. Keep the shell within the viewport, make the body the scroll owner, and keep header/footer actions outside that scroll region.
 4. Use a compact header band, visible close control, and a wrapping right-aligned action cluster.
 5. Feature modules may change shell width and internal content, but should compose the shared modal-shell classes for backdrop, shell, header, close, body, actions, and footer.
+6. On open, move focus inside the dialog; trap `Tab`/`Shift+Tab`, close on `Escape`, and restore focus to the opener after close.
 
 ```scss
 .backdrop {

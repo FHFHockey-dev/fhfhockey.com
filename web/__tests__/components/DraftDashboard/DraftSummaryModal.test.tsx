@@ -1,4 +1,10 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("html-to-image", () => ({ toPng: vi.fn() }));
@@ -72,5 +78,54 @@ describe("DraftSummaryModal configuration evidence", () => {
     expect(summary.textContent).toContain(
       "CSV row contents are intentionally excluded",
     );
+  });
+
+  it("traps keyboard focus, closes on Escape, and restores opener focus", async () => {
+    const opener = document.createElement("button");
+    opener.textContent = "Open draft summary";
+    document.body.appendChild(opener);
+    opener.focus();
+    const onClose = vi.fn();
+    const props = {
+      onClose,
+      draftSettings: {
+        teamCount: 1,
+        draftOrder: ["Team 1"],
+        scoringCategories: { GOALS: 3 },
+        rosterConfig: {
+          C: 1,
+          LW: 0,
+          RW: 0,
+          D: 0,
+          G: 0,
+          utility: 0,
+          bench: 0,
+        },
+        isKeeper: false,
+      },
+      draftedPlayers: [],
+      teamStats: [],
+      allPlayers: [],
+    } as any;
+    const view = render(<DraftSummaryModal isOpen {...props} />);
+
+    const closeButton = screen.getByRole("button", {
+      name: "Close Draft Summary",
+    });
+    await waitFor(() => expect(document.activeElement).toBe(closeButton));
+
+    const firstButton = screen.getByRole("button", { name: "Recap" });
+    closeButton.focus();
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(document.activeElement).toBe(firstButton);
+    firstButton.focus();
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(closeButton);
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(1);
+    view.rerender(<DraftSummaryModal isOpen={false} {...props} />);
+    expect(document.activeElement).toBe(opener);
+    opener.remove();
   });
 });
