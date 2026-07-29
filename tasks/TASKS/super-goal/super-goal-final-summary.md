@@ -467,6 +467,12 @@ Remaining cleanup and reference initiative sections are pending verified Wave-B 
 - **Contract:** The goalie-first routes remain wrappers over the canonical shared, completely paginated/chunked aggregation engine. The PRD, runbook, source map, and five pre-implementation artifacts now distinguish shipped ownership from historical rationale.
 - **Verification / controls:** The scoped seven-file/20-test cohort, full TypeScript, zero-error scoped lint, formatting, source/master 46/46 parity, and diff integrity pass. Dynamic audit 5.3.3 closes. Raw parity is 4,813/4,953 with 140 unchecked = 97.17%; actionable parity is 4,813/4,947 with 134 open = 97.29% complete / 2.71% open. Severity is P0 28/23, P1 184/146, P2 152/144, P3 35/35. No formula, writer, data, schema, migration, build, deployment, provider, schedule, credential, shared checkout, push, or stash changed.
 
+### C-US Mobile Stats audit
+
+- **Repair:** The mobile teams-grid morph now uses one passive requestAnimationFrame-coalesced listener and threshold-only React updates; unused per-frame state, scroll-stop timers, listener churn, and direct DOM synchronization are removed. Stats leaderboard reads now use deterministic complete pagination and chunked identity filters; goalie fallback first resolves and then reads only the latest available season.
+- **Contract:** `/stats` owns responsive team/search/leaderboard composition and navigation handoff. `/stats/team/[abbreviation]` and `/stats/player/[playerId]` keep their separate responsive ownership. Explicit tabs and expand buttons remain authoritative instead of swipe gestures.
+- **Verification / controls:** The scoped five-file/11-test cohort, full TypeScript, zero-error scoped lint, baseline-compatible code formatting, source/master 43/43 parity, and diff integrity pass. Dynamic audit 5.3.5 closes. Raw parity is 4,818/4,957 with 139 unchecked = 97.20%; actionable parity is 4,818/4,951 with 133 open = 97.31% complete / 2.69% open. Severity is P0 28/23, P1 184/146, P2 154/146, P3 36/36. No route ownership, writer, data, schema, migration, schedule, build, deployment, provider, credential, shared checkout, push, or stash changed.
+
 ## Completion-gate evidence
 
 All charter questions remain open until source/master synchronization, Wave A/B completion, Wave C audit/remediation, cross-initiative verification, cleanup, diary finalization, and evidence population are complete.

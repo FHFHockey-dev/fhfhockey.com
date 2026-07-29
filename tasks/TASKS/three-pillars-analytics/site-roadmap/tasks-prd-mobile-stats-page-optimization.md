@@ -2,7 +2,7 @@
 
 ## Project Context for LLM Continuation
 
-**Project Status:** We have completed Task 1.0 (Enhance SCSS Variables and Mobile Foundation), Task 2.0 (Implement Mobile-First Layout Structure), Task 3.0 (Optimize Teams Grid for Mobile Touch Interactions), and are now working on advanced mobile team grid functionality with modular architecture.
+**Project Status:** Complete and dynamically audited on 2026-07-29. The responsive `/stats` landing owns mobile team/search/leaderboard composition and hands navigation to the separately owned team/player entity routes.
 
 **What Was Completed:**
 - Added comprehensive mobile-specific variables to `web/styles/vars.scss`
@@ -12,8 +12,7 @@
 - ✅ **NEW:** Task 3.7 completed - Created modular mobile team list architecture with `MobileTeamList.tsx` component
 - ✅ **NEW:** Task 3.8 completed - Implemented smooth morphing animations and dynamic search bar positioning
 - ✅ **NEW:** Task 3.9 completed - Fixed scroll detection logic for proper expansion/collapse behavior
-- Test suite passed (12/12 tests)
-- Changes committed with message: "feat: add comprehensive mobile variables to vars.scss"
+- Current focused audit cohort passes the page scroll and complete-read regressions; historical implementation evidence remains below.
 
 **Key Variables Added:**
 - Mobile breakpoints: `$breakpoint-mobile-xs` (320px) through `$breakpoint-mobile-lg` (480px)
@@ -30,8 +29,6 @@
 - **Dynamic Positioning:** Search bar dynamically sticks to bottom edge of teams grid container
 - **Hardware Acceleration:** CSS animations optimized with `will-change` and `transform` properties
 - **Hysteresis Logic:** Prevents jittery scroll behavior with proper expand/collapse thresholds
-
-**Next Task Ready:** Task 4.0 - Create Mobile-Optimized Leaderboard Components
 
 ## Relevant Files
 
@@ -97,6 +94,10 @@
   - [x] 5.5 Optimize search bar for mobile keyboards and autocomplete functionality
   - [x] 5.6 Test and validate touch interactions across different mobile devices and screen sizes
   - [x] 5.7 Implement accessibility improvements for mobile screen readers and touch navigation
+- [x] 6.0 Complete dynamic-audit remediation
+  - [x] 6.1 **P2:** Remove unused per-frame React scroll state, listener churn, timers, and direct DOM synchronization; retain one passive requestAnimationFrame-coalesced listener with threshold-only state changes.
+  - [x] 6.2 **P2:** Fully paginate skater, goalie, identity, and latest-standings reads with deterministic order/chunking, and isolate goalie fallback rankings to the latest available season.
+  - [x] 6.3 **P3:** Reconcile the PRD/task status, route ownership, gesture decision, thresholds, and completed implementation evidence.
 
 ## Recent Achievements
 
@@ -119,8 +120,8 @@
 
 ### Fixed Scroll Behavior (Task 3.9)
 - Resolved jittery scroll issues with improved hysteresis logic
-- Proper expand threshold (≤20px) and collapse threshold (≥100px)
-- RequestAnimationFrame-based scroll handling for 60fps performance
+- Proper expand threshold (≤30px) and collapse threshold (≥80px)
+- One stable passive, requestAnimationFrame-coalesced listener with no unused per-frame React state or direct DOM synchronization
 - Dynamic search bar positioning that follows teams grid state
 
 ### Key Technical Improvements

@@ -1,4 +1,11 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -34,7 +41,9 @@ vi.mock("components/StatsPage/LeaderboardCategoryGoalie", () => ({
   default: () => null,
 }));
 vi.mock("components/StatsPage/MobileTeamList", () => ({
-  default: () => null,
+  default: ({ teamsGridState }: { teamsGridState: string }) => (
+    <div data-grid-state={teamsGridState} data-testid="mobile-team-list" />
+  ),
 }));
 vi.mock("components/StatsPage/MobileTabInterface", () => ({
   default: () => null,
@@ -66,6 +75,10 @@ beforeEach(() => {
   Object.defineProperty(window, "innerWidth", {
     configurable: true,
     value: 1024,
+  });
+  Object.defineProperty(window, "scrollY", {
+    configurable: true,
+    value: 0,
   });
   vi.spyOn(console, "log").mockImplementation(() => undefined);
 });
@@ -107,5 +120,68 @@ describe("StatsPage team logos", () => {
       screen.getByRole("img", { name: "Unknown Team" }).getAttribute("src"),
     ).toBe("/teamLogos/FHFH.png");
     expect(document.querySelector('img[src*="default.png"]')).toBeNull();
+  });
+});
+
+describe("StatsPage mobile team grid", () => {
+  it("morphs through one stable passive scroll listener and cancels pending work", async () => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 430,
+    });
+
+    let nextFrameId = 0;
+    const callbacks = new Map<number, FrameRequestCallback>();
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      nextFrameId += 1;
+      callbacks.set(nextFrameId, callback);
+      return nextFrameId;
+    });
+    const cancelFrame = vi
+      .spyOn(window, "cancelAnimationFrame")
+      .mockImplementation((frameId) => {
+        callbacks.delete(frameId);
+      });
+    const addEventListener = vi.spyOn(window, "addEventListener");
+
+    const { unmount } = render(<StatsPage {...emptyStatsProps} teams={[]} />);
+    const mobileTeamList = await screen.findByTestId("mobile-team-list");
+
+    const runLatestFrame = () => {
+      const frameId = nextFrameId;
+      const callback = callbacks.get(frameId);
+      expect(callback).toBeDefined();
+      callbacks.delete(frameId);
+      act(() => callback?.(frameId));
+    };
+
+    Object.defineProperty(window, "scrollY", {
+      configurable: true,
+      value: 100,
+    });
+    fireEvent.scroll(window);
+    runLatestFrame();
+    await waitFor(() =>
+      expect(mobileTeamList.getAttribute("data-grid-state")).toBe("collapsed"),
+    );
+
+    Object.defineProperty(window, "scrollY", {
+      configurable: true,
+      value: 0,
+    });
+    fireEvent.scroll(window);
+    runLatestFrame();
+    await waitFor(() =>
+      expect(mobileTeamList.getAttribute("data-grid-state")).toBe("expanded"),
+    );
+
+    expect(
+      addEventListener.mock.calls.filter(([event]) => event === "scroll"),
+    ).toHaveLength(1);
+
+    fireEvent.scroll(window);
+    const pendingFrameId = nextFrameId;
+    unmount();
+    expect(cancelFrame).toHaveBeenCalledWith(pendingFrameId);
   });
 });

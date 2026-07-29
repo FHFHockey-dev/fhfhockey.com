@@ -205,7 +205,7 @@
     - [x] 5.3.2 Audit Team Underlying Stats landing/detail contracts. Landing-only v1 preserves complete paginated summary reads, canonical filters/URL state, counts/rates, deterministic sorting, wide-table states, and explicit detail deferral. P1 NEW 15.0 redacts public dependency failures and P3 NEW 15.1 reconciles the PRD with the shipped contract; the focused six-file/26-test initiative cohort, TypeScript, scoped lint, and source/master parity pass (completed 2026-07-29).
     - [x] 5.3.3 Audit Goalie Underlying Stats landing/detail/runbook. Dedicated goalie landing/detail/chart wrappers preserve the shared canonical aggregation engine, complete paginated/chunked reads, goalie-only families, filters, URL state, drill-down, and operator routes. P1 NEW 7.0 redacts all three public 500 surfaces and P3 NEW 7.1 reconciles the PRD, runbook, source map, and historical audit artifacts. The scoped seven-file/20-test cohort, TypeScript, zero-error scoped lint, formatting, source/master parity, and diff integrity pass (completed 2026-07-29).
     - [x] 5.3.4 Audit standalone Underlying Stats landing and power-ranking roadmaps after A-US-SOS/B-GAMEGRID changes. Evidence: dashboard-first composition, numeric sorting, accessible native popovers, safe route/error states, canonical BCS-style SoS ownership, and bounded schedule reads remain intact; P2 NEW 7.0 repairs the sole active drift by paginating the 120-day narrative history with stable ordering. The focused five-file landing cohort passes 19/19 plus TypeScript, scoped lint, formatting, source/master parity, and diff integrity (verified 2026-07-29).
-    - [ ] 5.3.5 Audit Mobile Stats optimization across supported entity routes.
+    - [x] 5.3.5 Audit Mobile Stats optimization across supported entity routes.
     - [ ] 5.3.6 Audit WiGO charts optimization and remaining legacy ownership.
   - [ ] 5.4 `C-FORGE` Audit and remediate completed goalie, modularization, dashboard, pass-three, and prediction-engine work.
     - [ ] 5.4.1 Audit Goalie FORGE nested implementation and operator runbook.
@@ -3250,7 +3250,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-fhfh-style-system-and-underlying-stats-restyle.md::C0087` (original L156) — 12.6 Enrich the lead riser/faller summary cards with weekly games and off-night schedule context derived from the same weekly schedule model used by the Game Grid.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-fhfh-style-system-and-underlying-stats-restyle.md::C0088` (live NEW) — NEW 13.0 **P1 make every canonical shared dialog honor the same keyboard focus lifecycle:** Draft Summary now focuses inside on open, traps forward/reverse Tab, closes on Escape, and restores its opener; the canonical guide and focused regression agree (closed 2026-07-29).
 
-### Source: `tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-mobile-stats-page-optimization.md` (39 rows)
+### Source: `tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-mobile-stats-page-optimization.md` (43 rows)
 
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-mobile-stats-page-optimization.md::C0001` (original L61) — 1.0 Enhance SCSS Variables and Mobile Foundation ✅ COMPLETED & COMMITTED
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-mobile-stats-page-optimization.md::C0002` (original L62) — 1.1 Add mobile-specific breakpoint variables to `vars.scss` for precise mobile targeting (320px-480px range)
@@ -3291,6 +3291,10 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-mobile-stats-page-optimization.md::C0037` (original L97) — 5.5 Optimize search bar for mobile keyboards and autocomplete functionality
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-mobile-stats-page-optimization.md::C0038` (original L98) — 5.6 Test and validate touch interactions across different mobile devices and screen sizes
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-mobile-stats-page-optimization.md::C0039` (original L99) — 5.7 Implement accessibility improvements for mobile screen readers and touch navigation
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-mobile-stats-page-optimization.md::C0040` (live NEW) — 6.0 Complete dynamic-audit remediation.
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-mobile-stats-page-optimization.md::C0041` (live NEW) — 6.1 **P2:** Remove unused per-frame React scroll state, listener churn, timers, and direct DOM synchronization; retain one passive requestAnimationFrame-coalesced listener with threshold-only state changes.
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-mobile-stats-page-optimization.md::C0042` (live NEW) — 6.2 **P2:** Fully paginate skater, goalie, identity, and latest-standings reads with deterministic order/chunking, and isolate goalie fallback rankings to the latest available season.
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-mobile-stats-page-optimization.md::C0043` (live NEW) — 6.3 **P3:** Reconcile the PRD/task status, route ownership, gesture decision, thresholds, and completed implementation evidence.
 
 ### Source: `tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md` (19 rows)
 
