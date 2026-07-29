@@ -224,7 +224,7 @@
   - [ ] 5.7 `C-DYNAMIC` Audit every Wave-A/B initiative after its final implementation changes.
     - [ ] 5.7.1 Add a named audit subtask here for each Wave-A initiative immediately when it reaches implementation DoD.
     - [ ] 5.7.2 Add a named audit subtask here for each Wave-B initiative immediately when it reaches implementation DoD.
-    - [ ] 5.7.3 `C-DYNAMIC-A-US-SOS` Audit the completed underlying-stats landing/SOS initiative after Waves A and B permit broad Wave-C execution.
+    - [x] 5.7.3 `C-DYNAMIC-A-US-SOS` Audit the completed underlying-stats landing/SOS initiative after Waves A and B permit broad Wave-C execution. Evidence: route/payload/helper/test tracing confirms the later power-rankings roadmap supersedes the historical 50/50 formula with one visible BCS-style Past/Future contract; source/master NEW 8 records the ownership overlay, the misleading test title is corrected, and trend/date/freshness/cross-link/accessibility/responsive boundaries remain intact (2026-07-29).
     - [ ] 5.7.4 `C-DYNAMIC-A-SITE` Audit the completed site surface expansion roadmap, including route ownership, freshness, cross-links, calculations, accessibility, responsive behavior, and deferred-scope honesty.
     - [ ] 5.7.5 `C-DYNAMIC-A-STYLE` Audit the completed style-system and underlying-stats restyle, including token/guide/sandbox drift, dialog accessibility, player coverage diagnostics, load-more performance, and responsive table behavior.
     - [ ] 5.7.6 `C-DYNAMIC-A-FORGE-V1` Audit completed Projection V1 after Waves A/B, including the approved runtime/14-day evidence exception, promotion safeguards, pagination, freshness gates, model contracts, calibration, and canonical readers.
@@ -3910,6 +3910,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-underlying-stats-landing-page-sos.md::C0031` (original L94) — 5.4 Confirm that no implementation changes altered `/underlying-stats/playerStats` behavior or shared logic beyond what was strictly required for the landing page.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-underlying-stats-landing-page-sos.md::C0032` (original L95) — 5.5 Record final verification notes, assumptions, and any residual risks around optional `SoS` inputs that were intentionally excluded.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-underlying-stats-landing-page-sos.md::C0033` (original L97) — NEW 6.0 Refresh or backfill affected `team_power_ratings_daily` snapshots after the trend logic is corrected so the landing page is not reading stale flattened history.
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-underlying-stats-landing-page-sos.md::C0034` (live NEW) — NEW 8.0 **P2 reconcile the superseded 50/50 SoS definition with the current landing-page contract.** Evidence: later roadmap, route copy, payload, helper, and focused tests agree on one BCS-style Past/Future contract; historical 50/50 material remains lineage only (verified 2026-07-29).
 
 ### Source: `tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-underlying-stats-landing-page.md` (40 rows)
 
