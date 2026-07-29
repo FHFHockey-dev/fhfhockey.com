@@ -922,6 +922,6 @@ export default async function handler(
   } catch (err: any) {
     inFlight.delete(cacheKey);
     console.error("start-chart API error", err);
-    return res.status(500).json({ error: err?.message ?? "Unexpected error" });
+    return res.status(500).json({ error: "START_CHART_UNAVAILABLE" });
   }
 }

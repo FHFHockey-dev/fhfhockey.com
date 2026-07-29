@@ -631,4 +631,27 @@ describe("/api/v1/start-chart", () => {
       positions: ["G"],
     });
   });
+
+  it("returns a stable public error when a dependency fails", async () => {
+    const internalDetail =
+      "private_relation failed with Bearer internal-service-token";
+    fetchCurrentSeasonMock.mockRejectedValue(new Error(internalDetail));
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart"))
+      .default;
+    const res = createMockRes();
+
+    await handler(
+      { method: "GET", query: { date: "2026-02-08" } } as any,
+      res,
+    );
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({ error: "START_CHART_UNAVAILABLE" });
+    expect(JSON.stringify(res.body)).not.toContain(internalDetail);
+    consoleError.mockRestore();
+  });
 });

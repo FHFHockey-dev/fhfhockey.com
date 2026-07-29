@@ -53,3 +53,9 @@ Production activation completed on 2026-07-12. The exposed credential was rotate
 ## Follow-On Optimization Ownership
 
 The existing remediation backlog continues to own lower-priority calibration, composite naming, duplicate-control, goalie-chain, rolling-pipeline, and legacy-reuse work. Those items do not override the red/yellow classifications or the explicit NEW 13 release gate.
+
+## Dynamic Wave-C Reaudit
+
+The 2026-07-29 dynamic audit revalidated the approved historical Sustainability/goalie exceptions, the prospective non-zero Top Adds promotion gate, active Vault-backed writer ownership, cap-safe pagination, initial URL hydration, and the labeled rollback route. The authoritative matrix remains 4 green, 3 yellow, and 3 red.
+
+The audit closed one public-reader security drift: ownership trends, ownership snapshots, and Start Chart now return stable unavailable codes instead of dependency details on 5xx paths. It also reconciled the source tracker with the later verified deletion of the zero-consumer Top Movers wrapper; active movers rendering remains on Trends. The focused route plus dashboard/landing cohort passes 48/48.

@@ -99,6 +99,7 @@ This file is also the required rolling backlog for newly discovered issues and o
 - [Resolved 2026-07-11] Add route continuity tests for preserving `date`, `mode`, and resolved fallback context across CTA and row-level drill-ins.
 - [Resolved 2026-07-11] Add coverage-delta checks for goalie fallback behavior and projection coverage loss.
 - [Resolved 2026-07-11] Fix the FORGE page-route Vitest module-resolution blocker so the route-family suites collect and pass.
+- [Resolved 2026-07-29] Redact internal dependency detail from the public ownership-trends, ownership-snapshots, and Start Chart failure paths behind stable unavailable codes while retaining server-side diagnostics.
 
 ## Track 6: Runtime And Optimization
 
@@ -125,6 +126,10 @@ This file is also the required rolling backlog for newly discovered issues and o
   - hard-coded `calculateGameScore` weights
   - direct client-side Supabase fetch path against `sko_*` tables
 - [Resolved 2026-03-29] Retire the unused `web/components/forge-dashboard/TopMoversCard.tsx` surface from the active dashboard composition; do not reintegrate it until a future owner rebuilds its freshness and ownership semantics intentionally.
+
+### `P3`
+
+- [Resolved 2026-07-29] Reconcile the source tracker with the later verified physical deletion of the zero-consumer Top Movers wrapper; active movers rendering remains owned by Trends.
 
 ## Quarantine Alignment
 

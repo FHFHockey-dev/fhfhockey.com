@@ -269,3 +269,7 @@ The audit should produce one stable status record per component containing:
 3. Should preview surfaces in [FORGE.tsx](/Users/tim/Code/fhfhockey.com/web/pages/FORGE.tsx) inherit the same health status as their full dashboard counterparts, or should preview-specific degradations be tracked separately?
 4. For mixed-source components such as team context or player opportunity, what is the final policy for partial freshness when one upstream feed is current and another is stale?
 5. Which existing verification scripts can be reused directly for this audit, and which component families will need new checks?
+
+## 10. Dynamic Audit Reconciliation
+
+The 2026-07-29 Wave-C audit preserved the owner-approved historical Sustainability/goalie quarantines, prospective non-zero Top Adds gate, Vault-backed writer ownership, cap-safe pagination, initial hydration, rollback route, and authoritative 4-green/3-yellow/3-red matrix. It closed public dependency-detail disclosure in ownership trends, ownership snapshots, and Start Chart behind stable unavailable codes and reconciled the source tracker with the later verified deletion of the zero-consumer Top Movers wrapper.

@@ -268,6 +268,6 @@ export default async function handler(
     console.error("ownership-snapshots error", err?.message || err);
     return res
       .status(500)
-      .json({ success: false, error: err?.message || String(err) });
+      .json({ success: false, error: "OWNERSHIP_SNAPSHOTS_UNAVAILABLE" });
   }
 }

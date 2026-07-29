@@ -391,8 +391,7 @@ export default async function handler(
       .status(normalized.source === "supabase_or_proxy" ? 503 : 500)
       .json({
         success: false,
-        error: normalized.message,
-        ...(normalized.detail ? { detail: normalized.detail } : {})
+        error: "OWNERSHIP_TRENDS_UNAVAILABLE"
       });
   }
 }

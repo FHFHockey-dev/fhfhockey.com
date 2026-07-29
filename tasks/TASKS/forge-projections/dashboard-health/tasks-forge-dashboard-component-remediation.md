@@ -26,7 +26,7 @@
 - `web/components/forge-dashboard/HotColdCard.tsx` - Trend-movement component needing true freshness semantics and overlay safety repairs.
 - `web/components/forge-dashboard/GoalieRiskCard.tsx` - Goalie component needing coverage-loss, fallback, and requested-date truthfulness repairs.
 - `web/components/forge-dashboard/ForgeRouteNav.tsx` - Shared route navigation contract that must preserve dashboard context correctly.
-- `web/components/forge-dashboard/TopMoversCard.tsx` - Currently unused dashboard module that needs an explicit integrate-or-retire decision instead of remaining stale surface area.
+- `web/components/forge-dashboard/TopMoversCard.tsx` - Historical zero-consumer wrapper retired after the explicit integrate-or-retire review; active movers rendering remains owned by Trends.
 - `web/lib/dashboard/forgeLinks.ts` - Shared FORGE route-state helper for preserving selected date, mode, and resolved fallback context across nav and drill-ins.
 - `web/lib/dashboard/normalizers.ts` - Shared normalization layer where stale coercion and mixed-cadence masking currently occur.
 - `web/lib/dashboard/playerOwnership.ts` - Shared Yahoo ownership helper that needs season-resolution and null-overlay repairs.
@@ -138,7 +138,7 @@
   - [x] 7.4 Re-audit displayed dashboard scoring contracts, including `computeTeamPowerScore` naming/weights and the duplicated ownership-band controls between the dashboard shell and `TopAddsRail`, then fix or rename any composite that overstates what its inputs actually contain.
   - [x] 7.5 Finish the page-level and component-level styling pass for `web/pages/forge/dashboard.tsx` and the individual dashboard modules using `tasks/TASKS/rules/fhfh-styles.md` plus `web/styles/vars.scss`, with special attention to rail density, spacing, hierarchy, overflow, and degraded/loading state polish.
   - [x] 7.6 Smoke-test the live FORGE/dashboard endpoint family under the stated runtime and rate-limit rules, capture any stale-table blockers that require manual catch-up, and append optimization work for any scenario that misses the `4m30s` target.
-  - [x] 7.7 Perform output vetting and Chromium visual inspection for each dashboard band, append any newly discovered component/output issues, and make an explicit integrate-or-retire decision for stale dashboard surfaces such as `web/components/forge-dashboard/TopMoversCard.tsx`.
+  - [x] 7.7 Perform output vetting and Chromium visual inspection for each dashboard band, append any newly discovered component/output issues, and make an explicit integrate-or-retire decision for stale dashboard surfaces such as the later-removed `web/components/forge-dashboard/TopMoversCard.tsx`.
   - [x] 7.8 Repair the FORGE page-test module-resolution blocker so the route-family Vitest suites can execute again instead of failing before collection on `lib/dashboard/*` imports.
   - [x] 7.9 Teach the Trends player detail route to understand forwarded FORGE context (`date`, origin, and return path) so cross-route handoffs preserve operator context instead of becoming one-way jumps.
 
@@ -181,3 +181,7 @@
   - [x] 17.1 Skip only the projection-derived freshness query/gate on a zero-game slate, retain the blocker for scheduled slates, add both regressions, deploy, and re-run the weekly owner as a truthful no-op. Commit `258cbcb`, 32 focused tests, TypeScript, READY production build, and live HTTP 200/430 ms zero-game evidence pass (2026-07-12).
 
 - [x] 18.0 **NEW — Prevent the retained legacy dashboard rollback from mounting data modules before URL filter hydration.** The initial-only router hydration gate preserves ordinary filter changes while eliminating duplicate today/historical reads; 24/24 dashboard tests, 40/40 combined FORGE route tests, TypeScript, and browser/server-log verification pass (2026-07-12).
+
+- [x] 19.0 **NEW — Complete the dynamic Wave-C dashboard architecture and operational-truthfulness audit.** Direct tracing reconfirmed the approved historical Sustainability/goalie quarantines, prospective non-zero Top Adds gate, Vault-backed writer ownership, cap-safe reads, initial hydration, rollback availability, and unchanged 4-green/3-yellow/3-red matrix (2026-07-29).
+  - [x] 19.1 **P1 public dashboard reader dependency-detail disclosure.** Ownership trends, ownership snapshots, and Start Chart now keep dependency diagnostics in server logs while returning only stable public unavailable codes; direct route and dashboard/landing regressions pass 48/48 (2026-07-29).
+  - [x] 19.2 **P3 stale Top Movers source-tracker disposition.** Relevant Files now reflects the later verified deletion of the zero-consumer wrapper while preserving active movers rendering on Trends (2026-07-29).
