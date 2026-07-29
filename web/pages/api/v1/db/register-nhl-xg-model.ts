@@ -8,6 +8,7 @@ import {
   buildXgModelRegistryRow,
   hashXgModelArtifactFile,
   upsertXgModelRegistryRow,
+  XgModelLifecycleError,
   type XgModelApprovalStatus,
 } from "lib/xg/modelRegistry";
 import {
@@ -94,6 +95,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       deploymentAlias: firstQueryValue(req.query.deploymentAlias) ?? "candidate",
       isActive: parseBoolean(firstQueryValue(req.query.active)),
       isChampion: parseBoolean(firstQueryValue(req.query.champion)),
+      promotionConfirmed: parseBoolean(firstQueryValue(req.query.confirmPromotion)),
     });
 
     await upsertXgModelRegistryRow({ supabase, row });
@@ -114,6 +116,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       },
     });
   } catch (error) {
+    if (error instanceof XgModelLifecycleError) {
+      return res.status(409).json({
+        success: false,
+        error: error.message,
+      });
+    }
     return res.status(500).json({
       success: false,
       error: `Failed to register xG model artifact: ${getErrorMessage(error)}`,

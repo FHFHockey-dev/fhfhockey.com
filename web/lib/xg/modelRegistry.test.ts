@@ -60,6 +60,7 @@ describe("modelRegistry", () => {
       deploymentAlias: "champion",
       isActive: true,
       isChampion: true,
+      promotionConfirmed: true,
     });
 
     expect(row).toMatchObject({
@@ -111,5 +112,36 @@ describe("modelRegistry", () => {
       isEligible: false,
       blockingReasons: ["not enough test goals"],
     });
+  });
+
+  it("rejects approved lifecycle state for an ineligible artifact", () => {
+    expect(() =>
+      buildXgModelRegistryRow({
+        artifact: artifact({
+          approvalGradeEligibility: {
+            isEligible: false,
+            blockingReasons: ["calibration drift"],
+          },
+        }),
+        approvalStatus: "approved",
+      })
+    ).toThrow("not approval-eligible");
+  });
+
+  it("requires explicit confirmation before activation or champion promotion", () => {
+    expect(() =>
+      buildXgModelRegistryRow({
+        artifact: artifact(),
+        isActive: true,
+      })
+    ).toThrow("confirmPromotion=true");
+
+    expect(() =>
+      buildXgModelRegistryRow({
+        artifact: artifact(),
+        isChampion: true,
+        promotionConfirmed: true,
+      })
+    ).toThrow("must also be active");
   });
 });
