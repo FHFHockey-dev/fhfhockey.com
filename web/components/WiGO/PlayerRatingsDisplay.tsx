@@ -6,6 +6,7 @@ import { calculatePlayerRatings } from "utils/calculateWigoRatings";
 import { CalculatedPlayerRatings } from "components/WiGO/types";
 
 import styles from "./PlayerRatingsDisplay.module.scss";
+import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 
 interface PlayerRatingsProps {
   playerId: number | null | undefined;
@@ -58,21 +59,24 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
   seasonId,
   minGp
 }) => {
-  const { data: ratings, isLoading, error } =
-    useQuery<CalculatedPlayerRatings | null>({
-      queryKey: ["wigoPlayerRatings", playerId, seasonId, minGp],
-      queryFn: async () => {
-        const rawStats = await fetchRawStatsForAllStrengths(seasonId as number);
-        return calculatePlayerRatings(
-          playerId as number,
-          rawStats,
-          undefined,
-          undefined,
-          minGp
-        );
-      },
-      enabled: typeof playerId === "number" && typeof seasonId === "number"
-    });
+  const {
+    data: ratings,
+    isLoading,
+    error
+  } = useQuery<CalculatedPlayerRatings | null>({
+    queryKey: ["wigoPlayerRatings", playerId, seasonId, minGp],
+    queryFn: async () => {
+      const rawStats = await fetchRawStatsForAllStrengths(seasonId as number);
+      return calculatePlayerRatings(
+        playerId as number,
+        rawStats,
+        undefined,
+        undefined,
+        minGp
+      );
+    },
+    enabled: typeof playerId === "number" && typeof seasonId === "number"
+  });
 
   const formatRating = (rating: number | null): string => {
     return rating !== null && !isNaN(rating) ? rating.toFixed(1) : "-";
@@ -82,11 +86,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
     if (isLoading)
       return <div className={styles.loading}>Loading Ratings...</div>;
     if (error instanceof Error)
-      return (
-        <div className={styles.error}>
-          Failed to calculate ratings: {error.message || "Unknown error"}
-        </div>
-      );
+      return <div className={styles.error}>{WIGO_ERROR_MESSAGES.ratings}</div>;
     if (!ratings && !isLoading && playerId)
       return <div className={styles.calculating}>Calculating...</div>;
     if (!playerId)

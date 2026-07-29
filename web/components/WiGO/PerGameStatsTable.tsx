@@ -6,6 +6,7 @@ import {
   SkaterTotalsData
 } from "utils/fetchWigoPlayerStats";
 import { formatWigoStatValue } from "./statMetadata";
+import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 import styles from "./PerGameStatsTable.module.scss";
 
 type NumericSkaterTotalsKeys = {
@@ -51,13 +52,15 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
   playerId,
   seasonId
 }) => {
-  const { data: totalsData, isLoading, error } = useQuery<SkaterTotalsData | null>(
-    {
-      queryKey: ["wigoPerGameTotals", playerId, seasonId ?? "latest"],
-      queryFn: () => fetchPlayerPerGameTotals(playerId as number, seasonId),
-      enabled: typeof playerId === "number"
-    }
-  );
+  const {
+    data: totalsData,
+    isLoading,
+    error
+  } = useQuery<SkaterTotalsData | null>({
+    queryKey: ["wigoPerGameTotals", playerId, seasonId ?? "latest"],
+    queryFn: () => fetchPlayerPerGameTotals(playerId as number, seasonId),
+    enabled: typeof playerId === "number"
+  });
 
   const statRows = useMemo(() => {
     if (!totalsData?.games_played || totalsData.games_played <= 0) {
@@ -117,7 +120,7 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
     }
 
     if (error instanceof Error) {
-      return `Failed to load stats: ${error.message || "Unknown error"}`;
+      return WIGO_ERROR_MESSAGES.stats;
     }
 
     if (!isLoading && totalsData && (totalsData.games_played ?? 0) <= 0) {
@@ -136,7 +139,9 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
       {isLoading && (
         <div className={styles.loadingMessage}>Loading Stats...</div>
       )}
-      {errorMessage && <div className={styles.errorMessage}>{errorMessage}</div>}
+      {errorMessage && (
+        <div className={styles.errorMessage}>{errorMessage}</div>
+      )}
       {!isLoading && !errorMessage && statRows.length === 0 && playerId && (
         <div className={styles.noDataMessage}>No data available.</div>
       )}

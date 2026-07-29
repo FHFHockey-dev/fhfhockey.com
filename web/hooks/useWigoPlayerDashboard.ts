@@ -8,6 +8,7 @@ import {
   defaultColors,
   TableAggregateData
 } from "components/WiGO/types";
+import { WIGO_ERROR_MESSAGES } from "components/WiGO/errorMessages";
 import { getTeamInfoById, teamNameToAbbreviationMap } from "lib/teamsInfo";
 import supabase from "lib/supabase";
 import { fetchPlayerAggregatedStats } from "utils/fetchWigoPlayerStats";
@@ -221,11 +222,11 @@ export default function useWigoPlayerDashboard(): UseWigoPlayerDashboardResult {
     isLoadingPlayer: selectedPlayerQuery.isLoading,
     aggDataError:
       aggregatedStatsQuery.error instanceof Error
-        ? aggregatedStatsQuery.error.message
+        ? WIGO_ERROR_MESSAGES.comparison
         : null,
     playerDataError:
       selectedPlayerQuery.error instanceof Error
-        ? selectedPlayerQuery.error.message
+        ? WIGO_ERROR_MESSAGES.player
         : null,
     handlePlayerSelect,
     updateUrlWith

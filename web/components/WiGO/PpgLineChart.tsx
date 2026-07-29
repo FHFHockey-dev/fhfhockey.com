@@ -31,6 +31,7 @@ import Spinner from "components/Spinner";
 import Zoom from "chartjs-plugin-zoom";
 import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors";
 import WigoSectionCard from "./WigoSectionCard";
+import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 
 ChartJS.register(
   CategoryScale,
@@ -286,46 +287,46 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId, seasonId }) => {
   const chartOptions = getChartOptions();
   return (
     <WigoSectionCard title="Points / Game">
-        {/* Render the chart structure if NO error */}
-        {/* Shows empty state (with dummy labels) while loading */}
-        {!error && (
-          <Chart // Use the mixed type Chart component
-            ref={chartRef}
-            type="bar" // Base type is bar, lines override in datasets
-            options={chartOptions}
-            data={chartData}
-          />
-        )}
+      {/* Render the chart structure if NO error */}
+      {/* Shows empty state (with dummy labels) while loading */}
+      {!error && (
+        <Chart // Use the mixed type Chart component
+          ref={chartRef}
+          type="bar" // Base type is bar, lines override in datasets
+          options={chartOptions}
+          data={chartData}
+        />
+      )}
 
-        {/* --- Overlapping Status Indicators --- */}
+      {/* --- Overlapping Status Indicators --- */}
 
-        {/* Loading Indicator */}
-        {isLoading && (
-          <div style={loadingOverlayStyle}>
-            <Spinner />
-          </div>
-        )}
+      {/* Loading Indicator */}
+      {isLoading && (
+        <div style={loadingOverlayStyle}>
+          <Spinner />
+        </div>
+      )}
 
-        {/* Error Message */}
-        {error instanceof Error && !isLoading && (
-          <div style={placeholderStyle}>Error: {error.message}</div>
-        )}
+      {/* Error Message */}
+      {error instanceof Error && !isLoading && (
+        <div style={placeholderStyle}>{WIGO_ERROR_MESSAGES.chart}</div>
+      )}
 
-        {/* "Select Player" Placeholder */}
-        {!isLoading && !error && !playerId && (
-          <div style={placeholderStyle}>Select a player to view chart.</div>
-        )}
+      {/* "Select Player" Placeholder */}
+      {!isLoading && !error && !playerId && (
+        <div style={placeholderStyle}>Select a player to view chart.</div>
+      )}
 
-        {!isLoading && !error && playerId && !seasonId && (
-          <div style={placeholderStyle}>Loading season info...</div>
-        )}
+      {!isLoading && !error && playerId && !seasonId && (
+        <div style={placeholderStyle}>Loading season info...</div>
+      )}
 
-        {/* "No Data" Placeholder */}
-        {!isLoading &&
-          !error &&
-          playerId &&
-          seasonId &&
-          gameLogData.length === 0 && (
+      {/* "No Data" Placeholder */}
+      {!isLoading &&
+        !error &&
+        playerId &&
+        seasonId &&
+        gameLogData.length === 0 && (
           <div style={placeholderStyle}>
             No Points data available for this player.
           </div>

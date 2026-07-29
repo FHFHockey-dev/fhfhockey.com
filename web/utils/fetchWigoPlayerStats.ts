@@ -1,9 +1,6 @@
 // web/utils/fetchWigoPlayerStats.ts
 
-import {
-  TableAggregateData,
-  PlayerRawStats
-} from "components/WiGO/types";
+import { TableAggregateData, PlayerRawStats } from "components/WiGO/types";
 import {
   WIGO_STAT_ORDER,
   getWigoStatMetadata,
@@ -663,68 +660,26 @@ export async function fetchPaginatedData<T>(
   selectColumns: string,
   seasonFilter?: { column: string; value: number | string }
 ): Promise<T[]> {
-  const PAGE_SIZE = 500; // Reduced from 1000 to 500
-  const MAX_RETRIES = 3;
+  return fetchAllSupabasePages<T>(
+    ({ from, to }) => {
+      let query = supabase.from(tableName).select(selectColumns);
 
-  const rows = await fetchAllSupabasePages<T>(async ({ from, to, pageIndex }) => {
-    let retries = 0;
-    let lastError = null;
+      if (seasonFilter) {
+        query = query.eq(seasonFilter.column, seasonFilter.value);
+      }
 
-    while (retries < MAX_RETRIES) {
-      try {
-        let query = supabase
-          .from(tableName)
-          .select(selectColumns)
-          .range(from, to);
-
-        // Add season filter if provided
-        if (seasonFilter) {
-          query = query.eq(seasonFilter.column, seasonFilter.value);
-        }
-
-        const { data, error } = await query;
-
-        if (error) {
-          lastError = error;
-          retries++;
-          if (retries < MAX_RETRIES) {
-            // Wait before retrying (exponential backoff)
-            await new Promise((resolve) =>
-              setTimeout(resolve, Math.pow(2, retries) * 1000)
-            );
-            continue;
-          }
-          throw error;
-        }
-
-        if (data) {
-          console.log(
-            `[fetchPaginatedData] Fetched ${data.length} rows on page ${pageIndex} for ${tableName}.`
-          );
-          return { data: data as T[], error: null };
-        } else {
-          return { data: [], error: null };
-        }
-      } catch (error) {
-        lastError = error;
-        retries++;
-        if (retries < MAX_RETRIES) {
-          await new Promise((resolve) =>
-            setTimeout(resolve, Math.pow(2, retries) * 1000)
-          );
-          continue;
-        }
-        throw error;
+      return query
+        .order("player_id", { ascending: true })
+        .range(from, to) as any;
+    },
+    {
+      pageSize: 500,
+      retry: {
+        attempts: 3,
+        delayMs: (attempt) => Math.pow(2, attempt) * 1000
       }
     }
-
-    return { data: null, error: lastError };
-  }, { pageSize: PAGE_SIZE });
-
-  console.log(
-    `[fetchPaginatedData] Finished fetch for ${tableName}. Total rows: ${rows.length}`
   );
-  return rows;
 }
 
 // New function to fetch per-game relevant totals

@@ -55,4 +55,19 @@ describe("PerGameStatsTable", () => {
       expect(screen.getByText("12.5%")).toBeTruthy();
     });
   });
+
+  it("does not expose dependency details when stats fail", async () => {
+    mockFetchPlayerPerGameTotals.mockRejectedValue(
+      new Error("relation private_stats does not exist")
+    );
+
+    renderWithClient(<PerGameStatsTable playerId={1} seasonId={20242025} />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Unable to load player stats right now.")
+      ).toBeTruthy();
+    });
+    expect(screen.queryByText(/private_stats/)).toBeNull();
+  });
 });

@@ -201,7 +201,9 @@ describe("RateStatPercentiles", () => {
 
     expect(chartPayload.labels).toContain("GF%");
     expect(chartPayload.labels).toContain("HDCF%");
-    expect(chartPayload.datasets[0].data).toHaveLength(chartPayload.labels.length);
+    expect(chartPayload.datasets[0].data).toHaveLength(
+      chartPayload.labels.length
+    );
   });
 
   it("surfaces the fallback notice and uses canonical GP when current-season percentile tables are stale", async () => {
@@ -246,12 +248,36 @@ describe("RateStatPercentiles", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Using 20242025 percentile cohort while 20252026 catches up/)
+        screen.getByText(
+          /Using 20242025 percentile cohort while 20252026 catches up/
+        )
       ).toBeTruthy();
     });
 
     expect(
       screen.queryByText(/Selected Player GP \(4\) below threshold/)
     ).toBeNull();
+  });
+
+  it("does not expose dependency details when percentile loading fails", async () => {
+    mockFetchPercentileCohortForPlayer.mockRejectedValue(
+      new Error("statement timeout on private_percentiles")
+    );
+
+    renderWithClient(
+      <RateStatPercentiles
+        playerId={8476453}
+        seasonId={20252026}
+        minGp={10}
+        onMinGpChange={vi.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Unable to load percentile data right now.")
+      ).toBeTruthy();
+    });
+    expect(screen.queryByText(/private_percentiles/)).toBeNull();
   });
 });
