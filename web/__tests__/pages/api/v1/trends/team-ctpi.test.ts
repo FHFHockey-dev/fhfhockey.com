@@ -11,25 +11,25 @@ const { fetchCurrentSeasonMock, supabaseState } = vi.hoisted(() => ({
     current: {
       from() {
         throw new Error("Supabase mock not configured for this test.");
-      }
-    } as { from: (table: string) => unknown }
-  }
+      },
+    } as { from: (table: string) => unknown },
+  },
 }));
 
 vi.mock("dotenv", () => ({
-  default: { config: vi.fn() }
+  default: { config: vi.fn() },
 }));
 
 vi.mock("../../../../../utils/fetchCurrentSeason", () => ({
-  fetchCurrentSeason: fetchCurrentSeasonMock
+  fetchCurrentSeason: fetchCurrentSeasonMock,
 }));
 
 vi.mock("@supabase/supabase-js", () => ({
   createClient: () => ({
     from(table: string) {
       return supabaseState.current.from(table);
-    }
-  })
+    },
+  }),
 }));
 
 import handler from "../../../../../pages/api/v1/trends/team-ctpi";
@@ -49,7 +49,7 @@ function createMockRes() {
     json(payload: any) {
       this.body = payload;
       return this;
-    }
+    },
   };
 }
 
@@ -58,7 +58,7 @@ describe("/api/v1/trends/team-ctpi", () => {
     vi.clearAllMocks();
     fetchCurrentSeasonMock.mockResolvedValue({
       id: 20252026,
-      startDate: "2025-10-07"
+      startDate: "2025-10-07",
     });
   });
 
@@ -73,7 +73,7 @@ describe("/api/v1/trends/team-ctpi", () => {
       goaltending: 0.05,
       special_teams: 0.05,
       luck: 0.1,
-      computed_at: "2026-02-02T12:00:00.000Z"
+      computed_at: "2026-02-02T12:00:00.000Z",
     }));
     const rangeCalls: Array<[number, number]> = [];
 
@@ -99,16 +99,16 @@ describe("/api/v1/trends/team-ctpi", () => {
             rangeCalls.push([from, to]);
             return Promise.resolve({
               data: rows.slice(from, to + 1),
-              error: null
+              error: null,
             });
-          }
+          },
         };
-      }
+      },
     };
 
     const req: any = {
       method: "GET",
-      query: { date: "2026-02-02" }
+      query: { date: "2026-02-02" },
     };
     const res = createMockRes();
 
@@ -117,7 +117,7 @@ describe("/api/v1/trends/team-ctpi", () => {
     expect(res.statusCode).toBe(200);
     expect(rangeCalls).toEqual([
       [0, 999],
-      [1000, 1999]
+      [1000, 1999],
     ]);
     expect(res.body).toMatchObject({
       requestedDate: "2026-02-02",
@@ -128,18 +128,43 @@ describe("/api/v1/trends/team-ctpi", () => {
         kind: "team_ctpi_daily",
         sourceDate: "2026-02-01",
         computedAt: "2026-02-02T12:00:00.000Z",
-        rowCount: 1001
+        rowCount: 1001,
       },
       coverage: {
         expectedTeams: 32,
         teamCount: 32,
         sourceRowCount: 1001,
-        partial: true
-      }
+        partial: true,
+      },
     });
     expect(res.body.warnings).toEqual([
-      "CTPI is using the latest available fallback date."
+      "CTPI is using the latest available fallback date.",
     ]);
     expect(res.body.teams).toHaveLength(32);
+  });
+
+  it("redacts dependency details from internal-error responses", async () => {
+    supabaseState.current = {
+      from() {
+        throw new Error("private CTPI relation denied Bearer secret");
+      },
+    };
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const res = createMockRes();
+
+    await handler(
+      { method: "GET", query: { date: "2026-02-02" } } as any,
+      res as any,
+    );
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({
+      message: "Failed to compute CTPI.",
+      error: "TEAM_CTPI_UNAVAILABLE",
+    });
+    expect(JSON.stringify(res.body)).not.toContain("secret");
+    consoleError.mockRestore();
   });
 });

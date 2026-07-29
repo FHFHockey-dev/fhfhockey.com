@@ -13,7 +13,7 @@
 - `web/components/forge-dashboard/SustainabilityCard.tsx` - Sustainability insight panel audited for ownership-filter suppression behavior, output trust, and card-level styling polish.
 - `web/components/forge-dashboard/HotColdCard.tsx` - Player movement panel audited for selected-date truthfulness, ownership degradation behavior, and component styling polish.
 - `web/components/forge-dashboard/GoalieRiskCard.tsx` - Goalie risk module in the live dashboard family that shares panel styling and recency/status semantics with the rest of FORGE.
-- `web/components/forge-dashboard/TopMoversCard.tsx` - Adjacent dashboard-style movement card audited for shared panel-state styling consistency and possible stale chrome drift.
+- `web/components/forge-dashboard/TopMoversCard.tsx` - Historical zero-consumer wrapper removed during the later combined-dashboard reconciliation; active movers rendering remains owned by Trends.
 - `web/components/forge-dashboard/ForgeRouteNav.tsx` - Shared dashboard navigation surface that participates in the FORGE page chrome and command-surface styling.
 - `web/styles/ForgeDashboard.module.scss` - Main page-level and component-level style surface for the FORGE dashboard family.
 - `web/styles/_panel.scss` - Shared glass-panel and panel-title mixin surface that underpins FORGE container styling and needs to stay aligned with the dashboard blueprint.
@@ -204,3 +204,7 @@
   - [x] 23.2 Update FORGE drill-in links from surfaces like `HotColdCard` and `SustainabilityCard` so they pass honest source context, date context, and the most relevant diagnostic metric family when sending a user into the Trends player page. Sustainability opens Finishing (`shooting_pct`, `on_ice_sh_pct`, `pdo`, `ipp`); Hot/Cold opens Rates (`goals_per_60`, `sog_per_60`, `ixg_per_60`) (2026-07-12).
 
 - [x] 24.0 **NEW — Preserve missing numeric dashboard fields as null instead of coercing them to zero.** `toFiniteNumber` now rejects nullish/blank inputs while retaining real numeric zero, preventing absent goalie volatility/blow-up metadata and other missing values from masquerading as measured zero; 6/6 normalizer and 25/25 dashboard tests pass (2026-07-12).
+
+- [x] 25.0 Complete the dynamic Wave-C re-audit after later FORGE/dashboard consolidation. Freshness/fallback, plausibility, bounded reads, legacy isolation, and canonical diagnostic handoffs remain intact; the two discovered drifts are closed below (2026-07-29).
+  - [x] NEW 25.1 **P1 raw dashboard dependency error disclosure.** The skater-power, team-CTPI, and Sustainability trends APIs now retain server-side diagnostics while returning route-stable unavailable codes and messages for HTTP 500 responses, preventing relation, credential, or upstream detail from reaching public dashboard clients; focused route regressions pass (discovered and completed 2026-07-29).
+  - [x] NEW 25.2 **P3 stale Relevant Files reference after combined-dashboard cleanup.** The removed zero-consumer `TopMoversCard.tsx` wrapper is now labeled historical instead of implying a current implementation file; active movers rendering remains on the supported Trends path (discovered and completed 2026-07-29).

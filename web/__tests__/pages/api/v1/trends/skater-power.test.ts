@@ -5,26 +5,28 @@ vi.hoisted(() => {
   process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-test-key";
 });
 
-const { fetchCurrentSeasonMock, createClientMock, supabaseState } = vi.hoisted(() => ({
-  fetchCurrentSeasonMock: vi.fn(),
-  createClientMock: vi.fn(),
-  supabaseState: {
-    current: {
-      from() {
-        throw new Error("Supabase mock not configured for this test.");
-      }
-    } as { from: (table: string) => unknown }
-  }
-}));
+const { fetchCurrentSeasonMock, createClientMock, supabaseState } = vi.hoisted(
+  () => ({
+    fetchCurrentSeasonMock: vi.fn(),
+    createClientMock: vi.fn(),
+    supabaseState: {
+      current: {
+        from() {
+          throw new Error("Supabase mock not configured for this test.");
+        },
+      } as { from: (table: string) => unknown },
+    },
+  }),
+);
 
 vi.mock("dotenv", () => ({
   default: {
-    config: vi.fn()
-  }
+    config: vi.fn(),
+  },
 }));
 
 vi.mock("../../../../../utils/fetchCurrentSeason", () => ({
-  fetchCurrentSeason: fetchCurrentSeasonMock
+  fetchCurrentSeason: fetchCurrentSeasonMock,
 }));
 
 vi.mock("@supabase/supabase-js", () => ({
@@ -33,9 +35,9 @@ vi.mock("@supabase/supabase-js", () => ({
     return {
       from(table: string) {
         return supabaseState.current.from(table);
-      }
+      },
     };
-  }
+  },
 }));
 
 import handler from "../../../../../pages/api/v1/trends/skater-power";
@@ -55,14 +57,14 @@ function createMockRes() {
     json(payload: any) {
       this.body = payload;
       return this;
-    }
+    },
   };
   return res;
 }
 
 function buildSupabaseMock(
   metricRows: Array<Record<string, unknown>>,
-  rangeCalls: Array<[number, number]> = []
+  rangeCalls: Array<[number, number]> = [],
 ) {
   return {
     from(table: string) {
@@ -94,14 +96,19 @@ function buildSupabaseMock(
             rangeCalls.push([from, to]);
             return this;
           },
-          then(resolve: (value: { data: Array<Record<string, unknown>>; error: null }) => unknown) {
+          then(
+            resolve: (value: {
+              data: Array<Record<string, unknown>>;
+              error: null;
+            }) => unknown,
+          ) {
             return Promise.resolve(
               resolve({
                 data: metricRows.slice(this.rangeStart, this.rangeEnd + 1),
-                error: null
-              })
+                error: null,
+              }),
             );
-          }
+          },
         };
         return query;
       }
@@ -119,17 +126,17 @@ function buildSupabaseMock(
                   fullName: "Fallback Skater",
                   position: "C",
                   team_id: 1,
-                  image_url: null
-                }
+                  image_url: null,
+                },
               ],
-              error: null
+              error: null,
             });
-          }
+          },
         };
       }
 
       throw new Error(`Unexpected table: ${table}`);
-    }
+    },
   };
 }
 
@@ -138,7 +145,7 @@ describe("/api/v1/trends/skater-power", () => {
     vi.clearAllMocks();
     fetchCurrentSeasonMock.mockResolvedValue({
       id: 20252026,
-      startDate: "2025-10-07"
+      startDate: "2025-10-07",
     });
   });
 
@@ -152,8 +159,8 @@ describe("/api/v1/trends/skater-power", () => {
         rolling_avg_5: 1.9,
         rolling_avg_10: 1.8,
         season_id: 20252026,
-        position_code: "C"
-      }
+        position_code: "C",
+      },
     ]);
 
     const req: any = {
@@ -162,8 +169,8 @@ describe("/api/v1/trends/skater-power", () => {
         date: "2026-02-07",
         position: "forward",
         window: "5",
-        limit: "10"
-      }
+        limit: "10",
+      },
     };
     const res = createMockRes();
 
@@ -181,15 +188,15 @@ describe("/api/v1/trends/skater-power", () => {
         state: "fallback",
         strategy: "latest_available_with_data",
         severity: "error",
-        status: "blocked"
-      }
+        status: "blocked",
+      },
     });
     expect(res.body.serving.gapDays).toBeGreaterThanOrEqual(14);
     expect(res.body.serving.message).toContain("materially stale");
     expect(res.body.generatedAt).toBe("2025-10-16T23:59:59.999Z");
     expect(res.body.coverage).toMatchObject({ playerCount: 1, partial: true });
     expect(res.body.warnings).toEqual([
-      expect.stringContaining("materially stale")
+      expect.stringContaining("materially stale"),
     ]);
   });
 
@@ -203,8 +210,8 @@ describe("/api/v1/trends/skater-power", () => {
         rolling_avg_5: 1.9,
         rolling_avg_10: 1.8,
         season_id: 20252026,
-        position_code: "C"
-      }
+        position_code: "C",
+      },
     ]);
 
     const req: any = {
@@ -213,8 +220,8 @@ describe("/api/v1/trends/skater-power", () => {
         date: "2026-02-08",
         position: "forward",
         window: "5",
-        limit: "10"
-      }
+        limit: "10",
+      },
     };
     const res = createMockRes();
 
@@ -233,8 +240,8 @@ describe("/api/v1/trends/skater-power", () => {
         strategy: "requested_date",
         severity: "none",
         status: "requested_date",
-        message: null
-      }
+        message: null,
+      },
     });
     expect(res.body.serving.gapDays).toBe(0);
     expect(res.body.generatedAt).toBe("2026-02-08T23:59:59.999Z");
@@ -253,9 +260,9 @@ describe("/api/v1/trends/skater-power", () => {
         rolling_avg_5: index + 1,
         rolling_avg_10: index + 1,
         season_id: 20252026,
-        position_code: "C"
+        position_code: "C",
       })),
-      rangeCalls
+      rangeCalls,
     );
 
     const req: any = {
@@ -264,8 +271,8 @@ describe("/api/v1/trends/skater-power", () => {
         date: "2026-02-09",
         position: "forward",
         window: "5",
-        limit: "10"
-      }
+        limit: "10",
+      },
     };
     const res = createMockRes();
 
@@ -287,8 +294,8 @@ describe("/api/v1/trends/skater-power", () => {
         rolling_avg_5: index + 1,
         rolling_avg_10: index + 1,
         season_id: 20252026,
-        position_code: "C"
-      }))
+        position_code: "C",
+      })),
     );
 
     const req: any = {
@@ -297,8 +304,8 @@ describe("/api/v1/trends/skater-power", () => {
         date: "2026-02-21",
         position: "forward",
         window: "20",
-        limit: "10"
-      }
+        limit: "10",
+      },
     };
     const res = createMockRes();
 
@@ -306,7 +313,10 @@ describe("/api/v1/trends/skater-power", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body.windowSize).toBe(20);
-    expect(res.body.categories.shotsPer60.rankings[0].latestValue).toBeCloseTo(11.5, 5);
+    expect(res.body.categories.shotsPer60.rankings[0].latestValue).toBeCloseTo(
+      11.5,
+      5,
+    );
   });
 
   it("bounds returned series history without changing full-history rankings", async () => {
@@ -316,16 +326,16 @@ describe("/api/v1/trends/skater-power", () => {
           player_id: playerId,
           game_date: `2026-${String(Math.floor(index / 28) + 1).padStart(
             2,
-            "0"
+            "0",
           )}-${String((index % 28) + 1).padStart(2, "0")}`,
           raw_value: playerIndex === 0 ? index + 100 : index + 1,
           rolling_avg_3: playerIndex === 0 ? index + 100 : index + 1,
           rolling_avg_5: playerIndex === 0 ? index + 100 : index + 1,
           rolling_avg_10: playerIndex === 0 ? index + 100 : index + 1,
           season_id: 20252026,
-          position_code: "C"
-        }))
-      )
+          position_code: "C",
+        })),
+      ),
     );
 
     const req: any = {
@@ -335,8 +345,8 @@ describe("/api/v1/trends/skater-power", () => {
         position: "forward",
         window: "1",
         limit: "10",
-        seriesGames: "12"
-      }
+        seriesGames: "12",
+      },
     };
     const res = createMockRes();
 
@@ -347,7 +357,7 @@ describe("/api/v1/trends/skater-power", () => {
     expect(res.body.categories.shotsPer60.rankings[0]).toMatchObject({
       playerId: 8471214,
       gp: 50,
-      rank: 1
+      rank: 1,
     });
     expect(res.body.categories.shotsPer60.series["8471214"]).toHaveLength(12);
     expect(res.body.categories.shotsPer60.series["8471214"][0].gp).toBe(39);
@@ -366,8 +376,8 @@ describe("/api/v1/trends/skater-power", () => {
         rolling_avg_5: playerIndex * 100 + gameIndex,
         rolling_avg_10: playerIndex * 100 + gameIndex,
         season_id: 20252026,
-        position_code: "C"
-      }))
+        position_code: "C",
+      })),
     ).flat();
     supabaseState.current = buildSupabaseMock(rows);
 
@@ -378,8 +388,8 @@ describe("/api/v1/trends/skater-power", () => {
         position: "forward",
         window: "3",
         limit: "60",
-        seriesGames: "1"
-      }
+        seriesGames: "1",
+      },
     };
     const res = createMockRes();
 
@@ -391,12 +401,12 @@ describe("/api/v1/trends/skater-power", () => {
     expect(
       Object.values(res.body.categories).every((category: any) =>
         Object.values(category.series).every(
-          (points: any) => Array.isArray(points) && points.length <= 1
-        )
-      )
+          (points: any) => Array.isArray(points) && points.length <= 1,
+        ),
+      ),
     ).toBe(true);
     expect(
-      Buffer.byteLength(JSON.stringify(res.body), "utf8")
+      Buffer.byteLength(JSON.stringify(res.body), "utf8"),
     ).toBeLessThanOrEqual(280_000);
   });
 
@@ -411,9 +421,9 @@ describe("/api/v1/trends/skater-power", () => {
           rolling_avg_5: playerIndex === 0 ? index + 10 : index + 1,
           rolling_avg_10: playerIndex === 0 ? index + 10 : index + 1,
           season_id: 20252026,
-          position_code: "C"
-        }))
-      )
+          position_code: "C",
+        })),
+      ),
     );
 
     const req: any = {
@@ -422,8 +432,8 @@ describe("/api/v1/trends/skater-power", () => {
         date: "2026-04-06",
         position: "forward",
         window: "1",
-        limit: "10"
-      }
+        limit: "10",
+      },
     };
     const res = createMockRes();
 
@@ -433,7 +443,7 @@ describe("/api/v1/trends/skater-power", () => {
     expect(res.body.samplePolicy).toEqual({
       minimumGames: 10,
       lowSamplePercentiles: "shrink_to_neutral",
-      suppressLowSampleRankDelta: true
+      suppressLowSampleRankDelta: true,
     });
     expect(res.body.categories.shotsPer60.rankings[0]).toMatchObject({
       percentile: 80,
@@ -442,7 +452,37 @@ describe("/api/v1/trends/skater-power", () => {
       sampleConfidence: "low",
       minimumSampleGames: 10,
       previousRank: null,
-      delta: 0
+      delta: 0,
     });
+  });
+
+  it("redacts dependency details from internal-error responses", async () => {
+    supabaseState.current = {
+      from() {
+        throw new Error(
+          "relation private_player_trend_metrics denied Bearer secret",
+        );
+      },
+    };
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const res = createMockRes();
+
+    await handler(
+      {
+        method: "GET",
+        query: { date: "2026-04-06", position: "forward" },
+      } as any,
+      res,
+    );
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({
+      message: "Failed to compute skater trends.",
+      error: "SKATER_TRENDS_UNAVAILABLE",
+    });
+    expect(JSON.stringify(res.body)).not.toContain("secret");
+    consoleError.mockRestore();
   });
 });

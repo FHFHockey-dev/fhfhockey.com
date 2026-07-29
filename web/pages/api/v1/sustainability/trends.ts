@@ -288,8 +288,10 @@ export default async function handler(
     });
   } catch (error: any) {
     console.error("trends error", error?.message || error);
-    return res
-      .status(500)
-      .json({ success: false, message: error?.message || String(error) });
+    return res.status(500).json({
+      success: false,
+      message: "Sustainability trends are temporarily unavailable.",
+      error: "SUSTAINABILITY_TRENDS_UNAVAILABLE",
+    });
   }
 }
