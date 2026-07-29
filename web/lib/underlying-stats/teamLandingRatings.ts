@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import supabaseServer from "../supabase/server";
+import { fetchAllSupabasePages } from "../supabase/pagination";
 import {
   deriveTeamFormContextForDate as deriveStoredTeamFormContextForDate,
   computeTrendOverridesFromHistory,
@@ -100,7 +101,7 @@ const addDays = (isoDate: string, days: number): string => {
   return nextDate.toISOString().slice(0, 10);
 };
 
-const fetchTeamRatingHistoryForNarratives = async (
+export const fetchTeamRatingHistoryForNarratives = async (
   date: string,
   teamAbbrs: string[],
   supabase: SupabaseClient = supabaseServer
@@ -112,38 +113,39 @@ const fetchTeamRatingHistoryForNarratives = async (
   const normalizedTeamAbbrs = Array.from(
     new Set(teamAbbrs.map((teamAbbr) => teamAbbr.trim().toUpperCase()))
   );
-  const { data, error } = await supabase
-    .from("team_power_ratings_daily")
-    .select(
-      [
-        "team_abbreviation",
-        "date",
-        "off_rating",
-        "def_rating",
-        "pace_rating",
-        "pp_tier",
-        "pk_tier",
-        "xgf60",
-        "gf60",
-        "sf60",
-        "xga60",
-        "ga60",
-        "sa60",
-        "pace60"
-      ].join(",")
-    )
-    .in("team_abbreviation", normalizedTeamAbbrs)
-    .gte("date", addDays(date, -NARRATIVE_LOOKBACK_DAYS))
-    .lte("date", date)
-    .order("date", { ascending: false });
-
-  if (error) {
-    throw error;
-  }
+  const data = await fetchAllSupabasePages<TeamRatingHistoryRow>(
+    ({ from, to }) =>
+      supabase
+        .from("team_power_ratings_daily")
+        .select(
+          [
+            "team_abbreviation",
+            "date",
+            "off_rating",
+            "def_rating",
+            "pace_rating",
+            "pp_tier",
+            "pk_tier",
+            "xgf60",
+            "gf60",
+            "sf60",
+            "xga60",
+            "ga60",
+            "sa60",
+            "pace60"
+          ].join(",")
+        )
+        .in("team_abbreviation", normalizedTeamAbbrs)
+        .gte("date", addDays(date, -NARRATIVE_LOOKBACK_DAYS))
+        .lte("date", date)
+        .order("date", { ascending: false })
+        .order("team_abbreviation", { ascending: true })
+        .range(from, to) as any
+  );
 
   const payload = new Map<string, TeamRatingNarrativeSnapshot[]>();
 
-  ((data as unknown as TeamRatingHistoryRow[] | null) ?? []).forEach((row) => {
+  data.forEach((row) => {
     const teamAbbr = row.team_abbreviation?.trim().toUpperCase();
     if (!teamAbbr) {
       return;

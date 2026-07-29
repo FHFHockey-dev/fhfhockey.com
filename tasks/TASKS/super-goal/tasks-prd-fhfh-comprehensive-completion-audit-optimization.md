@@ -204,7 +204,7 @@
     - [ ] 5.3.1 Audit Player Underlying Stats landing/detail/runbook.
     - [ ] 5.3.2 Audit Team Underlying Stats landing/detail contracts.
     - [ ] 5.3.3 Audit Goalie Underlying Stats landing/detail/runbook.
-    - [ ] 5.3.4 Audit standalone Underlying Stats landing and power-ranking roadmaps after A-US-SOS/B-GAMEGRID changes.
+    - [x] 5.3.4 Audit standalone Underlying Stats landing and power-ranking roadmaps after A-US-SOS/B-GAMEGRID changes. Evidence: dashboard-first composition, numeric sorting, accessible native popovers, safe route/error states, canonical BCS-style SoS ownership, and bounded schedule reads remain intact; P2 NEW 7.0 repairs the sole active drift by paginating the 120-day narrative history with stable ordering. The focused five-file landing cohort passes 19/19 plus TypeScript, scoped lint, formatting, source/master parity, and diff integrity (verified 2026-07-29).
     - [ ] 5.3.5 Audit Mobile Stats optimization across supported entity routes.
     - [ ] 5.3.6 Audit WiGO charts optimization and remaining legacy ownership.
   - [ ] 5.4 `C-FORGE` Audit and remediate completed goalie, modularization, dashboard, pass-three, and prediction-engine work.
@@ -4002,6 +4002,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-underlying-stats-power-rankings-roadmap.md::C0028` (original L62) — 6.1 Review whether `Pace` should remain a full peer of `Offense` and `Defense` in the `Power Score` formula or be reduced to a smaller modifier or context dimension.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-underlying-stats-power-rankings-roadmap.md::C0029` (original L63) — 6.2 Review whether PP and PK should continue to influence the rankings through discrete tier bonuses or move to a smoother continuous percentile-based bonus.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-underlying-stats-power-rankings-roadmap.md::C0030` (original L64) — 6.3 Document the recommendation, the expected UX impact, and any migration work needed before changing the live score formula.
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-underlying-stats-power-rankings-roadmap.md::C0031` (live NEW) — NEW 7.0 **P2 narrative-history PostgREST truncation:** complete 120-day history now uses stable date/team range pagination; the >1,000-row regression and five-file landing cohort pass (verified 2026-07-29).
 
 ### Source: `tasks/TASKS/variance/v1/tasks-prd-skater-variance-leaderboard.md` (91 rows)
 
