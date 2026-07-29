@@ -510,9 +510,10 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
     for (const batch of chunk(predictionRecords, UPSERT_BATCH_SIZE)) {
       if (!batch.length) continue;
       const bStart = Date.now();
-      const { error } = await admin
-        .from("predictions_sko")
-        .upsert(batch, { onConflict: "player_id,as_of_date,horizon_games" });
+      const { error } = await admin.from("predictions_sko").upsert(batch, {
+        onConflict:
+          "player_id,as_of_date,horizon_games,model_name,model_version",
+      });
       if (error) throw error;
       upserts += batch.length;
       batchDurations.push(Date.now() - bStart);

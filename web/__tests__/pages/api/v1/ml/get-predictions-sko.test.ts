@@ -73,6 +73,10 @@ describe("/api/v1/ml/get-predictions-sko", () => {
       { playerIds: "7,nope" },
       "playerId/playerIds must contain positive integer ids.",
     ],
+    [
+      { modelVersion: "bad version" },
+      "modelVersion must contain 1-128 letters, numbers, dots, underscores, or hyphens.",
+    ],
   ])("rejects invalid query input %o", async (query, message) => {
     const req: any = { method: "GET", query };
     const res = createMockRes();
@@ -113,6 +117,8 @@ describe("/api/v1/ml/get-predictions-sko", () => {
         until: "2026-03-31",
         horizon: "5",
         playerIds: "8,7,8",
+        modelName: "baseline-moving-average",
+        modelVersion: "v0.2",
         order: "desc",
       },
     };
@@ -139,11 +145,22 @@ describe("/api/v1/ml/get-predictions-sko", () => {
     expect(query.order).toHaveBeenNthCalledWith(3, "horizon_games", {
       ascending: true,
     });
+    expect(query.order).toHaveBeenNthCalledWith(4, "model_name", {
+      ascending: true,
+    });
+    expect(query.order).toHaveBeenNthCalledWith(5, "model_version", {
+      ascending: true,
+    });
     expect(query.range).toHaveBeenCalledWith(2, 3);
     expect(query.eq).toHaveBeenCalledWith("horizon_games", 5);
     expect(query.gte).toHaveBeenCalledWith("as_of_date", "2026-03-01");
     expect(query.lte).toHaveBeenCalledWith("as_of_date", "2026-03-31");
     expect(query.in).toHaveBeenCalledWith("player_id", [8, 7]);
+    expect(query.eq).toHaveBeenCalledWith(
+      "model_name",
+      "baseline-moving-average",
+    );
+    expect(query.eq).toHaveBeenCalledWith("model_version", "v0.2");
     expect(res.body).toMatchObject({
       success: true,
       count: 1,

@@ -1,6 +1,6 @@
 SKO (Sustainability KPI Overview)
 
-> **Production-definition status (2026-07-28):** superseded research input. The owner-authorized historical-only disposition does not promote this residual-P/60 proposal or the later stability-CV proposal. Residual-P/60 remains Sustainability/Trends research; the active moving-average v0.2 writer is compatibility-only and not this score.
+> **Production-definition status (2026-07-29):** superseded research input. The owner-authorized historical-only disposition does not promote this residual-P/60 proposal or the later stability-CV proposal. Residual-P/60 remains Sustainability/Trends research; the active moving-average v0.2 writer is compatibility-only and not this score. Candidate migration `20260729205048` only preserves compatibility prediction history by model identity; it does not promote or reinterpret either research family.
 
 Working name options
 	•	sKO — Sustainability K‑Score & Outlook (my vote: short, pronounceable, keeps “KO” branding)

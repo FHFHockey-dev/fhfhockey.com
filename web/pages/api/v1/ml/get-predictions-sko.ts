@@ -66,6 +66,20 @@ function parseIds(value: unknown): number[] | undefined {
   return Array.from(new Set(out));
 }
 
+function parseModelIdentity(
+  value: unknown,
+  name: "modelName" | "modelVersion",
+): string | undefined {
+  const parsed = parseString(value);
+  if (parsed === undefined) return undefined;
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(parsed)) {
+    throw new InvalidQueryError(
+      `${name} must contain 1-128 letters, numbers, dots, underscores, or hyphens.`,
+    );
+  }
+  return parsed;
+}
+
 function ageDaysFromToday(date: string | null): number | null {
   if (!date) return null;
   const today = new Date().toISOString().slice(0, 10);
@@ -106,6 +120,11 @@ export default async function handler(
     }
     const horizon = parsePositiveInt(req.query.horizon, "horizon");
     const playerIds = parseIds(req.query.playerId ?? req.query.playerIds);
+    const modelName = parseModelIdentity(req.query.modelName, "modelName");
+    const modelVersion = parseModelIdentity(
+      req.query.modelVersion,
+      "modelVersion",
+    );
     const page = parsePositiveInt(req.query.page, "page", 1, 1_000_000) ?? 1;
     const pageSize =
       parsePositiveInt(
@@ -136,6 +155,8 @@ export default async function handler(
       .order("as_of_date", { ascending: order === "asc" })
       .order("player_id", { ascending: true })
       .order("horizon_games", { ascending: true })
+      .order("model_name", { ascending: true })
+      .order("model_version", { ascending: true })
       .range(offset, offset + pageSize - 1);
 
     if (horizon) query = query.eq("horizon_games", horizon);
@@ -143,6 +164,8 @@ export default async function handler(
     if (since) query = query.gte("as_of_date", since);
     if (until) query = query.lte("as_of_date", until);
     if (playerIds?.length) query = query.in("player_id", playerIds);
+    if (modelName) query = query.eq("model_name", modelName);
+    if (modelVersion) query = query.eq("model_version", modelVersion);
 
     const queryStart = Date.now();
     const { data, error, count } = await query;

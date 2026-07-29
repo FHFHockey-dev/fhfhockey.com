@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -52,6 +54,14 @@ import handler, {
 } from "../../../../../pages/api/v1/ml/update-predictions-sko";
 import { PredictionsSkoDependencyError } from "../../../../../lib/ml/predictionsSkoDependencyChecks";
 import { buildPredictionsSkoHealth } from "../../../../../lib/ml/predictionsSkoRunControl";
+
+const modelHistoryMigrationSql = readFileSync(
+  resolve(
+    process.cwd(),
+    "../supabase/migrations/20260729205048_preserve_sko_model_history.sql",
+  ),
+  "utf8",
+);
 
 function createMockRes() {
   return {
@@ -267,12 +277,30 @@ describe("/api/v1/ml/update-predictions-sko", () => {
     });
     expect(upsert).toHaveBeenCalledWith(
       [expect.objectContaining({ player_id: 2 })],
-      { onConflict: "player_id,as_of_date,horizon_games" },
+      {
+        onConflict:
+          "player_id,as_of_date,horizon_games,model_name,model_version",
+      },
     );
     expect(serviceRoleRpcMock.mock.calls.map((call) => call[0])).toEqual([
       "acquire_sko_prediction_run",
       "finish_sko_prediction_run",
     ]);
+  });
+
+  it("defines model-complete history identity and read-only public grants", () => {
+    expect(modelHistoryMigrationSql).toMatch(
+      /primary key \(\s*player_id,\s*as_of_date,\s*horizon_games,\s*model_name,\s*model_version\s*\)/,
+    );
+    expect(modelHistoryMigrationSql).toContain(
+      "revoke all on table public.predictions_sko from anon, authenticated",
+    );
+    expect(modelHistoryMigrationSql).toContain(
+      "grant select on table public.predictions_sko to anon, authenticated",
+    );
+    expect(modelHistoryMigrationSql).not.toMatch(
+      /grant\s+(?:insert|update|delete)[^;]*\b(?:anon|authenticated)\b/i,
+    );
   });
 
   it("rejects an overlapping run before dependency or write work", async () => {
