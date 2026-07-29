@@ -455,6 +455,12 @@ Initiative sections pending verified Wave-C audit.
 
 Remaining cleanup and reference initiative sections are pending verified Wave-B completion and schema/reference audit.
 
+### C-US Team Underlying Stats landing audit
+
+- **Repair:** Public team landing dependency/runtime failures now return only `TEAM_UNDERLYING_STATS_UNAVAILABLE`; bounded unsupported-filter 400 details remain intact and server logs retain diagnostics.
+- **Contract:** Landing-only v1 is authoritative and complete. The dedicated team detail route remains explicitly deferred; no legacy route is promoted. The source PRD now records the shipped status and canonical paths.
+- **Verification / controls:** The focused six-file/26-test initiative cohort, full TypeScript, scoped lint with zero errors, source/master 68/68 parity, and diff integrity pass. Dynamic audit 5.3.2 closes. Raw parity is 4,810/4,951 with 141 unchecked = 97.15%; actionable parity is 4,810/4,945 with 135 open = 97.27% complete / 2.73% open. Severity is P0 28/23, P1 183/145, P2 152/144, P3 34/34. No writer, data, schema, migration, build, deployment, provider, schedule, credential, shared checkout, push, or stash changed.
+
 ## Completion-gate evidence
 
 All charter questions remain open until source/master synchronization, Wave A/B completion, Wave C audit/remediation, cross-initiative verification, cleanup, diary finalization, and evidence population are complete.

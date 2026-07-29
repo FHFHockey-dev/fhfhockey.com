@@ -19,6 +19,7 @@
 - `web/lib/underlying-stats/teamStatsSummaryRefresh.ts` - New team summary refresh helpers and optional landing-cache warm hooks.
 - `web/lib/underlying-stats/teamStatsRefreshWindow.ts` - Incremental team catch-up game selection helper that mirrors the existing player and goalie refresh-window flow.
 - `web/pages/api/v1/underlying-stats/teams.ts` - New landing API wrapper for team table reads.
+- `web/__tests__/pages/api/v1/underlying-stats/teams.test.ts` - Direct public API error-contract regression.
 - `web/lib/underlying-stats/teamStatsFilters.ts` - New team landing filter-state, URL parsing, and default-sort contract.
 - `web/lib/underlying-stats/teamStatsLandingApi.ts` - Client-safe team landing response and path contract shared by the route, tests, and server query layer.
 - `web/lib/underlying-stats/teamStatsQueries.ts` - New team landing query and aggregation layer.
@@ -130,3 +131,6 @@ Validation note: local Chrome route verification returned `200` for the default 
 
 - [x] NEW 9.0 Reconcile the live Supabase table with the updated team-underlying migration before proceeding past schema work
   - [x] NEW 9.1 Because `team_underlying_stats_summary` was created manually before sub-tasks `2.3` and `2.4`, apply the newly added standings and shot-family columns plus the season/team/opponent/strength index set to the live Supabase schema so the database matches `migrations/20260407_create_team_underlying_stats_tables.sql` before pipeline implementation continues.
+
+- [x] NEW 15.0 **P1 — Redact public team landing dependency failures.** The team API now preserves bounded unsupported-filter details on 400 responses while returning only `TEAM_UNDERLYING_STATS_UNAVAILABLE` on dependency/runtime 500s; server logs retain the original diagnostic and a direct route regression proves the boundary (discovered and completed 2026-07-29).
+- [x] NEW 15.1 **P3 — Reconcile the team PRD with shipped landing-only ownership.** The PRD now records completed dynamic-audit status, the canonical task path, `web/`-qualified routes, and the explicit detail-route deferral already frozen by source task 1.2; no detail implementation or legacy-route promotion is inferred (discovered and completed 2026-07-29).
