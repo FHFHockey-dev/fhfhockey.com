@@ -2038,7 +2038,6 @@ const DraftDashboard: React.FC = () => {
             currentTurn={currentTurn}
             teamStats={teamStats}
             isSnakeDraft={isSnakeDraft}
-            availablePlayers={availablePlayers}
             allPlayers={allPlayers}
             onUpdateTeamName={updateTeamName}
             pickTrades={pickTrades}

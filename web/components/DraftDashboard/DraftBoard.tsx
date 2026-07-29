@@ -22,7 +22,6 @@ interface DraftBoardProps {
   };
   teamStats: TeamDraftStats[];
   isSnakeDraft: boolean;
-  availablePlayers?: ProcessedPlayer[];
   allPlayers: ProcessedPlayer[]; // Add this prop for complete player data
   onUpdateTeamName: (teamId: string, newName: string) => void; // Add this prop
   pickTrades?: PickTradeEntry[];
@@ -43,7 +42,6 @@ type SortField =
   | "teamVorp"
   | `dynamic:${string}`;
 
-const DEBUG = process.env.NODE_ENV !== "production";
 const CORE_CAT_UPPER = [
   "GOALS",
   "ASSISTS",
@@ -59,7 +57,6 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   currentTurn,
   teamStats,
   isSnakeDraft,
-  availablePlayers = [],
   allPlayers,
   onUpdateTeamName,
   pickTrades = [],
@@ -120,12 +117,6 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
     return m;
   }, [draftSettings.draftOrder, teamStats]);
 
-  // Debug: Track editing state changes
-  useEffect(() => {
-    if (DEBUG)
-      console.log("Editing state changed:", { editingTeam, editingValue });
-  }, [editingTeam, editingValue]);
-
   // Clear any pending blur timeout on unmount
   useEffect(() => {
     return () => {
@@ -139,7 +130,6 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   // Auto-focus the input when editing starts
   useEffect(() => {
     if (editingTeam) {
-      if (DEBUG) console.log("Manually focusing input for team:", editingTeam);
       // Use setTimeout to ensure DOM has updated
       setTimeout(() => {
         // Try both refs - one will be rendered, the other won't
@@ -167,18 +157,8 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
       clearTimeout(blurTimeoutRef.current);
       blurTimeoutRef.current = null;
     }
-    if (DEBUG) {
-      console.log("=== CLICK EVENT START ===");
-      console.log("Team name clicked:", { teamId, currentName });
-      console.log("Current editing state before click:", {
-        editingTeam,
-        editingValue
-      });
-      console.log("Setting editing state...");
-    }
     setEditingTeam(teamId);
     setEditingValue(currentName);
-    if (DEBUG) console.log("=== CLICK EVENT END ===");
   };
 
   const handleTeamNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -186,7 +166,6 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   };
 
   const handleTeamNameSubmit = (teamId: string) => {
-    if (DEBUG) console.log("Submitting team name:", { teamId, editingValue }); // Debug log
     if (blurTimeoutRef.current) {
       clearTimeout(blurTimeoutRef.current);
       blurTimeoutRef.current = null;
@@ -217,19 +196,12 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   };
 
   const handleTeamNameBlur = (teamId: string) => {
-    // Prevent immediate blur after click by checking if we just started editing
-    if (DEBUG) {
-      console.log("Blur event triggered for team:", teamId);
-      console.log("Current editing team:", editingTeam);
-    }
-
     // Only handle blur if we've been editing for more than 100ms
     if (blurTimeoutRef.current) {
       clearTimeout(blurTimeoutRef.current);
       blurTimeoutRef.current = null;
     }
     blurTimeoutRef.current = window.setTimeout(() => {
-      if (DEBUG) console.log("Blur timeout executing for team:", teamId);
       // Double-check we're still editing this team
       if (editingTeam === teamId) {
         handleTeamNameSubmit(teamId);
@@ -497,25 +469,10 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
 
   // Calculate team category totals for the leaderboard table
   const teamStatsWithCategories = useMemo(() => {
-    if (DEBUG)
-      console.log("Debug - DraftBoard teamStatsWithCategories calculation:", {
-        teamStatsLength: teamStats.length,
-        draftedPlayersLength: draftedPlayers.length,
-        availablePlayersLength: availablePlayers.length,
-        sampleDraftedPlayer: draftedPlayers[0],
-        sampleTeamStat: teamStats[0]
-      });
-
     return teamStats.map((team) => {
       const teamPlayers = draftedPlayers.filter(
         (p) => p.teamId === team.teamId
       );
-
-      if (DEBUG)
-        console.log(`Debug - Team ${team.teamId}:`, {
-          teamPlayersCount: teamPlayers.length,
-          teamPlayers: teamPlayers.map((p) => p.playerId)
-        });
 
       // Initialize category totals
       const categoryTotals = {
@@ -537,14 +494,6 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
           (p) => String(p.playerId) === draftedPlayer.playerId
         );
 
-        if (DEBUG)
-          console.log(`Debug - Player lookup for ${draftedPlayer.playerId}:`, {
-            found: !!player,
-            playerStats: player?.combinedStats
-              ? Object.keys(player.combinedStats)
-              : "no stats"
-          });
-
         if (player) {
           // Access the projected values from the combinedStats structure
           const goals = player.combinedStats.GOALS?.projected || 0;
@@ -553,16 +502,6 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
           const sog = player.combinedStats.SHOTS_ON_GOAL?.projected || 0;
           const hits = player.combinedStats.HITS?.projected || 0;
           const blocks = player.combinedStats.BLOCKED_SHOTS?.projected || 0;
-
-          if (DEBUG)
-            console.log(`Debug - Adding stats for ${player.fullName}:`, {
-              goals,
-              assists,
-              ppPoints,
-              sog,
-              hits,
-              blocks
-            });
 
           categoryTotals.goals += goals;
           categoryTotals.assists += assists;
@@ -580,12 +519,6 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
           });
         }
       });
-
-      if (DEBUG)
-        console.log(
-          `Debug - Final categoryTotals for ${team.teamId}:`,
-          categoryTotals
-        );
 
       // Compute team score average for categories mode
       let teamScoreAvg = 0;
@@ -615,7 +548,6 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   }, [
     teamStats,
     draftedPlayers,
-    availablePlayers,
     augmentedAllPlayers,
     dynamicCategoryKeys,
     draftSettings.leagueType,
