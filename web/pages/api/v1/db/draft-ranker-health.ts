@@ -135,9 +135,11 @@ export async function draftRankerHealthHandler(
       rowsAffected: input.dryRun ? 0 : snapshot.results.length,
     });
   } catch (error) {
+    console.error("Draft Ranker health operation failed", { error });
     return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : String(error),
+      code: "DRAFT_RANKER_HEALTH_UNAVAILABLE",
+      error: "Draft Ranker health operations are temporarily unavailable.",
       failedRows: 1,
     });
   }
