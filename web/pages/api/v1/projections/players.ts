@@ -3,7 +3,12 @@ import { z } from "zod";
 
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
-import { dateSchema, getQueryStringParam, requireLatestSucceededRunId } from "lib/projections/apiHelpers";
+import {
+  buildProjectionApiErrorResponse,
+  dateSchema,
+  getQueryStringParam,
+  requireLatestSucceededRunId,
+} from "lib/projections/apiHelpers";
 
 const querySchema = z.object({
   date: dateSchema,
@@ -11,7 +16,7 @@ const querySchema = z.object({
   runId: z.string().uuid().optional(),
   gameId: z.coerce.number().int().optional(),
   teamId: z.coerce.number().int().optional(),
-  playerId: z.coerce.number().int().optional()
+  playerId: z.coerce.number().int().optional(),
 });
 
 function parseQuery(req: NextApiRequest) {
@@ -21,7 +26,7 @@ function parseQuery(req: NextApiRequest) {
     runId: getQueryStringParam(req.query.runId),
     gameId: getQueryStringParam(req.query.gameId),
     teamId: getQueryStringParam(req.query.teamId),
-    playerId: getQueryStringParam(req.query.playerId)
+    playerId: getQueryStringParam(req.query.playerId),
   });
   if (!parsed.success) {
     const err = new Error("Invalid query parameters");
@@ -35,13 +40,13 @@ function parseQuery(req: NextApiRequest) {
 function applyDeprecationHeaders(res: NextApiResponse) {
   res.setHeader("Deprecation", "true");
   res.setHeader("X-FHF-Canonical-Route", "/api/v1/forge/players");
-  res.setHeader(
-    "Link",
-    '</api/v1/forge/players>; rel="successor-version"'
-  );
+  res.setHeader("Link", '</api/v1/forge/players>; rel="successor-version"');
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   const startedAt = Date.now();
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
@@ -75,17 +80,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       runId,
       asOfDate: q.date,
       horizonGames: q.horizon,
-      data: data ?? []
+      data: data ?? [],
     });
   } catch (e) {
     applyDeprecationHeaders(res);
-    const statusCode = (e as any)?.statusCode ?? 500;
-    return res.status(statusCode).json({
+    const failure = buildProjectionApiErrorResponse(
+      e,
+      "PROJECTION_PLAYERS_UNAVAILABLE",
+    );
+    return res.status(failure.statusCode).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       deprecated: true,
       canonicalRoute: "/api/v1/forge/players",
-      error: (e as any)?.message ?? String(e),
-      details: (e as any)?.details
+      error: failure.error,
+      details: failure.details,
     });
   }
 }

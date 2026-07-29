@@ -8,14 +8,33 @@ export const dateSchema = z
   .regex(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/u, "date must be YYYY-MM-DD");
 
 export function getQueryStringParam(
-  value: string | string[] | undefined
+  value: string | string[] | undefined,
 ): string | undefined {
   if (typeof value === "string") return value;
   if (Array.isArray(value)) return value[0];
   return undefined;
 }
 
-export async function requireLatestSucceededRunId(asOfDate: string): Promise<string> {
+export function buildProjectionApiErrorResponse(
+  error: unknown,
+  stableInternalError: string,
+): { statusCode: number; error: string; details?: unknown } {
+  const statusCode = Number((error as any)?.statusCode) || 500;
+  if (statusCode >= 500) {
+    return { statusCode, error: stableInternalError };
+  }
+  return {
+    statusCode,
+    error: (error as any)?.message ?? String(error),
+    ...((error as any)?.details === undefined
+      ? {}
+      : { details: (error as any).details }),
+  };
+}
+
+export async function requireLatestSucceededRunId(
+  asOfDate: string,
+): Promise<string> {
   if (!supabase) throw new Error("Supabase server client not available");
   const { data, error } = await supabase
     .from("forge_runs")
@@ -29,7 +48,9 @@ export async function requireLatestSucceededRunId(asOfDate: string): Promise<str
   if (error) throw error;
   const runId = (data as any)?.run_id as string | undefined;
   if (!runId) {
-    const err = new Error(`No succeeded projection run found for date=${asOfDate}`);
+    const err = new Error(
+      `No succeeded projection run found for date=${asOfDate}`,
+    );
     (err as any).statusCode = 404;
     throw err;
   }

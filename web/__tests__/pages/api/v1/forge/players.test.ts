@@ -443,7 +443,7 @@ describe("/api/v1/forge/players", () => {
 
     expect(res.statusCode).toBe(500);
     expect(res.body).toMatchObject({
-      error: "Projection team identity is invalid for the resolved season.",
+      error: "FORGE_PLAYERS_UNAVAILABLE",
       scanSummary: { status: "blocked", blockingIssueCount: 1 },
     });
     expect(res.body.data).toBeUndefined();

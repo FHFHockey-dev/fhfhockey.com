@@ -7,7 +7,10 @@ import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { buildRequestedDateServingState } from "lib/dashboard/freshness";
 import { buildCanonicalReaderCompatibility } from "lib/projections/compatibilityInventory";
-import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
+import {
+  buildProjectionApiErrorResponse,
+  requireLatestSucceededRunId,
+} from "lib/projections/apiHelpers";
 
 type LineComboRecencyClass = "FRESH" | "SOFT_STALE" | "HARD_STALE" | "MISSING";
 
@@ -673,8 +676,11 @@ export default async function handler(
       data: projections,
     });
   } catch (e) {
-    const statusCode = (e as any)?.statusCode ?? 500;
-    return res.status(statusCode).json({
+    const failure = buildProjectionApiErrorResponse(
+      e,
+      "FORGE_PLAYERS_UNAVAILABLE",
+    );
+    return res.status(failure.statusCode).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       scanSummary: buildEndpointScanSummary({
         surface: "forge_players_reader",
@@ -688,8 +694,8 @@ export default async function handler(
         blockingIssueCount: 1,
         notes: ["Unable to resolve a usable FORGE skater projection response."],
       }),
-      error: (e as any)?.message ?? String(e),
-      details: (e as any)?.details,
+      error: failure.error,
+      details: failure.details,
     });
   }
 }

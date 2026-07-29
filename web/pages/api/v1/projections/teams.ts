@@ -3,14 +3,19 @@ import { z } from "zod";
 
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
-import { dateSchema, getQueryStringParam, requireLatestSucceededRunId } from "lib/projections/apiHelpers";
+import {
+  buildProjectionApiErrorResponse,
+  dateSchema,
+  getQueryStringParam,
+  requireLatestSucceededRunId,
+} from "lib/projections/apiHelpers";
 
 const querySchema = z.object({
   date: dateSchema,
   horizon: z.coerce.number().int().min(1).max(10).default(1),
   runId: z.string().uuid().optional(),
   gameId: z.coerce.number().int().optional(),
-  teamId: z.coerce.number().int().optional()
+  teamId: z.coerce.number().int().optional(),
 });
 
 function parseQuery(req: NextApiRequest) {
@@ -19,7 +24,7 @@ function parseQuery(req: NextApiRequest) {
     horizon: getQueryStringParam(req.query.horizon),
     runId: getQueryStringParam(req.query.runId),
     gameId: getQueryStringParam(req.query.gameId),
-    teamId: getQueryStringParam(req.query.teamId)
+    teamId: getQueryStringParam(req.query.teamId),
   });
   if (!parsed.success) {
     const err = new Error("Invalid query parameters");
@@ -30,7 +35,10 @@ function parseQuery(req: NextApiRequest) {
   return parsed.data;
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   const startedAt = Date.now();
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
@@ -60,14 +68,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       runId,
       asOfDate: q.date,
       horizonGames: q.horizon,
-      data: data ?? []
+      data: data ?? [],
     });
   } catch (e) {
-    const statusCode = (e as any)?.statusCode ?? 500;
-    return res.status(statusCode).json({
+    const failure = buildProjectionApiErrorResponse(
+      e,
+      "PROJECTION_TEAMS_UNAVAILABLE",
+    );
+    return res.status(failure.statusCode).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
-      error: (e as any)?.message ?? String(e),
-      details: (e as any)?.details
+      error: failure.error,
+      details: failure.details,
     });
   }
 }

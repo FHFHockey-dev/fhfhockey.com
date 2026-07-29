@@ -1,4 +1,6 @@
-export const SKATER_MODEL_VERSION = "skater-role-scenario-v1";
+export const SKATER_CANDIDATE_MODEL_VERSION = "skater-role-scenario-v1";
+export const SKATER_BASELINE_MODEL_VERSION = "skater-baseline-v1";
+export const SKATER_MODEL_VERSION = SKATER_CANDIDATE_MODEL_VERSION;
 
 export type SkaterModelMode = "candidate" | "baseline";
 
@@ -12,13 +14,24 @@ export type SkaterRolloutConfig = {
 export function resolveSkaterRolloutConfig(
   rawMode = process.env.FORGE_SKATER_MODEL_MODE,
 ): SkaterRolloutConfig {
+  const mode: SkaterModelMode =
+    rawMode?.trim().toLowerCase() === "candidate" ? "candidate" : "baseline";
   return {
-    modelVersion: SKATER_MODEL_VERSION,
-    mode:
-      rawMode?.trim().toLowerCase() === "baseline" ? "baseline" : "candidate",
+    modelVersion:
+      mode === "candidate"
+        ? SKATER_CANDIDATE_MODEL_VERSION
+        : SKATER_BASELINE_MODEL_VERSION,
+    mode,
     featureFlag: "FORGE_SKATER_MODEL_MODE",
     rollbackMode: "baseline",
   };
+}
+
+export function selectSkaterRolloutScenarioMixture<T>(
+  config: SkaterRolloutConfig,
+  candidateMixture: T[],
+): T[] | undefined {
+  return config.mode === "candidate" ? candidateMixture : undefined;
 }
 
 export function selectSkaterRolloutStatLine<T>(args: {

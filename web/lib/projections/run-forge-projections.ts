@@ -16,6 +16,7 @@ import {
 } from "lib/projections/uncertainty";
 import {
   resolveSkaterRolloutConfig,
+  selectSkaterRolloutScenarioMixture,
   selectSkaterRolloutStatLine,
 } from "lib/projections/skaterRollout";
 import {
@@ -3120,7 +3121,10 @@ export async function runProjectionV2ForDate(
               horizonScalars: teamHorizonScalars,
               roleContinuity: p.roleContinuity,
             });
-            if (p.roleScenarios.length > 0) {
+            if (
+              skaterRollout.mode === "candidate" &&
+              p.roleScenarios.length > 0
+            ) {
               metrics.data_quality.role_scenario_blends_applied += 1;
               metrics.data_quality.role_scenario_horizon_games_modeled +=
                 teamHorizonScalars.length;
@@ -3172,15 +3176,18 @@ export async function runProjectionV2ForDate(
               },
               horizonGames,
               teamHorizonScalars,
-              scenarioBlend.scenarioLines.map((s) => ({
-                weight: s.probability,
-                goalsEs: s.goalsEs,
-                goalsPp: s.goalsPp,
-                assistsEs: s.assistsEs,
-                assistsPp: s.assistsPp,
-                shotsEs,
-                shotsPp,
-              })),
+              selectSkaterRolloutScenarioMixture(
+                skaterRollout,
+                scenarioBlend.scenarioLines.map((s) => ({
+                  weight: s.probability,
+                  goalsEs: s.goalsEs,
+                  goalsPp: s.goalsPp,
+                  assistsEs: s.assistsEs,
+                  assistsPp: s.assistsPp,
+                  shotsEs,
+                  shotsPp,
+                })),
+              ),
               p.trendAdjustment?.uncertaintyVolatilityMultiplier ?? 1,
             );
             const scenarioMetadata = buildSkaterScenarioMetadata({
@@ -3190,7 +3197,10 @@ export async function runProjectionV2ForDate(
             const uncertaintyWithRole = buildSkaterUncertaintyWithModel({
               uncertainty,
               model: {
-                source: "heuristic_skater_role_model",
+                source:
+                  skaterRollout.mode === "candidate"
+                    ? "heuristic_skater_role_model"
+                    : "scenario_free_current_rate_model",
                 rollout: skaterRollout,
                 holdout_baselines: {
                   current_baseline: {
