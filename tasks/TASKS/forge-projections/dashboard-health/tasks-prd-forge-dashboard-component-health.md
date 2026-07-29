@@ -1,5 +1,7 @@
 ## Relevant Files
 
+**Status (2026-07-29):** Complete at 47/47 after dynamic re-audit. The matrix and remediation closeout are authoritative for current health; the component audit and quarantine sections below preserve the original baseline that drove remediation.
+
 - `tasks/prd-forge-dashboard-component-health.md` - Source PRD for the FORGE dashboard component-health and data-integrity program.
 - `tasks/tasks-prd-forge-dashboard-component-health.md` - Task tracker for the component-health audit and follow-on planning work.
 - `tasks/artifacts/forge-dashboard-component-health-inventory.md` - Completed baseline inventory of the in-scope FORGE components, routes, adapters, serving APIs, source tables, and current cron/runtime ownership mapping.
@@ -137,7 +139,11 @@
   - [x] 6.4 Ensure the follow-on implementation plan explicitly includes a rolling “newly discovered issues and optimizations” backlog instead of only a fixed checklist.
   - [x] 6.5 Update the task tracker and relevant artifact references so the audit outputs act as the authoritative operational reference for the next phase.
 
+- [x] NEW 7.0 **P3 post-remediation evidence-authority reconciliation:** the PRD/list now distinguish original component audit/quarantine baselines from the authoritative current matrix and remediation closeout; the matrix no longer says Top Adds awaits credential rotation/activation after both completed.
+
 ## Quarantine List
+
+Historical baseline: this list records the original audit state that generated the remediation program. Use `tasks/artifacts/forge-dashboard-component-health-matrix.md` and `tasks/artifacts/forge-dashboard-component-remediation-closeout.md` for current classifications and gates.
 
 - `/api/v1/start-chart` - Matchups reconcile, but the audited slate showed a stale or empty goalie leg while the surface still looked current.
 - `/api/v1/forge/goalies` - Goalie-facing data is outdated relative to the audited slate window and is blocking a healthy slate/goalie contract.

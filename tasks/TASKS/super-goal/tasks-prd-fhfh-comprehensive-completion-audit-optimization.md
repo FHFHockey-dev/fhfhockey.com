@@ -211,7 +211,7 @@
     - [x] 5.4.1 Audit Goalie FORGE nested implementation and operator runbook. Evidence: canonical model/writer/reader/dashboard/accuracy ownership remains intact; P1 NEW 9.0 contains public goalie-card dependency details and P3 NEW 9.1 reconciles shipped phases, exclusions, paths, and historical planning records. The focused four-file/35-test cohort, TypeScript, scoped lint, source/master parity, and diff integrity pass (completed 2026-07-29).
     - [ ] 5.4.2 Audit FORGE run modularization after current pipeline changes.
     - [x] 5.4.3 Audit FORGE dashboard refresh after A-FORGE-DASH remediation. Evidence: preview/full-dashboard/Command-Center ownership, slate-first composition, filters, drill-ins, responsive states, and subsequent remediation remain coherent; P1 NEW 8.0 contains raw dependency details across all six dashboard panels and P3 NEW 8.1 reconciles current route/status ownership. The focused dashboard/Top Adds cohort, TypeScript, scoped lint, source/master parity, and diff integrity pass (completed 2026-07-29).
-    - [ ] 5.4.4 Audit dashboard component-health claims after latest remediation.
+    - [x] 5.4.4 Audit dashboard component-health claims after latest remediation. Evidence: the authoritative 4-green/3-yellow/3-red matrix remains truthful, its three red and three yellow gates remain explicit, and P3 NEW 7.0 distinguishes original audit/quarantine baselines from current matrix/closeout authority while correcting the stale Top Adds activation conclusion. Artifact-link, source/master parity, and diff-integrity checks pass (completed 2026-07-29).
     - [ ] 5.4.5 Audit FORGE ecosystem pass-three stabilization/quarantine/dashboard work.
     - [ ] 5.4.6 Audit FORGE prediction-engine super-list implementation and shared PRD mapping.
   - [ ] 5.5 `C-XG` Audit and remediate the NHL API xG foundation and baseline contracts.
@@ -1624,7 +1624,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/forge-projections/dashboard-health/tasks-forge-dashboard-component-remediation.md::C0077` (live NEW) — 19.1 P1 public dashboard reader dependency-detail disclosure closed with stable ownership-trends, ownership-snapshots, and Start Chart unavailable codes; 48/48 focused tests pass (2026-07-29).
 - [x] `SRC::tasks/TASKS/forge-projections/dashboard-health/tasks-forge-dashboard-component-remediation.md::C0078` (live NEW) — 19.2 P3 source-tracker drift closed by labeling the removed Top Movers wrapper historical while active movers rendering remains on Trends (2026-07-29).
 
-### Source: `tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard-component-health.md` (46 rows)
+### Source: `tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard-component-health.md` (47 rows)
 
 - [x] `SRC::tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard-component-health.md::C0001` (original L93) — 1.0 Define the component-health audit framework, inventory, and scoring model for the full FORGE dashboard route family
 - [x] `SRC::tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard-component-health.md::C0002` (original L94) — 1.1 Create `tasks/artifacts/forge-dashboard-component-health-inventory.md` and enumerate every in-scope FORGE component, route, adapter, serving API, and primary source table.
@@ -1672,6 +1672,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard-component-health.md::C0044` (original L136) — 6.3 Convert the audit findings into the next implementation task list for component-by-component fixes and verification work.
 - [x] `SRC::tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard-component-health.md::C0045` (original L137) — 6.4 Ensure the follow-on implementation plan explicitly includes a rolling “newly discovered issues and optimizations” backlog instead of only a fixed checklist.
 - [x] `SRC::tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard-component-health.md::C0046` (original L138) — 6.5 Update the task tracker and relevant artifact references so the audit outputs act as the authoritative operational reference for the next phase.
+- [x] `SRC::tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard-component-health.md::C0047` (live NEW) — NEW 7.0 **P3 post-remediation evidence-authority reconciliation:** original audit/quarantine baselines are distinguished from the authoritative current matrix/closeout, and the stale Top Adds activation conclusion is corrected.
 
 ### Source: `tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard.md` (49 rows)
 

@@ -60,6 +60,6 @@ The authoritative operational interpretation is now:
 1. team-context and route-continuity contracts are healthy
 2. stale, mixed, partial, and missing-overlay states are represented truthfully
 3. historical sustainability/goalie exceptions remain quarantined pending prospective evidence
-4. Top Adds week mode remains blocked on NEW 15 credential rotation and Vault-backed option-A activation
+4. Top Adds week mode remains red only until the first prospective non-zero in-season horizon-5 run; credential rotation and Vault-backed option-A activation are complete
 
 See [Remediation Closeout](./forge-dashboard-component-remediation-closeout.md) for production, verification, and exact-next-action evidence.
