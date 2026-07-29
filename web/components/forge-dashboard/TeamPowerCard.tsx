@@ -134,11 +134,7 @@ export default function TeamPowerCard({
         if (!active) return;
 
         if (teamRatingsResult.status === "rejected") {
-          const message =
-            teamRatingsResult.reason instanceof Error
-              ? teamRatingsResult.reason.message
-              : "Failed to load team power.";
-          setError(message);
+          setError("Team power is unavailable right now.");
           setRows([]);
           setCtpiRows([]);
           setSlateGames([]);
@@ -178,13 +174,9 @@ export default function TeamPowerCard({
 
         setSecondaryWarnings(warnings);
       })
-      .catch((fetchError: unknown) => {
+      .catch(() => {
         if (!active) return;
-        const message =
-          fetchError instanceof Error
-            ? fetchError.message
-            : "Failed to load team ratings.";
-        setError(message);
+        setError("Team power is unavailable right now.");
         setRows([]);
         setCtpiRows([]);
         setSlateGames([]);
@@ -314,7 +306,7 @@ export default function TeamPowerCard({
       </header>
 
       {loading && <p className={styles.panelState}>Loading team power...</p>}
-      {!loading && error && <p className={styles.panelState}>Error: {error}</p>}
+      {!loading && error && <p className={styles.panelState}>{error}</p>}
 
       {!loading && !error && rankedRows.length === 0 && (
         <p className={styles.panelState}>No team power data for this date.</p>

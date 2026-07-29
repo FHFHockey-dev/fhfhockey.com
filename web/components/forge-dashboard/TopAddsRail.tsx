@@ -496,13 +496,9 @@ export default function TopAddsRail({
         setOwnershipResponse(ownershipPayload);
         setOwnershipSnapshotMap(snapshotMap);
       })
-      .catch((fetchError: unknown) => {
+      .catch(() => {
         if (!active) return;
-        const message =
-          fetchError instanceof Error
-            ? fetchError.message
-            : "Failed to load top-adds rail.";
-        setError(message);
+        setError("Top Adds are unavailable right now.");
         setProjectionResponse(null);
         setProjectionResponseSelectionKey(projectionSelectionKey);
         setOwnershipResponse(null);

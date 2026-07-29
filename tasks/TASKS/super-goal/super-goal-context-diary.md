@@ -7171,3 +7171,11 @@
 - **Closed finding:** P3 NEW 8.1 reconciles the PRD/list status, canonical paths, duplicate relevant-file entries, and accepted parity label. Source/master is 35/36.
 - **Counts / boundary:** Raw parity is 4,827/4,964 with 137 unchecked = 97.24%; actionable parity is 4,827/4,958 with 131 open = 97.36% complete / 2.64% open. Severity is P0 28/23, P1 186/148, P2 156/147, P3 39/39. No formula, output, writer, data, schema, migration, schedule, build, deployment, provider, credential, shared checkout, push, or stash changed.
 - **Next action:** Preserve the truthful modularization checkpoint, then continue C-FORGE 5.4.3 while NEW 8.0 remains an explicit bounded structural backlog item.
+
+## Entry 0755 — 2026-07-29 C-FORGE dashboard refresh closure
+
+- **Architecture:** `/FORGE` remains the slim preview gateway, `/forge/dashboard` the retained full slate-first dashboard, and `/forge/command-center` the newer primary decision surface. Current filters, card families, route drill-ins, responsive states, and later A-FORGE-DASH ownership/remediation remain coherent.
+- **Findings / repair:** P1 NEW 8.0 replaces raw request URLs, HTTP status text, and dependency details across Team Power, Trust or Fade, player movement, game slate, Goalie Starts, and Top Adds failure states with stable surface copy. P3 NEW 8.1 reconciles current route/status ownership and labels absolute PRD paths as planning history.
+- **Verification / controls:** The dashboard page and Top Adds suites pass two files/30 tests. Full TypeScript, zero-error scoped lint, raw-error scan, source/master 49/49 parity, and diff integrity pass. C-FORGE 5.4.3 closes.
+- **Counts / boundary:** Raw parity is 4,830/4,966 with 136 unchecked = 97.26%; actionable parity is 4,830/4,960 with 130 open = 97.38% complete / 2.62% open. Severity is P0 28/23, P1 187/149, P2 156/147, P3 40/40. Existing prospective Top Adds and historical quarantine gates remain unchanged; no formula, writer, data, schema, migration, schedule, build, deployment, provider, credential, shared checkout, push, or stash changed.
+- **Next action:** Preserve this local checkpoint, then audit C-FORGE 5.4.4 component-health claims while modularization NEW 8.0 remains explicit.

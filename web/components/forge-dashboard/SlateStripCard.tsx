@@ -171,13 +171,9 @@ export default function SlateStripCard({
         setServingMessage(payload.serving?.message ?? null);
         setServingSeverity(payload.serving?.severity ?? "none");
       })
-      .catch((fetchError: unknown) => {
+      .catch(() => {
         if (!active) return;
-        const message =
-          fetchError instanceof Error
-            ? fetchError.message
-            : "Failed to load slate strip.";
-        setError(message);
+        setError("Game slate is unavailable right now.");
         setGames([]);
         setServingMessage(null);
         setServingSeverity("none");
@@ -256,7 +252,7 @@ export default function SlateStripCard({
       </header>
 
       {loading && <p className={styles.panelState}>Loading game slate...</p>}
-      {!loading && error && <p className={styles.panelState}>Error: {error}</p>}
+      {!loading && error && <p className={styles.panelState}>{error}</p>}
 
       {!loading && !error && displayGames.length === 0 && (
         <p className={styles.panelState}>No games match this filter/date.</p>

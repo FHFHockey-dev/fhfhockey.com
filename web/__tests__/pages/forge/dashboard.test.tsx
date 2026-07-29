@@ -455,13 +455,16 @@ describe("Forge dashboard render states", () => {
       expect(
         screen.getByText("Goalie projections are unavailable right now.")
       ).toBeTruthy();
+      expect(screen.getByText("Team power is unavailable right now.")).toBeTruthy();
       expect(
-        screen.queryByText(/forge\/goalies.*Request failed|Request failed.*forge\/goalies/i)
-      ).toBeNull();
-      const remainingLegacyErrors = screen.getAllByText(
-        /Error: Request failed \(500\)/i
-      );
-      expect(remainingLegacyErrors.length).toBeGreaterThanOrEqual(4);
+        screen.getByText("Trust and fade data is unavailable right now.")
+      ).toBeTruthy();
+      expect(
+        screen.getByText("Player trend movement is unavailable right now.")
+      ).toBeTruthy();
+      expect(screen.getByText("Game slate is unavailable right now.")).toBeTruthy();
+      expect(screen.getByText("Error: Top Adds are unavailable right now.")).toBeTruthy();
+      expect(screen.queryByText(/Request failed|\/api\/v1\//i)).toBeNull();
     });
   });
 

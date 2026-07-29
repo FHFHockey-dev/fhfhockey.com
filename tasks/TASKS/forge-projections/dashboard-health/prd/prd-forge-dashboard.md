@@ -1,5 +1,7 @@
 # PRD: FORGE Dashboard Refresh
 
+**Status (2026-07-29):** Implemented and dynamically audited. `/FORGE` is the slim preview gateway, `/forge/dashboard` is the retained full dashboard, and `/forge/command-center` is the newer primary decision surface. Absolute paths below preserve the original planning record; the paired task list's repository-relative paths are canonical.
+
 ## 1. Introduction / Overview
 
 The FORGE dashboard needs a full reset.
@@ -268,4 +270,3 @@ Likely merge targets include:
 4. Which sections should show stale data with warnings versus stronger blocked-state cards?
 5. Should the dashboard-specific player detail page exist in MVP, or should some card types temporarily route to the trends player page until the new page is built?
 6. Which `2` to `3` charts should be considered mandatory for the initial desktop dashboard layout?
-

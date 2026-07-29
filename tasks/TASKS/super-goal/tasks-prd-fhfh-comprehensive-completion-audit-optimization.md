@@ -210,7 +210,7 @@
   - [ ] 5.4 `C-FORGE` Audit and remediate completed goalie, modularization, dashboard, pass-three, and prediction-engine work.
     - [x] 5.4.1 Audit Goalie FORGE nested implementation and operator runbook. Evidence: canonical model/writer/reader/dashboard/accuracy ownership remains intact; P1 NEW 9.0 contains public goalie-card dependency details and P3 NEW 9.1 reconciles shipped phases, exclusions, paths, and historical planning records. The focused four-file/35-test cohort, TypeScript, scoped lint, source/master parity, and diff integrity pass (completed 2026-07-29).
     - [ ] 5.4.2 Audit FORGE run modularization after current pipeline changes.
-    - [ ] 5.4.3 Audit FORGE dashboard refresh after A-FORGE-DASH remediation.
+    - [x] 5.4.3 Audit FORGE dashboard refresh after A-FORGE-DASH remediation. Evidence: preview/full-dashboard/Command-Center ownership, slate-first composition, filters, drill-ins, responsive states, and subsequent remediation remain coherent; P1 NEW 8.0 contains raw dependency details across all six dashboard panels and P3 NEW 8.1 reconciles current route/status ownership. The focused dashboard/Top Adds cohort, TypeScript, scoped lint, source/master parity, and diff integrity pass (completed 2026-07-29).
     - [ ] 5.4.4 Audit dashboard component-health claims after latest remediation.
     - [ ] 5.4.5 Audit FORGE ecosystem pass-three stabilization/quarantine/dashboard work.
     - [ ] 5.4.6 Audit FORGE prediction-engine super-list implementation and shared PRD mapping.
@@ -1673,7 +1673,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard-component-health.md::C0045` (original L137) — 6.4 Ensure the follow-on implementation plan explicitly includes a rolling “newly discovered issues and optimizations” backlog instead of only a fixed checklist.
 - [x] `SRC::tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard-component-health.md::C0046` (original L138) — 6.5 Update the task tracker and relevant artifact references so the audit outputs act as the authoritative operational reference for the next phase.
 
-### Source: `tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard.md` (47 rows)
+### Source: `tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard.md` (49 rows)
 
 - [x] `SRC::tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard.md::C0001` (original L90) — 1.0 Define the dashboard architecture, navigation model, and component consolidation plan
 - [x] `SRC::tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard.md::C0002` (original L91) — 1.1 Audit the current FORGE, Trends, Start Chart, Underlying Stats, Placeholder, and Trends Sandbox pages and map their highest-value sections to the refreshed dashboard bands.
@@ -1722,6 +1722,8 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard.md::C0045` (original L134) — 7.4 Add tests or contract coverage for the dashboard data dependencies most likely to drift, including ownership, slate, team context, goalie, and sustainability payloads.
 - [x] `SRC::tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard.md::C0046` (original L135) — 7.5 Verify the dashboard nav, card click-throughs, mobile accordions, and ownership filters behave correctly under realistic initial-load states.
 - [x] `SRC::tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard.md::C0047` (original L136) — 7.6 Run full regression coverage for the affected dashboard, trends, start-chart, and supporting API/page surfaces before closeout.
+- [x] `SRC::tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard.md::C0048` (live NEW) — NEW 8.0 **P1 dashboard-wide dependency-detail containment:** all six full-dashboard panel failure states use stable surface copy rather than rendering fetch URLs, HTTP status text, or dependency details.
+- [x] `SRC::tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard.md::C0049` (live NEW) — NEW 8.1 **P3 current route/status reconciliation:** preview/full-dashboard/Command-Center ownership and historical absolute planning paths are explicit while the implemented refresh contract remains intact.
 
 ### Source: `tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md` (46 rows)
 

@@ -189,13 +189,9 @@ export default function HotColdCard({
         if (!active) return;
         setPayload(response);
       })
-      .catch((fetchError: unknown) => {
+      .catch(() => {
         if (!active) return;
-        const message =
-          fetchError instanceof Error
-            ? fetchError.message
-            : "Failed to load player trend movement.";
-        setError(message);
+        setError("Player trend movement is unavailable right now.");
         setPayload(null);
       })
       .finally(() => {
@@ -501,7 +497,7 @@ export default function HotColdCard({
         <p className={styles.panelState}>Loading player form...</p>
       )}
       {position !== "g" && !loading && error && (
-        <p className={styles.panelState}>Error: {error}</p>
+        <p className={styles.panelState}>{error}</p>
       )}
       {position !== "g" &&
         !loading &&

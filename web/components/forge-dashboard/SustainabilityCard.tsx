@@ -168,13 +168,9 @@ export default function SustainabilityCard({
         setSnapshotDate(hot.snapshot_date ?? cold.snapshot_date ?? null);
         setServingMessage(hot.serving?.message ?? cold.serving?.message ?? null);
       })
-      .catch((fetchError: unknown) => {
+      .catch(() => {
         if (!active) return;
-        const message =
-          fetchError instanceof Error
-            ? fetchError.message
-            : "Failed to load trust and fade data.";
-        setError(message);
+        setError("Trust and fade data is unavailable right now.");
         setHotRows([]);
         setColdRows([]);
         setSnapshotDate(null);
@@ -324,7 +320,7 @@ export default function SustainabilityCard({
       </header>
 
       {(loading || ownershipLoading) && <p className={styles.panelState}>Loading trust calls...</p>}
-      {!loading && error && <p className={styles.panelState}>Error: {error}</p>}
+      {!loading && error && <p className={styles.panelState}>{error}</p>}
 
       {!loading && !error && sustainableRows.length === 0 && riskRows.length === 0 && (
         <p className={styles.panelState}>No trust or fade calls available for this date.</p>
