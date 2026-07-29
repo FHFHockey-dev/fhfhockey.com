@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -12,7 +14,9 @@ import {
   generatePregamePredictionsForWindow,
   historicalPregamePredictionCutoffAt,
   isPregamePredictionCutoff,
+  parseGamePredictionPromotionReceipt,
   previewGamePredictionModelVersionPromotion,
+  promoteGamePredictionModelVersion,
   servingModelVersionPersistenceAction,
   sourceAsOfDateForPredictionCutoff,
 } from "./workflow";
@@ -21,6 +25,14 @@ import {
   BASELINE_MODEL_VERSION,
 } from "./baselineModel";
 import { GAME_PREDICTION_FEATURE_SET_VERSION } from "./featureSources";
+
+const promotionMigrationSql = readFileSync(
+  resolve(
+    process.cwd(),
+    "../supabase/migrations/20260728235000_make_game_prediction_promotion_atomic.sql",
+  ),
+  "utf8",
+);
 
 function eligiblePromotionMetadata(overrides?: Record<string, unknown>) {
   return {
@@ -587,6 +599,122 @@ describe("game prediction workflow", () => {
     });
     expect(from).toHaveBeenCalledTimes(3);
     expect(modelQuery).not.toHaveProperty("update");
+  });
+
+  it("promotes through one exact transactional receipt", async () => {
+    const modelQuery = queryBuilder(
+      {
+        data: {
+          model_name: "nhl_game_baseline_logistic",
+          model_version: "candidate-v1",
+          feature_set_version: "game_features_v5_accuracy_candidates",
+          status: "candidate",
+          validation_start_date: "2026-01-01",
+          validation_end_date: "2026-04-01",
+          validation_metrics: { summary: { evaluatedGames: 240 } },
+          metadata: eligiblePromotionMetadata(),
+          source_audit_metadata: {
+            uses_market_features: false,
+            public_explanation_ready: true,
+            explanation_blockers: [],
+            segment_regression_count: 0,
+          },
+        },
+        error: null,
+      },
+      "maybeSingle",
+    );
+    const metricQuery = queryBuilder(
+      {
+        data: {
+          segment_key: "overall",
+          segment_value: "all",
+          evaluation_start_date: "2026-01-01",
+          evaluation_end_date: "2026-04-01",
+          evaluated_games: 240,
+          log_loss: 0.64,
+          brier_score: 0.21,
+          accuracy: 0.58,
+        },
+        error: null,
+      },
+      "maybeSingle",
+    );
+    const segmentQuery = queryBuilder(
+      {
+        data: REQUIRED_PROMOTION_MONITORED_SEGMENT_KEYS.map((segment_key) => ({
+          segment_key,
+        })),
+        error: null,
+      },
+      "limit",
+    );
+    const metricQueries = [metricQuery, segmentQuery];
+    const from = vi.fn((table: string) => {
+      if (table === "game_prediction_model_versions") return modelQuery;
+      if (table === "game_prediction_model_metrics")
+        return metricQueries.shift();
+      throw new Error(`Unexpected table ${table}`);
+    });
+    const rpc = vi.fn().mockResolvedValue({
+      data: [{ promoted: true, retired_production_rows: 1 }],
+      error: null,
+    });
+
+    const result = await promoteGamePredictionModelVersion({
+      client: { from, rpc } as any,
+      modelName: "nhl_game_baseline_logistic",
+      modelVersion: "candidate-v1",
+      featureSetVersion: "game_features_v5_accuracy_candidates",
+      promotedAt: "2026-06-15T12:00:00.000Z",
+      minEvaluatedGames: 150,
+    });
+
+    expect(result).toMatchObject({
+      promoted: true,
+      promotedAt: "2026-06-15T12:00:00.000Z",
+      retiredProductionRows: 1,
+    });
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc.mock.calls[0][0]).toBe(
+      "promote_game_prediction_model_version_atomic",
+    );
+  });
+
+  it("defines an additive service-only atomic promotion migration", () => {
+    expect(promotionMigrationSql).toContain(
+      "create unique index if not exists game_prediction_model_versions_one_production_per_model",
+    );
+    expect(promotionMigrationSql).toContain("pg_advisory_xact_lock");
+    expect(promotionMigrationSql).toContain("for update");
+    expect(promotionMigrationSql).toContain(
+      "GAME_PREDICTION_PROMOTION_CANDIDATE_NOT_FOUND",
+    );
+    expect(promotionMigrationSql).toMatch(
+      /revoke all on function public\.promote_game_prediction_model_version_atomic\([\s\S]*?from public, anon, authenticated;/,
+    );
+    expect(promotionMigrationSql).toMatch(
+      /grant execute on function public\.promote_game_prediction_model_version_atomic\([\s\S]*?to service_role;/,
+    );
+    expect(promotionMigrationSql).not.toMatch(
+      /\b(drop table|truncate table)\b/i,
+    );
+  });
+
+  it("rejects missing or malformed atomic promotion receipts", () => {
+    expect(() => parseGamePredictionPromotionReceipt([])).toThrow(
+      "invalid receipt count",
+    );
+    expect(() =>
+      parseGamePredictionPromotionReceipt([
+        { promoted: true, retired_production_rows: -1 },
+      ]),
+    ).toThrow("invalid receipt");
+    expect(() =>
+      parseGamePredictionPromotionReceipt([
+        { promoted: true, retired_production_rows: "1" },
+      ]),
+    ).toThrow("invalid receipt");
   });
 
   it("requires persisted overall metric evidence to match the promotion window", () => {

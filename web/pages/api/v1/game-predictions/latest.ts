@@ -68,9 +68,10 @@ export default async function handler(
     return res.status(200).json({ success: true, ...payload });
   } catch (error: any) {
     console.error("game-predictions latest error", error?.message ?? error);
-    return res.status(500).json({
+    return res.status(503).json({
       success: false,
-      error: error?.message ?? "Unable to load game predictions",
+      code: "GAME_PREDICTIONS_UNAVAILABLE",
+      error: "Unable to load game predictions",
     });
   }
 }
