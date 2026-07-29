@@ -17,7 +17,7 @@ This note locks the route ownership, naming, and cross-link assumptions for pare
 | Schedule-planning grid | `/game-grid/7-Day-Forecast` | Treat `/game-grid` as a redirect only, not the canonical shared link target. |
 | WGO explainer charts | `/wigoCharts` | Keep as the explanatory chart home, but avoid overlapping it with team-page or trends ownership. |
 | Underlying-stats landing | `/underlying-stats` | Supporting reference surface, not the primary home for this roadmap. |
-| Splits decision surface | `/splits` | Planned dedicated route if trends cannot carry the UX cleanly. |
+| Splits decision surface | `/splits` | Shipped dedicated player/team matchup, goalie, and PP-shot-share workflow with canonical cross-links. |
 
 ## Overlap Decisions
 
@@ -79,7 +79,7 @@ All Supabase reads added by this roadmap are either provably bounded below the p
 - Goalie quality-of-competition remains optional until a verified opponent-quality join can distinguish role changes without inventing precision.
 - Breakout Barometer remains a planned Rankings Trending experiment until its five-metric signal is implemented and validated.
 - Value Cost Delta remains a planned Draft Dashboard experiment until projection/VORP, Yahoo ADP, next-pick availability, and scoring provenance can be joined without treating missing ADP as zero.
-- `/splits` remains uncreated; the current Trends/Rankings split foundations should be extended first unless a dedicated workflow is justified by measured UX evidence.
+- `/splits` is now shipped and owns the dedicated matchup workflow; future split expansion should extend its paginated public contract rather than create another route.
 - Production/provider rollout for line-source ingestion remains in A-GDL, and broader Sustainability/history coverage remains in A-SUST; this roadmap does not duplicate those operational gates.
 - The ranking-vote concept and a broad live-site redesign remain out of scope.
 
@@ -88,4 +88,4 @@ All Supabase reads added by this roadmap are either provably bounded below the p
 - Do not build the ranking-vote concept.
 - Do not commit to a live-site redesign.
 - Do not move ownership of WGO charts while parallel WGO chart work is in flight.
-- Do not create `/splits` yet unless a later parent task explicitly takes it on.
+- Do not create a second splits route; extend the canonical `/splits` contract.

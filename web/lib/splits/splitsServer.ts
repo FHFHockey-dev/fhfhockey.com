@@ -1,4 +1,8 @@
 import serviceRoleClient from "lib/supabase/server";
+import {
+  fetchAllSupabaseFilterChunks,
+  fetchAllSupabasePages,
+} from "lib/supabase/pagination";
 import { teamsInfo } from "lib/teamsInfo";
 
 import {
@@ -223,20 +227,21 @@ async function fetchPlayerDirectoryForTeam(args: {
   currentSeasonId: number;
   teamId?: number;
 }): Promise<PlayerDirectory> {
-  const { data, error } = await serviceRoleClient
-    .from("rosters")
-    .select("playerId, teamId, players:playerId(fullName, position)")
-    .eq("seasonId", args.currentSeasonId)
-    .match(args.teamId == null ? {} : { teamId: args.teamId });
-
-  if (error) {
-    throw new Error(`Unable to load roster directory: ${error.message}`);
-  }
+  const data = await fetchAllSupabasePages<RosterRow>(({ from, to }) =>
+    serviceRoleClient
+      .from("rosters")
+      .select("playerId, teamId, players:playerId(fullName, position)")
+      .eq("seasonId", args.currentSeasonId)
+      .match(args.teamId == null ? {} : { teamId: args.teamId })
+      .order("playerId", { ascending: true })
+      .order("teamId", { ascending: true })
+      .range(from, to)
+  );
 
   const byPlayerId = new Map<number, PlayerDirectoryEntry>();
   const byTeamId = new Map<number, PlayerDirectoryEntry[]>();
 
-  for (const row of ((data ?? []) as RosterRow[])) {
+  for (const row of data) {
     const entry: PlayerDirectoryEntry = {
       playerId: row.playerId,
       playerName: row.players?.fullName ?? `Player ${row.playerId}`,
@@ -260,16 +265,16 @@ async function fetchPlayerDirectoryForTeam(args: {
 }
 
 async function fetchCurrentSeasonGames(currentSeasonId: number) {
-  const { data, error } = await serviceRoleClient
-    .from("games")
-    .select("id, homeTeamId, awayTeamId")
-    .eq("seasonId", currentSeasonId);
+  const data = await fetchAllSupabasePages<GameRow>(({ from, to }) =>
+    serviceRoleClient
+      .from("games")
+      .select("id, homeTeamId, awayTeamId")
+      .eq("seasonId", currentSeasonId)
+      .order("id", { ascending: true })
+      .range(from, to)
+  );
 
-  if (error) {
-    throw new Error(`Unable to load season games: ${error.message}`);
-  }
-
-  return ((data ?? []) as GameRow[]).filter(
+  return data.filter(
     (row) =>
       Number.isFinite(row.id) &&
       Number.isFinite(row.homeTeamId) &&
@@ -282,40 +287,46 @@ async function fetchStrengthRowsForSeason(args: {
   seasonEndDate: string;
   teamId?: number;
 }) {
-  const { data, error } = await serviceRoleClient
-    .from("forge_player_game_strength")
-    .select(
-      [
-        "player_id",
-        "team_id",
-        "opponent_team_id",
-        "goals_es",
-        "goals_pk",
-        "goals_pp",
-        "assists_es",
-        "assists_pk",
-        "assists_pp",
-        "shots_es",
-        "shots_pk",
-        "shots_pp",
-        "plus_minus",
-        "pim",
-        "hits",
-        "blocks",
-        "toi_es_seconds",
-        "toi_pk_seconds",
-        "toi_pp_seconds",
-      ].join(",")
-    )
-    .gte("game_date", args.seasonStartDate)
-    .lte("game_date", args.seasonEndDate)
-    .match(args.teamId == null ? {} : { team_id: args.teamId });
+  return fetchAllSupabasePages<StrengthGameRow>(async ({ from, to }) => {
+    const { data, error } = await serviceRoleClient
+      .from("forge_player_game_strength")
+      .select(
+        [
+          "player_id",
+          "team_id",
+          "opponent_team_id",
+          "goals_es",
+          "goals_pk",
+          "goals_pp",
+          "assists_es",
+          "assists_pk",
+          "assists_pp",
+          "shots_es",
+          "shots_pk",
+          "shots_pp",
+          "plus_minus",
+          "pim",
+          "hits",
+          "blocks",
+          "toi_es_seconds",
+          "toi_pk_seconds",
+          "toi_pp_seconds",
+        ].join(",")
+      )
+      .gte("game_date", args.seasonStartDate)
+      .lte("game_date", args.seasonEndDate)
+      .match(args.teamId == null ? {} : { team_id: args.teamId })
+      .order("game_date", { ascending: true })
+      .order("player_id", { ascending: true })
+      .order("team_id", { ascending: true })
+      .order("opponent_team_id", { ascending: true })
+      .range(from, to);
 
-  if (error) {
-    throw new Error(`Unable to load skater split rows: ${error.message}`);
-  }
-
-  return ((data ?? []) as unknown) as StrengthGameRow[];
+    return {
+      data: (data ?? []) as unknown as StrengthGameRow[],
+      error,
+    };
+  });
 }
 
 async function fetchTeamStrengthRowsForSeason(args: {
@@ -323,18 +334,18 @@ async function fetchTeamStrengthRowsForSeason(args: {
   seasonEndDate: string;
   teamId?: number;
 }) {
-  const { data, error } = await serviceRoleClient
-    .from("forge_team_game_strength")
-    .select("team_id, opponent_team_id, toi_pp_seconds")
-    .gte("game_date", args.seasonStartDate)
-    .lte("game_date", args.seasonEndDate)
-    .match(args.teamId == null ? {} : { team_id: args.teamId });
-
-  if (error) {
-    throw new Error(`Unable to load team skater split rows: ${error.message}`);
-  }
-
-  return ((data ?? []) as unknown) as TeamStrengthGameRow[];
+  return fetchAllSupabasePages<TeamStrengthGameRow>(({ from, to }) =>
+    serviceRoleClient
+      .from("forge_team_game_strength")
+      .select("team_id, opponent_team_id, toi_pp_seconds")
+      .gte("game_date", args.seasonStartDate)
+      .lte("game_date", args.seasonEndDate)
+      .match(args.teamId == null ? {} : { team_id: args.teamId })
+      .order("game_date", { ascending: true })
+      .order("team_id", { ascending: true })
+      .order("opponent_team_id", { ascending: true })
+      .range(from, to)
+  );
 }
 
 async function fetchGoalieRowsForGames(gameIds: number[]) {
@@ -342,16 +353,17 @@ async function fetchGoalieRowsForGames(gameIds: number[]) {
     return [] as GoalieGameRow[];
   }
 
-  const { data, error } = await serviceRoleClient
-    .from("goaliesGameStats")
-    .select("playerId, gameId, goalsAgainst, saveShotsAgainst, toi")
-    .in("gameId", gameIds);
-
-  if (error) {
-    throw new Error(`Unable to load goalie game rows: ${error.message}`);
-  }
-
-  return (data ?? []) as GoalieGameRow[];
+  return fetchAllSupabaseFilterChunks<GoalieGameRow, number>(
+    gameIds,
+    (gameIdChunk, { from, to }) =>
+      serviceRoleClient
+        .from("goaliesGameStats")
+        .select("playerId, gameId, goalsAgainst, saveShotsAgainst, toi")
+        .in("gameId", gameIdChunk)
+        .order("gameId", { ascending: true })
+        .order("playerId", { ascending: true })
+        .range(from, to)
+  );
 }
 
 async function fetchGameOutcomesForTeam(args: {
@@ -362,18 +374,20 @@ async function fetchGameOutcomesForTeam(args: {
     return new Map<number, string>();
   }
 
-  const { data, error } = await serviceRoleClient
-    .from("gameOutcomes")
-    .select("gameId, outcome")
-    .eq("teamId", args.teamId)
-    .in("gameId", args.gameIds);
-
-  if (error) {
-    throw new Error(`Unable to load game outcomes: ${error.message}`);
-  }
+  const data = await fetchAllSupabaseFilterChunks<GameOutcomeRow, number>(
+    args.gameIds,
+    (gameIdChunk, { from, to }) =>
+      serviceRoleClient
+        .from("gameOutcomes")
+        .select("gameId, outcome")
+        .eq("teamId", args.teamId)
+        .in("gameId", gameIdChunk)
+        .order("gameId", { ascending: true })
+        .range(from, to)
+  );
 
   const outcomeByGameId = new Map<number, string>();
-  for (const row of (data ?? []) as GameOutcomeRow[]) {
+  for (const row of data) {
     if (row.gameId != null && row.outcome) {
       outcomeByGameId.set(row.gameId, row.outcome);
     }
