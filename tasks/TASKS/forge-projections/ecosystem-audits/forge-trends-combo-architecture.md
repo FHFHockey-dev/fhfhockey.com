@@ -1,8 +1,8 @@
 # FORGE + Trends + Start Chart Combo Dashboard
 
-## Current completion boundary (2026-07-22)
+## Current completion boundary (2026-07-29)
 
-The information architecture/data contracts, shared loading/cache layer, unified team-power views, FORGE-first player/goalie projections, team/skater trend/search sections, and validation/performance parent are complete as defined by their verified child rows. The source list is 36/38 with two open. Exact commit `b4aeea8f9af6229aa64f75e4b311b1218a5afb4c`, containing the bounded-series repair, is READY/Production as `dpl_4q8GM1wqTbHR3NbnxRxAakdLEvJr`; all nine declared value-free payload probes return 200 at 29–85,963 bytes within budget, and the bounded relevant runtime-error query is empty. Only legacy dead-code removal and its route parent remain gated.
+The information architecture/data contracts, shared loading/cache layer, unified team-power views, FORGE-first player/goalie projections, team/skater trend/search sections, routing, and validation/performance parent are complete at 38/38. Exact commit `b4aeea8f9af6229aa64f75e4b311b1218a5afb4c`, containing the bounded-series repair, is READY/Production as `dpl_4q8GM1wqTbHR3NbnxRxAakdLEvJr`; all nine declared value-free payload probes return 200 at 29–85,963 bytes within budget, and the bounded relevant runtime-error query is empty. The final dead-code audit removed only zero-consumer `TopMoversCard.tsx`; active `/trends` owns the shared movers visualization directly, and every remaining dashboard module has a runtime consumer. The current Trends/hook/rollback-route cohort passes 3 files/33 tests plus full TypeScript. Specialized routes and the named `/forge/dashboard` rollback route remain intact; dynamic Wave-C audit `5.7.16` and master `NEW-006` separately own any later route swap/removal decision.
 
 ## 1.1 Route + rendering strategy
 

@@ -131,7 +131,7 @@ These had no inbound imports in the custom graph and were also reported by `knip
 | `web/components/TeamLandingPage/teamStats.js` and `teamStats.scss` | React Router-era team stats module. | Imports `react-router-dom`, local `teamsInfo`, and CSS path inconsistent with Next app. No inbound imports. | Delete. |
 | `web/components/TeamStatCard/*` | Standalone team stat card. | No inbound imports. | Delete unless Storybook coverage is desired. |
 | `web/components/TeamPpPersonnelSnapshot/*` | PP personnel mini-module linking to `/lines/[team]`. | No inbound imports, but concept is product-relevant. | Either wire into team pages or delete. |
-| `web/components/forge-dashboard/TopMoversCard.tsx` | Earlier team movers card. | No inbound imports; dashboard uses other forge-dashboard cards. | Delete if superseded. |
+| `web/components/forge-dashboard/TopMoversCard.tsx` | Earlier team movers card. | Bounded re-audit confirmed zero inbound runtime imports; active `/trends` imports the shared `TopMovers` visualization directly. | Deleted 2026-07-29 as the sole proven-unused B-FORGE-COMBO wrapper. |
 | `web/lib/NHL/NHL_API.ts` | Old wrapper around `statsapi.web.nhl.com/api/v1`. | Uses retired NHL API base; no inbound imports. | Delete. |
 | `web/lib/projectionWeights.ts` | Integer projection source weight helpers. | No inbound imports. | Delete if projection UI no longer supports manual source weights. |
 | `web/lib/projectionsConfig/formatTotalSecondsToMMSS.ts` | Duplicate time formatter. | No inbound imports; `formatToMMSS.ts` and `formatDurationMmSs.ts` exist. | Delete. |

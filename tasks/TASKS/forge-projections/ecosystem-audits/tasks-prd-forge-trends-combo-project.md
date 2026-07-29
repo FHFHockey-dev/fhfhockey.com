@@ -65,11 +65,11 @@
   - [x] 5.3 Reuse player search/autocomplete and link to player trend pages.
   - [x] 5.4 Standardize chart palettes and legends across sections.
 
-- [ ] 6.0 Create the new dashboard page and routing, and deprecate legacy pages
+- [x] 6.0 Create the new dashboard page and routing, and deprecate legacy pages. Evidence (2026-07-29): the combined `/trends` dashboard, shared navigation/hydration, and legacy cross-links are complete. Specialized `/FORGE`, `/start-chart`, `/underlying-stats`, and `/trends` routes remain active, while `/forge/dashboard` remains the explicitly labeled one-release rollback route under separate Wave-C review; no protected route is removed by this closure.
   - [x] 6.1 Implement the new combined page layout and top-level navigation.
   - [x] 6.2 Add SSR/CSR data hydration logic based on chosen strategy.
   - [x] 6.3 Add redirects or in-app links from legacy pages to the new dashboard.
-  - [ ] 6.4 Audit for dead code and remove unused components once migration is complete.
+  - [x] 6.4 Audit for dead code and remove unused components once migration is complete. Evidence (2026-07-29): a bounded production import graph found every remaining `lib/dashboard` module and live `forge-dashboard` component consumed. `TopMoversCard.tsx` alone had zero inbound runtime imports, duplicated active Team Power/Hot-Cold behavior, and wrapped the same `TopMovers` visualization that `/trends` imports directly, so only that obsolete wrapper was removed.
 
 - [x] 7.0 Validation, performance tuning, and cron dependency check
   - [x] 7.1 Verify API response sizes and add pagination/limits where needed. A value-free Production probe measured all nine budgeted dashboard routes; eight passed and `skater-power?limit=60` exceeded its 280,000-byte budget at 383,242 bytes. The route now accepts bounded `seriesGames` history while retaining full-history rankings; actual consumers request 40 chart points, 10 Hot/Cold points, or one movers point. The regression uses a full 60-player/82-game input, verifies the existing 50-player cap plus one-point caller contract, and keeps serialized output within 280,000 bytes. NEW 8.0 retains deployment/Production remeasurement.
