@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { fromMock, identityMock, scoresMock } = vi.hoisted(() => ({
+const { fromMock, historyMock, identityMock, scoresMock } = vi.hoisted(() => ({
   fromMock: vi.fn(),
+  historyMock: vi.fn(),
   identityMock: vi.fn(),
   scoresMock: vi.fn(),
 }));
@@ -12,6 +13,7 @@ vi.mock("lib/supabase/public-client", () => ({
 
 vi.mock("lib/sustainability/trendsIdentity", () => ({
   fetchSustainabilityTrendIdentity: identityMock,
+  fetchSustainabilityTrendHistory: historyMock,
   fetchSustainabilityTrendScores: scoresMock,
 }));
 
@@ -74,6 +76,7 @@ describe("GET /api/v1/sustainability/trends", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     fromMock.mockImplementation(() => createSnapshotQuery());
+    historyMock.mockResolvedValue(new Map());
     scoresMock.mockResolvedValue([
       {
         player_id: 1,

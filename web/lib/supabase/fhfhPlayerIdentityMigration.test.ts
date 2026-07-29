@@ -4,13 +4,13 @@ import { describe, expect, it } from "vitest";
 
 const migrationPath = resolve(
   process.cwd(),
-  "../supabase/migrations/20260714223013_create_fhfh_player_identity_registry.sql",
+  "../supabase/migration-archive/pre-baseline-20260716/authoritative-root/20260714223013_create_fhfh_player_identity_registry.sql",
 );
 const migrationSql = readFileSync(migrationPath, "utf8");
 const indexMigrationSql = readFileSync(
   resolve(
     process.cwd(),
-    "../supabase/migrations/20260714223217_add_fhfh_identity_foreign_key_indexes.sql",
+    "../supabase/migration-archive/pre-baseline-20260716/authoritative-root/20260714223217_add_fhfh_identity_foreign_key_indexes.sql",
   ),
   "utf8",
 );

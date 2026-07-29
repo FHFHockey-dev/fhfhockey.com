@@ -158,7 +158,7 @@ describe("Yahoo global credential owner", () => {
     expect(source).toContain("withYahooRetry");
     expect(source).toContain("completeSnapshot");
     expect(source).toContain("rateLimitEvents");
-    expect(source).toContain("deactivationApplied: false");
+    expect(source).toContain("deactivationApplied: true");
     expect(source).not.toContain("fallback: full pagination scan");
   });
 

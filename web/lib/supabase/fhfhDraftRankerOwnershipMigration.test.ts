@@ -5,14 +5,14 @@ import { describe, expect, it } from "vitest";
 const migrationSql = readFileSync(
   resolve(
     process.cwd(),
-    "../supabase/migrations/20260715011329_create_draft_ranker_ownership_foundation.sql",
+    "../supabase/migration-archive/pre-baseline-20260716/authoritative-root/20260715011329_create_draft_ranker_ownership_foundation.sql",
   ),
   "utf8",
 );
 const indexMigrationSql = readFileSync(
   resolve(
     process.cwd(),
-    "../supabase/migrations/20260715011557_add_draft_ranker_foreign_key_indexes.sql",
+    "../supabase/migration-archive/pre-baseline-20260716/authoritative-root/20260715011557_add_draft_ranker_foreign_key_indexes.sql",
   ),
   "utf8",
 );

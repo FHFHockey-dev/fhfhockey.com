@@ -30,6 +30,17 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260716112909_add_line_combinations_source_provenance.sql",
       "20260716112910_harden_line_combination_trigger_auth.sql",
       "20260720105524_add_projection_materialization_transactions.sql",
+      "20260721013821_enforce_shift_relationship_positions.sql",
+      "20260722010355_add_transactional_gamecenter_normalization.sql",
+      "20260723040553_restrict_legacy_yahoo_player_writers.sql",
+      "20260723113533_make_yahoo_player_writer_atomic.sql",
+      "20260723121407_replace_forge_projection_results_atomic.sql",
+      "20260725200808_fix_yahoo_player_writer_captured_at.sql",
+      "20260725220704_reconcile_yahoo_player_key_snapshots.sql",
+      "20260725223034_add_sustainability_version_provenance.sql",
+      "20260725235646_add_normalized_yahoo_ownership_reader.sql",
+      "20260726000603_harden_yahoo_read_surfaces.sql",
+      "20260728225806_add_sko_prediction_run_control.sql",
     ]);
 
     expect(
