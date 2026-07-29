@@ -63,3 +63,7 @@ If this route is revisited later, the next steps should be:
 2. Tighten the detail-page copy to match the calmer data-page tone.
 3. Rename header/section labels so landing and detail pages feel like siblings rather than separate prototypes.
 4. Address the cold detail-query latency separately from UI styling work.
+
+## Dynamic C-US Audit — 2026-07-29
+
+The detail route remains aligned through shared module inheritance and the same native aggregation/filter/table contract. Season and season-team grouping, opponent semantics, context carry-over, loading/empty/error behavior, and inline chart ownership remain covered. P1 NEW 9.0 now redacts raw dependency detail from both detail and chart 500 responses while preserving bounded validation errors.

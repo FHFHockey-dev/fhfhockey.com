@@ -4,7 +4,10 @@ import { Pool } from "pg";
 
 import supabase from "lib/supabase/server";
 import type { Database } from "lib/supabase/database-generated.types";
-import { fetchAllSupabasePages } from "lib/supabase/pagination";
+import {
+  fetchAllSupabaseFilterChunks,
+  fetchAllSupabasePages,
+} from "lib/supabase/pagination";
 import {
   getGoalModifierFromRawEvent,
   type ParsedNhlPbpEvent,
@@ -2121,7 +2124,7 @@ function buildFallbackPlayerNamesById(
   return namesById;
 }
 
-async function fetchPlayerStatsLandingIdentityMaps(
+export async function fetchPlayerStatsLandingIdentityMaps(
   bundle: PlayerStatsLandingSourceBundle,
   client: PlayerStatsSupabaseClient = supabase
 ): Promise<PlayerStatsLandingIdentityMaps> {
@@ -2147,32 +2150,36 @@ async function fetchPlayerStatsLandingIdentityMaps(
     }
   }
 
-  const [playersResult, teamsResult] = await Promise.all([
+  const [playerRows, teamRows] = await Promise.all([
     playerIds.size > 0
-      ? client
-          .from("players")
-          .select("id,fullName,position")
-          .in("id", [...playerIds])
-      : Promise.resolve({ data: [], error: null }),
+      ? fetchAllSupabaseFilterChunks<PlayerRow, number>(
+          playerIds,
+          (playerIdChunk, { from, to }) =>
+            client
+              .from("players")
+              .select("id,fullName,position")
+              .in("id", playerIdChunk)
+              .order("id", { ascending: true })
+              .range(from, to) as any
+        )
+      : Promise.resolve([]),
     teamIds.size > 0
-      ? client
-          .from("teams")
-          .select("id,abbreviation")
-          .in("id", [...teamIds])
-      : Promise.resolve({ data: [], error: null }),
+      ? fetchAllSupabaseFilterChunks<TeamRow, number>(
+          teamIds,
+          (teamIdChunk, { from, to }) =>
+            client
+              .from("teams")
+              .select("id,abbreviation")
+              .in("id", teamIdChunk)
+              .order("id", { ascending: true })
+              .range(from, to) as any
+        )
+      : Promise.resolve([]),
   ]);
 
-  if (playersResult.error) {
-    throw playersResult.error;
-  }
-
-  if (teamsResult.error) {
-    throw teamsResult.error;
-  }
-
   return {
-    playersById: new Map((playersResult.data ?? []).map((row) => [row.id, row])),
-    teamsById: new Map((teamsResult.data ?? []).map((row) => [row.id, row])),
+    playersById: new Map(playerRows.map((row) => [row.id, row])),
+    teamsById: new Map(teamRows.map((row) => [row.id, row])),
     fallbackPlayerNamesById: buildFallbackPlayerNamesById(bundle),
   };
 }

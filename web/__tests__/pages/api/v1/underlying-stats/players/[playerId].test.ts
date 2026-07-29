@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("lib/underlying-stats/playerStatsLandingServer", () => ({
   buildPlayerStatsDetailAggregationFromState: vi.fn(),
@@ -41,6 +41,10 @@ function createMockApiContext(args?: {
 describe("/api/v1/underlying-stats/players/[playerId]", () => {
   beforeEach(() => {
     vi.mocked(buildPlayerStatsDetailAggregationFromState).mockReset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("returns a non-placeholder detail payload for valid requests", async () => {
@@ -116,5 +120,30 @@ describe("/api/v1/underlying-stats/players/[playerId]", () => {
       error: "Invalid player id.",
       issues: ["playerId must be a positive integer."],
     });
+  });
+
+  it("redacts dependency details from detail 500 responses", async () => {
+    const error = new Error("connection string detail");
+    vi.mocked(buildPlayerStatsDetailAggregationFromState).mockRejectedValue(error);
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { req, res } = createMockApiContext({
+      query: {
+        playerId: "8478401",
+        fromSeasonId: "20252026",
+        throughSeasonId: "20252026",
+      },
+    });
+
+    await handler(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.body).toEqual({
+      error: "Unable to build player detail underlying stats.",
+      issues: ["PLAYER_DETAIL_UNDERLYING_STATS_UNAVAILABLE"],
+    });
+    expect(consoleError).toHaveBeenCalledWith(
+      "Failed to build player detail underlying stats",
+      error
+    );
   });
 });

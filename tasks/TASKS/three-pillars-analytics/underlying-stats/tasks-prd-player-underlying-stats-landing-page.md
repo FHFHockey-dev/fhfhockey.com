@@ -129,6 +129,10 @@
   - [x] 8.10 Switch the landing API to prefer persisted per-game underlying-summary payloads and only live-reconstruct missing games from normalized PBP and shift rows while summary coverage catches up.
   - [x] 8.11 Stop `update-player-underlying-summaries?backfill=true` from re-requesting preseason games that already yield zero migrated rows, so the v2 summary migration loop terminates cleanly after regular-season coverage is complete.
 
+- [x] NEW 9.0 **P1 public dependency-detail disclosure:** landing, detail, and inline-chart HTTP 500 responses now return route-stable unavailable codes while bounded 400 validation detail remains public and raw failures stay server-side. The three direct route regressions pass (discovered and closed 2026-07-29).
+- [x] NEW 9.1 **P2 multi-season identity enrichment truncation/request overflow:** player and team identity lookups now use the shared deterministic chunk-and-page helper instead of one unbounded `.in(...)` request. A 205-player regression proves the 200/5 player chunks, bounded team chunk, complete maps, and exact ranges (discovered and closed 2026-07-29).
+- [x] NEW 9.2 **P3 stale PRD/runbook control paths:** the PRD now records implemented/audit-closed status, canonical `web/` routes, the later inline-chart enhancement, and the actual canonical task-list path; the runbook testing map now points to `web/__tests__` and includes the chart route/regression (discovered and closed 2026-07-29).
+
 ## Recorded Assumptions And Remaining Gaps
 
 This section is the canonical task output for `6.8`.
