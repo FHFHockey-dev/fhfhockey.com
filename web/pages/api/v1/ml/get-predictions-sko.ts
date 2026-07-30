@@ -89,6 +89,24 @@ function ageDaysFromToday(date: string | null): number | null {
   );
 }
 
+export function buildSkoSourceWarnings({
+  rows,
+  ageDays,
+}: {
+  rows: Array<{ top_features?: unknown }>;
+  ageDays: number | null;
+}): string[] {
+  const warnings = ["compatibility_model_not_promoted"];
+  if (!rows.length) warnings.push("prediction_data_empty");
+  if (rows.some((row) => row.top_features == null)) {
+    warnings.push("feature_attribution_unavailable");
+  }
+  if (ageDays !== null && ageDays > 3) {
+    warnings.push("prediction_snapshot_older_than_72_hours");
+  }
+  return warnings;
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
@@ -194,6 +212,7 @@ export default async function handler(
         .at(-1) ?? null;
     const earliestAsOfDate = asOfDates[0] ?? null;
     const latestAsOfDate = asOfDates.at(-1) ?? null;
+    const ageDays = ageDaysFromToday(latestAsOfDate);
     const hasMore = offset + rows.length < total;
     const basePayload = {
       success: true,
@@ -213,8 +232,9 @@ export default async function handler(
         earliestAsOfDate,
         latestAsOfDate,
         latestUpdatedAt,
-        ageDaysFromToday: ageDaysFromToday(latestAsOfDate),
+        ageDaysFromToday: ageDays,
       },
+      sourceWarnings: buildSkoSourceWarnings({ rows, ageDays }),
       durationMs: totalMs,
       queryMs: phase.query_ms,
     };

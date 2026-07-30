@@ -8,7 +8,9 @@ vi.mock("../../../../../lib/supabase/serverReadonly", () => ({
   default: serverReadonlyClientMock,
 }));
 
-import handler from "../../../../../pages/api/v1/ml/get-predictions-sko";
+import handler, {
+  buildSkoSourceWarnings,
+} from "../../../../../pages/api/v1/ml/get-predictions-sko";
 
 function createMockRes() {
   return {
@@ -181,6 +183,11 @@ describe("/api/v1/ml/get-predictions-sko", () => {
         latestUpdatedAt: "2026-03-19T10:00:00Z",
         ageDaysFromToday: expect.any(Number),
       },
+      sourceWarnings: [
+        "compatibility_model_not_promoted",
+        "feature_attribution_unavailable",
+        "prediction_snapshot_older_than_72_hours",
+      ],
     });
     expect(res.headers["Cache-Control"]).toBe(
       "s-maxage=60, stale-while-revalidate=300",
@@ -216,7 +223,20 @@ describe("/api/v1/ml/get-predictions-sko", () => {
         latestUpdatedAt: null,
         ageDaysFromToday: null,
       },
+      sourceWarnings: [
+        "compatibility_model_not_promoted",
+        "prediction_data_empty",
+      ],
     });
+  });
+
+  it("keeps source warning codes deterministic and omits unsupported claims", () => {
+    expect(
+      buildSkoSourceWarnings({
+        rows: [{ top_features: [{ key: "points", direction: "positive" }] }],
+        ageDays: 2,
+      }),
+    ).toEqual(["compatibility_model_not_promoted"]);
   });
 
   it("keeps raw dependency details out of the public error contract and sanitizes logs", async () => {
