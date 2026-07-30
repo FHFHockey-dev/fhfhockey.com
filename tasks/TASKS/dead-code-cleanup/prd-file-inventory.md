@@ -1909,3 +1909,10 @@ Total files: 845
 - webhooks/package-lock.json
 - webhooks/package.json
 - yahoo_historical.log (historical inventory; forward-untracked 2026-07-21)
+
+## 2026-07-30 Verification Refresh
+
+- Current tracked inventory: 3,477 paths, including 319 Next.js page entrypoints and 244 API entrypoints.
+- Current configured entrypoints: 48 package scripts and 20 Vercel cron definitions; the separately verified 64-job pg_cron inventory remains protected from import-graph deletion.
+- Current `knip` 5.88.1 production result: 155 raw unused-file candidates, 164 Sass-only unresolved aliases, and zero unlisted dependencies after direct manifest ownership was added for the three already-locked packages used by four active imports.
+- None of the 20 bounded cleanup deletions has reappeared. Approval-gated routes, separate applications, operational/manual callers, and quarantined artifacts remain inventoried rather than inferred dead.
