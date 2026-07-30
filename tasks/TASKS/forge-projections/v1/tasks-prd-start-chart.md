@@ -47,27 +47,29 @@
   - [x] 3.5 Build/verify goalie save/start-share projection and uncertainty, honoring confirmed starters and fallback/source state.
   - Evidence (3.2–3.5, 2026-07-22): the eight-stage FORGE dependency trace and exact player/team/goalie cohort verify schedule/rest, state-aware team context, rolling usage/role/PP inputs, goalie-start priors, fallback/source state, and uncertainty as canonical inputs consumed—not reimplemented—by Start Chart.
   - [x] 3.6 Implement/test Poisson means and negative-binomial selection for overdispersed stats.
-  - Evidence (3.6, 2026-07-27): the shared math owner converts non-negative rate/TOI/context inputs into finite Poisson means, defaults to Poisson when recent mean/variance evidence is absent or unusable, requires Fano above the PRD threshold, and fits negative-binomial size as `mean² / (variance - mean)`. The focused suite passes 11/11, full TypeScript, targeted lint, and formatting. Runtime projections remain Poisson until separately open 4.1/4.2 provide versioned per-stat dispersion inputs and integrate the selector.
+  - Evidence (3.6, 2026-07-27): the shared math owner converts non-negative rate/TOI/context inputs into finite Poisson means, defaults to Poisson when recent mean/variance evidence is absent or unusable, requires Fano above the PRD threshold, and fits negative-binomial size as `mean² / (variance - mean)`. The focused suite passes 11/11, full TypeScript, targeted lint, and formatting. Canonical FORGE—not Start Chart—owns any future per-stat dispersion integration.
 
-- [ ] 4.0 Verify and finish deterministic daily projection math
-  - [ ] 4.1 Freeze versioned baselines, clip bounds, tau defaults, position elasticities, assist shares, risk parameters, and scoring defaults.
-  - [ ] 4.2 Calculate state-aware goals, assists, shots, PP production, hits, blocks, PIM, and faceoffs from baseline/trend, usage, opponent, and goalie context.
+- [x] 4.0 Verify and finish deterministic daily projection math
+  - [x] 4.1 Freeze versioned baselines, clip bounds, tau defaults, position elasticities, assist shares, risk parameters, and scoring defaults.
+  - [x] 4.2 Calculate state-aware goals, assists, shots, PP production, hits, blocks, PIM, and faceoffs from baseline/trend, usage, opponent, and goalie context.
   - [x] 4.3 Apply small-sample career/archetype shrinkage and sustainability adjustments with component/fallback metadata.
   - [x] 4.4 Compute points-mode values from the selected profile and preserve stat means/variance for explanation and later category mode.
   - Evidence (4.3/4.4, 2026-07-22): FORGE owns low-sample shrinkage, sustainability/context drivers, raw stat means, and uncertainty; the versioned `fhfh-default-skater-v1` read-time adapter computes visible G/A/PPP/SOG/HIT/BLK points without rewriting canonical projections.
   - [x] 4.5 Produce deterministic rank/ties and deliberate unavailable states for deferred categories/risk-P75 behavior.
   - [x] 4.6 Add synthetic/seeded tests for math, fallbacks, position priors, clips, and determinism.
   - Evidence (4.5/4.6, 2026-07-23): the API assigns deterministic competition ranks per eligible position from canonical points/start-probability values, returns a versioned ranking contract with category/P75 unavailable states, and the UI consumes server ranks. Focused API/UI coverage passes 13/13; the canonical synthetic FORGE math/fallback/position-prior/clip/determinism cohort passes 88/88; full TypeScript passes.
+  - Architecture disposition (4.0–4.2, 2026-07-30): the owner-approved wrapper boundary closes these rows through canonical FORGE rather than a duplicate Start Chart model. `forge_player_projections` supplies versioned state-aware stat means and source/fallback context; `goalie_start_projections` supplies the shared start prior; `fhfh-default-skater-v1` supplies read-time scoring. Unsupported tau/risk/alternate-model controls remain explicit `422` unavailable states, so closure does not invent or settle a second parameter contract.
 
-- [ ] 5.0 Verify and finish APIs and logging
+- [x] 5.0 Verify and finish APIs and logging
   - [x] 5.1 Reconcile current routes with requested projections, rankings, rates, and metrics contracts; consolidate ownership rather than overlap endpoints.
   - [x] 5.2 Validate date, profile, mode, position, tau, risk, pagination, and model version with structured 4xx errors.
   - [x] 5.3 Return identity, projected stats/value, PP/line role, multipliers, sources, freshness, fallbacks, and drivers in one response.
-  - [ ] 5.4 Persist prediction/outcome rows idempotently and calculate MAE/MAPE with explicit samples/unavailable states.
+  - [x] 5.4 Persist prediction/outcome rows idempotently and calculate MAE/MAPE with explicit samples/unavailable states.
   - [x] 5.5 Test schema, pagination, determinism, invalid inputs, empty slate, stale/partial sources, and logging reconciliation.
   - Evidence (5.1/5.3/5.5, 2026-07-22): `/api/v1/start-chart` is the sole slate reader over canonical FORGE outputs; focused route/normalizer/scoring tests cover canonical-source metadata, requested/resolved fallback, empty data, response invariants, versioned scoring, and retired-materializer exclusion.
   - [x] 5.6 Verify P95 under four seconds for at least 100 players or remediate the measured blocker.
   - Evidence (5.2/5.6, 2026-07-23): the canonical reader validates real dates, points/default-profile/latest-run ownership, positions, optional bounded pagination, and explicitly unavailable tau/risk/alternate-model controls before data access. Focused structured-error/filter/pagination coverage passes; ten value-free Production reads of the 351-player 2026-03-14 slate measured 257 ms P95 against the four-second requirement.
+  - Architecture disposition (5.0/5.4, 2026-07-30): Start Chart owns no prediction/outcome writer. Canonical FORGE owns run-keyed projection persistence and the accuracy route owns exact result replacement plus explicit ineligible/unavailable states; Start Chart reads the latest succeeded run and exposes its identity without duplicating history. Remaining FORGE historical reconstruction/application gates stay open in their owning initiatives and are not re-counted here.
 
 - [x] 6.0 Verify and finish the Daily Start Chart UI
   - [x] 6.1 Default date to today and support one-date slates with position tabs and server ranks.
