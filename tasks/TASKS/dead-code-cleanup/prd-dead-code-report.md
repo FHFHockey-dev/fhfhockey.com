@@ -127,16 +127,16 @@ These had no inbound imports in the custom graph and were also reported by `knip
 | Files | Likely intent | Evidence | Recommendation |
 | --- | --- | --- | --- |
 | `web/components/DateRangeMatrix/DateRangeMatrixForGames.tsx` and the default export in `web/components/DateRangeMatrix/index.tsx` | Legacy wrappers around the unified raw/view and matrix-renderer paths. | Neither default wrapper has a runtime consumer; `/drm` uses `useDateRangeMatrixData`, `DateRangeMatrixView`, and props-only `LinePairGrid` directly. | Retain unchanged in quarantine; delete only after future explicit product-scope approval. |
-| `web/components/PlayerPPTOIPerGameChart/PlayerPPTOIPerGameChart.tsx` | Old per-player PP TOI chart. | No inbound imports; reads `sko_pp_stats` directly. | Delete. |
-| `web/components/TeamLandingPage/teamStats.js` and `teamStats.scss` | React Router-era team stats module. | Imports `react-router-dom`, local `teamsInfo`, and CSS path inconsistent with Next app. No inbound imports. | Delete. |
-| `web/components/TeamStatCard/*` | Standalone team stat card. | No inbound imports. | Delete unless Storybook coverage is desired. |
-| `web/components/TeamPpPersonnelSnapshot/*` | PP personnel mini-module linking to `/lines/[team]`. | No inbound imports, but concept is product-relevant. | Either wire into team pages or delete. |
+| `web/components/PlayerPPTOIPerGameChart/PlayerPPTOIPerGameChart.tsx` | Old per-player PP TOI chart. | No inbound imports; reads `sko_pp_stats` directly. | Deleted 2026-07-29; current `PPTOIChart.tsx` remains consumed by legacy team detail. |
+| `web/components/TeamLandingPage/teamStats.js` and `teamStats.scss` | React Router-era team stats module. | Imports `react-router-dom`, local `teamsInfo`, and CSS path inconsistent with Next app. No inbound imports. | Deleted 2026-07-29. |
+| `web/components/TeamStatCard/*` | Standalone team stat card. | No inbound imports. | Deleted 2026-07-29. |
+| `web/components/TeamPpPersonnelSnapshot/*` | PP personnel mini-module linking to `/lines/[team]`. | No inbound imports, but concept is product-relevant. | Deleted 2026-07-29 after exact current-consumer review. |
 | `web/components/forge-dashboard/TopMoversCard.tsx` | Earlier team movers card. | Bounded re-audit confirmed zero inbound runtime imports; active `/trends` imports the shared `TopMovers` visualization directly. | Deleted 2026-07-29 as the sole proven-unused B-FORGE-COMBO wrapper. |
-| `web/lib/NHL/NHL_API.ts` | Old wrapper around `statsapi.web.nhl.com/api/v1`. | Uses retired NHL API base; no inbound imports. | Delete. |
-| `web/lib/projectionWeights.ts` | Integer projection source weight helpers. | No inbound imports. | Delete if projection UI no longer supports manual source weights. |
-| `web/lib/projectionsConfig/formatTotalSecondsToMMSS.ts` | Duplicate time formatter. | No inbound imports; `formatToMMSS.ts` and `formatDurationMmSs.ts` exist. | Delete. |
-| `web/utils/analytics.ts` | Generic Bayesian/EMA/rolling average helpers. | No inbound imports. | Delete or move formulas into a tested active module. |
-| `web/utils/dateUtils.ts`, `web/utils/fetchScheduleData.ts`, `web/utils/memoize.ts` | Generic helpers. | Reported unused by `knip`; no inbound imports in custom graph. | Delete if no scripts require them. |
+| `web/lib/NHL/NHL_API.ts` | Old wrapper around `statsapi.web.nhl.com/api/v1`. | Uses retired NHL API base; no inbound imports. | Deleted 2026-07-29. |
+| `web/lib/projectionWeights.ts` | Integer projection source weight helpers. | No inbound imports. | Deleted 2026-07-29. |
+| `web/lib/projectionsConfig/formatTotalSecondsToMMSS.ts` | Duplicate time formatter. | No inbound imports; `formatToMMSS.ts` and `formatDurationMmSs.ts` exist. | Deleted 2026-07-29. |
+| `web/utils/analytics.ts` | Generic Bayesian/EMA/rolling average helpers. | No inbound imports. | Deleted 2026-07-29. |
+| `web/utils/dateUtils.ts`, `web/utils/fetchScheduleData.ts`, `web/utils/memoize.ts` | Generic helpers. | Exact review disproves the grouped claim for `dateUtils`: `usePlayerWeeklyStats` actively imports it; the other two have no consumer. | Retain `dateUtils`; deleted `fetchScheduleData` and `memoize` 2026-07-29. |
 
 ## Root-Level And Generated/Temporary Candidates
 
@@ -229,3 +229,11 @@ Five retained legacy routes across four families now use one shared visible quar
 The active `/trendsDebug` page now resolves administrator identity before mounting the validation console, so loading and denied states start no console data access. `/api/v1/debug/rolling-player-metrics` uses the existing fail-closed `adminOnly` middleware while retaining its read-only validation contract for authorized operators.
 
 The notice, page, and API suites pass 22/22 tests; full TypeScript passes; scoped ESLint reports zero errors and only the pre-existing `teamStats` image warning. This closes 4.2, 4.3, and parent 4.0. B-DEAD is 22/38 with 16 open. Route deletion/redirect approval, component/utility consumer proof and deletion, external operational ownership, and final verification remain open. No hosted build, deployment, database, provider, schedule, shared checkout, push, or external state changed.
+
+## 2026-07-29 Targeted Component and Utility Cleanup
+
+Exact path, symbol, runtime, script, config, separate-root, and documentation scans isolate 14 zero-consumer files from the broader candidate set. The bounded removal deletes the retired NHL API wrapper, duplicate time formatter, unused projection-weight/analytics/schedule/memoize utilities, obsolete PPTOI chart, React Router-era team stats pair, standalone TeamStatCard, and unwired Team PP personnel snapshot: 1,313 lines total.
+
+The review also disproves the grouped deletion claim for `web/utils/dateUtils.ts`: `usePlayerWeeklyStats` actively imports `getWeekStartDates`, so P3 NEW 8.4 records its retention before any deletion. Current `PPTOIChart.tsx`, retained route dependencies, historical SKO/prediction evidence, DRM quarantine, and old operational upserts with manual/external-caller uncertainty remain untouched. Thus 5.2 remains open rather than overstating complete consumer proof.
+
+Deleted-path/symbol scans are empty, full TypeScript passes, and the current Variance and Underlying Team Stats suites pass 2 files/8 tests. This closes 5.3/5.4 and NEW 8.4. B-DEAD is 25/39 with 14 open. No build, deployment, database, provider, schedule, credential, shared checkout, push, or external state changed.
