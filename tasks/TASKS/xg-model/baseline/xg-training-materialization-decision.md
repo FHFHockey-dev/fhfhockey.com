@@ -2,7 +2,8 @@
 
 ## Purpose
 
-This document records the materialization decision for baseline task `2.4` in `/Users/tim/Code/fhfhockey.com/tasks/tasks-xg-baseline-options.md`.
+This document records the materialization decision for baseline task `2.4` in
+`tasks/TASKS/xg-model/baseline/tasks-xg-baseline-options.md`.
 
 ## Decision
 
@@ -16,8 +17,10 @@ Instead, each approved baseline dataset build must produce a versioned dataset a
 
 - a stable dataset name
 - a dataset version
-- the required lineage metadata from `/Users/tim/Code/fhfhockey.com/tasks/TASKS/xg-model/baseline/xg-training-dataset-contract.md`
-- the feature contract reference from `/Users/tim/Code/fhfhockey.com/tasks/TASKS/xg-model/baseline/xg-training-feature-contract.md`
+- the required lineage metadata from
+  `tasks/TASKS/xg-model/baseline/xg-training-dataset-contract.md`
+- the feature contract reference from
+  `tasks/TASKS/xg-model/baseline/xg-training-feature-contract.md`
 
 ## Why This Option Was Chosen
 

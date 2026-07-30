@@ -111,3 +111,14 @@ The project is not release-ready for training or production rollout until all of
 - manual audit requirements have been satisfied and a passing artifact exists for representative games
 
 Those conditions are satisfied for the recorded version-1 training tuple through the exception-aware v2 release artifact. This does not approve production-reader cutover, authoritative parity publication, a later version tuple, or broad historical rollout.
+
+## 11. Baseline-contract current-state overlay (2026-07-29)
+
+- The baseline-option and follow-up lists are complete chronological execution records.
+- Later A-XG-TREND work owns current model lifecycle authority: approved active/champion
+  `logistic_l2-s20252026-p1-st1-f1-cfg9bac2706` remains in place, while corrected
+  `cfg2afcf561` remains inactive/non-champion.
+- Missed-shot rows remain eligible, but post-event `missReasonBucket` and
+  `isShortSideMiss` are forbidden scoring inputs under the leakage-safe contract.
+- New dataset artifacts use repository-relative contract references; historical
+  artifact bytes and production model state are unchanged.

@@ -1,5 +1,10 @@
 # xG Miss-Reason Treatment Study
 
+> Current-state overlay (2026-07-29): A-XG-TREND task 25.2 supersedes this March
+> 31 recommendation to use post-event miss classifications as explanatory
+> features. Missed-shot rows remain eligible, but `missReasonBucket` and
+> `isShortSideMiss` are forbidden scoring inputs under the leakage-safe contract.
+
 Date: `2026-03-31`
 Task: `tasks-xg-baseline-follow-ups.md` `5.2`
 Scope: decide whether miss-reason handling should change before the next clean xG approval pass.

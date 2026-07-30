@@ -486,6 +486,12 @@ Remaining cleanup and reference initiative sections are pending verified Wave-B 
 - **Contract:** `/stats` owns responsive team/search/leaderboard composition and navigation handoff. `/stats/team/[abbreviation]` and `/stats/player/[playerId]` keep their separate responsive ownership. Explicit tabs and expand buttons remain authoritative instead of swipe gestures.
 - **Verification / controls:** The scoped five-file/11-test cohort, full TypeScript, zero-error scoped lint, baseline-compatible code formatting, source/master 43/43 parity, and diff integrity pass. Dynamic audit 5.3.5 closes. Raw parity is 4,818/4,957 with 139 unchecked = 97.20%; actionable parity is 4,818/4,951 with 133 open = 97.31% complete / 2.69% open. Severity is P0 28/23, P1 184/146, P2 154/146, P3 36/36. No route ownership, writer, data, schema, migration, schedule, build, deployment, provider, credential, shared checkout, push, or stash changed.
 
+### C-XG baseline-contract audit
+
+- **Contract:** Missed-shot rows remain eligible, while post-event `missReasonBucket` and `isShortSideMiss` are forbidden scoring inputs in both the canonical contract and existing fail-closed harness.
+- **Lifecycle:** The March 31 option/follow-up artifacts remain chronological evidence. Later A-XG-TREND authority preserves approved active/champion `logistic_l2-s20252026-p1-st1-f1-cfg9bac2706`; corrected candidate `cfg2afcf561` remains inactive/non-champion.
+- **Portability / controls:** Newly generated dataset artifacts use repository-relative contract references; historical artifacts and production model state are untouched. Source/master is 35/35 for follow-ups and 36/36 for options; C-XG 5.5.2 and parent 5.5 close. Raw parity is 4,848/4,975 with 127 unchecked = 97.45%; actionable parity is 4,848/4,969 with 121 open = 97.56% complete / 2.44% open. Severity is P0 28/23, P1 190/152, P2 157/149, P3 45/45.
+
 ## Completion-gate evidence
 
 All charter questions remain open until source/master synchronization, Wave A/B completion, Wave C audit/remediation, cross-initiative verification, cleanup, diary finalization, and evidence population are complete.
