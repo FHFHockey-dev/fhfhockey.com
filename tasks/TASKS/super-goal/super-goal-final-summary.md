@@ -492,6 +492,12 @@ Remaining cleanup and reference initiative sections are pending verified Wave-B 
 - **Lifecycle:** The March 31 option/follow-up artifacts remain chronological evidence. Later A-XG-TREND authority preserves approved active/champion `logistic_l2-s20252026-p1-st1-f1-cfg9bac2706`; corrected candidate `cfg2afcf561` remains inactive/non-champion.
 - **Portability / controls:** Newly generated dataset artifacts use repository-relative contract references; historical artifacts and production model state are untouched. Source/master is 35/35 for follow-ups and 36/36 for options; C-XG 5.5.2 and parent 5.5 close. Raw parity is 4,848/4,975 with 127 unchecked = 97.45%; actionable parity is 4,848/4,969 with 121 open = 97.56% complete / 2.44% open. Severity is P0 28/23, P1 190/152, P2 157/149, P3 45/45.
 
+### C-VAR skater leaderboard audit
+
+- **Loading:** A background-page failure now retains completed rows, terminates both loading and has-more state, and renders a stable partial-data notice without exposing dependency details.
+- **Tables:** Elite/Quality/Average/Bad/Really Bad sort independently; bucket aggregates remain attached under every sort. Both table variants use native sort buttons with `aria-sort`, and advanced ownership values use percent formatting.
+- **Verification / controls:** The focused four-file/22-test cohort, full TypeScript, scoped lint, Sass compilation, source/master 94/94 parity, and diff integrity pass. C-VAR 5.6.1 closes. Raw parity is 4,852/4,978 with 126 unchecked = 97.47%; actionable parity is 4,852/4,972 with 120 open = 97.59% complete / 2.41% open. Severity is P0 28/23, P1 192/154, P2 158/150, P3 45/45. No scoring formula, data, writer, schema, migration, hosted build, deployment, provider, or schedule changed.
+
 ## Completion-gate evidence
 
 All charter questions remain open until source/master synchronization, Wave A/B completion, Wave C audit/remediation, cross-initiative verification, cleanup, diary finalization, and evidence population are complete.

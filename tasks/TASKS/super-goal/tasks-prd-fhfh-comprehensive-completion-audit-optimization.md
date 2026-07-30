@@ -218,7 +218,7 @@
     - [x] 5.5.1 Audit NHL API xG raw/normalized/shift/parity foundation after release work. Evidence: registered/closed P1 NEW 9.0/9.1 and P3 NEW 9.2; authenticated raw ingest is capped at 25 games, wide ranges fail before writes, multi-game game-local failures continue but return value-free HTTP 500 receipts, current paths/status match the exception-aware training-use verdict, and the 20-file/119-test foundation plus 2-file/21-test route cohorts and TypeScript pass (completed 2026-07-29).
     - [x] 5.5.2 Audit xG baseline options and follow-up contracts after A-XG-REL/A-XG-TREND changes. Evidence: P1 NEW 7.0 removes post-event miss fields from the written scoring contract, P2 NEW 7.1 makes new artifact lineage portable, and P3 NEW 7.2 reconciles canonical paths plus March-planning versus current active/champion authority; focused baseline tests and TypeScript pass (completed 2026-07-29).
   - [ ] 5.6 `C-VAR` Audit and remediate all variance initiatives.
-    - [ ] 5.6.1 Audit Skater variance leaderboard.
+    - [x] 5.6.1 Audit Skater variance leaderboard. Evidence: P1 NEW 12.0 contains background-pagination partial failure, P1 NEW 12.1 restores exact week-rating sorting and bucket-average grouping, and P2 NEW 12.2 supplies native sortable-header semantics plus consistent ownership formatting; the focused four-file/22-test cohort, TypeScript, lint, Sass, source/master parity, and diff integrity pass (completed 2026-07-29).
     - [ ] 5.6.2 Audit Variance section and goalie analytics.
     - [ ] 5.6.3 Audit Variance second pass and runbook.
   - [ ] 5.7 `C-DYNAMIC` Audit every Wave-A/B initiative after its final implementation changes.
@@ -4024,7 +4024,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-underlying-stats-power-rankings-roadmap.md::C0030` (original L64) — 6.3 Document the recommendation, the expected UX impact, and any migration work needed before changing the live score formula.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-underlying-stats-power-rankings-roadmap.md::C0031` (live NEW) — NEW 7.0 **P2 narrative-history PostgREST truncation:** complete 120-day history now uses stable date/team range pagination; the >1,000-row regression and five-file landing cohort pass (verified 2026-07-29).
 
-### Source: `tasks/TASKS/variance/v1/tasks-prd-skater-variance-leaderboard.md` (91 rows)
+### Source: `tasks/TASKS/variance/v1/tasks-prd-skater-variance-leaderboard.md` (94 rows)
 
 - [x] `SRC::tasks/TASKS/variance/v1/tasks-prd-skater-variance-leaderboard.md::C0001` (original L45) — 1.0 Establish skater data contracts and shared scoring metadata
 - [x] `SRC::tasks/TASKS/variance/v1/tasks-prd-skater-variance-leaderboard.md::C0002` (original L46) — 1.1 Create `web/components/SkaterPage/` if it does not already exist.
@@ -4117,6 +4117,9 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/variance/v1/tasks-prd-skater-variance-leaderboard.md::C0089` (original L142) — 10.8 Verify missing Yahoo data degrades gracefully.
 - [x] `SRC::tasks/TASKS/variance/v1/tasks-prd-skater-variance-leaderboard.md::C0090` (original L144) — 11.0 NEW: Resolve existing full TypeScript verification blockers
 - [x] `SRC::tasks/TASKS/variance/v1/tasks-prd-skater-variance-leaderboard.md::C0091` (original L145) — 11.1 Fix or quarantine pre-existing `tsc --noEmit` failures in underlying-stats and xg test files so full typecheck can be used as a clean verification signal. Verified with `npx tsc --noEmit` and a targeted Vitest pass covering 15 touched test files.
+- [x] `SRC::tasks/TASKS/variance/v1/tasks-prd-skater-variance-leaderboard.md::C0092` (live NEW) — NEW 12.0 **P1 background-pagination partial-failure containment:** completed rows remain visible, loading/has-more state terminates, a stable partial notice appears, and dependency details stay diagnostic-only.
+- [x] `SRC::tasks/TASKS/variance/v1/tasks-prd-skater-variance-leaderboard.md::C0093` (live NEW) — NEW 12.1 **P1 exact week-rating sorting and bucket grouping:** five independent rating keys sort their own counts; every non-bucket sort orders whole bucket groups by the aggregate row and keeps that row attached.
+- [x] `SRC::tasks/TASKS/variance/v1/tasks-prd-skater-variance-leaderboard.md::C0094` (live NEW) — NEW 12.2 **P2 sortable-header and ownership-display semantics:** both table variants use native buttons plus `aria-sort`; advanced ownership displays as a percent.
 
 ### Source: `tasks/TASKS/variance/v1/tasks-prd-variance-section.md` (52 rows)
 

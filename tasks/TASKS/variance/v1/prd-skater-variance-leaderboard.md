@@ -21,6 +21,15 @@ The feature should help fantasy hockey users evaluate whether skaters are produc
 9. Include transparent valuation context columns: `OWN%` in ownership mode and `ADP` in ADP mode.
 10. Preserve existing variance page filtering patterns, sortable tables, loading states, and error handling.
 
+## Current audit overlay (2026-07-29)
+
+- Background page failures retain the completed cohort, stop pagination, and show a stable
+  partial-data notice instead of leaving an endless loading state.
+- Each week-rating column owns its exact sort value. Non-bucket sorts order bucket groups by
+  their aggregate row and keep that row attached to its players.
+- Sortable headers are native buttons with `aria-sort`; advanced ownership values use percent
+  formatting consistent with the Value and Metrics tabs.
+
 ## User Stories
 
 1. As a fantasy hockey manager, I want to evaluate skaters relative to similarly owned players so I can find overperforming streamers and underperforming rostered players.
@@ -290,4 +299,3 @@ The feature should help fantasy hockey users evaluate whether skaters are produc
 5. Should defensemen be evaluated separately from forwards in a later pass?
 6. Should `LOW %D` players be included in the same average baseline as `WW`, or shown with `WW` while excluded from the `WW` average calculation?
 7. Which source should be canonical for unavailable advanced metrics such as `iXG/60` if `wgo_skater_stats` does not currently include them?
-

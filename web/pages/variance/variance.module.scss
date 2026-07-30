@@ -295,6 +295,17 @@
   backdrop-filter: blur(10px);
 }
 
+.sortButton {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-align: inherit;
+}
+
 .dataTable th:first-child,
 .dataTable td:first-child {
   text-align: left;

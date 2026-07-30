@@ -13,9 +13,13 @@ type SortDirection = "ascending" | "descending";
 type SkaterTableVariant = "value" | "metrics";
 
 type SkaterTableRow = SkaterValueOverviewRow | SkaterMetricsRow;
+export type SkaterTableSortKey =
+  | keyof SkaterValueOverviewRow
+  | keyof SkaterMetricsRow
+  | `weekCounts.${keyof SkaterValueOverviewRow["weekCounts"]}`;
 
 interface Column {
-  key: string;
+  key: SkaterTableSortKey;
   label: string;
   format?: (value: unknown, row: SkaterTableRow) => string;
 }
@@ -23,9 +27,9 @@ interface Column {
 interface SkaterTableProps {
   rows: SkaterTableRow[];
   variant: SkaterTableVariant;
-  sortKey: string;
+  sortKey: SkaterTableSortKey;
   sortDirection: SortDirection;
-  onSort: (key: string) => void;
+  onSort: (key: SkaterTableSortKey) => void;
 }
 
 type ResolvedTableRows = {
@@ -71,11 +75,11 @@ const valueColumns: Column[] = [
     format: (value, row) =>
       row.valuationLabel === "OWN%" ? formatPercent(value) : formatNumber(value, 1)
   },
-  { key: "weekCounts", label: "Elite", format: (_value, row) => formatNumber(getWeekCounts(row)?.Elite, 1) },
-  { key: "weekCounts", label: "Quality", format: (_value, row) => formatNumber(getWeekCounts(row)?.Quality, 1) },
-  { key: "weekCounts", label: "AVG", format: (_value, row) => formatNumber(getWeekCounts(row)?.Average, 1) },
-  { key: "weekCounts", label: "Bad", format: (_value, row) => formatNumber(getWeekCounts(row)?.Bad, 1) },
-  { key: "weekCounts", label: "Really Bad", format: (_value, row) => formatNumber(getWeekCounts(row)?.["Really Bad"], 1) },
+  { key: "weekCounts.Elite", label: "Elite", format: (_value, row) => formatNumber(getWeekCounts(row)?.Elite, 1) },
+  { key: "weekCounts.Quality", label: "Quality", format: (_value, row) => formatNumber(getWeekCounts(row)?.Quality, 1) },
+  { key: "weekCounts.Average", label: "AVG", format: (_value, row) => formatNumber(getWeekCounts(row)?.Average, 1) },
+  { key: "weekCounts.Bad", label: "Bad", format: (_value, row) => formatNumber(getWeekCounts(row)?.Bad, 1) },
+  { key: "weekCounts.Really Bad", label: "Really Bad", format: (_value, row) => formatNumber(getWeekCounts(row)?.["Really Bad"], 1) },
   { key: "percentOkWeeks", label: "% OK", format: formatPercent },
   { key: "percentGoodWeeks", label: "% Good", format: formatPercent },
   { key: "weeklyVariance", label: "Week Var", format: (value) => formatNumber(value) },
@@ -125,9 +129,10 @@ const metricsColumns: Column[] = [
   { key: "plusMinus", label: "+/-", format: (value) => formatNumber(value, 1) }
 ];
 
-const getSortValue = (row: SkaterTableRow, key: PropertyKey) => {
-  if (key === "weekCounts" && "weekCounts" in row) {
-    return row.weekCounts.Elite;
+const getSortValue = (row: SkaterTableRow, key: SkaterTableSortKey) => {
+  if (typeof key === "string" && key.startsWith("weekCounts.") && "weekCounts" in row) {
+    const rating = key.slice("weekCounts.".length) as keyof typeof row.weekCounts;
+    return row.weekCounts[rating];
   }
 
   return row[key as keyof typeof row];
@@ -156,7 +161,7 @@ const compareValues = (
   return direction === "ascending" ? result : -result;
 };
 
-const isBucketSortKey = (sortKey: string) =>
+const isBucketSortKey = (sortKey: SkaterTableSortKey) =>
   sortKey === "tier" || sortKey === "valuation";
 
 const getBucketKindPriority = (bucket: SkaterBucket) => {
@@ -196,28 +201,11 @@ const compareBuckets = (
   return direction === "ascending" ? result : -result;
 };
 
-const resolveTableRows = (
+export const resolveTableRows = (
   rows: SkaterTableRow[],
-  sortKey: string,
+  sortKey: SkaterTableSortKey,
   sortDirection: SortDirection
 ) : ResolvedTableRows => {
-  const playerRows = rows.filter((row) => row.rowType === "player");
-  const averageRows = rows.filter((row) => row.rowType === "bucket-average");
-
-  if (!isBucketSortKey(sortKey)) {
-    const sortedPlayerRows = [...playerRows].sort((a, b) =>
-      compareValues(
-        getSortValue(a, sortKey),
-        getSortValue(b, sortKey),
-        sortDirection
-      )
-    );
-
-    return {
-      sortedRows: [...sortedPlayerRows, ...averageRows]
-    };
-  }
-
   const byBucket = new Map<string, SkaterTableRow[]>();
 
   rows.forEach((row) => {
@@ -228,7 +216,19 @@ const resolveTableRows = (
 
   return {
     sortedRows: Array.from(byBucket.values())
-      .sort((a, b) => compareBuckets(a[0].bucket, b[0].bucket, sortDirection))
+      .sort((a, b) => {
+        if (isBucketSortKey(sortKey)) {
+          return compareBuckets(a[0].bucket, b[0].bucket, sortDirection);
+        }
+
+        const aAverage = a.find((row) => row.rowType === "bucket-average") ?? a[0];
+        const bAverage = b.find((row) => row.rowType === "bucket-average") ?? b[0];
+        return compareValues(
+          getSortValue(aAverage, sortKey),
+          getSortValue(bAverage, sortKey),
+          sortDirection
+        );
+      })
       .flatMap((bucketRows) => {
         const playerRows = bucketRows.filter((row) => row.rowType === "player");
         const averageRows = bucketRows.filter(
@@ -367,13 +367,26 @@ export default function SkaterTable({
           <tr>
             <th>Rank</th>
             {columns.map((column, index) => (
-              <th key={`${String(column.key)}-${index}`} onClick={() => onSort(column.key)}>
-                {column.label}
-                {sortKey === column.key
-                  ? sortDirection === "ascending"
-                    ? " ▲"
-                    : " ▼"
-                  : ""}
+              <th
+                key={`${String(column.key)}-${index}`}
+                aria-sort={
+                  sortKey === column.key
+                    ? sortDirection
+                    : undefined
+                }
+              >
+                <button
+                  className={styles.sortButton}
+                  type="button"
+                  onClick={() => onSort(column.key)}
+                >
+                  {column.label}
+                  {sortKey === column.key
+                    ? sortDirection === "ascending"
+                      ? " ▲"
+                      : " ▼"
+                    : ""}
+                </button>
               </th>
             ))}
           </tr>
@@ -404,7 +417,7 @@ export default function SkaterTable({
             >
               <td>{row.rowType === "bucket-average" ? "Avg" : rowIndex + 1}</td>
               {columns.map((column, columnIndex) => {
-                const value = row[column.key as keyof typeof row];
+                const value = getSortValue(row, column.key);
                 const formatted = column.format
                   ? column.format(value, row)
                   : String(value ?? "N/A");

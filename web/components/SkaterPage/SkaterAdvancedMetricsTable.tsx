@@ -10,7 +10,10 @@ type SortKey = keyof SkaterAdvancedMetricsRow;
 interface Column {
   key: SortKey;
   label: string;
-  format?: (value: SkaterAdvancedMetricsRow[SortKey]) => string;
+  format?: (
+    value: SkaterAdvancedMetricsRow[SortKey],
+    row: SkaterAdvancedMetricsRow
+  ) => string;
 }
 
 interface SkaterAdvancedMetricsTableProps {
@@ -21,6 +24,7 @@ const formatNumber = (value: unknown, digits = 2) =>
   typeof value === "number" && Number.isFinite(value)
     ? value.toFixed(digits)
     : "N/A";
+const formatDefaultNumber = (value: unknown) => formatNumber(value);
 
 const formatPercent = (value: unknown) =>
   typeof value === "number" && Number.isFinite(value)
@@ -33,22 +37,25 @@ const columns: Column[] = [
   {
     key: "valuation",
     label: "OWN%/ADP",
-    format: (value) => formatNumber(value, 1)
+    format: (value, row) =>
+      row.valuationLabel === "OWN%"
+        ? formatPercent(value)
+        : formatNumber(value, 1)
   },
   { key: "gamesPlayed", label: "GP", format: (value) => formatNumber(value, 0) },
-  { key: "goalsPer60", label: "G/60", format: formatNumber },
-  { key: "assistsPer60", label: "A/60", format: formatNumber },
-  { key: "pointsPer60", label: "PT/60", format: formatNumber },
-  { key: "shotsPer60", label: "SOG/60", format: formatNumber },
-  { key: "powerPlayGoalsPer60", label: "PPG/60", format: formatNumber },
-  { key: "powerPlayAssistsPer60", label: "PPA/60", format: formatNumber },
-  { key: "powerPlayPointsPer60", label: "PPP/60", format: formatNumber },
-  { key: "hitsPer60", label: "HIT/60", format: formatNumber },
-  { key: "blocksPer60", label: "BLK/60", format: formatNumber },
-  { key: "penaltyMinutesPer60", label: "PIM/60", format: formatNumber },
-  { key: "corsiForPer60", label: "CF/60", format: formatNumber },
+  { key: "goalsPer60", label: "G/60", format: formatDefaultNumber },
+  { key: "assistsPer60", label: "A/60", format: formatDefaultNumber },
+  { key: "pointsPer60", label: "PT/60", format: formatDefaultNumber },
+  { key: "shotsPer60", label: "SOG/60", format: formatDefaultNumber },
+  { key: "powerPlayGoalsPer60", label: "PPG/60", format: formatDefaultNumber },
+  { key: "powerPlayAssistsPer60", label: "PPA/60", format: formatDefaultNumber },
+  { key: "powerPlayPointsPer60", label: "PPP/60", format: formatDefaultNumber },
+  { key: "hitsPer60", label: "HIT/60", format: formatDefaultNumber },
+  { key: "blocksPer60", label: "BLK/60", format: formatDefaultNumber },
+  { key: "penaltyMinutesPer60", label: "PIM/60", format: formatDefaultNumber },
+  { key: "corsiForPer60", label: "CF/60", format: formatDefaultNumber },
   { key: "individualPointPercentage", label: "IPP", format: formatPercent },
-  { key: "individualExpectedGoalsPer60", label: "iXG/60", format: formatNumber }
+  { key: "individualExpectedGoalsPer60", label: "iXG/60", format: formatDefaultNumber }
 ];
 
 const compareValues = (
@@ -110,13 +117,26 @@ export default function SkaterAdvancedMetricsTable({
           <tr>
             <th>Rank</th>
             {columns.map((column) => (
-              <th key={column.key} onClick={() => requestSort(column.key)}>
-                {column.label}
-                {sortKey === column.key
-                  ? sortDirection === "ascending"
-                    ? " ▲"
-                    : " ▼"
-                  : ""}
+              <th
+                key={column.key}
+                aria-sort={
+                  sortKey === column.key
+                    ? sortDirection
+                    : undefined
+                }
+              >
+                <button
+                  className={styles.sortButton}
+                  type="button"
+                  onClick={() => requestSort(column.key)}
+                >
+                  {column.label}
+                  {sortKey === column.key
+                    ? sortDirection === "ascending"
+                      ? " ▲"
+                      : " ▼"
+                    : ""}
+                </button>
               </th>
             ))}
           </tr>
@@ -128,7 +148,7 @@ export default function SkaterAdvancedMetricsTable({
               {columns.map((column) => {
                 const value = row[column.key];
                 const formatted = column.format
-                  ? column.format(value)
+                  ? column.format(value, row)
                   : String(value ?? "N/A");
 
                 return <td key={column.key}>{formatted}</td>;
@@ -140,4 +160,3 @@ export default function SkaterAdvancedMetricsTable({
     </div>
   );
 }
-
