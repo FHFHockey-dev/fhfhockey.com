@@ -1445,7 +1445,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/cron-operations/tasks-prd-nst-api-audit-and-migration.md::C0045` (original L112) — 8.1 Investigate the failing assertions in `web/lib/underlying-stats/teamStatsQueries.test.ts` discovered during the mandatory `npm test` run for task `1.0`.
 - [x] `SRC::tasks/TASKS/cron-operations/tasks-prd-nst-api-audit-and-migration.md::C0046` (original L113) — 8.2 Decide whether the `teamStatsQueries` failures reflect expected upstream ongoing work or a real regression that must be fixed before later NST parent tasks are marked complete.
 
-### Source: `tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md` (14 rows)
+### Source: `tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md` (15 rows)
 
 - [x] `SRC::tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md::C0001` (original L434) — Bookmark/session v3 captures draft, keepers/trades, source/custom metadata, grouping/value/need/settings state while excluding private CSV rows/headers; focused regressions pass (2026-07-12).
 - [x] `SRC::tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md::C0002` (original L438) — Defense points option
@@ -2256,7 +2256,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md::C0035` (live NEW) — NEW 8.0 **P2 unfinished stage-oriented decomposition:** concrete preflight, skater, goalie, persistence, and metrics-finalization stages own their work; all pass-through wrappers and direct runner mutations are absent, the runner falls from 4,893 to 827 lines, formatter-normalized body equivalence passes, and the focused runner/import/API suites plus TypeScript pass without a projection execution or math change (completed 2026-07-29).
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md::C0036` (live NEW) — NEW 8.1 **P3 current-status and path reconciliation:** accepted rename/module/parity work is separated from the remaining structural gap; duplicate/stale active-file entries and parity-status drift are corrected.
 
-### Source: `tasks/TASKS/forge-projections/v1/tasks-skater-forge.md` (55 rows)
+### Source: `tasks/TASKS/forge-projections/v1/tasks-skater-forge.md` (57 rows)
 
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-skater-forge.md::C0001` (original L33) — 1.0 Harden skater candidate and role assignment hygiene
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-skater-forge.md::C0002` (original L34) — 1.1 Add active-skater filtering guards so stale/inactive skaters are near-eliminated from projection pools.
@@ -3174,7 +3174,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-fhfh-site-surface-expansion-roadmap.md::C0070` — NEW 14.0 Add direct canonical Team HQ links to team identities across all Game Grid variants so the grid-to-team-deep-dive flow is actionable. Evidence: accessible links render across all variants; focused tests/TypeScript pass and live March grid navigated to EDM Team HQ (2026-07-11).
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-fhfh-site-surface-expansion-roadmap.md::C0071` (live NEW) — NEW 15.0 **P1 paginate the public Splits season cohort and fail closed on dependency errors.** Complete ordered pagination covers roster/game/player/team reads; game-ID filters are chunked and paginated; invalid input remains bounded 400 while dependency failures return redacted 503 (verified 2026-07-29).
 
-### Source: `tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-fhfh-style-system-and-underlying-stats-restyle.md` (87 rows)
+### Source: `tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-fhfh-style-system-and-underlying-stats-restyle.md` (88 rows)
 
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-fhfh-style-system-and-underlying-stats-restyle.md::C0001` (original L59) — 1.0 Audit the rendered `DraftDashboard` and related reference surfaces to extract canonical reusable UI patterns
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-fhfh-style-system-and-underlying-stats-restyle.md::C0002` (original L60) — 1.1 Inspect the rendered `draft-dashboard` page in-browser and capture screenshots/notes for each major surface area rather than relying only on JSX and SCSS reads.
@@ -3333,7 +3333,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0018` (original L29) — Usage guide describing cron flow and API contract.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md::C0019` (original L30) — Document bulk rebuild endpoint (`POST /api/v1/sustainability/rebuild-trend-bands`) parameters (offset, limit, dry-run, game_limit).
 
-### Source: `tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md` (94 rows)
+### Source: `tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md` (95 rows)
 
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md::C0000` (original L41) — 1.0 Database Schema & Migrations. Option A makes the deployed TypeScript/Supabase contract canonical; production catalog, baseline, generated types, keys, uniqueness, and barometer indexes are verified (2026-07-22).
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md::C0001` (original L42) — 1.1 Draft DDL for `priors_cache`, `player_priors_cache`, `model_player_game_barometers`, `model_sustainability_config`, `sustainability_distribution_snapshots`, `sustainability_recompute_queue` per PRD.
@@ -3759,7 +3759,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-goalie-underlying-stats-landing-page.md::C0045` — NEW 7.0 P1 redacts landing/detail/chart dependency failures behind route-stable public unavailable codes while preserving server diagnostics (2026-07-29).
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-goalie-underlying-stats-landing-page.md::C0046` — NEW 7.1 P3 reconciles the shipped wrapper/shared-engine ownership across the PRD, runbook, source map, and historical audit artifacts (2026-07-29).
 
-### Source: `tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-player-underlying-stats-landing-page.md` (81 rows)
+### Source: `tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-player-underlying-stats-landing-page.md` (84 rows)
 
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-player-underlying-stats-landing-page.md::C0001` (original L43) — 1.0 Define the canonical data contract and query strategy for the landing page and player detail page
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-player-underlying-stats-landing-page.md::C0002` (original L44) — 1.1 Inventory the canonical source for each required stat family and identify which requested columns already exist versus which require new derived aggregation.
@@ -3917,7 +3917,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-team-underlying-stats-landing-page.md::C0067` — NEW 15.0 P1 redacts team landing dependency/runtime 500 details behind a stable public unavailable code while retaining server diagnostics (2026-07-29).
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-team-underlying-stats-landing-page.md::C0068` — NEW 15.1 P3 reconciles PRD status, canonical paths, landing-only ownership, and explicit detail deferral (2026-07-29).
 
-### Source: `tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-underlying-stats-landing-page-sos.md` (33 rows)
+### Source: `tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-underlying-stats-landing-page-sos.md` (34 rows)
 
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-underlying-stats-landing-page-sos.md::C0001` (original L63) — 1.0 Audit and correct the landing-page data pipeline for trend accuracy and snapshot-date availability
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-underlying-stats-landing-page-sos.md::C0002` (original L64) — 1.1 Trace the full landing-page data path from `web/pages/underlying-stats/index.tsx` through `/api/team-ratings` and `web/lib/teamRatingsService.ts` to confirm where each displayed field originates.
@@ -3997,7 +3997,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-underlying-stats-landing-page.md::C0039` (original L70) — 7.0 NEW: Clean up the missing asset request observed during live verification
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-underlying-stats-landing-page.md::C0040` (original L71) — 7.1 Investigate why `/pictures/hamburgerMenu.svg` returned `404` during the local `/underlying-stats` browser pass and either restore the asset or remove the stale reference. The desktop header now points at the existing `/pictures/burgerMenu.svg` asset.
 
-### Source: `tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-underlying-stats-power-rankings-roadmap.md` (30 rows)
+### Source: `tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-underlying-stats-power-rankings-roadmap.md` (31 rows)
 
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-underlying-stats-power-rankings-roadmap.md::C0001` (original L30) — 1.0 Keep the page’s “How to read this table” guidance compact and anchored to the table entry point
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-underlying-stats-power-rankings-roadmap.md::C0002` (original L31) — 1.1 Keep the help drawer in `web/pages/underlying-stats/index.tsx` one click away from the table title rather than burying it elsewhere on the page.
@@ -4255,7 +4255,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/variance/v2/tasks-prd-variance-goalies-skaters-second-pass.md::C0066` (original L109) — 10.5 Run the focused unit tests added or changed for this pass.
 - [x] `SRC::tasks/TASKS/variance/v2/tasks-prd-variance-goalies-skaters-second-pass.md::C0067` (live NEW) — NEW 11.0 **P3 current skater ownership:** preserve the neutral-proxy MVP as chronological evidence; the live surface is owned by configurable `SkaterPage`, and the legacy helper has no runtime consumer.
 
-### Source: `tasks/TASKS/wigo-charts/tasks-prd-wigo-charts-optimization.md` (37 rows)
+### Source: `tasks/TASKS/wigo-charts/tasks-prd-wigo-charts-optimization.md` (40 rows)
 
 - [x] `SRC::tasks/TASKS/wigo-charts/tasks-prd-wigo-charts-optimization.md::C0001` (original L65) — 1.0 Define the canonical WiGO data contract and stat metadata layer
 - [x] `SRC::tasks/TASKS/wigo-charts/tasks-prd-wigo-charts-optimization.md::C0002` (original L66) — 1.1 Inventory every stat displayed across WiGO tables and charts, including label, source field, unit, chart unit, display unit, and diff strategy.
@@ -4681,7 +4681,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md::C0170` — 27.3 NEW: Correct offline bounded-time evidence to use persisted period elapsed time; initial fail-closed artifact trained no heads, corrected rerun produced 145,050 labels, and TypeScript/12 focused tests pass (2026-07-12).
 - [x] `SRC::tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md::C0171` (live NEW) — 28.0 **P1 registry lifecycle override:** approval-ineligible artifacts cannot be labeled approved; active/champion requests require approved status and explicit `confirmPromotion=true`, champion requires active state, and the guarded route returns bounded 409 before any write (closed 2026-07-28).
 
-### Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md` (145 rows)
+### Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md` (157 rows)
 
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md::C0001` (original L27) — 1.0 Establish current warning/error baseline and ownership. Evidence: declared, strict, and full-core paths plus the ownership/dependency graph are recorded; the selected semantic ARIA scope is verified without suppression (2026-07-22).
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md::C0002` (original L28) — 1.1 Discover the repository's actual lint/type/build commands and run the narrowest baseline that reports file/rule/count without auto-fix. Evidence: deprecated/conflicting `next lint`, missing ESLint-9 flat config, explicit legacy-config/no-fix fallback, direct TypeScript, Vitest, Prettier, and bundled-Node-24 Sass paths were verified (2026-07-22).
@@ -4841,7 +4841,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md::C0156` (live NEW) — NEW 124.0 **P1 structured Supabase RPC errors lose transport status:** `normalizeSqlRpcFailure` now reads the bounded `{ message }` Supabase error shape before normalized fallback, preserving HTML 522 retry/final status classification. Focused route/helper regressions and the complete clean npm suite pass (verified 2026-07-28).
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md::C0157` (live NEW) — NEW 125.0 **P1 residual production/dev dependency audit:** the unused Nodemailer/AWS/XML tree is removed, Vitest and compatible transitive security fixes are current, and production/full audits fall to 6/36 with zero critical. Remaining Next/Sharp and Yahoo/UUID entries are explicitly major-gated or unreachable through the vulnerable buffer API; clean install, exact-lock dry run, valid tree, 635 files/3,508 tests, TypeScript, and zero-error lint pass (verified 2026-07-28).
 
-### Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md` (35 rows)
+### Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md` (38 rows)
 
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0001` (original L23) — 1.0 Refresh the dead-code evidence baseline. Current production scan plus bounded post-baseline delta classification pass without promoting raw flags to deletion claims (verified 2026-07-25).
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0002` (original L24) — 1.1 Re-run source inventory/import graph and current `knip --production` using repository conventions; exclude generated/vendor/cache/test false positives explicitly.
@@ -4995,7 +4995,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md::C0109` (live NEW) — NEW 83.0 P2 truthful route telemetry: `rowsVerified` reports exact scope cardinality while `rowsUpserted` counts only proven non-idempotent normalized inserts; replay/raw no-op attempts add zero writes in both route suites (completed 2026-07-21).
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md::C0110` (live NEW) — NEW 84.0 P2 downstream replay telemetry: shared player/goalie/team catch-up and backfill consumers report zero `rawRowsUpserted` for idempotent normalization replay, count only non-idempotent normalized roster/event/shift writes, and treat `rawEndpointsStored` as verification rather than writes; the focused 6-file/32-test helper/direct-route group, full TypeScript, and diff integrity pass (completed 2026-07-21).
 
-### Source: `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md` (91 rows)
+### Source: `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md` (92 rows)
 
 - [x] `SRC::tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md::C0001` (original L35) — 1.0 Baseline map/reconciliation complete; verified defects are NEW 11.1–11.8 and remaining unverified behavior stays open in its execution groups (2026-07-12).
 - [x] `SRC::tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md::C0002` (original L36) — 1.1 Current implementation ownership is mapped across dashboard orchestration/settings/board/roster/table/data/VORP/suggestions/CSS; absence of focused legacy tests remains tracked by the existing risk-based verification rows (2026-07-12).
@@ -5149,7 +5149,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md::C0055` (live NEW) — NEW 13.0 **P1 offseason Player Pickup season-identity mismatch:** canonical start-year derivation plus `20252026` aggregate identity tests restore 528 populated results without a data change (verified 2026-07-25).
 - [x] `SRC::tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md::C0056` (live NEW) — NEW 14.0 **P2 Player Pickup control/table semantics:** associated labels, native `aria-sort` buttons, contextual disclosure state, focus styling, and valid table DOM pass populated desktop/mobile proof with empty fresh logs (verified 2026-07-25).
 
-### Source: `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md` (69 rows)
+### Source: `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md` (71 rows)
 
 - [x] `SRC::tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md::C0001` (original L34) — 1.0 Establish the authoritative current Yahoo inventory and contracts
 - [x] `SRC::tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md::C0002` (original L35) — 1.1 Re-inventory every Python/TypeScript route, shared helper, table, RPC, migration, cron entry, UI consumer, environment name, and generated artifact related to Yahoo.
@@ -5223,7 +5223,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md::C0070` — NEW 9.12 **P0 Production atomic Yahoo writer rejects draft-history batches:** guarded migration `20260725200808` is applied/history-aligned; repaired-variable, authorization, latest/omission, duplicate history, forced rollback, and zero-residue proof all pass (closed 2026-07-25).
 - [x] `SRC::tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md::C0071` — NEW 9.13 **P1 Python Yahoo maintenance writer fabricated zero observations and bypassed the canonical transaction:** exact opt-in, explicit scope/config, paginated batched fetch, null/zero/omission semantics, atomic-RPC-only persistence, and receipt validation replace import-time fixed configuration, legacy RPC, and direct fallback (opened and closed 2026-07-25).
 
-### Source: `tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md` (52 rows)
+### Source: `tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md` (55 rows)
 
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0001` (original L26) — 1.0 Reconcile both PRDs with current Start Chart/FORGE ownership
 - [x] `SRC::tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md::C0002` (original L27) — 1.1 Map every requested table, view, job, utility, endpoint, UI control, metric, and acceptance criterion to current equivalents.
@@ -5421,7 +5421,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/draft-ranker/launch-runbook.md::C0009` (original L131) — Named operator, support owner, rollback owner, cohort IDs, and observation window are recorded.
 - [x] `SRC::tasks/TASKS/draft-ranker/launch-runbook.md::C0010` (original L132) — Product owner explicitly approves the production cohort expansion.
 
-### Source: `tasks/TASKS/draft-ranker/tasks-prd-draft-ranker.md` (55 rows)
+### Source: `tasks/TASKS/draft-ranker/tasks-prd-draft-ranker.md` (57 rows)
 
 - [x] `SRC::tasks/TASKS/draft-ranker/tasks-prd-draft-ranker.md::C0001` (original L31) — 0.0 Complete the repository audit, execution boundary, approved decisions, frozen contracts, and canonical planning controls.
 - [x] `SRC::tasks/TASKS/draft-ranker/tasks-prd-draft-ranker.md::C0002` (original L32) — DR-001 Persist and review the planning package, stable task IDs, approvals, and durable progress record.
@@ -5507,3 +5507,4 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] NEW-022 **P2 publication privacy:** Remove the newly repeated literal IFTTT account identifier from Entry 0478 while preserving the value-free provider-escalation evidence. Final added-line scanning finds no private key, JWT, credential assignment, credential-bearing URL, or opaque non-path literal; no provider or account state changed (completed 2026-07-21).
 - [x] NEW-023 **P3 completed-initiative parent drift:** Reconcile the still-open B-DRAFT-STYLE Wave-B parent against its authoritative 56/56 source/master pair and published completion evidence. Row 4.10 now closes and enters dynamic Wave C without reopening presentation, formula, data, provider, deployment, or Production scope (reconciled 2026-07-28).
 - [x] NEW-024 **P3 completed burn-down initiative parent drift:** Reconcile the still-open B-SKO-BURN Wave-B parent against the complete source/master 7.0–7.5 tree and owner-authorized historical-only disposition. Row 4.14 now closes without closing or weakening any of B-SKO's 15 remaining identity, freshness, schema/history, monitoring, retirement, or Production gates (reconciled 2026-07-28).
+- [x] NEW-025 **P3 imported-ledger arithmetic drift:** Recount all 76 canonical source mirrors directly, repair 14 stale source-header row labels, and stop treating master-only initiative/dynamic controls as imported-source checkboxes. Exact current parity is 4,825/4,982 raw and 4,825/4,976 actionable; every source total/checked count equals its imported mirror (reconciled 2026-07-29).

@@ -520,13 +520,19 @@ Remaining cleanup and reference initiative sections are pending verified Wave-B 
 
 - **Architecture:** `/trends` directly owns `TopMovers`; `/FORGE`, `/start-chart`, `/underlying-stats`, the named `/forge/dashboard` rollback route, and historical `/skoCharts` remain distinct supported or quarantined surfaces. Start Chart remains a UI-specific wrapper over canonical FORGE rather than a second authoritative projection engine.
 - **Ownership/quarantine:** Player, team, and goalie trend contracts remain separated by their existing owners. Supported Trends/FORGE code does not import the quarantined sKO chart, leaderboard, hook, or retired card, and the complete B-SKO burn subtree remains 6/6 while B-SKO correctly stays 58/68 for ten compatibility/migration/freshness gates.
-- **Verification / controls:** P3 NEW 9.0 replaces the stale Combo Jest instruction with the repository Vitest entry point; P3 NEW 13.0 reconciles the Trends PRD and master inventory. Combo is 39/39 and Trends is 53/53. Eight files/27 tests, current route/ownership/quarantine scans, unchanged-code TypeScript evidence, source/master parity, and diff integrity pass. Dynamic audits 5.7.20–5.7.22 close. Raw parity is 4,866/4,984 with 118 unchecked = 97.63%; actionable parity is 4,866/4,978 with 112 open = 97.75% complete / 2.25% open. Severity is P0 28/23, P1 192/154, P2 159/151, P3 50/50. No runtime, route, model, artifact, formula, data, writer, schema, migration, build, deployment, provider, schedule, credential, shared checkout, push, or stash changed.
+- **Verification / controls:** P3 NEW 9.0 replaces the stale Combo Jest instruction with the repository Vitest entry point; P3 NEW 13.0 reconciles the Trends PRD and master inventory. Combo is 39/39 and Trends is 53/53. Eight files/27 tests, current route/ownership/quarantine scans, unchanged-code TypeScript evidence, source/master parity, and diff integrity pass. Dynamic audits 5.7.20–5.7.22 close. Direct recount supersedes the incremental rollup: raw parity is 4,825/4,982 with 157 unchecked = 96.85%; actionable parity is 4,825/4,976 with 151 open = 96.97% complete / 3.03% open. Severity is P0 28/23, P1 192/154, P2 159/151, P3 50/50. No runtime, route, model, artifact, formula, data, writer, schema, migration, build, deployment, provider, schedule, credential, shared checkout, push, or stash changed.
 
 ### Completed Wave-B synchronization
 
 - **Parity:** Exact source/master parity is B-XG-EX 16/16, B-GAMEGRID 38/38, B-DRAFT-STYLE 56/56, B-FORGE-COMBO 39/39, B-TRENDS 53/53, and B-SKO-BURN 6/6 within the still-active 58/68 B-SKO ledger.
 - **Dynamic coverage:** The completed initiatives map to closed audits 5.7.11 and 5.7.18–5.7.22. Incomplete Wave-B initiatives remain deliberately outside dynamic audit until implementation DoD.
-- **Controls:** Master 4.17 closes. Raw parity is 4,867/4,984 with 117 unchecked = 97.65%; actionable parity is 4,867/4,978 with 111 open = 97.77% complete / 2.23% open. Severity remains P0 28/23, P1 192/154, P2 159/151, P3 50/50. No application or external state changed.
+- **Controls:** Master 4.17 closes. Direct recount proves raw parity is 4,825/4,982 with 157 unchecked = 96.85%; actionable parity is 4,825/4,976 with 151 open = 96.97% complete / 3.03% open. Severity remains P0 28/23, P1 192/154, P2 159/151, P3 50/50. No application or external state changed.
+
+### Imported-ledger direct recount
+
+- **Authority:** All 76 canonical source files exactly match their imported master rows for total and checked checkboxes.
+- **Correction:** P3 master NEW-025 repairs 14 stale source-header labels and supersedes incremental arithmetic that counted 42 master-only control closures as imported progress and added two nonexistent denominator rows.
+- **Current parity:** Raw 4,825/4,982 with 157 unchecked = 96.85%; actionable 4,825/4,976 with 151 open = 96.97% complete / 3.03% open. The only six non-actionable rows are the fenced task-template example placeholders.
 
 ## Completion-gate evidence
 
