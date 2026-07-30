@@ -67,7 +67,7 @@ describe("/api/v1/db/update-sko-stats route", () => {
 
       expect(res.statusCode).toBe(401);
       expect(res.body).toEqual({
-        message: "Invalid bearer token",
+        message: "Unauthorized.",
         success: false,
       });
       expect(getCurrentSeasonMock).not.toHaveBeenCalled();

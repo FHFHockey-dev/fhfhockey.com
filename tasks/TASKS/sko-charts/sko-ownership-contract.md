@@ -77,6 +77,7 @@ No live relation, policy, migration, type, or runtime reference supports the his
 - One typed mapper emits exactly the 28 live `sko_skater_stats` columns. It derives `time_on_ice`, `ipp`, and `sog_per_60`, preserves zero values, and maps the six supported 5v5 assist fields.
 - One batch upsert is attempted per date. Any schema/write error fails closed; the writer no longer learns the schema by retrying and dropping server-rejected fields.
 - Focused helper/route regressions pass 2 files/11 tests, including full/short-page continuation, the exact 28-key payload, derived-field arithmetic, one-attempt batching, schema-error propagation, and authorization/method boundaries. Full TypeScript passes.
+- Date responses now include deterministic requested/latest/age/empty freshness, primary-player and all-family row counts, family-specific missing-player associations, and attempted/upserted/partial write state. Incremental/full windows aggregate the same contract without hiding empty dates or partial work. Together with the prediction run manifest and health codes, this closes persistence-diagnostics row 2.5; migration application and Production monitoring remain separate.
 - Exact implementation/control commit `77485503560498750a0f8e023e55fb646be98456` is published on `octoberBranch`; fresh fetch proves local/tracking/live equality.
 
 ## Prediction persistence evidence

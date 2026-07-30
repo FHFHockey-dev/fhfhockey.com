@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  aggregateSkoSourceIngestDiagnostics,
+  buildSkoSourceIngestDiagnostics,
   buildSkoSkaterStatsRow,
   hasFullSkoSourcePage,
   isTruthyQueryFlag,
@@ -65,6 +67,77 @@ describe("/api/v1/db/update-sko-stats helpers", () => {
   it("continues pagination while any source family returns a full page", () => {
     expect(hasFullSkoSourcePage([99, 100, 12], 100)).toBe(true);
     expect(hasFullSkoSourcePage([99, 42, 0], 100)).toBe(false);
+  });
+
+  it("reports deterministic source freshness, family gaps, and atomic write state", () => {
+    const diagnostic = buildSkoSourceIngestDiagnostics({
+      requestedDate: "2026-03-14",
+      primaryPlayerIds: [3, 1, 1, 2],
+      sourceFamilyPlayerIds: {
+        goalsForAgainst: [1, 2],
+        timeOnIce: [3, 2, 1],
+      },
+      attemptedRows: 3,
+      upsertedRows: 3,
+      today: "2026-03-16",
+    });
+
+    expect(diagnostic).toEqual({
+      freshness: {
+        requestedDate: "2026-03-14",
+        latestSourceDate: "2026-03-14",
+        ageDaysFromToday: 2,
+        empty: false,
+      },
+      coverage: {
+        discoveredPlayers: 3,
+        sourceFamilyRows: { goalsForAgainst: 2, timeOnIce: 3 },
+        missingPlayersByFamily: { goalsForAgainst: 1, timeOnIce: 0 },
+        missingPlayerAssociations: 1,
+      },
+      write: {
+        attemptedRows: 3,
+        upsertedRows: 3,
+        partial: false,
+      },
+    });
+  });
+
+  it("aggregates bounded date diagnostics without hiding empty or partial work", () => {
+    const first = buildSkoSourceIngestDiagnostics({
+      requestedDate: "2026-03-14",
+      primaryPlayerIds: [1, 2],
+      sourceFamilyPlayerIds: { timeOnIce: [1] },
+      attemptedRows: 2,
+      upsertedRows: 2,
+      today: "2026-03-16",
+    });
+    const second = buildSkoSourceIngestDiagnostics({
+      requestedDate: "2026-03-15",
+      primaryPlayerIds: [],
+      sourceFamilyPlayerIds: { timeOnIce: [] },
+      attemptedRows: 1,
+      upsertedRows: 0,
+      today: "2026-03-16",
+    });
+
+    expect(aggregateSkoSourceIngestDiagnostics([first, second])).toEqual({
+      freshness: {
+        latestSourceDate: "2026-03-14",
+        emptySourceDates: 1,
+      },
+      coverage: {
+        playerDateRows: 2,
+        sourceFamilyRows: { timeOnIce: 1 },
+        missingPlayersByFamily: { timeOnIce: 1 },
+        missingPlayerAssociations: 1,
+      },
+      write: {
+        attemptedRows: 3,
+        upsertedRows: 2,
+        partial: true,
+      },
+    });
   });
 
   it("maps one source snapshot to the exact 28-column live contract", () => {

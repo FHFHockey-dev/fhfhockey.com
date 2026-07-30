@@ -190,6 +190,133 @@ export function hasFullSkoSourcePage(
   return pageLengths.some((length) => length >= limit);
 }
 
+export function buildSkoSourceIngestDiagnostics({
+  requestedDate,
+  primaryPlayerIds,
+  sourceFamilyPlayerIds,
+  attemptedRows,
+  upsertedRows,
+  today = format(new Date(), "yyyy-MM-dd")
+}: {
+  requestedDate: string;
+  primaryPlayerIds: number[];
+  sourceFamilyPlayerIds: Record<string, number[]>;
+  attemptedRows: number;
+  upsertedRows: number;
+  today?: string;
+}) {
+  const uniquePrimaryIds = Array.from(new Set(primaryPlayerIds)).sort(
+    (left, right) => left - right
+  );
+  const sourceFamilyRows: Record<string, number> = {};
+  const missingPlayersByFamily: Record<string, number> = {};
+
+  for (const family of Object.keys(sourceFamilyPlayerIds).sort()) {
+    const familyIds = new Set(sourceFamilyPlayerIds[family]);
+    sourceFamilyRows[family] = sourceFamilyPlayerIds[family].length;
+    missingPlayersByFamily[family] = uniquePrimaryIds.filter(
+      (playerId) => !familyIds.has(playerId)
+    ).length;
+  }
+
+  const latestSourceDate = uniquePrimaryIds.length ? requestedDate : null;
+  const ageDaysFromToday = latestSourceDate
+    ? Math.max(
+        0,
+        Math.round(
+          (Date.parse(`${today}T00:00:00Z`) -
+            Date.parse(`${latestSourceDate}T00:00:00Z`)) /
+            86_400_000
+        )
+      )
+    : null;
+
+  return {
+    freshness: {
+      requestedDate,
+      latestSourceDate,
+      ageDaysFromToday,
+      empty: uniquePrimaryIds.length === 0
+    },
+    coverage: {
+      discoveredPlayers: uniquePrimaryIds.length,
+      sourceFamilyRows,
+      missingPlayersByFamily,
+      missingPlayerAssociations: Object.values(missingPlayersByFamily).reduce(
+        (sum, count) => sum + count,
+        0
+      )
+    },
+    write: {
+      attemptedRows,
+      upsertedRows,
+      partial: upsertedRows !== attemptedRows
+    }
+  };
+}
+
+export function aggregateSkoSourceIngestDiagnostics(
+  diagnostics: ReturnType<typeof buildSkoSourceIngestDiagnostics>[]
+) {
+  const sourceFamilyRows: Record<string, number> = {};
+  const missingPlayersByFamily: Record<string, number> = {};
+  let latestSourceDate: string | null = null;
+
+  for (const diagnostic of diagnostics) {
+    if (
+      diagnostic.freshness.latestSourceDate &&
+      (!latestSourceDate ||
+        diagnostic.freshness.latestSourceDate > latestSourceDate)
+    ) {
+      latestSourceDate = diagnostic.freshness.latestSourceDate;
+    }
+    for (const [family, count] of Object.entries(
+      diagnostic.coverage.sourceFamilyRows
+    )) {
+      sourceFamilyRows[family] = (sourceFamilyRows[family] ?? 0) + count;
+    }
+    for (const [family, count] of Object.entries(
+      diagnostic.coverage.missingPlayersByFamily
+    )) {
+      missingPlayersByFamily[family] =
+        (missingPlayersByFamily[family] ?? 0) + count;
+    }
+  }
+
+  return {
+    freshness: {
+      latestSourceDate,
+      emptySourceDates: diagnostics.filter(
+        (diagnostic) => diagnostic.freshness.empty
+      ).length
+    },
+    coverage: {
+      playerDateRows: diagnostics.reduce(
+        (sum, diagnostic) =>
+          sum + diagnostic.coverage.discoveredPlayers,
+        0
+      ),
+      sourceFamilyRows,
+      missingPlayersByFamily,
+      missingPlayerAssociations: Object.values(missingPlayersByFamily).reduce(
+        (sum, count) => sum + count,
+        0
+      )
+    },
+    write: {
+      attemptedRows: diagnostics.reduce(
+        (sum, diagnostic) => sum + diagnostic.write.attemptedRows,
+        0
+      ),
+      upsertedRows: diagnostics.reduce(
+        (sum, diagnostic) => sum + diagnostic.write.upsertedRows,
+        0
+      ),
+      partial: diagnostics.some((diagnostic) => diagnostic.write.partial)
+    }
+  };
+}
+
 export function isTruthyQueryFlag(
   value: string | string[] | undefined
 ): boolean {
@@ -556,10 +683,34 @@ async function updateSkaterStats(
   if (mergedRows.length > 0) {
     await upsertSkoSkaterStats(supabase, mergedRows);
   }
+  const diagnostics = buildSkoSourceIngestDiagnostics({
+    requestedDate: formattedDate,
+    primaryPlayerIds: skaterStats.map((row) => Number(row.playerId)),
+    sourceFamilyPlayerIds: {
+      bios: skatersBio.map((row) => Number(row.playerId)),
+      faceoffs: faceOffStats.map((row) => Number(row.playerId)),
+      faceoffWinLoss: faceoffWinLossStats.map((row) => Number(row.playerId)),
+      goalsForAgainst: goalsForAgainstStats.map((row) => Number(row.playerId)),
+      penalties: penaltiesStats.map((row) => Number(row.playerId)),
+      penaltyKill: penaltyKillStats.map((row) => Number(row.playerId)),
+      powerPlay: powerPlayStats.map((row) => Number(row.playerId)),
+      puckPossession: puckPossessionStats.map((row) => Number(row.playerId)),
+      realtime: miscSkaterStats.map((row) => Number(row.playerId)),
+      satCounts: satCountsStats.map((row) => Number(row.playerId)),
+      satPercentages: satPercentagesStats.map((row) => Number(row.playerId)),
+      scoringPerGame: scoringPerGameStats.map((row) => Number(row.playerId)),
+      scoringRates: scoringRatesStats.map((row) => Number(row.playerId)),
+      shotType: shotTypeStats.map((row) => Number(row.playerId)),
+      timeOnIce: timeOnIceStats.map((row) => Number(row.playerId))
+    },
+    attemptedRows: mergedRows.length,
+    upsertedRows: mergedRows.length
+  });
 
   return {
     updated: true,
     upsertedRows: mergedRows.length,
+    diagnostics,
     skaterStats,
     skatersBio,
     miscSkaterStats,
@@ -1283,6 +1434,9 @@ async function updateSkaterStatsForDateWindow(
   let currentDate = parseISO(startDate);
   let totalUpdates = 0;
   let totalDaysProcessed = 0;
+  const dateDiagnostics: ReturnType<
+    typeof buildSkoSourceIngestDiagnostics
+  >[] = [];
 
   while (true) {
     const formattedDate = format(currentDate, "yyyy-MM-dd");
@@ -1294,6 +1448,7 @@ async function updateSkaterStatsForDateWindow(
     const result = await updateSkaterStats(formattedDate, { seasonId });
     totalUpdates += result.upsertedRows;
     totalDaysProcessed += 1;
+    dateDiagnostics.push(result.diagnostics);
     currentDate = addDays(currentDate, 1);
   }
 
@@ -1303,7 +1458,8 @@ async function updateSkaterStatsForDateWindow(
     startDate,
     endDate,
     totalDaysProcessed,
-    totalUpdates
+    totalUpdates,
+    diagnostics: aggregateSkoSourceIngestDiagnostics(dateDiagnostics)
   };
 }
 
