@@ -510,6 +510,12 @@ Remaining cleanup and reference initiative sections are pending verified Wave-B 
 - **Documentation:** The source list, PRD current-state overlay, and runbook now distinguish active page/calculation/table ownership from the historical helper.
 - **Verification / controls:** The consolidated six-file/44-test variance cohort, canonical paths, source/master 67/67 parity, and diff integrity pass. C-VAR 5.6.3 and parent 5.6 close. Raw parity is 4,858/4,981 with 123 unchecked = 97.53%; actionable parity is 4,858/4,975 with 117 open = 97.65% complete / 2.35% open. Severity is P0 28/23, P1 192/154, P2 159/151, P3 47/47. No code, scoring configuration, data, writer, schema, migration, hosted build, deployment, provider, or schedule changed.
 
+### B-GAMEGRID / B-DRAFT-STYLE dynamic audit
+
+- **Runtime:** Unified desktop order, non-day sorting, four-value 4WK group, Score-only emphasis, stable OMT failure state, minimum-width scrolling, exact 1023/1024 policy, named Legacy Vertical fallback, and no second flag remain authoritative.
+- **Style/accessibility:** Shared tokens, valid dense-table/control semantics, PDHC dialog lifecycle, reduced motion, Player Pickup identity, and feature-color exceptions remain aligned with the completed style report.
+- **Verification / controls:** P3 NEW 6.0 reconciles Game Grid PRD/master counts to source/master 38/38; style remains 56/56. Six files/19 tests, TypeScript, scoped lint, four Sass compilations, and diff integrity pass. Dynamic audits 5.7.18/5.7.19 close. Raw parity is 4,861/4,982 with 121 unchecked = 97.57%; actionable parity is 4,861/4,976 with 115 open = 97.69% complete / 2.31% open. Severity is P0 28/23, P1 192/154, P2 159/151, P3 48/48. No runtime, formula, data, feature flag, hosted build, deployment, provider, or schedule changed.
+
 ## Completion-gate evidence
 
 All charter questions remain open until source/master synchronization, Wave A/B completion, Wave C audit/remediation, cross-initiative verification, cleanup, diary finalization, and evidence population are complete.

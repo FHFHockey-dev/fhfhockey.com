@@ -1,6 +1,6 @@
 # PRD: Game Grid Master Table Dashboard Refactor
 
-> **2026-07-25 status:** Complete at 36/36. Phase 5 preserves the stacked mobile/tablet composition, keeps desktop vertical as the named legacy fallback, prevents desktop-master columns from compressing below readable minimums, and verifies the final breakpoint/orientation contract without a second feature flag.
+> **2026-07-29 status:** Complete at 38/38 after the Phase-5 responsive closure, declaration-order TypeScript repair, and final completion-control reconciliation. The stacked mobile/tablet composition remains intact, desktop vertical remains the named legacy fallback, desktop-master columns retain readable minimums, and no second feature flag exists.
 
 ## 1. Introduction / Overview
 
@@ -231,8 +231,8 @@ Phase 1 is evidence-complete in `game-grid-master-table-contract.md`. Current tr
 
 The audit records P1 NEW 1 for the master path suppressing the OMT error state, P2 NEW 2 for desktop vertical orientation bypassing the master architecture, closed P3 NEW 3 for the stale Jest command, and closed P0 NEW 4 for the stale tab identifier that blocked production compilation. Existing target-order, missing 4WK Score/sort, and group-boundary mismatches stay owned by base implementation tasks rather than duplicate findings.
 
-The owner approved the Phase-1 recommendations, Phases 3–4 as one cohort on 2026-07-22, and Phase 5 for local-only verification. Desktop-horizontal implements the exact OMT/Team/schedule/current/4WK order, expanded four-value 4WK group, all intended non-day sorts, Score-only rank emphasis plus edge, named `Legacy Vertical` fallback, and truthful OMT failure state without a second flag. Phase 5 closes the final breakpoint, scrolling, responsive-ownership, Player Pickup, and NEW 2 proof; the later P1 NEW 5 repair restores repository TypeScript verification. B-GAMEGRID is complete at 37/37.
+The owner approved the Phase-1 recommendations, Phases 3–4 as one cohort on 2026-07-22, and Phase 5 for local-only verification. Desktop-horizontal implements the exact OMT/Team/schedule/current/4WK order, expanded four-value 4WK group, all intended non-day sorts, Score-only rank emphasis plus edge, named `Legacy Vertical` fallback, and truthful OMT failure state without a second flag. Phase 5 closes the final breakpoint, scrolling, responsive-ownership, Player Pickup, and NEW 2 proof; the later P1 NEW 5 repair restores repository TypeScript verification, and P3 NEW 6 reconciles the final control count. B-GAMEGRID is complete at 38/38.
 
 ## 11. Completion Verification Repair — 2026-07-25
 
-Owner-authorized local-only Phase 5 completed the responsive contract at 36/36. A later repository-wide TypeScript gate exposed one declaration-order regression: `gridLayout` consumed `isDesktop` before the existing unconditional hook call. NEW 5 records the smallest repair, which moves that hook result above its first use without changing layout policy, formulas, data, feature flags, or external state. The focused regression passes 8/8, scoped lint is clean, and full TypeScript completes without diagnostics. B-GAMEGRID is complete at 37/37.
+Owner-authorized local-only Phase 5 completed the responsive contract at 36/36. A later repository-wide TypeScript gate exposed one declaration-order regression: `gridLayout` consumed `isDesktop` before the existing unconditional hook call. NEW 5 records the smallest repair, which moves that hook result above its first use without changing layout policy, formulas, data, feature flags, or external state. The focused regression passes 8/8, scoped lint is clean, and full TypeScript completes without diagnostics. NEW 6 subsequently reconciles completion metadata, making B-GAMEGRID complete at 38/38.
