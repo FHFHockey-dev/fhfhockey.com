@@ -28,6 +28,12 @@ import {
   persistForgeTeamProjection,
   persistPerGameAnalyticsOutputs
 } from "./stages/persistence-stage";
+import { runPerGameGoalieStage } from "./stages/goalie-stage";
+import {
+  buildModelMarketFlagRow,
+  getConsensusLineValue,
+  getProjectionValueForPropMarket
+} from "./utils/market-output-builders";
 
 describe("projection module import integrity", () => {
   it("loads extracted utility, query, calculator, and orchestrator modules", () => {
@@ -54,6 +60,10 @@ describe("projection module import integrity", () => {
     expect(typeof persistForgeTeamProjection).toBe("function");
     expect(typeof persistForgeGoalieProjection).toBe("function");
     expect(typeof persistPerGameAnalyticsOutputs).toBe("function");
+    expect(typeof runPerGameGoalieStage).toBe("function");
+    expect(typeof getProjectionValueForPropMarket).toBe("function");
+    expect(typeof getConsensusLineValue).toBe("function");
+    expect(typeof buildModelMarketFlagRow).toBe("function");
     expect(typeof runProjectionV2ForDate).toBe("function");
   });
 
