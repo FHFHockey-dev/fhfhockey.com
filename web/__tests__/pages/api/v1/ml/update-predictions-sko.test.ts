@@ -7,12 +7,14 @@ const {
   authGetUserMock,
   serviceRoleRpcMock,
   serviceRoleClientMock,
+  getCurrentSeasonMock,
   issue,
 } = vi.hoisted(() => ({
   assertPredictionsSkoPrerequisitesMock: vi.fn(),
   authGetUserMock: vi.fn(),
   serviceRoleRpcMock: vi.fn(),
   serviceRoleClientMock: { from: vi.fn(), rpc: vi.fn() },
+  getCurrentSeasonMock: vi.fn(),
   issue: {
     code: "missing_player_stats_unified",
     message:
@@ -48,9 +50,14 @@ vi.mock("../../../../../lib/supabase/server", () => ({
   default: serviceRoleClientMock,
 }));
 
+vi.mock("../../../../../lib/NHL/server", () => ({
+  getCurrentSeason: getCurrentSeasonMock,
+}));
+
 import handler, {
   fetchPlayerIdsPaginated,
   fetchPlayerSeries,
+  resolveSkoSeasonExecution,
 } from "../../../../../pages/api/v1/ml/update-predictions-sko";
 import { PredictionsSkoDependencyError } from "../../../../../lib/ml/predictionsSkoDependencyChecks";
 import { buildPredictionsSkoHealth } from "../../../../../lib/ml/predictionsSkoRunControl";
@@ -91,6 +98,11 @@ describe("/api/v1/ml/update-predictions-sko", () => {
       error: { message: "Invalid bearer token" },
     });
     assertPredictionsSkoPrerequisitesMock.mockResolvedValue(undefined);
+    getCurrentSeasonMock.mockResolvedValue({
+      seasonId: 20252026,
+      regularSeasonStartDate: "2025-10-07",
+      regularSeasonEndDate: "2026-04-16",
+    });
     serviceRoleClientMock.rpc.mockImplementation(serviceRoleRpcMock);
     serviceRoleRpcMock.mockImplementation(async (name: string) => ({
       data:
@@ -155,6 +167,53 @@ describe("/api/v1/ml/update-predictions-sko", () => {
     expect(res.body.rowsUpserted).toBe(0);
     expect(res.body.prerequisite).toEqual(issue);
     expect(res.body.dependencyError.message).toBe(issue.message);
+  });
+
+  it("classifies official-season boundaries deterministically", () => {
+    expect(
+      resolveSkoSeasonExecution({
+        asOfDate: "2026-04-16",
+        regularSeasonStartDate: "2025-10-07T00:00:00Z",
+        regularSeasonEndDate: "2026-04-16T00:00:00Z",
+      }),
+    ).toMatchObject({
+      shouldRun: true,
+      reason: "in_official_nhl_season",
+    });
+    expect(
+      resolveSkoSeasonExecution({
+        asOfDate: "2026-07-30",
+        regularSeasonStartDate: "2025-10-07",
+        regularSeasonEndDate: "2026-04-16",
+      }),
+    ).toMatchObject({
+      shouldRun: false,
+      reason: "outside_official_nhl_season",
+    });
+  });
+
+  it("records a truthful offseason no-write run before source or publication work", async () => {
+    const req: any = {
+      method: "POST",
+      headers: { authorization: "Bearer current-secret" },
+      query: { asOfDate: "2026-07-30" },
+      body: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      skipped: true,
+      skipReason: "outside_official_nhl_season",
+      rowsUpserted: 0,
+      health: { status: "ok", alerts: [] },
+      runManifest: { state: "succeeded" },
+    });
+    expect(assertPredictionsSkoPrerequisitesMock).not.toHaveBeenCalled();
+    expect(serviceRoleClientMock.from).not.toHaveBeenCalled();
   });
 
   it("paginates every player-discovery row and returns sorted unique ids", async () => {
@@ -301,6 +360,49 @@ describe("/api/v1/ml/update-predictions-sko", () => {
     expect(modelHistoryMigrationSql).not.toMatch(
       /grant\s+(?:insert|update|delete)[^;]*\b(?:anon|authenticated)\b/i,
     );
+  });
+
+  it("skips publication and warns when in-season source lag exceeds 72 hours", async () => {
+    const seriesBuilder: any = {};
+    for (const method of ["select", "eq", "lte", "gte"]) {
+      seriesBuilder[method] = vi.fn(() => seriesBuilder);
+    }
+    seriesBuilder.order = vi.fn(() => seriesBuilder);
+    seriesBuilder.limit = vi.fn().mockResolvedValue({
+      data: [{ player_id: 2, date: "2026-03-16", points: 2, games_played: 1 }],
+      error: null,
+    });
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    serviceRoleClientMock.from.mockImplementation((table: string) => {
+      if (table === "player_stats_unified") return seriesBuilder;
+      if (table === "predictions_sko") return { upsert };
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    const req: any = {
+      method: "POST",
+      headers: { authorization: "Bearer current-secret" },
+      query: { asOfDate: "2026-03-21", playerIds: "2" },
+      body: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      skipped: true,
+      skipReason: "source_lag_exceeds_72_hours",
+      rowsUpserted: 0,
+      source: { latestDate: "2026-03-16", lagDays: 5 },
+      write: { attemptedRows: 0, upsertedRows: 0 },
+      health: {
+        status: "warning",
+        alerts: [expect.objectContaining({ code: "stale_source" })],
+      },
+      runManifest: { state: "succeeded" },
+    });
+    expect(upsert).not.toHaveBeenCalled();
   });
 
   it("rejects an overlapping run before dependency or write work", async () => {

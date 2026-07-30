@@ -8,6 +8,7 @@ import {
   isPredictionsSkoDependencyError,
 } from "lib/ml/predictionsSkoDependencyChecks";
 import { withPredictionsSkoRunControl } from "lib/ml/predictionsSkoRunControl";
+import { getCurrentSeason } from "lib/NHL/server";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 /**
@@ -43,6 +44,7 @@ const PLAYER_DISCOVERY_PAGE_SIZE = 1000;
 const UPSERT_BATCH_SIZE = 200;
 const MODEL_NAME = "baseline-moving-average";
 const MODEL_VERSION = "v0.2";
+const MAX_SOURCE_LAG_DAYS = 3;
 
 function parseString(value: unknown): string | undefined {
   if (Array.isArray(value)) return value[0];
@@ -197,6 +199,33 @@ function sourceLagDays(asOfDate: string, latestSourceDate: string | null) {
       Date.parse(`${latestSourceDate}T00:00:00Z`)) /
       86_400_000,
   );
+}
+
+export function resolveSkoSeasonExecution({
+  asOfDate,
+  regularSeasonStartDate,
+  regularSeasonEndDate,
+}: {
+  asOfDate: string;
+  regularSeasonStartDate: string;
+  regularSeasonEndDate: string;
+}): {
+  shouldRun: boolean;
+  reason: "in_official_nhl_season" | "outside_official_nhl_season";
+  regularSeasonStartDate: string;
+  regularSeasonEndDate: string;
+} {
+  const startDate = regularSeasonStartDate.slice(0, 10);
+  const endDate = regularSeasonEndDate.slice(0, 10);
+  const shouldRun = asOfDate >= startDate && asOfDate <= endDate;
+  return {
+    shouldRun,
+    reason: shouldRun
+      ? "in_official_nhl_season"
+      : "outside_official_nhl_season",
+    regularSeasonStartDate: startDate,
+    regularSeasonEndDate: endDate,
+  };
 }
 
 type PredictionRunDiagnostics = {
@@ -375,6 +404,28 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
         : lookbackStartIso;
     runDiagnostics = emptyDiagnostics(asOfDate, effectiveStartIso);
 
+    const currentSeason = await getCurrentSeason();
+    const seasonExecution = resolveSkoSeasonExecution({
+      asOfDate,
+      regularSeasonStartDate: currentSeason.regularSeasonStartDate,
+      regularSeasonEndDate: currentSeason.regularSeasonEndDate,
+    });
+    if (!seasonExecution.shouldRun) {
+      return res.status(200).json({
+        success: true,
+        skipped: true,
+        skipReason: seasonExecution.reason,
+        asOfDate,
+        horizon,
+        players: 0,
+        upserts: 0,
+        rowsUpserted: 0,
+        ...runDiagnostics,
+        seasonExecution,
+        message: `No sKO predictions published for ${asOfDate}: outside the official NHL regular season.`,
+      });
+    }
+
     await assertPredictionsSkoPrerequisites({
       asOfDate,
       startDate: effectiveStartIso,
@@ -502,9 +553,28 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
     runDiagnostics.source.earliestDate = earliestSourceDate;
     runDiagnostics.source.latestDate = latestSourceDate;
     runDiagnostics.source.lagDays = sourceLagDays(asOfDate, latestSourceDate);
-    runDiagnostics.write.attemptedRows = predictionRecords.length;
     mark("phase_series_and_build");
 
+    if (
+      runDiagnostics.source.lagDays !== null &&
+      runDiagnostics.source.lagDays > MAX_SOURCE_LAG_DAYS
+    ) {
+      return res.status(200).json({
+        success: true,
+        skipped: true,
+        skipReason: "source_lag_exceeds_72_hours",
+        asOfDate,
+        horizon,
+        players: playerIds.length,
+        upserts: 0,
+        rowsUpserted: 0,
+        ...runDiagnostics,
+        seasonExecution,
+        message: `No sKO predictions published for ${asOfDate}: latest source data is ${runDiagnostics.source.lagDays} days old.`,
+      });
+    }
+
+    runDiagnostics.write.attemptedRows = predictionRecords.length;
     let upserts = 0;
     const batchDurations: number[] = [];
     for (const batch of chunk(predictionRecords, UPSERT_BATCH_SIZE)) {

@@ -13,7 +13,7 @@
 | Draft history | Production-ledger migrations for `yahoo_player_draft_analysis_history` | Table/index exist, but the active v3 writer does not append this history and therefore is not a complete atomic latest+history owner. |
 | Uniform numbers | Current player-detail payload | The scheduled TypeScript pipeline is authoritative. `yahooUniformNumbers.py` is an unscheduled opt-in maintenance fallback with no machine path/current ID default or import-time client; it requires explicit maintenance, game, league, and server credential configuration. |
 | Yahoo ↔ NHL mapping | Canonical FHFH external identities plus legacy `yahoo_nhl_player_map` compatibility rows | Deterministic exact/manual/alias stages precede thresholded fuzzy matching; ambiguous candidates use explicit evidence and ties remain unresolved. The 1,857 legacy rows are all distinct but contain 771 repeated Yahoo/NHL ID pairs and 12 null Yahoo IDs, so they are not assigned a fabricated unique key. Predeploy migration `20260726000603` adds the security-invoker base-table view; its consumers are locally restored to `yahoo_nhl_player_map_mat` after Production proved the view absent. Final cache-read retirement follows migration-first deployed parity while service refresh ownership remains unchanged. |
-| Sheet export | `/api/internal/sync-yahoo-players-to-sheet` | Exact-cron-secret-only internal route called by the global player writer. |
+| Sheet export | `/api/internal/sync-yahoo-players-to-sheet` | Exact-cron-secret-only internal route awaited by the global player writer only after an exact complete provider/persistence receipt. Candidate scheduler migration `20260730091500` deactivates the duplicate standalone sheet job. |
 
 ## Current schema and migration evidence
 
@@ -23,7 +23,7 @@ The authoritative pre-baseline production ledger preserves the 2025 ownership/hi
 
 ## Routes, schedules, and callers
 
-- Active pg_cron: `update-yahoo-matchup-dates` at 07:20 UTC calls `/api/v1/db/update-yahoo-weeks?game_key=nhl`; `update-yahoo-players` at 08:40 UTC calls `/api/v1/db/update-yahoo-players?gameId=465`; `sync-yahoo-players-to-sheet` at 08:55 UTC calls the exact-cron-only internal sheet route. Vault-backed callers already send the cron bearer; sheet failures now return/log fixed value-free copy.
+- Current Production pg_cron remains unchanged pending migration: `update-yahoo-matchup-dates` at 07:20 UTC, fixed-game `update-yahoo-players` at 08:40 UTC, and duplicate standalone `sync-yahoo-players-to-sheet` at 08:55 UTC. Candidate migration `20260730091500` retains weeks, removes `?gameId=465` from the player command, and deactivates the standalone sheet job; the player route then owns receipt-gated export. Vault-backed callers already send the cron bearer; sheet failures return/log fixed value-free copy.
 - Manual global refresh: `/api/v1/db/manual-refresh-yahoo-token`; no static browser caller was found.
 - Per-user routes: connect, callback, refresh, disconnect, and team-roster are authenticated owner-scoped account surfaces.
 - Direct table/API consumers: Draft Dashboard processing and diagnostics; Draft Ranker discovery/community/export; Command Center ownership context; Start Chart; Player Pickup; team stats; True Goalie Value; Variance; projection administration; matchup-week hooks; ownership snapshots/trends; sheet synchronization; and cron reporting.

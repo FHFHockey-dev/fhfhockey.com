@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -11,6 +13,14 @@ import {
   parseVercelCronConfig,
 } from "lib/cron/combinedCronInventory";
 import { PROJECTION_ROUTE_DEFAULT_BUDGET_MS } from "lib/rollingPlayerOperationalPolicy";
+
+const schedulerOwnershipMigrationSql = readFileSync(
+  resolve(
+    process.cwd(),
+    "../supabase/migrations/20260730091500_consolidate_scheduler_ownership.sql",
+  ),
+  "utf8",
+);
 
 describe("combinedCronInventory", () => {
   it("normalizes fixed fields without coercing wildcard syntax", () => {
@@ -355,33 +365,40 @@ SELECT cron.schedule(
     },
   );
 
-  it("reports both naturally scheduled 270-second contracts above the 240-second cap", async () => {
+  it("keeps natural projection work 30 seconds below the 240-second cap", async () => {
     const inventory = await loadCombinedCronInventory();
     const findings = findScheduledRuntimeBudgetFindings(inventory);
 
-    expect(PROJECTION_ROUTE_DEFAULT_BUDGET_MS).toBe(270_000);
-    expect(findings).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          routePath: "/api/v1/db/run-rolling-forge-pipeline",
-          budgetMs: 270_000,
-          platformLimitMs: 240_000,
-          hasAuditFlushHeadroom: false,
-        }),
-        expect.objectContaining({
-          routePath: "/api/v1/db/run-projection-v2",
-          budgetMs: 270_000,
-          platformLimitMs: 240_000,
-          hasAuditFlushHeadroom: false,
-          scheduledJobs: expect.arrayContaining([
-            expect.objectContaining({ name: "run-forge-projection-v2" }),
-            expect.objectContaining({
-              name: "run-forge-projection-v2-weekly",
-            }),
-          ]),
-        }),
-      ]),
+    expect(PROJECTION_ROUTE_DEFAULT_BUDGET_MS).toBe(210_000);
+    expect(findings).toEqual([]);
+  });
+
+  it("prepares one fail-closed scheduler ownership cutover", () => {
+    for (const jobName of [
+      "run-forge-projection-v2",
+      "rebuild-sustainability-priors",
+      "rebuild-sustainability-window-z",
+      "rebuild-sustainability-score",
+      "rebuild-sustainability-trend-bands",
+      "sync-yahoo-players-to-sheet",
+    ]) {
+      expect(schedulerOwnershipMigrationSql).toContain(`'${jobName}'`);
+    }
+    for (const retainedJob of [
+      "rebuild-sustainability-baselines",
+      "run-forge-projection-v2-weekly",
+      "update-yahoo-matchup-dates",
+      "update-sko-stats-full-season",
+      "update-predictions-sko",
+    ]) {
+      expect(schedulerOwnershipMigrationSql).toContain(`'${retainedJob}'`);
+    }
+    expect(schedulerOwnershipMigrationSql).toContain(
+      "replace(prior_command, '?gameId=465', '')",
     );
+    expect(schedulerOwnershipMigrationSql).toContain("active := false");
+    expect(schedulerOwnershipMigrationSql).toContain("active := true");
+    expect(schedulerOwnershipMigrationSql).toContain("matching_jobs <> 1");
   });
 
   it.each([

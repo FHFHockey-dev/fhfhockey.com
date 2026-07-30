@@ -11,7 +11,7 @@ type HealthStatus = "ok" | "warning" | "error";
 export type PredictionsSkoHealth = {
   status: HealthStatus;
   alerts: Array<{
-    code: "run_failed" | "partial_write" | "low_rows_written";
+    code: "run_failed" | "partial_write" | "low_rows_written" | "stale_source";
     severity: "warning" | "error";
     message: string;
   }>;
@@ -86,7 +86,15 @@ export function buildPredictionsSkoHealth(
   const selected = Number(
     body?.coverage?.selectedPlayers ?? body?.players ?? 0,
   );
-  if (body?.write?.partial === true || upserted < attempted) {
+  if (body?.skipReason === "source_lag_exceeds_72_hours") {
+    alerts.push({
+      code: "stale_source",
+      severity: "warning",
+      message:
+        body?.message ??
+        "sKO publication skipped because source data is stale.",
+    });
+  } else if (body?.write?.partial === true || upserted < attempted) {
     alerts.push({
       code: "partial_write",
       severity: "error",

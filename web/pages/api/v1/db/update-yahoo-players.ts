@@ -14,6 +14,8 @@ import adminOnly from "utils/adminOnlyMiddleware";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import {
   fetchCompleteYahooPlayerKeySnapshot,
+  isYahooSheetExportEligible,
+  requestYahooSheetExport,
   selectCanonicalYahooGame,
   withYahooRetry,
 } from "lib/integrations/yahoo/ingestionLifecycle";
@@ -331,26 +333,34 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         `Successfully processed all ${allRpcPayloads.length} player payloads via RPC.`,
       );
 
-      // Fire-and-forget trigger to sync Google Sheet. Do not block response.
-      try {
-        const targetUrl = `https://fhfhockey.com/api/internal/sync-yahoo-players-to-sheet${
-          gameId ? `?gameId=${encodeURIComponent(gameId)}` : ""
-        }`;
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 3000);
-        fetch(targetUrl, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
-          signal: controller.signal as any,
-        })
-          .then(() => console.log("Triggered sheet sync endpoint"))
-          .catch(() => console.warn("Sheet sync trigger failed (non-fatal)."))
-          .finally(() => clearTimeout(timeout));
-      } catch {
-        console.warn("Could not trigger sheet sync (non-fatal).");
-      }
-
-      const completeSnapshot = providerComplete && ownershipOmitted === 0;
+      const completeSnapshot = isYahooSheetExportEligible({
+        providerComplete,
+        ownershipOmitted,
+        persistedRows: dedupedRpcPayloads.length,
+        sourceRows: playerKeys.length,
+      });
+      const sheetExportEligible = completeSnapshot;
+      const sheetExport = sheetExportEligible
+        ? await requestYahooSheetExport({
+            gameId,
+            cronSecret: process.env.CRON_SECRET,
+          })
+        : {
+            attempted: false,
+            succeeded: false,
+            statusCode: null,
+            reason: "incomplete_player_receipt" as const,
+          };
+      const warnings =
+        sheetExportEligible && !sheetExport.succeeded
+          ? [
+              {
+                code: "yahoo_sheet_export_failed",
+                message:
+                  "Player persistence completed, but the receipt-gated sheet export did not succeed.",
+              },
+            ]
+          : [];
       return res.status(200).json({
         success: true,
         status: completeSnapshot ? "success" : "partial",
@@ -376,6 +386,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         keyChanged: keyReceipt.changed,
         keyDeactivated: keyReceipt.deactivated,
         deactivationApplied: true,
+        sheetExport,
+        warnings,
         message: `Processed ${dedupedRpcPayloads.length} players via RPC.`,
       });
     }

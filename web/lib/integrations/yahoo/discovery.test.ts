@@ -10,7 +10,9 @@ import {
   extractYahooPlayerKeyPage,
   fetchCompleteYahooPlayerKeySnapshot,
   getYahooRetryAfterMs,
+  isYahooSheetExportEligible,
   isRetryableYahooError,
+  requestYahooSheetExport,
   selectCanonicalYahooGame,
   withYahooRetry,
 } from "./ingestionLifecycle";
@@ -278,5 +280,50 @@ describe("Yahoo discovery helpers", () => {
         { pageSize: 1, maxPages: 2 },
       ),
     ).rejects.toThrow("exceeded its safety bound");
+  });
+
+  it("exports sheets only after an exact complete player receipt", async () => {
+    expect(
+      isYahooSheetExportEligible({
+        providerComplete: true,
+        ownershipOmitted: 0,
+        persistedRows: 1494,
+        sourceRows: 1494,
+      }),
+    ).toBe(true);
+    expect(
+      isYahooSheetExportEligible({
+        providerComplete: true,
+        ownershipOmitted: 1,
+        persistedRows: 1493,
+        sourceRows: 1494,
+      }),
+    ).toBe(false);
+
+    const fetchImpl = async () => ({ ok: true, status: 200 }) as Response;
+    await expect(
+      requestYahooSheetExport({
+        gameId: 465,
+        cronSecret: "test-secret",
+        fetchImpl: fetchImpl as typeof fetch,
+      }),
+    ).resolves.toEqual({
+      attempted: true,
+      succeeded: true,
+      statusCode: 200,
+      reason: "complete_player_receipt",
+    });
+    await expect(
+      requestYahooSheetExport({
+        gameId: 465,
+        cronSecret: undefined,
+        fetchImpl: fetchImpl as typeof fetch,
+      }),
+    ).resolves.toEqual({
+      attempted: false,
+      succeeded: false,
+      statusCode: null,
+      reason: "missing_cron_secret",
+    });
   });
 });

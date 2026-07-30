@@ -25,7 +25,7 @@
  * 3. `maxDurationMs` (optional)
  *    - Description: The maximum allowed execution time for the job in milliseconds.
  *    - Acts as a server-side timeout to prevent the process from running indefinitely.
- *    - Defaults to `270000` (4.5 minutes) if not specified.
+ *    - Defaults to `210000` (3.5 minutes) if not specified, leaving 30 seconds for final audit persistence.
  *    - Example: `?maxDurationMs=120000`
  *
  * 4. `gameIds` (optional)

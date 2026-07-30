@@ -215,8 +215,8 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
       success: true,
       mode: "daily_incremental",
       runtimeBudget: {
-        budgetMs: 270000,
-        budgetLabel: "04:30",
+        budgetMs: 210000,
+        budgetLabel: "03:30",
         durationMs: expect.any(Number),
         durationLabel: expect.any(String),
         withinBudget: true

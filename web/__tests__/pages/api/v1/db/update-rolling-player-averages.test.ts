@@ -317,7 +317,7 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
           "This run is not a one-day smoke test. Use explicit startDate=endDate for a true one-day operational probe."
       },
       runtimeBudget: expect.objectContaining({
-        budgetMs: 270000,
+        budgetMs: 210000,
         withinBudget: true
       })
     });

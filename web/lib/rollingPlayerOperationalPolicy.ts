@@ -5,7 +5,7 @@ export type RollingExecutionProfile =
 
 export type RollingForgePipelineMode = RollingExecutionProfile;
 
-export const PROJECTION_ROUTE_DEFAULT_BUDGET_MS = 270_000;
+export const PROJECTION_ROUTE_DEFAULT_BUDGET_MS = 210_000;
 
 export const ROLLING_EXECUTION_PROFILE_DEFAULTS: Record<
   RollingExecutionProfile,
@@ -40,7 +40,7 @@ export const ROLLING_EXECUTION_PROFILE_BUDGETS_MS: Record<
   RollingExecutionProfile,
   number
 > = {
-  daily_incremental: 270000,
+  daily_incremental: 210000,
   overnight: 1800000,
   targeted_repair: 600000,
 };
@@ -49,7 +49,7 @@ export const ROLLING_FORGE_PIPELINE_BUDGETS_MS: Record<
   RollingForgePipelineMode,
   number
 > = {
-  daily_incremental: 270000,
+  daily_incremental: 210000,
   overnight: 5400000,
   targeted_repair: 900000,
 };

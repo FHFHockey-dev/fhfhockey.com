@@ -111,7 +111,7 @@
   - `2026-02-08` (single-date fixture from existing operator runbook flows)
 - Deterministic run settings (apply to both baseline and modularized runner):
   - Endpoint: `/api/v1/db/run-projection-v2`
-  - Query: `date=YYYY-MM-DD&horizonGames=1&maxDurationMs=270000&bypassPreflight=true`
+  - Query: `date=YYYY-MM-DD&horizonGames=1&maxDurationMs=210000&bypassPreflight=true`
   - Keep endpoint path and handler behavior unchanged; compare runner internals only.
 - Baseline capture protocol (before structural refactor starts):
   - Run one projection per fixture date against current `runProjectionV2` implementation.

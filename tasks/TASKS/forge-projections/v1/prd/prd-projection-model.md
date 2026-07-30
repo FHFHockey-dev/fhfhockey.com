@@ -400,12 +400,12 @@ MVP is considered done when:
 - Supabase migrations for FORGE tables exist under `migrations/` and have been applied.
 - A minimal ingestion endpoint exists (cron-friendly; GET or POST) to populate PbP + shift totals:
   - `web/pages/api/v1/db/ingest-projection-inputs.ts`
-  - Supports `startDate`, `endDate`, `force`, `maxDurationMs` (default 270000), and `debug`/`debugLimit`.
+  - Supports `startDate`, `endDate`, `force`, `maxDurationMs` (default 210000), and `debug`/`debugLimit`.
   - Returns `durationMs` (MM:SS), `gamesTotal`, and `skipReasons` to explain “skipped” behavior.
 - Derived-table builders exist to populate strength aggregates:
   - `web/pages/api/v1/db/build-projection-derived-v2.ts`
   - Builds `forge_player_game_strength`, `forge_team_game_strength`, `forge_goalie_game`
-  - Supports `startDate`, `endDate`, and `maxDurationMs` (default 270000) + returns `durationMs` (MM:SS).
+  - Supports `startDate`, `endDate`, and `maxDurationMs` (default 210000) + returns `durationMs` (MM:SS).
 - Baseline horizon=1 projection runner exists (writes FORGE outputs + run logs):
   - `web/pages/api/v1/db/run-projection-v2.ts`
   - Writes `forge_runs` + `forge_player_projections`/`forge_team_projections`/`forge_goalie_projections`
@@ -435,18 +435,18 @@ This is the canonical “start to finish” order of API calls for a single-date
    - Optional flags:
      - `force=true` (re-fetch + overwrite for that date range)
      - `debug=true&debugLimit=50` (sampling/trace)
-     - `maxDurationMs=270000` (budget; stay under Vercel limit)
+     - `maxDurationMs=210000` (budget; reserve 30 seconds for response/final audit)
 
 2. **Build derived strength tables**
    - `/api/v1/db/build-projection-derived-v2?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
    - Optional flags:
-     - `maxDurationMs=270000`
+     - `maxDurationMs=210000`
 
 3. **Run projections (horizon=1)**
    - `/api/v1/db/run-projection-v2?date=YYYY-MM-DD`
    - `/api/v1/db/run-projection-v2?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
    - Optional flags:
-     - `maxDurationMs=270000`
+     - `maxDurationMs=210000`
 
 4. **Run projection accuracy (after actuals land)**
    - `/api/v1/db/run-projection-accuracy?date=YYYY-MM-DD`
@@ -477,7 +477,7 @@ Suggested nightly sequence for a given date:
 - Incremental/default: no `force=true` (skips games that already have PbP + shift totals).
 - Debug ingestion decisions: add `&debug=true` (optional `&debugLimit=50`).
 - Rebuild after a bugfix/backfill: add `&force=true` for a small date range (stay under 5 minutes).
-- Keep within Vercel limit: `&maxDurationMs=270000` (default) and check `timedOut` in the response.
+- Keep within Vercel limit: `&maxDurationMs=210000` (default) and check `timedOut` in the response.
 - Accuracy: use `projectionOffsetDays=0` for same-day projections; keep `1` only if projections are produced for the next day.
 
 ### Interpreting ingestion “skip”

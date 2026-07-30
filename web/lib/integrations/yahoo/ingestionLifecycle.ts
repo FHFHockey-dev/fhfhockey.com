@@ -26,6 +26,17 @@ export type YahooPlayerKeySnapshotRow = {
   player_name: string | null;
 };
 
+export type YahooSheetExportReceipt = {
+  attempted: boolean;
+  succeeded: boolean;
+  statusCode: number | null;
+  reason:
+    | "complete_player_receipt"
+    | "incomplete_player_receipt"
+    | "missing_cron_secret"
+    | "request_failed";
+};
+
 type YahooPlayerKeySnapshot = {
   players: YahooPlayerKeySnapshotRow[];
   pagesFetched: number;
@@ -173,6 +184,67 @@ export function selectCanonicalYahooGame<T extends YahooGameRow>(
         );
       })[0] ?? null
   );
+}
+
+export function isYahooSheetExportEligible(args: {
+  providerComplete: boolean;
+  ownershipOmitted: number;
+  persistedRows: number;
+  sourceRows: number;
+}): boolean {
+  return (
+    args.providerComplete &&
+    args.ownershipOmitted === 0 &&
+    args.sourceRows > 0 &&
+    args.persistedRows === args.sourceRows
+  );
+}
+
+export async function requestYahooSheetExport(args: {
+  gameId: string | number;
+  cronSecret: string | undefined;
+  fetchImpl?: typeof fetch;
+  timeoutMs?: number;
+}): Promise<YahooSheetExportReceipt> {
+  if (!args.cronSecret) {
+    return {
+      attempted: false,
+      succeeded: false,
+      statusCode: null,
+      reason: "missing_cron_secret",
+    };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(),
+    Math.max(1, args.timeoutMs ?? 3_000),
+  );
+  try {
+    const response = await (args.fetchImpl ?? fetch)(
+      `https://fhfhockey.com/api/internal/sync-yahoo-players-to-sheet?gameId=${encodeURIComponent(String(args.gameId))}`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${args.cronSecret}` },
+        signal: controller.signal,
+      },
+    );
+    return {
+      attempted: true,
+      succeeded: response.ok,
+      statusCode: response.status,
+      reason: response.ok ? "complete_player_receipt" : "request_failed",
+    };
+  } catch {
+    return {
+      attempted: true,
+      succeeded: false,
+      statusCode: null,
+      reason: "request_failed",
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function getErrorStatus(error: any): number | null {
