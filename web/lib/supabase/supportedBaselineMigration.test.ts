@@ -45,6 +45,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260729205048_preserve_sko_model_history.sql",
       "20260730091500_consolidate_scheduler_ownership.sql",
       "20260730190000_tombstone_legacy_public_rpcs.sql",
+      "20260730200000_repair_utah_wgo_team_identity.sql",
     ]);
 
     expect(
@@ -219,5 +220,26 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     ).toHaveLength(2);
     expect(migration.match(/to service_role;/g)).toHaveLength(2);
     expect(migration).not.toMatch(/authorization|bearer/i);
+  });
+
+  it("bounds the Utah WGO identity repair to the frozen replay-safe manifest", () => {
+    const migration = readMigration(
+      "20260730200000_repair_utah_wgo_team_identity.sql",
+    );
+
+    expect(migration).toContain(
+      "lock table public.wgo_team_stats in share row exclusive mode",
+    );
+    expect(migration).toContain("w.season_id = 20252026");
+    expect(migration).toContain("w.franchise_name = 'Utah Mammoth'");
+    expect(migration).toContain(
+      "manifest_digest <> 'dd27185df94d9f7e9816eb3a9a8a8b66'",
+    );
+    expect(migration).toContain("(pre_count = 88 and post_count = 0)");
+    expect(migration).toContain("(pre_count = 0 and post_count = 88)");
+    expect(migration).toContain("if pre_count = 88 then");
+    expect(migration).toContain("if updated_count <> 88 then");
+    expect(migration.match(/update public\.wgo_team_stats/g)).toHaveLength(1);
+    expect(migration).not.toMatch(/\b(?:insert|delete|truncate)\b/i);
   });
 });

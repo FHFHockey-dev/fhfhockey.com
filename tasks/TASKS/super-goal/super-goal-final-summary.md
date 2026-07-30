@@ -564,7 +564,7 @@ Remaining cleanup and reference initiative sections are pending verified Wave-B 
 
 ### Canonical bootstrap and master-PRD reconciliation
 
-- **Evidence:** A current filesystem comparison adds five post-baseline ownership/inventory/runbook artifacts and finds zero stale entries. Appendix A now exactly owns 251 substantive noncanonical artifacts (255 total minus four canonical controls) with no omission, extra, or empty file; all created/recovered pairs are registered; 76 stable source sections retain imported provenance; direct recounts govern initiative status; and FR-15/16 plus dated overlays record implementation ownership, dependencies, verified state, conflicts, decisions, and explicit approval gates.
+- **Evidence:** Appendix A now exactly owns 252 substantive noncanonical artifacts (256 total minus four canonical controls) after registering the Utah repair contract, with no known omission, extra, or empty file; all created/recovered pairs are registered; 76 stable source sections retain imported provenance; direct recounts govern initiative status; and FR-15/16 plus dated overlays record implementation ownership, dependencies, verified state, conflicts, decisions, and explicit approval gates.
 - **Closures / controls:** Master-only 0.0/0.6/0.7 and 1.0/1.3/1.4 close without implying unfinished initiatives are complete. Imported parity remains 4,834/4,983 raw and 4,834/4,977 actionable because no imported source row changed.
 - **Boundary:** No source checkbox, application file, build, deployment, provider, database, schedule, credential, shared checkout, push, or external state changed.
 
@@ -617,3 +617,9 @@ All charter questions remain open until source/master synchronization, Wave A/B 
 - Connected read-only preflight confirms one healthy default Supabase branch, eight applied migration versions, all later candidate migrations unapplied, and all 12 scheduler targets active with exact candidate-migration preconditions. Local Colima/Docker remains unavailable, so no paid branch or Production test execution was substituted.
 - The current exposed `analytics` catalog is 14 relations/one routine, not the stale documented 16; NEW 60 remains open for exact DDL/ACL/policy/config extraction and fresh local replay. Candidate migration `20260730190000` prepares credential-free, browser-denied, service-monitorable tombstones for the two legacy public RPCs; 5/5 static migration tests pass, while NEW 56/57 remain open for execution, publication, monitoring, and final-drop gates.
 - The owner accepts an exact-manifest one-off historical in-season sKO population as the temporary offseason Production baseline until the season opens. That future mutation remains separately authorization-gated and distinct from the natural truthful no-write audit. No hosted state changed.
+
+### Utah WGO repair-design checkpoint
+
+- Fresh read-only evidence freezes exactly 88 null-linked team-59 Utah Mammoth rows, 88 unique team-68 schedule mappings, zero target conflicts, and manifest digest `dd27185df94d9f7e9816eb3a9a8a8b66`.
+- Candidate migration `20260730200000` accepts only the complete pre/post state, updates only team/game/opponent identity under a writer lock, requires 88 first-run updates, and performs zero DML on replay. The registered inverse contract uses the same manifest. The focused migration suite passes 6/6.
+- B-CLEAN NEW 105 remains open for local executable rollback/reapply and exact Production mutation authorization/application with post-count, digest, unrelated-scope, and rollback receipts. No database row changed; actionable/master percentages remain 97.65%/96.75%.
