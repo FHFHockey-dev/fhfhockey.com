@@ -108,10 +108,10 @@ These had no inbound imports in the custom graph and were also reported by `knip
 
 | Files | Likely intent | Evidence | Recommendation |
 | --- | --- | --- | --- |
-| `web/components/WiGO/WigoDoughnutChart.js`, `web/components/WiGO/WigoLineChart.js`, `web/components/WiGO/wgoRadarChart.js` | Old Chart.js WiGO visuals. | No inbound imports; newer WiGO dashboard components exist and route `/wigoCharts` remains in nav. | Delete after confirming current WiGO route does not use them dynamically. |
-| `web/components/WiGO/TeamNameSVG.tsx` | SVG team-name renderer for old WiGO UI. | No inbound imports. | Delete. |
-| `web/components/WiGO/fetchThreeYearAverages.ts` | Client fetch helper for old three-year averages endpoint. | No inbound imports. | Delete if endpoint is also retired. |
-| `web/components/WiGO/ratingsConstants.ts` | Old WiGO rating constants. | No inbound imports. | Delete if not part of current scoring contract. |
+| `web/components/WiGO/WigoDoughnutChart.js`, `web/components/WiGO/WigoLineChart.js`, `web/components/WiGO/wgoRadarChart.js` | Old Chart.js WiGO visuals. | No inbound imports; newer WiGO dashboard components exist and route `/wigoCharts` remains in nav. | Deleted 2026-07-29 after exact static/dynamic consumer review. |
+| `web/components/WiGO/TeamNameSVG.tsx` | SVG team-name renderer for old WiGO UI. | No inbound imports. | Deleted 2026-07-29. |
+| `web/components/WiGO/fetchThreeYearAverages.ts` | Client fetch helper for old three-year averages endpoint. | No inbound imports. | Deleted 2026-07-29; active WiGO has no dependency on the helper. |
+| `web/components/WiGO/ratingsConstants.ts` | Old WiGO rating constants. | No inbound imports. | Deleted 2026-07-29; active rating ownership remains in current WiGO modules. |
 
 ### Legacy Goalie / Team / Upsert Utilities
 
@@ -237,3 +237,5 @@ Exact path, symbol, runtime, script, config, separate-root, and documentation sc
 The review also disproves the grouped deletion claim for `web/utils/dateUtils.ts`: `usePlayerWeeklyStats` actively imports `getWeekStartDates`, so P3 NEW 8.4 records its retention before any deletion. Current `PPTOIChart.tsx`, retained route dependencies, historical SKO/prediction evidence, DRM quarantine, and old operational upserts with manual/external-caller uncertainty remain untouched. Thus 5.2 remains open rather than overstating complete consumer proof.
 
 Deleted-path/symbol scans are empty, full TypeScript passes, and the current Variance and Underlying Team Stats suites pass 2 files/8 tests. This closes 5.3/5.4 and NEW 8.4. B-DEAD is 25/39 with 14 open. No build, deployment, database, provider, schedule, credential, shared checkout, push, or external state changed.
+
+The follow-on active-WiGO check proves the three old Chart.js visuals, `TeamNameSVG`, `fetchThreeYearAverages`, and `ratingsConstants` have no static, dynamic, script, config, workflow, separate-root, or current route consumer. All six files (668 lines) are deleted. The current WiGO cohort passes 9 files/28 tests and full TypeScript; exact deleted-symbol scans are empty. Cumulative targeted cleanup is 20 files/1,981 lines. This strengthens closed 5.3/5.4 but does not close 5.2 while operational/manual/external-caller and owner-quarantined clusters remain. No build or external state changed.
