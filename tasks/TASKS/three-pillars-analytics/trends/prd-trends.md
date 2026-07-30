@@ -2,7 +2,7 @@
 
 > **Reconciled implementation task list:** `tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md`
 >
-> **Current reconciliation status (2026-07-22):** 28/50 rows are evidence-complete from the canonical Sustainability/Trends inventory, dependency map, family audits, exact traces, and published regressions. Current route/metric/window/read/team/skater/goalie/context/URL/cache ownership is verified. The remaining 22 rows retain real typed-warning, failure-isolation/stale-state, mixed-recency, hydration, UX/accessibility/performance/browser, and final synchronization work.
+> **Current reconciliation status (2026-07-29):** Complete at 53/53 after the typed-warning, failure-isolation/stale-state, mixed-recency, hydration, UX/accessibility/performance/browser, workload-fanout, and final completion-control cohorts.
 
 ## Introduction/Overview
 
@@ -63,9 +63,9 @@ This PRD recovers the previously empty Trends scope from the Three Pillars PRD, 
 30. Non-trivial windowing, percentile, directionality, fallback, identity, and source-alignment logic must have focused tests; visual-only changes may use direct verification.
 31. The implementation must preserve compatibility for current FORGE/Command Center links and query-driven metric handoff where approved.
 
-## Current Verified Status — 2026-07-22
+## Current Verified Status — 2026-07-29
 
-- B-TRENDS is complete at 52/52. Typed comparison/source/coverage/warning contracts, complete reads, team/skater/goalie workflows, safe short-horizon separation, five-section resilience, query-date ownership, normalized goalie confidence, accessibility, responsive browser proof, and final synchronization are complete.
+- B-TRENDS is complete at 53/53. Typed comparison/source/coverage/warning contracts, complete reads, team/skater/goalie workflows, safe short-horizon separation, five-section resilience, query-date ownership, normalized goalie confidence, accessibility, responsive browser proof, and final synchronization are complete.
 - Browser tracing found the below-fold goalie workload chart launching 32 team-schedule requests on initial load; near-viewport mounting now defers that fanout and its focused regression passes. The final helper/hook/page group passes 8/8; scoped lint has zero errors; TypeScript and the complete production build pass after the separately recorded Lines repair.
 
 ## Non-Goals (Out of Scope)

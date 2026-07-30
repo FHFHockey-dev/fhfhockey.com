@@ -29,7 +29,7 @@
 ### Notes
 
 - Unit tests should typically be placed alongside the code files they are testing (e.g., `MyComponent.tsx` and `MyComponent.test.tsx` in the same directory).
-- Use `npx jest [optional/path/to/test/file]` to run tests. Running without a path executes all tests found by the Jest configuration.
+- Use `npm test -- [optional/path/to/test/file]` to run the repository-owned Vitest suite once.
 
 ## Tasks
 
@@ -80,3 +80,4 @@
 ## NEW Tasks
 
 - [x] NEW 8.0 **P1 deployed skater-trend response-budget gate:** exact commit `b4aeea8f9af6229aa64f75e4b311b1218a5afb4c`, containing the bounded-series repair, is READY/Production as `dpl_4q8GM1wqTbHR3NbnxRxAakdLEvJr`, promoted from authorized artifact `dpl_8PPWPDQoaaUp3yT4tKr3UaqBVKkW`. Value-free Production GETs returned 200 and passed all nine declared byte budgets: team ratings 17,842/120,000; FORGE players 2,375/350,000; FORGE goalies 39,999/220,000; Start Chart 1,665/300,000; team CTPI 23,018/180,000; largest-caller skater power 85,963/280,000; ownership trends 326/350,000; ownership snapshots 29/220,000; Sustainability trends 6,889/140,000. The bounded 15-minute relevant runtime-error query was empty (closed 2026-07-23).
+- [x] NEW 9.0 **P3 stale Jest task instruction:** the source now names the repository-owned Vitest command; the current shared Trends/dashboard/quarantine cohort passes eight files/27 tests (verified 2026-07-29).
