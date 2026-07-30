@@ -611,3 +611,9 @@ All charter questions remain open until source/master synchronization, Wave A/B 
 
 - Current Production proves signed-out `/db` settles on administrator-required content with zero operational controls/tables, missing-auth webhook requests return 401 before work, functions health returns 200 from its recorded READY owner, and CMS requires a Sanity login provider before editor access.
 - Malformed webhook auth disclosed Supabase parser detail. P1 NEW 8.9 fixes the shared boundary locally with one fixed 401 for malformed/rejected bearer input; five tests and scoped lint pass. NEW 8.3 remains open for publication and exact Production malformed-auth proof. Imported actionable completion is 4,871/4,988 with 117 open = 97.65%; master roll-up is 4,979/5,146 = 96.75%.
+
+### Free-side database-preparation checkpoint
+
+- Connected read-only preflight confirms one healthy default Supabase branch, eight applied migration versions, all later candidate migrations unapplied, and all 12 scheduler targets active with exact candidate-migration preconditions. Local Colima/Docker remains unavailable, so no paid branch or Production test execution was substituted.
+- The current exposed `analytics` catalog is 14 relations/one routine, not the stale documented 16; NEW 60 remains open for exact DDL/ACL/policy/config extraction and fresh local replay. Candidate migration `20260730190000` prepares credential-free, browser-denied, service-monitorable tombstones for the two legacy public RPCs; 5/5 static migration tests pass, while NEW 56/57 remain open for execution, publication, monitoring, and final-drop gates.
+- The owner accepts an exact-manifest one-off historical in-season sKO population as the temporary offseason Production baseline until the season opens. That future mutation remains separately authorization-gated and distinct from the natural truthful no-write audit. No hosted state changed.

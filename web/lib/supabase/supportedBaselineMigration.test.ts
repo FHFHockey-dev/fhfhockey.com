@@ -44,6 +44,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260728235000_make_game_prediction_promotion_atomic.sql",
       "20260729205048_preserve_sko_model_history.sql",
       "20260730091500_consolidate_scheduler_ownership.sql",
+      "20260730190000_tombstone_legacy_public_rpcs.sql",
     ]);
 
     expect(
@@ -195,5 +196,28 @@ describe("supported Supabase schema-baseline reconciliation", () => {
         ),
       );
     }
+  });
+
+  it("keeps legacy RPC tombstones credential-free and browser-denied", () => {
+    const migration = readMigration(
+      "20260730190000_tombstone_legacy_public_rpcs.sql",
+    );
+
+    expect(migration).toContain(
+      "to_regprocedure('public.update_all_wgo_skaters()')",
+    );
+    expect(migration).toContain(
+      "'public.get_skater_game_score_by_limit(bigint,integer)'",
+    );
+    expect(migration.match(/security invoker/g)).toHaveLength(2);
+    expect(migration.match(/set search_path = ''/g)).toHaveLength(2);
+    expect(migration.match(/message = 'Legacy RPC retired\.'/g)).toHaveLength(
+      2,
+    );
+    expect(
+      migration.match(/from public, anon, authenticated, service_role/g),
+    ).toHaveLength(2);
+    expect(migration.match(/to service_role;/g)).toHaveLength(2);
+    expect(migration).not.toMatch(/authorization|bearer/i);
   });
 });
