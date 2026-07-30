@@ -65,7 +65,10 @@ describe("/api/v1/db/update-player-trend-metrics", () => {
   it("rebuilds current-season state but writes only the seven-day repair window", async () => {
     const res = createMockRes();
 
-    await handler({ method: "POST" } as any, res);
+    await handler(
+      { method: "POST", headers: { host: "localhost" } } as any,
+      res,
+    );
 
     expect(res.statusCode).toBe(200);
     expect(rebuildPlayerTrendsMock).toHaveBeenCalledWith({
@@ -87,7 +90,10 @@ describe("/api/v1/db/update-player-trend-metrics", () => {
   it("rejects GET so the scheduled writer has an explicit POST contract", async () => {
     const res = createMockRes();
 
-    await handler({ method: "GET" } as any, res);
+    await handler(
+      { method: "GET", headers: { host: "localhost" } } as any,
+      res,
+    );
 
     expect(res.statusCode).toBe(405);
     expect(res.headers.Allow).toEqual(["POST"]);

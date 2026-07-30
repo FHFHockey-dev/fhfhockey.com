@@ -6,6 +6,7 @@ import {
 import type { NextApiRequest, NextApiResponse } from "next";
 import { rebuildPlayerTrends } from "../trends/player-trends";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -47,6 +48,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default withCronJobAudit(handler, {
+export default withCronJobAudit(adminOnly(handler as any), {
   jobName: "update-player-trend-metrics",
 });

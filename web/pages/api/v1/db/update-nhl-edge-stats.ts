@@ -51,6 +51,7 @@ import {
   type GetTeamsMode,
 } from "lib/NHL/server";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import adminOnly from "utils/adminOnlyMiddleware";
 import supabase from "lib/supabase/server";
 
 type SupplementalTargetMode =
@@ -1098,6 +1099,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   return runNhlEdgeStatsSnapshot(req, res);
 }
 
-export default withCronJobAudit(handler, {
+export default withCronJobAudit(adminOnly(handler as any), {
   jobName: "update-nhl-edge-stats"
 });

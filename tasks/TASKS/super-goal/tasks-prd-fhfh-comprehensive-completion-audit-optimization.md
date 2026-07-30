@@ -1178,7 +1178,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/contextual-hockey-rankings/workstation/context.md::C0031` (original L63) — Ran browser smoke check against `http://localhost:3001/rankings`.
 - [x] `SRC::tasks/TASKS/contextual-hockey-rankings/workstation/context.md::C0032` (original L64) — Ran `npm run test:full`; unrelated failures documented below.
 
-### Source: `tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md` (62 rows)
+### Source: `tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md` (64 rows)
 
 - [x] `SRC::tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md::C0001` (original L53) — 1.0 Reconcile the production cron schedule with local schedule inventory
 - [x] `SRC::tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md::C0002` (original L54) — 1.1 Query Supabase `cron.job` and `cron.job_run_details` to export the active job list, command text, schedule, active status, and latest run metadata.
@@ -1243,6 +1243,8 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md::C0060` (live NEW) — NEW 9.2 **P1 privileged season-writer auth gap:** `withCronJobAudit(adminOnly(handler))` now protects `update-season-stats`; focused production-mode regressions prove unauthenticated rejection and exact cron/authenticated-admin admission. Deployment remains in P0 `10.2` (verified locally 2026-07-14).
 - [x] `SRC::tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md::C0061` (live NEW) — NEW 11.0 **P1 missing-secret scheduled-auth bypass:** configured non-empty secret is required, absent/blank/whitespace and literal `Bearer undefined` fail closed, and the value-free auth-check shares the rule; combined gate passes 5 files/56 tests plus TypeScript/lint/format/diff checks (verified locally 2026-07-14).
 - [x] `SRC::tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md::C0062` (live NEW) — NEW 9.3 **P1 unprotected WGO mutation boundary:** the exported WGO handler now protects every mutation mode with `adminOnly`; focused production-mode regressions prove unauthenticated rejection and exact cron/authenticated-admin admission. Deployment remains in P0 `10.2` (verified locally 2026-07-14).
+- [x] `SRC::tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md::C0063` (live NEW) — NEW 9.4 **P2 stale scheduled-auth inventory after rolling-writer hardening:** the frozen contract now correctly records 31 admin-or-cron / 1 exact-cron-only / 20 unprotected routes while preserving all 59 jobs, 52 routes, and caller-shape totals; the focused inventory suite passes 4/4 (closed 2026-07-30).
+- [x] `SRC::tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md::C0064` (live NEW) — NEW 9.5 **P2 missing internal WGO caller ownership and 14-route fail-closed cohort:** caller ownership is corrected to 13 internal-server / 30 cron-only, 14 scheduled writers now use the shared admin-or-cron boundary, and the frozen set is 45/1/6. Eight files pass 22/22 plus TypeScript without external mutation (closed locally 2026-07-30).
 
 ### Source: `tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md` (43 rows)
 

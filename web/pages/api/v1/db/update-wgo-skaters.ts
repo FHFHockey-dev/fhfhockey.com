@@ -69,6 +69,7 @@
  */
 
 import { NextApiRequest, NextApiResponse } from "next";
+import adminOnly from "utils/adminOnlyMiddleware";
 import supabase from "lib/supabase/server";
 import type { Database } from "lib/supabase/database-generated.types";
 import Fetch from "lib/cors-fetch";
@@ -1744,7 +1745,7 @@ async function fetchDataForPlayer(playerId: string, playerName: string) {
   return { regularSeasonData, playoffData };
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
@@ -1894,3 +1895,5 @@ export default async function handler(
     }
   }
 }
+
+export default adminOnly(handler as any);

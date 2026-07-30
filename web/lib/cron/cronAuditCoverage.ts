@@ -206,6 +206,20 @@ export const CRON_AUTH_NON_CRON_CALLERS: Readonly<
       "web/pages/db/index.tsx",
     ],
   },
+  "/api/v1/db/update-wgo-skaters": {
+    shape: "internal-server",
+    files: [
+      "web/lib/rollingForgePipeline.ts",
+      "web/pages/api/v1/db/run-rolling-forge-pipeline.ts",
+    ],
+  },
+  "/api/v1/db/update-wgo-totals": {
+    shape: "internal-server",
+    files: [
+      "web/lib/rollingForgePipeline.ts",
+      "web/pages/api/v1/db/run-rolling-forge-pipeline.ts",
+    ],
+  },
 };
 
 function routeCandidates(webRoot: string, routePath: string) {

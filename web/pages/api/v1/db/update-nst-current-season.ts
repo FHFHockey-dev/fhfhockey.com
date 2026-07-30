@@ -1,6 +1,7 @@
 // pages/api/v1/db/update-nst-current-season.ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import adminOnly from "utils/adminOnlyMiddleware";
 import { resolveNstCurrentSeasonRequestPlan } from "lib/cron/nstBurstPlans";
 import type { NextApiRequest, NextApiResponse } from "next";
 import * as cheerio from "cheerio";
@@ -29,7 +30,8 @@ const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // --- Constants ---
 const PLAYER_MAP_VIEW = "view_active_player_ids_max_season";
-const BASE_URL_ALL_PLAYERS = "https://data.naturalstattrick.com/playerteams.php";
+const BASE_URL_ALL_PLAYERS =
+  "https://data.naturalstattrick.com/playerteams.php";
 // Define target table names
 const TABLE_INDIVIDUAL_COUNTS = "nst_seasonal_individual_counts";
 const TABLE_INDIVIDUAL_RATES = "nst_seasonal_individual_rates";
@@ -690,10 +692,7 @@ async function main() {
   }
 }
 
-async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
     res.status(405).json({ message: "Method Not Allowed" });
     return;
@@ -707,4 +706,4 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));
