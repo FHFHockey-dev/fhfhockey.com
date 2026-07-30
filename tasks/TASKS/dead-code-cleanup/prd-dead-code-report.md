@@ -87,7 +87,7 @@ These are not user-facing, but they appear intentionally operational rather than
 | `web/pages/db/player-aliases.tsx` | `/db/player-aliases` | Player alias review admin UI. | Keep protected if active; otherwise move to admin docs/tooling. |
 | `web/pages/api/v1/db/**` | `/api/v1/db/**` | Cron/manual ingestion and refresh endpoints. | Not user-facing. Do not delete from import graph alone; audit against cron inventory and external scheduler config. |
 | `web/pages/api/v1/webhooks/on-new-line-combo.ts` | API route | Line-combo screenshot/webhook workflow. | Operational, not public product. Keep if webhook still configured. |
-| `webhooks/**` | separate Express app | Long-running line-combo screenshot capture service. | Hidden project. Keep only if deployed/configured; otherwise archive/delete. |
+| `webhooks/**` | retired separate Express app | Former duplicate long-running line-combo screenshot capture service. | Deleted after exact local consumer/config proof and read-only Vercel inventory found no standalone project; canonical Next.js route retained. |
 | `functions/**` | separate Vercel/Python app | Hosted Python/NST helper functions. | Not dead: docs and `tasks/TASKS/xg-model/nst-migration/nst-direct-caller-inventory.md` identify `functions/api/fetch_team_table.py` as production-reachable. |
 | `cms/**` | Sanity Studio | CMS for `/studio/**`. | Not dead: root README and `web/next.config.js` rewrite `/studio` to CMS URL. |
 
@@ -214,7 +214,7 @@ The standalone `webhooks` Express service is an operational mutation surface, no
 
 The `/db` page previously hid only selected cards while rendering the broader operational shell and running initial reads for non-admin visitors. It now waits for resolved auth state, renders only an access boundary to non-admin users, and gates its initial public-table and resume-state reads on administrator identity. Every downstream mutation/API boundary remains independently authorized.
 
-These local repairs do not prove customer deployment or ownership. NEW 8.3 keeps the standalone service's live owner/deployment-or-retirement decision, exact-source deployment, value-free denial/error probes, functions receipt, and CMS Studio live access-policy evidence open. No webhook, screenshot, upload, Discord call, deployment, database/storage write, or CMS/provider mutation occurred.
+The later ownership reconciliation proves the standalone service had no repository consumer or deployment configuration, the Production trigger targets the canonical Next.js route, and the only live Vercel team has no standalone webhook project. The six-file duplicate service is therefore retired. NEW 8.3 remains open for value-free Production `/db` and canonical webhook denial proof plus the functions and CMS ownership receipt. No webhook, screenshot, upload, Discord call, deployment, database/storage write, or CMS/provider mutation occurred.
 
 ## 2026-07-29 Hidden Product Ownership Reconciliation
 

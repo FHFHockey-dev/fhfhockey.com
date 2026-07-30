@@ -43,6 +43,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260728225806_add_sko_prediction_run_control.sql",
       "20260728235000_make_game_prediction_promotion_atomic.sql",
       "20260729205048_preserve_sko_model_history.sql",
+      "20260730091500_consolidate_scheduler_ownership.sql",
     ]);
 
     expect(

@@ -12,7 +12,6 @@
 - `web/`: primary Next.js application, API routes, Vitest tests, Playwright E2E tests, scripts, and most Supabase client/migration tooling.
 - `cms/`: Sanity Studio.
 - `functions/`: serverless functions; its documented local server is launched from the repository root.
-- `webhooks/`: standalone webhook service for long-running/browser-backed tasks.
 - `supabase/`, `migrations/`, and `sql/`: database configuration and SQL. Check which migration tree the relevant workflow uses before adding or moving SQL.
 - `.github/workflows/`: CI evidence; the rankings Playwright workflow runs from `web/` with the Node version pinned in `web/.nvmrc` and npm.
 - `tasks/`: plans, PRDs, and artifacts, not application runtime code. Consult only when the task names one or the implementation directly depends on it.
@@ -44,8 +43,6 @@ Playwright starts `npm run dev:stable` on port 3100 unless `PLAYWRIGHT_BASE_URL`
 
 - Sanity Studio (`cms/`): `npm run dev` for development and `npm run build` for a production build.
 - Serverless functions (from repository root): `yarn vercel dev --cwd functions --listen 3003`.
-- `webhooks/` has no functional test script; its current `npm test` intentionally exits with an error. Do not present it as verification.
-
 Do not invent root-wide build, lint, format, or test commands. No repository formatting script is configured. Avoid dependency installation, lockfile regeneration, code generation, or long-running servers unless the task requires them. After a failed command, inspect the error and change the command, environment, assumption, or approach before retrying; do not rerun successful checks without a reason.
 
 ## Edit Policy
