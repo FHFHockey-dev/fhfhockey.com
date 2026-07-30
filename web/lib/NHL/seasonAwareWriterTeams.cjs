@@ -68,6 +68,89 @@ function normalizeSeasonId(seasonId) {
   return numericSeasonId;
 }
 
+function requirePositiveInteger(value, field) {
+  if (!Number.isSafeInteger(value) || value <= 0) {
+    throw new TypeError(`${field} must be a positive integer.`);
+  }
+  return value;
+}
+
+function requireNonemptyString(value, field) {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new TypeError(`${field} must be a nonempty string.`);
+  }
+  return value.trim();
+}
+
+function createSeasonAwareWriterTeamsFromLineageRecords(
+  seasonId,
+  lineageRecords,
+) {
+  const normalizedSeasonId = normalizeSeasonId(seasonId);
+  if (!Array.isArray(lineageRecords)) {
+    throw new TypeError("lineageRecords must be an array.");
+  }
+
+  const teams = {};
+  const franchiseIds = new Set();
+  const teamIds = new Set();
+
+  for (const record of lineageRecords) {
+    if (!record || typeof record !== "object" || Array.isArray(record)) {
+      throw new TypeError("Every lineage record must be an object.");
+    }
+    if (record.gameTypeId !== 2) continue;
+
+    const franchiseId = requirePositiveInteger(
+      record.franchiseId,
+      "franchiseId",
+    );
+    const teamId = requirePositiveInteger(record.teamId, "teamId");
+    const name = requireNonemptyString(record.teamName, "teamName");
+    const abbreviation = requireNonemptyString(record.triCode, "triCode");
+    const firstSeasonId = normalizeSeasonId(record.firstSeasonId);
+    const lastSeasonId =
+      record.lastSeasonId === null
+        ? null
+        : normalizeSeasonId(record.lastSeasonId);
+
+    if (lastSeasonId !== null && lastSeasonId < firstSeasonId) {
+      throw new TypeError("lastSeasonId must not precede firstSeasonId.");
+    }
+    if (
+      normalizedSeasonId < firstSeasonId ||
+      (lastSeasonId !== null && normalizedSeasonId > lastSeasonId)
+    ) {
+      continue;
+    }
+    if (
+      franchiseIds.has(franchiseId) ||
+      teamIds.has(teamId) ||
+      Object.prototype.hasOwnProperty.call(teams, abbreviation)
+    ) {
+      throw new Error(
+        `Ambiguous NHL lineage for season ${normalizedSeasonId}.`,
+      );
+    }
+
+    franchiseIds.add(franchiseId);
+    teamIds.add(teamId);
+    teams[abbreviation] = Object.freeze({
+      name,
+      franchiseId,
+      id: teamId,
+    });
+  }
+
+  if (Object.keys(teams).length === 0) {
+    throw new Error(
+      `No NHL regular-season lineage exists for season ${normalizedSeasonId}.`,
+    );
+  }
+
+  return Object.freeze(teams);
+}
+
 function createSeasonAwareWriterTeams(seasonId) {
   const normalizedSeasonId = normalizeSeasonId(seasonId);
   const teams = Object.fromEntries(
@@ -101,4 +184,7 @@ function createSeasonAwareWriterTeams(seasonId) {
   return Object.freeze(teams);
 }
 
-module.exports = { createSeasonAwareWriterTeams };
+module.exports = {
+  createSeasonAwareWriterTeams,
+  createSeasonAwareWriterTeamsFromLineageRecords,
+};

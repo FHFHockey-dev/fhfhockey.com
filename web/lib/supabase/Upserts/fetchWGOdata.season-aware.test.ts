@@ -7,6 +7,15 @@ import {
   it,
   vi,
 } from "vitest";
+import writerTeamAuthority from "../../NHL/seasonAwareWriterTeams.cjs";
+
+const { createSeasonAwareWriterTeamsFromLineageRecords } =
+  writerTeamAuthority as {
+    createSeasonAwareWriterTeamsFromLineageRecords: (
+      seasonId: number,
+      records: Array<Record<string, unknown>>,
+    ) => Record<string, { franchiseId: number; id: number; name: string }>;
+  };
 
 const mocks = vi.hoisted(() => {
   const originalSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -84,6 +93,9 @@ function installOneDateSources(
   seasonId: number,
   date: string,
   franchiseId: number,
+  teamId: number,
+  teamName: string,
+  teamAbbreviation: string,
 ) {
   const datasetRow = {
     franchiseId,
@@ -103,6 +115,21 @@ function installOneDateSources(
   mocks.fetch.mockImplementation(async (url: string) => {
     if (url.includes("/season?")) {
       return jsonResponse({ data: [season] });
+    }
+    if (url.includes("/franchise-team-totals")) {
+      return jsonResponse({
+        data: [
+          {
+            firstSeasonId: seasonId,
+            franchiseId,
+            gameTypeId: 2,
+            lastSeasonId: seasonId,
+            teamId,
+            teamName,
+            triCode: teamAbbreviation,
+          },
+        ],
+      });
     }
     if (url.includes("/team/")) {
       return jsonResponse({ data: [datasetRow] });
@@ -141,11 +168,36 @@ describe("fetchWGOdata season-aware writer identity", () => {
 
   it.each([
     {
+      seasonId: 20102011,
+      date: "2010-10-08",
+      franchiseId: 35,
+      teamId: 11,
+      teamName: "Atlanta Thrashers",
+      teamAbbreviation: "ATL",
+    },
+    {
+      seasonId: 20132014,
+      date: "2013-10-03",
+      franchiseId: 28,
+      teamId: 27,
+      teamName: "Phoenix Coyotes",
+      teamAbbreviation: "PHX",
+    },
+    {
+      seasonId: 20142015,
+      date: "2014-10-09",
+      franchiseId: 28,
+      teamId: 53,
+      teamName: "Arizona Coyotes",
+      teamAbbreviation: "ARI",
+    },
+    {
       seasonId: 20232024,
       date: "2023-10-10",
       franchiseId: 28,
       teamId: 53,
       teamName: "Arizona Coyotes",
+      teamAbbreviation: "ARI",
     },
     {
       seasonId: 20242025,
@@ -153,6 +205,7 @@ describe("fetchWGOdata season-aware writer identity", () => {
       franchiseId: 40,
       teamId: 59,
       teamName: "Utah Hockey Club",
+      teamAbbreviation: "UTA",
     },
     {
       seasonId: 20252026,
@@ -160,16 +213,31 @@ describe("fetchWGOdata season-aware writer identity", () => {
       franchiseId: 40,
       teamId: 68,
       teamName: "Utah Mammoth",
+      teamAbbreviation: "UTA",
     },
   ])(
     "writes canonical $seasonId identity from the per-season catalog",
-    async ({ seasonId, date, franchiseId, teamId, teamName }) => {
+    async ({
+      seasonId,
+      date,
+      franchiseId,
+      teamId,
+      teamName,
+      teamAbbreviation,
+    }) => {
       mocks.expectedTeamId = teamId;
-      installOneDateSources(seasonId, date, franchiseId);
+      installOneDateSources(
+        seasonId,
+        date,
+        franchiseId,
+        teamId,
+        teamName,
+        teamAbbreviation,
+      );
 
       await main({ date, recent: false, allSeasons: true });
 
-      expect(mocks.fetch).toHaveBeenCalledTimes(12);
+      expect(mocks.fetch).toHaveBeenCalledTimes(13);
       expect(mocks.upsertedRows).toHaveLength(1);
       expect(mocks.upsertedRows[0]).toMatchObject({
         season_id: String(seasonId),
@@ -181,4 +249,53 @@ describe("fetchWGOdata season-aware writer identity", () => {
       });
     },
   );
+});
+
+describe("WGO franchise-team lineage contract", () => {
+  const regularSeasonRecord = {
+    firstSeasonId: 20102011,
+    franchiseId: 35,
+    gameTypeId: 2,
+    lastSeasonId: 20102011,
+    teamId: 11,
+    teamName: "Atlanta Thrashers",
+    triCode: "ATL",
+  };
+
+  it("selects exact regular-season identity and ignores playoff totals", () => {
+    expect(
+      createSeasonAwareWriterTeamsFromLineageRecords(20102011, [
+        regularSeasonRecord,
+        { ...regularSeasonRecord, gameTypeId: 3 },
+      ]),
+    ).toEqual({
+      ATL: {
+        franchiseId: 35,
+        id: 11,
+        name: "Atlanta Thrashers",
+      },
+    });
+  });
+
+  it("fails closed when no regular-season lineage covers the season", () => {
+    expect(() =>
+      createSeasonAwareWriterTeamsFromLineageRecords(20112012, [
+        regularSeasonRecord,
+      ]),
+    ).toThrow("No NHL regular-season lineage exists");
+  });
+
+  it("fails closed on overlapping franchise lineage", () => {
+    expect(() =>
+      createSeasonAwareWriterTeamsFromLineageRecords(20102011, [
+        regularSeasonRecord,
+        {
+          ...regularSeasonRecord,
+          teamId: 52,
+          teamName: "Winnipeg Jets",
+          triCode: "WPG",
+        },
+      ]),
+    ).toThrow("Ambiguous NHL lineage");
+  });
 });

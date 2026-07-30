@@ -6,7 +6,7 @@ import { parseISO, format, addDays, isBefore, isValid } from "date-fns";
 import ProgressBar from "progress";
 import writerTeamAuthority from "../../NHL/seasonAwareWriterTeams.cjs";
 
-const { createSeasonAwareWriterTeams } = writerTeamAuthority;
+const { createSeasonAwareWriterTeamsFromLineageRecords } = writerTeamAuthority;
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -79,6 +79,16 @@ async function fetchNHLSeasons() {
   const url =
     "https://api.nhle.com/stats/rest/en/season?sort=%5B%7B%22property%22:%22id%22,%22direction%22:%22DESC%22%7D%5D";
   const response = await Fetch(url);
+  return response.data;
+}
+
+async function fetchNHLFranchiseTeamTotals() {
+  const response = await Fetch(
+    "https://records.nhl.com/site/api/franchise-team-totals",
+  );
+  if (!Array.isArray(response?.data)) {
+    throw new Error("NHL franchise-team lineage response is unavailable.");
+  }
   return response.data;
 }
 
@@ -156,8 +166,17 @@ async function upsertTeamStatsRows(rows, formattedDate, seasonId) {
   return upserted;
 }
 
-async function fetchNHLData(startDate, effectiveEndDate, seasonId, bar) {
-  const teamsInfo = createSeasonAwareWriterTeams(seasonId);
+async function fetchNHLData(
+  startDate,
+  effectiveEndDate,
+  seasonId,
+  lineageRecords,
+  bar,
+) {
+  const teamsInfo = createSeasonAwareWriterTeamsFromLineageRecords(
+    seasonId,
+    lineageRecords,
+  );
   const teamsByFranchiseId = new Map(
     Object.values(teamsInfo).map((team) => [team.franchiseId, team]),
   );
@@ -568,8 +587,11 @@ async function main(options = {}) {
   console.time("Total Process Time");
 
   try {
-    console.log("Fetching NHL seasons...");
-    const seasons = await fetchNHLSeasons();
+    console.log("Fetching NHL seasons and franchise-team lineage...");
+    const [seasons, lineageRecords] = await Promise.all([
+      fetchNHLSeasons(),
+      fetchNHLFranchiseTeamTotals(),
+    ]);
     console.log(`Fetched ${seasons?.length || 0} seasons from NHL API`);
 
     if (!seasons || seasons.length === 0) {
@@ -725,6 +747,7 @@ async function main(options = {}) {
             newStartDate,
             effectiveEndDate,
             season.id.toString(),
+            lineageRecords,
             bar,
           );
 
