@@ -32,6 +32,18 @@ begin
       message = 'Projection-result source must be the latest succeeded run.';
   end if;
 
+  if not exists (
+    select 1
+    from public.forge_runs
+    where run_id = p_source_run_id
+      and metrics #>> '{input_provenance,rolling_player_history_contract}'
+        = 'full_selected_scope_through_end_date_v1'
+  ) then
+    raise exception using
+      errcode = '22023',
+      message = 'Projection-result source is excluded from calibration by its rolling-history provenance.';
+  end if;
+
   if p_rows is null or jsonb_typeof(p_rows) <> 'array' then
     raise exception using
       errcode = '22023',

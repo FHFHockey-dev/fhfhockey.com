@@ -270,6 +270,10 @@ describe("/api/v1/db/run-projection-accuracy", () => {
     expect(sql).toMatch(
       /select run_id[\s\S]*status = 'succeeded'[\s\S]*order by created_at desc[\s\S]*limit 1/,
     );
+    expect(sql).toContain(
+      "metrics #>> '{input_provenance,rolling_player_history_contract}'",
+    );
+    expect(sql).toContain("full_selected_scope_through_end_date_v1");
     expect(
       sql.indexOf("delete from public.forge_projection_results"),
     ).toBeLessThan(sql.indexOf("insert into public.forge_projection_results"));

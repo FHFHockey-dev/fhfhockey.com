@@ -309,6 +309,7 @@ You are resuming work on FORGE projection accountability + learning.
 - Project: `/Users/tim/Desktop/fhfhockey.com`
 - Goal: add projection accuracy scoring (fantasy points) + ongoing learning; goalie win/shutout modeling is high priority.
 - New API endpoint: `web/pages/api/v1/db/run-projection-accuracy.ts`
+- Calibration eligibility is fail-closed: only runs carrying `full_selected_scope_through_end_date_v1` input provenance may produce accuracy/calibration rows. Historical projections remain immutable; legacy/contaminated runs are excluded rather than relabeled.
   - Computes skater accuracy using `wgo_skater_stats`.
   - Computes goalie accuracy using `goalie_stats_unified`, with fallback to `forge_goalie_game`.
   - Writes to `forge_projection_results`, `forge_projection_accuracy_daily`, `forge_projection_accuracy_player`, `forge_projection_accuracy_stat_daily`.

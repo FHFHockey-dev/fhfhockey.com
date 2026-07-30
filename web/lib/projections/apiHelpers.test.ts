@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { buildProjectionApiErrorResponse } from "./apiHelpers";
+import {
+  FORGE_ROLLING_HISTORY_INPUT_CONTRACT,
+  buildForgeInputProvenance,
+  evaluateForgeCalibrationEligibility,
+} from "./calibrationEligibility";
 
 describe("projection API error responses", () => {
   it("preserves bounded caller-error detail", () => {
@@ -32,6 +37,37 @@ describe("projection API error responses", () => {
     ).toEqual({
       statusCode: 503,
       error: "PROJECTIONS_UNAVAILABLE",
+    });
+  });
+});
+
+describe("FORGE calibration eligibility", () => {
+  it("accepts only the repaired rolling-history provenance contract", () => {
+    expect(
+      evaluateForgeCalibrationEligibility({
+        input_provenance: buildForgeInputProvenance(),
+      }),
+    ).toEqual({
+      eligible: true,
+      observedContract: FORGE_ROLLING_HISTORY_INPUT_CONTRACT,
+      requiredContract: FORGE_ROLLING_HISTORY_INPUT_CONTRACT,
+      reason: "eligible",
+    });
+
+    expect(evaluateForgeCalibrationEligibility({})).toMatchObject({
+      eligible: false,
+      observedContract: null,
+      reason: "missing_or_legacy_rolling_history_contract",
+    });
+    expect(
+      evaluateForgeCalibrationEligibility({
+        input_provenance: {
+          rolling_player_history_contract: "legacy_date_scoped_v0",
+        },
+      }),
+    ).toMatchObject({
+      eligible: false,
+      observedContract: "legacy_date_scoped_v0",
     });
   });
 });

@@ -7420,3 +7420,10 @@
 - **Missing PDO:** Source nulls remain null rather than coercing to zero. PDO EWMA and league moments use observed values only; a fully missing team records zero observations and explicit `pdo_missing=true`, receives neutral `pdo_z=0`, and cannot create a variance flag.
 - **Verification / controls:** Two focused files pass 5/5 tests; full TypeScript, changed-code formatting, and diff integrity pass. Imported actionable parity remains 4,867/4,986 with 119 open = 97.61%; canonical master roll-up remains 4,975/5,144 = 96.71%.
 - **Boundary / next action:** Local forward behavior only. NEW 2/6 stay open for their versioned bounded historical repair and deployed reader/source evidence. No build, push, deployment, migration, database row, writer, provider call, schedule, credential, shared checkout, or stash changed.
+
+## Entry 0790 — 2026-07-30 immutable FORGE history and calibration eligibility
+
+- **Provenance boundary:** New FORGE runs record `full_selected_scope_through_end_date_v1` under input provenance. Accuracy/calibration evaluates that exact contract after selecting the latest succeeded run and returns a bounded 422 exclusion before projection/result work when provenance is missing or legacy.
+- **Database contract:** The still-unapplied `20260723121407` atomic result RPC retains latest-succeeded-run authority and now independently rejects a source run without the repaired input contract. Existing historical projection rows are not relabeled, rewritten, or deleted.
+- **Verification / controls:** Three focused files pass 13/13 tests; full TypeScript, formatting, SQL contract, and diff integrity pass. Imported actionable parity remains 4,867/4,986 with 119 open = 97.61%; master roll-up remains 4,975/5,144 = 96.71%.
+- **Boundary / next action:** NEW 10/13 remain open for stored rolling-input repair, migration application, eligible bounded result reconstruction, idempotency, and deployed evidence. No build, push, deployment, migration application, database row, writer, provider call, schedule, credential, shared checkout, or stash changed.

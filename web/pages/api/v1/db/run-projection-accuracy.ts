@@ -11,6 +11,7 @@ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import supabase from "lib/supabase/server";
 import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
+import { evaluateForgeCalibrationEligibility } from "lib/projections/calibrationEligibility";
 import { runProjectionPreflightChecks } from "./run-projection-v2";
 import {
   computeAccuracyScore,
@@ -1659,6 +1660,23 @@ async function runAccuracyForDate(
   const startedAt = Date.now();
   const projectionDate = addDays(actualDate, -offsetDays);
   const runId = await requireLatestSucceededRunId(projectionDate);
+  const { data: runMetadata, error: runMetadataError } = await supabase
+    .from("forge_runs")
+    .select("metrics")
+    .eq("run_id", runId)
+    .maybeSingle();
+  if (runMetadataError) throw runMetadataError;
+  const calibrationEligibility = evaluateForgeCalibrationEligibility(
+    (runMetadata as any)?.metrics,
+  );
+  if (!calibrationEligibility.eligible) {
+    const error = new Error(
+      "Latest succeeded projection run is excluded from calibration because repaired rolling-history provenance is absent.",
+    );
+    (error as any).statusCode = 422;
+    (error as any).details = calibrationEligibility;
+    throw error;
+  }
   const { data: projections, error: projErr } = await supabase
     .from("forge_player_projections")
     .select(
@@ -2687,6 +2705,26 @@ export default withCronJobAudit(
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       });
     } catch (e) {
+      if (Number((e as any)?.statusCode) === 422) {
+        return res.status(422).json({
+          success: false,
+          scanSummary: buildEndpointScanSummary({
+            surface: "projection_accuracy_operator",
+            requestedDate: requestedDateFromQuery,
+            activeDataDate: requestedDateFromQuery,
+            fallbackApplied: false,
+            status: "blocked",
+            rowCounts: { rowsUpserted: 0 },
+            blockingIssueCount: 1,
+            notes: [
+              "Accuracy validation excluded a projection run with legacy or missing input provenance.",
+            ],
+          }),
+          error: (e as Error).message,
+          calibrationEligibility: (e as any)?.details,
+          durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
+        });
+      }
       const dependencyError = normalizeDependencyError(e);
       return res.status(500).json({
         success: false,

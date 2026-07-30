@@ -585,3 +585,9 @@ All charter questions remain open until source/master synchronization, Wave A/B 
 - **Canonical expected shooting:** The player-trend writer now computes `ixG / unblocked attempts × 100` from `nst_ixg` and `nst_iff`, retains the compatibility metric key, and passes a focused numeric regression.
 - **Neutral missing PDO:** Null PDO is preserved, excluded from observed-only EWMA/league moments, and represented by zero observations plus `pdo_missing=true`; its z-score is exactly `0`, so missingness cannot create a variance alert.
 - **Status:** NEW 2/6 remain open only for their bounded versioned historical repair and deployed evidence. Two focused files pass 5/5 tests; TypeScript, formatting, and diff integrity pass. Actionable parity remains 4,867/4,986 = 97.61%; master roll-up remains 4,975/5,144 = 96.71%.
+
+### Immutable FORGE history and calibration eligibility checkpoint
+
+- New projection runs carry the repaired rolling-history input contract; accuracy/calibration fails closed with a value-free 422 for untagged or legacy runs.
+- The unapplied atomic-result RPC enforces the same eligibility in addition to latest-succeeded-run authority. Historical projection rows remain immutable and are excluded rather than relabeled.
+- NEW 10/13 stay open for stored-input repair, migration application, eligible bounded reconstruction, and Production evidence. Three focused files pass 13 tests; TypeScript, formatting, SQL contract, and diff integrity pass.

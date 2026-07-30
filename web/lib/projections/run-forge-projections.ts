@@ -1,5 +1,6 @@
 import supabase from "lib/supabase/server";
 import { resolveNullableCompatibilityValue } from "lib/rollingPlayerMetricCompatibility";
+import { buildForgeInputProvenance } from "lib/projections/calibrationEligibility";
 import { fetchRecentTeamLineCombinations } from "lib/projections/queries/line-combo-queries";
 import { hasCompleteStoredPbpGame } from "lib/projections/pbpCompletenessServer";
 import { classifyStoredShiftChartStrengthGame } from "lib/projections/shiftChartCompletenessServer";
@@ -387,6 +388,7 @@ export async function runProjectionV2ForDate(
   const metrics: Record<string, any> = {
     as_of_date: asOfDate,
     horizon_games: clampHorizonGames(opts?.horizonGames ?? 1),
+    input_provenance: buildForgeInputProvenance(),
     execution_scope: {
       mode: opts?.gameIds?.length ? "selected_games" : "full_slate",
       requested_game_ids: opts?.gameIds ?? [],
