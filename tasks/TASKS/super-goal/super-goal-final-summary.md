@@ -626,3 +626,25 @@ All charter questions remain open until source/master synchronization, Wave A/B 
 - Fresh read-only evidence freezes exactly 88 null-linked team-59 Utah Mammoth rows, 88 unique team-68 schedule mappings, zero target conflicts, and manifest digest `dd27185df94d9f7e9816eb3a9a8a8b66`.
 - Candidate migration `20260730200000` accepts only the complete pre/post state, updates only team/game/opponent identity under a writer lock, requires 88 first-run updates, and performs zero DML on replay. The registered inverse contract uses the same manifest. The focused migration suite passes 6/6.
 - B-CLEAN NEW 105 remains open for local executable rollback/reapply and exact Production mutation authorization/application with post-count, digest, unrelated-scope, and rollback receipts. No database row changed; actionable/master percentages remain 97.65%/96.75%.
+
+### Frozen database application manifest
+
+Connected read-only evidence confirms Production has exactly eight applied migrations, ending at `20260725200808`. The following local candidates are frozen by class and SHA-256; these classes must not be collapsed into one bulk push.
+
+| Class | Migration | SHA-256 |
+| --- | --- | --- |
+| Ordered predeploy | `20260722010355_add_transactional_gamecenter_normalization.sql` | `1a049cb9da615f5c2a01195706f92ba27732c17c72242d56948ae4451b111308` |
+| Ordered predeploy | `20260723121407_replace_forge_projection_results_atomic.sql` | `e92d355e7223b9f3bbb688ab9cbb28b9966d82c9cefddae1dea9e1faeb6b6848` |
+| Ordered predeploy | `20260725220704_reconcile_yahoo_player_key_snapshots.sql` | `92ab89a1487c08c205d699f1118dbaede99803b1dbd89091a3e420cbb91d07fa` |
+| Ordered predeploy | `20260725223034_add_sustainability_version_provenance.sql` | `ad20b77c5d81a789951bfc08d19e791580e8f2ff763e20e8cfdefe31387981d3` |
+| Ordered predeploy | `20260725235646_add_normalized_yahoo_ownership_reader.sql` | `9105a54f59084bce36bfcc3f0467a4f4d650f57ea0144d5006061bc55809c5ca` |
+| Ordered predeploy | `20260726000603_harden_yahoo_read_surfaces.sql` | `7f0fc928bdbf2475f9afbadaad857d39affacdf0376a10b79a4ba5d932953687` |
+| Ordered predeploy | `20260728225806_add_sko_prediction_run_control.sql` | `bce47aa3c812ab766f42fe0ab5a716e4aa9f036dc67acfa24ad6be2a552ab90f` |
+| Ordered predeploy | `20260728235000_make_game_prediction_promotion_atomic.sql` | `81ca86a180f4eb4acfc4ab173bedc7efae6a17ec437cafda9e72ca970208c95d` |
+| Ordered predeploy | `20260729205048_preserve_sko_model_history.sql` | `740be6d9ae4a324f20677c8e70e19b0e8a7f6dd1ffa5b12abba27367760735d6` |
+| Ordered predeploy | `20260730091500_consolidate_scheduler_ownership.sql` | `30f6a9282b8f8a8d9b2a49a8599235dac364c3362606f021ef1b98928a264b00` |
+| Ordered predeploy | `20260730190000_tombstone_legacy_public_rpcs.sql` | `76bf473f846f76505c0cd1a410f2be6092c3d262e09055dda5de31f3a67c8c1e` |
+| Separate repair mutation | `20260730200000_repair_utah_wgo_team_identity.sql` | `e975a24362e14f7df07a38d2012cb9dade5e7f87ced425990ab3cf0ca4ec5255` |
+| Production tracking only after local parity | `20260730233451_reconstruct_hosted_analytics_schema.sql` | `d5447e461e70eecce10c902a01f62fda062132bcd277c712fc986484ecaf9fe5` |
+
+The grouped predeploy authorization must name the first 11 files in this exact order and stop before the Utah repair. The analytics baseline must be reconciled into Production migration tracking only after fresh local catalog/security/runtime/type parity; its already-hosted objects must not be destructively replayed. No undifferentiated `supabase db push` is permitted across all pending files.
