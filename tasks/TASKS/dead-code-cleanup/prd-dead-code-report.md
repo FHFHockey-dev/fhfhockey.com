@@ -215,3 +215,9 @@ The standalone `webhooks` Express service is an operational mutation surface, no
 The `/db` page previously hid only selected cards while rendering the broader operational shell and running initial reads for non-admin visitors. It now waits for resolved auth state, renders only an access boundary to non-admin users, and gates its initial public-table and resume-state reads on administrator identity. Every downstream mutation/API boundary remains independently authorized.
 
 These local repairs do not prove customer deployment or ownership. NEW 8.3 keeps the standalone service's live owner/deployment-or-retirement decision, exact-source deployment, value-free denial/error probes, functions receipt, and CMS Studio live access-policy evidence open. No webhook, screenshot, upload, Discord call, deployment, database/storage write, or CMS/provider mutation occurred.
+
+## 2026-07-29 Hidden Product Ownership Reconciliation
+
+The current route-to-owner matrix supersedes the original hidden-page recommendations without authorizing a runtime change. `/goalies` is redirect compatibility for canonical `/variance/goalies`; `/skoCharts` is the B-SKO historical-only quarantine; `/FORGE` remains a supported Quick Read surface; `/trendsDebug` is the rolling-metrics validation console; and `/twitterEmbeds` is a bounded, sanitized Lines/GDL read surface. `/buyLowSellHigh`, `/trueGoalieValue`, `/teamStats*`, and `/projections` remain unchanged legacy families behind explicit redirect/removal/product approval.
+
+Exact link/source scans plus the current FORGE, Trends Debug, Twitter Embeds, and trueGoalieValue suites (4 files/28 tests) support the classifications. This closes reconciliation/synchronization rows 4.1 and 4.4 only. Rows 3.3, 4.2, 4.3, 5.2–5.4, operational ownership, and final verification remain open. B-DEAD is 19/38 with 19 open; no route, component, utility, navigation, sitemap, rewrite, access policy, build, deployment, or external state changed.

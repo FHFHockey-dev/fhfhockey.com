@@ -4,6 +4,7 @@
 
 - `tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md` - Source audit, candidate clusters, surface classifications, and recommended cleanup order.
 - `tasks/TASKS/dead-code-cleanup/prd-file-inventory.md` - Repository file inventory supporting provenance and ownership review.
+- `tasks/TASKS/dead-code-cleanup/hidden-product-surface-ownership-matrix.md` - Current route-to-owner/replacement dispositions and exact remaining approval gates.
 - `tasks/TASKS/sko-charts/tasks-prd-sko-charts.md` - Owner of SKO-specific quarantine/burn-down decisions.
 - `web/package.json` - Current route/build/script/test entrypoint evidence and `knip` tooling.
 - `web/pages/` - Next.js route entrypoints that remain URL-reachable even without imports.
@@ -39,10 +40,10 @@
   - [ ] 3.4 Verify routing, sitemap/navigation, build, and direct replacement links after each batch.
 
 - [ ] 4.0 Resolve hidden legacy product surfaces through owning initiatives
-  - [ ] 4.1 Reconcile buy-low/sell-high, legacy goalies/team stats/projections/FORGE/SKO/debug/twitter routes against current Variance, Underlying Stats, FORGE, Trends, Lines, and admin replacements.
+  - [x] 4.1 Reconcile buy-low/sell-high, legacy goalies/team stats/projections/FORGE/SKO/debug/twitter routes against current Variance, Underlying Stats, FORGE, Trends, Lines, and admin replacements. Evidence: the exact ownership matrix classifies all nine route families as supported, redirect compatibility, historical quarantine, or approval-gated legacy; current link/source scans and 4 files/28 tests pass without changing a route (verified 2026-07-29).
   - [ ] 4.2 Prefer explicit redirects or quarantine notices when lineage/bookmarks remain useful; do not leave duplicate live product implementations ambiguous.
   - [ ] 4.3 Move active debug/operator behavior behind authenticated admin ownership or extract it into repeatable tests/runbooks.
-  - [ ] 4.4 Synchronize deletion/quarantine tasks with the relevant source initiative before editing files.
+  - [x] 4.4 Synchronize deletion/quarantine tasks with the relevant source initiative before editing files. Evidence: the matrix assigns Variance, Underlying Stats, FORGE, B-SKO, rolling-player-metrics, and Lines/GDL ownership, preserves B-DEAD 3.3/4.2/4.3 and 5.2–5.4 gates, and makes no runtime edit (verified 2026-07-29).
 
 - [ ] 5.0 Remove dead component/utility clusters only after route decisions
   - [x] 5.1 Re-verify legacy SKO/prediction, WiGO, goalie/team, old upsert, DRM wrapper, PPTOI, FORGE card, retired NHL API, formatter, and generic utility clusters.
@@ -78,3 +79,4 @@
 - This bounded reconciliation originally closed 11/35 rows. Later evidence closes baseline parent 1.0 and generated-debris parent 2.0; the retained nested SKO outputs now have an explicit historical-only disposition under B-SKO. Route, hidden-product, component-deletion, security, and final-verification parents remain open behind their explicit approval, consumer, and runtime gates.
 - The 2026-07-25 delta reconciliation closes 1.4 and parent 1.0. A fresh `knip` 5.88.1 production scan reports 174 raw candidates and 127 unresolved Sass-alias imports; neither raw class is a deletion list. Candidate-affecting changes preserve the renamed SKO reader/prediction cluster as explicit quarantine, preserve tests/scripts/operational modules as entrypoints, and disprove deadness for API helpers moved into imported library paths. B-DEAD is 14/35 with 21 open. No route, component, utility, dependency, build, deployment, or external state changed.
 - The 2026-07-25 operational-security cohort closes 6.3 plus local NEW 8.1/8.2 after repairing the standalone webhook bearer/error boundary, removing Puppeteer endpoint/raw-error disclosure from its Next.js counterpart, and gating `/db` plus its initial reads on resolved administrator state. NEW 8.3 preserves exact deployment, value-free runtime, standalone owner/retirement, functions receipt, and live CMS access-policy proof. B-DEAD is 17/38 with 21 open; no external system changed.
+- The 2026-07-29 hidden-product reconciliation closes 4.1/4.4 with an exact nine-family route-to-owner matrix. `/goalies`, `/skoCharts`, `/FORGE`, `/trendsDebug`, and `/twitterEmbeds` retain their verified redirect, quarantine, or supported ownership; five unresolved legacy families remain unchanged behind 3.3/4.2/4.3. Four current route suites pass 28/28. B-DEAD is 19/38 with 19 open; no route or external state changed.
