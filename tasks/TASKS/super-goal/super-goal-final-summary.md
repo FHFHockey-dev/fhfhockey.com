@@ -504,6 +504,12 @@ Remaining cleanup and reference initiative sections are pending verified Wave-B 
 - **Accessibility:** Goalie leaderboard, advanced-metrics, and weekly/range tables retain their existing sort keys and math while exposing sort actions through native buttons with exact `aria-sort`.
 - **Verification / controls:** The focused four-file/27-test cohort, full TypeScript, scoped lint, Sass compilation, source/master 54/54 parity, and diff integrity pass. C-VAR 5.6.2 closes. Raw parity is 4,855/4,980 with 125 unchecked = 97.49%; actionable parity is 4,855/4,974 with 119 open = 97.61% complete / 2.39% open. Severity is P0 28/23, P1 192/154, P2 159/151, P3 46/46. No goalie math, metric value, data, route destination, writer, schema, migration, hosted build, deployment, provider, or schedule changed.
 
+### C-VAR second-pass/runbook audit
+
+- **Authority:** The first skater MVP and its neutral proxy remain chronological evidence. The live `/variance/skaters` loader plus `SkaterPage` modules own configurable fantasy scoring, weekly variance, Yahoo enrichment, ownership/ADP valuation, and the active table modes; `Variance/skaterVariance.ts` has no runtime consumer.
+- **Documentation:** The source list, PRD current-state overlay, and runbook now distinguish active page/calculation/table ownership from the historical helper.
+- **Verification / controls:** The consolidated six-file/44-test variance cohort, canonical paths, source/master 67/67 parity, and diff integrity pass. C-VAR 5.6.3 and parent 5.6 close. Raw parity is 4,858/4,981 with 123 unchecked = 97.53%; actionable parity is 4,858/4,975 with 117 open = 97.65% complete / 2.35% open. Severity is P0 28/23, P1 192/154, P2 159/151, P3 47/47. No code, scoring configuration, data, writer, schema, migration, hosted build, deployment, provider, or schedule changed.
+
 ## Completion-gate evidence
 
 All charter questions remain open until source/master synchronization, Wave A/B completion, Wave C audit/remediation, cross-initiative verification, cleanup, diary finalization, and evidence population are complete.

@@ -5,7 +5,7 @@
 - `/variance` is the minimal Variance hub. It links to `/variance/goalies` and `/variance/skaters`.
 - `/variance/goalies` re-exports `web/pages/goalies.js`.
 - `/goalies` redirects to `/variance/goalies` through `getServerSideProps` in `web/pages/goalies.js`.
-- `/variance/skaters` is a live MVP table backed by `wgo_skater_stats`.
+- `/variance/skaters` is the full configurable skater variance leaderboard backed by `wgo_skater_stats` and optional Yahoo context.
 
 ## Upstream Sources
 
@@ -44,11 +44,12 @@
 
 ### Skater Variance
 
-- `wgo_skater_stats` is the current `/variance/skaters` MVP source.
+- `wgo_skater_stats` is the current `/variance/skaters` game-stat source.
 - The page fetches the latest non-null `season_id`, then pages through current-season game rows from `wgo_skater_stats`.
-- Selected fields: `player_id`, `player_name`, `team_abbrev`, `current_team_abbreviation`, `position_code`, `date`, `season_id`, `games_played`, `points`, `goals`, `assists`, `shots`, and `toi_per_game`.
-- `wgo_skater_stats_totals` is documented and available for later season-total context, but the current MVP does not require it.
-- `rolling_player_game_metrics` stores canonical rolling player metrics by player/date/strength state and is a future skater variance candidate, not part of the current MVP.
+- `wgo_skater_stats_totals` supplies the preferred latest-season identity; the game table is the fallback.
+- `yahoo_nhl_player_map_read`, `yahoo_players_with_normalized_history`, and `yahoo_matchup_weeks` provide optional identity, ownership/draft, and matchup-week context.
+- Selected game fields cover identity, scoring categories, special teams, peripherals, TOI, shooting, and individual shot-attempt rate.
+- `rolling_player_game_metrics` remains the canonical rolling player table but is not an input to the current skater leaderboard.
 - NST skater gamelog and seasonal tables documented in `supabase-table-structure.md` can support later advanced skater context.
 
 ## Refresh Jobs And Endpoints
@@ -73,10 +74,11 @@
 - `applyGoalieValueTiers` adds `valueTier` and `valueTierScore` to the current filtered goalie population. The score uses fantasy production, consistency, workload, and start confidence. QS% participates only when an advanced metrics row exists for that goalie.
 - `buildGoalieVarianceAverages` computes filtered-population averages for WoW and game standard deviation.
 - `formatGoalieVarianceValue` displays raw standard deviation or relative deltas versus the filtered average.
-- `buildSkaterVarianceRows` aggregates `wgo_skater_stats` game rows by skater for the current season.
-- `calculateSkaterProductionProxy` uses neutral production proxy `points + shots * 0.1`.
-- Skater game volatility is the population standard deviation of the neutral production proxy by game.
-- Minimum GP parsing lives in `components/Variance/varianceFilters.ts` and is shared by goalie and skater Variance surfaces.
+- `SkaterPage/skaterCalculations.ts` applies the selected scoring categories and point values to each game, maps games into Yahoo matchup or calendar weeks, and derives weekly production, sample standard deviation, rating counts, ownership/ADP buckets, and value rows.
+- Default skater point values come from `lib/projectionsConfig/fantasyPointsConfig.ts`; users may configure the active categories and values on the page.
+- `SkaterPage/skaterMetrics.ts` owns standard, advanced, overview, and trend row shaping.
+- The skater leaderboard uses `SkaterPage/skaterFilters.ts`; goalie Minimum GP parsing remains in `components/Variance/varianceFilters.ts`.
+- `components/Variance/skaterVariance.ts` preserves the historical neutral-MVP helper for compatibility tests only and has no runtime consumer.
 
 ## Table/View-Layer Calculations
 
@@ -110,13 +112,10 @@
 
 ## Skaters Variance Table
 
-- `/variance/skaters` is a live MVP table in `web/pages/variance/skaters.tsx`.
-- It fetches `wgo_skater_stats`, not `wgo_skater_stats_totals`.
-- It aggregates rows by `player_id` for the latest `season_id`.
-- Current columns: player, team, position, GP, production proxy, goals, assists, shots, TOI/GP, and game volatility.
-- The production proxy is deliberately neutral and should be labeled as `points + 0.1 * shots`, not fantasy scoring.
-- Game volatility is the standard deviation of that neutral production proxy by game.
-- The MVP does not include strength splits, PP role, rolling form, or site-wide skater fantasy scoring.
+- `web/pages/variance/skaters.tsx` owns data loading; `web/components/SkaterPage/SkaterLeaderboard.tsx` owns controls and table selection.
+- The active surface supports value overview, standard, advanced, and trend modes with configurable fantasy scoring and ownership/ADP valuation.
+- Row shaping and sorting remain in `SkaterPage` calculation/metric/table modules; the page does not invoke the historical neutral proxy.
+- Later-page failures retain completed rows and render a stable partial-data notice.
 
 ## Verification
 
@@ -128,13 +127,9 @@
   - QS% = summed `quality_start` / summed `games_started`.
   - GSAA and xGA = summed selected-strength fields.
   - xGA/60, HDSA/60, SA/60, RA/60, RushA/60 = summed count / summed selected-strength TOI minutes * 60.
-- Verify skater MVP values by comparing a known player/season against `wgo_skater_stats`:
-  - GP = summed `games_played` with missing game rows treated as one game.
-  - Production proxy = sum of `points + shots * 0.1`.
-  - Game volatility = standard deviation of per-game production proxy values.
-  - TOI/GP = average of `toi_per_game` across counted games.
+- Verify skater fantasy and variance values by applying the selected category weights to known `wgo_skater_stats` game rows, grouping them into the resolved matchup weeks, and comparing the weekly aggregates and sample standard deviation.
 - Focused test command:
-  - `npm run test:full -- --typecheck components/GoaliePage/goalieMetrics.test.ts components/Variance/skaterVariance.test.ts components/Variance/varianceFilters.test.ts`
+  - `npm test -- components/SkaterPage/skaterCalculations.test.ts components/SkaterPage/skaterMetrics.test.ts components/GoaliePage/goalieCalculations.test.ts components/GoaliePage/goalieFilters.test.ts components/GoaliePage/goalieMetrics.test.ts components/Variance/varianceFilters.test.ts`
 
 ## Known Gaps
 
@@ -142,6 +137,5 @@
 - The goalie advanced metrics fetch is season-scoped, not selected-date-range scoped.
 - `goalie_totals_unified` is underused at runtime, though it remains useful for validation.
 - Average shot distance and average goal distance are calculated but not rendered in the advanced table MVP.
-- `/variance/skaters` uses a neutral production proxy, not site-wide fantasy scoring.
-- `/variance/skaters` does not yet include skater strength-specific variance, PP role context, rolling form, or totals-table enrichment.
-- Project-wide `tsc --noEmit` currently fails on unrelated underlying-stats/xg test type issues; use focused typechecked Vitest commands for this pass until those are resolved.
+- `/variance/skaters` does not yet consume canonical `rolling_player_game_metrics` or NST strength-split rows.
+- Yahoo ownership/draft enrichment is optional and does not replace NHL player/stat authority.

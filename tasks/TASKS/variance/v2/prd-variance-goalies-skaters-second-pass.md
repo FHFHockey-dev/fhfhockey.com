@@ -6,6 +6,10 @@ This pass tightens the Variance route family after the first goalie migration. T
 
 The implementation must use existing data only. For goalies, keep the current leaderboard runtime in place while adding a Supabase-backed advanced Metrics table. For skaters, build a minimal live MVP table from existing skater schema sources documented in `tasks/TASKS/schema-docs/supabase-context/player-table-schemas.md` and `tasks/TASKS/schema-docs/supabase-context/supabase-table-structure.md`.
 
+### Current-State Authority (2026-07-29)
+
+This PRD remains the chronological contract for the second-pass goalie work and the first skater MVP. The live `/variance/skaters` surface has since expanded beyond that MVP: `web/pages/variance/skaters.tsx` owns complete current-season loading and Yahoo context, while `web/components/SkaterPage/` owns configurable fantasy scoring, weekly variance, ownership/ADP valuation, filters, and the active tables. The historical neutral `points + 0.1 * shots` implementation in `web/components/Variance/skaterVariance.ts` has no runtime consumer and is not a second authoritative scoring engine.
+
 ## Goals
 
 1. Keep `/variance/goalies` as the canonical goalie variance route.
