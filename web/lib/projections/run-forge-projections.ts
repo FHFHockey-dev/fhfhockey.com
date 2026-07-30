@@ -1,5 +1,4 @@
 import supabase from "lib/supabase/server";
-import { resolveLatestStartedSeasonIdForDate } from "lib/NHL/server";
 import { resolveNullableCompatibilityValue } from "lib/rollingPlayerMetricCompatibility";
 import { fetchRecentTeamLineCombinations } from "lib/projections/queries/line-combo-queries";
 import { hasCompleteStoredPbpGame } from "lib/projections/pbpCompletenessServer";
@@ -200,7 +199,6 @@ import {
   clampHorizonGames,
   daysBetweenDates,
   parseDateOnly,
-  toDayBoundsUtc,
 } from "./utils/date-utils";
 import {
   pickLatestByPlayer,
@@ -220,11 +218,7 @@ import {
   fetchLatestWgoSkaterDeploymentProfiles,
   fetchRollingRows,
 } from "./queries/skater-queries";
-import {
-  fetchGameMarketContextByGameIds,
-  fetchPlayerPropContextByGameIds,
-  type MarketTypeSummary,
-} from "./queries/market-queries";
+import { type MarketTypeSummary } from "./queries/market-queries";
 import {
   fetchCurrentTeamGoalieIds,
   fetchGoalieEvidence,
@@ -236,7 +230,6 @@ import {
   fetchTeamLineComboGoaliePrior,
 } from "./queries/goalie-queries";
 import {
-  fetchTeamAbbreviationMap,
   fetchTeamDefensiveEnvironment,
   fetchTeamFiveOnFiveProfile,
   fetchTeamNstExpectedGoalsProfile,
@@ -279,6 +272,14 @@ import {
   computeTeamFiveOnFiveContextAdjustment,
   computeTeamStrengthContextAdjustment,
 } from "./calculators/team-context-adjustments";
+import {
+  availabilityMultiplierForEvent,
+  runProjectionPreflightStage,
+} from "./stages/preflight-stage";
+import {
+  runMetricsFinalizationStage,
+  type ProjectionMetricsFinalizationTarget,
+} from "./stages/metrics-finalization-stage";
 
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
@@ -427,37 +428,6 @@ export function blendToiSecondsWithDeploymentPrior(args: {
   return Number(
     (rollingWeight * rolling + (1 - rollingWeight) * prior).toFixed(3),
   );
-}
-
-export function availabilityMultiplierForEvent(
-  eventType: string,
-  confidence: number,
-): number | null {
-  const c =
-    typeof confidence === "number" && Number.isFinite(confidence)
-      ? confidence
-      : 0.5;
-  switch (eventType) {
-    case "INJURY_OUT":
-    case "INJURY_IR":
-    case "IR":
-    case "LTIR":
-    case "SUSPENSION":
-    case "NON_ROSTER":
-    case "SENDDOWN":
-      return 0;
-    case "DTD":
-      return clamp(1 - 0.6 * c, 0.2, 1);
-    case "BENCHING":
-      return clamp(1 - 0.45 * c, 0.35, 1);
-    case "SCRATCH":
-      return clamp(1 - 0.8 * c, 0.05, 1);
-    case "RETURN":
-    case "CALLUP":
-      return 1;
-    default:
-      return null;
-  }
 }
 
 async function fetchLatestLineCombinationForTeam(
@@ -642,25 +612,11 @@ function getErrorMessage(error: unknown): string {
   return String(error);
 }
 
-async function runProjectionPreflightStage<T>(
-  stage: () => Promise<T>,
-): Promise<T> {
-  return stage();
-}
-
 async function runPerGameSkaterStage<T>(stage: () => Promise<T>): Promise<T> {
   return stage();
 }
 
 async function runPerGameGoalieStage<T>(stage: () => Promise<T>): Promise<T> {
-  return stage();
-}
-
-function runMetricsFinalizationStage(stage: () => void): void {
-  stage();
-}
-
-async function runPersistenceStage<T>(stage: () => Promise<T>): Promise<T> {
   return stage();
 }
 
@@ -687,6 +643,7 @@ export {
   computeGoalieRestSplitSavePctAdjustment,
   toGoalieRestSplitBucket,
 } from "./calculators/goalie-save-pct-context";
+export { availabilityMultiplierForEvent } from "./stages/preflight-stage";
 export {
   blendSkaterScenarioStatLines,
   blendSkaterScenarioStatLinesAcrossHorizon,
@@ -1528,138 +1485,9 @@ export async function runProjectionV2ForDate(
     const horizonGames = clampHorizonGames(opts?.horizonGames ?? 1);
     const teamDateKey = (teamId: number) => `${teamId}:${asOfDate}`;
     const playerDateKey = (playerId: number) => `${playerId}:${asOfDate}`;
-    const preflight = await runProjectionPreflightStage(async () => {
-      const currentSeasonId = await resolveLatestStartedSeasonIdForDate(
-        asOfDate,
-        supabase,
-      );
-      const { data: gameRows, error: gamesErr } = await supabase
-        .from("games")
-        .select("id,date,homeTeamId,awayTeamId")
-        .eq("date", asOfDate);
-      if (gamesErr) throw gamesErr;
-      const requestedGameIds = new Set(
-        (opts?.gameIds ?? []).filter((gameId) => Number.isFinite(gameId)),
-      );
-      const games = ((gameRows ?? []) as GameRow[]).filter(
-        (game) => requestedGameIds.size === 0 || requestedGameIds.has(game.id),
-      );
-      const gameIds = ((games ?? []) as GameRow[])
-        .map((game) => game.id)
-        .filter((id): id is number => Number.isFinite(id));
-      const { startTs, endTs } = toDayBoundsUtc(asOfDate);
-      const teamIds = Array.from(
-        new Set(
-          ((games ?? []) as GameRow[])
-            .flatMap((g) => [g.homeTeamId, g.awayTeamId])
-            .filter((n) => n != null),
-        ),
-      );
-      const teamAbbreviationById = await fetchTeamAbbreviationMap(teamIds);
-      const playerAvailabilityMultiplier = new Map<number, number>();
-      const availabilityEventByPlayer = new Map<number, RosterEventRow>();
-      const roleEventByPlayer = new Map<number, RosterEventRow>();
-      const goalieOverrideByTeamId = new Map<
-        number,
-        { goalieId: number; starterProb: number }
-      >();
-      const gameMarketContextByGameId = await fetchGameMarketContextByGameIds({
-        snapshotDate: asOfDate,
-        gameIds,
-      });
-      const playerPropContextByGamePlayerKey =
-        await fetchPlayerPropContextByGameIds({
-          snapshotDate: asOfDate,
-          gameIds,
-        });
-      if (teamIds.length > 0) {
-        const { data: events, error: evErr } = await supabase
-          .from("forge_roster_events")
-          .select(
-            "event_id,team_id,player_id,event_type,confidence,payload,effective_from,effective_to",
-          )
-          .in("team_id", teamIds)
-          .lte("effective_from", endTs)
-          .order("effective_from", { ascending: false })
-          .limit(5000);
-        if (evErr) throw evErr;
-
-        const bestAvailabilityEventByPlayer = new Map<number, RosterEventRow>();
-        const bestRoleEventByPlayer = new Map<number, RosterEventRow>();
-
-        for (const e of (events ?? []) as any[]) {
-          const row = e as RosterEventRow;
-          if (row.effective_to != null && row.effective_to < startTs) continue;
-          if (row.player_id != null) {
-            const mult = availabilityMultiplierForEvent(
-              row.event_type,
-              row.confidence,
-            );
-            if (mult != null) {
-              const existing = bestAvailabilityEventByPlayer.get(row.player_id);
-              if (!existing || row.effective_from > existing.effective_from) {
-                bestAvailabilityEventByPlayer.set(row.player_id, row);
-              }
-            }
-            if (
-              row.event_type === "LINE_CHANGE" ||
-              row.event_type === "PP_UNIT_CHANGE"
-            ) {
-              const existing = bestRoleEventByPlayer.get(row.player_id);
-              if (!existing || row.effective_from > existing.effective_from) {
-                bestRoleEventByPlayer.set(row.player_id, row);
-              }
-            }
-          }
-
-          if (
-            row.team_id != null &&
-            row.player_id != null &&
-            (row.event_type === "GOALIE_START_CONFIRMED" ||
-              row.event_type === "GOALIE_START_LIKELY")
-          ) {
-            const starterProb =
-              row.event_type === "GOALIE_START_CONFIRMED"
-                ? 1
-                : clamp(row.confidence ?? 0.75, 0.5, 1);
-            const existing = goalieOverrideByTeamId.get(row.team_id);
-            if (!existing || starterProb > existing.starterProb) {
-              goalieOverrideByTeamId.set(row.team_id, {
-                goalieId: row.player_id,
-                starterProb,
-              });
-            }
-          }
-        }
-
-        for (const [playerId, ev] of bestAvailabilityEventByPlayer.entries()) {
-          const mult = availabilityMultiplierForEvent(
-            ev.event_type,
-            ev.confidence,
-          );
-          if (mult != null) {
-            playerAvailabilityMultiplier.set(playerId, mult);
-            availabilityEventByPlayer.set(playerId, ev);
-          }
-        }
-        for (const [playerId, ev] of bestRoleEventByPlayer.entries()) {
-          roleEventByPlayer.set(playerId, ev);
-        }
-      }
-
-      return {
-        currentSeasonId,
-        games: (games ?? []) as GameRow[],
-        teamIds,
-        gameIds,
-        teamAbbreviationById,
-        playerAvailabilityMultiplier,
-        availabilityEventByPlayer,
-        roleEventByPlayer,
-        goalieOverrideByTeamId,
-        gameMarketContextByGameId,
-        playerPropContextByGamePlayerKey,
-      };
+    const preflight = await runProjectionPreflightStage({
+      asOfDate,
+      requestedGameIds: opts?.gameIds ?? [],
     });
 
     const currentSeasonId = preflight.currentSeasonId;
@@ -4845,37 +4673,16 @@ export async function runProjectionV2ForDate(
       metrics.games += 1;
     }
 
-    runMetricsFinalizationStage(() => {
-      metrics.player_rows = playerRowsUpserted;
-      metrics.team_rows = teamRowsUpserted;
-      metrics.goalie_rows = goalieRowsUpserted;
-      const learningPlayers = learningCounters.players;
-      metrics.learning.players_considered = learningPlayers;
-      metrics.learning.goal_rate_recent_players = learningCounters.goalRecent;
-      metrics.learning.assist_rate_recent_players =
-        learningCounters.assistRecent;
-      metrics.learning.goal_rate_recent_share =
-        learningPlayers > 0 ? learningCounters.goalRecent / learningPlayers : 0;
-      metrics.learning.assist_rate_recent_share =
-        learningPlayers > 0
-          ? learningCounters.assistRecent / learningPlayers
-          : 0;
-      metrics.data_quality.skater_pool_projected_count_avg =
-        metrics.data_quality.skater_pool_projected_teams > 0
-          ? Number(
-              (
-                metrics.data_quality.skater_pool_projected_count_sum /
-                metrics.data_quality.skater_pool_projected_teams
-              ).toFixed(3),
-            )
-          : null;
-      metrics.finished_at = new Date().toISOString();
-      metrics.timed_out = timedOut;
+    runMetricsFinalizationStage({
+      metrics: metrics as ProjectionMetricsFinalizationTarget,
+      playerRowsUpserted,
+      teamRowsUpserted,
+      goalieRowsUpserted,
+      learningCounters,
+      timedOut,
     });
 
-    await runPersistenceStage(() =>
-      finalizeRun(runId, timedOut ? "failed" : "succeeded", metrics),
-    );
+    await finalizeRun(runId, timedOut ? "failed" : "succeeded", metrics);
     return {
       runId,
       gamesProcessed: metrics.games,
@@ -4887,7 +4694,7 @@ export async function runProjectionV2ForDate(
   } catch (e) {
     metrics.finished_at = new Date().toISOString();
     metrics.error = getErrorMessage(e);
-    await runPersistenceStage(() => finalizeRun(runId, "failed", metrics));
+    await finalizeRun(runId, "failed", metrics);
     throw e;
   }
 }
