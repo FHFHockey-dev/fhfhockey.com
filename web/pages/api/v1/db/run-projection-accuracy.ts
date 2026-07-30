@@ -24,6 +24,7 @@ import {
   type HoldoutComparisonReport,
   type HoldoutComparisonSample,
 } from "lib/projections/promotionGates";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 type AccuracyResultRow = {
   as_of_date: string;
@@ -2434,7 +2435,7 @@ async function runAccuracyForDate(
 }
 
 export default withCronJobAudit(
-  async function handler(req: NextApiRequest, res: NextApiResponse) {
+  adminOnly(async function handler(req: NextApiRequest, res: NextApiResponse) {
     const startedAt = Date.now();
     const requestedDateFromQuery = parseDateParam(req.query.date);
     if (req.method !== "POST" && req.method !== "GET") {
@@ -2745,6 +2746,6 @@ export default withCronJobAudit(
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       });
     }
-  },
+  } as any),
   { jobName: "run-projection-accuracy" },
 );

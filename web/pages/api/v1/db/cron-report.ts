@@ -20,6 +20,7 @@ import { type CronJobTimingRecord } from "lib/cron/timingContract";
 import { extractAuditTimingRecord } from "lib/cron/cronReportTiming";
 import { buildSqlCronTimingObservation } from "lib/cron/sqlTiming";
 import { readCronScheduleMarkdown } from "lib/cron/cronInventory";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -2017,4 +2018,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   });
 }
 
-export default withCronJobAudit(handler, { jobName: "daily-cron-report" });
+export default withCronJobAudit(adminOnly(handler as any), {
+  jobName: "daily-cron-report",
+});

@@ -68,7 +68,7 @@ export const CRON_AUTH_NON_CRON_CALLERS: Readonly<
   },
   "/api/internal/sync-yahoo-players-to-sheet": {
     shape: "internal-server",
-    files: ["web/pages/api/v1/db/update-yahoo-players.ts"],
+    files: ["web/lib/integrations/yahoo/ingestionLifecycle.ts"],
   },
   "/api/v1/db/build-projection-derived-v2": {
     shape: "internal-server",

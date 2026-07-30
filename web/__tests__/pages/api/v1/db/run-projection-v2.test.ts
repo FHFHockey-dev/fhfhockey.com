@@ -56,6 +56,10 @@ vi.mock("lib/projections/run-forge-projections", () => ({
   runProjectionV2ForDate: vi.fn(),
 }));
 
+vi.mock("utils/adminOnlyMiddleware", () => ({
+  default: (handler: unknown) => handler,
+}));
+
 import handler, {
   buildProjectionDerivedGate,
   buildProjectionInputIngestGate,

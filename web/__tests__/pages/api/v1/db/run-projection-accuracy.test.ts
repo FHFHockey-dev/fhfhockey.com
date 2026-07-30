@@ -33,6 +33,10 @@ vi.mock("../../../../../pages/api/v1/db/run-projection-v2", () => ({
   runProjectionPreflightChecks: runProjectionPreflightChecksMock
 }));
 
+vi.mock("utils/adminOnlyMiddleware", () => ({
+  default: (handler: unknown) => handler
+}));
+
 import handler, {
   buildSkaterActualMatchDiagnostics,
   replaceProjectionResultsAtomic

@@ -60,6 +60,10 @@ vi.mock("fs/promises", () => ({
   },
 }));
 
+vi.mock("utils/adminOnlyMiddleware", () => ({
+  default: (handler: unknown) => handler,
+}));
+
 import handler from "../../../../../pages/api/v1/db/cron-report";
 
 function createMockRes() {

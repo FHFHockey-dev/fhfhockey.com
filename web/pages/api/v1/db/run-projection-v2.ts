@@ -87,6 +87,7 @@ import { getGoalieForgePipelineSpec } from "lib/projections/goaliePipeline";
 import { getRollingForgeStageDependencyContract } from "lib/rollingForgePipeline";
 import { PROJECTION_ROUTE_DEFAULT_BUDGET_MS } from "lib/rollingPlayerOperationalPolicy";
 import supabase from "lib/supabase/server";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 type PreflightGate = {
   gate_key: string;
@@ -1469,4 +1470,6 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(handler, { jobName: "run-projection-v2" });
+export default withCronJobAudit(adminOnly(handler as any), {
+  jobName: "run-projection-v2",
+});

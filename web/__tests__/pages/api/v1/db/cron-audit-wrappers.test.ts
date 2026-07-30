@@ -77,9 +77,8 @@ describe("scheduled cron audit coverage", () => {
       ),
     ).toBe(59);
     expect(modeCounts).toEqual({
-      "admin-or-cron": 45,
+      "admin-or-cron": 51,
       "cron-secret-only": 1,
-      unprotected: 6,
     });
     expect(callerCounts).toEqual({
       "browser-admin": 5,
@@ -103,19 +102,12 @@ describe("scheduled cron audit coverage", () => {
     }
   });
 
-  it("keeps the reviewed unprotected set explicit and targets no public unauthenticated exception", () => {
+  it("keeps every scheduled route behind its reviewed authorization boundary", () => {
     const unprotectedRoutes = authFindings
       .filter((finding) => finding.currentMode === "unprotected")
       .map((finding) => finding.routePath);
 
-    expect(unprotectedRoutes).toEqual([
-      "/api/v1/db/cron-report",
-      "/api/v1/db/run-projection-accuracy",
-      "/api/v1/db/run-projection-v2",
-      "/api/v1/db/update-game-goal-projections",
-      "/api/v1/db/update-goalie-projections-v2",
-      "/api/v1/db/update-nst-gamelog",
-    ]);
+    expect(unprotectedRoutes).toEqual([]);
     expect(
       authFindings.every(
         (finding) =>
