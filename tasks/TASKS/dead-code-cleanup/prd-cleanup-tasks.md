@@ -1,6 +1,8 @@
 # PRD: Codebase Cleanup & Warning Reduction
 
 > **Implementation task list:** `tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md`
+>
+> **2026-07-30 migration-control checkpoint:** B-CLEAN is 156/158 with NEW 7/105 open. P2 NEW 126 updates the canonical active-migration allowlist for the already-reviewed atomic game-prediction promotion and sKO model-history deltas. The focused six-file migration/consumer cohort passes 37/37; read-only Production history/catalog/cardinality preflight confirms nine active migrations remain unapplied and the audited candidate guards pass. No migration, row, writer, provider call, or deployment ran.
 
 ## Objective
 Reduce technical noise (lint warnings, repetitive code patterns) to improve developer velocity, build clarity, accessibility, and performance readiness before deeper feature work.

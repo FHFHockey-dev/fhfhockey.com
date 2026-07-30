@@ -41,6 +41,8 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260725235646_add_normalized_yahoo_ownership_reader.sql",
       "20260726000603_harden_yahoo_read_surfaces.sql",
       "20260728225806_add_sko_prediction_run_control.sql",
+      "20260728235000_make_game_prediction_promotion_atomic.sql",
+      "20260729205048_preserve_sko_model_history.sql",
     ]);
 
     expect(
