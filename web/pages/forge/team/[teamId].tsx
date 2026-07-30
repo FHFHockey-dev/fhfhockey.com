@@ -279,7 +279,7 @@ export default function ForgeTeamDetailPage({
                     Schedule season: {scheduleSeasonId ?? "unavailable"}
                   </span>
                   <Link
-                    href={buildForgeHref("/forge/dashboard", {
+                    href={buildForgeHref("/forge/command-center", {
                       date,
                       resolvedDate: resolvedDate ?? routeResolvedDate,
                       team: teamAbbr,
@@ -450,7 +450,7 @@ export default function ForgeTeamDetailPage({
                   </div>
                   <div className={styles.previewActions}>
                     <Link
-                      href={buildForgeHref("/forge/dashboard", {
+                      href={buildForgeHref("/forge/command-center", {
                         date,
                         resolvedDate: resolvedDate ?? routeResolvedDate,
                         team: teamAbbr,

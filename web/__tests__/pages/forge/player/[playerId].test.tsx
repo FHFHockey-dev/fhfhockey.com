@@ -193,11 +193,11 @@ describe("FORGE player detail page", () => {
     expect(screen.getByText("5D +5.0 pts")).toBeTruthy();
     expect(
       screen
-        .getAllByRole("link", { name: "Legacy Dashboard" })
+        .getAllByRole("link", { name: "Back to Dashboard" })
         .some(
           (link) =>
             link.getAttribute("href") ===
-            "/forge/dashboard?date=2026-03-14&mode=tonight",
+            "/forge/command-center?date=2026-03-14&mode=tonight",
         ),
     ).toBe(true);
     expect(

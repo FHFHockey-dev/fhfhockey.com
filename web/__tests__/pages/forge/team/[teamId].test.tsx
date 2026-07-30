@@ -162,11 +162,11 @@ describe("FORGE team detail page", () => {
     expect(screen.getAllByText("vs NYI").length).toBeGreaterThan(0);
     expect(
       screen
-        .getAllByRole("link", { name: "Legacy Dashboard" })
+        .getAllByRole("link", { name: "Back to Dashboard" })
         .some(
           (link) =>
             link.getAttribute("href") ===
-            "/forge/dashboard?date=2026-03-14&team=NJD",
+            "/forge/command-center?date=2026-03-14&team=NJD",
         ),
     ).toBe(true);
     expect(

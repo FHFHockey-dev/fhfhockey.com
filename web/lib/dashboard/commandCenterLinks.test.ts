@@ -11,13 +11,12 @@ describe("commandCenterLinks", () => {
       position: "f",
       slateMode: "main",
       addMode: "week",
-      returnTo: "/forge/command-center?date=2026-03-14"
+      returnTo: "/forge/command-center?date=2026-03-14",
     });
 
     expect(destinations.commandCenter).toBe(
-      "/forge/command-center?date=2026-03-14&mode=week&resolvedDate=2026-03-13&slate=main&team=CAR&position=f&returnTo=%2Fforge%2Fcommand-center%3Fdate%3D2026-03-14"
+      "/forge/command-center?date=2026-03-14&mode=week&resolvedDate=2026-03-13&slate=main&team=CAR&position=f&returnTo=%2Fforge%2Fcommand-center%3Fdate%3D2026-03-14",
     );
-    expect(destinations.legacyDashboard).toContain("/forge/dashboard?");
     expect(destinations.startChart).toContain("/start-chart?");
     expect(destinations.trends).toContain("/trends?");
     expect(destinations.teamDetail).toContain("/forge/team/CAR?");
@@ -33,12 +32,12 @@ describe("commandCenterLinks", () => {
       team: "all",
       position: "all",
       slateMode: "all",
-      addMode: "tonight"
+      addMode: "tonight",
     });
 
     expect(destinations.teamDetail).toBeNull();
     expect(destinations.commandCenter).toBe(
-      "/forge/command-center?date=2026-03-14&mode=tonight&slate=all&team=all&position=all"
+      "/forge/command-center?date=2026-03-14&mode=tonight&slate=all&team=all&position=all",
     );
   });
 });

@@ -448,8 +448,9 @@ export default function ForgePlayerDetailPage({
                     Schedule season: {scheduleSeasonId ?? "unavailable"}
                   </span>
                   <Link
-                    href={buildForgeHref("/forge/dashboard", {
+                    href={buildForgeHref("/forge/command-center", {
                       date,
+                      mode,
                       resolvedDate: asOfDate ?? routeResolvedDate,
                     })}
                     className={styles.navLink}
@@ -654,7 +655,7 @@ export default function ForgePlayerDetailPage({
                       </Link>
                     ) : null}
                     <Link
-                      href={buildForgeHref("/forge/dashboard", {
+                      href={buildForgeHref("/forge/command-center", {
                         date,
                         mode,
                         resolvedDate: asOfDate ?? routeResolvedDate,

@@ -4,6 +4,7 @@ import React, { useMemo, useState, useRef } from "react";
 import { NextSeo } from "next-seo";
 
 import Container from "components/Layout/Container";
+import LegacySurfaceNotice from "components/LegacySurfaceNotice/LegacySurfaceNotice";
 import { getCurrentSeason, getTeams } from "lib/NHL/server";
 import StrengthOfSchedule from "components/TeamLandingPage/StrengthOfSchedule";
 import { Team } from "lib/NHL/types";
@@ -119,6 +120,13 @@ function Stats({
         title="FHFH | Team Stat Catalogue"
         description="Five Hole Fantasy Hockey Podcast Stats for all teams in NHL."
       />
+      <LegacySurfaceNotice
+        replacementHref="/underlying-stats"
+        replacementLabel="Underlying Stats"
+      >
+        This bookmark-compatible team catalogue is retained for historical reference.
+        Current team analysis lives in Underlying Stats.
+      </LegacySurfaceNotice>
 
       <div className="team-logos-container">
         <div className="scroll-button left" onClick={() => scrollLogos("left")}>

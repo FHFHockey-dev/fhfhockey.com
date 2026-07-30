@@ -23,7 +23,7 @@
 - This checklist preserves the stable DR task IDs from `implementation-plan.md`; that file retains the detailed dependencies, files/systems, acceptance tests, security, migration/rollback, flag, approval, and non-goal fields for every row.
 - Checked historical rows are evidence-backed implementation claims, not a substitute for the required dynamic Wave-C audit.
 - DR-072 and the approved Phase-7 launch scope are complete. The aggregate-only final review passed, and the recorded authorization changed only the personal-ranker stage from `staff` to `authenticated`; beta entitlement and every non-homepage secondary/public flag remain closed.
-- Phase 8 remains explicitly deferred and unchecked under `B-DRAFT-RANKER-P8`; no deferred capability was required for launch completion.
+- Phase 8 is retired from the active super-goal into the future roadmap; no deferred capability is required for current completion.
 
 ## Tasks
 
@@ -101,11 +101,11 @@
 
 ### Phase 8 — Deferred mature-product capabilities
 
-- [ ] 8.0 Plan and execute deferred mature-product capabilities only through later PRD/decision updates and their separate approvals.
-  - [ ] DR-080 Plan and implement multiple named and league-specific rankings only after a separate product/migration approval; prevent cross-ranking evidence contamination.
-  - [ ] DR-081 Evaluate mature community/adaptive models offline and obtain explicit methodology approval before changing public behavior.
-  - [ ] DR-082 Plan expanded prospect/editorial infrastructure only after source rights, identity precision, and rollback are approved.
-  - [ ] DR-083 Plan XLSX and advanced export/discovery capabilities without blocking the launch CSV/JSON contract.
+- [x] 8.0 Retire deferred mature-product capabilities from the active super-goal into the future roadmap; any revival requires a new PRD and separate approvals (owner-approved 2026-07-30).
+  - [x] DR-080 Retire multiple named and league-specific rankings to the future roadmap.
+  - [x] DR-081 Retire mature community/adaptive model evaluation to the future roadmap.
+  - [x] DR-082 Retire expanded prospect/editorial infrastructure to the future roadmap.
+  - [x] DR-083 Retire XLSX and advanced export/discovery capabilities to the future roadmap.
 
 ## NEW Tasks
 

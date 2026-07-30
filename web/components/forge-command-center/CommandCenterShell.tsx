@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import type {
   CommandCenterMixedState,
   CommandCenterModuleState,
-  CommandCenterModuleStatus
+  CommandCenterModuleStatus,
 } from "lib/dashboard/commandCenterTypes";
 import styles from "styles/ForgeCommandCenter.module.scss";
 
@@ -55,7 +55,7 @@ const STATUS_LABELS: Record<CommandCenterModuleStatus, string> = {
   empty: "Empty",
   partial: "Partial",
   stale: "Fallback",
-  error: "Error"
+  error: "Error",
 };
 
 export function CommandCenterShell({
@@ -63,7 +63,7 @@ export function CommandCenterShell({
   title,
   subtitle,
   dateLabel,
-  children
+  children,
 }: CommandCenterShellProps) {
   return (
     <main className={styles.page}>
@@ -74,11 +74,16 @@ export function CommandCenterShell({
             <span className={styles.brandText}>FORGE</span>
           </Link>
 
-          <nav className={styles.primaryNav} aria-label="Command center navigation">
-            <Link href="/forge/command-center" className={styles.primaryNavActive}>
+          <nav
+            className={styles.primaryNav}
+            aria-label="Command center navigation"
+          >
+            <Link
+              href="/forge/command-center"
+              className={styles.primaryNavActive}
+            >
               Dashboard
             </Link>
-            <Link href="/forge/dashboard">Legacy Dashboard</Link>
             <Link href="/start-chart">Matchups</Link>
             <Link href="/trends">Trends</Link>
             <Link href="/FORGE">Quick Read</Link>
@@ -97,8 +102,10 @@ export function CommandCenterShell({
             <p>{subtitle}</p>
           </div>
           <div className={styles.statusStack} aria-label="Route status">
-            <span className={styles.statusChip}>Scratch Route</span>
-            <span className={styles.statusChipMuted}>Rollback: /forge/dashboard</span>
+            <span className={styles.statusChip}>Canonical Route</span>
+            <span className={styles.statusChipMuted}>
+              /forge/command-center
+            </span>
           </div>
         </section>
 
@@ -113,7 +120,7 @@ export function CommandCenterPanel({
   eyebrow,
   meta,
   className,
-  children
+  children,
 }: CommandCenterPanelProps) {
   return (
     <section className={`${styles.panel} ${className ?? ""}`}>
@@ -131,17 +138,23 @@ export function CommandCenterPanel({
 
 export function ModuleState<T>({
   module,
-  children
+  children,
 }: {
   module: CommandCenterModuleState<T>;
   children?: ReactNode;
 }) {
-  if (module.status === "ready" || module.status === "stale" || module.status === "partial") {
+  if (
+    module.status === "ready" ||
+    module.status === "stale" ||
+    module.status === "partial"
+  ) {
     return (
       <>
         {module.status !== "ready" ? (
           <p className={styles.moduleStateWarning}>
-            {module.message ?? module.error ?? `${module.contract.label} is ${module.status}.`}
+            {module.message ??
+              module.error ??
+              `${module.contract.label} is ${module.status}.`}
           </p>
         ) : null}
         {children}
@@ -166,14 +179,17 @@ export function ModuleState<T>({
 }
 
 export function MixedStateBanner({
-  mixedState
+  mixedState,
 }: {
   mixedState: CommandCenterMixedState;
 }) {
   if (!mixedState.hasMixedDates || !mixedState.message) return null;
 
   return (
-    <section className={styles.mixedStateBanner} aria-label="Command center data freshness">
+    <section
+      className={styles.mixedStateBanner}
+      aria-label="Command center data freshness"
+    >
       <div>
         <p className={styles.panelEyebrow}>Mixed Data State</p>
         <strong>{mixedState.message}</strong>
@@ -194,7 +210,11 @@ export function StatusChip({ children, tone = "neutral" }: StatusChipProps) {
   );
 }
 
-export function MetricPill({ label, value, tone = "neutral" }: MetricPillProps) {
+export function MetricPill({
+  label,
+  value,
+  tone = "neutral",
+}: MetricPillProps) {
   return (
     <span className={`${styles.metricPill} ${styles[`metricPill_${tone}`]}`}>
       <span>{label}</span>
@@ -206,7 +226,7 @@ export function MetricPill({ label, value, tone = "neutral" }: MetricPillProps) 
 export function TrendSparkline({
   values,
   tone = "neutral",
-  label
+  label,
 }: TrendSparklineProps) {
   const finiteValues = values.filter((value) => Number.isFinite(value));
   const width = 96;
@@ -233,7 +253,11 @@ export function TrendSparkline({
       viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="none"
     >
-      {points ? <polyline points={points} /> : <line x1="0" x2={width} y1="14" y2="14" />}
+      {points ? (
+        <polyline points={points} />
+      ) : (
+        <line x1="0" x2={width} y1="14" y2="14" />
+      )}
     </svg>
   );
 }
@@ -241,7 +265,7 @@ export function TrendSparkline({
 export function DenseList({
   children,
   columns = "minmax(120px, 0.8fr) minmax(0, 1fr)",
-  "aria-label": ariaLabel
+  "aria-label": ariaLabel,
 }: DenseListProps) {
   return (
     <div

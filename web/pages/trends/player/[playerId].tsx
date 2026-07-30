@@ -939,7 +939,8 @@ export default function PlayerTrendPage() {
     if (forgeOrigin === "forge-dashboard") {
       return {
         backHref:
-          forgeReturnTo ?? buildForgeHref("/forge/dashboard", { date: handoffDate }),
+          forgeReturnTo ??
+            buildForgeHref("/forge/command-center", { date: handoffDate }),
         backLabel: "Back to FORGE Dashboard",
         badge: "FORGE Dashboard Handoff",
         detail: `Context date ${handoffDate} preserved for dashboard return.`
@@ -949,7 +950,8 @@ export default function PlayerTrendPage() {
     if (forgeOrigin === "forge-player-detail") {
       return {
         backHref:
-          forgeReturnTo ?? buildForgeHref("/forge/dashboard", { date: handoffDate }),
+          forgeReturnTo ??
+            buildForgeHref("/forge/command-center", { date: handoffDate }),
         backLabel: "Back to FORGE Player Detail",
         badge: "FORGE Player Handoff",
         detail: `Context date ${handoffDate} preserved for player-detail return.`

@@ -2,7 +2,7 @@ You are GPT-5 Codex. Implement the Start Chart DAILY MVP exactly as specified.
 
 > **Reconciled implementation task list:** `tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md`
 >
-> **Current reconciliation status (2026-07-30):** 47/55 rows are evidence-complete. The canonical Sustainability/Trends/FORGE audit proves Start Chart is a one-date presentation adapter over FORGE, verifies current schema/input/utility/API/UI/schedule and exact player/team/goalie traces, and keeps the retired independent writer/materialization retired. Guarded recovery commit `96ccea804b90b5a6f482de45f6b7931253725311` is READY/Production as `dpl_HCFwiK4yAPeXUG3QzC3R28NtYvsc`; the populated API plus exact 1440×900/390×844 browser repeat passes without application error, body overflow, deployment-scoped runtime error, or 5xx. Formula/model-input integration, result history, and manual override remain separate. This status does not authorize new persistence, migration, or model ownership.
+> **Current reconciliation status (2026-07-30):** 49/55 rows are evidence-complete. The canonical Sustainability/Trends/FORGE audit proves Start Chart is a one-date presentation adapter over FORGE, verifies current schema/input/utility/API/UI/schedule and exact player/team/goalie traces, and keeps the retired independent writer/materialization retired. Guarded recovery commit `96ccea804b90b5a6f482de45f6b7931253725311` is READY/Production as `dpl_HCFwiK4yAPeXUG3QzC3R28NtYvsc`; the populated API plus exact 1440×900/390×844 browser repeat passes without application error, body overflow, deployment-scoped runtime error, or 5xx. Formula/model-input integration and result history remain separate; the owner removed the obsolete manual-override requirement because Start Chart is read-only. This status does not authorize new persistence, migration, or model ownership.
 
 Title
 Start Chart — Daily Fantasy Hockey Start/Sit Rankings
@@ -44,7 +44,7 @@ Deliverables
    - Nightly: refresh nst_team_* by state; compute and store league baselines in model_params (xga60_5v5, xga60_pk, sv_league, on_ice_sh_pct_5v5, per-pos means/stds).
    - Nightly: refresh skater gamelogs and goalie stats; update pp and lines from powerPlayCombinations and lineCombinations.
    - Hourly (game days): refresh starts with heuristic P_start if no confirmation:
-       P_start = 0.75*recent_start_share_14d - 0.15*b2b_penalty + 0.05*home_bonus - 0.10*poor_form_penalty; clip to [0.05,0.95]; status='projected'. Provide manual override path (UI).
+       P_start = 0.75*recent_start_share_14d - 0.15*b2b_penalty + 0.05*home_bonus - 0.10*poor_form_penalty; clip to [0.05,0.95]; status='projected'. Start Chart reads canonical FORGE output and owns no manual write path.
 
 4) Math utilities (src/lib/)
    - decayBlend(samples, tauDays), ewsd(samples, tauDays), slope(lastN), shrinkage(s_recent, s_career, k), clip(x, lo, hi), goalieFinishMult(sv_proj, league_SV).
@@ -102,7 +102,7 @@ Execution Order (priority)
 4. Views: vw_goalie_recent, vw_opponent_multipliers, vw_skater_game_lambda.
 5. Math utils; endpoints /projections and /rankings for a given date.
 6. Minimal UI (daily chart); metrics logging; rolling metrics endpoint.
-7. Heuristic P_start job; manual override UI for starts; polish.
+7. Canonical FORGE starter refresh and read-only Start Chart presentation; polish.
 
 Environment and Constants
 - Store clip bounds, τ defaults, elasticities, league baselines in model_params.params_json and expose as constants.

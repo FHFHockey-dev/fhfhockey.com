@@ -2,7 +2,7 @@
 
 This note documents the manual setup required for the auth flows now implemented in the app.
 
-Evidence status as of 2026-07-18: production Google OAuth is verified; localhost Google remains open; custom SMTP configuration, Supabase handoff, and Outlook Inbox receipt for both confirmation and recovery are verified; the received-link confirmation/recovery/password-update/cleanup lifecycle remains open; preview auth is required only if previews are intentionally supported. The browser client still uses Supabase JavaScript's default implicit flow. PKCE remains a separate deferred migration under source task `NEW 46.0` and must not be enabled before the email-template and mailbox-backed flows are compatible.
+Evidence status as of 2026-07-30: production Google OAuth is verified; localhost Google remains open; custom SMTP configuration, Supabase handoff, and Outlook Inbox receipt for both confirmation and recovery are verified; the received-link confirmation/recovery/password-update/cleanup lifecycle remains open; preview auth is unsupported. The browser client still uses Supabase JavaScript's default implicit flow. PKCE remains a separate migration under source task `NEW 46.0` and must not be enabled before the email-template and mailbox-backed flows are compatible.
 
 Implemented app routes:
 
@@ -163,7 +163,7 @@ After configuring Supabase and Google, use this current evidence split:
 5. **Verified for delivery:** Forgot-password request, SMTP handoff, and Outlook Inbox receipt succeed.
 6. **Open:** A received recovery link lands directly on `/auth/reset-password` and renders the reset flow.
 7. **Open:** Updating the password on `/auth/reset-password` through the bounded `/auth/v1/user` request succeeds, returns safely, and is cleaned up.
-8. **Conditional:** Verify preview deployments only if preview auth support is intentionally required.
+8. **Unsupported:** Do not add preview OAuth callbacks or broaden the redirect allow list.
 
 ## 5. Common Misconfigurations
 
