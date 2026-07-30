@@ -7209,3 +7209,10 @@
 - **Scope guardrail:** `run-forge-projections.ts` drops from 4,893 to 4,700 lines. Query order, formulas, rounding, writes, endpoint contracts, deadline checks, and timeout behavior remain unchanged. NEW 8.0 stays open because per-game skater, goalie, and persistence work remains inline.
 - **Verification / controls:** The focused runner/import cohort passes 2 files/85 tests; TypeScript, zero-error scoped lint, code formatting, source/master 35/36 parity, and diff integrity pass. Global counts remain raw 4,836/4,969 and actionable 4,836/4,963 (97.44% complete). No projection execution, output, database, migration, schedule, build, deployment, provider, credential, shared checkout, push, or stash changed.
 - **Next action:** Extract the per-game persistence boundary before separating the mutually dependent skater and goalie calculation bodies.
+
+## Entry 0760 — 2026-07-29 C-FORGE concrete persistence-stage extraction
+
+- **Structural progress:** Added `stages/persistence-stage.ts` as the single owner for player/team/goalie projection upserts and the ordered per-game player-output, game-output, and model-market-flag replacement sequence. The runner now delegates row-count increments to typed persistence results and calls the already-extracted lifecycle finalizer directly.
+- **Parity boundary:** Table names, conflict targets, delete-before-upsert order, conditional empty-row writes, error propagation, formulas, rounding, deadlines, and endpoint contracts are unchanged. The runner has no direct insert/upsert/delete calls and drops from 4,700 to 4,643 lines.
+- **Verification / controls:** The focused runner/import cohort passes 2 files/85 tests; TypeScript, zero-error scoped lint, code formatting, exact mutation scan, and diff integrity pass. Source/master remains 35/36; global counts remain raw 4,836/4,969 and actionable 4,836/4,963 (97.44% complete). No projection executed and no output, database, migration, schedule, build, deployment, provider, credential, shared checkout, push, or stash changed.
+- **Next action:** Extract the per-game skater calculation stage while keeping its goalie-candidate handoff explicit and output-equivalent.

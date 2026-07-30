@@ -22,6 +22,12 @@ import {
   availabilityMultiplierForEvent,
   runProjectionPreflightStage
 } from "./stages/preflight-stage";
+import {
+  persistForgeGoalieProjection,
+  persistForgePlayerProjectionRows,
+  persistForgeTeamProjection,
+  persistPerGameAnalyticsOutputs
+} from "./stages/persistence-stage";
 
 describe("projection module import integrity", () => {
   it("loads extracted utility, query, calculator, and orchestrator modules", () => {
@@ -44,6 +50,10 @@ describe("projection module import integrity", () => {
     expect(typeof availabilityMultiplierForEvent).toBe("function");
     expect(typeof runProjectionPreflightStage).toBe("function");
     expect(typeof runMetricsFinalizationStage).toBe("function");
+    expect(typeof persistForgePlayerProjectionRows).toBe("function");
+    expect(typeof persistForgeTeamProjection).toBe("function");
+    expect(typeof persistForgeGoalieProjection).toBe("function");
+    expect(typeof persistPerGameAnalyticsOutputs).toBe("function");
     expect(typeof runProjectionV2ForDate).toBe("function");
   });
 

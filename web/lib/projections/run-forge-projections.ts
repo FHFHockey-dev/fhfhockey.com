@@ -280,6 +280,12 @@ import {
   runMetricsFinalizationStage,
   type ProjectionMetricsFinalizationTarget,
 } from "./stages/metrics-finalization-stage";
+import {
+  persistForgeGoalieProjection,
+  persistForgePlayerProjectionRows,
+  persistForgeTeamProjection,
+  persistPerGameAnalyticsOutputs,
+} from "./stages/persistence-stage";
 
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
@@ -3446,13 +3452,8 @@ export async function runProjectionV2ForDate(
             });
           }
 
-          const { error: playerErr } = await supabase
-            .from("forge_player_projections")
-            .upsert(playerUpserts, {
-              onConflict: "run_id,game_id,player_id,horizon_games",
-            });
-          if (playerErr) throw playerErr;
-          playerRowsUpserted += playerUpserts.length;
+          playerRowsUpserted +=
+            await persistForgePlayerProjectionRows(playerUpserts);
 
           for (const [
             playerId,
@@ -3604,13 +3605,7 @@ export async function runProjectionV2ForDate(
             updated_at: new Date().toISOString(),
           };
 
-          const { error: teamErr } = await supabase
-            .from("forge_team_projections")
-            .upsert(teamUpsert, {
-              onConflict: "run_id,game_id,team_id,horizon_games",
-            });
-          if (teamErr) throw teamErr;
-          teamRowsUpserted += 1;
+          teamRowsUpserted += await persistForgeTeamProjection(teamUpsert);
 
           teamShotsByTeamId.set(teamId, {
             shotsEs: Number(teamUpsert.proj_shots_es ?? 0),
@@ -4379,13 +4374,8 @@ export async function runProjectionV2ForDate(
             updated_at: new Date().toISOString(),
           };
 
-          const { error: goalieErr } = await supabase
-            .from("forge_goalie_projections")
-            .upsert(goalieUpsert, {
-              onConflict: "run_id,game_id,goalie_id,horizon_games",
-            });
-          if (goalieErr) throw goalieErr;
-          goalieRowsUpserted += 1;
+          goalieRowsUpserted +=
+            await persistForgeGoalieProjection(goalieUpsert);
 
           selectedGoalieByTeamId.set(c.teamId, {
             goalieId: selectedGoalieId,
@@ -4491,26 +4481,6 @@ export async function runProjectionV2ForDate(
       if (goalieStageResult.timedOut) {
         timedOut = true;
         break gamesLoop;
-      }
-
-      const { error: deletePlayerPredictionErr } = await supabase
-        .from("player_prediction_outputs" as any)
-        .delete()
-        .eq("snapshot_date", asOfDate)
-        .eq("game_id", game.id)
-        .eq("model_name", ANALYTICS_MODEL_NAME)
-        .eq("model_version", ANALYTICS_MODEL_VERSION)
-        .eq("prediction_scope", "pregame");
-      if (deletePlayerPredictionErr) throw deletePlayerPredictionErr;
-
-      if (playerPredictionOutputRows.length > 0) {
-        const { error: playerPredictionErr } = await supabase
-          .from("player_prediction_outputs" as any)
-          .upsert(playerPredictionOutputRows as any, {
-            onConflict:
-              "snapshot_date,player_id,model_name,model_version,prediction_scope,metric_key,game_id",
-          });
-        if (playerPredictionErr) throw playerPredictionErr;
       }
 
       const homeExpectedGoals = teamGoalsByTeamId.get(game.homeTeamId) ?? null;
@@ -4633,42 +4603,15 @@ export async function runProjectionV2ForDate(
         },
       };
 
-      const { error: deleteGamePredictionErr } = await supabase
-        .from("game_prediction_outputs" as any)
-        .delete()
-        .eq("snapshot_date", asOfDate)
-        .eq("game_id", game.id)
-        .eq("model_name", ANALYTICS_MODEL_NAME)
-        .eq("model_version", ANALYTICS_MODEL_VERSION)
-        .eq("prediction_scope", "pregame");
-      if (deleteGamePredictionErr) throw deleteGamePredictionErr;
-
-      const { error: gamePredictionErr } = await supabase
-        .from("game_prediction_outputs" as any)
-        .upsert(gamePredictionOutput as any, {
-          onConflict:
-            "snapshot_date,game_id,model_name,model_version,prediction_scope",
-        });
-      if (gamePredictionErr) throw gamePredictionErr;
-
-      const { error: deleteModelFlagErr } = await supabase
-        .from("model_market_flags_daily" as any)
-        .delete()
-        .eq("snapshot_date", asOfDate)
-        .eq("game_id", game.id)
-        .eq("model_name", ANALYTICS_MODEL_NAME)
-        .eq("model_version", ANALYTICS_MODEL_VERSION);
-      if (deleteModelFlagErr) throw deleteModelFlagErr;
-
-      if (modelMarketFlagRows.length > 0) {
-        const { error: modelFlagErr } = await supabase
-          .from("model_market_flags_daily" as any)
-          .upsert(modelMarketFlagRows as any, {
-            onConflict:
-              "snapshot_date,entity_type,entity_id,model_name,model_version,market_type,flag_type,game_id",
-          });
-        if (modelFlagErr) throw modelFlagErr;
-      }
+      await persistPerGameAnalyticsOutputs({
+        asOfDate,
+        gameId: game.id,
+        modelName: ANALYTICS_MODEL_NAME,
+        modelVersion: ANALYTICS_MODEL_VERSION,
+        playerPredictionOutputRows,
+        gamePredictionOutput,
+        modelMarketFlagRows,
+      });
 
       metrics.games += 1;
     }
