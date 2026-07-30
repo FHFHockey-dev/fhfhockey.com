@@ -117,21 +117,21 @@
 
 ## Tasks
 
-- [ ] 0.0 Bootstrap, governing-rule read, inventory, and baseline
+- [x] 0.0 Bootstrap, governing-rule read, inventory, and baseline. The canonical 251-artifact Appendix-A inventory, 76-source provenance ledger, repaired-pair registry, verified initiative overlays, and direct recount controls supersede the seed snapshot without claiming implementation completion (reconciled 2026-07-29).
   - [x] 0.1 Read `web/rules/super-goal.md` completely.
   - [x] 0.2 Read `tasks/TASKS/rules/create-prd.mdc`, requested `web/rules/generate-tasks.mdc`, populated `tasks/TASKS/rules/generate-tasks.mdc`, and `tasks/TASKS/rules/process-task-list.mdc` completely.
   - [x] 0.3 Inspect repository instructions and record that no `AGENTS.md` is present.
   - [x] 0.4 Snapshot git status, diff statistics, branch, and recent commits without altering the dirty tree.
   - [x] 0.5 Enumerate the initialization artifact baseline: 209 substantive files under `tasks/TASKS/` (201 Markdown, four MDC, three images, one JSON; excluding `.DS_Store` and canonical files), 65 checklist-bearing files, 3,907 source checkbox rows, 3,284 checked and 623 unchecked.
-  - [ ] 0.6 Classify every source artifact and reconcile the seed initiative inventory against current paths, duplicates, missing pairs, empty files, and implementation evidence.
-  - [ ] 0.7 Establish verified initiative statuses rather than relying on seed parent-checkbox counts.
-  - [x] 0.8 Verify inventory completeness after generated/repaired pairs and later discoveries are added: 241 substantive non-canonical artifacts, no empty files, and all 15 created-or-recovered pair artifacts (14 new files plus the recovered pre-existing Trends PRD) recorded in the master PRD inventory.
+  - [x] 0.6 Classify every source artifact and reconcile the seed initiative inventory against current paths, duplicates, missing pairs, empty files, and implementation evidence. Appendix A owns all 251 substantive noncanonical artifacts with no omission/extra/empty file; the 15 created-or-recovered pairs and all 76 checklist sources are represented in the canonical registry/ledger (verified 2026-07-29).
+  - [x] 0.7 Establish verified initiative statuses rather than relying on seed parent-checkbox counts. FR-15/16 and the current Wave-A/B overlays use direct source/master recounts, implementation/runtime evidence, dependencies, and explicit external/decision gates; seed counts are retained only as history (verified 2026-07-29).
+  - [x] 0.8 Verify inventory completeness after generated/repaired pairs and later discoveries are added: 251 substantive non-canonical artifacts, no empty files, and all 15 created-or-recovered pair artifacts (14 new files plus the recovered pre-existing Trends PRD) recorded in the master PRD inventory. The current direct comparison adds five post-baseline artifacts and proves zero omission or stale entry.
 
-- [ ] 1.0 Canonical master PRD creation and reconciliation
+- [x] 1.0 Canonical master PRD creation and reconciliation. The nine-section PRD now owns the canonical charter, 251-artifact inventory, initiative registry, source provenance, implementation ownership, verified overlays, dependency graph, resolved conflicts, and explicit approval checkpoints (reconciled 2026-07-29).
   - [x] 1.1 Create the canonical directory and initial master PRD using the required nine-section structure.
   - [x] 1.2 Consolidate charter goals, requirements, boundaries, waves, initial initiative registry, dependency graph, and completion gates.
-  - [ ] 1.3 Enrich each initiative with source provenance, implementation ownership, acceptance criteria, and verified status during source review.
-  - [ ] 1.4 Reconcile material conflicts and record decisions or approval checkpoints.
+  - [x] 1.3 Enrich each initiative with source provenance, implementation ownership, acceptance criteria, and verified status during source review. FR-15, Appendix A/B, all 76 source sections, and current initiative overlays provide exact ownership/status/dependency/next-gate evidence (verified 2026-07-29).
+  - [x] 1.4 Reconcile material conflicts and record decisions or approval checkpoints. The PRD/task overlays and diary preserve formula/history/provider/route/deployment conflicts as named open gates instead of silently choosing outcomes; resolved architecture and ownership decisions retain dated evidence (verified 2026-07-29).
 
 - [x] 2.0 Canonical master task-list generation and source mapping
   - [x] 2.1 Create the canonical task control plane with required phases, Relevant Files, notes, and completion protocol.

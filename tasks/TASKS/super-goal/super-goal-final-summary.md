@@ -558,6 +558,12 @@ Remaining cleanup and reference initiative sections are pending verified Wave-B 
 - **Correction / controls:** P3 NEW 8.4 records `usePlayerWeeklyStats` consuming `dateUtils`. Deleted-symbol scans, full TypeScript, and 2 files/8 current Variance/Underlying Team Stats tests pass. Source/master 5.3/5.4/NEW 8.4 close; B-DEAD is 25/39 with 14 open. Raw parity is 4,834/4,983 with 149 unchecked = 97.01%; actionable parity is 4,834/4,977 with 143 open = 97.13% complete / 2.87% open. Severity is P0 28/23, P1 192/154, P2 159/152, P3 51/51.
 - **Boundary:** No build, deployment, database, provider, schedule, credential, shared checkout, push, or external state changed.
 
+### Canonical bootstrap and master-PRD reconciliation
+
+- **Evidence:** A current filesystem comparison adds five post-baseline ownership/inventory/runbook artifacts and finds zero stale entries. Appendix A now exactly owns 251 substantive noncanonical artifacts (255 total minus four canonical controls) with no omission, extra, or empty file; all created/recovered pairs are registered; 76 stable source sections retain imported provenance; direct recounts govern initiative status; and FR-15/16 plus dated overlays record implementation ownership, dependencies, verified state, conflicts, decisions, and explicit approval gates.
+- **Closures / controls:** Master-only 0.0/0.6/0.7 and 1.0/1.3/1.4 close without implying unfinished initiatives are complete. Imported parity remains 4,834/4,983 raw and 4,834/4,977 actionable because no imported source row changed.
+- **Boundary:** No source checkbox, application file, build, deployment, provider, database, schedule, credential, shared checkout, push, or external state changed.
+
 ## Completion-gate evidence
 
 All charter questions remain open until source/master synchronization, Wave A/B completion, Wave C audit/remediation, cross-initiative verification, cleanup, diary finalization, and evidence population are complete.
