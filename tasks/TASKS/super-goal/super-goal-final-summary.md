@@ -498,6 +498,12 @@ Remaining cleanup and reference initiative sections are pending verified Wave-B 
 - **Tables:** Elite/Quality/Average/Bad/Really Bad sort independently; bucket aggregates remain attached under every sort. Both table variants use native sort buttons with `aria-sort`, and advanced ownership values use percent formatting.
 - **Verification / controls:** The focused four-file/22-test cohort, full TypeScript, scoped lint, Sass compilation, source/master 94/94 parity, and diff integrity pass. C-VAR 5.6.1 closes. Raw parity is 4,852/4,978 with 126 unchecked = 97.47%; actionable parity is 4,852/4,972 with 120 open = 97.59% complete / 2.41% open. Severity is P0 28/23, P1 192/154, P2 158/150, P3 45/45. No scoring formula, data, writer, schema, migration, hosted build, deployment, provider, or schedule changed.
 
+### C-VAR goalie/section audit
+
+- **Routes/authority:** `/variance/goalies` remains canonical, `/goalies` remains redirect compatibility, and the original skater scaffold is superseded by the full leaderboard.
+- **Accessibility:** Goalie leaderboard, advanced-metrics, and weekly/range tables retain their existing sort keys and math while exposing sort actions through native buttons with exact `aria-sort`.
+- **Verification / controls:** The focused four-file/27-test cohort, full TypeScript, scoped lint, Sass compilation, source/master 54/54 parity, and diff integrity pass. C-VAR 5.6.2 closes. Raw parity is 4,855/4,980 with 125 unchecked = 97.49%; actionable parity is 4,855/4,974 with 119 open = 97.61% complete / 2.39% open. Severity is P0 28/23, P1 192/154, P2 159/151, P3 46/46. No goalie math, metric value, data, route destination, writer, schema, migration, hosted build, deployment, provider, or schedule changed.
+
 ## Completion-gate evidence
 
 All charter questions remain open until source/master synchronization, Wave A/B completion, Wave C audit/remediation, cross-initiative verification, cleanup, diary finalization, and evidence population are complete.

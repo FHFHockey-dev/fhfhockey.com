@@ -90,3 +90,6 @@
   - [x] 9.1 Run targeted checks for the active goalie route, the new Variance landing page, and the skaters scaffold.
   - [x] 9.2 Verify that no schema/view changes were introduced and that the feature still consumes the documented shared goalie data contracts.
   - [x] 9.3 Capture any residual follow-up items for cleanup, copy tightening, or later skater-surface work after the Variance rollout is stable.
+
+- [x] 10.0 **NEW P2:** Replace click-only sortable goalie headers across leaderboard, advanced metrics, and weekly/range tables with native buttons and exact `aria-sort` state while preserving the existing sort contracts (verified 2026-07-29).
+- [x] 10.1 **NEW P3:** Reconcile the PRD and source map with shipped authority: `/variance/goalies` is canonical, `/goalies` is redirect compatibility, and `/variance/skaters` is now a full leaderboard rather than a scaffold (verified 2026-07-29).

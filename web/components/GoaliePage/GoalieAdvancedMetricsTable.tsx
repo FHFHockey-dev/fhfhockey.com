@@ -210,17 +210,27 @@ const GoalieAdvancedMetricsTable: FC<Props> = ({ rows, strength = "all" }) => {
                 <th
                   key={column.sortKey}
                   className={styles.sortableHeader}
-                  onClick={() => requestSort(column.sortKey)}
+                  aria-sort={
+                    sortKey === column.sortKey
+                      ? sortDirection
+                      : undefined
+                  }
                 >
-                  {column.label}
-                  {column.title && (
-                    <span className={styles.infoIcon} title={column.title}>
-                      &#9432;
+                  <button
+                    className={styles.sortButton}
+                    type="button"
+                    onClick={() => requestSort(column.sortKey)}
+                  >
+                    {column.label}
+                    {column.title && (
+                      <span className={styles.infoIcon} title={column.title}>
+                        &#9432;
+                      </span>
+                    )}
+                    <span className={styles.sortIndicator}>
+                      {getSortIndicator(column.sortKey)}
                     </span>
-                  )}
-                  <span className={styles.sortIndicator}>
-                    {getSortIndicator(column.sortKey)}
-                  </span>
+                  </button>
                 </th>
               ))}
             </tr>

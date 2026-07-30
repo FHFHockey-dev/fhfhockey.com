@@ -219,7 +219,7 @@
     - [x] 5.5.2 Audit xG baseline options and follow-up contracts after A-XG-REL/A-XG-TREND changes. Evidence: P1 NEW 7.0 removes post-event miss fields from the written scoring contract, P2 NEW 7.1 makes new artifact lineage portable, and P3 NEW 7.2 reconciles canonical paths plus March-planning versus current active/champion authority; focused baseline tests and TypeScript pass (completed 2026-07-29).
   - [ ] 5.6 `C-VAR` Audit and remediate all variance initiatives.
     - [x] 5.6.1 Audit Skater variance leaderboard. Evidence: P1 NEW 12.0 contains background-pagination partial failure, P1 NEW 12.1 restores exact week-rating sorting and bucket-average grouping, and P2 NEW 12.2 supplies native sortable-header semantics plus consistent ownership formatting; the focused four-file/22-test cohort, TypeScript, lint, Sass, source/master parity, and diff integrity pass (completed 2026-07-29).
-    - [ ] 5.6.2 Audit Variance section and goalie analytics.
+    - [x] 5.6.2 Audit Variance section and goalie analytics. Evidence: P2 NEW 10.0 gives all three active goalie tables native sortable-button semantics and exact `aria-sort`; P3 NEW 10.1 reconciles canonical/compatibility routes and the now-complete skater surface. The focused four-file/27-test cohort, TypeScript, lint, Sass, path/source parity, and diff integrity pass (completed 2026-07-29).
     - [ ] 5.6.3 Audit Variance second pass and runbook.
   - [ ] 5.7 `C-DYNAMIC` Audit every Wave-A/B initiative after its final implementation changes.
     - [ ] 5.7.1 Add a named audit subtask here for each Wave-A initiative immediately when it reaches implementation DoD.
@@ -4121,7 +4121,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/variance/v1/tasks-prd-skater-variance-leaderboard.md::C0093` (live NEW) — NEW 12.1 **P1 exact week-rating sorting and bucket grouping:** five independent rating keys sort their own counts; every non-bucket sort orders whole bucket groups by the aggregate row and keeps that row attached.
 - [x] `SRC::tasks/TASKS/variance/v1/tasks-prd-skater-variance-leaderboard.md::C0094` (live NEW) — NEW 12.2 **P2 sortable-header and ownership-display semantics:** both table variants use native buttons plus `aria-sort`; advanced ownership displays as a percent.
 
-### Source: `tasks/TASKS/variance/v1/tasks-prd-variance-section.md` (52 rows)
+### Source: `tasks/TASKS/variance/v1/tasks-prd-variance-section.md` (54 rows)
 
 - [x] `SRC::tasks/TASKS/variance/v1/tasks-prd-variance-section.md::C0001` (original L33) — 1.0 Lock the Variance route family and update navigation
 - [x] `SRC::tasks/TASKS/variance/v1/tasks-prd-variance-section.md::C0002` (original L34) — 1.1 Create the `/variance` landing route and wire it to the site’s existing page-shell and link-card conventions.
@@ -4175,6 +4175,8 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/variance/v1/tasks-prd-variance-section.md::C0050` (original L90) — 9.1 Run targeted checks for the active goalie route, the new Variance landing page, and the skaters scaffold.
 - [x] `SRC::tasks/TASKS/variance/v1/tasks-prd-variance-section.md::C0051` (original L91) — 9.2 Verify that no schema/view changes were introduced and that the feature still consumes the documented shared goalie data contracts.
 - [x] `SRC::tasks/TASKS/variance/v1/tasks-prd-variance-section.md::C0052` (original L92) — 9.3 Capture any residual follow-up items for cleanup, copy tightening, or later skater-surface work after the Variance rollout is stable.
+- [x] `SRC::tasks/TASKS/variance/v1/tasks-prd-variance-section.md::C0053` (live NEW) — NEW 10.0 **P2 goalie sortable-header semantics:** leaderboard, advanced-metrics, and weekly/range tables use native buttons with exact `aria-sort` while retaining current sort keys and calculations.
+- [x] `SRC::tasks/TASKS/variance/v1/tasks-prd-variance-section.md::C0054` (live NEW) — NEW 10.1 **P3 current-route/surface authority:** `/variance/goalies` is canonical, `/goalies` is redirect compatibility, and `/variance/skaters` is a full leaderboard rather than the historical scaffold.
 
 ### Source: `tasks/TASKS/variance/v2/tasks-prd-variance-goalies-skaters-second-pass.md` (66 rows)
 

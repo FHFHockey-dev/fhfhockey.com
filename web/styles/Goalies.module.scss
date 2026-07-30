@@ -672,6 +672,17 @@
     }
   }
 
+  .sortButton {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+    text-align: inherit;
+  }
+
   .sortIndicator {
     display: inline-block; // Allow spacing
     margin-left: v.$space-xs; // Space indicator from text
