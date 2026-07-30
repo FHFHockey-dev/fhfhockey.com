@@ -79,6 +79,7 @@ import type {
   StrengthState
 } from "lib/supabase/Upserts/fetchRollingPlayerAverages";
 import type { NextApiRequest, NextApiResponse } from "next";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 type ResponseBody = {
   message: string;
@@ -391,7 +392,7 @@ function mergeRollingRunSummaries(
   };
 }
 
-async function handler(
+export async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseBody>
 ) {
@@ -906,4 +907,4 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

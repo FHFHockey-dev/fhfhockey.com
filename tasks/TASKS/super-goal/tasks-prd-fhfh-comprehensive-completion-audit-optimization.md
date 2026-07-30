@@ -3061,7 +3061,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rolling-player-pass-2-main-audit.md::C0037` (original L113) — 6.3 Reassess whether the legacy sustainability sandbox should stay on `trendsDebug.tsx` or move behind a secondary tab / route once the validation console is fully authoritative.
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rolling-player-pass-2-main-audit.md::C0038` (original L114) — 6.4 Run the full Vitest suite and targeted validation flows after the optimization work lands, then update any audit/runbook artifacts that depend on changed behavior.
 
-### Source: `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rpm-audit-action-items-pass-2.md` (36 rows)
+### Source: `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rpm-audit-action-items-pass-2.md` (37 rows)
 
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rpm-audit-action-items-pass-2.md::C0001` (original L74) — 1.0 Restore trustworthy verification and close immediate post-pass blockers
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rpm-audit-action-items-pass-2.md::C0002` (original L75) — 1.1 Update Vitest configuration to exclude `.next/**` and any other compiled artifact directories from test discovery.
@@ -3099,6 +3099,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rpm-audit-action-items-pass-2.md::C0034` (original L107) — what runs in the daily incremental path
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rpm-audit-action-items-pass-2.md::C0035` (original L108) — what the minimal cron/job surface is for keeping FORGE fresh
 - [x] `SRC::tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rpm-audit-action-items-pass-2.md::C0036` (original L109) — 5.6 Add a final organization/efficiency closeout artifact summarizing the reduced job surface, runtime budget status, and any intentionally deferred cleanup.
+- [x] `SRC::tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rpm-audit-action-items-pass-2.md::C0037` (original L110) — 6.0 P0 NEW 1: Require fail-closed administrator or exact cron-secret authorization on `update-rolling-player-averages` before any recompute work. A bounded preview request exposed that `withCronJobAudit` audited but did not authorize the writer; runtime logs proved the request selected zero players and wrote zero rows. The route now uses the established `adminOnly` boundary, focused coverage proves unauthenticated denial before `main`, and the active 08:15 UTC pg_cron caller already supplies a Vault-backed `cron_secret` Authorization header.
 
 ### Source: `tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-fhfh-site-surface-expansion-roadmap.md` (71 rows)
 
@@ -4841,7 +4842,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md::C0156` (live NEW) — NEW 124.0 **P1 structured Supabase RPC errors lose transport status:** `normalizeSqlRpcFailure` now reads the bounded `{ message }` Supabase error shape before normalized fallback, preserving HTML 522 retry/final status classification. Focused route/helper regressions and the complete clean npm suite pass (verified 2026-07-28).
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md::C0157` (live NEW) — NEW 125.0 **P1 residual production/dev dependency audit:** the unused Nodemailer/AWS/XML tree is removed, Vitest and compatible transitive security fixes are current, and production/full audits fall to 6/36 with zero critical. Remaining Next/Sharp and Yahoo/UUID entries are explicitly major-gated or unreachable through the vulnerable buffer API; clean install, exact-lock dry run, valid tree, 635 files/3,508 tests, TypeScript, and zero-error lint pass (verified 2026-07-28).
 
-### Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md` (38 rows)
+### Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md` (40 rows)
 
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0001` (original L23) — 1.0 Refresh the dead-code evidence baseline. Current production scan plus bounded post-baseline delta classification pass without promoting raw flags to deletion claims (verified 2026-07-25).
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0002` (original L24) — 1.1 Re-run source inventory/import graph and current `knip --production` using repository conventions; exclude generated/vendor/cache/test false positives explicitly.
@@ -4882,6 +4883,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0037` (live NEW) — NEW 8.2 P1 `/db` now waits for resolved admin state, denies the operational shell to other users, and skips initial operational reads outside admin state (verified 2026-07-25).
 - [ ] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0038` (live NEW) — NEW 8.3 P1 identify or retire the standalone webhook deployment, deploy NEW 8.1/8.2, run value-free runtime proof, and reconcile functions/CMS live ownership.
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0039` (live NEW) — NEW 8.4 P3 exact review finds `usePlayerWeeklyStats` actively consuming `utils/dateUtils.ts`; the stale deletion claim is corrected and the file retained (verified 2026-07-29).
+- [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0040` (live NEW) — NEW 8.5 P3 reconciles the stale 38-row imported header with the exact source/master ledger; the canonical inventory now reports 40 rows including this finding, with 26 verified and 14 open (verified 2026-07-30).
 
 ### Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md` (110 rows)
 

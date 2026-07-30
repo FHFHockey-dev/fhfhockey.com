@@ -132,8 +132,9 @@ Additional initiative sections remain pending verified Wave-A/B completion and W
 
 ### Rolling Player Averages foundation
 
-- **Current status:** The five-row source PRD is complete. The canonical route validates methods and bounded execution scopes/profiles, emits structured request/execute/response, freshness, runtime, progress, and run-summary telemetry, and persists success/failure through `withCronJobAudit`.
-- **Schedule / verification:** The active canonical job calls the bare route at 08:15 UTC, which resolves to the bounded implicit daily-incremental window; targeted and overnight scopes remain explicit. Direct route coverage passes 15/15 and the cron audit-wrapper inventory passes 4/4. No schedule, writer, database, deployment, or provider state changed for this evidence closure.
+- **Current status:** The five-row source PRD is complete. The canonical route validates methods and bounded execution scopes/profiles, emits structured request/execute/response, freshness, runtime, progress, and run-summary telemetry, persists success/failure through `withCronJobAudit`, and now fails closed through the established administrator/exact-cron-secret authorization boundary.
+- **Schedule / verification:** The active canonical job calls the bare route at 08:15 UTC, which resolves to the bounded implicit daily-incremental window and already supplies a Vault-backed `cron_secret` Authorization header; targeted and overnight scopes remain explicit. Direct route coverage passes 16/16. The preview discovery request selected zero players and wrote zero rows. The repaired artifact is not yet deployed or promoted.
+- **Ledger reconciliation:** B-DEAD P3 NEW 8.5 corrects its stale imported section label; exact source/master parity is 40 rows, 26 verified and 14 open.
 
 ### Start Chart + Unified Trends downstream reconciliation (`B-START`, `B-TRENDS`)
 
