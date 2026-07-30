@@ -138,6 +138,26 @@ const responseCache = new Map<
 >();
 const inFlight = new Map<string, Promise<SkaterTrendResponse>>();
 
+function logRequestCompletion(
+  req: NextApiRequest,
+  requestStartedAt: number,
+  cacheStatus: "memory-hit" | "in-flight" | "miss",
+  metricFetchMs?: number | null,
+) {
+  if (process.env.VERCEL !== "1") return;
+  console.info(
+    JSON.stringify({
+      level: "info",
+      message: "skater-power request completed",
+      route: "/api/v1/trends/skater-power",
+      requestId: req.headers["x-vercel-id"] ?? null,
+      cacheStatus,
+      ...(metricFetchMs == null ? {} : { metricFetchMs }),
+      durationMs: Date.now() - requestStartedAt,
+    }),
+  );
+}
+
 function parseWindowSize(input: unknown): SkaterWindowSize {
   const candidate = Number(Array.isArray(input) ? input[0] : input);
   if (SKATER_WINDOW_OPTIONS.includes(candidate as SkaterWindowSize)) {
@@ -602,6 +622,7 @@ export default async function handler(
   }
 
   try {
+    const requestStartedAt = Date.now();
     const limit = parseLimit(req.query.limit);
     const seriesGames = parseSeriesGames(req.query.seriesGames);
     const windowSize = parseWindowSize(req.query.window);
@@ -620,6 +641,7 @@ export default async function handler(
     const nowMs = Date.now();
     const cached = responseCache.get(cacheKey);
     if (cached && cached.expiresAt > nowMs) {
+      logRequestCompletion(req, requestStartedAt, "memory-hit");
       res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=60");
       return res.status(200).json(cached.payload);
     }
@@ -627,10 +649,12 @@ export default async function handler(
     const pending = inFlight.get(cacheKey);
     if (pending) {
       const payload = await pending;
+      logRequestCompletion(req, requestStartedAt, "in-flight");
       res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=60");
       return res.status(200).json(payload);
     }
 
+    let metricFetchMs: number | null = null;
     const loadPromise = (async () => {
       const season = await fetchCurrentSeason();
       const seasonId = season.id;
@@ -641,14 +665,22 @@ export default async function handler(
       const positions = SKATER_POSITION_GROUP_MAP[positionGroup];
       let latestIncludedDate: string | null = null;
 
-      for (const category of SKATER_TREND_CATEGORIES) {
-        const rows = await fetchMetricRows(
+      const metricFetchStartedAt = Date.now();
+      const categoryRows = await Promise.all(
+        SKATER_TREND_CATEGORIES.map(async (category) => ({
           category,
-          seasonId,
-          seasonStart,
-          requestedDate,
-          positions,
-        );
+          rows: await fetchMetricRows(
+            category,
+            seasonId,
+            seasonStart,
+            requestedDate,
+            positions,
+          ),
+        })),
+      );
+      metricFetchMs = Date.now() - metricFetchStartedAt;
+
+      for (const { category, rows } of categoryRows) {
         for (const row of rows) {
           if (
             typeof row.game_date === "string" &&
@@ -725,6 +757,7 @@ export default async function handler(
     const response = await loadPromise;
     inFlight.delete(cacheKey);
 
+    logRequestCompletion(req, requestStartedAt, "miss", metricFetchMs);
     res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=60");
     return res.status(200).json(response);
   } catch (error: any) {

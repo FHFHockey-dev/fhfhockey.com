@@ -41,6 +41,7 @@ vi.mock("@supabase/supabase-js", () => ({
 }));
 
 import handler from "../../../../../pages/api/v1/trends/skater-power";
+import { SKATER_TREND_CATEGORIES } from "../../../../../lib/trends/skaterMetricConfig";
 
 function createMockRes() {
   const res: any = {
@@ -66,6 +67,7 @@ function buildSupabaseMock(
   metricRows: Array<Record<string, unknown>>,
   rangeCalls: Array<[number, number]> = [],
   orderCalls: Array<[string, Record<string, unknown> | undefined]> = [],
+  queryConcurrency?: { active: number; peak: number },
 ) {
   return {
     from(table: string) {
@@ -88,10 +90,7 @@ function buildSupabaseMock(
           in() {
             return this;
           },
-          order(
-            column: string,
-            options?: Record<string, unknown>,
-          ) {
+          order(column: string, options?: Record<string, unknown>) {
             orderCalls.push([column, options]);
             return this;
           },
@@ -107,12 +106,29 @@ function buildSupabaseMock(
               error: null;
             }) => unknown,
           ) {
-            return Promise.resolve(
-              resolve({
-                data: metricRows.slice(this.rangeStart, this.rangeEnd + 1),
-                error: null,
-              }),
+            const result = {
+              data: metricRows.slice(this.rangeStart, this.rangeEnd + 1),
+              error: null,
+            };
+            if (!queryConcurrency) {
+              return Promise.resolve(resolve(result));
+            }
+            queryConcurrency.active += 1;
+            queryConcurrency.peak = Math.max(
+              queryConcurrency.peak,
+              queryConcurrency.active,
             );
+            return new Promise((resolveQuery) => {
+              setTimeout(() => {
+                queryConcurrency.active -= 1;
+                resolveQuery(
+                  resolve({
+                    data: result.data,
+                    error: null,
+                  }),
+                );
+              }, 5);
+            });
           },
         };
         return query;
@@ -256,9 +272,7 @@ describe("/api/v1/trends/skater-power", () => {
 
   it("continues past the default 1000-row PostgREST page cap", async () => {
     const rangeCalls: Array<[number, number]> = [];
-    const orderCalls: Array<
-      [string, Record<string, unknown> | undefined]
-    > = [];
+    const orderCalls: Array<[string, Record<string, unknown> | undefined]> = [];
     supabaseState.current = buildSupabaseMock(
       Array.from({ length: 1001 }, (_, index) => ({
         player_id: 8_470_000 + index,
@@ -295,6 +309,44 @@ describe("/api/v1/trends/skater-power", () => {
       ["game_date", { ascending: false }],
       ["player_id", { ascending: true }],
     ]);
+  });
+
+  it("loads independent metric categories concurrently", async () => {
+    const queryConcurrency = { active: 0, peak: 0 };
+    supabaseState.current = buildSupabaseMock(
+      [
+        {
+          player_id: 8471214,
+          game_date: "2026-02-10",
+          raw_value: 2.1,
+          rolling_avg_3: 2.0,
+          rolling_avg_5: 1.9,
+          rolling_avg_10: 1.8,
+          season_id: 20252026,
+          position_code: "C",
+        },
+      ],
+      [],
+      [],
+      queryConcurrency,
+    );
+
+    const res = createMockRes();
+    await handler(
+      {
+        method: "GET",
+        query: {
+          date: "2026-02-10",
+          position: "forward",
+          window: "5",
+          limit: "10",
+        },
+      } as any,
+      res,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(queryConcurrency.peak).toBe(SKATER_TREND_CATEGORIES.length);
   });
 
   it("supports a 20-game window by averaging the trailing raw values", async () => {
