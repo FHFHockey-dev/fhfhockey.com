@@ -46,6 +46,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260730091500_consolidate_scheduler_ownership.sql",
       "20260730190000_tombstone_legacy_public_rpcs.sql",
       "20260730200000_repair_utah_wgo_team_identity.sql",
+      "20260730233451_reconstruct_hosted_analytics_schema.sql",
     ]);
 
     expect(
@@ -241,5 +242,83 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     expect(migration).toContain("if updated_count <> 88 then");
     expect(migration.match(/update public\.wgo_team_stats/g)).toHaveLength(1);
     expect(migration).not.toMatch(/\b(?:insert|delete|truncate)\b/i);
+  });
+
+  it("reconstructs the exact credential-free hosted analytics contract", () => {
+    const migration = readMigration(
+      "20260730233451_reconstruct_hosted_analytics_schema.sql",
+    );
+    const config = readFileSync(
+      path.join(repoRoot, "supabase", "config.toml"),
+      "utf8",
+    );
+    const relationHashes = {
+      mv_sko_skater_moments:
+        "0282d6e1151ab637c90fda516fcc327b99e78e863ca800cb59e8275f18b2dcaf",
+      vw_entity_ratings_daily:
+        "f5672a8f1eb48999cd7275aa44392f73c23d38f6d98ec2cce03e269618917271",
+      vw_entity_sustainability_scores:
+        "8aff6119d5cea52bbc13bfe636b9ebcacae183aa98d49e5d0da79ead3ee1e894",
+      vw_nhl_edge_latest_goalie_metrics:
+        "dcdbf6b9a23a37a20ad7c0e69903e57c9645074f5955acf5bc8e5e5970a149b2",
+      vw_nhl_edge_latest_skater_metrics:
+        "f6446ce21377e7a90d6d890d91bf1275fdaea1a187aef59afb451d5f22b313a5",
+      vw_nhl_edge_latest_skater_skating_distance_games:
+        "d8713402a9b20b8904d7f9f9a0cf72539ffaa76039725018578d34d7cf97b022",
+      vw_nhl_edge_latest_team_metrics:
+        "07da52645031f345a44d1920d79eb2402afc6f16fe5c95b4222d75d82ccfb609",
+      vw_nhl_edge_latest_team_skating_distance_games:
+        "1eab15666b7da5d403b2b026466c2bc4620673d7970a395f0afe40fddf3685df",
+      vw_player_status_current:
+        "555a7f13e33a313e264478fa2e6bd33135312efea097f95b647837b201531805",
+      vw_sko_skater_base:
+        "4358bde8afba264a7286dd4e87b0106d4163acced964c504f09509176cc5f03f",
+      vw_sko_skater_scores:
+        "b7b11b4a3b5d8bafb9fff587774d38b051906d4589097215be3bce97b27049d7",
+      vw_sko_skater_zscores:
+        "310c31e9f94137ea475696c71487d9394a00d77a2d286bfe00f87887bdc241f7",
+      vw_team_ratings_daily:
+        "29bb1af632e96796e60a58883e2b77b69c348365a4749c8653693854fdc0c3ca",
+    };
+
+    for (const [name, expectedHash] of Object.entries(relationHashes)) {
+      const pattern =
+        name === "mv_sko_skater_moments"
+          ? new RegExp(
+              `create materialized view analytics\\.${name} as\\n([\\s\\S]*?)\\nwith data;`,
+            )
+          : new RegExp(
+              `create view analytics\\.${name} as\\n([\\s\\S]*?);\\n\\n`,
+            );
+      const definition = migration.match(pattern)?.[1];
+
+      expect(definition, name).toBeDefined();
+      expect(
+        createHash("sha256")
+          .update(definition ?? "")
+          .digest("hex"),
+        name,
+      ).toBe(expectedHash);
+    }
+
+    const routine = migration.match(
+      /(CREATE OR REPLACE FUNCTION analytics\.rpc_sko_player_series[\s\S]*?\$function\$);/,
+    )?.[1];
+    expect(routine).toBeDefined();
+    expect(
+      createHash("sha256")
+        .update(`${routine ?? ""}\n`)
+        .digest("hex"),
+    ).toBe("1badf135a7bd94bfd3bc7d7f7e99f2a73883780ef3814b51245ec1c868c1671c");
+    expect(migration).toContain(
+      "grant usage on schema analytics to anon, authenticated, service_role;",
+    );
+    expect(migration).toContain(
+      "grant select on analytics.vw_player_status_current to service_role;",
+    );
+    expect(migration).not.toMatch(/\b(?:bearer|password|api[_-]?key)\b/i);
+    expect(config).toContain(
+      'schemas = ["public", "graphql_public", "analytics"]',
+    );
   });
 });
