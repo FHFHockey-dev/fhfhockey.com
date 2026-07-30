@@ -134,7 +134,7 @@ Additional initiative sections remain pending verified Wave-A/B completion and W
 
 - **Current status:** The five-row source PRD is complete. The canonical route validates methods and bounded execution scopes/profiles, emits structured request/execute/response, freshness, runtime, progress, and run-summary telemetry, persists success/failure through `withCronJobAudit`, and now fails closed through the established administrator/exact-cron-secret authorization boundary.
 - **Schedule / verification:** The active canonical job calls the bare route at 08:15 UTC, which resolves to the bounded implicit daily-incremental window and already supplies a Vault-backed `cron_secret` Authorization header; targeted and overnight scopes remain explicit. Direct route coverage passes 16/16. The preview discovery request selected zero players and wrote zero rows. The repaired artifact is not yet deployed or promoted.
-- **Ledger reconciliation:** B-DEAD source/master parity is 43 rows, 35 verified and eight open after final inventory, route/build smoke, synchronization, direct-dependency ownership, guarded recovery, standalone retirement, and migration-allowlist reconciliation.
+- **Ledger reconciliation:** B-DEAD source/master parity is 43 rows, 37 verified and six open after final inventory, route/build smoke, synchronization, direct-dependency ownership, guarded recovery, standalone retirement, migration-allowlist reconciliation, and approved pure-route removal.
 
 ### Start Chart + Unified Trends downstream reconciliation (`B-START`, `B-TRENDS`)
 
@@ -601,3 +601,8 @@ All charter questions remain open until source/master synchronization, Wave A/B 
 
 - Exact runtime/config/CI scans find no consumer of the former separate Express root; the Production database trigger targets the canonical Next.js route; and read-only Vercel inventory finds one team with six web/CMS/functions projects and no standalone webhook project.
 - The six-file duplicate is deleted under the owner-approved automatic-retirement rule. The focused baseline test exposed and closed P2 NEW 8.8 by adding the reviewed scheduler migration to the exact active-migration allowlist. NEW 8.3 remains open for the grouped value-free Production `/db` and canonical webhook denial plus functions/CMS ownership receipt. Imported actionable completion is 4,868/4,987 with 119 open = 97.61%; master roll-up is 4,976/5,145 = 96.72%.
+
+### Pure empty/test/prototype route checkpoint
+
+- The approved boundary removes five unlinked empty/test/prototype routes and three exclusive zero-consumer implementation files. `cssTestingGrounds`, read-only `trendsTestingGrounds`, and noindex `statsPlaceholder` remain intact.
+- Source/master B-DEAD 3.0 and 3.3 close. B-DEAD is 37/43 with six open; imported actionable completion is 4,870/4,987 with 117 open = 97.65%, and master roll-up is 4,978/5,145 = 96.75%.

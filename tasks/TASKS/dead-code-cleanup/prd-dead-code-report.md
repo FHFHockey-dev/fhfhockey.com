@@ -51,13 +51,13 @@ These are public URL routes only by virtue of being in `pages/`, but they are no
 
 | File | Route | Likely intent | Evidence | Recommendation |
 | --- | --- | --- | --- | --- |
-| `web/pages/FantasyPowerRankings.js` | `/FantasyPowerRankings` | Placeholder for fantasy power rankings. | Component returns an empty `<div>`. No navigation or meaningful runtime. | Delete. |
-| `web/pages/PowerRankings.js` | `/PowerRankings` | Placeholder for generic power rankings. | Component returns an empty `<div>`. No navigation or meaningful runtime. | Delete. |
-| `web/pages/test/index.tsx` | `/test` | One-off line-combination test harness. | Renders `h`, calls `getLineCombinations(26)` in `useEffect`, no public links. | Delete or move to a real test. |
-| `web/pages/testLogoMaker.tsx` | `/testLogoMaker` | Manual logo/component sandbox. | Hard-coded selector and inline demo styling, no public links. | Delete if `LogoMaker` is no longer actively developed. |
+| `web/pages/FantasyPowerRankings.js` | `/FantasyPowerRankings` | Retired empty placeholder. | No navigation or meaningful runtime; deleted under the approved pure-route cohort. | Removed. |
+| `web/pages/PowerRankings.js` | `/PowerRankings` | Retired empty placeholder. | No navigation or meaningful runtime; deleted under the approved pure-route cohort. | Removed. |
+| `web/pages/test/index.tsx` | `/test` | Retired line-combination test harness. | Its utility already has direct tests and supported route consumers; deleted under the approved pure-route cohort. | Removed. |
+| `web/pages/testLogoMaker.tsx` | `/testLogoMaker` | Retired manual logo prototype. | No public link or second component consumer; route and exclusive implementation removed. | Removed. |
 | `web/pages/cssTestingGrounds.tsx` + `web/pages/cssTestingGrounds.module.scss` | `/cssTestingGrounds` | Internal style-system sandbox. | Development/review copy, no public navigation. | Keep only if actively used; otherwise delete or move to Storybook/docs. |
 | `web/pages/statsPlaceholder.tsx` | `/statsPlaceholder` | Old team-stats/SOS placeholder before current `/stats` and `/underlying-stats`. | Old local Windows path comment, duplicates current stats/team concepts, no links. | Delete after a quick screenshot/data parity check if desired. |
-| `web/pages/xGoalsPage.tsx` | `/xGoalsPage` | League-wide xGoals heatmap prototype. | Thin wrapper around `components/HeatMap/xGoals`, no navigation. | Delete route; keep component only if referenced elsewhere. |
+| `web/pages/xGoalsPage.tsx` | `/xGoalsPage` | Retired league-wide xGoals heatmap prototype. | No navigation or second component consumer; route and exclusive implementation removed. | Removed. |
 | `web/pages/trendsTestingGrounds.tsx` | `/trendsTestingGrounds` | Manual trends API rebuild/fetch tester. | Calls `/api/v1/trends/player-trends` and rebuild APIs from an unlinked form. | Delete or convert into protected admin tooling. |
 
 ## Hidden Or Legacy Product Pages
@@ -188,15 +188,15 @@ These were flagged by the import graph or `knip`, but should not be deleted base
 
 | Route | Current evidence | Disposition |
 | --- | --- | --- |
-| `/FantasyPowerRankings`, `/PowerRankings` | Both files still return empty elements; no navigation/config/runtime-link consumer. | High-confidence delete candidates; removal waits for the route-family approval gate. |
-| `/test` | Still renders only `h` and calls line-combination code on mount; no product/config consumer. | Delete or convert its useful assertion to a test after approval. |
-| `/testLogoMaker` | Unlinked hard-coded manual logo selector; the reusable logo component is separate. | Move useful examples to tests/docs or delete the route after approval. |
+| `/FantasyPowerRankings`, `/PowerRankings` | Both empty files had no navigation/config/runtime-link consumer. | Removed under the owner-approved pure-route cohort. |
+| `/test` | Rendered only `h` and called already-tested line-combination code on mount; no product/config consumer. | Removed under the owner-approved pure-route cohort. |
+| `/testLogoMaker` | Unlinked hard-coded manual logo selector; its component had no second consumer. | Route and exclusive component removed. |
 | `/cssTestingGrounds` | Current reviewed/approved style-system catalog and referenced smoke surface. | Keep and document as a supported review surface; not dead. |
 | `/statsPlaceholder` | Hidden legacy SoS/team-stats implementation with no product link; canonical `/stats` and `/underlying-stats` replacements exist. | Redirect/delete decision remains approval-gated; retain until replacement parity is explicitly accepted. |
-| `/xGoalsPage` | Unlinked thin prototype wrapper; component retention is a separate question. | Delete the route after approval, preserving the component only if another consumer is chosen. |
+| `/xGoalsPage` | Unlinked thin prototype wrapper; its xGoals component had no second consumer. | Route and exclusive component removed. |
 | `/trendsTestingGrounds` | Unlinked but now read-only; mutation was removed during the Sustainability audit. | Keep as an explicitly quarantined diagnostics surface until its remaining checks move to tests/admin/runbook ownership. |
 
-No route, component, script, operational entrypoint, or generated artifact changed in this refresh.
+The later owner-approved cohort removes only the five classified pure empty/test/prototype routes and their three exclusive implementation files. Supported and quarantined routes remain unchanged.
 
 Exact checkpoint `146ca692faf8b3469c05c91912a1e72ce90dcaa3` publishes the 11-row current-state reconciliation with source/master 11/35 and global 4,431/4,874 parity.
 
