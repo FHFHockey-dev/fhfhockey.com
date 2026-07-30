@@ -1,6 +1,10 @@
 import Head from "next/head";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { TextBanner } from "components/Banner/Banner";
+import Container from "components/Layout/Container";
+import { useAuth } from "contexts/AuthProviderContext";
 import {
   canonicalOrLegacyFinite,
   isCompatibilityOnlyLegacyField
@@ -664,8 +668,19 @@ async function fetchValidationPayload(
     params.set(key, String(value));
   }
 
+  const { data, error } = await supabase.auth.getSession();
+  const accessToken = data.session?.access_token;
+  if (error || !accessToken) {
+    throw new Error("Administrator session unavailable.");
+  }
+
   const response = await fetch(
-    `/api/v1/debug/rolling-player-metrics?${params.toString()}`
+    `/api/v1/debug/rolling-player-metrics?${params.toString()}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    }
   );
   const body = (await response.json()) as ValidationResponse;
 
@@ -676,7 +691,7 @@ async function fetchValidationPayload(
   return body.payload;
 }
 
-export default function TrendsDebugPage() {
+function TrendsDebugConsole() {
   const [playerQuery, setPlayerQuery] = useState("");
   const [playerSuggestions, setPlayerSuggestions] = useState<PlayerSearchResult[]>(
     []
@@ -2609,4 +2624,31 @@ export default function TrendsDebugPage() {
       </main>
     </>
   );
+}
+
+export default function TrendsDebugPage() {
+  const { isLoading, user } = useAuth();
+
+  if (isLoading) {
+    return (
+      <Container>
+        <TextBanner text="Checking administrator access…" />
+      </Container>
+    );
+  }
+
+  if (user?.role !== "admin") {
+    return (
+      <Container>
+        <TextBanner text="Administrator access required" />
+        <p>
+          Sign in with an administrator account to use the rolling validation
+          console.
+        </p>
+        <Link href="/">Return home</Link>
+      </Container>
+    );
+  }
+
+  return <TrendsDebugConsole />;
 }

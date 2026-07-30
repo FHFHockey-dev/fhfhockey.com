@@ -1,6 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { buildPayloadMock } = vi.hoisted(() => ({
+const { adminOnlyMock, buildPayloadMock } = vi.hoisted(() => ({
+  adminOnlyMock: vi.fn(
+    (routeHandler: (req: any, res: any) => Promise<void>) =>
+      async (req: any, res: any) => {
+        if (req.headers?.authorization !== "Bearer admin") {
+          return res.status(401).json({
+            message: "Authentication required.",
+            success: false
+          });
+        }
+        return routeHandler(req, res);
+      }
+  ),
   buildPayloadMock: vi.fn()
 }));
 
@@ -8,7 +20,13 @@ vi.mock("lib/supabase/Upserts/rollingPlayerValidationPayload", () => ({
   buildRollingPlayerValidationPayload: buildPayloadMock
 }));
 
-import handler from "../../../../../pages/api/v1/debug/rolling-player-metrics";
+vi.mock("utils/adminOnlyMiddleware", () => ({
+  default: adminOnlyMock
+}));
+
+import handler, {
+  rollingPlayerMetricsDebugHandler
+} from "../../../../../pages/api/v1/debug/rolling-player-metrics";
 
 function createMockRes() {
   const res: any = {
@@ -99,6 +117,23 @@ describe("/api/v1/debug/rolling-player-metrics", () => {
     });
   });
 
+  it("fails closed before running the debug handler without authorization", async () => {
+    const req: any = {
+      headers: {},
+      method: "GET",
+      query: {
+        playerId: "8478402",
+        season: "20252026"
+      }
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(401);
+    expect(buildPayloadMock).not.toHaveBeenCalled();
+  });
+
   it("returns 405 for unsupported methods", async () => {
     const req: any = {
       method: "POST",
@@ -106,7 +141,7 @@ describe("/api/v1/debug/rolling-player-metrics", () => {
     };
     const res = createMockRes();
 
-    await handler(req, res);
+    await rollingPlayerMetricsDebugHandler(req, res);
 
     expect(res.statusCode).toBe(405);
     expect(res.headers.Allow).toBe("GET, HEAD");
@@ -125,7 +160,7 @@ describe("/api/v1/debug/rolling-player-metrics", () => {
     };
     const res = createMockRes();
 
-    await handler(req, res);
+    await rollingPlayerMetricsDebugHandler(req, res);
 
     expect(res.statusCode).toBe(400);
     expect(buildPayloadMock).not.toHaveBeenCalled();
@@ -160,7 +195,7 @@ describe("/api/v1/debug/rolling-player-metrics", () => {
     };
     const res = createMockRes();
 
-    await handler(req, res);
+    await rollingPlayerMetricsDebugHandler(req, res);
 
     expect(res.statusCode).toBe(200);
     expect(buildPayloadMock).toHaveBeenCalledWith({
@@ -345,7 +380,7 @@ describe("/api/v1/debug/rolling-player-metrics", () => {
     };
     const res = createMockRes();
 
-    await handler(req, res);
+    await rollingPlayerMetricsDebugHandler(req, res);
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({
@@ -525,7 +560,7 @@ describe("/api/v1/debug/rolling-player-metrics", () => {
     };
     const res = createMockRes();
 
-    await handler(req, res);
+    await rollingPlayerMetricsDebugHandler(req, res);
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({
@@ -564,7 +599,7 @@ describe("/api/v1/debug/rolling-player-metrics", () => {
     };
     const res = createMockRes();
 
-    await handler(req, res);
+    await rollingPlayerMetricsDebugHandler(req, res);
 
     expect(res.statusCode).toBe(200);
     expect(buildPayloadMock).not.toHaveBeenCalled();
@@ -586,7 +621,7 @@ describe("/api/v1/debug/rolling-player-metrics", () => {
     };
     const res = createMockRes();
 
-    await handler(req, res);
+    await rollingPlayerMetricsDebugHandler(req, res);
 
     expect(res.statusCode).toBe(500);
     expect(res.body).toEqual({

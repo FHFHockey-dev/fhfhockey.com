@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import supabase from "lib/supabase";
 import styles from "styles/BLSH.module.scss";
 import useCareerAveragesStats from "hooks/useCareerAveragesStats";
+import LegacySurfaceNotice from "components/LegacySurfaceNotice/LegacySurfaceNotice";
 
 // TO DO:
 // Make Goalie Career Averages Endpoint via NST
@@ -40,6 +41,13 @@ function SkaterStats() {
 
   return (
     <div className={styles.skaterStats}>
+      <LegacySurfaceNotice
+        replacementHref="/underlying-stats"
+        replacementLabel="Underlying Stats"
+      >
+        This retained table supports old bookmarks. Underlying Stats is the
+        current player-analysis surface.
+      </LegacySurfaceNotice>
       <div className={styles.tabsContainer}>
         <button
           className={`${styles.tabs} ${

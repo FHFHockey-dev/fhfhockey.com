@@ -27,6 +27,7 @@ import type {
 import { calculateGoalieRankings } from "components/GoaliePage/goalieCalculations";
 import { fetchAllPages } from "utils/fetchAllPages";
 import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
+import LegacySurfaceNotice from "components/LegacySurfaceNotice/LegacySurfaceNotice";
 
 // --- Constants ---
 const STAT_COLUMNS: StatColumn[] = [
@@ -719,6 +720,13 @@ const GoalieTrends: FC = () => {
   return (
     // Use the main page container style
     <div className={styles.pageContainer}>
+      <LegacySurfaceNotice
+        replacementHref="/variance/goalies"
+        replacementLabel="Goalie Variance"
+      >
+        This retained view supports old bookmarks. Goalie Variance is the
+        current goalie-analysis surface.
+      </LegacySurfaceNotice>
       {/* --- Header --- */}
       <div className={styles.headerWrapper}>
         <h1 className={styles.pageTitle}>

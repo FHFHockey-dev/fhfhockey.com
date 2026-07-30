@@ -38,6 +38,7 @@ import {
 } from "lib/projectionsConfig/statsMasterList";
 import useCurrentSeason from "hooks/useCurrentSeason"; // Import the hook
 import styles from "styles/ProjectionsPage.module.scss";
+import LegacySurfaceNotice from "components/LegacySurfaceNotice/LegacySurfaceNotice";
 import { assignGlobalRanks, injectRanks } from "utils/projectionsRanking";
 
 // Import the new chart component
@@ -1327,6 +1328,13 @@ const ProjectionsPage: NextPage = () => {
       </Head>
       <RoundSummaryContext.Provider value={roundSummaryDataForContext}>
         <main className={styles.pageContainer}>
+          <LegacySurfaceNotice
+            replacementHref="/FORGE"
+            replacementLabel="FORGE Quick Read"
+          >
+            This retained projection table supports old bookmarks. FORGE is
+            the current projection-analysis surface.
+          </LegacySurfaceNotice>
           <section className={styles.headerSection}>
             <h1 className={styles.pageTitle}>
               Player <span className={styles.spanColorBlue}>Projections</span>

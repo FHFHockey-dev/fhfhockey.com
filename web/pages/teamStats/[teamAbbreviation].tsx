@@ -13,6 +13,7 @@ import { teamsInfo } from "lib/teamsInfo";
 import PPTOIChart from "components/PlayerPPTOIPerGameChart/PPTOIChart";
 import HockeyRinkSvg from "components/HockeyRinkSvg/HockeyRinkSvg";
 import HeatMap from "components/HeatMap/Heatmap";
+import LegacySurfaceNotice from "components/LegacySurfaceNotice/LegacySurfaceNotice";
 
 const curatedFields = [
   { key: "games_played", label: "GP" },
@@ -190,6 +191,13 @@ const TeamDetail = () => {
 
   return (
     <div className={styles.teamStatsContainer}>
+      <LegacySurfaceNotice
+        replacementHref="/underlying-stats/teamStats"
+        replacementLabel="Underlying Team Stats"
+      >
+        This retained team history supports old bookmarks. Underlying Team
+        Stats is the current team-analysis surface.
+      </LegacySurfaceNotice>
       <h1 className={styles.pageHeader}>
         {teamsInfo[teamAbbreviation]?.name}{" "}
         <span className={styles.spanColorBlue}>Stats</span>
