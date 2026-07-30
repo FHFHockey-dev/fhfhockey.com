@@ -648,3 +648,5 @@ Connected read-only evidence confirms Production has exactly eight applied migra
 | Production tracking only after local parity | `20260730233451_reconstruct_hosted_analytics_schema.sql` | `d5447e461e70eecce10c902a01f62fda062132bcd277c712fc986484ecaf9fe5` |
 
 The grouped predeploy authorization must name the first 11 files in this exact order and stop before the Utah repair. The analytics baseline must be reconciled into Production migration tracking only after fresh local catalog/security/runtime/type parity; its already-hosted objects must not be destructively replayed. No undifferentiated `supabase db push` is permitted across all pending files.
+
+The existing supported-baseline Vitest suite now enforces the exact eight-file hosted applied set, the 13-file pending order, the 11/1/1 execution classes, and every frozen SHA-256. A migration-content, filename, order, or class change therefore fails locally before any grouped authorization or publication.

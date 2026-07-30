@@ -321,4 +321,65 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       'schemas = ["public", "graphql_public", "analytics"]',
     );
   });
+
+  it("keeps the frozen Production application classes and migration hashes exact", () => {
+    const summary = readFileSync(
+      path.join(
+        repoRoot,
+        "tasks",
+        "TASKS",
+        "super-goal",
+        "super-goal-final-summary.md",
+      ),
+      "utf8",
+    );
+    const manifestRows = [
+      ...summary.matchAll(
+        /^\| (Ordered predeploy|Separate repair mutation|Production tracking only after local parity) \| `([^`]+\.sql)` \| `([a-f0-9]{64})` \|$/gm,
+      ),
+    ].map((match) => ({
+      className: match[1],
+      fileName: match[2],
+      expectedHash: match[3],
+    }));
+    const appliedProductionMigrations = new Set([
+      "20260716112908_production_schema_baseline.sql",
+      "20260716112909_add_line_combinations_source_provenance.sql",
+      "20260716112910_harden_line_combination_trigger_auth.sql",
+      "20260720105524_add_projection_materialization_transactions.sql",
+      "20260721013821_enforce_shift_relationship_positions.sql",
+      "20260723040553_restrict_legacy_yahoo_player_writers.sql",
+      "20260723113533_make_yahoo_player_writer_atomic.sql",
+      "20260725200808_fix_yahoo_player_writer_captured_at.sql",
+    ]);
+
+    expect(manifestRows).toHaveLength(13);
+    expect(
+      manifestRows.filter((row) => row.className === "Ordered predeploy"),
+    ).toHaveLength(11);
+    expect(
+      manifestRows.filter(
+        (row) => row.className === "Separate repair mutation",
+      ),
+    ).toHaveLength(1);
+    expect(
+      manifestRows.filter(
+        (row) =>
+          row.className === "Production tracking only after local parity",
+      ),
+    ).toHaveLength(1);
+    expect(manifestRows.map((row) => row.fileName)).toEqual(
+      readdirSync(migrationRoot)
+        .filter((name) => name.endsWith(".sql"))
+        .sort()
+        .filter((name) => !appliedProductionMigrations.has(name)),
+    );
+
+    for (const row of manifestRows) {
+      expect(
+        createHash("sha256").update(readMigration(row.fileName)).digest("hex"),
+        row.fileName,
+      ).toBe(row.expectedHash);
+    }
+  });
 });
