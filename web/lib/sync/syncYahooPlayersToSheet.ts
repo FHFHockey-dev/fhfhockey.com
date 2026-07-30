@@ -56,7 +56,7 @@ export async function syncYahooPlayersToSheet(opts: SyncOptions = {}) {
     "status",
     "status_full",
     "last_updated",
-    "ownership_timeline:normalized_ownership_timeline",
+    "ownership_timeline",
     "game_id"
   ].join(", ");
 
@@ -65,7 +65,7 @@ export async function syncYahooPlayersToSheet(opts: SyncOptions = {}) {
   let all: any[] = [];
   while (true) {
     let page = supabase
-      .from("yahoo_players_with_normalized_history")
+      .from("yahoo_players")
       .select(selectCols)
       .order("player_name", { ascending: true })
       .range(start, start + pageSize - 1);

@@ -24,7 +24,6 @@ const TYPE_LABELS: Record<DraftDiscoveryCard["type"], string> = {
 };
 
 function sourceLabel(source: string) {
-  if (source === "yahoo_player_ownership_history") return "Yahoo ownership";
   if (source === "yahoo_players.ownership_timeline") return "Yahoo ownership";
   if (source === "yahoo_players.adp") return "Yahoo ADP";
   if (source === "forge_roster_events") return "Verified roster event";

@@ -584,7 +584,7 @@ export default async function handler(
         ...(goalieRows ?? []).map((g) => g.player_id),
       ];
       const { data: mappingRows, error: mapError } = await supabase
-        .from("yahoo_nhl_player_map_read")
+        .from("yahoo_nhl_player_map_mat")
         .select("nhl_player_id, yahoo_player_id")
         .in("nhl_player_id", playerIds.map(String));
 
@@ -604,9 +604,9 @@ export default async function handler(
 
       // Grab ONLY the relevant Yahoo players (avoid 1000 row limit)
       const { data: yahooPlayers, error: ypError } = await supabase
-        .from("yahoo_players_with_normalized_history")
+        .from("yahoo_players")
         .select(
-          "player_id, player_name, full_name, eligible_positions, percent_ownership, ownership_timeline:normalized_ownership_timeline",
+          "player_id, player_name, full_name, eligible_positions, percent_ownership, ownership_timeline",
         )
         .eq("season", yahooSeason)
         .in("player_id", yahooPlayerIds.map(String));

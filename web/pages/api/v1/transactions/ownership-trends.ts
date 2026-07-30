@@ -66,7 +66,7 @@ export async function fetchYahooPlayerRows(args: {
   const rows: any[] = [];
   for (let from = 0; ; from += PAGE_SIZE) {
     let query = args.supabase
-      .from("yahoo_players_with_normalized_history")
+      .from("yahoo_players")
       .select(args.select)
       .order("player_id", { ascending: true })
       .order("season", { ascending: true, nullsFirst: true })
@@ -131,7 +131,7 @@ async function fetchYahooToNhlMap(
   const map: YahooToNhlMap = new Map();
   for (const idChunk of chunk(uniqueIds, MAP_CHUNK_SIZE)) {
     const { data, error } = await supabase
-      .from("yahoo_nhl_player_map_read")
+      .from("yahoo_nhl_player_map_mat")
       .select("nhl_player_id, yahoo_player_id")
       .in("yahoo_player_id", idChunk.map(String));
     if (error) throw error;
@@ -184,9 +184,9 @@ export default async function handler(
     });
 
     const selectWithMeta =
-      "player_key, player_id, full_name, headshot_url, display_position, editorial_team_full_name, editorial_team_abbreviation, eligible_positions, uniform_number, ownership_timeline:normalized_ownership_timeline";
+      "player_key, player_id, full_name, headshot_url, display_position, editorial_team_full_name, editorial_team_abbreviation, eligible_positions, uniform_number, ownership_timeline";
     const selectMinimal =
-      "player_key, player_id, full_name, headshot_url, ownership_timeline:normalized_ownership_timeline";
+      "player_key, player_id, full_name, headshot_url, ownership_timeline";
 
     let data: any[] = [];
     let seasonFallbackApplied = false;

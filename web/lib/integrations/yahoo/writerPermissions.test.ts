@@ -90,7 +90,7 @@ describe("Yahoo player writer permissions", () => {
     expect(repair).not.toContain("grant execute");
   });
 
-  it("keeps historical ownership readers on the normalized daily source", () => {
+  it("keeps the normalized ownership reader staged behind migration application", () => {
     const migration = readFileSync(
       path.join(
         repoRoot,
@@ -124,14 +124,12 @@ describe("Yahoo player writer permissions", () => {
       "web/pages/variance/skaters.tsx",
     ]) {
       const source = readFileSync(path.join(repoRoot, relativePath), "utf8");
-      expect(source).toContain("yahoo_players_with_normalized_history");
-      expect(source).toContain(
-        "ownership_timeline:normalized_ownership_timeline",
-      );
+      expect(source).toContain('.from("yahoo_players")');
+      expect(source).not.toContain("yahoo_players_with_normalized_history");
     }
   });
 
-  it("keeps browser Yahoo read surfaces select-only with one proven name identity", () => {
+  it("keeps the hardened Yahoo map reader staged behind migration application", () => {
     const migration = readFileSync(
       path.join(
         repoRoot,
@@ -168,8 +166,8 @@ describe("Yahoo player writer permissions", () => {
       "web/pages/variance/skaters.tsx",
     ]) {
       const source = readFileSync(path.join(repoRoot, relativePath), "utf8");
-      expect(source).toContain("yahoo_nhl_player_map_read");
-      expect(source).not.toContain('.from("yahoo_nhl_player_map_mat")');
+      expect(source).toContain('.from("yahoo_nhl_player_map_mat")');
+      expect(source).not.toContain("yahoo_nhl_player_map_read");
     }
   });
 
