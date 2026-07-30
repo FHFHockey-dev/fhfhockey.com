@@ -1,11 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getCurrentSeasonMock, ingestNhlApiRawGamesMock, serviceRoleFromMock } =
-  vi.hoisted(() => ({
-    getCurrentSeasonMock: vi.fn(),
-    ingestNhlApiRawGamesMock: vi.fn(),
-    serviceRoleFromMock: vi.fn(),
-  }));
+const {
+  getCurrentSeasonMock,
+  ingestNhlApiRawGamesMock,
+  ingestNhlApiRawGamesBestEffortMock,
+  serviceRoleFromMock,
+} = vi.hoisted(() => ({
+  getCurrentSeasonMock: vi.fn(),
+  ingestNhlApiRawGamesMock: vi.fn(),
+  ingestNhlApiRawGamesBestEffortMock: vi.fn(),
+  serviceRoleFromMock: vi.fn(),
+}));
 
 vi.mock("lib/cron/withCronJobAudit", () => ({
   withCronJobAudit: (handler: any) => handler,
@@ -27,6 +32,7 @@ vi.mock("lib/supabase/server", () => ({
 
 vi.mock("lib/supabase/Upserts/nhlRawGamecenter.mjs", () => ({
   ingestNhlApiRawGames: ingestNhlApiRawGamesMock,
+  ingestNhlApiRawGamesBestEffort: ingestNhlApiRawGamesBestEffortMock,
   NORMALIZATION_PARSER_FINGERPRINT: "f".repeat(64),
 }));
 
@@ -263,6 +269,27 @@ describe("/api/v1/db/update-nhl-shift-charts", () => {
         idempotent: false,
       },
     ]);
+    ingestNhlApiRawGamesBestEffortMock.mockResolvedValue({
+      results: [
+        {
+          gameId: 2025021090,
+          rosterCount: 40,
+          eventCount: 358,
+          shiftCount: 720,
+          rawEndpointsStored: 4,
+          idempotent: false,
+        },
+        {
+          gameId: 2025021089,
+          rosterCount: 40,
+          eventCount: 299,
+          shiftCount: 782,
+          rawEndpointsStored: 4,
+          idempotent: false,
+        },
+      ],
+      failures: [],
+    });
   });
 
   afterEach(() => {
@@ -292,7 +319,7 @@ describe("/api/v1/db/update-nhl-shift-charts", () => {
     );
     expect(serviceRoleFromMock).not.toHaveBeenCalledWith("nhl_api_pbp_events");
     expect(serviceRoleFromMock).not.toHaveBeenCalledWith("nhl_api_shift_rows");
-    expect(ingestNhlApiRawGamesMock).toHaveBeenCalledWith(
+    expect(ingestNhlApiRawGamesBestEffortMock).toHaveBeenCalledWith(
       expect.anything(),
       [2025021090, 2025021089],
     );
@@ -536,7 +563,7 @@ describe("/api/v1/db/update-nhl-shift-charts", () => {
     ).toHaveLength(4);
   });
 
-  it("paginates an explicit date range beyond 1,000 games", async () => {
+  it("rejects an explicit date-range fan-out above the bounded request ceiling", async () => {
     const games = Array.from({ length: 1100 }, (_, index) => ({
       id: 2020000000 + index,
       date: "2026-01-01",
@@ -548,15 +575,13 @@ describe("/api/v1/db/update-nhl-shift-charts", () => {
       if (table === "games") return gamesTable;
       throw new Error(`Unexpected table access: ${table}`);
     });
-    ingestNhlApiRawGamesMock.mockResolvedValue([]);
-
     const req: any = {
       method: "POST",
       query: {
         seasonId: "20252026",
         startDate: "2026-01-01",
         endDate: "2026-01-02",
-        limit: "1001",
+        limit: "26",
       },
       headers: {},
     };
@@ -564,18 +589,102 @@ describe("/api/v1/db/update-nhl-shift-charts", () => {
 
     await handler(req, res);
 
-    expect(gamesTable.range).toHaveBeenNthCalledWith(1, 0, 999);
-    expect(gamesTable.range).toHaveBeenNthCalledWith(2, 1000, 1000);
-    expect(ingestNhlApiRawGamesMock).toHaveBeenCalledWith(
-      expect.anything(),
-      games.slice(0, 1001).map((game) => game.id),
-    );
+    expect(res.statusCode).toBe(400);
     expect(res.body).toMatchObject({
-      mode: "date_range",
-      requestedGameCount: 1001,
+      success: false,
       rowsUpserted: 0,
       rowsVerified: 0,
     });
+    expect(serviceRoleFromMock).not.toHaveBeenCalled();
+    expect(getCurrentSeasonMock).not.toHaveBeenCalled();
+    expect(ingestNhlApiRawGamesMock).not.toHaveBeenCalled();
+    expect(ingestNhlApiRawGamesBestEffortMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a date range containing more games than its bounded slice before ingest", async () => {
+    const games = Array.from({ length: 26 }, (_, index) => ({
+      id: 2020000000 + index,
+      date: "2026-01-01",
+      startTime: "2026-01-01T12:00:00+00:00",
+      seasonId: 20252026,
+    }));
+    const gamesTable = createGamesTableMock(games);
+    serviceRoleFromMock.mockImplementation((table: string) => {
+      if (table === "games") return gamesTable;
+      throw new Error(`Unexpected table access: ${table}`);
+    });
+
+    const req: any = {
+      method: "POST",
+      query: {
+        seasonId: "20252026",
+        startDate: "2026-01-01",
+        endDate: "2026-01-02",
+      },
+      headers: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(gamesTable.range).toHaveBeenCalledWith(0, 25);
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toMatchObject({
+      success: false,
+      rowsUpserted: 0,
+      rowsVerified: 0,
+    });
+    expect(ingestNhlApiRawGamesMock).not.toHaveBeenCalled();
+    expect(ingestNhlApiRawGamesBestEffortMock).not.toHaveBeenCalled();
+  });
+
+  it("continues a bounded multi-game batch but returns HTTP 500 with value-free failed IDs", async () => {
+    ingestNhlApiRawGamesBestEffortMock.mockResolvedValue({
+      results: [
+        {
+          gameId: 2025021090,
+          rosterCount: 40,
+          eventCount: 358,
+          shiftCount: 720,
+          rawEndpointsStored: 4,
+          idempotent: false,
+        },
+      ],
+      failures: [
+        {
+          gameId: 2025021089,
+          message:
+            "HTTP 502 from https://upstream.example/private?token=secret",
+        },
+      ],
+    });
+
+    const req: any = {
+      method: "POST",
+      query: {
+        backfill: "true",
+        seasonId: "20252026",
+        limit: "2",
+      },
+      headers: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toMatchObject({
+      success: false,
+      code: "NHL_RAW_INGEST_PARTIAL_FAILURE",
+      requestedGameCount: 2,
+      succeededGameIds: [2025021090],
+      failedGameIds: [2025021089],
+      failureCount: 1,
+      rowsUpserted: 1118,
+      rowsVerified: 1122,
+    });
+    expect(JSON.stringify(res.body)).not.toContain("upstream.example");
+    expect(JSON.stringify(res.body)).not.toContain("secret");
   });
 
   it.each([

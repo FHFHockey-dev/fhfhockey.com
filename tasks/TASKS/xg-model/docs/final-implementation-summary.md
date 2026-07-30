@@ -4,6 +4,8 @@
 
 This document summarizes the current state of the NHL API ingestion, normalization, feature, and parity foundation at the end of the phase-1 implementation pass.
 
+**Current audit overlay (2026-07-29):** The later exception-aware v2 release package satisfies training use for parser/strength/feature/parity version 1 with zero blocking mismatches and 1,021 visible approved-exception mismatches. Production-reader cutover and authoritative parity publication remain separate. The authenticated raw-ingest owner now enforces a 25-game request ceiling, rejects implicit date-range truncation, continues bounded multi-game work after game-local failures, and returns value-free structured HTTP 500 partial-failure receipts. The transactional normalization migration/deployment and broad-history gates remain separately open.
+
 It answers four questions:
 
 1. what is complete
@@ -185,7 +187,9 @@ Not part of the current release-ready foundation:
 - any future methodology that excludes specific miss subtypes from xG
 - any tracking-grade enhancements that require data beyond NHL public APIs
 
-## Current Release Blockers
+## Historical Phase-1 Release Blockers
+
+The items below describe the pre-release state captured by this phase-1 report. The later exception-aware v2 package resolved the training-use validation items for the recorded version-1 tuple; production publication/cutover and broader rollout remain separately governed.
 
 The project is not approved yet for xG training use or production rollout until all of the following are satisfied.
 
@@ -228,16 +232,9 @@ Current status:
 - normalized event and shift foundation: complete
 - derived feature foundation: complete
 - parity foundation: complete with documented approximation boundaries
-- training readiness: blocked pending release validation package
-- production rollout readiness: blocked pending release validation package and downstream cutover decisions
+- training readiness: approved for the recorded parser/strength/feature/parity version-1 tuple
+- production rollout readiness: separately gated on authoritative publication, downstream cutover, transactional-normalization deployment, and bounded history
 
 ## Recommended Next Step
 
-The next correct move is to complete the phase-1 release package:
-
-- finalize the implementation summary and follow-up list
-- run and record the formal validation batch
-- resolve remaining release blockers
-- only then approve training-dataset publication or production-reader cutover
-
-Once the release package is approved, execute the post-foundation queue in `tasks/TASKS/xg-model/nhl-api-foundation/post-foundation-follow-ups.md`.
+The phase-1 training release package is complete. Continue only the explicitly governed post-foundation queue in `tasks/TASKS/xg-model/nhl-api-foundation/post-foundation-follow-ups.md`; do not infer production-reader cutover, authoritative parity publication, migration deployment, or broad historical rollout from the training-use verdict.

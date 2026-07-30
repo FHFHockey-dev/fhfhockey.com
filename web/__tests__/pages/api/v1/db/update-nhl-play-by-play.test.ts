@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { ingestNhlApiRawGamesMock, serviceRoleFromMock } = vi.hoisted(() => ({
+const {
+  ingestNhlApiRawGamesMock,
+  ingestNhlApiRawGamesBestEffortMock,
+  serviceRoleFromMock,
+} = vi.hoisted(() => ({
   ingestNhlApiRawGamesMock: vi.fn(),
+  ingestNhlApiRawGamesBestEffortMock: vi.fn(),
   serviceRoleFromMock: vi.fn(),
 }));
 
@@ -25,6 +30,8 @@ vi.mock("lib/supabase/server", () => ({
 
 vi.mock("lib/supabase/Upserts/nhlRawGamecenter.mjs", () => ({
   ingestNhlApiRawGames: ingestNhlApiRawGamesMock,
+  ingestNhlApiRawGamesBestEffort: ingestNhlApiRawGamesBestEffortMock,
+  NORMALIZATION_PARSER_FINGERPRINT: "f".repeat(64),
 }));
 
 import handler from "../../../../../pages/api/v1/db/update-nhl-play-by-play";

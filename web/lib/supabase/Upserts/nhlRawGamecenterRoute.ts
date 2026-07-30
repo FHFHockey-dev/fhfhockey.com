@@ -6,6 +6,7 @@ import serviceRoleClient from "lib/supabase/server";
 
 import {
   ingestNhlApiRawGames,
+  ingestNhlApiRawGamesBestEffort,
   NORMALIZATION_PARSER_FINGERPRINT,
 } from "./nhlRawGamecenter.mjs";
 import { summarizeNhlRawGamecenterIngestResults } from "./nhlRawGamecenterTelemetry";
@@ -20,6 +21,7 @@ type RawIngestApiRequest = {
 class InvalidRawIngestRequestError extends Error {}
 
 const SUPABASE_PAGE_SIZE = 1000;
+const MAX_RAW_INGEST_GAMES_PER_REQUEST = 25;
 const RAW_GAMECENTER_ENDPOINTS = [
   "play-by-play",
   "boxscore",
@@ -69,6 +71,7 @@ function getOptionalSingleQueryValue(
 function parseOptionalPositiveInteger(
   value: RawIngestQueryValue,
   fieldName: string,
+  maxValue?: number,
 ): number | null {
   const normalized = getOptionalSingleQueryValue(value, fieldName);
   if (normalized == null) return null;
@@ -81,6 +84,11 @@ function parseOptionalPositiveInteger(
   if (!Number.isSafeInteger(parsed)) {
     throw new InvalidRawIngestRequestError(
       `${fieldName} must be a canonical positive safe integer.`,
+    );
+  }
+  if (maxValue != null && parsed > maxValue) {
+    throw new InvalidRawIngestRequestError(
+      `${fieldName} must be at most ${maxValue}.`,
     );
   }
   return parsed;
@@ -115,7 +123,7 @@ async function selectGameIdsForRange(args: {
   limit: number | null;
 }) {
   const rows = await fetchAllRows<GameRow>(async (from, to) => {
-    const effectiveTo = args.limit == null ? to : Math.min(to, args.limit - 1);
+    const effectiveTo = args.limit == null ? to : Math.min(to, args.limit);
     if (effectiveTo < from) {
       return { data: [], error: null };
     }
@@ -130,6 +138,12 @@ async function selectGameIdsForRange(args: {
       .order("id", { ascending: true })
       .range(from, effectiveTo);
   });
+
+  if (args.limit != null && rows.length > args.limit) {
+    throw new InvalidRawIngestRequestError(
+      `date range selects more than ${args.limit} games; narrow the range or use bounded backfill mode.`,
+    );
+  }
 
   return rows.map((row) => Number(row.id)).filter((id) => Number.isFinite(id));
 }
@@ -329,7 +343,11 @@ export async function resolveRequestedGameIds(
   const endDate = getOptionalSingleQueryValue(query.endDate, "endDate");
   const backfill =
     isTruthyQueryFlag(query.backfill) || isTruthyQueryFlag(query.games);
-  const limit = parseOptionalPositiveInteger(query.limit, "limit");
+  const limit = parseOptionalPositiveInteger(
+    query.limit,
+    "limit",
+    MAX_RAW_INGEST_GAMES_PER_REQUEST,
+  );
   const hasDateRangeInput = startDate != null || endDate != null;
 
   if (
@@ -360,7 +378,7 @@ export async function resolveRequestedGameIds(
         seasonId,
         startDate,
         endDate,
-        limit,
+        limit: limit ?? MAX_RAW_INGEST_GAMES_PER_REQUEST,
       }),
     };
   }
@@ -372,7 +390,7 @@ export async function resolveRequestedGameIds(
       gameIds: await selectGameIdsForBackfill({
         supabase,
         seasonId,
-        limit: limit ?? 25,
+        limit: limit ?? MAX_RAW_INGEST_GAMES_PER_REQUEST,
       }),
     };
   }
@@ -428,9 +446,37 @@ export function createNhlRawGamecenterRoute(args: {
       });
     }
 
-    const results = await ingestNhlApiRawGames(supabase, selection.gameIds);
+    const { results, failures } =
+      selection.gameIds.length === 1
+        ? {
+            results: await ingestNhlApiRawGames(supabase, selection.gameIds),
+            failures: [],
+          }
+        : await ingestNhlApiRawGamesBestEffort(supabase, selection.gameIds);
     const { rowsUpserted, rowsVerified } =
       summarizeNhlRawGamecenterIngestResults(results);
+    const succeededGameIds = results.map((result) => result.gameId);
+    const failedGameIds = failures.map((failure) => failure.gameId);
+
+    if (failures.length > 0) {
+      return res.status(500).json({
+        success: false,
+        code: "NHL_RAW_INGEST_PARTIAL_FAILURE",
+        route: args.routeName,
+        routeAlias: args.routeAlias,
+        mode: selection.mode,
+        seasonId: selection.seasonId,
+        requestedGameCount: selection.gameIds.length,
+        succeededGameIds,
+        failedGameIds,
+        failureCount: failures.length,
+        rowsUpserted,
+        rowsVerified,
+        results,
+        message:
+          "Raw NHL gamecenter ingestion failed for one or more requested games.",
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -440,6 +486,9 @@ export function createNhlRawGamecenterRoute(args: {
       seasonId: selection.seasonId,
       requestedGameCount: selection.gameIds.length,
       gameIds: selection.gameIds,
+      succeededGameIds,
+      failedGameIds,
+      failureCount: 0,
       rowsUpserted,
       rowsVerified,
       results,

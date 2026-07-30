@@ -1,5 +1,7 @@
 # PRD: NHL API xG Model Data Foundation
 
+**Dynamic-audit status (2026-07-29):** The foundation and exception-aware training-use release gate are complete for parser/strength/feature/parity version 1; production-reader cutover and authoritative parity publication remain separately governed. The shared authenticated ingest owner now limits every request to 25 games, rejects silently truncated date ranges, continues later game-local work in multi-game mode, and returns value-free HTTP 500 partial-failure receipts. Current repository paths are reconciled; the later transactional normalization migration/deployment and broad history remain owned by their existing open production gates.
+
 ## 1. Introduction / Overview
 
 This project replaces the repo's NST-scraped game-level skater and goalie metrics with an NHL public API ingestion and derivation pipeline. The new system must preserve the current product's useful strength-split metrics, prefer NHL-derived correctness when it conflicts with NST edge-case behavior, and create a scalable data foundation for later xG model training from normalized play-by-play and shift data.
@@ -101,11 +103,11 @@ The immediate goal is not to train a model yet. The immediate goal is to build a
 
 The project is not release-ready for training or production rollout until all of the following are true:
 
-- event taxonomy is documented in `tasks/event-dictionary.md`
+- event taxonomy is documented in `tasks/TASKS/xg-model/docs/event-dictionary.md`
 - strength decoding is documented in `tasks/TASKS/xg-model/nhl-api-foundation/strength-mapping.md`
 - shift integration and on-ice attribution rules are documented in the phase-1 source-of-truth docs
 - normalized-event validation is passing on the intended release sample
 - parity validation is passing on the intended release sample
 - manual audit requirements have been satisfied and a passing artifact exists for representative games
 
-Until those conditions are met, NHL API ingestion may continue for development and audit purposes only.
+Those conditions are satisfied for the recorded version-1 training tuple through the exception-aware v2 release artifact. This does not approve production-reader cutover, authoritative parity publication, a later version tuple, or broad historical rollout.
