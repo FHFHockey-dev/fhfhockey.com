@@ -70,6 +70,17 @@ Do not POST to `/sko/pipeline` or `/sko/pipeline-step`, invoke the compatibility
 - No retained parquet/CSV/JSON file is a current model, stage checkpoint, recovery cursor, or publishable source of truth.
 - Archive/removal requires version/checksum provenance under 8.4 and the existing B-DEAD decision; no artifact cleanup is implied here.
 
+## Offseason Production evidence cohort
+
+The owner accepts one explicit historical in-season population as temporary Production evidence until the next official season opens. This is an operator-invoked compatibility run, not a natural scheduled run and not a model promotion.
+
+- Exact target: `asOfDate=2026-03-22`, `horizon=5`, `lookbackDays=120`, `model_name=baseline-moving-average`, `model_version=v0.2`.
+- Read-only hosted preflight: 324 same-day source rows/players; 851 distinct qualifying lookback players; 27,359 qualifying lookback rows; zero existing rows at the exact target identity; value-free input-player digest `0ab825ccbf3a185d1c72f3fc7eb72227`.
+- Prerequisites: apply `20260728225806_add_sko_prediction_run_control.sql` and `20260729205048_preserve_sko_model_history.sql` before publishing the matching code. Then run the protected route once with `dryRun=true` and require 851 would-write rows, zero upserts, zero stale-source warning, and a retained SHA-256 identity-scope digest.
+- Mutation gate: request separate authorization quoting the dry-run digest/count. The authorized call must omit `dryRun`, return the same scope digest, write exactly 851 rows, and leave unrelated date/horizon/model identities unchanged.
+- Rollback: because the exact target has zero preexisting rows, delete only `(as_of_date='2026-03-22', horizon_games=5, model_name='baseline-moving-average', model_version='v0.2')` after matching the retained digest/count. A rollback authorization is required before deletion.
+- Acceptance: exact post-count/digest parity, idempotent replay with no count change, successful run-manifest/cron-audit receipts, empty bounded runtime-error evidence, and a separate natural offseason no-write observation. Preserve these receipts until the next official-season natural run supersedes them.
+
 ## Rollback and recovery
 
 - The local hardening changes no database row, schema, deployment alias, route mapping, schedule, artifact, or credential. A code rollback is a normal reviewed revert, but must never restore fail-open auth or false-success behavior.

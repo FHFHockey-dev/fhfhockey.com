@@ -94,13 +94,16 @@ export function buildPredictionsSkoHealth(
         body?.message ??
         "sKO publication skipped because source data is stale.",
     });
-  } else if (body?.write?.partial === true || upserted < attempted) {
+  } else if (
+    body?.dryRun !== true &&
+    (body?.write?.partial === true || upserted < attempted)
+  ) {
     alerts.push({
       code: "partial_write",
       severity: "error",
       message: `Only ${upserted} of ${attempted} attempted rows were written.`,
     });
-  } else if (selected > 0 && upserted < selected) {
+  } else if (body?.dryRun !== true && selected > 0 && upserted < selected) {
     alerts.push({
       code: "low_rows_written",
       severity: "warning",

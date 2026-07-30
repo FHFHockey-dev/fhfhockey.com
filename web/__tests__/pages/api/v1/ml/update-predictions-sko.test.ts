@@ -57,6 +57,7 @@ vi.mock("../../../../../lib/NHL/server", () => ({
 import handler, {
   fetchPlayerIdsPaginated,
   fetchPlayerSeries,
+  predictionScopeDigest,
   resolveSkoSeasonExecution,
 } from "../../../../../pages/api/v1/ml/update-predictions-sko";
 import { PredictionsSkoDependencyError } from "../../../../../lib/ml/predictionsSkoDependencyChecks";
@@ -137,7 +138,7 @@ describe("/api/v1/ml/update-predictions-sko", () => {
 
       expect(res.statusCode).toBe(401);
       expect(res.body).toEqual({
-        message: "Invalid bearer token",
+        message: "Unauthorized.",
         success: false,
       });
       expect(assertPredictionsSkoPrerequisitesMock).not.toHaveBeenCalled();
@@ -360,6 +361,67 @@ describe("/api/v1/ml/update-predictions-sko", () => {
     expect(modelHistoryMigrationSql).not.toMatch(
       /grant\s+(?:insert|update|delete)[^;]*\b(?:anon|authenticated)\b/i,
     );
+  });
+
+  it("returns an exact dry-run manifest without changing prediction rows", async () => {
+    const seriesBuilder: any = {};
+    for (const method of ["select", "eq", "lte", "gte"]) {
+      seriesBuilder[method] = vi.fn(() => seriesBuilder);
+    }
+    seriesBuilder.order = vi.fn(() => seriesBuilder);
+    seriesBuilder.limit = vi.fn().mockResolvedValue({
+      data: [{ player_id: 2, date: "2026-03-22", points: 2, games_played: 1 }],
+      error: null,
+    });
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    serviceRoleClientMock.from.mockImplementation((table: string) => {
+      if (table === "player_stats_unified") return seriesBuilder;
+      if (table === "predictions_sko") return { upsert };
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    const req: any = {
+      method: "POST",
+      headers: { authorization: "Bearer current-secret" },
+      query: {
+        asOfDate: "2026-03-22",
+        playerIds: "2",
+        dryRun: "true",
+      },
+      body: {},
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      dryRun: true,
+      players: 1,
+      upserts: 0,
+      rowsUpserted: 0,
+      wouldUpsertRows: 1,
+      write: {
+        attemptedRows: 1,
+        upsertedRows: 0,
+        batchesCompleted: 0,
+        partial: false,
+      },
+      health: { status: "ok", alerts: [] },
+      runManifest: { state: "succeeded" },
+    });
+    expect(res.body.write.scopeDigest).toBe(
+      predictionScopeDigest([
+        {
+          player_id: 2,
+          as_of_date: "2026-03-22",
+          horizon_games: 5,
+          model_name: "baseline-moving-average",
+          model_version: "v0.2",
+        },
+      ]),
+    );
+    expect(upsert).not.toHaveBeenCalled();
   });
 
   it("skips publication and warns when in-season source lag exceeds 72 hours", async () => {

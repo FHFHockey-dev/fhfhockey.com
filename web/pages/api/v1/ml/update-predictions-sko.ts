@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createHash } from "node:crypto";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { Database } from "lib/supabase/database-generated.types";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
@@ -20,6 +21,8 @@ import adminOnly from "utils/adminOnlyMiddleware";
  * - batchSize / limitPlayers: optional positive integer limit.
  * - seasonCutoff: optional YYYY-MM-DD lower bound.
  * - playerId / playerIds: optional targeted player ids.
+ * - dryRun: optional truthy flag; computes the exact write manifest without
+ *   changing prediction rows.
  * - debug: optional truthy flag for timings.
  *
  * Cron-safe static URL:
@@ -92,6 +95,11 @@ function parsePlayerIds(value: unknown): number[] | undefined {
     .map((token) => Number(token))
     .filter((id) => Number.isInteger(id) && id > 0);
   return ids.length ? Array.from(new Set(ids)) : undefined;
+}
+
+function parseFlag(value: unknown): boolean {
+  const parsed = Array.isArray(value) ? value[0] : value;
+  return parsed === true || parsed === 1 || parsed === "1" || parsed === "true";
 }
 
 function mean(values: number[]): number {
@@ -254,6 +262,7 @@ type PredictionRunDiagnostics = {
     upsertedRows: number;
     batchesCompleted: number;
     partial: boolean;
+    scopeDigest: string | null;
   };
 };
 
@@ -287,6 +296,7 @@ function emptyDiagnostics(
       upsertedRows: 0,
       batchesCompleted: 0,
       partial: false,
+      scopeDigest: null,
     },
   };
 }
@@ -336,6 +346,22 @@ function buildPredictionRecord(
     model_name: MODEL_NAME,
     model_version: MODEL_VERSION,
   } satisfies PredictionsInsert;
+}
+
+export function predictionScopeDigest(records: PredictionsInsert[]): string {
+  const scope = records
+    .map((record) =>
+      [
+        record.player_id,
+        record.as_of_date,
+        record.horizon_games,
+        record.model_name,
+        record.model_version,
+      ].join("|"),
+    )
+    .sort()
+    .join("\n");
+  return createHash("sha256").update(scope).digest("hex");
 }
 
 type RequestWithSupabase = NextApiRequest & {
@@ -394,6 +420,7 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
     const playerIdsFilter =
       parsePlayerIds(queryAccessor("playerId")) ??
       parsePlayerIds(queryAccessor("playerIds"));
+    const dryRun = parseFlag(queryAccessor("dryRun"));
 
     const startDate = new Date(asOfDate);
     startDate.setDate(startDate.getDate() - lookbackDays);
@@ -575,20 +602,23 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
     }
 
     runDiagnostics.write.attemptedRows = predictionRecords.length;
+    runDiagnostics.write.scopeDigest = predictionScopeDigest(predictionRecords);
     let upserts = 0;
     const batchDurations: number[] = [];
-    for (const batch of chunk(predictionRecords, UPSERT_BATCH_SIZE)) {
-      if (!batch.length) continue;
-      const bStart = Date.now();
-      const { error } = await admin.from("predictions_sko").upsert(batch, {
-        onConflict:
-          "player_id,as_of_date,horizon_games,model_name,model_version",
-      });
-      if (error) throw error;
-      upserts += batch.length;
-      batchDurations.push(Date.now() - bStart);
-      runDiagnostics.write.upsertedRows = upserts;
-      runDiagnostics.write.batchesCompleted = batchDurations.length;
+    if (!dryRun) {
+      for (const batch of chunk(predictionRecords, UPSERT_BATCH_SIZE)) {
+        if (!batch.length) continue;
+        const bStart = Date.now();
+        const { error } = await admin.from("predictions_sko").upsert(batch, {
+          onConflict:
+            "player_id,as_of_date,horizon_games,model_name,model_version",
+        });
+        if (error) throw error;
+        upserts += batch.length;
+        batchDurations.push(Date.now() - bStart);
+        runDiagnostics.write.upsertedRows = upserts;
+        runDiagnostics.write.batchesCompleted = batchDurations.length;
+      }
     }
     mark("phase_upserts");
 
@@ -623,14 +653,18 @@ const handler = async (req: RequestWithSupabase, res: NextApiResponse) => {
     const durationSec = (totalMs / 1000).toFixed(2);
     return res.status(200).json({
       success: true,
+      dryRun,
       asOfDate,
       horizon,
       players: playerIds.length,
       upserts,
       rowsUpserted: upserts,
+      wouldUpsertRows: predictionRecords.length,
       ...runDiagnostics,
       duration: `${durationSec}s`,
-      message: `Refreshed sKO predictions for ${playerIds.length} skaters (${upserts} rows) as of ${asOfDate} in ${durationSec}s`,
+      message: dryRun
+        ? `Dry run prepared ${predictionRecords.length} sKO prediction rows for ${playerIds.length} skaters as of ${asOfDate} in ${durationSec}s`
+        : `Refreshed sKO predictions for ${playerIds.length} skaters (${upserts} rows) as of ${asOfDate} in ${durationSec}s`,
       ...(debug ? { timings: phases } : {}),
     });
   } catch (error: any) {
