@@ -591,3 +591,8 @@ All charter questions remain open until source/master synchronization, Wave A/B 
 - New projection runs carry the repaired rolling-history input contract; accuracy/calibration fails closed with a value-free 422 for untagged or legacy runs.
 - The unapplied atomic-result RPC enforces the same eligibility in addition to latest-succeeded-run authority. Historical projection rows remain immutable and are excluded rather than relabeled.
 - NEW 10/13 stay open for stored-input repair, migration application, eligible bounded reconstruction, and Production evidence. Three focused files pass 13 tests; TypeScript, formatting, SQL contract, and diff integrity pass.
+
+### Browser PKCE forward-cutover checkpoint
+
+- The authenticated browser client now explicitly uses PKCE. Existing callback/reset code exchange, token-hash compatibility, synchronous credential scrubbing, and safe return routing remain intact.
+- A-AUTH NEW 46 stays open for hosted-template confirmation, publication, and value-free Production Google/confirmation/recovery lifecycle proof; legacy fragment support remains transitional.

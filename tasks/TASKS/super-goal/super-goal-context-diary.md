@@ -7427,3 +7427,9 @@
 - **Database contract:** The still-unapplied `20260723121407` atomic result RPC retains latest-succeeded-run authority and now independently rejects a source run without the repaired input contract. Existing historical projection rows are not relabeled, rewritten, or deleted.
 - **Verification / controls:** Three focused files pass 13/13 tests; full TypeScript, formatting, SQL contract, and diff integrity pass. Imported actionable parity remains 4,867/4,986 with 119 open = 97.61%; master roll-up remains 4,975/5,144 = 96.71%.
 - **Boundary / next action:** NEW 10/13 remain open for stored rolling-input repair, migration application, eligible bounded result reconstruction, idempotency, and deployed evidence. No build, push, deployment, migration application, database row, writer, provider call, schedule, credential, shared checkout, or stash changed.
+
+## Entry 0791 — 2026-07-30 browser PKCE forward cutover
+
+- **Implementation:** The authenticated browser Supabase client now explicitly uses PKCE while retaining manual callback consumption. `/auth/callback` and `/auth/reset-password` already exchange code responses, accept token-hash compatibility paths, synchronously scrub visible/Next history, and preserve sanitized return navigation.
+- **Verification / controls:** Auth form, callback, reset, and callback-location suites pass locally; full TypeScript and diff integrity pass. Imported actionable parity remains 4,867/4,986 with 119 open = 97.61%; master roll-up remains 4,975/5,144 = 96.71%.
+- **Boundary / next action:** A-AUTH NEW 46 stays open for hosted `RedirectTo` template confirmation, guarded publication, and value-free Production Google/confirmation/recovery completion. Preview auth remains unsupported; legacy fragment handling remains bounded transition compatibility. No build, push, deployment, provider/template mutation, session, email, credential, shared checkout, or stash changed.

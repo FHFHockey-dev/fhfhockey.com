@@ -66,6 +66,8 @@ If your confirmation or recovery templates still use `{{ .SiteURL }}`, update th
 
 This matters because sign-up and recovery links now intentionally target the app callback route rather than only the base site URL.
 
+The browser client now uses PKCE. Before publication, confirm the hosted confirmation and recovery templates preserve `{{ .RedirectTo }}` and deliver a code/token-hash shape accepted by `/auth/callback` or `/auth/reset-password`. Legacy fragment consumption remains only as bounded transition compatibility until the Production lifecycle proof passes.
+
 ### Required app environment values
 
 Confirm these exist in your deploy environment:
