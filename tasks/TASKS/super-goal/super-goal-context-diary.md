@@ -7413,3 +7413,10 @@
 - **Yahoo receipt gate:** The retained TypeScript player route now awaits the sheet export only after exact provider/persistence completeness; incomplete receipts make no sheet request, and failed/missing-secret export receipts stay value-free and explicit. The candidate scheduler migration removes fixed `gameId=465` and deactivates the duplicate sheet job without changing Production yet.
 - **Verification / controls:** Seven focused files pass 109 tests; full TypeScript, changed-code formatting, and diff integrity pass. Imported actionable parity remains 4,867/4,986 with 119 open = 97.61%; canonical master roll-up remains 4,975/5,144 = 96.71%.
 - **Boundary / next action:** Local-only. No push, build, deployment, migration application, database row, writer, provider call, schedule, credential, shared checkout, or stash changed. NEW 49/50, B-CRON-NST NEW 61, and sKO NEW 9.9 remain open for the grouped migration/publication and bounded Production evidence cohort.
+
+## Entry 0789 — 2026-07-30 Sustainability formula/default forward fixes
+
+- **Expected shooting:** `playerTrendCalculator` now uses the approved canonical `ixG / unblocked attempts × 100` definition over `nst_ixg` and `nst_iff`, retaining the existing persisted metric key for compatibility. A focused regression proves `2.5 / 10 = 25%`.
+- **Missing PDO:** Source nulls remain null rather than coercing to zero. PDO EWMA and league moments use observed values only; a fully missing team records zero observations and explicit `pdo_missing=true`, receives neutral `pdo_z=0`, and cannot create a variance flag.
+- **Verification / controls:** Two focused files pass 5/5 tests; full TypeScript, changed-code formatting, and diff integrity pass. Imported actionable parity remains 4,867/4,986 with 119 open = 97.61%; canonical master roll-up remains 4,975/5,144 = 96.71%.
+- **Boundary / next action:** Local forward behavior only. NEW 2/6 stay open for their versioned bounded historical repair and deployed reader/source evidence. No build, push, deployment, migration, database row, writer, provider call, schedule, credential, shared checkout, or stash changed.

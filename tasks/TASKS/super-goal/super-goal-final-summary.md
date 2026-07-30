@@ -579,3 +579,9 @@ Remaining cleanup and reference initiative sections are pending verified Wave-B 
 ## Completion-gate evidence
 
 All charter questions remain open until source/master synchronization, Wave A/B completion, Wave C audit/remediation, cross-initiative verification, cleanup, diary finalization, and evidence population are complete.
+
+### Sustainability formula/default forward checkpoint
+
+- **Canonical expected shooting:** The player-trend writer now computes `ixG / unblocked attempts × 100` from `nst_ixg` and `nst_iff`, retains the compatibility metric key, and passes a focused numeric regression.
+- **Neutral missing PDO:** Null PDO is preserved, excluded from observed-only EWMA/league moments, and represented by zero observations plus `pdo_missing=true`; its z-score is exactly `0`, so missingness cannot create a variance alert.
+- **Status:** NEW 2/6 remain open only for their bounded versioned historical repair and deployed evidence. Two focused files pass 5/5 tests; TypeScript, formatting, and diff integrity pass. Actionable parity remains 4,867/4,986 = 97.61%; master roll-up remains 4,975/5,144 = 96.71%.
