@@ -4846,7 +4846,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md::C0157` (live NEW) — NEW 125.0 **P1 residual production/dev dependency audit:** the unused Nodemailer/AWS/XML tree is removed, Vitest and compatible transitive security fixes are current, and production/full audits fall to 6/36 with zero critical. Remaining Next/Sharp and Yahoo/UUID entries are explicitly major-gated or unreachable through the vulnerable buffer API; clean install, exact-lock dry run, valid tree, 635 files/3,508 tests, TypeScript, and zero-error lint pass (verified 2026-07-28).
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md::C0158` (live NEW) — NEW 126.0 **P2 active-migration allowlist drift:** the exact allowlist now includes the reviewed atomic game-prediction promotion and sKO model-history migrations; the six-file migration/consumer cohort passes 37/37 and read-only Production preflight confirms candidate objects remain absent with guards satisfied (discovered and closed 2026-07-30).
 
-### Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md` (43 rows)
+### Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md` (44 rows)
 
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0001` (original L23) — 1.0 Refresh the dead-code evidence baseline. Current production scan plus bounded post-baseline delta classification pass without promoting raw flags to deletion claims (verified 2026-07-25).
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0002` (original L24) — 1.1 Re-run source inventory/import graph and current `knip --production` using repository conventions; exclude generated/vendor/cache/test false positives explicitly.
@@ -4891,6 +4891,7 @@ Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0041` (live NEW) — NEW 8.6 P2 declares already-locked `@sanity/client`, `domhandler`, and `progress` as direct dependencies for four active imports; offline lock validation and the rerun prove manifest/lock parity and zero unlisted packages (verified 2026-07-30).
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0042` (live NEW) — NEW 8.7 P3 owner-approved bookmark-compatible `/statsPlaceholder` quarantine uses the shared visible notice, `noindex,nofollow`, and exact `/underlying-stats` replacement link without changing historical data behavior (closed 2026-07-30).
 - [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0043` (live NEW) — NEW 8.8 P2 the reviewed scheduler-ownership migration is included in the exact active-migration allowlist; the four-test baseline contract passes without migration application (verified 2026-07-30).
+- [x] `SRC::tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md::C0044` (live NEW) — NEW 8.9 P1 shared admin authorization now maps malformed/rejected bearer input to one fixed 401 without Supabase parser detail; five focused tests and scoped lint pass, with publication proof retained by NEW 8.3 (locally closed 2026-07-30).
 
 ### Source: `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md` (110 rows)
 

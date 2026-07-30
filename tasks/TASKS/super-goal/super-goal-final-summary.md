@@ -134,7 +134,7 @@ Additional initiative sections remain pending verified Wave-A/B completion and W
 
 - **Current status:** The five-row source PRD is complete. The canonical route validates methods and bounded execution scopes/profiles, emits structured request/execute/response, freshness, runtime, progress, and run-summary telemetry, persists success/failure through `withCronJobAudit`, and now fails closed through the established administrator/exact-cron-secret authorization boundary.
 - **Schedule / verification:** The active canonical job calls the bare route at 08:15 UTC, which resolves to the bounded implicit daily-incremental window and already supplies a Vault-backed `cron_secret` Authorization header; targeted and overnight scopes remain explicit. Direct route coverage passes 16/16. The preview discovery request selected zero players and wrote zero rows. The repaired artifact is not yet deployed or promoted.
-- **Ledger reconciliation:** B-DEAD source/master parity is 43 rows, 37 verified and six open after final inventory, route/build smoke, synchronization, direct-dependency ownership, guarded recovery, standalone retirement, migration-allowlist reconciliation, and approved pure-route removal.
+- **Ledger reconciliation:** B-DEAD source/master parity is 44 rows, 38 verified and six open after final inventory, route/build smoke, synchronization, guarded recovery, bounded retirements, live ownership evidence, and the local fixed malformed-auth repair.
 
 ### Start Chart + Unified Trends downstream reconciliation (`B-START`, `B-TRENDS`)
 
@@ -606,3 +606,8 @@ All charter questions remain open until source/master synchronization, Wave A/B 
 
 - The approved boundary removes five unlinked empty/test/prototype routes and three exclusive zero-consumer implementation files. `cssTestingGrounds`, read-only `trendsTestingGrounds`, and noindex `statsPlaceholder` remain intact.
 - Source/master B-DEAD 3.0 and 3.3 close. B-DEAD is 37/43 with six open; imported actionable completion is 4,870/4,987 with 117 open = 97.65%, and master roll-up is 4,978/5,145 = 96.75%.
+
+### Operational ownership and bounded-auth checkpoint
+
+- Current Production proves signed-out `/db` settles on administrator-required content with zero operational controls/tables, missing-auth webhook requests return 401 before work, functions health returns 200 from its recorded READY owner, and CMS requires a Sanity login provider before editor access.
+- Malformed webhook auth disclosed Supabase parser detail. P1 NEW 8.9 fixes the shared boundary locally with one fixed 401 for malformed/rejected bearer input; five tests and scoped lint pass. NEW 8.3 remains open for publication and exact Production malformed-auth proof. Imported actionable completion is 4,871/4,988 with 117 open = 97.65%; master roll-up is 4,979/5,146 = 96.75%.
