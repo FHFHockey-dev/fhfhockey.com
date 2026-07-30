@@ -29,6 +29,7 @@ import {
   persistPerGameAnalyticsOutputs
 } from "./stages/persistence-stage";
 import { runPerGameGoalieStage } from "./stages/goalie-stage";
+import { runPerGameSkaterStage } from "./stages/skater-stage";
 import {
   buildModelMarketFlagRow,
   getConsensusLineValue,
@@ -61,6 +62,7 @@ describe("projection module import integrity", () => {
     expect(typeof persistForgeGoalieProjection).toBe("function");
     expect(typeof persistPerGameAnalyticsOutputs).toBe("function");
     expect(typeof runPerGameGoalieStage).toBe("function");
+    expect(typeof runPerGameSkaterStage).toBe("function");
     expect(typeof getProjectionValueForPropMarket).toBe("function");
     expect(typeof getConsensusLineValue).toBe("function");
     expect(typeof buildModelMarketFlagRow).toBe("function");

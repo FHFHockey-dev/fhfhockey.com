@@ -1,8 +1,9 @@
 ## Relevant Files
 
-**Status (2026-07-29):** 35/36 complete after dynamic audit. Rename, extracted modules, compatibility controls, and approved parity evidence remain valid; NEW 8.0 keeps the unfinished stage-oriented decomposition explicit.
+**Status (2026-07-29):** 36/36 complete. Rename, extracted modules, compatibility controls, approved parity evidence, and concrete preflight/skater/goalie/persistence/metrics-finalization stages are complete.
 
-- `web/lib/projections/run-forge-projections.ts` - Current orchestrator source after rename and partial decomposition.
+- `web/lib/projections/run-forge-projections.ts` - Current top-down stage-composition owner after rename and decomposition.
+- `web/lib/projections/stages/*.ts` - Concrete preflight, per-game skater, goalie, persistence, and metrics-finalization owners.
 - `web/lib/projections/runProjectionV2.test.ts` - Historical test filename retained for regression coverage after the runner rename.
 - `web/lib/projections/types/*.ts` - Extracted projection row/result/contract types used across modules.
 - `web/lib/projections/types/run-forge-projections.types.ts` - Centralized extracted row, adjustment, starter, and orchestrator IO contract types for parity-safe modularization.
@@ -79,7 +80,7 @@
   - [x] 7.3 Run repository-level type/import integrity validation (`tsc`/build/lint as applicable) to confirm no unresolved imports after rename and extraction. [Deps: 7.1] [Files: repo config + touched modules] [AC: zero unresolved import/type errors in touched scope]
   - [x] 7.4 Capture migration report summary (files moved/created, import updates, validation outcomes, unresolved risks) and attach to PR/task notes for implementation workflow handoff. [Deps: 7.2, 7.3] [Files: PR description or task notes] [AC: report includes parity evidence and explicit residual-risk list]
 
-- [ ] NEW 8.0 **P2 unfinished stage-oriented decomposition:** `run-forge-projections.ts` remains a mixed-responsibility orchestrator. Local progress (2026-07-29): concrete preflight, metrics-finalization, persistence, and goalie stages own their real work; shared market-output builders own prediction/flag construction helpers. All five original pass-through wrappers are gone, the runner has no direct mutations, and it falls from 4,893 to 3,832 lines. Keep open until the remaining per-game skater responsibility is extracted under the existing no-math-change parity guardrail.
+- [x] NEW 8.0 **P2 unfinished stage-oriented decomposition:** concrete preflight, skater, goalie, persistence, and metrics-finalization modules now own their real work through explicit stage contracts; shared market-output builders own prediction/flag construction helpers. All five original pass-through wrappers are gone, the 827-line runner contains no direct mutations, and it retains only top-down invocation, handoffs, aggregate counters, timeout propagation, and lifecycle coordination. Formatter-normalized mechanical comparison proves the moved skater body is identical to its pre-extraction parent after normalizing only the expanded counter return, and the focused runner/import plus API-route suites pass 96/96 with full TypeScript (completed 2026-07-29).
 - [x] NEW 8.1 **P3 current-status and path reconciliation:** the PRD/list now distinguish accepted rename/module/parity work from the remaining structural gap, remove duplicate/stale active-file entries, use canonical repository paths, and mark parity evidence accepted rather than in progress.
 
 ### 1.1 Frozen Reference Inventory Checklist
