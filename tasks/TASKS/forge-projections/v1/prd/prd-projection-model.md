@@ -4,6 +4,10 @@
 > It includes the current implementation status, concrete file pointers, and the
 > remaining work prioritized for MVP.
 
+## Shared prediction-engine mapping authority
+
+This PRD owns the canonical FORGE player/team/goalie projection trunk. Cross-initiative mapping across FORGE, Sustainability, rolling metrics, sKO, dashboards, and game predictions lives in `tasks/TASKS/forge-projections/prediction-engine/tasks-prd-forge-prediction-engine-super-task-list.md`; a second standalone super-list PRD is intentionally unnecessary. Super-list checkmarks record meta-level mapping, merge, or disposition and do not override granular runtime, data, migration, promotion, or evidence gates in the mapped A–K source ledgers.
+
 ## 1) One-liner
 Build a self-consistent NHL player + team projection system that outputs per-game boxscore projections (by strength: ES/PP/PK) and rolls them up for horizons of 1–10 future games with uncertainty bands, updating nightly (“learn as it goes”).
 
