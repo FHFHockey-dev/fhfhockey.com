@@ -6,6 +6,8 @@ This PRD is the canonical product and execution contract for the repository-wide
 
 The program is continuous. It first verifies and finishes unfinished initiatives (Wave A), then plans and completes not-started or untracked initiatives (Wave B), and finally audits and remediates every completed initiative (Wave C). Historical checkmarks are claims that require implementation evidence and a Wave-C audit; they are not accepted as proof by themselves.
 
+**2026-07-30 recovery publication overlay:** guarded `96ccea804b90b5a6f482de45f6b7931253725311` is READY/Production as `dpl_HCFwiK4yAPeXUG3QzC3R28NtYvsc`. Seven public shells return 200, protected rolling routes return 401, the populated Start Chart API plus exact 1440×900/390×844 browser repeat pass, bounded ownership/Variance/Player Pickup/Command Center/projections readers pass, and deployment-scoped runtime-error/5xx queries are empty. This closes B-START NEW 9.4, B-YAHOO NEW 9.14, and B-DEAD 7.3 plus parent 7.0. B-START is 47/55, B-YAHOO 53/72, and B-DEAD 33/41. Raw parity is 4,846/4,988 with 142 open = 97.15%; actionable parity is 4,846/4,982 with 136 open = 97.27% complete / 2.73% open. Severity is P0 29/24, P1 194/157, P2 160/153, P3 52/52. No migration or writer ran.
+
 ### Canonical control artifacts
 
 - `tasks/TASKS/super-goal/prd/prd-fhfh-comprehensive-completion-audit-optimization.md` — this PRD.
