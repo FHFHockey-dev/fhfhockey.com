@@ -1,5 +1,7 @@
 # FHFH Comprehensive Completion, Audit, and Optimization — Master Task List
 
+**2026-07-31 live Production ledger reconciliation:** Connected read-only Supabase evidence contains the prior eight migrations plus all 16 exact ordered-predeploy migrations through `20260731040341`. The Utah repair, analytics tracking-only, and Yahoo postdeploy migrations remain separately gated and absent. Current Production is READY/Current at `dpl_vU1c1yvbDQJMXEzK1rLT373Qndwy` on `1f9a54d1cf7ced88c6f0f5a4ab57e9a547d3fdfc`; home/redirect/denial probes and the bounded runtime-error query are clean. No new external mutation or build occurred.
+
 **2026-07-31 local migration reapply:** The disposable stack was reset to `20260731035012`, then `supabase migration up --local` applied only `20260731040341_privatize_unified_materialized_views.sql`; history returned to 27 rows with three `internal_stats` materializations, three public wrappers, and zero sKO lease residue. This remains local-only.
 
 ## Current execution overlay
