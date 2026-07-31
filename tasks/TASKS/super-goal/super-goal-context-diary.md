@@ -8066,3 +8066,9 @@
 - **Reconciliation:** Yahoo parent 7.0 is now closed because children 7.1–7.5 are complete. The already-recorded deployed canonical-reader proof under 7.1 is joined by the local 17-file/83-test contract cohort and existing TypeScript, scoped lint, formatting, and diff-integrity evidence.
 - **Synchronization:** Source/master C0046 closes alongside the prior NEW 9.0/C0058 receipt. B-YAHOO is 65/72 with seven open. Raw parity is 4,937/5,011; actionable parity is 4,937/5,005 with 68 open (98.64%); mechanical master roll-up is 5,065/5,171. The Yahoo task list/PRD/inventory, canonical PRD/master, final summary, and diary carry the same current roll-up.
 - **Boundary:** Provider/league discovery, legacy-Python retirement, resumable historical backfill, end-to-end/provider, and other explicit external gates remain open. This was documentation-only reconciliation; no provider, database, writer, repair, backfill, deployment, build, push, analytics, or credential action ran.
+
+## Entry 0882 — 2026-07-31 current Wave-B roll-up parity reconciliation
+
+- **Discovery:** Current source-ledger recounts showed several older Wave-B banners in the canonical PRD/master/final-summary still carrying pre-Yahoo and pre-DRM/B-CLEAN counts. No implementation or gate disposition was changed.
+- **Current roll-up:** B-CRON-NST 68/75; B-SUST-BAR 95/95; B-SUST-AUD 50/58; B-GAMEGRID 38/38; B-SKO 70/70; B-START 55/55; B-FORGE-COMBO 39/39; B-XG-EX 16/16; B-YAHOO 65/72; B-DRAFT-STYLE 56/56; B-CLEAN 158/158; B-DEAD 44/44; B-DRM 94/111; B-SKO-BURN 6/6; B-TRENDS 53/53. Global parity is raw 4,937/5,011, actionable 4,937/5,005 with 68 open, and mechanical master 5,065/5,171.
+- **Boundary:** The canonical PRD, master task list, final summary, and diary now carry the same current roll-up. Remaining provider, credential, database, repair, backfill, deployment, and natural-run gates remain open; no external state changed.
