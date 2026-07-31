@@ -2,7 +2,7 @@
 
 ## Current execution overlay
 
-**2026-07-31 disposable local database validation:** A fresh Colima/Docker Supabase reset with disposable CLI `2.111.0` replayed 15 ordered migrations through `20260728225806`; the installed `2.90.0` parser failure was isolated to the local CLI and the migration file remained unchanged. Value-free catalog, ACL/RLS, and direct rollback-contained receipts cover Yahoo atomic player/history and key snapshots, sKO leases, Gamecenter normalization/CAS, and FORGE exact replacement. Four focused files pass 47/47 tests. No Production migration, writer, repair, backfill, provider, build, deployment, or push occurred; existing open rows and external gates remain open.
+**2026-07-31 full-chain local database validation:** A fresh Colima/Docker Supabase reset with disposable CLI `2.111.0` replayed all 27 active migrations through `20260731040341`; data-free scheduler, Utah-repair, and materialized-view retargeting guards behaved as designed. Analytics reconstruction and `internal_stats` materialization relocation completed locally. Value-free catalog, ACL/RLS, and direct rollback-contained promotion/snapshot receipts pass, and the migration-contract cohort passes 76/76 tests. The preceding 15-migration CLI checkpoint is superseded for current-chain evidence. No Production migration, writer, repair, backfill, provider, build, deployment, or push occurred; existing open rows and external gates remain open.
 
 ## Relevant Files
 
