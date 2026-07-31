@@ -7947,3 +7947,8 @@
 
 - **Synchronization:** The sKO source task list's completed 8.0 banner incorrectly said continuous-discovery NEW 9.0 was “closed,” contradicting its own unchecked NEW 9.0 row, the ownership contract, and the current master/summary roll-ups. The banner now states that NEW 9.0 remains separate and open.
 - **Boundary / counts:** Documentation-only correction; no application, database, migration, writer, repair, provider, schedule, build/deployment, push, or credential state changed. Raw parity remains 4,922/5,011; actionable parity remains 4,922/5,005 with 83 open = 98.34%; mechanical master remains 5,048/5,171; B-SKO remains 69/70.
+
+## Entry 0864 — 2026-07-31 B-SKO initiative-registry reconciliation
+
+- **Synchronization:** The canonical master PRD initiative registry still listed B-SKO as 67/70 with three open. Its current row now matches the synchronized source/master evidence: 69/70 with only continuous-discovery NEW 9.0 open; safe retirement is closed.
+- **Boundary / counts:** Documentation-only correction; no application, database, migration, writer, repair, provider, schedule, build/deployment, push, or credential state changed. Raw parity remains 4,922/5,011; actionable parity remains 4,922/5,005 with 83 open = 98.34%; mechanical master remains 5,048/5,171; B-SKO remains 69/70.
