@@ -8072,3 +8072,9 @@
 - **Discovery:** Current source-ledger recounts showed several older Wave-B banners in the canonical PRD/master/final-summary still carrying pre-Yahoo and pre-DRM/B-CLEAN counts. No implementation or gate disposition was changed.
 - **Current roll-up:** B-CRON-NST 68/75; B-SUST-BAR 95/95; B-SUST-AUD 50/58; B-GAMEGRID 38/38; B-SKO 70/70; B-START 55/55; B-FORGE-COMBO 39/39; B-XG-EX 16/16; B-YAHOO 65/72; B-DRAFT-STYLE 56/56; B-CLEAN 158/158; B-DEAD 44/44; B-DRM 94/111; B-SKO-BURN 6/6; B-TRENDS 53/53. Global parity is raw 4,937/5,011, actionable 4,937/5,005 with 68 open, and mechanical master 5,065/5,171.
 - **Boundary:** The canonical PRD, master task list, final summary, and diary now carry the same current roll-up. Remaining provider, credential, database, repair, backfill, deployment, and natural-run gates remain open; no external state changed.
+
+## Entry 0883 — 2026-07-31 publication-ref divergence audit
+
+- **Read-only refs:** GitHub `origin/octoberBranch` is `fdfbb2764d656be37b47be27de64d0e50f25f19f`; requested `e6a93bc23` is its ancestor and 23 commits behind. Clean local `HEAD` is `608ba00e23ca99f05ba400b10afe577b9ac09515`, 10 commits ahead of GitHub. The separate `local/octoberBranch` ref is divergent shared-checkout “home page stuff” at `a13dd0175c510ab59f250b76dd5b5372e9e74090`, leaving local-snapshot 401 ahead and one behind that ref.
+- **Disposition:** The stale e6 target is not a safe normal-push target and was not deployed. A current-HEAD publication remains separately gated; no branch was merged or rewritten.
+- **Boundary:** This was a read-only fetch/ref audit. No push, build, deployment, migration, provider, writer, repair, backfill, analytics, or credential action ran.
