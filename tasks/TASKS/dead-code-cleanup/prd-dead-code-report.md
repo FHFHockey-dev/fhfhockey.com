@@ -245,3 +245,19 @@ The follow-on active-WiGO check proves the three old Chart.js visuals, `TeamName
 The post-cleanup `knip` 5.88.1 production scan reports 155 raw unused-file candidates, down from 174 before the bounded removals. Its 164 unresolved imports are exclusively Sass alias-analysis false positives; the exact Production build succeeds. Tests, scripts, framework/config entrypoints, manual operational modules, quarantined surfaces, and separate apps remain intentional non-deletion classes. The scan initially exposed three undeclared transitive packages across four active imports; the canonical manifest and lock now directly own already-locked `@sanity/client` 3.4.1, `domhandler` 5.0.3, and `progress` 2.0.3, and the rerun reports zero unlisted dependencies.
 
 Exact deleted-path checks find none of the 20 removed files restored. Route/config comparison preserves all approval-gated routes, 48 package scripts, 20 Vercel cron definitions, and every canonical replacement link. Guarded recovery `96ccea804` is READY/Production as `dpl_HCFwiK4yAPeXUG3QzC3R28NtYvsc`; seven public shells return 200, both unauthenticated rolling routes return 401, populated Start Chart desktop/mobile plus bounded restored-reader surfaces pass, and deployment-scoped runtime-error/5xx queries are empty. Final integrity row 7.3 and parent 7.0 close; B-DEAD is 33/41 with eight open. No migration or writer ran.
+
+## 2026-07-30 Deleted-Cluster Consumer Closure
+
+Fresh exact path, basename, and symbol scans across application runtime,
+scripts, tests, dynamic imports, workflows/configuration, and the CMS,
+functions, webhook, migration, and SQL roots find no consumer or restored copy
+of any of the 20 deleted files. The only similar-name hits are the separately
+retained current `PlayerPPTOIPerGameChart/PPTOIChart.tsx` implementation and
+unrelated Sustainability CSS class names; neither references a deleted module.
+
+The remaining original candidates are already classified as active,
+operational/manual, or owner-quarantined and therefore sit outside the
+deletion set rather than carrying an unresolved deadness claim. This closes
+5.2 and parent 5.0 without deleting another file. B-DEAD is 40/44 with four
+open. Raw imported parity is 4,898/5,002; actionable imported parity is
+4,898/4,996 = 98.04%; canonical master roll-up is 5,009/5,156 = 97.15%.
