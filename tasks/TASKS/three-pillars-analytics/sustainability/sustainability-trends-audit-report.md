@@ -213,6 +213,8 @@ This closes the first cross-system map only. It does not close family-specific f
 | NEW 11 Start Chart scoring drift                | P1       | Start Chart API/UI/config                      | Closed locally                   | `fhfh-default-skater-v1` consumes shared G/A/PPP/SOG/HIT/BLK defaults, the API returns the contract, the UI renders it, and API/UI regressions pass. Points remain read-time presentation over unchanged raw FORGE rows. |
 | NEW 12 confidence-driver nesting drift          | P2       | Canonical FORGE player reader                  | Closed locally                   | The reader now prefers PP/matchup/rest drivers from `model.skater_selection`, falls back to historical top-level metadata, and the focused route regression covers every nested field.                               |
 | NEW 13 FORGE result/run-version coverage gap    | P1       | Results/accuracy pipeline                      | Open — migration/backfill proof  | Canonical eligibility has 1,344 missing of 7,523. New-run provenance and the atomic RPC exclude contaminated legacy inputs while retaining latest-run authority and eligible empty-scope cleanup; apply it, backfill only eligible scopes, and prove idempotency/coverage.       |
+| NEW 14 contaminated result-history conflict     | P1       | FORGE historical results/calibration           | Open — owner disposition         | Every one of the 21 repair-scope runs lacks repaired rolling-history provenance and is correctly rejected. Choose no-backfill quarantine or a separately versioned non-calibration history class without altering original runs/projections. |
+| NEW 15 source season-identity corruption        | P1       | WGO → unified player stats → trends            | Open — source-first repair       | 1,905 April 2023 WGO/unified rows and 49,410 derived trend rows are mislabeled `20242025`. Repair source identity atomically with an inverse, refresh the view, then rebuild dependent trends. |
 
 ## Validation evidence register
 
@@ -229,6 +231,21 @@ All database checks below were read-only against project `fyhftlxokyjtpndbkfse`;
 | FORGE-TEAM-01 | ANA/VGK and BUF/MTL; exact May 10 run | Summed player ES/PP shots and goals by game/team. | All four team rows reconcile within 0.003 rounding; the compatibility team API returns the exact stored rows. | Pass. |
 | FORGE-GOALIE-01 | Lukas Dostal; exact May 10 run | Heuristic starter scenarios select Dostal at `0.98`; evidence is 574 recent/1,243 season shots and 20/44 starts. | Canonical goalie API returns shots `26.654`, saves `24.002`, goals allowed `2.652` (balanced exactly), plus explicit uncertainty/scenario context. Start Chart intentionally shows the shared prior `0.70`, not the FORGE scenario probability. | Pass; semantics are distinct and documented. |
 | FORGE-ACCURACY-01 | Succeeded horizon-one skater projections through 2026-04-16 | The broad all-succeeded-run pass found 8,002 distinct projected player-games, but the route canonically selects the latest succeeded run and exact same-date game. That contract yields 7,523 eligible player-games. | 6,179 canonical player-games have results and 1,344 are missing: 912 across 18 zero-result dates and 432 across three partial dates. All surviving rows on the partial dates reference older source runs after later reruns became canonical; the broad population contains 149 additional stored matches outside the latest-run population. The active caller is correctly explicit at offset 0. A local selected-run diagnostic reports/persists coverage, and a service-only security-invoker RPC validates the latest succeeded run then transactionally exact-replaces the full date scope, including empty results. | NEW 13 now has local authority/stale-row/idempotent-write controls with 6/6 focused tests plus TypeScript; migration application, bounded backfill, and resulting coverage/idempotency proof remain open. |
+
+## Bounded repair preparation — 2026-07-30
+
+The value-free
+[`sustainability-forge-bounded-repair-manifest.md`](./sustainability-forge-bounded-repair-manifest.md)
+freezes the exact playoff-trend, score-provenance, 2025–26 team-rating,
+rolling primary/support, and 21-date FORGE scopes with pre-state counts and
+commutative identity/payload receipts. It also fixes the execution order,
+rollback/idempotency requirements, and no-mutation boundary.
+
+The preparation does not close a historical repair. It opens NEW 14 because
+all 21 FORGE runs fail the approved repaired-input provenance contract, and
+NEW 15 because the 2024–25 trend source includes April 2023 rows under the
+wrong season. Both must be resolved before the corresponding dry-run or
+mutation authorization can be truthful.
 
 ## Definition and overlap register
 
