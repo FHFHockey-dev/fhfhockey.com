@@ -240,6 +240,9 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     expect(migration).toContain("(pre_count = 0 and post_count = 88)");
     expect(migration).toContain("if pre_count = 88 then");
     expect(migration).toContain("if updated_count <> 88 then");
+    expect(migration).toContain(
+      "if not exists (select 1 from public.wgo_team_stats)",
+    );
     expect(migration.match(/update public\.wgo_team_stats/g)).toHaveLength(1);
     expect(migration).not.toMatch(/\b(?:insert|delete|truncate)\b/i);
   });
@@ -252,6 +255,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       path.join(repoRoot, "supabase", "config.toml"),
       "utf8",
     );
+    expect(migration).toContain("with no data;");
     const relationHashes = {
       mv_sko_skater_moments:
         "0282d6e1151ab637c90fda516fcc327b99e78e863ca800cb59e8275f18b2dcaf",
@@ -285,7 +289,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       const pattern =
         name === "mv_sko_skater_moments"
           ? new RegExp(
-              `create materialized view analytics\\.${name} as\\n([\\s\\S]*?)\\nwith data;`,
+              `create materialized view analytics\\.${name} as\\n([\\s\\S]*?)\\n-- The supported baseline[\\s\\S]*?\\nwith no data;`,
             )
           : new RegExp(
               `create view analytics\\.${name} as\\n([\\s\\S]*?);\\n\\n`,
@@ -295,7 +299,11 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       expect(definition, name).toBeDefined();
       expect(
         createHash("sha256")
-          .update(definition ?? "")
+          .update(
+            name === "mv_sko_skater_moments"
+              ? `${definition ?? ""};`
+              : (definition ?? ""),
+          )
           .digest("hex"),
         name,
       ).toBe(expectedHash);

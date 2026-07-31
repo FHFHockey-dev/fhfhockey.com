@@ -9,14 +9,15 @@
 do $$
 begin
   if to_regprocedure('public.update_all_wgo_skaters()') is null then
-    raise exception 'expected public.update_all_wgo_skaters()';
+    raise notice
+      'public.update_all_wgo_skaters() is absent; creating its retired contract';
   end if;
 
   if to_regprocedure(
     'public.get_skater_game_score_by_limit(bigint,integer)'
   ) is null then
-    raise exception
-      'expected public.get_skater_game_score_by_limit(bigint,integer)';
+    raise notice
+      'public.get_skater_game_score_by_limit(bigint,integer) is absent; creating its retired contract';
   end if;
 end;
 $$;

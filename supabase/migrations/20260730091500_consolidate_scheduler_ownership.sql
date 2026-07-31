@@ -17,6 +17,13 @@ begin
     raise exception 'cron.job is unavailable';
   end if;
 
+  -- The supported schema-only baseline contains no pg_cron row data. Hosted
+  -- databases must still satisfy every exact-name assertion below.
+  if not exists (select 1 from cron.job) then
+    raise notice 'scheduler ownership skipped for data-free baseline replay';
+    return;
+  end if;
+
   foreach job_name in array array[
     'run-forge-projection-v2',
     'rebuild-sustainability-priors',

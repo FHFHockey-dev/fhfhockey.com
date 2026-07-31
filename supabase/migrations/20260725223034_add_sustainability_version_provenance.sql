@@ -552,6 +552,35 @@ grant execute on function public.activate_sustainability_config(
   integer, text, text, jsonb, jsonb, jsonb, text, integer, text
 ) to service_role;
 
+-- The supported hosted-schema baseline is intentionally data-free. Preserve the
+-- historical revision identity on a fresh replay without changing an existing
+-- hosted configuration row.
+insert into public.model_sustainability_config (
+  model_version,
+  score_model_version,
+  config_hash,
+  active,
+  weights_json,
+  toggles_json,
+  constants_json,
+  sd_mode,
+  freshness_days
+)
+select
+  1,
+  'legacy_draft_v1',
+  'legacy_unversioned',
+  false,
+  '{}'::jsonb,
+  '{}'::jsonb,
+  '{}'::jsonb,
+  'fixed',
+  45
+where not exists (
+  select 1
+  from public.model_sustainability_config
+);
+
 select public.activate_sustainability_config(
   2,
   'sustainability_score_v2',

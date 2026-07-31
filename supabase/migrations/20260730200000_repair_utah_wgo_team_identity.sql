@@ -50,6 +50,15 @@ declare
   post_count integer;
   updated_count integer := 0;
 begin
+  -- The supported schema-only baseline contains no application rows. A hosted
+  -- database with any WGO/game data must still satisfy the exact 88-row
+  -- manifest and digest assertions below.
+  if not exists (select 1 from public.wgo_team_stats)
+     and not exists (select 1 from public.games) then
+    raise notice 'Utah WGO repair skipped for data-free baseline replay';
+    return;
+  end if;
+
   select
     pg_catalog.count(*)::integer,
     pg_catalog.md5(

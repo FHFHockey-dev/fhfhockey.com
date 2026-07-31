@@ -39,6 +39,14 @@ describe("Sustainability version provenance migration", () => {
     )
   })
 
+  it("bootstraps the legacy revision only for a data-free baseline replay", () => {
+    expect(migrationSql).toContain("'legacy_draft_v1'")
+    expect(migrationSql).toContain("'legacy_unversioned'")
+    expect(migrationSql).toMatch(
+      /insert into public\.model_sustainability_config[\s\S]+select\s+1,[\s\S]+where not exists \(\s+select 1\s+from public\.model_sustainability_config\s+\);/,
+    )
+  })
+
   it("queues a bounded canonical v2 upgrade without rewriting old rows", () => {
     expect(migrationSql).toContain(
       "create table if not exists public.sustainability_recompute_queue",

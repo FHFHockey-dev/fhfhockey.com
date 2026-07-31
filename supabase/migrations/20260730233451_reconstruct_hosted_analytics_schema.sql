@@ -630,8 +630,10 @@ create materialized view analytics.mv_sko_skater_moments as
    FROM player_medians pm
      JOIN player_mads pmad USING (player_id, position_code)
      JOIN league_medians lm USING (position_code)
-     JOIN league_mads lmad USING (position_code);
-with data;
+     JOIN league_mads lmad USING (position_code)
+-- The supported baseline is schema-only; populate from retained source rows
+-- only in an environment where those rows exist.
+with no data;
 
 create view analytics.vw_sko_skater_zscores as
  WITH constants AS (

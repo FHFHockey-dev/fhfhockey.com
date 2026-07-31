@@ -399,6 +399,9 @@ SELECT cron.schedule(
     expect(schedulerOwnershipMigrationSql).toContain("active := false");
     expect(schedulerOwnershipMigrationSql).toContain("active := true");
     expect(schedulerOwnershipMigrationSql).toContain("matching_jobs <> 1");
+    expect(schedulerOwnershipMigrationSql).toContain(
+      "if not exists (select 1 from cron.job)",
+    );
   });
 
   it.each([
