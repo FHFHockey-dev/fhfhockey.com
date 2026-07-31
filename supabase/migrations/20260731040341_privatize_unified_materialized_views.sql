@@ -6,7 +6,8 @@
 --   2. replace the repair RPC's internal_stats refresh target with public;
 --   3. drop the three public wrapper views;
 --   4. move the three internal_stats materialized views back to public; and
---   5. drop internal_stats after confirming it is empty.
+--   5. restore their prior anon/authenticated/service_role grants; and
+--   6. drop internal_stats after confirming it is empty.
 
 do $$
 declare
