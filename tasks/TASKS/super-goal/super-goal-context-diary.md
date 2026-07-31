@@ -7942,3 +7942,8 @@
 - **Zero-use evidence:** The bounded last-24-hour Postgres log window returned 100 rows and no exact execution-log match for `update_all_wgo_skaters` or `get_skater_game_score_by_limit(...)`. A read-only `pg_stat_statements` check returned zero non-comment fingerprints for either tombstoned routine; the only initial textual match was a comment-only schedule/timeline query and was excluded.
 - **Disposition:** NEW 56 and NEW 57 remain open for the required one-release zero-use monitoring, publication/application receipts, and final-drop controls. This observation is supporting evidence only and does not authorize or perform the drops.
 - **Boundary / counts:** No migration, writer, repair, backfill, provider call, schedule change, analytics reconciliation, Yahoo revocation, credential change, Vercel build/deployment, push, or shared-checkout mutation occurred. Raw parity remains 4,922/5,011; actionable parity remains 4,922/5,005 with 83 open = 98.34%; mechanical master remains 5,048/5,171; B-SKO remains 69/70.
+
+## Entry 0863 — 2026-07-31 sKO open-gate banner correction
+
+- **Synchronization:** The sKO source task list's completed 8.0 banner incorrectly said continuous-discovery NEW 9.0 was “closed,” contradicting its own unchecked NEW 9.0 row, the ownership contract, and the current master/summary roll-ups. The banner now states that NEW 9.0 remains separate and open.
+- **Boundary / counts:** Documentation-only correction; no application, database, migration, writer, repair, provider, schedule, build/deployment, push, or credential state changed. Raw parity remains 4,922/5,011; actionable parity remains 4,922/5,005 with 83 open = 98.34%; mechanical master remains 5,048/5,171; B-SKO remains 69/70.
