@@ -7790,3 +7790,9 @@
 - **Behavior receipts:** A synthetic game-prediction candidate promoted atomically and rolled back. A synthetic Yahoo game-week snapshot inserted, replayed exactly, rejected a conflicting same-ID payload, and rolled back with zero residue.
 - **Focused verification:** Ten correctly scoped migration/route files pass 76/76 tests, including supported-baseline, Gamecenter, projection-materialization, Sustainability provenance, shift-position, immutable-unaccent, non-realized-stats, transactional-stats, Yahoo permissions, and sKO prediction lifecycle contracts. No full suite or build was run.
 - **Disposition/boundary:** This supersedes the preceding 15-migration local note for current-chain evidence but closes no Production/history or mutation-gated row. No hosted migration, writer, repair, backfill, provider call, Vercel build/deployment, Git push, analytics reconciliation, or Yahoo cache revocation occurred.
+
+## Entry 0839 — 2026-07-31 bounded local migration down/reapply
+
+- **Receipt:** The disposable local stack reset to `20260731035012`, then `supabase migration up --local` applied only `20260731040341_privatize_unified_materialized_views.sql`.
+- **Postcondition:** Local history returned to 27 rows with three `internal_stats` materializations, three public aggregate wrappers, and zero `sko_prediction_run_manifests` residue. No hosted state changed.
+- **Boundary:** This is a local migration-down/reapply proof only. No Production migration, writer, repair, backfill, provider call, build, deployment, Git push, analytics reconciliation, or Yahoo cache revocation occurred.

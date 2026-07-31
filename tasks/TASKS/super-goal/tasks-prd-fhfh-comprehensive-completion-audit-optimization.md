@@ -1,5 +1,7 @@
 # FHFH Comprehensive Completion, Audit, and Optimization — Master Task List
 
+**2026-07-31 local migration reapply:** The disposable stack was reset to `20260731035012`, then `supabase migration up --local` applied only `20260731040341_privatize_unified_materialized_views.sql`; history returned to 27 rows with three `internal_stats` materializations, three public wrappers, and zero sKO lease residue. This remains local-only.
+
 ## Current execution overlay
 
 **2026-07-31 full-chain local database validation:** A fresh Colima/Docker Supabase reset with disposable CLI `2.111.0` replayed all 27 active migrations through `20260731040341`; data-free scheduler, Utah-repair, and materialized-view retargeting guards behaved as designed. Analytics reconstruction and `internal_stats` materialization relocation completed locally. Value-free catalog, ACL/RLS, and direct rollback-contained promotion/snapshot receipts pass, and the migration-contract cohort passes 76/76 tests. The preceding 15-migration CLI checkpoint is superseded for current-chain evidence. No Production migration, writer, repair, backfill, provider, build, deployment, or push occurred; existing open rows and external gates remain open.

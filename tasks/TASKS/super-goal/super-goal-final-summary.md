@@ -1,5 +1,7 @@
 # FHFH Comprehensive Completion, Audit, and Optimization — Final Summary
 
+**Latest local down/reapply receipt (2026-07-31):** The disposable stack reset to `20260731035012`; `supabase migration up --local` applied only `20260731040341`, restoring 27 migration rows, three `internal_stats` materializations, three public wrappers, and zero sKO lease residue. No hosted or application state changed.
+
 > **Status: ACTIVE — NOT COMPLETE.** This is the required final-report skeleton. Populate verified results only after all completion gates pass.
 
 **Latest full-chain local database checkpoint (2026-07-31):** Fresh disposable Colima/Docker reset with CLI `2.111.0` replayed all 27 active migrations through `20260731040341` in timestamp order. Data-free scheduler, Utah-repair, and materialized-view retargeting guards skipped safely; analytics reconstruction created 16 local relations and three aggregate materializations moved to `internal_stats` behind public wrappers. Catalog/RLS/ACL checks pass with zero residue in the new state tables. The migration-contract cohort passes 76/76 tests; rollback-contained game-prediction promotion and Yahoo game-week snapshot receipts pass first-run, exact replay, conflict rejection, and rollback. This supersedes the prior 15-migration local note and changes no imported/master counts or Production-gated status. No hosted migration, writer, repair, backfill, provider action, build, deployment, or push occurred.

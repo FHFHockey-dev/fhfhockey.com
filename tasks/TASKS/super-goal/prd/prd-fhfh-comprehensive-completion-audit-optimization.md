@@ -1,5 +1,7 @@
 # PRD: FHFH Comprehensive Completion, Audit, and Optimization
 
+**2026-07-31 local migration reapply overlay:** The disposable stack was reset to `20260731035012`, then `supabase migration up --local` applied only `20260731040341_privatize_unified_materialized_views.sql`; post-reapply history is again 27 rows, with three `internal_stats` materializations, three public wrappers, and zero sKO lease residue. This is a local down/reapply receipt only.
+
 ## 1. Introduction / Overview
 
 This PRD is the canonical product and execution contract for the repository-wide completion program defined by `web/rules/super-goal.md`. It consolidates every discoverable FHFH PRD, task list, embedded checklist, audit, implementation plan, runbook, schema contract, research note, and current implementation signal into a single dependency-aware program.
