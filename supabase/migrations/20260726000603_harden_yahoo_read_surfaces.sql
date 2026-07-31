@@ -51,6 +51,37 @@ alter table public.yahoo_names
 create unique index yahoo_names_player_id_key
   on public.yahoo_names (player_id);
 
+do $index_guard$
+begin
+  if not exists (
+    select 1
+    from pg_catalog.pg_constraint
+    where conrelid = 'public.yahoo_players'::pg_catalog.regclass
+      and conname = 'yahoo_players_pkey'
+      and contype = 'p'
+  ) or not exists (
+    select 1
+    from pg_catalog.pg_constraint
+    where conrelid =
+      'public.yahoo_player_ownership_history'::pg_catalog.regclass
+      and conname = 'yahoo_player_ownership_history_pkey'
+      and contype = 'p'
+  ) then
+    raise exception using
+      errcode = '55000',
+      message = 'Canonical Yahoo primary-key coverage is absent.';
+  end if;
+end
+$index_guard$;
+
+drop index if exists public.yahoo_players_player_key_key;
+
+alter table public.yahoo_player_ownership_history
+  drop constraint if exists
+    yahoo_player_ownership_history_player_key_date_unique;
+
+drop index if exists public.ypo_hist_player_date;
+
 create policy public_read
   on public.yahoo_positions
   for select

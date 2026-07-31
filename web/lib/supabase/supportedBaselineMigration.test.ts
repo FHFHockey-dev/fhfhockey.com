@@ -50,6 +50,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260730200000_repair_utah_wgo_team_identity.sql",
       "20260730233451_reconstruct_hosted_analytics_schema.sql",
       "20260731015416_repair_wgo_player_season_identity.sql",
+      "20260731022805_revoke_legacy_yahoo_read_cache.sql",
     ]);
 
     expect(
@@ -372,6 +373,31 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     );
   });
 
+  it("keeps the legacy Yahoo cache revocation postdeploy and fail-closed", () => {
+    const migration = readMigration(
+      "20260731022805_revoke_legacy_yahoo_read_cache.sql",
+    );
+
+    expect(migration).toContain(
+      "relation.relname = 'yahoo_nhl_player_map_mat'",
+    );
+    expect(migration).toContain("relation.relkind = 'm'");
+    expect(migration).toContain("'yahoo_nhl_player_map_read'");
+    expect(migration).toContain("'yahoo_players_with_normalized_history'");
+    expect(migration).toContain(
+      "relation.reloptions @> array['security_invoker=true']",
+    );
+    expect(migration).toContain(
+      "revoke all on table public.yahoo_nhl_player_map_mat",
+    );
+    expect(migration).toContain("from public, anon, authenticated;");
+    expect(migration).toContain(
+      "grant select on table public.yahoo_nhl_player_map_mat",
+    );
+    expect(migration).toContain("to service_role;");
+    expect(migration).not.toMatch(/\b(?:insert|update|delete|truncate)\b/i);
+  });
+
   it("reconstructs the exact credential-free hosted analytics contract", () => {
     const migration = readMigration(
       "20260730233451_reconstruct_hosted_analytics_schema.sql",
@@ -468,7 +494,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     );
     const manifestRows = [
       ...summary.matchAll(
-        /^\| (Ordered predeploy|Separate repair mutation|Production tracking only after local parity) \| `([^`]+\.sql)` \| `([a-f0-9]{64})` \|$/gm,
+        /^\| (Ordered predeploy|Separate repair mutation|Production tracking only after local parity|Postdeploy after reader parity) \| `([^`]+\.sql)` \| `([a-f0-9]{64})` \|$/gm,
       ),
     ].map((match) => ({
       className: match[1],
@@ -486,7 +512,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260725200808_fix_yahoo_player_writer_captured_at.sql",
     ]);
 
-    expect(manifestRows).toHaveLength(16);
+    expect(manifestRows).toHaveLength(17);
     expect(
       manifestRows.filter((row) => row.className === "Ordered predeploy"),
     ).toHaveLength(14);
@@ -499,6 +525,11 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       manifestRows.filter(
         (row) =>
           row.className === "Production tracking only after local parity",
+      ),
+    ).toHaveLength(1);
+    expect(
+      manifestRows.filter(
+        (row) => row.className === "Postdeploy after reader parity",
       ),
     ).toHaveLength(1);
     expect(manifestRows.map((row) => row.fileName)).toEqual(

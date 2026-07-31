@@ -146,6 +146,15 @@ describe("Yahoo player writer permissions", () => {
     expect(migration).toContain("with (security_invoker = true)");
     expect(migration).toContain("from public.yahoo_nhl_player_map as mapping");
     expect(migration).toContain("create policy public_read");
+    expect(migration).toContain(
+      "drop index if exists public.yahoo_players_player_key_key",
+    );
+    expect(migration).toContain(
+      "yahoo_player_ownership_history_player_key_date_unique",
+    );
+    expect(migration).toContain(
+      "drop index if exists public.ypo_hist_player_date",
+    );
     expect(migration).toContain("relation.relname in (");
     expect(migration).toContain("or not relation.relrowsecurity");
     expect(migration).toContain("from public, anon, authenticated");
