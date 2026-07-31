@@ -2,7 +2,7 @@
 
 ## 2026-07-31 current continuous-discovery closure
 
-NEW 9.1–9.14 were re-read as the complete current Yahoo finding register. The bounded local contract cohort passed 17 files/83 tests, with existing TypeScript, scoped lint, formatting, and diff-integrity evidence green. No new issue was found outside the explicit controlled provider/league-discovery, legacy-Python-retirement, resumable historical-backfill, and end-to-end/provider gates. B-YAHOO is 64/72 with eight open; no provider, database, writer, repair, backfill, build, deployment, push, or credential action occurred.
+Parent 7.0 and NEW 9.0 are closed after all five downstream children and NEW 9.1–9.14 were re-read. The bounded local contract cohort passed 17 files/83 tests, with existing TypeScript, scoped lint, formatting, and diff-integrity evidence green; deployed canonical-reader proof is recorded under 7.1. No new issue was found outside the explicit controlled provider/league-discovery, legacy-Python-retirement, resumable historical-backfill, and end-to-end/provider gates. B-YAHOO is 65/72 with seven open; no provider, database, writer, repair, backfill, build, deployment, push, or credential action occurred.
 
 ## 2026-07-31 current Production reader cutover
 

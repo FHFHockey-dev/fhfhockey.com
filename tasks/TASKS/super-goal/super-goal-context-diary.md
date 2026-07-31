@@ -8060,3 +8060,9 @@
 - **Verification:** The bounded local Yahoo contract cohort passed 17 files/83 tests. Existing TypeScript, scoped lint, formatting, and diff-integrity evidence remains green. No runtime or external state changed.
 - **Synchronization:** Source/master NEW 9.0/C0058 close. B-YAHOO is 64/72 with eight open. Raw parity is 4,936/5,011; actionable parity is 4,936/5,005 with 69 open (98.62%); mechanical master roll-up is 5,064/5,171. The Yahoo task list/PRD/inventory, canonical PRD/master, final summary, and diary carry the same closure.
 - **Boundary:** Controlled provider/league discovery, legacy-Python retirement, resumable historical backfill, end-to-end/provider, and other explicit external gates remain open. No provider, database, writer, repair, backfill, deployment, build, push, analytics, or credential action ran.
+
+## Entry 0881 — 2026-07-31 Yahoo downstream parent reconciliation
+
+- **Reconciliation:** Yahoo parent 7.0 is now closed because children 7.1–7.5 are complete. The already-recorded deployed canonical-reader proof under 7.1 is joined by the local 17-file/83-test contract cohort and existing TypeScript, scoped lint, formatting, and diff-integrity evidence.
+- **Synchronization:** Source/master C0046 closes alongside the prior NEW 9.0/C0058 receipt. B-YAHOO is 65/72 with seven open. Raw parity is 4,937/5,011; actionable parity is 4,937/5,005 with 68 open (98.64%); mechanical master roll-up is 5,065/5,171. The Yahoo task list/PRD/inventory, canonical PRD/master, final summary, and diary carry the same current roll-up.
+- **Boundary:** Provider/league discovery, legacy-Python retirement, resumable historical backfill, end-to-end/provider, and other explicit external gates remain open. This was documentation-only reconciliation; no provider, database, writer, repair, backfill, deployment, build, push, analytics, or credential action ran.
