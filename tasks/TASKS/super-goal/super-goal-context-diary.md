@@ -7924,3 +7924,8 @@
 - **Push:** After the guarded ancestor/clean-worktree checks, normal push `4b5bb3e51` advanced `origin/octoberBranch`; local HEAD, tracking, and live branch tips are equal.
 - **Vercel fanout:** The canonical web, CMS, and functions projects and root-linked `fhfhockey.com` duplicate each produced a canceled deployment for the documentation-only commit; the remaining legacy duplicate produced no commit-matched deployment. No new READY preview or replacement build was produced, and Production remained on `dpl_vU1c1yvbDQJMXEzK1rLT373Qndwy`.
 - **Disposition:** B-CRON-NST NEW 68/C0072 closes. The bounded runtime-error query remains empty. No migration, writer, repair, backfill, provider call, analytics tracking reconciliation, Yahoo revocation, credential change, or manual build ran. Raw parity is 4,921/5,011; actionable parity is 4,921/5,005 with 84 open; mechanical master is 5,047/5,171; B-CRON-NST is 67/75.
+
+## Entry 0860 — 2026-07-31 B-SKO 8.0 parent reconciliation
+
+- **Closure:** Source parent 8.0 and imported master C0047 were the only unchecked controls in the B-SKO runbook/monitoring/evidence family. Children 8.1–8.5 are all checked with the value-free runbook, exact Production reader/schema/freshness observation, historical-only end-to-end disposition, bounded artifact safety inventory, and synchronized control receipts. The parent closes without changing runtime behavior or external state.
+- **Boundary:** Continuous-discovery NEW 9.0 remains the sole B-SKO open control. No database, writer, repair, backfill, provider, schedule, deployment, build, credential, or shared-checkout state changed. Raw parity is 4,922/5,011; actionable parity is 4,922/5,005 with 83 open; mechanical master is 5,048/5,171; B-SKO is 69/70.
