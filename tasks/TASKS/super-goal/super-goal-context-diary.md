@@ -7652,3 +7652,10 @@
 - **Live operational evidence:** Current Production remains exact READY deployment `dpl_HCFwiK4yAPeXUG3QzC3R28NtYvsc` at `96ccea804`. A value-free malformed-bearer webhook probe still returns parser detail despite HTTP 401, so B-DEAD NEW 8.3 remains correctly open for the next authorized publication; no webhook work or downstream writer ran.
 - **Controls / counts:** Source/master NEW 14 closes. B-SUST-AUD is 49/57 with eight open. Raw imported parity is 4,902/5,004; actionable parity is 4,902/4,998 with 96 open = 98.08%; mechanical master roll-up is 5,026/5,164. P1 severity is 200 opened/165 closed; P0 remains 29/25, P2 165/160, and P3 57/57.
 - **Boundary:** No database row, migration, writer, provider mutation, build/deployment, schedule, credential, shared checkout, push, or stash changed.
+
+## Entry 0822 — 2026-07-30 disconnected podcast applet retirement
+
+- **Owner-approved disposition:** A-GDL NEW 19 closes by retiring the podcast applet instead of repairing its drifted Spotify trigger. Existing provider evidence proves the restored card is disconnected; that inactive state is the terminal contract.
+- **Containment:** The applet will not be reconnected, corrected, promoted, or used as GDL evidence. This retirement does not touch or weaken NEW 13–18: the four retained GDL/CCC applets, payload repair, historical Webhooks-key retirement, and every controlled event remain held pending IFTTT engineering and direct old-key rejection/current-key authorization.
+- **Controls / counts:** A-GDL is 74/85 with 11 open. Raw imported parity is 4,903/5,004; actionable parity is 4,903/4,998 with 95 open = 98.10%; mechanical master roll-up is 5,027/5,164. P2 severity is 165 opened/161 closed; P0 remains 29/25, P1 200/165, and P3 57/57.
+- **Boundary:** Evidence-only repository reconciliation. No IFTTT/provider call, applet edit, key probe, event, email, database row, build/deployment, schedule, credential, shared checkout, push, or stash changed.
