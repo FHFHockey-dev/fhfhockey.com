@@ -10,8 +10,10 @@ import {
   extractYahooPlayerKeyPage,
   fetchCompleteYahooPlayerKeySnapshot,
   getYahooRetryAfterMs,
+  isYahooGameWeekSnapshotReceipt,
   isYahooSheetExportEligible,
   isRetryableYahooError,
+  prepareYahooGameWeekSnapshot,
   requestYahooSheetExport,
   selectCanonicalYahooGame,
   withYahooRetry,
@@ -107,6 +109,86 @@ describe("Yahoo discovery helpers", () => {
         { game_id: null, season: 2027 },
       ]),
     ).toEqual({ game_id: 500, season: 2026, is_offseason: true });
+  });
+
+  it("normalizes one complete Yahoo game metadata/week snapshot", () => {
+    expect(
+      prepareYahooGameWeekSnapshot({
+        game_key: "500",
+        game_id: "500",
+        name: "Hockey",
+        code: "nhl",
+        type: "full",
+        url: "https://example.test/game/500",
+        season: "2026",
+        weeks: [
+          { week: "2", start: "2026-10-13", end: "2026-10-19" },
+          { week: 1, start: "2026-10-06", end: "2026-10-12" },
+        ],
+      }),
+    ).toEqual({
+      game: {
+        game_id: 500,
+        game_key: "500",
+        name: "Hockey",
+        code: "nhl",
+        type: "full",
+        url: "https://example.test/game/500",
+        season: 2026,
+      },
+      weeks: [
+        { week: 1, start_date: "2026-10-06", end_date: "2026-10-12" },
+        { week: 2, start_date: "2026-10-13", end_date: "2026-10-19" },
+      ],
+    });
+  });
+
+  it("rejects partial, duplicate, and invalid Yahoo game-week snapshots", () => {
+    expect(() =>
+      prepareYahooGameWeekSnapshot({
+        game_key: "500",
+        game_id: "500",
+        season: "2026",
+        weeks: [],
+      }),
+    ).toThrow("incomplete");
+    expect(() =>
+      prepareYahooGameWeekSnapshot({
+        game_key: "500",
+        game_id: "500",
+        season: "2026",
+        weeks: [
+          { week: 1, start: "2026-10-13", end: "2026-10-12" },
+          { week: 1, start: "2026-10-20", end: "2026-10-26" },
+        ],
+      }),
+    ).toThrow("invalid");
+  });
+
+  it("accepts only an exact first-run game-week persistence receipt", () => {
+    const expected = {
+      snapshotId: "11111111-1111-4111-8111-111111111111",
+      gameId: 500,
+      gameKey: "500",
+      season: 2026,
+      sourceCount: 2,
+    };
+    const receipt = {
+      ...expected,
+      sourceHash: "a".repeat(64),
+      metadataChanged: true,
+      changed: 2,
+      removed: 0,
+      replayed: false,
+    };
+
+    expect(isYahooGameWeekSnapshotReceipt(receipt, expected)).toBe(true);
+    expect(
+      isYahooGameWeekSnapshotReceipt({ ...receipt, sourceCount: 1 }, expected),
+    ).toBe(false);
+    expect(
+      isYahooGameWeekSnapshotReceipt({ ...receipt, replayed: true }, expected),
+    ).toBe(false);
   });
 
   it("retries transient Yahoo failures with Retry-After but fails fast on auth", async () => {

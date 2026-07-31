@@ -39074,6 +39074,45 @@ export type Database = {
         }
         Relationships: []
       }
+      yahoo_game_week_snapshots: {
+        Row: {
+          changed_count: number
+          created_at: string
+          game_id: number
+          game_key: string
+          metadata_changed: boolean
+          removed_count: number
+          season: number
+          snapshot_id: string
+          source_count: number
+          source_hash: string
+        }
+        Insert: {
+          changed_count: number
+          created_at?: string
+          game_id: number
+          game_key: string
+          metadata_changed: boolean
+          removed_count: number
+          season: number
+          snapshot_id: string
+          source_count: number
+          source_hash: string
+        }
+        Update: {
+          changed_count?: number
+          created_at?: string
+          game_id?: number
+          game_key?: string
+          metadata_changed?: boolean
+          removed_count?: number
+          season?: number
+          snapshot_id?: string
+          source_count?: number
+          source_hash?: string
+        }
+        Relationships: []
+      }
       yahoo_matchup_weeks: {
         Row: {
           code: string | null
@@ -45804,6 +45843,14 @@ export type Database = {
           }
       upsert_yahoo_players_atomic: {
         Args: { players_data: Json[] }
+        Returns: Json
+      }
+      replace_yahoo_game_weeks_snapshot: {
+        Args: {
+          p_game: Json
+          p_snapshot_id: string
+          p_weeks: Json
+        }
         Returns: Json
       }
       replace_yahoo_player_keys_snapshot: {

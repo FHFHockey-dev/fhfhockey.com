@@ -37,6 +37,36 @@ export type YahooSheetExportReceipt = {
     | "request_failed";
 };
 
+export type YahooGameWeekSnapshot = {
+  game: {
+    game_id: number;
+    game_key: string;
+    name: string | null;
+    code: string | null;
+    type: string | null;
+    url: string | null;
+    season: number;
+  };
+  weeks: Array<{
+    week: number;
+    start_date: string;
+    end_date: string;
+  }>;
+};
+
+export type YahooGameWeekSnapshotReceipt = {
+  snapshotId?: string;
+  gameId?: number;
+  gameKey?: string;
+  season?: number;
+  sourceHash?: string;
+  sourceCount?: number;
+  metadataChanged?: boolean;
+  changed?: number;
+  removed?: number;
+  replayed?: boolean;
+};
+
 type YahooPlayerKeySnapshot = {
   players: YahooPlayerKeySnapshotRow[];
   pagesFetched: number;
@@ -55,6 +85,107 @@ function finiteNumber(value: unknown): number | null {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value != null && typeof value === "object" && !Array.isArray(value);
+}
+
+function nullableTrimmedText(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function exactIsoDate(value: unknown): string | null {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return null;
+  }
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(parsed.getTime()) &&
+    parsed.toISOString().slice(0, 10) === value
+    ? value
+    : null;
+}
+
+export function prepareYahooGameWeekSnapshot(
+  response: unknown,
+): YahooGameWeekSnapshot {
+  if (!isRecord(response)) {
+    throw new Error("Yahoo game-week response is malformed.");
+  }
+
+  const gameId = finiteNumber(response.game_id);
+  const season = finiteNumber(response.season);
+  const gameKey = nullableTrimmedText(response.game_key);
+  if (
+    gameId == null ||
+    gameId <= 0 ||
+    season == null ||
+    season < 1900 ||
+    !gameKey ||
+    !/^[A-Za-z0-9._-]+$/.test(gameKey) ||
+    !Array.isArray(response.weeks) ||
+    response.weeks.length === 0
+  ) {
+    throw new Error("Yahoo game-week response is incomplete.");
+  }
+
+  const seenWeeks = new Set<number>();
+  const weeks = response.weeks
+    .map((rawWeek) => {
+      if (!isRecord(rawWeek)) {
+        throw new Error("Yahoo game-week row is malformed.");
+      }
+      const week = finiteNumber(rawWeek.week);
+      const startDate = exactIsoDate(rawWeek.start ?? rawWeek.start_date);
+      const endDate = exactIsoDate(rawWeek.end ?? rawWeek.end_date);
+      if (
+        week == null ||
+        !Number.isInteger(week) ||
+        week <= 0 ||
+        !startDate ||
+        !endDate ||
+        startDate > endDate ||
+        seenWeeks.has(week)
+      ) {
+        throw new Error("Yahoo game-week row is invalid.");
+      }
+      seenWeeks.add(week);
+      return { week, start_date: startDate, end_date: endDate };
+    })
+    .sort((left, right) => left.week - right.week);
+
+  return {
+    game: {
+      game_id: Math.trunc(gameId),
+      game_key: gameKey,
+      name: nullableTrimmedText(response.name),
+      code: nullableTrimmedText(response.code),
+      type: nullableTrimmedText(response.type),
+      url: nullableTrimmedText(response.url),
+      season: Math.trunc(season),
+    },
+    weeks,
+  };
+}
+
+export function isYahooGameWeekSnapshotReceipt(
+  value: YahooGameWeekSnapshotReceipt | null,
+  expected: {
+    snapshotId: string;
+    gameId: number;
+    gameKey: string;
+    season: number;
+    sourceCount: number;
+  },
+): value is Required<YahooGameWeekSnapshotReceipt> {
+  return (
+    value?.snapshotId === expected.snapshotId &&
+    value.gameId === expected.gameId &&
+    value.gameKey === expected.gameKey &&
+    value.season === expected.season &&
+    value.sourceCount === expected.sourceCount &&
+    /^[a-f0-9]{64}$/.test(value.sourceHash ?? "") &&
+    typeof value.metadataChanged === "boolean" &&
+    Number.isFinite(value.changed) &&
+    Number.isFinite(value.removed) &&
+    value.replayed === false
+  );
 }
 
 function findNestedValue(value: unknown, key: string): unknown {

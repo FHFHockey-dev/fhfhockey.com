@@ -46,6 +46,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260730091500_consolidate_scheduler_ownership.sql",
       "20260730190000_tombstone_legacy_public_rpcs.sql",
       "20260730193000_repair_compile_invalid_legacy_routines.sql",
+      "20260730195000_replace_yahoo_game_weeks_snapshot.sql",
       "20260730200000_repair_utah_wgo_team_identity.sql",
       "20260730233451_reconstruct_hosted_analytics_schema.sql",
     ]);
@@ -255,6 +256,37 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     expect(migration).not.toContain("process_team_goalie_projections");
   });
 
+  it("atomically versions complete Yahoo game metadata/week snapshots", () => {
+    const migration = readMigration(
+      "20260730195000_replace_yahoo_game_weeks_snapshot.sql",
+    );
+
+    expect(migration).toContain(
+      "create table if not exists public.yahoo_game_week_snapshots",
+    );
+    expect(migration).toContain(
+      "create or replace function public.replace_yahoo_game_weeks_snapshot(",
+    );
+    expect(migration).toContain("security invoker");
+    expect(migration).toContain("set search_path = ''");
+    expect(migration).toContain("pg_advisory_xact_lock");
+    expect(migration).toContain("YAHOO_GAME_WEEK_SNAPSHOT_CONFLICT");
+    expect(migration).toContain("YAHOO_GAME_WEEK_ROWS_INVALID");
+    expect(migration).toContain(
+      "on conflict (game_key, season, week) do update",
+    );
+    expect(migration).toContain(
+      "delete from public.yahoo_matchup_weeks as existing",
+    );
+    expect(migration).toContain("to service_role;");
+    expect(migration).toMatch(
+      /revoke all on function public\.replace_yahoo_game_weeks_snapshot\([\s\S]+from public, anon, authenticated, service_role;/i,
+    );
+    expect(migration).not.toMatch(
+      /grant execute on function public\.replace_yahoo_game_weeks_snapshot\([\s\S]+to (?:anon|authenticated);/i,
+    );
+  });
+
   it("bounds the Utah WGO identity repair to the frozen replay-safe manifest", () => {
     const migration = readMigration(
       "20260730200000_repair_utah_wgo_team_identity.sql",
@@ -395,10 +427,10 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260725200808_fix_yahoo_player_writer_captured_at.sql",
     ]);
 
-    expect(manifestRows).toHaveLength(14);
+    expect(manifestRows).toHaveLength(15);
     expect(
       manifestRows.filter((row) => row.className === "Ordered predeploy"),
-    ).toHaveLength(12);
+    ).toHaveLength(13);
     expect(
       manifestRows.filter(
         (row) => row.className === "Separate repair mutation",

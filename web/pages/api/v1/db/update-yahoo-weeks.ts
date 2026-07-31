@@ -3,14 +3,20 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import {
   loadYahooGlobalCredentials,
-  persistYahooGlobalTokens
+  persistYahooGlobalTokens,
 } from "lib/integrations/yahoo/globalCredentials";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
 import YahooFantasy from "yahoo-fantasy";
-import { parseISO } from "date-fns";
+import { randomUUID } from "node:crypto";
 import adminOnly from "utils/adminOnlyMiddleware";
-import { withYahooRetry } from "lib/integrations/yahoo/ingestionLifecycle";
+import {
+  isYahooGameWeekSnapshotReceipt,
+  prepareYahooGameWeekSnapshot,
+  withYahooRetry,
+  type YahooGameWeekSnapshotReceipt,
+} from "lib/integrations/yahoo/ingestionLifecycle";
+import type { Database } from "lib/supabase/database-generated.types";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (!["GET", "POST"].includes(req.method || "")) {
@@ -19,9 +25,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       .json({ success: false, message: "Method Not Allowed" });
   }
 
-  const supabase = createClient(
+  const supabase = createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
   let retries = 0;
   let rateLimitEvents = 0;
@@ -34,7 +40,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       creds.consumer_secret,
       async ({
         access_token,
-        refresh_token
+        refresh_token,
       }: {
         access_token: string;
         refresh_token: string;
@@ -42,78 +48,77 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         // Persist refreshed tokens
         await persistYahooGlobalTokens(supabase, creds.id, {
           access_token,
-          refresh_token
+          refresh_token,
         });
-      }
+      },
     );
     yf.setUserToken(creds.access_token);
     yf.setRefreshToken(creds.refresh_token);
 
-    // 2. Read game_key (e.g. "nhl") from query
+    // 2. The scheduled path discovers the current NHL game through Yahoo's
+    // canonical alias. An explicit key remains a bounded maintenance override.
     const { game_key } = req.query as { game_key?: string };
-    if (!game_key) {
+    const requestedGameKey = game_key || "nhl";
+    if (!/^[A-Za-z0-9._-]+$/.test(requestedGameKey)) {
       return res
         .status(400)
-        .json({ success: false, message: "Missing game_key parameter" });
+        .json({ success: false, message: "Invalid game_key parameter" });
     }
 
     // 3. Fetch weeks from Yahoo API
     const response = await withYahooRetry<any>(
-      () => yf.game.game_weeks(game_key),
+      () => yf.game.game_weeks(requestedGameKey),
       {
         maxAttempts: 3,
         onRetry: ({ rateLimited }) => {
           retries += 1;
           if (rateLimited) rateLimitEvents += 1;
-        }
-      }
+        },
+      },
     );
-    const {
-      game_key: key,
-      game_id,
-      name,
-      code,
-      type,
-      url,
-      season,
-      weeks
-    } = response;
-
-    // 4. Build payload
-    const payload = weeks.map((w: any) => ({
-      game_key: key,
-      game_id,
-      name,
-      code,
-      type,
-      url,
-      season,
-      week:
-        typeof w.week === "string" ? parseInt(w.week, 10) : (w.week as number),
-      start_date: parseISO(w.start),
-      end_date: parseISO(w.end)
-    }));
-
-    // 5. Upsert — only new (game_key,season,week) rows will be inserted
-    const { error } = await supabase
-      .from("yahoo_matchup_weeks")
-      .upsert(payload, {
-        onConflict: "game_key,season,week"
-      });
-
-    if (error) throw error;
+    const snapshot = prepareYahooGameWeekSnapshot(response);
+    const snapshotId = randomUUID();
+    const { data, error } = await supabase.rpc(
+      "replace_yahoo_game_weeks_snapshot",
+      {
+        p_snapshot_id: snapshotId,
+        p_game: snapshot.game,
+        p_weeks: snapshot.weeks,
+      },
+    );
+    if (error) throw new Error("Yahoo game-week snapshot persistence failed.");
+    const receipt = data as YahooGameWeekSnapshotReceipt | null;
+    if (
+      !isYahooGameWeekSnapshotReceipt(receipt, {
+        snapshotId,
+        gameId: snapshot.game.game_id,
+        gameKey: snapshot.game.game_key,
+        season: snapshot.game.season,
+        sourceCount: snapshot.weeks.length,
+      })
+    ) {
+      throw new Error("Yahoo game-week snapshot receipt is invalid.");
+    }
 
     return res.status(200).json({
       success: true,
       status: "success",
-      processed: payload.length,
-      succeeded: payload.length,
+      gameId: receipt.gameId,
+      gameKey: receipt.gameKey,
+      season: receipt.season,
+      snapshotId,
+      sourceHash: receipt.sourceHash,
+      processed: snapshot.weeks.length,
+      succeeded: snapshot.weeks.length,
       failedRows: 0,
       omitted: 0,
+      metadataChanged: receipt.metadataChanged,
+      changed: receipt.changed,
+      removed: receipt.removed,
       retries,
       rateLimitEvents,
       completeSnapshot: true,
-      message: `Upserted ${payload.length} week(s) for game_key=${key}`
+      message: `Reconciled ${snapshot.weeks.length} week(s) for game_key=${snapshot.game.game_key}`,
     });
   } catch {
     console.error("Yahoo matchup week update failed.");
@@ -122,7 +127,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       status: "failure",
       retries,
       rateLimitEvents,
-      message: "Yahoo matchup week update failed"
+      message: "Yahoo matchup week update failed",
     });
   }
 }
