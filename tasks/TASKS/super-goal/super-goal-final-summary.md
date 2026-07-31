@@ -659,7 +659,7 @@ All charter questions remain open until source/master synchronization, Wave A/B 
 
 ### Browser PKCE forward-cutover checkpoint
 
-- The authenticated browser client now explicitly uses PKCE. Existing callback/reset code exchange, token-hash compatibility, synchronous credential scrubbing, and safe return routing remain intact.
+- The authenticated browser client explicitly uses PKCE. Existing callback/reset code exchange, token-hash compatibility, synchronous credential scrubbing, and safe return routing remain intact; the focused AuthForm/callback/reset/location group rerun passes 4 files and 33/33 tests.
 - A-AUTH NEW 46 stays open for hosted-template confirmation, publication, and value-free Production Google/confirmation/recovery lifecycle proof; legacy fragment support remains transitional.
 
 ### Standalone webhook retirement checkpoint

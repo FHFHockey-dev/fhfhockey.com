@@ -2,7 +2,7 @@
 
 This note documents the manual setup required for the auth flows now implemented in the app.
 
-Evidence status as of 2026-07-30: production Google OAuth is verified; localhost Google remains open; custom SMTP configuration, Supabase handoff, and Outlook Inbox receipt for both confirmation and recovery are verified; the received-link confirmation/recovery/password-update/cleanup lifecycle remains open; preview auth is unsupported. The browser client still uses Supabase JavaScript's default implicit flow. PKCE remains a separate migration under source task `NEW 46.0` and must not be enabled before the email-template and mailbox-backed flows are compatible.
+Evidence status as of 2026-07-31: production Google OAuth is verified; localhost Google remains open; custom SMTP configuration, Supabase handoff, and Outlook Inbox receipt for both confirmation and recovery are verified; the received-link confirmation/recovery/password-update/cleanup lifecycle remains open; preview auth is unsupported. The browser client now explicitly uses Supabase JavaScript PKCE. PKCE remains open under source task `NEW 46.0` for hosted template compatibility and complete value-free Production lifecycle evidence; do not retire legacy fragment compatibility until that gate passes.
 
 Implemented app routes:
 
@@ -137,7 +137,7 @@ Current flow behavior in code:
   - app calls `supabase.auth.signInWithOAuth({ provider: "google", options.redirectTo: "<app>/auth/callback?next=..." })`
   - Google returns to Supabase callback
   - Supabase redirects to app `/auth/callback`
-  - the current browser client does not set `flowType`, so Supabase JavaScript's default implicit flow remains active
+  - the current browser client explicitly sets `flowType: "pkce"`; the callback still accepts bounded token-hash/fragment compatibility during the transition
   - `/auth/callback` accepts a code, token hash, or fragment session payload, synchronously scrubs query/hash and Next-history state before asynchronous auth work, then returns the user to a sanitized same-origin `next` path
   - production Google sign-in is verified; localhost remains open
 
