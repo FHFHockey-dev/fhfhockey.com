@@ -1,6 +1,6 @@
 # Burn Down / Simplify sKO Predictions Pipeline (v2 Plan)
 
-> **Execution mapping (2026-07-31):** SKO-specific burn-down work is merged into `tasks/TASKS/sko-charts/tasks-prd-sko-charts.md`. Ordered Production migrations `20260728225806` and `20260729205048` are applied/verified for the surviving compatibility boundary, while the owner-authorized historical-only quarantine remains in force instead of this v2 replacement. This document remains source inventory and a historical alternative, not implementation, writer, population, or restoration authority.
+> **Execution mapping (2026-07-31):** SKO-specific burn-down work is merged into `tasks/TASKS/sko-charts/tasks-prd-sko-charts.md`. Ordered Production migrations `20260728225806` and `20260729205048` are applied/verified for the surviving compatibility boundary, while the owner-authorized historical-only quarantine remains in force instead of this v2 replacement. This document remains source inventory and a historical alternative, not implementation, writer, population, or restoration authority. The continuous-discovery register NEW 9.0 is closed with no additional finding through 2026-07-31.
 
 Date: 2025-09-28
 Owner: (you)

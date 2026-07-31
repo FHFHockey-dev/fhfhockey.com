@@ -1,5 +1,7 @@
 # sKO Predictive Modeling Plan 
 
+**2026-07-31 continuous-discovery closure:** The dynamic audit found no unrecorded defect, dependency, model question, or optimization beyond NEW 9.1–9.17. The current reader/writer suites pass 25/25 tests; TypeScript, zero-error lint, and diff integrity pass. This historical modeling note remains non-authoritative and no model or runtime stage was restored.
+
 > **Historical implementation status (2026-07-31):** The owner authorized this modeling family as historical-only quarantine. The local `web/scripts/modeling/*` implementation described below was deliberately removed by commit `abbc01e8c5dc99e1544594e0c72bdecd0a013ea8`; retained outputs and `functions/lib/sko_pipeline.py` are evidence/compatibility artifacts, not executable model stages. The checklist below records the historical plan and does not claim supported runtime completion. Ordered Production migrations `20260728225806` and `20260729205048` are applied/verified for the surviving compatibility writer; they do not restore this pipeline. The separate `baseline-moving-average` v0.2 compatibility cohort has accepted historical population evidence, but no executable historical modeling stage or score promotion is inferred. Any future model requires a new approved product/data contract rather than restoration inferred from this document.
 
 ## What We’re Trying To Do

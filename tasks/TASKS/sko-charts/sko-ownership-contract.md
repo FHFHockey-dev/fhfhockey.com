@@ -2,7 +2,7 @@
 
 Date: 2026-07-28
 
-Status: Owner-authorized historical-only disposition complete; no SKO score family is promoted as a canonical supported product contract.
+Status: Owner-authorized historical-only disposition complete; no SKO score family is promoted as a canonical supported product contract. The 2026-07-31 continuous-discovery audit is closed: NEW 9.1–9.17 contain the complete verified finding register, with no new item outside the explicit gates.
 
 ## Decision hierarchy
 

@@ -2,7 +2,7 @@
 
 Date: 2026-07-22
 
-Status: inventory and failure-response runbook only. The owner authorized the absent modeling pipeline as historical-only on 2026-07-28; there is no approved executable SKO modeling pipeline.
+Status: inventory and failure-response runbook only. The owner authorized the absent modeling pipeline as historical-only on 2026-07-28; there is no approved executable SKO modeling pipeline. The continuous-discovery audit closed on 2026-07-31 after confirming that NEW 9.1–9.17 record every current defect, dependency, model question, and optimization.
 
 ## Ownership and boundaries
 

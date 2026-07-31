@@ -8039,3 +8039,10 @@
 - **Verification:** `npx tsc --noEmit` passed; the machine-readable lint inventory confirmed 1,595 files, zero errors, and the same 52 warnings; `git diff --check` passed. No source/runtime behavior or external state changed.
 - **Synchronization:** Source/master NEW 7/C0031 close. B-CLEAN is 158/158. Raw parity is 4,933/5,011; actionable parity is 4,933/5,005 with 72 open (98.56%); mechanical master roll-up is 5,060/5,171. The dead-code report/PRD, canonical PRD/master, final summary, and diary now carry the same current receipt.
 - **Boundary:** Production/provider/history, migration, writer, repair, backfill, scheduler, IFTTT, and deployment gates remain open. No Vercel build, push, migration, writer, repair, backfill, provider, analytics, or credential action ran.
+
+## Entry 0878 — 2026-07-31 B-SKO continuous-discovery audit closure
+
+- **Audit:** NEW 9.1–9.17 were re-read as the complete current sKO finding register. Every verified defect, manual/provider dependency, model question, and optimization is already recorded; no additional item was found outside the explicit Production/provider/history/retirement gates.
+- **Verification:** The owning `get-predictions-sko` and `update-predictions-sko` suites passed 2 files/25 tests. Existing owning-package TypeScript, zero-error lint, and diff-integrity checks also pass. No runtime or external state changed.
+- **Synchronization:** Source/master NEW 9.0/C0053 and the B-SKO parent close. B-SKO is 70/70. Raw parity is 4,934/5,011; actionable parity is 4,934/5,005 with 71 open (98.58%); mechanical master roll-up is 5,062/5,171. The sKO task list, both PRDs, modeling notes, ownership contract, runbook, burn-down plan, canonical master, final summary, and this diary carry the same closure.
+- **Boundary:** Safe retirement, production/provider/history, formula, repair, scheduler-natural-run, IFTTT, migration, writer, deployment, and other external gates remain explicit. No push, Vercel build/deployment, migration, writer, repair, backfill, provider, analytics, or credential action ran.
