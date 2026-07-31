@@ -435,3 +435,11 @@ pass exact local replay, rollback, contention, ACL/RLS, blank-reset, and lint
 proof; only exact Production application/repair authorization and receipts
 remain before the 2024–25 trend rebuild. B-SUST-AUD is therefore 49/57 with
 eight open rows, without weakening any historical or calibration guard.
+
+NEW 16 closes a stale authorization ambiguity in the bounded repair manifest.
+The owner-approved no-backfill quarantine is now terminal: the 18 zero-result
+and three partial dates cannot enter a mutation request, all 21 original runs
+and projections remain unchanged, and the 1,344 missing results remain an
+explicit excluded coverage class. Only future/otherwise eligible runs carrying
+the repaired provenance contract remain within NEW 13. B-SUST-AUD is 50/58
+with the same eight open rows.

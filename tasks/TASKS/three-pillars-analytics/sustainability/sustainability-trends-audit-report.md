@@ -215,6 +215,7 @@ This closes the first cross-system map only. It does not close family-specific f
 | NEW 13 FORGE result/run-version coverage gap    | P1       | Results/accuracy pipeline                      | Open — migration/backfill proof  | Canonical eligibility has 1,344 missing of 7,523. New-run provenance and the atomic RPC exclude contaminated legacy inputs while retaining latest-run authority and eligible empty-scope cleanup; apply it, backfill only eligible scopes, and prove idempotency/coverage.       |
 | NEW 14 contaminated result-history conflict     | P1       | FORGE historical results/calibration           | Closed — no-backfill quarantine  | Owner-approved explicit quarantine preserves all 21 original runs/projections unchanged. Missing repaired rolling-history provenance remains ineligible for result repair/calibration through the existing route and atomic RPC; no parallel history class is added. |
 | NEW 15 source season-identity corruption        | P1       | WGO → unified player stats → trends            | Open — Production authorization  | The exact 1,905/49,410 source-first repair now has frozen ordered receipts, bounded service-only forward/inverse staging, atomic view refresh/trend replacement, dry-run-first orchestration, and local rollback/replay/concurrency/ACL proof. Production migration/repair authorization and post-write receipts remain. |
+| NEW 16 stale FORGE mutation wording              | P1       | Bounded repair authorization manifest           | Closed — explicit exclusion      | The manifest now makes the no-backfill disposition terminal: the 21 contaminated runs/projections remain immutable, their 1,344 missing results stay excluded, and no mutation request may include those scopes. |
 
 ## Validation evidence register
 
@@ -241,11 +242,12 @@ rolling primary/support, and 21-date FORGE scopes with pre-state counts and
 commutative identity/payload receipts. It also fixes the execution order,
 rollback/idempotency requirements, and no-mutation boundary.
 
-The preparation does not close a historical repair. It opens NEW 14 because
-all 21 FORGE runs fail the approved repaired-input provenance contract. NEW 15
-now has an inert, service-only migration and dry-run-first runner that pass the
-exact local forward/inverse/replay, transaction rollback, advisory-lock,
-ACL/RLS, blank-reset, and database-lint cohort. The historical row remains open
+The preparation does not close a historical repair. NEW 14's owner-approved
+no-backfill disposition is now carried explicitly into the manifest by closed
+NEW 16, so all 21 FORGE scopes remain non-authorizable. NEW 15 has an inert,
+service-only migration and dry-run-first runner that pass the exact local
+forward/inverse/replay, transaction rollback, advisory-lock, ACL/RLS,
+blank-reset, and database-lint cohort. The historical row remains open
 only for exact Production migration/repair authorization and post-write
 receipts; no repair has run.
 

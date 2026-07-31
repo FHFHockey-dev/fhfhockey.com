@@ -15,7 +15,8 @@ writer call, projection run, schedule change, or calibration change.
 - Run repairs in dependency order:
   player trends and team ratings → Sustainability provenance →
   rolling primary/support history → prospective versioned FORGE →
-  projection-result disposition.
+  eligible projection results only. The 21 contaminated historical FORGE
+  scopes remain excluded.
 - Before every authorized mutation, retain exact pre-counts and identity plus
   payload hashes. Afterward, require post-counts, idempotent replay, unrelated
   scope invariance, and an executable inverse or retained pre-state.
@@ -187,25 +188,20 @@ for 432. The full target date scopes currently contain 309 result rows
 - unrelated 6,932-row identity receipt `-8709483987125723559`;
 - unrelated payload receipt `-7724181989307097579`.
 
-## FORGE execution blocker
+## FORGE final no-backfill disposition
 
 All 21 latest succeeded runs lack
 `metrics.input_provenance.rolling_player_history_contract =
 full_selected_scope_through_end_date_v1`. Therefore both the current accuracy
 route and `replace_forge_projection_results_atomic` correctly reject them.
 
-Do not weaken this guard, stamp legacy runs retroactively, or rewrite their
-projections. Before any result write, the owner must choose and document one
-coherent disposition:
-
-1. retain the 21 scopes as explicitly excluded contaminated history with no
-   backfill; or
-2. introduce a separately versioned, non-calibration historical-result class
-   that cannot enter calibration/promotion and does not alter original runs or
-   projections.
-
-The existing instruction to exact-replace these results cannot execute under
-the simultaneously approved contaminated-run exclusion without that decision.
+The owner selected explicit no-backfill quarantine. Do not weaken the guard,
+stamp legacy runs retroactively, create a parallel non-calibration history
+class, rewrite projections, or exact-replace results for these 18 zero and
+three partial dates. Preserve the 21 runs and their projections unchanged and
+retain the 1,344 missing results as an explicitly excluded coverage class.
+Future or otherwise eligible runs carrying the repaired provenance contract
+remain within NEW 13's normal bounded result-repair path.
 
 ## Authorization package
 
@@ -218,8 +214,9 @@ An eventual mutation request must quote:
 - physical replay expectations;
 - unrelated-scope receipts;
 - rollback SQL or retained pre-state;
-- the resolved FORGE contaminated-history disposition.
+- an explicit exclusion receipt proving the 21 contaminated FORGE runs,
+  projections, and result scopes remain unchanged.
 
-No mutation request is ready until the source-season defect, versioned
-trend/team publication receipts, and FORGE disposition are implemented and
-proved locally.
+No Sustainability mutation request is ready until the source-season migration
+is applied and the versioned trend/team/rolling dry-run receipts are complete.
+No mutation request may include the 21 contaminated FORGE scopes.
