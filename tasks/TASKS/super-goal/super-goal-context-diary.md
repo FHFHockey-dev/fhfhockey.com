@@ -7815,3 +7815,9 @@
 - **Synchronization:** The superseded `prd-sko.md`, historical `sko-modeling-notes.md`, and sKO burn-down plan now carry the verified 2026-07-31 status: ordered migrations `20260728225806` and `20260729205048` are applied/verified for the compatibility boundary, while the deleted modeling pipeline remains historical-only and no writer or one-off population ran.
 - **Gate preservation:** This closes no implementation or population row. NEW 9.9 remains the exact dry-run/population/receipt cohort; schema/artifact monitoring, Production observation, final synchronization, safe retirement, and continuous discovery remain open.
 - **Controls / boundary:** Raw parity remains 4,916/5,011; actionable parity remains 4,916/5,005 with 89 open = 98.22%; mechanical master roll-up remains 5,042/5,171 = 97.51%; B-SKO remains 65/70. Documentation only; no database, writer, repair, backfill, provider, schedule, build/deployment, push, analytics reconciliation, or Yahoo revocation changed.
+
+## Entry 0843 — 2026-07-31 sKO documentation synchronization closure
+
+- **Closure:** B-SKO task 8.5 / master C0052 closes after both PRDs, modeling notes, burn-down plan, source task list, and imported master mirror were reconciled to the verified applied-migration checkpoint. The closure records current evidence only; it does not imply writer execution or population.
+- **Controls / counts:** B-SKO advances to 66/70 with four open. Raw parity is 4,917/5,011 with 94 unchecked; actionable parity is 4,917/5,005 with 88 open = 98.24%; mechanical master roll-up is 5,043/5,171 = 97.52%. NEW 9.9, monitoring/Production observation, safe retirement, and continuous discovery remain open.
+- **Boundary:** Local documentation, ledger, and mirror synchronization only. No database migration, row, writer, repair, backfill, provider mutation, schedule, build/deployment, Git push, analytics reconciliation, Yahoo revocation, credential, or shared-checkout change occurred.
