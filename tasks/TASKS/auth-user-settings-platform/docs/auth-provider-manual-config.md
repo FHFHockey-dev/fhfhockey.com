@@ -2,7 +2,7 @@
 
 This note documents the manual setup required for the auth flows now implemented in the app.
 
-Evidence status as of 2026-07-31: production Google OAuth is verified; localhost Google remains open; custom SMTP configuration, Supabase handoff, and Outlook Inbox receipt for both confirmation and recovery are verified; the received-link confirmation/recovery/password-update/cleanup lifecycle remains open; preview auth is unsupported. The browser client now explicitly uses Supabase JavaScript PKCE. PKCE remains open under source task `NEW 46.0` for hosted template compatibility and complete value-free Production lifecycle evidence; do not retire legacy fragment compatibility until that gate passes.
+Evidence status as of 2026-07-31: production and localhost Google OAuth are verified; localhost completed the hosted Supabase callback and returned to a credential-free authenticated `/auth` state before sign-out/local reset and tab cleanup. Custom SMTP configuration, Supabase handoff, and Outlook Inbox receipt for both confirmation and recovery are verified; the received-link confirmation/recovery/password-update/cleanup lifecycle remains open; preview auth is unsupported. The browser client now explicitly uses Supabase JavaScript PKCE. PKCE remains open under source task `NEW 46.0` for hosted template compatibility and complete value-free Production lifecycle evidence; do not retire legacy fragment compatibility until that gate passes.
 
 Implemented app routes:
 
