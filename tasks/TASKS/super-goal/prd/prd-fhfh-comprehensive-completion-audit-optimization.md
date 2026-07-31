@@ -4,6 +4,8 @@
 
 **2026-07-31 current Wave-B status overlay (supersedes older table cells below):** B-CRON-NST 66/75, B-SUST-BAR 95/95, B-SUST-AUD 50/58, B-GAMEGRID 38/38, B-SKO 67/70, B-START 55/55, B-FORGE-COMBO 39/39, B-XG-EX 16/16, B-YAHOO 60/72, B-DRAFT-STYLE 56/56, B-CLEAN 156/158, B-DEAD 44/44, B-DRM 92/111, B-SKO-BURN 6/6, and B-TRENDS 53/53. B-DRAFT-RANKER-P8's five rows are retired to the future roadmap, not active work. The actionable ledger remains 4,918/5,005 with 87 open; this is a documentation reconciliation only.
 
+**2026-07-31 sKO monitoring observation overlay:** The public compatibility reader returned a bounded page of 5/851 exact-target rows for `2026-03-22`, with same-day scope, 105 ms total/query time, honest compatibility/feature/freshness warnings, and no route runtime errors in the preceding hour. This supplements but does not close B-SKO 8.2: schema/artifact signals and continued Production observation remain open; no writer, migration, or row changed.
+
 **2026-07-31 local migration reapply overlay:** The disposable stack was reset to `20260731035012`, then `supabase migration up --local` applied only `20260731040341_privatize_unified_materialized_views.sql`; post-reapply history is again 27 rows, with three `internal_stats` materializations, three public wrappers, and zero sKO lease residue. This is a local down/reapply receipt only.
 
 ## 1. Introduction / Overview
