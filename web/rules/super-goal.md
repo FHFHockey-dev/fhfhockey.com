@@ -278,6 +278,7 @@ Control hosted build cost as part of checkpoint discipline:
 - Trigger Preview or Production builds only when a meaningful bundled checkpoint requires hosted runtime, environment, alias, or deployment evidence and the applicable external-action approval is in place.
 - Batch compatible verified changes into that checkpoint and reuse an existing exact READY artifact when Vercel supports doing so without rebuilding.
 - Because pushes to a Vercel-connected branch build by default, hold documentation-only/control receipts locally for the next meaningful bundled checkpoint unless a verified project-level ignore rule will skip that push.
+- Every linked deployable root must keep a version-controlled Vercel `ignoreCommand` that skips the build when `git diff HEAD^ HEAD --quiet ./` proves that root is unchanged. A meaningful checkpoint may build only the roots changed by that exact commit; verify the first published receipt before relying on this control.
 
 - destructive or irreversible data/schema change
 - broad architecture replacement or cross-system rewrite
