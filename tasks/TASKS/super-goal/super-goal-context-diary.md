@@ -7644,3 +7644,11 @@
 - **Truthful open state:** All three rows remain unchecked for authorized Production migration/publication, deployed zero-overlap and ordered-handoff evidence, and natural-run receipts. The ownership migration intentionally skips row mutation on the data-free supported baseline while its focused test asserts every exact deactivated/retained job name and fail-closed uniqueness guard.
 - **Controls / counts:** No row closes. Raw imported parity remains 4,901/5,004; actionable parity remains 4,901/4,998 with 97 open = 98.06%; mechanical master roll-up remains 5,025/5,164. B-DRM remains 93/111 and B-CRON-NST remains 61/69.
 - **Boundary:** No hosted Supabase branch, Production migration/row, schedule, writer, provider call, Vercel build/deployment, credential, shared checkout, push, or stash changed.
+
+## Entry 0821 — 2026-07-30 FORGE contaminated-history quarantine disposition
+
+- **Owner-approved disposition:** The approved plan's immutable-history and calibration-exclusion requirements select explicit no-backfill quarantine for B-SUST-AUD NEW 14. All 21 repair-scope runs lack `full_selected_scope_through_end_date_v1`; their original runs/projections remain unchanged, and no separately versioned non-calibration result-history class is introduced.
+- **Existing enforcement:** The canonical accuracy route and atomic result replacement boundary already reject missing/legacy rolling-history provenance. The frozen 1,344-row gap manifest authorizes no write; NEW 13 may repair only eligible future/current scopes carrying the repaired contract.
+- **Live operational evidence:** Current Production remains exact READY deployment `dpl_HCFwiK4yAPeXUG3QzC3R28NtYvsc` at `96ccea804`. A value-free malformed-bearer webhook probe still returns parser detail despite HTTP 401, so B-DEAD NEW 8.3 remains correctly open for the next authorized publication; no webhook work or downstream writer ran.
+- **Controls / counts:** Source/master NEW 14 closes. B-SUST-AUD is 49/57 with eight open. Raw imported parity is 4,902/5,004; actionable parity is 4,902/4,998 with 96 open = 98.08%; mechanical master roll-up is 5,026/5,164. P1 severity is 200 opened/165 closed; P0 remains 29/25, P2 165/160, and P3 57/57.
+- **Boundary:** No database row, migration, writer, provider mutation, build/deployment, schedule, credential, shared checkout, push, or stash changed.

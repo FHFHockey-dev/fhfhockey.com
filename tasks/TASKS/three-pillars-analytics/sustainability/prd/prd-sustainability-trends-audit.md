@@ -423,14 +423,15 @@ pre-state counts and receipts for both playoff seasons, Sustainability score
 provenance, the complete 2025–26 team-rating calendar, rolling primary/support
 history, and all 21 FORGE result-gap dates. It authorizes no write.
 
-Two newly proved dependencies prevent a truthful mutation request. NEW 14
-records that every 21-date FORGE run lacks repaired rolling-history provenance,
-so the approved calibration exclusion correctly blocks the requested result
-backfill until the owner chooses explicit quarantine or a separately versioned
-non-calibration history class. NEW 15 records 1,905 April 2023 WGO/unified rows
+Two newly proved dependencies prevent a truthful mutation request. NEW 14 is
+closed by the owner-approved explicit no-backfill quarantine: every 21-date
+FORGE run lacks repaired rolling-history provenance, so the existing route and
+atomic RPC continue to reject result repair/calibration while original runs and
+projections remain immutable. No alternate non-calibration history class is
+created. NEW 15 records 1,905 April 2023 WGO/unified rows
 and 49,410 dependent trend rows mislabeled as season `20242025`. Its frozen
 source-first forward/inverse migration and bounded dry-run-first runner now
 pass exact local replay, rollback, contention, ACL/RLS, blank-reset, and lint
 proof; only exact Production application/repair authorization and receipts
-remain before the 2024–25 trend rebuild. B-SUST-AUD is therefore 48/57 with
-nine open rows, without weakening any historical or calibration guard.
+remain before the 2024–25 trend rebuild. B-SUST-AUD is therefore 49/57 with
+eight open rows, without weakening any historical or calibration guard.
