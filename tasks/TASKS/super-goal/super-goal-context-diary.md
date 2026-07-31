@@ -7952,3 +7952,10 @@
 
 - **Synchronization:** The canonical master PRD initiative registry still listed B-SKO as 67/70 with three open. Its current row now matches the synchronized source/master evidence: 69/70 with only continuous-discovery NEW 9.0 open; safe retirement is closed.
 - **Boundary / counts:** Documentation-only correction; no application, database, migration, writer, repair, provider, schedule, build/deployment, push, or credential state changed. Raw parity remains 4,922/5,011; actionable parity remains 4,922/5,005 with 83 open = 98.34%; mechanical master remains 5,048/5,171; B-SKO remains 69/70.
+
+## Entry 0865 — 2026-07-31 applied scheduler ownership readback
+
+- **Connected ledger:** Fresh read-only Supabase evidence confirms 24 applied Production migration rows through `20260731040341`, including `20260730091500`. The separately gated Utah repair `20260730200000`, hosted-analytics tracking reconciliation `20260730233451`, and Yahoo postdeploy cache revocation `20260731022805` remain absent.
+- **Scheduler state:** Read-only `cron.job` evidence shows projection job 308 inactive and horizon-5 job 393 active; Sustainability overlap jobs 370/371/372/376 inactive and baseline job 326 active; Yahoo duplicate sheet job 251 inactive with retained jobs 106/233 active. Project status remains `ACTIVE_HEALTHY`; current Production remains READY/Current at `dpl_vU1c1yvbDQJMXEzK1rLT373Qndwy`.
+- **Disposition:** Source, master, PRD, report, and final-summary scheduler wording now reflects the applied migration. NEW 49/50/61 remain open for deployed zero-overlap/ordered handoff, retained-schedule final-audit, and one natural ordered run; no closure is inferred from catalog state alone.
+- **Boundary / counts:** Documentation-only synchronization after read-only external evidence. No migration, writer, repair, backfill, provider call, schedule mutation, analytics reconciliation, Yahoo revocation, credential change, build, deployment, push, or shared-checkout mutation occurred. Raw parity remains 4,922/5,011; actionable parity remains 4,922/5,005 with 83 open = 98.34%; mechanical master remains 5,048/5,171; B-SKO remains 69/70.

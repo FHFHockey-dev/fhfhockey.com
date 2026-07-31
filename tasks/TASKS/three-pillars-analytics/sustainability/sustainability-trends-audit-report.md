@@ -4,6 +4,8 @@
 
 **2026-07-31 bounded execution checkpoint:** The canonical Production publication now carries the exact 16 ordered predeploy migrations and passes value-free scheduler, reader, ACL/advisor, and error-boundary checks; the Utah repair, analytics tracking reconciliation, Yahoo cache revocation, historical repairs, writers, and backfills remain excluded. The disposable local stack replays all 27 active migrations through `20260731040341` with 76/76 migration-contract tests and rollback-contained promotion/snapshot receipts. Sustainability NEW 2/6/7/9/10/13/15 remain open for their separately authorized formula, unit/history, provenance, scheduler, repair, or Production gates; this report records no new data or runtime completion claim.
 
+**2026-07-31 scheduler readback:** The applied ownership migration is reflected in the hosted catalog: pg_cron jobs 370/371/372/376 are inactive and baseline job 326 remains active. This is read-only evidence; the Sustainability scheduler row remains open for deployed zero-scope-concurrency, ordered handoff/audit, and natural-run proof.
+
 ## Execution order and dependencies
 
 1. Define the worksheet and glossary used by every family (`1.1`, `1.7`).

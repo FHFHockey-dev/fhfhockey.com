@@ -4,6 +4,8 @@
 
 **2026-07-31 tombstoned-RPC zero-use observation:** The bounded last-24-hour Supabase Postgres log window returned 100 rows with no exact execution-log match for `update_all_wgo_skaters` or `get_skater_game_score_by_limit(...)`; read-only `pg_stat_statements` returned zero non-comment fingerprints for either routine after excluding comment-only schedule text. NEW 56/57 remain open for one-release zero-use monitoring and final-drop controls. No migration, writer, repair, provider call, build, deployment, or push occurred.
 
+**2026-07-31 scheduler ownership receipt:** Production migration `20260730091500` is applied. Read-only `cron.job` evidence shows 370/371/372/376 and 308 inactive, baseline 326 and distinct horizon-5 job 393 active, duplicate sheet job 251 inactive, and retained Yahoo jobs 106/233 active. NEW 49/50/61 remain open for deployed handoff, zero-overlap/final-audit, and natural-run evidence.
+
 > **Shared pair mapping:** This PRD governs both `tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md` and the active email-derived remediation list `tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md`. The two lists must be reconciled by owning route/failure rather than executed as duplicate fixes.
 
 ## Introduction/Overview
