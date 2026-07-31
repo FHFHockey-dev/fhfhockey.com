@@ -1,5 +1,7 @@
 # PRD: Date Range Matrix (DRM) Refactor
 
+**2026-07-31 continuous-discovery closure:** NEW 8–85 contain every verified DRM parity, pagination, stale-state, consumer, accessibility, and optimization finding; the re-read found no new issue beyond the explicit Production/history/scheduler/credential gates. The bounded DRM/UI/transactional cohort passes 21 files/243 tests. B-DRM is now `94/111` with 17 open; no runtime or external state changed.
+
 > **Implementation task list:** `tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md`
 
 Generated: 2025-09-12 13:27:53 UTC

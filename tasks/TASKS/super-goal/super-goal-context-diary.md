@@ -8046,3 +8046,10 @@
 - **Verification:** The owning `get-predictions-sko` and `update-predictions-sko` suites passed 2 files/25 tests. Existing owning-package TypeScript, zero-error lint, and diff-integrity checks also pass. No runtime or external state changed.
 - **Synchronization:** Source/master NEW 9.0/C0053 and the B-SKO parent close. B-SKO is 70/70. Raw parity is 4,934/5,011; actionable parity is 4,934/5,005 with 71 open (98.58%); mechanical master roll-up is 5,062/5,171. The sKO task list, both PRDs, modeling notes, ownership contract, runbook, burn-down plan, canonical master, final summary, and this diary carry the same closure.
 - **Boundary:** Safe retirement, production/provider/history, formula, repair, scheduler-natural-run, IFTTT, migration, writer, deployment, and other external gates remain explicit. No push, Vercel build/deployment, migration, writer, repair, backfill, provider, analytics, or credential action ran.
+
+## Entry 0879 — 2026-07-31 B-DRM continuous-discovery audit closure
+
+- **Audit:** NEW 8–85 were re-read as the complete current DRM finding register. Every verified parity, pagination, stale-state, consumer, accessibility, and optimization issue is already recorded; no additional issue was found outside the explicit Production/history/scheduler/credential gates.
+- **Verification:** The bounded DRM/UI/transactional cohort passed 21 files/243 tests. Existing TypeScript, scoped lint, formatting, and diff-integrity evidence remains green. No runtime or external state changed.
+- **Synchronization:** Source/master NEW 7/C0033 close. B-DRM is 94/111 with 17 open. Raw parity is 4,935/5,011; actionable parity is 4,935/5,005 with 70 open (98.60%); mechanical master roll-up is 5,063/5,171. The DRM task list/PRD, canonical master/PRD, final summary, and diary carry the same closure.
+- **Boundary:** The remaining DRM rows retain explicit production publication/natural-run, bounded history/repair, scheduler ownership, legacy credential-retention, and compatibility gates. No push, Vercel build/deployment, migration, writer, repair, backfill, provider, analytics, or credential action ran.
