@@ -7576,3 +7576,9 @@
 - **Coverage:** The alert classifier covers stale last success, two consecutive ownership failures, mapping-coverage regression, unmatched growth, rate-limit saturation, token failure, and schema drift. The focused Yahoo helper and cron-report suites pass 2 files/22 tests; full TypeScript, scoped ESLint, formatting, and diff integrity pass.
 - **Reconciliation / counts:** Source/master 6.5 closes; B-YAHOO reaches 60/72 with 12 open. Raw imported parity is 4,896/5,000 with 104 open = 97.92%; actionable parity is 4,896/4,994 with 98 open = 98.04%; canonical master roll-up is 5,007/5,154 = 97.15%. Severity remains P0 29/25, P1 197/162, P2 165/160, P3 55/55.
 - **Boundary:** Historical backfill 6.4 and NEW 9.5 remain open. No Production migration, database row, provider call, schedule, Vercel build/deployment, credential, shared checkout, push, or stash changed.
+
+## Entry 0812 — 2026-07-30 Yahoo historical-league identity gate
+
+- **Read-only evidence:** The legacy Python URL uses Yahoo's genuine `type=week;week=N` ownership contract, so the historical dates are not fabricated. The canonical global game catalog nevertheless stores empty league arrays for every inspected NHL season. Connected-account storage contains nine distinct league keys for 2025 and none for older seasons.
+- **Disposition:** Selecting one connected-account league or porting the fixed 2024/2025 IDs would violate the owner-approved self-discovery contract and could create league-dependent history. Row 6.4 and NEW 9.5 remain open for a controlled provider checkpoint that proves a canonical league-discovery/equivalence rule before a durable TypeScript cursor is finalized. This refines an existing gate and adds no task row.
+- **Boundary:** Only value-free read-only catalog queries ran. No provider request, database write, migration, schedule, build/deployment, credential, shared checkout, push, or stash changed.
