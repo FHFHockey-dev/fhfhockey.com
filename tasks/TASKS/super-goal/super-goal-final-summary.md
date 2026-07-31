@@ -671,3 +671,11 @@ The Gamecenter follow-on executes the previously missing two-session cohort. Ini
 The grouped predeploy authorization must name all 14 rows labeled `Ordered predeploy` and preserve their migration order while handling the Utah repair, analytics tracking, and Yahoo postdeploy-revocation rows only under their separate gates. The analytics baseline must be reconciled into Production migration tracking only after fresh local catalog/security/runtime/type parity; its already-hosted objects must not be destructively replayed. The Yahoo postdeploy row may run only after populated normalized-reader parity passes. No undifferentiated `supabase db push` is permitted across all pending files.
 
 The existing supported-baseline Vitest suite now enforces the exact eight-file hosted applied set, the 17-file pending order, the 14/1/1/1 execution classes, and every frozen SHA-256. A migration-content, filename, order, or class change therefore fails locally before any grouped authorization or publication.
+
+### C-RANK Wave-C audit closure
+
+- All three Contextual Rankings lists and all six rolling-player audit/remediation/pass-two lists remain mechanically complete. Independent evidence—not the former dirty-scope capture commit—confirms the post-alignment claims.
+- The hosted baseline owns populated RLS-enabled ranking and rolling relations; current readers page complete cohorts and expose explicit `source_pending` or `current_proxy` states instead of presenting unavailable inputs as authoritative.
+- Production Rankings, filters, metadata, and a valid matrix request return successful value-free reads. The matrix uses `entity_metric_rankings` with a current snapshot and no fallback message.
+- The combined 62-file/339-test cohort and TypeScript pass after source/master P3 NEW 6.0 corrected one stale rolling-writer 401 assertion to the shared generic `Unauthorized.` contract. No runtime authorization behavior changed.
+- Raw imported parity is 4,899/5,003 with 104 open = 97.92%; actionable imported parity is 4,899/4,997 with 98 open = 98.04%; canonical master roll-up is 5,019/5,158 with 139 open = 97.30%. Severity is P0 29/25, P1 199/162, P2 165/160, and P3 57/57. No build, deployment, Production mutation, authenticated writer, provider call, schedule, credential, shared-checkout, push, or stash changed.

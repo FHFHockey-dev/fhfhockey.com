@@ -60,3 +60,5 @@
   - [x] 5.3 Recompute or simulate representative scenarios in tests so the Corey Perry trade case, ratio `lastN` cases, and PP-share cases remain protected.
   - [x] 5.4 Re-read `tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md` and verify that all suggested actions, redesign requirements, and remediation items have been fully addressed.
   - [x] 5.5 If the final verification finds remaining gaps, create a new PRD, generate a new task list, and process the remaining work until the audit contract is fully satisfied.
+
+- [x] NEW 6.0 **P3 stale privileged-route auth assertion:** align the rolling recompute regression with the shared fail-closed admin middleware's published generic `Unauthorized.` response instead of mocked provider error text. The runtime authorization contract is unchanged (discovered and completed 2026-07-30).

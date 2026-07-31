@@ -161,7 +161,7 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
 
     expect(res.statusCode).toBe(401);
     expect(res.body).toEqual({
-      message: "Invalid authentication credentials",
+      message: "Unauthorized.",
       success: false
     });
     expect(mainMock).not.toHaveBeenCalled();
