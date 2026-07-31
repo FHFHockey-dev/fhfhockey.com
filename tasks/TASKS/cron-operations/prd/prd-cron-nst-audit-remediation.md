@@ -129,6 +129,7 @@ The NST portion is urgent because `www.naturalstattrick.com` is no longer the co
 78. A module located under `pages/api` must be import-safe: importing or building the Next.js route tree may not launch a write-heavy batch or terminate the host process. Legacy command-style execution must require an explicit opt-in environment contract and retain an import regression that proves no `process.exit` side effect.
 79. Compile-invalid legacy routines must be classified by exact repository and database-dependency evidence. Superseded zero-consumer writers retain only service-role one-release tombstones; a compatible read-only contract may be repaired in place with explicit result types, fixed search path, and unchanged browser-read authority.
 80. A migration that takes a table lock for an exact bounded repair must establish its own explicit transaction boundary so the standard Supabase migration runner can replay it from a blank database; this does not authorize the repair against populated Production data.
+81. Every active Production HTTP cron job must be active in the canonical inventory and resolve to a reviewed fail-closed route boundary. A legacy or quarantine response does not make an active route safe to expose without admin-or-cron authorization.
 
 ## Non-Goals (Out of Scope)
 

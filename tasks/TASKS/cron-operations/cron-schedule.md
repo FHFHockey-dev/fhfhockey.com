@@ -402,9 +402,10 @@
     "jobname": "update-rolling-games-recent",
     "schedule": "25 10 * * *",
     "run_time_utc": "10:25 UTC",
-    "active": false,
+    "active": true,
     "method": "GET",
-    "route": "/api/v1/db/update-rolling-games?date=recent"
+    "route": "/api/v1/db/update-rolling-games?date=recent",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 321,

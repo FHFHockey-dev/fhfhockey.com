@@ -265,11 +265,11 @@ SELECT cron.schedule(
 
     expect(
       inventory.jobs.filter((job) => job.provider === "pg_cron"),
-    ).toHaveLength(64);
+    ).toHaveLength(65);
     expect(
       inventory.jobs.filter((job) => job.provider === "vercel"),
     ).toHaveLength(20);
-    expect(inventory.jobs).toHaveLength(84);
+    expect(inventory.jobs).toHaveLength(85);
     expect(inventory.vercelMaxDurationMs).toBe(240_000);
     expect(inventory.jobs.every((job) => job.active)).toBe(true);
   });
