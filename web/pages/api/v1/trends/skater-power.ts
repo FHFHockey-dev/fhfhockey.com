@@ -537,15 +537,25 @@ async function fetchMetricRows(
   seasonId: number,
   seasonStart: string,
   asOfDate: string,
+  windowSize: SkaterWindowSize,
   positions: string[] | undefined,
 ): Promise<PlayerTrendRow[]> {
   const rows: PlayerTrendRow[] = [];
+  const rollingColumn =
+    windowSize === 3
+      ? ", rolling_avg_3"
+      : windowSize === 5
+        ? ", rolling_avg_5"
+        : windowSize === 10
+          ? ", rolling_avg_10"
+          : "";
+  const selectColumns =
+    `player_id, game_date, raw_value${rollingColumn}, ` +
+    "season_id, position_code";
   for (let from = 0; ; from += PAGE_SIZE) {
     let query = supabase
       .from("player_trend_metrics")
-      .select(
-        "player_id, game_date, raw_value, rolling_avg_3, rolling_avg_5, rolling_avg_10, season_id, position_code",
-      )
+      .select(selectColumns)
       .eq("metric_key", category.metricKey)
       .eq("season_id", seasonId)
       .gte("game_date", seasonStart)
@@ -674,6 +684,7 @@ export default async function handler(
             seasonId,
             seasonStart,
             requestedDate,
+            windowSize,
             positions,
           ),
         })),

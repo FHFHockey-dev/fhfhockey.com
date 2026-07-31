@@ -68,6 +68,7 @@ function buildSupabaseMock(
   rangeCalls: Array<[number, number]> = [],
   orderCalls: Array<[string, Record<string, unknown> | undefined]> = [],
   queryConcurrency?: { active: number; peak: number },
+  selectCalls: string[] = [],
 ) {
   return {
     from(table: string) {
@@ -75,7 +76,8 @@ function buildSupabaseMock(
         const query = {
           rangeStart: 0,
           rangeEnd: metricRows.length - 1,
-          select() {
+          select(columns: string) {
+            selectCalls.push(columns);
             return this;
           },
           eq() {
@@ -347,6 +349,48 @@ describe("/api/v1/trends/skater-power", () => {
 
     expect(res.statusCode).toBe(200);
     expect(queryConcurrency.peak).toBe(SKATER_TREND_CATEGORIES.length);
+  });
+
+  it("projects only the rolling column required by the selected window", async () => {
+    const selectCalls: string[] = [];
+    supabaseState.current = buildSupabaseMock(
+      [
+        {
+          player_id: 8471214,
+          game_date: "2026-02-12",
+          raw_value: 2.1,
+          rolling_avg_5: 1.9,
+          season_id: 20252026,
+          position_code: "C",
+        },
+      ],
+      [],
+      [],
+      undefined,
+      selectCalls,
+    );
+
+    const res = createMockRes();
+    await handler(
+      {
+        method: "GET",
+        query: {
+          date: "2026-02-12",
+          position: "forward",
+          window: "5",
+          limit: "10",
+        },
+      } as any,
+      res,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(selectCalls).toHaveLength(SKATER_TREND_CATEGORIES.length);
+    expect(new Set(selectCalls)).toEqual(
+      new Set([
+        "player_id, game_date, raw_value, rolling_avg_5, season_id, position_code",
+      ]),
+    );
   });
 
   it("supports a 20-game window by averaging the trailing raw values", async () => {

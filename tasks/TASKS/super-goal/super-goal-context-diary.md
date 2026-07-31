@@ -7766,3 +7766,10 @@
 - **Structured function evidence:** The deployment-scoped Vercel runtime log contains a real serverless miss with `cacheStatus=miss`, `metricFetchMs=1385`, and `durationMs=1644`. This exceeds the unchanged 900-ms function target. No cache-hit wall time was substituted for structured execution timing.
 - **Disposition:** The local four-category parallel-read repair and value-free telemetry are published and working. C-DYNAMIC-A-FORGE-CC NEW 18 remains open for a representative structured-duration distribution and any bounded optimization; no checkbox or denominator changed.
 - **Boundary:** Read-only GETs and Vercel log inspection only. No migration, row, writer, repair, backfill, provider call, schedule, build, deployment, credential, or shared-checkout mutation occurred in this receipt.
+
+## Entry 0836 — 2026-07-31 local skater-power payload optimization
+
+- **Local change:** `pages/api/v1/trends/skater-power.ts` now selects only the rolling-average column required by the requested window: `rolling_avg_3`, `rolling_avg_5`, or `rolling_avg_10`; raw and 20-game windows select none and continue to compute trailing averages locally. Ranking/history semantics remain unchanged.
+- **Verification:** The focused skater-power API suite passes 10/10, including the exact select projection assertion; TypeScript, scoped ESLint, Prettier, and diff integrity pass.
+- **Publication boundary:** This is an unpublished local optimization intended to reduce metric-read serialization before the next authorized Production checkpoint. It does not close NEW 18 or authorize a build/push/deployment; Production structured-duration recheck remains open.
+- **Boundary:** No migration, row, writer, repair, backfill, provider call, schedule, credential, or external state changed.
