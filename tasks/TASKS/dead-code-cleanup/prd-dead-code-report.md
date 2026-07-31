@@ -261,3 +261,7 @@ deletion set rather than carrying an unresolved deadness claim. This closes
 5.2 and parent 5.0 without deleting another file. B-DEAD is 40/44 with four
 open. Raw imported parity is 4,898/5,002; actionable imported parity is
 4,898/4,996 = 98.04%; canonical master roll-up is 5,009/5,156 = 97.15%.
+
+## 2026-07-31 Operational Ownership Completion
+
+Exact-SHA Production proves signed-out `/db` settles on the administrator-required shell with no operational controls, and both missing and malformed canonical webhook bearer requests return the same fixed 401 before screenshot, upload, or Discord work. Exact-SHA READY CMS and functions deployments return 200 from Sanity Studio and `/api/healthz`; the standalone webhook service remains retired and deployment-scoped runtime errors are empty. This closes 6.0/6.1 and NEW 8.0/8.3, completing B-DEAD at 44/44 without another deletion.

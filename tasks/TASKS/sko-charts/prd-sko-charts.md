@@ -520,4 +520,8 @@ sko_predictions.parquet + game_actuals.jsonl → step_forward (delta calc) → p
 | Poisson variance mis-spec | Under/over confidence bands | Fit dispersion & shift to NegBin if needed |
 | Network flakiness | Intermittent data gaps | Retries (done) + alt transport + chunk size tuning |
 
+## 2026-07-31 Production Migration Receipt
+
+Ordered Production migrations `20260728225806` and `20260729205048` are applied before exact-SHA application publication. Value-free catalog proof finds all three sKO run-control RPCs security-invoker, browser-denied, and service-only, with model-version prediction identity preserved. This closes persistence parent 2.0 and migration row 2.2; B-SKO is 65/70. Freshness/population, Production observation, synchronization, retirement, and continuous-discovery gates remain open, and no sKO writer or one-off population ran.
+
 ---

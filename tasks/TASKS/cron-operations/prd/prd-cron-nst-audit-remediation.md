@@ -213,3 +213,7 @@ The NST portion is urgent because `www.naturalstattrick.com` is no longer the co
 - Should the cron report suppress known safe side-effect routes from “No audit row” warnings when they are intentionally out of scope for Supabase audit coverage?
 - Is a small follow-up PRD needed after this work to cover non-Supabase scheduled side-effect routes and remaining cron observability gaps?
 - Should game-stat persistence use the recommended additive service-role-only transactional per-game RPC with a durable outcome/count manifest, or should the owner explicitly accept observable retriable partial rows and a narrower status-authoritative contract that cannot prove every legacy partial batch?
+
+## 2026-07-31 Supported-Baseline Production Receipt
+
+Ordered migrations `20260731035012` and `20260731040341` are applied. The three relocated internal materializations are populated; their exact refresh jobs remain active on unchanged schedules and target `internal_stats`; all three canonical public REST readers return 200; direct internal Data API access returns 406. The advisor has zero target findings for those materializations, security-definer views, or mutable routine search paths. NEW 66 closes; B-CRON-NST is 66/75 with nine open.
