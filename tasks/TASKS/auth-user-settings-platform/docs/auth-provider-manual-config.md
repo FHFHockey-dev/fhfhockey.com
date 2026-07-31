@@ -2,7 +2,7 @@
 
 This note documents the manual setup required for the auth flows now implemented in the app.
 
-Evidence status as of 2026-07-31: production and localhost Google OAuth are verified; localhost completed the hosted Supabase callback and returned to a credential-free authenticated `/auth` state before sign-out/local reset and tab cleanup. Custom SMTP configuration, Supabase handoff, and Outlook Inbox receipt for both confirmation and recovery are verified; the received-link confirmation/recovery/password-update/cleanup lifecycle remains open; preview auth is unsupported. The browser client now explicitly uses Supabase JavaScript PKCE. PKCE remains open under source task `NEW 46.0` for hosted template compatibility and complete value-free Production lifecycle evidence; do not retire legacy fragment compatibility until that gate passes.
+Evidence status as of 2026-07-31: production and localhost Google OAuth are verified; localhost completed the hosted Supabase callback and returned to a credential-free authenticated `/auth` state before sign-out/local reset and tab cleanup. A fresh disposable confirmation and recovery message were delivered through the active custom SMTP configuration; confirmation and recovery links completed credential-free callback/reset navigation, password update succeeded, and disposable auth/profile/settings cleanup verified zero remaining rows without recording message values or tokens. Preview auth is unsupported. The browser client now explicitly uses Supabase JavaScript PKCE. PKCE remains open under source task `NEW 46.0` for hosted template compatibility and complete value-free Production lifecycle evidence; do not retire legacy fragment compatibility until that gate passes.
 
 Implemented app routes:
 
@@ -56,7 +56,7 @@ Recommended:
 
 - Keep `Confirm email` enabled.
 - Use Supabase-managed passwords only. Do not store passwords in app tables.
-- Keep the current custom SMTP sender configured. Production confirmation/recovery requests, Supabase handoff, and recipient-side Outlook Inbox receipt are verified; link completion remains unverified.
+- Keep the current custom SMTP sender configured. Production confirmation/recovery requests, Supabase handoff, and recipient-side receipt are verified; the disposable local confirmation/recovery link, callback/reset, password-update, and cleanup lifecycle is also verified. Hosted Production lifecycle publication remains under NEW 46.
 
 ### Email templates
 

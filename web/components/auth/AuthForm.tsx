@@ -115,7 +115,7 @@ export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
 
   const submitLabel = useMemo(() => {
     if (mode === "sign-up") return "Create Account";
-    if (mode === "forgot-password") return "Reset Flow Coming Next";
+    if (mode === "forgot-password") return "Send Recovery Email";
     return "Sign In";
   }, [mode]);
 

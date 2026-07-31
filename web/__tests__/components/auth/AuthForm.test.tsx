@@ -121,7 +121,7 @@ describe("AuthForm", () => {
     fireEvent.change(screen.getByLabelText("Email"), {
       target: { value: "tim@example.com" }
     });
-    fireEvent.click(screen.getByRole("button", { name: "Reset Flow Coming Next" }));
+    fireEvent.click(screen.getByRole("button", { name: "Send Recovery Email" }));
 
     await waitFor(() => {
       expect(authState.resetPasswordForEmail).toHaveBeenCalledTimes(1);
