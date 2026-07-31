@@ -1,5 +1,7 @@
 **2026-07-31 bounded Production monitoring observation:** The guarded docs-only checkpoint `6e1f5b5d3` is equal on local `HEAD` and `origin/octoberBranch`; its commit-matched Vercel deployment self-canceled at the configured ignore step, with no alias or Production artifact change. A single read-only 24-hour Vercel query returned 19 existing error groups, led by missing `NST_KEY` on NST routes, the known Sustainability `model_sustainability_config.score_model_version` schema mismatch, and Yahoo update failures. These observations remain within the open NEW 56–61/parent monitoring, Sustainability, and Yahoo gates; they do not authorize a writer, repair, migration, provider call, or build.
 
+**2026-07-31 tombstoned-RPC zero-use observation:** The bounded last-24-hour Supabase Postgres log window returned 100 rows with no exact execution-log match for `update_all_wgo_skaters` or `get_skater_game_score_by_limit(...)`; read-only `pg_stat_statements` returned zero non-comment fingerprints for either routine after excluding comment-only schedule text. NEW 56/57 remain open for one-release zero-use monitoring and final-drop controls. No migration, writer, repair, provider call, build, deployment, or push occurred.
+
 ## Relevant Files
 
 - `web/pages/api/v1/db/cron-report.ts` - Daily cron summary route that correlates scheduled jobs, audit rows, and email output.

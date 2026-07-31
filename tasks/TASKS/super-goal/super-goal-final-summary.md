@@ -12,6 +12,8 @@
 
 **2026-07-31 current Wave-B status overlay:** B-CRON-NST 67/75, B-SUST-BAR 95/95, B-SUST-AUD 50/58, B-GAMEGRID 38/38, B-SKO 69/70, B-START 55/55, B-FORGE-COMBO 39/39, B-XG-EX 16/16, B-YAHOO 60/72, B-DRAFT-STYLE 56/56, B-CLEAN 156/158, B-DEAD 44/44, B-DRM 92/111, B-SKO-BURN 6/6, and B-TRENDS 53/53. B-DRAFT-RANKER-P8's five rows are retired to the future roadmap, not active work. This supersedes older initiative-status prose below without changing any gate.
 
+**2026-07-31 tombstoned-RPC zero-use observation:** A bounded last-24-hour Supabase Postgres log window returned 100 rows with no exact execution-log match for `update_all_wgo_skaters` or `get_skater_game_score_by_limit(...)`; read-only `pg_stat_statements` returned zero non-comment fingerprints for either routine after excluding comment-only schedule text. NEW 56/57 remain open for one-release zero-use monitoring and final-drop controls. No migration, writer, repair, provider call, build, deployment, or push occurred. Current actionable parity is 4,922/5,005 with 83 open; B-SKO is 69/70.
+
 **Latest local down/reapply receipt (2026-07-31):** The disposable stack reset to `20260731035012`; `supabase migration up --local` applied only `20260731040341`, restoring 27 migration rows, three `internal_stats` materializations, three public wrappers, and zero sKO lease residue. No hosted or application state changed.
 
 > **Status: ACTIVE — NOT COMPLETE.** This is the required final-report skeleton. Populate verified results only after all completion gates pass.
