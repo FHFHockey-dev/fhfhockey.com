@@ -52,6 +52,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260731015416_repair_wgo_player_season_identity.sql",
       "20260731022805_revoke_legacy_yahoo_read_cache.sql",
       "20260731035012_restrict_admin_metadata_views.sql",
+      "20260731040341_privatize_unified_materialized_views.sql",
     ]);
 
     expect(
@@ -460,6 +461,27 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     expect(migration).not.toContain("public.player_totals_unified,");
   });
 
+  it("keeps canonical aggregate readers public while privatizing materialized storage", () => {
+    const migration = readMigration(
+      "20260731040341_privatize_unified_materialized_views.sql",
+    );
+
+    expect(migration).toContain(
+      "create schema internal_stats authorization postgres",
+    );
+    expect(migration).toContain(
+      "alter materialized view public.player_stats_unified",
+    );
+    expect(migration).toContain("create view public.player_stats_unified");
+    expect(migration).toContain("with (security_invoker = true)");
+    expect(migration).toContain(
+      "refresh materialized view internal_stats.player_stats_unified;",
+    );
+    expect(migration).toContain("daily-refresh-player-totals-unified-matview");
+    expect(migration).toContain("notify pgrst, 'reload schema'");
+    expect(migration).not.toContain("grant create on schema internal_stats");
+  });
+
   it("reconstructs the exact credential-free hosted analytics contract", () => {
     const migration = readMigration(
       "20260730233451_reconstruct_hosted_analytics_schema.sql",
@@ -574,10 +596,10 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260725200808_fix_yahoo_player_writer_captured_at.sql",
     ]);
 
-    expect(manifestRows).toHaveLength(18);
+    expect(manifestRows).toHaveLength(19);
     expect(
       manifestRows.filter((row) => row.className === "Ordered predeploy"),
-    ).toHaveLength(15);
+    ).toHaveLength(16);
     expect(
       manifestRows.filter(
         (row) => row.className === "Separate repair mutation",
