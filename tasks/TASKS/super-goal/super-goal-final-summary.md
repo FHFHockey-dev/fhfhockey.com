@@ -2,6 +2,10 @@
 
 > **Status: ACTIVE — NOT COMPLETE.** This is the required final-report skeleton. Populate verified results only after all completion gates pass.
 
+**Latest verified checkpoint (2026-07-30):** The three scheduler ownership decisions are reconciled without prematurely closing their Production gates. B-DRM NEW 39 uses per-game manifests plus stage-local cursors/leases with no global operation identity. B-DRM NEW 49 selects the Vercel coordinator as daily owner; candidate migration `20260730091500` deactivates job 308 and retains job 393 only for horizon-5 output. B-CRON-NST NEW 61 selects bounded Vercel Sustainability chunks; the migration deactivates jobs 370/371/372/376 and retains baseline job 326. The free local Supabase stack is healthy and has all 25 migrations applied. Counts remain 4,901/5,004 raw, 4,901/4,998 actionable with 97 open = 98.06%, and 5,025/5,164 master. No hosted branch, Production mutation, schedule, provider call, or Vercel build occurred.
+
+**Latest verified checkpoint (2026-07-30):** B-DRM NEW 28 is closed by executable local PostgreSQL proof of atomic player/team/goalie exact replacement, explicit no-goalie persistence, stale-goalie pruning, no-DML replay, CAS rejection, late-failure rollback, service-only access, and zero residue. B-DRM is 93/111 with 18 open. Raw imported parity is 4,901/5,004; actionable parity is 4,901/4,998 with 97 open = 98.06%; mechanical master roll-up is 5,025/5,164. No Production mutation or build occurred.
+
 **Latest verified checkpoint (2026-07-30):** C-OPS 5.1 and children 5.1.1–5.1.4 are locally audit-closed. B-CRON-NST is 61/69 with eight explicit external/publication gates open. NEW 65 corrected the sole new defect: active Production job 319 was stale/inactive in the canonical inventory and its legacy rolling-games 410 handler lacked authorization. The canonical contract now contains 65 active pg_cron plus 20 Vercel jobs, and the route fails closed through admin-or-cron auth. Raw imported parity is 4,900/5,004; actionable parity is 4,900/4,998 with 98 open = 98.04%; mechanical master roll-up is 5,024/5,164. No Production mutation or build occurred.
 
 ## Repository-wide totals
