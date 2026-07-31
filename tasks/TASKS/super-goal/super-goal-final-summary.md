@@ -1,5 +1,7 @@
 # FHFH Comprehensive Completion, Audit, and Optimization — Final Summary
 
+**2026-07-31 documentation parity correction:** The sustainability audit report's family index now marks the completed dependency maps, player/team/rolling/FORGE traces, Start Chart architecture classification, overlap matrix, and consolidation recommendation as complete. Its legacy-only row remains explicitly deferred, and no open formula, history, repair, or publication gate was reclassified. Counts remain raw 4,918/5,011, actionable 4,918/5,005 (87 open), mechanical master 5,044/5,171, and B-SKO 67/70. No application, database, writer, repair, provider, build/deployment, push, or credential state changed.
+
 **Latest local down/reapply receipt (2026-07-31):** The disposable stack reset to `20260731035012`; `supabase migration up --local` applied only `20260731040341`, restoring 27 migration rows, three `internal_stats` materializations, three public wrappers, and zero sKO lease residue. No hosted or application state changed.
 
 > **Status: ACTIVE — NOT COMPLETE.** This is the required final-report skeleton. Populate verified results only after all completion gates pass.
