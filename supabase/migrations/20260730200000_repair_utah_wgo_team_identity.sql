@@ -5,6 +5,8 @@
 -- in source-row-id order. The migration accepts only the complete pre-state
 -- or the complete post-state so a physical replay performs no DML.
 
+begin;
+
 lock table public.wgo_team_stats in share row exclusive mode;
 
 create temporary table wgo_utah_20252026_repair_manifest
@@ -119,3 +121,5 @@ begin
   end if;
 end;
 $repair$;
+
+commit;

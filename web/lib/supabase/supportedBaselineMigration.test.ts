@@ -45,6 +45,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260729205048_preserve_sko_model_history.sql",
       "20260730091500_consolidate_scheduler_ownership.sql",
       "20260730190000_tombstone_legacy_public_rpcs.sql",
+      "20260730193000_repair_compile_invalid_legacy_routines.sql",
       "20260730200000_repair_utah_wgo_team_identity.sql",
       "20260730233451_reconstruct_hosted_analytics_schema.sql",
     ]);
@@ -223,6 +224,37 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     expect(migration).not.toMatch(/authorization|bearer/i);
   });
 
+  it("repairs compile-invalid legacy routines without restoring duplicate writers", () => {
+    const migration = readMigration(
+      "20260730193000_repair_compile_invalid_legacy_routines.sql",
+    );
+
+    for (const signature of [
+      "public.calculate_goalie_start_projections(date)",
+      "public.upsert_players_batch(jsonb)",
+    ]) {
+      expect(migration).toContain(`alter function ${signature}`);
+      expect(migration).toMatch(
+        new RegExp(
+          `revoke all on function ${signature.replace(/[()[\].]/g, "\\$&")}[\\s\\S]+from public, anon, authenticated, service_role;`,
+        ),
+      );
+    }
+    expect(migration.match(/message = 'Legacy RPC retired\.'/g)).toHaveLength(
+      2,
+    );
+    expect(migration).toContain(
+      "create or replace function public.get_aggregated_player_stats(",
+    );
+    expect(migration).toContain("language sql");
+    expect(migration).toContain("stable");
+    expect(migration).toContain("sum(stats.goals)::double precision");
+    expect(migration).toContain("avg(stats.zone_start_pct)::double precision");
+    expect(migration.match(/set search_path = ''/g)).toHaveLength(3);
+    expect(migration).not.toContain("percent_owned_value");
+    expect(migration).not.toContain("process_team_goalie_projections");
+  });
+
   it("bounds the Utah WGO identity repair to the frozen replay-safe manifest", () => {
     const migration = readMigration(
       "20260730200000_repair_utah_wgo_team_identity.sql",
@@ -231,6 +263,8 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     expect(migration).toContain(
       "lock table public.wgo_team_stats in share row exclusive mode",
     );
+    expect(migration).toMatch(/\bbegin;\s+lock table/i);
+    expect(migration).toMatch(/\$repair\$;\s+commit;/i);
     expect(migration).toContain("w.season_id = 20252026");
     expect(migration).toContain("w.franchise_name = 'Utah Mammoth'");
     expect(migration).toContain(
@@ -361,10 +395,10 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260725200808_fix_yahoo_player_writer_captured_at.sql",
     ]);
 
-    expect(manifestRows).toHaveLength(13);
+    expect(manifestRows).toHaveLength(14);
     expect(
       manifestRows.filter((row) => row.className === "Ordered predeploy"),
-    ).toHaveLength(11);
+    ).toHaveLength(12);
     expect(
       manifestRows.filter(
         (row) => row.className === "Separate repair mutation",
