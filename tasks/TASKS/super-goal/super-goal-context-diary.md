@@ -7796,3 +7796,9 @@
 - **Receipt:** The disposable local stack reset to `20260731035012`, then `supabase migration up --local` applied only `20260731040341_privatize_unified_materialized_views.sql`.
 - **Postcondition:** Local history returned to 27 rows with three `internal_stats` materializations, three public aggregate wrappers, and zero `sko_prediction_run_manifests` residue. No hosted state changed.
 - **Boundary:** This is a local migration-down/reapply proof only. No Production migration, writer, repair, backfill, provider call, build, deployment, Git push, analytics reconciliation, or Yahoo cache revocation occurred.
+
+## Entry 0840 — 2026-07-31 control-plane parity synchronization
+
+- **Discovery:** The master task list still labeled its imported ledger with the superseded 4,882/4,976 checkpoint, while the current source recount and latest canonical publication evidence were 4,916/5,011 raw and 4,916/5,005 actionable. The stale label could make the completed publication appear to regress or leave the master out of sync.
+- **Synchronization:** The master ledger now reports 5,011 imported rows from 76 files, 4,916 checked, 95 raw open, and 89 actionable open after excluding the six fenced task-template examples. The master, PRD, final summary, and Sustainability report now share the same bounded Production/local checkpoint and explicitly retain all external, repair, writer, backfill, provider, formula/history, and natural-run gates.
+- **Verification/boundary:** Targeted cross-file searches confirm the current counts, exact Production SHA/deployment, 27-migration local replay, and 76/76 focused-test receipt are present in the synchronized control files. Documentation only; no application code, database row, migration, writer, repair, backfill, provider, build, deployment, push, or credential changed.

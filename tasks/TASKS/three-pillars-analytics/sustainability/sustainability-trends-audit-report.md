@@ -2,6 +2,8 @@
 
 > **Status: ACTIVE — NOT COMPLETE.** This is the canonical working artifact for `tasks-prd-sustainability-trends-audit.md`. A row is evidence-complete only when its repository paths, runtime role, data dependencies, and validation result are recorded here.
 
+**2026-07-31 bounded execution checkpoint:** The canonical Production publication now carries the exact 16 ordered predeploy migrations and passes value-free scheduler, reader, ACL/advisor, and error-boundary checks; the Utah repair, analytics tracking reconciliation, Yahoo cache revocation, historical repairs, writers, and backfills remain excluded. The disposable local stack replays all 27 active migrations through `20260731040341` with 76/76 migration-contract tests and rollback-contained promotion/snapshot receipts. Sustainability NEW 2/6/7/9/10/13/15 remain open for their separately authorized formula, unit/history, provenance, scheduler, repair, or Production gates; this report records no new data or runtime completion claim.
+
 ## Execution order and dependencies
 
 1. Define the worksheet and glossary used by every family (`1.1`, `1.7`).
