@@ -68,7 +68,10 @@ describe("transactional Gamecenter normalization migration", () => {
     expect(serializerSql).toContain("pg_try_advisory_xact_lock");
     expect(serializerSql).toContain("NHL_NORMALIZATION_WRITER_BUSY");
     expect(serializerSql).not.toMatch(/(?<!try_)pg_advisory_xact_lock/);
-    expect(migrationSql.match(/normalization_serialize\n/g)).toHaveLength(4);
+    expect(migrationSql.match(/normalization_serialize\n/g)).toHaveLength(5);
+    expect(migrationSql).toMatch(
+      /nhl_api_game_payloads_raw_normalization_serialize\nbefore insert on public\.nhl_api_game_payloads_raw/,
+    );
     expect(lockSql).toContain("security invoker");
     expect(lockSql).toContain("set search_path = ''");
     expect(lockSql).toContain("'fhfh:projection-game:'");
@@ -150,6 +153,9 @@ describe("transactional Gamecenter normalization migration", () => {
   it("binds exact rows to the current immutable raw heads and stable fingerprints", () => {
     const sql = functionSql("persist_nhl_api_gamecenter_normalized_v1");
 
+    expect(sql.indexOf("'fhfh:normalization-direct-writer'")).toBeLessThan(
+      sql.indexOf("'fhfh:projection-game:' || p_game_id::text"),
+    );
     expect(sql).toContain("for update of head");
     expect(sql).toContain("NHL_NORMALIZATION_PBP_HEAD_MISMATCH");
     expect(sql).toContain("NHL_NORMALIZATION_SHIFT_HEAD_MISMATCH");

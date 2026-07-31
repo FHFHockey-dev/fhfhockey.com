@@ -316,6 +316,12 @@ create trigger nhl_api_game_payload_snapshot_heads_normalization_serialize
 before insert or update on public.nhl_api_game_payload_snapshot_heads
 for each statement execute function public.serialize_nhl_api_game_normalization_writes();
 
+-- Raw capture must enter the same global-before-game lock order before its
+-- existing row trigger advances the snapshot head.
+create trigger nhl_api_game_payloads_raw_normalization_serialize
+before insert on public.nhl_api_game_payloads_raw
+for each statement execute function public.serialize_nhl_api_game_normalization_writes();
+
 create or replace function public.invalidate_nhl_api_game_normalization_status()
 returns trigger
 language plpgsql
@@ -625,6 +631,12 @@ begin
     raise exception using message = 'INVALID_NHL_NORMALIZATION_SHIFT_ROWS';
   end if;
 
+  -- Every canonical, direct-normalized, raw-head, and raw-capture writer enters
+  -- the same global-before-game order. This keeps a raw-head UPDATE from first
+  -- waiting on a tuple held by this RPC and only then requesting the game lock.
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended('fhfh:normalization-direct-writer', 0)
+  );
   perform pg_catalog.pg_advisory_xact_lock(
     pg_catalog.hashtextextended('fhfh:projection-game:' || p_game_id::text, 0)
   );
