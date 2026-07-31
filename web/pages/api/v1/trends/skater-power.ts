@@ -573,7 +573,7 @@ async function fetchMetricRows(
     if (!data || data.length === 0) {
       break;
     }
-    rows.push(...(data as PlayerTrendRow[]));
+    rows.push(...(data as unknown as PlayerTrendRow[]));
     if (data.length < PAGE_SIZE) {
       break;
     }
