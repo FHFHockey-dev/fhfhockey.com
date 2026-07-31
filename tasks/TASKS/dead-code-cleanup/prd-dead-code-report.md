@@ -265,3 +265,7 @@ open. Raw imported parity is 4,898/5,002; actionable imported parity is
 ## 2026-07-31 Operational Ownership Completion
 
 Exact-SHA Production proves signed-out `/db` settles on the administrator-required shell with no operational controls, and both missing and malformed canonical webhook bearer requests return the same fixed 401 before screenshot, upload, or Discord work. Exact-SHA READY CMS and functions deployments return 200 from Sanity Studio and `/api/healthz`; the standalone webhook service remains retired and deployment-scoped runtime errors are empty. This closes 6.0/6.1 and NEW 8.0/8.3, completing B-DEAD at 44/44 without another deletion.
+
+## 2026-07-31 Utah WGO Identity Repair Completion
+
+The exact authorized Utah WGO repair is applied from `20260730200000_repair_utah_wgo_team_identity.sql`; hosted migration history records `20260731220635 / repair_utah_wgo_team_identity`. The frozen manifest digest `dd27185df94d9f7e9816eb3a9a8a8b66` remains stable, all 88 rows are mapped to team 68 with zero team-59/null-link residue, and total WGO cardinality remains 38,484. The migration's post-state replay returned no rows and performed no updates. Local inverse/reapply proof remains the rollback receipt; the separate 376-row relocation-era repair is not included. B-CLEAN is now 157/158 with only continuous-discovery NEW 7 open.
