@@ -30,3 +30,9 @@ These counts and digests are preconditions, not permission to write.
 Before application, re-run the frozen preconditions and require the exact migration in the grouped predeploy authorization. After application, require 38,484 total rows, 2,788 season rows, zero target-key duplicates, zero residual team-59 rows in the manifest, 88 exact team-68 rows, the unchanged manifest digest, and unrelated-scope digest invariance.
 
 The inverse rollback manifest is the same frozen row-ID/date/game/opponent digest. A rollback may set only those 88 rows back to team 59 with null game/opponent links after proving the complete post-state and zero later writes to those IDs. It must run in one locked transaction, require exactly 88 updates, reproduce the original digest and counts, and retain its own receipt. Do not use the inverse after later canonical WGO writes have changed any manifest row.
+
+## Local executable proof
+
+On 2026-07-30, the value-free hosted identity manifest reproduced the frozen digest on the isolated local Supabase stack. First application changed exactly 88 rows; physical replay left every manifest row `xmin` unchanged. The locked inverse restored exactly 88 pre-state rows, and reapplication restored the exact 88-row post-state. The immutable-field digest remained `0c3b0c5b2dd02dab9c2c3ece04909d50`, the unrelated-row digest remained `fbcb62d89e71125835a93c44c9e1c19d`, and cleanup returned WGO, game, and team fixture counts to zero.
+
+This closes the local rollback/reapply gate only. Production application and its post-count, digest, invariance, and retained rollback receipts still require exact mutation authorization.

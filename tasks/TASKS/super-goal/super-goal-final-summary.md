@@ -622,11 +622,12 @@ All charter questions remain open until source/master synchronization, Wave A/B 
 - Current local `db lint` flags three pre-existing baseline routine bodies and no pending-cohort routine. P1 B-CRON-NST NEW 63 records the separate repair/tombstone work. Connected Production advisors still show the expected pre-migration tombstone warnings; no Production schema or row changed.
 - The owner accepts an exact-manifest one-off historical in-season sKO population as the seasonal writer's Production evidence until the season opens. Once exact mutation and acceptance controls pass, it satisfies the otherwise unavailable offseason writer-evidence gate; the natural no-write observation separately proves scheduler policy. Read-only hosted evidence selects 2026-03-22: 851 lookback players, 27,359 qualifying source rows, zero existing exact-target rows, and input digest `0ab825ccbf3a185d1c72f3fc7eb72227`. The local authenticated writer now supports a SHA-256 identity-manifest `dryRun=true` path with zero prediction-row DML. Matching dry-run publication and exact mutation/rollback authorization remain gated; no population ran.
 
-### Utah WGO repair-design checkpoint
+### Utah WGO repair checkpoint
 
 - Fresh read-only evidence freezes exactly 88 null-linked team-59 Utah Mammoth rows, 88 unique team-68 schedule mappings, zero target conflicts, and manifest digest `dd27185df94d9f7e9816eb3a9a8a8b66`.
 - Candidate migration `20260730200000` accepts only the complete pre/post state, updates only team/game/opponent identity under a writer lock, requires 88 first-run updates, and performs zero DML on replay. The registered inverse contract uses the same manifest. The focused migration suite passes 6/6.
-- B-CLEAN NEW 105 remains open for local executable rollback/reapply and exact Production mutation authorization/application with post-count, digest, unrelated-scope, and rollback receipts. No database row changed; actionable/master percentages remain 97.65%/96.75%.
+- Exact-manifest local execution proves 88-row first apply, physical no-DML replay with unchanged `xmin`, exact locked inverse, and exact reapply. Immutable-field and unrelated-row digests remain invariant, and cleanup returns all fixture tables to zero rows.
+- B-CLEAN NEW 105 remains open only for exact Production mutation authorization/application with post-count, digest, unrelated-scope, and rollback receipts. No Production database row changed; current actionable/master percentages remain 97.90%/97.01%.
 
 ### Frozen database application manifest
 

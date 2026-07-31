@@ -7555,3 +7555,10 @@
 - **Cleanup / verification:** A final blank reset removes the synthetic game, teams, season, raw rows, heads, normalized rows, manifest, and helper; all residue counts are zero. All 22 migrations replay, `public`/`analytics` database lint is empty, and the Gamecenter plus supported-baseline suites pass 17/17. The frozen migration hash is updated.
 - **Controls / counts:** B-DRM NEW 66/75/85 close, leaving B-DRM at 92/111 with 19 open. Raw imported parity is 4,889/5,000 with 111 open = 97.78%; actionable imported parity is 4,889/4,994 with 105 open = 97.90%; master roll-up is 5,000/5,154 = 97.01%. Severity is P0 29/25, P1 197/162, P2 165/160, P3 55/55.
 - **Boundary:** All writes were confined to the disposable local stack. No Production migration, row, writer, provider call, Vercel build/deployment, schedule, credential, shared checkout, push, or stash changed.
+
+## Entry 0809 — 2026-07-30 Utah WGO local rollback/reapply proof
+
+- **Exact fixture:** Connected read-only Supabase evidence supplied only the frozen Utah identity manifest. The isolated local stack reproduced all 88 row/date/game/opponent mappings and exact digest `dd27185df94d9f7e9816eb3a9a8a8b66`.
+- **Executable proof:** Migration `20260730200000` changed exactly 88 pre-state rows to canonical team 68 with mapped game/opponent identities. Physical replay left every manifest-row `xmin` unchanged. The locked inverse restored exactly 88 team-59/null-link rows, and reapplication restored the exact post-state.
+- **Invariance / cleanup:** Immutable-field digest `0c3b0c5b2dd02dab9c2c3ece04909d50` and unrelated-row digest `fbcb62d89e71125835a93c44c9e1c19d` remained unchanged across apply, replay, inverse, and reapply. Cleanup returned local WGO, game, and team fixture counts to zero.
+- **Controls / boundary:** NEW 105 remains open only for exact Production mutation authorization/application and post-repair receipts, so completion counts do not change. No Production row, migration, writer, provider, schedule, build, deployment, credential, shared checkout, push, or stash changed.
