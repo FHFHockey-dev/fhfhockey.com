@@ -38,8 +38,6 @@ type PlayerTrendRow = {
   rolling_avg_3: number | null;
   rolling_avg_5: number | null;
   rolling_avg_10: number | null;
-  season_id: number | null;
-  position_code: string | null;
 };
 
 type PlayerTrendPoint = {
@@ -549,9 +547,7 @@ async function fetchMetricRows(
         : windowSize === 10
           ? ", rolling_avg_10"
           : "";
-  const selectColumns =
-    `player_id, game_date, raw_value${rollingColumn}, ` +
-    "season_id, position_code";
+  const selectColumns = `player_id, game_date, raw_value${rollingColumn}`;
   for (let from = 0; ; from += PAGE_SIZE) {
     let query = supabase
       .from("player_trend_metrics")

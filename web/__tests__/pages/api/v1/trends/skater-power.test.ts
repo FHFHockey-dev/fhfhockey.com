@@ -387,9 +387,7 @@ describe("/api/v1/trends/skater-power", () => {
     expect(res.statusCode).toBe(200);
     expect(selectCalls).toHaveLength(SKATER_TREND_CATEGORIES.length);
     expect(new Set(selectCalls)).toEqual(
-      new Set([
-        "player_id, game_date, raw_value, rolling_avg_5, season_id, position_code",
-      ]),
+      new Set(["player_id, game_date, raw_value, rolling_avg_5"]),
     );
   });
 
