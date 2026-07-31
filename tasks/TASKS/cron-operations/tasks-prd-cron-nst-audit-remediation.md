@@ -2,7 +2,7 @@
 
 **2026-07-31 tombstoned-RPC zero-use observation:** The bounded last-24-hour Supabase Postgres log window returned 100 rows with no exact execution-log match for `update_all_wgo_skaters` or `get_skater_game_score_by_limit(...)`; read-only `pg_stat_statements` returned zero non-comment fingerprints for either routine after excluding comment-only schedule text. NEW 56/57 remain open for one-release zero-use monitoring and final-drop controls. No migration, writer, repair, provider call, build, deployment, or push occurred.
 
-**2026-07-31 Utah WGO repair receipt:** The exact authorized `20260730200000_repair_utah_wgo_team_identity.sql` cohort is applied and replay-verified. Hosted history records `20260731220635 / repair_utah_wgo_team_identity`; 88/88 rows match the frozen digest `dd27185df94d9f7e9816eb3a9a8a8b66`, legacy residue is zero, and total WGO cardinality remains 38,484. The remaining hosted migration classes are now only analytics tracking reconciliation and Yahoo postdeploy revocation; no build, provider call, or unrelated writer ran.
+**2026-07-31 Utah WGO repair receipt:** The exact authorized `20260730200000_repair_utah_wgo_team_identity.sql` cohort is applied and replay-verified. Linked history now records the exact repository version `20260730200000 / repair_utah_wgo_team_identity` after reverting the connector's temporary auto-version; 88/88 rows match the frozen digest `dd27185df94d9f7e9816eb3a9a8a8b66`, legacy residue is zero, and total WGO cardinality remains 38,484. The remaining hosted migration classes are now only analytics tracking reconciliation and Yahoo postdeploy revocation; no build, provider call, or unrelated writer ran.
 
 ## Relevant Files
 
