@@ -1,5 +1,9 @@
 # Yahoo ingestion and identity inventory — 2026-07-22
 
+## 2026-07-31 current continuous-discovery closure
+
+NEW 9.1–9.14 were re-read as the complete current Yahoo finding register. The bounded local contract cohort passed 17 files/83 tests, with existing TypeScript, scoped lint, formatting, and diff-integrity evidence green. No new issue was found outside the explicit controlled provider/league-discovery, legacy-Python-retirement, resumable historical-backfill, and end-to-end/provider gates. B-YAHOO is 64/72 with eight open; no provider, database, writer, repair, backfill, build, deployment, push, or credential action occurred.
+
 ## 2026-07-31 current Production reader cutover
 
 Exact commit `fdfbb2764d656be37b47be27de64d0e50f25f19f` is promoted without a second build as READY deployment `dpl_EphZQcV7FFUHah3sVfYWuzkcVj8D`. Start Chart, ownership trends, and ownership snapshots return value-free 200 responses from canonical readers, with an empty bounded one-hour Production error-log query. Migration `20260731022805_revoke_legacy_yahoo_read_cache.sql` is applied: the retained `yahoo_nhl_player_map_mat` cache is service-role-readable only, both replacement views remain security-invoker/browser-readable, and the non-unique 1,857-row legacy map is retained for service rollback. Provider-equivalence, Python-retirement, historical-backfill, and end-to-end/provider gates remain open.

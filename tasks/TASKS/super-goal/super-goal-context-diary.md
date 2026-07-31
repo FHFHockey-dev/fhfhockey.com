@@ -8053,3 +8053,10 @@
 - **Verification:** The bounded DRM/UI/transactional cohort passed 21 files/243 tests. Existing TypeScript, scoped lint, formatting, and diff-integrity evidence remains green. No runtime or external state changed.
 - **Synchronization:** Source/master NEW 7/C0033 close. B-DRM is 94/111 with 17 open. Raw parity is 4,935/5,011; actionable parity is 4,935/5,005 with 70 open (98.60%); mechanical master roll-up is 5,063/5,171. The DRM task list/PRD, canonical master/PRD, final summary, and diary carry the same closure.
 - **Boundary:** The remaining DRM rows retain explicit production publication/natural-run, bounded history/repair, scheduler ownership, legacy credential-retention, and compatibility gates. No push, Vercel build/deployment, migration, writer, repair, backfill, provider, analytics, or credential action ran.
+
+## Entry 0880 — 2026-07-31 B-YAHOO continuous-discovery audit closure
+
+- **Audit:** Yahoo NEW 9.1–9.14 were re-read as the complete current Yahoo finding register. Every verified defect, schema drift, provider/manual dependency, unmatched identity class, and optimization is already recorded; no additional issue was found outside the explicit controlled provider/league-discovery, legacy-Python-retirement, resumable-history, and end-to-end/provider gates.
+- **Verification:** The bounded local Yahoo contract cohort passed 17 files/83 tests. Existing TypeScript, scoped lint, formatting, and diff-integrity evidence remains green. No runtime or external state changed.
+- **Synchronization:** Source/master NEW 9.0/C0058 close. B-YAHOO is 64/72 with eight open. Raw parity is 4,936/5,011; actionable parity is 4,936/5,005 with 69 open (98.62%); mechanical master roll-up is 5,064/5,171. The Yahoo task list/PRD/inventory, canonical PRD/master, final summary, and diary carry the same closure.
+- **Boundary:** Controlled provider/league discovery, legacy-Python retirement, resumable historical backfill, end-to-end/provider, and other explicit external gates remain open. No provider, database, writer, repair, backfill, deployment, build, push, analytics, or credential action ran.
