@@ -18,6 +18,10 @@ import {
   selectCanonicalYahooGame,
   withYahooRetry,
 } from "./ingestionLifecycle";
+import {
+  assessYahooLifecycleHealth,
+  classifyYahooLifecycleError,
+} from "./lifecycleHealth";
 
 describe("Yahoo discovery helpers", () => {
   it("keeps only the latest Yahoo game season for sync", () => {
@@ -189,6 +193,45 @@ describe("Yahoo discovery helpers", () => {
     expect(
       isYahooGameWeekSnapshotReceipt({ ...receipt, replayed: true }, expected),
     ).toBe(false);
+  });
+
+  it("classifies every Yahoo lifecycle alert from durable audit observations", () => {
+    expect(
+      assessYahooLifecycleHealth({
+        nowMs: Date.parse("2026-07-30T12:00:00Z"),
+        observations: [
+          {
+            time: "2026-07-29T00:00:00Z",
+            status: "failure",
+            response: {
+              rateLimitEvents: 3,
+              errorCategory: "token_failure",
+              health: { mappedPlayers: 90, unmatchedPlayers: 12 },
+            },
+          },
+          {
+            time: "2026-07-28T00:00:00Z",
+            status: "failure",
+            response: {
+              health: { mappedPlayers: 100, unmatchedPlayers: 10 },
+            },
+          },
+        ],
+      }).map((warning) => warning.code),
+    ).toEqual([
+      "stale_last_success",
+      "repeated_ownership_failure",
+      "mapping_coverage_regression",
+      "unmatched_growth",
+      "rate_limit_saturation",
+      "token_failure",
+    ]);
+    expect(
+      classifyYahooLifecycleError({ code: "42703", message: "column missing" }),
+    ).toBe("schema_drift");
+    expect(
+      classifyYahooLifecycleError({ status: 401, message: "OAuth denied" }),
+    ).toBe("token_failure");
   });
 
   it("retries transient Yahoo failures with Retry-After but fails fast on auth", async () => {

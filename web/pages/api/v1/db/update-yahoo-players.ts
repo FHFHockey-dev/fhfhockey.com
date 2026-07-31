@@ -19,6 +19,7 @@ import {
   selectCanonicalYahooGame,
   withYahooRetry,
 } from "lib/integrations/yahoo/ingestionLifecycle";
+import { classifyYahooLifecycleError } from "lib/integrations/yahoo/lifecycleHealth";
 import type { Database } from "lib/supabase/database-generated.types";
 import {
   dedupeYahooPlayerPayloads,
@@ -104,6 +105,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     }
     const gameId = Number(gameRow.game_id);
     const season = gameRow.season ? Number(gameRow.season) : undefined;
+    const [mappedResult, unmatchedResult] = await Promise.all([
+      supabase
+        .from("yahoo_nhl_player_map")
+        .select("*", { count: "exact", head: true })
+        .not("yahoo_player_id", "is", null),
+      supabase
+        .from("yahoo_nhl_player_map_unmatched")
+        .select("*", { count: "exact", head: true }),
+    ]);
+    if (mappedResult.error || unmatchedResult.error) {
+      throw new Error("Yahoo mapping health schema query failed.");
+    }
+    const health = {
+      mappedPlayers: mappedResult.count ?? 0,
+      unmatchedPlayers: unmatchedResult.count ?? 0,
+    };
     console.log(
       `${
         overrideGameId ? "Using override" : "Detected canonical"
@@ -208,6 +225,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         keyChanged: keyReceipt.changed,
         keyDeactivated: keyReceipt.deactivated,
         deactivationApplied: true,
+        health,
         message: "No player keys found.",
       });
     }
@@ -219,6 +237,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const currentDate = format(new Date(), "yyyy-MM-dd");
     let failedRows = 0;
     let omitted = 0;
+    let errorCategory: "token_failure" | "schema_drift" | null = null;
     for (let i = 0; i < playerKeys.length; i += BATCH_SIZE) {
       const batchKeys = playerKeys.slice(i, i + BATCH_SIZE);
       console.log(
@@ -287,8 +306,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             `No data returned for batch starting with: ${batchKeys[0]}`,
           );
         }
-      } catch {
+      } catch (error) {
         failedRows += batchKeys.length;
+        errorCategory ??= classifyYahooLifecycleError(error);
         console.error(`Yahoo player batch failed at record ${i + 1}.`);
         continue; // continue with next batch
       }
@@ -378,6 +398,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         draftHistoryUpserted,
         retries,
         rateLimitEvents,
+        errorCategory,
         completeSnapshot,
         keySnapshotId: snapshotId,
         keyPagesFetched: keySnapshot.pagesFetched,
@@ -387,6 +408,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         keyDeactivated: keyReceipt.deactivated,
         deactivationApplied: true,
         sheetExport,
+        health,
         warnings,
         message: `Processed ${dedupedRpcPayloads.length} players via RPC.`,
       });
@@ -409,6 +431,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       draftHistoryUpserted: 0,
       retries,
       rateLimitEvents,
+      errorCategory,
       completeSnapshot: false,
       keySnapshotId: snapshotId,
       keyPagesFetched: keySnapshot.pagesFetched,
@@ -417,15 +440,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       keyChanged: keyReceipt.changed,
       keyDeactivated: keyReceipt.deactivated,
       deactivationApplied: true,
+      health,
       message:
         failedRows > 0
           ? "Yahoo player batches failed."
           : "Yahoo omitted all requested player data.",
     });
-  } catch {
+  } catch (error) {
     console.error("Yahoo player update failed.");
+    const errorCategory = classifyYahooLifecycleError(error);
     return res.status(500).json({
       success: false,
+      status: "failure",
+      errorCategory,
       message: "Yahoo player update failed",
     });
   }

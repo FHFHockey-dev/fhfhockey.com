@@ -21,6 +21,10 @@ import { extractAuditTimingRecord } from "lib/cron/cronReportTiming";
 import { buildSqlCronTimingObservation } from "lib/cron/sqlTiming";
 import { readCronScheduleMarkdown } from "lib/cron/cronInventory";
 import adminOnly from "utils/adminOnlyMiddleware";
+import {
+  assessYahooLifecycleHealth,
+  type YahooLifecycleWarning,
+} from "lib/integrations/yahoo/lifecycleHealth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -285,6 +289,7 @@ type WarningSummary = {
   slowJobs: SlowJobWarning[];
   partialFailureJobs: Array<{ displayName: string; failedRows: number }>;
   missingObservationJobs: Array<{ displayName: string; warnings: string[] }>;
+  yahooLifecycle: YahooLifecycleWarning[];
 };
 
 type BenchmarkSummary = {
@@ -1841,6 +1846,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       displayName: job.displayName,
       warnings: job.missingObservationWarnings,
     }));
+  const yahooLifecycle = assessYahooLifecycleHealth({
+    observations: auditRows
+      .filter(
+        (row) =>
+          row.parsed.routePath === "/api/v1/db/update-yahoo-players" ||
+          row.jobName === "update-yahoo-players",
+      )
+      .map((row) => ({
+        time: row.time,
+        status: row.status,
+        response: row.parsed.response,
+      })),
+    nowMs: now.getTime(),
+  });
 
   const benchmarkSummary: BenchmarkSummary = {
     annotatedJobCount: jobSummaries.filter(
@@ -1865,6 +1884,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     slowJobs: WARN_SLOW,
     partialFailureJobs: WARN_PARTIAL_FAILURE,
     missingObservationJobs,
+    yahooLifecycle,
   };
 
   const counts: ReportCounts = {
