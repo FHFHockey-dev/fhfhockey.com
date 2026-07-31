@@ -258,6 +258,47 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     expect(migration).not.toContain("process_team_goalie_projections");
   });
 
+  it("keeps SKO run control service-only with deterministic lease rejection", () => {
+    const migration = readMigration(
+      "20260728225806_add_sko_prediction_run_control.sql",
+    );
+
+    expect(migration).toContain(
+      "alter table public.sko_prediction_run_manifests force row level security;",
+    );
+    expect(migration).toMatch(
+      /revoke all on table public\.sko_prediction_run_manifests\s+from public, anon, authenticated, service_role;/,
+    );
+    expect(migration).toMatch(
+      /grant select, insert, update on table public\.sko_prediction_run_manifests\s+to service_role;/,
+    );
+    expect(migration).toContain(
+      "select coalesce((select true from renewed limit 1), false);",
+    );
+    expect(migration).toContain(
+      "select coalesce((select true from finished limit 1), false);",
+    );
+    expect(migration).toContain("and p_ttl_seconds between 30 and 86400");
+    expect(migration.match(/and lease_expires_at > now\(\)/g)).toHaveLength(2);
+
+    for (const signature of [
+      "public.acquire_sko_prediction_run(text, uuid, integer, jsonb)",
+      "public.heartbeat_sko_prediction_run(text, uuid, integer)",
+      "public.finish_sko_prediction_run(text, uuid, boolean, text, jsonb)",
+    ]) {
+      expect(migration).toMatch(
+        new RegExp(
+          `revoke all on function ${signature.replace(/[()[\].]/g, "\\$&")}\\s+from public, anon, authenticated, service_role;`,
+        ),
+      );
+      expect(migration).toMatch(
+        new RegExp(
+          `grant execute on function ${signature.replace(/[()[\].]/g, "\\$&")}\\s+to service_role;`,
+        ),
+      );
+    }
+  });
+
   it("atomically versions complete Yahoo game metadata/week snapshots", () => {
     const migration = readMigration(
       "20260730195000_replace_yahoo_game_weeks_snapshot.sql",

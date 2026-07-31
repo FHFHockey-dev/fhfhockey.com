@@ -38,6 +38,7 @@ create index sko_prediction_run_manifests_updated_at_idx
   on public.sko_prediction_run_manifests (updated_at desc);
 
 alter table public.sko_prediction_run_manifests enable row level security;
+alter table public.sko_prediction_run_manifests force row level security;
 
 create function public.acquire_sko_prediction_run(
   p_run_key text,
@@ -127,15 +128,19 @@ create function public.heartbeat_sko_prediction_run(
 language sql
 set search_path to 'public', 'pg_temp'
 as $$
-  update public.sko_prediction_run_manifests
-  set heartbeat_at = now(),
-      lease_expires_at = now() + make_interval(secs => p_ttl_seconds),
-      updated_at = now()
-  where run_key = p_run_key
-    and owner_token = p_owner_token
-    and state = 'running'
-    and lease_expires_at > now()
-  returning true;
+  with renewed as (
+    update public.sko_prediction_run_manifests
+    set heartbeat_at = now(),
+        lease_expires_at = now() + make_interval(secs => p_ttl_seconds),
+        updated_at = now()
+    where run_key = p_run_key
+      and owner_token = p_owner_token
+      and state = 'running'
+      and lease_expires_at > now()
+      and p_ttl_seconds between 30 and 86400
+    returning true
+  )
+  select coalesce((select true from renewed limit 1), false);
 $$;
 
 create function public.finish_sko_prediction_run(
@@ -148,39 +153,43 @@ create function public.finish_sko_prediction_run(
 language sql
 set search_path to 'public', 'pg_temp'
 as $$
-  update public.sko_prediction_run_manifests
-  set owner_token = null,
-      state = case when p_succeeded then 'succeeded' else 'failed' end,
-      lease_expires_at = null,
-      completed_at = now(),
-      last_success_at = case when p_succeeded then now() else last_success_at end,
-      last_failure_at = case when p_succeeded then last_failure_at else now() end,
-      last_error = case
-        when p_succeeded then null
-        else left(coalesce(p_error, 'unknown failure'), 2000)
-      end,
-      metadata = metadata || coalesce(p_metadata, '{}'::jsonb),
-      updated_at = now()
-  where run_key = p_run_key
-    and owner_token = p_owner_token
-    and state = 'running'
-  returning true;
+  with finished as (
+    update public.sko_prediction_run_manifests
+    set owner_token = null,
+        state = case when p_succeeded then 'succeeded' else 'failed' end,
+        lease_expires_at = null,
+        completed_at = now(),
+        last_success_at = case when p_succeeded then now() else last_success_at end,
+        last_failure_at = case when p_succeeded then last_failure_at else now() end,
+        last_error = case
+          when p_succeeded then null
+          else left(coalesce(p_error, 'unknown failure'), 2000)
+        end,
+        metadata = metadata || coalesce(p_metadata, '{}'::jsonb),
+        updated_at = now()
+    where run_key = p_run_key
+      and owner_token = p_owner_token
+      and state = 'running'
+      and lease_expires_at > now()
+    returning true
+  )
+  select coalesce((select true from finished limit 1), false);
 $$;
 
 revoke all on table public.sko_prediction_run_manifests
-  from public, anon, authenticated;
+  from public, anon, authenticated, service_role;
 grant select, insert, update on table public.sko_prediction_run_manifests
   to service_role;
 
 revoke all on function public.acquire_sko_prediction_run(text, uuid, integer, jsonb)
-  from public;
+  from public, anon, authenticated, service_role;
 grant execute on function public.acquire_sko_prediction_run(text, uuid, integer, jsonb)
   to service_role;
 revoke all on function public.heartbeat_sko_prediction_run(text, uuid, integer)
-  from public;
+  from public, anon, authenticated, service_role;
 grant execute on function public.heartbeat_sko_prediction_run(text, uuid, integer)
   to service_role;
 revoke all on function public.finish_sko_prediction_run(text, uuid, boolean, text, jsonb)
-  from public;
+  from public, anon, authenticated, service_role;
 grant execute on function public.finish_sko_prediction_run(text, uuid, boolean, text, jsonb)
   to service_role;
