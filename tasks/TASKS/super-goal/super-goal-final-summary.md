@@ -633,6 +633,13 @@ All charter questions remain open until source/master synchronization, Wave A/B 
 - Exact-manifest local execution proves 88-row first apply, physical no-DML replay with unchanged `xmin`, exact locked inverse, and exact reapply. Immutable-field and unrelated-row digests remain invariant, and cleanup returns all fixture tables to zero rows.
 - B-CLEAN NEW 105 remains open only for exact Production mutation authorization/application with post-count, digest, unrelated-scope, and rollback receipts. No Production database row changed; the Utah checkpoint's actionable/master percentages were 97.90%/97.01%.
 
+### April 2023 WGO player-season repair checkpoint
+
+- Exact ordered receipts now supplement the frozen commutative scope: source manifest MD5 `23394878da4315e9013533d460815b0a` and trend identity MD5 `cd94410ea3f8851b8d3155c9cb2299f1`. There are zero exact target-season conflicts on the affected player/date/metric scope.
+- Inert migration `20260731015416_repair_wgo_player_season_identity.sql` adds browser-denied service-only forward/inverse staging and an atomic finalizer that locks the exact 1,905-row source scope, refreshes `player_stats_unified`, and exact-replaces 49,410 trend rows only after frozen count/identity validation. The dry-run-first TypeScript runner uses complete deterministic pagination and the canonical trend calculator.
+- The disposable local stack proves exact-cardinality forward/inverse execution, 99 bounded chunks each way, zero-DML physical replay, transaction rollback with zero residue, advisory-lock serialization, ACL/RLS denial, clean full-chain reset, generated `public`/`analytics` type parity apart from the CLI's omitted trailing blank line, and zero-error database lint. Focused tests pass 13/13 and TypeScript passes.
+- NEW 15 remains open for exact Production migration/repair authorization, application, and post-write receipts. No Production migration or writer ran, and the 2024–25 playoff trend rebuild remains gated behind this repair.
+
 ### Frozen database application manifest
 
 Connected read-only evidence confirms Production has exactly eight applied migrations, ending at `20260725200808`. The following local candidates are frozen by class and SHA-256; these classes must not be collapsed into one bulk push.
@@ -658,7 +665,8 @@ The Gamecenter follow-on executes the previously missing two-session cohort. Ini
 | Ordered predeploy | `20260730195000_replace_yahoo_game_weeks_snapshot.sql` | `9a2445100b49aed2ee24e775c5e76d728ada2938035a5beda6112857dbfbbf1e` |
 | Separate repair mutation | `20260730200000_repair_utah_wgo_team_identity.sql` | `3f49bed58ec464028180335ccf8d02a2fdcbd09dd18be2493283ba5e3f806af2` |
 | Production tracking only after local parity | `20260730233451_reconstruct_hosted_analytics_schema.sql` | `ef0da7a1c5f9e407a58e9515ab21e6c9fa80587b3dbb63d3c913c34f197a5c66` |
+| Ordered predeploy | `20260731015416_repair_wgo_player_season_identity.sql` | `d472a84231ae8a02771cb102b73c0d83d6ad21e2c077f05cc0ae4a034ac85738` |
 
-The grouped predeploy authorization must name the first 13 files in this exact order and stop before the Utah repair. The analytics baseline must be reconciled into Production migration tracking only after fresh local catalog/security/runtime/type parity; its already-hosted objects must not be destructively replayed. No undifferentiated `supabase db push` is permitted across all pending files.
+The grouped predeploy authorization must name all 14 rows labeled `Ordered predeploy` and preserve their migration order while handling the Utah repair and analytics tracking row only under their separate gates. The analytics baseline must be reconciled into Production migration tracking only after fresh local catalog/security/runtime/type parity; its already-hosted objects must not be destructively replayed. No undifferentiated `supabase db push` is permitted across all pending files.
 
-The existing supported-baseline Vitest suite now enforces the exact eight-file hosted applied set, the 15-file pending order, the 13/1/1 execution classes, and every frozen SHA-256. A migration-content, filename, order, or class change therefore fails locally before any grouped authorization or publication.
+The existing supported-baseline Vitest suite now enforces the exact eight-file hosted applied set, the 16-file pending order, the 14/1/1 execution classes, and every frozen SHA-256. A migration-content, filename, order, or class change therefore fails locally before any grouped authorization or publication.

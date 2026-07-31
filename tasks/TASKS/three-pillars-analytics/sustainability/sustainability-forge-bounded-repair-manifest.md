@@ -2,9 +2,9 @@
 
 Date: 2026-07-30
 
-Status: read-only preparation only. This document does not authorize a
-Production migration, historical rewrite, writer call, projection run,
-schedule change, or calibration change.
+Status: read-only preparation plus disposable-local executable proof only.
+This document does not authorize a Production migration, historical rewrite,
+writer call, projection run, schedule change, or calibration change.
 
 ## Invariants
 
@@ -40,16 +40,33 @@ The preflight also found a separate upstream identity defect. Exactly 1,905
 `wgo_skater_stats` rows dated `2023-04-01`–`2023-04-06` are labeled season
 `20242025`; the materialized `player_stats_unified` view inherits all 1,905,
 and `player_trend_metrics` contains 49,410 derived rows over 1,830
-player-dates under the same wrong season. There are zero corresponding rows
-under season `20222023` or any other season. Receipts:
+player-dates under the same wrong season. There are zero exact target-season
+conflicts on the affected player/date/metric scope. Receipts:
 
 - WGO identity: `8868305476867722389`.
 - Unified player/date identity: `5499108705494982642`.
 - Trend identity: `5346575694005736297`.
+- Ordered WGO source manifest MD5 over `id:player_id:date`:
+  `23394878da4315e9013533d460815b0a`.
+- Ordered trend identity MD5 over `player_id:game_date:metric_key`:
+  `cd94410ea3f8851b8d3155c9cb2299f1`.
 
-Do not run a 2024–25 trend rebuild until this source-season scope has its own
-exact repair and inverse manifest. Otherwise the rebuild would reproduce the
-wrong-season inputs.
+Migration `20260731015416_repair_wgo_player_season_identity.sql` is inert on
+application. It exposes browser-denied, service-only bounded staging for exact
+forward and retained inverse payloads, then atomically locks and repairs the
+1,905 source rows, refreshes `player_stats_unified`, and exact-replaces the
+49,410 dependent trend rows only after both ordered receipts and all
+cardinalities match. The dry-run-first
+`repair:wgo-player-season-identity` runner uses complete deterministic
+pagination and the canonical trend calculator.
+
+The disposable local cohort proves the exact 1,905/49,410 fixture in 99
+500-row chunks per direction, zero-DML physical replay, forward and inverse
+finalization, transaction rollback with zero residue, advisory-lock
+serialization, browser denial/service ACL, RLS, clean full migration reset,
+generated `public`/`analytics` types, and zero-error database lint. NEW 15
+remains open for exact Production migration/repair authorization and post-write
+receipts. Do not run a 2024–25 trend rebuild before that repair completes.
 
 ### Sustainability score provenance
 

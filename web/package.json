@@ -25,6 +25,7 @@
     "forecast:game-predictions": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/forecast-game-predictions.ts",
     "import:historical-market-odds": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/import-historical-market-odds.ts",
     "promote:game-prediction-model-version": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/promote-game-prediction-model-version.ts",
+    "repair:wgo-player-season-identity": "NODE_PATH=. ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/repair-wgo-player-season-identity.ts",
     "audit:team-underlying-vs-nhl": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/audit-team-underlying-vs-nhl.ts",
     "audit:tweet-news-phrases": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/analyze-tweet-news-phrases.ts",
     "train:nhl-xg-baseline": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/train-nhl-xg-baseline.ts",

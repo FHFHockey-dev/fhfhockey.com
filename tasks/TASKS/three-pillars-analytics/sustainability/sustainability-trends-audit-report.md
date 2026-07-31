@@ -214,7 +214,7 @@ This closes the first cross-system map only. It does not close family-specific f
 | NEW 12 confidence-driver nesting drift          | P2       | Canonical FORGE player reader                  | Closed locally                   | The reader now prefers PP/matchup/rest drivers from `model.skater_selection`, falls back to historical top-level metadata, and the focused route regression covers every nested field.                               |
 | NEW 13 FORGE result/run-version coverage gap    | P1       | Results/accuracy pipeline                      | Open — migration/backfill proof  | Canonical eligibility has 1,344 missing of 7,523. New-run provenance and the atomic RPC exclude contaminated legacy inputs while retaining latest-run authority and eligible empty-scope cleanup; apply it, backfill only eligible scopes, and prove idempotency/coverage.       |
 | NEW 14 contaminated result-history conflict     | P1       | FORGE historical results/calibration           | Open — owner disposition         | Every one of the 21 repair-scope runs lacks repaired rolling-history provenance and is correctly rejected. Choose no-backfill quarantine or a separately versioned non-calibration history class without altering original runs/projections. |
-| NEW 15 source season-identity corruption        | P1       | WGO → unified player stats → trends            | Open — source-first repair       | 1,905 April 2023 WGO/unified rows and 49,410 derived trend rows are mislabeled `20242025`. Repair source identity atomically with an inverse, refresh the view, then rebuild dependent trends. |
+| NEW 15 source season-identity corruption        | P1       | WGO → unified player stats → trends            | Open — Production authorization  | The exact 1,905/49,410 source-first repair now has frozen ordered receipts, bounded service-only forward/inverse staging, atomic view refresh/trend replacement, dry-run-first orchestration, and local rollback/replay/concurrency/ACL proof. Production migration/repair authorization and post-write receipts remain. |
 
 ## Validation evidence register
 
@@ -242,10 +242,12 @@ commutative identity/payload receipts. It also fixes the execution order,
 rollback/idempotency requirements, and no-mutation boundary.
 
 The preparation does not close a historical repair. It opens NEW 14 because
-all 21 FORGE runs fail the approved repaired-input provenance contract, and
-NEW 15 because the 2024–25 trend source includes April 2023 rows under the
-wrong season. Both must be resolved before the corresponding dry-run or
-mutation authorization can be truthful.
+all 21 FORGE runs fail the approved repaired-input provenance contract. NEW 15
+now has an inert, service-only migration and dry-run-first runner that pass the
+exact local forward/inverse/replay, transaction rollback, advisory-lock,
+ACL/RLS, blank-reset, and database-lint cohort. The historical row remains open
+only for exact Production migration/repair authorization and post-write
+receipts; no repair has run.
 
 ## Definition and overlap register
 

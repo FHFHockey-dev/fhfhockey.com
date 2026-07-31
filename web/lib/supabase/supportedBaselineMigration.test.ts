@@ -49,6 +49,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260730195000_replace_yahoo_game_weeks_snapshot.sql",
       "20260730200000_repair_utah_wgo_team_identity.sql",
       "20260730233451_reconstruct_hosted_analytics_schema.sql",
+      "20260731015416_repair_wgo_player_season_identity.sql",
     ]);
 
     expect(
@@ -313,6 +314,64 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     expect(migration).not.toMatch(/\b(?:insert|delete|truncate)\b/i);
   });
 
+  it("makes the April 2023 WGO/trend season repair atomic and reversible", () => {
+    const migration = readMigration(
+      "20260731015416_repair_wgo_player_season_identity.sql",
+    );
+
+    expect(migration).toContain(
+      "create table if not exists public.wgo_player_season_repair_trend_staging",
+    );
+    expect(migration).toContain(
+      "alter table public.wgo_player_season_repair_trend_staging",
+    );
+    expect(migration).toContain("enable row level security");
+    expect(migration).toContain(
+      "create or replace function public.stage_wgo_player_season_repair_trends(",
+    );
+    expect(migration).toContain(
+      "create or replace function public.repair_wgo_player_season_identity(",
+    );
+    expect(migration).toContain("security definer");
+    expect(migration).toContain("security invoker");
+    expect(migration).toContain("set search_path = ''");
+    expect(migration).toContain(
+      "pg_catalog.hashtextextended('fhfh:wgo-player-season-identity:2023-04', 0)",
+    );
+    expect(migration).toContain(
+      "lock table public.wgo_skater_stats in share row exclusive mode",
+    );
+    expect(migration).toContain(
+      "lock table public.player_trend_metrics in share row exclusive mode",
+    );
+    expect(migration).toContain("v_source_count <> 1905");
+    expect(migration).toContain("v_input_trend_count <> 49410");
+    expect(migration).toContain("v_input_trend_player_dates <> 1830");
+    expect(migration).toContain("v_input_metric_keys <> 27");
+    expect(migration).toContain("pg_catalog.jsonb_array_length(p_rows) > 500");
+    expect(migration).toContain(
+      "refresh materialized view public.player_stats_unified",
+    );
+    expect(migration).toContain(
+      "on conflict (player_id, game_date, metric_key) do update",
+    );
+    expect(migration).toContain("is distinct from");
+    expect(migration).toContain("'forward'");
+    expect(migration).toContain("'inverse'");
+    expect(migration).toMatch(
+      /revoke all on function public\.repair_wgo_player_season_identity\([\s\S]+from public, anon, authenticated, service_role;/i,
+    );
+    expect(migration).toMatch(
+      /revoke all on function public\.stage_wgo_player_season_repair_trends\([\s\S]+from public, anon, authenticated, service_role;/i,
+    );
+    expect(migration).toMatch(
+      /grant execute on function public\.repair_wgo_player_season_identity\([\s\S]+to service_role;/i,
+    );
+    expect(migration).not.toMatch(
+      /grant execute on function public\.repair_wgo_player_season_identity\([\s\S]+to (?:anon|authenticated);/i,
+    );
+  });
+
   it("reconstructs the exact credential-free hosted analytics contract", () => {
     const migration = readMigration(
       "20260730233451_reconstruct_hosted_analytics_schema.sql",
@@ -427,10 +486,10 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260725200808_fix_yahoo_player_writer_captured_at.sql",
     ]);
 
-    expect(manifestRows).toHaveLength(15);
+    expect(manifestRows).toHaveLength(16);
     expect(
       manifestRows.filter((row) => row.className === "Ordered predeploy"),
-    ).toHaveLength(13);
+    ).toHaveLength(14);
     expect(
       manifestRows.filter(
         (row) => row.className === "Separate repair mutation",

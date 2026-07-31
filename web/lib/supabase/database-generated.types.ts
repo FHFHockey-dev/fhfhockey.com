@@ -7,10 +7,535 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "12.0.2 (a4e00ff)"
+  analytics: {
+    Tables: {
+      sko_model_v1: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: number
+          intercept: number
+          mu: Json
+          sigma: Json
+          sigma_residual: number
+          target: string
+          weights: Json
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          intercept: number
+          mu: Json
+          sigma: Json
+          sigma_residual: number
+          target?: string
+          weights: Json
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          intercept?: number
+          mu?: Json
+          sigma?: Json
+          sigma_residual?: number
+          target?: string
+          weights?: Json
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      mv_sko_skater_moments: {
+        Row: {
+          ixg_mad: number | null
+          ixg_med: number | null
+          ixg_per_60_mad: number | null
+          ixg_per_60_med: number | null
+          league_ixg_mad: number | null
+          league_ixg_med: number | null
+          league_ixg_per_60_mad: number | null
+          league_ixg_per_60_med: number | null
+          league_onice_sh_mad: number | null
+          league_onice_sh_med: number | null
+          league_ozfo_mad: number | null
+          league_ozfo_med: number | null
+          league_pp_toi_mad: number | null
+          league_pp_toi_med: number | null
+          league_shooting_pct_mad: number | null
+          league_shooting_pct_med: number | null
+          league_shots_mad: number | null
+          league_shots_med: number | null
+          league_toi_mad: number | null
+          league_toi_med: number | null
+          n_games: number | null
+          onice_sh_mad: number | null
+          onice_sh_med: number | null
+          ozfo_mad: number | null
+          ozfo_med: number | null
+          player_id: number | null
+          position_code: string | null
+          pp_toi_mad: number | null
+          pp_toi_med: number | null
+          shooting_pct_mad: number | null
+          shooting_pct_med: number | null
+          shots_mad: number | null
+          shots_med: number | null
+          toi_mad: number | null
+          toi_med: number | null
+        }
+        Relationships: []
+      }
+      vw_entity_ratings_daily: {
+        Row: {
+          components: Json | null
+          computed_at: string | null
+          defense_rating_0_to_100: number | null
+          entity_id: number | null
+          entity_type: string | null
+          goalie_rating_0_to_100: number | null
+          league_rank: number | null
+          offense_rating_0_to_100: number | null
+          overall_rating_0_to_100: number | null
+          percentile: number | null
+          player_id: number | null
+          provenance: Json | null
+          season_id: number | null
+          snapshot_date: string | null
+          source_table: string | null
+          team_abbrev: string | null
+          team_id: number | null
+        }
+        Relationships: []
+      }
+      vw_entity_sustainability_scores: {
+        Row: {
+          baseline_value: number | null
+          components: Json | null
+          computed_at: string | null
+          entity_id: number | null
+          entity_type: string | null
+          expectation_state: string | null
+          expected_value: number | null
+          metric_scope: string | null
+          player_id: number | null
+          provenance: Json | null
+          recent_value: number | null
+          s_100: number | null
+          s_raw: number | null
+          season_id: number | null
+          snapshot_date: string | null
+          team_id: number | null
+          window_code: string | null
+          z_score: number | null
+        }
+        Relationships: []
+      }
+      vw_nhl_edge_latest_goalie_metrics: {
+        Row: {
+          all_goals_against: number | null
+          all_save_pct: number | null
+          all_saves: number | null
+          created_at: string | null
+          edge_goals_against_avg: number | null
+          edge_goals_against_avg_league_avg: number | null
+          edge_goals_against_avg_percentile: number | null
+          game_type: number | null
+          games_above_900: number | null
+          games_above_900_league_avg: number | null
+          games_above_900_percentile: number | null
+          games_played: number | null
+          goal_differential_per_60: number | null
+          goal_differential_per_60_league_avg: number | null
+          goal_differential_per_60_percentile: number | null
+          goal_support_avg: number | null
+          goal_support_avg_league_avg: number | null
+          goal_support_avg_percentile: number | null
+          goalie_id: number | null
+          goalie_name: string | null
+          goals_against_avg: number | null
+          high_danger_goals_against: number | null
+          high_danger_save_pct: number | null
+          high_danger_saves: number | null
+          long_range_goals_against: number | null
+          long_range_save_pct: number | null
+          long_range_saves: number | null
+          losses: number | null
+          metadata: Json | null
+          mid_range_goals_against: number | null
+          mid_range_save_pct: number | null
+          mid_range_saves: number | null
+          ot_losses: number | null
+          point_pct: number | null
+          point_pct_league_avg: number | null
+          point_pct_percentile: number | null
+          raw_payload: Json | null
+          save_pct: number | null
+          season_id: number | null
+          snapshot_date: string | null
+          source_url: string | null
+          team_abbreviation: string | null
+          team_id: number | null
+          updated_at: string | null
+          wins: number | null
+        }
+        Relationships: []
+      }
+      vw_nhl_edge_latest_skater_metrics: {
+        Row: {
+          all_goals: number | null
+          all_shooting_pct: number | null
+          all_shots: number | null
+          assists: number | null
+          bursts_over_20: number | null
+          bursts_over_20_league_avg: number | null
+          bursts_over_20_percentile: number | null
+          created_at: string | null
+          defensive_zone_league_avg: number | null
+          defensive_zone_pct: number | null
+          defensive_zone_percentile: number | null
+          game_type: number | null
+          games_played: number | null
+          goals: number | null
+          high_danger_goals: number | null
+          high_danger_shooting_pct: number | null
+          high_danger_shots: number | null
+          long_range_goals: number | null
+          long_range_shooting_pct: number | null
+          long_range_shots: number | null
+          max_game_distance_km: number | null
+          max_game_distance_league_avg_miles: number | null
+          max_game_distance_miles: number | null
+          max_game_distance_percentile: number | null
+          max_skating_speed_kph: number | null
+          max_skating_speed_league_avg_mph: number | null
+          max_skating_speed_mph: number | null
+          max_skating_speed_percentile: number | null
+          metadata: Json | null
+          mid_range_goals: number | null
+          mid_range_shooting_pct: number | null
+          mid_range_shots: number | null
+          neutral_zone_league_avg: number | null
+          neutral_zone_pct: number | null
+          neutral_zone_percentile: number | null
+          offensive_zone_ev_league_avg: number | null
+          offensive_zone_ev_pct: number | null
+          offensive_zone_ev_percentile: number | null
+          offensive_zone_league_avg: number | null
+          offensive_zone_pct: number | null
+          offensive_zone_percentile: number | null
+          player_id: number | null
+          player_name: string | null
+          points: number | null
+          position: string | null
+          raw_payload: Json | null
+          season_id: number | null
+          snapshot_date: string | null
+          source_url: string | null
+          team_abbreviation: string | null
+          team_id: number | null
+          top_shot_speed_kph: number | null
+          top_shot_speed_league_avg_mph: number | null
+          top_shot_speed_mph: number | null
+          top_shot_speed_percentile: number | null
+          total_distance_km: number | null
+          total_distance_league_avg_miles: number | null
+          total_distance_miles: number | null
+          total_distance_percentile: number | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
+      vw_nhl_edge_latest_skater_skating_distance_games: {
+        Row: {
+          away_team_abbreviation: string | null
+          created_at: string | null
+          distance_skated_all_km: number | null
+          distance_skated_all_miles: number | null
+          distance_skated_even_km: number | null
+          distance_skated_even_miles: number | null
+          distance_skated_pk_km: number | null
+          distance_skated_pk_miles: number | null
+          distance_skated_pp_km: number | null
+          distance_skated_pp_miles: number | null
+          game_center_link: string | null
+          game_date: string | null
+          game_id: number | null
+          game_type: number | null
+          home_team_abbreviation: string | null
+          metadata: Json | null
+          player_id: number | null
+          player_name: string | null
+          player_on_home_team: boolean | null
+          position: string | null
+          raw_payload: Json | null
+          season_id: number | null
+          snapshot_date: string | null
+          source_url: string | null
+          team_abbreviation: string | null
+          team_id: number | null
+          toi_all_seconds: number | null
+          toi_even_seconds: number | null
+          toi_pk_seconds: number | null
+          toi_pp_seconds: number | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
+      vw_nhl_edge_latest_team_metrics: {
+        Row: {
+          all_goals: number | null
+          all_goals_rank: number | null
+          all_shooting_pct: number | null
+          all_shooting_pct_rank: number | null
+          all_shots: number | null
+          all_shots_rank: number | null
+          bursts_over_20: number | null
+          bursts_over_20_league_avg: number | null
+          bursts_over_20_rank: number | null
+          bursts_over_22: number | null
+          bursts_over_22_rank: number | null
+          conference: string | null
+          created_at: string | null
+          defensive_zone_league_avg: number | null
+          defensive_zone_pct: number | null
+          defensive_zone_rank: number | null
+          division: string | null
+          game_type: number | null
+          games_played: number | null
+          high_danger_goals: number | null
+          high_danger_goals_rank: number | null
+          high_danger_shooting_pct: number | null
+          high_danger_shooting_pct_rank: number | null
+          high_danger_shots: number | null
+          high_danger_shots_rank: number | null
+          long_range_goals: number | null
+          long_range_goals_rank: number | null
+          long_range_shooting_pct: number | null
+          long_range_shooting_pct_rank: number | null
+          long_range_shots: number | null
+          long_range_shots_rank: number | null
+          losses: number | null
+          max_skating_speed_kph: number | null
+          max_skating_speed_league_avg_mph: number | null
+          max_skating_speed_mph: number | null
+          max_skating_speed_rank: number | null
+          metadata: Json | null
+          mid_range_goals: number | null
+          mid_range_goals_rank: number | null
+          mid_range_shooting_pct: number | null
+          mid_range_shooting_pct_rank: number | null
+          mid_range_shots: number | null
+          mid_range_shots_rank: number | null
+          neutral_zone_league_avg: number | null
+          neutral_zone_pct: number | null
+          neutral_zone_rank: number | null
+          offensive_zone_ev_league_avg: number | null
+          offensive_zone_ev_pct: number | null
+          offensive_zone_ev_rank: number | null
+          offensive_zone_league_avg: number | null
+          offensive_zone_pct: number | null
+          offensive_zone_rank: number | null
+          ot_losses: number | null
+          points: number | null
+          raw_payload: Json | null
+          season_id: number | null
+          shot_attempts_over_90: number | null
+          shot_attempts_over_90_rank: number | null
+          snapshot_date: string | null
+          source_url: string | null
+          team_abbreviation: string | null
+          team_id: number | null
+          team_name: string | null
+          top_shot_speed_kph: number | null
+          top_shot_speed_league_avg_mph: number | null
+          top_shot_speed_mph: number | null
+          top_shot_speed_rank: number | null
+          total_distance_km: number | null
+          total_distance_league_avg_miles: number | null
+          total_distance_miles: number | null
+          total_distance_rank: number | null
+          updated_at: string | null
+          wins: number | null
+        }
+        Relationships: []
+      }
+      vw_nhl_edge_latest_team_skating_distance_games: {
+        Row: {
+          away_team_abbreviation: string | null
+          created_at: string | null
+          distance_skated_all_km: number | null
+          distance_skated_all_miles: number | null
+          distance_skated_even_km: number | null
+          distance_skated_even_miles: number | null
+          distance_skated_pk_km: number | null
+          distance_skated_pk_miles: number | null
+          distance_skated_pp_km: number | null
+          distance_skated_pp_miles: number | null
+          game_center_link: string | null
+          game_date: string | null
+          game_id: number | null
+          game_type: number | null
+          home_team_abbreviation: string | null
+          is_home_team: boolean | null
+          metadata: Json | null
+          raw_payload: Json | null
+          season_id: number | null
+          snapshot_date: string | null
+          source_url: string | null
+          team_abbreviation: string | null
+          team_id: number | null
+          team_name: string | null
+          toi_all_seconds: number | null
+          toi_even_seconds: number | null
+          toi_pk_seconds: number | null
+          toi_pp_seconds: number | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
+      vw_player_status_current: {
+        Row: {
+          capture_key: string | null
+          display_status: string | null
+          display_tone: string | null
+          metadata: Json | null
+          observed_at: string | null
+          player_id: number | null
+          player_name: string | null
+          raw_status: string | null
+          snapshot_date: string | null
+          source_name: string | null
+          source_rank: number | null
+          source_url: string | null
+          status_detail: string | null
+          status_expires_at: string | null
+          status_state: string | null
+          team_abbreviation: string | null
+          team_id: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_status_history_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "vw_team_ratings_daily"
+            referencedColumns: ["team_id"]
+          },
+        ]
+      }
+      vw_sko_skater_base: {
+        Row: {
+          date: string | null
+          game_id: number | null
+          ixg: number | null
+          ixg_per_60: number | null
+          o_zone_fo_percentage: number | null
+          on_ice_shooting_pct: number | null
+          player_id: number | null
+          player_name: string | null
+          position_code: string | null
+          pp_toi_per_game: number | null
+          season_id: number | null
+          shooting_percentage: number | null
+          shots: number | null
+          toi_per_game: number | null
+        }
+        Relationships: []
+      }
+      vw_sko_skater_scores: {
+        Row: {
+          date: string | null
+          game_id: number | null
+          ixg_per_60_z: number | null
+          ixg_z: number | null
+          onice_sh_z: number | null
+          ozfo_z: number | null
+          player_id: number | null
+          position_code: string | null
+          pp_toi_z: number | null
+          season_id: number | null
+          shooting_pct_z: number | null
+          shots_z: number | null
+          sko: number | null
+          sko_raw: number | null
+          toi_z: number | null
+        }
+        Relationships: []
+      }
+      vw_sko_skater_zscores: {
+        Row: {
+          date: string | null
+          game_id: number | null
+          ixg: number | null
+          ixg_per_60: number | null
+          ixg_per_60_z: number | null
+          ixg_z: number | null
+          n_games: number | null
+          o_zone_fo_percentage: number | null
+          on_ice_shooting_pct: number | null
+          onice_sh_z: number | null
+          ozfo_z: number | null
+          player_id: number | null
+          position_code: string | null
+          pp_toi_per_game: number | null
+          pp_toi_z: number | null
+          season_id: number | null
+          shooting_pct_z: number | null
+          shooting_percentage: number | null
+          shots: number | null
+          shots_z: number | null
+          toi_per_game: number | null
+          toi_z: number | null
+          w_league: number | null
+          w_player: number | null
+        }
+        Relationships: []
+      }
+      vw_team_ratings_daily: {
+        Row: {
+          components: Json | null
+          computed_at: string | null
+          danger_rating: number | null
+          defense_rating: number | null
+          discipline_rating: number | null
+          finishing_rating: number | null
+          goalie_rating: number | null
+          offense_rating: number | null
+          pace_rating: number | null
+          provenance: Json | null
+          season_id: number | null
+          snapshot_date: string | null
+          special_rating: number | null
+          team_abbreviation: string | null
+          team_id: number | null
+          trend10: number | null
+          variance_flag: number | null
+        }
+        Relationships: []
+      }
+    }
+    Functions: {
+      rpc_sko_player_series: {
+        Args: {
+          p_l_cold?: number
+          p_l_hot?: number
+          p_lambda_cold?: number
+          p_lambda_hot?: number
+          p_player_id: number
+          p_span?: number
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -810,6 +1335,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "draft_ranker_discovery_projection_consens_target_season_id_fkey"
+            columns: ["target_season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "draft_ranker_discovery_projection_consensus_fhfh_player_id_fkey"
             columns: ["fhfh_player_id"]
             isOneToOne: false
@@ -821,13 +1353,6 @@ export type Database = {
             columns: ["run_id"]
             isOneToOne: false
             referencedRelation: "draft_ranker_discovery_refresh_runs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "draft_ranker_discovery_projection_consensus_target_season_id_fkey"
-            columns: ["target_season_id"]
-            isOneToOne: false
-            referencedRelation: "seasons"
             referencedColumns: ["id"]
           },
         ]
@@ -2388,6 +2913,13 @@ export type Database = {
             referencedRelation: "connected_accounts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "external_leagues_connected_account_user_fk"
+            columns: ["connected_account_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id", "user_id"]
+          },
         ]
       }
       external_teams: {
@@ -2442,10 +2974,396 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "external_teams_connected_account_user_fk"
+            columns: ["connected_account_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
             foreignKeyName: "external_teams_external_league_id_fkey"
             columns: ["external_league_id"]
             isOneToOne: false
             referencedRelation: "external_leagues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_teams_external_league_user_fk"
+            columns: ["external_league_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "external_leagues"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      fhfh_player_external_identities: {
+        Row: {
+          context_key: string
+          created_at: string
+          external_player_id: string
+          fhfh_player_id: number
+          id: string
+          is_primary: boolean
+          match_confidence: number | null
+          match_method: string
+          provider: string
+          season_id: number | null
+          source_provenance: Json
+          updated_at: string
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
+          verified_by_system: string | null
+        }
+        Insert: {
+          context_key?: string
+          created_at?: string
+          external_player_id: string
+          fhfh_player_id: number
+          id?: string
+          is_primary?: boolean
+          match_confidence?: number | null
+          match_method: string
+          provider: string
+          season_id?: number | null
+          source_provenance?: Json
+          updated_at?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+          verified_by_system?: string | null
+        }
+        Update: {
+          context_key?: string
+          created_at?: string
+          external_player_id?: string
+          fhfh_player_id?: number
+          id?: string
+          is_primary?: boolean
+          match_confidence?: number | null
+          match_method?: string
+          provider?: string
+          season_id?: number | null
+          source_provenance?: Json
+          updated_at?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+          verified_by_system?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fhfh_player_external_identities_fhfh_player_id_fkey"
+            columns: ["fhfh_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fhfh_player_external_identities_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fhfh_player_identities: {
+        Row: {
+          birth_date: string | null
+          canonical_name: string
+          canonical_position:
+            | Database["public"]["Enums"]["NHL_Position_Code"]
+            | null
+          created_at: string
+          current_nhl_team_id: number | null
+          current_organization_name: string | null
+          current_organization_type: string
+          first_name: string | null
+          headshot_url: string | null
+          id: number
+          last_name: string | null
+          lifecycle_status: string
+          merged_into_id: number | null
+          nhl_player_id: number | null
+          source_provenance: Json
+          updated_at: string
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          birth_date?: string | null
+          canonical_name: string
+          canonical_position?:
+            | Database["public"]["Enums"]["NHL_Position_Code"]
+            | null
+          created_at?: string
+          current_nhl_team_id?: number | null
+          current_organization_name?: string | null
+          current_organization_type?: string
+          first_name?: string | null
+          headshot_url?: string | null
+          id?: never
+          last_name?: string | null
+          lifecycle_status?: string
+          merged_into_id?: number | null
+          nhl_player_id?: number | null
+          source_provenance?: Json
+          updated_at?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          birth_date?: string | null
+          canonical_name?: string
+          canonical_position?:
+            | Database["public"]["Enums"]["NHL_Position_Code"]
+            | null
+          created_at?: string
+          current_nhl_team_id?: number | null
+          current_organization_name?: string | null
+          current_organization_type?: string
+          first_name?: string | null
+          headshot_url?: string | null
+          id?: never
+          last_name?: string | null
+          lifecycle_status?: string
+          merged_into_id?: number | null
+          nhl_player_id?: number | null
+          source_provenance?: Json
+          updated_at?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fhfh_player_identities_current_nhl_team_id_fkey"
+            columns: ["current_nhl_team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "fhfh_player_identities_current_nhl_team_id_fkey"
+            columns: ["current_nhl_team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "fhfh_player_identities_current_nhl_team_id_fkey"
+            columns: ["current_nhl_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fhfh_player_identities_merged_into_id_fkey"
+            columns: ["merged_into_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fhfh_player_identities_nhl_player_id_fkey"
+            columns: ["nhl_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fhfh_player_identity_aliases: {
+        Row: {
+          alias: string
+          created_at: string
+          fhfh_player_id: number
+          id: string
+          language_code: string | null
+          normalized_alias: string
+          source: string
+          source_provenance: Json
+          updated_at: string
+          verification_status: string
+        }
+        Insert: {
+          alias: string
+          created_at?: string
+          fhfh_player_id: number
+          id?: string
+          language_code?: string | null
+          normalized_alias: string
+          source: string
+          source_provenance?: Json
+          updated_at?: string
+          verification_status?: string
+        }
+        Update: {
+          alias?: string
+          created_at?: string
+          fhfh_player_id?: number
+          id?: string
+          language_code?: string | null
+          normalized_alias?: string
+          source?: string
+          source_provenance?: Json
+          updated_at?: string
+          verification_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fhfh_player_identity_aliases_fhfh_player_id_fkey"
+            columns: ["fhfh_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fhfh_player_identity_review_queue: {
+        Row: {
+          candidate_fhfh_player_ids: number[]
+          created_at: string
+          dedupe_key: string | null
+          id: string
+          raw_name: string | null
+          requested_by: string | null
+          resolution_action: string | null
+          resolution_notes: string | null
+          resolved_fhfh_player_id: number | null
+          review_type: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewed_by_system: string | null
+          source_evidence: Json
+          status: string
+          submitted_context: Json
+          updated_at: string
+        }
+        Insert: {
+          candidate_fhfh_player_ids?: number[]
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          raw_name?: string | null
+          requested_by?: string | null
+          resolution_action?: string | null
+          resolution_notes?: string | null
+          resolved_fhfh_player_id?: number | null
+          review_type: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewed_by_system?: string | null
+          source_evidence?: Json
+          status?: string
+          submitted_context?: Json
+          updated_at?: string
+        }
+        Update: {
+          candidate_fhfh_player_ids?: number[]
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          raw_name?: string | null
+          requested_by?: string | null
+          resolution_action?: string | null
+          resolution_notes?: string | null
+          resolved_fhfh_player_id?: number | null
+          review_type?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewed_by_system?: string | null
+          source_evidence?: Json
+          status?: string
+          submitted_context?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fhfh_player_identity_review_queue_resolved_fhfh_player_id_fkey"
+            columns: ["resolved_fhfh_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fhfh_player_organization_history: {
+        Row: {
+          created_at: string
+          effective_from: string | null
+          effective_to: string | null
+          fhfh_player_id: number
+          id: string
+          is_current: boolean
+          nhl_team_id: number | null
+          organization_name: string
+          organization_type: string
+          source: string
+          source_confidence: number | null
+          source_provenance: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          fhfh_player_id: number
+          id?: string
+          is_current?: boolean
+          nhl_team_id?: number | null
+          organization_name: string
+          organization_type: string
+          source: string
+          source_confidence?: number | null
+          source_provenance?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          fhfh_player_id?: number
+          id?: string
+          is_current?: boolean
+          nhl_team_id?: number | null
+          organization_name?: string
+          organization_type?: string
+          source?: string
+          source_confidence?: number | null
+          source_provenance?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fhfh_player_organization_history_fhfh_player_id_fkey"
+            columns: ["fhfh_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fhfh_player_organization_history_nhl_team_id_fkey"
+            columns: ["nhl_team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "fhfh_player_organization_history_nhl_team_id_fkey"
+            columns: ["nhl_team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "fhfh_player_organization_history_nhl_team_id_fkey"
+            columns: ["nhl_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -3491,378 +4409,6 @@ export type Database = {
           },
         ]
       }
-      fhfh_player_external_identities: {
-        Row: {
-          context_key: string
-          created_at: string
-          external_player_id: string
-          fhfh_player_id: number
-          id: string
-          is_primary: boolean
-          match_confidence: number | null
-          match_method: string
-          provider: string
-          season_id: number | null
-          source_provenance: Json
-          updated_at: string
-          verification_status: string
-          verified_at: string | null
-          verified_by: string | null
-          verified_by_system: string | null
-        }
-        Insert: {
-          context_key?: string
-          created_at?: string
-          external_player_id: string
-          fhfh_player_id: number
-          id?: string
-          is_primary?: boolean
-          match_confidence?: number | null
-          match_method: string
-          provider: string
-          season_id?: number | null
-          source_provenance?: Json
-          updated_at?: string
-          verification_status?: string
-          verified_at?: string | null
-          verified_by?: string | null
-          verified_by_system?: string | null
-        }
-        Update: {
-          context_key?: string
-          created_at?: string
-          external_player_id?: string
-          fhfh_player_id?: number
-          id?: string
-          is_primary?: boolean
-          match_confidence?: number | null
-          match_method?: string
-          provider?: string
-          season_id?: number | null
-          source_provenance?: Json
-          updated_at?: string
-          verification_status?: string
-          verified_at?: string | null
-          verified_by?: string | null
-          verified_by_system?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fhfh_player_external_identities_fhfh_player_id_fkey"
-            columns: ["fhfh_player_id"]
-            isOneToOne: false
-            referencedRelation: "fhfh_player_identities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fhfh_player_external_identities_season_id_fkey"
-            columns: ["season_id"]
-            isOneToOne: false
-            referencedRelation: "seasons"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fhfh_player_identities: {
-        Row: {
-          birth_date: string | null
-          canonical_name: string
-          canonical_position:
-            | Database["public"]["Enums"]["NHL_Position_Code"]
-            | null
-          created_at: string
-          current_nhl_team_id: number | null
-          current_organization_name: string | null
-          current_organization_type: string
-          first_name: string | null
-          headshot_url: string | null
-          id: number
-          last_name: string | null
-          lifecycle_status: string
-          merged_into_id: number | null
-          nhl_player_id: number | null
-          source_provenance: Json
-          updated_at: string
-          verification_status: string
-          verified_at: string | null
-          verified_by: string | null
-        }
-        Insert: {
-          birth_date?: string | null
-          canonical_name: string
-          canonical_position?:
-            | Database["public"]["Enums"]["NHL_Position_Code"]
-            | null
-          created_at?: string
-          current_nhl_team_id?: number | null
-          current_organization_name?: string | null
-          current_organization_type?: string
-          first_name?: string | null
-          headshot_url?: string | null
-          id?: never
-          last_name?: string | null
-          lifecycle_status?: string
-          merged_into_id?: number | null
-          nhl_player_id?: number | null
-          source_provenance?: Json
-          updated_at?: string
-          verification_status?: string
-          verified_at?: string | null
-          verified_by?: string | null
-        }
-        Update: {
-          birth_date?: string | null
-          canonical_name?: string
-          canonical_position?:
-            | Database["public"]["Enums"]["NHL_Position_Code"]
-            | null
-          created_at?: string
-          current_nhl_team_id?: number | null
-          current_organization_name?: string | null
-          current_organization_type?: string
-          first_name?: string | null
-          headshot_url?: string | null
-          id?: never
-          last_name?: string | null
-          lifecycle_status?: string
-          merged_into_id?: number | null
-          nhl_player_id?: number | null
-          source_provenance?: Json
-          updated_at?: string
-          verification_status?: string
-          verified_at?: string | null
-          verified_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fhfh_player_identities_current_nhl_team_id_fkey"
-            columns: ["current_nhl_team_id"]
-            isOneToOne: false
-            referencedRelation: "combined_sos"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "fhfh_player_identities_current_nhl_team_id_fkey"
-            columns: ["current_nhl_team_id"]
-            isOneToOne: false
-            referencedRelation: "power_rankings"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "fhfh_player_identities_current_nhl_team_id_fkey"
-            columns: ["current_nhl_team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fhfh_player_identities_merged_into_id_fkey"
-            columns: ["merged_into_id"]
-            isOneToOne: false
-            referencedRelation: "fhfh_player_identities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fhfh_player_identities_nhl_player_id_fkey"
-            columns: ["nhl_player_id"]
-            isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fhfh_player_identity_aliases: {
-        Row: {
-          alias: string
-          created_at: string
-          fhfh_player_id: number
-          id: string
-          language_code: string | null
-          normalized_alias: string
-          source: string
-          source_provenance: Json
-          updated_at: string
-          verification_status: string
-        }
-        Insert: {
-          alias: string
-          created_at?: string
-          fhfh_player_id: number
-          id?: string
-          language_code?: string | null
-          normalized_alias: string
-          source: string
-          source_provenance?: Json
-          updated_at?: string
-          verification_status?: string
-        }
-        Update: {
-          alias?: string
-          created_at?: string
-          fhfh_player_id?: number
-          id?: string
-          language_code?: string | null
-          normalized_alias?: string
-          source?: string
-          source_provenance?: Json
-          updated_at?: string
-          verification_status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fhfh_player_identity_aliases_fhfh_player_id_fkey"
-            columns: ["fhfh_player_id"]
-            isOneToOne: false
-            referencedRelation: "fhfh_player_identities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fhfh_player_identity_review_queue: {
-        Row: {
-          candidate_fhfh_player_ids: number[]
-          created_at: string
-          dedupe_key: string | null
-          id: string
-          raw_name: string | null
-          requested_by: string | null
-          resolution_action: string | null
-          resolution_notes: string | null
-          resolved_fhfh_player_id: number | null
-          review_type: string
-          reviewed_at: string | null
-          reviewed_by: string | null
-          reviewed_by_system: string | null
-          source_evidence: Json
-          status: string
-          submitted_context: Json
-          updated_at: string
-        }
-        Insert: {
-          candidate_fhfh_player_ids?: number[]
-          created_at?: string
-          dedupe_key?: string | null
-          id?: string
-          raw_name?: string | null
-          requested_by?: string | null
-          resolution_action?: string | null
-          resolution_notes?: string | null
-          resolved_fhfh_player_id?: number | null
-          review_type: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          reviewed_by_system?: string | null
-          source_evidence?: Json
-          status?: string
-          submitted_context?: Json
-          updated_at?: string
-        }
-        Update: {
-          candidate_fhfh_player_ids?: number[]
-          created_at?: string
-          dedupe_key?: string | null
-          id?: string
-          raw_name?: string | null
-          requested_by?: string | null
-          resolution_action?: string | null
-          resolution_notes?: string | null
-          resolved_fhfh_player_id?: number | null
-          review_type?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          reviewed_by_system?: string | null
-          source_evidence?: Json
-          status?: string
-          submitted_context?: Json
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fhfh_player_identity_review_queue_resolved_fhfh_player_id_fkey"
-            columns: ["resolved_fhfh_player_id"]
-            isOneToOne: false
-            referencedRelation: "fhfh_player_identities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fhfh_player_organization_history: {
-        Row: {
-          created_at: string
-          effective_from: string | null
-          effective_to: string | null
-          fhfh_player_id: number
-          id: string
-          is_current: boolean
-          nhl_team_id: number | null
-          organization_name: string
-          organization_type: string
-          source: string
-          source_confidence: number | null
-          source_provenance: Json
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          effective_from?: string | null
-          effective_to?: string | null
-          fhfh_player_id: number
-          id?: string
-          is_current?: boolean
-          nhl_team_id?: number | null
-          organization_name: string
-          organization_type: string
-          source: string
-          source_confidence?: number | null
-          source_provenance?: Json
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          effective_from?: string | null
-          effective_to?: string | null
-          fhfh_player_id?: number
-          id?: string
-          is_current?: boolean
-          nhl_team_id?: number | null
-          organization_name?: string
-          organization_type?: string
-          source?: string
-          source_confidence?: number | null
-          source_provenance?: Json
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fhfh_player_organization_history_fhfh_player_id_fkey"
-            columns: ["fhfh_player_id"]
-            isOneToOne: false
-            referencedRelation: "fhfh_player_identities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fhfh_player_organization_history_nhl_team_id_fkey"
-            columns: ["nhl_team_id"]
-            isOneToOne: false
-            referencedRelation: "combined_sos"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "fhfh_player_organization_history_nhl_team_id_fkey"
-            columns: ["nhl_team_id"]
-            isOneToOne: false
-            referencedRelation: "power_rankings"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "fhfh_player_organization_history_nhl_team_id_fkey"
-            columns: ["nhl_team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       game_prediction_accountability_daily: {
         Row: {
           accountability_daily_id: string
@@ -4542,8 +5088,8 @@ export type Database = {
           metadata: Json
           odds_snapshot_id: string
           over_odds: number | null
-          provider: string
           provenance: Json
+          provider: string
           requested_date: string
           source_payload: Json
           source_url: string
@@ -4573,8 +5119,8 @@ export type Database = {
           metadata?: Json
           odds_snapshot_id?: string
           over_odds?: number | null
-          provider: string
           provenance?: Json
+          provider: string
           requested_date: string
           source_payload?: Json
           source_url: string
@@ -4604,8 +5150,8 @@ export type Database = {
           metadata?: Json
           odds_snapshot_id?: string
           over_odds?: number | null
-          provider?: string
           provenance?: Json
+          provider?: string
           requested_date?: string
           source_payload?: Json
           source_url?: string
@@ -7280,6 +7826,158 @@ export type Database = {
           },
         ]
       }
+      nhl_api_game_normalization_status: {
+        Row: {
+          completed_at: string
+          created_at: string
+          event_fingerprint: string
+          expected_event_rows: number
+          expected_roster_rows: number
+          expected_shift_rows: number
+          game_date: string
+          game_id: number
+          materializer_version: string
+          normalization_fingerprint: string
+          normalization_version: number
+          observed_event_rows: number
+          observed_roster_rows: number
+          observed_shift_rows: number
+          parser_fingerprint: string
+          parser_version: number
+          pbp_raw_payload_hash: string
+          pbp_raw_payload_id: number
+          pbp_raw_snapshot_version: number
+          roster_fingerprint: string
+          season_id: number
+          shift_fingerprint: string
+          shift_raw_payload_hash: string
+          shift_raw_payload_id: number
+          shift_raw_snapshot_version: number
+          source_fingerprint: string
+          status: string
+          strength_version: number
+          updated_at: string
+        }
+        Insert: {
+          completed_at: string
+          created_at?: string
+          event_fingerprint: string
+          expected_event_rows: number
+          expected_roster_rows: number
+          expected_shift_rows: number
+          game_date: string
+          game_id: number
+          materializer_version: string
+          normalization_fingerprint: string
+          normalization_version: number
+          observed_event_rows: number
+          observed_roster_rows: number
+          observed_shift_rows: number
+          parser_fingerprint: string
+          parser_version: number
+          pbp_raw_payload_hash: string
+          pbp_raw_payload_id: number
+          pbp_raw_snapshot_version: number
+          roster_fingerprint: string
+          season_id: number
+          shift_fingerprint: string
+          shift_raw_payload_hash: string
+          shift_raw_payload_id: number
+          shift_raw_snapshot_version: number
+          source_fingerprint: string
+          status: string
+          strength_version: number
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string
+          created_at?: string
+          event_fingerprint?: string
+          expected_event_rows?: number
+          expected_roster_rows?: number
+          expected_shift_rows?: number
+          game_date?: string
+          game_id?: number
+          materializer_version?: string
+          normalization_fingerprint?: string
+          normalization_version?: number
+          observed_event_rows?: number
+          observed_roster_rows?: number
+          observed_shift_rows?: number
+          parser_fingerprint?: string
+          parser_version?: number
+          pbp_raw_payload_hash?: string
+          pbp_raw_payload_id?: number
+          pbp_raw_snapshot_version?: number
+          roster_fingerprint?: string
+          season_id?: number
+          shift_fingerprint?: string
+          shift_raw_payload_hash?: string
+          shift_raw_payload_id?: number
+          shift_raw_snapshot_version?: number
+          source_fingerprint?: string
+          status?: string
+          strength_version?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nhl_api_game_normalization_status_pbp_raw_payload_id_fkey"
+            columns: ["pbp_raw_payload_id"]
+            isOneToOne: false
+            referencedRelation: "nhl_api_game_payloads_raw"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nhl_api_game_normalization_status_shift_raw_payload_id_fkey"
+            columns: ["shift_raw_payload_id"]
+            isOneToOne: false
+            referencedRelation: "nhl_api_game_payloads_raw"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nhl_api_game_payload_snapshot_heads: {
+        Row: {
+          created_at: string
+          endpoint: string
+          fetched_at: string
+          game_id: number
+          payload_hash: string
+          raw_payload_id: number
+          snapshot_version: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          fetched_at: string
+          game_id: number
+          payload_hash: string
+          raw_payload_id: number
+          snapshot_version: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          fetched_at?: string
+          game_id?: number
+          payload_hash?: string
+          raw_payload_id?: number
+          snapshot_version?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nhl_raw_snapshot_head_exact_payload_fkey"
+            columns: ["raw_payload_id", "game_id", "endpoint", "payload_hash"]
+            isOneToOne: false
+            referencedRelation: "nhl_api_game_payloads_raw"
+            referencedColumns: ["id", "game_id", "endpoint", "payload_hash"]
+          },
+        ]
+      }
       nhl_api_game_payloads_raw: {
         Row: {
           created_at: string
@@ -8566,6 +9264,101 @@ export type Database = {
           player_name?: string | null
         }
         Relationships: []
+      }
+      nhl_player_contracts: {
+        Row: {
+          age_at_signing: number | null
+          contract_aav: number | null
+          contract_key: string
+          contract_value: number | null
+          contract_years: number | null
+          created_at: string
+          end_season_id: number
+          player_full_name: string
+          player_id: number | null
+          position_code: string | null
+          provenance: Json
+          raw_contract: Json
+          resolution_candidate_count: number
+          resolution_status: string
+          signed_with_team_id: number | null
+          signed_with_team_tri_code: string | null
+          signing_bonus: number | null
+          source: string
+          source_file: string | null
+          source_package_version: string
+          start_season_id: number
+          team_id: number | null
+          team_tri_code: string | null
+          three_year_cash: number | null
+          two_year_cash: number | null
+          updated_at: string
+        }
+        Insert: {
+          age_at_signing?: number | null
+          contract_aav?: number | null
+          contract_key: string
+          contract_value?: number | null
+          contract_years?: number | null
+          created_at?: string
+          end_season_id: number
+          player_full_name: string
+          player_id?: number | null
+          position_code?: string | null
+          provenance?: Json
+          raw_contract?: Json
+          resolution_candidate_count?: number
+          resolution_status: string
+          signed_with_team_id?: number | null
+          signed_with_team_tri_code?: string | null
+          signing_bonus?: number | null
+          source?: string
+          source_file?: string | null
+          source_package_version: string
+          start_season_id: number
+          team_id?: number | null
+          team_tri_code?: string | null
+          three_year_cash?: number | null
+          two_year_cash?: number | null
+          updated_at?: string
+        }
+        Update: {
+          age_at_signing?: number | null
+          contract_aav?: number | null
+          contract_key?: string
+          contract_value?: number | null
+          contract_years?: number | null
+          created_at?: string
+          end_season_id?: number
+          player_full_name?: string
+          player_id?: number | null
+          position_code?: string | null
+          provenance?: Json
+          raw_contract?: Json
+          resolution_candidate_count?: number
+          resolution_status?: string
+          signed_with_team_id?: number | null
+          signed_with_team_tri_code?: string | null
+          signing_bonus?: number | null
+          source?: string
+          source_file?: string | null
+          source_package_version?: string
+          start_season_id?: number
+          team_id?: number | null
+          team_tri_code?: string | null
+          three_year_cash?: number | null
+          two_year_cash?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nhl_player_contracts_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       nhl_ppt_replay_frames: {
         Row: {
@@ -21917,6 +22710,83 @@ export type Database = {
         }
         Relationships: []
       }
+      player_lineup_deployment_tallies: {
+        Row: {
+          created_at: string
+          deployment_code: string
+          deployment_group: string
+          deployment_label: string
+          first_game_date: string | null
+          game_type: number
+          games: number
+          last_game_date: string | null
+          line_number: number | null
+          player_id: number
+          season_id: number
+          share: number
+          slot_label: string | null
+          slot_number: number | null
+          source_table: string
+          source_version: string
+          team_ids: number[]
+          total_games: number
+          unit_number: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deployment_code: string
+          deployment_group: string
+          deployment_label: string
+          first_game_date?: string | null
+          game_type: number
+          games: number
+          last_game_date?: string | null
+          line_number?: number | null
+          player_id: number
+          season_id: number
+          share: number
+          slot_label?: string | null
+          slot_number?: number | null
+          source_table: string
+          source_version?: string
+          team_ids?: number[]
+          total_games: number
+          unit_number?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deployment_code?: string
+          deployment_group?: string
+          deployment_label?: string
+          first_game_date?: string | null
+          game_type?: number
+          games?: number
+          last_game_date?: string | null
+          line_number?: number | null
+          player_id?: number
+          season_id?: number
+          share?: number
+          slot_label?: string | null
+          slot_number?: number | null
+          source_table?: string
+          source_version?: string
+          team_ids?: number[]
+          total_games?: number
+          unit_number?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_lineup_deployment_tallies_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_name_aliases: {
         Row: {
           canonical_name: string | null
@@ -22646,6 +23516,217 @@ export type Database = {
           stability_cv?: number | null
           stability_multiplier?: number | null
           top_features?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      projection_game_materialization_status: {
+        Row: {
+          created_at: string
+          derived_algorithm_version: string | null
+          derived_completed_at: string | null
+          derived_fingerprint: string | null
+          derived_input_fingerprint: string | null
+          derived_status: string
+          derived_version: number
+          expected_goalie_rows: number | null
+          expected_play_rows: number | null
+          expected_player_rows: number | null
+          expected_relationship_rows: number | null
+          expected_strength_rows: number | null
+          expected_team_rows: number | null
+          game_id: number
+          goalie_justification: string | null
+          goalie_outcome: string | null
+          input_completed_at: string | null
+          input_fingerprint: string | null
+          input_materializer_version: string | null
+          input_status: string
+          input_version: number
+          observed_goalie_rows: number | null
+          observed_play_rows: number | null
+          observed_player_rows: number | null
+          observed_relationship_rows: number | null
+          observed_strength_rows: number | null
+          observed_team_rows: number | null
+          parser_version: string | null
+          pbp_raw_payload_hash: string | null
+          pbp_raw_payload_id: number | null
+          pbp_raw_snapshot_version: number | null
+          pbp_source_hash: string | null
+          relationship_algorithm_version: string | null
+          relationship_completed_at: string | null
+          relationship_fingerprint: string | null
+          relationship_input_fingerprint: string | null
+          relationship_status: string
+          relationship_version: number
+          shift_raw_payload_hash: string | null
+          shift_raw_payload_id: number | null
+          shift_raw_snapshot_version: number | null
+          shift_source_hash: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          derived_algorithm_version?: string | null
+          derived_completed_at?: string | null
+          derived_fingerprint?: string | null
+          derived_input_fingerprint?: string | null
+          derived_status?: string
+          derived_version?: number
+          expected_goalie_rows?: number | null
+          expected_play_rows?: number | null
+          expected_player_rows?: number | null
+          expected_relationship_rows?: number | null
+          expected_strength_rows?: number | null
+          expected_team_rows?: number | null
+          game_id: number
+          goalie_justification?: string | null
+          goalie_outcome?: string | null
+          input_completed_at?: string | null
+          input_fingerprint?: string | null
+          input_materializer_version?: string | null
+          input_status?: string
+          input_version?: number
+          observed_goalie_rows?: number | null
+          observed_play_rows?: number | null
+          observed_player_rows?: number | null
+          observed_relationship_rows?: number | null
+          observed_strength_rows?: number | null
+          observed_team_rows?: number | null
+          parser_version?: string | null
+          pbp_raw_payload_hash?: string | null
+          pbp_raw_payload_id?: number | null
+          pbp_raw_snapshot_version?: number | null
+          pbp_source_hash?: string | null
+          relationship_algorithm_version?: string | null
+          relationship_completed_at?: string | null
+          relationship_fingerprint?: string | null
+          relationship_input_fingerprint?: string | null
+          relationship_status?: string
+          relationship_version?: number
+          shift_raw_payload_hash?: string | null
+          shift_raw_payload_id?: number | null
+          shift_raw_snapshot_version?: number | null
+          shift_source_hash?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          derived_algorithm_version?: string | null
+          derived_completed_at?: string | null
+          derived_fingerprint?: string | null
+          derived_input_fingerprint?: string | null
+          derived_status?: string
+          derived_version?: number
+          expected_goalie_rows?: number | null
+          expected_play_rows?: number | null
+          expected_player_rows?: number | null
+          expected_relationship_rows?: number | null
+          expected_strength_rows?: number | null
+          expected_team_rows?: number | null
+          game_id?: number
+          goalie_justification?: string | null
+          goalie_outcome?: string | null
+          input_completed_at?: string | null
+          input_fingerprint?: string | null
+          input_materializer_version?: string | null
+          input_status?: string
+          input_version?: number
+          observed_goalie_rows?: number | null
+          observed_play_rows?: number | null
+          observed_player_rows?: number | null
+          observed_relationship_rows?: number | null
+          observed_strength_rows?: number | null
+          observed_team_rows?: number | null
+          parser_version?: string | null
+          pbp_raw_payload_hash?: string | null
+          pbp_raw_payload_id?: number | null
+          pbp_raw_snapshot_version?: number | null
+          pbp_source_hash?: string | null
+          relationship_algorithm_version?: string | null
+          relationship_completed_at?: string | null
+          relationship_fingerprint?: string | null
+          relationship_input_fingerprint?: string | null
+          relationship_status?: string
+          relationship_version?: number
+          shift_raw_payload_hash?: string | null
+          shift_raw_payload_id?: number | null
+          shift_raw_snapshot_version?: number | null
+          shift_source_hash?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projection_game_materialization_statu_shift_raw_payload_id_fkey"
+            columns: ["shift_raw_payload_id"]
+            isOneToOne: false
+            referencedRelation: "nhl_api_game_payloads_raw"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projection_game_materialization_status_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: true
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projection_game_materialization_status_pbp_raw_payload_id_fkey"
+            columns: ["pbp_raw_payload_id"]
+            isOneToOne: false
+            referencedRelation: "nhl_api_game_payloads_raw"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projection_pipeline_state: {
+        Row: {
+          created_at: string
+          cursor_date: string | null
+          cursor_game_id: number | null
+          last_error: string | null
+          lease_expires_at: string | null
+          lease_owner: string | null
+          operation_key: string
+          pipeline_key: string
+          range_end_date: string | null
+          range_start_date: string | null
+          revision: number
+          scope_key: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cursor_date?: string | null
+          cursor_game_id?: number | null
+          last_error?: string | null
+          lease_expires_at?: string | null
+          lease_owner?: string | null
+          operation_key: string
+          pipeline_key: string
+          range_end_date?: string | null
+          range_start_date?: string | null
+          revision?: number
+          scope_key: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cursor_date?: string | null
+          cursor_game_id?: number | null
+          last_error?: string | null
+          lease_expires_at?: string | null
+          lease_owner?: string | null
+          operation_key?: string
+          pipeline_key?: string
+          range_end_date?: string | null
+          range_start_date?: string | null
+          revision?: number
+          scope_key?: string
+          status?: string
           updated_at?: string
         }
         Relationships: []
@@ -23520,6 +24601,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "provider_sync_runs_connected_account_user_fk"
+            columns: ["connected_account_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
             foreignKeyName: "provider_sync_runs_external_league_id_fkey"
             columns: ["external_league_id"]
             isOneToOne: false
@@ -23527,11 +24615,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "provider_sync_runs_external_league_user_fk"
+            columns: ["external_league_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "external_leagues"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
             foreignKeyName: "provider_sync_runs_external_team_id_fkey"
             columns: ["external_team_id"]
             isOneToOne: false
             referencedRelation: "external_teams"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_sync_runs_external_team_user_fk"
+            columns: ["external_team_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "external_teams"
+            referencedColumns: ["id", "user_id"]
           },
         ]
       }
@@ -28255,6 +29357,54 @@ export type Database = {
         }
         Relationships: []
       }
+      sko_prediction_run_manifests: {
+        Row: {
+          acquired_at: string | null
+          attempt_count: number
+          completed_at: string | null
+          heartbeat_at: string | null
+          last_error: string | null
+          last_failure_at: string | null
+          last_success_at: string | null
+          lease_expires_at: string | null
+          metadata: Json
+          owner_token: string | null
+          run_key: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          acquired_at?: string | null
+          attempt_count?: number
+          completed_at?: string | null
+          heartbeat_at?: string | null
+          last_error?: string | null
+          last_failure_at?: string | null
+          last_success_at?: string | null
+          lease_expires_at?: string | null
+          metadata?: Json
+          owner_token?: string | null
+          run_key: string
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          acquired_at?: string | null
+          attempt_count?: number
+          completed_at?: string | null
+          heartbeat_at?: string | null
+          last_error?: string | null
+          last_failure_at?: string | null
+          last_success_at?: string | null
+          lease_expires_at?: string | null
+          metadata?: Json
+          owner_token?: string | null
+          run_key?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sko_skater_stats: {
         Row: {
           assists: number | null
@@ -29165,51 +30315,6 @@ export type Database = {
           },
         ]
       }
-      sustainability_scores: {
-        Row: {
-          components: Json
-          computed_at: string
-          config_hash: string
-          model_version: string
-          player_id: number
-          position_group: string
-          s_100: number
-          s_raw: number
-          season_id: number
-          snapshot_date: string
-          sustainability_quintile: number | null
-          window_code: string
-        }
-        Insert: {
-          components: Json
-          computed_at?: string
-          config_hash: string
-          model_version: string
-          player_id: number
-          position_group: string
-          s_100: number
-          s_raw: number
-          season_id: number
-          snapshot_date: string
-          sustainability_quintile?: number | null
-          window_code: string
-        }
-        Update: {
-          components?: Json
-          computed_at?: string
-          config_hash?: string
-          model_version?: string
-          player_id?: number
-          position_group?: string
-          s_100?: number
-          s_raw?: number
-          season_id?: number
-          snapshot_date?: string
-          sustainability_quintile?: number | null
-          window_code?: string
-        }
-        Relationships: []
-      }
       sustainability_recompute_queue: {
         Row: {
           attempts: number
@@ -29255,6 +30360,51 @@ export type Database = {
           reason?: string
           started_at?: string | null
           status?: string
+        }
+        Relationships: []
+      }
+      sustainability_scores: {
+        Row: {
+          components: Json
+          computed_at: string
+          config_hash: string
+          model_version: string
+          player_id: number
+          position_group: string
+          s_100: number
+          s_raw: number
+          season_id: number
+          snapshot_date: string
+          sustainability_quintile: number | null
+          window_code: string
+        }
+        Insert: {
+          components: Json
+          computed_at?: string
+          config_hash: string
+          model_version: string
+          player_id: number
+          position_group: string
+          s_100: number
+          s_raw: number
+          season_id: number
+          snapshot_date: string
+          sustainability_quintile?: number | null
+          window_code: string
+        }
+        Update: {
+          components?: Json
+          computed_at?: string
+          config_hash?: string
+          model_version?: string
+          player_id?: number
+          position_group?: string
+          s_100?: number
+          s_raw?: number
+          season_id?: number
+          snapshot_date?: string
+          sustainability_quintile?: number | null
+          window_code?: string
         }
         Relationships: []
       }
@@ -29685,81 +30835,6 @@ export type Database = {
         }
         Relationships: []
       }
-      team_unit_toi: {
-        Row: {
-          coverage_status: "complete" | "partial" | "source_gap"
-          coverage_warnings: Json
-          created_at: string
-          game_date: string | null
-          game_id: number
-          id: number
-          metadata: Json
-          player_count: number
-          player_ids: number[]
-          season_id: number
-          snapshot_date: string
-          source_table: string
-          source_version: string
-          team_abbrev: string | null
-          team_id: number
-          team_unit_pool_toi_seconds: number
-          toi_basis: string
-          unit_number: number
-          unit_share: number | null
-          unit_toi_seconds: number
-          unit_type: "forward_line" | "defense_pair" | "power_play"
-          updated_at: string
-        }
-        Insert: {
-          coverage_status?: "complete" | "partial" | "source_gap"
-          coverage_warnings?: Json
-          created_at?: string
-          game_date?: string | null
-          game_id: number
-          id?: number
-          metadata?: Json
-          player_count?: number
-          player_ids?: number[]
-          season_id: number
-          snapshot_date: string
-          source_table: string
-          source_version?: string
-          team_abbrev?: string | null
-          team_id: number
-          team_unit_pool_toi_seconds: number
-          toi_basis?: string
-          unit_number: number
-          unit_share?: never
-          unit_toi_seconds: number
-          unit_type: "forward_line" | "defense_pair" | "power_play"
-          updated_at?: string
-        }
-        Update: {
-          coverage_status?: "complete" | "partial" | "source_gap"
-          coverage_warnings?: Json
-          created_at?: string
-          game_date?: string | null
-          game_id?: number
-          id?: number
-          metadata?: Json
-          player_count?: number
-          player_ids?: number[]
-          season_id?: number
-          snapshot_date?: string
-          source_table?: string
-          source_version?: string
-          team_abbrev?: string | null
-          team_id?: number
-          team_unit_pool_toi_seconds?: number
-          toi_basis?: string
-          unit_number?: number
-          unit_share?: never
-          unit_toi_seconds?: number
-          unit_type?: "forward_line" | "defense_pair" | "power_play"
-          updated_at?: string
-        }
-        Relationships: []
-      }
       team_season: {
         Row: {
           created_at: string
@@ -30050,6 +31125,81 @@ export type Database = {
         }
         Relationships: []
       }
+      team_unit_toi: {
+        Row: {
+          coverage_status: string
+          coverage_warnings: Json
+          created_at: string
+          game_date: string | null
+          game_id: number
+          id: number
+          metadata: Json
+          player_count: number
+          player_ids: number[]
+          season_id: number
+          snapshot_date: string
+          source_table: string
+          source_version: string
+          team_abbrev: string | null
+          team_id: number
+          team_unit_pool_toi_seconds: number
+          toi_basis: string
+          unit_number: number
+          unit_share: number | null
+          unit_toi_seconds: number
+          unit_type: string
+          updated_at: string
+        }
+        Insert: {
+          coverage_status?: string
+          coverage_warnings?: Json
+          created_at?: string
+          game_date?: string | null
+          game_id: number
+          id?: number
+          metadata?: Json
+          player_count?: number
+          player_ids?: number[]
+          season_id: number
+          snapshot_date: string
+          source_table: string
+          source_version?: string
+          team_abbrev?: string | null
+          team_id: number
+          team_unit_pool_toi_seconds: number
+          toi_basis?: string
+          unit_number: number
+          unit_share?: number | null
+          unit_toi_seconds: number
+          unit_type: string
+          updated_at?: string
+        }
+        Update: {
+          coverage_status?: string
+          coverage_warnings?: Json
+          created_at?: string
+          game_date?: string | null
+          game_id?: number
+          id?: number
+          metadata?: Json
+          player_count?: number
+          player_ids?: number[]
+          season_id?: number
+          snapshot_date?: string
+          source_table?: string
+          source_version?: string
+          team_abbrev?: string | null
+          team_id?: number
+          team_unit_pool_toi_seconds?: number
+          toi_basis?: string
+          unit_number?: number
+          unit_share?: number | null
+          unit_toi_seconds?: number
+          unit_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       teamGameStats: {
         Row: {
           blockedShots: number
@@ -30201,6 +31351,83 @@ export type Database = {
           short_name?: string
         }
         Relationships: []
+      }
+      tweet_news_inference_state: {
+        Row: {
+          attempts: number
+          category: string | null
+          confidence: number | null
+          created_at: string
+          decision: string | null
+          dedupe_key: string
+          error: string | null
+          evidence: Json
+          id: string
+          lease_expires_at: string | null
+          model: string
+          next_attempt_at: string | null
+          prompt_version: string
+          result: Json | null
+          review_item_id: string
+          source_tweet_id: string | null
+          status: string
+          subcategory: string | null
+          updated_at: string
+          verification_state: string | null
+        }
+        Insert: {
+          attempts?: number
+          category?: string | null
+          confidence?: number | null
+          created_at?: string
+          decision?: string | null
+          dedupe_key: string
+          error?: string | null
+          evidence?: Json
+          id?: string
+          lease_expires_at?: string | null
+          model: string
+          next_attempt_at?: string | null
+          prompt_version: string
+          result?: Json | null
+          review_item_id: string
+          source_tweet_id?: string | null
+          status: string
+          subcategory?: string | null
+          updated_at?: string
+          verification_state?: string | null
+        }
+        Update: {
+          attempts?: number
+          category?: string | null
+          confidence?: number | null
+          created_at?: string
+          decision?: string | null
+          dedupe_key?: string
+          error?: string | null
+          evidence?: Json
+          id?: string
+          lease_expires_at?: string | null
+          model?: string
+          next_attempt_at?: string | null
+          prompt_version?: string
+          result?: Json | null
+          review_item_id?: string
+          source_tweet_id?: string | null
+          status?: string
+          subcategory?: string | null
+          updated_at?: string
+          verification_state?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tweet_news_inference_state_review_item_id_fkey"
+            columns: ["review_item_id"]
+            isOneToOne: false
+            referencedRelation: "tweet_pattern_review_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tweet_pattern_review_items: {
         Row: {
@@ -30395,6 +31622,13 @@ export type Database = {
             referencedRelation: "connected_accounts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_entitlements_source_account_user_fk"
+            columns: ["source_account_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id", "user_id"]
+          },
         ]
       }
       user_profiles: {
@@ -30470,6 +31704,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "user_provider_preferences_connected_account_user_fk"
+            columns: ["connected_account_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
             foreignKeyName: "user_provider_preferences_default_external_league_id_fkey"
             columns: ["default_external_league_id"]
             isOneToOne: false
@@ -30477,11 +31718,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "user_provider_preferences_default_external_league_user_fk"
+            columns: ["default_external_league_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "external_leagues"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
             foreignKeyName: "user_provider_preferences_default_external_team_id_fkey"
             columns: ["default_external_team_id"]
             isOneToOne: false
             referencedRelation: "external_teams"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_provider_preferences_default_external_team_user_fk"
+            columns: ["default_external_team_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "external_teams"
+            referencedColumns: ["id", "user_id"]
           },
         ]
       }
@@ -32312,6 +33567,72 @@ export type Database = {
           time_on_ice?: number | null
           updated_at?: string | null
           wins?: number | null
+        }
+        Relationships: []
+      }
+      wgo_player_season_repair_trend_staging: {
+        Row: {
+          average_value: number | null
+          direction: string
+          game_date: string
+          metric_key: string
+          metric_label: string
+          metric_type: string
+          operation_id: string
+          player_id: number
+          position_code: string | null
+          raw_value: number | null
+          rolling_avg_10: number | null
+          rolling_avg_3: number | null
+          rolling_avg_5: number | null
+          sample_size: number
+          season_id: number
+          staged_at: string
+          std_dev_value: number | null
+          updated_at: string
+          variance_value: number | null
+        }
+        Insert: {
+          average_value?: number | null
+          direction: string
+          game_date: string
+          metric_key: string
+          metric_label: string
+          metric_type: string
+          operation_id: string
+          player_id: number
+          position_code?: string | null
+          raw_value?: number | null
+          rolling_avg_10?: number | null
+          rolling_avg_3?: number | null
+          rolling_avg_5?: number | null
+          sample_size: number
+          season_id: number
+          staged_at?: string
+          std_dev_value?: number | null
+          updated_at: string
+          variance_value?: number | null
+        }
+        Update: {
+          average_value?: number | null
+          direction?: string
+          game_date?: string
+          metric_key?: string
+          metric_label?: string
+          metric_type?: string
+          operation_id?: string
+          player_id?: number
+          position_code?: string | null
+          raw_value?: number | null
+          rolling_avg_10?: number | null
+          rolling_avg_3?: number | null
+          rolling_avg_5?: number | null
+          sample_size?: number
+          season_id?: number
+          staged_at?: string
+          std_dev_value?: number | null
+          updated_at?: string
+          variance_value?: number | null
         }
         Relationships: []
       }
@@ -38951,6 +40272,54 @@ export type Database = {
         }
         Relationships: []
       }
+      xg_execution_leases: {
+        Row: {
+          acquired_at: string | null
+          attempt_count: number
+          completed_at: string | null
+          heartbeat_at: string | null
+          last_error: string | null
+          last_failure_at: string | null
+          last_success_at: string | null
+          lease_expires_at: string | null
+          lease_key: string
+          metadata: Json
+          owner_token: string | null
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          acquired_at?: string | null
+          attempt_count?: number
+          completed_at?: string | null
+          heartbeat_at?: string | null
+          last_error?: string | null
+          last_failure_at?: string | null
+          last_success_at?: string | null
+          lease_expires_at?: string | null
+          lease_key: string
+          metadata?: Json
+          owner_token?: string | null
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          acquired_at?: string | null
+          attempt_count?: number
+          completed_at?: string | null
+          heartbeat_at?: string | null
+          last_error?: string | null
+          last_failure_at?: string | null
+          last_success_at?: string | null
+          lease_expires_at?: string | null
+          lease_key?: string
+          metadata?: Json
+          owner_token?: string | null
+          state?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       yahoo_api_credentials: {
         Row: {
           access_token: string
@@ -39162,19 +40531,19 @@ export type Database = {
         Row: {
           first_name: string | null
           last_name: string | null
-          player_id: string | null
+          player_id: string
           player_name: string | null
         }
         Insert: {
           first_name?: string | null
           last_name?: string | null
-          player_id?: string | null
+          player_id: string
           player_name?: string | null
         }
         Update: {
           first_name?: string | null
           last_name?: string | null
-          player_id?: string | null
+          player_id?: string
           player_name?: string | null
         }
         Relationships: []
@@ -39350,39 +40719,6 @@ export type Database = {
         }
         Relationships: []
       }
-      yahoo_player_keys: {
-        Row: {
-          game_id: number | null
-          is_active: boolean
-          last_updated: string
-          last_seen_at: string | null
-          player_id: number | null
-          player_key: string
-          player_name: string | null
-          snapshot_id: string | null
-        }
-        Insert: {
-          game_id?: never
-          is_active?: boolean
-          last_updated?: string
-          last_seen_at?: string | null
-          player_id?: number | null
-          player_key: string
-          player_name?: string | null
-          snapshot_id?: string | null
-        }
-        Update: {
-          game_id?: never
-          is_active?: boolean
-          last_updated?: string
-          last_seen_at?: string | null
-          player_id?: number | null
-          player_key?: string
-          player_name?: string | null
-          snapshot_id?: string | null
-        }
-        Relationships: []
-      }
       yahoo_player_key_snapshots: {
         Row: {
           added_count: number
@@ -39416,6 +40752,39 @@ export type Database = {
           reactivated_count?: number
           snapshot_id?: string
           source_count?: number
+        }
+        Relationships: []
+      }
+      yahoo_player_keys: {
+        Row: {
+          game_id: number | null
+          is_active: boolean
+          last_seen_at: string | null
+          last_updated: string
+          player_id: number | null
+          player_key: string
+          player_name: string | null
+          snapshot_id: string | null
+        }
+        Insert: {
+          game_id?: number | null
+          is_active?: boolean
+          last_seen_at?: string | null
+          last_updated?: string
+          player_id?: number | null
+          player_key: string
+          player_name?: string | null
+          snapshot_id?: string | null
+        }
+        Update: {
+          game_id?: number | null
+          is_active?: boolean
+          last_seen_at?: string | null
+          last_updated?: string
+          player_id?: number | null
+          player_key?: string
+          player_name?: string | null
+          snapshot_id?: string | null
         }
         Relationships: []
       }
@@ -45268,6 +46637,80 @@ export type Database = {
           yahoo_player_name: string | null
           yahoo_team: string | null
         }
+        Insert: {
+          assists?: number | null
+          blocked_shots?: number | null
+          eligible_positions?: Json | null
+          goals?: number | null
+          goals_against_avg?: number | null
+          hits?: number | null
+          injury_note?: string | null
+          losses?: number | null
+          mapped_position?: never
+          nhl_player_id?: string | null
+          nhl_player_name?: string | null
+          nhl_team_abbreviation?: string | null
+          normalized_position?: never
+          normalized_team?: never
+          penalty_minutes?: number | null
+          percent_games?: never
+          percent_ownership?: number | null
+          player_position?: never
+          player_type?: string | null
+          points?: number | null
+          pp_points?: number | null
+          quality_start?: number | null
+          save_pct?: number | null
+          saves?: number | null
+          sh_points?: number | null
+          shots?: number | null
+          shots_against?: number | null
+          shutouts?: number | null
+          status?: string | null
+          status_full?: string | null
+          total_fow?: number | null
+          wins?: number | null
+          yahoo_player_id?: string | null
+          yahoo_player_name?: string | null
+          yahoo_team?: string | null
+        }
+        Update: {
+          assists?: number | null
+          blocked_shots?: number | null
+          eligible_positions?: Json | null
+          goals?: number | null
+          goals_against_avg?: number | null
+          hits?: number | null
+          injury_note?: string | null
+          losses?: number | null
+          mapped_position?: never
+          nhl_player_id?: string | null
+          nhl_player_name?: string | null
+          nhl_team_abbreviation?: string | null
+          normalized_position?: never
+          normalized_team?: never
+          penalty_minutes?: number | null
+          percent_games?: never
+          percent_ownership?: number | null
+          player_position?: never
+          player_type?: string | null
+          points?: number | null
+          pp_points?: number | null
+          quality_start?: number | null
+          save_pct?: number | null
+          saves?: number | null
+          sh_points?: number | null
+          shots?: number | null
+          shots_against?: number | null
+          shutouts?: number | null
+          status?: string | null
+          status_full?: string | null
+          total_fow?: number | null
+          wins?: number | null
+          yahoo_player_id?: string | null
+          yahoo_player_name?: string | null
+          yahoo_team?: string | null
+        }
         Relationships: []
       }
       yahoo_players_with_normalized_history: {
@@ -45299,6 +46742,62 @@ export type Database = {
           status_full: string | null
           uniform_number: number | null
         }
+        Insert: {
+          average_draft_cost?: number | null
+          average_draft_pick?: number | null
+          average_draft_round?: number | null
+          display_position?: string | null
+          draft_analysis?: Json | null
+          editorial_player_key?: string | null
+          editorial_team_abbreviation?: string | null
+          editorial_team_full_name?: string | null
+          eligible_positions?: Json | null
+          full_name?: string | null
+          game_id?: number | null
+          headshot_url?: string | null
+          injury_note?: string | null
+          last_updated?: string | null
+          normalized_ownership_timeline?: never
+          ownership_timeline?: Json | null
+          percent_drafted?: number | null
+          percent_ownership?: number | null
+          player_id?: string | null
+          player_key?: string | null
+          player_name?: string | null
+          position_type?: string | null
+          season?: number | null
+          status?: string | null
+          status_full?: string | null
+          uniform_number?: number | null
+        }
+        Update: {
+          average_draft_cost?: number | null
+          average_draft_pick?: number | null
+          average_draft_round?: number | null
+          display_position?: string | null
+          draft_analysis?: Json | null
+          editorial_player_key?: string | null
+          editorial_team_abbreviation?: string | null
+          editorial_team_full_name?: string | null
+          eligible_positions?: Json | null
+          full_name?: string | null
+          game_id?: number | null
+          headshot_url?: string | null
+          injury_note?: string | null
+          last_updated?: string | null
+          normalized_ownership_timeline?: never
+          ownership_timeline?: Json | null
+          percent_drafted?: number | null
+          percent_ownership?: number | null
+          player_id?: string | null
+          player_key?: string | null
+          player_name?: string | null
+          position_type?: string | null
+          season?: number | null
+          status?: string | null
+          status_full?: string | null
+          uniform_number?: number | null
+        }
         Relationships: []
       }
     }
@@ -45306,6 +46805,36 @@ export type Database = {
       acquire_lock: {
         Args: { job_name_param: string; timeout_interval: string }
         Returns: boolean
+      }
+      acquire_sko_prediction_run: {
+        Args: {
+          p_metadata?: Json
+          p_owner_token: string
+          p_run_key: string
+          p_ttl_seconds: number
+        }
+        Returns: {
+          acquired: boolean
+          attempt_count: number
+          lease_expires_at: string
+          run_key: string
+          state: string
+        }[]
+      }
+      acquire_xg_execution_lease: {
+        Args: {
+          p_lease_key: string
+          p_metadata?: Json
+          p_owner_token: string
+          p_ttl_seconds: number
+        }
+        Returns: {
+          acquired: boolean
+          current_owner_token: string
+          lease_expires_at: string
+          lease_key: string
+          state: string
+        }[]
       }
       activate_sustainability_config: {
         Args: {
@@ -45321,15 +46850,6 @@ export type Database = {
         }
         Returns: Json
       }
-      advance_sustainability_recompute_queue: {
-        Args: {
-          p_completed: boolean
-          p_cursor: Json
-          p_error?: string
-          p_id: number
-        }
-        Returns: Database["public"]["Tables"]["sustainability_recompute_queue"]["Row"][]
-      }
       advance_draft_ranker_placement: {
         Args: {
           p_expected_anchor_player_id: number
@@ -45341,6 +46861,67 @@ export type Database = {
           p_user_id: string
         }
         Returns: Json
+      }
+      advance_projection_pipeline_state_v1: {
+        Args: {
+          p_expected_revision: number
+          p_last_error: string
+          p_lease_expires_at: string
+          p_lease_owner: string
+          p_next_cursor_date: string
+          p_next_cursor_game_id: number
+          p_next_status: string
+          p_operation_key: string
+          p_pipeline_key: string
+          p_range_end_date: string
+          p_range_start_date: string
+          p_scope_key: string
+          p_transition: string
+        }
+        Returns: {
+          cursor_date: string
+          cursor_game_id: number
+          last_error: string
+          lease_expires_at: string
+          lease_owner: string
+          operation_key: string
+          pipeline_key: string
+          range_end_date: string
+          range_start_date: string
+          revision: number
+          scope_key: string
+          status: string
+          updated_at: string
+        }[]
+      }
+      advance_sustainability_recompute_queue: {
+        Args: {
+          p_completed: boolean
+          p_cursor: Json
+          p_error?: string
+          p_id: number
+        }
+        Returns: {
+          attempts: number
+          completed_at: string | null
+          config_hash: string
+          config_revision: number
+          cursor: Json | null
+          enqueued_at: string
+          id: number
+          last_error: string | null
+          model_version: string
+          next_attempt_at: string
+          reason: string
+          started_at: string | null
+          status: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "sustainability_recompute_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       apply_draft_ranker_player_action: {
         Args: {
@@ -45371,20 +46952,6 @@ export type Database = {
         Args: { target_date: string }
         Returns: undefined
       }
-      claim_sustainability_recompute_queue: {
-        Args: never
-        Returns: Database["public"]["Tables"]["sustainability_recompute_queue"]["Row"][]
-      }
-      finalize_sustainability_score_snapshot: {
-        Args: {
-          p_config_hash: string
-          p_config_revision: number
-          p_model_version: string
-          p_season_id: number
-          p_snapshot_date: string
-        }
-        Returns: Json
-      }
       cancel_draft_ranker_placement: {
         Args: {
           p_operation_id: string
@@ -45393,6 +46960,52 @@ export type Database = {
           p_user_id: string
         }
         Returns: Json
+      }
+      capture_projection_raw_source_snapshots_v1: {
+        Args: {
+          p_game_date: string
+          p_game_id: number
+          p_pbp_payload: Json
+          p_pbp_payload_hash: string
+          p_pbp_source_url: string
+          p_season_id: number
+          p_shift_payload: Json
+          p_shift_payload_hash: string
+          p_shift_source_url: string
+        }
+        Returns: {
+          game_id: number
+          pbp_raw_payload_hash: string
+          pbp_raw_payload_id: number
+          pbp_raw_snapshot_version: number
+          shift_raw_payload_hash: string
+          shift_raw_payload_id: number
+          shift_raw_snapshot_version: number
+        }[]
+      }
+      claim_sustainability_recompute_queue: {
+        Args: never
+        Returns: {
+          attempts: number
+          completed_at: string | null
+          config_hash: string
+          config_revision: number
+          cursor: Json | null
+          enqueued_at: string
+          id: number
+          last_error: string | null
+          model_version: string
+          next_attempt_at: string
+          reason: string
+          started_at: string | null
+          status: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "sustainability_recompute_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       confirm_draft_ranker_placement: {
         Args: {
@@ -45421,6 +47034,52 @@ export type Database = {
         Returns: Json
       }
       execute_sql: { Args: { sql_statement: string }; Returns: undefined }
+      finalize_non_realized_game_stats_v1: {
+        Args: { p_game_id: number }
+        Returns: {
+          completed_at: string
+          contract_version: number
+          expected_goalie_rows: number
+          expected_skater_rows: number
+          expected_team_rows: number
+          game_id: number
+          observed_goalie_rows: number
+          observed_skater_rows: number
+          observed_team_rows: number
+          outcome: string
+          reason: string
+        }[]
+      }
+      finalize_sustainability_score_snapshot: {
+        Args: {
+          p_config_hash: string
+          p_config_revision: number
+          p_model_version: string
+          p_season_id: number
+          p_snapshot_date: string
+        }
+        Returns: Json
+      }
+      finish_sko_prediction_run: {
+        Args: {
+          p_error?: string
+          p_metadata?: Json
+          p_owner_token: string
+          p_run_key: string
+          p_succeeded: boolean
+        }
+        Returns: boolean
+      }
+      finish_xg_execution_lease: {
+        Args: {
+          p_error?: string
+          p_lease_key: string
+          p_metadata?: Json
+          p_owner_token: string
+          p_succeeded: boolean
+        }
+        Returns: boolean
+      }
       get_aggregated_player_stats:
         | {
             Args: {
@@ -45512,21 +47171,6 @@ export type Database = {
           id: number
         }[]
       }
-      upsert_line_combinations_from_source: {
-        Args: {
-          p_defensemen?: number[] | null
-          p_forwards?: number[] | null
-          p_game_id: number
-          p_goalies?: number[] | null
-          p_observed_at: string | null
-          p_source_capture_key: string | null
-          p_source_key: string
-          p_source_kind: string
-          p_source_url: string | null
-          p_team_id: number
-        }
-        Returns: Json
-      }
       get_unupdated_games: {
         Args: never
         Returns: {
@@ -45538,6 +47182,22 @@ export type Database = {
         Returns: {
           gameid: number
         }[]
+      }
+      heartbeat_sko_prediction_run: {
+        Args: {
+          p_owner_token: string
+          p_run_key: string
+          p_ttl_seconds: number
+        }
+        Returns: boolean
+      }
+      heartbeat_xg_execution_lease: {
+        Args: {
+          p_lease_key: string
+          p_owner_token: string
+          p_ttl_seconds: number
+        }
+        Returns: boolean
       }
       immutable_unaccent: { Args: { "": string }; Returns: string }
       initialize_draft_ranking_from_yahoo: {
@@ -45584,6 +47244,262 @@ export type Database = {
         }
         Returns: Json
       }
+      persist_complete_game_stats_v1: {
+        Args: {
+          p_expected_goalie_rows: number
+          p_expected_skater_rows: number
+          p_expected_team_rows: number
+          p_game_id: number
+          p_goalie_rows: Json
+          p_skater_rows: Json
+          p_team_rows: Json
+        }
+        Returns: {
+          completed_at: string
+          contract_version: number
+          expected_goalie_rows: number
+          expected_skater_rows: number
+          expected_team_rows: number
+          game_id: number
+          observed_goalie_rows: number
+          observed_skater_rows: number
+          observed_team_rows: number
+          outcome: string
+          pruned_goalie_rows: number
+          pruned_skater_rows: number
+          pruned_team_rows: number
+        }[]
+      }
+      persist_nhl_api_gamecenter_normalized_v1: {
+        Args: {
+          p_event_rows: Json
+          p_expected_current_fingerprint: string
+          p_expected_current_version: number
+          p_expected_event_rows: number
+          p_expected_pbp_payload_hash: string
+          p_expected_roster_rows: number
+          p_expected_shift_payload_hash: string
+          p_expected_shift_rows: number
+          p_game_date: string
+          p_game_id: number
+          p_materializer_version: string
+          p_parser_fingerprint: string
+          p_parser_version: number
+          p_roster_rows: Json
+          p_season_id: number
+          p_shift_rows: Json
+          p_strength_version: number
+        }
+        Returns: {
+          completed_at: string
+          expected_event_rows: number
+          expected_roster_rows: number
+          expected_shift_rows: number
+          game_id: number
+          idempotent: boolean
+          normalization_fingerprint: string
+          normalization_status: string
+          normalization_version: number
+          observed_event_rows: number
+          observed_roster_rows: number
+          observed_shift_rows: number
+          parser_fingerprint: string
+          pbp_raw_payload_hash: string
+          pbp_raw_payload_id: number
+          pbp_raw_snapshot_version: number
+          pruned_event_rows: number
+          pruned_roster_rows: number
+          pruned_shift_rows: number
+          shift_raw_payload_hash: string
+          shift_raw_payload_id: number
+          shift_raw_snapshot_version: number
+          source_fingerprint: string
+        }[]
+      }
+      persist_projection_game_derived_v1: {
+        Args: {
+          p_algorithm_version: string
+          p_derived_fingerprint: string
+          p_expected_goalie_rows: number
+          p_expected_input_fingerprint: string
+          p_expected_input_version: number
+          p_expected_player_rows: number
+          p_expected_team_rows: number
+          p_game_id: number
+          p_goalie_justification: string
+          p_goalie_outcome: string
+          p_goalie_rows: Json
+          p_player_rows: Json
+          p_team_rows: Json
+        }
+        Returns: {
+          algorithm_version: string
+          completed_at: string
+          derived_fingerprint: string
+          derived_status: string
+          derived_version: number
+          expected_goalie_rows: number
+          expected_player_rows: number
+          expected_team_rows: number
+          game_id: number
+          goalie_justification: string
+          goalie_outcome: string
+          idempotent: boolean
+          input_fingerprint: string
+          input_version: number
+          observed_goalie_rows: number
+          observed_player_rows: number
+          observed_team_rows: number
+          pruned_goalie_rows: number
+          pruned_player_rows: number
+          pruned_team_rows: number
+        }[]
+      }
+      persist_projection_game_inputs_v1: {
+        Args: {
+          p_expected_current_input_fingerprint: string
+          p_expected_play_rows: number
+          p_expected_strength_rows: number
+          p_game_id: number
+          p_game_row: Json
+          p_input_fingerprint: string
+          p_materializer_version: string
+          p_parser_version: string
+          p_pbp_raw_payload_hash: string
+          p_pbp_raw_payload_id: number
+          p_pbp_raw_snapshot_version: number
+          p_pbp_source_hash: string
+          p_play_rows: Json
+          p_shift_raw_payload_hash: string
+          p_shift_raw_payload_id: number
+          p_shift_raw_snapshot_version: number
+          p_shift_source_hash: string
+          p_strength_rows: Json
+        }
+        Returns: {
+          completed_at: string
+          expected_play_rows: number
+          expected_strength_rows: number
+          game_id: number
+          idempotent: boolean
+          input_fingerprint: string
+          input_status: string
+          input_version: number
+          observed_play_rows: number
+          observed_strength_rows: number
+          pbp_raw_payload_hash: string
+          pbp_raw_payload_id: number
+          pbp_raw_snapshot_version: number
+          pruned_play_rows: number
+          pruned_strength_rows: number
+          shift_raw_payload_hash: string
+          shift_raw_payload_id: number
+          shift_raw_snapshot_version: number
+        }[]
+      }
+      persist_shift_chart_relationships_v1: {
+        Args: {
+          p_algorithm_version: string
+          p_expected_input_fingerprint: string
+          p_expected_input_version: number
+          p_expected_rows: number
+          p_game_id: number
+          p_relationship_fingerprint: string
+          p_rows: Json
+        }
+        Returns: {
+          algorithm_version: string
+          completed_at: string
+          expected_rows: number
+          game_id: number
+          idempotent: boolean
+          input_fingerprint: string
+          input_version: number
+          observed_rows: number
+          pruned_rows: number
+          relationship_fingerprint: string
+          relationship_status: string
+          relationship_version: number
+        }[]
+      }
+      process_team_goalie_projections: {
+        Args: { p_date: string; p_game_id: number; p_team_id: number }
+        Returns: undefined
+      }
+      promote_game_prediction_model_version_atomic: {
+        Args: {
+          p_feature_set_version: string
+          p_metadata: Json
+          p_model_name: string
+          p_model_version: string
+          p_promoted_at: string
+        }
+        Returns: {
+          promoted: boolean
+          retired_production_rows: number
+        }[]
+      }
+      quarantine_game_stats_v1: {
+        Args: { p_game_ids: number[]; p_reason: string }
+        Returns: {
+          completed_at: string
+          contract_version: number
+          expected_goalie_rows: number
+          expected_skater_rows: number
+          expected_team_rows: number
+          game_id: number
+          observed_goalie_rows: number
+          observed_skater_rows: number
+          observed_team_rows: number
+          outcome: string
+          reason: string
+        }[]
+      }
+      refresh_player_lineup_deployment_tallies: {
+        Args: { p_player_id?: number; p_season_id?: number }
+        Returns: {
+          deleted_rows: number
+          inserted_rows: number
+        }[]
+      }
+      refresh_team_power_ratings: {
+        Args: { date_from?: string; date_to?: string }
+        Returns: undefined
+      }
+      reorder_draft_ranking: {
+        Args: {
+          p_action: string
+          p_anchor_player_id: number
+          p_expected_version: number
+          p_operation_id: string
+          p_operation_payload_hash: string
+          p_player_id: number
+          p_ranking_id: string
+          p_target_rank: number
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      repair_draft_ranking_ordering: {
+        Args: {
+          p_confirmation: string
+          p_expected_version: number
+          p_operation_id: string
+          p_operation_payload_hash: string
+          p_ranking_id: string
+          p_reason: string
+        }
+        Returns: Json
+      }
+      repair_wgo_player_season_identity: {
+        Args: {
+          p_direction: string
+          p_expected_source_manifest_md5: string
+          p_expected_trend_identity_md5: string
+          p_operation_id: string
+        }
+        Returns: Json
+      }
       replace_draft_ranker_community_snapshot: {
         Args: {
           p_accepted_comparison_count: number
@@ -45620,98 +47536,21 @@ export type Database = {
         }
         Returns: Json
       }
-      repair_draft_ranking_ordering: {
+      replace_forge_projection_results_atomic: {
         Args: {
-          p_confirmation: string
-          p_expected_version: number
-          p_operation_id: string
-          p_operation_payload_hash: string
-          p_ranking_id: string
-          p_reason: string
+          p_actual_date: string
+          p_as_of_date: string
+          p_rows: Json
+          p_source_run_id: string
         }
         Returns: Json
       }
-      persist_complete_game_stats_v1: {
-        Args: {
-          p_expected_goalie_rows: number
-          p_expected_skater_rows: number
-          p_expected_team_rows: number
-          p_game_id: number
-          p_goalie_rows: Json
-          p_skater_rows: Json
-          p_team_rows: Json
-        }
-        Returns: {
-          completed_at: string
-          contract_version: number
-          expected_goalie_rows: number
-          expected_skater_rows: number
-          expected_team_rows: number
-          game_id: number
-          observed_goalie_rows: number
-          observed_skater_rows: number
-          observed_team_rows: number
-          outcome: string
-          pruned_goalie_rows: number
-          pruned_skater_rows: number
-          pruned_team_rows: number
-        }[]
+      replace_yahoo_game_weeks_snapshot: {
+        Args: { p_game: Json; p_snapshot_id: string; p_weeks: Json }
+        Returns: Json
       }
-      finalize_non_realized_game_stats_v1: {
-        Args: { p_game_id: number }
-        Returns: {
-          completed_at: string
-          contract_version: number
-          expected_goalie_rows: number
-          expected_skater_rows: number
-          expected_team_rows: number
-          game_id: number
-          observed_goalie_rows: number
-          observed_skater_rows: number
-          observed_team_rows: number
-          outcome: string
-          reason: string
-        }[]
-      }
-      process_team_goalie_projections: {
-        Args: { p_date: string; p_game_id: number; p_team_id: number }
-        Returns: undefined
-      }
-      quarantine_game_stats_v1: {
-        Args: {
-          p_game_ids: number[]
-          p_reason: string
-        }
-        Returns: {
-          completed_at: string
-          contract_version: number
-          expected_goalie_rows: number
-          expected_skater_rows: number
-          expected_team_rows: number
-          game_id: number
-          observed_goalie_rows: number
-          observed_skater_rows: number
-          observed_team_rows: number
-          outcome: string
-          reason: string
-        }[]
-      }
-      refresh_team_power_ratings: {
-        Args: { date_from?: string; date_to?: string }
-        Returns: undefined
-      }
-      reorder_draft_ranking: {
-        Args: {
-          p_action: string
-          p_anchor_player_id: number
-          p_expected_version: number
-          p_operation_id: string
-          p_operation_payload_hash: string
-          p_player_id: number
-          p_ranking_id: string
-          p_target_rank: number
-          p_user_id: string
-        }
+      replace_yahoo_player_keys_snapshot: {
+        Args: { p_game_id: number; p_players: Json; p_snapshot_id: string }
         Returns: Json
       }
       request_fhfh_player_addition: {
@@ -45774,6 +47613,10 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      stage_wgo_player_season_repair_trends: {
+        Args: { p_direction: string; p_operation_id: string; p_rows: Json }
+        Returns: Json
+      }
       submit_draft_ranker_pair_comparison: {
         Args: {
           p_client_operation_id: string
@@ -45828,6 +47671,21 @@ export type Database = {
         }
         Returns: undefined
       }
+      upsert_line_combinations_from_source: {
+        Args: {
+          p_defensemen?: number[]
+          p_forwards?: number[]
+          p_game_id: number
+          p_goalies?: number[]
+          p_observed_at: string
+          p_source_capture_key: string
+          p_source_key: string
+          p_source_kind: string
+          p_source_url: string
+          p_team_id: number
+        }
+        Returns: Json
+      }
       upsert_players_batch:
         | {
             Args: { players_data: Json }
@@ -45843,22 +47701,6 @@ export type Database = {
           }
       upsert_yahoo_players_atomic: {
         Args: { players_data: Json[] }
-        Returns: Json
-      }
-      replace_yahoo_game_weeks_snapshot: {
-        Args: {
-          p_game: Json
-          p_snapshot_id: string
-          p_weeks: Json
-        }
-        Returns: Json
-      }
-      replace_yahoo_player_keys_snapshot: {
-        Args: {
-          p_game_id: number
-          p_players: Json
-          p_snapshot_id: string
-        }
         Returns: Json
       }
       upsert_yahoo_players_v3: {
@@ -45997,6 +47839,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  analytics: {
+    Enums: {},
+  },
   public: {
     Enums: {
       NHL_Position_Code: ["L", "R", "G", "D", "C"],

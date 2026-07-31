@@ -428,7 +428,9 @@ records that every 21-date FORGE run lacks repaired rolling-history provenance,
 so the approved calibration exclusion correctly blocks the requested result
 backfill until the owner chooses explicit quarantine or a separately versioned
 non-calibration history class. NEW 15 records 1,905 April 2023 WGO/unified rows
-and 49,410 dependent trend rows mislabeled as season `20242025`; source identity
-must be repaired before the 2024–25 trend rebuild. B-SUST-AUD is therefore
-48/57 with nine open rows, without weakening any historical or calibration
-guard.
+and 49,410 dependent trend rows mislabeled as season `20242025`. Its frozen
+source-first forward/inverse migration and bounded dry-run-first runner now
+pass exact local replay, rollback, contention, ACL/RLS, blank-reset, and lint
+proof; only exact Production application/repair authorization and receipts
+remain before the 2024–25 trend rebuild. B-SUST-AUD is therefore 48/57 with
+nine open rows, without weakening any historical or calibration guard.
