@@ -7874,3 +7874,9 @@
 - **Discovery:** The sustainability report's family worksheet still described the completed dependency maps, 2.7/3.5/4.6/5.6 validation traces, Start Chart 4.7 architecture classification, and 5.7/5.8 overlap/recommendation register as pending, despite the canonical task list and report evidence marking them complete.
 - **Synchronization:** The family index now records those phases as complete; the Start Chart paragraph points to the completed trace/matrix evidence and preserves the remaining formula, history, repair, and publication gates. The legacy/adjacent row remains explicitly deferred where no executable owner exists.
 - **Boundary / counts:** Documentation-only correction; no application, database, migration, writer, repair, provider, build/deployment, push, or credential state changed. Counts remain B-SKO 67/70, raw 4,918/5,011, actionable 4,918/5,005 with 87 open, and mechanical master 5,044/5,171.
+
+## Entry 0852 — 2026-07-31 Wave-B status-banner reconciliation
+
+- **Discovery:** The current PRD/master initiative tables and several un-dated final-summary sections still carried earlier Wave-B totals after later verified checkpoints (including B-SUST-AUD 50/58, sKO 67/70, B-GAMEGRID 38/38, B-FORGE-COMBO 39/39, B-DRAFT-STYLE 56/56, B-YAHOO 60/72, B-CLEAN 156/158, B-DEAD 44/44, B-DRM 92/111, and B-TRENDS 53/53).
+- **Synchronization:** Current Wave-B roll-up overlays now supersede older table cells and the master parent banners for B-SUST-AUD, B-SKO, and the completed Wave-B parity line. Historical checkpoint paragraphs remain append-only and are not reclassified as current status.
+- **Boundary / counts:** Documentation-only correction; no application, database, migration, writer, repair, provider, build/deployment, push, or credential state changed. Raw parity remains 4,918/5,011, actionable parity 4,918/5,005 with 87 open, mechanical master 5,044/5,171, and B-SKO 67/70.
