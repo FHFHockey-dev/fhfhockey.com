@@ -7841,3 +7841,9 @@
 - **Read-only acceptance check:** One batched Supabase query found exactly 851 target rows and recomputed the same five-column identity digest. The durable run manifest is `succeeded` at attempt 2 with no failure timestamp; the matching `update-predictions-sko` cron-audit row is successful, HTTP 200, and records 851 affected rows. A bounded two-hour Vercel runtime-error query for the route is empty.
 - **Remaining controls:** Idempotent replay with unchanged count, unrelated-scope invariance, exact rollback receipt, and a natural offseason no-write observation remain open. The one-off is not represented as a scheduled run and does not yet close NEW 9.9.
 - **Boundary / counts:** The authorized 851-row population is the only new Production row mutation. No migration, repair, provider, schedule, build/deployment, push, credential, or shared-checkout state changed. Raw parity remains 4,917/5,011; actionable parity remains 4,917/5,005 with 88 open = 98.24%; mechanical master roll-up remains 5,043/5,171 = 97.52%; B-SKO remains 66/70.
+
+## Entry 0847 — 2026-07-31 sKO replay-invariance baseline
+
+- **Baseline:** Before any idempotent replay, one read-only Supabase query serialized every non-target `predictions_sko` row and froze 9,765 unrelated rows at digest `36e70852795ed519604390f718158c45f7061694fa47b2fc06cd8af86919d3e1`. The exact target remains 851 rows.
+- **Control:** A later authorized replay can be compared against this count/digest and the existing target digest without widening the scope. No replay, rollback, or additional writer call occurred in this checkpoint.
+- **Boundary / counts:** No new database row, migration, repair, provider, schedule, build/deployment, push, credential, or shared-checkout state changed. Raw parity remains 4,917/5,011; actionable parity remains 4,917/5,005 with 88 open = 98.24%; mechanical master roll-up remains 5,043/5,171 = 97.52%; B-SKO remains 66/70.
