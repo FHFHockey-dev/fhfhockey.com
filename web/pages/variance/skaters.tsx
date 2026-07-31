@@ -50,7 +50,7 @@ const YAHOO_SKATER_SELECT_FIELDS = [
   "player_name",
   "full_name",
   "percent_ownership",
-  "ownership_timeline",
+  "ownership_timeline:normalized_ownership_timeline",
   "draft_analysis",
   "average_draft_pick",
   "average_draft_round",
@@ -177,7 +177,7 @@ async function fetchYahooSkaterRowsForNhlPlayerIds(
   }
 
   const { data: mappingData, error: mappingError } = await supabase
-    .from("yahoo_nhl_player_map_mat")
+    .from("yahoo_nhl_player_map_read")
     .select("nhl_player_id, yahoo_player_id")
     .in("nhl_player_id", uniqueNhlPlayerIds.map(String));
 
@@ -204,7 +204,7 @@ async function fetchYahooSkaterRowsForNhlPlayerIds(
   });
 
   const { data, error } = await supabase
-    .from("yahoo_players")
+    .from("yahoo_players_with_normalized_history")
     .select(YAHOO_SKATER_SELECT_FIELDS)
     .eq("season", yahooSeason)
     .in("player_id", Array.from(yahooLookupIds));

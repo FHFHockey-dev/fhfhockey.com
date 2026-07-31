@@ -124,8 +124,8 @@ describe("Yahoo player writer permissions", () => {
       "web/pages/variance/skaters.tsx",
     ]) {
       const source = readFileSync(path.join(repoRoot, relativePath), "utf8");
-      expect(source).toContain('.from("yahoo_players")');
-      expect(source).not.toContain("yahoo_players_with_normalized_history");
+      expect(source).toContain('.from("yahoo_players_with_normalized_history")');
+      expect(source).toContain("normalized_ownership_timeline");
     }
   });
 
@@ -175,8 +175,8 @@ describe("Yahoo player writer permissions", () => {
       "web/pages/variance/skaters.tsx",
     ]) {
       const source = readFileSync(path.join(repoRoot, relativePath), "utf8");
-      expect(source).toContain('.from("yahoo_nhl_player_map_mat")');
-      expect(source).not.toContain("yahoo_nhl_player_map_read");
+      expect(source).toContain('.from("yahoo_nhl_player_map_read")');
+      expect(source).not.toContain('.from("yahoo_nhl_player_map_mat")');
     }
   });
 

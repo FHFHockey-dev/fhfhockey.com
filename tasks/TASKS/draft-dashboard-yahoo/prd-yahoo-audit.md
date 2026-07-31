@@ -1,5 +1,7 @@
 # PRD: Yahoo Fantasy -> Supabase Ingestion & Mapping Audit ("Yahoo Pipeline")
 
+> **2026-07-31 local normalized-reader cutover:** Hosted value-free parity is exact for the staged views: mapping reader/materialized cache 1,857/1,857 with digest `d5448d3d5ac68dc47ffbf335f44e71a5`; latest-player fields 2,827/2,827 with digest `0844a51501fac22c8a027099cbec6a47`; normalized history covers 1,548 players and 496,371 non-null rows. All local read-only Yahoo consumers now use the canonical security-invoker readers, with normalized history aliased to the stable timeline field. Production publication, postdeploy cache revocation/advisor, provider, backfill, and legacy-map gates remain open.
+
 > **Implementation task list:** `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md`
 
 ## 2026-07-22 current-state overlay

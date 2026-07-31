@@ -679,7 +679,7 @@ async function fetchAllSourceData(
     string
   >(Array.from(uniqueNhlPlayerIds, String), (playerIdChunk, { from, to }) =>
     supabaseClient
-      .from("yahoo_nhl_player_map_mat")
+      .from("yahoo_nhl_player_map_read")
       .select(yahooMapSelectString)
       .in(YAHOO_PLAYER_MAP_KEYS.nhlPlayerId, playerIdChunk)
       .order(YAHOO_PLAYER_MAP_KEYS.nhlPlayerId, { ascending: true })
@@ -726,7 +726,7 @@ async function fetchAllSourceData(
         string
       >(compositeIds, (playerIdChunk, { from, to }) =>
         supabaseClient
-          .from("yahoo_players")
+          .from("yahoo_players_with_normalized_history")
           .select(yahooPlayersSelectString)
           .eq("game_id", CURRENT_YAHOO_GAME_ID)
           .in(YAHOO_PLAYERS_TABLE_KEYS.primaryKey, playerIdChunk)
@@ -742,7 +742,7 @@ async function fetchAllSourceData(
         string
       >(numericIds, (playerIdChunk, { from, to }) =>
         supabaseClient
-          .from("yahoo_players")
+          .from("yahoo_players_with_normalized_history")
           .select(yahooPlayersSelectString)
           .eq("game_id", CURRENT_YAHOO_GAME_ID)
           .in(YAHOO_PLAYERS_TABLE_KEYS.yahooSpecificPlayerId, playerIdChunk)

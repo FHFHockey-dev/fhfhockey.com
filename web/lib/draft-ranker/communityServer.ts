@@ -170,7 +170,7 @@ async function loadCommunityCandidates(args: {
   const priorSeason = priorYahooSeason(args.targetSeasonId);
   const yahooRows = await fetchAll<YahooRow>((from, to) =>
     args.client
-      .from("yahoo_players")
+      .from("yahoo_players_with_normalized_history")
       .select("player_key,draft_analysis,average_draft_pick")
       .eq("season", priorSeason)
       .order("player_key", { ascending: true })

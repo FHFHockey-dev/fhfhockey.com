@@ -1748,9 +1748,9 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         while (true) {
           const { data: seasonPlayerRows, error: seasonPlayersError } =
             await publicSupabase
-              .from("yahoo_players")
+              .from("yahoo_players_with_normalized_history")
               .select(
-                "player_key, player_id, percent_ownership, ownership_timeline"
+                "player_key, player_id, percent_ownership, ownership_timeline:normalized_ownership_timeline"
               )
               .eq("season", yahooSeasonYear)
               .range(playersFrom, playersFrom + supabasePageSize - 1);
@@ -1801,10 +1801,10 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           );
         }
 
-        // Query `yahoo_nhl_player_map_mat` with pagination
+        // Query the security-invoker canonical Yahoo/NHL mapping reader with pagination
         while (true) {
           const { data, error, count } = await publicSupabase
-            .from("yahoo_nhl_player_map_mat")
+            .from("yahoo_nhl_player_map_read")
             .select("*", { count: "exact" })
             .range(from, from + supabasePageSize - 1);
 
