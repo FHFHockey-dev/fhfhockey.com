@@ -383,7 +383,7 @@ Do not execute the former restore/segment/upload/UI handoff. The owner-authorize
 
 ## 13) Expanded TODOs (Delta)
 - API
-  - [x] Harden endpoint with paging/batching and concurrency controls. *(Complete source pagination and bounded batch upserts are paired with an owner-safe cross-instance lease, stale-run recovery, and a durable per-model/date/horizon run manifest. Production migration `20260728225806` is applied and verified; schema/artifact monitoring and Production observation remain open.)*
+  - [x] Harden endpoint with paging/batching and concurrency controls. *(Complete source pagination and bounded batch upserts are paired with an owner-safe cross-instance lease, stale-run recovery, and a durable per-model/date/horizon run manifest. Production migration `20260728225806` is applied and verified; the 2026-07-31 reader schema/freshness/coverage observation and empty runtime-error query close monitoring under 8.2.)*
   - [x] Add auth/secret check for write operations.
   - [x] Support `playerId` filter for on-demand updates.
   - [x] Log run metadata to `cron_job_audit`/`job_run_details`. *(Current compatibility evidence: `withCronJobAudit` owns timed success/failure records and row counts; verified 2026-07-22.)*
@@ -403,7 +403,7 @@ Do not execute the former restore/segment/upload/UI handoff. The owner-authorize
   - [x] Wire player search + row click-through from the Trends index to the player detail experience, keeping query params in sync.
 - Ops
   - [x] Nightly job to call `/api/v1/ml/update-predictions-sko` post-games. *(Current compatibility evidence: active production pg_cron job 327 calls the protected writer at `45 10 * * *` with a Vault-backed Authorization header; verified value-free 2026-07-22.)*
-  - [x] Alerting if failure or unusually low updated rows. *(Stable health codes classify failed/partial writes as errors and selected-versus-written shortfalls as warnings; the verdict and exact diagnostics are returned, persisted in the run manifest, emitted to runtime logs, and surfaced by the existing daily cron operator email. Production observation and schema/artifact monitoring remain separately open.)*
+  - [x] Alerting if failure or unusually low updated rows. *(Stable health codes classify failed/partial writes as errors and selected-versus-written shortfalls as warnings; the verdict and exact diagnostics are returned, persisted in the run manifest, emitted to runtime logs, and surfaced by the existing daily cron operator email. The 2026-07-31 value-free reader observation found only the three expected compatibility warnings and no runtime-error, schema-drift, artifact-mismatch, or stalled-stage signal.)*
   - [x] One-season backfill script that runs under 15s to seed historical features (`backfill_seasons.py` + manifest).
   - [x] Lightweight nightly scorer/uploader (<300s) leveraging cached models + append-only features. *(Historical-only disposition 2026-07-28: the deleted offline scorer/uploader is not restored; the v0.2 compatibility writer remains separately owned.)*
 
@@ -522,6 +522,6 @@ sko_predictions.parquet + game_actuals.jsonl → step_forward (delta calc) → p
 
 ## 2026-07-31 Production Migration Receipt
 
-Ordered Production migrations `20260728225806` and `20260729205048` are applied before exact-SHA application publication. Value-free catalog proof finds all three sKO run-control RPCs security-invoker, browser-denied, and service-only, with model-version prediction identity preserved. This closes persistence parent 2.0 and migration row 2.2; B-SKO is 67/70 after documentation synchronization row 8.5 and NEW 9.9 closed. The accepted exact-manifest compatibility population, guarded rollback/repopulation, and natural offseason no-write receipts satisfy the temporary offseason evidence gate; monitoring/Production observation, safe retirement, and continuous-discovery gates remain open.
+Ordered Production migrations `20260728225806` and `20260729205048` are applied before exact-SHA application publication. Value-free catalog proof finds all three sKO run-control RPCs security-invoker, browser-denied, and service-only, with model-version prediction identity preserved. This closes persistence parent 2.0 and migration row 2.2; B-SKO is 68/70 after the accepted one-off, monitoring observation, and documentation synchronization, with safe retirement and continuous discovery still open. The accepted exact-manifest compatibility population, guarded rollback/repopulation, natural offseason no-write receipts, and 2026-07-31 reader schema/freshness/coverage/runtime observation satisfy the temporary offseason and monitoring evidence gates.
 
 ---
