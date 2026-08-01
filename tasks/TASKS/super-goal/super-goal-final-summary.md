@@ -16,7 +16,7 @@
 
 **2026-07-31 cleanup reconciliation:** The bounded 7.2 checkpoint at `tasks/TASKS/super-goal/cleanup-reconciliation.md` removes exactly six tracked, no-consumer `web/tmp*` investigation probes, including the unowned manual sheet-writer probe. Historical inventory/PBP references are classified without rewriting history; ignored caches/logs and unproven debug candidates remain untouched. Master 7.2 closes, moving the mechanical roll-up to `5,072/5,171`; imported parity remains raw `4,937/5,011` and actionable `4,937/5,005` with 68 open. No runtime, build, deployment, database, provider, writer, repair, backfill, credential, or analytics state changed; the super-goal remains active.
 
-## Current completion roll-up (authoritative 2026-07-31)
+## Current completion roll-up (authoritative 2026-08-01)
 
 This section is the current summary for the active control plane. Older initiative and checkpoint sections below remain append-only evidence and are not used as current totals.
 
@@ -26,9 +26,9 @@ This section is the current summary for the active control plane. Older initiati
 | --- | ---: | ---: | ---: | --- |
 | Imported raw source claims | 4,937 | 5,011 | 74 | 76 source sections and the parity receipt in [`documentation-parity-checkpoint.md`](documentation-parity-checkpoint.md) |
 | Imported actionable claims | 4,937 | 5,005 | 68 | Six fenced rule examples are excluded as non-actionable; current source/master parity is exact |
-| Mechanical master control plane | 5,075 | 5,171 | 96 | Master task-list direct recount after the 6.5 populated Production/browser acceptance |
+| Mechanical master control plane | 5,082 | 5,175 | 93 | Master task-list direct recount after the 2026-08-01 dynamic Wave-C registration cohort |
 
-The 96 master open rows consist of the 68 imported actionable rows plus 28 control-plane rows (parent/verification/completion gates). No denominator was reduced to make a checkpoint appear better.
+The 93 master open rows consist of the 68 imported actionable rows plus 25 control-plane rows (parent/verification/completion gates). The four newly registered Wave-C children add four checked rows and four denominator rows; no denominator was reduced to make a checkpoint appear better.
 
 ### Initiative disposition
 
@@ -45,7 +45,7 @@ The 96 master open rows consist of the 68 imported actionable rows plus 28 contr
 
 ### Evidence index and boundary
 
-The current roll-up is derived from the canonical [master task list](tasks-prd-fhfh-comprehensive-completion-audit-optimization.md), [canonical PRD](prd/prd-fhfh-comprehensive-completion-audit-optimization.md), [76-source parity receipt](documentation-parity-checkpoint.md), [6.5 verification record](verification-checkpoint-6-5.md), [7.2 cleanup receipt](cleanup-reconciliation.md), and [7.5 charter-gate matrix](completion-gate-reconciliation.md). The current 6.5 receipt records one authorized push/deployment and its bounded value-free/browser result; the local follow-up has a passing local production build but is not published. The super-goal remains active.
+The current roll-up is derived from the canonical [master task list](tasks-prd-fhfh-comprehensive-completion-audit-optimization.md), [canonical PRD](prd/prd-fhfh-comprehensive-completion-audit-optimization.md), [76-source parity receipt](documentation-parity-checkpoint.md), [6.5 verification record](verification-checkpoint-6-5.md), [7.2 cleanup receipt](cleanup-reconciliation.md), [7.5 charter-gate matrix](completion-gate-reconciliation.md), and the 2026-08-01 dynamic-registration receipt. The published 6.5 `parseISO` correction is included in the accepted `6b16d9641` Production artifact; the earlier local ClientOnly follow-up remains historical and unpublished. The super-goal remains active.
 
 **2026-07-31 current `bf54db89e` Production publication checkpoint (authoritative):** Guarded normal push advanced GitHub `origin/octoberBranch` to exact `bf54db89ed51bde9021d7f22c8343f7bc3a7c95f`; local `HEAD` and the fetched GitHub tip are equal and the worktree is clean. The exact Git-tree source was published as READY Production deployment `dpl_2QhAGet43TZFYLiLfcp96vJ5ijCM`, now serving all five canonical aliases. Value-free probes returned `200` for `/auth`, `/forge/dashboard`, canonical skater-power GET, and team-power GET; unauthenticated sustainability rebuild and webhook requests returned `401`; `/db` returned its public shell `200`; the bounded deployment error query returned zero error-like rows. Vercel's Git-linked path remains blocked for commit author `timbranson515@gmail.com`, so the exact no-Git export was used without changing Git identity or team configuration. No migration, writer, repair, backfill, provider, analytics, credential, or Yahoo revocation action ran; no row is closed by this checkpoint. Current parity remains raw `4,937/5,011`, actionable `4,937/5,005` with 68 open, and mechanical master `5,065/5,171`; the super-goal remains active.
 

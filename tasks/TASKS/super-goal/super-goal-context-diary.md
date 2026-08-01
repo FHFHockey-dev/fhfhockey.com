@@ -8216,3 +8216,9 @@
 - **Evidence-only audit:** Existing B-CLEAN, B-DEAD, B-SKO, and B-SUST-BAR completion receipts were re-read against the current initiative roll-up. Their implementation-DoD evidence is complete and no contradictory owner, consumer, route, formula, or external-gate finding was introduced. Four named children, 5.7.24–5.7.27, are now checked.
 - **Control disposition:** The current register covers every Wave-A/B initiative that has reached implementation DoD. Controls 5.7.1 and 5.7.2 close; the dynamic parent 5.7 remains open for future DoD registrations. Active A-AUTH/A-CRON-EMAIL/A-GDL/A-3P/A-SUST and B-CRON-NST/B-SUST-AUD/B-YAHOO/B-DRM remain unchanged.
 - **Counts / boundary:** Mechanical master is `5,082/5,175` with 93 open; imported raw/actionable parity remains `4,937/5,011` and `4,937/5,005` with 68 open. No runtime, deployment, migration, writer, repair, backfill, provider, analytics, credential, schedule, or Yahoo-revocation state changed.
+
+## Entry 0905 — 2026-08-01 current-roll-up reconciliation
+
+- **Finding:** The dynamic-registration receipt correctly advanced the mechanical master to `5,082/5,175`, but the Final Summary's authoritative table still showed the pre-registration `5,075/5,171` denominator. This was a documentation inconsistency, not a completion regression.
+- **Synchronization:** The Final Summary current section now reports 5,082 checked of 5,175 (93 open: 68 imported actionable plus 25 control-plane rows) and the 2026-08-01 date. The canonical PRD and master task list carry the same reconciliation receipt; historical checkpoint paragraphs remain append-only.
+- **Boundary:** Imported raw/actionable parity remains `4,937/5,011` and `4,937/5,005` with 68 open. No source checkbox, runtime, database, provider, deployment, writer, repair, backfill, analytics, credential, schedule, or Yahoo-revocation state changed.
