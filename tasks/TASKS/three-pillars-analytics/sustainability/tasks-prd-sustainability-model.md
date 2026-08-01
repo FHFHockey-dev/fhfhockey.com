@@ -86,7 +86,7 @@
 
 - Unit tests should typically be placed alongside the code files they are testing (e.g., `MyModule.ts` and `MyModule.test.ts` in the same directory).
 - Use `npx vitest` to run tests in this workspace (web uses Vitest). You can scope to a file, e.g., `npx vitest web/__tests__/sustainability/data.test.ts`.
-- Cross-provider natural-schedule ownership for overlapping priors and window-z writers is tracked only by B-CRON-NST NEW 61. This list is 86/89; do not duplicate or close that operational checkbox here.
+- Cross-provider natural-schedule ownership for overlapping priors and window-z writers is tracked only by B-CRON-NST NEW 61, now closed by the Aug 1 Production handoff and non-overlapping natural chain. This list is 86/89; do not duplicate or close that operational checkbox here.
 
 ## Tasks
 

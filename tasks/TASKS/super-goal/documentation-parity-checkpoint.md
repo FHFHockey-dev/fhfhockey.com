@@ -1,11 +1,11 @@
 # Documentation and Source/Master Parity Checkpoint (7.1)
 
-**Status:** Evidence-only synchronization completed 2026-08-01. This checkpoint reconciles the current source/master ledger, Relevant Files, PRD, final summary, diary, and referenced operational/schema contracts after the authorized NEW 58/59 natural cron-report receipt. It does not authorize any additional migration, writer, repair, backfill, provider call, deployment, credential change, or deletion.
+**Status:** Evidence-only synchronization completed 2026-08-01. This checkpoint reconciles the current source/master ledger, Relevant Files, PRD, final summary, diary, and referenced operational/schema contracts after the NEW 61 natural Sustainability handoff receipt. It does not authorize any additional migration, writer, repair, backfill, provider call, deployment, credential change, or deletion.
 
 ## Parity checks
 
-- A read-only parser found all 76 imported source paths represented in the canonical master. Counts are exact at `4,943/5,011` raw; no source/master checked/total mismatch was found. The six fenced `generate-tasks.mdc` format examples remain explicitly non-actionable reference rows.
-- The mechanical master roll-up is `5,089/5,176`; imported actionable parity is `4,943/5,005` with 62 open. Historical checkpoint paragraphs remain append-only and are not treated as current totals.
+- A read-only parser found all 76 imported source paths represented in the canonical master. Counts are exact at `4,944/5,011` raw; no source/master checked/total mismatch was found. The six fenced `generate-tasks.mdc` format examples remain explicitly non-actionable reference rows.
+- The mechanical master roll-up is `5,090/5,176`; imported actionable parity is `4,944/5,005` with 61 open. Historical checkpoint paragraphs remain append-only and are not treated as current totals.
 - The master Relevant Files section contains 161 candidate concrete references. Eight parser hits are intentional non-current references: the deleted Yahoo token artifact, ignored local environment file, historical applied migration names, `.DS_Store`, and prose `.limit()` text. No newly added control artifact is missing.
 - The current cross-initiative, security, data-completeness, end-to-end, 6.5 verification, and UX/performance artifacts are linked from the master Relevant Files section and current PRD/final-summary/diary receipts. Their current counts, open gates, and no-external-mutation boundaries agree.
 - Referenced runbooks, schema/migration contracts, operational inventories, and source reports remain owned by their initiative lists; no source checkbox or runtime contract was changed by this synchronization-only checkpoint.
@@ -40,3 +40,7 @@ The exact `20260801195126_drop_legacy_public_rpcs_after_zero_use.sql` migration 
 ## 2026-08-01 NEW 58/59 natural-report overlay
 
 The natural scheduler run `148950` completed at `2026-08-01T21:15:06Z` with HTTP 200/success, successful audit-email delivery, `warnMissingAudit=0`, and no `daily-cron-report` self-entry in `warnings.missingObservationJobs`. The separately reported `sync-yahoo-players-to-sheet` observation remains explicit. The bounded partial-success identities reconcile exactly to the owner-supplied CEO briefing: `update-line-combinations-job` 10, `update-line-combinations-all` 10, and `update-nhl-edge-stats` 5, with reasons/samples documented. Source NEW 58/59 and master C0003/C0005/C0062/C0063 are checked. Current parity is raw `4,943/5,011`, actionable `4,943/5,005` with 62 open, and mechanical master `5,089/5,176` with 87 open. No writer, repair, backfill, provider, migration, deployment, analytics, credential, or Yahoo-revocation action ran.
+
+## 2026-08-01 NEW 61 natural Sustainability handoff overlay
+
+Production migration `20260730091500` is read back with baseline job 326 active and jobs 370/371/372/376 inactive. The natural Aug 1 baseline → priors → three window-z chunks → three score stages → four trend-band chunks are non-overlapping, HTTP 200/success, and each has a truthful `cron_job_audit` timing receipt. Source NEW 61 and master C0065 close. Current parity is raw `4,944/5,011`, actionable `4,944/5,005` with 61 open, and mechanical master `5,090/5,176` with 86 open. No writer, repair, backfill, provider, migration, deployment, analytics, credential, or Yahoo-revocation action ran.
