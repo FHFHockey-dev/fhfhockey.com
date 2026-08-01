@@ -175,6 +175,9 @@ describe("/underlying-stats landing page", () => {
     expect(screen.getByText("What looks real?")).toBeTruthy();
     expect(screen.getByText("Schedule texture")).toBeTruthy();
     expect(screen.getByText("Under the radar")).toBeTruthy();
+    expect(screen.getByText("Team snapshot").parentElement?.textContent).toContain(
+      "Apr 5, 2026"
+    );
 
     const table = screen.getByRole("table");
     expect(
