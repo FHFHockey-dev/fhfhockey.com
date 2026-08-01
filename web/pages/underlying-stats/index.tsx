@@ -13,6 +13,7 @@ import { useRouter } from "next/router";
 import { format, parseISO } from "date-fns";
 
 import DashboardPillarHero from "../../components/dashboard/DashboardPillarHero";
+import ClientOnly from "../../components/ClientOnly";
 import UnderlyingStatsDashboardCard from "../../components/underlying-stats/UnderlyingStatsDashboardCard";
 import UnderlyingStatsNavBar from "../../components/underlying-stats/UnderlyingStatsNavBar";
 import UlsStatusPanel from "../../components/underlying-stats/UlsStatusPanel";
@@ -1073,13 +1074,15 @@ const TeamPowerRankingsPage: NextPage<PageProps> = ({
             }
           >
             {dashboard.quadrant.points.length ? (
-              <UnderlyingStatsQuadrantMap
-                activeTeamAbbr={activeTeamAbbr}
-                averageDefenseProcess={dashboard.quadrant.averageDefenseProcess}
-                averageOffenseProcess={dashboard.quadrant.averageOffenseProcess}
-                onTeamHover={setActiveTeamAbbr}
-                points={dashboard.quadrant.points}
-              />
+              <ClientOnly>
+                <UnderlyingStatsQuadrantMap
+                  activeTeamAbbr={activeTeamAbbr}
+                  averageDefenseProcess={dashboard.quadrant.averageDefenseProcess}
+                  averageOffenseProcess={dashboard.quadrant.averageOffenseProcess}
+                  onTeamHover={setActiveTeamAbbr}
+                  points={dashboard.quadrant.points}
+                />
+              </ClientOnly>
             ) : (
               <div className={styles.moduleEmpty}>No quadrant data for this snapshot.</div>
             )}

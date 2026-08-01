@@ -5,7 +5,7 @@
 ## Parity checks
 
 - A read-only parser found all 76 imported source paths represented in the canonical master. Counts are exact at `4,937/5,011` raw; no source/master checked/total mismatch was found. The six fenced `generate-tasks.mdc` format examples remain explicitly non-actionable reference rows.
-- The mechanical master roll-up is `5,070/5,171`; imported actionable parity is `4,937/5,005` with 68 open. Historical checkpoint paragraphs remain append-only and are not treated as current totals.
+- The mechanical master roll-up is `5,074/5,171`; imported actionable parity is `4,937/5,005` with 68 open. Historical checkpoint paragraphs remain append-only and are not treated as current totals.
 - The master Relevant Files section contains 161 candidate concrete references. Eight parser hits are intentional non-current references: the deleted Yahoo token artifact, ignored local environment file, historical applied migration names, `.DS_Store`, and prose `.limit()` text. No newly added control artifact is missing.
 - The current cross-initiative, security, data-completeness, end-to-end, 6.5 verification, and UX/performance artifacts are linked from the master Relevant Files section and current PRD/final-summary/diary receipts. Their current counts, open gates, and no-external-mutation boundaries agree.
 - Referenced runbooks, schema/migration contracts, operational inventories, and source reports remain owned by their initiative lists; no source checkbox or runtime contract was changed by this synchronization-only checkpoint.
