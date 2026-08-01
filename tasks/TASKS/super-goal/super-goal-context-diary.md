@@ -8120,3 +8120,9 @@
 - **Browser boundary:** The targeted rankings runtime test was attempted twice. After a workspace-only Chromium install, launch still failed before test execution because the macOS sandbox denied Chromium's Mach rendezvous bootstrap. This is recorded as blocked runtime evidence, not a pass; the generated browser cache is ignored and no source changed.
 - **Build boundary:** No routine local build ran because this checkpoint changes documentation only; existing READY/Production build receipts remain authoritative. Master 6.5 remains open until a browser-capable environment supplies runtime proof. Counts remain imported raw/actionable `4,937/5,011` and `4,937/5,005` with 68 open, mechanical master `5,069/5,171`.
 - **External boundary:** No deployment, migration, writer, repair, backfill, provider call, credential change, or push occurred; the super-goal remains active.
+
+## Entry 0890 — 2026-07-31 UX/performance/observability reconciliation
+
+- **Verification:** The local 6.6 cohort passed 11 files/77 tests: cache/observability/keyboard 3/13, rankings accessibility/state 4/16, FORGE context/performance 3/25, and responsive player-stat batching/cache 2/23. Existing responsive measurements and structured Command Center Production latency (113–173 ms metric fetch; 203–386 ms duration; median 249 ms) remain below the unchanged 900-ms target.
+- **Disposition:** Master 6.6 closes as a bounded evidence task. Accessibility semantics, cache/query limits, structured timings, classified outliers, and observability contracts remain explicit; fresh browser visual execution is still governed by the 6.5 sandbox limitation. Imported raw/actionable parity remains `4,937/5,011` and `4,937/5,005` with 68 open; mechanical master becomes `5,070/5,171`.
+- **Boundary:** No deployment, build, migration, writer, repair, backfill, provider call, credential change, or push occurred; the super-goal remains active.
