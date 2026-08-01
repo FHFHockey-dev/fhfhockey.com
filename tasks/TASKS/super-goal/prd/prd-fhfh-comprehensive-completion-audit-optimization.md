@@ -121,6 +121,7 @@ The program is continuous. It first verifies and finishes unfinished initiatives
 - `tasks/TASKS/super-goal/super-goal-context-diary.md` — the only durable super-goal execution diary.
 - `tasks/TASKS/super-goal/super-goal-final-summary.md` — final evidence report, maintained as a skeleton until completion.
 - `tasks/TASKS/super-goal/cleanup-reconciliation.md` — bounded 7.2 tracked temporary-probe cleanup and retained-artifact classification.
+- `tasks/TASKS/super-goal/completion-gate-reconciliation.md` — 7.5 charter-question evidence matrix and incomplete-task control.
 
 ## 2. Goals
 

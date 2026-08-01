@@ -93,6 +93,7 @@
 - `tasks/TASKS/super-goal/ux-performance-observability-reconciliation.md` — evidence-only 6.6 UX, accessibility, performance, cache, and observability matrix.
 - `tasks/TASKS/super-goal/documentation-parity-checkpoint.md` — evidence-only 7.1 source/master and current-control-plane parity receipt.
 - `tasks/TASKS/super-goal/cleanup-reconciliation.md` — bounded 7.2 tracked temporary-probe cleanup and retained-artifact classification.
+- `tasks/TASKS/super-goal/completion-gate-reconciliation.md` — 7.5 charter-question evidence matrix and incomplete-task control.
 - `tasks/TASKS/lines-gdl-ingestion/prd/prd-gdl-suite-ingestion.md` — repaired Wave-A PRD pair for the existing GDL Suite task list.
 - `tasks/TASKS/xg-model/trending-model/prd/prd-xg-trending-model-completion.md` — repaired Wave-A PRD pair for the xG trending/completion task list.
 - `web/scripts/train-nhl-xg-baseline.ts`, `web/scripts/train_nhl_xg_challengers.py`, and `web/scripts/requirements.txt` — frozen-contract export and offline calibrated challenger-family runner for A-XG-TREND.
@@ -336,7 +337,7 @@
   - [x] 7.2 Remove or consolidate temporary files, test debris, stale generated artifacts, and super-goal helper scripts. Evidence: the bounded cleanup checkpoint removes exactly six tracked, no-consumer `web/tmp*` probes, marks the PBP references historical-only, and leaves ignored caches/logs and unproven candidates untouched (verified 2026-07-31).
   - [x] 7.3 Populate the final summary for every initiative and all repository-wide totals with evidence. Evidence: the current-summary roll-up in `tasks/TASKS/super-goal/super-goal-final-summary.md` lists every Wave-A/B/C initiative, cross-initiative controls, exact raw/actionable/mechanical totals, remaining gate classes, and the governing evidence index (verified 2026-07-31).
   - [ ] 7.4 Update the diary with final commands, decisions, findings, exceptions, and completion evidence.
-  - [ ] 7.5 Answer every charter completion-gate question with evidence and ensure no unapproved incomplete task remains.
+  - [ ] 7.5 Answer every charter completion-gate question with evidence and ensure no unapproved incomplete task remains. Evidence matrix: `tasks/TASKS/super-goal/completion-gate-reconciliation.md` answers all 12 charter questions and preserves every NO/PARTIAL condition as open; the final gate is not satisfied while those conditions remain.
   - [ ] 7.6 Mark the continuous goal complete only after 7.1–7.5 pass.
 
 ## Imported Source Checkbox Ledger
