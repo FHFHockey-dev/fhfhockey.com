@@ -230,7 +230,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     expect(migration).not.toMatch(/authorization|bearer/i);
   });
 
-  it("keeps the deferred legacy-RPC final drop exact and fail-closed", () => {
+  it("keeps the separately authorized legacy-RPC final drop exact and fail-closed", () => {
     const migration = readMigration(
       "20260801195126_drop_legacy_public_rpcs_after_zero_use.sql",
     );
@@ -621,7 +621,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260723113533_make_yahoo_player_writer_atomic.sql",
       "20260725200808_fix_yahoo_player_writer_captured_at.sql",
     ]);
-    const deferredProductionMigrations = new Set([
+    const separatelyAuthorizedMigrations = new Set([
       "20260801195126_drop_legacy_public_rpcs_after_zero_use.sql",
     ]);
 
@@ -650,7 +650,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
         .filter((name) => name.endsWith(".sql"))
         .sort()
         .filter((name) => !appliedProductionMigrations.has(name))
-        .filter((name) => !deferredProductionMigrations.has(name)),
+        .filter((name) => !separatelyAuthorizedMigrations.has(name)),
     );
 
     for (const row of manifestRows) {
