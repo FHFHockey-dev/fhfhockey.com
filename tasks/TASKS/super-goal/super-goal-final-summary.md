@@ -12,9 +12,9 @@ This section is the current summary for the active control plane. Older initiati
 | --- | ---: | ---: | ---: | --- |
 | Imported raw source claims | 4,937 | 5,011 | 74 | 76 source sections and the parity receipt in [`documentation-parity-checkpoint.md`](documentation-parity-checkpoint.md) |
 | Imported actionable claims | 4,937 | 5,005 | 68 | Six fenced rule examples are excluded as non-actionable; current source/master parity is exact |
-| Mechanical master control plane | 5,073 | 5,171 | 98 | Master task-list direct recount after 7.3 final-summary closure |
+| Mechanical master control plane | 5,074 | 5,171 | 97 | Master task-list direct recount after B-CLEAN parent reconciliation |
 
-The 98 master open rows consist of the 68 imported actionable rows plus 30 control-plane rows (parent/verification/completion gates). No denominator was reduced to make a checkpoint appear better.
+The 97 master open rows consist of the 68 imported actionable rows plus 29 control-plane rows (parent/verification/completion gates). No denominator was reduced to make a checkpoint appear better.
 
 ### Initiative disposition
 
