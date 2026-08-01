@@ -16,11 +16,15 @@ import { Player } from "./types";
 
 interface NameSearchBarProps {
   onSelect: (player: Player, headshotUrl: string) => void;
+  selectedPlayer?: Player | null;
 }
 
 const DEBOUNCE_DELAY = 300;
 
-const NameSearchBar: React.FC<NameSearchBarProps> = ({ onSelect }) => {
+const NameSearchBar: React.FC<NameSearchBarProps> = ({
+  onSelect,
+  selectedPlayer,
+}) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [selectedPlayerName, setSelectedPlayerName] = useState<string | null>(
@@ -32,6 +36,14 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({ onSelect }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listItemsRef = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    const selectedName = selectedPlayer?.fullName ?? "";
+    setSearchTerm(selectedName);
+    setSelectedPlayerName(selectedName || null);
+    setIsDropdownVisible(false);
+    setActiveIndex(-1);
+  }, [selectedPlayer?.id, selectedPlayer?.fullName]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

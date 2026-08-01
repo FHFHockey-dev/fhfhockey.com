@@ -54,6 +54,9 @@ describe("PerGameStatsTable", () => {
     await waitFor(() => {
       expect(screen.getByText("12.5%")).toBeTruthy();
     });
+
+    expect(screen.getByText("Production Snapshot")).toBeTruthy();
+    expect(screen.getByText("(This season)")).toBeTruthy();
   });
 
   it("does not expose dependency details when stats fail", async () => {

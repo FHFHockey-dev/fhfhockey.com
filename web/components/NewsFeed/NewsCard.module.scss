@@ -152,7 +152,6 @@
 
 .railMobileHeadline,
 .mobileTimestamp,
-.expandedTimestamp,
 .mobileMetaDivider,
 .railDisclosureButton,
 .railDetails {
@@ -470,15 +469,15 @@
   }
 }
 
-@media (max-width: v.$breakpoint-mobile-max) {
+@media (max-width: v.$breakpoint-tablet) {
   .rail {
-    grid-template-columns: 56px minmax(0, 1fr) 44px;
+    grid-template-columns: clamp(68px, 18vw, 82px) minmax(0, 1fr) 44px;
     align-items: stretch;
-    min-height: 96px;
+    min-height: 92px;
     border: 0;
     border-bottom: 1px solid rgba(v.$color-white, 0.09);
     border-radius: 0;
-    background: transparent;
+    background: rgba(v.$color-white, 0.008);
     box-shadow: none;
 
     &:last-child {
@@ -486,24 +485,60 @@
     }
 
     &.railNoDisclosure {
-      grid-template-columns: 56px minmax(0, 1fr);
+      grid-template-columns: clamp(68px, 18vw, 82px) minmax(0, 1fr);
     }
 
     .teamPane {
+      position: relative;
       grid-column: 1;
       grid-row: 1;
       display: flex;
       align-self: stretch;
       align-items: center;
       justify-content: center;
-      padding: v.$space-xs;
+      min-height: 100%;
+      padding: 8px 8px 8px 13px;
+      overflow: hidden;
       border: 0;
-      background: transparent;
+      border-right: 1px solid rgba(v.$color-white, 0.1);
+      background:
+        linear-gradient(
+          135deg,
+          rgba(v.$color-white, 0.045),
+          rgba(v.$color-black, 0.24)
+        ),
+        color-mix(
+          in srgb,
+          var(--news-team-surface, v.$background-dark) 56%,
+          v.$surface-0
+        );
+
+      &::before,
+      &::after {
+        content: "";
+        position: absolute;
+        inset-block: 0;
+        z-index: 0;
+      }
+
+      &::before {
+        left: 0;
+        width: 5px;
+        background: var(--news-team-stripe, v.$primary-color);
+      }
+
+      &::after {
+        left: 6px;
+        width: 2px;
+        background: var(--news-team-secondary, v.$primary-color);
+      }
     }
 
     .teamLogo {
-      width: 40px;
-      height: 40px;
+      position: relative;
+      z-index: 1;
+      width: clamp(40px, 11vw, 50px);
+      height: clamp(40px, 11vw, 50px);
       display: grid;
       place-items: center;
       filter: drop-shadow(0 4px 8px rgba(v.$color-black, 0.38));
@@ -516,9 +551,9 @@
 
     .content {
       align-content: center;
-      gap: 6px;
+      gap: 5px;
       min-width: 0;
-      padding: v.$space-sm 2px v.$space-sm v.$space-xs;
+      padding: 8px 3px 8px 12px;
       background: transparent;
 
       &::before {
@@ -527,11 +562,11 @@
     }
 
     .meta {
-      gap: 4px 7px;
+      gap: 3px 6px;
       color: v.$color-neutral-400;
-      font-size: 0.68rem;
-      font-weight: v.$font-weight-semibold;
-      letter-spacing: 0.09em;
+      font-size: 0.64rem;
+      font-weight: v.$font-weight-medium;
+      letter-spacing: 0.085em;
     }
 
     .metaStrong {
@@ -546,11 +581,11 @@
     .categoryLabel {
       display: inline-flex;
       align-items: center;
-      min-height: 22px;
-      padding: 1px 8px;
-      border: 1px solid rgba(v.$primary-color, 0.38);
+      min-height: 20px;
+      padding: 1px 7px;
+      border: 1px solid rgba(v.$primary-color, 0.34);
       border-radius: 999px;
-      background: rgba(v.$primary-color, 0.055);
+      background: rgba(v.$primary-color, 0.035);
       color: v.$primary-color;
       line-height: 1;
     }
@@ -561,9 +596,9 @@
 
     .headline {
       color: v.$color-brand-white;
-      font-size: 1rem;
-      font-weight: v.$font-weight-medium;
-      line-height: 1.18;
+      font-size: clamp(0.84rem, 3.65vw, 1rem);
+      font-weight: v.$font-weight-regular;
+      line-height: 1.22;
       -webkit-line-clamp: 2;
     }
 
@@ -586,7 +621,7 @@
     }
 
     .railDetails {
-      padding-top: 2px;
+      padding: 3px 0 1px;
 
       &[hidden] {
         display: none;
@@ -599,16 +634,16 @@
       p {
         margin: 0;
         color: v.$color-neutral-400;
-        font-size: 0.82rem;
-        line-height: 1.42;
+        font-size: clamp(0.72rem, 3vw, 0.82rem);
+        line-height: 1.46;
       }
     }
 
     .footer {
-      gap: 4px 8px;
+      gap: 3px 7px;
       color: v.$color-neutral-400;
-      font-size: 0.66rem;
-      line-height: 1.2;
+      font-size: 0.62rem;
+      line-height: 1.15;
     }
 
     .sourceLink {
@@ -617,7 +652,18 @@
   }
 
   .rail.expanded {
-    background: rgba(v.$primary-color, 0.025);
+    background: rgba(v.$primary-color, 0.018);
+
+    .content {
+      align-content: start;
+      gap: 7px;
+      padding-block: 11px;
+      background: linear-gradient(
+        90deg,
+        rgba(v.$color-white, 0.018),
+        transparent
+      );
+    }
 
     .headline {
       display: block;
@@ -625,78 +671,86 @@
       -webkit-line-clamp: unset;
     }
 
-    .mobileTimestamp {
-      display: none;
-    }
-
-    .expandedTimestamp {
-      display: inline;
-    }
-
     .railDisclosureButton {
-      border-color: rgba(v.$primary-color, 0.52);
-      background: rgba(v.$primary-color, 0.085);
+      align-self: start;
+      margin-top: 8px;
+
+      > span {
+        border-color: rgba(v.$primary-color, 0.58);
+        background: rgba(v.$primary-color, 0.08);
+      }
     }
   }
 
   .railDisclosureButton {
     grid-column: 3;
     grid-row: 1;
-    align-self: start;
+    align-self: center;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 44px;
     min-width: 44px;
     height: 44px;
-    margin: v.$space-sm v.$space-xs 0 0;
+    margin: 0 3px 0 0;
     padding: 0;
-    border: 1px solid rgba(v.$color-white, 0.18);
-    border-radius: v.$radius-control;
-    background: rgba(v.$color-white, 0.025);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     color: v.$primary-color;
     font: inherit;
-    font-size: 1.45rem;
-    font-weight: 300;
-    line-height: 1;
     cursor: pointer;
 
-    &:hover {
-      border-color: rgba(v.$primary-color, 0.58);
-      background: rgba(v.$primary-color, 0.08);
+    > span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border: 1px solid rgba(v.$color-white, 0.16);
+      border-radius: v.$radius-control;
+      background: rgba(v.$color-white, 0.018);
+      font-size: 1.05rem;
+      font-weight: 300;
+      line-height: 1;
+    }
+
+    &:hover > span {
+      border-color: rgba(v.$primary-color, 0.5);
+      background: rgba(v.$primary-color, 0.06);
     }
 
     &:focus-visible {
       outline: 2px solid v.$primary-color;
-      outline-offset: 2px;
+      outline-offset: 0;
     }
   }
 }
 
 @media (max-width: 360px) {
   .rail {
-    grid-template-columns: 48px minmax(0, 1fr) 44px;
+    grid-template-columns: 64px minmax(0, 1fr) 44px;
 
     &.railNoDisclosure {
-      grid-template-columns: 48px minmax(0, 1fr);
+      grid-template-columns: 64px minmax(0, 1fr);
     }
 
     .teamPane {
-      padding: 6px;
+      padding-inline: 11px 6px;
     }
 
     .teamLogo {
-      width: 34px;
-      height: 34px;
+      width: 38px;
+      height: 38px;
     }
 
     .content {
-      padding-left: 6px;
+      padding-left: 8px;
     }
 
     .meta {
       gap: 3px 5px;
-      font-size: 0.63rem;
+      font-size: 0.59rem;
     }
 
     .categoryLabel {
@@ -704,11 +758,12 @@
     }
 
     .headline {
-      font-size: 0.9rem;
+      font-size: 0.82rem;
     }
 
     .footer {
-      font-size: 0.61rem;
+      gap: 3px 5px;
+      font-size: 0.57rem;
     }
   }
 }

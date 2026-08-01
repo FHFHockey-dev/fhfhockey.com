@@ -11,8 +11,6 @@ import {
 } from "components/WiGO/WigoDashboardSections";
 import useWigoPlayerDashboard from "hooks/useWigoPlayerDashboard";
 import { computeDiffColumn } from "components/WiGO/tableUtils";
-import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
-import { getWigoSurfaceLinks } from "lib/navigation/siteSurfaceLinks";
 
 type TabKey = "overview" | "trends" | "percentiles" | "comparison";
 const VALID_TABS: TabKey[] = [
@@ -71,14 +69,13 @@ const WigoCharts: React.FC = () => {
     setRightTimeframe(right as keyof TableAggregateData);
   }, []);
 
+  const handlePlayerClear = useCallback(() => {
+    void updateUrlWith({ playerId: undefined });
+  }, [updateUrlWith]);
+
   const mobileVisibleColumns = useMemo(() => {
     return [leftTimeframe, rightTimeframe] as Array<keyof TableAggregateData>;
   }, [leftTimeframe, rightTimeframe]);
-  const workflowLinks = useMemo(
-    () => getWigoSurfaceLinks(teamAbbreviation),
-    [teamAbbreviation],
-  );
-
   const renderTabs = () => (
     <div className={styles.mobileTabsBar}>
       {VALID_TABS.map((t) => (
@@ -115,7 +112,13 @@ const WigoCharts: React.FC = () => {
           }
         >
           <div className={styles.headerRowWrapper}>
-            <WigoDashboardHeader onPlayerSelect={handlePlayerSelect} />
+            <WigoDashboardHeader
+              onPlayerSelect={handlePlayerSelect}
+              selectedPlayer={selectedPlayer}
+              headshotUrl={headshotUrl}
+              teamAbbreviation={teamAbbreviation}
+              onPlayerClear={handlePlayerClear}
+            />
           </div>
 
           <div className={styles.leftColumnWrapper}>
@@ -131,7 +134,20 @@ const WigoCharts: React.FC = () => {
             />
           </div>
 
-          <div className={styles.middleColumnWrapper}>
+          <div className={styles.comparisonColumnWrapper}>
+            <WigoComparisonSection
+              data={displayDataWithDiff}
+              isLoadingAggData={isLoadingAggData}
+              aggDataError={aggDataError}
+              playerId={selectedPlayer?.id}
+              currentSeasonId={currentSeasonId}
+              leftTimeframe={leftTimeframe}
+              rightTimeframe={rightTimeframe}
+              onCompare={handleTimeframeCompare}
+            />
+          </div>
+
+          <div className={styles.trendsColumnWrapper}>
             <WigoTrendsSection
               selectedPlayer={selectedPlayer}
               currentSeasonId={currentSeasonId}
@@ -144,18 +160,6 @@ const WigoCharts: React.FC = () => {
             />
           </div>
 
-          <div className={styles.rightColumnWrapper}>
-            <WigoComparisonSection
-              data={displayDataWithDiff}
-              isLoadingAggData={isLoadingAggData}
-              aggDataError={aggDataError}
-              playerId={selectedPlayer?.id}
-              currentSeasonId={currentSeasonId}
-              leftTimeframe={leftTimeframe}
-              rightTimeframe={rightTimeframe}
-              onCompare={handleTimeframeCompare}
-            />
-          </div>
         </div>
 
         <div
@@ -171,7 +175,13 @@ const WigoCharts: React.FC = () => {
           }
         >
           <div className={styles.mobileHeaderRow}>
-            <WigoDashboardHeader onPlayerSelect={handlePlayerSelect} />
+            <WigoDashboardHeader
+              onPlayerSelect={handlePlayerSelect}
+              selectedPlayer={selectedPlayer}
+              headshotUrl={headshotUrl}
+              teamAbbreviation={teamAbbreviation}
+              onPlayerClear={handlePlayerClear}
+            />
           </div>
 
           {renderTabs()}
@@ -221,12 +231,6 @@ const WigoCharts: React.FC = () => {
             )}
           </div>
         </div>
-        <SurfaceWorkflowLinks
-          eyebrow="Next decision"
-          title="Put the explanation in context"
-          description="Move from player and team drivers into recent form, deployment, schedule, and slate planning."
-          links={workflowLinks}
-        />
       </div>
     </div>
   );

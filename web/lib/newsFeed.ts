@@ -450,6 +450,8 @@ export function getNewsItemTeamColors(teamAbbreviation: string | null | undefine
     primary: team?.primaryColor ?? "#14a2d2",
     secondary: team?.secondaryColor ?? "#24282e",
     accent: team?.accent ?? "#14a2d2",
+    stripe: team?.jersey ?? team?.secondaryColor ?? "#14a2d2",
+    surface: team?.primaryColor ?? "#0b1821",
     logoUrl: team ? getTeamLogoSvg(team.abbrev) : fallbackNHLLogo,
     shortName: team?.shortName ?? teamAbbreviation ?? "NHL",
   };

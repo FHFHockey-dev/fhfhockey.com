@@ -6,8 +6,8 @@
 .ratingsRoot {
   display: flex; // Use flexbox to arrange the three main sections
   justify-content: space-between; // Distribute space between sections
-  gap: v.$space-md; // Add some gap between the columns
-  padding: v.$space-sm v.$space-md; // Padding around the whole element
+  gap: 4px;
+  padding: 4px;
   background-color: color.adjust(
     v.$background-dark,
     $lightness: -3%
@@ -38,13 +38,13 @@
     v.$background-dark,
     $lightness: -5%
   ); // Header background
-  padding: v.$space-xs v.$space-sm;
+  padding: 3px 2px;
   margin: 0;
-  font-size: v.$font-size-small;
+  font-size: 10px;
   font-family: v.$font-family-primary;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 1px;
   border-bottom: 1px solid v.$border-color-primary;
   flex-shrink: 0; // Prevent title from shrinking
 }
@@ -54,8 +54,8 @@
   display: flex;
   flex-direction: column; // Stack boxes vertically by default
   flex-grow: 1; // Allow this container to fill the remaining space
-  padding: v.$space-sm;
-  gap: v.$space-sm; // Space between boxes
+  padding: 3px;
+  gap: 3px;
   justify-content: space-evenly; // Distribute space evenly vertically
   min-height: 0; // Allow flex container to shrink properly if needed
 }
@@ -66,10 +66,10 @@
   flex-direction: column; // Stack label and value vertically
   justify-content: center; // Center content vertically
   align-items: center; // Center content horizontally
-  border-radius: 8px;
-  padding: v.$space-xs; // Adjust padding as needed
+  border-radius: 4px;
+  padding: 1px;
   width: 100%; // Fill the column width
-  min-height: 30px;
+  min-height: 32px;
   flex-basis: 0;
   flex-grow: 1;
   box-sizing: border-box;
@@ -81,15 +81,15 @@
 }
 
 .ratingLabel {
-  font-size: 0.8rem;
+  font-size: 10px;
   color: WHITE; // Default label color
   font-weight: normal;
   line-height: 1.1;
-  margin-bottom: 2px;
+  margin-bottom: 0;
 }
 
 .ratingValue {
-  font-size: 1.2rem;
+  font-size: 15px;
   font-weight: bold;
   color: #e0e0e0; // Default value color (will be overridden)
   line-height: 1.2;
@@ -105,7 +105,7 @@
   }
   .ratingValue {
     color: #ffffff; // Default final value color (will be overridden)
-    font-size: 1.3rem;
+    font-size: 15px;
     font-weight: bolder;
   }
 }

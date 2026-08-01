@@ -357,7 +357,10 @@ export default function NewsCard({
       style={
         {
           "--news-accent": team.primary,
-          "--news-team-surface": team.secondary,
+          "--news-team-primary": team.primary,
+          "--news-team-secondary": team.secondary,
+          "--news-team-stripe": team.stripe,
+          "--news-team-surface": team.surface,
         } as CSSProperties
       }
     >
@@ -436,11 +439,6 @@ export default function NewsCard({
           <span className={styles.mobileTimestamp}>
             {formatRailDate(publishedAt)}
           </span>
-          {hasDisclosure ? (
-            <span className={styles.expandedTimestamp}>
-              {formatDate(publishedAt)}
-            </span>
-          ) : null}
           {sourceAttribution ? <span>{sourceAttribution}</span> : null}
           {publicSource.url ? (
             <ExternalNewsLink

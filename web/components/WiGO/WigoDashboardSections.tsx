@@ -1,5 +1,6 @@
 import React from "react";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 
 import CategoryCoverageChart from "components/CategoryCoverageChart";
 import OpponentGamelog from "components/WiGO/OpponentGamelog";
@@ -40,6 +41,10 @@ const ConsistencyChart = dynamic(
 
 interface WigoDashboardHeaderProps {
   onPlayerSelect: (player: Player, headshotUrl: string) => void;
+  selectedPlayer: Player | null;
+  headshotUrl: string | null;
+  teamAbbreviation: string | null;
+  onPlayerClear: () => void;
 }
 
 interface WigoOverviewSectionProps {
@@ -79,6 +84,27 @@ interface WigoComparisonSectionProps {
 
 const placeholderImage = "/pictures/player-placeholder.jpg";
 
+const formatHeight = (heightInCentimeters: number) => {
+  const totalInches = Math.round(heightInCentimeters / 2.54);
+  return `${Math.floor(totalInches / 12)}' ${totalInches % 12}\"`;
+};
+
+const formatWeight = (weightInKilograms: number) =>
+  `${Math.round(weightInKilograms * 2.20462)} lbs`;
+
+const getAge = (birthDate: string) => {
+  const birth = new Date(`${birthDate}T00:00:00Z`);
+  const today = new Date();
+  let age = today.getUTCFullYear() - birth.getUTCFullYear();
+  const hasNotHadBirthday =
+    today.getUTCMonth() < birth.getUTCMonth() ||
+    (today.getUTCMonth() === birth.getUTCMonth() &&
+      today.getUTCDate() < birth.getUTCDate());
+
+  if (hasNotHadBirthday) age -= 1;
+  return age;
+};
+
 function WigoPlayerIdentity({
   selectedPlayer,
   headshotUrl,
@@ -95,52 +121,107 @@ function WigoPlayerIdentity({
 >) {
   return (
     <>
-      <div className={styles.playerHeaderContainer}>
-        <PlayerHeader
-          selectedPlayer={selectedPlayer}
-          headshotUrl={headshotUrl}
-          teamName={teamName}
-          teamAbbreviation={teamAbbreviation}
-          teamColors={teamColors}
-          placeholderImage={placeholderImage}
-        />
-      </div>
-      <div className={styles.playerNameContainer}>
+      <div className={styles.playerIdentityCard}>
+        <div className={styles.playerHeaderContainer}>
+          <PlayerHeader
+            selectedPlayer={selectedPlayer}
+            headshotUrl={headshotUrl}
+            teamName={teamName}
+            teamAbbreviation={teamAbbreviation}
+            teamColors={teamColors}
+            placeholderImage={placeholderImage}
+          />
+        </div>
         {selectedPlayer ? (
-          <h2 className={styles.playerName}>
-            <span className={styles.spanColorBlueName}>
-              {selectedPlayer.firstName}
-            </span>{" "}
-            {selectedPlayer.lastName}
-          </h2>
+          <div className={styles.playerIdentityCopy}>
+            <span className={styles.playerTeam}>{teamName}</span>
+            <h2 className={styles.playerName}>
+              <span>{selectedPlayer.firstName}</span>
+              {selectedPlayer.lastName}
+            </h2>
+            <span className={styles.playerRole}>
+              {selectedPlayer.sweater_number
+                ? `#${selectedPlayer.sweater_number} · `
+                : ""}
+              {selectedPlayer.position}
+              {teamAbbreviation ? ` · ${teamAbbreviation}` : ""}
+            </span>
+          </div>
         ) : (
           <div className={styles.chartLoadingPlaceholder}>Select a player</div>
         )}
       </div>
+      {selectedPlayer ? (
+        <div className={styles.playerMetaGrid}>
+          <span>
+            <small>Age</small>
+            {getAge(selectedPlayer.birthDate)}
+          </span>
+          <span>
+            <small>Height</small>
+            {formatHeight(selectedPlayer.heightInCentimeters)}
+          </span>
+          <span>
+            <small>Weight</small>
+            {formatWeight(selectedPlayer.weightInKilograms)}
+          </span>
+          <span>
+            <small>Position</small>
+            {selectedPlayer.position}
+          </span>
+        </div>
+      ) : null}
     </>
   );
 }
 
 export function WigoDashboardHeader({
   onPlayerSelect,
+  selectedPlayer,
+  headshotUrl,
+  teamAbbreviation,
+  onPlayerClear,
 }: WigoDashboardHeaderProps) {
   return (
     <>
-      <div className={styles.nameSearchBarContainer}>
-        <NameSearchBar onSelect={onPlayerSelect} />
+      <div className={styles.wigoContextIdentity}>
+        <span className={styles.spanColorBlue}>WiGO</span>
+        <span className={styles.wigoContextTagline}>What Is Going On</span>
       </div>
-      <div className={styles.wigoHeader}>
+      <div className={styles.nameSearchBarContainer}>
+        <NameSearchBar
+          onSelect={onPlayerSelect}
+          selectedPlayer={selectedPlayer}
+        />
+      </div>
+      <div className={styles.selectedPlayerControl}>
+        {selectedPlayer ? (
+          <>
+            <div className={styles.selectedPlayerThumb}>
+              <Image
+                src={headshotUrl || placeholderImage}
+                alt=""
+                fill
+                sizes="40px"
+              />
+            </div>
+            <div className={styles.selectedPlayerText}>
+              <strong>{selectedPlayer.fullName}</strong>
+              <span>
+                {teamAbbreviation || "NHL"} · {selectedPlayer.position}
+              </span>
+            </div>
+            <button type="button" onClick={onPlayerClear}>
+              Clear
+            </button>
+          </>
+        ) : (
+          <span className={styles.noSelectedPlayer}>No player selected</span>
+        )}
+      </div>
+      <div className={styles.wigoHeader} aria-hidden="true">
         <div className={styles.headerText}>
-          <span className={styles.spanColorBlue}>WiGO</span>
-          {"\u00A0\u00A0//\u00A0\u00A0"}
-          <span className={styles.spanColorBlue}>W</span>
-          HAT
-          {"\u00A0\u00A0"}
-          <span className={styles.spanColorBlue}>I</span>S{"\u00A0\u00A0"}
-          <span className={styles.spanColorBlue}>G</span>
-          OING
-          {"\u00A0\u00A0"}
-          <span className={styles.spanColorBlue}>O</span>N
+          Player research
         </div>
       </div>
     </>
