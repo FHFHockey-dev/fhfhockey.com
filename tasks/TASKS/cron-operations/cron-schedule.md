@@ -2372,3 +2372,14 @@ curl -i -sS -m 180 \
 -- 11:34/17:34/21:10 UTC: capture ESPN market odds snapshots for upcoming NHL predictions.
 -- 11:45 UTC: refresh roster-adjusted game predictions.
 -- 13:00 UTC: run cron-report.
+
+----------------------------------------------------------------------------------
+-- 2026-08-01 post-publication job-392 auth observation
+--
+-- pg_cron run 148893 submitted job 392 successfully at 12:00 UTC, but the
+-- application audit recorded HTTP 401; a later 22:51 UTC invocation also
+-- recorded HTTP 401. The command's route/POST/Vault/timeout shape remains
+-- correct, but this is not current-secret authorization proof. Keep NEW 9.0
+-- open, do not expose or copy credential values, and require an authorized
+-- current-auth canary or value-free secret-parity reconciliation before
+-- treating job 392 as operationally healthy.

@@ -56,3 +56,7 @@ The isolated Colima/Docker-backed stack completed a fresh `supabase db reset --l
 ## 2026-08-01 hosted Supabase value-free contract overlay
 
 Connected read-only Supabase evidence reports 28 Production migration rows through `20260801195126_drop_legacy_public_rpcs_after_zero_use`, zero remaining legacy-RPC signatures, inactive jobs 308/370/371/372/376, active jobs 326/393/392, and job 392's unchanged POST/Vault/300-second contract. Five selected public control tables report RLS and forced-RLS enabled. The bounded advisor/log snapshot (81 security notices, 572 performance notices, 89 LOG/11 ERROR entries) remains observation-only; no source/master row closes and no SQL mutation, writer, repair, backfill, provider, analytics, credential, or Vercel action ran. Current parity remains raw `4,944/5,011`, actionable `4,944/5,005` with 61 open, mechanical master `5,090/5,176` with 86 open.
+
+## 2026-08-01 job-392 auth-observation overlay
+
+Read-only pg_cron metadata shows run `148893` submitted successfully at 12:00 UTC, while `cron_job_audit` records HTTP 401; a later 22:51 UTC audit also records HTTP 401. The prior 2026-07-31 run was HTTP 200. This discovery is appended to existing NEW 9.0 current-secret parity/authentication evidence; no credential value, writer, mutation, deployment, or new denominator row was introduced. Current parity remains raw `4,944/5,011`, actionable `4,944/5,005` with 61 open, mechanical master `5,090/5,176` with 86 open.

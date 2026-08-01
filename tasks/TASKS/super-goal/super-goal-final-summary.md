@@ -891,3 +891,8 @@ The post-sKO audit inspected all current open source rows outside the completed 
 - Connected catalog evidence reports 28 Production migration rows through `20260801195126_drop_legacy_public_rpcs_after_zero_use`; the selected database-cohort migrations and scheduler consolidation are present, and both tombstoned legacy RPC signatures are absent.
 - Jobs 308/370/371/372/376 remain inactive while 326/393/392 remain active. Job 392 preserves its `0 12 * * *` schedule, POST route, Vault-backed Authorization shape, JSON body, and 300-second timeout. The five selected public control tables report RLS and forced-RLS enabled.
 - The bounded connector snapshot returned 81 security and 572 performance advisor notices plus 89 LOG/11 ERROR Postgres entries; these are observation-only counts, not remediation or closure evidence. No SQL mutation, writer, repair, backfill, provider, analytics, credential, or Vercel action ran. Current parity remains raw `4,944/5,011`, actionable `4,944/5,005` with 61 open, and mechanical master `5,090/5,176` with 86 open.
+
+### 2026-08-01 post-publication job-392 auth observation
+
+- Read-only pg_cron metadata shows run `148893` submitted successfully at 12:00 UTC, while the matching `cron_job_audit` metadata records HTTP 401; a later 22:51 UTC audit also records HTTP 401. The previous 2026-07-31 run was HTTP 200.
+- This is unresolved current-secret parity under NEW 9.0, not authorization proof from command shape. No credential value was read or changed, no authenticated writer workload is evidenced, and the discovery is folded into the existing gate without changing the actionable denominator.
