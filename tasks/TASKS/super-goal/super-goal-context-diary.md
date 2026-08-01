@@ -8310,3 +8310,9 @@
 - **Current auth contract:** The machine-checked inventory resolves 54 active jobs to 48 route files at 48 admin-or-cron, zero exact-cron-only, and zero unprotected, with caller shapes 5 browser-admin, 12 internal-server, 4 mixed, and 27 cron-only. C0051 remains open for grouped publication, value-free canaries, bounded runtime-error evidence, and a natural audit observation.
 - **Local-only cohort:** Non-positive shooting-attempt denominators now fail closed; the Gamecenter normalization client test asserts both immutable source hashes; and the cron report renders intentional quarantined legacy-route HTTP 410s as `DISABLED` while preserving the stale-scheduler note. Focused tests pass 3 files/13 cron-report email tests, 5 files/32 Sustainability tests, 8 files/77 DRM tests, and 3 files/52 cron inventory/auth tests; TypeScript, Prettier, and diff integrity pass.
 - **Boundary:** No Production deployment, migration, writer, repair, backfill, provider, credential, analytics, or scheduler mutation occurred. Imported parity and mechanical master counts remain unchanged from Entry 0918.
+
+## Entry 0920 — 2026-08-01 local PKCE regression checkpoint
+
+- **Local contract:** The browser Supabase client/callback/reset implementation remains explicitly PKCE-first with token-hash compatibility, synchronous credential scrubbing, and safe same-origin returns. A direct client configuration regression was added in `web/lib/supabase/client.test.ts`.
+- **Verification:** The focused AuthForm/callback/reset/location/client cohort passes 5 files/34 tests; TypeScript, Prettier, and diff integrity pass.
+- **Disposition / boundary:** A-AUTH NEW 46/C0200 remains open only for hosted `{{ .RedirectTo }}` template compatibility, guarded publication, and value-free Production Google/sign-up-confirmation/recovery evidence. No external state changed; imported parity and mechanical master counts remain unchanged from Entry 0919.
