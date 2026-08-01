@@ -1,5 +1,7 @@
 # FHFH Comprehensive Completion, Audit, and Optimization — Final Summary
 
+**2026-07-31 current `6b16d9641` Production/browser acceptance:** The guarded normal push advanced `origin/octoberBranch` from `d0a2d8dfb1876397fa9f3befddbbd09adf1b2ead` to exact `6b16d9641ed24c05c400955dda9c7eb02eb04295`; one authorized Vercel Production deployment, `dpl_Ao9VoZdPtjUQtiMZicNyhtjZtxtF`, reached READY and compiled all 77 pages. Value-free public/read probes returned `200`, canonical redirects `307`, and unauthenticated mutation probes `401`. Fresh Chrome rendered the populated `/underlying-stats` dashboard with expected headings, no application-error marker, and zero console error/warning entries. The published `parseISO` correction removes the prior ULS UTC/Eastern hydration mismatch; master 6.5 and `NEW 6.5-HYDRATION-TZ` close. Imported parity remains raw `4,937/5,011` and actionable `4,937/5,005` with 68 open; mechanical master is `5,075/5,171` with 96 open. Native Playwright remains sandbox-blocked, but the owner-approved host Chrome fallback supplies the populated runtime evidence. No migration, writer, repair, backfill, provider, analytics, credential, schedule, or Yahoo-revocation action ran.
+
 **2026-07-31 current `d0a2d8dfb` Production/browser follow-up:** The guarded push advanced `origin/octoberBranch` from `065b43e56` to exact `d0a2d8dfb`; one direct Vercel Production deployment `dpl_EDYwMJgwmQAF71ADBy4T1MHvi8jv` reached READY and compiled all 77 pages. Status-only public/redirect/unauthorized probes passed (`200`/`307`/`401`). Populated Chrome still reports 13 `/underlying-stats` hydration errors. The remaining `NEW 6.5-HYDRATION-TZ` finding is a confirmed UTC-versus-Eastern date-only ULS status mismatch; local `parseISO` correction plus 5/5 focused tests, TypeScript, scoped ESLint, and diff integrity pass, but the fix is unpublished. Master 6.5 remains open; counts remain raw `4,937/5,011`, actionable `4,937/5,005`, mechanical `5,074/5,171`. No migration, writer, repair, backfill, provider, analytics, credential, schedule, or Yahoo-revocation action ran.
 
 **2026-07-31 tombstoned-RPC zero-use follow-up:** A second bounded connected read-only check found the Production project `ACTIVE_HEALTHY` with 27 applied migrations. The last-24-hour Postgres log payload contained no exact text for `update_all_wgo_skaters` or `get_skater_game_score_by_limit(...)`; a read-only SQL check returned `0` `pg_stat_statements` matches and `0` cron-command matches. NEW 56/57 remain open for one-release monitoring and separately approved final drop. No DDL/DML, migration, writer, repair, provider, build, deployment, or push occurred.
@@ -22,9 +24,9 @@ This section is the current summary for the active control plane. Older initiati
 | --- | ---: | ---: | ---: | --- |
 | Imported raw source claims | 4,937 | 5,011 | 74 | 76 source sections and the parity receipt in [`documentation-parity-checkpoint.md`](documentation-parity-checkpoint.md) |
 | Imported actionable claims | 4,937 | 5,005 | 68 | Six fenced rule examples are excluded as non-actionable; current source/master parity is exact |
-| Mechanical master control plane | 5,074 | 5,171 | 97 | Master task-list direct recount after B-CLEAN parent reconciliation |
+| Mechanical master control plane | 5,075 | 5,171 | 96 | Master task-list direct recount after the 6.5 populated Production/browser acceptance |
 
-The 97 master open rows consist of the 68 imported actionable rows plus 29 control-plane rows (parent/verification/completion gates). No denominator was reduced to make a checkpoint appear better.
+The 96 master open rows consist of the 68 imported actionable rows plus 28 control-plane rows (parent/verification/completion gates). No denominator was reduced to make a checkpoint appear better.
 
 ### Initiative disposition
 
@@ -36,7 +38,7 @@ The 97 master open rows consist of the 68 imported actionable rows plus 29 contr
 | B | `B-CRON-NST` 68/75; `B-SUST-AUD` 50/58; `B-YAHOO` 65/72; `B-DRM` 94/111 | Remaining work is grouped under scheduler/natural-run, Sustainability formula/history/repair, Yahoo provider/Python/backfill/cutover, and DRM history/provider/repair gates. |
 | B | `B-SUST-BAR` 95/95; `B-GAMEGRID` 38/38; `B-SKO` 70/70; `B-START` 55/55; `B-FORGE-COMBO` 39/39; `B-XG-EX` 16/16; `B-DRAFT-STYLE` 56/56; `B-CLEAN` 158/158; `B-DEAD` 44/44; `B-SKO-BURN` 6/6; `B-TRENDS` 53/53 | Current implementation and bounded verification evidence is recorded; any separately gated external/provider/history exception remains open under its owning rows. |
 | C | `C-US`, `C-FORGE`, `C-XG`, and `C-VAR` — completed bounded audits; `C-DYNAMIC` children 5.7.3–5.7.23 — checked | The parent dynamic-audit governance row and the global P0/P1/P2/P3 closure row remain open until the final completion gate. |
-| Cross-initiative | 6.1, 6.2, 6.3, 6.4, and 6.6 — checked; 6.5 — open | Local type/lint/unit evidence is green; the authorized populated Production browser check still reports 13 Underlying Stats hydration errors, and the local `ClientOnly` follow-up remains unpublished. |
+| Cross-initiative | 6.1–6.6 — checked | The authorized populated Production Chrome check is zero-error after the published date-only `parseISO` correction; native Playwright remains sandbox-blocked but the approved host-browser fallback is recorded. |
 | Documentation | 7.1 and 7.2 — checked; 7.3 — this receipt; 7.4–7.6 — open | Diary finalization, charter-question answers, owner-approved exceptions, and the continuous-goal completion decision remain pending. |
 
 ### Evidence index and boundary
