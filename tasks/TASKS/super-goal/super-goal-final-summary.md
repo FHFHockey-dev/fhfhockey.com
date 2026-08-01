@@ -2,6 +2,37 @@
 
 **2026-07-31 cleanup reconciliation:** The bounded 7.2 checkpoint at `tasks/TASKS/super-goal/cleanup-reconciliation.md` removes exactly six tracked, no-consumer `web/tmp*` investigation probes, including the unowned manual sheet-writer probe. Historical inventory/PBP references are classified without rewriting history; ignored caches/logs and unproven debug candidates remain untouched. Master 7.2 closes, moving the mechanical roll-up to `5,072/5,171`; imported parity remains raw `4,937/5,011` and actionable `4,937/5,005` with 68 open. No runtime, build, deployment, database, provider, writer, repair, backfill, credential, or analytics state changed; the super-goal remains active.
 
+## Current completion roll-up (authoritative 2026-07-31)
+
+This section is the current summary for the active control plane. Older initiative and checkpoint sections below remain append-only evidence and are not used as current totals.
+
+### Repository totals
+
+| Ledger | Checked | Total | Open | Evidence |
+| --- | ---: | ---: | ---: | --- |
+| Imported raw source claims | 4,937 | 5,011 | 74 | 76 source sections and the parity receipt in [`documentation-parity-checkpoint.md`](documentation-parity-checkpoint.md) |
+| Imported actionable claims | 4,937 | 5,005 | 68 | Six fenced rule examples are excluded as non-actionable; current source/master parity is exact |
+| Mechanical master control plane | 5,073 | 5,171 | 98 | Master task-list direct recount after 7.3 final-summary closure |
+
+The 98 master open rows consist of the 68 imported actionable rows plus 30 control-plane rows (parent/verification/completion gates). No denominator was reduced to make a checkpoint appear better.
+
+### Initiative disposition
+
+| Wave | Initiative disposition | Current evidence or remaining gate |
+| --- | --- | --- |
+| A | `A-AUTH` — open at 202/208; `A-CRON-EMAIL` — open; `A-GDL` — open; `A-3P` — open; `A-SUST` — 86/89 | Hosted PKCE/template and lifecycle publication, credential-retention, IFTTT/provider, umbrella synchronization, and Sustainability scheduler/formula/history gates remain explicit. |
+| A | `A-US-SOS`, `A-SITE`, `A-STYLE`, `A-FORGE-V1`, `A-FORGE-DASH`, `A-FORGE-P4`, `A-FORGE-LIVE`, `A-PRED`, `A-XG-TREND`, `A-XG-REL`, `A-DRAFT`, `A-DRAFT-DEBUG`, and `A-DRAFT-RANKER` — implementation evidence complete | Their approved exceptions, no-promotion decisions, or future-roadmap boundaries remain recorded in the corresponding master rows; Draft Ranker Phase 8 is retired to the roadmap. |
+| A | Wave-A synchronization — open | Source/master and dynamic-Wave-C registration remains a final governance control, not an unrecorded implementation task. |
+| B | `B-CRON-NST` 68/75; `B-SUST-AUD` 50/58; `B-YAHOO` 65/72; `B-DRM` 94/111 | Remaining work is grouped under scheduler/natural-run, Sustainability formula/history/repair, Yahoo provider/Python/backfill/cutover, and DRM history/provider/repair gates. |
+| B | `B-SUST-BAR` 95/95; `B-GAMEGRID` 38/38; `B-SKO` 70/70; `B-START` 55/55; `B-FORGE-COMBO` 39/39; `B-XG-EX` 16/16; `B-DRAFT-STYLE` 56/56; `B-CLEAN` 158/158; `B-DEAD` 44/44; `B-SKO-BURN` 6/6; `B-TRENDS` 53/53 | Current implementation and bounded verification evidence is recorded; any separately gated external/provider/history exception remains open under its owning rows. |
+| C | `C-US`, `C-FORGE`, `C-XG`, and `C-VAR` — completed bounded audits; `C-DYNAMIC` children 5.7.3–5.7.23 — checked | The parent dynamic-audit governance row and the global P0/P1/P2/P3 closure row remain open until the final completion gate. |
+| Cross-initiative | 6.1, 6.2, 6.3, 6.4, and 6.6 — checked; 6.5 — open | Local type/lint/unit evidence is green; fresh browser runtime is blocked by the macOS Chromium sandbox and remains honestly unclosed. |
+| Documentation | 7.1 and 7.2 — checked; 7.3 — this receipt; 7.4–7.6 — open | Diary finalization, charter-question answers, owner-approved exceptions, and the continuous-goal completion decision remain pending. |
+
+### Evidence index and boundary
+
+The current roll-up is derived from the canonical [master task list](tasks-prd-fhfh-comprehensive-completion-audit-optimization.md), [canonical PRD](prd/prd-fhfh-comprehensive-completion-audit-optimization.md), [76-source parity receipt](documentation-parity-checkpoint.md), [6.5 verification record](verification-checkpoint-6-5.md), and [7.2 cleanup receipt](cleanup-reconciliation.md). This checkpoint changes documentation only; it performs no build, push, deployment, migration, writer, repair, backfill, provider call, credential mutation, analytics reconciliation, or schedule action. The super-goal remains active.
+
 **2026-07-31 current `bf54db89e` Production publication checkpoint (authoritative):** Guarded normal push advanced GitHub `origin/octoberBranch` to exact `bf54db89ed51bde9021d7f22c8343f7bc3a7c95f`; local `HEAD` and the fetched GitHub tip are equal and the worktree is clean. The exact Git-tree source was published as READY Production deployment `dpl_2QhAGet43TZFYLiLfcp96vJ5ijCM`, now serving all five canonical aliases. Value-free probes returned `200` for `/auth`, `/forge/dashboard`, canonical skater-power GET, and team-power GET; unauthenticated sustainability rebuild and webhook requests returned `401`; `/db` returned its public shell `200`; the bounded deployment error query returned zero error-like rows. Vercel's Git-linked path remains blocked for commit author `timbranson515@gmail.com`, so the exact no-Git export was used without changing Git identity or team configuration. No migration, writer, repair, backfill, provider, analytics, credential, or Yahoo revocation action ran; no row is closed by this checkpoint. Current parity remains raw `4,937/5,011`, actionable `4,937/5,005` with 68 open, and mechanical master `5,065/5,171`; the super-goal remains active.
 
 **2026-07-31 cross-initiative ownership reconciliation:** The evidence-only matrix at `tasks/TASKS/super-goal/cross-initiative-ownership-reconciliation.md` reconciles canonical schema/API/identity/auth/cron/model owners, downstream consumers, compatibility/quarantine boundaries, and remaining gates. Static evidence finds no contradictory active owner or second projection engine; Start Chart remains a read-only FORGE wrapper, canonical writers remain singular, and unresolved repair/provider/natural-run gates remain attached to their owning lists. Master 6.1 closes; imported raw/actionable parity is unchanged at `4,937/5,011` and `4,937/5,005` with 68 open, while mechanical master becomes `5,066/5,171`. No runtime or external state changed.
