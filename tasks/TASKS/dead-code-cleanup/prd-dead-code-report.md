@@ -146,7 +146,7 @@ These had no inbound imports in the custom graph and were also reported by `knip
 
 | File/Directory | Likely intent | Recommendation |
 | --- | --- | --- |
-| `web/tmp-run-sync.ts`, `web/tmp-test-sheets.mjs`, `web/tmp-check-games.ts`, `web/tmp-check-pbp-games.ts`, `web/tmp-check-pbp-structure.js`, `web/tmp-check-seasons.js`, `web/tmp/**` | Temporary investigation scripts/artifacts. | Delete or move durable findings into `tasks/artifacts`. |
+| `web/tmp-run-sync.ts`, `web/tmp-test-sheets.mjs`, `web/tmp-check-games.ts`, `web/tmp-check-pbp-games.ts`, `web/tmp-check-pbp-structure.js`, `web/tmp-check-seasons.js`, `web/tmp/**` | Temporary investigation scripts/artifacts. | The six tracked probes were deleted on 2026-07-31 after an exact no-consumer scan; durable findings and historical inventory references remain in `tasks/TASKS/super-goal/cleanup-reconciliation.md`. Ignored `web/tmp/**` remains local-only. |
 | `web/debug-goalies.ts` | Manual goalie debug script. | Delete if no longer used. |
 | `web/web/scripts/output/**` | Nested generated model/output artifacts under duplicated `web/web` path. | Retain as owner-authorized historical SKO evidence; any future removal requires a new explicit checkpoint. |
 | `yahoo_historical.log` | Historical Yahoo ingest log. | Forward-untracked and ignored on 2026-07-21 while its physical local copy remains; value-free sensitivity review found no high-confidence/current credential and did not justify history rewriting. |
