@@ -5,6 +5,7 @@ import {
   type ChangeEvent,
   type ReactNode
 } from "react";
+import dynamic from "next/dynamic";
 import Head from "next/head";
 import Link from "next/link";
 import type { GetServerSideProps, NextPage } from "next";
@@ -14,7 +15,6 @@ import { format, parseISO } from "date-fns";
 import DashboardPillarHero from "../../components/dashboard/DashboardPillarHero";
 import UnderlyingStatsDashboardCard from "../../components/underlying-stats/UnderlyingStatsDashboardCard";
 import UnderlyingStatsNavBar from "../../components/underlying-stats/UnderlyingStatsNavBar";
-import UnderlyingStatsQuadrantMap from "../../components/underlying-stats/UnderlyingStatsQuadrantMap";
 import UlsStatusPanel from "../../components/underlying-stats/UlsStatusPanel";
 import OwnershipSparkline from "../../components/TransactionTrends/OwnershipSparkline";
 import { computeTeamPowerScore } from "../../lib/dashboard/teamContext";
@@ -31,6 +31,11 @@ import {
 } from "../../lib/underlying-stats/teamLandingRatings";
 import { fetchUlsRouteStatus, type UlsRouteStatus } from "../../lib/underlying-stats/ulsRouteStatus";
 import styles from "./indexUS.module.scss";
+
+const UnderlyingStatsQuadrantMap = dynamic(
+  () => import("../../components/underlying-stats/UnderlyingStatsQuadrantMap"),
+  { ssr: false }
+);
 
 type PageProps = {
   availableDates: string[];
