@@ -8185,3 +8185,9 @@
 - **Verification:** The unpublished `ClientOnly` follow-up in `web/pages/underlying-stats/index.tsx` passed a second local `npm run build`. Next compiled successfully, generated all 77 pages, finalized build traces, and completed `next-sitemap` with exit 0.
 - **Boundary:** This adds local build evidence only. The follow-up remains unpublished, no second Vercel build/deployment occurred, and the populated Production/browser hydration gate remains open because the available Production artifact is still `065b43e56` with 13 console errors.
 - **Controls / counts:** Focused Underlying Stats tests now pass 5/5, including server-markup/client-mount coverage; scoped ESLint, TypeScript, and diff integrity remain green. Imported parity remains raw `4,937/5,011`, actionable `4,937/5,005` with 68 open, and mechanical master remains `5,074/5,171` with 97 open. No migration, writer, repair, backfill, provider, analytics reconciliation, credential, schedule, or Yahoo-revocation action ran.
+
+## Entry 0900 — 2026-07-31 tombstoned-RPC zero-use follow-up
+
+- **Connected read-only evidence:** Production project `fyhftlxokyjtpndbkfse` reports `ACTIVE_HEALTHY` with 27 applied migrations. The bounded last-24-hour Postgres log payload contains no exact text for `update_all_wgo_skaters` or `get_skater_game_score_by_limit(...)`; a read-only SQL query returns `0` `pg_stat_statements` matches and `0` cron-command matches.
+- **Disposition:** This is a second monitoring observation only. NEW 56/57 remain open for the required one-release zero-use window and separately approved final drop; no tombstone was dropped or altered.
+- **Boundary / counts:** No DDL/DML, migration, writer, repair, provider, build, deployment, or push occurred. Imported parity remains raw `4,937/5,011`, actionable `4,937/5,005` with 68 open, and mechanical master remains `5,074/5,171` with 97 open.
