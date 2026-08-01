@@ -1,5 +1,7 @@
 # FHFH Comprehensive Completion, Audit, and Optimization — Final Summary
 
+**2026-08-01 NEW-027 Production closure:** Guarded normal push advanced origin/octoberBranch from `6b16d9641ed24c05c400955dda9c7eb02eb04295` to exact `d0cc7d3b3152981b80ab9403b42d497251b4af14`; one authorized Vercel Production deployment, `dpl_GMUXeUdvXCfCc8nbXPkpCNKQYB45`, reached READY, aliased `https://fhfhockey.com`, and compiled all 77 pages. Value-free GETs for `/trends/player/88` and `/trends/player/97` returned `200`; route-scoped runtime-error clusters and deployment-scoped searches for `rolling_player_game_metrics` and `goals` returned no errors or logs. NEW-027 closes. No migration, writer, repair, backfill, provider, analytics reconciliation, credential, or Yahoo-revocation action ran. Mechanical master is now `5,083/5,176` with 93 open; imported parity remains raw `4,937/5,011` and actionable `4,937/5,005` with 68 open.
+
 **2026-08-01 documentation-control receipt:** Diary Entry 0902 records the exact checkpoint commands, decisions, findings, exceptions, and remaining gates. Master 7.4 closes; 7.5/7.6 remain open pending the charter-wide completion audit and owner-approved external exceptions. Mechanical master is `5,076/5,171` with 95 open; imported raw/actionable parity remains `4,937/5,011` and `4,937/5,005` with 68 open.
 
 **2026-08-01 dynamic-registration receipt:** The current Wave-C register covers every Wave-A/B initiative at implementation DoD. New named audits 5.7.24–5.7.27 close the B-CLEAN, B-DEAD, B-SKO, and B-SUST-BAR registrations; controls 5.7.1/5.7.2 close and parent 5.7 remains open for future DoD registrations. Mechanical master is `5,082/5,175` with 93 open; imported raw/actionable parity remains `4,937/5,011` and `4,937/5,005` with 68 open.
@@ -32,9 +34,9 @@ This section is the current summary for the active control plane. Older initiati
 | --- | ---: | ---: | ---: | --- |
 | Imported raw source claims | 4,937 | 5,011 | 74 | 76 source sections and the parity receipt in [`documentation-parity-checkpoint.md`](documentation-parity-checkpoint.md) |
 | Imported actionable claims | 4,937 | 5,005 | 68 | Six fenced rule examples are excluded as non-actionable; current source/master parity is exact |
-| Mechanical master control plane | 5,082 | 5,176 | 94 | Master task-list direct recount after the 2026-08-01 Production anomaly registration |
+| Mechanical master control plane | 5,083 | 5,176 | 93 | Master task-list direct recount after the 2026-08-01 NEW-027 Production closure |
 
-The 94 master open rows consist of the 68 imported actionable rows plus 26 control-plane rows (parent/verification/completion gates, including NEW-027). The four newly registered Wave-C children add four checked rows and four denominator rows; NEW-027 adds one unresolved production-anomaly control row; no denominator was reduced to make a checkpoint appear better.
+The 93 master open rows consist of the 68 imported actionable rows plus 25 control-plane rows (parent/verification/completion gates). The four newly registered Wave-C children add four checked rows and four denominator rows; NEW-027 is closed by the guarded publication and value-free Production evidence above; no denominator was reduced to make a checkpoint appear better.
 
 ### Initiative disposition
 
