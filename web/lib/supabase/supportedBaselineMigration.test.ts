@@ -53,6 +53,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260731022805_revoke_legacy_yahoo_read_cache.sql",
       "20260731035012_restrict_admin_metadata_views.sql",
       "20260731040341_privatize_unified_materialized_views.sql",
+      "20260801195126_drop_legacy_public_rpcs_after_zero_use.sql",
     ]);
 
     expect(
@@ -227,6 +228,31 @@ describe("supported Supabase schema-baseline reconciliation", () => {
     ).toHaveLength(2);
     expect(migration.match(/to service_role;/g)).toHaveLength(2);
     expect(migration).not.toMatch(/authorization|bearer/i);
+  });
+
+  it("keeps the deferred legacy-RPC final drop exact and fail-closed", () => {
+    const migration = readMigration(
+      "20260801195126_drop_legacy_public_rpcs_after_zero_use.sql",
+    );
+
+    expect(migration).toContain(
+      "to_regprocedure('public.update_all_wgo_skaters()')",
+    );
+    expect(migration).toContain(
+      "to_regprocedure('public.get_skater_game_score_by_limit(bigint,integer)')",
+    );
+    expect(migration).toContain("errcode = '2BP01'");
+    expect(migration).toMatch(
+      /drop function if exists public\.update_all_wgo_skaters\(\);/i,
+    );
+    expect(migration).toMatch(
+      /drop function if exists public\.get_skater_game_score_by_limit\(bigint, integer\);/i,
+    );
+    expect(migration.match(/drop function if exists/gi)).toHaveLength(2);
+    expect(migration).not.toMatch(
+      /\b(?:create|alter|grant|revoke)\s+(?:function|procedure|table|schema)/i,
+    );
+    expect(migration).not.toMatch(/authorization|bearer|password|api[_-]?key/i);
   });
 
   it("repairs compile-invalid legacy routines without restoring duplicate writers", () => {
@@ -595,6 +621,9 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260723113533_make_yahoo_player_writer_atomic.sql",
       "20260725200808_fix_yahoo_player_writer_captured_at.sql",
     ]);
+    const deferredProductionMigrations = new Set([
+      "20260801195126_drop_legacy_public_rpcs_after_zero_use.sql",
+    ]);
 
     expect(manifestRows).toHaveLength(19);
     expect(
@@ -620,7 +649,8 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       readdirSync(migrationRoot)
         .filter((name) => name.endsWith(".sql"))
         .sort()
-        .filter((name) => !appliedProductionMigrations.has(name)),
+        .filter((name) => !appliedProductionMigrations.has(name))
+        .filter((name) => !deferredProductionMigrations.has(name)),
     );
 
     for (const row of manifestRows) {
