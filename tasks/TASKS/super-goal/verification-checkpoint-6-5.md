@@ -10,7 +10,8 @@
 | Four bounded route/component Vitest groups covering dashboard/FORGE/Start Chart, Sustainability, Draft/Yahoo/sKO/Trends, and Underlying Stats | 22 files, 107/107 tests passed. Expected test-only service-role/chart-size diagnostics were non-fatal. |
 | `npx tsc --noEmit` (from `web/`) | Exit 0, no output. |
 | `npm run lint -- --quiet` (from `web/`) | Exit 0, no lint errors. The command intentionally suppresses warning-only output. |
-| `npm run build` (from `web/`) | Exit 0. Next compiled successfully, generated all 77 pages, finalized build traces, and completed `next-sitemap`. |
+| `npm run build` (from `web/`, first changed tree) | Exit 0. Next compiled successfully, generated all 77 pages, finalized build traces, and completed `next-sitemap`. |
+| `npm run build` (from `web/`, unpublished `ClientOnly` follow-up) | Exit 0. Next compiled successfully, generated all 77 pages, finalized build traces, and completed `next-sitemap`. |
 | `npm run test:e2e:rankings -- --list` | Exit 0; enumerated 3 Chromium tests in `e2e/rankings.spec.ts`. Discovery is not runtime proof. |
 | `npm run test:e2e:rankings -- --grep "renders the live skater matrix"` | Attempted twice. First attempt found no browser executable; after the workspace-only install, Chromium launch was denied by the macOS sandbox (`MachPortRendezvousServer: Permission denied`). The test did not execute. |
 
@@ -20,11 +21,11 @@ The existing Chrome session supplied a bounded read-only runtime cohort after th
 
 The first defect classification was isolated to the SSR-populated Recharts quadrant map. The dynamic import (`ssr: false`) was published in commit `065b43e5686484ce2fcea096c2a6173b7c9bcc3c` and the resulting Production artifact was checked in Chrome. The populated `/underlying-stats` page still emitted 13 React hydration errors (`#425`, `#418` × 11, and `#423`), so that boundary alone is insufficient. The server response contains no quadrant-map markup while the hydrated DOM mounts the map, indicating that the dynamic component can still appear during the hydration pass.
 
-The local follow-up wraps the dynamic chart in the existing `ClientOnly` component so both server and initial client renders are empty and the chart mounts only after the client effect. Focused Underlying Stats Vitest remains 4/4, scoped ESLint and TypeScript remain green, and `git diff --check` passes. A fresh local `next dev` check at `http://127.0.0.1:3105/underlying-stats` still covers the empty snapshot state only because local Supabase service-role variables are absent; the follow-up has not been published. Therefore 6.5 remains open pending a populated Production/browser acceptance check with zero console errors.
+The local follow-up wraps the dynamic chart in the existing `ClientOnly` component so both server and initial client renders are empty and the chart mounts only after the client effect. Focused Underlying Stats Vitest remains 4/4, scoped ESLint and TypeScript remain green, `git diff --check` passes, and a second local `npm run build` passes with all 77 pages and sitemap finalization. A fresh local `next dev` check at `http://127.0.0.1:3105/underlying-stats` still covers the empty snapshot state only because local Supabase service-role variables are absent; the follow-up has not been published. Therefore 6.5 remains open pending a populated Production/browser acceptance check with zero console errors.
 
 ## Build and browser disposition
 
-The targeted local `npm run build` passed against the first changed tree, compiling all 77 pages and finalizing `next-sitemap`. The authorized replacement Production deployment `dpl_2wnCPDVZWvL2jx77ehsiZciptPBT` also completed its remote build and reached READY. Playwright remains blocked by the local sandbox, while Chrome supplied the bounded read-only cohort above. The follow-up `ClientOnly` wrapper is local-only and has not caused a second build or deployment; the generated workspace Playwright cache is ignored and is not part of the repository commit.
+The targeted local `npm run build` passed against both the first changed tree and the unpublished `ClientOnly` follow-up, compiling all 77 pages and finalizing `next-sitemap` each time. The authorized replacement Production deployment `dpl_2wnCPDVZWvL2jx77ehsiZciptPBT` also completed its remote build and reached READY. Playwright remains blocked by the local sandbox, while Chrome supplied the bounded read-only cohort above. The follow-up `ClientOnly` wrapper is local-only and has not caused a second Vercel build or deployment; the generated workspace Playwright cache is ignored and is not part of the repository commit.
 
 ## Scope boundary
 
