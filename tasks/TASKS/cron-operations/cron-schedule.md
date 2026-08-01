@@ -2383,3 +2383,9 @@ curl -i -sS -m 180 \
 -- open, do not expose or copy credential values, and require an authorized
 -- current-auth canary or value-free secret-parity reconciliation before
 -- treating job 392 as operationally healthy.
+
+-- 2026-08-01 local auth-contract checkpoint
+-- The focused cron authorization suite now passes 7/7 after aligning two
+-- stale assertions with the shared fail-closed Unauthorized. response.
+-- This local evidence does not resolve the Production job-392 HTTP-401
+-- current-secret parity gate; keep NEW 9.0 open and credential values unread.

@@ -2,6 +2,10 @@
 
 **Status:** Evidence-only synchronization completed 2026-08-01. This checkpoint reconciles the current source/master ledger, Relevant Files, PRD, final summary, diary, and referenced operational/schema contracts after the NEW 61 natural Sustainability handoff receipt. It does not authorize any additional migration, writer, repair, backfill, provider call, deployment, credential change, or deletion.
 
+## 2026-08-01 local auth-contract overlay
+
+The two stale cron-boundary expectations now match the shared fail-closed Unauthorized. response contract. The focused suite passes 7/7 and the middleware suite remains 5/5. This local-only test correction does not alter route behavior, resolve the Production job-392 HTTP-401 current-secret parity gate, add a denominator row, or change the current parity totals below.
+
 ## Parity checks
 
 - A read-only parser found all 76 imported source paths represented in the canonical master. Counts are exact at `4,944/5,011` raw; no source/master checked/total mismatch was found. The six fenced `generate-tasks.mdc` format examples remain explicitly non-actionable reference rows.

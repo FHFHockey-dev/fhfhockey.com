@@ -176,7 +176,7 @@ describe("season and WGO cron authorization boundaries", () => {
 
       expect(res.statusCode, route.name).toBe(401);
       expect(res.body, route.name).toEqual({
-        message: "Invalid access token",
+        message: "Unauthorized.",
         success: false,
       });
     }
@@ -218,7 +218,7 @@ describe("season and WGO cron authorization boundaries", () => {
 
       expect(res.statusCode, route.name).toBe(401);
       expect(res.body, route.name).toEqual({
-        message: "Invalid access token",
+        message: "Unauthorized.",
         success: false,
       });
     }
