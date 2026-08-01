@@ -131,6 +131,7 @@ describe("/api/v1/db/update-nst-goalies", () => {
 
     const req: any = {
       method: "GET",
+      headers: { host: "localhost" },
       query: {
         startDate: "2025-10-01",
         maxUrls: "1",

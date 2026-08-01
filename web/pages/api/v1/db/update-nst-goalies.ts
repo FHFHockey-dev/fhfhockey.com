@@ -56,6 +56,7 @@
  */
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import adminOnly from "utils/adminOnlyMiddleware";
 import {
   DEFAULT_MAX_PENDING_URLS_PER_RUN,
   GOALIE_URLS_PER_DATE,
@@ -866,4 +867,4 @@ async function getLatestDateSupabase(): Promise<string | null> {
   return latestDate;
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

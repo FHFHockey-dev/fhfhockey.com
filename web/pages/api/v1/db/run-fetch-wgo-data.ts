@@ -2,6 +2,7 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { main } from "lib/supabase/Upserts/fetchWGOdata.js";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 async function handler(
   req: NextApiRequest,
@@ -57,4 +58,4 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

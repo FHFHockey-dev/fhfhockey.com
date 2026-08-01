@@ -1,4 +1,5 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import adminOnly from "utils/adminOnlyMiddleware";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
@@ -342,4 +343,4 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

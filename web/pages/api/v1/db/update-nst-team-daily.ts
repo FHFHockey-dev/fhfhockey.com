@@ -1,4 +1,5 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import adminOnly from "utils/adminOnlyMiddleware";
 import {
   NST_TEAM_DAILY_BURST_INTERVAL_MS,
   resolveTeamDailyNstRequestPlan
@@ -772,4 +773,4 @@ const handler = async (
   }
 };
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

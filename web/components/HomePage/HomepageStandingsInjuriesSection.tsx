@@ -11,6 +11,7 @@ import {
   formatNewsFeedLabel,
   getPublicNewsItemDetails,
   normalizeNewsCategory,
+  sanitizePublicNewsText,
   type NewsFeedItem,
 } from "lib/newsFeed";
 import styles from "styles/Home.module.scss";
@@ -25,7 +26,7 @@ type HomepageStandingsInjuriesSectionProps = {
   injuriesError: string | null;
 };
 
-const ROWS_PER_PAGE = 32;
+const HOMEPAGE_UPDATES_PER_PAGE = 10;
 const HOMEPAGE_TIME_ZONE = "America/New_York";
 
 function formatHomepageDate(value: string | null | undefined): string {
@@ -34,6 +35,161 @@ function formatHomepageDate(value: string | null | undefined): string {
   return parsed.isValid()
     ? parsed.tz(HOMEPAGE_TIME_ZONE).format("M/D/YY")
     : "N/A";
+}
+
+function formatHomepageTimestamp(value: string | null | undefined): string {
+  if (!value) return "";
+  const parsed = moment(value);
+  if (!parsed.isValid()) return "";
+  const hasTime = /T\d{2}:\d{2}/.test(value);
+  return parsed
+    .tz(HOMEPAGE_TIME_ZONE)
+    .format(hasTime ? "MMM D, h:mm A" : "MMM D, YYYY");
+}
+
+function abbreviatePlayerName(value: string): string {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return parts[0] ?? "";
+  return `${parts[0].charAt(0)}. ${parts.slice(1).join(" ")}`;
+}
+
+function getPlayerNameFromHeadline(value: string): string | null {
+  const headline = sanitizePublicNewsText(value);
+  const nameToken = String.raw`[\p{Lu}][\p{L}’'.-]+`;
+  const patterns = [
+    new RegExp(
+      String.raw`\b(?:have|has)\s+signed\s+(${nameToken}\s+${nameToken})(?=\s+(?:to|with|for|on|and|$))`,
+      "u",
+    ),
+    new RegExp(
+      String.raw`\band\s+(${nameToken}\s+${nameToken})\s+(?:avoid|avoids|has|have|signed|agreed)\b`,
+      "u",
+    ),
+    new RegExp(
+      String.raw`(?:^|:\s*)(${nameToken}\s+${nameToken})\s+has\s+signed\b`,
+      "u",
+    ),
+  ];
+
+  for (const pattern of patterns) {
+    const match = headline.match(pattern);
+    if (match?.[1]) return match[1];
+  }
+
+  return null;
+}
+
+function getHomepageTransactionAction(
+  transaction: any,
+  details: string,
+): string {
+  const category = normalizeNewsCategory(transaction.category);
+  const searchableText = sanitizePublicNewsText(
+    [
+      transaction.headline,
+      transaction.blurb,
+      details,
+      transaction.subcategory,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  ).toLowerCase();
+
+  if (searchableText.includes("arbitration")) return "arbitration";
+  if (searchableText.includes("extension")) return "extension";
+  if (searchableText.includes("retire")) return "retirement";
+  if (searchableText.includes("waiver")) return "waivers";
+  if (searchableText.includes("recall")) return "recall";
+  if (searchableText.includes("contract negotiation")) {
+    return "contract negotiation";
+  }
+
+  switch (category) {
+    case "TRADE":
+      return "trade";
+    case "SIGNING":
+      return "signing";
+    case "RETIREMENT":
+      return "retirement";
+    case "WAIVER":
+    case "WAIVERS":
+      return "waivers";
+    case "ROSTER MOVE":
+      return "roster move";
+    case "NEWS UPDATE":
+      return "update";
+    case "TRANSACTION":
+      return "transaction";
+    default:
+      return formatNewsFeedLabel(category || "transaction").toLowerCase();
+  }
+}
+
+function isGenericHomepageTransactionTitle(
+  value: string,
+  teamAbbreviation: string,
+  category: string,
+): boolean {
+  const normalized = sanitizePublicNewsText(value)
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+  const team = teamAbbreviation.toLowerCase();
+  const action = formatNewsFeedLabel(category).toLowerCase();
+
+  return new Set([
+    "",
+    action,
+    `${team} ${action}`,
+    `${team} transaction`,
+    `${team} signing`,
+    "official signing",
+    "news update",
+    "transaction",
+  ]).has(normalized);
+}
+
+export function buildHomepageTransactionTitle(transaction: any): string {
+  const teamAbbreviation = transaction.team_abbreviation ?? "NHL";
+  const category = normalizeNewsCategory(transaction.category);
+  const details = getPublicNewsItemDetails(transaction);
+  const playerName =
+    (Array.isArray(transaction.players)
+      ? transaction.players.find((player: any) => player?.player_name)
+          ?.player_name
+      : null) ?? getPlayerNameFromHeadline(transaction.headline);
+
+  if (playerName) {
+    return `${abbreviatePlayerName(playerName)} ${getHomepageTransactionAction(
+      transaction,
+      details,
+    )}`;
+  }
+
+  const headline = sanitizePublicNewsText(transaction.headline);
+  if (
+    headline &&
+    !isGenericHomepageTransactionTitle(
+      headline,
+      teamAbbreviation,
+      category,
+    )
+  ) {
+    return headline;
+  }
+
+  if (
+    details &&
+    !isGenericHomepageTransactionTitle(
+      details,
+      teamAbbreviation,
+      category,
+    )
+  ) {
+    return details;
+  }
+
+  return headline || `${teamAbbreviation} ${formatNewsFeedLabel(category)}`;
 }
 
 function newsItemToHomepageInjury(item: NewsFeedItem) {
@@ -54,6 +210,7 @@ function newsItemToHomepageInjury(item: NewsFeedItem) {
     status: formatNewsFeedLabel(item.subcategory ?? item.category),
     description: getPublicNewsItemDetails(item),
     sourceUrl: item.source_url,
+    sourceAttribution: item.source_account ?? item.source_label,
     statusState:
       category === "RETURN" || category === "RETURNING"
         ? "returning"
@@ -95,7 +252,7 @@ export default function HomepageStandingsInjuriesSection({
   const [injuryPage, setInjuryPage] = useState(0);
   const [activeUpdatesTab, setActiveUpdatesTab] = useState<
     "transactions" | "injuries"
-  >(() => (recentTransactions.length > 0 ? "transactions" : "injuries"));
+  >("injuries");
   const [expandedUpdateKey, setExpandedUpdateKey] = useState<string | null>(
     null,
   );
@@ -128,10 +285,15 @@ export default function HomepageStandingsInjuriesSection({
     if (!Array.isArray(injuryUpdates)) return [];
 
     return injuryUpdates.slice(
-      injuryPage * ROWS_PER_PAGE,
-      (injuryPage + 1) * ROWS_PER_PAGE,
+      injuryPage * HOMEPAGE_UPDATES_PER_PAGE,
+      (injuryPage + 1) * HOMEPAGE_UPDATES_PER_PAGE,
     );
   }, [injuryUpdates, injuryPage]);
+
+  const homepageTransactions = useMemo(
+    () => recentTransactions.slice(0, HOMEPAGE_UPDATES_PER_PAGE),
+    [recentTransactions],
+  );
 
   const standingsPresentation = buildHomepageModulePresentation({
     source: "homepage-standings",
@@ -300,26 +462,24 @@ export default function HomepageStandingsInjuriesSection({
                   <tr>
                     <th scope="col">Date</th>
                     <th scope="col">Team</th>
-                    <th scope="col">Player / update</th>
+                    <th scope="col">Transaction</th>
                     <th scope="col">Type</th>
-                    <th scope="col">
+                    <th scope="col" className={styles.descriptionColumn}>
                       <span className={styles.desktopDetailsLabel}>Details</span>
-                      <span className={styles.mobileExpandLabel}>Expand</span>
+                      <span className={styles.mobileSourceLabel}>Source</span>
+                      <span className={styles.mobileExpandLabel}>
+                        <span className={styles.visuallyHidden}>Expand</span>
+                      </span>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {recentTransactions.map((transaction) => {
+                  {homepageTransactions.map((transaction) => {
                     const teamAbbrev = transaction.team_abbreviation ?? "NHL";
-                    const playerNames = Array.isArray(transaction.players)
-                      ? transaction.players
-                          .map((player: any) => player?.player_name)
-                          .filter(Boolean)
-                          .join(", ")
-                      : "";
                     const details = getPublicNewsItemDetails(transaction);
-                    const sourceLabel =
-                      playerNames || transaction.headline || "news update";
+                    const displayTitle =
+                      buildHomepageTransactionTitle(transaction);
+                    const sourceLabel = displayTitle || "news update";
                     const updateKey = `transaction-${transaction.id}`;
                     const detailId = `${updateKey.replace(
                       /[^a-zA-Z0-9_-]/g,
@@ -329,7 +489,13 @@ export default function HomepageStandingsInjuriesSection({
 
                     return (
                       <Fragment key={transaction.id}>
-                        <tr>
+                        <tr
+                          className={
+                            isExpanded
+                              ? styles.expandedUpdateSummaryRow
+                              : undefined
+                          }
+                        >
                           <td className={styles.dateColumn}>
                             {formatHomepageDate(
                               transaction.published_at ??
@@ -348,10 +514,10 @@ export default function HomepageStandingsInjuriesSection({
                             />
                           </td>
                           <td className={styles.nameColumn}>
-                            {playerNames || transaction.headline}
+                            {displayTitle}
                           </td>
                           <td className={styles.statusColumn}>
-                            {transaction.category}
+                            {normalizeNewsCategory(transaction.category)}
                           </td>
                           <td className={styles.descriptionColumn}>
                             <span className={styles.desktopUpdateDetails}>
@@ -383,23 +549,28 @@ export default function HomepageStandingsInjuriesSection({
                             </button>
                           </td>
                         </tr>
-                        {isExpanded ? (
-                          <tr
-                            id={detailId}
-                            className={styles.expandedUpdateRow}
-                          >
-                            <td colSpan={5} className={styles.expandedUpdateCell}>
-                              <span>{details}</span>
-                              {transaction.source_url ? (
-                                <ExternalNewsLink
-                                  href={transaction.source_url}
-                                  className={styles.externalNewsLink}
-                                  label={`View original post for ${sourceLabel}`}
-                                />
-                              ) : null}
-                            </td>
-                          </tr>
-                        ) : null}
+                        <tr
+                          id={detailId}
+                          className={styles.expandedUpdateRow}
+                          hidden={!isExpanded}
+                        >
+                          <td colSpan={5} className={styles.expandedUpdateCell}>
+                            <span>{details}</span>
+                            <span className={styles.expandedUpdateMeta}>
+                              {formatHomepageTimestamp(
+                                transaction.published_at ??
+                                  transaction.created_at,
+                              )}
+                              {transaction.source_account ??
+                              transaction.source_label
+                                ? ` · ${
+                                    transaction.source_account ??
+                                    transaction.source_label
+                                  }`
+                                : ""}
+                            </span>
+                          </td>
+                        </tr>
                       </Fragment>
                     );
                   })}
@@ -424,14 +595,17 @@ export default function HomepageStandingsInjuriesSection({
                     Team
                   </th>
                   <th scope="col" className={styles.nameColumn}>
-                    Player
+                    Update
                   </th>
                   <th scope="col" className={styles.statusColumn}>
-                    Status
+                    Type
                   </th>
                   <th scope="col" className={styles.descriptionColumn}>
                     <span className={styles.desktopDetailsLabel}>Details</span>
-                    <span className={styles.mobileExpandLabel}>Expand</span>
+                    <span className={styles.mobileSourceLabel}>Source</span>
+                    <span className={styles.mobileExpandLabel}>
+                      <span className={styles.visuallyHidden}>Expand</span>
+                    </span>
                   </th>
                 </tr>
               </thead>
@@ -452,10 +626,16 @@ export default function HomepageStandingsInjuriesSection({
                     "-",
                   )}-details`;
                   const isExpanded = expandedUpdateKey === updateKey;
+                  const summaryRowClassName = [
+                    rowClassName,
+                    isExpanded ? styles.expandedUpdateSummaryRow : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ");
 
                   return (
                     <Fragment key={injury.key}>
-                      <tr className={rowClassName}>
+                      <tr className={summaryRowClassName}>
                         <td className={styles.dateColumn}>
                           {formatHomepageDate(injury.date)}
                         </td>
@@ -512,20 +692,21 @@ export default function HomepageStandingsInjuriesSection({
                           </button>
                         </td>
                       </tr>
-                      {isExpanded ? (
-                        <tr id={detailId} className={styles.expandedUpdateRow}>
-                          <td colSpan={5} className={styles.expandedUpdateCell}>
-                            <span>{injury.description ?? "N/A"}</span>
-                            {injury.sourceUrl ? (
-                              <ExternalNewsLink
-                                href={injury.sourceUrl}
-                                className={styles.externalNewsLink}
-                                label={`View original post for ${playerName}`}
-                              />
-                            ) : null}
-                          </td>
-                        </tr>
-                      ) : null}
+                      <tr
+                        id={detailId}
+                        className={styles.expandedUpdateRow}
+                        hidden={!isExpanded}
+                      >
+                        <td colSpan={5} className={styles.expandedUpdateCell}>
+                          <span>{injury.description ?? "N/A"}</span>
+                          <span className={styles.expandedUpdateMeta}>
+                            {formatHomepageTimestamp(injury.date)}
+                            {injury.sourceAttribution
+                              ? ` · ${injury.sourceAttribution}`
+                              : ""}
+                          </span>
+                        </td>
+                      </tr>
                     </Fragment>
                   );
                 })}
@@ -534,7 +715,8 @@ export default function HomepageStandingsInjuriesSection({
           ) : null}
         </div>
 
-        {activeUpdatesTab === "injuries" && injuryUpdates.length > ROWS_PER_PAGE ? (
+        {activeUpdatesTab === "injuries" &&
+        injuryUpdates.length > HOMEPAGE_UPDATES_PER_PAGE ? (
           <div className={styles.pagination}>
             <button
               onClick={() => setInjuryPage((prev) => Math.max(prev - 1, 0))}
@@ -544,18 +726,23 @@ export default function HomepageStandingsInjuriesSection({
             </button>
             <span>
               Page {injuryPage + 1} of{" "}
-              {Math.ceil(injuryUpdates.length / ROWS_PER_PAGE)}
+              {Math.ceil(injuryUpdates.length / HOMEPAGE_UPDATES_PER_PAGE)}
             </span>
             <button
               onClick={() => setInjuryPage((prev) => prev + 1)}
               disabled={
-                injuryUpdates.length <= (injuryPage + 1) * ROWS_PER_PAGE
+                injuryUpdates.length <=
+                (injuryPage + 1) * HOMEPAGE_UPDATES_PER_PAGE
               }
             >
               Next
             </button>
           </div>
         ) : null}
+        <Link href="/news" className={styles.updatesBottomAction}>
+          <span>View all transactions &amp; injuries</span>
+          <span aria-hidden="true">›</span>
+        </Link>
       </div>
     </section>
   );

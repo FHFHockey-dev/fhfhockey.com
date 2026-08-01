@@ -1,6 +1,7 @@
 // pages/api/v1/db/update-nst-current-season.ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import adminOnly from "utils/adminOnlyMiddleware";
 import { resolveNstCurrentSeasonRequestPlan } from "lib/cron/nstBurstPlans";
 import type { NextApiRequest, NextApiResponse } from "next";
 import * as cheerio from "cheerio";
@@ -707,4 +708,4 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

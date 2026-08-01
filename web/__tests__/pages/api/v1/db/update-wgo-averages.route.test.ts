@@ -61,7 +61,7 @@ describe("/api/v1/db/update-wgo-averages route", () => {
   });
 
   it("returns a structured dependency error instead of leaking html", async () => {
-    const req: any = { method: "GET", query: {} };
+    const req: any = { method: "GET", query: {}, headers: { host: "localhost" } };
     const res = createMockRes();
 
     await handler(req, res);

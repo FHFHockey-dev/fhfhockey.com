@@ -6,6 +6,7 @@
 - Make every meaningful action reduce uncertainty, advance the requested implementation, or verify its result. Reuse established conversation and repository context; do not repeat settled analysis.
 - Keep work narrowly scoped. Avoid speculative features, unrelated cleanup, premature generalization, and broad exploration of the codebase.
 - Prefer the smallest complete, maintainable diff. Preserve unrelated code, formatting, comments, and user changes already in the working tree.
+- Stop when the requested outcome is complete and proportionate verification has passed. Do not continue with optional cleanup, broader checks, or extra improvements merely for additional confidence.
 
 ## Task Routing and Repository Map
 
@@ -21,13 +22,13 @@ Start with named files, their nearest implementation/tests, and relevant configu
 
 ## Commands
 
-Run JavaScript application commands in the owning directory; there is no root package manifest.
+Run JavaScript application commands in the owning directory; there is no root package manifest. The commands below are available entry points, not a checklist; run only those justified by the affected surface.
 
 ### Web app (`web/`)
 
 - Install reproducibly: `npm ci` (CI uses `web/package-lock.json` and Node 20; `.nvmrc` specifies Node 22 for local use).
 - Develop: `npm run dev`; use `npm run dev:stable` if file watching reports `EMFILE` or generated `.next` files disappear.
-- Build: `npm run build`.
+- Local production build (exception only): `npm run build`; use it only under the criteria in Verification and Testing.
 - Lint: `npm run lint`.
 - Type-check: `npx tsc --noEmit`.
 - Run one Vitest file: `npm test -- path/to/file.test.ts`; filter a test by name with `npm test -- -t "test name"`.
@@ -42,7 +43,7 @@ Playwright starts `npm run dev:stable` on port 3100 unless `PLAYWRIGHT_BASE_URL`
 
 ### Other applications
 
-- Sanity Studio (`cms/`): `npm run dev` for development and `npm run build` for a production build.
+- Sanity Studio (`cms/`): `npm run dev` for development. Run `npm run build` only when a local production build is necessary to verify build-specific behavior.
 - Serverless functions (from repository root): `yarn vercel dev --cwd functions --listen 3003`.
 - `webhooks/` has no functional test script; its current `npm test` intentionally exits with an error. Do not present it as verification.
 
@@ -60,7 +61,8 @@ Do not invent root-wide build, lint, format, or test commands. No repository for
 
 - Match verification to impact. Start with the affected file, symbol, Vitest file, Playwright spec, route, or package; escalate only when shared behavior or repository convention justifies it.
 - Add or update tests when behavior changes, a bug needs regression coverage, or an established convention requires it. Prefer extending the nearest relevant test over creating a new test file; do not add duplicate or low-value tests.
-- For `web/` TypeScript changes, run the narrowest relevant test first, then `npx tsc --noEmit` and/or `npm run lint` when the affected surface warrants them. Run `npm run build` only for build-sensitive or sufficiently broad changes.
+- For `web/` TypeScript changes, run the narrowest relevant test first, then `npx tsc --noEmit` and/or `npm run lint` when the affected surface warrants them. Run a local `npm run build` only when it is absolutely necessary to verify build-specific behavior that narrower checks cannot cover; do not run it merely as a final confidence check.
+- Treat every remote Vercel build or deployment, including preview and production, as a costly external action. Never trigger one as routine verification or through another action known to create a deployment unless the user explicitly authorized that remote build in the current task.
 - For browser behavior, prefer the relevant Playwright spec. Use `--list` only to verify discovery; it does not verify runtime behavior.
 - For Markdown or instruction-only changes, inspect the rendered content/diff and validate referenced commands against manifests/configuration; do not run application suites solely because documentation changed.
 - Report checks as passed, failed, not run, or blocked. Never claim a command or behavior was verified unless it was actually run or directly observed.
@@ -75,6 +77,7 @@ Do not invent root-wide build, lint, format, or test commands. No repository for
 
 ## Boundaries and Planning
 
+- For review, audit, explanation, diagnosis, or planning requests, inspect and report without modifying code unless the user also asks for implementation. For change, fix, or build requests, make the requested local changes and run proportionate non-destructive verification without asking first.
 - Ask only when a material ambiguity cannot be resolved from repository/conversation evidence and a wrong choice risks destructive changes or substantial rework. Otherwise choose the safest reversible repository-consistent interpretation and state the assumption afterward.
 - Treat database publishes, non-dry-run backfills/recomputes, remote migration pushes, production changes, credential handling, destructive operations, and other irreversible external actions as ask-first unless explicitly authorized.
 - For broad rolling-player recomputes, preserve the bounds documented in `web/README.md`; composite publishing defaults to `dryRun=true` and should remain dry-run unless an intentional publish is authorized.

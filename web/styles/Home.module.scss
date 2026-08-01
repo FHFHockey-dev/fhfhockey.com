@@ -1282,8 +1282,11 @@
 }
 
 .mobileExpandLabel,
+.mobileSourceLabel,
 .expandUpdateButton,
-.expandedUpdateRow {
+.expandedUpdateRow,
+.expandedUpdateMeta,
+.updatesBottomAction {
   display: none;
 }
 
@@ -1489,6 +1492,59 @@
     grid-template-columns: 1fr;
   }
 
+  .injuriesContainer {
+    background: v.$surface-0;
+  }
+
+  .injuriesContainer .tableWrapper {
+    overflow: visible;
+  }
+
+  .injuriesHeader {
+    align-items: center;
+    min-height: 42px;
+    padding: 5px v.$space-sm;
+
+    h2 {
+      max-width: none;
+      font-size: clamp(0.72rem, 3.3vw, 0.9rem);
+      font-weight: v.$font-weight-medium;
+      letter-spacing: 0.065em;
+      line-height: 1.08;
+    }
+  }
+
+  .updateTabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    margin: 6px;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid rgba(v.$color-white, 0.1);
+    border-radius: v.$radius-control;
+    background: transparent;
+
+    button {
+      min-height: 42px;
+      padding: 0 v.$space-xs;
+      border: 1px solid transparent;
+      border-radius: v.$radius-control;
+      background: rgba(v.$color-white, 0.012);
+      color: v.$color-neutral-400;
+      font-size: 0.62rem;
+      font-weight: v.$font-weight-medium;
+      letter-spacing: 0.075em;
+    }
+  }
+
+  .updateTabs .activeTab {
+    border-color: rgba(v.$primary-color, 0.72);
+    background: rgba(v.$primary-color, 0.065);
+    color: v.$primary-color;
+    box-shadow: inset 0 -1px 0 rgba(v.$primary-color, 0.28);
+  }
+
   .leagueChartPanel,
   .newsPanel {
     grid-column: auto;
@@ -1581,114 +1637,312 @@
 
   .injuryTable,
   .transactionTable {
+    display: block;
     width: 100%;
     min-width: 0;
-    table-layout: fixed;
+    border-collapse: separate;
+    table-layout: auto;
 
-    th:nth-child(1),
-    td:nth-child(1) {
-      width: 16%;
+    thead,
+    tbody {
+      display: grid;
     }
 
-    th:nth-child(2),
-    td:nth-child(2) {
-      width: 9%;
+    thead {
+      padding: 0 6px;
     }
 
-    th:nth-child(3),
-    td:nth-child(3) {
-      width: 34%;
+    tbody {
+      gap: 5px;
+      padding: 5px 6px 6px;
     }
 
-    th:nth-child(4),
-    td:nth-child(4) {
-      width: 25%;
+    thead tr,
+    tbody tr:not(.expandedUpdateRow) {
+      display: grid;
+      grid-template-columns:
+        clamp(48px, 13vw, 54px) clamp(32px, 9vw, 38px)
+        minmax(0, 1fr) clamp(50px, 17vw, 72px)
+        clamp(28px, 8vw, 32px) 44px;
+      column-gap: clamp(2px, 1vw, 4px);
+      align-items: center;
     }
 
-    th:nth-child(5),
-    td:nth-child(5) {
-      width: 16%;
+    thead tr {
+      min-height: 30px;
+      border-bottom: 1px solid rgba(v.$primary-color, 0.2);
+      background: transparent;
     }
 
     thead th {
+      position: static;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      width: auto !important;
       height: 30px;
-      padding: 2px;
-      font-size: 0.62rem;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      font-size: 0.58rem;
+      font-weight: v.$font-weight-medium;
+      letter-spacing: 0.055em;
     }
 
-    tbody td,
-    tbody th {
-      height: 44px;
-      padding: 3px;
+    tbody tr:not(.expandedUpdateRow) {
+      min-height: 60px;
+      overflow: hidden;
+      border: 1px solid rgba(v.$color-white, 0.1);
+      border-radius: 6px;
+      background: rgba(v.$color-white, 0.018);
+
+      &:hover {
+        border-color: rgba(v.$primary-color, 0.28);
+        background: rgba(v.$primary-color, 0.035);
+      }
+    }
+
+    tbody td {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      width: auto !important;
+      height: 58px;
+      min-width: 0;
+      padding: 5px 0;
+      border: 0;
       font-size: 0.7rem;
+      white-space: normal;
+    }
+
+    .descriptionColumn,
+    .desktopUpdateDetails {
+      display: contents;
+    }
+
+    .descriptionContent {
+      display: none;
+    }
+
+    .externalNewsLink {
+      grid-column: 5;
+      display: inline-flex;
+      justify-content: flex-start;
+      width: 100%;
+      height: 44px;
+      margin: 0;
+      font-size: 0.94rem;
+    }
+
+    .expandUpdateButton {
+      grid-column: 6;
     }
   }
 
   .dateColumn {
-    font-size: 0.64rem !important;
+    justify-content: flex-start !important;
+    padding-left: 5px !important;
+    color: v.$color-neutral-400;
+    font-size: 0.67rem !important;
+    font-weight: v.$font-weight-medium;
+  }
+
+  .teamColumn {
+    justify-content: flex-start !important;
+  }
+
+  .injuryTeamLogo {
+    width: 28px;
+    height: 28px;
+    filter: none;
+  }
+
+  .nameColumn {
+    display: -webkit-box !important;
+    align-self: center;
+    height: auto !important;
+    overflow: hidden;
+    color: v.$color-neutral-200;
+    font-size: 0.76rem !important;
+    font-weight: v.$font-weight-regular;
+    line-height: 1.18 !important;
+    text-align: left !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .injuryTable thead .nameColumn,
+  .transactionTable thead .nameColumn {
+    display: flex !important;
+    align-items: center;
+    height: 30px !important;
   }
 
   .nameColumn,
   .statusColumn {
     white-space: normal !important;
-    line-height: 1.15 !important;
   }
 
-  .descriptionColumn {
-    padding: 0 !important;
-    text-align: center !important;
+  .statusColumn {
+    justify-content: flex-start !important;
+    color: v.$color-neutral-400;
+    font-size: 0.58rem !important;
+    font-weight: v.$font-weight-medium;
+    line-height: 1.12 !important;
+    text-align: left !important;
+  }
+
+  .injuredRow .statusColumn,
+  .returningRow .statusColumn {
+    color: v.$color-neutral-400;
   }
 
   .desktopDetailsLabel,
-  .desktopUpdateDetails {
+  .descriptionContent {
     display: none;
   }
 
+  .mobileSourceLabel,
   .mobileExpandLabel {
-    display: inline;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    height: 30px;
+  }
+
+  .mobileSourceLabel {
+    grid-column: 5;
+  }
+
+  .mobileExpandLabel {
+    grid-column: 6;
   }
 
   .expandUpdateButton {
-    @include v.reset-button;
+    appearance: none;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     width: 44px;
     height: 44px;
-    max-width: 100%;
-    border-radius: v.$radius-control;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     color: v.$primary-color;
     cursor: pointer;
     font-family: v.$font-family-numbers;
-    font-size: 1.2rem;
 
-    &:hover,
-    &:focus-visible {
-      background: rgba(v.$primary-color, 0.12);
+    > span[aria-hidden="true"] {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border: 1px solid rgba(v.$color-white, 0.16);
+      border-radius: v.$radius-control;
+      background: rgba(v.$color-white, 0.018);
+      font-size: 1rem;
+      font-weight: v.$font-weight-regular;
+      line-height: 1;
+    }
+
+    &:hover > span[aria-hidden="true"] {
+      border-color: rgba(v.$primary-color, 0.5);
+      background: rgba(v.$primary-color, 0.06);
     }
 
     &:focus-visible {
       outline: 2px solid v.$primary-color;
-      outline-offset: -2px;
+      outline-offset: 0;
+    }
+  }
+
+  .expandedUpdateSummaryRow {
+    border-color: rgba(v.$primary-color, 0.34) !important;
+    border-bottom-right-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    background: rgba(v.$primary-color, 0.035) !important;
+
+    .expandUpdateButton {
+      align-self: start;
+      margin-top: 4px;
+    }
+
+    .expandUpdateButton > span[aria-hidden="true"] {
+      border-color: rgba(v.$primary-color, 0.58);
+      background: rgba(v.$primary-color, 0.08);
     }
   }
 
   .expandedUpdateRow {
-    display: table-row;
-    background: rgba(v.$primary-color, 0.055) !important;
+    display: block;
+    margin-top: -5px;
+    overflow: hidden;
+    border: 1px solid rgba(v.$primary-color, 0.34);
+    border-top: 0;
+    border-radius: 0 0 6px 6px;
+    background: rgba(v.$primary-color, 0.035) !important;
+
+    &[hidden] {
+      display: none;
+    }
   }
 
   .expandedUpdateCell {
+    display: grid !important;
+    gap: 5px;
+    width: 100% !important;
     height: auto !important;
-    padding: v.$space-sm v.$space-md !important;
+    padding: 8px 10px 9px !important;
     color: v.$text-primary;
-    font-size: v.$font-size-sm !important;
-    line-height: 1.45 !important;
+    font-size: 0.72rem !important;
+    line-height: 1.4 !important;
     text-align: left !important;
     white-space: normal !important;
+  }
 
-    .externalNewsLink {
-      margin-left: v.$space-xs;
+  .expandedUpdateMeta {
+    display: block;
+    color: v.$color-neutral-400;
+    font-family: v.$font-family-numbers;
+    font-size: 0.56rem;
+    letter-spacing: 0.025em;
+  }
+
+  .updatesBottomAction {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: v.$space-sm;
+    min-height: 44px;
+    margin: 0 6px 6px;
+    border: 1px solid rgba(v.$primary-color, 0.32);
+    border-radius: v.$radius-control;
+    background: rgba(v.$primary-color, 0.035);
+    color: v.$primary-color;
+    font-family: v.$font-family-accent, sans-serif;
+    font-size: 0.64rem;
+    letter-spacing: 0.075em;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+
+    &:hover {
+      border-color: rgba(v.$primary-color, 0.58);
+      background: rgba(v.$primary-color, 0.075);
+    }
+
+    &:focus-visible {
+      outline: 2px solid v.$primary-color;
+      outline-offset: 2px;
+    }
+
+    span:last-child {
+      font-family: v.$font-family-primary, sans-serif;
+      font-size: 1rem;
+      line-height: 1;
     }
   }
 }
@@ -1779,13 +2033,16 @@
   }
 
   .compactPanelHeader,
-  .standingsHeader,
-  .injuriesHeader {
+  .standingsHeader {
     align-items: flex-start;
   }
 
+  .injuriesHeader {
+    align-items: center;
+  }
+
   .injuriesHeader h2 {
-    max-width: 22ch;
+    max-width: none;
   }
 
   .gamesHeader {
@@ -2170,24 +2427,6 @@
     }
   }
 
-  .injuryTable,
-  .transactionTable {
-    tbody tr:not(.expandedUpdateRow) {
-      border-bottom-color: rgba(v.$color-white, 0.08);
-      background: transparent;
-    }
-  }
-
-  .expandUpdateButton {
-    border: 1px solid rgba(v.$primary-color, 0.5);
-    border-radius: 50%;
-    background: rgba(v.$primary-color, 0.045);
-  }
-
-  .expandedUpdateRow {
-    border-left: 3px solid v.$primary-color;
-    background: rgba(v.$primary-color, 0.075) !important;
-  }
 }
 
 @media (max-width: 375px) {
