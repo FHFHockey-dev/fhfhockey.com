@@ -879,3 +879,9 @@ The post-sKO audit inspected all current open source rows outside the completed 
 
 - The browser Supabase client/callback/reset implementation remains explicitly PKCE-first with token-hash compatibility, synchronous credential scrubbing, and safe same-origin returns. A direct client configuration regression was added; the focused AuthForm/callback/reset/location/client cohort passes 5 files/34 tests, plus TypeScript, Prettier, and diff integrity.
 - A-AUTH NEW 46/C0200 remains open only for hosted `{{ .RedirectTo }}` template compatibility, guarded publication, and value-free Production Google/sign-up-confirmation/recovery evidence. No external state changed; imported parity and mechanical master counts remain unchanged.
+
+### 2026-08-01 fresh local Supabase replay checkpoint
+
+- Colima/Docker-backed local Supabase completed a fresh `supabase db reset --local --no-seed --yes` in the isolated checkout. The replay applied 28 local migration-history rows through `20260801195126_drop_legacy_public_rpcs_after_zero_use.sql`, including the seven selected database-cohort migrations in timestamp order.
+- The data-free replay emitted the expected skips for scheduler ownership, the Utah repair, and unified materialized-view cron retargeting. Local `supabase db lint --local --level error` returned zero findings across all checked schemas; the focused migration-contract cohort passed 4 files/37 tests; both tombstoned legacy RPC signatures were absent in the value-free catalog readback.
+- This checkpoint supplies local prerequisite evidence only. Imported parity remains `4,944/5,011` raw and `4,944/5,005` actionable with 61 open; mechanical master remains `5,090/5,176` with 86 open. No hosted migration, rollback/concurrency proof, writer, repair, backfill, provider, analytics, credential, or Vercel build/deployment action ran.
