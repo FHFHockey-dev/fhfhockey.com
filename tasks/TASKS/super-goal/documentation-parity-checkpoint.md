@@ -28,3 +28,7 @@ The source list remains the authoritative implementation ledger; the master mirr
 - `tasks/TASKS/super-goal/super-goal-context-diary.md`
 - `tasks/TASKS/super-goal/verification-checkpoint-6-5.md`
 - `tasks/TASKS/rules/generate-tasks.mdc`
+
+## 2026-08-01 publication overlay
+
+The authorized 16-migration Production checkpoint is now recorded consistently in the canonical PRD, master task list, final summary, cron/NST source pair, and diary. Read-only Supabase evidence confirms the exact 16 versions and scheduler ownership; the guarded push was a no-op at equal `32e38c6ec` refs; one cached Production redeploy `dpl_DYwkkCpNZUTxV3FVgtQFYodYfyoA` is READY/Current; value-free `200`/`307`/`401` probes and bounded runtime-error checks pass. Mechanical master remains `5,083/5,176`; imported raw/actionable parity remains `4,937/5,011` and `4,937/5,005`. This overlay changes no source checkbox or external state.
