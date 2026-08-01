@@ -635,6 +635,12 @@
 > owned by audited POST job 392 at `12:00`. The deployed writer probes passed;
 > offseason trend serving remains truthfully blocked on the latest played date.
 
+> **Current command readback (2026-08-01):** Job 392 remains active on
+> `0 12 * * *` and uses `POST /api/v1/db/update-player-trend-metrics` with
+> `{}` and a 300-second timeout. Its bearer is resolved from Vault
+> `cron_secret`; the command preserves the JSON content type and no manual
+> cron invocation was used for the publication checkpoint.
+
 ## Inbound scheduled-route authentication boundary
 
 The machine-checked inventory in `web/lib/cron/cronAuditCoverage.ts` and
