@@ -265,44 +265,20 @@ SELECT cron.schedule(
 
     expect(
       inventory.jobs.filter((job) => job.provider === "pg_cron"),
-    ).toHaveLength(65);
+    ).toHaveLength(59);
     expect(
       inventory.jobs.filter((job) => job.provider === "vercel"),
     ).toHaveLength(20);
-    expect(inventory.jobs).toHaveLength(85);
+    expect(inventory.jobs).toHaveLength(79);
     expect(inventory.vercelMaxDurationMs).toBe(240_000);
     expect(inventory.jobs.every((job) => job.active)).toBe(true);
   });
 
-  it("detects normalized cross-provider projection and sustainability collisions", async () => {
+  it("keeps retired cross-provider projection and sustainability collisions absent", async () => {
     const inventory = await loadCombinedCronInventory();
     const collisions = findCrossProviderCronCollisions(inventory.jobs);
 
-    expect(collisions).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          normalizedCronExpressions: ["5 10 * * *"],
-          domain: "projection_execution",
-        }),
-        expect.objectContaining({
-          normalizedCronExpressions: ["42 10 * * *"],
-          domain: "sustainability_priors",
-        }),
-        expect.objectContaining({
-          normalizedCronExpressions: ["43 10 * * *"],
-          domain: "sustainability_window_z",
-        }),
-      ]),
-    );
-
-    const projectionCollision = collisions.find(
-      (collision) =>
-        collision.normalizedCronExpressions.includes("5 10 * * *") &&
-        collision.domain === "projection_execution",
-    );
-    expect(projectionCollision?.jobs.map((job) => job.provider).sort()).toEqual(
-      ["pg_cron", "vercel"],
-    );
+    expect(collisions).toEqual([]);
     expect(JSON.stringify(collisions)).not.toMatch(/https?:\/\//);
   });
 

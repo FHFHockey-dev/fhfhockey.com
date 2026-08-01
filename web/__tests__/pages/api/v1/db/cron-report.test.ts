@@ -652,4 +652,89 @@ SELECT cron.schedule(
       }),
     });
   });
+
+  it("classifies a scheduled 410 legacy route as disabled rather than failed", async () => {
+    cronJobReportSelectMock.mockReturnValue({
+      gte: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({
+          data: [
+            {
+              jobname: "update-rolling-games-recent",
+              scheduled_time: "2026-03-20T12:00:00.000Z",
+              end_time: "2026-03-20T12:00:01.000Z",
+              status: "failed",
+              return_message:
+                "HTTP 410 Legacy rolling-games loader has been disabled.",
+              sql_text:
+                "select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-rolling-games?date=recent');",
+            },
+          ],
+          error: null,
+        }),
+      }),
+    });
+
+    cronJobAuditSelectMock.mockReturnValue({
+      gte: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({
+          data: [
+            {
+              job_name: "update-rolling-games-recent",
+              run_time: "2026-03-20T12:00:01.000Z",
+              rows_affected: 0,
+              status: "failure",
+              details: {
+                method: "GET",
+                url: "https://fhfhockey.com/api/v1/db/update-rolling-games?date=recent",
+                statusCode: 410,
+                durationMs: 1000,
+                response: JSON.stringify({
+                  success: false,
+                  error: "Legacy rolling-games loader has been disabled.",
+                }),
+              },
+            },
+          ],
+          error: null,
+        }),
+      }),
+    });
+
+    readFileMock.mockResolvedValue(`
+\`\`\`json
+[
+  {
+    "jobid": 319,
+    "jobname": "update-rolling-games-recent",
+    "schedule": "0 12 * * *",
+    "run_time_utc": "12:00 UTC",
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-rolling-games?date=recent"
+  }
+]
+\`\`\`
+`);
+
+    const req: any = { method: "GET", query: {} };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      counts: expect.objectContaining({
+        auditFailures: 0,
+        auditDisabled: 1,
+        jobsFailingLast: 0,
+        jobsDisabledLast: 1,
+      }),
+    });
+    expect(cronAuditEmailMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        audits: [expect.objectContaining({ status: "disabled" })],
+        summary: expect.objectContaining({ auditDisabled: 1 }),
+      }),
+    );
+  });
 });

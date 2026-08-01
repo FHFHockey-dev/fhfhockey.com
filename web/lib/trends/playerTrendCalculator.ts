@@ -291,7 +291,7 @@ export const SKATER_TREND_METRICS: SkaterTrendMetricDefinition[] = [
       if (
         ixg === null ||
         unblockedAttempts === null ||
-        unblockedAttempts === 0
+        unblockedAttempts <= 0
       ) {
         return null;
       }

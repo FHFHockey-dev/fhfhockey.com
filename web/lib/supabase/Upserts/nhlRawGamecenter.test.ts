@@ -615,6 +615,8 @@ describe("nhlRawGamecenter", () => {
     expect(rpc).toHaveBeenCalledWith(
       "persist_nhl_api_gamecenter_normalized_v1",
       expect.objectContaining({
+        p_expected_pbp_payload_hash: scope.pbpPayloadHash,
+        p_expected_shift_payload_hash: scope.shiftPayloadHash,
         p_expected_current_fingerprint:
           expectedCurrentManifest.normalizationFingerprint,
         p_expected_current_version: 7,

@@ -247,7 +247,7 @@
     "jobname": "sync-yahoo-players-to-sheet",
     "schedule": "55 8 * * *",
     "run_time_utc": "08:55 UTC",
-    "active": true,
+    "active": false,
     "method": "GET",
     "route": "/api/internal/sync-yahoo-players-to-sheet?gameId=465"
   },
@@ -372,7 +372,7 @@
     "jobname": "run-forge-projection-v2",
     "schedule": "05 10 * * *",
     "run_time_utc": "10:05 UTC",
-    "active": true,
+    "active": false,
     "method": "POST",
     "route": "/api/v1/db/run-projection-v2",
     "auth": "Supabase Vault cron_secret"
@@ -448,7 +448,7 @@
     "jobname": "rebuild-sustainability-priors",
     "schedule": "42 10 * * *",
     "run_time_utc": "10:42 UTC",
-    "active": true,
+    "active": false,
     "method": "GET",
     "route": "/api/v1/sustainability/rebuild-priors?season=current",
     "auth": "Supabase Vault cron_secret"
@@ -458,7 +458,7 @@
     "jobname": "rebuild-sustainability-window-z",
     "schedule": "43 10 * * *",
     "run_time_utc": "10:43 UTC",
-    "active": true,
+    "active": false,
     "method": "GET",
     "route": "/api/v1/sustainability/rebuild-window-z?season=current&runAll=true",
     "auth": "Supabase Vault cron_secret"
@@ -468,7 +468,7 @@
     "jobname": "rebuild-sustainability-score",
     "schedule": "44 10 * * *",
     "run_time_utc": "10:44 UTC",
-    "active": true,
+    "active": false,
     "method": "GET",
     "route": "/api/v1/sustainability/rebuild-score?season=current&runAll=true",
     "auth": "Supabase Vault cron_secret"
@@ -487,7 +487,7 @@
     "jobname": "rebuild-sustainability-trend-bands",
     "schedule": "46 10 * * *",
     "run_time_utc": "10:46 UTC",
-    "active": true,
+    "active": false,
     "method": "GET",
     "route": "/api/v1/sustainability/rebuild-trend-bands?runAll=true",
     "auth": "Supabase Vault cron_secret"
@@ -638,20 +638,25 @@
 ## Inbound scheduled-route authentication boundary
 
 The machine-checked inventory in `web/lib/cron/cronAuditCoverage.ts` and
-`web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts` freezes the
-2026-07-30 completed local authorization contract:
+`web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts` now follows the
+2026-08-01 Production readback. The six scheduler deactivations already
+recorded by the closed scheduler migration are reflected in the source JSON:
 
-- 59 active HTTP jobs resolve to 52 unique Pages API routes with no missing
-  route owner.
-- 51 routes use the fail-closed `adminOnly` admin-or-exact-cron boundary; one
-  destructive internal sheet-sync route intentionally uses an
-  exact-`CRON_SECRET`-only guard; zero active scheduled routes are unprotected.
+- 54 active HTTP jobs resolve to 48 unique Pages API routes with no missing
+  route owner (job 393 is the retained horizon-5 owner for the shared
+  projection route formerly used by job 308).
+- All 48 active routes use the fail-closed `adminOnly` admin-or-exact-cron
+  boundary; the exact-cron-only sheet-sync route is inactive, so zero active
+  scheduled routes are unprotected.
 - Static non-cron consumers are classified as 5 browser-admin-only routes,
-  13 internal-server-only routes, 4 routes with both browser-admin and internal
-  callers, and 30 cron-only routes. The manifest names every direct non-cron source
+  12 internal-server-only routes, 4 routes with both browser-admin and internal
+  callers, and 27 cron-only routes. The manifest names every direct non-cron source
   file so later protection cannot silently break an admin surface or chained
   server call.
 - There is no public unauthenticated exception.
+
+The prior 2026-07-30 59-job/52-route contract remains a historical local
+publication snapshot; it is not the current Production schedule.
 
 The local rollout is complete after verifying all named browser callers supply
 an authenticated admin bearer and all named server callers forward the exact

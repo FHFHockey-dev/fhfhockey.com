@@ -127,7 +127,8 @@ const ROUTE_TARGET_TABLE_MAP: Record<string, string> = {
 };
 
 type NormalizedStatus = "success" | "failure" | "unknown";
-type ReportJobStatus = NormalizedStatus | "missing";
+type ReportStatus = NormalizedStatus | "disabled";
+type ReportJobStatus = ReportStatus | "missing";
 type ScheduleMethod = "GET" | "POST" | "SQL" | "UNKNOWN";
 
 type ScheduledCronJob = {
@@ -244,7 +245,7 @@ type RunDigest = {
   key: string;
   label: string;
   jobName: string;
-  status: NormalizedStatus;
+  status: ReportStatus;
   runTime: string;
   runTimeDisplay: string;
   method: string | null;
@@ -271,10 +272,12 @@ type ReportCounts = {
   auditSuccesses: number;
   auditFailures: number;
   auditUnknown: number;
+  auditDisabled: number;
   jobsOkLast: number;
   jobsFailingLast: number;
   jobsMissingLast: number;
   jobsUnknownLast: number;
+  jobsDisabledLast: number;
   unscheduledRuns: number;
   totalRowsUpserted: number;
   totalFailedRows: number;
@@ -306,6 +309,29 @@ function normalizeStatus(value: unknown): NormalizedStatus {
   if (["success", "succeeded", "ok", "passed"].includes(v)) return "success";
   if (["failure", "failed", "error", "errored"].includes(v)) return "failure";
   return "unknown";
+}
+
+function isQuarantinedLegacyRoute(routePath: string | null): boolean {
+  return (
+    routePath === "/api/v1/db/update-rolling-games" ||
+    routePath === "/api/v1/db/update-power-rankings"
+  );
+}
+
+function classifyAuditStatus(row: AuditRow): ReportStatus {
+  return row.status === "failure" &&
+    row.parsed.statusCode === 410 &&
+    isQuarantinedLegacyRoute(row.parsed.routePath)
+    ? "disabled"
+    : row.status;
+}
+
+function classifyCronStatus(row: RunRow): ReportStatus {
+  const message = row.returnMessage ?? "";
+  return isQuarantinedLegacyRoute(row.routePath) &&
+    /\b410\b|legacy[ -]+.*disabled|disabled.*legacy|gone/i.test(message)
+    ? "disabled"
+    : row.status;
 }
 
 function getQueryString(req: NextApiRequest, key: string): string | null {
@@ -1104,8 +1130,10 @@ function statusSortValue(status: ReportJobStatus): number {
       return 1;
     case "unknown":
       return 2;
-    default:
+    case "disabled":
       return 3;
+    default:
+      return 4;
   }
 }
 
@@ -1126,7 +1154,7 @@ function buildRunDigestFromAudit(
     key: row.id,
     label: row.parsed.route ?? row.jobName,
     jobName: row.jobName,
-    status: row.status,
+    status: classifyAuditStatus(row),
     runTime: row.time,
     runTimeDisplay: new Date(row.time).toLocaleString(),
     method: row.parsed.method,
@@ -1168,7 +1196,7 @@ function buildRunDigestFromCron(
     key: row.id,
     label: row.route ?? row.jobName,
     jobName: row.jobName,
-    status: row.status,
+    status: classifyCronStatus(row),
     runTime: row.time,
     runTimeDisplay: new Date(row.time).toLocaleString(),
     method: row.method === "UNKNOWN" ? null : row.method,
@@ -1515,7 +1543,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           ? runDataAvailable
           : runDataAvailable && auditDataAvailable;
 
-      const lastStatus: ReportJobStatus =
+      const rawLastStatus: NormalizedStatus | "missing" =
         !lastAudit && !lastRun
           ? hasFullCoverageForMissing
             ? "missing"
@@ -1523,6 +1551,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           : preferAudit
             ? (lastAudit?.status ?? "unknown")
             : (lastRun?.status ?? "unknown");
+      const lastStatus: ReportJobStatus =
+        lastAudit && preferAudit
+          ? classifyAuditStatus(lastAudit)
+          : lastRun
+            ? classifyCronStatus(lastRun)
+            : rawLastStatus;
 
       const lastStatusSource: JobSummary["lastStatusSource"] =
         !lastAudit && !lastRun
@@ -1624,6 +1658,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const notes: string[] = [];
       if (lastStatus === "missing") {
         notes.push("No cron or audit entry matched this scheduled slot.");
+      }
+      if (lastStatus === "disabled") {
+        notes.push(
+          "Quarantined legacy route returned HTTP 410; remove its stale scheduler reference before route retirement.",
+        );
       }
       if (
         matchingRuns.length > 0 &&
@@ -1893,9 +1932,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       (job) => job.runsCount > 0 || job.auditRunsCount > 0,
     ).length,
     auditRuns: auditRows.length,
-    auditSuccesses: auditRows.filter((row) => row.status === "success").length,
-    auditFailures: auditRows.filter((row) => row.status === "failure").length,
-    auditUnknown: auditRows.filter((row) => row.status === "unknown").length,
+    auditSuccesses: auditRows.filter(
+      (row) => classifyAuditStatus(row) === "success",
+    ).length,
+    auditFailures: auditRows.filter(
+      (row) => classifyAuditStatus(row) === "failure",
+    ).length,
+    auditUnknown: auditRows.filter(
+      (row) => classifyAuditStatus(row) === "unknown",
+    ).length,
+    auditDisabled: auditRows.filter(
+      (row) => classifyAuditStatus(row) === "disabled",
+    ).length,
     jobsOkLast: jobSummaries.filter((job) => job.lastStatus === "success")
       .length,
     jobsFailingLast: jobSummaries.filter((job) => job.lastStatus === "failure")
@@ -1904,6 +1952,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       .length,
     jobsUnknownLast: jobSummaries.filter((job) => job.lastStatus === "unknown")
       .length,
+    jobsDisabledLast: jobSummaries.filter(
+      (job) => job.lastStatus === "disabled",
+    ).length,
     unscheduledRuns: unscheduledRuns.length,
     totalRowsUpserted: jobSummaries.reduce(
       (acc, job) => acc + (job.rowsUpsertedLast ?? job.rowsAffectedLast ?? 0),
@@ -1952,7 +2003,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
               ? `❌ Daily Cron Report — ${counts.jobsFailingLast} failing, ${counts.jobsMissingLast} missing`
               : counts.jobsUnknownLast > 0
                 ? `⚠️ Daily Cron Report — ${counts.jobsUnknownLast} unknown`
-                : `✅ Daily Cron Report — ${counts.jobsOkLast}/${counts.scheduledJobs} jobs ok`,
+                : counts.jobsDisabledLast > 0
+                  ? `⚠️ Daily Cron Report — ${counts.jobsDisabledLast} quarantined`
+                  : `✅ Daily Cron Report — ${counts.jobsOkLast}/${counts.scheduledJobs} jobs ok`,
         react: CronAuditEmail({
           audits: auditBriefings,
           sinceDate: since,
@@ -1962,6 +2015,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             auditSuccesses: counts.auditSuccesses,
             auditFailures: counts.auditFailures,
             auditUnknown: counts.auditUnknown,
+            auditDisabled: counts.auditDisabled,
             slowJobDenotation: SLOW_JOB_DENOTATION,
             slowMsThreshold: SLOW_JOB_THRESHOLD_MS,
             annotatedJobCount: auditRunDigests.filter(
