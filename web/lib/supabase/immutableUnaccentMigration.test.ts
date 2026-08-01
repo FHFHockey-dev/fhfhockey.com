@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const migrationPath = resolve(
   process.cwd(),
-  "../supabase/migrations/20260714211247_fix_immutable_unaccent_search_path.sql",
+  "../supabase/migration-archive/pre-baseline-20260716/authoritative-root/20260714211247_fix_immutable_unaccent_search_path.sql",
 );
 const migrationSql = readFileSync(migrationPath, "utf8");
 

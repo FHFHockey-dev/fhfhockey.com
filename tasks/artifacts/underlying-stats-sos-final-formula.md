@@ -226,3 +226,7 @@ If richer context is desired later, it should be added only after:
 
 - `nhl_standings_details` freshness is repaired
 - any new adjustment is validated as materially additive rather than duplicative
+
+## Current ownership note (2026-07-29)
+
+This artifact preserves the original April 50/50 standings/predictive design and its evidence. The later completed `tasks-underlying-stats-power-rankings-roadmap.md` supersedes it for the live landing page: `SoS Past` and `SoS Future` are the page's current BCS-style direct/indirect opponent-record metrics, and future schedule texture remains a separate context layer. This artifact is historical formula lineage, not a second authoritative projection path.

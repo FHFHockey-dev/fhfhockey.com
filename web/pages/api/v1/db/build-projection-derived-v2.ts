@@ -44,20 +44,35 @@
  * Notes:
  *
  * - The endpoint supports both `GET` and `POST` methods. There is no difference in functionality between them.
- * - The process is broken down into three ordered parts: player strength, team strength, and goalie game logs. A failed stage retains that date as the resume cursor.
- * - The response payload will detail the outcome of each part, including the number of games processed and rows upserted.
+ * - Each game is prepared in player, team, then goalie order and all three exact scopes are persisted by one version-checked transaction. A failed stage retains that date as the resume cursor.
+ * - The response payload details the committed outcome of each part, separating exact rows verified from logical upserts and idempotent replays.
  * - A `207 Multi-Status` response will be returned if any part of the process encounters an error.
  */
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import adminOnly from "utils/adminOnlyMiddleware";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { getRollingForgeStageDependencyContract } from "lib/rollingForgePipeline";
+import supabase from "lib/supabase/server";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 
 import {
-  buildPlayerGameStrengthV2ForDateRange,
-  buildTeamGameStrengthV2ForDateRange,
+  fetchProjectionDerivedGamesForDateRange,
+  preparePlayerGameStrengthV2,
+  prepareTeamGameStrengthV2,
+  type ProjectionDerivedGame,
 } from "lib/projections/derived/buildStrengthTablesV2";
-import { buildGoalieGameV2ForDateRange } from "lib/projections/derived/buildGoalieGameV2";
+import { prepareGoalieGameV2 } from "lib/projections/derived/buildGoalieGameV2";
+import {
+  persistProjectionGameDerivedV1,
+  readProjectionGameInputManifest,
+} from "lib/projections/derived/projectionDerivedPersistence";
+import {
+  selectPendingProjectionDerivedDates,
+  type ProjectionDerivedQueueRow,
+} from "lib/projections/derived/projectionDerivedQueue";
+
+const SCHEDULED_DERIVED_MAX_DATES = 3;
 
 type Result = {
   success: boolean;
@@ -72,9 +87,27 @@ type Result = {
   durationMs: string;
   timedOut: boolean;
   maxDurationMs: string;
-  player: { gamesProcessed: number; rowsUpserted: number };
-  team: { gamesProcessed: number; rowsUpserted: number };
-  goalie: { gamesProcessed: number; rowsUpserted: number };
+  rowsAffected: number;
+  rowsVerified: number;
+  rowsPruned: number;
+  gamesVerified: number;
+  gamesIdempotent: number;
+  player: {
+    gamesProcessed: number;
+    rowsUpserted: number;
+    rowsVerified: number;
+  };
+  team: {
+    gamesProcessed: number;
+    rowsUpserted: number;
+    rowsVerified: number;
+  };
+  goalie: {
+    gamesProcessed: number;
+    rowsUpserted: number;
+    rowsVerified: number;
+    gamesNotObserved: number;
+  };
   observability: {
     goalieRowsProcessed: number;
     dataQualityWarnings: Array<{
@@ -88,7 +121,13 @@ type Result = {
   failedStages: number;
   failures: Array<{
     date: string;
-    stage: "request" | "player" | "team" | "goalie";
+    stage:
+      | "request"
+      | "input_manifest"
+      | "player"
+      | "team"
+      | "goalie"
+      | "persist";
     error: string;
   }>;
   dependencyContract?: ReturnType<
@@ -155,6 +194,82 @@ function buildDateRange(start: string, end: string): string[] {
   return out;
 }
 
+async function listPendingProjectionDerivedDates(maxDates: number) {
+  if (!supabase) throw new Error("Supabase server client not available");
+  const rows = await fetchAllSupabasePages<ProjectionDerivedQueueRow>(
+    ({ from, to }) =>
+      (supabase as any)
+        .from("projection_game_materialization_status")
+        .select(
+          "game_id,input_status,input_fingerprint,relationship_status,relationship_input_fingerprint,relationship_algorithm_version,derived_status,derived_input_fingerprint,derived_algorithm_version,games!inner(id,date)",
+        )
+        .eq("input_status", "complete")
+        .order("game_id", { ascending: true })
+        .range(from, to),
+  );
+  return selectPendingProjectionDerivedDates({ rows, maxDates });
+}
+
+type DerivedStage = Exclude<Result["failures"][number]["stage"], "request">;
+
+class DerivedStageError extends Error {
+  readonly stage: DerivedStage;
+
+  constructor(stage: DerivedStage, cause: unknown) {
+    super(cause instanceof Error ? cause.message : String(cause));
+    this.name = "DerivedStageError";
+    this.stage = stage;
+  }
+}
+
+async function processProjectionDerivedGame(game: ProjectionDerivedGame) {
+  let manifest;
+  try {
+    manifest = await readProjectionGameInputManifest({ gameId: game.id });
+  } catch (error) {
+    throw new DerivedStageError("input_manifest", error);
+  }
+
+  let playerPrepared;
+  try {
+    playerPrepared = await preparePlayerGameStrengthV2({ game });
+  } catch (error) {
+    throw new DerivedStageError("player", error);
+  }
+
+  let teamRows;
+  try {
+    teamRows = prepareTeamGameStrengthV2({
+      game,
+      playerRows: playerPrepared.rows,
+    });
+  } catch (error) {
+    throw new DerivedStageError("team", error);
+  }
+
+  let goaliePrepared;
+  try {
+    goaliePrepared = prepareGoalieGameV2({
+      game,
+      plays: playerPrepared.plays,
+    });
+  } catch (error) {
+    throw new DerivedStageError("goalie", error);
+  }
+
+  try {
+    return await persistProjectionGameDerivedV1({
+      gameId: game.id,
+      manifest,
+      playerRows: playerPrepared.rows,
+      teamRows,
+      goalie: goaliePrepared,
+    });
+  } catch (error) {
+    throw new DerivedStageError("persist", error);
+  }
+}
+
 async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
   const startedAt = Date.now();
   const dependencyContract = getRollingForgeStageDependencyContract(
@@ -175,9 +290,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       timedOut: false,
       maxDurationMs: formatDurationMsToMMSS(0),
-      player: { gamesProcessed: 0, rowsUpserted: 0 },
-      team: { gamesProcessed: 0, rowsUpserted: 0 },
-      goalie: { gamesProcessed: 0, rowsUpserted: 0 },
+      rowsAffected: 0,
+      rowsVerified: 0,
+      rowsPruned: 0,
+      gamesVerified: 0,
+      gamesIdempotent: 0,
+      player: { gamesProcessed: 0, rowsUpserted: 0, rowsVerified: 0 },
+      team: { gamesProcessed: 0, rowsUpserted: 0, rowsVerified: 0 },
+      goalie: {
+        gamesProcessed: 0,
+        rowsUpserted: 0,
+        rowsVerified: 0,
+        gamesNotObserved: 0,
+      },
       observability: {
         goalieRowsProcessed: 0,
         dataQualityWarnings: [],
@@ -190,14 +315,36 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     });
   }
 
-  const startDate = getParam(req, "startDate") ?? previousUtcDate();
-  const endDate = getParam(req, "endDate") ?? startDate;
+  const requestedStartDate = getParam(req, "startDate");
+  const requestedEndDate = getParam(req, "endDate");
   const chunkDays = parseChunkDays(getParam(req, "chunkDays") ?? null);
   const explicitMaxDays = parsePositiveInt(getParam(req, "maxDays"));
+  const resumeFromDate = getParam(req, "resumeFromDate")?.slice(0, 10) ?? null;
+  const useScheduledDerivedQueue =
+    requestedStartDate == null &&
+    requestedEndDate == null &&
+    resumeFromDate == null &&
+    chunkDays === 0 &&
+    explicitMaxDays == null;
+  const scheduledDates = useScheduledDerivedQueue
+    ? await listPendingProjectionDerivedDates(SCHEDULED_DERIVED_MAX_DATES)
+    : null;
+  const fallbackDate = previousUtcDate();
+  const startDate =
+    scheduledDates && scheduledDates.length > 0
+      ? scheduledDates[0]
+      : (requestedStartDate ?? fallbackDate);
+  const endDate =
+    scheduledDates && scheduledDates.length > 0
+      ? scheduledDates[scheduledDates.length - 1]
+      : (requestedEndDate ?? startDate);
   const maxDays =
     explicitMaxDays ??
-    (chunkDays === 0 && getParam(req, "resumeFromDate") == null ? 3 : null);
-  const resumeFromDate = getParam(req, "resumeFromDate")?.slice(0, 10) ?? null;
+    (useScheduledDerivedQueue
+      ? SCHEDULED_DERIVED_MAX_DATES
+      : chunkDays === 0 && resumeFromDate == null
+        ? 3
+        : null);
   const bypassMaxDuration = parseBooleanParam(
     getParam(req, "bypassMaxDuration") ?? null,
   );
@@ -213,11 +360,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     resumeFromDate && resumeFromDate >= startDate && resumeFromDate <= endDate
       ? resumeFromDate
       : startDate;
-  const fullRangeDates = buildDateRange(effectiveStartDate, endDate);
+  const fullRangeDates =
+    scheduledDates ?? buildDateRange(effectiveStartDate, endDate);
   const chunkLimitedRangeDates =
-    chunkDays > 0 ? fullRangeDates.slice(0, chunkDays) : fullRangeDates;
+    useScheduledDerivedQueue
+      ? fullRangeDates
+      : chunkDays > 0
+        ? fullRangeDates.slice(0, chunkDays)
+        : fullRangeDates;
   const limitedRangeDates =
-    maxDays != null
+    useScheduledDerivedQueue
+      ? chunkLimitedRangeDates
+      : maxDays != null
       ? chunkLimitedRangeDates.slice(0, maxDays)
       : chunkLimitedRangeDates;
   const effectiveEndDate =
@@ -229,9 +383,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
 
   const errors: string[] = [];
   const failures: Result["failures"] = [];
-  let player = { gamesProcessed: 0, rowsUpserted: 0 };
-  let team = { gamesProcessed: 0, rowsUpserted: 0 };
-  let goalie = { gamesProcessed: 0, rowsUpserted: 0 };
+  let rowsAffected = 0;
+  let rowsVerified = 0;
+  let rowsPruned = 0;
+  let gamesVerified = 0;
+  let gamesIdempotent = 0;
+  let player = { gamesProcessed: 0, rowsUpserted: 0, rowsVerified: 0 };
+  let team = { gamesProcessed: 0, rowsUpserted: 0, rowsVerified: 0 };
+  let goalie = {
+    gamesProcessed: 0,
+    rowsUpserted: 0,
+    rowsVerified: 0,
+    gamesNotObserved: 0,
+  };
   let timedOut = false;
   const processedDates: string[] = [];
   let nextStartDate = chunkNextStartDate;
@@ -242,67 +406,61 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
       nextStartDate = date;
       break;
     }
-
+    let games;
     try {
-      const playerResult = await buildPlayerGameStrengthV2ForDateRange({
+      games = await fetchProjectionDerivedGamesForDateRange({
         startDate: date,
         endDate: date,
-        deadlineMs,
       });
-      player.gamesProcessed += playerResult.gamesProcessed;
-      player.rowsUpserted += playerResult.rowsUpserted;
-    } catch (e) {
-      const error = (e as any)?.message ?? String(e);
-      errors.push(`${date} player: ${error}`);
-      failures.push({ date, stage: "player", error });
+    } catch (cause) {
+      const error = cause instanceof Error ? cause.message : String(cause);
+      errors.push(`${date} request: ${error}`);
+      failures.push({ date, stage: "request", error });
       nextStartDate = date;
       break;
     }
+    let dateFailed = false;
+    for (const game of games) {
+      if (Date.now() > deadlineMs) {
+        timedOut = true;
+        nextStartDate = date;
+        dateFailed = true;
+        break;
+      }
+      try {
+        const receipt = await processProjectionDerivedGame(game);
+        gamesVerified += 1;
+        rowsVerified += receipt.verifiedRows;
+        rowsPruned += receipt.prunedRows;
+        rowsAffected += receipt.affectedRows;
+        if (receipt.idempotent) gamesIdempotent += 1;
 
-    if (Date.now() > deadlineMs) {
-      timedOut = true;
-      nextStartDate = date;
-      break;
+        player.gamesProcessed += 1;
+        player.rowsVerified += receipt.observedPlayerRows;
+        team.gamesProcessed += 1;
+        team.rowsVerified += receipt.observedTeamRows;
+        goalie.gamesProcessed += 1;
+        goalie.rowsVerified += receipt.observedGoalieRows;
+        if (!receipt.idempotent) {
+          player.rowsUpserted += receipt.observedPlayerRows;
+          team.rowsUpserted += receipt.observedTeamRows;
+          goalie.rowsUpserted += receipt.observedGoalieRows;
+        }
+        if (receipt.goalieOutcome === "not_observed") {
+          goalie.gamesNotObserved += 1;
+        }
+      } catch (cause) {
+        const stage =
+          cause instanceof DerivedStageError ? cause.stage : "persist";
+        const error = cause instanceof Error ? cause.message : String(cause);
+        errors.push(`${date} ${stage}: ${error}`);
+        failures.push({ date, stage, error });
+        nextStartDate = date;
+        dateFailed = true;
+        break;
+      }
     }
-
-    try {
-      const teamResult = await buildTeamGameStrengthV2ForDateRange({
-        startDate: date,
-        endDate: date,
-        deadlineMs,
-      });
-      team.gamesProcessed += teamResult.gamesProcessed;
-      team.rowsUpserted += teamResult.rowsUpserted;
-    } catch (e) {
-      const error = (e as any)?.message ?? String(e);
-      errors.push(`${date} team: ${error}`);
-      failures.push({ date, stage: "team", error });
-      nextStartDate = date;
-      break;
-    }
-
-    if (Date.now() > deadlineMs) {
-      timedOut = true;
-      nextStartDate = date;
-      break;
-    }
-
-    try {
-      const goalieResult = await buildGoalieGameV2ForDateRange({
-        startDate: date,
-        endDate: date,
-        deadlineMs,
-      });
-      goalie.gamesProcessed += goalieResult.gamesProcessed;
-      goalie.rowsUpserted += goalieResult.rowsUpserted;
-    } catch (e) {
-      const error = (e as any)?.message ?? String(e);
-      errors.push(`${date} goalie: ${error}`);
-      failures.push({ date, stage: "goalie", error });
-      nextStartDate = date;
-      break;
-    }
-
+    if (dateFailed) break;
     processedDates.push(date);
 
     if (Date.now() > deadlineMs) {
@@ -328,20 +486,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
         .join(" | "),
     });
   }
-  if (
-    goalie.gamesProcessed === 0 &&
-    (player.gamesProcessed > 0 || team.gamesProcessed > 0)
-  ) {
+  if (goalie.gamesNotObserved > 0) {
     dataQualityWarnings.push({
-      code: "goalie_games_missing",
+      code: "goalie_not_observed",
       message:
-        "Player/team derived jobs processed games but goalie derived processed none.",
-    });
-  }
-  if (goalie.gamesProcessed > 0 && goalie.rowsUpserted === 0) {
-    dataQualityWarnings.push({
-      code: "goalie_rows_zero",
-      message: "Goalie derived processed games but wrote zero rows.",
+        "Completed PBP justified an explicit empty goalie scope for one or more games.",
+      detail: `${goalie.gamesNotObserved} game(s) committed with goalie_outcome=not_observed.`,
     });
   }
 
@@ -362,11 +512,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
     maxDurationMs: bypassMaxDuration
       ? "bypassed"
       : formatDurationMsToMMSS(budgetMs),
+    rowsAffected,
+    rowsVerified,
+    rowsPruned,
+    gamesVerified,
+    gamesIdempotent,
     player,
     team,
     goalie,
     observability: {
-      goalieRowsProcessed: goalie.rowsUpserted,
+      goalieRowsProcessed: goalie.rowsVerified,
       dataQualityWarnings,
     },
     errors,
@@ -377,6 +532,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Result>) {
   });
 }
 
-export default withCronJobAudit(handler, {
+export default withCronJobAudit(adminOnly(handler as any), {
   jobName: "build-projection-derived-v2",
 });

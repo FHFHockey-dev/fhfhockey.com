@@ -201,7 +201,7 @@ export default withCronJobAudit(
     const requestedDate = parseRequestedDate(req.query.date);
     const currentSeason = await getCurrentSeason();
     const teamDirectory = buildTeamDirectory(
-      await getTeams(currentSeason.seasonId),
+      await getTeams(currentSeason.seasonId, { mode: "current-canonical" }),
     );
     const scheduledGames = await fetchScheduledGamesForDate({
       supabase: req.supabase,

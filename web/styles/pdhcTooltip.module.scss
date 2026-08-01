@@ -5,21 +5,20 @@
 
 .tooltipWrapper {
   display: block;
-  cursor: pointer; /* Indicate that the element is clickable */
+  cursor: pointer;
   height: 100%;
   position: relative;
   width: 100%;
+  border-radius: v.$radius-sm;
 
-          // style={{ position: "relative", display: "inline-block", width: "100%" }}
-
+  @include v.focus-ring-desktop;
 }
 
 .backdrop {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw; /* Full viewport width */
-  height: 100vh; /* Full viewport height */
+  inset: 0;
   background:
     radial-gradient(
       circle at 30% 20%,
@@ -27,16 +26,16 @@
       rgba(v.$secondary-color, 0) 55%
     ),
     rgba(v.$color-black, 0.6);
-  z-index: 9999; /* Below the tooltip content */
+  z-index: 9999;
   opacity: 0;
   transition: opacity 0.3s ease;
   will-change: opacity;
-  pointer-events: none; /* Initially not interactive */
+  pointer-events: none;
 }
 
 .visible {
   opacity: 1;
-  pointer-events: auto; /* Enable interaction when visible */
+  pointer-events: auto;
 }
 
 .hidden {
@@ -54,22 +53,25 @@
     v.$desktop-panel-shadow,
     0 0 28px rgba(v.$secondary-color, 0.18);
   max-width: 400px;
+  max-height: calc(100dvh - #{v.$space-xl});
+  overflow: auto;
+  @include v.custom-scrollbar(v.$secondary-color, v.$background-medium);
   transition:
     opacity 0.3s ease,
     transform 0.3s ease;
   opacity: 0;
-  transform: translate(-50%, -50%) translateY(-20px) scale(0.95); /* Initial positioning */
-  position: fixed; /* Fixed to viewport */
+  transform: translate(-50%, -50%) translateY(-20px) scale(0.95);
+  position: fixed;
   top: 50%;
   left: 50%;
-  z-index: 10000; /* Above the backdrop */
+  z-index: 10000;
   outline: none;
   will-change: transform, opacity;
 }
 
 .tooltipContent.visible {
   opacity: 1;
-  transform: translate(-50%, -50%) translateY(0) scale(1); /* Slide in and scale up */
+  transform: translate(-50%, -50%) translateY(0) scale(1);
 }
 
 .tooltipContent.hidden {
@@ -79,15 +81,25 @@
 
 .closeButton {
   position: absolute;
-  top: 0px;
-  right: 4px;
+  top: v.$space-xs;
+  right: v.$space-xs;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
   background: transparent;
   color: v.$secondary-color;
-  border: none;
+  border: 1px solid transparent;
+  border-radius: v.$radius-control;
   font-size: 24px;
   cursor: pointer;
   line-height: 1;
   padding: 0;
+
+  &:hover {
+    background: rgba(v.$secondary-color, 0.1);
+    border-color: rgba(v.$secondary-color, 0.35);
+  }
 }
 
 .closeButton:focus-visible {
@@ -95,44 +107,20 @@
   box-shadow: v.$focus-ring-desktop;
 }
 
-.tooltipArrow {
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 6px solid var(--secondary-color, #{v.$secondary-color});
-  position: absolute;
-  bottom: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-@media (max-width: 600px) {
+@media (max-width: v.$breakpoint-sm-max) {
   .tooltipContent {
-    width: calc(100% - 40px);
-    left: 50% !important;
-    top: 50% !important;
-    transform: translate(-50%, -50%) translateY(-20px) scale(0.95); /* Initial slide up and scale */
-    max-height: 90vh;
-    overflow-y: auto;
-    transition:
-      opacity 0.3s ease,
-      transform 0.3s ease;
-    padding: 20px;
+    width: calc(100% - #{v.$space-xl});
+    padding: v.$space-md;
   }
 
   .tooltipContent.visible {
-    transform: translate(-50%, -50%) translateY(0) scale(1); /* Slide in and scale up */
+    transform: translate(-50%, -50%) translateY(0) scale(1);
     opacity: 1;
   }
 
   .tooltipContent.hidden {
     transform: translate(-50%, -50%) translateY(-20px) scale(0.95);
     opacity: 0;
-  }
-
-  .tooltipArrow {
-    display: none; /* Hide the arrow on mobile */
   }
 }
 
@@ -182,7 +170,7 @@
 }
 
 /* Responsive Styles */
-@media (max-width: 600px) {
+@media (max-width: v.$breakpoint-sm-max) {
   .chartContainer {
     padding: 10px;
   }
@@ -197,5 +185,12 @@
 
   .winOddsLabelsDivider {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .tooltipContent {
+    transition: none;
   }
 }

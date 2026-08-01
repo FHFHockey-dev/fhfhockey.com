@@ -201,10 +201,7 @@ async function fetchAllPlayerIds(
 // --- END PAGINATION HELPER ---
 
 // --- Main Handler ---
-async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const startTime = Date.now();
   console.log(
     "Starting player stats update (v9 - Separate Recent Table - Full Code)..."

@@ -6,14 +6,14 @@ import { describe, expect, it } from "vitest";
 const migrationSql = readFileSync(
   resolve(
     process.cwd(),
-    "../supabase/migrations/20260715061931_create_draft_ranker_community_snapshots.sql",
+    "../supabase/migration-archive/pre-baseline-20260716/authoritative-root/20260715061931_create_draft_ranker_community_snapshots.sql",
   ),
   "utf8",
 );
 const indexSql = readFileSync(
   resolve(
     process.cwd(),
-    "../supabase/migrations/20260715062048_add_draft_ranker_community_foreign_key_indexes.sql",
+    "../supabase/migration-archive/pre-baseline-20260716/authoritative-root/20260715062048_add_draft_ranker_community_foreign_key_indexes.sql",
   ),
   "utf8",
 );

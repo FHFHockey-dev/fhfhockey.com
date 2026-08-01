@@ -2,19 +2,20 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
+import adminOnly from "utils/adminOnlyMiddleware";
 import supabase from "lib/supabase/server";
 import {
   computeAndStoreTrendBands,
   computeAndStoreTrendBandHistory,
   parseDateParam,
   parseMetricParam,
-  parseWindowParam
+  parseWindowParam,
 } from "lib/sustainability/bandService";
 import type { SustainabilityMetricKey } from "lib/sustainability/bands";
 import { WindowCode } from "lib/sustainability/windows";
 import {
   assertTrendBandPrerequisites,
-  isSustainabilityDependencyError
+  isSustainabilityDependencyError,
 } from "lib/sustainability/dependencyChecks";
 
 type Summary = {
@@ -36,7 +37,7 @@ function parseBoolean(value: string | string[] | undefined): boolean {
 }
 
 function parseOptionalDateParam(
-  value: string | string[] | undefined
+  value: string | string[] | undefined,
 ): string | null {
   const candidate = Array.isArray(value) ? value[0] : value;
   if (!candidate) return null;
@@ -45,7 +46,7 @@ function parseOptionalDateParam(
 
 function parseIntParam(
   value: string | string[] | undefined,
-  fallback: number
+  fallback: number,
 ): number {
   const candidate = Array.isArray(value) ? value[0] : value;
   if (!candidate) return fallback;
@@ -54,7 +55,7 @@ function parseIntParam(
 }
 
 function parseSeasonIdParam(
-  value: string | string[] | undefined
+  value: string | string[] | undefined,
 ): number | null {
   const candidate = Array.isArray(value) ? value[0] : value;
   if (!candidate) return null;
@@ -65,7 +66,7 @@ function parseSeasonIdParam(
 async function fetchPlayerIds(
   offset: number,
   limit: number,
-  seasonId: number | null
+  seasonId: number | null,
 ): Promise<number[]> {
   let query = supabase
     .from("player_totals_unified")
@@ -83,14 +84,14 @@ async function fetchPlayerIds(
     new Set(
       (data ?? [])
         .map((row) => Number((row as any).player_id ?? Number.NaN))
-        .filter((id) => Number.isFinite(id))
-    )
+        .filter((id) => Number.isFinite(id)),
+    ),
   );
 }
 
-async function handler(
+export async function rebuildTrendBandsHandler(
   req: NextApiRequest,
-  res: NextApiResponse<CronTimedResponse<Record<string, unknown>>>
+  res: NextApiResponse<CronTimedResponse<Record<string, unknown>>>,
 ) {
   const startedAt = Date.now();
   const withTiming = (body: Record<string, unknown>, endedAt = Date.now()) =>
@@ -103,34 +104,35 @@ async function handler(
   }
 
   const snapshotDate = parseDateParam(
-    req.body?.snapshot_date ?? req.query.snapshot_date
+    req.body?.snapshot_date ?? req.query.snapshot_date,
   );
   const startDate = parseOptionalDateParam(
-    req.body?.start_date ?? req.query.start_date
+    req.body?.start_date ?? req.query.start_date,
   );
   const endDateOverride = parseOptionalDateParam(
-    req.body?.end_date ?? req.query.end_date
+    req.body?.end_date ?? req.query.end_date,
   );
   const metrics: SustainabilityMetricKey[] = parseMetricParam(
-    req.body?.metrics ?? req.query.metric
+    req.body?.metrics ?? req.query.metric,
   );
   const windows: WindowCode[] = parseWindowParam(
-    req.body?.windows ?? req.query.window
+    req.body?.windows ?? req.query.window,
   );
   const limit = Math.max(
     1,
-    parseIntParam(req.body?.limit ?? req.query.limit, 250)
+    parseIntParam(req.body?.limit ?? req.query.limit, 250),
   );
   const offset = Math.max(
     0,
-    parseIntParam(req.body?.offset ?? req.query.offset, 0)
+    parseIntParam(req.body?.offset ?? req.query.offset, 0),
   );
   const dry = parseBoolean(req.body?.dry ?? req.query.dry);
-  const runAll = parseBoolean(req.body?.runAll ?? req.query.runAll) ||
+  const runAll =
+    parseBoolean(req.body?.runAll ?? req.query.runAll) ||
     parseBoolean(req.body?.run_all ?? req.query.run_all);
   const gameLimit = Math.max(
     1,
-    parseIntParam(req.body?.game_limit ?? req.query.game_limit, 40)
+    parseIntParam(req.body?.game_limit ?? req.query.game_limit, 40),
   );
   const historyRequested =
     parseBoolean(req.body?.history ?? req.query.history) ||
@@ -138,7 +140,7 @@ async function handler(
     Boolean(endDateOverride);
   const effectiveEndDate = endDateOverride ?? snapshotDate;
   const seasonId = parseSeasonIdParam(
-    req.body?.season_id ?? req.query.season_id
+    req.body?.season_id ?? req.query.season_id,
   );
 
   try {
@@ -181,13 +183,13 @@ async function handler(
               startDate,
               endDate: effectiveEndDate,
               gameLimit,
-              dry
+              dry,
             });
             totalBands += result.totalRows;
             totalSnapshots += result.snapshots;
             const summary: Summary = {
               player_id: playerId,
-              bands_computed: result.totalRows
+              bands_computed: result.totalRows,
             };
             if (result.snapshots) {
               summary.snapshots = result.snapshots;
@@ -203,65 +205,70 @@ async function handler(
               metrics,
               windows,
               gameLimit,
-              dry
+              dry,
             });
             totalBands += rows.length;
-            summaries.push({ player_id: playerId, bands_computed: rows.length });
+            summaries.push({
+              player_id: playerId,
+              bands_computed: rows.length,
+            });
           }
         } catch (error: any) {
-          // eslint-disable-next-line no-console
           console.error(
             "trend-band bulk error",
             playerId,
-            error?.message ?? error
+            error?.message ?? error,
           );
           errors.push({
             player_id: playerId,
-            message: error?.message ?? String(error)
+            message: error?.message ?? String(error),
           });
         }
       }
     }
 
     if (!totalPlayers) {
-      return res.status(200).json(withTiming({
+      return res.status(200).json(
+        withTiming({
+          success: true,
+          history: historyRequested,
+          start_date: startDate ?? null,
+          snapshot_date: effectiveEndDate,
+          season_id: seasonId,
+          run_all: runAll,
+          processed: 0,
+          batches_processed: 0,
+          snapshots_processed: 0,
+          computed_bands: 0,
+          updated_bands: 0,
+          summaries: [],
+          errors: [],
+        }),
+      );
+    }
+
+    return res.status(200).json(
+      withTiming({
         success: true,
         history: historyRequested,
         start_date: startDate ?? null,
         snapshot_date: effectiveEndDate,
         season_id: seasonId,
+        dry_run: dry,
         run_all: runAll,
-        processed: 0,
-        batches_processed: 0,
-        snapshots_processed: 0,
-        computed_bands: 0,
-        updated_bands: 0,
-        summaries: [],
-        errors: []
-      }));
-    }
-
-    return res.status(200).json(withTiming({
-      success: true,
-      history: historyRequested,
-      start_date: startDate ?? null,
-      snapshot_date: effectiveEndDate,
-      season_id: seasonId,
-      dry_run: dry,
-      run_all: runAll,
-      processed: totalPlayers,
-      batches_processed: processedBatches,
-      snapshots_processed: totalSnapshots,
-      computed_bands: totalBands,
-      updated_bands: dry ? 0 : totalBands,
-      summaries,
-      errors
-    }));
+        processed: totalPlayers,
+        batches_processed: processedBatches,
+        snapshots_processed: totalSnapshots,
+        computed_bands: totalBands,
+        updated_bands: dry ? 0 : totalBands,
+        summaries,
+        errors,
+      }),
+    );
   } catch (error: any) {
     if (isSustainabilityDependencyError(error)) {
-      return res
-        .status(error.statusCode)
-        .json(withTiming({
+      return res.status(error.statusCode).json(
+        withTiming({
           success: false,
           message: error.issue.message,
           prerequisite: error.issue,
@@ -271,21 +278,21 @@ async function handler(
             classification: "structured_upstream_error",
             message: error.issue.message,
             detail: error.issue.detail,
-            htmlLike: false
-          }
-        }));
+            htmlLike: false,
+          },
+        }),
+      );
     }
     const dependencyError = normalizeDependencyError(error);
-    // eslint-disable-next-line no-console
     console.error("rebuild-trend-bands error", error?.message ?? error);
-    return res
-      .status(500)
-      .json(withTiming({
+    return res.status(500).json(
+      withTiming({
         success: false,
         message: dependencyError.message,
-        dependencyError
-      }));
+        dependencyError,
+      }),
+    );
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(rebuildTrendBandsHandler as any));

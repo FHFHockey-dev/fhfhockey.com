@@ -9,7 +9,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(405).json({ ok: false, error: "Method Not Allowed" });
   }
 
-  // Simple bearer token guard (reuse CRON_SECRET)
   const authHeader = req.headers["authorization"] || "";
   const token = authHeader.toString().startsWith("Bearer ")
     ? authHeader.toString().slice("Bearer ".length)
@@ -23,15 +22,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const result = await syncYahooPlayersToSheet({
       tabName: "Yahoo Player Data",
       helperPoints: 30,
-      gameId
+      gameId,
     });
     return res.status(200).json({ ok: true, ...result });
-  } catch (e: any) {
-    console.error("Sheet sync failed:", e?.message || e);
-    return res.status(500).json({ ok: false, error: e?.message || String(e) });
+  } catch {
+    console.error("Yahoo sheet sync failed.");
+    return res
+      .status(500)
+      .json({ ok: false, error: "Yahoo sheet sync failed" });
   }
 }
 
 export default withCronJobAudit(handler, {
-  jobName: "sync-yahoo-players-to-sheet"
+  jobName: "sync-yahoo-players-to-sheet",
 });

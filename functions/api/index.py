@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from api.fetch_team_table import fetch_team_table
 from lib.sko_pipeline import trigger_sko_step_forward
 import os
+import secrets
 
 app = Flask(__name__)
 
@@ -16,19 +17,18 @@ def healthz():
 
 
 def _check_auth() -> tuple[bool, str]:
-    """Validate optional bearer token against SKO_PIPELINE_SECRET.
+    """Validate a required bearer token against SKO_PIPELINE_SECRET.
 
     Returns (ok, message).
     """
-    expected = os.environ.get("SKO_PIPELINE_SECRET")
+    expected = (os.environ.get("SKO_PIPELINE_SECRET") or "").strip()
     if not expected:
-        # No secret configured; allow by default
-        return True, "no secret configured"
+        return False, "pipeline authentication is not configured"
     auth = request.headers.get("Authorization", "")
     if not auth.startswith("Bearer "):
         return False, "missing bearer token"
     token = auth.split(" ", 1)[1]
-    if token != expected:
+    if not secrets.compare_digest(token, expected):
         return False, "invalid token"
     return True, "ok"
 
@@ -119,27 +119,12 @@ def run_sko_pipeline_step():
             "message": f"Unknown step '{step}'. Allowed: {sorted(list(allowed))}",
         }), 400
 
-    # Extract commonly used parameters (pass-through)
-    as_of_date = payload.get("asOfDate") or payload.get("as_of_date")
-    horizon = payload.get("horizon")
-    season_cutoff = payload.get("seasonCutoff") or payload.get("season_cutoff")
-
-    # TODO: Replace this placeholder with actual work. For example:
-    # - Enqueue a job in your DB/queue and let a cron/worker process it.
-    # - Trigger a smaller internal function that completes within ~10-30s.
-    # - Write a row to Supabase to signal a background processor.
-    # For now we return immediately to prove the segmented flow works end-to-end.
-
     return jsonify({
-        "success": True,
-        "message": f"Accepted step '{step}'",
+        "success": False,
+        "message": "SKO pipeline stage execution is not implemented.",
         "step": step,
-        "echo": {
-            "asOfDate": as_of_date,
-            "horizon": horizon,
-            "seasonCutoff": season_cutoff,
-        },
-    }), 200
+        "implemented": False,
+    }), 501
 
 
 if __name__ == '__main__':

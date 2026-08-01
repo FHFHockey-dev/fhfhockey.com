@@ -2,7 +2,12 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-const { supabaseFromMock } = vi.hoisted(() => ({
+const { authState, getSessionMock, supabaseFromMock } = vi.hoisted(() => ({
+  authState: {
+    isLoading: false,
+    user: { role: "admin" } as { role: "admin" } | null
+  },
+  getSessionMock: vi.fn(),
   supabaseFromMock: vi.fn()
 }));
 
@@ -12,8 +17,15 @@ vi.mock("next/head", () => ({
 
 vi.mock("lib/supabase/client", () => ({
   default: {
+    auth: {
+      getSession: getSessionMock
+    },
     from: supabaseFromMock
   }
+}));
+
+vi.mock("contexts/AuthProviderContext", () => ({
+  useAuth: () => authState
 }));
 
 import TrendsDebugPage from "../../pages/trendsDebug";
@@ -706,6 +718,16 @@ function buildFaceoffTotalsQuery() {
 describe("TrendsDebugPage validation console", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    authState.isLoading = false;
+    authState.user = { role: "admin" };
+    getSessionMock.mockResolvedValue({
+      data: {
+        session: {
+          access_token: "admin-access-token"
+        }
+      },
+      error: null
+    });
     supabaseFromMock.mockImplementation((table: string) => {
       if (table === "players") return buildPlayersQuery();
       if (table === "wgo_skater_stats_totals") return buildFaceoffTotalsQuery();
@@ -736,6 +758,29 @@ describe("TrendsDebugPage validation console", () => {
     vi.unstubAllGlobals();
   });
 
+  it("fails closed while administrator access is unresolved", () => {
+    authState.isLoading = true;
+    authState.user = null;
+
+    render(<TrendsDebugPage />);
+
+    expect(screen.getByText("Checking administrator access…")).toBeTruthy();
+    expect(screen.queryByText("Trends Debug")).toBeNull();
+    expect(supabaseFromMock).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("denies non-administrators without starting console data access", () => {
+    authState.user = null;
+
+    render(<TrendsDebugPage />);
+
+    expect(screen.getByText("Administrator access required")).toBeTruthy();
+    expect(screen.queryByText("Trends Debug")).toBeNull();
+    expect(supabaseFromMock).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it("renders blocked freshness and comparison views from the validation payload", async () => {
     render(<TrendsDebugPage />);
 
@@ -749,6 +794,14 @@ describe("TrendsDebugPage validation console", () => {
     fireEvent.click(playerButton);
 
     expect(await screen.findByText("Copy Helpers")).toBeTruthy();
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/v1/debug/rolling-player-metrics?"),
+      {
+        headers: {
+          Authorization: "Bearer admin-access-token"
+        }
+      }
+    );
     expect(screen.getAllByText(/readiness BLOCKED/i).length).toBeGreaterThan(0);
     expect(
       screen.getAllByText(/2 blocker\(s\) require refresh or investigation/i).length

@@ -68,7 +68,7 @@ export const CRON_AUTH_NON_CRON_CALLERS: Readonly<
   },
   "/api/internal/sync-yahoo-players-to-sheet": {
     shape: "internal-server",
-    files: ["web/pages/api/v1/db/update-yahoo-players.ts"],
+    files: ["web/lib/integrations/yahoo/ingestionLifecycle.ts"],
   },
   "/api/v1/db/build-projection-derived-v2": {
     shape: "internal-server",
@@ -204,6 +204,20 @@ export const CRON_AUTH_NON_CRON_CALLERS: Readonly<
       "web/pages/api/v1/db/run-projection-v2.ts",
       "web/pages/api/v1/db/run-rolling-forge-pipeline.ts",
       "web/pages/db/index.tsx",
+    ],
+  },
+  "/api/v1/db/update-wgo-skaters": {
+    shape: "internal-server",
+    files: [
+      "web/lib/rollingForgePipeline.ts",
+      "web/pages/api/v1/db/run-rolling-forge-pipeline.ts",
+    ],
+  },
+  "/api/v1/db/update-wgo-totals": {
+    shape: "internal-server",
+    files: [
+      "web/lib/rollingForgePipeline.ts",
+      "web/pages/api/v1/db/run-rolling-forge-pipeline.ts",
     ],
   },
 };

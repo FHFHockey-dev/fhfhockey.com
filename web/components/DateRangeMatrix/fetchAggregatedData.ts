@@ -56,6 +56,7 @@ type NormalizedAggregateShiftRow = {
   playerId: number;
   gameToiSeconds: number;
   gameLengthSeconds: number;
+  appearanceExceedsGameLength: boolean;
   homeOrAway: "home" | "away" | null;
   opponentTeamAbbreviation: string | null;
   opponentTeamId: number | null;
@@ -734,6 +735,7 @@ function normalizeAggregateRows(
 ): {
   rows: NormalizedAggregateShiftRow[];
   pairGameFacts: AggregatePairGameFact[];
+  skippedRows: number;
 } {
   const seenRowIds = new Set<number>();
   const seenPlayerGames = new Set<string>();
@@ -831,9 +833,6 @@ function normalizeAggregateRows(
     if (gameLengthSeconds === 0) {
       throw new Error("Shift-chart data contains an invalid game length.");
     }
-    if (gameToiSeconds > gameLengthSeconds) {
-      throw new Error("Shift-chart game TOI exceeds game length.");
-    }
 
     const normalizedRow: NormalizedAggregateShiftRow = {
       rowId,
@@ -844,6 +843,7 @@ function normalizeAggregateRows(
       playerId,
       gameToiSeconds,
       gameLengthSeconds,
+      appearanceExceedsGameLength: gameToiSeconds > gameLengthSeconds,
       homeOrAway,
       opponentTeamAbbreviation,
       opponentTeamId,
@@ -886,6 +886,7 @@ function normalizeAggregateRows(
 
   const normalizedRows: NormalizedAggregateShiftRow[] = [];
   const pairGameFacts: AggregatePairGameFact[] = [];
+  let skippedRows = 0;
   const orderedGames = [...rowsByGame.entries()].sort(
     ([leftGameId, leftRows], [rightGameId, rightRows]) =>
       leftRows[0].gameDate.localeCompare(rightRows[0].gameDate) ||
@@ -893,6 +894,11 @@ function normalizeAggregateRows(
   );
 
   for (const [gameId, gameRows] of orderedGames) {
+    if (gameRows.some((row) => row.appearanceExceedsGameLength)) {
+      skippedRows += gameRows.length;
+      continue;
+    }
+
     const playerIds = new Set(gameRows.map((row) => row.playerId));
     for (const row of gameRows) {
       for (const relationships of [
@@ -929,6 +935,8 @@ function normalizeAggregateRows(
     const orderedRows = [...gameRows].sort(
       (left, right) => left.playerId - right.playerId,
     );
+    const gameFacts: AggregatePairGameFact[] = [];
+    let relationshipExceedsAppearance = false;
     for (let firstIndex = 0; firstIndex < orderedRows.length; firstIndex += 1) {
       for (
         let secondIndex = firstIndex + 1;
@@ -962,19 +970,24 @@ function normalizeAggregateRows(
           firstObservation.seconds > first.gameToiSeconds ||
           firstObservation.seconds > second.gameToiSeconds
         ) {
-          throw new Error(
-            "Shift-chart relationship TOI exceeds a player appearance.",
-          );
+          relationshipExceedsAppearance = true;
+          break;
         }
-        pairGameFacts.push({
+        gameFacts.push({
           gameId,
           firstPlayerId: first.playerId,
           secondPlayerId: second.playerId,
           seconds: firstObservation.seconds,
         });
       }
+      if (relationshipExceedsAppearance) break;
+    }
+    if (relationshipExceedsAppearance) {
+      skippedRows += gameRows.length;
+      continue;
     }
     normalizedRows.push(...gameRows);
+    pairGameFacts.push(...gameFacts);
   }
 
   normalizedRows.sort(
@@ -983,7 +996,7 @@ function normalizeAggregateRows(
       left.gameId - right.gameId ||
       left.rowId - right.rowId,
   );
-  return { rows: normalizedRows, pairGameFacts };
+  return { rows: normalizedRows, pairGameFacts, skippedRows };
 }
 
 function resolveCanonicalPlayerMetadata(
@@ -1423,5 +1436,10 @@ export async function fetchAggregatedData(request: FetchAggregatedDataRequest) {
     playoffPlayersData,
     matchedGameIds,
     cardStats,
+    coverage: {
+      inputRows: allTeamData.length,
+      rosterRows: Object.keys(selectedPlayersData).length,
+      skippedRows: normalized.skippedRows,
+    },
   };
 }

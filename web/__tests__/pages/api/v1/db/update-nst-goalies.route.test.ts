@@ -23,9 +23,10 @@ const {
                     return {
                       limit() {
                         return {
-                          maybeSingle: vi
-                            .fn()
-                            .mockResolvedValue({ data: { id: 8478402 }, error: null })
+                          maybeSingle: vi.fn().mockResolvedValue({
+                            data: { id: 8478402 },
+                            error: null
+                          })
                         };
                       }
                     };

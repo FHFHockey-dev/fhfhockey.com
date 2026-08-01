@@ -4,10 +4,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { main } from "lib/supabase/Upserts/fetchWGOdata.js";
 import adminOnly from "utils/adminOnlyMiddleware";
 
-async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Allow GET and POST for testing
   if (req.method !== "POST" && req.method !== "GET") {
     return res.status(405).json({ error: "Method Not Allowed" });

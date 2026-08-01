@@ -5,6 +5,7 @@ import {
 } from "lib/api/scanSummary";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import adminOnly from "utils/adminOnlyMiddleware";
 import { FORGE_COMPATIBILITY_INVENTORY } from "lib/projections/compatibilityInventory";
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
@@ -30,6 +31,7 @@ import updateLineCombinationsHandler from "./update-line-combinations";
 import updatePowerPlayCombinationsBatchHandler from "./update-power-play-combinations";
 import updateRollingPlayerAveragesHandler from "./update-rolling-player-averages";
 import ingestProjectionInputsHandler from "./ingest-projection-inputs";
+import shiftChartsHandler from "./shift-charts";
 import buildProjectionDerivedHandler from "./build-projection-derived-v2";
 import updateGoalieProjectionsV2Handler from "./update-goalie-projections-v2";
 import runProjectionV2Handler from "./run-projection-v2";
@@ -302,12 +304,13 @@ async function invokeRouteStep(args: {
   id: string;
   route: string;
   handler: RouteHandler;
+  method?: "GET" | "POST";
   query?: Record<string, string>;
 }): Promise<StepResult> {
   const startedAt = Date.now();
   const query = args.query ?? {};
   const req: any = {
-    method: "GET",
+    method: args.method ?? "GET",
     query,
     headers: {
       authorization: `Bearer ${process.env.CRON_SECRET ?? ""}`
@@ -349,6 +352,7 @@ async function runStage(args: {
   date: string;
   includeDownstream: boolean;
   includeAccuracy: boolean;
+  useDurableProjectionBacklog: boolean;
 }): Promise<StageResult> {
   const startedAt = Date.now();
   const steps: StepResult[] = [];
@@ -369,6 +373,7 @@ async function runStage(args: {
     id: string;
     route: string;
     handler: RouteHandler;
+    method?: "GET" | "POST";
     query?: Record<string, string>;
   }) => {
     steps.push(await invokeRouteStep(step));
@@ -477,10 +482,24 @@ async function runStage(args: {
         id: "ingest-projection-inputs",
         route: "/api/v1/db/ingest-projection-inputs",
         handler: ingestProjectionInputsHandler,
+        method: "POST",
+        query: args.useDurableProjectionBacklog
+          ? undefined
+          : {
+              startDate: projectionInputStartDate,
+              endDate: projectionInputEndDate,
+              maxGames: args.mode === "overnight" ? "80" : "50"
+            }
+      });
+      break;
+    case "projection_relationship_build":
+      await addStep({
+        id: "build-projection-relationships",
+        route: "/api/v1/db/shift-charts",
+        handler: shiftChartsHandler,
+        method: "POST",
         query: {
-          startDate: projectionInputStartDate,
-          endDate: projectionInputEndDate,
-          maxGames: args.mode === "overnight" ? "80" : "50"
+          gameId: "all"
         }
       });
       break;
@@ -489,11 +508,14 @@ async function runStage(args: {
         id: "build-projection-derived-v2",
         route: "/api/v1/db/build-projection-derived-v2",
         handler: buildProjectionDerivedHandler,
-        query: {
-          startDate: derivedBuildStartDate,
-          endDate: derivedBuildEndDate,
-          maxDays: args.mode === "overnight" ? "30" : "14"
-        }
+        method: "POST",
+        query: args.useDurableProjectionBacklog
+          ? undefined
+          : {
+              startDate: derivedBuildStartDate,
+              endDate: derivedBuildEndDate,
+              maxDays: args.mode === "overnight" ? "30" : "14"
+            }
       });
       break;
     case "projection_execution":
@@ -646,6 +668,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
   }
 
   const mode = parseMode(getParam(req, "mode"));
+  const useDurableProjectionBacklog =
+    getParam(req, "date") == null &&
+    getParam(req, "startDate") == null &&
+    getParam(req, "endDate") == null;
   const { startDate, endDate, date } = parseDateWindow(req);
   const includeDownstream = parseBooleanParam(
     getParam(req, "includeDownstream"),
@@ -655,7 +681,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
     getParam(req, "includeAccuracy"),
     mode === "overnight"
   );
-  const stopOnFailure = parseBooleanParam(getParam(req, "stopOnFailure"), true);
+  const requestedStopOnFailure = parseBooleanParam(
+    getParam(req, "stopOnFailure"),
+    true
+  );
+  const stopOnFailure = useDurableProjectionBacklog
+    ? true
+    : requestedStopOnFailure;
 
   const stageResults: StageResult[] = [];
   let blocked = false;
@@ -681,7 +713,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
       endDate,
       date,
       includeDownstream,
-      includeAccuracy
+      includeAccuracy,
+      useDurableProjectionBacklog
     });
     stageResults.push(result);
 
@@ -695,7 +728,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
   );
 
   const downstreamNotes = [
-    "Stage 8 is now an accuracy-only downstream validation stage, not a canonical skater projection writer.",
+    "Stage 9 is an accuracy-only downstream validation stage, not a canonical skater projection writer.",
     "The Start Chart read layer resolves skaters from forge_player_projections.",
     "update-start-chart-projections has been retired; no live player_projections materializer remains in the rolling-to-FORGE pipeline."
   ];
@@ -747,6 +780,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
   });
 }
 
-export default withCronJobAudit(handler, {
+export default withCronJobAudit(adminOnly(handler as any), {
   jobName: "run-rolling-forge-pipeline"
 });

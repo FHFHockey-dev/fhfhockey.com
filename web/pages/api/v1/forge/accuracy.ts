@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
-import { dateSchema, getQueryStringParam } from "pages/api/v1/projections/_helpers";
+import { dateSchema, getQueryStringParam } from "lib/projections/apiHelpers";
 
 const querySchema = z.object({
   endDate: dateSchema.optional(),

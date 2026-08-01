@@ -35,8 +35,8 @@ FR8. System MUST apply soft clipping to raw z via z_soft = c * tanh(z_raw / c) w
 FR9. System MUST compute finishing residual components (goals − ixG) and (goals_per_60 − ixG_per_60) if feature toggle use_finishing_residuals=true (default ON per decision 1.2) and incorporate as negative regressors or log but exclude if disabled.
 FR10. System MUST treat PDO parts (oiSH%, oiSV%) separately (NOT aggregated PDO) per selection (1.3=C); combined PDO is NOT included to avoid double weighting.
 FR11. System MUST include stabilizer metrics (definition below) as positive contributors (ixG/60, ICF/60, HDCF/60) — all standardized to position-season; additional optional (xGF%, SCF%, shot volume) may be toggled in later iteration (config flags default false if not yet selected). (See §5.)
-FR12. System MUST compute final logistic score S_raw = sigmoid( Σ_i weight_i * (r_i * z_soft_i) ), scaled to S = round(S_raw *100) with guardrails (only show 100 if S_raw≥0.995; only show 0 if ≤0.005).
-FR13. System MUST persist both S_raw (float) and S (int 0–100) plus sustainability_quintile (0–4) computed from nightly distribution (quantile-based dynamic tiers).
+FR12. Canonical v2 MUST persist the contribution sum as score logit `s_raw`, transform it through `P = sigmoid(s_raw)`, and persist `s_100 = round(P * 100, 2)`. Exact endpoint values remain reserved: 100 is valid only when `P≥0.995`, and 0 only when `P≤0.005`. Consumers may round for presentation but must not rewrite the persisted two-decimal contract.
+FR13. System MUST persist both `s_raw` (float logit) and `s_100` (numeric 0–100). Dynamic quintiles remain a separate distribution feature and must not be inferred from integer rounding.
 FR14. System MUST record component details in JSON: per metric {metric_code, z_raw, z_soft, r, n, weight, contrib}.
 FR15. System MUST mark status='provisional' if exposures below heuristic sufficiency yet still produce a score (no hard gating; FR16 handles variance broadening implicitly via reliability r).
 FR16. System MUST treat IPP gracefully when on-ice GF=0: use posterior mean only (no deviation; z_raw=0, r=0, flag neutral_component=true) per decision (6.3=B).
@@ -278,7 +278,7 @@ z_soft = c * tanh(z_raw / c) (monotone, symmetric, rank preserving in finite z r
 contrib_i = weight_i * (r_i * z_soft_i)
 
 ### 13.7 Final Score
-S_raw = sigmoid( Σ contrib_i ) ; S = integer formatting (see FR12).
+`s_raw = Σ contrib_i`; `P = sigmoid(s_raw)`; `s_100 = round(P * 100, 2)` (see FR12).
 
 ### 13.8 Handling Zero or Sparse Exposure
 If n=0 (e.g., IPP when on-ice GF=0): set z_raw=0, z_soft=0, r=0, neutral flag; metric does not shift score.
@@ -345,6 +345,8 @@ function runNightlySustainabilityJob(targetSeason):
   logSummary(snapshot, results)
   enqueueRetroIfConfigChanged(cfg)
 ```
+
+Canonical implementation note (2026-07-25): TypeScript/Supabase owns this flow. Config activation inserts one service-only resumable queue receipt. A protected worker claims one job with `SKIP LOCKED` and executes exactly one bounded priors, window-z, score, transactional distribution/quintile finalization, or trend-band stage per request. Complete score populations persist exact version/config/season/date/window snapshots and zero-based quintiles; failures retain only a fixed code and capped exponential retry. The independent production schedules remain unchanged until B-CRON-NST NEW 61 selects final ownership. Migration application and executable database proof remain gated by NEW 15.
 
 ## 15. API Changes
 - Extend existing player summary response: add { sustainability: { game: {score, raw, quintile}, g5: {...}, g10: {...}, std: {...} } }.
@@ -435,9 +437,7 @@ function runNightlySustainabilityJob(targetSeason):
 ### 23.3 Score Formatting Function
 ```ts
 function formatScore(raw: number): number {
-  if (raw >= 0.995) return 100;
-  if (raw <= 0.005) return 0;
-  return Math.round(raw * 100);
+  return Number((raw * 100).toFixed(2));
 }
 ```
 
@@ -445,3 +445,43 @@ function formatScore(raw: number): number {
 Model Version: 1 (initial)  
 Prepared for: Sustainability Barometer MVP  
 Status: Draft Ready for Task Breakdown  
+
+## 24. Super-goal audit update (2026-07-22)
+
+The source task list is an in-progress 37/89 implementation, not an unstarted eight-row initiative. Current configuration and pure rolling/scoring cohorts pass 28 focused Python tests plus module compilation, so parents 2.0 and 4.0 are reconciled complete. The malformed checked 1.0 parent is normalized open, conceptual-only 1.7 and stub-backed 3.2–3.4 are reopened, and P1 NEW 10 records a material ownership mismatch: the legacy Python adapter targets several absent draft tables/columns while the authoritative production schema and active TypeScript Sustainability pipeline use different canonical contracts. Dependency order is schema/owner decision and exact adapter contract → executable migration/runtime proof → pipeline/API/UI/observability/versioning; no database or production mutation is part of this audit.
+
+## 25. Canonical ownership decision (2026-07-22)
+
+Owner-approved Option A makes the existing TypeScript/Supabase Sustainability implementation the only production contract. Canonical priors are read from `player_totals_unified` and written to `sustainability_priors` plus `sustainability_player_priors`; production scoring remains under `web/lib/sustainability/*` and `web/pages/api/v1/sustainability/*`. Python retains deterministic offline math, fixture, benchmark, and comparison value, but its disconnected database adapter is retired and every persistence/orchestration switch fails closed.
+
+The canonical prior reads must range-paginate ordered source rows and split large player-ID filters into bounded chunks. Offset and limit apply to current-season player identities before fetching all three complete NHL seasons. NHL season identifiers are concatenated year pairs, so prior seasons are derived component-wise (`20252026` → `20242025` → `20232024`), never by integer subtraction. The production catalog and checked-in schema baseline are authoritative over legacy draft table names.
+
+## 26. Canonical v2 score-format decision (2026-07-23)
+
+Fractional two-decimal `s_100` is the canonical persisted v2 contract. It preserves information for ranking and calibration while compact UI surfaces remain free to round at presentation time. `s_raw` is the pre-sigmoid contribution sum/logit, not the probability itself; `sigmoid(s_raw)` produces the probability scaled into `s_100`.
+
+A value-free production aggregate over 249,520 rows finds 217,724 fractional scores and 144,832 rows explicitly stamped `sustainability_score_v2`. All 20,563 exact 100 rows have `sigmoid(s_raw)≥0.995`, and all 8,754 exact zero rows have `sigmoid(s_raw)≤0.005`; there are zero invalid exact endpoints. Existing fractional and exact rows therefore satisfy one numeric v2 contract and require no historical rewrite. Runtime constants publish precision 2 and the 0.005/0.995 endpoint thresholds; persisted-row guardrails replace an unqualified exact endpoint with its two-decimal probability score and emit a warning. Synthetic writer/reader boundary coverage plus the existing score suite proves the contract.
+
+## 27. Canonical API/window decision (2026-07-23)
+
+The deployed `l3`, `l5`, `l10`, and `l20` rolling windows are the canonical public taxonomy. The draft-only `GAME`, `G5`, `G10`, and `STD` labels are retired rather than mapped ambiguously onto production data.
+
+The existing player route remains backward compatible in its default single-window mode and gains additive `summary=true` behavior. That summary returns the deterministic latest score for each canonical window plus stored model/config provenance.
+
+The latest-snapshot leaderboard accepts canonical window, minimum-games, minimum-score, rookie-only, page, and bounded page-size controls. It uses complete range-paginated score/player-total reads, score-descending/player-ID ordering, current-season games, and an explicit rookie rule of no games in either prior canonical season. The endpoint returns stored components for `include=components` only after the existing admin/cron boundary authorizes the request. Public responses emit a deterministic SHA-256 ETag and shared-cache policy with matching 304 support; component responses are private/no-store. Production read-only `EXPLAIN` proves `idx_susscore_date_win` supplies index-only latest-snapshot discovery and exact snapshot/window row selection. The focused group passes 3 files/10 tests plus TypeScript and closes 6.0–6.7 and NEW 14.
+
+Canonical version/config decision (2026-07-25): the active TypeScript/Supabase `sustainability_scores` and `sustainability_player_priors` tables—not draft `model_player_game_barometers`—own score-v2 provenance. First-class string `model_version` and stable `config_hash` fields are additive. Existing embedded score provenance is retained; rows without it are labeled `legacy_unversioned` rather than reinterpreted. One service-only transactional activation RPC advances the integer config revision exactly once, validates the nested score-v2 weight contract, keeps exactly one active row, and enqueues a forced-RLS recompute receipt. Revision 2 preserves the deployed score-v2 weights under hash `fnv1a_91691726`. Future A/B candidates remain offline and version-distinct until methodology approval; activation never rewrites history, and bounded queue execution remains separately authorized.
+
+Production application receipt (2026-07-31): ordered migration `20260725223034_add_sustainability_version_provenance.sql` is applied before exact-SHA application publication. Value-free catalog/ACL evidence preserves the local activation, queue, finalizer, and service-only contracts. No config was activated and no Sustainability writer ran. NEW 15 closes and B-SUST-BAR is complete at 95/95.
+
+## 28. Canonical frontend signal components (2026-07-23)
+
+The FORGE dashboard Trust/Fade lists now consume one reusable Sustainability UI family: a dynamically quantile-tiered accessible badge, bounded ten-point canonical-window score history with a truthful fallback, and a keyboard-native component disclosure table sorted by absolute contribution. Guardrail-degraded scores are explicitly announced and styled as provisional. Reliability/sample values not present in the canonical v2 component payload remain visibly unavailable rather than inferred.
+
+The history reader chunks player IDs, restricts each request to a 90-day date window, range-paginates deterministic rows, and caps each rendered series at ten points. Both dashboard lists integrate the signals without nesting the disclosure control inside the player-detail link. Shared formatting and one Storybook surface cover ready, provisional, populated-history, fallback, and component states. The focused UI/helper/normalizer/dashboard group passes 4 files/39 tests, TypeScript, bundled-Node-24 Sass compilation, and diff integrity, closing 7.0–7.8.
+
+## 29. Canonical score observability (2026-07-23)
+
+Each score rebuild emits named prerequisite, player-load, league-reference, score-build, verification, persistence, and optional drift timings alongside processed, built, written, chunk, and anomaly counts in both its structured server event and audited response. Extreme detection operates on finite raw window z values before canonical clipping: `|z|>5` persists `extremeFlag`, sorted metric names, and the threshold inside the canonical score component JSON. This preserves the signal without adding a competing draft-table column.
+
+Each rebuild randomly samples at most 25 computed rows and compares them with stored same-snapshot/window/player values before persistence, exposing baseline gaps plus maximum/mean difference and alerting past 0.01. The existing active nightly `runAll=true` call performs the drift gate after its complete write: a range-paginated `l10` population compares current mean/stdev with the prior seven daily distributions and alerts beyond five score points. No new schedule or feature flag is introduced. The focused observability/score/guardrail/route group passes 4 files/10 tests plus TypeScript and diff integrity, closing 8.0–8.8.

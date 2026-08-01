@@ -1,6 +1,7 @@
 // C:\Users\timbr\Desktop\FHFH\fhfhockey.com-3\web\pages\api\v1\db\update-wgo-goalie-totals.ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import adminOnly from "utils/adminOnlyMiddleware";
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server";
 import Fetch from "lib/cors-fetch";
@@ -311,4 +312,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

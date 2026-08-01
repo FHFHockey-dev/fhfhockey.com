@@ -1,26 +1,26 @@
 ## Relevant Files
 
-- `tasks/tasks-nhl-api-xg-model.md` - Execution plan for NHL API ingestion, NST parity reconstruction, and xG data-foundation work.
-- `tasks/prd-nhl-api-xg-model.md` - Final PRD for the migration and xG data platform once scope decisions are closed.
+- `tasks/TASKS/xg-model/tasks-nhl-api-xg-model.md` - Execution plan for NHL API ingestion, NST parity reconstruction, and xG data-foundation work.
+- `tasks/TASKS/xg-model/nhl-api-foundation/prd/prd-nhl-api-xg-model.md` - Final PRD for the migration and xG data platform once scope decisions are closed.
 - `tasks/TASKS/xg-model/nhl-api-foundation/nhl-api-nst-migration-brief.md` - Current technical brief summarizing the recon findings, schema choice, and open policy questions.
-- `tasks/definitions-and-parity.md` - Canonical source of truth for event definitions, exclusions, parity targets, and versioning policy.
-- `tasks/event-dictionary.md` - Living catalog of NHL event types, `details` keys, nullable behavior, and examples.
+- `tasks/TASKS/xg-model/docs/definitions-and-parity.md` - Canonical source of truth for event definitions, exclusions, parity targets, and versioning policy.
+- `tasks/TASKS/xg-model/docs/event-dictionary.md` - Living catalog of NHL event types, `details` keys, nullable behavior, and examples.
 - `tasks/TASKS/xg-model/nhl-api-foundation/strength-mapping.md` - Canonical mapping for `situationCode`, manpower state, and exact/canonical strength labels.
 - `tasks/TASKS/xg-model/nhl-api-foundation/legacy-ingest-conventions.md` - Audit of the existing `pbp_games`, `pbp_plays`, and `shift_charts` ingest/idempotency/audit contract to preserve or replace during migration.
 - `tasks/TASKS/xg-model/nhl-api-foundation/upstream-ambiguities.md` - Canonical register of sparse fields, endpoint ambiguities, fallback rules, and documented non-parity exceptions.
 - `tasks/TASKS/xg-model/nhl-api-foundation/schema-recommendation.md` - Architecture decision record for raw snapshots, normalized event rows, shift rows, and future derived tables.
-- `tasks/data-contract-boundaries.md` - Canonical boundary document for what belongs in raw storage, normalized facts, derived feature rows, and published parity outputs.
+- `tasks/TASKS/xg-model/docs/data-contract-boundaries.md` - Canonical boundary document for what belongs in raw storage, normalized facts, derived feature rows, and published parity outputs.
 - `tasks/TASKS/xg-model/nhl-api-foundation/metric-parity-map.md` - Mapping of every legacy NST metric and table family to its NHL-derived replacement path.
 - `tasks/TASKS/xg-model/nhl-api-foundation/pbp-plays-vs-nhl-api-events-audit.md` - Comparison of legacy `pbp_plays` against `nhl_api_pbp_events`, including count parity, shared-field parity, and legacy-only assumptions.
 - `tasks/TASKS/xg-model/nhl-api-foundation/shift-charts-vs-nhl-api-shifts-audit.md` - Comparison of legacy `shift_charts` against `nhl_api_shift_rows`, including TOI parity, player coverage, and baseline limitations.
 - `tasks/TASKS/xg-model/nhl-api-foundation/validation-checklist.md` - Manual and automated validation checklist required before parity sign-off or training use.
 - `tasks/TASKS/xg-model/nhl-api-foundation/manual-audit-requirements.md` - Human spot-check procedure and pass/fail rules for representative event, strength, and on-ice audits.
 - `tasks/TASKS/xg-model/nhl-api-foundation/idempotent-backfill-behavior.md` - Replay and backfill contract for raw snapshots, normalized rows, and future derived/parity outputs.
-- `tasks/failure-handling-policy.md` - Retry, logging, and partial-failure contract for upstream, parser, and schema-level NHL ingest failures.
-- `tasks/final-implementation-summary.md` - Release-facing summary of what is complete, approximate, deferred, and still blocking training or production rollout.
+- `tasks/TASKS/xg-model/docs/failure-handling-policy.md` - Retry, logging, and partial-failure contract for upstream, parser, and schema-level NHL ingest failures.
+- `tasks/TASKS/xg-model/docs/final-implementation-summary.md` - Release-facing summary of what is complete, approximate, deferred, and still blocking training or production rollout.
 - `tasks/TASKS/xg-model/nhl-api-foundation/post-foundation-follow-ups.md` - Follow-up queue for training, coefficient fitting, calibration, benchmarking, advanced features, and post-validation productization.
 - `tasks/TASKS/xg-model/nhl-api-foundation/live-schema-drift-audit.md` - Live Supabase catalog audit comparing `nhl_api_*` table shape, constraints, indexes, trigger, and view definitions against the phase-1 migration.
-- `tasks/corrective-migration-decision.md` - No-op decision record confirming whether an additive schema-repair migration is still required after the live drift audit.
+- `tasks/TASKS/xg-model/nhl-api-foundation/corrective-migration-decision.md` - No-op decision record confirming whether an additive schema-repair migration is still required after the live drift audit.
 - `tasks/TASKS/xg-model/nhl-api-foundation/post-drift-retry-verification.md` - Operational verification record for type regeneration, sampled raw-ingest retry, and direct row-count confirmation after the drift audit.
 - `tasks/artifacts/nhl-manual-audit-2026-03-30.md` - Dated manual audit artifact with live sampled findings from Supabase-backed NHL API ingest tables.
 - `tasks/artifacts/nhl-pbp-recon-2026-03-30.md` - Generated reconnaissance report with sampled games, observed event types, and validated `situationCode` examples.
@@ -90,13 +90,13 @@
   - [x] 1.2 Decide whether exact NST parity or NHL-derived “correctness” wins when the two disagree on edge cases, and document the policy explicitly. NHL-derived correctness wins when it conflicts with NST on edge cases; any intentional divergence must be documented and versioned.
   - [x] 1.3 Decide whether the first production rollout targets current season only or includes immediate historical backfill, and update the backfill tasks accordingly. Prioritize current season only for the first rollout, but build in a query parameter that can trigger immediate historical backfill when needed.
   - [x] 1.4 Decide whether rush, rebound, flurry, and danger-bucket classifications are phase-1 deliverables or a second-pass derived layer after raw/event/shift ingestion stabilizes. Rush, rebound, flurry, and danger-bucket classifications are phase-1 deliverables.
-  - [x] 1.5 Convert `tasks/TASKS/xg-model/nhl-api-foundation/nhl-api-nst-migration-brief.md` plus the resolved decisions into `tasks/prd-nhl-api-xg-model.md`.
-  - [x] 1.6 Create `tasks/definitions-and-parity.md` as the canonical source of truth for event definitions, exclusions, parity expectations, and versioning policy.
+  - [x] 1.5 Convert `tasks/TASKS/xg-model/nhl-api-foundation/nhl-api-nst-migration-brief.md` plus the resolved decisions into `tasks/TASKS/xg-model/nhl-api-foundation/prd/prd-nhl-api-xg-model.md`.
+  - [x] 1.6 Create `tasks/TASKS/xg-model/docs/definitions-and-parity.md` as the canonical source of truth for event definitions, exclusions, parity expectations, and versioning policy.
   - [x] 1.7 Create `tasks/TASKS/xg-model/nhl-api-foundation/metric-parity-map.md` listing every existing NST-derived metric currently used by the repo, its target NHL-derived replacement, and its status: exact, close approximation, unsupported, or deprecated.
   - [x] 1.8 Define versioning rules for parser logic, strength logic, parity logic, derived features, and future xG model versions.
 
 - [x] 2.0 Consolidate reconnaissance and legacy-contract findings into living docs
-  - [x] 2.1 Promote the sampled event taxonomy from `tasks/artifacts/nhl-pbp-recon-2026-03-30.md` into `tasks/event-dictionary.md`.
+  - [x] 2.1 Promote the sampled event taxonomy from `tasks/artifacts/nhl-pbp-recon-2026-03-30.md` into `tasks/TASKS/xg-model/docs/event-dictionary.md`.
   - [x] 2.2 Promote the validated `situationCode` findings into `tasks/TASKS/xg-model/nhl-api-foundation/strength-mapping.md`, including explicit examples for `1331`, `0651`, and `1560`.
   - [x] 2.3 Record the current upstream endpoint shape differences, including the finding that `play-by-play` exposes `rosterSpots` while `boxscore` may not expose the expected roster sections for the same game.
   - [x] 2.4 Confirm the canonical event-ordering field for deterministic in-game sequencing and document it in the event dictionary and parser notes.
@@ -120,7 +120,7 @@
   - [x] 4.2 Run `web/scripts/ingest-nhl-api-raw.mjs` for the sampled recon games and verify that raw payload snapshots, roster spots, event rows, and shift rows are populated as expected.
   - [x] 4.3 Compare the newly ingested `nhl_api_pbp_events` rows against existing `pbp_plays` rows for overlapping games to identify flattening gaps, field mismatches, or legacy-only assumptions.
   - [x] 4.4 Compare `nhl_api_shift_rows` against existing `shift_charts` aggregates to confirm the raw shift feed can support current TOI totals and later stint reconstruction.
-  - [x] 4.5 Extract shared logic from `web/scripts/ingest-nhl-api-raw.mjs` into reusable library modules such as `web/lib/supabase/Upserts/nhlRawGamecenter.ts`.
+  - [x] 4.5 Extract shared logic from `web/scripts/ingest-nhl-api-raw.mjs` into reusable `web/lib/supabase/Upserts/nhlRawGamecenter.mjs`.
   - [x] 4.6 Add or update API routes that can invoke the new raw-ingestion flow for one game, a date range, or a backfill batch using the repo’s normal audit and auth patterns.
   - [x] 4.7 Decide whether the legacy `pbp_games`, `pbp_plays`, and `shift_charts` flows should dual-write during migration or remain frozen while the new pipeline is validated. Legacy `pbp_games`, `pbp_plays`, and `shift_charts` will remain frozen while the new NHL API pipeline is validated.
   - [x] 4.8 Add unit and route-level tests covering raw ingest retries, checksum/idempotency handling, and basic Supabase upsert behavior.
@@ -164,3 +164,7 @@
   - [x] 8.4 Decide whether to keep `pbp_plays` frozen as a partial comparison baseline or backfill its missing recent-game coverage for broader overlap validation. `pbp_plays` will remain frozen as a partial comparison baseline.
   - [x] 8.5 Decide whether `shift_charts` should remain a validation baseline as-is or be repaired/backfilled, given that recent rows can have null `game_toi`, `durations`, and `shifts`. `shift_charts` will remain a secondary validation surface for player coverage and ES/PP/PK TOI totals only; `nhl_api_shift_rows` is the canonical source for raw shift reconstruction, stint logic, on-ice replay, and feature generation.
   - [x] 8.6 Add retry/backoff handling around raw NHL endpoint fetches so multi-game ingest batches survive transient `UND_ERR_SOCKET` failures instead of aborting the whole run. Completed during `4.8` by adding shared retry/backoff fetch handling in `web/lib/supabase/Upserts/nhlRawGamecenter.mjs`.
+
+- [x] NEW 9.0 **P1 unbounded raw-ingest request fan-out:** both authenticated NHL raw-ingest routes accepted an arbitrary `limit` and could run 1,001+ sequential four-endpoint game ingests inside the 240-second function. The shared selector now rejects limits above 25 before database work, fetches at most one extra date-range identity to fail closed on implicit truncation, and directs broader work to bounded backfill slices. Focused route regressions pass (discovered and completed 2026-07-29).
+- [x] NEW 9.1 **P1 multi-game fail-fast/partial-failure contract drift:** date-range and backfill modes called the fail-fast batch helper, so one game-local failure prevented later games from running and exposed no structured partial result despite the documented contract. Multi-game work now uses the existing sequential retrying best-effort helper, returns bounded succeeded/failed game IDs and successful-row telemetry, emits value-free HTTP 500 on any failure, and never serializes the underlying URL/error text. Focused route regressions pass (discovered and completed 2026-07-29).
+- [x] NEW 9.2 **P3 current-status and canonical-path reconciliation:** repaired nine pre-reorganization task/document paths plus the shipped `.mjs` helper path, and reconciled the implementation summary/PRD with the later exception-aware training-use PASS while preserving the separate production-reader, authoritative-publication, transactional-normalization migration, and large-history gates (discovered and completed 2026-07-29).

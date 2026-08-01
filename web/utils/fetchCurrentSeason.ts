@@ -17,6 +17,66 @@ export interface SeasonInfo {
   idTwo?: number;
 }
 
+function isValidSeasonInfoResponse(value: unknown): value is {
+  id: number;
+  startDate: string;
+  regularSeasonEndDate: string;
+  endDate: string;
+} {
+  if (!value || typeof value !== "object") return false;
+  const row = value as Record<string, unknown>;
+  return (
+    Number.isSafeInteger(row.id) &&
+    Number(row.id) > 0 &&
+    typeof row.startDate === "string" &&
+    typeof row.regularSeasonEndDate === "string" &&
+    typeof row.endDate === "string"
+  );
+}
+
+function toSeasonInfo(value: {
+  id: number;
+  startDate: string;
+  regularSeasonEndDate: string;
+  endDate: string;
+}): SeasonInfo {
+  const timeZone = "America/New_York";
+  const playoffsStart = toZonedTime(
+    parseISO(value.regularSeasonEndDate),
+    timeZone,
+  );
+  playoffsStart.setDate(playoffsStart.getDate() + 1);
+  const playoffsEnd = toZonedTime(parseISO(value.endDate), timeZone);
+  return {
+    id: value.id,
+    startDate: value.startDate,
+    regularSeasonEndDate: value.regularSeasonEndDate,
+    endDate: value.endDate,
+    playoffsStartDate: playoffsStart.getTime(),
+    playoffsEndDate: playoffsEnd.getTime(),
+  };
+}
+
+export async function fetchSeasonById(seasonId: number): Promise<SeasonInfo> {
+  if (!Number.isSafeInteger(seasonId) || seasonId <= 0) {
+    throw new Error("A valid season ID is required.");
+  }
+  const isServer = typeof window === "undefined";
+  const base = isServer
+    ? process.env.NEXT_PUBLIC_SITE_URL ||
+      `http://localhost:${process.env.PORT || 3000}`
+    : "";
+  const response = await fetch(`${base}/api/v1/season?season=${seasonId}`);
+  if (!response.ok) {
+    throw new Error(`Unable to load season ${seasonId}: ${response.status}`);
+  }
+  const value: unknown = await response.json();
+  if (!isValidSeasonInfoResponse(value)) {
+    throw new Error(`Season ${seasonId} returned an invalid contract.`);
+  }
+  return toSeasonInfo(value);
+}
+
 // console marker removed for production noise reduction
 
 export async function fetchCurrentSeason(): Promise<SeasonInfo> {
@@ -43,7 +103,7 @@ export async function fetchCurrentSeason(): Promise<SeasonInfo> {
         body = await res.text();
       } catch (_) {}
       throw new Error(
-        `Internal API error ${res.status}${body ? ` – ${body.slice(0, 300)}` : ""}`
+        `Internal API error ${res.status}${body ? ` – ${body.slice(0, 300)}` : ""}`,
       );
     }
     const s = await res.json();
@@ -51,21 +111,21 @@ export async function fetchCurrentSeason(): Promise<SeasonInfo> {
     const now = toZonedTime(new Date(), timeZone);
     const currentStart = toZonedTime(
       parseISO(s.regularSeasonStartDate),
-      timeZone
+      timeZone,
     );
     const prevRegEnd = toZonedTime(
       parseISO(s.lastRegularSeasonEndDate),
-      timeZone
+      timeZone,
     );
 
     // Helper to build SeasonInfo from fields
-    const toSeasonInfo = (
+    const toCurrentSeasonInfo = (
       id: number,
       start: string,
       regEnd: string,
       end: string,
       idPrev?: number,
-      idTwo?: number
+      idTwo?: number,
     ): SeasonInfo => {
       const playoffsStart = toZonedTime(parseISO(regEnd), timeZone);
       playoffsStart.setDate(playoffsStart.getDate() + 1);
@@ -78,39 +138,39 @@ export async function fetchCurrentSeason(): Promise<SeasonInfo> {
         playoffsStartDate: playoffsStart.getTime(),
         playoffsEndDate: playoffsEnd.getTime(),
         idPrev,
-        idTwo
+        idTwo,
       } as SeasonInfo;
     };
 
     // If before current season start but after last season regular season end, use last season
     if (now < currentStart && now > prevRegEnd) {
-      return toSeasonInfo(
+      return toCurrentSeasonInfo(
         s.lastSeasonId,
         s.lastRegularSeasonStartDate,
         s.lastRegularSeasonEndDate,
         s.lastSeasonEndDate,
         undefined,
-        s.seasonId
+        s.seasonId,
       );
     }
 
-    return toSeasonInfo(
+    return toCurrentSeasonInfo(
       s.seasonId,
       s.regularSeasonStartDate,
       s.regularSeasonEndDate,
       s.seasonEndDate,
       s.lastSeasonId,
-      undefined
+      undefined,
     );
   } catch (internalErr) {
     console.warn(
       "Internal season API failed, falling back to NHL API:",
-      internalErr
+      internalErr,
     );
 
     // Fallback to NHL public endpoint (may be unstable)
     const response = await Fetch(
-      "https://api.nhle.com/stats/rest/en/season?sort=%5B%7B%22property%22:%22id%22,%22direction%22:%22DESC%22%7D%5D"
+      "https://api.nhle.com/stats/rest/en/season?sort=%5B%7B%22property%22:%22id%22,%22direction%22:%22DESC%22%7D%5D",
     );
     if (!response.ok) {
       throw new Error(`Failed to fetch season data: ${response.statusText}`);
@@ -125,27 +185,27 @@ export async function fetchCurrentSeason(): Promise<SeasonInfo> {
     const startDate = toZonedTime(parseISO(currentSeason.startDate), timeZone);
     const prevEndDate = toZonedTime(
       parseISO(previousSeason.regularSeasonEndDate),
-      timeZone
+      timeZone,
     );
 
     const playoffsStartDate = toZonedTime(
       parseISO(currentSeason.regularSeasonEndDate),
-      timeZone
+      timeZone,
     );
     playoffsStartDate.setDate(playoffsStartDate.getDate() + 1);
     const playoffsEndDate = toZonedTime(
       parseISO(currentSeason.endDate),
-      timeZone
+      timeZone,
     );
 
     const prevPlayoffsStartDate = toZonedTime(
       parseISO(previousSeason.regularSeasonEndDate),
-      timeZone
+      timeZone,
     );
     prevPlayoffsStartDate.setDate(prevPlayoffsStartDate.getDate() + 1);
     const prevPlayoffsEndDate = toZonedTime(
       parseISO(previousSeason.endDate),
-      timeZone
+      timeZone,
     );
 
     if (now < startDate && now > prevEndDate) {
@@ -156,7 +216,7 @@ export async function fetchCurrentSeason(): Promise<SeasonInfo> {
         endDate: previousSeason.endDate,
         playoffsStartDate: prevPlayoffsStartDate.getTime(),
         playoffsEndDate: prevPlayoffsEndDate.getTime(),
-        previousSeason
+        previousSeason,
       } as SeasonInfo;
     } else {
       return {
@@ -166,7 +226,7 @@ export async function fetchCurrentSeason(): Promise<SeasonInfo> {
         endDate: currentSeason.endDate,
         playoffsStartDate: playoffsStartDate.getTime(),
         playoffsEndDate: playoffsEndDate.getTime(),
-        idPrev: previousSeason.id
+        idPrev: previousSeason.id,
       } as SeasonInfo;
     }
   }

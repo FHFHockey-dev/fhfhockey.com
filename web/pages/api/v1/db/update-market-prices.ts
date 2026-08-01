@@ -200,7 +200,9 @@ export default withCronJobAudit(
       }
 
       const season = await getCurrentSeason();
-      const teams = buildOddsTeamDirectory(await getTeams(season.seasonId));
+      const teams = buildOddsTeamDirectory(
+        await getTeams(season.seasonId, { mode: "current-canonical" }),
+      );
       const teamIds = Array.from(
         new Set(
           scheduledGames.flatMap((game) => [game.homeTeamId, game.awayTeamId]).filter(Number.isFinite)

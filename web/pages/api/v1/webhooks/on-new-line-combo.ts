@@ -50,18 +50,10 @@ export default adminOnly(async (req, res) => {
       message: "Successfully handled the line combo for " + gameId
     });
   } catch (e: any) {
-    // Log the full error and return a more informative response.
     console.error("on-new-line-combo error:", e);
-    const msg =
-      e && e.message
-        ? e.message
-        : typeof e === "string"
-          ? e
-          : JSON.stringify(e);
-    const details = e && e.stack ? e.stack : msg;
     res.status(500).json({
-      error: `Failed to handle the line combo ${teamId}-${gameId} error: ${msg}`,
-      details
+      success: false,
+      error: "Line-combination webhook processing failed."
     });
   }
 });
@@ -69,7 +61,6 @@ export default adminOnly(async (req, res) => {
 async function saveLinemateMatrixImages(gameId: number, teamIds: number[]) {
   console.log("Start to save line combo for " + gameId);
   let old = Date.now();
-  console.log(process.env.PUPPETEER_ENDPOINT);
   if (!process.env.PUPPETEER_ENDPOINT) {
     throw new NonRetryableWebhookError("PUPPETEER_ENDPOINT is not configured.");
   }

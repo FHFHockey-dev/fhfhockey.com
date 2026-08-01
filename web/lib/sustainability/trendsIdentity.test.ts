@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   fetchSustainabilityTrendIdentity,
+  fetchSustainabilityTrendHistory,
   fetchSustainabilityTrendScores,
   type SustainabilityTrendScoreRow,
 } from "./trendsIdentity";
@@ -136,5 +137,46 @@ describe("sustainability trend identity", () => {
       [0, 499],
       [500, 999],
     ]);
+  });
+
+  it("returns a bounded recent score history for each requested player", async () => {
+    const ranges: Array<[number, number]> = [];
+    const client = {
+      from() {
+        const builder: any = {
+          select() { return builder; },
+          in() { return builder; },
+          eq() { return builder; },
+          gte() { return builder; },
+          lte() { return builder; },
+          order() { return builder; },
+          range(from: number, to: number) {
+            ranges.push([from, to]);
+            return Promise.resolve({
+              data: [
+                { player_id: 1, snapshot_date: "2026-03-19", s_100: 40 },
+                { player_id: 1, snapshot_date: "2026-03-20", s_100: 50 },
+                { player_id: 1, snapshot_date: "2026-03-21", s_100: 60 },
+              ],
+              error: null,
+            });
+          },
+        };
+        return builder;
+      },
+    };
+
+    const history = await fetchSustainabilityTrendHistory(client as any, {
+      playerIds: [1],
+      windowCode: "l10",
+      endDate: "2026-03-21",
+      points: 2,
+    });
+
+    expect(history.get(1)).toEqual([
+      { snapshot_date: "2026-03-20", s_100: 50 },
+      { snapshot_date: "2026-03-21", s_100: 60 },
+    ]);
+    expect(ranges).toEqual([[0, 499]]);
   });
 });

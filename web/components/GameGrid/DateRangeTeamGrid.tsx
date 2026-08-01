@@ -10,7 +10,7 @@ import { GameData } from "lib/NHL/types";
 
 import useDateRangeTeamGrid, {
   DateMeta,
-  TeamDateGames
+  TeamDateGames,
 } from "./utils/useDateRangeTeamGrid";
 
 import styles from "./DateRangeTeamGrid.module.scss";
@@ -49,7 +49,7 @@ function classForDay(game: GameData | undefined, meta: DateMeta | undefined) {
 
 function computeBackToBacks(
   dates: string[],
-  gamesByDate: Record<string, GameData>
+  gamesByDate: Record<string, GameData>,
 ) {
   let count = 0;
   for (let i = 0; i < dates.length - 1; i++) {
@@ -62,7 +62,7 @@ function computeBackToBacks(
 
 export default function DateRangeTeamGrid({
   start,
-  end
+  end,
 }: DateRangeTeamGridProps) {
   const teams = useTeamsMap();
   const { dates, teamDateGames, dateMetaByDate, loading, error } =
@@ -94,7 +94,7 @@ export default function DateRangeTeamGrid({
     return Object.entries(teamsInfo)
       .map(([abbreviation, info]) => ({
         abbreviation,
-        info
+        info,
       }))
       .sort((a, b) => a.info.name.localeCompare(b.info.name));
   }, []);
@@ -106,7 +106,7 @@ export default function DateRangeTeamGrid({
         id: canonicalId,
         name: info.name,
         abbreviation: info.abbrev ?? abbreviation,
-        logo: `/teamLogos/${(info.abbrev ?? abbreviation).toUpperCase()}.png`
+        logo: `/teamLogos/${(info.abbrev ?? abbreviation).toUpperCase()}.png`,
       };
 
       const sourceIds = [canonicalId, ...(info.legacyIds ?? [])];
@@ -138,7 +138,7 @@ export default function DateRangeTeamGrid({
           if (sourceIdSet.has(g.awayTeam.id)) acc.away++;
           return acc;
         },
-        { home: 0, away: 0 }
+        { home: 0, away: 0 },
       );
 
       return {
@@ -149,7 +149,7 @@ export default function DateRangeTeamGrid({
         b2b,
         home,
         away,
-        sourceIdSet
+        sourceIdSet,
       };
     });
   }, [canonicalTeams, teams, teamDateGames, dates, dateMetaByDate]);
@@ -178,7 +178,8 @@ export default function DateRangeTeamGrid({
       if (prev?.key === key) {
         return {
           key,
-          direction: prev.direction === "ascending" ? "descending" : "ascending"
+          direction:
+            prev.direction === "ascending" ? "descending" : "ascending",
         };
       }
       return { key, direction: "descending" }; // numeric columns default to desc
@@ -188,6 +189,17 @@ export default function DateRangeTeamGrid({
   const ariaSortFor = (key: SortKey) => {
     if (sortConfig?.key !== key) return undefined;
     return sortConfig.direction === "ascending" ? "ascending" : "descending";
+  };
+
+  const handleSortKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    key: SortKey,
+  ) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      if (event.repeat) return;
+      toggleSort(key);
+    }
   };
 
   const monthStartDates = useMemo(() => {
@@ -206,7 +218,7 @@ export default function DateRangeTeamGrid({
       const lefts: number[] = [];
       monthStartDates.forEach((d) => {
         const th = table.querySelector<HTMLTableCellElement>(
-          `th[data-date="${d}"]`
+          `th[data-date="${d}"]`,
         );
         if (!th) return;
         lefts.push(th.offsetLeft);
@@ -234,7 +246,7 @@ export default function DateRangeTeamGrid({
               {parsedRange
                 ? `${format(parsedRange.startDate, "MMM d, yyyy")} – ${format(
                     parsedRange.endDate,
-                    "MMM d, yyyy"
+                    "MMM d, yyyy",
                   )}`
                 : `${start} – ${end}`}
             </p>
@@ -287,66 +299,62 @@ export default function DateRangeTeamGrid({
                     <th
                       title="Off-night games (≤8 NHL games)"
                       className={styles.sortableMetricHeader}
-                      role="button"
-                      tabIndex={0}
                       aria-sort={ariaSortFor("off")}
-                      onClick={() => toggleSort("off")}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          toggleSort("off");
-                        }
-                      }}
                     >
-                      OFF
+                      <button
+                        type="button"
+                        className={styles.metricSortButton}
+                        aria-label="Sort by off-night games"
+                        onClick={() => toggleSort("off")}
+                        onKeyDown={(event) => handleSortKeyDown(event, "off")}
+                      >
+                        OFF
+                      </button>
                     </th>
                     <th
                       title="Back-to-backs (consecutive game days)"
                       className={styles.sortableMetricHeader}
-                      role="button"
-                      tabIndex={0}
                       aria-sort={ariaSortFor("b2b")}
-                      onClick={() => toggleSort("b2b")}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          toggleSort("b2b");
-                        }
-                      }}
                     >
-                      B2B
+                      <button
+                        type="button"
+                        className={styles.metricSortButton}
+                        aria-label="Sort by back-to-back games"
+                        onClick={() => toggleSort("b2b")}
+                        onKeyDown={(event) => handleSortKeyDown(event, "b2b")}
+                      >
+                        B2B
+                      </button>
                     </th>
                     <th
                       title="Home games"
                       className={styles.sortableMetricHeader}
-                      role="button"
-                      tabIndex={0}
                       aria-sort={ariaSortFor("home")}
-                      onClick={() => toggleSort("home")}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          toggleSort("home");
-                        }
-                      }}
                     >
-                      HOME
+                      <button
+                        type="button"
+                        className={styles.metricSortButton}
+                        aria-label="Sort by home games"
+                        onClick={() => toggleSort("home")}
+                        onKeyDown={(event) => handleSortKeyDown(event, "home")}
+                      >
+                        HOME
+                      </button>
                     </th>
                     <th
                       title="Away games"
                       className={styles.sortableMetricHeader}
-                      role="button"
-                      tabIndex={0}
                       aria-sort={ariaSortFor("away")}
-                      onClick={() => toggleSort("away")}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          toggleSort("away");
-                        }
-                      }}
                     >
-                      AWAY
+                      <button
+                        type="button"
+                        className={styles.metricSortButton}
+                        aria-label="Sort by away games"
+                        onClick={() => toggleSort("away")}
+                        onKeyDown={(event) => handleSortKeyDown(event, "away")}
+                      >
+                        AWAY
+                      </button>
                     </th>
                     {dates.map((d) => {
                       const dt = parseISO(d);
@@ -360,7 +368,7 @@ export default function DateRangeTeamGrid({
                           title={format(dt, "MMM d, yyyy")}
                           className={[
                             styles.dayHeaderCell,
-                            isMonthStart ? styles.monthStartHeader : ""
+                            isMonthStart ? styles.monthStartHeader : "",
                           ]
                             .filter(Boolean)
                             .join(" ")}
@@ -427,7 +435,7 @@ export default function DateRangeTeamGrid({
 
                           const opponentId = getOpponentTeamId(
                             row.sourceIdSet,
-                            g
+                            g,
                           );
                           const opponentLogo = getTeamLogo(opponentId, teams);
                           const opponent = teams[opponentId];

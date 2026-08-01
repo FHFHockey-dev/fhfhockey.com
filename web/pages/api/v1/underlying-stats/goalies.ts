@@ -10,7 +10,9 @@ import { buildGoalieStatsLandingAggregationFromState } from "lib/underlying-stat
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<GoalieStatsLandingApiResponse | GoalieStatsLandingApiError>
+  res: NextApiResponse<
+    GoalieStatsLandingApiResponse | GoalieStatsLandingApiError
+  >,
 ) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
@@ -26,7 +28,9 @@ export default async function handler(
   }
 
   try {
-    const aggregation = await buildGoalieStatsLandingAggregationFromState(parsed.state);
+    const aggregation = await buildGoalieStatsLandingAggregationFromState(
+      parsed.state,
+    );
     const response = await overlayEntityRatingsOnLandingResponse({
       response: {
         ...aggregation,
@@ -36,7 +40,10 @@ export default async function handler(
       variant: "goalie",
     });
 
-    res.setHeader("Cache-Control", "private, max-age=60, stale-while-revalidate=300");
+    res.setHeader(
+      "Cache-Control",
+      "private, max-age=60, stale-while-revalidate=300",
+    );
     return res.status(200).json(response);
   } catch (error) {
     const message =
@@ -45,17 +52,24 @@ export default async function handler(
         : "Unable to build goalie underlying stats.";
 
     const statusCode =
-      message.includes("does not yet support") || message.includes("Unsupported")
+      message.includes("does not yet support") ||
+      message.includes("Unsupported")
         ? 400
         : 500;
 
+    if (statusCode === 500) {
+      console.error("Failed to build goalie underlying stats", error);
+    }
     res.setHeader("Cache-Control", "no-store");
     return res.status(statusCode).json({
       error:
         statusCode === 400
           ? "Unsupported goalie stats filter combination."
           : "Unable to build goalie underlying stats.",
-      issues: [message],
+      issues:
+        statusCode === 400
+          ? [message]
+          : ["GOALIE_UNDERLYING_STATS_UNAVAILABLE"],
     });
   }
 }

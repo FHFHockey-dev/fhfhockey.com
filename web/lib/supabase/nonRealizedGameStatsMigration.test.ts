@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const migrationPath = resolve(
   process.cwd(),
-  "../supabase/migrations/20260715155738_add_non_realized_game_stats_and_season_selector.sql",
+  "../supabase/migration-archive/pre-baseline-20260716/authoritative-root/20260715155738_add_non_realized_game_stats_and_season_selector.sql",
 );
 const migrationSql = readFileSync(migrationPath, "utf8");
 

@@ -137,13 +137,9 @@ export default function GoalieRiskCard({
         setServingMessage(payload.serving?.message ?? null);
         setServingSeverity(payload.serving?.severity ?? "none");
       })
-      .catch((fetchError: unknown) => {
+      .catch(() => {
         if (!active) return;
-        const message =
-          fetchError instanceof Error
-            ? fetchError.message
-            : "Failed to load goalie risk.";
-        setError(message);
+        setError("Goalie projections are unavailable right now.");
         setRows([]);
         setServingMessage(null);
         setServingSeverity("none");
@@ -203,7 +199,7 @@ export default function GoalieRiskCard({
       </header>
 
       {loading && <p className={styles.panelState}>Loading goalie projections...</p>}
-      {!loading && error && <p className={styles.panelState}>Error: {error}</p>}
+      {!loading && error && <p className={styles.panelState}>{error}</p>}
 
       {!loading && !error && tableRows.length === 0 && (
         <p className={styles.panelState}>No goalie projections for this filter/date.</p>

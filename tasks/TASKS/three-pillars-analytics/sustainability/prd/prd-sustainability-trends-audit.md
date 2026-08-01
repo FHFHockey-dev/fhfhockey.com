@@ -409,3 +409,37 @@ For each major system, the audit must run this pattern:
 - Should the future unified dashboard expose intermediate calculation steps directly in the UI, or only raw inputs plus final outputs?
 - Should the post-audit regression suite be built inside `web/tests` only, or should SQL validation assets also live under a dedicated audit folder?
 - Are there cron jobs or external scripts outside the scanned paths that feed these same tables and should be included before audit execution begins?
+
+## 14. Execution Checkpoint — 2026-07-22
+
+The canonical player/team/rolling/FORGE validation cohort and its dependent definition-drift, overlap, and consolidation deliverables are complete. Audit phase parents 2.0–5.0 close over their fully evidenced child rows, and NEW 12 closes with canonical nested confidence-driver extraction plus historical-row fallback coverage. NEW 13's original broad 1,674-of-8,002 gap is now refined against the route's latest-run/same-date contract to 1,344 missing of 7,523, with 18 zero-result dates, three partial dates, and stale older-source-run evidence; a forward-only selected-run coverage diagnostic is implemented locally, while authority/backfill gates remain. NEW 8 now has explicit provenance v2 requested/observed/derived/scope fields and raw-source age coverage, but stored v1 false-cutoff repair policy remains open. NEW 7 now has explicit playoff-source seconds→minutes normalization and mixed full-accumulator coverage, while stored 60×-low/reset history remains held. NEW 9's live active jobs prove source ingestion already precedes ratings at 09:55 → 10:15 UTC and that the rating caller has no date override; its local forward repair therefore changes only the default scheduled invocation to recompute the prior date before today's carry-forward, with an exact final-source/carry regression, while historical version/backfill and deployed natural proof remain held. NEW 10 now separates the rolling daily write window from accumulator input history: the active bare caller still selects players and writes within its implicit 15-day scope, while each selected player reads complete prior selected-scope history through the end date; stored primary/support repair and raw→FORGE proof remain held. NEW 11 closes on `fhfh-default-skater-v1`: the API consumes all six shared default weights from canonical FORGE components, returns the versioned contract, and the UI renders it; stored raw projections remain unchanged because the former points value existed only in the read response. At that checkpoint the audit was active at 48/55 with 7 open; Section 15 supersedes that count after registering NEW 14/15. The consolidation recommendation is evidence-only; it does not authorize deletion, historical rewrites, model promotion, or production mutation.
+
+NEW 13 now has a local database-enforced repair boundary. Migration `20260723121407_replace_forge_projection_results_atomic.sql` adds a service-role-only security-invoker RPC that accepts only the latest succeeded run for the as-of date, validates the complete payload before its first write, and transactionally exact-replaces the as-of/actual-date scope. Empty payloads intentionally delete stale rows left by later canonical reruns. The route requires an exact scope/run/count receipt, and focused empty-scope, stale-receipt, and migration-contract regressions pass 6/6 with full TypeScript. NEW 13 remains open because applying the migration, executing the bounded 18-zero-date/three-partial-date backfill, and proving post-write coverage/idempotency are external mutation gates.
+
+## 15. Bounded Repair Preparation Checkpoint — 2026-07-30
+
+The value-free `sustainability-forge-bounded-repair-manifest.md` freezes exact
+pre-state counts and receipts for both playoff seasons, Sustainability score
+provenance, the complete 2025–26 team-rating calendar, rolling primary/support
+history, and all 21 FORGE result-gap dates. It authorizes no write.
+
+Two newly proved dependencies prevent a truthful mutation request. NEW 14 is
+closed by the owner-approved explicit no-backfill quarantine: every 21-date
+FORGE run lacks repaired rolling-history provenance, so the existing route and
+atomic RPC continue to reject result repair/calibration while original runs and
+projections remain immutable. No alternate non-calibration history class is
+created. NEW 15 records 1,905 April 2023 WGO/unified rows
+and 49,410 dependent trend rows mislabeled as season `20242025`. Its frozen
+source-first forward/inverse migration and bounded dry-run-first runner now
+pass exact local replay, rollback, contention, ACL/RLS, blank-reset, and lint
+proof; only exact Production application/repair authorization and receipts
+remain before the 2024–25 trend rebuild. B-SUST-AUD is therefore 49/57 with
+eight open rows, without weakening any historical or calibration guard.
+
+NEW 16 closes a stale authorization ambiguity in the bounded repair manifest.
+The owner-approved no-backfill quarantine is now terminal: the 18 zero-result
+and three partial dates cannot enter a mutation request, all 21 original runs
+and projections remain unchanged, and the 1,344 missing results remain an
+explicit excluded coverage class. Only future/otherwise eligible runs carrying
+the repaired provenance contract remain within NEW 13. B-SUST-AUD is 50/58
+with the same eight open rows.

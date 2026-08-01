@@ -11,8 +11,10 @@ import GoalieShareChart from "components/GoalieShareChart";
 import { StatsProps } from "lib/NHL/statsPageTypes";
 import { fetchStatsData } from "lib/NHL/statsPageFetch";
 import PlayerSearchBar from "components/StatsPage/PlayerSearchBar";
+import OptimizedImage from "components/common/OptimizedImage";
 import Link from "next/link";
 import supabase from "lib/supabase";
+import { fallbackTeamLogo } from "lib/images";
 import { getCurrentSeason } from "lib/NHL/client";
 import {
   getTeamAbbreviationById,
@@ -66,7 +68,6 @@ export default function StatsPage({
   // Dev logging wrapper (suppressed in production)
   const debugLog = (...args: any[]) => {
     if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
       console.log(...args);
     }
   };
@@ -85,8 +86,6 @@ export default function StatsPage({
   const [teamsGridState, setTeamsGridState] = useState<
     "expanded" | "collapsed"
   >("expanded");
-  const [lastScrollY, setLastScrollY] = useState(0);
-  const [scrollDirection, setScrollDirection] = useState<"up" | "down">("down");
   // Mobile detection state
   const [isMobile, setIsMobile] = useState(false);
 
@@ -150,7 +149,6 @@ export default function StatsPage({
       if (hoverTimeout) clearTimeout(hoverTimeout);
       if (leaveTimeout) clearTimeout(leaveTimeout);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- no dependencies; on unmount only
   }, []);
 
   const generateTeamColorStyles = (): React.CSSProperties => {
@@ -218,189 +216,52 @@ export default function StatsPage({
     setSelectedFilter(filterOptions[nextIndex].key);
   };
 
-  // Scroll handler for teams grid morphing - OPTIMIZED FOR MOBILE UX
+  // Scroll handler for teams grid morphing
   useEffect(() => {
-    // Only run on mobile
     if (!isMobile) return;
 
-    // Use ref to track scroll position to avoid dependency issues
-    const scrollPositionRef = { current: window.scrollY };
-    let ticking = false;
-    let isUserScrolling = false;
-    let scrollTimeout: NodeJS.Timeout;
-    let lastStateChange = 0; // Prevent rapid state changes
+    const expandThreshold = 30;
+    const collapseThreshold = 80;
+    let previousScrollY = window.scrollY;
+    let currentState: "expanded" | "collapsed" =
+      previousScrollY >= collapseThreshold ? "collapsed" : "expanded";
+    let frameId: number | null = null;
+
+    setTeamsGridState(currentState);
 
     const handleScroll = () => {
-      // Mark that user is actively scrolling
-      isUserScrolling = true;
+      if (frameId !== null) return;
 
-      // Clear any existing timeout
-      if (scrollTimeout) {
-        clearTimeout(scrollTimeout);
-      }
+      frameId = requestAnimationFrame(() => {
+        frameId = null;
+        const currentScrollY = window.scrollY;
+        const scrollingDown = currentScrollY > previousScrollY;
+        const scrollDelta = Math.abs(currentScrollY - previousScrollY);
+        previousScrollY = currentScrollY;
 
-      // Set timeout to detect when scrolling has stopped
-      scrollTimeout = setTimeout(() => {
-        isUserScrolling = false;
-      }, 150);
+        if (scrollDelta < 8) return;
 
-      // Prevent multiple rapid scroll events
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          const currentScrollY = window.scrollY;
-          const previousScrollY = scrollPositionRef.current;
-          const newScrollDirection =
-            currentScrollY > previousScrollY ? "down" : "up";
-
-          // Calculate scroll delta to detect intentional scrolling
-          const scrollDelta = Math.abs(currentScrollY - previousScrollY);
-          const now = Date.now();
-
-          // Update refs and state
-          scrollPositionRef.current = currentScrollY;
-          setScrollDirection(newScrollDirection);
-          setLastScrollY(currentScrollY);
-
-          // MOBILE-OPTIMIZED THRESHOLDS - Much more responsive
-          const expandThreshold = 30; // Expand when very close to top
-          const collapseThreshold = 80; // REDUCED: Collapse much sooner for better mobile UX
-          const minStateChangeInterval = 150; // Slightly increased to reduce excessive re-renders
-
-          // Get current state to prevent unnecessary updates
-          const currentState = teamsGridState;
-
-          // OPTIMIZED: Reduce unnecessary scroll events and state changes
-          if (
-            scrollDelta < 8 ||
-            now - lastStateChange < minStateChangeInterval
-          ) {
-            ticking = false;
-            return;
-          }
-
-          // MOBILE UX DEBUG LOGGING (reduced frequency)
-          if (scrollDelta > 10) {
-            // Only log significant movements
-            debugLog("📱 Mobile Scroll:", {
-              position: currentScrollY,
-              delta: scrollDelta,
-              state: currentState,
-              thresholds: {
-                expand: expandThreshold,
-                collapse: collapseThreshold
-              },
-              direction: newScrollDirection
-            });
-          }
-
-          // STATE LOGIC WITH IMMEDIATE STATE UPDATES
-          if (
-            currentScrollY <= expandThreshold &&
-            currentState !== "expanded"
-          ) {
-            // At the very top - expand
-            debugLog("🟢 EXPANDING teams grid at scroll:", currentScrollY);
-
-            // CRITICAL FIX: Use React's batch update to ensure immediate state change
-            setTeamsGridState(() => {
-              debugLog("🟢 State setter called: expanded");
-              return "expanded";
-            });
-
-            lastStateChange = now;
-
-            // DOM manipulation as backup
-            const teamsGridElement =
-              (document.querySelector("[data-grid-state]") as HTMLElement) ||
-              (document.querySelector(".teamSelectHeader") as HTMLElement);
-
-            if (teamsGridElement) {
-              // Force immediate DOM update
-              teamsGridElement.setAttribute("data-state", "expanded");
-              teamsGridElement.setAttribute("data-grid-state", "expanded");
-              debugLog("✅ DOM element found and updated to expanded");
-            }
-          } else if (
-            currentScrollY >= collapseThreshold &&
-            currentState !== "collapsed" &&
-            newScrollDirection === "down" // Only collapse when scrolling down
-          ) {
-            // Scrolled down past threshold and moving down - collapse
-            debugLog("🔴 COLLAPSING teams grid at scroll:", currentScrollY);
-
-            // CRITICAL FIX: Use React's batch update to ensure immediate state change
-            setTeamsGridState(() => {
-              debugLog("🔴 State setter called: collapsed");
-              return "collapsed";
-            });
-
-            lastStateChange = now;
-
-            // DOM manipulation as backup
-            const teamsGridElement =
-              (document.querySelector("[data-grid-state]") as HTMLElement) ||
-              (document.querySelector(".teamSelectHeader") as HTMLElement);
-
-            if (teamsGridElement) {
-              // Force immediate DOM update
-              teamsGridElement.setAttribute("data-state", "collapsed");
-              teamsGridElement.setAttribute("data-grid-state", "collapsed");
-              debugLog("✅ DOM element found and updated to collapsed");
-            }
-          }
-
-          ticking = false;
-        });
-      }
-      ticking = true;
+        if (currentScrollY <= expandThreshold && currentState !== "expanded") {
+          currentState = "expanded";
+          setTeamsGridState("expanded");
+        } else if (
+          currentScrollY >= collapseThreshold &&
+          currentState !== "collapsed" &&
+          scrollingDown
+        ) {
+          currentState = "collapsed";
+          setTeamsGridState("collapsed");
+        }
+      });
     };
 
-    // PASSIVE SCROLL LISTENER - Critical for performance and preventing scroll blocking
     window.addEventListener("scroll", handleScroll, { passive: true });
-
-    // Set initial state based on current scroll position - FIXED SYNCHRONIZATION
-    const initialScrollY = window.scrollY;
-    scrollPositionRef.current = initialScrollY;
-    setLastScrollY(initialScrollY);
-
-    // ENHANCED INITIAL STATE LOGIC WITH FORCED UPDATE
-    debugLog("🚀 Initial scroll position:", initialScrollY);
-    if (initialScrollY <= 30) {
-      debugLog("🟢 Initial state: expanded");
-      setTeamsGridState("expanded");
-
-      // Force DOM update immediately
-      setTimeout(() => {
-        const teamsGridElement = document.querySelector(
-          "[data-grid-state]"
-        ) as HTMLElement;
-        if (teamsGridElement) {
-          teamsGridElement.setAttribute("data-grid-state", "expanded");
-          debugLog("🟢 Initial DOM state set to expanded");
-        }
-      }, 0);
-    } else if (initialScrollY >= 80) {
-      // UPDATED: Use new collapse threshold
-      debugLog("🔴 Initial state: collapsed");
-      setTeamsGridState("collapsed");
-
-      // Force DOM update immediately
-      setTimeout(() => {
-        const teamsGridElement = document.querySelector(
-          "[data-grid-state]"
-        ) as HTMLElement;
-        if (teamsGridElement) {
-          teamsGridElement.setAttribute("data-grid-state", "collapsed");
-          debugLog("🔴 Initial DOM state set to collapsed");
-        }
-      }, 0);
-    }
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      if (scrollTimeout) clearTimeout(scrollTimeout);
+      if (frameId !== null) cancelAnimationFrame(frameId);
     };
-  }, [isMobile, teamsGridState]); // CRITICAL: Include teamsGridState to detect desync
+  }, [isMobile]);
 
   // Mobile detection hook
   useEffect(() => {
@@ -490,17 +351,19 @@ export default function StatsPage({
                     onMouseEnter={() => handleTeamMouseEnter(team.abbreviation)}
                   >
                     <div className={styles.teamLogoContainer}>
-                      <img
-                        src={`/teamLogos/${team.abbreviation ?? "default"}.png`}
+                      <OptimizedImage
+                        src={
+                          team.abbreviation
+                            ? `/teamLogos/${team.abbreviation}.png`
+                            : fallbackTeamLogo
+                        }
                         alt={team.name}
                         className={styles.teamLogo}
                         width={45}
                         height={45}
                         loading="lazy"
                         decoding="async"
-                        onError={(e) => {
-                          e.currentTarget.src = "/teamLogos/default.png";
-                        }}
+                        fallbackSrc={fallbackTeamLogo}
                       />
                     </div>
                     <span className={styles.teamAbbreviation}>

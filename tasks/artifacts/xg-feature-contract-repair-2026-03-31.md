@@ -1,5 +1,10 @@
 # xG Feature Contract Repair
 
+> Current-state overlay (2026-07-29): A-XG-TREND task 25.2 supersedes this March
+> 31 allowance for post-event miss classifications. `missReasonBucket` and
+> `isShortSideMiss` remain derived audit fields but are forbidden baseline scoring
+> inputs; missed-shot rows remain in the cohort.
+
 Date: `2026-03-31`
 Task: `tasks-xg-baseline-follow-ups.md` `1.1`
 

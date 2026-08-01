@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { fromMock, identityMock, scoresMock } = vi.hoisted(() => ({
+const { fromMock, historyMock, identityMock, scoresMock } = vi.hoisted(() => ({
   fromMock: vi.fn(),
+  historyMock: vi.fn(),
   identityMock: vi.fn(),
   scoresMock: vi.fn(),
 }));
@@ -12,6 +13,7 @@ vi.mock("lib/supabase/public-client", () => ({
 
 vi.mock("lib/sustainability/trendsIdentity", () => ({
   fetchSustainabilityTrendIdentity: identityMock,
+  fetchSustainabilityTrendHistory: historyMock,
   fetchSustainabilityTrendScores: scoresMock,
 }));
 
@@ -74,6 +76,7 @@ describe("GET /api/v1/sustainability/trends", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     fromMock.mockImplementation(() => createSnapshotQuery());
+    historyMock.mockResolvedValue(new Map());
     scoresMock.mockResolvedValue([
       {
         player_id: 1,
@@ -134,5 +137,38 @@ describe("GET /api/v1/sustainability/trends", () => {
         position_code: "C",
       }),
     ]);
+  });
+
+  it("redacts dependency details from internal-error responses", async () => {
+    scoresMock.mockRejectedValue(
+      new Error("private sustainability relation denied Bearer secret"),
+    );
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const res = createRes();
+
+    await handler(
+      {
+        method: "GET",
+        query: {
+          snapshot_date: "2026-03-14",
+          window_code: "l10",
+          pos: "all",
+          direction: "hot",
+          limit: "25",
+        },
+      } as any,
+      res,
+    );
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({
+      success: false,
+      message: "Sustainability trends are temporarily unavailable.",
+      error: "SUSTAINABILITY_TRENDS_UNAVAILABLE",
+    });
+    expect(JSON.stringify(res.body)).not.toContain("secret");
+    consoleError.mockRestore();
   });
 });

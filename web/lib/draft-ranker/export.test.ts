@@ -67,6 +67,19 @@ describe("Draft Ranking export contract", () => {
     expect(csv).toContain('"First line\nuntouchable"');
   });
 
+  it("neutralizes spreadsheet formulas in string fields without changing numbers", () => {
+    const exportDocument = document();
+    exportDocument.top250[0].playerName = '=HYPERLINK("https://example.test")';
+    exportDocument.top250[0].notes = "  +SUM(1,2)";
+    exportDocument.top250[0].projectionFptsPerGame = -1.25;
+
+    const csv = serializeDraftRankingCsv(exportDocument);
+
+    expect(csv).toContain('"\'=HYPERLINK(""https://example.test"")"');
+    expect(csv).toContain('"\'  +SUM(1,2)"');
+    expect(csv).toContain(",-1.25,");
+  });
+
   it("round-trips versioned JSON without private comparison evidence", () => {
     const parsed = JSON.parse(JSON.stringify(document()));
     expect(parsed.schemaVersion).toBe("fhfh-draft-ranking-v1");

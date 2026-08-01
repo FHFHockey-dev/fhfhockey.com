@@ -27,7 +27,7 @@
  *    - In `incremental` mode: Defines the starting date for the forward fetch. The script will fetch data from this date
  *      up to the current date.
  *    The format must be YYYY-MM-DD.
- * 
+ *
  *    Example: /api/v1/db/update-nst-goalies?runMode=reverse&startDate=2024-02-05
  *    Example: /api/v1/db/update-nst-goalies?runMode=incremental&startDate=2025-10-01
  *
@@ -37,7 +37,7 @@
  *      - reverse/forward: overwrite defaults to yes (full-refresh)
  *      - incremental: overwrite defaults to no (skip complete dates)
  *    Example: /api/v1/db/update-nst-goalies?runMode=reverse&overwrite=no
- * 
+ *
  *    /api/v1/db/update-nst-goalies?runMode=incremental&overwrite=yes&startDate=2026-03-01
  *
  * 4. `datasetType` (optional): Filters the operation to a specific dataset type.
@@ -196,7 +196,9 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function parsePositiveIntParam(value: string | string[] | undefined): number | undefined {
+function parsePositiveIntParam(
+  value: string | string[] | undefined
+): number | undefined {
   const raw = Array.isArray(value) ? value[0] : value;
   if (!raw) return undefined;
   const parsed = Number.parseInt(raw, 10);

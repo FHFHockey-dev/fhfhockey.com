@@ -1,3 +1,5 @@
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -6,6 +8,9 @@ import {
   withSkaterMetricsBucketAverages,
   withSkaterValueOverviewBucketAverages
 } from "./skaterMetrics";
+import { resolveTableRows } from "./SkaterTable";
+import SkaterTable from "./SkaterTable";
+import SkaterAdvancedMetricsTable from "./SkaterAdvancedMetricsTable";
 import type {
   SkaterBucket,
   SkaterGameRow,
@@ -169,5 +174,80 @@ describe("withSkaterValueOverviewBucketAverages", () => {
       )
     ).toBe(true);
   });
-});
 
+  it("sorts each week-rating column independently and keeps bucket averages attached", () => {
+    const baseRow: SkaterValueOverviewRow = {
+      rowType: "player",
+      playerId: 1,
+      playerName: "Elite-heavy",
+      team: "BOS",
+      tier: bucket.label,
+      valuation: 34,
+      valuationLabel: "OWN%",
+      bucket,
+      weekCounts: {
+        Elite: 5,
+        Quality: 1,
+        Average: 0,
+        Bad: 0,
+        "Really Bad": 0
+      },
+      percentOkWeeks: 100,
+      percentGoodWeeks: 100,
+      weeklyVariance: 1,
+      gameToGameVariance: 1,
+      averageFantasyPointsPerGame: 5,
+      averageFantasyPointsPerWeek: 10,
+      fantasyPointsAboveAverage: 2,
+      gamesPlayed: 6,
+      totalFantasyPoints: 60
+    };
+    const rows = withSkaterValueOverviewBucketAverages([
+      baseRow,
+      {
+        ...baseRow,
+        playerId: 2,
+        playerName: "Quality-heavy",
+        weekCounts: { ...baseRow.weekCounts, Elite: 1, Quality: 4 }
+      }
+    ]);
+
+    const sorted = resolveTableRows(
+      rows,
+      "weekCounts.Quality",
+      "descending"
+    ).sortedRows;
+
+    expect(sorted.map((row) => row.playerName)).toEqual([
+      "Quality-heavy",
+      "Elite-heavy",
+      "30-39% Avg"
+    ]);
+  });
+
+  it("uses keyboard-operable sort buttons and formats advanced ownership as a percent", () => {
+    const advancedRows = buildSkaterAdvancedMetricsRows(
+      gameRows,
+      weeklyAggregates,
+      "ownership"
+    );
+    const tableMarkup = renderToStaticMarkup(
+      React.createElement(SkaterTable, {
+        rows: [],
+        variant: "value",
+        sortKey: "weekCounts.Quality",
+        sortDirection: "descending",
+        onSort: () => undefined
+      })
+    );
+    const advancedMarkup = renderToStaticMarkup(
+      React.createElement(SkaterAdvancedMetricsTable, {
+        rows: advancedRows
+      })
+    );
+
+    expect(tableMarkup).toContain('<button');
+    expect(tableMarkup).toContain('aria-sort="descending"');
+    expect(advancedMarkup).toContain("34.0%");
+  });
+});

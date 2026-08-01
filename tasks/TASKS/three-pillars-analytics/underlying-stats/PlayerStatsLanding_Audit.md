@@ -167,3 +167,7 @@ When restyling this page:
 4. Shorten the controls-section copy and keep the active-state chips.
 5. Preserve the state-banner placement directly above the filters/table.
 6. Treat `playerStats.module.scss`, not `indexUS.module.scss`, as the local production styling target.
+
+## Dynamic C-US Audit — 2026-07-29
+
+The mounted landing surface retains the table-first archetype, shared filters, six canonical families, numeric server sorting, 100-row load-more transport, coherent states, and native/persisted-summary ownership. P1 NEW 9.0 redacts raw dependency detail from public 500 responses, and P2 NEW 9.1 chunks and fully paginates multi-season player/team identity enrichment. The scoped 13-file cohort passes 139/139 plus TypeScript, lint, and diff integrity.

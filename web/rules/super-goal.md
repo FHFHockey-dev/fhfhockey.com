@@ -271,6 +271,15 @@ Do not perform a broad rewrite merely because an alternative architecture is cle
 
 Continue through adjacent low-risk tasks without stopping after every sub-task. Pause when required by the governing process or when any of these apply:
 
+Control hosted build cost as part of checkpoint discipline:
+
+- Do not run `npm run build` routinely; use it in the isolated checkout only when narrower checks cannot verify build-specific behavior.
+- Do not trigger a Vercel build merely to verify a commit, documentation update, or intermediate checkpoint.
+- Trigger Preview or Production builds only when a meaningful bundled checkpoint requires hosted runtime, environment, alias, or deployment evidence and the applicable external-action approval is in place.
+- Batch compatible verified changes into that checkpoint and reuse an existing exact READY artifact when Vercel supports doing so without rebuilding.
+- Because pushes to a Vercel-connected branch build by default, hold documentation-only/control receipts locally for the next meaningful bundled checkpoint unless a verified project-level ignore rule will skip that push.
+- Every canonical linked deployable root must keep a version-controlled Vercel `ignoreCommand` that compares the current commit with Vercel's project/branch-specific `VERCEL_GIT_PREVIOUS_SHA`, skips only when that full unpublished range proves the root unchanged, and explicitly exits `1` to build when the variable or commit object is unavailable; never pass Git's missing-object exit `128` through to Vercel because Vercel treats it as a deployment error. Root-linked legacy duplicate projects must use the repository-root `ignoreCommand` to skip every build. A meaningful checkpoint may build only the canonical roots changed since their previous successful deployment; verify the first published receipt before relying on this control.
+
 - destructive or irreversible data/schema change
 - broad architecture replacement or cross-system rewrite
 - breaking public/API/data contract change

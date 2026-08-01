@@ -9,6 +9,8 @@ import {
   GOALIE_TREND_CATEGORIES,
   GOALIE_WINDOW_OPTIONS,
   MAX_GOALIE_LIMIT,
+  summarizeGoalieTrendConfidence,
+  type GoalieTrendConfidence,
   type GoalieTrendCategoryDefinition,
   type GoalieTrendCategoryId,
   type GoalieWindowSize
@@ -58,6 +60,9 @@ interface RankingEntry {
   previousRank: number | null;
   delta: number;
   latestValue: number | null;
+  sampleSize: number;
+  confidence: GoalieTrendConfidence;
+  volatility: number | null;
 }
 
 interface CategoryResult {
@@ -80,6 +85,12 @@ interface GoalieTrendResponse {
   };
   limit: number;
   windowSize: GoalieWindowSize;
+  coverage: {
+    categoryCount: number;
+    playerCount: number;
+    partial: boolean;
+  };
+  warnings: string[];
   categories: Record<
     GoalieTrendCategoryId,
     Omit<CategoryResult, "includedPlayerIds">
@@ -320,6 +331,9 @@ function buildCategoryResult(
       const numericId = Number(playerId);
       const latest = points[points.length - 1];
       const sourceList = byPlayer.get(numericId);
+      const confidence = summarizeGoalieTrendConfidence(
+        points.map((point) => point.percentile)
+      );
       const latestValue =
         sourceList && sourceList.length > 0
           ? (() => {
@@ -356,7 +370,8 @@ function buildCategoryResult(
         rank: 0,
         previousRank: null,
         delta: 0,
-        latestValue
+        latestValue,
+        ...confidence
       };
     }
   );
@@ -563,6 +578,12 @@ export default async function handler(
         requestedDate,
         resolvedDate
       });
+      const warnings = [
+        ...(serving.message ? [serving.message] : []),
+        ...(playerIdsNeeded.size === 0
+          ? ["No qualified goalie trend rows are available for this scope."]
+          : [])
+      ];
 
       const response: GoalieTrendResponse = {
         seasonId,
@@ -573,6 +594,12 @@ export default async function handler(
         serving,
         limit,
         windowSize,
+        coverage: {
+          categoryCount: GOALIE_TREND_CATEGORIES.length,
+          playerCount: playerIdsNeeded.size,
+          partial: playerIdsNeeded.size === 0 || serving.status !== "requested_date"
+        },
+        warnings,
         categories: categories as GoalieTrendResponse["categories"],
         playerMetadata
       };

@@ -2,16 +2,11 @@
 
 import React from "react";
 import Image from "next/legacy/image";
-import { teamsInfo } from "./utils/teamsInfo";
-
-interface SoSRanking {
-  team: string;
-  sos: number;
-}
+import type { CanonicalSosRanking } from "lib/trends/strengthOfSchedule";
 
 interface StrengthOfScheduleProps {
   type: "past" | "future";
-  rankings: SoSRanking[];
+  rankings: CanonicalSosRanking[];
 }
 
 const StrengthOfSchedule: React.FC<StrengthOfScheduleProps> = ({
@@ -29,8 +24,8 @@ const StrengthOfSchedule: React.FC<StrengthOfScheduleProps> = ({
             </tr>
           </thead>
           <tbody>
-            {rankings.map(({ team, sos }) => (
-              <tr key={team}>
+            {rankings.map(({ teamId, team, abbreviation, sos }) => (
+              <tr key={teamId}>
                 <td
                   style={{
                     display: "flex",
@@ -40,9 +35,7 @@ const StrengthOfSchedule: React.FC<StrengthOfScheduleProps> = ({
                   }}
                 >
                   <Image
-                    src={`https://assets.nhle.com/logos/nhl/svg/${getTeamAbbreviation(
-                      team
-                    )}_dark.svg`}
+                    src={`https://assets.nhle.com/logos/nhl/svg/${abbreviation}_dark.svg`}
                     alt={`${team} Logo`}
                     width={30}
                     height={30}
@@ -59,14 +52,6 @@ const StrengthOfSchedule: React.FC<StrengthOfScheduleProps> = ({
       </div>
     </div>
   );
-};
-
-// Utility function to map team names to abbreviations
-const getTeamAbbreviation = (teamName: string): string => {
-  const teamEntry = Object.values(teamsInfo).find(
-    (team) => team.name.toLowerCase() === teamName.toLowerCase()
-  );
-  return teamEntry ? teamEntry.abbrev : "";
 };
 
 export default StrengthOfSchedule;

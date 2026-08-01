@@ -10,7 +10,8 @@ It defines:
 - the label definition
 - the season and split strategy
 
-This is the contract for baseline task `2.1` in `/Users/tim/Code/fhfhockey.com/tasks/tasks-xg-baseline-options.md`.
+This is the contract for baseline task `2.1` in
+`tasks/TASKS/xg-model/baseline/tasks-xg-baseline-options.md`.
 
 ## Version Scope
 
@@ -29,7 +30,8 @@ The first baseline comparison uses:
 
 - one row per shot-feature row
 - one row per unique `(gameId, eventId)`
-- sourced from the derived feature layer produced by `/Users/tim/Code/fhfhockey.com/web/lib/supabase/Upserts/nhlShotFeatureBuilder.ts`
+- sourced from the derived feature layer produced by
+  `web/lib/supabase/Upserts/nhlShotFeatureBuilder.ts`
 
 For the first baseline cohort, a row is training-eligible only if all of the following are true:
 
@@ -245,7 +247,7 @@ Every generated training dataset, whether ephemeral or persisted, must carry a c
 - training dataset contract reference
   - points to this document so row grain, label definition, and split rules are auditable
 - training feature contract reference
-  - points to `/Users/tim/Code/fhfhockey.com/tasks/TASKS/xg-model/baseline/xg-training-feature-contract.md`
+  - points to `tasks/TASKS/xg-model/baseline/xg-training-feature-contract.md`
 - season scope
   - records the exact season or season range included in the dataset
 - split-strategy identifier

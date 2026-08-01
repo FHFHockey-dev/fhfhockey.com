@@ -16,12 +16,32 @@ import { getTeamMetaByAbbr, getTeamMetaById } from "./teamMetadata";
 export type TeamTrendsResponse = {
   seasonId: number;
   generatedAt: string;
+  dateUsed: string | null;
+  coverage: {
+    expectedTeams: number;
+    teamsWithData: number;
+    categoryCount: number;
+    sourceRows: Record<string, number>;
+    partial: boolean;
+  };
+  warnings: string[];
   categories: Record<TrendCategoryId, CategoryComputationResult>;
 };
 
 export type CtpiResponse = {
   seasonId: number;
   generatedAt: string;
+  requestedDate: string;
+  dateUsed: string;
+  fallbackApplied: boolean;
+  serving: RequestedDateServingState;
+  coverage: {
+    expectedTeams: number;
+    teamCount: number;
+    sourceRowCount: number;
+    partial: boolean;
+  };
+  warnings: string[];
   teams: Array<{
     team: string;
     ctpi_0_to_100: number;
@@ -37,6 +57,14 @@ export type CtpiResponse = {
 export type SosResponse = {
   seasonId: number;
   generatedAt: string;
+  dateUsed: string | null;
+  coverage: {
+    expectedTeams: number;
+    teamCount: number;
+    sourceRowCount: number;
+    partial: boolean;
+  };
+  warnings: string[];
   teams: Array<{
     team: string;
     teamId: number;
@@ -53,7 +81,23 @@ export type SkaterTrendsResponse = {
   generatedAt: string;
   positionGroup: "forward" | "defense" | "all";
   limit: number;
+  seriesGames: number;
   windowSize: number;
+  requestedDate: string;
+  dateUsed: string;
+  fallbackApplied: boolean;
+  serving: RequestedDateServingState;
+  samplePolicy: {
+    minimumGames: number;
+    lowSamplePercentiles: "shrink_to_neutral";
+    suppressLowSampleRankDelta: true;
+  };
+  coverage: {
+    categoryCount: number;
+    playerCount: number;
+    partial: boolean;
+  };
+  warnings: string[];
   categories: Record<string, unknown>;
   playerMetadata: Record<
     string,
@@ -76,6 +120,12 @@ export type GoalieTrendsResponse = {
   serving: RequestedDateServingState;
   limit: number;
   windowSize: number;
+  coverage: {
+    categoryCount: number;
+    playerCount: number;
+    partial: boolean;
+  };
+  warnings: string[];
   categories: Record<
     GoalieTrendCategoryId,
     {
@@ -88,6 +138,9 @@ export type GoalieTrendsResponse = {
         previousRank: number | null;
         delta: number;
         latestValue: number | null;
+        sampleSize: number;
+        confidence: "low" | "medium" | "high";
+        volatility: number | null;
       }>;
     }
   >;
@@ -173,6 +226,23 @@ export type DashboardDataParams = {
   sustainabilityLimit?: number;
 };
 
+export const DASHBOARD_SECTIONS = [
+  "team",
+  "skater",
+  "goalie",
+  "projection",
+  "schedule"
+] as const;
+
+export type DashboardSection = (typeof DASHBOARD_SECTIONS)[number];
+
+export type DashboardRecencyState = {
+  status: "aligned" | "mixed" | "insufficient";
+  gapDays: number | null;
+  sourceDates: Record<string, string>;
+  warning: string | null;
+};
+
 export type DashboardData = {
   date: string;
   teamRatings: TeamRating[];
@@ -188,6 +258,10 @@ export type DashboardData = {
     hot: SustainabilityTrendsResponse;
     cold: SustainabilityTrendsResponse;
   };
+  sectionErrors: Partial<Record<DashboardSection, string>>;
+  sectionUpdatedAt: Partial<Record<DashboardSection, string>>;
+  sectionResolvedFor: Partial<Record<DashboardSection, string>>;
+  recency: DashboardRecencyState;
   teamMeta: Record<
     string,
     {
@@ -263,6 +337,53 @@ const buildTeamMetaIndex = (input: {
   return metaIndex;
 };
 
+export const buildDashboardRecencyState = (
+  data: Pick<
+    DashboardData,
+    | "teamTrends"
+    | "teamCtpi"
+    | "teamSos"
+    | "skaterTrends"
+    | "goalieTrends"
+    | "forgePlayers"
+    | "forgeGoalies"
+    | "startChart"
+  >
+): DashboardRecencyState => {
+  const candidates: Record<string, string | null | undefined> = {
+    teamPower: data.teamTrends.dateUsed,
+    ctpi: data.teamCtpi.dateUsed,
+    teamSos: data.teamSos.dateUsed,
+    skaterTrends: data.skaterTrends.dateUsed,
+    goalieTrends: data.goalieTrends.dateUsed,
+    forgePlayers: data.forgePlayers.asOfDate,
+    forgeGoalies: data.forgeGoalies.asOfDate,
+    startChart: data.startChart.dateUsed
+  };
+  const sourceDates = Object.fromEntries(
+    Object.entries(candidates).filter((entry): entry is [string, string] =>
+      /^\d{4}-\d{2}-\d{2}$/.test(entry[1] ?? "")
+    )
+  );
+  const times = Object.values(sourceDates).map((date) =>
+    Date.parse(`${date}T00:00:00.000Z`)
+  );
+  if (times.length < 2) {
+    return { status: "insufficient", gapDays: null, sourceDates, warning: null };
+  }
+  const gapDays = Math.round((Math.max(...times) - Math.min(...times)) / 86_400_000);
+  if (gapDays <= 3) {
+    return { status: "aligned", gapDays, sourceDates, warning: null };
+  }
+  return {
+    status: "mixed",
+    gapDays,
+    sourceDates,
+    warning:
+      "Source dates are not safely aligned; projection and start context is downgraded until the feeds converge."
+  };
+};
+
 export const fetchTeamTrends = (): Promise<TeamTrendsResponse> =>
   fetchCachedJson<TeamTrendsResponse>("/api/v1/trends/team-power", {
     ttlMs: TREND_TTL_MS
@@ -282,12 +403,14 @@ export const fetchSkaterTrends = (params: {
   position?: "forward" | "defense" | "all";
   window?: 1 | 3 | 5 | 10 | 20;
   limit?: number;
+  seriesGames?: number;
 }): Promise<SkaterTrendsResponse> =>
   fetchCachedJson<SkaterTrendsResponse>(
     buildQuery("/api/v1/trends/skater-power", {
       position: params.position,
       window: params.window,
-      limit: params.limit
+      limit: params.limit,
+      seriesGames: params.seriesGames
     }),
     { ttlMs: TREND_TTL_MS }
   );
@@ -362,7 +485,11 @@ export const fetchSustainabilityTrends = (params: {
   );
 
 export const loadTrendsDashboardData = async (
-  params: DashboardDataParams
+  params: DashboardDataParams,
+  options: {
+    sections?: DashboardSection[];
+    base?: DashboardData | null;
+  } = {}
 ): Promise<DashboardData> => {
   const skaterPosition = params.skaterPosition ?? "forward";
   const skaterWindow = params.skaterWindow ?? 1;
@@ -371,74 +498,314 @@ export const loadTrendsDashboardData = async (
   const sustainabilityLimit = params.sustainabilityLimit ?? 15;
   const sustainabilityPosition = toSustainabilityPosition(skaterPosition);
 
-  const [
-    teamRatings,
-    teamTrends,
-    teamCtpi,
-    teamSos,
-    skaterTrends,
-    goalieTrends,
-    forgePlayers,
-    forgeGoalies,
-    startChart,
-    sustainabilityHot,
-    sustainabilityCold
-  ] = await Promise.all([
-    fetchTeamRatings(params.date),
-    fetchTeamTrends(),
-    fetchTeamCtpi(),
-    fetchTeamSos(),
-    fetchSkaterTrends({
-      position: skaterPosition,
-      window: skaterWindow,
-      limit: skaterLimit
-    }),
-    fetchGoalieTrends({
-      date: params.date,
-      window: skaterWindow === 20 ? 10 : skaterWindow,
-      limit: skaterLimit
-    }),
-    fetchForgePlayers(params.date),
-    fetchForgeGoalies(params.date),
-    fetchStartChart(params.date),
-    fetchSustainabilityTrends({
-      date: params.date,
-      direction: "hot",
-      pos: sustainabilityPosition,
-      window: sustainabilityWindow,
-      limit: sustainabilityLimit
-    }),
-    fetchSustainabilityTrends({
-      date: params.date,
-      direction: "cold",
-      pos: sustainabilityPosition,
-      window: sustainabilityWindow,
-      limit: sustainabilityLimit
-    })
+  const emptyServing = {} as RequestedDateServingState;
+  const base: DashboardData = options.base ?? {
+    date: params.date,
+    teamRatings: [],
+    teamTrends: {
+      seasonId: 0,
+      generatedAt: "",
+      dateUsed: null,
+      coverage: {
+        expectedTeams: 32,
+        teamsWithData: 0,
+        categoryCount: 0,
+        sourceRows: {},
+        partial: true
+      },
+      warnings: [],
+      categories: {} as TeamTrendsResponse["categories"]
+    },
+    teamCtpi: {
+      seasonId: 0,
+      generatedAt: "",
+      requestedDate: params.date,
+      dateUsed: "",
+      fallbackApplied: false,
+      serving: emptyServing,
+      coverage: {
+        expectedTeams: 32,
+        teamCount: 0,
+        sourceRowCount: 0,
+        partial: true
+      },
+      warnings: [],
+      teams: []
+    },
+    teamSos: {
+      seasonId: 0,
+      generatedAt: "",
+      dateUsed: null,
+      coverage: {
+        expectedTeams: 32,
+        teamCount: 0,
+        sourceRowCount: 0,
+        partial: true
+      },
+      warnings: [],
+      teams: []
+    },
+    skaterTrends: {
+      seasonId: 0,
+      generatedAt: "",
+      positionGroup: skaterPosition,
+      limit: skaterLimit,
+      seriesGames: 40,
+      windowSize: skaterWindow,
+      requestedDate: params.date,
+      dateUsed: "",
+      fallbackApplied: false,
+      serving: emptyServing,
+      samplePolicy: {
+        minimumGames: 3,
+        lowSamplePercentiles: "shrink_to_neutral",
+        suppressLowSampleRankDelta: true
+      },
+      coverage: { categoryCount: 0, playerCount: 0, partial: true },
+      warnings: [],
+      categories: {},
+      playerMetadata: {}
+    },
+    goalieTrends: {
+      seasonId: 0,
+      generatedAt: "",
+      requestedDate: params.date,
+      dateUsed: "",
+      fallbackApplied: false,
+      serving: emptyServing,
+      limit: skaterLimit,
+      windowSize: skaterWindow === 20 ? 10 : skaterWindow,
+      coverage: { categoryCount: 0, playerCount: 0, partial: true },
+      warnings: [],
+      categories: {} as GoalieTrendsResponse["categories"],
+      playerMetadata: {}
+    },
+    forgePlayers: {
+      durationMs: "",
+      runId: 0,
+      asOfDate: "",
+      requestedDate: params.date,
+      fallbackApplied: false,
+      serving: emptyServing,
+      data: []
+    },
+    forgeGoalies: {
+      durationMs: "",
+      runId: "",
+      asOfDate: "",
+      horizonGames: 1,
+      requestedDate: params.date,
+      fallbackApplied: false,
+      serving: emptyServing,
+      data: []
+    },
+    startChart: {
+      dateUsed: "",
+      requestedDate: params.date,
+      fallbackApplied: false,
+      serving: emptyServing,
+      projections: 0,
+      players: [],
+      ctpi: [],
+      games: []
+    },
+    sustainability: {
+      hot: {
+        success: false,
+        snapshot_date: params.date,
+        window_code: sustainabilityWindow,
+        pos: sustainabilityPosition,
+        direction: "hot",
+        limit: sustainabilityLimit,
+        rows: []
+      },
+      cold: {
+        success: false,
+        snapshot_date: params.date,
+        window_code: sustainabilityWindow,
+        pos: sustainabilityPosition,
+        direction: "cold",
+        limit: sustainabilityLimit,
+        rows: []
+      }
+    },
+    sectionErrors: {},
+    sectionUpdatedAt: {},
+    sectionResolvedFor: {},
+    recency: {
+      status: "insufficient",
+      gapDays: null,
+      sourceDates: {},
+      warning: null
+    },
+    teamMeta: {}
+  };
+  const next: DashboardData = {
+    ...base,
+    date: params.date,
+    sustainability: { ...base.sustainability },
+    sectionErrors: { ...base.sectionErrors },
+    sectionUpdatedAt: { ...base.sectionUpdatedAt },
+    sectionResolvedFor: { ...base.sectionResolvedFor }
+  };
+  const sections = new Set(options.sections ?? DASHBOARD_SECTIONS);
+
+  const applySection = async <T extends readonly unknown[]>(
+    section: DashboardSection,
+    getRequests: () => { [K in keyof T]: Promise<T[K]> },
+    apply: (values: { [K in keyof T]: T[K] | undefined }) => void
+  ) => {
+    if (!sections.has(section)) return;
+    const settled = await Promise.allSettled(getRequests());
+    const values = settled.map((result) =>
+      result.status === "fulfilled" ? result.value : undefined
+    ) as unknown as { [K in keyof T]: T[K] | undefined };
+    apply(values);
+    if (settled.some((result) => result.status === "rejected")) {
+      next.sectionErrors[section] = `${section} sources are temporarily unavailable`;
+      return;
+    }
+    delete next.sectionErrors[section];
+    next.sectionUpdatedAt[section] = new Date().toISOString();
+    next.sectionResolvedFor[section] =
+      section === "skater"
+        ? `${params.date}; ${skaterPosition}; ${skaterWindow} GP`
+        : section === "goalie"
+          ? `${params.date}; ${skaterWindow === 20 ? 10 : skaterWindow} GP`
+          : params.date;
+  };
+
+  await Promise.all([
+    applySection(
+      "team",
+      () => [
+        fetchTeamRatings(params.date),
+        fetchTeamTrends(),
+        fetchTeamCtpi(),
+        fetchTeamSos()
+      ] as const,
+      ([teamRatings, teamTrends, teamCtpi, teamSos]) => {
+        if (teamRatings) next.teamRatings = teamRatings;
+        if (teamTrends) next.teamTrends = teamTrends;
+        if (teamCtpi) next.teamCtpi = teamCtpi;
+        if (teamSos) next.teamSos = teamSos;
+      }
+    ),
+    applySection(
+      "skater",
+      () => [
+        fetchSkaterTrends({
+          position: skaterPosition,
+          window: skaterWindow,
+          limit: skaterLimit,
+          seriesGames: 40
+        }),
+        fetchSustainabilityTrends({
+          date: params.date,
+          direction: "hot",
+          pos: sustainabilityPosition,
+          window: sustainabilityWindow,
+          limit: sustainabilityLimit
+        }),
+        fetchSustainabilityTrends({
+          date: params.date,
+          direction: "cold",
+          pos: sustainabilityPosition,
+          window: sustainabilityWindow,
+          limit: sustainabilityLimit
+        })
+      ] as const,
+      ([skaterTrends, sustainabilityHot, sustainabilityCold]) => {
+        if (skaterTrends) next.skaterTrends = skaterTrends;
+        if (sustainabilityHot) next.sustainability.hot = sustainabilityHot;
+        if (sustainabilityCold) next.sustainability.cold = sustainabilityCold;
+      }
+    ),
+    applySection(
+      "goalie",
+      () => [
+        fetchGoalieTrends({
+          date: params.date,
+          window: skaterWindow === 20 ? 10 : skaterWindow,
+          limit: skaterLimit
+        })
+      ] as const,
+      ([goalieTrends]) => {
+        if (goalieTrends) next.goalieTrends = goalieTrends;
+      }
+    ),
+    applySection(
+      "projection",
+      () => [fetchForgePlayers(params.date)] as const,
+      ([forgePlayers]) => {
+        if (forgePlayers) next.forgePlayers = forgePlayers;
+      }
+    ),
+    applySection(
+      "schedule",
+      () =>
+        [fetchForgeGoalies(params.date), fetchStartChart(params.date)] as const,
+      ([forgeGoalies, startChart]) => {
+        if (forgeGoalies) next.forgeGoalies = forgeGoalies;
+        if (startChart) next.startChart = startChart;
+      }
+    )
   ]);
 
-  return {
-    date: params.date,
-    teamRatings,
-    teamTrends,
-    teamCtpi,
-    teamSos,
-    skaterTrends,
-    goalieTrends,
-    forgePlayers,
-    forgeGoalies,
-    startChart,
-    sustainability: {
-      hot: sustainabilityHot,
-      cold: sustainabilityCold
-    },
-    teamMeta: buildTeamMetaIndex({
-      teamRatings,
-      teamCtpi,
-      teamSos,
-      startChart
-    })
+  next.teamMeta = buildTeamMetaIndex(next);
+  next.recency = buildDashboardRecencyState(next);
+  return next;
+};
+
+export const mergeDashboardSections = (
+  current: DashboardData | null,
+  response: DashboardData,
+  sections: DashboardSection[]
+): DashboardData => {
+  if (!current) return response;
+  const merged: DashboardData = {
+    ...current,
+    date: response.date,
+    sustainability: { ...current.sustainability },
+    sectionErrors: { ...current.sectionErrors },
+    sectionUpdatedAt: { ...current.sectionUpdatedAt },
+    sectionResolvedFor: { ...current.sectionResolvedFor }
   };
+
+  sections.forEach((section) => {
+    if (section === "team") {
+      merged.teamRatings = response.teamRatings;
+      merged.teamTrends = response.teamTrends;
+      merged.teamCtpi = response.teamCtpi;
+      merged.teamSos = response.teamSos;
+    } else if (section === "skater") {
+      merged.skaterTrends = response.skaterTrends;
+      merged.sustainability = response.sustainability;
+    } else if (section === "goalie") {
+      merged.goalieTrends = response.goalieTrends;
+    } else if (section === "projection") {
+      merged.forgePlayers = response.forgePlayers;
+    } else {
+      merged.forgeGoalies = response.forgeGoalies;
+      merged.startChart = response.startChart;
+    }
+
+    if (response.sectionErrors[section]) {
+      merged.sectionErrors[section] = response.sectionErrors[section];
+    } else {
+      delete merged.sectionErrors[section];
+    }
+    if (response.sectionUpdatedAt[section]) {
+      merged.sectionUpdatedAt[section] = response.sectionUpdatedAt[section];
+    }
+    if (response.sectionResolvedFor[section]) {
+      merged.sectionResolvedFor[section] = response.sectionResolvedFor[section];
+    }
+  });
+
+  merged.teamMeta = buildTeamMetaIndex(merged);
+  merged.recency = buildDashboardRecencyState(merged);
+  return merged;
 };
 
 // Deprecated compatibility export for older callers. Prefer loadTrendsDashboardData

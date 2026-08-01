@@ -38,7 +38,7 @@ function parseOperationId(value: string | null) {
   return value;
 }
 
-async function handler(
+export async function refreshDraftRankerDiscoveryHandler(
   req: NextApiRequest & { supabase: any },
   res: NextApiResponse,
 ) {
@@ -102,15 +102,19 @@ async function handler(
       durationMs: Date.now() - startedAt,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    console.error("Draft Ranker discovery refresh failed", { error });
     return res.status(500).json({
       success: false,
-      error: message,
+      code: "DRAFT_RANKER_DISCOVERY_REFRESH_UNAVAILABLE",
+      error: "Draft Ranker discovery refresh is temporarily unavailable.",
       failedRows: 1,
     });
   }
 }
 
-export default withCronJobAudit(adminOnly(handler as any), {
-  jobName: "refresh-draft-ranker-discovery",
-});
+export default withCronJobAudit(
+  adminOnly(refreshDraftRankerDiscoveryHandler as any),
+  {
+    jobName: "refresh-draft-ranker-discovery",
+  },
+);

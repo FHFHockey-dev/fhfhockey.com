@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import styles from "./DraftSummaryModal.module.scss";
 import modalStyles from "./ModalShell.module.scss";
 import type {
@@ -46,7 +46,64 @@ export default function DraftSummaryModal({
   configurationSummary,
 }: DraftSummaryModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
   const [viewMode, setViewMode] = useState<"roster" | "recap">("recap");
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    const timer = window.setTimeout(() => {
+      const dialog = dialogRef.current;
+      (
+        dialog?.querySelector<HTMLElement>(
+          '[aria-label="Close Draft Summary"]',
+        ) ?? dialog?.querySelector<HTMLElement>("button, [href], input, select")
+      )?.focus();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timer);
+      previousFocusRef.current?.focus();
+      previousFocusRef.current = null;
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+      const focusables = Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      ).filter((element) => !element.hasAttribute("disabled"));
+      if (focusables.length === 0) return;
+
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
 
   const playerMap = useMemo(() => {
     const m = new Map<string, ProcessedPlayer>();
@@ -371,6 +428,7 @@ export default function DraftSummaryModal({
 
   return (
     <div
+      ref={dialogRef}
       className={`${modalStyles.backdrop} ${styles.backdrop}`}
       role="dialog"
       aria-modal="true"
@@ -404,7 +462,11 @@ export default function DraftSummaryModal({
             <button className={styles.actionBtn} onClick={downloadImage}>
               Download PNG
             </button>
-            <button className={styles.actionBtn} onClick={onClose}>
+            <button
+              className={styles.actionBtn}
+              onClick={onClose}
+              aria-label="Close Draft Summary"
+            >
               Close
             </button>
           </div>

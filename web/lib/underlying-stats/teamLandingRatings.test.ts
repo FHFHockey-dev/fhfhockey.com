@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   computeTrendOverridesFromHistory,
+  fetchTeamRatingHistoryForNarratives,
   mergeUnderlyingStatsLandingRatings,
   resolveUnderlyingStatsLandingSnapshot
 } from "./teamLandingRatings";
@@ -74,6 +75,71 @@ describe("computeTrendOverridesFromHistory", () => {
     const trendOverrides = computeTrendOverridesFromHistory(history);
 
     expect(trendOverrides.get("DET")).toBe(0);
+  });
+});
+
+describe("fetchTeamRatingHistoryForNarratives", () => {
+  it("paginates the complete narrative lookback with stable ordering", async () => {
+    const rows = Array.from({ length: 1007 }, (_, index) => ({
+      date: `2026-04-${String(30 - (index % 11)).padStart(2, "0")}`,
+      def_rating: 100,
+      ga60: 2,
+      gf60: 3,
+      off_rating: 100,
+      pace60: 60,
+      pace_rating: 100,
+      pk_tier: 2,
+      pp_tier: 2,
+      sa60: 28,
+      sf60: 30,
+      team_abbreviation: "TOR",
+      xga60: 2,
+      xgf60: 3
+    }));
+    const ranges: Array<[number, number]> = [];
+    const orders: Array<[string, boolean]> = [];
+
+    const createQuery = () => {
+      const query: any = {
+        select: vi.fn(() => query),
+        in: vi.fn(() => query),
+        gte: vi.fn(() => query),
+        lte: vi.fn(() => query),
+        order: vi.fn((column: string, options: { ascending: boolean }) => {
+          orders.push([column, options.ascending]);
+          return query;
+        }),
+        range: vi.fn((from: number, to: number) => {
+          ranges.push([from, to]);
+          return Promise.resolve({
+            data: rows.slice(from, to + 1),
+            error: null
+          });
+        })
+      };
+      return query;
+    };
+    const supabase = {
+      from: vi.fn(() => createQuery())
+    };
+
+    const result = await fetchTeamRatingHistoryForNarratives(
+      "2026-04-30",
+      ["TOR"],
+      supabase as any
+    );
+
+    expect(ranges).toEqual([
+      [0, 999],
+      [1000, 1999]
+    ]);
+    expect(orders).toEqual([
+      ["date", false],
+      ["team_abbreviation", true],
+      ["date", false],
+      ["team_abbreviation", true]
+    ]);
+    expect(result.get("TOR")).toHaveLength(11);
   });
 });
 

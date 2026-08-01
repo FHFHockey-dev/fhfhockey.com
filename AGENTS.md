@@ -15,7 +15,7 @@
 - `functions/`: serverless functions; its documented local server is launched from the repository root.
 - `webhooks/`: standalone webhook service for long-running/browser-backed tasks.
 - `supabase/`, `migrations/`, and `sql/`: database configuration and SQL. Check which migration tree the relevant workflow uses before adding or moving SQL.
-- `.github/workflows/`: CI evidence; currently the rankings Playwright workflow runs from `web/` with Node 20 and npm.
+- `.github/workflows/`: CI evidence; the rankings Playwright workflow runs from `web/` with the Node version pinned in `web/.nvmrc` and npm.
 - `tasks/`: plans, PRDs, and artifacts, not application runtime code. Consult only when the task names one or the implementation directly depends on it.
 
 Start with named files, their nearest implementation/tests, and relevant configuration. Use imports as bounded navigation hints; follow imports-of-imports only while they can affect the current decision. Prefer `rg`, `rg --files`, exact paths, and narrow line ranges. Do not recursively inventory the repository or reread unchanged files without a new uncertainty.
@@ -26,7 +26,7 @@ Run JavaScript application commands in the owning directory; there is no root pa
 
 ### Web app (`web/`)
 
-- Install reproducibly: `npm ci` (CI uses `web/package-lock.json` and Node 20; `.nvmrc` specifies Node 22 for local use).
+- Install reproducibly: `npm ci` (npm and `web/package-lock.json` are the sole package-manager authority; CI and local use Node 22.11.0 from `.nvmrc`).
 - Develop: `npm run dev`; use `npm run dev:stable` if file watching reports `EMFILE` or generated `.next` files disappear.
 - Local production build (exception only): `npm run build`; use it only under the criteria in Verification and Testing.
 - Lint: `npm run lint`.

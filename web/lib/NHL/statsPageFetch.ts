@@ -2,6 +2,10 @@
 
 import supabase from "lib/supabase";
 import { getCurrentSeason } from "lib/NHL/server";
+import {
+  fetchAllSupabaseFilterChunks,
+  fetchAllSupabasePages
+} from "lib/supabase/pagination";
 import { SkaterStat, GoalieStat } from "./statsPageTypes";
 
 const GOALIE_TOTALS_SELECT = `
@@ -39,31 +43,35 @@ export async function fetchStatsData(): Promise<{
   const skaterSeasonLabel = formatSeasonLabel(currentSeason.seasonId);
   let goalieSeasonLabel = skaterSeasonLabel;
 
-  // Fetch skater stats
-  const { data: skaterData, error: skaterError } = await supabase
-    .from("wgo_skater_stats_totals")
-    .select(
-      `
-      player_id,
-      player_name,
-      current_team_abbreviation,
-      points,
-      goals,
-      pp_points,
-      blocked_shots,
-      shots,
-      hits,
-      total_primary_assists,
-      total_secondary_assists,
-      pp_goals,
-      pp_primary_assists,
-      pp_secondary_assists,
-      sh_goals
-      `
-    )
-    .eq("season", String(currentSeason.seasonId));
-
-  if (skaterError || !skaterData) {
+  let skaterData: any[];
+  try {
+    skaterData = await fetchAllSupabasePages<any>(({ from, to }) =>
+      supabase
+        .from("wgo_skater_stats_totals")
+        .select(
+          `
+          player_id,
+          player_name,
+          current_team_abbreviation,
+          points,
+          goals,
+          pp_points,
+          blocked_shots,
+          shots,
+          hits,
+          total_primary_assists,
+          total_secondary_assists,
+          pp_goals,
+          pp_primary_assists,
+          pp_secondary_assists,
+          sh_goals
+          `
+        )
+        .eq("season", String(currentSeason.seasonId))
+        .order("player_id", { ascending: true })
+        .range(from, to)
+    );
+  } catch (skaterError) {
     console.error("Error fetching skater stats:", skaterError);
     return {
       skaterSeasonLabel,
@@ -83,16 +91,23 @@ export async function fetchStatsData(): Promise<{
   const playerIds = Array.from(
     new Set(skaterData.map((row: any) => row.player_id))
   );
-  const { data: playersData, error: playersError } = await supabase
-    .from("players")
-    .select("id, sweater_number, position, image_url")
-    .in("id", playerIds);
-
-  if (playersError || !playersData) {
+  let playersData: any[] = [];
+  try {
+    playersData = await fetchAllSupabaseFilterChunks<any, number>(
+      playerIds,
+      (idChunk, { from, to }) =>
+        supabase
+          .from("players")
+          .select("id, sweater_number, position, image_url")
+          .in("id", idChunk)
+          .order("id", { ascending: true })
+          .range(from, to)
+    );
+  } catch (playersError) {
     console.error("Error fetching player info:", playersError);
   }
   const playersMap = new Map<number, any>();
-  playersData?.forEach((p: any) => playersMap.set(p.id, p));
+  playersData.forEach((p: any) => playersMap.set(p.id, p));
 
   const skaters: SkaterStat[] = skaterData.map((row: any) => {
     const playerInfo = playersMap.get(row.player_id);
@@ -132,25 +147,51 @@ export async function fetchStatsData(): Promise<{
   const bshLeaders = [...skaters].sort((a, b) => b.bsh - a.bsh).slice(0, 5);
 
   // --- Fetch Goalie Stats (including games_played) ---
-  let { data: goalieData, error: goalieError } = await supabase
-    .from("wgo_goalie_stats_totals")
-    .select(GOALIE_TOTALS_SELECT)
-    .eq("season_id", currentSeason.seasonId);
-
-  if (!goalieError && (!goalieData || goalieData.length === 0)) {
-    const fallback = await supabase
-      .from("wgo_goalie_stats_totals")
-      .select(GOALIE_TOTALS_SELECT)
-      .lte("season_id", currentSeason.seasonId)
-      .order("season_id", { ascending: false })
-      .order("wins", { ascending: false })
-      .limit(250);
-
-    goalieData = fallback.data;
-    goalieError = fallback.error;
+  let goalieData: any[] = [];
+  let goalieError: unknown = null;
+  try {
+    goalieData = await fetchAllSupabasePages<any>(({ from, to }) =>
+      supabase
+        .from("wgo_goalie_stats_totals")
+        .select(GOALIE_TOTALS_SELECT)
+        .eq("season_id", currentSeason.seasonId)
+        .order("goalie_id", { ascending: true })
+        .range(from, to)
+    );
+  } catch (error) {
+    goalieError = error;
   }
 
-  if (goalieError || !goalieData) {
+  if (!goalieError && goalieData.length === 0) {
+    const fallbackSeason = await supabase
+      .from("wgo_goalie_stats_totals")
+      .select("season_id")
+      .lte("season_id", currentSeason.seasonId)
+      .order("season_id", { ascending: false })
+      .limit(1);
+
+    if (fallbackSeason.error) {
+      goalieError = fallbackSeason.error;
+    } else {
+      const fallbackSeasonId = fallbackSeason.data?.[0]?.season_id;
+      if (fallbackSeasonId != null) {
+        try {
+          goalieData = await fetchAllSupabasePages<any>(({ from, to }) =>
+            supabase
+              .from("wgo_goalie_stats_totals")
+              .select(GOALIE_TOTALS_SELECT)
+              .eq("season_id", fallbackSeasonId)
+              .order("goalie_id", { ascending: true })
+              .range(from, to)
+          );
+        } catch (error) {
+          goalieError = error;
+        }
+      }
+    }
+  }
+
+  if (goalieError) {
     console.error("Error fetching goalie stats:", goalieError);
     return {
       skaterSeasonLabel,
@@ -173,38 +214,58 @@ export async function fetchStatsData(): Promise<{
   const goalieIds = Array.from(
     new Set(goalieData.map((row: any) => row.goalie_id))
   );
-  const { data: goaliePlayersData, error: goaliePlayersError } = await supabase
-    .from("players")
-    .select("id, image_url, sweater_number")
-    .in("id", goalieIds);
-
-  if (goaliePlayersError || !goaliePlayersData) {
+  let goaliePlayersData: any[] = [];
+  try {
+    goaliePlayersData = await fetchAllSupabaseFilterChunks<any, number>(
+      goalieIds,
+      (idChunk, { from, to }) =>
+        supabase
+          .from("players")
+          .select("id, image_url, sweater_number")
+          .in("id", idChunk)
+          .order("id", { ascending: true })
+          .range(from, to)
+    );
+  } catch (goaliePlayersError) {
     console.error("Error fetching goalie player info:", goaliePlayersError);
   }
   const goaliePlayersMap = new Map<number, any>();
-  goaliePlayersData?.forEach((p: any) => goaliePlayersMap.set(p.id, p));
+  goaliePlayersData.forEach((p: any) => goaliePlayersMap.set(p.id, p));
 
   // Determine minimum games played threshold
-  const { data: standingsData, error: standingsError } = await supabase
+  const latestStandingsDate = await supabase
     .from("nhl_standings_details")
-    .select("date, games_played")
+    .select("date")
     .eq("season_id", currentSeason.seasonId)
-    .order("date", { ascending: false });
+    .order("date", { ascending: false })
+    .limit(1);
+
+  let standingsData: any[] = [];
+  let standingsError: unknown = latestStandingsDate.error;
+  const latestDate = latestStandingsDate.data?.[0]?.date;
+  if (!standingsError && latestDate) {
+    try {
+      standingsData = await fetchAllSupabasePages<any>(({ from, to }) =>
+        supabase
+          .from("nhl_standings_details")
+          .select("date, team_abbrev, games_played")
+          .eq("season_id", currentSeason.seasonId)
+          .eq("date", latestDate)
+          .order("team_abbrev", { ascending: true })
+          .range(from, to)
+      );
+    } catch (error) {
+      standingsError = error;
+    }
+  }
 
   let minGamesThreshold = 0;
-  if (!standingsError && standingsData && standingsData.length > 0) {
-    const latestDate = standingsData.reduce(
-      (max: any, row: any) => (row.date > max ? row.date : max),
-      standingsData[0].date
-    );
-    const latestRows = standingsData.filter(
-      (row: any) => row.date === latestDate
-    );
-    const totalGames = latestRows.reduce(
+  if (!standingsError && standingsData.length > 0) {
+    const totalGames = standingsData.reduce(
       (sum: number, row: any) => sum + (row.games_played || 0),
       0
     );
-    const avgGames = totalGames / latestRows.length;
+    const avgGames = totalGames / standingsData.length;
     if (avgGames > 10) {
       minGamesThreshold = Math.floor(avgGames * 0.25);
     }

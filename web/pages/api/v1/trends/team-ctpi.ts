@@ -2,13 +2,10 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
-import {
-  TeamGameRow,
-  computeCtpi,
-  computeTrendMetrics
-} from "lib/trends/ctpi";
+import { TeamGameRow, computeCtpi, computeTrendMetrics } from "lib/trends/ctpi";
 import { type CtpiScore } from "lib/trends/ctpi";
 import { buildRequestedDateServingState } from "lib/dashboard/freshness";
+import { ACTIVE_TEAM_ABBREVIATIONS } from "lib/trends/teamMetricConfig";
 
 dotenv.config({ path: "./../../../.env.local" });
 
@@ -33,7 +30,7 @@ async function fetchAllPages<T>(buildQuery: () => any): Promise<T[]> {
   for (let from = 0; ; from += PAGE_SIZE) {
     const { data, error } = await buildQuery().range(
       from,
-      from + PAGE_SIZE - 1
+      from + PAGE_SIZE - 1,
     );
     if (error) throw error;
     if (!data || data.length === 0) break;
@@ -49,7 +46,7 @@ function sourceDateTimestamp(sourceDate: string | null): string | null {
 
 async function fetchGameRows(
   seasonId: number,
-  requestedDate: string
+  requestedDate: string,
 ): Promise<TeamGameRow[]> {
   const asRows = await fetchAllPages<any>(() =>
     supabase
@@ -67,43 +64,49 @@ async function fetchGameRows(
           "cf_pct",
           "ga",
           "xga",
-          "pdo"
-        ].join(",")
+          "pdo",
+        ].join(","),
       )
       .eq("season_id", seasonId)
       .lte("date", requestedDate)
       .order("date", { ascending: true })
-      .order("team_abbreviation", { ascending: true })
+      .order("team_abbreviation", { ascending: true }),
   );
 
   const asCountsRows = await fetchAllPages<any>(() =>
     supabase
       .from(AS_COUNTS_TABLE)
-      .select(["team_abbreviation", "date", "toi_seconds", "xga", "ga"].join(","))
+      .select(
+        ["team_abbreviation", "date", "toi_seconds", "xga", "ga"].join(","),
+      )
       .eq("season_id", seasonId)
       .lte("date", requestedDate)
       .order("date", { ascending: true })
-      .order("team_abbreviation", { ascending: true })
+      .order("team_abbreviation", { ascending: true }),
   );
 
   const ppRows = await fetchAllPages<any>(() =>
     supabase
       .from(PP_COUNTS_TABLE)
-      .select(["team_abbreviation", "date", "gf", "xgf", "toi_seconds"].join(","))
+      .select(
+        ["team_abbreviation", "date", "gf", "xgf", "toi_seconds"].join(","),
+      )
       .eq("season_id", seasonId)
       .lte("date", requestedDate)
       .order("date", { ascending: true })
-      .order("team_abbreviation", { ascending: true })
+      .order("team_abbreviation", { ascending: true }),
   );
 
   const pkRows = await fetchAllPages<any>(() =>
     supabase
       .from(PK_COUNTS_TABLE)
-      .select(["team_abbreviation", "date", "ga", "xga", "toi_seconds"].join(","))
+      .select(
+        ["team_abbreviation", "date", "ga", "xga", "toi_seconds"].join(","),
+      )
       .eq("season_id", seasonId)
       .lte("date", requestedDate)
       .order("date", { ascending: true })
-      .order("team_abbreviation", { ascending: true })
+      .order("team_abbreviation", { ascending: true }),
   );
 
   // Index AS Counts by team+date
@@ -116,7 +119,7 @@ async function fetchGameRows(
     asCountsMap.set(key, {
       toi: row.toi_seconds ?? null,
       xga: row.xga ?? null,
-      ga: row.ga ?? null
+      ga: row.ga ?? null,
     });
   });
 
@@ -130,7 +133,7 @@ async function fetchGameRows(
     ppMap.set(key, {
       gf: row.gf ?? null,
       xgf: row.xgf ?? null,
-      toi: row.toi_seconds ?? null
+      toi: row.toi_seconds ?? null,
     });
   });
   const pkMap = new Map<
@@ -142,7 +145,7 @@ async function fetchGameRows(
     pkMap.set(key, {
       ga: row.ga ?? null,
       xga: row.xga ?? null,
-      toi: row.toi_seconds ?? null
+      toi: row.toi_seconds ?? null,
     });
   });
 
@@ -172,14 +175,14 @@ async function fetchGameRows(
       pk_xga: pk?.xga ?? null, // Added
       net_penalties_per_60: null,
       pdo: row.pdo != null ? Number(row.pdo) : null,
-      toi_all_seconds: asCounts?.toi // Added
+      toi_all_seconds: asCounts?.toi, // Added
     };
   });
 }
 
 async function fetchCtpiDaily(
   seasonId: number,
-  requestedDate: string
+  requestedDate: string,
 ): Promise<{
   scores: CtpiScore[];
   sourceDate: string;
@@ -202,13 +205,13 @@ async function fetchCtpiDaily(
             "goaltending",
             "special_teams",
             "luck",
-            "computed_at"
-          ].join(",")
+            "computed_at",
+          ].join(","),
         )
         .eq("season_id", seasonId)
         .lte("date", requestedDate)
         .order("date", { ascending: true })
-        .order("team", { ascending: true })
+        .order("team", { ascending: true }),
     );
   } catch (error) {
     console.error("team-ctpi daily load error", error);
@@ -247,20 +250,20 @@ async function fetchCtpiDaily(
       z: {},
       sparkSeries: sorted
         .slice(-10)
-        .map((r: any) => ({ date: r.date, value: r.ctpi_0_to_100 }))
+        .map((r: any) => ({ date: r.date, value: r.ctpi_0_to_100 })),
     });
   });
   return {
     scores,
     sourceDate,
     computedAt: latestComputedAt,
-    sourceRowCount: data.length
+    sourceRowCount: data.length,
   };
 }
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
@@ -271,7 +274,9 @@ export default async function handler(
     const season = await fetchCurrentSeason();
     const seasonId = season.id;
     const requestedDateRaw = String(
-      Array.isArray(req.query.date) ? req.query.date[0] : req.query.date ?? ""
+      Array.isArray(req.query.date)
+        ? req.query.date[0]
+        : (req.query.date ?? ""),
     ).trim();
     const requestedDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDateRaw)
       ? requestedDateRaw
@@ -295,7 +300,7 @@ export default async function handler(
         if (!sourceDate || row.date > sourceDate) sourceDate = row.date;
       });
       const trendMetrics = Array.from(teamMap.values()).map((games) =>
-        computeTrendMetrics(games)
+        computeTrendMetrics(games),
       );
       ctpi = computeCtpi(trendMetrics);
       source = "on_the_fly";
@@ -311,8 +316,10 @@ export default async function handler(
       fallbackApplied,
       strategy: fallbackApplied
         ? "latest_available_with_data"
-        : "requested_date"
+        : "requested_date",
     });
+    const partial =
+      ctpi.length < ACTIVE_TEAM_ABBREVIATIONS.length || fallbackApplied;
 
     res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=60");
     return res.status(200).json({
@@ -326,15 +333,29 @@ export default async function handler(
         kind: source,
         sourceDate,
         computedAt,
-        rowCount: sourceRowCount
+        rowCount: sourceRowCount,
       },
-      teams: ctpi
+      coverage: {
+        expectedTeams: ACTIVE_TEAM_ABBREVIATIONS.length,
+        teamCount: ctpi.length,
+        sourceRowCount,
+        partial,
+      },
+      warnings: [
+        ...(fallbackApplied
+          ? ["CTPI is using the latest available fallback date."]
+          : []),
+        ...(ctpi.length < ACTIVE_TEAM_ABBREVIATIONS.length
+          ? ["CTPI team coverage is incomplete."]
+          : []),
+      ],
+      teams: ctpi,
     });
   } catch (error: any) {
     console.error("team-ctpi API error", error);
     return res.status(500).json({
       message: "Failed to compute CTPI.",
-      error: error?.message ?? "Unknown error"
+      error: "TEAM_CTPI_UNAVAILABLE",
     });
   }
 }

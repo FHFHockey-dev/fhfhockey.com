@@ -87,7 +87,7 @@ async function resolveYahooPlayerIds(
   const byNhlId = new Map<string, string>();
   for (const idChunk of chunk(playerIds)) {
     const { data, error } = await supabase
-      .from("yahoo_nhl_player_map_mat")
+    .from("yahoo_nhl_player_map_read")
       .select("nhl_player_id, yahoo_player_id")
       .in("nhl_player_id", idChunk);
     if (error) throw error;
@@ -120,8 +120,10 @@ async function resolveYahooPlayerIds(
       const yahooRows: any[] = [];
       for (const nameChunk of chunk(names, 100)) {
         const { data, error: yahooError } = await supabase
-          .from("yahoo_players")
-          .select("player_id, full_name, player_name, ownership_timeline, season")
+          .from("yahoo_players_with_normalized_history")
+          .select(
+            "player_id, full_name, player_name, ownership_timeline:normalized_ownership_timeline, season"
+          )
           .in("full_name", nameChunk)
           .order("player_id", { ascending: true })
           .order("season", { ascending: true, nullsFirst: true })
@@ -194,8 +196,10 @@ export default async function handler(
       const loaded: Array<Record<string, unknown>> = [];
       for (const idChunk of chunk(yahooPlayerIds)) {
         let query = supabase
-          .from("yahoo_players")
-          .select("player_id, percent_ownership, ownership_timeline, season")
+        .from("yahoo_players_with_normalized_history")
+          .select(
+            "player_id, percent_ownership, ownership_timeline:normalized_ownership_timeline, season"
+          )
           .in("player_id", idChunk)
           .order("player_id", { ascending: true })
           .order("season", { ascending: true, nullsFirst: true })
@@ -264,6 +268,6 @@ export default async function handler(
     console.error("ownership-snapshots error", err?.message || err);
     return res
       .status(500)
-      .json({ success: false, error: err?.message || String(err) });
+      .json({ success: false, error: "OWNERSHIP_SNAPSHOTS_UNAVAILABLE" });
   }
 }

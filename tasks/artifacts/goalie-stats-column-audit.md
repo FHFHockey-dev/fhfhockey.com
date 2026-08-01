@@ -1,5 +1,7 @@
 # Goalie Stats Column Audit (`1.2`)
 
+> **Historical scope:** This pre-implementation comparison remains formula lineage. The shipped dedicated goalie routes reuse these shared canonical column families; current ownership lives in the canonical goalie PRD, task list, and runbook.
+
 ## Scope
 
 This step compares the currently implemented shared goalie column families in [`web/components/underlying-stats/playerStatsColumns.ts`](/Users/tim/Code/fhfhockey.com/web/components/underlying-stats/playerStatsColumns.ts:271) against the dedicated goalie PRD requirements in [`tasks/prd-goalie-underlying-stats-landing-page.md`](/Users/tim/Code/fhfhockey.com/tasks/prd-goalie-underlying-stats-landing-page.md).

@@ -10,13 +10,14 @@ This document defines which shot-feature columns are:
 
 for the first xG baseline comparison.
 
-This is the contract for baseline task `2.2` in `/Users/tim/Code/fhfhockey.com/tasks/tasks-xg-baseline-options.md`.
+This is the contract for baseline task `2.2` in
+`tasks/TASKS/xg-model/baseline/tasks-xg-baseline-options.md`.
 
 ## Scope
 
 This contract applies to the first baseline cohort defined in:
 
-- `/Users/tim/Code/fhfhockey.com/tasks/TASKS/xg-model/baseline/xg-training-dataset-contract.md`
+- `tasks/TASKS/xg-model/baseline/xg-training-dataset-contract.md`
 
 That means:
 
@@ -133,11 +134,6 @@ Derived flags:
 - `isEmptyNetEvent`
 - `isOvertimeEvent`
 
-Miss context:
-
-- `missReasonBucket`
-- `isShortSideMiss`
-
 Contextual features:
 
 - `ownerPowerPlayAgeSeconds`
@@ -151,7 +147,7 @@ Why these are mandatory:
 - they represent the first-pass public-data xG signal set
 - they are available directly from the current feature builder
 - they cover geometry, sequence context, manpower context, and a minimal fatigue/movement layer without overloading the first baseline
-- miss subtypes stay in the cohort as explanatory inputs; they are not currently exclusion rules
+- missed-shot rows stay in the cohort, but post-event miss classifications are not model inputs
 
 ### 2. Optional Baseline Features
 
@@ -293,6 +289,8 @@ Direct label or near-label leakage:
 - `isMissedShot`
 - `isBlockedShot`
 - `isUnblockedShotAttempt`
+- `missReasonBucket`
+- `isShortSideMiss`
 
 Raw coordinates once normalized geometry exists:
 
@@ -309,7 +307,8 @@ Training-policy exclusion flags:
 Reason for exclusion:
 
 - identity fields are for lineage, joins, and split assignment only
-- current-shot event-class and label-adjacent columns would leak or restate the target
+- current-shot event-class, outcome, and post-event miss-classification columns would leak or
+  restate information unavailable before the shot outcome
 - raw coordinates are dominated by normalized geometry in the first baseline
 - exclusion and cohort-policy flags define row eligibility, not shot quality
 
@@ -338,14 +337,16 @@ Recommended first-pass categorical set:
 - `strengthExact`
 - `zoneCode`
 - `previousEventTypeDescKey`
-- `missReasonBucket`
 
 ## Important Boundaries
 
 - This contract defines feature eligibility, not the exact final model matrix implementation.
 - The first baseline harness may run ablations between mandatory-only and mandatory-plus-optional sets.
 - Any future addition of blocked-shot cohorts, goalie-specific context expansion, or historical season expansion must be versioned in training artifact metadata.
-- any future miss-subtype exclusion, down-weighting, or separate modeling treatment must also be versioned and justified by an approval-grade rerun
+- miss subtypes remain eligible rows, but `missReasonBucket` and `isShortSideMiss` are forbidden
+  scoring inputs under the leakage-safe contract
+- any future miss-subtype exclusion, down-weighting, or separate modeling treatment must also be
+  versioned and justified by an approval-grade rerun
 
 ## Summary
 

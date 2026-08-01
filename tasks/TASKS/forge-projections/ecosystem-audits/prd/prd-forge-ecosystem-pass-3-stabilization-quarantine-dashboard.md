@@ -14,6 +14,16 @@ This document is the single pass-3 source of truth for:
 - remediation planning
 - landing dashboard visual polish planning
 
+## Current-State Authority
+
+The 2026-07-29 Wave-C re-audit treats the implementation narratives below as chronological evidence, not current runtime inventory. The current contract is:
+
+- `rolling-forge-pipeline-v4` owns ten ordered stages; projection execution is stage 8, accuracy refresh is stage 9, and monitoring is stage 10.
+- `update-goalie-projections.ts`, `update-start-chart-projections.ts`, `update-wgo-ly.ts`, and `runProjectionV2.ts` are deleted. Their remaining references are explicit retirement/history/test guards.
+- `/api/v1/forge/players`, `/api/v1/forge/goalies`, and `/api/v1/start-chart` remain canonical readers. `/api/v1/projections/players` and `/api/v1/projections/goalies` remain deprecated-readable compatibility routes.
+- `update-rolling-games.ts` and `update-power-rankings.ts` remain no-write `410 Gone` stubs. `update-team-power-ratings-new.ts` remains a no-write quarantine stub but intentionally returns HTTP 200 with `operationStatus: "warning"`; it is not a runnable writer.
+- The homepage timezone hydration mismatch recorded by the March 29 browser trace was later contained by rendering the schedule context as `null` on both initial renders and formatting local time only in a client effect. The remaining card-first standings/injuries idea is optional UX work, not a pass-3 correctness blocker.
+
 Pass-3 scope is driven by the current codebase, not the historical ideal architecture. The working assumption is that the canonical path today is:
 
 1. core entity freshness
@@ -88,11 +98,11 @@ The result is avoidable confusion around what is current, what is safe to run, w
 - `fetchRollingPlayerAverages.ts` is now the semantic owner for the rolling pipeline, but it is still a very large orchestration surface with substantial compatibility baggage.
 - `rolling_player_game_metrics` contains canonical fields, legacy alias fields, compatibility-only fields, and newer support columns; downstream readers still depend on both canonical and legacy ordering rules.
 - `run-forge-projections.ts` is the canonical projection runner, and the old `runProjectionV2.ts` shim has been removed from runtime.
-- `run-rolling-forge-pipeline.ts` and `rollingForgePipeline.ts` now define the newer stage model with stage 8 reduced to accuracy refresh only after the legacy start-chart materializer was retired.
+- `run-rolling-forge-pipeline.ts` and `rollingForgePipeline.ts` define the v4 stage model with projection execution at stage 8, accuracy refresh at stage 9, and monitoring at stage 10 after the legacy start-chart materializer was retired.
 - The start-chart read layer is aligned to canonical `forge_player_projections`, and the legacy `player_projections` materializer has now been removed from the live pipeline.
 - `goalie_start_projections` remains a live dependency for multiple readers and runners. Pass 3 now treats it as an intentionally shared table with one canonical writer, while any rename or wrapping is deferred to a later pass.
-- `team_power_ratings_daily` and `team_power_ratings_daily__new` still both exist structurally, but the rating service now reads only `team_power_ratings_daily` and the alternate writer is disabled.
-- The landing page was broken into focused homepage sections and no longer relies on the previous hard `min-width: 1300px` desktop lock, though further browser verification is still warranted.
+- `team_power_ratings_daily` and `team_power_ratings_daily__new` still both exist structurally, but the rating service reads only `team_power_ratings_daily` and the alternate route is warning-only/no-write.
+- The landing page was broken into focused homepage sections and no longer relies on the previous hard `min-width: 1300px` desktop lock. Browser verification completed, and its timezone hydration finding was subsequently contained.
 
 ## Success Metrics
 
@@ -235,16 +245,16 @@ The result is avoidable confusion around what is current, what is safe to run, w
 ## Top Immediate Fix Outcomes
 
 - `/api/v1/start-chart` now reads skater rows from canonical `forge_player_projections` while still joining `goalie_start_projections` for goalie context.
-- `web/pages/api/v1/db/update-goalie-projections.ts` is quarantined behind `410 Gone`; `/api/v1/db/update-goalie-projections-v2` is the only supported goalie-start writer.
+- `web/pages/api/v1/db/update-goalie-projections.ts` is deleted; `/api/v1/db/update-goalie-projections-v2` is the only supported goalie-start writer.
 - `/api/v1/projections/players` and `/api/v1/projections/goalies` remain readable compatibility surfaces, but they now emit explicit deprecation headers and metadata pointing callers to `/api/v1/forge/*`.
-- `teamRatingsService` now reads only canonical `team_power_ratings_daily`; `update-team-power-ratings-new.ts` is quarantined behind `410 Gone`.
+- `teamRatingsService` now reads only canonical `team_power_ratings_daily`; `update-team-power-ratings-new.ts` is a warning-only no-write quarantine stub.
 - Legacy JS-backed loaders `update-rolling-games.ts` and `update-power-rankings.ts` are quarantined behind `410 Gone`.
 - The remaining high-risk follow-up is no longer “which path is canonical”; it is finishing retirement of transitional or deprecated surfaces that are now explicitly marked and bounded.
 
 ## Execution Safety Notes
 
 - Do not treat `/api/v1/start-chart` as a same-day validation surface unless its explicit `serving` metadata confirms the requested date is being served without fallback.
-- Do not use `update-goalie-projections.ts`, `update-team-power-ratings-new.ts`, `update-rolling-games.ts`, or `update-power-rankings.ts` as active operator surfaces; they now return `410 Gone`.
+- Do not use `update-team-power-ratings-new.ts`, `update-rolling-games.ts`, or `update-power-rankings.ts` as active operator surfaces. The first is a warning-only no-write response and the latter two return `410 Gone`; `update-goalie-projections.ts` is deleted.
 - Do not use the removed `runProjectionV2.ts` shim as justification for teaching the old runner path; `run-forge-projections.ts` is the active module owner.
 - Do not trust rolling PP or line-context labels until `powerPlayCombinations` and `lineCombinations` have been refreshed for the target games.
 - Do not treat deprecated `/api/v1/projections/*` readers as canonical ownership just because they still return data for compatibility.
@@ -286,10 +296,10 @@ The result is avoidable confusion around what is current, what is safe to run, w
 | `web/pages/api/v1/start-chart.ts` | `/api/v1/start-chart` | Start-chart consumer API | Reads skaters from `forge_player_projections` and goalie context from `goalie_start_projections` | High | `HEALTHY` | `SAFE TO RUN` | Still supports fallback serving, but that state is now explicit through canonical-source, compatibility, and serving metadata | Keep as the curated start-chart consumer layer |
 | `web/pages/api/v1/projections/players.ts` | `/api/v1/projections/players` | Deprecated generic player projection reader | Reads `forge_player_projections` | Medium | `REDUNDANT` | `SAFE TO RUN` | Duplicates `/api/v1/forge/players`, but now emits explicit deprecation headers and replacement metadata | Keep readable for compatibility, then retire after usage verification |
 | `web/pages/api/v1/projections/goalies.ts` | `/api/v1/projections/goalies` | Deprecated generic goalie projection reader | Reads `forge_goalie_projections` | Medium | `REDUNDANT` | `SAFE TO RUN` | Same duplication pattern as the player route, now with explicit deprecation signaling | Keep readable for compatibility, then retire after usage verification |
-| `web/pages/api/v1/db/update-goalie-projections.ts` | `/api/v1/db/update-goalie-projections` | Old goalie-prior RPC wrapper | Formerly wrote `goalie_start_projections` through old RPC | Low | `QUARANTINED` | `DO NOT RUN` | Now returns `410 Gone`; remaining risk is hidden scheduler or operator expectations, not dual-write behavior | Delete after usage verification |
+| `web/pages/api/v1/db/update-goalie-projections.ts` | retired route | Old goalie-prior RPC wrapper | Formerly wrote `goalie_start_projections` through old RPC | Low | `RETIRED` | `DO NOT RUN` | The file is deleted and the v2 writer is the sole supported owner | Keep deleted; retain only explicit historical references |
 | `web/lib/projections/runProjectionV2.ts` | removed shim | Removed compatibility export shim | Formerly re-exported `run-forge-projections` | Low | `OUTDATED` | `DO NOT RUN` | Runtime ambiguity is gone; remaining risk is stale documentation or task references | Keep deleted; clean residual docs only |
 | `web/pages/api/v1/db/update-team-power-ratings.ts` | `/api/v1/db/update-team-power-ratings` | Current team power ratings writer | Writes `team_power_ratings_daily` | Medium | `HEALTHY` | `RUN ONLY AFTER DEPENDENCIES` | Still part of downstream start-chart logic | Keep until table ownership is cleaned up |
-| `web/pages/api/v1/db/update-team-power-ratings-new.ts` | `/api/v1/db/update-team-power-ratings-new` | Alternate writer for `__new` table | Formerly wrote `team_power_ratings_daily__new` | Low | `QUARANTINED` | `DO NOT RUN` | Now returns `410 Gone`; canonical reads stay on `team_power_ratings_daily` | Delete after confirming no hidden callers still expect the alternate writer |
+| `web/pages/api/v1/db/update-team-power-ratings-new.ts` | `/api/v1/db/update-team-power-ratings-new` | No-write compatibility stub for the former `__new` writer | Formerly wrote `team_power_ratings_daily__new` | Low | `QUARANTINED` | `DO NOT RUN` | Returns HTTP 200 with explicit warning/no-work metadata; canonical reads and writes stay on `team_power_ratings_daily` | Delete after confirming no hidden callers still expect the alternate route |
 | `web/pages/api/v1/db/update-rolling-games.ts` | `/api/v1/db/update-rolling-games` | Legacy rolling-games wrapper | Formerly dynamically imported `fetchRollingGames.js` | Low | `QUARANTINED` | `DO NOT RUN` | Now returns `410 Gone`; remaining risk is stale scheduler or benchmark inventory references | Delete after confirming no hidden callers still depend on it |
 | `web/pages/api/v1/db/update-power-rankings.ts` | `/api/v1/db/update-power-rankings` | Legacy power-rankings wrapper | Formerly dynamically imported `fetchPowerRankings.js` | Low | `QUARANTINED` | `DO NOT RUN` | Now returns `410 Gone`; there is still no current canonical operator story for this legacy path | Delete after scheduler and consumer verification |
 
@@ -297,11 +307,11 @@ The result is avoidable confusion around what is current, what is safe to run, w
 
 | Quarantine Status | File Path | Route / Entrypoint | Reason for Quarantine | Evidence | Likely Root Cause | Downstream Impact | `DO NOT RUN` | Recommended Disposition |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `QUARANTINED` | `web/pages/api/v1/db/update-goalie-projections.ts` | `/api/v1/db/update-goalie-projections` | Old goalie-start writer is now intentionally disabled | Route returns `410 Gone` and points to `/api/v1/db/update-goalie-projections-v2` | Route-level migration is complete, but cleanup has not yet reached every possible scheduler or manual script | Confusion risk is now limited to stale callers, not silent dual writes | Yes | `delete` after verifying no hidden scheduler or runbook still references it |
+| `RETIRED` | `web/pages/api/v1/db/update-goalie-projections.ts` | retired route | Old goalie-start writer was removed | File absence plus compatibility and module-import guards preserve `/api/v1/db/update-goalie-projections-v2` as the sole writer | Caller cleanup and deletion are complete | Remaining risk is stale historical prose only | Yes | Keep deleted |
 | `RETIRED` | `web/pages/api/v1/db/update-start-chart-projections.ts` | `/api/v1/db/update-start-chart-projections` | Legacy downstream materializer was removed after consumer verification | Start-chart and other live skater readers already used `forge_player_projections`; stage-8 orchestration and cron docs were updated before deletion | The route survived earlier as bounded migration debt until the final caller audit was complete | Remaining risk is limited to stale historical docs, not a live side channel | Yes | Keep deleted and continue cleaning residual historical references opportunistically |
 | `QUARANTINED` | `web/pages/api/v1/projections/players.ts` | `/api/v1/projections/players` | Deprecated reader duplicates `/api/v1/forge/players` | Route now emits deprecation headers and replacement metadata while still serving compatibility traffic | Namespace cleanup was deferred to avoid breaking unknown callers immediately | Keeps API ownership ambiguous until usage is proven low enough for removal | No | `deprecate` in place, then `delete` after usage verification |
 | `QUARANTINED` | `web/pages/api/v1/projections/goalies.ts` | `/api/v1/projections/goalies` | Deprecated reader duplicates `/api/v1/forge/goalies` | Same deprecation contract as the player route | Same as above | Same duplication and compatibility burden | No | `deprecate` in place, then `delete` after usage verification |
-| `QUARANTINED` | `web/pages/api/v1/db/update-team-power-ratings-new.ts` | `/api/v1/db/update-team-power-ratings-new` | Alternate writer is intentionally disabled | Route returns `410 Gone`; `teamRatingsService` reads only `team_power_ratings_daily` | Canonical table choice is made, but cleanup is not fully finished | Remaining risk is hidden operator use of the disabled writer or stale `__new` table expectations | Yes | `delete` after hidden-caller verification |
+| `QUARANTINED` | `web/pages/api/v1/db/update-team-power-ratings-new.ts` | `/api/v1/db/update-team-power-ratings-new` | Alternate writer is intentionally disabled | Route performs no work and returns HTTP 200 with `operationStatus: "warning"`; `teamRatingsService` reads only `team_power_ratings_daily` | Canonical table choice is made, but caller cleanup is not fully finished | A stale caller can receive a successful transport status but must observe the explicit warning/no-work contract | Yes | `delete` after hidden-caller verification |
 | `QUARANTINED` | `web/pages/api/v1/db/update-rolling-games.ts` | `/api/v1/db/update-rolling-games` | Legacy rolling-games route is intentionally disabled | Route returns `410 Gone`; task audit still found cron or benchmark references in repo inventory | Route survived earlier rewrites as operational drift | Remaining risk is stale operational references, not silent runtime divergence | Yes | `delete` after scheduler verification |
 | `QUARANTINED` | `web/pages/api/v1/db/update-power-rankings.ts` | `/api/v1/db/update-power-rankings` | Legacy power-rankings route is intentionally disabled | Route returns `410 Gone`; there is no supported canonical replacement inside the current rolling-to-FORGE operator story | Legacy maintenance path was never folded into the newer stage model | Remaining risk is hidden consumer or schedule expectations | Yes | `delete` after scheduler and consumer verification |
 
@@ -318,7 +328,7 @@ The result is avoidable confusion around what is current, what is safe to run, w
 | 5 | Projection ingest | `ingest-projection-inputs` | `pbp_games`, `pbp_plays`, `shift_charts` | Derived tables miss current games |
 | 6 | Derived build | `build-projection-derived-v2` | `forge_player_game_strength`, `forge_team_game_strength`, `forge_goalie_game` | Projection runner preflight fails or uses stale features |
 | 7 | Projection execution | `update-goalie-projections-v2`, `run-projection-v2` | `goalie_start_projections`, `forge_runs`, `forge_*_projections` | FORGE readers and accuracy tables drift from reality |
-| 8 | Downstream consumers and transitional materializers | `/api/v1/forge/*`, `/api/v1/start-chart`, dashboard pages, `update-start-chart-projections` | API payloads, product surfaces, and legacy materializations | Product pages can look healthy while serving fallback data or while transitional legacy materializations linger unnecessarily |
+| 8 | Accuracy and downstream consumers | `run-projection-accuracy`, `/api/v1/forge/*`, `/api/v1/start-chart`, dashboard pages | Accuracy outputs, API payloads, and product surfaces | Product pages can look healthy while serving fallback data if callers ignore explicit serving metadata |
 
 ### Freshness Risks That Need Explicit Repair
 
@@ -328,7 +338,7 @@ The result is avoidable confusion around what is current, what is safe to run, w
 - `run-projection-v2` and `run-projection-accuracy` now enforce dependency-aware preflight behavior. The remaining weak point is downstream validation discipline when a reader endpoint is allowed to serve fallback data.
 - `/api/v1/forge/players`, `/api/v1/forge/goalies`, and `/api/v1/start-chart` still allow fallback behavior for resilience, but they now expose `serving` metadata and scan summaries. The residual risk is operator misuse of those fallback-capable readers as strict same-day validation surfaces.
 - `goalie_start_projections` remains a shared upstream dependency with legacy naming, but pass 3 now makes that sharing explicit: one canonical writer, multiple legitimate readers, and no near-term rename inside this stabilization pass.
-- `update-start-chart-projections.ts` still materializes `player_projections`, which means the ecosystem still carries one bounded legacy skater-output side channel even though the start-chart read layer was corrected.
+- `update-start-chart-projections.ts` and its `player_projections` side channel are retired; Start Chart remains a curated wrapper over canonical FORGE skater outputs.
 
 ### Stale-Tail and False-Validation Risks
 
@@ -340,10 +350,10 @@ The result is avoidable confusion around what is current, what is safe to run, w
 
 ### Duplicated or Unnecessary Recompute Paths
 
-- The old goalie-start writer route still exists, but it is gated behind `410 Gone` rather than acting as a second active writer.
+- The old goalie-start writer route is deleted; the v2 route remains the sole writer.
 - Two projection read namespaces still exist.
 - Two team ratings tables still exist.
-- The start-chart reader is now a downstream view over canonical FORGE skater outputs, but the legacy `player_projections` materializer still exists as transitional debt.
+- The start-chart reader is a downstream view over canonical FORGE skater outputs, and the legacy `player_projections` materializer is deleted.
 - Legacy JS loader routes for rolling games and power rankings still exist only as disabled `410 Gone` surfaces outside the current stage model.
 
 ### Freshness and Execution Safety Validation Standard
@@ -373,8 +383,7 @@ Pass 3 now codifies large parts of this standard directly in route contracts and
 ### Residual UX Gaps
 
 - Standings and injuries are still fundamentally table-based modules. The page is more coherent now, but a future card-first or progressively disclosed treatment could improve scanability further.
-- Browser verification on March 29, 2026 confirmed the new summary-first structure is directionally right, but it also exposed a hydration mismatch in the slate summary where server and client render different timezone strings for the same hero copy.
-- The immediate homepage follow-up should therefore be correctness-first: fix the server/client timezone mismatch before treating the landing page as fully stabilized.
+- Browser verification on March 29, 2026 confirmed the new summary-first structure and exposed a slate-summary timezone hydration mismatch. That mismatch was later contained by deferring localized schedule text until the client effect; it remains historical verification evidence rather than a current blocker.
 - The product story is materially stronger than before, and if a later UX iteration is still warranted after that hydration fix, card-first standings or injuries should take precedence over adding a separate “today in fantasy” summary layer.
 
 ## Landing Dashboard Improvement Plan
@@ -406,25 +415,25 @@ Pass 3 now codifies large parts of this standard directly in route contracts and
 
 | Candidate | Why It Exists | Why It May No Longer Be Needed | Superseding Surface | Risk Before Removal | Validation Required |
 | --- | --- | --- | --- | --- | --- |
-| `web/pages/api/v1/db/update-goalie-projections.ts` | Older goalie-start projection writer | Route is now disabled and no longer functions as a live alternate writer | `web/pages/api/v1/db/update-goalie-projections-v2.ts` | Hidden schedulers or scripts may still call the disabled path | Audit cron inventory and Vercel schedules before deletion |
+| `web/pages/api/v1/db/update-goalie-projections.ts` | Older goalie-start projection writer | Deleted after caller verification | `web/pages/api/v1/db/update-goalie-projections-v2.ts` | Historical references can be mistaken for live guidance | Keep deleted and preserve explicit retirement labels |
 | `web/pages/api/v1/projections/players.ts` | Older projection reader namespace | `/api/v1/forge/players` is the canonical namespace and the old route now self-identifies as deprecated | `web/pages/api/v1/forge/players.ts` | External consumers may still rely on the old namespace | Search logs and internal references before deletion |
 | `web/pages/api/v1/projections/goalies.ts` | Older projection reader namespace | `/api/v1/forge/goalies` is canonical and the old route now self-identifies as deprecated | `web/pages/api/v1/forge/goalies.ts` | Same external-consumer risk | Search logs and internal references before deletion |
 | `web/lib/projections/runProjectionV2.ts` | Import shim during runner rename | Removed in pass 3 | `web/lib/projections/run-forge-projections.ts` | Residual docs can still teach the dead path | Clean active docs and task references |
-| `web/pages/api/v1/db/update-team-power-ratings-new.ts` | Migration path for alternate ratings table | Canonical read path is now fixed on `team_power_ratings_daily`; alternate writer is disabled | `web/pages/api/v1/db/update-team-power-ratings.ts` | Hidden callers may still expect the alternate route | Audit logs and then delete |
+| `web/pages/api/v1/db/update-team-power-ratings-new.ts` | Migration path for alternate ratings table | Canonical read path is fixed on `team_power_ratings_daily`; the retained route is a warning-only no-write stub | `web/pages/api/v1/db/update-team-power-ratings.ts` | Hidden callers may treat transport-level 200 as successful work unless they honor the warning payload | Audit logs and then delete |
 | `web/pages/api/v1/db/update-rolling-games.ts` | Legacy rolling-games entrypoint | Disabled in pass 3 | `web/pages/api/v1/db/update-rolling-player-averages.ts` | Hidden automation could still call it | Audit cron inventory and logs before deletion |
 | `web/pages/api/v1/db/update-power-rankings.ts` | Legacy power-rankings entrypoint | Disabled in pass 3 and still lacks a supported canonical successor | TBD; likely no direct replacement inside the current rolling-to-FORGE chain | Could still feed a niche consumer or stale automation | Audit references and consumer expectations before deletion |
-| `web/pages/api/v1/db/update-start-chart-projections.ts` | Transitional legacy start-chart materializer | Start-chart reads were corrected, but this materializer still writes `player_projections` | Canonical FORGE readers plus curated `start-chart` read logic | Hidden consumers may still depend on the legacy table | Map remaining `player_projections` consumers before deletion or replacement |
+| `web/pages/api/v1/db/update-start-chart-projections.ts` | Transitional legacy start-chart materializer | Deleted after consumer verification | Canonical FORGE readers plus curated `start-chart` read logic | Historical references can be mistaken for live guidance | Keep deleted and preserve explicit retirement labels |
 
 ## Remediation Plan
 
 ### Completed in Pass 3
 
 1. Established the canonical downstream skater read model by moving `/api/v1/start-chart` onto `forge_player_projections` while preserving goalie context from `goalie_start_projections`.
-2. Quarantined old goalie-start write entrypoints by forcing `update-goalie-projections.ts` to return `410 Gone` and point to `/api/v1/db/update-goalie-projections-v2`.
+2. Retired the old goalie-start write entrypoint after first quarantining it; `/api/v1/db/update-goalie-projections-v2` is the sole supported writer.
 3. Aligned the pipeline spec with real storage and downstream meaning in `rollingForgePipeline.ts` and `run-rolling-forge-pipeline.ts`.
 4. Marked `/api/v1/forge/players` and `/api/v1/forge/goalies` as canonical and converted `/api/v1/projections/*` into explicitly deprecated-readable compatibility routes.
 5. Quarantined legacy JS loader routes outside the current rolling/FORGE model by forcing `update-rolling-games.ts` and `update-power-rankings.ts` to return `410 Gone`.
-6. Converged the team power ratings story at the read layer by fixing `teamRatingsService` on `team_power_ratings_daily` and disabling `update-team-power-ratings-new.ts`.
+6. Converged the team power ratings story at the read layer by fixing `teamRatingsService` on `team_power_ratings_daily`; `update-team-power-ratings-new.ts` remains a warning-only no-write quarantine stub.
 7. Added a canonical batch PP repair route and explicit historical line-combination repair modes.
 8. Tightened freshness signaling by exposing same-day versus fallback serving metadata in `/api/v1/forge/players`, `/api/v1/forge/goalies`, and `/api/v1/start-chart`.
 9. Standardized the safe validation sequence by exposing a shared operator dependency contract and enforcing freshness-aware preflight behavior in rolling and accuracy surfaces.
@@ -436,12 +445,12 @@ Pass 3 now codifies large parts of this standard directly in route contracts and
 
 The follow-up implementation queue should stay in this PRD and the companion task file. Do not split these residual items into another pass-3 planning markdown.
 
-13. Verify that no hidden schedulers, cron jobs, benchmarks, or external callers still rely on the disabled `410 Gone` routes before deleting them.
+13. Verify that no hidden schedulers, cron jobs, benchmarks, or external callers still rely on the retained no-write legacy routes before deleting them.
 14. Clean any remaining active docs or task references that still teach the retired start-chart materializer as a live route.
 15. Clean active docs and task references that still teach `runProjectionV2.ts` as a live runner path.
 16. If a later pass renames or wraps `goalie_start_projections`, migrate all shared readers together instead of creating another partial compatibility layer.
 17. Audit any remaining support-only WGO helper writers beyond `update-wgo-ly.ts` before treating them as active pipeline dependencies again.
-18. If homepage iteration continues after the verified timezone hydration mismatch is fixed, prioritize a card-first standings or injuries treatment before considering any optional “today in fantasy” summary layer.
+18. If homepage iteration continues, prioritize a card-first standings or injuries treatment before considering any optional “today in fantasy” summary layer; the verified timezone hydration mismatch is already contained.
 
 ## Open Questions
 

@@ -143,3 +143,7 @@
 
 - [x] 11.0 NEW: Resolve existing full TypeScript verification blockers
   - [x] 11.1 Fix or quarantine pre-existing `tsc --noEmit` failures in underlying-stats and xg test files so full typecheck can be used as a clean verification signal. Verified with `npx tsc --noEmit` and a targeted Vitest pass covering 15 touched test files.
+
+- [x] 12.0 **NEW P1:** Contain background pagination failures: retain completed rows, stop the loading-more state, clear `hasMore`, render a stable partial-data notice, and keep dependency details only in server/browser diagnostics (verified 2026-07-29).
+- [x] 12.1 **NEW P1:** Correct table sorting so Elite, Quality, Average, Bad, and Really Bad use independent values and every bucket-average row remains attached to its sorted bucket group (verified 2026-07-29).
+- [x] 12.2 **NEW P2:** Give both sortable table variants native keyboard-operable header buttons with `aria-sort`, and format advanced-table ownership values with the same visible percent semantics as the other tabs (verified 2026-07-29).

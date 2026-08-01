@@ -299,10 +299,14 @@ export default function ImportCsvModal({
     };
   }, [open]);
 
-  const REQUIRED_COLUMNS = getRequiredCsvColumns(
-    isGoalieCsv ? "goalie" : "skater"
+  const REQUIRED_COLUMNS = useMemo(
+    () => getRequiredCsvColumns(isGoalieCsv ? "goalie" : "skater"),
+    [isGoalieCsv],
   );
-  const REQUIRED_COLUMN_SET = new Set(REQUIRED_COLUMNS);
+  const REQUIRED_COLUMN_SET = useMemo(
+    () => new Set(REQUIRED_COLUMNS),
+    [REQUIRED_COLUMNS],
+  );
 
   const rosterIndex = useMemo(() => {
     const ids = new Set<number>();

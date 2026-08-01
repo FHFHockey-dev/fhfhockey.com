@@ -69,23 +69,22 @@ describe("scheduled cron audit coverage", () => {
       {},
     );
 
-    expect(authFindings).toHaveLength(52);
+    expect(authFindings).toHaveLength(53);
     expect(
       authFindings.reduce(
         (jobCount, finding) => jobCount + finding.jobNames.length,
         0,
       ),
-    ).toBe(59);
+    ).toBe(60);
     expect(modeCounts).toEqual({
-      "admin-or-cron": 17,
+      "admin-or-cron": 52,
       "cron-secret-only": 1,
-      unprotected: 34,
     });
     expect(callerCounts).toEqual({
       "browser-admin": 5,
       "browser-admin-and-internal": 4,
-      "cron-only": 32,
-      "internal-server": 11,
+      "cron-only": 31,
+      "internal-server": 13,
     });
     expect(authFindings.filter((finding) => !finding.filePath)).toEqual([]);
 
@@ -103,47 +102,12 @@ describe("scheduled cron audit coverage", () => {
     }
   });
 
-  it("keeps the reviewed unprotected set explicit and targets no public unauthenticated exception", () => {
+  it("keeps every scheduled route behind its reviewed authorization boundary", () => {
     const unprotectedRoutes = authFindings
       .filter((finding) => finding.currentMode === "unprotected")
       .map((finding) => finding.routePath);
 
-    expect(unprotectedRoutes).toEqual([
-      "/api/v1/db/build-projection-derived-v2",
-      "/api/v1/db/calculate-wigo-stats",
-      "/api/v1/db/cron-report",
-      "/api/v1/db/ingest-projection-inputs",
-      "/api/v1/db/run-fetch-wgo-data",
-      "/api/v1/db/run-projection-accuracy",
-      "/api/v1/db/run-projection-v2",
-      "/api/v1/db/sustainability/rebuild-baselines",
-      "/api/v1/db/update-game-goal-projections",
-      "/api/v1/db/update-goalie-projections-v2",
-      "/api/v1/db/update-nhl-edge-stats",
-      "/api/v1/db/update-nst-current-season",
-      "/api/v1/db/update-nst-gamelog",
-      "/api/v1/db/update-nst-goalies",
-      "/api/v1/db/update-nst-team-daily",
-      "/api/v1/db/update-PbP",
-      "/api/v1/db/update-player-trend-metrics",
-      "/api/v1/db/update-rolling-player-averages",
-      "/api/v1/db/update-sko-stats",
-      "/api/v1/db/update-team-ctpi-daily",
-      "/api/v1/db/update-team-power-ratings",
-      "/api/v1/db/update-team-sos",
-      "/api/v1/db/update-team-yearly-summary",
-      "/api/v1/db/update-wgo-averages",
-      "/api/v1/db/update-wgo-goalie-totals",
-      "/api/v1/db/update-wgo-skaters",
-      "/api/v1/db/update-wgo-totals",
-      "/api/v1/db/update-yahoo-players",
-      "/api/v1/db/update-yahoo-weeks",
-      "/api/v1/ml/update-predictions-sko",
-      "/api/v1/sustainability/rebuild-priors",
-      "/api/v1/sustainability/rebuild-score",
-      "/api/v1/sustainability/rebuild-trend-bands",
-      "/api/v1/sustainability/rebuild-window-z",
-    ]);
+    expect(unprotectedRoutes).toEqual([]);
     expect(
       authFindings.every(
         (finding) =>

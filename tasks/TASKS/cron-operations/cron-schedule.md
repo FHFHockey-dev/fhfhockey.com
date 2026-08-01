@@ -284,7 +284,8 @@
     "run_time_utc": "10:15 UTC",
     "active": true,
     "method": "GET",
-    "route": "/api/v1/db/update-team-power-ratings"
+    "route": "/api/v1/db/update-team-power-ratings",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 389,
@@ -401,9 +402,10 @@
     "jobname": "update-rolling-games-recent",
     "schedule": "25 10 * * *",
     "run_time_utc": "10:25 UTC",
-    "active": false,
+    "active": true,
     "method": "GET",
-    "route": "/api/v1/db/update-rolling-games?date=recent"
+    "route": "/api/v1/db/update-rolling-games?date=recent",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 321,
@@ -430,7 +432,8 @@
     "run_time_utc": "10:40 UTC",
     "active": true,
     "method": "GET",
-    "route": "/api/v1/db/sustainability/rebuild-baselines"
+    "route": "/api/v1/db/sustainability/rebuild-baselines",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 374,
@@ -447,7 +450,8 @@
     "run_time_utc": "10:42 UTC",
     "active": true,
     "method": "GET",
-    "route": "/api/v1/sustainability/rebuild-priors?season=current"
+    "route": "/api/v1/sustainability/rebuild-priors?season=current",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 370,
@@ -456,7 +460,8 @@
     "run_time_utc": "10:43 UTC",
     "active": true,
     "method": "GET",
-    "route": "/api/v1/sustainability/rebuild-window-z?season=current&runAll=true"
+    "route": "/api/v1/sustainability/rebuild-window-z?season=current&runAll=true",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 371,
@@ -465,7 +470,8 @@
     "run_time_utc": "10:44 UTC",
     "active": true,
     "method": "GET",
-    "route": "/api/v1/sustainability/rebuild-score?season=current&runAll=true"
+    "route": "/api/v1/sustainability/rebuild-score?season=current&runAll=true",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 327,
@@ -483,7 +489,8 @@
     "run_time_utc": "10:46 UTC",
     "active": true,
     "method": "GET",
-    "route": "/api/v1/sustainability/rebuild-trend-bands?runAll=true"
+    "route": "/api/v1/sustainability/rebuild-trend-bands?runAll=true",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 328,
@@ -632,32 +639,28 @@
 
 The machine-checked inventory in `web/lib/cron/cronAuditCoverage.ts` and
 `web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts` freezes the
-2026-07-18 pre-rollout contract:
+2026-07-30 completed local authorization contract:
 
 - 59 active HTTP jobs resolve to 52 unique Pages API routes with no missing
   route owner.
-- 17 routes already use the fail-closed `adminOnly` admin-or-exact-cron
-  boundary; one destructive internal sheet-sync route intentionally uses an
-  exact-`CRON_SECRET`-only guard; 34 routes remain explicitly unprotected and
-  pending route-by-route migration.
+- 51 routes use the fail-closed `adminOnly` admin-or-exact-cron boundary; one
+  destructive internal sheet-sync route intentionally uses an
+  exact-`CRON_SECRET`-only guard; zero active scheduled routes are unprotected.
 - Static non-cron consumers are classified as 5 browser-admin-only routes,
-  11 internal-server-only routes, 4 routes with both browser-admin and internal
-  callers, and 32 cron-only routes. The manifest names every non-cron source
+  13 internal-server-only routes, 4 routes with both browser-admin and internal
+  callers, and 30 cron-only routes. The manifest names every direct non-cron source
   file so later protection cannot silently break an admin surface or chained
   server call.
-- There is no approved public unauthenticated exception. The target is
-  `adminOnly` for every scheduled writer except the existing internal
-  cron-secret-only sheet sync.
+- There is no public unauthenticated exception.
 
-Rollout must remain route-by-route. Before wrapping a route, verify all named
-browser callers supply an authenticated admin bearer, all named server callers
-forward the exact cron bearer without logging it, and focused production-mode
-tests prove missing/invalid rejection plus cron/admin admission. Deploy a small
-coherent batch, run value-free 401/200 checks, then observe the scheduled audit
-before continuing. If a caller contract fails, roll back only that route's
-wrapper/caller batch to the preceding deployment; do not roll back the rotated
-secret, Vault-backed cron commands, or unrelated protected routes. A bulk
-cross-route enforcement change remains a breaking-contract checkpoint.
+The local rollout is complete after verifying all named browser callers supply
+an authenticated admin bearer and all named server callers forward the exact
+cron bearer without logging it. Grouped publication must run value-free
+missing/invalid 401 and current-auth safe-validation canaries, inspect bounded
+runtime errors, and observe the next scheduled audit. If a caller contract fails,
+roll back only the final six-route wrapper batch to the preceding deployment; do
+not roll back the rotated secret, Vault-backed cron commands, or unrelated
+protected routes.
 
 
 
@@ -1014,7 +1017,10 @@ curl -i -sS -m 180 \
 -- |||||||||||||||||||||||||||||||||  03:15 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
--- STATUS: 404 NOT FOUND
+-- HISTORICAL STATUS: an earlier probe returned 404. Later production evidence
+-- returned HTTP 200; the active inventory above is authoritative. Job 16 now
+-- reaches a compatibility adapter, while final ordering, single audit ownership,
+-- and cross-provider scheduler ownership remain open under B-DRM NEW 38/49–51.
 -- SELECT cron.schedule(
 --     'update-shift-charts',
 --     '45 7 * * *', -- 07:45 UTC

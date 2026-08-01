@@ -1,32 +1,33 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { addStartChartPositionRanks } from "lib/projections/startChartFantasyScoring";
 
 const { fromMock, fetchCurrentSeasonMock, fetchTeamRatingsMock } = vi.hoisted(
   () => ({
     fromMock: vi.fn(),
     fetchCurrentSeasonMock: vi.fn(),
-    fetchTeamRatingsMock: vi.fn()
-  })
+    fetchTeamRatingsMock: vi.fn(),
+  }),
 );
 
 vi.mock("lib/supabase/server", () => ({
   default: {
-    from: fromMock
-  }
+    from: fromMock,
+  },
 }));
 
 vi.mock("utils/fetchCurrentSeason", () => ({
-  fetchCurrentSeason: fetchCurrentSeasonMock
+  fetchCurrentSeason: fetchCurrentSeasonMock,
 }));
 
 vi.mock("lib/teamRatingsService", () => ({
-  fetchTeamRatings: fetchTeamRatingsMock
+  fetchTeamRatings: fetchTeamRatingsMock,
 }));
 
-vi.mock("pages/api/v1/projections/_helpers", async () => {
-  const actual = await vi.importActual<any>("pages/api/v1/projections/_helpers");
+vi.mock("lib/projections/apiHelpers", async () => {
+  const actual = await vi.importActual<any>("lib/projections/apiHelpers");
   return {
     ...actual,
-    requireLatestSucceededRunId: vi.fn(async () => "run-123")
+    requireLatestSucceededRunId: vi.fn(async () => "run-123"),
   };
 });
 
@@ -60,13 +61,17 @@ function createQueryBuilder(resolver: () => QueryResult) {
     },
     maybeSingle() {
       const out = resolver();
-      const data = Array.isArray(out.data) ? (out.data[0] ?? null) : out.data ?? null;
+      const data = Array.isArray(out.data)
+        ? (out.data[0] ?? null)
+        : (out.data ?? null);
       return Promise.resolve({ data, error: out.error });
     },
     then(resolve: (value: any) => any) {
       const out = resolver();
-      return Promise.resolve(resolve({ data: out.data ?? [], error: out.error }));
-    }
+      return Promise.resolve(
+        resolve({ data: out.data ?? [], error: out.error }),
+      );
+    },
   };
   return builder;
 }
@@ -86,12 +91,53 @@ function createMockRes() {
     json(payload: any) {
       this.body = payload;
       return this;
-    }
+    },
   };
   return res;
 }
 
 describe("/api/v1/start-chart", () => {
+  it("assigns deterministic competition ranks per eligible position", () => {
+    const ranked = addStartChartPositionRanks([
+      {
+        player_id: 30,
+        positions: ["C", "RW"],
+        proj_fantasy_points: 4.5,
+      },
+      {
+        player_id: 10,
+        positions: ["C"],
+        proj_fantasy_points: 4.5,
+      },
+      {
+        player_id: 20,
+        positions: ["C"],
+        proj_fantasy_points: 4,
+      },
+      {
+        player_id: 40,
+        positions: ["G"],
+        proj_fantasy_points: null,
+        start_probability: null,
+      },
+    ]);
+
+    expect(
+      ranked.map(({ player_id, position_ranks }) => ({
+        player_id,
+        position_ranks,
+      })),
+    ).toEqual([
+      { player_id: 30, position_ranks: { C: 1, RW: 1 } },
+      { player_id: 10, position_ranks: { C: 1 } },
+      { player_id: 20, position_ranks: { C: 3 } },
+      { player_id: 40, position_ranks: {} },
+    ]);
+    expect(addStartChartPositionRanks([...ranked].reverse())).toEqual(
+      [...ranked].reverse(),
+    );
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     fetchCurrentSeasonMock.mockResolvedValue({ id: 20252026 });
@@ -112,14 +158,14 @@ describe("/api/v1/start-chart", () => {
           xga60: 3.0,
           ga60: 2.9,
           sa60: 29,
-          pace60: 61
+          pace60: 61,
         },
         finishingRating: null,
         goalieRating: null,
         dangerRating: null,
         specialRating: null,
         disciplineRating: null,
-        varianceFlag: null
+        varianceFlag: null,
       },
       {
         teamAbbr: "MTL",
@@ -137,15 +183,15 @@ describe("/api/v1/start-chart", () => {
           xga60: 2.8,
           ga60: 2.9,
           sa60: 31,
-          pace60: 58
+          pace60: 58,
         },
         finishingRating: null,
         goalieRating: null,
         dangerRating: null,
         specialRating: null,
         disciplineRating: null,
-        varianceFlag: null
-      }
+        varianceFlag: null,
+      },
     ]);
 
     fromMock.mockImplementation((table: string) => {
@@ -159,10 +205,10 @@ describe("/api/v1/start-chart", () => {
               id: 1001,
               date: "2026-02-07",
               homeTeamId: 10,
-              awayTeamId: 8
-            }
+              awayTeamId: 8,
+            },
           ],
-          error: null
+          error: null,
         }));
       }
       if (table === "forge_player_projections") {
@@ -186,10 +232,10 @@ describe("/api/v1/start-chart", () => {
               proj_shots_pk: 0,
               proj_hits: 0.6,
               proj_blocks: 0.4,
-              proj_pim: 0.1
-            }
+              proj_pim: 0.1,
+            },
           ],
-          error: null
+          error: null,
         }));
       }
       if (table === "goalie_start_projections") {
@@ -201,22 +247,22 @@ describe("/api/v1/start-chart", () => {
               player_id: 9001,
               start_probability: 0.72,
               projected_gsaa_per_60: 0.18,
-              confirmed_status: true
-            }
+              confirmed_status: true,
+            },
           ],
-          error: null
+          error: null,
         }));
       }
-      if (table === "yahoo_nhl_player_map_mat") {
+      if (table === "yahoo_nhl_player_map_read") {
         return createQueryBuilder(() => ({
           data: [
             { nhl_player_id: "8478402", yahoo_player_id: "5001" },
-            { nhl_player_id: "9001", yahoo_player_id: "5002" }
+            { nhl_player_id: "9001", yahoo_player_id: "5002" },
           ],
-          error: null
+          error: null,
         }));
       }
-      if (table === "yahoo_players") {
+      if (table === "yahoo_players_with_normalized_history") {
         return createQueryBuilder(() => ({
           data: [
             {
@@ -225,7 +271,7 @@ describe("/api/v1/start-chart", () => {
               full_name: "Nick Suzuki",
               eligible_positions: ["C"],
               percent_ownership: 78,
-              ownership_timeline: []
+              ownership_timeline: [],
             },
             {
               player_id: "5002",
@@ -233,19 +279,19 @@ describe("/api/v1/start-chart", () => {
               full_name: "Goalie A",
               eligible_positions: ["G"],
               percent_ownership: 41,
-              ownership_timeline: []
-            }
+              ownership_timeline: [],
+            },
           ],
-          error: null
+          error: null,
         }));
       }
       if (table === "team_ctpi_daily") {
         return createQueryBuilder(() => ({
           data: [
             { date: "2026-02-01", team: "MTL", ctpi_0_to_100: 55 },
-            { date: "2026-02-01", team: "TOR", ctpi_0_to_100: 61 }
+            { date: "2026-02-01", team: "TOR", ctpi_0_to_100: 61 },
           ],
-          error: null
+          error: null,
         }));
       }
       return createQueryBuilder(() => ({ data: [], error: null }));
@@ -254,12 +300,13 @@ describe("/api/v1/start-chart", () => {
 
   it("reads skaters from forge_player_projections and exposes canonical-source metadata", async () => {
     vi.resetModules();
-    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const handler = (await import("../../../../pages/api/v1/start-chart"))
+      .default;
     const req: any = {
       method: "GET",
       query: {
-        date: "2026-02-07"
-      }
+        date: "2026-02-07",
+      },
     };
     const res = createMockRes();
 
@@ -280,11 +327,36 @@ describe("/api/v1/start-chart", () => {
         gapDays: 0,
         severity: "none",
         status: "requested_date",
-        message: null
+        message: null,
       },
       projectionRunId: "run-123",
       skaterSource: "forge_player_projections",
       goalieSource: "goalie_start_projections",
+      fantasyScoringContract: {
+        version: "fhfh-default-skater-v1",
+        label: "FHFH default skater",
+        weights: {
+          goals: 3,
+          assists: 2,
+          powerPlayPoints: 1,
+          shotsOnGoal: 0.2,
+          hits: 0.2,
+          blockedShots: 0.25,
+        },
+      },
+      rankingContract: {
+        version: "start-chart-ranking-v1",
+        scope: "eligible_position",
+        tieMethod: "competition",
+        scoreFields: {
+          skater: "proj_fantasy_points",
+          goalie: "start_probability",
+        },
+        unavailable: {
+          categoryMode: true,
+          riskP75: true,
+        },
+      },
       compatibilityInventory: {
         inventoryVersion: "forge-compatibility-inventory-v2",
         canonicalSkaterSource: "forge_player_projections",
@@ -299,22 +371,35 @@ describe("/api/v1/start-chart", () => {
           decision: "retain_shared_table_name_for_now",
           canonicalWriterRoute: "/api/v1/db/update-goalie-projections-v2",
           canonicalWriterStatus: "single_writer",
-          renameDeferred: true
-        }
+          renameDeferred: true,
+        },
       },
-      legacyPlayerProjectionsUsed: false
+      legacyPlayerProjectionsUsed: false,
+    });
+    expect(res.body.request).toEqual({
+      mode: "points",
+      profile: "fhfh-default-skater-v1",
+      position: null,
+      modelVersion: "latest",
+    });
+    expect(res.body.pagination).toEqual({
+      page: 1,
+      pageSize: 2,
+      totalPlayers: 2,
+      totalPages: 1,
     });
     const skater = res.body.players.find(
-      (player: any) => player.player_id === 8478402
+      (player: any) => player.player_id === 8478402,
     );
     expect(skater).toBeTruthy();
     expect(skater.name).toBe("Nick Suzuki");
     expect(skater.proj_goals).toBeCloseTo(0.6, 6);
     expect(skater.proj_assists).toBeCloseTo(0.6, 6);
     expect(skater.proj_shots).toBeCloseTo(3.5, 6);
-    expect(skater.proj_fantasy_points).toBeCloseTo(4.75, 6);
+    expect(skater.proj_fantasy_points).toBeCloseTo(4.22, 6);
+    expect(skater.position_ranks).toEqual({ C: 1 });
     expect(fromMock.mock.calls.map((call) => call[0])).not.toContain(
-      "player_projections"
+      "player_projections",
     );
   });
 
@@ -330,7 +415,7 @@ describe("/api/v1/start-chart", () => {
         if (gamesQueryCount === 1) {
           return createQueryBuilder(() => ({
             data: [],
-            error: null
+            error: null,
           }));
         }
         return createQueryBuilder(() => ({
@@ -339,10 +424,10 @@ describe("/api/v1/start-chart", () => {
               id: 1002,
               date: "2026-02-07",
               homeTeamId: 10,
-              awayTeamId: 8
-            }
+              awayTeamId: 8,
+            },
           ],
-          error: null
+          error: null,
         }));
       }
       if (table === "forge_player_projections") {
@@ -366,25 +451,25 @@ describe("/api/v1/start-chart", () => {
               proj_shots_pk: 0,
               proj_hits: 0.6,
               proj_blocks: 0.4,
-              proj_pim: 0.1
-            }
+              proj_pim: 0.1,
+            },
           ],
-          error: null
+          error: null,
         }));
       }
       if (table === "goalie_start_projections") {
         return createQueryBuilder(() => ({
           data: [],
-          error: null
+          error: null,
         }));
       }
-      if (table === "yahoo_nhl_player_map_mat") {
+      if (table === "yahoo_nhl_player_map_read") {
         return createQueryBuilder(() => ({
           data: [{ nhl_player_id: "8478402", yahoo_player_id: "5001" }],
-          error: null
+          error: null,
         }));
       }
-      if (table === "yahoo_players") {
+      if (table === "yahoo_players_with_normalized_history") {
         return createQueryBuilder(() => ({
           data: [
             {
@@ -393,28 +478,29 @@ describe("/api/v1/start-chart", () => {
               full_name: "Nick Suzuki",
               eligible_positions: ["C"],
               percent_ownership: 78,
-              ownership_timeline: []
-            }
+              ownership_timeline: [],
+            },
           ],
-          error: null
+          error: null,
         }));
       }
       if (table === "team_ctpi_daily") {
         return createQueryBuilder(() => ({
           data: [],
-          error: null
+          error: null,
         }));
       }
       return createQueryBuilder(() => ({ data: [], error: null }));
     });
 
     vi.resetModules();
-    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+    const handler = (await import("../../../../pages/api/v1/start-chart"))
+      .default;
     const req: any = {
       method: "GET",
       query: {
-        date: "2026-02-08"
-      }
+        date: "2026-02-08",
+      },
     };
     const res = createMockRes();
 
@@ -439,8 +525,8 @@ describe("/api/v1/start-chart", () => {
           decision: "retain_shared_table_name_for_now",
           canonicalWriterRoute: "/api/v1/db/update-goalie-projections-v2",
           canonicalWriterStatus: "single_writer",
-          renameDeferred: true
-        }
+          renameDeferred: true,
+        },
       },
       serving: {
         requestedDate: "2026-02-08",
@@ -453,8 +539,119 @@ describe("/api/v1/start-chart", () => {
         severity: "warn",
         status: "fallback_recent",
         message:
-          "Start-chart slate is serving the nearest available date (2026-02-07), 1 day behind the requested date."
-      }
+          "Start-chart slate is serving the nearest available date (2026-02-07), 1 day behind the requested date.",
+      },
     });
+  });
+
+  it.each([
+    [{ date: "2026-02-30" }, 400, "invalid_parameter", "date"],
+    [
+      { date: "2026-02-07", position: "F" },
+      400,
+      "invalid_parameter",
+      "position",
+    ],
+    [
+      { date: "2026-02-07", mode: "categories" },
+      422,
+      "control_unavailable",
+      "mode",
+    ],
+    [{ date: "2026-02-07", tau: "0.5" }, 422, "control_unavailable", "tau"],
+    [
+      { date: "2026-02-07", model_version: "v1" },
+      422,
+      "control_unavailable",
+      "model_version",
+    ],
+    [
+      { date: "2026-02-07", page_size: "201" },
+      400,
+      "invalid_parameter",
+      "page_size",
+    ],
+    [{ date: ["2026-02-07", "2026-02-08"] }, 400, "invalid_parameter", "date"],
+  ])(
+    "rejects invalid or unavailable controls with a structured response",
+    async (query, status, code, field) => {
+      vi.resetModules();
+      const handler = (await import("../../../../pages/api/v1/start-chart"))
+        .default;
+      const res = createMockRes();
+
+      await handler({ method: "GET", query } as any, res);
+
+      expect(res.statusCode).toBe(status);
+      expect(res.body).toMatchObject({
+        error: { code, field },
+      });
+      expect(fromMock).not.toHaveBeenCalled();
+    },
+  );
+
+  it("filters and paginates deterministically without changing canonical model ownership", async () => {
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart"))
+      .default;
+    const res = createMockRes();
+
+    await handler(
+      {
+        method: "GET",
+        query: {
+          date: "2026-02-07",
+          position: "G",
+          page: "1",
+          page_size: "1",
+          mode: "points",
+          profile: "fhfh-default-skater-v1",
+          model_version: "latest",
+        },
+      } as any,
+      res,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.request).toEqual({
+      mode: "points",
+      profile: "fhfh-default-skater-v1",
+      position: "G",
+      modelVersion: "latest",
+    });
+    expect(res.body.pagination).toEqual({
+      page: 1,
+      pageSize: 1,
+      totalPlayers: 1,
+      totalPages: 1,
+    });
+    expect(res.body.players).toHaveLength(1);
+    expect(res.body.players[0]).toMatchObject({
+      player_id: 9001,
+      positions: ["G"],
+    });
+  });
+
+  it("returns a stable public error when a dependency fails", async () => {
+    const internalDetail =
+      "private_relation failed with Bearer internal-service-token";
+    fetchCurrentSeasonMock.mockRejectedValue(new Error(internalDetail));
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    vi.resetModules();
+    const handler = (await import("../../../../pages/api/v1/start-chart"))
+      .default;
+    const res = createMockRes();
+
+    await handler(
+      { method: "GET", query: { date: "2026-02-08" } } as any,
+      res,
+    );
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({ error: "START_CHART_UNAVAILABLE" });
+    expect(JSON.stringify(res.body)).not.toContain(internalDetail);
+    consoleError.mockRestore();
   });
 });

@@ -6,12 +6,14 @@ const {
   cronJobAuditInsertMock,
   resendSendMock,
   readFileMock,
+  cronAuditEmailMock,
 } = vi.hoisted(() => ({
   cronJobReportSelectMock: vi.fn(),
   cronJobAuditSelectMock: vi.fn(),
   cronJobAuditInsertMock: vi.fn(),
   resendSendMock: vi.fn(),
   readFileMock: vi.fn(),
+  cronAuditEmailMock: vi.fn(() => null),
 }));
 
 vi.mock("@supabase/supabase-js", () => ({
@@ -48,10 +50,18 @@ vi.mock("resend", () => ({
   })),
 }));
 
+vi.mock("components/CronReportEmail/CronAuditEmail", () => ({
+  CronAuditEmail: cronAuditEmailMock,
+}));
+
 vi.mock("fs/promises", () => ({
   default: {
     readFile: readFileMock,
   },
+}));
+
+vi.mock("utils/adminOnlyMiddleware", () => ({
+  default: (handler: unknown) => handler,
 }));
 
 import handler from "../../../../../pages/api/v1/db/cron-report";
@@ -202,6 +212,88 @@ SELECT cron.schedule(
         missingObservationJobs: [],
       },
     });
+  });
+
+  it("includes SKO low-row warnings in the daily operator email", async () => {
+    cronJobReportSelectMock.mockReturnValue({
+      gte: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({
+          data: [
+            {
+              jobname: "update-predictions-sko",
+              scheduled_time: "2026-03-20T10:45:00.000Z",
+              end_time: "2026-03-20T10:45:02.000Z",
+              status: "success",
+              return_message: "1 row",
+              sql_text:
+                "select net.http_get(url:='https://fhfhockey.com/api/v1/ml/update-predictions-sko');",
+            },
+          ],
+          error: null,
+        }),
+      }),
+    });
+    cronJobAuditSelectMock.mockReturnValue({
+      gte: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({
+          data: [
+            {
+              job_name: "update-predictions-sko",
+              run_time: "2026-03-20T10:45:02.000Z",
+              rows_affected: 0,
+              status: "success",
+              details: {
+                method: "GET",
+                url: "/api/v1/ml/update-predictions-sko",
+                statusCode: 200,
+                response: JSON.stringify({
+                  success: true,
+                  warnings: [
+                    {
+                      code: "low_rows_written",
+                      message:
+                        "Only 0 rows were written for 2 selected players.",
+                    },
+                  ],
+                }),
+              },
+            },
+          ],
+          error: null,
+        }),
+      }),
+    });
+    readFileMock.mockResolvedValue(`
+\`\`\`json
+[
+  {
+    "jobid": 327,
+    "jobname": "update-predictions-sko",
+    "schedule": "45 10 * * *",
+    "run_time_utc": "10:45 UTC",
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/ml/update-predictions-sko"
+  }
+]
+\`\`\`
+`);
+    const req: any = { method: "GET", query: {} };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(cronAuditEmailMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        audits: [
+          expect.objectContaining({
+            jobName: "update-predictions-sko",
+            reason: "Returned 1 warning(s).",
+          }),
+        ],
+      }),
+    );
   });
 
   it("prefers the active JSON schedule inventory over legacy SQL snippets", async () => {

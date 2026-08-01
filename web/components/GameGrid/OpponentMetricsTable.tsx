@@ -1,10 +1,11 @@
 // components/GameGrid/OpponentMetricsTable.tsx
 import React, { useState, useEffect, useMemo } from "react";
-import Image from "next/image";
 import { TeamDataWithTotals } from "lib/NHL/types";
 import styles from "./OpponentMetricsTable.module.scss";
 import clsx from "clsx";
 import PanelStatus from "components/common/PanelStatus";
+import OptimizedImage from "components/common/OptimizedImage";
+import { getLocalTeamLogoPath } from "lib/images";
 import { useTeamsMap } from "hooks/useTeams";
 import {
   OpponentMetricAverages,
@@ -286,8 +287,8 @@ export default function OpponentMetricsTable({
                 <tr key={team.teamId}>
                   <td>
                     <div className={styles.teamInfo}>
-                      <Image
-                        src={`/teamLogos/${team.teamAbbreviation ?? "default"}.png`}
+                      <OptimizedImage
+                        src={getLocalTeamLogoPath(team.teamAbbreviation)}
                         alt={team.teamAbbreviation || "Team Logo"}
                         width={24}
                         height={24}

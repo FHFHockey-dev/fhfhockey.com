@@ -18,17 +18,6 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, Tuple
 
-try:  # Local import guard so tests without psycopg still pass
-    from . import db_adapter
-except Exception:  # pragma: no cover
-    db_adapter = None  # type: ignore
-
-try:
-    from lib.env_loader import ensure_loaded_for
-except Exception:  # pragma: no cover
-    ensure_loaded_for = lambda *a, **k: None  # type: ignore
-
-
 DEFAULT_CONFIG = {
     "model_version": 1,
     "weights_json": {
@@ -157,14 +146,6 @@ def fetch_active_config_row(db_client) -> Optional[Dict[str, Any]]:
         if callable(getter):
             return getter()
         return None
-    # Fallback to module-level db_adapter
-    if db_adapter is not None:
-        # Ensure env is loaded for DSN if necessary
-        ensure_loaded_for(["SUPABASE_DB_URL"])
-        try:
-            return db_adapter.fetch_active_config_row()  # type: ignore[attr-defined]
-        except Exception:  # pragma: no cover
-            return None
     return None
 
 

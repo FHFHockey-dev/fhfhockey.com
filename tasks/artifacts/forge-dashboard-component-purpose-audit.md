@@ -614,6 +614,8 @@ Forecasting-adjacent:
 
 `TopMoversCard` should either be retired or folded into `HotColdCard` / `Team Trends`. It is not currently essential enough to justify a separate dashboard card.
 
+Disposition (2026-07-29): retired and removed after a bounded import graph reconfirmed zero runtime consumers. The active `/trends` route imports `TopMovers` directly, so mover functionality remains available without this duplicate wrapper.
+
 ## Shared Utility
 
 ### 16. `web/lib/dashboard/forgeLinks.ts`
@@ -728,4 +730,3 @@ This would make the dashboard easier to understand because each module would ans
 
 1. What is likely to happen next?
 2. Can I trust what just happened?
-

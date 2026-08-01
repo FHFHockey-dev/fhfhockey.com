@@ -85,6 +85,19 @@ type TeamWeekData = {
 };
 
 export type GameGridMode = "7-Day-Forecast" | "10-Day-Forecast";
+export const GAME_GRID_DESKTOP_BREAKPOINT = 1024;
+
+export function isGameGridDesktopViewport(viewportWidth: number) {
+  return viewportWidth >= GAME_GRID_DESKTOP_BREAKPOINT;
+}
+
+export function getGameGridLayout(
+  isDesktop: boolean,
+  orientation: "horizontal" | "vertical",
+) {
+  if (!isDesktop) return "stacked";
+  return orientation === "horizontal" ? "master" : "legacy-vertical";
+}
 
 type GameGridProps = {
   mode: GameGridMode;
@@ -116,7 +129,7 @@ function useIsDesktop() {
 
   useEffect(() => {
     function handleResize() {
-      setIsDesktop(window.innerWidth >= 1024);
+      setIsDesktop(isGameGridDesktopViewport(window.innerWidth));
     }
 
     handleResize();
@@ -295,8 +308,8 @@ function GameGridInternal({
   }, [
     excludedDays,
     currentSchedule,
-    currentNumGamesPerDay,
-    regularNumGamesPerDay
+    regularNumGamesPerDay,
+    teams
   ]);
 
   // Detect if this week contains any preseason games
@@ -383,6 +396,8 @@ function GameGridInternal({
   const handleOrientationToggle = () => {
     setOrientation(orientation === "horizontal" ? "vertical" : "horizontal");
   };
+  const isDesktop = useIsDesktop();
+  const gridLayout = getGameGridLayout(isDesktop, orientation);
 
   const handleSortToggle = (
     key: "totalOffNights" | "totalGamesPlayed" | "weekScore"
@@ -742,7 +757,6 @@ function GameGridInternal({
   }, [fourWeekLoading, teamDataWithAverages]);
 
   const isMobile = useIsMobile();
-  const isDesktop = useIsDesktop();
   const [showMobileTips, setShowMobileTips] = useState(false);
   const [showWeekScoreHelp, setShowWeekScoreHelp] = useState(false);
   const [isBottomDrawerOpen, setIsBottomDrawerOpen] = useState(false);
@@ -1387,7 +1401,13 @@ function GameGridInternal({
                 className={styles.orientationToggleButton}
                 onClick={handleOrientationToggle}
               >
-                {orientation === "horizontal" ? "Vertical" : "Horizontal"}
+                {isDesktop
+                  ? orientation === "horizontal"
+                    ? "Legacy Vertical"
+                    : "Master Table"
+                  : orientation === "horizontal"
+                    ? "Vertical"
+                    : "Horizontal"}
               </button>
             </div>
           </div>
@@ -1470,8 +1490,8 @@ function GameGridInternal({
         </div>
 
         {/* New 3-Column Dashboard Layout */}
-        <div className={styles.dashboardLayout}>
-          {isDesktop && orientation === "horizontal" ? (
+        <div className={styles.dashboardLayout} data-grid-layout={gridLayout}>
+          {gridLayout === "master" ? (
             <div className={styles.desktopMasterSection}>
               <div className={styles.scheduleGridContainer}>
                 {legendBar}
@@ -1487,6 +1507,7 @@ function GameGridInternal({
                   opponentMetricColumns={opponentMetricsData.metricColumns}
                   opponentLeagueAverages={opponentMetricsData.leagueAverages}
                   opponentMetricsLoading={opponentMetricsData.statsLoading}
+                  opponentMetricsError={opponentMetricsData.statsError}
                   fourWeekSummaryByTeamId={fourWeekSummaryByTeamId}
                   fourWeekAverages={fourWeekAverages}
                 />

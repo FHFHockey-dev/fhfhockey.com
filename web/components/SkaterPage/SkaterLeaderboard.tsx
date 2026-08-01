@@ -21,6 +21,7 @@ import {
 } from "./skaterFilters";
 import SkaterAdvancedMetricsTable from "./SkaterAdvancedMetricsTable";
 import SkaterTable from "./SkaterTable";
+import type { SkaterTableSortKey } from "./SkaterTable";
 import type {
   SkaterFantasyPointSettings,
   SkaterFantasyStatKey,
@@ -84,11 +85,11 @@ export default function SkaterLeaderboard({
   const [averageComparisonBasis, setAverageComparisonBasis] =
     useState<"weekly" | "game">("weekly");
   const [valueSortKey, setValueSortKey] =
-    useState<keyof SkaterValueOverviewRow>("totalFantasyPoints");
+    useState<SkaterTableSortKey>("totalFantasyPoints");
   const [valueSortDirection, setValueSortDirection] =
     useState<SortDirection>("descending");
   const [metricsSortKey, setMetricsSortKey] =
-    useState<keyof SkaterMetricsRow>("points");
+    useState<SkaterTableSortKey>("points");
   const [metricsSortDirection, setMetricsSortDirection] =
     useState<SortDirection>("descending");
 
@@ -208,7 +209,7 @@ export default function SkaterLeaderboard({
     }));
   };
 
-  const requestValueSort = (key: keyof SkaterValueOverviewRow) => {
+  const requestValueSort = (key: SkaterTableSortKey) => {
     if (key === valueSortKey) {
       setValueSortDirection((current) =>
         current === "ascending" ? "descending" : "ascending"
@@ -228,7 +229,7 @@ export default function SkaterLeaderboard({
     );
   };
 
-  const requestMetricsSort = (key: keyof SkaterMetricsRow) => {
+  const requestMetricsSort = (key: SkaterTableSortKey) => {
     if (key === metricsSortKey) {
       setMetricsSortDirection((current) =>
         current === "ascending" ? "descending" : "ascending"

@@ -1,4 +1,5 @@
 import React from "react";
+import { fallbackTeamLogo } from "lib/images";
 import styles from "./TopMovers.module.scss";
 
 type Mover = {
@@ -30,10 +31,20 @@ export default function TopMovers({
             {improved.map((m, i) => (
               <li key={m.id} className={styles.item}>
                 <div className={styles.rank}>{i + 1}</div>
+                {/* Mover sources may use the NHL CMS host outside the Next image allowlist. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={m.logo ?? "/teamLogos/default.png"}
+                  src={m.logo ?? fallbackTeamLogo}
                   alt={`${m.name} logo`}
+                  width={28}
+                  height={28}
                   className={styles.logo}
+                  loading="lazy"
+                  decoding="async"
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = fallbackTeamLogo;
+                  }}
                 />
                 <div className={styles.name}>{m.name}</div>
                 <div className={styles.deltaGroup}>
@@ -61,10 +72,20 @@ export default function TopMovers({
             {degraded.map((m, i) => (
               <li key={m.id} className={styles.item}>
                 <div className={styles.rank}>{i + 1}</div>
+                {/* Mover sources may use the NHL CMS host outside the Next image allowlist. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={m.logo ?? "/teamLogos/default.png"}
+                  src={m.logo ?? fallbackTeamLogo}
                   alt={`${m.name} logo`}
+                  width={28}
+                  height={28}
                   className={styles.logo}
+                  loading="lazy"
+                  decoding="async"
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = fallbackTeamLogo;
+                  }}
                 />
                 <div className={styles.name}>{m.name}</div>
                 <div className={styles.deltaGroup}>

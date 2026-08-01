@@ -1,5 +1,7 @@
 # Goalie Stats Filter Semantics Audit (`1.3`)
 
+> **Historical scope:** This audit records gaps found before dedicated-route completion. The shared engine now supports the promised goalie strength and score-state contract; current ownership lives in the canonical goalie PRD, task list, and runbook.
+
 ## Findings
 
 ### 1. The current shared contract exposes more goalie filter values than the shared server actually supports.

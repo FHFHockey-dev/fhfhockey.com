@@ -1,5 +1,7 @@
 # Goalie FORGE Implementation Plan
 
+**Status (2026-07-29):** Implemented and dynamically audited. The canonical writer/model, `/api/v1/forge/goalies` reader, dashboard card, accuracy/calibration pipeline, and operator runbook own the shipped contract. The phase labels below are retained as implementation history.
+
 ## Phase 1 (implemented in this pass)
 - Add a reusable goalie projection model helper (`web/lib/projections/goalieModel.ts`) that enforces:
   - regression-to-mean save% priors
@@ -11,7 +13,7 @@
 - Add `GET /api/v1/forge/goalies` for FORGE page consumption.
 - Update `web/pages/FORGE.tsx` with Skaters/Goalies mode switch and goalie-specific cards.
 
-## Phase 2 (next)
+## Phase 2 (implemented)
 - Replace baseline `forge_goalie_game` evidence pulls with precomputed goalie feature snapshots to reduce runtime query cost.
 - Add context features to goalie model:
   - opponent shot-quality proxy and pace
@@ -31,3 +33,5 @@
 - Incorporate flurry/venue/rink-bias adjustments where data permits.
 - Add scenario simulations for confirmed/likely starts and lineup event overrides.
 - Add start/sit and prop-lean endpoints with explicit confidence labels.
+
+The shipped implementation covers the task-list commitments; remaining research-grade tracking, rink-bias, and dedicated prop-leans are not implied by completion of the nested implementation list.

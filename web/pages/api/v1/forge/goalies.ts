@@ -7,10 +7,11 @@ import { buildGoalieReaderCompatibility } from "lib/projections/compatibilityInv
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import {
+  buildProjectionApiErrorResponse,
   dateSchema,
   getQueryStringParam,
-  requireLatestSucceededRunId
-} from "pages/api/v1/projections/_helpers";
+  requireLatestSucceededRunId,
+} from "lib/projections/apiHelpers";
 
 const querySchema = z.object({
   date: dateSchema.optional(),
@@ -19,7 +20,7 @@ const querySchema = z.object({
   fallbackToLatestWithData: z
     .enum(["true", "false"])
     .optional()
-    .transform((v) => v !== "false")
+    .transform((v) => v !== "false"),
 });
 
 function parseQuery(req: NextApiRequest) {
@@ -28,8 +29,8 @@ function parseQuery(req: NextApiRequest) {
     horizon: getQueryStringParam(req.query.horizon),
     runId: getQueryStringParam(req.query.runId),
     fallbackToLatestWithData: getQueryStringParam(
-      req.query.fallbackToLatestWithData
-    )
+      req.query.fallbackToLatestWithData,
+    ),
   });
   if (!parsed.success) {
     const err = new Error("Invalid query parameters");
@@ -73,7 +74,9 @@ function extractModel(uncertainty: unknown): GoalieUncertaintyModel {
   const model = (uncertainty as any).model;
   if (!model || typeof model !== "object") return {};
   return {
-    save_pct: Number.isFinite(model.save_pct) ? Number(model.save_pct) : undefined,
+    save_pct: Number.isFinite(model.save_pct)
+      ? Number(model.save_pct)
+      : undefined,
     volatility_index: Number.isFinite(model.volatility_index)
       ? Number(model.volatility_index)
       : undefined,
@@ -81,13 +84,19 @@ function extractModel(uncertainty: unknown): GoalieUncertaintyModel {
       ? Number(model.blowup_risk)
       : undefined,
     confidence_tier:
-      typeof model.confidence_tier === "string" ? model.confidence_tier : undefined,
+      typeof model.confidence_tier === "string"
+        ? model.confidence_tier
+        : undefined,
     quality_tier:
       typeof model.quality_tier === "string" ? model.quality_tier : undefined,
     reliability_tier:
-      typeof model.reliability_tier === "string" ? model.reliability_tier : undefined,
+      typeof model.reliability_tier === "string"
+        ? model.reliability_tier
+        : undefined,
     recommendation:
-      typeof model.recommendation === "string" ? model.recommendation : undefined
+      typeof model.recommendation === "string"
+        ? model.recommendation
+        : undefined,
   };
 }
 
@@ -106,7 +115,8 @@ function extractScenarioMetadata(uncertainty: unknown): ScenarioMetadata {
       ? scenarioMeta.model_version
       : null;
   const scenarioCountRaw =
-    scenarioMeta?.top2_scenario_count ?? starterSelection?.scenario_projection_count;
+    scenarioMeta?.top2_scenario_count ??
+    starterSelection?.scenario_projection_count;
   const scenarioCount =
     Number.isFinite(scenarioCountRaw) && Number(scenarioCountRaw) >= 0
       ? Number(scenarioCountRaw)
@@ -136,12 +146,14 @@ function parseFiniteNumber(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function normalizeLikelyStarterWinProbabilities<T extends {
-  team_id: number;
-  opponent_team_id: number;
-  starter_probability: number;
-  proj_win_prob: number;
-}>(rows: T[]): { rows: T[]; adjustedMatchups: number } {
+function normalizeLikelyStarterWinProbabilities<
+  T extends {
+    team_id: number;
+    opponent_team_id: number;
+    starter_probability: number;
+    proj_win_prob: number;
+  },
+>(rows: T[]): { rows: T[]; adjustedMatchups: number } {
   const normalizedRows = rows.map((row) => ({ ...row }));
   const matchupIndexMap = new Map<string, number[]>();
 
@@ -157,14 +169,17 @@ function normalizeLikelyStarterWinProbabilities<T extends {
   for (const indices of matchupIndexMap.values()) {
     if (indices.length < 2) continue;
     const positiveMass = indices.reduce(
-      (sum, idx) => sum + Math.max(0, Number(normalizedRows[idx].proj_win_prob ?? 0)),
-      0
+      (sum, idx) =>
+        sum + Math.max(0, Number(normalizedRows[idx].proj_win_prob ?? 0)),
+      0,
     );
     const starterMass = indices.reduce(
-      (sum, idx) => sum + Math.max(0, Number(normalizedRows[idx].starter_probability ?? 0)),
-      0
+      (sum, idx) =>
+        sum + Math.max(0, Number(normalizedRows[idx].starter_probability ?? 0)),
+      0,
     );
-    const denominator = positiveMass > 0 ? positiveMass : starterMass > 0 ? starterMass : 0;
+    const denominator =
+      positiveMass > 0 ? positiveMass : starterMass > 0 ? starterMass : 0;
     if (denominator <= 0) {
       const equalProb = 1 / indices.length;
       indices.forEach((idx) => {
@@ -195,7 +210,7 @@ function normalizeLikelyStarterWinProbabilities<T extends {
 }
 
 async function fetchGoalieCalibrationHints(
-  projectionDate: string
+  projectionDate: string,
 ): Promise<CalibrationHints | null> {
   if (!supabase) throw new Error("Supabase server client not available");
   const { data, error } = await supabase
@@ -215,21 +230,29 @@ async function fetchGoalieCalibrationHints(
   const stats = metrics?.stats ?? {};
   return {
     sourceDate:
-      typeof (data as any).date === "string" ? ((data as any).date as string) : null,
+      typeof (data as any).date === "string"
+        ? ((data as any).date as string)
+        : null,
     projectionDate:
       typeof (data as any).projection_date === "string"
         ? ((data as any).projection_date as string)
         : null,
     sampleCount30d: parseFiniteNumber(stats?.saves?.rolling_30d?.player_count),
-    starterBrier: parseFiniteNumber(probability?.starter_probability?.brier_score),
+    starterBrier: parseFiniteNumber(
+      probability?.starter_probability?.brier_score,
+    ),
     winBrier: parseFiniteNumber(probability?.win_probability?.brier_score),
-    shutoutBrier: parseFiniteNumber(probability?.shutout_probability?.brier_score),
+    shutoutBrier: parseFiniteNumber(
+      probability?.shutout_probability?.brier_score,
+    ),
     savesMae30d: parseFiniteNumber(stats?.saves?.rolling_30d?.mae),
-    goalsAgainstMae30d: parseFiniteNumber(stats?.goals_against?.rolling_30d?.mae),
+    goalsAgainstMae30d: parseFiniteNumber(
+      stats?.goals_against?.rolling_30d?.mae,
+    ),
     savesIntervalHitRate: parseFiniteNumber(intervals?.saves?.p10_p90_hit_rate),
     goalsAllowedIntervalHitRate: parseFiniteNumber(
-      intervals?.goals_allowed?.p10_p90_hit_rate
-    )
+      intervals?.goals_allowed?.p10_p90_hit_rate,
+    ),
   };
 }
 
@@ -241,15 +264,13 @@ async function fetchRunSummary(runId: string) {
     .eq("run_id", runId)
     .maybeSingle();
   if (error) throw error;
-  return data as
-    | {
-        run_id: string;
-        as_of_date: string;
-        status: string;
-        created_at: string;
-        metrics: any;
-      }
-    | null;
+  return data as {
+    run_id: string;
+    as_of_date: string;
+    status: string;
+    created_at: string;
+    metrics: any;
+  } | null;
 }
 
 async function fetchGamesScheduledCount(date: string): Promise<number> {
@@ -264,7 +285,7 @@ async function fetchGamesScheduledCount(date: string): Promise<number> {
 
 async function fetchFallbackRunWithGoalieData(
   targetDate: string,
-  horizon: number
+  horizon: number,
 ): Promise<{ runId: string; asOfDate: string } | null> {
   if (!supabase) throw new Error("Supabase server client not available");
 
@@ -294,7 +315,7 @@ async function fetchFallbackRunWithGoalieData(
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   const startedAt = Date.now();
   if (req.method !== "GET") {
@@ -319,8 +340,11 @@ export default async function handler(
     let resolvedRunId = requestedRunId;
     let fallbackApplied = false;
     let requestedRowCount = 0;
-    let fallbackCandidate: { runId: string; asOfDate: string; rowCount: number } | null =
-      null;
+    let fallbackCandidate: {
+      runId: string;
+      asOfDate: string;
+      rowCount: number;
+    } | null = null;
 
     const fetchGoalieRows = async (runId: string, asOfDate: string) => {
       const { data, error } = await supabase
@@ -348,7 +372,7 @@ export default async function handler(
           proj_win_prob,
           proj_shutout_prob,
           uncertainty
-        `
+        `,
         )
         .eq("run_id", runId)
         .eq("as_of_date", asOfDate)
@@ -364,13 +388,19 @@ export default async function handler(
     }
 
     if (data.length === 0 && q.fallbackToLatestWithData) {
-      const fallback = await fetchFallbackRunWithGoalieData(requestedDate, q.horizon);
+      const fallback = await fetchFallbackRunWithGoalieData(
+        requestedDate,
+        q.horizon,
+      );
       if (fallback && fallback.runId !== resolvedRunId) {
-        const fallbackRows = await fetchGoalieRows(fallback.runId, fallback.asOfDate);
+        const fallbackRows = await fetchGoalieRows(
+          fallback.runId,
+          fallback.asOfDate,
+        );
         fallbackCandidate = {
           runId: fallback.runId,
           asOfDate: fallback.asOfDate,
-          rowCount: fallbackRows.length
+          rowCount: fallbackRows.length,
         };
         if (fallbackRows.length > 0) {
           data = fallbackRows;
@@ -383,7 +413,7 @@ export default async function handler(
 
     if (!resolvedRunId) {
       const err = new Error(
-        `No succeeded projection run found for date=${requestedDate}`
+        `No succeeded projection run found for date=${requestedDate}`,
       );
       (err as any).statusCode = 404;
       throw err;
@@ -413,12 +443,14 @@ export default async function handler(
         quality_tier: model.quality_tier ?? null,
         reliability_tier: model.reliability_tier ?? null,
         recommendation: model.recommendation ?? null,
-        uncertainty: row.uncertainty
+        uncertainty: row.uncertainty,
       };
     });
     const normalizationResult = normalizeLikelyStarterWinProbabilities(rawRows);
     const rows = normalizationResult.rows;
-    const scenarioMeta = rows.map((row) => extractScenarioMetadata(row.uncertainty));
+    const scenarioMeta = rows.map((row) =>
+      extractScenarioMetadata(row.uncertainty),
+    );
     const modelVersions = scenarioMeta
       .map((meta) => meta.modelVersion)
       .filter((v): v is string => typeof v === "string" && v.length > 0);
@@ -433,7 +465,7 @@ export default async function handler(
       resolvedRunSummaryMaybe,
       requestedScheduledGamesCount,
       resolvedScheduledGamesCountMaybe,
-      calibrationHints
+      calibrationHints,
     ] = await Promise.all([
       requestedRunId ? fetchRunSummary(requestedRunId) : Promise.resolve(null),
       !requestedRunId || requestedRunId === resolvedRunId
@@ -443,7 +475,7 @@ export default async function handler(
       requestedDate === resolvedDate
         ? Promise.resolve(null)
         : fetchGamesScheduledCount(resolvedDate),
-      fetchGoalieCalibrationHints(resolvedDate)
+      fetchGoalieCalibrationHints(resolvedDate),
     ]);
     const runSummary = resolvedRunSummaryMaybe ?? requestedRunSummary;
     const scheduledGamesCount =
@@ -454,7 +486,7 @@ export default async function handler(
       notes.push("No goalie projection rows found for resolved date/run.");
       if (requestedDate !== resolvedDate || requestedRunId !== resolvedRunId) {
         notes.push(
-          "Requested context differs from resolved context after fallback resolution."
+          "Requested context differs from resolved context after fallback resolution.",
         );
       }
       if (scheduledGamesCount === 0) {
@@ -462,21 +494,29 @@ export default async function handler(
       }
       const goalieRowsMetric = Number(runSummary?.metrics?.goalie_rows ?? 0);
       if (goalieRowsMetric === 0) {
-        notes.push("Projection run metrics show zero goalie rows were generated.");
+        notes.push(
+          "Projection run metrics show zero goalie rows were generated.",
+        );
       }
     }
     if (!modelVersion) {
-      notes.push("Model version metadata is missing from goalie uncertainty payloads.");
+      notes.push(
+        "Model version metadata is missing from goalie uncertainty payloads.",
+      );
     }
     if (scenarioCount == null) {
-      notes.push("Starter scenario count metadata is missing from goalie rows.");
+      notes.push(
+        "Starter scenario count metadata is missing from goalie rows.",
+      );
     }
     if (!calibrationHints) {
-      notes.push("No goalie calibration hints available for the resolved projection date.");
+      notes.push(
+        "No goalie calibration hints available for the resolved projection date.",
+      );
     }
     if (normalizationResult.adjustedMatchups > 0) {
       notes.push(
-        `Normalized likely-starter win probabilities across ${normalizationResult.adjustedMatchups} matchup(s) to total 100%.`
+        `Normalized likely-starter win probabilities across ${normalizationResult.adjustedMatchups} matchup(s) to total 100%.`,
       );
     }
     const serving = buildResolvedDataServingContract({
@@ -488,7 +528,7 @@ export default async function handler(
         : "requested_date",
       requestedScheduledGames: requestedScheduledGamesCount,
       resolvedScheduledGames: scheduledGamesCount,
-      sourceLabel: "Goalie projections"
+      sourceLabel: "Goalie projections",
     });
     const scanSummary = buildEndpointScanSummary({
       surface: "forge_goalies_reader",
@@ -504,7 +544,7 @@ export default async function handler(
       rowCounts: {
         returned: rows.length,
         requested: requestedRowCount,
-        scheduledGamesOnDate: scheduledGamesCount
+        scheduledGamesOnDate: scheduledGamesCount,
       },
       blockingIssueCount: serving.severity === "error" ? 1 : 0,
       notes: [
@@ -512,8 +552,8 @@ export default async function handler(
         fallbackApplied
           ? `Serving fallback goalie projections from ${resolvedDate}.`
           : null,
-        ...notes
-      ]
+        ...notes,
+      ],
     });
 
     return res.status(200).json({
@@ -539,7 +579,7 @@ export default async function handler(
           rowCount: requestedRowCount,
           runStatus: requestedRunSummary?.status ?? null,
           runCreatedAt: requestedRunSummary?.created_at ?? null,
-          runMetrics: requestedRunSummary?.metrics ?? null
+          runMetrics: requestedRunSummary?.metrics ?? null,
         },
         resolved: {
           date: resolvedDate,
@@ -548,35 +588,38 @@ export default async function handler(
           rowCount: rows.length,
           runStatus: runSummary?.status ?? null,
           runCreatedAt: runSummary?.created_at ?? null,
-          runMetrics: runSummary?.metrics ?? null
+          runMetrics: runSummary?.metrics ?? null,
         },
         fallback: {
           enabled: q.fallbackToLatestWithData,
           applied: fallbackApplied,
           candidateRunId: fallbackCandidate?.runId ?? null,
           candidateAsOfDate: fallbackCandidate?.asOfDate ?? null,
-          candidateRowCount: fallbackCandidate?.rowCount ?? null
+          candidateRowCount: fallbackCandidate?.rowCount ?? null,
         },
         emptyResultAnalysis: {
           isEmpty: rows.length === 0,
           requestedContextChanged:
-            requestedDate !== resolvedDate || requestedRunId !== resolvedRunId
+            requestedDate !== resolvedDate || requestedRunId !== resolvedRunId,
         },
         runStatus: runSummary?.status ?? null,
         runCreatedAt: runSummary?.created_at ?? null,
         runMetrics: runSummary?.metrics ?? null,
         scheduledGamesOnDate: scheduledGamesCount,
         rowCount: rows.length,
-        notes
+        notes,
       },
-      data: rows
+      data: rows,
     });
   } catch (e) {
-    const statusCode = (e as any)?.statusCode ?? 500;
-    return res.status(statusCode).json({
+    const failure = buildProjectionApiErrorResponse(
+      e,
+      "FORGE_GOALIES_UNAVAILABLE",
+    );
+    return res.status(failure.statusCode).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
-      error: (e as any)?.message ?? String(e),
-      details: (e as any)?.details
+      error: failure.error,
+      details: failure.details,
     });
   }
 }

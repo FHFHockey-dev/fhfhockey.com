@@ -4,6 +4,9 @@ import { createClient } from "@supabase/supabase-js";
 import fetch from "node-fetch";
 import { parseISO, format, addDays, isBefore, isValid } from "date-fns";
 import ProgressBar from "progress";
+import writerTeamAuthority from "../../NHL/seasonAwareWriterTeams.cjs";
+
+const { createSeasonAwareWriterTeamsFromLineageRecords } = writerTeamAuthority;
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -48,47 +51,6 @@ function parseQueryParams() {
   return params;
 }
 
-// Teams mapping – please ensure this is complete as needed
-const teamsInfo = {
-  NJD: { name: "New Jersey Devils", franchiseId: 23, id: 1 },
-  NYI: { name: "New York Islanders", franchiseId: 22, id: 2 },
-  NYR: { name: "New York Rangers", franchiseId: 10, id: 3 },
-  PHI: { name: "Philadelphia Flyers", franchiseId: 16, id: 4 },
-  PIT: { name: "Pittsburgh Penguins", franchiseId: 17, id: 5 },
-  BOS: { name: "Boston Bruins", franchiseId: 6, id: 6 },
-  BUF: { name: "Buffalo Sabres", franchiseId: 19, id: 7 },
-  MTL: { name: "Montréal Canadiens", franchiseId: 1, id: 8 },
-  OTT: { name: "Ottawa Senators", franchiseId: 30, id: 9 },
-  TOR: { name: "Toronto Maple Leafs", franchiseId: 5, id: 10 },
-  CAR: { name: "Carolina Hurricanes", franchiseId: 26, id: 12 },
-  FLA: { name: "Florida Panthers", franchiseId: 33, id: 13 },
-  TBL: { name: "Tampa Bay Lightning", franchiseId: 31, id: 14 },
-  WSH: { name: "Washington Capitals", franchiseId: 24, id: 15 },
-  CHI: { name: "Chicago Blackhawks", franchiseId: 11, id: 16 },
-  DET: { name: "Detroit Red Wings", franchiseId: 12, id: 17 },
-  NSH: { name: "Nashville Predators", franchiseId: 34, id: 18 },
-  STL: { name: "St. Louis Blues", franchiseId: 18, id: 19 },
-  CGY: { name: "Calgary Flames", franchiseId: 21, id: 20 },
-  COL: { name: "Colorado Avalanche", franchiseId: 27, id: 21 },
-  EDM: { name: "Edmonton Oilers", franchiseId: 25, id: 22 },
-  VAN: { name: "Vancouver Canucks", franchiseId: 20, id: 23 },
-  ANA: { name: "Anaheim Ducks", franchiseId: 32, id: 24 },
-  DAL: { name: "Dallas Stars", franchiseId: 15, id: 25 },
-  LAK: { name: "Los Angeles Kings", franchiseId: 14, id: 26 },
-  SJS: { name: "San Jose Sharks", franchiseId: 29, id: 28 },
-  CBJ: { name: "Columbus Blue Jackets", franchiseId: 36, id: 29 },
-  MIN: { name: "Minnesota Wild", franchiseId: 37, id: 30 },
-  WPG: { name: "Winnipeg Jets", franchiseId: 35, id: 52 },
-  ARI: { name: "Arizona Coyotes", franchiseId: 28, id: 53 },
-  VGK: { name: "Vegas Golden Knights", franchiseId: 38, id: 54 },
-  SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 },
-  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 },
-};
-
-const teamsByFranchiseId = new Map(
-  Object.values(teamsInfo).map((team) => [team.franchiseId, team]),
-);
-
 function mapByFranchiseId(rows = []) {
   return new Map(rows.map((row) => [row.franchiseId, row]));
 }
@@ -117,6 +79,16 @@ async function fetchNHLSeasons() {
   const url =
     "https://api.nhle.com/stats/rest/en/season?sort=%5B%7B%22property%22:%22id%22,%22direction%22:%22DESC%22%7D%5D";
   const response = await Fetch(url);
+  return response.data;
+}
+
+async function fetchNHLFranchiseTeamTotals() {
+  const response = await Fetch(
+    "https://records.nhl.com/site/api/franchise-team-totals",
+  );
+  if (!Array.isArray(response?.data)) {
+    throw new Error("NHL franchise-team lineage response is unavailable.");
+  }
   return response.data;
 }
 
@@ -194,7 +166,20 @@ async function upsertTeamStatsRows(rows, formattedDate, seasonId) {
   return upserted;
 }
 
-async function fetchNHLData(startDate, effectiveEndDate, seasonId, bar) {
+async function fetchNHLData(
+  startDate,
+  effectiveEndDate,
+  seasonId,
+  lineageRecords,
+  bar,
+) {
+  const teamsInfo = createSeasonAwareWriterTeamsFromLineageRecords(
+    seasonId,
+    lineageRecords,
+  );
+  const teamsByFranchiseId = new Map(
+    Object.values(teamsInfo).map((team) => [team.franchiseId, team]),
+  );
   let currentDate = parseISO(startDate);
 
   while (format(currentDate, "yyyy-MM-dd") <= effectiveEndDate) {
@@ -360,7 +345,7 @@ async function fetchNHLData(startDate, effectiveEndDate, seasonId, bar) {
 
         upsertRows.push({
           team_id: team.id,
-          franchise_name: stat.franchiseName,
+          franchise_name: team.name,
           date: formattedDate,
           season_id: seasonId,
           faceoff_win_pct: stat.faceoffWinPct,
@@ -602,8 +587,11 @@ async function main(options = {}) {
   console.time("Total Process Time");
 
   try {
-    console.log("Fetching NHL seasons...");
-    const seasons = await fetchNHLSeasons();
+    console.log("Fetching NHL seasons and franchise-team lineage...");
+    const [seasons, lineageRecords] = await Promise.all([
+      fetchNHLSeasons(),
+      fetchNHLFranchiseTeamTotals(),
+    ]);
     console.log(`Fetched ${seasons?.length || 0} seasons from NHL API`);
 
     if (!seasons || seasons.length === 0) {
@@ -759,6 +747,7 @@ async function main(options = {}) {
             newStartDate,
             effectiveEndDate,
             season.id.toString(),
+            lineageRecords,
             bar,
           );
 

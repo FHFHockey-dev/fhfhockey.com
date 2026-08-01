@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# /Users/tim/Desktop/FHFH/fhfhockey.com/web/lib/supabase/Upserts/Yahoo/yahooAPI.py
+# Opt-in compatibility writer. The scheduled TypeScript route remains canonical.
 
 import os
 import time
@@ -67,48 +67,10 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-ENV_FILE = "/Users/tim/Desktop/FHFH/fhfhockey.com/web/.env.local"
-load_dotenv(ENV_FILE)
-
-SUPABASE_URL = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
-YFPY_CONSUMER_KEY = os.getenv('YFPY_CONSUMER_KEY')
-YFPY_CONSUMER_SECRET = os.getenv('YFPY_CONSUMER_SECRET')
-
-if not all([SUPABASE_URL, SUPABASE_KEY, YFPY_CONSUMER_KEY, YFPY_CONSUMER_SECRET]):
-    logging.error("Missing environment variables.")
-    exit(1)
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# Yahoo API constants
-GAME_ID = '465'
-LEAGUE_ID = '858'
-ENV_FILE_LOCATION = Path("/Users/tim/Desktop/FHFH/fhfhockey.com/web/")
-
-# -----------------------------------------------------------------------------
-# INIT YFPY (Custom) QUERY INSTANCE
-# -----------------------------------------------------------------------------
-yahoo_query = MyYahooQuery(
-    league_id=LEAGUE_ID,
-    game_code="nhl",
-    game_id=GAME_ID,
-    yahoo_consumer_key=YFPY_CONSUMER_KEY,
-    yahoo_consumer_secret=YFPY_CONSUMER_SECRET,
-    save_token_data_to_env_file=False,
-    env_file_location=ENV_FILE_LOCATION
-)
-
-# Save token data (if applicable)
-yahoo_query.save_access_token_data_to_env_file(
-    env_file_location=ENV_FILE_LOCATION,
-    env_file_name='.env.local'
-)
-
 # -----------------------------------------------------------------------------
 # FETCHING PLAYER KEYS FROM SUPABASE IN PAGES OF 1000
 # -----------------------------------------------------------------------------
-def get_player_keys_from_supabase():
+def get_player_keys_from_supabase(supabase: Client, game_id: str):
     """
     Retrieve all player keys from 'yahoo_player_keys' via Supabase in increments
     of 1000, since that's Supabase's default maximum per request.
@@ -121,7 +83,9 @@ def get_player_keys_from_supabase():
 
     while True:
         resp = supabase.table("yahoo_player_keys") \
-                       .select("*") \
+                       .select("player_key") \
+                       .like("player_key", f"{game_id}.%") \
+                       .order("player_key") \
                        .range(start, start + page_size - 1) \
                        .execute()
         data = resp.data
@@ -145,7 +109,36 @@ def get_player_keys_from_supabase():
 # -----------------------------------------------------------------------------
 # BUILD ROWS FROM A PLAYERS BATCH
 # -----------------------------------------------------------------------------
-def build_rows_from_batch(players_batch):
+def _optional_float(value):
+    if value is None or value == "":
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _extract_percent_owned(percent_owned):
+    if isinstance(percent_owned, list):
+        for item in percent_owned:
+            if isinstance(item, dict) and (
+                item.get("value") is not None or item.get("Value") is not None
+            ):
+                return _optional_float(item.get("value", item.get("Value")))
+        return None
+    if isinstance(percent_owned, dict):
+        return _optional_float(
+            percent_owned.get("value", percent_owned.get("Value"))
+        )
+    return _optional_float(percent_owned)
+
+
+def build_rows_from_batch(
+    players_batch,
+    current_date: str,
+    game_id: str,
+    season: int,
+):
     """
     Given a list of YFPY Player objects, build a list of rows (dicts)
     matching the schema of the 'yahoo_players' table.
@@ -161,23 +154,18 @@ def build_rows_from_batch(players_batch):
         # Extract draft analysis data
         da = pdata.get("draft_analysis")
         if da and isinstance(da, DraftAnalysis):
-            average_draft_pick = float(da.average_pick)
-            average_draft_round = float(da.average_round)
-            average_draft_cost = float(da.average_cost)
-            percent_drafted = float(da.percent_drafted)
+            average_draft_pick = _optional_float(da.average_pick)
+            average_draft_round = _optional_float(da.average_round)
+            average_draft_cost = _optional_float(da.average_cost)
+            percent_drafted = _optional_float(da.percent_drafted)
         else:
-            average_draft_pick = 0.0
-            average_draft_round = 0.0
-            average_draft_cost = 0.0
-            percent_drafted = 0.0
+            average_draft_pick = None
+            average_draft_round = None
+            average_draft_cost = None
+            percent_drafted = None
 
         # Extract percent ownership
-        percent_owned_obj = pdata.get("percent_owned")
-        if percent_owned_obj and isinstance(percent_owned_obj, dict):
-            percent_owned_value = float(percent_owned_obj.get("value", 0) or 0)
-        else:
-            percent_owned_value = 0.0
-        percent_ownership = percent_owned_value
+        percent_ownership = _extract_percent_owned(pdata.get("percent_owned"))
 
         # Process eligible positions
         eligible_positions = pdata.get("eligible_positions")
@@ -201,7 +189,7 @@ def build_rows_from_batch(players_batch):
             "player_key": pdata.get("player_key"),
             "player_id": str(pdata.get("player_id", "")),
             "player_name": full_name,
-            "draft_analysis": da._extracted_data if da and hasattr(da, "_extracted_data") else {},
+            "draft_analysis": da._extracted_data if da and hasattr(da, "_extracted_data") else None,
             "average_draft_pick": average_draft_pick,
             "average_draft_round": average_draft_round,
             "average_draft_cost": average_draft_cost,
@@ -215,12 +203,15 @@ def build_rows_from_batch(players_batch):
             "injury_note": pdata.get("injury_note"),
             "full_name": full_name,
             "percent_ownership": percent_ownership,
-            "percent_owned_value": percent_owned_value,
+            "snapshot_status": "observed" if percent_ownership is not None else "omitted",
+            "game_id": game_id,
+            "season": season,
             "position_type": pdata.get("position_type"),
             "status": pdata.get("status"),
             "status_full": pdata.get("status_full"),
             "last_updated": datetime.now().isoformat(),
-            "uniform_number": uniform_number
+            "uniform_number": uniform_number,
+            "current_date": current_date,
         }
         rows.append(row)
     return rows
@@ -231,8 +222,50 @@ def build_rows_from_batch(players_batch):
 def main():
     start_time = datetime.now()
 
+    if os.getenv("YAHOO_PLAYER_MAINTENANCE_WRITE_ENABLED") != "1":
+        logging.info(
+            "Yahoo player maintenance is disabled; set "
+            "YAHOO_PLAYER_MAINTENANCE_WRITE_ENABLED=1 to run."
+        )
+        return
+
+    load_dotenv()
+    required = {
+        "NEXT_PUBLIC_SUPABASE_URL": os.getenv("NEXT_PUBLIC_SUPABASE_URL"),
+        "SUPABASE_SERVICE_ROLE_KEY": os.getenv("SUPABASE_SERVICE_ROLE_KEY"),
+        "YFPY_CONSUMER_KEY": os.getenv("YFPY_CONSUMER_KEY"),
+        "YFPY_CONSUMER_SECRET": os.getenv("YFPY_CONSUMER_SECRET"),
+        "YAHOO_GAME_ID": os.getenv("YAHOO_GAME_ID"),
+        "YAHOO_LEAGUE_ID": os.getenv("YAHOO_LEAGUE_ID"),
+        "YAHOO_SEASON": os.getenv("YAHOO_SEASON"),
+    }
+    missing = [name for name, value in required.items() if not value]
+    if missing:
+        raise RuntimeError(
+            "Yahoo player maintenance configuration is incomplete."
+        )
+
+    game_id = str(required["YAHOO_GAME_ID"])
+    league_id = str(required["YAHOO_LEAGUE_ID"])
+    season = int(str(required["YAHOO_SEASON"]))
+    supabase: Client = create_client(
+        str(required["NEXT_PUBLIC_SUPABASE_URL"]),
+        str(required["SUPABASE_SERVICE_ROLE_KEY"]),
+    )
+    yahoo_query = MyYahooQuery(
+        league_id=league_id,
+        game_code="nhl",
+        game_id=game_id,
+        yahoo_consumer_key=str(required["YFPY_CONSUMER_KEY"]),
+        yahoo_consumer_secret=str(required["YFPY_CONSUMER_SECRET"]),
+        save_token_data_to_env_file=False,
+        env_file_location=Path(
+            os.getenv("YAHOO_ENV_FILE_LOCATION", str(Path.cwd()))
+        ),
+    )
+
     # 1) Fetch all player keys from Supabase in pages of 1000
-    all_player_keys = get_player_keys_from_supabase()
+    all_player_keys = get_player_keys_from_supabase(supabase, game_id)
     if not all_player_keys:
         logging.info("No player keys found. Exiting.")
         return
@@ -240,38 +273,46 @@ def main():
     # 2) Define the subresources to request from Yahoo
     subresources = ["draft_analysis", "percent_owned"]
 
-    # 3) Fetch players (for debugging, we use a single key per request)
-    all_rows = []   # Accumulate all rows for upsert later
-    logging.info("Fetching players (one key at a time) from Yahoo...")
+    # 3) Any provider failure aborts before persistence so a partial snapshot
+    # cannot masquerade as complete.
+    all_rows = []
+    current_date = datetime.now().date().isoformat()
+    provider_batch_size = int(os.getenv("YFPY_MAX_KEYS_PER_REQUEST", "25"))
+    logging.info("Fetching %d Yahoo player keys.", len(all_player_keys))
 
-    for key in all_player_keys:
-        logging.info(f"Processing player key: {key}")
-        players_batch = yahoo_query.get_multiple_players([key], subresources=subresources)
-        logging.info(f"Data returned for {key}: {players_batch}")
-        batch_rows = build_rows_from_batch(players_batch)
+    for start in range(0, len(all_player_keys), provider_batch_size):
+        keys = all_player_keys[start:start + provider_batch_size]
+        players_batch = yahoo_query.get_multiple_players(
+            keys,
+            subresources=subresources,
+        )
+        batch_rows = build_rows_from_batch(
+            players_batch,
+            current_date,
+            game_id,
+            season,
+        )
         all_rows.extend(batch_rows)
-        time.sleep(0.5)  # Respect rate limits
+        time.sleep(0.5)
 
-    # 4) Perform a single upsert with all records
+    # 4) Use the same fail-closed atomic writer as the canonical TypeScript route.
     if all_rows:
-        try:
-            # Prefer invoking RPC to upsert and append history atomically
-            try:
-                logging.info('Attempting to call RPC upsert_players_batch with payload size %d', len(all_rows))
-                rpc_resp = supabase.rpc('upsert_players_batch', { 'players_data': all_rows }).execute()
-                if hasattr(rpc_resp, 'error') and rpc_resp.error:
-                    logging.warning('RPC upsert_players_batch returned error: %s', rpc_resp.error)
-                    raise Exception(rpc_resp.error)
-                logging.info('RPC upsert_players_batch completed successfully')
-            except Exception as e:
-                logging.warning('RPC failed or not available; falling back to direct table upsert: %s', e)
-                response = supabase.table("yahoo_players").upsert(all_rows).execute()
-                if hasattr(response, "error") and response.error:
-                    logging.error(f"Failed to upsert yahoo_players: {response.error}")
-                else:
-                    logging.info(f"Upserted {len(all_rows)} player records into 'yahoo_players'.")
-        except Exception as e:
-            logging.error(f"Exception upserting players: {e}")
+        rpc_batch_size = 500
+        for start in range(0, len(all_rows), rpc_batch_size):
+            rows = all_rows[start:start + rpc_batch_size]
+            response = supabase.rpc(
+                "upsert_yahoo_players_atomic",
+                {"players_data": rows},
+            ).execute()
+            receipt = response.data
+            if not isinstance(receipt, dict) or receipt.get("processed") != len(rows):
+                raise RuntimeError(
+                    "Yahoo atomic writer returned an invalid receipt."
+                )
+        logging.info(
+            "Persisted %d Yahoo player rows through the atomic writer.",
+            len(all_rows),
+        )
     else:
         logging.info("No rows to upsert.")
 

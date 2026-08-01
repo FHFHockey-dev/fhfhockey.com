@@ -651,10 +651,7 @@ function parseBooleanParam(
   return ["true", "1", "yes", "y"].includes(value.toLowerCase());
 }
 
-const handler = async (
-  req: NextApiRequest,
-  res: NextApiResponse
-) => {
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const startedAt = Date.now();
   if (req.method !== "GET" && req.method !== "POST") {
     res.setHeader("Allow", "GET,POST");

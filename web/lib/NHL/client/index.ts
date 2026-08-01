@@ -8,7 +8,7 @@ import type {
   Season,
   Team,
 } from "lib/NHL/types";
-import { Response } from "pages/api/_types";
+import { Response } from "lib/api/types";
 
 const BASE_URL = "/api/v1";
 

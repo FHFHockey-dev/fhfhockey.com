@@ -49,13 +49,19 @@ export default async function handler(
         ? 400
         : 500;
 
+    if (statusCode === 500) {
+      console.error("Failed to build player underlying stats", error);
+    }
     res.setHeader("Cache-Control", "no-store");
     return res.status(statusCode).json({
       error:
         statusCode === 400
           ? "Unsupported player stats filter combination."
           : "Unable to build player underlying stats.",
-      issues: [message],
+      issues:
+        statusCode === 400
+          ? [message]
+          : ["PLAYER_UNDERLYING_STATS_UNAVAILABLE"],
     });
   }
 }

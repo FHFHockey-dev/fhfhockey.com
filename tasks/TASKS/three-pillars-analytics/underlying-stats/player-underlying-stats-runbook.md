@@ -473,6 +473,7 @@ Purpose:
 API route:
 
 - `web/pages/api/v1/underlying-stats/players/[playerId].ts`
+- inline chart: `web/pages/api/v1/underlying-stats/players/[playerId]/chart.ts`
 
 ## Core Architecture
 
@@ -909,16 +910,17 @@ Core suites:
 - `web/components/underlying-stats/PlayerStatsTable.test.tsx`
 - `web/lib/underlying-stats/playerStatsQueries.test.ts`
 - `web/lib/underlying-stats/playerStatsLandingServer.test.ts`
-- `web/pages/underlying-stats/playerStats/index.test.tsx`
-- `web/pages/underlying-stats/playerStats/[playerId].test.tsx`
-- `web/pages/api/v1/underlying-stats/players.test.ts`
-- `web/pages/api/v1/underlying-stats/players/[playerId].test.ts`
+- `web/__tests__/pages/underlying-stats/playerStats/index.test.tsx`
+- `web/__tests__/pages/underlying-stats/playerStats/[playerId].test.tsx`
+- `web/__tests__/pages/api/v1/underlying-stats/players.test.ts`
+- `web/__tests__/pages/api/v1/underlying-stats/players/[playerId].test.ts`
+- `web/__tests__/pages/api/v1/underlying-stats/players/[playerId]/chart.test.ts`
 
 Operational/backfill suites:
 
 - `web/__tests__/pages/api/v1/db/update-nhl-shift-charts.test.ts`
 - `web/lib/supabase/Upserts/nhlRawGamecenter.test.ts`
-- `web/pages/api/v1/db/update-player-underlying-summaries.test.ts`
+- `web/__tests__/pages/api/v1/db/update-player-underlying-summaries.test.ts`
 
 ## Files Future Maintainers Will Actually Touch
 

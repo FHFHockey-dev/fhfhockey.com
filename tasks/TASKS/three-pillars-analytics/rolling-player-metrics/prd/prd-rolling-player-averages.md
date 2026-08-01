@@ -83,7 +83,7 @@
 - [x] Design new Supabase table schema for rolling outputs.
 - [x] Define transformation flow (data fetch ordering, joins, rolling algorithm).
 - [x] Implement Next.js API endpoint, leveraging shared utilities where possible.
-- [ ] Add validation/logging & update cron orchestration (if required).
+- [x] Add validation/logging & update cron orchestration (if required). Evidence (2026-07-25): the route enforces method and bounded scope/profile validation, emits structured request/execute/response timing plus freshness/runtime/run summaries, and is wrapped by durable `withCronJobAudit`. The canonical active schedule calls the bare daily-incremental route at 08:15 UTC; direct route tests pass 15/15 and the audit-wrapper inventory passes 4/4.
 
 ## Open Questions
 - Determine expectations for goalie coverage in this first iteration.
@@ -95,3 +95,4 @@
 - Power-play share metrics are only retained for `strength_state` values `all` and `pp` to avoid misleading data in EV/PK rows.
 - Supabase fetches now retry with exponential backoff and are processed sequentially per strength to avoid transient `fetch failed` errors; batches are upserted after each player.
 - WGO per-game data supplies fallback TOI and shot-based rates when NST gamelog rows are missing; on-ice/IPP style metrics remain null until source data exists. Logging highlights missing NST coverage per player/strength.
+- Completion reconciliation (2026-07-25): all five tracker rows are verified. The active 08:15 UTC caller uses the bounded implicit daily window; deliberate targeted/overnight scopes remain explicit, freshness blockers are surfaced as block/warning states, and durable audit rows retain success/failure semantics. No schedule or external state changed during this evidence closure.

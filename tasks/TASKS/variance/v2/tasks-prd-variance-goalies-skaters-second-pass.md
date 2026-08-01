@@ -1,9 +1,12 @@
 ## Relevant Files
 
 - `web/pages/goalies.js` - Active goalie page runtime used by `/variance/goalies`; owns tabs, filters, leaderboard fetches, and advanced metrics rendering.
-- `web/pages/variance/skaters.tsx` - Current skaters scaffold that must become a live MVP table.
-- `web/components/Variance/skaterVariance.ts` - Shared skater variance aggregation, production proxy, and volatility helpers.
-- `web/components/Variance/skaterVariance.test.ts` - Focused skater aggregation and game-volatility tests.
+- `web/pages/variance/skaters.tsx` - Active skater data-loading owner; resolves the latest season, pages game rows, and enriches Yahoo context.
+- `web/components/SkaterPage/SkaterLeaderboard.tsx` - Active configurable skater leaderboard and table-mode owner.
+- `web/components/SkaterPage/skaterCalculations.ts` - Active fantasy-point, weekly, variance, bucket, and valuation calculations.
+- `web/components/SkaterPage/skaterMetrics.ts` - Active metric definitions and shared default fantasy-scoring integration.
+- `web/components/Variance/skaterVariance.ts` - Historical MVP aggregation/proxy helper retained only for its focused compatibility tests; it has no active runtime consumer.
+- `web/components/Variance/skaterVariance.test.ts` - Historical MVP aggregation and game-volatility compatibility tests.
 - `web/components/GoaliePage/GoalieLeaderboard.tsx` - Goalie leaderboard table surface for Value Tier and relative variance display.
 - `web/components/GoaliePage/GoalieAdvancedMetricsTable.tsx` - Advanced goalie Metrics table with sortable season-level Supabase metrics.
 - `web/components/GoaliePage/GoalieTable.tsx` - Existing standard table convention to reuse for advanced goalie and skater table patterns.
@@ -26,7 +29,7 @@
 
 ### Notes
 
-- Default unresolved PRD choices for implementation: use visible label `Even Strength` for the `nst_ev_*` strength mode; use a neutral skater production proxy for v1 instead of assuming site-wide fantasy scoring; start goalie advanced metrics from season/totals data unless matching the selected date range is straightforward without changing backend contracts.
+- Historical implementation defaults were `Even Strength` for `nst_ev_*`, a neutral skater proxy for the first MVP, and season/totals goalie advanced metrics. Current skater authority supersedes the neutral-proxy choice with shared configurable fantasy scoring.
 - Unit tests should live alongside the code files they test, following the existing `GoaliePage/*.test.ts` pattern.
 - Confirm the repo’s current test command before execution; existing files use Vitest-style tests.
 
@@ -107,3 +110,5 @@
   - [x] 10.3 Document page-layer versus table/view-layer calculations after the implementation is complete.
   - [x] 10.4 Run targeted checks for `/variance`, `/variance/goalies`, and `/variance/skaters`.
   - [x] 10.5 Run the focused unit tests added or changed for this pass.
+
+- [x] 11.0 **NEW P3 — Reconcile current skater ownership after the MVP was superseded.** Preserve the original neutral-proxy rows as chronological implementation evidence, but document that the live `/variance/skaters` surface is now owned by `SkaterPage`, uses shared configurable fantasy scoring, and does not consume `components/Variance/skaterVariance.ts`.

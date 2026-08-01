@@ -6,13 +6,13 @@ import {
   ACTIVE_TEAM_ABBREVIATIONS,
   MetricSource,
   TEAM_TREND_CATEGORIES,
-  TrendCategoryId
+  TrendCategoryId,
 } from "lib/trends/teamMetricConfig";
 import {
   CategoryComputationResult,
   TeamGameMap,
   TeamSnapshot,
-  computeCategoryResults
+  computeCategoryResults,
 } from "lib/trends/teamPercentiles";
 import { getTeamAbbreviationById } from "lib/teamsInfo";
 
@@ -33,7 +33,7 @@ const SOURCE_METADATA_COLUMNS: Record<MetricSource, string[]> = {
   as: ["team_abbreviation", "gp", "date"],
   pp: ["team_abbreviation", "gp", "date"],
   pk: ["team_abbreviation", "gp", "date"],
-  wgo: ["team_id", "games_played", "date"]
+  wgo: ["team_id", "games_played", "date"],
 };
 
 function buildSourceColumnMap(): SourceColumnMap {
@@ -41,7 +41,7 @@ function buildSourceColumnMap(): SourceColumnMap {
     as: new Set(SOURCE_METADATA_COLUMNS.as),
     pp: new Set(SOURCE_METADATA_COLUMNS.pp),
     pk: new Set(SOURCE_METADATA_COLUMNS.pk),
-    wgo: new Set(SOURCE_METADATA_COLUMNS.wgo)
+    wgo: new Set(SOURCE_METADATA_COLUMNS.wgo),
   };
   TEAM_TREND_CATEGORIES.forEach((category) => {
     category.metrics.forEach((metric) => {
@@ -57,8 +57,9 @@ const SOURCE_TABLES: Record<MetricSource, string> = {
   as: "nst_team_gamelogs_as_counts",
   pp: "nst_team_gamelogs_pp_counts",
   pk: "nst_team_gamelogs_pk_counts",
-  wgo: "wgo_team_stats"
+  wgo: "wgo_team_stats",
 };
+const PAGE_SIZE = 1000;
 
 type GenericRow = Record<string, any>;
 
@@ -66,36 +67,52 @@ async function fetchRowsForSource(
   source: MetricSource,
   seasonId: number,
   seasonStart: string,
-  seasonEnd: string
+  seasonEnd: string,
 ): Promise<GenericRow[]> {
   const table = SOURCE_TABLES[source];
   const columns = Array.from(sourceColumns[source]).join(",");
-  let query = supabase.from(table).select(columns);
+  const rows: GenericRow[] = [];
 
-  if (source === "wgo") {
-    query = query
-      .gte("date", seasonStart)
-      .lte("date", seasonEnd)
-      .order("date", { ascending: true });
-  } else {
-    query = query
-      .eq("season_id", seasonId)
-      .order("date", { ascending: true })
-      .order("gp", { ascending: true });
+  for (let page = 0; ; page += 1) {
+    const from = page * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    let query = supabase.from(table).select(columns);
+
+    if (source === "wgo") {
+      query = query
+        .gte("date", seasonStart)
+        .lte("date", seasonEnd)
+        .order("date", { ascending: true })
+        .order("games_played", { ascending: true })
+        .order("team_id", { ascending: true });
+    } else {
+      query = query
+        .eq("season_id", seasonId)
+        .order("date", { ascending: true })
+        .order("gp", { ascending: true })
+        .order("team_abbreviation", { ascending: true });
+    }
+
+    const { data, error } = await query.range(from, to);
+    if (error) {
+      throw new Error(
+        `Failed to fetch ${table} (page ${page}): ${
+          error.message || "unknown error"
+        }`,
+      );
+    }
+
+    if (!data || data.length === 0) break;
+    rows.push(...data);
+    if (data.length < PAGE_SIZE) break;
   }
 
-  const { data, error } = await query;
-  if (error) {
-    throw new Error(
-      `Failed to fetch ${table}: ${error.message || "unknown error"}`
-    );
-  }
-  return data ?? [];
+  return rows;
 }
 
 function getOrCreateTeamSnapshot(
   teamMap: Map<string, TeamSnapshot>,
-  dateKey: string
+  dateKey: string,
 ): TeamSnapshot {
   if (!teamMap.has(dateKey)) {
     teamMap.set(dateKey, { date: dateKey, gp: 0 });
@@ -106,20 +123,18 @@ function getOrCreateTeamSnapshot(
 function ingestRows(
   rows: GenericRow[],
   source: MetricSource,
-  teamGameMap: TeamGameMap
+  teamGameMap: TeamGameMap,
 ) {
   const teamKey = source === "wgo" ? "team_id" : "team_abbreviation";
 
   const metadata = SOURCE_METADATA_COLUMNS[source];
   const dataColumns = Array.from(sourceColumns[source]).filter(
-    (col) => !metadata.includes(col)
+    (col) => !metadata.includes(col),
   );
 
   rows.forEach((row) => {
     const team =
-      source === "wgo"
-        ? getTeamAbbreviationById(row[teamKey])
-        : row[teamKey];
+      source === "wgo" ? getTeamAbbreviationById(row[teamKey]) : row[teamKey];
     const rawDate =
       row.date ??
       row.game_date ??
@@ -141,10 +156,10 @@ function ingestRows(
       source === "as"
         ? "as"
         : source === "pp"
-        ? "pp"
-        : source === "pk"
-        ? "pk"
-        : "wgo";
+          ? "pp"
+          : source === "pk"
+            ? "pk"
+            : "wgo";
 
     if (!snapshot[sourceKey]) {
       snapshot[sourceKey] = {};
@@ -160,7 +175,7 @@ function ingestRows(
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
@@ -173,14 +188,26 @@ export default async function handler(
     const seasonId = season.id;
     const seasonStart = season.startDate;
     const seasonEnd = season.endDate || season.regularSeasonEndDate;
+    const sourceRows: Record<MetricSource, number> = {
+      as: 0,
+      pp: 0,
+      pk: 0,
+      wgo: 0,
+    };
+    let dateUsed: string | null = null;
 
     for (const source of Object.keys(SOURCE_TABLES) as MetricSource[]) {
       const rows = await fetchRowsForSource(
         source,
         seasonId,
         seasonStart,
-        seasonEnd
+        seasonEnd,
       );
+      sourceRows[source] = rows.length;
+      rows.forEach((row) => {
+        const rowDate = typeof row.date === "string" ? row.date.slice(0, 10) : null;
+        if (rowDate && (!dateUsed || rowDate > dateUsed)) dateUsed = rowDate;
+      });
       ingestRows(rows, source, teamGameMap);
     }
 
@@ -193,18 +220,33 @@ export default async function handler(
 
     const categoryResults: Record<TrendCategoryId, CategoryComputationResult> =
       computeCategoryResults(teamGameMap);
+    const teamsWithData = Array.from(teamGameMap.values()).filter(
+      (teamDates) => teamDates.size > 0,
+    ).length;
+    const partial = teamsWithData < ACTIVE_TEAM_ABBREVIATIONS.length;
 
     res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=60");
     return res.status(200).json({
       seasonId,
-      generatedAt: new Date().toISOString(),
-      categories: categoryResults
+      generatedAt: dateUsed ? `${dateUsed}T23:59:59.999Z` : new Date().toISOString(),
+      dateUsed,
+      coverage: {
+        expectedTeams: ACTIVE_TEAM_ABBREVIATIONS.length,
+        teamsWithData,
+        categoryCount: TEAM_TREND_CATEGORIES.length,
+        sourceRows,
+        partial,
+      },
+      warnings: partial
+        ? ["Team trend coverage is incomplete for the current season."]
+        : [],
+      categories: categoryResults,
     });
   } catch (error: any) {
     console.error("team-power API error", error);
     return res.status(500).json({
       message: "Failed to compute team trends.",
-      error: error?.message ?? "Unknown error"
+      error: error?.message ?? "Unknown error",
     });
   }
 }

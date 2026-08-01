@@ -32,11 +32,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Iterable, Any
 
 from .config_loader import SustainabilityConfig
-
-try:  # Import optional db adapter
-    from . import db_adapter
-except Exception:  # pragma: no cover
-    db_adapter = None  # type: ignore
+from .offline import reject_persistence
 
 LEAGUE_PRIOR_METRICS = ["sh_pct", "oish_pct", "ipp"]  # Minimal initial set
 
@@ -69,40 +65,14 @@ def fetch_league_aggregates(db_client, season_id: int) -> Iterable[Dict[str, Any
         if callable(getter):
             return getter(season_id)
         return []
-    if db_adapter is not None:
-        try:
-            return db_adapter.fetch_league_aggregates(season_id)  # type: ignore[attr-defined]
-        except Exception:  # pragma: no cover
-            return []
     return []
 
 
 def upsert_league_priors(db_client, priors: List[LeaguePriorRow]) -> int:
-    """Persist computed league priors into priors_cache.
-
-    This is a stub. Real implementation should execute a bulk upsert (ON CONFLICT
-    DO UPDATE) keyed by (season_id, position_code, stat_code).
-    Returns number of rows intended for upsert.
-    """
-    if db_client is not None:
-        up = getattr(db_client, "upsert_league_priors", None)
-        if callable(up):
-            return up([p.__dict__ for p in priors])
-        return len(priors)
-    if db_adapter is not None:
-        try:
-            return db_adapter.upsert_league_priors([p.__dict__ for p in priors])  # type: ignore[attr-defined]
-        except Exception:  # pragma: no cover
-            return 0
-    # Example pseudo-logic (IMPLEMENT OUTSIDE this stub):
-    # sql = """
-    # INSERT INTO priors_cache(season_id, position_code, stat_code, alpha0, beta0, k, league_mu)
-    # VALUES %s
-    # ON CONFLICT (season_id, position_code, stat_code)
-    # DO UPDATE SET alpha0=EXCLUDED.alpha0, beta0=EXCLUDED.beta0, k=EXCLUDED.k, league_mu=EXCLUDED.league_mu, updated_at=NOW();
-    # """
-    # db_client.bulk_upsert(sql, priors)
-    return 0
+    """Reject legacy Python prior persistence; TypeScript owns production writes."""
+    if not priors:
+        return 0
+    reject_persistence()
 
 
 def _extract_metric_counts(row: Dict[str, Any], metric: str) -> tuple[int, int]:

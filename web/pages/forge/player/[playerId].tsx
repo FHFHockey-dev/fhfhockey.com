@@ -2,7 +2,7 @@ import Link from "next/link";
 import Head from "next/head";
 import type { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { format, parseISO, startOfWeek } from "date-fns";
 
 import ForgeRouteNav from "components/forge-dashboard/ForgeRouteNav";
@@ -12,22 +12,39 @@ import { fetchCachedJson } from "lib/dashboard/clientFetchCache";
 import {
   buildForgeHref,
   parseForgeDateParam,
-  parseForgeResolvedDateParam
+  parseForgeResolvedDateParam,
 } from "lib/dashboard/forgeLinks";
 import {
   fetchOwnershipContextMap,
-  type PlayerOwnershipContext
+  type PlayerOwnershipContext,
 } from "lib/dashboard/playerOwnership";
 import {
   scoreTopAddsCandidate,
-  type TopAddsMode
+  type TopAddsMode,
 } from "lib/dashboard/topAddsRanking";
 import { buildTopAddsScheduleContextMap } from "lib/dashboard/topAddsScheduleContext";
+import { getLatestStartedSeasonForDate } from "lib/NHL/server";
+import {
+  type ProjectionTeamIdentity,
+  validateProjectionTeamIdentityForSeason,
+} from "lib/NHL/seasonAwareScheduleTeam";
 import { teamsInfo } from "lib/teamsInfo";
 import styles from "styles/ForgeDashboard.module.scss";
 
+type ForgePlayerDetailPageProps = {
+  scheduleSeasonId: string | null;
+};
+
+const UNAVAILABLE_SCHEDULE_SEASON = "unavailable";
+const SCHEDULE_SEASON_UNAVAILABLE_COPY =
+  "Selected-date schedule season unavailable.";
+
 type ForgePlayersResponse = {
   asOfDate: string | null;
+  requestedDate?: string | null;
+  requestedSeasonId?: number | null;
+  resolvedSeasonId?: number | null;
+  horizonGames?: number | null;
   degradedProjectionSummary?: {
     note: string | null;
   } | null;
@@ -35,6 +52,7 @@ type ForgePlayersResponse = {
     player_id: number;
     player_name: string | null;
     team_name: string | null;
+    teamIdentity?: ProjectionTeamIdentity | null;
     position: string | null;
     pts: number;
     ppp: number;
@@ -55,7 +73,7 @@ function getTodayEt(): string {
     timeZone: "America/New_York",
     year: "numeric",
     month: "2-digit",
-    day: "2-digit"
+    day: "2-digit",
   }).formatToParts(now);
 
   const y = parts.find((part) => part.type === "year")?.value ?? "1970";
@@ -64,11 +82,26 @@ function getTodayEt(): string {
   return `${y}-${m}-${d}`;
 }
 
-function resolveTeamMeta(teamName: string | null | undefined) {
-  const normalizedName = (teamName ?? "").trim().toLowerCase();
-  return Object.values(teamsInfo).find(
-    (team) => team.name.toLowerCase() === normalizedName
+function resolveTeamMeta(
+  teamIdentity: ProjectionTeamIdentity | null | undefined,
+  teamName: string | null | undefined,
+  resolvedSeasonId: number | null,
+) {
+  if (resolvedSeasonId === null) return undefined;
+  const validatedIdentity = validateProjectionTeamIdentityForSeason(
+    teamIdentity,
+    resolvedSeasonId,
   );
+  const source = validatedIdentity?.source;
+  const canonical = validatedIdentity?.canonical;
+  if (!source || !canonical || source.name !== teamName) return undefined;
+
+  const current = teamsInfo[canonical.abbreviation];
+  return current?.id === canonical.id &&
+    current.abbrev === canonical.abbreviation &&
+    current.name === canonical.name
+    ? current
+    : undefined;
 }
 
 const formatMetric = (value: number | null | undefined, digits = 1): string =>
@@ -80,16 +113,24 @@ const formatSigned = (value: number | null | undefined): string => {
   return `${sign}${value.toFixed(1)}`;
 };
 
-export default function ForgePlayerDetailPage() {
+export default function ForgePlayerDetailPage({
+  scheduleSeasonId,
+}: ForgePlayerDetailPageProps) {
   const router = useRouter();
   const todayEt = useMemo(() => getTodayEt(), []);
   const playerId = Number(router.query.playerId);
   const date = parseForgeDateParam(router.query.date, todayEt);
-  const routeResolvedDate = parseForgeResolvedDateParam(router.query.resolvedDate);
+  const routeResolvedDate = parseForgeResolvedDateParam(
+    router.query.resolvedDate,
+  );
   const mode = router.query.mode === "week" ? "week" : "tonight";
-  const [projectionRow, setProjectionRow] =
-    useState<ForgePlayersResponse["data"][number] | null>(null);
+  const [projectionRow, setProjectionRow] = useState<
+    ForgePlayersResponse["data"][number] | null
+  >(null);
   const [asOfDate, setAsOfDate] = useState<string | null>(null);
+  const [projectionResolvedSeasonId, setProjectionResolvedSeasonId] = useState<
+    number | null
+  >(null);
   const [ownershipContext, setOwnershipContext] =
     useState<PlayerOwnershipContext | null>(null);
   const [detailMessages, setDetailMessages] = useState<string[]>([]);
@@ -116,9 +157,9 @@ export default function ForgePlayerDetailPage() {
         `/api/v1/forge/players?date=${encodeURIComponent(date)}&horizon=${
           mode === "week" ? "5" : "1"
         }`,
-        { ttlMs: 60_000 }
+        { ttlMs: 60_000 },
       ),
-      fetchOwnershipContextMap([playerId], date, 5)
+      fetchOwnershipContextMap([playerId], date, 5),
     ])
       .then(([playersResult, ownershipResult]) => {
         if (!active) return;
@@ -128,26 +169,52 @@ export default function ForgePlayerDetailPage() {
           setError("Player opportunity context is unavailable for this date.");
           setProjectionRow(null);
           setAsOfDate(null);
+          setProjectionResolvedSeasonId(null);
           setOwnershipContext(null);
           return;
         }
 
         const playersPayload = playersResult.value;
+        const expectedHorizon = mode === "week" ? 5 : 1;
+        const resolvedSeasonId = playersPayload?.resolvedSeasonId;
+        const resolvedSeasonText = String(resolvedSeasonId);
+        const resolvedSeasonStart = Number(resolvedSeasonText.slice(0, 4));
+        const resolvedSeasonEnd = Number(resolvedSeasonText.slice(4));
+        const responseOwnsSelection =
+          playersPayload?.requestedDate === date &&
+          playersPayload?.horizonGames === expectedHorizon &&
+          Number.isSafeInteger(resolvedSeasonId) &&
+          /^\d{8}$/.test(resolvedSeasonText) &&
+          resolvedSeasonEnd === resolvedSeasonStart + 1;
+
+        if (!responseOwnsSelection) {
+          setError(
+            "Projection response does not match the selected date and horizon.",
+          );
+          setProjectionRow(null);
+          setAsOfDate(null);
+          setProjectionResolvedSeasonId(null);
+          setOwnershipContext(null);
+          return;
+        }
+
         const row =
-          (playersPayload?.data ?? []).find((candidate) => candidate.player_id === playerId) ??
-          null;
+          (playersPayload?.data ?? []).find(
+            (candidate) => candidate.player_id === playerId,
+          ) ?? null;
 
         if (!row) {
           setError("Player not found in the current FORGE opportunity set.");
           setProjectionRow(null);
           setAsOfDate(playersPayload?.asOfDate ?? null);
+          setProjectionResolvedSeasonId(null);
           setOwnershipContext(null);
           return;
         }
 
         if (playersPayload?.asOfDate && playersPayload.asOfDate !== date) {
           nextMessages.push(
-            `Using latest available projections from ${playersPayload.asOfDate}.`
+            `Using latest available projections from ${playersPayload.asOfDate}.`,
           );
         }
         if (playersPayload?.degradedProjectionSummary?.note) {
@@ -159,6 +226,7 @@ export default function ForgePlayerDetailPage() {
 
         setProjectionRow(row);
         setAsOfDate(playersPayload?.asOfDate ?? null);
+        setProjectionResolvedSeasonId(Number(resolvedSeasonId));
 
         if (ownershipResult.status === "fulfilled") {
           setOwnershipContext(ownershipResult.value[playerId] ?? null);
@@ -174,9 +242,11 @@ export default function ForgePlayerDetailPage() {
         setError(
           fetchError instanceof Error
             ? fetchError.message
-            : "Failed to load player detail."
+            : "Failed to load player detail.",
         );
         setProjectionRow(null);
+        setAsOfDate(null);
+        setProjectionResolvedSeasonId(null);
         setOwnershipContext(null);
       })
       .finally(() => {
@@ -190,31 +260,77 @@ export default function ForgePlayerDetailPage() {
   }, [date, mode, playerId]);
 
   const teamMeta = useMemo(
-    () => resolveTeamMeta(projectionRow?.team_name),
-    [projectionRow?.team_name]
+    () =>
+      resolveTeamMeta(
+        projectionRow?.teamIdentity,
+        projectionRow?.team_name,
+        projectionResolvedSeasonId,
+      ),
+    [
+      projectionResolvedSeasonId,
+      projectionRow?.teamIdentity,
+      projectionRow?.team_name,
+    ],
   );
   const {
     games: scheduleGames,
     loading: scheduleLoading,
-    error: scheduleError
+    error: scheduleError,
+    scheduleTeam,
   } = useTeamSchedule(
     teamMeta?.abbrev ?? "",
-    undefined,
-    teamMeta ? String(teamMeta.id) : undefined
+    scheduleSeasonId ?? UNAVAILABLE_SCHEDULE_SEASON,
+    teamMeta ? String(teamMeta.id) : undefined,
+    date,
   );
   const weekStartDate = useMemo(
-    () => format(startOfWeek(parseISO(date), { weekStartsOn: 1 }), "yyyy-MM-dd"),
-    [date]
+    () =>
+      format(startOfWeek(parseISO(date), { weekStartsOn: 1 }), "yyyy-MM-dd"),
+    [date],
   );
-  const [weekSchedule, weekNumGamesPerDay] = useSchedule(weekStartDate, false);
+  const [weekSchedule, weekNumGamesPerDay, weekScheduleLoading] = useSchedule(
+    weekStartDate,
+    false,
+  );
+  const weekScheduleRequestKey = `${weekStartDate}:${
+    scheduleSeasonId ?? UNAVAILABLE_SCHEDULE_SEASON
+  }`;
+  const previousWeekScheduleRequestKeyRef = useRef(weekScheduleRequestKey);
+  const weekScheduleRequestChanged =
+    previousWeekScheduleRequestKeyRef.current !== weekScheduleRequestKey;
+
+  useEffect(() => {
+    previousWeekScheduleRequestKeyRef.current = weekScheduleRequestKey;
+  }, [weekScheduleRequestKey]);
+
   const weekContext = useMemo(() => {
-    if (!teamMeta || mode !== "week") return null;
-    return buildTopAddsScheduleContextMap(
-      weekSchedule,
-      weekNumGamesPerDay,
-      date
-    )[teamMeta.abbrev] ?? null;
-  }, [date, mode, teamMeta, weekNumGamesPerDay, weekSchedule]);
+    if (
+      !teamMeta ||
+      mode !== "week" ||
+      scheduleSeasonId === null ||
+      weekScheduleLoading ||
+      weekScheduleRequestChanged
+    ) {
+      return null;
+    }
+    return (
+      buildTopAddsScheduleContextMap(
+        weekSchedule,
+        weekNumGamesPerDay,
+        date,
+        Number(scheduleSeasonId),
+      )[teamMeta.abbrev] ?? null
+    );
+  }, [
+    date,
+    mode,
+    scheduleSeasonId,
+    teamMeta,
+    weekNumGamesPerDay,
+    weekSchedule,
+    weekScheduleLoading,
+    weekScheduleRequestChanged,
+  ]);
 
   const opportunityScore = useMemo(() => {
     if (!projectionRow || !ownershipContext) return null;
@@ -238,21 +354,28 @@ export default function ForgePlayerDetailPage() {
         uncertainty: projectionRow.uncertainty,
         scheduleGamesRemaining: weekContext?.gamesRemaining ?? null,
         scheduleOffNightsRemaining: weekContext?.offNightsRemaining ?? null,
-        scheduleLabel: weekContext?.summaryLabel ?? null
+        scheduleLabel: weekContext?.summaryLabel ?? null,
       },
-      mode as TopAddsMode
+      mode as TopAddsMode,
     );
-  }, [ownershipContext, playerId, projectionRow, teamMeta?.abbrev, weekContext]);
+  }, [
+    mode,
+    ownershipContext,
+    playerId,
+    projectionRow,
+    teamMeta?.abbrev,
+    weekContext,
+  ]);
   const playerDetailReturnHref = useMemo(
     () =>
       Number.isFinite(playerId)
         ? buildForgeHref(`/forge/player/${playerId}`, {
             date,
             mode,
-            resolvedDate: asOfDate ?? routeResolvedDate
+            resolvedDate: asOfDate ?? routeResolvedDate,
           })
         : null,
-    [asOfDate, date, mode, playerId, routeResolvedDate]
+    [asOfDate, date, mode, playerId, routeResolvedDate],
   );
 
   const upcomingGames = useMemo(() => {
@@ -286,8 +409,9 @@ export default function ForgePlayerDetailPage() {
                   {projectionRow?.player_name ?? `Player ${playerId}`}
                 </h1>
                 <p className={styles.routePageSubtitle}>
-                  Opportunity cards route here so the user gets projection, ownership,
-                  and weekly team context without being dropped straight into the trends stack.
+                  Opportunity cards route here so the user gets projection,
+                  ownership, and weekly team context without being dropped
+                  straight into the trends stack.
                 </p>
               </div>
               <div className={styles.routePageNavStack}>
@@ -298,7 +422,7 @@ export default function ForgePlayerDetailPage() {
                       ? buildForgeHref(`/forge/team/${teamMeta.abbrev}`, {
                           date,
                           resolvedDate: asOfDate ?? routeResolvedDate,
-                          mode
+                          mode,
                         })
                       : null
                   }
@@ -307,7 +431,7 @@ export default function ForgePlayerDetailPage() {
                       ? buildForgeHref(`/forge/player/${playerId}`, {
                           date,
                           mode,
-                          resolvedDate: asOfDate ?? routeResolvedDate
+                          resolvedDate: asOfDate ?? routeResolvedDate,
                         })
                       : null
                   }
@@ -317,12 +441,17 @@ export default function ForgePlayerDetailPage() {
                 />
                 <div className={styles.routePageMeta}>
                   <span className={styles.contextChip}>
-                    {mode === "week" ? "This Week" : "Tonight"} • {asOfDate ?? date}
+                    {mode === "week" ? "This Week" : "Tonight"} •{" "}
+                    {asOfDate ?? date}
+                  </span>
+                  <span className={styles.contextChip}>
+                    Schedule season: {scheduleSeasonId ?? "unavailable"}
                   </span>
                   <Link
-                    href={buildForgeHref("/forge/dashboard", {
+                    href={buildForgeHref("/forge/command-center", {
                       date,
-                      resolvedDate: asOfDate ?? routeResolvedDate
+                      mode,
+                      resolvedDate: asOfDate ?? routeResolvedDate,
                     })}
                     className={styles.navLink}
                   >
@@ -350,7 +479,9 @@ export default function ForgePlayerDetailPage() {
                   <div className={styles.bandHeader}>
                     <div className={styles.bandIntro}>
                       <p className={styles.bandEyebrow}>Opportunity Snapshot</p>
-                      <h2 className={styles.bandTitle}>Projection and Ownership</h2>
+                      <h2 className={styles.bandTitle}>
+                        Projection and Ownership
+                      </h2>
                     </div>
                   </div>
                   {detailMessages.length > 0 ? (
@@ -371,28 +502,43 @@ export default function ForgePlayerDetailPage() {
                   ) : null}
                   <div className={styles.detailMetricGrid}>
                     <article className={styles.detailMetricCard}>
-                      <span className={styles.previewSubheading}>Projection</span>
+                      <span className={styles.previewSubheading}>
+                        Projection
+                      </span>
                       <strong>{formatMetric(projectionRow.pts)} pts</strong>
                       <span>PPP {formatMetric(projectionRow.ppp)}</span>
                     </article>
                     <article className={styles.detailMetricCard}>
                       <span className={styles.previewSubheading}>Volume</span>
                       <strong>SOG {formatMetric(projectionRow.sog)}</strong>
-                      <span>Hits+Blk {formatMetric((projectionRow.hit ?? 0) + (projectionRow.blk ?? 0))}</span>
+                      <span>
+                        Hits+Blk{" "}
+                        {formatMetric(
+                          (projectionRow.hit ?? 0) + (projectionRow.blk ?? 0),
+                        )}
+                      </span>
                     </article>
                     <article className={styles.detailMetricCard}>
-                      <span className={styles.previewSubheading}>Ownership</span>
+                      <span className={styles.previewSubheading}>
+                        Ownership
+                      </span>
                       <strong>
                         {ownershipContext?.ownership == null
                           ? "--"
                           : `${ownershipContext.ownership.toFixed(0)}%`}
                       </strong>
-                      <span>5D {formatSigned(ownershipContext?.delta)} pts</span>
+                      <span>
+                        5D {formatSigned(ownershipContext?.delta)} pts
+                      </span>
                     </article>
                     <article className={styles.detailMetricCard}>
-                      <span className={styles.previewSubheading}>Add Model Score</span>
+                      <span className={styles.previewSubheading}>
+                        Add Model Score
+                      </span>
                       <strong>{formatMetric(opportunityScore?.total)}</strong>
-                      <span>Risk {formatMetric(opportunityScore?.riskPenaltyScore)}</span>
+                      <span>
+                        Risk {formatMetric(opportunityScore?.riskPenaltyScore)}
+                      </span>
                     </article>
                   </div>
                 </section>
@@ -404,19 +550,40 @@ export default function ForgePlayerDetailPage() {
                       <h2 className={styles.bandTitle}>Upcoming Schedule</h2>
                     </div>
                   </div>
-                  {scheduleLoading ? (
-                    <p className={styles.panelState}>Loading team schedule...</p>
+                  {scheduleSeasonId === null ? (
+                    <p className={styles.panelState}>
+                      {SCHEDULE_SEASON_UNAVAILABLE_COPY}
+                    </p>
+                  ) : scheduleLoading ? (
+                    <p className={styles.panelState}>
+                      Loading team schedule...
+                    </p>
                   ) : scheduleError ? (
-                    <p className={styles.panelState}>Schedule error: {scheduleError}</p>
+                    <p className={styles.panelState}>
+                      Schedule error: {scheduleError}
+                    </p>
                   ) : (
                     <div className={styles.previewColumns}>
                       <div className={styles.previewSubsection}>
-                        <p className={styles.previewSubheading}>Player Context</p>
+                        <p className={styles.previewSubheading}>
+                          Player Context
+                        </p>
                         <div className={styles.previewList}>
                           <div className={styles.previewRowStatic}>
-                            <strong>{teamMeta?.name ?? projectionRow.team_name ?? "--"}</strong>
+                            <strong>
+                              {teamMeta &&
+                              projectionRow.teamIdentity?.source.name ===
+                                projectionRow.team_name
+                                ? projectionRow.teamIdentity.source.name
+                                : (projectionRow.team_name ??
+                                  teamMeta?.name ??
+                                  "--")}
+                            </strong>
                             <span>
-                              {projectionRow.position ?? "--"} • {mode === "week" ? "Weekly stream mode" : "Single-slate mode"}
+                              {projectionRow.position ?? "--"} •{" "}
+                              {mode === "week"
+                                ? "Weekly stream mode"
+                                : "Single-slate mode"}
                               {mode === "week" && weekContext?.summaryLabel
                                 ? ` • ${weekContext.summaryLabel}`
                                 : ""}
@@ -428,17 +595,28 @@ export default function ForgePlayerDetailPage() {
                         <p className={styles.previewSubheading}>Next Games</p>
                         <div className={styles.previewList}>
                           {upcomingGames.map((game) => {
-                            const isHome = game.homeTeam.abbrev === teamMeta?.abbrev;
-                            const opponent = isHome ? game.awayTeam.abbrev : game.homeTeam.abbrev;
+                            const isHome = scheduleTeam
+                              ? game.homeTeam.id === scheduleTeam.id
+                              : game.homeTeam.abbrev === teamMeta?.abbrev;
+                            const opponent = isHome
+                              ? game.awayTeam.abbrev
+                              : game.homeTeam.abbrev;
                             return (
-                              <div key={game.id} className={styles.previewRowStatic}>
-                                <strong>{isHome ? `vs ${opponent}` : `@ ${opponent}`}</strong>
+                              <div
+                                key={game.id}
+                                className={styles.previewRowStatic}
+                              >
+                                <strong>
+                                  {isHome ? `vs ${opponent}` : `@ ${opponent}`}
+                                </strong>
                                 <span>{game.gameDate}</span>
                               </div>
                             );
                           })}
                           {upcomingGames.length === 0 ? (
-                            <p className={styles.panelState}>No upcoming games available.</p>
+                            <p className={styles.panelState}>
+                              No upcoming games available.
+                            </p>
                           ) : null}
                         </div>
                       </div>
@@ -458,7 +636,7 @@ export default function ForgePlayerDetailPage() {
                       href={buildForgeHref(`/trends/player/${playerId}`, {
                         date,
                         origin: "forge-player-detail",
-                        returnTo: playerDetailReturnHref
+                        returnTo: playerDetailReturnHref,
                       })}
                       className={styles.slateActionLink}
                     >
@@ -469,7 +647,7 @@ export default function ForgePlayerDetailPage() {
                         href={buildForgeHref(`/forge/team/${teamMeta.abbrev}`, {
                           date,
                           mode,
-                          resolvedDate: asOfDate ?? routeResolvedDate
+                          resolvedDate: asOfDate ?? routeResolvedDate,
                         })}
                         className={styles.slateActionLink}
                       >
@@ -477,10 +655,10 @@ export default function ForgePlayerDetailPage() {
                       </Link>
                     ) : null}
                     <Link
-                      href={buildForgeHref("/forge/dashboard", {
+                      href={buildForgeHref("/forge/command-center", {
                         date,
                         mode,
-                        resolvedDate: asOfDate ?? routeResolvedDate
+                        resolvedDate: asOfDate ?? routeResolvedDate,
                       })}
                       className={styles.slateActionLink}
                     >
@@ -490,7 +668,7 @@ export default function ForgePlayerDetailPage() {
                       href={buildForgeHref("/start-chart", {
                         date,
                         mode,
-                        resolvedDate: asOfDate ?? routeResolvedDate
+                        resolvedDate: asOfDate ?? routeResolvedDate,
                       })}
                       className={styles.slateActionLink}
                     >
@@ -507,6 +685,24 @@ export default function ForgePlayerDetailPage() {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async () => ({
-  props: {}
-});
+export const getServerSideProps: GetServerSideProps<
+  ForgePlayerDetailPageProps
+> = async ({ query }) => {
+  const date = parseForgeDateParam(query.date, getTodayEt());
+
+  try {
+    const season = await getLatestStartedSeasonForDate(date);
+    return {
+      props: {
+        scheduleSeasonId: season === null ? null : String(season.id),
+      },
+    };
+  } catch {
+    console.warn("Forge player detail schedule season lookup failed.");
+    return {
+      props: {
+        scheduleSeasonId: null,
+      },
+    };
+  }
+};

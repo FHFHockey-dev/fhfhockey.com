@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { POSTGREST_PAGE_SIZE, fetchPaginatedRows } from "./power-ratings";
+import {
+  POSTGREST_PAGE_SIZE,
+  calculateEwma,
+  calculateLeagueMetrics,
+  calculateZScores,
+  fetchPaginatedRows,
+  type TeamGame,
+} from "./power-ratings";
 
 describe("power-ratings PostgREST pagination", () => {
   it("continues after a full 1,000-row page with deterministic ordering", async () => {
@@ -59,5 +66,51 @@ describe("power-ratings PostgREST pagination", () => {
         ["date"],
       ),
     ).rejects.toThrow("page failed");
+  });
+});
+
+describe("power-ratings missing PDO handling", () => {
+  const teamGame = (team: string, pdo: number | null): TeamGame => ({
+    team_abbreviation: team,
+    date: "2026-03-10",
+    season_id: 20252026,
+    cf_per_60: 60,
+    ca_per_60: 60,
+    sf_per_60: 30,
+    sa_per_60: 30,
+    gf_per_60: 3,
+    ga_per_60: 3,
+    xgf_per_60: 3,
+    xga_per_60: 3,
+    gp: 1,
+    toi_seconds: 3600,
+    pace_per_60: 60,
+    hdcf_per_60: 10,
+    hdca_per_60: 10,
+    pdo,
+    data_mode: "all",
+    pp_xgf_per_60: 6,
+    pk_xga_per_60: 6,
+    penalties_drawn_per_60: 2,
+    penalties_taken_per_60: 2,
+    rn_desc: 0,
+    gp_to_date: 1,
+  });
+
+  it("records missing provenance and assigns a neutral PDO z-score", () => {
+    const missing = calculateEwma([teamGame("ANA", null)], "2026-03-10")!;
+    const observed = calculateEwma([teamGame("BOS", 1.01)], "2026-03-10")!;
+    const league = calculateLeagueMetrics([missing, observed]);
+    const result = calculateZScores(missing, league);
+
+    expect(missing).toMatchObject({
+      pdo_ewma: null,
+      pdo_observation_count: 0,
+    });
+    expect(result).toMatchObject({
+      pdo_z: 0,
+      pdo_missing: true,
+    });
+    expect(league.league_pdo_avg).toBe(1.01);
   });
 });

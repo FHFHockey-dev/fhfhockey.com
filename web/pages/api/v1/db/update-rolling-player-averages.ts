@@ -79,6 +79,7 @@ import type {
   StrengthState
 } from "lib/supabase/Upserts/fetchRollingPlayerAverages";
 import type { NextApiRequest, NextApiResponse } from "next";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 type ResponseBody = {
   message: string;
@@ -89,6 +90,7 @@ type ResponseBody = {
   executionScope?: {
     startDate: string | null;
     endDate: string | null;
+    historyReadMode: "full_selected_scope_through_end_date";
     implicitDailyWindowApplied: boolean;
     windowDays: number | null;
     smokeTestComparable: boolean;
@@ -290,6 +292,7 @@ function buildExecutionScopeSummary(args: {
   return {
     startDate: args.startDate ?? null,
     endDate: args.endDate ?? null,
+    historyReadMode: "full_selected_scope_through_end_date" as const,
     implicitDailyWindowApplied: args.implicitDailyWindowApplied,
     windowDays,
     smokeTestComparable,
@@ -389,7 +392,7 @@ function mergeRollingRunSummaries(
   };
 }
 
-async function handler(
+export async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseBody>
 ) {
@@ -904,4 +907,4 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

@@ -654,11 +654,6 @@ describe("fetchAggregatedData", () => {
       message: "invalid game length",
     },
     {
-      name: "appearance beyond game length",
-      rows: [shiftRow(1, { game_toi: "61:00", game_length: "60:00" })],
-      message: "game TOI exceeds game length",
-    },
-    {
       name: "array relationship JSON",
       rows: [shiftRow(1, { time_spent_with: [] })],
       message: "invalid same-position relationship",
@@ -749,17 +744,6 @@ describe("fetchAggregatedData", () => {
       message: "contradictory relationship categories",
     },
     {
-      name: "relationship beyond appearance",
-      rows: completeGameRelationships(
-        [
-          shiftRow(1, { game_id: 2025020101, game_toi: "04:00" }),
-          teammateRow(2, 2025020101, { game_toi: "10:00" }),
-        ],
-        { "29-97": "05:00" },
-      ),
-      message: "relationship TOI exceeds a player appearance",
-    },
-    {
       name: "invalid line assignment",
       rows: [shiftRow(1, { line_combination: 5 })],
       message: "invalid line combination",
@@ -787,6 +771,129 @@ describe("fetchAggregatedData", () => {
     await expect(fetchAggregatedData(request)).rejects.toThrow(message);
     expect(mocks.from).not.toHaveBeenCalledWith("skatersGameStats");
     expect(mocks.from).not.toHaveBeenCalledWith("goaliesGameStats");
+  });
+
+  it("excludes a complete game with an impossible appearance and reports partial coverage", async () => {
+    const affectedGameId = 2025020101;
+    const validGameId = 2025020102;
+    mocks.shiftResponses.push({
+      data: [
+        ...completeGameRelationships([
+          shiftRow(1, {
+            game_id: affectedGameId,
+            player_id: 30,
+            player_first_name: "Affected",
+            player_last_name: "Goalie",
+            primary_position: "G",
+            display_position: "G",
+            player_type: "G",
+            line_combination: null,
+            game_toi: "61:00",
+          }),
+          teammateRow(2, affectedGameId),
+        ]),
+        ...completeGameRelationships(
+          [
+            shiftRow(3, {
+              game_id: validGameId,
+              game_date: "2026-03-12",
+            }),
+            teammateRow(4, validGameId, { game_date: "2026-03-12" }),
+          ],
+          { "29-97": "04:00" },
+        ),
+      ],
+      error: null,
+    });
+
+    const result = await fetchAggregatedData(request);
+
+    expect(result.coverage).toEqual({
+      inputRows: 4,
+      rosterRows: 2,
+      skippedRows: 2,
+    });
+    expect(result.matchedGameIds).toEqual([validGameId]);
+    expect(result.regularSeasonPlayersData[97].regularSeasonData).toMatchObject(
+      {
+        GP: 1,
+        gameIds: [validGameId],
+        timeSpentWith: { 29: 240 },
+      },
+    );
+    expect(result.regularSeasonPlayersData[30]).toBeUndefined();
+  });
+
+  it("excludes a complete game whose relationship exceeds an appearance", async () => {
+    const affectedGameId = 2025020101;
+    const validGameId = 2025020102;
+    mocks.shiftResponses.push({
+      data: [
+        ...completeGameRelationships(
+          [
+            shiftRow(1, {
+              game_id: affectedGameId,
+              game_toi: "04:00",
+            }),
+            teammateRow(2, affectedGameId, { game_toi: "10:00" }),
+          ],
+          { "29-97": "05:00" },
+        ),
+        ...completeGameRelationships(
+          [
+            shiftRow(3, {
+              game_id: validGameId,
+              game_date: "2026-03-12",
+            }),
+            teammateRow(4, validGameId, { game_date: "2026-03-12" }),
+          ],
+          { "29-97": "04:00" },
+        ),
+      ],
+      error: null,
+    });
+
+    const result = await fetchAggregatedData(request);
+
+    expect(result.coverage).toEqual({
+      inputRows: 4,
+      rosterRows: 2,
+      skippedRows: 2,
+    });
+    expect(result.matchedGameIds).toEqual([validGameId]);
+    expect(result.regularSeasonPlayersData[97].regularSeasonData).toMatchObject(
+      {
+        GP: 1,
+        gameIds: [validGameId],
+        timeSpentWith: { 29: 240 },
+      },
+    );
+  });
+
+  it("returns explicit empty partial coverage when every selected game is affected", async () => {
+    const affectedGameId = 2025020101;
+    mocks.shiftResponses.push({
+      data: completeGameRelationships([
+        shiftRow(1, { game_id: affectedGameId, game_toi: "61:00" }),
+        teammateRow(2, affectedGameId),
+      ]),
+      error: null,
+    });
+
+    const result = await fetchAggregatedData(request);
+
+    expect(result.coverage).toEqual({
+      inputRows: 2,
+      rosterRows: 0,
+      skippedRows: 2,
+    });
+    expect(result.regularSeasonPlayersData).toEqual({});
+    expect(result.matchedGameIds).toEqual([]);
+    expect(result.cardStats).toEqual({
+      scopeGameIds: [],
+      skatersByPlayerId: {},
+      goaliesByPlayerId: {},
+    });
   });
 
   it("rejects an unexpected player fallback identity", async () => {

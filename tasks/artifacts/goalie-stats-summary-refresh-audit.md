@@ -1,5 +1,7 @@
 # Goalie Stats Summary Refresh Audit (`1.4`)
 
+> **Historical scope:** This audit predates the dedicated goalie persistence and writer routes. Shared raw ingest/aggregation remains canonical, while current goalie-specific persistence and operator routes are documented in the canonical goalie PRD, task list, and runbook.
+
 ## Findings
 
 ### 1. The canonical refresh path already rebuilds goalie summary snapshots from the same shared source-of-truth pipeline.

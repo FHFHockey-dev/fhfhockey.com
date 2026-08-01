@@ -7,12 +7,13 @@ import {
   fetchLeagueAverages,
   fetchTeamScores,
   Game
-} from "./fetchData";
+} from "lib/gameGoalProjections/fetchData";
 import {
   buildGameGoalProjections,
   CalculatedGameGoalProjectionData
-} from "./calculations";
+} from "lib/gameGoalProjections/calculations";
 import supabase from "lib/supabase/server";
+import adminOnly from "utils/adminOnlyMiddleware";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 
 type ResponseData = {
@@ -132,5 +133,4 @@ const handler = async (
   }
 };
 
-// Wrap the handler with adminOnly middleware for authentication
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

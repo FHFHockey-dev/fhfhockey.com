@@ -9,25 +9,31 @@
 - Track auxiliary boxscore metrics & fantasy score signals to analyze correlations with streaks.
 
 ## Deliverables Checklist
-- [ ] Data model decision for storing per-player per-metric volatility/band snapshots.
-- [ ] Next.js API endpoint(s) for band recomputation & retrieval.
-  - [ ] Define request parameters & payload shape (player, metric set, windows, snapshot date).
-  - [ ] Implement Supabase queries aggregating 1/3/5/10 game windows.
-  - [ ] Compute volatility stats (mean, variance, percentiles, blended weights).
-  - [ ] Persist results (table or JSON storage) for UI consumption.
-- [ ] Frontend updates in `trendsSandbox.tsx`.
-  - [ ] Hook into new API to load band + metric series for selected player/season.
-  - [ ] Normalize and combine metric series for visualization (shared scale or multi-axis approach).
-  - [ ] Render elasticity bands + actual series with color-coded segments.
-  - [ ] Surface 1-game dots, plus rolling averages (3/5/10) simultaneously or via toggles.
-  - [ ] Add controls to choose metrics, windows, and visualization options.
-  - [ ] Display supporting boxscore + fantasy score summaries and correlations.
-- [ ] SCSS updates in `web/pages/trends/sandbox.module.scss` aligning with new visuals.
-- [ ] Unit/integration tests for API computations (targeted utility functions).
-- [ ] Documentation updates:
-  - [ ] Finalize volatility/band formula reference.
-  - [ ] Usage guide describing cron flow and API contract.
-    - [ ] Document bulk rebuild endpoint (`POST /api/v1/sustainability/rebuild-trend-bands`) parameters (offset, limit, dry-run, game_limit).
+- [x] Data model decision for storing per-player per-metric volatility/band snapshots.
+- [x] Next.js API endpoint(s) for band recomputation & retrieval.
+  - [x] Define request parameters & payload shape (player, metric set, windows, snapshot date).
+  - [x] Implement Supabase queries aggregating 1/3/5/10 game windows.
+  - [x] Compute volatility stats (mean, variance, percentiles, blended weights).
+  - [x] Persist results (table or JSON storage) for UI consumption.
+- [x] Frontend updates in `trendsSandbox.tsx`.
+  - [x] Hook into new API to load band + metric series for selected player/season.
+  - [x] Normalize and combine metric series for visualization (shared scale or multi-axis approach).
+  - [x] Render elasticity bands + actual series with color-coded segments.
+  - [x] Surface 1-game dots, plus rolling averages (3/5/10) simultaneously or via toggles.
+  - [x] Add controls to choose metrics, windows, and visualization options.
+  - [x] Display supporting boxscore + fantasy score summaries and correlations.
+- [x] SCSS updates in `web/pages/trends/sandbox.module.scss` aligning with new visuals.
+- [x] Unit/integration tests for API computations (targeted utility functions).
+- [x] Documentation updates:
+  - [x] Finalize volatility/band formula reference.
+  - [x] Usage guide describing cron flow and API contract.
+    - [x] Document bulk rebuild endpoint (`POST /api/v1/sustainability/rebuild-trend-bands`) parameters (offset, limit, dry-run, game_limit).
+
+## Completion Reconciliation — July 2026
+- The canonical implementation now stores player × metric × window × snapshot rows in `sustainability_trend_bands`; public retrieval and fail-closed single-player/bulk recompute routes use the shared `bandService` and bounded player/date/metric/window parameters.
+- Raw game rows provide the one-game series while `bandCalculator` computes l3/l5/l10/l20 EWMA/prior-blended credible intervals, z-scores, percentiles, and exposure metadata. `trendsSandbox.tsx` loads the selected player's band/history series and renders actual points, bands, hot/cold/normal states, metric controls, and window toggles; l20 is an additive option beyond the required 1/3/5/10 views.
+- Four focused calculator, persistence, read-route, and bulk-route files pass 14/14 tests, covering the composite key, chunking/idempotency, calculation payload, public-read/protected-mutation split, and bulk prerequisite behavior. `SUSTAINABILITY-RUNBOOK.md` documents the protected scheduled chain, bounded pagination/retries, response/audit contract, and bulk `offset`/`limit`/`dry_run`/`game_limit` controls.
+- The frontend now pairs the selected skater metric with the canonical fantasy-score series over complete game pairs, reports the paired sample, averages, Pearson `r`, `r²`, and points/shots/hits/blocks/PPP per-game context, and withholds correlation below three pairs. Fantasy self-correlation is labeled rather than presented as an independent signal; goalie support remains explicitly deferred. The focused helper suite passes 5/5, full TypeScript and scoped ESLint pass, and the source is complete at 19/19.
 
 ## Decisions (locked in)
 - Storage: create Supabase table `sustainability_trend_bands` (player × metric × window × snapshot).

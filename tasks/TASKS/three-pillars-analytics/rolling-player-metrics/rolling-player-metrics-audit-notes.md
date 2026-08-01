@@ -7114,6 +7114,10 @@ If the goal is the cleanest long-term model, the best direction is:
 
 ### Main conclusion from 4.5
 
+## Production Authorization Verification — 2026-07-30
+
+A value-free preview cohort found that `update-rolling-player-averages` was publicly callable because `withCronJobAudit` audited execution without authorizing it. The one observed request completed in 1.113 seconds, selected zero players, and wrote zero rows. The route now composes the established `adminOnly` boundary inside the audit wrapper, so missing or invalid credentials fail before recompute work while administrator sessions and the exact cron secret remain supported. Read-only production scheduler evidence confirms active job 278 remains at `15 8 * * *` and already sends a Vault-backed `cron_secret` Authorization header.
+
 The GP% redesign should not be a one-line bug fix.
 It should include:
 

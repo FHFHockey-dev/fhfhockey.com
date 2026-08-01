@@ -1,4 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("lib/cron/withCronJobAudit", () => ({
+  withCronJobAudit: (routeHandler: any) => routeHandler,
+}));
 
 import handler from "../../../../../pages/api/v1/db/update-power-rankings";
 
@@ -22,7 +26,7 @@ function createMockRes() {
     json(payload: any) {
       this.body = payload;
       return this;
-    }
+    },
   };
   return res;
 }
@@ -31,7 +35,7 @@ describe("/api/v1/db/update-power-rankings", () => {
   it("returns 410 and marks the loader as a quarantined legacy surface", async () => {
     const req: any = {
       method: "GET",
-      query: {}
+      query: {},
     };
     const res = createMockRes();
 
@@ -45,14 +49,14 @@ describe("/api/v1/db/update-power-rankings", () => {
       retentionReason:
         "Retained as a 410 quarantine stub until cron-source, failed-job inventories, and benchmark artifacts stop referencing this legacy route.",
       canonicalStatus: "no supported operator route",
-      canonicalDataset: "power_rankings"
+      canonicalDataset: "power_rankings",
     });
   });
 
   it("still returns 405 for unsupported methods", async () => {
     const req: any = {
       method: "DELETE",
-      query: {}
+      query: {},
     };
     const res = createMockRes();
 

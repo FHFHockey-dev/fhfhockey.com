@@ -2917,6 +2917,21 @@ function shouldUseDateScopedPlayerSelection(options: FetchOptions): boolean {
   );
 }
 
+function buildPlayerHistoryReadOptions(options: FetchOptions): FetchOptions {
+  const historyOptions = { ...options };
+  delete historyOptions.startDate;
+  return historyOptions;
+}
+
+function isWithinRequestedWriteWindow(
+  gameDate: string,
+  options: FetchOptions
+): boolean {
+  if (options.startDate && gameDate < options.startDate) return false;
+  if (options.endDate && gameDate > options.endDate) return false;
+  return true;
+}
+
 function normalizePlayerIdList(ids: number[]): number[] {
   return Array.from(new Set(ids)).sort((a, b) => a - b);
 }
@@ -3510,7 +3525,8 @@ async function processPlayer(
   knownGameIds: Set<number>,
   options: FetchOptions
 ): Promise<ProcessPlayerResult> {
-  const wgoRows = await fetchWgoRowsForPlayer(playerId, options);
+  const historyReadOptions = buildPlayerHistoryReadOptions(options);
+  const wgoRows = await fetchWgoRowsForPlayer(playerId, historyReadOptions);
   if (wgoRows.length === 0) {
     return {
       rows: [],
@@ -3834,7 +3850,7 @@ async function processPlayer(
           });
         }
 
-        outputs.push({
+        const output = {
           // The semantic type is intentionally sourced from the shared
           // availability contract so later GP% remediation tasks can update one
           // contract definition instead of re-deriving this meaning at call
@@ -3854,8 +3870,11 @@ async function processPlayer(
           ...getOptionalPpContextOutputs(game),
           gp_semantic_type: getGpOutputCompatibilityMode(config.state).semanticType,
           ...metricOutputs
-        });
-          strengthOutputs.push(outputs[outputs.length - 1]);
+        };
+        if (isWithinRequestedWriteWindow(game.gameDate, options)) {
+          outputs.push(output);
+          strengthOutputs.push(output);
+        }
         }
       } catch (error) {
         logPipelinePhase({
@@ -4539,6 +4558,8 @@ export const __testables = {
   normalizeStrengthStates,
   normalizePlayerIdList,
   shouldUseDateScopedPlayerSelection,
+  buildPlayerHistoryReadOptions,
+  isWithinRequestedWriteWindow,
   shouldWarnAboutDisabledImplicitAutoResume,
   filterPlayerIdsForResume,
   splitRollingUpsertRowForDurableStorage,

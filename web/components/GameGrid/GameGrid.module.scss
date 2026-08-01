@@ -56,6 +56,16 @@
     gap: v.$space-lg;
     flex: 1 1 auto;
     min-height: 0;
+
+    &[data-grid-layout="legacy-vertical"] {
+      grid-template-columns: 320px 1320px 280px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      overscroll-behavior-x: contain;
+      scrollbar-gutter: stable;
+      padding-bottom: v.$space-xs;
+      @include v.custom-scrollbar(v.$primary-color, v.$background-medium);
+    }
   }
 }
 
@@ -70,7 +80,7 @@
   background: #1d2127;
   border: 1px solid rgba(v.$color-white, 0.06);
   box-shadow:
-    0 18px 44px rgba(0, 0, 0, 0.32),
+    0 18px 44px rgba(v.$color-black, 0.32),
     inset 0 1px 0 rgba(v.$color-white, 0.05);
 
   @media (min-width: v.$breakpoint-desktop) {
@@ -89,7 +99,7 @@
   min-height: 0;
   border: 1px solid rgba(v.$secondary-color, 0.28);
   box-shadow:
-    0 24px 60px rgba(0, 0, 0, 0.36),
+    0 24px 60px rgba(v.$color-black, 0.36),
     0 0 0 1px rgba(v.$color-white, 0.03) inset,
     0 0 28px rgba(v.$primary-color, 0.08);
   border-radius: 0;
@@ -122,7 +132,7 @@
   background: #1d2127;
   border: 1px solid rgba(v.$color-white, 0.06);
   box-shadow:
-    0 18px 44px rgba(0, 0, 0, 0.32),
+    0 18px 44px rgba(v.$color-black, 0.32),
     inset 0 1px 0 rgba(v.$color-white, 0.05);
 
   @media (min-width: v.$breakpoint-desktop) {
@@ -160,7 +170,7 @@
   border: 1px solid rgba(v.$color-white, 0.06);
   background: v.$surface-1;
   box-shadow:
-    0 20px 44px rgba(0, 0, 0, 0.32),
+    0 20px 44px rgba(v.$color-black, 0.32),
     0 0 0 1px rgba(v.$color-white, 0.04) inset,
     0 0 24px rgba(v.$primary-color, 0.06);
   position: relative;
@@ -205,11 +215,11 @@
     background: linear-gradient(
       180deg,
       rgba(v.$secondary-color, 0.16),
-      rgba(0, 0, 0, 0.92) 55%
+      rgba(v.$color-black, 0.92) 55%
     );
     border-top: 1px solid rgba(v.$secondary-color, 0.4);
     box-shadow:
-      0 -18px 40px rgba(0, 0, 0, 0.6),
+      0 -18px 40px rgba(v.$color-black, 0.6),
       0 -2px 22px rgba(v.$secondary-color, 0.22);
     z-index: 60;
     backdrop-filter: blur(10px);
@@ -252,8 +262,8 @@
     border-top: 0;
     background: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.06),
-      rgba(255, 255, 255, 0.02)
+      rgba(v.$color-white, 0.06),
+      rgba(v.$color-white, 0.02)
     );
     color: v.$text-color-primary;
     cursor: pointer;
@@ -265,12 +275,12 @@
     &:hover {
       box-shadow:
         0 0 0 1px rgba(v.$secondary-color, 0.22) inset,
-        0 12px 30px rgba(0, 0, 0, 0.35),
+        0 12px 30px rgba(v.$color-black, 0.35),
         0 0 22px rgba(v.$secondary-color, 0.18);
       background: linear-gradient(
         135deg,
         rgba(v.$secondary-color, 0.14),
-        rgba(255, 255, 255, 0.03)
+        rgba(v.$color-white, 0.03)
       );
     }
 
@@ -309,8 +319,8 @@
 .opponentStatsContainer {
   flex-shrink: 0;
   border-radius: 0;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(v.$color-black, 0.08);
+  border: 1px solid rgba(v.$color-white, 0.08);
 
   @media (min-width: v.$breakpoint-desktop) {
     // Removed component-wrapper to avoid double bordering/outlining
@@ -321,8 +331,8 @@
     flex-direction: column;
     // Reduce competing "card" framing inside the unified dashboard panel.
     box-shadow: none;
-    border-color: rgba(255, 255, 255, 0.06);
-    background: rgba(0, 0, 0, 0.16);
+    border-color: rgba(v.$color-white, 0.06);
+    background: rgba(v.$color-black, 0.16);
   }
 }
 
@@ -340,7 +350,7 @@
   overflow: hidden;
   min-height: 0;
 
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(v.$color-white, 0.1);
   background: #1d2127;
   box-shadow:
     v.$box-shadow-default,
@@ -363,7 +373,7 @@
   flex-direction: column;
   min-height: 0;
   border-radius: 0;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(v.$color-white, 0.1);
   background: #1d2127;
   box-shadow:
     v.$box-shadow-default,
@@ -488,11 +498,11 @@
   padding: v.$space-xs v.$space-md;
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.08),
-    rgba(255, 255, 255, 0.04)
+    rgba(v.$color-white, 0.08),
+    rgba(v.$color-white, 0.04)
   );
   color: v.$text-secondary;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(v.$color-white, 0.15);
   backdrop-filter: blur(12px);
   transition: all v.$transition-duration v.$ease-desktop-standard;
   position: relative;
@@ -515,8 +525,8 @@
   &:hover:not(:disabled) {
     background: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.12),
-      rgba(255, 255, 255, 0.08)
+      rgba(v.$color-white, 0.12),
+      rgba(v.$color-white, 0.08)
     );
     color: v.$text-color-primary;
     border-color: rgba(v.$secondary-color, 0.3);
@@ -558,7 +568,7 @@
   padding: 4px;
   border: 1px solid rgba(v.$secondary-color, 0.22);
   box-shadow:
-    0 10px 24px rgba(0, 0, 0, 0.22),
+    0 10px 24px rgba(v.$color-black, 0.22),
     inset 0 1px 0 rgba(v.$color-white, 0.04);
   min-height: 40px;
   width: 50%;
@@ -643,7 +653,7 @@
   letter-spacing: 0.08em;
   margin-bottom: 0;
   box-shadow:
-    0 20px 50px rgba(0, 0, 0, 0.3),
+    0 20px 50px rgba(v.$color-black, 0.3),
     inset 0 1px 0 rgba(v.$color-white, 0.05);
 }
 
@@ -707,7 +717,7 @@
   width: auto;
   max-width: 28rem;
   line-height: 1.45;
-  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4));
+  filter: drop-shadow(0 0 4px rgba(v.$color-white, 0.4));
 
   @media (max-width: 980px) {
     text-align: center;
@@ -726,7 +736,7 @@
   background: v.$surface-1;
   border: 1px solid rgba(v.$color-white, 0.08);
   box-shadow:
-    0 18px 36px rgba(0, 0, 0, 0.28),
+    0 18px 36px rgba(v.$color-black, 0.28),
     inset 0 1px 0 rgba(v.$color-white, 0.04);
   position: relative;
   z-index: 4;
@@ -1080,7 +1090,7 @@
   background: #1d2127;
   color: v.$text-primary;
   box-shadow:
-    0 14px 28px rgba(0, 0, 0, 0.34),
+    0 14px 28px rgba(v.$color-black, 0.34),
     inset 0 1px 0 rgba(v.$color-white, 0.04);
   z-index: 20;
 
@@ -1100,7 +1110,7 @@
   height: 14px;
   border-radius: 4px;
   display: inline-block;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 0 1px rgba(v.$color-white, 0.15);
 }
 .legendOffNight {
   background: var(--color-off-night);
@@ -1142,6 +1152,15 @@
   padding: 0 v.$space-sm v.$space-sm;
 }
 
+.masterMetricsUnavailable {
+  margin: 0 v.$space-sm v.$space-xs;
+  padding: v.$space-xs v.$space-sm;
+  border-left: 3px solid v.$schedule-yellow;
+  background: rgba(v.$schedule-yellow, 0.08);
+  color: rgba(v.$color-white, 0.88);
+  font-size: 0.72rem;
+}
+
 .masterTableScroll {
   overflow-x: auto;
   overflow-y: auto;
@@ -1157,7 +1176,7 @@
   overflow: hidden;
   background: rgba(27, 32, 38, 0.96);
   border-bottom: 1px solid rgba(v.$color-white, 0.18);
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.34);
+  box-shadow: 0 14px 28px rgba(v.$color-black, 0.34);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -1495,7 +1514,7 @@
   box-shadow:
     inset 3px 0 0 rgba(v.$secondary-color, 0.22),
     inset -3px 0 0 rgba(v.$secondary-color, 0.24),
-    10px 0 20px rgba(0, 0, 0, 0.18);
+    10px 0 20px rgba(v.$color-black, 0.18);
 }
 
 .masterTeamHeaderInner {
@@ -1675,6 +1694,27 @@
   border-left: 1px solid rgba(v.$color-blue-300, 0.18);
 }
 
+.masterFourWeekHeaderActions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22px;
+  min-height: 56px;
+}
+
+.masterFourWeekCollapseControl {
+  border: 0;
+  border-left: 1px solid rgba(v.$color-blue-300, 0.18);
+  background: transparent;
+  color: v.$color-blue-300;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    background: rgba(v.$primary-color, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(v.$primary-color, 0.26);
+  }
+}
+
 .masterFourWeekLead {
   border-left: 1px solid rgba(v.$color-blue-300, 0.24);
 }
@@ -1709,20 +1749,6 @@
   border-right: 1px solid rgba(v.$color-blue-300, 0.18);
 }
 
-.masterRowBest td {
-  background-image: linear-gradient(
-    rgba(v.$schedule-green, 0.08),
-    rgba(v.$schedule-green, 0.08)
-  );
-}
-
-.masterRowWorst td {
-  background-image: linear-gradient(
-    rgba(v.$schedule-red, 0.08),
-    rgba(v.$schedule-red, 0.08)
-  );
-}
-
 .masterRowBest td:first-child {
   box-shadow: inset 6px 0 0 rgba(v.$schedule-green, 0.95);
 }
@@ -1731,35 +1757,16 @@
   box-shadow: inset 6px 0 0 rgba(v.$schedule-red, 0.95);
 }
 
-.masterRowBest td.masterTeamCell {
-  box-shadow:
-    inset 6px 0 0 rgba(v.$schedule-green, 0.95),
-    inset -2px 0 0 rgba(v.$secondary-color, 0.2);
+.masterScoreBest {
+  background: rgba(v.$schedule-green, 0.17) !important;
+  color: #7cffcb !important;
+  box-shadow: inset 0 0 0 1px rgba(v.$schedule-green, 0.62);
 }
 
-.masterRowWorst td.masterTeamCell {
-  box-shadow:
-    inset 6px 0 0 rgba(v.$schedule-red, 0.95),
-    inset -2px 0 0 rgba(v.$secondary-color, 0.2);
-}
-
-.masterRowBest:hover td {
-  background-image: linear-gradient(
-    rgba(v.$schedule-green, 0.11),
-    rgba(v.$schedule-green, 0.11)
-  );
-}
-
-.masterRowWorst:hover td {
-  background-image: linear-gradient(
-    rgba(v.$schedule-red, 0.11),
-    rgba(v.$schedule-red, 0.11)
-  );
-}
-
-.masterRowBest td.masterSummaryScore,
-.masterRowWorst td.masterSummaryScore {
-  text-shadow: none;
+.masterScoreWorst {
+  background: rgba(v.$schedule-red, 0.17) !important;
+  color: #ff8f8f !important;
+  box-shadow: inset 0 0 0 1px rgba(v.$schedule-red, 0.62);
 }
 
 .masterTotalsRow td {
@@ -1806,13 +1813,13 @@
     // Fade from solid (left) to 50% transparency (right)
     -webkit-mask-image: linear-gradient(
       to right,
-      rgba(0, 0, 0, 1) 0%,
-      rgba(0, 0, 0, 0) 100%
+      rgba(v.$color-black, 1) 0%,
+      rgba(v.$color-black, 0) 100%
     );
     mask-image: linear-gradient(
       to right,
-      rgba(0, 0, 0, 1) 0%,
-      rgba(0, 0, 0, 0) 100%
+      rgba(v.$color-black, 1) 0%,
+      rgba(v.$color-black, 0) 100%
     );
     -webkit-mask-repeat: no-repeat;
     mask-repeat: no-repeat;
@@ -1983,7 +1990,7 @@
   justify-content: center;
   padding: 1px;
   line-height: 0;
-  border: 1px solid var(--ha-border-color, rgba(255, 255, 255, 0.35));
+  border: 1px solid var(--ha-border-color, rgba(v.$color-white, 0.35));
   background-color: var(--ha-bg-color, transparent);
   border-radius: v.$border-radius-sm;
   box-sizing: border-box;
@@ -2005,8 +2012,8 @@
   z-index: 1;
   pointer-events: none;
   border-radius: 4px;
-  border: 1px solid var(--ha-border-color, rgba(255, 255, 255, 0.18));
-  background-color: var(--ha-bg-color, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--ha-border-color, rgba(v.$color-white, 0.18));
+  background-color: var(--ha-bg-color, rgba(v.$color-white, 0.08));
   box-sizing: border-box;
 
   img {
@@ -2055,7 +2062,7 @@
     font-size: 0.55rem;
     letter-spacing: 0.06em; // reduce visual noise
     padding: 4px 2px !important;
-    background: rgba(0, 0, 0, 0.65);
+    background: rgba(v.$color-black, 0.65);
     backdrop-filter: blur(6px);
     position: relative;
   }
@@ -2083,7 +2090,7 @@
     padding-left: 6px !important;
     font-weight: 600;
     font-size: 0.65rem;
-    background: rgba(0, 0, 0, 0.7) !important;
+    background: rgba(v.$color-black, 0.7) !important;
   }
   .mobileCompactTable .cellInnerBorder {
     padding: 1px !important;
@@ -2094,7 +2101,7 @@
   }
   .mobileCompactTable td[data-intensity] {
     // soften intensity backgrounds slightly for less visual noise
-    background-color: color.adjust(rgba(255, 255, 255, 0.05), $alpha: -0.02);
+    background-color: color.adjust(rgba(v.$color-white, 0.05), $alpha: -0.02);
   }
   .mobileCompactTable .weekScoreCell {
     font-weight: 600;
@@ -2145,7 +2152,44 @@
 }
 
 .sortableHeader {
+  cursor: default;
+}
+
+.sortAction {
+  display: flex;
+  width: 100%;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
   cursor: pointer;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-shadow: inherit;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px rgba(v.$primary-color, 0.65);
+  }
+
+  @media (forced-colors: active) {
+    &:focus-visible {
+      outline: 2px solid CanvasText;
+      outline-offset: -2px;
+      box-shadow: none;
+    }
+  }
+}
+
+.teamSortAction {
+  flex: 1 1 auto;
+  justify-content: space-between;
 }
 
 .dateRangeOverlay {
@@ -2155,17 +2199,17 @@
   display: grid;
   place-items: center;
   padding: v.$space-lg;
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(v.$color-black, 0.72);
 }
 
 .dateRangeModal {
   width: min(520px, 92vw);
   border-radius: v.$border-radius-lg;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(v.$color-white, 0.12);
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.06),
-    rgba(255, 255, 255, 0.02)
+    rgba(v.$color-white, 0.06),
+    rgba(v.$color-white, 0.02)
   );
   box-shadow:
     v.$desktop-panel-shadow,
@@ -2194,7 +2238,7 @@
 .dateRangeClose {
   @include v.button-style;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(v.$color-white, 0.16);
   color: v.$text-primary;
   height: 34px;
   padding: 0 v.$space-sm;
@@ -2236,8 +2280,8 @@
   height: 40px;
   padding: 0 v.$space-sm;
   border-radius: v.$border-radius-md;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(v.$color-white, 0.14);
+  background: rgba(v.$color-black, 0.35);
   color: v.$text-primary;
   font-family: v.$font-family-numbers, v.$font-family-primary, sans-serif;
 
@@ -2263,14 +2307,14 @@
   justify-content: flex-end;
   gap: v.$space-sm;
   padding: v.$space-md v.$space-lg;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0, 0, 0, 0.25);
+  border-top: 1px solid rgba(v.$color-white, 0.08);
+  background: rgba(v.$color-black, 0.25);
 }
 
 .dateRangeCancel {
   @include v.button-style;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(v.$color-white, 0.16);
   color: v.$text-primary;
   height: 40px;
   padding: 0 v.$space-md;
@@ -2320,7 +2364,7 @@
   color: #0fc0f6;
   text-shadow:
     0 0 10px rgba(v.$secondary-color, 0.18),
-    0 1px 2px rgba(0, 0, 0, 0.45);
+    0 1px 2px rgba(v.$color-black, 0.45);
 
   @media (max-width: v.$breakpoint-mobile-max) {
     font-size: 0.66rem;
@@ -2355,8 +2399,8 @@
 //     border-radius: 6px;
 //     background: linear-gradient(
 //       180deg,
-//       rgba(255, 255, 255, 0.25),
-//       rgba(255, 255, 255, 0)
+//       rgba(v.$color-white, 0.25),
+//       rgba(v.$color-white, 0)
 //     );
 //     opacity: 0; // default off; only visible when specific modifier sets color
 //     transition:
@@ -2440,8 +2484,8 @@
   // Neutral preparatory background so accent variants layer consistently
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.045),
-    rgba(255, 255, 255, 0.02)
+    rgba(v.$color-white, 0.045),
+    rgba(v.$color-white, 0.02)
   );
   backdrop-filter: none;
 }
@@ -2450,18 +2494,18 @@
   background: linear-gradient(
     180deg,
     var(--color-off-night-bg),
-    rgba(0, 0, 0, 0)
+    rgba(v.$color-black, 0)
   );
 }
 
 // "medium-high" corresponds to mid density (7–8 games – medium-heavy day)
 .scheduleGrid thead th[data-intensity="medium-high"] {
-  background: linear-gradient(180deg, var(--color-mid-bg), rgba(0, 0, 0, 0));
+  background: linear-gradient(180deg, var(--color-mid-bg), rgba(v.$color-black, 0));
 }
 
 // "low" intensity used for heavy days (9+ games) in existing logic
 .scheduleGrid thead th[data-intensity="low"] {
-  background: linear-gradient(180deg, var(--color-heavy-bg), rgba(0, 0, 0, 0));
+  background: linear-gradient(180deg, var(--color-heavy-bg), rgba(v.$color-black, 0));
 }
 
 // Accessibility: if user prefers reduced motion, disable gradient transitions
@@ -2487,7 +2531,7 @@
   border-radius: 50%;
   cursor: help;
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.15),
+    0 0 0 1px rgba(v.$color-white, 0.15),
     0 0 4px -1px v.$primary-color;
   text-transform: none;
   letter-spacing: 0;
@@ -2500,7 +2544,7 @@
   &:focus-visible {
     background: color.adjust(v.$primary-color, $lightness: 8%);
     box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.25),
+      0 0 0 1px rgba(v.$color-white, 0.25),
       0 0 6px 0 v.$primary-color;
     transform: translateY(-1px);
   }
@@ -2535,12 +2579,12 @@
     font-size: 0.7rem;
     letter-spacing: 0.05em;
     padding: 6px 10px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(v.$color-white, 0.05);
+    border: 1px solid rgba(v.$color-white, 0.1);
     border-radius: 8px;
   }
   &[open] summary {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(v.$color-white, 0.08);
   }
   table {
     width: 100%;
@@ -2548,7 +2592,7 @@
 }
 
 .innerNoGamesTable tr td:first-child {
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(v.$color-black, 0.4);
 }
 
 // --- Mobile Specific Header Actions ---
@@ -2567,7 +2611,7 @@
     border-bottom: none; // Seamless join with table
     border-top-left-radius: v.$border-radius;
     border-top-right-radius: v.$border-radius;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(v.$color-black, 0.1);
 
     .titleRow {
       // Kept for backward-compat when nested, but main styles added below at root
@@ -2725,7 +2769,7 @@
       background: v.$background-dark;
       color: v.$text-color-secondary;
       font-size: 0.85rem;
-      border-top: 1px dashed rgba(255, 255, 255, 0.2);
+      border-top: 1px dashed rgba(v.$color-white, 0.2);
       margin-top: v.$space-xs;
       ul {
         margin: 0;
@@ -2757,7 +2801,7 @@
       rgba(v.$primary-color, 0.1)
     );
     border-radius: v.$border-radius-sm;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(v.$color-black, 0.1);
 
     // Inline layout: title on the left, tips button on the right
     .titleBar {
@@ -2820,7 +2864,7 @@
   thead th {
     position: sticky;
     top: 0;
-    background: rgba(0, 0, 0, 0.72); // flattened header surface
+    background: rgba(v.$color-black, 0.72); // flattened header surface
     z-index: 3;
   }
 
@@ -2828,7 +2872,7 @@
   td:first-child {
     position: sticky;
     left: 0;
-    background: rgba(0, 0, 0, 0.7); // unified dark surface
+    background: rgba(v.$color-black, 0.7); // unified dark surface
     z-index: 2;
   }
 
@@ -2842,7 +2886,7 @@
     ):not(.green):not(.yellow):not(.red):not(.scoreMetric):not(.offMetric):not(
       .gpMetric
     ) {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(v.$color-white, 0.02);
   }
 
   td,
@@ -2927,7 +2971,7 @@
     vertical-align: middle;
     box-shadow: v.$box-shadow-default;
     border-bottom: 2px solid v.$secondary-color;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 2px 4px rgba(v.$color-black, 0.5);
 
     @media (max-width: 480px) {
       height: 30px;
@@ -2979,7 +3023,7 @@
         transition: all 0.2s ease;
 
         &:hover {
-          background-color: rgba(255, 255, 255, 0.05);
+          background-color: rgba(v.$color-white, 0.05);
           color: v.$text-color-primary;
         }
       }
@@ -3046,7 +3090,7 @@
       );
       color: v.$primary-color;
       // Removed cell border in favor of continuous overlay line
-      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+      box-shadow: 2px 0 8px rgba(v.$color-black, 0.1);
       border-right: 2px solid v.$secondary-color; // Match header bottom border color for corner
 
       @media (max-width: 480px) {
@@ -3093,7 +3137,7 @@
       width: 100%;
       background-color: transparent;
       padding: v.$space-xxs v.$space-xxs;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(v.$color-white, 0.1);
 
       @media (max-width: 480px) {
         flex-direction: row;
@@ -3102,7 +3146,7 @@
         height: 100%;
         width: 100%;
         background-color: transparent;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid rgba(v.$color-white, 0.1);
       }
     }
   } // End thead
@@ -3156,7 +3200,7 @@
       align-items: center;
       justify-content: center;
       height: 100%;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(v.$color-white, 0.1);
       height: 14px;
     }
   }
@@ -3180,7 +3224,7 @@
       text-align: center;
       font-weight: 600;
       font-size: 1em;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(v.$color-white, 0.1);
       min-height: 16px;
       margin-right: v.$space-xs;
     }
@@ -3238,8 +3282,8 @@
       &:nth-child(even) {
         background: linear-gradient(
           90deg,
-          rgba(255, 255, 255, 0.03),
-          rgba(255, 255, 255, 0.01)
+          rgba(v.$color-white, 0.03),
+          rgba(v.$color-white, 0.01)
         );
       }
 
@@ -3251,8 +3295,8 @@
       &:last-child {
         background: linear-gradient(
           90deg,
-          rgba(255, 255, 255, 0.03),
-          rgba(255, 255, 255, 0.01)
+          rgba(v.$color-white, 0.03),
+          rgba(v.$color-white, 0.01)
         );
       }
 
@@ -3291,12 +3335,12 @@
       position: relative;
 
       &:nth-child(9) {
-        background-color: rgba(255, 255, 255, 0.02);
+        background-color: rgba(v.$color-white, 0.02);
         border-left: 2px solid v.$primary-color;
       }
       &:nth-child(10),
       &:nth-child(11) {
-        background-color: rgba(255, 255, 255, 0.02);
+        background-color: rgba(v.$color-white, 0.02);
       }
 
       &:nth-child(8) {
@@ -3338,7 +3382,7 @@
           box-shadow 0.15s v.$ease-desktop-emphasized;
 
         &:hover {
-          box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+          box-shadow: 0 0 0 1px rgba(v.$color-white, 0.12) inset;
         }
 
         @media (max-width: 480px) {
@@ -3378,7 +3422,7 @@
         0,
         0.7
       ); // Solid surface to avoid scroll "white flashes"
-      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+      box-shadow: 2px 0 8px rgba(v.$color-black, 0.1);
     }
 
     @media (max-width: 480px) {
@@ -3394,8 +3438,8 @@
     // Nested under .scheduleGrid
     background: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.08),
-      rgba(255, 255, 255, 0.04)
+      rgba(v.$color-white, 0.08),
+      rgba(v.$color-white, 0.04)
     );
     border-radius: 0;
     height: 30px;
@@ -3411,7 +3455,7 @@
     td {
       // Nested under .totalGamesPerDayRow
       padding: 0;
-      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      border-right: 1px solid rgba(v.$color-white, 0.08);
       border-top: 2px solid v.$primary-color;
       position: relative;
       vertical-align: middle;
@@ -3458,7 +3502,7 @@
         color.adjust(v.$background-dark, $lightness: 3%)
       ) !important; // Override intensity
       border-top: 2px solid v.$primary-color;
-      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+      box-shadow: 2px 0 8px rgba(v.$color-black, 0.1);
 
       // Text spans (nested are fine)
       .desktopText {
@@ -3496,7 +3540,7 @@
       line-height: 1.05;
       box-sizing: border-box;
       position: relative; // allow subtle column separators
-      border-left: 1px solid rgba(255, 255, 255, 0.181);
+      border-left: 1px solid rgba(v.$color-white, 0.181);
     }
 
     th,
@@ -3527,7 +3571,7 @@
 
     // Subtle separation for sticky header/footer on mobile
     thead {
-      box-shadow: 0 2px 0 rgba(255, 255, 255, 0.06);
+      box-shadow: 0 2px 0 rgba(v.$color-white, 0.06);
       backface-visibility: hidden;
       will-change: transform;
 
@@ -3562,7 +3606,7 @@
     //   bottom: 6px;
     //   left: 0;
     //   width: 1px;
-    //   background: rgba(255, 255, 255, 0.06);
+    //   background: rgba(v.$color-white, 0.06);
     //   pointer-events: none;
     // }
   }
@@ -3636,14 +3680,14 @@
     th:nth-child(10),
     td:nth-child(9),
     td:nth-child(10) {
-      border-right: 1px solid rgba(255, 255, 255, 0.08);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-right: 1px solid rgba(v.$color-white, 0.08);
+      border-bottom: 1px solid rgba(v.$color-white, 0.08);
     }
 
     // Total Row 320px adjustments
     .totalGamesPerDayRow {
       // Nest under .scheduleGrid
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(v.$color-white, 0.08);
       td {
         // Nest under .totalGamesPerDayRow
         // Apply intensity colors
@@ -3730,7 +3774,7 @@
     position: relative;
     z-index: 1;
     font-weight: 700;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8); // Ensure legibility
+    text-shadow: 0 1px 2px rgba(v.$color-black, 0.8); // Ensure legibility
   }
 
   // Adjust the first column (Team Name)
@@ -3754,7 +3798,7 @@
   padding-right: v.$space-md;
   position: relative;
   overflow: hidden; // allow logo to overflow but clip to the cell shape
-  background: rgba(0, 0, 0, 0.64); // flattened from prior gradient
+  background: rgba(v.$color-black, 0.64); // flattened from prior gradient
 
   .teamSurfaceLink {
     display: flex;
@@ -3938,15 +3982,15 @@
   .fourWeekGridContainerAll {
     border-radius: v.$border-radius-lg;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(0, 0, 0, 0.16);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(v.$color-white, 0.08);
+    background: rgba(v.$color-black, 0.16);
+    box-shadow: 0 4px 20px rgba(v.$color-black, 0.08);
   }
 
   // The schedule grid already has its own dense internal styling; keep its outer
   // framing lighter than the side panels.
   .scheduleGridContainer {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 20px rgba(v.$color-black, 0.08);
   }
 
   .opponentMetricsContainer {
@@ -4040,7 +4084,7 @@
     border-radius: v.$border-radius-md;
     padding: 4px 4px !important;
     color: v.$text-secondary;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(v.$color-white, 0.1);
     background: linear-gradient(
       145deg,
       rgba(v.$secondary-color, 0.1),
@@ -4050,7 +4094,7 @@
     &:hover:not(:disabled) {
       background-color: rgba(v.$secondary-color, 0.2);
       color: v.$primary-color;
-      border-color: rgba(255, 255, 255, 0.2);
+      border-color: rgba(v.$color-white, 0.2);
       transform: translateY(-1px);
     }
     &:focus-visible {
@@ -4164,7 +4208,7 @@
     pointer-events: none;
     // Dog-ear triangle base
     clip-path: polygon(100% 0, 0 0, 100% 100%);
-    background: var(--corner-badge-bg, rgba(255, 255, 255, 0.15));
+    background: var(--corner-badge-bg, rgba(v.$color-white, 0.15));
     mix-blend-mode: normal;
   }
   .homeBadge {
@@ -4183,7 +4227,7 @@
   .legendOverlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(v.$color-black, 0.5);
     z-index: 1000;
     display: flex;
     align-items: flex-end;
@@ -4199,7 +4243,7 @@
     border: 2px solid v.$background-light;
     outline: 8px solid v.$background-dark;
     padding: v.$space-md;
-    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 -8px 24px rgba(v.$color-black, 0.4);
     transform: translateY(100%);
     animation: slideUp 220ms ease-out forwards;
   }
@@ -4341,7 +4385,7 @@
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(255, 255, 255, 0.1),
+      rgba(v.$color-white, 0.1),
       transparent
     );
     background-size: 200px 100%;
@@ -4369,16 +4413,16 @@
 
 // --- Modern Glassmorphism Utilities ---
 .glass {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(v.$color-white, 0.1);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(v.$color-white, 0.2);
   box-shadow: v.$box-shadow-default;
 }
 
 .glass-dark {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(v.$color-black, 0.2);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(v.$color-white, 0.1);
   box-shadow: v.$box-shadow-default;
 }
 
@@ -4401,7 +4445,7 @@
     width: 60px;
     background: v.$primary-color;
     color: v.$color-white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(v.$color-white, 0.2);
     padding-left: 20px;
     padding-right: 20px;
     border-radius: v.$border-radius-md;
@@ -4479,7 +4523,7 @@
     }
     &::before {
       left: 0;
-      background: linear-gradient(90deg, rgba(0, 0, 0, 0.24), rgba(0, 0, 0, 0));
+      background: linear-gradient(90deg, rgba(v.$color-black, 0.24), rgba(v.$color-black, 0));
     }
     &::after {
       float: right; // ensure right edge rendering
@@ -4487,8 +4531,8 @@
       right: 0;
       background: linear-gradient(
         -90deg,
-        rgba(0, 0, 0, 0.24),
-        rgba(0, 0, 0, 0)
+        rgba(v.$color-black, 0.24),
+        rgba(v.$color-black, 0)
       );
     }
   }

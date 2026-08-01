@@ -8,6 +8,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { teamsInfo } from "lib/teamsInfo";
 import type { AggregatedMatrixSeasonData } from "./fetchAggregatedData";
+import type { Mode } from "./index";
 import type { PlayerData } from "./utilities";
 import {
   mapAggregatedPlayers,
@@ -160,6 +161,49 @@ function rawResult(id: number) {
   };
 }
 
+function groupingPlayer(id: number, playerType: "F" | "D" | "G"): PlayerData {
+  const position =
+    playerType === "F"
+      ? id % 3 === 0
+        ? "RW"
+        : id % 3 === 1
+          ? "LW"
+          : "C"
+      : playerType;
+  return {
+    ...rawPlayer(id),
+    position,
+    displayPosition: position,
+    playerType,
+    timesOnLine: playerType === "F" ? { "1": 1_000 - id } : {},
+    timesOnPair: playerType === "D" ? { "1": 1_000 - id } : {},
+  };
+}
+
+function rawGroupingResult() {
+  const roster = [
+    ...Array.from({ length: 15 }, (_, index) => groupingPlayer(index + 1, "F")),
+    ...Array.from({ length: 8 }, (_, index) =>
+      groupingPlayer(101 + index, "D"),
+    ),
+    groupingPlayer(201, "G"),
+  ];
+  return {
+    toiData: [],
+    roster,
+    team: { id: teamsInfo.EDM.id, name: teamsInfo.EDM.name },
+    homeAwayInfo: [],
+    playerATOI: Object.fromEntries(
+      roster.map((player) => [player.id, player.ATOI]),
+    ),
+    coverage: {
+      inputRows: roster.length,
+      rosterRows: roster.length,
+      skippedRows: 0,
+    },
+  };
+}
+
 describe("mapAggregatedPlayers", () => {
   it("projects the typed regular-season bucket without coercion", () => {
     const [player] = mapAggregatedPlayers(
@@ -258,6 +302,37 @@ describe("useDateRangeMatrixData aggregated season selection", () => {
       expect(result.current.roster[0]?.totalTOI).toBe(1200);
       expect(result.current.roster[0]?.GP).toBe(2);
     });
+  });
+});
+
+describe("useDateRangeMatrixData line and pair ownership", () => {
+  it("publishes canonical groups for all modes without refetching the roster", async () => {
+    getTOIDataForGamesMock.mockResolvedValueOnce(rawGroupingResult());
+
+    const { result, rerender } = renderHook(
+      ({ mode }: { mode: Mode }) =>
+        useDateRangeMatrixData({
+          teamAbbreviation: "EDM",
+          startDate: "2025-04-01",
+          endDate: "2025-05-01",
+          mode,
+          source: "raw",
+        }),
+      { initialProps: { mode: "total-toi" as Mode } },
+    );
+
+    await waitFor(() => expect(result.current.status).toBe("success"));
+    expect(result.current.lines).toHaveLength(4);
+    expect(result.current.pairs).toHaveLength(3);
+
+    rerender({ mode: "line-combination" });
+    expect(result.current.lines).toHaveLength(4);
+    expect(result.current.pairs).toHaveLength(3);
+
+    rerender({ mode: "full-roster" });
+    expect(result.current.lines).toHaveLength(5);
+    expect(result.current.pairs).toHaveLength(4);
+    expect(getTOIDataForGamesMock).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -449,7 +524,39 @@ describe("useDateRangeMatrixData request state", () => {
       "2025-04-01",
       "2025-05-01",
       "playoffs",
+      undefined,
     );
+  });
+
+  it("propagates aggregate skipped-game coverage without remapping it away", async () => {
+    const { result } = renderHook(() =>
+      useDateRangeMatrixData({
+        teamAbbreviation: "EDM",
+        startDate: "2026-03-01",
+        endDate: "2026-03-31",
+        mode: "total-toi",
+        source: "aggregated",
+        seasonType: "regularSeason",
+        aggregatedData: aggregatedPlayers,
+        aggregateStatus: "partial",
+        aggregateCoverage: {
+          inputRows: 4,
+          rosterRows: 1,
+          skippedRows: 3,
+        },
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+      expect(result.current.status).toBe("partial");
+      expect(result.current.coverage).toEqual({
+        inputRows: 4,
+        rosterRows: 1,
+        skippedRows: 3,
+      });
+      expect(result.current.roster).toHaveLength(1);
+    });
   });
 
   it("uses a canonical team identity for lowercase raw input metadata", async () => {
@@ -476,6 +583,7 @@ describe("useDateRangeMatrixData request state", () => {
       "2025-04-01",
       "2025-05-01",
       "regularSeason",
+      undefined,
     );
   });
 });

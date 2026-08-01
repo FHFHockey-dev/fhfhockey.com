@@ -19,8 +19,8 @@ Design Notes:
   * Provisional assignment: if no snapshot available we set row['quintile']=None and row['provisional_tier']=True
 
 Persistence (DB):
-  * Optional helper stubs: insert_distribution_snapshot, fetch_latest_distribution_snapshot expected in db_adapter.
-  * This module remains functional without DB (pure in-memory calculation) to ease testing.
+  * Production snapshot persistence belongs to the canonical TypeScript/Supabase pipeline.
+  * This module remains pure and in-memory for offline comparison and testing.
 """
 from __future__ import annotations
 

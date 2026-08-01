@@ -137,6 +137,8 @@ const GoalieTable: FC<Props> = ({
     if (!sortConfig || sortConfig.key !== key) return ""; // Check if sortConfig exists
     return sortConfig.direction === "ascending" ? " ▲" : " ▼";
   };
+  const getAriaSort = (key: keyof DisplayGoalie) =>
+    sortConfig?.key === key ? sortConfig.direction : undefined;
 
   return (
     <>
@@ -191,36 +193,70 @@ const GoalieTable: FC<Props> = ({
           {/* Header Row */}
           <tr>
             <th
-              onClick={() =>
-                requestSort(isSingleWeek ? "gameDate" : "goalieFullName")
-              }
+              className={styles.sortableHeader}
+              aria-sort={getAriaSort(
+                isSingleWeek ? "gameDate" : "goalieFullName"
+              )}
             >
-              {isSingleWeek ? "Date" : "Name"}
-              {getSortIndicator(isSingleWeek ? "gameDate" : "goalieFullName")}
+              <button
+                className={styles.sortButton}
+                type="button"
+                onClick={() =>
+                  requestSort(isSingleWeek ? "gameDate" : "goalieFullName")
+                }
+              >
+                {isSingleWeek ? "Date" : "Name"}
+                {getSortIndicator(isSingleWeek ? "gameDate" : "goalieFullName")}
+              </button>
             </th>
             <th
-              onClick={() =>
-                requestSort(isSingleWeek ? "goalieFullName" : "team")
-              }
+              className={styles.sortableHeader}
+              aria-sort={getAriaSort(
+                isSingleWeek ? "goalieFullName" : "team"
+              )}
             >
-              {isSingleWeek ? "Goalie" : "Team"}
-              {getSortIndicator(isSingleWeek ? "goalieFullName" : "team")}
+              <button
+                className={styles.sortButton}
+                type="button"
+                onClick={() =>
+                  requestSort(isSingleWeek ? "goalieFullName" : "team")
+                }
+              >
+                {isSingleWeek ? "Goalie" : "Team"}
+                {getSortIndicator(isSingleWeek ? "goalieFullName" : "team")}
+              </button>
             </th>
             {statColumns.map((stat) => (
               // Use value for key, label for display
               <th
                 key={`th-${stat.value}`}
-                onClick={() => requestSort(stat.value)}
+                className={styles.sortableHeader}
+                aria-sort={getAriaSort(stat.value)}
               >
-                {stat.label}
-                {getSortIndicator(stat.value)}
+                <button
+                  className={styles.sortButton}
+                  type="button"
+                  onClick={() => requestSort(stat.value)}
+                >
+                  {stat.label}
+                  {getSortIndicator(stat.value)}
+                </button>
               </th>
             ))}
             {/* Conditionally show Percentage/Ranking headers (add sorting if needed) */}
             {goalies[0]?.percentage !== undefined && (
-              <th onClick={() => requestSort("percentage")}>
-                % &gt; AVG
-                {getSortIndicator("percentage")}
+              <th
+                className={styles.sortableHeader}
+                aria-sort={getAriaSort("percentage")}
+              >
+                <button
+                  className={styles.sortButton}
+                  type="button"
+                  onClick={() => requestSort("percentage")}
+                >
+                  % &gt; AVG
+                  {getSortIndicator("percentage")}
+                </button>
               </th>
             )}
             {goalies[0]?.ranking !== undefined && <th>Rank</th>}

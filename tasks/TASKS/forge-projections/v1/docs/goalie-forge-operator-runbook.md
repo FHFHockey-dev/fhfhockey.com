@@ -139,9 +139,9 @@ Use this checklist after every manual run/backfill chunk.
 
 ## Skater Model Rollout and Rollback
 
-- Current version: `skater-role-scenario-v1`.
+- Candidate version: `skater-role-scenario-v1`; rollback version: `skater-baseline-v1`.
 - Safety flag: `FORGE_SKATER_MODEL_MODE=candidate|baseline` (server-only environment name; no secret value belongs in logs or docs).
-- Default remains `candidate` to preserve current repository behavior. `baseline` is the emergency rollback mode and returns the scenario-free current-rate stat line while preserving the same storage/API schema.
+- Missing, blank, or unrecognized flag values fail closed to `baseline`, which returns the scenario-free current-rate stat line and uncertainty while preserving the same storage/API schema. Candidate behavior requires the exact explicit `candidate` value.
 - Changing the deployed flag or promoting a new default is a production checkpoint. Do not do it from a backfill or validation request.
 
 Promotion requires all of the following:
@@ -161,5 +161,6 @@ Rollback to `baseline` if the active 14-day MAE/RMSE regresses, interval coverag
 - Keep a deployed candidate unchanged while evidence accumulates. A code-complete shadow report does not count as 14 elapsed observation days.
 
 ## Related Docs
-- `tasks/tasks-goalie-forge.md`
-- `tasks/goalie-forge.md`
+- `tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md`
+- `tasks/TASKS/forge-projections/v1/goalie-forge.md`
+- `tasks/TASKS/forge-projections/v1/prd/goalie-forge-implementation-plan.md`

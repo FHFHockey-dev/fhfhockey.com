@@ -29,50 +29,55 @@
 ### Notes
 
 - Unit tests should typically be placed alongside the code files they are testing (e.g., `MyComponent.tsx` and `MyComponent.test.tsx` in the same directory).
-- Use `npx jest [optional/path/to/test/file]` to run tests. Running without a path executes all tests found by the Jest configuration.
+- Use `npm test -- [optional/path/to/test/file]` to run the repository-owned Vitest suite once.
 
 ## Tasks
 
-- [ ] 1.0 Define combined dashboard information architecture and data contracts
+- [x] 1.0 Define combined dashboard information architecture and data contracts
   - [x] 1.1 Confirm final route name and whether the page is SSR, CSR, or hybrid.
   - [x] 1.2 Define canonical data shapes for team power, projections, and trends.
   - [x] 1.3 Decide whether legacy `player_projections` stays as fallback or is removed.
   - [x] 1.4 Align date semantics across sources (today vs latest available vs yesterday).
   - [x] 1.5 Document required filters (date, team, search, position, projection source).
 
-- [ ] 2.0 Build unified data loading layer and cache strategy
+- [x] 2.0 Build unified data loading layer and cache strategy
   - [x] 2.1 Create shared fetch utilities/hooks for CTPI, team power, SOS, skater trends, FORGE projections, and start-chart schedule data.
   - [x] 2.2 Add caching/memoization to avoid duplicate API calls across sections.
   - [x] 2.3 Normalize team metadata via `teamsInfo` (abbr/name/colors) in one place.
   - [x] 2.4 Add loading/error boundary handling per section with consistent empty states.
 
-- [ ] 3.0 Consolidate team power views (CTPI + power ratings + SOS)
+- [x] 3.0 Consolidate team power views (CTPI + power ratings + SOS)
   - [x] 3.1 Merge CTPI ladder and power ratings table into a single canonical table.
   - [x] 3.2 Integrate SOS metrics into the combined team table and cards.
   - [x] 3.3 Reuse CTPI sparkline + hot/cold streaks as sidebar components.
   - [x] 3.4 Expose component ratings (finishing/goalie/danger/special/discipline) in expanded rows or tooltips.
 
-- [ ] 4.0 Consolidate player/goalie projections and matchup context
+- [x] 4.0 Consolidate player/goalie projections and matchup context
   - [x] 4.1 Build unified projections section using FORGE as primary source.
   - [x] 4.2 Wire goalie starts and win/shutout probabilities into projections view.
   - [x] 4.3 Add games remaining + opponent context to projection rows.
   - [x] 4.4 Add toggle for legacy projections if retained (side-by-side or switch).
   - [x] 4.5 Ensure uncertainty bands render consistently across skaters/goalies.
 
-- [ ] 5.0 Consolidate trend charts (team + skater) and search
+- [x] 5.0 Consolidate trend charts (team + skater) and search
   - [x] 5.1 Embed team trend charts with category tabs and brush controls.
   - [x] 5.2 Embed skater trend charts with position + window controls.
   - [x] 5.3 Reuse player search/autocomplete and link to player trend pages.
   - [x] 5.4 Standardize chart palettes and legends across sections.
 
-- [ ] 6.0 Create the new dashboard page and routing, and deprecate legacy pages
+- [x] 6.0 Create the new dashboard page and routing, and deprecate legacy pages. Evidence (2026-07-29): the combined `/trends` dashboard, shared navigation/hydration, and legacy cross-links are complete. Specialized `/FORGE`, `/start-chart`, `/underlying-stats`, and `/trends` routes remain active, while `/forge/dashboard` remains the explicitly labeled one-release rollback route under separate Wave-C review; no protected route is removed by this closure.
   - [x] 6.1 Implement the new combined page layout and top-level navigation.
   - [x] 6.2 Add SSR/CSR data hydration logic based on chosen strategy.
   - [x] 6.3 Add redirects or in-app links from legacy pages to the new dashboard.
-  - [ ] 6.4 Audit for dead code and remove unused components once migration is complete.
+  - [x] 6.4 Audit for dead code and remove unused components once migration is complete. Evidence (2026-07-29): a bounded production import graph found every remaining `lib/dashboard` module and live `forge-dashboard` component consumed. `TopMoversCard.tsx` alone had zero inbound runtime imports, duplicated active Team Power/Hot-Cold behavior, and wrapped the same `TopMovers` visualization that `/trends` imports directly, so only that obsolete wrapper was removed.
 
-- [ ] 7.0 Validation, performance tuning, and cron dependency check
-  - [ ] 7.1 Verify API response sizes and add pagination/limits where needed.
-- [ ] 7.2 Load-test with empty data and off-season scenarios.
-- [ ] 7.3 Validate cron table freshness against `tasks/TASKS/cron-operations/cron-schedule.md`.
-- [ ] 7.4 Confirm median dashboard load time under the target thresholds.
+- [x] 7.0 Validation, performance tuning, and cron dependency check
+  - [x] 7.1 Verify API response sizes and add pagination/limits where needed. A value-free Production probe measured all nine budgeted dashboard routes; eight passed and `skater-power?limit=60` exceeded its 280,000-byte budget at 383,242 bytes. The route now accepts bounded `seriesGames` history while retaining full-history rankings; actual consumers request 40 chart points, 10 Hot/Cold points, or one movers point. The regression uses a full 60-player/82-game input, verifies the existing 50-player cap plus one-point caller contract, and keeps serialized output within 280,000 bytes. NEW 8.0 retains deployment/Production remeasurement.
+- [x] 7.2 Load-test with empty data and off-season scenarios. The complete 26-test dashboard page suite covers empty endpoint payloads, blocked/degraded weekly and stale fallback states, independent module states, and usable shell rendering; the production remediation closeout separately records the truthful 52,153-game/zero-eligible-write offseason no-op.
+- [x] 7.3 Validate cron table freshness against `tasks/TASKS/cron-operations/cron-schedule.md`. The reconciled production chain remains WGO 09:35 → incremental NST 09:55 → CTPI 10:10 → team power 10:15, full NST 10:55, and player trends 12:00; bounded production probes verified 32 CTPI teams, 32 distinct non-zero team trends, and explicit latest-eligible offseason blocking.
+- [x] 7.4 Confirm median dashboard load time under the target thresholds. The preserved 10-run warm-cache artifact records 1,142.85 ms median dashboard-ready time against the 2,500 ms target, with 400.3 ms median load-event time; current 7-file/58-test validation and full TypeScript pass.
+
+## NEW Tasks
+
+- [x] NEW 8.0 **P1 deployed skater-trend response-budget gate:** exact commit `b4aeea8f9af6229aa64f75e4b311b1218a5afb4c`, containing the bounded-series repair, is READY/Production as `dpl_4q8GM1wqTbHR3NbnxRxAakdLEvJr`, promoted from authorized artifact `dpl_8PPWPDQoaaUp3yT4tKr3UaqBVKkW`. Value-free Production GETs returned 200 and passed all nine declared byte budgets: team ratings 17,842/120,000; FORGE players 2,375/350,000; FORGE goalies 39,999/220,000; Start Chart 1,665/300,000; team CTPI 23,018/180,000; largest-caller skater power 85,963/280,000; ownership trends 326/350,000; ownership snapshots 29/220,000; Sustainability trends 6,889/140,000. The bounded 15-minute relevant runtime-error query was empty (closed 2026-07-23).
+- [x] NEW 9.0 **P3 stale Jest task instruction:** the source now names the repository-owned Vitest command; the current shared Trends/dashboard/quarantine cohort passes eight files/27 tests (verified 2026-07-29).

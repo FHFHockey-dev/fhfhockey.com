@@ -114,19 +114,31 @@ const GoalieLeaderboard: FC<Props> = ({
                 <th
                   key={label}
                   className={isSortable ? styles.sortableHeader : ""}
-                  onClick={isSortable ? () => requestSort(sortKey) : undefined}
+                  aria-sort={
+                    isSortable && sortConfig?.key === sortKey
+                      ? sortConfig.direction
+                      : undefined
+                  }
                   style={{ width: width }}
                 >
-                  {label}
-                  {infoTitle && (
-                    <span className={styles.infoIcon} title={infoTitle}>
-                      &#9432;
-                    </span>
-                  )}
-                  {isSortable && (
-                    <span className={styles.sortIndicator}>
-                      {getSortIndicator(sortKey)}
-                    </span>
+                  {isSortable ? (
+                    <button
+                      className={styles.sortButton}
+                      type="button"
+                      onClick={() => requestSort(sortKey)}
+                    >
+                      {label}
+                      {infoTitle && (
+                        <span className={styles.infoIcon} title={infoTitle}>
+                          &#9432;
+                        </span>
+                      )}
+                      <span className={styles.sortIndicator}>
+                        {getSortIndicator(sortKey)}
+                      </span>
+                    </button>
+                  ) : (
+                    label
                   )}
                 </th>
               );

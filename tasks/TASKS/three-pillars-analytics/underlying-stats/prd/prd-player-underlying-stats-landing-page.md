@@ -2,17 +2,19 @@
 
 ## Document Status
 
-- Status: Draft, curated for task-list generation
+- Status: Implemented; dynamic C-US audit closed 2026-07-29
 - Owner: TBD
-- Primary audience: junior developer implementing the feature and AI assistant generating the task list
-- Intended follow-up artifact: `tasks/tasks-prd-player-underlying-stats-landing-page.md`
+- Primary audience: maintainers of the shared player/goalie underlying-stats surface
+- Canonical task list: `tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-player-underlying-stats-landing-page.md`
 
 ## Introduction and Overview
 
 Build a production-ready player underlying-stats experience with:
 
-- a landing page at `pages/underlying-stats/playerStats`
-- a player detail page at `pages/underlying-stats/playerStats/{playerId}`
+- a landing page at `web/pages/underlying-stats/playerStats`
+- a player detail page at `web/pages/underlying-stats/playerStats/{playerId}`
+
+The original table-only scope was later extended with an inline per-game expanded-row chart. That mounted enhancement shares the canonical filter/query contract and does not replace the table-first product architecture.
 
 The landing page is the comparison surface. It must let users compare skaters and goalies across multiple stat families, season scopes, strength states, score states, and rolling windows from one master table.
 
@@ -515,3 +517,7 @@ The goal of this feature is to create a canonical underlying-stats player experi
 1. Which canonical source or view should back each metric family on day one for the landing page versus the player detail page?
 2. Should the first implementation ship with a single shared backend query surface for landing and detail pages, or two reader-specific query surfaces that share a lower-level aggregation layer?
 3. Does the current data layer already support every requested goalie distance-bucket metric in canonical form, or will some require documented interim derivation?
+
+## Dynamic Audit Addendum — 2026-07-29
+
+The implementation resolves the original questions through one shared native aggregation layer, persisted per-game summary fast path, explicit derived goalie fields, and documented fail-closed unsupported filters. The C-US audit also closed public 500-detail disclosure and multi-season identity lookup truncation/request overflow. The complete scoped landing/detail/filter/table/query/server/API cohort passes 13 files/139 tests plus TypeScript, scoped lint, and diff integrity.

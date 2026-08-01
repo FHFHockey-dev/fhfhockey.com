@@ -661,3 +661,7 @@ The pass-2 effort must leave behind both:
 - an implementation backlog in [rpm-audit-action-items-pass-2.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md)
 
 Once this pass-2 PRD and audit work are complete, the next implementation phase can resume from the highest-priority unresolved remediation step with the audit notes, action-items backlog, runbook, and `trendsDebug.tsx` validation console acting as the authoritative execution surface.
+
+## 27. Production Authorization Correction
+
+The rolling recompute route is a writer even when invoked through GET. `withCronJobAudit` provides durable run evidence but is not an authorization boundary. The supported contract therefore requires fail-closed administrator or exact cron-secret authorization before request parsing or recompute work. The active 08:15 UTC pg_cron caller retains its schedule and Vault-backed `cron_secret` Authorization header.

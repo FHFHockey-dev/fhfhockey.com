@@ -3,6 +3,28 @@ import { describe, expect, it } from "vitest";
 import { buildPlayerTrendRecords } from "./playerTrendCalculator";
 
 describe("buildPlayerTrendRecords incremental emission", () => {
+  it("uses ixG per unblocked attempt for expected shooting percentage", () => {
+    const records = buildPlayerTrendRecords([
+      {
+        player_id: 8470001,
+        date: "2026-03-10",
+        season_id: 20252026,
+        position_code: "C",
+        nst_ixg: 2.5,
+        nst_iff: 10,
+        shots: 4,
+      },
+    ] as any);
+
+    expect(
+      records.find((record) => record.metric_key === "expected_shooting_pct"),
+    ).toMatchObject({
+      raw_value: 25,
+      average_value: 25,
+      sample_size: 1,
+    });
+  });
+
   it("uses full history for accumulators while emitting only the repair window", () => {
     const rows = [
       {

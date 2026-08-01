@@ -62,3 +62,5 @@
   - [x] 6.1 Review whether `Pace` should remain a full peer of `Offense` and `Defense` in the `Power Score` formula or be reduced to a smaller modifier or context dimension.
   - [x] 6.2 Review whether PP and PK should continue to influence the rankings through discrete tier bonuses or move to a smoother continuous percentile-based bonus.
   - [x] 6.3 Document the recommendation, the expected UX impact, and any migration work needed before changing the live score formula.
+
+- [x] NEW 7.0 **P2 narrative-history PostgREST truncation:** paginate the complete 120-day `team_power_ratings_daily` narrative cohort with stable date/team ordering so the prior-10 explanation baseline cannot silently omit teams after the first 1,000 rows. Evidence: the shared pagination helper now reads every page, the focused >1,000-row regression proves the exact ranges and ordering, and the five-file landing cohort passes 19/19 (discovered and closed 2026-07-29).

@@ -2,10 +2,10 @@
 
 ## Document Status
 
-- Status: Draft, curated for task-list generation
+- Status: Implemented; current-state audit reconciled 2026-07-29
 - Owner: TBD
 - Primary audience: junior developer implementing the feature and AI assistant generating the task list
-- Intended follow-up artifact: `tasks/tasks-prd-variance-section.md`
+- Canonical task artifact: `tasks/TASKS/variance/v1/tasks-prd-variance-section.md`
 
 ## Relevant Files
 
@@ -24,6 +24,14 @@
 ## Current-State Audit
 
 This is not a greenfield page.
+
+Current authority overlay (2026-07-29):
+
+- `/variance/goalies` is canonical; `/goalies` retains redirect compatibility.
+- `/variance/skaters` is now the complete configurable skater leaderboard, not the original
+  scaffold.
+- Goalie leaderboard, advanced-metrics, and weekly/range sort headers use native buttons with
+  `aria-sort`; their existing sort keys and calculations are unchanged.
 
 The live goalie experience currently runs from `web/pages/goalies.js`, which:
 

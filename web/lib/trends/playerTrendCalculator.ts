@@ -284,14 +284,18 @@ export const SKATER_TREND_METRICS: SkaterTrendMetricDefinition[] = [
     key: "expected_shooting_pct",
     label: "Expected Shooting %",
     metricType: "skater",
-    sources: ["shots", "nst_ixg"],
+    sources: ["nst_ixg", "nst_iff"],
     accessor: (row) => {
-      const shots = safeNumber(row.shots);
       const ixg = safeNumber(row.nst_ixg);
-      if (shots === null || ixg === null || ixg === 0) {
+      const unblockedAttempts = safeNumber(row.nst_iff);
+      if (
+        ixg === null ||
+        unblockedAttempts === null ||
+        unblockedAttempts === 0
+      ) {
         return null;
       }
-      return shots / ixg;
+      return (ixg / unblockedAttempts) * 100;
     },
   },
   {

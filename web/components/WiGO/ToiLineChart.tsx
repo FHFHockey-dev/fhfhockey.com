@@ -27,6 +27,7 @@ import zoomPlugin from "chartjs-plugin-zoom";
 import Spinner from "components/Spinner";
 import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors";
 import WigoSectionCard from "./WigoSectionCard";
+import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 
 ChartJS.register(
   CategoryScale,
@@ -338,7 +339,10 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
       title={chartTitle}
       toolbar={
         <div className={styles.toggleButtons}>
-          <button onClick={() => setChartView("toi")} disabled={chartView === "toi"}>
+          <button
+            onClick={() => setChartView("toi")}
+            disabled={chartView === "toi"}
+          >
             TOI
           </button>
           <button
@@ -350,43 +354,43 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
         </div>
       }
     >
-        {/* Render the chart structure if NO error */}
-        {/* It will show the empty state (with dummy labels) while loading */}
-        {!error && (
-          <Line ref={chartRef} options={chartOptions} data={chartData} />
+      {/* Render the chart structure if NO error */}
+      {/* It will show the empty state (with dummy labels) while loading */}
+      {!error && (
+        <Line ref={chartRef} options={chartOptions} data={chartData} />
+      )}
+
+      {/* --- Overlapping Status Indicators --- */}
+
+      {/* Loading Indicator (overlaps the chart) */}
+      {isLoading && (
+        <div style={loadingOverlayStyle}>
+          <Spinner />
+        </div>
+      )}
+
+      {/* Error Message (replaces chart or overlaps) */}
+      {/* Show error overlay if an error occurred */}
+      {error instanceof Error &&
+        !isLoading && ( // Show only if not also loading
+          <div style={placeholderStyle}>{WIGO_ERROR_MESSAGES.chart}</div>
         )}
 
-        {/* --- Overlapping Status Indicators --- */}
+      {/* "Select Player" Placeholder (overlaps empty chart if !isLoading, !error, !playerId) */}
+      {!isLoading && !error && !playerId && (
+        <div style={placeholderStyle}>Select a player to view chart.</div>
+      )}
 
-        {/* Loading Indicator (overlaps the chart) */}
-        {isLoading && (
-          <div style={loadingOverlayStyle}>
-            <Spinner />
-          </div>
-        )}
+      {!isLoading && !error && playerId && !seasonId && (
+        <div style={placeholderStyle}>Loading season info...</div>
+      )}
 
-        {/* Error Message (replaces chart or overlaps) */}
-        {/* Show error overlay if an error occurred */}
-        {error instanceof Error &&
-          !isLoading && ( // Show only if not also loading
-            <div style={placeholderStyle}>Error: {error.message}</div>
-          )}
-
-        {/* "Select Player" Placeholder (overlaps empty chart if !isLoading, !error, !playerId) */}
-        {!isLoading && !error && !playerId && (
-          <div style={placeholderStyle}>Select a player to view chart.</div>
-        )}
-
-        {!isLoading && !error && playerId && !seasonId && (
-          <div style={placeholderStyle}>Loading season info...</div>
-        )}
-
-        {/* "No Data" Placeholder (overlaps empty chart if !isLoading, !error, playerId, and gameLogData is empty) */}
-        {!isLoading &&
-          !error &&
-          playerId &&
-          seasonId &&
-          gameLogData.length === 0 && (
+      {/* "No Data" Placeholder (overlaps empty chart if !isLoading, !error, playerId, and gameLogData is empty) */}
+      {!isLoading &&
+        !error &&
+        playerId &&
+        seasonId &&
+        gameLogData.length === 0 && (
           <div style={placeholderStyle}>
             No game log data available for this player.
           </div>

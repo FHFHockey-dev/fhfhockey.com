@@ -4,21 +4,22 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
+import adminOnly from "utils/adminOnlyMiddleware";
 import {
   rebuildBetaWindowZForSnapshot,
   loadPlayersForSnapshot,
-  ensureWindowTable
+  ensureWindowTable,
 } from "lib/sustainability/windows";
 import { StatCode } from "lib/sustainability/priors";
 import { resolveSeasonId } from "lib/sustainability/resolveSeasonId";
 import {
   assertWindowZPrerequisites,
-  isSustainabilityDependencyError
+  isSustainabilityDependencyError,
 } from "lib/sustainability/dependencyChecks";
 
-async function handler(
+export async function rebuildWindowZHandler(
   req: NextApiRequest,
-  res: NextApiResponse<CronTimedResponse<Record<string, unknown>>>
+  res: NextApiResponse<CronTimedResponse<Record<string, unknown>>>,
 ) {
   const started = Date.now();
   const withTiming = (body: Record<string, unknown>, endedAt = Date.now()) =>
@@ -26,7 +27,7 @@ async function handler(
   try {
     const season = await resolveSeasonId(req.query.season);
     const snapshot = String(
-      req.query.snapshot_date || new Date().toISOString().slice(0, 10)
+      req.query.snapshot_date || new Date().toISOString().slice(0, 10),
     );
     await assertWindowZPrerequisites(season, snapshot);
     const dry = req.query.dry === "1" || req.query.dry === "true";
@@ -45,7 +46,7 @@ async function handler(
       { code: "l3", n: 3 },
       { code: "l5", n: 5 },
       { code: "l10", n: 10 },
-      { code: "l20", n: 20 }
+      { code: "l20", n: 20 },
     ] as const;
 
     // Optional filter: ?stat=shp or ?stat=ipp, supports comma list
@@ -64,11 +65,12 @@ async function handler(
     const batchOffsets = runAll
       ? Array.from(
           { length: Math.ceil(ids.length / limit) },
-          (_, index) => index * limit
+          (_, index) => index * limit,
         )
       : [offset];
 
     let totalCount = 0;
+    let totalWriteChunks = 0;
     let totalPlayers = 0;
     let sample: any[] = [];
 
@@ -78,17 +80,22 @@ async function handler(
         continue;
       }
 
-      const { count, sample: batchSample } = await rebuildBetaWindowZForSnapshot(
+      const {
+        count,
+        chunks,
+        sample: batchSample,
+      } = await rebuildBetaWindowZForSnapshot(
         season,
         snapshot,
         batch,
         posMap,
         windows as any,
         statList,
-        dry
+        dry,
       );
 
       totalCount += count;
+      totalWriteChunks += chunks;
       totalPlayers += batch.length;
       if (!sample.length && batchSample?.length) {
         sample = batchSample;
@@ -96,23 +103,25 @@ async function handler(
     }
 
     const duration_s = ((Date.now() - started) / 1000).toFixed(2);
-    return res.status(200).json(withTiming({
-      success: true,
-      season,
-      snapshot_date: snapshot,
-      dry,
-      run_all: runAll,
-      processed_players: totalPlayers,
-      rows_upserted_or_built: totalCount,
-      batches_processed: batchOffsets.length,
-      sample,
-      duration_s
-    }));
+    return res.status(200).json(
+      withTiming({
+        success: true,
+        season,
+        snapshot_date: snapshot,
+        dry,
+        run_all: runAll,
+        processed_players: totalPlayers,
+        rows_upserted_or_built: totalCount,
+        write_chunks: totalWriteChunks,
+        batches_processed: batchOffsets.length,
+        sample,
+        duration_s,
+      }),
+    );
   } catch (e: any) {
     if (isSustainabilityDependencyError(e)) {
-      return res
-        .status(e.statusCode)
-        .json(withTiming({
+      return res.status(e.statusCode).json(
+        withTiming({
           success: false,
           message: e.issue.message,
           prerequisite: e.issue,
@@ -122,21 +131,21 @@ async function handler(
             classification: "structured_upstream_error",
             message: e.issue.message,
             detail: e.issue.detail,
-            htmlLike: false
-          }
-        }));
+            htmlLike: false,
+          },
+        }),
+      );
     }
     const dependencyError = normalizeDependencyError(e);
-    // eslint-disable-next-line no-console
     console.error("rebuild-window-z error", e?.message || e);
-    return res
-      .status(500)
-      .json(withTiming({
+    return res.status(500).json(
+      withTiming({
         success: false,
         message: dependencyError.message,
-        dependencyError
-      }));
+        dependencyError,
+      }),
+    );
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(rebuildWindowZHandler as any));

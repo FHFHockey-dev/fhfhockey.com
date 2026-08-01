@@ -107,3 +107,4 @@
     - [x] what runs in the daily incremental path
     - [x] what the minimal cron/job surface is for keeping FORGE fresh
   - [x] 5.6 Add a final organization/efficiency closeout artifact summarizing the reduced job surface, runtime budget status, and any intentionally deferred cleanup.
+- [x] 6.0 P0 NEW 1: Require fail-closed administrator or exact cron-secret authorization on `update-rolling-player-averages` before any recompute work. A bounded preview request exposed that `withCronJobAudit` audited but did not authorize the writer; runtime logs proved the request selected zero players and wrote zero rows. The route now uses the established `adminOnly` boundary, focused coverage proves unauthenticated denial before `main`, and the active 08:15 UTC pg_cron caller already supplies a Vault-backed `cron_secret` Authorization header.

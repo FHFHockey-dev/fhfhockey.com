@@ -48,4 +48,40 @@ describe("sustainability guardrails", () => {
       ])
     );
   });
+
+  it("keeps fractional v2 precision and reserves exact endpoints for qualified raw probabilities", () => {
+    expect(
+      applySustainabilityScoreGuardrails({ sRaw: 2 }).s100
+    ).toBe(88.08);
+
+    const invalidHigh = applySustainabilityScoreGuardrails({
+      sRaw: 0,
+      s100: 100,
+      recomputeScore: false
+    });
+    const invalidLow = applySustainabilityScoreGuardrails({
+      sRaw: 0,
+      s100: 0,
+      recomputeScore: false
+    });
+    const qualifiedHigh = applySustainabilityScoreGuardrails({
+      sRaw: 8,
+      s100: 100,
+      recomputeScore: false
+    });
+    const qualifiedLow = applySustainabilityScoreGuardrails({
+      sRaw: -8,
+      s100: 0,
+      recomputeScore: false
+    });
+
+    expect(invalidHigh.s100).toBe(50);
+    expect(invalidHigh.warnings).toContain("guardrail_invalid_exact_100");
+    expect(invalidLow.s100).toBe(50);
+    expect(invalidLow.warnings).toContain("guardrail_invalid_exact_0");
+    expect(qualifiedHigh.s100).toBe(100);
+    expect(qualifiedHigh.warnings).not.toContain("guardrail_invalid_exact_100");
+    expect(qualifiedLow.s100).toBe(0);
+    expect(qualifiedLow.warnings).not.toContain("guardrail_invalid_exact_0");
+  });
 });

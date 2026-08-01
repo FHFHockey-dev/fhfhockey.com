@@ -1,5 +1,7 @@
 # Goalie Underlying Stats Runbook
 
+> **Current status (2026-07-29):** Dedicated landing, detail, chart, persistence, backfill, and catch-up routes are implemented. Public readers delegate to the shared, completely paginated player-underlying aggregation engine and return stable redacted dependency failures. The commands below are operator recipes; run them from the repository root and never infer a production write from a read verification.
+
 ## TL;DR
 
 The goalie underlying pipeline now has its own dedicated persisted summary table and admin refresh routes.
@@ -115,7 +117,7 @@ http://localhost:3000/api/v1/db/update-goalie-underlying-summaries?seasonId=2025
 Curl form:
 
 ```bash
-cd /Users/tim/Code/fhfhockey.com/web
+cd web
 set -a && source .env.local && set +a
 curl -i -sS \
   -H "Authorization: Bearer ${CRON_SECRET}" \
@@ -153,7 +155,7 @@ http://localhost:3000/api/v1/db/update-goalie-underlying-stats?incremental=true&
 Curl form:
 
 ```bash
-cd /Users/tim/Code/fhfhockey.com/web
+cd web
 set -a && source .env.local && set +a
 curl -i -sS \
   -H "Authorization: Bearer ${CRON_SECRET}" \
@@ -177,7 +179,7 @@ Keep using this URL until the response comes back with either:
 If you know one specific game is wrong or absent, use the one-game full ingest route instead of another broad catch-up run.
 
 ```bash
-cd /Users/tim/Code/fhfhockey.com/web
+cd web
 set -a && source .env.local && set +a
 curl -i -sS -m 180 \
   -H "Authorization: Bearer ${CRON_SECRET}" \
@@ -195,7 +197,7 @@ Use this when:
 If you know the stale coverage is limited to a narrow date window, use the range form of the full route.
 
 ```bash
-cd /Users/tim/Code/fhfhockey.com/web
+cd web
 set -a && source .env.local && set +a
 curl -i -sS -m 180 \
   -H "Authorization: Bearer ${CRON_SECRET}" \
@@ -213,7 +215,7 @@ Use this when:
 If raw ingest tables already look correct and you only want to rebuild the goalie-only summary row set, use the summary-only route.
 
 ```bash
-cd /Users/tim/Code/fhfhockey.com/web
+cd web
 set -a && source .env.local && set +a
 curl -i -sS -m 180 \
   -H "Authorization: Bearer ${CRON_SECRET}" \
@@ -270,7 +272,7 @@ These new convenience routes do the looping for you instead of requiring repeate
 Single game:
 
 ```bash
-cd /Users/tim/Code/fhfhockey.com/web
+cd web
 set -a && source .env.local && set +a
 curl -i -sS -m 180 \
   -H "Authorization: Bearer ${CRON_SECRET}" \
@@ -280,7 +282,7 @@ curl -i -sS -m 180 \
 Date range in one season:
 
 ```bash
-cd /Users/tim/Code/fhfhockey.com/web
+cd web
 set -a && source .env.local && set +a
 curl -i -sS -m 180 \
   -H "Authorization: Bearer ${CRON_SECRET}" \
@@ -290,7 +292,7 @@ curl -i -sS -m 180 \
 Incremental catch-up:
 
 ```bash
-cd /Users/tim/Code/fhfhockey.com/web
+cd web
 set -a && source .env.local && set +a
 curl -i -sS -m 180 \
   -H "Authorization: Bearer ${CRON_SECRET}" \
@@ -304,7 +306,7 @@ Use this first when a goalie is missing games, missing TOI, missing saves/goals-
 Single game:
 
 ```bash
-cd /Users/tim/Code/fhfhockey.com/web
+cd web
 set -a && source .env.local && set +a
 curl -i -sS -m 180 \
   -H "Authorization: Bearer ${CRON_SECRET}" \
@@ -314,7 +316,7 @@ curl -i -sS -m 180 \
 Backfill missing summaries for a season:
 
 ```bash
-cd /Users/tim/Code/fhfhockey.com/web
+cd web
 set -a && source .env.local && set +a
 curl -i -sS -m 180 \
   -H "Authorization: Bearer ${CRON_SECRET}" \
@@ -324,7 +326,7 @@ curl -i -sS -m 180 \
 Incremental summary-only catch-up:
 
 ```bash
-cd /Users/tim/Code/fhfhockey.com/web
+cd web
 set -a && source .env.local && set +a
 curl -i -sS -m 180 \
   -H "Authorization: Bearer ${CRON_SECRET}" \

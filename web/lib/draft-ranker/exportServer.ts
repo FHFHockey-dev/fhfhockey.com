@@ -97,7 +97,7 @@ async function loadExportEvidence(args: {
         average_draft_pick: number | null;
       }>(yahooKeys, (keyChunk) =>
         args.client
-          .from("yahoo_players")
+          .from("yahoo_players_with_normalized_history")
           .select("player_key,draft_analysis,average_draft_pick")
           .eq("season", priorYahooSeason)
           .in("player_key", keyChunk),

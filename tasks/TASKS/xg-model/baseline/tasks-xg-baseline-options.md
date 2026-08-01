@@ -1,12 +1,12 @@
 ## Relevant Files
 
-- `tasks/tasks-xg-baseline-options.md` - Execution plan for validating release readiness and evaluating first-pass xG baseline model options.
+- `tasks/TASKS/xg-model/baseline/tasks-xg-baseline-options.md` - Execution plan for validating release readiness and evaluating first-pass xG baseline model options.
 - `tasks/TASKS/xg-model/nhl-api-foundation/post-foundation-follow-ups.md` - Source document for the approved post-foundation queue, including baseline-model options.
 - `tasks/TASKS/xg-model/nhl-api-foundation/validation-checklist.md` - Release-gate checklist that must pass before training or rollout work begins.
-- `tasks/final-implementation-summary.md` - Current status summary of what is complete, approximate, deferred, and still blocking release.
-- `tasks/prd-nhl-api-xg-model.md` - PRD for the NHL API xG data foundation and release-gate requirements.
-- `tasks/definitions-and-parity.md` - Canonical rules for exclusions, feature semantics, and versioning that training logic must respect.
-- `tasks/data-contract-boundaries.md` - Boundary contract separating raw, normalized, feature, and parity layers.
+- `tasks/TASKS/xg-model/docs/final-implementation-summary.md` - Current status summary of what is complete, approximate, deferred, and still blocking release.
+- `tasks/TASKS/xg-model/nhl-api-foundation/prd/prd-nhl-api-xg-model.md` - PRD for the NHL API xG data foundation and release-gate requirements.
+- `tasks/TASKS/xg-model/docs/definitions-and-parity.md` - Canonical rules for exclusions, feature semantics, and versioning that training logic must respect.
+- `tasks/TASKS/xg-model/docs/data-contract-boundaries.md` - Boundary contract separating raw, normalized, feature, and parity layers.
 - `tasks/TASKS/xg-model/nhl-api-foundation/post-drift-retry-verification.md` - Latest operational verification that raw ingest, schema, and generated types are aligned.
 - `tasks/TASKS/xg-model/baseline/xg-training-dataset-contract.md` - Canonical first-pass training dataset contract defining row grain, label, and split strategy for baseline comparisons.
 - `tasks/TASKS/xg-model/baseline/xg-training-feature-contract.md` - Canonical first-pass feature contract defining mandatory, optional, and excluded shot-feature columns for baseline training.
@@ -14,11 +14,11 @@
 - `tasks/artifacts/xg-baseline-validation-2026-03-30.md` - Dated release-gate validation artifact for the intended baseline-training sample.
 - `tasks/artifacts/xg-release-blockers-2026-03-30.md` - Dated blocker list for the current baseline-training release-gate review.
 - `tasks/artifacts/xg-release-gate-verdict-2026-03-30.md` - Dated release-gate decision for whether baseline-model training may begin.
-- `tasks/tasks-xg-release-remediation.md` - Required remediation queue that must be completed before any baseline-model work resumes.
+- `tasks/TASKS/xg-model/release/tasks-xg-release-remediation.md` - Required remediation queue that must be completed before any baseline-model work resumes.
 - `tasks/artifacts/xg-release-validation-2026-03-31-v2.md` - Current exception-aware release-validation artifact showing training-use release readiness for the active version tuple.
 - `tasks/artifacts/xg-release-blockers-2026-03-31-v2.md` - Current blocker review showing no remaining training-use blockers.
 - `tasks/artifacts/xg-release-gate-verdict-2026-03-31-v2.md` - Current dated verdict recording that the training-use release gate is now satisfied.
-- `tasks/tasks-xg-release-exception-resolution.md` - Release-policy resolution track that unblocked resumption of baseline-model work.
+- `tasks/TASKS/xg-model/release/tasks-xg-release-exception-resolution.md` - Release-policy resolution track that unblocked resumption of baseline-model work.
 - `web/lib/supabase/Upserts/nhlShotFeatureBuilder.ts` - Current builder for versioned shot-feature rows that baseline models will consume.
 - `web/lib/supabase/Upserts/nhlShotFeatureBuilder.test.ts` - Unit tests covering integrated shot-feature assembly.
 - `web/lib/xg/baselineDataset.ts` - Baseline dataset shaping and chronological split logic for xG training artifacts.
@@ -42,7 +42,7 @@
 
 - [x] 1.0 Test the current data foundation and verify whether the release gate is satisfied
   - [x] 1.1 Run the formal validation package against the intended training sample, including raw-vs-normalized checks, parity checks, and manual-audit references.
-  - [x] 1.2 Review `tasks/TASKS/xg-model/nhl-api-foundation/validation-checklist.md`, `tasks/final-implementation-summary.md`, and the latest verification artifacts to list any unresolved release blockers.
+  - [x] 1.2 Review `tasks/TASKS/xg-model/nhl-api-foundation/validation-checklist.md`, `tasks/TASKS/xg-model/docs/final-implementation-summary.md`, and the latest verification artifacts to list any unresolved release blockers.
   - [x] 1.3 Record an explicit verdict of `release gate satisfied` or `release gate not satisfied` for training use, with dated rationale and approved exceptions if any.
   - [x] 1.4 If the gate is not satisfied, stop baseline-model work and create remediation tasks before proceeding.
 

@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const nhleFetchJsonMock = vi.hoisted(() => vi.fn());
+
+vi.mock("./nhleFetch", () => ({
+  nhleFetchJson: nhleFetchJsonMock,
+}));
+
 const db = vi.hoisted(() => {
   const state = {
     invalidateError: null as Error | null,
@@ -17,7 +23,10 @@ vi.mock("lib/supabase/server", () => ({
 }));
 
 import {
+  buildShiftRelationshipStrengthSegments,
   buildShiftStrengthUpserts,
+  fetchAllNhleShiftChartsForGame,
+  fetchAllNhleShiftChartsSnapshotForGame,
   replaceShiftStrengthRowsForGame,
   type NhleShiftRow,
 } from "./shifts";
@@ -100,6 +109,7 @@ function shift(overrides: Partial<NhleShiftRow> = {}): NhleShiftRow {
     teamAbbrev: "AAA",
     firstName: "Home",
     lastName: "Player",
+    shiftNumber: 1,
     period: 1,
     startTime: "0:00",
     endTime: "0:30",
@@ -128,6 +138,67 @@ describe("projection shift strength ownership", () => {
     vi.clearAllMocks();
     db.state.invalidateError = null;
     db.state.upsertError = null;
+    nhleFetchJsonMock.mockReset();
+  });
+
+  it("requires every declared shift page and returns one stable source order", async () => {
+    const firstPage = Array.from({ length: 1000 }, (_, index) =>
+      shift({ shiftNumber: 1000 - index }),
+    );
+    nhleFetchJsonMock
+      .mockResolvedValueOnce({ total: 1001, data: firstPage })
+      .mockResolvedValueOnce({
+        total: 1001,
+        data: [shift({ shiftNumber: 1001 })],
+      });
+
+    const snapshot = await fetchAllNhleShiftChartsSnapshotForGame(GAME_ID);
+    const rows = snapshot.rows;
+
+    expect(rows).toHaveLength(1001);
+    expect(rows[0].shiftNumber).toBe(1);
+    expect(rows.at(-1)?.shiftNumber).toBe(1001);
+    expect(snapshot.rawPayload).toMatchObject({
+      total: 1001,
+      source: "json-api",
+    });
+    expect(snapshot.rawPayload.data[0].shiftNumber).toBe(1000);
+    expect(snapshot.rawPayload.data.at(-1)?.shiftNumber).toBe(1001);
+    expect(nhleFetchJsonMock).toHaveBeenCalledTimes(2);
+    expect(nhleFetchJsonMock.mock.calls[1][0]).toContain("start=1000");
+  });
+
+  it("rejects premature short pages, total drift, and duplicate source rows", async () => {
+    nhleFetchJsonMock.mockResolvedValueOnce({
+      total: 2,
+      data: [shift()],
+    });
+    await expect(fetchAllNhleShiftChartsForGame(GAME_ID)).rejects.toThrow(
+      "Incomplete NHL shift pagination",
+    );
+
+    nhleFetchJsonMock
+      .mockResolvedValueOnce({
+        total: 1001,
+        data: Array.from({ length: 1000 }, (_, index) =>
+          shift({ shiftNumber: index + 1 }),
+        ),
+      })
+      .mockResolvedValueOnce({
+        total: 1002,
+        data: [shift({ shiftNumber: 1001 })],
+      });
+    await expect(fetchAllNhleShiftChartsForGame(GAME_ID)).rejects.toThrow(
+      "Invalid NHL shift pagination metadata",
+    );
+
+    nhleFetchJsonMock.mockResolvedValueOnce({
+      total: 2,
+      data: [shift(), shift()],
+    });
+    await expect(fetchAllNhleShiftChartsForGame(GAME_ID)).rejects.toThrow(
+      "Duplicate NHL shift source row",
+    );
   });
 
   it("uses only interval rows and assigns every interval second to ES/PP/PK", () => {
@@ -204,6 +275,63 @@ describe("projection shift strength ownership", () => {
       expect(row).not.toHaveProperty("time_spent_with");
       expect(row).not.toHaveProperty("game_length");
     }
+  });
+
+  it("derives relationship PP/ES segments from the manifest-bound PBP timeline", () => {
+    const pbp = finalPbp({}, [
+      play({
+        eventId: 1,
+        typeDescKey: "period-start",
+        timeInPeriod: "00:00",
+        timeRemaining: "20:00",
+      }),
+      play({
+        eventId: 2,
+        typeDescKey: "penalty",
+        timeInPeriod: "00:30",
+        timeRemaining: "19:30",
+        situationCode: "1451",
+      }),
+      play({
+        eventId: 3,
+        typeDescKey: "faceoff",
+        timeInPeriod: "01:00",
+        timeRemaining: "19:00",
+        situationCode: "1551",
+      }),
+      play({
+        eventId: 4,
+        typeDescKey: "game-end",
+        timeInPeriod: "20:00",
+        timeRemaining: "00:00",
+      }),
+    ]);
+
+    const segments = buildShiftRelationshipStrengthSegments(GAME_ID, pbp, [
+      shift({ endTime: "1:30", duration: "1:30" }),
+      awayShift({ endTime: "1:30", duration: "1:30" }),
+    ]).filter((segment) => segment.playerId === 10);
+
+    expect(segments).toEqual([
+      expect.objectContaining({
+        startTime: "0:00",
+        endTime: "0:30",
+        duration: "0:30",
+        strength: "es",
+      }),
+      expect.objectContaining({
+        startTime: "0:30",
+        endTime: "1:00",
+        duration: "0:30",
+        strength: "pp",
+      }),
+      expect.objectContaining({
+        startTime: "1:00",
+        endTime: "1:30",
+        duration: "0:30",
+        strength: "es",
+      }),
+    ]);
   });
 
   it("uses canonical sort order for same-timestamp situation transitions", () => {

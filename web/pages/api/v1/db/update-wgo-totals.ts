@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
+import adminOnly from "utils/adminOnlyMiddleware";
 import supabase from "lib/supabase/server";
 import Fetch from "lib/cors-fetch";
 import { getCurrentSeason } from "lib/NHL/server";
@@ -677,7 +678,7 @@ async function updateSkaterTotals(
 
 // ==============================
 // API handler
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
@@ -783,3 +784,5 @@ export default async function handler(
     }
   }
 }
+
+export default adminOnly(handler as any);

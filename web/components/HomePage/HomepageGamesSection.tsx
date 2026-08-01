@@ -868,9 +868,9 @@ export default function HomepageGamesSection({
               {games.map((game) => {
                 const homeTeam = game.homeTeam;
                 const awayTeam = game.awayTeam;
-                const broadcast = game?.tvBroadcasts?.[0]?.network ?? null;
 
                 if (!homeTeam?.abbrev || !awayTeam?.abbrev) return null;
+                const broadcast = game?.tvBroadcasts?.[0]?.network ?? null;
 
                 return (
                   <Link

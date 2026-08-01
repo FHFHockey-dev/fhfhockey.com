@@ -57,11 +57,6 @@ function buildNavItems({
       href: buildForgeHref("/forge/command-center", sharedContext)
     },
     {
-      key: "dashboard",
-      label: "Legacy Dashboard",
-      href: buildForgeHref("/forge/dashboard", sharedContext)
-    },
-    {
       key: "startChart",
       label: "Goalie Starts",
       href: buildForgeHref("/start-chart", sharedContext)

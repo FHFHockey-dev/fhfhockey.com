@@ -507,6 +507,7 @@ Minimum promotion criteria:
 - No major calibration regression
 - No major drop in prediction coverage
 - No evidence that the model is using leaked or unavailable data
+- Promotion and retirement must commit atomically under a per-model lock, enforce at most one production row, require one candidate compare-and-set, and return an exact service-only receipt.
 
 **FR-26. Performance history**  
 The system must store historical performance metrics by model version.
@@ -593,6 +594,8 @@ At minimum, show:
 The website must show when the prediction data was last updated.
 
 If data is missing or stale, the UI should show a clear warning instead of hiding the issue.
+
+Public dependency failures must use a stable unavailable code/message; database relation names, proxy payloads, and raw provider errors remain server-only diagnostics.
 
 **FR-33. No betting presentation**  
 The UI must not present the predictions as betting advice.

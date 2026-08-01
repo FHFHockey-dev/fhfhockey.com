@@ -16,7 +16,7 @@ describe("computePointPctFromRecord", () => {
 });
 
 describe("computeUnderlyingStatsTeamScheduleStrength", () => {
-  it("computes standings, predictive, and blended sos scores from snapshot inputs", () => {
+  it("computes past BCS-style sos scores from snapshot inputs", () => {
     const result = computeUnderlyingStatsTeamScheduleStrength({
       date: "2026-04-05",
       scheduleRows: [

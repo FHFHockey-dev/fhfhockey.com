@@ -27,6 +27,8 @@ The goal is not to preserve the old design wholesale. The goal is to explicitly 
 - `web/tmp-check-pbp-structure.js`
 - `web/tmp-check-pbp-games.ts`
 
+The two `web/tmp-check-pbp-*` entries above are historical investigation probes, not supported ingest callers; both were deleted on 2026-07-31 under `tasks/TASKS/super-goal/cleanup-reconciliation.md`. The production ingest modules above remain the durable sources for this convention record.
+
 ## Legacy PbP Flow
 
 ### Entry Points

@@ -37,7 +37,7 @@ function getErrorMessage(error: unknown): string {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<TeamStatsLandingApiResponse | TeamStatsLandingApiError>
+  res: NextApiResponse<TeamStatsLandingApiResponse | TeamStatsLandingApiError>,
 ) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
@@ -57,23 +57,31 @@ export default async function handler(
       state: parsed.state,
     });
 
-    res.setHeader("Cache-Control", "private, max-age=60, stale-while-revalidate=300");
+    res.setHeader(
+      "Cache-Control",
+      "private, max-age=60, stale-while-revalidate=300",
+    );
     return res.status(200).json(aggregation);
   } catch (error) {
     const message = getErrorMessage(error);
 
     const statusCode =
-      message.includes("does not yet support") || message.includes("Unsupported")
+      message.includes("does not yet support") ||
+      message.includes("Unsupported")
         ? 400
         : 500;
 
+    if (statusCode === 500) {
+      console.error("Failed to build team underlying stats", error);
+    }
     res.setHeader("Cache-Control", "no-store");
     return res.status(statusCode).json({
       error:
         statusCode === 400
           ? "Unsupported team stats filter combination."
           : "Unable to build team underlying stats.",
-      issues: [message],
+      issues:
+        statusCode === 400 ? [message] : ["TEAM_UNDERLYING_STATS_UNAVAILABLE"],
     });
   }
 }

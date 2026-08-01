@@ -1,6 +1,7 @@
 // C:\Users\timbr\Desktop\FHFH\fhfhockey.com-3\web\lib\NHL\server\index.ts
 
 import { differenceInYears } from "date-fns";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { get, restGet } from "lib/NHL/base";
 import {
   Boxscore,
@@ -11,17 +12,13 @@ import {
   ScheduleData,
   Season,
   Team,
-  GameData
+  GameData,
 } from "lib/NHL/types";
 import supabase from "lib/supabase/public-client";
-import {
-  activeTeamAbbreviations,
-  legacyTeamIdToAbbr,
-  teamsInfo
-} from "lib/teamsInfo";
+import { activeTeamAbbreviations, teamsInfo } from "lib/teamsInfo";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import supabaseServer from "lib/supabase/server";
-import { Tables } from "lib/supabase/database-generated.types";
+import type { Database, Tables } from "lib/supabase/database-generated.types";
 import { updatePlayer } from "pages/api/v1/db/update-player/[playerId]";
 
 function buildStaticTeamsFallback(): Team[] {
@@ -36,16 +33,58 @@ function buildStaticTeamsFallback(): Team[] {
         id: info.id,
         name: info.name,
         abbreviation,
-        logo: getTeamLogo(abbreviation)
+        logo: getTeamLogo(abbreviation),
       };
     })
     .sort((a, b) => a.id - b.id);
 }
 
+export type GetTeamsMode = "current-canonical" | "season-exact";
+
+export type GetTeamsOptions = {
+  mode?: GetTeamsMode;
+};
+
+export function isValidNhlSeasonId(seasonId: number): boolean {
+  if (!Number.isSafeInteger(seasonId)) return false;
+
+  const value = String(seasonId);
+  if (!/^\d{8}$/.test(value)) return false;
+
+  const startYear = Number(value.slice(0, 4));
+  const endYear = Number(value.slice(4));
+  return endYear === startYear + 1;
+}
+
+export type CanonicalTeamLineage = {
+  id: number;
+  abbreviation: keyof typeof teamsInfo;
+};
+
+export function resolveCanonicalTeamLineage(
+  teamId: number,
+  abbreviation: string,
+): CanonicalTeamLineage | null {
+  if (
+    (teamId === 53 && abbreviation === "ARI") ||
+    (teamId === 59 && abbreviation === "UTA") ||
+    (teamId === 68 && abbreviation === "UTA")
+  ) {
+    return { id: 68, abbreviation: "UTA" };
+  }
+
+  const abbreviationKey = abbreviation as keyof typeof teamsInfo;
+  if (!activeTeamAbbreviations.has(abbreviationKey)) return null;
+
+  const team = teamsInfo[abbreviationKey];
+  if (team.id !== teamId) return null;
+  return { id: team.id, abbreviation: abbreviationKey };
+}
+
 export async function getPlayerGameLog(
   id: number | string,
   seasonId: number | string,
-  gameType: number | string = 2
+  gameType: number | string = 2,
 ): Promise<PlayerGameLog[]> {
   try {
     const data =
@@ -83,7 +122,7 @@ export async function getPlayer(id: number): Promise<Player> {
     teamName: data.teams?.name,
     teamAbbreviation: data.teams?.abbreviation,
     age: differenceInYears(new Date(), new Date(data.players?.birthDate ?? "")),
-    ...data.players
+    ...data.players,
   } as Player;
 }
 
@@ -91,46 +130,74 @@ export async function getPlayer(id: number): Promise<Player> {
  * Server only
  * @returns
  */
-export async function getTeams(seasonId?: number): Promise<Team[]> {
-  if (seasonId === undefined) {
-    seasonId = (await getCurrentSeason()).seasonId;
+export async function getTeams(
+  seasonId?: number,
+  options: GetTeamsOptions = {},
+): Promise<Team[]> {
+  if (seasonId !== undefined && !isValidNhlSeasonId(seasonId)) {
+    throw new Error("A valid consecutive eight-digit season ID is required.");
   }
 
-  const { data: teams, error } = (await supabase
-    .from("teams")
-    .select("id, name, abbreviation, team_season!inner()")
-    .eq("team_season.seasonId", seasonId)) as unknown as {
-    data: Tables<"teams">[] | null;
-    error?: unknown;
-  };
+  const mode =
+    options.mode ??
+    (seasonId === undefined ? "current-canonical" : "season-exact");
+  const resolvedSeasonId = seasonId ?? (await getCurrentSeason()).seasonId;
 
-  if (error || !Array.isArray(teams)) {
-    const normalized = normalizeDependencyError(error ?? "Missing team rows");
+  if (!isValidNhlSeasonId(resolvedSeasonId)) {
+    throw new Error("A valid consecutive eight-digit season ID is required.");
+  }
+
+  let teams: Tables<"teams">[];
+  try {
+    const result = (await supabase
+      .from("teams")
+      .select("id, name, abbreviation, team_season!inner()")
+      .eq("team_season.seasonId", resolvedSeasonId)) as unknown as {
+      data: Tables<"teams">[] | null;
+      error?: unknown;
+    };
+
+    if (result.error) throw result.error;
+    if (!Array.isArray(result.data)) throw new Error("Missing team rows");
+    teams = result.data;
+  } catch (error: unknown) {
+    if (mode === "season-exact") throw error;
+
+    const normalized = normalizeDependencyError(error);
     console.warn("Team lookup failed; falling back to static team catalog.", {
-      seasonId,
+      seasonId: resolvedSeasonId,
       message: normalized.message,
-      detail: normalized.detail
+      detail: normalized.detail,
     });
     return buildStaticTeamsFallback();
+  }
+
+  if (mode === "season-exact") {
+    return teams
+      .map((team) => ({
+        id: team.id,
+        name: team.name,
+        abbreviation: team.abbreviation,
+        logo: getTeamLogo(team.abbreviation),
+      }))
+      .sort((a, b) => a.id - b.id);
   }
 
   const canonical = new Map<number, Team>();
 
   for (const team of teams) {
-    const overrideAbbr = legacyTeamIdToAbbr[team.id];
-    const derivedAbbr = overrideAbbr ?? team.abbreviation;
-    if (!activeTeamAbbreviations.has(derivedAbbr as keyof typeof teamsInfo)) {
-      continue;
-    }
-    const abbr = derivedAbbr as keyof typeof teamsInfo;
+    const lineage = resolveCanonicalTeamLineage(team.id, team.abbreviation);
+    if (!lineage) continue;
+
+    const abbr = lineage.abbreviation;
     const info = teamsInfo[abbr];
-    const canonicalId = info.id;
+    const canonicalId = lineage.id;
     const abbreviation = info.abbrev ?? String(abbr);
     const normalized: Team = {
       id: canonicalId,
       name: info.name,
       abbreviation,
-      logo: getTeamLogo(abbreviation)
+      logo: getTeamLogo(abbreviation),
     };
     const existing = canonical.get(canonicalId);
     if (!existing || team.id === canonicalId) {
@@ -147,7 +214,7 @@ export async function getTeams(seasonId?: number): Promise<Team[]> {
         id: info.id,
         name: info.name,
         abbreviation,
-        logo: getTeamLogo(abbreviation)
+        logo: getTeamLogo(abbreviation),
       });
     }
   }
@@ -179,7 +246,7 @@ export async function getCurrentSeason(): Promise<Season> {
     lastNumberOfGames: lastSeason.numberOfGames,
     slice: function (arg0: number, arg1: number): string {
       return "";
-    }
+    },
   });
 
   try {
@@ -193,7 +260,9 @@ export async function getCurrentSeason(): Promise<Season> {
       throw error;
     }
     if (!data || data.length === 0) {
-      throw new Error("Cannot find the current season (no rows in seasons table).");
+      throw new Error(
+        "Cannot find the current season (no rows in seasons table).",
+      );
     }
 
     const currentSeason = data[0];
@@ -205,8 +274,8 @@ export async function getCurrentSeason(): Promise<Season> {
       "Primary season lookup failed; falling back to NHL season feed.",
       {
         message: normalized.message,
-        detail: normalized.detail
-      }
+        detail: normalized.detail,
+      },
     );
   }
 
@@ -231,10 +300,14 @@ export async function getCurrentSeason(): Promise<Season> {
       return start <= now && now <= end;
     });
     const startedIndex = seasons.findIndex(
-      (season) => new Date(season.startDate) <= now
+      (season) => new Date(season.startDate) <= now,
     );
     const resolvedIndex =
-      currentIndex !== -1 ? currentIndex : startedIndex !== -1 ? startedIndex : 0;
+      currentIndex !== -1
+        ? currentIndex
+        : startedIndex !== -1
+          ? startedIndex
+          : 0;
     const currentSeason = seasons[resolvedIndex];
     const lastSeason = seasons[resolvedIndex + 1] ?? currentSeason;
 
@@ -242,6 +315,74 @@ export async function getCurrentSeason(): Promise<Season> {
   } catch (fallbackError: any) {
     throw new Error(`Cannot fetch seasons: ${fallbackError.message}`);
   }
+}
+
+export type SeasonDetails = Pick<
+  Tables<"seasons">,
+  "id" | "startDate" | "regularSeasonEndDate" | "endDate" | "numberOfGames"
+>;
+
+const EXACT_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function toEndOfDayUtc(date: string): string {
+  if (!EXACT_DATE_PATTERN.test(date)) {
+    throw new Error("A valid date in YYYY-MM-DD format is required.");
+  }
+
+  const parsedDate = new Date(`${date}T00:00:00.000Z`);
+  if (
+    Number.isNaN(parsedDate.getTime()) ||
+    parsedDate.toISOString().slice(0, 10) !== date
+  ) {
+    throw new Error("A valid date in YYYY-MM-DD format is required.");
+  }
+
+  return `${date}T23:59:59.999Z`;
+}
+
+export async function getLatestStartedSeasonForDate(
+  date: string,
+  client: SupabaseClient<Database> = supabase,
+): Promise<SeasonDetails | null> {
+  const endOfDayUtc = toEndOfDayUtc(date);
+  const { data, error } = await client
+    .from("seasons")
+    .select("id,startDate,regularSeasonEndDate,endDate,numberOfGames")
+    .lte("startDate", endOfDayUtc)
+    .order("startDate", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function resolveLatestStartedSeasonIdForDate(
+  date: string,
+  client: SupabaseClient<Database> = supabase,
+): Promise<number> {
+  const season = await getLatestStartedSeasonForDate(date, client);
+  const seasonId = Number(season?.id);
+  if (!Number.isSafeInteger(seasonId) || seasonId <= 0) {
+    throw new Error(`Unable to resolve season id for date=${date}`);
+  }
+  return seasonId;
+}
+
+export async function getSeasonById(
+  seasonId: number,
+): Promise<SeasonDetails | null> {
+  if (!Number.isSafeInteger(seasonId) || seasonId <= 0) {
+    throw new Error("A valid season ID is required.");
+  }
+
+  const { data, error } = await supabase
+    .from("seasons")
+    .select("id,startDate,regularSeasonEndDate,endDate,numberOfGames")
+    .eq("id", seasonId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
 }
 
 export async function getSeasons(): Promise<Season[]> {
@@ -259,7 +400,7 @@ export async function getSeasons(): Promise<Season[]> {
 
     slice: function (arg0: number, arg1: number): string {
       return "";
-    }
+    },
   }));
   return data;
 }
@@ -280,38 +421,13 @@ export async function getAllPlayers(seasonId?: number): Promise<Player[]> {
     ...player.players!,
     age: differenceInYears(
       new Date(),
-      new Date(player.players?.birthDate ?? "")
+      new Date(player.players?.birthDate ?? ""),
     ),
     sweaterNumber: player.sweaterNumber,
     teamId: player.teams?.id,
     teamAbbreviation: player.teams?.abbreviation,
-    teamName: player.teams?.name
+    teamName: player.teams?.name,
   }));
-}
-
-async function getTeamsMap(): Promise<Record<number, Team>> {
-  const teams = await getTeams();
-  const map: any = {};
-  teams.forEach((team) => {
-    map[team.id] = team;
-  });
-  Object.entries(legacyTeamIdToAbbr).forEach(([legacyId, abbrKey]) => {
-    const abbr = abbrKey as keyof typeof teamsInfo;
-    const info = teamsInfo[abbr];
-    if (!info) return;
-    const abbreviation = info.abbrev ?? String(abbr);
-    const canonical = map[info.id] ?? {
-      id: info.id,
-      name: info.name,
-      abbreviation,
-      logo: getTeamLogo(abbreviation)
-    };
-    map[Number(legacyId)] = {
-      ...canonical,
-      id: Number(legacyId)
-    };
-  });
-  return map;
 }
 
 type GameWeek = {
@@ -341,24 +457,23 @@ type GameWeek = {
  */
 export async function getSchedule(
   startDate: string,
-  opts: { includeOdds?: boolean } = {}
+  opts: { includeOdds?: boolean } = {},
 ) {
   const includeOdds = opts.includeOdds !== false;
   const { gameWeek } = await get<{ gameWeek: GameWeek }>(
-    `/schedule/${startDate}`
+    `/schedule/${startDate}`,
   );
-  const teams = await getTeamsMap();
   const TEAM_DAY_DATA: ScheduleData["data"] = {};
   const numGamesPerDay: number[] = [];
   const result = {
     data: TEAM_DAY_DATA,
-    numGamesPerDay
+    numGamesPerDay,
   };
 
   // Get number of games per day
   DAYS.forEach((item) => {
     numGamesPerDay.push(
-      gameWeek.find((day) => day.dayAbbrev === item)?.numberOfGames ?? 0
+      gameWeek.find((day) => day.dayAbbrev === item)?.numberOfGames ?? 0,
     );
   });
 
@@ -376,7 +491,7 @@ export async function getSchedule(
     const { data: oddsData, error } = await supabase
       .from("expected_goals")
       .select(
-        "game_id, home_win_odds, away_win_odds, home_api_win_odds, away_api_win_odds"
+        "game_id, home_win_odds, away_win_odds, home_api_win_odds, away_api_win_odds",
       )
       .in("game_id", gameIds);
 
@@ -384,7 +499,7 @@ export async function getSchedule(
       const normalized = normalizeDependencyError(error);
       console.warn("Win odds lookup failed; continuing without odds.", {
         message: normalized.message,
-        detail: normalized.detail
+        detail: normalized.detail,
       });
     }
 
@@ -397,10 +512,9 @@ export async function getSchedule(
   const tasksForOneWeek = gameWeek.map((day) => async () => {
     const tasksForOneDay = day.games.map((game) => async () => {
       const { homeTeam, awayTeam } = game;
-      // Do not skip games if a team is missing from the DB teams map.
-      // Schedules should still include those team IDs (e.g., new/rebranded teams like UTA 68),
-      // and the client can provide fallback team metadata via teamsInfo/useTeamsMap.
-      // Keeping this logic ensures we don't drop entire games (which also hides the opponent's entry).
+      // Preserve the source schedule's team IDs, including relocated or newly
+      // branded teams such as UTA 68. Client metadata can fall back through
+      // teamsInfo/useTeamsMap without hiding either side of the game.
 
       // Fetch win odds from the oddsByGameId (optional)
       const odds = includeOdds ? oddsByGameId[game.id] : null;
@@ -418,14 +532,14 @@ export async function getSchedule(
           id: homeTeam.id,
           score: homeTeam.score,
           winOdds: homeWinOdds,
-          apiWinOdds: homeApiWinOdds
+          apiWinOdds: homeApiWinOdds,
         },
         awayTeam: {
           id: awayTeam.id,
           score: awayTeam.score,
           winOdds: awayWinOdds,
-          apiWinOdds: awayApiWinOdds
-        }
+          apiWinOdds: awayApiWinOdds,
+        },
       };
 
       if (!TEAM_DAY_DATA[homeTeam.id]) TEAM_DAY_DATA[homeTeam.id] = {};

@@ -771,7 +771,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       ]),
     );
     onSourceControlsChange(normalizeWeights(converted)!);
-    // eslint-disable-next-line no-console
     console.warn(
       "[DraftSettings] Coerced incoming skater source weights from percents to scalars.",
     );
@@ -796,7 +795,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       ]),
     );
     onGoalieSourceControlsChange(normalizeWeights(converted)!);
-    // eslint-disable-next-line no-console
     console.warn(
       "[DraftSettings] Coerced incoming goalie source weights from percents to scalars.",
     );
@@ -1123,31 +1121,25 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       }
     } catch {}
     // Lightweight user feedback (avoid adding more UI state for now)
-    // eslint-disable-next-line no-alert
     alert(`Bookmark key created (len ${key.length}). Copied to clipboard.`);
   };
 
   const handleImportBookmark = () => {
-    // eslint-disable-next-line no-alert
     const raw = window.prompt("Paste Bookmark Key (or JSON):");
     if (!raw) return;
     const data = deserializeBookmark(raw.trim());
     if (!data || typeof data !== "object") {
-      // eslint-disable-next-line no-alert
       alert("Invalid bookmark key");
       return;
     }
     if (data.v !== 2) {
-      // eslint-disable-next-line no-alert
       alert("Unsupported bookmark version. Expected v2.");
       return;
     }
     if (onBookmarkImport) {
       onBookmarkImport(data);
-      // eslint-disable-next-line no-alert
       alert("Bookmark imported. Parent will reconcile state.");
     } else {
-      // eslint-disable-next-line no-alert
       alert("Bookmark parsed, but no onBookmarkImport handler provided.");
       // As a safety, we can apply settings directly if present
       if (data.settings) onSettingsChange(data.settings);
@@ -2567,7 +2559,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                               if (!el) return;
                               el.classList.remove(styles.inputErrorPulse);
                               // force reflow to restart animation te
-                              // eslint-disable-next-line no-unused-expressions
                               (el as any).offsetWidth;
                               el.classList.add(styles.inputErrorPulse);
                               window.setTimeout(

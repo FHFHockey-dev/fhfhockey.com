@@ -9,12 +9,7 @@ import type { PlayerData } from "./utilities";
 type Source = "raw" | "aggregated";
 export type DRMSeasonType = "regularSeason" | "playoffs";
 export type DRMDataStatus =
-  | "idle"
-  | "loading"
-  | "success"
-  | "empty"
-  | "partial"
-  | "error";
+  "idle" | "loading" | "success" | "empty" | "partial" | "error";
 
 export type DRMDataCoverage = {
   inputRows: number;
@@ -37,10 +32,12 @@ type UseDRMParams = {
   endDate: string | undefined; // YYYY-MM-DD
   mode: Mode;
   source: Source;
+  seasonId?: number;
   seasonType?: DRMSeasonType;
   aggregatedData?: AggregatedDRMPlayer[]; // when source === 'aggregated'
   aggregateStatus?: DRMDataStatus;
   aggregateError?: string | null;
+  aggregateCoverage?: DRMDataCoverage;
 };
 
 export type UseDRMReturn = {
@@ -131,31 +128,41 @@ export function useDateRangeMatrixData({
   endDate,
   mode,
   source,
+  seasonId,
   seasonType = "regularSeason",
   aggregatedData = EMPTY_AGGREGATED_DATA,
   aggregateStatus = "success",
   aggregateError = null,
+  aggregateCoverage,
 }: UseDRMParams): UseDRMReturn {
+  const aggregateInputRows = aggregateCoverage?.inputRows;
+  const aggregateSkippedRows = aggregateCoverage?.skippedRows;
   const requestIdentity = useMemo(
     () => ({
       teamAbbreviation,
       startDate,
       endDate,
       source,
+      seasonId,
       seasonType,
       aggregatedData,
       aggregateStatus,
       aggregateError,
+      aggregateInputRows,
+      aggregateSkippedRows,
     }),
     [
       teamAbbreviation,
       startDate,
       endDate,
       source,
+      seasonId,
       seasonType,
       aggregatedData,
       aggregateStatus,
       aggregateError,
+      aggregateInputRows,
+      aggregateSkippedRows,
     ],
   );
   const [loading, setLoading] = useState<boolean>(false);
@@ -259,6 +266,7 @@ export function useDateRangeMatrixData({
             startDate,
             endDate,
             seasonType,
+            seasonId,
           );
           if (!isCurrent()) return;
           setRoster(roster);
@@ -289,12 +297,13 @@ export function useDateRangeMatrixData({
           setPlayerATOI(map);
           setToiData([]); // DateRangeMatrixInternal uses percentToiWith, so raw toi grid can be empty
           setHomeAwayInfo([]);
-          const skippedRows = Math.max(
+          const mappingSkippedRows = Math.max(
             0,
             aggregatedData.length - mapped.length,
           );
+          const skippedRows = (aggregateSkippedRows ?? 0) + mappingSkippedRows;
           setCoverage({
-            inputRows: aggregatedData.length,
+            inputRows: aggregateInputRows ?? aggregatedData.length,
             rosterRows: mapped.length,
             skippedRows,
           });
@@ -327,20 +336,24 @@ export function useDateRangeMatrixData({
     startDate,
     endDate,
     source,
+    seasonId,
     seasonType,
     aggregatedData,
     aggregateStatus,
     aggregateError,
+    aggregateInputRows,
+    aggregateSkippedRows,
     requestIdentity,
   ]);
 
-  // Compute lines & pairs when roster/mode changes
+  // Own one canonical line/pair derivation for both matrix and card consumers.
+  // Total-TOI does not use the groups in the matrix, but the adjacent card view
+  // still needs the same capped line-combination contract.
   const { lines, pairs } = useMemo(() => {
     if (!roster || roster.length === 0) return { lines: [], pairs: [] };
-    if (mode === "line-combination" || mode === "full-roster") {
-      return calculateLinesAndPairs(roster, mode);
-    }
-    return { lines: [], pairs: [] };
+    const groupingMode =
+      mode === "full-roster" ? "full-roster" : "line-combination";
+    return calculateLinesAndPairs(roster, groupingMode);
   }, [roster, mode]);
 
   const resultIsCurrent = resolvedRequestIdentity === requestIdentity;

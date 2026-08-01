@@ -23,7 +23,9 @@ function getServerClient(): SupabaseClient<Database> {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY;
 
   if (!url || !key) {
-    throw new Error("Supabase credentials missing for game prediction odds API.");
+    throw new Error(
+      "Supabase credentials missing for game prediction odds API.",
+    );
   }
 
   serverClient = createClient<Database>(url, key, {
@@ -64,7 +66,6 @@ export default async function handler(
         dates,
       });
     } catch (error: any) {
-      // eslint-disable-next-line no-console
       console.warn(
         "game-predictions persisted odds lookup failed",
         error?.message ?? error,
@@ -88,7 +89,6 @@ export default async function handler(
       odds,
     });
   } catch (error: any) {
-    // eslint-disable-next-line no-console
     console.error("game-predictions ESPN odds error", error?.message ?? error);
     return res.status(502).json({
       success: false,

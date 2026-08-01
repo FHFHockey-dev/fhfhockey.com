@@ -1,8 +1,9 @@
 ## Relevant Files
 
+**Status (2026-07-29):** Complete at 40/40 after dynamic audit. Planning-era “proposed” and “needs” descriptions below are historical; the checked tasks and current repository paths define the shipped contract.
+
 - `tasks/TASKS/wigo-charts/prd-wigo-charts-optimization.md` - Source PRD that defines the WiGO optimization scope and acceptance criteria.
 - `web/pages/wigoCharts.tsx` - Main WiGO page that needs orchestration and layout refactoring.
-- `web/pages/draft-dashboard.tsx` - Non-WiGO page updated to remove a build blocker discovered during parent-task validation.
 - `web/hooks/useCurrentSeason.ts` - Shared season lookup hook that should be folded into a more coherent WiGO data-loading flow.
 - `web/hooks/usePercentileRank.ts` - Legacy percentile radar hook now backed directly by the shared Supabase percentile source instead of the broken nested API route.
 - `web/hooks/useWigoPlayerDashboard.ts` - Proposed new page-level data hook for selected player, season, branding, aggregates, and statuses.
@@ -58,7 +59,7 @@
 ### Notes
 
 - Unit tests should typically be placed alongside the code files they are testing.
-- Use `npx jest [optional/path/to/test/file]` to run focused tests during implementation.
+- Use `npm test -- [path/to/test/file]` from `web/` to run focused Vitest tests.
 - The new WiGO task list assumes the existing `tasks/TASKS/wigo-charts/` directory remains the canonical place for PRDs and task lists in this repo.
 - Favor introducing shared stat metadata and shared data hooks before editing multiple WiGO view components in parallel.
 
@@ -107,3 +108,6 @@
   - [x] 6.5 Perform manual desktop and mobile verification of section order, tab behavior, chart states, and cross-surface stat consistency on `/wigoCharts`.
 
 - [x] NEW 7.0 **P1 table-specific player-radar query contract:** The radar now uses exact generated-schema branches: skaters query `player_id`, text `season`, and optional `position_code`; goalies query `goalie_id` plus numeric `season_id` with no nonexistent position filter. The redundant unconditional skater read was removed, and `fetchWigoPlayerStats` now narrows WGO `date`/`season_id` separately from NST `date_scraped`/`season`. Evidence (2026-07-18): focused Vitest passes 2 files/7 tests; full TypeScript, scoped legacy-config ESLint, and scoped diff checks pass.
+- [x] NEW 7.1 **P1 public dependency-detail containment:** WiGO comparison, player, rating, percentile, per-game, TOI, PPG, consistency, and Game Score failures now render stable surface messages instead of raw query/RPC/runtime details.
+- [x] NEW 7.2 **P2 deterministic complete cohort pagination:** the shared 500-row percentile/rating loader orders by `player_id` on every page and delegates bounded retry behavior to the canonical pagination helper.
+- [x] NEW 7.3 **P3 current-contract and legacy-ownership reconciliation:** the PRD/task pair now records shipped ownership, resolved min-GP/cache/chart/mobile decisions, the canonical Vitest command, and historical-only quarantine for four zero-consumer compatibility artifacts.

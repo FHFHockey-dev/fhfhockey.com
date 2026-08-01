@@ -1,375 +1,320 @@
 // /web/pages/api/v1/db/update-yahoo-players.ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import {
+  loadYahooGlobalCredentials,
+  persistYahooGlobalTokens,
+} from "lib/integrations/yahoo/globalCredentials";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import YahooFantasy from "yahoo-fantasy";
 import { format } from "date-fns";
-
-interface YahooCredentials {
-  id: number;
-  consumer_key: string;
-  consumer_secret: string;
-  access_token: string;
-  refresh_token: string;
-}
-
-async function getYahooAPICredentials(
-  supabase: SupabaseClient
-): Promise<YahooCredentials> {
-  const { data, error } = await supabase
-    .from("yahoo_api_credentials")
-    .select("id, consumer_key, consumer_secret, access_token, refresh_token")
-    .single();
-
-  if (error || !data) {
-    throw new Error(
-      `Failed to fetch Yahoo API credentials: ${error?.message || "No data"}`
-    );
-  }
-
-  return data;
-}
+import { randomUUID } from "node:crypto";
+import adminOnly from "utils/adminOnlyMiddleware";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
+import {
+  fetchCompleteYahooPlayerKeySnapshot,
+  isYahooSheetExportEligible,
+  requestYahooSheetExport,
+  selectCanonicalYahooGame,
+  withYahooRetry,
+} from "lib/integrations/yahoo/ingestionLifecycle";
+import { classifyYahooLifecycleError } from "lib/integrations/yahoo/lifecycleHealth";
+import type { Database } from "lib/supabase/database-generated.types";
+import {
+  dedupeYahooPlayerPayloads,
+  persistYahooPlayerPayloadBatch,
+  prepareYahooPlayerAtomicPayload,
+  type YahooPlayerAtomicPayload,
+} from "lib/integrations/yahoo/playerWriter";
 
 async function getPlayerKeys(
-  supabase: SupabaseClient,
-  gameId?: string
+  supabase: SupabaseClient<Database>,
+  gameId: number,
 ): Promise<string[]> {
-  // If gameId is provided, only fetch keys that start with the gameId prefix
-  if (gameId) {
-    console.log(`Fetching player keys for game_id=${gameId}`);
-    const keys: string[] = [];
-    const pageSize = 1000;
-    let start = 0;
-    let fetching = true;
-
-    while (fetching) {
-      console.log(
-        `Fetching player keys for ${gameId} from ${start} to ${start + pageSize - 1}`
-      );
-      const { data, error } = await supabase
+  const rows = await fetchAllSupabasePages<{ player_key: string }>(
+    ({ from, to }) => {
+      return supabase
         .from("yahoo_player_keys")
         .select("player_key")
-        .like("player_key", `${gameId}.%`)
-        .range(start, start + pageSize - 1);
+        .eq("game_id", gameId)
+        .eq("is_active", true)
+        .order("player_key", { ascending: true })
+        .range(from, to) as any;
+    },
+    { pageSize: 1000 },
+  );
 
-      if (error) {
-        throw new Error(`Error fetching player keys: ${error.message}`);
-      }
-
-      if (data && data.length) {
-        keys.push(...data.map((r: any) => r.player_key));
-        if (data.length < pageSize) {
-          fetching = false;
-        } else {
-          start += pageSize;
-        }
-      } else {
-        fetching = false;
-      }
-    }
-
-    console.log(`Total player keys fetched for ${gameId}: ${keys.length}`);
-    return keys;
-  }
-
-  // fallback: full pagination scan
-  const allPlayerKeys: string[] = [];
-  const pageSize = 1000;
-  let start = 0;
-  let fetching = true;
-
-  while (fetching) {
-    console.log(
-      `Fetching player keys from ${start} to ${start + pageSize - 1}`
-    );
-
-    const { data, error } = await supabase
-      .from("yahoo_player_keys")
-      .select("player_key")
-      .range(start, start + pageSize - 1);
-
-    if (error) {
-      throw new Error(`Error fetching player keys: ${error.message}`);
-    }
-
-    if (data && data.length > 0) {
-      allPlayerKeys.push(...data.map((row) => row.player_key));
-      if (data.length < pageSize) {
-        fetching = false;
-      } else {
-        start += pageSize;
-      }
-    } else {
-      fetching = false;
-    }
-  }
-
-  console.log(`Total player keys fetched: ${allPlayerKeys.length}`);
-  return allPlayerKeys;
+  return Array.from(new Set(rows.map((row) => row.player_key).filter(Boolean)));
 }
 
-// Handles Yahoo "percent_owned" in array/object/primitive forms.
-// Returns a number (0-100) or null if unknown/offseason.
-function extractPercentOwned(player: any): number | null {
-  const po = player?.percent_owned;
-  if (!po) return null;
-
-  // Array shape: find the first element with a numeric "value" / "Value"
-  if (Array.isArray(po)) {
-    const item = po.find((x: any) => x && (x.value != null || x.Value != null));
-    const v = item?.value ?? item?.Value;
-    const n = typeof v === "string" ? parseFloat(v) : Number(v);
-    return Number.isFinite(n) ? n : null;
-  }
-
-  // Object shape: { coverage_type, value, delta }
-  if (typeof po === "object") {
-    const v = (po as any).value ?? (po as any).Value;
-    const n = typeof v === "string" ? parseFloat(v) : Number(v);
-    return Number.isFinite(n) ? n : null;
-  }
-
-  // Primitive shape: "37" | 37
-  const n = typeof po === "string" ? parseFloat(po) : Number(po);
-  return Number.isFinite(n) ? n : null;
-}
-
-function prepareRpcPayload(
-  player: any,
-  currentDate: string,
-  gameId?: string,
-  season?: number
-) {
-  const val = extractPercentOwned(player);
-  const currentOwnershipValue = val != null && Number.isFinite(val) ? val : 0; // keep your legacy numeric fields non-null
-
-  // One-day entry for JSONB append; empty array if no valid reading (offseason)
-  const timelineEntry =
-    val != null && Number.isFinite(val)
-      ? [{ date: currentDate, value: val }]
-      : [];
-
-  return {
-    player_key: player.player_key,
-    player_id: player.player_id,
-    player_name: player.name?.full || null,
-    draft_analysis: player.draft_analysis || {},
-    average_draft_pick: parseFloat(player.draft_analysis?.average_pick || "0"),
-    average_draft_round: parseFloat(
-      player.draft_analysis?.average_round || "0"
-    ),
-    average_draft_cost: parseFloat(player.draft_analysis?.average_cost || "0"),
-    percent_drafted: parseFloat(player.draft_analysis?.percent_drafted || "0"),
-    editorial_player_key: player.editorial_player_key || null,
-    editorial_team_abbreviation: player.editorial_team_abbr || null,
-    editorial_team_full_name: player.editorial_team_full_name || null,
-    eligible_positions: player.eligible_positions || [],
-    display_position: player.display_position || null,
-    headshot_url: player.headshot?.url || null,
-    injury_note: player.injury_note || null,
-    full_name: player.name?.full || null,
-
-    // numeric column
-    percent_ownership: val != null && Number.isFinite(val) ? val : undefined, // let SQL skip if null/undefined
-
-    game_id: gameId || null,
-    season: season ?? null,
-    position_type: player.position_type || null,
-    status: player.status || null,
-    status_full: player.status_full || null,
-    last_updated: new Date().toISOString(),
-    uniform_number: player.uniform_number
-      ? parseInt(player.uniform_number)
-      : null,
-
-    // timeline append support
-    ownership_timeline: timelineEntry,
-
-    // existing append helpers (used by RPC)
-    current_ownership_value: currentOwnershipValue,
-    current_date: currentDate
-  };
-}
-
-async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (!["GET", "POST"].includes(req.method || "")) {
     return res
       .status(405)
       .json({ success: false, message: "Method Not Allowed" });
   }
 
-  const supabase = createClient(
+  const supabase = createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
   console.log("Starting update-yahoo-players handler.");
 
   try {
-    const creds = await getYahooAPICredentials(supabase);
+    const creds = await loadYahooGlobalCredentials(supabase);
 
     // Allow explicit override of gameId via query or JSON body for one-off runs
     // e.g. GET /api/v1/db/update-yahoo-players?gameId=465
-    let gameId: string | undefined = undefined;
-    let season: number | undefined = undefined;
-
     const overrideGameId =
       (req.query?.gameId as string) ||
       (req.body && (req.body.gameId as string));
-    if (overrideGameId) {
-      gameId = overrideGameId;
-      console.log(`Using override gameId from request: ${gameId}`);
-    } else {
-      // Determine active NHL game_id / season from yahoo_game_keys
-      try {
-        const { data: gameRow, error: gameErr } = await supabase
-          .from("yahoo_game_keys")
-          .select(
-            "game_id, game_key, season, is_offseason, is_game_over, current_week"
-          )
-          .eq("code", "nhl")
-          .order("season", { ascending: false })
-          .limit(1)
-          .single();
-
-        if (gameErr) {
-          console.warn(
-            "Could not determine active game_id from yahoo_game_keys:",
-            gameErr.message || gameErr
-          );
-        } else if (gameRow && gameRow.game_id) {
-          gameId = String(gameRow.game_id);
-          season = gameRow.season ? Number(gameRow.season) : undefined;
-          console.log(
-            `Detected active NHL game_id=${gameId}, season=${season}`
-          );
-        }
-      } catch (e) {
-        console.warn(
-          "Error while querying yahoo_game_keys for active season:",
-          e
-        );
-      }
+    if (overrideGameId && !/^\d+$/.test(overrideGameId)) {
+      throw new Error("Yahoo game override is invalid.");
     }
+
+    let gameQuery = supabase
+      .from("yahoo_game_keys")
+      .select(
+        "game_id, game_key, season, is_offseason, is_game_over, current_week",
+      )
+      .eq("code", "nhl");
+    gameQuery = overrideGameId
+      ? gameQuery.eq("game_id", Number(overrideGameId)).limit(1)
+      : gameQuery
+          .order("season", { ascending: false })
+          .order("game_id", { ascending: false })
+          .limit(10);
+    const { data: gameRows, error: gameErr } = await gameQuery;
+    if (gameErr) {
+      throw new Error("Yahoo canonical game lookup failed.");
+    }
+
+    const gameRow = selectCanonicalYahooGame(
+      (gameRows ?? []).map((row) => ({
+        ...row,
+        is_offseason:
+          row.is_offseason == null ? null : Boolean(row.is_offseason),
+        is_game_over:
+          row.is_game_over == null ? null : Boolean(row.is_game_over),
+      })),
+    );
+    if (!gameRow) {
+      throw new Error("Yahoo canonical game is unavailable.");
+    }
+    const gameId = Number(gameRow.game_id);
+    const season = gameRow.season ? Number(gameRow.season) : undefined;
+    const [mappedResult, unmatchedResult] = await Promise.all([
+      supabase
+        .from("yahoo_nhl_player_map")
+        .select("*", { count: "exact", head: true })
+        .not("yahoo_player_id", "is", null),
+      supabase
+        .from("yahoo_nhl_player_map_unmatched")
+        .select("*", { count: "exact", head: true }),
+    ]);
+    if (mappedResult.error || unmatchedResult.error) {
+      throw new Error("Yahoo mapping health schema query failed.");
+    }
+    const health = {
+      mappedPlayers: mappedResult.count ?? 0,
+      unmatchedPlayers: unmatchedResult.count ?? 0,
+    };
+    console.log(
+      `${
+        overrideGameId ? "Using override" : "Detected canonical"
+      } NHL game_id=${gameId}, season=${season}`,
+    );
 
     const yf = new YahooFantasy(
       creds.consumer_key,
       creds.consumer_secret,
       async ({
         access_token,
-        refresh_token
+        refresh_token,
       }: {
         access_token: string;
         refresh_token: string;
       }) => {
         console.log("Refreshing tokens...");
-        const { error } = await supabase
-          .from("yahoo_api_credentials")
-          .update({
-            access_token,
-            refresh_token,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", creds.id);
-
-        if (error) {
-          console.error("Failed to persist refreshed tokens:", error);
-          throw error;
-        } else {
-          console.log("Tokens refreshed and stored.");
-        }
-      }
+        await persistYahooGlobalTokens(supabase, creds.id, {
+          access_token,
+          refresh_token,
+        });
+        console.log("Tokens refreshed and stored.");
+      },
     );
 
     yf.setUserToken(creds.access_token);
     yf.setRefreshToken(creds.refresh_token);
 
+    let retries = 0;
+    let rateLimitEvents = 0;
+    const keySnapshot = await fetchCompleteYahooPlayerKeySnapshot(
+      String(gameId),
+      (url) =>
+        withYahooRetry(() => (yf as any).api((yf as any).GET, url), {
+          maxAttempts: 3,
+          onRetry: ({ rateLimited }) => {
+            retries += 1;
+            if (rateLimited) rateLimitEvents += 1;
+          },
+        }),
+    );
+    if (!keySnapshot.players.length) {
+      throw new Error("Yahoo complete player-key snapshot is empty.");
+    }
+
+    const snapshotId = randomUUID();
+    const { data: keyReceiptData, error: keyReceiptError } = await supabase.rpc(
+      "replace_yahoo_player_keys_snapshot",
+      {
+        p_game_id: gameId,
+        p_snapshot_id: snapshotId,
+        p_players: keySnapshot.players,
+      },
+    );
+    if (keyReceiptError) {
+      throw new Error("Yahoo player-key snapshot persistence failed.");
+    }
+    const keyReceipt = keyReceiptData as {
+      snapshotId?: string;
+      gameId?: number;
+      sourceCount?: number;
+      added?: number;
+      reactivated?: number;
+      changed?: number;
+      deactivated?: number;
+      replayed?: boolean;
+    } | null;
+    if (
+      keyReceipt?.snapshotId !== snapshotId ||
+      keyReceipt.gameId !== gameId ||
+      keyReceipt.sourceCount !== keySnapshot.players.length ||
+      !Number.isFinite(keyReceipt.added) ||
+      !Number.isFinite(keyReceipt.reactivated) ||
+      !Number.isFinite(keyReceipt.changed) ||
+      !Number.isFinite(keyReceipt.deactivated) ||
+      keyReceipt.replayed !== false
+    ) {
+      throw new Error("Yahoo player-key snapshot receipt is invalid.");
+    }
+
     const playerKeys = await getPlayerKeys(supabase, gameId);
     console.log(`Fetched ${playerKeys.length} player keys.`);
 
     if (!playerKeys.length) {
-      return res
-        .status(200)
-        .json({ success: true, message: "No player keys found." });
+      return res.status(200).json({
+        success: true,
+        status: "success",
+        gameId,
+        season: season ?? null,
+        sourceRows: 0,
+        processed: 0,
+        succeeded: 0,
+        failedRows: 0,
+        omitted: 0,
+        retries: 0,
+        rateLimitEvents: 0,
+        completeSnapshot: true,
+        keySnapshotId: snapshotId,
+        keyPagesFetched: keySnapshot.pagesFetched,
+        keyAdded: keyReceipt.added,
+        keyReactivated: keyReceipt.reactivated,
+        keyChanged: keyReceipt.changed,
+        keyDeactivated: keyReceipt.deactivated,
+        deactivationApplied: true,
+        health,
+        message: "No player keys found.",
+      });
     }
 
     const subresources = ["draft_analysis", "percent_owned"];
-    const allRpcPayloads: ReturnType<typeof prepareRpcPayload>[] = []; // Store payloads for RPC
+    const allRpcPayloads: YahooPlayerAtomicPayload[] = [];
 
     const BATCH_SIZE = 25;
     const currentDate = format(new Date(), "yyyy-MM-dd");
-
+    let failedRows = 0;
+    let omitted = 0;
+    let errorCategory: "token_failure" | "schema_drift" | null = null;
     for (let i = 0; i < playerKeys.length; i += BATCH_SIZE) {
       const batchKeys = playerKeys.slice(i, i + BATCH_SIZE);
       console.log(
         `Fetching players ${i + 1}-${Math.min(
           i + BATCH_SIZE,
-          playerKeys.length
-        )}/${playerKeys.length}`
+          playerKeys.length,
+        )}/${playerKeys.length}`,
       );
 
       try {
-        let players;
+        let refreshedExpiredToken = false;
+        const players = await withYahooRetry(
+          async () => {
+            try {
+              return await yf.players.fetch(batchKeys, subresources);
+            } catch (fetchErr: any) {
+              const tokenExpired =
+                fetchErr.description?.includes("Invalid cookie") ||
+                fetchErr.message?.includes("Request denied") ||
+                fetchErr.message?.includes("Unexpected token");
 
-        try {
-          players = await yf.players.fetch(batchKeys, subresources);
-        } catch (fetchErr: any) {
-          const tokenExpired =
-            fetchErr.description?.includes("Invalid cookie") ||
-            fetchErr.message.includes("Request denied") ||
-            fetchErr.message.includes("Unexpected token");
-
-          if (tokenExpired) {
-            console.warn("Token expired. Refreshing explicitly.");
-
-            await new Promise<void>((resolve, reject) => {
-              yf.refreshToken((err: any) => {
-                if (err) {
-                  console.error("Failed to refresh token explicitly:", err);
-                  reject(err);
-                } else {
-                  console.log("Token refreshed explicitly.");
-                  resolve();
-                }
+              if (!tokenExpired || refreshedExpiredToken) throw fetchErr;
+              refreshedExpiredToken = true;
+              console.warn("Yahoo token expired; refreshing once.");
+              await new Promise<void>((resolve, reject) => {
+                yf.refreshToken((err: any) => (err ? reject(err) : resolve()));
               });
-            });
-
-            players = await yf.players.fetch(batchKeys, subresources);
-          } else {
-            throw fetchErr;
-          }
-        }
+              return yf.players.fetch(batchKeys, subresources);
+            }
+          },
+          {
+            maxAttempts: 3,
+            onRetry: ({ rateLimited }) => {
+              retries += 1;
+              if (rateLimited) rateLimitEvents += 1;
+            },
+          },
+        );
 
         if (players && players.length) {
+          const returnedKeys = new Set(
+            players
+              .map((playerData: any) => String(playerData?.player_key ?? ""))
+              .filter(Boolean),
+          );
+          omitted += batchKeys.filter((key) => !returnedKeys.has(key)).length;
           players.forEach((playerData: any) => {
+            if (!playerData?.player_key) return;
             allRpcPayloads.push(
-              prepareRpcPayload(playerData, currentDate, gameId, season)
+              prepareYahooPlayerAtomicPayload(
+                playerData,
+                currentDate,
+                String(gameId),
+                season,
+              ),
             ); // Pass current date + season context
             console.log(
               `Player payload queued: ${
                 playerData.name?.full || playerData.player_key
-              }`
+              }`,
             );
           });
         } else {
+          omitted += batchKeys.length;
           console.warn(
-            `No data returned for batch starting with: ${batchKeys[0]}`
+            `No data returned for batch starting with: ${batchKeys[0]}`,
           );
         }
-      } catch (err: any) {
-        console.error(
-          `Failed fetching batch starting with ${batchKeys[0]}:`,
-          err.message || err
-        );
+      } catch (error) {
+        failedRows += batchKeys.length;
+        errorCategory ??= classifyYahooLifecycleError(error);
+        console.error(`Yahoo player batch failed at record ${i + 1}.`);
         continue; // continue with next batch
       }
 
       await new Promise((r) =>
-        setTimeout(r, 450 + Math.floor(Math.random() * 200))
+        setTimeout(r, 450 + Math.floor(Math.random() * 200)),
       );
     }
 
@@ -377,140 +322,140 @@ async function handler(
     // Deduplicate payloads by player_key so we keep one payload per canonical
     // player_key (which includes the game/season prefix). This avoids
     // collapsing different-season entries that share the same player_id.
-    function dedupeByPlayerKey(arr: ReturnType<typeof prepareRpcPayload>[]) {
-      const map = new Map<string, ReturnType<typeof prepareRpcPayload>>();
-      arr.forEach((p) => {
-        const key = String(p.player_key);
-        // keep the last occurrence (overwrite)
-        map.set(key, p);
-      });
-      return Array.from(map.values());
-    }
-
-    const dedupedRpcPayloads = dedupeByPlayerKey(allRpcPayloads);
-
-    // Fetch existing rows by player_key in pages to merge fields when Yahoo
-    // returns nulls for certain fields. We intentionally avoid changing
-    // payload.player_key or reconciling by player_id so new season-prefixed
-    // keys will be inserted as new rows.
-    try {
-      const existingByKey = new Map<string, any>();
-      const keys = dedupedRpcPayloads.map((p) => p.player_key);
-      const pageSize = 1000;
-      for (let s = 0; s < keys.length; s += pageSize) {
-        const chunk = keys.slice(s, s + pageSize);
-        const { data: existingRows, error: keyFetchErr } = await supabase
-          .from("yahoo_players")
-          .select(
-            "player_key, player_id, player_name, draft_analysis, percent_ownership, editorial_player_key, editorial_team_abbreviation, editorial_team_full_name, eligible_positions, display_position, headshot_url, injury_note, full_name, position_type, status, status_full, last_updated, uniform_number"
-          )
-          .in("player_key", chunk as string[]);
-
-        if (keyFetchErr) {
-          console.warn(
-            "Could not fetch existing yahoo_players for player_key check:",
-            keyFetchErr.message || keyFetchErr
-          );
-          continue;
-        }
-
-        if (existingRows && existingRows.length) {
-          existingRows.forEach((r: any) =>
-            existingByKey.set(String(r.player_key), r)
-          );
-        }
-      }
-
-      // Merge non-null DB-provided values into payloads for the same player_key
-      // (do NOT rewrite payload.player_key to a different value).
-      dedupedRpcPayloads.forEach((p) => {
-        if (existingByKey.has(p.player_key)) {
-          const existing = existingByKey.get(p.player_key)!;
-          Object.keys(existing).forEach((k) => {
-            const pp: any = p;
-            const ex: any = existing;
-            if (pp[k] == null && ex[k] != null) {
-              pp[k] = ex[k];
-            }
-          });
-        }
-      });
-    } catch (e) {
-      console.warn("Error during existing player_key reconciliation:", e);
-      // non-fatal: continue and let RPC handle any remaining conflicts
-    }
+    const dedupedRpcPayloads = dedupeYahooPlayerPayloads(allRpcPayloads);
+    const providerComplete = failedRows === 0 && omitted === 0;
+    let ownershipHistoryUpserted = 0;
+    let draftHistoryUpserted = 0;
+    let ownershipOmitted = 0;
 
     if (dedupedRpcPayloads.length) {
       console.log(
-        `Upserting ${dedupedRpcPayloads.length} players to Supabase in batches (deduped from ${allRpcPayloads.length}).`
+        `Upserting ${dedupedRpcPayloads.length} players to Supabase in batches (deduped from ${allRpcPayloads.length}).`,
       );
       for (let i = 0; i < dedupedRpcPayloads.length; i += RPC_BATCH_SIZE) {
         const batch = dedupedRpcPayloads.slice(i, i + RPC_BATCH_SIZE);
         console.log(
           `Upserting batch ${i + 1}-${Math.min(
             i + RPC_BATCH_SIZE,
-            dedupedRpcPayloads.length
-          )}`
+            dedupedRpcPayloads.length,
+          )}`,
         );
 
-        // Call the new function 'upsert_yahoo_players_v3' which supports
-        // per-season rows via player_key and accepts game_id/season in
-        // each payload.
-        const { error } = await supabase.rpc("upsert_yahoo_players_v3", {
-          players_data: batch
-        });
-
-        if (error) {
-          console.error(
-            `RPC batch call failed for batch starting at record ${i + 1}:`,
-            error
-          );
-          throw new Error(`RPC batch failed: ${error.message}`);
-        } else {
-          console.log(`RPC Batch ${i + 1} successful.`);
-        }
+        const result = await persistYahooPlayerPayloadBatch(supabase, batch);
+        ownershipHistoryUpserted += result.ownershipHistoryUpserted;
+        draftHistoryUpserted += result.draftHistoryUpserted;
+        ownershipOmitted += result.ownershipOmitted;
 
         await new Promise((resolve) => setTimeout(resolve, 500)); // Keep delay between batches
       }
 
       console.log(
-        `Successfully processed all ${allRpcPayloads.length} player payloads via RPC.`
+        `Successfully processed all ${allRpcPayloads.length} player payloads via RPC.`,
       );
 
-      // Fire-and-forget trigger to sync Google Sheet. Do not block response.
-      try {
-        const targetUrl = `https://fhfhockey.com/api/internal/sync-yahoo-players-to-sheet${
-          gameId ? `?gameId=${encodeURIComponent(gameId)}` : ''
-        }`;
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 3000);
-        fetch(targetUrl, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
-          signal: controller.signal as any,
-        })
-          .then(() => console.log('Triggered sheet sync endpoint'))
-          .catch((e) => console.warn('Sheet sync trigger failed (non-fatal):', e?.message || e))
-          .finally(() => clearTimeout(timeout));
-      } catch (e: any) {
-        console.warn('Could not trigger sheet sync (non-fatal):', e?.message || e);
-      }
-
+      const completeSnapshot = isYahooSheetExportEligible({
+        providerComplete,
+        ownershipOmitted,
+        persistedRows: dedupedRpcPayloads.length,
+        sourceRows: playerKeys.length,
+      });
+      const sheetExportEligible = completeSnapshot;
+      const sheetExport = sheetExportEligible
+        ? await requestYahooSheetExport({
+            gameId,
+            cronSecret: process.env.CRON_SECRET,
+          })
+        : {
+            attempted: false,
+            succeeded: false,
+            statusCode: null,
+            reason: "incomplete_player_receipt" as const,
+          };
+      const warnings =
+        sheetExportEligible && !sheetExport.succeeded
+          ? [
+              {
+                code: "yahoo_sheet_export_failed",
+                message:
+                  "Player persistence completed, but the receipt-gated sheet export did not succeed.",
+              },
+            ]
+          : [];
       return res.status(200).json({
         success: true,
-        message: `Processed ${allRpcPayloads.length} players via RPC.`
+        status: completeSnapshot ? "success" : "partial",
+        gameId,
+        season: season ?? null,
+        sourceRows: playerKeys.length,
+        processed: playerKeys.length,
+        succeeded: dedupedRpcPayloads.length,
+        rowsUpserted: dedupedRpcPayloads.length,
+        failedRows,
+        omitted: omitted + ownershipOmitted,
+        providerOmitted: omitted,
+        ownershipOmitted,
+        ownershipHistoryUpserted,
+        draftHistoryUpserted,
+        retries,
+        rateLimitEvents,
+        errorCategory,
+        completeSnapshot,
+        keySnapshotId: snapshotId,
+        keyPagesFetched: keySnapshot.pagesFetched,
+        keyAdded: keyReceipt.added,
+        keyReactivated: keyReceipt.reactivated,
+        keyChanged: keyReceipt.changed,
+        keyDeactivated: keyReceipt.deactivated,
+        deactivationApplied: true,
+        sheetExport,
+        health,
+        warnings,
+        message: `Processed ${dedupedRpcPayloads.length} players via RPC.`,
       });
     }
 
-    return res
-      .status(200)
-      .json({ success: true, message: "No player data retrieved to process." });
-  } catch (err: any) {
-    console.error("🚨 API error encountered:", err);
-    // Ensure the error message is captured
-    const errorMessage = err instanceof Error ? err.message : String(err);
-    return res.status(500).json({ success: false, message: errorMessage });
+    return res.status(failedRows > 0 ? 502 : 200).json({
+      success: failedRows === 0,
+      status: failedRows > 0 ? "failure" : "partial",
+      gameId,
+      season: season ?? null,
+      sourceRows: playerKeys.length,
+      processed: playerKeys.length,
+      succeeded: 0,
+      rowsUpserted: 0,
+      failedRows,
+      omitted,
+      providerOmitted: omitted,
+      ownershipOmitted: 0,
+      ownershipHistoryUpserted: 0,
+      draftHistoryUpserted: 0,
+      retries,
+      rateLimitEvents,
+      errorCategory,
+      completeSnapshot: false,
+      keySnapshotId: snapshotId,
+      keyPagesFetched: keySnapshot.pagesFetched,
+      keyAdded: keyReceipt.added,
+      keyReactivated: keyReceipt.reactivated,
+      keyChanged: keyReceipt.changed,
+      keyDeactivated: keyReceipt.deactivated,
+      deactivationApplied: true,
+      health,
+      message:
+        failedRows > 0
+          ? "Yahoo player batches failed."
+          : "Yahoo omitted all requested player data.",
+    });
+  } catch (error) {
+    console.error("Yahoo player update failed.");
+    const errorCategory = classifyYahooLifecycleError(error);
+    return res.status(500).json({
+      success: false,
+      status: "failure",
+      errorCategory,
+      message: "Yahoo player update failed",
+    });
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

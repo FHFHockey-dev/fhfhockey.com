@@ -513,11 +513,6 @@ describe("getTOIDataForGames", () => {
       message: "contradictory mirrored relationships",
     },
     {
-      name: "appearance TOI beyond game length",
-      rows: [shiftRow(1, { game_toi: "61:00", game_length: "60:00" })],
-      message: "game TOI exceeds game length",
-    },
-    {
       name: "nonpositive game length",
       rows: [shiftRow(1, { game_toi: "00:00", game_length: "00:00" })],
       message: "invalid game length",
@@ -552,6 +547,87 @@ describe("getTOIDataForGames", () => {
     await expect(
       getTOIDataForGames("EDM", "2026-03-01", "2026-03-31"),
     ).rejects.toThrow(message);
+  });
+
+  it("excludes an affected game without leaking pair facts into valid coverage", async () => {
+    const affectedGameId = 2025020101;
+    const validGameId = 2025020102;
+    const affectedRows = pairedGameRows(
+      affectedGameId,
+      "2026-03-10",
+      1,
+      "05:00",
+    ).map((row, index) => (index === 0 ? { ...row, game_toi: "61:00" } : row));
+    mocks.shiftResponses.push({
+      data: [
+        ...affectedRows,
+        ...pairedGameRows(validGameId, "2026-03-12", 3, "04:00"),
+      ],
+      error: null,
+    });
+
+    const result = await getTOIDataForGames("EDM", "2026-03-01", "2026-03-31");
+
+    expect(result.coverage).toEqual({
+      inputRows: 4,
+      rosterRows: 2,
+      skippedRows: 2,
+    });
+    expect(result.roster.every((player) => player.GP === 1)).toBe(true);
+    expect(result.toiData).toHaveLength(1);
+    expect(result.toiData[0].toi).toBe(240);
+    expect(result.homeAwayInfo).toEqual([
+      { gameId: validGameId, homeOrAway: "home" },
+    ]);
+  });
+
+  it("excludes a game whose relationship exceeds a player appearance", async () => {
+    const affectedGameId = 2025020101;
+    const validGameId = 2025020102;
+    mocks.shiftResponses.push({
+      data: [
+        ...pairedGameRows(affectedGameId, "2026-03-10", 1, "05:00").map(
+          (row, index) => (index === 0 ? { ...row, game_toi: "04:00" } : row),
+        ),
+        ...pairedGameRows(validGameId, "2026-03-12", 3, "04:00"),
+      ],
+      error: null,
+    });
+
+    const result = await getTOIDataForGames("EDM", "2026-03-01", "2026-03-31");
+
+    expect(result.coverage).toEqual({
+      inputRows: 4,
+      rosterRows: 2,
+      skippedRows: 2,
+    });
+    expect(result.roster.every((player) => player.GP === 1)).toBe(true);
+    expect(result.toiData).toHaveLength(1);
+    expect(result.toiData[0].toi).toBe(240);
+    expect(result.homeAwayInfo).toEqual([
+      { gameId: validGameId, homeOrAway: "home" },
+    ]);
+  });
+
+  it("returns empty partial coverage when every selected game is affected", async () => {
+    const affectedRows = pairedGameRows(
+      2025020101,
+      "2026-03-10",
+      1,
+      "05:00",
+    ).map((row, index) => (index === 0 ? { ...row, game_toi: "61:00" } : row));
+    mocks.shiftResponses.push({ data: affectedRows, error: null });
+
+    const result = await getTOIDataForGames("EDM", "2026-03-01", "2026-03-31");
+
+    expect(result.coverage).toEqual({
+      inputRows: 2,
+      rosterRows: 0,
+      skippedRows: 2,
+    });
+    expect(result.roster).toEqual([]);
+    expect(result.toiData).toEqual([]);
+    expect(result.homeAwayInfo).toEqual([]);
   });
 
   it("uses the exact playoff game type without changing date semantics", async () => {

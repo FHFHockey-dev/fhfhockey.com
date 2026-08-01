@@ -1,11 +1,16 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { buildEndpointScanSummary } from "lib/api/scanSummary";
+import { resolveLatestStartedSeasonIdForDate } from "lib/NHL/server";
+import { resolveProjectionTeamIdentity } from "lib/NHL/seasonAwareScheduleTeam";
 import supabase from "lib/supabase/server";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { buildRequestedDateServingState } from "lib/dashboard/freshness";
 import { buildCanonicalReaderCompatibility } from "lib/projections/compatibilityInventory";
-import { requireLatestSucceededRunId } from "pages/api/v1/projections/_helpers";
+import {
+  buildProjectionApiErrorResponse,
+  requireLatestSucceededRunId,
+} from "lib/projections/apiHelpers";
 
 type LineComboRecencyClass = "FRESH" | "SOFT_STALE" | "HARD_STALE" | "MISSING";
 
@@ -89,6 +94,12 @@ function extractSkaterModelMetadata(uncertainty: unknown): SkaterModelMetadata {
 function extractSkaterConfidenceDrivers(uncertainty: unknown) {
   const model = (uncertainty as any)?.model ?? {};
   const selection = model.skater_selection ?? {};
+  const powerPlay = selection.pp_opportunity ?? model.pp_opportunity ?? {};
+  const opponentGoalie =
+    selection.opponent_goalie_context ?? model.opponent_goalie_context ?? {};
+  const teamLevel =
+    selection.team_level_context ?? model.team_level_context ?? {};
+  const restSchedule = selection.rest_schedule ?? model.rest_schedule ?? {};
   return {
     role: {
       evenStrength:
@@ -101,30 +112,22 @@ function extractSkaterConfidenceDrivers(uncertainty: unknown) {
       ),
     },
     powerPlay: {
-      allocatedShare: parseFiniteNumber(
-        model.pp_opportunity?.allocated_player_pp_share,
-      ),
-      teamTargetSeconds: parseFiniteNumber(
-        model.pp_opportunity?.team_pp_target_seconds,
-      ),
+      allocatedShare: parseFiniteNumber(powerPlay.allocated_player_pp_share),
+      teamTargetSeconds: parseFiniteNumber(powerPlay.team_pp_target_seconds),
     },
     matchup: {
       opponentGoalieGoalRateMultiplier: parseFiniteNumber(
-        model.opponent_goalie_context?.goal_rate_multiplier,
+        opponentGoalie.goal_rate_multiplier,
       ),
       opponentStarterCertainty: parseFiniteNumber(
-        model.opponent_goalie_context?.starter_certainty,
+        opponentGoalie.starter_certainty,
       ),
-      opponentDefenseEdge: parseFiniteNumber(
-        model.team_level_context?.opponent_defense_edge,
-      ),
+      opponentDefenseEdge: parseFiniteNumber(teamLevel.opponent_defense_edge),
     },
     rest: {
-      teamRestDays: parseFiniteNumber(model.rest_schedule?.team_rest_days),
-      opponentRestDays: parseFiniteNumber(
-        model.rest_schedule?.opponent_rest_days,
-      ),
-      restDelta: parseFiniteNumber(model.rest_schedule?.rest_delta),
+      teamRestDays: parseFiniteNumber(restSchedule.team_rest_days),
+      opponentRestDays: parseFiniteNumber(restSchedule.opponent_rest_days),
+      restDelta: parseFiniteNumber(restSchedule.rest_delta),
     },
   };
 }
@@ -328,24 +331,6 @@ function extractDegradedProjectionContext(
   };
 }
 
-async function fetchCurrentSeasonIdForDate(asOfDate: string): Promise<number> {
-  if (!supabase) throw new Error("Supabase server client not available");
-  const asOfTimestamp = `${asOfDate}T23:59:59.999Z`;
-  const { data, error } = await supabase
-    .from("seasons")
-    .select("id")
-    .lte("startDate", asOfTimestamp)
-    .order("startDate", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw error;
-  const seasonId = Number((data as any)?.id);
-  if (!Number.isFinite(seasonId)) {
-    throw new Error(`Unable to resolve season id for date=${asOfDate}`);
-  }
-  return seasonId;
-}
-
 async function fetchActiveRosterPlayerIdSet(
   seasonId: number,
 ): Promise<Set<number>> {
@@ -445,11 +430,14 @@ export default async function handler(
 
     const selectQuery = `
         player_id,
+        team_id,
         players!player_id (
           fullName,
           position
         ),
         teams!team_id (
+          id,
+          abbreviation,
           name
         ),
         proj_goals_es,
@@ -524,9 +512,16 @@ export default async function handler(
       missingRequestedHorizon = (count ?? 0) > 0;
     }
 
-    const currentSeasonId = await fetchCurrentSeasonIdForDate(resolvedDate);
+    const resolvedSeasonId = await resolveLatestStartedSeasonIdForDate(
+      resolvedDate,
+      supabase,
+    );
+    const requestedSeasonId =
+      resolvedDate === targetDate
+        ? resolvedSeasonId
+        : await resolveLatestStartedSeasonIdForDate(targetDate, supabase);
     const activeRosterPlayerIds =
-      await fetchActiveRosterPlayerIdSet(currentSeasonId);
+      await fetchActiveRosterPlayerIdSet(resolvedSeasonId);
     if (activeRosterPlayerIds.size > 0) {
       projectionsRaw = projectionsRaw.filter((row: any) =>
         activeRosterPlayerIds.has(Number(row?.player_id)),
@@ -534,6 +529,16 @@ export default async function handler(
     }
 
     const projections = projectionsRaw.map((row: any) => {
+      const teamIdentity = resolveProjectionTeamIdentity(
+        row.team_id,
+        row.teams,
+        resolvedSeasonId,
+      );
+      if (!teamIdentity) {
+        throw new Error(
+          "Projection team identity is invalid for the resolved season.",
+        );
+      }
       const degradedProjectionContext = extractDegradedProjectionContext(
         row.uncertainty,
       );
@@ -555,6 +560,7 @@ export default async function handler(
         player_id: row.player_id,
         player_name: row.players?.fullName,
         team_name: row.teams?.name,
+        teamIdentity,
         position: row.players?.position,
         g,
         a,
@@ -634,6 +640,8 @@ export default async function handler(
       runId,
       asOfDate: resolvedDate,
       requestedDate: targetDate,
+      requestedSeasonId,
+      resolvedSeasonId,
       horizonGames,
       fallbackApplied,
       degradedProjectionSummary,
@@ -668,8 +676,11 @@ export default async function handler(
       data: projections,
     });
   } catch (e) {
-    const statusCode = (e as any)?.statusCode ?? 500;
-    return res.status(statusCode).json({
+    const failure = buildProjectionApiErrorResponse(
+      e,
+      "FORGE_PLAYERS_UNAVAILABLE",
+    );
+    return res.status(failure.statusCode).json({
       durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       scanSummary: buildEndpointScanSummary({
         surface: "forge_players_reader",
@@ -683,8 +694,8 @@ export default async function handler(
         blockingIssueCount: 1,
         notes: ["Unable to resolve a usable FORGE skater projection response."],
       }),
-      error: (e as any)?.message ?? String(e),
-      details: (e as any)?.details,
+      error: failure.error,
+      details: failure.details,
     });
   }
 }

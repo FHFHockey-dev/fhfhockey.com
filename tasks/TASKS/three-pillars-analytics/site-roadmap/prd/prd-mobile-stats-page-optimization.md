@@ -1,5 +1,7 @@
 # Product Requirements Document: Mobile Stats Page Optimization
 
+**Status (2026-07-29):** Implemented and dynamically audited. This PRD owns the responsive `/stats` landing surface and its navigation handoff to `/stats/team/[abbreviation]` and `/stats/player/[playerId]`; those entity routes retain their own responsive ownership.
+
 ## Introduction/Overview
 
 The Stats page currently provides comprehensive hockey statistics through a three-column desktop layout with teams grid, quick stats, and leaderboards. While functional on desktop, the mobile experience requires optimization to create a modern, sleek, and elegant UI that improves usability on mobile devices. This feature will transform the Stats page into a mobile-first experience while maintaining the core functionality and visual appeal.
@@ -13,7 +15,7 @@ The Stats page currently provides comprehensive hockey statistics through a thre
 1. **Enhance Mobile Usability**: Implement touch-friendly interactions with proper tap targets (44px minimum)
 2. **Improve Visual Hierarchy**: Prioritize teams grid and search functionality at the top, with condensed leaderboards below
 3. **Modernize Mobile Design**: Create a sleek, elegant interface using existing design system variables
-4. **Optimize Touch Interactions**: Implement swipe gestures and mobile-specific navigation patterns
+4. **Optimize Touch Interactions**: Use accessible tabs, tap targets, and mobile-specific navigation patterns
 5. **Maintain Core Functionality**: Preserve all existing features while adapting them for mobile
 6. **Improve Performance**: Implement mobile-specific optimizations for faster loading
 
@@ -23,7 +25,7 @@ The Stats page currently provides comprehensive hockey statistics through a thre
 - Immediately see the teams grid and search bar when I load the page so that I can quickly navigate to my team or find players
 - Easily tap on team logos with confidence so that navigation feels natural on my touch device
 - Scroll through condensed leaderboards below the main content so that I can view player statistics without losing access to primary navigation
-- Use swipe gestures for intuitive navigation so that the interface feels modern and responsive
+- Use accessible tab and expand controls that do not conflict with player links or vertical scrolling
 - Access all statistical information in a well-organized mobile layout so that no functionality is lost on smaller screens
 
 **As a hockey fan, I want to:**
@@ -102,7 +104,7 @@ The Stats page currently provides comprehensive hockey statistics through a thre
 
 ### Interaction Design
 - **Touch Targets**: Minimum 44px for all interactive elements
-- **Gestures**: Implement swipe navigation where appropriate
+- **Gestures**: Prefer explicit tab and expand buttons; swipe navigation is intentionally not part of the shipped contract
 - **Feedback**: Clear visual feedback for touch interactions
 - **Accessibility**: Maintain WCAG compliance for mobile interactions
 
@@ -141,19 +143,14 @@ The Stats page currently provides comprehensive hockey statistics through a thre
 - **Search Usage**: Increase mobile search bar usage by 40%
 - **Leaderboard Interaction**: Maintain current leaderboard engagement levels despite condensed format
 
-## Open Questions
+## Resolved Product Decisions
 
-1. **Teams Grid Layout**: Should we implement 4-column (8 rows) or 8-column (4 rows) for the teams grid? Initial preference is 4-column for better touch targets.
-
-2. **Tab Implementation**: If we implement tabs for Skater/Goaltender leaderboards, should we include visual indicators for active tabs and smooth transitions?
-
-3. **Search Bar Integration**: Should the search bar be integrated within the teams grid container or positioned as a separate section immediately below?
-
-4. **Progressive Enhancement**: Should we implement a mobile-first approach and enhance for desktop, or maintain separate mobile optimizations?
-
-5. **Animation Performance**: How should we optimize the existing team color gradient animations for mobile performance while maintaining visual appeal?
-
-6. **Leaderboard Depth**: In the condensed mobile leaderboards, should we show top 3, top 5, or top 10 players by default with expand options?
+1. **Teams Grid Layout**: Use four columns in the expanded mobile state and a horizontally scrollable collapsed state.
+2. **Tab Implementation**: Use visible Skaters/Goalies tabs plus tap-expand stat groups.
+3. **Search Bar Integration**: Keep search in its own section immediately below the teams grid.
+4. **Responsive Ownership**: Use a dedicated mobile composition at 480px and below while retaining the desktop composition.
+5. **Animation Performance**: Use CSS transforms plus a passive, requestAnimationFrame-coalesced scroll listener that changes React state only at hysteresis thresholds.
+6. **Leaderboard Depth**: Preserve the five-player server leaderboard depth and expose groups through explicit expansion controls.
 
 ---
 

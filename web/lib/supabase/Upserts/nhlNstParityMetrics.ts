@@ -1550,11 +1550,21 @@ export function buildNstParityMetrics(
             `${event.period_number}:${event.period_seconds_elapsed}`
           ) ?? []
         : [];
+      const faceoffStint = isZoneStart
+        ? stints.find(
+            (stint) =>
+              stint.period === event.period_number &&
+              stint.startSecond === event.period_seconds_elapsed
+          ) ?? null
+        : null;
       for (const teamId of [options.homeTeamId, options.awayTeamId]) {
-        const playerIds =
+        const attributedPlayerIds =
           teamId === options.homeTeamId
             ? attribution.homeTeam.playerIds
             : attribution.awayTeam.playerIds;
+        const playerIds =
+          faceoffStint?.teams.find((team) => team.teamId === teamId)
+            ?.playerIds ?? attributedPlayerIds;
         const zoneStartPlayerIds = isZoneStart
           ? playerIds.filter((playerId) => shiftStartPlayerIds.includes(playerId))
           : [];

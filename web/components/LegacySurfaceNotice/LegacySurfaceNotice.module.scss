@@ -1,0 +1,19 @@
+@use "styles/vars" as vars;
+
+.notice {
+  margin: 1rem 0;
+  padding: 0.9rem 1rem;
+  color: vars.$text-primary;
+  background: vars.$surface-1;
+  border: 1px solid vars.$border-secondary;
+  border-left: 4px solid vars.$color-brand-primary;
+  border-radius: 4px;
+
+  p {
+    margin: 0.35rem 0;
+  }
+
+  a {
+    color: vars.$color-blue;
+  }
+}

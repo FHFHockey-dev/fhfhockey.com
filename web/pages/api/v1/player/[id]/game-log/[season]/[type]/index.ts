@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { PlayerGameLog } from "lib/NHL/types";
 import { getPlayerGameLog } from "lib/NHL/server";
-import { Response } from "pages/api/_types";
+import { Response } from "lib/api/types";
 
 export default async function handler(
   req: NextApiRequest,

@@ -10,7 +10,8 @@ import {
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import supabase from "lib/supabase/server";
-import { requireLatestSucceededRunId } from "pages/api/v1/projections/_helpers";
+import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
+import { evaluateForgeCalibrationEligibility } from "lib/projections/calibrationEligibility";
 import { runProjectionPreflightChecks } from "./run-projection-v2";
 import {
   computeAccuracyScore,
@@ -23,6 +24,7 @@ import {
   type HoldoutComparisonReport,
   type HoldoutComparisonSample,
 } from "lib/projections/promotionGates";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 type AccuracyResultRow = {
   as_of_date: string;
@@ -39,6 +41,63 @@ type AccuracyResultRow = {
   accuracy: number;
   source_run_id: string;
   created_at: string;
+};
+
+type ProjectionResultReplacementReceipt = {
+  deleted?: number;
+  inserted?: number;
+  asOfDate?: string;
+  actualDate?: string;
+  sourceRunId?: string;
+};
+
+export async function replaceProjectionResultsAtomic(
+  client: {
+    rpc: (
+      name: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: { message?: string } | null }>;
+  },
+  args: {
+    asOfDate: string;
+    actualDate: string;
+    sourceRunId: string;
+    rows: AccuracyResultRow[];
+  },
+): Promise<ProjectionResultReplacementReceipt> {
+  const { data, error } = await client.rpc(
+    "replace_forge_projection_results_atomic",
+    {
+      p_as_of_date: args.asOfDate,
+      p_actual_date: args.actualDate,
+      p_source_run_id: args.sourceRunId,
+      p_rows: args.rows,
+    },
+  );
+  if (error) {
+    throw new Error("Atomic projection-result replacement failed.");
+  }
+
+  const receipt = data as ProjectionResultReplacementReceipt | null;
+  if (
+    receipt?.inserted !== args.rows.length ||
+    receipt.asOfDate !== args.asOfDate ||
+    receipt.actualDate !== args.actualDate ||
+    receipt.sourceRunId !== args.sourceRunId
+  ) {
+    throw new Error("Atomic projection-result replacement receipt mismatch.");
+  }
+  return receipt;
+}
+
+type SkaterActualMatchDiagnostics = {
+  projectionRows: number;
+  eligibleSameDateRows: number;
+  matchedActualRows: number;
+  missingActualRows: number;
+  wrongDateRows: number;
+  invalidIdentityRows: number;
+  actualMatchRate: number | null;
 };
 
 type AggregateStats = {
@@ -257,6 +316,52 @@ type MetricComparison = {
 
 const DEFAULT_OFFSET_DAYS = 1;
 const DEFAULT_RANGE_BUDGET_MS = 240_000;
+
+export function buildSkaterActualMatchDiagnostics(args: {
+  playerProjections: Array<Record<string, unknown>>;
+  validGameIds: ReadonlySet<number>;
+  skaterActuals: ReadonlyMap<string, unknown>;
+}): SkaterActualMatchDiagnostics {
+  let eligibleSameDateRows = 0;
+  let matchedActualRows = 0;
+  let wrongDateRows = 0;
+  let invalidIdentityRows = 0;
+
+  for (const row of args.playerProjections) {
+    const gameId = Number(row.game_id);
+    const playerId = Number(row.player_id);
+    if (
+      row.game_id == null ||
+      row.player_id == null ||
+      !Number.isFinite(gameId) ||
+      !Number.isFinite(playerId)
+    ) {
+      invalidIdentityRows += 1;
+      continue;
+    }
+    if (!args.validGameIds.has(gameId)) {
+      wrongDateRows += 1;
+      continue;
+    }
+    eligibleSameDateRows += 1;
+    if (args.skaterActuals.has(`${gameId}:${playerId}`)) {
+      matchedActualRows += 1;
+    }
+  }
+
+  return {
+    projectionRows: args.playerProjections.length,
+    eligibleSameDateRows,
+    matchedActualRows,
+    missingActualRows: eligibleSameDateRows - matchedActualRows,
+    wrongDateRows,
+    invalidIdentityRows,
+    actualMatchRate:
+      eligibleSameDateRows > 0
+        ? matchedActualRows / eligibleSameDateRows
+        : null,
+  };
+}
 const BATCH_SIZE = 800;
 const GOALIE_LAUNCH_GATE_THRESHOLDS = {
   min_sample_count_30d: 100,
@@ -1525,6 +1630,7 @@ async function runAccuracyForDate(
   skaterRows: number;
   goalieRows: number;
   totalRows: number;
+  skaterActualMatchDiagnostics: SkaterActualMatchDiagnostics;
   goalieMatchDiagnostics: {
     goalieProjectionCount: number;
     goalieActualCount: number;
@@ -1555,6 +1661,23 @@ async function runAccuracyForDate(
   const startedAt = Date.now();
   const projectionDate = addDays(actualDate, -offsetDays);
   const runId = await requireLatestSucceededRunId(projectionDate);
+  const { data: runMetadata, error: runMetadataError } = await supabase
+    .from("forge_runs")
+    .select("metrics")
+    .eq("run_id", runId)
+    .maybeSingle();
+  if (runMetadataError) throw runMetadataError;
+  const calibrationEligibility = evaluateForgeCalibrationEligibility(
+    (runMetadata as any)?.metrics,
+  );
+  if (!calibrationEligibility.eligible) {
+    const error = new Error(
+      "Latest succeeded projection run is excluded from calibration because repaired rolling-history provenance is absent.",
+    );
+    (error as any).statusCode = 422;
+    (error as any).details = calibrationEligibility;
+    throw error;
+  }
   const { data: projections, error: projErr } = await supabase
     .from("forge_player_projections")
     .select(
@@ -1589,6 +1712,11 @@ async function runAccuracyForDate(
   const skaterActuals = await fetchSkaterActualsByPlayerDate({
     actualDate,
     playerIds: projectedPlayerIds,
+  });
+  const skaterActualMatchDiagnostics = buildSkaterActualMatchDiagnostics({
+    playerProjections,
+    validGameIds,
+    skaterActuals,
   });
 
   const skaterResults: AccuracyResultRow[] = [];
@@ -2067,16 +2195,12 @@ async function runAccuracyForDate(
   }
 
   const allResults = [...skaterResults, ...goalieResults];
-  if (allResults.length > 0) {
-    for (const batch of chunk(allResults, BATCH_SIZE)) {
-      const { error } = await supabase
-        .from("forge_projection_results")
-        .upsert(batch, {
-          onConflict: "as_of_date,actual_date,player_id,game_id,player_type",
-        });
-      if (error) throw error;
-    }
-  }
+  await replaceProjectionResultsAtomic(supabase as any, {
+    asOfDate: projectionDate,
+    actualDate,
+    sourceRunId: runId,
+    rows: allResults,
+  });
 
   const overallAgg = computeAggregate(allResults);
   const skaterAgg = computeAggregate(skaterResults);
@@ -2238,6 +2362,7 @@ async function runAccuracyForDate(
   const calibrationSummary = {
     actual_date: actualDate,
     projection_date: projectionDate,
+    skater_actual_match_diagnostics: skaterActualMatchDiagnostics,
     skater: skaterCoverageSummary,
     skater_role_bucket_diagnostics: skaterRoleBucketDiagnostics,
     skater_role_bucket_interval_calibration_diagnostics:
@@ -2280,6 +2405,7 @@ async function runAccuracyForDate(
     skaterRows: skaterResults.length,
     goalieRows: goalieResults.length,
     totalRows: allResults.length,
+    skaterActualMatchDiagnostics,
     goalieMatchDiagnostics: {
       goalieProjectionCount: goalieProjectionRows.length,
       goalieActualCount,
@@ -2309,7 +2435,7 @@ async function runAccuracyForDate(
 }
 
 export default withCronJobAudit(
-  async function handler(req: NextApiRequest, res: NextApiResponse) {
+  adminOnly(async function handler(req: NextApiRequest, res: NextApiResponse) {
     const startedAt = Date.now();
     const requestedDateFromQuery = parseDateParam(req.query.date);
     if (req.method !== "POST" && req.method !== "GET") {
@@ -2542,6 +2668,10 @@ export default withCronJobAudit(
           status: result.totalRows > 0 ? "ready" : "empty",
           rowCounts: {
             skaterRows: result.skaterRows,
+            skaterEligibleRows:
+              result.skaterActualMatchDiagnostics.eligibleSameDateRows,
+            skaterMissingActualRows:
+              result.skaterActualMatchDiagnostics.missingActualRows,
             goalieRows: result.goalieRows,
             totalRows: result.totalRows,
           },
@@ -2555,6 +2685,7 @@ export default withCronJobAudit(
         skaterRows: result.skaterRows,
         goalieRows: result.goalieRows,
         totalRows: result.totalRows,
+        skaterActualMatchDiagnostics: result.skaterActualMatchDiagnostics,
         goalieMatchDiagnostics: result.goalieMatchDiagnostics,
         goalieHoldoutComparison: result.goalieHoldoutComparison,
         goalieStatDiagnostics: result.goalieStatDiagnostics,
@@ -2575,6 +2706,26 @@ export default withCronJobAudit(
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       });
     } catch (e) {
+      if (Number((e as any)?.statusCode) === 422) {
+        return res.status(422).json({
+          success: false,
+          scanSummary: buildEndpointScanSummary({
+            surface: "projection_accuracy_operator",
+            requestedDate: requestedDateFromQuery,
+            activeDataDate: requestedDateFromQuery,
+            fallbackApplied: false,
+            status: "blocked",
+            rowCounts: { rowsUpserted: 0 },
+            blockingIssueCount: 1,
+            notes: [
+              "Accuracy validation excluded a projection run with legacy or missing input provenance.",
+            ],
+          }),
+          error: (e as Error).message,
+          calibrationEligibility: (e as any)?.details,
+          durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
+        });
+      }
       const dependencyError = normalizeDependencyError(e);
       return res.status(500).json({
         success: false,
@@ -2595,6 +2746,6 @@ export default withCronJobAudit(
         durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
       });
     }
-  },
+  } as any),
   { jobName: "run-projection-accuracy" },
 );

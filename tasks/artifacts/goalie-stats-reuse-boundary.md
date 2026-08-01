@@ -1,5 +1,7 @@
 # Goalie Stats Reuse Boundary (`1.5`)
 
+> **Current disposition:** The shared ingest/aggregation decision remains authoritative. Dedicated goalie landing/detail/chart and persistence/operator wrappers now exist; statements below describing those wrappers as future work are retained as pre-implementation rationale.
+
 ## Decision
 
 The dedicated goalie surface should be a wrapper product surface over the existing shared player-underlying pipeline, not a second ingestion or aggregation system.

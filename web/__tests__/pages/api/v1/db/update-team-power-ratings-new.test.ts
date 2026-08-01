@@ -21,7 +21,7 @@ function createMockRes() {
     json(payload: any) {
       this.body = payload;
       return this;
-    }
+    },
   };
   return res;
 }
@@ -31,8 +31,8 @@ describe("/api/v1/db/update-team-power-ratings-new", () => {
     const req: any = {
       method: "GET",
       query: {
-        date: "2026-02-07"
-      }
+        date: "2026-02-07",
+      },
     };
     const res = createMockRes();
 
@@ -48,16 +48,16 @@ describe("/api/v1/db/update-team-power-ratings-new", () => {
       targetTable: "team_power_ratings_daily__new",
       disposition: "DO NOT RUN",
       retentionReason:
-        "Retained as a 410 quarantine stub until cron-source, inventory, and operator docs stop referencing this legacy route.",
+        "Retained as a warning-only no-write quarantine stub until cron-source, inventory, and operator docs stop referencing this legacy route.",
       replacementRoute: "/api/v1/db/update-team-power-ratings",
-      canonicalTable: "team_power_ratings_daily"
+      canonicalTable: "team_power_ratings_daily",
     });
   });
 
   it("still returns 405 for unsupported methods", async () => {
     const req: any = {
       method: "DELETE",
-      query: {}
+      query: {},
     };
     const res = createMockRes();
 
