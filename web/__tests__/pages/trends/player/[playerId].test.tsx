@@ -17,6 +17,9 @@ vi.mock("recharts", () => ({
 }));
 
 const routerReplace = vi.fn();
+const testMocks = vi.hoisted(() => ({
+  rollingMetricsSelect: vi.fn()
+}));
 
 vi.mock("next/router", () => ({
   useRouter: () => ({
@@ -111,6 +114,10 @@ vi.mock("lib/supabase", () => {
     eq: metricsStrength
   }));
 
+  testMocks.rollingMetricsSelect.mockImplementation(() => ({
+    eq: metricsPlayer
+  }));
+
   return {
     default: {
       from: vi.fn((table: string) => {
@@ -122,9 +129,7 @@ vi.mock("lib/supabase", () => {
 
         if (table === "rolling_player_game_metrics") {
           return {
-            select: vi.fn(() => ({
-              eq: metricsPlayer
-            }))
+            select: testMocks.rollingMetricsSelect
           };
         }
 
@@ -138,8 +143,9 @@ import PlayerTrendPage from "../../../../pages/trends/player/[playerId]";
 
 describe("Trends player detail page", () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
     routerReplace.mockReset();
+    testMocks.rollingMetricsSelect.mockClear();
   });
 
   afterEach(() => {
@@ -180,5 +186,13 @@ describe("Trends player detail page", () => {
     expect(screen.queryByRole("button", { name: "Goals" })).toBeNull();
     expect(screen.getByText(/Baseline 10\.0%/)).toBeTruthy();
     expect(routerReplace).not.toHaveBeenCalled();
+
+    const selectedFields = String(
+      testMocks.rollingMetricsSelect.mock.calls[0]?.[0] ?? ""
+    )
+      .split(",")
+      .map((field) => field.trim());
+    expect(selectedFields).not.toContain("goals");
+    expect(selectedFields).toContain("goals_avg_career");
   });
 });

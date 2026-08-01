@@ -475,7 +475,6 @@ function resolveMetricValue(
 function buildSelectClause() {
   const fields = new Set<string>(["game_date"]);
   METRIC_CONFIG.forEach((metric) => {
-    fields.add(metric.key);
     ROLLING_WINDOW_OPTIONS.forEach((option) => {
       getMetricFieldCandidates(metric, option.key).forEach((field) =>
         fields.add(field)
