@@ -8210,3 +8210,9 @@
 
 - **Control:** Entry 0902 supplies the final commands, decisions, findings, exceptions, and completion evidence required by master 7.4. The canonical PRD, master task list, final summary, and diary now agree that 7.4 is checked while 7.5/7.6 remain open.
 - **Counts / boundary:** Mechanical master is `5,076/5,171` with 95 open; imported raw/actionable parity remains `4,937/5,011` and `4,937/5,005` with 68 open. No runtime, deployment, migration, writer, repair, backfill, provider, analytics, credential, schedule, or Yahoo-revocation state changed.
+
+## Entry 0904 — 2026-08-01 dynamic Wave-C registration cohort
+
+- **Evidence-only audit:** Existing B-CLEAN, B-DEAD, B-SKO, and B-SUST-BAR completion receipts were re-read against the current initiative roll-up. Their implementation-DoD evidence is complete and no contradictory owner, consumer, route, formula, or external-gate finding was introduced. Four named children, 5.7.24–5.7.27, are now checked.
+- **Control disposition:** The current register covers every Wave-A/B initiative that has reached implementation DoD. Controls 5.7.1 and 5.7.2 close; the dynamic parent 5.7 remains open for future DoD registrations. Active A-AUTH/A-CRON-EMAIL/A-GDL/A-3P/A-SUST and B-CRON-NST/B-SUST-AUD/B-YAHOO/B-DRM remain unchanged.
+- **Counts / boundary:** Mechanical master is `5,082/5,175` with 93 open; imported raw/actionable parity remains `4,937/5,011` and `4,937/5,005` with 68 open. No runtime, deployment, migration, writer, repair, backfill, provider, analytics, credential, schedule, or Yahoo-revocation state changed.
