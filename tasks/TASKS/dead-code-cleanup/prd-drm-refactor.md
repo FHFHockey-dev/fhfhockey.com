@@ -1,6 +1,6 @@
 # PRD: Date Range Matrix (DRM) Refactor
 
-**2026-08-02 DRM audit/ownership closure overlay:** B-DRM is now `97/111` with 14 open. NEW 41 and NEW 51 close from deployed checkpoint `3e74ac295373af6dfe8efea1c8983403b4531cac` (READY Production `dpl_47AFWu6itJvqzrpeWkd1fTuQkVjq`, commit `4c10509c101048e2b3e707b2f98fd8a8f3c5d8a7`), bounded natural `cron_job_audit` receipts, and the existing local 400/405 plus one-call/one-row regressions. NEW 49/50, history, repair, migration, and other natural-run gates remain open; this was documentation-only.
+**2026-08-02 DRM scheduler/ownership closure overlay:** B-DRM is now `98/111` with 13 open. NEW 49 closes from Production migration `20260730091500`, read-only `cron.job` ownership (308 inactive; 393 active), READY/Production `dpl_47AFWu6itJvqzrpeWkd1fTuQkVjq` at commit `4c10509c101048e2b3e707b2f98fd8a8f3c5d8a7`, 200 runtime groups, and non-overlapping Aug 1–2 natural coordinator/horizon-5 audit receipts. NEW 50 remains open for final-audit/termination evidence; NEW 41 and NEW 51 remain closed, and history, repair, migration, provider, and other natural-run gates remain open.
 
 **2026-08-02 legacy-writer retirement checkpoint:** B-DRM NEW 22 is closed at `95/111` after the exact no-invoker and retained-artifact proof, explicit owner authorization, and deletion of the dormant `supabaseShifts.js` entry. The focused retired-path test passes; Git history retains recovery of the deleted source. No credential rotation or external state changed.
 

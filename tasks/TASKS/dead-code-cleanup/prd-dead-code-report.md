@@ -1,6 +1,6 @@
 # PRD: Dead Code & Hidden Surface Audit
 
-**2026-08-02 DRM audit/ownership overlay:** B-DRM NEW 41 and NEW 51 close from exact deployed checkpoint `3e74ac295373af6dfe8efea1c8983403b4531cac`, READY Production deployment `dpl_47AFWu6itJvqzrpeWkd1fTuQkVjq`, and bounded natural audit metadata. B-DRM is `97/111` with 14 open; remaining DRM rows retain explicit scheduler, history, repair, migration, deployment, or natural-evidence gates.
+**2026-08-02 DRM scheduler/ownership overlay:** B-DRM is `98/111` with 13 open. NEW 49 closes from the applied ownership migration, read-only job 308 inactive/job 393 active evidence, READY Production `dpl_47AFWu6itJvqzrpeWkd1fTuQkVjq`, and non-overlapping Aug 1–2 coordinator/horizon-5 receipts; NEW 41 and NEW 51 remain closed. NEW 50 and the remaining DRM rows retain explicit final-audit, scheduler, history, repair, migration, deployment, or natural-evidence gates.
 
 > **Implementation task list:** `tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md`
 
