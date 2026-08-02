@@ -375,6 +375,9 @@ SELECT cron.schedule(
         warnMissingAudit: 1,
       }),
     });
+    expect(res.body.warnings.missingObservationJobs[0].warnings).toContain(
+      "Cron submission was recorded, but no route audit payload was recorded; route execution is unverified.",
+    );
   });
 
   it("suppresses only the current report's self-audit gap while the wrapper is still writing it", async () => {
@@ -437,6 +440,89 @@ SELECT cron.schedule(
         missingObservationJobs: [],
       }),
     });
+  });
+
+  it("distinguishes the four scheduler submissions from unverified route execution", async () => {
+    vi.setSystemTime(new Date("2026-03-20T14:00:00.000Z"));
+
+    const jobs = [
+      {
+        jobid: 43,
+        jobname: "update-standings-details",
+        schedule: "15 8 * * *",
+        route: "/api/v1/db/update-standings-details?date=all",
+      },
+      {
+        jobid: 99,
+        jobname: "update-nst-goalies",
+        schedule: "30 8 * * *",
+        route: "/api/v1/db/update-nst-goalies",
+      },
+      {
+        jobid: 275,
+        jobname: "update-nst-team-daily",
+        schedule: "55 9 * * *",
+        route: "/api/v1/db/update-nst-team-daily",
+      },
+      {
+        jobid: 328,
+        jobname: "update-nst-team-daily-incremental",
+        schedule: "50 10 * * *",
+        route: "/api/v1/db/update-nst-team-daily",
+      },
+    ];
+
+    cronJobReportSelectMock.mockReturnValue({
+      gte: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({
+          data: jobs.map((job) => ({
+            jobname: job.jobname,
+            scheduled_time: "2026-03-20T12:00:00.000Z",
+            end_time: "2026-03-20T12:00:01.000Z",
+            status: "success",
+            return_message: "OK",
+            sql_text: `select net.http_get(url:='https://fhfhockey.com${job.route}');`,
+          })),
+          error: null,
+        }),
+      }),
+    });
+    cronJobAuditSelectMock.mockReturnValue({
+      gte: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    });
+    readFileMock.mockResolvedValue(`
+\`\`\`json
+${JSON.stringify(
+  jobs.map((job) => ({
+    ...job,
+    active: true,
+    method: "GET",
+  })),
+)}
+\`\`\`
+`);
+
+    const req: any = { method: "GET", query: { preview: "json" } };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      counts: expect.objectContaining({
+        scheduledJobs: 4,
+        scheduledJobsWithActivity: 4,
+        warnMissingAudit: 4,
+      }),
+    });
+    expect(res.body.warnings.missingObservationJobs).toHaveLength(4);
+    for (const warning of res.body.warnings.missingObservationJobs) {
+      expect(warning.warnings).toContain(
+        "Cron submission was recorded, but no route audit payload was recorded; route execution is unverified.",
+      );
+    }
   });
 
   it("supports preview=json without sending Resend emails", async () => {

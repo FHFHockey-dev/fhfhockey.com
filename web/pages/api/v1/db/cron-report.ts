@@ -37,6 +37,8 @@ const REPORT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const SELF_AUDIT_WRITE_GRACE_MS = 5 * 60 * 1000;
 const MATCH_WINDOW_MS = 6 * 60 * 60 * 1000;
 const MAX_UNSCHEDULED_ALERTS = 8;
+const ROUTE_AUDIT_MISSING_WARNING =
+  "Cron submission was recorded, but no route audit payload was recorded; route execution is unverified.";
 
 const SCHEDULE_ALIAS_MAP: Record<string, string[]> = {
   "update-all-wgo-skaters": [
@@ -1335,7 +1337,7 @@ function collectMissingObservationWarnings(job: {
     !awaitingPostGraceRun &&
     !awaitingCurrentReportSelfAudit
   ) {
-    warnings.push("Cron invoked the route, but no audit payload was recorded.");
+    warnings.push(ROUTE_AUDIT_MISSING_WARNING);
   }
 
   if (job.lastStatus !== "missing" && job.lastDurationMs == null) {
@@ -1669,13 +1671,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         matchingAudits.length === 0 &&
         job.method !== "SQL" &&
         auditDataAvailable &&
-        missingObservationWarnings.includes(
-          "Cron invoked the route, but no audit payload was recorded.",
-        )
+        missingObservationWarnings.includes(ROUTE_AUDIT_MISSING_WARNING)
       ) {
-        notes.push(
-          "Cron invoked the route, but no audit payload was recorded.",
-        );
+        notes.push(ROUTE_AUDIT_MISSING_WARNING);
       }
       if (!lastAudit && !lastRun && !hasFullCoverageForMissing) {
         notes.push(
@@ -1873,9 +1871,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         job.auditRunsCount === 0 &&
         job.method !== "SQL" &&
         auditDataAvailable &&
-        job.missingObservationWarnings.includes(
-          "Cron invoked the route, but no audit payload was recorded.",
-        ),
+        job.missingObservationWarnings.includes(ROUTE_AUDIT_MISSING_WARNING),
     )
     .map((job) => job.displayName);
 
