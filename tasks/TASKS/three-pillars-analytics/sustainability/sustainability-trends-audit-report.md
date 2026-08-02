@@ -12,6 +12,17 @@ affected-date target-season WGO rows, and zero staging rows. NEW 15 therefore
 remains open only for the exact Production data-repair authorization,
 application, and post-write receipts; no writer or repair ran.
 
+**2026-08-02 NEW 15 exact dry-run receipt and runner correction:** The first
+value-free runner attempt rejected 2,025 generated identities outside the
+49,410 persisted target identities, with zero missing identities. The runner
+now filters candidates to the existing inverse identity set. The rerun passes
+1,905 source/unified rows, 49,410 trend rows, 1,830 player-dates, 27 keys,
+both frozen MD5 receipts, and replacement/inverse payload SHA-256 receipts
+`9487a342b26c03af14b0a4852d43f3c46f44b3660fe0773051a72e5fcda059fc` /
+`68f027af3b0dafb4a42f520f896599690143a6a990f5c5c3fd63f84207f4ead6`.
+TypeScript passes. No staging, execute, rollback, writer, or data mutation ran;
+Production repair remains authorization-gated.
+
 **2026-08-01 local database validation receipt:** The healthy Colima/Docker
 stack reports `28/28` migrations through `20260801195126`; the value-free
 catalog confirms the four required repair/reader tables and six required

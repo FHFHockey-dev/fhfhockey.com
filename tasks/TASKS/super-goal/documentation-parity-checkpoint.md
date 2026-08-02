@@ -67,6 +67,15 @@ the default read-only owner-shell dry-run of
 before any separate Production repair authorization. No source checkbox,
 denominator, or external state changed.
 
+**2026-08-02 NEW 15 dry-run parity receipt:** The runner's first value-free
+attempt rejected 2,025 extra generated identities and zero missing identities;
+the local correction filters candidates to the existing inverse identity set.
+The successful rerun matches the frozen 1,905/49,410/1,830/27 cardinalities,
+both MD5 receipts, and the replacement/inverse payload SHA-256 receipts
+`9487a342b26c03af14b0a4852d43f3c46f44b3660fe0773051a72e5fcda059fc` /
+`68f027af3b0dafb4a42f520f896599690143a6a990f5c5c3fd63f84207f4ead6`.
+TypeScript passes; no staging or mutation occurred, and NEW 15 remains open.
+
 ## 2026-08-01 local auth-contract overlay
 
 The two stale cron-boundary expectations now match the shared fail-closed Unauthorized. response contract. The focused suite passes 7/7 and the middleware suite remains 5/5. This local-only test correction does not alter route behavior, resolve the Production job-392 HTTP-401 current-secret parity gate, add a denominator row, or change the current parity totals below.

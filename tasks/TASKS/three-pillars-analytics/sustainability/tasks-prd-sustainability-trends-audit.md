@@ -20,6 +20,19 @@ no Supabase environment credentials, so no runner mode or database access was
 attempted. The exact dry-run output is required before any separate Production
 repair authorization is considered. No checkbox or denominator changed.
 
+**2026-08-02 NEW 15 exact dry-run receipt and runner correction:** The shared
+local environment was loaded in-process without copying or printing secrets.
+The first value-free run correctly rejected a candidate payload with 2,025
+extra identities (75 player-dates × 27 metrics) and zero missing identities.
+The runner now filters generated candidates to the existing persisted inverse
+identity set. The rerun passes the frozen contract: 1,905 source/unified rows,
+49,410 trend rows, 1,830 player-dates, 27 keys, both MD5 receipts, and payload
+SHA-256 receipts `9487a342b26c03af14b0a4852d43f3c46f44b3660fe0773051a72e5fcda059fc`
+and `68f027af3b0dafb4a42f520f896599690143a6a990f5c5c3fd63f84207f4ead6`.
+TypeScript passes. No staging, execute, rollback, writer, or data mutation ran;
+NEW 15 remains open for separately authorized Production repair/application and
+post-write receipts.
+
 ## Relevant Files
 
 - `tasks/prd-sustainability-trends-audit.md` - Source PRD that defines the audit scope, validation method, and consolidation goals.

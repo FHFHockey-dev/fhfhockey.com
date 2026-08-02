@@ -38,6 +38,17 @@ the default read-only owner-shell dry-run of
 required before any separate Production repair authorization is considered.
 No source/master checkbox or denominator changed.
 
+**2026-08-02 NEW 15 exact dry-run receipt and runner correction:** The first
+value-free run correctly rejected 2,025 extra generated identities and zero
+missing identities. The runner now filters candidates to the existing inverse
+identity set. The rerun passes 1,905 source/unified rows, 49,410 trend rows,
+1,830 player-dates, 27 keys, both frozen MD5 receipts, and payload SHA-256
+receipts `9487a342b26c03af14b0a4852d43f3c46f44b3660fe0773051a72e5fcda059fc` /
+`68f027af3b0dafb4a42f520f896599690143a6a990f5c5c3fd63f84207f4ead6`.
+TypeScript passes. No staging, execute, rollback, writer, or data mutation ran;
+NEW 15 remains open for separately authorized Production repair/application and
+post-write receipts.
+
 **2026-08-01 local database validation receipt:** Read-only Colima/Docker
 catalog evidence confirms `28/28` local migrations through `20260801195126`,
 four required repair/reader tables, and six required repair/FORGE/sKO routines;

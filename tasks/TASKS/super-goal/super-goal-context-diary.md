@@ -8477,3 +8477,11 @@
 - **Bounded scan:** The current source lists contain 44 unchecked rows outside the canonical control ledger. Every remaining row is held by a Production/natural-run, provider/credential, historical-repair/backfill, migration, or owner-decision gate; no additional non-gated local implementation cohort was identified.
 - **Next action:** Run the default read-only owner-shell command `cd /Users/tim/Code/fhfhockey.com/web/.next-codex-reconcile/web && npm run repair:wgo-player-season-identity` with the owner's existing environment and paste the complete dry-run output. Do not add `--execute` or `--rollback`.
 - **Boundary:** No source/master checkbox, denominator, runtime, database, writer, repair, backfill, provider, credential, analytics, deployment, or Yahoo state changed. Production repair remains separately authorization-gated.
+
+## Entry 0948 — 2026-08-02 NEW 15 exact dry-run and identity-boundary correction
+
+- **Environment boundary:** The isolated checkout has no `.env.local`; the owner-shared `web/.env.local` was loaded only in-process for the read-only run, without printing or copying either credential.
+- **Initial safe failure:** The runner reached Production reads and rejected its candidate payload: frozen source/trend MD5 receipts matched, but 2,025 generated identities (75 player-dates × 27 metrics) were extra and zero were missing. No write path was reached.
+- **Correction:** `web/scripts/repair-wgo-player-season-identity.ts` now filters generated candidates to the existing persisted inverse identity set, preserving the exact no-new-identities contract.
+- **Successful dry-run:** The rerun returned 1,905 source/unified rows, 49,410 trend rows, 1,830 player-dates, 27 keys, both frozen MD5 receipts, replacement SHA-256 `9487a342b26c03af14b0a4852d43f3c46f44b3660fe0773051a72e5fcda059fc`, inverse SHA-256 `68f027af3b0dafb4a42f520f896599690143a6a990f5c5c3fd63f84207f4ead6`, and TypeScript passed.
+- **Disposition:** No staging, execute, rollback, writer, repair, backfill, provider, credential, analytics, deployment, or Yahoo action ran. NEW 15 remains open for exact owner authorization, Production execution, and post-write count/digest/replay/rollback receipts.

@@ -278,7 +278,7 @@ async function preparePayloads(client: ReturnType<typeof createServiceClient>) {
     ...row,
     season_id: TARGET_SEASON,
   }));
-  const replacementRows: RepairTrendRow[] = buildPlayerTrendRecords(
+  const candidateReplacementRows: RepairTrendRow[] = buildPlayerTrendRecords(
     [...historyRows, ...correctedRows],
     { emitFromDate: BAD_START },
   )
@@ -307,8 +307,15 @@ async function preparePayloads(client: ReturnType<typeof createServiceClient>) {
       .range(from, to),
   );
 
+  const inverseIdentitySet = new Set(inverseRows.map(stableIdentity));
+  // Keep the repair exact: never create trend identities absent from the
+  // retained target scope, even when the forward calculator emits candidates.
+  const replacementRows = candidateReplacementRows.filter((row) =>
+    inverseIdentitySet.has(stableIdentity(row)),
+  );
   const replacementIdentities = replacementRows.map(stableIdentity).sort();
   const inverseIdentities = inverseRows.map(stableIdentity).sort();
+  const replacementIdentitySet = new Set(replacementIdentities);
   const sourceManifestMd5 = digest(
     "md5",
     [...badWgoRows]
@@ -322,17 +329,51 @@ async function preparePayloads(client: ReturnType<typeof createServiceClient>) {
   );
   const metricKeys = new Set(replacementRows.map((row) => row.metric_key));
 
+  const receiptShape = {
+    sourceRows: badWgoRows.length,
+    expectedSourceRows: EXPECTED_SOURCE_ROWS,
+    unifiedRows: badUnifiedRows.length,
+    expectedUnifiedRows: EXPECTED_SOURCE_ROWS,
+    affectedPlayers: playerIds.length,
+    historyRows: historyRows.length,
+    candidateReplacementRows: candidateReplacementRows.length,
+    replacementRows: replacementRows.length,
+    expectedReplacementRows: EXPECTED_TREND_ROWS,
+    inverseRows: inverseRows.length,
+    expectedInverseRows: EXPECTED_TREND_ROWS,
+    playerDates: playerDates.size,
+    expectedPlayerDates: EXPECTED_PLAYER_DATES,
+    metricKeys: metricKeys.size,
+    expectedMetricKeys: EXPECTED_METRIC_KEYS,
+    replacementIdentityMatchesInverse:
+      replacementIdentities.join("\n") === inverseIdentities.join("\n"),
+    replacementDistinctIdentities: replacementIdentitySet.size,
+    inverseDistinctIdentities: inverseIdentitySet.size,
+    extraIdentityCount: Array.from(replacementIdentitySet).filter(
+      (identity) => !inverseIdentitySet.has(identity),
+    ).length,
+    missingIdentityCount: Array.from(inverseIdentitySet).filter(
+      (identity) => !replacementIdentitySet.has(identity),
+    ).length,
+    sourceManifestMd5,
+    expectedSourceManifestMd5: EXPECTED_SOURCE_MANIFEST_MD5,
+    trendIdentityMd5,
+    expectedTrendIdentityMd5: EXPECTED_TREND_IDENTITY_MD5,
+  };
+
   if (
-    replacementRows.length !== EXPECTED_TREND_ROWS ||
-    inverseRows.length !== EXPECTED_TREND_ROWS ||
-    playerDates.size !== EXPECTED_PLAYER_DATES ||
-    metricKeys.size !== EXPECTED_METRIC_KEYS ||
-    replacementIdentities.join("\n") !== inverseIdentities.join("\n") ||
-    sourceManifestMd5 !== EXPECTED_SOURCE_MANIFEST_MD5 ||
-    trendIdentityMd5 !== EXPECTED_TREND_IDENTITY_MD5
+    receiptShape.replacementRows !== receiptShape.expectedReplacementRows ||
+    receiptShape.inverseRows !== receiptShape.expectedInverseRows ||
+    receiptShape.playerDates !== receiptShape.expectedPlayerDates ||
+    receiptShape.metricKeys !== receiptShape.expectedMetricKeys ||
+    !receiptShape.replacementIdentityMatchesInverse ||
+    receiptShape.sourceManifestMd5 !== receiptShape.expectedSourceManifestMd5 ||
+    receiptShape.trendIdentityMd5 !== receiptShape.expectedTrendIdentityMd5
   ) {
     throw new Error(
-      "Derived repair payload no longer matches frozen receipts.",
+      `Derived repair payload no longer matches frozen receipts: ${JSON.stringify(
+        receiptShape,
+      )}`,
     );
   }
 
