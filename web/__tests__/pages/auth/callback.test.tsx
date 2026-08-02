@@ -73,6 +73,22 @@ describe("Auth callback page", () => {
     expect(JSON.stringify(window.history.state)).not.toContain("oauth-code");
   });
 
+  it("keeps the authenticated success state when client routing rejects", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    pageState.exchangeCodeForSession.mockResolvedValue({ error: null });
+    pageState.replace.mockRejectedValue(new Error("router unavailable"));
+    window.history.replaceState({}, "", "http://localhost:3000/auth/callback?code=oauth-code&next=%2Faccount");
+
+    render(<AuthCallbackPage />);
+
+    expect(await screen.findByText("Authentication complete")).toBeTruthy();
+    expect(
+      screen.queryByText(
+        "FHFH could not finish this authentication response. Return to sign in and try again."
+      )
+    ).toBeNull();
+  });
+
   it("scrubs and processes credentials without waiting for router readiness", async () => {
     pageState.isReady = false;
     pageState.exchangeCodeForSession.mockImplementation(async () => {

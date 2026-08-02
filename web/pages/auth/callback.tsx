@@ -24,6 +24,30 @@ type CallbackState = {
 const VALID_OTP_TYPES = new Set(["email", "recovery", "invite", "email_change"]);
 const SAFE_DOCUMENT_TITLE = "Completing Authentication | FHFHockey";
 
+async function replaceAfterAuth(
+  replaceRoute: (url: string) => unknown,
+  nextPath: string,
+  currentWindow: Window = window
+) {
+  const hardNavigate = () => {
+    try {
+      currentWindow.location.replace(nextPath);
+    } catch {
+      // The authenticated state is already established; retain the success UI
+      // if the browser refuses a second navigation attempt.
+    }
+  };
+
+  try {
+    const didNavigate = await replaceRoute(nextPath);
+    if (didNavigate === false) {
+      hardNavigate();
+    }
+  } catch {
+    hardNavigate();
+  }
+}
+
 export default function AuthCallbackPage() {
   const router = useRouter();
   const hasProcessedRef = useRef(false);
@@ -97,7 +121,10 @@ export default function AuthCallbackPage() {
                 "Your recovery link was accepted. Redirecting you to the password reset screen now.",
               tone: "success"
             });
-            await router.replace(`/auth/reset-password?next=${encodeURIComponent(nextPath)}`);
+            await replaceAfterAuth(
+              router.replace,
+              `/auth/reset-password?next=${encodeURIComponent(nextPath)}`
+            );
             return;
           }
 
@@ -106,7 +133,7 @@ export default function AuthCallbackPage() {
             message: "Your Google sign-in is complete. Redirecting you back now.",
             tone: "success"
           });
-          await router.replace(nextPath);
+          await replaceAfterAuth(router.replace, nextPath);
           return;
         }
 
@@ -127,7 +154,10 @@ export default function AuthCallbackPage() {
                 "Your recovery link was accepted. Redirecting you to the password reset screen now.",
               tone: "success"
             });
-            await router.replace(`/auth/reset-password?next=${encodeURIComponent(nextPath)}`);
+            await replaceAfterAuth(
+              router.replace,
+              `/auth/reset-password?next=${encodeURIComponent(nextPath)}`
+            );
             return;
           }
 
@@ -137,7 +167,7 @@ export default function AuthCallbackPage() {
               "Your email verification completed successfully. Redirecting you back into the site now.",
             tone: "success"
           });
-          await router.replace(nextPath);
+          await replaceAfterAuth(router.replace, nextPath);
           return;
         }
 
@@ -158,7 +188,10 @@ export default function AuthCallbackPage() {
                 "Your recovery link was accepted. Redirecting you to the password reset screen now.",
               tone: "success"
             });
-            await router.replace(`/auth/reset-password?next=${encodeURIComponent(nextPath)}`);
+            await replaceAfterAuth(
+              router.replace,
+              `/auth/reset-password?next=${encodeURIComponent(nextPath)}`
+            );
             return;
           }
 
@@ -167,7 +200,7 @@ export default function AuthCallbackPage() {
             message: "Your session is ready. Redirecting you back now.",
             tone: "success"
           });
-          await router.replace(nextPath);
+          await replaceAfterAuth(router.replace, nextPath);
           return;
         }
 

@@ -1,5 +1,7 @@
 # Documentation and Source/Master Parity Checkpoint (7.1)
 
+**2026-08-01 hosted PKCE template/Production lifecycle overlay:** Confirm signup and Reset Password templates now use `{{ .RedirectTo }}` plus `{{ .TokenHash }}`. The disposable Production confirmation email was delivered and server-confirmed, but `/auth/callback` showed a generic client navigation failure; recovery/password update/sign-out succeeded and cleanup left zero disposable auth/profile/settings rows. The local callback now has a credential-free hard-navigation fallback for rejected post-auth router replacement. NEW 46.0 remains open for guarded publication and fresh value-free Production confirmation/Google/recovery evidence. No message values or tokens were recorded; no remote build/deployment or other external mutation occurred.
+
 **Status:** Evidence-only synchronization completed 2026-08-01. This checkpoint reconciles the current source/master ledger, Relevant Files, PRD, final summary, diary, and referenced operational/schema contracts after the NEW 61 natural Sustainability handoff receipt. It does not authorize any additional migration, writer, repair, backfill, provider call, deployment, credential change, or deletion.
 
 ## 2026-08-01 local auth-contract overlay
