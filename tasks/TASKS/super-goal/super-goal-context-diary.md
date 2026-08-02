@@ -8419,3 +8419,8 @@
 
 - **Control update:** `completion-gate-reconciliation.md` now reflects the current 76-source parity receipt, actionable `4,946/5,005` ledger with 59 open, B-CRON-NST's 75/75 source rows with its parent synchronization control still open, B-DRM `95/111`, and the latest 6.5 verification plus diary Entries 0929–0936.
 - **Disposition:** Charter answers remain intentionally `NO`/`PARTIAL` where provider, credential, historical-repair, scheduler-natural, or final-governance evidence is still required. No source checkbox, runtime, database, deployment, provider, writer, repair, backfill, credential, analytics, or Yahoo state changed.
+
+## Entry 0938 — 2026-08-02 cross-initiative ownership refresh
+
+- **Control update:** `cross-initiative-ownership-reconciliation.md` now reflects the clean isolated control tree in the current documentation-only scope and distinguishes the current Production scheduler readback (59 active pg_cron plus 20 Vercel jobs) from the historical 65-active pre-deactivation snapshot.
+- **Disposition:** Canonical ownership, compatibility/quarantine boundaries, and remaining provider/history/natural-run gates are unchanged. No source checkbox, runtime, database, deployment, provider, writer, repair, backfill, credential, analytics, or Yahoo state changed.
