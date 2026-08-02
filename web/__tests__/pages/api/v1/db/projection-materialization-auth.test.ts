@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -16,9 +16,9 @@ const routeSources = [
   ),
 }));
 
-const legacyShiftWriterSource = readFileSync(
-  resolve(process.cwd(), "lib/supabase/Upserts/supabaseShifts.js"),
-  "utf8",
+const legacyShiftWriterPath = resolve(
+  process.cwd(),
+  "lib/supabase/Upserts/supabaseShifts.js",
 );
 
 describe("projection materialization route authorization", () => {
@@ -47,18 +47,7 @@ describe("projection materialization route authorization", () => {
     );
   });
 
-  it("does not log legacy shift-writer URL or credential values", () => {
-    expect(legacyShiftWriterSource).not.toContain("Fetched data from ${url}");
-    expect(legacyShiftWriterSource).not.toContain("Failed to fetch ${url}");
-    expect(legacyShiftWriterSource).not.toMatch(
-      /console\.(log|warn|error)\([^\n]*(?:supabaseKey|SUPABASE_SERVICE_ROLE_KEY|token|secret|authorization)/i,
-    );
-  });
-
-  it("keeps the legacy writer behind an explicit recovery opt-in", () => {
-    expect(legacyShiftWriterSource).toContain("require.main === module");
-    expect(legacyShiftWriterSource).toContain(
-      'process.env.FHFH_ENABLE_LEGACY_SHIFT_WRITER === "1"',
-    );
+  it("retires the legacy shift writer after no-invoker and retained-artifact proof", () => {
+    expect(existsSync(legacyShiftWriterPath)).toBe(false);
   });
 });

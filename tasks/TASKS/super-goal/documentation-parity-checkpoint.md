@@ -8,14 +8,16 @@
 
 **Status:** Evidence-only synchronization completed 2026-08-01. This checkpoint reconciles the current source/master ledger, Relevant Files, PRD, final summary, diary, and referenced operational/schema contracts after the NEW 61 natural Sustainability handoff receipt. It does not authorize any additional migration, writer, repair, backfill, provider call, deployment, credential change, or deletion.
 
+**2026-08-02 B-DRM NEW 22 retirement overlay:** The exact no-invoker and retained-artifact proof is complete. Under explicit owner authorization, the dormant `web/lib/supabase/Upserts/supabaseShifts.js` entry was deleted; the focused retired-path test passes and Git history retains recovery. No credential rotation or external mutation occurred. Current parity is raw `4,946/5,011`, actionable `4,946/5,005` with 59 open, and mechanical master `5,092/5,176` with 84 open.
+
 ## 2026-08-01 local auth-contract overlay
 
 The two stale cron-boundary expectations now match the shared fail-closed Unauthorized. response contract. The focused suite passes 7/7 and the middleware suite remains 5/5. This local-only test correction does not alter route behavior, resolve the Production job-392 HTTP-401 current-secret parity gate, add a denominator row, or change the current parity totals below.
 
 ## Parity checks
 
-- A read-only parser found all 76 imported source paths represented in the canonical master. Counts are exact at `4,944/5,011` raw; no source/master checked/total mismatch was found. The six fenced `generate-tasks.mdc` format examples remain explicitly non-actionable reference rows.
-- The mechanical master roll-up is `5,090/5,176`; imported actionable parity is `4,944/5,005` with 61 open. Historical checkpoint paragraphs remain append-only and are not treated as current totals.
+- A read-only parser found all 76 imported source paths represented in the canonical master. Counts are exact at `4,946/5,011` raw; no source/master checked/total mismatch was found. The six fenced `generate-tasks.mdc` format examples remain explicitly non-actionable reference rows.
+- The mechanical master roll-up is `5,092/5,176`; imported actionable parity is `4,946/5,005` with 59 open. Historical checkpoint paragraphs remain append-only and are not treated as current totals.
 - The master Relevant Files section contains 161 candidate concrete references. Eight parser hits are intentional non-current references: the deleted Yahoo token artifact, ignored local environment file, historical applied migration names, `.DS_Store`, and prose `.limit()` text. No newly added control artifact is missing.
 - The current cross-initiative, security, data-completeness, end-to-end, 6.5 verification, and UX/performance artifacts are linked from the master Relevant Files section and current PRD/final-summary/diary receipts. Their current counts, open gates, and no-external-mutation boundaries agree.
 - Referenced runbooks, schema/migration contracts, operational inventories, and source reports remain owned by their initiative lists; no source checkbox or runtime contract was changed by this synchronization-only checkpoint.

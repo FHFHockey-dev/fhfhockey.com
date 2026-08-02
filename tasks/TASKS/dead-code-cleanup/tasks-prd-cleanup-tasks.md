@@ -62,7 +62,7 @@
 - `.tmp-next-dev.log`, `web/lib/supabase/sosStandings.log`, `web/tmp/team-underlying-audit*.json`, and `yahoo_historical.log` - Seven write-only/generated development, audit, and ingestion outputs removed from tracking while their ignored physical copies remain local.
 - `tasks/TASKS/rules/process-task-list.mdc` - Governing explicit-path staging and coherent checkpoint-commit discipline added after the cache incident.
 - `web/lib/supabase/Upserts/Yahoo/__pycache__/*.pyc` - Three pre-existing tracked Python bytecode artifacts removed forward-only while their source scripts remain intact.
-- `web/lib/supabase/Upserts/supabaseShifts.js` - Legacy ingestion candidate whose credential/URL-bearing logs, including fetched-URL success/error interpolation, are contained under shared B-DRM NEW 22; execution now requires `require.main === module` plus `FHFH_ENABLE_LEGACY_SHIFT_WRITER=1`, and the source-boundary/opt-in guard passes 7/7 (2026-08-02). External invocation/retirement remains evidence-gated.
+- `web/lib/supabase/Upserts/supabaseShifts.js` - Retired on 2026-08-02 after the exact no-invoker and retained-artifact proof under shared B-DRM NEW 22. The deployable source path is deleted, Git history retains recovery, and no credential rotation was needed because no execution or retained secret-bearing output was found.
 
 ### Notes
 
