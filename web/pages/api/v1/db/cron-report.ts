@@ -2097,4 +2097,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
 export default withCronJobAudit(adminOnly(handler as any), {
   jobName: "daily-cron-report",
+  // The report is an observability response, not a row-producing writer.
+  // Do not infer its nested warning counts as rows affected by the report
+  // itself; that creates a self-reinforcing partial-failure entry.
+  recordRowMetrics: false,
 });

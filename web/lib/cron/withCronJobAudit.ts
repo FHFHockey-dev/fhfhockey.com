@@ -147,7 +147,11 @@ function defaultJobName(req: NextApiRequest): string {
 
 export function withCronJobAudit(
   handler: (req: any, res: any) => any,
-  opts?: { jobName?: string; includeFinalAuditReceipt?: boolean },
+  opts?: {
+    jobName?: string;
+    includeFinalAuditReceipt?: boolean;
+    recordRowMetrics?: boolean;
+  },
 ): (req: any, res: any) => Promise<void> {
   return async (req: NextApiRequest, res: NextApiResponse) => {
     const startedAt = Date.now();
@@ -200,8 +204,11 @@ export function withCronJobAudit(
         };
     const durationMs = timing.durationMs;
     const statusCode = res.statusCode;
-    const rowsUpserted = inferRowsAffected(capturedBody);
-    const failedRows = inferFailedRows(capturedBody);
+    const recordRowMetrics = opts?.recordRowMetrics !== false;
+    const rowsUpserted = recordRowMetrics
+      ? inferRowsAffected(capturedBody)
+      : null;
+    const failedRows = recordRowMetrics ? inferFailedRows(capturedBody) : null;
     const inferredFailure =
       thrown != null || statusCode >= 400 || inferFailure(capturedBody);
 

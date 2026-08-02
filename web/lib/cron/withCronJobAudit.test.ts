@@ -220,6 +220,29 @@ describe("withCronJobAudit", () => {
     expect(insertMock.mock.calls[0][0].status).toBe("success");
   });
 
+  it("can omit inferred row metrics for an observability-only report", async () => {
+    const wrapped = withCronJobAudit(
+      async (_req, res) =>
+        res.json({
+          success: true,
+          counts: { totalFailedRows: 50 },
+          warnings: {
+            partialFailureJobs: [
+              { displayName: "daily-cron-report", failedRows: 50 },
+            ],
+          },
+        }),
+      { jobName: "daily-cron-report", recordRowMetrics: false },
+    );
+
+    await wrapped(createMockReq(), createMockRes());
+
+    const row = insertMock.mock.calls[0][0];
+    expect(row.rows_affected).toBeNull();
+    expect(row.details.rowsUpserted).toBeNull();
+    expect(row.details.failedRows).toBeNull();
+  });
+
   it("surfaces a resolved Supabase audit insert error", async () => {
     const consoleErrorSpy = vi
       .spyOn(console, "error")

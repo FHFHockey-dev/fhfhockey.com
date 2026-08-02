@@ -173,6 +173,16 @@ SELECT cron.schedule(
       from: "audit-report@fhfhockey.com",
       subject: expect.stringContaining("Daily Cron Report"),
     });
+    expect(cronJobAuditInsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        job_name: "daily-cron-report",
+        rows_affected: null,
+        details: expect.objectContaining({
+          rowsUpserted: null,
+          failedRows: null,
+        }),
+      }),
+    );
     expect(res.body).toMatchObject({
       success: true,
       jobRunDetailsEmailResult: expect.objectContaining({
