@@ -2,9 +2,19 @@
 
 Date: 2026-07-30
 
-Status: read-only preparation plus disposable-local executable proof only.
-This document does not authorize a Production migration, historical rewrite,
-writer call, projection run, schedule change, or calibration change.
+Status: Production NEW 15 forward repair receipt recorded; remaining scopes
+stay read-only and separately authorized.
+
+**2026-08-02 NEW 15 Production repair receipt:** The exact authorized forward
+operation `e87f3e99-317f-4f80-9cfa-fc450412750f` changed 1,905 source rows and
+49,410 dependent trend rows over 1,830 player-dates. Post-state source and
+unified counts are all target season with source MD5
+`23394878da4315e9013533d460815b0a`; the exact forward scope has zero legacy
+rows and trend identity MD5 `cd94410ea3f8851b8d3155c9cb2299f1`. The physical
+forward replay returned zero source/trend changes. Inverse operation
+`06cc8259-1717-4a26-837e-6c1a8c85ef1c` retains 49,410 inverse rows for a
+separately authorized rollback. NEW 15 is closed; do not run the 2024–25
+trend rebuild until its remaining independent gates are authorized.
 
 **2026-08-02 hosted-ledger overlay:** Read-only Supabase evidence shows the
 exact migration `20260731015416_repair_wgo_player_season_identity` present in
