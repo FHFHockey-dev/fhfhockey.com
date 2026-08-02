@@ -8424,3 +8424,8 @@
 
 - **Control update:** `cross-initiative-ownership-reconciliation.md` now reflects the clean isolated control tree in the current documentation-only scope and distinguishes the current Production scheduler readback (59 active pg_cron plus 20 Vercel jobs) from the historical 65-active pre-deactivation snapshot.
 - **Disposition:** Canonical ownership, compatibility/quarantine boundaries, and remaining provider/history/natural-run gates are unchanged. No source checkbox, runtime, database, deployment, provider, writer, repair, backfill, credential, analytics, or Yahoo state changed.
+
+## Entry 0939 — 2026-08-02 actionable-open gate audit
+
+- **Partition:** A fresh unchecked-row read of the canonical master finds 59 actionable opens: A-AUTH 6, A-CRON-EMAIL 6, A-GDL 11, B-YAHOO 7, A-3P 2, A-SUST model 3, B-SUST-AUD 8, and B-DRM 16. The six fenced rule examples remain non-actionable.
+- **Disposition:** Every open implementation row is held by an explicit credential/provider, historical-repair/backfill, Production/natural-run, or owner-authorized external-evidence gate. The A-CRON-EMAIL 2.4/2.5 chain remains data-dependent and mutation-gated; no new local code cohort was identified. No source checkbox, runtime, database, deployment, provider, writer, repair, backfill, credential, analytics, or Yahoo state changed.
