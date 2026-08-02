@@ -10,6 +10,8 @@ Scope: repository source files under `/Users/tim/Code/fhfhockey.com`, with gener
 
 The final owning-web lint inventory returns zero errors and 52 known warnings: 48 `@next/next/no-img-element` findings and four `import/no-anonymous-default-export` findings. The current dead-code/ownership scan found no new unused suppression, behavior regression, ownership conflict, or consumer finding beyond the already-recorded production/provider/history gates. TypeScript and diff integrity pass. This closes B-CLEAN NEW 7; B-CLEAN is 158/158.
 
+**2026-08-02 current control overlay:** B-CLEAN is `158/158` and B-DEAD is `44/44` in the current source/master roll-up. The retired `supabaseShifts.js` writer is recorded under B-DRM NEW 22; older count snapshots below are historical and remain unchanged.
+
 ## Method
 
 - Enumerated all source files with `rg --files` and `find`.

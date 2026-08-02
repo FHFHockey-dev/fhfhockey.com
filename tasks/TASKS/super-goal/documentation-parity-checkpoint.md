@@ -10,6 +10,8 @@
 
 **2026-08-02 B-DRM NEW 22 retirement overlay:** The exact no-invoker and retained-artifact proof is complete. Under explicit owner authorization, the dormant `web/lib/supabase/Upserts/supabaseShifts.js` entry was deleted; the focused retired-path test passes and Git history retains recovery. No credential rotation or external mutation occurred. Current parity is raw `4,946/5,011`, actionable `4,946/5,005` with 59 open, and mechanical master `5,092/5,176` with 84 open.
 
+The current initiative roll-up is B-CLEAN `158/158`, B-DEAD `44/44`, and B-DRM `95/111`; older dated initiative sections remain append-only historical evidence.
+
 ## 2026-08-01 local auth-contract overlay
 
 The two stale cron-boundary expectations now match the shared fail-closed Unauthorized. response contract. The focused suite passes 7/7 and the middleware suite remains 5/5. This local-only test correction does not alter route behavior, resolve the Production job-392 HTTP-401 current-secret parity gate, add a denominator row, or change the current parity totals below.

@@ -410,6 +410,8 @@ Current reconciled ledger after the 2026-08-02 B-DRM NEW 22 retirement: **5,011 
 
 Current Wave-B initiative roll-up (2026-08-02; supersedes older parent-status prose below): B-CRON-NST 75/75, B-SUST-BAR 95/95, B-SUST-AUD 50/58, B-GAMEGRID 38/38, B-SKO 70/70, B-START 55/55, B-FORGE-COMBO 39/39, B-XG-EX 16/16, B-YAHOO 65/72, B-DRAFT-STYLE 56/56, B-CLEAN 158/158, B-DEAD 44/44, B-DRM 95/111, B-SKO-BURN 6/6, and B-TRENDS 53/53. B-DRAFT-RANKER-P8's five rows are retired to the future roadmap, not active work. The unrelated sheet-sync observation remains separately owned; B-CRON-NST has no open source row.
 
+**2026-08-02 current parent-control reconciliation:** Master 4.12 B-DEAD is checked at `44/44`; master 4.13 B-DRM remains open at `95/111` because NEW 20/23–27/29/32–33/37–39/41/49–51 retain their explicit history, scheduler, deployment, and natural-evidence gates. This supersedes older 4.13 prose below.
+
 Latest B-CLEAN publication evidence: exact eight-path checkpoint `2ba29106c48c18d0ffb8dd18cfa583143aeeefaf` publishes NEW 85–87's exact schedule/score selects, stable core/optional diagnostics, progressive core readiness, focused regression, and synchronized controls. Guarded exact-parent staging, generated/cache/binary/value-free/integrity gates, five files/79 tests plus the focused 51-test rerun, full TypeScript, zero-error scoped lint, 111/143 source/master parity, 4,835 unique stable IDs, one-ahead/zero-behind proof, normal non-force push, and fresh local/tracking/live equality pass. It supersedes TeamStatsPage checkpoint `b023aeab9e57d263b5c3ea4f73a454a2d370b979`; NEW 105/107 remain separate.
 
 ### Source: `tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md` (208 rows)

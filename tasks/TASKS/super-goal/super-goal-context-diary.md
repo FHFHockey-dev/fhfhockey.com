@@ -8404,3 +8404,8 @@
 - **Authorization and disposition:** The owner authorized deletion of `web/lib/supabase/Upserts/supabaseShifts.js` after the exact no-invoker inventory and bounded retained-artifact proof. No runtime, package, workflow, Vercel, migration, import, loader, child-process, manual/external invocation, or retained secret-bearing output was found. The source is deleted from the deployable tree; Git history retains recovery, and no credential rotation was performed because no execution or retention evidence existed.
 - **Focused verification:** The projection-materialization authorization test now verifies the retired path is absent and passes 6/6. TypeScript and `git diff --check` pass; no deployment, database, writer, repair, backfill, provider, credential, Yahoo, analytics, or build action ran.
 - **Parity / closure:** Source NEW 22 and master C0048 close. B-DRM is `95/111` with 16 open; imported parity is raw `4,946/5,011`, actionable `4,946/5,005` with 59 open, and mechanical master is `5,092/5,176` with 84 open. The super-goal remains active.
+
+## Entry 0935 — 2026-08-02 current Wave-B control reconciliation
+
+- **Documentation-only synchronization:** The current source/master roll-up is reconciled across the canonical PRD, master task list, parity checkpoint, dead-code report, final summary, and diary: B-CLEAN `158/158`, B-DEAD `44/44`, and B-DRM `95/111` with 16 open. Older initiative snapshots remain append-only historical evidence.
+- **Boundary:** No source checkbox, runtime, database, deployment, provider, writer, repair, backfill, credential, analytics, or Yahoo state changed. Imported parity remains raw/actionable `4,946/5,011` and `4,946/5,005` with 59 actionable rows open; mechanical master remains `5,092/5,176` with 84 open.
