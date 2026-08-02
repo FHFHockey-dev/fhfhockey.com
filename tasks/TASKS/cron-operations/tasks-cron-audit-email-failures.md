@@ -142,8 +142,7 @@
   - [x] 7.1 Add focused tests for schedule parser path coverage, route alias matching, SQL job matching, and stale inactive job exclusion.
   - [x] 7.2 Add component tests for the new CEO briefing sections and hidden-success behavior.
   - [x] 7.3 Run the targeted Vitest suite and TypeScript check.
-  - [ ] 7.4 Send a preview or controlled test email and confirm the report lists only actionable failures and gaps.
-    - BLOCKED (requires deployed code or local server with production env): command after deploy/local server: `curl -fsS -H "Authorization: Bearer $CRON_SECRET" "https://fhfhockey.com/api/v1/db/cron-report?preview=json"`. Expected result: JSON `success: true`, `dryRun: true`, no Resend send, one suppressed job-status result. Verification query: `select job_name, run_time, details->>'url' from cron_job_audit where job_name='daily-cron-report' order by run_time desc limit 1;`.
+  - [x] 7.4 Send a preview or controlled test email and confirm the report lists only actionable failures and gaps. Hosted Vault-backed preview request 218 returned HTTP 200 with `success:true`, `dryRun:true`, `preview:"json"`; both email paths were suppressed, `warnMissingAudit:0`, `scheduledJobs:59`, `scheduledJobsWithActivity:59`, and `missingObservationJobs:[]` (2026-08-02). No email was sent.
   - [ ] 7.5 After deployment, verify the next morning report shows zero false missing jobs, zero false audit gaps, and only real route/data failures.
     - BLOCKED (next scheduled report after deploy): after 2026-06-12 21:15 UTC, run `select job_name, run_time, status, details->>'response' as response from cron_job_audit where job_name='daily-cron-report' and run_time >= '2026-06-12 21:15:00+00' order by run_time desc limit 1;`. Expected result: response counts show no false missing inactive jobs, no duplicate email send path, and only real route/data failures.
 

@@ -1,5 +1,7 @@
 # FHFH Comprehensive Completion, Audit, and Optimization — Final Summary
 
+**2026-08-02 authenticated cron-report preview checkpoint:** One Vault-backed authenticated GET to `/api/v1/db/cron-report?preview=json` returned HTTP 200 as request 218 with `success:true`, `dryRun:true`, `preview:"json"`, 59 scheduled jobs, 59 with activity, `warnMissingAudit:0`, and no missing-observation jobs. Both email paths were suppressed, so no email was sent. A bounded read-only post-deployment audit query found only this preview row and zero non-preview `daily-cron-report` rows; the next natural report has not occurred, so 7.5/C0047 and NEW 9.0's natural-observation gate remain open.
+
 **2026-08-01 hosted PKCE template/Production lifecycle checkpoint:** Confirm signup and Reset Password templates now use `{{ .RedirectTo }}` plus `{{ .TokenHash }}`. A disposable Production confirmation email was delivered and value-free server readback showed one confirmed/signed-in user, but `/auth/callback` displayed a generic client navigation failure; recovery reached `/auth/reset-password`, password update/sign-out succeeded, and cleanup left zero disposable auth/profile/settings rows. The local callback now falls back to credential-free hard navigation when post-auth router replacement rejects. NEW 46.0 remains open for guarded publication and fresh value-free Production confirmation/Google/recovery evidence. No message values or tokens were recorded; no Vercel build/deployment, migration, writer, repair, backfill, provider, analytics, credential, or Yahoo-revocation action occurred.
 
 **2026-08-01 local auth-contract checkpoint:** The two stale cron authorization assertions now match the existing fail-closed Unauthorized. response contract. The focused suite passes 7/7 and the middleware suite remains 5/5. This improves local regression coverage without changing route behavior or closing the Production job-392 current-secret parity gate; no denominator row or external state changed.
@@ -52,11 +54,11 @@ This section is the current summary for the active control plane. Older initiati
 
 | Ledger | Checked | Total | Open | Evidence |
 | --- | ---: | ---: | ---: | --- |
-| Imported raw source claims | 4,944 | 5,011 | 67 | 76 source sections and the parity receipt in [`documentation-parity-checkpoint.md`](documentation-parity-checkpoint.md) |
-| Imported actionable claims | 4,944 | 5,005 | 61 | Six fenced rule examples are excluded as non-actionable; current source/master parity is exact |
-| Mechanical master control plane | 5,090 | 5,176 | 86 | Master task-list direct recount after the 2026-08-01 NEW 61 natural Sustainability handoff closure |
+| Imported raw source claims | 4,945 | 5,011 | 66 | 76 source sections and the parity receipt in [`documentation-parity-checkpoint.md`](documentation-parity-checkpoint.md) |
+| Imported actionable claims | 4,945 | 5,005 | 60 | Six fenced rule examples are excluded as non-actionable; current source/master parity is exact |
+| Mechanical master control plane | 5,091 | 5,176 | 85 | Master task-list direct recount after the 2026-08-02 7.4 preview evidence closure |
 
-The 86 master open rows consist of the 61 imported actionable rows plus 25 control-plane rows (parent/verification/completion gates). The four newly registered Wave-C children add four checked rows and four denominator rows; NEW-027, NEW 58/59, and NEW 61 are closed by their guarded publication/natural-report/handoff evidence above; no denominator was reduced to make a checkpoint appear better.
+The 85 master open rows consist of the 60 imported actionable rows plus 25 control-plane rows (parent/verification/completion gates). The four newly registered Wave-C children add four checked rows and four denominator rows; NEW-027, NEW 58/59, and NEW 61 are closed by their guarded publication/natural-report/handoff evidence above; no denominator was reduced to make a checkpoint appear better.
 
 ### Initiative disposition
 

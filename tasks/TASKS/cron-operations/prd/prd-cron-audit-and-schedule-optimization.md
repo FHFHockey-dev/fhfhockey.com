@@ -1,5 +1,7 @@
 # PRD: Cron Audit and Schedule Optimization
 
+**2026-08-02 authenticated cron-report preview checkpoint:** One Vault-backed authenticated GET to `/api/v1/db/cron-report?preview=json` returned HTTP 200 as request 218 with `success:true`, `dryRun:true`, `preview:"json"`, 59 scheduled jobs, 59 with activity, `warnMissingAudit:0`, and no missing-observation jobs. Both email paths were suppressed, so no email was sent. A bounded read-only post-deployment audit query found only this preview row and zero non-preview `daily-cron-report` rows; the next natural report has not occurred, so 7.5/C0047 and NEW 9.0's natural-observation gate remain open.
+
 ## Introduction / Overview
 
 This project defines a full audit and optimization pass for the scheduled cron jobs documented in [cron-schedule.md](/Users/tim/Code/fhfhockey.com/tasks/TASKS/cron-operations/cron-schedule.md). The work has two connected goals:
@@ -117,4 +119,3 @@ The primary execution mode for the audit is local/dev where possible, with produ
 - Should slow-job denotations use a single severity level, or should there be multiple levels such as `slow`, `very slow`, and `optimization required`?
 - For NST-touching jobs that already self-throttle internally, what evidence is sufficient to allow spacing exceptions below the preferred 15-minute gap?
 - Should the benchmark runner persist results into an existing audit table, a new table, local files, or all three?
-
