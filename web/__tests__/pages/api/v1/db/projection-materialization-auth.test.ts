@@ -54,4 +54,11 @@ describe("projection materialization route authorization", () => {
       /console\.(log|warn|error)\([^\n]*(?:supabaseKey|SUPABASE_SERVICE_ROLE_KEY|token|secret|authorization)/i,
     );
   });
+
+  it("keeps the legacy writer behind an explicit recovery opt-in", () => {
+    expect(legacyShiftWriterSource).toContain("require.main === module");
+    expect(legacyShiftWriterSource).toContain(
+      'process.env.FHFH_ENABLE_LEGACY_SHIFT_WRITER === "1"',
+    );
+  });
 });

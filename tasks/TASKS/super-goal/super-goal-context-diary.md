@@ -8386,3 +8386,9 @@
 
 - **Preview receipt:** One Vault-backed authenticated GET to `/api/v1/db/cron-report?preview=json` returned HTTP 200 as request 218 with `success:true`, `dryRun:true`, `preview:"json"`, 59 scheduled jobs, 59 with activity, `warnMissingAudit:0`, and an empty `missingObservationJobs` list. Both the CEO and dedicated job-status email paths were suppressed; no email was sent.
 - **Natural-run check:** A bounded read-only query for `daily-cron-report` audits since the `dpl_47AFWu6itJvqzrpeWkd1fTuQkVjq` checkpoint found one post-deployment row, the preview itself, and zero non-preview rows. The next scheduled natural report has not occurred yet, so 7.5/C0047 and NEW 9.0's natural-observation gate remain open. No writer, migration, repair, backfill, provider, analytics, credential, Yahoo revocation, or email action ran.
+
+## Entry 0932 — 2026-08-02 B-DRM NEW 22 recovery-only execution guard
+
+- **Local containment:** The retained `web/lib/supabase/Upserts/supabaseShifts.js` writer now runs only when it is the direct Node entry point and `FHFH_ENABLE_LEGACY_SHIFT_WRITER=1` is explicitly present. Imports and ordinary direct execution therefore perform no writer work; the recovery path remains available without deleting the historical source or rotating any credential.
+- **Verification:** The existing projection-materialization authorization suite passes 7/7, including the URL/credential redaction and recovery-opt-in assertions; `node --check` and `git diff --check` pass. No secret was read or reproduced, and no writer, migration, repair, backfill, provider, analytics, deployment, or Production data state changed.
+- **Disposition / counts:** This is a local fail-closed containment step, not retirement proof. NEW 22/C0048 remains open for untracked/manual/external execution and retained-log inventory plus owner disposition of the recovery-only entry. Imported and mechanical denominators are unchanged.

@@ -1016,4 +1016,11 @@ async function fetchAndStoreShiftCharts() {
   }
 }
 
-fetchAndStoreShiftCharts();
+// The legacy writer is retained only as an explicitly enabled recovery tool.
+// It must never run as an import-time or accidental direct-execution side effect.
+if (
+  require.main === module &&
+  process.env.FHFH_ENABLE_LEGACY_SHIFT_WRITER === "1"
+) {
+  fetchAndStoreShiftCharts();
+}
