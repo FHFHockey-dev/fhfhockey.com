@@ -61,6 +61,12 @@ type StageResult = {
   steps: StepResult[];
 };
 
+type TerminationReceipt = {
+  state: "not_started" | "completed" | "stopped_on_blocking_failure";
+  resumeRequired: boolean;
+  nextStartDate: string | null;
+};
+
 type ResponseBody = {
   success: boolean;
   mode: RollingForgePipelineMode;
@@ -82,6 +88,7 @@ type ResponseBody = {
     includeAccuracy: boolean;
     stopOnFailure: boolean;
   };
+  termination: TerminationReceipt;
   downstreamSummary: {
     stageId: "downstream_projection_consumers";
     includesLegacyStartChartMaterialization: boolean;
@@ -640,6 +647,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
         includeAccuracy: false,
         stopOnFailure: true
       },
+      termination: {
+        state: "not_started",
+        resumeRequired: false,
+        nextStartDate: null
+      },
       downstreamSummary: {
         stageId: "downstream_projection_consumers",
         includesLegacyStartChartMaterialization: false,
@@ -726,6 +738,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
   const success = !stageResults.some(
     (stage) => stage.blocking && stage.status === "failed"
   );
+  const termination: TerminationReceipt = {
+    state: success ? "completed" : "stopped_on_blocking_failure",
+    resumeRequired: !success,
+    nextStartDate: null
+  };
 
   const downstreamNotes = [
     "Stage 9 is an accuracy-only downstream validation stage, not a canonical skater projection writer.",
@@ -762,6 +779,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
       includeAccuracy,
       stopOnFailure
     },
+    termination,
     downstreamSummary: {
       stageId: "downstream_projection_consumers",
       includesLegacyStartChartMaterialization: false,
@@ -781,5 +799,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
 }
 
 export default withCronJobAudit(adminOnly(handler as any), {
-  jobName: "run-rolling-forge-pipeline"
+  jobName: "run-rolling-forge-pipeline",
+  includeFinalAuditReceipt: true
 });

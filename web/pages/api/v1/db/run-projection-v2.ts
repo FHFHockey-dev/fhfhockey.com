@@ -263,6 +263,7 @@ type Result =
       chunkDays: number;
       resumeFromDate: string | null;
       nextStartDate: string | null;
+      termination: TerminationReceipt;
       gamesProcessed: number;
       playerRowsUpserted: number;
       teamRowsUpserted: number;
@@ -298,6 +299,7 @@ type Result =
       chunkDays: number;
       resumeFromDate: string | null;
       nextStartDate: string | null;
+      termination: TerminationReceipt;
       timedOut: boolean;
       maxDurationMs: string;
       durationMs: string;
@@ -327,6 +329,12 @@ type Result =
       }>;
       processedDates?: string[];
     };
+
+type TerminationReceipt = {
+  state: "not_started" | "blocked" | "resume_required" | "completed";
+  resumeRequired: boolean;
+  nextStartDate: string | null;
+};
 
 function getParam(req: NextApiRequest, key: string): string | null {
   const v = req.query[key];
@@ -940,6 +948,11 @@ async function handler(
         chunkDays,
         resumeFromDate,
         nextStartDate: null,
+        termination: {
+          state: "not_started",
+          resumeRequired: false,
+          nextStartDate: null,
+        },
         pipeline,
         dependencyContract,
         compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
@@ -989,6 +1002,11 @@ async function handler(
         chunkDays,
         resumeFromDate,
         nextStartDate: null,
+        termination: {
+          state: "blocked",
+          resumeRequired: true,
+          nextStartDate: startDateParam ?? endDateParam ?? null,
+        },
         pipeline,
         dependencyContract,
         compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
@@ -1076,6 +1094,11 @@ async function handler(
               chunkDays,
               resumeFromDate,
               nextStartDate: date,
+              termination: {
+                state: "blocked",
+                resumeRequired: true,
+                nextStartDate: date,
+              },
               pipeline,
               dependencyContract,
               compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
@@ -1146,6 +1169,11 @@ async function handler(
               chunkDays,
               resumeFromDate,
               nextStartDate: date,
+              termination: {
+                state: "resume_required",
+                resumeRequired: true,
+                nextStartDate: date,
+              },
               pipeline,
               dependencyContract,
               compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
@@ -1229,6 +1257,11 @@ async function handler(
           chunkDays,
           resumeFromDate,
           nextStartDate: chunkNextStartDate,
+          termination: {
+            state: chunkNextStartDate ? "resume_required" : "completed",
+            resumeRequired: Boolean(chunkNextStartDate),
+            nextStartDate: chunkNextStartDate,
+          },
           pipeline,
           dependencyContract,
           compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
@@ -1295,6 +1328,11 @@ async function handler(
           chunkDays,
           resumeFromDate,
           nextStartDate: asOfDate,
+          termination: {
+            state: "blocked",
+            resumeRequired: true,
+            nextStartDate: asOfDate,
+          },
           pipeline,
           dependencyContract,
           compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
@@ -1344,6 +1382,11 @@ async function handler(
           chunkDays,
           resumeFromDate,
           nextStartDate: asOfDate,
+          termination: {
+            state: "resume_required",
+            resumeRequired: true,
+            nextStartDate: asOfDate,
+          },
           pipeline,
           dependencyContract,
           compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
@@ -1384,6 +1427,11 @@ async function handler(
         chunkDays,
         resumeFromDate,
         nextStartDate: null,
+        termination: {
+          state: "completed",
+          resumeRequired: false,
+          nextStartDate: null,
+        },
         pipeline,
         dependencyContract,
         compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
@@ -1432,6 +1480,11 @@ async function handler(
         chunkDays,
         resumeFromDate,
         nextStartDate: null,
+        termination: {
+          state: "blocked",
+          resumeRequired: true,
+          nextStartDate: asOfDate,
+        },
         pipeline,
         dependencyContract,
         compatibilityInventory: FORGE_COMPATIBILITY_INVENTORY,
@@ -1472,4 +1525,5 @@ async function handler(
 
 export default withCronJobAudit(adminOnly(handler as any), {
   jobName: "run-projection-v2",
+  includeFinalAuditReceipt: true,
 });

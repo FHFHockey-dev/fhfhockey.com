@@ -226,6 +226,15 @@ describe("/api/v1/db/run-rolling-forge-pipeline", () => {
         includeAccuracy: false,
         stopOnFailure: true
       },
+      termination: {
+        state: "completed",
+        resumeRequired: false,
+        nextStartDate: null
+      },
+      finalAudit: {
+        owner: "withCronJobAudit",
+        status: "persisted"
+      },
       downstreamSummary: {
         stageId: "downstream_projection_consumers",
         includesLegacyStartChartMaterialization: false,
