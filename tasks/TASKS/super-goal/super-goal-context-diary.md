@@ -8414,3 +8414,8 @@
 
 - **Correction:** The undated canonical master task-list parent for B-DRM 4.13 still said `92/111` and omitted the closed P0 NEW 22 retirement. It now matches the current source/master roll-up at `95/111`, with the remaining 16 history, scheduler, publication, and natural-evidence gates unchanged.
 - **Boundary:** Documentation-only; no checkbox disposition beyond the already recorded NEW 22 closure changed. No runtime, database, deployment, provider, writer, repair, backfill, credential, analytics, or Yahoo state changed.
+
+## Entry 0937 — 2026-08-02 charter completion-matrix reconciliation
+
+- **Control update:** `completion-gate-reconciliation.md` now reflects the current 76-source parity receipt, actionable `4,946/5,005` ledger with 59 open, B-CRON-NST's 75/75 source rows with its parent synchronization control still open, B-DRM `95/111`, and the latest 6.5 verification plus diary Entries 0929–0936.
+- **Disposition:** Charter answers remain intentionally `NO`/`PARTIAL` where provider, credential, historical-repair, scheduler-natural, or final-governance evidence is still required. No source checkbox, runtime, database, deployment, provider, writer, repair, backfill, credential, analytics, or Yahoo state changed.
