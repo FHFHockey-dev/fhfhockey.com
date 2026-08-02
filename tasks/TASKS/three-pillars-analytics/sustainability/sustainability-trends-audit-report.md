@@ -267,6 +267,13 @@ only for exact Production data-repair authorization/application and post-write
 receipts; migration-history presence is not a repair receipt, and no repair
 has run.
 
+The manifest carries the exact three-mode runner contract: default read-only
+dry-run, receipt-gated forward execution with distinct forward and inverse
+UUIDs, and separately authorized inverse rollback. The isolated checkout has
+no Supabase environment file or exported service credentials, so the dry-run
+must be launched from an owner shell with its existing environment; no secret
+is copied into the repository.
+
 ## Definition and overlap register
 
 | Concept | Current implementations | Preferred authority / disposition |

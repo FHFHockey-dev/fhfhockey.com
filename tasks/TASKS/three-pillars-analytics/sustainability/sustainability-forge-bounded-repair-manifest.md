@@ -227,6 +227,31 @@ An eventual mutation request must quote:
 - an explicit exclusion receipt proving the 21 contaminated FORGE runs,
   projections, and result scopes remain unchanged.
 
-No Sustainability mutation request is ready until the source-season migration
-is applied and the versioned trend/team/rolling dry-run receipts are complete.
-No mutation request may include the 21 contaminated FORGE scopes.
+### Runner command contract (pending authorization)
+
+Run from `web/` with the existing Supabase environment loaded in the shell;
+do not add secrets to the repository or paste them into chat:
+
+```bash
+# Read-only payload preparation; no flags means dry-run.
+npm run repair:wgo-player-season-identity
+
+# Only after exact owner authorization and the returned payload digests are accepted:
+ALLOW_WGO_PLAYER_SEASON_REPAIR=exact-april-2023 \
+  npm run repair:wgo-player-season-identity -- \
+  --execute \
+  --forward-operation=<forward-operation-uuid> \
+  --inverse-operation=<inverse-operation-uuid>
+
+# Rollback is a separate exact authorization, using the retained inverse operation.
+ALLOW_WGO_PLAYER_SEASON_REPAIR=exact-april-2023 \
+  npm run repair:wgo-player-season-identity -- \
+  --rollback \
+  --inverse-operation=<inverse-operation-uuid>
+```
+
+The dry-run must return the frozen counts, both MD5 receipts, and replacement
+and inverse payload SHA-256 values before an execute authorization is valid.
+No Sustainability mutation request is ready until the versioned
+trend/team/rolling dry-run receipts are complete and this exact repair scope is
+authorized. No mutation request may include the 21 contaminated FORGE scopes.

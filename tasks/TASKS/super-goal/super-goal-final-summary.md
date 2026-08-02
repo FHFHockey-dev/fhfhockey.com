@@ -21,6 +21,11 @@ zero affected-date target-season WGO rows, and zero staging rows. The migration
 is applied but data-inert; exact Production data-repair authorization,
 application, and post-write receipts remain open.
 
+**2026-08-02 NEW 15 runner boundary:** The manifest now carries copy-paste
+dry-run, execute, and inverse-rollback forms without embedding credentials.
+The isolated checkout has no Supabase environment, so the default dry-run
+stopped before database access; no runner mode or mutation ran.
+
 **2026-08-02 cross-initiative ownership refresh:** The ownership matrix now reflects the clean isolated control tree in the current documentation-only scope and the current Production scheduler readback of 59 active pg_cron jobs plus 20 Vercel jobs; the earlier 65-active pre-deactivation snapshot is explicitly historical. Canonical writer/reader ownership, Start Chart's read-only FORGE-wrapper boundary, and all remaining provider/history/natural-run gates are unchanged. No runtime or external state changed.
 
 **2026-08-02 natural-report receipt clarification:** Read-only Production evidence confirms scheduled run `148950` at `2026-08-01T21:15:06Z` completed success/HTTP 200 with zero warning and missing-observation counts. The later `01:23Z` audit row is a `preview=json` URL despite lacking a dedicated preview key, so it is not a natural run; `sync-yahoo-players-to-sheet` remains an unrelated observation gap. The natural-report and scheduled-auth gates remain open. No email, writer, or mutation ran.

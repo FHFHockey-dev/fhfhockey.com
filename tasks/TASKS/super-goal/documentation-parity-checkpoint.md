@@ -33,6 +33,12 @@ applied but data-inert; NEW 15 remains open only for exact Production data
 repair authorization/application and post-write receipts. No source checkbox
 or denominator changed.
 
+**2026-08-02 NEW 15 runner boundary:** The manifest's dry-run/execute/rollback
+command contract is synchronized with the report and diary. The isolated
+checkout has no Supabase environment credentials, so the default dry-run
+stopped before database access; no source/master status or external state
+changed.
+
 The current initiative roll-up is B-CLEAN `158/158`, B-DEAD `44/44`, and B-DRM `95/111`; older dated initiative sections remain append-only historical evidence.
 
 ## 2026-08-01 local auth-contract overlay
