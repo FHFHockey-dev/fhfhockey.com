@@ -214,6 +214,100 @@ SELECT cron.schedule(
     });
   });
 
+  it("does not let a same-name method-mismatched probe replace the scheduled result", async () => {
+    cronJobReportSelectMock.mockReturnValue({
+      gte: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({
+          data: [
+            {
+              jobname: "update-player-trend-metrics",
+              scheduled_time: "2026-03-20T12:00:00.000Z",
+              end_time: "2026-03-20T12:00:01.000Z",
+              status: "succeeded",
+              return_message: "200 OK",
+              sql_text:
+                "select net.http_post(url:='https://example.test/api/v1/db/update-player-trend-metrics');",
+            },
+          ],
+          error: null,
+        }),
+      }),
+    });
+    cronJobAuditSelectMock.mockReturnValue({
+      gte: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({
+          data: [
+            {
+              job_name: "update-player-trend-metrics",
+              run_time: "2026-03-20T12:00:01.000Z",
+              rows_affected: 10,
+              status: "success",
+              details: {
+                method: "POST",
+                url: "https://example.test/api/v1/db/update-player-trend-metrics",
+                statusCode: 200,
+                response: JSON.stringify({ success: true, rowsUpserted: 10 }),
+              },
+            },
+            {
+              job_name: "update-player-trend-metrics",
+              run_time: "2026-03-20T12:01:00.000Z",
+              rows_affected: null,
+              status: "failure",
+              details: {
+                method: "GET",
+                url: "https://example.test/api/v1/db/update-player-trend-metrics",
+                statusCode: 405,
+                response: JSON.stringify({ success: false }),
+              },
+            },
+          ],
+          error: null,
+        }),
+      }),
+    });
+    readFileMock.mockResolvedValue(`
+\`\`\`json
+[
+  {
+    "jobid": 392,
+    "jobname": "update-player-trend-metrics",
+    "schedule": "0 12 * * *",
+    "run_time_utc": "12:00 UTC",
+    "active": true,
+    "method": "POST",
+    "route": "/api/v1/db/update-player-trend-metrics"
+  }
+]
+\`\`\`
+`);
+
+    const res = createMockRes();
+    await handler({ method: "GET", query: {} } as any, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      counts: expect.objectContaining({
+        jobsOkLast: 1,
+        jobsFailingLast: 0,
+        // The mismatched probe remains visible as an unmatched audit run;
+        // it must not change the scheduled job's status.
+        auditFailures: 1,
+      }),
+    });
+    expect(cronAuditEmailMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        audits: [
+          expect.objectContaining({
+            jobName: "update-player-trend-metrics",
+            status: "success",
+            statusCode: 200,
+          }),
+        ],
+      }),
+    );
+  });
+
   it("includes SKO low-row warnings in the daily operator email", async () => {
     cronJobReportSelectMock.mockReturnValue({
       gte: vi.fn().mockReturnValue({

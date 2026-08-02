@@ -198,7 +198,7 @@ describe("/api/v1/db/run-projection-v2", () => {
     });
     expect(auditInsertMock.mock.calls[0]?.[0]?.details?.finalAudit).toEqual({
       owner: "withCronJobAudit",
-      status: "pending",
+      status: "persisted",
     });
   });
 

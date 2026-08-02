@@ -1103,14 +1103,21 @@ function candidateMatchesSchedule(
   if (!aliasMatch) return false;
 
   const candidateMethod = candidate.method?.toUpperCase() ?? null;
-  const exactJobNameMatch = candidate.jobName === job.name;
   if (
     job.method !== "SQL" &&
     candidateMethod &&
     candidateMethod !== "UNKNOWN" &&
     candidateMethod !== job.method &&
-    !exactJobNameMatch
+    // A legacy GET scheduler may be converted to POST by an audited route
+    // wrapper. Preserve that one-way compatibility, but never let a GET
+    // probe replace a scheduled POST writer result.
+    !(job.method === "GET" && candidateMethod === "POST")
   ) {
+    // A direct probe can reuse the scheduled job name while using a
+    // different method (for example, an unauthorized GET against a POST
+    // writer). The method contract remains authoritative even when the name
+    // matches exactly; otherwise the probe would replace the real scheduled
+    // result in the daily report.
     return false;
   }
 

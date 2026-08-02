@@ -302,8 +302,11 @@ describe("withCronJobAudit", () => {
     });
     expect(insertMock.mock.calls[0][0].details.finalAudit).toEqual({
       owner: "withCronJobAudit",
-      status: "pending",
+      status: "persisted",
     });
+    expect(insertMock.mock.calls[0][0].details.response).toContain(
+      '"finalAudit":{"owner":"withCronJobAudit","status":"persisted"}',
+    );
   });
 
   it("reports a failed final-audit receipt when persistence returns an error", async () => {
@@ -331,7 +334,7 @@ describe("withCronJobAudit", () => {
     });
     expect(insertMock.mock.calls[0][0].details.finalAudit).toEqual({
       owner: "withCronJobAudit",
-      status: "pending",
+      status: "persisted",
     });
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       "cron_job_audit insert failed",

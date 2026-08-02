@@ -154,9 +154,7 @@ export function withCronJobAudit(
     const jobName = opts?.jobName ?? defaultJobName(req);
 
     let capturedBody: unknown = null;
-    let pendingResponse:
-      | { kind: "json" | "send"; body: unknown }
-      | null = null;
+    let pendingResponse: { kind: "json" | "send"; body: unknown } | null = null;
 
     const originalJson = res.json.bind(res);
     res.json = ((body: any) => {
@@ -217,7 +215,10 @@ export function withCronJobAudit(
         ...(capturedBody as Record<string, unknown>),
         finalAudit: {
           owner: "withCronJobAudit",
-          status: "pending",
+          // A row is visible to readers only after this wrapper's insert
+          // succeeds, so a durable row must not advertise a pending receipt.
+          // The response is changed to `failed` below if the insert errors.
+          status: "persisted",
         },
       };
       capturedBody = bodyWithReceipt;
@@ -250,7 +251,7 @@ export function withCronJobAudit(
         finalAudit: opts?.includeFinalAuditReceipt
           ? {
               owner: "withCronJobAudit",
-              status: "pending",
+              status: "persisted",
             }
           : null,
         error:
@@ -277,15 +278,13 @@ export function withCronJobAudit(
         }
       } catch (e) {
         finalAuditStatus = "failed";
-        console.error(
-          "cron_job_audit insert failed",
-          (e as any)?.message ?? e,
-        );
+        console.error("cron_job_audit insert failed", (e as any)?.message ?? e);
       }
     } finally {
-      const responseToFlush = pendingResponse as
-        | { kind: "json" | "send"; body: unknown }
-        | null;
+      const responseToFlush = pendingResponse as {
+        kind: "json" | "send";
+        body: unknown;
+      } | null;
       res.json = originalJson as any;
       if (originalSend) {
         res.send = originalSend as any;
