@@ -6,6 +6,8 @@
 
 **2026-08-02 NEW 50 local receipt-contract checkpoint:** The coordinator and direct projection routes now expose explicit termination/resume state. Their shared audit wrappers opt into a final-audit receipt that is captured in the audit payload before insertion and reports the insert outcome in the flushed response. Focused wrapper/coordinator/projection tests pass 29/29 (10 wrapper, 8 coordinator, 11 projection) plus TypeScript; this is local evidence only, so NEW 50 remains open for guarded publication and a natural Production receipt.
 
+**2026-08-02 NEW 50 receipt-state correction:** The local wrapper contract is now precise: a successfully inserted durable row and its flushed response report `finalAudit.status="persisted"`; an insert error changes the flushed response to `failed`. The earlier denied probes on the prior Production artifact remain historical pending markers and do not prove a natural termination receipt.
+
 **2026-08-02 legacy-writer retirement checkpoint:** B-DRM NEW 22 is closed at `95/111` after the exact no-invoker and retained-artifact proof, explicit owner authorization, and deletion of the dormant `supabaseShifts.js` entry. The focused retired-path test passes; Git history retains recovery of the deleted source. No credential rotation or external state changed.
 
 **2026-07-31 continuous-discovery closure:** NEW 8–85 contain every verified DRM parity, pagination, stale-state, consumer, accessibility, and optimization finding; the re-read found no new issue beyond the explicit Production/history/scheduler/credential gates. The bounded DRM/UI/transactional cohort passes 21 files/243 tests. B-DRM was `94/111` with 17 open at that historical checkpoint; no runtime or external state changed.
