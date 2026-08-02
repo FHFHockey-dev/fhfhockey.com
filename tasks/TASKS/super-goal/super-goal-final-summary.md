@@ -882,7 +882,7 @@ The post-sKO audit inspected all current open source rows outside the completed 
 ### 2026-08-01 local PKCE regression checkpoint
 
 - The browser Supabase client/callback/reset implementation remains explicitly PKCE-first with token-hash compatibility, synchronous credential scrubbing, and safe same-origin returns. A direct client configuration regression was added; the focused AuthForm/callback/reset/location/client cohort passes 5 files/34 tests, plus TypeScript, Prettier, and diff integrity.
-- A-AUTH NEW 46/C0200 remains open only for hosted `{{ .RedirectTo }}` template compatibility, guarded publication, and value-free Production Google/sign-up-confirmation/recovery evidence. No external state changed; imported parity and mechanical master counts remain unchanged.
+- A-AUTH NEW 46/C0200 remains open for guarded publication and value-free Production Google/sign-up-confirmation/recovery evidence. Hosted `{{ .RedirectTo }}`/`{{ .TokenHash }}` templates are configured, and the local 5-file/35-test PKCE cohort includes the post-auth hard-navigation fallback; a disposable Production confirmation was server-confirmed but its callback UI showed a generic navigation failure. No external state changed in this local follow-up; imported parity and mechanical master counts remain unchanged.
 
 ### 2026-08-01 fresh local Supabase replay checkpoint
 
