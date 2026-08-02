@@ -1,4 +1,5 @@
 # Documentation and Source/Master Parity Checkpoint (7.1)
+**2026-08-02 B-DRM audit/ownership parity overlay:** Source NEW 41/51 and master C0067/C0077 are checked from exact deployed checkpoint `3e74ac295373af6dfe8efea1c8983403b4531cac`, READY Production `dpl_47AFWu6itJvqzrpeWkd1fTuQkVjq`, and bounded natural audit receipts. Current parity is raw `4,950/5,011`, actionable `4,950/5,005` with 55 open; mechanical master is `5,096/5,176` with 80 open; B-DRM is `97/111` with 14 open. NEW 49/50 and remaining history/provider/repair gates are unchanged.
 **2026-08-02 A-CRON-EMAIL C0051/NEW 9.0 parity overlay:** The natural job-392 Production run completed POST HTTP 200/success at `2026-08-02T12:00:13.778493Z` in `11,603` ms with bounded fields `success=true`, `playersProcessed=0`, `gamesProcessed=52,151`, and `metricsUpserted=0`. Current-auth parity is proven without a manual invocation or credential-value access; separate NST `NST_KEY`-missing/timeout failures and the natural report's real missing-audit/partial-failure findings remain open under C0047/7.5. Source/master checkboxes are synchronized at raw/actionable `4,948/5,011` and `4,948/5,005` with 57 open; mechanical master is `5,094/5,176` with 82 open.
 
 **2026-08-02 NEW 15 Production receipt overlay:** The authorized exact WGO forward operation changed 1,905 source rows and 49,410 dependent trend rows over 1,830 player-dates. Source/unified post-state is all target season at source MD5 `23394878da4315e9013533d460815b0a`; the forward scope is all target season at trend MD5 `cd94410ea3f8851b8d3155c9cb2299f1`; replay changed zero rows. The inverse 49,410-row staging manifest remains retained for separate rollback authorization. Source/master parity is now raw/actionable `4,947/5,011` and `4,947/5,005` with 58 open; mechanical master is `5,093/5,176` with 83 open. No other external action occurred.
@@ -54,7 +55,7 @@ advisor findings, RLS enabled on all four target tables, and no `anon` or
 `authenticated` execution privilege on the seven target routines; unrelated
 baseline advisor warnings remain observation-only.
 
-The current initiative roll-up is B-CLEAN `158/158`, B-DEAD `44/44`, and B-DRM `95/111`; older dated initiative sections remain append-only historical evidence.
+The current initiative roll-up is B-CLEAN `158/158`, B-DEAD `44/44`, and B-DRM `97/111`; older dated initiative sections remain append-only historical evidence.
 
 **2026-08-01 parser-format reconciliation:** A direct stable-ID parity parser
 covered all `5,011` imported rows across `76` source paths with zero
@@ -85,8 +86,8 @@ The two stale cron-boundary expectations now match the shared fail-closed Unauth
 
 ## Parity checks
 
-- A read-only parser found all 76 imported source paths represented in the canonical master. Counts are exact at `4,948/5,011` raw; no source/master checked/total mismatch was found. The six fenced `generate-tasks.mdc` format examples remain explicitly non-actionable reference rows.
-- The mechanical master roll-up is `5,094/5,176`; imported actionable parity is `4,948/5,005` with 57 open. Historical checkpoint paragraphs remain append-only and are not treated as current totals.
+- A read-only parser found all 76 imported source paths represented in the canonical master. Counts are exact at `4,950/5,011` raw; no source/master checked/total mismatch was found. The six fenced `generate-tasks.mdc` format examples remain explicitly non-actionable reference rows.
+- The mechanical master roll-up is `5,096/5,176`; imported actionable parity is `4,950/5,005` with 55 open. Historical checkpoint paragraphs remain append-only and are not treated as current totals.
 - The master Relevant Files section contains 161 candidate concrete references. Eight parser hits are intentional non-current references: the deleted Yahoo token artifact, ignored local environment file, historical applied migration names, `.DS_Store`, and prose `.limit()` text. No newly added control artifact is missing.
 - The current cross-initiative, security, data-completeness, end-to-end, 6.5 verification, and UX/performance artifacts are linked from the master Relevant Files section and current PRD/final-summary/diary receipts. Their current counts, open gates, and no-external-mutation boundaries agree.
 - Referenced runbooks, schema/migration contracts, operational inventories, and source reports remain owned by their initiative lists; no source checkbox or runtime contract was changed by this synchronization-only checkpoint.

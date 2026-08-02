@@ -1,5 +1,7 @@
 # PRD: Dead Code & Hidden Surface Audit
 
+**2026-08-02 DRM audit/ownership overlay:** B-DRM NEW 41 and NEW 51 close from exact deployed checkpoint `3e74ac295373af6dfe8efea1c8983403b4531cac`, READY Production deployment `dpl_47AFWu6itJvqzrpeWkd1fTuQkVjq`, and bounded natural audit metadata. B-DRM is `97/111` with 14 open; remaining DRM rows retain explicit scheduler, history, repair, migration, deployment, or natural-evidence gates.
+
 > **Implementation task list:** `tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md`
 
 Generated: 2026-04-28
