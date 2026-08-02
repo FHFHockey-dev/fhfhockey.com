@@ -6,6 +6,13 @@ Status: read-only preparation plus disposable-local executable proof only.
 This document does not authorize a Production migration, historical rewrite,
 writer call, projection run, schedule change, or calibration change.
 
+**2026-08-02 hosted-ledger overlay:** Read-only Supabase evidence shows the
+exact migration `20260731015416_repair_wgo_player_season_identity` present in
+the hosted ledger and the project `ACTIVE_HEALTHY`. The bounded pre-repair
+state remains `1,905` wrong-season WGO rows, `49,410` wrong-season trend rows,
+zero affected-date target-season WGO rows, and zero staging rows. The data
+repair has not run; this overlay does not authorize it.
+
 ## Invariants
 
 - Preserve every existing historical `forge_runs` row and projection row.
@@ -52,9 +59,11 @@ conflicts on the affected player/date/metric scope. Receipts:
 - Ordered trend identity MD5 over `player_id:game_date:metric_key`:
   `cd94410ea3f8851b8d3155c9cb2299f1`.
 
-Migration `20260731015416_repair_wgo_player_season_identity.sql` is inert on
-application. It exposes browser-denied, service-only bounded staging for exact
-forward and retained inverse payloads, then atomically locks and repairs the
+Migration `20260731015416_repair_wgo_player_season_identity.sql` is present in
+the hosted migration ledger but remains data-inert until a service-role caller
+stages the complete replacement (or retained inverse) payload. It exposes
+browser-denied, service-only bounded staging for exact forward and retained
+inverse payloads, then atomically locks and repairs the
 1,905 source rows, refreshes `player_stats_unified`, and exact-replaces the
 49,410 dependent trend rows only after both ordered receipts and all
 cardinalities match. The dry-run-first
@@ -66,8 +75,9 @@ The disposable local cohort proves the exact 1,905/49,410 fixture in 99
 finalization, transaction rollback with zero residue, advisory-lock
 serialization, browser denial/service ACL, RLS, clean full migration reset,
 generated `public`/`analytics` types, and zero-error database lint. NEW 15
-remains open for exact Production migration/repair authorization and post-write
-receipts. Do not run a 2024–25 trend rebuild before that repair completes.
+remains open only for exact Production data-repair authorization/application
+and post-write receipts; migration-history presence is not a repair receipt.
+Do not run a 2024–25 trend rebuild before that repair completes.
 
 ### Sustainability score provenance
 

@@ -24,6 +24,15 @@ excluded. The generated file inventory is explicitly labeled historical and
 records the deleted legacy shift-writer path in a current overlay. No source
 checkbox, denominator, runtime, database, or external state changed.
 
+**2026-08-02 NEW 15 ledger clarification:** Read-only hosted evidence shows
+`20260731015416_repair_wgo_player_season_identity` present in the 28-row
+migration ledger and the project `ACTIVE_HEALTHY`; aggregate pre-repair state
+remains `1,905` wrong-season WGO rows, `49,410` wrong-season trend rows, zero
+affected-date target-season WGO rows, and zero staging rows. The migration is
+applied but data-inert; NEW 15 remains open only for exact Production data
+repair authorization/application and post-write receipts. No source checkbox
+or denominator changed.
+
 The current initiative roll-up is B-CLEAN `158/158`, B-DEAD `44/44`, and B-DRM `95/111`; older dated initiative sections remain append-only historical evidence.
 
 ## 2026-08-01 local auth-contract overlay

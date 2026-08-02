@@ -13,6 +13,14 @@ Sustainability/FORGE repair manifest remains read-only and mutation-gated for
 NEW 15; the 21 contaminated FORGE scopes remain excluded. No source/master
 row, denominator, or external state changed.
 
+**2026-08-02 NEW 15 ledger clarification:** Read-only hosted evidence shows
+`20260731015416_repair_wgo_player_season_identity` in the 28-row migration
+ledger and `ACTIVE_HEALTHY` project status. The affected pre-repair state is
+unchanged at `1,905` wrong-season WGO rows, `49,410` wrong-season trend rows,
+zero affected-date target-season WGO rows, and zero staging rows. The migration
+is applied but data-inert; exact Production data-repair authorization,
+application, and post-write receipts remain open.
+
 **2026-08-02 cross-initiative ownership refresh:** The ownership matrix now reflects the clean isolated control tree in the current documentation-only scope and the current Production scheduler readback of 59 active pg_cron jobs plus 20 Vercel jobs; the earlier 65-active pre-deactivation snapshot is explicitly historical. Canonical writer/reader ownership, Start Chart's read-only FORGE-wrapper boundary, and all remaining provider/history/natural-run gates are unchanged. No runtime or external state changed.
 
 **2026-08-02 natural-report receipt clarification:** Read-only Production evidence confirms scheduled run `148950` at `2026-08-01T21:15:06Z` completed success/HTTP 200 with zero warning and missing-observation counts. The later `01:23Z` audit row is a `preview=json` URL despite lacking a dedicated preview key, so it is not a natural run; `sync-yahoo-players-to-sheet` remains an unrelated observation gap. The natural-report and scheduled-auth gates remain open. No email, writer, or mutation ran.

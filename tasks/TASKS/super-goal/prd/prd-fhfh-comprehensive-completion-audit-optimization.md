@@ -27,6 +27,15 @@ still held for exact Production migration/repair and post-write receipts, and
 the 21 contaminated FORGE scopes remain excluded. No source/master row or
 denominator changed, and no external state was mutated.
 
+**2026-08-02 NEW 15 ledger clarification:** Read-only hosted Supabase evidence
+shows `20260731015416_repair_wgo_player_season_identity` present in the
+28-row migration ledger and the project `ACTIVE_HEALTHY`; aggregate readback
+still shows `1,905` wrong-season WGO rows, `49,410` wrong-season trend rows,
+zero affected-date target-season WGO rows, and zero staging rows. The migration
+is applied but data-inert; NEW 15 remains open only for exact Production data
+repair authorization/application and post-write receipts. No source/master
+checkbox or denominator changed.
+
 **2026-08-02 current Wave-B roll-up reconciliation:** The canonical current source/master initiative statuses are B-CLEAN `158/158`, B-DEAD `44/44`, and B-DRM `95/111` with 16 open; this supersedes older initiative-table narratives retained below. No source row, runtime, database, provider, deployment, or external state changed in this evidence-only synchronization.
 
 **2026-08-02 natural-report receipt clarification:** Read-only Production evidence confirms scheduled run `148950` at `2026-08-01T21:15:06Z` completed success/HTTP 200 with zero warning and missing-observation counts. The later `01:23Z` audit row is a `preview=json` URL despite lacking a dedicated preview key, so it is not a natural run; `sync-yahoo-players-to-sheet` remains an unrelated observation gap. The natural-report and scheduled-auth gates remain open.

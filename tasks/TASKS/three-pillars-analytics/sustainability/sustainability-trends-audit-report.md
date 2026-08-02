@@ -4,6 +4,14 @@
 
 **2026-08-01 NEW 61 natural Sustainability handoff:** Production migration `20260730091500` is read back with baseline job 326 active and jobs 370/371/372/376 inactive. The Aug 1 natural baseline → priors → three window-z chunks → three score stages → four trend-band chunks are non-overlapping, HTTP 200/success, and each has a truthful audit timing receipt. The cross-provider scheduler gate is closed; Sustainability formula, history, repair, and other Production gates remain open.
 
+**2026-08-02 NEW 15 ledger clarification:** Read-only hosted evidence shows
+`20260731015416_repair_wgo_player_season_identity` present in the migration
+ledger and the project `ACTIVE_HEALTHY`. Aggregate pre-repair readback still
+shows `1,905` wrong-season WGO rows, `49,410` wrong-season trend rows, zero
+affected-date target-season WGO rows, and zero staging rows. NEW 15 therefore
+remains open only for the exact Production data-repair authorization,
+application, and post-write receipts; no writer or repair ran.
+
 **2026-07-31 bounded execution checkpoint:** The canonical Production publication now carries the exact 16 ordered predeploy migrations and passes value-free scheduler, reader, ACL/advisor, and error-boundary checks; the Utah repair, analytics tracking reconciliation, Yahoo cache revocation, historical repairs, writers, and backfills remain excluded. The disposable local stack replays all 27 active migrations through `20260731040341` with 76/76 migration-contract tests and rollback-contained promotion/snapshot receipts. Sustainability NEW 2/6/7/9/10/13/15 remain open for their separately authorized formula, unit/history, provenance, scheduler, repair, or Production gates; this report records no new data or runtime completion claim.
 
 **2026-07-31 scheduler readback:** The applied ownership migration is reflected in the hosted catalog: pg_cron jobs 370/371/372/376 are inactive and baseline job 326 remains active. This is read-only evidence; the Sustainability scheduler row remains open for deployed zero-scope-concurrency, ordered handoff/audit, and natural-run proof.
@@ -250,12 +258,14 @@ rollback/idempotency requirements, and no-mutation boundary.
 
 The preparation does not close a historical repair. NEW 14's owner-approved
 no-backfill disposition is now carried explicitly into the manifest by closed
-NEW 16, so all 21 FORGE scopes remain non-authorizable. NEW 15 has an inert,
-service-only migration and dry-run-first runner that pass the exact local
+NEW 16, so all 21 FORGE scopes remain non-authorizable. NEW 15 has an
+applied-but-data-inert, service-only migration and dry-run-first runner that
+pass the exact local
 forward/inverse/replay, transaction rollback, advisory-lock, ACL/RLS,
 blank-reset, and database-lint cohort. The historical row remains open
-only for exact Production migration/repair authorization and post-write
-receipts; no repair has run.
+only for exact Production data-repair authorization/application and post-write
+receipts; migration-history presence is not a repair receipt, and no repair
+has run.
 
 ## Definition and overlap register
 
