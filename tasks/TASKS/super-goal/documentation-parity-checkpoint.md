@@ -53,6 +53,13 @@ baseline advisor warnings remain observation-only.
 
 The current initiative roll-up is B-CLEAN `158/158`, B-DEAD `44/44`, and B-DRM `95/111`; older dated initiative sections remain append-only historical evidence.
 
+**2026-08-01 parser-format reconciliation:** A direct stable-ID parity parser
+covered all `5,011` imported rows across `76` source paths with zero
+checked-state mismatches and no missing source files. The Sustainability
+Barometer's first imported row intentionally uses zero-based `C0000`, matching
+the source's first checkbox at original line 41. This is an ordinal-format
+convention, not source/master drift; no row status or denominator changed.
+
 ## 2026-08-01 local auth-contract overlay
 
 The two stale cron-boundary expectations now match the shared fail-closed Unauthorized. response contract. The focused suite passes 7/7 and the middleware suite remains 5/5. This local-only test correction does not alter route behavior, resolve the Production job-392 HTTP-401 current-secret parity gate, add a denominator row, or change the current parity totals below.

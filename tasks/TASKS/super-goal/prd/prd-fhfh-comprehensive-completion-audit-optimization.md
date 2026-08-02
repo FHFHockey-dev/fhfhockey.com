@@ -18,6 +18,13 @@
 
 **2026-08-02 B-DRM NEW 22 retirement checkpoint:** The exact no-invoker and retained-artifact proof is complete; explicit owner authorization deleted the dormant `web/lib/supabase/Upserts/supabaseShifts.js` entry, and the focused retired-path test passes. Git history retains recovery, no credential rotation was needed, and no external state changed. Imported parity is raw `4,946/5,011` and actionable `4,946/5,005` with 59 open; the mechanical master is `5,092/5,176` with 84 open; B-DRM is `95/111` with 16 open. All remaining provider, formula/history, repair, writer, backfill, analytics, credential, Yahoo, browser, natural-run, and final-completion gates remain explicit.
 
+**2026-08-01 source/master parser-format reconciliation:** A direct stable-ID
+parity parser covered all `5,011` imported rows across `76` source paths with
+zero checked-state mismatches and no missing source files. The Sustainability
+Barometer's first imported row intentionally uses zero-based `C0000` (matching
+the source's first checkbox at original line 41); this is an ordinal-format
+convention, not drift, and changes no row status or denominator.
+
 **2026-08-02 supporting-artifact reconciliation:** The Utah WGO repair
 contract and generated file inventory now carry current-status overlays that
 distinguish the completed exact 88-row repair and deleted legacy shift-writer

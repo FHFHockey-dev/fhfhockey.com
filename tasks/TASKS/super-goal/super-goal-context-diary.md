@@ -8464,3 +8464,9 @@
 - **Read-only catalog checks:** Local schema lint returns zero results. Target-filtered advisors return zero findings; the broader 63-warning advisor output concerns unrelated baseline tables and remains observation-only.
 - **ACL/RLS boundary:** RLS is enabled on all four target tables, and all seven target mutation/control routines deny `anon` and `authenticated` execution. This complements the existing local rollback, replay, advisory-lock, and contention proof.
 - **Disposition:** No checkbox or denominator changed. Hosted repair/history authorization and post-write receipts remain required; no local or hosted data, writer, migration, provider, deployment, credential, analytics, or Yahoo state was mutated.
+
+## Entry 0946 — 2026-08-01 source/master parser-format reconciliation
+
+- **Read-only parity evidence:** A direct stable-ID parser covered all `5,011` imported rows across `76` source paths with zero checked-state mismatches and no missing source files.
+- **Ordinal classification:** The Sustainability Barometer's first imported row is intentionally zero-based `C0000`, matching the source's first checkbox at original line 41. This is a historical ordinal-format convention, not drift.
+- **Disposition:** No source/master checkbox, denominator, runtime, database, writer, repair, backfill, provider, credential, analytics, deployment, or Yahoo state changed. The owner-shell WGO dry-run remains the next executable gate.

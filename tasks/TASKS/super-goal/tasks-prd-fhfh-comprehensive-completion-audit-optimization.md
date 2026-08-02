@@ -10,6 +10,13 @@ read-only and NEW 15 remains held for exact Production migration/repair and
 post-write receipts. No source/master checkbox, denominator, or external state
 changed.
 
+**2026-08-01 source/master parser-format reconciliation:** A direct stable-ID
+parity parser covered all `5,011` imported rows across `76` source paths with
+zero checked-state mismatches and no missing source files. The Sustainability
+Barometer's first imported row intentionally uses zero-based `C0000` (matching
+the source's first checkbox at original line 41); this is an ordinal-format
+convention, not drift, and changes no row status or denominator.
+
 **2026-08-02 NEW 15 ledger clarification:** Read-only hosted Supabase evidence
 shows `20260731015416_repair_wgo_player_season_identity` present in the
 28-row migration ledger and `ACTIVE_HEALTHY` project status. Aggregate

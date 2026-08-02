@@ -4,6 +4,13 @@
 
 **2026-08-02 authorized B-DRM NEW 22 retirement:** The exact no-invoker and retained-artifact proof found no execution or retained secret-bearing output. With explicit owner authorization, `web/lib/supabase/Upserts/supabaseShifts.js` was deleted from the deployable tree; the focused retired-path test passes, Git history retains recovery, and no credential rotation was needed. Imported parity is raw `4,946/5,011`, actionable `4,946/5,005` with 59 open; mechanical master is `5,092/5,176` with 84 open; B-DRM is `95/111` with 16 open. No deployment, database, writer, repair, backfill, provider, analytics, credential, or Yahoo action occurred.
 
+**2026-08-01 source/master parser-format reconciliation:** A direct stable-ID
+parity parser covered all `5,011` imported rows across `76` source paths with
+zero checked-state mismatches and no missing source files. The Sustainability
+Barometer's first imported row intentionally uses zero-based `C0000` (matching
+the source's first checkbox at original line 41); this is an ordinal-format
+convention, not drift, and changes no row status or denominator.
+
 **2026-08-02 supporting-artifact reconciliation:** The Utah WGO contract now
 records the already-completed exact 88-row Production receipt (digest
 `dd27185df94d9f7e9816eb3a9a8a8b66`, zero team-59 residue, 38,484 total WGO
