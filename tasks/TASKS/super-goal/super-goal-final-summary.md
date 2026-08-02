@@ -33,6 +33,13 @@ dry-run, execute, and inverse-rollback forms without embedding credentials.
 The isolated checkout has no Supabase environment, so the default dry-run
 stopped before database access; no runner mode or mutation ran.
 
+**2026-08-01 resumed execution gate:** A bounded open-row scan found no
+additional non-gated local implementation cohort. NEW 15's next safe action is
+the default read-only owner-shell dry-run of
+`web/scripts/repair-wgo-player-season-identity.ts`; the exact dry-run output is
+required before any separate Production repair authorization is considered.
+No source/master checkbox or denominator changed.
+
 **2026-08-01 local database validation receipt:** The healthy Colima/Docker
 stack reports `28/28` applied migrations through `20260801195126`; a
 value-free catalog query confirms the four required repair/reader tables and

@@ -8470,3 +8470,10 @@
 - **Read-only parity evidence:** A direct stable-ID parser covered all `5,011` imported rows across `76` source paths with zero checked-state mismatches and no missing source files.
 - **Ordinal classification:** The Sustainability Barometer's first imported row is intentionally zero-based `C0000`, matching the source's first checkbox at original line 41. This is a historical ordinal-format convention, not drift.
 - **Disposition:** No source/master checkbox, denominator, runtime, database, writer, repair, backfill, provider, credential, analytics, deployment, or Yahoo state changed. The owner-shell WGO dry-run remains the next executable gate.
+
+## Entry 0947 — 2026-08-01 resumed execution/open-row gate audit
+
+- **Recovery:** Re-read the governing charter/rules and verified the isolated branch is clean at `87e5ce9c8`, 19 commits ahead of `origin/octoberBranch`; no push or deployment occurred.
+- **Bounded scan:** The current source lists contain 44 unchecked rows outside the canonical control ledger. Every remaining row is held by a Production/natural-run, provider/credential, historical-repair/backfill, migration, or owner-decision gate; no additional non-gated local implementation cohort was identified.
+- **Next action:** Run the default read-only owner-shell command `cd /Users/tim/Code/fhfhockey.com/web/.next-codex-reconcile/web && npm run repair:wgo-player-season-identity` with the owner's existing environment and paste the complete dry-run output. Do not add `--execute` or `--rollback`.
+- **Boundary:** No source/master checkbox, denominator, runtime, database, writer, repair, backfill, provider, credential, analytics, deployment, or Yahoo state changed. Production repair remains separately authorization-gated.

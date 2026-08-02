@@ -60,6 +60,13 @@ Barometer's first imported row intentionally uses zero-based `C0000`, matching
 the source's first checkbox at original line 41. This is an ordinal-format
 convention, not source/master drift; no row status or denominator changed.
 
+**2026-08-01 resumed execution gate:** The bounded open-row scan found no
+additional non-gated local implementation cohort. NEW 15's next safe action is
+the default read-only owner-shell dry-run of
+`web/scripts/repair-wgo-player-season-identity.ts`; the exact output is needed
+before any separate Production repair authorization. No source checkbox,
+denominator, or external state changed.
+
 ## 2026-08-01 local auth-contract overlay
 
 The two stale cron-boundary expectations now match the shared fail-closed Unauthorized. response contract. The focused suite passes 7/7 and the middleware suite remains 5/5. This local-only test correction does not alter route behavior, resolve the Production job-392 HTTP-401 current-secret parity gate, add a denominator row, or change the current parity totals below.

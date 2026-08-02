@@ -12,6 +12,14 @@ return zero findings; RLS is enabled on all four target tables; and all seven
 target mutation/control routines deny `anon` and `authenticated` execution.
 The 63 unrelated local advisor warnings remain observation-only baseline.
 
+**2026-08-01 resumed execution gate:** A bounded open-row scan found no
+additional non-gated local implementation cohort. NEW 15's next safe action is
+the default read-only owner-shell dry-run of
+`web/scripts/repair-wgo-player-season-identity.ts`; the isolated checkout has
+no Supabase environment credentials, so no runner mode or database access was
+attempted. The exact dry-run output is required before any separate Production
+repair authorization is considered. No checkbox or denominator changed.
+
 ## Relevant Files
 
 - `tasks/prd-sustainability-trends-audit.md` - Source PRD that defines the audit scope, validation method, and consolidation goals.

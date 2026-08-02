@@ -49,6 +49,13 @@ separately authorized inverse rollback form. The isolated checkout lacks
 Supabase environment credentials, so no runner mode reached database access;
 the owner-shell dry-run remains the next safe preparation step.
 
+**2026-08-01 resumed execution gate:** A bounded open-row scan found no
+additional non-gated local implementation cohort. NEW 15's next safe action is
+the default read-only owner-shell dry-run of
+`web/scripts/repair-wgo-player-season-identity.ts`; the exact dry-run output is
+required before any separate Production repair authorization is considered.
+No source/master checkbox or denominator changed.
+
 **2026-08-01 local database validation receipt:** The disposable
 Colima/Docker stack is healthy; read-only local catalog evidence shows all
 `28/28` migrations through `20260801195126`, four required repair/reader
