@@ -6,6 +6,8 @@ This note documents the manual setup required for the auth flows now implemented
 
 Evidence status as of 2026-07-31: production and localhost Google OAuth are verified; localhost completed the hosted Supabase callback and returned to a credential-free authenticated `/auth` state before sign-out/local reset and tab cleanup. A fresh disposable confirmation and recovery message were delivered through the active custom SMTP configuration; confirmation and recovery links completed credential-free callback/reset navigation, password update succeeded, and disposable auth/profile/settings cleanup verified zero remaining rows without recording message values or tokens. Preview auth is unsupported. The browser client now explicitly uses Supabase JavaScript PKCE. PKCE remains open under source task `NEW 46.0` for hosted template compatibility and complete value-free Production lifecycle evidence; do not retire legacy fragment compatibility until that gate passes.
 
+**2026-08-01 Production verification update:** The exact PKCE fix was promoted as `dpl_47AFWu6itJvqzrpeWkd1fTuQkVjq` and is READY/current on the canonical aliases. Fresh value-free confirmation and recovery completion passed on Production: callback/reset navigation was clean, the disposable account was confirmed, password update/sign-out succeeded, and exact cleanup left zero auth/profile/settings rows. The Google button reached `accounts.google.com/v3/signin/identifier` with only OAuth parameter names observed; no provider completion or provider mutation was performed under the current no-provider boundary. NEW 46.0 remains open for that separate full Google completion; legacy fragment compatibility stays enabled.
+
 Implemented app routes:
 
 - Production site URL: `https://fhfhockey.com`
