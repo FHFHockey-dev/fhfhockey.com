@@ -8409,3 +8409,8 @@
 
 - **Documentation-only synchronization:** The current source/master roll-up is reconciled across the canonical PRD, master task list, parity checkpoint, dead-code report, final summary, and diary: B-CLEAN `158/158`, B-DEAD `44/44`, and B-DRM `95/111` with 16 open. Older initiative snapshots remain append-only historical evidence.
 - **Boundary:** No source checkbox, runtime, database, deployment, provider, writer, repair, backfill, credential, analytics, or Yahoo state changed. Imported parity remains raw/actionable `4,946/5,011` and `4,946/5,005` with 59 actionable rows open; mechanical master remains `5,092/5,176` with 84 open.
+
+## Entry 0936 — 2026-08-02 B-DRM parent-narrative parity correction
+
+- **Correction:** The undated canonical master task-list parent for B-DRM 4.13 still said `92/111` and omitted the closed P0 NEW 22 retirement. It now matches the current source/master roll-up at `95/111`, with the remaining 16 history, scheduler, publication, and natural-evidence gates unchanged.
+- **Boundary:** Documentation-only; no checkbox disposition beyond the already recorded NEW 22 closure changed. No runtime, database, deployment, provider, writer, repair, backfill, credential, analytics, or Yahoo state changed.
