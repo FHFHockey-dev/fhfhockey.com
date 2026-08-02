@@ -147,7 +147,7 @@ function defaultJobName(req: NextApiRequest): string {
 
 export function withCronJobAudit(
   handler: (req: any, res: any) => any,
-  opts?: { jobName?: string },
+  opts?: { jobName?: string; includeFinalAuditReceipt?: boolean },
 ): (req: any, res: any) => Promise<void> {
   return async (req: NextApiRequest, res: NextApiResponse) => {
     const startedAt = Date.now();
@@ -207,6 +207,34 @@ export function withCronJobAudit(
     const inferredFailure =
       thrown != null || statusCode >= 400 || inferFailure(capturedBody);
 
+    if (
+      opts?.includeFinalAuditReceipt &&
+      capturedBody &&
+      typeof capturedBody === "object" &&
+      !Array.isArray(capturedBody)
+    ) {
+      const bodyWithReceipt = {
+        ...(capturedBody as Record<string, unknown>),
+        finalAudit: {
+          owner: "withCronJobAudit",
+          status: "pending",
+        },
+      };
+      capturedBody = bodyWithReceipt;
+      const pending = pendingResponse as {
+        kind: "json" | "send";
+        body: unknown;
+      } | null;
+      if (pending) {
+        pendingResponse = {
+          kind: pending.kind,
+          body: bodyWithReceipt,
+        };
+      }
+    }
+
+    let finalAuditStatus: "persisted" | "failed" = "persisted";
+
     const row: CronAuditRow = {
       job_name: jobName,
       status: inferredFailure ? "failure" : "success",
@@ -219,6 +247,12 @@ export function withCronJobAudit(
         timing,
         rowsUpserted,
         failedRows,
+        finalAudit: opts?.includeFinalAuditReceipt
+          ? {
+              owner: "withCronJobAudit",
+              status: "pending",
+            }
+          : null,
         error:
           thrown != null
             ? ((thrown as any)?.message ?? safeJson(thrown, 2000))
@@ -233,6 +267,7 @@ export function withCronJobAudit(
           .from("cron_job_audit")
           .insert(row as any);
         if (auditInsertError) {
+          finalAuditStatus = "failed";
           console.error(
             "cron_job_audit insert failed",
             auditInsertError.message ??
@@ -241,6 +276,7 @@ export function withCronJobAudit(
           );
         }
       } catch (e) {
+        finalAuditStatus = "failed";
         console.error(
           "cron_job_audit insert failed",
           (e as any)?.message ?? e,
@@ -254,10 +290,27 @@ export function withCronJobAudit(
       if (originalSend) {
         res.send = originalSend as any;
       }
+      if (
+        opts?.includeFinalAuditReceipt &&
+        pendingResponse?.body &&
+        typeof pendingResponse.body === "object" &&
+        !Array.isArray(pendingResponse.body)
+      ) {
+        pendingResponse = {
+          ...pendingResponse,
+          body: {
+            ...(pendingResponse.body as Record<string, unknown>),
+            finalAudit: {
+              owner: "withCronJobAudit",
+              status: finalAuditStatus,
+            },
+          },
+        };
+      }
       if (responseToFlush?.kind === "json") {
-        originalJson(responseToFlush.body);
+        originalJson(pendingResponse?.body ?? responseToFlush.body);
       } else if (responseToFlush?.kind === "send" && originalSend) {
-        originalSend(responseToFlush.body);
+        originalSend(pendingResponse?.body ?? responseToFlush.body);
       }
     }
   };

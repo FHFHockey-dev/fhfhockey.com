@@ -2,6 +2,8 @@
 
 **2026-08-02 DRM scheduler/ownership overlay:** B-DRM is `98/111` with 13 open. NEW 49 closes from the applied ownership migration, read-only job 308 inactive/job 393 active evidence, READY Production `dpl_47AFWu6itJvqzrpeWkd1fTuQkVjq`, and non-overlapping Aug 1–2 coordinator/horizon-5 receipts; NEW 41 and NEW 51 remain closed. NEW 50 and the remaining DRM rows retain explicit final-audit, scheduler, history, repair, migration, deployment, or natural-evidence gates.
 
+**2026-08-02 NEW 50 local receipt-contract checkpoint:** The coordinator and direct projection routes now expose explicit termination/resume state, and their audited wrappers opt into a final-audit receipt with pending-before-insert and persisted/failed-after-insert response status. Focused local tests pass 29/29 (10 wrapper, 8 coordinator, 11 projection) plus TypeScript; guarded publication and a natural Production receipt remain open.
+
 > **Implementation task list:** `tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md`
 
 Generated: 2026-04-28

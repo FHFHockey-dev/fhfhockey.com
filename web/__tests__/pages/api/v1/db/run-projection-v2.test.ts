@@ -120,6 +120,15 @@ describe("/api/v1/db/run-projection-v2", () => {
     expect(res.statusCode).toBe(500);
     expect(res.body).toMatchObject({
       success: false,
+      termination: {
+        state: "blocked",
+        resumeRequired: true,
+        nextStartDate: "2026-03-20",
+      },
+      finalAudit: {
+        owner: "withCronJobAudit",
+        status: "persisted",
+      },
       error:
         "Upstream dependency returned an HTML error page instead of structured JSON.",
       dependencyContract: {
@@ -186,6 +195,10 @@ describe("/api/v1/db/run-projection-v2", () => {
         },
         blockingIssueCount: 1,
       },
+    });
+    expect(auditInsertMock.mock.calls[0]?.[0]?.details?.finalAudit).toEqual({
+      owner: "withCronJobAudit",
+      status: "pending",
     });
   });
 
