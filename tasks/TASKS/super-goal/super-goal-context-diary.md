@@ -8429,3 +8429,8 @@
 
 - **Partition:** A fresh unchecked-row read of the canonical master finds 59 actionable opens: A-AUTH 6, A-CRON-EMAIL 6, A-GDL 11, B-YAHOO 7, A-3P 2, A-SUST model 3, B-SUST-AUD 8, and B-DRM 16. The six fenced rule examples remain non-actionable.
 - **Disposition:** Every open implementation row is held by an explicit credential/provider, historical-repair/backfill, Production/natural-run, or owner-authorized external-evidence gate. The A-CRON-EMAIL 2.4/2.5 chain remains data-dependent and mutation-gated; no new local code cohort was identified. No source checkbox, runtime, database, deployment, provider, writer, repair, backfill, credential, analytics, or Yahoo state changed.
+
+## Entry 0940 — 2026-08-02 natural-report receipt clarification
+
+- **Read-only evidence:** Scheduled report run `148950` at `2026-08-01T21:15:06Z` completed success/HTTP 200 with zero warning and missing-observation counts. A later `2026-08-02T01:23:19Z` audit row is `/api/v1/db/cron-report?preview=json` by URL despite lacking a dedicated preview key, so it is a preview rather than a second natural run.
+- **Disposition:** The unrelated `sync-yahoo-players-to-sheet` observation remains explicit; the natural-report/scheduled-auth gates remain open. No email, writer, migration, repair, backfill, provider, credential, analytics, Yahoo, deployment, or build action ran.

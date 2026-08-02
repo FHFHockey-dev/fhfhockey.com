@@ -10,6 +10,8 @@
 
 **2026-08-02 B-DRM NEW 22 retirement overlay:** The exact no-invoker and retained-artifact proof is complete. Under explicit owner authorization, the dormant `web/lib/supabase/Upserts/supabaseShifts.js` entry was deleted; the focused retired-path test passes and Git history retains recovery. No credential rotation or external mutation occurred. Current parity is raw `4,946/5,011`, actionable `4,946/5,005` with 59 open, and mechanical master `5,092/5,176` with 84 open.
 
+**2026-08-02 natural-report receipt clarification:** Read-only Production evidence confirms scheduled run `148950` at `2026-08-01T21:15:06Z` completed success/HTTP 200 with zero warning and missing-observation counts. The later `01:23Z` audit row is a `preview=json` URL despite lacking a dedicated preview key, so it is not a natural run; `sync-yahoo-players-to-sheet` remains an unrelated observation gap. The natural-report and scheduled-auth gates remain open.
+
 **2026-08-02 actionable-open gate audit:** A fresh unchecked-row partition re-read the canonical master: 59 actionable opens comprise A-AUTH 6, A-CRON-EMAIL 6, A-GDL 11, B-YAHOO 7, A-3P 2, A-SUST model 3, B-SUST-AUD 8, and B-DRM 16. The six fenced rule examples remain non-actionable. Every open implementation row is held by an explicit credential/provider, historical-repair/backfill, Production/natural-run, or owner-authorized external-evidence gate; the A-CRON-EMAIL 2.4/2.5 chain remains data-dependent and mutation-gated. No new local code cohort or unapproved external action was identified.
 
 The current initiative roll-up is B-CLEAN `158/158`, B-DEAD `44/44`, and B-DRM `95/111`; older dated initiative sections remain append-only historical evidence.

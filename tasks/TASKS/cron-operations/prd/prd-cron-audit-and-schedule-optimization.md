@@ -1,5 +1,7 @@
 # PRD: Cron Audit and Schedule Optimization
 
+**2026-08-02 natural-report receipt clarification:** Read-only Production evidence now confirms scheduled run `148950` at `2026-08-01T21:15:06Z` completed success/HTTP 200 with zero warning and missing-observation counts. The later `2026-08-02T01:23:19Z` audit row is still `/api/v1/db/cron-report?preview=json` by URL despite lacking a dedicated preview key, so it is not a natural run. The unrelated `sync-yahoo-players-to-sheet` observation remains explicit; 7.5/C0047 and NEW 9.0 remain open. No email, writer, or mutation ran.
+
 **2026-08-02 authenticated cron-report preview checkpoint:** One Vault-backed authenticated GET to `/api/v1/db/cron-report?preview=json` returned HTTP 200 as request 218 with `success:true`, `dryRun:true`, `preview:"json"`, 59 scheduled jobs, 59 with activity, `warnMissingAudit:0`, and no missing-observation jobs. Both email paths were suppressed, so no email was sent. A bounded read-only post-deployment audit query found only this preview row and zero non-preview `daily-cron-report` rows; the next natural report has not occurred, so 7.5/C0047 and NEW 9.0's natural-observation gate remain open.
 
 ## Introduction / Overview
