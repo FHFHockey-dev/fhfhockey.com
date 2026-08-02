@@ -18,6 +18,15 @@
 
 **2026-08-02 B-DRM NEW 22 retirement checkpoint:** The exact no-invoker and retained-artifact proof is complete; explicit owner authorization deleted the dormant `web/lib/supabase/Upserts/supabaseShifts.js` entry, and the focused retired-path test passes. Git history retains recovery, no credential rotation was needed, and no external state changed. Imported parity is raw `4,946/5,011` and actionable `4,946/5,005` with 59 open; the mechanical master is `5,092/5,176` with 84 open; B-DRM is `95/111` with 16 open. All remaining provider, formula/history, repair, writer, backfill, analytics, credential, Yahoo, browser, natural-run, and final-completion gates remain explicit.
 
+**2026-08-02 supporting-artifact reconciliation:** The Utah WGO repair
+contract and generated file inventory now carry current-status overlays that
+distinguish the completed exact 88-row repair and deleted legacy shift-writer
+path from their historical pre-change snapshots. The Sustainability/FORGE
+bounded-repair manifest remains a read-only authorization package: NEW 15 is
+still held for exact Production migration/repair and post-write receipts, and
+the 21 contaminated FORGE scopes remain excluded. No source/master row or
+denominator changed, and no external state was mutated.
+
 **2026-08-02 current Wave-B roll-up reconciliation:** The canonical current source/master initiative statuses are B-CLEAN `158/158`, B-DEAD `44/44`, and B-DRM `95/111` with 16 open; this supersedes older initiative-table narratives retained below. No source row, runtime, database, provider, deployment, or external state changed in this evidence-only synchronization.
 
 **2026-08-02 natural-report receipt clarification:** Read-only Production evidence confirms scheduled run `148950` at `2026-08-01T21:15:06Z` completed success/HTTP 200 with zero warning and missing-observation counts. The later `01:23Z` audit row is a `preview=json` URL despite lacking a dedicated preview key, so it is not a natural run; `sync-yahoo-players-to-sheet` remains an unrelated observation gap. The natural-report and scheduled-auth gates remain open.

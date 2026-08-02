@@ -8434,3 +8434,9 @@
 
 - **Read-only evidence:** Scheduled report run `148950` at `2026-08-01T21:15:06Z` completed success/HTTP 200 with zero warning and missing-observation counts. A later `2026-08-02T01:23:19Z` audit row is `/api/v1/db/cron-report?preview=json` by URL despite lacking a dedicated preview key, so it is a preview rather than a second natural run.
 - **Disposition:** The unrelated `sync-yahoo-players-to-sheet` observation remains explicit; the natural-report/scheduled-auth gates remain open. No email, writer, migration, repair, backfill, provider, credential, analytics, Yahoo, deployment, or build action ran.
+
+## Entry 0941 — 2026-08-02 supporting-artifact parity reconciliation
+
+- **Utah contract:** The current exact 88-row Production completion receipt is now appended to `wgo-utah-identity-repair-contract.md`: linked history is `20260730200000 / repair_utah_wgo_team_identity`, digest `dd27185df94d9f7e9816eb3a9a8a8b66` is stable, all 88 rows are team-68 mapped with zero team-59/null-link residue, and total WGO cardinality remains 38,484. The broader relocation-era repair remains separately gated.
+- **Inventory and repair boundary:** The generated file inventory is labeled as a historical snapshot and records the deleted `supabaseShifts.js` path in a current overlay. The Sustainability/FORGE bounded-repair manifest remains read-only: NEW 15 still requires exact Production migration/repair authorization and post-write receipts, and the 21 contaminated FORGE scopes remain excluded.
+- **Parity / boundary:** These are documentation-only reconciliations. No source/master checkbox, denominator, runtime, database, writer, repair, backfill, provider, credential, analytics, Yahoo, deployment, or build state changed. Current imported actionable parity remains `4,946/5,005` with 59 open; mechanical master remains `5,092/5,176` with 84 open.

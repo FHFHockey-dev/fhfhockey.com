@@ -4,6 +4,15 @@
 
 **2026-08-02 authorized B-DRM NEW 22 retirement:** The exact no-invoker and retained-artifact proof found no execution or retained secret-bearing output. With explicit owner authorization, `web/lib/supabase/Upserts/supabaseShifts.js` was deleted from the deployable tree; the focused retired-path test passes, Git history retains recovery, and no credential rotation was needed. Imported parity is raw `4,946/5,011`, actionable `4,946/5,005` with 59 open; mechanical master is `5,092/5,176` with 84 open; B-DRM is `95/111` with 16 open. No deployment, database, writer, repair, backfill, provider, analytics, credential, or Yahoo action occurred.
 
+**2026-08-02 supporting-artifact reconciliation:** The Utah WGO contract now
+records the already-completed exact 88-row Production receipt (digest
+`dd27185df94d9f7e9816eb3a9a8a8b66`, zero team-59 residue, 38,484 total WGO
+rows), and the generated file inventory labels its older tree/list as a
+historical snapshot while recording the deleted shift-writer path. The
+Sustainability/FORGE repair manifest remains read-only and mutation-gated for
+NEW 15; the 21 contaminated FORGE scopes remain excluded. No source/master
+row, denominator, or external state changed.
+
 **2026-08-02 cross-initiative ownership refresh:** The ownership matrix now reflects the clean isolated control tree in the current documentation-only scope and the current Production scheduler readback of 59 active pg_cron jobs plus 20 Vercel jobs; the earlier 65-active pre-deactivation snapshot is explicitly historical. Canonical writer/reader ownership, Start Chart's read-only FORGE-wrapper boundary, and all remaining provider/history/natural-run gates are unchanged. No runtime or external state changed.
 
 **2026-08-02 natural-report receipt clarification:** Read-only Production evidence confirms scheduled run `148950` at `2026-08-01T21:15:06Z` completed success/HTTP 200 with zero warning and missing-observation counts. The later `01:23Z` audit row is a `preview=json` URL despite lacking a dedicated preview key, so it is not a natural run; `sync-yahoo-players-to-sheet` remains an unrelated observation gap. The natural-report and scheduled-auth gates remain open. No email, writer, or mutation ran.

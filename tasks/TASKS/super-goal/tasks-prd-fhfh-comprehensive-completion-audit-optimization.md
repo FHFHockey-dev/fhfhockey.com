@@ -2,6 +2,14 @@
 
 **2026-08-01 hosted PKCE template/Production lifecycle checkpoint:** Confirm signup and Reset Password templates now use `{{ .RedirectTo }}` plus `{{ .TokenHash }}`. The disposable Production confirmation email was delivered and server-confirmed, but `/auth/callback` showed a generic client navigation failure; recovery/password update/sign-out succeeded and cleanup left zero disposable auth/profile/settings rows. The local callback now falls back to credential-free hard navigation when post-auth router replacement rejects. NEW 46.0 remains open for guarded publication and fresh value-free Production confirmation/Google/recovery evidence. No message values or tokens were recorded; no Vercel build/deployment, migration, writer, repair, backfill, provider, analytics, credential, or Yahoo-revocation action occurred.
 
+**2026-08-02 supporting-artifact reconciliation:** The exact Utah WGO
+88-row repair receipt and the deleted legacy shift-writer inventory are now
+explicitly current in their referenced contracts; their older pre-change text
+remains historical. The Sustainability/FORGE bounded-repair manifest remains
+read-only and NEW 15 remains held for exact Production migration/repair and
+post-write receipts. No source/master checkbox, denominator, or external state
+changed.
+
 **2026-08-01 local auth-contract checkpoint:** Two stale authorization-test expectations were aligned with the existing fail-closed Unauthorized. response contract. The focused cron-boundary suite passes 7/7 and the middleware suite remains 5/5. This is local evidence only; C0051/NEW 9.0 remains open because Production job 392 still has HTTP-401 current-secret parity evidence. No denominator row or external state changed.
 
 **2026-08-01 authorized job-392 Vault-header/publication checkpoint:** Clean branch tip `4c1e48abe10f15eeb667938f80b1b0c88f05a0f4` includes the authorized `126faba1e` publication and equals `origin/octoberBranch`. One existing READY preview was promoted to READY/Production as `dpl_CJQB59DAyPnv6gBMASH6vpkCJQEe`; value-free `/auth`, `/forge/dashboard`, and `/underlying-stats` reads were `200`, the unauthenticated trend-metric POST was `401`, and the bounded runtime-error query was empty. Job 392 read back active with its unchanged `0 12 * * *` schedule, POST route, `{}` body, Vault-backed Authorization header, JSON content type, and 300-second timeout. No manual cron run occurred. C0051/NEW 9.0 remains open for current-auth safe validation and the next natural audit observation; imported parity remains raw `4,944/5,011`, actionable `4,944/5,005`, and mechanical master `5,090/5,176` (86 open). No migration, writer, repair, backfill, provider, analytics, credential rotation, or Yahoo-revocation action occurred.

@@ -1,8 +1,18 @@
 # WGO Utah Identity Repair Contract
 
+**2026-08-02 current-status overlay:** The exact authorization-gated 88-row
+contract below was applied in Production from
+`20260730200000_repair_utah_wgo_team_identity.sql` and replay-verified. Linked
+history records `20260730200000 / repair_utah_wgo_team_identity`; the frozen
+digest `dd27185df94d9f7e9816eb3a9a8a8b66` remains stable, all 88 rows are
+team-68 mapped with zero team-59/null-link residue, and total WGO cardinality
+remains 38,484. The pre-application wording below is retained as the frozen
+scope and contract evidence; it is superseded only by this completion receipt.
+The broader relocation-era repair remains separately gated.
+
 ## Scope
 
-This contract prepares `B-CLEAN NEW 105` without authorizing a Production mutation. It covers only the 88 `public.wgo_team_stats` rows for season `20252026` stored under team 59 with the already-correct `Utah Mammoth` name.
+This contract records the frozen scope for `B-CLEAN NEW 105`. It covers only the 88 `public.wgo_team_stats` rows for season `20252026` stored under team 59 with the already-correct `Utah Mammoth` name.
 
 ## Frozen read-only evidence
 

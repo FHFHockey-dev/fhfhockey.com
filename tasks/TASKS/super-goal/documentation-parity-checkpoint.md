@@ -14,6 +14,16 @@
 
 **2026-08-02 actionable-open gate audit:** A fresh unchecked-row partition re-read the canonical master: 59 actionable opens comprise A-AUTH 6, A-CRON-EMAIL 6, A-GDL 11, B-YAHOO 7, A-3P 2, A-SUST model 3, B-SUST-AUD 8, and B-DRM 16. The six fenced rule examples remain non-actionable. Every open implementation row is held by an explicit credential/provider, historical-repair/backfill, Production/natural-run, or owner-authorized external-evidence gate; the A-CRON-EMAIL 2.4/2.5 chain remains data-dependent and mutation-gated. No new local code cohort or unapproved external action was identified.
 
+**2026-08-02 repair-artifact parity overlay:** The Utah contract now carries the
+current exact 88-row Production completion receipt (digest
+`dd27185df94d9f7e9816eb3a9a8a8b66`, 38,484 total WGO rows, zero legacy
+residue). The Sustainability/FORGE bounded-repair manifest remains read-only:
+NEW 15 still requires exact Production migration/repair authorization and
+post-write receipts, while the 21 contaminated FORGE scopes remain terminally
+excluded. The generated file inventory is explicitly labeled historical and
+records the deleted legacy shift-writer path in a current overlay. No source
+checkbox, denominator, runtime, database, or external state changed.
+
 The current initiative roll-up is B-CLEAN `158/158`, B-DEAD `44/44`, and B-DRM `95/111`; older dated initiative sections remain append-only historical evidence.
 
 ## 2026-08-01 local auth-contract overlay
