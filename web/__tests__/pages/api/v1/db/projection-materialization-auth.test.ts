@@ -16,6 +16,11 @@ const routeSources = [
   ),
 }));
 
+const legacyShiftWriterSource = readFileSync(
+  resolve(process.cwd(), "lib/supabase/Upserts/supabaseShifts.js"),
+  "utf8",
+);
+
 describe("projection materialization route authorization", () => {
   it.each(routeSources)(
     "keeps $fileName behind the shared cron/admin boundary inside auditing",
@@ -39,6 +44,14 @@ describe("projection materialization route authorization", () => {
     expect(source).toContain("return ingestProjectionInputsHandler(");
     expect(source).not.toMatch(
       /import\s+ingestProjectionInputsHandler\s+from\s+["']\.\/ingest-projection-inputs["']/,
+    );
+  });
+
+  it("does not log legacy shift-writer URL or credential values", () => {
+    expect(legacyShiftWriterSource).not.toContain("Fetched data from ${url}");
+    expect(legacyShiftWriterSource).not.toContain("Failed to fetch ${url}");
+    expect(legacyShiftWriterSource).not.toMatch(
+      /console\.(log|warn|error)\([^\n]*(?:supabaseKey|SUPABASE_SERVICE_ROLE_KEY|token|secret|authorization)/i,
     );
   });
 });

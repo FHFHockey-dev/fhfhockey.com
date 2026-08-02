@@ -17,10 +17,9 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 async function Fetch(url) {
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
+    throw new Error(`Shift-chart source request failed: ${response.statusText}`);
   }
   const data = await response.json();
-  console.log(`Fetched data from ${url}`);
   return data;
 }
 
