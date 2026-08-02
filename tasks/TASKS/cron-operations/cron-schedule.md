@@ -1,3 +1,11 @@
+-- 2026-08-02 natural job-392/current-auth receipt
+-- The scheduled job-392 run at 2026-08-02T12:00:13.778493Z completed POST
+-- HTTP 200/success in 11,603 ms with value-free fields success=true,
+-- playersProcessed=0, gamesProcessed=52,151, metricsUpserted=0. This proves
+-- current Vault-secret parity without a manual invocation. Separate NST
+-- NST_KEY-missing/timeout runtime failures and the natural report's real
+-- missing-audit/partial-failure warnings remain open under C0047/7.5.
+
 # ALL CRON JOBS:
 ```json
 [
