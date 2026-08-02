@@ -20,6 +20,11 @@ repair/FORGE/sKO routines. The focused five-file migration/route cohort passes
 `46/46` tests. This is local contract evidence only and does not authorize a
 hosted repair, writer, backfill, or migration.
 
+Local schema lint returns zero results; target-filtered advisors return zero
+findings; RLS is enabled on all four target tables; and all seven target
+routines deny `anon` and `authenticated` execution. The broader 63-warning
+advisor baseline is unrelated to this manifest and remains observation-only.
+
 ## Invariants
 
 - Preserve every existing historical `forge_runs` row and projection row.

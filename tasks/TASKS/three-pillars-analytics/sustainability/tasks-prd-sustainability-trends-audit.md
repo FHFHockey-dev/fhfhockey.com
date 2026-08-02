@@ -7,6 +7,11 @@ only; NEW 15 and the other historical-repair rows remain gated on their exact
 Production authorization and post-write receipts. No local or hosted data was
 mutated.
 
+The follow-up local schema lint returns zero results; target-filtered advisors
+return zero findings; RLS is enabled on all four target tables; and all seven
+target mutation/control routines deny `anon` and `authenticated` execution.
+The 63 unrelated local advisor warnings remain observation-only baseline.
+
 ## Relevant Files
 
 - `tasks/prd-sustainability-trends-audit.md` - Source PRD that defines the audit scope, validation method, and consolidation goals.

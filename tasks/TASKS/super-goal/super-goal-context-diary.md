@@ -8458,3 +8458,9 @@
 - **Local runtime:** Colima/Docker's disposable Supabase stack is healthy. The cache-safe CLI readback reports `28/28` local migrations through `20260801195126`; a value-free catalog query confirms the four required repair/reader tables and six required repair/FORGE/sKO routines.
 - **Focused verification:** The migration/route cohort passes five files and `46/46` tests. Two expected mocked `cron_job_audit` warnings are emitted by the projection-accuracy tests; no test failed.
 - **Disposition / boundary:** This is local contract evidence only. NEW 15 remains open for the owner-shell dry-run payload receipts, exact Production authorization/application, and post-write proof. No local or hosted data, migration history, writer, repair, backfill, provider, deployment, credential, analytics, or Yahoo state was mutated.
+
+## Entry 0945 — 2026-08-01 local target security receipt
+
+- **Read-only catalog checks:** Local schema lint returns zero results. Target-filtered advisors return zero findings; the broader 63-warning advisor output concerns unrelated baseline tables and remains observation-only.
+- **ACL/RLS boundary:** RLS is enabled on all four target tables, and all seven target mutation/control routines deny `anon` and `authenticated` execution. This complements the existing local rollback, replay, advisory-lock, and contention proof.
+- **Disposition:** No checkbox or denominator changed. Hosted repair/history authorization and post-write receipts remain required; no local or hosted data, writer, migration, provider, deployment, credential, analytics, or Yahoo state was mutated.

@@ -46,6 +46,11 @@ five-file migration/route cohort passes `46/46` tests. This is value-free local
 contract evidence only; hosted repair/history gates remain open and no data or
 external state changed.
 
+The same local receipt has zero schema-lint results, zero target-filtered
+advisor findings, RLS enabled on all four target tables, and no `anon` or
+`authenticated` execution privilege on the seven target routines; unrelated
+baseline advisor warnings remain observation-only.
+
 The current initiative roll-up is B-CLEAN `158/158`, B-DEAD `44/44`, and B-DRM `95/111`; older dated initiative sections remain append-only historical evidence.
 
 ## 2026-08-01 local auth-contract overlay

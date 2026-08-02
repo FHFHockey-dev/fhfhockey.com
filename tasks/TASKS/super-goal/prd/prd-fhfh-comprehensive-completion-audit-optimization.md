@@ -49,6 +49,11 @@ tables, and six required repair/FORGE/sKO routines. The focused five-file
 migration/route cohort passes `46/46` tests. This does not close NEW 15 or
 authorize hosted mutation.
 
+Local schema lint returns zero results, target-filtered advisors return zero
+findings, RLS is enabled on all four target tables, and all seven target
+routines deny `anon`/`authenticated` execution. The broader 63-warning advisor
+baseline is unrelated and remains observation-only.
+
 **2026-08-02 current Wave-B roll-up reconciliation:** The canonical current source/master initiative statuses are B-CLEAN `158/158`, B-DEAD `44/44`, and B-DRM `95/111` with 16 open; this supersedes older initiative-table narratives retained below. No source row, runtime, database, provider, deployment, or external state changed in this evidence-only synchronization.
 
 **2026-08-02 natural-report receipt clarification:** Read-only Production evidence confirms scheduled run `148950` at `2026-08-01T21:15:06Z` completed success/HTTP 200 with zero warning and missing-observation counts. The later `01:23Z` audit row is a `preview=json` URL despite lacking a dedicated preview key, so it is not a natural run; `sync-yahoo-players-to-sheet` remains an unrelated observation gap. The natural-report and scheduled-auth gates remain open.
