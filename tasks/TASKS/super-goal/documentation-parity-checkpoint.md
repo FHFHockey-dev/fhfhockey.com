@@ -39,6 +39,13 @@ checkout has no Supabase environment credentials, so the default dry-run
 stopped before database access; no source/master status or external state
 changed.
 
+**2026-08-01 local database validation receipt:** Colima/Docker local
+readback reports `28/28` migrations through `20260801195126`, four required
+repair/reader tables, and six required repair/FORGE/sKO routines. The focused
+five-file migration/route cohort passes `46/46` tests. This is value-free local
+contract evidence only; hosted repair/history gates remain open and no data or
+external state changed.
+
 The current initiative roll-up is B-CLEAN `158/158`, B-DEAD `44/44`, and B-DRM `95/111`; older dated initiative sections remain append-only historical evidence.
 
 ## 2026-08-01 local auth-contract overlay

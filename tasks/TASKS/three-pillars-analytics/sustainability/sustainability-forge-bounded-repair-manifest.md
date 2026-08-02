@@ -13,6 +13,13 @@ state remains `1,905` wrong-season WGO rows, `49,410` wrong-season trend rows,
 zero affected-date target-season WGO rows, and zero staging rows. The data
 repair has not run; this overlay does not authorize it.
 
+**2026-08-01 local validation receipt:** The Colima-backed local stack reports
+`28/28` applied migrations through `20260801195126`; a value-free catalog
+query confirms the four required repair/reader tables and six required
+repair/FORGE/sKO routines. The focused five-file migration/route cohort passes
+`46/46` tests. This is local contract evidence only and does not authorize a
+hosted repair, writer, backfill, or migration.
+
 ## Invariants
 
 - Preserve every existing historical `forge_runs` row and projection row.

@@ -26,6 +26,13 @@ dry-run, execute, and inverse-rollback forms without embedding credentials.
 The isolated checkout has no Supabase environment, so the default dry-run
 stopped before database access; no runner mode or mutation ran.
 
+**2026-08-01 local database validation receipt:** The healthy Colima/Docker
+stack reports `28/28` applied migrations through `20260801195126`; a
+value-free catalog query confirms the four required repair/reader tables and
+six required repair/FORGE/sKO routines. The focused five-file migration/route
+cohort passes `46/46` tests. This local evidence does not close the hosted
+repair/history gates or authorize any mutation.
+
 **2026-08-02 cross-initiative ownership refresh:** The ownership matrix now reflects the clean isolated control tree in the current documentation-only scope and the current Production scheduler readback of 59 active pg_cron jobs plus 20 Vercel jobs; the earlier 65-active pre-deactivation snapshot is explicitly historical. Canonical writer/reader ownership, Start Chart's read-only FORGE-wrapper boundary, and all remaining provider/history/natural-run gates are unchanged. No runtime or external state changed.
 
 **2026-08-02 natural-report receipt clarification:** Read-only Production evidence confirms scheduled run `148950` at `2026-08-01T21:15:06Z` completed success/HTTP 200 with zero warning and missing-observation counts. The later `01:23Z` audit row is a `preview=json` URL despite lacking a dedicated preview key, so it is not a natural run; `sync-yahoo-players-to-sheet` remains an unrelated observation gap. The natural-report and scheduled-auth gates remain open. No email, writer, or mutation ran.

@@ -42,6 +42,13 @@ separately authorized inverse rollback form. The isolated checkout lacks
 Supabase environment credentials, so no runner mode reached database access;
 the owner-shell dry-run remains the next safe preparation step.
 
+**2026-08-01 local database validation receipt:** The disposable
+Colima/Docker stack is healthy; read-only local catalog evidence shows all
+`28/28` migrations through `20260801195126`, four required repair/reader
+tables, and six required repair/FORGE/sKO routines. The focused five-file
+migration/route cohort passes `46/46` tests. This does not close NEW 15 or
+authorize hosted mutation.
+
 **2026-08-02 current Wave-B roll-up reconciliation:** The canonical current source/master initiative statuses are B-CLEAN `158/158`, B-DEAD `44/44`, and B-DRM `95/111` with 16 open; this supersedes older initiative-table narratives retained below. No source row, runtime, database, provider, deployment, or external state changed in this evidence-only synchronization.
 
 **2026-08-02 natural-report receipt clarification:** Read-only Production evidence confirms scheduled run `148950` at `2026-08-01T21:15:06Z` completed success/HTTP 200 with zero warning and missing-observation counts. The later `01:23Z` audit row is a `preview=json` URL despite lacking a dedicated preview key, so it is not a natural run; `sync-yahoo-players-to-sheet` remains an unrelated observation gap. The natural-report and scheduled-auth gates remain open.

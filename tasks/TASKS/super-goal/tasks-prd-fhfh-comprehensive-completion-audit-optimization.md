@@ -24,6 +24,13 @@ read-only dry-run plus confirmation-gated execute and separately authorized
 inverse rollback commands. No Supabase environment credentials are present in
 the isolated checkout, so no runner mode reached database access or mutation.
 
+**2026-08-01 local database validation receipt:** Read-only Colima/Docker
+catalog evidence confirms `28/28` local migrations through `20260801195126`,
+four required repair/reader tables, and six required repair/FORGE/sKO routines;
+the focused five-file migration/route cohort passes `46/46` tests. This local
+contract receipt changes no checkbox or denominator and does not authorize a
+hosted repair or other mutation.
+
 **2026-08-01 local auth-contract checkpoint:** Two stale authorization-test expectations were aligned with the existing fail-closed Unauthorized. response contract. The focused cron-boundary suite passes 7/7 and the middleware suite remains 5/5. This is local evidence only; C0051/NEW 9.0 remains open because Production job 392 still has HTTP-401 current-secret parity evidence. No denominator row or external state changed.
 
 **2026-08-01 authorized job-392 Vault-header/publication checkpoint:** Clean branch tip `4c1e48abe10f15eeb667938f80b1b0c88f05a0f4` includes the authorized `126faba1e` publication and equals `origin/octoberBranch`. One existing READY preview was promoted to READY/Production as `dpl_CJQB59DAyPnv6gBMASH6vpkCJQEe`; value-free `/auth`, `/forge/dashboard`, and `/underlying-stats` reads were `200`, the unauthenticated trend-metric POST was `401`, and the bounded runtime-error query was empty. Job 392 read back active with its unchanged `0 12 * * *` schedule, POST route, `{}` body, Vault-backed Authorization header, JSON content type, and 300-second timeout. No manual cron run occurred. C0051/NEW 9.0 remains open for current-auth safe validation and the next natural audit observation; imported parity remains raw `4,944/5,011`, actionable `4,944/5,005`, and mechanical master `5,090/5,176` (86 open). No migration, writer, repair, backfill, provider, analytics, credential rotation, or Yahoo-revocation action occurred.

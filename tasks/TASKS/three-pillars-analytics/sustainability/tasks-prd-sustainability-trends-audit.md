@@ -1,3 +1,12 @@
+**2026-08-01 local database validation receipt:** The Colima-backed local
+Supabase stack is healthy and its read-only catalog reports all `28/28`
+migrations through `20260801195126`, the four required repair/reader tables,
+and the six required repair/FORGE/sKO routines. The focused five-file
+migration/route cohort passes `46/46` tests. This validates the local contract
+only; NEW 15 and the other historical-repair rows remain gated on their exact
+Production authorization and post-write receipts. No local or hosted data was
+mutated.
+
 ## Relevant Files
 
 - `tasks/prd-sustainability-trends-audit.md` - Source PRD that defines the audit scope, validation method, and consolidation goals.

@@ -8452,3 +8452,9 @@
 - **Safe runner check:** The repository script `web/scripts/repair-wgo-player-season-identity.ts` defaults to read-only dry-run. `--execute` requires `ALLOW_WGO_PLAYER_SEASON_REPAIR=exact-april-2023` plus distinct forward/inverse UUIDs; `--rollback` requires the same confirmation and the retained inverse UUID. No write mode was invoked.
 - **Environment boundary:** The isolated checkout has no `.env.local`, `NEXT_PUBLIC_SUPABASE_URL`, or `SUPABASE_SERVICE_ROLE_KEY`, so the default dry-run stopped before database access. The owner can run the exact manifest command from a shell with the existing environment loaded; no secret should be copied into the repository or chat.
 - **Disposition:** This is command/readiness evidence only. NEW 15 remains open for the dry-run payload SHA receipts, exact owner authorization, forward post-count/digest/replay proof, and any separately authorized rollback. No source/master checkbox or denominator changed.
+
+## Entry 0944 — 2026-08-01 local database validation receipt
+
+- **Local runtime:** Colima/Docker's disposable Supabase stack is healthy. The cache-safe CLI readback reports `28/28` local migrations through `20260801195126`; a value-free catalog query confirms the four required repair/reader tables and six required repair/FORGE/sKO routines.
+- **Focused verification:** The migration/route cohort passes five files and `46/46` tests. Two expected mocked `cron_job_audit` warnings are emitted by the projection-accuracy tests; no test failed.
+- **Disposition / boundary:** This is local contract evidence only. NEW 15 remains open for the owner-shell dry-run payload receipts, exact Production authorization/application, and post-write proof. No local or hosted data, migration history, writer, repair, backfill, provider, deployment, credential, analytics, or Yahoo state was mutated.
