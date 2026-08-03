@@ -8689,3 +8689,8 @@
 
 - **Read-only Production evidence:** The `cron_job_audit` window remains at 273 observations: 264 successes and 9 non-successes. Every line-combination run from `12:00Z` through `18:00Z` returned HTTP `200` with `skipped_external_feed_unavailable`; the four HTTP `500` rows are confined to the earlier `10:50Z`–`11:50Z` window. The remaining workload failures are the intentional rolling-games `410` and provider-dependent Yahoo weeks/player `500`s; the two `401` records are retained probes. The natural `daily-cron-report` at `13:00:59Z` remains HTTP `200` with 59/59 activity and zero missing jobs, although its deployed output predates the local report corrections.
 - **Disposition / parity:** This corroborates the local correction without closing any external gate. No source/master checkbox or denominator changed; no database, writer, repair, backfill, provider, analytics, credential, push, build, deployment, or Yahoo action occurred. The no-push/no-build/no-deployment freeze remains active.
+
+## Entry 0983 — 2026-08-03 local cron-report skip-metric correction
+
+- **Discovery / correction:** A focused fixture for a successful `skipped_external_feed_unavailable` line-combination receipt revealed that `collectFailureEntries` counted numeric `skippedGameIds` as failed rows. The collector now ignores primitive values in non-failure arrays, traverses nested objects, and counts entries only under explicit failure keys.
+- **Verification / boundary:** The cron-report suite passes `13/13`, including the new regression. No source/master checkbox or denominator changed; no database, writer, repair, backfill, provider, analytics, credential, push, build, deployment, or Yahoo action occurred. The no-push/no-build/no-deployment freeze remains active.

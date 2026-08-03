@@ -586,8 +586,6 @@ function collectFailureEntries(value: unknown, limit = 10): unknown[] {
         if (out.length >= limit) break;
         if (item && typeof item === "object") {
           visit(item);
-        } else if (item != null) {
-          out.push(item);
         }
       }
       return;

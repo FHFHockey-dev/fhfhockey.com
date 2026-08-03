@@ -318,6 +318,86 @@ SELECT cron.schedule(
     );
   });
 
+  it("does not count bounded external-feed skips as partial failures", async () => {
+    cronJobReportSelectMock.mockReturnValue({
+      gte: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({
+          data: [
+            {
+              jobname: "update-line-combinations-job",
+              scheduled_time: "2026-03-20T12:00:00.000Z",
+              end_time: "2026-03-20T12:00:01.000Z",
+              status: "success",
+              return_message: "200 OK",
+              sql_text:
+                "select net.http_get(url:='https://example.test/api/v1/db/update-line-combinations?count=10');",
+            },
+          ],
+          error: null,
+        }),
+      }),
+    });
+    cronJobAuditSelectMock.mockReturnValue({
+      gte: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({
+          data: [
+            {
+              job_name: "update-line-combinations-job",
+              run_time: "2026-03-20T12:00:01.000Z",
+              rows_affected: 10,
+              status: "success",
+              details: {
+                method: "GET",
+                url: "https://example.test/api/v1/db/update-line-combinations?count=10",
+                statusCode: 200,
+                response: JSON.stringify({
+                  success: true,
+                  repairMode: "recent_gap",
+                  status: "skipped_external_feed_unavailable",
+                  processed: 0,
+                  skipped: 10,
+                  skippedGameIds: [2025030417],
+                }),
+              },
+            },
+          ],
+          error: null,
+        }),
+      }),
+    });
+    readFileMock.mockResolvedValue(`
+\`\`\`json
+[
+  {
+    "jobid": 328,
+    "jobname": "update-line-combinations-job",
+    "schedule": "0 12 * * *",
+    "run_time_utc": "12:00 UTC",
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-line-combinations?count=10"
+  }
+]
+\`\`\`
+`);
+
+    const res = createMockRes();
+    await handler({ method: "GET", query: {} } as any, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      counts: expect.objectContaining({
+        auditFailures: 0,
+        totalFailedRows: 0,
+        warnPartialFailure: 0,
+        jobsFailingLast: 0,
+      }),
+      warnings: expect.objectContaining({
+        partialFailureJobs: [],
+      }),
+    });
+  });
+
   it("includes SKO low-row warnings in the daily operator email", async () => {
     cronJobReportSelectMock.mockReturnValue({
       gte: vi.fn().mockReturnValue({
