@@ -8699,3 +8699,8 @@
 
 - **Discovery / correction:** The same bounded-feed fixture showed that a stale audit `rows_affected` value could overstate upserts even when the response explicitly reported `processed: 0` and `skipped: 10`. `parseAuditDetails` now treats `skipped_external_feed_unavailable` as zero upserts unless explicit processed/upserted rows are present.
 - **Verification / boundary:** The cron-report suite passes `13/13`; TypeScript, scoped ESLint, and diff integrity pass. No source/master checkbox or denominator changed; no database, writer, repair, backfill, provider, analytics, credential, push, build, deployment, or Yahoo action occurred. The no-push/no-build/no-deployment freeze remains active.
+
+## Entry 0985 — 2026-08-03 local cron-contract cohort verification
+
+- **Verification:** The shared cron/audit cohort passes `27` files / `182` tests, including the corrected report metrics, audit-wrapper final-audit receipts, schedule inventory, timing, benchmark, NST, WGO, and transactional helper contracts.
+- **Boundary / parity:** This is local-only verification. No source/master checkbox or denominator changed; no database, writer, repair, backfill, provider, analytics, credential, push, build, deployment, or Yahoo action occurred. The no-push/no-build/no-deployment freeze remains active.
