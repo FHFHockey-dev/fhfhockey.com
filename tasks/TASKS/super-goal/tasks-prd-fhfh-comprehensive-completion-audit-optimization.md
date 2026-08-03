@@ -1,5 +1,7 @@
 # FHFH Comprehensive Completion, Audit, and Optimization — Master Task List
 
+**2026-08-03 natural DRM termination/final-audit boundary:** Read-only Production metadata shows the Aug 3 coordinator and direct projection completed HTTP `200` with `termination.state="completed"`, and the horizon-5 run also succeeded. The durable audit rows still expose `finalAudit.status="pending"` because the deployed artifact predates the local persistence correction. NEW 50/C0076 remains open for corrected publication plus a later natural persisted receipt; no master checkbox or denominator changed.
+
 **2026-08-03 local Yahoo sheet-export pagination hardening:** The canonical internal sheet reader now uses shared complete Supabase pagination with deterministic `player_name`/`player_key` ordering. The lifecycle requires a value-free `{ok:true,count>0}` receipt and fails before sheet clearing when the canonical view is empty. Discovery, writer-permission, and pagination contracts pass `34/34` tests, with TypeScript, scoped ESLint, Prettier, and diff integrity green. No master checkbox or denominator changed; no external state changed.
 
 **2026-08-03 full local Vitest error correction:** The WGO source-contract regression now asserts the canonical NHL Records lineage call before the first `wgo_team_stats` read. Focused verification passes `28/28`; full local Vitest passes `642` files / `3,599` tests. No source/master checkbox or denominator changed; no runtime/data, build, push, deployment, provider, repair, writer, migration, credential, analytics, or Yahoo state changed.

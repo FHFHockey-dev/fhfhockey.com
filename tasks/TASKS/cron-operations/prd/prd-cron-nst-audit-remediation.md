@@ -1,5 +1,7 @@
 # PRD: Cron, NST, and Audit Remediation
 
+**2026-08-03 natural DRM termination/final-audit boundary:** Value-free Production SQL shows the retained Aug 3 coordinator and direct projection completed HTTP `200` with `termination.state="completed"`, and the horizon-5 run also completed HTTP `200`. The durable rows still expose `details.finalAudit.status="pending"`, confirming the deployed artifact predates the local final-audit persistence correction. NEW 50/C0076 remains open for corrected publication and a later natural persisted receipt; no manual route invocation or external mutation occurred.
+
 **2026-08-03 NST Relevant Files classification correction:** The paired task inventory now describes projection and accuracy as open data/provenance gates, sKO as historical schema drift with a natural receipt gate, update-power-rankings as intentional HTTP 410 quarantine, and standings as a historical 429 observation with an open route-audit gate. No checkbox, denominator, or external state changed.
 
 **2026-08-03 projection failure-inventory classification correction:** The Cron source inventory no longer labels `run-forge-projection-v2` and `run-projection-accuracy` as currently failing HTTP 422. Historical preflight/freshness 422 receipts remain documented; later natural receipts are HTTP 200, while C0012/C0013 remain open for current-date input freshness and provenance-complete eligible calibration evidence. No checkbox, denominator, or external state changed under the no-push/no-build/no-deployment freeze.
