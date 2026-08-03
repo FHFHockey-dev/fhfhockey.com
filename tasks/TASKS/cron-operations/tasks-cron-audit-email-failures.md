@@ -32,7 +32,7 @@
 - `web/__tests__/pages/api/v1/db/cron-auth-boundaries.test.ts` - Focused production-mode proof that season and WGO writers reject unauthenticated/missing-secret calls and admit only the exact cron bearer or an authenticated admin.
 - `web/lib/cron/cronAuditCoverage.ts` - Resolves active scheduled HTTP routes to Pages API files and freezes both audit ownership and current/target inbound-auth plus non-cron caller contracts.
 - `web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts` - Static regression gate proving every active scheduled HTTP route has an audit owner and an explicit auth/caller classification.
-- `web/pages/api/v1/db/update-line-combinations/index.ts` - Failing line-combination route.
+- `web/pages/api/v1/db/update-line-combinations/index.ts` - Historical line-combination failure surface; current recent-gap feed outages are classified as bounded external skips while explicit historical backfills remain fail-closed.
 - `web/pages/api/v1/db/run-projection-v2.ts` - Failing projection execution route.
 - `web/pages/api/v1/db/run-projection-accuracy.ts` - Projection accuracy route blocked by projection freshness.
 - `web/pages/api/v1/db/build-projection-derived-v2.ts` - FORGE derived builder with separate failed-stage, failed-row, and deferred-date contracts.
@@ -75,7 +75,7 @@
 
 ## Failure Inventory
 
-- `update-line-combinations-all` is failing with HTTP 500 because stale playoff game IDs return NHL Gamecenter 404s.
+- `update-line-combinations-all` had historical HTTP 500s when stale/offseason Gamecenter states returned 404/503; current natural observations return HTTP 200 with `skipped_external_feed_unavailable`, while true historical-backfill failures remain actionable.
 - `run-forge-projection-v2` is failing with HTTP 422 and blocks downstream projection freshness.
 - `run-projection-accuracy` is failing with HTTP 422 because projection freshness depends on a successful projection run.
 - `update-sko-stats-full-season` had a historical HTTP 400 because its legacy payload included fields absent from `sko_skater_stats`; the local writer now projects the exact 28-column contract. A natural Production receipt is still required before treating the scheduled path as cleared.
