@@ -1216,3 +1216,7 @@ The two legacy metadata/key Python scripts now fail closed without shell-level `
 ### 2026-08-03 local historical Yahoo owner hardening
 
 The guarded historical ownership script now requires environment-owned bootstrap IDs and consumer credentials, accepts historical season mappings only through explicit `YHO_GAME_LEAGUE_OVERRIDES` JSON, and no longer reads the credential table or persists refreshed tokens. The exact backfill opt-in remains required. Writer-permission coverage passes 13/13 and all three scripts AST-parse; no external state changed, and provider/runtime, league-equivalence, canonical lifecycle retirement, and resumable backfill remain open.
+
+### 2026-08-03 local lint/type verification rebaseline
+
+The current isolated checkout passes `npx tsc --noEmit`; the owning ESLint command reports zero errors and 53 warnings (49 image advisories and four anonymous-default advisories). The prior 52-warning sentence is stale evidence only. No checkbox, denominator, build, push, deployment, or external state changed.

@@ -176,3 +176,7 @@ The Yahoo source task/PRD/inventory, canonical master/PRD, final summary, comple
 ## 2026-08-03 local historical Yahoo owner overlay
 
 The Yahoo source task/PRD/inventory, canonical master/PRD, final summary, completion-gate report, and diary now carry the same historical-owner hardening receipt: environment-owned IDs/credentials, explicit `YHO_GAME_LEAGUE_OVERRIDES` JSON only, no credential-table fallback or token-file writes, exact `YAHOO_HISTORICAL_WRITE_ENABLED=1` guard, and 13/13 focused permission coverage plus three-script AST checks. No source checkbox or denominator changed; imported parity remains `4,951/5,011` raw and `4,951/5,005` actionable, and mechanical master remains `5,098/5,176`; provider/runtime and history gates stay open.
+
+## 2026-08-03 local lint/type verification overlay
+
+The synchronized cleanup/source/master/PRD/final-summary/gate/diary artifacts now carry the same current verification receipt: `npx tsc --noEmit` passes, and the owning ESLint command exits with zero errors and 53 warnings (49 image advisories plus four anonymous-default advisories). This corrects the stale 52-warning evidence count only; no source checkbox, denominator, runtime, build, push, deployment, or external state changed.

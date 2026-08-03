@@ -1034,3 +1034,7 @@ The post-sKO audit inspected all current open source rows outside the completed 
 ### 2026-08-03 local historical Yahoo owner hardening
 
 `yahooHistoricalOwnership.py` now requires environment-owned bootstrap IDs and consumer credentials, accepts historical mappings only through explicit `YHO_GAME_LEAGUE_OVERRIDES` JSON, and removes the credential-table fallback and token-file writes while retaining the exact backfill opt-in. Writer-permission coverage passes 13/13 and all three scripts AST-parse. This is local-only NEW 9.5 evidence; provider/runtime, league-equivalence, canonical lifecycle retirement, and resumable backfill remain open, with no push/build/deployment or external mutation.
+
+### 2026-08-03 local lint/type verification rebaseline
+
+The isolated checkout passes `npx tsc --noEmit`; the owning ESLint command exits with zero errors and 53 warnings (49 `@next/next/no-img-element` and four `import/no-anonymous-default-export`). This replaces the stale 52-warning current-state count without changing any task row, denominator, runtime, build, push, deployment, or external state.

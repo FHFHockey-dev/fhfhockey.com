@@ -8645,3 +8645,9 @@
 - **Implementation:** `yahooHistoricalOwnership.py` now requires environment-owned `YFPY_GAME_ID`/`YFPY_LEAGUE_ID` and consumer credentials, reads optional season mappings only from explicit `YHO_GAME_LEAGUE_OVERRIDES` JSON, removes the Supabase credential-table fallback and token-file writes, and retains exact `YAHOO_HISTORICAL_WRITE_ENABLED=1` guard.
 - **Verification:** `writerPermissions.test.ts` passes 13/13; all three Yahoo Python scripts AST-parse; running the historical script without its guard exits before provider/client setup. No provider, database, writer, backfill, migration, analytics, credential, deployment, build, or push action occurred.
 - **Disposition / counts:** This advances only local B-YAHOO/NEW 9.5 evidence. Provider/runtime, league-equivalence, canonical lifecycle retirement, and resumable backfill remain open. Imported parity is `4,951/5,011` raw and `4,951/5,005` actionable; mechanical master is `5,098/5,176`; no denominator or checkbox changed.
+
+## Entry 0975 — 2026-08-03 local lint/type verification rebaseline
+
+- **Verification:** In the isolated checkout, `npx tsc --noEmit` passed. The owning ESLint command exited with zero errors and 53 warnings: 49 `@next/next/no-img-element` advisories and four `import/no-anonymous-default-export` advisories.
+- **Reconciliation:** The prior 52-warning current-state sentence was stale; this receipt corrects the evidence count without changing cleanup conclusions, source/master checkboxes, or denominators.
+- **Boundary:** No Vercel build/deployment, push, database, writer, repair, backfill, provider, analytics, credential, or Yahoo action occurred; the owner's no-push/no-build/no-deployment freeze remains in force.

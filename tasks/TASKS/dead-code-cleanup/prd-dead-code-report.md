@@ -279,3 +279,7 @@ Exact-SHA Production proves signed-out `/db` settles on the administrator-requir
 ## 2026-07-31 Utah WGO Identity Repair Completion
 
 The exact authorized Utah WGO repair is applied from `20260730200000_repair_utah_wgo_team_identity.sql`; linked migration history now records the exact repository version `20260730200000 / repair_utah_wgo_team_identity` after reverting the connector's temporary auto-version. The frozen manifest digest `dd27185df94d9f7e9816eb3a9a8a8b66` remains stable, all 88 rows are mapped to team 68 with zero team-59/null-link residue, and total WGO cardinality remains 38,484. The migration's post-state replay returned no rows and performed no updates. Local inverse/reapply proof remains the rollback receipt; the separate 376-row relocation-era repair is not included. B-CLEAN is now 157/158 with only continuous-discovery NEW 7 open.
+
+## 2026-08-03 lint/type verification rebaseline
+
+The isolated checkout's `npx tsc --noEmit` passes. The owning ESLint command exits with zero errors and 53 warnings: 49 `@next/next/no-img-element` advisories and four `import/no-anonymous-default-export` advisories. This corrects the stale 52-warning current-state sentence without changing the historical cleanup conclusions or any external state.
