@@ -77,3 +77,7 @@ All Yahoo tables have RLS enabled. Credential storage has no browser policy; int
 ## 2026-08-03 local legacy-owner hardening overlay
 
 `yahooAPIgameIds.py` and `yahooApiPlayerKeys.py` are now explicit compatibility-only paths: shell-level `YAHOO_LEGACY_PYTHON_WRITER_ENABLED=1` is required, game/league IDs and env-file location are environment-owned, client setup is deferred until after the guard, and the player-key path no longer writes access tokens. Focused permission coverage passes 12/12, both scripts AST-parse, and disabled invocations perform no provider or Supabase setup. Production provider/runtime, league-equivalence, canonical lifecycle retirement, and resumable backfill gates remain open.
+
+## 2026-08-03 local historical-owner hardening overlay
+
+The guarded historical ownership script now uses environment-owned bootstrap IDs and consumer credentials, accepts historical season mappings only from explicit `YHO_GAME_LEAGUE_OVERRIDES` JSON, and removes both credential-table fallback reads and token-file persistence. Its exact backfill opt-in remains required. The focused permission suite passes 13/13 and all three legacy Yahoo scripts AST-parse; Production provider/runtime, league-equivalence, canonical lifecycle retirement, and resumable backfill remain open.

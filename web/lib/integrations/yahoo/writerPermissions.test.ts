@@ -348,4 +348,25 @@ describe("Yahoo player writer permissions", () => {
       );
     }
   });
+
+  it("keeps historical Yahoo ownership backfill explicitly gated and environment-owned", () => {
+    const source = readFileSync(
+      path.join(
+        repoRoot,
+        "web/lib/supabase/Upserts/Yahoo/yahooHistoricalOwnership.py",
+      ),
+      "utf8",
+    );
+
+    expect(source).toContain(
+      'if os.getenv("YAHOO_HISTORICAL_WRITE_ENABLED") != "1":',
+    );
+    expect(source).toContain("YHO_GAME_LEAGUE_OVERRIDES");
+    expect(source).toContain('os.getenv("YFPY_GAME_ID", "").strip()');
+    expect(source).toContain('os.getenv("YFPY_LEAGUE_ID", "").strip()');
+    expect(source).not.toContain('os.getenv("YFPY_GAME_ID", "465")');
+    expect(source).not.toContain('os.getenv("YFPY_LEAGUE_ID", "858")');
+    expect(source).not.toContain("yahoo_api_credentials");
+    expect(source).not.toContain("save_access_token_data_to_env_file");
+  });
 });

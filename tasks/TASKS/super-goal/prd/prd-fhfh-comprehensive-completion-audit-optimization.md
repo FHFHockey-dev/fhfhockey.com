@@ -1212,3 +1212,7 @@ The shared cron benchmark annotation and source failure inventory now distinguis
 ### 2026-08-03 local legacy Yahoo owner hardening
 
 The two legacy metadata/key Python scripts now fail closed without shell-level `YAHOO_LEGACY_PYTHON_WRITER_ENABLED=1`; their clients are created only inside `main`, game/league IDs and env-file location are environment-owned, fixed desktop paths and 465/858 defaults are gone, and the player-key path no longer saves token material. The focused writer-permission suite passes 12/12, both scripts AST-parse, and disabled invocations perform no provider/Supabase setup. This is local-only B-YAHOO/NEW 9.5 evidence; provider/runtime, league-equivalence, canonical lifecycle retirement, and resumable backfill remain open. Current imported parity is `4,951/5,011` raw and `4,951/5,005` actionable with 54 open; mechanical master is `5,098/5,176` with 78 open. No external state changed.
+
+### 2026-08-03 local historical Yahoo owner hardening
+
+The guarded historical ownership script now requires environment-owned bootstrap IDs and consumer credentials, accepts historical season mappings only through explicit `YHO_GAME_LEAGUE_OVERRIDES` JSON, and no longer reads the credential table or persists refreshed tokens. The exact backfill opt-in remains required. Writer-permission coverage passes 13/13 and all three scripts AST-parse; no external state changed, and provider/runtime, league-equivalence, canonical lifecycle retirement, and resumable backfill remain open.

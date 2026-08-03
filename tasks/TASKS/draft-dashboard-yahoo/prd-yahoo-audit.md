@@ -662,4 +662,8 @@ Output expected
 
 The two remaining legacy metadata/key Python paths now fail closed unless the shell explicitly sets `YAHOO_LEGACY_PYTHON_WRITER_ENABLED=1`. Their Supabase/Yahoo clients are constructed only inside `main`, fixed desktop env paths and 465/858 defaults are removed, IDs are environment-owned, and the player-key path no longer writes access-token material. The focused writer-permission suite passes 12/12; both scripts AST-parse and disabled invocations exit before client/provider setup. This is local evidence only: controlled provider/league discovery, canonical Production runtime, retirement/cutover, and resumable historical backfill remain open under NEW 9.5.
 
+## 2026-08-03 local historical-owner hardening overlay
+
+`yahooHistoricalOwnership.py` now requires `YFPY_GAME_ID` and `YFPY_LEAGUE_ID`, accepts historical season mappings only through explicit `YHO_GAME_LEAGUE_OVERRIDES` JSON, requires environment consumer credentials, and no longer reads the credential table or writes refreshed tokens to `.env.local`. Its exact `YAHOO_HISTORICAL_WRITE_ENABLED=1` backfill guard remains. Writer-permission coverage passes 13/13 and all three Yahoo Python scripts AST-parse; no provider, database, writer, backfill, or credential action ran. NEW 9.5's controlled provider/league-equivalence and resumable-history gates remain open.
+
 ---

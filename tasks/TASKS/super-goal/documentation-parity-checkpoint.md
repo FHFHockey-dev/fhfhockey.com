@@ -172,3 +172,7 @@ The cron source failure inventory, benchmark annotation, super-goal PRD, final s
 ## 2026-08-03 local legacy Yahoo owner overlay
 
 The Yahoo source task/PRD/inventory, canonical master/PRD, final summary, completion-gate report, and diary now carry the same local owner-hardening receipt. The two legacy metadata/key scripts require shell-level `YAHOO_LEGACY_PYTHON_WRITER_ENABLED=1`, defer Supabase/Yahoo client setup, use environment-owned IDs and env-file location, and no longer use fixed desktop paths, 465/858 defaults, or player-key token-file writes. Focused permission coverage passes 12/12; AST parsing and disabled-invocation checks pass. No source checkbox or denominator changed; imported parity is `4,951/5,011` raw and `4,951/5,005` actionable, mechanical master is `5,098/5,176`, and provider/runtime, league-equivalence, lifecycle-retirement, and resumable-backfill gates remain open.
+
+## 2026-08-03 local historical Yahoo owner overlay
+
+The Yahoo source task/PRD/inventory, canonical master/PRD, final summary, completion-gate report, and diary now carry the same historical-owner hardening receipt: environment-owned IDs/credentials, explicit `YHO_GAME_LEAGUE_OVERRIDES` JSON only, no credential-table fallback or token-file writes, exact `YAHOO_HISTORICAL_WRITE_ENABLED=1` guard, and 13/13 focused permission coverage plus three-script AST checks. No source checkbox or denominator changed; imported parity remains `4,951/5,011` raw and `4,951/5,005` actionable, and mechanical master remains `5,098/5,176`; provider/runtime and history gates stay open.
