@@ -1208,3 +1208,7 @@ The full-season `update-sko-stats` path still constructs a legacy NHL payload wi
 ### 2026-08-03 benchmark/failure-inventory stale sKO classification correction
 
 The shared cron benchmark annotation and source failure inventory now distinguish the historical sKO schema mismatch from the corrected local writer contract. The remaining dependency annotation is truthful: exact 28-column projection is implemented, but a natural Production full-season receipt is still required. No external state changed.
+
+### 2026-08-03 local legacy Yahoo owner hardening
+
+The two legacy metadata/key Python scripts now fail closed without shell-level `YAHOO_LEGACY_PYTHON_WRITER_ENABLED=1`; their clients are created only inside `main`, game/league IDs and env-file location are environment-owned, fixed desktop paths and 465/858 defaults are gone, and the player-key path no longer saves token material. The focused writer-permission suite passes 12/12, both scripts AST-parse, and disabled invocations perform no provider/Supabase setup. This is local-only B-YAHOO/NEW 9.5 evidence; provider/runtime, league-equivalence, canonical lifecycle retirement, and resumable backfill remain open. Current imported parity is `4,951/5,011` raw and `4,951/5,005` actionable with 54 open; mechanical master is `5,098/5,176` with 78 open. No external state changed.

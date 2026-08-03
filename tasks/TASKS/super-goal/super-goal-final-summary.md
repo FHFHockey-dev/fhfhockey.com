@@ -1026,3 +1026,7 @@ The post-sKO audit inspected all current open source rows outside the completed 
 
 - The cron benchmark annotations and failure inventory no longer describe the corrected sKO writer as a current schema mismatch. They now identify historical schema drift, the canonical 28-column projection, and the remaining natural Production receipt gate.
 - Focused benchmark-note coverage passes with the existing cron diagnostics; no route behavior, database, writer, repair, backfill, provider, analytics, credential, push, build, or deployment state changed.
+
+### 2026-08-03 local legacy Yahoo owner hardening
+
+`yahooAPIgameIds.py` and `yahooApiPlayerKeys.py` now require shell-level `YAHOO_LEGACY_PYTHON_WRITER_ENABLED=1`; client setup is deferred behind that guard, IDs/env location are environment-owned, fixed desktop paths and 465/858 defaults are removed, and the player-key script no longer writes access-token material. The focused permission suite passes 12/12, both scripts AST-parse, and disabled invocations exit before client/provider setup. This is local-only evidence under NEW 9.5; provider/runtime, league-equivalence, canonical lifecycle retirement, and resumable backfill remain open. Imported parity remains `4,951/5,011` raw and `4,951/5,005` actionable with 54 open; mechanical master remains `5,098/5,176` with 78 open. The no-push/no-build/no-deployment freeze is preserved.
