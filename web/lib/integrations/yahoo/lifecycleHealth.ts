@@ -11,7 +11,8 @@ export type YahooLifecycleWarning = {
     | "unmatched_growth"
     | "rate_limit_saturation"
     | "token_failure"
-    | "schema_drift";
+    | "schema_drift"
+    | "provider_unavailable";
   message: string;
 };
 
@@ -47,13 +48,18 @@ export function readYahooLifecycleHealthSnapshot(
 
 export function classifyYahooLifecycleError(
   error: unknown,
-): "token_failure" | "schema_drift" | null {
+): "token_failure" | "schema_drift" | "provider_unavailable" | null {
   const value = record(error);
+  const response = record(value?.response);
+  const status = [value?.statusCode, value?.status, response?.status].find(
+    (candidate): candidate is number =>
+      typeof candidate === "number" && Number.isFinite(candidate),
+  );
   const text = [
     value?.code,
     value?.message,
     value?.description,
-    record(value?.response)?.statusText,
+    response?.statusText,
   ]
     .filter((part): part is string => typeof part === "string")
     .join(" ")
@@ -72,6 +78,14 @@ export function classifyYahooLifecycleError(
     )
   ) {
     return "schema_drift";
+  }
+  if (
+    (status != null && (status === 429 || (status >= 500 && status <= 599))) ||
+    /econnaborted|econnreset|enetunreach|etimedout|eai_again|econnrefused|fetch failed|network|timed out|timeout|temporarily unavailable|bad gateway|service unavailable|gateway timeout|too many requests|rate limit/.test(
+      text,
+    )
+  ) {
+    return "provider_unavailable";
   }
   return null;
 }
@@ -149,13 +163,19 @@ export function assessYahooLifecycleHealth(args: {
   }
 
   const errorCategory = current?.errorCategory;
-  if (errorCategory === "token_failure" || errorCategory === "schema_drift") {
+  if (
+    errorCategory === "token_failure" ||
+    errorCategory === "schema_drift" ||
+    errorCategory === "provider_unavailable"
+  ) {
     warnings.push({
       code: errorCategory,
       message:
         errorCategory === "token_failure"
           ? "Yahoo ingestion reported an OAuth/token failure."
-          : "Yahoo ingestion reported provider or database schema drift.",
+          : errorCategory === "schema_drift"
+            ? "Yahoo ingestion reported provider or database schema drift."
+            : "Yahoo ingestion reported a transient Yahoo/provider failure.",
     });
   }
 

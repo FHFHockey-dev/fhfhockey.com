@@ -16,6 +16,7 @@ import {
   withYahooRetry,
   type YahooGameWeekSnapshotReceipt,
 } from "lib/integrations/yahoo/ingestionLifecycle";
+import { classifyYahooLifecycleError } from "lib/integrations/yahoo/lifecycleHealth";
 import type { Database } from "lib/supabase/database-generated.types";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -120,11 +121,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       completeSnapshot: true,
       message: `Reconciled ${snapshot.weeks.length} week(s) for game_key=${snapshot.game.game_key}`,
     });
-  } catch {
+  } catch (error) {
     console.error("Yahoo matchup week update failed.");
     return res.status(500).json({
       success: false,
       status: "failure",
+      errorCategory: classifyYahooLifecycleError(error),
       retries,
       rateLimitEvents,
       message: "Yahoo matchup week update failed",

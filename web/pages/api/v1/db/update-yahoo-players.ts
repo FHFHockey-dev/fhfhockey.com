@@ -237,7 +237,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const currentDate = format(new Date(), "yyyy-MM-dd");
     let failedRows = 0;
     let omitted = 0;
-    let errorCategory: "token_failure" | "schema_drift" | null = null;
+    let errorCategory:
+      | "token_failure"
+      | "schema_drift"
+      | "provider_unavailable"
+      | null = null;
     for (let i = 0; i < playerKeys.length; i += BATCH_SIZE) {
       const batchKeys = playerKeys.slice(i, i + BATCH_SIZE);
       console.log(

@@ -232,6 +232,30 @@ describe("Yahoo discovery helpers", () => {
     expect(
       classifyYahooLifecycleError({ status: 401, message: "OAuth denied" }),
     ).toBe("token_failure");
+    expect(
+      classifyYahooLifecycleError({
+        status: 503,
+        message: "Yahoo unavailable",
+      }),
+    ).toBe("provider_unavailable");
+    expect(
+      classifyYahooLifecycleError({
+        code: "ETIMEDOUT",
+        message: "request timed out",
+      }),
+    ).toBe("provider_unavailable");
+    expect(
+      assessYahooLifecycleHealth({
+        nowMs: Date.parse("2026-07-30T12:00:00Z"),
+        observations: [
+          {
+            time: "2026-07-30T00:00:00Z",
+            status: "failure",
+            response: { errorCategory: "provider_unavailable" },
+          },
+        ],
+      }).map((warning) => warning.code),
+    ).toContain("provider_unavailable");
   });
 
   it("retries transient Yahoo failures with Retry-After but fails fast on auth", async () => {
