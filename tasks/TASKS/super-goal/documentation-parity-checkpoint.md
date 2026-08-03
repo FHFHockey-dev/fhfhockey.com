@@ -1,5 +1,7 @@
 # Documentation and Source/Master Parity Checkpoint (7.1)
 
+**2026-08-03 local error-cohort parity:** Source, master, PRD, completion-gate, final-summary, and diary overlays now carry the same local-only receipt: Supabase schema lint is clean across all five local schemas and the bounded error cohort passes `108/108` tests (`38` cron/projection, `28` Yahoo/sKO, `42` migration-contract). No checkbox, denominator, hosted state, or external gate changed under the no-push/no-build/no-deployment freeze.
+
 **2026-08-03 Wave-A synchronization parity overlay:** Master 3.20 now records
 the synchronized implementation-complete Wave-A set 3.6–3.19 and checked
 dynamic audits 5.7.3–5.7.17. Active Wave-A parents 3.1–3.5 remain open.

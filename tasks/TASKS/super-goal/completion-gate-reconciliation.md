@@ -1,5 +1,7 @@
 # Charter Completion-Gate Reconciliation (7.5)
 
+**2026-08-03 local error-cohort verification:** Local Supabase schema lint exited clean across `analytics`, `extensions`, `fhfh_internal`, `internal_stats`, and `public`; the bounded cron/projection, Yahoo/sKO, and migration-contract suites passed `108/108`. This does not satisfy any hosted, natural-run, provider, history, repair, writer, credential, or publication gate, and no checkbox or denominator changed under the no-push/no-build/no-deployment freeze.
+
 **2026-08-03 Wave-A synchronization checkpoint:** Master 3.20 is closed for
 the implementation-complete Wave-A set 3.6–3.19, whose source/master evidence
 and dynamic audits 5.7.3–5.7.17 are synchronized. Active Wave-A parents 3.1–3.5

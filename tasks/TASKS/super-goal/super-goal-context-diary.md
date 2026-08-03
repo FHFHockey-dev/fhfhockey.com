@@ -8651,3 +8651,8 @@
 - **Verification:** In the isolated checkout, `npx tsc --noEmit` passed. The owning ESLint command exited with zero errors and 53 warnings: 49 `@next/next/no-img-element` advisories and four `import/no-anonymous-default-export` advisories.
 - **Reconciliation:** The prior 52-warning current-state sentence was stale; this receipt corrects the evidence count without changing cleanup conclusions, source/master checkboxes, or denominators.
 - **Boundary:** No Vercel build/deployment, push, database, writer, repair, backfill, provider, analytics, credential, or Yahoo action occurred; the owner's no-push/no-build/no-deployment freeze remains in force.
+
+## Entry 0976 — 2026-08-03 local error-cohort verification
+
+- **Verification:** Under the no-push/no-build/no-deployment freeze, local Supabase schema lint exited clean across `analytics`, `extensions`, `fhfh_internal`, `internal_stats`, and `public`. The bounded regression cohort passed `108/108`: 38 cron/projection tests, 28 Yahoo/sKO tests, and 42 migration-contract tests.
+- **Boundary:** The only test stderr was expected missing local Supabase/mocked-client diagnostics; no test failed. No source/master checkbox or denominator changed, and no hosted/Production migration, writer, repair, backfill, provider, analytics, credential, push, build, or deployment action ran. Natural/provider/history gates remain open.
