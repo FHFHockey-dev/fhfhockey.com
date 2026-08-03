@@ -124,7 +124,9 @@ describe("Yahoo player writer permissions", () => {
       "web/pages/variance/skaters.tsx",
     ]) {
       const source = readFileSync(path.join(repoRoot, relativePath), "utf8");
-      expect(source).toContain('.from("yahoo_players_with_normalized_history")');
+      expect(source).toContain(
+        '.from("yahoo_players_with_normalized_history")',
+      );
       expect(source).toContain("normalized_ownership_timeline");
     }
   });
@@ -333,9 +335,7 @@ describe("Yahoo player writer permissions", () => {
       expect(source).toContain(
         'LEGACY_WRITER_FLAG = "YAHOO_LEGACY_PYTHON_WRITER_ENABLED"',
       );
-      expect(source).toContain(
-        'if os.getenv(LEGACY_WRITER_FLAG) != "1":',
-      );
+      expect(source).toContain('if os.getenv(LEGACY_WRITER_FLAG) != "1":');
       expect(source).not.toContain("/Users/tim/");
       expect(source).not.toMatch(/GAME_ID\s*=\s*["']465["']/);
       expect(source).not.toMatch(/LEAGUE_ID\s*=\s*["']858["']/);
