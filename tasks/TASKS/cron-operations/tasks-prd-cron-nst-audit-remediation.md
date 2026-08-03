@@ -54,11 +54,11 @@
 - `web/pages/api/v1/db/cron/update-stats-cron.ts` - Repeated audit failure source that likely needs partial-success classification changes.
 - `web/pages/api/v1/db/update-stats/[gameId].ts` - Dynamic game-stat writer sharing identity, source, team, skater, goalie, and failure-classification contracts.
 - `web/pages/api/v1/db/update-line-combinations/index.ts` - Repeated audit noise source during live-game processing.
-- `web/pages/api/v1/db/update-standings-details/index.ts` - Live failing route with NHL API `429` behavior to triage.
-- `web/pages/api/v1/db/run-projection-v2.ts` - Live failing route with `422` preflight or pipeline validation behavior.
-- `web/pages/api/v1/db/update-sko-stats.ts` - Historical failing route with the `assists_5v5` schema mismatch; local exact-contract projection now strips legacy-only columns before upsert.
-- `web/pages/api/v1/db/update-power-rankings.ts` - Live failing route with the `(void 0) is not a function` runtime error.
-- `web/pages/api/v1/db/run-projection-accuracy.ts` - Live failing downstream route that depends on a succeeded projection run.
+- `web/pages/api/v1/db/update-standings-details/index.ts` - Scheduled route with historical NHL API `429` behavior; current route-audit evidence remains open under C0047.
+- `web/pages/api/v1/db/run-projection-v2.ts` - Projection execution route with an open preflight/data-freshness gate; later natural receipts are HTTP 200.
+- `web/pages/api/v1/db/update-sko-stats.ts` - Historical schema-drift surface; local exact-contract projection now strips legacy-only columns before upsert, with a natural full-season receipt still required.
+- `web/pages/api/v1/db/update-power-rankings.ts` - Intentionally disabled legacy route whose HTTP 410 is the quarantine behavior.
+- `web/pages/api/v1/db/run-projection-accuracy.ts` - Projection accuracy route with an open calibration/provenance gate; later natural receipts are HTTP 200.
 - `web/pages/api/v1/db/update-wgo-goalies.ts` - WGO goalie writer whose bulk and row-level fallback paths must not convert zero persisted rows into route success.
 - `web/pages/api/v1/db/update-wgo-skaters.ts` and `web/__tests__/pages/api/v1/db/update-wgo-skaters.types.test.ts` - Exact generated regular-season/playoff insert contracts, target-specific time-field normalization, and focused writer regressions.
 - `web/lib/cron/wgoGoaliePersistence.ts` - Bounded bulk/row persistence contract that surfaces incomplete WGO goalie writes as structured actionable failures.

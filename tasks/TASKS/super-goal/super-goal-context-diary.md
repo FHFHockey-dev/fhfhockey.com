@@ -8622,3 +8622,8 @@
 
 - **Finding:** The Cron source task's Relevant Files entry still called `update-sko-stats.ts` a current schema-mismatch failure after the exact live 28-column writer projection had been implemented.
 - **Correction / boundary:** Reworded that entry as historical schema drift with a remaining natural full-season receipt gate. Existing source/master/PRD benchmark disposition remains unchanged; no checkbox, denominator, database, writer, repair, backfill, provider, analytics, credential, push, build, or deployment state changed.
+
+## Entry 0971 — 2026-08-03 NST Relevant Files classification correction
+
+- **Finding:** The paired NST task inventory still labeled projection, accuracy, and the intentionally disabled rankings route as live failures, and labeled the corrected sKO writer as a current schema mismatch.
+- **Correction / boundary:** Reclassified those entries as the open preflight/calibration gates, historical schema drift, or intentional HTTP 410 quarantine; the standings entry now preserves its historical 429 observation and current C0047 audit-evidence gate. No checkbox, denominator, database, writer, repair, backfill, provider, analytics, credential, push, build, or deployment state changed.
