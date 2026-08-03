@@ -8720,3 +8720,9 @@
 
 - **Reconciliation:** The route-level unavailable-feed correction is included in published commit `9cc3fcaac` and READY Production deployment `dpl_9otZoeDi1izJz6NWdX2iBUZdCi9X`. It classifies bounded recent-gap Gamecenter `FUT`/`PRE`/`503` conditions as `skipped_external_feed_unavailable` while preserving historical-backfill failures as fail-closed.
 - **Boundary:** The cron-report self/skip/upsert truthfulness corrections remain local and unpublished. C0047 therefore stays open for a natural report with corrected metrics and correlated route-audit receipts; no checkbox or denominator changed. No database, writer, repair, backfill, provider, analytics, credential, push, build, or deployment action occurred in this parity correction.
+
+## Entry 0989 — 2026-08-03 cron-report correction publication parity
+
+- **Read-only Production evidence:** The connected Supabase query at `2026-08-03T19:35:38Z` found three non-preview `daily-cron-report` audit rows in the 36-hour window; the latest is the pre-deployment `2026-08-03T13:00:59Z` HTTP `200` receipt. It reports `59/59` scheduled/activity coverage and `jobsMissingLast=0`, but retains the pre-publication self/partial metrics and four missing route-audit observations. No post-deployment natural report has occurred yet.
+- **Reconciliation:** The cron-report skip/upsert/self-metric corrections and the line-combination unavailable-feed classification are all present in published commit `9cc3fcaac` / READY Production `dpl_9otZoeDi1izJz6NWdX2iBUZdCi9X`. The current C0047/7.5 gate is therefore a single natural post-deployment report with correlated route-audit receipts, not another local publication task.
+- **Boundary:** The read-only Supabase SQL/log checks and documentation synchronization changed no database, writer, repair, backfill, provider, analytics, credential, push, build, deployment, or Yahoo state. The actionable denominator remains unchanged; no task row closes from this evidence.
