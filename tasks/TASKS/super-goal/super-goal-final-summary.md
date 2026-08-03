@@ -1058,3 +1058,5 @@ The post-sKO audit inspected all current open source rows outside the completed 
 ### 2026-08-03 local lint/type verification rebaseline
 
 The isolated checkout passes `npx tsc --noEmit`; the owning ESLint command exits with zero errors and 53 warnings (49 `@next/next/no-img-element` and four `import/no-anonymous-default-export`). This replaces the stale 52-warning current-state count without changing any task row, denominator, runtime, build, push, deployment, or external state.
+
+**2026-08-03 local repository-wide verification checkpoint:** The owning ESLint command exits with zero errors (existing warnings only), and the full Vitest suite passes `642` files / `3,600` tests. Expected mocked/local dependency diagnostics are non-failing test output. This is local verification under the no-push/no-build/no-deployment freeze; no checkbox, denominator, database, writer, repair, backfill, provider, analytics, credential, or Yahoo state changed.

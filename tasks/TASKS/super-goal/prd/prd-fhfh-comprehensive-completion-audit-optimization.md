@@ -1240,3 +1240,5 @@ The guarded historical ownership script now requires environment-owned bootstrap
 ### 2026-08-03 local lint/type verification rebaseline
 
 The current isolated checkout passes `npx tsc --noEmit`; the owning ESLint command reports zero errors and 53 warnings (49 image advisories and four anonymous-default advisories). The prior 52-warning sentence is stale evidence only. No checkbox, denominator, build, push, deployment, or external state changed.
+
+**2026-08-03 local repository-wide verification checkpoint:** The owning ESLint command exits with zero errors (existing warnings only), and the full Vitest suite passes `642` files / `3,600` tests. Expected mocked/local dependency diagnostics are non-failing test output. This is local verification under the no-push/no-build/no-deployment freeze; no checkbox, denominator, database, writer, repair, backfill, provider, analytics, credential, or Yahoo state changed.

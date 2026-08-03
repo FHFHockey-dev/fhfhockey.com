@@ -184,3 +184,5 @@ The Yahoo source task/PRD/inventory, canonical master/PRD, final summary, comple
 ## 2026-08-03 local lint/type verification overlay
 
 The synchronized cleanup/source/master/PRD/final-summary/gate/diary artifacts now carry the same current verification receipt: `npx tsc --noEmit` passes, and the owning ESLint command exits with zero errors and 53 warnings (49 image advisories plus four anonymous-default advisories). This corrects the stale 52-warning evidence count only; no source checkbox, denominator, runtime, build, push, deployment, or external state changed.
+
+**2026-08-03 local repository-wide verification parity:** The synchronized task, PRD, final-summary, and diary artifacts record the same receipt: owning ESLint exits with zero errors (existing warnings only), and the full Vitest suite passes `642` files / `3,600` tests. This is local-only verification under the no-push/no-build/no-deployment freeze; no source/master checkbox or denominator changed and no external state changed.
