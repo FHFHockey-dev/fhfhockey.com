@@ -8678,3 +8678,9 @@
 - **Read-only Production evidence:** `cron.job` reports 69 jobs total, with 59 active (54 HTTP and 5 SQL) and 10 inactive: `251,277,280,281,308,330,370,371,372,376`.
 - **Correction:** The current schedule reference now states that job 308 is inactive and distinct horizon-5 job 393 remains active. The underlying JSON inventory was already correct; historical checkpoint entries remain unchanged.
 - **Boundary:** This is documentation-only reconciliation. No source/master checkbox or denominator changed, and no database, writer, repair, backfill, provider, analytics, credential, push, build, deployment, or Yahoo action occurred. The owner's no-push/no-build/no-deployment freeze remains active.
+
+## Entry 0981 — 2026-08-03 latest 24-hour cron error-cohort reconciliation
+
+- **Read-only Production evidence:** The last 24-hour `cron_job_audit` window contains 273 observations: 264 successes and 9 HTTP-error observations. The early line-combination failures are followed by HTTP `200` runs from `12:00Z` through `17:25Z`, each carrying the bounded `skipped_external_feed_unavailable` classification.
+- **Disposition:** This corroborates the local line-combination correction. Remaining error groups are the intentional rolling-games `410`, provider-dependent Yahoo `500`s, and retained `401` probes; none is treated as a newly discovered local code defect.
+- **Boundary:** No source/master checkbox or denominator changed, and no database, writer, repair, backfill, provider, analytics, credential, push, build, deployment, or Yahoo action occurred. The no-push/no-build/no-deployment freeze remains active.
