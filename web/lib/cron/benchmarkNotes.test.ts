@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   getBenchmarkAnnotations,
-  hasBenchmarkAnnotationKind
+  hasBenchmarkAnnotationKind,
 } from "lib/cron/benchmarkNotes";
 
 describe("benchmarkNotes", () => {
@@ -11,9 +11,9 @@ describe("benchmarkNotes", () => {
 
     expect(annotations.length).toBeGreaterThan(0);
     expect(hasBenchmarkAnnotationKind(annotations, "bottleneck")).toBe(true);
-    expect(hasBenchmarkAnnotationKind(annotations, "dependency_sensitive")).toBe(
-      true
-    );
+    expect(
+      hasBenchmarkAnnotationKind(annotations, "dependency_sensitive"),
+    ).toBe(true);
   });
 
   it("returns an empty list for jobs without curated benchmark notes", () => {
@@ -27,6 +27,8 @@ describe("benchmarkNotes", () => {
     )?.note;
 
     expect(dependencyNote).toContain("canonical 28-column");
-    expect(dependencyNote).not.toContain("Current blocker is a real schema mismatch");
+    expect(dependencyNote).not.toContain(
+      "Current blocker is a real schema mismatch",
+    );
   });
 });
