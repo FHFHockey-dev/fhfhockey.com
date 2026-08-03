@@ -1,5 +1,14 @@
 # FHFH Comprehensive Completion, Audit, and Optimization — Master Task List
 
+**2026-08-03 Wave-A synchronization checkpoint:** Master 3.20 is now
+reconciled. Every implementation-complete Wave-A parent (3.6–3.19, including
+the approved exception/DoD state for A-FORGE-CC) has matching source/master
+evidence and a checked dynamic Wave-C child 5.7.3–5.7.17. Active Wave-A
+parents 3.1–3.5 remain outside this synchronization control; no imported
+source row or external gate is being closed by this checkpoint. Current parity
+is raw/actionable `4,951/5,011` and `4,951/5,005` (54 actionable open); the
+mechanical master is `5,098/5,176` with 78 open.
+
 **2026-08-03 NST Relevant Files classification parity:** Source and paired task inventories now distinguish historical projection/accuracy/sKO failures from the open data/provenance gates, intentional rankings quarantine, and standings route-audit evidence gap. No master checkbox, denominator, or external state changed under the no-push/no-build/no-deployment freeze.
 
 **2026-08-03 projection failure-inventory classification correction:** The Cron source inventory no longer labels `run-forge-projection-v2` and `run-projection-accuracy` as currently failing HTTP 422. Historical preflight/freshness 422 receipts remain documented; later natural receipts are HTTP 200, while C0012/C0013 remain open for current-date input freshness and provenance-complete eligible calibration evidence. No master checkbox, denominator, or external state changed under the no-push/no-build/no-deployment freeze.
@@ -379,7 +388,7 @@ advisor baseline remains observation-only.
   - [x] 3.17 `A-DRAFT` Reconstruct the missing task list and finish Draft Dashboard requirements. Evidence: all 91/91 source rows close with collision-safe complete Yahoo/projection reads, session-local multi-CSV, canonical weights/value/grouping/keeper/trade/recommendation/summary contracts, truthful resilient states, 36 files/114 tests, TypeScript/Sass/diff checks, HTTP-200 and responsive/performance evidence. Owner-approved option A retains the tested inline/collapsible settings workstation and supersedes the old all-modal sentence; initiative enters dynamic Wave C (2026-07-13).
   - [x] 3.18 `A-DRAFT-DEBUG` Verify and finish Draft Dashboard debug/performance requirements. Evidence: all 14/14 reconciled rows close; SHA projected/actual/custom derivation, selectors, board/export wiring, and empty-category recovery pass 5 files/19 tests plus TypeScript. Current absolute benchmarks pass at 12.61ms recompute/rank and 5.59ms for 10,000-player filtering. Owner-approved option A accepts this evidence and grants an exception only for the unprovable historical `>=30%` TTFP comparison (2026-07-13); initiative enters dynamic Wave C.
   - [x] 3.19 `A-DRAFT-RANKER` Verify and finish the account-backed personal NHL Draft Ranker launch scope. Evidence: authoritative PR #352 records the aggregate-only final review after more than 30 clean production hours and the exact-source stage-only `staff` → `authenticated` redeploy. Canonical reconciliation is 57/57 checked plus 10/10 separate launch prerequisites after ignored localhost readiness, dynamic Wave-C audit completion, and owner retirement of Phase 8 to the future roadmap. DR-072 and Phase 7 are complete; beta entitlement, discovery, contribution collection, and public Community Ranking remain off behind independent future approvals (updated 2026-07-30).
-  - [ ] 3.20 Synchronize every completed Wave-A source/master list and add all Wave-A initiatives to dynamic Wave C.
+  - [x] 3.20 Synchronize every completed Wave-A source/master list and add all Wave-A initiatives to dynamic Wave C. The implementation-complete set 3.6–3.19 is source/master-reconciled, and its named dynamic audits 5.7.3–5.7.17 are checked; active parents 3.1–3.5 remain open (verified 2026-08-03).
 
 - [ ] 4.0 Wave B — plan, start, and finish all not-yet-started/untracked initiatives
   - [ ] 4.1 `B-CRON-NST` Implement and verify Cron NST/audit remediation after Wave-A reconciliation, including the now-closed NEW 61 cross-provider sustainability owner/order gate and NEW 66's supported-baseline view/function security-advisor cohort.

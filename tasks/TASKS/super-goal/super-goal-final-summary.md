@@ -145,7 +145,15 @@ change.
 
 **2026-07-31 cleanup reconciliation:** The bounded 7.2 checkpoint at `tasks/TASKS/super-goal/cleanup-reconciliation.md` removes exactly six tracked, no-consumer `web/tmp*` investigation probes, including the unowned manual sheet-writer probe. Historical inventory/PBP references are classified without rewriting history; ignored caches/logs and unproven debug candidates remain untouched. Master 7.2 closes, moving the mechanical roll-up to `5,072/5,171`; imported parity remains raw `4,937/5,011` and actionable `4,937/5,005` with 68 open. No runtime, build, deployment, database, provider, writer, repair, backfill, credential, or analytics state changed; the super-goal remains active.
 
-## Current completion roll-up (authoritative 2026-08-02)
+**2026-08-03 Wave-A synchronization checkpoint:** Master 3.20 closes after
+reconciling every implementation-complete Wave-A parent (3.6–3.19) to its
+source/master evidence and checked dynamic audits 5.7.3–5.7.17. Active
+Wave-A parents 3.1–3.5 remain open. Imported parity is unchanged at
+`4,951/5,011` raw and `4,951/5,005` actionable; mechanical master is now
+`5,098/5,176` with 78 open. No runtime, database, provider, deployment, push,
+build, writer, repair, backfill, credential, analytics, or Yahoo state changed.
+
+## Current completion roll-up (authoritative 2026-08-03)
 
 This section is the current summary for the active control plane. Older initiative and checkpoint sections below remain append-only evidence and are not used as current totals.
 
@@ -155,9 +163,9 @@ This section is the current summary for the active control plane. Older initiati
 | --- | ---: | ---: | ---: | --- |
 | Imported raw source claims | 4,951 | 5,011 | 60 | 76 source sections and the parity receipt in [`documentation-parity-checkpoint.md`](documentation-parity-checkpoint.md) |
 | Imported actionable claims | 4,951 | 5,005 | 54 | Six fenced rule examples are excluded as non-actionable; current source/master parity is exact |
-| Mechanical master control plane | 5,097 | 5,176 | 79 | Master task-list direct recount after the 2026-08-02 NEW 15 Production repair, C0051 natural-auth receipt, and B-DRM NEW 22/41/49/51 checkpoints |
+| Mechanical master control plane | 5,098 | 5,176 | 78 | Master task-list direct recount after Wave-A synchronization control 3.20 and the 2026-08-02 NEW 15/C0051/B-DRM checkpoints |
 
-The 79 master open rows consist of the 54 imported actionable rows plus 25 control-plane rows (parent/verification/completion gates). The four newly registered Wave-C children add four checked rows and four denominator rows; NEW-027, NEW 15/C0057, NEW 58/59, NEW 61, and NEW 22/C0048 are closed by their recorded evidence above; no denominator was reduced to make a checkpoint appear better.
+The 78 master open rows consist of the 54 imported actionable rows plus 24 control-plane rows (parent/verification/completion gates). Master 3.20 is now synchronized; the four newly registered Wave-C children add four checked rows and four denominator rows; NEW-027, NEW 15/C0057, NEW 58/59, NEW 61, and NEW 22/C0048 are closed by their recorded evidence above; no denominator was reduced to make a checkpoint appear better.
 
 ### Initiative disposition
 
@@ -165,7 +173,7 @@ The 79 master open rows consist of the 54 imported actionable rows plus 25 contr
 | --- | --- | --- |
 | A | `A-AUTH` — open at 202/208; `A-CRON-EMAIL` — open; `A-GDL` — open; `A-3P` — open; `A-SUST` — 86/89 | Hosted PKCE/template and lifecycle publication, credential-retention, IFTTT/provider, umbrella synchronization, and Sustainability scheduler/formula/history gates remain explicit. |
 | A | `A-US-SOS`, `A-SITE`, `A-STYLE`, `A-FORGE-V1`, `A-FORGE-DASH`, `A-FORGE-P4`, `A-FORGE-LIVE`, `A-PRED`, `A-XG-TREND`, `A-XG-REL`, `A-DRAFT`, `A-DRAFT-DEBUG`, and `A-DRAFT-RANKER` — implementation evidence complete | Their approved exceptions, no-promotion decisions, or future-roadmap boundaries remain recorded in the corresponding master rows; Draft Ranker Phase 8 is retired to the roadmap. |
-| A | Wave-A synchronization — open | Source/master and dynamic-Wave-C registration remains a final governance control, not an unrecorded implementation task. |
+| A | Wave-A synchronization — closed | Master 3.20 reconciles implementation-complete parents 3.6–3.19 to their source/master evidence and checked dynamic audits 5.7.3–5.7.17; active parents 3.1–3.5 remain open. |
 | B | `B-CRON-NST` 75/75; `B-SUST-AUD` 51/58; `B-YAHOO` 65/72; `B-DRM` 98/111 | B-CRON-NST's cross-provider handoff is closed by the Aug 1 non-overlapping natural chain; B-SUST-AUD NEW 15 is closed by the exact Production source/trend repair and zero-change replay, with inverse staging retained; B-DRM NEW 22, NEW 41, NEW 49, and NEW 51 are closed by exact retirement, scheduler-ownership, and deployed audit-ownership receipts; NEW 50 and the remaining global work are grouped under Sustainability formula/history/repair, Yahoo provider/Python/backfill/cutover, DRM history/provider/repair/final-audit, and final governance gates. |
 | B | `B-SUST-BAR` 95/95; `B-GAMEGRID` 38/38; `B-SKO` 70/70; `B-START` 55/55; `B-FORGE-COMBO` 39/39; `B-XG-EX` 16/16; `B-DRAFT-STYLE` 56/56; `B-CLEAN` 158/158; `B-DEAD` 44/44; `B-SKO-BURN` 6/6; `B-TRENDS` 53/53 | Current implementation and bounded verification evidence is recorded; any separately gated external/provider/history exception remains open under its owning rows. |
 | C | `C-US`, `C-FORGE`, `C-XG`, and `C-VAR` — completed bounded audits; `C-DYNAMIC` children 5.7.3–5.7.27 — checked | Registration controls 5.7.1/5.7.2 are current-state complete; parent dynamic-audit governance and global P0/P1/P2/P3 closure remain open for future DoD and final completion. |

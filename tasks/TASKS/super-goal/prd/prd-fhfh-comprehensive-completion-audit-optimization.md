@@ -1,5 +1,14 @@
 # PRD: FHFH Comprehensive Completion, Audit, and Optimization
 
+**2026-08-03 Wave-A synchronization checkpoint:** The implementation-complete
+Wave-A set recorded in master 3.6–3.19 is synchronized to its source lists and
+checked dynamic audits 5.7.3–5.7.17. Active Wave-A initiatives 3.1–3.5 remain
+open, as do their credential, provider, history, and Production gates. Master
+3.20 closes as a documentation/governance control only; no runtime or external
+state changed. Current parity is raw/actionable `4,951/5,011` and
+`4,951/5,005` (54 actionable open); the mechanical master is `5,098/5,176`
+with 78 open.
+
 **2026-08-03 NST Relevant Files classification parity:** Source and paired task inventories now distinguish historical projection/accuracy/sKO failures from the open data/provenance gates, intentional rankings quarantine, and standings route-audit evidence gap. No checkbox, denominator, or external state changed under the no-push/no-build/no-deployment freeze.
 
 **2026-08-03 projection failure-inventory classification correction:** The Cron source inventory no longer labels `run-forge-projection-v2` and `run-projection-accuracy` as currently failing HTTP 422. Historical preflight/freshness 422 receipts remain documented; later natural receipts are HTTP 200, while C0012/C0013 remain open for current-date input freshness and provenance-complete eligible calibration evidence. No checkbox, denominator, or external state changed under the no-push/no-build/no-deployment freeze.

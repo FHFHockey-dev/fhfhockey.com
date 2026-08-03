@@ -1,5 +1,13 @@
 # Charter Completion-Gate Reconciliation (7.5)
 
+**2026-08-03 Wave-A synchronization checkpoint:** Master 3.20 is closed for
+the implementation-complete Wave-A set 3.6–3.19, whose source/master evidence
+and dynamic audits 5.7.3–5.7.17 are synchronized. Active Wave-A parents 3.1–3.5
+and all external/provider/history/Production gates remain open; no runtime or
+external state changed. Current imported parity is raw/actionable
+`4,951/5,011` and `4,951/5,005` with 54 actionable open; the mechanical master
+is `5,098/5,176` with 78 open.
+
 **2026-08-03 NST Relevant Files classification parity:** Source and paired task inventories now distinguish historical projection/accuracy/sKO failures from the open data/provenance gates, intentional rankings quarantine, and standings route-audit evidence gap. No checkbox, denominator, or external state changed under the no-push/no-build/no-deployment freeze.
 
 **2026-08-03 projection failure-inventory classification correction:** The Cron source inventory no longer labels `run-forge-projection-v2` and `run-projection-accuracy` as currently failing HTTP 422. Historical preflight/freshness 422 receipts remain documented; later natural receipts are HTTP 200, while C0012/C0013 remain open for current-date input freshness and provenance-complete eligible calibration evidence. No checkbox, denominator, or external state changed under the no-push/no-build/no-deployment freeze.
@@ -37,7 +45,7 @@ The charter questions are the twelve questions in `web/rules/super-goal.md` §12
 | # | Charter question | Current answer | Evidence / disposition |
 | ---: | --- | --- | --- |
 | 1 | Has every source artifact been inventoried and classified? | **YES, bounded** | The 76-source parity receipt covers all imported source sections; Appendix A and the cleanup receipt classify tracked temporary probes and intentional historical/ignored references. |
-| 2 | Is every initiative represented by a usable PRD and task list, directly or through an explicitly documented merge? | **PARTIAL / OPEN** | The master maps all 76 source sections and records repaired pairs/merges, but Wave-A synchronization and remaining pair/umbrella/provider gates are still open under 3.20 and the initiative rows. |
+| 2 | Is every initiative represented by a usable PRD and task list, directly or through an explicitly documented merge? | **PARTIAL / OPEN** | The master maps all 76 source sections and records repaired pairs/merges; Wave-A synchronization 3.20 is closed for implementation-complete parents, while active initiative and pair/umbrella/provider gates remain open. |
 | 3 | Are all Wave-A and Wave-B tasks complete and verified? | **NO** | Current roll-up leaves A-AUTH, A-CRON-EMAIL, A-GDL, A-3P, A-SUST, the B-CRON-NST parent synchronization control, B-SUST-AUD, B-YAHOO, and B-DRM open. B-CRON-NST's imported source rows are 75/75, but its parent control remains unchecked; every remaining gate has an explicit owner and evidence requirement. NEW 15 and DRM NEW 41/49/51 are now closed by exact Production receipts. |
 | 4 | Has every completed initiative passed Wave-C audit after its latest implementation changes? | **PARTIAL / OPEN** | Completed C-US/C-FORGE/C-XG/C-VAR audits and dynamic children through 5.7.27 are recorded, but parent 5.7 remains open for future DoD registrations and final dynamic governance. |
 | 5 | Are all P0/P1 findings closed and all P2/P3 findings completed or explicitly approved as exceptions? | **NO** | Master 5.8 remains open; IFTTT retirement, provider/credential, historical repair, scheduler natural-run, and Production/migration gates remain explicit. |

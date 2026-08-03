@@ -8627,3 +8627,9 @@
 
 - **Finding:** The paired NST task inventory still labeled projection, accuracy, and the intentionally disabled rankings route as live failures, and labeled the corrected sKO writer as a current schema mismatch.
 - **Correction / boundary:** Reclassified those entries as the open preflight/calibration gates, historical schema drift, or intentional HTTP 410 quarantine; the standings entry now preserves its historical 429 observation and current C0047 audit-evidence gate. No checkbox, denominator, database, writer, repair, backfill, provider, analytics, credential, push, build, or deployment state changed.
+
+## Entry 0972 — 2026-08-03 Wave-A synchronization control closure
+
+- **Reconciliation:** Master control 3.20 is now checked. Every implementation-complete Wave-A parent (3.6–3.19, including the approved exception/DoD state for A-FORGE-CC) has matching source/master evidence and a checked dynamic Wave-C child 5.7.3–5.7.17. Active Wave-A parents 3.1–3.5 remain outside this control and open.
+- **Parity:** Imported raw/actionable parity remains `4,951/5,011` and `4,951/5,005` with 54 actionable rows open. Mechanical master advances to `5,098/5,176` with 78 open: 54 imported actionable plus 24 remaining control-plane rows.
+- **Boundary:** This is documentation/governance synchronization only. No runtime, database, provider, deployment, push, build, writer, repair, backfill, credential, analytics, or Yahoo state changed; the super-goal remains active.

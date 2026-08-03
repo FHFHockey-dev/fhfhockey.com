@@ -1,4 +1,12 @@
 # Documentation and Source/Master Parity Checkpoint (7.1)
+
+**2026-08-03 Wave-A synchronization parity overlay:** Master 3.20 now records
+the synchronized implementation-complete Wave-A set 3.6–3.19 and checked
+dynamic audits 5.7.3–5.7.17. Active Wave-A parents 3.1–3.5 remain open.
+Imported raw/actionable parity remains `4,951/5,011` and `4,951/5,005`; the
+mechanical master is `5,098/5,176` with 78 open. No source checkbox, runtime,
+database, provider, deployment, push, build, writer, repair, backfill,
+credential, analytics, or Yahoo state changed.
 **2026-08-03 NST Relevant Files classification parity:** Source task lists, paired PRDs, completion-gate report, master, final summary, and diary now distinguish historical projection/accuracy/sKO failures from the open data/provenance gates, intentional rankings quarantine, and standings route-audit evidence gap. No checkbox or denominator changed under the no-push/no-build/no-deployment freeze.
 
 **2026-08-03 projection failure-inventory classification parity:** Source task lists, PRDs, completion-gate report, master, final summary, and diary now distinguish historical projection/accuracy HTTP 422 receipts from later natural HTTP 200 receipts. C0012/C0013 remain open for current-date input freshness and provenance-complete eligible calibration evidence; no checkbox or denominator changed under the no-push/no-build/no-deployment freeze.
