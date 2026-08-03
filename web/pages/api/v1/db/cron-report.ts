@@ -786,6 +786,19 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
     .map((entry) => formatFailureSample(entry))
     .filter((entry): entry is string => Boolean(entry))
     .slice(0, 3);
+  const responseStatus =
+    response && typeof response === "object" && !Array.isArray(response)
+      ? (response as Record<string, unknown>).status
+      : null;
+  const rowsUpserted =
+    responseStatus === "skipped_external_feed_unavailable"
+      ? (getDirectNumericField(response, [
+          "rowsUpserted",
+          "rows_upserted",
+          "processed",
+          "succeeded",
+        ]) ?? 0)
+      : toFiniteNumber(obj.rowsUpserted) ?? inferRowsUpserted(response);
 
   return {
     timing,
@@ -802,8 +815,7 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
     skaterRowsProcessed,
     skaterFreshnessFailureCount,
     dataQualityWarningCount: countWarningEntries(response),
-    rowsUpserted:
-      toFiniteNumber(obj.rowsUpserted) ?? inferRowsUpserted(response),
+    rowsUpserted,
     failedRows: toFiniteNumber(obj.failedRows) ?? inferFailedRows(response),
     failedRowSamples,
   };

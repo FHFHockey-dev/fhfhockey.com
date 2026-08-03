@@ -8694,3 +8694,8 @@
 
 - **Discovery / correction:** A focused fixture for a successful `skipped_external_feed_unavailable` line-combination receipt revealed that `collectFailureEntries` counted numeric `skippedGameIds` as failed rows. The collector now ignores primitive values in non-failure arrays, traverses nested objects, and counts entries only under explicit failure keys.
 - **Verification / boundary:** The cron-report suite passes `13/13`, including the new regression. No source/master checkbox or denominator changed; no database, writer, repair, backfill, provider, analytics, credential, push, build, deployment, or Yahoo action occurred. The no-push/no-build/no-deployment freeze remains active.
+
+## Entry 0984 — 2026-08-03 local cron-report upsert-metric correction
+
+- **Discovery / correction:** The same bounded-feed fixture showed that a stale audit `rows_affected` value could overstate upserts even when the response explicitly reported `processed: 0` and `skipped: 10`. `parseAuditDetails` now treats `skipped_external_feed_unavailable` as zero upserts unless explicit processed/upserted rows are present.
+- **Verification / boundary:** The cron-report suite passes `13/13`; TypeScript, scoped ESLint, and diff integrity pass. No source/master checkbox or denominator changed; no database, writer, repair, backfill, provider, analytics, credential, push, build, deployment, or Yahoo action occurred. The no-push/no-build/no-deployment freeze remains active.

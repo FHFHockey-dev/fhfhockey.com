@@ -389,6 +389,7 @@ SELECT cron.schedule(
       counts: expect.objectContaining({
         auditFailures: 0,
         totalFailedRows: 0,
+        totalRowsUpserted: 0,
         warnPartialFailure: 0,
         jobsFailingLast: 0,
       }),
