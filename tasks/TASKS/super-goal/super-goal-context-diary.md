@@ -8606,3 +8606,8 @@
 - **Correction:** Added one shared canonical projection at `upsertSkoSkaterStats`. It permits only the exact 28 generated/live columns for single rows and batches, preserves supported values, drops undefined legacy fields, and both full-season payload paths now provide `season_id` from the active season.
 - **Verification:** The focused helper/route cohort passes `15/15`; TypeScript, scoped ESLint, Prettier, and `git diff --check` pass. The regression proves unsupported legacy columns cannot reach Supabase.
 - **Boundary:** This is local/unpublished correction evidence under the owner's no-Vercel-deployment, no-push, and no-build freeze. No Production database, writer, repair, backfill, provider, analytics, credential, or Yahoo state changed. C0011's local implementation is reconciled; parent C0008 and natural Production receipt remain open, and no checkbox or denominator changed.
+## Entry 0968 — 2026-08-03 stale sKO benchmark classification correction
+
+- **Finding:** `web/lib/cron/benchmarkNotes.ts` still labeled `update-sko-stats-full-season` with a current schema mismatch even after the writer was constrained to the live 28-column table.
+- **Correction:** Reworded the benchmark annotation and Cron failure inventory to identify historical schema drift, the canonical projection, and the remaining natural Production receipt gate; no current error is inferred away.
+- **Verification:** Added a regression to `benchmarkNotes.test.ts` proving the obsolete current-mismatch wording cannot return. No database, writer, repair, backfill, provider, analytics, credential, push, build, or deployment action occurred.

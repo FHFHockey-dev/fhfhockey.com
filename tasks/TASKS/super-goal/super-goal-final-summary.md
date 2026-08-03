@@ -1010,3 +1010,7 @@ The post-sKO audit inspected all current open source rows outside the completed 
 - The legacy full-season `update-sko-stats` branch can construct hundreds of retired NHL fields before writing to the live 28-column `sko_skater_stats` table. The shared writer now projects both single-row and batch payloads to the canonical 28-column whitelist, and both full-season payload paths include the required `season_id`.
 - Focused helper/route tests pass 15/15; TypeScript, scoped ESLint, Prettier, and `git diff --check` pass. The regression covers unsupported `assists_per_game`/`shoots_catches` fields at the writer boundary.
 - This is local/unpublished correction evidence under the no-push/no-build/no-deployment freeze. C0011's local implementation is reconciled, while the parent hard-failure/natural Production receipt remains open. No database, writer, repair, backfill, provider, analytics, credential, or Yahoo state changed.
+### 2026-08-03 benchmark/failure-inventory stale sKO classification correction
+
+- The cron benchmark annotations and failure inventory no longer describe the corrected sKO writer as a current schema mismatch. They now identify historical schema drift, the canonical 28-column projection, and the remaining natural Production receipt gate.
+- Focused benchmark-note coverage passes with the existing cron diagnostics; no route behavior, database, writer, repair, backfill, provider, analytics, credential, push, build, or deployment state changed.

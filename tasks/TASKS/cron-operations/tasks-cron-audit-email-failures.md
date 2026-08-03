@@ -78,7 +78,7 @@
 - `update-line-combinations-all` is failing with HTTP 500 because stale playoff game IDs return NHL Gamecenter 404s.
 - `run-forge-projection-v2` is failing with HTTP 422 and blocks downstream projection freshness.
 - `run-projection-accuracy` is failing with HTTP 422 because projection freshness depends on a successful projection run.
-- `update-sko-stats-full-season` is failing with HTTP 400 because `sko_skater_stats` is missing the expected `assists_per_game` column.
+- `update-sko-stats-full-season` had a historical HTTP 400 because its legacy payload included fields absent from `sko_skater_stats`; the local writer now projects the exact 28-column contract. A natural Production receipt is still required before treating the scheduled path as cleared.
 - `update-power-rankings` is scheduled but intentionally disabled with HTTP 410.
 - Missing schedule observations: `update-teams-job`, `update-seasons-job`, `update-players-job`, `update-games-job`, `daily-refresh-nstwgo-matview`, `update-team-power-ratings-new`, `update-start-chart-projections`, `update-nhl-xg-shot-features`, `update-nhl-xg-shot-predictions`, `rebuild-sustainability-window-z`, `rebuild-sustainability-score`, and `rebuild-sustainability-trend-bands`.
 - Cron/audit gaps: `update-shift-charts`, `update-standings-details`, `update-nst-goalies`, `update-nst-current-season`, `sync-yahoo-players-to-sheet`, `update-nst-team-daily`, `update-season-stats-current-season`, `update-rolling-games-recent`, and `daily-cron-report` have cron observations without reliable audit payloads.

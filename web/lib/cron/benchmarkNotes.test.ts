@@ -19,4 +19,14 @@ describe("benchmarkNotes", () => {
   it("returns an empty list for jobs without curated benchmark notes", () => {
     expect(getBenchmarkAnnotations("update-games")).toEqual([]);
   });
+
+  it("does not report the corrected sKO schema drift as a current mismatch", () => {
+    const annotations = getBenchmarkAnnotations("update-sko-stats-full-season");
+    const dependencyNote = annotations.find(
+      (annotation) => annotation.kind === "dependency_sensitive",
+    )?.note;
+
+    expect(dependencyNote).toContain("canonical 28-column");
+    expect(dependencyNote).not.toContain("Current blocker is a real schema mismatch");
+  });
 });

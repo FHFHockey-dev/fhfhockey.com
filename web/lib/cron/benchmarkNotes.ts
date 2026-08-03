@@ -251,7 +251,7 @@ const BENCHMARK_NOTES_BY_JOB: Record<string, BenchmarkAnnotation[]> = {
     {
       kind: "dependency_sensitive",
       note:
-        "Current blocker is a real schema mismatch in sko_skater_stats (missing assists_5v5), not proxy HTML leakage."
+        "Historical schema drift is contained by the canonical 28-column sko_skater_stats writer projection; retain this dependency annotation until a natural Production receipt confirms the scheduled full-season path."
     }
   ],
   "update-wgo-averages": [

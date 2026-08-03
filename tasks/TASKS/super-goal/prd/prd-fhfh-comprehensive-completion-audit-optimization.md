@@ -1192,3 +1192,6 @@ Sustainability/FORGE bounded repair preparation (2026-07-30): the value-free man
 ### 2026-08-03 local sKO schema-boundary correction
 
 The full-season `update-sko-stats` path still constructs a legacy NHL payload with columns that are absent from the live 28-column `sko_skater_stats` contract. The shared write boundary now whitelists the exact canonical columns for both single rows and batches, and the full-season path supplies the required `season_id`. Focused helper/route coverage passes 15/15, with TypeScript, scoped ESLint, Prettier, and diff integrity passing. This closes the local implementation defect only; no Production deployment, push, build, writer, repair, migration, provider, analytics, credential, or Yahoo action occurred, and the natural Production receipt remains open.
+### 2026-08-03 benchmark/failure-inventory stale sKO classification correction
+
+The shared cron benchmark annotation and source failure inventory now distinguish the historical sKO schema mismatch from the corrected local writer contract. The remaining dependency annotation is truthful: exact 28-column projection is implemented, but a natural Production full-season receipt is still required. No external state changed.

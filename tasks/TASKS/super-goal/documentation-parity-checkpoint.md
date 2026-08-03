@@ -153,3 +153,6 @@ Read-only pg_cron metadata shows run `148893` submitted successfully at 12:00 UT
 ## 2026-08-03 local sKO schema-boundary overlay
 
 The source task, cron/NST PRD pair, master mirror, super-goal PRD, final summary, completion-gate reconciliation, and diary now carry the same local `update-sko-stats` correction: exact 28-column projection at the write boundary plus full-season `season_id`. The 15/15 focused helper/route cohort and static checks pass. No checkbox, denominator, deployment, push, build, hosted database, writer, repair, backfill, provider, analytics, credential, or Yahoo state changed; Production/natural evidence remains separately gated.
+## 2026-08-03 sKO benchmark classification overlay
+
+The cron source failure inventory, benchmark annotation, super-goal PRD, final summary, completion-gate report, and diary now carry the same historical/dependency wording for the corrected sKO writer. The obsolete “current schema mismatch” diagnosis is absent from the runtime benchmark note; natural Production verification remains open.
