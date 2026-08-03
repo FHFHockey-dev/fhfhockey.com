@@ -8617,3 +8617,8 @@
 - **Finding:** The Cron source failure inventory still described `run-forge-projection-v2` and `run-projection-accuracy` as currently failing HTTP 422, despite later natural HTTP 200 receipts recorded in the same evidence set.
 - **Correction:** Reworded the source task and synchronized PRD, master, completion-gate, final-summary, parity, and diary overlays to preserve historical 422 preflight/freshness evidence while keeping C0012/C0013 open for current-date input freshness and provenance-complete eligible calibration evidence.
 - **Verification / boundary:** Projection-v2 tests pass `11/11`, projection-accuracy tests pass `6/6`, and cron-report tests pass `12/12`; `git diff --check` passes. No checkbox, denominator, database, writer, repair, backfill, provider, analytics, credential, push, build, or deployment state changed under the freeze.
+
+## Entry 0970 — 2026-08-03 sKO Relevant Files classification correction
+
+- **Finding:** The Cron source task's Relevant Files entry still called `update-sko-stats.ts` a current schema-mismatch failure after the exact live 28-column writer projection had been implemented.
+- **Correction / boundary:** Reworded that entry as historical schema drift with a remaining natural full-season receipt gate. Existing source/master/PRD benchmark disposition remains unchanged; no checkbox, denominator, database, writer, repair, backfill, provider, analytics, credential, push, build, or deployment state changed.

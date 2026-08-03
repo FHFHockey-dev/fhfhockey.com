@@ -37,7 +37,7 @@
 - `web/pages/api/v1/db/run-projection-accuracy.ts` - Projection accuracy route with an open calibration-freshness gate.
 - `web/pages/api/v1/db/build-projection-derived-v2.ts` - FORGE derived builder with separate failed-stage, failed-row, and deferred-date contracts.
 - `web/__tests__/pages/api/v1/db/build-projection-derived-v2.test.ts` - Covers bounded execution, resume/deferred dates, and stage-failure classification.
-- `web/pages/api/v1/db/update-sko-stats.ts` - Failing sKO stats route with schema mismatch.
+- `web/pages/api/v1/db/update-sko-stats.ts` - Historical sKO schema-mismatch surface; the canonical writer now projects the exact live 28-column contract, with a natural full-season receipt still required.
 - `web/pages/api/v1/db/update-power-rankings.ts` - Disabled legacy route that is still scheduled.
 - `web/pages/api/v1/db/update-nhl-edge-stats.ts` - NHL Edge ingestion route with endpoint-family-specific skip diagnostics for skaters, goalies, and teams.
 - `web/__tests__/pages/api/v1/db/update-nhl-edge-stats.test.ts` - Focused diagnostic reason regression coverage.
