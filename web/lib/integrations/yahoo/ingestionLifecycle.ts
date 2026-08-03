@@ -360,6 +360,41 @@ export async function requestYahooSheetExport(args: {
         signal: controller.signal,
       },
     );
+    if (!response.ok) {
+      return {
+        attempted: true,
+        succeeded: false,
+        statusCode: response.status,
+        reason: "request_failed",
+      };
+    }
+
+    let receipt: unknown;
+    try {
+      receipt = await response.json();
+    } catch {
+      return {
+        attempted: true,
+        succeeded: false,
+        statusCode: response.status,
+        reason: "request_failed",
+      };
+    }
+    const count = isRecord(receipt) ? finiteNumber(receipt.count) : null;
+    if (
+      !isRecord(receipt) ||
+      receipt.ok !== true ||
+      count == null ||
+      count <= 0
+    ) {
+      return {
+        attempted: true,
+        succeeded: false,
+        statusCode: response.status,
+        reason: "request_failed",
+      };
+    }
+
     return {
       attempted: true,
       succeeded: response.ok,

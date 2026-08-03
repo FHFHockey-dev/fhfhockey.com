@@ -2,7 +2,7 @@
 
 ## 2026-08-03 local sheet-export pagination hardening
 
-The canonical internal sheet-export reader now uses the shared complete Supabase pagination helper with deterministic `player_name`/`player_key` ordering. This prevents equal-name rows from moving across page boundaries. Focused Yahoo writer-permission and pagination contracts pass `21/21` tests, with TypeScript, scoped ESLint, Prettier, and diff integrity green. This is local NEW 9.5 evidence only; controlled provider/runtime, league-equivalence, Python retirement, and resumable historical-backfill gates remain open. No external state changed.
+The canonical internal sheet-export reader now uses the shared complete Supabase pagination helper with deterministic `player_name`/`player_key` ordering. This prevents equal-name rows from moving across page boundaries; the lifecycle also requires a value-free `{ok:true,count>0}` receipt and fails before sheet clearing when the canonical view is empty. Focused discovery, writer-permission, and pagination contracts pass `34/34` tests, with TypeScript, scoped ESLint, Prettier, and diff integrity green. This is local NEW 9.5 evidence only; controlled provider/runtime, league-equivalence, Python retirement, and resumable historical-backfill gates remain open. No external state changed.
 
 ## 2026-07-31 current continuous-discovery closure
 

@@ -74,6 +74,10 @@ export async function syncYahooPlayersToSheet(opts: SyncOptions = {}) {
     { pageSize: 1000 },
   );
 
+  if (all.length === 0) {
+    throw new Error("Yahoo sheet export has no canonical player rows.");
+  }
+
   const rows = mapPlayersToRows(all, helperPoints);
 
   // Build headers and sparkline formulas

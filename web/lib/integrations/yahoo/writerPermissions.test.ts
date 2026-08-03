@@ -141,6 +141,9 @@ describe("Yahoo player writer permissions", () => {
     expect(sheetSyncSource).toContain(
       '.order("player_key", { ascending: true })',
     );
+    expect(sheetSyncSource).toContain(
+      "Yahoo sheet export has no canonical player rows.",
+    );
   });
 
   it("keeps the hardened Yahoo map reader staged behind migration application", () => {

@@ -449,7 +449,12 @@ describe("Yahoo discovery helpers", () => {
       }),
     ).toBe(false);
 
-    const fetchImpl = async () => ({ ok: true, status: 200 }) as Response;
+    const fetchImpl = async () =>
+      ({
+        ok: true,
+        status: 200,
+        json: async () => ({ ok: true, count: 1494 }),
+      }) as Response;
     await expect(
       requestYahooSheetExport({
         gameId: 465,
@@ -461,6 +466,23 @@ describe("Yahoo discovery helpers", () => {
       succeeded: true,
       statusCode: 200,
       reason: "complete_player_receipt",
+    });
+    await expect(
+      requestYahooSheetExport({
+        gameId: 465,
+        cronSecret: "test-secret",
+        fetchImpl: (async () =>
+          ({
+            ok: true,
+            status: 200,
+            json: async () => ({ ok: true, count: 0 }),
+          }) as Response) as typeof fetch,
+      }),
+    ).resolves.toEqual({
+      attempted: true,
+      succeeded: false,
+      statusCode: 200,
+      reason: "request_failed",
     });
     await expect(
       requestYahooSheetExport({
