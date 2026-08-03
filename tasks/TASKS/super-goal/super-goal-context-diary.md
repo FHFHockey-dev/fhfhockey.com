@@ -8726,3 +8726,9 @@
 - **Read-only Production evidence:** The connected Supabase query at `2026-08-03T19:35:38Z` found three non-preview `daily-cron-report` audit rows in the 36-hour window; the latest is the pre-deployment `2026-08-03T13:00:59Z` HTTP `200` receipt. It reports `59/59` scheduled/activity coverage and `jobsMissingLast=0`, but retains the pre-publication self/partial metrics and four missing route-audit observations. No post-deployment natural report has occurred yet.
 - **Reconciliation:** The cron-report skip/upsert/self-metric corrections and the line-combination unavailable-feed classification are all present in published commit `9cc3fcaac` / READY Production `dpl_9otZoeDi1izJz6NWdX2iBUZdCi9X`. The current C0047/7.5 gate is therefore a single natural post-deployment report with correlated route-audit receipts, not another local publication task.
 - **Boundary:** The read-only Supabase SQL/log checks and documentation synchronization changed no database, writer, repair, backfill, provider, analytics, credential, push, build, deployment, or Yahoo state. The actionable denominator remains unchanged; no task row closes from this evidence.
+
+## Entry 0990 — 2026-08-03 guarded documentation publication
+
+- **Publication:** A fresh fetch confirmed clean local `d1a2e1c46` was three commits ahead of `origin/octoberBranch` with no behind divergence. The guarded normal push advanced `octoberBranch` from `9cc3fcaac` to `d1a2e1c46`.
+- **Cost boundary:** The checkpoint contains only synchronized documentation; no web runtime path changed, so no Vercel build or deployment was triggered.
+- **Disposition:** C0047/7.5 remains open for the next natural report with correlated route-audit receipts; NEW 50/C0076 remains open for a natural termination plus persisted-final-audit receipt. Provider/history gates remain open. No migration, writer, repair, backfill, provider, credential, analytics, or Yahoo action ran, and no checkbox or denominator changed.

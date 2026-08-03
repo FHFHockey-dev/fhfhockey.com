@@ -1,5 +1,7 @@
 # PRD: Cron, NST, and Audit Remediation
 
+**2026-08-03 guarded documentation publication:** A fresh fetch showed clean local `d1a2e1c46` three commits ahead of `origin/octoberBranch` with no behind divergence; guarded normal push advanced `octoberBranch` from `9cc3fcaac` to `d1a2e1c46`. The pushed checkpoint is documentation-only, so no Vercel build or deployment ran. C0047/7.5, NEW 50/C0076, provider, and history gates remain open; no migration, writer, repair, backfill, provider, credential, analytics, or Yahoo action ran.
+
 **2026-08-03 natural DRM termination/final-audit boundary:** Value-free Production SQL shows the retained Aug 3 coordinator and direct projection completed HTTP `200` with `termination.state="completed"`, and the horizon-5 run also completed HTTP `200`. The durable rows still expose `details.finalAudit.status="pending"`, confirming the deployed artifact predates the local final-audit persistence correction. NEW 50/C0076 remains open for corrected publication and a later natural persisted receipt; no manual route invocation or external mutation occurred.
 
 **2026-08-03 NST Relevant Files classification correction:** The paired task inventory now describes projection and accuracy as open data/provenance gates, sKO as historical schema drift with a natural receipt gate, update-power-rankings as intentional HTTP 410 quarantine, and standings as a historical 429 observation with an open route-audit gate. No checkbox, denominator, or external state changed.
