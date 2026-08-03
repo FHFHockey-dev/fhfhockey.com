@@ -8660,3 +8660,9 @@
 
 - **Finding / correction:** The first full local suite found one stale WGO source-contract assertion: the active writer already uses NHL Records lineage authority, while the test searched for a retired static-catalog call. The test now checks `createSeasonAwareWriterTeamsFromLineageRecords` before the first `wgo_team_stats` read.
 - **Verification / boundary:** Focused WGO authority verification passes `28/28`; full Vitest passes `642` files / `3,599` tests; targeted ESLint, Prettier, and diff integrity pass. No runtime/data state, checkbox, denominator, build, push, deployment, provider, repair, writer, backfill, migration, credential, analytics, or Yahoo state changed.
+
+## Entry 0978 — 2026-08-03 local Yahoo sheet-export pagination hardening
+
+- **Local correction:** `web/lib/sync/syncYahooPlayersToSheet.ts` now uses the shared `fetchAllSupabasePages` helper and orders the canonical normalized-history view by `player_name` then `player_key`. This removes a page-boundary correctness risk for equal-name players without changing the sheet schema or export eligibility gate.
+- **Verification:** The Yahoo writer-permission and Supabase pagination contracts pass `21/21`; TypeScript, scoped ESLint, Prettier, and `git diff --check` pass. No sheet, provider, database, writer, migration, repair, backfill, deployment, push, credential, analytics, or Yahoo action occurred.
+- **Disposition / parity:** This advances local evidence only under the no-Vercel-deployment/no-push/no-build freeze. B-YAHOO remains `65/72` with seven external/provider, league-equivalence, legacy-owner, historical-backfill, and end-to-end gates open; imported actionable parity remains `4,951/5,005` with 54 open, and no source/master checkbox or denominator changed.

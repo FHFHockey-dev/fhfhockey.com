@@ -129,6 +129,18 @@ describe("Yahoo player writer permissions", () => {
       );
       expect(source).toContain("normalized_ownership_timeline");
     }
+
+    const sheetSyncSource = readFileSync(
+      path.join(repoRoot, "web/lib/sync/syncYahooPlayersToSheet.ts"),
+      "utf8",
+    );
+    expect(sheetSyncSource).toContain("fetchAllSupabasePages");
+    expect(sheetSyncSource).toContain(
+      '.order("player_name", { ascending: true })',
+    );
+    expect(sheetSyncSource).toContain(
+      '.order("player_key", { ascending: true })',
+    );
   });
 
   it("keeps the hardened Yahoo map reader staged behind migration application", () => {

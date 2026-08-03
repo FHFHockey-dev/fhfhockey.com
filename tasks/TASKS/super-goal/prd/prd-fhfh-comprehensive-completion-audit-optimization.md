@@ -1,5 +1,7 @@
 # PRD: FHFH Comprehensive Completion, Audit, and Optimization
 
+**2026-08-03 local Yahoo sheet-export pagination hardening:** The canonical internal sheet reader now uses the shared complete Supabase pagination helper with stable `player_name`/`player_key` ordering. Yahoo writer-permission and pagination contracts pass `21/21` tests, with TypeScript, scoped ESLint, Prettier, and diff integrity green. No source/master checkbox or denominator changed; the remaining provider, league-equivalence, historical, natural-run, and publication gates remain open.
+
 **2026-08-03 full local Vitest error correction:** The active WGO writer's canonical lineage authority was already correct; a stale source-contract assertion was updated to check it before the first `wgo_team_stats` read. Focused verification passes `28/28`; full local Vitest passes `642` files / `3,599` tests, with targeted lint, formatting, and diff integrity green. No checkbox, denominator, runtime/data, build, push, deployment, provider, repair, writer, migration, credential, analytics, or Yahoo state changed.
 
 **2026-08-03 local error-cohort verification:** Local Supabase schema lint exited clean across `analytics`, `extensions`, `fhfh_internal`, `internal_stats`, and `public`. The bounded local error cohort passed `108/108` tests: 38 cron/projection, 28 Yahoo/sKO, and 42 migration-contract. This is evidence-only under the no-push/no-build/no-deployment freeze; no checkbox, denominator, hosted state, or external gate changed.
