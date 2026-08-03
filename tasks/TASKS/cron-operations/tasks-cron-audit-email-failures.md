@@ -33,8 +33,8 @@
 - `web/lib/cron/cronAuditCoverage.ts` - Resolves active scheduled HTTP routes to Pages API files and freezes both audit ownership and current/target inbound-auth plus non-cron caller contracts.
 - `web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts` - Static regression gate proving every active scheduled HTTP route has an audit owner and an explicit auth/caller classification.
 - `web/pages/api/v1/db/update-line-combinations/index.ts` - Historical line-combination failure surface; current recent-gap feed outages are classified as bounded external skips while explicit historical backfills remain fail-closed.
-- `web/pages/api/v1/db/run-projection-v2.ts` - Failing projection execution route.
-- `web/pages/api/v1/db/run-projection-accuracy.ts` - Projection accuracy route blocked by projection freshness.
+- `web/pages/api/v1/db/run-projection-v2.ts` - Projection execution route with an open preflight/data-freshness gate.
+- `web/pages/api/v1/db/run-projection-accuracy.ts` - Projection accuracy route with an open calibration-freshness gate.
 - `web/pages/api/v1/db/build-projection-derived-v2.ts` - FORGE derived builder with separate failed-stage, failed-row, and deferred-date contracts.
 - `web/__tests__/pages/api/v1/db/build-projection-derived-v2.test.ts` - Covers bounded execution, resume/deferred dates, and stage-failure classification.
 - `web/pages/api/v1/db/update-sko-stats.ts` - Failing sKO stats route with schema mismatch.
@@ -76,8 +76,8 @@
 ## Failure Inventory
 
 - `update-line-combinations-all` had historical HTTP 500s when stale/offseason Gamecenter states returned 404/503; current natural observations return HTTP 200 with `skipped_external_feed_unavailable`, while true historical-backfill failures remain actionable.
-- `run-forge-projection-v2` is failing with HTTP 422 and blocks downstream projection freshness.
-- `run-projection-accuracy` is failing with HTTP 422 because projection freshness depends on a successful projection run.
+- `run-forge-projection-v2` had historical HTTP 422 preflight failures; later natural receipts are HTTP 200, while the current-date input-freshness gate remains open (`projection_input_ingest`).
+- `run-projection-accuracy` had historical HTTP 422 freshness failures; later natural receipts are HTTP 200, while calibration remains dependent on an eligible, provenance-complete projection run.
 - `update-sko-stats-full-season` had a historical HTTP 400 because its legacy payload included fields absent from `sko_skater_stats`; the local writer now projects the exact 28-column contract. A natural Production receipt is still required before treating the scheduled path as cleared.
 - `update-power-rankings` is scheduled but intentionally disabled with HTTP 410.
 - Missing schedule observations: `update-teams-job`, `update-seasons-job`, `update-players-job`, `update-games-job`, `daily-refresh-nstwgo-matview`, `update-team-power-ratings-new`, `update-start-chart-projections`, `update-nhl-xg-shot-features`, `update-nhl-xg-shot-predictions`, `rebuild-sustainability-window-z`, `rebuild-sustainability-score`, and `rebuild-sustainability-trend-bands`.

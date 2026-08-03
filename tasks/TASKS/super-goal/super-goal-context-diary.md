@@ -8611,3 +8611,9 @@
 - **Finding:** `web/lib/cron/benchmarkNotes.ts` still labeled `update-sko-stats-full-season` with a current schema mismatch even after the writer was constrained to the live 28-column table.
 - **Correction:** Reworded the benchmark annotation and Cron failure inventory to identify historical schema drift, the canonical projection, and the remaining natural Production receipt gate; no current error is inferred away.
 - **Verification:** Added a regression to `benchmarkNotes.test.ts` proving the obsolete current-mismatch wording cannot return. No database, writer, repair, backfill, provider, analytics, credential, push, build, or deployment action occurred.
+
+## Entry 0969 — 2026-08-03 projection failure-inventory classification correction
+
+- **Finding:** The Cron source failure inventory still described `run-forge-projection-v2` and `run-projection-accuracy` as currently failing HTTP 422, despite later natural HTTP 200 receipts recorded in the same evidence set.
+- **Correction:** Reworded the source task and synchronized PRD, master, completion-gate, final-summary, parity, and diary overlays to preserve historical 422 preflight/freshness evidence while keeping C0012/C0013 open for current-date input freshness and provenance-complete eligible calibration evidence.
+- **Verification / boundary:** Projection-v2 tests pass `11/11`, projection-accuracy tests pass `6/6`, and cron-report tests pass `12/12`; `git diff --check` passes. No checkbox, denominator, database, writer, repair, backfill, provider, analytics, credential, push, build, or deployment state changed under the freeze.
