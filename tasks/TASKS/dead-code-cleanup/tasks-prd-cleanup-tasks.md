@@ -1,5 +1,7 @@
 # Codebase Cleanup and Warning Reduction — Tasks
 
+**2026-08-03 local WGO test-contract correction:** The full local Vitest run exposed one stale structural assertion, not a runtime defect: `fetchWGOdata.js` already uses the canonical NHL Records lineage authority. The assertion now checks `createSeasonAwareWriterTeamsFromLineageRecords` before the first `wgo_team_stats` read. The focused WGO authority suite passes `28/28`; full Vitest passes `642` files / `3,599` tests; targeted ESLint, Prettier, and diff integrity pass. No runtime, data, checkbox, denominator, build, push, deployment, provider, or repair state changed.
+
 ## Relevant Files
 
 - `tasks/TASKS/dead-code-cleanup/prd-cleanup-tasks.md` - Source PRD, baseline warning goals, progress claims, and hook-audit examples.

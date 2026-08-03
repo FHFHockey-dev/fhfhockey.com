@@ -8656,3 +8656,7 @@
 
 - **Verification:** Under the no-push/no-build/no-deployment freeze, local Supabase schema lint exited clean across `analytics`, `extensions`, `fhfh_internal`, `internal_stats`, and `public`. The bounded regression cohort passed `108/108`: 38 cron/projection tests, 28 Yahoo/sKO tests, and 42 migration-contract tests.
 - **Boundary:** The only test stderr was expected missing local Supabase/mocked-client diagnostics; no test failed. No source/master checkbox or denominator changed, and no hosted/Production migration, writer, repair, backfill, provider, analytics, credential, push, build, or deployment action ran. Natural/provider/history gates remain open.
+## Entry 0977 — 2026-08-03 full local Vitest error correction
+
+- **Finding / correction:** The first full local suite found one stale WGO source-contract assertion: the active writer already uses NHL Records lineage authority, while the test searched for a retired static-catalog call. The test now checks `createSeasonAwareWriterTeamsFromLineageRecords` before the first `wgo_team_stats` read.
+- **Verification / boundary:** Focused WGO authority verification passes `28/28`; full Vitest passes `642` files / `3,599` tests; targeted ESLint, Prettier, and diff integrity pass. No runtime/data state, checkbox, denominator, build, push, deployment, provider, repair, writer, backfill, migration, credential, analytics, or Yahoo state changed.

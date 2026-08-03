@@ -1,5 +1,7 @@
 # PRD: Codebase Cleanup & Warning Reduction
 
+> **2026-08-03 local WGO test-contract correction:** The stale WGO source assertion now checks the canonical NHL Records lineage authority before the first `wgo_team_stats` read. The focused authority suite passes `28/28`; full local Vitest passes `642` files / `3,599` tests, with targeted ESLint, Prettier, and diff integrity green. No runtime, data, checkbox, denominator, build, push, deployment, provider, or repair state changed.
+
 > **Implementation task list:** `tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md`
 >
 > **2026-07-31 continuous-discovery closure:** The owning web lint command returns 0 errors and 52 known warnings (48 `@next/next/no-img-element`, four `import/no-anonymous-default-export`); no new unused suppression, behavior regression, ownership conflict, or dead-code consumer finding was identified beyond the already-recorded production/provider/history gates. TypeScript and diff integrity pass. NEW 7 closes and B-CLEAN is 158/158.

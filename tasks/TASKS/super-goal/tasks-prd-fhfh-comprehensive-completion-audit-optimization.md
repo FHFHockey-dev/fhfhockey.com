@@ -1,5 +1,7 @@
 # FHFH Comprehensive Completion, Audit, and Optimization — Master Task List
 
+**2026-08-03 full local Vitest error correction:** The WGO source-contract regression now asserts the canonical NHL Records lineage call before the first `wgo_team_stats` read. Focused verification passes `28/28`; full local Vitest passes `642` files / `3,599` tests. No source/master checkbox or denominator changed; no runtime/data, build, push, deployment, provider, repair, writer, migration, credential, analytics, or Yahoo state changed.
+
 **2026-08-03 local error-cohort verification:** Local Supabase schema lint exited clean across all five local schemas. The bounded local regression cohort passed `108/108` tests (`38` cron/projection, `28` Yahoo/sKO, `42` migration-contract). No source/master checkbox or denominator changed; no hosted/Production migration, writer, repair, backfill, provider, analytics, credential, push, build, or deployment action occurred.
 
 **2026-08-03 Wave-A synchronization checkpoint:** Master 3.20 is now

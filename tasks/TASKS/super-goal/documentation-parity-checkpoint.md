@@ -1,5 +1,7 @@
 # Documentation and Source/Master Parity Checkpoint (7.1)
 
+**2026-08-03 full local Vitest parity:** Source, master, PRD, report, completion-gate, final-summary, and diary overlays now carry the same WGO regression receipt: the stale structural assertion was aligned to the canonical lineage authority, focused verification passes `28/28`, and full local Vitest passes `642` files / `3,599` tests. No checkbox, denominator, runtime/data, hosted, provider, repair, writer, build, push, or deployment state changed.
+
 **2026-08-03 local error-cohort parity:** Source, master, PRD, completion-gate, final-summary, and diary overlays now carry the same local-only receipt: Supabase schema lint is clean across all five local schemas and the bounded error cohort passes `108/108` tests (`38` cron/projection, `28` Yahoo/sKO, `42` migration-contract). No checkbox, denominator, hosted state, or external gate changed under the no-push/no-build/no-deployment freeze.
 
 **2026-08-03 Wave-A synchronization parity overlay:** Master 3.20 now records

@@ -1,5 +1,7 @@
 # Charter Completion-Gate Reconciliation (7.5)
 
+**2026-08-03 full local Vitest error correction:** The only full-suite failure was a stale WGO source assertion; it now checks the canonical lineage authority before the first `wgo_team_stats` read. Focused verification passes `28/28`; full local Vitest passes `642` files / `3,599` tests, with targeted lint/format/diff checks green. This is local evidence only: no checkbox, denominator, hosted/natural/provider/history/repair/writer/publication gate changed.
+
 **2026-08-03 local error-cohort verification:** Local Supabase schema lint exited clean across `analytics`, `extensions`, `fhfh_internal`, `internal_stats`, and `public`; the bounded cron/projection, Yahoo/sKO, and migration-contract suites passed `108/108`. This does not satisfy any hosted, natural-run, provider, history, repair, writer, credential, or publication gate, and no checkbox or denominator changed under the no-push/no-build/no-deployment freeze.
 
 **2026-08-03 Wave-A synchronization checkpoint:** Master 3.20 is closed for

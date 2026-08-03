@@ -1,5 +1,7 @@
 # WGO Relocation-Era Identity Contract
 
+**2026-08-03 local WGO contract verification:** The active writer already resolves each requested season through `createSeasonAwareWriterTeamsFromLineageRecords` before its first `wgo_team_stats` read. The stale source assertion was updated to that canonical lineage call; focused authority verification passes `28/28`, full local Vitest passes `642` files / `3,599` tests, and targeted lint/format/diff checks pass. This changes no writer, data, repair, provider, deployment, or authorization state.
+
 ## Scope
 
 This contract closes the evidence and design scope of `B-CLEAN NEW 107` without authorizing a production backfill. It covers the WGO all-seasons team writer and the relocation-era rows already stored in `public.wgo_team_stats`. The 2024–25/2025–26 Utah correction remains separately owned by NEW 104/105.

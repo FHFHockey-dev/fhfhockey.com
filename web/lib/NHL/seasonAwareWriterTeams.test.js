@@ -119,10 +119,10 @@ describe("createSeasonAwareWriterTeams", () => {
 });
 
 describe("season-aware writer consumers", () => {
-  it("resolves WGO identity per processed season before source work", () => {
+  it("resolves WGO identity from lineage per processed season before source work", () => {
     const functionStart = wgoSource.indexOf("async function fetchNHLData");
     const authorityUse = wgoSource.indexOf(
-      "createSeasonAwareWriterTeams(seasonId)",
+      "createSeasonAwareWriterTeamsFromLineageRecords(\n    seasonId,",
       functionStart,
     );
     const firstDatabaseRead = wgoSource.indexOf(
