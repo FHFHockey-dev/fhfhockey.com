@@ -6,6 +6,12 @@
 -- NST_KEY-missing/timeout runtime failures and the natural report's real
 -- missing-audit/partial-failure warnings remain open under C0047/7.5.
 
+-- 2026-08-03 read-only catalog reconciliation
+-- Production cron.job currently reports 69 jobs: 59 active (54 HTTP and
+-- 5 SQL) and 10 inactive (251, 277, 280, 281, 308, 330, 370, 371, 372, 376).
+-- The JSON inventory below is the current-state source of truth; job 308 is
+-- inactive and distinct horizon-5 job 393 remains active.
+
 # ALL CRON JOBS:
 ```json
 [
@@ -1628,7 +1634,7 @@ curl -i -sS -m 180 \
 -- - owns only genuine horizon-5 output
 -- - uses a separate run id on the same as-of date
 -- - must use a Vault-backed Authorization header
--- - jobs 308 and 393 are active and use the canonical Vault lookup after the
+-- - job 308 is inactive; distinct horizon-5 job 393 remains active and uses the canonical Vault lookup after the
 --   value-free 2026-07-14 rotation/conversion gate
 -- - the commented SQL below is reference-only; production job 393 already exists
 --

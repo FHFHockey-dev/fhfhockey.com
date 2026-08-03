@@ -8672,3 +8672,9 @@
 - **Read-only Production evidence:** The retained Aug 3 coordinator audit at `10:06:53Z` and direct projection audit at `10:06:53Z` both completed HTTP `200` with `termination.state="completed"`; the distinct horizon-5 run at `10:12:01Z` also completed HTTP `200`. No route was invoked manually.
 - **Final-audit result:** The durable audit rows still expose `details.finalAudit.status="pending"` for the coordinator/direct runs. This is consistent with the deployed artifact predating the local `withCronJobAudit` correction that records a persisted receipt after a successful insert; it is not evidence of a failed route or a writer error.
 - **Disposition / boundary:** NEW 50/C0076 now has natural termination evidence but remains open for corrected publication and one later natural receipt with `finalAudit.status="persisted"`. No checkbox or denominator changed; no migration, writer, repair, backfill, provider, credential, analytics, push, build, or deployment action occurred. The publication/build/push freeze remains active.
+
+## Entry 0980 — 2026-08-03 current cron catalog reconciliation
+
+- **Read-only Production evidence:** `cron.job` reports 69 jobs total, with 59 active (54 HTTP and 5 SQL) and 10 inactive: `251,277,280,281,308,330,370,371,372,376`.
+- **Correction:** The current schedule reference now states that job 308 is inactive and distinct horizon-5 job 393 remains active. The underlying JSON inventory was already correct; historical checkpoint entries remain unchanged.
+- **Boundary:** This is documentation-only reconciliation. No source/master checkbox or denominator changed, and no database, writer, repair, backfill, provider, analytics, credential, push, build, deployment, or Yahoo action occurred. The owner's no-push/no-build/no-deployment freeze remains active.

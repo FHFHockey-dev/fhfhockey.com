@@ -1,5 +1,7 @@
 # PRD: Cron Audit and Schedule Optimization
 
+**2026-08-03 current catalog reconciliation:** Read-only Production `cron.job` evidence reports 69 jobs: 59 active (54 HTTP and 5 SQL) and 10 inactive (`251,277,280,281,308,330,370,371,372,376`). The source JSON inventory now explicitly preserves job 308 as inactive and distinct horizon-5 job 393 as active. This corrects current schedule documentation only; no checkbox, denominator, migration, writer, repair, backfill, provider, analytics, credential, push, build, or deployment state changed under the freeze.
+
 **2026-08-03 local error-cohort verification:** Local Supabase schema lint exited clean across all five local schemas. The bounded cron/projection, Yahoo/sKO, and migration-contract suites pass `108/108` tests (`38/28/42`); this remains local evidence only under the no-push/no-build/no-deployment freeze. C0047/7.5 and provider/history/natural-run gates remain open; no checkbox, denominator, or external state changed.
 
 **2026-08-03 projection failure-inventory classification correction:** The Cron source inventory no longer labels `run-forge-projection-v2` and `run-projection-accuracy` as currently failing HTTP 422. Historical preflight/freshness 422 receipts remain documented; later natural receipts are HTTP 200, while C0012/C0013 remain open for current-date input freshness and provenance-complete eligible calibration evidence. No checkbox, denominator, or external state changed under the no-push/no-build/no-deployment freeze.
