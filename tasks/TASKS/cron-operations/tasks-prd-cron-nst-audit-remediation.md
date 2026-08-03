@@ -56,7 +56,7 @@
 - `web/pages/api/v1/db/update-line-combinations/index.ts` - Repeated audit noise source during live-game processing.
 - `web/pages/api/v1/db/update-standings-details/index.ts` - Live failing route with NHL API `429` behavior to triage.
 - `web/pages/api/v1/db/run-projection-v2.ts` - Live failing route with `422` preflight or pipeline validation behavior.
-- `web/pages/api/v1/db/update-sko-stats.ts` - Live failing route with the `assists_5v5` schema mismatch.
+- `web/pages/api/v1/db/update-sko-stats.ts` - Historical failing route with the `assists_5v5` schema mismatch; local exact-contract projection now strips legacy-only columns before upsert.
 - `web/pages/api/v1/db/update-power-rankings.ts` - Live failing route with the `(void 0) is not a function` runtime error.
 - `web/pages/api/v1/db/run-projection-accuracy.ts` - Live failing downstream route that depends on a succeeded projection run.
 - `web/pages/api/v1/db/update-wgo-goalies.ts` - WGO goalie writer whose bulk and row-level fallback paths must not convert zero persisted rows into route success.

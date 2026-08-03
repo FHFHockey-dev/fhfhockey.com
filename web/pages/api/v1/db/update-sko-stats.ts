@@ -8,7 +8,7 @@ import { format, parseISO, addDays, isBefore } from "date-fns";
 import {
   getCurrentSeason,
   isValidNhlSeasonId,
-  resolveLatestStartedSeasonIdForDate
+  resolveLatestStartedSeasonIdForDate,
 } from "lib/NHL/server";
 import { Database } from "lib/supabase/database-generated.types";
 import {
@@ -28,7 +28,7 @@ import {
   WGOScoringCountsSkaterStat,
   WGOShotTypeSkaterStat,
   WGOToiSkaterStat,
-  WGOSkaterStat
+  WGOSkaterStat,
 } from "lib/NHL/types";
 import adminOnly from "utils/adminOnlyMiddleware";
 
@@ -72,6 +72,52 @@ interface NHLApiResponse {
 type SkoSkaterStatsInsert =
   Database["public"]["Tables"]["sko_skater_stats"]["Insert"];
 
+const SKO_SKATER_STATS_COLUMNS = [
+  "player_id",
+  "player_name",
+  "date",
+  "season_id",
+  "position_code",
+  "games_played",
+  "goals",
+  "assists",
+  "points",
+  "shots",
+  "shooting_percentage",
+  "time_on_ice",
+  "on_ice_shooting_pct",
+  "zone_start_pct",
+  "pp_toi_pct_per_game",
+  "es_goals_for",
+  "pp_goals_for",
+  "sh_goals_for",
+  "total_primary_assists",
+  "total_secondary_assists",
+  "ipp",
+  "sog_per_60",
+  "assists_5v5",
+  "assists_per_60_5v5",
+  "primary_assists_5v5",
+  "primary_assists_per_60_5v5",
+  "secondary_assists_5v5",
+  "secondary_assists_per_60_5v5",
+] as const;
+
+export function projectSkoSkaterStatsRow(
+  payload: Record<string, unknown>,
+): SkoSkaterStatsInsert {
+  const projected: Record<string, unknown> = {};
+
+  for (const column of SKO_SKATER_STATS_COLUMNS) {
+    if (Object.prototype.hasOwnProperty.call(payload, column)) {
+      const value = payload[column];
+      if (value !== undefined) projected[column] = value;
+    }
+  }
+
+  return projected as SkoSkaterStatsInsert;
+}
+
 function finiteNumberOrNull(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
   const numericValue = Number(value);
@@ -87,7 +133,7 @@ export function buildSkoSkaterStatsRow({
   scoringPerGameStat,
   timeOnIceStat,
   formattedDate,
-  seasonId
+  seasonId,
 }: {
   stat: WGOSummarySkaterStat;
   goalsForAgainstStat?: WGOGoalsForAgainstSkaterStat;
@@ -129,24 +175,20 @@ export function buildSkoSkaterStatsRow({
     shooting_percentage: finiteNumberOrNull(stat.shootingPct),
     time_on_ice: timeOnIceSeconds,
     on_ice_shooting_pct: finiteNumberOrNull(
-      puckPossessionStat?.onIceShootingPct
+      puckPossessionStat?.onIceShootingPct,
     ),
     zone_start_pct: finiteNumberOrNull(puckPossessionStat?.zoneStartPct),
     pp_toi_pct_per_game: finiteNumberOrNull(
-      powerPlayStat?.ppTimeOnIcePctPerGame
+      powerPlayStat?.ppTimeOnIcePctPerGame,
     ),
-    es_goals_for: finiteNumberOrNull(
-      goalsForAgainstStat?.evenStrengthGoalsFor
-    ),
+    es_goals_for: finiteNumberOrNull(goalsForAgainstStat?.evenStrengthGoalsFor),
     pp_goals_for: finiteNumberOrNull(goalsForAgainstStat?.powerPlayGoalFor),
-    sh_goals_for: finiteNumberOrNull(
-      goalsForAgainstStat?.shortHandedGoalsFor
-    ),
+    sh_goals_for: finiteNumberOrNull(goalsForAgainstStat?.shortHandedGoalsFor),
     total_primary_assists: finiteNumberOrNull(
-      scoringPerGameStat?.totalPrimaryAssists
+      scoringPerGameStat?.totalPrimaryAssists,
     ),
     total_secondary_assists: finiteNumberOrNull(
-      scoringPerGameStat?.totalSecondaryAssists
+      scoringPerGameStat?.totalSecondaryAssists,
     ),
     ipp:
       points !== null && totalOnIceGoalsFor > 0
@@ -157,35 +199,40 @@ export function buildSkoSkaterStatsRow({
         ? (shots / timeOnIceMinutes) * 60
         : null,
     assists_5v5: finiteNumberOrNull(scoringRatesStat?.assists5v5),
-    assists_per_60_5v5: finiteNumberOrNull(
-      scoringRatesStat?.assistsPer605v5
-    ),
+    assists_per_60_5v5: finiteNumberOrNull(scoringRatesStat?.assistsPer605v5),
     primary_assists_5v5: finiteNumberOrNull(
-      scoringRatesStat?.primaryAssists5v5
+      scoringRatesStat?.primaryAssists5v5,
     ),
     primary_assists_per_60_5v5: finiteNumberOrNull(
-      scoringRatesStat?.primaryAssistsPer605v5
+      scoringRatesStat?.primaryAssistsPer605v5,
     ),
     secondary_assists_5v5: finiteNumberOrNull(
-      scoringRatesStat?.secondaryAssists5v5
+      scoringRatesStat?.secondaryAssists5v5,
     ),
     secondary_assists_per_60_5v5: finiteNumberOrNull(
-      scoringRatesStat?.secondaryAssistsPer605v5
-    )
+      scoringRatesStat?.secondaryAssistsPer605v5,
+    ),
   };
 }
 
 export async function upsertSkoSkaterStats(
   client: typeof supabase,
-  payload: SkoSkaterStatsInsert | SkoSkaterStatsInsert[]
+  payload: SkoSkaterStatsInsert | SkoSkaterStatsInsert[],
 ) {
-  const { error } = await client.from("sko_skater_stats").upsert(payload);
+  const canonicalPayload = Array.isArray(payload)
+    ? payload.map((row) =>
+        projectSkoSkaterStatsRow(row as Record<string, unknown>),
+      )
+    : projectSkoSkaterStatsRow(payload as Record<string, unknown>);
+  const { error } = await client
+    .from("sko_skater_stats")
+    .upsert(canonicalPayload);
   if (error) throw error;
 }
 
 export function hasFullSkoSourcePage(
   pageLengths: number[],
-  limit: number
+  limit: number,
 ): boolean {
   return pageLengths.some((length) => length >= limit);
 }
@@ -196,7 +243,7 @@ export function buildSkoSourceIngestDiagnostics({
   sourceFamilyPlayerIds,
   attemptedRows,
   upsertedRows,
-  today = format(new Date(), "yyyy-MM-dd")
+  today = format(new Date(), "yyyy-MM-dd"),
 }: {
   requestedDate: string;
   primaryPlayerIds: number[];
@@ -206,7 +253,7 @@ export function buildSkoSourceIngestDiagnostics({
   today?: string;
 }) {
   const uniquePrimaryIds = Array.from(new Set(primaryPlayerIds)).sort(
-    (left, right) => left - right
+    (left, right) => left - right,
   );
   const sourceFamilyRows: Record<string, number> = {};
   const missingPlayersByFamily: Record<string, number> = {};
@@ -215,7 +262,7 @@ export function buildSkoSourceIngestDiagnostics({
     const familyIds = new Set(sourceFamilyPlayerIds[family]);
     sourceFamilyRows[family] = sourceFamilyPlayerIds[family].length;
     missingPlayersByFamily[family] = uniquePrimaryIds.filter(
-      (playerId) => !familyIds.has(playerId)
+      (playerId) => !familyIds.has(playerId),
     ).length;
   }
 
@@ -226,8 +273,8 @@ export function buildSkoSourceIngestDiagnostics({
         Math.round(
           (Date.parse(`${today}T00:00:00Z`) -
             Date.parse(`${latestSourceDate}T00:00:00Z`)) /
-            86_400_000
-        )
+            86_400_000,
+        ),
       )
     : null;
 
@@ -236,7 +283,7 @@ export function buildSkoSourceIngestDiagnostics({
       requestedDate,
       latestSourceDate,
       ageDaysFromToday,
-      empty: uniquePrimaryIds.length === 0
+      empty: uniquePrimaryIds.length === 0,
     },
     coverage: {
       discoveredPlayers: uniquePrimaryIds.length,
@@ -244,19 +291,19 @@ export function buildSkoSourceIngestDiagnostics({
       missingPlayersByFamily,
       missingPlayerAssociations: Object.values(missingPlayersByFamily).reduce(
         (sum, count) => sum + count,
-        0
-      )
+        0,
+      ),
     },
     write: {
       attemptedRows,
       upsertedRows,
-      partial: upsertedRows !== attemptedRows
-    }
+      partial: upsertedRows !== attemptedRows,
+    },
   };
 }
 
 export function aggregateSkoSourceIngestDiagnostics(
-  diagnostics: ReturnType<typeof buildSkoSourceIngestDiagnostics>[]
+  diagnostics: ReturnType<typeof buildSkoSourceIngestDiagnostics>[],
 ) {
   const sourceFamilyRows: Record<string, number> = {};
   const missingPlayersByFamily: Record<string, number> = {};
@@ -271,12 +318,12 @@ export function aggregateSkoSourceIngestDiagnostics(
       latestSourceDate = diagnostic.freshness.latestSourceDate;
     }
     for (const [family, count] of Object.entries(
-      diagnostic.coverage.sourceFamilyRows
+      diagnostic.coverage.sourceFamilyRows,
     )) {
       sourceFamilyRows[family] = (sourceFamilyRows[family] ?? 0) + count;
     }
     for (const [family, count] of Object.entries(
-      diagnostic.coverage.missingPlayersByFamily
+      diagnostic.coverage.missingPlayersByFamily,
     )) {
       missingPlayersByFamily[family] =
         (missingPlayersByFamily[family] ?? 0) + count;
@@ -287,38 +334,37 @@ export function aggregateSkoSourceIngestDiagnostics(
     freshness: {
       latestSourceDate,
       emptySourceDates: diagnostics.filter(
-        (diagnostic) => diagnostic.freshness.empty
-      ).length
+        (diagnostic) => diagnostic.freshness.empty,
+      ).length,
     },
     coverage: {
       playerDateRows: diagnostics.reduce(
-        (sum, diagnostic) =>
-          sum + diagnostic.coverage.discoveredPlayers,
-        0
+        (sum, diagnostic) => sum + diagnostic.coverage.discoveredPlayers,
+        0,
       ),
       sourceFamilyRows,
       missingPlayersByFamily,
       missingPlayerAssociations: Object.values(missingPlayersByFamily).reduce(
         (sum, count) => sum + count,
-        0
-      )
+        0,
+      ),
     },
     write: {
       attemptedRows: diagnostics.reduce(
         (sum, diagnostic) => sum + diagnostic.write.attemptedRows,
-        0
+        0,
       ),
       upsertedRows: diagnostics.reduce(
         (sum, diagnostic) => sum + diagnostic.write.upsertedRows,
-        0
+        0,
       ),
-      partial: diagnostics.some((diagnostic) => diagnostic.write.partial)
-    }
+      partial: diagnostics.some((diagnostic) => diagnostic.write.partial),
+    },
   };
 }
 
 export function isTruthyQueryFlag(
-  value: string | string[] | undefined
+  value: string | string[] | undefined,
 ): boolean {
   if (typeof value === "string") {
     return ["1", "true", "all", "full", "yes"].includes(value.toLowerCase());
@@ -335,7 +381,7 @@ export function resolveSkaterIncrementalWindow({
   seasonStartDate,
   seasonEndDate,
   latestStoredDate,
-  today = format(new Date(), "yyyy-MM-dd")
+  today = format(new Date(), "yyyy-MM-dd"),
 }: {
   seasonStartDate: string;
   seasonEndDate: string;
@@ -356,19 +402,19 @@ export function resolveSkaterIncrementalWindow({
     return {
       startDate: null,
       endDate,
-      upToDate: true
+      upToDate: true,
     };
   }
 
   return {
     startDate,
     endDate,
-    upToDate: false
+    upToDate: false,
   };
 }
 
 async function getLatestSkaterStatsDateForSeason(
-  seasonId: number
+  seasonId: number,
 ): Promise<string | null> {
   const { data, error } = await supabase
     .from("sko_skater_stats")
@@ -379,7 +425,7 @@ async function getLatestSkaterStatsDateForSeason(
 
   if (error) {
     throw new Error(
-      `Failed to determine latest sko_skater_stats date for season ${seasonId}: ${error.message}`
+      `Failed to determine latest sko_skater_stats date for season ${seasonId}: ${error.message}`,
     );
   }
 
@@ -389,7 +435,7 @@ async function getLatestSkaterStatsDateForSeason(
 // Fetch all skater data for a specific date with a limit on the number of records
 async function fetchAllDataForDate(
   formattedDate: string,
-  limit: number
+  limit: number,
 ): Promise<{
   skaterStats: WGOSummarySkaterStat[];
   skatersBio: WGOSkatersBio[];
@@ -464,92 +510,92 @@ async function fetchAllDataForDate(
       scoringRatesResponse,
       scoringPerGameResponse,
       shotTypeResponse,
-      timeOnIceResponse
+      timeOnIceResponse,
     ] = await Promise.all([
       Fetch(skaterStatsUrl).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(skaterBioUrl).then((res) => res.json() as Promise<NHLApiResponse>),
       Fetch(miscSkaterStatsUrl).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(faceOffStatsUrl).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(faceoffWinLossUrl).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(goalsForAgainstUrl).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(penaltiesUrl).then((res) => res.json() as Promise<NHLApiResponse>),
       Fetch(penaltyKillUrl).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(powerPlayUrl).then((res) => res.json() as Promise<NHLApiResponse>),
       Fetch(puckPossessionUrl).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(satCountsUrl).then((res) => res.json() as Promise<NHLApiResponse>),
       Fetch(satPercentagesUrl).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(scoringRatesUrl).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(scoringPerGameUrl).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(shotTypeUrl).then((res) => res.json() as Promise<NHLApiResponse>),
-      Fetch(timeOnIceUrl).then((res) => res.json() as Promise<NHLApiResponse>)
+      Fetch(timeOnIceUrl).then((res) => res.json() as Promise<NHLApiResponse>),
     ]);
 
     // Concatenate the fetched data to the accumulated array
     skaterStats = skaterStats.concat(
-      skaterStatsResponse.data as WGOSummarySkaterStat[]
+      skaterStatsResponse.data as WGOSummarySkaterStat[],
     );
     skatersBio = skatersBio.concat(bioStatsResponse.data as WGOSkatersBio[]);
     miscSkaterStats = miscSkaterStats.concat(
-      miscSkaterStatsResponse.data as WGORealtimeSkaterStat[]
+      miscSkaterStatsResponse.data as WGORealtimeSkaterStat[],
     );
     faceOffStats = faceOffStats.concat(
-      faceOffStatsResponse.data as WGOFaceoffSkaterStat[]
+      faceOffStatsResponse.data as WGOFaceoffSkaterStat[],
     );
     faceoffWinLossStats = faceoffWinLossStats.concat(
-      faceoffWinLossResponse.data as WGOFaceOffWinLossSkaterStat[]
+      faceoffWinLossResponse.data as WGOFaceOffWinLossSkaterStat[],
     );
     goalsForAgainstStats = goalsForAgainstStats.concat(
-      goalsForAgainstResponse.data as WGOGoalsForAgainstSkaterStat[]
+      goalsForAgainstResponse.data as WGOGoalsForAgainstSkaterStat[],
     );
     penaltiesStats = penaltiesStats.concat(
-      penaltiesResponse.data as WGOPenaltySkaterStat[]
+      penaltiesResponse.data as WGOPenaltySkaterStat[],
     );
     penaltyKillStats = penaltyKillStats.concat(
-      penaltyKillResponse.data as WGOPenaltyKillSkaterStat[]
+      penaltyKillResponse.data as WGOPenaltyKillSkaterStat[],
     );
     powerPlayStats = powerPlayStats.concat(
-      powerPlayResponse.data as WGOPowerPlaySkaterStat[]
+      powerPlayResponse.data as WGOPowerPlaySkaterStat[],
     );
     puckPossessionStats = puckPossessionStats.concat(
-      puckPossessionResponse.data as WGOPuckPossessionSkaterStat[]
+      puckPossessionResponse.data as WGOPuckPossessionSkaterStat[],
     );
     satCountsStats = satCountsStats.concat(
-      satCountsResponse.data as WGOSatCountSkaterStat[]
+      satCountsResponse.data as WGOSatCountSkaterStat[],
     );
     satPercentagesStats = satPercentagesStats.concat(
-      satPercentagesResponse.data as WGOSatPercentageSkaterStat[]
+      satPercentagesResponse.data as WGOSatPercentageSkaterStat[],
     );
     scoringRatesStats = scoringRatesStats.concat(
-      scoringRatesResponse.data as WGOScoringRatesSkaterStat[]
+      scoringRatesResponse.data as WGOScoringRatesSkaterStat[],
     );
     scoringPerGameStats = scoringPerGameStats.concat(
-      scoringPerGameResponse.data as WGOScoringCountsSkaterStat[]
+      scoringPerGameResponse.data as WGOScoringCountsSkaterStat[],
     );
     shotTypeStats = shotTypeStats.concat(
-      shotTypeResponse.data as WGOShotTypeSkaterStat[]
+      shotTypeResponse.data as WGOShotTypeSkaterStat[],
     );
     timeOnIceStats = timeOnIceStats.concat(
-      timeOnIceResponse.data as WGOToiSkaterStat[]
+      timeOnIceResponse.data as WGOToiSkaterStat[],
     );
 
     // Determine if more data is available to fetch in the next iteration
@@ -570,9 +616,9 @@ async function fetchAllDataForDate(
         scoringRatesResponse.data.length,
         scoringPerGameResponse.data.length,
         shotTypeResponse.data.length,
-        timeOnIceResponse.data.length
+        timeOnIceResponse.data.length,
       ],
-      limit
+      limit,
     );
     start += limit; // Increment the start index for the next fetch
   }
@@ -593,14 +639,14 @@ async function fetchAllDataForDate(
     scoringRatesStats,
     scoringPerGameStats,
     shotTypeStats,
-    timeOnIceStats
+    timeOnIceStats,
   };
 }
 
 // Function to update skater stats for a specific date in the Supabase database
 async function updateSkaterStats(
   date: string,
-  options?: { seasonId?: number }
+  options?: { seasonId?: number },
 ): Promise<{
   updated: boolean;
   upsertedRows: number;
@@ -638,7 +684,7 @@ async function updateSkaterStats(
     scoringRatesStats,
     scoringPerGameStats,
     shotTypeStats,
-    timeOnIceStats
+    timeOnIceStats,
   } = await fetchAllDataForDate(formattedDate, 100);
 
   const resolvedSeasonId =
@@ -646,7 +692,7 @@ async function updateSkaterStats(
     (await resolveLatestStartedSeasonIdForDate(formattedDate, supabase));
   if (!isValidNhlSeasonId(resolvedSeasonId)) {
     throw new Error(
-      `Unable to resolve a canonical NHL season for SKO ingest date=${formattedDate}`
+      `Unable to resolve a canonical NHL season for SKO ingest date=${formattedDate}`,
     );
   }
 
@@ -657,26 +703,26 @@ async function updateSkaterStats(
       buildSkoSkaterStatsRow({
         stat,
         goalsForAgainstStat: goalsForAgainstStats.find(
-          (candidate) => candidate.playerId === stat.playerId
+          (candidate) => candidate.playerId === stat.playerId,
         ),
         powerPlayStat: powerPlayStats.find(
-          (candidate) => candidate.playerId === stat.playerId
+          (candidate) => candidate.playerId === stat.playerId,
         ),
         puckPossessionStat: puckPossessionStats.find(
-          (candidate) => candidate.playerId === stat.playerId
+          (candidate) => candidate.playerId === stat.playerId,
         ),
         scoringRatesStat: scoringRatesStats.find(
-          (candidate) => candidate.playerId === stat.playerId
+          (candidate) => candidate.playerId === stat.playerId,
         ),
         scoringPerGameStat: scoringPerGameStats.find(
-          (candidate) => candidate.playerId === stat.playerId
+          (candidate) => candidate.playerId === stat.playerId,
         ),
         timeOnIceStat: timeOnIceStats.find(
-          (candidate) => candidate.playerId === stat.playerId
+          (candidate) => candidate.playerId === stat.playerId,
         ),
         formattedDate,
-        seasonId: resolvedSeasonId
-      })
+        seasonId: resolvedSeasonId,
+      }),
     );
   }
 
@@ -701,10 +747,10 @@ async function updateSkaterStats(
       scoringPerGame: scoringPerGameStats.map((row) => Number(row.playerId)),
       scoringRates: scoringRatesStats.map((row) => Number(row.playerId)),
       shotType: shotTypeStats.map((row) => Number(row.playerId)),
-      timeOnIce: timeOnIceStats.map((row) => Number(row.playerId))
+      timeOnIce: timeOnIceStats.map((row) => Number(row.playerId)),
     },
     attemptedRows: mergedRows.length,
-    upsertedRows: mergedRows.length
+    upsertedRows: mergedRows.length,
   });
 
   return {
@@ -726,7 +772,7 @@ async function updateSkaterStats(
     scoringRatesStats,
     scoringPerGameStats,
     shotTypeStats,
-    timeOnIceStats
+    timeOnIceStats,
   };
 }
 
@@ -758,7 +804,7 @@ async function updateSkaterStatsForSeason() {
       scoringRatesStats,
       scoringPerGameStats,
       shotTypeStats,
-      timeOnIceStats
+      timeOnIceStats,
     } = await fetchAllDataForDate(formattedDate, 100);
 
     for (const stat of skaterStats) {
@@ -769,49 +815,49 @@ async function updateSkaterStatsForSeason() {
         .single();
 
       const bioStats = skatersBio.find(
-        (aStat) => aStat.playerId === stat.playerId
+        (aStat) => aStat.playerId === stat.playerId,
       );
       const miscStats = miscSkaterStats.find(
-        (aStat) => aStat.playerId === stat.playerId
+        (aStat) => aStat.playerId === stat.playerId,
       );
       const faceOffStat = faceOffStats.find(
-        (aStat) => aStat.playerId === stat.playerId
+        (aStat) => aStat.playerId === stat.playerId,
       );
       const faceoffWinLossStat = faceoffWinLossStats.find(
-        (aStat) => aStat.playerId === stat.playerId
+        (aStat) => aStat.playerId === stat.playerId,
       );
       const goalsForAgainstStat = goalsForAgainstStats.find(
-        (aStat) => aStat.playerId === stat.playerId
+        (aStat) => aStat.playerId === stat.playerId,
       );
       const penaltiesStat = penaltiesStats.find(
-        (aStat) => aStat.playerId === stat.playerId
+        (aStat) => aStat.playerId === stat.playerId,
       );
       const penaltyKillStat = penaltyKillStats.find(
-        (aStat) => aStat.playerId === stat.playerId
+        (aStat) => aStat.playerId === stat.playerId,
       );
       const powerPlayStat = powerPlayStats.find(
-        (aStat) => aStat.playerId === stat.playerId
+        (aStat) => aStat.playerId === stat.playerId,
       );
       const puckPossessionStat = puckPossessionStats.find(
-        (aStat) => aStat.playerId === stat.playerId
+        (aStat) => aStat.playerId === stat.playerId,
       );
       const satCountsStat = satCountsStats.find(
-        (aStat) => aStat.playerId === stat.playerId
+        (aStat) => aStat.playerId === stat.playerId,
       );
       const satPercentagesStat = satPercentagesStats.find(
-        (aStat) => aStat.playerId === stat.playerId
+        (aStat) => aStat.playerId === stat.playerId,
       );
       const scoringRatesStat = scoringRatesStats.find(
-        (aStat) => aStat.playerId === stat.playerId
+        (aStat) => aStat.playerId === stat.playerId,
       );
       const scoringPerGameStat = scoringPerGameStats.find(
-        (aStat) => aStat.playerId === stat.playerId
+        (aStat) => aStat.playerId === stat.playerId,
       );
       const shotTypeStat = shotTypeStats.find(
-        (aStat) => aStat.playerId === stat.playerId
+        (aStat) => aStat.playerId === stat.playerId,
       );
       const timeOnIceStat = timeOnIceStats.find(
-        (aStat) => aStat.playerId === stat.playerId
+        (aStat) => aStat.playerId === stat.playerId,
       );
 
       const mergedData = {
@@ -822,6 +868,7 @@ async function updateSkaterStatsForSeason() {
         player_id: stat.playerId, // int
         player_name: stat.skaterFullName, // text
         date: formattedDate, // date
+        season_id: Number(currentSeason.seasonId), // int
         shoots_catches: stat.shootsCatches, // text
         position_code: stat.positionCode, // text
         games_played: stat.gamesPlayed, // int
@@ -1072,7 +1119,7 @@ async function updateSkaterStatsForSeason() {
         ot_time_on_ice_per_game: timeOnIceStat?.otTimeOnIcePerOtGame, // float
         shifts: timeOnIceStat?.shifts, // int
         shifts_per_game: timeOnIceStat?.shiftsPerGame, // float
-        time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift // float
+        time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift, // float
       };
 
       // Update Supabase table if there are new non-null values
@@ -1082,55 +1129,56 @@ async function updateSkaterStatsForSeason() {
 
       for (const stat of skaterStats) {
         const bioStats = skatersBio.find(
-          (aStat) => aStat.playerId === stat.playerId
+          (aStat) => aStat.playerId === stat.playerId,
         );
         const miscStats = miscSkaterStats.find(
-          (aStat) => aStat.playerId === stat.playerId
+          (aStat) => aStat.playerId === stat.playerId,
         );
         const faceOffStat = faceOffStats.find(
-          (aStat) => aStat.playerId === stat.playerId
+          (aStat) => aStat.playerId === stat.playerId,
         );
         const faceoffWinLossStat = faceoffWinLossStats.find(
-          (aStat) => aStat.playerId === stat.playerId
+          (aStat) => aStat.playerId === stat.playerId,
         );
         const goalsForAgainstStat = goalsForAgainstStats.find(
-          (aStat) => aStat.playerId === stat.playerId
+          (aStat) => aStat.playerId === stat.playerId,
         );
         const penaltiesStat = penaltiesStats.find(
-          (aStat) => aStat.playerId === stat.playerId
+          (aStat) => aStat.playerId === stat.playerId,
         );
         const penaltyKillStat = penaltyKillStats.find(
-          (aStat) => aStat.playerId === stat.playerId
+          (aStat) => aStat.playerId === stat.playerId,
         );
         const powerPlayStat = powerPlayStats.find(
-          (aStat) => aStat.playerId === stat.playerId
+          (aStat) => aStat.playerId === stat.playerId,
         );
         const puckPossessionStat = puckPossessionStats.find(
-          (aStat) => aStat.playerId === stat.playerId
+          (aStat) => aStat.playerId === stat.playerId,
         );
         const satCountsStat = satCountsStats.find(
-          (aStat) => aStat.playerId === stat.playerId
+          (aStat) => aStat.playerId === stat.playerId,
         );
         const satPercentagesStat = satPercentagesStats.find(
-          (aStat) => aStat.playerId === stat.playerId
+          (aStat) => aStat.playerId === stat.playerId,
         );
         const scoringRatesStat = scoringRatesStats.find(
-          (aStat) => aStat.playerId === stat.playerId
+          (aStat) => aStat.playerId === stat.playerId,
         );
         const scoringPerGameStat = scoringPerGameStats.find(
-          (aStat) => aStat.playerId === stat.playerId
+          (aStat) => aStat.playerId === stat.playerId,
         );
         const shotTypeStat = shotTypeStats.find(
-          (aStat) => aStat.playerId === stat.playerId
+          (aStat) => aStat.playerId === stat.playerId,
         );
         const timeOnIceStat = timeOnIceStats.find(
-          (aStat) => aStat.playerId === stat.playerId
+          (aStat) => aStat.playerId === stat.playerId,
         );
         await upsertSkoSkaterStats(supabase, {
           // summary stats from skaterStatsResponse (stat)
           player_id: stat.playerId, // int
           player_name: stat.skaterFullName, // text
           date: formattedDate, // date
+          season_id: Number(currentSeason.seasonId), // int
           shoots_catches: stat.shootsCatches, // text
           position_code: stat.positionCode, // text
           games_played: stat.gamesPlayed, // int
@@ -1381,7 +1429,7 @@ async function updateSkaterStatsForSeason() {
           ot_time_on_ice_per_game: timeOnIceStat?.otTimeOnIcePerOtGame, // float
           shifts: timeOnIceStat?.shifts, // int
           shifts_per_game: timeOnIceStat?.shiftsPerGame, // float
-          time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift // float
+          time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift, // float
         });
         totalUpdates++;
       }
@@ -1392,7 +1440,7 @@ async function updateSkaterStatsForSeason() {
     return {
       message: `Skater stats updated for the entire season successfully. Total updates: ${totalUpdates}`,
       success: true,
-      totalUpdates: totalUpdates
+      totalUpdates: totalUpdates,
     };
   }
 }
@@ -1400,25 +1448,25 @@ async function updateSkaterStatsForSeason() {
 async function resolveDefaultSkaterRefreshWindow() {
   const currentSeason = await getCurrentSeason();
   const latestStoredDate = await getLatestSkaterStatsDateForSeason(
-    Number(currentSeason.seasonId)
+    Number(currentSeason.seasonId),
   );
   const window = resolveSkaterIncrementalWindow({
     seasonStartDate: currentSeason.regularSeasonStartDate,
     seasonEndDate: currentSeason.regularSeasonEndDate,
-    latestStoredDate
+    latestStoredDate,
   });
 
   return {
     seasonId: Number(currentSeason.seasonId),
     latestStoredDate,
-    ...window
+    ...window,
   };
 }
 
 async function updateSkaterStatsForDateWindow(
   startDate: string,
   endDate: string,
-  seasonId?: number
+  seasonId?: number,
 ) {
   if (startDate > endDate) {
     return {
@@ -1427,16 +1475,15 @@ async function updateSkaterStatsForDateWindow(
       startDate,
       endDate,
       totalDaysProcessed: 0,
-      totalUpdates: 0
+      totalUpdates: 0,
     };
   }
 
   let currentDate = parseISO(startDate);
   let totalUpdates = 0;
   let totalDaysProcessed = 0;
-  const dateDiagnostics: ReturnType<
-    typeof buildSkoSourceIngestDiagnostics
-  >[] = [];
+  const dateDiagnostics: ReturnType<typeof buildSkoSourceIngestDiagnostics>[] =
+    [];
 
   while (true) {
     const formattedDate = format(currentDate, "yyyy-MM-dd");
@@ -1459,14 +1506,14 @@ async function updateSkaterStatsForDateWindow(
     endDate,
     totalDaysProcessed,
     totalUpdates,
-    diagnostics: aggregateSkoSourceIngestDiagnostics(dateDiagnostics)
+    diagnostics: aggregateSkoSourceIngestDiagnostics(dateDiagnostics),
   };
 }
 
 // Function to fetch data for a specific skater across multiple dates
 async function fetchDataForPlayer(
   playerId: string,
-  playerName: string
+  playerName: string,
 ): Promise<{
   skaterStats: WGOSummarySkaterStat[];
   skatersBio: WGOSkatersBio[];
@@ -1510,7 +1557,7 @@ async function fetchDataForPlayer(
     const formattedDate = format(today, "yyyy-MM-dd");
     const regularSeasonStartDate = format(
       parseISO((await getCurrentSeason()).regularSeasonStartDate),
-      "yyyy-MM-dd"
+      "yyyy-MM-dd",
     );
     const skaterStatsURL = `https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goals%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22assists%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${regularSeasonStartDate}%22%20and%20gameTypeId=2%20and%20skaterFullName%20likeIgnoreCase%20%22${encodedPlayerName}%22`;
     const skatersBioURL = `https://api.nhle.com/stats/rest/en/skater/bios?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22lastName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22skaterFullName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&cayenneExp=gameDate%3C=%22${regularSeasonStartDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2%20and%20skaterFullName%20likeIgnoreCase%20%22${encodedPlayerName}%22`;
@@ -1545,91 +1592,91 @@ async function fetchDataForPlayer(
       scoringRatesResponse,
       scoringPerGameResponse,
       shotTypeResponse,
-      timeOnIceResponse
+      timeOnIceResponse,
     ] = await Promise.all([
       Fetch(skaterStatsURL).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(skatersBioURL).then((res) => res.json() as Promise<NHLApiResponse>),
       Fetch(miscSkaterStatsURL).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(faceOffStatsURL).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(faceoffWinLossUrl).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(goalsForAgainstUrl).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(penaltiesUrl).then((res) => res.json() as Promise<NHLApiResponse>),
       Fetch(penaltyKillUrl).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(powerPlayUrl).then((res) => res.json() as Promise<NHLApiResponse>),
       Fetch(puckPossessionUrl).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(satCountsUrl).then((res) => res.json() as Promise<NHLApiResponse>),
       Fetch(satPercentagesUrl).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(scoringRatesUrl).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(scoringPerGameUrl).then(
-        (res) => res.json() as Promise<NHLApiResponse>
+        (res) => res.json() as Promise<NHLApiResponse>,
       ),
       Fetch(shotTypesUrl).then((res) => res.json() as Promise<NHLApiResponse>),
-      Fetch(timeOnIceUrl).then((res) => res.json() as Promise<NHLApiResponse>)
+      Fetch(timeOnIceUrl).then((res) => res.json() as Promise<NHLApiResponse>),
     ]);
 
     skaterStats = skaterStats.concat(
-      skaterStatsResponse.data as WGOSkaterStat[]
+      skaterStatsResponse.data as WGOSkaterStat[],
     );
     skatersBio = skatersBio.concat(skatersBioResponse.data as WGOSkatersBio[]);
     miscSkaterStats = miscSkaterStats.concat(
-      miscSkaterStatsResponse.data as WGORealtimeSkaterStat[]
+      miscSkaterStatsResponse.data as WGORealtimeSkaterStat[],
     );
     faceOffStats = faceOffStats.concat(
-      faceOffStatsResponse.data as WGOFaceoffSkaterStat[]
+      faceOffStatsResponse.data as WGOFaceoffSkaterStat[],
     );
     faceoffWinLossStats = faceoffWinLossStats.concat(
-      faceoffWinLossResponse.data as WGOFaceOffWinLossSkaterStat[]
+      faceoffWinLossResponse.data as WGOFaceOffWinLossSkaterStat[],
     );
     goalsForAgainstStats = goalsForAgainstStats.concat(
-      goalsForAgainstResponse.data as WGOGoalsForAgainstSkaterStat[]
+      goalsForAgainstResponse.data as WGOGoalsForAgainstSkaterStat[],
     );
     penaltiesStats = penaltiesStats.concat(
-      penaltiesResponse.data as WGOPenaltySkaterStat[]
+      penaltiesResponse.data as WGOPenaltySkaterStat[],
     );
     penaltyKillStats = penaltyKillStats.concat(
-      penaltyKillResponse.data as WGOPenaltyKillSkaterStat[]
+      penaltyKillResponse.data as WGOPenaltyKillSkaterStat[],
     );
     powerPlayStats = powerPlayStats.concat(
-      powerPlayResponse.data as WGOPowerPlaySkaterStat[]
+      powerPlayResponse.data as WGOPowerPlaySkaterStat[],
     );
     puckPossessionStats = puckPossessionStats.concat(
-      puckPossessionResponse.data as WGOPuckPossessionSkaterStat[]
+      puckPossessionResponse.data as WGOPuckPossessionSkaterStat[],
     );
     satCountsStats = satCountsStats.concat(
-      satCountsResponse.data as WGOSatCountSkaterStat[]
+      satCountsResponse.data as WGOSatCountSkaterStat[],
     );
     satPercentagesStats = satPercentagesStats.concat(
-      satPercentagesResponse.data as WGOSatPercentageSkaterStat[]
+      satPercentagesResponse.data as WGOSatPercentageSkaterStat[],
     );
     scoringRatesStats = scoringRatesStats.concat(
-      scoringRatesResponse.data as WGOScoringRatesSkaterStat[]
+      scoringRatesResponse.data as WGOScoringRatesSkaterStat[],
     );
     scoringPerGameStats = scoringPerGameStats.concat(
-      scoringPerGameResponse.data as WGOScoringCountsSkaterStat[]
+      scoringPerGameResponse.data as WGOScoringCountsSkaterStat[],
     );
     shotTypeStats = shotTypeStats.concat(
-      shotTypeResponse.data as WGOShotTypeSkaterStat[]
+      shotTypeResponse.data as WGOShotTypeSkaterStat[],
     );
     timeOnIceStats = timeOnIceStats.concat(
-      timeOnIceResponse.data as WGOToiSkaterStat[]
+      timeOnIceResponse.data as WGOToiSkaterStat[],
     );
 
     moreDataAvailable =
@@ -1668,19 +1715,16 @@ async function fetchDataForPlayer(
     scoringRatesStats,
     scoringPerGameStats,
     shotTypeStats,
-    timeOnIceStats
+    timeOnIceStats,
   };
 }
 
-async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET" && req.method !== "POST") {
     res.setHeader("Allow", ["GET", "POST"]);
     res.status(405).json({
       message: `Method ${req.method ?? "unknown"} Not Allowed`,
-      success: false
+      success: false,
     });
     return;
   }
@@ -1714,19 +1758,19 @@ async function handler(
         today < currentSeason.regularSeasonEndDate
           ? today
           : currentSeason.regularSeasonEndDate,
-        Number(currentSeason.seasonId)
+        Number(currentSeason.seasonId),
       );
       res.json({
         message:
           "Skater stats updated successfully for all players (full-season run).",
         success: true,
         mode: "full",
-        data: result
+        data: result,
       });
     } else if (noExplicitMode || runMode === "incremental") {
       if (noExplicitMode) {
         console.log(
-          "No explicit mode provided; defaulting update-sko-stats to incremental refresh."
+          "No explicit mode provided; defaulting update-sko-stats to incremental refresh.",
         );
       }
       const window = await resolveDefaultSkaterRefreshWindow();
@@ -1742,8 +1786,8 @@ async function handler(
             endDate: window.endDate,
             latestStoredDate: window.latestStoredDate,
             totalDaysProcessed: 0,
-            totalUpdates: 0
-          }
+            totalUpdates: 0,
+          },
         });
         return;
       }
@@ -1751,7 +1795,7 @@ async function handler(
       const result = await updateSkaterStatsForDateWindow(
         window.startDate,
         window.endDate,
-        window.seasonId
+        window.seasonId,
       );
       res.json({
         message:
@@ -1760,8 +1804,8 @@ async function handler(
         mode: "incremental",
         data: {
           latestStoredDate: window.latestStoredDate,
-          ...result
-        }
+          ...result,
+        },
       });
     } else if (date) {
       const result = await updateSkaterStats(date);
@@ -1769,7 +1813,7 @@ async function handler(
         message: `Skater stats updated successfully for ${date}.`,
         success: true,
         mode: "date",
-        data: result
+        data: result,
       });
     } else if (playerId && playerFullName) {
       const result = await fetchDataForPlayer(playerId, playerFullName);
@@ -1777,13 +1821,13 @@ async function handler(
         message: `Data fetched successfully for player ${playerFullName}.`,
         success: true,
         mode: "player",
-        data: result
+        data: result,
       });
     } else {
       res.status(400).json({
         message:
           "Invalid parameters. Use one of: no params / ?runMode=incremental for incremental refresh; ?full=1 or ?runMode=full for a full-season run; ?date=YYYY-MM-DD for a single day; or ?playerId=...&playerFullName=... for an individual player.",
-        success: false
+        success: false,
       });
     }
   } catch (e: any) {
@@ -1791,7 +1835,7 @@ async function handler(
     res.status(400).json({
       message: "Failed to process request. Reason: " + dependencyError.message,
       success: false,
-      dependencyError
+      dependencyError,
     });
   }
 }

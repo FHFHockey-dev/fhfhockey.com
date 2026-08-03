@@ -127,7 +127,7 @@ The NST portion is urgent because `www.naturalstattrick.com` is no longer the co
 17. The implementation must triage and fix the live non-NST failures shown in the March 31, 2026 daily summary because full-system verification depends on them:
    - `update-standings-details` NHL API `429`
    - `run-forge-projection-v2` `422`
-   - `update-sko-stats-full-season` schema mismatch on `assists_5v5`
+   - `update-sko-stats-full-season` schema mismatch on `assists_5v5` (historical observation; the local writer now projects the exact 28-column live contract and strips legacy-only fields before upsert)
    - `update-power-rankings` `(void 0) is not a function`
    - `run-projection-accuracy` missing succeeded projection dependency
 18. The implementation must account for the March 29, 2026 audit noise where repeated failures were reported for `/api/v1/db/cron/update-stats-cron` and `/api/v1/db/update-line-combinations`, and must distinguish true failures from expected live-game or partial-processing conditions.

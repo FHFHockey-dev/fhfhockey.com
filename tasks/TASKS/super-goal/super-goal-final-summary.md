@@ -1005,3 +1005,8 @@ The post-sKO audit inspected all current open source rows outside the completed 
 
 - Read-only pg_cron metadata shows run `148893` submitted successfully at 12:00 UTC, while the matching `cron_job_audit` metadata records HTTP 401; a later 22:51 UTC audit also records HTTP 401. The previous 2026-07-31 run was HTTP 200.
 - This is unresolved current-secret parity under NEW 9.0, not authorization proof from command shape. No credential value was read or changed, no authenticated writer workload is evidenced, and the discovery is folded into the existing gate without changing the actionable denominator.
+### 2026-08-03 local sKO full-season schema-boundary correction
+
+- The legacy full-season `update-sko-stats` branch can construct hundreds of retired NHL fields before writing to the live 28-column `sko_skater_stats` table. The shared writer now projects both single-row and batch payloads to the canonical 28-column whitelist, and both full-season payload paths include the required `season_id`.
+- Focused helper/route tests pass 15/15; TypeScript, scoped ESLint, Prettier, and `git diff --check` pass. The regression covers unsupported `assists_per_game`/`shoots_catches` fields at the writer boundary.
+- This is local/unpublished correction evidence under the no-push/no-build/no-deployment freeze. C0011's local implementation is reconciled, while the parent hard-failure/natural Production receipt remains open. No database, writer, repair, backfill, provider, analytics, credential, or Yahoo state changed.

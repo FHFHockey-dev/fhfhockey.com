@@ -150,3 +150,6 @@ Connected read-only Supabase evidence reports 28 Production migration rows throu
 ## 2026-08-01 job-392 auth-observation overlay
 
 Read-only pg_cron metadata shows run `148893` submitted successfully at 12:00 UTC, while `cron_job_audit` records HTTP 401; a later 22:51 UTC audit also records HTTP 401. The prior 2026-07-31 run was HTTP 200. This discovery is appended to existing NEW 9.0 current-secret parity/authentication evidence; no credential value, writer, mutation, deployment, or new denominator row was introduced. Current parity remains raw `4,944/5,011`, actionable `4,944/5,005` with 61 open, mechanical master `5,090/5,176` with 86 open.
+## 2026-08-03 local sKO schema-boundary overlay
+
+The source task, cron/NST PRD pair, master mirror, super-goal PRD, final summary, completion-gate reconciliation, and diary now carry the same local `update-sko-stats` correction: exact 28-column projection at the write boundary plus full-season `season_id`. The 15/15 focused helper/route cohort and static checks pass. No checkbox, denominator, deployment, push, build, hosted database, writer, repair, backfill, provider, analytics, credential, or Yahoo state changed; Production/natural evidence remains separately gated.

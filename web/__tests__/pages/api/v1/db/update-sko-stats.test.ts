@@ -6,6 +6,7 @@ import {
   buildSkoSkaterStatsRow,
   hasFullSkoSourcePage,
   isTruthyQueryFlag,
+  projectSkoSkaterStatsRow,
   resolveSkaterIncrementalWindow,
   upsertSkoSkaterStats,
 } from "../../../../../pages/api/v1/db/update-sko-stats";
@@ -222,6 +223,38 @@ describe("/api/v1/db/update-sko-stats helpers", () => {
     });
   });
 
+  it("projects legacy full-season payloads before they reach the live table", () => {
+    const row = projectSkoSkaterStatsRow({
+      player_id: 8478402,
+      player_name: "Test Skater",
+      date: "2026-03-14",
+      season_id: 20252026,
+      points: 10,
+      assists_5v5: 3,
+      assists_per_game: 0.5,
+      shoots_catches: "L",
+    });
+
+    expect(Object.keys(row).sort()).toEqual(
+      [
+        "assists_5v5",
+        "date",
+        "player_id",
+        "player_name",
+        "points",
+        "season_id",
+      ].sort(),
+    );
+    expect(row).toEqual({
+      player_id: 8478402,
+      player_name: "Test Skater",
+      date: "2026-03-14",
+      season_id: 20252026,
+      points: 10,
+      assists_5v5: 3,
+    });
+  });
+
   it("submits an exact mapped batch once and fails closed on upsert errors", async () => {
     const upsert = vi
       .fn()
@@ -251,5 +284,30 @@ describe("/api/v1/db/update-sko-stats helpers", () => {
       "schema mismatch",
     );
     expect(upsert).toHaveBeenCalledTimes(2);
+  });
+
+  it("strips unsupported legacy columns at the write boundary", async () => {
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    const client = {
+      from: vi.fn(() => ({ upsert })),
+    } as any;
+
+    await upsertSkoSkaterStats(client, {
+      player_id: 8478402,
+      player_name: "Test Skater",
+      date: "2026-03-14",
+      season_id: 20252026,
+      points: 10,
+      assists_per_game: 0.5,
+      shoots_catches: "L",
+    } as any);
+
+    expect(upsert).toHaveBeenCalledWith({
+      player_id: 8478402,
+      player_name: "Test Skater",
+      date: "2026-03-14",
+      season_id: 20252026,
+      points: 10,
+    });
   });
 });
