@@ -70,6 +70,7 @@ import dotenv from "dotenv";
 import {
   fetchNstTextByUrl,
   isNstAuthError,
+  isNstConfigError,
   isNstRateLimitError
 } from "lib/nst/client";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
@@ -389,7 +390,11 @@ async function fetchAndParseData(
       );
       return dataRowsCollected;
     } catch (error: any) {
-      if (isNstAuthError(error) || isNstRateLimitError(error)) {
+      if (
+        isNstAuthError(error) ||
+        isNstConfigError(error) ||
+        isNstRateLimitError(error)
+      ) {
         throw error;
       }
       console.error(
