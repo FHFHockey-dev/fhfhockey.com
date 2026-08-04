@@ -168,7 +168,8 @@
   - [x] 6.5 Make the job-status email focus on schedule health and remove duplicate detail already shown in the CEO briefing.
   - [x] 6.6 Add a `?dryRun=true` or `?preview=json` mode to `cron-report` for testing email payloads without sending Resend emails.
 
-- [ ] 7.0 Verify end-to-end
+- [x] 7.0 Verify end-to-end
+  - End-to-end closure receipt 2026-08-04: children 7.1–7.5 are all checked; focused route/component tests, TypeScript, the no-send preview contract, and the first natural post-publication report all pass. Remaining route/provider partials are explicitly real observations under 7.5.
   - [x] 7.1 Add focused tests for schedule parser path coverage, route alias matching, SQL job matching, and stale inactive job exclusion.
   - [x] 7.2 Add component tests for the new CEO briefing sections and hidden-success behavior.
   - [x] 7.3 Run the targeted Vitest suite and TypeScript check.

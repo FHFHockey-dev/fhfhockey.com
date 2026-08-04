@@ -1,6 +1,6 @@
 # FHFH Comprehensive Completion, Audit, and Optimization — Final Summary
 
-**2026-08-04 natural closure checkpoint:** The first post-publication natural `daily-cron-report` at `2026-08-03T21:15:07.800997Z` is non-preview GET/HTTP 200 with `success=true`, `warnMissingAudit=0`, `jobsMissingLast=0`, and no missing-job/audit-gap findings; remaining partials are real route/data/provider observations. The retained Aug 4 coordinator GET/200 at `10:06:36.349119Z` and direct projection POST/200 at `10:12:01.295463Z` each completed termination and persisted the durable final audit. C0047/7.5 and DRM NEW 50/C0076 close. Imported actionable parity is `4,953/5,005` with 52 open; mechanical master is `5,100/5,176` with 76 open. No manual route, writer, migration, repair, backfill, provider, email, build, or deployment action occurred.
+**2026-08-04 natural closure checkpoint:** Cron children 7.1–7.5 are checked, including the no-send preview; the first post-publication natural `daily-cron-report` at `2026-08-03T21:15:07.800997Z` is non-preview GET/HTTP 200 with `success=true`, `warnMissingAudit=0`, `jobsMissingLast=0`, and no missing-job/audit-gap findings; remaining partials are real route/data/provider observations. The retained Aug 4 coordinator GET/200 at `10:06:36.349119Z` and direct projection POST/200 at `10:12:01.295463Z` each completed termination and persisted the durable final audit. C0042/7.0, C0047/7.5, and DRM NEW 50/C0076 close. Imported actionable parity is `4,954/5,005` with 51 open; mechanical master is `5,101/5,176` with 75 open. No manual route, writer, migration, repair, backfill, provider, email, build, or deployment action occurred.
 
 **2026-08-03 guarded documentation publication:** After a fresh fetch confirmed a clean local `d1a2e1c46` three commits ahead with no behind divergence, the guarded normal push advanced `octoberBranch` from `9cc3fcaac` to `d1a2e1c46`. This documentation-only checkpoint did not trigger a Vercel build/deployment. C0047/7.5, NEW 50/C0076, provider, and history gates remain open; no migration, writer, repair, backfill, provider, credential, analytics, or Yahoo action ran.
 
@@ -175,8 +175,8 @@ change.
 reconciling every implementation-complete Wave-A parent (3.6–3.19) to its
 source/master evidence and checked dynamic audits 5.7.3–5.7.17. Active
 Wave-A parents 3.1–3.5 remain open. Imported parity is unchanged at
-`4,953/5,011` raw and `4,953/5,005` actionable with 52 open; mechanical master is now
-`5,100/5,176` with 76 open. No runtime, database, provider, deployment, push,
+`4,954/5,011` raw and `4,954/5,005` actionable with 51 open; mechanical master is now
+`5,101/5,176` with 75 open. No runtime, database, provider, deployment, push,
 build, writer, repair, backfill, credential, analytics, or Yahoo state changed.
 
 ## Current completion roll-up (authoritative 2026-08-04)
@@ -187,9 +187,9 @@ This section is the current summary for the active control plane. Older initiati
 
 | Ledger | Checked | Total | Open | Evidence |
 | --- | ---: | ---: | ---: | --- |
-| Imported raw source claims | 4,953 | 5,011 | 58 | 76 source sections and the parity receipt in [`documentation-parity-checkpoint.md`](documentation-parity-checkpoint.md) |
-| Imported actionable claims | 4,953 | 5,005 | 52 | Six fenced rule examples are excluded as non-actionable; current source/master parity is exact |
-| Mechanical master control plane | 5,100 | 5,176 | 76 | Master task-list direct recount after C0047/7.5 and DRM NEW 50 natural receipts |
+| Imported raw source claims | 4,954 | 5,011 | 57 | 76 source sections and the parity receipt in [`documentation-parity-checkpoint.md`](documentation-parity-checkpoint.md) |
+| Imported actionable claims | 4,954 | 5,005 | 51 | Six fenced rule examples are excluded as non-actionable; current source/master parity is exact |
+| Mechanical master control plane | 5,101 | 5,176 | 75 | Master task-list direct recount after C0042/7.0, C0047/7.5, and DRM NEW 50 natural receipts |
 
 The 78 master open rows consist of the 54 imported actionable rows plus 24 control-plane rows (parent/verification/completion gates). Master 3.20 is now synchronized; the four newly registered Wave-C children add four checked rows and four denominator rows; NEW-027, NEW 15/C0057, NEW 58/59, NEW 61, and NEW 22/C0048 are closed by their recorded evidence above; no denominator was reduced to make a checkpoint appear better.
 
