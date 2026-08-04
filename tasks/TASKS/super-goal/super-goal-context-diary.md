@@ -8743,3 +8743,8 @@
 
 - **C0042/7.0 receipt:** The end-to-end parent is now checked because children 7.1–7.5 are all checked: focused route/component tests and TypeScript pass, the hosted preview suppressed both email paths, and the first natural post-publication report is success/HTTP 200 with zero missing-job/audit-gap findings. Remaining route/provider partials are retained as real observations under C0047/7.5.
 - **Parity / boundary:** Source C0042, master C0042, paired cron PRDs, completion gate, parity record, final summary, and diary are synchronized. Imported actionable parity is `4,954/5,005` with 51 open; mechanical master is `5,101/5,176` with 75 open. No migration, writer, repair, backfill, provider, email, credential, analytics, push, build, deployment, or Yahoo action occurred.
+
+## Entry 0993 — 2026-08-04 natural projection/accuracy closure
+
+- **C0008/C0012/C0013 receipt:** Read-only Production audit metadata shows scheduled `run-projection-v2` POST/HTTP 200 at `2026-08-04T10:12:01.295463Z` with `success=true`, `partial=false`, and no bounded `failed=true` or stale `pbp_coverage` token. Scheduled `run-projection-accuracy` POST/HTTP 200 at `2026-08-04T11:30:02.941178Z` likewise has `success=true`, `partial=false`, and no 422/failure status. Earlier input-ingest/422 rows are historical; no manual invocation, writer, or mutation ran.
+- **Parity / boundary:** Source C0008/C0012/C0013, master mirrors, paired cron PRDs, completion gate, parity record, final summary, and diary are synchronized. Imported actionable parity is `4,957/5,005` with 48 open; mechanical master is `5,104/5,176` with 72 open. No migration, repair, backfill, provider, email, credential, analytics, push, build, deployment, or Yahoo action occurred.
