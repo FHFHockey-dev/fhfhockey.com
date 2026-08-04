@@ -6,13 +6,17 @@ import adminOnly from "utils/adminOnlyMiddleware";
 import { format, parseISO, addDays } from "date-fns";
 import { getCurrentSeason } from "lib/NHL/server";
 import { SupabaseClient } from "@supabase/supabase-js";
-
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+import {
+  boundStandingsEndDate,
+  MAX_STANDINGS_DATES_PER_RUN,
+  parseBooleanQuery
+} from "lib/cron/standingsDateRange";
 
 function isRetriableStandingsStatus(status: number) {
   return status === 429 || status >= 500;
+}
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export default withCronJobAudit(adminOnly(async function handler(
@@ -43,27 +47,64 @@ export default withCronJobAudit(adminOnly(async function handler(
     const seasonId = seasonInfo.seasonId;
     const seasonStartDate = parseISO(seasonInfo.regularSeasonStartDate);
     const todayDate = new Date();
+    const regularSeasonEndDate = parseISO(seasonInfo.regularSeasonEndDate);
+    const latestProcessableDate =
+      todayDate < regularSeasonEndDate ? todayDate : regularSeasonEndDate;
 
     // 2) Determine processing mode based on the query parameter ?date
     if (typeof date === "string") {
       if (date.toLowerCase() === "all") {
-        // Process the entire season from season start to today
+        // The scheduled `date=all` invocation is incremental and bounded. An
+        // explicit `full=true` is retained for intentional historical refreshes.
+        const fullRefresh = parseBooleanQuery(req.query.full);
+        const latestDate = fullRefresh
+          ? null
+          : await getLatestStandingsDate(supabase, seasonId);
+        const startDate = latestDate
+          ? parseISO(latestDate)
+          : seasonStartDate;
+        const range = boundStandingsEndDate(
+          startDate,
+          latestProcessableDate,
+          fullRefresh ? undefined : MAX_STANDINGS_DATES_PER_RUN
+        );
+        if (startDate > range.endDate) {
+          return res.json({
+            success: true,
+            operationStatus: "success",
+            message: "Standings are already up-to-date.",
+            processedDates: 0,
+            skippedDates: [],
+            skippedReasons: [],
+            bounded: false,
+            nextStartDate: null
+          });
+        }
         const rangeSummary = await updateStandingsDateRange(
           supabase,
           seasonId,
-          seasonStartDate,
-          todayDate
+          startDate,
+          range.endDate
         );
+        const nextStartDate = range.bounded
+          ? format(addDays(range.endDate, 1), "yyyy-MM-dd")
+          : null;
         return res.json({
           success: true,
           operationStatus: rangeSummary.skippedDates.length > 0 ? "warning" : "success",
           message:
             rangeSummary.skippedDates.length > 0
               ? "Updated standings with some dates deferred for retry."
-              : "Updated all dates for the current season.",
+              : range.bounded
+                ? "Updated a bounded standings window; rerun to continue."
+                : fullRefresh
+                  ? "Updated all dates for the current season."
+                  : "Updated standings through the latest available date.",
           processedDates: rangeSummary.processedDates,
           skippedDates: rangeSummary.skippedDates,
-          skippedReasons: rangeSummary.skippedReasons
+          skippedReasons: rangeSummary.skippedReasons,
+          bounded: range.bounded,
+          nextStartDate
         });
       } else {
         // Process a specific date provided in the query parameter
@@ -81,44 +122,36 @@ export default withCronJobAudit(adminOnly(async function handler(
         });
       }
     } else {
-      // No date param provided: do an incremental update.
-      // Here we query the most recent date in nhl_standings_details.
-      const { data: maxDateRow, error } = await supabase
-        .from("nhl_standings_details")
-        .select("date")
-        .eq("season_id", seasonId)
-        .order("date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error) {
-        console.error("Error querying max date:", error);
-        return res.status(500).json({
-          success: false,
-          message: "Database error."
-        });
-      }
-
+      // No date param provided: do a bounded incremental update.
+      const latestDate = await getLatestStandingsDate(supabase, seasonId);
       // Change: Instead of starting from the next day,
       // we start from the most recent date (to overwrite it) if it exists.
-      let start = maxDateRow?.date
-        ? parseISO(maxDateRow.date)
+      let start = latestDate
+        ? parseISO(latestDate)
         : seasonStartDate;
 
       // If the start date is in the future, nothing to update.
-      if (start > todayDate) {
+      if (start > latestProcessableDate) {
         return res.json({
           success: true,
           message: "Database already up-to-date."
         });
       }
 
+      const range = boundStandingsEndDate(
+        start,
+        latestProcessableDate,
+        MAX_STANDINGS_DATES_PER_RUN
+      );
       const rangeSummary = await updateStandingsDateRange(
         supabase,
         seasonId,
         start,
-        todayDate
+        range.endDate
       );
+      const nextStartDate = range.bounded
+        ? format(addDays(range.endDate, 1), "yyyy-MM-dd")
+        : null;
       return res.json({
         success: true,
         operationStatus: rangeSummary.skippedDates.length > 0 ? "warning" : "success",
@@ -127,14 +160,21 @@ export default withCronJobAudit(adminOnly(async function handler(
             ? `Updated standings from ${format(
                 start,
                 "yyyy-MM-dd"
-              )} to ${format(todayDate, "yyyy-MM-dd")} with some dates deferred for retry.`
-            : `Updated standings from ${format(
-                start,
-                "yyyy-MM-dd"
-              )} to ${format(todayDate, "yyyy-MM-dd")}`,
+              )} to ${format(range.endDate, "yyyy-MM-dd")} with some dates deferred for retry.`
+            : range.bounded
+              ? `Updated standings from ${format(start, "yyyy-MM-dd")} through ${format(
+                  range.endDate,
+                  "yyyy-MM-dd"
+                )}; rerun to continue.`
+              : `Updated standings from ${format(
+                  start,
+                  "yyyy-MM-dd"
+                )} to ${format(range.endDate, "yyyy-MM-dd")}`,
         processedDates: rangeSummary.processedDates,
         skippedDates: rangeSummary.skippedDates,
-        skippedReasons: rangeSummary.skippedReasons
+        skippedReasons: rangeSummary.skippedReasons,
+        bounded: range.bounded,
+        nextStartDate
       });
     }
   } catch (error: any) {
@@ -145,6 +185,25 @@ export default withCronJobAudit(adminOnly(async function handler(
     });
   }
 }));
+
+async function getLatestStandingsDate(
+  supabase: SupabaseClient,
+  seasonId: number
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("nhl_standings_details")
+    .select("date")
+    .eq("season_id", seasonId)
+    .order("date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error querying max date:", error);
+    throw new Error("Database error.");
+  }
+  return data?.date ?? null;
+}
 
 // Iterate from startDate to endDate (inclusive), updating each day
 async function updateStandingsDateRange(

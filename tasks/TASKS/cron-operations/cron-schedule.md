@@ -1,3 +1,10 @@
+-- 2026-08-04 local standings timeout-bound correction
+-- The scheduled/default update-standings-details?date=all path now resumes from
+-- the latest persisted standings date, stops at the regular-season end, and
+-- caps each invocation at 14 inclusive dates; `full=true` remains the explicit
+-- historical-refresh escape hatch. The schedule, method, owner, and database
+-- state are unchanged.
+
 -- 2026-08-02 natural job-392/current-auth receipt
 -- The scheduled job-392 run at 2026-08-02T12:00:13.778493Z completed POST
 -- HTTP 200/success in 11,603 ms with value-free fields success=true,

@@ -1,5 +1,7 @@
 ## Relevant Files
 
+**2026-08-04 local standings timeout-bound correction:** The scheduled/default standings `date=all` path now resumes from the latest persisted date, stops at the regular-season end, and caps each invocation at 14 inclusive dates; `full=true` remains the explicit historical-refresh escape hatch. The pure helper passes `3/3`; TypeScript, scoped ESLint, and diff integrity pass. No schedule, database, writer, repair, backfill, provider, credential, push, build, or deployment state changed.
+
 - `tasks/TASKS/cron-operations/cron-schedule.md` - Source-of-truth cron inventory and the schedule file that will be tightened and reordered based on measured durations.
 - `tasks/artifacts/cron-schedule-normalized-inventory.md` - Normalized inventory of every scheduled cron block with dependency position, time slot, method, and URL or SQL target.
 - `tasks/artifacts/cron-benchmark-runner-shape.md` - Execution-shape decision artifact choosing a shared runner core with a script-first operator surface and an optional thin API wrapper.
