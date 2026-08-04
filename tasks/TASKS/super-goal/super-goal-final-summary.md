@@ -1,5 +1,7 @@
 # FHFH Comprehensive Completion, Audit, and Optimization — Final Summary
 
+**2026-08-04 natural closure checkpoint:** The first post-publication natural `daily-cron-report` at `2026-08-03T21:15:07.800997Z` is non-preview GET/HTTP 200 with `success=true`, `warnMissingAudit=0`, `jobsMissingLast=0`, and no missing-job/audit-gap findings; remaining partials are real route/data/provider observations. The retained Aug 4 coordinator GET/200 at `10:06:36.349119Z` and direct projection POST/200 at `10:12:01.295463Z` each completed termination and persisted the durable final audit. C0047/7.5 and DRM NEW 50/C0076 close. Imported actionable parity is `4,953/5,005` with 52 open; mechanical master is `5,100/5,176` with 76 open. No manual route, writer, migration, repair, backfill, provider, email, build, or deployment action occurred.
+
 **2026-08-03 guarded documentation publication:** After a fresh fetch confirmed a clean local `d1a2e1c46` three commits ahead with no behind divergence, the guarded normal push advanced `octoberBranch` from `9cc3fcaac` to `d1a2e1c46`. This documentation-only checkpoint did not trigger a Vercel build/deployment. C0047/7.5, NEW 50/C0076, provider, and history gates remain open; no migration, writer, repair, backfill, provider, credential, analytics, or Yahoo action ran.
 
 **2026-08-03 guarded B-DRM NEW 50 publication checkpoint:** The guarded push of `9cc3fcaac` to `octoberBranch` produced READY branch artifact `dpl_FdqykdwxfNYR89RxJFxEjn5JDzEJ`; its one authorized Production promotion is READY as `dpl_9otZoeDi1izJz6NWdX2iBUZdCi9X` on the canonical aliases, with a two-minute completed build. Value-free `/auth`/underlying-stats/redirect probes, unauthenticated coordinator/direct-projection/webhook boundaries, and the post-deployment runtime-error scan passed. The two resulting audit rows are intentional GET probes with `finalAudit.status="persisted"`, not natural successful runs; NEW 50/C0076 remains open for a later retained-schedule termination plus persisted-final-audit receipt. No checkbox or denominator changed; no migration, writer, repair, backfill, provider, analytics, credential, or Yahoo action ran.
@@ -173,11 +175,11 @@ change.
 reconciling every implementation-complete Wave-A parent (3.6–3.19) to its
 source/master evidence and checked dynamic audits 5.7.3–5.7.17. Active
 Wave-A parents 3.1–3.5 remain open. Imported parity is unchanged at
-`4,951/5,011` raw and `4,951/5,005` actionable; mechanical master is now
-`5,098/5,176` with 78 open. No runtime, database, provider, deployment, push,
+`4,953/5,011` raw and `4,953/5,005` actionable with 52 open; mechanical master is now
+`5,100/5,176` with 76 open. No runtime, database, provider, deployment, push,
 build, writer, repair, backfill, credential, analytics, or Yahoo state changed.
 
-## Current completion roll-up (authoritative 2026-08-03)
+## Current completion roll-up (authoritative 2026-08-04)
 
 This section is the current summary for the active control plane. Older initiative and checkpoint sections below remain append-only evidence and are not used as current totals.
 
@@ -185,9 +187,9 @@ This section is the current summary for the active control plane. Older initiati
 
 | Ledger | Checked | Total | Open | Evidence |
 | --- | ---: | ---: | ---: | --- |
-| Imported raw source claims | 4,951 | 5,011 | 60 | 76 source sections and the parity receipt in [`documentation-parity-checkpoint.md`](documentation-parity-checkpoint.md) |
-| Imported actionable claims | 4,951 | 5,005 | 54 | Six fenced rule examples are excluded as non-actionable; current source/master parity is exact |
-| Mechanical master control plane | 5,098 | 5,176 | 78 | Master task-list direct recount after Wave-A synchronization control 3.20 and the 2026-08-02 NEW 15/C0051/B-DRM checkpoints |
+| Imported raw source claims | 4,953 | 5,011 | 58 | 76 source sections and the parity receipt in [`documentation-parity-checkpoint.md`](documentation-parity-checkpoint.md) |
+| Imported actionable claims | 4,953 | 5,005 | 52 | Six fenced rule examples are excluded as non-actionable; current source/master parity is exact |
+| Mechanical master control plane | 5,100 | 5,176 | 76 | Master task-list direct recount after C0047/7.5 and DRM NEW 50 natural receipts |
 
 The 78 master open rows consist of the 54 imported actionable rows plus 24 control-plane rows (parent/verification/completion gates). Master 3.20 is now synchronized; the four newly registered Wave-C children add four checked rows and four denominator rows; NEW-027, NEW 15/C0057, NEW 58/59, NEW 61, and NEW 22/C0048 are closed by their recorded evidence above; no denominator was reduced to make a checkpoint appear better.
 
@@ -198,7 +200,7 @@ The 78 master open rows consist of the 54 imported actionable rows plus 24 contr
 | A | `A-AUTH` — open at 202/208; `A-CRON-EMAIL` — open; `A-GDL` — open; `A-3P` — open; `A-SUST` — 86/89 | Hosted PKCE/template and lifecycle publication, credential-retention, IFTTT/provider, umbrella synchronization, and Sustainability scheduler/formula/history gates remain explicit. |
 | A | `A-US-SOS`, `A-SITE`, `A-STYLE`, `A-FORGE-V1`, `A-FORGE-DASH`, `A-FORGE-P4`, `A-FORGE-LIVE`, `A-PRED`, `A-XG-TREND`, `A-XG-REL`, `A-DRAFT`, `A-DRAFT-DEBUG`, and `A-DRAFT-RANKER` — implementation evidence complete | Their approved exceptions, no-promotion decisions, or future-roadmap boundaries remain recorded in the corresponding master rows; Draft Ranker Phase 8 is retired to the roadmap. |
 | A | Wave-A synchronization — closed | Master 3.20 reconciles implementation-complete parents 3.6–3.19 to their source/master evidence and checked dynamic audits 5.7.3–5.7.17; active parents 3.1–3.5 remain open. |
-| B | `B-CRON-NST` 75/75; `B-SUST-AUD` 51/58; `B-YAHOO` 65/72; `B-DRM` 98/111 | B-CRON-NST's cross-provider handoff is closed by the Aug 1 non-overlapping natural chain; B-SUST-AUD NEW 15 is closed by the exact Production source/trend repair and zero-change replay, with inverse staging retained; B-DRM NEW 22, NEW 41, NEW 49, and NEW 51 are closed by exact retirement, scheduler-ownership, and deployed audit-ownership receipts; NEW 50 and the remaining global work are grouped under Sustainability formula/history/repair, Yahoo provider/Python/backfill/cutover, DRM history/provider/repair/final-audit, and final governance gates. |
+| B | `B-CRON-NST` 75/75; `B-SUST-AUD` 51/58; `B-YAHOO` 65/72; `B-DRM` 99/111 | B-CRON-NST's cross-provider handoff is closed by the Aug 1 non-overlapping natural chain; B-SUST-AUD NEW 15 is closed by the exact Production source/trend repair and zero-change replay, with inverse staging retained; B-DRM NEW 22, NEW 41, NEW 49, NEW 50, and NEW 51 are closed by exact retirement, scheduler-ownership, natural final-audit, and deployed audit-ownership receipts; remaining global work is grouped under Sustainability formula/history/repair, Yahoo provider/Python/backfill/cutover, DRM history/provider/repair, and final governance gates. |
 | B | `B-SUST-BAR` 95/95; `B-GAMEGRID` 38/38; `B-SKO` 70/70; `B-START` 55/55; `B-FORGE-COMBO` 39/39; `B-XG-EX` 16/16; `B-DRAFT-STYLE` 56/56; `B-CLEAN` 158/158; `B-DEAD` 44/44; `B-SKO-BURN` 6/6; `B-TRENDS` 53/53 | Current implementation and bounded verification evidence is recorded; any separately gated external/provider/history exception remains open under its owning rows. |
 | C | `C-US`, `C-FORGE`, `C-XG`, and `C-VAR` — completed bounded audits; `C-DYNAMIC` children 5.7.3–5.7.27 — checked | Registration controls 5.7.1/5.7.2 are current-state complete; parent dynamic-audit governance and global P0/P1/P2/P3 closure remain open for future DoD and final completion. |
 | Cross-initiative | 6.1–6.6 — checked | The authorized populated Production Chrome check is zero-error after the published date-only `parseISO` correction; native Playwright remains sandbox-blocked but the approved host-browser fallback is recorded. |

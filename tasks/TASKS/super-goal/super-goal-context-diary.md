@@ -8732,3 +8732,9 @@
 - **Publication:** A fresh fetch confirmed clean local `d1a2e1c46` was three commits ahead of `origin/octoberBranch` with no behind divergence. The guarded normal push advanced `octoberBranch` from `9cc3fcaac` to `d1a2e1c46`.
 - **Cost boundary:** The checkpoint contains only synchronized documentation; no web runtime path changed, so no Vercel build or deployment was triggered.
 - **Disposition:** C0047/7.5 remains open for the next natural report with correlated route-audit receipts; NEW 50/C0076 remains open for a natural termination plus persisted-final-audit receipt. Provider/history gates remain open. No migration, writer, repair, backfill, provider, credential, analytics, or Yahoo action ran, and no checkbox or denominator changed.
+
+## Entry 0991 — 2026-08-04 natural cron/DRM closure
+
+- **C0047/7.5 receipt:** The first post-publication natural `daily-cron-report` at `2026-08-03T21:15:07.800997Z` is non-preview GET/HTTP 200 with `success=true`, `warnMissingAudit=0`, and `jobsMissingLast=0`. Value-free response-shape checks found no missing-job or audit-gap findings; remaining partials are real route/data/provider observations, including the intentional rolling-games 410 and Yahoo provider 500s. No email was sent and no route was invoked manually.
+- **DRM NEW 50 receipt:** Retained natural coordinator GET/HTTP 200 at `2026-08-04T10:06:36.349119Z` and direct projection POST/HTTP 200 at `2026-08-04T10:12:01.295463Z` both expose completed termination and durable `finalAudit.status="persisted"`; neither is a preview or manual invocation.
+- **Synchronization / boundary:** Source C0047/7.5 and C0076 are checked across source, master, paired PRDs, completion gate, parity record, final summary, and diary. Imported actionable parity is `4,953/5,005` with 52 open; mechanical master is `5,100/5,176` with 76 open. No migration, writer, repair, backfill, provider, email, credential, analytics, push, build, deployment, or Yahoo action occurred.

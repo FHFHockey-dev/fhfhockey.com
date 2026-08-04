@@ -1,5 +1,7 @@
 # Documentation and Source/Master Parity Checkpoint (7.1)
 
+**2026-08-04 closure parity:** Source, paired PRDs, master, completion-gate report, final summary, and diary now record the same natural receipts: post-publication `daily-cron-report` GET/200 at `2026-08-03T21:15:07.800997Z` with `success=true`, `warnMissingAudit=0`, `jobsMissingLast=0`, and no missing-job/audit-gap findings; coordinator GET/200 at `2026-08-04T10:06:36.349119Z` and direct projection POST/200 at `10:12:01.295463Z`, each with completed termination and durable `finalAudit.status="persisted"`. C0047/7.5 and DRM NEW 50/C0076 are checked. Imported actionable parity is `4,953/5,005` with 52 open; mechanical master is `5,100/5,176` with 76 open. No manual route, writer, migration, repair, backfill, provider, email, build, or deployment action occurred.
+
 **2026-08-03 guarded documentation publication:** The isolated checkout was clean after a fresh fetch, with local `d1a2e1c46` three commits ahead and zero behind `origin/octoberBranch`; a guarded normal push advanced `octoberBranch` from `9cc3fcaac` to `d1a2e1c46`. This is a documentation-only checkpoint, so no Vercel build/deployment ran. C0047/7.5, NEW 50/C0076, provider, and history gates remain open; no migration, writer, repair, backfill, provider, credential, analytics, or Yahoo action ran.
 
 **2026-08-03 published line-combination and cron-report parity:** Source task lists, paired PRDs, completion-gate report, master, final summary, and diary now record that both the deployed recent-gap `skipped_external_feed_unavailable` route correction and the cron-report truthfulness corrections are present in published commit `9cc3fcaac` / READY Production `dpl_9otZoeDi1izJz6NWdX2iBUZdCi9X`. C0047 remains open only for the next post-deployment natural report containing corrected metrics and correlated route-audit receipts. No checkbox, denominator, database, writer, repair, backfill, provider, analytics, credential, push, or build state changed.
@@ -46,7 +48,7 @@ credential, analytics, or Yahoo state changed.
 
 **2026-08-02 natural-report receipt clarification:** Read-only Production evidence confirms scheduled run `148950` at `2026-08-01T21:15:06Z` completed success/HTTP 200 with zero warning and missing-observation counts. The later `01:23Z` audit row is a `preview=json` URL despite lacking a dedicated preview key, so it is not a natural run; `sync-yahoo-players-to-sheet` remains an unrelated observation gap. The natural-report and scheduled-auth gates remain open.
 
-**2026-08-02 actionable-open gate audit:** The current unchecked-row partition has 54 actionable opens: A-AUTH 6, A-CRON-EMAIL 5, A-GDL 11, B-YAHOO 7, A-3P 2, A-SUST model 3, B-SUST-AUD 7, and B-DRM 13. The six fenced rule examples remain non-actionable. Every open implementation row is held by an explicit credential/provider, historical-repair/backfill, Production/natural-run, final-audit, or owner-authorized external-evidence gate; the A-CRON-EMAIL 2.4/2.5 chain and DRM NEW 50 remain data/termination dependent and mutation-gated. No unapproved external action occurred.
+**2026-08-04 actionable-open gate audit:** The current unchecked-row partition has 52 actionable opens: A-AUTH 6, A-CRON-EMAIL 4, A-GDL 11, B-YAHOO 7, A-3P 2, A-SUST model 3, B-SUST-AUD 7, and B-DRM 12. The six fenced rule examples remain non-actionable. Every open implementation row is held by an explicit credential/provider, historical-repair/backfill, Production/natural-run, or owner-authorized external-evidence gate; C0047/7.5 and DRM NEW 50 are closed by the natural receipts above. No unapproved external action occurred.
 
 **2026-08-02 repair-artifact parity overlay:** The Utah contract now carries the
 current exact 88-row Production completion receipt (digest
@@ -85,7 +87,7 @@ advisor findings, RLS enabled on all four target tables, and no `anon` or
 `authenticated` execution privilege on the seven target routines; unrelated
 baseline advisor warnings remain observation-only.
 
-The current initiative roll-up is B-CLEAN `158/158`, B-DEAD `44/44`, and B-DRM `98/111`; older dated initiative sections remain append-only historical evidence.
+The current initiative roll-up is B-CLEAN `158/158`, B-DEAD `44/44`, and B-DRM `99/111`; older dated initiative sections remain append-only historical evidence.
 
 **2026-08-01 parser-format reconciliation:** A direct stable-ID parity parser
 covered all `5,011` imported rows across `76` source paths with zero
@@ -116,8 +118,8 @@ The two stale cron-boundary expectations now match the shared fail-closed Unauth
 
 ## Parity checks
 
-- A read-only parser found all 76 imported source paths represented in the canonical master. Counts are exact at `4,951/5,011` raw; no source/master checked/total mismatch was found. The six fenced `generate-tasks.mdc` format examples remain explicitly non-actionable reference rows.
-- The mechanical master roll-up is `5,097/5,176`; imported actionable parity is `4,951/5,005` with 54 open. Historical checkpoint paragraphs remain append-only and are not treated as current totals.
+- A read-only parser found all 76 imported source paths represented in the canonical master. Counts are exact at `4,953/5,011` raw; no source/master checked/total mismatch was found. The six fenced `generate-tasks.mdc` format examples remain explicitly non-actionable reference rows.
+- The mechanical master roll-up is `5,100/5,176`; imported actionable parity is `4,953/5,005` with 52 open. Historical checkpoint paragraphs remain append-only and are not treated as current totals.
 - The master Relevant Files section contains 161 candidate concrete references. Eight parser hits are intentional non-current references: the deleted Yahoo token artifact, ignored local environment file, historical applied migration names, `.DS_Store`, and prose `.limit()` text. No newly added control artifact is missing.
 - The current cross-initiative, security, data-completeness, end-to-end, 6.5 verification, and UX/performance artifacts are linked from the master Relevant Files section and current PRD/final-summary/diary receipts. Their current counts, open gates, and no-external-mutation boundaries agree.
 - Referenced runbooks, schema/migration contracts, operational inventories, and source reports remain owned by their initiative lists; no source checkbox or runtime contract was changed by this synchronization-only checkpoint.
