@@ -8756,3 +8756,9 @@
 - **Disposition:** The prior `2026-08-03T21:15:07.800997Z` natural report with `warnMissingAudit=0` remains valid for that run. A new open cron-NST source row NEW 72.0 and master C0076 record the recurrence and require a correlated deployed route receipt or an approved runtime correction; no prior closure was reversed.
 - **Parity:** Current imported parity is raw `4,957/5,012`, actionable `4,957/5,006` with 49 open; mechanical master is `5,104/5,177` with 73 open; B-CRON-NST is `75/76`.
 - **Boundary:** No route was invoked, and no schedule/data mutation, migration, writer, repair, backfill, provider, credential, analytics, push, build, deployment, or Yahoo action occurred.
+
+## Entry 0995 — 2026-08-04 deployed runtime correlation for cron-NST C0076
+
+- **Evidence:** Read-only Vercel grouped Production runtime errors for deployment `dpl_9otZoeDi1izJz6NWdX2iBUZdCi9X` over seven days show 168 `NST_KEY missing` team-daily errors, separate NST-goalie fetch-failure groups of 147 and 49, and 28 240-second timeouts spanning standings, goalies, and team-daily; latests are `2026-08-04T10:50:01Z` and `2026-08-04T08:30:01Z`.
+- **Disposition:** This proves scheduled route reachability and pre-terminal-audit failure; it is not successful execution. C0076/NEW 72.0 remains open for owner-authorized credential/runtime remediation or a terminal audit receipt. No environment value was read or changed.
+- **Parity / boundary:** Current imported parity remains raw/actionable `4,957/5,012` and `4,957/5,006` with 49 open; mechanical master remains `5,104/5,177` with 73 open. No route invocation, schedule/data mutation, migration, writer, repair, backfill, provider, credential, analytics, push, build, deployment, or Yahoo action occurred.
