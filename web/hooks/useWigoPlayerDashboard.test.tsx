@@ -156,7 +156,9 @@ describe("useWigoPlayerDashboard", () => {
 
     mockRouter.query = { playerId: String(player.id) };
     singleMock.mockResolvedValue({ data: player, error: null });
-    mockFetchPlayerAggregatedStats.mockRejectedValue(new Error("aggregate boom"));
+    mockFetchPlayerAggregatedStats.mockRejectedValue(
+      new Error("aggregate boom")
+    );
 
     const queryClient = createQueryClient();
     const { result } = renderHook(() => useWigoPlayerDashboard(), {
@@ -165,7 +167,9 @@ describe("useWigoPlayerDashboard", () => {
 
     await waitFor(() => {
       expect(result.current.selectedPlayer?.id).toBe(player.id);
-      expect(result.current.aggDataError).toBe("aggregate boom");
+      expect(result.current.aggDataError).toBe(
+        "Unable to load comparison stats right now."
+      );
     });
 
     expect(result.current.rawCombinedData).toEqual([]);
@@ -201,7 +205,9 @@ describe("useWigoPlayerDashboard", () => {
 
     await waitFor(() => {
       expect(result.current.selectedPlayer?.id).toBe(firstPlayer.id);
-      expect(result.current.rawCombinedData).toEqual([{ label: "Goals", STD: 31 }]);
+      expect(result.current.rawCombinedData).toEqual([
+        { label: "Goals", STD: 31 }
+      ]);
     });
 
     mockRouter.query = { playerId: String(secondPlayer.id) };
@@ -220,7 +226,9 @@ describe("useWigoPlayerDashboard", () => {
 
     await waitFor(() => {
       expect(result.current.selectedPlayer?.id).toBe(secondPlayer.id);
-      expect(result.current.rawCombinedData).toEqual([{ label: "Goals", STD: 27 }]);
+      expect(result.current.rawCombinedData).toEqual([
+        { label: "Goals", STD: 27 }
+      ]);
     });
   });
 
@@ -232,7 +240,10 @@ describe("useWigoPlayerDashboard", () => {
     });
 
     act(() => {
-      result.current.handlePlayerSelect(selectedPlayer, "https://example.com/timo.png");
+      result.current.handlePlayerSelect(
+        selectedPlayer,
+        "https://example.com/timo.png"
+      );
     });
 
     expect(mockReplace).toHaveBeenCalledWith(

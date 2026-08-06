@@ -1,4 +1,5 @@
 import React from "react";
+import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
@@ -174,6 +175,9 @@ describe("/underlying-stats landing page", () => {
     expect(screen.getByText("What looks real?")).toBeTruthy();
     expect(screen.getByText("Schedule texture")).toBeTruthy();
     expect(screen.getByText("Under the radar")).toBeTruthy();
+    expect(screen.getByText("Team snapshot").parentElement?.textContent).toContain(
+      "Apr 5, 2026"
+    );
 
     const table = screen.getByRole("table");
     expect(
@@ -192,6 +196,23 @@ describe("/underlying-stats landing page", () => {
         "5v5 offense is rising as expected goals and shot volume improve."
       )
     ).toBeTruthy();
+  });
+
+  it("keeps the populated quadrant map out of server markup before mounting it on the client", async () => {
+    const pageProps = {
+      availableDates: ["2026-04-05"],
+      routeStatus,
+      initialSnapshot: buildSnapshot([buildRating("TOR")])
+    };
+
+    const serverMarkup = renderToString(<TeamPowerRankingsPage {...pageProps} />);
+    expect(serverMarkup).not.toContain("Smothering");
+
+    render(<TeamPowerRankingsPage {...pageProps} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Smothering")).toBeTruthy();
+    });
   });
 
   it("fetches updated landing ratings when the snapshot date changes", async () => {

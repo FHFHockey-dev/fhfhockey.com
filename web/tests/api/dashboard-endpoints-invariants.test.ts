@@ -4,13 +4,13 @@ import {
   normalizeGoalieResponse,
   normalizeStartChartResponse,
   normalizeSustainabilityResponse,
-  normalizeTeamRatings
+  normalizeTeamRatings,
 } from "lib/dashboard/normalizers";
 import {
   auditGoalieRows,
   auditStartChartGames,
   auditSustainabilityRows,
-  auditTeamRatings
+  auditTeamRatings,
 } from "lib/dashboard/invariants";
 
 describe("Dashboard Endpoint Invariant Guards", () => {
@@ -25,10 +25,10 @@ describe("Dashboard Endpoint Invariant Guards", () => {
             starter_probability: 1.1,
             proj_win_prob: 0.4,
             proj_shutout_prob: 0.02,
-            blowup_risk: -0.2
-          }
-        ]
-      }).data
+            blowup_risk: -0.2,
+          },
+        ],
+      }).data,
     );
 
     const startChartAudit = auditStartChartGames(
@@ -43,28 +43,28 @@ describe("Dashboard Endpoint Invariant Guards", () => {
               {
                 player_id: 10,
                 name: "Home",
-                start_probability: 1.2
-              }
+                start_probability: 1.2,
+              },
             ],
             awayGoalies: [
               {
                 player_id: 11,
                 name: "Away",
-                start_probability: -0.1
-              }
-            ]
-          }
-        ]
-      }).games
+                start_probability: -0.1,
+              },
+            ],
+          },
+        ],
+      }).games,
     );
 
     expect(goalieAudit.ok).toBe(false);
-    expect(goalieAudit.issues.some((msg) => msg.includes("starter_probability"))).toBe(
-      true
-    );
+    expect(
+      goalieAudit.issues.some((msg) => msg.includes("starter_probability")),
+    ).toBe(true);
     expect(startChartAudit.ok).toBe(false);
     expect(
-      startChartAudit.issues.some((msg) => msg.includes("start_probability"))
+      startChartAudit.issues.some((msg) => msg.includes("start_probability")),
     ).toBe(true);
   });
 
@@ -77,7 +77,7 @@ describe("Dashboard Endpoint Invariant Guards", () => {
         def_rating: 97,
         pace_rating: 100,
         pp_tier: 1,
-        pk_tier: 2
+        pk_tier: 2,
       },
       {
         team_abbreviation: "NJD",
@@ -86,8 +86,8 @@ describe("Dashboard Endpoint Invariant Guards", () => {
         def_rating: 99,
         pace_rating: 100,
         pp_tier: 2,
-        pk_tier: 2
-      }
+        pk_tier: 2,
+      },
     ]);
 
     expect(normalized.length).toBe(1);
@@ -107,9 +107,9 @@ describe("Dashboard Endpoint Invariant Guards", () => {
           position_code: "C",
           window_code: "l10",
           s_100: "73.5",
-          luck_pressure: "0.81"
-        }
-      ]
+          luck_pressure: "0.81",
+        },
+      ],
     });
 
     expect(normalized.snapshot_date).toBe("2026-03-04");
@@ -126,7 +126,10 @@ describe("Dashboard Endpoint Invariant Guards", () => {
       z_shp: null,
       z_oishp: null,
       z_ipp: null,
-      z_ppshp: null
+      z_ppshp: null,
+      status: "ready",
+      score_history: [],
+      component_breakdown: [],
     });
 
     const audit = auditSustainabilityRows(normalized.rows);

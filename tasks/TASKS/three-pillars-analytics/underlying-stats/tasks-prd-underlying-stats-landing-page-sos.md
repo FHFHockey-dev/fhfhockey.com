@@ -96,3 +96,6 @@
   - [x] 5.5 Record final verification notes, assumptions, and any residual risks around optional `SoS` inputs that were intentionally excluded.
 
 - [x] NEW 6.0 Refresh or backfill affected `team_power_ratings_daily` snapshots after the trend logic is corrected so the landing page is not reading stale flattened history.
+
+- [x] NEW 8.0 **P2 reconcile the superseded 50/50 SoS definition with the current landing-page contract.**
+  - Evidence (2026-07-29): the later completed power-rankings roadmap intentionally owns visible `SoS Past` and `SoS Future` as BCS-style direct/indirect opponent-record calculations plus future schedule texture. The route copy, payload, helper, and focused tests agree. The original 50/50 standings/predictive artifact is retained as historical design lineage rather than current authority; the misleading surviving test title is corrected without changing runtime behavior.

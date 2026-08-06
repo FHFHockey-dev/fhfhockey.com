@@ -1,5 +1,19 @@
 export const SUSTAINABILITY_SCORE_MODEL_VERSION = "sustainability_score_v2";
+export const SUSTAINABILITY_SCORE_CONFIG_HASH = "fnv1a_91691726";
+export const SUSTAINABILITY_SCORE_PROVENANCE_VERSION =
+  "sustainability_score_provenance_v2";
 export const SUSTAINABILITY_TREND_BAND_MODEL_VERSION = "sustainability_trend_bands_v2";
+export const SUSTAINABILITY_SCORE_PRECISION = 2;
+export const SUSTAINABILITY_EXACT_SCORE_PROBABILITY_THRESHOLDS = {
+  lower: 0.005,
+  upper: 0.995
+} as const;
+export const SUSTAINABILITY_SCORE_WINDOW_CODES = [
+  "l3",
+  "l5",
+  "l10",
+  "l20"
+] as const;
 
 function stableStringify(value: unknown): string {
   if (value == null || typeof value !== "object") return JSON.stringify(value);

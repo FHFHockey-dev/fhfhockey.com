@@ -679,7 +679,7 @@ async function fetchAllSourceData(
     string
   >(Array.from(uniqueNhlPlayerIds, String), (playerIdChunk, { from, to }) =>
     supabaseClient
-      .from("yahoo_nhl_player_map_mat")
+      .from("yahoo_nhl_player_map_read")
       .select(yahooMapSelectString)
       .in(YAHOO_PLAYER_MAP_KEYS.nhlPlayerId, playerIdChunk)
       .order(YAHOO_PLAYER_MAP_KEYS.nhlPlayerId, { ascending: true })
@@ -726,7 +726,7 @@ async function fetchAllSourceData(
         string
       >(compositeIds, (playerIdChunk, { from, to }) =>
         supabaseClient
-          .from("yahoo_players")
+          .from("yahoo_players_with_normalized_history")
           .select(yahooPlayersSelectString)
           .eq("game_id", CURRENT_YAHOO_GAME_ID)
           .in(YAHOO_PLAYERS_TABLE_KEYS.primaryKey, playerIdChunk)
@@ -742,7 +742,7 @@ async function fetchAllSourceData(
         string
       >(numericIds, (playerIdChunk, { from, to }) =>
         supabaseClient
-          .from("yahoo_players")
+          .from("yahoo_players_with_normalized_history")
           .select(yahooPlayersSelectString)
           .eq("game_id", CURRENT_YAHOO_GAME_ID)
           .in(YAHOO_PLAYERS_TABLE_KEYS.yahooSpecificPlayerId, playerIdChunk)
@@ -1580,40 +1580,32 @@ export const useProcessedProjectionsData = ({
     return map;
   }, [customAdditionalSources, customAdditionalSource]);
 
-  // Stabilize dependencies with useMemo to prevent infinite loops
+  const sourceControlsKey = JSON.stringify(
+    Object.fromEntries(
+      Object.keys(sourceControls)
+        .sort()
+        .map((key) => [key, sourceControls[key]]),
+    ),
+  );
+  const fantasyPointSettingsKey = JSON.stringify(
+    Object.fromEntries(
+      Object.keys(fantasyPointSettings)
+        .sort()
+        .map((key) => [key, fantasyPointSettings[key]]),
+    ),
+  );
+
+  // Stabilize dependencies by value to prevent equivalent objects from refetching.
   const stableSourceControls = useMemo(() => {
-    // Create a stable reference only when the actual values change
-    const keys = Object.keys(sourceControls).sort();
-    const stableObj: Record<string, { isSelected: boolean; weight: number }> =
-      {};
-    keys.forEach((key) => {
-      stableObj[key] = sourceControls[key];
-    });
-    return stableObj;
-  }, [
-    Object.keys(sourceControls).sort().join(","),
-    ...Object.keys(sourceControls)
-      .sort()
-      .map(
-        (key) =>
-          `${sourceControls[key]?.isSelected}-${sourceControls[key]?.weight}`,
-      ),
-  ]);
+    return JSON.parse(sourceControlsKey) as Record<
+      string,
+      { isSelected: boolean; weight: number }
+    >;
+  }, [sourceControlsKey]);
 
   const stableFantasyPointSettings = useMemo(() => {
-    // Create a stable reference only when the actual values change
-    const keys = Object.keys(fantasyPointSettings).sort();
-    const stableObj: Record<string, number> = {};
-    keys.forEach((key) => {
-      stableObj[key] = fantasyPointSettings[key];
-    });
-    return stableObj;
-  }, [
-    Object.keys(fantasyPointSettings).sort().join(","),
-    ...Object.keys(fantasyPointSettings)
-      .sort()
-      .map((key) => fantasyPointSettings[key]),
-  ]);
+    return JSON.parse(fantasyPointSettingsKey) as Record<string, number>;
+  }, [fantasyPointSettingsKey]);
 
   // Create stable string representations for cache comparison
   const stableSourceControlsString = useMemo(
@@ -2270,6 +2262,14 @@ export const useProcessedProjectionsData = ({
     baseKey,
     fpKey,
     allowCustomNameFallback,
+    customAdditionalSource,
+    customAdditionalSources,
+    stableFantasyPointSettings,
+    stableSourceControls,
+    statGroupCollapseState,
+    styles,
+    togglePerGameFantasyPoints,
+    toggleStatGroupCollapse,
   ]);
 
   useEffect(() => {

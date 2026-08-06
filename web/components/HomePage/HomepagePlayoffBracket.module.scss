@@ -121,7 +121,11 @@
 .railEmpty {
   background:
     linear-gradient(135deg, rgba(v.$secondary-color, 0.12) 0%, transparent 30%),
-    linear-gradient(180deg, color.adjust(v.$background-dark, $lightness: -3%) 0%, v.$background-medium 100%);
+    linear-gradient(
+      180deg,
+      color.adjust(v.$background-dark, $lightness: -3%) 0%,
+      v.$background-medium 100%
+    );
 }
 
 .railItem {
@@ -159,8 +163,16 @@
   &:focus-visible {
     transform: translateY(-1px);
     background:
-      linear-gradient(135deg, rgba(v.$secondary-color, 0.18) 0%, transparent 36%),
-      linear-gradient(180deg, color.adjust(v.$background-dark, $lightness: -1%) 0%, color.adjust(v.$background-medium, $lightness: 2%) 100%);
+      linear-gradient(
+        135deg,
+        rgba(v.$secondary-color, 0.18) 0%,
+        transparent 36%
+      ),
+      linear-gradient(
+        180deg,
+        color.adjust(v.$background-dark, $lightness: -1%) 0%,
+        color.adjust(v.$background-medium, $lightness: 2%) 100%
+      );
   }
 
   &:focus-visible {
@@ -199,8 +211,11 @@
 }
 
 .railTeamLogo {
-  filter:
-    drop-shadow(0 0 8px rgba(255, 255, 255, 0.22))
+  width: 28px;
+  height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.22))
     drop-shadow(0 0 10px rgba(v.$secondary-color, 0.16));
 }
 
@@ -296,7 +311,9 @@
   flex: 1 1 auto;
   grid-template-rows: repeat(4, var(--bracket-slot-height));
   row-gap: var(--bracket-slot-gap);
-  min-height: calc((4 * var(--bracket-slot-height)) + (3 * var(--bracket-slot-gap)));
+  min-height: calc(
+    (4 * var(--bracket-slot-height)) + (3 * var(--bracket-slot-gap))
+  );
 }
 
 .alignStart .roundStack > * {
@@ -349,7 +366,11 @@
   border-radius: v.$radius-card;
   background:
     linear-gradient(135deg, rgba(v.$color-white, 0.04) 0%, transparent 28%),
-    linear-gradient(180deg, rgba(v.$background-medium, 0.98) 0%, color.adjust(v.$background-dark, $lightness: -2%) 100%);
+    linear-gradient(
+      180deg,
+      rgba(v.$background-medium, 0.98) 0%,
+      color.adjust(v.$background-dark, $lightness: -2%) 100%
+    );
   box-shadow:
     inset 0 1px 0 rgba(v.$color-white, 0.04),
     0 18px 34px -26px rgba(0, 0, 0, 0.95);
@@ -410,9 +431,10 @@
 
 .seriesTeamLogo {
   width: 46px;
-  height: 46px;
-  filter:
-    drop-shadow(0 0 10px rgba(255, 255, 255, 0.18))
+  height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.18))
     drop-shadow(0 0 12px rgba(v.$secondary-color, 0.14));
 }
 
@@ -496,7 +518,8 @@
 }
 
 .seriesDot {
-  border: 1px solid color-mix(in srgb, var(--series-dot-color) 70%, rgba(255, 255, 255, 0.24));
+  border: 1px solid
+    color-mix(in srgb, var(--series-dot-color) 70%, rgba(255, 255, 255, 0.24));
   background: rgba(v.$background-dark, 0.75);
   box-shadow:
     inset 0 0 0 1px rgba(v.$color-white, 0.04),
@@ -504,7 +527,11 @@
 }
 
 .seriesDotFilled {
-  background: color-mix(in srgb, var(--series-dot-color) 88%, rgba(255, 255, 255, 0.14));
+  background: color-mix(
+    in srgb,
+    var(--series-dot-color) 88%,
+    rgba(255, 255, 255, 0.14)
+  );
   box-shadow:
     0 0 12px color-mix(in srgb, var(--series-dot-color) 46%, transparent),
     inset 0 0 0 1px rgba(v.$color-white, 0.12);
@@ -543,6 +570,7 @@
 
 .placeholderLogo {
   width: min(100%, 120px);
+  height: auto;
   max-height: 64px;
   object-fit: contain;
   opacity: 0.92;
@@ -568,7 +596,11 @@
   clip-path: polygon(14% 0, 86% 0, 100% 18%, 88% 86%, 50% 100%, 12% 86%, 0 18%);
   border: 1px solid rgba(v.$color-white, 0.1);
   background:
-    linear-gradient(180deg, rgba(v.$color-white, 0.08) 0%, rgba(v.$color-white, 0.02) 100%),
+    linear-gradient(
+      180deg,
+      rgba(v.$color-white, 0.08) 0%,
+      rgba(v.$color-white, 0.02) 100%
+    ),
     rgba(v.$background-dark, 0.7);
 }
 
@@ -614,8 +646,11 @@
     border: 1px solid rgba(v.$secondary-color, 0.18);
     border-radius: v.$radius-card;
     overflow: hidden;
-    background:
-      linear-gradient(180deg, rgba(v.$secondary-color, 0.08) 0%, rgba(v.$background-medium, 0.92) 100%);
+    background: linear-gradient(
+      180deg,
+      rgba(v.$secondary-color, 0.08) 0%,
+      rgba(v.$background-medium, 0.92) 100%
+    );
 
     &:not(:last-child) {
       border-right: 1px solid rgba(v.$secondary-color, 0.18);
@@ -659,7 +694,7 @@
 
   .railTeamLogo {
     width: 20px;
-    height: 20px;
+    height: auto;
   }
 
   .railTeamAbbrev,
@@ -821,7 +856,7 @@
 
   .seriesTeamLogo {
     width: 36px;
-    height: 36px;
+    height: auto;
   }
 
   .seriesTeamText,

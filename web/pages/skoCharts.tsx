@@ -74,7 +74,7 @@ const SkoChartsPage: NextPage = () => {
               </div>
 
               <div className={styles.previewActions}>
-                <Link href="/forge/dashboard" className={styles.navLink}>
+                <Link href="/forge/command-center" className={styles.navLink}>
                   Back to FORGE Dashboard
                 </Link>
                 <Link href="/trends" className={styles.navLink}>

@@ -1,0 +1,238 @@
+{
+  "schemaVersion": "1.0.0",
+  "contractVersion": "player-forecasts-research-v1",
+  "status": "approved_for_private_shadow_backtest",
+  "approvedAt": "2026-08-02T00:00:00Z",
+  "systemKey": "player_forecasts",
+  "releaseChannel": "shadow",
+  "fantasyScoringPolicy": "downstream_only",
+  "forecast": {
+    "maximumTeamGameHorizon": 10,
+    "stopAt": "scheduled_puck_drop_exclusive",
+    "vintages": [
+      "horizon_10_open",
+      "horizon_10_through_1_checkpoint",
+      "final_pregame"
+    ],
+    "quantiles": [0.1, 0.25, 0.5, 0.75, 0.9],
+    "retainOpeningAcrossScheduleRevisions": true
+  },
+  "populations": ["forward", "defense", "goalie"],
+  "targets": [
+    {
+      "key": "plays",
+      "populations": ["forward", "defense"],
+      "conditioning": "playing_probability",
+      "distribution": "bernoulli",
+      "unit": "probability"
+    },
+    {
+      "key": "time_on_ice_seconds",
+      "populations": ["forward", "defense"],
+      "conditioning": "conditional_playing",
+      "distribution": "gamma",
+      "unit": "seconds"
+    },
+    {
+      "key": "goals",
+      "populations": ["forward", "defense"],
+      "conditioning": "conditional_playing",
+      "distribution": "negative_binomial",
+      "unit": "count"
+    },
+    {
+      "key": "assists",
+      "populations": ["forward", "defense"],
+      "conditioning": "conditional_playing",
+      "distribution": "negative_binomial",
+      "unit": "count"
+    },
+    {
+      "key": "shots_on_goal",
+      "populations": ["forward", "defense"],
+      "conditioning": "conditional_playing",
+      "distribution": "negative_binomial",
+      "unit": "count"
+    },
+    {
+      "key": "blocked_shots",
+      "populations": ["forward", "defense"],
+      "conditioning": "conditional_playing",
+      "distribution": "negative_binomial",
+      "unit": "count"
+    },
+    {
+      "key": "hits",
+      "populations": ["forward", "defense"],
+      "conditioning": "conditional_playing",
+      "distribution": "negative_binomial",
+      "unit": "count"
+    },
+    {
+      "key": "penalty_minutes",
+      "populations": ["forward", "defense"],
+      "conditioning": "conditional_playing",
+      "distribution": "hurdle_negative_binomial",
+      "unit": "minutes"
+    },
+    {
+      "key": "starts",
+      "populations": ["goalie"],
+      "conditioning": "start_probability",
+      "distribution": "bernoulli",
+      "unit": "probability"
+    },
+    {
+      "key": "shots_against",
+      "populations": ["goalie"],
+      "conditioning": "conditional_start",
+      "distribution": "negative_binomial",
+      "unit": "count"
+    },
+    {
+      "key": "goals_against",
+      "populations": ["goalie"],
+      "conditioning": "conditional_start",
+      "distribution": "beta_binomial",
+      "unit": "count"
+    },
+    {
+      "key": "saves",
+      "populations": ["goalie"],
+      "conditioning": "conditional_start",
+      "distribution": "derived_shots_minus_goals",
+      "unit": "count"
+    }
+  ],
+  "mixturePolicy": {
+    "skaters": "unconditional_equals_plays_probability_times_conditional_playing_distribution_with_point_mass_at_zero",
+    "goalies": "unconditional_equals_start_probability_times_conditional_start_distribution_with_point_mass_at_zero",
+    "storeConditionalAndUnconditionalSeparately": true
+  },
+  "featureTracks": {
+    "historical_core": {
+      "eligible": [
+        "schedule_and_game_identity",
+        "prior_player_game_outcomes",
+        "normalized_play_by_play",
+        "normalized_shifts",
+        "time_on_ice_and_strength_state",
+        "position",
+        "team_and_opponent_history",
+        "home_away",
+        "rest_days"
+      ],
+      "availabilityRule": "available_at_lte_forecast_cutoff",
+      "currentStateFallbackAllowed": false
+    },
+    "prospective_enriched": {
+      "eligible": [
+        "lineup_assignments",
+        "injury_and_scratch_observations",
+        "special_teams_assignments",
+        "goalie_start_observations"
+      ],
+      "availabilityRule": "observed_available_at_lte_forecast_cutoff",
+      "historicalLockboxEligible": false
+    },
+    "providerConditional": {
+      "sources": ["wgo", "nst"],
+      "eligibleOnlyAfterAudit": true,
+      "requirements": [
+        "definition_version_is_known",
+        "historical_availability_is_reconstructable",
+        "provider_rights_are_approved"
+      ]
+    }
+  },
+  "features": {
+    "minimumWindows": [5, 10, 20],
+    "includeExpandingHistory": true,
+    "includeTunedExponentialDecay": true,
+    "includePositionPriors": true,
+    "includeMissingnessIndicators": true,
+    "fitTransformationsInsideChronologicalFoldOnly": true
+  },
+  "modelPolicy": {
+    "baselineTournament": [
+      "position_prior",
+      "previous_season_rate",
+      "career_rate",
+      "multi_season_weighted_rate",
+      "season_to_date_rate",
+      "last_5_rate",
+      "last_10_rate",
+      "last_20_rate",
+      "exponential_decay_rate",
+      "empirical_bayes_opportunity_adjusted_rate"
+    ],
+    "availabilityPrimary": "calibrated_penalized_logistic_regression",
+    "availabilityChallenger": "gradient_boosted_trees",
+    "opportunityPrimary": "penalized_gamma_glm",
+    "opportunityChallenger": "gradient_boosted_trees",
+    "countPrimary": "penalized_negative_binomial_glm",
+    "countChallenger": "gradient_boosted_trees",
+    "goalieStartPrimary": "calibrated_penalized_multinomial_logistic_regression",
+    "goalieWorkloadPrimary": "negative_binomial_glm",
+    "goaliePreventionPrimary": "beta_binomial_partial_pooling",
+    "calibration": ["platt", "isotonic_if_fold_support_is_sufficient"],
+    "forbidden": [
+      "random_row_level_train_test_split",
+      "full_season_preprocessing_before_fold_split",
+      "post_cutoff_observations",
+      "forge_heuristic_coefficients",
+      "fantasy_points_as_training_target"
+    ]
+  },
+  "backtest": {
+    "primarySeasonId": 20252026,
+    "gameType": 2,
+    "developmentEndInclusive": "2026-01-02",
+    "lockboxStartInclusive": "2026-01-03",
+    "lockboxEndInclusive": "2026-04-16",
+    "tuning": "rolling_origin_within_development_only",
+    "lockboxEvaluationsAllowed": 1,
+    "blockBootstrapUnit": "slate_date",
+    "confidenceLevel": 0.95,
+    "prospectiveConfirmationSeason": 20262027
+  },
+  "scoring": {
+    "version": "player-forecast-skill-v1",
+    "losses": {
+      "counts_and_continuous": ["mae", "negative_log_likelihood"],
+      "probabilities": ["brier", "log_loss"],
+      "intervals": ["weighted_interval_score", "coverage_error"],
+      "calibration": ["expected_calibration_error", "calibration_slope"]
+    },
+    "skillTransform": "clip(50 + 50 * ((baseline_loss - model_loss) / max(abs(baseline_loss), 1e-12)), 0, 100)",
+    "compositeWeights": {
+      "point_and_count_accuracy": 0.4,
+      "probability_accuracy": 0.25,
+      "distribution_quality": 0.2,
+      "calibration": 0.15
+    },
+    "aggregation": "macro_average_position_target_horizon_then_apply_component_weights",
+    "baselineScore": 50,
+    "higherIsBetter": true
+  },
+  "promotion": {
+    "status": "provisional_policy_until_lockbox_evidence",
+    "minimumRelativePrimaryLossReduction": 0.02,
+    "pairedBlockBootstrapLowerBoundMustExceed": 0,
+    "maximumRelativeProbabilityLossRegression": 0.01,
+    "maximumCriticalSubgroupRelativeRegression": 0.05,
+    "maximumEightyPercentIntervalCoverageError": 0.05,
+    "requireReproducibleArtifact": true,
+    "requireNoPostCutoffInputs": true,
+    "requireOperationalSloPass": true,
+    "approvalRequired": true
+  },
+  "operationalSlo": {
+    "forecastCompletionBeforePuckDropRate": 0.99,
+    "eligibleObservationFollowupRate": 1,
+    "deterministicReplayMatchRate": 1,
+    "criticalSecurityIncidents": 0,
+    "maximumQueueAgeMinutes": 10,
+    "maximumCorrectionWindowHours": 48
+  }
+}

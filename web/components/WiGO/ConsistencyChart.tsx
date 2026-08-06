@@ -2,9 +2,7 @@ import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from "chart.js";
-import {
-  fetchPlayerGameLogConsistencyData
-} from "utils/fetchWigoPlayerStats";
+import { fetchPlayerGameLogConsistencyData } from "utils/fetchWigoPlayerStats";
 import { formatPercentage } from "utils/formattingUtils";
 import styles from "styles/wigoCharts.module.scss";
 import {
@@ -13,6 +11,7 @@ import {
   CONSISTENCY_CHART_COLORS
 } from "styles/wigoColors";
 import WigoSectionCard from "./WigoSectionCard";
+import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
@@ -45,7 +44,10 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
 
   const { processedData, chartData } = useMemo(() => {
     if (!gameLogs || gameLogs.length === 0) {
-      return { processedData: [] as ConsistencyDataPoint[], chartData: { datasets: [] } };
+      return {
+        processedData: [] as ConsistencyDataPoint[],
+        chartData: { datasets: [] }
+      };
     }
 
     const totalGames = gameLogs.length;
@@ -168,7 +170,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
             className={styles.chartErrorPlaceholder}
             style={{ width: "100%" }}
           >
-            Error: Failed to load data: {error.message || "Unknown error"}
+            {WIGO_ERROR_MESSAGES.chart}
           </div>
         )}
         {!playerId && !isLoading && !error && (

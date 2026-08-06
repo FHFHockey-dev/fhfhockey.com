@@ -232,6 +232,90 @@ describe("/api/v1/db/update-line-combinations", () => {
     });
   });
 
+  it("classifies recent FUT and 503 feed states as bounded source skips", async () => {
+    updateLineCombosMock.mockImplementation(async (gameId: number) => {
+      if (gameId === 311) {
+        throw new Error("The gameState for the game 311 is FUT");
+      }
+      throw new Error("Gamecenter play-by-play HTTP 503");
+    });
+    const req: any = {
+      method: "GET",
+      query: {
+        count: "2"
+      },
+      mockSupabase: {
+        from: vi.fn((table: string) => {
+          if (table === "games") {
+            return {
+              select: vi.fn(() =>
+                createGamesQueryBuilder([
+                  { id: 311, startTime: "2026-05-09T01:00:00.000Z" },
+                  { id: 312, startTime: "2026-05-08T01:00:00.000Z" }
+                ])
+              )
+            };
+          }
+
+          if (table === "lineCombinations") {
+            return {
+              select: vi.fn(() => createLineCombosQueryBuilder([]))
+            };
+          }
+
+          throw new Error(`Unexpected table ${table}`);
+        })
+      }
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      repairMode: "recent_gap",
+      status: "skipped_external_feed_unavailable",
+      processed: 0,
+      skipped: 2,
+      skippedGameIds: [311, 312]
+    });
+  });
+
+  it("keeps explicit historical 503 backfills fail-closed", async () => {
+    updateLineCombosMock.mockRejectedValue(
+      new Error("Gamecenter boxscore HTTP 503")
+    );
+    const req: any = {
+      method: "GET",
+      query: {
+        repairMode: "historical_backfill",
+        gameIds: "313"
+      },
+      mockSupabase: {
+        from: vi.fn(() => ({
+          select: vi.fn(() =>
+            createGamesQueryBuilder([
+              { id: 313, date: "2026-05-07" }
+            ])
+          )
+        }))
+      }
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toMatchObject({
+      success: false,
+      repairMode: "historical_backfill",
+      processed: 0,
+      skipped: 0,
+      failed: 1
+    });
+  });
+
   it("requires explicit scope for historical backfill", async () => {
     const req: any = {
       method: "GET",

@@ -1,15 +1,12 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import {
+  PLAYER_TREND_REPAIR_WINDOW_DAYS,
+  resolvePlayerTrendWriteFromDate,
+} from "lib/trends/playerTrendRebuildScope";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { rebuildPlayerTrends } from "../trends/player-trends";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
-
-export const PLAYER_TREND_REPAIR_WINDOW_DAYS = 7;
-
-export function resolvePlayerTrendWriteFromDate(today: string): string {
-  const date = new Date(`${today}T00:00:00.000Z`);
-  date.setUTCDate(date.getUTCDate() - PLAYER_TREND_REPAIR_WINDOW_DAYS);
-  return date.toISOString().slice(0, 10);
-}
+import adminOnly from "utils/adminOnlyMiddleware";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -51,6 +48,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default withCronJobAudit(handler, {
+export default withCronJobAudit(adminOnly(handler as any), {
   jobName: "update-player-trend-metrics",
 });

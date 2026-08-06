@@ -377,6 +377,10 @@ The page must not imply that a successful downstream accuracy refresh makes stal
 4. Should the new route initially use only existing APIs, or may it create one command-center aggregate API to reduce client fetch coordination?
    - Recommended default: start with existing APIs plus a client/server data adapter; create an aggregate API only if request coordination becomes brittle.
 5. Should command-center promotion replace `/forge/dashboard` immediately after validation, or should both routes coexist for one release cycle?
-   - Recommended default: coexist for one release cycle.
+   - Resolved 2026-07-30: the completed coexistence period is sufficient. Command Center is canonical, and `/forge/dashboard` is a query-preserving compatibility redirect.
 6. Should the implementation include any formula changes to top-add scoring, sustainability, goalie risk, or team power?
    - Recommended default: no formula changes in this PRD; preserve current math and improve composition/trust presentation first.
+
+## 10. Dynamic Audit Reconciliation
+
+The 2026-07-31 Wave-C follow-through completed the approved coexistence period and latency recheck. Existing dependency traffic, Sustainability responses, and named Trust/Fade rendering supplied sufficient product evidence for the owner's final decision: Command Center is canonical, while `/forge/dashboard` is a non-permanent compatibility redirect that preserves supported query context. Exact Production deployment `dpl_vU1c1yvbDQJMXEzK1rLT373Qndwy` includes the selective rolling-column projection and cast-only type bridge; five sequential varied skater-power cache misses returned 200 with structured `metricFetchMs=113–173 ms` and `durationMs=203–386 ms` (median 249 ms; all below the unchanged 900-ms target). One concurrent-fanout 1,146-ms outlier remains classified as bounded contention, and the deployment-scoped runtime-error query is empty. P2 NEW 18.0 closes; cache-hit wall time is not treated as function-p95 evidence.

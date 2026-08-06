@@ -1,6 +1,8 @@
 You are GPT-5 Codex. Implement the Start Chart DAILY MVP exactly as specified.
 
 > **Reconciled implementation task list:** `tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md`
+>
+> **Current reconciliation status (2026-07-30):** Complete at 55/55. The owner-approved architecture closes legacy formula/input/history requirements through canonical FORGE ownership rather than a second Start Chart engine. Start Chart reads run-keyed `forge_player_projections` plus shared goalie priors, applies only versioned `fhfh-default-skater-v1` presentation scoring, and exposes unsupported second-model controls as unavailable. Canonical FORGE/accuracy retains projection/result history and its separately owned repair/application gates. Guarded recovery commit `96ccea804b90b5a6f482de45f6b7931253725311` is READY/Production as `dpl_HCFwiK4yAPeXUG3QzC3R28NtYvsc`; populated API and desktop/mobile proof pass. Dynamic audit 5.7.23 finds no additional Start Chart-owned gap. This disposition authorizes no new persistence, migration, or model ownership.
 
 Title
 Start Chart — Daily Fantasy Hockey Start/Sit Rankings
@@ -42,7 +44,7 @@ Deliverables
    - Nightly: refresh nst_team_* by state; compute and store league baselines in model_params (xga60_5v5, xga60_pk, sv_league, on_ice_sh_pct_5v5, per-pos means/stds).
    - Nightly: refresh skater gamelogs and goalie stats; update pp and lines from powerPlayCombinations and lineCombinations.
    - Hourly (game days): refresh starts with heuristic P_start if no confirmation:
-       P_start = 0.75*recent_start_share_14d - 0.15*b2b_penalty + 0.05*home_bonus - 0.10*poor_form_penalty; clip to [0.05,0.95]; status='projected'. Provide manual override path (UI).
+       P_start = 0.75*recent_start_share_14d - 0.15*b2b_penalty + 0.05*home_bonus - 0.10*poor_form_penalty; clip to [0.05,0.95]; status='projected'. Start Chart reads canonical FORGE output and owns no manual write path.
 
 4) Math utilities (src/lib/)
    - decayBlend(samples, tauDays), ewsd(samples, tauDays), slope(lastN), shrinkage(s_recent, s_career, k), clip(x, lo, hi), goalieFinishMult(sv_proj, league_SV).
@@ -100,7 +102,7 @@ Execution Order (priority)
 4. Views: vw_goalie_recent, vw_opponent_multipliers, vw_skater_game_lambda.
 5. Math utils; endpoints /projections and /rankings for a given date.
 6. Minimal UI (daily chart); metrics logging; rolling metrics endpoint.
-7. Heuristic P_start job; manual override UI for starts; polish.
+7. Canonical FORGE starter refresh and read-only Start Chart presentation; polish.
 
 Environment and Constants
 - Store clip bounds, τ defaults, elasticities, league baselines in model_params.params_json and expose as constants.
@@ -110,3 +112,15 @@ Begin now by generating:
 - SQL migrations for starts, scoring_profiles, model_params and initial indexes.
 - SQL for vw_schedule_day and vw_team_strength_state_daily.
 - TypeScript modules for math utilities and API route scaffolds for /projections and /rankings with input validation.
+
+## Reconciled schema ownership (2026-07-27)
+
+The deliverables above describe the original greenfield proposal. The supported implementation reuses canonical FORGE rather than creating parallel `starts`, `predictions`, `outcomes`, `scoring_profiles`, or `model_params` ownership for Start Chart. `goalie_start_projections` owns the game/player start prior; `forge_runs` owns run identity; player, team, and goalie projections use run/game/entity/horizon keys; and `fhfh-default-skater-v1` owns read-time scoring. Result exact-replacement/history remains under the existing accuracy migration gate, while tau, elasticity, and other formula parameters remain under the explicit model-contract decision. No additional Start Chart schema is missing for the current wrapper.
+
+## Canonical reader/control and operations checkpoint (2026-07-23)
+
+Start Chart remains a presentation adapter over the latest succeeded FORGE run. Its reader now rejects invalid dates, positions, and pagination with structured `400` responses; accepts only points mode, `fhfh-default-skater-v1`, and latest-run ownership; and returns structured `422` responses for tau, risk, alternate profile/mode, or pinned-model overrides that would create a second model contract.
+
+The page exposes the supported points/profile contract and selected date, synchronizes date state to the URL, and renders unavailable model controls explicitly. Keyboard-native game filters, metric disclosure, chart labeling, and direct FORGE navigation are implemented and unit-covered. A populated 351-player browser pass proves labeled/native controls, keyboard disclosure, color-independent text context, exact matchup filtering, 1440×900 and 390-class responsive behavior, zero body overflow, and empty final runtime logs. Composite player/team/opponent keys and direct chart-dot key ownership repair both runtime findings discovered during that pass. Guarded recovery `96ccea804` is READY/Production with successful populated API and exact 1440×900/390×844 proof; deployment-scoped runtime-error/5xx evidence is empty.
+
+The focused API/UI group passes 2 files/12 tests, TypeScript, zero-error targeted lint, formatting, and bundled-Node-24 Sass. Value-free Production reads cover three seeded dates; the largest returns 351 players, and ten samples measure 257 ms P95. `web/README.md` owns the environment-name, active-schedule, bounded repair, smoke, expected-receipt, failure, and rollback runbook.

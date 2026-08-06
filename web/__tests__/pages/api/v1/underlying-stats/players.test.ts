@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("lib/underlying-stats/playerStatsLandingServer", () => ({
   buildPlayerStatsLandingAggregationFromState: vi.fn(),
@@ -41,6 +41,10 @@ function createMockApiContext(args?: {
 describe("/api/v1/underlying-stats/players", () => {
   beforeEach(() => {
     vi.mocked(buildPlayerStatsLandingAggregationFromState).mockReset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("returns a non-placeholder native landing payload for valid requests", async () => {
@@ -113,5 +117,29 @@ describe("/api/v1/underlying-stats/players", () => {
       error: "Unsupported player stats filter combination.",
       issues: ['Native landing aggregation does not yet support score state "tied".'],
     });
+  });
+
+  it("redacts dependency details from landing 500 responses", async () => {
+    const error = new Error("postgres secret detail");
+    vi.mocked(buildPlayerStatsLandingAggregationFromState).mockRejectedValue(error);
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { req, res } = createMockApiContext({
+      query: {
+        fromSeasonId: "20252026",
+        throughSeasonId: "20252026",
+      },
+    });
+
+    await handler(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.body).toEqual({
+      error: "Unable to build player underlying stats.",
+      issues: ["PLAYER_UNDERLYING_STATS_UNAVAILABLE"],
+    });
+    expect(consoleError).toHaveBeenCalledWith(
+      "Failed to build player underlying stats",
+      error
+    );
   });
 });

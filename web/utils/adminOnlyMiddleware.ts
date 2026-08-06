@@ -21,12 +21,19 @@ export default function adminOnly(handler: Handler): Handler {
       client = serviceRoleClient;
     } else {
       // authentication check
-      const access_token = authHeader.split(" ")[1] ?? "";
+      const bearerMatch = authHeader.match(/^Bearer ([^\s]+)$/);
+      if (!bearerMatch) {
+        return res.status(401).json({
+          message: "Unauthorized.",
+          success: false,
+        });
+      }
+      const access_token = bearerMatch[1];
       const authClient = createClientWithToken(access_token);
       const { error: userError } = await authClient.auth.getUser();
       if (userError) {
         return res.status(401).json({
-          message: userError.message,
+          message: "Unauthorized.",
           success: false,
         });
       }

@@ -1,9 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { createClientWithToken } from "lib/supabase";
+
 import {
+  default as adminOnly,
   invokedByCron,
   invokedByLocalDev,
 } from "../../utils/adminOnlyMiddleware";
+
+vi.mock("lib/supabase", () => ({
+  createClientWithToken: vi.fn(),
+}));
+vi.mock("lib/supabase/server", () => ({
+  default: {},
+}));
 
 const originalCronSecret = process.env.CRON_SECRET;
 
@@ -71,5 +81,56 @@ describe("adminOnlyMiddleware", () => {
         },
       } as never),
     ).toBe(false);
+  });
+
+  it("returns one fixed denial for missing, malformed, and rejected bearer tokens", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const status = vi.fn();
+    const json = vi.fn();
+    status.mockReturnValue({ json });
+    const handler = vi.fn();
+    const protectedHandler = adminOnly(handler);
+
+    for (const authorization of [
+      undefined,
+      "invalid",
+      "Bearer",
+      "Bearer token extra",
+    ]) {
+      await protectedHandler(
+        { headers: { authorization, host: "fhfhockey.com" } } as never,
+        { status } as never,
+      );
+      expect(status).toHaveBeenLastCalledWith(401);
+      expect(json).toHaveBeenLastCalledWith({
+        message: "Unauthorized.",
+        success: false,
+      });
+    }
+    expect(createClientWithToken).not.toHaveBeenCalled();
+
+    vi.mocked(createClientWithToken).mockReturnValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          error: { message: "invalid JWT: internal parser detail" },
+        }),
+      },
+    } as never);
+    await protectedHandler(
+      {
+        headers: {
+          authorization: "Bearer structurally-valid-token",
+          host: "fhfhockey.com",
+        },
+      } as never,
+      { status } as never,
+    );
+
+    expect(status).toHaveBeenLastCalledWith(401);
+    expect(json).toHaveBeenLastCalledWith({
+      message: "Unauthorized.",
+      success: false,
+    });
+    expect(handler).not.toHaveBeenCalled();
   });
 });

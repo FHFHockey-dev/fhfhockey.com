@@ -34,13 +34,30 @@ function parseGameIdsParam(value: string | string[] | undefined): number[] {
     .filter((entry) => Number.isFinite(entry) && entry > 0);
 }
 
-function isExternalFeedUnavailableError(message: string): boolean {
-  return /Gamecenter (boxscore|play-by-play) HTTP 404: Not Found/i.test(message);
+function isExternalFeedUnavailableError(
+  message: string,
+  allowRecentUnavailableStates = false
+): boolean {
+  if (/Gamecenter (boxscore|play-by-play) HTTP 404: Not Found/i.test(message)) {
+    return true;
+  }
+
+  if (!allowRecentUnavailableStates) return false;
+
+  // Offseason recent-gap healing can encounter archived games whose
+  // Gamecenter state is FUT/PRE or whose historical feed is temporarily
+  // unavailable (503). Treat those as bounded source skips; explicit
+  // historical backfills remain fail-closed below.
+  return (
+    /gameState for the game \d+ is (?:FUT|PRE)\b/i.test(message) ||
+    /Gamecenter (boxscore|play-by-play) HTTP 503\b/i.test(message)
+  );
 }
 
 function summarizeLineComboFailures(
   settled: PromiseSettledResult<any[]>[],
-  games: Array<{ id: number }>
+  games: Array<{ id: number }>,
+  options: { allowRecentUnavailableStates?: boolean } = {}
 ) {
   const succeededGameIds: number[] = [];
   const skippedUnavailableFeeds: Array<{ gameId: number; message: string }> = [];
@@ -58,7 +75,12 @@ function summarizeLineComboFailures(
 
     const message = result.reason?.message ?? String(result.reason);
     const entry = { gameId: game.id, message };
-    if (isExternalFeedUnavailableError(message)) {
+    if (
+      isExternalFeedUnavailableError(
+        message,
+        options.allowRecentUnavailableStates === true
+      )
+    ) {
       skippedUnavailableFeeds.push(entry);
       return;
     }
@@ -250,7 +272,9 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
       succeededGameIds: updatedGameIds,
       skippedUnavailableFeeds,
       failures
-    } = summarizeLineComboFailures(results, repairTargets);
+    } = summarizeLineComboFailures(results, repairTargets, {
+      allowRecentUnavailableStates: true
+    });
 
     failures.forEach((item) => console.error(item.message));
 

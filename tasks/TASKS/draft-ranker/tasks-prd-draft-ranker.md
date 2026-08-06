@@ -23,7 +23,7 @@
 - This checklist preserves the stable DR task IDs from `implementation-plan.md`; that file retains the detailed dependencies, files/systems, acceptance tests, security, migration/rollback, flag, approval, and non-goal fields for every row.
 - Checked historical rows are evidence-backed implementation claims, not a substitute for the required dynamic Wave-C audit.
 - DR-072 and the approved Phase-7 launch scope are complete. The aggregate-only final review passed, and the recorded authorization changed only the personal-ranker stage from `staff` to `authenticated`; beta entitlement and every non-homepage secondary/public flag remain closed.
-- Phase 8 remains explicitly deferred and unchecked under `B-DRAFT-RANKER-P8`; no deferred capability was required for launch completion.
+- Phase 8 is retired from the active super-goal into the future roadmap; no deferred capability is required for current completion.
 
 ## Tasks
 
@@ -101,13 +101,15 @@
 
 ### Phase 8 — Deferred mature-product capabilities
 
-- [ ] 8.0 Plan and execute deferred mature-product capabilities only through later PRD/decision updates and their separate approvals.
-  - [ ] DR-080 Plan and implement multiple named and league-specific rankings only after a separate product/migration approval; prevent cross-ranking evidence contamination.
-  - [ ] DR-081 Evaluate mature community/adaptive models offline and obtain explicit methodology approval before changing public behavior.
-  - [ ] DR-082 Plan expanded prospect/editorial infrastructure only after source rights, identity precision, and rollback are approved.
-  - [ ] DR-083 Plan XLSX and advanced export/discovery capabilities without blocking the launch CSV/JSON contract.
+- [x] 8.0 Retire deferred mature-product capabilities from the active super-goal into the future roadmap; any revival requires a new PRD and separate approvals (owner-approved 2026-07-30).
+  - [x] DR-080 Retire multiple named and league-specific rankings to the future roadmap.
+  - [x] DR-081 Retire mature community/adaptive model evaluation to the future roadmap.
+  - [x] DR-082 Retire expanded prospect/editorial infrastructure to the future roadmap.
+  - [x] DR-083 Retire XLSX and advanced export/discovery capabilities to the future roadmap.
 
 ## NEW Tasks
 
 - [x] NEW DR-078 Reconcile authoritative PR #352 after the pre-commit mailbox checkpoint exposed newer rollout evidence: merge the exact 2026-07-17 authenticated-stage record, close DR-072/Phase 7 from aggregate-only proof, retain every secondary flag and Phase 8 gate, and reclassify the five deferred Phase 8 rows into Wave B without inspecting personal choices or mutating production (completed 2026-07-18).
 - [x] NEW DR-079 Enable and verify the existing personal Draft Ranker on localhost without changing the page or production: keep the two required master/stage settings only in ignored `.env.development.local`; start the installed Next binary with process-level Watchpack polling without changing pnpm's dependency-build approval policy; pass the intended 2-file/18-test flag/API suite with the retained ignored clone explicitly excluded after its duplicate 4-file/36-test discovery; prove anonymous API denial is `401 authentication_required` rather than the disabled `503`; prove both Draft Ranker and home pages return meaningful 200 responses without disabled copy, a framework error overlay, or recurring watcher errors; and confirm the signed-in existing board renders read-only without initialize/reorder/watchlist/pairwise/export actions (completed 2026-07-20).
+- [x] NEW DR-084 **P1 maintenance error disclosure:** redact dependency/runtime details from the protected health, community-refresh, and discovery-refresh HTTP 500 bodies behind route-stable unavailable codes while retaining server-side diagnostics and cron-audit failure counts (discovered and completed 2026-07-29).
+- [x] NEW DR-085 **P1 CSV formula injection:** neutralize formula-leading string cells in private CSV exports while preserving numeric values, RFC-compatible quoting, the stable 23-column schema, owner scope, and the JSON contract (discovered and completed 2026-07-29).

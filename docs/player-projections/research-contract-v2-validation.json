@@ -1,0 +1,113 @@
+{
+  "schemaVersion": "1.0.0",
+  "contractVersion": "player-forecasts-research-v2-validation",
+  "status": "approved_for_local_validation_challenger",
+  "approvedAt": "2026-08-04T00:00:00Z",
+  "baseContract": {
+    "version": "player-forecasts-research-v1",
+    "checksum": "9d4a30f5027e8b277015c592a39715e16d18c9a371dd352ddd4f0738868d9574"
+  },
+  "releaseChannel": "local_validation_only",
+  "costPolicy": "zero_incremental_cost",
+  "fantasyScoringPolicy": "downstream_only",
+  "forgePolicy": "benchmark_only_unchanged",
+  "evidencePolicy": {
+    "consumedPrimaryLockbox": {
+      "seasonId": 20252026,
+      "startInclusive": "2026-01-03",
+      "endInclusive": "2026-04-16",
+      "evaluationsAllowed": 1,
+      "additionalEvaluationsAllowed": 0
+    },
+    "challengerClassification": "validation_not_blind_evidence",
+    "promotionRequiresUntouchedProspectiveSeason": 20262027
+  },
+  "sourcePolicy": {
+    "officialNhlPlayByPlay": {
+      "eligibleForSettledOutcomeLabels": true,
+      "eligibleForHistoricalFeaturesOnlyAfterGameEnd": true,
+      "ingestionTimestampMayNotBeUsedAsHistoricalAvailability": true,
+      "assistIdentityFields": ["assist1_player_id", "assist2_player_id"]
+    },
+    "finalSchedule": {
+      "eligibleForReconstructedValidationHorizons": true,
+      "historicalScheduleRevisionEvidence": false
+    },
+    "wgoAndNst": {
+      "eligible": false,
+      "reason": "definition, rights, and historical availability gates remain unresolved"
+    }
+  },
+  "assistPolicy": {
+    "officialScoredTarget": "assists",
+    "decomposedTargets": ["primary_assists", "secondary_assists"],
+    "officialExpectationIdentity": "expected_assists_equals_expected_primary_assists_plus_expected_secondary_assists",
+    "weightedCandidateFeatures": [
+      {
+        "key": "play_driver_70_30",
+        "primaryWeight": 0.7,
+        "secondaryWeight": 0.3
+      },
+      {
+        "key": "play_driver_80_20",
+        "primaryWeight": 0.8,
+        "secondaryWeight": 0.2
+      },
+      {
+        "key": "play_driver_learned",
+        "selection": "fit_inside_development_fold_only"
+      }
+    ],
+    "weightedFeaturesMayReplaceOfficialAssistDefinition": false,
+    "candidateSelection": "chronological_development_validation_only"
+  },
+  "horizonPolicy": {
+    "maximumTeamGameHorizon": 10,
+    "canonicalIssueTimeUtc": "10:00:00",
+    "stopAt": "scheduled_puck_drop_exclusive",
+    "forecastEachScheduledGameIndependently": true,
+    "requiredContext": [
+      "target_game_id",
+      "team_id",
+      "opponent_team_id",
+      "home_away",
+      "rest_days",
+      "team_game_horizon",
+      "issued_at",
+      "cutoff_at"
+    ],
+    "historicalReconstructionLabel": "final_schedule_reconstructed_validation",
+    "confidencePolicy": {
+      "method": "population_target_horizon_residual_quantiles",
+      "fitWindow": "development_only",
+      "monotonicWideningAssumed": false,
+      "pooledFallbackRequiresFlag": true
+    }
+  },
+  "restOfSeasonPolicy": {
+    "unit": "remaining_scheduled_games",
+    "method": "aggregate_independent_game_level_predictive_distributions",
+    "scheduleRevisionIdentityRequired": true,
+    "conditional": "condition_on_playing_in_each_component_game",
+    "unconditional": "mix_each_game_with_plays_probability_and_point_mass_at_zero_before_aggregation",
+    "storeConditionalAndUnconditionalSeparately": true,
+    "failClosedWhenPlayingProbabilityMissing": true,
+    "fullSeasonDisplay": "season_to_date_actual_plus_rest_of_season_distribution"
+  },
+  "hitsPolicy": {
+    "target": "official_hits",
+    "primaryCandidate": "hierarchical_opportunity_count_model",
+    "exposure": "projected_time_on_ice_seconds",
+    "partialPoolingGroups": ["position", "player"],
+    "priorStrengthSelection": "development_only_likelihood_or_chronological_validation",
+    "fixedSparseThresholdMaySelectModel": false
+  },
+  "acceptance": {
+    "inheritPromotionThresholdsFromBaseContract": true,
+    "requireDeterministicReplay": true,
+    "requireNoPostCutoffInputs": true,
+    "requireHorizonSpecificReporting": true,
+    "requireConditionalUnconditionalLabels": true,
+    "promotionEligible": false
+  }
+}

@@ -12,6 +12,13 @@ import {
 
 export type XgModelApprovalStatus = "candidate" | "approved" | "rejected" | "retired";
 
+export class XgModelLifecycleError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "XgModelLifecycleError";
+  }
+}
+
 export type XgModelRegistryRow = {
   model_version: string;
   prediction_type: XgShotPredictionType;
@@ -99,6 +106,7 @@ export function buildXgModelRegistryRow(args: {
   deploymentAlias?: string | null;
   isActive?: boolean;
   isChampion?: boolean;
+  promotionConfirmed?: boolean;
 }): XgModelRegistryRow {
   const artifactChecksum =
     args.artifactChecksum ??
@@ -116,6 +124,27 @@ export function buildXgModelRegistryRow(args: {
   };
   const now = new Date().toISOString();
   const modelApproved = args.artifact.approvalGradeEligibility?.isEligible === true;
+  const approvalStatus = inferApprovalStatus(args.artifact, args.approvalStatus);
+  const requestsPromotion = args.isActive === true || args.isChampion === true;
+
+  if (approvalStatus === "approved" && !modelApproved) {
+    throw new XgModelLifecycleError(
+      "An artifact that is not approval-eligible cannot be registered as approved."
+    );
+  }
+  if (requestsPromotion && approvalStatus !== "approved") {
+    throw new XgModelLifecycleError(
+      "Only an approved artifact can be activated or promoted."
+    );
+  }
+  if (requestsPromotion && args.promotionConfirmed !== true) {
+    throw new XgModelLifecycleError(
+      "Activation or champion promotion requires confirmPromotion=true."
+    );
+  }
+  if (args.isChampion === true && args.isActive !== true) {
+    throw new XgModelLifecycleError("A champion artifact must also be active.");
+  }
 
   return {
     model_version: args.artifact.artifactTag,
@@ -143,7 +172,7 @@ export function buildXgModelRegistryRow(args: {
     train_example_count: args.artifact.trainExampleCount ?? null,
     validation_example_count: args.artifact.validationExampleCount ?? null,
     test_example_count: args.artifact.testExampleCount ?? null,
-    approval_status: inferApprovalStatus(args.artifact, args.approvalStatus),
+    approval_status: approvalStatus,
     model_approved: modelApproved,
     deployment_alias: args.deploymentAlias ?? "candidate",
     is_active: args.isActive === true,

@@ -1,5 +1,9 @@
 # Game Grid Revamp Plan (Condensed Standard Grid)
 
+## 2026-07-22 master-table checkpoint
+
+The approved Phases 3–5 cohorts are complete: desktop-horizontal owns one OMT/Team/schedule/current/4WK table with contract order, all intended non-day sorts, expanded-by-default four-value 4WK group, Score-only rank emphasis plus edge, and a truthful OMT-unavailable state. Desktop vertical remains explicitly named `Legacy Vertical`; mobile/tablet compositions remain stacked and no second feature flag was added. The final breakpoint/minimum-width cohort passes 3 files/12 tests plus TypeScript, targeted lint, direct Sass compilation, and diff integrity; the later declaration-order repair also passes its focused 8/8 regression and full TypeScript.
+
 ## Status (Updated)
 
 **Implemented so far**

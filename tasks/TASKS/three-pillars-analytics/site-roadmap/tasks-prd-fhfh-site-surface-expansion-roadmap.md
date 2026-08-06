@@ -221,3 +221,6 @@
 
 - [x] NEW 14.0 Add direct canonical Team HQ links to team identities across the standard, desktop-master, and four-week Game Grid variants so the required grid-to-team-deep-dive flow does not stop at a generic navigation rail.
   - Evidence (2026-07-11): all three renderers now expose accessible `Open [team] Team HQ` links; component/TypeScript checks pass, and a populated March grid link navigated to EDM Team HQ with Timeline available and no runtime overlay.
+
+- [x] NEW 15.0 **P1 paginate the public Splits season cohort and fail closed on dependency errors.**
+  - Evidence (2026-07-29): every season-wide roster/game/player-strength/team-strength read now uses deterministic complete range pagination, and large goalie/outcome game-ID filters use bounded chunks with independent pagination. Invalid team/opponent input retains bounded 400 detail; dependency failures return stable 503 without raw table/provider text. The implementation map now recognizes the shipped `/splits` route instead of describing it as uncreated deferred scope.

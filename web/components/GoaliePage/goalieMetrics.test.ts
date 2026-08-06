@@ -1,3 +1,5 @@
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import type { GoalieRanking } from "./goalieTypes";
@@ -16,6 +18,8 @@ import {
   formatAdvancedMetricPercent,
   sortAdvancedMetricRows,
 } from "./GoalieAdvancedMetricsTable";
+import GoalieAdvancedMetricsTable from "./GoalieAdvancedMetricsTable";
+import GoalieLeaderboard from "./GoalieLeaderboard";
 
 const makeGoalie = (
   playerId: number,
@@ -386,5 +390,25 @@ describe("sortAdvancedMetricRows", () => {
         (row) => row.playerId,
       ),
     ).toEqual([2, 3, 1]);
+  });
+});
+
+describe("goalie sortable table semantics", () => {
+  it("renders native sort buttons and active aria-sort state", () => {
+    const leaderboardMarkup = renderToStaticMarkup(
+      React.createElement(GoalieLeaderboard, {
+        goalieRankings: [makeGoalie(1, {})],
+        sortConfig: { key: "totalPoints", direction: "descending" },
+        requestSort: () => undefined,
+      }),
+    );
+    const advancedMarkup = renderToStaticMarkup(
+      React.createElement(GoalieAdvancedMetricsTable, { rows: [] }),
+    );
+
+    expect(leaderboardMarkup).toContain("<button");
+    expect(leaderboardMarkup).toContain('aria-sort="descending"');
+    expect(advancedMarkup).toContain("<button");
+    expect(advancedMarkup).toContain('aria-sort="descending"');
   });
 });

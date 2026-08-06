@@ -12,13 +12,13 @@ from pathlib import Path
 try:
     from .player_name_matcher import (
         NORM_SPEC,
-        best_qualified_name_match,
+        best_qualified_player_match,
         normalize_name,
     )
 except ImportError:
     from player_name_matcher import (
         NORM_SPEC,
-        best_qualified_name_match,
+        best_qualified_player_match,
         normalize_name,
     )
 
@@ -34,7 +34,7 @@ ENV_FILE = Path(__file__).resolve().parents[4] / ".env.local"
 load_dotenv(ENV_FILE)
 
 SUPABASE_URL = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY') or os.getenv('NEXT_PUBLIC_SUPABASE_PUBLIC_KEY')
+SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
 
 supabase: Client | None = None
 if SUPABASE_URL and SUPABASE_KEY:
@@ -255,8 +255,8 @@ def analyze_yahoo_to_nhl(nhl_players, yahoo_players, forward_mappings, reverse_o
         # Thresholded fuzzy fallback (Yahoo -> NHL). Both independent name
         # thresholds must pass; nickname equivalents are canonicalized first.
         if not nhl_id:
-            cand_id, ln_score, fn_score = best_qualified_name_match(
-                raw_name,
+            cand_id, ln_score, fn_score, _ = best_qualified_player_match(
+                y,
                 nhl_players,
             )
             if cand_id is not None:
@@ -298,7 +298,9 @@ def match_players(nhl_players, yahoo_players, forward_overrides=None):
     
     mappings = []
     unmatched = []
-    yahoo_name_to_id = {player['clean_name']: pid for pid, player in yahoo_players.items()}
+    yahoo_name_to_ids = {}
+    for player_id, player in yahoo_players.items():
+        yahoo_name_to_ids.setdefault(player["clean_name"], []).append(player_id)
     
     matched_count = 0
     unmatched_count = 0
@@ -312,14 +314,14 @@ def match_players(nhl_players, yahoo_players, forward_overrides=None):
             corrected = forward_overrides.get(nhl_name)
             if corrected:
                 corrected_norm = normalize_name(corrected)
-                yahoo_id = yahoo_name_to_id.get(corrected_norm)
-                if not yahoo_id:
-                    # A corrected label still uses the same independent fuzzy
-                    # thresholds; manual overrides never enable a weaker path.
-                    yahoo_id, _, _ = best_qualified_name_match(
-                        corrected,
-                        yahoo_players,
-                    )
+                exact_candidates = {
+                    candidate_id: yahoo_players[candidate_id]
+                    for candidate_id in yahoo_name_to_ids.get(corrected_norm, [])
+                }
+                yahoo_id, _, _, match_evidence = best_qualified_player_match(
+                    {**nhl_player, "name": corrected},
+                    exact_candidates or yahoo_players,
+                )
                 if yahoo_id:
                     yahoo_player = yahoo_players[yahoo_id]
                     mappings.append({
@@ -330,13 +332,22 @@ def match_players(nhl_players, yahoo_players, forward_overrides=None):
                         'nhl_team_abbreviation': nhl_player.get('team'),
                         'mapped_position': nhl_player.get('position'),
                         'match_confidence': 100.0,
+                        'match_method': 'manual_override',
+                        'match_evidence': match_evidence,
                     })
                     matched_count += 1
                     continue
 
         # Deterministic exact (normalized) match
-        if nhl_name in yahoo_name_to_id:
-            yahoo_id = yahoo_name_to_id[nhl_name]
+        exact_candidates = {
+            candidate_id: yahoo_players[candidate_id]
+            for candidate_id in yahoo_name_to_ids.get(nhl_name, [])
+        }
+        yahoo_id, _, _, match_evidence = best_qualified_player_match(
+            nhl_player,
+            exact_candidates,
+        )
+        if yahoo_id is not None:
             yahoo_player = yahoo_players[yahoo_id]
             mappings.append({
                 'nhl_player_id': str(nhl_id),
@@ -347,6 +358,8 @@ def match_players(nhl_players, yahoo_players, forward_overrides=None):
                 'yahoo_team': yahoo_player.get('team'),
                 'mapped_position': nhl_player.get('position'),
                 'match_confidence': 100.0,
+                'match_method': 'exact_normalized',
+                'match_evidence': match_evidence,
             })
             matched_count += 1
             continue
@@ -355,8 +368,15 @@ def match_players(nhl_players, yahoo_players, forward_overrides=None):
         alias_map = NORM_SPEC.get('alias_map', {})
         if nhl_name in alias_map:
             alias_norm = alias_map[nhl_name]
-            if alias_norm in yahoo_name_to_id:
-                yahoo_id = yahoo_name_to_id[alias_norm]
+            alias_candidates = {
+                candidate_id: yahoo_players[candidate_id]
+                for candidate_id in yahoo_name_to_ids.get(alias_norm, [])
+            }
+            yahoo_id, _, _, match_evidence = best_qualified_player_match(
+                nhl_player,
+                alias_candidates,
+            )
+            if yahoo_id is not None:
                 yahoo_player = yahoo_players[yahoo_id]
                 mappings.append({
                     'nhl_player_id': str(nhl_id),
@@ -367,14 +387,16 @@ def match_players(nhl_players, yahoo_players, forward_overrides=None):
                     'yahoo_team': yahoo_player.get('team'),
                     'mapped_position': nhl_player.get('position'),
                     'match_confidence': 100.0,
+                    'match_method': 'alias',
+                    'match_evidence': match_evidence,
                 })
                 matched_count += 1
                 continue
 
         # Thresholded fuzzy fallback. Last name must score at least 90 and
         # first name at least 50 after nickname canonicalization.
-        cand_id, ln_score, fn_score = best_qualified_name_match(
-            raw_nhl_name,
+        cand_id, ln_score, fn_score, match_evidence = best_qualified_player_match(
+            nhl_player,
             yahoo_players,
         )
         if cand_id is not None:
@@ -390,6 +412,8 @@ def match_players(nhl_players, yahoo_players, forward_overrides=None):
                 'match_confidence': float((ln_score * 0.7) + (fn_score * 0.3)),
                 'last_name_confidence': float(ln_score),
                 'first_name_confidence': float(fn_score),
+                'match_method': 'fuzzy_qualified',
+                'match_evidence': match_evidence,
             })
             matched_count += 1
             continue
@@ -404,19 +428,6 @@ def match_players(nhl_players, yahoo_players, forward_overrides=None):
             'team': nhl_player.get('team'),
             'position': nhl_player.get('position'),
         })
-        # persist unmatched suggestion row with empty candidates for now
-        try:
-            spec_norm = nhl_name
-            resp = supabase.table('yahoo_nhl_player_map_unmatched').insert({
-                'nhl_player_id': str(nhl_id),
-                'nhl_player_name': nhl_player['name'],
-                'nhl_normalized': spec_norm,
-                'candidate_yahoo': [],
-            }).execute()
-            if hasattr(resp, 'error') and resp.error:
-                logging.warning('Could not insert unmatched row for %s: %s', nhl_player['name'], resp.error)
-        except Exception as e:
-            logging.warning('Exception while inserting unmatched for %s: %s', nhl_player['name'], e)
     
     logging.info(f"Matched {matched_count} players, {unmatched_count} unmatched")
     return mappings, unmatched
@@ -469,6 +480,31 @@ def upsert_mappings(mappings):
     except Exception as e:
         logging.error(f"Exception while upserting mappings: {e}")
 
+
+def insert_unmatched(unmatched):
+    """Persist unmatched review rows only during an explicit write run."""
+    for player in unmatched:
+        try:
+            resp = supabase.table("yahoo_nhl_player_map_unmatched").insert({
+                "nhl_player_id": player["nhl_player_id"],
+                "nhl_player_name": player["nhl_player_name"],
+                "nhl_normalized": player["nhl_normalized"],
+                "candidate_yahoo": [],
+            }).execute()
+            if hasattr(resp, "error") and resp.error:
+                logging.warning(
+                    "Could not insert unmatched row for %s: %s",
+                    player["nhl_player_name"],
+                    resp.error,
+                )
+        except Exception as error:
+            logging.warning(
+                "Exception while inserting unmatched for %s: %s",
+                player["nhl_player_name"],
+                error,
+            )
+
+
 # -----------------------------------------------------------------------------
 # MAIN
 # -----------------------------------------------------------------------------
@@ -478,7 +514,7 @@ def main():
     if supabase is None:
         logging.error(
             "Missing environment variables. Need NEXT_PUBLIC_SUPABASE_URL and "
-            "either SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_PUBLIC_KEY"
+            "SUPABASE_SERVICE_ROLE_KEY"
         )
         return
     
@@ -499,8 +535,14 @@ def main():
     # 3. Match players using fuzzy name matching (with overrides)
     mappings, unmatched = match_players(nhl_players, yahoo_players, forward_overrides)
     
-    # 4. Upsert mappings to database
-    upsert_mappings(mappings)
+    # 4. Persistence is a separate explicit maintenance action.
+    if os.getenv("YAHOO_MAPPING_WRITE_ENABLED") == "1":
+        upsert_mappings(mappings)
+        insert_unmatched(unmatched)
+    else:
+        logging.info(
+            "Mapping write skipped; set YAHOO_MAPPING_WRITE_ENABLED=1 to apply."
+        )
     
     # 5. Output unmatched list to terminal and JSON for review (forward: NHL -> Yahoo)
     try:

@@ -17,7 +17,10 @@ export const LEGACY_PREDICTION_ARTIFACTS: LegacyPredictionArtifact[] = [
     paths: [
       "web/pages/api/v1/ml/update-predictions-sko.ts",
       "web/pages/api/v1/ml/get-predictions-sko.ts",
-      "web/components/Predictions/PredictionsLeaderboard.tsx"
+      "web/lib/hooks/useQuarantinedPredictionsSko.ts",
+      "web/components/Predictions/PredictionsLeaderboard.tsx",
+      "web/components/Predictions/InfoPopover.tsx",
+      "web/components/Predictions/SkoExplainer.tsx"
     ],
     disposition: "quarantined",
     reason:

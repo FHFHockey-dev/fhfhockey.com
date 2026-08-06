@@ -21,7 +21,6 @@
 
   // Neon Style - Handled by parent container now to avoid double borders
   // border: 1px solid v.$primary-color;
-  // background: rgba(20, 162, 210, 0.15);
 
   // --- Mobile Specific Framing & Styling ---
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
@@ -138,7 +137,7 @@
   text-transform: uppercase;
   letter-spacing: 0.3px;
   border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(v.$color-white, 0.08);
   border-top: none;
   white-space: normal;
   vertical-align: middle;
@@ -209,7 +208,7 @@
 
 .table td {
   border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(v.$color-white, 0.06);
   padding: 0; // Condensed padding
   font-family: v.$font-family-primary;
   vertical-align: middle;
@@ -255,7 +254,7 @@
   color: v.$text-color-secondary;
   font-weight: bold;
   font-size: 10.5px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(v.$color-white, 0.12);
   padding: 4px 4px;
   height: 30px;
 

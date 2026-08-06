@@ -53,7 +53,11 @@ export function normalizeSqlRpcFailure(
       ? error.message
       : typeof error === "string"
         ? error
-        : normalized.detail ?? normalized.message;
+        : error &&
+            typeof error === "object" &&
+            typeof (error as { message?: unknown }).message === "string"
+          ? (error as { message: string }).message
+          : normalized.detail ?? normalized.message;
   const statusCode = extractStatusCode(raw);
 
   let classification: SqlRpcFailureClassification =

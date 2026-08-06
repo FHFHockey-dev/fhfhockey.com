@@ -44,10 +44,10 @@ export type UseOpponentMetricsDataResult = {
 export const OPPONENT_METRIC_COLUMNS: OpponentMetricColumn[] = [
   { label: "xGF", key: "avgXgf" },
   { label: "xGA", key: "avgXga" },
-  { label: "SF", key: "avgSf" },
-  { label: "SA", key: "avgSa" },
   { label: "GF", key: "avgGoalFor" },
   { label: "GA", key: "avgGoalAgainst" },
+  { label: "SF", key: "avgSf" },
+  { label: "SA", key: "avgSa" },
   { label: "W%", key: "avgWinPct" }
 ];
 

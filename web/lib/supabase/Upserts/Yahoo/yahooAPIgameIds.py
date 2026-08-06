@@ -18,25 +18,42 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-ENV_FILE = "/Users/tim/Desktop/FHFH/fhfhockey.com/web/.env.local"
-load_dotenv(ENV_FILE)
+LEGACY_WRITER_FLAG = "YAHOO_LEGACY_PYTHON_WRITER_ENABLED"
 
-SUPABASE_URL = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
-YFPY_CONSUMER_KEY = os.getenv('YFPY_CONSUMER_KEY')
-YFPY_CONSUMER_SECRET = os.getenv('YFPY_CONSUMER_SECRET')
 
-if not all([SUPABASE_URL, SUPABASE_KEY, YFPY_CONSUMER_KEY, YFPY_CONSUMER_SECRET]):
-    logging.error("Missing one or more required environment variables.")
-    exit(1)
+def _load_environment():
+    """Load only an explicitly selected local env file or the current directory."""
+    env_file = os.getenv("YFPY_ENV_FILE") or os.getenv("YAHOO_ENV_FILE")
+    if env_file:
+        load_dotenv(env_file)
+    else:
+        load_dotenv()
+        load_dotenv(".env.local")
 
-# Yahoo API constants
-GAME_ID = '465'
-LEAGUE_ID = '858'
-ENV_FILE_LOCATION = Path("/Users/tim/Desktop/FHFH/fhfhockey.com/web/")
 
-# Initialize Supabase client
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+def _required_config():
+    required = {
+        "NEXT_PUBLIC_SUPABASE_URL": os.getenv("NEXT_PUBLIC_SUPABASE_URL"),
+        "SUPABASE_SERVICE_ROLE_KEY": os.getenv("SUPABASE_SERVICE_ROLE_KEY"),
+        "YFPY_CONSUMER_KEY": os.getenv("YFPY_CONSUMER_KEY"),
+        "YFPY_CONSUMER_SECRET": os.getenv("YFPY_CONSUMER_SECRET"),
+        "YFPY_GAME_ID": os.getenv("YFPY_GAME_ID") or os.getenv("YAHOO_GAME_ID"),
+        "YFPY_LEAGUE_ID": os.getenv("YFPY_LEAGUE_ID") or os.getenv("YAHOO_LEAGUE_ID"),
+    }
+    missing = [name for name, value in required.items() if not value]
+    if missing:
+        raise RuntimeError(
+            "Legacy Yahoo game-key maintenance configuration is incomplete: "
+            + ", ".join(missing)
+        )
+    return required
+
+
+def _env_file_location():
+    configured = os.getenv("YFPY_ENV_FILE_LOCATION") or os.getenv(
+        "YAHOO_ENV_FILE_LOCATION"
+    )
+    return Path(configured).expanduser() if configured else Path.cwd()
 
 # -----------------------------------------------------------------------------
 # FUNCTIONS
@@ -90,7 +107,7 @@ def build_rows_from_games(games):
         rows.append(row)
     return rows
 
-def update_game_weeks(yahoo_query, game_map):
+def update_game_weeks(supabase: Client, yahoo_query, game_map):
     """
     Fetches game weeks for each game_id and updates the table by upserting
     both game_id (PK) and the not-null game_key.
@@ -146,15 +163,29 @@ def update_game_weeks(yahoo_query, game_map):
 # MAIN LOGIC
 # -----------------------------------------------------------------------------
 def main():
+    if os.getenv(LEGACY_WRITER_FLAG) != "1":
+        logging.info(
+            "Legacy Yahoo game-key maintenance is disabled; set %s=1 for "
+            "an explicitly authorized run.",
+            LEGACY_WRITER_FLAG,
+        )
+        return
+
+    _load_environment()
+    config = _required_config()
+    supabase: Client = create_client(
+        config["NEXT_PUBLIC_SUPABASE_URL"],
+        config["SUPABASE_SERVICE_ROLE_KEY"],
+    )
     # Initialize YahooFantasySportsQuery
     yahoo_query = YahooFantasySportsQuery(
-        league_id=LEAGUE_ID,
+        league_id=config["YFPY_LEAGUE_ID"],
         game_code="nhl",
-        game_id=GAME_ID,
-        yahoo_consumer_key=YFPY_CONSUMER_KEY,
-        yahoo_consumer_secret=YFPY_CONSUMER_SECRET,
+        game_id=config["YFPY_GAME_ID"],
+        yahoo_consumer_key=config["YFPY_CONSUMER_KEY"],
+        yahoo_consumer_secret=config["YFPY_CONSUMER_SECRET"],
         save_token_data_to_env_file=False,
-        env_file_location=ENV_FILE_LOCATION
+        env_file_location=_env_file_location(),
     )
 
     # 1) Fetch all game keys (list of Game objects)
@@ -188,7 +219,7 @@ def main():
         return
 
     # 5) Fetch and update the game weeks (with both ID + KEY included)
-    update_game_weeks(yahoo_query, game_map)
+    update_game_weeks(supabase, yahoo_query, game_map)
 
 if __name__ == "__main__":
     main()

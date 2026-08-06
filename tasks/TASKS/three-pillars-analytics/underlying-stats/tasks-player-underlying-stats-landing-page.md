@@ -2,7 +2,7 @@
 
 Use the canonical task-list file:
 
-- `tasks/tasks-prd-player-underlying-stats-landing-page.md`
+- `tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-player-underlying-stats-landing-page.md`
 
 The canonical file follows the filename convention required by:
 

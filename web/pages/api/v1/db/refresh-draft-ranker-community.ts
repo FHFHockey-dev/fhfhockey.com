@@ -40,7 +40,7 @@ function parseOperationId(value: string | null) {
   return value;
 }
 
-async function handler(
+export async function refreshDraftRankerCommunityHandler(
   req: NextApiRequest & { supabase: any },
   res: NextApiResponse,
 ) {
@@ -131,14 +131,19 @@ async function handler(
       durationMs: Date.now() - startedAt,
     });
   } catch (error) {
+    console.error("Draft Ranker community refresh failed", { error });
     return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : String(error),
+      code: "DRAFT_RANKER_COMMUNITY_REFRESH_UNAVAILABLE",
+      error: "Draft Ranker community refresh is temporarily unavailable.",
       failedRows: 1,
     });
   }
 }
 
-export default withCronJobAudit(adminOnly(handler as any), {
-  jobName: "refresh-draft-ranker-community",
-});
+export default withCronJobAudit(
+  adminOnly(refreshDraftRankerCommunityHandler as any),
+  {
+    jobName: "refresh-draft-ranker-community",
+  },
+);

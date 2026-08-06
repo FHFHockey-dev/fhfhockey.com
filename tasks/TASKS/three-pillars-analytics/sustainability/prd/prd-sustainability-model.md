@@ -152,6 +152,9 @@ Features (illustrative)
 Horizon aggregation
 - For each upcoming game, compute opponent-adjusted distribution; roll up to 5- and 10-game totals with uncertainty propagation.
 
+Scheduled ownership
+- B-CRON-NST NEW 61 exclusively owned the cross-provider natural-schedule finding: the Aug 1 Production handoff now leaves baseline job 326 active, deactivates overlapping jobs 370/371/372/376, and proves a non-overlapping ordered natural chain. A-SUST is 86/89 after current Production hot/cold and rendered Command Center proof closes its stable-identity gate; later sustainability stages must preserve the recorded owner/order contract.
+
 ### Persistence (Proposed)
 
 - Continue using `sustainability_trend_bands` for per-metric, per-window bands:

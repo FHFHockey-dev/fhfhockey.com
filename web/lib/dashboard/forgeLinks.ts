@@ -13,11 +13,23 @@ type ForgeRouteContext = {
   returnTo?: string | null;
 };
 
-function isDateOnly(value: string | null | undefined): value is string {
-  return typeof value === "string" && DATE_ONLY_PATTERN.test(value);
+export function isRealUtcDateOnly(
+  value: string | null | undefined,
+): value is string {
+  if (typeof value !== "string" || !DATE_ONLY_PATTERN.test(value)) {
+    return false;
+  }
+
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return (
+    !Number.isNaN(parsed.getTime()) &&
+    parsed.toISOString().slice(0, 10) === value
+  );
 }
 
-function isInternalReturnPath(value: string | null | undefined): value is string {
+function isInternalReturnPath(
+  value: string | null | undefined,
+): value is string {
   return (
     typeof value === "string" &&
     value.startsWith("/") &&
@@ -26,7 +38,7 @@ function isInternalReturnPath(value: string | null | undefined): value is string
 }
 
 export function parseForgeOriginParam(
-  value: string | string[] | undefined
+  value: string | string[] | undefined,
 ): string | null {
   const candidate = Array.isArray(value) ? value[0] : value;
   if (typeof candidate !== "string" || candidate.trim().length === 0) {
@@ -36,7 +48,7 @@ export function parseForgeOriginParam(
 }
 
 export function parseForgeReturnToParam(
-  value: string | string[] | undefined
+  value: string | string[] | undefined,
 ): string | null {
   const candidate = Array.isArray(value) ? value[0] : value;
   return isInternalReturnPath(candidate) ? candidate : null;
@@ -44,11 +56,11 @@ export function parseForgeReturnToParam(
 
 export function buildForgeHref(
   pathname: string,
-  context: ForgeRouteContext = {}
+  context: ForgeRouteContext = {},
 ): string {
   const params = new URLSearchParams();
 
-  if (isDateOnly(context.date)) {
+  if (isRealUtcDateOnly(context.date)) {
     params.set("date", context.date);
   }
 
@@ -57,7 +69,7 @@ export function buildForgeHref(
   }
 
   if (
-    isDateOnly(context.resolvedDate) &&
+    isRealUtcDateOnly(context.resolvedDate) &&
     context.resolvedDate !== context.date
   ) {
     params.set("resolvedDate", context.resolvedDate);
@@ -105,39 +117,45 @@ export function buildForgeHref(
 
 export function parseForgeDateParam(
   value: string | string[] | undefined,
-  fallback: string
+  fallback: string,
 ): string {
   const candidate = Array.isArray(value) ? value[0] : value;
-  return isDateOnly(candidate) ? candidate : fallback;
+  return isRealUtcDateOnly(candidate) ? candidate : fallback;
 }
 
 export function parseForgeResolvedDateParam(
-  value: string | string[] | undefined
+  value: string | string[] | undefined,
 ): string | null {
   const candidate = Array.isArray(value) ? value[0] : value;
-  return isDateOnly(candidate) ? candidate : null;
+  return isRealUtcDateOnly(candidate) ? candidate : null;
 }
 
 export function parseForgeTeamParam(
-  value: string | string[] | undefined
+  value: string | string[] | undefined,
 ): string | null {
   const candidate = Array.isArray(value) ? value[0] : value;
-  if (typeof candidate !== "string" || candidate.trim().length === 0) return null;
+  if (typeof candidate !== "string" || candidate.trim().length === 0)
+    return null;
   return candidate.trim().toUpperCase();
 }
 
 export function parseForgePositionParam(
-  value: string | string[] | undefined
+  value: string | string[] | undefined,
 ): "all" | "f" | "d" | "g" | null {
   const candidate = Array.isArray(value) ? value[0] : value;
-  if (candidate === "all" || candidate === "f" || candidate === "d" || candidate === "g") {
+  if (
+    candidate === "all" ||
+    candidate === "f" ||
+    candidate === "d" ||
+    candidate === "g"
+  ) {
     return candidate;
   }
   return null;
 }
 
 export function parseForgeModeParam(
-  value: string | string[] | undefined
+  value: string | string[] | undefined,
 ): "tonight" | "week" | null {
   const candidate = Array.isArray(value) ? value[0] : value;
   if (candidate === "tonight" || candidate === "week") {
@@ -147,7 +165,7 @@ export function parseForgeModeParam(
 }
 
 export function parseForgeSlateParam(
-  value: string | string[] | undefined
+  value: string | string[] | undefined,
 ): "main" | "all" | null {
   const candidate = Array.isArray(value) ? value[0] : value;
   if (candidate === "main" || candidate === "all") {

@@ -2,6 +2,8 @@
 
 Historical note: this PRD was written before the runner rename landed. References to `runProjectionV2.ts` below describe the pre-rename state and should not be treated as the current runtime path.
 
+**Dynamic-audit status (2026-07-29):** Complete. Rename, extracted modules, compatibility controls, approved parity evidence, and concrete preflight, skater, goalie, persistence, and metrics-finalization stages meet the structural success metric. All five original pass-through wrappers are absent; the runner falls from 4,893 to 827 lines with no direct mutation calls and retains only top-down stage composition. The moved skater body is formatter-normalized mechanically identical to its pre-extraction parent after normalizing only the expanded counter return; no math change is authorized or claimed.
+
 ## Introduction/Overview
 The current FORGE projection runner is implemented in a single file: `web/lib/projections/runProjectionV2.ts` (6,811 LOC). It currently mixes data access, orchestration, projection math, type definitions, constants, uncertainty metadata assembly, and persistence writes in one module.
 

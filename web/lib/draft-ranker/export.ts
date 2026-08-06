@@ -86,8 +86,11 @@ export type DraftRankingExportDocument = {
 
 function csvValue(value: unknown): string {
   if (value == null) return "";
+  const raw = typeof value === "object" ? JSON.stringify(value) : String(value);
   const text =
-    typeof value === "object" ? JSON.stringify(value) : String(value);
+    typeof value === "string" && /^[\t\r\n ]*[=+\-@]/u.test(raw)
+      ? `'${raw}`
+      : raw;
   return /[",\r\n]/u.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 

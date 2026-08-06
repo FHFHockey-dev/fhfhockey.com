@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mainMock, auditInsertMock } = vi.hoisted(() => ({
+const { mainMock, auditInsertMock, getUserMock } = vi.hoisted(() => ({
   mainMock: vi.fn(),
-  auditInsertMock: vi.fn().mockResolvedValue({ error: null })
+  auditInsertMock: vi.fn().mockResolvedValue({ error: null }),
+  getUserMock: vi.fn()
 }));
 
 function createRollingRunSummary(overrides: Record<string, unknown> = {}) {
@@ -87,6 +88,11 @@ vi.mock("lib/supabase/Upserts/fetchRollingPlayerAverages", () => ({
 }));
 
 vi.mock("lib/supabase", () => ({
+  createClientWithToken: vi.fn(() => ({
+    auth: {
+      getUser: getUserMock
+    }
+  })),
   default: {
     from: vi.fn(() => ({
       insert: auditInsertMock
@@ -102,7 +108,9 @@ vi.mock("lib/supabase/server", () => ({
   }
 }));
 
-import handler from "../../../../../pages/api/v1/db/update-rolling-player-averages";
+import protectedHandler, {
+  handler
+} from "../../../../../pages/api/v1/db/update-rolling-player-averages";
 
 function createMockRes() {
   const res: any = {
@@ -135,6 +143,28 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mainMock.mockResolvedValue(createRollingRunSummary());
+    getUserMock.mockResolvedValue({
+      error: { message: "Invalid authentication credentials" }
+    });
+  });
+
+  it("rejects unauthenticated writer requests before recompute work", async () => {
+    const req: any = {
+      method: "GET",
+      headers: {},
+      query: {},
+      url: "/api/v1/db/update-rolling-player-averages"
+    };
+    const res = createMockRes();
+
+    await protectedHandler(req, res);
+
+    expect(res.statusCode).toBe(401);
+    expect(res.body).toEqual({
+      message: "Unauthorized.",
+      success: false
+    });
+    expect(mainMock).not.toHaveBeenCalled();
   });
 
   it("returns 405 for unsupported methods", async () => {
@@ -199,7 +229,7 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
         freshnessBlockers: 0
       }),
       dependencyContract: {
-        version: "rolling-forge-operator-order-v1",
+        version: "rolling-forge-operator-order-v2",
         currentStage: {
           id: "rolling_player_recompute",
           order: 4
@@ -279,6 +309,7 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
       executionScope: {
         startDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
         endDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+        historyReadMode: "full_selected_scope_through_end_date",
         implicitDailyWindowApplied: true,
         windowDays: 15,
         smokeTestComparable: false,
@@ -286,7 +317,7 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
           "This run is not a one-day smoke test. Use explicit startDate=endDate for a true one-day operational probe."
       },
       runtimeBudget: expect.objectContaining({
-        budgetMs: 270000,
+        budgetMs: 210000,
         withinBudget: true
       })
     });
@@ -682,11 +713,16 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
       })
     );
     const previousServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const previousCronSecret = process.env.CRON_SECRET;
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role";
+    process.env.CRON_SECRET = "test-cron-secret";
 
     try {
       const req: any = {
         method: "GET",
+        headers: {
+          authorization: "Bearer test-cron-secret"
+        },
         query: {
           startDate: "2026-03-14",
           endDate: "2026-03-14",
@@ -696,7 +732,7 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
       };
       const res = createMockRes();
 
-      await handler(req, res);
+      await protectedHandler(req, res);
 
       expect(res.statusCode).toBe(200);
       expect(res.body).toMatchObject({
@@ -733,6 +769,11 @@ describe("/api/v1/db/update-rolling-player-averages", () => {
         delete process.env.SUPABASE_SERVICE_ROLE_KEY;
       } else {
         process.env.SUPABASE_SERVICE_ROLE_KEY = previousServiceRoleKey;
+      }
+      if (previousCronSecret === undefined) {
+        delete process.env.CRON_SECRET;
+      } else {
+        process.env.CRON_SECRET = previousCronSecret;
       }
     }
   });

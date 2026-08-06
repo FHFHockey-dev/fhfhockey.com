@@ -6,11 +6,9 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
-from tqdm import tqdm
 from supabase import create_client, Client
 
 from yfpy.query import YahooFantasySportsQuery
-from yfpy.models import DraftAnalysis
 
 # -----------------------------------------------------------------------------
 # CONFIG & ENV
@@ -20,49 +18,47 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-# Adjust path as needed
-ENV_FILE = "/Users/tim/Desktop/FHFH/fhfhockey.com/web/.env.local"
-load_dotenv(ENV_FILE)
+LEGACY_WRITER_FLAG = "YAHOO_LEGACY_PYTHON_WRITER_ENABLED"
 
-SUPABASE_URL = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
-YFPY_CONSUMER_KEY = os.getenv('YFPY_CONSUMER_KEY')
-YFPY_CONSUMER_SECRET = os.getenv('YFPY_CONSUMER_SECRET')
 
-if not all([SUPABASE_URL, SUPABASE_KEY, YFPY_CONSUMER_KEY, YFPY_CONSUMER_SECRET]):
-    logging.error("Missing one or more required environment variables.")
-    exit(1)
+def _load_environment():
+    """Load only an explicitly selected local env file or the current directory."""
+    env_file = os.getenv("YFPY_ENV_FILE") or os.getenv("YAHOO_ENV_FILE")
+    if env_file:
+        load_dotenv(env_file)
+    else:
+        load_dotenv()
+        load_dotenv(".env.local")
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Yahoo API constants
-GAME_ID = '465'
-LEAGUE_ID = '858'
-ENV_FILE_LOCATION = Path("/Users/tim/Desktop/FHFH/fhfhockey.com/web/")
+def _required_config():
+    required = {
+        "NEXT_PUBLIC_SUPABASE_URL": os.getenv("NEXT_PUBLIC_SUPABASE_URL"),
+        "SUPABASE_SERVICE_ROLE_KEY": os.getenv("SUPABASE_SERVICE_ROLE_KEY"),
+        "YFPY_CONSUMER_KEY": os.getenv("YFPY_CONSUMER_KEY"),
+        "YFPY_CONSUMER_SECRET": os.getenv("YFPY_CONSUMER_SECRET"),
+        "YFPY_GAME_ID": os.getenv("YFPY_GAME_ID") or os.getenv("YAHOO_GAME_ID"),
+        "YFPY_LEAGUE_ID": os.getenv("YFPY_LEAGUE_ID") or os.getenv("YAHOO_LEAGUE_ID"),
+    }
+    missing = [name for name, value in required.items() if not value]
+    if missing:
+        raise RuntimeError(
+            "Legacy Yahoo player-key maintenance configuration is incomplete: "
+            + ", ".join(missing)
+        )
+    return required
 
-# -----------------------------------------------------------------------------
-# INIT YFPY QUERY
-# -----------------------------------------------------------------------------
-yahoo_query = YahooFantasySportsQuery(
-    league_id=LEAGUE_ID,
-    game_code="nhl",
-    game_id=GAME_ID,
-    yahoo_consumer_key=YFPY_CONSUMER_KEY,
-    yahoo_consumer_secret=YFPY_CONSUMER_SECRET,
-    save_token_data_to_env_file=False,
-    env_file_location=ENV_FILE_LOCATION
-)
 
-# Explicitly save token data
-yahoo_query.save_access_token_data_to_env_file(
-    env_file_location=ENV_FILE_LOCATION,
-    env_file_name='.env.local'
-)
+def _env_file_location():
+    configured = os.getenv("YFPY_ENV_FILE_LOCATION") or os.getenv(
+        "YAHOO_ENV_FILE_LOCATION"
+    )
+    return Path(configured).expanduser() if configured else Path.cwd()
 
 # -----------------------------------------------------------------------------
 # FETCH & UPSERT ALL PLAYER KEYS
 # -----------------------------------------------------------------------------
-def fetch_all_player_keys():
+def fetch_all_player_keys(yahoo_query):
     """
     Fetch all players via large-batch pagination, then return
     a list of records for upserting to yahoo_player_keys.
@@ -114,7 +110,7 @@ def fetch_all_player_keys():
 
     return records
 
-def upsert_player_keys(records):
+def upsert_player_keys(supabase: Client, records):
     """
     Upsert the list of player-key records into the yahoo_player_keys table.
     """
@@ -135,13 +131,36 @@ def upsert_player_keys(records):
 # MAIN
 # -----------------------------------------------------------------------------
 def main():
+    if os.getenv(LEGACY_WRITER_FLAG) != "1":
+        logging.info(
+            "Legacy Yahoo player-key maintenance is disabled; set %s=1 for "
+            "an explicitly authorized run.",
+            LEGACY_WRITER_FLAG,
+        )
+        return
+
+    _load_environment()
+    config = _required_config()
+    supabase: Client = create_client(
+        config["NEXT_PUBLIC_SUPABASE_URL"],
+        config["SUPABASE_SERVICE_ROLE_KEY"],
+    )
+    yahoo_query = YahooFantasySportsQuery(
+        league_id=config["YFPY_LEAGUE_ID"],
+        game_code="nhl",
+        game_id=config["YFPY_GAME_ID"],
+        yahoo_consumer_key=config["YFPY_CONSUMER_KEY"],
+        yahoo_consumer_secret=config["YFPY_CONSUMER_SECRET"],
+        save_token_data_to_env_file=False,
+        env_file_location=_env_file_location(),
+    )
     start_time = datetime.now()
 
     # Fetch all players from Yahoo & build records
-    records = fetch_all_player_keys()
+    records = fetch_all_player_keys(yahoo_query)
 
     # Upsert into yahoo_player_keys table
-    upsert_player_keys(records)
+    upsert_player_keys(supabase, records)
 
     # Timer
     elapsed = datetime.now() - start_time

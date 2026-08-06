@@ -1,6 +1,6 @@
 SKO (Sustainability KPI Overview)
 
-> **Production-definition status:** superseded research input. The reconciled implementation list is `tasks/TASKS/sko-charts/tasks-prd-sko-charts.md`; current production behavior follows the later stability-CV contract in `prd-sko-charts.md`. Residual-P/60 ideas remain Sustainability/Trends research rather than a competing score.
+> **Production-definition status (2026-07-31):** superseded research input. The owner-authorized historical-only disposition does not promote this residual-P/60 proposal or the later stability-CV proposal. Residual-P/60 remains Sustainability/Trends research; the active moving-average v0.2 writer is compatibility-only and not this score. Ordered Production migration `20260729205048` preserves compatibility prediction history by model identity and is applied/verified; it does not promote or reinterpret either research family. The separately accepted historical one-off supplies temporary writer evidence until opening day; it does not make either research family executable or promoted. The complete NEW 9.0 discovery register records all verified findings through 2026-07-31; no additional finding was identified.
 
 Working name options
 	•	sKO — Sustainability K‑Score & Outlook (my vote: short, pronounceable, keeps “KO” branding)

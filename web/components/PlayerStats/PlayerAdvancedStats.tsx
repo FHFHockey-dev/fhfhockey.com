@@ -50,7 +50,7 @@ export function PlayerAdvancedStats({
       POSITION_STAT_CONFIGS[pos as keyof typeof POSITION_STAT_CONFIGS] ||
       POSITION_STAT_CONFIGS.C
     );
-  }, [player?.position]);
+  }, [player]);
 
   // Use advanced stats from position config
   const advancedStats = positionConfig.advanced || [];

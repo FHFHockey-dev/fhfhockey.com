@@ -147,16 +147,18 @@ function defaultJobName(req: NextApiRequest): string {
 
 export function withCronJobAudit(
   handler: (req: any, res: any) => any,
-  opts?: { jobName?: string },
+  opts?: {
+    jobName?: string;
+    includeFinalAuditReceipt?: boolean;
+    recordRowMetrics?: boolean;
+  },
 ): (req: any, res: any) => Promise<void> {
   return async (req: NextApiRequest, res: NextApiResponse) => {
     const startedAt = Date.now();
     const jobName = opts?.jobName ?? defaultJobName(req);
 
     let capturedBody: unknown = null;
-    let pendingResponse:
-      | { kind: "json" | "send"; body: unknown }
-      | null = null;
+    let pendingResponse: { kind: "json" | "send"; body: unknown } | null = null;
 
     const originalJson = res.json.bind(res);
     res.json = ((body: any) => {
@@ -202,10 +204,44 @@ export function withCronJobAudit(
         };
     const durationMs = timing.durationMs;
     const statusCode = res.statusCode;
-    const rowsUpserted = inferRowsAffected(capturedBody);
-    const failedRows = inferFailedRows(capturedBody);
+    const recordRowMetrics = opts?.recordRowMetrics !== false;
+    const rowsUpserted = recordRowMetrics
+      ? inferRowsAffected(capturedBody)
+      : null;
+    const failedRows = recordRowMetrics ? inferFailedRows(capturedBody) : null;
     const inferredFailure =
       thrown != null || statusCode >= 400 || inferFailure(capturedBody);
+
+    if (
+      opts?.includeFinalAuditReceipt &&
+      capturedBody &&
+      typeof capturedBody === "object" &&
+      !Array.isArray(capturedBody)
+    ) {
+      const bodyWithReceipt = {
+        ...(capturedBody as Record<string, unknown>),
+        finalAudit: {
+          owner: "withCronJobAudit",
+          // A row is visible to readers only after this wrapper's insert
+          // succeeds, so a durable row must not advertise a pending receipt.
+          // The response is changed to `failed` below if the insert errors.
+          status: "persisted",
+        },
+      };
+      capturedBody = bodyWithReceipt;
+      const pending = pendingResponse as {
+        kind: "json" | "send";
+        body: unknown;
+      } | null;
+      if (pending) {
+        pendingResponse = {
+          kind: pending.kind,
+          body: bodyWithReceipt,
+        };
+      }
+    }
+
+    let finalAuditStatus: "persisted" | "failed" = "persisted";
 
     const row: CronAuditRow = {
       job_name: jobName,
@@ -219,6 +255,12 @@ export function withCronJobAudit(
         timing,
         rowsUpserted,
         failedRows,
+        finalAudit: opts?.includeFinalAuditReceipt
+          ? {
+              owner: "withCronJobAudit",
+              status: "persisted",
+            }
+          : null,
         error:
           thrown != null
             ? ((thrown as any)?.message ?? safeJson(thrown, 2000))
@@ -233,6 +275,7 @@ export function withCronJobAudit(
           .from("cron_job_audit")
           .insert(row as any);
         if (auditInsertError) {
+          finalAuditStatus = "failed";
           console.error(
             "cron_job_audit insert failed",
             auditInsertError.message ??
@@ -241,23 +284,39 @@ export function withCronJobAudit(
           );
         }
       } catch (e) {
-        console.error(
-          "cron_job_audit insert failed",
-          (e as any)?.message ?? e,
-        );
+        finalAuditStatus = "failed";
+        console.error("cron_job_audit insert failed", (e as any)?.message ?? e);
       }
     } finally {
-      const responseToFlush = pendingResponse as
-        | { kind: "json" | "send"; body: unknown }
-        | null;
+      const responseToFlush = pendingResponse as {
+        kind: "json" | "send";
+        body: unknown;
+      } | null;
       res.json = originalJson as any;
       if (originalSend) {
         res.send = originalSend as any;
       }
+      if (
+        opts?.includeFinalAuditReceipt &&
+        pendingResponse?.body &&
+        typeof pendingResponse.body === "object" &&
+        !Array.isArray(pendingResponse.body)
+      ) {
+        pendingResponse = {
+          ...pendingResponse,
+          body: {
+            ...(pendingResponse.body as Record<string, unknown>),
+            finalAudit: {
+              owner: "withCronJobAudit",
+              status: finalAuditStatus,
+            },
+          },
+        };
+      }
       if (responseToFlush?.kind === "json") {
-        originalJson(responseToFlush.body);
+        originalJson(pendingResponse?.body ?? responseToFlush.body);
       } else if (responseToFlush?.kind === "send" && originalSend) {
-        originalSend(responseToFlush.body);
+        originalSend(pendingResponse?.body ?? responseToFlush.body);
       }
     }
   };

@@ -876,6 +876,10 @@ const DraftDashboard: React.FC = () => {
     isSnakeDraft,
     myTeamId,
     customTeamNames,
+    forwardGrouping,
+    keepers,
+    pickOwnerOverrides,
+    pickTrades,
   ]);
 
   // Calculate current turn and team
@@ -1986,7 +1990,6 @@ const DraftDashboard: React.FC = () => {
             // Reset history since imported state may not map cleanly
             setDraftHistory([]);
           } catch (e) {
-            // eslint-disable-next-line no-console
             console.error("Failed to apply imported bookmark", e);
           }
         }}
@@ -2035,7 +2038,6 @@ const DraftDashboard: React.FC = () => {
             currentTurn={currentTurn}
             teamStats={teamStats}
             isSnakeDraft={isSnakeDraft}
-            availablePlayers={availablePlayers}
             allPlayers={allPlayers}
             onUpdateTeamName={updateTeamName}
             pickTrades={pickTrades}

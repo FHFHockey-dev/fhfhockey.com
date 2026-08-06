@@ -100,6 +100,7 @@ import {
 import { resolveNstGamelogRequestPlan } from "lib/cron/nstBurstPlans";
 import { buildCronJobTiming } from "lib/cron/timingContract";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
+import adminOnly from "utils/adminOnlyMiddleware";
 import {
   addDays,
   parseISO,
@@ -2626,7 +2627,7 @@ async function main(
 }
 
 // http://localhost:3000/api/v1/db/update-nst-gamelog?runMode=incremental
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -2806,3 +2807,5 @@ export default async function handler(
     return res.status(500).json({ error: err.message });
   }
 }
+
+export default adminOnly(handler as any);

@@ -15,6 +15,12 @@ function normalizeQueryValue(value: string | string[] | undefined): string | nul
   return null;
 }
 
+const CLIENT_INPUT_ERRORS = new Set([
+  "Unknown team abbreviation.",
+  "Unknown opponent abbreviation.",
+  "Team and opponent must be different.",
+]);
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<SplitsApiResponse | SplitsApiError>
@@ -42,11 +48,12 @@ export default async function handler(
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unable to build splits surface.";
+    const isClientInputError = CLIENT_INPUT_ERRORS.has(message);
 
     res.setHeader("Cache-Control", "no-store");
-    return res.status(400).json({
+    return res.status(isClientInputError ? 400 : 503).json({
       error: "Unable to build splits surface.",
-      issues: [message],
+      ...(isClientInputError ? { issues: [message] } : {}),
     });
   }
 }

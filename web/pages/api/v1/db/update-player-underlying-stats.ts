@@ -7,6 +7,7 @@ import {
 import { resolvePlayerStatsIncrementalSelection } from "lib/underlying-stats/playerStatsRefreshWindow";
 import { resolveRequestedGameIds } from "lib/supabase/Upserts/nhlRawGamecenterRoute";
 import { ingestNhlApiRawGamesBestEffort } from "lib/supabase/Upserts/nhlRawGamecenter.mjs";
+import { summarizeNhlRawGamecenterIngestResults } from "lib/supabase/Upserts/nhlRawGamecenterTelemetry";
 import serviceRoleClient from "lib/supabase/server";
 import adminOnly from "utils/adminOnlyMiddleware";
 
@@ -37,6 +38,7 @@ type UpdatePlayerUnderlyingStatsResponse =
         eventCount: number;
         shiftCount: number;
         rawEndpointsStored: number;
+        idempotent: boolean;
       }>;
       message: string;
     }
@@ -99,23 +101,6 @@ function inferRequestedGameType(args: {
   }
 
   return [...inferredGameTypes][0] ?? null;
-}
-
-function sumRowsAffected(results: Array<{
-  rosterCount: number;
-  eventCount: number;
-  shiftCount: number;
-  rawEndpointsStored: number;
-}>) {
-  return results.reduce(
-    (total, result) =>
-      total +
-      result.rosterCount +
-      result.eventCount +
-      result.shiftCount +
-      result.rawEndpointsStored,
-    0
-  );
 }
 
 async function handler(
@@ -192,6 +177,7 @@ async function handler(
       eventCount: number;
       shiftCount: number;
       rawEndpointsStored: number;
+      idempotent: boolean;
     }> = [];
     const failures: Array<{ gameId: number; message: string }> = [];
     const processedGameIds: number[] = [];
@@ -203,7 +189,8 @@ async function handler(
       const rawIngest = await ingestNhlApiRawGamesBestEffort(serviceRoleClient, batchGameIds);
       const rawResults = rawIngest.results;
       aggregatedResults.push(...rawResults);
-      rawRowsUpserted += sumRowsAffected(rawResults);
+      rawRowsUpserted +=
+        summarizeNhlRawGamecenterIngestResults(rawResults).rowsUpserted;
       failures.push(...rawIngest.failures);
 
       const successfulGameIds = rawResults

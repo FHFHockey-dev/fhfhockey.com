@@ -2,38 +2,43 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\DateRangeMatrix\TeamDropdown.tsx
 
 import React from "react";
+import classNames from "classnames";
 import { teamsInfo } from "lib/teamsInfo";
 import styles from "./drm.module.scss"; // Assuming your custom styles are in drm.module.scss
 
-type TeamAbbreviation = keyof typeof teamsInfo;
+type TeamAbbreviation = Extract<keyof typeof teamsInfo, string>;
 
-type TeamDropdownProps = {
+type TeamDropdownProps = Omit<
+  React.SelectHTMLAttributes<HTMLSelectElement>,
+  "children" | "className" | "defaultValue" | "onChange" | "onSelect" | "value"
+> & {
   selectedTeam: TeamAbbreviation | "";
-  onSelect: (team: TeamAbbreviation) => void;
+  onSelect: (team: TeamAbbreviation | "") => void;
   className?: string;
 };
 
-const TeamDropdown: React.FC<TeamDropdownProps> = ({
+function TeamDropdown({
   selectedTeam,
-  onSelect
-}) => {
+  onSelect,
+  className,
+  ...selectProps
+}: TeamDropdownProps) {
   const teamOptions = Object.keys(teamsInfo)
     .sort()
     .map((key) => ({
       value: key,
-      label: key
+      label: key,
     }));
 
   return (
     <div className={styles.customSelect}>
       <select
+        {...selectProps}
         value={selectedTeam}
-        onChange={(e) => {
-          const selectedTeam = e.target.value as TeamAbbreviation;
-          console.log("Selected team:", selectedTeam);
-          onSelect(selectedTeam);
+        onChange={(event) => {
+          onSelect(event.currentTarget.value as TeamAbbreviation | "");
         }}
-        className={styles.select}
+        className={classNames(styles.select, className)}
       >
         <option value="">Select a team</option>
         {teamOptions.map((team) => (
@@ -44,6 +49,6 @@ const TeamDropdown: React.FC<TeamDropdownProps> = ({
       </select>
     </div>
   );
-};
+}
 
 export default TeamDropdown;

@@ -73,7 +73,7 @@ export default async function handler(
       modelName: firstParam(req.query.modelName) ?? BASELINE_MODEL_NAME,
       modelVersion: latestBacktest
         ? requestedModelVersion
-        : requestedModelVersion ?? BASELINE_MODEL_VERSION,
+        : (requestedModelVersion ?? BASELINE_MODEL_VERSION),
       featureSetVersion:
         firstParam(req.query.featureSetVersion) ??
         GAME_PREDICTION_FEATURE_SET_VERSION,
@@ -87,7 +87,6 @@ export default async function handler(
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=900");
     return res.status(200).json({ success: true, ...payload });
   } catch (error: any) {
-    // eslint-disable-next-line no-console
     console.error(
       "game-predictions accountability error",
       error?.message ?? error,

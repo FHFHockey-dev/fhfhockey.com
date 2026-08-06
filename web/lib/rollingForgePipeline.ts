@@ -6,6 +6,7 @@ export type RollingForgePipelineStageId =
   | "contextual_builders"
   | "rolling_player_recompute"
   | "projection_input_ingest"
+  | "projection_relationship_build"
   | "projection_derived_build"
   | "projection_execution"
   | "downstream_projection_consumers"
@@ -117,8 +118,20 @@ export const ROLLING_FORGE_PIPELINE_ORDER: RollingForgePipelineStage[] = [
     blocking: true
   },
   {
-    id: "projection_derived_build",
+    id: "projection_relationship_build",
     order: 6,
+    label: "Projection Relationship Build",
+    modes: ["overnight", "daily_incremental"],
+    operatorSurface: "projection relationship build",
+    routes: ["/api/v1/db/shift-charts"],
+    produces: ["shift_charts relationship-owned columns"],
+    depends_on: ["projection_input_ingest"],
+    skippableInDaily: false,
+    blocking: true
+  },
+  {
+    id: "projection_derived_build",
+    order: 7,
     label: "Projection Derived Build",
     modes: ["overnight", "daily_incremental"],
     operatorSurface: "projection-derived build",
@@ -128,13 +141,13 @@ export const ROLLING_FORGE_PIPELINE_ORDER: RollingForgePipelineStage[] = [
       "forge_team_game_strength",
       "forge_goalie_game"
     ],
-    depends_on: ["projection_input_ingest", "contextual_builders"],
+    depends_on: ["projection_relationship_build", "contextual_builders"],
     skippableInDaily: false,
     blocking: true
   },
   {
     id: "projection_execution",
-    order: 7,
+    order: 8,
     label: "Projection Execution",
     modes: ["overnight", "daily_incremental"],
     operatorSurface: "projection execution",
@@ -155,7 +168,7 @@ export const ROLLING_FORGE_PIPELINE_ORDER: RollingForgePipelineStage[] = [
   },
   {
     id: "downstream_projection_consumers",
-    order: 8,
+    order: 9,
     label: "Projection Accuracy Refresh",
     modes: ["overnight", "daily_incremental"],
     operatorSurface: "projection accuracy refresh",
@@ -173,7 +186,7 @@ export const ROLLING_FORGE_PIPELINE_ORDER: RollingForgePipelineStage[] = [
   },
   {
     id: "monitoring",
-    order: 9,
+    order: 10,
     label: "Monitoring",
     modes: ["overnight", "daily_incremental", "targeted_repair"],
     operatorSurface: "monitoring",
@@ -187,7 +200,7 @@ export const ROLLING_FORGE_PIPELINE_ORDER: RollingForgePipelineStage[] = [
 
 export function getRollingForgePipelineSpec() {
   return {
-    version: "rolling-forge-pipeline-v3",
+    version: "rolling-forge-pipeline-v4",
     stages: ROLLING_FORGE_PIPELINE_ORDER
   };
 }
@@ -212,8 +225,10 @@ const DEPENDENCY_STAGE_REQUIREMENTS: Record<
     "rolling_player_game_metrics must be recomputed after both skater sources and contextual builders are fresh.",
   projection_input_ingest:
     "PBP and shift inputs must be ingested before projection-derived tables are rebuilt for the same window.",
+  projection_relationship_build:
+    "The exact relationship-owned shift scope must complete for the current input generation before projection-derived output can be published.",
   projection_derived_build:
-    "Derived player, team, and goalie strength tables must be rebuilt after ingest and contextual refresh.",
+    "Derived player, team, and goalie strength tables must be rebuilt after ingest, relationship materialization, and contextual refresh.",
   projection_execution:
     "Goalie start priors and FORGE projections are only healthy after rolling_player_game_metrics and derived tables are fresh for the same execution window.",
   downstream_projection_consumers:
@@ -224,13 +239,13 @@ const DEPENDENCY_STAGE_REQUIREMENTS: Record<
 
 export function getRollingForgeDependencyContract(): RollingForgeDependencyContract {
   return {
-    version: "rolling-forge-operator-order-v1",
+    version: "rolling-forge-operator-order-v2",
     summary:
       "Canonical rolling-to-FORGE dependency order for operator surfaces and preflight messaging.",
     healthyRunRule:
       "A healthy run requires each blocking stage to complete in order; success in a later stage does not excuse stale or skipped prerequisites.",
     validationRule:
-      "Do not validate projections, dashboard readers, or downstream materializers until rolling_player_game_metrics, projection ingest, and projection-derived tables are all fresh for the intended date window.",
+      "Do not validate projections, dashboard readers, or downstream materializers until rolling_player_game_metrics, projection ingest, relationship materialization, and projection-derived tables are all fresh for the intended date window.",
     falseHealthySignals: [
       "A successful rolling recompute does not imply projection ingest or derived tables are current.",
       "A successful ingest run does not imply rolling_player_game_metrics or contextual builders are fresh.",

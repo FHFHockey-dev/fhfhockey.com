@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import styles from "styles/Stats.module.scss";
 import { GoalieStat } from "lib/NHL/statsPageTypes";
+import LeaderboardHeadshot from "./LeaderboardHeadshot";
 
 interface LeaderboardCategoryGoalieProps {
   title: string;
@@ -48,19 +49,11 @@ const LeaderboardCategoryGoalie: React.FC<LeaderboardCategoryGoalieProps> = ({
             <div className={styles.cardContainer}>
               <div className={styles.cardLeft}>
                 <Link href={`/stats/player/${goalie.goalie_id}`}>
-                  <img
-                    src={
-                      goalie.image_url ||
-                      `https://cms.nhl.bamgrid.com/images/headshots/current/168x168/${goalie.goalie_id}.jpg`
-                    }
-                    alt={goalie.fullName}
+                  <LeaderboardHeadshot
+                    imageUrl={goalie.image_url}
+                    playerId={goalie.goalie_id}
+                    playerName={goalie.fullName}
                     className={styles.playerHeadshot}
-                    loading="lazy"
-                    decoding="async"
-                    style={{ cursor: "pointer" }}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = "none";
-                    }}
                   />
                 </Link>
               </div>

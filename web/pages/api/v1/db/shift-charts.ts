@@ -12,7 +12,9 @@
  *
  * URL Query Parameters:
  *
- * This endpoint does not accept any URL query parameters. Its behavior is entirely automatic.
+ * `gameId` is optional. When omitted, the route runs its incremental scheduled
+ * scope. A positive `gameId` selects one final game for a bounded canary or
+ * correction repair and bypasses the incremental date watermark.
  *
  * ---
  *
@@ -39,15 +41,42 @@
  * - This is a critical data ingestion step required for calculating player time on ice (TOI) and line combinations.
  */
 // C:\Users\timbr\Desktop\FHFH\fhfhockey.com\web\pages\api\v1\db\shift-charts.ts
-// @ts-nocheck
 import { NextApiRequest, NextApiResponse } from "next";
+import type { Json } from "lib/supabase/database-generated.types";
 import supabase from "lib/supabase/server";
 import adminOnly from "utils/adminOnlyMiddleware";
+import { parseQueryPositiveInt } from "lib/api/queryParams";
+import { getCurrentSeason } from "lib/NHL/server";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { buildShiftChartRelationshipUpsert } from "lib/projections/shiftChartRelationshipPayload";
 import {
-  calculateCompletedGameLengthSeconds,
-  formatGameLength,
-  normalizeNhlGameType
+  buildShiftRelationshipStrengthSegments,
+  fetchAllNhleShiftChartsForGame,
+  type NhleShiftRow,
+} from "lib/projections/ingest/shifts";
+import {
+  buildProjectionPbpSourceHash,
+  buildProjectionShiftSourceHash,
+} from "lib/projections/ingest/projectionInputPersistence";
+import {
+  fetchPbpGame,
+  isCompleteFinalPbpPayload,
+  type PbpResponse,
+} from "lib/projections/ingest/pbp";
+import {
+  persistShiftChartRelationships,
+  selectPendingRelationshipGameIds,
+  type RelationshipQueueStatus,
+} from "lib/projections/relationshipMaterialization";
+import {
+  buildRelationshipRosterPositionMap,
+  resolveRelationshipPlayerPosition,
+  type RelationshipRosterPosition,
+  type ResolvedRelationshipPlayerPosition,
+} from "lib/projections/relationshipPlayerPosition";
+import {
+  formatCompletedPbpGameLength,
+  normalizeNhlGameType,
 } from "lib/projections/gameLength";
 
 // TODO : integrate home_or_away, opponent_team_id and opponent_team_abbreviation
@@ -95,7 +124,8 @@ interface PlayerPosition {
 }
 
 interface ShiftChartData {
-  data: Shift[];
+  data: NhleShiftRow[];
+  sourceShiftHash: string;
 }
 
 interface ConsolidatedPlayerData {
@@ -122,9 +152,9 @@ interface ConsolidatedPlayerData {
   game_toi: string;
   total_pp_toi: string;
   total_es_toi: string;
-  display_position: string | null;
-  primary_position: string | null;
-  player_type: "G" | "F" | "D" | null;
+  display_position: string;
+  primary_position: string;
+  player_type: "G" | "F" | "D";
   line_combination: number | null;
   pairing_combination: number | null;
 }
@@ -152,6 +182,18 @@ interface ESShift {
   start_time: string;
   end_time: string;
   shift_number: number;
+}
+
+function projectShiftSegmentsToJson(
+  segments: ReadonlyArray<PPShift | ESShift>,
+): Json {
+  return segments.map((segment) => ({
+    period: segment.period,
+    duration: segment.duration,
+    start_time: segment.start_time,
+    end_time: segment.end_time,
+    shift_number: segment.shift_number,
+  }));
 }
 
 interface BatchData extends ConsolidatedPlayerData {}
@@ -207,7 +249,7 @@ const teamsInfo: Record<string, TeamInfo> = {
   ARI: { name: "Arizona Coyotes", franchiseId: 28, id: 53 },
   VGK: { name: "Vegas Golden Knights", franchiseId: 38, id: 54 },
   SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 },
-  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 }
+  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 },
 };
 
 // Helper Functions
@@ -277,66 +319,6 @@ function sumDurations(durations: string[]): string {
 }
 
 /**
- * Merges overlapping intervals.
- * @param intervals - Array of interval objects with 'start' and 'end' in seconds.
- * @returns Array of merged interval objects.
- */
-function mergeIntervals(
-  intervals: { start: number; end: number }[]
-): { start: number; end: number }[] {
-  if (!intervals.length) return [];
-
-  // Sort intervals by start time
-  intervals.sort((a, b) => a.start - b.start);
-
-  const merged: { start: number; end: number }[] = [intervals[0]];
-
-  for (let i = 1; i < intervals.length; i++) {
-    const last = merged[merged.length - 1];
-    const current = intervals[i];
-
-    if (current.start <= last.end) {
-      // Overlapping intervals, merge them
-      last.end = Math.max(last.end, current.end);
-    } else {
-      // Non-overlapping interval, add to merged
-      merged.push(current);
-    }
-  }
-
-  return merged;
-}
-
-/**
- * Inverts intervals within a given range.
- * @param intervals - Array of merged overlapping intervals.
- * @param start - Start of the overall range in seconds.
- * @param end - End of the overall range in seconds.
- * @returns Array of non-overlapping intervals.
- */
-function invertIntervals(
-  intervals: { start: number; end: number }[],
-  start: number,
-  end: number
-): { start: number; end: number }[] {
-  const inverted: { start: number; end: number }[] = [];
-  let current = start;
-
-  for (const interval of intervals) {
-    if (current < interval.start) {
-      inverted.push({ start: current, end: interval.start });
-    }
-    current = Math.max(current, interval.end);
-  }
-
-  if (current < end) {
-    inverted.push({ start: current, end: end });
-  }
-
-  return inverted;
-}
-
-/**
  * Formats duration from seconds to "MM:SS" format.
  * @param seconds - Total seconds.
  * @returns Formatted duration string.
@@ -345,39 +327,6 @@ function formatDuration(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
   return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
-}
-
-/**
- * Formats seconds back to "MM:SS" string.
- * @param seconds - Total seconds.
- * @returns "MM:SS"
- */
-function formatTime(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
-    .toString()
-    .padStart(2, "0")}`;
-}
-
-/**
- * Determines the player type based on position.
- * @param primaryPosition - Primary position code.
- * @param displayPosition - Display position code.
- * @returns "G", "F", "D", or null.
- */
-function getPlayerType(
-  primaryPosition: string | null,
-  displayPosition: string | null
-): "G" | "F" | "D" | null {
-  if (primaryPosition === "G" || displayPosition === "G") {
-    return "G";
-  } else if (isForward(primaryPosition)) {
-    return "F";
-  } else if (isDefense(primaryPosition)) {
-    return "D";
-  }
-  return null;
 }
 
 /**
@@ -460,14 +409,14 @@ function getPairwiseTOI(shifts: ShiftDetail[], p1: number, p2: number): number {
  */
 function generateTeamLogs(
   consolidatedData: Record<string, ConsolidatedPlayerData>,
-  pairwiseTOI: Record<string, { toi: number }>
+  pairwiseTOI: Record<string, { toi: number }>,
 ): Record<string, TeamLogs> {
   const teams: Record<string, TeamLogs> = {};
 
   // Group players by team abbreviation
   const playersByTeam = groupBy(
     Object.values(consolidatedData),
-    (player) => player.team_abbreviation
+    (player) => player.team_abbreviation,
   );
 
   for (const [teamAbbrev, players] of playersByTeam.entries()) {
@@ -475,7 +424,7 @@ function generateTeamLogs(
       forwards: [],
       defensemen: [],
       lines: {},
-      pairs: {}
+      pairs: {},
     };
 
     players.forEach((player) => {
@@ -485,7 +434,7 @@ function generateTeamLogs(
         toi: player.game_toi,
         shared_toi: player.percent_toi_with,
         line_combination: player.line_combination,
-        pairing_combination: player.pairing_combination
+        pairing_combination: player.pairing_combination,
       };
 
       if (isForward(player.primary_position)) {
@@ -497,10 +446,10 @@ function generateTeamLogs(
 
     // Sort players by TOI
     teams[teamAbbrev].forwards.sort(
-      (a: PlayerInfo, b: PlayerInfo) => parseTime(b.toi) - parseTime(a.toi)
+      (a: PlayerInfo, b: PlayerInfo) => parseTime(b.toi) - parseTime(a.toi),
     );
     teams[teamAbbrev].defensemen.sort(
-      (a: PlayerInfo, b: PlayerInfo) => parseTime(b.toi) - parseTime(a.toi)
+      (a: PlayerInfo, b: PlayerInfo) => parseTime(b.toi) - parseTime(a.toi),
     );
 
     const { forwards, defensemen } = teams[teamAbbrev];
@@ -511,33 +460,33 @@ function generateTeamLogs(
     // Assign lines
     for (let line = 1; line <= 4; line++) {
       const pivotPlayer = forwards.find(
-        (player) => !usedForwards.has(player.id)
+        (player) => !usedForwards.has(player.id),
       );
       if (!pivotPlayer) break;
 
       const linemates = forwards
         .filter(
           (player: PlayerInfo) =>
-            !usedForwards.has(player.id) && player.id !== pivotPlayer.id
+            !usedForwards.has(player.id) && player.id !== pivotPlayer.id,
         )
         .sort(
           (a: PlayerInfo, b: PlayerInfo) =>
             parseTime(
               consolidatedData[`${pivotPlayer.id}`].time_spent_with[
                 `${b.id}`
-              ] || "0:00"
+              ] || "0:00",
             ) -
             parseTime(
               consolidatedData[`${pivotPlayer.id}`].time_spent_with[
                 `${a.id}`
-              ] || "0:00"
-            )
+              ] || "0:00",
+            ),
         )
         .slice(0, 2);
 
       if (linemates.length < 2) {
         console.warn(
-          `Not enough linemates for Line ${line} in Team ${teamAbbrev}.`
+          `Not enough linemates for Line ${line} in Team ${teamAbbrev}.`,
         );
       }
 
@@ -548,40 +497,40 @@ function generateTeamLogs(
       console.log(
         `Assigned Line ${line} for Team ${teamAbbrev}: ${linePlayers
           .map((p: PlayerInfo) => p.name)
-          .join(", ")}`
+          .join(", ")}`,
       );
     }
 
     // Assign pairs
     for (let pair = 1; pair <= 3; pair++) {
       const pivotPlayer = defensemen.find(
-        (player) => !usedDefensemen.has(player.id)
+        (player) => !usedDefensemen.has(player.id),
       );
       if (!pivotPlayer) break;
 
       const pairPlayer = defensemen
         .filter(
           (player: PlayerInfo) =>
-            !usedDefensemen.has(player.id) && player.id !== pivotPlayer.id
+            !usedDefensemen.has(player.id) && player.id !== pivotPlayer.id,
         )
         .sort(
           (a: PlayerInfo, b: PlayerInfo) =>
             parseTime(
               consolidatedData[`${pivotPlayer.id}`].time_spent_with[
                 `${b.id}`
-              ] || "0:00"
+              ] || "0:00",
             ) -
             parseTime(
               consolidatedData[`${pivotPlayer.id}`].time_spent_with[
                 `${a.id}`
-              ] || "0:00"
-            )
+              ] || "0:00",
+            ),
         )
         .slice(0, 1);
 
       if (pairPlayer.length < 1) {
         console.warn(
-          `Not enough pair players for Pair ${pair} in Team ${teamAbbrev}.`
+          `Not enough pair players for Pair ${pair} in Team ${teamAbbrev}.`,
         );
       }
 
@@ -592,7 +541,7 @@ function generateTeamLogs(
       console.log(
         `Assigned Pair ${pair} for Team ${teamAbbrev}: ${pairPlayers
           .map((p: PlayerInfo) => p.name)
-          .join(", ")}`
+          .join(", ")}`,
       );
     }
   }
@@ -602,28 +551,32 @@ function generateTeamLogs(
 
 // Main Functions
 
-/**
- * Fetches the current season ID based on the current date.
- * @returns Current or previous season ID.
- */
-async function fetchCurrentSeason(): Promise<number> {
-  const response = await fetch(
-    "https://api.nhle.com/stats/rest/en/season?sort=%5B%7B%22property%22:%22id%22,%22direction%22:%22DESC%22%7D%5D"
+async function listPendingRelationshipGameIds(
+  seasonId: number,
+  maxGames: number,
+): Promise<number[]> {
+  const games = await fetchAllSupabasePages<{ id: number; date: string }>(
+    ({ from, to }) =>
+      supabase
+        .from("games")
+        .select("id,date")
+        .eq("seasonId", seasonId)
+        .order("date", { ascending: true })
+        .order("id", { ascending: true })
+        .range(from, to),
   );
-  const data = await response.json();
-  const currentSeason = data.data[0];
-  const previousSeason = data.data[1];
-  const now = new Date();
-  const startDate = new Date(currentSeason.startDate);
-  const endDate = new Date(currentSeason.endDate);
-  console.log(`Current season ID: ${currentSeason.id}`);
-  console.log(`Previous season ID: ${previousSeason.id}`);
-
-  if (now < startDate || now > endDate) {
-    return previousSeason.id;
-  } else {
-    return currentSeason.id;
-  }
+  const statuses = await fetchAllSupabasePages<RelationshipQueueStatus>(
+    ({ from, to }) =>
+      (supabase as any)
+        .from("projection_game_materialization_status")
+        .select(
+          "game_id,input_status,input_fingerprint,relationship_status,relationship_input_fingerprint,relationship_algorithm_version",
+        )
+        .eq("input_status", "complete")
+        .order("game_id", { ascending: true })
+        .range(from, to),
+  );
+  return selectPendingRelationshipGameIds({ games, statuses, maxGames });
 }
 
 /**
@@ -634,16 +587,16 @@ async function fetchCurrentSeason(): Promise<number> {
  */
 async function fetchTeamSchedule(
   teamAbbreviation: string,
-  seasonId: number
+  seasonId: number,
 ): Promise<any> {
   console.log(
-    `Fetching schedule for ${teamAbbreviation} in season ${seasonId}`
+    `Fetching schedule for ${teamAbbreviation} in season ${seasonId}`,
   );
   const scheduleUrl = `https://api-web.nhle.com/v1/club-schedule-season/${teamAbbreviation}/${seasonId}`;
   const response = await fetch(scheduleUrl);
   if (!response.ok) {
     throw new Error(
-      `Failed to fetch schedule for ${teamAbbreviation}: ${response.statusText}`
+      `Failed to fetch schedule for ${teamAbbreviation}: ${response.statusText}`,
     );
   }
   const data = await response.json();
@@ -656,15 +609,18 @@ async function fetchTeamSchedule(
  * @returns Shift chart data.
  */
 async function fetchShiftChartData(gameId: number): Promise<ShiftChartData> {
-  const shiftChartUrl = `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${gameId}`;
-  const response = await fetch(shiftChartUrl);
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch shift chart data for game ID ${gameId}: ${response.statusText}`
-    );
+  const allRows = await fetchAllNhleShiftChartsForGame(gameId);
+  if (allRows.length === 0) {
+    throw new Error(`No shift chart data found for game ID: ${gameId}`);
   }
-  const data = await response.json();
-  return data;
+  const intervalRows = allRows.filter((row) => row.typeCode === 517);
+  if (intervalRows.length === 0) {
+    throw new Error(`No shift intervals found for game ID: ${gameId}`);
+  }
+  return {
+    data: intervalRows,
+    sourceShiftHash: buildProjectionShiftSourceHash(allRows),
+  };
 }
 
 /**
@@ -691,41 +647,55 @@ async function fetchAllPlayerPositions(): Promise<PlayerPosition[]> {
     }
   }
   console.log(
-    `Fetched ${allPositions.length} player positions from yahoo_positions`
+    `Fetched ${allPositions.length} player positions from yahoo_positions`,
   );
   return allPositions;
 }
 
-/**
- * Fetches the total game length based on game data.
- * @param gameId - Game ID.
- * @returns Total game length in "MM:SS" format.
- */
-async function fetchGameLength(gameId: number): Promise<string> {
-  try {
-    const gameDataResponse = await fetch(
-      `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
-    );
-    if (!gameDataResponse.ok) {
-      throw new Error(
-        `Failed to fetch game length: ${gameDataResponse.statusText}`
-      );
-    }
-    const gameData = await gameDataResponse.json();
-    if (
-      !gameData ||
-      !gameData.periodDescriptor ||
-      !gameData.clock ||
-      !gameData.gameOutcome
-    ) {
-      throw new Error("Invalid game data structure");
-    }
-
-    return formatGameLength(calculateCompletedGameLengthSeconds(gameData));
-  } catch (error) {
-    console.error(`Error fetching game length for game ID ${gameId}:`, error);
-    throw error;
+async function fetchCurrentRelationshipRosterPositions(
+  gameId: number,
+): Promise<{
+  expectedPbpRawPayloadHash: string;
+  positions: Map<number, RelationshipRosterPosition>;
+}> {
+  const db = supabase as any;
+  const { data: status, error: statusError } = await db
+    .from("projection_game_materialization_status")
+    .select("game_id,input_status,pbp_raw_payload_hash")
+    .eq("game_id", gameId)
+    .maybeSingle();
+  if (statusError) throw statusError;
+  if (
+    !status ||
+    status.game_id !== gameId ||
+    status.input_status !== "complete" ||
+    typeof status.pbp_raw_payload_hash !== "string" ||
+    !/^[a-f0-9]{64}$/.test(status.pbp_raw_payload_hash)
+  ) {
+    throw new Error(`Projection inputs are not complete for game ${gameId}`);
   }
+
+  const rows = await fetchAllSupabasePages<RelationshipRosterPosition>(
+    ({ from, to }) =>
+      db
+        .from("nhl_api_game_roster_spots")
+        .select(
+          "game_id,player_id,team_id,position_code,source_play_by_play_hash",
+        )
+        .eq("game_id", gameId)
+        .eq("source_play_by_play_hash", status.pbp_raw_payload_hash)
+        .order("player_id", { ascending: true })
+        .range(from, to),
+  );
+
+  return {
+    expectedPbpRawPayloadHash: status.pbp_raw_payload_hash,
+    positions: buildRelationshipRosterPositionMap({
+      expectedPbpRawPayloadHash: status.pbp_raw_payload_hash,
+      gameId,
+      rows,
+    }),
+  };
 }
 
 /**
@@ -738,31 +708,71 @@ async function fetchGameLength(gameId: number): Promise<string> {
 async function upsertShiftChartData(
   shiftChartData: ShiftChartData,
   gameInfo: GameInfo,
-  playerPositions: PlayerPosition[]
-): Promise<{ unmatchedNames: string[]; upsertCount: number }> {
+  playerPositions: PlayerPosition[],
+  rosterPositions: Map<number, RelationshipRosterPosition>,
+  expectedPbpRawPayloadHash: string,
+  pbp: PbpResponse,
+): Promise<{
+  unmatchedNames: string[];
+  positionFallbackNames: string[];
+  upsertCount: number;
+  verifiedCount: number;
+  prunedCount: number;
+  idempotent: boolean;
+}> {
   const unmatchedNamesSet = new Set<string>();
+  const positionFallbackNamesSet = new Set<string>();
   const consolidatedData: Record<string, ConsolidatedPlayerData> = {};
-
-  const gameLength = await fetchGameLength(gameInfo.game_id);
-
-  // Fetch Power Play Timeframes for the Current Game
-  const { data: ppData, error: ppError } = await supabase
-    .from("pp_timeframes")
-    .select("pp_timeframes")
-    .eq("game_id", gameInfo.game_id);
-
-  if (ppError) {
-    throw new Error(
-      `Error fetching power play timeframes for game ID ${gameInfo.game_id}: ${ppError.message}`
-    );
-  }
-
-  const powerPlays = ppData && ppData.length > 0 ? ppData[0].pp_timeframes : [];
 
   // Use groupBy to group shifts by playerId
   const shiftsByPlayer = groupBy(
     shiftChartData.data,
-    (shift) => shift.playerId
+    (shift) => shift.playerId,
+  );
+
+  // Resolve the complete roster-bound position scope before any relationship
+  // calculation so missing or stale evidence cannot produce partial work.
+  const resolvedPositionsByPlayer = new Map<
+    number,
+    ResolvedRelationshipPlayerPosition
+  >();
+  for (const [playerId, shifts] of shiftsByPlayer.entries()) {
+    const firstShift = shifts[0];
+    const playerName = `${firstShift.firstName} ${firstShift.lastName}`;
+    const matchedPosition = playerPositions.find(
+      (position) => position.full_name === playerName,
+    );
+    if (!matchedPosition) unmatchedNamesSet.add(playerName);
+    if (
+      firstShift.teamId !== gameInfo.homeTeam.id &&
+      firstShift.teamId !== gameInfo.awayTeam.id
+    ) {
+      throw new Error(
+        `Shift team ${firstShift.teamId} is not scheduled for game ${gameInfo.game_id}`,
+      );
+    }
+    const resolvedPosition = resolveRelationshipPlayerPosition({
+      expectedPbpRawPayloadHash,
+      gameId: gameInfo.game_id,
+      playerId,
+      rosterPosition: rosterPositions.get(playerId),
+      teamId: firstShift.teamId,
+      yahooPosition: matchedPosition,
+    });
+    if (resolvedPosition.source === "nhl_roster") {
+      positionFallbackNamesSet.add(playerName);
+    }
+    resolvedPositionsByPlayer.set(playerId, resolvedPosition);
+  }
+
+  const gameLength = formatCompletedPbpGameLength(pbp);
+  const strengthSegmentsByPlayer = groupBy(
+    buildShiftRelationshipStrengthSegments(
+      gameInfo.game_id,
+      pbp,
+      shiftChartData.data,
+    ),
+    (segment) => segment.playerId,
   );
 
   // Process each player's shifts
@@ -770,23 +780,20 @@ async function upsertShiftChartData(
     const playerKey = `${playerId}`;
     const firstShift = shifts[0]; // Assuming all shifts have consistent player info
 
-    const playerName = `${firstShift.firstName} ${firstShift.lastName}`;
-    const matchedPosition = playerPositions.find(
-      (pos) => pos.full_name === playerName
-    );
-    if (!matchedPosition) {
-      unmatchedNamesSet.add(playerName);
-    }
     const isHomeTeam = firstShift.teamId === gameInfo.homeTeam.id;
     const isAwayTeam = firstShift.teamId === gameInfo.awayTeam.id;
     if (!isHomeTeam && !isAwayTeam) {
       throw new Error(
-        `Shift team ${firstShift.teamId} is not scheduled for game ${gameInfo.game_id}`
+        `Shift team ${firstShift.teamId} is not scheduled for game ${gameInfo.game_id}`,
       );
     }
-    const opponentTeam = isHomeTeam
-      ? gameInfo.awayTeam
-      : gameInfo.homeTeam;
+    const opponentTeam = isHomeTeam ? gameInfo.awayTeam : gameInfo.homeTeam;
+    const resolvedPosition = resolvedPositionsByPlayer.get(playerId);
+    if (!resolvedPosition) {
+      throw new Error(
+        `Missing resolved relationship position for player ${playerId}`,
+      );
+    }
 
     // Initialize player data in consolidatedData
     consolidatedData[playerKey] = {
@@ -813,20 +820,11 @@ async function upsertShiftChartData(
       game_toi: "0:00",
       total_pp_toi: "0:00",
       total_es_toi: "0:00",
-      display_position: matchedPosition
-        ? matchedPosition.display_position
-        : null,
-      primary_position: matchedPosition
-        ? matchedPosition.primary_position
-        : null,
-      player_type: matchedPosition
-        ? getPlayerType(
-            matchedPosition.primary_position,
-            matchedPosition.display_position
-          )
-        : null,
+      display_position: resolvedPosition.displayPosition,
+      primary_position: resolvedPosition.primaryPosition,
+      player_type: resolvedPosition.playerType,
       line_combination: null,
-      pairing_combination: null
+      pairing_combination: null,
     };
 
     // Process each shift for the player
@@ -836,7 +834,7 @@ async function upsertShiftChartData(
       // Update game_toi
       consolidatedData[playerKey].game_toi = sumDurations([
         consolidatedData[playerKey].game_toi,
-        duration
+        duration,
       ]);
 
       // Add shift details
@@ -846,93 +844,38 @@ async function upsertShiftChartData(
         start_time: shift.startTime,
         end_time: shift.endTime,
         duration: duration,
-        playerId: shift.playerId
+        playerId: shift.playerId,
       });
-
-      // Split shift into pp_shifts and es_shifts based on power plays
-
-      const shiftPeriod = shift.period;
-      const shiftStartSeconds = parseTime(shift.startTime);
-      const shiftEndSeconds = parseTime(shift.endTime);
-      const shiftDurationSeconds = parseTime(shift.duration || "00:00"); // Total duration in seconds
-
-      // Identify player's team ID
-      const playerTeamId = consolidatedData[playerKey].team_id;
-
-      // Filter power plays where the player's team is on the power play
-      const overlappingPPs = powerPlays
-        .filter(
-          (pp: any) =>
-            pp.powerPlayPeriod === shiftPeriod &&
-            pp.teamOnPowerPlay === playerTeamId
-        )
-        .map((pp: any) => ({
-          start: parseTime(pp.powerPlayStartTime),
-          end: parseTime(pp.powerPlayEndTime)
-        }));
-
-      // Calculate overlapping intervals with shift
-      const overlappingIntervals = overlappingPPs
-        .map((pp: any) => ({
-          start: Math.max(shiftStartSeconds, pp.start),
-          end: Math.min(shiftEndSeconds, pp.end)
-        }))
-        .filter(
-          (interval: { start: number; end: number }) =>
-            interval.start < interval.end
-        ); // Keep valid overlaps
-
-      // Merge overlapping intervals to get unique overlapping time
-      const mergedOverlaps = mergeIntervals(overlappingIntervals);
-
-      // Assign pp_shift(s)
-      mergedOverlaps.forEach((interval) => {
-        consolidatedData[playerKey].pp_shifts.push({
-          period: shift.period,
-          duration: formatDuration(interval.end - interval.start),
-          start_time: formatTime(interval.start),
-          end_time: formatTime(interval.end),
-          shift_number: shift.shiftNumber
-        });
-      });
-
-      // Calculate esOverlapSeconds
-      const totalPPOverlapSeconds = mergedOverlaps.reduce(
-        (sum, interval) => sum + (interval.end - interval.start),
-        0
-      );
-      const totalESOverlapSeconds =
-        shiftDurationSeconds - totalPPOverlapSeconds;
-
-      // Assign es_shift(s) based on inverted intervals
-      if (totalESOverlapSeconds > 0) {
-        const esIntervals = invertIntervals(
-          mergedOverlaps,
-          shiftStartSeconds,
-          shiftEndSeconds
-        );
-
-        esIntervals.forEach((interval) => {
-          const esDurationSeconds = interval.end - interval.start;
-          if (esDurationSeconds > 0) {
-            consolidatedData[playerKey].es_shifts.push({
-              period: shift.period,
-              duration: formatDuration(esDurationSeconds),
-              start_time: formatTime(interval.start),
-              end_time: formatTime(interval.end),
-              shift_number: shift.shiftNumber
-            });
-          }
-        });
-      }
     });
+
+    const playerStrengthSegments = strengthSegmentsByPlayer.get(playerId);
+    if (!playerStrengthSegments || playerStrengthSegments.length === 0) {
+      throw new Error(
+        `Missing PBP-bound strength segments for player ${playerId} in game ${gameInfo.game_id}`,
+      );
+    }
+    for (const segment of playerStrengthSegments) {
+      const target =
+        segment.strength === "pp"
+          ? consolidatedData[playerKey].pp_shifts
+          : consolidatedData[playerKey].es_shifts;
+      // The legacy relationship contract calls every non-power-play interval
+      // `es_shifts`; penalty-kill time therefore remains in this collection.
+      target.push({
+        period: segment.period,
+        duration: segment.duration,
+        start_time: segment.startTime,
+        end_time: segment.endTime,
+        shift_number: segment.shiftNumber,
+      });
+    }
 
     // Calculate total_pp_toi and total_es_toi for each player
     consolidatedData[playerKey].total_pp_toi = sumDurations(
-      consolidatedData[playerKey].pp_shifts.map((shift) => shift.duration)
+      consolidatedData[playerKey].pp_shifts.map((shift) => shift.duration),
     );
     consolidatedData[playerKey].total_es_toi = sumDurations(
-      consolidatedData[playerKey].es_shifts.map((shift) => shift.duration)
+      consolidatedData[playerKey].es_shifts.map((shift) => shift.duration),
     );
   }
 
@@ -944,7 +887,7 @@ async function upsertShiftChartData(
       endTime: shift.end_time,
       duration: shift.duration,
       period: shift.period,
-      playerId: shift.playerId
+      playerId: shift.playerId,
     }));
 
     for (const otherPlayerKey in consolidatedData) {
@@ -963,7 +906,7 @@ async function upsertShiftChartData(
         startTime: shift.start_time,
         endTime: shift.end_time,
         duration: shift.duration,
-        period: shift.period
+        period: shift.period,
       }));
 
       let totalTimeSpent = 0;
@@ -978,7 +921,7 @@ async function upsertShiftChartData(
 
             const overlapStart = Math.max(
               shiftStartSeconds,
-              otherShiftStartSeconds
+              otherShiftStartSeconds,
             );
             const overlapEnd = Math.min(shiftEndSeconds, otherShiftEndSeconds);
 
@@ -1016,8 +959,8 @@ async function upsertShiftChartData(
         toi: getPairwiseTOI(
           playerData.shifts,
           playerData.player_id,
-          otherPlayerData.player_id
-        )
+          otherPlayerData.player_id,
+        ),
       };
     });
   });
@@ -1047,25 +990,34 @@ async function upsertShiftChartData(
 
   // Prepare Batch Data for Upsert
   const batchData = Object.values(consolidatedData).map((data) =>
-    buildShiftChartRelationshipUpsert(data)
+    buildShiftChartRelationshipUpsert({
+      ...data,
+      pp_shifts: projectShiftSegmentsToJson(data.pp_shifts),
+      es_shifts: projectShiftSegmentsToJson(data.es_shifts),
+    }),
   );
 
-  let upsertCount = 0;
-  if (batchData.length > 0) {
-    const { error } = await supabase
-      .from("shift_charts")
-      .upsert(batchData, {
-        onConflict: "game_id,player_id"
-      });
+  const receipt = await persistShiftChartRelationships({
+    expectedPbpRawPayloadHash,
+    gameId: gameInfo.game_id,
+    sourcePbpHash: buildProjectionPbpSourceHash(pbp),
+    sourceShiftHash: shiftChartData.sourceShiftHash,
+    rows: batchData,
+  });
+  const verifiedCount = receipt.relationshipRows;
+  const upsertCount = receipt.idempotent ? 0 : verifiedCount;
+  console.log(
+    `Persisted exact shift-chart relationship scope for game ${gameInfo.game_id}.`,
+  );
 
-    if (error) {
-      throw new Error(`Error upserting shift chart data: ${error.message}`);
-    }
-    console.log("Successfully upserted shift chart records.");
-    upsertCount = batchData.length;
-  }
-
-  return { unmatchedNames: Array.from(unmatchedNamesSet), upsertCount };
+  return {
+    unmatchedNames: Array.from(unmatchedNamesSet),
+    positionFallbackNames: Array.from(positionFallbackNamesSet),
+    upsertCount,
+    verifiedCount,
+    prunedCount: receipt.prunedRows,
+    idempotent: receipt.idempotent,
+  };
 }
 
 /**
@@ -1074,70 +1026,82 @@ async function upsertShiftChartData(
 /**
  * Main function to fetch and store shift charts.
  */
-async function fetchAndStoreShiftCharts(): Promise<{
+async function fetchAndStoreShiftCharts(
+  targetGameId?: number,
+  maxGames = 16,
+): Promise<{
   success: boolean;
   message: string;
   unmatchedNames: string[];
+  positionFallbackNames: string[];
   totalRowsUpserted: number;
+  totalRowsVerified: number;
+  totalRowsPruned: number;
+  idempotentGames: number;
   error?: any;
 }> {
   let totalRowsUpserted = 0;
+  let totalRowsVerified = 0;
+  let totalRowsPruned = 0;
+  let idempotentGames = 0;
   let error: any = null;
   try {
-    // Step 1: Get the latest processed game_date from shift_charts
-    const latestGameDate = await getLatestProcessedGameDate();
-    if (latestGameDate) {
-      console.log(`Latest processed game date: ${latestGameDate}`);
-    } else {
-      console.log("No previous shift_chart data found. Processing all games.");
-    }
-
-    // Step 2: Fetch the current season ID
-    const seasonId = await fetchCurrentSeason();
-    console.log(`Current season ID: ${seasonId}`);
-
     const gameIdSet = new Set<number>();
     const gameInfoMap = new Map<number, GameInfo>();
+    const gamePbpMap = new Map<number, PbpResponse>();
 
-    // Step 3: Fetch all player positions
+    // Fetch all player positions once for the selected scope.
     const playerPositions = await fetchAllPlayerPositions();
     const unmatchedNames: string[] = [];
+    const positionFallbackNames: string[] = [];
 
-    // Step 4: Iterate through each team to fetch and process games
-    for (const teamAbbreviation of Object.keys(teamsInfo)) {
-      const teamSchedule = await fetchTeamSchedule(teamAbbreviation, seasonId);
-
-      if (!teamSchedule || !teamSchedule.games) {
-        throw new Error(`No schedule data found for team: ${teamAbbreviation}`);
+    if (targetGameId != null) {
+      const pbp = await fetchPbpGame(targetGameId);
+      if (pbp.id !== targetGameId || !isCompleteFinalPbpPayload(pbp)) {
+        throw new Error(
+          `PBP is not final and complete for target game ${targetGameId}`,
+        );
       }
-
-      for (const game of teamSchedule.games) {
-        // Check if the game has finished
-        if (!isGameFinished(game)) {
-          console.log(
-            `Skipping game ID: ${game.id} as it is not finished (gameState: ${game.gameState})`
-          );
-          continue;
+      const targetSeasonId = Number(pbp.season);
+      if (!Number.isSafeInteger(targetSeasonId) || targetSeasonId <= 0) {
+        throw new Error(
+          `Invalid season identity for target game ${targetGameId}`,
+        );
+      }
+      gameIdSet.add(targetGameId);
+      gamePbpMap.set(targetGameId, pbp);
+      gameInfoMap.set(targetGameId, {
+        gameType: pbp.gameType,
+        gameDate: pbp.gameDate,
+        homeTeam: { id: pbp.homeTeam.id, abbrev: pbp.homeTeam.abbrev },
+        awayTeam: { id: pbp.awayTeam.id, abbrev: pbp.awayTeam.abbrev },
+        game_id: targetGameId,
+        season_id: targetSeasonId,
+      });
+    } else {
+      const seasonId = (await getCurrentSeason()).seasonId;
+      const pendingGameIds = await listPendingRelationshipGameIds(
+        seasonId,
+        maxGames,
+      );
+      for (const gameId of pendingGameIds) {
+        const pbp = await fetchPbpGame(gameId);
+        if (pbp.id !== gameId || !isCompleteFinalPbpPayload(pbp)) {
+          throw new Error(`PBP is not final and complete for game ${gameId}`);
         }
-
-        // Revisit every game on the latest date so a partial same-day write
-        // cannot suppress a later complete relationship materialization.
-        if (latestGameDate && game.gameDate < latestGameDate) {
-          console.log(
-            `Skipping game ID: ${game.id} as its gameDate (${game.gameDate}) is before the latest processed date (${latestGameDate})`
-          );
-          continue;
+        const gameSeasonId = Number(pbp.season);
+        if (gameSeasonId !== seasonId) {
+          throw new Error(`Season identity mismatch for game ${gameId}`);
         }
-
-        // Add game ID and info for processing
-        gameIdSet.add(game.id);
-        gameInfoMap.set(game.id, {
-          gameType: game.gameType,
-          gameDate: game.gameDate,
-          homeTeam: game.homeTeam,
-          awayTeam: game.awayTeam,
-          game_id: game.id,
-          season_id: seasonId
+        gameIdSet.add(gameId);
+        gamePbpMap.set(gameId, pbp);
+        gameInfoMap.set(gameId, {
+          gameType: pbp.gameType,
+          gameDate: pbp.gameDate,
+          homeTeam: { id: pbp.homeTeam.id, abbrev: pbp.homeTeam.abbrev },
+          awayTeam: { id: pbp.awayTeam.id, abbrev: pbp.awayTeam.abbrev },
+          game_id: gameId,
+          season_id: gameSeasonId,
         });
       }
     }
@@ -1155,11 +1119,35 @@ async function fetchAndStoreShiftCharts(): Promise<{
         if (!gameInfo) {
           throw new Error(`No game info found for game ID: ${gameId}`);
         }
+        const pbp = gamePbpMap.get(gameId);
+        if (!pbp) {
+          throw new Error(`No PBP source found for game ID: ${gameId}`);
+        }
 
-        const { unmatchedNames: unmatched, upsertCount } =
-          await upsertShiftChartData(shiftChartData, gameInfo, playerPositions);
+        const currentRoster =
+          await fetchCurrentRelationshipRosterPositions(gameId);
+
+        const {
+          unmatchedNames: unmatched,
+          positionFallbackNames: positionFallbacks,
+          upsertCount,
+          verifiedCount,
+          prunedCount,
+          idempotent,
+        } = await upsertShiftChartData(
+          shiftChartData,
+          gameInfo,
+          playerPositions,
+          currentRoster.positions,
+          currentRoster.expectedPbpRawPayloadHash,
+          pbp,
+        );
         unmatchedNames.push(...unmatched);
+        positionFallbackNames.push(...positionFallbacks);
         totalRowsUpserted += upsertCount;
+        totalRowsVerified += verifiedCount;
+        totalRowsPruned += prunedCount;
+        if (idempotent) idempotentGames += 1;
 
         // Optional: Delay between requests to avoid rate limiting
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -1171,62 +1159,18 @@ async function fetchAndStoreShiftCharts(): Promise<{
 
     console.log("Unmatched Names:", Array.from(new Set(unmatchedNames)));
 
-    // Fetch and Compare Names
-    const { data: shiftChartNames, error: shiftChartError } = await supabase
-      .from("shift_charts")
-      .select("player_first_name, player_last_name");
-
-    if (shiftChartError) {
-      console.error("Error fetching shift chart names:", shiftChartError);
-    } else {
-      const uniqueShiftChartNames = new Set(
-        (shiftChartNames as any[]).map(
-          (name) => `${name.player_first_name} ${name.player_last_name}`
-        )
-      );
-
-      const { data: yahooNames, error: yahooError } = await supabase
-        .from("yahoo_positions")
-        .select("full_name");
-
-      console.log("Unique Shift Chart Names:", uniqueShiftChartNames.size);
-      console.log("Unique Yahoo Names:", yahooNames?.length || 0);
-
-      if (yahooError) {
-        console.error("Error fetching yahoo names:", yahooError);
-      } else {
-        const uniqueYahooNames = new Set(
-          (yahooNames as any[]).map((name) => name.full_name)
-        );
-
-        const unmatchedShiftChartNames = [...uniqueShiftChartNames].filter(
-          (name) => !uniqueYahooNames.has(name)
-        );
-        const unmatchedYahooNames = [...uniqueYahooNames].filter(
-          (name) => !uniqueShiftChartNames.has(name)
-        );
-
-        console.log(
-          "Unmatched Shift Chart Names:",
-          unmatchedShiftChartNames.length > 0
-            ? unmatchedShiftChartNames
-            : "None"
-        );
-        console.log(
-          "Unmatched Yahoo Names:",
-          unmatchedYahooNames.length > 0 ? unmatchedYahooNames : "None"
-        );
-      }
-    }
-
     return {
       success: !error,
       message: error
         ? error.message || "An error occurred."
         : "Successfully processed all shift charts.",
       unmatchedNames: Array.from(new Set(unmatchedNames)),
+      positionFallbackNames: Array.from(new Set(positionFallbackNames)),
       totalRowsUpserted,
-      error
+      totalRowsVerified,
+      totalRowsPruned,
+      idempotentGames,
+      error,
     };
   } catch (err: any) {
     console.error("An error occurred in fetchAndStoreShiftCharts:", err);
@@ -1234,15 +1178,23 @@ async function fetchAndStoreShiftCharts(): Promise<{
       success: false,
       message: err.message || "An unexpected error occurred.",
       unmatchedNames: [],
+      positionFallbackNames: [],
       totalRowsUpserted,
-      error: err
+      totalRowsVerified,
+      totalRowsPruned,
+      idempotentGames,
+      error: err,
     };
   }
 }
 
-// API Handler
+type ShiftChartsAuditOwner = "self" | "caller";
 
-export default adminOnly(async (req: NextApiRequest, res: NextApiResponse) => {
+async function handleShiftChartsRequest(
+  req: NextApiRequest,
+  res: NextApiResponse,
+  auditOwner: ShiftChartsAuditOwner,
+) {
   const jobName = "update-shift-charts";
   const startTime = Date.now();
   let status: "success" | "error" = "success";
@@ -1253,21 +1205,54 @@ export default adminOnly(async (req: NextApiRequest, res: NextApiResponse) => {
     if (req.method !== "POST") {
       responseBody = {
         message: "Method not allowed. Use POST.",
-        success: false
+        success: false,
       };
       return res.status(405).json(responseBody);
     }
-    const result = await fetchAndStoreShiftCharts();
+    const rawTargetGameId = Array.isArray(req.query.gameId)
+      ? req.query.gameId[0]
+      : req.query.gameId;
+    const targetGameId =
+      rawTargetGameId === "all" ? null : parseQueryPositiveInt(rawTargetGameId);
+    if (
+      rawTargetGameId != null &&
+      rawTargetGameId !== "all" &&
+      targetGameId == null
+    ) {
+      responseBody = { message: "Invalid gameId.", success: false };
+      return res.status(400).json(responseBody);
+    }
+    const rawMaxGames = req.query.maxGames;
+    const parsedMaxGames = parseQueryPositiveInt(rawMaxGames);
+    if (rawMaxGames != null && parsedMaxGames == null) {
+      responseBody = { message: "Invalid maxGames.", success: false };
+      return res.status(400).json(responseBody);
+    }
+    const maxGames = Math.min(parsedMaxGames ?? 16, 50);
+    const result = await fetchAndStoreShiftCharts(
+      targetGameId ?? undefined,
+      maxGames,
+    );
     rowsAffected = result.totalRowsUpserted;
     details = {
       unmatchedNames: result.unmatchedNames,
-      durationMs: Date.now() - startTime
+      positionFallbackNames: result.positionFallbackNames,
+      durationMs: Date.now() - startTime,
+      rowsVerified: result.totalRowsVerified,
+      rowsPruned: result.totalRowsPruned,
+      idempotentGames: result.idempotentGames,
     };
     if (result.success) {
       responseBody = {
         message: result.message,
         success: true,
-        unmatchedNames: result.unmatchedNames
+        unmatchedNames: result.unmatchedNames,
+        positionFallbackNames: result.positionFallbackNames,
+        rowsAffected,
+        rowsVerified: result.totalRowsVerified,
+        rowsPruned: result.totalRowsPruned,
+        idempotentGames: result.idempotentGames,
+        targetGameId: targetGameId ?? null,
       };
       res.status(200).json(responseBody);
     } else {
@@ -1276,7 +1261,13 @@ export default adminOnly(async (req: NextApiRequest, res: NextApiResponse) => {
       responseBody = {
         message: result.message,
         success: false,
-        unmatchedNames: result.unmatchedNames
+        unmatchedNames: result.unmatchedNames,
+        positionFallbackNames: result.positionFallbackNames,
+        rowsAffected,
+        rowsVerified: result.totalRowsVerified,
+        rowsPruned: result.totalRowsPruned,
+        idempotentGames: result.idempotentGames,
+        targetGameId: targetGameId ?? null,
       };
       res.status(500).json(responseBody);
     }
@@ -1285,29 +1276,58 @@ export default adminOnly(async (req: NextApiRequest, res: NextApiResponse) => {
     details = { ...details, error: error.message };
     responseBody = {
       message: error.message || "An unexpected error occurred.",
-      success: false
+      success: false,
     };
     res.status(500).json(responseBody);
   } finally {
-    try {
-      await supabase.from("cron_job_audit").insert([
-        {
-          job_name: jobName,
-          status,
-          rows_affected: rowsAffected,
-          details: {
-            method: req.method ?? null,
-            url: req.url ?? null,
-            statusCode: res.statusCode,
-            durationMs: Date.now() - startTime,
-            error: status === "error" ? details?.error ?? "Unknown error" : null,
-            response: responseBody,
-            context: details
-          }
-        }
-      ]);
-    } catch (auditErr) {
-      console.error("Failed to write audit row:", auditErr);
+    if (auditOwner === "self") {
+      if (res.statusCode >= 400) {
+        status = "error";
+        details = {
+          ...details,
+          error:
+            details?.error ??
+            responseBody?.error ??
+            responseBody?.message ??
+            `Request failed with HTTP ${res.statusCode}`,
+        };
+      }
+      try {
+        await supabase.from("cron_job_audit").insert([
+          {
+            job_name: jobName,
+            status,
+            rows_affected: rowsAffected,
+            details: {
+              method: req.method ?? null,
+              url: req.url ?? null,
+              statusCode: res.statusCode,
+              durationMs: Date.now() - startTime,
+              error:
+                status === "error" ? (details?.error ?? "Unknown error") : null,
+              response: responseBody,
+              context: details,
+            },
+          },
+        ]);
+      } catch (auditErr) {
+        console.error("Failed to write audit row:", auditErr);
+      }
     }
   }
-});
+}
+
+// The compatibility adapter already owns auth and auditing. Calling this
+// explicit delegate avoids both a second auth boundary and a duplicate row.
+export function delegatedShiftChartsHandler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
+  return handleShiftChartsRequest(req, res, "caller");
+}
+
+function directShiftChartsHandler(req: NextApiRequest, res: NextApiResponse) {
+  return handleShiftChartsRequest(req, res, "self");
+}
+
+export default adminOnly(directShiftChartsHandler);

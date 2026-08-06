@@ -8,6 +8,7 @@ import {
   buildRollingPlayerValidationPayload,
   type RollingPlayerValidationRequest
 } from "lib/supabase/Upserts/rollingPlayerValidationPayload";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 type ResponseBody =
   | {
@@ -65,7 +66,7 @@ function parseRequest(
   };
 }
 
-async function handler(
+export async function rollingPlayerMetricsDebugHandler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseBody>
 ) {
@@ -110,4 +111,4 @@ async function handler(
   }
 }
 
-export default handler;
+export default adminOnly(rollingPlayerMetricsDebugHandler as any);

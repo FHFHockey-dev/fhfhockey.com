@@ -10,26 +10,30 @@ const mockUseCurrentSeason = vi.hoisted(() => vi.fn());
 
 vi.mock("lib/supabase/public-client", () => ({
   default: {
-    rpc: mockRpc
-  }
+    rpc: mockRpc,
+  },
 }));
 
 vi.mock("./useCurrentSeason", () => ({
-  default: mockUseCurrentSeason
+  default: mockUseCurrentSeason,
 }));
 
 function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        retry: false
-      }
-    }
+        retry: false,
+      },
+    },
   });
 
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+  function QueryWrapper({ children }: { children: React.ReactNode }) {
+    return (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+  }
+
+  return QueryWrapper;
 }
 
 describe("usePercentileRank", () => {
@@ -44,7 +48,7 @@ describe("usePercentileRank", () => {
     mockUseCurrentSeason.mockReturnValue({
       seasonId: 20252026,
       regularSeasonStartDate: "2025-10-07",
-      regularSeasonEndDate: "2026-04-17"
+      regularSeasonEndDate: "2026-04-17",
     });
   });
 
@@ -62,7 +66,7 @@ describe("usePercentileRank", () => {
             avgblockedshots: 0.5,
             avgpowerplaypoints: 0.4,
             avgshots: 3.7,
-            count: 72
+            count: 72,
           },
           {
             id: 1,
@@ -74,17 +78,16 @@ describe("usePercentileRank", () => {
             avgblockedshots: 0.1,
             avgpowerplaypoints: 0.1,
             avgshots: 2.1,
-            count: 50
-          }
+            count: 50,
+          },
         ],
-        error: null
-      })
+        error: null,
+      }),
     });
 
-    const { result } = renderHook(
-      () => usePercentileRank(8476453, "SEASON"),
-      { wrapper: createWrapper() }
-    );
+    const { result } = renderHook(() => usePercentileRank(8476453, "SEASON"), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(mockRpc).toHaveBeenCalled();
@@ -93,7 +96,7 @@ describe("usePercentileRank", () => {
 
     expect(mockRpc).toHaveBeenCalledWith("get_skaters_avg_stats", {
       start_date: "2025-10-07",
-      end_date: "2026-04-09"
+      end_date: "2026-04-09",
     });
   });
 

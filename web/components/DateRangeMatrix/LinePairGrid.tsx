@@ -3,7 +3,6 @@
 
 import React, { useMemo } from "react";
 import styles from "../../styles/LinePairGrid.module.scss";
-import { calculateLinesAndPairs } from "components/DateRangeMatrix/lineCombinationHelper";
 import type { PlayerData } from "components/DateRangeMatrix/utilities";
 import type { DRMDataStatus } from "./useDateRangeMatrixData";
 import type { ScopedCardStats } from "./fetchAggregatedData";
@@ -14,139 +13,170 @@ type LinePairGridProps = {
   scopeKey: string;
   status: DRMDataStatus;
   roster: PlayerData[];
+  lines: readonly (readonly PlayerData[])[];
+  pairs: readonly (readonly PlayerData[])[];
   scopeGameCount: number;
   cardStats: ScopedCardStats;
 };
+
+function orderForwardLineForPresentation(
+  line: readonly PlayerData[],
+): PlayerData[] {
+  let leftWing: PlayerData | undefined;
+  let center: PlayerData | undefined;
+  let rightWing: PlayerData | undefined;
+
+  line.forEach((player) => {
+    if (player.displayPosition === "LW" && !leftWing) {
+      leftWing = player;
+    } else if (player.displayPosition === "C" && !center) {
+      center = player;
+    } else if (player.displayPosition === "RW" && !rightWing) {
+      rightWing = player;
+    }
+  });
+
+  line.forEach((player) => {
+    if (!leftWing && player.displayPosition.includes("LW")) {
+      leftWing = player;
+    } else if (!center && player.displayPosition.includes("C")) {
+      center = player;
+    } else if (!rightWing && player.displayPosition.includes("RW")) {
+      rightWing = player;
+    }
+  });
+
+  const assignedPlayers = new Set(
+    [leftWing, center, rightWing]
+      .filter((player): player is PlayerData => player != null)
+      .map((player) => player.id),
+  );
+  const remainingPlayers = line
+    .filter((player) => !assignedPlayers.has(player.id))
+    .slice()
+    .sort((left, right) => {
+      const parseAToiToSeconds = (atoi: string): number => {
+        const [minutes, seconds] = atoi.split(":").map(Number);
+        return minutes * 60 + seconds;
+      };
+      return parseAToiToSeconds(right.ATOI) - parseAToiToSeconds(left.ATOI);
+    });
+
+  if (!leftWing) leftWing = remainingPlayers.shift();
+  if (!center) center = remainingPlayers.shift();
+  if (!rightWing) rightWing = remainingPlayers.shift();
+
+  return [leftWing, center, rightWing].filter(
+    (player): player is PlayerData => player != null,
+  );
+}
+
+function groupKey(prefix: "line" | "pair", group: readonly PlayerData[]) {
+  const playerIds = group.map((player) => player.id).sort((a, b) => a - b);
+  return `${prefix}-${playerIds.join("-")}`;
+}
 
 const LinePairGrid: React.FC<LinePairGridProps> = ({
   scopeKey,
   status,
   roster,
+  lines,
+  pairs,
   scopeGameCount,
   cardStats,
 }) => {
-  const resultIsVisible =
-    (status === "success" || status === "partial") &&
-    roster.length > 0 &&
-    scopeGameCount > 0;
-  const { lines, pairs } = useMemo(
+  const scopeIsVisible =
+    (status === "success" || status === "partial") && scopeGameCount > 0;
+  const visibleLines = useMemo(
     () =>
-      resultIsVisible
-        ? calculateLinesAndPairs(roster, "line-combination")
-        : { lines: [], pairs: [] },
-    [resultIsVisible, roster],
+      scopeIsVisible
+        ? lines.slice(0, 4).map(orderForwardLineForPresentation)
+        : [],
+    [lines, scopeIsVisible],
+  );
+  const visiblePairs = useMemo(
+    () => (scopeIsVisible ? pairs.slice(0, 3) : []),
+    [pairs, scopeIsVisible],
   );
   const goalies = useMemo(
     () =>
-      resultIsVisible
+      scopeIsVisible
         ? roster
             .filter((player) => player.playerType === "G")
             .sort((left, right) => right.GP - left.GP)
             .slice(0, 2)
         : [],
-    [resultIsVisible, roster],
+    [roster, scopeIsVisible],
   );
 
-  if (!resultIsVisible) return null;
-
-  const reorderLine = (line: PlayerData[]): PlayerData[] => {
-    // Initialize positions
-    let LW: PlayerData | null = null;
-    let C: PlayerData | null = null;
-    let RW: PlayerData | null = null;
-
-    // First, assign players with only one displayPosition
-    line.forEach((player) => {
-      if (player.displayPosition === "LW" && !LW) {
-        LW = player;
-      } else if (player.displayPosition === "C" && !C) {
-        C = player;
-      } else if (player.displayPosition === "RW" && !RW) {
-        RW = player;
-      }
-    });
-
-    // Next, handle players with multiple display positions
-    line.forEach((player) => {
-      if (!LW && player.displayPosition.includes("LW")) {
-        LW = player;
-      } else if (!C && player.displayPosition.includes("C")) {
-        C = player;
-      } else if (!RW && player.displayPosition.includes("RW")) {
-        RW = player;
-      }
-    });
-
-    // If positions are still unfilled, fill them based on remaining players and ATOI
-    const unassignedPlayers = line.filter(
-      (player) => player !== LW && player !== C && player !== RW,
-    );
-
-    // Parse ATOI into seconds for comparison
-    const parseAToiToSeconds = (atoi: string): number => {
-      const [minutes, seconds] = atoi.split(":").map(Number);
-      return minutes * 60 + seconds;
-    };
-
-    unassignedPlayers.sort(
-      (a, b) => parseAToiToSeconds(b.ATOI) - parseAToiToSeconds(a.ATOI),
-    ); // Sort by ATOI descending
-
-    if (!LW && unassignedPlayers.length > 0) LW = unassignedPlayers.shift()!;
-    if (!C && unassignedPlayers.length > 0) C = unassignedPlayers.shift()!;
-    if (!RW && unassignedPlayers.length > 0) RW = unassignedPlayers.shift()!;
-
-    // Return the reordered line
-    return [LW, C, RW].filter((player) => player !== null) as PlayerData[];
-  };
-
-  // Apply the reorder function to each line before rendering
-  const reorderedLines = lines.map((line) => reorderLine(line));
+  if (
+    !scopeIsVisible ||
+    (visibleLines.length === 0 &&
+      visiblePairs.length === 0 &&
+      goalies.length === 0)
+  ) {
+    return null;
+  }
 
   return (
     <div className={styles.gridContainer} data-scope-key={scopeKey}>
-      <div className={styles.sectionLabel}>Forward Lines</div>
-      <div className={`${styles.sectionLabel} ${styles.defenseLabel}`}>
-        Defense Pairs
+      <div className={styles.forwardColumn}>
+        <div className={styles.sectionLabel}>Forward Lines</div>
+        <div className={styles.forwardLines} data-testid="forward-lines">
+          {visibleLines.map((line) => (
+            <div
+              className={styles.forwardLine}
+              data-testid="forward-line"
+              key={groupKey("line", line)}
+            >
+              {line.map((player) => (
+                <PlayerCard
+                  key={player.id}
+                  player={player}
+                  stats={cardStats.skatersByPlayerId[player.id]}
+                  scopeGameCount={scopeGameCount}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
 
-      {reorderedLines.slice(0, 4).map((line, index) => (
-        <React.Fragment key={`line-${index}`}>
-          {line.map((player, playerIndex) => (
-            <PlayerCard
-              key={`${player.id}-${index}-${playerIndex}`}
-              player={player}
-              stats={cardStats.skatersByPlayerId[player.id]}
-              scopeGameCount={scopeGameCount}
-            />
+      <div className={styles.divider}></div>
+
+      <div className={styles.defenseColumn}>
+        <div className={styles.sectionLabel}>Defense Pairs</div>
+        <div className={styles.defensePairs} data-testid="defense-pairs">
+          {visiblePairs.map((pair) => (
+            <div
+              className={styles.defensePair}
+              data-testid="defense-pair"
+              key={groupKey("pair", pair)}
+            >
+              {pair.map((player) => (
+                <PlayerCard
+                  key={player.id}
+                  player={player}
+                  stats={cardStats.skatersByPlayerId[player.id]}
+                  scopeGameCount={scopeGameCount}
+                />
+              ))}
+            </div>
           ))}
-          {pairs[index] &&
-            pairs[index].map((player, playerIndex) => (
-              <PlayerCard
-                key={`${player.id}-${index}-${playerIndex}`}
-                player={player}
-                stats={cardStats.skatersByPlayerId[player.id]}
+        </div>
+
+        <div className={styles.goalieContainer}>
+          <div className={styles.goalieLabel}>Goaltenders</div>
+          <div className={styles.goalieCards}>
+            {goalies.map((goalie) => (
+              <GoalieCard
+                key={goalie.id}
+                player={goalie}
+                stats={cardStats.goaliesByPlayerId[goalie.id]}
                 scopeGameCount={scopeGameCount}
               />
             ))}
-        </React.Fragment>
-      ))}
-
-      {/* Divider */}
-      <div className={styles.divider}></div>
-
-      {/* Goalie Container */}
-      <div className={styles.goalieContainer}>
-        <div className={styles.goalieLabel}>Goaltenders</div>
-        <div className={styles.goalieCards}>
-          {goalies.map((goalie) => (
-            <GoalieCard
-              key={goalie.id}
-              player={goalie}
-              stats={cardStats.goaliesByPlayerId[goalie.id]}
-              scopeGameCount={scopeGameCount}
-            />
-          ))}
+          </div>
         </div>
       </div>
     </div>

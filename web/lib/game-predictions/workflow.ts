@@ -183,6 +183,28 @@ export type PreviewGamePredictionModelVersionPromotionResult = {
   persistedEvidenceChecked: boolean;
 };
 
+export function parseGamePredictionPromotionReceipt(receipts: unknown): number {
+  if (!Array.isArray(receipts) || receipts.length !== 1) {
+    throw new Error(
+      "Atomic game-prediction promotion returned an invalid receipt count.",
+    );
+  }
+  const receipt = asRecord(receipts[0]);
+  const retiredProductionRows = receipt.retired_production_rows;
+  if (
+    receipt.promoted !== true ||
+    typeof retiredProductionRows !== "number" ||
+    !Number.isFinite(retiredProductionRows) ||
+    !Number.isInteger(retiredProductionRows) ||
+    retiredProductionRows < 0
+  ) {
+    throw new Error(
+      "Atomic game-prediction promotion returned an invalid receipt.",
+    );
+  }
+  return retiredProductionRows;
+}
+
 type PromotionGateEvidence = {
   modelVersion: PromotionGateModelVersionRow | null;
   persistedOverallMetric: PromotionOverallMetricRow | null;
@@ -552,24 +574,6 @@ export function evaluatePersistedModelVersionPromotionGate(args: {
   };
 }
 
-function sameModelVersionKey(
-  left: Pick<
-    GamePredictionModelVersionRow,
-    "feature_set_version" | "model_name" | "model_version"
-  >,
-  right: {
-    featureSetVersion: string;
-    modelName: string;
-    modelVersion: string;
-  },
-): boolean {
-  return (
-    left.model_name === right.modelName &&
-    left.model_version === right.modelVersion &&
-    left.feature_set_version === right.featureSetVersion
-  );
-}
-
 async function loadPromotionGateEvidence(args: {
   client: SupabaseClient<Database>;
   modelName: string;
@@ -705,13 +709,6 @@ export async function promoteGamePredictionModelVersion(args: {
     };
   }
 
-  const { data: productionRows, error: productionError } = await args.client
-    .from("game_prediction_model_versions")
-    .select("model_name,model_version,feature_set_version")
-    .eq("model_name", args.modelName)
-    .eq("status", "production");
-  if (productionError) throw productionError;
-
   const promotionMetadata = {
     ...asRecord(modelVersion.metadata),
     manual_promotion: {
@@ -722,43 +719,21 @@ export async function promoteGamePredictionModelVersion(args: {
     },
   } as unknown as Json;
 
-  const { error: promoteError } = await args.client
-    .from("game_prediction_model_versions")
-    .update({
-      status: "production",
-      promoted_at: promotedAt,
-      retired_at: null,
-      metadata: promotionMetadata,
-      updated_at: promotedAt,
-    })
-    .eq("model_name", args.modelName)
-    .eq("model_version", args.modelVersion)
-    .eq("feature_set_version", args.featureSetVersion)
-    .eq("status", "candidate");
+  const { data: promotionReceipts, error: promoteError } =
+    await args.client.rpc(
+      "promote_game_prediction_model_version_atomic" as never,
+      {
+        p_model_name: args.modelName,
+        p_model_version: args.modelVersion,
+        p_feature_set_version: args.featureSetVersion,
+        p_promoted_at: promotedAt,
+        p_metadata: promotionMetadata,
+      } as never,
+    );
   if (promoteError) throw promoteError;
 
-  let retiredProductionRows = 0;
-  for (const row of (productionRows ?? []) as Array<
-    Pick<
-      GamePredictionModelVersionRow,
-      "feature_set_version" | "model_name" | "model_version"
-    >
-  >) {
-    if (sameModelVersionKey(row, args)) continue;
-    const { error: retireError } = await args.client
-      .from("game_prediction_model_versions")
-      .update({
-        status: "retired",
-        retired_at: promotedAt,
-        updated_at: promotedAt,
-      })
-      .eq("model_name", row.model_name)
-      .eq("model_version", row.model_version)
-      .eq("feature_set_version", row.feature_set_version)
-      .eq("status", "production");
-    if (retireError) throw retireError;
-    retiredProductionRows += 1;
-  }
+  const retiredProductionRows =
+    parseGamePredictionPromotionReceipt(promotionReceipts);
 
   return {
     promoted: true,

@@ -2,6 +2,7 @@ export type GoaliePipelineStageId =
   | "core_roster_schedule"
   | "line_combinations"
   | "projection_input_ingest"
+  | "projection_relationship_build"
   | "projection_derived_v2"
   | "goalie_start_priors_v2"
   | "projection_run_v2"
@@ -42,8 +43,16 @@ export const GOALIE_FORGE_PIPELINE_ORDER: GoaliePipelineStage[] = [
     depends_on: ["line_combinations"]
   },
   {
-    id: "projection_derived_v2",
+    id: "projection_relationship_build",
     order: 4,
+    label: "Build Projection Relationships",
+    endpoint: "/api/v1/db/shift-charts",
+    produces: ["shift_charts relationship-owned columns"],
+    depends_on: ["projection_input_ingest"]
+  },
+  {
+    id: "projection_derived_v2",
+    order: 5,
     label: "Build Derived Projection Inputs",
     endpoint: "/api/v1/db/build-projection-derived-v2",
     produces: [
@@ -51,11 +60,11 @@ export const GOALIE_FORGE_PIPELINE_ORDER: GoaliePipelineStage[] = [
       "forge_team_game_strength",
       "forge_goalie_game"
     ],
-    depends_on: ["projection_input_ingest"]
+    depends_on: ["projection_relationship_build"]
   },
   {
     id: "goalie_start_priors_v2",
-    order: 5,
+    order: 6,
     label: "Goalie Start Priors",
     endpoint: "/api/v1/db/update-goalie-projections-v2",
     produces: ["goalie_start_projections"],
@@ -63,7 +72,7 @@ export const GOALIE_FORGE_PIPELINE_ORDER: GoaliePipelineStage[] = [
   },
   {
     id: "projection_run_v2",
-    order: 6,
+    order: 7,
     label: "Run FORGE Projections",
     endpoint: "/api/v1/db/run-projection-v2",
     produces: [
@@ -76,7 +85,7 @@ export const GOALIE_FORGE_PIPELINE_ORDER: GoaliePipelineStage[] = [
   },
   {
     id: "projection_accuracy",
-    order: 7,
+    order: 8,
     label: "Run Accuracy + Calibration",
     endpoint: "/api/v1/db/run-projection-accuracy",
     produces: [
@@ -92,8 +101,7 @@ export const GOALIE_FORGE_PIPELINE_ORDER: GoaliePipelineStage[] = [
 
 export function getGoalieForgePipelineSpec() {
   return {
-    version: "goalie-forge-pipeline-v1",
+    version: "goalie-forge-pipeline-v2",
     stages: GOALIE_FORGE_PIPELINE_ORDER
   };
 }
-

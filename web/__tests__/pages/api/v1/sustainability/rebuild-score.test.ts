@@ -1,11 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("utils/adminOnlyMiddleware", () => ({
+  default: (handler: any) => handler
+}));
+
 const {
   assertScorePrerequisitesMock,
+  detectSourceAdvanceMock,
   resolveSeasonIdMock,
   issue
 } = vi.hoisted(() => ({
   assertScorePrerequisitesMock: vi.fn(),
+  detectSourceAdvanceMock: vi.fn(),
   resolveSeasonIdMock: vi.fn(),
   issue: {
     code: "missing_sustainability_window_z",
@@ -16,6 +22,10 @@ const {
     action:
       "Run /api/v1/sustainability/rebuild-window-z for the requested season and snapshot before rebuilding scores."
   } as const
+}));
+
+vi.mock("../../../../../lib/sustainability/incremental", () => ({
+  detectSustainabilitySourceAdvance: detectSourceAdvanceMock
 }));
 
 vi.mock("../../../../../lib/sustainability/dependencyChecks", async () => {
@@ -55,6 +65,10 @@ describe("/api/v1/sustainability/rebuild-score", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resolveSeasonIdMock.mockResolvedValue(20252026);
+    detectSourceAdvanceMock.mockResolvedValue({
+      shouldProcess: true,
+      reason: "new_source_date"
+    });
   });
 
   it("returns a structured prerequisite failure when window-z rows are missing", async () => {
@@ -74,5 +88,28 @@ describe("/api/v1/sustainability/rebuild-score", () => {
     expect(res.body.success).toBe(false);
     expect(res.body.prerequisite).toEqual(issue);
     expect(res.body.dependencyError.message).toBe(issue.message);
+  });
+
+  it("returns a no-op receipt when the latest source cutoff is already processed", async () => {
+    detectSourceAdvanceMock.mockResolvedValue({
+      shouldProcess: false,
+      reason: "source_already_processed",
+      latest_source_date: "2026-03-21",
+      latest_processed_source_date: "2026-03-21"
+    });
+    const res = createMockRes();
+
+    await handler(
+      { method: "GET", query: { season: "current" } } as any,
+      res
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      skipped: true,
+      reason: "source_already_processed"
+    });
+    expect(assertScorePrerequisitesMock).not.toHaveBeenCalled();
   });
 });

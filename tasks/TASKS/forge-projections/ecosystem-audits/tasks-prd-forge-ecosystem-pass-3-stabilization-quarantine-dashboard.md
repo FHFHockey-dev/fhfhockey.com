@@ -1,27 +1,27 @@
 ## Relevant Files
 
-- `tasks/prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md` - Authoritative pass-3 PRD and the only planning artifact this task list should extend.
-- `tasks/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md` - Execution checklist for the stabilization, quarantine, freshness, and dashboard-polish work.
-- `web/lib/rollingForgePipeline.ts` - Canonical stage-order contract that currently drifts from real storage behavior.
+- `tasks/TASKS/forge-projections/ecosystem-audits/prd/prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md` - Authoritative pass-3 PRD and the only planning artifact this task list should extend.
+- `tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md` - Execution checklist for the stabilization, quarantine, freshness, and dashboard-polish work.
+- `web/lib/rollingForgePipeline.ts` - Canonical v4 stage-order contract.
 - `web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts` - Coordinator regression coverage for pipeline-spec metadata and stage sequencing.
 - `web/__tests__/pages/api/v1/start-chart.test.ts` - Consumer-route regression test proving Start Chart reads skaters from `forge_player_projections` and exposes canonical-source metadata.
 - `web/__tests__/pages/api/v1/forge/players.test.ts` - Consumer-route regression test covering canonical FORGE skater aggregates and response shape.
-- `web/pages/api/v1/db/run-rolling-forge-pipeline.ts` - End-to-end orchestration route whose operator messaging and stage assumptions must match the real pipeline.
+- `web/pages/api/v1/db/run-rolling-forge-pipeline.ts` - End-to-end orchestration route aligned to the v4 stage contract.
 - `web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts` - Coordinator response-contract test covering stage order, spec version, and downstream execution metadata.
 - `web/pages/api/v1/db/run-projection-v2.ts` - Canonical projection execution endpoint whose preflight and operator-facing behavior may need freshness and deprecation updates.
 - `web/lib/projections/run-forge-projections.ts` - Canonical FORGE projection runner and downstream storage writer.
 - `web/pages/api/v1/db/update-start-chart-projections.ts` - Removed legacy downstream writer; keep only as a retired route reference while residual historical docs are cleaned up.
 - `web/pages/api/v1/start-chart.ts` - Start-chart consumer API now re-pointed to canonical `forge_player_projections` for skaters while still joining `goalie_start_projections` for goalie context.
-- `web/pages/api/v1/forge/players.ts` - Canonical player projection reader that should expose fallback and freshness state explicitly.
-- `web/pages/api/v1/forge/goalies.ts` - Canonical goalie projection reader that should expose fallback and freshness state explicitly.
+- `web/pages/api/v1/forge/players.ts` - Canonical player projection reader with explicit fallback and freshness state.
+- `web/pages/api/v1/forge/goalies.ts` - Canonical goalie projection reader with explicit fallback and freshness state.
 - `web/pages/api/v1/projections/players.ts` - Redundant legacy player-reader namespace that should be deprecated or merged.
 - `web/pages/api/v1/projections/goalies.ts` - Redundant legacy goalie-reader namespace that should be deprecated or merged.
 - `web/__tests__/pages/api/v1/projections/players.test.ts` - Regression test proving the legacy player projection namespace remains readable but explicitly deprecated in favor of `/api/v1/forge/players`.
 - `web/__tests__/pages/api/v1/projections/goalies.test.ts` - Regression test proving the legacy goalie projection namespace remains readable but explicitly deprecated in favor of `/api/v1/forge/goalies`.
 - `web/pages/api/v1/db/update-goalie-projections-v2.ts` - Canonical goalie-start writer that should remain as the only supported write path.
-- `web/pages/api/v1/db/update-team-power-ratings.ts` - Current team-ratings writer participating in the ambiguous dual-table story.
-- `web/pages/api/v1/db/update-team-power-ratings-new.ts` - Retained `410 Gone` legacy stub with an explicit retention reason while cron-source and operator docs are cleaned up.
-- `web/lib/teamRatingsService.ts` - Shared service layer that currently reads across both team-ratings tables and needs a single canonical table decision.
+- `web/pages/api/v1/db/update-team-power-ratings.ts` - Canonical `team_power_ratings_daily` writer.
+- `web/pages/api/v1/db/update-team-power-ratings-new.ts` - Retained warning-only no-write legacy stub with an explicit retention reason while cron-source and operator docs are cleaned up.
+- `web/lib/teamRatingsService.ts` - Shared service layer fixed on canonical `team_power_ratings_daily`.
 - `web/lib/teamRatingsService.test.ts` - Regression coverage for the canonical team-ratings read path and same-table column-fallback behavior.
 - `web/__tests__/pages/api/v1/db/update-team-power-ratings-new.test.ts` - Regression test proving the alternate `__new` team-ratings writer is quarantined and points callers to the canonical writer.
 - `web/pages/api/v1/db/update-rolling-player-averages.ts` - Canonical rolling recompute operator surface where freshness checks and validation guidance should tighten.
@@ -48,12 +48,12 @@
 - `web/__tests__/pages/api/v1/runs/latest.test.ts` - Regression test proving the latest-run reader exposes scan-friendly run metadata instead of only raw row payloads.
 - `web/lib/api/scanSummary.ts` - Shared scan-summary helper that standardizes active data date, fallback usage, row counts, and blocking issue counts across run and reader surfaces.
 - `web/lib/projections/compatibilityInventory.ts` - Shared compatibility cleanup ledger for removed shim paths, duplicate reader namespaces, and surviving transitional routes.
-- `web/pages/index.tsx` - Landing dashboard page that needs decomposition, hierarchy cleanup, and responsive polish.
-- `web/styles/Home.module.scss` - Homepage stylesheet with the current desktop-first layout assumptions, including the hard `min-width`.
-- `web/components/TransactionTrends/TransactionTrends.tsx` - Homepage insight module that needs stronger hierarchy, state handling, and mobile behavior.
-- `web/components/TeamStandingsChart/TeamStandingsChart.tsx` - Homepage standings module that needs lighter presentation and better scanability.
-- `web/lib/dashboard/dataFetchers.ts` - Dashboard data orchestration surface that may need clearer freshness and state contracts.
-- `web/lib/dashboard/freshness.ts` - Shared freshness logic likely to support the new same-day vs fallback signaling.
+- `web/pages/index.tsx` - Decomposed summary-first landing dashboard composition.
+- `web/styles/Home.module.scss` - Responsive homepage layout without the retired hard desktop `min-width`.
+- `web/components/TransactionTrends/TransactionTrends.tsx` - Summary-first homepage market insight module.
+- `web/components/TeamStandingsChart/TeamStandingsChart.tsx` - Homepage standings module with compact summary framing.
+- `web/lib/dashboard/dataFetchers.ts` - Dashboard data orchestration and explicit state/freshness surface.
+- `web/lib/dashboard/freshness.ts` - Shared same-day, fallback, stale, and module-state presentation logic.
 - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts` - Rolling pipeline regression coverage for dependency and contract changes.
 - `web/lib/projections/runProjectionV2.test.ts` - Historical test filename that still carries projection-runner regression coverage after the shim removal.
 - `web/lib/projections/module-imports.test.ts` - Import integrity coverage for projection module cleanup.
@@ -71,7 +71,14 @@
 - Prefer consolidating or deleting duplicate runtime surfaces instead of adding another compatibility layer.
 - When deprecating or deleting a route, verify repo references, scheduler/cron ownership, and any documented operator usage before removal.
 - Place tests alongside the code they verify when adding new coverage.
-- Run targeted tests first, then broader integrity checks in `web`, such as `npx jest [optional/path/to/test/file]` and `npx tsc --noEmit`.
+- Run targeted tests first, then broader integrity checks in `web`, such as `npm test -- [path/to/test/file]` and `npx tsc --noEmit`.
+
+### Current Audit Authority
+
+- The detailed implementation sections below are chronological evidence. Current runtime authority is `rolling-forge-pipeline-v4`, with projection execution at stage 8, accuracy refresh at stage 9, and monitoring at stage 10.
+- The legacy goalie writer, Start Chart materializer, WGO LY writer, and runner shim are deleted. The generic `/api/v1/projections/*` readers remain deprecated-readable, while the three retained legacy operator stubs remain no-write.
+- `update-team-power-ratings-new.ts` intentionally returns HTTP 200 plus `operationStatus: "warning"` rather than the original 410 contract. Its payload and test now call it a warning-only no-write quarantine stub, avoiding a false current-state claim while preserving the intentional transport behavior.
+- The March 29 homepage hydration mismatch is historical evidence: localized schedule text now initializes identically on server/client and is added only in a client effect.
 
 ## Tasks
 
@@ -641,3 +648,5 @@
 - Headless Chrome browser verification against `http://localhost:3000`
 - Captured full-page screenshot and DOM state
 - No code tests were run because `10.3` was verification and documentation only
+
+- [x] NEW 11.0 **P3 current-state authority reconciliation:** the PRD and task header now distinguish chronological pass-three implementation traces from current runtime authority; they reconcile pipeline v4 stage 8/9/10 ownership, deleted legacy routes/modules, deprecated-readable projection routes, retained 410 versus warning-only no-write stubs, and the subsequently contained homepage hydration mismatch. The alternate team-rating stub metadata and focused regression now describe its intentional HTTP 200 warning/no-work contract without changing transport behavior (discovered and completed 2026-07-29).

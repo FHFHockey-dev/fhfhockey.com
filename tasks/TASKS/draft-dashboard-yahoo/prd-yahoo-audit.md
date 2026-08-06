@@ -1,6 +1,22 @@
 # PRD: Yahoo Fantasy -> Supabase Ingestion & Mapping Audit ("Yahoo Pipeline")
 
+**2026-08-03 local sheet-export pagination hardening:** The canonical internal sheet reader now uses shared complete Supabase pagination with deterministic `player_name`/`player_key` ordering. The lifecycle requires a value-free `{ok:true,count>0}` internal receipt and fails before sheet clearing when the canonical view is empty. The focused discovery, writer-permission, and pagination contracts pass `34/34` tests, with TypeScript, scoped ESLint, Prettier, and diff integrity green. This is local-only evidence for NEW 9.5; no provider, database, sheet, writer, migration, repair, backfill, deployment, push, credential, or analytics action occurred.
+
+> **2026-07-31 current downstream/discovery closure:** Parent 7.0 and NEW 9.0 were reconciled after all children and NEW 9.1–9.14 were re-read. The bounded local Yahoo contract cohort passed 17 files/83 tests, with existing TypeScript, scoped lint, formatting, and diff-integrity evidence green; deployed canonical-reader proof is already recorded under 7.1. No new issue was found beyond the explicit controlled provider/league-discovery, legacy-Python-retirement, resumable-history, and end-to-end/provider gates. B-YAHOO is 65/72 with seven open. No external state changed.
+
+> **2026-07-31 current reader cutover (supersedes the historical status paragraphs below):** Exact commit `fdfbb2764d656be37b47be27de64d0e50f25f19f` is promoted without a second build as READY deployment `dpl_EphZQcV7FFUHah3sVfYWuzkcVj8D`. Start Chart, ownership trends, and ownership snapshots return value-free 200 responses from canonical readers; the bounded one-hour Production error-log query is empty. Postdeploy migration `20260731022805_revoke_legacy_yahoo_read_cache.sql` is applied under linked history: `yahoo_nhl_player_map_mat` is service-role-readable only, while both replacement readers remain security-invoker/browser-readable. The non-unique 1,857-row legacy map is retained explicitly for service rollback. The current implementation is 63/72 with 9 open; provider equivalence, Python retirement, historical backfill, and end-to-end/provider gates remain open.
+
+> **2026-07-31 local normalized-reader cutover:** Hosted value-free parity is exact for the staged views: mapping reader/materialized cache 1,857/1,857 with digest `d5448d3d5ac68dc47ffbf335f44e71a5`; latest-player fields 2,827/2,827 with digest `0844a51501fac22c8a027099cbec6a47`; normalized history covers 1,548 players and 496,371 non-null rows. All local read-only Yahoo consumers now use the canonical security-invoker readers, with normalized history aliased to the stable timeline field. Production publication, postdeploy cache revocation/advisor, provider, backfill, and legacy-map gates remain open.
+
 > **Implementation task list:** `tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md`
+
+## 2026-07-22 current-state overlay
+
+> **2026-07-30 current receipt (supersedes the historical status sentence below):** 60/72 rows are complete with 12 open. Atomic metadata/week and player-key lifecycle proofs, guarded Production reader recovery, and machine-readable Yahoo lifecycle alerts are complete. No Production migration, provider call, writer, schedule mutation, or build ran; resumable historical backfill remains gated on provider league-discovery equivalence because the global catalog has no league identity and connected-account state has nine distinct 2025 leagues. Migration-first reader cutover also remains open.
+
+> **2026-07-31 hosted migration readback:** The required Yahoo predeploy migrations are present in the 24-row Production ledger, including the key-snapshot, normalized-reader, scheduler-ownership, and metadata/week versions. The separately gated postdeploy legacy-cache revocation remains absent. This updates migration status only; provider league-discovery equivalence, controlled runtime, Python retirement, historical backfill, normalized-reader parity/cutover, postdeploy advisor proof, and legacy-map disposition remain open.
+
+The authoritative current inventory is `tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md`; it supersedes this 2025 file inventory where paths, schema, or ownership differ. The current implementation list is 60/72 with 12 open. Canonical normalized week ownership, complete provider/Supabase player-key pagination, measured non-destructive history retention, complete Yahoo/NHL mapping segmentation, deterministic evidence-scored identity matching, canonical provenance/review persistence, safe incremental/full-recompute behavior, Production maintenance-route authorization, and repaired atomic writer runtime/cross-runtime contracts are reconciled. Migrations `20260723040553`, `20260723113533`, `20260725200808`, `20260725220704`, `20260725235646`, `20260726000603`, `20260730091500`, and `20260730195000` are applied/history-aligned; the atomic detail writer, versioned key snapshot, normalized readers, and scheduler ownership contracts are browser-denied/service-role-only or fail-closed as designed. Exact Production `dpl_2DyH68oEiUhfsakGfRcHMAFdmumA` proved the consumers were published before migration: Start Chart returned 500/`42P01`; all named consumers are restored on READY/Production `96ccea804`. Postdeploy-only `20260731022805` now fail-closes unless both replacement readers are security-invoker and the mapping reader is browser-readable, then revokes the legacy cache from browsers while retaining service access. A clean full-chain local reset, exact ACL/index probes, 23 focused tests, and zero-error database lint pass. The 1,857-row legacy map remains deliberately non-unique because every full row is distinct despite 771 repeated ID pairs and 12 null Yahoo IDs. Ordered migration-first reader parity/cutover, controlled provider/league-discovery equivalence, historical backfill, Python-owner retirement, postdeploy cache retirement/advisor proof, and explicit legacy-map disposition remain open.
 
 Version: 2025-08-27
 Author: Automated Audit (GitHub Copilot)
@@ -177,6 +193,8 @@ Recommendations (P0):
 - Enhance RPC to: (a) upsert latest snapshot; (b) insert into history table using `current_date` + ownership metrics inside a transaction.
 - Fallback if percent_owned structure changes: search array for `value` property or handle object format.
 - Add per-player error catch to continue within batch.
+
+Current lifecycle update (2026-07-31): the TypeScript metadata/week route defaults to Yahoo's canonical `nhl` alias, retains only a validated maintenance override, and uses applied migration `20260730195000` to atomically version complete game metadata plus normalized weeks with change/removal counts and physical no-DML replay. The player-detail route discovers that newest database-owned NHL game unless an explicit maintenance override is supplied, reads scoped keys through deterministic complete Supabase pagination, uses bounded transient-only retry with jitter/`Retry-After`, and emits machine-readable processed/succeeded/failed/omitted/retry/rate-limit/completeness state into the shared durable cron audit. Partial results never remove weeks or deactivate players. Migrations `20260723113533`, `20260725200808`, and `20260725220704` plus typed transform/persistence ownership replace fabricated-zero/previous-row observation fill with explicit omission state and one fail-closed atomic latest/daily-ownership/daily-draft writer. Value-free Production atomicity/idempotency/late-failure proof passes with zero residue and unchanged service-role-only authorization. The Python player compatibility path is inert without exact opt-in and shares the paginated game scope, null/zero/omission contract, atomic RPC, and receipt validation without direct-table fallback. All active global mutations are method/auth bounded, exact-cron sheet failure output is value-free, and unscheduled mapping/backfill/uniform writers require explicit write opt-in. The TypeScript detail pipeline is the sole scheduled uniform-number owner. Deterministic mapping uses exact/manual/alias stages before thresholded fuzzy matching, explicit contextual evidence for ambiguities, canonical versioned FHFH review/provenance persistence, baseline-backed incremental selection, and fail-closed full recompute. Production migration application is complete; controlled provider execution, scheduler/natural evidence, final Python retirement, migration-first normalized-reader/security cutover, and historical backfill remain open boundaries.
 
 ### 6.8 `manual-refresh-yahoo-token.ts`
 Issues:
@@ -550,7 +568,7 @@ Completed items (observed)
 - Adaptive split-on-failure backoff that shrinks batch sizes on rate-limit and retries before long pauses.
 - Retry-After header handling for numeric and HTTP-date formats.
 - Pacing controls (min interval + optional per-minute cap) to avoid burst throttling.
-- Structured telemetry to `yahoo_historical_progress.log` and run logging to `yahoo_historical.log`.
+- Structured telemetry to local-only `yahoo_historical_progress.log` and run logging to ignored, untracked `yahoo_historical.log`; neither output is a source artifact.
 - Robust extraction for percent_owned/name/player_id across multiple Yahoo response shapes.
 - Upsert retry with exponential backoff for Supabase writes.
 - Diagnostic helper `dump_sample_for_first_key()` for response-shape inspection.
@@ -585,7 +603,7 @@ Key files & logs (repo-relative):
 - `web/lib/supabase/Upserts/Yahoo/player_name_normalization_spec.json` (normalization)
 - `migrations/20250827_yahoo_upsert_and_mapping.sql` (migration sketch)
 - `tasks/TASKS/draft-dashboard-yahoo/prd-yahoo-audit.md` (this PRD)
-- Telemetry/logs at repo root: `yahoo_historical_progress.log`, `yahoo_historical.log`
+- Local-only telemetry/logs at repo root: `yahoo_historical_progress.log`, `yahoo_historical.log` (ignored/untracked; durable conclusions belong in task/runbook evidence)
 - Upstream TS invoker: `web/pages/api/v1/db/update-yahoo-players.ts`
 
 Step-by-step instructions for the assistant/LLM
@@ -641,5 +659,13 @@ Output expected
 - Short runnable checklist confirming the ingestion run started and was monitored.
 - JSON telemetry summary.
 - Final recommended env settings for staging/production and concise migration plan (SQL snippets).
+
+## 2026-08-03 local legacy-owner hardening overlay
+
+The two remaining legacy metadata/key Python paths now fail closed unless the shell explicitly sets `YAHOO_LEGACY_PYTHON_WRITER_ENABLED=1`. Their Supabase/Yahoo clients are constructed only inside `main`, fixed desktop env paths and 465/858 defaults are removed, IDs are environment-owned, and the player-key path no longer writes access-token material. The focused writer-permission suite passes 12/12; both scripts AST-parse and disabled invocations exit before client/provider setup. This is local evidence only: controlled provider/league discovery, canonical Production runtime, retirement/cutover, and resumable historical backfill remain open under NEW 9.5.
+
+## 2026-08-03 local historical-owner hardening overlay
+
+`yahooHistoricalOwnership.py` now requires `YFPY_GAME_ID` and `YFPY_LEAGUE_ID`, accepts historical season mappings only through explicit `YHO_GAME_LEAGUE_OVERRIDES` JSON, requires environment consumer credentials, and no longer reads the credential table or writes refreshed tokens to `.env.local`. Its exact `YAHOO_HISTORICAL_WRITE_ENABLED=1` backfill guard remains. Writer-permission coverage passes 13/13 and all three Yahoo Python scripts AST-parse; no provider, database, writer, backfill, or credential action ran. NEW 9.5's controlled provider/league-equivalence and resumable-history gates remain open.
 
 ---

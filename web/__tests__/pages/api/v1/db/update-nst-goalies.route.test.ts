@@ -4,6 +4,7 @@ const {
   createClientMock,
   fetchCurrentSeasonMock,
   fetchNstTextByUrlMock,
+  isNstConfigErrorMock,
   upsertMock
 } = vi.hoisted(() => {
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
@@ -23,9 +24,10 @@ const {
                     return {
                       limit() {
                         return {
-                          maybeSingle: vi
-                            .fn()
-                            .mockResolvedValue({ data: { id: 8478402 }, error: null })
+                          maybeSingle: vi.fn().mockResolvedValue({
+                            data: { id: 8478402 },
+                            error: null
+                          })
                         };
                       }
                     };
@@ -56,6 +58,9 @@ const {
     createClientMock: vi.fn(() => supabaseClient),
     fetchCurrentSeasonMock: vi.fn(),
     fetchNstTextByUrlMock: vi.fn(),
+    isNstConfigErrorMock: vi.fn((error: unknown) =>
+      error instanceof Error && error.name === "NstConfigError"
+    ),
     upsertMock
   };
 });
@@ -73,7 +78,10 @@ vi.mock("../../../../../utils/fetchCurrentSeason", () => ({
 }));
 
 vi.mock("../../../../../lib/nst/client", () => ({
-  fetchNstTextByUrl: fetchNstTextByUrlMock
+  fetchNstTextByUrl: fetchNstTextByUrlMock,
+  isNstAuthError: vi.fn(() => false),
+  isNstConfigError: isNstConfigErrorMock,
+  isNstRateLimitError: vi.fn(() => false)
 }));
 
 vi.mock("dotenv", () => ({
@@ -131,6 +139,7 @@ describe("/api/v1/db/update-nst-goalies", () => {
 
     const req: any = {
       method: "GET",
+      headers: { host: "localhost" },
       query: {
         startDate: "2025-10-01",
         maxUrls: "1",
@@ -167,5 +176,36 @@ describe("/api/v1/db/update-nst-goalies", () => {
       datesQueued: 1,
       stoppedEarly: true
     });
+  });
+
+  it("fails fast on missing NST configuration instead of retrying it", async () => {
+    fetchCurrentSeasonMock.mockResolvedValue({
+      id: 20252026,
+      startDate: "2025-10-01",
+      endDate: "2025-10-01"
+    });
+    fetchNstTextByUrlMock.mockRejectedValue(
+      Object.assign(new Error("NST_KEY missing"), {
+        name: "NstConfigError"
+      })
+    );
+
+    const res = createMockRes();
+    await handler(
+      {
+        method: "GET",
+        headers: { host: "localhost" },
+        query: {
+          startDate: "2025-10-01",
+          maxUrls: "1",
+          maxDays: "1"
+        }
+      } as any,
+      res
+    );
+
+    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(1);
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({ message: "Internal Server Error" });
   });
 });

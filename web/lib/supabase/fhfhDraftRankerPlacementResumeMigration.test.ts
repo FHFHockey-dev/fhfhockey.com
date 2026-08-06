@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 const migration = readFileSync(
   resolve(
     process.cwd(),
-    "../supabase/migrations/20260715034601_enforce_single_active_draft_placement.sql",
+    "../supabase/migration-archive/pre-baseline-20260716/authoritative-root/20260715034601_enforce_single_active_draft_placement.sql",
   ),
   "utf8",
 );

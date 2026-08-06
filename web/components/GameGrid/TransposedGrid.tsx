@@ -33,13 +33,13 @@ export default function TransposedGrid({
   setExcludedDays,
   extended,
   start,
-  mode
+  mode,
 }: TransposedGridProps) {
   const daysToRender = extended ? EXTENDED_DAYS : DAYS;
   const [dates] = useState<[string, string]>(() => startAndEndOfWeek());
   const [currentSchedule, currentNumGamesPerDay] = useSchedule(
     format(new Date(dates[0]), "yyyy-MM-dd"),
-    mode === "10-Day-Forecast"
+    mode === "10-Day-Forecast",
   );
   const teamsMap = useTeamsMap();
 
@@ -76,7 +76,7 @@ export default function TransposedGrid({
   const scoreRankings = React.useMemo(() => {
     const validTeams = sortedTeams.filter((team) => team.weekScore !== -100);
     const sortedByScore = [...validTeams].sort(
-      (a, b) => b.weekScore - a.weekScore
+      (a, b) => b.weekScore - a.weekScore,
     );
     const ranking: Record<number, number> = {};
     sortedByScore.forEach((team, index) => {
@@ -207,7 +207,8 @@ export default function TransposedGrid({
                     {day} {cellDate}
                     {!extended && (
                       <Toggle
-                        checked={isDisabled}
+                        checked={!isDisabled}
+                        aria-label={`Include ${String(day)} games`}
                         onChange={() => toggleDay(day as DAY_ABBREVIATION)}
                       />
                     )}

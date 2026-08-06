@@ -19,6 +19,11 @@ export type SustainabilityTrendIdentity = {
   positionCode: string | null;
 };
 
+export type SustainabilityTrendHistoryPoint = {
+  snapshot_date: string;
+  s_100: number;
+};
+
 const SCORE_PAGE_SIZE = 500;
 const IDENTITY_CHUNK_SIZE = 200;
 
@@ -140,4 +145,54 @@ export async function fetchSustainabilityTrendIdentity(
       ];
     }),
   );
+}
+
+export async function fetchSustainabilityTrendHistory(
+  client: SupabaseClient<Database>,
+  args: {
+    playerIds: number[];
+    windowCode: string;
+    endDate: string;
+    points?: number;
+  },
+): Promise<Map<number, SustainabilityTrendHistoryPoint[]>> {
+  const points = Math.max(2, Math.min(30, args.points ?? 10));
+  const start = new Date(`${args.endDate}T00:00:00.000Z`);
+  start.setUTCDate(start.getUTCDate() - 90);
+  const startDate = start.toISOString().slice(0, 10);
+  const rows: Array<{
+    player_id: number;
+    snapshot_date: string;
+    s_100: number;
+  }> = [];
+
+  for (const playerIdChunk of chunks(args.playerIds, IDENTITY_CHUNK_SIZE)) {
+    for (let offset = 0; ; offset += SCORE_PAGE_SIZE) {
+      const { data, error } = await client
+        .from("sustainability_scores")
+        .select("player_id, snapshot_date, s_100")
+        .in("player_id", playerIdChunk)
+        .eq("window_code", args.windowCode)
+        .gte("snapshot_date", startDate)
+        .lte("snapshot_date", args.endDate)
+        .order("player_id", { ascending: true })
+        .order("snapshot_date", { ascending: true })
+        .range(offset, offset + SCORE_PAGE_SIZE - 1);
+      if (error) throw error;
+      const page = data ?? [];
+      rows.push(...page);
+      if (page.length < SCORE_PAGE_SIZE) break;
+    }
+  }
+
+  const byPlayer = new Map<number, SustainabilityTrendHistoryPoint[]>();
+  for (const row of rows) {
+    const history = byPlayer.get(row.player_id) ?? [];
+    history.push({
+      snapshot_date: row.snapshot_date,
+      s_100: row.s_100,
+    });
+    byPlayer.set(row.player_id, history.slice(-points));
+  }
+  return byPlayer;
 }

@@ -1,10 +1,9 @@
 import { GetServerSidePropsContext } from "next";
 import supabase from "lib/supabase";
-import { formatPercent, formatSeason } from "../../../utils/stats/formatters";
 import styles from "styles/TeamStatsPage.module.scss";
 import React, { useEffect, useState, useRef } from "react";
-import useCurrentSeason from "hooks/useCurrentSeason";
 import { useShotData, ShotDataFilters } from "hooks/useShotData";
+import { useTeamStatsHeaderData } from "hooks/useTeamStatsHeaderData";
 import { teamsInfo } from "lib/teamsInfo";
 import { LineCombinationsGrid } from "components/LineCombinations/LineCombinationsGrid";
 import { TeamTabNavigation } from "components/TeamTabNavigation/TeamTabNavigation";
@@ -19,29 +18,6 @@ interface ShotData {
   xcoord: number;
   ycoord: number;
   typedesckey: string; // 'goal' or 'shot'
-}
-
-// Standings interfaces for enhanced header - Updated to match actual data structure
-interface StandingsData {
-  division_sequence: number;
-  conference_sequence: number;
-  league_sequence: number;
-  points: number;
-  wins: number;
-  losses: number;
-  ot_losses: number;
-  streak_code: string;
-  streak_count: number;
-  l10_wins: number;
-  l10_losses: number;
-  l10_ot_losses: number;
-  goal_for: number;
-  goal_against: number;
-  point_pctg: number;
-  division_name: string;
-  conference_name: string;
-  games_played: number;
-  regulation_wins: number;
 }
 
 interface TeamSeasonSummary {
@@ -80,6 +56,22 @@ function formatSeasonLabel(seasonId: number | string | null | undefined) {
   return `${season.slice(0, 4)}-${season.slice(6, 8)}`;
 }
 
+export function formatOrdinal(value: number | null | undefined) {
+  if (!Number.isSafeInteger(value) || Number(value) <= 0) return "—";
+  const normalized = Number(value);
+  const lastTwoDigits = normalized % 100;
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 13) return `${normalized}th`;
+  const suffix =
+    normalized % 10 === 1
+      ? "st"
+      : normalized % 10 === 2
+        ? "nd"
+        : normalized % 10 === 3
+          ? "rd"
+          : "th";
+  return `${normalized}${suffix}`;
+}
+
 export default function TeamStatsPage({
   teamName,
   summaries,
@@ -93,9 +85,9 @@ export default function TeamStatsPage({
   teamColors: TeamColors | null;
   teams: { team_id: number; name: string; abbreviation: string }[];
 }) {
-  const currentSeason = useCurrentSeason();
   const teamId = summaries[0]?.team_id;
-  const summarySeasonLabel = formatSeasonLabel(summaries[0]?.season_id);
+  const pageSeasonId = summaries[0]?.season_id;
+  const summarySeasonLabel = formatSeasonLabel(pageSeasonId);
 
   // State for event and game type filters
   const [filters, setFilters] = useState<ShotDataFilters>({
@@ -117,12 +109,11 @@ export default function TeamStatsPage({
   const [playerMapLoading, setPlayerMapLoading] = useState(false);
   const [playerMapError, setPlayerMapError] = useState<string | null>(null);
 
-  // State for standings data
-  const [standingsData, setStandingsData] = useState<StandingsData | null>(
-    null
-  );
-  const [standingsLoading, setStandingsLoading] = useState(false);
-  const [standingsError, setStandingsError] = useState<string | null>(null);
+  const {
+    data: standingsData,
+    loading: standingsLoading,
+    error: standingsError
+  } = useTeamStatsHeaderData(teamId, teamAbbreviation, pageSeasonId);
 
   // Add refs for table and line combinations
   const tableRef = useRef<HTMLTableElement>(null);
@@ -202,102 +193,6 @@ export default function TeamStatsPage({
       });
   }, [lineCombos]);
 
-  // Fetch standings data for the current team and season - Updated to match TeamDashboard
-  useEffect(() => {
-    const fetchStandingsData = async () => {
-      if (!teamId || !currentSeason) return;
-
-      setStandingsLoading(true);
-      setStandingsError(null);
-
-      try {
-        // Fetch team summary data for accurate official stats
-        const { data: summaryData, error: summaryError } = await supabase
-          .from("team_summary_years")
-          .select(
-            `
-            games_played,
-            wins,
-            losses,
-            ot_losses,
-            points,
-            goals_for,
-            goals_against,
-            point_pct,
-            regulation_and_ot_wins
-          `
-          )
-          .eq("team_id", teamId)
-          .eq("season_id", currentSeason.seasonId)
-          .single();
-
-        if (summaryError) throw summaryError;
-
-        // Fetch current standings position from nhl_standings_details
-        const { data: standings, error: standingsError } = await supabase
-          .from("nhl_standings_details")
-          .select(
-            `
-            division_sequence,
-            conference_sequence,
-            league_sequence,
-            streak_code,
-            streak_count,
-            l10_wins,
-            l10_losses,
-            l10_ot_losses,
-            l10_goals_for,
-            l10_goals_against,
-            l10_goal_differential,
-            division_name,
-            conference_name
-          `
-          )
-          .eq("team_abbrev", teamAbbreviation)
-          .eq("season_id", currentSeason.seasonId)
-          .order("date", { ascending: false })
-          .limit(1);
-
-        if (standingsError) throw standingsError;
-
-        // Combine data from both sources
-        if (summaryData) {
-          const standingsRecord = standings?.[0];
-          setStandingsData({
-            division_sequence: standingsRecord?.division_sequence || 0,
-            conference_sequence: standingsRecord?.conference_sequence || 0,
-            league_sequence: standingsRecord?.league_sequence || 0,
-            points: summaryData.points || 0,
-            wins: summaryData.wins || 0,
-            losses: summaryData.losses || 0,
-            ot_losses: summaryData.ot_losses || 0,
-            streak_code: standingsRecord?.streak_code || "",
-            streak_count: standingsRecord?.streak_count || 0,
-            l10_wins: standingsRecord?.l10_wins || 0,
-            l10_losses: standingsRecord?.l10_losses || 0,
-            l10_ot_losses: standingsRecord?.l10_ot_losses || 0,
-            goal_for: summaryData.goals_for || 0,
-            goal_against: summaryData.goals_against || 0,
-            point_pctg: summaryData.point_pct || 0,
-            division_name: standingsRecord?.division_name || "",
-            conference_name: standingsRecord?.conference_name || "",
-            games_played: summaryData.games_played || 0,
-            regulation_wins: summaryData.regulation_and_ot_wins || 0
-          });
-        }
-      } catch (err) {
-        setStandingsError(
-          err instanceof Error ? err.message : "An error occurred"
-        );
-        setStandingsData(null);
-      } finally {
-        setStandingsLoading(false);
-      }
-    };
-
-    fetchStandingsData();
-  }, [teamId, currentSeason, teamAbbreviation]);
-
   // Show more/less for stats table
   const [showAllSeasons, setShowAllSeasons] = useState(false);
   const displayedSummaries = showAllSeasons
@@ -307,7 +202,7 @@ export default function TeamStatsPage({
   // Use our custom hook to fetch shot data with filters
   const { shotData, opponentShotData, isLoading, error } = useShotData(
     teamId,
-    currentSeason?.seasonId.toString(),
+    pageSeasonId?.toString(),
     filters
   );
 
@@ -373,14 +268,7 @@ export default function TeamStatsPage({
                 </div>
                 <div className={styles.quickStat}>
                   <span className={styles.quickStatValue}>
-                    {standingsData.division_sequence}
-                    {standingsData.division_sequence === 1
-                      ? "st"
-                      : standingsData.division_sequence === 2
-                        ? "nd"
-                        : standingsData.division_sequence === 3
-                          ? "rd"
-                          : "th"}
+                    {formatOrdinal(standingsData.division_sequence)}
                   </span>
                   <span className={styles.quickStatLabel}>
                     {standingsData.division_name}
@@ -388,14 +276,7 @@ export default function TeamStatsPage({
                 </div>
                 <div className={styles.quickStat}>
                   <span className={styles.quickStatValue}>
-                    {standingsData.conference_sequence}
-                    {standingsData.conference_sequence === 1
-                      ? "st"
-                      : standingsData.conference_sequence === 2
-                        ? "nd"
-                        : standingsData.conference_sequence === 3
-                          ? "rd"
-                          : "th"}
+                    {formatOrdinal(standingsData.conference_sequence)}
                   </span>
                   <span className={styles.quickStatLabel}>
                     {standingsData.conference_name}
@@ -403,14 +284,7 @@ export default function TeamStatsPage({
                 </div>
                 <div className={styles.quickStat}>
                   <span className={styles.quickStatValue}>
-                    {standingsData.league_sequence}
-                    {standingsData.league_sequence === 1
-                      ? "st"
-                      : standingsData.league_sequence === 2
-                        ? "nd"
-                        : standingsData.league_sequence === 3
-                          ? "rd"
-                          : "th"}
+                    {formatOrdinal(standingsData.league_sequence)}
                   </span>
                   <span className={styles.quickStatLabel}>NHL</span>
                 </div>
@@ -433,8 +307,10 @@ export default function TeamStatsPage({
         <TeamTabNavigation
           teamId={teamId?.toString() || ""}
           teamAbbrev={teamAbbreviation}
-          seasonId={currentSeason?.seasonId?.toString() || ""}
-          currentSeason={currentSeason}
+          seasonId={pageSeasonId?.toString() || ""}
+          currentSeason={
+            pageSeasonId === undefined ? undefined : { seasonId: pageSeasonId }
+          }
           shotData={shotData}
           opponentShotData={opponentShotData}
           isLoadingShotData={isLoading}
@@ -467,11 +343,11 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   if (!teamAbbreviation || Array.isArray(teamAbbreviation)) {
     return { notFound: true };
   }
-  // Look up team info by abbreviation
-  const teamInfo = teamsInfo[teamAbbreviation as string];
-  if (!teamInfo) {
+  if (!Object.prototype.hasOwnProperty.call(teamsInfo, teamAbbreviation)) {
     return { notFound: true };
   }
+  const canonicalTeamAbbreviation = teamAbbreviation as keyof typeof teamsInfo;
+  const teamInfo = teamsInfo[canonicalTeamAbbreviation];
   const teamIdNum = teamInfo.id;
   const { data } = await supabase
     .from("team_summary_years")
@@ -508,7 +384,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     props: {
       teamName: data[0].team_full_name,
       summaries: data,
-      teamAbbreviation,
+      teamAbbreviation: canonicalTeamAbbreviation,
       teams,
       teamColors: teamInfo
         ? {

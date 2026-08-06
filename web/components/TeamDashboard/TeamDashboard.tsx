@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import supabase from "lib/supabase";
 import { teamsInfo } from "lib/teamsInfo";
-import useCurrentSeason from "hooks/useCurrentSeason";
+import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
 import fetchWithCache from "lib/fetchWithCache";
 import { GameByGameTimeline } from "./GameByGameTimeline";
 import { AdvancedL10Metrics } from "./AdvancedL10Metrics";
@@ -15,9 +15,9 @@ interface TeamDashboardProps {
 }
 
 interface StandingsData {
-  division_sequence: number;
-  conference_sequence: number;
-  league_sequence: number;
+  division_sequence: number | null;
+  conference_sequence: number | null;
+  league_sequence: number | null;
   points: number;
   wins: number;
   losses: number;
@@ -123,38 +123,63 @@ interface LeagueRankings {
   pp_goals_for_rank: number;
   pp_goals_against_rank: number;
   sh_goals_for_rank: number;
-  team_save_pct_rank: number;
-  team_gaa_rank: number;
-  team_shutouts_rank: number;
   scf_pct_rank: number;
   xgf_rank: number;
   xga_rank: number;
 }
 
-interface PlayerLeader {
-  player_id: number;
-  player_name: string;
-  position_code: string;
-  value: number;
-  games_played: number;
+function parsePositiveInteger(value: string | undefined): number | null {
+  if (!value || !/^[1-9]\d*$/.test(value)) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) ? parsed : null;
 }
 
-interface TeamLeadersData {
-  pointsLeaders: PlayerLeader[];
-  goalsLeaders: PlayerLeader[];
-  bshLeaders: PlayerLeader[];
+function parseSeasonId(value: string | undefined): number | null {
+  if (!value || !/^[1-9]\d{7}$/.test(value)) return null;
+  const parsed = Number(value);
+  const startYear = Number(value.slice(0, 4));
+  const endYear = Number(value.slice(4));
+  return Number.isSafeInteger(parsed) && endYear === startYear + 1
+    ? parsed
+    : null;
+}
+
+function formatOrdinal(value: number | null | undefined): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return "N/A";
+  }
+
+  const remainder100 = Math.abs(value) % 100;
+  if (remainder100 >= 11 && remainder100 <= 13) return `${value}th`;
+
+  switch (Math.abs(value) % 10) {
+    case 1:
+      return `${value}st`;
+    case 2:
+      return `${value}nd`;
+    case 3:
+      return `${value}rd`;
+    default:
+      return `${value}th`;
+  }
+}
+
+function formatPerGame(total: number, gamesPlayed: number): string {
+  if (!Number.isFinite(total) || !Number.isFinite(gamesPlayed)) return "N/A";
+  return gamesPlayed > 0 ? (total / gamesPlayed).toFixed(2) : "N/A";
 }
 
 export function TeamDashboard({
   teamId,
   teamAbbrev,
-  seasonId
+  seasonId,
 }: TeamDashboardProps) {
-  const currentSeason = useCurrentSeason();
+  const currentSeasonQuery = useCurrentSeasonQuery();
+  const currentSeason = currentSeasonQuery.data ?? undefined;
   const effectiveSeasonId = seasonId || currentSeason?.seasonId?.toString();
 
   const [standingsData, setStandingsData] = useState<StandingsData | null>(
-    null
+    null,
   );
   const [teamStats, setTeamStats] = useState<TeamStats | null>(null);
   const [specialTeamsStats, setSpecialTeamsStats] =
@@ -164,26 +189,72 @@ export function TeamDashboard({
   const [recentPerformance, setRecentPerformance] =
     useState<RecentPerformance | null>(null);
   const [leagueRankings, setLeagueRankings] = useState<LeagueRankings | null>(
-    null
+    null,
   );
-  const [teamLeaders, setTeamLeaders] = useState<TeamLeadersData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [gameRecordsCount, setGameRecordsCount] = useState<number>(0);
   const [includePlayoffs, setIncludePlayoffs] = useState<boolean>(false);
+  const [settledRequestIdentity, setSettledRequestIdentity] = useState<
+    string | null
+  >(null);
 
-  const teamInfo = teamsInfo[teamAbbrev];
+  const teamInfo = Object.prototype.hasOwnProperty.call(teamsInfo, teamAbbrev)
+    ? teamsInfo[teamAbbrev]
+    : undefined;
+  const franchiseId = teamInfo?.franchiseId;
+  const parsedTeamId = parsePositiveInteger(teamId);
+  const parsedSeasonId = parseSeasonId(effectiveSeasonId);
+  const teamSelectionIsValid =
+    parsedTeamId !== null && teamInfo?.id === parsedTeamId;
+  const hasExplicitSeasonId = Boolean(seasonId);
+  const seasonLookupIsPending =
+    !hasExplicitSeasonId && currentSeasonQuery.isPending;
+  const seasonLookupIsError =
+    !hasExplicitSeasonId && currentSeasonQuery.isError;
+  const currentSeasonMatchesSelection =
+    currentSeason?.seasonId?.toString() === effectiveSeasonId;
+  const selectedRegularSeasonStartDate = currentSeasonMatchesSelection
+    ? currentSeason?.regularSeasonStartDate
+    : undefined;
+  const selectedRegularSeasonEndDate = currentSeasonMatchesSelection
+    ? currentSeason?.regularSeasonEndDate
+    : undefined;
+  const selectedSeasonEndDate = currentSeasonMatchesSelection
+    ? currentSeason?.seasonEndDate
+    : undefined;
+  const requestIdentity = JSON.stringify([
+    teamId,
+    teamAbbrev,
+    effectiveSeasonId ?? "",
+    includePlayoffs,
+    selectedRegularSeasonStartDate ?? "",
+    selectedRegularSeasonEndDate ?? "",
+    selectedSeasonEndDate ?? "",
+  ]);
 
   useEffect(() => {
-    const fetchTeamData = async () => {
+    let ownsRequest = true;
+
+    const clearDashboardData = () => {
+      setStandingsData(null);
+      setTeamStats(null);
+      setSpecialTeamsStats(null);
+      setGoaltendingStats(null);
+      setRecentPerformance(null);
+      setLeagueRankings(null);
+      setGameRecordsCount(0);
+    };
+
+    const fetchTeamData = async (
+      validatedTeamId: number,
+      validatedSeasonId: number,
+    ) => {
+      const validatedSeasonIdString = validatedSeasonId.toString();
       try {
         setIsLoading(true);
         setError(null);
-
-        // Type guard to ensure we have a valid season ID
-        if (!effectiveSeasonId) {
-          throw new Error("No valid season ID available");
-        }
+        clearDashboardData();
 
         // Fetch standings data from team_summary_years for more accurate official stats
         const { data: summaryData, error: summaryError } = await supabase
@@ -202,12 +273,13 @@ export function TeamDashboard({
             faceoff_win_pct,
             penalty_kill_pct,
             power_play_pct
-          `
+          `,
           )
-          .eq("team_id", parseInt(teamId))
-          .eq("season_id", parseInt(effectiveSeasonId))
+          .eq("team_id", validatedTeamId)
+          .eq("season_id", validatedSeasonId)
           .single();
 
+        if (!ownsRequest) return;
         if (summaryError) throw summaryError;
 
         // Fetch current standings position from nhl_standings_details (for division rank, streak, etc.)
@@ -228,13 +300,14 @@ export function TeamDashboard({
             l10_goal_differential,
             division_name,
             conference_name
-          `
+          `,
           )
           .eq("team_abbrev", teamAbbrev)
-          .eq("season_id", parseInt(effectiveSeasonId))
+          .eq("season_id", validatedSeasonId)
           .order("date", { ascending: false })
           .limit(1);
 
+        if (!ownsRequest) return;
         if (standingsError) throw standingsError;
 
         // Fetch 5v5 advanced stats and calculate season averages weighted by games played
@@ -242,18 +315,15 @@ export function TeamDashboard({
         let startDate: string;
         let endDate: string;
 
-        if (
-          currentSeason?.regularSeasonStartDate &&
-          currentSeason?.regularSeasonEndDate
-        ) {
-          startDate = currentSeason.regularSeasonStartDate.split("T")[0];
+        if (selectedRegularSeasonStartDate && selectedRegularSeasonEndDate) {
+          startDate = selectedRegularSeasonStartDate.split("T")[0];
           endDate =
-            includePlayoffs && currentSeason?.seasonEndDate
-              ? currentSeason.seasonEndDate.split("T")[0]
-              : currentSeason.regularSeasonEndDate.split("T")[0];
+            includePlayoffs && selectedSeasonEndDate
+              ? selectedSeasonEndDate.split("T")[0]
+              : selectedRegularSeasonEndDate.split("T")[0];
         } else {
           // Fallback date ranges based on season ID
-          const seasonYear = parseInt(effectiveSeasonId.slice(0, 4));
+          const seasonYear = Number(validatedSeasonIdString.slice(0, 4));
           startDate = `${seasonYear}-10-01`; // Typical season start
           endDate = includePlayoffs
             ? `${seasonYear + 1}-06-30` // End of playoffs
@@ -275,13 +345,14 @@ export function TeamDashboard({
             xgf,
             xga,
             date
-          `
+          `,
           )
           .eq("team_abbreviation", teamAbbrev)
           .gte("date", startDate)
           .lte("date", endDate)
           .order("date", { ascending: true }); // Get all records to calculate proper averages
 
+        if (!ownsRequest) return;
         if (stats5v5Error) throw stats5v5Error;
 
         // Fetch special teams stats from wgo_team_stats (latest available)
@@ -296,22 +367,23 @@ export function TeamDashboard({
             pp_goals_against,
             sh_goals_for,
             sh_goals_against
-          `
+          `,
           )
-          .eq("team_id", parseInt(teamId))
-          .eq("season_id", parseInt(effectiveSeasonId))
+          .eq("team_id", validatedTeamId)
+          .eq("season_id", validatedSeasonId)
           .order("date", { ascending: false })
           .limit(1);
 
+        if (!ownsRequest) return;
         if (specialTeamsError) throw specialTeamsError;
 
         // Process standings data combining team_summary_years and nhl_standings_details
         if (summaryData) {
           const standingsRecord = standings?.[0];
           setStandingsData({
-            division_sequence: standingsRecord?.division_sequence || 0,
-            conference_sequence: standingsRecord?.conference_sequence || 0,
-            league_sequence: standingsRecord?.league_sequence || 0,
+            division_sequence: standingsRecord?.division_sequence ?? null,
+            conference_sequence: standingsRecord?.conference_sequence ?? null,
+            league_sequence: standingsRecord?.league_sequence ?? null,
             points: summaryData.points || 0,
             wins: summaryData.wins || 0,
             losses: summaryData.losses || 0,
@@ -327,7 +399,7 @@ export function TeamDashboard({
             division_name: standingsRecord?.division_name || "",
             conference_name: standingsRecord?.conference_name || "",
             games_played: summaryData.games_played || 0,
-            regulation_wins: summaryData.regulation_and_ot_wins || 0
+            regulation_wins: summaryData.regulation_and_ot_wins || 0,
           });
         }
 
@@ -349,7 +421,7 @@ export function TeamDashboard({
 
           // Filter out records with zero or null games played
           const validRecords = stats5v5.filter(
-            (record) => record.gp && record.gp > 0
+            (record) => record.gp && record.gp > 0,
           );
 
           validRecords.forEach((record) => {
@@ -418,7 +490,7 @@ export function TeamDashboard({
               save_pct_5v5: weightedSvPct / totalGamesWeighted,
               shooting_pct_5v5: weightedShPct / totalGamesWeighted,
               xgf: weightedXgf / totalGamesWeighted, // Average expected goals for per game
-              xga: weightedXga / totalGamesWeighted // Average expected goals against per game
+              xga: weightedXga / totalGamesWeighted, // Average expected goals against per game
             });
           }
         }
@@ -434,35 +506,48 @@ export function TeamDashboard({
             pp_goals_for: latestSpecialTeams.power_play_goals_for || 0,
             pp_goals_against: latestSpecialTeams.pp_goals_against || 0,
             sh_goals_for: latestSpecialTeams.sh_goals_for || 0,
-            sh_goals_against: latestSpecialTeams.sh_goals_against || 0
+            sh_goals_against: latestSpecialTeams.sh_goals_against || 0,
           });
         }
 
         // Fetch goaltending data using NHL API and process team goalie statistics
-        const franchiseId = teamInfo?.franchiseId;
         if (franchiseId) {
           try {
-            // Calculate date range for current season with fallbacks
+            // Keep regular-season goalie windows inside the selected season.
             const today = new Date().toISOString().split("T")[0];
-            const seasonStart =
-              currentSeason?.regularSeasonStartDate?.split("T")[0] || startDate;
+            const regularSeasonEndDate =
+              selectedRegularSeasonEndDate?.split("T")[0] ||
+              `${Number(validatedSeasonIdString.slice(0, 4)) + 1}-04-30`;
+            const goalieEndDate =
+              today < regularSeasonEndDate ? today : regularSeasonEndDate;
+            const goalieWindowHasStarted = goalieEndDate >= startDate;
 
             // Fetch team schedule to get total games played
-            const scheduleUrl = `https://api-web.nhle.com/v1/club-schedule-season/${teamAbbrev}/${effectiveSeasonId}`;
-            const scheduleResponse = await fetchWithCache(scheduleUrl);
+            const scheduleUrl = `https://api-web.nhle.com/v1/club-schedule-season/${teamAbbrev}/${validatedSeasonIdString}`;
+            const scheduleResponse = goalieWindowHasStarted
+              ? await fetchWithCache(scheduleUrl)
+              : { games: [] };
+            if (!ownsRequest) return;
             const completedGames = scheduleResponse.games.filter(
               (game: any) =>
-                game.gameType === 2 && game.gameDate.split("T")[0] <= today
+                game.gameType === 2 &&
+                game.gameDate.split("T")[0] >= startDate &&
+                game.gameDate.split("T")[0] <= goalieEndDate,
             ).length;
 
             // Fetch goalie data from NHL API
-            const goalieUrl = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameDate<='${today}' and gameDate>='${seasonStart}' and gameTypeId=2`;
-            const goalieResponse = await fetchWithCache(goalieUrl);
+            const goalieUrl = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameDate<='${goalieEndDate}' and gameDate>='${startDate}' and gameTypeId=2`;
+            const goalieResponse = goalieWindowHasStarted
+              ? await fetchWithCache(goalieUrl)
+              : { data: [] };
+            if (!ownsRequest) return;
 
             // Also fetch advanced goalie stats for quality starts
-            const advancedGoalieUrl = `https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=true&isGame=true&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameDate<='${today}' and gameDate>='${seasonStart}' and gameTypeId=2`;
-            const advancedGoalieResponse =
-              await fetchWithCache(advancedGoalieUrl);
+            const advancedGoalieUrl = `https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=true&isGame=true&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameDate<='${goalieEndDate}' and gameDate>='${startDate}' and gameTypeId=2`;
+            const advancedGoalieResponse = goalieWindowHasStarted
+              ? await fetchWithCache(advancedGoalieUrl)
+              : { data: [] };
+            if (!ownsRequest) return;
 
             if (goalieResponse.data && goalieResponse.data.length > 0) {
               const goalieData = goalieResponse.data;
@@ -474,7 +559,7 @@ export function TeamDashboard({
                   acc[goalie.playerId] = goalie;
                   return acc;
                 },
-                {}
+                {},
               );
 
               // Process individual goalie stats
@@ -493,11 +578,14 @@ export function TeamDashboard({
                     savePct: goalie.savePct,
                     gaa: goalie.goalsAgainstAverage,
                     shutouts: goalie.shutouts,
-                    workloadShare: (goalie.gamesStarted / completedGames) * 100,
+                    workloadShare:
+                      completedGames > 0
+                        ? (goalie.gamesStarted / completedGames) * 100
+                        : 0,
                     qualityStarts: advancedStats?.qualityStart || 0,
-                    qualityStartsPct: advancedStats?.qualityStartsPct || 0
+                    qualityStartsPct: advancedStats?.qualityStartsPct || 0,
                   };
-                }
+                },
               );
 
               // Calculate team totals (including quality starts from advanced data)
@@ -515,7 +603,7 @@ export function TeamDashboard({
                     shutouts: acc.shutouts + goalie.shutouts,
                     qualityStarts:
                       acc.qualityStarts + (advancedStats?.qualityStart || 0),
-                    timeOnIce: acc.timeOnIce + goalie.timeOnIce
+                    timeOnIce: acc.timeOnIce + goalie.timeOnIce,
                   };
                 },
                 {
@@ -528,8 +616,8 @@ export function TeamDashboard({
                   goalsAgainst: 0,
                   shutouts: 0,
                   qualityStarts: 0,
-                  timeOnIce: 0
-                }
+                  timeOnIce: 0,
+                },
               );
 
               // Calculate team averages
@@ -551,12 +639,13 @@ export function TeamDashboard({
                 quality_starts: teamTotals.qualityStarts,
                 goals_saved_above_expected: 0, // Would need advanced stats for this
                 goalies: processedGoalies.sort(
-                  (a, b) => b.gamesStarted - a.gamesStarted
+                  (a, b) => b.gamesStarted - a.gamesStarted,
                 ),
-                totalGames: completedGames
+                totalGames: completedGames,
               });
             }
           } catch (error) {
+            if (!ownsRequest) return;
             console.error("Error fetching goaltending data:", error);
             setGoaltendingStats(null);
           }
@@ -573,7 +662,7 @@ export function TeamDashboard({
             shots_for_l10: 0, // Would need to calculate from recent games
             shots_against_l10: 0,
             pp_pct_l10: specialTeams?.[0]?.power_play_pct || 0,
-            pk_pct_l10: specialTeams?.[0]?.penalty_kill_pct || 0
+            pk_pct_l10: specialTeams?.[0]?.penalty_kill_pct || 0,
           };
           setRecentPerformance(recent);
         }
@@ -596,10 +685,11 @@ export function TeamDashboard({
               faceoff_win_pct,
               point_pct,
               points
-            `
+            `,
             )
-            .eq("season_id", parseInt(effectiveSeasonId));
+            .eq("season_id", validatedSeasonId);
 
+          if (!ownsRequest) return;
           if (allTeamsError) throw allTeamsError;
 
           // Get all teams' standings data for positional rankings
@@ -621,12 +711,13 @@ export function TeamDashboard({
               l10_wins,
               l10_losses,
               l10_ot_losses
-            `
+            `,
               )
-              .eq("season_id", parseInt(effectiveSeasonId))
+              .eq("season_id", validatedSeasonId)
               .order("date", { ascending: false })
               .limit(32); // Get latest for each team
 
+          if (!ownsRequest) return;
           if (allStandingsError) throw allStandingsError;
 
           // Get all teams' advanced stats using the same date range logic
@@ -646,12 +737,13 @@ export function TeamDashboard({
               xga,
               xgf,
               date
-            `
+            `,
               )
               .gte("date", startDate)
               .lte("date", endDate)
               .order("date", { ascending: false });
 
+          if (!ownsRequest) return;
           if (allAdvancedError) throw allAdvancedError;
 
           // Get all teams' special teams data
@@ -665,11 +757,12 @@ export function TeamDashboard({
               power_play_goals_for,
               pp_goals_against,
               sh_goals_for
-            `
+            `,
               )
-              .eq("season_id", parseInt(effectiveSeasonId))
+              .eq("season_id", validatedSeasonId)
               .order("date", { ascending: false });
 
+          if (!ownsRequest) return;
           if (allSpecialTeamsError) throw allSpecialTeamsError;
 
           if (allTeamsSummary && summaryData) {
@@ -677,17 +770,17 @@ export function TeamDashboard({
             const calculateRank = (
               value: number,
               allValues: number[],
-              higherIsBetter: boolean = true
+              higherIsBetter: boolean = true,
             ) => {
               if (value === null || value === undefined || isNaN(value))
                 return 32;
               const validValues = allValues.filter(
-                (v) => v !== null && v !== undefined && !isNaN(v)
+                (v) => v !== null && v !== undefined && !isNaN(v),
               );
               if (validValues.length === 0) return 32;
 
               const sortedValues = [...validValues].sort((a, b) =>
-                higherIsBetter ? b - a : a - b
+                higherIsBetter ? b - a : a - b,
               );
               const rank = sortedValues.findIndex((v) => v === value) + 1;
               return rank || validValues.length + 1;
@@ -695,20 +788,20 @@ export function TeamDashboard({
 
             // Extract current team's values
             const currentTeamData = allTeamsSummary.find(
-              (team) => team.team_id === parseInt(teamId)
+              (team) => team.team_id === validatedTeamId,
             );
             const currentTeamStandings = allTeamsStandings?.find(
-              (team) => team.team_abbrev === teamAbbrev
+              (team) => team.team_abbrev === teamAbbrev,
             );
 
             // Get latest advanced stats for current team
             const currentTeamAdvanced = allTeamsAdvanced?.find(
-              (team) => team.team_abbreviation === teamAbbrev
+              (team) => team.team_abbreviation === teamAbbrev,
             );
 
             // Get special teams for current team
             const currentTeamSpecialTeams = allTeamsSpecialTeams?.find(
-              (team) => team.team_id === parseInt(teamId)
+              (team) => team.team_id === validatedTeamId,
             );
 
             if (currentTeamData) {
@@ -724,22 +817,23 @@ export function TeamDashboard({
               const allGoalsPerGame = allTeamsSummary
                 .filter((team) => team.games_played && team.games_played > 0)
                 .map(
-                  (team) => (team.goals_for || 0) / (team.games_played || 1)
+                  (team) => (team.goals_for || 0) / (team.games_played || 1),
                 );
 
               const allGoalsAgainstPerGame = allTeamsSummary
                 .filter((team) => team.games_played && team.games_played > 0)
                 .map(
-                  (team) => (team.goals_against || 0) / (team.games_played || 1)
+                  (team) =>
+                    (team.goals_against || 0) / (team.games_played || 1),
                 );
 
               const allGoalDiffs = allTeamsSummary.map(
-                (team) => (team.goals_for || 0) - (team.goals_against || 0)
+                (team) => (team.goals_for || 0) - (team.goals_against || 0),
               );
 
               const allPoints = allTeamsSummary.map((team) => team.points || 0);
               const allPointPcts = allTeamsSummary.map(
-                (team) => team.point_pct || 0
+                (team) => team.point_pct || 0,
               );
 
               // Calculate special teams rankings with null safety
@@ -767,15 +861,15 @@ export function TeamDashboard({
               // Special teams additional stats
               const allPpOpportunities =
                 allTeamsSpecialTeams?.map(
-                  (team) => team.pp_opportunities_per_game || 0
+                  (team) => team.pp_opportunities_per_game || 0,
                 ) || [];
               const allPpGoalsFor =
                 allTeamsSpecialTeams?.map(
-                  (team) => team.power_play_goals_for || 0
+                  (team) => team.power_play_goals_for || 0,
                 ) || [];
               const allPpGoalsAgainst =
                 allTeamsSpecialTeams?.map(
-                  (team) => team.pp_goals_against || 0
+                  (team) => team.pp_goals_against || 0,
                 ) || [];
               const allShGoalsFor =
                 allTeamsSpecialTeams?.map((team) => team.sh_goals_for || 0) ||
@@ -799,14 +893,15 @@ export function TeamDashboard({
 
                 const allHomePoints = allTeamsStandings.map(
                   (team) =>
-                    (team.home_wins || 0) * 2 + (team.home_ot_losses || 0)
+                    (team.home_wins || 0) * 2 + (team.home_ot_losses || 0),
                 );
                 const allRoadPoints = allTeamsStandings.map(
                   (team) =>
-                    (team.road_wins || 0) * 2 + (team.road_ot_losses || 0)
+                    (team.road_wins || 0) * 2 + (team.road_ot_losses || 0),
                 );
                 const allL10Points = allTeamsStandings.map(
-                  (team) => (team.l10_wins || 0) * 2 + (team.l10_ot_losses || 0)
+                  (team) =>
+                    (team.l10_wins || 0) * 2 + (team.l10_ot_losses || 0),
                 );
 
                 homeRecordRank = calculateRank(homePoints, allHomePoints, true);
@@ -839,27 +934,27 @@ export function TeamDashboard({
                 });
 
                 const latestAdvancedStats = Array.from(
-                  teamAdvancedStats.values()
+                  teamAdvancedStats.values(),
                 );
 
                 const allCfPct = latestAdvancedStats.map(
-                  (team) => team.cf_pct || 0
+                  (team) => team.cf_pct || 0,
                 );
                 const allXgfPct = latestAdvancedStats.map(
-                  (team) => team.xgf_pct || 0
+                  (team) => team.xgf_pct || 0,
                 );
                 const allPdo = latestAdvancedStats.map((team) => team.pdo || 0);
                 const allHdcfPct = latestAdvancedStats.map(
-                  (team) => team.hdcf_pct || 0
+                  (team) => team.hdcf_pct || 0,
                 );
                 const allScfPct = latestAdvancedStats.map(
-                  (team) => team.scf_pct || 0
+                  (team) => team.scf_pct || 0,
                 );
                 const allSavePct = latestAdvancedStats.map(
-                  (team) => team.sv_pct || 0
+                  (team) => team.sv_pct || 0,
                 );
                 const allShootingPct = latestAdvancedStats.map(
-                  (team) => team.sh_pct || 0
+                  (team) => team.sh_pct || 0,
                 );
                 const allXgf = latestAdvancedStats.map((team) => team.xgf || 0);
                 const allXga = latestAdvancedStats.map((team) => team.xga || 0);
@@ -867,47 +962,47 @@ export function TeamDashboard({
                 cfPctRank = calculateRank(
                   currentTeamAdvanced.cf_pct || 0,
                   allCfPct,
-                  true
+                  true,
                 );
                 xgfPctRank = calculateRank(
                   currentTeamAdvanced.xgf_pct || 0,
                   allXgfPct,
-                  true
+                  true,
                 );
                 pdoRank = calculateRank(
                   currentTeamAdvanced.pdo || 0,
                   allPdo,
-                  true
+                  true,
                 );
                 hdcfPctRank = calculateRank(
                   currentTeamAdvanced.hdcf_pct || 0,
                   allHdcfPct,
-                  true
+                  true,
                 );
                 scfPctRank = calculateRank(
                   currentTeamAdvanced.scf_pct || 0,
                   allScfPct,
-                  true
+                  true,
                 );
                 savePct5v5Rank = calculateRank(
                   currentTeamAdvanced.sv_pct || 0,
                   allSavePct,
-                  true
+                  true,
                 );
                 shootingPct5v5Rank = calculateRank(
                   currentTeamAdvanced.sh_pct || 0,
                   allShootingPct,
-                  true
+                  true,
                 );
                 xgfRank = calculateRank(
                   currentTeamAdvanced.xgf || 0,
                   allXgf,
-                  true
+                  true,
                 );
                 xgaRank = calculateRank(
                   currentTeamAdvanced.xga || 0,
                   allXga,
-                  false
+                  false,
                 ); // Lower is better for xGA
               }
 
@@ -915,37 +1010,37 @@ export function TeamDashboard({
                 goals_per_game_rank: calculateRank(
                   goalsPerGame,
                   allGoalsPerGame,
-                  true
+                  true,
                 ),
                 goals_against_per_game_rank: calculateRank(
                   goalsAgainstPerGame,
                   allGoalsAgainstPerGame,
-                  false
+                  false,
                 ),
                 shots_per_game_rank: calculateRank(
                   currentTeamData.shots_for_per_game || 0,
                   allShotsPerGame,
-                  true
+                  true,
                 ),
                 shots_against_per_game_rank: calculateRank(
                   currentTeamData.shots_against_per_game || 0,
                   allShotsAgainstPerGame,
-                  false
+                  false,
                 ),
                 power_play_rank: calculateRank(
                   currentTeamData.power_play_pct || 0,
                   allPowerPlayPct,
-                  true
+                  true,
                 ),
                 penalty_kill_rank: calculateRank(
                   currentTeamData.penalty_kill_pct || 0,
                   allPenaltyKillPct,
-                  true
+                  true,
                 ),
                 faceoff_win_rank: calculateRank(
                   currentTeamData.faceoff_win_pct || 0,
                   allFaceoffPct,
-                  true
+                  true,
                 ),
                 home_record_rank: homeRecordRank,
                 road_record_rank: roadRecordRank,
@@ -960,164 +1055,110 @@ export function TeamDashboard({
                 points_rank: calculateRank(
                   summaryData.points || 0,
                   allPoints,
-                  true
+                  true,
                 ),
                 point_pct_rank: calculateRank(
                   summaryData.point_pct || 0,
                   allPointPcts,
-                  true
+                  true,
                 ),
                 goal_diff_rank: calculateRank(goalDiff, allGoalDiffs, true),
                 pp_opportunities_rank: calculateRank(
                   currentTeamSpecialTeams?.pp_opportunities_per_game || 0,
                   allPpOpportunities,
-                  true
+                  true,
                 ),
                 pp_goals_for_rank: calculateRank(
                   currentTeamSpecialTeams?.power_play_goals_for || 0,
                   allPpGoalsFor,
-                  true
+                  true,
                 ),
                 pp_goals_against_rank: calculateRank(
                   currentTeamSpecialTeams?.pp_goals_against || 0,
                   allPpGoalsAgainst,
-                  false
+                  false,
                 ),
                 sh_goals_for_rank: calculateRank(
                   currentTeamSpecialTeams?.sh_goals_for || 0,
                   allShGoalsFor,
-                  true
+                  true,
                 ),
-                team_save_pct_rank: calculateRank(
-                  (goaltendingStats?.save_pct || 0) * 100,
-                  [90, 91, 92, 93],
-                  true
-                ), // Placeholder - would need league goalie data
-                team_gaa_rank: calculateRank(
-                  goaltendingStats?.gaa || 0,
-                  [2.5, 2.7, 3.0, 3.2],
-                  false
-                ), // Placeholder - would need league goalie data
-                team_shutouts_rank: calculateRank(
-                  goaltendingStats?.shutouts || 0,
-                  [3, 4, 5, 6],
-                  true
-                ), // Placeholder - would need league goalie data
                 scf_pct_rank: scfPctRank,
                 xgf_rank: xgfRank,
-                xga_rank: xgaRank
+                xga_rank: xgaRank,
               });
             }
           }
         } catch (rankingsError) {
+          if (!ownsRequest) return;
           console.error("Error calculating league rankings:", rankingsError);
           setLeagueRankings(null);
         }
-
-        // Fetch team leaders data
-        try {
-          // Convert season ID to the format used in wgo_skater_stats_totals (e.g., "20242025")
-          const formattedSeasonId =
-            effectiveSeasonId.length === 4
-              ? `${effectiveSeasonId}${(parseInt(effectiveSeasonId) + 1).toString()}`
-              : effectiveSeasonId;
-
-          const { data: skatersData, error: skatersError } = await supabase
-            .from("wgo_skater_stats_totals")
-            .select(
-              `
-              player_id,
-              player_name,
-              position_code,
-              games_played,
-              points,
-              goals,
-              blocked_shots,
-              shots,
-              hits
-            `
-            )
-            .eq("current_team_abbreviation", teamAbbrev)
-            .eq("season", formattedSeasonId)
-            .gte("games_played", 5); // Minimum 5 games played to qualify
-
-          if (skatersError) throw skatersError;
-
-          if (skatersData && skatersData.length > 0) {
-            // Calculate BSH (Blocked Shots + Shots + Hits) for each player
-            const playersWithBSH = skatersData.map((player) => ({
-              ...player,
-              bsh:
-                (player.blocked_shots || 0) +
-                (player.shots || 0) +
-                (player.hits || 0)
-            }));
-
-            // Get top 3 in each category
-            const pointsLeaders = [...playersWithBSH]
-              .filter((p) => p.player_name && p.position_code) // Filter out null names/positions
-              .sort((a, b) => (b.points || 0) - (a.points || 0))
-              .slice(0, 3)
-              .map((p) => ({
-                player_id: p.player_id,
-                player_name: p.player_name || "Unknown Player",
-                position_code: p.position_code || "N/A",
-                value: p.points || 0,
-                games_played: p.games_played || 0
-              }));
-
-            const goalsLeaders = [...playersWithBSH]
-              .filter((p) => p.player_name && p.position_code) // Filter out null names/positions
-              .sort((a, b) => (b.goals || 0) - (a.goals || 0))
-              .slice(0, 3)
-              .map((p) => ({
-                player_id: p.player_id,
-                player_name: p.player_name || "Unknown Player",
-                position_code: p.position_code || "N/A",
-                value: p.goals || 0,
-                games_played: p.games_played || 0
-              }));
-
-            const bshLeaders = [...playersWithBSH]
-              .filter((p) => p.player_name && p.position_code) // Filter out null names/positions
-              .sort((a, b) => b.bsh - a.bsh)
-              .slice(0, 3)
-              .map((p) => ({
-                player_id: p.player_id,
-                player_name: p.player_name || "Unknown Player",
-                position_code: p.position_code || "N/A",
-                value: p.bsh,
-                games_played: p.games_played || 0
-              }));
-
-            setTeamLeaders({
-              pointsLeaders,
-              goalsLeaders,
-              bshLeaders
-            });
-          } else {
-            setTeamLeaders({
-              pointsLeaders: [],
-              goalsLeaders: [],
-              bshLeaders: []
-            });
-          }
-        } catch (leadersFetchError) {
-          console.error("Error fetching team leaders data:", leadersFetchError);
-          setTeamLeaders(null);
-        }
       } catch (err) {
+        if (!ownsRequest) return;
         setError(err instanceof Error ? err.message : "An error occurred");
         console.error("Error fetching team dashboard data:", err);
       } finally {
-        setIsLoading(false);
+        if (ownsRequest) {
+          setSettledRequestIdentity(requestIdentity);
+          setIsLoading(false);
+        }
       }
     };
 
-    if (teamId && teamAbbrev && effectiveSeasonId) {
-      fetchTeamData();
+    if (!effectiveSeasonId) {
+      clearDashboardData();
+      if (seasonLookupIsPending) {
+        setIsLoading(true);
+        setError(null);
+      } else {
+        setIsLoading(false);
+        setError(
+          seasonLookupIsError
+            ? "Unable to load the current season."
+            : "Team dashboard requires a season selection.",
+        );
+        setSettledRequestIdentity(requestIdentity);
+      }
+      return;
     }
-  }, [teamId, teamAbbrev, effectiveSeasonId, includePlayoffs, currentSeason]);
+
+    if (parsedSeasonId === null) {
+      clearDashboardData();
+      setIsLoading(false);
+      setError("Team dashboard requires a valid season selection.");
+      setSettledRequestIdentity(requestIdentity);
+      return;
+    }
+
+    if (!teamSelectionIsValid || parsedTeamId === null) {
+      clearDashboardData();
+      setIsLoading(false);
+      setError("Team dashboard requires a valid team selection.");
+      setSettledRequestIdentity(requestIdentity);
+      return;
+    }
+
+    void fetchTeamData(parsedTeamId, parsedSeasonId);
+    return () => {
+      ownsRequest = false;
+    };
+  }, [
+    teamId,
+    teamAbbrev,
+    effectiveSeasonId,
+    franchiseId,
+    includePlayoffs,
+    parsedSeasonId,
+    parsedTeamId,
+    requestIdentity,
+    seasonLookupIsError,
+    seasonLookupIsPending,
+    selectedRegularSeasonEndDate,
+    selectedRegularSeasonStartDate,
+    selectedSeasonEndDate,
+    teamSelectionIsValid,
+  ]);
 
   const formatStreak = (code: string, count: number) => {
     const streakType = code === "W" ? "Win" : code === "L" ? "Loss" : "OT Loss";
@@ -1142,7 +1183,7 @@ export function TeamDashboard({
   const getRankColor = (
     value: number,
     threshold: { good: number; poor: number },
-    higher_is_better: boolean = true
+    higher_is_better: boolean = true,
   ) => {
     if (higher_is_better) {
       if (value >= threshold.good) return styles.excellent;
@@ -1193,15 +1234,12 @@ export function TeamDashboard({
       scf_pct: leagueRankings.scf_pct_rank,
       xgf: leagueRankings.xgf_rank,
       xga: leagueRankings.xga_rank,
-      team_save_pct: leagueRankings.team_save_pct_rank,
-      team_gaa: leagueRankings.team_gaa_rank,
-      team_shutouts: leagueRankings.team_shutouts_rank
     };
 
     return rankMap[statName] || 16; // Default to middle if stat not found
   };
 
-  if (isLoading) {
+  if (isLoading || settledRequestIdentity !== requestIdentity) {
     return (
       <div className={styles.container}>
         <div className={styles.loading}>
@@ -1231,7 +1269,7 @@ export function TeamDashboard({
           "--team-primary-color": teamInfo?.primaryColor || "#1976d2",
           "--team-secondary-color": teamInfo?.secondaryColor || "#424242",
           "--team-accent-color": teamInfo?.accent || "#ff9800",
-          "--team-jersey-color": teamInfo?.jersey || "#ffffff"
+          "--team-jersey-color": teamInfo?.jersey || "#ffffff",
         } as React.CSSProperties
       }
     >
@@ -1300,27 +1338,13 @@ export function TeamDashboard({
                     <div className={styles.positionSummary}>
                       <div className={styles.positionStat}>
                         <span className={styles.positionValue}>
-                          {standingsData.league_sequence}
-                          {standingsData.league_sequence === 1
-                            ? "st"
-                            : standingsData.league_sequence === 2
-                              ? "nd"
-                              : standingsData.league_sequence === 3
-                                ? "rd"
-                                : "th"}
+                          {formatOrdinal(standingsData.league_sequence)}
                         </span>
                         <span className={styles.positionLabel}>NHL</span>
                       </div>
                       <div className={styles.positionStat}>
                         <span className={styles.positionValue}>
-                          {standingsData.conference_sequence}
-                          {standingsData.conference_sequence === 1
-                            ? "st"
-                            : standingsData.conference_sequence === 2
-                              ? "nd"
-                              : standingsData.conference_sequence === 3
-                                ? "rd"
-                                : "th"}
+                          {formatOrdinal(standingsData.conference_sequence)}
                         </span>
                         <span className={styles.positionLabel}>
                           {standingsData.conference_name}
@@ -1328,14 +1352,7 @@ export function TeamDashboard({
                       </div>
                       <div className={styles.positionStat}>
                         <span className={styles.positionValue}>
-                          {standingsData.division_sequence}
-                          {standingsData.division_sequence === 1
-                            ? "st"
-                            : standingsData.division_sequence === 2
-                              ? "nd"
-                              : standingsData.division_sequence === 3
-                                ? "rd"
-                                : "th"}
+                          {formatOrdinal(standingsData.division_sequence)}
                         </span>
                         <span className={styles.positionLabel}>
                           {standingsData.division_name}
@@ -1386,10 +1403,10 @@ export function TeamDashboard({
                             <span
                               className={`${styles.statValue} ${getRankingBasedColor(getStatRank("goals_per_game"))}`}
                             >
-                              {(
-                                standingsData.goal_for /
-                                standingsData.games_played
-                              ).toFixed(2)}
+                              {formatPerGame(
+                                standingsData.goal_for,
+                                standingsData.games_played,
+                              )}
                             </span>
                             <span
                               className={`${styles.rankValue} ${getRankingColor(leagueRankings.goals_per_game_rank)}`}
@@ -1405,10 +1422,10 @@ export function TeamDashboard({
                             <span
                               className={`${styles.statValue} ${getRankingBasedColor(getStatRank("goals_against_per_game"))}`}
                             >
-                              {(
-                                standingsData.goal_against /
-                                standingsData.games_played
-                              ).toFixed(2)}
+                              {formatPerGame(
+                                standingsData.goal_against,
+                                standingsData.games_played,
+                              )}
                             </span>
                             <span
                               className={`${styles.rankValue} ${getRankingColor(leagueRankings.goals_against_per_game_rank)}`}
@@ -1457,7 +1474,7 @@ export function TeamDashboard({
                               className={`${styles.statValue} ${getRankingBasedColor(getStatRank("power_play_pct"))}`}
                             >
                               {formatPercentage(
-                                specialTeamsStats.power_play_pct
+                                specialTeamsStats.power_play_pct,
                               )}
                             </span>
                             <span
@@ -1475,7 +1492,7 @@ export function TeamDashboard({
                               className={`${styles.statValue} ${getRankingBasedColor(getStatRank("penalty_kill_pct"))}`}
                             >
                               {formatPercentage(
-                                specialTeamsStats.penalty_kill_pct
+                                specialTeamsStats.penalty_kill_pct,
                               )}
                             </span>
                             <span
@@ -1496,7 +1513,7 @@ export function TeamDashboard({
                             >
                               {formatDecimal(
                                 specialTeamsStats.pp_opportunities_per_game,
-                                1
+                                1,
                               )}
                             </span>
                             <span
@@ -1728,8 +1745,8 @@ export function TeamDashboard({
                     </div>
                   </div>
                 ) : (
-                  <div className={styles.rankingsLoading}>
-                    Loading league rankings...
+                  <div className={styles.noData}>
+                    No league rankings available
                   </div>
                 )}
               </>
@@ -1756,7 +1773,7 @@ export function TeamDashboard({
                 className={`${styles.toggleButton} ${!includePlayoffs ? styles.active : ""}`}
                 onClick={() => setIncludePlayoffs(false)}
               >
-                Exhibition
+                Regular Season
               </button>
               <button
                 className={`${styles.toggleButton} ${includePlayoffs ? styles.active : ""}`}
@@ -1952,10 +1969,10 @@ export function TeamDashboard({
                                       "var(--team-accent-color)",
                                       "#6c757d",
                                       "#dc3545",
-                                      "#28a745"
+                                      "#28a745",
                                     ];
                                     return goalieColors[index] || "#6c757d";
-                                  })()
+                                  })(),
                                 }}
                               />
                             </div>
@@ -2048,7 +2065,7 @@ export function TeamDashboard({
                         "var(--team-accent-color)",
                         "#6c757d",
                         "#dc3545",
-                        "#28a745"
+                        "#28a745",
                       ];
 
                       return (
@@ -2057,7 +2074,7 @@ export function TeamDashboard({
                           className={styles.workloadSegment}
                           style={{
                             width: `${goalie.workloadShare}%`,
-                            backgroundColor: goalieColors[index] || "#6c757d"
+                            backgroundColor: goalieColors[index] || "#6c757d",
                           }}
                           title={`${goalie.goalieFullName}: ${formatDecimal(goalie.workloadShare, 1)}% (${goalie.gamesStarted} starts)`}
                         />
@@ -2072,7 +2089,7 @@ export function TeamDashboard({
                         "var(--team-accent-color)",
                         "#6c757d",
                         "#dc3545",
-                        "#28a745"
+                        "#28a745",
                       ];
 
                       return (
@@ -2083,7 +2100,7 @@ export function TeamDashboard({
                           <div
                             className={styles.legendColor}
                             style={{
-                              backgroundColor: goalieColors[index] || "#6c757d"
+                              backgroundColor: goalieColors[index] || "#6c757d",
                             }}
                           />
                           <span className={styles.legendText}>
@@ -2097,10 +2114,7 @@ export function TeamDashboard({
                 </div>
               </>
             ) : (
-              <div className={styles.loadingState}>
-                <div className={styles.loadingSpinner}></div>
-                <span>Loading goaltending data...</span>
-              </div>
+              <div className={styles.noData}>No goaltending data available</div>
             )}
           </div>
         </div>

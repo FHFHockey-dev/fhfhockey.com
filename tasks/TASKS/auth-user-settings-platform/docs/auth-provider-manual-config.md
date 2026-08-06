@@ -1,8 +1,12 @@
 # Auth Provider Manual Configuration
 
+**2026-08-01 hosted PKCE template/Production lifecycle checkpoint:** Confirm signup and Reset Password templates now use `{{ .RedirectTo }}` plus `{{ .TokenHash }}`. A disposable Production confirmation email was delivered and the server confirmed the user, but the app callback displayed a generic client navigation failure; the recovery link reached `/auth/reset-password`, password update/sign-out succeeded, and cleanup verified zero disposable auth/profile/settings rows. The local callback now has a credential-free hard-navigation fallback for rejected post-auth router replacement. PKCE remains open under NEW 46.0 for guarded publication and fresh value-free Production confirmation/Google/recovery evidence. No message values or tokens were recorded.
+
 This note documents the manual setup required for the auth flows now implemented in the app.
 
-Evidence status as of 2026-07-18: production Google OAuth is verified; localhost Google remains open; custom SMTP configuration, Supabase handoff, and Outlook Inbox receipt for both confirmation and recovery are verified; the received-link confirmation/recovery/password-update/cleanup lifecycle remains open; preview auth is required only if previews are intentionally supported. The browser client still uses Supabase JavaScript's default implicit flow. PKCE remains a separate deferred migration under source task `NEW 46.0` and must not be enabled before the email-template and mailbox-backed flows are compatible.
+Evidence status as of 2026-07-31: production and localhost Google OAuth are verified; localhost completed the hosted Supabase callback and returned to a credential-free authenticated `/auth` state before sign-out/local reset and tab cleanup. A fresh disposable confirmation and recovery message were delivered through the active custom SMTP configuration; confirmation and recovery links completed credential-free callback/reset navigation, password update succeeded, and disposable auth/profile/settings cleanup verified zero remaining rows without recording message values or tokens. Preview auth is unsupported. The browser client now explicitly uses Supabase JavaScript PKCE. PKCE remains open under source task `NEW 46.0` for hosted template compatibility and complete value-free Production lifecycle evidence; do not retire legacy fragment compatibility until that gate passes.
+
+**2026-08-01 Production verification update:** The exact PKCE fix was promoted as `dpl_47AFWu6itJvqzrpeWkd1fTuQkVjq` and is READY/current on the canonical aliases. Fresh value-free confirmation and recovery completion passed on Production: callback/reset navigation was clean, the disposable account was confirmed, password update/sign-out succeeded, and exact cleanup left zero auth/profile/settings rows. The Google button reached `accounts.google.com/v3/signin/identifier` with only OAuth parameter names observed; no provider completion or provider mutation was performed under the current no-provider boundary. NEW 46.0 remains open for that separate full Google completion; legacy fragment compatibility stays enabled.
 
 Implemented app routes:
 
@@ -56,7 +60,7 @@ Recommended:
 
 - Keep `Confirm email` enabled.
 - Use Supabase-managed passwords only. Do not store passwords in app tables.
-- Keep the current custom SMTP sender configured. Production confirmation/recovery requests, Supabase handoff, and recipient-side Outlook Inbox receipt are verified; link completion remains unverified.
+- Keep the current custom SMTP sender configured. Production confirmation/recovery requests, Supabase handoff, and recipient-side receipt are verified; the disposable local confirmation/recovery link, callback/reset, password-update, and cleanup lifecycle is also verified. Hosted Production lifecycle publication remains under NEW 46.
 
 ### Email templates
 
@@ -65,6 +69,8 @@ If your confirmation or recovery templates still use `{{ .SiteURL }}`, update th
 - use `{{ .RedirectTo }}` in the auth email links
 
 This matters because sign-up and recovery links now intentionally target the app callback route rather than only the base site URL.
+
+The browser client now uses PKCE. Before publication, confirm the hosted confirmation and recovery templates preserve `{{ .RedirectTo }}` and deliver a code/token-hash shape accepted by `/auth/callback` or `/auth/reset-password`. Legacy fragment consumption remains only as bounded transition compatibility until the Production lifecycle proof passes.
 
 ### Required app environment values
 
@@ -135,7 +141,7 @@ Current flow behavior in code:
   - app calls `supabase.auth.signInWithOAuth({ provider: "google", options.redirectTo: "<app>/auth/callback?next=..." })`
   - Google returns to Supabase callback
   - Supabase redirects to app `/auth/callback`
-  - the current browser client does not set `flowType`, so Supabase JavaScript's default implicit flow remains active
+  - the current browser client explicitly sets `flowType: "pkce"`; the callback still accepts bounded token-hash/fragment compatibility during the transition
   - `/auth/callback` accepts a code, token hash, or fragment session payload, synchronously scrubs query/hash and Next-history state before asynchronous auth work, then returns the user to a sanitized same-origin `next` path
   - production Google sign-in is verified; localhost remains open
 
@@ -163,7 +169,7 @@ After configuring Supabase and Google, use this current evidence split:
 5. **Verified for delivery:** Forgot-password request, SMTP handoff, and Outlook Inbox receipt succeed.
 6. **Open:** A received recovery link lands directly on `/auth/reset-password` and renders the reset flow.
 7. **Open:** Updating the password on `/auth/reset-password` through the bounded `/auth/v1/user` request succeeds, returns safely, and is cleaned up.
-8. **Conditional:** Verify preview deployments only if preview auth support is intentionally required.
+8. **Unsupported:** Do not add preview OAuth callbacks or broaden the redirect allow list.
 
 ## 5. Common Misconfigurations
 

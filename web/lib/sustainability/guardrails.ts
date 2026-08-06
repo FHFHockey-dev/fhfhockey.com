@@ -1,3 +1,8 @@
+import {
+  SUSTAINABILITY_EXACT_SCORE_PROBABILITY_THRESHOLDS,
+  SUSTAINABILITY_SCORE_PRECISION
+} from "./runtimeContract";
+
 export type SustainabilityGuardrailState = "ok" | "degraded" | "blocked";
 
 export type SustainabilityGuardrailResult = {
@@ -65,7 +70,7 @@ export function applySustainabilityScoreGuardrails(input: {
   recomputeScore?: boolean;
   precision?: number;
 }): SustainabilityGuardrailResult {
-  const precision = input.precision ?? 2;
+  const precision = input.precision ?? SUSTAINABILITY_SCORE_PRECISION;
   const warnings: string[] = [];
   const components = { ...(input.components ?? {}) };
 
@@ -98,6 +103,20 @@ export function applySustainabilityScoreGuardrails(input: {
     } else {
       s100 = round(clamp(scoreValue, 0, 100), precision);
       if (s100 !== scoreValue) warnings.push("guardrail_clipped_s_100");
+      const rawProbability = sigmoid(sRaw);
+      if (
+        s100 === 100 &&
+        rawProbability < SUSTAINABILITY_EXACT_SCORE_PROBABILITY_THRESHOLDS.upper
+      ) {
+        warnings.push("guardrail_invalid_exact_100");
+        s100 = round(100 * rawProbability, precision);
+      } else if (
+        s100 === 0 &&
+        rawProbability > SUSTAINABILITY_EXACT_SCORE_PROBABILITY_THRESHOLDS.lower
+      ) {
+        warnings.push("guardrail_invalid_exact_0");
+        s100 = round(100 * rawProbability, precision);
+      }
     }
   }
 

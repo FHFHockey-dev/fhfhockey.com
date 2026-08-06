@@ -10,6 +10,7 @@ import {
 } from "utils/formattingUtils";
 import { ChartOptions, ChartData, ChartDataset } from "chart.js";
 import { WIGO_COLORS, addAlpha, CHART_COLORS } from "styles/wigoColors";
+import { WIGO_ERROR_MESSAGES } from "../errorMessages";
 
 // --- Define props and dummy labels ---
 type GameScoreLineChartProps = {
@@ -247,7 +248,7 @@ export default function GameScoreLineChart({
         </div>
       )}
       {error && !isLoading && (
-        <div style={placeholderStyle}>Error: {error.message}</div>
+        <div style={placeholderStyle}>{WIGO_ERROR_MESSAGES.chart}</div>
       )}
       {!isLoading && !error && !playerId && (
         <div style={placeholderStyle}>Select a player to view chart.</div>

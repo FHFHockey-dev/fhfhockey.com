@@ -17,6 +17,12 @@ vi.mock("lib/supabase", () => ({
 vi.mock("lib/supabase/server", () => ({
   default: {
     from: vi.fn((table: string) => {
+      if (table === "cron_job_audit") {
+        return {
+          insert: auditInsertMock,
+        };
+      }
+
       if (table === "games") {
         gamesEqMock.mockResolvedValue({
           data: null,
@@ -48,6 +54,10 @@ vi.mock("lib/supabase/server", () => ({
 
 vi.mock("lib/projections/run-forge-projections", () => ({
   runProjectionV2ForDate: vi.fn(),
+}));
+
+vi.mock("utils/adminOnlyMiddleware", () => ({
+  default: (handler: unknown) => handler,
 }));
 
 import handler, {
@@ -110,13 +120,22 @@ describe("/api/v1/db/run-projection-v2", () => {
     expect(res.statusCode).toBe(500);
     expect(res.body).toMatchObject({
       success: false,
+      termination: {
+        state: "blocked",
+        resumeRequired: true,
+        nextStartDate: "2026-03-20",
+      },
+      finalAudit: {
+        owner: "withCronJobAudit",
+        status: "persisted",
+      },
       error:
         "Upstream dependency returned an HTML error page instead of structured JSON.",
       dependencyContract: {
-        version: "rolling-forge-operator-order-v1",
+        version: "rolling-forge-operator-order-v2",
         currentStage: {
           id: "projection_execution",
-          order: 7,
+          order: 8,
         },
         prerequisiteStages: [
           expect.objectContaining({
@@ -125,7 +144,7 @@ describe("/api/v1/db/run-projection-v2", () => {
           }),
           expect.objectContaining({
             id: "projection_derived_build",
-            order: 6,
+            order: 7,
           }),
         ],
       },
@@ -176,6 +195,10 @@ describe("/api/v1/db/run-projection-v2", () => {
         },
         blockingIssueCount: 1,
       },
+    });
+    expect(auditInsertMock.mock.calls[0]?.[0]?.details?.finalAudit).toEqual({
+      owner: "withCronJobAudit",
+      status: "persisted",
     });
   });
 

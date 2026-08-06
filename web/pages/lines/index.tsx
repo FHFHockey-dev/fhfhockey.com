@@ -17,7 +17,7 @@ import { getTeams, getCurrentSeason } from "lib/NHL/server";
 import ClientOnly from "components/ClientOnly";
 import { getLineCombinations } from "components/LineCombinations/utilities";
 import { fetchLatestPlayerNewsFlags, type PlayerNewsFlag } from "lib/newsFeed";
-import supabaseServer from "lib/supabase/server";
+import supabase from "lib/supabase";
 
 export type RowData = {
   playerId: number;
@@ -131,7 +131,7 @@ export const getStaticProps: GetStaticProps = async () => {
   const playerIds = new Set<number>();
   promotions.forEach((p) => playerIds.add(p.playerId));
   demotions.forEach((p) => playerIds.add(p.playerId));
-  const { data: playersInfo } = await supabaseServer
+  const { data: playersInfo } = await supabase
     .from("players")
     .select("id, playerName:fullName")
     .in("id", [...playerIds])
@@ -142,7 +142,7 @@ export const getStaticProps: GetStaticProps = async () => {
   });
 
   const newsFlags = await fetchLatestPlayerNewsFlags({
-    supabase: supabaseServer,
+    supabase,
     playerIds: [...playerIds],
   });
 

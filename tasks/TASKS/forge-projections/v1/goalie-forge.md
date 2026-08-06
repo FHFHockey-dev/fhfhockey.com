@@ -3,6 +3,8 @@
 **Scope:** Goaltender sustainability, volatility, valuation, and short-horizon (Next 5 Games) projections  
 **Primary Use:** Fantasy hockey + betting decision support (start/sit, streaming, props/totals), with a modeling spine reusable across future skater/team modules.
 
+**Implementation status (2026-07-29):** The nested 56-row implementation list and operator runbook are complete and dynamically audited. Research-grade tracking/rink-bias inputs and dedicated betting endpoints remain explicitly outside the shipped nested contract unless separately authorized.
+
 ---
 
 ## 0) Executive Summary
@@ -396,4 +398,4 @@ A probabilistic goalie decision engine that:
 
 Please update [tasks-goalie-forge.md](tasks/tasks-goalie-forge.md) with progress, context, and anything that could be useful to my next chat window with Codex including the instructions to use [process-task-list.mdc](tasks/TASKS/rules/process-task-list.mdc) 
 
-At the end of the [tasks-goalie-forge.md](tasks/tasks-goalie-forge.md) please include a handoff prompt that I can use to give to the next chat with Codex 5.3 that would seamlessly pickup where you are leaving off - include anything that you would want inside of a prompt if you were to be the one picking up this project at this very point. 
+At the end of the [tasks-goalie-forge.md](tasks/tasks-goalie-forge.md) please include a handoff prompt that I can use to give to the next chat with Codex 5.3 that would seamlessly pickup where you are leaving off - include anything that you would want inside of a prompt if you were to be the one picking up this project at this very point.

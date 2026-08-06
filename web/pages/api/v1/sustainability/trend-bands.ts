@@ -4,9 +4,10 @@ import {
   computeAndStoreTrendBands,
   parseDateParam,
   parseMetricParam,
-  parseWindowParam
+  parseWindowParam,
 } from "lib/sustainability/bandService";
 import type { Database } from "lib/supabase/database-generated.types";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 type TrendBandRow =
   Database["public"]["Tables"]["sustainability_trend_bands"]["Row"];
@@ -19,14 +20,19 @@ function parseLimitParam(value: string | string[] | undefined, fallback = 180) {
   return Math.max(1, Math.min(1000, parsed));
 }
 
-function parseSeasonIdParam(value: string | string[] | undefined): number | null {
+function parseSeasonIdParam(
+  value: string | string[] | undefined,
+): number | null {
   const candidate = Array.isArray(value) ? value[0] : value;
   if (!candidate) return null;
   const parsed = Number(candidate);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function shouldRecompute(method: string, query: NextApiRequest["query"]): boolean {
+function shouldRecompute(
+  method: string,
+  query: NextApiRequest["query"],
+): boolean {
   if (method === "POST") return true;
   const flag = query?.recompute;
   if (!flag) return false;
@@ -48,7 +54,9 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
   const startDate = req.query.start_date
     ? parseDateParam(req.query.start_date)
     : null;
-  const endDate = req.query.end_date ? parseDateParam(req.query.end_date) : null;
+  const endDate = req.query.end_date
+    ? parseDateParam(req.query.end_date)
+    : null;
 
   let query = supabase
     .from("sustainability_trend_bands")
@@ -87,7 +95,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       .json({ success: false, message: "Missing or invalid player_id" });
   }
   const snapshotDate = parseDateParam(
-    req.body?.snapshot_date ?? req.query.snapshot_date
+    req.body?.snapshot_date ?? req.query.snapshot_date,
   );
   const metrics = parseMetricParam(req.body?.metrics ?? req.query.metric);
   const windows = parseWindowParam(req.body?.windows ?? req.query.window);
@@ -97,14 +105,14 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       playerId,
       snapshotDate,
       metrics,
-      windows
+      windows,
     });
 
     if (!rows.length) {
       return res.status(200).json({
         success: true,
         message: "No bands computed (insufficient data)",
-        rows: []
+        rows: [],
       });
     }
 
@@ -112,25 +120,26 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       success: true,
       snapshot_date: snapshotDate,
       player_id: playerId,
-      rows
+      rows,
     });
   } catch (error: any) {
-    // eslint-disable-next-line no-console
     console.error("trend-bands recompute error", error?.message ?? error);
     return res.status(500).json({
       success: false,
-      message: error?.message ?? String(error)
+      message: error?.message ?? String(error),
     });
   }
 }
 
+const handleAuthorizedRecompute = adminOnly(handlePost as any);
+
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   if (req.method === "GET" || req.method === "POST") {
     if (shouldRecompute(req.method, req.query)) {
-      return handlePost(req, res);
+      return handleAuthorizedRecompute(req as any, res);
     }
     return handleGet(req, res);
   }

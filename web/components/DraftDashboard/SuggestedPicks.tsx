@@ -434,7 +434,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
       }
     });
     return arr;
-  }, [filtered, sortField, sortDir]);
+  }, [filtered, rosterVorpEnabled, sortField, sortDir]);
 
   const top = useMemo(
     () => sorted.slice(0, Math.max(1, limit)),

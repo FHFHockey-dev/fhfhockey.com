@@ -309,6 +309,12 @@ describe("train-nhl-xg-baseline", () => {
       randomSeed: 42,
       seasonScopes: [20252026],
       featureFamily: "first_pass_v1",
+      datasetContractRef:
+        "tasks/TASKS/xg-model/baseline/xg-training-dataset-contract.md",
+      featureContractRef:
+        "tasks/TASKS/xg-model/baseline/xg-training-feature-contract.md",
+      materializationDecisionRef:
+        "tasks/TASKS/xg-model/baseline/xg-training-materialization-decision.md",
       splitConfig: { trainRatio: 0.7, validationRatio: 0.15 },
       splitStrategy: "chronological_game(train=0.7,validation=0.15,test=0.15)",
       selectedFeatures: {

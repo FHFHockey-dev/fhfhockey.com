@@ -1,16 +1,20 @@
 // web/lib/sustainability/score.ts
 
 import supabase from "lib/supabase/server";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { PosGroup } from "lib/sustainability/priors";
 import { WindowCode } from "lib/sustainability/windows";
+import { upsertRowsInChunks } from "./persist";
 import {
+  SUSTAINABILITY_SCORE_CONFIG_HASH,
   SUSTAINABILITY_SCORE_MODEL_VERSION,
-  buildSustainabilityConfigHash
+  SUSTAINABILITY_SCORE_PROVENANCE_VERSION
 } from "./runtimeContract";
 import {
   applySustainabilityScoreGuardrails,
   clampSustainabilityZScore
 } from "./guardrails";
+import { buildSustainabilityExtremeMetadata } from "./observability";
 
 const EPS = 1e-9;
 
@@ -18,15 +22,25 @@ const EPS = 1e-9;
 export type SkillCode = "ixg60" | "icf60" | "hdcf60";
 
 // League references (mu, sigma) for each stabilizer stat per season x position group
-export async function fetchSkillLeagueRef(season_id: number, pg: PosGroup) {
-  const { data, error } = await (supabase as any)
-    .from("player_totals_unified")
-    .select(
-      "position_code, nst_ixg_per_60, nst_icf_per_60, nst_hdcf_per_60, season_id"
-    )
-    .eq("season_id", season_id)
-    .in("position_code", pg === "F" ? ["C", "LW", "RW"] : ["D"]);
-  if (error) throw error;
+export async function fetchSkillLeagueRef(
+  season_id: number,
+  pg: PosGroup,
+  options: { client?: any; pageSize?: number } = {}
+) {
+  const client = options.client ?? (supabase as any);
+  const data = await fetchAllSupabasePages<any>(
+    ({ from, to }) =>
+      client
+        .from("player_totals_unified")
+        .select(
+          "player_id, position_code, nst_ixg_per_60, nst_icf_per_60, nst_hdcf_per_60, season_id"
+        )
+        .eq("season_id", season_id)
+        .in("position_code", pg === "F" ? ["C", "LW", "RW"] : ["D"])
+        .order("player_id", { ascending: true })
+        .range(from, to),
+    { pageSize: options.pageSize }
+  );
   const vals = {
     ixg60: [] as number[],
     icf60: [] as number[],
@@ -55,11 +69,19 @@ export async function fetchSkillLeagueRef(season_id: number, pg: PosGroup) {
 export async function fetchSkillWindowRates(
   player_id: number,
   snapshot_date: string,
-  nGames: number
-): Promise<{ ixg60: number; icf60: number; hdcf60: number }> {
-  const { data, error } = await (supabase as any)
+  nGames: number,
+  options: { client?: any } = {}
+): Promise<{
+  ixg60: number;
+  icf60: number;
+  hdcf60: number;
+  sourceDate: string | null;
+  appearanceCount: number;
+}> {
+  const client = options.client ?? (supabase as any);
+  const { data, error } = await client
     .from("player_stats_unified")
-    .select("nst_ixg, nst_icf, nst_hdcf, nst_toi")
+    .select("date, nst_ixg, nst_icf, nst_hdcf, nst_toi")
     .eq("player_id", player_id)
     .lte("date", snapshot_date)
     .order("date", { ascending: false })
@@ -79,7 +101,48 @@ export async function fetchSkillWindowRates(
   return {
     ixg60: (3600 * ixg) / denom,
     icf60: (3600 * icf) / denom,
-    hdcf60: (3600 * hdcf) / denom
+    hdcf60: (3600 * hdcf) / denom,
+    sourceDate:
+      data?.[0]?.date == null ? null : String(data[0].date).slice(0, 10),
+    appearanceCount: data?.length ?? 0
+  };
+}
+
+function dateAgeDays(requestedDate: string, observedDate: string | null) {
+  if (!observedDate) return null;
+  const requestedMs = Date.parse(`${requestedDate}T00:00:00Z`);
+  const observedMs = Date.parse(`${observedDate}T00:00:00Z`);
+  if (!Number.isFinite(requestedMs) || !Number.isFinite(observedMs)) {
+    return null;
+  }
+  return Math.round((requestedMs - observedMs) / 86_400_000);
+}
+
+export function buildScoreSourceCutoffs(args: {
+  snapshotDate: string;
+  playerStatsSourceDate: string | null;
+  seasonId: number;
+}) {
+  return {
+    version: SUSTAINABILITY_SCORE_PROVENANCE_VERSION,
+    requested: {
+      snapshot_date: args.snapshotDate
+    },
+    observed: {
+      player_stats_unified: args.playerStatsSourceDate
+    },
+    derived: {
+      sustainability_window_z: args.snapshotDate
+    },
+    scopes: {
+      player_totals_unified_season_id: args.seasonId
+    },
+    age_days: {
+      player_stats_unified: dateAgeDays(
+        args.snapshotDate,
+        args.playerStatsSourceDate
+      )
+    }
   };
 }
 
@@ -114,7 +177,8 @@ export async function buildScoreForPlayerWindow(
     icf60: { mu: number; sig: number };
     hdcf60: { mu: number; sig: number };
   },
-  weights: WeightConfig = DEFAULT_WEIGHTS
+  weights: WeightConfig = DEFAULT_WEIGHTS,
+  provenance?: { modelVersion: string; configHash: string }
 ) {
   // luck z's (pull from existing window z table)
   const { data: zrows, error } = await (supabase as any)
@@ -126,8 +190,10 @@ export async function buildScoreForPlayerWindow(
     .in("stat_code", ["shp", "oishp", "ipp", "ppshp"]);
   if (error) throw error;
   const zmap: Record<string, number> = {};
+  const rawZMap: Record<string, number> = {};
   const guardrailWarnings: string[] = [];
   for (const r of zrows ?? []) {
+    rawZMap[`z_${r.stat_code}`] = Number(r.eb_z);
     zmap[r.stat_code] = clampSustainabilityZScore(
       Number(r.eb_z),
       `window_z_${r.stat_code}`,
@@ -156,21 +222,27 @@ export async function buildScoreForPlayerWindow(
     weights.skill.ixg60 * z_ixg +
     weights.skill.icf60 * z_icf +
     weights.skill.hdcf60 * z_hdc;
+  const modelVersion =
+    provenance?.modelVersion ?? SUSTAINABILITY_SCORE_MODEL_VERSION;
+  const configHash =
+    provenance?.configHash ?? SUSTAINABILITY_SCORE_CONFIG_HASH;
   const components = {
-    modelVersion: SUSTAINABILITY_SCORE_MODEL_VERSION,
-    configHash: buildSustainabilityConfigHash({ weights, window }),
-    sourceCutoffs: {
-      sustainability_window_z: snapshot_date,
-      player_stats_unified: snapshot_date,
-      player_totals_unified: season_id
-    },
+    modelVersion,
+    configHash,
+    sourceCutoffs: buildScoreSourceCutoffs({
+      snapshotDate: snapshot_date,
+      playerStatsSourceDate: rates.sourceDate,
+      seasonId: season_id
+    }),
     warnings: [
       ...missingLuckStats.map((stat) => `missing_window_z_${stat}`),
+      ...(rates.sourceDate ? [] : ["missing_player_stats_source_date"]),
       ...guardrailWarnings
     ],
     fallbackFlags: {
       missing_luck_stats: missingLuckStats.length > 0
     },
+    ...buildSustainabilityExtremeMetadata(rawZMap),
     z_shp: zmap["shp"] ?? 0,
     z_oishp: zmap["oishp"] ?? 0,
     z_ipp: zmap["ipp"] ?? 0,
@@ -194,19 +266,23 @@ export async function buildScoreForPlayerWindow(
       window_code: window.code,
       s_raw: guardedScore.sRaw,
       s_100: guardedScore.s100,
-      components: guardedScore.components
+      components: guardedScore.components,
+      model_version: modelVersion,
+      config_hash: configHash
     },
     sample: { rates, zmap }
   };
 }
 
 export async function upsertScores(rows: any[], dry = false) {
-  if (dry || !rows.length) return { inserted: 0 };
-  const { error } = await (supabase as any)
-    .from("sustainability_scores")
-    .upsert(rows, { onConflict: "player_id,snapshot_date,window_code" });
-  if (error) throw error;
-  return { inserted: rows.length };
+  if (dry || !rows.length) return { inserted: 0, chunks: 0 };
+  return upsertRowsInChunks({
+    rows,
+    upsert: (chunk) =>
+      (supabase as any).from("sustainability_scores").upsert(chunk, {
+        onConflict: "player_id,snapshot_date,window_code"
+      })
+  });
 }
 
 export default {

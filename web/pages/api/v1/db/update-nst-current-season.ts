@@ -1,6 +1,7 @@
 // pages/api/v1/db/update-nst-current-season.ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import adminOnly from "utils/adminOnlyMiddleware";
 import { resolveNstCurrentSeasonRequestPlan } from "lib/cron/nstBurstPlans";
 import type { NextApiRequest, NextApiResponse } from "next";
 import * as cheerio from "cheerio";
@@ -14,6 +15,7 @@ import {
 // Assuming utils/fetchCurrentSeason is directly under 'pages' or project root
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import type { Element } from "domhandler";
+import { capturePlayerForecastSourceObservation } from "lib/player-forecasts/sourceSnapshot";
 
 dotenv.config({ path: "./../../../.env.local" });
 
@@ -29,7 +31,8 @@ const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // --- Constants ---
 const PLAYER_MAP_VIEW = "view_active_player_ids_max_season";
-const BASE_URL_ALL_PLAYERS = "https://data.naturalstattrick.com/playerteams.php";
+const BASE_URL_ALL_PLAYERS =
+  "https://data.naturalstattrick.com/playerteams.php";
 // Define target table names
 const TABLE_INDIVIDUAL_COUNTS = "nst_seasonal_individual_counts";
 const TABLE_INDIVIDUAL_RATES = "nst_seasonal_individual_rates";
@@ -372,6 +375,24 @@ async function fetchAndParseAllPlayersData(
         await delay(2000 * (attempt + 1));
         continue;
       }
+      try {
+        await capturePlayerForecastSourceObservation({
+          supabase,
+          provider: "natural_stat_trick",
+          datasetKey: `${ReportType[reportType]}:${strength}`,
+          entityKind: "season_report",
+          entityKey: seasonId,
+          sourceUrl: url,
+          sourceRevisionKey: `${seasonId}:${ReportType[reportType]}:${strength}`,
+          payload: { html: text },
+          metadata: { reportType: ReportType[reportType], strength, seasonId },
+        });
+      } catch (snapshotError) {
+        console.warn(
+          "Player Forecasts could not preserve the NST source observation:",
+          snapshotError,
+        );
+      }
       const $ = cheerio.load(text);
       const table = $("div#allplayers_length ~ table");
       let dataTable: cheerio.Cheerio<Element>;
@@ -690,10 +711,7 @@ async function main() {
   }
 }
 
-async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
     res.status(405).json({ message: "Method Not Allowed" });
     return;
@@ -707,4 +725,4 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

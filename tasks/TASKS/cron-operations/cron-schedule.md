@@ -1,3 +1,24 @@
+-- 2026-08-04 local standings timeout-bound correction
+-- The scheduled/default update-standings-details?date=all path now resumes from
+-- the latest persisted standings date, stops at the regular-season end, and
+-- caps each invocation at 14 inclusive dates; `full=true` remains the explicit
+-- historical-refresh escape hatch. The schedule, method, owner, and database
+-- state are unchanged.
+
+-- 2026-08-02 natural job-392/current-auth receipt
+-- The scheduled job-392 run at 2026-08-02T12:00:13.778493Z completed POST
+-- HTTP 200/success in 11,603 ms with value-free fields success=true,
+-- playersProcessed=0, gamesProcessed=52,151, metricsUpserted=0. This proves
+-- current Vault-secret parity without a manual invocation. Separate NST
+-- NST_KEY-missing/timeout runtime failures and the natural report's real
+-- missing-audit/partial-failure warnings remain open under C0047/7.5.
+
+-- 2026-08-03 read-only catalog reconciliation
+-- Production cron.job currently reports 69 jobs: 59 active (54 HTTP and
+-- 5 SQL) and 10 inactive (251, 277, 280, 281, 308, 330, 370, 371, 372, 376).
+-- The JSON inventory below is the current-state source of truth; job 308 is
+-- inactive and distinct horizon-5 job 393 remains active.
+
 # ALL CRON JOBS:
 ```json
 [
@@ -247,7 +268,7 @@
     "jobname": "sync-yahoo-players-to-sheet",
     "schedule": "55 8 * * *",
     "run_time_utc": "08:55 UTC",
-    "active": true,
+    "active": false,
     "method": "GET",
     "route": "/api/internal/sync-yahoo-players-to-sheet?gameId=465"
   },
@@ -284,7 +305,8 @@
     "run_time_utc": "10:15 UTC",
     "active": true,
     "method": "GET",
-    "route": "/api/v1/db/update-team-power-ratings"
+    "route": "/api/v1/db/update-team-power-ratings",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 389,
@@ -371,7 +393,7 @@
     "jobname": "run-forge-projection-v2",
     "schedule": "05 10 * * *",
     "run_time_utc": "10:05 UTC",
-    "active": true,
+    "active": false,
     "method": "POST",
     "route": "/api/v1/db/run-projection-v2",
     "auth": "Supabase Vault cron_secret"
@@ -401,9 +423,10 @@
     "jobname": "update-rolling-games-recent",
     "schedule": "25 10 * * *",
     "run_time_utc": "10:25 UTC",
-    "active": false,
+    "active": true,
     "method": "GET",
-    "route": "/api/v1/db/update-rolling-games?date=recent"
+    "route": "/api/v1/db/update-rolling-games?date=recent",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 321,
@@ -430,7 +453,8 @@
     "run_time_utc": "10:40 UTC",
     "active": true,
     "method": "GET",
-    "route": "/api/v1/db/sustainability/rebuild-baselines"
+    "route": "/api/v1/db/sustainability/rebuild-baselines",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 374,
@@ -445,27 +469,30 @@
     "jobname": "rebuild-sustainability-priors",
     "schedule": "42 10 * * *",
     "run_time_utc": "10:42 UTC",
-    "active": true,
+    "active": false,
     "method": "GET",
-    "route": "/api/v1/sustainability/rebuild-priors?season=current"
+    "route": "/api/v1/sustainability/rebuild-priors?season=current",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 370,
     "jobname": "rebuild-sustainability-window-z",
     "schedule": "43 10 * * *",
     "run_time_utc": "10:43 UTC",
-    "active": true,
+    "active": false,
     "method": "GET",
-    "route": "/api/v1/sustainability/rebuild-window-z?season=current&runAll=true"
+    "route": "/api/v1/sustainability/rebuild-window-z?season=current&runAll=true",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 371,
     "jobname": "rebuild-sustainability-score",
     "schedule": "44 10 * * *",
     "run_time_utc": "10:44 UTC",
-    "active": true,
+    "active": false,
     "method": "GET",
-    "route": "/api/v1/sustainability/rebuild-score?season=current&runAll=true"
+    "route": "/api/v1/sustainability/rebuild-score?season=current&runAll=true",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 327,
@@ -481,9 +508,10 @@
     "jobname": "rebuild-sustainability-trend-bands",
     "schedule": "46 10 * * *",
     "run_time_utc": "10:46 UTC",
-    "active": true,
+    "active": false,
     "method": "GET",
-    "route": "/api/v1/sustainability/rebuild-trend-bands?runAll=true"
+    "route": "/api/v1/sustainability/rebuild-trend-bands?runAll=true",
+    "auth": "Supabase Vault cron_secret"
   },
   {
     "jobid": 328,
@@ -628,36 +656,43 @@
 > owned by audited POST job 392 at `12:00`. The deployed writer probes passed;
 > offseason trend serving remains truthfully blocked on the latest played date.
 
+> **Current command readback (2026-08-01):** Job 392 remains active on
+> `0 12 * * *` and uses `POST /api/v1/db/update-player-trend-metrics` with
+> `{}` and a 300-second timeout. Its bearer is resolved from Vault
+> `cron_secret`; the command preserves the JSON content type and no manual
+> cron invocation was used for the publication checkpoint.
+
 ## Inbound scheduled-route authentication boundary
 
 The machine-checked inventory in `web/lib/cron/cronAuditCoverage.ts` and
-`web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts` freezes the
-2026-07-18 pre-rollout contract:
+`web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts` now follows the
+2026-08-01 Production readback. The six scheduler deactivations already
+recorded by the closed scheduler migration are reflected in the source JSON:
 
-- 59 active HTTP jobs resolve to 52 unique Pages API routes with no missing
-  route owner.
-- 17 routes already use the fail-closed `adminOnly` admin-or-exact-cron
-  boundary; one destructive internal sheet-sync route intentionally uses an
-  exact-`CRON_SECRET`-only guard; 34 routes remain explicitly unprotected and
-  pending route-by-route migration.
+- 54 active HTTP jobs resolve to 48 unique Pages API routes with no missing
+  route owner (job 393 is the retained horizon-5 owner for the shared
+  projection route formerly used by job 308).
+- All 48 active routes use the fail-closed `adminOnly` admin-or-exact-cron
+  boundary; the exact-cron-only sheet-sync route is inactive, so zero active
+  scheduled routes are unprotected.
 - Static non-cron consumers are classified as 5 browser-admin-only routes,
-  11 internal-server-only routes, 4 routes with both browser-admin and internal
-  callers, and 32 cron-only routes. The manifest names every non-cron source
+  12 internal-server-only routes, 4 routes with both browser-admin and internal
+  callers, and 27 cron-only routes. The manifest names every direct non-cron source
   file so later protection cannot silently break an admin surface or chained
   server call.
-- There is no approved public unauthenticated exception. The target is
-  `adminOnly` for every scheduled writer except the existing internal
-  cron-secret-only sheet sync.
+- There is no public unauthenticated exception.
 
-Rollout must remain route-by-route. Before wrapping a route, verify all named
-browser callers supply an authenticated admin bearer, all named server callers
-forward the exact cron bearer without logging it, and focused production-mode
-tests prove missing/invalid rejection plus cron/admin admission. Deploy a small
-coherent batch, run value-free 401/200 checks, then observe the scheduled audit
-before continuing. If a caller contract fails, roll back only that route's
-wrapper/caller batch to the preceding deployment; do not roll back the rotated
-secret, Vault-backed cron commands, or unrelated protected routes. A bulk
-cross-route enforcement change remains a breaking-contract checkpoint.
+The prior 2026-07-30 59-job/52-route contract remains a historical local
+publication snapshot; it is not the current Production schedule.
+
+The local rollout is complete after verifying all named browser callers supply
+an authenticated admin bearer and all named server callers forward the exact
+cron bearer without logging it. Grouped publication must run value-free
+missing/invalid 401 and current-auth safe-validation canaries, inspect bounded
+runtime errors, and observe the next scheduled audit. If a caller contract fails,
+roll back only the final six-route wrapper batch to the preceding deployment; do
+not roll back the rotated secret, Vault-backed cron commands, or unrelated
+protected routes.
 
 
 
@@ -1014,7 +1049,10 @@ curl -i -sS -m 180 \
 -- |||||||||||||||||||||||||||||||||  03:15 EST  |||||||||||||||||||||||||||||||||
 -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
--- STATUS: 404 NOT FOUND
+-- HISTORICAL STATUS: an earlier probe returned 404. Later production evidence
+-- returned HTTP 200; the active inventory above is authoritative. Job 16 now
+-- reaches a compatibility adapter, while final ordering, single audit ownership,
+-- and cross-provider scheduler ownership remain open under B-DRM NEW 38/49–51.
 -- SELECT cron.schedule(
 --     'update-shift-charts',
 --     '45 7 * * *', -- 07:45 UTC
@@ -1603,7 +1641,7 @@ curl -i -sS -m 180 \
 -- - owns only genuine horizon-5 output
 -- - uses a separate run id on the same as-of date
 -- - must use a Vault-backed Authorization header
--- - jobs 308 and 393 are active and use the canonical Vault lookup after the
+-- - job 308 is inactive; distinct horizon-5 job 393 remains active and uses the canonical Vault lookup after the
 --   value-free 2026-07-14 rotation/conversion gate
 -- - the commented SQL below is reference-only; production job 393 already exists
 --
@@ -2355,3 +2393,20 @@ curl -i -sS -m 180 \
 -- 11:34/17:34/21:10 UTC: capture ESPN market odds snapshots for upcoming NHL predictions.
 -- 11:45 UTC: refresh roster-adjusted game predictions.
 -- 13:00 UTC: run cron-report.
+
+----------------------------------------------------------------------------------
+-- 2026-08-01 post-publication job-392 auth observation
+--
+-- pg_cron run 148893 submitted job 392 successfully at 12:00 UTC, but the
+-- application audit recorded HTTP 401; a later 22:51 UTC invocation also
+-- recorded HTTP 401. The command's route/POST/Vault/timeout shape remains
+-- correct, but this is not current-secret authorization proof. Keep NEW 9.0
+-- open, do not expose or copy credential values, and require an authorized
+-- current-auth canary or value-free secret-parity reconciliation before
+-- treating job 392 as operationally healthy.
+
+-- 2026-08-01 local auth-contract checkpoint
+-- The focused cron authorization suite now passes 7/7 after aligning two
+-- stale assertions with the shared fail-closed Unauthorized. response.
+-- This local evidence does not resolve the Production job-392 HTTP-401
+-- current-secret parity gate; keep NEW 9.0 open and credential values unread.

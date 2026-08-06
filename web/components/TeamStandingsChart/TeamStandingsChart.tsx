@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import * as d3 from "d3";
 import { format, isAfter } from "date-fns";
 import PanelStatus from "components/common/PanelStatus";
-import OptimizedImage from "components/common/OptimizedImage";
 import useCurrentSeason from "hooks/useCurrentSeason";
 import useResizeObserver from "hooks/useResizeObserver";
 import { buildHomepageModulePresentation } from "lib/dashboard/freshness";
@@ -10,6 +9,8 @@ import { teamsInfo, teamNameToAbbreviationMap } from "lib/teamsInfo";
 import publicSupabase from "lib/supabase/public-client";
 import styles from "./TeamStandingsChart.module.scss";
 import Fetch from "lib/cors-fetch";
+import OptimizedImage from "components/common/OptimizedImage";
+import { fallbackTeamLogo, getLocalTeamLogoPath } from "lib/images";
 import {
   getMetricValue,
   getYDomainMax,
@@ -571,7 +572,10 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
             const lastPoint = s.data[s.data.length - 1];
             teamG
               .append("svg:image")
-              .attr("xlink:href", `/teamLogos/${abbr || "default"}.png`)
+              .attr("xlink:href", getLocalTeamLogoPath(abbr))
+              .on("error", function () {
+                d3.select(this).attr("xlink:href", fallbackTeamLogo);
+              })
               .attr("x", xScale(lastPoint.gamesPlayed) + 5)
               .attr("y", yScale(getMetricValue(lastPoint[metric], metric)) - 10)
               .attr("width", 20)
@@ -635,7 +639,10 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
         const lastPoint = sortedData[sortedData.length - 1];
         teamG
           .append("svg:image")
-          .attr("xlink:href", `/teamLogos/${abbr || "default"}.png`)
+          .attr("xlink:href", getLocalTeamLogoPath(abbr))
+          .on("error", function () {
+            d3.select(this).attr("xlink:href", fallbackTeamLogo);
+          })
           .attr("x", xScale(lastPoint.gamesPlayed) + 5)
           .attr("y", () =>
             metric === "pointPct"
@@ -834,6 +841,9 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
     Object.keys(divisions).forEach((div) => divisions[div].sort());
     return divisions;
   }, [data, selectedConference, selectedDivision]);
+
+  const leftDivisions = ["Atlantic", "Central"];
+  const rightDivisions = ["Metropolitan", "Pacific"];
 
   const selectAllTeams = () => {
     const allTeams: string[] = [];
@@ -1036,38 +1046,74 @@ const TeamStandingsChart = ({ compact = false }: TeamStandingsChartProps) => {
                 <button onClick={clearAllTeams}>Clear All</button>
               </div>
               <div className={styles.toggleList}>
-                {DIVISION_ORDER.map((div) => (
-                  <div key={div} className={styles.divisionGroup}>
-                    <strong>{div === "Metropolitan" ? "Metro" : div}</strong>
-                    <div className={styles.divisionTeams}>
-                      {teamsByDivision[div]?.map((abbr) => (
-                        <label key={abbr} className={styles.teamToggle}>
-                          <input
-                            type="checkbox"
-                            checked={selectedTeams.includes(abbr)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedTeams((prev) => [...prev, abbr]);
-                              } else {
-                                setSelectedTeams((prev) =>
-                                  prev.filter((t) => t !== abbr),
-                                );
-                              }
-                            }}
-                          />
-                          <OptimizedImage
-                            src={`/teamLogos/${abbr ?? "default"}.png`}
-                            alt={abbr}
-                            className={styles.toggleLogo}
-                            width={32}
-                            height={32}
-                            fallbackSrc="/teamLogos/FHFH.png"
-                          />
-                        </label>
-                      ))}
+                <div className={styles.toggleColumn}>
+                  {leftDivisions.map((div) => (
+                    <div key={div} className={styles.divisionGroup}>
+                      <strong>{div}</strong>
+                      <div className={styles.divisionTeams}>
+                        {teamsByDivision[div]?.map((abbr) => (
+                          <label key={abbr} className={styles.teamToggle}>
+                            <input
+                              type="checkbox"
+                              checked={selectedTeams.includes(abbr)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedTeams((prev) => [...prev, abbr]);
+                                } else {
+                                  setSelectedTeams((prev) =>
+                                    prev.filter((t) => t !== abbr),
+                                  );
+                                }
+                              }}
+                            />
+                            <OptimizedImage
+                              src={getLocalTeamLogoPath(abbr)}
+                              alt={abbr}
+                              width={26}
+                              height={26}
+                              fallbackSrc={fallbackTeamLogo}
+                              className={styles.toggleLogo}
+                            />
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+                <div className={styles.toggleColumn}>
+                  {rightDivisions.map((div) => (
+                    <div key={div} className={styles.divisionGroup}>
+                      <strong>{div === "Metropolitan" ? "Metro" : div}</strong>
+                      <div className={styles.divisionTeams}>
+                        {teamsByDivision[div]?.map((abbr) => (
+                          <label key={abbr} className={styles.teamToggle}>
+                            <input
+                              type="checkbox"
+                              checked={selectedTeams.includes(abbr)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedTeams((prev) => [...prev, abbr]);
+                                } else {
+                                  setSelectedTeams((prev) =>
+                                    prev.filter((t) => t !== abbr),
+                                  );
+                                }
+                              }}
+                            />
+                            <OptimizedImage
+                              src={getLocalTeamLogoPath(abbr)}
+                              alt={abbr}
+                              width={26}
+                              height={26}
+                              fallbackSrc={fallbackTeamLogo}
+                              className={styles.toggleLogo}
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </details>

@@ -1,6 +1,7 @@
 // API endpoint for calculating WIGO statistics
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
+import adminOnly from "utils/adminOnlyMiddleware";
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server"; // Supabase client instance
 import { getCurrentSeason } from "lib/NHL/server"; // NHL season helper function
@@ -200,10 +201,7 @@ async function fetchAllPlayerIds(
 // --- END PAGINATION HELPER ---
 
 // --- Main Handler ---
-export default withCronJobAudit(async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const startTime = Date.now();
   console.log(
     "Starting player stats update (v9 - Separate Recent Table - Full Code)..."
@@ -1275,4 +1273,5 @@ export default withCronJobAudit(async function handler(
     });
   }
 }
-);
+
+export default withCronJobAudit(adminOnly(handler as any));

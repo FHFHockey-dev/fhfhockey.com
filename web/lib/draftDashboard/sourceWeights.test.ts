@@ -56,8 +56,8 @@ describe("projection source weights", () => {
     expect(weighted).toBe(25);
   });
 
-  it("keeps representative cached source-weight math within 200ms", () => {
-    const playerCount = 1000;
+  it("keeps representative cached source-weight math within 150ms", () => {
+    const playerCount = 2000;
     const statCount = 24;
     const sourceCount = 8;
     const started = performance.now();
@@ -84,6 +84,6 @@ describe("projection source weights", () => {
     console.info(
       `[A-DRAFT source-weight benchmark] ${playerCount} players x ${statCount} stats x ${sourceCount} sources: ${elapsedMs.toFixed(2)}ms`
     );
-    expect(elapsedMs).toBeLessThan(200);
+    expect(elapsedMs).toBeLessThan(150);
   });
 });

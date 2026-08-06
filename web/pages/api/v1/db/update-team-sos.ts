@@ -1,4 +1,5 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import adminOnly from "utils/adminOnlyMiddleware";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
@@ -182,10 +183,7 @@ async function resolveStartDate(
   return lastDate.slice(0, 10);
 }
 
-async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ message: "Method not allowed" });
@@ -196,8 +194,7 @@ async function handler(
     const startParam =
       typeof req.query.start === "string" ? req.query.start : undefined;
     const today = new Date().toISOString().slice(0, 10);
-    const seasonEnd =
-      season.endDate || season.regularSeasonEndDate || today;
+    const seasonEnd = season.endDate || season.regularSeasonEndDate || today;
     const endDate = seasonEnd > today ? today : seasonEnd;
     const startCandidate = await resolveStartDate(
       season.id,
@@ -239,7 +236,7 @@ async function handler(
 
     const allRows: SosRowInsert[] = [];
 
-  for (const currentDate of dates) {
+    for (const currentDate of dates) {
       const standingsMap = await fetchStandingsByDate(currentDate);
       await sleep(250);
 
@@ -342,4 +339,4 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

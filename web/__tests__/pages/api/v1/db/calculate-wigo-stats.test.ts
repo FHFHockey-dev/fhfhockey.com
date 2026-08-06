@@ -36,10 +36,16 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
 
   it("returns a structured dependency error instead of leaking html", async () => {
     getCurrentSeasonMock.mockRejectedValue(
-      new Error("<!DOCTYPE html><html><body>Error code 522 from supabase.co</body></html>")
+      new Error(
+        "<!DOCTYPE html><html><body>Error code 522 from supabase.co</body></html>"
+      )
     );
 
-    const req: any = { method: "GET", query: {} };
+    const req: any = {
+      method: "GET",
+      query: {},
+      headers: { host: "localhost" }
+    };
     const res = createMockRes();
 
     await handler(req, res);

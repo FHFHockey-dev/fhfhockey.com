@@ -9,7 +9,9 @@ import { buildGoalieStatsDetailAggregationFromState } from "lib/underlying-stats
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<GoalieStatsDetailApiResponse | GoalieStatsDetailApiError>
+  res: NextApiResponse<
+    GoalieStatsDetailApiResponse | GoalieStatsDetailApiError
+  >,
 ) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
@@ -27,10 +29,13 @@ export default async function handler(
   try {
     const aggregation = await buildGoalieStatsDetailAggregationFromState(
       parsed.playerId,
-      parsed.state
+      parsed.state,
     );
 
-    res.setHeader("Cache-Control", "private, max-age=60, stale-while-revalidate=300");
+    res.setHeader(
+      "Cache-Control",
+      "private, max-age=60, stale-while-revalidate=300",
+    );
     return res.status(200).json({
       ...aggregation,
       placeholder: false,
@@ -43,17 +48,24 @@ export default async function handler(
         : "Unable to build goalie detail underlying stats.";
 
     const statusCode =
-      message.includes("does not yet support") || message.includes("Unsupported")
+      message.includes("does not yet support") ||
+      message.includes("Unsupported")
         ? 400
         : 500;
 
+    if (statusCode === 500) {
+      console.error("Failed to build goalie detail underlying stats", error);
+    }
     res.setHeader("Cache-Control", "no-store");
     return res.status(statusCode).json({
       error:
         statusCode === 400
           ? "Unsupported goalie stats filter combination."
           : "Unable to build goalie detail underlying stats.",
-      issues: [message],
+      issues:
+        statusCode === 400
+          ? [message]
+          : ["GOALIE_DETAIL_UNDERLYING_STATS_UNAVAILABLE"],
     });
   }
 }

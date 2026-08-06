@@ -6,6 +6,7 @@ import {
   SkaterTotalsData
 } from "utils/fetchWigoPlayerStats";
 import { formatWigoStatValue } from "./statMetadata";
+import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 import styles from "./PerGameStatsTable.module.scss";
 
 type NumericSkaterTotalsKeys = {
@@ -51,13 +52,15 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
   playerId,
   seasonId
 }) => {
-  const { data: totalsData, isLoading, error } = useQuery<SkaterTotalsData | null>(
-    {
-      queryKey: ["wigoPerGameTotals", playerId, seasonId ?? "latest"],
-      queryFn: () => fetchPlayerPerGameTotals(playerId as number, seasonId),
-      enabled: typeof playerId === "number"
-    }
-  );
+  const {
+    data: totalsData,
+    isLoading,
+    error
+  } = useQuery<SkaterTotalsData | null>({
+    queryKey: ["wigoPerGameTotals", playerId, seasonId ?? "latest"],
+    queryFn: () => fetchPlayerPerGameTotals(playerId as number, seasonId),
+    enabled: typeof playerId === "number"
+  });
 
   const statRows = useMemo(() => {
     if (!totalsData?.games_played || totalsData.games_played <= 0) {
@@ -117,7 +120,7 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
     }
 
     if (error instanceof Error) {
-      return `Failed to load stats: ${error.message || "Unknown error"}`;
+      return WIGO_ERROR_MESSAGES.stats;
     }
 
     if (!isLoading && totalsData && (totalsData.games_played ?? 0) <= 0) {
@@ -131,38 +134,67 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
     return null;
   }, [error, isLoading, playerId, totalsData]);
 
+  const productionSnapshot = useMemo(() => {
+    if (!totalsData?.games_played) return [];
+
+    const gp = totalsData.games_played;
+    return [
+      { label: "Points", value: totalsData.points, perGame: totalsData.points_per_game },
+      { label: "Goals", value: totalsData.goals, perGame: (totalsData.goals ?? 0) / gp },
+      { label: "Assists", value: totalsData.assists, perGame: (totalsData.assists ?? 0) / gp },
+      { label: "SOG", value: totalsData.shots, perGame: (totalsData.shots ?? 0) / gp }
+    ];
+  }, [totalsData]);
+
   return (
     <div className={styles.perGameTableContainer}>
       {isLoading && (
         <div className={styles.loadingMessage}>Loading Stats...</div>
       )}
-      {errorMessage && <div className={styles.errorMessage}>{errorMessage}</div>}
+      {errorMessage && (
+        <div className={styles.errorMessage}>{errorMessage}</div>
+      )}
       {!isLoading && !errorMessage && statRows.length === 0 && playerId && (
         <div className={styles.noDataMessage}>No data available.</div>
       )}
       {!isLoading && !errorMessage && statRows.length > 0 && (
-        <table className={styles.verticalStatsTable}>
-          <thead>
-            <tr>
-              {/* Fixed Column Headers */}
-              <th className={styles.metricHeader}>Metric</th>
-              <th className={styles.valueHeader}>Per/GP</th>
-              <th className={styles.valueHeader}>Per/82</th>
-            </tr>
-          </thead>
-          <tbody>
-            {/* Map over calculated rows */}
-            {statRows.map((row) => (
-              <tr key={row.stat}>
-                <th scope="row" className={styles.metricCell}>
-                  {row.stat}
-                </th>
-                <td className={styles.valueCell}>{row.perGame}</td>
-                <td className={styles.valueCell}>{row.per82}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <section className={styles.productionSnapshot}>
+            <h3>Production Snapshot <span>(This season)</span></h3>
+            <div className={styles.productionGrid}>
+              {productionSnapshot.map((stat) => (
+                <div key={stat.label} className={styles.productionStat}>
+                  <span>{stat.label}</span>
+                  <strong>{stat.value ?? "-"}</strong>
+                  <small>{formatStatValue(stat.perGame)} / GP</small>
+                </div>
+              ))}
+            </div>
+          </section>
+          <section className={styles.projectionTableSection}>
+            <h3>Per-game / Per-82 projection</h3>
+            <table className={styles.verticalStatsTable}>
+              <thead>
+                <tr>
+                  <th className={styles.metricHeader}>Metric</th>
+                  <th className={styles.valueHeader}>Per/GP</th>
+                  <th className={styles.valueHeader}>Per/82</th>
+                </tr>
+              </thead>
+              <tbody>
+                {statRows.map((row) => (
+                  <tr key={row.stat}>
+                    <th scope="row" className={styles.metricCell}>
+                      {row.stat}
+                    </th>
+                    <td className={styles.valueCell}>{row.perGame}</td>
+                    <td className={styles.valueCell}>{row.per82}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        </>
       )}
       {!playerId && !isLoading && (
         <div className={styles.noPlayerMessage}>

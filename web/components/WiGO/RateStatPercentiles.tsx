@@ -21,6 +21,7 @@ import {
   calculatePlayerRank
 } from "utils/calculatePercentiles";
 import { formatOrdinal } from "utils/formattingUtils";
+import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 
 ChartJS.register(
   CategoryScale,
@@ -246,7 +247,10 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
       ),
     enabled: typeof seasonId === "number" && typeof playerId === "number"
   });
-  const allPlayersStats: PlayerRawStats[] = percentileCohort?.stats ?? [];
+  const allPlayersStats = useMemo<PlayerRawStats[]>(
+    () => percentileCohort?.stats ?? [],
+    [percentileCohort?.stats]
+  );
   const usingFallbackSeason =
     (percentileCohort?.appliedSeasonId ?? seasonId) !==
     (percentileCohort?.requestedSeasonId ?? seasonId);
@@ -266,7 +270,8 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
     }
 
     const cohortGp =
-      allPlayersStats.find((player) => player.player_id === playerId)?.gp ?? null;
+      allPlayersStats.find((player) => player.player_id === playerId)?.gp ??
+      null;
 
     return percentileCohort?.canonicalPlayerGp ?? cohortGp;
   }, [allPlayersStats, percentileCohort?.canonicalPlayerGp, playerId]);
@@ -370,8 +375,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
     return selectedPlayerGp !== null && selectedPlayerGp >= minGp;
   }, [selectedPlayerGp, minGp]);
 
-  const sliderMax =
-    Math.max(selectedPlayerGp ?? 0, maxPossibleGp, 1);
+  const sliderMax = Math.max(selectedPlayerGp ?? 0, maxPossibleGp, 1);
 
   const combinedChartConfig = useMemo(
     () =>
@@ -390,8 +394,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
       )}
       {!isLoading && error && (
         <div className={styles.errorMessage}>
-          Failed to load player list:{" "}
-          {error instanceof Error ? error.message || "Unknown error" : "Unknown error"}
+          {WIGO_ERROR_MESSAGES.percentile}
         </div>
       )}
       {!isLoading && !error && !seasonId && playerId && (
@@ -436,8 +439,8 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                   {sliderMax > 1
                     ? sliderMax
                     : selectedPlayerGp !== null
-                    ? selectedPlayerGp
-                    : ""}
+                      ? selectedPlayerGp
+                      : ""}
                 </span>
 
                 <input
@@ -465,19 +468,19 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
             <div className={styles.thresholdMessagesContainer}>
               {calculatedPercentiles !== null &&
                 percentileCohort?.fallbackReason && (
-                <div className={styles.thresholdMessage}>
-                  {percentileCohort.fallbackReason}
-                </div>
-              )}
+                  <div className={styles.thresholdMessage}>
+                    {percentileCohort.fallbackReason}
+                  </div>
+                )}
               {calculatedPercentiles !== null &&
                 !usingFallbackSeason &&
                 !selectedPlayerMeetsGpThreshold &&
                 selectedPlayerGp !== null && (
-                <div className={styles.thresholdMessage}>
-                  Selected Player GP ({selectedPlayerGp}) below threshold (
-                  {minGp}). Comparing against {minGp}+ GP players.
-                </div>
-              )}
+                  <div className={styles.thresholdMessage}>
+                    Selected Player GP ({selectedPlayerGp}) below threshold (
+                    {minGp}). Comparing against {minGp}+ GP players.
+                  </div>
+                )}
               {selectedPlayerGp === 0 && (
                 <div className={styles.thresholdMessage}>
                   Selected Player has 0 GP for {selectedStrength.toUpperCase()}.

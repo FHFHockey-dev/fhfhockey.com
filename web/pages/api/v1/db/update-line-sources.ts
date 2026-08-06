@@ -17,6 +17,10 @@ import {
 } from "lib/sources/lineSourceProcessing";
 import { syncLineCombinationSourceWinners } from "lib/sources/lineSourceLineCombinations";
 import {
+  capturePlayerForecastSourceRows,
+  type ForecastLineSourceRow,
+} from "lib/player-forecasts/sourceObservations";
+import {
   applyLinesCccWrapperOEmbed,
   applyQuotedTweetPreference,
   buildLinesCccWrapperOEmbedDeferredState,
@@ -310,7 +314,7 @@ export default withCronJobAudit(
     const sourceKeys = parseOptionalSourceKeys(req.query.sourceKey);
     const currentSeason = await getCurrentSeason();
     const teamDirectory = buildTeamDirectory(
-      await getTeams(currentSeason.seasonId),
+      await getTeams(currentSeason.seasonId, { mode: "current-canonical" }),
     );
     const scheduledGames = await fetchScheduledGamesForDate({
       supabase: req.supabase,
@@ -729,6 +733,51 @@ export default withCronJobAudit(
         row,
       });
     }
+    let playerForecastCapture:
+      | Awaited<ReturnType<typeof capturePlayerForecastSourceRows>>
+      | { error: string };
+    try {
+      playerForecastCapture = await capturePlayerForecastSourceRows({
+        supabase: req.supabase,
+        rows: rowsToUpsert as unknown as ForecastLineSourceRow[],
+      });
+    } catch (error) {
+      playerForecastCapture = {
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+    let playerForecastConflictEmail: { requested: boolean; error?: string } = {
+      requested: false,
+    };
+    if ("conflicts" in playerForecastCapture && playerForecastCapture.conflicts > 0) {
+      try {
+        const configuredBaseUrl =
+          process.env.NEXT_PUBLIC_SITE_URL ?? process.env.SITE_URL;
+        const protocol = req.headers["x-forwarded-proto"] ?? "https";
+        const host = req.headers.host ?? "fhfhockey.com";
+        const baseUrl = configuredBaseUrl
+          ? configuredBaseUrl.replace(/\/$/, "")
+          : `${protocol}://${host}`;
+        const response = await fetch(
+          `${baseUrl}/api/v1/player-forecasts/send-conflict-review`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${process.env.CRON_SECRET ?? ""}`,
+            },
+          },
+        );
+        if (!response.ok) {
+          throw new Error(`Conflict review email returned HTTP ${response.status}.`);
+        }
+        playerForecastConflictEmail = { requested: true };
+      } catch (error) {
+        playerForecastConflictEmail = {
+          requested: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    }
     let lineCombinationSync: Awaited<
       ReturnType<typeof syncLineCombinationSourceWinners>
     > & { error?: string } = {
@@ -835,6 +884,8 @@ export default withCronJobAudit(
         duplicatesSkipped: duplicateCaptureKeysSkipped,
         rowsUpserted: rowsToUpsert.length,
         lineCombinationSync,
+        playerForecastCapture,
+        playerForecastConflictEmail,
         unresolvedNamesQueued,
         unresolvedNameEmail,
         eventsDeferred: deferredEventUpdates.length,

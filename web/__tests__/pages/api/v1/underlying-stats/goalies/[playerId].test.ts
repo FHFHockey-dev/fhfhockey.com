@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("lib/underlying-stats/playerStatsLandingServer", () => ({
   buildPlayerStatsDetailAggregationFromState: vi.fn(),
@@ -41,6 +41,10 @@ function createMockApiContext(args?: {
 describe("/api/v1/underlying-stats/goalies/[playerId]", () => {
   beforeEach(() => {
     vi.mocked(buildPlayerStatsDetailAggregationFromState).mockReset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("returns the shared goalie counts payload unchanged for detail requests", async () => {
@@ -86,7 +90,7 @@ describe("/api/v1/underlying-stats/goalies/[playerId]", () => {
         primary: expect.objectContaining({
           statMode: "goalies",
         }),
-      })
+      }),
     );
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.body).toMatchObject({
@@ -147,7 +151,7 @@ describe("/api/v1/underlying-stats/goalies/[playerId]", () => {
           statMode: "goalies",
           displayMode: "rates",
         }),
-      })
+      }),
     );
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.body).toMatchObject({
@@ -161,5 +165,32 @@ describe("/api/v1/underlying-stats/goalies/[playerId]", () => {
         }),
       ],
     });
+  });
+
+  it("redacts dependency details from detail 500 responses", async () => {
+    const error = new Error("goalie detail dependency detail");
+    vi.mocked(buildPlayerStatsDetailAggregationFromState).mockRejectedValue(
+      error,
+    );
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const { req, res } = createMockApiContext({
+      query: {
+        playerId: "8475883",
+      },
+    });
+
+    await handler(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.body).toEqual({
+      error: "Unable to build goalie detail underlying stats.",
+      issues: ["GOALIE_DETAIL_UNDERLYING_STATS_UNAVAILABLE"],
+    });
+    expect(consoleError).toHaveBeenCalledWith(
+      "Failed to build goalie detail underlying stats",
+      error,
+    );
   });
 });

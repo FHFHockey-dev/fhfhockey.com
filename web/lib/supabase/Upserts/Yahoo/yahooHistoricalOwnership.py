@@ -32,7 +32,8 @@ Required env
   YFPY_CONSUMER_KEY
   YFPY_CONSUMER_SECRET
   (optional) YFPY_ACCESS_TOKEN, YFPY_REFRESH_TOKEN
-  (optional) YFPY_GAME_ID, YFPY_LEAGUE_ID   # only for bootstrap client
+  YFPY_GAME_ID, YFPY_LEAGUE_ID              # explicit bootstrap client scope
+  (optional) YHO_GAME_LEAGUE_OVERRIDES     # explicit JSON historical mappings
 """
 import os, time, random, json, logging
 from collections import deque
@@ -88,14 +89,37 @@ def load_env_candidates():
     logging.info("No .env.local found in candidates; relying on environment variables.")
     return None
 
-# Manual overrides: season_start_year -> { game_id_prefix, league_id }
-GAME_LEAGUE_OVERRIDES = {
-    2024: {"game_id_prefix": "453", "league_id": "105954"},
-    2025: {"game_id_prefix": "465", "league_id": "858"},
-}
-
 LOG_MISSING_KEYS = os.getenv('YHO_LOG_MISSING_KEYS', '1') == '1'
 MISSING_KEYS_LOG_LIMIT = int(os.getenv('YHO_MISSING_KEYS_LIMIT', '10') or '10')
+
+
+def configured_game_league_overrides() -> dict:
+    """Read optional historical mappings only from an explicit JSON env value."""
+    raw = os.getenv("YHO_GAME_LEAGUE_OVERRIDES", "").strip()
+    if not raw:
+        return {}
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError as error:
+        raise RuntimeError("YHO_GAME_LEAGUE_OVERRIDES must be valid JSON.") from error
+    if not isinstance(parsed, dict):
+        raise RuntimeError("YHO_GAME_LEAGUE_OVERRIDES must be a JSON object.")
+
+    overrides = {}
+    for season, value in parsed.items():
+        if not isinstance(value, dict):
+            raise RuntimeError("YHO_GAME_LEAGUE_OVERRIDES entries must be objects.")
+        game_id_prefix = str(value.get("game_id_prefix", "")).strip()
+        league_id = str(value.get("league_id", "")).strip()
+        if not season or not game_id_prefix or not league_id:
+            raise RuntimeError(
+                "YHO_GAME_LEAGUE_OVERRIDES entries require season, game_id_prefix, and league_id."
+            )
+        overrides[int(season)] = {
+            "game_id_prefix": game_id_prefix,
+            "league_id": league_id,
+        }
+    return overrides
 
 # ---------- Clients ----------
 def init_clients():
@@ -107,29 +131,20 @@ def init_clients():
         raise SystemExit(1)
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-    # Bootstrap Yahoo client (may be different season than we ingest)
+    # Bootstrap Yahoo client (may be different season than we ingest).
+    # Provider credentials must be explicitly configured; this compatibility
+    # backfill is not a second credential-table owner.
     YCK, YCS = os.getenv("YFPY_CONSUMER_KEY"), os.getenv("YFPY_CONSUMER_SECRET")
     YAT, YRT = os.getenv("YFPY_ACCESS_TOKEN"), os.getenv("YFPY_REFRESH_TOKEN")
     if not (YCK and YCS):
-        try:
-            creds = supabase.table('yahoo_api_credentials').select(
-                'consumer_key,consumer_secret,access_token,refresh_token'
-            ).limit(1).single().execute()
-            if getattr(creds, 'data', None):
-                row = creds.data
-                YCK = YCK or row.get('consumer_key')
-                YCS = YCS or row.get('consumer_secret')
-                YAT = YAT or row.get('access_token')
-                YRT = YRT or row.get('refresh_token')
-                logging.info('Loaded Yahoo API credentials from Supabase')
-        except Exception as e:
-            logging.warning('Could not load yahoo_api_credentials from Supabase: %s', e)
-    if not (YCK and YCS):
-        logging.error('Missing Yahoo consumer key/secret (env or Supabase).')
+        logging.error('Missing Yahoo consumer key/secret in environment.')
         raise SystemExit(1)
 
-    GAME_ID = os.getenv("YFPY_GAME_ID", "465")
-    LEAGUE_ID = os.getenv("YFPY_LEAGUE_ID", "858")
+    GAME_ID = os.getenv("YFPY_GAME_ID", "").strip()
+    LEAGUE_ID = os.getenv("YFPY_LEAGUE_ID", "").strip()
+    if not GAME_ID or not LEAGUE_ID:
+        logging.error("YFPY_GAME_ID and YFPY_LEAGUE_ID are required for historical maintenance.")
+        raise SystemExit(1)
 
     yq = YahooFantasySportsQuery(
         league_id=LEAGUE_ID, game_code="nhl", game_id=GAME_ID,
@@ -139,10 +154,6 @@ def init_clients():
     try:
         if YAT:
             yq._yahoo_access_token_dict = yq._get_dict_from_access_token_json({'access_token': YAT, 'refresh_token': YRT})
-    except Exception:
-        pass
-    try:
-        yq.save_access_token_data_to_env_file(env_file_location=Path.cwd(), env_file_name='.env.local')
     except Exception:
         pass
     return supabase, yq
@@ -160,10 +171,6 @@ def init_yahoo_query_for(game_id: str, league_id: str) -> YahooFantasySportsQuer
     try:
         if YAT:
             yq._yahoo_access_token_dict = yq._get_dict_from_access_token_json({'access_token': YAT, 'refresh_token': YRT})
-    except Exception:
-        pass
-    try:
-        yq.save_access_token_data_to_env_file(env_file_location=Path.cwd(), env_file_name='.env.local')
     except Exception:
         pass
     return yq
@@ -261,8 +268,9 @@ def get_second_most_recent_season(supabase: Client):
     return resp.data[0] if getattr(resp, 'data', None) else None
 
 def get_game_id_for_season(supabase: Client, season_start_year: int, default_league_id: str):
-    if season_start_year in GAME_LEAGUE_OVERRIDES:
-        o = GAME_LEAGUE_OVERRIDES[season_start_year]
+    overrides = configured_game_league_overrides()
+    if season_start_year in overrides:
+        o = overrides[season_start_year]
         return o['game_id_prefix'], o['league_id']
     resp = supabase.table('yahoo_game_keys').select('game_id, game_key, season').eq('season', season_start_year).limit(1).execute()
     if getattr(resp, 'data', None):
@@ -700,6 +708,10 @@ def main(sample_player_limit: Optional[int] = None,
 
 # ---------- CLI ----------
 if __name__ == '__main__':
+    if os.getenv("YAHOO_HISTORICAL_WRITE_ENABLED") != "1":
+        raise SystemExit(
+            "Set YAHOO_HISTORICAL_WRITE_ENABLED=1 for explicit backfill writes."
+        )
     sample_player_limit = int(os.getenv('YHO_SAMPLE_PLAYER_LIMIT', '0')) or None
     sample_weeks_limit  = int(os.getenv('YHO_SAMPLE_WEEKS_LIMIT', '0')) or None
     batch_size = int(os.getenv('YHO_BATCH_SIZE', '25'))

@@ -79,7 +79,8 @@ export interface EwmaMetrics {
   // New EWMA fields
   hdcf60_ewma: number;
   hdca60_ewma: number;
-  pdo_ewma: number;
+  pdo_ewma: number | null;
+  pdo_observation_count: number;
   pp_xgf60_ewma: number;
   pk_xga60_ewma: number;
   discipline_diff_ewma: number;
@@ -116,6 +117,15 @@ export interface LeagueMetrics {
   league_discipline_stddev: number;
   league_pdo_avg: number;
   league_pdo_stddev: number;
+}
+
+function toNullableNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : null;
 }
 
 export async function fetchGameLogs(
@@ -246,7 +256,7 @@ export async function fetchGameLogs(
       pace_per_60: (Number(row.cf_per_60) + Number(row.ca_per_60)) / 2.0,
       hdcf_per_60: Number(row.hdcf_per_60),
       hdca_per_60: Number(row.hdca_per_60),
-      pdo: Number(row.pdo),
+      pdo: toNullableNumber(row.pdo),
       data_mode: "all",
       pp_xgf_per_60: pp ? Number(pp.xgf_per_60) : null,
       pk_xga_per_60: pk ? Number(pk.xga_per_60) : null,
@@ -283,7 +293,7 @@ export async function fetchGameLogs(
       pace_per_60: null,
       hdcf_per_60: null,
       hdca_per_60: null,
-      pdo: allRow ? Number(allRow.pdo) : null,
+      pdo: allRow ? toNullableNumber(allRow.pdo) : null,
       data_mode: "5v5",
       pp_xgf_per_60: pp ? Number(pp.xgf_per_60) : null,
       pk_xga_per_60: pk ? Number(pk.xga_per_60) : null,
@@ -323,6 +333,8 @@ export function calculateEwma(
   let sumHdcf = 0;
   let sumHdca = 0;
   let sumPdo = 0;
+  let sumPdoWeights = 0;
+  let pdoObservationCount = 0;
   let sumPpXgf = 0;
   let sumPkXga = 0;
   let sumDisciplineDiff = 0;
@@ -341,9 +353,11 @@ export function calculateEwma(
     sumSa += (game.sa_per_60 ?? 0) * weight;
     sumHdcf += (game.hdcf_per_60 ?? 0) * weight;
     sumHdca += (game.hdca_per_60 ?? 0) * weight;
-    sumPdo += (game.pdo ?? 100) * weight; // Default PDO to 100 if null? Or 1.0? Usually it's around 1.0 or 100. NST uses 1.0 I think? Let's check.
-    // In fetchGameLogs: pdo: Number(row.pdo). NST usually provides 1.02 etc.
-    // Let's assume 1.0 base.
+    if (game.pdo !== null) {
+      sumPdo += game.pdo * weight;
+      sumPdoWeights += weight;
+      pdoObservationCount += 1;
+    }
 
     sumPpXgf += (game.pp_xgf_per_60 ?? 0) * weight;
     sumPkXga += (game.pk_xga_per_60 ?? 0) * weight;
@@ -371,7 +385,8 @@ export function calculateEwma(
     pace60_ewma: sumPace / sumWeights,
     hdcf60_ewma: sumHdcf / sumWeights,
     hdca60_ewma: sumHdca / sumWeights,
-    pdo_ewma: sumPdo / sumWeights,
+    pdo_ewma: sumPdoWeights > 0 ? sumPdo / sumPdoWeights : null,
+    pdo_observation_count: pdoObservationCount,
     pp_xgf60_ewma: sumPpXgf / sumWeights,
     pk_xga60_ewma: sumPkXga / sumWeights,
     discipline_diff_ewma: sumDisciplineDiff / sumWeights,
@@ -409,7 +424,11 @@ export function calculateLeagueMetrics(metrics: EwmaMetrics[]): LeagueMetrics {
   const ppOff = calcStats(metrics.map((m) => m.pp_xgf60_ewma));
   const pkDef = calcStats(metrics.map((m) => m.pk_xga60_ewma));
   const discipline = calcStats(metrics.map((m) => m.discipline_diff_ewma));
-  const pdo = calcStats(metrics.map((m) => m.pdo_ewma));
+  const pdo = calcStats(
+    metrics.flatMap((metric) =>
+      metric.pdo_ewma === null ? [] : [metric.pdo_ewma],
+    ),
+  );
 
   return {
     date: metrics[0].date,
@@ -469,6 +488,7 @@ export interface ZScored {
   pk_def_z: number;
   discipline_z: number;
   pdo_z: number;
+  pdo_missing: boolean;
 }
 
 export function calculateZScores(
@@ -532,7 +552,11 @@ export function calculateZScores(
       league.league_discipline_avg,
       league.league_discipline_stddev,
     ),
-    pdo_z: z(pdo, league.league_pdo_avg, league.league_pdo_stddev),
+    pdo_z:
+      pdo === null
+        ? 0
+        : z(pdo, league.league_pdo_avg, league.league_pdo_stddev),
+    pdo_missing: pdo === null,
   };
 }
 

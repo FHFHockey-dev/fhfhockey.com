@@ -3,6 +3,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import { CronTimedResponse, withCronJobTiming } from "lib/cron/timingContract";
+import adminOnly from "utils/adminOnlyMiddleware";
 // import supabase from "lib/supabase"; // <- remove
 import {
   ensureTables,
@@ -16,6 +17,8 @@ import {
   assertPriorsPrerequisites,
   isSustainabilityDependencyError
 } from "lib/sustainability/dependencyChecks";
+import supabase from "lib/supabase/server";
+import { loadActiveSustainabilityConfig } from "lib/sustainability/config";
 
 function parseBoundedInt(value: string | string[] | undefined, fallback: number, max: number) {
   const candidate = Array.isArray(value) ? value[0] : value;
@@ -24,7 +27,7 @@ function parseBoundedInt(value: string | string[] | undefined, fallback: number,
   return Math.max(0, Math.min(max, Math.floor(parsed)));
 }
 
-async function handler(
+export async function rebuildPriorsHandler(
   req: NextApiRequest,
   res: NextApiResponse<CronTimedResponse<Record<string, unknown>>>
 ) {
@@ -34,6 +37,7 @@ async function handler(
   try {
     const season = await resolveSeasonId(req.query.season);
     await assertPriorsPrerequisites(season);
+    const activeConfig = await loadActiveSustainabilityConfig(supabase);
     const dry =
       req.query.dry === "1" ||
       req.query.dry === "true" ||
@@ -76,12 +80,19 @@ async function handler(
         )
       : undefined;
 
-    const { inserted, sample } = await upsertPlayerPosteriors(
+    const { inserted, chunks, sample } = await upsertPlayerPosteriors(
       season,
       k,
       dry,
       dryPriorMap,
-      { offset, limit }
+      {
+        offset,
+        limit,
+        provenance: {
+          modelVersion: activeConfig.modelVersion,
+          configHash: activeConfig.configHash
+        }
+      }
     );
 
     const duration_s = ((Date.now() - started) / 1000).toFixed(2);
@@ -94,7 +105,11 @@ async function handler(
         offset,
         limit,
         k,
+        config_revision: activeConfig.configRevision,
+        model_version: activeConfig.modelVersion,
+        config_hash: activeConfig.configHash,
         inserted_player_rows: inserted,
+        write_chunks: chunks,
         sample,
         duration_s
       }));
@@ -128,6 +143,6 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(handler, {
+export default withCronJobAudit(adminOnly(rebuildPriorsHandler as any), {
   jobName: "rebuild-sustainability-priors"
 });

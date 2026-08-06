@@ -37,15 +37,11 @@ export default async function handler(
       generatedAt: new Date().toISOString(),
     });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Unable to build player chart underlying stats.";
-
+    console.error("Failed to build player chart underlying stats", error);
     res.setHeader("Cache-Control", "no-store");
     return res.status(500).json({
       error: "Unable to build player chart underlying stats.",
-      issues: [message],
+      issues: ["PLAYER_CHART_UNDERLYING_STATS_UNAVAILABLE"],
     });
   }
 }

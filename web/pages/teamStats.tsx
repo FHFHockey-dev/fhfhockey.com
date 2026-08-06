@@ -5,6 +5,7 @@ import Link from "next/link";
 import useTeams from "../hooks/useTeams";
 import styles from "../styles/teamStats.module.scss";
 import { teamsInfo } from "lib/teamsInfo"; // ensure unified path
+import LegacySurfaceNotice from "components/LegacySurfaceNotice/LegacySurfaceNotice";
 
 interface CustomStyle extends React.CSSProperties {
   "--primary-color"?: string;
@@ -24,6 +25,13 @@ const TeamStats = () => {
 
   return (
     <div className={styles.teamStatsContainer}>
+      <LegacySurfaceNotice
+        replacementHref="/underlying-stats/teamStats"
+        replacementLabel="Underlying Team Stats"
+      >
+        This retained directory supports old bookmarks. Underlying Team Stats
+        is the current team-analysis surface.
+      </LegacySurfaceNotice>
       <h1 className={styles.pageHeader}>
         <span className={styles.spanColorBlue}>Team</span> Stats
       </h1>

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const migrationSql = readFileSync(
   resolve(
     process.cwd(),
-    "../supabase/migrations/20260714224230_backfill_fhfh_nhl_player_identities.sql",
+    "../supabase/migration-archive/pre-baseline-20260716/authoritative-root/20260714224230_backfill_fhfh_nhl_player_identities.sql",
   ),
   "utf8",
 );

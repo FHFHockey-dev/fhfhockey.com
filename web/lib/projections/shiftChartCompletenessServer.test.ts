@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-const { rangeMock, rows } = vi.hoisted(() => {
+const { orMock, rangeMock, rows } = vi.hoisted(() => {
   const gameId = 2025020001;
   const generatedRows = Array.from({ length: 1001 }, (_, index) => {
     const home = index % 2 === 0;
@@ -23,6 +23,7 @@ const { rangeMock, rows } = vi.hoisted(() => {
   });
   return {
     rows: generatedRows,
+    orMock: vi.fn(),
     rangeMock: vi.fn(async (from: number, to: number) => ({
       data: generatedRows.slice(from, to + 1),
       error: null,
@@ -37,6 +38,10 @@ vi.mock("lib/supabase/server", () => ({
         select: vi.fn(() => query),
         in: vi.fn(() => query),
         eq: vi.fn(() => query),
+        or: vi.fn((filter: string) => {
+          orMock(filter);
+          return query;
+        }),
         order: vi.fn(() => query),
         range: rangeMock,
       };
@@ -61,6 +66,9 @@ describe("stored shift strength pagination", () => {
       [0, 999],
       [1000, 1999],
     ]);
+    expect(orMock).toHaveBeenCalledWith(
+      "total_es_toi.not.is.null,total_pp_toi.not.is.null,total_pk_toi.not.is.null",
+    );
     expect(classifications.get(gameId)).toMatchObject({
       status: "partial",
       rowCount: 1001,

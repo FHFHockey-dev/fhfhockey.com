@@ -1,7 +1,11 @@
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import OwnershipSparkline from "components/TransactionTrends/OwnershipSparkline";
+import SustainabilityBadge from "components/sustainability/SustainabilityBadge";
+import SustainabilitySparkline from "components/sustainability/SustainabilitySparkline";
+import SustainabilityTooltip from "components/sustainability/SustainabilityTooltip";
+import { buildSustainabilityThresholds } from "components/sustainability/formatting";
 import styles from "styles/ForgeDashboard.module.scss";
 import { buildForgeHref } from "lib/dashboard/forgeLinks";
 import type {
@@ -38,11 +42,6 @@ const toPosParam = (position: SustainabilityCardProps["position"]): "all" | "F" 
   if (position === "f") return "F";
   if (position === "d") return "D";
   return "all";
-};
-
-const formatScore = (value: number | null | undefined) => {
-  if (value == null || Number.isNaN(value)) return "--";
-  return value.toFixed(1);
 };
 
 const formatSigned = (value: number | null | undefined) => {
@@ -169,13 +168,9 @@ export default function SustainabilityCard({
         setSnapshotDate(hot.snapshot_date ?? cold.snapshot_date ?? null);
         setServingMessage(hot.serving?.message ?? cold.serving?.message ?? null);
       })
-      .catch((fetchError: unknown) => {
+      .catch(() => {
         if (!active) return;
-        const message =
-          fetchError instanceof Error
-            ? fetchError.message
-            : "Failed to load trust and fade data.";
-        setError(message);
+        setError("Trust and fade data is unavailable right now.");
         setHotRows([]);
         setColdRows([]);
         setSnapshotDate(null);
@@ -244,31 +239,38 @@ export default function SustainabilityCard({
     ownershipFilterActive && missingOwnershipCount > 0
       ? `Ownership is missing for ${missingOwnershipCount} players, so those rows stay visible even if they fall outside the range.`
       : null;
-  const withinOwnershipBand = (playerId: number) => {
-    if (!ownershipFilterActive) return true;
-    const ownership = ownershipMap[playerId]?.ownership;
-    if (ownership == null) return true;
-    return ownership >= ownershipMin && ownership <= ownershipMax;
-  };
+  const withinOwnershipBand = useCallback(
+    (playerId: number) => {
+      if (!ownershipFilterActive) return true;
+      const ownership = ownershipMap[playerId]?.ownership;
+      if (ownership == null) return true;
+      return ownership >= ownershipMin && ownership <= ownershipMax;
+    },
+    [ownershipFilterActive, ownershipMap, ownershipMax, ownershipMin]
+  );
 
   const sustainableRows = useMemo(
     () =>
       coldRows
         .filter((row) => row.player_name && withinOwnershipBand(row.player_id))
         .slice(0, 5),
-    [coldRows, ownershipMap, ownershipMax, ownershipMin, ownershipWarning]
+    [coldRows, withinOwnershipBand]
   );
   const riskRows = useMemo(
     () =>
       hotRows
         .filter((row) => row.player_name && withinOwnershipBand(row.player_id))
         .slice(0, 5),
-    [hotRows, ownershipMap, ownershipMax, ownershipMin, ownershipWarning]
+    [hotRows, withinOwnershipBand]
   );
   const isStale = Boolean(snapshotDate && snapshotDate !== date);
   const metaSnapshot = snapshotDate ?? date;
   const trustworthyGuide = describePlayerSignalFrame("trustworthy");
   const overheatedGuide = describePlayerSignalFrame("overheated");
+  const scoreThresholds = useMemo(
+    () => buildSustainabilityThresholds([...hotRows, ...coldRows].map((row) => row.s_100)),
+    [coldRows, hotRows]
+  );
 
   useEffect(() => {
     onResolvedDate?.(snapshotDate);
@@ -318,7 +320,7 @@ export default function SustainabilityCard({
       </header>
 
       {(loading || ownershipLoading) && <p className={styles.panelState}>Loading trust calls...</p>}
-      {!loading && error && <p className={styles.panelState}>Error: {error}</p>}
+      {!loading && error && <p className={styles.panelState}>{error}</p>}
 
       {!loading && !error && sustainableRows.length === 0 && riskRows.length === 0 && (
         <p className={styles.panelState}>No trust or fade calls available for this date.</p>
@@ -388,7 +390,11 @@ export default function SustainabilityCard({
                           <span className={styles.susBadge}>
                             5D {formatOwnershipDelta(ownershipContext?.delta)}
                           </span>
-                          <span className={styles.susBadge}>Trust {formatScore(row.s_100)}</span>
+                          <SustainabilityBadge
+                            score={row.s_100}
+                            thresholds={scoreThresholds}
+                            status={row.status}
+                          />
                           {row.guardrail_state === "degraded" && (
                             <span className={`${styles.susBadge} ${styles.susBadgeRisk}`}>
                               Check role
@@ -428,6 +434,7 @@ export default function SustainabilityCard({
                             />
                           </div>
                         ) : null}
+                        <SustainabilitySparkline points={row.score_history} />
                         <span className={styles.susReason}>
                           {getReasonText(row, "sustainable")}
                         </span>
@@ -435,6 +442,7 @@ export default function SustainabilityCard({
                           Open trend detail
                         </span>
                       </Link>
+                      <SustainabilityTooltip components={row.component_breakdown} />
                     </li>
                   );
                 })}
@@ -475,7 +483,11 @@ export default function SustainabilityCard({
                           <span className={styles.susBadge}>
                             5D {formatOwnershipDelta(ownershipContext?.delta)}
                           </span>
-                          <span className={styles.susBadge}>Trust {formatScore(row.s_100)}</span>
+                          <SustainabilityBadge
+                            score={row.s_100}
+                            thresholds={scoreThresholds}
+                            status={row.status}
+                          />
                           {row.guardrail_state === "degraded" && (
                             <span className={`${styles.susBadge} ${styles.susBadgeRisk}`}>
                               Check role
@@ -515,6 +527,7 @@ export default function SustainabilityCard({
                             />
                           </div>
                         ) : null}
+                        <SustainabilitySparkline points={row.score_history} />
                         <span className={styles.susReason}>
                           {getReasonText(row, "unsustainable")}
                         </span>
@@ -522,6 +535,7 @@ export default function SustainabilityCard({
                           Open trend detail
                         </span>
                       </Link>
+                      <SustainabilityTooltip components={row.component_breakdown} />
                     </li>
                   );
                 })}

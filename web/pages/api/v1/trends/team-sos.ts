@@ -7,6 +7,7 @@ import {
   type SosRating,
   type SosStandingRow
 } from "lib/trends/strengthOfSchedule";
+import { ACTIVE_TEAM_ABBREVIATIONS } from "lib/trends/teamMetricConfig";
 
 dotenv.config({ path: "./../../../.env.local" });
 
@@ -70,6 +71,14 @@ export default async function handler(
       return res.status(200).json({
         seasonId,
         generatedAt: new Date().toISOString(),
+        dateUsed: null,
+        coverage: {
+          expectedTeams: ACTIVE_TEAM_ABBREVIATIONS.length,
+          teamCount: 0,
+          sourceRowCount: 0,
+          partial: true
+        },
+        warnings: ["Strength-of-schedule data is unavailable for this season."],
         message:
           "No strength-of-schedule data available (sos_standings empty for this season).",
         teams: []
@@ -77,6 +86,8 @@ export default async function handler(
     }
 
     const ratings: SosRating[] = computeSosRatings(rows);
+    const dateUsed = String(rows[0]?.game_date ?? "").slice(0, 10) || null;
+    const partial = ratings.length < ACTIVE_TEAM_ABBREVIATIONS.length;
 
     // Optional debugging: expose distribution stats when debug query flag is set.
     const debugStats = (() => {
@@ -154,7 +165,19 @@ export default async function handler(
     res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=60");
     return res.status(200).json({
       seasonId,
-      generatedAt: new Date().toISOString(),
+      generatedAt: dateUsed
+        ? `${dateUsed}T23:59:59.999Z`
+        : new Date().toISOString(),
+      dateUsed,
+      coverage: {
+        expectedTeams: ACTIVE_TEAM_ABBREVIATIONS.length,
+        teamCount: ratings.length,
+        sourceRowCount: rows.length,
+        partial
+      },
+      warnings: partial
+        ? ["Strength-of-schedule team coverage is incomplete."]
+        : [],
       teams: ratings,
       ...(debug ? { debug: debugStats } : {})
     });

@@ -133,11 +133,14 @@ describe("homepage Latest News", () => {
         name: "Complete authoritative story 6.",
       }),
     ).toBeNull();
-    expect(
-      screen
-        .getAllByRole("button")
-        .filter((button) => button.hasAttribute("aria-expanded")),
-    ).toHaveLength(5);
+    const disclosureButtons = screen
+      .getAllByRole("button")
+      .filter((button) => button.hasAttribute("aria-expanded"));
+    expect(disclosureButtons).toHaveLength(5);
+    disclosureButtons.forEach((button) => {
+      expect(button.getAttribute("aria-expanded")).toBe("false");
+      expect(button.textContent).toContain("+");
+    });
   });
 
   it("does not fabricate rows when fewer than five stories exist", () => {

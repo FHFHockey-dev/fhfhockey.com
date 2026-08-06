@@ -182,7 +182,7 @@ export default function UpsertProjectionsPage() {
           return;
         }
         const { data: n2, error: e2 } = await supabase
-          .from("yahoo_players")
+          .from("yahoo_players_with_normalized_history")
           .select("full_name")
           .limit(5000);
         if (!cancelled && !e2 && Array.isArray(n2)) {

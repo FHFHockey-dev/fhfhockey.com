@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { createElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import HomepageGamesSection from "./HomepageGamesSection";
@@ -8,11 +9,15 @@ vi.mock("next/link", () => ({
     <a href={href} className={className} {...props}>
       {children}
     </a>
-  )
+  ),
 }));
 
-vi.mock("components/common/OptimizedImage", () => ({
-  default: ({ alt }: { alt: string }) => <img alt={alt} />
+vi.mock("next/image", () => ({
+  default: ({ priority, fill: _fill, ...props }: any) =>
+    createElement("img", {
+      ...props,
+      loading: props.loading ?? (priority ? "eager" : "lazy"),
+    }),
 }));
 
 const makeGames = (count: number, states: string[] = []) =>
@@ -45,7 +50,7 @@ describe("HomepageGamesSection", () => {
   });
 
   it("shows live period and time remaining instead of a scheduled start time", () => {
-    render(
+    const { container } = render(
       <HomepageGamesSection
         currentDate="2026-04-08"
         gamesHeaderText="Today's"
@@ -56,7 +61,7 @@ describe("HomepageGamesSection", () => {
         heroMetrics={[
           { label: "Players", value: "3,555", caption: "indexed" },
           { label: "New", value: "92", caption: "updates" },
-          { label: "Injuries", value: "54", caption: "current updates" }
+          { label: "Injuries", value: "54", caption: "current updates" },
         ]}
         games={[
           {
@@ -65,31 +70,118 @@ describe("HomepageGamesSection", () => {
             periodDescriptor: { number: 2, periodType: "REG" },
             clock: { timeRemaining: "12:34", inIntermission: false },
             homeTeam: { abbrev: "BOS", record: "45-20-5" },
-            awayTeam: { abbrev: "NYR", record: "43-22-6" }
-          }
+            awayTeam: { abbrev: "NYR", record: "43-22-6" },
+          },
         ]}
-      />
+      />,
     );
 
     expect(screen.getByText("2nd Period")).toBeTruthy();
     expect(screen.getAllByText("12:34")).toHaveLength(2);
-    expect(screen.getByRole("heading", { name: "The Slate" })).toBeTruthy();
+    const awayLogo = screen.getAllByRole("img", { name: "NYR logo" })[0];
+    expect(awayLogo.getAttribute("src")).toBe(
+      "https://assets.nhle.com/logos/nhl/svg/NYR_light.svg",
+    );
+    expect(awayLogo.getAttribute("width")).toBe("52");
+    expect(awayLogo.getAttribute("height")).toBe("52");
+    expect(awayLogo.getAttribute("loading")).toBe("lazy");
+
+    fireEvent.error(awayLogo);
     expect(
-      screen.getByText("Real-time analytics. Built for fantasy.")
+      screen
+        .getAllByRole("img", { name: "NYR logo" })[0]
+        .getAttribute("src"),
+    ).toBe("https://assets.nhle.com/logos/nhl/svg/NHL_light.svg");
+    expect(screen.getByRole("heading", { name: "The Slate" })).toBeTruthy();
+    const slateHeading = document.getElementById("slate-heading");
+    const gamesHeading = document.getElementById("games-strip-heading");
+    expect(
+      Boolean(
+        (slateHeading?.compareDocumentPosition(gamesHeading as Node) ?? 0) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+    ).toBe(true);
+    expect(
+      screen.getByText("Real-time analytics. Built for fantasy."),
     ).toBeTruthy();
     expect(screen.queryByText(/welcome to/i)).toBeNull();
     expect(screen.getByText("3,555")).toBeTruthy();
     expect(screen.getByText("92")).toBeTruthy();
     expect(screen.getByText("54")).toBeTruthy();
+    expect(container.querySelectorAll('[data-slate-metric="true"]')).toHaveLength(3);
+    expect(screen.queryByText(/data points/i)).toBeNull();
+
+    const slateArtwork = container.querySelector('[data-slate-artwork="true"]');
+    const slateShapes = Array.from(
+      slateArtwork?.querySelectorAll("polygon") ?? [],
+    ).map((shape) =>
+      (shape.getAttribute("points") ?? "").split(" ").map((point) => {
+        const [x, y] = point.split(",").map(Number);
+        return { x, y };
+      }),
+    );
+    expect(slateShapes).toHaveLength(4);
+
+    const shapeWidths = slateShapes.map(
+      ([bottomLeft, bottomRight]) => bottomRight.x - bottomLeft.x,
+    );
+    const shapeHeights = slateShapes.map(
+      ([bottomLeft, , , topLeft]) => bottomLeft.y - topLeft.y,
+    );
+    const shapeGaps = slateShapes.slice(0, -1).map((shape, index) => {
+      const nextShape = slateShapes[index + 1];
+      return nextShape[0].x - shape[1].x;
+    });
+    const slantRatios = slateShapes.map(
+      ([bottomLeft, , , topLeft]) =>
+        (topLeft.x - bottomLeft.x) / (bottomLeft.y - topLeft.y),
+    );
+
+    expect(shapeWidths[0]).toBeCloseTo(shapeWidths[1], 2);
+    expect(shapeWidths[0]).toBeCloseTo(shapeWidths[2], 2);
+    expect(shapeWidths[3] / shapeWidths[0]).toBeCloseTo(1.62, 2);
+    expect(shapeHeights[1] / shapeHeights[0]).toBeCloseTo(1, 2);
+    expect(shapeHeights[2] / shapeHeights[0]).toBeCloseTo(1.1, 2);
+    expect(shapeHeights[3] / shapeHeights[0]).toBeCloseTo(1.42, 2);
+    shapeGaps.forEach((gap) =>
+      expect(gap / shapeWidths[0]).toBeCloseTo(0.6, 2),
+    );
+    slantRatios.forEach((ratio) =>
+      expect(ratio).toBeCloseTo(slantRatios[0], 2),
+    );
+    slateShapes.forEach(([bottomLeft, bottomRight, topRight, topLeft]) => {
+      expect(topRight.x - topLeft.x).toBeCloseTo(
+        bottomRight.x - bottomLeft.x,
+        2,
+      );
+      expect(topRight.x - bottomRight.x).toBeCloseTo(
+        topLeft.x - bottomLeft.x,
+        2,
+      );
+      expect(bottomRight.y).toBeCloseTo(bottomLeft.y, 2);
+      expect(topRight.y).toBeCloseTo(topLeft.y, 2);
+    });
     expect(
       screen
         .getAllByRole("link", { name: /starter board/i })
-        .some((link) => link.getAttribute("href") === "/start-chart")
+        .some((link) => link.getAttribute("href") === "/start-chart"),
     ).toBe(true);
     expect(
       screen
         .getAllByRole("link", { name: /game grid/i })
-        .some((link) => link.getAttribute("href") === "/game-grid/7-Day-Forecast")
+        .some(
+          (link) => link.getAttribute("href") === "/game-grid/7-Day-Forecast",
+        ),
+    ).toBe(true);
+    expect(
+      screen
+        .getAllByRole("link", { name: /trends/i })
+        .some((link) => link.getAttribute("href") === "/trends"),
+    ).toBe(true);
+    expect(
+      screen
+        .getAllByRole("link", { name: /underlying stats/i })
+        .some((link) => link.getAttribute("href") === "/underlying-stats"),
     ).toBe(true);
   });
 
@@ -107,26 +199,50 @@ describe("HomepageGamesSection", () => {
         error={null}
         lastUpdatedAt="2026-07-15T16:00:00.000Z"
         openingNightDate="2026-09-29"
-      />
+      />,
     );
 
     expect(
-      screen.getByRole("heading", { name: /opening night countdown/i })
+      screen.getByRole("heading", { name: /opening night countdown/i }),
     ).toBeTruthy();
     expect(screen.getByText("2026-27 season")).toBeTruthy();
     expect(screen.getByText(/The season opens on/i)).toBeTruthy();
     expect(screen.getByText(/Sep 29, 2026/)).toBeTruthy();
-    expect(screen.getByText(/No games today/i)).toBeTruthy();
     expect(
-      screen.getByText(/Use the tools below to plan your next move/i)
-    ).toBeTruthy();
-    expect(screen.queryByText(/before the slate repopulates/i)).toBeNull();
-    expect(screen.queryByText(/No games scheduled for 07\/15\/2026/i)).toBeNull();
+      screen.queryByText(/No games scheduled for 07\/15\/2026/i),
+    ).toBeNull();
     expect(
-      screen.getByLabelText(/time remaining until nhl opening night/i)
+      screen.getByLabelText(/time remaining until nhl opening night/i),
     ).toBeTruthy();
     expect(screen.getByText("75")).toBeTruthy();
-    expect(screen.getByText(/puck-drop time updates when the NHL schedule/i)).toBeTruthy();
+    expect(
+      screen.getByText(/puck-drop time updates when the NHL schedule/i),
+    ).toBeTruthy();
+  });
+
+  it("omits an incomplete upstream game without crashing the section", () => {
+    expect(() =>
+      render(
+        <HomepageGamesSection
+          currentDate="2026-04-08"
+          gamesHeaderText="Today's"
+          onChangeDate={() => {}}
+          loading={false}
+          error={null}
+          lastUpdatedAt="2026-04-08T12:00:00.000Z"
+          games={[
+            {
+              id: 2,
+              gameState: "FUT",
+              homeTeam: undefined,
+              awayTeam: { abbrev: "NYR", record: "43-22-6" },
+            },
+          ]}
+        />,
+      ),
+    ).not.toThrow();
+
+    expect(screen.queryByRole("link", { name: /nyr logo/i })).toBeNull();
   });
 
   it("opens the date selector and navigates through the existing day-change callback", () => {

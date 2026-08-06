@@ -191,7 +191,7 @@ const RoundPerformanceChart: React.FC<RoundPerformanceChartProps> = ({
       // baseOptions.scales.x.max = 210; // ~17.5 rounds
     }
     return baseOptions;
-  }, [chartType, yAxisLabel, labels]);
+  }, [chartType, yAxisLabel]);
 
   return (
     <div

@@ -24,7 +24,10 @@ import styles from "./[abbreviation].module.scss";
 import useScreenSize from "hooks/useScreenSize";
 import { getTeamLogo, getTeams, getCurrentSeason } from "lib/NHL/server";
 import { Team } from "lib/NHL/types";
-import { getLineCombinations } from "components/LineCombinations/utilities";
+import {
+  getLineCombinations,
+  type LineCombinations
+} from "components/LineCombinations/utilities";
 import { getLinesSurfaceLinks } from "lib/navigation/siteSurfaceLinks";
 import LineShareBars from "components/LineCombinations/LineShareBars";
 import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
@@ -72,27 +75,7 @@ type Props = {
    */
   teams: Team[];
 
-  lineCombinations: {
-    game: {
-      id: number;
-    };
-    date: string;
-    forwards: {
-      line1: SkaterStats[];
-      line2: SkaterStats[];
-      line3: SkaterStats[];
-      line4: SkaterStats[];
-    };
-    defensemen: {
-      line1: SkaterStats[];
-      line2: SkaterStats[];
-      line3: SkaterStats[];
-    };
-    goalies: {
-      line1: GoalieStats[];
-      line2: GoalieStats[];
-    };
-  };
+  lineCombinations: LineCombinations;
   lastUpdated: string;
 };
 
@@ -105,11 +88,10 @@ export default function TeamLC({
   const router = useRouter();
   const { abbreviation } = router.query;
   const mappedAbbreviation = mapTeamAbbreviation(abbreviation as string); // Map abbreviation
-  const teamMeta = useMemo(
-    () => teams.find((team) => team.abbreviation === mappedAbbreviation),
-    [teams, mappedAbbreviation]
+  const sourceTeamMeta = useMemo(
+    () => teams.find((team) => team.id === lineCombinations.game.teamId),
+    [teams, lineCombinations.game.teamId]
   );
-  const teamId = teamMeta?.id ?? 0;
 
   const onTeamChange = (newAbbreviation: string) => {
     const mappedNewAbbreviation = mapTeamAbbreviation(newAbbreviation);
@@ -291,12 +273,13 @@ export default function TeamLC({
               />
             </section>
           </Container>
-          {teamId ? (
+          {lineCombinations.game.teamId ? (
             <div className={styles.powerPlay}>
               <PowerPlayCombos
-                teamId={teamId}
+                teamId={lineCombinations.game.teamId}
                 gameId={lineCombinations.game.id}
-                teamAbbreviation={mappedAbbreviation}
+                seasonId={lineCombinations.game.seasonId}
+                teamAbbreviation={sourceTeamMeta?.abbreviation}
               />
             </div>
           ) : null}

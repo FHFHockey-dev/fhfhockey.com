@@ -103,21 +103,19 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
 
   // Memoized CSS variables
   const cssVariables = useMemo(
-    (): React.CSSProperties & { [key: string]: string } => ({
-      "--home-primary-color": homeTeamInfo?.primaryColor || "#333",
-      "--home-secondary-color": homeTeamInfo?.secondaryColor || "#555",
-      "--home-accent-color": homeTeamInfo?.accent || "#777",
-      "--home-alt-color": homeTeamInfo?.alt || "#999",
-      "--home-jersey-color": homeTeamInfo?.jersey || "#ccc",
-      "--away-primary-color": awayTeamInfo?.primaryColor || "#333",
-      "--away-secondary-color": awayTeamInfo?.secondaryColor || "#555",
-      "--away-accent-color": awayTeamInfo?.accent || "#777",
-      "--away-alt-color": awayTeamInfo?.alt || "#999",
-      "--away-jersey-color": awayTeamInfo?.jersey || "#ccc",
-      "--divider-color": "#ccc",
-      "--title-color": "#fff",
-      "--win-odds-color": "#fff"
-    }),
+    (): React.CSSProperties =>
+      ({
+        "--home-primary-color": homeTeamInfo?.primaryColor,
+        "--home-secondary-color": homeTeamInfo?.secondaryColor,
+        "--home-accent-color": homeTeamInfo?.accent,
+        "--home-alt-color": homeTeamInfo?.alt,
+        "--home-jersey-color": homeTeamInfo?.jersey,
+        "--away-primary-color": awayTeamInfo?.primaryColor,
+        "--away-secondary-color": awayTeamInfo?.secondaryColor,
+        "--away-accent-color": awayTeamInfo?.accent,
+        "--away-alt-color": awayTeamInfo?.alt,
+        "--away-jersey-color": awayTeamInfo?.jersey
+      }) as React.CSSProperties,
     [homeTeamInfo, awayTeamInfo]
   );
 
@@ -235,7 +233,7 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
             fontSize="15"
             fontWeight="900"
             fontFamily="Roboto Condensed, sans-serif"
-            fill="#FFF"
+            fill="currentColor"
           >
             {label}
           </text>
@@ -255,7 +253,7 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
             textAnchor="end"
             fontSize="15"
             fontWeight="900"
-            fill="#FFF"
+            fill="currentColor"
           >
             {label}
           </text>
@@ -279,7 +277,7 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
           fontSize="15"
           fontFamily="Roboto Condensed, sans-serif"
           fontWeight="bold"
-          fill="#FFF"
+          fill="currentColor"
         >
           {awayTeamSafe.name}
         </text>
@@ -300,7 +298,7 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
             HeatmapConfig.margin.top +
             ((HeatmapConfig.maxGoals + 1) * HeatmapConfig.cellSize) / 2
           })`}
-          fill="#FFF"
+          fill="currentColor"
         >
           {homeTeamSafe.name}
         </text>
@@ -320,7 +318,7 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
             width={HeatmapConfig.cellSize}
             height={HeatmapConfig.cellSize}
             fill={colorScale(value)}
-            stroke="#fff"
+            stroke="currentColor"
             strokeWidth="0.5"
           >
             <title>
@@ -373,8 +371,8 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
   }
 
   return (
-    <div className={styles.chartContainer}>
-      <h4 className={styles.pdchTitle} style={cssVariables}>
+    <div className={styles.chartContainer} style={cssVariables}>
+      <h4 className={styles.pdchTitle}>
         <Image
           src={homeTeamSafe.logo}
           alt={homeTeamSafe.abbreviation}
@@ -410,6 +408,8 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
         width={dimensions.width}
         height={dimensions.height}
         className={styles.poissonSvg}
+        aria-label={`${homeTeamSafe.name} versus ${awayTeamSafe.name} score probability heatmap`}
+        role="img"
       >
         {renderTeamNames()}
         {renderAxisLabels()}

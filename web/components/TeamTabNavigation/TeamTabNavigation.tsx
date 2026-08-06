@@ -133,7 +133,8 @@ export function TeamTabNavigation({
     games,
     loading: scheduleLoading,
     error: scheduleError,
-    record
+    standingsDetails,
+    scheduleTeam
   } = useTeamSchedule(teamAbbrev, seasonId, teamId);
 
   useEffect(() => {
@@ -186,15 +187,25 @@ export function TeamTabNavigation({
         );
 
       case "schedule":
+        if (!scheduleTeam) {
+          return (
+            <div className={styles.errorMessage} role="status">
+              {scheduleLoading
+                ? "Loading schedule..."
+                : scheduleError || "Schedule unavailable."}
+            </div>
+          );
+        }
+
         return (
           <TeamScheduleCalendar
             games={games}
-            teamId={parseInt(teamId, 10)}
-            teamAbbreviation={teamAbbrev}
+            teamId={scheduleTeam.id}
+            teamAbbreviation={scheduleTeam.abbreviation}
             seasonId={seasonId}
             loading={scheduleLoading}
             error={scheduleError}
-            record={record}
+            standingsDetails={standingsDetails}
           />
         );
 

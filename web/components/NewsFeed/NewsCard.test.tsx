@@ -9,6 +9,7 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import NewsCard from "./NewsCard";
+import { teamsInfo } from "lib/teamsInfo";
 
 vi.mock("next/legacy/image", () => ({
   default: ({ alt, src }: { alt: string; src: string }) => (
@@ -86,6 +87,18 @@ describe("NewsCard", () => {
 
     const article = container.querySelector("article");
     expect(article).toBeTruthy();
+    expect(article?.style.getPropertyValue("--news-team-primary")).toBe(
+      teamsInfo.FLA.primaryColor,
+    );
+    expect(article?.style.getPropertyValue("--news-team-secondary")).toBe(
+      teamsInfo.FLA.secondaryColor,
+    );
+    expect(article?.style.getPropertyValue("--news-team-stripe")).toBe(
+      teamsInfo.FLA.jersey,
+    );
+    expect(article?.style.getPropertyValue("--news-team-surface")).toBe(
+      teamsInfo.FLA.primaryColor,
+    );
     expect(within(article as HTMLElement).getAllByText("FLA")).toHaveLength(1);
     expect(
       within(article as HTMLElement).getAllByText("Signing"),
@@ -123,6 +136,10 @@ describe("NewsCard", () => {
     const button = screen.getByRole("button", {
       name: /expand chi news/i,
     });
+    const compactTimestamp = container.querySelector(
+      '[class*="mobileTimestamp"]',
+    );
+    const initialTimestamp = compactTimestamp?.textContent;
     const controlledRegion = document.getElementById(
       button.getAttribute("aria-controls") ?? "",
     );
@@ -138,6 +155,10 @@ describe("NewsCard", () => {
     expect(button.getAttribute("aria-expanded")).toBe("true");
     expect(button.textContent).toContain("−");
     expect(screen.getByAltText("CHI logo")).toBeTruthy();
+    expect(compactTimestamp?.textContent).toBe(initialTimestamp);
+    expect(
+      controlledRegion?.querySelector('[class*="expandedTimestamp"]'),
+    ).toBeNull();
 
     fireEvent.click(button);
     expect(button.getAttribute("aria-expanded")).toBe("false");
@@ -261,7 +282,7 @@ describe("NewsCard", () => {
   });
 
   it("uses the neutral NHL logo when a team logo is unavailable", () => {
-    render(
+    const { container } = render(
       <NewsCard
         compact
         rail
@@ -273,6 +294,13 @@ describe("NewsCard", () => {
 
     expect(screen.getByAltText("ZZZ logo").getAttribute("src")).toBe(
       "https://assets.nhle.com/logos/nhl/svg/NHL_light.svg",
+    );
+    const article = container.querySelector("article");
+    expect(article?.style.getPropertyValue("--news-team-primary")).toBe(
+      "#14a2d2",
+    );
+    expect(article?.style.getPropertyValue("--news-team-surface")).toBe(
+      "#0b1821",
     );
   });
 

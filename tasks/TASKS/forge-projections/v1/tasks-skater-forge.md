@@ -11,7 +11,8 @@
 - `web/lib/projections/promotionGates.ts` - Launch-gate and shadow-mode improvement helpers for skater/FORGE promotion decisions.
 - `web/lib/projections/promotionGates.test.ts` - Regression tests for promotion-gate threshold and shadow-mode comparison behavior.
 - `web/lib/projections/skaterRollout.ts` - Versioned skater feature flag, rollback selection, and promotion/monitoring governance contract.
-- `web/lib/projections/skaterRollout.test.ts` - Regression coverage for default preservation, explicit rollback, and 14-day governance requirements.
+- `web/lib/projections/skaterRollout.test.ts` - Regression coverage for fail-closed baseline defaulting, explicit candidate selection, rollback uncertainty isolation, and 14-day governance requirements.
+- `web/lib/projections/apiHelpers.ts` - Shared bounded caller-error and redacted dependency-error response contract for projection readers.
 - `web/lib/projections/derived/buildStrengthTablesV2.ts` - Derived skater/team strength feature inputs.
 - `web/pages/api/v1/db/ingest-projection-inputs.ts` - PbP + shift ingest dependency for skater derived features.
 - `web/pages/api/v1/db/build-projection-derived-v2.ts` - Derived table build orchestrator for skater inputs.
@@ -100,6 +101,12 @@
   - [x] 8.2 Run shadow-mode comparisons for at least 14 days before default switch. **OWNER-APPROVED EVIDENCE EXCEPTION (2026-07-11):** 14 elapsed matched dates were not observed. The default must not be switched/promoted until that evidence exists.
   - [x] 8.3 Define acceptance criteria and rollback triggers for production enablement.
   - [x] 8.4 Publish post-launch monitoring checklist and weekly recalibration cadence.
+
+- [x] NEW 9.0 **P1 blocked skater candidate promotion was fail-open.**
+  - Evidence (2026-07-29): missing or malformed `FORGE_SKATER_MODEL_MODE` previously selected the candidate despite 8.2 explicitly blocking default switching until 14 distinct matched dates exist. The resolver now defaults to the version-labeled baseline, requires exact explicit `candidate`, excludes candidate scenario mixtures and applied-blend metrics during rollback, and labels baseline output as the scenario-free current-rate model. Focused rollout/model regressions and TypeScript pass; no deployed flag, model output, database row, schedule, build, or Production state changed.
+
+- [x] NEW 9.1 **P1 projection readers exposed raw dependency and schema failures.**
+  - Evidence (2026-07-29): canonical player/goalie and compatibility player/team/goalie readers now preserve bounded 4xx validation detail while replacing every 5xx message/detail with route-stable unavailable codes. Shared helper and current reader regressions pass; no endpoint success schema or external state changed.
 
 ## Progress Snapshot (For Next Codex Chat)
 

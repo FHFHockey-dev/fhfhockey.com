@@ -40,9 +40,17 @@ This consolidation intentionally does not force every task into the same model. 
 
 ### Notes
 
-- Treat this file as the active implementation plan; the 11 merged source files remain historical traceability inputs.
+- Treat this file as the active meta-level consolidation and ownership plan. Its checked rows record that work was mapped, merged, or dispositioned; they do not independently supersede granular runtime, data, migration, promotion, or evidence gates in the 11 source files.
 - sKO is quarantined unless it gains persisted feature importances, validation metrics, freshness metadata, and promotion gates.
 - Lineup, goalie, injury, and roster-event work is prediction context, not isolated UI work.
+
+## Current Wave-C Audit Authority
+
+- All 11 A–K source paths and all 19 named implementation/runbook paths resolve.
+- Current A–K source parity is A 18/18, B 25/25, C 5/5, D 78/78, E 38/38, F 94/95, G 85/89, H 57/57, I 19/19, J 118/118, and K 64/64. The five open Sustainability rows remain authoritative and are not closed by this meta list.
+- The shared PRD is `tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md`; it owns the FORGE projection trunk. This super list owns cross-initiative A–K mapping, so a second standalone prediction-engine PRD would duplicate rather than clarify ownership.
+- `rolling-forge-pipeline-v4` is the current orchestration contract. TypeScript is the canonical Sustainability runtime while Python remains non-canonical/read-only pending an explicit offline role or removal. sKO is historical-only compatibility/quarantine, not a second prediction engine.
+- Current SoS ownership is the canonical past/future opponent-record contract in `web/lib/trends/strengthOfSchedule.ts`, not the original simple latest-row description below. The original wiring audit and task wording remain chronological planning evidence where later source decisions changed the disposition.
 
 ## Source Map
 
@@ -71,11 +79,11 @@ This consolidation intentionally does not force every task into the same model. 
 - Line-combination evidence is already consumed by FORGE in `web/lib/projections/queries/line-combo-queries.ts` and by game predictions in `web/lib/game-predictions/featureBuilder.ts`.
 - Game prediction scaffolding is substantial: `web/lib/game-predictions/featureBuilder.ts`, `baselineModel.ts`, `workflow.ts`, `evaluation.ts`, `adminHealth.ts`, and API routes under `web/pages/api/v1/game-predictions/*`.
 - Game prediction features already use team power, standings, WGO/NST team form, goalie starts, line combinations, accepted CCC goalie rows, goalie quality, rest, and source cutoffs.
-- Sustainability has two overlapping implementations: TypeScript modules in `web/lib/sustainability/*` and Python modules in `functions/lib/sustainability/*`. These should be reconciled before new model work expands.
-- sKO currently has serving/UI and a baseline endpoint at `web/pages/api/v1/ml/update-predictions-sko.ts`, but the richer PRD-mentioned `web/scripts/modeling/train.py`, `score.py`, and `upload_predictions.py` path is not present as active files. The current endpoint uses a moving-average baseline and writes `top_features: null`.
-- SoS currently exists as simple latest-row opponent win percentage logic in `web/lib/trends/strengthOfSchedule.ts`, plus update and trend routes. The roster/SoS PRD wants as-of, opponent-adjusted, and backtestable features.
-- Cron sequencing already includes the combined system in `tasks/TASKS/cron-operations/cron-schedule.md`: rolling metrics, line combos, goalie projections, FORGE projections, sustainability baselines/priors/window-z/score/bands, sKO, game-prediction snapshots, game-prediction scoring, and cron report.
-- Some source docs have stale paths. Example: `tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md` references `tasks/TASKS/forge-projections/context/forge-tables.md`; the actual current file is `tasks/TASKS/forge-projections/context/forge-tables.md`.
+- Sustainability runtime ownership is reconciled: TypeScript modules in `web/lib/sustainability/*` are canonical, while `functions/lib/sustainability/*` remains non-canonical/read-only pending an explicit offline role or removal.
+- sKO's moving-average compatibility path and orphaned reader/UI remain historical-only quarantine. The deliberately deleted offline modeling family is not a second active engine.
+- SoS now exposes separate canonical past/future opponent-record rankings with deterministic ordering; later source work superseded the original simple latest-row description.
+- Repository cron documentation maps the combined dependency chain, while active scheduling/runtime evidence remains owned by the Cron and granular A–K source ledgers.
+- The shared Projection V1 PRD and every A–K source path now resolve at their canonical `tasks/TASKS/**` locations.
 
 ## Consolidation Decision
 
@@ -258,9 +266,11 @@ Use one trunk and five branches.
 - [x] 10.0 Consolidate or quarantine legacy/adjacent artifacts
   - [x] 10.1 Audit leftover sKO modeling artifacts and decide what belongs in the unified model tree.
   - [x] 10.2 Retire or isolate orphaned sKO chart/model paths that are not serving validated predictions.
-  - [x] 10.3 Remove or document legacy start-chart materialization paths that duplicate FORGE outputs.
-  - [x] 10.4 Remove dead dashboard routes/components only after replacement surfaces are validated.
-  - [x] 10.5 Document any intentionally unmerged dots and why they remain separate.
+- [x] 10.3 Remove or document legacy start-chart materialization paths that duplicate FORGE outputs.
+- [x] 10.4 Remove dead dashboard routes/components only after replacement surfaces are validated.
+- [x] 10.5 Document any intentionally unmerged dots and why they remain separate.
+
+- [x] NEW 11.0 **P3 meta-checkmark and shared-PRD authority reconciliation:** classify the 101 original checks as completed A–K mapping/merge/disposition work rather than independent proof of every runtime or promotion gate; record exact current A–K source parity, preserve five open Sustainability rows, identify Projection V1 as the shared trunk PRD, and reconcile current pipeline, Sustainability, sKO, SoS, path, and scheduling ownership (discovered and completed 2026-07-29).
 
 ## Logical Order Of Operations
 
@@ -284,6 +294,8 @@ Use one trunk and five branches.
 - Lineup and goalie confirmation work is not an isolated tweet-ingestion feature. It is current-state context for player projections, team aggregation, and game predictions.
 
 ## Definition Of Done For The Unified Tree
+
+These criteria describe the unified target. At this meta layer they are mapped to authoritative owners; current satisfaction and exceptions must be read from the granular A–K source ledgers and super-goal controls.
 
 - A daily run can ingest/update source data, compute rolling features, rebuild sustainability/bands, ingest current lineup/goalie events, run FORGE projections, run game predictions, score completed outcomes, and emit a health report.
 - Each prediction includes model version, feature set version, source cutoffs, warnings, top factors or explanations, and calibration/backtest metadata where applicable.

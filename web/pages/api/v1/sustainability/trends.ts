@@ -7,6 +7,7 @@ import {
 } from "lib/sustainability/guardrails";
 import {
   fetchSustainabilityTrendIdentity,
+  fetchSustainabilityTrendHistory,
   fetchSustainabilityTrendScores,
   type SustainabilityTrendScoreRow,
 } from "lib/sustainability/trendsIdentity";
@@ -163,6 +164,16 @@ export default async function handler(
       z_ppshp: number;
       guardrail_state: SustainabilityGuardrailState;
       guardrail_warnings: string[];
+      status: "ready" | "provisional";
+      score_history: Array<{ snapshot_date: string; s_100: number }>;
+      component_breakdown: Array<{
+        metric: string;
+        contrib: number;
+        z_raw: number;
+        z_soft: number;
+        r: null;
+        n: null;
+      }>;
     };
 
     let guardrailFiltered = 0;
@@ -177,7 +188,6 @@ export default async function handler(
           try {
             components = JSON.parse(componentsRaw);
           } catch (parseErr) {
-            // eslint-disable-next-line no-console
             console.warn("Failed to parse components JSON", parseErr);
           }
         }
@@ -224,6 +234,21 @@ export default async function handler(
           z_ppshp: Number(guarded.components.z_ppshp ?? z_ppshp) || 0,
           guardrail_state: guarded.state,
           guardrail_warnings: guarded.warnings,
+          status: guarded.state === "degraded" ? "provisional" : "ready",
+          score_history: [],
+          component_breakdown: [
+            ["shp", z_shp, Number(weights.shp ?? 0)],
+            ["oishp", z_oishp, Number(weights.oishp ?? 0)],
+            ["ipp", z_ipp, Number(weights.ipp ?? 0)],
+            ["ppshp", z_ppshp, Number(weights.ppshp ?? 0)],
+          ].map(([metric, z, weight]) => ({
+            metric: String(metric),
+            contrib: Number(z) * Number(weight),
+            z_raw: Number(z),
+            z_soft: Number(z),
+            r: null,
+            n: null,
+          })),
         };
       })
       .filter((row): row is RowOut => Boolean(row));
@@ -232,6 +257,14 @@ export default async function handler(
       return direction === "hot"
         ? b.luck_pressure - a.luck_pressure
         : a.luck_pressure - b.luck_pressure;
+    });
+
+    const selectedRows = rows.slice(0, limit);
+    const history = await fetchSustainabilityTrendHistory(supabase, {
+      playerIds: selectedRows.map((row) => row.player_id),
+      windowCode,
+      endDate: snapshot,
+      points: 10,
     });
 
     return res.status(200).json({
@@ -248,13 +281,17 @@ export default async function handler(
       direction,
       limit,
       guardrail_filtered: guardrailFiltered,
-      rows: rows.slice(0, limit),
+      rows: selectedRows.map((row) => ({
+        ...row,
+        score_history: history.get(row.player_id) ?? [],
+      })),
     });
   } catch (error: any) {
-    // eslint-disable-next-line no-console
     console.error("trends error", error?.message || error);
-    return res
-      .status(500)
-      .json({ success: false, message: error?.message || String(error) });
+    return res.status(500).json({
+      success: false,
+      message: "Sustainability trends are temporarily unavailable.",
+      error: "SUSTAINABILITY_TRENDS_UNAVAILABLE",
+    });
   }
 }

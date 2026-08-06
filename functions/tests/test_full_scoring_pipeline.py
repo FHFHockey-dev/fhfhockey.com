@@ -1,4 +1,6 @@
-from lib.sustainability.pipeline import run_full_scoring_pipeline
+import pytest
+
+from lib.sustainability.pipeline import OfflinePersistenceDisabledError, run_full_scoring_pipeline
 from lib.sustainability.config_loader import DEFAULT_CONFIG, SustainabilityConfig
 from lib.sustainability.priors import LeaguePriorRow
 
@@ -59,3 +61,8 @@ def test_run_full_scoring_pipeline_basic():
     assert result['snapshot'] is not None
     if sample['window_type'] == 'GAME':
         assert 'quintile' in sample
+
+
+def test_run_full_scoring_pipeline_rejects_persistence():
+    with pytest.raises(OfflinePersistenceDisabledError):
+        run_full_scoring_pipeline(season_id=2025, games=[], persist=True)

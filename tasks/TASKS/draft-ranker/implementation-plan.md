@@ -347,10 +347,10 @@ Acceptance/Tests: A live disposable account passed sign in → initialize 313 pl
 Security/Observability: Verify no cross-user access, private comparison leaks, or unaudited privileged jobs.
 Migration/Rollback/Flag/Approval: At DR-073's 2026-07-15 local checkpoint, all-flags-on verification ended with the server stopped and deployed flags remained off. Flag disablement, dry-run rebuild, deletion, and zero-residue recovery were demonstrated without data loss. The production expansion then required the recorded approval checklist, named owners and cohort IDs, real traffic, and the required observation window; DR-072 subsequently satisfied that separate gate on 2026-07-17 without enabling any non-homepage secondary flag.
 Non-goals: Deferred mature capabilities.
-Phase 8 — Deferred mature-product capabilities
+Phase 8 — Future-roadmap mature-product capabilities
 Phase contract
-Status: Deferred.
-Scope: Expand after launch evidence and product validation.
+Status: Retired from the active super-goal by owner decision on 2026-07-30.
+Scope: Future roadmap only; revival requires a new PRD.
 Dependencies: Successful Phase 7.
 Affected systems: Ranking versions, models, prospect sources, exports, discovery.
 Database/API/UI: Future, separately designed.
@@ -361,7 +361,7 @@ Feature flag: Separate experiments.
 Approval checkpoint: Required for algorithm changes, paid sources, or major homepage changes.
 Non-goals: Treating deferred work as launch scope.
 DR-080 — Multiple named and league-specific rankings
-Status: Deferred.
+Status: Future roadmap.
 Scope: Copy, archive, reset, named rankings, keeper/dynasty variants, Yahoo-league setting imports.
 Dependencies: Phase 7.
 Affected: Ranking-set APIs and selector UI.
@@ -371,7 +371,7 @@ Security/Observability: Same owner boundaries.
 Migration/Rollback/Flag/Approval: Product approval before exposure.
 Non-goals: Automatic silent conversion.
 DR-081 — Mature community and adaptive models
-Status: Deferred.
+Status: Future roadmap.
 Scope: Bayesian uncertainty, time decay, segments, user reliability, information-gain queues.
 Dependencies: Sufficient evidence volume.
 Affected: Model/queue versions and methodology UI.
@@ -381,7 +381,7 @@ Security/Observability: Bias/fairness and abuse monitoring.
 Migration/Rollback/Flag/Approval: Explicit algorithm approval required.
 Non-goals: Updating public behavior without methodology disclosure.
 DR-082 — Expanded prospect and editorial infrastructure
-Status: Deferred.
+Status: Future roadmap.
 Scope: Official/licensed prospect feeds, editorial verification, camp/news role workflows.
 Dependencies: Licensing and identity-quality review.
 Affected: Identity ingestion and review tools.
@@ -391,7 +391,7 @@ Security/Observability: Provenance and review audit.
 Migration/Rollback/Flag/Approval: Paid/restricted sources require explicit approval.
 Non-goals: Scraping or storing data without verified rights.
 DR-083 — XLSX and advanced exports/discovery
-Status: Deferred.
+Status: Future roadmap.
 Scope: Multi-sheet XLSX, richer history, role/news/ML discovery, tiers and bulk edits.
 Dependencies: Launch validation.
 Affected: Export/UI dependencies and discovery models.

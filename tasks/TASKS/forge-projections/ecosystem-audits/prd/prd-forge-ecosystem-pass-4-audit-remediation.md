@@ -84,3 +84,7 @@ This pass is correctness-first. Calculation validity, output trustworthiness, en
 - Which FORGE outputs are internally consistent in code but still questionable in hockey-facing behavior and therefore need formula or presentation changes?
 - Which endpoint smoke tests can be executed meaningfully without NST catch-up, and which must remain blocked until the external access issue is resolved?
 - Are there latent styling inconsistencies between page-level layout and child components that only become obvious during browser-based visual inspection?
+
+## Dynamic Audit Outcome — 2026-07-29
+
+Wave-C revalidation confirms the completed freshness/fallback, plausibility, bounded-read, legacy-isolation, and canonical FORGE-to-Trends handoff contracts remain intact after later dashboard consolidation. The audit closed one P1 public-error disclosure across the skater-power, team-CTPI, and Sustainability trends readers and one P3 stale reference to the removed zero-consumer Top Movers wrapper. The current source list is complete at 94/94; the focused eight-file regression cohort passes 64/64 plus TypeScript and scoped lint.

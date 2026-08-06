@@ -9,6 +9,7 @@ import {
   computeCtpi,
 } from "lib/trends/ctpi";
 import { fetchPaginatedRows } from "lib/power-ratings";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 dotenv.config({ path: "./../../../.env.local" });
 
@@ -307,6 +308,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default withCronJobAudit(handler, {
+export default withCronJobAudit(adminOnly(handler as any), {
   jobName: "/api/v1/db/update-team-ctpi-daily",
 });

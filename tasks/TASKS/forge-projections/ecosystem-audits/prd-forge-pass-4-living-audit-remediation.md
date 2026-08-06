@@ -92,3 +92,7 @@ This pass exists to close gaps left by the previous pass, especially incomplete 
 - Whether any endpoint needed for smoke testing will require a manual catch-up run before a valid one-day test can be executed.
 - Whether the audit will reveal production-path constraints that require bounded fallback logic around the new gradient boosting implementation.
 - Whether any legacy `skoCharts` concepts are valuable enough to port directly versus document and retire.
+
+## Dynamic Audit Outcome — 2026-07-29
+
+Wave-C revalidation confirms selected-game operational ownership, the season-qualified fallback-query optimization, run/audit telemetry, model identity, truthful reader output, and isolation of the historical probe deployment remain intact. The audit closed one P1 raw-error disclosure on the public latest-run reader and one P3 stale Top Movers disposition after later dashboard consolidation. The current source list is complete at 66/66; the focused four-file regression cohort passes 28/28 plus TypeScript and scoped lint.

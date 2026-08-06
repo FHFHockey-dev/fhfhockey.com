@@ -1,6 +1,7 @@
 import pytest
 
 from lib.sustainability.config_loader import load_config
+from lib.sustainability.offline import OfflinePersistenceDisabledError
 from lib.sustainability.priors import compute_league_beta_priors, LeaguePriorRow, upsert_league_priors
 
 
@@ -67,8 +68,7 @@ def test_compute_league_beta_priors_zero_trials():
         assert r.beta0 > 0
 
 
-def test_upsert_league_priors_stub():
-    # No db_client returns 0
+def test_upsert_league_priors_fails_closed():
     cfg = load_config(db_client=None, allow_fallback=True)
     rows = compute_league_beta_priors(2025, db_client=None, cfg=cfg, aggregates=[{
         "season_id": 2025,
@@ -80,10 +80,8 @@ def test_upsert_league_priors_stub():
         "ipp_successes": 30,
         "ipp_trials": 40,
     }])
-    assert upsert_league_priors(None, rows) == 0
-    # Fake client to count call size
-    class FakeClient: ...
-    assert upsert_league_priors(FakeClient(), rows) == len(rows)
+    with pytest.raises(OfflinePersistenceDisabledError):
+        upsert_league_priors(None, rows)
 
 
 if __name__ == "__main__":

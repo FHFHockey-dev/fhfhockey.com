@@ -1,7 +1,7 @@
 ## Relevant Files
 
-- `tasks/tasks-xg-baseline-options.md` - Completed baseline-options execution queue through the first decision pass.
-- `tasks/artifacts/xg-first-baseline-decision-2026-03-31.md` - Records that no first baseline is approved yet.
+- `tasks/TASKS/xg-model/baseline/tasks-xg-baseline-options.md` - Completed baseline-options execution queue through the first decision pass.
+- `tasks/artifacts/xg-first-baseline-decision-2026-03-31.md` - Historical pre-approval decision record.
 - `tasks/artifacts/xg-first-baseline-decision-2026-03-31-repaired.md` - Fresh post-repair approval decision using the leakage-free rerun.
 - `tasks/artifacts/xg-baseline-benchmark-summary-2026-03-31.md` - Current benchmark summary with provisional winner/runner-up and rejection reasons.
 - `tasks/artifacts/xg-calibration-review-2026-03-31.md` - Current calibration review showing exploratory gains but no adoptable calibrated result.
@@ -27,7 +27,7 @@
 - `tasks/artifacts/xg-rollout-health-checks-2026-03-31.md` - Required rollout health surface for validation drift, calibration drift, and upstream feature-contract drift.
 - `tasks/artifacts/xg-second-pass-feature-followups-2026-03-31.md` - Ordered list of feature follow-ups for the next model pass.
 - `tasks/artifacts/xg-goalie-baseline-decision-2026-03-31.md` - Decision that goalie-facing work should reuse the skater-shot baseline.
-- `tasks/TASKS/xg-model/baseline/xg-training-feature-contract.md` - Current baseline feature contract that still needs leakage repair.
+- `tasks/TASKS/xg-model/baseline/xg-training-feature-contract.md` - Current leakage-safe baseline feature contract.
 - `tasks/TASKS/xg-model/nhl-api-foundation/post-foundation-follow-ups.md` - Broader post-foundation queue that this task list operationalizes.
 - `web/lib/xg/baselineDataset.ts` - Baseline dataset shaping and feature encoding.
 - `web/lib/xg/deploymentContext.ts` - Coarse on-ice deployment and matchup context derivation.
@@ -38,9 +38,12 @@
 
 ### Notes
 
-- This queue starts from the current state: no first baseline is approved yet.
-- The first block of work is contract repair, not new feature expansion.
-- Do not declare a winner until the repaired feature contract has been rerun through the full benchmark and calibration cycle.
+- The March 31 queue began before a first baseline was approved. Later A-XG-TREND work
+  approved and productionized `logistic_l2-s20252026-p1-st1-f1-cfg9bac2706`.
+- The active/champion artifact remains authoritative until a separately gated promotion changes
+  lifecycle state.
+- Later leakage remediation forbids post-event `missReasonBucket` and `isShortSideMiss` scoring
+  inputs while retaining missed-shot rows in the cohort.
 
 ## Tasks
 
@@ -81,3 +84,7 @@
   - [x] 6.2 Decide whether calibrated outputs need separate persisted model metadata or artifact storage.
   - [x] 6.3 Define refresh cadence and rerun policy for current-season retrains, repair runs, and benchmark refreshes.
   - [x] 6.4 Add rollout health checks for validation drift, calibration drift, and upstream feature-contract drift.
+
+- [x] 7.0 **NEW P1:** Reconcile the canonical baseline feature contract with A-XG-TREND's later post-event leakage removal; `missReasonBucket` and `isShortSideMiss` are forbidden inputs in both the contract and existing fail-closed harness while missed-shot rows remain eligible (verified 2026-07-29).
+- [x] 7.1 **NEW P2:** Make newly generated dataset-artifact lineage references repository-relative and portable while leaving historical generated dataset/model artifact bytes unchanged (verified 2026-07-29).
+- [x] 7.2 **NEW P3:** Reconcile moved canonical paths and distinguish the March 31 planning/decision record from the later approved active/champion and corrected inactive-candidate lifecycle state (verified 2026-07-29).

@@ -148,6 +148,10 @@ Important scope boundary:
 
 ## 8. Success Metrics
 
+### Current ownership overlay (2026-07-29)
+
+The 50/50 standings/predictive formula below records this initiative's shipped April design. The later completed `tasks-underlying-stats-power-rankings-roadmap.md` supersedes that single-value presentation and now owns the live landing-page contract: visible `SoS Past` and `SoS Future` use the same BCS-style direct/indirect opponent-record calculation, while future schedule texture is presented separately. This historical PRD remains unchanged as design lineage; it is not a second current formula authority.
+
 - `trend10` on `/underlying-stats` is restored to an accurate, non-broken value path.
 - The snapshot date selector exposes the correct distinct available dates for the landing page.
 - The landing page ships with a documented `SoS` metric.

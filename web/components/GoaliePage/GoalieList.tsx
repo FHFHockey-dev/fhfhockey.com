@@ -208,7 +208,7 @@ const GoalieList: FC<Props> = ({
     }
 
     return transformedGoalies;
-  }, [rankedWeeklyData, listSortConfig, GoalieBaseStatsExample]); // <-- Added GoalieBaseStatsExample dependency (line 209 warning)
+  }, [rankedWeeklyData, listSortConfig, GoalieBaseStatsExample, statColumns]);
 
   // Step 3: Format the single LeagueWeeklyAverage into GoalieAverages for the table header
   const averagesForTable = useMemo((): GoalieAverages => {

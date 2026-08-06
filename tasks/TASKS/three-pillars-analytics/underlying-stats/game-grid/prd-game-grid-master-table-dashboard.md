@@ -1,5 +1,7 @@
 # PRD: Game Grid Master Table Dashboard Refactor
 
+> **2026-07-29 status:** Complete at 38/38 after the Phase-5 responsive closure, declaration-order TypeScript repair, and final completion-control reconciliation. The stacked mobile/tablet composition remains intact, desktop vertical remains the named legacy fallback, desktop-master columns retain readable minimums, and no second feature flag exists.
+
 ## 1. Introduction / Overview
 
 Redesign the Game Grid page into a more elegant, modern, dark dashboard with a single unified desktop table that combines the current Opponent Metrics Table (OMT), Game Grid (GG), and Four Week Grid (4WG) into one master table.
@@ -218,3 +220,19 @@ Each phase should stop for review before moving to the next phase. The implement
 3. Which left-side columns should remain sticky during horizontal scroll on desktop if making the entire OMT block sticky is too heavy for the layout?
 4. Should score-based top-10 and bottom-10 highlighting apply only to the `Score` column, or should it also influence the full row treatment?
 5. Is a temporary feature flag or route-level toggle desired during Phase 2 and Phase 3, or should the new desktop table replace the old layout directly once each phase is approved?
+
+## 10. Implementation Status — 2026-07-22
+
+The owner approved the recommended defaults, authorized Phases 3–4 as one cohort, and authorized Phase 5 for local-only verification. The desktop-horizontal table matches the required OMT → Team → schedule → current summary → 4WG order; 4WG starts expanded with all four sortable values; rank emphasis is confined to Score plus a restrained edge; OMT failures are truthful without hiding schedule data; and desktop vertical remains the named `Legacy Vertical` fallback with no second feature flag. The final cohort preserves smaller-breakpoint stacking, Player Pickup ownership, readable desktop minimums, and the exact 1023/1024 boundary.
+
+## 10. Execution Checkpoint — 2026-07-22
+
+Phase 1 is evidence-complete in `game-grid-master-table-contract.md`. Current tracked code already has a desktop-horizontal `DesktopMasterTable`, but it is a partial implementation rather than proof that phases 2–5 are complete. The fixed target order is OMT metrics → one Team identity → existing 7/10 day cells → current GP/OFF/Score → four-week GP/OFF/Opp%/Score; day columns remain non-sortable, intended non-day values remain sortable, and the seven OMT columns plus Team are the initial left-sticky block. Mobile/tablet remain separate compositions.
+
+The audit records P1 NEW 1 for the master path suppressing the OMT error state, P2 NEW 2 for desktop vertical orientation bypassing the master architecture, closed P3 NEW 3 for the stale Jest command, and closed P0 NEW 4 for the stale tab identifier that blocked production compilation. Existing target-order, missing 4WK Score/sort, and group-boundary mismatches stay owned by base implementation tasks rather than duplicate findings.
+
+The owner approved the Phase-1 recommendations, Phases 3–4 as one cohort on 2026-07-22, and Phase 5 for local-only verification. Desktop-horizontal implements the exact OMT/Team/schedule/current/4WK order, expanded four-value 4WK group, all intended non-day sorts, Score-only rank emphasis plus edge, named `Legacy Vertical` fallback, and truthful OMT failure state without a second flag. Phase 5 closes the final breakpoint, scrolling, responsive-ownership, Player Pickup, and NEW 2 proof; the later P1 NEW 5 repair restores repository TypeScript verification, and P3 NEW 6 reconciles the final control count. B-GAMEGRID is complete at 38/38.
+
+## 11. Completion Verification Repair — 2026-07-25
+
+Owner-authorized local-only Phase 5 completed the responsive contract at 36/36. A later repository-wide TypeScript gate exposed one declaration-order regression: `gridLayout` consumed `isDesktop` before the existing unconditional hook call. NEW 5 records the smallest repair, which moves that hook result above its first use without changing layout policy, formulas, data, feature flags, or external state. The focused regression passes 8/8, scoped lint is clean, and full TypeScript completes without diagnostics. NEW 6 subsequently reconciles completion metadata, making B-GAMEGRID complete at 38/38.

@@ -1,5 +1,7 @@
 ## Relevant Files
 
+**Status (2026-07-29):** Complete at 49/49 after dynamic audit. The original slate-first refresh remains implemented; subsequent A-FORGE-DASH remediation and the Command Center layer supersede operational/promotion details without invalidating this layout contract.
+
 - `web/pages/forge/dashboard.tsx` - Main FORGE dashboard page that will be rebuilt around the slate-first layout.
 - `web/styles/ForgeDashboard.module.scss` - Shared page/card stylesheet for the FORGE dashboard shell, layout bands, and dashboard-specific visual treatments.
 - `web/pages/FORGE.tsx` - FORGE landing page that will be rebuilt as the preview and navigation gateway.
@@ -134,3 +136,6 @@
   - [x] 7.4 Add tests or contract coverage for the dashboard data dependencies most likely to drift, including ownership, slate, team context, goalie, and sustainability payloads.
   - [x] 7.5 Verify the dashboard nav, card click-throughs, mobile accordions, and ownership filters behave correctly under realistic initial-load states.
   - [x] 7.6 Run full regression coverage for the affected dashboard, trends, start-chart, and supporting API/page surfaces before closeout.
+
+- [x] NEW 8.0 **P1 dashboard-wide dependency-detail containment:** Team Power, Trust or Fade, player movement, game slate, Goalie Starts, and Top Adds failure states now use stable surface copy rather than rendering fetch URLs, HTTP status text, or dependency details.
+- [x] NEW 8.1 **P3 current route/status reconciliation:** the PRD/list now record the shipped preview/full-dashboard/Command-Center ownership and treat absolute planning paths as historical while preserving the implemented refresh contract.

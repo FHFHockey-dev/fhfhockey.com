@@ -13,6 +13,10 @@ describe("legacy prediction artifact quarantine", () => {
       disposition: "quarantined"
     });
     expect(sko?.promotionRequirement).toMatch(/feature importances/);
+    expect(sko?.paths).toContain(
+      "web/lib/hooks/useQuarantinedPredictionsSko.ts"
+    );
+    expect(sko?.paths).not.toContain("web/lib/hooks/usePredictionsSko.ts");
     expect(LEGACY_PREDICTION_ARTIFACTS.every((artifact) => artifact.paths.length > 0)).toBe(
       true
     );

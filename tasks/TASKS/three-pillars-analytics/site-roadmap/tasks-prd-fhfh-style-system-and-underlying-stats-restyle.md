@@ -175,3 +175,6 @@
   - [x] 12.4 Rework the desktop transaction-trends control/header layout so the time-window and position controls sit above both tables, with a single shared desktop shell wrapping the risers and fallers instead of two separately outlined panels.
   - [x] 12.5 Add subtle success/danger surface tinting to the risers and fallers tables and convert the lead riser/faller summary cards to the same left-accent card treatment with color-coordinated styling.
   - [x] 12.6 Enrich the lead riser/faller summary cards with weekly games and off-night schedule context derived from the same weekly schedule model used by the Game Grid.
+
+- [x] NEW 13.0 **P1 make every canonical shared dialog honor the same keyboard focus lifecycle.**
+  - Evidence (2026-07-29): Draft Summary now matches Compare Players and CSV Import by moving focus inside on open, trapping forward/reverse Tab navigation, closing on Escape, and restoring the opener after close. Its existing focused suite covers that lifecycle, and the canonical style guide now states it explicitly.

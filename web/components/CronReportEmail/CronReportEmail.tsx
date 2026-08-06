@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { formatDurationMsToMMSS } from "lib/cron/formatDuration";
 
-type JobStatus = "success" | "failure" | "unknown" | "missing";
+type JobStatus = "success" | "failure" | "unknown" | "missing" | "disabled";
 type BenchmarkAnnotation = { kind: string; note: string };
 
 interface JobRow {
@@ -33,7 +33,7 @@ interface RunDigest {
   key: string;
   label: string;
   jobName: string;
-  status: "success" | "failure" | "unknown";
+  status: "success" | "failure" | "unknown" | "disabled";
   runTimeDisplay: string;
   method: string | null;
   route: string | null;
@@ -62,6 +62,7 @@ interface CronReportEmailProps {
     jobsFailingLast: number;
     jobsMissingLast: number;
     jobsUnknownLast: number;
+    jobsDisabledLast?: number;
     unscheduledRuns: number;
     totalRowsUpserted: number;
     totalFailedRows: number;
@@ -97,11 +98,11 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
   missingJobs,
   unscheduledRuns,
   fetchErrors,
-  warnings
+  warnings,
 }) => {
   const container: React.CSSProperties = {
     fontFamily: "system-ui, sans-serif",
-    lineHeight: 1.4
+    lineHeight: 1.4,
   };
   const telemetryUnavailable =
     fetchErrors.length > 0 &&
@@ -113,7 +114,7 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
       job.lastStatus !== "success" ||
       (job.failedRowsLast ?? 0) > 0 ||
       Boolean(job.optimizationDenotation) ||
-      (job.missingObservationWarnings ?? []).length > 0
+      (job.missingObservationWarnings ?? []).length > 0,
   );
 
   const renderTable = (children: React.ReactNode) => (
@@ -128,7 +129,7 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
 
   const pill = (
     label: string,
-    colors: { background: string; color: string }
+    colors: { background: string; color: string },
   ) => (
     <>
       <span
@@ -141,7 +142,7 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
           fontSize: 11,
           fontWeight: 700,
           background: colors.background,
-          color: colors.color
+          color: colors.color,
         }}
       >
         {label}
@@ -152,7 +153,9 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
   const renderDuration = (durationMs: number | null) =>
     typeof durationMs === "number" ? (
       <div>
-        <div style={{ fontWeight: 700 }}>{formatDurationMsToMMSS(durationMs)}</div>
+        <div style={{ fontWeight: 700 }}>
+          {formatDurationMsToMMSS(durationMs)}
+        </div>
         <div style={{ fontSize: 12, color: "#6B7280" }}>
           {Math.round(durationMs / 1000)}s
         </div>
@@ -163,14 +166,14 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
 
   const badge = (
     status: JobStatus | RunDigest["status"],
-    source?: "audit" | "cron" | "missing" | "unknown"
+    source?: "audit" | "cron" | "missing" | "unknown",
   ) => {
     const common: React.CSSProperties = {
       display: "inline-block",
       padding: "2px 8px",
       borderRadius: 999,
       fontSize: 12,
-      fontWeight: 700
+      fontWeight: 700,
     };
     const sourceNote =
       source === "audit"
@@ -202,6 +205,13 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
         </span>
       );
     }
+    if (status === "disabled") {
+      return (
+        <span style={{ ...common, background: "#E0F2FE", color: "#075985" }}>
+          DISABLED{sourceNote}
+        </span>
+      );
+    }
     return (
       <span style={{ ...common, background: "#E5E7EB", color: "#374151" }}>
         UNKNOWN{sourceNote}
@@ -212,7 +222,7 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
   const renderReasonCell = (
     reason: string | null,
     samples: string[],
-    tone: "danger" | "neutral" = "neutral"
+    tone: "danger" | "neutral" = "neutral",
   ) => (
     <td style={tone === "danger" ? { color: "#991B1B" } : undefined}>
       <div>{reason ?? "—"}</div>
@@ -228,12 +238,17 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
     <div style={container}>
       <h1 style={{ margin: "0 0 8px" }}>Daily Cron Summary — last 24 hrs</h1>
       <div style={{ margin: "0 0 12px", color: "#374151" }}>
-        Since {new Date(sinceDate).toLocaleString()} • {summary.scheduledJobs} scheduled jobs
-        • {summary.scheduledJobsWithActivity} observed •{" "}
-        <span style={{ color: summary.jobsFailingLast ? "#991B1B" : "#166534" }}>
+        Since {new Date(sinceDate).toLocaleString()} • {summary.scheduledJobs}{" "}
+        scheduled jobs • {summary.scheduledJobsWithActivity} observed •{" "}
+        <span
+          style={{ color: summary.jobsFailingLast ? "#991B1B" : "#166534" }}
+        >
           {summary.jobsFailingLast} failing
         </span>{" "}
         • {summary.jobsMissingLast} missing • {summary.jobsOkLast} ok
+        {summary.jobsDisabledLast
+          ? ` • ${summary.jobsDisabledLast} disabled`
+          : ""}
         {summary.jobsUnknownLast ? ` • ${summary.jobsUnknownLast} unknown` : ""}
         <br />
         {summary.auditRuns} audit runs • {summary.auditSuccesses} successes •{" "}
@@ -254,12 +269,12 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
             padding: "12px 14px",
             border: "1px solid #FCA5A5",
             background: "#FEF2F2",
-            color: "#991B1B"
+            color: "#991B1B",
           }}
         >
-          Cron telemetry was unavailable for this report window, so scheduled job status
-          could not be evaluated. This email is reporting collection failure, not job
-          execution health.
+          Cron telemetry was unavailable for this report window, so scheduled
+          job status could not be evaluated. This email is reporting collection
+          failure, not job execution health.
         </div>
       ) : null}
 
@@ -271,25 +286,26 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
           <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
             {warnings.slowJobs.slice(0, 6).map((job) => (
               <li key={`slow-${job.displayName}`}>
-                {job.denotation ?? warnings.slowJobDenotation ?? "Slow"}: {job.displayName} (
+                {job.denotation ?? warnings.slowJobDenotation ?? "Slow"}:{" "}
+                {job.displayName} (
                 {job.timer ?? formatDurationMsToMMSS(job.durationMs)}, threshold{" "}
                 {formatDurationMsToMMSS(warnings.slowMsThreshold)})
               </li>
             ))}
             {warnings.partialFailureJobs.slice(0, 6).map((job) => (
               <li key={`partial-${job.displayName}`}>
-                Partial success: {job.displayName} returned {job.failedRows} failed rows.
+                Partial success: {job.displayName} returned {job.failedRows}{" "}
+                failed rows.
               </li>
             ))}
             {(warnings.missingObservationJobs ?? []).slice(0, 6).map((job) => (
               <li key={`missing-observation-${job.displayName}`}>
-                Observation gap: {job.displayName} ({job.warnings[0] ?? "Missing cron telemetry."})
+                Observation gap: {job.displayName} (
+                {job.warnings[0] ?? "Missing cron telemetry."})
               </li>
             ))}
             {warnings.missingAuditJobs.slice(0, 6).map((job) => (
-              <li key={`missing-audit-${job}`}>
-                No audit row: {job}
-              </li>
+              <li key={`missing-audit-${job}`}>No audit row: {job}</li>
             ))}
           </ul>
         </div>
@@ -342,11 +358,15 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                     <td align="right">{renderDuration(job.lastDurationMs)}</td>
                     <td align="right">{job.rowsUpsertedLast ?? "—"}</td>
                     <td align="right">{job.failedRowsLast ?? "—"}</td>
-                    {renderReasonCell(job.why ?? job.note, job.failedRowSamples, "danger")}
+                    {renderReasonCell(
+                      job.why ?? job.note,
+                      job.failedRowSamples,
+                      "danger",
+                    )}
                   </tr>
                 ))}
               </tbody>
-            </>
+            </>,
           )}
         </>
       ) : !telemetryUnavailable ? (
@@ -376,11 +396,13 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                     <td style={{ fontWeight: 700 }}>{job.displayName}</td>
                     <td>{job.expectedRunDisplay}</td>
                     <td>{job.route ?? "SQL"}</td>
-                    <td>{job.note ?? "No matching cron or audit row was found."}</td>
+                    <td>
+                      {job.note ?? "No matching cron or audit row was found."}
+                    </td>
                   </tr>
                 ))}
               </tbody>
-            </>
+            </>,
           )}
         </>
       ) : null}
@@ -417,13 +439,15 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                     </td>
                     <td align="right">{run.statusCode ?? "—"}</td>
                     <td align="right">{renderDuration(run.durationMs)}</td>
-                    <td align="right">{run.rowsUpserted ?? run.rowsAffected ?? "—"}</td>
+                    <td align="right">
+                      {run.rowsUpserted ?? run.rowsAffected ?? "—"}
+                    </td>
                     <td align="right">{run.failedRows ?? "—"}</td>
                     {renderReasonCell(run.reason, run.failedRowSamples)}
                   </tr>
                 ))}
               </tbody>
-            </>
+            </>,
           )}
         </>
       ) : null}
@@ -487,31 +511,51 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                       {job.optimizationDenotation
                         ? pill(job.optimizationDenotation, {
                             background: "#FEE2E2",
-                            color: "#991B1B"
+                            color: "#991B1B",
                           })
                         : null}
                       {(job.benchmarkAnnotations ?? [])
                         .filter((annotation) =>
-                          ["bottleneck", "rate_limited", "side_effect"].includes(
-                            annotation.kind
-                          )
+                          [
+                            "bottleneck",
+                            "rate_limited",
+                            "side_effect",
+                          ].includes(annotation.kind),
                         )
                         .slice(0, 2)
                         .map((annotation) => (
-                          <React.Fragment key={`${job.jobKey}-${annotation.kind}`}>
-                            {pill(annotation.kind.replace(/_/g, " ").toUpperCase(), {
-                              background: "#E0F2FE",
-                              color: "#075985"
-                            })}
+                          <React.Fragment
+                            key={`${job.jobKey}-${annotation.kind}`}
+                          >
+                            {pill(
+                              annotation.kind.replace(/_/g, " ").toUpperCase(),
+                              {
+                                background: "#E0F2FE",
+                                color: "#075985",
+                              },
+                            )}
                           </React.Fragment>
                         ))}
                       {(job.missingObservationWarnings ?? []).length > 0 ? (
-                        <div style={{ marginTop: 4, fontSize: 12, color: "#92400E" }}>
-                          Observation gaps: {job.missingObservationWarnings?.join(" ")}
+                        <div
+                          style={{
+                            marginTop: 4,
+                            fontSize: 12,
+                            color: "#92400E",
+                          }}
+                        >
+                          Observation gaps:{" "}
+                          {job.missingObservationWarnings?.join(" ")}
                         </div>
                       ) : null}
                       {(job.benchmarkAnnotations ?? []).length > 0 ? (
-                        <div style={{ marginTop: 4, fontSize: 12, color: "#4B5563" }}>
+                        <div
+                          style={{
+                            marginTop: 4,
+                            fontSize: 12,
+                            color: "#4B5563",
+                          }}
+                        >
                           Benchmark: {job.benchmarkAnnotations?.[0]?.note}
                           {(job.benchmarkAnnotations?.length ?? 0) > 1
                             ? ` (+${(job.benchmarkAnnotations?.length ?? 1) - 1} more)`
@@ -519,7 +563,13 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                         </div>
                       ) : null}
                       {job.failedRowSamples.length > 0 ? (
-                        <div style={{ marginTop: 4, fontSize: 12, color: "#4B5563" }}>
+                        <div
+                          style={{
+                            marginTop: 4,
+                            fontSize: 12,
+                            color: "#4B5563",
+                          }}
+                        >
                           Samples: {job.failedRowSamples.join(" ; ")}
                         </div>
                       ) : null}
@@ -527,7 +577,7 @@ export const CronReportEmail: React.FC<CronReportEmailProps> = ({
                   </tr>
                 ))}
               </tbody>
-            </>
+            </>,
           )}
         </>
       ) : null}

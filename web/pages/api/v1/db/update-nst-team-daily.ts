@@ -1,4 +1,5 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import adminOnly from "utils/adminOnlyMiddleware";
 import {
   NST_TEAM_DAILY_BURST_INTERVAL_MS,
   resolveTeamDailyNstRequestPlan
@@ -650,10 +651,7 @@ function parseBooleanParam(
   return ["true", "1", "yes", "y"].includes(value.toLowerCase());
 }
 
-const handler = async (
-  req: NextApiRequest,
-  res: NextApiResponse
-) => {
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const startedAt = Date.now();
   if (req.method !== "GET" && req.method !== "POST") {
     res.setHeader("Allow", "GET,POST");
@@ -772,4 +770,4 @@ const handler = async (
   }
 };
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

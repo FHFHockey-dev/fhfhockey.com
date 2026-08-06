@@ -41,6 +41,30 @@ export const TREND_BAND_ON_CONFLICT =
 export const SUSTAINABILITY_PROJECTION_ON_CONFLICT =
   "player_id,snapshot_date,metric_key,horizon_games,projection_type,scope_key";
 
+export async function upsertRowsInChunks<T>({
+  rows,
+  upsert,
+  chunkSize = 400
+}: {
+  rows: T[];
+  upsert: (chunk: T[]) => Promise<{ error: Error | null }>;
+  chunkSize?: number;
+}): Promise<{ inserted: number; chunks: number }> {
+  if (!Number.isSafeInteger(chunkSize) || chunkSize < 1) {
+    throw new Error("chunkSize must be a positive safe integer");
+  }
+  if (!rows.length) return { inserted: 0, chunks: 0 };
+
+  let chunks = 0;
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const { error } = await upsert(rows.slice(i, i + chunkSize));
+    if (error) throw error;
+    chunks += 1;
+  }
+
+  return { inserted: rows.length, chunks };
+}
+
 function assertBandOrder(
   band: SustainabilityProjectionInput["band50"],
   label: string
@@ -110,19 +134,14 @@ export async function upsertSustainabilityProjectionRows({
   client?: ProjectionClient;
   chunkSize?: number;
 }): Promise<{ inserted: number; chunks: number }> {
-  if (!rows.length) return { inserted: 0, chunks: 0 };
-
-  let chunks = 0;
-  for (let i = 0; i < rows.length; i += chunkSize) {
-    const chunk = rows.slice(i, i + chunkSize);
-    const { error } = await client
-      .from("sustainability_projections")
-      .upsert(chunk, { onConflict: SUSTAINABILITY_PROJECTION_ON_CONFLICT });
-    if (error) throw error;
-    chunks += 1;
-  }
-
-  return { inserted: rows.length, chunks };
+  return upsertRowsInChunks({
+    rows,
+    chunkSize,
+    upsert: (chunk) =>
+      client
+        .from("sustainability_projections")
+        .upsert(chunk, { onConflict: SUSTAINABILITY_PROJECTION_ON_CONFLICT })
+  });
 }
 
 export async function upsertTrendBandRows({
@@ -139,19 +158,14 @@ export async function upsertTrendBandRows({
     return { inserted: 0, chunks: 0 };
   }
 
-  let chunks = 0;
-  for (let i = 0; i < filteredRows.length; i += chunkSize) {
-    const chunk = filteredRows.slice(i, i + chunkSize);
-    const { error } = await client
-      .from("sustainability_trend_bands")
-      .upsert(chunk, {
+  return upsertRowsInChunks({
+    rows: filteredRows,
+    chunkSize,
+    upsert: (chunk) =>
+      client.from("sustainability_trend_bands").upsert(chunk, {
         onConflict: TREND_BAND_ON_CONFLICT
-      });
-    if (error) throw error;
-    chunks += 1;
-  }
-
-  return { inserted: filteredRows.length, chunks };
+      })
+  });
 }
 
 function buildInList(values: string[]): string {

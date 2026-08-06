@@ -1,5 +1,6 @@
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
+import adminOnly from "utils/adminOnlyMiddleware";
 import supabase from "lib/supabase/server";
 import { fetchCurrentSeason } from "../../../../utils/fetchCurrentSeason";
 import {
@@ -54,6 +55,12 @@ function isValidIsoDate(value: string): boolean {
   );
 }
 
+function previousIsoDate(value: string): string {
+  const date = new Date(`${value}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() - 1);
+  return date.toISOString().slice(0, 10);
+}
+
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST" && req.method !== "GET") {
     res.setHeader("Allow", ["POST", "GET"]);
@@ -83,6 +90,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     parsedDateParam ??
     new Date().toISOString().slice(0, 10);
   const explicitStartDate = parsedStartDateParam;
+  const isDefaultScheduledWindow =
+    rawDateParam == null &&
+    rawStartDateParam == null &&
+    rawEndDateParam == null;
 
   if (explicitStartDate && explicitStartDate > targetDateParam) {
     return res.status(400).json({ error: "Invalid startDate/endDate range" });
@@ -101,6 +112,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const explicitRangeApplied = Boolean(explicitStartDate);
     const autoBackfillApplied =
       !explicitRangeApplied && tableWasEmpty && !smokeTestMode;
+    let lateArrivalRepairApplied = false;
     if (autoBackfillApplied) {
       console.log("Table is empty. Fetching season start date...");
       const season = await fetchCurrentSeason();
@@ -113,6 +125,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     } else if (explicitRangeApplied) {
       console.log(
         `Explicit rating refresh range requested: ${startDateStr} -> ${targetDateParam}.`,
+      );
+    } else if (isDefaultScheduledWindow && !smokeTestMode) {
+      startDateStr = previousIsoDate(targetDateParam);
+      lateArrivalRepairApplied = true;
+      console.log(
+        `Scheduled late-arrival repair window: ${startDateStr} -> ${targetDateParam}.`,
       );
     }
 
@@ -355,6 +373,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         tableWasEmpty,
         smokeTestMode,
         autoBackfillApplied,
+        lateArrivalRepairApplied,
         explicitRangeApplied,
         smokeTestComparable: executionWindowDays === 1,
         smokeTestGuidance:
@@ -369,4 +388,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

@@ -24,28 +24,28 @@
 
 .wigoDashboardContainer {
   width: 100%;
-  max-width: 2200px;
-  min-width: 1300px;
-  min-height: 100vh;
-  max-height: 100vh;
+  max-width: 1920px;
+  min-width: 0;
   margin: 0 auto;
-  display: flex;
-  border-radius: v.$border-radius * 2;
+  padding: v.$space-sm;
 }
 
 .wigoDashboardContent {
-  flex-grow: 1;
-  background-color: color.adjust(v.$background-dark, $lightness: -3%);
-  border-radius: v.$border-radius;
-  // overflow: hidden; // Hidden overflow on main grid container
-
-  // Grid Definition
   display: grid;
-  grid-template-columns: repeat(36, 1fr);
-  grid-template-rows: repeat(44, 1fr); // 44 rows spanning grid lines 1 to 45
-  column-gap: v.$space-xl; // Horizontal gap between columns
-  row-gap: v.$space-lg; // Vertical gap between rows
-  margin-bottom: v.$space-sm; // Bottom margin spacing
+  grid-template-columns:
+    minmax(280px, 0.72fr)
+    minmax(640px, 1.65fr)
+    minmax(380px, 1.05fr);
+  grid-template-rows: auto minmax(760px, calc(100vh - 150px));
+  grid-template-areas:
+    "context context context"
+    "dossier comparison evidence";
+  gap: v.$space-sm;
+  min-width: 0;
+  padding: v.$space-sm;
+  border: 1px solid color.adjust(v.$background-dark, $lightness: 8%);
+  border-radius: v.$border-radius * 1.5;
+  background-color: color.adjust(v.$background-dark, $lightness: -3%);
 }
 
 /* Hide mobile container by default (desktop/tablet). It will be enabled in the mobile media query below */
@@ -56,8 +56,7 @@
 /* --- Mobile overrides --- */
 @media (max-width: 768px) {
   .wigoDashboardContainer {
-    min-width: auto; // allow shrinking on mobile
-    max-height: none;
+    padding: 0;
   }
   .wigoDashboardContent {
     display: none; // hide desktop grid on mobile
@@ -74,6 +73,10 @@
     flex-direction: column;
     gap: v.$space-sm;
     padding: 0 v.$space-md;
+
+    .wigoHeader {
+      display: none;
+    }
   }
   .mobileTabsBar {
     position: sticky;
@@ -133,6 +136,43 @@
   .combinedStatsTableContainer {
     overflow-x: auto;
   }
+
+}
+
+@media (min-width: 769px) and (max-width: 1420px) {
+  .wigoDashboardContent {
+    grid-template-columns:
+      minmax(245px, 0.7fr)
+      minmax(600px, 1.65fr)
+      minmax(330px, 0.95fr);
+    grid-template-rows: auto minmax(760px, calc(100vh - 150px));
+    grid-template-areas:
+      "context context context"
+      "dossier comparison evidence";
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1180px) {
+  .wigoDashboardContent {
+    grid-template-columns: minmax(260px, 0.72fr) minmax(660px, 1.65fr);
+    grid-template-rows: auto minmax(760px, calc(100vh - 150px)) auto;
+    grid-template-areas:
+      "context context"
+      "dossier comparison"
+      "evidence evidence";
+  }
+}
+
+@media (min-width: 769px) and (max-width: 980px) {
+  .wigoDashboardContent {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(760px, calc(100vh - 150px)) auto;
+    grid-template-areas:
+      "context"
+      "dossier"
+      "comparison"
+      "evidence";
+  }
 }
 
 /* Base Styles for Grid Items */
@@ -151,66 +191,83 @@
 // Direct children positioned by the grid system
 
 .leftColumnWrapper,
-.middleColumnWrapper,
-.rightColumnWrapper {
-  display: flex; // Flex container layout
-  flex-direction: column; // Vertical layout direction
-  height: 100%; // Essential for percentage heights of children
+.comparisonColumnWrapper,
+.trendsColumnWrapper {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
   width: 100%;
-  overflow: hidden; // Prevents wrapper overflow while children handle internal scroll/overflow
-  outline: 10px solid color.adjust(v.$background-dark, $lightness: 3%);
-  border-radius: v.$border-radius * 0.25;
+  overflow: hidden;
+  border: 1px solid color.adjust(v.$background-dark, $lightness: 9%);
+  border-radius: v.$border-radius;
+  background: color.adjust(v.$background-dark, $lightness: -1%);
 }
 
-// Grid areas for wrapper elements
-// Format: DOWN / LEFT / RIGHT / DOWN
 .leftColumnWrapper {
-  grid-area: 4 / 2 / 45 / 9; // Rows 3-44, Cols 1-8
+  grid-area: dossier;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: v.$primary-color v.$background-medium;
 }
 
-.middleColumnWrapper {
-  grid-area: 4 / 9 / 45 / 23; // Rows 3-44, Cols 9-24
+.comparisonColumnWrapper {
+  grid-area: comparison;
 }
 
-.rightColumnWrapper {
-  grid-area: 4 / 23 / 45 / 36; // Rows 3-44, Cols 25-36
+.trendsColumnWrapper {
+  grid-area: evidence;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: v.$primary-color v.$background-medium;
 }
 
 /* Specific Container Styles & Grid Areas (BENTO BOX LAYOUT) */
 
 .headerRowWrapper {
-  grid-area: 1 / 1 / 4 / 37; // Spans full width where two items are positioned
-  display: flex; // Flexbox for horizontal positioning of children
-  align-items: center; // Children fill the height of wrapper
-  justify-content: space-between; // Space distribution between children
-  column-gap: 0; // No gap between flex children (search bar and header)
-  padding-bottom: v.$space-xl;
-  padding-top: v.$space-xl;
-  padding-left: v.$space-xxl;
-  padding-right: v.$space-lg;
-  height: 100%;
+  grid-area: context;
+  display: grid;
+  grid-template-columns: minmax(245px, 0.8fr) minmax(260px, 0.9fr) minmax(260px, 1fr) auto;
+  align-items: center;
+  gap: v.$space-sm;
+  min-height: 52px;
   width: 100%;
+  padding: v.$space-xs v.$space-sm;
+  border: 1px solid color.adjust(v.$background-dark, $lightness: 9%);
+  border-radius: v.$border-radius;
+  background: color.adjust(v.$background-dark, $lightness: -1%);
+}
 
-  // Border styling applied to wrapper instead of individual items
-  border-bottom: 8px double v.$primary-color;
+.wigoContextIdentity {
+  display: flex;
+  align-items: baseline;
+  gap: v.$space-md;
+  min-width: 0;
+}
+
+.wigoContextTagline {
+  overflow: hidden;
+  color: v.$text-color-secondary;
+  font-family: v.$font-family-primary;
+  font-size: 10px;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 // Top Row Items (Direct Grid Children)
 .nameSearchBarContainer {
-  // Grid-area removed - positioned by flex wrapper
-  background-color: color.adjust(v.$background-dark, $lightness: -1%);
-  height: 100%; // Fills height of wrapper
-  min-height: 45px; // Minimum height maintained
-  overflow: visible !important; // Required for dropdown functionality
-  display: flex; // Internal flex layout
+  position: relative;
+  z-index: 10;
+  display: flex;
   align-items: center;
-  justify-content: space-between;
-  z-index: 3; // Stacking context maintained
-  // Border removed since applied to wrapper
-
-  // Flex sizing configuration
-  flex: 6 1 0%; // Approximates original width (8 columns wide) - Grow 8, Shrink 1, Basis 0
-  min-width: 0; // Prevents flex overflow issues
+  min-width: 0;
+  height: 38px;
+  overflow: visible !important;
 
   > div {
     // Targets inner div element if needed
@@ -220,82 +277,209 @@
 }
 
 .wigoHeader {
-  // Grid-area removed - positioned by flex wrapper
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  padding: v.$space-md;
+  min-width: 0;
   overflow: hidden;
   white-space: nowrap;
-  // Border removed since applied to wrapper
-  border: none; // Border removal
-  height: 100%; // Fills height of wrapper
-
-  // Flex sizing configuration
-  flex: 26 1 0%; // Approximates original width (28 columns wide) - Grow 28, Shrink 1, Basis 0
-  min-width: 0; // Prevents flex overflow issues
 
   .headerText {
-    font-family: "Train One", sans-serif;
-    letter-spacing: 0.75em;
-    font-size: v.$font-size-base * 1.8;
-    line-height: 1.5em;
-    font-weight: 100;
+    color: v.$text-color-secondary;
+    font-family: v.$font-family-primary;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
   }
 }
 
-// Left Column Components (Children of .leftColumnWrapper)
+.selectedPlayerControl {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+  min-width: 0;
+  height: 38px;
+  padding: 0 v.$space-sm;
+  border: 1px solid v.$border-color-secondary;
+  border-radius: v.$border-radius-sm;
+  background: color.adjust(v.$background-dark, $lightness: 2%);
+
+  button {
+    margin-left: auto;
+    padding: 4px 6px;
+    border: 0;
+    background: transparent;
+    color: v.$text-color-secondary;
+    cursor: pointer;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+
+    &:hover,
+    &:focus-visible {
+      color: v.$primary-color;
+    }
+
+    &:focus-visible {
+      outline: 1px solid v.$primary-color;
+      outline-offset: 2px;
+    }
+  }
+}
+
+.selectedPlayerThumb {
+  position: relative;
+  align-self: stretch;
+  width: 40px;
+  flex: 0 0 40px;
+
+  img {
+    object-fit: contain;
+    object-position: center bottom;
+  }
+}
+
+.selectedPlayerText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  strong,
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  strong {
+    color: v.$text-color-primary;
+    font-size: 12px;
+  }
+
+  span {
+    color: v.$text-color-secondary;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+}
+
+.noSelectedPlayer {
+  color: v.$text-color-secondary;
+  font-size: 11px;
+}
+
+.playerIdentityCard {
+  display: flex;
+  min-height: 130px;
+  padding: v.$space-sm;
+  border-bottom: 1px solid color.adjust(v.$background-dark, $lightness: 9%);
+  background: linear-gradient(
+    105deg,
+    color-mix(in srgb, var(--primary-color) 24%, transparent),
+    color.adjust(v.$background-dark, $lightness: -2%) 70%
+  );
+}
 
 .playerHeaderContainer {
-  position: relative; // Relative positioning for internal absolute positioning
-  z-index: 1; // Stacking context if needed
-  padding: 0;
-  overflow: hidden !important; // Prevents overflow of children
-  height: 15%;
-  border-bottom: 8px solid color.adjust(v.$background-dark, $lightness: 3%);
-  background-color: color.adjust(v.$background-dark, $lightness: 3%);
+  position: relative;
+  z-index: 1;
+  width: 44%;
+  min-width: 104px;
+  overflow: hidden;
 }
 
-.playerNameContainer {
-  @include internal-flex-column; // Internal structure maintenance
-  padding: 0;
-  overflow: hidden; // Explicit overflow handling despite mixin coverage
-  height: 5%;
+.playerIdentityCopy {
   display: flex;
-  align-items: center; // Vertical content centering
-  justify-content: center; // Horizontal content centering
-  text-align: center; // Text centering
-  font-family: "Train One", sans-serif;
-  letter-spacing: 0.5em;
-  font-size: v.$font-size-small * 0.8;
-  font-weight: 100;
-  text-transform: uppercase;
-  background-color: color.adjust(v.$background-dark, $lightness: -1%);
-  border-bottom: 8px solid color.adjust(v.$background-dark, $lightness: 3%); // Visual separation border
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: v.$space-sm;
 }
 
-.spanColorBlueName {
-  display: inline-block;
-  color: v.$primary-color;
+.playerTeam,
+.playerRole {
+  color: v.$text-color-secondary;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.playerName {
+  display: flex;
+  flex-direction: column;
+  margin: 5px 0;
+  color: v.$text-color-primary;
+  font-family: "Roboto Condensed", v.$font-family-primary;
+  font-size: clamp(20px, 1.6vw, 28px);
+  font-weight: 700;
+  line-height: 0.92;
+  text-transform: uppercase;
+
+  span {
+    font-size: 0.58em;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+  }
+}
+
+.playerMetaGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  min-height: 52px;
+  border-bottom: 1px solid color.adjust(v.$background-dark, $lightness: 9%);
+
+  > span {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    border-right: 1px solid v.$border-color-secondary;
+    color: v.$text-color-primary;
+    font-family: v.$font-family-numbers;
+    font-size: 11px;
+    white-space: nowrap;
+
+    &:last-child {
+      border-right: 0;
+    }
+  }
+
+  small {
+    color: v.$text-color-secondary;
+    font-family: v.$font-family-primary;
+    font-size: 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
 }
 
 .perGameStatsContainer {
-  @include internal-flex-column; // Internal structure maintenance
+  @include internal-flex-column;
   padding: 0 !important;
-  overflow: hidden; // Explicit overflow handling despite mixin coverage
-  height: 30%;
+  overflow: visible;
+  height: auto;
+  min-height: 316px;
+  flex-shrink: 0;
+  border-bottom: 1px solid color.adjust(v.$background-dark, $lightness: 9%);
 }
 
 .opponentLogContainer {
   @include internal-flex-column;
   padding: 0;
-  height: 30%;
-  border-bottom: 8px solid color.adjust(v.$background-dark, $lightness: 3%); // Visual separation border
+  height: 150px;
+  flex-shrink: 0;
+  border-bottom: 1px solid color.adjust(v.$background-dark, $lightness: 9%);
 }
 
 .ratingsContainer {
   @include internal-flex-column;
-  height: 20%;
+  height: 150px;
+  flex-shrink: 0;
+  border-bottom: 1px solid color.adjust(v.$background-dark, $lightness: 9%);
 }
 
 .consistencyAndCategoryWrapper {
@@ -306,8 +490,10 @@
   // align-items: stretch; // Alternative to make children fill wrapper height
   justify-content: center; // Removable or adjustable (e.g., flex-start)
   overflow: hidden;
-  height: 20%;
-  border-bottom: 8px solid color.adjust(v.$background-dark, $lightness: 3%); // Visual separation border
+  height: 185px;
+  min-height: 185px;
+  flex-shrink: 0;
+  border-bottom: 1px solid color.adjust(v.$background-dark, $lightness: 9%);
 }
 
 .consistencyRatingContainer {
@@ -439,17 +625,17 @@
   // Consistency Chart Internal Styles
 }
 
-// Middle Column Components (Children of .middleColumnWrapper)
+// Trend Evidence Components
 .percentileChartContainer {
   // Renamed from Category Coverage based on component name
   @include internal-flex-column; // Internal column layout maintenance
   padding: 0;
-  min-height: 200px; // Minimum height maintained
+  min-height: 0;
 
   // Flex Sizing Configuration
   flex: 3 1 0%; // Grow = 1, Shrink = 1, Basis = 0% (Takes 1/3rd of available width)
   min-width: 0; // Prevents flexbox overflow issues
-  border-left: 8px solid color.adjust(v.$background-dark, $lightness: 3%); // Visual separation border
+  border-left: 1px solid color.adjust(v.$background-dark, $lightness: 9%);
 
   .chartTitle {
     background-color: color.adjust(v.$primary-color, $lightness: -25%);
@@ -473,31 +659,37 @@
 .toiChartContainer {
   @include internal-flex-column;
   padding: 0;
-  height: 20%;
-  border-bottom: 8px solid color.adjust(v.$background-dark, $lightness: 3%); // Visual separation border
+  height: 180px;
+  min-height: 180px;
+  flex-shrink: 0;
+  border-bottom: 1px solid color.adjust(v.$background-dark, $lightness: 9%);
 }
 
 .ppgChartContainer {
   @include internal-flex-column;
   padding: 0;
-  height: 20%;
-
-  border-bottom: 8px solid color.adjust(v.$background-dark, $lightness: 3%); // Visual separation border
+  height: 155px;
+  min-height: 155px;
+  flex-shrink: 0;
+  border-bottom: 1px solid color.adjust(v.$background-dark, $lightness: 9%);
 }
 
 .gameScoreContainer {
   @include internal-flex-column;
   padding: 0;
-  height: 20%;
-
-  border-bottom: 8px solid color.adjust(v.$background-dark, $lightness: 3%); // Visual separation border
+  height: 155px;
+  min-height: 155px;
+  flex-shrink: 0;
+  border-bottom: 1px solid color.adjust(v.$background-dark, $lightness: 9%);
 }
 
 .rateStatBarPercentilesContainer {
   @include internal-flex-column;
-  margin-top: auto !important;
+  margin-top: 0 !important;
   padding: 0;
-  height: 20%;
+  height: 205px;
+  min-height: 205px;
+  flex-shrink: 0;
 }
 
 .rateStatBarPercentilesComponent {
@@ -509,14 +701,11 @@
   max-height: 250px;
 }
 
-// Right Column Components (Children of .rightColumnWrapper)
+// Timeframe Comparison Components
 .timeframeComparisonWrapper {
-  @include internal-flex-column; // Mixin usage when appropriate, or custom styles
-
-  align-items: center;
-  justify-content: center;
+  @include internal-flex-column;
+  min-height: 0;
   > div {
-    // Targets the TimeframeComparison component inside
     width: 100%;
   }
 }
@@ -524,9 +713,10 @@
 .combinedStatsTableContainer {
   @include internal-flex-column;
   padding: 0;
-  overflow: hidden; // Mixin handles this
-  flex: 1 1 auto; // Allows table container to grow and shrink
-  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  flex: 1 1 auto;
+  height: auto;
   background-color: color.adjust(v.$background-dark, $lightness: -1%);
 }
 
@@ -534,7 +724,7 @@
 .statsTableContainer {
   height: 100%;
   width: 100%;
-  overflow-y: auto; // Enables vertical scroll if content overflows height
+  overflow: auto;
 
   &::-webkit-scrollbar {
     height: 6px;
@@ -557,6 +747,7 @@
   width: 100%;
   height: 100%;
   table-layout: fixed;
+  min-width: 600px;
 
   // Styling variables
   $highlight-border-width: 3px; // Better visibility with radius
@@ -571,7 +762,8 @@
     font-size: v.$font-size-small * 0.95;
     height: 34px;
     font-weight: 100;
-    font-family: "roboto condensed", sans-serif;
+    font-family: v.$font-family-numbers, "Roboto Condensed", sans-serif;
+    font-variant-numeric: tabular-nums;
     vertical-align: middle;
     white-space: nowrap;
     text-align: right;
@@ -584,6 +776,7 @@
 
   td {
     height: 24px;
+    border-bottom: 1px solid rgba(v.$color-white, 0.035);
   }
 
   // Base Header Styles
@@ -931,7 +1124,7 @@
   width: 100%;
   height: 100%;
   display: flex;
-  border: 4px solid color.adjust(v.$background-dark, $lightness: 15%);
+  border: 1px solid color.adjust(v.$background-dark, $lightness: 15%);
   border-radius: v.$border-radius; // Rounded corners
   overflow: hidden; // Prevents overflow of children
   background-color: none; // Allows background to show through if needed
@@ -947,7 +1140,7 @@
   align-items: center;
   overflow: visible;
   justify-content: center;
-  transform: translateX(10%);
+  transform: translateX(24%);
   opacity: 0.25; // Semi-transparent appearance
   p {
     color: #ccc;
@@ -980,8 +1173,9 @@
   display: block;
   width: 100%;
   height: 100%;
-  transform: translateX(-20%);
-  object-fit: cover;
+  transform: none;
+  object-fit: contain;
+  object-position: left bottom;
   // filter: drop-shadow(3px 3px 0 var(--primary-color))
   //   drop-shadow(-3px 3px 0 var(--primary-color))
   //   drop-shadow(3px -3px 0 var(--primary-color))
@@ -992,7 +1186,7 @@
   //   drop-shadow(-3px 3px 0 var(--secondary-color)) drop-shadow(3px 3px 0 white)
   //   drop-shadow(-3px -3px 0 white) drop-shadow(3px -3px 0 white)
   //   drop-shadow(-3px 3px 0 white);
-  filter: drop-shadow(0px 4px 8px white);
+  filter: drop-shadow(0 3px 5px rgba(255, 255, 255, 0.38));
 }
 .headshotImage[alt*="Placeholder headshot"] {
   object-fit: contain;

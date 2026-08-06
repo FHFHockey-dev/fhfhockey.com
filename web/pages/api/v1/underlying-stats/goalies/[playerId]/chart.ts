@@ -9,7 +9,9 @@ import { buildGoalieStatsLandingChartFromState } from "lib/underlying-stats/goal
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<GoalieStatsLandingChartResponse | GoalieStatsLandingChartError>
+  res: NextApiResponse<
+    GoalieStatsLandingChartResponse | GoalieStatsLandingChartError
+  >,
 ) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
@@ -31,21 +33,20 @@ export default async function handler(
       state: parsed.state,
     });
 
-    res.setHeader("Cache-Control", "private, max-age=60, stale-while-revalidate=300");
+    res.setHeader(
+      "Cache-Control",
+      "private, max-age=60, stale-while-revalidate=300",
+    );
     return res.status(200).json({
       ...chartData,
       generatedAt: new Date().toISOString(),
     });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Unable to build goalie chart underlying stats.";
-
+    console.error("Failed to build goalie chart underlying stats", error);
     res.setHeader("Cache-Control", "no-store");
     return res.status(500).json({
       error: "Unable to build goalie chart underlying stats.",
-      issues: [message],
+      issues: ["GOALIE_CHART_UNDERLYING_STATS_UNAVAILABLE"],
     });
   }
 }

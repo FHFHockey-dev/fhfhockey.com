@@ -189,3 +189,7 @@
   - [x] 13.2 Add a regression proving scoring setup performs no upsert for an existing production row. Evaluation/workflow tests pass 21/21 and TypeScript passes (2026-07-12).
 
 - [x] 14.0 NEW: Reconcile the launch/scoring identity before activating cron or production. Owner selected option A: explicitly persisted legacy v6/v4 candidate metrics, retained zero production rows, and approved an evidence-gated no-production exception until compiled v6/v5 earns adequate in-season validation. Default zero-row v6/v5 scoring is not launch evidence (2026-07-12).
+
+- [x] 15.0 **NEW P1:** Close dynamic Wave-C lifecycle and public-failure gaps without weakening the approved no-production exception. The promotion path is now one service-only transaction with an exact receipt, and the public reader exposes a stable unavailable response instead of dependency details. The migration remains unapplied and no model, cron, serving row, or production state changed (2026-07-28).
+  - [x] 15.1 Replace the three-step promote/retire loop with candidate migration `20260728235000`: one per-model advisory lock, row locks, one-production unique index, candidate compare-and-set, rollback-safe retirement, service-role-only execution, and one exact receipt. Missing/malformed receipts fail closed in application code.
+  - [x] 15.2 Return stable HTTP 503 code `GAME_PREDICTIONS_UNAVAILABLE` from the public latest route while retaining server-only diagnostics; raw relation/proxy/dependency messages no longer cross the public boundary.

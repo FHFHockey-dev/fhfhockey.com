@@ -124,7 +124,7 @@ export default function FantraxImportPanel({
     return () => {
       active = false;
     };
-  }, [loadState]);
+  }, [config.providerName, loadState]);
 
   const defaultTeam = useMemo(
     () =>

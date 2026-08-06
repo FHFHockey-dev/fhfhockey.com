@@ -159,6 +159,16 @@ export type NormalizedSustainabilityRow = {
   z_ppshp: number | null;
   guardrail_state: string | null;
   guardrail_warnings: string[];
+  status: "ready" | "provisional";
+  score_history: Array<{ snapshot_date: string; s_100: number }>;
+  component_breakdown: Array<{
+    metric: string;
+    contrib: number;
+    z_raw: number | null;
+    z_soft: number | null;
+    r: number | null;
+    n: number | null;
+  }>;
 };
 
 export type NormalizedSustainabilityResponse = {
@@ -193,7 +203,36 @@ export const normalizeSustainabilityResponse = (
         guardrail_state: toStringOrNull(row.guardrail_state),
         guardrail_warnings: toArray<unknown>(row.guardrail_warnings).filter(
           (warning): warning is string => typeof warning === "string"
+        ),
+        status: row.status === "provisional" ? "provisional" : "ready",
+        score_history: toArray<Record<string, unknown>>(row.score_history)
+          .map((point) => ({
+            snapshot_date: toStringOrNull(point.snapshot_date) ?? "",
+            s_100: toFiniteNumber(point.s_100)
+          }))
+          .filter(
+            (point): point is { snapshot_date: string; s_100: number } =>
+              Boolean(point.snapshot_date) && point.s_100 != null
+          ),
+        component_breakdown: toArray<Record<string, unknown>>(
+          row.component_breakdown
         )
+          .map((component) => {
+            const metric = toStringOrNull(component.metric);
+            const contrib = toFiniteNumber(component.contrib);
+            if (!metric || contrib == null) return null;
+            return {
+              metric,
+              contrib,
+              z_raw: toFiniteNumber(component.z_raw),
+              z_soft: toFiniteNumber(component.z_soft),
+              r: toFiniteNumber(component.r),
+              n: toFiniteNumber(component.n)
+            };
+          })
+          .filter((component): component is NonNullable<typeof component> =>
+            Boolean(component)
+          )
       };
     })
     .filter((row): row is NormalizedSustainabilityRow => Boolean(row));

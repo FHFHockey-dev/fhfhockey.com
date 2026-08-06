@@ -132,4 +132,25 @@ describe("/api/v1/game-predictions/latest", () => {
       error: "Method not allowed",
     });
   });
+
+  it("redacts dependency details from public failures", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    fetchPublicGamePredictionsMock.mockRejectedValueOnce(
+      new Error("relation private_model_evidence does not exist"),
+    );
+    const { req, res } = createMockApiContext();
+
+    await handler(req as never, res as never);
+
+    expect(res.statusCode).toBe(503);
+    expect(res.body).toEqual({
+      success: false,
+      code: "GAME_PREDICTIONS_UNAVAILABLE",
+      error: "Unable to load game predictions",
+    });
+    expect(JSON.stringify(res.body)).not.toContain("private_model_evidence");
+    consoleError.mockRestore();
+  });
 });

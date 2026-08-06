@@ -15,6 +15,7 @@ import {
   buildPlayerStatsLandingSummarySnapshotsFromPayloadRows,
   buildPlayerStatsNativeGameParity,
   buildStoredPbpEventSequence,
+  fetchPlayerStatsLandingIdentityMaps,
   fetchSupabaseRowsForGameChunks,
   flattenPersistedSummaryRows,
   filterPlayerStatsLandingSourceGames,
@@ -31,6 +32,96 @@ describe("resolvePlayerStatsSeasonGameType", () => {
     expect(resolvePlayerStatsSeasonGameType("preSeason")).toBe(1);
     expect(resolvePlayerStatsSeasonGameType("regularSeason")).toBe(2);
     expect(resolvePlayerStatsSeasonGameType("playoffs")).toBe(3);
+  });
+});
+
+describe("fetchPlayerStatsLandingIdentityMaps", () => {
+  it("chunks large player identity filters and keeps deterministic complete reads", async () => {
+    const playerIds = Array.from({ length: 205 }, (_, index) => 9000 + index);
+    const requests: Array<{
+      table: string;
+      ids: number[];
+      from: number;
+      to: number;
+    }> = [];
+    const client = {
+      from: (table: string) => {
+        let ids: number[] = [];
+        const query: any = {
+          select: () => query,
+          in: (_column: string, nextIds: number[]) => {
+            ids = nextIds;
+            return query;
+          },
+          order: () => query,
+          range: (from: number, to: number) => {
+            requests.push({ table, ids: [...ids], from, to });
+            return Promise.resolve({
+              data:
+                table === "players"
+                  ? ids.map((id) => ({
+                      id,
+                      fullName: `Player ${id}`,
+                      position: "C",
+                    }))
+                  : ids.map((id) => ({ id, abbreviation: `T${id}` })),
+              error: null,
+            });
+          },
+        };
+        return query;
+      },
+    };
+    const bundle = {
+      games: [
+        {
+          id: 1,
+          seasonId: 20252026,
+          type: 2,
+          date: "2026-04-01",
+          startTime: "2026-04-01T00:00:00.000Z",
+          homeTeamId: 10,
+          awayTeamId: 20,
+        },
+      ],
+      eventsByGameId: new Map(),
+      shiftRowsByGameId: new Map(),
+      rosterSpotsByGameId: new Map([
+        [
+          1,
+          playerIds.map((playerId) => ({
+            player_id: playerId,
+            team_id: 10,
+            first_name: "Player",
+            last_name: String(playerId),
+          })),
+        ],
+      ]),
+      ownGoalEventIdsByGameId: new Map(),
+    };
+
+    const result = await fetchPlayerStatsLandingIdentityMaps(
+      bundle as any,
+      client as any
+    );
+
+    expect(
+      requests
+        .filter((request) => request.table === "players")
+        .map((request) => request.ids.length)
+    ).toEqual([200, 5]);
+    expect(
+      requests
+        .filter((request) => request.table === "teams")
+        .map((request) => request.ids)
+    ).toEqual([[10, 20]]);
+    expect(result.playersById.size).toBe(205);
+    expect(result.teamsById.size).toBe(2);
+    expect(
+      requests.every(
+        (request) => request.from === 0 && request.to === 999
+      )
+    ).toBe(true);
   });
 });
 

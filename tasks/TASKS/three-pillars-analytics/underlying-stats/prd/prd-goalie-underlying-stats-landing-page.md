@@ -2,9 +2,9 @@
 
 ## Document Status
 
-- Status: Draft, curated for task-list generation
-- Owner: TBD
-- Primary audience: junior developer implementing the feature and AI assistant generating the task list
+- Status: Implemented and dynamically audited (2026-07-29)
+- Owner: Underlying Stats
+- Primary audience: maintainers of the dedicated goalie surface and shared aggregation pipeline
 - Intended follow-up artifact: `tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-goalie-underlying-stats-landing-page.md`
 
 ## Current-State Audit
@@ -25,7 +25,7 @@ The current player underlying-stats system already includes goalie metrics insid
   - `web/pages/api/v1/db/update-player-underlying-stats.ts`
   - `web/pages/api/v1/db/update-player-underlying-summaries.ts`
 
-What does not exist yet is a dedicated goalie product surface with goalie-specific information architecture, routing, API naming, copy, default behavior, and validation.
+The dedicated goalie landing, detail, and chart wrappers now exist with goalie-specific routing, API naming, copy, defaults, and validation. They deliberately reuse the shared player-underlying aggregation engine rather than introducing a second metric pipeline.
 
 ## Findings
 
@@ -40,9 +40,9 @@ What does not exist yet is a dedicated goalie product surface with goalie-specif
    - rebound attempts against
    - average shot distance
    - average goal distance
-3. There is currently no dedicated goalie landing route or dedicated goalie API namespace. The current read surface is player-centric in naming and copy.
+3. Dedicated goalie landing/detail routes and a dedicated goalie API namespace now wrap the shared aggregation engine.
 4. The existing shared filter contract already supports the required game type, strength, score-state, date range, game range, and team-game range options. That means the goalie PRD should avoid inventing a second incompatible filter model.
-5. The current player page supports a `Goalies` mode, but it is not a dedicated goalie experience:
+5. The current player page retains `Goalies` mode as compatibility behavior, while the dedicated goalie routes own the goalie-first experience:
    - the route is still `playerStats`
    - the page copy is player-oriented
    - the product framing is still “players”
@@ -51,8 +51,8 @@ What does not exist yet is a dedicated goalie product surface with goalie-specif
 ## Assumptions
 
 1. The new dedicated goalie product surface should live at:
-   - landing: `pages/underlying-stats/goalieStats`
-   - detail: `pages/underlying-stats/goalieStats/{playerId}`
+   - landing: `web/pages/underlying-stats/goalieStats`
+   - detail: `web/pages/underlying-stats/goalieStats/[playerId]`
 2. The stable identifier remains the existing player identifier from the shared player system, even for goalies.
 3. The shared ingestion and summary snapshot pipeline remains canonical. No separate goalie raw ingest pipeline should be introduced.
 4. The goalie product surface should reuse the current shared metric math unless a goalie-specific formula audit later proves that a metric needs to change.
@@ -61,8 +61,8 @@ What does not exist yet is a dedicated goalie product surface with goalie-specif
 
 Build a dedicated goalie underlying-stats experience with:
 
-- a landing page at `pages/underlying-stats/goalieStats`
-- a goalie detail page at `pages/underlying-stats/goalieStats/{playerId}`
+- a landing page at `web/pages/underlying-stats/goalieStats`
+- a goalie detail page at `web/pages/underlying-stats/goalieStats/[playerId]`
 
 This must be a first-class goalie product surface, not just the current player page with `statMode=goalies` preselected.
 
@@ -115,8 +115,8 @@ The goal of this feature is to create a dedicated goalie underlying-stats surfac
 
 ### 1. Routes and Pages
 
-1. The system must provide a goalie landing page at `pages/underlying-stats/goalieStats`.
-2. The system must provide a goalie detail page at `pages/underlying-stats/goalieStats/{playerId}`.
+1. The system must provide a goalie landing page at `web/pages/underlying-stats/goalieStats`.
+2. The system must provide a goalie detail page at `web/pages/underlying-stats/goalieStats/[playerId]`.
 3. The goalie landing page must be the primary comparison surface for goalie underlying stats.
 4. The goalie detail page must be the goalie-specific drill-down surface.
 
@@ -275,7 +275,7 @@ The goal of this feature is to create a dedicated goalie underlying-stats surfac
 
 ### 8. Navigation and Detail Surface
 
-37. Every goalie name on the landing page must link to `pages/underlying-stats/goalieStats/{playerId}`.
+37. Every goalie name on the landing page must link to `web/pages/underlying-stats/goalieStats/[playerId]`.
 38. The goalie detail route must preserve the active landing-page filter context through recoverable URL state.
 39. The goalie detail page must use the same general filter model where applicable.
 40. On the goalie detail page, the landing-page `Team` filter may be replaced with `Against Specific Team` only if that matches the existing detail-surface pattern and does not weaken the goalie workflow.
@@ -317,11 +317,11 @@ The goal of this feature is to create a dedicated goalie underlying-stats surfac
 ### 13. Canonical Read Surfaces
 
 58. The dedicated goalie landing surface should expose a dedicated API route:
-   - `pages/api/v1/underlying-stats/goalies.ts`
+   - `web/pages/api/v1/underlying-stats/goalies.ts`
 59. The dedicated goalie detail surface should expose a dedicated API route:
-   - `pages/api/v1/underlying-stats/goalies/{playerId}.ts`
+   - `web/pages/api/v1/underlying-stats/goalies/[playerId].ts`
 60. If the expandable row chart pattern is reused, the dedicated goalie chart surface should expose:
-   - `pages/api/v1/underlying-stats/goalies/{playerId}/chart.ts`
+   - `web/pages/api/v1/underlying-stats/goalies/[playerId]/chart.ts`
 61. These dedicated goalie routes may delegate internally to the existing shared player-underlying aggregation code as long as the response contract is goalie-specific and stable.
 
 ### 14. Provenance and Metric Rules
@@ -349,9 +349,9 @@ The dedicated goalie PRD should assume new goalie-specific page and API wrappers
 
 ## Open Product and Engineering Decisions
 
-1. Should the initial goalie detail page be a dedicated copy and route wrapper over the current shared detail implementation, or should it ship only after the dedicated landing page is stable?
-2. Should the current player surface retain goalie mode after the dedicated goalie surface ships, or should goalie mode eventually redirect to the dedicated route?
-3. Should the dedicated goalie surface use the exact current goalie metric formulas at launch, or should a goalie-specific formula audit be a prerequisite milestone?
+1. Resolved: the goalie detail page is a dedicated route wrapper over the shared detail implementation.
+2. Resolved: the player surface retains goalie mode as compatibility behavior; the dedicated route owns goalie-first navigation.
+3. Resolved: the dedicated surface launches on the shared canonical formulas; any later formula change requires its own audit and approval.
 
 ## Success Criteria
 

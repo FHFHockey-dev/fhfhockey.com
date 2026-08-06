@@ -220,6 +220,29 @@ describe("withCronJobAudit", () => {
     expect(insertMock.mock.calls[0][0].status).toBe("success");
   });
 
+  it("can omit inferred row metrics for an observability-only report", async () => {
+    const wrapped = withCronJobAudit(
+      async (_req, res) =>
+        res.json({
+          success: true,
+          counts: { totalFailedRows: 50 },
+          warnings: {
+            partialFailureJobs: [
+              { displayName: "daily-cron-report", failedRows: 50 },
+            ],
+          },
+        }),
+      { jobName: "daily-cron-report", recordRowMetrics: false },
+    );
+
+    await wrapped(createMockReq(), createMockRes());
+
+    const row = insertMock.mock.calls[0][0];
+    expect(row.rows_affected).toBeNull();
+    expect(row.details.rowsUpserted).toBeNull();
+    expect(row.details.failedRows).toBeNull();
+  });
+
   it("surfaces a resolved Supabase audit insert error", async () => {
     const consoleErrorSpy = vi
       .spyOn(console, "error")
@@ -280,5 +303,65 @@ describe("withCronJobAudit", () => {
 
     expect(res.headersSent).toBe(true);
     expect(res.body).toEqual({ success: true, rowsAffected: 0 });
+  });
+
+  it("returns a final-audit receipt only for opted-in long-running routes", async () => {
+    const wrapped = withCronJobAudit(
+      async (_req, res) =>
+        res.json({ success: true, termination: { state: "completed" } }),
+      { jobName: "long-running-job", includeFinalAuditReceipt: true },
+    );
+    const res = createMockRes();
+
+    await wrapped(createMockReq(), res);
+
+    expect(res.body).toMatchObject({
+      success: true,
+      termination: { state: "completed" },
+      finalAudit: {
+        owner: "withCronJobAudit",
+        status: "persisted",
+      },
+    });
+    expect(insertMock.mock.calls[0][0].details.finalAudit).toEqual({
+      owner: "withCronJobAudit",
+      status: "persisted",
+    });
+    expect(insertMock.mock.calls[0][0].details.response).toContain(
+      '"finalAudit":{"owner":"withCronJobAudit","status":"persisted"}',
+    );
+  });
+
+  it("reports a failed final-audit receipt when persistence returns an error", async () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    insertMock.mockResolvedValueOnce({
+      error: { message: "audit insert unavailable" },
+    });
+    const wrapped = withCronJobAudit(
+      async (_req, res) =>
+        res.json({ success: true, termination: { state: "completed" } }),
+      { jobName: "long-running-audit-failure", includeFinalAuditReceipt: true },
+    );
+    const res = createMockRes();
+
+    await wrapped(createMockReq(), res);
+
+    expect(res.body).toMatchObject({
+      success: true,
+      finalAudit: {
+        owner: "withCronJobAudit",
+        status: "failed",
+      },
+    });
+    expect(insertMock.mock.calls[0][0].details.finalAudit).toEqual({
+      owner: "withCronJobAudit",
+      status: "persisted",
+    });
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "cron_job_audit insert failed",
+      "audit insert unavailable",
+    );
   });
 });

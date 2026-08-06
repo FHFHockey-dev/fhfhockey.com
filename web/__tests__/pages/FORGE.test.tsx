@@ -206,9 +206,6 @@ describe("FORGE landing page", () => {
       screen.getByRole("link", { name: "Command Center" }).getAttribute("href"),
     ).toBe("/forge/command-center?date=2026-03-14");
     expect(
-      screen.getByRole("link", { name: "Legacy Dashboard" }).getAttribute("href"),
-    ).toBe("/forge/dashboard?date=2026-03-14");
-    expect(
       screen.getByRole("link", { name: "See All Adds" }).getAttribute("href"),
     ).toBe("/forge/command-center?date=2026-03-14");
     expect(

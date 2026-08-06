@@ -1,17 +1,19 @@
 # PRD: Team Underlying Stats Landing Page
 
 ## Document Status
-- Status: Draft, curated for task-list generation
-- Owner: TBD
-- Primary audience: junior developer implementing the feature and AI assistant generating the task list
-- Intended follow-up artifact: `tasks/tasks-prd-team-underlying-stats-landing-page.md`
+- Status: Implemented and dynamically audited (2026-07-29)
+- Owner: Underlying Stats
+- Primary audience: maintainers of the Team Underlying Stats landing surface
+- Canonical task artifact: `tasks/TASKS/three-pillars-analytics/underlying-stats/tasks-prd-team-underlying-stats-landing-page.md`
 
 ## Introduction and Overview
 Build a production-ready team underlying-stats experience with:
-- a landing page at `pages/underlying-stats/teamStats`
-- (Optional/TBD) a team detail page at `pages/underlying-stats/teamStats/{teamId}`
+- a landing page at `web/pages/underlying-stats/teamStats`
+- a deliberately deferred team detail page at `web/pages/underlying-stats/teamStats/[teamId]`
 
 The landing page must let users compare NHL teams across Counts and Rates, season scopes, strength states, score states, and rolling windows. It will match the design and filter philosophy of the `playerStats` and `goalieStats` pages to ensure continuity.
+
+> **Current contract:** Landing-only v1 is complete. The dedicated team detail route remains out of scope unless a later product decision expands the canonical task list; the older `web/pages/teamStats/[teamAbbreviation].tsx` surface is separate legacy lineage, not this deferred route.
 
 ## Problem Statement
 While users can analyze individual player and goalie underlying metrics, there is no unified dashboard to evaluate team-level performance metrics (Counts and Rates) under specific context filters (strength, score state). A dedicated team metrics page is needed to provide this macro-level view using the exact same robust filtering system as the player and goalie pages.
@@ -34,7 +36,7 @@ While users can analyze individual player and goalie underlying metrics, there i
 ## Functional Requirements
 
 ### 1. Routes and Pages
-1. The system must provide a landing page at `pages/underlying-stats/teamStats`.
+1. The system must provide a landing page at `web/pages/underlying-stats/teamStats`.
 2. The page must share the unified UI/UX layout seen in `playerStats` and `goalieStats` (`index.tsx`).
 
 ### 2. Primary Controls
@@ -81,11 +83,11 @@ While users can analyze individual player and goalie underlying metrics, there i
 - **Scalability:** Just like the player tables, handle wide columns gracefully with horizontal scrolling and sticky identifier columns.
 
 ## Success Metrics
-1. The `pages/underlying-stats/teamStats` route is live and renders Team data accurately.
+1. The `web/pages/underlying-stats/teamStats` route is live and renders Team data accurately.
 2. Users can seamlessly switch between Counts and Rates without breaking active filters.
 3. The new backend catch-up scripts populate the bespoke team tables without degrading existing player/goalie data pipelines.
 
 ## Open Questions
-1. Do we need a dedicated `teamStats/{teamId}` detail page right now, or is the landing table sufficient for v1?
-2. What should the default sort column be? (Assuming `Points` or `xGF%` until confirmed).
-3. Should selecting a Team and an Opponent explicitly trigger a Head-to-Head query?
+1. Resolved: the landing table is the complete v1 surface; a dedicated `teamStats/[teamId]` route is deferred.
+2. Resolved: Counts defaults to `Points desc`; Rates defaults to `xGF% desc`.
+3. Resolved: Team plus Opponent narrows the same aggregate query and does not create a separate head-to-head surface.

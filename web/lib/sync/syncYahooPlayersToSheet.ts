@@ -6,12 +6,13 @@ import {
   clearTab,
   writeValues,
   formatSheet,
-  colIndexToA1
+  colIndexToA1,
 } from "../google/sheets";
 import {
   buildHeadersWithHelpers,
-  mapPlayersToRows
+  mapPlayersToRows,
 } from "../mappers/yahooPlayersToSheet";
+import { fetchAllSupabasePages } from "../supabase/pagination";
 
 export type SyncOptions = {
   tabName?: string;
@@ -56,26 +57,25 @@ export async function syncYahooPlayersToSheet(opts: SyncOptions = {}) {
     "status",
     "status_full",
     "last_updated",
-    "ownership_timeline",
-    "game_id"
+    "ownership_timeline:normalized_ownership_timeline",
+    "game_id",
   ].join(", ");
 
-  const pageSize = 1000;
-  let start = 0;
-  let all: any[] = [];
-  while (true) {
-    let page = supabase
-      .from("yahoo_players")
-      .select(selectCols)
-      .order("player_name", { ascending: true })
-      .range(start, start + pageSize - 1);
-    if (gameId) page = page.eq("game_id", Number(gameId));
-    const { data, error } = await page;
-    if (error) throw error;
-    const chunk = (data as any[]) || [];
-    all = all.concat(chunk);
-    if (chunk.length < pageSize) break;
-    start += pageSize;
+  const all = await fetchAllSupabasePages<any>(
+    ({ from, to }) => {
+      let page = supabase
+        .from("yahoo_players_with_normalized_history")
+        .select(selectCols)
+        .order("player_name", { ascending: true })
+        .order("player_key", { ascending: true })
+        .range(from, to);
+      return gameId ? page.eq("game_id", Number(gameId)) : page;
+    },
+    { pageSize: 1000 },
+  );
+
+  if (all.length === 0) {
+    throw new Error("Yahoo sheet export has no canonical player rows.");
   }
 
   const rows = mapPlayersToRows(all, helperPoints);
@@ -107,7 +107,7 @@ export async function syncYahooPlayersToSheet(opts: SyncOptions = {}) {
   await formatSheet(auth, spreadsheetId, props.sheetId!, {
     freezeHeader: true,
     hideColumnsFrom: helperStartIndex,
-    hideColumnsTo: helperEndIndex
+    hideColumnsTo: helperEndIndex,
   });
 
   return { count: rows.length };

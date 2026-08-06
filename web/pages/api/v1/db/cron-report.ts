@@ -20,6 +20,11 @@ import { type CronJobTimingRecord } from "lib/cron/timingContract";
 import { extractAuditTimingRecord } from "lib/cron/cronReportTiming";
 import { buildSqlCronTimingObservation } from "lib/cron/sqlTiming";
 import { readCronScheduleMarkdown } from "lib/cron/cronInventory";
+import adminOnly from "utils/adminOnlyMiddleware";
+import {
+  assessYahooLifecycleHealth,
+  type YahooLifecycleWarning,
+} from "lib/integrations/yahoo/lifecycleHealth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -32,6 +37,8 @@ const REPORT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const SELF_AUDIT_WRITE_GRACE_MS = 5 * 60 * 1000;
 const MATCH_WINDOW_MS = 6 * 60 * 60 * 1000;
 const MAX_UNSCHEDULED_ALERTS = 8;
+const ROUTE_AUDIT_MISSING_WARNING =
+  "Cron submission was recorded, but no route audit payload was recorded; route execution is unverified.";
 
 const SCHEDULE_ALIAS_MAP: Record<string, string[]> = {
   "update-all-wgo-skaters": [
@@ -122,7 +129,8 @@ const ROUTE_TARGET_TABLE_MAP: Record<string, string> = {
 };
 
 type NormalizedStatus = "success" | "failure" | "unknown";
-type ReportJobStatus = NormalizedStatus | "missing";
+type ReportStatus = NormalizedStatus | "disabled";
+type ReportJobStatus = ReportStatus | "missing";
 type ScheduleMethod = "GET" | "POST" | "SQL" | "UNKNOWN";
 
 type ScheduledCronJob = {
@@ -239,7 +247,7 @@ type RunDigest = {
   key: string;
   label: string;
   jobName: string;
-  status: NormalizedStatus;
+  status: ReportStatus;
   runTime: string;
   runTimeDisplay: string;
   method: string | null;
@@ -266,10 +274,12 @@ type ReportCounts = {
   auditSuccesses: number;
   auditFailures: number;
   auditUnknown: number;
+  auditDisabled: number;
   jobsOkLast: number;
   jobsFailingLast: number;
   jobsMissingLast: number;
   jobsUnknownLast: number;
+  jobsDisabledLast: number;
   unscheduledRuns: number;
   totalRowsUpserted: number;
   totalFailedRows: number;
@@ -284,6 +294,7 @@ type WarningSummary = {
   slowJobs: SlowJobWarning[];
   partialFailureJobs: Array<{ displayName: string; failedRows: number }>;
   missingObservationJobs: Array<{ displayName: string; warnings: string[] }>;
+  yahooLifecycle: YahooLifecycleWarning[];
 };
 
 type BenchmarkSummary = {
@@ -300,6 +311,29 @@ function normalizeStatus(value: unknown): NormalizedStatus {
   if (["success", "succeeded", "ok", "passed"].includes(v)) return "success";
   if (["failure", "failed", "error", "errored"].includes(v)) return "failure";
   return "unknown";
+}
+
+function isQuarantinedLegacyRoute(routePath: string | null): boolean {
+  return (
+    routePath === "/api/v1/db/update-rolling-games" ||
+    routePath === "/api/v1/db/update-power-rankings"
+  );
+}
+
+function classifyAuditStatus(row: AuditRow): ReportStatus {
+  return row.status === "failure" &&
+    row.parsed.statusCode === 410 &&
+    isQuarantinedLegacyRoute(row.parsed.routePath)
+    ? "disabled"
+    : row.status;
+}
+
+function classifyCronStatus(row: RunRow): ReportStatus {
+  const message = row.returnMessage ?? "";
+  return isQuarantinedLegacyRoute(row.routePath) &&
+    /\b410\b|legacy[ -]+.*disabled|disabled.*legacy|gone/i.test(message)
+    ? "disabled"
+    : row.status;
 }
 
 function getQueryString(req: NextApiRequest, key: string): string | null {
@@ -552,8 +586,6 @@ function collectFailureEntries(value: unknown, limit = 10): unknown[] {
         if (out.length >= limit) break;
         if (item && typeof item === "object") {
           visit(item);
-        } else if (item != null) {
-          out.push(item);
         }
       }
       return;
@@ -754,6 +786,19 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
     .map((entry) => formatFailureSample(entry))
     .filter((entry): entry is string => Boolean(entry))
     .slice(0, 3);
+  const responseStatus =
+    response && typeof response === "object" && !Array.isArray(response)
+      ? (response as Record<string, unknown>).status
+      : null;
+  const rowsUpserted =
+    responseStatus === "skipped_external_feed_unavailable"
+      ? (getDirectNumericField(response, [
+          "rowsUpserted",
+          "rows_upserted",
+          "processed",
+          "succeeded",
+        ]) ?? 0)
+      : toFiniteNumber(obj.rowsUpserted) ?? inferRowsUpserted(response);
 
   return {
     timing,
@@ -770,8 +815,7 @@ function parseAuditDetails(details: unknown): ParsedAuditDetails {
     skaterRowsProcessed,
     skaterFreshnessFailureCount,
     dataQualityWarningCount: countWarningEntries(response),
-    rowsUpserted:
-      toFiniteNumber(obj.rowsUpserted) ?? inferRowsUpserted(response),
+    rowsUpserted,
     failedRows: toFiniteNumber(obj.failedRows) ?? inferFailedRows(response),
     failedRowSamples,
   };
@@ -1069,14 +1113,21 @@ function candidateMatchesSchedule(
   if (!aliasMatch) return false;
 
   const candidateMethod = candidate.method?.toUpperCase() ?? null;
-  const exactJobNameMatch = candidate.jobName === job.name;
   if (
     job.method !== "SQL" &&
     candidateMethod &&
     candidateMethod !== "UNKNOWN" &&
     candidateMethod !== job.method &&
-    !exactJobNameMatch
+    // A legacy GET scheduler may be converted to POST by an audited route
+    // wrapper. Preserve that one-way compatibility, but never let a GET
+    // probe replace a scheduled POST writer result.
+    !(job.method === "GET" && candidateMethod === "POST")
   ) {
+    // A direct probe can reuse the scheduled job name while using a
+    // different method (for example, an unauthorized GET against a POST
+    // writer). The method contract remains authoritative even when the name
+    // matches exactly; otherwise the probe would replace the real scheduled
+    // result in the daily report.
     return false;
   }
 
@@ -1098,8 +1149,10 @@ function statusSortValue(status: ReportJobStatus): number {
       return 1;
     case "unknown":
       return 2;
-    default:
+    case "disabled":
       return 3;
+    default:
+      return 4;
   }
 }
 
@@ -1120,7 +1173,7 @@ function buildRunDigestFromAudit(
     key: row.id,
     label: row.parsed.route ?? row.jobName,
     jobName: row.jobName,
-    status: row.status,
+    status: classifyAuditStatus(row),
     runTime: row.time,
     runTimeDisplay: new Date(row.time).toLocaleString(),
     method: row.parsed.method,
@@ -1162,7 +1215,7 @@ function buildRunDigestFromCron(
     key: row.id,
     label: row.route ?? row.jobName,
     jobName: row.jobName,
-    status: row.status,
+    status: classifyCronStatus(row),
     runTime: row.time,
     runTimeDisplay: new Date(row.time).toLocaleString(),
     method: row.method === "UNKNOWN" ? null : row.method,
@@ -1301,7 +1354,7 @@ function collectMissingObservationWarnings(job: {
     !awaitingPostGraceRun &&
     !awaitingCurrentReportSelfAudit
   ) {
-    warnings.push("Cron invoked the route, but no audit payload was recorded.");
+    warnings.push(ROUTE_AUDIT_MISSING_WARNING);
   }
 
   if (job.lastStatus !== "missing" && job.lastDurationMs == null) {
@@ -1509,7 +1562,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           ? runDataAvailable
           : runDataAvailable && auditDataAvailable;
 
-      const lastStatus: ReportJobStatus =
+      const rawLastStatus: NormalizedStatus | "missing" =
         !lastAudit && !lastRun
           ? hasFullCoverageForMissing
             ? "missing"
@@ -1517,6 +1570,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           : preferAudit
             ? (lastAudit?.status ?? "unknown")
             : (lastRun?.status ?? "unknown");
+      const lastStatus: ReportJobStatus =
+        lastAudit && preferAudit
+          ? classifyAuditStatus(lastAudit)
+          : lastRun
+            ? classifyCronStatus(lastRun)
+            : rawLastStatus;
 
       const lastStatusSource: JobSummary["lastStatusSource"] =
         !lastAudit && !lastRun
@@ -1619,18 +1678,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       if (lastStatus === "missing") {
         notes.push("No cron or audit entry matched this scheduled slot.");
       }
+      if (lastStatus === "disabled") {
+        notes.push(
+          "Quarantined legacy route returned HTTP 410; remove its stale scheduler reference before route retirement.",
+        );
+      }
       if (
         matchingRuns.length > 0 &&
         matchingAudits.length === 0 &&
         job.method !== "SQL" &&
         auditDataAvailable &&
-        missingObservationWarnings.includes(
-          "Cron invoked the route, but no audit payload was recorded.",
-        )
+        missingObservationWarnings.includes(ROUTE_AUDIT_MISSING_WARNING)
       ) {
-        notes.push(
-          "Cron invoked the route, but no audit payload was recorded.",
-        );
+        notes.push(ROUTE_AUDIT_MISSING_WARNING);
       }
       if (!lastAudit && !lastRun && !hasFullCoverageForMissing) {
         notes.push(
@@ -1828,9 +1888,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         job.auditRunsCount === 0 &&
         job.method !== "SQL" &&
         auditDataAvailable &&
-        job.missingObservationWarnings.includes(
-          "Cron invoked the route, but no audit payload was recorded.",
-        ),
+        job.missingObservationWarnings.includes(ROUTE_AUDIT_MISSING_WARNING),
     )
     .map((job) => job.displayName);
 
@@ -1840,6 +1898,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       displayName: job.displayName,
       warnings: job.missingObservationWarnings,
     }));
+  const yahooLifecycle = assessYahooLifecycleHealth({
+    observations: auditRows
+      .filter(
+        (row) =>
+          row.parsed.routePath === "/api/v1/db/update-yahoo-players" ||
+          row.jobName === "update-yahoo-players",
+      )
+      .map((row) => ({
+        time: row.time,
+        status: row.status,
+        response: row.parsed.response,
+      })),
+    nowMs: now.getTime(),
+  });
 
   const benchmarkSummary: BenchmarkSummary = {
     annotatedJobCount: jobSummaries.filter(
@@ -1864,6 +1936,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     slowJobs: WARN_SLOW,
     partialFailureJobs: WARN_PARTIAL_FAILURE,
     missingObservationJobs,
+    yahooLifecycle,
   };
 
   const counts: ReportCounts = {
@@ -1872,9 +1945,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       (job) => job.runsCount > 0 || job.auditRunsCount > 0,
     ).length,
     auditRuns: auditRows.length,
-    auditSuccesses: auditRows.filter((row) => row.status === "success").length,
-    auditFailures: auditRows.filter((row) => row.status === "failure").length,
-    auditUnknown: auditRows.filter((row) => row.status === "unknown").length,
+    auditSuccesses: auditRows.filter(
+      (row) => classifyAuditStatus(row) === "success",
+    ).length,
+    auditFailures: auditRows.filter(
+      (row) => classifyAuditStatus(row) === "failure",
+    ).length,
+    auditUnknown: auditRows.filter(
+      (row) => classifyAuditStatus(row) === "unknown",
+    ).length,
+    auditDisabled: auditRows.filter(
+      (row) => classifyAuditStatus(row) === "disabled",
+    ).length,
     jobsOkLast: jobSummaries.filter((job) => job.lastStatus === "success")
       .length,
     jobsFailingLast: jobSummaries.filter((job) => job.lastStatus === "failure")
@@ -1883,6 +1965,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       .length,
     jobsUnknownLast: jobSummaries.filter((job) => job.lastStatus === "unknown")
       .length,
+    jobsDisabledLast: jobSummaries.filter(
+      (job) => job.lastStatus === "disabled",
+    ).length,
     unscheduledRuns: unscheduledRuns.length,
     totalRowsUpserted: jobSummaries.reduce(
       (acc, job) => acc + (job.rowsUpsertedLast ?? job.rowsAffectedLast ?? 0),
@@ -1931,7 +2016,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
               ? `❌ Daily Cron Report — ${counts.jobsFailingLast} failing, ${counts.jobsMissingLast} missing`
               : counts.jobsUnknownLast > 0
                 ? `⚠️ Daily Cron Report — ${counts.jobsUnknownLast} unknown`
-                : `✅ Daily Cron Report — ${counts.jobsOkLast}/${counts.scheduledJobs} jobs ok`,
+                : counts.jobsDisabledLast > 0
+                  ? `⚠️ Daily Cron Report — ${counts.jobsDisabledLast} quarantined`
+                  : `✅ Daily Cron Report — ${counts.jobsOkLast}/${counts.scheduledJobs} jobs ok`,
         react: CronAuditEmail({
           audits: auditBriefings,
           sinceDate: since,
@@ -1941,6 +2028,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             auditSuccesses: counts.auditSuccesses,
             auditFailures: counts.auditFailures,
             auditUnknown: counts.auditUnknown,
+            auditDisabled: counts.auditDisabled,
             slowJobDenotation: SLOW_JOB_DENOTATION,
             slowMsThreshold: SLOW_JOB_THRESHOLD_MS,
             annotatedJobCount: auditRunDigests.filter(
@@ -2017,4 +2105,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   });
 }
 
-export default withCronJobAudit(handler, { jobName: "daily-cron-report" });
+export default withCronJobAudit(adminOnly(handler as any), {
+  jobName: "daily-cron-report",
+  // The report is an observability response, not a row-producing writer.
+  // Do not infer its nested warning counts as rows affected by the report
+  // itself; that creates a self-reinforcing partial-failure entry.
+  recordRowMetrics: false,
+});

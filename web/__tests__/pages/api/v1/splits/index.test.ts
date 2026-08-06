@@ -148,4 +148,37 @@ describe("/api/v1/splits", () => {
       includeLanding: false,
     });
   });
+
+  it("returns bounded validation details for invalid input", async () => {
+    buildSplitsSurfaceMock.mockRejectedValue(
+      new Error("Unknown team abbreviation.")
+    );
+    const res = createMockRes();
+
+    await handler(
+      { method: "GET", query: { team: "INVALID" } } as any,
+      res
+    );
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toEqual({
+      error: "Unable to build splits surface.",
+      issues: ["Unknown team abbreviation."],
+    });
+  });
+
+  it("redacts dependency failures behind a stable unavailable response", async () => {
+    buildSplitsSurfaceMock.mockRejectedValue(
+      new Error("permission denied for table private_source")
+    );
+    const res = createMockRes();
+
+    await handler({ method: "GET", query: {} } as any, res);
+
+    expect(res.statusCode).toBe(503);
+    expect(res.body).toEqual({
+      error: "Unable to build splits surface.",
+    });
+    expect(JSON.stringify(res.body)).not.toContain("private_source");
+  });
 });

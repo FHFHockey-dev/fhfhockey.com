@@ -1,10 +1,74 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
+
+const fromMock = vi.hoisted(() => vi.fn());
+
+vi.mock("lib/supabase", () => ({
+  default: { from: fromMock }
+}));
+
+vi.mock("lib/NHL/server", () => ({
+  getCurrentSeason: vi.fn()
+}));
 import { lineCombos_2023020951_2023020970 } from "./LineCombinationsData";
 import {
   aggregateSkaterToiSeconds,
   convertToLines,
-  getLineChanges
+  getLineCombinations,
+  getLineChanges,
+  resolveLineCombinationSourceContext
 } from "../utilities";
+
+describe("getLineCombinations", () => {
+  test("filters and orders through the selected game relationship alias", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const query: Record<string, any> = {};
+    query.select = vi.fn(() => query);
+    query.eq = vi.fn(() => query);
+    query.order = vi.fn(() => query);
+    query.limit = vi.fn(() => query);
+    query.returns = vi.fn(() => query);
+    query.throwOnError = vi.fn(() =>
+      Promise.reject(new Error("stop after relationship query"))
+    );
+    fromMock.mockReturnValue(query);
+
+    await expect(getLineCombinations(22, 20252026)).rejects.toThrow(
+      "stop after relationship query"
+    );
+
+    expect(query.eq).toHaveBeenCalledWith("game.seasonId", 20252026);
+    expect(query.order).toHaveBeenCalledWith("game(startTime)", {
+      ascending: false
+    });
+    errorSpy.mockRestore();
+  });
+});
+
+describe("resolveLineCombinationSourceContext", () => {
+  test("returns the exact requested source identity", () => {
+    expect(
+      resolveLineCombinationSourceContext({
+        requestedTeamId: 59,
+        requestedSeasonId: 20242025,
+        sourceTeamId: 59,
+        sourceSeasonId: 20242025
+      })
+    ).toEqual({ teamId: 59, seasonId: 20242025 });
+  });
+
+  test.each([
+    { sourceTeamId: 68, sourceSeasonId: 20242025 },
+    { sourceTeamId: 59, sourceSeasonId: 20252026 }
+  ])("rejects mismatched source context %#", (source) => {
+    expect(() =>
+      resolveLineCombinationSourceContext({
+        requestedTeamId: 59,
+        requestedSeasonId: 20242025,
+        ...source
+      })
+    ).toThrow("Line combination source context does not match the request.");
+  });
+});
 
 describe("aggregateSkaterToiSeconds", () => {
   test("sums tracked game TOI for each player", () => {

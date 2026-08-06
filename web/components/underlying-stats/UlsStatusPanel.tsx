@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 
 import type { UlsRouteStatus, UlsStatusSnapshot } from "lib/underlying-stats/ulsRouteStatus";
 
@@ -12,7 +12,7 @@ type UlsStatusPanelProps = {
 function formatSnapshotDate(value: string | null): string {
   if (!value) return "Awaiting first snapshot";
   try {
-    return format(new Date(`${value}T00:00:00.000Z`), "MMM d, yyyy");
+    return format(parseISO(value), "MMM d, yyyy");
   } catch {
     return value;
   }

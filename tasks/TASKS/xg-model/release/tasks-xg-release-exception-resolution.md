@@ -46,3 +46,5 @@
 - [x] 4.0 Record the final training-use release verdict. The dated v2 verdict is `release gate satisfied`, and baseline tasks resumed through completion (verified 2026-07-12).
   - [x] 4.1 Record a new dated release-gate verdict based on the updated release artifact.
   - [x] 4.2 If and only if the verdict is satisfied, resume `tasks/tasks-xg-baseline-options.md` at task `2.0`.
+
+- [x] NEW 5.0 **P2 dynamic-audit artifact portability:** Preserve the historical v2 artifact unchanged while preventing future release reports from serializing machine-specific evidence paths. The output contract now requires repository-relative references; the runner converts in-repository absolute paths, preserves repository-relative paths, and rejects external machine-local paths. Focused validation/parity/reference tests pass 3 files/21 tests, the value-free CLI help path, TypeScript, scoped lint, new-file formatting, and diff integrity pass (2026-07-28).

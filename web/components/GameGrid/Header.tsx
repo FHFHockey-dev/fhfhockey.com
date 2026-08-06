@@ -2,9 +2,9 @@
 
 import { Dispatch, JSX, SetStateAction, useState, useEffect } from "react";
 import styles from "./GameGrid.module.scss";
+import switchStyles from "./Switch/Switch.module.scss";
 
 import { addDays, formatDate, getDayStr } from "./utils/date-func";
-import Switch from "./Switch";
 import Toggle from "./Toggle";
 import { DAY_ABBREVIATION, TeamDataWithTotals } from "lib/NHL/types";
 
@@ -46,6 +46,20 @@ type SortKey = {
   ascending: boolean;
 };
 
+function SortIndicator({ ascending }: { ascending: boolean }) {
+  return (
+    <span
+      className={`${switchStyles.switch} ${
+        ascending ? switchStyles.unchecked : switchStyles.checked
+      }`}
+      data-sort-direction={ascending ? "ascending" : "descending"}
+      aria-hidden="true"
+    >
+      <span className={switchStyles.arrow} />
+    </span>
+  );
+}
+
 // Function to determine intensity based on game count
 const getIntensity = (numGames: number): string => {
   if (numGames <= 7) return "high"; // Green (Fewest games = highest intensity day for streaming)
@@ -62,7 +76,7 @@ const MOBILE_DAY_ABBR: Record<string, string> = {
   THU: "Th",
   FRI: "F",
   SAT: "S",
-  SUN: "Su"
+  SUN: "Su",
 };
 
 function Header({
@@ -76,27 +90,34 @@ function Header({
   gamesPerDay,
   hasPreseason,
   hidePreseason,
-  setHidePreseason
+  setHidePreseason,
 }: HeaderProps) {
   const [currentSortKey, setCurrentSortKey] = useState<SortKey | null>(null);
   const isMobile = useIsMobile();
 
   const handleSortToggle = (
     key: "teamName" | "totalOffNights" | "totalGamesPlayed" | "weekScore",
-    defaultAscending: boolean
+    defaultAscending: boolean,
   ) => {
-    setCurrentSortKey((prev) => {
-      if (prev && prev.key === key) {
-        // Toggle the ascending value
-        const newSortKey = { key, ascending: !prev.ascending };
-        setSortKeys([newSortKey]); // Replace sortKeys with the new sort key
-        return newSortKey;
-      } else {
-        const newSortKey = { key, ascending: defaultAscending };
-        setSortKeys([newSortKey]); // Replace sortKeys with the new sort key
-        return newSortKey;
-      }
-    });
+    const nextSortKey: SortKey =
+      currentSortKey?.key === key
+        ? { key, ascending: !currentSortKey.ascending }
+        : { key, ascending: defaultAscending };
+
+    setCurrentSortKey(nextSortKey);
+    setSortKeys([nextSortKey]);
+  };
+
+  const handleSortKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    key: SortKey["key"],
+    defaultAscending: boolean,
+  ) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      if (event.repeat) return;
+      handleSortToggle(key, defaultAscending);
+    }
   };
 
   const statsColumns = extended
@@ -108,32 +129,36 @@ function Header({
               <span className={styles.desktopText}>GP</span>
 
               <span className={styles.switchContainer}>
-                <Switch
-                  checked={
-                    currentSortKey?.key === "totalGamesPlayed" &&
-                    currentSortKey.ascending
+                <SortIndicator
+                  ascending={
+                    currentSortKey?.key === "totalGamesPlayed"
+                      ? currentSortKey.ascending
+                      : false
                   }
                 />
               </span>
             </div>
           ),
-          id: "totalGamesPlayed"
+          id: "totalGamesPlayed",
+          sortLabel: "games played",
         },
         {
           label: (
             <div className={styles.headerLabel}>
               <span className={styles.desktopText}>Off</span>
               <span className={styles.switchContainer}>
-                <Switch
-                  checked={
-                    currentSortKey?.key === "totalOffNights" &&
-                    currentSortKey.ascending
+                <SortIndicator
+                  ascending={
+                    currentSortKey?.key === "totalOffNights"
+                      ? currentSortKey.ascending
+                      : false
                   }
                 />
               </span>
             </div>
           ),
-          id: "totalOffNights"
+          id: "totalOffNights",
+          sortLabel: "off-night games",
         },
         {
           label: (
@@ -144,17 +169,19 @@ function Header({
                 Score
               </span>
               <span className={styles.switchContainer}>
-                <Switch
-                  checked={
-                    currentSortKey?.key === "weekScore" &&
-                    currentSortKey.ascending
+                <SortIndicator
+                  ascending={
+                    currentSortKey?.key === "weekScore"
+                      ? currentSortKey.ascending
+                      : false
                   }
                 />
               </span>
             </div>
           ),
-          id: "weekScore"
-        }
+          id: "weekScore",
+          sortLabel: "week score",
+        },
       ];
 
   const dayColumns = getDayColumns(
@@ -163,7 +190,7 @@ function Header({
     setExcludedDays,
     extended,
     gamesPerDay,
-    isMobile
+    isMobile,
   );
 
   return (
@@ -172,8 +199,6 @@ function Header({
         <th
           scope="col"
           aria-label="Team"
-          role="button"
-          tabIndex={0}
           aria-sort={
             currentSortKey?.key === "teamName"
               ? currentSortKey.ascending
@@ -182,13 +207,6 @@ function Header({
               : undefined
           }
           className={styles.sortableHeader}
-          onClick={() => handleSortToggle("teamName", true)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              handleSortToggle("teamName", true);
-            }
-          }}
         >
           <div className={styles.teamHeaderContent}>
             {!extended && hasPreseason && setHidePreseason && (
@@ -201,19 +219,29 @@ function Header({
                 <Toggle
                   size="small"
                   checked={!!hidePreseason}
+                  aria-label="Hide preseason games"
                   onChange={() => setHidePreseason((v) => !v)}
                 />
               </span>
             )}
-            <span>Team</span>
-            <div className={styles.teamSortSwitch}>
-              <Switch
-                checked={
-                  currentSortKey?.key === "teamName" && currentSortKey.ascending
-                }
-                aria-label="Sort by team"
-              />
-            </div>
+            <button
+              type="button"
+              className={`${styles.sortAction} ${styles.teamSortAction}`}
+              aria-label="Sort by team"
+              onClick={() => handleSortToggle("teamName", true)}
+              onKeyDown={(event) => handleSortKeyDown(event, "teamName", true)}
+            >
+              <span>Team</span>
+              <span className={styles.teamSortSwitch}>
+                <SortIndicator
+                  ascending={
+                    currentSortKey?.key === "teamName"
+                      ? currentSortKey.ascending
+                      : true
+                  }
+                />
+              </span>
+            </button>
           </div>
         </th>
         {dayColumns.map((col) => (
@@ -241,24 +269,25 @@ function Header({
               className={
                 [
                   styles.sortableHeader,
-                  col.id === "totalGamesPlayed" ? styles.statsStart : undefined
+                  col.id === "totalGamesPlayed" ? styles.statsStart : undefined,
                 ]
                   .filter(Boolean)
                   .join(" ") || undefined
               }
-              role="button"
-              tabIndex={0}
-              onClick={() =>
-                handleSortToggle(col.id as SortKey["key"], false)
-              }
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  handleSortToggle(col.id as SortKey["key"], false);
-                }
-              }}
             >
-              {col.label}
+              <button
+                type="button"
+                className={styles.sortAction}
+                aria-label={`Sort by ${col.sortLabel}`}
+                onClick={() =>
+                  handleSortToggle(col.id as SortKey["key"], false)
+                }
+                onKeyDown={(event) =>
+                  handleSortKeyDown(event, col.id as SortKey["key"], false)
+                }
+              >
+                {col.label}
+              </button>
             </th>
           );
         })}
@@ -273,7 +302,7 @@ function getDayColumns(
   setExcludedDays: React.Dispatch<React.SetStateAction<DAY_ABBREVIATION[]>>,
   extended: boolean,
   gamesPerDay: number[],
-  isMobile?: boolean
+  isMobile?: boolean,
 ): { label: JSX.Element | string; id: string; intensity?: string }[] {
   const startDate = new Date(start);
 
@@ -317,6 +346,7 @@ function getDayColumns(
               <Toggle
                 size="small"
                 checked={!excludedDays.includes(day)}
+                aria-label={`Include ${String(day)} games`}
                 onChange={onChange}
               />
             </div>
@@ -324,7 +354,7 @@ function getDayColumns(
         </div>
       ),
       id: day, // Use day abbreviation as ID
-      intensity: intensity // Include intensity
+      intensity: intensity, // Include intensity
     });
     current = addDays(current, 1);
   }

@@ -5,6 +5,7 @@ import supabase from "lib/supabase/server";
 import { teamsInfo } from "lib/teamsInfo";
 import Fetch from "lib/cors-fetch";
 import { buildNhlStatsScoringGameTypeCayenne } from "lib/NHL/playoffs";
+import adminOnly from "utils/adminOnlyMiddleware";
 
 // Helper to fetch current season info
 async function fetchCurrentSeasonInfo() {
@@ -385,4 +386,4 @@ const handler = async (
   }
 };
 
-export default withCronJobAudit(handler);
+export default withCronJobAudit(adminOnly(handler as any));

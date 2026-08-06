@@ -1,5 +1,7 @@
 # PRD: WiGO Charts Optimization
 
+**Status (2026-07-29):** Implemented and dynamically audited. `/wigoCharts` is the canonical WiGO page; its shared dashboard hook, stat metadata, percentile/rating readers, section components, and React Query cache keys are authoritative. Absolute links below preserve the original planning record; repository-relative paths in the paired task list are canonical.
+
 ## 1. Introduction / Overview
 The current WiGO Charts experience in [wigoCharts.tsx](/Users/tim/Code/fhfhockey.com/web/pages/wigoCharts.tsx) delivers a wide set of player evaluation views, but the page has grown into a tightly coupled client-side dashboard with repeated data fetching, inconsistent stat normalization, duplicated desktop/mobile layouts, and chart components that independently recompute overlapping player-season context.
 
@@ -173,12 +175,13 @@ This PRD is based on an audit of the current upstream WiGO path, including:
 - Validate a representative set of players across positions and usage profiles.
 - Confirm mobile and desktop parity for section order, data, and interactions.
 
-## 11. Open Questions
-- Should WiGO ratings respect the same `minGp` slider as rate percentiles, or should ratings use a separate internal threshold model?
-- Do we want percentile and rating heavy calculations to remain client-side if cache reuse is good enough, or should they move behind a dedicated API immediately?
-- Should the comparison drilldown chart continue using Recharts while the rest of WiGO uses Chart.js, or should WiGO converge on one charting library?
-- Is the existing `CategoryCoverageChart` percentile source the intended long-term percentile source for WiGO, or should it also be aligned to the new WiGO percentile data contract?
-- Should WiGO keep the current tab names and section grouping on mobile, or should mobile be reorganized after the shared-section refactor is complete?
+## 11. Resolved Decisions
+- Ratings honor the active `minGp` threshold and include the selected player for low-GP regression.
+- Heavy percentile/rating cohorts remain client-side behind complete, season-keyed React Query caches; a new API or materialized view is not required by this initiative.
+- Existing chart libraries may coexist behind shared WiGO shells and formatting contracts; library convergence is not a release requirement.
+- `CategoryCoverageChart` remains an explicitly separate legacy percentile source used by WiGO Trends and `/charts`; it does not define the canonical rate-percentile contract.
+- Mobile retains the Overview, Trends, Percentiles, and Comparison tabs over the same shared section components used by desktop.
+- Zero-consumer `WigoLineChart.js`, `WigoDoughnutChart.js`, `wgoRadarChart.js`, and the unused percentile-rank compatibility API remain historical-only cleanup candidates; this audit does not authorize deletion.
 
 ## 12. Relevant Files
 - [wigoCharts.tsx](/Users/tim/Code/fhfhockey.com/web/pages/wigoCharts.tsx)

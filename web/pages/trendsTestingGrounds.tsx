@@ -28,21 +28,19 @@ const LIMIT_DEFAULT = 25;
 
 export default function TrendsTestingGrounds() {
   const [selectedMetric, setSelectedMetric] = useState<string>(
-    PLAYER_TREND_METRICS[0]?.key ?? ""
+    PLAYER_TREND_METRICS[0]?.key ?? "",
   );
   const [playerIdInput, setPlayerIdInput] = useState<string>("");
   const [limit, setLimit] = useState<number>(LIMIT_DEFAULT);
   const [trends, setTrends] = useState<TrendMetricRow[]>([]);
   const [fetchState, setFetchState] = useState<RequestState>("idle");
   const [fetchError, setFetchError] = useState<string>("");
-  const [rebuildState, setRebuildState] = useState<RequestState>("idle");
-  const [rebuildError, setRebuildError] = useState<string>("");
-  const [startDateInput, setStartDateInput] = useState<string>("2023-01-01");
 
   const metricOptions = useMemo(() => {
-    return [...PLAYER_TREND_METRICS].sort((a, b) =>
-      a.metricType.localeCompare(b.metricType) ||
-      a.label.localeCompare(b.label)
+    return [...PLAYER_TREND_METRICS].sort(
+      (a, b) =>
+        a.metricType.localeCompare(b.metricType) ||
+        a.label.localeCompare(b.label),
     );
   }, []);
 
@@ -69,7 +67,7 @@ export default function TrendsTestingGrounds() {
 
     try {
       const response = await fetch(
-        `/api/v1/trends/player-trends?${params.toString()}`
+        `/api/v1/trends/player-trends?${params.toString()}`,
       );
       const payload = await response.json();
 
@@ -82,33 +80,6 @@ export default function TrendsTestingGrounds() {
     } catch (error: any) {
       setFetchState("error");
       setFetchError(error.message ?? "Unexpected error");
-    }
-  };
-
-  const handleRebuild = async () => {
-    setRebuildState("loading");
-    setRebuildError("");
-
-    try {
-      const response = await fetch("/api/v1/trends/player-trends", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          startDate: startDateInput || "2023-01-01"
-        })
-      });
-      const payload = await response.json();
-
-      if (!response.ok || !payload.success) {
-        throw new Error(payload.message || "Failed to rebuild trends");
-      }
-
-      setRebuildState("success");
-    } catch (error: any) {
-      setRebuildError(error.message ?? "Unexpected error");
-      setRebuildState("error");
     }
   };
 
@@ -125,7 +96,7 @@ export default function TrendsTestingGrounds() {
             marginBottom: "2rem",
             padding: "1.5rem",
             border: "1px solid #ddd",
-            borderRadius: "8px"
+            borderRadius: "8px",
           }}
         >
           <h2 style={{ marginBottom: "1rem" }}>Fetch Player Trend Metrics</h2>
@@ -184,7 +155,7 @@ export default function TrendsTestingGrounds() {
                 border: "none",
                 borderRadius: "6px",
                 cursor: isFetchDisabled ? "not-allowed" : "pointer",
-                opacity: fetchState === "loading" ? 0.7 : 1
+                opacity: fetchState === "loading" ? 0.7 : 1,
               }}
             >
               {fetchState === "loading" ? "Loading..." : "Fetch Trends"}
@@ -203,68 +174,21 @@ export default function TrendsTestingGrounds() {
             marginBottom: "2rem",
             padding: "1.5rem",
             border: "1px solid #ddd",
-            borderRadius: "8px"
+            borderRadius: "8px",
           }}
         >
-          <h2 style={{ marginBottom: "1rem" }}>Rebuild Trend Metrics</h2>
-          <p style={{ marginBottom: "1rem", color: "#555" }}>
-            Triggers the API to recompute rolling trends from the start date you
-            provide. This can take a little while for the full dataset.
+          <h2 style={{ marginBottom: "1rem" }}>Trend Rebuilds</h2>
+          <p style={{ marginBottom: 0, color: "#555" }}>
+            This page is read-only. Current-season repairs run through the
+            authenticated server-to-server rebuild endpoint.
           </p>
-          <div
-            style={{
-              display: "flex",
-              gap: "1rem",
-              flexWrap: "wrap",
-              alignItems: "center"
-            }}
-          >
-            <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              Start Date (inclusive)
-              <input
-                type="date"
-                value={startDateInput}
-                onChange={(event) => setStartDateInput(event.target.value)}
-                style={{ padding: "0.5rem", fontSize: "1rem" }}
-              />
-            </label>
-
-            <button
-              type="button"
-              onClick={handleRebuild}
-              disabled={rebuildState === "loading"}
-              style={{
-                padding: "0.75rem 1rem",
-                fontSize: "1rem",
-                backgroundColor: "#1864ab",
-                color: "#fff",
-                border: "none",
-                borderRadius: "6px",
-                cursor: rebuildState === "loading" ? "not-allowed" : "pointer",
-                opacity: rebuildState === "loading" ? 0.7 : 1
-              }}
-            >
-              {rebuildState === "loading" ? "Running..." : "Rebuild Trends"}
-            </button>
-          </div>
-
-          {rebuildState === "success" && (
-            <p style={{ marginTop: "1rem", color: "#2f9e44" }}>
-              Rebuild job triggered successfully.
-            </p>
-          )}
-          {rebuildState === "error" && (
-            <p style={{ marginTop: "1rem", color: "#c92a2a" }}>
-              {rebuildError || "Failed to trigger rebuild"}
-            </p>
-          )}
         </section>
 
         <section
           style={{
             padding: "1.5rem",
             border: "1px solid #ddd",
-            borderRadius: "8px"
+            borderRadius: "8px",
           }}
         >
           <h2 style={{ marginBottom: "1rem" }}>
@@ -280,7 +204,7 @@ export default function TrendsTestingGrounds() {
                 style={{
                   width: "100%",
                   borderCollapse: "collapse",
-                  fontSize: "0.95rem"
+                  fontSize: "0.95rem",
                 }}
               >
                 <thead>
@@ -298,7 +222,9 @@ export default function TrendsTestingGrounds() {
                 </thead>
                 <tbody>
                   {trends.map((row) => (
-                    <tr key={`${row.player_id}-${row.metric_key}-${row.game_date}`}>
+                    <tr
+                      key={`${row.player_id}-${row.metric_key}-${row.game_date}`}
+                    >
                       <td style={tdStyle}>{row.game_date}</td>
                       <td style={tdStyle}>{formatNumber(row.raw_value)}</td>
                       <td style={tdStyle}>{formatNumber(row.average_value)}</td>
@@ -307,7 +233,9 @@ export default function TrendsTestingGrounds() {
                       <td style={tdStyle}>
                         {formatNumber(row.rolling_avg_10)}
                       </td>
-                      <td style={tdStyle}>{formatNumber(row.variance_value)}</td>
+                      <td style={tdStyle}>
+                        {formatNumber(row.variance_value)}
+                      </td>
                       <td style={tdStyle}>{formatNumber(row.std_dev_value)}</td>
                       <td style={tdStyle}>{row.sample_size}</td>
                     </tr>
@@ -336,11 +264,11 @@ const thStyle: CSSProperties = {
   textAlign: "left",
   borderBottom: "1px solid #ccc",
   padding: "0.5rem",
-  backgroundColor: "#f8f9fa"
+  backgroundColor: "#f8f9fa",
 };
 
 const tdStyle: CSSProperties = {
   padding: "0.5rem",
   borderBottom: "1px solid #eee",
-  whiteSpace: "nowrap"
+  whiteSpace: "nowrap",
 };

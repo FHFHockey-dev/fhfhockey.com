@@ -13,11 +13,11 @@ import {
   type SkaterTrendCategoryDefinition,
   type SkaterTrendCategoryId,
   type SkaterWindowSize,
-  SKATER_WINDOW_OPTIONS
+  SKATER_WINDOW_OPTIONS,
 } from "lib/trends/skaterMetricConfig";
 import {
   buildRequestedDateServingState,
-  type RequestedDateServingState
+  type RequestedDateServingState,
 } from "lib/dashboard/freshness";
 
 dotenv.config({ path: "./../../../.env.local" });
@@ -38,8 +38,6 @@ type PlayerTrendRow = {
   rolling_avg_3: number | null;
   rolling_avg_5: number | null;
   rolling_avg_10: number | null;
-  season_id: number | null;
-  position_code: string | null;
 };
 
 type PlayerTrendPoint = {
@@ -93,12 +91,19 @@ interface SkaterTrendResponse {
   };
   positionGroup: SkaterPositionGroup;
   limit: number;
+  seriesGames: number;
   windowSize: SkaterWindowSize;
   samplePolicy: {
     minimumGames: number;
     lowSamplePercentiles: "shrink_to_neutral";
     suppressLowSampleRankDelta: true;
   };
+  coverage: {
+    categoryCount: number;
+    playerCount: number;
+    partial: boolean;
+  };
+  warnings: string[];
   categories: Record<
     SkaterTrendCategoryId,
     Omit<CategoryResult, "includedPlayerIds">
@@ -123,11 +128,33 @@ const RESPONSE_TTL_MS = 60_000;
 const RECENT_FALLBACK_MAX_DAYS = 3;
 const BLOCKED_FALLBACK_MIN_DAYS = 14;
 const MIN_TREND_SAMPLE_GAMES = 10;
+const DEFAULT_SERIES_GAMES = 40;
+const MAX_SERIES_GAMES = 82;
 const responseCache = new Map<
   string,
   { expiresAt: number; payload: SkaterTrendResponse }
 >();
 const inFlight = new Map<string, Promise<SkaterTrendResponse>>();
+
+function logRequestCompletion(
+  req: NextApiRequest,
+  requestStartedAt: number,
+  cacheStatus: "memory-hit" | "in-flight" | "miss",
+  metricFetchMs?: number | null,
+) {
+  if (process.env.VERCEL !== "1") return;
+  console.info(
+    JSON.stringify({
+      level: "info",
+      message: "skater-power request completed",
+      route: "/api/v1/trends/skater-power",
+      requestId: req.headers["x-vercel-id"] ?? null,
+      cacheStatus,
+      ...(metricFetchMs == null ? {} : { metricFetchMs }),
+      durationMs: Date.now() - requestStartedAt,
+    }),
+  );
+}
 
 function parseWindowSize(input: unknown): SkaterWindowSize {
   const candidate = Number(Array.isArray(input) ? input[0] : input);
@@ -145,9 +172,17 @@ function parseLimit(input: unknown): number {
   return DEFAULT_SKATER_LIMIT;
 }
 
+function parseSeriesGames(input: unknown): number {
+  const candidate = Number(Array.isArray(input) ? input[0] : input);
+  if (Number.isFinite(candidate) && candidate > 0) {
+    return Math.min(Math.round(candidate), MAX_SERIES_GAMES);
+  }
+  return DEFAULT_SERIES_GAMES;
+}
+
 function parsePositionGroup(input: unknown): SkaterPositionGroup {
   const value = String(
-    Array.isArray(input) ? input[0] : input || ""
+    Array.isArray(input) ? input[0] : input || "",
   ).toLowerCase();
   if (value === "defense" || value === "defencemen" || value === "d") {
     return "defense";
@@ -158,7 +193,10 @@ function parsePositionGroup(input: unknown): SkaterPositionGroup {
   return "forward";
 }
 
-function diffDateOnlyDays(laterDate: string, earlierDate: string): number | null {
+function diffDateOnlyDays(
+  laterDate: string,
+  earlierDate: string,
+): number | null {
   const laterTs = Date.parse(`${laterDate}T00:00:00.000Z`);
   const earlierTs = Date.parse(`${earlierDate}T00:00:00.000Z`);
   if (!Number.isFinite(laterTs) || !Number.isFinite(earlierTs)) return null;
@@ -177,7 +215,7 @@ function buildSkaterServingContract(input: {
     strategy:
       input.requestedDate === input.resolvedDate
         ? "requested_date"
-        : "latest_available_with_data"
+        : "latest_available_with_data",
   });
 
   if (!base.fallbackApplied || gapDays == null || gapDays <= 0) {
@@ -186,7 +224,7 @@ function buildSkaterServingContract(input: {
       gapDays: gapDays ?? 0,
       severity: "none",
       status: "requested_date",
-      message: null
+      message: null,
     };
   }
 
@@ -196,7 +234,7 @@ function buildSkaterServingContract(input: {
       gapDays,
       severity: "warn",
       status: "fallback_recent",
-      message: `Trend movement is serving the nearest available scope date (${input.resolvedDate}), ${gapDays} day${gapDays === 1 ? "" : "s"} behind the requested dashboard date.`
+      message: `Trend movement is serving the nearest available scope date (${input.resolvedDate}), ${gapDays} day${gapDays === 1 ? "" : "s"} behind the requested dashboard date.`,
     };
   }
 
@@ -206,7 +244,7 @@ function buildSkaterServingContract(input: {
       gapDays,
       severity: "error",
       status: "blocked",
-      message: `Trend movement fallback is materially stale: requested ${input.requestedDate}, but latest available scope is ${input.resolvedDate} (${gapDays} days old). Treat this module as degraded until fresher trend rows exist.`
+      message: `Trend movement fallback is materially stale: requested ${input.requestedDate}, but latest available scope is ${input.resolvedDate} (${gapDays} days old). Treat this module as degraded until fresher trend rows exist.`,
     };
   }
 
@@ -215,14 +253,14 @@ function buildSkaterServingContract(input: {
     gapDays,
     severity: "warn",
     status: "degraded",
-    message: `Trend movement is using stale fallback scope (${input.resolvedDate}), ${gapDays} days behind the requested dashboard date.`
+    message: `Trend movement is using stale fallback scope (${input.resolvedDate}), ${gapDays} days behind the requested dashboard date.`,
   };
 }
 
 function computeTrailingAverage(
   list: PlayerTrendPoint[],
   index: number,
-  sampleSize: number
+  sampleSize: number,
 ): number | null {
   const values = list
     .slice(Math.max(0, index - sampleSize + 1), index + 1)
@@ -238,7 +276,7 @@ function computeTrailingAverage(
 
 function computePercentiles(
   entries: Array<{ playerId: number; value: number }>,
-  higherIsBetter: boolean
+  higherIsBetter: boolean,
 ): Map<number, number> {
   const result = new Map<number, number>();
   if (entries.length === 0) return result;
@@ -260,7 +298,7 @@ function computePercentiles(
 
 function stabilizePercentileForSample(
   rawPercentile: number,
-  gamesPlayed: number
+  gamesPlayed: number,
 ): { percentile: number; sampleConfidence: SampleConfidence } {
   if (gamesPlayed >= MIN_TREND_SAMPLE_GAMES) {
     return { percentile: rawPercentile, sampleConfidence: "qualified" };
@@ -268,12 +306,12 @@ function stabilizePercentileForSample(
 
   const sampleWeight = Math.max(
     0,
-    Math.min(1, gamesPlayed / MIN_TREND_SAMPLE_GAMES)
+    Math.min(1, gamesPlayed / MIN_TREND_SAMPLE_GAMES),
   );
   const percentile = 50 + (rawPercentile - 50) * sampleWeight;
   return {
     percentile: Math.round(percentile * 100) / 100,
-    sampleConfidence: "low"
+    sampleConfidence: "low",
   };
 }
 
@@ -281,7 +319,8 @@ function buildCategoryResult(
   rows: PlayerTrendRow[],
   category: SkaterTrendCategoryDefinition,
   windowSize: SkaterWindowSize,
-  limit: number
+  limit: number,
+  seriesGames: number,
 ): CategoryResult {
   const byPlayer = new Map<number, PlayerTrendPoint[]>();
 
@@ -311,7 +350,7 @@ function buildCategoryResult(
         row.rolling_avg_10 === null || row.rolling_avg_10 === undefined
           ? null
           : Number(row.rolling_avg_10),
-      gp: 0
+      gp: 0,
     });
   });
 
@@ -325,7 +364,7 @@ function buildCategoryResult(
 
   const maxGames = Array.from(byPlayer.values()).reduce(
     (max, list) => Math.max(max, list.length),
-    0
+    0,
   );
 
   const series: Record<string, SeriesPoint[]> = {};
@@ -345,7 +384,8 @@ function buildCategoryResult(
           value = point.rollingAvg5 ?? computeTrailingAverage(list, gp - 1, 5);
           break;
         case 10:
-          value = point.rollingAvg10 ?? computeTrailingAverage(list, gp - 1, 10);
+          value =
+            point.rollingAvg10 ?? computeTrailingAverage(list, gp - 1, 10);
           break;
         case 20:
           value = computeTrailingAverage(list, gp - 1, 20);
@@ -371,7 +411,7 @@ function buildCategoryResult(
         gp,
         percentile: stabilized.percentile,
         rawPercentile,
-        sampleConfidence: stabilized.sampleConfidence
+        sampleConfidence: stabilized.sampleConfidence,
       });
     });
   }
@@ -403,13 +443,17 @@ function buildCategoryResult(
                 case 10:
                   return (
                     latestPoint.rollingAvg10 ??
-                    computeTrailingAverage(sourceList, sourceList.length - 1, 10)
+                    computeTrailingAverage(
+                      sourceList,
+                      sourceList.length - 1,
+                      10,
+                    )
                   );
                 case 20:
                   return computeTrailingAverage(
                     sourceList,
                     sourceList.length - 1,
-                    20
+                    20,
                   );
                 case 1:
                 default:
@@ -427,9 +471,9 @@ function buildCategoryResult(
         rank: 0,
         previousRank: null,
         delta: 0,
-        latestValue
+        latestValue,
       };
-    }
+    },
   );
 
   rankings.sort((a, b) => b.percentile - a.percentile);
@@ -475,14 +519,14 @@ function buildCategoryResult(
   allowedIds.forEach((playerId) => {
     const key = String(playerId);
     if (series[key]) {
-      limitedSeries[key] = series[key];
+      limitedSeries[key] = series[key].slice(-seriesGames);
     }
   });
 
   return {
     series: limitedSeries,
     rankings: limitedRankings,
-    includedPlayerIds: Array.from(allowedIds)
+    includedPlayerIds: Array.from(allowedIds),
   };
 }
 
@@ -491,21 +535,29 @@ async function fetchMetricRows(
   seasonId: number,
   seasonStart: string,
   asOfDate: string,
-  positions: string[] | undefined
+  windowSize: SkaterWindowSize,
+  positions: string[] | undefined,
 ): Promise<PlayerTrendRow[]> {
   const rows: PlayerTrendRow[] = [];
+  const rollingColumn =
+    windowSize === 3
+      ? ", rolling_avg_3"
+      : windowSize === 5
+        ? ", rolling_avg_5"
+        : windowSize === 10
+          ? ", rolling_avg_10"
+          : "";
+  const selectColumns = `player_id, game_date, raw_value${rollingColumn}`;
   for (let from = 0; ; from += PAGE_SIZE) {
     let query = supabase
       .from("player_trend_metrics")
-      .select(
-        "player_id, game_date, raw_value, rolling_avg_3, rolling_avg_5, rolling_avg_10, season_id, position_code"
-      )
+      .select(selectColumns)
       .eq("metric_key", category.metricKey)
       .eq("season_id", seasonId)
       .gte("game_date", seasonStart)
       .lte("game_date", asOfDate)
+      .order("game_date", { ascending: false })
       .order("player_id", { ascending: true })
-      .order("game_date", { ascending: true })
       .range(from, from + PAGE_SIZE - 1);
 
     if (positions && positions.length > 0) {
@@ -515,13 +567,13 @@ async function fetchMetricRows(
     const { data, error } = await query;
     if (error) {
       throw new Error(
-        `Failed to load trend data for ${category.metricKey}: ${error.message}`
+        `Failed to load trend data for ${category.metricKey}: ${error.message}`,
       );
     }
     if (!data || data.length === 0) {
       break;
     }
-    rows.push(...(data as PlayerTrendRow[]));
+    rows.push(...(data as unknown as PlayerTrendRow[]));
     if (data.length < PAGE_SIZE) {
       break;
     }
@@ -560,7 +612,7 @@ async function fetchPlayerMetadata(playerIds: number[]) {
         player.team_id !== null && player.team_id !== undefined
           ? (getTeamAbbreviationById(player.team_id) ?? null)
           : null,
-      imageUrl: player.image_url ?? null
+      imageUrl: player.image_url ?? null,
     };
   });
   return map;
@@ -568,7 +620,7 @@ async function fetchPlayerMetadata(playerIds: number[]) {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
@@ -576,19 +628,26 @@ export default async function handler(
   }
 
   try {
+    const requestStartedAt = Date.now();
     const limit = parseLimit(req.query.limit);
+    const seriesGames = parseSeriesGames(req.query.seriesGames);
     const windowSize = parseWindowSize(req.query.window);
     const positionGroup = parsePositionGroup(req.query.position);
     const requestedDateRaw = String(
-      Array.isArray(req.query.date) ? req.query.date[0] : req.query.date ?? ""
+      Array.isArray(req.query.date)
+        ? req.query.date[0]
+        : (req.query.date ?? ""),
     ).trim();
     const requestedDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDateRaw)
       ? requestedDateRaw
       : new Date().toISOString().slice(0, 10);
-    const cacheKey = `${positionGroup}:${windowSize}:${limit}:${requestedDate}`;
+    const cacheKey =
+      `${positionGroup}:${windowSize}:${limit}:` +
+      `${seriesGames}:${requestedDate}`;
     const nowMs = Date.now();
     const cached = responseCache.get(cacheKey);
     if (cached && cached.expiresAt > nowMs) {
+      logRequestCompletion(req, requestStartedAt, "memory-hit");
       res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=60");
       return res.status(200).json(cached.payload);
     }
@@ -596,10 +655,12 @@ export default async function handler(
     const pending = inFlight.get(cacheKey);
     if (pending) {
       const payload = await pending;
+      logRequestCompletion(req, requestStartedAt, "in-flight");
       res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=60");
       return res.status(200).json(payload);
     }
 
+    let metricFetchMs: number | null = null;
     const loadPromise = (async () => {
       const season = await fetchCurrentSeason();
       const seasonId = season.id;
@@ -610,14 +671,23 @@ export default async function handler(
       const positions = SKATER_POSITION_GROUP_MAP[positionGroup];
       let latestIncludedDate: string | null = null;
 
-      for (const category of SKATER_TREND_CATEGORIES) {
-        const rows = await fetchMetricRows(
+      const metricFetchStartedAt = Date.now();
+      const categoryRows = await Promise.all(
+        SKATER_TREND_CATEGORIES.map(async (category) => ({
           category,
-          seasonId,
-          seasonStart,
-          requestedDate,
-          positions
-        );
+          rows: await fetchMetricRows(
+            category,
+            seasonId,
+            seasonStart,
+            requestedDate,
+            windowSize,
+            positions,
+          ),
+        })),
+      );
+      metricFetchMs = Date.now() - metricFetchStartedAt;
+
+      for (const { category, rows } of categoryRows) {
         for (const row of rows) {
           if (
             typeof row.game_date === "string" &&
@@ -627,22 +697,34 @@ export default async function handler(
             latestIncludedDate = row.game_date;
           }
         }
-        const result = buildCategoryResult(rows, category, windowSize, limit);
+        const result = buildCategoryResult(
+          rows,
+          category,
+          windowSize,
+          limit,
+          seriesGames,
+        );
         categories[category.id] = {
           series: result.series,
-          rankings: result.rankings
+          rankings: result.rankings,
         };
         result.includedPlayerIds.forEach((id) => playerIdsNeeded.add(id));
       }
 
       const playerMetadata = await fetchPlayerMetadata(
-        Array.from(playerIdsNeeded)
+        Array.from(playerIdsNeeded),
       );
       const resolvedDate = latestIncludedDate ?? requestedDate;
       const serving = buildSkaterServingContract({
         requestedDate,
-        resolvedDate
+        resolvedDate,
       });
+      const warnings = [
+        ...(serving.message ? [serving.message] : []),
+        ...(playerIdsNeeded.size === 0
+          ? ["No qualified skater trend rows are available for this scope."]
+          : []),
+      ];
 
       const response: SkaterTrendResponse = {
         seasonId,
@@ -653,19 +735,27 @@ export default async function handler(
         serving,
         positionGroup,
         limit,
+        seriesGames,
         windowSize,
         samplePolicy: {
           minimumGames: MIN_TREND_SAMPLE_GAMES,
           lowSamplePercentiles: "shrink_to_neutral",
-          suppressLowSampleRankDelta: true
+          suppressLowSampleRankDelta: true,
         },
+        coverage: {
+          categoryCount: SKATER_TREND_CATEGORIES.length,
+          playerCount: playerIdsNeeded.size,
+          partial:
+            playerIdsNeeded.size === 0 || serving.status !== "requested_date",
+        },
+        warnings,
         categories: categories as SkaterTrendResponse["categories"],
-        playerMetadata
+        playerMetadata,
       };
 
       responseCache.set(cacheKey, {
         payload: response,
-        expiresAt: Date.now() + RESPONSE_TTL_MS
+        expiresAt: Date.now() + RESPONSE_TTL_MS,
       });
       return response;
     })();
@@ -674,24 +764,30 @@ export default async function handler(
     const response = await loadPromise;
     inFlight.delete(cacheKey);
 
+    logRequestCompletion(req, requestStartedAt, "miss", metricFetchMs);
     res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=60");
     return res.status(200).json(response);
   } catch (error: any) {
     const limit = parseLimit(req.query.limit);
+    const seriesGames = parseSeriesGames(req.query.seriesGames);
     const windowSize = parseWindowSize(req.query.window);
     const positionGroup = parsePositionGroup(req.query.position);
     const requestedDateRaw = String(
-      Array.isArray(req.query.date) ? req.query.date[0] : req.query.date ?? ""
+      Array.isArray(req.query.date)
+        ? req.query.date[0]
+        : (req.query.date ?? ""),
     ).trim();
     const requestedDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDateRaw)
       ? requestedDateRaw
       : new Date().toISOString().slice(0, 10);
-    const cacheKey = `${positionGroup}:${windowSize}:${limit}:${requestedDate}`;
+    const cacheKey =
+      `${positionGroup}:${windowSize}:${limit}:` +
+      `${seriesGames}:${requestedDate}`;
     inFlight.delete(cacheKey);
     console.error("skater-power API error", error);
     return res.status(500).json({
       message: "Failed to compute skater trends.",
-      error: error?.message ?? "Unknown error"
+      error: "SKATER_TRENDS_UNAVAILABLE",
     });
   }
 }

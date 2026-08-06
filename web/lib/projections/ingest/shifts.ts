@@ -13,6 +13,7 @@ export type NhleShiftRow = {
   teamAbbrev: string;
   firstName: string;
   lastName: string;
+  shiftNumber: number;
   period: number;
   startTime: string;
   endTime: string;
@@ -23,6 +24,15 @@ export type NhleShiftRow = {
 type ShiftchartsResponse = {
   total: number;
   data: NhleShiftRow[];
+};
+
+export type NhleShiftChartsRawPayload = ShiftchartsResponse & {
+  source: "json-api";
+};
+
+export type NhleShiftChartsSnapshot = {
+  rows: NhleShiftRow[];
+  rawPayload: NhleShiftChartsRawPayload;
 };
 
 export type ShiftStrengthUpsert = Pick<
@@ -45,7 +55,17 @@ export type ShiftStrengthUpsert = Pick<
   | "updated_at"
 >;
 
-type Strength = "es" | "pp" | "pk";
+export type Strength = "es" | "pp" | "pk";
+
+export type ShiftRelationshipStrengthSegment = {
+  playerId: number;
+  shiftNumber: number;
+  period: number;
+  startTime: string;
+  endTime: string;
+  duration: string;
+  strength: Strength;
+};
 
 type SituationDigits = {
   awayGoalie: number;
@@ -284,24 +304,100 @@ function overlapSeconds(
   return Math.max(0, end - start);
 }
 
-export async function fetchAllNhleShiftChartsForGame(
+export async function fetchAllNhleShiftChartsSnapshotForGame(
   gameId: number,
-): Promise<NhleShiftRow[]> {
+): Promise<NhleShiftChartsSnapshot> {
+  if (!Number.isSafeInteger(gameId) || gameId <= 0) {
+    throw new Error("Invalid NHL shift-chart game identity");
+  }
   const pageSize = 1000;
   let start = 0;
   let rows: NhleShiftRow[] = [];
-  let total = Infinity;
+  let declaredTotal: number | null = null;
 
-  while (start < total) {
+  while (declaredTotal == null || start < declaredTotal) {
     const url = `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${gameId}&start=${start}&limit=${pageSize}`;
     const resp = await nhleFetchJson<ShiftchartsResponse>(url);
-    total = resp.total ?? 0;
-    rows = rows.concat(resp.data ?? []);
-    start += pageSize;
-    if (!resp.data || resp.data.length === 0) break;
+    if (
+      !Number.isSafeInteger(resp.total) ||
+      resp.total < 0 ||
+      resp.total > 20_000 ||
+      !Array.isArray(resp.data) ||
+      resp.data.length > pageSize ||
+      (declaredTotal != null && resp.total !== declaredTotal)
+    ) {
+      throw new Error(`Invalid NHL shift pagination metadata for game ${gameId}`);
+    }
+    declaredTotal = resp.total;
+    if (
+      rows.length + resp.data.length > declaredTotal ||
+      (rows.length + resp.data.length < declaredTotal &&
+        resp.data.length < pageSize)
+    ) {
+      throw new Error(`Incomplete NHL shift pagination for game ${gameId}`);
+    }
+    rows = rows.concat(resp.data);
+    start += resp.data.length;
+    if (resp.data.length === 0) break;
   }
 
-  return rows;
+  if (declaredTotal == null || rows.length !== declaredTotal) {
+    throw new Error(`Incomplete NHL shift pagination for game ${gameId}`);
+  }
+  const identities = new Set<string>();
+  for (const row of rows) {
+    if (
+      row.gameId !== gameId ||
+      !Number.isSafeInteger(row.playerId) ||
+      !Number.isSafeInteger(row.teamId) ||
+      !Number.isSafeInteger(row.shiftNumber) ||
+      !Number.isSafeInteger(row.period) ||
+      !Number.isSafeInteger(row.typeCode) ||
+      row.shiftNumber < 0 ||
+      row.period < 0 ||
+      typeof row.startTime !== "string" ||
+      typeof row.endTime !== "string"
+    ) {
+      throw new Error(`Invalid NHL shift source row for game ${gameId}`);
+    }
+    const identity = [
+      row.gameId,
+      row.playerId,
+      row.teamId,
+      row.shiftNumber,
+      row.period,
+      row.startTime,
+      row.endTime,
+      row.duration ?? "",
+      row.typeCode,
+    ].join(":");
+    if (identities.has(identity)) {
+      throw new Error(`Duplicate NHL shift source row for game ${gameId}`);
+    }
+    identities.add(identity);
+  }
+
+  const rawPayload: NhleShiftChartsRawPayload = {
+    total: rows.length,
+    data: rows,
+    source: "json-api",
+  };
+  const normalizedRows = [...rows].sort(
+    (left, right) =>
+      left.typeCode - right.typeCode ||
+      left.playerId - right.playerId ||
+      left.period - right.period ||
+      left.shiftNumber - right.shiftNumber ||
+      left.startTime.localeCompare(right.startTime) ||
+      left.endTime.localeCompare(right.endTime),
+  );
+  return { rows: normalizedRows, rawPayload };
+}
+
+export async function fetchAllNhleShiftChartsForGame(
+  gameId: number,
+): Promise<NhleShiftRow[]> {
+  return (await fetchAllNhleShiftChartsSnapshotForGame(gameId)).rows;
 }
 
 export async function upsertShiftTotalsForGame(gameId: number): Promise<{
@@ -541,6 +637,92 @@ export function buildShiftStrengthUpserts(
     );
   }
   return upserts;
+}
+
+/**
+ * Split every validated shift interval against the same complete PBP situation
+ * timeline used for strength totals. This keeps relationship PP/ES arrays on
+ * the input manifest's PBP generation instead of a separately scheduled table.
+ */
+export function buildShiftRelationshipStrengthSegments(
+  gameId: number,
+  pbp: Awaited<ReturnType<typeof fetchPbpGame>>,
+  shiftRows: readonly NhleShiftRow[],
+): ShiftRelationshipStrengthSegment[] {
+  // Reuse the strict identity, final-PBP, both-team, clock, and full-coverage
+  // checks before exposing any relationship segments.
+  buildShiftStrengthUpserts(gameId, pbp, shiftRows, "1970-01-01T00:00:00.000Z");
+
+  const homeTeamId = pbp.homeTeam.id;
+  const awayTeamId = pbp.awayTeam.id;
+  const timelinesByPeriod = new Map<number, PeriodTimeline>();
+  const output: ShiftRelationshipStrengthSegment[] = [];
+
+  const intervalRows = shiftRows
+    .filter((row) => row.typeCode === 517)
+    .slice()
+    .sort(
+      (left, right) =>
+        left.playerId - right.playerId ||
+        left.period - right.period ||
+        left.shiftNumber - right.shiftNumber ||
+        left.startTime.localeCompare(right.startTime),
+    );
+  for (const shift of intervalRows) {
+    let timeline = timelinesByPeriod.get(shift.period);
+    if (!timeline) {
+      timeline = buildSituationTimelineForPeriod(
+        pbp.plays,
+        shift.period,
+        gameId,
+      );
+      timelinesByPeriod.set(shift.period, timeline);
+    }
+    const start = requireShiftClock(shift.startTime, "start");
+    const rawEnd = requireShiftClock(shift.endTime, "end");
+    const duration = requireShiftClock(shift.duration, "duration");
+    const end = rawEnd === 0 ? start + duration : rawEnd;
+
+    for (const segment of timeline.segments) {
+      const segmentStart = Math.max(start, segment.start);
+      const segmentEnd = Math.min(end, segment.end);
+      if (segmentEnd <= segmentStart) continue;
+      const strength = strengthForTeam(
+        segment.digits,
+        shift.teamId,
+        homeTeamId,
+        awayTeamId,
+      );
+      const previous = output.at(-1);
+      if (
+        previous &&
+        previous.playerId === shift.playerId &&
+        previous.shiftNumber === shift.shiftNumber &&
+        previous.period === shift.period &&
+        previous.strength === strength &&
+        requireShiftClock(previous.endTime, "segment end") === segmentStart
+      ) {
+        previous.endTime = formatSecondsToClock(segmentEnd);
+        previous.duration = formatSecondsToClock(
+          requireShiftClock(previous.duration, "segment duration") +
+            segmentEnd -
+            segmentStart,
+        );
+        continue;
+      }
+      output.push({
+        playerId: shift.playerId,
+        shiftNumber: shift.shiftNumber,
+        period: shift.period,
+        startTime: formatSecondsToClock(segmentStart),
+        endTime: formatSecondsToClock(segmentEnd),
+        duration: formatSecondsToClock(segmentEnd - segmentStart),
+        strength,
+      });
+    }
+  }
+
+  return output;
 }
 
 export async function upsertShiftTotalsForGameFromPbp(

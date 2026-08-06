@@ -8,7 +8,7 @@
 - `web/lib/supabase/Upserts/fetchWGOskaterStats.js` - Skater game-log stats used for per-game/player aggregates.
 - `web/lib/supabase/Upserts/fetchWGOgoalieStats.js` - Goalie game-log stats for goalie aggregates and starter modeling.
 - `web/lib/supabase/Upserts/fetchPbP.ts` - Play-by-play ingestion (`pbp_games`, `pbp_plays`) for event-derived features.
-- `web/lib/supabase/Upserts/supabaseShifts.js` - Shift/TOI ingestion (key for ES/PP/PK splits + line inference).
+- `web/lib/projections/ingest/shifts.ts` - Canonical Shift/TOI ingestion (key for ES/PP/PK splits + line inference); the dormant standalone `supabaseShifts.js` helper was retired under B-DRM NEW 22.
 - `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` - Existing rolling feature builder patterns (recent vs baseline, strength configs).
 - `web/pages/api/v1/db/update-start-chart-projections.ts` - Existing “projection job” pattern (cron + upsert) to reuse/extend.
 - `web/lib/cron/withCronJobAudit.ts` - Cron job audit/logging wrapper for scheduled pipeline runs.

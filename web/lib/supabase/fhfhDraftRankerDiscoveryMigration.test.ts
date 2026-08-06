@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 const migrationPath = path.resolve(
   process.cwd(),
-  "../supabase/migrations/20260715055259_create_draft_ranker_discovery_materialization.sql",
+  "../supabase/migration-archive/pre-baseline-20260716/authoritative-root/20260715055259_create_draft_ranker_discovery_materialization.sql",
 );
 const migrationSql = fs.readFileSync(migrationPath, "utf8");
 
