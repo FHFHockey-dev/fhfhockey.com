@@ -1,0 +1,1461 @@
+{
+  "schemaVersion": 1,
+  "auditDate": "2026-08-01",
+  "scope": "Repository evidence only; no live Supabase data was queried and no statistical architecture was selected.",
+  "migrationAuthority": {
+    "active": "supabase/migrations",
+    "historicalOrDesignEvidence": [
+      "migrations",
+      "web/supabase/migrations",
+      "web/sql",
+      "supabase/migration-archive"
+    ]
+  },
+  "classificationVocabulary": [
+    "actual_trained_predictive_model",
+    "weighted_projection_formula",
+    "heuristic_probability_model",
+    "display_only_transformation",
+    "rolling_stat_calculation",
+    "sustainability_score",
+    "ranking_formula",
+    "simulation",
+    "feature_pipeline",
+    "evaluation_pipeline",
+    "serving_adapter",
+    "unused_experiment"
+  ],
+  "statusVocabulary": [
+    "production",
+    "partial",
+    "experimental",
+    "quarantined",
+    "duplicated",
+    "stale",
+    "dead",
+    "historical_evidence"
+  ],
+  "systems": [
+    {
+      "id": "PP-001",
+      "name": "NHL projection-input ingest and deterministic materialization",
+      "classification": ["feature_pipeline"],
+      "language": ["TypeScript", "SQL"],
+      "ownerSurface": "FORGE data foundation",
+      "status": "production",
+      "paths": [
+        "web/lib/projections/ingest/",
+        "web/lib/projections/derived/",
+        "web/lib/projections/relationshipMaterialization.ts",
+        "web/pages/api/v1/db/ingest-projection-inputs.ts",
+        "web/pages/api/v1/db/build-projection-derived-v2.ts",
+        "supabase/migrations/20260720105524_add_projection_materialization_transactions.sql"
+      ],
+      "semantics": {
+        "population": "mixed NHL games, skaters and goalies",
+        "target": "none; raw and normalized feature inputs",
+        "horizon": "completed games plus bounded schedule context",
+        "vintage": "raw payload fetched_at and hash; normalized generation receipt",
+        "strengthState": "event and shift situations normalized",
+        "output": "rows and JSON payloads",
+        "distribution": "none"
+      },
+      "data": {
+        "inputs": ["NHL Gamecenter play-by-play", "NHL Gamecenter shifts", "game and player relationships"],
+        "providers": ["NHL Gamecenter"],
+        "historicalCoverage": "Unknown without live inspection; repository proves bounded repair tooling, not complete seasons."
+      },
+      "runtime": {
+        "writers": ["ingest-projection-inputs", "build-projection-derived-v2", "relationship materializer"],
+        "outputs": ["nhl_api_game_payloads_raw", "snapshot heads", "normalized PBP/shift tables", "forge_player_game_strength", "forge_team_game_strength", "forge_goalie_game"],
+        "jobs": ["daily run-rolling-forge-pipeline stages"],
+        "consumers": ["rolling-player pipeline", "FORGE projection runner", "xG feature pipeline"]
+      },
+      "method": {
+        "training": "none",
+        "inference": "versioned parsing and transactional materialization",
+        "evaluation": "hash, fingerprint, row-count, completeness and relationship receipts"
+      },
+      "governance": {
+        "tests": ["web/lib/projections/ingest/*.test.ts", "web/lib/projections/derived/*.test.ts", "web/lib/supabase/projectionMaterializationMigration.test.ts"],
+        "artifactHandling": "append-only raw JSON plus hashes and current snapshot heads",
+        "versioning": "parser, materializer, relationship and derived versions are explicit",
+        "asOfBehavior": "Strongest repository pattern for immutable source evidence; schedule and several non-NHL inputs remain mutable.",
+        "leakageRisk": "Low for raw NHL payload preservation; downstream joins can still introduce current-state data.",
+        "unresolved": ["live season coverage", "source revision retention", "whether every normalized generation can be replayed byte-for-byte"]
+      },
+      "disposition": "refactor"
+    },
+    {
+      "id": "PP-002",
+      "name": "Rolling player game metrics",
+      "classification": ["rolling_stat_calculation", "feature_pipeline"],
+      "language": ["TypeScript", "SQL"],
+      "ownerSurface": "FORGE, rankings and analytics shared features",
+      "status": "production",
+      "paths": [
+        "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+        "web/lib/supabase/Upserts/rollingMetricSourceUnitContract.ts",
+        "web/pages/api/v1/db/update-rolling-player-averages.ts",
+        "web/lib/projections/queries/skater-queries.ts"
+      ],
+      "semantics": {
+        "population": "skaters, forwards and defensemen",
+        "target": "historical rolling counts, rates, deployment and context",
+        "horizon": "last 3/5/10/20 and related season/career windows",
+        "vintage": "event date/endDate, not a complete source-availability timestamp",
+        "strengthState": "all situations plus optional ES/PP/PK fields",
+        "output": "counts, rates, percentages and support payloads",
+        "distribution": "none"
+      },
+      "data": {
+        "inputs": ["WGO player games and totals", "NST enrichments", "NHL-derived relationships", "line and PP context"],
+        "providers": ["WGO", "Natural Stat Trick", "NHL Gamecenter"],
+        "historicalCoverage": "Live coverage unknown; repository documents a known WGO repair slice for 2023-04-01 through 2023-04-06."
+      },
+      "runtime": {
+        "writers": ["update-rolling-player-averages"],
+        "outputs": ["rolling_player_game_metrics", "rolling_player_metric_support_payloads", "statsUpdateStatus"],
+        "jobs": ["daily run-rolling-forge-pipeline stage"],
+        "consumers": ["FORGE skater stage", "contextual rankings", "sustainability", "trends", "dashboard"]
+      },
+      "method": {
+        "training": "none",
+        "inference": "chronological window aggregation and deterministic rate transforms",
+        "evaluation": "coverage, unit-contract and validation diagnostics"
+      },
+      "governance": {
+        "tests": ["web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts", "web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.test.ts", "web/__tests__/pages/api/v1/db/update-rolling-player-averages.test.ts"],
+        "artifactHandling": "mutable database rows; no frozen feature artifact",
+        "versioning": "field contracts exist but no complete feature-set version on each row",
+        "asOfBehavior": "Chronological query bounds exist; mutable WGO/NST sources and rewrites prevent reliable historical replay.",
+        "leakageRisk": "High if used in historical backtests without source availability/revision snapshots.",
+        "unresolved": ["complete provider coverage", "late corrections", "source-specific availability timestamps", "duplicate window ownership"]
+      },
+      "disposition": "extract"
+    },
+    {
+      "id": "PP-003",
+      "name": "FORGE skater and team projection formula",
+      "classification": ["weighted_projection_formula"],
+      "language": ["TypeScript", "SQL"],
+      "ownerSurface": "FORGE and Start Chart",
+      "status": "production",
+      "paths": [
+        "web/lib/projections/run-forge-projections.ts",
+        "web/lib/projections/stages/skater-stage.ts",
+        "web/lib/projections/calculators/skater-adjustments.ts",
+        "web/lib/projections/calculators/team-context-adjustments.ts",
+        "web/lib/projections/constants/projection-weights.ts",
+        "web/pages/api/v1/db/run-projection-v2.ts"
+      ],
+      "semantics": {
+        "population": "skaters; forwards and defensemen share the event core",
+        "target": "raw goals, assists, shots, hits, blocks and ES/PP/PK opportunity",
+        "horizon": "1 to 10 scheduled team games; production daily defaults to 1",
+        "vintage": "as_of_date at date granularity plus current/fallback source state",
+        "strengthState": "ES, PP and PK TOI; several event splits incomplete",
+        "output": "point estimates with uncertainty metadata",
+        "distribution": "delegated to PP-005"
+      },
+      "data": {
+        "inputs": ["rolling player metrics", "schedule/rest", "team strength", "line/PP role", "roster events", "opponent and goalie context"],
+        "providers": ["NHL Gamecenter", "WGO", "Natural Stat Trick", "lineup sources"],
+        "historicalCoverage": "Depends on mutable upstream tables; not established repository-wide."
+      },
+      "runtime": {
+        "writers": ["run-projection-v2", "run-rolling-forge-pipeline"],
+        "outputs": ["forge_runs", "forge_player_projections", "forge_team_projections"],
+        "jobs": ["Vercel daily horizon 1", "retained pg_cron weekly horizon 5"],
+        "consumers": ["/api/v1/forge/players", "/api/v1/projections/players", "/api/v1/start-chart", "FORGE dashboard", "Top Adds"]
+      },
+      "method": {
+        "training": "none; coefficients and bounds are hand-authored constants",
+        "inference": "weighted rolling rates, role/opponent/rest adjustments and hard bounds",
+        "evaluation": "FORGE fantasy-weighted accuracy pipeline; not honest target-level validation"
+      },
+      "governance": {
+        "tests": ["web/lib/projections/runProjectionV2.test.ts", "web/lib/projections/queries/skater-queries.test.ts", "web/lib/projections/skaterRollout.test.ts"],
+        "artifactHandling": "code constants only; Git SHA may be recorded on a run",
+        "versioning": "input materializer versions exist; no complete player model/feature artifact identity",
+        "asOfBehavior": "Date-only cutoff; current roster, mutable provider aggregates and unrestricted-latest fallbacks can enter historical runs.",
+        "leakageRisk": "High for historical replay and backtesting; functional production output is not statistical validation.",
+        "unresolved": ["research-selected targets and model families", "forward/defense sharing", "conditional probability of playing", "per-game multi-horizon context"]
+      },
+      "disposition": "replace_core"
+    },
+    {
+      "id": "PP-004",
+      "name": "FORGE goalie starter, workload and save formula",
+      "classification": ["heuristic_probability_model", "weighted_projection_formula"],
+      "language": ["TypeScript", "SQL"],
+      "ownerSurface": "FORGE goalie branch and Start Chart",
+      "status": "production",
+      "paths": [
+        "web/lib/projections/goalieModel.ts",
+        "web/lib/projections/goaliePipeline.ts",
+        "web/lib/projections/stages/goalie-stage.ts",
+        "web/lib/projections/calculators/goalie-starter.ts",
+        "web/lib/projections/calculators/goalie-save-pct-context.ts",
+        "web/pages/api/v1/db/update-goalie-projections-v2.ts"
+      ],
+      "semantics": {
+        "population": "goalies",
+        "target": "start probability, shots faced, saves, goals against, wins and shutouts",
+        "horizon": "next game and FORGE aggregate horizons",
+        "vintage": "date cutoff plus mutable confirmations, current rosters and provider totals",
+        "strengthState": "team/game aggregate",
+        "output": "probabilities and point estimates",
+        "distribution": "candidate mixture metadata; canonical row semantics are inconsistent"
+      },
+      "data": {
+        "inputs": ["goalie game history", "current roster", "rest/B2B", "line-source confirmation", "team/opponent strength", "save percentage priors"],
+        "providers": ["NHL Gamecenter", "WGO", "Natural Stat Trick", "lineup/goalie sources"],
+        "historicalCoverage": "Unknown for prospective starter confirmations; current goalie tables are mutable."
+      },
+      "runtime": {
+        "writers": ["update-goalie-projections-v2", "FORGE goalie stage"],
+        "outputs": ["goalie_start_projections", "forge_goalie_projections"],
+        "jobs": ["daily FORGE pipeline"],
+        "consumers": ["/api/v1/forge/goalies", "/api/v1/projections/goalies", "/api/v1/start-chart", "FORGE dashboard"]
+      },
+      "method": {
+        "training": "none; heuristic softmax and fixed shrinkage",
+        "inference": "candidate scoring, context blending and fixed league-prior shrinkage",
+        "evaluation": "FORGE result/accuracy route selectively evaluates the selected goalie"
+      },
+      "governance": {
+        "tests": ["web/lib/projections/goalieModel.test.ts", "web/lib/projections/goaliePipeline.test.ts", "web/__tests__/pages/api/v1/db/update-goalie-projections-v2.test.ts"],
+        "artifactHandling": "code constants and row metadata only",
+        "versioning": "run Git SHA but no fitted goalie model/artifact version",
+        "asOfBehavior": "A prior query permits gameDate <= target date; current roster and current-source fallbacks can contaminate reruns.",
+        "leakageRisk": "Critical historical leakage and selective evaluation; selected-goalie identity is mixed with team-level unconditional outcomes.",
+        "unresolved": ["confirmed/projected starter source history", "conditional versus unconditional contract", "all-candidate outcome scoring", "goalie pooling"]
+      },
+      "disposition": "replace_core"
+    },
+    {
+      "id": "PP-005",
+      "name": "FORGE seeded uncertainty and aggregate-horizon simulation",
+      "classification": ["simulation"],
+      "language": ["TypeScript"],
+      "ownerSurface": "FORGE projection metadata",
+      "status": "production",
+      "paths": ["web/lib/projections/uncertainty.ts", "web/lib/projections/utils/projection-metadata-builders.ts"],
+      "semantics": {
+        "population": "skaters, teams and goalies",
+        "target": "P10/P50/P90 around FORGE point estimates",
+        "horizon": "1 to 10 games",
+        "vintage": "inherits FORGE run",
+        "strengthState": "inherits point estimates",
+        "output": "quantiles and scenario JSON",
+        "distribution": "fixed Normal/Poisson approximations, 400 deterministic simulations"
+      },
+      "data": {
+        "inputs": ["FORGE point estimates", "fixed noise constants", "seed", "horizon rest scalar"],
+        "providers": ["derived only"],
+        "historicalCoverage": "Not applicable beyond FORGE run history."
+      },
+      "runtime": {
+        "writers": ["FORGE projection runner"],
+        "outputs": ["uncertainty JSON on FORGE projection rows"],
+        "jobs": ["same as FORGE"],
+        "consumers": ["FORGE APIs", "dashboard risk displays", "Top Adds risk penalty"]
+      },
+      "method": {
+        "training": "none",
+        "inference": "seeded Monte Carlo from fixed variance assumptions",
+        "evaluation": "interval coverage is stored in FORGE calibration tables but not a validated calibration process"
+      },
+      "governance": {
+        "tests": ["web/lib/projections/uncertainty.test.ts"],
+        "artifactHandling": "none",
+        "versioning": "implicit in source code/Git SHA",
+        "asOfBehavior": "inherits all upstream vintage weaknesses",
+        "leakageRisk": "Not direct leakage; serious miscalibration and false schedule-awareness risk.",
+        "unresolved": ["distribution families", "cross-game dependence", "calibration targets", "schedule-aware state transitions"]
+      },
+      "disposition": "replace_core"
+    },
+    {
+      "id": "PP-006",
+      "name": "FORGE team/player reconciliation",
+      "classification": ["feature_pipeline"],
+      "language": ["TypeScript"],
+      "ownerSurface": "FORGE inference constraints",
+      "status": "production",
+      "paths": ["web/lib/projections/reconcile.ts", "web/lib/projections/calculators/scenario-blending.ts"],
+      "semantics": {
+        "population": "skaters, goalies and teams",
+        "target": "team TOI and shot consistency",
+        "horizon": "same as FORGE run",
+        "vintage": "inherits FORGE run",
+        "strengthState": "ES and PP opportunity plus team totals",
+        "output": "adjusted point estimates and validation diagnostics",
+        "distribution": "none"
+      },
+      "data": {
+        "inputs": ["independent player estimates", "team opportunity/shot targets"],
+        "providers": ["derived only"],
+        "historicalCoverage": "Not applicable."
+      },
+      "runtime": {
+        "writers": ["FORGE runner"],
+        "outputs": ["reconciled FORGE rows and validation metadata"],
+        "jobs": ["same as FORGE"],
+        "consumers": ["FORGE persistence and APIs"]
+      },
+      "method": {
+        "training": "none",
+        "inference": "deterministic constraints and scaling",
+        "evaluation": "invariant/distribution checks"
+      },
+      "governance": {
+        "tests": ["coverage through FORGE runner and reconciliation invariants"],
+        "artifactHandling": "none",
+        "versioning": "implicit in code",
+        "asOfBehavior": "inherits source estimates",
+        "leakageRisk": "Low direct leakage; incomplete outcome identities can create semantic inconsistency.",
+        "unresolved": ["research-approved reconciliation identities", "whether marginal distributions must be preserved"]
+      },
+      "disposition": "refactor"
+    },
+    {
+      "id": "PP-007",
+      "name": "FORGE outcome scoring, accuracy and calibration",
+      "classification": ["evaluation_pipeline"],
+      "language": ["TypeScript", "SQL"],
+      "ownerSurface": "FORGE monitoring",
+      "status": "partial",
+      "paths": [
+        "web/pages/api/v1/db/run-projection-accuracy.ts",
+        "web/lib/projections/accuracy/fantasyPoints.ts",
+        "web/lib/projections/calibrationEligibility.ts",
+        "web/lib/projections/promotionGates.ts"
+      ],
+      "semantics": {
+        "population": "FORGE skaters and goalies",
+        "target": "fantasy-weighted errors, per-stat errors and interval coverage",
+        "horizon": "completed FORGE dates/runs",
+        "vintage": "latest eligible stored run, not every immutable issued vintage",
+        "strengthState": "mixed",
+        "output": "accuracy/calibration aggregates",
+        "distribution": "coverage diagnostics"
+      },
+      "data": {
+        "inputs": ["FORGE projections", "completed player and goalie results"],
+        "providers": ["internal outcomes"],
+        "historicalCoverage": "Unknown; daily Vercel pipeline currently invokes FORGE with accuracy disabled."
+      },
+      "runtime": {
+        "writers": ["run-projection-accuracy"],
+        "outputs": ["forge_projection_results", "forge_projection_accuracy_daily", "forge_projection_accuracy_player", "forge_projection_accuracy_stat_daily", "forge_projection_calibration_daily"],
+        "jobs": ["route exists; disabled in the daily FORGE cron invocation"],
+        "consumers": ["/api/v1/forge/accuracy", "FORGE promotion-gate helpers"]
+      },
+      "method": {
+        "training": "none",
+        "inference": "postgame joins and aggregate errors",
+        "evaluation": "fantasy-point MAE/bias, per-stat summaries and interval hit rates"
+      },
+      "governance": {
+        "tests": ["web/__tests__/pages/api/v1/db/run-projection-accuracy.test.ts", "web/lib/projections/promotionGates.test.ts"],
+        "artifactHandling": "database aggregates",
+        "versioning": "run linkage is incomplete for a fully governed challenger comparison",
+        "asOfBehavior": "Latest-run and overwrite-oriented scopes make old reruns/order significant.",
+        "leakageRisk": "Selective goalie scoring, pseudo-holdout logic and order-dependent backfills can overstate quality.",
+        "unresolved": ["raw target metrics", "every-vintage scoring", "proper scores", "walk-forward folds", "promotion gates"]
+      },
+      "disposition": "extract"
+    },
+    {
+      "id": "PP-008",
+      "name": "FORGE persistence, APIs and product adapters",
+      "classification": ["serving_adapter", "display_only_transformation"],
+      "language": ["TypeScript", "React", "SQL"],
+      "ownerSurface": "FORGE dashboard, Start Chart and compatibility clients",
+      "status": "production",
+      "paths": [
+        "web/lib/projections/stages/persistence-stage.ts",
+        "web/pages/api/v1/forge/players.ts",
+        "web/pages/api/v1/forge/goalies.ts",
+        "web/pages/api/v1/projections/players.ts",
+        "web/pages/api/v1/projections/goalies.ts",
+        "web/pages/api/v1/start-chart.ts",
+        "web/pages/start-chart.tsx",
+        "web/pages/forge/",
+        "web/lib/projections/startChartFantasyScoring.ts"
+      ],
+      "semantics": {
+        "population": "skaters, goalies and teams",
+        "target": "serve stored raw FORGE outputs and downstream fantasy scores",
+        "horizon": "query-selected stored horizon",
+        "vintage": "latest/as_of_date contract",
+        "strengthState": "raw fields retained; UI often summarizes",
+        "output": "JSON rows and downstream fantasy display",
+        "distribution": "uncertainty mostly nested in metadata"
+      },
+      "data": {
+        "inputs": ["FORGE tables", "goalie_start_projections", "fantasy scoring configuration"],
+        "providers": ["internal"],
+        "historicalCoverage": "Run tables retain some history; consumer defaults emphasize latest rows."
+      },
+      "runtime": {
+        "writers": ["atomic FORGE result replacement"],
+        "outputs": ["forge_runs", "forge_player_projections", "forge_goalie_projections", "forge_team_projections", "HTTP responses"],
+        "jobs": ["inference jobs only"],
+        "consumers": ["Start Chart", "FORGE dashboard/command center/player/team pages", "Top Adds", "deprecated projection API clients"]
+      },
+      "method": {
+        "training": "none",
+        "inference": "database selection, normalization and fantasy-scoring transformation",
+        "evaluation": "API and compatibility contract tests"
+      },
+      "governance": {
+        "tests": ["web/lib/projections/apiHelpers.test.ts", "web/__tests__/pages/api/v1/projections/players.test.ts", "web/__tests__/pages/api/v1/projections/goalies.test.ts"],
+        "artifactHandling": "database rows",
+        "versioning": "canonical and deprecated route inventory; incomplete additive distribution schema",
+        "asOfBehavior": "Can select date/horizon, but no full issued-at/source-snapshot contract.",
+        "leakageRisk": "Serving layer is not the primary leakage source; response-time win-odds normalization differs from stored/evaluated values.",
+        "unresolved": ["default horizon UX", "conditional goalie semantics", "interval API shape", "compatibility window telemetry"]
+      },
+      "disposition": "refactor"
+    },
+    {
+      "id": "PP-009",
+      "name": "Canonical TypeScript sustainability priors, score and bands",
+      "classification": ["sustainability_score", "rolling_stat_calculation"],
+      "language": ["TypeScript", "SQL", "React"],
+      "ownerSurface": "Sustainability APIs, FORGE dashboard and trends",
+      "status": "production",
+      "paths": [
+        "web/lib/sustainability/priors.ts",
+        "web/lib/sustainability/windows.ts",
+        "web/lib/sustainability/score.ts",
+        "web/lib/sustainability/bandService.ts",
+        "web/pages/api/v1/sustainability/",
+        "web/components/sustainability/"
+      ],
+      "semantics": {
+        "population": "skaters with forward/defense priors; experimental entity readers include teams/goalies",
+        "target": "descriptive sustainability/luck pressure and empirical bands",
+        "horizon": "season and recent 3/5/10/20-game windows",
+        "vintage": "snapshot_date/as_of_date fields, inconsistently enforced in upstream reads",
+        "strengthState": "mixed all-situation and feature-specific inputs",
+        "output": "scores, z-values, bands and classifications",
+        "distribution": "descriptive empirical summaries, not calibrated predictive distributions"
+      },
+      "data": {
+        "inputs": ["rolling player metrics", "season totals", "player/position Beta priors", "xG and shooting residuals"],
+        "providers": ["internal rolling", "WGO/NST-derived fields", "NHL xG-derived fields"],
+        "historicalCoverage": "Unknown live; a runbook recorded zero sustainability_projections rows on 2026-07-11."
+      },
+      "runtime": {
+        "writers": ["rebuild-priors", "rebuild-window-z", "rebuild-score", "rebuild-trend-bands"],
+        "outputs": ["sustainability_priors", "sustainability_player_priors", "sustainability_window_z", "sustainability_scores", "sustainability_trend_bands", "sustainability_distribution_snapshots", "sustainability_recompute_queue"],
+        "jobs": ["daily Vercel sequence", "retained pg_cron baseline rebuild"],
+        "consumers": ["sustainability APIs/components", "FORGE dashboard SustainabilityCard", "trends/player surfaces"]
+      },
+      "method": {
+        "training": "empirical Beta priors and fixed hand-weighted score configuration",
+        "inference": "fixed 0.6/0.3/0.1 season blend, window z-scores and band lookup",
+        "evaluation": "backtest harness and diagnostics; no valid promotion evidence for future outcomes"
+      },
+      "governance": {
+        "tests": ["web/lib/sustainability/*.test.ts", "web/__tests__/pages/api/v1/sustainability/*.test.ts", "web/components/sustainability/SustainabilityUi.test.tsx"],
+        "artifactHandling": "database configs/priors/snapshots; no trained model binary",
+        "versioning": "sustainability_score_v2 and config revision 2 plus provenance migration",
+        "asOfBehavior": "Historical baseline and band rebuilds can reuse full-season totals beyond the requested snapshot.",
+        "leakageRisk": "High if interpreted as predictive evidence; old vintages are not reproducible from stored source snapshots.",
+        "unresolved": ["valid pooling/decay", "target-specific persistence", "whether entity surfaces have an active writer", "historical provider availability"]
+      },
+      "disposition": "replace_core"
+    },
+    {
+      "id": "PP-010",
+      "name": "TypeScript sustainability upcoming projection and hot/normal/cold probability helpers",
+      "classification": ["weighted_projection_formula", "simulation"],
+      "language": ["TypeScript", "SQL"],
+      "ownerSurface": "Sustainability upcoming API and debug/test surfaces",
+      "status": "partial",
+      "paths": [
+        "web/lib/sustainability/model.ts",
+        "web/lib/sustainability/recompute.ts",
+        "web/lib/sustainability/distribution.ts",
+        "web/pages/api/v1/sustainability/upcoming/[playerId].ts",
+        "web/sql/sustainability/001_create_sustainability_projections.sql"
+      ],
+      "semantics": {
+        "population": "skaters",
+        "target": "future count extrapolations and demo hot/normal/cold probabilities",
+        "horizon": "1, 5 and 10 games",
+        "vintage": "requested as-of date but upstream enforcement is incomplete",
+        "strengthState": "not consistently separated",
+        "output": "point estimates, intervals and demo probabilities",
+        "distribution": "simple parametric summaries/logistic helper"
+      },
+      "data": {
+        "inputs": ["season-to-date rates", "recent sustainability state", "fixed opponent multipliers"],
+        "providers": ["internal sustainability and rolling data"],
+        "historicalCoverage": "No proven persisted production population; live count not queried."
+      },
+      "runtime": {
+        "writers": ["sustainability recompute path"],
+        "outputs": ["sustainability_projections", "upcoming API response"],
+        "jobs": ["recompute queue is present; no independent canonical forecast cron established"],
+        "consumers": ["upcoming sustainability API", "debug/demo/tests; production reader returns pending calibration for probabilities"]
+      },
+      "method": {
+        "training": "none",
+        "inference": "rate extrapolation, fixed opponent factors and logistic classification helper",
+        "evaluation": "tests and a leaky historical harness only"
+      },
+      "governance": {
+        "tests": ["web/lib/sustainability/model.test.ts", "web/lib/sustainability/recompute.test.ts", "web/lib/sustainability/distribution.test.ts"],
+        "artifactHandling": "database rows/code only",
+        "versioning": "partial sustainability provenance",
+        "asOfBehavior": "Cannot reconstruct old vintages reliably.",
+        "leakageRisk": "Full-season totals can leak into historical snapshots; output may look calibrated when it is explicitly pending calibration.",
+        "unresolved": ["whether to retain any public upcoming contract", "target definitions", "calibration method"]
+      },
+      "disposition": "retire_or_replace_after_migration"
+    },
+    {
+      "id": "PP-011",
+      "name": "Python sustainability implementation",
+      "classification": ["sustainability_score", "unused_experiment"],
+      "language": ["Python"],
+      "ownerSurface": "offline characterization only",
+      "status": "duplicated",
+      "paths": ["functions/lib/sustainability/", "functions/lib/sustainability/README.md"],
+      "semantics": {
+        "population": "skaters",
+        "target": "alternative sustainability score/priors/windows",
+        "horizon": "descriptive windows",
+        "vintage": "offline inputs",
+        "strengthState": "mixed",
+        "output": "offline score structures",
+        "distribution": "alternative helper distributions"
+      },
+      "data": {
+        "inputs": ["offline records/synthetic benchmark"],
+        "providers": ["none at runtime"],
+        "historicalCoverage": "Synthetic benchmark only in repository evidence."
+      },
+      "runtime": {
+        "writers": ["none; persistence and serving intentionally fail closed"],
+        "outputs": ["in-memory/offline benchmark output"],
+        "jobs": ["none"],
+        "consumers": ["Python tests only"]
+      },
+      "method": {
+        "training": "alternative empirical priors",
+        "inference": "different windows, weights and reliability from TypeScript owner",
+        "evaluation": "synthetic benchmark"
+      },
+      "governance": {
+        "tests": ["functions/lib/sustainability benchmark modules"],
+        "artifactHandling": "none",
+        "versioning": "not aligned with canonical TypeScript model/config",
+        "asOfBehavior": "offline only",
+        "leakageRisk": "Main risk is semantic divergence, not production leakage.",
+        "unresolved": ["which pure characterization cases are worth extracting before deletion"]
+      },
+      "disposition": "retire_after_test_extraction"
+    },
+    {
+      "id": "PP-012",
+      "name": "Active sKO moving-average prediction baseline",
+      "classification": ["weighted_projection_formula"],
+      "language": ["TypeScript", "SQL"],
+      "ownerSurface": "quarantined sKO compatibility API",
+      "status": "quarantined",
+      "paths": [
+        "web/pages/api/v1/ml/update-predictions-sko.ts",
+        "web/pages/api/v1/ml/get-predictions-sko.ts",
+        "web/lib/hooks/useQuarantinedPredictionsSko.ts",
+        "supabase/migrations/20260728225806_add_sko_prediction_run_control.sql",
+        "supabase/migrations/20260729205048_preserve_sko_model_history.sql"
+      ],
+      "semantics": {
+        "population": "skaters",
+        "target": "future totals for configured player stats",
+        "horizon": "default 5 games",
+        "vintage": "as_of_date at date granularity",
+        "strengthState": "all situations",
+        "output": "point estimate and multiplier; top_features null",
+        "distribution": "none"
+      },
+      "data": {
+        "inputs": ["player_stats_unified, maximum 60 games/120 days", "5/10/20 game averages"],
+        "providers": ["internal unified player stats"],
+        "historicalCoverage": "Live coverage unknown."
+      },
+      "runtime": {
+        "writers": ["update-predictions-sko"],
+        "outputs": ["predictions_sko", "sko_prediction_run_manifests"],
+        "jobs": ["retained active pg_cron update-predictions-sko"],
+        "consumers": ["get-predictions-sko compatibility API", "quarantined hook/components", "skoCharts legacy page"]
+      },
+      "method": {
+        "training": "none",
+        "inference": "0.6*avg10 + 0.4*avg5, population-SD mislabeled stability_cv, smoothstep multiplier 0.8-1.0",
+        "evaluation": "no valid production scoring loop found"
+      },
+      "governance": {
+        "tests": ["web/__tests__/pages/api/v1/ml/update-predictions-sko.test.ts", "web/__tests__/pages/api/v1/ml/get-predictions-sko.test.ts"],
+        "artifactHandling": "database rows only",
+        "versioning": "model/model_version key and run lease/manifest; same grain can overwrite within a vintage",
+        "asOfBehavior": "History query is bounded by as_of_date, but no immutable feature/source snapshot or issued_at exists.",
+        "leakageRisk": "Lower direct query leakage than offline sKO, but no reproducible source vintage and no valid evaluation evidence.",
+        "unresolved": ["remaining callers", "retirement compatibility window", "whether any output contract is worth retaining"]
+      },
+      "disposition": "retire_after_migration"
+    },
+    {
+      "id": "PP-013",
+      "name": "Legacy sKO source ingestion",
+      "classification": ["feature_pipeline"],
+      "language": ["TypeScript", "SQL"],
+      "ownerSurface": "legacy sKO database jobs",
+      "status": "stale",
+      "paths": ["web/pages/api/v1/db/update-sko-stats.ts", "supabase/migrations/20260716112908_production_schema_baseline.sql"],
+      "semantics": {
+        "population": "skaters",
+        "target": "source statistic and season-year records",
+        "horizon": "historical/current season",
+        "vintage": "incremental route defaults despite full-season job name",
+        "strengthState": "mixed",
+        "output": "source rows",
+        "distribution": "none"
+      },
+      "data": {
+        "inputs": ["legacy sKO source feeds"],
+        "providers": ["repository does not establish a current authoritative provider contract"],
+        "historicalCoverage": "Analytics SQL embeds a 2021-22 through 2023-24 baseline; live tables were not queried."
+      },
+      "runtime": {
+        "writers": ["update-sko-stats"],
+        "outputs": ["sko_skater_stats", "sko_pp_stats", "sko_skater_years"],
+        "jobs": ["retained active pg_cron update-sko-stats-full-season, although route default is incremental"],
+        "consumers": ["legacy analytics SQL only; active PP-012 writer does not read these tables"]
+      },
+      "method": {
+        "training": "none",
+        "inference": "source ingestion/upsert",
+        "evaluation": "route tests only"
+      },
+      "governance": {
+        "tests": ["web/__tests__/pages/api/v1/db/update-sko-stats.test.ts", "web/__tests__/pages/api/v1/db/update-sko-stats.route.test.ts"],
+        "artifactHandling": "mutable database tables",
+        "versioning": "none adequate for forecast use",
+        "asOfBehavior": "No immutable source revision contract established.",
+        "leakageRisk": "Disconnected lineage and misleading scheduler scope can create false confidence in data completeness.",
+        "unresolved": ["live row counts", "real provider ownership", "any external caller"]
+      },
+      "disposition": "retire_after_dependency_confirmation"
+    },
+    {
+      "id": "PP-014",
+      "name": "Retained offline sKO feature, target and holdout artifacts",
+      "classification": ["actual_trained_predictive_model", "unused_experiment"],
+      "language": ["Python-generated Parquet/CSV/JSON"],
+      "ownerSurface": "historical research evidence",
+      "status": "historical_evidence",
+      "paths": ["web/scripts/output/sko_features.parquet", "web/scripts/output/sko_predictions.parquet", "web/scripts/output/sko_holdout_predictions.parquet", "web/scripts/output/sko_metrics.parquet", "web/scripts/output/sko_backfill_state.json", "web/web/scripts/output/"],
+      "semantics": {
+        "population": "723 skaters",
+        "target": "next-5 values for seven stats as encoded in retained artifacts",
+        "horizon": "nominally 5 games",
+        "vintage": "2024-25 rows",
+        "strengthState": "mixed",
+        "output": "features, predictions and metrics",
+        "distribution": "point predictions"
+      },
+      "data": {
+        "inputs": ["35,246 feature rows and 290 columns"],
+        "providers": ["not fully reconstructable because executable training scripts were deleted"],
+        "historicalCoverage": "2024-25 only in retained artifacts."
+      },
+      "runtime": {
+        "writers": ["deleted historical training pipeline"],
+        "outputs": ["Parquet, CSV and JSON artifacts"],
+        "jobs": ["none"],
+        "consumers": ["none in runtime"]
+      },
+      "method": {
+        "training": "ElasticNet and gradient-boosted-regression pickle families are visible in nested artifacts, but preprocessing, configuration, split and executable lineage are incomplete",
+        "inference": "offline predictions",
+        "evaluation": "retained holdout metrics are invalid forecast evidence"
+      },
+      "governance": {
+        "tests": [],
+        "artifactHandling": "tracked files; hash-distinct duplicates also exist under web/web/scripts/output",
+        "versioning": "incomplete; executable lineage removed",
+        "asOfBehavior": "Target construction is leaked: shift(-1).rolling(5).sum at row i includes four already-known/current games and only one future game.",
+        "leakageRisk": "Critical target leakage invalidates reported holdout metrics.",
+        "unresolved": ["exact deleted model family", "why duplicate artifacts diverge", "whether any non-metric metadata merits archival retention"]
+      },
+      "disposition": "retire_as_validation_evidence"
+    },
+    {
+      "id": "PP-015",
+      "name": "Analytics SQL sKO trends and RPC",
+      "classification": ["ranking_formula", "sustainability_score"],
+      "language": ["SQL"],
+      "ownerSurface": "unused analytics schema",
+      "status": "stale",
+      "paths": [
+        "web/sql/ratings/002_create_analytics_trends_predictions_and_provenance.sql",
+        "web/sql/views/analytics.vw_sko_skater_base.sql",
+        "web/sql/views/analytics.vw_sko_skater_zscores.sql",
+        "web/sql/views/analytics.vw_sko_skater_scores.sql",
+        "web/sql/functions/analytics.rpc_sko_player_series.sql",
+        "web/sql/functions/public.rpc_sko_player_series.sql"
+      ],
+      "semantics": {
+        "population": "skaters",
+        "target": "descriptive z-score/sustainability/trend labels",
+        "horizon": "current row and historical moments",
+        "vintage": "not forecast-safe",
+        "strengthState": "mixed",
+        "output": "scores, labels, materialized view and RPC rows",
+        "distribution": "none"
+      },
+      "data": {
+        "inputs": ["legacy sKO stats", "all-history moments", "hard-coded 2021-22 to 2023-24 baseline"],
+        "providers": ["legacy sKO"],
+        "historicalCoverage": "Hard-coded baseline seasons only; live materialized-view state unknown."
+      },
+      "runtime": {
+        "writers": ["SQL materialized view definition; no refresh owner found"],
+        "outputs": ["analytics sKO views/materialized view", "public/analytics rpc_sko_player_series", "sko_trends overlap"],
+        "jobs": ["none found for materialized-view refresh"],
+        "consumers": ["no application consumer found"]
+      },
+      "method": {
+        "training": "fixed coefficients and all-history moments",
+        "inference": "SQL z-scores and thresholds",
+        "evaluation": "SQL validation fixture only"
+      },
+      "governance": {
+        "tests": ["web/sql/tests/sko_trends_validation.sql"],
+        "artifactHandling": "database objects",
+        "versioning": "no model/feature registry",
+        "asOfBehavior": "All-history moments can include later information.",
+        "leakageRisk": "Critical if treated as forecasting; SECURITY DEFINER RPC exposes an orphaned surface to browser roles.",
+        "unresolved": ["whether objects exist in production", "whether any external SQL consumer exists"]
+      },
+      "disposition": "retire_after_live_dependency_audit"
+    },
+    {
+      "id": "PP-016",
+      "name": "Contextual rankings, composites and deployment tiers",
+      "classification": ["ranking_formula"],
+      "language": ["TypeScript", "SQL", "React"],
+      "ownerSurface": "Rankings pages and APIs",
+      "status": "production",
+      "paths": ["web/lib/rankings/", "web/pages/api/v1/contextual-rankings.ts", "web/pages/api/v1/rankings.ts", "web/pages/rankings.tsx"],
+      "semantics": {
+        "population": "forwards, defensemen, goalies and teams in separate peer groups",
+        "target": "relative percentile, composite and tier ranking",
+        "horizon": "selected historical window/current snapshot",
+        "vintage": "snapshot date/window; source revisions not frozen",
+        "strengthState": "metric-specific 5v5/PP/all-situation contexts",
+        "output": "percentiles, ranks, composite scores and tiers",
+        "distribution": "none"
+      },
+      "data": {
+        "inputs": ["rolling metrics", "xG impacts", "deployment and results-luck sources"],
+        "providers": ["internal rolling and xG stores"],
+        "historicalCoverage": "Depends on upstream rolling/xG coverage."
+      },
+      "runtime": {
+        "writers": ["update-entity-metric-rankings", "skater composite writer", "team unit writer"],
+        "outputs": ["entity_metric_rankings", "contextual ranking snapshots/composites"],
+        "jobs": ["runtime update routes; exact live schedule requires scheduler audit"],
+        "consumers": ["rankings APIs/page", "FORGE and trend context"]
+      },
+      "method": {
+        "training": "none",
+        "inference": "peer-group percentile and fixed weighted composite/tier thresholds",
+        "evaluation": "methodology, snapshot and source tests"
+      },
+      "governance": {
+        "tests": ["web/lib/rankings/*.test.ts"],
+        "artifactHandling": "database snapshots and code constants",
+        "versioning": "methodology helpers exist; not a forecast model registry",
+        "asOfBehavior": "Results Luck has a useful selected-window exclusion guard; upstream histories remain mutable.",
+        "leakageRisk": "Moderate if repurposed as predictive features without immutable snapshots; descriptive rankings are not forecasts.",
+        "unresolved": ["which metrics add out-of-time lift", "canonical hot/cold ownership", "snapshot retention"]
+      },
+      "disposition": "extract"
+    },
+    {
+      "id": "PP-017",
+      "name": "Player trends and hot/cold display",
+      "classification": ["rolling_stat_calculation", "display_only_transformation"],
+      "language": ["TypeScript", "React", "SQL"],
+      "ownerSurface": "Trends pages and FORGE dashboard",
+      "status": "production",
+      "paths": [
+        "web/lib/trends/playerTrendCalculator.ts",
+        "web/pages/api/v1/db/update-player-trend-metrics.ts",
+        "web/pages/api/v1/trends/player-trends.ts",
+        "web/pages/trends/",
+        "web/lib/projections/utils/trend-adjustments.ts"
+      ],
+      "semantics": {
+        "population": "skaters",
+        "target": "historical cumulative/rolling trend and display hot/cold",
+        "horizon": "historical selected window",
+        "vintage": "current stored trend rows",
+        "strengthState": "metric-specific/mixed",
+        "output": "means, standard deviations, percentage change and labels",
+        "distribution": "none"
+      },
+      "data": {
+        "inputs": ["player game metrics", "rolling metric store"],
+        "providers": ["internal"],
+        "historicalCoverage": "Unknown live."
+      },
+      "runtime": {
+        "writers": ["update-player-trend-metrics"],
+        "outputs": ["player_trend_metrics", "trend API response"],
+        "jobs": ["route exists; current scheduler ownership not proved"],
+        "consumers": ["trends pages", "FORGE trend adjustments", "dashboard HotColdCard"]
+      },
+      "method": {
+        "training": "none",
+        "inference": "rolling/cumulative statistics; UI applies approximately +/-8% labels",
+        "evaluation": "calculator, route and page tests"
+      },
+      "governance": {
+        "tests": ["web/lib/trends/playerTrendCalculator.test.ts", "web/__tests__/pages/api/v1/trends/player-trends.test.ts", "web/__tests__/pages/trends/index.test.tsx"],
+        "artifactHandling": "mutable database rows",
+        "versioning": "none adequate for model features",
+        "asOfBehavior": "Not a frozen feature snapshot.",
+        "leakageRisk": "Low as display; high if current labels are joined into historical forecasts.",
+        "unresolved": ["overlap with rolling metrics and sustainability", "canonical threshold/definition", "job owner"]
+      },
+      "disposition": "extract_or_consolidate"
+    },
+    {
+      "id": "PP-018",
+      "name": "WiGO per-game, per-82 and rating transformations",
+      "classification": ["display_only_transformation", "ranking_formula"],
+      "language": ["TypeScript", "React"],
+      "ownerSurface": "WiGO charts",
+      "status": "production",
+      "paths": ["web/pages/api/v1/db/calculate-wigo-stats.ts", "web/components/WiGO/", "web/pages/wigoCharts.tsx"],
+      "semantics": {
+        "population": "skaters and teams depending on component",
+        "target": "historical rate/rating display; per-82 values are labeled projection in places",
+        "horizon": "82-game display normalization",
+        "vintage": "current fetched history",
+        "strengthState": "mixed",
+        "output": "rates, percentiles and display scores",
+        "distribution": "none"
+      },
+      "data": {
+        "inputs": ["historical games and rate statistics"],
+        "providers": ["internal stores"],
+        "historicalCoverage": "Unknown live."
+      },
+      "runtime": {
+        "writers": ["calculate-wigo-stats"],
+        "outputs": ["WiGO derived rows and client calculations"],
+        "jobs": ["route exists; schedule not established"],
+        "consumers": ["wigoCharts and WiGO components"]
+      },
+      "method": {
+        "training": "none",
+        "inference": "rate normalization, fixed rating weights and x82 display multiplication",
+        "evaluation": "component and route tests"
+      },
+      "governance": {
+        "tests": ["web/__tests__/pages/api/v1/db/calculate-wigo-stats.test.ts", "web/components/WiGO/*.test.tsx"],
+        "artifactHandling": "database/client state",
+        "versioning": "none",
+        "asOfBehavior": "display-only current history",
+        "leakageRisk": "Semantic risk: per-82 extrapolation can be mistaken for a forecast.",
+        "unresolved": ["rename projection labels", "whether any transforms merit feature extraction"]
+      },
+      "disposition": "retain_as_display_only"
+    },
+    {
+      "id": "PP-019",
+      "name": "External annual projection aggregation and fantasy ranking",
+      "classification": ["weighted_projection_formula", "display_only_transformation", "ranking_formula"],
+      "language": ["TypeScript", "React", "SQL"],
+      "ownerSurface": "Projections page and draft dashboard",
+      "status": "production",
+      "paths": [
+        "web/lib/projectionsConfig/projectionSourcesConfig.ts",
+        "web/hooks/useProcessedProjectionsData.tsx",
+        "web/lib/draftDashboard/sourceWeights.ts",
+        "web/lib/projectionsConfig/proration.ts",
+        "web/pages/projections/index.tsx",
+        "web/pages/draft-dashboard.tsx"
+      ],
+      "semantics": {
+        "population": "skaters and goalies",
+        "target": "provider projected full-season raw totals and derived fantasy points/ranks",
+        "horizon": "2025-26 full season; optional per-82 normalization",
+        "vintage": "latest uploaded row/batch; complete provider issue history is not established",
+        "strengthState": "mostly season aggregate",
+        "output": "weighted consensus totals, fantasy points and rankings",
+        "distribution": "none"
+      },
+      "data": {
+        "inputs": ["ten configured provider tables", "user source weights", "Yahoo identity/ADP", "fantasy scoring settings"],
+        "providers": ["Apples & Ginos", "Cullen", "DFO", "DTZ", "FHFH", "Kubota", "Laidlaw"],
+        "historicalCoverage": "Configured tables are 2025-26 only; provider historical vintages and licensing are not proven."
+      },
+      "runtime": {
+        "writers": ["manual/upload flows outside the weighted hook"],
+        "outputs": ["PROJECTIONS_20252026_AG_SKATERS", "PROJECTIONS_20252026_CULLEN_SKATERS", "PROJECTIONS_20252026_CULLEN_GOALIES", "PROJECTIONS_20252026_DFO_SKATERS", "PROJECTIONS_20252026_DFO_GOALIES", "PROJECTIONS_20252026_DTZ_Skaters", "PROJECTIONS_20252026_DTZ_GOALIES", "PROJECTIONS_20252026_FHFH_SKATERS", "PROJECTIONS_20252026_KUBOTA_SKATERS", "PROJECTIONS_20252026_LAIDLAW_SKATERS", "client consensus rows"],
+        "jobs": ["no canonical continuously learning job; uploads are seasonal"],
+        "consumers": ["projections page", "draft dashboard", "draft-ranker discovery inputs"]
+      },
+      "method": {
+        "training": "external/unknown",
+        "inference": "user-weighted mean with missing-source handling, optional per-82 proration and fantasy scoring",
+        "evaluation": "crosscheck/freshness/inclusion tests; no provider walk-forward tournament"
+      },
+      "governance": {
+        "tests": ["web/lib/draftDashboard/projection*.test.ts", "web/lib/draftDashboard/sourceWeights tests", "web/lib/projectionsConfig tests"],
+        "artifactHandling": "Supabase provider tables and upload_batch_id fields",
+        "versioning": "season/table naming and batch IDs; no complete immutable provider vintage registry",
+        "asOfBehavior": "Current-season filtering exists; issue timestamp and revision lineage are incomplete.",
+        "leakageRisk": "Unsuitable for historical backtests without original issue vintages; methodology/licensing are external unknowns.",
+        "unresolved": ["provider licenses", "historical vintage availability", "consensus benchmark inclusion", "goalie provider coverage"]
+      },
+      "disposition": "retain_as_benchmark_and_product_input"
+    },
+    {
+      "id": "PP-020",
+      "name": "Draft-ranker discovery consensus and community ranking",
+      "classification": ["ranking_formula", "display_only_transformation"],
+      "language": ["TypeScript", "React", "SQL"],
+      "ownerSurface": "Draft Ranker",
+      "status": "production",
+      "paths": ["web/lib/draft-ranker/discovery.ts", "web/lib/draft-ranker/communityModel.ts", "web/lib/draft-ranker/placementEngine.ts", "web/pages/api/v1/draft-ranker/", "web/pages/draft-rankings/", "web/pages/community-draft-rankings.tsx"],
+      "semantics": {
+        "population": "fantasy draft player pool",
+        "target": "median external projection consensus, discovery priority and community order",
+        "horizon": "season/draft cycle",
+        "vintage": "explicit as-of/expiry snapshots for discovery",
+        "strengthState": "not applicable",
+        "output": "rank, score, signal and queue placement",
+        "distribution": "none"
+      },
+      "data": {
+        "inputs": ["external annual projections", "Yahoo pool/ADP", "community pairwise responses"],
+        "providers": ["external projection sources", "Yahoo", "user responses"],
+        "historicalCoverage": "Current draft cycle; snapshot patterns exist."
+      },
+      "runtime": {
+        "writers": ["refresh-draft-ranker-discovery", "refresh-draft-ranker-community", "pairwise response/placement routes"],
+        "outputs": ["draft-ranker discovery snapshots", "community rankings/queue state"],
+        "jobs": ["community refresh and health scheduled in Vercel; discovery refresh route is currently unscheduled"],
+        "consumers": ["draft rankings and community pages/APIs"]
+      },
+      "method": {
+        "training": "none for discovery; community ordering updates from pairwise responses",
+        "inference": "median consensus, fixed eligibility thresholds and placement/ranking logic",
+        "evaluation": "extensive route/model/red-team tests, not outcome-forecast validation"
+      },
+      "governance": {
+        "tests": ["web/lib/draft-ranker/*.test.ts", "web/__tests__/pages/api/v1/draft-ranker/*.test.ts"],
+        "artifactHandling": "database snapshots with as-of/expiry fields",
+        "versioning": "snapshot identity; not a player outcome model version",
+        "asOfBehavior": "Useful explicit snapshot/expiry pattern.",
+        "leakageRisk": "Low for stated ranking product; should not be mistaken for an NHL outcome forecast.",
+        "unresolved": ["whether consensus becomes an approved benchmark", "discovery scheduler owner"]
+      },
+      "disposition": "retain_as_adjacent_product_and_snapshot_pattern"
+    },
+    {
+      "id": "PP-021",
+      "name": "Top Adds recommendation score",
+      "classification": ["ranking_formula"],
+      "language": ["TypeScript", "React"],
+      "ownerSurface": "FORGE dashboard and command center",
+      "status": "production",
+      "paths": ["web/lib/dashboard/topAddsRanking.ts", "web/lib/dashboard/topAddsScheduleContext.ts", "web/components/forge-dashboard/TopAddsRail.tsx", "web/components/forge-command-center/TopAddsWatchlist.tsx"],
+      "semantics": {
+        "population": "available skaters",
+        "target": "fantasy add recommendation order",
+        "horizon": "tonight or week",
+        "vintage": "current dashboard fetch",
+        "strengthState": "summarized from FORGE",
+        "output": "deterministic recommendation score and breakdown",
+        "distribution": "uncertainty enters only as a penalty"
+      },
+      "data": {
+        "inputs": ["FORGE projection points/raw stats", "ownership/delta", "schedule games/off-nights", "uncertainty and degraded-context flags"],
+        "providers": ["internal FORGE", "ownership trends", "schedule"],
+        "historicalCoverage": "No recommendation-vintage history established."
+      },
+      "runtime": {
+        "writers": ["none; computed at read time"],
+        "outputs": ["ranked candidate list"],
+        "jobs": ["none independent"],
+        "consumers": ["TopAddsRail", "TopAddsWatchlist"]
+      },
+      "method": {
+        "training": "none",
+        "inference": "fixed additive formula",
+        "evaluation": "unit tests only"
+      },
+      "governance": {
+        "tests": ["web/lib/dashboard/topAddsRanking.test.ts", "web/lib/dashboard/topAddsScheduleContext.test.ts", "web/components/forge-dashboard/TopAddsRail.test.tsx"],
+        "artifactHandling": "none",
+        "versioning": "implicit in code",
+        "asOfBehavior": "current-state recommendation",
+        "leakageRisk": "Not a forecast model; risk is conflating product utility weights with statistical quality.",
+        "unresolved": ["future product objective and evaluation", "whether to retain weights after new forecasts"]
+      },
+      "disposition": "retain_as_downstream_product_formula"
+    },
+    {
+      "id": "PP-022",
+      "name": "Skater and goalie variance display",
+      "classification": ["display_only_transformation"],
+      "language": ["TypeScript", "JavaScript", "React"],
+      "ownerSurface": "Variance pages",
+      "status": "production",
+      "paths": ["web/pages/variance/skaters.tsx", "web/pages/variance/goalies.js", "web/components/Variance/varianceFilters.ts"],
+      "semantics": {
+        "population": "skaters and goalies",
+        "target": "historical fantasy-point variability",
+        "horizon": "observed game sample",
+        "vintage": "current fetched history",
+        "strengthState": "mixed",
+        "output": "sample standard deviation and filtering fields",
+        "distribution": "descriptive standard deviation, despite some variance naming"
+      },
+      "data": {
+        "inputs": ["historical game fantasy points", "fantasy scoring settings"],
+        "providers": ["internal game stats"],
+        "historicalCoverage": "UI-selected/current source coverage."
+      },
+      "runtime": {
+        "writers": ["none; client calculation"],
+        "outputs": ["variance-page display rows"],
+        "jobs": ["none"],
+        "consumers": ["variance skater and goalie pages"]
+      },
+      "method": {
+        "training": "none",
+        "inference": "sample standard deviation and fantasy scoring",
+        "evaluation": "filter/calculation tests"
+      },
+      "governance": {
+        "tests": ["web/components/Variance/varianceFilters.test.ts"],
+        "artifactHandling": "none",
+        "versioning": "none",
+        "asOfBehavior": "display-only current history",
+        "leakageRisk": "Terminology risk if sample SD is reused as predictive variance.",
+        "unresolved": ["rename ambiguous fields", "whether any variability baseline should enter future research"]
+      },
+      "disposition": "retain_as_display_only"
+    },
+    {
+      "id": "PP-023",
+      "name": "CTPI, strength-of-schedule and power-rating context",
+      "classification": ["ranking_formula", "feature_pipeline"],
+      "language": ["TypeScript", "SQL", "React"],
+      "ownerSurface": "Trends, dashboard and FORGE context",
+      "status": "production",
+      "paths": ["web/lib/trends/ctpi.ts", "web/lib/trends/strengthOfSchedule.ts", "web/pages/api/v1/db/update-power-rankings.ts", "web/pages/api/v1/db/update-team-power-ratings.ts", "web/pages/api/v1/db/update-team-power-ratings-new.ts", "web/pages/api/v1/trends/team-ctpi.ts", "web/pages/api/v1/trends/team-sos.ts", "web/pages/api/v1/trends/team-power.ts"],
+      "semantics": {
+        "population": "teams; used as player context",
+        "target": "descriptive team power, context and schedule difficulty",
+        "horizon": "current/recent and future schedule windows",
+        "vintage": "current calculation/snapshot",
+        "strengthState": "team aggregate",
+        "output": "continuous scores, percentiles and ranks",
+        "distribution": "none"
+      },
+      "data": {
+        "inputs": ["team results", "opponents", "schedule", "team metrics"],
+        "providers": ["internal NHL-derived data"],
+        "historicalCoverage": "Unknown live."
+      },
+      "runtime": {
+        "writers": ["power ranking/team power routes"],
+        "outputs": ["power_rankings_store", "team trend/context responses"],
+        "jobs": ["routes exist; live scheduler ownership is not fully proved"],
+        "consumers": ["trends pages", "FORGE dashboard", "Top Adds schedule context", "FORGE feature queries"]
+      },
+      "method": {
+        "training": "none",
+        "inference": "fixed team/schedule formulas and percentiles",
+        "evaluation": "route and utility tests"
+      },
+      "governance": {
+        "tests": ["web/lib/trends/strengthOfSchedule.test.ts", "web/__tests__/pages/api/v1/trends/team-ctpi.test.ts", "web/__tests__/pages/api/v1/trends/team-power.test.ts"],
+        "artifactHandling": "database rows/code constants",
+        "versioning": "not a model registry",
+        "asOfBehavior": "Current snapshots; unrestricted-latest reads elsewhere can contaminate historical FORGE runs.",
+        "leakageRisk": "Moderate to high when used as historical model features without cutoff-bounded snapshots.",
+        "unresolved": ["which contexts add lift", "canonical power formula", "historical schedule revisions"]
+      },
+      "disposition": "extract"
+    },
+    {
+      "id": "PP-024",
+      "name": "NHL shot-level expected-goals models and derived impacts",
+      "classification": ["actual_trained_predictive_model", "feature_pipeline", "evaluation_pipeline"],
+      "language": ["TypeScript", "Python", "SQL"],
+      "ownerSurface": "Underlying xG analytics and adjacent model governance",
+      "status": "production",
+      "paths": ["web/lib/xg/", "web/scripts/train-nhl-xg-baseline.ts", "web/scripts/train_nhl_xg_challengers.py", "web/pages/api/v1/db/update-nhl-xg-shot-predictions.ts", "web/pages/api/v1/xg/operations.ts", "web/pages/underlying-stats/xg/"],
+      "semantics": {
+        "population": "shots, skaters, goalies and teams",
+        "target": "shot goal probability and xG-derived impacts",
+        "horizon": "event probability and historical rolling aggregates",
+        "vintage": "feature/parser/model versions and artifact references",
+        "strengthState": "situation-aware shot features and aggregates",
+        "output": "probability, xG totals, residual impacts and diagnostics",
+        "distribution": "Bernoulli probability plus aggregates"
+      },
+      "data": {
+        "inputs": ["NHL shot events", "geometry/situation/rebound/rush/strength features", "optional enriched context"],
+        "providers": ["NHL Gamecenter and internal enrichment"],
+        "historicalCoverage": "Committed model artifacts and approvals establish 2025-26 coverage; broader live coverage unknown."
+      },
+      "runtime": {
+        "writers": ["shot feature/prediction and derived impact routes"],
+        "outputs": ["nhl_xg_model_registry", "nhl_xg_shot_features", "nhl_xg_shot_predictions", "nhl_xg_*_aggregates", "nhl_xg_adjusted_player_impacts", "artifact JSON files"],
+        "jobs": ["xG update routes and leases; exact live schedule requires scheduler audit"],
+        "consumers": ["underlying xG APIs/pages", "rankings", "sustainability", "FORGE/team context candidates"]
+      },
+      "method": {
+        "training": "logistic and challenger scripts with frozen dataset/model artifacts",
+        "inference": "versioned feature construction and shot probability scoring",
+        "evaluation": "baseline benchmarking, calibration, feature coverage and release validation"
+      },
+      "governance": {
+        "tests": ["web/lib/xg/*.test.ts", "web/scripts/train-nhl-xg-baseline.test.ts"],
+        "artifactHandling": "tracked artifact references, checksums and registry URIs; runtime reads deployed filesystem",
+        "versioning": "model registry, feature version, calibration fingerprint, lifecycle state and checksums",
+        "asOfBehavior": "Strong adjacent registry pattern; player forecasts still need their own immutable snapshots.",
+        "leakageRisk": "Not audited here as a final player model; any use in player forecasts must respect event availability and model vintage.",
+        "unresolved": ["historical coverage before 2025-26", "artifact storage beyond deployed filesystem", "out-of-time player-level lift"]
+      },
+      "disposition": "extract_patterns_and_features"
+    },
+    {
+      "id": "PP-025",
+      "name": "NHL team game prediction system",
+      "classification": ["actual_trained_predictive_model", "simulation", "evaluation_pipeline"],
+      "language": ["TypeScript", "SQL"],
+      "ownerSurface": "NHL predictions page and adjacent model governance",
+      "status": "production",
+      "paths": ["web/lib/game-predictions/", "web/pages/api/v1/game-predictions/", "web/scripts/forecast-game-predictions.ts", "web/pages/nhl-predictions.tsx"],
+      "semantics": {
+        "population": "NHL teams/games",
+        "target": "game win probability and team score distribution",
+        "horizon": "scheduled game",
+        "vintage": "feature_cutoff_at and feature snapshot",
+        "strengthState": "team/game aggregate",
+        "output": "probabilities, score distribution and accountability metrics",
+        "distribution": "probability and score distribution"
+      },
+      "data": {
+        "inputs": ["team/game features", "roster impact", "market odds", "schedule/context"],
+        "providers": ["internal NHL-derived data", "ESPN odds"],
+        "historicalCoverage": "Live coverage unknown; repository contains snapshot/backtest tooling."
+      },
+      "runtime": {
+        "writers": ["game-predictions/forecast", "generate", "score", "accuracy-loop"],
+        "outputs": ["game_prediction_feature_snapshots", "game_prediction_model_versions", "game_prediction_outputs", "game_prediction_history", "game_prediction_model_metrics", "game_prediction_backtest_runs", "game_prediction_accountability_*", "game_prediction_market_odds_snapshots"],
+        "jobs": ["daily odds ingests and forecast in Vercel cron"],
+        "consumers": ["game prediction APIs", "nhl-predictions page", "FORGE context candidates"]
+      },
+      "method": {
+        "training": "versioned baseline/candidate model workflow",
+        "inference": "feature snapshot and model-version scoring",
+        "evaluation": "chronological backtest, proper metrics, accountability, atomic promotion and rollback patterns"
+      },
+      "governance": {
+        "tests": ["web/lib/game-predictions/*.test.ts", "web/scripts/*game-prediction*.test.ts"],
+        "artifactHandling": "database model versions, metrics and immutable feature snapshots",
+        "versioning": "explicit model version and atomic champion promotion",
+        "asOfBehavior": "Strongest adjacent forecast-cutoff and snapshot pattern.",
+        "leakageRisk": "Adjacent system, not evidence that its team features/models transfer to player targets.",
+        "unresolved": ["which governance components to generalize", "team/player reconciliation contract"]
+      },
+      "disposition": "extract_patterns"
+    },
+    {
+      "id": "PP-026",
+      "name": "Legacy team expected-goals Poisson projection",
+      "classification": ["weighted_projection_formula", "simulation"],
+      "language": ["TypeScript", "SQL"],
+      "ownerSurface": "legacy game-goal projection route",
+      "status": "stale",
+      "paths": ["web/pages/api/v1/db/update-game-goal-projections/index.ts"],
+      "semantics": {
+        "population": "teams/games",
+        "target": "team expected goals and score probabilities",
+        "horizon": "next game",
+        "vintage": "current inputs",
+        "strengthState": "team aggregate",
+        "output": "expected goals and Poisson probabilities",
+        "distribution": "independent Poisson team goals"
+      },
+      "data": {
+        "inputs": ["team strength", "league-average goals"],
+        "providers": ["internal"],
+        "historicalCoverage": "Unknown."
+      },
+      "runtime": {
+        "writers": ["update-game-goal-projections"],
+        "outputs": ["legacy game goal projection rows"],
+        "jobs": ["no current owner established"],
+        "consumers": ["no player projection consumer found"]
+      },
+      "method": {
+        "training": "none",
+        "inference": "team strength multiplied by league mean plus independent Poisson",
+        "evaluation": "no relevant validated evidence found"
+      },
+      "governance": {
+        "tests": [],
+        "artifactHandling": "database/code only",
+        "versioning": "none",
+        "asOfBehavior": "current inputs",
+        "leakageRisk": "Semantic/model misspecification risk; not a player model.",
+        "unresolved": ["remaining caller", "whether fully superseded by PP-025"]
+      },
+      "disposition": "retire_after_dependency_confirmation"
+    },
+    {
+      "id": "PP-027",
+      "name": "One-off performance_prediction Python experiment",
+      "classification": ["actual_trained_predictive_model", "unused_experiment"],
+      "language": ["Python"],
+      "ownerSurface": "offline script",
+      "status": "stale",
+      "paths": ["web/scripts/performance_prediction.py"],
+      "semantics": {
+        "population": "players in input CSV",
+        "target": "selected future performance column",
+        "horizon": "dataset-defined",
+        "vintage": "not safely constructed",
+        "strengthState": "mixed",
+        "output": "CSV predictions/metrics",
+        "distribution": "point predictions"
+      },
+      "data": {
+        "inputs": ["CSV containing multiple future target columns"],
+        "providers": ["local CSV"],
+        "historicalCoverage": "Not established."
+      },
+      "runtime": {
+        "writers": ["manual script only"],
+        "outputs": ["local CSV"],
+        "jobs": ["none"],
+        "consumers": ["none"]
+      },
+      "method": {
+        "training": "offline ML preprocessing/model fit",
+        "inference": "offline batch",
+        "evaluation": "invalid because preprocessing is fit on the full dataset and non-selected future targets remain in features"
+      },
+      "governance": {
+        "tests": [],
+        "artifactHandling": "local CSV only",
+        "versioning": "none",
+        "asOfBehavior": "not forecast-safe",
+        "leakageRisk": "Critical direct target leakage and train/test preprocessing leakage.",
+        "unresolved": ["none required for production; retain only as negative evidence"]
+      },
+      "disposition": "retire"
+    },
+    {
+      "id": "PP-028",
+      "name": "Goals correlation analysis and generated charts",
+      "classification": ["unused_experiment"],
+      "language": ["Python", "CSV", "PNG"],
+      "ownerSurface": "offline exploratory analysis",
+      "status": "historical_evidence",
+      "paths": ["web/scripts/goals_correlation_analysis.py", "web/scripts/output/correlations_all_metrics_F.csv", "web/scripts/output/correlations_all_metrics_F.png"],
+      "semantics": {
+        "population": "forwards and defensemen",
+        "target": "contemporaneous correlation with goals",
+        "horizon": "same-period association",
+        "vintage": "offline dataset",
+        "strengthState": "metric subsets",
+        "output": "correlation tables and plots",
+        "distribution": "none"
+      },
+      "data": {
+        "inputs": ["historical player metrics"],
+        "providers": ["local data extract"],
+        "historicalCoverage": "Not encoded as a governed dataset artifact."
+      },
+      "runtime": {
+        "writers": ["manual script"],
+        "outputs": ["generated CSV/PNG matrix"],
+        "jobs": ["none"],
+        "consumers": ["none"]
+      },
+      "method": {
+        "training": "none",
+        "inference": "correlation calculation",
+        "evaluation": "not predictive evaluation"
+      },
+      "governance": {
+        "tests": [],
+        "artifactHandling": "tracked generated outputs",
+        "versioning": "none",
+        "asOfBehavior": "not applicable to forecasting",
+        "leakageRisk": "Contemporaneous correlation can be mistaken for future predictive signal.",
+        "unresolved": ["whether regenerated results have any documented research provenance"]
+      },
+      "disposition": "archive_or_retire"
+    },
+    {
+      "id": "PP-029",
+      "name": "Legacy Buy Low/Sell High and True Goalie Value surfaces",
+      "classification": ["ranking_formula", "display_only_transformation"],
+      "language": ["JavaScript", "TypeScript", "React"],
+      "ownerSurface": "legacy pages",
+      "status": "stale",
+      "paths": ["web/pages/buyLowSellHigh.js", "web/pages/trueGoalieValue.tsx"],
+      "semantics": {
+        "population": "skaters and goalies",
+        "target": "descriptive value/opportunity labels",
+        "horizon": "current/history",
+        "vintage": "current page data",
+        "strengthState": "mixed",
+        "output": "ranked/display values",
+        "distribution": "none"
+      },
+      "data": {
+        "inputs": ["legacy player/goalie statistics"],
+        "providers": ["internal"],
+        "historicalCoverage": "Unknown."
+      },
+      "runtime": {
+        "writers": ["none identified"],
+        "outputs": ["page-level transforms"],
+        "jobs": ["none"],
+        "consumers": ["legacy pages"]
+      },
+      "method": {
+        "training": "none",
+        "inference": "fixed display/ranking formulas",
+        "evaluation": "page tests only for True Goalie Value"
+      },
+      "governance": {
+        "tests": ["web/__tests__/pages/trueGoalieValue.test.tsx"],
+        "artifactHandling": "none",
+        "versioning": "none",
+        "asOfBehavior": "current state",
+        "leakageRisk": "Not forecast-safe and not a statistical model.",
+        "unresolved": ["traffic/callers", "whether superseded product surfaces permit removal"]
+      },
+      "disposition": "retire_after_product_confirmation"
+    },
+    {
+      "id": "PP-030",
+      "name": "Orphan goalie starter-mixture experiment",
+      "classification": ["heuristic_probability_model", "simulation"],
+      "language": ["TypeScript", "historical SQL"],
+      "ownerSurface": "unscheduled database route",
+      "status": "partial",
+      "paths": ["web/lib/projections/goalieStarterMixtures.ts", "web/pages/api/v1/db/update-goalie-starter-mixtures.ts", "migrations/20260527_create_goalie_starter_mixture_tables.sql"],
+      "semantics": {
+        "population": "goalies",
+        "target": "candidate start probabilities and conditional/unconditional scenario mixtures",
+        "horizon": "next game",
+        "vintage": "requested/current date",
+        "strengthState": "game aggregate",
+        "output": "candidate and mixture rows",
+        "distribution": "discrete starter mixture"
+      },
+      "data": {
+        "inputs": ["goalie candidates", "starter probabilities", "conditional performance scenarios"],
+        "providers": ["internal FORGE/goalie context"],
+        "historicalCoverage": "Unknown; target tables exist only in a historical migration tree."
+      },
+      "runtime": {
+        "writers": ["update-goalie-starter-mixtures"],
+        "outputs": ["historical-migration-only goalie mixture tables"],
+        "jobs": ["no schedule found"],
+        "consumers": ["no canonical API/UI consumer found"]
+      },
+      "method": {
+        "training": "none",
+        "inference": "heuristic mixture assembly",
+        "evaluation": "unit tests only"
+      },
+      "governance": {
+        "tests": ["web/lib/projections/goalieStarterMixtures.test.ts"],
+        "artifactHandling": "database rows if manually deployed",
+        "versioning": "none",
+        "asOfBehavior": "not proven",
+        "leakageRisk": "Operational/security risk: active route targets tables absent from the active migration chain, uses untyped table access, and lacks the normal admin-only wrapper.",
+        "unresolved": ["whether tables were manually deployed", "whether route has ever been called", "whether any mixture contract should be salvaged"]
+      },
+      "disposition": "quarantine_then_extract_contract_or_retire"
+    },
+    {
+      "id": "PP-031",
+      "name": "Legacy player projection storage, routes and tombstones",
+      "classification": ["serving_adapter", "weighted_projection_formula"],
+      "language": ["TypeScript", "SQL"],
+      "ownerSurface": "compatibility and historical schema",
+      "status": "stale",
+      "paths": [
+        "supabase/migrations/20260716112908_production_schema_baseline.sql",
+        "supabase/migrations/20260730193000_repair_compile_invalid_legacy_routines.sql",
+        "web/pages/api/v1/projections/players.ts",
+        "web/pages/api/v1/projections/goalies.ts",
+        "web/pages/api/v1/projections/teams.ts",
+        "web/pages/db/upsert-projections.tsx",
+        "web/pages/api/v1/db/update-PbP.ts"
+      ],
+      "semantics": {
+        "population": "mixed legacy skaters, goalies and teams",
+        "target": "legacy prediction rows and compatibility responses",
+        "horizon": "varies",
+        "vintage": "legacy/current",
+        "strengthState": "varies",
+        "output": "legacy rows or adapters to canonical FORGE",
+        "distribution": "none/legacy"
+      },
+      "data": {
+        "inputs": ["legacy player_projections", "canonical FORGE tables through deprecated aliases", "NHL PBP compatibility arguments"],
+        "providers": ["internal"],
+        "historicalCoverage": "Unknown; no live runtime reader/writer of player_projections was found."
+      },
+      "runtime": {
+        "writers": ["legacy upsert page", "update-PbP one-release compatibility adapter for ingest"],
+        "outputs": ["player_projections", "deprecated /api/v1/projections/* responses", "calculate_goalie_start_projections tombstone"],
+        "jobs": ["no live player_projections writer found; update-PbP compatibility path may still support authenticated repair callers"],
+        "consumers": ["deprecated API clients pending telemetry; no current player_projections runtime consumer found"]
+      },
+      "method": {
+        "training": "none established",
+        "inference": "legacy formulas or forwarding adapters",
+        "evaluation": "compatibility tests"
+      },
+      "governance": {
+        "tests": ["web/lib/projections/compatibilityInventory.ts", "web/lib/projections/module-imports.test.ts", "web/__tests__/pages/api/v1/projections/*.test.ts"],
+        "artifactHandling": "legacy database table and one-release SQL tombstone",
+        "versioning": "compatibility inventory only",
+        "asOfBehavior": "legacy/incomplete",
+        "leakageRisk": "Primary risk is duplicate ownership and accidental reuse of unversioned legacy data.",
+        "unresolved": ["API traffic", "manual users of db/upsert-projections", "when update-PbP callers have fully migrated"]
+      },
+      "disposition": "retire_after_telemetry_and_caller_migration"
+    }
+  ]
+}

@@ -50,7 +50,7 @@ describe("HomepageGamesSection", () => {
   });
 
   it("shows live period and time remaining instead of a scheduled start time", () => {
-    render(
+    const { container } = render(
       <HomepageGamesSection
         currentDate="2026-04-08"
         gamesHeaderText="Today's"
@@ -61,7 +61,7 @@ describe("HomepageGamesSection", () => {
         heroMetrics={[
           { label: "Players", value: "3,555", caption: "indexed" },
           { label: "New", value: "92", caption: "updates" },
-          { label: "Injuries", value: "54", caption: "current updates" }
+          { label: "Injuries", value: "54", caption: "current updates" },
         ]}
         games={[
           {
@@ -93,6 +93,14 @@ describe("HomepageGamesSection", () => {
         .getAttribute("src"),
     ).toBe("https://assets.nhle.com/logos/nhl/svg/NHL_light.svg");
     expect(screen.getByRole("heading", { name: "The Slate" })).toBeTruthy();
+    const slateHeading = document.getElementById("slate-heading");
+    const gamesHeading = document.getElementById("games-strip-heading");
+    expect(
+      Boolean(
+        (slateHeading?.compareDocumentPosition(gamesHeading as Node) ?? 0) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+    ).toBe(true);
     expect(
       screen.getByText("Real-time analytics. Built for fantasy."),
     ).toBeTruthy();
@@ -100,6 +108,59 @@ describe("HomepageGamesSection", () => {
     expect(screen.getByText("3,555")).toBeTruthy();
     expect(screen.getByText("92")).toBeTruthy();
     expect(screen.getByText("54")).toBeTruthy();
+    expect(container.querySelectorAll('[data-slate-metric="true"]')).toHaveLength(3);
+    expect(screen.queryByText(/data points/i)).toBeNull();
+
+    const slateArtwork = container.querySelector('[data-slate-artwork="true"]');
+    const slateShapes = Array.from(
+      slateArtwork?.querySelectorAll("polygon") ?? [],
+    ).map((shape) =>
+      (shape.getAttribute("points") ?? "").split(" ").map((point) => {
+        const [x, y] = point.split(",").map(Number);
+        return { x, y };
+      }),
+    );
+    expect(slateShapes).toHaveLength(4);
+
+    const shapeWidths = slateShapes.map(
+      ([bottomLeft, bottomRight]) => bottomRight.x - bottomLeft.x,
+    );
+    const shapeHeights = slateShapes.map(
+      ([bottomLeft, , , topLeft]) => bottomLeft.y - topLeft.y,
+    );
+    const shapeGaps = slateShapes.slice(0, -1).map((shape, index) => {
+      const nextShape = slateShapes[index + 1];
+      return nextShape[0].x - shape[1].x;
+    });
+    const slantRatios = slateShapes.map(
+      ([bottomLeft, , , topLeft]) =>
+        (topLeft.x - bottomLeft.x) / (bottomLeft.y - topLeft.y),
+    );
+
+    expect(shapeWidths[0]).toBeCloseTo(shapeWidths[1], 2);
+    expect(shapeWidths[0]).toBeCloseTo(shapeWidths[2], 2);
+    expect(shapeWidths[3] / shapeWidths[0]).toBeCloseTo(1.62, 2);
+    expect(shapeHeights[1] / shapeHeights[0]).toBeCloseTo(1, 2);
+    expect(shapeHeights[2] / shapeHeights[0]).toBeCloseTo(1.1, 2);
+    expect(shapeHeights[3] / shapeHeights[0]).toBeCloseTo(1.42, 2);
+    shapeGaps.forEach((gap) =>
+      expect(gap / shapeWidths[0]).toBeCloseTo(0.6, 2),
+    );
+    slantRatios.forEach((ratio) =>
+      expect(ratio).toBeCloseTo(slantRatios[0], 2),
+    );
+    slateShapes.forEach(([bottomLeft, bottomRight, topRight, topLeft]) => {
+      expect(topRight.x - topLeft.x).toBeCloseTo(
+        bottomRight.x - bottomLeft.x,
+        2,
+      );
+      expect(topRight.x - bottomRight.x).toBeCloseTo(
+        topLeft.x - bottomLeft.x,
+        2,
+      );
+      expect(bottomRight.y).toBeCloseTo(bottomLeft.y, 2);
+      expect(topRight.y).toBeCloseTo(topLeft.y, 2);
+    });
     expect(
       screen
         .getAllByRole("link", { name: /starter board/i })
@@ -111,6 +172,16 @@ describe("HomepageGamesSection", () => {
         .some(
           (link) => link.getAttribute("href") === "/game-grid/7-Day-Forecast",
         ),
+    ).toBe(true);
+    expect(
+      screen
+        .getAllByRole("link", { name: /trends/i })
+        .some((link) => link.getAttribute("href") === "/trends"),
+    ).toBe(true);
+    expect(
+      screen
+        .getAllByRole("link", { name: /underlying stats/i })
+        .some((link) => link.getAttribute("href") === "/underlying-stats"),
     ).toBe(true);
   });
 

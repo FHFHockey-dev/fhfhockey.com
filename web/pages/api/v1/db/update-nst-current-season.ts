@@ -15,6 +15,7 @@ import {
 // Assuming utils/fetchCurrentSeason is directly under 'pages' or project root
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import type { Element } from "domhandler";
+import { capturePlayerForecastSourceObservation } from "lib/player-forecasts/sourceSnapshot";
 
 dotenv.config({ path: "./../../../.env.local" });
 
@@ -373,6 +374,24 @@ async function fetchAndParseAllPlayersData(
         if (attempt === retries) return [];
         await delay(2000 * (attempt + 1));
         continue;
+      }
+      try {
+        await capturePlayerForecastSourceObservation({
+          supabase,
+          provider: "natural_stat_trick",
+          datasetKey: `${ReportType[reportType]}:${strength}`,
+          entityKind: "season_report",
+          entityKey: seasonId,
+          sourceUrl: url,
+          sourceRevisionKey: `${seasonId}:${ReportType[reportType]}:${strength}`,
+          payload: { html: text },
+          metadata: { reportType: ReportType[reportType], strength, seasonId },
+        });
+      } catch (snapshotError) {
+        console.warn(
+          "Player Forecasts could not preserve the NST source observation:",
+          snapshotError,
+        );
       }
       const $ = cheerio.load(text);
       const table = $("div#allplayers_length ~ table");

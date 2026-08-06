@@ -650,6 +650,10 @@
   border-right: 1px solid v.$border-soft;
 }
 
+.slateIdentityLockup {
+  display: contents;
+}
+
 .slateEyebrow {
   margin: 0 0 v.$space-xs;
   color: v.$primary-color;
@@ -714,6 +718,10 @@
       );
     }
   }
+}
+
+.slateAccentDesktop {
+  display: none;
 }
 
 .slateDashboard {
@@ -787,6 +795,12 @@
   white-space: nowrap;
 }
 
+.slateMetricDesktopCopy,
+.slateContextLinks,
+.slateActionIcon {
+  display: none;
+}
+
 .edgePanel {
   position: relative;
   display: grid;
@@ -820,6 +834,45 @@
   stroke-linecap: round;
   stroke-linejoin: round;
   filter: drop-shadow(0 0 4px rgba(v.$primary-color, 0.25));
+}
+
+.homepagePulseSeries {
+  opacity: 1;
+  transform: scaleY(1);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity 600ms ease,
+    transform 600ms ease;
+}
+
+.homepagePulseSeriesFading {
+  opacity: 0;
+  transform: scaleY(0.82);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .homepagePulseSeries {
+    transition: none;
+  }
+}
+
+.homepagePulseGhostLine {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.16;
+}
+
+.homepagePulseGlowLine {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.28;
 }
 
 .edgeCopy {
@@ -913,6 +966,643 @@
   &:focus-visible {
     outline: 2px solid v.$primary-color;
     outline-offset: 2px;
+  }
+}
+
+// Desktop Slate hero: intentionally isolated from the approved tablet and
+// mobile presentation below. The existing markup supplies all live metrics,
+// edge copy, freshness data, pulse data, and destination links.
+@media (min-width: 1024px) {
+  .homeContainer {
+    padding-inline: 0 !important;
+    background:
+      radial-gradient(
+        ellipse at 50% 12%,
+        rgba(v.$color-blue-600, 0.045),
+        transparent 48%
+      ),
+      color.adjust(v.$background-dark, $lightness: -5%);
+  }
+
+  .homepage {
+    --homepage-gutter: 24px;
+    width: calc(100% - var(--homepage-gutter) - var(--homepage-gutter));
+    max-width: 1728px;
+    margin-inline: auto;
+    padding-inline: 0;
+  }
+
+  .gameCardsContainer {
+    gap: clamp(12px, 1vw, 18px);
+  }
+
+  .slateHero {
+    --slate-inset: clamp(20px, 2vw, 32px);
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: minmax(230px, 0.25fr) minmax(0, 0.75fr);
+    grid-template-rows: minmax(210px, 1fr) auto;
+    min-height: 0;
+    box-sizing: border-box;
+    isolation: isolate;
+    border-color: rgba(v.$primary-color, 0.26);
+    border-radius: clamp(10px, 0.8vw, 14px);
+    background:
+      radial-gradient(ellipse at 16% 78%, rgba(v.$primary-color, 0.16), transparent 34%),
+      radial-gradient(
+        ellipse at 58% 72%,
+        rgba(v.$color-blue-600, 0.12),
+        transparent 48%
+      ),
+      linear-gradient(
+        105deg,
+        rgba(v.$color-black, 0.12),
+        transparent 54%,
+        rgba(v.$color-black, 0.16)
+      ),
+      color.adjust(v.$background-dark, $lightness: -4%);
+    box-shadow:
+      0 22px 48px -32px rgba(v.$color-black, 0.92),
+      inset 0 1px 0 rgba(v.$color-white, 0.045),
+      inset 0 0 36px rgba(v.$color-blue-600, 0.025);
+
+    &::before {
+      position: absolute;
+      z-index: 0;
+      inset: 0;
+      border-radius: inherit;
+      background:
+        radial-gradient(
+          ellipse at 34% 16%,
+          rgba(v.$primary-color, 0.055),
+          transparent 34%
+        ),
+        linear-gradient(
+          90deg,
+          rgba(v.$color-black, 0.08),
+          transparent 28%,
+          transparent 76%,
+          rgba(v.$color-black, 0.18)
+        );
+      content: "";
+      pointer-events: none;
+    }
+
+    &::after {
+      position: absolute;
+      z-index: 0;
+      inset: 34% 0 0 12%;
+      background-image:
+        linear-gradient(rgba(v.$primary-color, 0.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(v.$primary-color, 0.022) 1px, transparent 1px);
+      background-size: 42px 34px;
+      content: "";
+      mask-image: radial-gradient(ellipse at 55% 72%, black 18%, transparent 78%);
+      pointer-events: none;
+    }
+  }
+
+  .slateHeroIntro {
+    justify-content: flex-start;
+    min-width: 0;
+    max-width: 100%;
+    padding: clamp(1rem, 1.25vw, 1.5rem) var(--slate-inset);
+    box-sizing: border-box;
+    border-right: 0;
+
+    &::after {
+      display: none;
+    }
+  }
+
+  .slateIdentityLockup {
+    display: block;
+    width: calc(100% - 16px);
+  }
+
+  .slateHeadline {
+    position: relative;
+    width: fit-content;
+    padding-bottom: clamp(0.45rem, 0.65vw, 0.7rem);
+    font-size: clamp(2.65rem, 3.7vw, 4.5rem);
+    font-weight: v.$font-weight-bold;
+    letter-spacing: 0.035em;
+    line-height: 0.92;
+    text-shadow: none;
+
+    &::after {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      height: 2px;
+      background: v.$primary-color;
+      box-shadow: 0 2px 8px rgba(v.$primary-color, 0.16);
+      content: "";
+    }
+  }
+
+  .slateDescription {
+    max-width: none;
+    margin-top: clamp(0.45rem, 0.55vw, 0.55rem);
+    color: v.$primary-color;
+    font-size: clamp(0.84rem, 1vw, 1.1rem);
+    font-weight: v.$font-weight-medium;
+    line-height: 1.35;
+  }
+
+  .slateAccent {
+    display: none;
+  }
+
+  .slateAccentDesktop {
+    position: absolute;
+    z-index: 1;
+    bottom: clamp(10px, 0.7vw, 14px);
+    left: clamp(10px, 0.5vw, 14px);
+    display: block;
+    width: min(
+      calc(100% - clamp(20px, 2vw, 24px)),
+      clamp(220px, 18.75vw, 360px)
+    );
+    height: auto;
+    overflow: hidden;
+    border-bottom-left-radius: 24px;
+    filter: drop-shadow(0 0 13px rgba(v.$primary-color, 0.1));
+    pointer-events: none;
+  }
+
+  .slateDashboard {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    grid-template-rows: minmax(86px, 39%) minmax(0, 1fr);
+    min-height: 0;
+    box-sizing: border-box;
+  }
+
+  .slateSummaryRail {
+    position: relative;
+    min-width: 0;
+    max-width: 100%;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    box-sizing: border-box;
+    border-bottom: 0;
+
+    &::after {
+      position: absolute;
+      z-index: 2;
+      right: var(--slate-inset);
+      bottom: 0;
+      left: var(--slate-inset);
+      height: 1px;
+      background: rgba(v.$color-white, 0.095);
+      content: "";
+    }
+  }
+
+  .slateSummaryCard {
+    grid-template-columns: clamp(38px, 3vw, 52px) minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    align-content: center;
+    min-height: 0;
+    padding: clamp(0.65rem, 0.8vw, 1rem) clamp(0.75rem, 1.35vw, 1.5rem);
+    column-gap: clamp(0.8rem, 1.15vw, 1.15rem);
+    border-right: 0;
+    transform: translateY(clamp(2px, 0.25vw, 4px));
+
+    &:not(:last-child)::after {
+      position: absolute;
+      top: clamp(1.25rem, 1.5vw, 1.75rem);
+      right: 0;
+      bottom: clamp(1.25rem, 1.5vw, 1.75rem);
+      width: 1px;
+      background: rgba(v.$color-white, 0.075);
+      content: "";
+    }
+
+    small {
+      font-size: clamp(0.66rem, 0.72vw, 0.74rem);
+      letter-spacing: 0.025em;
+      text-transform: none;
+    }
+  }
+
+  .metricIcon {
+    grid-row: 1 / 4;
+    align-self: start;
+    width: clamp(38px, 3vw, 52px);
+    height: clamp(38px, 3vw, 52px);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: v.$primary-color;
+    stroke: currentColor;
+    stroke-width: 1.45;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    box-shadow: none;
+  }
+
+  .slateSummaryLabel {
+    font-size: clamp(0.7rem, 0.82vw, 0.82rem);
+    letter-spacing: 0.075em;
+    line-height: 1.15;
+  }
+
+  .slateSummaryValue {
+    font-size: clamp(2rem, 2.7vw, 2rem);
+    font-weight: v.$font-weight-semibold;
+  }
+
+  .slateMetricDefaultCopy {
+    display: none;
+  }
+
+  .slateMetricDesktopCopy {
+    display: inline;
+  }
+
+  .edgePanel {
+    display: block;
+    width: 100%;
+    min-height: 0;
+    max-width: 100%;
+    padding: clamp(0rem, 0vw, 0rem) clamp(2rem, 3.5vw, 3.25rem)
+      clamp(2.6rem, 3vw, 3rem);
+    box-sizing: border-box;
+    overflow: visible;
+    background: transparent;
+
+    &::before {
+      position: absolute;
+      z-index: 1;
+      bottom: 0;
+      left: clamp(-158px, -9vw, -92px);
+      width: 1px;
+      height: calc(100% + 1px);
+      background: rgba(v.$primary-color, 0.88);
+      box-shadow: 0 0 7px rgba(v.$primary-color, 0.2);
+      content: "";
+      pointer-events: none;
+      transform: skewX(var(--slate-side-skew));
+      transform-origin: bottom center;
+    }
+  }
+
+  .homepagePulse {
+    inset: 29% 1.5% auto;
+    z-index: 1;
+    width: 97%;
+    height: 42%;
+    opacity: 0.9;
+  }
+
+  .homepagePulseLine {
+    stroke-width: 1.35px;
+    filter: drop-shadow(0 0 2px rgba(v.$primary-color, 0.42));
+  }
+
+  .homepagePulseGhostLine {
+    stroke-width: 7px;
+    opacity: 0.1;
+    filter: blur(5px);
+  }
+
+  .homepagePulseGlowLine {
+    stroke-width: 3.2px;
+    opacity: 0.24;
+    filter: blur(1.8px);
+  }
+
+  .edgeCopy {
+    position: relative;
+    z-index: 2;
+    align-items: start;
+    justify-items: start;
+    max-width: min(42rem, calc(100% - 9rem));
+    padding: 0;
+    text-align: left;
+    margin-left: clamp(1.25rem, 1.5vw, 1.75rem);
+
+    strong {
+      font-size: clamp(1.6rem, 2.25vw, 2.15rem);
+      font-weight: v.$font-weight-medium;
+      letter-spacing: 0.045em;
+    }
+
+    p {
+      max-width: 54ch;
+      font-size: clamp(0.86rem, 1vw, 1rem);
+      line-height: 1.45;
+    }
+  }
+
+  .dataUpdated {
+    position: absolute;
+    z-index: 2;
+    right: clamp(1.6rem, 2.6vw, 2.75rem);
+    bottom: clamp(2.9rem, 3vw, 3.2rem);
+    min-width: 0;
+    gap: 0.35rem;
+    justify-items: end;
+    font-size: clamp(0.6rem, 0.7vw, 0.7rem);
+    text-align: right;
+
+    small {
+      font-size: clamp(0.72rem, 0.9vw, 0.88rem);
+    }
+
+    i {
+      box-shadow:
+        0 0 0 2px rgba(v.$success-color, 0.12),
+        0 0 8px rgba(v.$success-color, 0.72),
+        0 0 15px rgba(v.$success-color, 0.3);
+    }
+
+    &::before {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: -1rem;
+      width: 1px;
+      background: rgba(v.$color-white, 0.085);
+      content: "";
+    }
+  }
+
+  .slateContextLinks {
+    position: absolute;
+    z-index: 2;
+    right: clamp(2rem, 3.5vw, 3.25rem);
+    bottom: 0;
+    left: clamp(2rem, 3.5vw, 3.25rem);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: end;
+    min-height: 42px;
+    border-top: 1px solid rgba(v.$color-white, 0.055);
+
+    a {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      color: rgba(v.$color-white, 0.7);
+      font-family: v.$font-family-primary, sans-serif;
+      font-size: clamp(0.64rem, 0.76vw, 0.78rem);
+      font-weight: v.$font-weight-semibold;
+      letter-spacing: 0.055em;
+      text-decoration: none;
+      text-transform: uppercase;
+
+      &::after {
+        position: absolute;
+        right: 28%;
+        bottom: 0;
+        left: 28%;
+        height: 2px;
+        background: v.$primary-color;
+        content: "";
+        opacity: 0;
+        transform: scaleX(0.55);
+        transition:
+          opacity v.$transition-duration v.$transition-easing,
+          transform v.$transition-duration v.$transition-easing;
+      }
+
+      &:hover,
+      &:focus-visible {
+        color: v.$color-white;
+      }
+
+      &:hover::after,
+      &:focus-visible::after,
+      &[data-featured="true"]::after {
+        opacity: 1;
+        transform: scaleX(1);
+        box-shadow: 0 0 7px rgba(v.$primary-color, 0.28);
+      }
+
+      &:focus-visible {
+        outline: 2px solid v.$primary-color;
+        outline-offset: -2px;
+      }
+    }
+  }
+
+  .slateActionRow {
+    position: static;
+    inset: auto;
+    z-index: 1;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    gap: v.$space-sm;
+    padding: clamp(4px, 0.5vw, 8px) clamp(1rem, 2vw, 1.5rem);
+    box-sizing: border-box;
+    border-top: 1px solid rgba(v.$color-white, 0.09);
+    background: rgba(v.$color-black, 0.12);
+    pointer-events: auto;
+  }
+
+  .slateActionLink {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+    align-items: center;
+    min-width: 0;
+    min-height: 36px;
+    padding: 0 v.$space-sm;
+    border: 1px solid rgba(v.$color-white, 0.11);
+    border-radius: v.$radius-control;
+    background: rgba(v.$color-white, 0.018);
+    color: v.$text-primary;
+    font-size: clamp(0.68rem, 0.88vw, 0.84rem);
+    font-weight: v.$font-weight-semibold;
+    letter-spacing: 0.07em;
+    line-height: 1.2;
+    text-align: left;
+    transition:
+      border-color v.$transition-duration v.$transition-easing,
+      background-color v.$transition-duration v.$transition-easing,
+      color v.$transition-duration v.$transition-easing;
+
+    &:hover,
+    &:focus-visible {
+      border-color: rgba(v.$primary-color, 0.7);
+      background: rgba(v.$primary-color, 0.08);
+      color: v.$color-white;
+    }
+  }
+
+  .slateActionIcon {
+    display: block;
+    width: 23px;
+    height: 23px;
+    color: v.$primary-color;
+    stroke: currentColor;
+    stroke-width: 1.65;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+@media (min-width: 1280px) {
+  .homepage {
+    --homepage-gutter: 32px;
+  }
+
+  .slateHero {
+    --slate-rail-line-offset: clamp(68px, 5.25vw, 101px);
+    grid-template-columns: minmax(0, 0.24fr) minmax(0, 0.58fr) minmax(0, 0.18fr);
+    grid-template-rows: minmax(0, 1fr);
+    min-height: 0;
+    aspect-ratio: 6 / 1;
+
+    &::after {
+      right: 18%;
+    }
+  }
+
+  .slateHeroIntro {
+    grid-column: 1;
+    grid-row: 1;
+
+    &::after {
+      position: absolute;
+      z-index: 2;
+      top: var(--slate-rail-line-offset);
+      right: clamp(70px, 5.4vw, 104px);
+      bottom: 0;
+      display: block;
+      width: 1px;
+      background: rgba(v.$primary-color, 0.88);
+      box-shadow: 0 0 7px rgba(v.$primary-color, 0.2);
+      content: "";
+      pointer-events: none;
+      transform: skewX(var(--slate-side-skew));
+      transform-origin: bottom center;
+    }
+  }
+
+  .slateHeadline::after {
+    display: none;
+  }
+
+  .slateDashboard {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .slateSummaryRail::after {
+    top: var(--slate-rail-line-offset);
+    right: var(--slate-inset);
+    bottom: auto;
+    left: calc(-41.3793% + var(--slate-inset));
+    height: 2px;
+    background: v.$primary-color;
+    box-shadow: 0 2px 8px rgba(v.$primary-color, 0.16);
+  }
+
+  .slateSummaryCard {
+    transform: translateY(-7px);
+  }
+
+  .edgePanel::before {
+    display: none;
+  }
+
+  .homepagePulse {
+    height: min(42%, calc(71% - 45px));
+  }
+
+  .slateActionRow {
+    position: relative;
+    inset: auto;
+    grid-column: 3;
+    grid-row: 1;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto repeat(4, minmax(0, 1fr));
+    align-content: stretch;
+    gap: clamp(4px, 0.4vw, 6px);
+    padding: clamp(0.75rem, 1vw, 1rem) clamp(1rem, 1.4vw, 1.5rem);
+    border-top: 0;
+    border-left: 0;
+    background: transparent;
+
+    &::before {
+      align-self: center;
+      margin-bottom: 4px;
+      color: v.$primary-color;
+      content: "Quick links";
+      font-family: v.$font-family-primary, sans-serif;
+      font-size: clamp(1.08rem, 1.3vw, 1.38rem);
+      font-weight: v.$font-weight-semibold;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    &::after {
+      position: absolute;
+      top: 16px;
+      bottom: 16px;
+      left: 0;
+      width: 1px;
+      background: rgba(v.$color-white, 0.085);
+      content: "";
+      pointer-events: none;
+    }
+  }
+
+  .slateActionLink {
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    column-gap: clamp(0.75rem, 0.9vw, 1rem);
+    min-height: clamp(36px, 2.25vw, 46px);
+    padding: 0 clamp(1.05rem, 1.35vw, 1.45rem);
+    border-color: rgba(v.$color-white, 0.085);
+    border-radius: clamp(5px, 0.45vw, 8px);
+    background: rgba(v.$color-white, 0.022);
+    font-size: clamp(0.74rem, 0.9vw, 0.88rem);
+    text-align: left;
+
+    &::after {
+      color: v.$primary-color;
+      content: "›";
+      font-family: v.$font-family-numbers;
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+  }
+
+  .slateActionIcon {
+    width: clamp(24px, 1.65vw, 28px);
+    height: clamp(24px, 1.65vw, 28px);
+  }
+
+  .slateDescription {
+    white-space: nowrap;
+  }
+
+  .slateContextLinks {
+    display: grid;
+  }
+}
+
+@media (min-width: 1600px) {
+  .homepage {
+    --homepage-gutter: 48px;
+  }
+}
+
+@media (min-width: 1920px) {
+  .homepage {
+    --homepage-gutter: 64px;
   }
 }
 
@@ -1375,10 +2065,6 @@
   .homepage,
   .gameCardsContainer {
     gap: v.$space-sm;
-  }
-
-  .gameCardsContainer .slateHero {
-    order: -1;
   }
 
   .gamesHeader {

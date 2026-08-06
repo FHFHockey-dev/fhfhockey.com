@@ -5,6 +5,7 @@ import fetch from "node-fetch";
 import { parseISO, format, addDays, isBefore, isValid } from "date-fns";
 import ProgressBar from "progress";
 import writerTeamAuthority from "../../NHL/seasonAwareWriterTeams.cjs";
+import { capturePlayerForecastSourceObservation } from "../../player-forecasts/sourceSnapshot";
 
 const { createSeasonAwareWriterTeamsFromLineageRecords } = writerTeamAuthority;
 
@@ -256,6 +257,36 @@ async function fetchNHLData(
         `https://api.nhle.com/stats/rest/en/team/faceoffwins?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22faceoffsWon%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`,
       ),
     ]);
+
+    try {
+      await capturePlayerForecastSourceObservation({
+        supabase,
+        provider: "nhl_stats_api",
+        datasetKey: "wgo_team_daily_bundle",
+        entityKind: "league_date",
+        entityKey: `${seasonId}:${formattedDate}`,
+        sourceRevisionKey: `${seasonId}:${formattedDate}`,
+        payload: {
+          summary: statsResponse,
+          realtime: miscStatsResponse,
+          penalties: penaltyResponse,
+          penaltyKill: penaltyKillResponse,
+          powerPlay: powerPlayResponse,
+          powerPlayToi: ppToiResponse,
+          penaltyKillToi: pkToiResponse,
+          shooting: shootingResponse,
+          percentages: shPercentageResponse,
+          faceoff: faceOffResponse,
+          faceoffWins: faceOffWinLossResponse,
+        },
+        metadata: { pipeline: "wgo_team_stats", seasonId, formattedDate },
+      });
+    } catch (snapshotError) {
+      console.warn(
+        "Player Forecasts could not preserve the WGO pipeline source observation:",
+        snapshotError,
+      );
+    }
 
     const counts = {
       summary: statsResponse?.data?.length || 0,

@@ -64,6 +64,165 @@ const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 type MobileSlateMode = "light" | "medium" | "heavy";
 type MobileGameGroup = "live" | "scheduled" | "final";
+type SlateIconName =
+  | "players"
+  | "news"
+  | "injuries"
+  | "starter"
+  | "grid"
+  | "trends"
+  | "stats";
+
+const SLATE_METRIC_PRESENTATION: Record<
+  string,
+  { label: string; descriptor: string; icon: SlateIconName }
+> = {
+  players: {
+    label: "Players indexed",
+    descriptor: "Up to date",
+    icon: "players",
+  },
+  news: {
+    label: "News updates",
+    descriptor: "Latest headlines",
+    icon: "news",
+  },
+  injuries: {
+    label: "Injuries tracked",
+    descriptor: "Current updates",
+    icon: "injuries",
+  },
+};
+
+const SLATE_SIDE_ANGLE_DEGREES = 34;
+const SLATE_SHAPE_WIDTH_RATIOS = [1, 1, 1, 1.62] as const;
+const SLATE_SHAPE_HEIGHT_RATIOS = [1, 1, 1.1, 1.42] as const;
+const SLATE_SHAPE_GAP_RATIO = 0.6;
+const SLATE_SHAPE_BASE_WIDTH = 42;
+const SLATE_SHAPE_BASE_HEIGHT = 76;
+const SLATE_ARTWORK_PADDING = 4;
+
+const slateSlantRatio = Math.tan(
+  (SLATE_SIDE_ANGLE_DEGREES * Math.PI) / 180,
+);
+const slateArtworkBaseline =
+  SLATE_ARTWORK_PADDING +
+  SLATE_SHAPE_BASE_HEIGHT * Math.max(...SLATE_SHAPE_HEIGHT_RATIOS);
+
+const SLATE_ARTWORK_SHAPES = SLATE_SHAPE_WIDTH_RATIOS.map(
+  (widthRatio, index) => {
+    const width = SLATE_SHAPE_BASE_WIDTH * widthRatio;
+    const height = SLATE_SHAPE_BASE_HEIGHT * SLATE_SHAPE_HEIGHT_RATIOS[index];
+    const slantOffset = height * slateSlantRatio;
+    const x =
+      SLATE_ARTWORK_PADDING +
+      index *
+        SLATE_SHAPE_BASE_WIDTH * (1 + SLATE_SHAPE_GAP_RATIO);
+    const top = slateArtworkBaseline - height;
+
+    return {
+      index,
+      rightEdge: x + width + slantOffset,
+      points: [
+        [x, slateArtworkBaseline],
+        [x + width, slateArtworkBaseline],
+        [x + width + slantOffset, top],
+        [x + slantOffset, top],
+      ]
+        .map(([pointX, pointY]) => `${pointX.toFixed(2)},${pointY.toFixed(2)}`)
+        .join(" "),
+    };
+  },
+);
+
+const slateArtworkLastShape =
+  SLATE_ARTWORK_SHAPES[SLATE_ARTWORK_SHAPES.length - 1];
+const SLATE_ARTWORK_VIEWBOX_WIDTH =
+  slateArtworkLastShape.rightEdge + SLATE_ARTWORK_PADDING;
+const SLATE_ARTWORK_VIEWBOX_HEIGHT =
+  slateArtworkBaseline + SLATE_ARTWORK_PADDING;
+const SLATE_HERO_STYLE = {
+  "--slate-side-angle": `${SLATE_SIDE_ANGLE_DEGREES}deg`,
+  "--slate-side-skew": `${-SLATE_SIDE_ANGLE_DEGREES}deg`,
+} as CSSProperties;
+
+const getSlateMetricPresentation = (label: string, caption: string) =>
+  SLATE_METRIC_PRESENTATION[label.trim().toLowerCase()] ?? {
+    label,
+    descriptor: caption,
+    icon: "stats" as const,
+  };
+
+const getSlateLinkIcon = (href: string): SlateIconName => {
+  if (href === "/start-chart") return "starter";
+  if (href.startsWith("/game-grid")) return "grid";
+  if (href === "/trends") return "trends";
+  return "stats";
+};
+
+function SlateIcon({
+  name,
+  className,
+}: {
+  name: SlateIconName;
+  className: string;
+}) {
+  const paths: Record<SlateIconName, React.ReactNode> = {
+    players: (
+      <>
+        <circle cx="9" cy="8" r="3" />
+        <path d="M3.5 18c1-3.2 2.8-5 5.5-5s4.5 1.8 5.5 5" />
+        <path d="M16 6.5a2.5 2.5 0 0 1 0 5M17 13c1.8.7 3 2.3 3.5 5" />
+      </>
+    ),
+    news: (
+      <>
+        <path d="M7 3h12v15H7z" />
+        <path d="M4 6h3v15h12v-3M10 7h6M10 11h6M10 15h4" />
+      </>
+    ),
+    injuries: (
+      <>
+        <path d="M5 8h14a2 2 0 0 1 2 2v9H3v-9a2 2 0 0 1 2-2Z" />
+        <path d="M9 8V5h6v3M12 11v5M9.5 13.5h5M3 12h18" />
+      </>
+    ),
+    starter: (
+      <>
+        <circle cx="9" cy="8" r="3" />
+        <path d="M3.5 18c1-3.2 2.8-5 5.5-5s4.5 1.8 5.5 5M16 6.5a2.5 2.5 0 0 1 0 5M17 13c1.8.7 3 2.3 3.5 5" />
+      </>
+    ),
+    grid: (
+      <>
+        <path d="M3 4h5v4H3zM10 4h5v4h-5zM17 4h4v4h-4zM3 10h5v4H3zM10 10h5v4h-5zM17 10h4v4h-4zM3 16h5v4H3zM10 16h5v4h-5zM17 16h4v4h-4z" />
+      </>
+    ),
+    trends: (
+      <>
+        <path d="M3 20h18M4 17l5-6 4 3 7-9" />
+        <path d="M16 6h4v4" />
+      </>
+    ),
+    stats: (
+      <>
+        <path d="M4 20V10h4v10M10 20V5h4v15M16 20v-7h4v7M3 20h18" />
+      </>
+    ),
+  };
+
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {paths[name]}
+    </svg>
+  );
+}
 
 const getMobileSlateMode = (gameCount: number): MobileSlateMode => {
   if (gameCount <= 5) return "light";
@@ -635,6 +794,155 @@ export default function HomepageGamesSection({
   return (
     <div className={styles.gameCardsContainer}>
       <section
+        className={styles.slateHero}
+        aria-labelledby="slate-heading"
+        data-slate-angle={SLATE_SIDE_ANGLE_DEGREES}
+        style={SLATE_HERO_STYLE}
+      >
+        <div className={styles.slateHeroIntro}>
+          <div className={styles.slateIdentityLockup}>
+            <h1 id="slate-heading" className={styles.slateHeadline}>
+              {playoffsActive ? "The Bracket" : "The Slate"}
+            </h1>
+            <p className={styles.slateDescription}>
+              Real-time analytics. Built for fantasy.
+            </p>
+          </div>
+          <div className={styles.slateAccent} aria-hidden="true">
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+          </div>
+          <svg
+            className={styles.slateAccentDesktop}
+            viewBox={`0 0 ${SLATE_ARTWORK_VIEWBOX_WIDTH} ${SLATE_ARTWORK_VIEWBOX_HEIGHT}`}
+            aria-hidden="true"
+            focusable="false"
+            data-slate-artwork="true"
+          >
+            <defs>
+              <linearGradient id="slate-cyan-gradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#31cff7" />
+                <stop offset="0.58" stopColor="#0caee0" />
+                <stop offset="1" stopColor="#079aca" />
+              </linearGradient>
+              <linearGradient id="slate-white-gradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#f8fbff" />
+                <stop offset="1" stopColor="#d9e2ea" />
+              </linearGradient>
+            </defs>
+            {SLATE_ARTWORK_SHAPES.map((shape) => (
+              <polygon
+                key={shape.index}
+                points={shape.points}
+                fill={
+                  shape.index === 2
+                    ? "url(#slate-white-gradient)"
+                    : "url(#slate-cyan-gradient)"
+                }
+                data-slate-shape={shape.index + 1}
+              />
+            ))}
+          </svg>
+        </div>
+
+        <div className={styles.slateDashboard}>
+          <div className={styles.slateSummaryRail}>
+            {heroMetrics.map((metric) => {
+              const presentation = getSlateMetricPresentation(
+                metric.label,
+                metric.caption,
+              );
+
+              return (
+                <div
+                  key={metric.label}
+                  className={styles.slateSummaryCard}
+                  data-slate-metric="true"
+                >
+                  <SlateIcon
+                    name={presentation.icon}
+                    className={styles.metricIcon}
+                  />
+                  <span className={styles.slateSummaryLabel}>
+                    <span className={styles.slateMetricDefaultCopy}>
+                      {metric.label}
+                    </span>
+                    <span className={styles.slateMetricDesktopCopy}>
+                      {presentation.label}
+                    </span>
+                  </span>
+                  <strong className={styles.slateSummaryValue}>
+                    {metric.value}
+                  </strong>
+                  <small>
+                    <span className={styles.slateMetricDefaultCopy}>
+                      {metric.caption}
+                    </span>
+                    <span className={styles.slateMetricDesktopCopy}>
+                      {presentation.descriptor}
+                    </span>
+                  </small>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className={styles.edgePanel}>
+            <HomepagePulse initialPoints={pulsePoints} />
+            <div className={styles.edgeCopy}>
+              <strong>
+                Today&apos;s <span>Edge</span>
+              </strong>
+              <p>{heroDescription}</p>
+            </div>
+            {lastUpdatedAt ? (
+              <ClientOnly>
+                <div className={styles.dataUpdated}>
+                  <span>Data updated</span>
+                  <small>
+                    <i aria-hidden="true"></i>
+                    {moment(lastUpdatedAt).fromNow()}
+                  </small>
+                </div>
+              </ClientOnly>
+            ) : null}
+            <nav
+              className={styles.slateContextLinks}
+              aria-label="Contextual homepage tools"
+            >
+              {HOME_SURFACE_LINKS.slice(0, 4).map((link, index) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  data-featured={index === 0 || undefined}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        </div>
+
+        <nav className={styles.slateActionRow} aria-label="Homepage tools">
+          {HOME_SURFACE_LINKS.slice(0, 4).map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={styles.slateActionLink}
+            >
+              <SlateIcon
+                name={getSlateLinkIcon(link.href)}
+                className={styles.slateActionIcon}
+              />
+              <span>{link.label}</span>
+            </Link>
+          ))}
+        </nav>
+      </section>
+
+      <section
         className={styles.gamesStrip}
         aria-labelledby="games-strip-heading"
       >
@@ -1022,70 +1330,6 @@ export default function HomepageGamesSection({
         </div>
       </section>
 
-      <section className={styles.slateHero} aria-labelledby="slate-heading">
-        <div className={styles.slateHeroIntro}>
-          <h1 id="slate-heading" className={styles.slateHeadline}>
-            {playoffsActive ? "The Bracket" : "The Slate"}
-          </h1>
-          <p className={styles.slateDescription}>
-            Real-time analytics. Built for fantasy.
-          </p>
-          <div className={styles.slateAccent} aria-hidden="true">
-            <i></i>
-            <i></i>
-            <i></i>
-            <i></i>
-          </div>
-        </div>
-
-        <div className={styles.slateDashboard}>
-          <div className={styles.slateSummaryRail}>
-            {heroMetrics.map((metric) => (
-              <div key={metric.label} className={styles.slateSummaryCard}>
-                <span className={styles.metricIcon} aria-hidden="true"></span>
-                <span className={styles.slateSummaryLabel}>{metric.label}</span>
-                <strong className={styles.slateSummaryValue}>
-                  {metric.value}
-                </strong>
-                <small>{metric.caption}</small>
-              </div>
-            ))}
-          </div>
-
-          <div className={styles.edgePanel}>
-            <HomepagePulse initialPoints={pulsePoints} />
-            <div className={styles.edgeCopy}>
-              <strong>
-                Today&apos;s <span>Edge</span>
-              </strong>
-              <p>{heroDescription}</p>
-            </div>
-            {lastUpdatedAt ? (
-              <ClientOnly>
-                <div className={styles.dataUpdated}>
-                  <span>Data updated</span>
-                  <small>
-                    <i aria-hidden="true"></i>
-                    {moment(lastUpdatedAt).fromNow()}
-                  </small>
-                </div>
-              </ClientOnly>
-            ) : null}
-          </div>
-        </div>
-
-        <nav className={styles.slateActionRow} aria-label="Homepage tools">
-          {HOME_SURFACE_LINKS.slice(0, 4).map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={styles.slateActionLink}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-      </section>
     </div>
   );
 }
