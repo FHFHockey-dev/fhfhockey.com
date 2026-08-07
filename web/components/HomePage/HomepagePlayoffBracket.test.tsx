@@ -1,7 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { getImageProps } from "next/image";
 import { createElement } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { PlayoffBracketSeries } from "lib/NHL/server/playoffBracket";
 
@@ -30,6 +30,8 @@ vi.mock("next/image", async () => {
   };
 });
 
+afterEach(cleanup);
+
 function makeSeries(
   overrides: Partial<PlayoffBracketSeries>,
 ): PlayoffBracketSeries {
@@ -49,6 +51,80 @@ function makeSeries(
 }
 
 describe("HomepagePlayoffBracket image contracts", () => {
+  it("renders both conference wings, a centered Final, connectors, and the champion", () => {
+    const roundOneLetters = ["A", "B", "C", "D", "E", "F", "G", "H"];
+    const roundTwoLetters = ["I", "J", "K", "L"];
+    const conferenceFinalLetters = ["M", "N"];
+    const bracketSeries = [
+      ...roundOneLetters.map((seriesLetter) =>
+        makeSeries({
+          seriesLetter,
+          topSeedTeam: { id: 25, abbrev: "DAL" },
+          bottomSeedTeam: { id: 22, abbrev: "EDM" },
+        }),
+      ),
+      ...roundTwoLetters.map((seriesLetter) =>
+        makeSeries({
+          seriesTitle: "Round Two",
+          seriesAbbrev: "R2",
+          seriesLetter,
+          playoffRound: 2,
+          topSeedTeam: { id: 25, abbrev: "DAL" },
+          bottomSeedTeam: { id: 22, abbrev: "EDM" },
+        }),
+      ),
+      ...conferenceFinalLetters.map((seriesLetter) =>
+        makeSeries({
+          seriesTitle: "Conference Final",
+          seriesAbbrev: "CF",
+          seriesLetter,
+          playoffRound: 3,
+          topSeedTeam: { id: 25, abbrev: "DAL" },
+          bottomSeedTeam: { id: 22, abbrev: "EDM" },
+        }),
+      ),
+      makeSeries({
+        seriesTitle: "Stanley Cup Final",
+        seriesAbbrev: "SCF",
+        seriesLetter: "O",
+        playoffRound: 4,
+        topSeedWins: 4,
+        bottomSeedWins: 2,
+        topSeedTeam: {
+          id: 25,
+          abbrev: "DAL",
+          name: { default: "Dallas Stars" },
+        },
+        bottomSeedTeam: {
+          id: 6,
+          abbrev: "BOS",
+          name: { default: "Boston Bruins" },
+        },
+      }),
+    ];
+
+    const { container } = render(
+      <HomepagePlayoffBracket
+        currentDate="2026-06-24"
+        games={[]}
+        playoffWeekGames={[]}
+        postseasonYear={2026}
+        playoffBracket={{ series: bracketSeries }}
+      />,
+    );
+
+    expect(screen.getByText("Western Conference")).toBeTruthy();
+    expect(screen.getByText("Eastern Conference")).toBeTruthy();
+    expect(container.querySelectorAll('[data-playoff-round="1"]')).toHaveLength(8);
+    expect(container.querySelectorAll('[data-playoff-round="2"]')).toHaveLength(4);
+    expect(container.querySelectorAll('[data-playoff-round="3"]')).toHaveLength(2);
+    expect(container.querySelectorAll('[data-series-letter="O"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[data-connector-side="west"]')).toHaveLength(7);
+    expect(container.querySelectorAll('[data-connector-side="east"]')).toHaveLength(7);
+    expect(screen.getByText("Stanley Cup Champions")).toBeTruthy();
+    expect(screen.getByText("Dallas Stars")).toBeTruthy();
+  });
+
   it("uses source-aware intrinsic dimensions and the production optimizer path", () => {
     render(
       <HomepagePlayoffBracket

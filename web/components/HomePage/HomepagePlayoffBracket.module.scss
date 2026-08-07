@@ -9,6 +9,79 @@
   min-width: 0;
 }
 
+.playoffStateHeader {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: v.$space-md;
+  padding: v.$space-sm;
+  border: 1px solid rgba(v.$secondary-color, 0.18);
+  border-radius: v.$radius-card;
+  background:
+    linear-gradient(100deg, rgba(v.$secondary-color, 0.1), transparent 46%),
+    rgba(v.$background-dark, 0.72);
+
+  p {
+    margin: 0;
+    color: v.$text-color-secondary;
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+}
+
+.playoffStateTitle {
+  display: grid;
+  gap: 2px;
+
+  span {
+    color: v.$secondary-color;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  h3 {
+    margin: 0;
+    color: v.$color-white;
+    font-family: v.$font-family-primary;
+    font-size: 1.12rem;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+}
+
+.fullBracketLink {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-xs;
+  min-height: 32px;
+  padding-inline: v.$space-sm;
+  border: 1px solid rgba(v.$secondary-color, 0.42);
+  border-radius: v.$radius-control;
+  background: rgba(v.$secondary-color, 0.05);
+  color: v.$secondary-color;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  &:hover,
+  &:focus-visible {
+    border-color: v.$secondary-color;
+    background: rgba(v.$secondary-color, 0.1);
+    color: v.$color-white;
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$focus-color;
+    outline-offset: 2px;
+  }
+}
+
 .playoffHeader {
   display: flex;
   align-items: center;
@@ -258,6 +331,7 @@
 }
 
 .bracketBoard {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   gap: clamp(v.$space-md, 2vw, v.$space-xxl);
@@ -266,10 +340,55 @@
   min-width: 0;
 }
 
+.bracketConnectors {
+  display: none;
+}
+
 .conferenceBoard,
 .cupBoard {
   min-width: 0;
   width: 100%;
+}
+
+.championCard {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  width: 100%;
+  padding: v.$space-sm;
+  border: 1px solid rgba(v.$success-color, 0.4);
+  border-radius: v.$radius-card;
+  background:
+    radial-gradient(circle at 50% 0, rgba(v.$success-color, 0.16), transparent 58%),
+    rgba(v.$background-dark, 0.82);
+  text-align: center;
+
+  img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+  }
+
+  span,
+  small {
+    color: v.$success-color;
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  strong {
+    color: v.$color-white;
+    font-family: v.$font-family-primary;
+    font-size: 0.82rem;
+    line-height: 1.1;
+    text-transform: uppercase;
+  }
+
+  small {
+    color: v.$text-color-secondary;
+    font-family: v.$font-family-numbers;
+  }
 }
 
 .conferenceHeading {
@@ -613,7 +732,217 @@
   text-transform: uppercase;
 }
 
-@media (max-width: #{v.$breakpoint-desktop}) {
+@media (min-width: #{v.$breakpoint-desktop}) {
+  .playoffBracket {
+    gap: 7px;
+  }
+
+  .playoffStateHeader {
+    min-height: 54px;
+    padding: 6px v.$space-sm;
+  }
+
+  .playoffHeader,
+  .railScroller,
+  .railEmpty,
+  .bracketBrand {
+    display: none;
+  }
+
+  .bracketBoard {
+    grid-template-columns: minmax(0, 1fr) minmax(112px, 0.16fr) minmax(0, 1fr);
+    gap: clamp(5px, 0.65vw, 10px);
+    align-items: stretch;
+    min-height: 278px;
+    padding: 2px 4px 4px;
+  }
+
+  .bracketConnectors {
+    position: absolute;
+    z-index: 0;
+    inset: 27px 4px 3px;
+    display: block;
+    width: calc(100% - 8px);
+    height: calc(100% - 30px);
+    overflow: visible;
+    pointer-events: none;
+
+    path {
+      fill: none;
+      stroke: rgba(v.$secondary-color, 0.27);
+      stroke-width: 1;
+    }
+  }
+
+  .conferenceBoard,
+  .cupBoard {
+    position: relative;
+    z-index: 1;
+  }
+
+  .conferenceHeading {
+    margin-bottom: 3px;
+    font-size: 0.55rem;
+    letter-spacing: 0.11em;
+  }
+
+  .conferenceColumns,
+  .eastColumns {
+    --bracket-slot-height: 53px;
+    --bracket-slot-gap: 7px;
+    gap: clamp(4px, 0.55vw, 9px);
+  }
+
+  .roundColumn {
+    gap: 3px;
+  }
+
+  .roundLabel {
+    min-height: 11px;
+    font-size: 0.48rem;
+    letter-spacing: 0.08em;
+  }
+
+  .roundStack {
+    min-height: calc(
+      (4 * var(--bracket-slot-height)) + (3 * var(--bracket-slot-gap))
+    );
+  }
+
+  .seriesCard {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    min-height: 53px;
+    padding: 3px 5px;
+    border-radius: 5px;
+  }
+
+  .roundOneCard,
+  .roundTwoCard,
+  .conferenceFinalCard,
+  .cupFinalCard {
+    width: 100%;
+    max-width: none;
+  }
+
+  .cupFinalCard {
+    min-height: 66px;
+    padding: 4px 6px;
+  }
+
+  .seriesMain {
+    gap: 1px;
+  }
+
+  .seriesTeamRow {
+    gap: 3px;
+    min-height: 18px;
+
+    &[data-series-winner="true"] {
+      color: v.$success-color;
+    }
+  }
+
+  .seriesTeamMeta {
+    gap: 3px;
+  }
+
+  .seriesTeamLogo {
+    width: 20px;
+    height: 16px;
+  }
+
+  .seriesTeamText {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 2px;
+  }
+
+  .seriesTeamAbbrev {
+    font-size: clamp(0.56rem, 0.66vw, 0.7rem);
+  }
+
+  .seriesTeamSeed {
+    font-size: 0.4rem;
+  }
+
+  .seriesScore {
+    font-size: 0.72rem;
+  }
+
+  .seriesCenterLine {
+    gap: 3px;
+  }
+
+  .seriesCenterText {
+    font-size: 0.39rem;
+    letter-spacing: 0.02em;
+  }
+
+  .seriesProgress {
+    display: none;
+  }
+
+  .placeholderCard,
+  .cupFinalCard.placeholderCard {
+    min-height: 53px;
+  }
+
+  .placeholderInner {
+    gap: 2px;
+  }
+
+  .placeholderAbbrev,
+  .placeholderTitle {
+    font-size: 0.48rem;
+  }
+
+  .placeholderLogo,
+  .conferencePlaceholderLogo,
+  .cupFinalCard .placeholderLogo {
+    width: auto;
+    max-width: 62px;
+    height: 24px;
+    max-height: 24px;
+  }
+
+  .placeholderShield {
+    width: 24px;
+    height: 28px;
+  }
+
+  .cupBoard {
+    gap: 4px;
+    padding-top: 15px;
+  }
+
+  .cupBoard > .roundLabel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+  }
+
+  .championCard {
+    padding: 5px;
+
+    img {
+      width: 38px;
+      height: 38px;
+    }
+
+    span,
+    small {
+      font-size: 0.42rem;
+    }
+
+    strong {
+      font-size: 0.6rem;
+    }
+  }
+}
+
+@media (max-width: #{v.$breakpoint-desktop - 1px}) {
   .bracketBoard {
     grid-template-columns: 1fr;
   }
@@ -625,6 +954,15 @@
 
   .cupBoard {
     order: -1;
+  }
+
+  .playoffStateHeader {
+    grid-template-columns: 1fr auto;
+
+    p {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
   }
 }
 

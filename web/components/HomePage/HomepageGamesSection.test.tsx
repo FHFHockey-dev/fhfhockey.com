@@ -1,4 +1,11 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { createElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -29,6 +36,47 @@ const makeGames = (count: number, states: string[] = []) =>
     awayTeam: { abbrev: "NYR", record: "43-22-6", score: 1 },
     tvBroadcasts: [{ network: "ESPN" }],
   }));
+
+const makeMixedGames = (states: string[]) =>
+  makeGames(states.length, states).map((game, index) => {
+    const isScheduled = game.gameState === "FUT";
+    const isLive = game.gameState === "LIVE";
+
+    return {
+      ...game,
+      tvBroadcasts: [
+        {
+          network:
+            index === states.length - 1
+              ? "NATIONAL SPORTS NETWORK PLUS"
+              : index % 2 === 0
+                ? "ESPN+"
+                : "TNT",
+        },
+      ],
+      analytics: isScheduled
+        ? {
+            gameId: game.id,
+            awayWinProbability: 0.43,
+            homeWinProbability: 0.57,
+            edgeTeamAbbreviation: "BOS",
+            edgePercentagePoints: 5,
+            awayProjectedGoals: 2.31,
+            homeProjectedGoals: 2.79,
+            awayStarter: { name: "Away Starter", confirmed: false },
+            homeStarter: { name: "Home Starter", confirmed: true },
+          }
+        : {
+            gameId: game.id,
+            awayXg: 1.82,
+            homeXg: 2.35,
+            awayShotsOnGoal: 20,
+            homeShotsOnGoal: 24,
+            xgUpdatedAt: isLive ? new Date().toISOString() : undefined,
+            shotsUpdatedAt: isLive ? new Date().toISOString() : undefined,
+          },
+    };
+  });
 
 const renderGames = (games: any[]) =>
   render(
@@ -290,7 +338,7 @@ describe("HomepageGamesSection", () => {
     ).toBeNull();
   });
 
-  it("supports month navigation and Escape dismissal in the date selector", () => {
+  it("portals the calendar and restores date-button focus after dismissal", async () => {
     render(
       <HomepageGamesSection
         currentDate="2026-07-15"
@@ -307,6 +355,9 @@ describe("HomepageGamesSection", () => {
       name: /choose game date, currently july 15, 2026/i,
     });
     fireEvent.click(dateButton);
+    expect(
+      screen.getByRole("dialog", { name: /choose game date/i }).parentElement,
+    ).toBe(document.body);
     fireEvent.click(screen.getByRole("button", { name: /next month/i }));
 
     expect(screen.getByText("August 2026")).toBeTruthy();
@@ -315,6 +366,103 @@ describe("HomepageGamesSection", () => {
     expect(
       screen.queryByRole("dialog", { name: /choose game date/i }),
     ).toBeNull();
+    await waitFor(() => expect(document.activeElement).toBe(dateButton));
+  });
+
+  it("closes the portaled calendar on outside click and restores focus", async () => {
+    render(
+      <HomepageGamesSection
+        currentDate="2026-07-15"
+        games={[]}
+        gamesHeaderText="Today's"
+        onChangeDate={() => {}}
+        loading={false}
+        error={null}
+        lastUpdatedAt="2026-07-15T16:00:00.000Z"
+      />,
+    );
+
+    const dateButton = screen.getByRole("button", {
+      name: /choose game date, currently july 15, 2026/i,
+    });
+    fireEvent.click(dateButton);
+    fireEvent.mouseDown(document.body);
+
+    expect(
+      screen.queryByRole("dialog", { name: /choose game date/i }),
+    ).toBeNull();
+    await waitFor(() => expect(document.activeElement).toBe(dateButton));
+  });
+
+  it("gives the playoff snapshot precedence over a future opening date", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-15T16:00:00.000Z"));
+
+    render(
+      <HomepageGamesSection
+        currentDate="2026-07-15"
+        games={[]}
+        gamesHeaderText="Today's"
+        onChangeDate={() => {}}
+        loading={false}
+        error={null}
+        lastUpdatedAt="2026-07-15T16:00:00.000Z"
+        playoffsActive
+        playoffSeasonYear={2026}
+        openingNightDate="2026-09-29"
+        playoffBracket={{
+          series: [
+            {
+              seriesTitle: "Stanley Cup Final",
+              seriesAbbrev: "SCF",
+              seriesLetter: "O",
+              playoffRound: 4,
+              topSeedRank: 1,
+              topSeedRankAbbrev: "W",
+              topSeedWins: 4,
+              bottomSeedRank: 1,
+              bottomSeedRankAbbrev: "E",
+              bottomSeedWins: 2,
+              topSeedTeam: {
+                id: 25,
+                abbrev: "DAL",
+                name: { default: "Dallas Stars" },
+              },
+              bottomSeedTeam: {
+                id: 6,
+                abbrev: "BOS",
+                name: { default: "Boston Bruins" },
+              },
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Postseason 2026")).toBeTruthy();
+    expect(screen.getByText("Western Conference")).toBeTruthy();
+    expect(screen.getByText("Eastern Conference")).toBeTruthy();
+    expect(screen.getByText("Stanley Cup Champions")).toBeTruthy();
+    expect(screen.queryByText(/opening night countdown/i)).toBeNull();
+    expect(screen.queryByText(/No games scheduled/i)).toBeNull();
+  });
+
+  it("shows a compact zero-game state without substituting postseason content", () => {
+    render(
+      <HomepageGamesSection
+        currentDate="2026-10-12"
+        games={[]}
+        gamesHeaderText="Upcoming"
+        onChangeDate={() => {}}
+        loading={false}
+        error={null}
+        lastUpdatedAt="2026-10-12T12:00:00.000Z"
+      />,
+    );
+
+    expect(screen.getByText(/No games scheduled for 10\/12\/2026/i)).toBeTruthy();
+    expect(screen.queryByText(/opening night countdown/i)).toBeNull();
+    expect(screen.queryByText(/Western Conference/i)).toBeNull();
   });
 
   it.each([
@@ -324,7 +472,7 @@ describe("HomepageGamesSection", () => {
     [11, "medium"],
     [12, "heavy"],
     [16, "heavy"],
-  ])("uses %i games for the %s mobile slate mode", (gameCount, mode) => {
+  ])("uses %i games for the %s desktop and mobile slate modes", (gameCount, mode) => {
     const { container } = render(
       <HomepageGamesSection
         currentDate="2026-10-10"
@@ -337,16 +485,78 @@ describe("HomepageGamesSection", () => {
       />,
     );
 
+    const slates = [
+      container.querySelector("[data-desktop-slate='true']"),
+      container.querySelector("[data-mobile-slate='true']"),
+    ];
+
+    slates.forEach((slate) => {
+      expect(slate?.getAttribute("data-slate-mode")).toBe(mode);
+      const slateQueries = within(slate as HTMLElement);
+      expect(
+        slateQueries
+          .getByRole("link", { name: `View all ${gameCount} games` })
+          .getAttribute("href"),
+      ).toBe("/game-grid/7-Day-Forecast");
+      const adaptiveGameLinks = Array.from(
+        slate?.querySelectorAll('a[href^="/game/"]') ?? [],
+      );
+      expect(adaptiveGameLinks).toHaveLength(gameCount);
+      expect(
+        new Set(adaptiveGameLinks.map((link) => link.getAttribute("href"))).size,
+      ).toBe(gameCount);
+    });
+  });
+
+  it("preserves loading, error, and stale slate semantics", () => {
+    const { rerender } = render(
+      <HomepageGamesSection
+        currentDate="2026-10-10"
+        games={[]}
+        gamesHeaderText="Today's"
+        onChangeDate={() => {}}
+        loading
+        error={null}
+        lastUpdatedAt={null}
+      />,
+    );
+
+    expect(screen.getByText("Refreshing the slate...")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /view all/i })).toBeNull();
+
+    rerender(
+      <HomepageGamesSection
+        currentDate="2026-10-10"
+        games={[]}
+        gamesHeaderText="Today's"
+        onChangeDate={() => {}}
+        loading={false}
+        error="The schedule feed is unavailable."
+        lastUpdatedAt={null}
+      />,
+    );
+
+    expect(screen.getByText("The schedule feed is unavailable.")).toBeTruthy();
+    expect(screen.queryByText(/No games scheduled/i)).toBeNull();
+
+    rerender(
+      <HomepageGamesSection
+        currentDate="2026-10-10"
+        games={makeGames(6)}
+        gamesHeaderText="Today's"
+        onChangeDate={() => {}}
+        loading={false}
+        error={null}
+        lastUpdatedAt="2025-01-01T00:00:00.000Z"
+      />,
+    );
+
     expect(
-      container
-        .querySelector("[data-slate-mode]")
-        ?.getAttribute("data-slate-mode"),
-    ).toBe(mode);
-    expect(
-      screen
-        .getByRole("link", { name: `View all ${gameCount} games` })
-        .getAttribute("href"),
-    ).toBe("/game-grid/7-Day-Forecast");
+      screen.getByText(
+        "Slate data may be stale. Refresh before making lineup decisions.",
+      ),
+    ).toBeTruthy();
+    expect(screen.getAllByRole("link", { name: "View all 6 games" })).toHaveLength(2);
   });
 
   it("groups medium and heavy slates with live games first", () => {
@@ -362,17 +572,171 @@ describe("HomepageGamesSection", () => {
       />,
     );
 
-    const mobileSlate = container.querySelector("[data-slate-mode='medium']");
+    const desktopSlate = container.querySelector("[data-desktop-slate='true']");
     const groupOrder = Array.from(
-      mobileSlate?.querySelectorAll("[data-game-group]") ?? [],
+      desktopSlate?.querySelectorAll("[data-game-group]") ?? [],
     ).map((group) => group.getAttribute("data-game-group"));
 
     expect(groupOrder).toEqual(["live", "scheduled", "final"]);
     expect(
-      mobileSlate
+      desktopSlate
         ?.querySelector("a[data-game-state]")
         ?.getAttribute("data-game-state"),
     ).toBe("live");
+  });
+
+  it("uses prominent live cards and shared scheduled and final tables for Medium", () => {
+    const { container } = renderGames(
+      makeMixedGames([
+        "LIVE",
+        "LIVE",
+        "FUT",
+        "FUT",
+        "FUT",
+        "FUT",
+        "FUT",
+        "FINAL",
+        "FINAL",
+      ]),
+    );
+    const desktopSlate = container.querySelector(
+      "[data-desktop-slate='true']",
+    ) as HTMLElement;
+    const desktopQueries = within(desktopSlate);
+
+    expect(desktopSlate.getAttribute("data-slate-mode")).toBe("medium");
+    expect(
+      desktopSlate.querySelectorAll("[data-card-variant='medium-live']"),
+    ).toHaveLength(2);
+    expect(
+      desktopSlate.querySelectorAll("[data-table-surface='scheduled']"),
+    ).toHaveLength(1);
+    expect(
+      desktopSlate.querySelectorAll("[data-table-surface='final']"),
+    ).toHaveLength(1);
+    expect(
+      desktopSlate.querySelector(
+        "[data-table-columns='medium-scheduled']",
+      )?.textContent,
+    ).toContain("TimeMatchupEdgeProjNetwork");
+    expect(
+      desktopSlate.querySelector("[data-table-columns='medium-final']")
+        ?.textContent,
+    ).toContain("FinalMatchupxGFSOGNetwork");
+    expect(
+      desktopSlate.querySelectorAll("a[data-game-state='scheduled']"),
+    ).toHaveLength(5);
+    expect(
+      desktopSlate.querySelectorAll(
+        "a[data-game-state='scheduled'] [data-team-score]",
+      ),
+    ).toHaveLength(0);
+    expect(
+      desktopSlate.querySelector("[data-table-group='scheduled']")
+        ?.textContent,
+    ).toContain("BOS +5.0pp");
+    expect(
+      desktopSlate.querySelector("[data-table-group='scheduled']")
+        ?.textContent,
+    ).toContain("2.31–2.79");
+    expect(
+      desktopSlate.querySelector("[data-table-group='final']")?.textContent,
+    ).toContain("1.82–2.35");
+    expect(
+      desktopSlate.querySelector("[data-table-group='final']")?.textContent,
+    ).toContain("20–24");
+    expect(desktopQueries.getAllByRole("link")).toHaveLength(10);
+  });
+
+  it("uses stacked live scoreboards and analytics-free two-column routine tables for Heavy", () => {
+    const { container } = renderGames(
+      makeMixedGames([
+        "LIVE",
+        "LIVE",
+        "LIVE",
+        "LIVE",
+        "FUT",
+        "FUT",
+        "FUT",
+        "FUT",
+        "FUT",
+        "FUT",
+        "FUT",
+        "FUT",
+        "FINAL",
+        "FINAL",
+        "FINAL",
+        "FINAL",
+      ]),
+    );
+    const desktopSlate = container.querySelector(
+      "[data-desktop-slate='true']",
+    ) as HTMLElement;
+
+    expect(desktopSlate.getAttribute("data-slate-mode")).toBe("heavy");
+    expect(
+      desktopSlate.querySelectorAll("[data-card-variant='heavy-live']"),
+    ).toHaveLength(4);
+    expect(
+      desktopSlate.querySelectorAll("[data-scoreboard-team-row]"),
+    ).toHaveLength(8);
+    expect(
+      desktopSlate.querySelectorAll("[data-table-surface='scheduled']"),
+    ).toHaveLength(2);
+    expect(
+      desktopSlate.querySelectorAll("[data-table-surface='final']"),
+    ).toHaveLength(2);
+    expect(desktopSlate.querySelectorAll("[data-table-metric]")).toHaveLength(
+      0,
+    );
+    expect(
+      desktopSlate.querySelectorAll("a[data-game-state='scheduled']"),
+    ).toHaveLength(8);
+    expect(
+      desktopSlate.querySelectorAll("a[data-game-state='final']"),
+    ).toHaveLength(4);
+    const gameLinks = Array.from(
+      desktopSlate.querySelectorAll('a[href^="/game/"]'),
+    );
+    expect(gameLinks).toHaveLength(16);
+    expect(
+      new Set(gameLinks.map((link) => link.getAttribute("href"))).size,
+    ).toBe(16);
+  });
+
+  it.each([
+    [6, "medium", 1],
+    [12, "heavy", 2],
+  ])(
+    "omits an empty live group in a %i-game %s slate",
+    (gameCount, mode, tableCount) => {
+      const { container } = renderGames(
+        makeMixedGames(Array.from({ length: gameCount }, () => "FUT")),
+      );
+      const desktopSlate = container.querySelector(
+        "[data-desktop-slate='true']",
+      ) as HTMLElement;
+
+      expect(desktopSlate.getAttribute("data-slate-mode")).toBe(mode);
+      expect(
+        desktopSlate.querySelector("[data-game-group='live']"),
+      ).toBeNull();
+      expect(
+        desktopSlate.querySelectorAll("[data-table-surface='scheduled']"),
+      ).toHaveLength(tableCount);
+    },
+  );
+
+  it("closes Light card gaps cleanly when optional analytics are unavailable", () => {
+    const { container } = renderGames(makeGames(1));
+    const desktopCard = container.querySelector(
+      "[data-desktop-slate='true'] [data-card-variant='light']",
+    ) as HTMLElement;
+
+    expect(desktopCard.querySelector("[data-light-analytics]")).toBeNull();
+    expect(desktopCard.querySelectorAll("[data-team-score]")).toHaveLength(0);
+    expect(desktopCard.textContent).toContain("Records");
+    expect(desktopCard.textContent).not.toMatch(/\bN\/A\b/i);
   });
 
   it("shows team-associated pregame probabilities, Edge, projection, and starters", () => {
@@ -392,6 +756,10 @@ describe("HomepageGamesSection", () => {
         },
       },
     ]);
+    const mobileSlate = container.querySelector(
+      "[data-mobile-slate='true']",
+    ) as HTMLElement;
+    const mobileQueries = within(mobileSlate);
 
     const awayProbability = screen.getByTitle(
       "NYR pregame win probability",
@@ -412,9 +780,9 @@ describe("HomepageGamesSection", () => {
     expect(
       container.querySelector("[data-game-state]")?.textContent,
     ).toContain("BOS +6.0pp");
-    expect(screen.getByText("2.41–3.08")).toBeTruthy();
-    expect(screen.getByText(/Igor Shesterkin \(NYR\)/i)).toBeTruthy();
-    expect(screen.getByText(/✓ Jeremy Swayman \(BOS\)/i)).toBeTruthy();
+    expect(mobileQueries.getByText("2.41–3.08")).toBeTruthy();
+    expect(mobileQueries.getByText(/Igor Shesterkin \(NYR\)/i)).toBeTruthy();
+    expect(mobileQueries.getByText(/✓ Jeremy Swayman \(BOS\)/i)).toBeTruthy();
     expect(screen.queryByText(/\bN\/A\b/i)).toBeNull();
   });
 
@@ -496,7 +864,7 @@ describe("HomepageGamesSection", () => {
       } as any;
       const { container } = renderGames(games);
       const probabilityRow = container.querySelector(
-        `[data-slate-mode="${mode}"] [data-has-probabilities="true"]`,
+        `[data-mobile-slate="true"][data-slate-mode="${mode}"] [data-has-probabilities="true"]`,
       );
 
       expect(probabilityRow).toBeTruthy();
@@ -539,7 +907,7 @@ describe("HomepageGamesSection", () => {
   });
 
   it("shows live actual xG and SOG instead of the pregame projection", () => {
-    renderGames([
+    const { container } = renderGames([
       {
         ...makeGames(1, ["LIVE"])[0],
         analytics: {
@@ -559,10 +927,13 @@ describe("HomepageGamesSection", () => {
         },
       },
     ]);
+    const mobileQueries = within(
+      container.querySelector("[data-mobile-slate='true']") as HTMLElement,
+    );
 
-    expect(screen.getByText("1.82–2.35")).toBeTruthy();
-    expect(screen.getByText("20–24")).toBeTruthy();
-    expect(screen.queryByText("2.41–3.08")).toBeNull();
+    expect(mobileQueries.getByText("1.82–2.35")).toBeTruthy();
+    expect(mobileQueries.getByText("20–24")).toBeTruthy();
+    expect(mobileQueries.queryByText("2.41–3.08")).toBeNull();
     expect(
       screen.queryByTitle("NYR pregame win probability"),
     ).toBeNull();
@@ -628,8 +999,11 @@ describe("HomepageGamesSection", () => {
       />,
     );
 
-    expect(screen.getByText("1.82–2.35")).toBeTruthy();
-    expect(screen.getByText("20–24")).toBeTruthy();
+    const desktopQueries = within(
+      container.querySelector("[data-desktop-slate='true']") as HTMLElement,
+    );
+    expect(desktopQueries.getByText("1.82–2.35")).toBeTruthy();
+    expect(desktopQueries.getByText("20–24")).toBeTruthy();
     expect(screen.queryByText(/Away Starter/i)).toBeNull();
   });
 });

@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -6,6 +7,7 @@ import {
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
+import { createPortal } from "react-dom";
 
 import Link from "next/link";
 import moment from "moment-timezone";
@@ -16,7 +18,6 @@ import PanelStatus from "components/common/PanelStatus";
 import OptimizedImage from "components/common/OptimizedImage";
 import { buildHomepageModulePresentation } from "lib/dashboard/freshness";
 import { type PlayoffBracketResponse } from "lib/NHL/server/playoffBracket";
-import type { HomepageGameAnalytics } from "lib/homepageGameAnalytics";
 import { fallbackNHLLogo, getTeamLogoSvg } from "lib/images";
 import { HOME_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import { teamsInfo } from "lib/teamsInfo";
@@ -31,6 +32,16 @@ import {
   isFinalGameState,
   isLiveGameState,
 } from "./homepageGameFormatting";
+import {
+  compactHomepageMetric,
+  formatHomepageEdge,
+  getHomepageGameGroup,
+  getHomepageGamePresentation,
+  getHomepageSlateMode,
+  type HomepageGameGroup,
+  type HomepageSlateMode,
+} from "./homepageGamePresentation";
+import HomepageDesktopGameSlates from "./HomepageDesktopGameSlates";
 
 type HomepageGamesSectionProps = {
   currentDate: string;
@@ -42,6 +53,7 @@ type HomepageGamesSectionProps = {
   lastUpdatedAt: string | null;
   playoffsActive?: boolean;
   playoffBracket?: PlayoffBracketResponse | null;
+  playoffSeasonYear?: number | null;
   playoffWeekGames?: any[];
   heroMetrics?: Array<{
     label: string;
@@ -62,8 +74,7 @@ const COUNTDOWN_UNITS = [
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-type MobileSlateMode = "light" | "medium" | "heavy";
-type MobileGameGroup = "live" | "scheduled" | "final";
+type CalendarPosition = { top: number; left: number };
 type SlateIconName =
   | "players"
   | "news"
@@ -224,18 +235,6 @@ function SlateIcon({
   );
 }
 
-const getMobileSlateMode = (gameCount: number): MobileSlateMode => {
-  if (gameCount <= 5) return "light";
-  if (gameCount <= 11) return "medium";
-  return "heavy";
-};
-
-const getMobileGameGroup = (gameState?: string): MobileGameGroup => {
-  if (isLiveGameState(gameState)) return "live";
-  if (isFinalGameState(gameState)) return "final";
-  return "scheduled";
-};
-
 const getGameColorStyle = (
   homeTeamAbbreviation: string,
   awayTeamAbbreviation: string,
@@ -255,9 +254,6 @@ const getGameColorStyle = (
   } as CSSProperties;
 };
 
-const compactMetric = (value: number) =>
-  Number.isInteger(value) ? String(value) : value.toFixed(2);
-
 const probabilityTone = (probability: number) =>
   probability > 0.5
     ? "favored"
@@ -272,89 +268,33 @@ const probabilityClassName = (probability: number) => {
   return styles.probabilityEven;
 };
 
-const formatEdge = (percentagePoints: number) =>
-  `${percentagePoints > 0 ? "+" : ""}${percentagePoints.toFixed(1)}pp`;
-
-const isFreshLiveMetric = (updatedAt?: string) => {
-  if (!updatedAt) return false;
-  const age = Date.now() - Date.parse(updatedAt);
-  return Number.isFinite(age) && age >= -60_000 && age <= 15 * 60_000;
-};
-
 function MobileGameItem({
   game,
   mode,
 }: {
   game: any;
-  mode: MobileSlateMode;
+  mode: HomepageSlateMode;
 }) {
-  const homeTeam = game?.homeTeam;
-  const awayTeam = game?.awayTeam;
-  if (!homeTeam?.abbrev || !awayTeam?.abbrev) return null;
+  const presentation = getHomepageGamePresentation(game);
+  if (!presentation) return null;
 
-  const group = getMobileGameGroup(game.gameState);
-  const broadcast = game?.tvBroadcasts?.[0]?.network ?? null;
-  const inIntermission = Boolean(
-    game?.clock && game.clock.inIntermission !== undefined
-      ? game.clock.inIntermission
-      : game?.inIntermission,
-  );
-  const periodLabel =
-    group === "live"
-      ? formatPeriodText(
-          game?.periodDescriptor?.number ?? game?.period ?? 1,
-          game?.periodDescriptor?.periodType ?? game?.periodType ?? "REG",
-          inIntermission,
-        ).replace(" Period", "")
-      : null;
-  const clock =
-    group === "live" && !inIntermission
-      ? game?.clock?.timeRemaining || game?.timeRemaining || "--:--"
-      : null;
-  const stateLabel =
-    group === "live"
-      ? "Live"
-      : group === "final"
-        ? "Final"
-        : getDisplayGameState(game.gameState);
-  const analytics = (game.analytics ?? null) as HomepageGameAnalytics | null;
-  const edgeAvailable =
-    group === "scheduled" &&
-    analytics?.predictionFreshness !== "stale" &&
-    analytics?.edgeTeamAbbreviation &&
-    typeof analytics.edgePercentagePoints === "number";
-  const probabilitiesAvailable =
-    group === "scheduled" &&
-    analytics?.predictionFreshness !== "stale" &&
-    typeof analytics?.awayWinProbability === "number" &&
-    typeof analytics.homeWinProbability === "number";
-  const projectedGoalsAvailable =
-    group === "scheduled" &&
-    analytics?.projectedGoalsFreshness !== "stale" &&
-    typeof analytics?.awayProjectedGoals === "number" &&
-    typeof analytics.homeProjectedGoals === "number";
-  const xgAvailable =
-    group !== "scheduled" &&
-    (group === "final" || isFreshLiveMetric(analytics?.xgUpdatedAt)) &&
-    typeof analytics?.awayXg === "number" &&
-    typeof analytics.homeXg === "number";
-  const shotsAvailable =
-    group !== "scheduled" &&
-    (group === "final" || isFreshLiveMetric(analytics?.shotsUpdatedAt)) &&
-    typeof analytics?.awayShotsOnGoal === "number" &&
-    typeof analytics.homeShotsOnGoal === "number";
-  const starterAvailable =
-    group !== "final" &&
-    (analytics?.awayStarter?.name || analytics?.homeStarter?.name);
-  const matchupLabel = `${awayTeam.abbrev} at ${homeTeam.abbrev}, ${stateLabel}${
-    probabilitiesAvailable
-      ? `, pregame win probability ${awayTeam.abbrev} ${Math.round(
-          analytics!.awayWinProbability! * 100,
-        )} percent, ${homeTeam.abbrev} ${Math.round(
-          analytics!.homeWinProbability! * 100,
-        )} percent`
-      : ""
-  }`;
+  const {
+    homeTeam,
+    awayTeam,
+    group,
+    broadcast,
+    periodLabel,
+    clock,
+    stateLabel,
+    analytics,
+    edgeAvailable,
+    probabilitiesAvailable,
+    projectedGoalsAvailable,
+    xgAvailable,
+    shotsAvailable,
+    starterAvailable,
+    matchupLabel,
+  } = presentation;
 
   return (
     <Link
@@ -362,6 +302,7 @@ function MobileGameItem({
       className={styles.mobileGameLink}
       data-game-state={group}
       data-has-probabilities={probabilitiesAvailable ? "true" : "false"}
+      data-has-starters={starterAvailable ? "true" : "false"}
       aria-label={matchupLabel}
       style={getGameColorStyle(homeTeam.abbrev, awayTeam.abbrev)}
     >
@@ -387,14 +328,14 @@ function MobileGameItem({
       {probabilitiesAvailable ? (
         <span
           className={`${styles.mobileWinProbability} ${styles.mobileAwayProbability} ${probabilityClassName(
-            analytics.awayWinProbability!,
+            analytics!.awayWinProbability!,
           )}`}
           data-probability-tone={probabilityTone(
-            analytics.awayWinProbability!,
+            analytics!.awayWinProbability!,
           )}
           title={`${awayTeam.abbrev} pregame win probability`}
         >
-          {Math.round(analytics.awayWinProbability! * 100)}%
+          {Math.round(analytics!.awayWinProbability! * 100)}%
         </span>
       ) : null}
       <span
@@ -433,14 +374,14 @@ function MobileGameItem({
       {probabilitiesAvailable ? (
         <span
           className={`${styles.mobileWinProbability} ${styles.mobileHomeProbability} ${probabilityClassName(
-            analytics.homeWinProbability!,
+            analytics!.homeWinProbability!,
           )}`}
           data-probability-tone={probabilityTone(
-            analytics.homeWinProbability!,
+            analytics!.homeWinProbability!,
           )}
           title={`${homeTeam.abbrev} pregame win probability`}
         >
-          {Math.round(analytics.homeWinProbability! * 100)}%
+          {Math.round(analytics!.homeWinProbability! * 100)}%
         </span>
       ) : null}
       <span className={styles.mobileBroadcast}>{broadcast ?? ""}</span>
@@ -450,30 +391,30 @@ function MobileGameItem({
       shotsAvailable ? (
         <span className={styles.mobileAnalytics}>
           {projectedGoalsAvailable ? (
-            <span>
+            <span data-analytics-metric="projected-goals">
               <small>Proj</small>
-              {compactMetric(analytics.awayProjectedGoals!)}–
-              {compactMetric(analytics.homeProjectedGoals!)}
+              {compactHomepageMetric(analytics!.awayProjectedGoals!)}–
+              {compactHomepageMetric(analytics!.homeProjectedGoals!)}
             </span>
           ) : null}
           {edgeAvailable ? (
-            <span>
+            <span data-analytics-metric="edge">
               <small>Edge</small>
-              {analytics.edgeTeamAbbreviation}{" "}
-              {formatEdge(analytics.edgePercentagePoints!)}
+              {analytics!.edgeTeamAbbreviation}{" "}
+              {formatHomepageEdge(analytics!.edgePercentagePoints!)}
             </span>
           ) : null}
           {xgAvailable ? (
-            <span>
+            <span data-analytics-metric="xgf">
               <small>xGF</small>
-              {compactMetric(analytics.awayXg!)}–
-              {compactMetric(analytics.homeXg!)}
+              {compactHomepageMetric(analytics!.awayXg!)}–
+              {compactHomepageMetric(analytics!.homeXg!)}
             </span>
           ) : null}
           {shotsAvailable ? (
-            <span>
+            <span data-analytics-metric="shots">
               <small>SOG</small>
-              {analytics.awayShotsOnGoal}–{analytics.homeShotsOnGoal}
+              {analytics!.awayShotsOnGoal}–{analytics!.homeShotsOnGoal}
             </span>
           ) : null}
         </span>
@@ -516,6 +457,7 @@ export default function HomepageGamesSection({
   lastUpdatedAt,
   playoffsActive = false,
   playoffBracket = null,
+  playoffSeasonYear = null,
   playoffWeekGames = [],
   heroMetrics = [],
   pulsePoints = [],
@@ -540,12 +482,40 @@ export default function HomepageGamesSection({
   const [scheduleContext, setScheduleContext] = useState<string | null>(null);
   const [countdownNow, setCountdownNow] = useState<number | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [calendarPosition, setCalendarPosition] =
+    useState<CalendarPosition | null>(null);
   const [calendarMonth, setCalendarMonth] = useState(() =>
     moment(currentDate).startOf("month").format("YYYY-MM-DD"),
   );
   const dateSelectorRef = useRef<HTMLDivElement | null>(null);
   const dateButtonRef = useRef<HTMLButtonElement | null>(null);
   const calendarDialogRef = useRef<HTMLDivElement | null>(null);
+  const updateCalendarPosition = useCallback(() => {
+    const anchor = dateButtonRef.current;
+    if (!anchor) return;
+
+    const rect = anchor.getBoundingClientRect();
+    const gamesPanel = anchor.closest<HTMLElement>(
+      'section[aria-labelledby="games-strip-heading"]',
+    );
+    const gamesPanelRect = gamesPanel?.getBoundingClientRect();
+    const calendarWidth = Math.min(310, window.innerWidth - 24);
+    const desktop = window.innerWidth >= 1024;
+    const preferredLeft =
+      desktop ? rect.right + 12 : rect.right - calendarWidth;
+    const left = Math.min(
+      Math.max(12, preferredLeft),
+      Math.max(12, window.innerWidth - calendarWidth - 12),
+    );
+    const preferredTop =
+      desktop && gamesPanelRect
+        ? Math.max(12, gamesPanelRect.bottom - 36)
+        : rect.bottom + 6;
+    const top = desktop
+      ? Math.min(preferredTop, Math.max(12, window.innerHeight - 374 - 12))
+      : preferredTop;
+    setCalendarPosition({ top, left });
+  }, []);
   const hasOfficialPuckDrop = Boolean(
     openingNightStartTime && moment(openingNightStartTime).isValid(),
   );
@@ -604,10 +574,10 @@ export default function HomepageGamesSection({
     };
     const handlePointerDown = (event: MouseEvent) => {
       if (
-        dateSelectorRef.current &&
-        !dateSelectorRef.current.contains(event.target as Node)
+        !dateSelectorRef.current?.contains(event.target as Node) &&
+        !calendarDialogRef.current?.contains(event.target as Node)
       ) {
-        setCalendarOpen(false);
+        closeCalendar();
       }
     };
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -644,6 +614,21 @@ export default function HomepageGamesSection({
     };
   }, [calendarOpen, currentDate]);
 
+  useEffect(() => {
+    if (!calendarOpen) return;
+
+    updateCalendarPosition();
+    window.addEventListener("resize", updateCalendarPosition);
+    window.addEventListener("scroll", updateCalendarPosition, {
+      capture: true,
+      passive: true,
+    });
+    return () => {
+      window.removeEventListener("resize", updateCalendarPosition);
+      window.removeEventListener("scroll", updateCalendarPosition, true);
+    };
+  }, [calendarOpen, updateCalendarPosition]);
+
   const openingNightCountdown = useMemo(() => {
     if (!openingNightTarget || countdownNow === null) return null;
     const remaining = Math.max(openingNightTarget.valueOf() - countdownNow, 0);
@@ -656,7 +641,7 @@ export default function HomepageGamesSection({
       complete: remaining === 0,
     };
   }, [countdownNow, openingNightTarget]);
-  const showOpeningNightCountdown = Boolean(
+  const openingNightCountdownAvailable = Boolean(
     games.length === 0 &&
     openingNightTarget &&
     (!openingNightCountdown || !openingNightCountdown.complete),
@@ -683,29 +668,35 @@ export default function HomepageGamesSection({
     );
   }, [displayedCalendarMonth]);
   const todayDate = moment().format("YYYY-MM-DD");
-  const mobileSlateMode = getMobileSlateMode(games.length);
-  const mobileGameGroups = [
+  const slateMode = getHomepageSlateMode(games.length);
+  const gameGroups: Array<{
+    key: HomepageGameGroup;
+    label: string;
+    games: any[];
+  }> = [
     {
       key: "live" as const,
       label: "Live now",
-      games: games.filter((game) => getMobileGameGroup(game.gameState) === "live"),
+      games: games.filter(
+        (game) => getHomepageGameGroup(game.gameState) === "live",
+      ),
     },
     {
       key: "scheduled" as const,
       label: "Scheduled",
       games: games.filter(
-        (game) => getMobileGameGroup(game.gameState) === "scheduled",
+        (game) => getHomepageGameGroup(game.gameState) === "scheduled",
       ),
     },
     {
       key: "final" as const,
       label: "Final",
       games: games.filter(
-        (game) => getMobileGameGroup(game.gameState) === "final",
+        (game) => getHomepageGameGroup(game.gameState) === "final",
       ),
     },
   ].filter((group) => group.games.length > 0);
-  const mobileOrderedGames = mobileGameGroups.flatMap((group) => group.games);
+  const orderedGames = gameGroups.flatMap((group) => group.games);
 
   const closeCalendar = (restoreFocus = true) => {
     setCalendarOpen(false);
@@ -790,6 +781,129 @@ export default function HomepageGamesSection({
     staleMessage:
       "Slate data may be stale. Refresh before making lineup decisions.",
   });
+  const hasBlockingPanelState =
+    modulePresentation.panelState === "loading" ||
+    modulePresentation.panelState === "error";
+  const showPlayoffSnapshot = Boolean(
+    !hasBlockingPanelState && playoffsActive && playoffBracket,
+  );
+  const showOpeningNightCountdown = Boolean(
+    !hasBlockingPanelState &&
+      !showPlayoffSnapshot &&
+      openingNightCountdownAvailable,
+  );
+  const showAdaptiveGames = Boolean(
+    !hasBlockingPanelState && games.length > 0 && !showPlayoffSnapshot,
+  );
+  const calendar =
+    calendarOpen && calendarPosition && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            id="homepage-games-calendar"
+            ref={calendarDialogRef}
+            className={styles.calendarPopover}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Choose game date"
+            style={
+              {
+                "--calendar-top": `${calendarPosition.top}px`,
+                "--calendar-left": `${calendarPosition.left}px`,
+              } as CSSProperties
+            }
+          >
+            <div className={styles.calendarHeader}>
+              <button
+                type="button"
+                aria-label="Previous month"
+                onClick={() =>
+                  setCalendarMonth(
+                    displayedCalendarMonth
+                      .clone()
+                      .subtract(1, "month")
+                      .format("YYYY-MM-DD"),
+                  )
+                }
+              >
+                ‹
+              </button>
+              <strong aria-live="polite">
+                {displayedCalendarMonth.format("MMMM YYYY")}
+              </strong>
+              <button
+                type="button"
+                aria-label="Next month"
+                onClick={() =>
+                  setCalendarMonth(
+                    displayedCalendarMonth
+                      .clone()
+                      .add(1, "month")
+                      .format("YYYY-MM-DD"),
+                  )
+                }
+              >
+                ›
+              </button>
+            </div>
+            <div
+              className={styles.calendarGrid}
+              role="grid"
+              aria-label={displayedCalendarMonth.format("MMMM YYYY")}
+            >
+              <div className={styles.calendarWeekdays} role="row">
+                {WEEKDAY_LABELS.map((weekday) => (
+                  <span key={weekday} role="columnheader" aria-label={weekday}>
+                    {weekday.slice(0, 1)}
+                  </span>
+                ))}
+              </div>
+              {calendarWeeks.map((week) => (
+                <div
+                  className={styles.calendarWeek}
+                  role="row"
+                  key={week[0].format("YYYY-MM-DD")}
+                >
+                  {week.map((date) => {
+                    const dateValue = date.format("YYYY-MM-DD");
+                    const selected = dateValue === currentDate;
+                    const today = dateValue === todayDate;
+                    const outsideMonth =
+                      date.month() !== displayedCalendarMonth.month();
+
+                    return (
+                      <button
+                        type="button"
+                        role="gridcell"
+                        key={dateValue}
+                        data-calendar-date={dateValue}
+                        data-outside-month={outsideMonth || undefined}
+                        aria-label={date.format("MMMM D, YYYY")}
+                        aria-selected={selected}
+                        aria-current={today ? "date" : undefined}
+                        onClick={() => selectDate(dateValue)}
+                        onKeyDown={(event) =>
+                          handleCalendarKeyDown(event, date)
+                        }
+                      >
+                        {date.date()}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+            <div className={styles.calendarFooter}>
+              <button type="button" onClick={() => selectDate(todayDate)}>
+                Today
+              </button>
+              <button type="button" onClick={() => closeCalendar()}>
+                Close
+              </button>
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
 
   return (
     <div className={styles.gameCardsContainer}>
@@ -952,13 +1066,11 @@ export default function HomepageGamesSection({
               {gamesHeaderText} <span>Games</span>
             </h2>
           </div>
-          {!playoffsActive ? (
-            <button
-              type="button"
-              onClick={() => onChangeDate(-1)}
-              aria-label="Previous Day"
-            ></button>
-          ) : null}
+          <button
+            type="button"
+            onClick={() => onChangeDate(-1)}
+            aria-label="Previous Day"
+          ></button>
           <div className={styles.dateSelector} ref={dateSelectorRef}>
             <button
               ref={dateButtonRef}
@@ -968,123 +1080,21 @@ export default function HomepageGamesSection({
               aria-haspopup="dialog"
               aria-expanded={calendarOpen}
               aria-controls="homepage-games-calendar"
-              onClick={() => setCalendarOpen((open) => !open)}
+              onClick={() => {
+                if (!calendarOpen) updateCalendarPosition();
+                setCalendarOpen((open) => !open);
+              }}
             >
               <span className={styles.dateDisplay}>
                 {moment(currentDate).format("ddd, MMM D")}
               </span>
             </button>
-            {calendarOpen ? (
-              <div
-                id="homepage-games-calendar"
-                ref={calendarDialogRef}
-                className={styles.calendarPopover}
-                role="dialog"
-                aria-modal="true"
-                aria-label="Choose game date"
-              >
-                <div className={styles.calendarHeader}>
-                  <button
-                    type="button"
-                    aria-label="Previous month"
-                    onClick={() =>
-                      setCalendarMonth(
-                        displayedCalendarMonth
-                          .clone()
-                          .subtract(1, "month")
-                          .format("YYYY-MM-DD"),
-                      )
-                    }
-                  >
-                    ‹
-                  </button>
-                  <strong aria-live="polite">
-                    {displayedCalendarMonth.format("MMMM YYYY")}
-                  </strong>
-                  <button
-                    type="button"
-                    aria-label="Next month"
-                    onClick={() =>
-                      setCalendarMonth(
-                        displayedCalendarMonth
-                          .clone()
-                          .add(1, "month")
-                          .format("YYYY-MM-DD"),
-                      )
-                    }
-                  >
-                    ›
-                  </button>
-                </div>
-                <div
-                  className={styles.calendarGrid}
-                  role="grid"
-                  aria-label={displayedCalendarMonth.format("MMMM YYYY")}
-                >
-                  <div className={styles.calendarWeekdays} role="row">
-                    {WEEKDAY_LABELS.map((weekday) => (
-                      <span
-                        key={weekday}
-                        role="columnheader"
-                        aria-label={weekday}
-                      >
-                        {weekday.slice(0, 1)}
-                      </span>
-                    ))}
-                  </div>
-                  {calendarWeeks.map((week) => (
-                    <div
-                      className={styles.calendarWeek}
-                      role="row"
-                      key={week[0].format("YYYY-MM-DD")}
-                    >
-                      {week.map((date) => {
-                        const dateValue = date.format("YYYY-MM-DD");
-                        const selected = dateValue === currentDate;
-                        const today = dateValue === todayDate;
-                        const outsideMonth =
-                          date.month() !== displayedCalendarMonth.month();
-
-                        return (
-                          <button
-                            type="button"
-                            role="gridcell"
-                            key={dateValue}
-                            data-calendar-date={dateValue}
-                            data-outside-month={outsideMonth || undefined}
-                            aria-label={date.format("MMMM D, YYYY")}
-                            aria-selected={selected}
-                            aria-current={today ? "date" : undefined}
-                            onClick={() => selectDate(dateValue)}
-                            onKeyDown={(event) =>
-                              handleCalendarKeyDown(event, date)
-                            }
-                          >
-                            {date.date()}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-                <div className={styles.calendarFooter}>
-                  <button type="button" onClick={() => selectDate(todayDate)}>
-                    Today
-                  </button>
-                  <button type="button" onClick={() => closeCalendar()}>
-                    Close
-                  </button>
-                </div>
-              </div>
-            ) : null}
           </div>
-          {!playoffsActive ? (
-            <button
-              type="button"
-              onClick={() => onChangeDate(1)}
-              aria-label="Next Day"
-            ></button>
-          ) : null}
+          <button
+            type="button"
+            onClick={() => onChangeDate(1)}
+            aria-label="Next Day"
+          ></button>
           <div className={styles.gamesSummary} aria-label="Slate summary">
             <span>
               <strong>{games.length}</strong>
@@ -1106,7 +1116,7 @@ export default function HomepageGamesSection({
         <div className={styles.gamesContainer}>
           {modulePresentation.panelState &&
           !(
-            showOpeningNightCountdown &&
+            (showOpeningNightCountdown || showPlayoffSnapshot) &&
             modulePresentation.panelState === "empty"
           ) ? (
             <PanelStatus
@@ -1123,16 +1133,16 @@ export default function HomepageGamesSection({
               <div className={styles.openingNightIntro}>
                 <span>{openingNightSeasonLabel}</span>
                 <h3 id="opening-night-countdown-heading">
-                  Opening night countdown
+                  <span>Opening night</span>{" "}
+                  <span>countdown</span>
                 </h3>
                 <p>
                   The season opens on{" "}
                   <time dateTime={openingNightTarget?.toISOString()}>
                     {hasOfficialPuckDrop
                       ? openingNightTarget?.format("MMM D, YYYY · h:mm A z")
-                      : openingNightTarget?.format("MMM D, YYYY")}
+                      : openingNightTarget?.format("MMM D, YYYY")}.
                   </time>
-                  .
                 </p>
                 <small>
                   {hasOfficialPuckDrop
@@ -1157,7 +1167,7 @@ export default function HomepageGamesSection({
               </div>
             </section>
           ) : null}
-          {playoffsActive && playoffBracket ? (
+          {showPlayoffSnapshot && playoffBracket ? (
             <div
               className={
                 games.length > 0 ? styles.playoffBracketWithGames : undefined
@@ -1167,11 +1177,12 @@ export default function HomepageGamesSection({
                 currentDate={currentDate}
                 games={games}
                 playoffBracket={playoffBracket}
+                postseasonYear={playoffSeasonYear}
                 playoffWeekGames={playoffWeekGames}
               />
             </div>
           ) : null}
-          {games.length > 0 && !playoffsActive ? (
+          {showAdaptiveGames ? (
             <div className={styles.gamesGrid}>
               {games.map((game) => {
                 const homeTeam = game.homeTeam;
@@ -1281,24 +1292,34 @@ export default function HomepageGamesSection({
               })}
             </div>
           ) : null}
-          {games.length > 0 ? (
+          {showAdaptiveGames ? (
+            <HomepageDesktopGameSlates
+              mode={slateMode}
+              gameCount={games.length}
+              groups={gameGroups}
+              getGameColorStyle={getGameColorStyle}
+            />
+          ) : null}
+          {showAdaptiveGames ? (
             <div
               className={styles.mobileGamesSlate}
-              data-slate-mode={mobileSlateMode}
-              aria-label={`${mobileSlateMode} slate, ${games.length} games`}
+              data-mobile-slate="true"
+              data-slate-mode={slateMode}
+              data-game-count={games.length}
+              aria-label={`${slateMode} slate, ${games.length} games`}
             >
-              {mobileSlateMode === "light" ? (
+              {slateMode === "light" ? (
                 <div className={styles.mobileGameGroup}>
-                  {mobileOrderedGames.map((game) => (
+                  {orderedGames.map((game) => (
                     <MobileGameItem
                       key={game.id}
                       game={game}
-                      mode={mobileSlateMode}
+                      mode={slateMode}
                     />
                   ))}
                 </div>
               ) : (
-                mobileGameGroups.map((group) => (
+                gameGroups.map((group) => (
                   <section
                     className={styles.mobileGameGroup}
                     data-game-group={group.key}
@@ -1312,7 +1333,7 @@ export default function HomepageGamesSection({
                       <MobileGameItem
                         key={game.id}
                         game={game}
-                        mode={mobileSlateMode}
+                        mode={slateMode}
                       />
                     ))}
                   </section>
@@ -1329,7 +1350,7 @@ export default function HomepageGamesSection({
           ) : null}
         </div>
       </section>
-
+      {calendar}
     </div>
   );
 }

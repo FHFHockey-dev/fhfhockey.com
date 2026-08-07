@@ -41,6 +41,20 @@ export function getPlayoffBracketYear(
   return parsed.getFullYear();
 }
 
+export function shouldShowPlayoffSnapshot(input: {
+  season: PlayoffSeasonWindow | null | undefined;
+  isOffseason: boolean;
+  openingNightDate: string | null | undefined;
+  now?: Date;
+}) {
+  const now = input.now ?? new Date();
+  if (isPlayoffsActive(input.season, now)) return true;
+  if (!input.isOffseason || input.openingNightDate) return false;
+  if (!input.season?.regularSeasonEndDate) return false;
+
+  return isAfter(now, parseSeasonBoundary(input.season.regularSeasonEndDate));
+}
+
 export function isRegularSeasonOrPlayoffGameType(
   gameType: number | null | undefined
 ) {

@@ -57,6 +57,7 @@ type HomepagePlayoffBracketProps = {
   currentDate: string;
   games: PlayoffGame[];
   playoffBracket: PlayoffBracketResponse;
+  postseasonYear?: number | null;
   playoffWeekGames: PlayoffGame[];
 };
 
@@ -79,6 +80,38 @@ const SERIES_LOGO_DIMENSIONS: Partial<
 };
 const DEFAULT_SERIES_LOGO_DIMENSIONS = { width: 120, height: 64 } as const;
 const SERIES_LOGO_SIZES = "120px";
+const ROUND_ONE_Y = [13, 38, 63, 88] as const;
+const ROUND_TWO_Y = [25.5, 75.5] as const;
+
+function buildConnectorPath(
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number,
+) {
+  const elbowX = (startX + endX) / 2;
+  return `M ${startX} ${startY} H ${elbowX} V ${endY} H ${endX}`;
+}
+
+function buildConferenceConnectorPaths(side: "west" | "east") {
+  const mirror = (x: number) => (side === "west" ? x : 100 - x);
+  const paths = [
+    ...ROUND_ONE_Y.map((startY, index) =>
+      buildConnectorPath(
+        mirror(13.5),
+        startY,
+        mirror(17),
+        ROUND_TWO_Y[Math.floor(index / 2)],
+      ),
+    ),
+    ...ROUND_TWO_Y.map((startY) =>
+      buildConnectorPath(mirror(28.5), startY, mirror(31.5), 50.5),
+    ),
+    buildConnectorPath(mirror(42.5), 50.5, mirror(46), 50.5),
+  ];
+
+  return paths;
+}
 
 function getSeriesByLetter(
   series: PlayoffBracketSeries[],
@@ -146,38 +179,6 @@ function getSeriesHref(game: PlayoffGame | null) {
   return game?.id ? `/game/${game.id}` : null;
 }
 
-function getTeamScoreForSeriesTeam(
-  seriesTeamAbbrev: string | undefined,
-  gameTeam: PlayoffGame["homeTeam"] | PlayoffGame["awayTeam"] | undefined,
-) {
-  if (
-    !seriesTeamAbbrev ||
-    !gameTeam?.abbrev ||
-    typeof gameTeam.score !== "number"
-  ) {
-    return null;
-  }
-
-  return gameTeam.abbrev === seriesTeamAbbrev ? gameTeam.score : null;
-}
-
-function getDisplayedSeriesScore(
-  seriesTeamAbbrev: string | undefined,
-  game: PlayoffGame | null,
-) {
-  if (
-    !game ||
-    (!isLiveGameState(game.gameState) && !isFinalGameState(game.gameState))
-  ) {
-    return null;
-  }
-
-  return (
-    getTeamScoreForSeriesTeam(seriesTeamAbbrev, game.homeTeam) ??
-    getTeamScoreForSeriesTeam(seriesTeamAbbrev, game.awayTeam)
-  );
-}
-
 function getSeriesCardVariantClass(series: PlayoffBracketSeries) {
   if (series.seriesLetter === CUP_FINAL_LETTER) {
     return styles.cupFinalCard;
@@ -240,8 +241,6 @@ function PlayoffSeriesCard({
   const topSeedInfo = teamsInfo[topSeedTeam.abbrev];
   const bottomSeedInfo = teamsInfo[bottomSeedTeam.abbrev];
   const { topSeedWins, bottomSeedWins } = getSeriesWins(series, game);
-  const topSeedScore = getDisplayedSeriesScore(topSeedTeam.abbrev, game);
-  const bottomSeedScore = getDisplayedSeriesScore(bottomSeedTeam.abbrev, game);
   const href = getSeriesHref(game);
   const cardTone = getSeriesCardTone(game);
   const variantClass = getSeriesCardVariantClass(series);
@@ -249,6 +248,8 @@ function PlayoffSeriesCard({
   const card = (
     <div
       className={`${styles.seriesCard} ${variantClass} ${cardTone}`}
+      data-series-letter={series.seriesLetter}
+      data-playoff-round={series.playoffRound}
       style={
         {
           "--top-team-color":
@@ -261,7 +262,10 @@ function PlayoffSeriesCard({
       }
     >
       <div className={styles.seriesMain}>
-        <div className={styles.seriesTeamRow}>
+        <div
+          className={styles.seriesTeamRow}
+          data-series-winner={topSeedWins >= 4 || undefined}
+        >
           <div className={styles.seriesTeamMeta}>
             <OptimizedImage
               src={getTeamLogoSvg(topSeedTeam.abbrev)}
@@ -280,11 +284,7 @@ function PlayoffSeriesCard({
               </span>
             </div>
           </div>
-          <span
-            className={`${styles.seriesScore} ${topSeedScore === null ? styles.seriesScoreHidden : ""}`}
-          >
-            {topSeedScore ?? "0"}
-          </span>
+          <span className={styles.seriesScore}>{topSeedWins}</span>
         </div>
 
         <div className={styles.seriesCenterLine}>
@@ -297,7 +297,10 @@ function PlayoffSeriesCard({
           <span className={styles.seriesCenterRule} />
         </div>
 
-        <div className={styles.seriesTeamRow}>
+        <div
+          className={styles.seriesTeamRow}
+          data-series-winner={bottomSeedWins >= 4 || undefined}
+        >
           <div className={styles.seriesTeamMeta}>
             <OptimizedImage
               src={getTeamLogoSvg(bottomSeedTeam.abbrev)}
@@ -316,11 +319,7 @@ function PlayoffSeriesCard({
               </span>
             </div>
           </div>
-          <span
-            className={`${styles.seriesScore} ${bottomSeedScore === null ? styles.seriesScoreHidden : ""}`}
-          >
-            {bottomSeedScore ?? "0"}
-          </span>
+          <span className={styles.seriesScore}>{bottomSeedWins}</span>
         </div>
       </div>
 
@@ -365,6 +364,8 @@ function PlayoffPlaceholderCard({ series }: { series: PlayoffBracketSeries }) {
   return (
     <div
       className={`${styles.seriesCard} ${variantClass} ${styles.placeholderCard}`}
+      data-series-letter={series.seriesLetter}
+      data-playoff-round={series.playoffRound}
     >
       <div className={styles.placeholderInner}>
         {!showConferenceLogoOnly ? (
@@ -568,6 +569,7 @@ export default function HomepagePlayoffBracket({
   currentDate,
   games,
   playoffBracket,
+  postseasonYear = null,
   playoffWeekGames,
 }: HomepagePlayoffBracketProps) {
   const series = playoffBracket.series ?? [];
@@ -579,9 +581,43 @@ export default function HomepagePlayoffBracket({
   const eastFinal = getSeriesByLetter(series, EAST_FINAL_LETTER);
   const cupFinal = getSeriesByLetter(series, CUP_FINAL_LETTER);
   const formattedDate = moment(currentDate).format("ddd, MMM D");
+  const champion = cupFinal
+    ? cupFinal.topSeedWins >= 4
+      ? cupFinal.topSeedTeam
+      : cupFinal.bottomSeedWins >= 4
+        ? cupFinal.bottomSeedTeam
+        : null
+    : null;
+  const championWins = champion
+    ? champion.id === cupFinal?.topSeedTeam?.id
+      ? cupFinal?.topSeedWins
+      : cupFinal?.bottomSeedWins
+    : null;
+  const finalistWins = champion
+    ? champion.id === cupFinal?.topSeedTeam?.id
+      ? cupFinal?.bottomSeedWins
+      : cupFinal?.topSeedWins
+    : null;
+  const championName =
+    champion?.commonName?.default ?? champion?.name?.default ?? champion?.abbrev;
+  const seasonLabel = postseasonYear ? `Postseason ${postseasonYear}` : "Postseason";
+  const bracketStatusCopy = champion
+    ? "The championship path remains available until the next season schedule is released."
+    : "Follow both conferences as they advance toward the Stanley Cup Final.";
 
   return (
     <div className={styles.playoffBracket}>
+      <div className={styles.playoffStateHeader}>
+        <div className={styles.playoffStateTitle}>
+          <span>{seasonLabel}</span>
+          <h3>The bracket</h3>
+        </div>
+        <p>{bracketStatusCopy}</p>
+        <a href="#homepage-playoff-bracket-board" className={styles.fullBracketLink}>
+          View full bracket <span aria-hidden="true">›</span>
+        </a>
+      </div>
+
       <div className={styles.playoffHeader}>
         <span className={styles.playoffEyebrow}>Today&apos;s matchups</span>
         <div className={styles.playoffHeaderMeta}>
@@ -612,7 +648,31 @@ export default function HomepagePlayoffBracket({
         )}
       </div>
 
-      <div className={styles.bracketBoard}>
+      <div
+        id="homepage-playoff-bracket-board"
+        className={styles.bracketBoard}
+        aria-label="Stanley Cup Playoffs bracket"
+      >
+        <svg
+          className={styles.bracketConnectors}
+          viewBox="0 0 100 101"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          focusable="false"
+        >
+          {["west", "east"].flatMap((side) =>
+            buildConferenceConnectorPaths(side as "west" | "east").map(
+              (path, index) => (
+                <path
+                  key={`${side}-${index}`}
+                  d={path}
+                  data-connector-side={side}
+                  vectorEffect="non-scaling-stroke"
+                />
+              ),
+            ),
+          )}
+        </svg>
         <section className={`${styles.conferenceBoard} ${styles.westBoard}`}>
           <div className={styles.conferenceHeading}>Western Conference</div>
           <div className={styles.conferenceColumns}>
@@ -643,7 +703,24 @@ export default function HomepagePlayoffBracket({
         </section>
 
         <section className={styles.cupBoard}>
-          <span className={styles.roundLabel}>SCF</span>
+          <span className={styles.roundLabel}>Stanley Cup Final</span>
+          {champion?.abbrev ? (
+            <div className={styles.championCard} data-champion="true">
+              <OptimizedImage
+                src={getTeamLogoSvg(champion.abbrev)}
+                alt={`${champion.abbrev} logo`}
+                width={72}
+                height={72}
+                fallbackSrc={fallbackNHLLogo}
+              />
+              <span>Stanley Cup Champions</span>
+              <strong>{championName}</strong>
+              <small>
+                {postseasonYear ? `${postseasonYear} · ` : ""}
+                {championWins}–{finalistWins}
+              </small>
+            </div>
+          ) : null}
           {cupFinal ? (
             <PlayoffSeriesCard
               series={cupFinal}

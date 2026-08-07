@@ -158,10 +158,11 @@
 }
 
 .calendarPopover {
-  position: absolute;
+  position: fixed;
   z-index: 1200;
-  top: calc(100% + 6px);
-  right: 0;
+  top: var(--calendar-top, 12px);
+  right: auto;
+  left: var(--calendar-left, 12px);
   width: min(310px, calc(100vw - 24px));
   padding: v.$space-sm;
   border: 1px solid rgba(v.$primary-color, 0.42);
@@ -624,6 +625,1583 @@
   display: none;
 }
 
+.desktopGamesSlate {
+  display: none;
+}
+
+@media (min-width: #{v.$breakpoint-desktop}) {
+  .gamesContainer {
+    min-height: 0;
+    padding: 6px;
+  }
+
+  .gamesGrid {
+    display: none;
+  }
+
+  .mobileGamesSlate {
+    display: none;
+  }
+
+  .mobileGameGroup {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+
+    > h3 {
+      grid-column: 1 / -1;
+      margin: 0 2px;
+      color: v.$primary-color;
+      font-family: v.$font-family-numbers;
+      font-size: 0.58rem;
+      font-weight: v.$font-weight-medium;
+      letter-spacing: 0.08em;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    &[data-game-group="live"] > h3 {
+      color: v.$success-color;
+    }
+
+    &[data-game-group="final"] > h3 {
+      color: v.$text-secondary;
+    }
+  }
+
+  .mobileGameLink {
+    position: relative;
+    display: grid;
+    align-items: center;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid rgba(v.$color-white, 0.085);
+    border-radius: 5px;
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--away-primary-color) 5%, transparent),
+        transparent 36%
+      ),
+      linear-gradient(
+        270deg,
+        color-mix(in srgb, var(--home-primary-color) 5%, transparent),
+        transparent 36%
+      ),
+      rgba(v.$color-white, 0.012);
+    color: v.$text-primary;
+    text-decoration: none;
+
+    &::before,
+    &::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      width: 50%;
+      height: 1px;
+      opacity: 0.72;
+    }
+
+    &::before {
+      left: 0;
+      background: var(--away-primary-light-color);
+    }
+
+    &::after {
+      right: 0;
+      background: var(--home-primary-light-color);
+    }
+
+    &[data-game-state="live"] {
+      border-color: rgba(v.$success-color, 0.48);
+      box-shadow: inset 2px 0 0 rgba(v.$success-color, 0.8);
+    }
+
+    &:hover {
+      border-color: rgba(v.$primary-color, 0.58);
+      background-color: rgba(v.$primary-color, 0.045);
+    }
+
+    &:focus-visible {
+      border-color: v.$primary-color;
+      outline: 2px solid rgba(v.$primary-color, 0.8);
+      outline-offset: 1px;
+    }
+  }
+
+  .mobileGameState {
+    display: inline-flex;
+    grid-area: state;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    color: v.$primary-color;
+    font-family: v.$font-family-numbers;
+    font-size: 0.52rem;
+    font-weight: v.$font-weight-medium;
+    letter-spacing: 0.045em;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
+
+    i {
+      flex: 0 0 auto;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+  }
+
+  .mobileGameLink[data-game-state="live"] .mobileGameState {
+    color: v.$success-color;
+  }
+
+  .mobileGameLink[data-game-state="final"] .mobileGameState {
+    color: v.$text-secondary;
+  }
+
+  .mobileGameTime {
+    grid-area: time;
+    min-width: 0;
+    color: v.$text-primary;
+    font-family: v.$font-family-numbers;
+    font-size: 0.55rem;
+    letter-spacing: 0.02em;
+    text-align: center;
+    text-transform: uppercase;
+    white-space: nowrap;
+
+    > div,
+    > div > span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    small {
+      color: v.$color-brand-white;
+      font: inherit;
+    }
+  }
+
+  .mobileTeam {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    color: v.$color-brand-white;
+
+    img {
+      flex: 0 0 auto;
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+    }
+
+    strong {
+      overflow: hidden;
+      font-family: v.$font-family-accent;
+      font-size: 0.62rem;
+      font-weight: v.$font-weight-semibold;
+      letter-spacing: 0.045em;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    b {
+      margin-left: auto;
+      color: v.$color-brand-white;
+      font-family: v.$font-family-numbers;
+      font-size: 0.72rem;
+      font-weight: v.$font-weight-semibold;
+    }
+  }
+
+  .mobileAwayTeam {
+    grid-area: away;
+    justify-self: stretch;
+  }
+
+  .mobileHomeTeam {
+    grid-area: home;
+    justify-self: stretch;
+
+    b {
+      margin: 0;
+    }
+
+    img {
+      order: 1;
+    }
+
+    strong {
+      order: 2;
+    }
+  }
+
+  .mobileMatchupDivider {
+    display: grid;
+    grid-area: divider;
+    place-items: center;
+    color: v.$text-secondary;
+    font-family: v.$font-family-numbers;
+    font-size: 0.46rem;
+  }
+
+  .mobileWinProbability {
+    min-width: 0;
+    font-family: v.$font-family-numbers;
+    font-size: 0.48rem;
+    font-weight: v.$font-weight-medium;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .mobileAwayProbability {
+    grid-area: awayProbability;
+  }
+
+  .mobileHomeProbability {
+    grid-area: homeProbability;
+  }
+
+  .probabilityFavored {
+    color: color-mix(in srgb, v.$success-color 78%, v.$color-brand-white);
+  }
+
+  .probabilityUnderdog {
+    color: color-mix(in srgb, v.$danger-color 68%, v.$color-brand-white);
+  }
+
+  .probabilityEven {
+    color: v.$text-secondary;
+  }
+
+  .mobileBroadcast {
+    grid-area: broadcast;
+    min-width: 0;
+    overflow: hidden;
+    color: v.$text-secondary;
+    font-size: 0.46rem;
+    text-align: right;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .mobileAnalytics {
+    display: flex;
+    grid-area: analytics;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
+    overflow: hidden;
+    color: v.$color-brand-white;
+    font-family: v.$font-family-numbers;
+    font-size: 0.48rem;
+    white-space: nowrap;
+
+    > span {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 3px;
+    }
+
+    small {
+      color: v.$text-secondary;
+      font: inherit;
+      font-size: 0.4rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    > span:first-child {
+      color: v.$primary-color;
+    }
+  }
+
+  .mobileStarters,
+  .mobileGameRecords {
+    min-width: 0;
+    overflow: hidden;
+    color: v.$text-secondary;
+    font-family: v.$font-family-numbers;
+    font-size: 0.43rem;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .mobileStarters {
+    grid-area: starters;
+
+    small {
+      margin-right: 4px;
+      color: v.$color-neutral-400;
+      font: inherit;
+    }
+  }
+
+  .mobileGameRecords {
+    grid-area: records;
+  }
+
+  .mobileGameChevron {
+    grid-area: chevron;
+    color: v.$primary-color;
+    font-size: 0.82rem;
+    line-height: 1;
+    text-align: right;
+  }
+
+  .mobileGamesSlate[data-slate-mode="light"] {
+    .mobileGameGroup {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    &[data-game-count="1"] .mobileGameGroup {
+      grid-template-columns: minmax(310px, 760px);
+      justify-content: center;
+    }
+
+    &[data-game-count="2"] .mobileGameGroup {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    &[data-game-count="3"] .mobileGameGroup {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    &[data-game-count="4"] .mobileGameGroup {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    &[data-game-count="5"] .mobileGameLink {
+      grid-column: span 2;
+    }
+
+    &[data-game-count="5"] .mobileGameLink:nth-of-type(4) {
+      grid-column: 2 / span 2;
+    }
+
+    &[data-game-count="5"] .mobileGameLink:nth-of-type(5) {
+      grid-column: 4 / span 2;
+    }
+
+    .mobileGameLink {
+      grid-template-areas:
+        "state time broadcast"
+        "away divider home"
+        "analytics analytics analytics"
+        "starters starters chevron"
+        "records records records";
+      grid-template-columns: minmax(100px, 1fr) minmax(70px, auto) minmax(100px, 1fr);
+      grid-template-rows: auto minmax(62px, 1fr) auto auto auto;
+      min-height: 166px;
+      padding: 7px 12px 8px;
+      column-gap: 6px;
+      row-gap: 4px;
+      border-radius: 7px;
+      background:
+        linear-gradient(
+          90deg,
+          color-mix(in srgb, var(--away-primary-color) 8%, transparent),
+          transparent 42%
+        ),
+        linear-gradient(
+          270deg,
+          color-mix(in srgb, var(--home-primary-color) 8%, transparent),
+          transparent 42%
+        ),
+        rgba(v.$color-white, 0.015);
+    }
+
+    .mobileGameState {
+      font-size: 0.58rem;
+    }
+
+    .mobileGameTime {
+      font-size: 0.64rem;
+    }
+
+    .mobileBroadcast {
+      font-size: 0.52rem;
+    }
+
+    .mobileTeam {
+      gap: 7px;
+
+      img {
+        width: 38px;
+        height: 38px;
+      }
+
+      strong {
+        font-size: 0.9rem;
+      }
+
+      b {
+        font-size: 1.25rem;
+      }
+    }
+
+    .mobileMatchupDivider {
+      font-size: 0.6rem;
+    }
+
+    .mobileWinProbability {
+      display: none;
+    }
+
+    .mobileGameLink[data-has-probabilities="true"] {
+      .mobileAwayProbability {
+        grid-area: away;
+        z-index: 1;
+        justify-self: start;
+      }
+
+      .mobileHomeProbability {
+        grid-area: home;
+        z-index: 1;
+        justify-self: end;
+      }
+
+      .mobileAwayTeam {
+        padding-left: 0;
+      }
+
+      .mobileHomeTeam {
+        padding-right: 0;
+      }
+    }
+
+    .mobileAnalytics {
+      display: grid;
+      grid-auto-columns: minmax(0, 1fr);
+      grid-auto-flow: column;
+      gap: 0;
+      min-height: 28px;
+      padding-block: 5px;
+      border-block: 1px solid rgba(v.$color-white, 0.055);
+      font-size: 0.58rem;
+
+      > span {
+        justify-content: center;
+        gap: 4px;
+        padding-inline: 4px;
+
+        &:not(:first-child) {
+          border-left: 1px solid rgba(v.$color-white, 0.055);
+        }
+      }
+
+      small {
+        font-size: 0.48rem;
+      }
+    }
+
+    .mobileStarters,
+    .mobileGameRecords {
+      font-size: 0.5rem;
+    }
+
+    .mobileGameLink[data-has-starters="true"] .mobileGameRecords {
+      display: none;
+    }
+  }
+
+  .mobileGamesSlate[data-slate-mode="medium"],
+  .mobileGamesSlate[data-slate-mode="heavy"] {
+    .mobileGameLink {
+      grid-template-areas: "state time awayProbability away divider home homeProbability analytics broadcast chevron";
+      grid-template-columns: 7px 54px 28px 68px 12px 68px 28px minmax(100px, 1fr) 34px 7px;
+      gap: 2px;
+      min-height: 31px;
+      padding: 1px 5px;
+    }
+
+    .mobileGameState span {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+    }
+
+    .mobileStarters,
+    .mobileGameRecords {
+      display: none;
+    }
+
+    .mobileAnalytics {
+      justify-content: flex-start;
+      gap: 4px;
+
+      > span[data-analytics-metric="edge"] {
+        order: 1;
+      }
+
+      > span[data-analytics-metric="projected-goals"] {
+        order: 2;
+      }
+
+      > span:nth-child(n + 3) {
+        display: none;
+      }
+    }
+  }
+
+  .mobileGamesSlate[data-slate-mode="medium"] {
+    .mobileGameGroup {
+      gap: 2px;
+    }
+
+    .mobileGameGroup[data-game-group="scheduled"],
+    .mobileGameGroup[data-game-group="final"] {
+      grid-template-columns: minmax(0, 1fr);
+
+      .mobileGameLink {
+        min-height: 23px;
+        padding-block: 0;
+      }
+
+      .mobileAnalytics {
+        display: grid;
+        grid-auto-columns: minmax(0, 1fr);
+        grid-auto-flow: column;
+        gap: 0;
+
+        > span {
+          justify-content: center;
+        }
+      }
+    }
+
+    .mobileGameGroup[data-game-group="live"] {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .mobileGameGroup[data-game-group="live"] .mobileGameLink {
+      grid-template-areas:
+        "state time broadcast"
+        "away divider home"
+        "analytics analytics chevron";
+      grid-template-columns: minmax(72px, 1fr) minmax(52px, auto) minmax(72px, 1fr);
+      grid-template-rows: 18px 38px 18px;
+      min-height: 82px;
+      padding: 2px 8px 3px;
+    }
+
+    .mobileGameGroup[data-game-group="live"] .mobileTeam {
+      gap: 6px;
+
+      img {
+        width: 26px;
+        height: 26px;
+      }
+
+      strong {
+        font-size: 0.76rem;
+      }
+
+      b {
+        font-size: 1rem;
+      }
+    }
+
+    .mobileGameGroup[data-game-group="live"] .mobileGameState span {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      clip: auto;
+    }
+  }
+
+  .mobileGamesSlate[data-slate-mode="heavy"] {
+    gap: 3px;
+
+    .mobileGameGroup {
+      gap: 2px;
+    }
+
+    .mobileGameGroup[data-game-group="live"] {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .mobileGameGroup[data-game-group="scheduled"],
+    .mobileGameGroup[data-game-group="final"] {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .mobileGameGroup[data-game-group="live"] .mobileGameLink {
+      grid-template-areas: "state time away divider home analytics chevron";
+      grid-template-columns: 7px 58px minmax(46px, 1fr) 8px minmax(46px, 1fr) minmax(42px, 0.8fr) 7px;
+      gap: 2px;
+    }
+
+    .mobileGameGroup[data-game-group="live"] .mobileBroadcast {
+      display: none;
+    }
+
+    .mobileGameGroup[data-game-group="live"] .mobileAnalytics > span:first-child:not(:last-child) {
+      display: none;
+    }
+
+    .mobileGameGroup[data-game-group="live"] .mobileTeam {
+      gap: 2px;
+
+      img {
+        width: 16px;
+        height: 16px;
+      }
+
+      strong {
+        font-size: 0.54rem;
+      }
+
+      b {
+        font-size: 0.64rem;
+      }
+    }
+
+    .mobileGameLink {
+      min-height: 29px;
+    }
+  }
+
+  .mobileGamesViewAll {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    min-height: 30px;
+    padding: 2px v.$space-sm;
+    border: 1px solid rgba(v.$primary-color, 0.28);
+    border-radius: 5px;
+    background: rgba(v.$primary-color, 0.035);
+    color: v.$primary-color;
+    font-family: v.$font-family-numbers;
+    font-size: 0.56rem;
+    font-weight: v.$font-weight-medium;
+    letter-spacing: 0.1em;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+
+    span {
+      font-size: 0.9rem;
+    }
+
+    &:hover,
+    &:focus-visible {
+      border-color: v.$primary-color;
+      background: rgba(v.$primary-color, 0.09);
+      color: v.$color-white;
+    }
+
+    &:focus-visible {
+      outline: 2px solid rgba(v.$primary-color, 0.8);
+      outline-offset: 1px;
+    }
+  }
+
+  .desktopGamesSlate {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .desktopLightGrid,
+  .desktopLiveGrid,
+  .desktopTableColumns {
+    display: grid;
+    min-width: 0;
+  }
+
+  .desktopLightGrid {
+    gap: 8px;
+  }
+
+  .desktopGamesSlate[data-slate-mode="light"] {
+    &[data-game-count="1"] .desktopLightGrid {
+      grid-template-columns: minmax(330px, 760px);
+      justify-content: center;
+    }
+
+    &[data-game-count="2"] .desktopLightGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    &[data-game-count="3"] .desktopLightGrid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    &[data-game-count="4"] .desktopLightGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    &[data-game-count="5"] .desktopLightGrid {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    &[data-game-count="5"] .desktopLightCard {
+      grid-column: span 2;
+    }
+
+    &[data-game-count="5"] .desktopLightCard:nth-child(4) {
+      grid-column: 2 / span 2;
+    }
+
+    &[data-game-count="5"] .desktopLightCard:nth-child(5) {
+      grid-column: 4 / span 2;
+    }
+  }
+
+  .desktopLightCard,
+  .desktopMediumLiveCard,
+  .desktopHeavyLiveCard {
+    position: relative;
+    min-width: 0;
+    border: 1px solid rgba(v.$color-white, 0.12);
+    border-radius: 7px;
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--away-primary-color) 8%, transparent),
+        transparent 43%
+      ),
+      linear-gradient(
+        270deg,
+        color-mix(in srgb, var(--home-primary-color) 8%, transparent),
+        transparent 43%
+      ),
+      rgba(v.$color-white, 0.015);
+    color: v.$color-brand-white;
+    text-decoration: none;
+
+    &[data-game-state="live"] {
+      border-color: rgba(v.$success-color, 0.55);
+      box-shadow: inset 2px 0 0 rgba(v.$success-color, 0.78);
+    }
+
+    &[data-game-state="scheduled"] {
+      border-color: rgba(v.$primary-color, 0.32);
+    }
+
+    &:hover {
+      border-color: rgba(v.$primary-color, 0.72);
+      background-color: rgba(v.$primary-color, 0.04);
+    }
+
+    &:focus-visible {
+      outline: 2px solid v.$primary-color;
+      outline-offset: 2px;
+    }
+  }
+
+  .desktopLightCard {
+    display: grid;
+    grid-template-rows: 20px minmax(64px, 1fr) auto 24px;
+    gap: 5px;
+    min-height: 176px;
+    padding: 7px 12px 8px;
+  }
+
+  .desktopCardMeta {
+    display: grid;
+    grid-template-columns: minmax(72px, 1fr) minmax(92px, auto) minmax(72px, 1fr);
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    font-family: v.$font-family-numbers;
+    font-size: 0.68rem;
+    letter-spacing: 0.045em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .desktopStateLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    color: v.$primary-color;
+    font-weight: v.$font-weight-medium;
+
+    i {
+      flex: 0 0 auto;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+  }
+
+  [data-game-state="live"] .desktopStateLabel {
+    color: v.$success-color;
+  }
+
+  [data-game-state="final"] .desktopStateLabel {
+    color: v.$text-secondary;
+  }
+
+  .desktopCardTime {
+    min-width: 0;
+    overflow: hidden;
+    color: v.$text-primary;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .desktopCardNetwork {
+    min-width: 0;
+    overflow: hidden;
+    color: v.$text-secondary;
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .desktopLightMatchup {
+    display: grid;
+    grid-template-columns: minmax(108px, 1fr) 28px minmax(108px, 1fr);
+    align-items: center;
+    min-width: 0;
+  }
+
+  .desktopLightTeam {
+    display: grid;
+    grid-template-columns: 42px minmax(0, auto) minmax(20px, 1fr);
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+
+    img {
+      width: 42px;
+      height: 42px;
+      object-fit: contain;
+    }
+
+    strong {
+      min-width: 0;
+      overflow: hidden;
+      font-family: v.$font-family-accent;
+      font-size: 0.94rem;
+      letter-spacing: 0.055em;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    b {
+      justify-self: end;
+      font-family: v.$font-family-numbers;
+      font-size: 1.42rem;
+      font-variant-numeric: tabular-nums;
+      font-weight: v.$font-weight-semibold;
+    }
+  }
+
+  .desktopLightHomeTeam {
+    grid-template-columns: minmax(20px, 1fr) minmax(0, auto) 42px;
+
+    b {
+      justify-self: start;
+    }
+
+    img {
+      justify-self: end;
+    }
+  }
+
+  .desktopLightDivider {
+    color: v.$text-secondary;
+    font-family: v.$font-family-numbers;
+    font-size: 0.58rem;
+    text-align: center;
+  }
+
+  .desktopLightAnalytics {
+    display: grid;
+    grid-row: 3;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    min-height: 34px;
+    border-block: 1px solid rgba(v.$color-white, 0.07);
+    font-family: v.$font-family-numbers;
+
+    > span {
+      display: grid;
+      place-content: center;
+      min-width: 0;
+      padding-inline: 6px;
+      text-align: center;
+
+      &:not(:first-child) {
+        border-left: 1px solid rgba(v.$color-white, 0.07);
+      }
+    }
+
+    small {
+      color: v.$text-secondary;
+      font-size: 0.52rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    strong {
+      min-width: 0;
+      overflow: hidden;
+      color: v.$primary-color;
+      font-size: 0.68rem;
+      font-variant-numeric: tabular-nums;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .desktopLightFooter {
+    display: grid;
+    grid-row: 4;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    color: v.$text-secondary;
+    font-family: v.$font-family-numbers;
+    font-size: 0.56rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+
+    > span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    small {
+      margin-right: 5px;
+      color: v.$color-neutral-400;
+      font: inherit;
+      letter-spacing: 0.055em;
+    }
+
+    b {
+      color: v.$primary-color;
+      font-size: 0.92rem;
+      font-weight: 400;
+    }
+  }
+
+  .desktopLiveGroup,
+  .desktopRoutineGroup {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+
+    > h3 {
+      margin: 0 2px;
+      color: v.$primary-color;
+      font-family: v.$font-family-numbers;
+      font-size: 0.64rem;
+      font-weight: v.$font-weight-medium;
+      letter-spacing: 0.09em;
+      line-height: 1.15;
+      text-transform: uppercase;
+    }
+  }
+
+  .desktopLiveGroup > h3 {
+    color: v.$success-color;
+  }
+
+  .desktopRoutineGroup[data-game-group="final"] > h3 {
+    color: v.$text-secondary;
+  }
+
+  .desktopGamesSlate[data-slate-mode="medium"] .desktopLiveGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .desktopMediumLiveCard {
+    display: grid;
+    grid-template-areas:
+      "meta meta chevron"
+      "matchup matchup chevron"
+      "analytics analytics chevron";
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 10px;
+    grid-template-rows: 21px minmax(52px, 1fr) 22px;
+    gap: 2px 7px;
+    min-height: 105px;
+    padding: 5px 8px;
+
+    .desktopCardMeta {
+      grid-area: meta;
+    }
+  }
+
+  .desktopMediumMatchup {
+    display: grid;
+    grid-area: matchup;
+    grid-template-columns: minmax(112px, 1fr) 30px minmax(112px, 1fr);
+    align-items: center;
+    min-width: 0;
+
+    > span:nth-child(2) {
+      color: v.$text-secondary;
+      font-family: v.$font-family-numbers;
+      font-size: 0.55rem;
+      text-align: center;
+    }
+  }
+
+  .desktopMediumTeam {
+    display: grid;
+    grid-template-columns: 34px minmax(0, auto) minmax(24px, 1fr);
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+
+    img {
+      width: 34px;
+      height: 34px;
+      object-fit: contain;
+    }
+
+    strong {
+      min-width: 0;
+      overflow: hidden;
+      font-family: v.$font-family-accent;
+      font-size: 0.86rem;
+      letter-spacing: 0.05em;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    b {
+      justify-self: end;
+      font-family: v.$font-family-numbers;
+      font-size: 1.22rem;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .desktopMediumHomeTeam {
+    grid-template-columns: minmax(24px, 1fr) minmax(0, auto) 34px;
+
+    b {
+      justify-self: start;
+    }
+
+    img {
+      justify-self: end;
+    }
+  }
+
+  .desktopMediumAnalytics {
+    display: flex;
+    grid-area: analytics;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    min-width: 0;
+    border-top: 1px solid rgba(v.$color-white, 0.06);
+    color: v.$color-brand-white;
+    font-family: v.$font-family-numbers;
+    font-size: 0.6rem;
+    font-variant-numeric: tabular-nums;
+
+    small {
+      color: v.$text-secondary;
+      font: inherit;
+      font-size: 0.5rem;
+      text-transform: uppercase;
+    }
+  }
+
+  .desktopCardChevron {
+    display: grid;
+    grid-area: chevron;
+    align-self: stretch;
+    place-items: center;
+    color: v.$primary-color;
+    font-size: 0.9rem;
+  }
+
+  .desktopGamesSlate[data-slate-mode="heavy"] .desktopLiveGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .desktopHeavyLiveCard {
+    display: grid;
+    grid-template-rows: 18px repeat(2, minmax(28px, 1fr));
+    gap: 1px;
+    min-height: 91px;
+    padding: 5px 8px 6px;
+  }
+
+  .desktopHeavyMeta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    color: v.$text-secondary;
+    font-family: v.$font-family-numbers;
+    font-size: 0.62rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+
+    span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    span:first-child {
+      color: v.$text-primary;
+    }
+
+    i {
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      margin-right: 3px;
+      border-radius: 50%;
+      background: v.$success-color;
+    }
+  }
+
+  .desktopHeavyTeamRow {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) 28px;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+
+    img {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+    }
+
+    strong {
+      min-width: 0;
+      overflow: hidden;
+      font-family: v.$font-family-accent;
+      font-size: 0.72rem;
+      letter-spacing: 0.055em;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    b {
+      justify-self: end;
+      font-family: v.$font-family-numbers;
+      font-size: 1rem;
+      font-variant-numeric: tabular-nums;
+      font-weight: v.$font-weight-semibold;
+    }
+  }
+
+  .desktopTableColumns {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .desktopGamesSlate[data-slate-mode="heavy"] .desktopTableColumns[data-column-count="2"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .desktopTableSurface {
+    min-width: 0;
+    overflow: clip;
+    border: 1px solid rgba(v.$color-white, 0.085);
+    border-radius: 5px;
+    background: rgba(v.$color-white, 0.012);
+  }
+
+  .desktopTableHeader,
+  .desktopTableRow {
+    display: grid;
+    align-items: center;
+    min-width: 0;
+
+    > * {
+      min-width: 0;
+    }
+
+    &[data-table-columns^="medium"] {
+      grid-template-columns:
+        76px
+        minmax(250px, 1.55fr)
+        minmax(88px, 0.62fr)
+        minmax(88px, 0.62fr)
+        minmax(62px, 0.48fr)
+        14px;
+      gap: 6px;
+    }
+
+    &[data-table-columns="heavy"] {
+      grid-template-columns: 62px minmax(0, 1fr) minmax(52px, 72px) 12px;
+      gap: 5px;
+    }
+  }
+
+  .desktopTableHeader {
+    min-height: 18px;
+    padding: 1px 7px;
+    border-bottom: 1px solid rgba(v.$color-white, 0.08);
+    background: rgba(v.$color-white, 0.025);
+    color: v.$color-neutral-400;
+    font-family: v.$font-family-numbers;
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .desktopTableRow {
+    min-height: 28px;
+    padding: 1px 7px;
+    color: v.$text-primary;
+    text-decoration: none;
+
+    &:not(:last-child) {
+      border-bottom: 1px solid rgba(v.$color-white, 0.06);
+    }
+
+    &[data-table-columns="heavy"] {
+      min-height: 26px;
+    }
+
+    &:hover {
+      background: rgba(v.$primary-color, 0.055);
+    }
+
+    &:focus-visible {
+      position: relative;
+      z-index: 1;
+      outline: 2px solid v.$primary-color;
+      outline-offset: -2px;
+    }
+  }
+
+  .desktopTableTime,
+  .desktopTableMetric,
+  .desktopTableNetwork {
+    min-width: 0;
+    overflow: hidden;
+    font-family: v.$font-family-numbers;
+    font-size: 0.62rem;
+    font-variant-numeric: tabular-nums;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .desktopTableTime {
+    color: v.$text-primary;
+  }
+
+  .desktopTableMetric {
+    color: v.$primary-color;
+    text-align: center;
+  }
+
+  .desktopTableNetwork {
+    color: v.$text-secondary;
+    text-align: right;
+  }
+
+  .desktopTableMatchup {
+    display: grid;
+    grid-template-columns:
+      minmax(72px, max-content)
+      18px
+      minmax(72px, max-content);
+    align-items: center;
+    justify-content: start;
+    gap: 4px;
+    min-width: 0;
+
+    > span {
+      display: grid;
+      grid-template-columns: 22px minmax(0, max-content) minmax(18px, max-content);
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    img {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+    }
+
+    strong {
+      min-width: 0;
+      overflow: hidden;
+      font-family: v.$font-family-accent;
+      font-size: 0.66rem;
+      letter-spacing: 0.045em;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    b {
+      justify-self: end;
+      font-family: v.$font-family-numbers;
+      font-size: 0.63rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    small {
+      color: v.$text-secondary;
+      font-family: v.$font-family-numbers;
+      font-size: 0.44rem;
+      text-align: center;
+    }
+  }
+
+  .desktopTableChevron {
+    color: v.$primary-color;
+    font-size: 0.78rem;
+    text-align: right;
+  }
+
+  .desktopGamesViewAll {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    min-height: 30px;
+    padding: 2px v.$space-sm;
+    border: 1px solid rgba(v.$primary-color, 0.28);
+    border-radius: 5px;
+    background: rgba(v.$primary-color, 0.035);
+    color: v.$primary-color;
+    font-family: v.$font-family-numbers;
+    font-size: 0.62rem;
+    font-weight: v.$font-weight-medium;
+    letter-spacing: 0.1em;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+
+    span {
+      font-size: 0.9rem;
+    }
+
+    &:hover,
+    &:focus-visible {
+      border-color: v.$primary-color;
+      background: rgba(v.$primary-color, 0.09);
+      color: v.$color-white;
+    }
+
+    &:focus-visible {
+      outline: 2px solid rgba(v.$primary-color, 0.8);
+      outline-offset: 1px;
+    }
+  }
+
+  .openingNightCountdown {
+    position: relative;
+    isolation: isolate;
+    grid-template-columns: minmax(330px, 42%) minmax(460px, 50%);
+    justify-content: space-between;
+    gap: clamp(24px, 3vw, 54px);
+    min-height: clamp(182px, 12.5vw, 204px);
+    padding: clamp(18px, 1.25vw, 24px) clamp(24px, 2.3vw, 40px);
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse at 48% 56%, rgba(v.$primary-color, 0.09), transparent 34%),
+      linear-gradient(105deg, rgba(v.$primary-color, 0.13), transparent 44%),
+      linear-gradient(90deg, rgba(v.$color-black, 0.14), transparent 28%, transparent 72%, rgba(v.$color-black, 0.18)),
+      v.$background-medium;
+
+    &::before {
+      position: absolute;
+      z-index: -1;
+      inset: 13% 27% -65% -12%;
+      background:
+        radial-gradient(ellipse at 0 100%, transparent 58%, rgba(v.$primary-color, 0.14) 58.35%, transparent 58.7%),
+        radial-gradient(ellipse at 0 100%, transparent 66%, rgba(v.$primary-color, 0.11) 66.35%, transparent 66.7%),
+        radial-gradient(ellipse at 0 100%, transparent 74%, rgba(v.$primary-color, 0.08) 74.35%, transparent 74.7%);
+      content: "";
+      opacity: 0.8;
+      pointer-events: none;
+      transform: rotate(-4deg);
+    }
+
+    &::after {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(v.$primary-color, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(v.$primary-color, 0.02) 1px, transparent 1px);
+      background-size: 38px 28px;
+      content: "";
+      mask-image: radial-gradient(ellipse at 46% 62%, black 8%, transparent 62%);
+      opacity: 0.7;
+      pointer-events: none;
+    }
+  }
+
+  .openingNightIntro {
+    position: relative;
+    z-index: 1;
+    align-content: center;
+    gap: 6px;
+
+    > span {
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+    }
+
+    h3 {
+      font-size: clamp(1.9rem, 2.1vw, 2.25rem);
+      letter-spacing: 0.055em;
+      line-height: 0.92;
+
+      > span {
+        display: block;
+      }
+    }
+
+    p {
+      margin-top: 5px;
+      font-size: 0.82rem;
+      line-height: 1.25;
+    }
+
+    time {
+      display: block;
+      margin-top: 2px;
+      font-size: 0.98rem;
+    }
+
+    small {
+      font-size: 0.68rem;
+      line-height: 1.3;
+    }
+  }
+
+  .countdownGrid {
+    position: relative;
+    z-index: 1;
+    align-self: center;
+    gap: 0;
+  }
+
+  .countdownUnit {
+    position: relative;
+    min-width: 0;
+    gap: 7px;
+    padding: v.$space-sm clamp(8px, 1vw, 18px);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+
+    &:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      top: 12%;
+      right: 0;
+      width: 1px;
+      height: 76%;
+      background: rgba(v.$primary-color, 0.34);
+    }
+
+    strong {
+      color: v.$primary-color;
+      font-size: clamp(2.65rem, 3.4vw, 3.55rem);
+      font-weight: v.$font-weight-medium;
+      letter-spacing: 0.035em;
+      line-height: 0.92;
+    }
+
+    small {
+      font-size: 0.72rem;
+      letter-spacing: 0.095em;
+    }
+  }
+
+  .dateDisplay {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    &::before {
+      width: 13px;
+      height: 12px;
+      border: 1px solid rgba(v.$primary-color, 0.82);
+      border-radius: 2px;
+      background: linear-gradient(
+        to bottom,
+        rgba(v.$primary-color, 0.3) 0 3px,
+        transparent 3px
+      );
+      content: "";
+    }
+  }
+}
+
+@media (min-width: 1400px) {
+  .desktopGamesSlate[data-slate-mode="light"][data-game-count="4"] {
+    .desktopLightGrid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .desktopGamesSlate[data-slate-mode="heavy"] .desktopLiveGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .mobileGamesSlate[data-slate-mode="light"] {
+    &[data-game-count="4"] .mobileGameGroup {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+}
+
+@media (min-width: 1680px) {
+  .desktopGamesSlate[data-slate-mode="light"][data-game-count="5"] {
+    .desktopLightGrid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .desktopLightCard,
+    .desktopLightCard:nth-child(4),
+    .desktopLightCard:nth-child(5) {
+      grid-column: auto;
+    }
+  }
+
+  .mobileGamesSlate[data-slate-mode="light"][data-game-count="5"] {
+    .mobileGameGroup {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .mobileGameLink,
+    .mobileGameLink:nth-of-type(4),
+    .mobileGameLink:nth-of-type(5) {
+      grid-column: auto;
+    }
+  }
+}
+
 .slateHero {
   position: relative;
   display: grid;
@@ -1084,10 +2662,11 @@
     position: relative;
     width: fit-content;
     padding-bottom: clamp(0.45rem, 0.65vw, 0.7rem);
-    font-size: clamp(2.65rem, 3.7vw, 4.5rem);
+    font-family: v.$font-family-accent, sans-serif;
+    font-size: clamp(1.855rem, 2.59vw, 3.15rem);
     font-weight: v.$font-weight-bold;
     letter-spacing: 0.035em;
-    line-height: 0.92;
+    line-height: 1.25;
     text-shadow: none;
 
     &::after {

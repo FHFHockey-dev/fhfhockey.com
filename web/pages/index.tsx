@@ -16,7 +16,11 @@ import HomepageStandingsInjuriesSection from "components/HomePage/HomepageStandi
 import { useHomepageGames } from "components/HomePage/useHomepageGames";
 import NewsCard from "components/NewsFeed/NewsCard";
 
-import { isPlayoffsActive, getPlayoffBracketYear } from "lib/NHL/playoffs";
+import {
+  isPlayoffsActive,
+  getPlayoffBracketYear,
+  shouldShowPlayoffSnapshot,
+} from "lib/NHL/playoffs";
 import { getPlayoffBracket } from "lib/NHL/server/playoffBracket";
 import { getCurrentSeason } from "lib/NHL/server";
 import { fetchNewsFeedItems } from "lib/newsFeed";
@@ -60,6 +64,7 @@ const Home: NextPage = ({
   nextGameDate,
   playoffsActive,
   playoffBracket,
+  playoffSeasonYear,
   playoffWeekGames,
   homepageSnapshotGeneratedAt,
   standingsLoadError,
@@ -119,6 +124,7 @@ const Home: NextPage = ({
           lastUpdatedAt={lastUpdatedAt}
           playoffsActive={playoffsActive}
           playoffBracket={playoffBracket}
+          playoffSeasonYear={playoffSeasonYear}
           playoffWeekGames={playoffWeekGames}
           heroMetrics={[
             {
@@ -402,7 +408,7 @@ export async function getServerSideProps({ req, res }) {
   // Check if we're in the offseason first
   const isOffseason = await checkIsOffseason();
   const currentSeason = await getCurrentSeason();
-  const playoffsActive = !isOffseason && isPlayoffsActive(currentSeason);
+  let playoffsActive = !isOffseason && isPlayoffsActive(currentSeason);
 
   const today = moment().format("YYYY-MM-DD");
   let gamesToday = [];
@@ -432,6 +438,12 @@ export async function getServerSideProps({ req, res }) {
   } catch (error: any) {
     console.error("Error fetching the next NHL opening night:", error.message);
   }
+
+  playoffsActive = shouldShowPlayoffSnapshot({
+    season: currentSeason,
+    isOffseason,
+    openingNightDate,
+  });
 
   if (isOffseason) {
     console.log("Currently in offseason - skipping game search");
@@ -489,11 +501,11 @@ export async function getServerSideProps({ req, res }) {
   }
 
   let playoffBracket = null;
+  let playoffSeasonYear = null;
   if (playoffsActive) {
     try {
-      playoffBracket = await getPlayoffBracket(
-        getPlayoffBracketYear(currentSeason),
-      );
+      playoffSeasonYear = getPlayoffBracketYear(currentSeason);
+      playoffBracket = await getPlayoffBracket(playoffSeasonYear);
     } catch (error: any) {
       console.error("Error fetching playoff bracket:", error.message);
     }
@@ -579,6 +591,7 @@ export async function getServerSideProps({ req, res }) {
       isOffseason,
       playoffsActive: Boolean(playoffsActive && playoffBracket),
       playoffBracket,
+      playoffSeasonYear,
       playoffWeekGames,
       homepageSnapshotGeneratedAt: new Date().toISOString(),
       standingsLoadError: standingsResult.error,
