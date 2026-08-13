@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   flattenYahooTeams,
@@ -8,7 +8,9 @@ import {
 } from "./discovery";
 import {
   extractYahooPlayerKeyPage,
+  extractYahooPlayerBatch,
   fetchCompleteYahooPlayerKeySnapshot,
+  fetchYahooPublicJson,
   getYahooRetryAfterMs,
   isYahooGameWeekSnapshotReceipt,
   isYahooSheetExportEligible,
@@ -144,6 +146,36 @@ describe("Yahoo discovery helpers", () => {
         { week: 1, start_date: "2026-10-06", end_date: "2026-10-12" },
         { week: 2, start_date: "2026-10-13", end_date: "2026-10-19" },
       ],
+    });
+  });
+
+  it("normalizes Yahoo's public json_f game-week envelope", () => {
+    expect(
+      prepareYahooGameWeekSnapshot({
+        fantasy_content: {
+          game: {
+            game_key: "477",
+            game_id: "477",
+            name: "Hockey",
+            code: "nhl",
+            type: "full",
+            url: "https://hockey.fantasysports.yahoo.com/hockey",
+            season: "2026",
+            game_weeks: [
+              {
+                game_week: {
+                  week: "1",
+                  start: "2026-09-29",
+                  end: "2026-10-04",
+                },
+              },
+            ],
+          },
+        },
+      }),
+    ).toMatchObject({
+      game: { game_id: 477, game_key: "477", season: 2026 },
+      weeks: [{ week: 1, start_date: "2026-09-29", end_date: "2026-10-04" }],
     });
   });
 
@@ -371,6 +403,73 @@ describe("Yahoo discovery helpers", () => {
       expect.stringContaining("/players;start=0;count=2"),
       expect.stringContaining("/players;start=2;count=2"),
     ]);
+  });
+
+  it("extracts public json_f player keys and enriched player batches", () => {
+    const players = [
+      {
+        player: {
+          player_key: "477.p.6743",
+          player_id: "6743",
+          name: { full: "Connor McDavid" },
+          percent_owned: { value: 100 },
+        },
+      },
+    ];
+
+    expect(
+      extractYahooPlayerKeyPage({
+        fantasy_content: { game: { players } },
+      }),
+    ).toEqual([
+      {
+        player_key: "477.p.6743",
+        player_id: 6743,
+        player_name: "Connor McDavid",
+      },
+    ]);
+    expect(
+      extractYahooPlayerBatch({
+        fantasy_content: { players },
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        player_key: "477.p.6743",
+        percent_owned: { value: 100 },
+      }),
+    ]);
+  });
+
+  it("requests Yahoo's public json_f endpoint and exposes retryable status", async () => {
+    const requestedUrls: string[] = [];
+    const fetchImpl = vi.fn(async (input: RequestInfo | URL) => {
+      requestedUrls.push(String(input));
+      return {
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: async () => ({ fantasy_content: { game: {} } }),
+      } as Response;
+    });
+
+    await expect(
+      fetchYahooPublicJson("game/nhl/game_weeks", fetchImpl as typeof fetch),
+    ).resolves.toEqual({ fantasy_content: { game: {} } });
+    expect(requestedUrls[0]).toContain(
+      "pub-api-ro.fantasysports.yahoo.com/fantasy/v2/game/nhl/game_weeks?format=json_f",
+    );
+
+    const unavailable = () =>
+      fetchYahooPublicJson(
+        "game/nhl/game_weeks",
+        (async () =>
+          ({
+            ok: false,
+            status: 503,
+            headers: new Headers(),
+          }) as Response) as typeof fetch,
+      );
+    await expect(unavailable()).rejects.toMatchObject({ status: 503 });
   });
 
   it("fails closed on malformed, repeated, or non-terminating key pages", async () => {

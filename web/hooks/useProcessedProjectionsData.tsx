@@ -59,11 +59,6 @@ import {
 } from "lib/draftDashboard/projectionSourceSettling";
 export type { CustomAdditionalProjectionSource } from "lib/draftDashboard/customProjectionSources";
 
-// Central constant: current Yahoo game/season prefix for filtering ADP rows.
-// Ensure all yahoo_players and mapping data are restricted to this prefix to avoid prior season leakage.
-export const CURRENT_YAHOO_GAME_ID = 465;
-export const CURRENT_YAHOO_GAME_PREFIX = `${CURRENT_YAHOO_GAME_ID}.`; // (Prev season prefix: 453.)
-
 // --- Types ---
 interface RawPlayerStatFromSource {
   value: number | null;
@@ -703,6 +698,10 @@ async function fetchAllSourceData(
 
   let yahooPlayersMap = new Map<string, YahooPlayerDetailData>();
   if (uniqueYahooPlayerIdsFromMap.size > 0) {
+    const yahooSeason = Number.parseInt(currentSeasonId.slice(0, 4), 10);
+    if (!Number.isFinite(yahooSeason)) {
+      throw new Error("Current season cannot be mapped to a Yahoo season.");
+    }
     const yahooPlayersSelectString = `${YAHOO_PLAYERS_TABLE_KEYS.primaryKey}, ${YAHOO_PLAYERS_TABLE_KEYS.yahooSpecificPlayerId}, ${YAHOO_PLAYERS_TABLE_KEYS.fullName}, ${YAHOO_PLAYERS_TABLE_KEYS.draftAnalysis}, ${YAHOO_PLAYERS_TABLE_KEYS.editorialTeamAbbreviation}, ${YAHOO_PLAYERS_TABLE_KEYS.displayPosition}, ${YAHOO_PLAYERS_TABLE_KEYS.eligiblePositions}, average_draft_pick, average_draft_round, percent_drafted, game_id, season`;
 
     // Split IDs into composite (player_key-like) and bare numeric IDs
@@ -728,7 +727,7 @@ async function fetchAllSourceData(
         supabaseClient
           .from("yahoo_players_with_normalized_history")
           .select(yahooPlayersSelectString)
-          .eq("game_id", CURRENT_YAHOO_GAME_ID)
+          .eq("season", yahooSeason)
           .in(YAHOO_PLAYERS_TABLE_KEYS.primaryKey, playerIdChunk)
           .order(YAHOO_PLAYERS_TABLE_KEYS.primaryKey, { ascending: true })
           .range(from, to),
@@ -744,7 +743,7 @@ async function fetchAllSourceData(
         supabaseClient
           .from("yahoo_players_with_normalized_history")
           .select(yahooPlayersSelectString)
-          .eq("game_id", CURRENT_YAHOO_GAME_ID)
+          .eq("season", yahooSeason)
           .in(YAHOO_PLAYERS_TABLE_KEYS.yahooSpecificPlayerId, playerIdChunk)
           .order(YAHOO_PLAYERS_TABLE_KEYS.primaryKey, { ascending: true })
           .range(from, to),
@@ -757,16 +756,7 @@ async function fetchAllSourceData(
     for (const row of results) {
       const pk: any = (row as any)[YAHOO_PLAYERS_TABLE_KEYS.primaryKey];
       if (!pk) continue;
-      // Prefer rows whose player_key starts with CURRENT_YAHOO_GAME_PREFIX
-      const existing = dedup.get(pk);
-      if (!existing) dedup.set(pk, row);
-      else {
-        const existingPref = (existing as any)[
-          YAHOO_PLAYERS_TABLE_KEYS.primaryKey
-        ]?.startsWith(CURRENT_YAHOO_GAME_PREFIX);
-        const candidatePref = String(pk).startsWith(CURRENT_YAHOO_GAME_PREFIX);
-        if (!existingPref && candidatePref) dedup.set(pk, row);
-      }
+      if (!dedup.has(pk)) dedup.set(pk, row);
     }
 
     // Build map keyed by both player_id and player_key for flexible lookup

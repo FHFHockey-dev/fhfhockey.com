@@ -1,16 +1,12 @@
 // web/pages/api/v1/db/update-yahoo-weeks.ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
-import {
-  loadYahooGlobalCredentials,
-  persistYahooGlobalTokens,
-} from "lib/integrations/yahoo/globalCredentials";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
-import YahooFantasy from "yahoo-fantasy";
 import { randomUUID } from "node:crypto";
 import adminOnly from "utils/adminOnlyMiddleware";
 import {
+  fetchYahooPublicJson,
   isYahooGameWeekSnapshotReceipt,
   prepareYahooGameWeekSnapshot,
   withYahooRetry,
@@ -34,29 +30,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   let rateLimitEvents = 0;
 
   try {
-    // 1. Get creds & init YahooFantasy
-    const creds = await loadYahooGlobalCredentials(supabase);
-    const yf = new YahooFantasy(
-      creds.consumer_key,
-      creds.consumer_secret,
-      async ({
-        access_token,
-        refresh_token,
-      }: {
-        access_token: string;
-        refresh_token: string;
-      }) => {
-        // Persist refreshed tokens
-        await persistYahooGlobalTokens(supabase, creds.id, {
-          access_token,
-          refresh_token,
-        });
-      },
-    );
-    yf.setUserToken(creds.access_token);
-    yf.setRefreshToken(creds.refresh_token);
-
-    // 2. The scheduled path discovers the current NHL game through Yahoo's
+    // The scheduled path discovers the current NHL game through Yahoo's
     // canonical alias. An explicit key remains a bounded maintenance override.
     const { game_key } = req.query as { game_key?: string };
     const requestedGameKey = game_key || "nhl";
@@ -66,9 +40,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         .json({ success: false, message: "Invalid game_key parameter" });
     }
 
-    // 3. Fetch weeks from Yahoo API
+    // Public game metadata does not require a user OAuth token.
     const response = await withYahooRetry<any>(
-      () => yf.game.game_weeks(requestedGameKey),
+      () =>
+        fetchYahooPublicJson(
+          `game/${encodeURIComponent(requestedGameKey)}/game_weeks`,
+        ),
       {
         maxAttempts: 3,
         onRetry: ({ rateLimited }) => {

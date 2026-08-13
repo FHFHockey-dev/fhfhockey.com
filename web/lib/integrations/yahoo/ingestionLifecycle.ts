@@ -7,6 +7,9 @@ type YahooGameRow = {
   current_week?: string | number | null;
 };
 
+const YAHOO_PUBLIC_API_ORIGIN = "https://pub-api-ro.fantasysports.yahoo.com";
+const YAHOO_PUBLIC_API_BASE_URL = `${YAHOO_PUBLIC_API_ORIGIN}/fantasy/v2/`;
+
 type YahooRetryOptions = {
   maxAttempts?: number;
   baseDelayMs?: number;
@@ -102,6 +105,38 @@ function exactIsoDate(value: unknown): string | null {
     : null;
 }
 
+export async function fetchYahooPublicJson(
+  pathOrUrl: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<unknown> {
+  const url = new URL(pathOrUrl, YAHOO_PUBLIC_API_BASE_URL);
+  if (
+    url.origin !== YAHOO_PUBLIC_API_ORIGIN ||
+    !url.pathname.startsWith("/fantasy/v2/")
+  ) {
+    throw new Error("Yahoo public API URL is invalid.");
+  }
+  url.searchParams.set("format", "json_f");
+
+  const response = await fetchImpl(url.toString(), {
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) {
+    const error = new Error("Yahoo public API request failed.") as Error & {
+      response?: { headers: Headers; status: number };
+      status?: number;
+    };
+    error.status = response.status;
+    error.response = {
+      headers: response.headers,
+      status: response.status,
+    };
+    throw error;
+  }
+
+  return response.json();
+}
+
 export function prepareYahooGameWeekSnapshot(
   response: unknown,
 ): YahooGameWeekSnapshot {
@@ -109,9 +144,26 @@ export function prepareYahooGameWeekSnapshot(
     throw new Error("Yahoo game-week response is malformed.");
   }
 
-  const gameId = finiteNumber(response.game_id);
-  const season = finiteNumber(response.season);
-  const gameKey = nullableTrimmedText(response.game_key);
+  const fantasyContent = isRecord(response.fantasy_content)
+    ? response.fantasy_content
+    : null;
+  const game =
+    fantasyContent && isRecord(fantasyContent.game)
+      ? fantasyContent.game
+      : response;
+  const rawWeeks = Array.isArray(game.weeks)
+    ? game.weeks
+    : Array.isArray(game.game_weeks)
+      ? game.game_weeks.map((entry) =>
+          isRecord(entry) && entry.game_week !== undefined
+            ? entry.game_week
+            : entry,
+        )
+      : null;
+
+  const gameId = finiteNumber(game.game_id);
+  const season = finiteNumber(game.season);
+  const gameKey = nullableTrimmedText(game.game_key);
   if (
     gameId == null ||
     gameId <= 0 ||
@@ -119,14 +171,14 @@ export function prepareYahooGameWeekSnapshot(
     season < 1900 ||
     !gameKey ||
     !/^[A-Za-z0-9._-]+$/.test(gameKey) ||
-    !Array.isArray(response.weeks) ||
-    response.weeks.length === 0
+    !rawWeeks ||
+    rawWeeks.length === 0
   ) {
     throw new Error("Yahoo game-week response is incomplete.");
   }
 
   const seenWeeks = new Set<number>();
-  const weeks = response.weeks
+  const weeks = rawWeeks
     .map((rawWeek) => {
       if (!isRecord(rawWeek)) {
         throw new Error("Yahoo game-week row is malformed.");
@@ -154,10 +206,10 @@ export function prepareYahooGameWeekSnapshot(
     game: {
       game_id: Math.trunc(gameId),
       game_key: gameKey,
-      name: nullableTrimmedText(response.name),
-      code: nullableTrimmedText(response.code),
-      type: nullableTrimmedText(response.type),
-      url: nullableTrimmedText(response.url),
+      name: nullableTrimmedText(game.name),
+      code: nullableTrimmedText(game.code),
+      type: nullableTrimmedText(game.type),
+      url: nullableTrimmedText(game.url),
       season: Math.trunc(season),
     },
     weeks,
@@ -216,40 +268,94 @@ export function extractYahooPlayerKeyPage(
     ? response.fantasy_content.game
     : [response.fantasy_content.game];
   const holder = gameParts.find(
-    (part) => isRecord(part) && isRecord(part.players),
+    (part) =>
+      isRecord(part) && (isRecord(part.players) || Array.isArray(part.players)),
   );
-  if (!isRecord(holder) || !isRecord(holder.players)) {
+  if (
+    !isRecord(holder) ||
+    (!isRecord(holder.players) && !Array.isArray(holder.players))
+  ) {
     throw new Error("Yahoo player-key collection is missing.");
   }
 
-  const rows = Object.entries(holder.players)
-    .filter(([key]) => /^\d+$/.test(key))
-    .map(([, entry]) => {
-      const playerKey = findNestedValue(entry, "player_key");
-      if (typeof playerKey !== "string" || !/^\d+\.p\.\d+$/.test(playerKey)) {
-        throw new Error("Yahoo player-key row is malformed.");
-      }
+  const entries = Array.isArray(holder.players)
+    ? holder.players
+    : Object.entries(holder.players)
+        .filter(([key]) => /^\d+$/.test(key))
+        .map(([, entry]) => entry);
+  const rows = entries.map((entry) => {
+    const playerKey = findNestedValue(entry, "player_key");
+    if (typeof playerKey !== "string" || !/^\d+\.p\.\d+$/.test(playerKey)) {
+      throw new Error("Yahoo player-key row is malformed.");
+    }
 
-      const rawPlayerId = findNestedValue(entry, "player_id");
-      const playerId = finiteNumber(rawPlayerId);
-      const rawName = findNestedValue(entry, "name");
-      const playerName =
-        isRecord(rawName) && typeof rawName.full === "string"
-          ? rawName.full.trim() || null
-          : null;
+    const rawPlayerId = findNestedValue(entry, "player_id");
+    const playerId = finiteNumber(rawPlayerId);
+    const rawName = findNestedValue(entry, "name");
+    const playerName =
+      isRecord(rawName) && typeof rawName.full === "string"
+        ? rawName.full.trim() || null
+        : null;
 
-      return {
-        player_key: playerKey,
-        player_id: playerId == null ? null : Math.trunc(playerId),
-        player_name: playerName,
-      };
-    });
+    return {
+      player_key: playerKey,
+      player_id: playerId == null ? null : Math.trunc(playerId),
+      player_name: playerName,
+    };
+  });
 
   const uniqueKeys = new Set(rows.map((row) => row.player_key));
   if (uniqueKeys.size !== rows.length) {
     throw new Error("Yahoo player-key page contains duplicate keys.");
   }
   return rows;
+}
+
+export function extractYahooPlayerBatch(
+  response: unknown,
+): Array<Record<string, unknown>> {
+  const fantasyContent = isRecord(response) ? response.fantasy_content : null;
+  const contentPlayers = isRecord(fantasyContent)
+    ? fantasyContent.players
+    : null;
+  const gamePlayers =
+    isRecord(fantasyContent) && isRecord(fantasyContent.game)
+      ? fantasyContent.game.players
+      : null;
+  const collection = Array.isArray(response)
+    ? response
+    : Array.isArray(contentPlayers) || isRecord(contentPlayers)
+      ? contentPlayers
+      : Array.isArray(gamePlayers) || isRecord(gamePlayers)
+        ? gamePlayers
+        : null;
+  if (!collection) {
+    throw new Error("Yahoo player batch is malformed.");
+  }
+
+  const entries = Array.isArray(collection)
+    ? collection
+    : Object.entries(collection)
+        .filter(([key]) => /^\d+$/.test(key))
+        .map(([, entry]) => entry);
+  const players = entries.map((entry) => {
+    const player =
+      isRecord(entry) && isRecord(entry.player) ? entry.player : entry;
+    if (
+      !isRecord(player) ||
+      typeof player.player_key !== "string" ||
+      !/^\d+\.p\.\d+$/.test(player.player_key)
+    ) {
+      throw new Error("Yahoo player batch row is malformed.");
+    }
+    return player;
+  });
+
+  const uniqueKeys = new Set(players.map((player) => player.player_key));
+  if (uniqueKeys.size !== players.length) {
+    throw new Error("Yahoo player batch contains duplicate keys.");
+  }
+  return players;
 }
 
 export async function fetchCompleteYahooPlayerKeySnapshot(
@@ -262,8 +368,8 @@ export async function fetchCompleteYahooPlayerKeySnapshot(
   }
 
   const pageSize = Math.min(
-    25,
-    Math.max(1, Math.trunc(options.pageSize ?? 25)),
+    2_000,
+    Math.max(1, Math.trunc(options.pageSize ?? 2_000)),
   );
   const maxPages = Math.max(1, Math.trunc(options.maxPages ?? 200));
   const players: YahooPlayerKeySnapshotRow[] = [];
@@ -272,11 +378,14 @@ export async function fetchCompleteYahooPlayerKeySnapshot(
   for (let page = 0; page < maxPages; page += 1) {
     const start = page * pageSize;
     const url =
-      `https://fantasysports.yahooapis.com/fantasy/v2/game/${gameId}` +
-      `/players;start=${start};count=${pageSize}`;
+      `${YAHOO_PUBLIC_API_BASE_URL}game/${gameId}` +
+      `/players;start=${start};count=${pageSize}?format=json_f`;
     const pageRows = extractYahooPlayerKeyPage(await requestPage(url));
 
     for (const row of pageRows) {
+      if (!row.player_key.startsWith(`${gameId}.p.`)) {
+        throw new Error("Yahoo player-key page contains another game.");
+      }
       if (seen.has(row.player_key)) {
         throw new Error("Yahoo player-key pagination repeated a key.");
       }
