@@ -1,23 +1,22 @@
 // /web/pages/api/v1/db/update-yahoo-players.ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
-import {
-  loadYahooGlobalCredentials,
-  persistYahooGlobalTokens,
-} from "lib/integrations/yahoo/globalCredentials";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import YahooFantasy from "yahoo-fantasy";
 import { format } from "date-fns";
 import { randomUUID } from "node:crypto";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import {
+  extractYahooPlayerBatch,
   fetchCompleteYahooPlayerKeySnapshot,
+  fetchYahooPublicJson,
+  isYahooGameWeekSnapshotReceipt,
   isYahooSheetExportEligible,
+  prepareYahooGameWeekSnapshot,
   requestYahooSheetExport,
-  selectCanonicalYahooGame,
   withYahooRetry,
+  type YahooGameWeekSnapshotReceipt,
 } from "lib/integrations/yahoo/ingestionLifecycle";
 import { classifyYahooLifecycleError } from "lib/integrations/yahoo/lifecycleHealth";
 import type { Database } from "lib/supabase/database-generated.types";
@@ -62,49 +61,85 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   console.log("Starting update-yahoo-players handler.");
 
-  try {
-    const creds = await loadYahooGlobalCredentials(supabase);
+  let retries = 0;
+  let rateLimitEvents = 0;
 
+  try {
     // Allow explicit override of gameId via query or JSON body for one-off runs
-    // e.g. GET /api/v1/db/update-yahoo-players?gameId=465
-    const overrideGameId =
+    // while the scheduled path follows Yahoo's live NHL alias.
+    const rawOverrideGameId =
       (req.query?.gameId as string) ||
       (req.body && (req.body.gameId as string));
+    const overrideGameId = rawOverrideGameId ? String(rawOverrideGameId) : null;
     if (overrideGameId && !/^\d+$/.test(overrideGameId)) {
       throw new Error("Yahoo game override is invalid.");
     }
 
-    let gameQuery = supabase
+    const requestedGameKey = overrideGameId || "nhl";
+    const gameResponse = await withYahooRetry(
+      () =>
+        fetchYahooPublicJson(
+          `game/${encodeURIComponent(requestedGameKey)}/game_weeks`,
+        ),
+      {
+        maxAttempts: 3,
+        onRetry: ({ rateLimited }) => {
+          retries += 1;
+          if (rateLimited) rateLimitEvents += 1;
+        },
+      },
+    );
+    const gameSnapshot = prepareYahooGameWeekSnapshot(gameResponse);
+    if (
+      overrideGameId &&
+      gameSnapshot.game.game_id !== Number(overrideGameId)
+    ) {
+      throw new Error("Yahoo game override resolved to another game.");
+    }
+    const gameId = gameSnapshot.game.game_id;
+    const season = gameSnapshot.game.season;
+
+    const { data: storedGame, error: storedGameError } = await supabase
       .from("yahoo_game_keys")
-      .select(
-        "game_id, game_key, season, is_offseason, is_game_over, current_week",
-      )
-      .eq("code", "nhl");
-    gameQuery = overrideGameId
-      ? gameQuery.eq("game_id", Number(overrideGameId)).limit(1)
-      : gameQuery
-          .order("season", { ascending: false })
-          .order("game_id", { ascending: false })
-          .limit(10);
-    const { data: gameRows, error: gameErr } = await gameQuery;
-    if (gameErr) {
-      throw new Error("Yahoo canonical game lookup failed.");
+      .select("game_id, game_key, season")
+      .eq("game_id", gameId)
+      .maybeSingle();
+    if (storedGameError) {
+      throw new Error("Yahoo game metadata lookup failed.");
+    }
+    if (
+      !storedGame ||
+      storedGame.game_key !== gameSnapshot.game.game_key ||
+      Number(storedGame.season) !== season
+    ) {
+      const gameSnapshotId = randomUUID();
+      const { data, error } = await supabase.rpc(
+        "replace_yahoo_game_weeks_snapshot",
+        {
+          p_snapshot_id: gameSnapshotId,
+          p_game: gameSnapshot.game,
+          p_weeks: gameSnapshot.weeks,
+        },
+      );
+      if (error) {
+        throw new Error("Yahoo game metadata persistence failed.");
+      }
+      if (
+        !isYahooGameWeekSnapshotReceipt(
+          data as YahooGameWeekSnapshotReceipt | null,
+          {
+            snapshotId: gameSnapshotId,
+            gameId,
+            gameKey: gameSnapshot.game.game_key,
+            season,
+            sourceCount: gameSnapshot.weeks.length,
+          },
+        )
+      ) {
+        throw new Error("Yahoo game metadata receipt is invalid.");
+      }
     }
 
-    const gameRow = selectCanonicalYahooGame(
-      (gameRows ?? []).map((row) => ({
-        ...row,
-        is_offseason:
-          row.is_offseason == null ? null : Boolean(row.is_offseason),
-        is_game_over:
-          row.is_game_over == null ? null : Boolean(row.is_game_over),
-      })),
-    );
-    if (!gameRow) {
-      throw new Error("Yahoo canonical game is unavailable.");
-    }
-    const gameId = Number(gameRow.game_id);
-    const season = gameRow.season ? Number(gameRow.season) : undefined;
     const [mappedResult, unmatchedResult] = await Promise.all([
       supabase
         .from("yahoo_nhl_player_map")
@@ -123,38 +158,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     };
     console.log(
       `${
-        overrideGameId ? "Using override" : "Detected canonical"
+        overrideGameId ? "Using override" : "Detected live"
       } NHL game_id=${gameId}, season=${season}`,
     );
-
-    const yf = new YahooFantasy(
-      creds.consumer_key,
-      creds.consumer_secret,
-      async ({
-        access_token,
-        refresh_token,
-      }: {
-        access_token: string;
-        refresh_token: string;
-      }) => {
-        console.log("Refreshing tokens...");
-        await persistYahooGlobalTokens(supabase, creds.id, {
-          access_token,
-          refresh_token,
-        });
-        console.log("Tokens refreshed and stored.");
-      },
-    );
-
-    yf.setUserToken(creds.access_token);
-    yf.setRefreshToken(creds.refresh_token);
-
-    let retries = 0;
-    let rateLimitEvents = 0;
     const keySnapshot = await fetchCompleteYahooPlayerKeySnapshot(
       String(gameId),
       (url) =>
-        withYahooRetry(() => (yf as any).api((yf as any).GET, url), {
+        withYahooRetry(() => fetchYahooPublicJson(url), {
           maxAttempts: 3,
           onRetry: ({ rateLimited }) => {
             retries += 1;
@@ -230,7 +240,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       });
     }
 
-    const subresources = ["draft_analysis", "percent_owned"];
     const allRpcPayloads: YahooPlayerAtomicPayload[] = [];
 
     const BATCH_SIZE = 25;
@@ -252,26 +261,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       );
 
       try {
-        let refreshedExpiredToken = false;
-        const players = await withYahooRetry(
-          async () => {
-            try {
-              return await yf.players.fetch(batchKeys, subresources);
-            } catch (fetchErr: any) {
-              const tokenExpired =
-                fetchErr.description?.includes("Invalid cookie") ||
-                fetchErr.message?.includes("Request denied") ||
-                fetchErr.message?.includes("Unexpected token");
-
-              if (!tokenExpired || refreshedExpiredToken) throw fetchErr;
-              refreshedExpiredToken = true;
-              console.warn("Yahoo token expired; refreshing once.");
-              await new Promise<void>((resolve, reject) => {
-                yf.refreshToken((err: any) => (err ? reject(err) : resolve()));
-              });
-              return yf.players.fetch(batchKeys, subresources);
-            }
-          },
+        const response = await withYahooRetry(
+          () =>
+            fetchYahooPublicJson(
+              `players;player_keys=${batchKeys
+                .map(encodeURIComponent)
+                .join(",")};out=draft_analysis,percent_owned`,
+            ),
           {
             maxAttempts: 3,
             onRetry: ({ rateLimited }) => {
@@ -280,13 +276,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             },
           },
         );
+        const players = extractYahooPlayerBatch(response);
 
-        if (players && players.length) {
+        if (players.length) {
+          const requestedKeys = new Set(batchKeys);
           const returnedKeys = new Set(
             players
               .map((playerData: any) => String(playerData?.player_key ?? ""))
               .filter(Boolean),
           );
+          if ([...returnedKeys].some((key) => !requestedKeys.has(key))) {
+            throw new Error("Yahoo player batch returned an unexpected key.");
+          }
           omitted += batchKeys.filter((key) => !returnedKeys.has(key)).length;
           players.forEach((playerData: any) => {
             if (!playerData?.player_key) return;
@@ -457,6 +458,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       success: false,
       status: "failure",
       errorCategory,
+      retries,
+      rateLimitEvents,
       message: "Yahoo player update failed",
     });
   }
