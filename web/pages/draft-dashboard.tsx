@@ -1,12 +1,22 @@
 // pages/draft-dashboard.tsx
 
+import { useState } from "react";
 import type { GetServerSideProps } from "next";
+
+import DraftDashboard from "components/DraftDashboard/DraftDashboard";
 
 export const getServerSideProps: GetServerSideProps = async () => ({
   props: {}
 });
 
 export default function DraftDashboardPage() {
+  const [isNoticeOpen, setIsNoticeOpen] = useState(true);
+  const canDismissNotice = process.env.NODE_ENV === "development";
+
+  if (canDismissNotice && !isNoticeOpen) {
+    return <DraftDashboard />;
+  }
+
   return (
     <main
       style={{
@@ -45,6 +55,25 @@ export default function DraftDashboardPage() {
         <p style={{ fontSize: "1.125rem", lineHeight: 1.6, margin: 0 }}>
           Actively being updated for the 2026-2027 season. Check back soon
         </p>
+        {canDismissNotice ? (
+          <button
+            onClick={() => setIsNoticeOpen(false)}
+            style={{
+              background: "#07aae2",
+              border: 0,
+              borderRadius: "8px",
+              color: "#07111f",
+              cursor: "pointer",
+              fontSize: "1rem",
+              fontWeight: 700,
+              marginTop: "24px",
+              padding: "12px 18px"
+            }}
+            type="button"
+          >
+            Continue to Draft Dashboard
+          </button>
+        ) : null}
       </section>
     </main>
   );
