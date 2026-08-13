@@ -124,19 +124,22 @@ describe("Yahoo global credential owner", () => {
     await expect(failed).rejects.not.toThrow(/sensitive-fragment/);
   });
 
-  it("keeps every active global route on the shared owner", () => {
-    const routes = [
-      "manual-refresh-yahoo-token.ts",
-      "update-yahoo-players.ts",
-      "update-yahoo-weeks.ts",
-    ];
+  it("keeps OAuth ownership centralized and public readers token-free", () => {
+    const refreshSource = fs.readFileSync(
+      path.join(process.cwd(), "pages/api/v1/db/manual-refresh-yahoo-token.ts"),
+      "utf8",
+    );
+    expect(refreshSource).toContain(
+      'from "lib/integrations/yahoo/globalCredentials"',
+    );
 
-    for (const route of routes) {
+    for (const route of ["update-yahoo-players.ts", "update-yahoo-weeks.ts"]) {
       const source = fs.readFileSync(
         path.join(process.cwd(), "pages/api/v1/db", route),
         "utf8",
       );
-      expect(source).toContain(
+      expect(source).toContain("fetchYahooPublicJson");
+      expect(source).not.toContain(
         'from "lib/integrations/yahoo/globalCredentials"',
       );
       expect(source).not.toContain('.from("yahoo_api_credentials")');
@@ -152,7 +155,10 @@ describe("Yahoo global credential owner", () => {
       "utf8",
     );
 
-    expect(source).toContain("selectCanonicalYahooGame");
+    expect(source).toContain(
+      'const requestedGameKey = overrideGameId || "nhl"',
+    );
+    expect(source).toContain("prepareYahooGameWeekSnapshot");
     expect(source).toContain("fetchAllSupabasePages");
     expect(source).toContain('.order("player_key", { ascending: true })');
     expect(source).toContain("withYahooRetry");
