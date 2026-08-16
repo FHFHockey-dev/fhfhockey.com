@@ -130,6 +130,38 @@ describe("tweet news automation", () => {
     expect(candidate).toBeNull();
   });
 
+  it("keeps NHL events when a later sentence only mentions minor-league history", () => {
+    const retirement = buildTweetNewsAutomationCandidate({
+      row: buildRow({
+        parser_classification: "other",
+        review_text:
+          "Noah Philp announced his retirement. He previously played in the WHL.",
+      }),
+      players: [
+        ...players,
+        { id: 10, fullName: "Luke Philp", position: "C", team_id: 22 },
+      ],
+    });
+    const signing = buildTweetNewsAutomationCandidate({
+      row: buildRow({
+        parser_classification: "other",
+        review_text:
+          "The Avalanche sign Georgii Merkulov to a one-year deal. He scored 15 goals in the AHL last season.",
+      }),
+      players,
+    });
+
+    expect(retirement).toMatchObject({
+      cardStatus: "published",
+      category: "RETIREMENT",
+      playerAssignments: [],
+    });
+    expect(signing).toMatchObject({
+      cardStatus: "published",
+      category: "SIGNING",
+    });
+  });
+
   it("does not create news cards for top-performer stat recaps", () => {
     const candidate = buildTweetNewsAutomationCandidate({
       row: buildRow({
@@ -408,6 +440,47 @@ describe("tweet news automation", () => {
       cardStatus: "published",
       category: "INJURY",
       subcategory: "OUT",
+    });
+  });
+
+  it("publishes completed surgery, active contract talks, and camp-ready returns", () => {
+    const surgery = buildTweetNewsAutomationCandidate({
+      row: buildRow({
+        review_text: "Connor Bedard had wrist surgery and is expected back in November.",
+      }),
+      players,
+    });
+    const contractTalks = buildTweetNewsAutomationCandidate({
+      row: buildRow({
+        review_text:
+          "Brayden Point and the Lightning are still in talks on a contract ahead of arbitration.",
+      }),
+      players,
+    });
+    const campReady = buildTweetNewsAutomationCandidate({
+      row: buildRow({
+        team_id: null,
+        team_abbreviation: null,
+        review_text:
+          "Nikita Grebenkin is fully healthy and ready to go for training camp.",
+      }),
+      players,
+    });
+
+    expect(surgery).toMatchObject({
+      cardStatus: "published",
+      category: "INJURY",
+      subcategory: "SURGERY / REHAB",
+    });
+    expect(contractTalks).toMatchObject({
+      cardStatus: "published",
+      category: "NEWS UPDATE",
+      subcategory: "CONTRACT NEGOTIATION",
+    });
+    expect(campReady).toMatchObject({
+      cardStatus: "published",
+      category: "RETURN",
+      subcategory: "FULLY HEALTHY",
     });
   });
 

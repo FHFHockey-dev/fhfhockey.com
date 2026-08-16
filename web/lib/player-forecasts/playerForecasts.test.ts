@@ -358,4 +358,52 @@ describe("player forecast migration", () => {
     expect(migration).toContain("jobs/drain?dryRun=true");
     expect(migration).not.toMatch(/grant\s+select[^;]+to\s+(anon|authenticated)/i);
   });
+
+  it("keeps the season platform service-only and activation-gates Supabase Cron", () => {
+    const migration = fs.readFileSync(
+      path.resolve(process.cwd(), "../supabase/migrations/20260813001304_player_forecast_season_v3.sql"),
+      "utf8",
+    );
+    expect(migration).toContain("create table public.player_forecast_season_game_outputs");
+    expect(migration).toContain("create table public.player_forecast_season_outcome_revisions");
+    expect(migration).toContain("create table public.player_forecast_season_evaluation_revisions");
+    expect(migration).toContain("alter table public.%I force row level security");
+    expect(migration).toContain("create trigger player_forecast_season_override_enqueue");
+    expect(migration).toContain("snapshot.processing_status = 'trusted' and snapshot.forecast_relevant");
+    expect(migration).toContain("perform cron.schedule(");
+    expect(migration).toContain("Intentionally not invoked by this migration");
+    expect(migration).not.toMatch(/insert\s+into\s+cron\.job/i);
+    expect(migration).not.toMatch(/grant\s+select[^;]+to\s+(anon|authenticated)/i);
+  });
+
+  it("resolves season identities atomically without exposing the resolver to clients", () => {
+    const migration = fs.readFileSync(
+      path.resolve(
+        process.cwd(),
+        "../supabase/migrations/20260813144701_player_forecast_season_identity_resolution.sql",
+      ),
+      "utf8",
+    );
+    expect(migration).toContain(
+      "create or replace function public.resolve_player_forecast_season_identity",
+    );
+    expect(migration).toContain("pg_advisory_xact_lock");
+    expect(migration).not.toMatch(
+      /where superseding\.supersedes_id = review\.id\s*\)\s*for update/i,
+    );
+    expect(migration).toContain("from public.users editor_profile");
+    expect(migration).not.toContain("from auth.users");
+    expect(migration).toContain("PLAYER_FORECAST_SEASON_FHFH_IDENTITY_CONFLICT");
+    expect(migration).toContain("season_editor_official_nhl_id");
+    expect(migration).toContain("created_verified_identity");
+    expect(migration).toContain("mapped_existing_identity");
+    expect(migration).toContain("perform public.enqueue_player_forecast_season_job");
+    expect(migration).toContain(
+      "from public, anon, authenticated",
+    );
+    expect(migration).toContain("to service_role;");
+    expect(migration).not.toMatch(
+      /grant\s+execute[^;]+to\s+(anon|authenticated)/i,
+    );
+  });
 });

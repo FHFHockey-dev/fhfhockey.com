@@ -247,4 +247,27 @@ describe("ProjectionsTable visibility diagnostics", () => {
     expect((second as HTMLInputElement).checked).toBe(false);
     expect(screen.queryByRole("status")).toBeNull();
   });
+
+  it("shows immutable personal ranks and locks manual draft actions", () => {
+    const onDraftPlayer = vi.fn();
+    render(
+      <ProjectionsTable
+        players={[player(1, "Ranked Player", "C")]}
+        allPlayers={[player(1, "Ranked Player", "C")]}
+        draftedPlayers={[]}
+        isLoading={false}
+        error={null}
+        onDraftPlayer={onDraftPlayer}
+        canDraft={false}
+        personalRankByPlayerId={{ "1": 7 }}
+      />,
+    );
+
+    expect(screen.getByRole("columnheader", { name: /My Rank/ })).toBeTruthy();
+    expect(screen.getByText("7")).toBeTruthy();
+    const draftButton = screen.getByRole("button", { name: "Draft" });
+    expect((draftButton as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(draftButton);
+    expect(onDraftPlayer).not.toHaveBeenCalled();
+  });
 });

@@ -264,12 +264,11 @@ export default function PatreonConnectionPanel() {
     >
       <div className={styles.formSectionHeader}>
         <h3 id="patreon-link-title" className={styles.formSectionTitle}>
-          Patreon Membership Link
+          Patreon Membership
         </h3>
         <p className={styles.formSectionBody}>
-          Link Patreon only to evaluate the configured FHFH campaign membership.
-          It remains separate from your FHFH sign-in, and no matching email is
-          required.
+          Connect Patreon to verify your membership and supporter access. This
+          does not change how you sign in to FHFH.
         </p>
       </div>
 
@@ -298,36 +297,31 @@ export default function PatreonConnectionPanel() {
             Connection: {state?.account ? "Linked" : "Not linked"}
           </div>
           <div className={styles.providerControlRow}>
-            Generic supporter eligibility:{" "}
+            Supporter access:{" "}
             {state?.entitlement?.entitlement_status || "None"}
           </div>
           <div className={styles.providerControlRow}>
-            Patreon membership status:{" "}
+            Membership:{" "}
             {state?.account?.metadata &&
             isJsonObject(state.account.metadata) &&
             typeof state.account.metadata.patron_status === "string"
-              ? state.account.metadata.patron_status
+              ? state.account.metadata.patron_status.replaceAll("_", " ")
               : "Unavailable"}
           </div>
           <div className={styles.providerControlRow}>
-            Entitled tier{tiers.length === 1 ? "" : "s"}:{" "}
+            Tier{tiers.length === 1 ? "" : "s"}:{" "}
             {tiers.length ? tiers.join(", ") : "None reported"}
           </div>
           <div className={styles.providerControlRow}>
-            Last sync: {formatTimestamp(state?.account?.last_synced_at)}
+            Last synced: {formatTimestamp(state?.account?.last_synced_at)}
             {state?.latestRun ? ` · ${state.latestRun.status}` : ""}
-          </div>
-          <div className={styles.providerControlRow}>
-            Tier-specific FHFH feature mapping: not configured; no concrete paid
-            feature is granted by this local foundation.
           </div>
         </div>
       )}
 
       {!state?.configured && !state?.account && !loading ? (
         <div className={styles.infoMessage} role="status">
-          Patreon OAuth is not configured in this environment. Live client and
-          campaign settings remain a separate production checkpoint.
+          Patreon connections are unavailable right now.
         </div>
       ) : null}
 

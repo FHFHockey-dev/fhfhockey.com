@@ -88,6 +88,7 @@ describe("/api/v1/db/update-wgo-goalies", () => {
       data: {
         id: 20252026,
         startDate: "2025-10-07",
+        endDate: "2026-06-30",
         regularSeasonEndDate: "2026-04-16",
       },
       error: null,
@@ -131,6 +132,7 @@ describe("/api/v1/db/update-wgo-goalies", () => {
           data: url.includes("/goalie/summary?")
             ? [
                 {
+                  gameId: 2025020001,
                   goalieFullName: "Regression Goalie",
                   playerId: 8478402,
                 },
@@ -162,6 +164,7 @@ describe("/api/v1/db/update-wgo-goalies", () => {
         goalie_id: 8478402,
         goalie_name: "Regression Goalie",
         date: "2026-01-01",
+        game_id: 2025020001,
         season_id: 20252026,
       }),
     ]);
@@ -170,6 +173,7 @@ describe("/api/v1/db/update-wgo-goalies", () => {
       expect.objectContaining({
         goalie_id: 8478402,
         date: "2026-01-01",
+        game_id: 2025020001,
         season_id: 20252026,
       }),
     );
@@ -528,7 +532,7 @@ describe("/api/v1/db/update-wgo-goalies", () => {
 
     await handler(req, res);
 
-    expect(seasonOrderMock).toHaveBeenCalledOnce();
+    expect(seasonOrderMock).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
     expect(wgoUpsertMock).not.toHaveBeenCalled();
     expect(res.statusCode).toBe(200);
@@ -565,8 +569,16 @@ describe("/api/v1/db/update-wgo-goalies", () => {
         json: async () => ({
           data: url.includes("/goalie/summary?")
             ? [
-                { goalieFullName: "Persisted Goalie", playerId: 8478402 },
-                { goalieFullName: "Failed Goalie", playerId: 8478403 },
+                {
+                  gameId: 2025020001,
+                  goalieFullName: "Persisted Goalie",
+                  playerId: 8478402,
+                },
+                {
+                  gameId: 2025020001,
+                  goalieFullName: "Failed Goalie",
+                  playerId: 8478403,
+                },
               ]
             : [],
         }),
@@ -1394,10 +1406,12 @@ describe("/api/v1/db/update-wgo-goalies", () => {
           data: url.includes("/goalie/summary?")
             ? [
                 {
+                  gameId: 2025020001,
                   goalieFullName: "Preserved Goalie One",
                   playerId: 8478402,
                 },
                 {
+                  gameId: 2025020001,
                   goalieFullName: "Preserved Goalie Two",
                   playerId: 8478403,
                 },

@@ -367,7 +367,12 @@ const MyRoster: React.FC<MyRosterProps> = ({
         <button
           className={styles.draftButton}
           onClick={handleDraftClick}
-          disabled={!selectedPlayerId}
+          disabled={!canDraft || !selectedPlayerId}
+          title={
+            canDraft
+              ? undefined
+              : "Manual drafting is locked while Yahoo sync is authoritative"
+          }
         >
           Add Player to {currentTurn.teamId}
         </button>
@@ -446,6 +451,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
                             : ""
                         }`}
                         onClick={() => {
+                          if (!canDraft) return;
                           if (drafted) {
                             setSelectedRoster({
                               playerId: drafted.playerId,
@@ -456,6 +462,12 @@ const MyRoster: React.FC<MyRosterProps> = ({
                             setSelectedRoster(null);
                           }
                         }}
+                        aria-disabled={!canDraft || undefined}
+                        title={
+                          canDraft
+                            ? undefined
+                            : "Roster moves are locked while Yahoo sync is authoritative"
+                        }
                       >
                         {drafted ? (
                           <div className={styles.playerInfo}>

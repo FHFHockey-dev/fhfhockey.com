@@ -9,6 +9,8 @@ CONTRACT_VERSION = "player-forecasts-research-v1"
 CONTRACT_SHA256 = "9d4a30f5027e8b277015c592a39715e16d18c9a371dd352ddd4f0738868d9574"
 VALIDATION_CONTRACT_VERSION = "player-forecasts-research-v2-validation"
 VALIDATION_CONTRACT_SHA256 = "14832482d902ca02fa148be4b31eaa23fe57b5a2d4ac642d87ba14403a90f5ed"
+SEASON_CONTRACT_VERSION = "player-forecasts-research-v3-season"
+SEASON_CONTRACT_SHA256 = "29c6766f63ba9a8dbf8890cb6a388418945134b70217d58e9d8645b34dc36b93"
 DEVELOPMENT_END = "2026-01-02"
 LOCKBOX_START = "2026-01-03"
 LOCKBOX_END = "2026-04-16"
@@ -26,6 +28,10 @@ def contract_path() -> Path:
 
 def validation_contract_path() -> Path:
     return repository_root() / "docs" / "player-projections" / "research-contract-v2-validation.json"
+
+
+def season_contract_path() -> Path:
+    return repository_root() / "docs" / "player-projections" / "research-contract-v3-season.json"
 
 
 def sha256_file(path: Path) -> str:
@@ -58,4 +64,17 @@ def load_and_verify_validation_contract() -> dict[str, Any]:
     base = payload.get("baseContract", {})
     if base.get("version") != CONTRACT_VERSION or base.get("checksum") != CONTRACT_SHA256:
         raise RuntimeError("validation research contract base mismatch")
+    return payload
+
+
+def load_and_verify_season_contract() -> dict[str, Any]:
+    path = season_contract_path()
+    checksum = sha256_file(path)
+    if checksum != SEASON_CONTRACT_SHA256:
+        raise RuntimeError("season research contract checksum mismatch")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("contractVersion") != SEASON_CONTRACT_VERSION:
+        raise RuntimeError("season research contract version mismatch")
+    if payload.get("seasonId") != 20262027:
+        raise RuntimeError("season research contract target mismatch")
     return payload

@@ -1,0 +1,118 @@
+@use "styles/vars" as v;
+
+.panel {
+  display: grid;
+  gap: v.$space-sm;
+  margin-bottom: v.$space-md;
+  padding: v.$space-md;
+  border: v.$border-subtle;
+  border-radius: v.$radius-card;
+  background: v.$background-medium;
+  color: v.$text-primary;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: v.$space-sm;
+
+  h2,
+  p {
+    margin: 0;
+  }
+
+  h2 {
+    color: v.$color-white;
+    font-family: v.$font-family-accent;
+    font-size: v.$font-size-sm;
+    text-transform: uppercase;
+  }
+
+  p {
+    margin-top: v.$space-xs;
+    color: v.$text-secondary;
+    font-size: v.$font-size-xs;
+  }
+
+  > span {
+    padding: v.$space-xs v.$space-sm;
+    border: 1px solid v.$warning-color;
+    border-radius: v.$radius-control;
+    color: v.$warning-color;
+    font-size: v.$font-size-xxs;
+    text-transform: uppercase;
+  }
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(150px, 1fr)) auto;
+  align-items: end;
+  gap: v.$space-sm;
+
+  label {
+    display: grid;
+    gap: v.$space-xs;
+    font-size: v.$font-size-xs;
+  }
+
+  select,
+  button {
+    min-height: v.$control-height-md;
+    padding: 0 v.$space-sm;
+    border: v.$border-subtle;
+    border-radius: v.$radius-control;
+    background: v.$background-dark;
+    color: v.$text-primary;
+  }
+
+  button {
+    border-color: v.$primary-color;
+    cursor: pointer;
+    font-weight: v.$font-weight-bold;
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+  }
+}
+
+.summary,
+.notice,
+.error {
+  padding: v.$space-sm;
+  border: v.$border-default;
+  border-radius: v.$radius-control;
+  background: v.$background-dark;
+  font-size: v.$font-size-xs;
+}
+
+.summary {
+  display: grid;
+  gap: v.$space-xs;
+
+  ul {
+    margin: 0;
+    padding-left: v.$space-md;
+  }
+}
+
+.notice {
+  border-color: v.$warning-color;
+}
+
+.error {
+  border-color: v.$danger-color;
+}
+
+@media (max-width: 900px) {
+  .header {
+    flex-direction: column;
+  }
+
+  .controls {
+    grid-template-columns: 1fr;
+  }
+}

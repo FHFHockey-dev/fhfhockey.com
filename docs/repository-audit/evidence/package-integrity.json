@@ -1,0 +1,23 @@
+{
+  "audit_run_id": "REPO-AUDIT-2026-08-09-FROZEN-36536C3",
+  "coverage": {
+    "audit_generated_records": 77,
+    "frozen_source_records": 3580,
+    "missing_or_extra_generated_paths": 0
+  },
+  "created_at": "2026-08-16T14:59:14Z",
+  "errors": [],
+  "manifest_records": 77,
+  "package_files": 77,
+  "provenance_domains": {
+    "audit_generated": "evidence/audit-package-manifest.jsonl",
+    "external_disposable": "evidence/external-output-integrity.json",
+    "frozen_source": "evidence/frozen-source-manifest.jsonl",
+    "live_drift": "evidence/live-worktree-drift.jsonl"
+  },
+  "record_type": "audit_package_integrity",
+  "result": "passed",
+  "schema_version": 1,
+  "self_referential_hash_omissions": 4,
+  "validated_nonself_hashes": 73
+}

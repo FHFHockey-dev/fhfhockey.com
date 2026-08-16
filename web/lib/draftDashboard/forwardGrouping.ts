@@ -51,9 +51,19 @@ export function normalizePlayerEligibility(
 
 export function groupPlayerEligibility(
   positions: string[],
-  grouping: ForwardGrouping
+  grouping: ForwardGrouping,
+  includeGenericForward = false
 ) {
-  if (grouping === "split") return Array.from(new Set(positions));
+  if (grouping === "split") {
+    const grouped = new Set(positions);
+    if (
+      includeGenericForward &&
+      positions.some((position) => FORWARD_POSITIONS.has(position))
+    ) {
+      grouped.add("FWD");
+    }
+    return Array.from(grouped);
+  }
   const grouped = new Set<string>();
   for (const position of positions) {
     if (FORWARD_POSITIONS.has(position)) grouped.add("FWD");
@@ -70,8 +80,14 @@ export function getForwardRosterTotal(rosterConfig: RosterConfig) {
   );
 }
 
-export function getRosterPositions(grouping: ForwardGrouping) {
-  return grouping === "fwd" ? ["FWD", "D", "G"] : ["C", "LW", "RW", "D", "G"];
+export function getRosterPositions(
+  grouping: ForwardGrouping,
+  rosterConfig?: RosterConfig
+) {
+  if (grouping === "fwd") return ["FWD", "D", "G"];
+  const positions = ["C", "LW", "RW", "D", "G"];
+  if ((rosterConfig?.FWD ?? 0) > 0) positions.push("FWD");
+  return positions;
 }
 
 export function getEffectiveRosterConfig(
@@ -118,10 +134,13 @@ export function buildPositionPools(
   playerIds: Iterable<string>,
   values: ReadonlyMap<string, number>,
   eligibility: ReadonlyMap<string, string[]>,
-  grouping: ForwardGrouping
+  grouping: ForwardGrouping,
+  rosterConfig?: RosterConfig
 ) {
   const pools: Record<string, Array<{ id: string; value: number }>> = {};
-  for (const position of getRosterPositions(grouping)) pools[position] = [];
+  for (const position of getRosterPositions(grouping, rosterConfig)) {
+    pools[position] = [];
+  }
   for (const id of playerIds) {
     const groupedPositions = groupPlayerEligibility(
       eligibility.get(id) ?? [],
@@ -150,7 +169,9 @@ export function allocateGroupedRosterSlots({
   overrides?: Record<string, string>;
 }) {
   const effective = getEffectiveRosterConfig(rosterConfig, grouping);
-  const positions = getRosterPositions(grouping);
+  const includeGenericForward =
+    grouping === "split" && (effective.FWD ?? 0) > 0;
+  const positions = getRosterPositions(grouping, effective);
   const counts: Record<string, number> = Object.fromEntries([
     ...positions.map((position) => [position, 0] as const),
     ["UTILITY", 0],
@@ -159,7 +180,11 @@ export function allocateGroupedRosterSlots({
   const assignments: Record<string, string> = {};
 
   for (const player of players) {
-    const eligible = groupPlayerEligibility(player.eligibility, grouping);
+    const eligible = groupPlayerEligibility(
+      player.eligibility,
+      grouping,
+      includeGenericForward
+    );
     const override = overrides[player.id]?.toUpperCase();
     const canUse = (position: string) =>
       eligible.includes(position) &&

@@ -1,10 +1,14 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import adminOnly from "utils/adminOnlyMiddleware";
 import supabase from "lib/supabase/server";
-import Fetch from "lib/cors-fetch";
 import { getCurrentSeason } from "lib/NHL/server";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import pLimit from "p-limit";
+import {
+  fetchAllWgoStatsPages,
+  mapWgoRowsByPlayerId,
+  parseWgoSeasonId,
+} from "lib/cron/wgoIngestion";
 import {
   WGOSummarySkaterTotal,
   WGOSkatersBio,
@@ -38,38 +42,15 @@ type SkaterTotalsTable =
 // Helper: Concurrently fetch all pages for one endpoint.
 async function fetchAllDataForEndpoint<T>(
   urlBuilder: (start: number) => string,
+  label: string,
   concurrency: number = 4,
 ): Promise<T[]> {
-  const limit = 100;
-  let page = 0;
-  let allData: T[] = [];
-
-  const limiter = pLimit(concurrency);
-  let done = false;
-  while (!done) {
-    const batchPromises = [];
-    for (let i = 0; i < concurrency; i++) {
-      batchPromises.push(
-        limiter(
-          () =>
-            Fetch(urlBuilder((page + i) * limit)).then((res) =>
-              res.json(),
-            ) as Promise<{ data: T[]; total: number }>,
-        ),
-      );
-    }
-    const batchResults = await Promise.all(batchPromises);
-    for (const result of batchResults) {
-      if (!result.data) continue;
-      allData.push(...result.data);
-      if (result.data.length < limit || allData.length >= result.total) {
-        done = true;
-        break;
-      }
-    }
-    page += concurrency;
-  }
-  return allData;
+  return fetchAllWgoStatsPages<T>({
+    buildUrl: urlBuilder,
+    concurrency,
+    label,
+    pageSize: 100,
+  });
 }
 
 // ==============================
@@ -170,36 +151,70 @@ async function fetchAllTotalsForSeason(
     shotTypeTotalStats,
     timeOnIceTotalStats,
   ] = await Promise.all([
-    fetchAllDataForEndpoint<WGOSummarySkaterTotal>(buildSkaterTotalStatsUrl),
-    fetchAllDataForEndpoint<WGOSkatersBio>(buildSkatersBioUrl),
-    fetchAllDataForEndpoint<WGORealtimeSkaterTotal>(buildMiscSkaterTotalsUrl),
-    fetchAllDataForEndpoint<WGOFaceoffSkaterTotal>(buildFaceOffTotalsUrl),
+    fetchAllDataForEndpoint<WGOSummarySkaterTotal>(
+      buildSkaterTotalStatsUrl,
+      "skater totals summary",
+    ),
+    fetchAllDataForEndpoint<WGOSkatersBio>(
+      buildSkatersBioUrl,
+      "skater totals bios",
+    ),
+    fetchAllDataForEndpoint<WGORealtimeSkaterTotal>(
+      buildMiscSkaterTotalsUrl,
+      "skater totals realtime",
+    ),
+    fetchAllDataForEndpoint<WGOFaceoffSkaterTotal>(
+      buildFaceOffTotalsUrl,
+      "skater totals faceoffs",
+    ),
     fetchAllDataForEndpoint<WGOFaceOffWinLossSkaterTotal>(
       buildFaceoffWinLossTotalsUrl,
+      "skater totals faceoff wins",
     ),
     fetchAllDataForEndpoint<WGOGoalsForAgainstSkaterTotal>(
       buildGoalsForAgainstTotalsUrl,
+      "skater totals goals for/against",
     ),
-    fetchAllDataForEndpoint<WGOPenaltySkaterTotal>(buildPenaltiesTotalsUrl),
+    fetchAllDataForEndpoint<WGOPenaltySkaterTotal>(
+      buildPenaltiesTotalsUrl,
+      "skater totals penalties",
+    ),
     fetchAllDataForEndpoint<WGOPenaltyKillSkaterTotal>(
       buildPenaltyKillTotalsUrl,
+      "skater totals penalty kill",
     ),
-    fetchAllDataForEndpoint<WGOPowerPlaySkaterTotal>(buildPowerPlayTotalsUrl),
+    fetchAllDataForEndpoint<WGOPowerPlaySkaterTotal>(
+      buildPowerPlayTotalsUrl,
+      "skater totals power play",
+    ),
     fetchAllDataForEndpoint<WGOPuckPossessionSkaterTotal>(
       buildPuckPossessionTotalsUrl,
+      "skater totals puck possessions",
     ),
-    fetchAllDataForEndpoint<WGOSatCountSkaterTotal>(buildSatCountsTotalsUrl),
+    fetchAllDataForEndpoint<WGOSatCountSkaterTotal>(
+      buildSatCountsTotalsUrl,
+      "skater totals shooting counts",
+    ),
     fetchAllDataForEndpoint<WGOSatPercentageSkaterTotal>(
       buildSatPercentagesTotalsUrl,
+      "skater totals percentages",
     ),
     fetchAllDataForEndpoint<WGOScoringRatesSkaterTotal>(
       buildScoringRatesTotalsUrl,
+      "skater totals scoring rates",
     ),
     fetchAllDataForEndpoint<WGOScoringCountsSkaterTotal>(
       buildScoringPerGameTotalsUrl,
+      "skater totals scoring per game",
     ),
-    fetchAllDataForEndpoint<WGOShotTypeSkaterTotal>(buildShotTypeTotalsUrl),
-    fetchAllDataForEndpoint<WGOToiSkaterTotal>(buildTimeOnIceTotalsUrl),
+    fetchAllDataForEndpoint<WGOShotTypeSkaterTotal>(
+      buildShotTypeTotalsUrl,
+      "skater totals shot type",
+    ),
+    fetchAllDataForEndpoint<WGOToiSkaterTotal>(
+      buildTimeOnIceTotalsUrl,
+      "skater totals time on ice",
+    ),
   ]);
 
   return {
@@ -303,7 +318,13 @@ async function processSeasons(): Promise<{
       return updateSkaterTotals(season);
     }),
   );
-  await Promise.all(updateTasks);
+  const results = await Promise.all(updateTasks);
+  const failedSeasons = seasons.filter((_, index) => !results[index].updated);
+  if (failedSeasons.length > 0) {
+    throw new Error(
+      `Skater totals refresh failed for seasons: ${failedSeasons.join(", ")}.`,
+    );
+  }
 
   const overallEndTime = Date.now();
   const totalTimeInSeconds = (overallEndTime - overallStartTime) / 1000;
@@ -362,36 +383,64 @@ async function fetchProcessAndUpsert(
       `Data fetched for ${skaterTotalStats.length} players for ${gameTypeName}, beginning processing.`,
     );
 
-    const skatersBioMap = new Map<number, WGOSkatersBio>();
-    skatersBio.forEach((s) => skatersBioMap.set(s.playerId, s));
-    const miscMap = new Map<number, WGORealtimeSkaterTotal>();
-    miscTotalSkaterStats.forEach((s) => miscMap.set(s.playerId, s));
-    const faceoffMap = new Map<number, WGOFaceoffSkaterTotal>();
-    faceOffTotalStats.forEach((s) => faceoffMap.set(s.playerId, s));
-    const faceoffWLMap = new Map<number, WGOFaceOffWinLossSkaterTotal>();
-    faceoffWinLossTotalStats.forEach((s) => faceoffWLMap.set(s.playerId, s));
-    const goalsMap = new Map<number, WGOGoalsForAgainstSkaterTotal>();
-    goalsForAgainstTotalStats.forEach((s) => goalsMap.set(s.playerId, s));
-    const penMap = new Map<number, WGOPenaltySkaterTotal>();
-    penaltiesTotalStats.forEach((s) => penMap.set(s.playerId, s));
-    const pkMap = new Map<number, WGOPenaltyKillSkaterTotal>();
-    penaltyKillTotalStats.forEach((s) => pkMap.set(s.playerId, s));
-    const ppMap = new Map<number, WGOPowerPlaySkaterTotal>();
-    powerPlayTotalStats.forEach((s) => ppMap.set(s.playerId, s));
-    const puckMap = new Map<number, WGOPuckPossessionSkaterTotal>();
-    puckPossessionTotalStats.forEach((s) => puckMap.set(s.playerId, s));
-    const satCountMap = new Map<number, WGOSatCountSkaterTotal>();
-    satCountsTotalStats.forEach((s) => satCountMap.set(s.playerId, s));
-    const satPctMap = new Map<number, WGOSatPercentageSkaterTotal>();
-    satPercentagesTotalStats.forEach((s) => satPctMap.set(s.playerId, s));
-    const rateMap = new Map<number, WGOScoringRatesSkaterTotal>();
-    scoringRatesTotalStats.forEach((s) => rateMap.set(s.playerId, s));
-    const countMap = new Map<number, WGOScoringCountsSkaterTotal>();
-    scoringPerGameTotalStats.forEach((s) => countMap.set(s.playerId, s));
-    const shotMap = new Map<number, WGOShotTypeSkaterTotal>();
-    shotTypeTotalStats.forEach((s) => shotMap.set(s.playerId, s));
-    const toiMap = new Map<number, WGOToiSkaterTotal>();
-    timeOnIceTotalStats.forEach((s) => toiMap.set(s.playerId, s));
+    mapWgoRowsByPlayerId(skaterTotalStats, "skater totals summary");
+    const skatersBioMap = mapWgoRowsByPlayerId(skatersBio, "skater totals bios");
+    const miscMap = mapWgoRowsByPlayerId(
+      miscTotalSkaterStats,
+      "skater totals realtime",
+    );
+    const faceoffMap = mapWgoRowsByPlayerId(
+      faceOffTotalStats,
+      "skater totals faceoffs",
+    );
+    const faceoffWLMap = mapWgoRowsByPlayerId(
+      faceoffWinLossTotalStats,
+      "skater totals faceoff wins",
+    );
+    const goalsMap = mapWgoRowsByPlayerId(
+      goalsForAgainstTotalStats,
+      "skater totals goals for/against",
+    );
+    const penMap = mapWgoRowsByPlayerId(
+      penaltiesTotalStats,
+      "skater totals penalties",
+    );
+    const pkMap = mapWgoRowsByPlayerId(
+      penaltyKillTotalStats,
+      "skater totals penalty kill",
+    );
+    const ppMap = mapWgoRowsByPlayerId(
+      powerPlayTotalStats,
+      "skater totals power play",
+    );
+    const puckMap = mapWgoRowsByPlayerId(
+      puckPossessionTotalStats,
+      "skater totals puck possessions",
+    );
+    const satCountMap = mapWgoRowsByPlayerId(
+      satCountsTotalStats,
+      "skater totals shooting counts",
+    );
+    const satPctMap = mapWgoRowsByPlayerId(
+      satPercentagesTotalStats,
+      "skater totals percentages",
+    );
+    const rateMap = mapWgoRowsByPlayerId(
+      scoringRatesTotalStats,
+      "skater totals scoring rates",
+    );
+    const countMap = mapWgoRowsByPlayerId(
+      scoringPerGameTotalStats,
+      "skater totals scoring per game",
+    );
+    const shotMap = mapWgoRowsByPlayerId(
+      shotTypeTotalStats,
+      "skater totals shot type",
+    );
+    const toiMap = mapWgoRowsByPlayerId(
+      timeOnIceTotalStats,
+      "skater totals time on ice",
+    );
 
     const dataArray: any[] = [];
     const now = new Date().toISOString();
@@ -502,6 +551,7 @@ async function fetchProcessAndUpsert(
         penalties_drawn_per_60: pen?.penaltiesDrawnPer60,
         penalties_taken_per_60: pen?.penaltiesTakenPer60,
         penalty_minutes: pen?.penaltyMinutes,
+        penalty_minutes_per_toi: pen?.penaltyMinutesPerTimeOnIce,
         penalty_seconds_per_game: pen?.penaltySecondsPerGame,
         pp_goals_against_per_60: pk?.ppGoalsAgainstPer60,
         sh_assists: pk?.shAssists,
@@ -544,7 +594,8 @@ async function fetchProcessAndUpsert(
         sat_pct: puck?.satPct,
         toi_per_game_5v5: puck?.timeOnIcePerGame5v5,
         usat_pct: puck?.usatPct,
-        zone_start_pct: puck?.zoneStartPct,
+        zone_start_pct:
+          puck?.offensiveZoneStartRatio ?? puck?.zoneStartPct,
         sat_against: satCt?.satAgainst,
         sat_ahead: satCt?.satAhead,
         sat_behind: satCt?.satBehind,
@@ -729,10 +780,25 @@ async function handler(
         success: result.updated,
         ...details,
       };
-      return res.json(responseBody);
+      return res.status(result.updated ? 200 : 500).json(responseBody);
     }
 
-    const seasonValue = seasonParam!;
+    const parsedSeason = parseWgoSeasonId(seasonParam);
+    if (!parsedSeason) {
+      return res.status(400).json({
+        message:
+          "Invalid season. Use current, all, or a consecutive YYYYyyyy season ID.",
+        success: false,
+      });
+    }
+    const seasonValue = String(parsedSeason);
+    const knownSeasons = await getAllSeasonsFromDB();
+    if (!knownSeasons.includes(seasonValue)) {
+      return res.status(400).json({
+        message: `Season ${seasonValue} was not found in the seasons table.`,
+        success: false,
+      });
+    }
     console.log(`Processing season ${seasonValue}`);
     const result = await updateSkaterTotals(seasonValue);
     rowsAffected = result.playersUpdated;
@@ -748,7 +814,7 @@ async function handler(
       success: result.updated,
       ...details,
     };
-    return res.json(responseBody);
+    return res.status(result.updated ? 200 : 500).json(responseBody);
   } catch (err: any) {
     status = "error";
     totalErrors += 1;

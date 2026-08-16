@@ -1059,6 +1059,7 @@ export default function HomepageGamesSection({
       <section
         className={styles.gamesStrip}
         aria-labelledby="games-strip-heading"
+        data-opening-night={showOpeningNightCountdown || undefined}
       >
         <div className={styles.gamesHeader}>
           <div className={styles.gamesHeaderTitle}>

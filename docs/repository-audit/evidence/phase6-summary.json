@@ -1,0 +1,43 @@
+{
+  "audit_run_id": "REPO-AUDIT-2026-08-09-FROZEN-36536C3",
+  "candidate_accounting": {
+    "canonical_findings": 30,
+    "static_candidates": 31,
+    "used_exactly_once": 32,
+    "validation_candidates": 1
+  },
+  "cleanup_records": {
+    "statuses": {
+      "Archive": 341,
+      "Keep": 244,
+      "Merge": 2,
+      "Needs owner decision": 39
+    },
+    "total": 626
+  },
+  "enhancement_records": {
+    "justified_findings": 30,
+    "no_justified_change": 5,
+    "primary_categories": {
+      "UX": 1,
+      "accessibility": 3,
+      "architecture": 1,
+      "build/deploy": 3,
+      "cleanup": 3,
+      "correctness": 4,
+      "developer experience": 4,
+      "documentation": 4,
+      "maintainability": 1,
+      "reliability": 1,
+      "security/privacy": 5
+    },
+    "priorities": {
+      "P0": 3,
+      "P1": 4,
+      "P2": 13,
+      "P3": 10
+    },
+    "total": 35
+  },
+  "schema_version": 1
+}

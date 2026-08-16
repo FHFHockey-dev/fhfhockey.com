@@ -1,0 +1,15 @@
+{
+  "settings": {
+    "name": "Redacted Season Points League",
+    "size": 2,
+    "scoringSettings": {
+      "scoringType": "TOTAL_SEASON_POINTS",
+      "scoringItems": [
+        { "statId": 16, "points": 1 },
+        { "statId": 7, "points": 5 }
+      ]
+    },
+    "rosterSettings": { "lineupSlotCounts": { "3": 4, "4": 2, "5": 1, "7": 2 } },
+    "draftSettings": { "type": "SNAKE", "pickOrder": [1, 2] }
+  }
+}

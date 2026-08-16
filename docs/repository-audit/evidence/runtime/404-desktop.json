@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "audit_run_id": "REPO-AUDIT-2026-08-09-FROZEN-36536C3",
+  "receipt_id": "RUNTIME-0001",
+  "created_at": "2026-08-09T18:16:24Z",
+  "source_ref": "frozen-goal-start-snapshot",
+  "route_id": "ROUTE-0270",
+  "pattern": "/404",
+  "viewport": {
+    "name": "desktop",
+    "width": 1440,
+    "height": 900
+  },
+  "browser": "Codex in-app Browser",
+  "server_boundary": "Next.js 15.5.22 development server in a disposable frozen-snapshot child under a local-only sandbox",
+  "observation": {
+    "title": "FHFH | Not Found",
+    "ready_state": "complete",
+    "document_width": 1440,
+    "client_width": 1440,
+    "horizontal_overflow": false,
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "404 - Page Not Found"
+      }
+    ],
+    "landmarks": [
+      "header",
+      "nav",
+      "header",
+      "nav",
+      "main",
+      "footer"
+    ],
+    "interactive_counts": {
+      "links": 28,
+      "buttons": 5,
+      "unlabeled_buttons_by_text_or_aria_label": 1
+    }
+  },
+  "asset_inventory": {
+    "total_assets": 31,
+    "inline_svg_count": 2,
+    "by_kind": {
+      "image": 10,
+      "other": 2,
+      "script": 9,
+      "stylesheet": 10
+    },
+    "observed_resource_origins": {
+      "http://127.0.0.1:3210": 18,
+      "https://fonts.googleapis.com": 20,
+      "https://img.buymeacoffee.com": 1,
+      "https://cdn.vercel-insights.com": 1,
+      "https://va.vercel-scripts.com": 1
+    }
+  },
+  "safety_stop": {
+    "triggered": true,
+    "reason": "The shared application shell exposed third-party static resources and Vercel telemetry scripts to the browser. The browser client did not provide a guaranteed request-interception boundary, so further route navigation could not exclude external telemetry writes.",
+    "scope": "No further UI route navigation or viewport reload was performed. Remaining route/viewports use explicit static fallbacks.",
+    "interpretation_limit": "Observed resource entries prove that the browser saw resource loads; they do not prove that a telemetry payload was successfully transmitted."
+  },
+  "disposable_source_integrity": {
+    "canonical_snapshot_unchanged": true,
+    "disposable_child_baseline_file_changed": "web/next-env.d.ts",
+    "baseline_sha256": "8d7005cad1aa9b508709582440b50042c0aa11ca0c7c60f765732700359159aa",
+    "post_command_sha256": "95c5e6b31f13db907e9fe5d7cd72edd186321a0c7a8fb2d89129029fb289c276",
+    "generated_extra_file_count": 42,
+    "generated_extra_root": "web/.next",
+    "copied_back": false
+  },
+  "evidence_refs": [
+    "static-source:web/pages/404.tsx:1-14",
+    "baseline-sha256:b52cf03c7b1adcd6e2d3ef5bc134036f872ad62d694eed4b03234f48288d71f9",
+    "external-log:next-dev.log#sha256=d574a17fcc137d99da3f37c8d051ccba25ef6db483c5a692c736c803b453043f"
+  ]
+}

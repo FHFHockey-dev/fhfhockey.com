@@ -1,0 +1,250 @@
+{
+  "contractVersion": "player-forecasts-research-v3-season",
+  "status": "approved_for_local_implementation",
+  "seasonId": 20262027,
+  "gameType": 2,
+  "seasonGamesPerTeam": 84,
+  "releaseSemantics": {
+    "opening": "Frozen preseason projection issued before the first regular-season game.",
+    "current": "Actual outcomes through cutoff plus forecasts for every remaining scheduled game.",
+    "ros": "Forecast distribution for every remaining scheduled game, excluding recorded outcomes."
+  },
+  "evidencePolicy": {
+    "historicalCore": [
+      "official_nhl_outcomes",
+      "official_gamecenter",
+      "normalized_play_by_play",
+      "official_shift_charts",
+      "cutoff_safe_schedules"
+    ],
+    "settledOutcomeLabels": [
+      {
+        "source": "WGO",
+        "tables": [
+          "wgo_skater_stats",
+          "wgo_skater_stats_totals"
+        ],
+        "eligibleTargets": [
+          "PRIMARY_ASSISTS",
+          "SECONDARY_ASSISTS",
+          "PP_ASSISTS",
+          "SH_ASSISTS",
+          "PP_GOALS",
+          "SH_GOALS"
+        ],
+        "scope": "Frozen, checksum-addressed settled training outcomes only; never a cutoff-time predictive feature.",
+        "identityRule": "Per-game primary plus secondary assists must equal the selected settled assist total. Unresolved rows block the freeze and are never coerced to zero.",
+        "joinRule": "Bind WGO game logs to official regular-season games by NHL player ID and game date; do not trust WGO season_id or missing historical game_id as authoritative game identity.",
+        "availabilityRule": "The freeze records the actual capture time and checksum. It makes no claim that retrospectively frozen WGO labels were available at an earlier forecast cutoff."
+      }
+    ],
+    "prospectiveEnriched": [
+      "trusted_normalized_lineups",
+      "trusted_normalized_injuries",
+      "trusted_normalized_scratches",
+      "trusted_normalized_goalie_observations",
+      "versioned_editorial_assumptions"
+    ],
+    "excludedWithoutSeparateApproval": [
+      "NST",
+      "fabricated_available_at",
+      "current_state_historical_fallbacks",
+      "raw_ifttt_feature_flags"
+    ],
+    "availabilityRule": "A predictive feature is eligible only when available_at is at or before the forecast cutoff. Retrospectively frozen settled outcome labels are eligible only as training responses and settlement truth."
+  },
+  "playerPool": {
+    "eligibleLifecycleStatuses": [
+      "active_nhl",
+      "active_prospect",
+      "unsigned_relevant"
+    ],
+    "sources": [
+      "official_rosters",
+      "verified_fhfh_identities",
+      "recent_nhl_participation",
+      "verified_draft_and_prospect_records",
+      "explicit_editor_assignment"
+    ],
+    "omissionPolicy": "An offseason official-roster omission never proves release or ineligibility.",
+    "prospectPolicy": "Insufficient NHL history uses a flagged population prior and wider uncertainty; history is never fabricated."
+  },
+  "populations": [
+    "forward",
+    "defense",
+    "goalie"
+  ],
+  "targets": {
+    "skaterPrimitive": [
+      "GAMES_PLAYED",
+      "TOTAL_TOI",
+      "EV_TOI",
+      "PP_TOI",
+      "PK_TOI",
+      "GOALS",
+      "PRIMARY_ASSISTS",
+      "SECONDARY_ASSISTS",
+      "PLUS_MINUS",
+      "SHOTS_ON_GOAL",
+      "HITS",
+      "BLOCKED_SHOTS",
+      "PENALTY_MINUTES",
+      "PP_GOALS",
+      "PP_ASSISTS",
+      "SH_GOALS",
+      "SH_ASSISTS",
+      "FACEOFFS_WON",
+      "FACEOFFS_LOST"
+    ],
+    "goaliePrimitive": [
+      "GAMES_PLAYED",
+      "GAMES_STARTED",
+      "TOTAL_TOI",
+      "WINS_GOALIE",
+      "LOSSES_GOALIE",
+      "OTL_GOALIE",
+      "SHOTS_AGAINST_GOALIE",
+      "GOALS_AGAINST_GOALIE",
+      "SHUTOUTS_GOALIE"
+    ],
+    "derived": {
+      "ASSISTS": "PRIMARY_ASSISTS + SECONDARY_ASSISTS",
+      "POINTS": "GOALS + ASSISTS",
+      "PP_POINTS": "PP_GOALS + PP_ASSISTS",
+      "SH_POINTS": "SH_GOALS + SH_ASSISTS",
+      "SAVES_GOALIE": "SHOTS_AGAINST_GOALIE - GOALS_AGAINST_GOALIE",
+      "SAVE_PERCENTAGE": "SAVES_GOALIE / SHOTS_AGAINST_GOALIE",
+      "GOALS_AGAINST_AVERAGE": "60 * GOALS_AGAINST_GOALIE / (TOTAL_TOI / 60)"
+    },
+    "assistPolicy": "Primary and secondary assists are separate targets. Official assists are their unweighted sum; fixed 70:30 and 80:20 weighting is prohibited.",
+    "assistLabelResolution": "Use normalized official play-by-play when that official game has complete normalized coverage; otherwise use a frozen WGO game label whose primary and secondary assists reconcile to its settled assist total. When complete PBP and WGO disagree on assist order or strength state, or the selected settled total disagrees with the official box score, reconcile the affected rows against a checksum-captured final NHL Gamecenter record. A trustworthy zero requires covered source evidence. Source disagreements remain explicit provenance and no missing label becomes zero."
+  },
+  "deployment": {
+    "roles": [
+      "forward_line",
+      "defense_pair",
+      "power_play",
+      "penalty_kill",
+      "goalie_order"
+    ],
+    "publishedFields": [
+      "mostLikelyRole",
+      "alternativeRoleProbabilities",
+      "confidence",
+      "expectedEvToi",
+      "expectedPpToi",
+      "expectedPkToi",
+      "expectedTotalToi"
+    ],
+    "probabilityRule": "Role probabilities are bounded in [0,1] and reconcile within each role family."
+  },
+  "ratings": {
+    "scale": {
+      "minimum": 0,
+      "maximum": 100,
+      "peerMedian": 50,
+      "positionAdjusted": true
+    },
+    "skater": [
+      "offense",
+      "defense"
+    ],
+    "goalie": [
+      "goaltending"
+    ],
+    "team": [
+      "offense",
+      "defense",
+      "goaltending",
+      "powerPlay",
+      "penaltyKill",
+      "pace",
+      "overall"
+    ],
+    "overallRule": "Team overall is the position-adjusted transform of schedule-neutral projected goal differential.",
+    "selectionRule": "Decay, shrinkage, and feature weights are selected only inside chronological development folds."
+  },
+  "modeling": {
+    "baselineFamilies": [
+      "empirical_bayes_rate",
+      "penalized_glm"
+    ],
+    "challengerPolicy": "Serve a challenger only when it beats the valid frozen baseline under preregistered chronological evaluation; otherwise serve that baseline.",
+    "gameAggregation": "Forecast every remaining scheduled game independently and aggregate unconditional moments and quantiles.",
+    "contextAdjustment": "Player conditional rates already contain their observed team environment. Per-game skater rates may be adjusted for pace and opponent defense, but must not be multiplied by the current own-team offense rating a second time. Team offense remains a separately published roster-adjusted rating until a context-normalized player model is chronologically validated.",
+    "forbiddenAggregation": [
+      "multiply_h1_by_84",
+      "label_h1_h10_sum_as_ros"
+    ],
+    "validation": "Use historical preseason and rolling-origin simulations. The consumed 2025-26 lockbox is validation/training evidence, not new blind evidence.",
+    "prospectiveEvidenceSeason": 20262027
+  },
+  "evaluation": {
+    "scoringVersion": "player-forecast-season-accountability-v1",
+    "settlement": {
+      "provisionalDelayHours": 8,
+      "correctionWindowHours": 48,
+      "revisionPolicy": "Append outcome and evaluation revisions; never rewrite an earlier revision.",
+      "availabilityPolicy": "Use immutable source capture fetched_at and the actual settlement execution time; never backdate availability."
+    },
+    "pointLosses": [
+      "absolute_error",
+      "squared_error"
+    ],
+    "probabilityLosses": [
+      "brier",
+      "log_loss"
+    ],
+    "distributionDiagnostics": [
+      "p10_p90_coverage",
+      "interval_width"
+    ],
+    "compositeSkillIndex": {
+      "formula": "clip(50 + 50 * ((baseline_loss - model_loss) / max(baseline_loss, 1e-9)), 0, 100)",
+      "weights": {
+        "pointAndCountAccuracy": 0.4,
+        "probabilityAccuracy": 0.25,
+        "distributionQuality": 0.2,
+        "calibration": 0.15
+      },
+      "aggregation": "Macro-average position by target by release view before applying weights; always report raw losses beside the index."
+    },
+    "editorialPolicy": "Settle untouched model values and published editorial values separately. Direct season-total deltas are allocated over remaining per-game components only for daily diagnostic scoring and are also scored exactly against final season totals."
+  },
+  "publication": {
+    "channel": "public_beta",
+    "label": "2026-27 beta - model plus editorial review",
+    "openingManualApproval": true,
+    "dailyHealthyAutoPublish": true,
+    "unhealthyPolicy": "Retain the last good release and publish a non-sensitive hold reason.",
+    "fantasyScoring": "Downstream client-side transform of published raw hockey projections; never a model target.",
+    "forgePolicy": "FORGE remains unchanged and benchmark-only."
+  },
+  "security": {
+    "tables": "service_only_forced_rls",
+    "editorAuthorization": "valid user token AND admin role AND UUID in PLAYER_FORECAST_EDITOR_USER_IDS",
+    "productionEditorCount": 1,
+    "cronCanEditOrPublish": false,
+    "publicData": "immutable published releases only"
+  },
+  "acceptance": {
+    "teams": 32,
+    "uniqueGames": 1344,
+    "gamesPerTeam": 84,
+    "minimumRosterWithoutWaiver": {
+      "forwards": 12,
+      "defensemen": 6,
+      "goalies": 2
+    },
+    "probabilityBounds": [
+      0,
+      1
+    ],
+    "maxExpectedGames": 84,
+    "maxGamesQuantile": "GP and start quantiles cannot exceed actual-to-date games plus the player's remaining scheduled components, and therefore cannot exceed 84 in 2026-27.",
+    "quantileOrder": "p10 <= p50 <= p90",
+    "assistLabelCoverage": "Every frozen skater-game has a nonnegative primary and secondary assist label, PRIMARY_ASSISTS + SECONDARY_ASSISTS = ASSIST_LABEL_ASSISTS, a named source, and zero unresolved label rows.",
+    "assistSourceAudit": "The freeze records source counts, box-score disagreements, PBP/WGO conflicts, official-final reconciliation captures, row identities, source capture time, and checksums; zero detected source conflict remains open and WGO-derived fields never enter the predictive feature matrix.",
+    "determinism": "Identical artifact, feature, roster, schedule, and override inputs produce byte-equivalent canonical outputs."
+  }
+}

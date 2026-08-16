@@ -1,0 +1,46 @@
+{
+  "audit_run_id": "REPO-AUDIT-2026-08-09-FROZEN-36536C3",
+  "comparison": {
+    "fully_hash_compared_nonsecret_paths": 3576,
+    "post_baseline_changes_incorporated_into_audit": false,
+    "secret_like_paths_metadata_only": 4,
+    "secret_values_opened_or_printed": false
+  },
+  "created_at": "2026-08-09T19:19:56Z",
+  "frozen_source_authority": {
+    "branch": "octoberBranch",
+    "file_count": 3580,
+    "head": "36536c3f1cbf065c34dc0ee5eceec2094e17d858",
+    "manifest_sha256": "2634689a5aa2a130be38c50975ea52d038ba85321591ca24981ec3ecf771b56f"
+  },
+  "live_drift_ledger": "evidence/live-worktree-drift.jsonl",
+  "live_repository": {
+    "audit_package_files": 77,
+    "branch": "octoberBranch",
+    "head": "36536c3f1cbf065c34dc0ee5eceec2094e17d858",
+    "nonignored_untracked_source_paths": 0,
+    "source_drift_records": 0
+  },
+  "pre_existing_user_changes": [
+    {
+      "baseline_worktree_sha256": "b20c43bce3550138787d865b552ca75ba38235c9390035a0dfc738b4ec564734",
+      "live_sha256": "b20c43bce3550138787d865b552ca75ba38235c9390035a0dfc738b4ec564734",
+      "path": "web/components/HomePage/HomepageGamesSection.test.tsx",
+      "unchanged_since_freeze": true
+    },
+    {
+      "baseline_worktree_sha256": "871e437bcbb73aa72a170b49a360fd42d7267ea5ff90aa54f8fc025265dfe6f1",
+      "live_sha256": "871e437bcbb73aa72a170b49a360fd42d7267ea5ff90aa54f8fc025265dfe6f1",
+      "path": "web/components/HomePage/HomepageGamesSection.tsx",
+      "unchanged_since_freeze": true
+    },
+    {
+      "baseline_worktree_sha256": "2fd4e402ef0f91aea0b5bb4bf75c0a52cdf9903cb8baad0b5f2da28ff366975c",
+      "live_sha256": "2fd4e402ef0f91aea0b5bb4bf75c0a52cdf9903cb8baad0b5f2da28ff366975c",
+      "path": "web/styles/Home.module.scss",
+      "unchanged_since_freeze": true
+    }
+  ],
+  "record_type": "source_and_drift_integrity_receipt",
+  "schema_version": 1
+}

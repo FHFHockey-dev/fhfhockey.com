@@ -10,6 +10,7 @@
   },
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 3000",
+    "dev:player-forecasts": "node scripts/dev-player-forecasts.mjs",
     "dev:stable": "node scripts/dev-stable.mjs",
     "dev:turbo": "next dev --turbopack -H 0.0.0.0 -p 3000",
     "dev:3001": "next dev --turbopack -H 0.0.0.0 -p 3001",
@@ -25,6 +26,10 @@
     "check:player-forecast-readiness": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/player-forecast-readiness.ts",
     "fixture:player-forecasts": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/seed-player-forecast-fixtures.ts",
     "register:player-forecast-artifact": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/register-player-forecast-artifact.ts",
+    "import:player-forecast-season": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/import-player-forecast-season.ts",
+    "reconcile:player-forecast-season-local-queue": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/reconcile-player-forecast-season-local-queue.ts",
+    "publish:player-forecast-season-local": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/publish-player-forecast-season-local.ts",
+    "import:player-forecast-season-settlement": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/import-player-forecast-season-settlement.ts",
     "fixture:player-forecast-serving-proof": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/seed-player-forecast-serving-proof.ts",
     "verify:player-forecast-local-acceptance": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/verify-player-forecast-local-acceptance.ts",
     "forecast:game-predictions": "NODE_PATH=. ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/forecast-game-predictions.ts",

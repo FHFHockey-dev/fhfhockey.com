@@ -1,0 +1,25 @@
+{
+  "ambiguous_duplicate_patterns_skipped": [
+    "/api/fetch_team_table",
+    "/api/healthz"
+  ],
+  "audit_run_id": "REPO-AUDIT-2026-08-09-FROZEN-36536C3",
+  "decode_failures": 0,
+  "limitations": [
+    "The scan supplements AST/navigation edges; it does not infer that every literal is a clickable link.",
+    "Dynamic runtime URLs are primarily covered by AST/source-derived edges and bounded cross-system reconciliation.",
+    "The root '/' route is excluded from literal scanning because it cannot be distinguished from ordinary path syntax.",
+    "No absence result is used as Dead end evidence."
+  ],
+  "matched_non_ui_references": 3157,
+  "matched_references": 4913,
+  "matched_ui_references": 1756,
+  "method": "exact UI-route and endpoint literal scan over bounded frozen text files",
+  "scan_id": "ROUTE-REF-SCAN-001",
+  "scanned_files": 3125,
+  "schema_version": 1,
+  "skipped_binary_assets": 299,
+  "skipped_non_text_suffix": 142,
+  "skipped_over_2_mib": 10,
+  "skipped_secret_like_names_without_content_read": 4
+}

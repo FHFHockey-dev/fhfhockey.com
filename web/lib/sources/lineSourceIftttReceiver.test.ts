@@ -97,6 +97,7 @@ describe("createLineSourceIftttReceiver", () => {
         username: "GameDayGoalies",
         text: "Confirmed Wild Starting Goalie: Filip Gustavsson",
         tweet_id: "2049999999999999999",
+        tweet_created_at: "2026-04-30T22:05:00.000Z",
         processing_status: "pending",
         raw_payload: expect.objectContaining({
           source_account: "GameDayGoalies",

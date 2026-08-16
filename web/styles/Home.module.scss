@@ -53,8 +53,8 @@
   gap: v.$space-xs;
   min-height: 46px;
   padding: v.$space-xs v.$space-sm;
-  border-bottom: 1px solid v.$border-soft;
-  background: v.$background-dark;
+  // border-bottom: 1px solid v.$border-soft;
+  background: v.$background-medium;
 
   > button {
     @include v.reset-button;
@@ -630,6 +630,107 @@
 }
 
 @media (min-width: #{v.$breakpoint-desktop}) {
+  .gamesStrip[data-opening-night="true"] {
+    box-sizing: border-box;
+    gap: clamp(10px, 0.725vw, 13px);
+    padding: clamp(0.75rem, 1vw, 1rem) clamp(1rem, 1.4vw, 1.5rem);
+    overflow: visible;
+    border-color: rgba(v.$primary-color, 0.18);
+    border-radius: 16px;
+    background:
+      radial-gradient(
+        ellipse at 18% 0%,
+        rgba(v.$primary-color, 0.055),
+        transparent 42%
+      ),
+      linear-gradient(
+        135deg,
+        rgba(v.$color-white, 0.018),
+        transparent 48%
+      ),
+      color.adjust(v.$background-dark, $lightness: -4%);
+    box-shadow:
+      0 24px 52px -38px rgba(v.$color-black, 0.95),
+      inset 0 1px 0 rgba(v.$color-white, 0.035);
+
+    .gamesHeader {
+      grid-template-columns: max-content 52px minmax(180px, 220px) 52px 1fr;
+      grid-template-rows: 56px 56px;
+      column-gap: 10px;
+      row-gap: 16px;
+      min-height: 128px;
+      padding: 0;
+      background: transparent;
+    }
+
+    .gamesHeaderTitle {
+      margin-right: clamp(14px, 2vw, 28px);
+    }
+
+    .gamesHeaderTitle h2 {
+      font-size: clamp(1.18rem, 1.65vw, 1.48rem);
+      letter-spacing: 0.095em;
+      line-height: 1;
+    }
+
+    .gamesHeader > button {
+      width: 52px;
+      height: 52px;
+      border-color: rgba(v.$primary-color, 0.2);
+      border-radius: 10px;
+      background: rgba(v.$color-white, 0.018);
+      color: v.$color-white;
+      font-size: 1.3rem;
+    }
+
+    .dateSelector,
+    .headerAndDate {
+      height: 52px;
+    }
+
+    .headerAndDate {
+      padding-inline: 16px;
+      border-color: rgba(v.$primary-color, 0.2);
+      border-radius: 10px;
+      background: rgba(v.$color-black, 0.15);
+    }
+
+    .dateDisplay {
+      gap: 10px;
+      font-size: 0.78rem;
+      letter-spacing: 0.055em;
+    }
+
+    .gamesSummary {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      grid-template-columns: repeat(3, minmax(130px, 1fr));
+      justify-self: end;
+      gap: 12px;
+      width: min(100%, 480px);
+    }
+
+    .gamesSummary > span {
+      min-height: 56px;
+      padding: 8px 12px;
+      column-gap: 10px;
+      border-color: rgba(v.$primary-color, 0.18);
+      border-radius: 10px;
+      background: rgba(v.$color-black, 0.12);
+      font-size: 0.66rem;
+      line-height: 1.1;
+    }
+
+    .gamesSummary strong {
+      font-size: 1.18rem;
+    }
+
+    .gamesContainer {
+      min-height: 0;
+      padding: 0;
+    }
+  }
+
   .gamesContainer {
     min-height: 0;
     padding: 6px;
@@ -2154,6 +2255,43 @@
         transparent 3px
       );
       content: "";
+    }
+  }
+}
+
+@media (min-width: 1280px) {
+  .gamesStrip[data-opening-night="true"] {
+    .gamesHeader {
+      grid-template-columns:
+        max-content
+        56px
+        minmax(190px, 210px)
+        56px
+        minmax(20px, 1fr)
+        auto;
+      grid-template-rows: 58px;
+      min-height: 58px;
+    }
+
+    .gamesHeaderTitle {
+      margin-right: clamp(16px, 1.5vw, 26px);
+    }
+
+    .gamesHeader > button,
+    .dateSelector,
+    .headerAndDate {
+      height: 56px;
+    }
+
+    .gamesHeader > button {
+      width: 56px;
+    }
+
+    .gamesSummary {
+      grid-column: 6;
+      grid-row: 1;
+      grid-template-columns: repeat(3, minmax(125px, 1fr));
+      width: clamp(405px, 26vw, 468px);
     }
   }
 }

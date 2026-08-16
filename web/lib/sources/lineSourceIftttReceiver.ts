@@ -1,4 +1,5 @@
 import { timingSafeEqual } from "crypto";
+import moment from "moment-timezone";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import supabase from "lib/supabase/server";
@@ -64,8 +65,17 @@ function extractTweetId(value: string | null): string | null {
   return value.match(/\/status(?:es)?\/(\d+)/i)?.[1] ?? null;
 }
 
-function parseDateToIso(value: string | null): string | null {
+export function parseIftttDateToIso(value: string | null): string | null {
   if (!value) return null;
+
+  const iftttDate = moment.tz(
+    value,
+    "MMMM D, YYYY [at] hh:mmA",
+    true,
+    "America/New_York",
+  );
+  if (iftttDate.isValid()) return iftttDate.toISOString();
+
   const parsed = Date.parse(value);
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
 }
@@ -234,7 +244,7 @@ export function createLineSourceIftttReceiver(
       link_to_tweet: linkToTweet,
       tweet_id: tweetId,
       tweet_embed_code: tweetEmbedCode,
-      tweet_created_at: parseDateToIso(createdAt),
+      tweet_created_at: parseIftttDateToIso(createdAt),
       created_at_label: createdAt,
       processing_status: "pending",
       raw_payload: req.body && typeof req.body === "object" ? req.body : {},

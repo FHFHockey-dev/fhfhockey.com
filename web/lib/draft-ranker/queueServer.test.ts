@@ -11,6 +11,8 @@ const { fromMock, rpcMock, maybeQueues, awaitedQueues } = vi.hoisted(() => {
       const builder: any = {
         select: () => builder,
         eq: () => builder,
+        like: () => builder,
+        in: () => builder,
         order: () => builder,
         limit: () => builder,
         gte: () => builder,

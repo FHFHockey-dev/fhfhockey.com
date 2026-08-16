@@ -153,12 +153,20 @@ import {
   WgoGoaliePruneError,
   WgoGoalieWriteError,
 } from "lib/cron/wgoGoaliePersistence";
+import {
+  fetchCompletedWgoSeasonGameDates,
+  mapWgoRowsByPlayerGame,
+  parseWgoSeasonId,
+  resolveWgoGameIdentity,
+  wgoPlayerGameKey,
+} from "lib/cron/wgoIngestion";
 
 // TO DO - Got more stats from NHL API including the days rest statistics.
 
 interface SeasonInfo {
   id: number; // Assuming 'id' in your 'seasons' table is the numeric season ID like 20232024
   startDate: string; // 'YYYY-MM-DD'
+  endDate: string; // 'YYYY-MM-DD', including playoffs
   regularSeasonEndDate: string; // 'YYYY-MM-DD'
 }
 
@@ -310,122 +318,24 @@ async function getSeasonFromDate(
   dateString: string,
 ): Promise<SeasonInfo | null> {
   try {
-    // First, try the direct approach - look for a season that contains this date
-    const { data: directMatch, error: directError } = await supabase
+    const { data, error } = await supabase
       .from("seasons")
-      .select("id, startDate, regularSeasonEndDate") // Select needed columns
-      .lte("startDate", dateString) // Date is on or after season start
-      .gte("regularSeasonEndDate", dateString) // Date is on or before regular season end
-      .maybeSingle(); // Zero rows is expected for offseason dates; multiple rows is an error.
+      .select("id, startDate, endDate, regularSeasonEndDate")
+      .lte("startDate", dateString)
+      .gte("endDate", dateString)
+      .maybeSingle();
 
-    if (directError) {
+    if (error) {
       throw new WgoGoalieFetchError({
         code: "WGO_GOALIE_FETCH_FAILED",
         date: dateString,
         source: "season",
         pageStart: 0,
         pageLimit: 1,
-        upstreamError: directError,
+        upstreamError: error,
       });
     }
-
-    if (directMatch) {
-      // Found a direct match - date falls within a regular season
-      return {
-        ...directMatch,
-        id: Number(directMatch.id),
-      };
-    }
-
-    // If no direct match (likely offseason), use smart logic similar to fetchCurrentSeason
-    console.log(
-      `Date ${dateString} falls outside regular season periods. Using smart season detection...`,
-    );
-
-    // Fetch all seasons to determine which one this date most likely belongs to
-    const { data: allSeasons, error: seasonsError } = await supabase
-      .from("seasons")
-      .select("id, startDate, regularSeasonEndDate")
-      .order("id", { ascending: false }); // Most recent first
-
-    if (seasonsError) {
-      throw new WgoGoalieFetchError({
-        code: "WGO_GOALIE_FETCH_FAILED",
-        date: dateString,
-        source: "season",
-        pageStart: 0,
-        pageLimit: 1,
-        upstreamError: seasonsError,
-      });
-    }
-
-    if (!allSeasons || allSeasons.length === 0) {
-      return null;
-    }
-
-    const targetDate = new Date(dateString);
-
-    // Check each season to find the most appropriate one
-    for (let i = 0; i < allSeasons.length; i++) {
-      const currentSeason = allSeasons[i];
-      const nextSeason = allSeasons[i - 1]; // Next season (more recent)
-
-      const seasonStart = new Date(currentSeason.startDate);
-      const seasonEnd = new Date(currentSeason.regularSeasonEndDate);
-
-      // If date is before this season starts, continue to older seasons
-      if (targetDate < seasonStart) {
-        continue;
-      }
-
-      // If date is during regular season, return this season
-      if (targetDate >= seasonStart && targetDate <= seasonEnd) {
-        return {
-          ...currentSeason,
-          id: Number(currentSeason.id),
-        };
-      }
-
-      // If date is after this season ends, check if it's in the offseason
-      if (targetDate > seasonEnd) {
-        // If there's a next season, check if date is before next season starts
-        if (nextSeason) {
-          const nextSeasonStart = new Date(nextSeason.startDate);
-          if (targetDate < nextSeasonStart) {
-            // Date is in offseason between this season and next season
-            // Use the more recent season (next season) for context
-            console.log(
-              `Date ${dateString} is in offseason. Using upcoming season ${nextSeason.id} for context.`,
-            );
-            return {
-              ...nextSeason,
-              id: Number(nextSeason.id),
-            };
-          }
-        } else {
-          // No next season defined, this might be the current/future season
-          // Check if we're in a reasonable offseason period (within ~6 months after season end)
-          const monthsAfterSeason =
-            (targetDate.getTime() - seasonEnd.getTime()) /
-            (1000 * 60 * 60 * 24 * 30.44);
-          if (monthsAfterSeason <= 6) {
-            console.log(
-              `Date ${dateString} is in recent offseason. Using completed season ${currentSeason.id} for context.`,
-            );
-            return {
-              ...currentSeason,
-              id: Number(currentSeason.id),
-            };
-          }
-        }
-      }
-    }
-
-    // If we get here, we couldn't determine an appropriate season
-    console.warn(
-      `Could not determine appropriate season for date: ${dateString}`,
-    );
-    return null;
+    return data ? { ...data, id: Number(data.id) } : null;
   } catch (error: unknown) {
     if (error instanceof WgoGoalieFetchError) {
       throw error;
@@ -453,7 +363,7 @@ async function getSeasonDetailsById(
   try {
     const { data, error } = await supabase
       .from("seasons")
-      .select("id, startDate, regularSeasonEndDate") // Select needed columns
+      .select("id, startDate, endDate, regularSeasonEndDate")
       .eq("id", seasonId)
       .single(); // Expect only one season for a given ID
 
@@ -548,11 +458,7 @@ async function pruneStaleGoalieStatsForDate(
   }
 }
 
-function mapByPlayerId<T extends { playerId: number }>(
-  rows: T[],
-): Map<number, T> {
-  return new Map(rows.map((row) => [row.playerId, row]));
-}
+type GameScopedGoalie<T> = T & { gameDate?: string; gameId: number };
 
 async function upsertGoalieStatsRecords(records: any[]): Promise<number> {
   return persistWgoGoalieStatsRecords(
@@ -727,19 +633,41 @@ async function updateGoalieStats(
   const advancedGoalieStats = dataForDate.advancedGoalieStats;
   const daysRestStats = dataForDate.daysRestStats;
 
-  const advancedGoalieStatsByPlayer = mapByPlayerId(advancedGoalieStats);
-  const daysRestStatsByPlayer = mapByPlayerId(daysRestStats);
+  mapWgoRowsByPlayerGame(
+    goalieStats as GameScopedGoalie<WGOGoalieStat>[],
+    "goalie summary",
+  );
+  const advancedGoalieStatsByGame = mapWgoRowsByPlayerGame(
+    advancedGoalieStats as GameScopedGoalie<WGOAdvancedGoalieStat>[],
+    "goalie advanced",
+  );
+  const daysRestStatsByGame = mapWgoRowsByPlayerGame(
+    daysRestStats as GameScopedGoalie<WGODaysLeftStat>[],
+    "goalie days rest",
+  );
 
   const records = goalieStats.map((stat) => {
-    const advStats = advancedGoalieStatsByPlayer.get(stat.playerId);
-    const daysRestStat = daysRestStatsByPlayer.get(stat.playerId);
+    const gameIdentity = resolveWgoGameIdentity({
+      row: stat,
+      expectedDate: formattedDate,
+      expectedSeasonId: seasonId,
+      allowedGameTypes: [2, 3],
+      source: "goalie summary",
+    });
+    const playerGameKey = wgoPlayerGameKey(stat, "goalie summary");
+    const advStats = advancedGoalieStatsByGame.get(playerGameKey);
+    const daysRestStat = daysRestStatsByGame.get(playerGameKey);
 
     return {
       // Mapping fields from fetched data to Supabase table columns
       goalie_id: stat.playerId,
       goalie_name: stat.goalieFullName,
       date: formattedDate,
-      season_id: seasonId, // *** Use the correct season ID ***
+      season_id: gameIdentity.seasonId,
+      game_id: gameIdentity.gameId,
+      team_abbreviation: stat.teamAbbrev ?? stat.teamAbbrevs,
+      opponent_team_abbrev: stat.opponentTeamAbbrev,
+      home_road: stat.homeRoad,
       shoots_catches: stat.shootsCatches,
       position_code: "G",
       games_played: stat.gamesPlayed,
@@ -946,15 +874,32 @@ async function updateAllGoalieStatsForSeason(targetSeasonId: number) {
   // Use dates from the fetched season details
   // Add one day to start date for iteration start because parseISO might handle timezones unexpectedly
   let currentDate = addDays(parseISO(seasonDetails.startDate), 0); // Start from the exact start date
-  const endDate = parseISO(seasonDetails.regularSeasonEndDate);
+  const endDate = parseISO(seasonDetails.endDate);
+  const completedGameDates = new Set(
+    await fetchCompletedWgoSeasonGameDates({
+      endDate: seasonDetails.endDate,
+      seasonId: targetSeasonId,
+      startDate: seasonDetails.startDate,
+    }),
+  );
+  const today = format(new Date(), "yyyy-MM-dd");
+  if (completedGameDates.size === 0 && seasonDetails.endDate < today) {
+    throw new Error(
+      `No completed NHL game dates were returned for completed season ${targetSeasonId}.`,
+    );
+  }
 
   let totalUpdates = 0;
   let totalErrors = 0;
 
-  // Iterate from season start date up to and including the regular season end date
+  // Iterate through the complete season, including playoffs.
   while (isBefore(currentDate, addDays(endDate, 1))) {
     // Loop until *after* the end date
     const formattedDate = format(currentDate, "yyyy-MM-dd");
+    if (!completedGameDates.has(formattedDate)) {
+      currentDate = addDays(currentDate, 1);
+      continue;
+    }
     try {
       // Use the already refactored updateGoalieStats which handles fetching and upserting for a single date
       const dailyResult = await updateGoalieStats(formattedDate);
@@ -1519,8 +1464,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       if (seasonParam) {
         // Process Specific Season
         details.action = "full_refresh_single_season";
-        const targetSeasonId = parseInt(seasonParam, 10);
-        if (isNaN(targetSeasonId)) {
+        const targetSeasonId = parseWgoSeasonId(seasonParam);
+        if (!targetSeasonId) {
           throw new Error(
             `Invalid season parameter format: ${seasonParam}. Expected numeric ID like 20232024.`,
           );

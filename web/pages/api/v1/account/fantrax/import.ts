@@ -60,6 +60,7 @@ export default async function handler(
       userId: user.id,
       content: req.body?.content,
       format: req.body?.format,
+      targetConnectedAccountId: req.body?.targetConnectedAccountId,
     });
     return res.status(200).json({
       success: true,

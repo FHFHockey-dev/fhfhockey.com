@@ -22,6 +22,8 @@ export type DraftRankingBootstrap = {
 
 export type DraftRankingEntry = {
   playerId: number;
+  nhlPlayerId?: number | null;
+  yahooPlayerId?: number | null;
   rank: number;
   orderKey: number;
   seedSource: string | null;

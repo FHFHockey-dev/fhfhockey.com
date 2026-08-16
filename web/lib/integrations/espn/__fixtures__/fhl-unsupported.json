@@ -1,0 +1,16 @@
+{
+  "settings": {
+    "name": "Redacted Partially Supported League",
+    "size": 2,
+    "scoringSettings": {
+      "scoringType": "H2H_POINTS",
+      "scoringItems": [
+        { "statId": 13, "points": 3 },
+        { "statId": 999, "points": 2 },
+        { "statId": 14, "points": 1, "pointsOverrides": { "5": 2 } }
+      ]
+    },
+    "rosterSettings": { "lineupSlotCounts": { "3": 3, "4": 2, "5": 1, "8": 2, "12": 1 } },
+    "draftSettings": { "type": "AUCTION", "pickOrder": [] }
+  }
+}

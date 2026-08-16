@@ -237,3 +237,86 @@ No open question permits leakage, automatic promotion, historical timestamp fabr
 | Hosted read-only coverage queries dated 2026-08-02 | FHFH data support and historical gaps | Executed data audit |
 
 The source matrix does not claim that adjusted plus-minus methods directly forecast the selected box-score targets. Those papers support regularization and decomposition principles; target-specific selection remains an FHFH chronological experiment.
+
+# 2026–27 season-platform addendum (v3)
+
+The executable season contract is
+`research-contract-v3-season.json`, checksum
+`29c6766f63ba9a8dbf8890cb6a388418945134b70217d58e9d8645b34dc36b93`.
+It extends, but does not replace, the H1–H10 research contract. FORGE remains a
+benchmark and is not an input to the candidate model.
+
+The v3 historical-core baseline uses official NHL outcomes, Gamecenter-derived
+events, normalized play-by-play, shifts, and the complete official schedule.
+WGO is authorized only as a checksum-frozen settled outcome-label source for
+historical assist and strength-state targets. It is never a cutoff-time feature,
+and its retrospective rows receive no fabricated availability timestamp. NST and
+retrospective lineup or goalie-current-state fallbacks remain excluded. Primary
+and secondary assists are modeled separately; official assists remain their
+arithmetic sum, because the tested fixed 70:30 and 80:20 alternatives did not
+improve total-assist accuracy. Every frozen skater-game must name its label
+source and satisfy A1 + A2 = settled assists; unresolved rows block training.
+Player-specific rates remain on their observed scale: game evaluation may adjust
+for pace and opponent defense, but it does not multiply those rates by the
+current team's offense rating again. That prevents roster-derived team offense
+from double-counting the environment already present in an established
+player's history.
+
+The initial August 12, 2026 audit found 32 teams, 1,344 unique regular-season
+games, 84 games per team, 810 official offseason-roster players, 802 resolved
+stable identities, and eight unresolved identities. After the owner resolved
+those eight, the refreshed local freeze contained 1,090 eligible players and no
+player-pool publication blocker. Its 141,488 skater-game outcome rows contain
+42,688 complete normalized-play-by-play labels, 98,612 frozen WGO labels, 27
+verified official-boxscore zero labels, and 161 final Gamecenter resolutions.
+The reconciliation detected 149 PBP/WGO conflicts and checked 203 affected
+rows against checksum-captured final NHL Gamecenter payloads. It corrected 161
+rows and retained 42 selected-label/box-score disagreements because the final
+official record supported the selected label. All rows identify their source,
+all satisfy A1 + A2 = assists, and zero remain unresolved or invalid.
+
+The raw WGO outcome values are complete for the required projection targets,
+but its historical game-log metadata is not uniformly reliable: 347,791 of
+441,274 audited `wgo_skater_stats` rows lack `game_id`, and 253,362 rows tagged
+as 2024–25 fall outside that season's official date window. The freeze therefore
+never trusts WGO `game_id` or `season_id`; it joins a player and game date to the
+unique official NHL game and derives the season from that game. Ambiguous or
+unmatched rows cannot enter the training freeze.
+
+The verified historical-core artifact contains 1,090 player priors and 32 team
+contexts. It uses chronological development folds to select among the frozen
+population rate, empirical-Bayes decay/shrinkage, and penalized log-link GLM for
+each population and target. The final local artifact selected 33 GLMs, five
+empirical-Bayes models, and nine explicit population-rate fallbacks across 47
+target policies; no selected policy had worse chronological MAE than its
+reported baseline. Its checksum is
+`11f21dfafd3a46c55b7ac8d8dbe588b0077eb43423423980d4c90a8391bbce53`.
+The artifact reports held-forward MAE and predictive-interval coverage. Its
+defensive rating uses position-regularized on-ice
+shot-attempt and goal suppression adjusted for team and opponent. It is a
+cutoff-safe baseline, not a proprietary expected-goals model; players lacking
+eligible shift history retain an explicit adjusted-plus/minus fallback flag.
+Prospect outputs are prior-based and carry wider uncertainty/fallback metadata.
+
+The 2025–26 season is consumed training and validation evidence. It is not a
+new blind test. The untouched evidence that can support later promotion begins
+with the frozen 2026–27 opening artifact and separately settled model-only and
+editorial projections.
+
+Every remaining game is evaluated independently and then aggregated. Opening,
+current full-season, and rest-of-season releases preserve their component
+manifests, schedule/roster revisions, cutoff, artifact, source watermark, and
+contract checksum. Raw projections and fantasy-scoring weights remain separate.
+Historical participation denominators remain 82 games for the eligible prior
+seasons; 2026–27 expectations and GP/start distribution bounds use its actual
+84-game schedule.
+
+Season settlement uses `player-forecast-season-accountability-v1`. It appends
+provisional results after the source capture becomes available, appends any
+correction through 48 hours, and then appends a final revision. Model and
+editorial forecasts receive separate absolute/squared losses, probability
+Brier/log losses, and p10–p90 coverage diagnostics. The 0–100 index retains the
+v1 preregistered formula and 40/25/20/15 point, probability, distribution, and
+calibration weights; raw losses always accompany it. Direct editorial season
+deltas are allocated across remaining component games for daily diagnostics
+and are also judged exactly against the final season total.

@@ -516,28 +516,45 @@ async function findOrCreateAccount(
   userId: string,
   accountLabel: string,
   providerConfig: ManualImportProviderConfig,
+  targetConnectedAccountId?: string | null,
+  requireTargetWhenAccountsExist = false,
 ) {
-  const { data: existing, error: existingError } = await client
+  const { data: existingAccounts, error: existingError } = await client
     .from("connected_accounts")
     .select("*")
     .eq("user_id", userId)
     .eq("provider", providerConfig.provider)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .order("created_at", { ascending: true });
   if (existingError) {
     throw new Error(
       `Failed to load ${providerConfig.displayName} account: ${existingError.message}`,
     );
   }
-  if (existing) return existing;
+  const targetId = targetConnectedAccountId?.trim() || null;
+  if (targetId) {
+    const target = existingAccounts?.find((account) => account.id === targetId);
+    if (!target) {
+      throw new FantraxImportError(
+        `${providerConfig.displayName} account was not found.`,
+        404,
+      );
+    }
+    return target;
+  }
+  if (existingAccounts?.length && requireTargetWhenAccountsExist) {
+    throw new FantraxImportError(
+      `Choose which ${providerConfig.displayName} account should receive this import.`,
+      400,
+    );
+  }
+  if (existingAccounts?.[0]) return existingAccounts[0];
 
   const { data, error } = await client
     .from("connected_accounts")
     .insert({
       user_id: userId,
       provider: providerConfig.provider,
-      provider_user_id: `manual:${userId}`,
+      provider_user_id: null,
       account_label: accountLabel,
       status: "connected",
       metadata: {
@@ -593,6 +610,8 @@ export async function runManualProviderImport({
   userId,
   content,
   format,
+  targetConnectedAccountId,
+  requireTargetWhenAccountsExist = false,
   providerConfig,
   parseImport,
   client = serviceRoleClient,
@@ -601,6 +620,8 @@ export async function runManualProviderImport({
   userId: string;
   content: unknown;
   format?: string | null;
+  targetConnectedAccountId?: string | null;
+  requireTargetWhenAccountsExist?: boolean;
   providerConfig: ManualImportProviderConfig;
   parseImport: (
     content: unknown,
@@ -615,6 +636,8 @@ export async function runManualProviderImport({
     userId,
     payload.accountLabel,
     providerConfig,
+    targetConnectedAccountId,
+    requireTargetWhenAccountsExist,
   );
   const startedAt = now();
   const latestRun = await latestRunForAccount(
@@ -682,19 +705,59 @@ export async function runManualProviderImport({
 
   try {
     const importedAt = startedAt.toISOString();
-    const leagueRows = payload.leagues.map((league) => ({
-      connected_account_id: account.id,
-      user_id: userId,
-      provider: providerConfig.provider,
-      external_league_key: league.key,
-      league_name: league.name,
-      season_key: league.seasonKey,
-      league_metadata: league.metadata,
-      scoring_settings: league.scoringSettings,
-      roster_settings: league.rosterSettings,
-      imported_at: importedAt,
-      updated_at: importedAt,
-    }));
+    const { data: existingLeagues, error: existingLeaguesError } = await client
+      .from("external_leagues")
+      .select("*")
+      .eq("connected_account_id", account.id)
+      .eq("user_id", userId)
+      .eq("provider", providerConfig.provider)
+      .in(
+        "external_league_key",
+        payload.leagues.map((league) => league.key),
+      );
+    if (existingLeaguesError) throw existingLeaguesError;
+    const existingLeagueByKey = new Map(
+      (existingLeagues ?? []).map((league) => [
+        league.external_league_key,
+        league,
+      ]),
+    );
+    const leagueRows = payload.leagues.map((league) => {
+      const existing = existingLeagueByKey.get(league.key);
+      const existingMetadata = isRecord(existing?.league_metadata)
+        ? existing.league_metadata
+        : {};
+      const manualMetadata = isRecord(league.metadata) ? league.metadata : {};
+      const hasApiSource = existingMetadata.api_sync_enabled === true;
+      return {
+        connected_account_id: account.id,
+        user_id: userId,
+        provider: providerConfig.provider,
+        external_league_key: league.key,
+        league_name: hasApiSource ? existing?.league_name : league.name,
+        season_key: hasApiSource ? existing?.season_key : league.seasonKey,
+        league_metadata: {
+          ...manualMetadata,
+          ...existingMetadata,
+          source_modes: hasApiSource ? ["manual_import", "api"] : ["manual_import"],
+          manual_imported_at: importedAt,
+          manual_snapshot: {
+            league_name: league.name,
+            season_key: league.seasonKey,
+            scoring_settings: league.scoringSettings,
+            roster_settings: league.rosterSettings,
+          },
+        },
+        scoring_settings: hasApiSource
+          ? existing?.scoring_settings ?? league.scoringSettings
+          : league.scoringSettings,
+        roster_settings: hasApiSource
+          ? existing?.roster_settings ?? league.rosterSettings
+          : league.rosterSettings,
+        imported_at: importedAt,
+        updated_at: importedAt,
+      };
+    });
     const { data: leagues, error: leagueError } = await client
       .from("external_leagues")
       .upsert(leagueRows, {
@@ -710,6 +773,21 @@ export async function runManualProviderImport({
     const leagueIdByKey = new Map(
       leagues.map((league) => [league.external_league_key, league.id]),
     );
+    const importedLeagueIds = leagues.map((league) => league.id);
+    const { data: existingTeams, error: existingTeamsError } = await client
+      .from("external_teams")
+      .select("*")
+      .eq("connected_account_id", account.id)
+      .eq("user_id", userId)
+      .eq("provider", providerConfig.provider)
+      .in("external_league_id", importedLeagueIds);
+    if (existingTeamsError) throw existingTeamsError;
+    const existingTeamByKey = new Map(
+      (existingTeams ?? []).map((team) => [
+        `${team.external_league_id}:${team.external_team_key}`,
+        team,
+      ]),
+    );
     const teamRows = payload.leagues.flatMap((league) => {
       const externalLeagueId = leagueIdByKey.get(league.key);
       if (!externalLeagueId) {
@@ -717,18 +795,37 @@ export async function runManualProviderImport({
           `${providerConfig.displayName} league "${league.key}" was not returned.`,
         );
       }
-      return league.teams.map((team) => ({
-        external_league_id: externalLeagueId,
-        connected_account_id: account.id,
-        user_id: userId,
-        provider: providerConfig.provider,
-        external_team_key: team.key,
-        team_name: team.name,
-        team_metadata: team.metadata,
-        roster_snapshot: team.roster,
-        imported_at: importedAt,
-        updated_at: importedAt,
-      }));
+      return league.teams.map((team) => {
+        const existing = existingTeamByKey.get(`${externalLeagueId}:${team.key}`);
+        const existingMetadata = isRecord(existing?.team_metadata)
+          ? existing.team_metadata
+          : {};
+        const manualMetadata = isRecord(team.metadata) ? team.metadata : {};
+        const hasApiSource = existingMetadata.source_mode === "api";
+        return {
+          external_league_id: externalLeagueId,
+          connected_account_id: account.id,
+          user_id: userId,
+          provider: providerConfig.provider,
+          external_team_key: team.key,
+          team_name: hasApiSource ? existing?.team_name : team.name,
+          team_metadata: {
+            ...manualMetadata,
+            ...existingMetadata,
+            source_modes: hasApiSource
+              ? ["manual_import", "api"]
+              : ["manual_import"],
+            manual_snapshot: {
+              team_name: team.name,
+              team_metadata: team.metadata,
+              roster_snapshot: team.roster,
+            },
+          },
+          roster_snapshot: team.roster,
+          imported_at: importedAt,
+          updated_at: importedAt,
+        };
+      });
     });
     const { data: teams, error: teamError } = await client
       .from("external_teams")
@@ -755,67 +852,7 @@ export async function runManualProviderImport({
       );
     }
 
-    const requestedDefault = payload.leagues
-      .flatMap((league) =>
-        league.teams.map((team) => ({ leagueKey: league.key, team })),
-      )
-      .find(({ team }) => team.isDefault);
-    const requestedDefaultTeam = requestedDefault
-      ? teams.find(
-          (team) =>
-            team.external_team_key === requestedDefault.team.key &&
-            team.external_league_id ===
-              leagueIdByKey.get(requestedDefault.leagueKey),
-        )
-      : null;
-    const defaultTeamId =
-      requestedDefaultTeam?.id ??
-      existingPreferences?.default_external_team_id ??
-      teams[0]?.id ??
-      null;
-    const defaultLeagueId =
-      requestedDefaultTeam?.external_league_id ??
-      existingPreferences?.default_external_league_id ??
-      teams[0]?.external_league_id ??
-      leagues[0]?.id ??
-      null;
-    const activeContext = requestedDefaultTeam
-      ? {
-          provider: providerConfig.provider,
-          external_league_id: requestedDefaultTeam.external_league_id,
-          external_team_id: requestedDefaultTeam.id,
-        }
-      : existingPreferences?.active_context &&
-          Object.keys(existingPreferences.active_context as object).length > 0
-        ? existingPreferences.active_context
-        : defaultTeamId
-          ? {
-              provider: providerConfig.provider,
-              external_league_id: defaultLeagueId,
-              external_team_id: defaultTeamId,
-            }
-          : {};
-
-    const { error: preferenceError } = await client
-      .from("user_provider_preferences")
-      .upsert(
-        {
-          user_id: userId,
-          provider: providerConfig.provider,
-          connected_account_id: account.id,
-          default_external_league_id: defaultLeagueId,
-          default_external_team_id: defaultTeamId,
-          refresh_on_login: false,
-          active_context: activeContext,
-          updated_at: importedAt,
-        },
-        { onConflict: "user_id,provider" },
-      );
-    if (preferenceError) {
-      throw new Error(
-        `Failed to persist ${providerConfig.displayName} defaults: ${preferenceError.message}`,
-      );
-    }
+    const defaultTeamId = existingPreferences?.default_external_team_id ?? null;
 
     const finishedAt = now();
     const cooldownUntil = new Date(
@@ -843,15 +880,37 @@ export async function runManualProviderImport({
       );
     }
 
+    const existingAccountMetadata = isRecord(account.metadata)
+      ? account.metadata
+      : {};
+    const integrationModes = Array.from(
+      new Set([
+        ...(Array.isArray(existingAccountMetadata.integration_modes)
+          ? existingAccountMetadata.integration_modes.filter(
+              (value): value is string => typeof value === "string",
+            )
+          : []),
+        ...(typeof existingAccountMetadata.integration_mode === "string"
+          ? [existingAccountMetadata.integration_mode]
+          : []),
+        "manual_import",
+      ]),
+    );
     const { error: accountError } = await client
       .from("connected_accounts")
       .update({
-        account_label: payload.accountLabel,
+        account_label:
+          existingAccountMetadata.api_linked === true
+            ? account.account_label
+            : payload.accountLabel,
         status: "connected",
         last_synced_at: finishedAt.toISOString(),
         metadata: {
-          integration_mode: "manual_import",
-          credentials_stored: false,
+          ...existingAccountMetadata,
+          integration_modes: integrationModes,
+          credentials_stored:
+            existingAccountMetadata.credentials_stored === true,
+          manual_imported_at: finishedAt.toISOString(),
           league_count: leagues.length,
           team_count: teams.length,
         },
@@ -870,6 +929,7 @@ export async function runManualProviderImport({
       teamCount: teams.length,
       cooldownUntil,
       defaultTeamId,
+      accountId: account.id,
     };
   } catch (error) {
     const finishedAt = now();
@@ -910,11 +970,13 @@ export async function runFantraxManualImport(args: {
   userId: string;
   content: unknown;
   format?: string | null;
+  targetConnectedAccountId?: string | null;
   client?: SupabaseClient<Database>;
   now?: () => Date;
 }) {
   return runManualProviderImport({
     ...args,
+    requireTargetWhenAccountsExist: true,
     providerConfig: FANTRAX_MANUAL_IMPORT_CONFIG,
     parseImport: parseFantraxImport,
   });
@@ -1059,14 +1121,12 @@ export async function getManualProviderImportState({
   providerConfig: ManualImportProviderConfig;
   client?: SupabaseClient<Database>;
 }) {
-  const { data: account, error: accountError } = await client
+  const { data: accounts, error: accountError } = await client
     .from("connected_accounts")
     .select("*")
     .eq("user_id", userId)
     .eq("provider", providerConfig.provider)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .order("created_at", { ascending: true });
   if (accountError) throw accountError;
 
   const [leagues, teams] = await Promise.all([
@@ -1111,7 +1171,14 @@ export async function getManualProviderImportState({
   if (preferenceError) throw preferenceError;
   if (runError) throw runError;
 
-  return { account, leagues, teams, preferences, latestRun };
+  return {
+    account: accounts?.[0] ?? null,
+    accounts: accounts ?? [],
+    leagues,
+    teams,
+    preferences,
+    latestRun,
+  };
 }
 
 export async function getFantraxImportState(args: {

@@ -139,13 +139,35 @@ export async function loadDraftRankingEntries(
   const { data, error } = await serviceRoleClient
     .from("draft_ranking_entries")
     .select(
-      "fhfh_player_id,order_key,seed_source,seed_adp,seed_rank,tier,notes,updated_at,player:fhfh_player_identities!draft_ranking_entries_fhfh_player_id_fkey(canonical_name,canonical_position,current_organization_name,headshot_url,lifecycle_status)",
+      "fhfh_player_id,order_key,seed_source,seed_adp,seed_rank,tier,notes,updated_at,player:fhfh_player_identities!draft_ranking_entries_fhfh_player_id_fkey(canonical_name,canonical_position,current_organization_name,headshot_url,lifecycle_status,nhl_player_id)",
     )
     .eq("ranking_id", rankingId)
     .eq("user_id", userId)
     .order("order_key", { ascending: true });
 
   if (error) throw error;
+
+  const entries = data ?? [];
+  const yahooPlayerIdByFhfhId = new Map<number, number>();
+  const playerIds = entries.map((entry) => entry.fhfh_player_id);
+  for (let offset = 0; offset < playerIds.length; offset += 400) {
+    const { data: mappings, error: mappingError } = await serviceRoleClient
+      .from("fhfh_player_external_identities")
+      .select("fhfh_player_id,external_player_id,is_primary")
+      .eq("provider", "yahoo")
+      .eq("verification_status", "verified")
+      .like("external_player_id", "477.p.%")
+      .in("fhfh_player_id", playerIds.slice(offset, offset + 400))
+      .order("is_primary", { ascending: false });
+
+    if (mappingError) throw mappingError;
+    for (const mapping of mappings ?? []) {
+      if (yahooPlayerIdByFhfhId.has(mapping.fhfh_player_id)) continue;
+      const match = /^477\.p\.(\d+)$/.exec(mapping.external_player_id);
+      if (!match) continue;
+      yahooPlayerIdByFhfhId.set(mapping.fhfh_player_id, Number(match[1]));
+    }
+  }
 
   return {
     ranking: {
@@ -154,8 +176,11 @@ export async function loadDraftRankingEntries(
       targetSeasonId: ranking.target_season_id,
       status: ranking.status,
     },
-    entries: (data ?? []).map((entry, index) => ({
+    entries: entries.map((entry, index) => ({
       playerId: entry.fhfh_player_id,
+      nhlPlayerId: entry.player?.nhl_player_id ?? null,
+      yahooPlayerId:
+        yahooPlayerIdByFhfhId.get(entry.fhfh_player_id) ?? null,
       rank: index + 1,
       orderKey: entry.order_key,
       seedSource: entry.seed_source,

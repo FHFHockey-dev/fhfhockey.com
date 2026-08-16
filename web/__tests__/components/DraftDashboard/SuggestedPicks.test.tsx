@@ -117,4 +117,34 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     render(<SuggestedPicks players={[]} currentPick={1} teamCount={1} />);
     expect(screen.getByText("No matching players")).toBeTruthy();
   });
+
+  it("shows personal rank without changing it and locks Yahoo-mode drafting", () => {
+    const onDraftPlayer = vi.fn();
+    render(
+      <SuggestedPicks
+        players={[player(1, "Ranked Player", "C", 100)]}
+        currentPick={1}
+        teamCount={1}
+        onDraftPlayer={onDraftPlayer}
+        canDraft={false}
+        personalRankByPlayerId={{ "1": 4 }}
+      />
+    );
+
+    expect(screen.getAllByText("My Rank")).toHaveLength(2);
+    expect(screen.getByText("4")).toBeTruthy();
+    expect(
+      Array.from(
+        screen.getByRole<HTMLSelectElement>("combobox", {
+          name: "Sort suggested picks"
+        }).options
+      ).map((option) => option.value)
+    ).toContain("myRank");
+    const draftButton = screen.getByRole("button", {
+      name: "Draft Ranked Player"
+    });
+    expect((draftButton as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(draftButton);
+    expect(onDraftPlayer).not.toHaveBeenCalled();
+  });
 });

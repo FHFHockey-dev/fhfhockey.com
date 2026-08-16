@@ -62,7 +62,7 @@ describe("PatreonConnectionPanel", () => {
 
     render(<PatreonConnectionPanel />);
     expect(
-      await screen.findByText(/Patreon OAuth is not configured/),
+      await screen.findByText("Patreon connections are unavailable right now."),
     ).toBeTruthy();
     expect(
       (
@@ -86,12 +86,10 @@ describe("PatreonConnectionPanel", () => {
 
     render(<PatreonConnectionPanel />);
     expect(
-      await screen.findByText(/Generic supporter eligibility: active/),
+      await screen.findByText(/Supporter access: active/),
     ).toBeTruthy();
-    expect(screen.getByText(/Entitled tier: Power Play/)).toBeTruthy();
-    expect(
-      screen.getByText(/no concrete paid feature is granted/i),
-    ).toBeTruthy();
+    expect(screen.getByText(/Tier: Power Play/)).toBeTruthy();
+    expect(screen.queryByText(/no concrete paid feature is granted/i)).toBeNull();
 
     fireEvent.click(
       screen.getByRole("button", { name: "Refresh Patreon Membership" }),

@@ -1,0 +1,15 @@
+(version 1)
+
+; Audit command containment. Read access remains available to the copied
+; runtime and system libraries. Writes are limited to explicitly parameterized
+; disposable roots, and network access is limited to local IPC/loopback so the
+; same profile can host a local browser target without contacting remote data.
+(allow default)
+(deny file-write*)
+(allow file-write*
+  (subpath (param "WRITE_ROOT"))
+  (subpath (param "TMP_ROOT"))
+  (literal "/dev/null")
+  (literal "/dev/tty"))
+(deny network*)
+(allow network* (local ip))

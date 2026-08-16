@@ -1,0 +1,13 @@
+{
+  "audit_run_id": "REPO-AUDIT-2026-08-09-FROZEN-36536C3",
+  "overlap": 0,
+  "owners": {
+    "documentation-operations": 847,
+    "frontend-cms": 924,
+    "platform-data": 287,
+    "web-backend": 1522
+  },
+  "schema_version": 1,
+  "total": 3580,
+  "unassigned": 0
+}

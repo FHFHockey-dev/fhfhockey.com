@@ -67,6 +67,7 @@ interface ProjectionsTableProps {
   >;
   dataNotices?: string[];
   emptyStateMessage?: string;
+  personalRankByPlayerId?: Readonly<Record<string, number>>;
 }
 
 type SortableField =
@@ -76,6 +77,7 @@ type SortableField =
   | "vorp"
   | "vona"
   | "vbd"
+  | "myRank"
   | "risk";
 
 const DEFAULT_SKATER_STAT_KEYS = [
@@ -123,7 +125,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   inclusionDiagnostics,
   dataNotices = [],
   emptyStateMessage = "No players found matching your filters.",
+  personalRankByPlayerId = {},
 }) => {
+  const hasPersonalRanks = Object.keys(personalRankByPlayerId).length > 0;
   const [sortField, setSortField] = useState<SortableField>("yahooAvgPick");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [positionFilter, setPositionFilter] = useState<string>("ALL");
@@ -491,6 +495,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         "vorp",
         "vona",
         "vbd",
+        "myRank",
         "risk",
       ];
       const savedSortField = window.localStorage.getItem(
@@ -760,6 +765,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         const bM = vorpMap.get(String(b.playerId));
         aValue = needWeightEnabled ? (aM?.vbdAdj ?? 0) : (aM?.vbd ?? 0);
         bValue = needWeightEnabled ? (bM?.vbdAdj ?? 0) : (bM?.vbd ?? 0);
+      } else if (sortField === "myRank") {
+        aValue = personalRankByPlayerId[String(a.playerId)];
+        bValue = personalRankByPlayerId[String(b.playerId)];
       } else if (sortField === "risk") {
         aValue = riskMap.get(String(a.playerId));
         bValue = riskMap.get(String(b.playerId));
@@ -806,6 +814,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     favoriteIds,
     getDisplayPos,
     forwardGrouping,
+    personalRankByPlayerId,
   ]);
 
   // Helpers for percentile calculations
@@ -969,7 +978,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   };
 
   const handleDraftClick = (playerId: number) => {
-    // Always allow drafting; assignment goes to currentTurn in parent
+    if (!canDraft) return;
     onDraftPlayer(String(playerId));
   };
 
@@ -1502,6 +1511,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
               </>
             )}
             <col className={styles.colAdp} />
+            {hasPersonalRanks && <col className={styles.colAdp} />}
             <col className={styles.colNextPick} />
             <col className={styles.colAction} />
             <col className={styles.colCompare} />
@@ -1632,6 +1642,19 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 {sortField === "yahooAvgPick" &&
                   (sortDirection === "asc" ? "↑" : "↓")}
               </th>
+              {hasPersonalRanks && (
+                <th
+                  onClick={() => handleSort("myRank")}
+                  className={`${styles.sortableHeader} ${styles.colAdp}`}
+                  aria-sort={getAriaSort("myRank")}
+                  scope="col"
+                  title="Your immutable personal draft-board rank"
+                >
+                  My Rank{" "}
+                  {sortField === "myRank" &&
+                    (sortDirection === "asc" ? "↑" : "↓")}
+                </th>
+              )}
               <th
                 onClick={() => handleSort("risk")}
                 className={`${styles.sortableHeader} ${styles.colNextPick}`}
@@ -1712,6 +1735,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   1 + // team
                   (statColumnsMode ? statColumns.length : metricColumnsCount) +
                   1 + // ADP
+                  (hasPersonalRanks ? 1 : 0) + // personal board rank
                   1 + // Next Pick
                   1 + // Action
                   1; // Compare
@@ -1871,6 +1895,14 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         ? player.yahooAvgPick.toFixed(1)
                         : "-"}
                     </td>
+                    {hasPersonalRanks && (
+                      <td
+                        className={styles.adp}
+                        title="Your immutable personal draft-board rank"
+                      >
+                        {personalRankByPlayerId[key] ?? "-"}
+                      </td>
+                    )}
                     <td
                       className={`${styles.nextPick} ${riskClass ? riskClass : ""}`}
                       title={
@@ -1885,9 +1917,11 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       <button
                         className={styles.draftButton}
                         onClick={() => handleDraftClick(player.playerId)}
-                        disabled={draftedIdSet.has(key)}
+                        disabled={!canDraft || draftedIdSet.has(key)}
                         title={
-                          draftedIdSet.has(key)
+                          !canDraft
+                            ? "Manual drafting is locked while Yahoo sync is authoritative"
+                            : draftedIdSet.has(key)
                             ? "Player already drafted"
                             : "Draft this player"
                         }

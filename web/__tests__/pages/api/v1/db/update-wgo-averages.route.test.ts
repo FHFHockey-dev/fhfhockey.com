@@ -14,7 +14,9 @@ vi.mock("../../../../../lib/supabase/server", () => ({
   }
 }));
 
-import handler from "../../../../../pages/api/v1/db/update-wgo-averages";
+import handler, {
+  selectCompletedWgoAverageSeasons,
+} from "../../../../../pages/api/v1/db/update-wgo-averages";
 
 function createMockRes() {
   return {
@@ -81,5 +83,20 @@ describe("/api/v1/db/update-wgo-averages route", () => {
       source: "supabase_or_proxy",
       htmlLike: true
     });
+  });
+
+  it("includes the latest completed season and excludes an active season", () => {
+    expect(
+      selectCompletedWgoAverageSeasons(
+        [20232024, 20242025, 20252026, 20262027],
+        [
+          { id: 20232024, regularSeasonEndDate: "2024-04-18" },
+          { id: 20242025, regularSeasonEndDate: "2025-04-17" },
+          { id: 20252026, regularSeasonEndDate: "2026-04-16" },
+          { id: 20262027, regularSeasonEndDate: "2027-04-18" },
+        ],
+        "2026-08-13",
+      ),
+    ).toEqual([20252026, 20242025, 20232024]);
   });
 });

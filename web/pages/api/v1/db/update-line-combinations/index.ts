@@ -104,6 +104,26 @@ function formatFailureSummary(
     .join("; ");
 }
 
+async function listGameTeamRows(args: {
+  supabase: SupabaseClient;
+  table: "teamGameStats" | "lineCombinations";
+  gameIds: number[];
+}): Promise<Array<{ gameId: number; teamId: number }>> {
+  const rows: Array<{ gameId: number; teamId: number }> = [];
+
+  for (let index = 0; index < args.gameIds.length; index += 400) {
+    const gameIds = args.gameIds.slice(index, index + 400);
+    const { data } = await args.supabase
+      .from(args.table)
+      .select("gameId, teamId")
+      .in("gameId", gameIds)
+      .throwOnError();
+    rows.push(...((data ?? []) as Array<{ gameId: number; teamId: number }>));
+  }
+
+  return rows;
+}
+
 async function listHistoricalGamesInRange(args: {
   supabase: SupabaseClient;
   startDate: string;
@@ -235,29 +255,47 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
       });
     }
 
-    const candidateIds = recentGames.map((game) => game.id);
-    const { data: existingLineCombos } = await supabase
-      .from("lineCombinations")
-      .select("gameId")
-      .in("gameId", candidateIds)
-      .throwOnError();
-
-    const comboCounts = new Map<number, number>();
-    existingLineCombos?.forEach((combo) => {
-      comboCounts.set(combo.gameId, (comboCounts.get(combo.gameId) ?? 0) + 1);
+    const scheduledCandidateIds = recentGames.map((game) => game.id);
+    const teamStatRows = await listGameTeamRows({
+      supabase,
+      table: "teamGameStats",
+      gameIds: scheduledCandidateIds
+    });
+    const completedTeamsByGame = new Map<number, Set<number>>();
+    teamStatRows.forEach((row) => {
+      if (!completedTeamsByGame.has(row.gameId)) {
+        completedTeamsByGame.set(row.gameId, new Set());
+      }
+      completedTeamsByGame.get(row.gameId)?.add(row.teamId);
+    });
+    const candidateIds = scheduledCandidateIds.filter(
+      (gameId) => (completedTeamsByGame.get(gameId)?.size ?? 0) >= 2
+    );
+    const existingLineCombos = await listGameTeamRows({
+      supabase,
+      table: "lineCombinations",
+      gameIds: candidateIds
     });
 
-    const repairTargets = candidateIds
-      .filter((id) => (comboCounts.get(id) ?? 0) < 2)
-      .slice(0, count)
+    const comboTeamsByGame = new Map<number, Set<number>>();
+    existingLineCombos.forEach((combo) => {
+      if (!comboTeamsByGame.has(combo.gameId)) {
+        comboTeamsByGame.set(combo.gameId, new Set());
+      }
+      comboTeamsByGame.get(combo.gameId)?.add(combo.teamId);
+    });
+
+    const repairCandidates = candidateIds
+      .filter((id) => (comboTeamsByGame.get(id)?.size ?? 0) < 2)
       .map((id) => ({ id }));
 
-    if (repairTargets.length === 0) {
+    if (repairCandidates.length === 0) {
       return res.json({
         repairMode,
         message: "Recent current-season line combination data are up to date.",
         success: true,
         candidateWindow,
+        eligibleGames: candidateIds.length,
         requestedScope: {
           count,
           seasonId: currentSeason.seasonId
@@ -265,16 +303,33 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
       });
     }
 
-    const results = await Promise.allSettled(
-      repairTargets.map((item) => updateLineCombos(item.id, supabase))
+    const attemptLimit = Math.min(
+      repairCandidates.length,
+      Math.max(count * 3, count + 10)
     );
-    const {
-      succeededGameIds: updatedGameIds,
-      skippedUnavailableFeeds,
-      failures
-    } = summarizeLineComboFailures(results, repairTargets, {
-      allowRecentUnavailableStates: true
-    });
+    const updatedGameIds: number[] = [];
+    const skippedUnavailableFeeds: Array<{ gameId: number; message: string }> = [];
+    const failures: Array<{ gameId: number; message: string }> = [];
+    let attemptedCount = 0;
+
+    while (updatedGameIds.length < count && attemptedCount < attemptLimit) {
+      const remainingSuccesses = count - updatedGameIds.length;
+      const batch = repairCandidates.slice(
+        attemptedCount,
+        Math.min(attemptedCount + remainingSuccesses, attemptLimit)
+      );
+      attemptedCount += batch.length;
+
+      const results = await Promise.allSettled(
+        batch.map((item) => updateLineCombos(item.id, supabase))
+      );
+      const summary = summarizeLineComboFailures(results, batch, {
+        allowRecentUnavailableStates: true
+      });
+      updatedGameIds.push(...summary.succeededGameIds);
+      skippedUnavailableFeeds.push(...summary.skippedUnavailableFeeds);
+      failures.push(...summary.failures);
+    }
 
     failures.forEach((item) => console.error(item.message));
 
@@ -283,19 +338,21 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
         success: true,
         repairMode,
         candidateWindow,
+        eligibleGames: candidateIds.length,
         status: "skipped_external_feed_unavailable",
         requestedScope: {
           count,
           seasonId: currentSeason.seasonId
         },
         processed: updatedGameIds.length,
+        attempted: attemptedCount,
         skipped: skippedUnavailableFeeds.length,
         skippedGameIds: skippedUnavailableFeeds
           .slice(0, 20)
           .map((failure) => failure.gameId),
         message:
           `Updated line combinations for ${updatedGameIds.length} game(s). ` +
-          `Skipped ${skippedUnavailableFeeds.length} game(s) because NHL Gamecenter feeds returned 404.`
+          `Skipped ${skippedUnavailableFeeds.length} game(s) because NHL Gamecenter feeds were unavailable.`
       });
     }
 
@@ -304,11 +361,13 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
         success: false,
         repairMode,
         candidateWindow,
+        eligibleGames: candidateIds.length,
         requestedScope: {
           count,
           seasonId: currentSeason.seasonId
         },
         processed: updatedGameIds.length,
+        attempted: attemptedCount,
         skipped: skippedUnavailableFeeds.length,
         skippedGameIds: skippedUnavailableFeeds
           .slice(0, 20)
@@ -325,10 +384,14 @@ export default withCronJobAudit(adminOnly(async (req, res) => {
       success: true,
       repairMode,
       candidateWindow,
+      eligibleGames: candidateIds.length,
       requestedScope: {
         count,
         seasonId: currentSeason.seasonId
       },
+      processed: updatedGameIds.length,
+      attempted: attemptedCount,
+      skipped: skippedUnavailableFeeds.length,
       message: `Successfully updated the line combinations for these games [${updatedGameIds}]`
     });
   } catch (e: any) {

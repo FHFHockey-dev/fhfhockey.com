@@ -7,7 +7,7 @@
 // implement fantasy points scoring, real and projected
 // implement table filtering => Add/remove stat categories
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import supabase from "lib/supabase";
 import { NextPage } from "next";
 import Head from "next/head";
@@ -40,6 +40,16 @@ import useCurrentSeason from "hooks/useCurrentSeason"; // Import the hook
 import styles from "styles/ProjectionsPage.module.scss";
 import LegacySurfaceNotice from "components/LegacySurfaceNotice/LegacySurfaceNotice";
 import { assignGlobalRanks, injectRanks } from "utils/projectionsRanking";
+import { useAuth } from "contexts/AuthProviderContext";
+import EspnLeagueSettingsPanel, {
+  type EspnLeagueSelection,
+} from "components/integrations/EspnLeagueSettingsPanel";
+import type { EspnConnectionLeague } from "lib/integrations/espn/contracts";
+import {
+  loadEspnScoringOverride,
+  saveEspnScoringOverride,
+} from "lib/integrations/espn/sessionOverride";
+import { mapUserSettingsRowToLeagueSettings } from "lib/user-settings/mappers";
 
 // Import the new chart component
 import RoundPerformanceChart from "components/Projections/RoundPerformanceBoxPlotChart";
@@ -523,6 +533,7 @@ const ExpandedPlayerRowChartContext = React.createContext<{
 
 // --- Main Page Component ---
 const ProjectionsPage: NextPage = () => {
+  const { user } = useAuth();
   const currentSeason = useCurrentSeason();
   const currentSeasonId = currentSeason?.seasonId;
   const [activePlayerType, setActivePlayerType] = useState<
@@ -541,6 +552,50 @@ const ProjectionsPage: NextPage = () => {
   const [goaliePointValues, setGoaliePointValues] = useState<
     Record<string, number>
   >(() => getDefaultFantasyPointsConfig("goalie"));
+  const [scoringSettingsReady, setScoringSettingsReady] = useState(false);
+  const hasLocalScoringRef = useRef(false);
+  const manualScoringEditRef = useRef(false);
+  const accountDefaultsUserRef = useRef<string | null>(null);
+  const activeEspnOverrideRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const override = loadEspnScoringOverride(
+      window.sessionStorage,
+      "legacy-projections",
+    );
+    if (override?.settings.leagueType === "points") {
+      setSkaterPointValues(override.settings.skaterScoringCategories);
+      setGoaliePointValues(override.settings.goalieScoringCategories);
+      activeEspnOverrideRef.current = override.externalLeagueId;
+      hasLocalScoringRef.current = true;
+    }
+    setScoringSettingsReady(true);
+  }, []);
+
+  useEffect(() => {
+    const userId = user?.id ?? null;
+    if (!scoringSettingsReady || !userId || hasLocalScoringRef.current) return;
+    if (accountDefaultsUserRef.current === userId) return;
+    accountDefaultsUserRef.current = userId;
+    let active = true;
+    void supabase
+      .from("user_settings")
+      .select(
+        "league_type, scoring_categories, goalie_scoring_categories, category_weights, roster_config, team_count, draft_order_type, ui_preferences, active_context",
+      )
+      .eq("user_id", userId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!active || error || !data || hasLocalScoringRef.current) return;
+        const defaults = mapUserSettingsRowToLeagueSettings(data);
+        if (defaults.leagueType !== "points") return;
+        setSkaterPointValues(defaults.scoringCategories);
+        setGoaliePointValues(defaults.goalieScoringCategories);
+      });
+    return () => {
+      active = false;
+    };
+  }, [scoringSettingsReady, user?.id]);
 
   const [showPerGameFantasyPoints, setShowPerGameFantasyPoints] =
     useState<boolean>(false);
@@ -1282,6 +1337,8 @@ const ProjectionsPage: NextPage = () => {
 
   const handleFantasyPointSettingChange = useCallback(
     (statKey: string, value: number) => {
+      hasLocalScoringRef.current = true;
+      manualScoringEditRef.current = true;
       const typeToUpdate = activePlayerType === "goalie" ? "goalie" : "skater";
       const numericValue = isNaN(value) ? 0 : value;
 
@@ -1298,6 +1355,50 @@ const ProjectionsPage: NextPage = () => {
       }
     },
     [activePlayerType, setSkaterPointValues, setGoaliePointValues]
+  );
+
+  const confirmEspnLeague = useCallback(
+    (league: EspnConnectionLeague, selection: EspnLeagueSelection) => {
+      const replacesActiveWork =
+        manualScoringEditRef.current ||
+        (activeEspnOverrideRef.current != null &&
+          activeEspnOverrideRef.current !== selection.externalLeagueId);
+      return (
+        !replacesActiveWork ||
+        window.confirm(
+          `Replace the active ESPN scoring with ${league.name} (${league.seasonKey})?`,
+        )
+      );
+    },
+    [],
+  );
+
+  const applyEspnLeague = useCallback(
+    (
+      league: EspnConnectionLeague,
+      teamId: string | null,
+      selection: EspnLeagueSelection,
+    ) => {
+      if (league.settings.leagueType !== "points") return;
+      hasLocalScoringRef.current = true;
+      manualScoringEditRef.current = false;
+      activeEspnOverrideRef.current = league.id;
+      setSkaterPointValues(league.settings.skaterScoringCategories);
+      setGoaliePointValues(league.settings.goalieScoringCategories);
+      try {
+        saveEspnScoringOverride(window.sessionStorage, "legacy-projections", {
+          version: 1,
+          namespace: selection.namespace,
+          externalLeagueId: league.id,
+          externalTeamId: teamId,
+          leagueName: league.name,
+          settings: league.settings,
+        });
+      } catch {
+        // The in-memory override still applies when browser storage is unavailable.
+      }
+    },
+    [],
   );
 
   // Transform currentSeasonId for the provider
@@ -1345,6 +1446,21 @@ const ProjectionsPage: NextPage = () => {
             <PlayerTypeTabs
               activeTab={activePlayerType}
               onTabChange={handlePlayerTypeChange}
+            />
+
+            <EspnLeagueSettingsPanel
+              enabled={Boolean(user?.id)}
+              disabled={false}
+              contextLabel="legacy projection session"
+              onApply={applyEspnLeague}
+              onConfirmApply={confirmEspnLeague}
+              supportsLeague={(league) => ({
+                supported: league.settings.leagueType === "points",
+                reason:
+                  league.settings.leagueType === "points"
+                    ? undefined
+                    : "Legacy Projections supports point scoring only; use Fantasy Projections for category leagues.",
+              })}
             />
 
             {/* NEW: View Selector - Data Table vs Projection Analysis */}

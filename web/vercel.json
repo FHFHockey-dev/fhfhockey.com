@@ -8,6 +8,14 @@
   },
   "crons": [
     {
+      "path": "/api/internal/fantrax-sync",
+      "schedule": "17 * * * *"
+    },
+    {
+      "path": "/api/internal/espn-sync",
+      "schedule": "37 * * * *"
+    },
+    {
       "path": "/api/v1/db/run-rolling-forge-pipeline?mode=daily_incremental&includeDownstream=true&includeAccuracy=false&stopOnFailure=false",
       "schedule": "5 10 * * *"
     },

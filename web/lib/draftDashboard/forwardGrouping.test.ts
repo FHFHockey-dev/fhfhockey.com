@@ -70,6 +70,40 @@ describe("grouped forward contract", () => {
     expect(result.counts).toMatchObject({ FWD: 1, D: 1, G: 1, UTILITY: 1 });
   });
 
+  it("supports an exact generic-forward flex alongside split forward slots", () => {
+    const rosterConfig = {
+      C: 1,
+      LW: 0,
+      RW: 0,
+      FWD: 1,
+      D: 0,
+      G: 0,
+      utility: 0,
+      bench: 0
+    };
+    const eligibility = groupPlayerEligibility(["C"], "split", true);
+    expect(eligibility).toEqual(["C", "FWD"]);
+    const pools = buildPositionPools(
+      ["f1"],
+      new Map([["f1", 10]]),
+      new Map([["f1", eligibility]]),
+      "split",
+      rosterConfig
+    );
+    expect(pools.C).toEqual([{ id: "f1", value: 10 }]);
+    expect(pools.FWD).toEqual([{ id: "f1", value: 10 }]);
+
+    const allocation = allocateGroupedRosterSlots({
+      players: [
+        { id: "f1", eligibility: ["C"] },
+        { id: "f2", eligibility: ["C"] }
+      ],
+      rosterConfig,
+      grouping: "split"
+    });
+    expect(allocation.assignments).toEqual({ f1: "C", f2: "FWD" });
+  });
+
   it("persists only valid grouped-forward modes and safely defaults old values", () => {
     const values = new Map<string, string>();
     const storage = {

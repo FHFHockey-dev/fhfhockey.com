@@ -1,118 +1,192 @@
 @use "styles/vars" as v;
+@use "styles/_panel" as panel;
 
 .panel {
+  @include panel.panel-shell(
+    $radius: v.$radius-card,
+    $padding: v.$space-md,
+    $variant: flat,
+    $overflow: auto
+  );
   display: grid;
-  gap: 16px;
-  margin-top: 18px;
-  padding: 20px;
-  border: 1px solid rgba(v.$secondary-color, 0.34);
-  border-radius: 18px;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(v.$secondary-color, 0.08),
-      rgba(v.$primary-color, 0.08)
-    ),
-    rgba(v.$background-dark, 0.78);
+  align-content: start;
+  gap: v.$space-sm;
+  min-height: 0;
+  @include v.custom-scrollbar($width: 5px);
 }
 
 .header {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: v.$space-md;
+
+  h3,
+  p {
+    margin: 0;
+  }
 
   h3 {
-    margin: 0;
     color: v.$color-white;
     font-family: v.$font-family-accent;
-    font-size: 0.86rem;
-    letter-spacing: 0.1em;
+    font-size: v.$font-size-sm;
+    font-weight: v.$font-weight-bold;
+    letter-spacing: 0.07em;
+    line-height: 1.2;
     text-transform: uppercase;
   }
 
   p {
-    max-width: 720px;
-    margin: 8px 0 0;
-    color: rgba(v.$text-primary, 0.88);
-    line-height: 1.55;
+    margin-top: v.$space-xs;
+    color: v.$text-secondary;
+    font-size: v.$font-size-sm;
   }
 }
 
 .status,
 .defaultBadge {
-  align-self: flex-start;
-  padding: 7px 10px;
-  border: 1px solid rgba(v.$secondary-color, 0.34);
-  border-radius: 999px;
-  background: rgba(v.$secondary-color, 0.1);
-  color: v.$color-white;
-  font-family: v.$font-family-accent;
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 v.$space-sm;
+  border: 1px solid v.$primary-color;
+  border-radius: v.$radius-control;
+  background: rgba(v.$primary-color, v.$fill-opacity-subtle);
+  color: v.$text-primary;
+  font-size: v.$font-size-xxs;
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
-.form,
+.form {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.7fr) minmax(0, 1.3fr);
+  align-items: start;
+  gap: v.$space-sm v.$space-md;
+
+  > .field:first-of-type {
+    grid-column: 1;
+  }
+
+  > .field:nth-of-type(2) {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+  }
+}
+
 .field,
-.summary,
 .leagueGrid,
 .teamList {
   display: grid;
-  gap: 10px;
+  gap: v.$space-xs;
 }
 
 .field {
-  color: rgba(v.$text-primary, 0.9);
+  min-width: 0;
+  color: v.$text-primary;
 
   > span {
-    font-family: v.$font-family-accent;
-    font-size: 0.72rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-size: v.$font-size-xs;
+    font-weight: v.$font-weight-semibold;
   }
 
   input,
+  select,
   textarea {
     width: 100%;
-    padding: 12px;
-    border: 1px solid rgba(v.$border-secondary, 0.9);
-    border-radius: 12px;
-    background: rgba(v.$background-dark, 0.7);
+    border: v.$border-subtle;
+    border-radius: v.$radius-control;
+    background: v.$background-dark;
     color: v.$text-primary;
     font: inherit;
+
+    &:focus-visible {
+      border-color: v.$primary-color;
+      outline: none;
+      box-shadow: v.$focus-ring;
+    }
+  }
+
+  input {
+    min-height: v.$control-height-md;
+    padding: v.$space-xs v.$space-sm;
+  }
+
+  select {
+    min-height: v.$control-height-md;
+    padding: v.$space-xs v.$space-sm;
+  }
+
+  small {
+    color: v.$text-secondary;
+    font-size: v.$font-size-xs;
+    line-height: 1.4;
   }
 
   textarea {
+    min-height: 118px;
+    padding: v.$space-sm;
     resize: vertical;
   }
 }
 
-.or,
+.or {
+  display: none;
+}
+
+.formatHelp {
+  border: v.$border-default;
+  border-radius: v.$radius-control;
+  background: v.$background-dark;
+
+  summary {
+    padding: v.$space-sm;
+    color: v.$text-secondary;
+    cursor: pointer;
+    font-size: v.$font-size-xs;
+  }
+}
+
 .hint,
 .leagueMeta {
-  color: rgba(v.$text-primary, 0.68);
-  font-size: 0.82rem;
-  line-height: 1.5;
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  line-height: 1.35;
 }
 
 .hint {
-  margin: 0;
+  padding: 0 v.$space-sm v.$space-sm;
 }
 
 .primaryButton,
+.secondaryButton,
+.textButton,
+.teamActions button,
 .teamRow button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: fit-content;
-  min-height: 40px;
-  padding: 0 15px;
-  border: 1px solid rgba(v.$secondary-color, 0.65);
-  border-radius: 12px;
-  background: rgba(v.$secondary-color, 0.12);
-  color: v.$secondary-color;
-  font-family: v.$font-family-accent;
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  min-height: v.$control-height-md;
+  padding: 0 v.$space-md;
+  border: 2px solid v.$primary-color;
+  border-radius: v.$radius-control;
+  background: rgba(v.$primary-color, v.$fill-opacity);
+  color: v.$color-white;
   cursor: pointer;
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-transform: uppercase;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
 
   &:disabled {
     cursor: not-allowed;
@@ -120,34 +194,58 @@
   }
 }
 
+.secondaryButton,
+.teamActions button {
+  border-width: 1px;
+  background: v.$background-medium;
+}
+
+.textButton {
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: v.$text-secondary;
+}
+
+.dangerButton {
+  border-color: v.$danger-color !important;
+  background: rgba(v.$danger-color, v.$fill-opacity-subtle) !important;
+}
+
 .error,
 .success,
 .info,
 .empty,
 .summary {
-  padding: 12px 14px;
-  border-radius: 12px;
-  line-height: 1.5;
+  padding: v.$space-sm;
+  border-radius: v.$radius-control;
+  font-size: v.$font-size-xs;
+  line-height: 1.35;
 }
 
 .error {
-  border: 1px solid rgba(v.$danger-color, 0.45);
-  background: rgba(v.$danger-color-dark, 0.4);
-  color: #ffd9e1;
+  border: 1px solid v.$danger-color;
+  background: rgba(v.$danger-color, v.$fill-opacity-subtle);
 }
 
 .success {
-  border: 1px solid rgba(v.$success-color, 0.32);
-  background: rgba(v.$success-color, 0.1);
-  color: #d7ffee;
+  border: 1px solid v.$success-color;
+  background: rgba(v.$success-color, v.$fill-opacity-subtle);
 }
 
 .info,
 .empty,
 .summary {
-  border: 1px solid rgba(v.$border-secondary, 0.8);
-  background: rgba(v.$background-dark, 0.54);
-  color: rgba(v.$text-primary, 0.9);
+  border: v.$border-default;
+  background: v.$background-dark;
+  color: v.$text-primary;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: v.$space-sm;
 }
 
 .leagueGrid {
@@ -155,13 +253,13 @@
 }
 
 .leagueCard {
-  padding: 14px;
-  border: 1px solid rgba(v.$border-secondary, 0.82);
-  border-radius: 14px;
-  background: rgba(v.$background-dark, 0.58);
+  padding: v.$space-sm;
+  border: v.$border-subtle;
+  border-radius: v.$radius-card;
+  background: v.$background-medium;
 
   h4 {
-    margin: 0 0 5px;
+    margin: 0 0 v.$space-xs;
     color: v.$color-white;
   }
 }
@@ -170,34 +268,210 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(v.$border-secondary, 0.5);
+  gap: v.$space-sm;
+  padding-top: v.$space-sm;
+  border-top: v.$border-default;
 }
 
 .teamActions {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
+  gap: v.$space-xs;
 }
 
 .teamRow button {
-  min-height: 34px;
-  padding: 0 10px;
+  min-height: v.$control-height-sm;
+  padding-inline: v.$space-sm;
+  border-width: 1px;
 }
 
 .defaultBadge {
-  border-color: rgba(v.$success-color, 0.32);
-  background: rgba(v.$success-color, 0.1);
-  color: #d7ffee;
+  border-color: v.$success-color;
+  background: rgba(v.$success-color, v.$fill-opacity-subtle);
 }
 
-@media (max-width: 560px) {
+.changedBadge {
+  @extend .defaultBadge;
+  border-color: v.$warning-color;
+  background: rgba(v.$warning-color, v.$fill-opacity-subtle);
+}
+
+.linkForm,
+.accountGrid,
+.accountCard,
+.linkedLeague,
+.leaguePicker,
+.mappingDetails,
+.warningList,
+.advanced {
+  display: grid;
+  gap: v.$space-sm;
+}
+
+.linkForm,
+.accountCard {
+  padding: v.$space-md;
+  border: v.$border-subtle;
+  border-radius: v.$radius-card;
+  background: v.$background-dark;
+}
+
+.formSectionHeader,
+.cardHeader,
+.badgeRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: v.$space-sm;
+}
+
+.badgeRow {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.leaguePicker {
+  min-width: 0;
+  margin: 0;
+  padding: v.$space-sm;
+  border: v.$border-default;
+  border-radius: v.$radius-control;
+}
+
+.checkboxRow,
+.consentRow {
+  display: flex;
+  align-items: flex-start;
+  gap: v.$space-sm;
+  color: v.$text-primary;
+  font-size: v.$font-size-xs;
+
+  input {
+    flex: 0 0 auto;
+    margin-top: 0.15rem;
+  }
+
+  span {
+    display: grid;
+    gap: 2px;
+  }
+
+  small {
+    color: v.$text-secondary;
+  }
+}
+
+.mappingDetails {
+  padding: v.$space-sm;
+  border: v.$border-default;
+  border-radius: v.$radius-control;
+  background: v.$background-medium;
+
+  summary {
+    color: v.$text-primary;
+    cursor: pointer;
+    font-size: v.$font-size-xs;
+    font-weight: v.$font-weight-bold;
+  }
+}
+
+.mappingGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: v.$space-sm;
+  margin: 0;
+
+  div {
+    min-width: 0;
+  }
+
+  dt {
+    color: v.$text-secondary;
+    font-size: v.$font-size-xxs;
+    font-weight: v.$font-weight-bold;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: v.$space-xs 0 0;
+    overflow-wrap: anywhere;
+    color: v.$text-primary;
+    font-size: v.$font-size-xs;
+  }
+}
+
+.warningList {
+  padding: v.$space-sm;
+  border: 1px solid v.$warning-color;
+  border-radius: v.$radius-control;
+  background: rgba(v.$warning-color, v.$fill-opacity-subtle);
+  color: v.$text-primary;
+  font-size: v.$font-size-xs;
+
+  ul {
+    margin: 0;
+    padding-left: v.$space-md;
+  }
+}
+
+.mappingSuccess {
+  margin: 0;
+  color: v.$success-color;
+  font-size: v.$font-size-xs;
+}
+
+.accountGrid {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.accountCard h4 {
+  margin: 0;
+  color: v.$color-white;
+}
+
+.linkedLeague {
+  padding-top: v.$space-sm;
+  border-top: v.$border-default;
+}
+
+.advanced {
+  border: v.$border-default;
+  border-radius: v.$radius-card;
+
+  > summary {
+    padding: v.$space-sm;
+    color: v.$text-primary;
+    cursor: pointer;
+    font-size: v.$font-size-xs;
+    font-weight: v.$font-weight-bold;
+  }
+
+  > .panel {
+    border: 0;
+  }
+}
+
+@media (max-width: 720px) {
   .header,
-  .teamRow {
+  .teamRow,
+  .cardHeader,
+  .formSectionHeader {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .form,
+  .summary,
+  .accountGrid {
+    grid-template-columns: 1fr;
+
+    > .field:first-of-type,
+    > .field:nth-of-type(2) {
+      grid-column: 1;
+      grid-row: auto;
+    }
   }
 
   .teamActions {
@@ -205,6 +479,8 @@
   }
 
   .primaryButton,
+  .secondaryButton,
+  .teamActions button,
   .teamRow button {
     width: 100%;
   }

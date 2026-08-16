@@ -1,0 +1,33 @@
+{
+  "transactions": [
+    {
+      "id": "tx-2",
+      "type": "ROSTER",
+      "status": "EXECUTED",
+      "teamId": 1,
+      "proposedDate": 1767312000000,
+      "scoringPeriodId": 2,
+      "items": [{ "type": "ADD", "playerId": 9002, "toTeamId": 1, "toLineupSlotId": 7 }]
+    },
+    {
+      "id": "tx-1",
+      "type": "WAIVER",
+      "status": "EXECUTED",
+      "teamId": 1,
+      "proposedDate": 1767225600000,
+      "scoringPeriodId": 1,
+      "bidAmount": 3,
+      "items": [{ "type": "ADD", "playerId": 9001, "toTeamId": 1, "isKeeper": false }]
+    },
+    {
+      "id": "tx-1",
+      "type": "WAIVER",
+      "status": "EXECUTED",
+      "teamId": 1,
+      "proposedDate": 1767225600000,
+      "scoringPeriodId": 1,
+      "bidAmount": 3,
+      "items": []
+    }
+  ]
+}

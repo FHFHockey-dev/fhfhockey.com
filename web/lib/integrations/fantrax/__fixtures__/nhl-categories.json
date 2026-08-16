@@ -1,0 +1,53 @@
+{
+  "leagueName": "Fixture NHL Category League",
+  "sportCode": "NHL",
+  "season": "2026",
+  "teamCount": 2,
+  "draftType": "STRAIGHT",
+  "rosterInfo": {
+    "positionConstraints": [
+      { "position": { "code": "C" }, "maxActivePlayers": 2 },
+      { "position": { "code": "LW" }, "maxActivePlayers": 2 },
+      { "position": { "code": "RW" }, "maxActivePlayers": 2 },
+      { "position": { "code": "D" }, "maxActivePlayers": 4 },
+      { "position": { "code": "G" }, "maxActivePlayers": 2 },
+      { "position": { "code": "UTILITY" }, "maxActivePlayers": 1 },
+      { "position": { "code": "RESERVE" }, "maxActivePlayers": 4 }
+    ]
+  },
+  "scoringSystem": {
+    "type": "ROTISSERIE",
+    "scoringCategorySettings": [
+      {
+        "configs": [
+          {
+            "position": "SKATER",
+            "scoringCategory": { "code": "G", "name": "Goals" },
+            "weight": 2
+          },
+          {
+            "position": "SKATER",
+            "scoringCategory": { "code": "GP", "name": "Games Played" }
+          },
+          {
+            "position": "GOALIE",
+            "scoringCategory": { "code": "GP", "name": "Games Played" }
+          },
+          {
+            "position": "GOALIE",
+            "scoringCategory": { "code": "W", "name": "Wins" }
+          },
+          {
+            "position": "GOALIE",
+            "scoringCategory": { "code": "SV%", "name": "Save Percentage" },
+            "weight": 0
+          }
+        ]
+      }
+    ]
+  },
+  "teamInfo": {
+    "team-1": { "id": "team-1", "name": "Frozen Assets" },
+    "team-2": { "id": "team-2", "name": "Net Results" }
+  }
+}

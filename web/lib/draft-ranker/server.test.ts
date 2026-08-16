@@ -30,6 +30,14 @@ const { fromMock, rpcMock, responses, queryLog } = vi.hoisted(() => {
           record.filters.push([column, value]);
           return builder;
         },
+        like(column: string, value: unknown) {
+          record.filters.push([column, value]);
+          return builder;
+        },
+        in(column: string, value: unknown) {
+          record.filters.push([column, value]);
+          return builder;
+        },
         order() {
           return builder;
         },
@@ -179,7 +187,10 @@ describe("Draft Ranker server ownership queries", () => {
           tier: null,
           notes: null,
           updated_at: "2026-07-15T00:00:00Z",
-          player: { canonical_name: "Connor McDavid" },
+          player: {
+            canonical_name: "Connor McDavid",
+            nhl_player_id: 8478402,
+          },
         },
         {
           fhfh_player_id: 11,
@@ -190,7 +201,25 @@ describe("Draft Ranker server ownership queries", () => {
           tier: null,
           notes: null,
           updated_at: "2026-07-15T00:00:00Z",
-          player: { canonical_name: "Nathan MacKinnon" },
+          player: {
+            canonical_name: "Nathan MacKinnon",
+            nhl_player_id: 8477492,
+          },
+        },
+      ],
+      error: null,
+    });
+    responses.awaited.set("fhfh_player_external_identities", {
+      data: [
+        {
+          fhfh_player_id: 10,
+          external_player_id: "477.p.1234",
+          is_primary: true,
+        },
+        {
+          fhfh_player_id: 11,
+          external_player_id: "465.p.4321",
+          is_primary: true,
         },
       ],
       error: null,
@@ -205,6 +234,18 @@ describe("Draft Ranker server ownership queries", () => {
       { playerId: 10, rank: 1 },
       { playerId: 11, rank: 2 },
     ]);
+    expect(result.entries[0]).toEqual(
+      expect.objectContaining({
+        nhlPlayerId: 8478402,
+        yahooPlayerId: 1234,
+      }),
+    );
+    expect(result.entries[1]).toEqual(
+      expect.objectContaining({
+        nhlPlayerId: 8477492,
+        yahooPlayerId: null,
+      }),
+    );
     const entryQuery = queryLog.find(
       (record) => record.table === "draft_ranking_entries",
     );

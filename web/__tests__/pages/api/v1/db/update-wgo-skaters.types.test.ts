@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { fromMock, upsertMock } = vi.hoisted(() => ({
+const { fetchMock, fromMock, upsertMock } = vi.hoisted(() => ({
+  fetchMock: vi.fn(),
   fromMock: vi.fn(),
   upsertMock: vi.fn(),
 }));
@@ -9,12 +10,17 @@ vi.mock("../../../../../lib/supabase/server", () => ({
   default: { from: fromMock },
 }));
 
+vi.mock("lib/cors-fetch", () => ({
+  default: fetchMock,
+}));
+
 import {
+  fetchDataForGameType,
   processAndUpsertGameTypeData,
   type AllSkaterStats,
 } from "../../../../../pages/api/v1/db/update-wgo-skaters";
 
-function createSkaterData(): AllSkaterStats {
+function createSkaterData(gameId = 2025020001): AllSkaterStats {
   return {
     skaterStats: [
       {
@@ -36,7 +42,7 @@ function createSkaterData(): AllSkaterStats {
         faceoffWinPct: 0.55,
         timeOnIcePerGame: 20.5,
         teamAbbrev: "EDM",
-        gameId: 2025020001,
+        gameId,
         opponentTeamAbbrev: "CGY",
         homeRoad: "H",
         evGoals: 1,
@@ -49,6 +55,7 @@ function createSkaterData(): AllSkaterStats {
     faceoffWinLossStats: [],
     goalsForAgainstStats: [
       {
+        gameId,
         playerId: 8478402,
         evenStrengthGoalDifference: 1,
         evenStrengthGoalsAgainst: 2,
@@ -66,6 +73,7 @@ function createSkaterData(): AllSkaterStats {
     penaltiesStats: [],
     penaltyKillStats: [
       {
+        gameId,
         playerId: 8478402,
         ppGoalsAgainstPer60: 0,
         shAssists: 0,
@@ -88,6 +96,7 @@ function createSkaterData(): AllSkaterStats {
     ],
     powerPlayStats: [
       {
+        gameId,
         playerId: 8478402,
         ppAssists: 1,
         ppGoals: 0,
@@ -109,6 +118,7 @@ function createSkaterData(): AllSkaterStats {
     ],
     puckPossessionStats: [
       {
+        gameId,
         playerId: 8478402,
         goalsPct: 0.6,
         faceoffPct5v5: 0.55,
@@ -118,16 +128,55 @@ function createSkaterData(): AllSkaterStats {
         satPct: 0.58,
         timeOnIcePerGame5v5: 12.5,
         usatPct: 0.57,
-        zoneStartPct: 0.52,
+        offensiveZoneStartRatio: 0.52,
       },
     ],
     satCountsStats: [],
     satPercentagesStats: [],
     scoringRatesStats: [],
     scoringPerGameStats: [],
-    shotTypeStats: [],
+    shotTypeStats: [
+      {
+        gameId,
+        playerId: 8478402,
+        goalsBackhand: 0,
+        goalsBat: 0,
+        goalsBetweenLegs: 0,
+        goalsCradle: 0,
+        goalsDeflected: 0,
+        goalsPoke: 0,
+        goalsSlap: 1,
+        goalsSnap: 0,
+        goalsTipIn: 0,
+        goalsWrapAround: 0,
+        goalsWrist: 0,
+        shootingPctBackhand: 0,
+        shootingPctBat: 0,
+        shootingPctBetweenLegs: 0,
+        shootingPctCradle: 0,
+        shootingPctDeflected: 0,
+        shootingPctPoke: 0,
+        shootingPctSlap: 0.125,
+        shootingPctSnap: 0,
+        shootingPctTipIn: 0,
+        shootingPctWrapAround: 0,
+        shootingPctWrist: 0,
+        shotsOnNetBackhand: 0,
+        shotsOnNetBat: 0,
+        shotsOnNetBetweenLegs: 0,
+        shotsOnNetCradle: 0,
+        shotsOnNetDeflected: 0,
+        shotsOnNetPoke: 0,
+        shotsOnNetSlap: 8,
+        shotsOnNetSnap: 0,
+        shotsOnNetTipIn: 0,
+        shotsOnNetWrapAround: 0,
+        shotsOnNetWrist: 0,
+      },
+    ],
     timeOnIceStats: [
       {
+        gameId,
         playerId: 8478402,
         evTimeOnIce: 900,
         evTimeOnIcePerGame: 900,
@@ -144,8 +193,48 @@ function createSkaterData(): AllSkaterStats {
 describe("WGO skater generated insert contracts", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      headers: { get: () => "application/json" },
+      json: async () => ({ data: [], total: 0 }),
+    });
     upsertMock.mockResolvedValue({ error: null });
     fromMock.mockReturnValue({ upsert: upsertMock });
+  });
+
+  it("fetches a complete date window without 100-row pagination", async () => {
+    await expect(
+      fetchDataForGameType(2, "2026-01-18", -1, "2026-01-12"),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        skaterStats: [],
+        timeOnIceStats: [],
+      }),
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(16);
+    for (const [url] of fetchMock.mock.calls) {
+      const decodedUrl = decodeURIComponent(String(url));
+      expect(decodedUrl).toContain("limit=-1");
+      expect(decodedUrl).toContain('gameDate>="2026-01-12"');
+      expect(decodedUrl).toContain('gameDate<="2026-01-18 23:59:59"');
+    }
+  });
+
+  it("rejects an incomplete unbounded NHL response", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      headers: { get: () => "application/json" },
+      json: async () => ({ data: [{}], total: 2 }),
+    });
+
+    await expect(
+      fetchDataForGameType(2, "2026-01-18", -1, "2026-01-12"),
+    ).rejects.toThrow("returned 1/2");
   });
 
   it("writes numeric time fields through the regular-season table contract", async () => {
@@ -164,6 +253,7 @@ describe("WGO skater generated insert contracts", () => {
         expect.objectContaining({
           player_id: 8478402,
           season_id: 20252026,
+          game_id: 2025020001,
           es_toi_per_game: 10.25,
           ev_time_on_ice: 900,
           ot_time_on_ice: 30,
@@ -171,6 +261,8 @@ describe("WGO skater generated insert contracts", () => {
           sh_time_on_ice: 60,
           time_on_ice_per_shift: 45,
           toi_per_game_5v5: 12.5,
+          zone_start_pct: 0.52,
+          shooting_pct_slap: 0.125,
         }),
       ],
       { onConflict: "player_id, date" },
@@ -180,7 +272,7 @@ describe("WGO skater generated insert contracts", () => {
   it("normalizes time fields to text through the playoff table contract", async () => {
     await expect(
       processAndUpsertGameTypeData(
-        createSkaterData(),
+        createSkaterData(2025030001),
         "wgo_skater_stats_playoffs",
         "2026-05-01",
         20252026,
@@ -193,6 +285,7 @@ describe("WGO skater generated insert contracts", () => {
         expect.objectContaining({
           player_id: 8478402,
           season_id: 20252026,
+          game_id: 2025030001,
           es_toi_per_game: "10.25",
           ev_time_on_ice: "900",
           ot_time_on_ice: "30",

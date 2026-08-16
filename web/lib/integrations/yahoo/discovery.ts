@@ -135,6 +135,47 @@ export function mergeYahooLeagueTeams(teams: Array<any>, standings: Array<any>) 
     }));
 }
 
+export function yahooDraftDiscoveryMetadata(
+  league: any,
+  settingsResponse: any,
+) {
+  const settings = settingsResponse?.settings || {};
+  return {
+    draft_status:
+      settingsResponse?.draft_status ??
+      settings?.draft_status ??
+      league?.draft_status ??
+      null,
+    draft_type:
+      settingsResponse?.draft_type ?? settings?.draft_type ?? league?.draft_type ?? null,
+    is_auction_draft:
+      settingsResponse?.is_auction_draft ??
+      settings?.is_auction_draft ??
+      league?.is_auction_draft ??
+      null,
+    draft_time:
+      settingsResponse?.draft_time ?? settings?.draft_time ?? league?.draft_time ?? null,
+    pick_time:
+      settingsResponse?.pick_time ??
+      settingsResponse?.draft_pick_time ??
+      settings?.pick_time ??
+      settings?.draft_pick_time ??
+      league?.pick_time ??
+      null,
+    draft_order_type:
+      settingsResponse?.draft_order_type ??
+      settings?.draft_order_type ??
+      settingsResponse?.is_snake_draft ??
+      settings?.is_snake_draft ??
+      null,
+  };
+}
+
+export function yahooTeamDraftPosition(team: any) {
+  const value = Number(team?.draft_position ?? team?.draft_order);
+  return Number.isInteger(value) && value > 0 ? value : null;
+}
+
 function toJsonObject(value: Record<string, unknown>): Json {
   return value as Json;
 }
@@ -365,6 +406,7 @@ export async function syncYahooDiscovery({
       standingsResponse?.standings || []
     );
     leagueTeamsByLeagueKey.set(String(league.league_key), leagueTeams);
+    const draftMetadata = yahooDraftDiscoveryMetadata(league, settingsResponse);
     normalizedLeagues.push({
       connected_account_id: connectedAccount.id,
       user_id: userId,
@@ -379,6 +421,10 @@ export async function syncYahooDiscovery({
           num_teams: settingsResponse.num_teams || league.num_teams || null,
           draft_status: settingsResponse.draft_status || league.draft_status || null,
         },
+        yahoo_live_draft: {
+          discovery: draftMetadata,
+          fetched_at: new Date().toISOString(),
+        },
         standings: standingsResponse?.standings || [],
         team_count: leagueTeams.length,
       }),
@@ -386,6 +432,8 @@ export async function syncYahooDiscovery({
         scoring_type: settingsResponse.scoring_type || league.scoring_type || null,
         stat_categories: settingsResponse.settings?.stat_categories || [],
         stat_modifiers: settingsResponse.settings?.stat_modifiers || [],
+        draft_type: draftMetadata.draft_type,
+        is_auction_draft: draftMetadata.is_auction_draft,
       }),
       roster_settings: toJsonObject({
         roster_positions: settingsResponse.settings?.roster_positions || [],
@@ -395,6 +443,10 @@ export async function syncYahooDiscovery({
           league.weekly_deadline ||
           null,
         roster_type: settingsResponse.settings?.roster_type || null,
+        draft_time: draftMetadata.draft_time,
+        pick_time: draftMetadata.pick_time,
+        draft_status: draftMetadata.draft_status,
+        draft_order_type: draftMetadata.draft_order_type,
       }),
       imported_at: new Date().toISOString(),
     });
@@ -442,6 +494,7 @@ export async function syncYahooDiscovery({
         team_metadata: toJsonObject({
           ...leagueTeam,
           is_owned: Boolean(ownedTeam),
+          draft_position: yahooTeamDraftPosition(leagueTeam),
           team_logo_url:
             Array.isArray(leagueTeam.team_logos) && leagueTeam.team_logos.length > 0
               ? leagueTeam.team_logos[0]?.url || null

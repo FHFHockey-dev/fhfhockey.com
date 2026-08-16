@@ -89,6 +89,8 @@ interface DraftSettingsProps {
     sweaterNumber?: number;
     teamId?: number;
   }>;
+  draftLocked?: boolean;
+  draftLockReason?: string;
 }
 
 const CAT_KEYS = [
@@ -181,6 +183,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   onBookmarkCreate,
   onBookmarkImport,
   playersForKeeperAutocomplete,
+  draftLocked = false,
+  draftLockReason = "Yahoo live sync is authoritative.",
 }) => {
   const [collapsed, setCollapsed] = React.useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -232,6 +236,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   ]);
 
   const handleTeamCountChange = (count: number) => {
+    if (draftLocked) return;
     if (
       (keepers.length > 0 || pickTrades.length > 0) &&
       count !== settings.teamCount
@@ -258,8 +263,9 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   };
 
   const handleRosterConfigChange = (position: string, count: number) => {
+    if (draftLocked) return;
     const nextRosterConfig =
-      position === "FWD"
+      position === "FWD" && forwardGrouping === "fwd"
         ? setForwardRosterTotal(settings.rosterConfig, count)
         : { ...settings.rosterConfig, [position]: count };
     const nextRoundCount = Object.values(nextRosterConfig).reduce(
@@ -277,7 +283,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       });
       return;
     }
-    if (position === "FWD") {
+    if (position === "FWD" && forwardGrouping === "fwd") {
       onSettingsChange({
         rosterConfig: nextRosterConfig as any,
       });
@@ -289,6 +295,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   };
 
   const handleSnakeDraftChange = (next: boolean) => {
+    if (draftLocked) return;
     if (pickTrades.length > 0 && next !== isSnakeDraft) {
       setTradeFeedback({
         ok: false,
@@ -554,7 +561,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
 
   const stepRoster = (position: string, delta: number) => {
     const current =
-      position === "FWD"
+      position === "FWD" && forwardGrouping === "fwd"
         ? getEffectiveRosterConfig(settings.rosterConfig, "fwd").FWD
         : settings.rosterConfig[position];
     const max = positionMax[position] ?? 10;
@@ -700,6 +707,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const [confirmReset, setConfirmReset] = React.useState(false);
   const confirmResetTimeout = React.useRef<number | null>(null);
   const handleResetDraftClick = () => {
+    if (draftLocked) return;
     if (!confirmReset) {
       setConfirmReset(true);
       if (confirmResetTimeout.current)
@@ -1212,6 +1220,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
               className={styles.inlineResetBtn}
               style={{ marginLeft: 6 }}
               onClick={handleCreateBookmark}
+              disabled={draftLocked}
               title="Create portable draft bookmark key"
             >
               Bookmark
@@ -1220,6 +1229,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
               type="button"
               className={styles.inlineResetBtn}
               onClick={handleImportBookmark}
+              disabled={draftLocked}
               title="Import draft bookmark key"
             >
               Import
@@ -1235,6 +1245,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
               onClick={() => handleSnakeDraftChange(false)}
               role="tab"
               aria-selected={!isSnakeDraft}
+              disabled={draftLocked}
+              title={draftLocked ? draftLockReason : undefined}
             >
               Standard
             </button>
@@ -1243,6 +1255,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
               onClick={() => handleSnakeDraftChange(true)}
               role="tab"
               aria-selected={isSnakeDraft}
+              disabled={draftLocked}
+              title={draftLocked ? draftLockReason : undefined}
             >
               Snake
             </button>
@@ -1291,6 +1305,11 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
           </button>
         </div>
       </div>
+      {draftLocked && (
+        <div className={styles.lockNotice} role="status">
+          {draftLockReason}
+        </div>
+      )}
       {!collapsed && (
         <div className={styles.settingsGrid}>
           <fieldset className={styles.fieldset}>
@@ -1312,7 +1331,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                       Math.max(2, (settings.teamCount || 0) - 1),
                     )
                   }
-                  disabled={settings.teamCount <= 2}
+                  disabled={draftLocked || settings.teamCount <= 2}
                   aria-label="Decrease team count"
                 >
                   −
@@ -1337,6 +1356,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                   className={styles.numberInput}
                   data-testid="team-count-select" /* keep legacy test id */
                   aria-label="Number of teams"
+                  disabled={draftLocked}
                 />
                 <button
                   type="button"
@@ -1346,7 +1366,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                       Math.min(40, (settings.teamCount || 0) + 1),
                     )
                   }
-                  disabled={settings.teamCount >= 40}
+                  disabled={draftLocked || settings.teamCount >= 40}
                   aria-label="Increase team count"
                 >
                   +
@@ -1362,6 +1382,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                 value={myTeamId}
                 onChange={(e) => onMyTeamIdChange(e.target.value)}
                 className={styles.select}
+                disabled={draftLocked}
               >
                 {settings.draftOrder.map((teamId) => (
                   <option key={teamId} value={teamId}>
@@ -1381,6 +1402,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                   onSettingsChange({ leagueType: e.target.value as LeagueType })
                 }
                 className={styles.select}
+                disabled={draftLocked}
               >
                 <option value="points">Points</option>
                 <option value="categories">Categories</option>
@@ -1394,6 +1416,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                   onClick={() => onSettingsChange({ isKeeper: false })}
                   role="tab"
                   aria-selected={!settings.isKeeper}
+                  disabled={draftLocked}
                 >
                   No
                 </button>
@@ -1402,6 +1425,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                   onClick={() => onSettingsChange({ isKeeper: true })}
                   role="tab"
                   aria-selected={!!settings.isKeeper}
+                  disabled={draftLocked}
                 >
                   Yes
                 </button>
@@ -1415,7 +1439,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
               <button
                 className={`${styles.actionButton} ${styles.actionButtonDanger}`}
                 onClick={undoLastPick}
-                disabled={draftHistory.length === 0}
+                disabled={draftLocked || draftHistory.length === 0}
                 title={
                   draftHistory.length > 0
                     ? `Undo Pick #${currentPick - 1}`
@@ -1428,7 +1452,9 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
               <button
                 className={`${styles.actionButton} ${confirmReset ? styles.confirmReset : ""}`}
                 onClick={handleResetDraftClick}
-                disabled={draftedPlayers.length === 0 && !confirmReset}
+                disabled={
+                  draftLocked || (draftedPlayers.length === 0 && !confirmReset)
+                }
                 aria-describedby="resetDraftWarning"
                 data-testid="reset-draft-btn"
                 title="Reset entire draft"
@@ -1497,7 +1523,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
               </button>
             </div>
           </fieldset>
-          <fieldset className={styles.fieldset}>
+          <fieldset className={styles.fieldset} disabled={draftLocked}>
             <legend className={styles.legend}>
               Roster Spots{" "}
               <span className={`${styles.rosterTotal} ${rosterTotalClass}`}>
@@ -1595,6 +1621,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
           </fieldset>
           <fieldset
             className={`${styles.fieldset} ${styles.settingsGroupScoring}`}
+            disabled={draftLocked}
           >
             <legend className={styles.legend}>
               {leagueType === "categories"
@@ -2118,7 +2145,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
           )}
           {/* Quick Actions fieldset removed; actions moved under League Setup */}
           {settings.isKeeper && (
-            <fieldset className={styles.fieldset}>
+            <fieldset className={styles.fieldset} disabled={draftLocked}>
               <legend className={styles.legend}>Keepers & Traded Picks</legend>
               <>
                 {/* Traded Picks subsection */}
@@ -3004,7 +3031,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
         </div>
       )}
       <ManageTradesModal
-        open={tradeManagerOpen}
+        open={tradeManagerOpen && !draftLocked}
         onClose={() => setTradeManagerOpen(false)}
         draftOrder={settings.draftOrder}
         customTeamNames={customTeamNames}

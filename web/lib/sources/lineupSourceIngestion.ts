@@ -1264,6 +1264,25 @@ export function buildGameDayTweetsLineupSourceFromTweet(args: {
   });
 }
 
+export function parseGameDayTweetsPageCount(html: string): number {
+  const root = cheerio.load(html);
+  let pageCount = 1;
+
+  root("a[href]").each((_, element) => {
+    const href = root(element).attr("href");
+    if (!href) return;
+
+    const page = Number(
+      new URL(href, "https://www.gamedaytweets.com").searchParams.get("page")
+    );
+    if (Number.isInteger(page) && page > pageCount) {
+      pageCount = page;
+    }
+  });
+
+  return pageCount;
+}
+
 export function parseGameDayTweetsLinesPage(args: {
   html: string;
   team: TeamDirectoryEntry;

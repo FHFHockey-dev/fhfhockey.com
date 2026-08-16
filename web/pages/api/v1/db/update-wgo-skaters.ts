@@ -40,6 +40,16 @@
  *       - **Example**:
  *         `/api/v1/db/update-wgo-skaters?action=all_seasons_full_refresh`
  *
+ *     - `action=season&season=YYYYYYYY`:
+ *       Rebuilds one season, including playoffs, and skips calendar dates that
+ *       the official NHL game index does not mark complete. Seven calendar days
+ *       are fetched per NHL request batch, and optional `startDate`/`endDate`
+ *       parameters make the run resumable.
+ *       - **Example**:
+ *         `/api/v1/db/update-wgo-skaters?action=season&season=20252026`
+ *       - **Resume example**:
+ *         `/api/v1/db/update-wgo-skaters?action=season&season=20252026&startDate=2026-01-19`
+ *
  * 2.  `date`: Fetches and updates data for a single, specific date.
  *     - **Format**: YYYY-MM-DD
  *     - **Example**:
@@ -56,14 +66,18 @@
  *     - **Example**:
  *       `/api/v1/db/update-wgo-skaters?action=all&fullRefresh=true`
  *
- * 5.  `startDate` (Optional, Date String): Modifies `action=all`.
+ * 5.  `startDate` (Optional, Date String): Modifies `action=all` or `action=season`.
  *     Overrides the automatic start date (which is either the day after the last record or the season start)
  *     with a specific date.
  *     - **Format**: YYYY-MM-DD
  *     - **Example**:
- *       ` `
+ *       `/api/v1/db/update-wgo-skaters?action=season&season=20252026&startDate=2026-01-19`
  *
- * 6.  `playerFullName` (Optional, String): Used for logging when `playerId` is specified.
+ * 6.  `endDate` (Optional, Date String): Restricts `action=season` to a final
+ *     date, allowing a season rebuild to be split into independently resumable
+ *     ranges.
+ *
+ * 7.  `playerFullName` (Optional, String): Used for logging when `playerId` is specified.
  *     - **Example**:
  *       `/api/v1/db/update-wgo-skaters?playerId=8478402&playerFullName=Connor%20McDavid`
  */
@@ -90,6 +104,14 @@ import {
   WgoDateProcessingError,
 } from "lib/cron/wgoDateOutcome";
 import {
+  fetchCompletedWgoSeasonGameDates,
+  mapWgoRowsByPlayerId,
+  mapWgoRowsByPlayerGame,
+  parseWgoSeasonId,
+  resolveWgoGameIdentity,
+  wgoPlayerGameKey,
+} from "lib/cron/wgoIngestion";
+import {
   WGOSummarySkaterStat,
   WGOSkatersBio,
   WGORealtimeSkaterStat,
@@ -111,6 +133,7 @@ import {
 // Types
 interface NHLApiResponse {
   data: any[];
+  total: number;
 }
 
 type RegularSeasonSkaterInsert =
@@ -128,44 +151,60 @@ type SkaterWriteBatch =
       records: PlayoffSkaterInsert[];
     };
 
+type MaybeGameScoped<T> = T & { gameDate?: string; gameId?: number };
+
 export type AllSkaterStats = {
   skaterStats: WGOSummarySkaterStat[];
   skatersBio: WGOSkatersBio[];
-  miscSkaterStats: WGORealtimeSkaterStat[];
-  faceOffStats: WGOFaceoffSkaterStat[];
-  faceoffWinLossStats: WGOFaceOffWinLossSkaterStat[];
-  goalsForAgainstStats: WGOGoalsForAgainstSkaterStat[];
-  penaltiesStats: WGOPenaltySkaterStat[];
-  penaltyKillStats: WGOPenaltyKillSkaterStat[];
-  powerPlayStats: WGOPowerPlaySkaterStat[];
-  puckPossessionStats: WGOPuckPossessionSkaterStat[];
-  satCountsStats: WGOSatCountSkaterStat[];
-  satPercentagesStats: WGOSatPercentageSkaterStat[];
-  scoringRatesStats: WGOScoringRatesSkaterStat[];
-  scoringPerGameStats: WGOScoringCountsSkaterStat[];
-  shotTypeStats: WGOShotTypeSkaterStat[];
-  timeOnIceStats: WGOToiSkaterStat[];
+  miscSkaterStats: MaybeGameScoped<WGORealtimeSkaterStat>[];
+  faceOffStats: MaybeGameScoped<WGOFaceoffSkaterStat>[];
+  faceoffWinLossStats: MaybeGameScoped<WGOFaceOffWinLossSkaterStat>[];
+  goalsForAgainstStats: MaybeGameScoped<WGOGoalsForAgainstSkaterStat>[];
+  penaltiesStats: MaybeGameScoped<WGOPenaltySkaterStat>[];
+  penaltyKillStats: MaybeGameScoped<WGOPenaltyKillSkaterStat>[];
+  powerPlayStats: MaybeGameScoped<WGOPowerPlaySkaterStat>[];
+  puckPossessionStats: MaybeGameScoped<WGOPuckPossessionSkaterStat>[];
+  satCountsStats: MaybeGameScoped<WGOSatCountSkaterStat>[];
+  satPercentagesStats: MaybeGameScoped<WGOSatPercentageSkaterStat>[];
+  scoringRatesStats: MaybeGameScoped<WGOScoringRatesSkaterStat>[];
+  scoringPerGameStats: MaybeGameScoped<WGOScoringCountsSkaterStat>[];
+  shotTypeStats: MaybeGameScoped<WGOShotTypeSkaterStat>[];
+  timeOnIceStats: MaybeGameScoped<WGOToiSkaterStat>[];
 };
+
+type GameScoped<T> = T & { gameDate?: string; gameId: number };
 
 type DataMaps = {
   bioMap: Map<number, WGOSkatersBio>;
-  miscMap: Map<number, WGORealtimeSkaterStat>;
-  faceOffMap: Map<number, WGOFaceoffSkaterStat>;
-  faceoffWinLossMap: Map<number, WGOFaceOffWinLossSkaterStat>;
-  goalsForAgainstMap: Map<number, WGOGoalsForAgainstSkaterStat>;
-  penaltiesMap: Map<number, WGOPenaltySkaterStat>;
-  penaltyKillMap: Map<number, WGOPenaltyKillSkaterStat>;
-  powerPlayMap: Map<number, WGOPowerPlaySkaterStat>;
-  puckPossessionMap: Map<number, WGOPuckPossessionSkaterStat>;
-  satCountsMap: Map<number, WGOSatCountSkaterStat>;
-  satPercentagesMap: Map<number, WGOSatPercentageSkaterStat>;
-  scoringRatesMap: Map<number, WGOScoringRatesSkaterStat>;
-  scoringPerGameMap: Map<number, WGOScoringCountsSkaterStat>;
-  shotTypeMap: Map<number, WGOShotTypeSkaterStat>;
-  timeOnIceMap: Map<number, WGOToiSkaterStat>;
+  miscMap: Map<string, GameScoped<WGORealtimeSkaterStat>>;
+  faceOffMap: Map<string, GameScoped<WGOFaceoffSkaterStat>>;
+  faceoffWinLossMap: Map<string, GameScoped<WGOFaceOffWinLossSkaterStat>>;
+  goalsForAgainstMap: Map<string, GameScoped<WGOGoalsForAgainstSkaterStat>>;
+  penaltiesMap: Map<string, GameScoped<WGOPenaltySkaterStat>>;
+  penaltyKillMap: Map<string, GameScoped<WGOPenaltyKillSkaterStat>>;
+  powerPlayMap: Map<string, GameScoped<WGOPowerPlaySkaterStat>>;
+  puckPossessionMap: Map<string, GameScoped<WGOPuckPossessionSkaterStat>>;
+  satCountsMap: Map<string, GameScoped<WGOSatCountSkaterStat>>;
+  satPercentagesMap: Map<string, GameScoped<WGOSatPercentageSkaterStat>>;
+  scoringRatesMap: Map<string, GameScoped<WGOScoringRatesSkaterStat>>;
+  scoringPerGameMap: Map<string, GameScoped<WGOScoringCountsSkaterStat>>;
+  shotTypeMap: Map<string, GameScoped<WGOShotTypeSkaterStat>>;
+  timeOnIceMap: Map<string, GameScoped<WGOToiSkaterStat>>;
 };
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function parseOptionalWgoDate(value: unknown): string | undefined {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (typeof raw !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return undefined;
+  }
+  const parsed = new Date(`${raw}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) &&
+    parsed.toISOString().slice(0, 10) === raw
+    ? raw
+    : undefined;
+}
 
 /**
  * Fetches season details from Supabase based on a specific date.
@@ -337,21 +376,33 @@ function mapApiDataToDbRecord(
   seasonId?: number,
   tableName: SkaterStatsTable = "wgo_skater_stats",
 ): RegularSeasonSkaterInsert | PlayoffSkaterInsert {
+  if (!seasonId) {
+    throw new Error("A season ID is required for a WGO skater game row.");
+  }
+  const expectedGameType = tableName === "wgo_skater_stats" ? 2 : 3;
+  const gameIdentity = resolveWgoGameIdentity({
+    row: stat,
+    expectedDate: formattedDate,
+    expectedSeasonId: seasonId,
+    allowedGameTypes: [expectedGameType],
+    source: "skater summary",
+  });
+  const playerGameKey = wgoPlayerGameKey(stat, "skater summary");
   const bioStats = allData.bioMap.get(stat.playerId);
-  const miscStats = allData.miscMap.get(stat.playerId);
-  const faceOffStat = allData.faceOffMap.get(stat.playerId);
-  const faceoffWinLossStat = allData.faceoffWinLossMap.get(stat.playerId);
-  const goalsForAgainstStat = allData.goalsForAgainstMap.get(stat.playerId);
-  const penaltiesStat = allData.penaltiesMap.get(stat.playerId);
-  const penaltyKillStat = allData.penaltyKillMap.get(stat.playerId);
-  const powerPlayStat = allData.powerPlayMap.get(stat.playerId);
-  const puckPossessionStat = allData.puckPossessionMap.get(stat.playerId);
-  const satCountsStat = allData.satCountsMap.get(stat.playerId);
-  const satPercentagesStat = allData.satPercentagesMap.get(stat.playerId);
-  const scoringRatesStat = allData.scoringRatesMap.get(stat.playerId);
-  const scoringPerGameStat = allData.scoringPerGameMap.get(stat.playerId);
-  const shotTypeStat = allData.shotTypeMap.get(stat.playerId);
-  const timeOnIceStat = allData.timeOnIceMap.get(stat.playerId);
+  const miscStats = allData.miscMap.get(playerGameKey);
+  const faceOffStat = allData.faceOffMap.get(playerGameKey);
+  const faceoffWinLossStat = allData.faceoffWinLossMap.get(playerGameKey);
+  const goalsForAgainstStat = allData.goalsForAgainstMap.get(playerGameKey);
+  const penaltiesStat = allData.penaltiesMap.get(playerGameKey);
+  const penaltyKillStat = allData.penaltyKillMap.get(playerGameKey);
+  const powerPlayStat = allData.powerPlayMap.get(playerGameKey);
+  const puckPossessionStat = allData.puckPossessionMap.get(playerGameKey);
+  const satCountsStat = allData.satCountsMap.get(playerGameKey);
+  const satPercentagesStat = allData.satPercentagesMap.get(playerGameKey);
+  const scoringRatesStat = allData.scoringRatesMap.get(playerGameKey);
+  const scoringPerGameStat = allData.scoringPerGameMap.get(playerGameKey);
+  const shotTypeStat = allData.shotTypeMap.get(playerGameKey);
+  const timeOnIceStat = allData.timeOnIceMap.get(playerGameKey);
 
   const regularSeasonRecord = {
     player_id: stat.playerId,
@@ -373,7 +424,7 @@ function mapApiDataToDbRecord(
     fow_percentage: stat.faceoffWinPct,
     toi_per_game: stat.timeOnIcePerGame,
     team_abbrev: stat.teamAbbrev,
-    game_id: stat.gameId,
+    game_id: gameIdentity.gameId,
     opponent_team_abbrev: stat.opponentTeamAbbrev,
     home_road: stat.homeRoad,
     ev_goals: stat.evGoals,
@@ -501,7 +552,9 @@ function mapApiDataToDbRecord(
     sat_pct: puckPossessionStat?.satPct,
     toi_per_game_5v5: puckPossessionStat?.timeOnIcePerGame5v5,
     usat_pct: puckPossessionStat?.usatPct,
-    zone_start_pct: puckPossessionStat?.zoneStartPct,
+    zone_start_pct:
+      puckPossessionStat?.offensiveZoneStartRatio ??
+      puckPossessionStat?.zoneStartPct,
     sat_against: satCountsStat?.satAgainst,
     sat_ahead: satCountsStat?.satAhead,
     sat_behind: satCountsStat?.satBehind,
@@ -574,7 +627,7 @@ function mapApiDataToDbRecord(
     shooting_pct_cradle: shotTypeStat?.shootingPctCradle,
     shooting_pct_deflected: shotTypeStat?.shootingPctDeflected,
     shooting_pct_poke: shotTypeStat?.shootingPctPoke,
-    shooting_pct_slap: shotTypeStat?.goalsSlap,
+    shooting_pct_slap: shotTypeStat?.shootingPctSlap,
     shooting_pct_snap: shotTypeStat?.shootingPctSnap,
     shooting_pct_tip_in: shotTypeStat?.shootingPctTipIn,
     shooting_pct_wrap_around: shotTypeStat?.shootingPctWrapAround,
@@ -597,7 +650,7 @@ function mapApiDataToDbRecord(
     shifts: timeOnIceStat?.shifts,
     shifts_per_game: timeOnIceStat?.shiftsPerGame,
     time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift,
-    ...(seasonId ? { season_id: seasonId } : {}),
+    season_id: gameIdentity.seasonId,
   } satisfies RegularSeasonSkaterInsert;
 
   if (tableName === "wgo_skater_stats") {
@@ -628,10 +681,11 @@ function mapApiDataToDbRecord(
   return removeUndefinedProperties(playoffRecord);
 }
 
-async function fetchDataForGameType(
+export async function fetchDataForGameType(
   gameTypeId: number,
-  formattedDate: string,
-  limit: number = 100,
+  formattedEndDate: string,
+  limit: number = -1,
+  formattedStartDate: string = formattedEndDate,
 ): Promise<AllSkaterStats> {
   const fetchJsonWithDiagnostics = async (
     url: string,
@@ -649,7 +703,14 @@ async function fetchDataForGameType(
       );
     }
 
-    return (await response.json()) as NHLApiResponse;
+    const payload = (await response.json()) as Partial<NHLApiResponse>;
+    if (!Array.isArray(payload.data) || !Number.isSafeInteger(payload.total)) {
+      throw new WgoDateProcessingError(
+        "source_failure",
+        `NHL API returned an invalid response contract for ${label}.`,
+      );
+    }
+    return payload as NHLApiResponse;
   };
   const fetchJsonWithRetry = async (
     url: string,
@@ -708,7 +769,7 @@ async function fetchDataForGameType(
     sort: string,
     factCayenneExp: string = "gamesPlayed>=1",
   ) =>
-    `https://api.nhle.com/stats/rest/en/skater/${reportName}?isAggregate=false&isGame=true&sort=${encodeURIComponent(sort)}&start=${start}&limit=${limit}&factCayenneExp=${factCayenneExp}&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=${gameTypeId}`;
+    `https://api.nhle.com/stats/rest/en/skater/${reportName}?isAggregate=false&isGame=true&sort=${encodeURIComponent(sort)}&start=${start}&limit=${limit}&factCayenneExp=${factCayenneExp}&cayenneExp=gameDate%3C=%22${formattedEndDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedStartDate}%22%20and%20gameTypeId=${gameTypeId}`;
   while (moreDataAvailable) {
     const urls = {
       skaterStats: getUrl(
@@ -809,6 +870,24 @@ async function fetchDataForGameType(
       shotTypeResponse,
       timeOnIceResponse,
     ] = responses;
+    if (limit <= 0) {
+      for (let index = 0; index < responses.length; index++) {
+        const [label] = entries[index];
+        const response = responses[index];
+        if (response.total >= 9_000) {
+          throw new WgoDateProcessingError(
+            "source_failure",
+            `NHL API returned ${response.total} ${label} rows for ${formattedStartDate} through ${formattedEndDate}; refusing a potentially capped response.`,
+          );
+        }
+        if (response.data.length !== response.total) {
+          throw new WgoDateProcessingError(
+            "source_failure",
+            `NHL API returned ${response.data.length}/${response.total} ${label} rows for ${formattedStartDate} through ${formattedEndDate}.`,
+          );
+        }
+      }
+    }
     allData.skaterStats.push(...skaterStatsResponse.data);
     allData.skatersBio.push(...bioStatsResponse.data);
     allData.miscSkaterStats.push(...miscSkaterStatsResponse.data);
@@ -825,8 +904,11 @@ async function fetchDataForGameType(
     allData.scoringPerGameStats.push(...scoringPerGameResponse.data);
     allData.shotTypeStats.push(...shotTypeResponse.data);
     allData.timeOnIceStats.push(...timeOnIceResponse.data);
-    moreDataAvailable = responses.some((res) => res.data.length === limit);
-    start += limit;
+    moreDataAvailable =
+      limit > 0 && responses.some((res) => res.data.length === limit);
+    if (limit > 0) {
+      start += limit;
+    }
   }
   return allData;
 }
@@ -835,7 +917,7 @@ export async function processAndUpsertGameTypeData(
   allData: AllSkaterStats,
   tableName: SkaterStatsTable,
   formattedDate: string,
-  seasonId?: number,
+  seasonId: number,
 ): Promise<number> {
   // Early exit if no skater stats data
   if (allData.skaterStats.length === 0) {
@@ -845,36 +927,69 @@ export async function processAndUpsertGameTypeData(
     return 0;
   }
 
+  mapWgoRowsByPlayerGame(
+    allData.skaterStats as GameScoped<WGOSummarySkaterStat>[],
+    "skater summary",
+  );
+
   const dataMaps: DataMaps = {
-    bioMap: new Map(allData.skatersBio.map((s) => [s.playerId, s])),
-    miscMap: new Map(allData.miscSkaterStats.map((s) => [s.playerId, s])),
-    faceOffMap: new Map(allData.faceOffStats.map((s) => [s.playerId, s])),
-    faceoffWinLossMap: new Map(
-      allData.faceoffWinLossStats.map((s) => [s.playerId, s]),
+    bioMap: mapWgoRowsByPlayerId(allData.skatersBio, "skater bios"),
+    miscMap: mapWgoRowsByPlayerGame(
+      allData.miscSkaterStats as GameScoped<WGORealtimeSkaterStat>[],
+      "skater realtime",
     ),
-    goalsForAgainstMap: new Map(
-      allData.goalsForAgainstStats.map((s) => [s.playerId, s]),
+    faceOffMap: mapWgoRowsByPlayerGame(
+      allData.faceOffStats as GameScoped<WGOFaceoffSkaterStat>[],
+      "skater faceoff percentages",
     ),
-    penaltiesMap: new Map(allData.penaltiesStats.map((s) => [s.playerId, s])),
-    penaltyKillMap: new Map(
-      allData.penaltyKillStats.map((s) => [s.playerId, s]),
+    faceoffWinLossMap: mapWgoRowsByPlayerGame(
+      allData.faceoffWinLossStats as GameScoped<WGOFaceOffWinLossSkaterStat>[],
+      "skater faceoff wins",
     ),
-    powerPlayMap: new Map(allData.powerPlayStats.map((s) => [s.playerId, s])),
-    puckPossessionMap: new Map(
-      allData.puckPossessionStats.map((s) => [s.playerId, s]),
+    goalsForAgainstMap: mapWgoRowsByPlayerGame(
+      allData.goalsForAgainstStats as GameScoped<WGOGoalsForAgainstSkaterStat>[],
+      "skater goals for/against",
     ),
-    satCountsMap: new Map(allData.satCountsStats.map((s) => [s.playerId, s])),
-    satPercentagesMap: new Map(
-      allData.satPercentagesStats.map((s) => [s.playerId, s]),
+    penaltiesMap: mapWgoRowsByPlayerGame(
+      allData.penaltiesStats as GameScoped<WGOPenaltySkaterStat>[],
+      "skater penalties",
     ),
-    scoringRatesMap: new Map(
-      allData.scoringRatesStats.map((s) => [s.playerId, s]),
+    penaltyKillMap: mapWgoRowsByPlayerGame(
+      allData.penaltyKillStats as GameScoped<WGOPenaltyKillSkaterStat>[],
+      "skater penalty kill",
     ),
-    scoringPerGameMap: new Map(
-      allData.scoringPerGameStats.map((s) => [s.playerId, s]),
+    powerPlayMap: mapWgoRowsByPlayerGame(
+      allData.powerPlayStats as GameScoped<WGOPowerPlaySkaterStat>[],
+      "skater power play",
     ),
-    shotTypeMap: new Map(allData.shotTypeStats.map((s) => [s.playerId, s])),
-    timeOnIceMap: new Map(allData.timeOnIceStats.map((s) => [s.playerId, s])),
+    puckPossessionMap: mapWgoRowsByPlayerGame(
+      allData.puckPossessionStats as GameScoped<WGOPuckPossessionSkaterStat>[],
+      "skater puck possessions",
+    ),
+    satCountsMap: mapWgoRowsByPlayerGame(
+      allData.satCountsStats as GameScoped<WGOSatCountSkaterStat>[],
+      "skater shooting counts",
+    ),
+    satPercentagesMap: mapWgoRowsByPlayerGame(
+      allData.satPercentagesStats as GameScoped<WGOSatPercentageSkaterStat>[],
+      "skater percentages",
+    ),
+    scoringRatesMap: mapWgoRowsByPlayerGame(
+      allData.scoringRatesStats as GameScoped<WGOScoringRatesSkaterStat>[],
+      "skater scoring rates",
+    ),
+    scoringPerGameMap: mapWgoRowsByPlayerGame(
+      allData.scoringPerGameStats as GameScoped<WGOScoringCountsSkaterStat>[],
+      "skater scoring per game",
+    ),
+    shotTypeMap: mapWgoRowsByPlayerGame(
+      allData.shotTypeStats as GameScoped<WGOShotTypeSkaterStat>[],
+      "skater shot type",
+    ),
+    timeOnIceMap: mapWgoRowsByPlayerGame(
+      allData.timeOnIceStats as GameScoped<WGOToiSkaterStat>[],
+      "skater time on ice",
+    ),
   };
 
   let writeBatch: SkaterWriteBatch;
@@ -1529,9 +1644,94 @@ async function processDate(
 
   return outcome!;
 }
+
+const WGO_SKATER_WINDOW_DAYS = 7;
+
+async function processCompletedDateWindow(options: {
+  completedDates: string[];
+  endDate: string;
+  seasonInfo: {
+    seasonId: number;
+    startDate: string;
+    endDate: string;
+    regularSeasonEndDate: string;
+  };
+  startDate: string;
+}): Promise<WgoDateOutcome[]> {
+  const { completedDates, endDate, seasonInfo, startDate } = options;
+  if (completedDates.length === 0) return [];
+
+  const startsInRegularSeason = startDate <= seasonInfo.regularSeasonEndDate;
+  const endsInRegularSeason = endDate <= seasonInfo.regularSeasonEndDate;
+  if (startsInRegularSeason !== endsInRegularSeason) {
+    throw new WgoDateProcessingError(
+      "transform_failure",
+      `WGO skater window ${startDate} through ${endDate} crosses the regular-season/playoff boundary.`,
+    );
+  }
+
+  const gameTypeId = startsInRegularSeason ? 2 : 3;
+  const tableName: SkaterStatsTable = startsInRegularSeason
+    ? "wgo_skater_stats"
+    : "wgo_skater_stats_playoffs";
+  const allData = await fetchDataForGameType(
+    gameTypeId,
+    endDate,
+    -1,
+    startDate,
+  );
+  const expectedDates = new Set(completedDates);
+  const summariesByDate = new Map<string, WGOSummarySkaterStat[]>();
+
+  for (const stat of allData.skaterStats) {
+    const gameDate = stat.gameDate;
+    if (typeof gameDate !== "string" || !expectedDates.has(gameDate)) {
+      throw new WgoDateProcessingError(
+        "source_failure",
+        `NHL skater summary returned unexpected gameDate ${String(gameDate)} for ${startDate} through ${endDate}.`,
+      );
+    }
+    const rows = summariesByDate.get(gameDate) ?? [];
+    rows.push(stat);
+    summariesByDate.set(gameDate, rows);
+  }
+
+  const outcomes: WgoDateOutcome[] = [];
+  for (const date of completedDates) {
+    const skaterStats = summariesByDate.get(date) ?? [];
+    if (skaterStats.length === 0) {
+      throw new WgoDateProcessingError(
+        "source_failure",
+        `NHL game index marks ${date} complete, but the skater summary returned no rows.`,
+      );
+    }
+    const totalUpdates = await processAndUpsertGameTypeData(
+      { ...allData, skaterStats },
+      tableName,
+      date,
+      seasonInfo.seasonId,
+    );
+    outcomes.push(
+      createWgoDateOutcome({
+        date,
+        rowsFetched: skaterStats.length,
+        totalUpdates,
+      }),
+    );
+  }
+
+  return outcomes;
+}
+
 // Affected portion: updateAllStatsForAllSeasons function
-async function updateAllStatsForAllSeasons() {
-  const allSeasons = await getAllSeasonsFromDB();
+async function updateAllStatsForAllSeasons(
+  targetSeasonId?: number,
+  requestedRange: { endDate?: string; startDate?: string } = {},
+) {
+  const availableSeasons = await getAllSeasonsFromDB();
+  const allSeasons = targetSeasonId
+    ? availableSeasons.filter((season) => season.seasonId === targetSeasonId)
+    : availableSeasons;
   let totalUpdates = 0;
   let failedOutcomes: Array<WgoDateOutcome & { seasonId: number }> = [];
   const skippedOutcomes: WgoDateOutcome[] = [];
@@ -1540,6 +1740,7 @@ async function updateAllStatsForAllSeasons() {
     return {
       message: "No seasons found in the database to refresh.",
       success: true,
+      seasonsProcessed: 0,
       totalUpdates: 0,
       failedDates: [],
       failedDatesCount: 0,
@@ -1550,33 +1751,100 @@ async function updateAllStatsForAllSeasons() {
     };
   }
 
+  if (targetSeasonId) {
+    const targetSeason = allSeasons[0];
+    for (const [label, value] of [
+      ["startDate", requestedRange.startDate],
+      ["endDate", requestedRange.endDate],
+    ] as const) {
+      if (
+        value &&
+        (value < targetSeason.startDate || value > targetSeason.endDate)
+      ) {
+        throw new Error(
+          `${label} ${value} is outside season ${targetSeasonId} (${targetSeason.startDate} through ${targetSeason.endDate}).`,
+        );
+      }
+    }
+  }
+
   console.log(`Starting full refresh for ${allSeasons.length} seasons.`);
 
   const MAX_RETRIES = 3;
-  let totalDaysAcrossAllSeasons = 0;
-  for (const season of allSeasons) {
-    totalDaysAcrossAllSeasons +=
-      differenceInDays(parseISO(season.endDate), parseISO(season.startDate)) +
-      1;
-  }
+  const seasonRanges = allSeasons
+    .map((season) => ({
+      endDate:
+        requestedRange.endDate && requestedRange.endDate < season.endDate
+          ? requestedRange.endDate
+          : season.endDate,
+      season,
+      startDate:
+        requestedRange.startDate && requestedRange.startDate > season.startDate
+          ? requestedRange.startDate
+          : season.startDate,
+    }))
+    .filter(({ endDate, startDate }) => startDate <= endDate);
+  const totalDaysAcrossAllSeasons = seasonRanges.reduce(
+    (total, range) =>
+      total +
+      differenceInDays(parseISO(range.endDate), parseISO(range.startDate)) +
+      1,
+    0,
+  );
   let globalDaysProcessedCount = 0;
 
-  for (const season of allSeasons) {
+  for (const {
+    endDate: rangeEndDate,
+    season,
+    startDate: rangeStartDate,
+  } of seasonRanges) {
     console.log(
-      `\n--- Processing Season: ${season.seasonId} (${season.startDate} to ${season.endDate}) ---`,
+      `\n--- Processing Season: ${season.seasonId} (${rangeStartDate} to ${rangeEndDate}) ---`,
     );
-    let currentDate = parseISO(season.startDate);
-    const endDate = parseISO(season.endDate);
+    let currentDate = parseISO(rangeStartDate);
+    const endDate = parseISO(rangeEndDate);
+    const completedGameDates = await fetchCompletedWgoSeasonGameDates({
+      endDate: rangeEndDate,
+      seasonId: season.seasonId,
+      startDate: rangeStartDate,
+    });
+    const today = formatISO(new Date(), { representation: "date" });
+    if (completedGameDates.length === 0 && rangeEndDate < today) {
+      throw new Error(
+        `No completed NHL game dates were returned for completed season ${season.seasonId}.`,
+      );
+    }
 
     while (
       isBefore(currentDate, endDate) ||
       currentDate.toDateString() === endDate.toDateString()
     ) {
-      const formattedDate = formatISO(currentDate, { representation: "date" });
-      let success = false;
-      let lastOutcome: WgoDateOutcome | null = null;
+      let windowEnd = addDays(currentDate, WGO_SKATER_WINDOW_DAYS - 1);
+      if (isBefore(endDate, windowEnd)) {
+        windowEnd = endDate;
+      }
+      const regularSeasonEnd = parseISO(season.regularSeasonEndDate);
+      if (
+        !isBefore(regularSeasonEnd, currentDate) &&
+        isBefore(regularSeasonEnd, windowEnd)
+      ) {
+        windowEnd = regularSeasonEnd;
+      }
+      const windowStartDate = formatISO(currentDate, {
+        representation: "date",
+      });
+      const windowEndDate = formatISO(windowEnd, { representation: "date" });
+      const windowCompletedDates = completedGameDates.filter(
+        (date) => date >= windowStartDate && date <= windowEndDate,
+      );
+      const windowDays = differenceInDays(windowEnd, currentDate) + 1;
 
-      // Use the seasonInfo directly as it's iterated per season
+      if (windowCompletedDates.length === 0) {
+        globalDaysProcessedCount += windowDays;
+        currentDate = addDays(windowEnd, 1);
+        continue;
+      }
+
       const seasonInfoForDate = {
         seasonId: season.seasonId,
         startDate: season.startDate,
@@ -1594,36 +1862,47 @@ async function updateAllStatsForAllSeasons() {
             )
           : 100;
 
+      console.log(
+        `Processing ${windowStartDate} through ${windowEndDate} (${windowCompletedDates.length} completed game dates, ${globalProgressPercent}% complete)`,
+      );
+      let success = false;
+      let lastError: unknown = new Error("WGO skater window did not run.");
       for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         try {
-          const result = await processDate(
-            formattedDate,
-            seasonInfoForDate, // Pass the season info object
-            attempt, // Pass the attempt number
-            `${globalDaysProcessedCount + 1}/${totalDaysAcrossAllSeasons}`, // X/Y for global progress
-            `${globalProgressPercent}%`, // % for global progress
+          const outcomes = await processCompletedDateWindow({
+            completedDates: windowCompletedDates,
+            endDate: windowEndDate,
+            seasonInfo: seasonInfoForDate,
+            startDate: windowStartDate,
+          });
+          for (const outcome of outcomes) {
+            if (outcome.status === "processed") {
+              totalUpdates += outcome.totalUpdates;
+            } else if (outcome.status === "skipped") {
+              skippedOutcomes.push(outcome);
+            }
+          }
+          success = true;
+          break;
+        } catch (error: unknown) {
+          lastError = error;
+          console.warn(
+            `WGO skater window ${windowStartDate} through ${windowEndDate} failed on attempt ${attempt}:`,
+            error instanceof Error ? error.message : String(error),
           );
-          lastOutcome = result;
-          if (result.status === "processed") {
-            totalUpdates += result.totalUpdates;
-            success = true;
-            break;
-          }
-          if (result.status === "skipped") {
-            skippedOutcomes.push(result);
-            success = true;
-            break;
-          }
-        } catch (error: any) {
-          lastOutcome = createWgoDateFailure(formattedDate, error);
         }
       }
 
-      if (!success && lastOutcome) {
-        failedOutcomes.push({ ...lastOutcome, seasonId: season.seasonId });
+      if (!success) {
+        failedOutcomes.push(
+          ...windowCompletedDates.map((date) => ({
+            ...createWgoDateFailure(date, lastError),
+            seasonId: season.seasonId,
+          })),
+        );
       }
-      globalDaysProcessedCount++;
-      currentDate = addDays(currentDate, 1);
+      globalDaysProcessedCount += windowDays;
+      currentDate = addDays(windowEnd, 1);
     }
   }
 
@@ -1716,6 +1995,7 @@ async function updateAllStatsForAllSeasons() {
   return {
     message,
     success: failedOutcomes.length === 0,
+    seasonsProcessed: allSeasons.length,
     totalUpdates,
     ...outcomeSummary,
   };
@@ -1766,8 +2046,10 @@ async function handler(
       date,
       playerId,
       action,
+      season: rawSeason,
       fullRefresh: fullRefreshParam,
       startDate: startDateParam, // Accept startDate
+      endDate: endDateParam,
       playerFullName: rawPlayerFullName,
     } = req.query;
     const fullRefresh = fullRefreshParam === "true" || fullRefreshParam === "1";
@@ -1776,6 +2058,7 @@ async function handler(
     const playerFullName = Array.isArray(rawPlayerFullName)
       ? rawPlayerFullName[0]
       : rawPlayerFullName;
+    const seasonParam = Array.isArray(rawSeason) ? rawSeason[0] : rawSeason;
     let result: any;
 
     if (action === "all_seasons_full_refresh") {
@@ -1792,6 +2075,52 @@ async function handler(
         skips: result.skips,
       };
       responseBody = { ...result, failedRows: 0 };
+      res.status(result.success ? 200 : 207).json(responseBody);
+    } else if (action === "season") {
+      const targetSeasonId = parseWgoSeasonId(seasonParam);
+      if (!targetSeasonId) {
+        throw new Error(
+          "action=season requires season=YYYYYYYY for a consecutive two-year NHL season.",
+        );
+      }
+      const rangeStartDate = parseOptionalWgoDate(startDateParam);
+      const rangeEndDate = parseOptionalWgoDate(endDateParam);
+      if (startDateParam !== undefined && !rangeStartDate) {
+        throw new Error("Invalid startDate. Expected YYYY-MM-DD.");
+      }
+      if (endDateParam !== undefined && !rangeEndDate) {
+        throw new Error("Invalid endDate. Expected YYYY-MM-DD.");
+      }
+      if (rangeStartDate && rangeEndDate && rangeStartDate > rangeEndDate) {
+        throw new Error("startDate must be on or before endDate.");
+      }
+      result = await updateAllStatsForAllSeasons(targetSeasonId, {
+        endDate: rangeEndDate,
+        startDate: rangeStartDate,
+      });
+      if (result.seasonsProcessed === 0) {
+        throw new Error(`Season ${targetSeasonId} was not found in the seasons table.`);
+      }
+      totalUpdates = result.totalUpdates;
+      status = result.success ? "success" : "failure";
+      details = {
+        message: result.message,
+        season: targetSeasonId,
+        startDate: rangeStartDate,
+        endDate: rangeEndDate,
+        failedDates: result.failedDates,
+        failedDatesCount: result.failedDatesCount,
+        failures: result.failures,
+        skippedDatesCount: result.skippedDatesCount,
+        skips: result.skips,
+      };
+      responseBody = {
+        ...result,
+        season: targetSeasonId,
+        startDate: rangeStartDate,
+        endDate: rangeEndDate,
+        failedRows: 0,
+      };
       res.status(result.success ? 200 : 207).json(responseBody);
     } else if (action === "all") {
       console.log(
@@ -1859,7 +2188,7 @@ async function handler(
       status = "failure";
       details = {
         message:
-          "Missing or invalid parameters. Provide 'action=all_seasons_full_refresh', 'action=all', 'date', or 'playerId'.",
+          "Missing or invalid parameters. Provide 'action=all_seasons_full_refresh', 'action=season&season=YYYYYYYY', 'action=all', 'date', or 'playerId'.",
       };
       responseBody = details;
       res.status(400).json(responseBody);

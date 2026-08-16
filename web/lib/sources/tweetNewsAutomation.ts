@@ -189,7 +189,11 @@ function hasLineupStructure(text: string): boolean {
 
 function matchesExclusion(text: string): string | null {
   for (const rule of tweetNewsExclusionRules) {
-    if (rule.regexes.some((regex) => new RegExp(regex, "i").test(text))) {
+    const matchText =
+      rule.id === "non-nhl-leagues"
+        ? text.split(/(?:[.!?](?:\s|$)|\r?\n)/, 1)[0] ?? text
+        : text;
+    if (rule.regexes.some((regex) => new RegExp(regex, "i").test(matchText))) {
       return rule.id;
     }
   }
@@ -227,6 +231,25 @@ function getLastName(fullName: string): string {
   return fullName.trim().split(/\s+/).at(-1) ?? fullName;
 }
 
+function hasConflictingFullNameMention(
+  text: string,
+  player: TweetNewsAutomationPlayer,
+): boolean {
+  const firstName = player.fullName.trim().split(/\s+/)[0];
+  const lastName = getLastName(player.fullName);
+  if (!firstName || !lastName) return false;
+
+  const explicitNamePattern = new RegExp(
+    `\\b(\\p{Lu}[\\p{L}.'’\\-]+)\\s+${escapeRegExp(lastName)}\\b`,
+    "gu",
+  );
+  return [...text.matchAll(explicitNamePattern)].some(
+    (match) =>
+      normalizeForMatch(match[1]).toLowerCase() !==
+      normalizeForMatch(firstName).toLowerCase(),
+  );
+}
+
 function resolveMentionedPlayers(args: {
   row: TweetNewsAutomationReviewRow;
   players: TweetNewsAutomationPlayer[];
@@ -255,7 +278,11 @@ function resolveMentionedPlayers(args: {
 
   const lastNameMatches = scopedPlayers.filter((player) => {
     const lastName = normalizeForMatch(getLastName(player.fullName));
-    return lastName.length >= 4 && includesPlayerName(text, lastName);
+    return (
+      lastName.length >= 4 &&
+      includesPlayerName(text, lastName) &&
+      !hasConflictingFullNameMention(args.text, player)
+    );
   });
 
   return lastNameMatches.slice(0, 12);

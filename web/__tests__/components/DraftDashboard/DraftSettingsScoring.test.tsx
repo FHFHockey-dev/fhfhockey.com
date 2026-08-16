@@ -133,3 +133,60 @@ describe("DraftSettings SHA selectors", () => {
     ).toContainEqual(["SH_ASSISTS", "SHA"]);
   });
 });
+
+describe("DraftSettings Yahoo lock", () => {
+  it("visibly disables draft structure, roster, scoring, undo, and reset controls", () => {
+    const onSettingsChange = vi.fn();
+    const onSnakeDraftChange = vi.fn();
+    const undoLastPick = vi.fn();
+    const resetDraft = vi.fn();
+    render(
+      <DraftSettings
+        settings={{ ...settings, isKeeper: true }}
+        onSettingsChange={onSettingsChange}
+        isSnakeDraft
+        onSnakeDraftChange={onSnakeDraftChange}
+        myTeamId="Team 1"
+        onMyTeamIdChange={vi.fn()}
+        undoLastPick={undoLastPick}
+        resetDraft={resetDraft}
+        draftHistory={[{ players: [], pickNumber: 1 }]}
+        draftedPlayers={[{ playerId: "1" }]}
+        currentPick={2}
+        draftLocked
+        draftLockReason="Yahoo live sync controls this draft."
+      />,
+    );
+
+    expect(screen.getByRole("status").textContent).toContain("Yahoo live sync");
+    expect(
+      (screen.getByTestId("team-count-select") as HTMLInputElement).disabled,
+    ).toBe(true);
+    expect(
+      (screen.getByTestId("roster-input-C") as HTMLInputElement).closest(
+        "fieldset",
+      )?.hasAttribute("disabled"),
+    ).toBe(true);
+    expect(
+      (
+        screen.getByRole("tab", {
+          name: "Snake",
+          hidden: true,
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
+    expect(
+      (screen.getByTestId("undo-pick-btn") as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(
+      (screen.getByTestId("reset-draft-btn") as HTMLButtonElement).disabled,
+    ).toBe(true);
+
+    fireEvent.click(screen.getByTestId("undo-pick-btn"));
+    fireEvent.click(screen.getByTestId("reset-draft-btn"));
+    expect(undoLastPick).not.toHaveBeenCalled();
+    expect(resetDraft).not.toHaveBeenCalled();
+    expect(onSettingsChange).not.toHaveBeenCalled();
+    expect(onSnakeDraftChange).not.toHaveBeenCalled();
+  });
+});

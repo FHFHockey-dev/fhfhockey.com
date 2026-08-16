@@ -1,4 +1,12 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  FormEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/router";
 
 import { useAuth } from "contexts/AuthProviderContext";
@@ -36,97 +44,57 @@ type UserProviderPreferencesRow =
   Database["public"]["Tables"]["user_provider_preferences"]["Row"];
 type JsonObject = Record<string, Json | undefined>;
 
-const CONNECTED_ACCOUNT_PROVIDERS = [
-  {
-    key: "yahoo",
-    name: "Yahoo Fantasy",
-    status: "Planned",
-    location: "Account Settings and League Settings",
-    summary:
-      "Per-user Yahoo OAuth stays separate from site login. Future flows will discover linked leagues and teams, support default-team selection, and throttle manual refresh runs.",
-    bullets: [
-      "Connection lives here, not in core sign-in.",
-      "League sync imports league metadata, scoring, roster settings, teams, and team context.",
-      "Refresh controls will use cooldowns and in-flight dedupe to avoid rapid rate-limit pressure.",
-    ],
-  },
-  {
-    key: "fantrax",
-    name: "Fantrax",
-    status: "Manual import",
-    location: "Account Settings and League Settings",
-    summary:
-      "Fantrax uses owner-supplied CSV/JSON imports through the shared provider model. No Fantrax credentials, scraping, or unofficial session adapter is required.",
-    bullets: [
-      "Manual imports keep provider auth decoupled from app auth.",
-      "Multiple leagues, teams, roster snapshots, and default-team selection are supported.",
-      "Imports are additive/idempotent and recorded with status, failure, dedupe, and cooldown state.",
-    ],
-  },
-  {
-    key: "patreon",
-    name: "Patreon",
-    status: "OAuth link",
-    location: "Account Settings",
-    summary:
-      "Patreon remains an entitlement-linked connected account, not a primary authentication method. The linkage supports paid access checks without requiring matching emails with the site login.",
-    bullets: [
-      "Patreon connection belongs on the account page, not the auth modal.",
-      "Generic supporter eligibility is materialized as a site-owned entitlement.",
-      "Stable Patreon identities cannot be attached to multiple FHFH accounts.",
-    ],
-  },
-  {
-    key: "espn",
-    name: "ESPN",
-    status: "Manual import",
-    location: "Account Settings and League Settings",
-    summary:
-      "ESPN uses owner-supplied CSV/JSON imports through the shared provider model. No ESPN credentials, browser cookies, scraping, or private endpoints are required.",
-    bullets: [
-      "Manual imports keep ESPN identity separate from FHFH site authentication.",
-      "Multiple leagues/teams plus default and active context are supported.",
-      "Matching keys update in place; omitted records are preserved and retries are guarded.",
-    ],
-  },
-] as const;
-
-const FUTURE_PROVIDER_CONTROL_SURFACES = [
-  {
-    title: "Linked League and Team Context",
-    body: "Future providers can expose multiple leagues and teams under one connected account. Users need a visible default team plus an in-place active league switcher that does not force a page transition.",
-    rows: [
-      "Linked leagues: multiple-provider league discovery placeholder",
-      "Default team: explicit per-provider default target",
-      "Active league switcher: in-place context change without losing draft/dashboard progress",
-    ],
-  },
-  {
-    title: "Refresh Preferences and Manual Sync",
-    body: "Provider refresh stays user-controlled. The eventual controls belong here so refresh-on-login behavior, manual refresh, and next allowed sync time are understandable before OAuth is implemented.",
-    rows: [
-      "Refresh on sign-in: planned preference toggle",
-      "Manual refresh: planned guarded action button",
-      "Next eligible refresh: cooldown-driven availability message",
-    ],
-  },
-  {
-    title: "Cooldowns and In-Flight Dedupe",
-    body: "Provider sync jobs need defensive UX. This placeholder makes the future safety model explicit so rapid repeat refreshes and overlapping sync runs are visibly blocked.",
-    rows: [
-      "Cooldown window: planned anti-throttling lockout after a sync run",
-      "In-flight dedupe: planned prevention of duplicate refresh jobs",
-      "Last sync state: future success, failure, and running-status summary",
-    ],
-  },
-] as const;
-
 type AccountSection =
   | "profile"
   | "league-settings"
   | "saved-teams"
   | "connected-accounts"
   | "patreon";
+
+type LeagueSettingsView = "scoring" | "categories" | "roster" | "context";
+type ConnectedAccountsView = "yahoo" | "fantrax" | "espn";
+type AccountIconName =
+  | "accounts"
+  | "chevron"
+  | "external"
+  | "leagues"
+  | "link"
+  | "profile"
+  | "save"
+  | "teams"
+  | "timezone"
+  | "verified";
+
+type ProfileSummaryCounts = {
+  connectedLeagues: number | null;
+  savedTeams: number | null;
+  connectedAccounts: number | null;
+};
+
+const EMPTY_PROFILE_SUMMARY_COUNTS: ProfileSummaryCounts = {
+  connectedLeagues: null,
+  savedTeams: null,
+  connectedAccounts: null,
+};
+
+const LEAGUE_SETTINGS_VIEWS: Array<{
+  key: LeagueSettingsView;
+  label: string;
+}> = [
+  { key: "scoring", label: "Points scoring" },
+  { key: "categories", label: "Category weights" },
+  { key: "roster", label: "Roster" },
+  { key: "context", label: "Yahoo context" },
+];
+
+const CONNECTED_ACCOUNT_VIEWS: Array<{
+  key: ConnectedAccountsView;
+  label: string;
+}> = [
+  { key: "yahoo", label: "Yahoo Fantasy" },
+  { key: "fantrax", label: "Fantrax import" },
+  { key: "espn", label: "ESPN import" },
+];
 
 const SECTION_CONFIG: Record<
   AccountSection,
@@ -135,90 +103,177 @@ const SECTION_CONFIG: Record<
     description: string;
     title: string;
     body: string;
-    panels: Array<{ title: string; body: string }>;
   }
 > = {
   profile: {
     label: "Profile",
-    description: "Identity, email, avatar, and account summary",
-    title: "Profile Overview",
-    body: "This section is the home for your site identity, email-verification state, avatar display, and basic account metadata.",
-    panels: [
-      {
-        title: "Display Profile",
-        body: "The next slice will load and edit `user_profiles` fields like display name, avatar URL, and timezone.",
-      },
-      {
-        title: "Account Security",
-        body: "Auth provider state is now handled through Supabase Auth. MFA and recovery-state refinements will stay separate from connected fantasy providers.",
-      },
-    ],
+    description: "Name, avatar, and timezone",
+    title: "Profile",
+    body: "Manage how your account appears across FHFH.",
   },
   "league-settings": {
     label: "League Settings",
-    description: "Scoring defaults, roster shape, and active league context",
+    description: "Scoring, roster, and league defaults",
     title: "League Defaults",
-    body: "This section will become the persisted home for fantasy scoring preferences, roster structure, active-context selection, and future refresh controls.",
-    panels: [
-      {
-        title: "Scoring and Roster Defaults",
-        body: "The next slices will map `user_settings` directly onto your existing fantasy scoring configuration system without touching Draft Dashboard.",
-      },
-      {
-        title: "Active League Context",
-        body: "The shell already reserves a stable place for active league switching so users can change context later without being pushed through a separate page flow.",
-      },
-    ],
+    body: "Set the scoring and roster defaults used by your fantasy tools.",
   },
   "saved-teams": {
     label: "Saved Teams",
-    description: "Manual rosters, defaults, and future synced team choices",
+    description: "Reusable teams and notes",
     title: "Saved Teams",
-    body: "This section will hold manual saved teams first, then support default-team selection for imported Yahoo, Fantrax, or future ESPN league/team records.",
-    panels: [
-      {
-        title: "Manual Teams",
-        body: "Upcoming work will add list, create, edit, and default-selection behavior for `user_saved_teams`.",
-      },
-      {
-        title: "Imported Team Targets",
-        body: "This shell also reserves room for future multi-league and multi-team account connections, including default-team selection and in-place active switching.",
-      },
-    ],
+    body: "Create, edit, and choose a default team.",
   },
   "connected-accounts": {
     label: "Connected Accounts",
-    description: "Yahoo, Fantrax, ESPN, and future provider connections",
+    description: "Yahoo, Fantrax, and ESPN",
     title: "Connected Accounts",
-    body: "Connected fantasy accounts stay separate from core site authentication. This section will host provider connection, sync, refresh, and cooldown controls.",
-    panels: [
-      {
-        title: "Yahoo and Fantrax",
-        body: "Future work will expose provider status, linked leagues, default team selection, and guarded manual refresh options with cooldown messaging.",
-      },
-      {
-        title: "ESPN and Future Providers",
-        body: "The data model already leaves room for additional provider connectors without coupling them to the primary auth system.",
-      },
-    ],
+    body: "Connect Yahoo or import league data from Fantrax and ESPN.",
   },
   patreon: {
     label: "Patreon",
-    description: "Entitlements, perk visibility, and linked Patreon state",
-    title: "Patreon Entitlements",
-    body: "Patreon remains an optional connected account for perk access, not a primary site login method. This section exposes membership, generic supporter eligibility, tier metadata, and sync state.",
-    panels: [
-      {
-        title: "Entitlement Status",
-        body: "Site-owned generic supporter eligibility is shown separately from the Patreon identity itself; concrete feature grants require an explicit tier policy.",
-      },
-      {
-        title: "Access Boundaries",
-        body: "Stable Patreon identities are single-account constrained, and entitlement checks remain separate from the core user login session.",
-      },
-    ],
+    description: "Membership and supporter access",
+    title: "Patreon",
+    body: "Link Patreon and review your supporter status.",
   },
 };
+
+const ACCOUNT_ICON_PATHS: Record<AccountIconName, ReactNode> = {
+    accounts: (
+      <>
+        <path d="M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+        <path d="M2.5 21v-2.5A4.5 4.5 0 0 1 7 14h2a4.5 4.5 0 0 1 4.5 4.5V21" />
+        <path d="M16 4.5a3.5 3.5 0 0 1 0 6.8M16 14h.5a5 5 0 0 1 5 5v2" />
+      </>
+    ),
+    chevron: <path d="m9 18 6-6-6-6" />,
+    external: (
+      <>
+        <path d="M14 4h6v6" />
+        <path d="m20 4-9 9" />
+        <path d="M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6" />
+      </>
+    ),
+    leagues: (
+      <>
+        <path d="M8 4h8v3a4 4 0 0 1-8 0V4Z" />
+        <path d="M9 14h6M12 11v6M8 20h8" />
+        <path d="M8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4" />
+      </>
+    ),
+    link: (
+      <>
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+      </>
+    ),
+    profile: (
+      <>
+        <circle cx="12" cy="8" r="3.5" />
+        <path d="M5.5 21v-2.5A6.5 6.5 0 0 1 12 12a6.5 6.5 0 0 1 6.5 6.5V21Z" />
+      </>
+    ),
+    save: (
+      <>
+        <path d="M5 4h12l2 2v14H5Z" />
+        <path d="M8 4v6h8V4M8 20v-6h8v6" />
+      </>
+    ),
+    teams: (
+      <>
+        <circle cx="9" cy="8" r="3" />
+        <circle cx="17" cy="9" r="2.5" />
+        <path d="M3 20v-2a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v2M15 14h1a5 5 0 0 1 5 5v1" />
+      </>
+    ),
+    timezone: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+      </>
+    ),
+    verified: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="m8 12 2.5 2.5L16 9" />
+      </>
+    ),
+};
+
+function AccountIcon({
+  name,
+  className,
+}: {
+  name: AccountIconName;
+  className?: string;
+}) {
+
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {ACCOUNT_ICON_PATHS[name]}
+    </svg>
+  );
+}
+
+function AccountPageHero({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <section className={styles.profileHero} aria-labelledby="profile-title">
+      <div className={styles.profileHeroContent}>
+        <div className={styles.profileHeroIcon}>
+          <AccountIcon name="profile" />
+        </div>
+        <div>
+          <h1 id="profile-title" className={styles.profileHeroTitle}>
+            {title}
+          </h1>
+          <p className={styles.profileHeroBody}>{description}</p>
+        </div>
+      </div>
+
+      <svg
+        className={styles.profileHeroGraph}
+        viewBox="0 0 760 150"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path
+          d="M8 126 C80 112 110 84 178 90 S276 116 326 74 S398 44 454 82 S537 109 596 78 S672 66 748 52"
+        />
+        {[178, 326, 454, 596, 748].map((cx, index) => {
+          const cy = [90, 74, 82, 78, 52][index];
+          return <circle key={cx} cx={cx} cy={cy} r={index === 4 ? 3 : 2} />;
+        })}
+      </svg>
+    </section>
+  );
+}
+
+function getSafeHttpUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:"
+      ? url.toString()
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 function resolveSection(
   sectionValue: string | string[] | undefined,
@@ -490,6 +545,34 @@ function buildManualActiveContext() {
   };
 }
 
+const SETTING_LABELS: Record<string, string> = {
+  goals: "Goals",
+  assists: "Assists",
+  pp_points: "Power-play points",
+  shots_on_goal: "Shots on goal",
+  hits: "Hits",
+  blocked_shots: "Blocked shots",
+  wins_goalie: "Goalie wins",
+  saves_goalie: "Goalie saves",
+  save_percentage: "Save percentage",
+  c: "Centers",
+  lw: "Left wings",
+  rw: "Right wings",
+  d: "Defense",
+  g: "Goalies",
+  bench: "Bench",
+  utility: "Utility",
+};
+
+function getSettingLabel(key: string) {
+  return (
+    SETTING_LABELS[key.toLowerCase()] ||
+    key
+      .replaceAll("_", " ")
+      .replace(/\b\w/g, (character) => character.toUpperCase())
+  );
+}
+
 export default function AccountSettingsPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -512,6 +595,9 @@ export default function AccountSettingsPage() {
   >("unknown");
   const [isProfileLoading, setIsProfileLoading] = useState(true);
   const [isProfileSaving, setIsProfileSaving] = useState(false);
+  const [profileSummaryCounts, setProfileSummaryCounts] =
+    useState<ProfileSummaryCounts>(EMPTY_PROFILE_SUMMARY_COUNTS);
+  const [isProfileSummaryLoading, setIsProfileSummaryLoading] = useState(true);
   const [isLeagueLoading, setIsLeagueLoading] = useState(true);
   const [isLeagueSaving, setIsLeagueSaving] = useState(false);
   const [savedTeams, setSavedTeams] = useState<SavedTeamRow[]>([]);
@@ -557,6 +643,11 @@ export default function AccountSettingsPage() {
     tone: "error" | "success" | "info";
     message: string;
   } | null>(null);
+  const [leagueSettingsView, setLeagueSettingsView] =
+    useState<LeagueSettingsView>("scoring");
+  const [connectedAccountsView, setConnectedAccountsView] =
+    useState<ConnectedAccountsView>("yahoo");
+  const timezoneInputRef = useRef<HTMLInputElement>(null);
 
   const activeSection = useMemo(
     () => resolveSection(router.query.section),
@@ -570,6 +661,10 @@ export default function AccountSettingsPage() {
     "Authenticated User";
   const resolvedAvatarUrl =
     profileForm.avatarUrl.trim() || user?.avatarUrl || "";
+  const safeAvatarLink = useMemo(
+    () => getSafeHttpUrl(resolvedAvatarUrl),
+    [resolvedAvatarUrl],
+  );
   const yahooDefaultTeam = useMemo(
     () =>
       yahooTeams.find(
@@ -734,6 +829,56 @@ export default function AccountSettingsPage() {
   }, [userAvatarUrl, userDisplayName, userId]);
 
   useEffect(() => {
+    if (!userId || activeSection !== "profile") {
+      return;
+    }
+
+    const currentUserId = userId;
+    let isMounted = true;
+
+    async function loadProfileSummary() {
+      setIsProfileSummaryLoading(true);
+
+      const [leaguesResponse, teamsResponse, accountsResponse] =
+        await Promise.all([
+          supabase
+            .from("external_leagues")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", currentUserId),
+          supabase
+            .from("user_saved_teams")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", currentUserId),
+          supabase
+            .from("connected_accounts")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", currentUserId),
+        ]);
+
+      if (!isMounted) {
+        return;
+      }
+
+      setProfileSummaryCounts({
+        connectedLeagues: leaguesResponse.error
+          ? null
+          : (leaguesResponse.count ?? 0),
+        savedTeams: teamsResponse.error ? null : (teamsResponse.count ?? 0),
+        connectedAccounts: accountsResponse.error
+          ? null
+          : (accountsResponse.count ?? 0),
+      });
+      setIsProfileSummaryLoading(false);
+    }
+
+    void loadProfileSummary();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeSection, userId]);
+
+  useEffect(() => {
     if (!userId) {
       setLeagueForm(createDefaultUserLeagueSettings());
       setIsLeagueLoading(false);
@@ -751,7 +896,7 @@ export default function AccountSettingsPage() {
       const { data, error } = await supabase
         .from("user_settings")
         .select(
-          "league_type, scoring_categories, category_weights, roster_config, ui_preferences, active_context",
+          "league_type, scoring_categories, goalie_scoring_categories, category_weights, roster_config, team_count, draft_order_type, ui_preferences, active_context",
         )
         .eq("user_id", currentUserId)
         .maybeSingle();
@@ -1027,7 +1172,11 @@ export default function AccountSettingsPage() {
   }
 
   function updateLeagueNumberField(
-    group: "scoringCategories" | "categoryWeights" | "rosterConfig",
+    group:
+      | "scoringCategories"
+      | "goalieScoringCategories"
+      | "categoryWeights"
+      | "rosterConfig",
     key: string,
     value: string,
   ) {
@@ -1829,6 +1978,10 @@ export default function AccountSettingsPage() {
     () => Object.entries(leagueForm.scoringCategories),
     [leagueForm.scoringCategories],
   );
+  const goalieScoringEntries = useMemo(
+    () => Object.entries(leagueForm.goalieScoringCategories),
+    [leagueForm.goalieScoringCategories],
+  );
   const categoryWeightEntries = useMemo(
     () => Object.entries(leagueForm.categoryWeights),
     [leagueForm.categoryWeights],
@@ -1841,14 +1994,22 @@ export default function AccountSettingsPage() {
   return (
     <div className={styles.page}>
       <div className={styles.shell}>
-        <aside className={styles.sidebar}>
-          <div className={styles.eyebrow}>Account Settings</div>
-          <div className={styles.userName}>{resolvedDisplayName}</div>
-          <div className={styles.userMeta}>
-            {user?.email || "Signed-in account"}
+        <header className={styles.accountHeader}>
+          <div className={styles.accountIdentity}>
+            <div className={styles.eyebrow}>Account Settings</div>
+            <div className={styles.identityRow}>
+              <div className={styles.userName}>{resolvedDisplayName}</div>
+              <div className={styles.userMeta}>
+                {user?.email || "Signed-in account"}
+              </div>
+            </div>
           </div>
 
-          <div className={styles.nav}>
+          <div
+            className={styles.nav}
+            role="tablist"
+            aria-label="Account settings sections"
+          >
             {(
               Object.entries(SECTION_CONFIG) as Array<
                 [AccountSection, (typeof SECTION_CONFIG)[AccountSection]]
@@ -1856,170 +2017,347 @@ export default function AccountSettingsPage() {
             ).map(([sectionKey, config]) => (
               <button
                 key={sectionKey}
+                id={`account-tab-${sectionKey}`}
                 type="button"
+                role="tab"
+                aria-selected={activeSection === sectionKey}
+                aria-controls="account-section-panel"
+                aria-current={
+                  activeSection === sectionKey ? "page" : undefined
+                }
                 className={`${styles.navButton} ${activeSection === sectionKey ? styles.navButtonActive : ""}`}
                 onClick={() => updateSection(sectionKey)}
+                title={config.description}
               >
                 <span className={styles.navLabel}>{config.label}</span>
-                <span className={styles.navDescription}>
-                  {config.description}
-                </span>
               </button>
             ))}
           </div>
-        </aside>
+        </header>
 
-        <section className={styles.content}>
-          <header className={styles.header}>
-            <div className={styles.eyebrow}>{sectionConfig.label}</div>
-            <h1 className={styles.title}>{sectionConfig.title}</h1>
-            <p className={styles.body}>{sectionConfig.body}</p>
-          </header>
+        <section
+          id="account-section-panel"
+          className={`${styles.content} ${
+            activeSection === "profile" ? styles.profileContent : ""
+          }`}
+          role="tabpanel"
+          aria-labelledby={`account-tab-${activeSection}`}
+        >
+          {activeSection === "profile" ? null : (
+            <header className={styles.header}>
+              <h1 className={styles.title}>{sectionConfig.title}</h1>
+              <p className={styles.body}>{sectionConfig.body}</p>
+            </header>
+          )}
 
-          <div className={styles.statusRow}>
-            <span className={styles.statusPill}>
-              Auth: {user?.isEmailVerified ? "verified" : "signed in"}
-            </span>
-            <span className={styles.statusPill}>
-              Section: {sectionConfig.label}
-            </span>
-            <span className={styles.statusPill}>Route shell active</span>
-          </div>
-
-          <div className={styles.panelGrid}>
+          <div
+            className={`${styles.panelGrid} ${
+              activeSection === "profile" ? styles.profilePanelGrid : ""
+            }`}
+          >
             {activeSection === "profile" ? (
-              <div className={styles.panel}>
-                <h2 className={styles.panelTitle}>Display Profile</h2>
-                <div className={styles.profileEditor}>
-                  <div className={styles.avatarCard}>
-                    <div className={styles.avatarFrame}>
-                      {resolvedAvatarUrl ? (
-                        <img
-                          src={resolvedAvatarUrl}
-                          alt={resolvedDisplayName}
-                          className={styles.avatarImage}
-                        />
-                      ) : (
-                        <span className={styles.avatarFallback}>
-                          {getUserInitials(resolvedDisplayName)}
-                        </span>
-                      )}
-                    </div>
-                    <div className={styles.avatarMeta}>
-                      <div className={styles.avatarName}>
-                        {resolvedDisplayName}
-                      </div>
-                      <div className={styles.avatarEmail}>
-                        {user?.email || "Signed-in account"}
-                      </div>
-                    </div>
-                  </div>
+              <>
+                <AccountPageHero
+                  title="Profile Overview"
+                  description="Manage your account details and preferences across FHFH."
+                />
 
-                  {isProfileLoading ? (
-                    <div className={styles.profileLoading}>
-                      Loading profile fields...
-                    </div>
-                  ) : (
-                    <form
-                      className={styles.profileForm}
-                      onSubmit={(event) => void handleProfileSubmit(event)}
+                <div className={styles.profileDashboard}>
+                  <section
+                    className={`${styles.profileCard} ${styles.accountSummaryCard}`}
+                    aria-labelledby="account-summary-title"
+                  >
+                    <h2
+                      id="account-summary-title"
+                      className={styles.profileSectionTitle}
                     >
-                      {profileRecordState === "missing" ? (
-                        <div className={styles.infoMessage}>
-                          Your profile record is not stored yet. The form is
-                          using your current auth identity as a fallback, and
-                          saving will initialize the profile row.
+                      Account Summary
+                    </h2>
+
+                    <div className={styles.summaryIdentity}>
+                      <div className={styles.summaryAvatarFrame}>
+                        {resolvedAvatarUrl ? (
+                          <img
+                            src={resolvedAvatarUrl}
+                            alt={`${resolvedDisplayName} profile avatar`}
+                            className={styles.avatarImage}
+                          />
+                        ) : (
+                          <span className={styles.avatarFallback}>
+                            {getUserInitials(resolvedDisplayName)}
+                          </span>
+                        )}
+                      </div>
+                      <div className={styles.avatarMeta}>
+                        <div className={styles.avatarName}>
+                          {resolvedDisplayName}
                         </div>
-                      ) : null}
-
-                      {profileRecordState === "error" ? (
-                        <div className={styles.errorMessage} role="alert">
-                          We could not load your saved profile row. You can
-                          retry by refreshing or save again to attempt
-                          reinitialization.
+                        <div className={styles.avatarEmail}>
+                          {user?.email || "Signed-in account"}
                         </div>
-                      ) : null}
-
-                      <label className={styles.field}>
-                        <span className={styles.fieldLabel}>Display Name</span>
-                        <input
-                          type="text"
-                          value={profileForm.displayName}
-                          onChange={(event) =>
-                            updateProfileField(
-                              "displayName",
-                              event.target.value,
-                            )
-                          }
-                          className={styles.input}
-                          placeholder="How your account should appear"
-                          disabled={isProfileSaving}
-                        />
-                      </label>
-
-                      <label className={styles.field}>
-                        <span className={styles.fieldLabel}>Avatar URL</span>
-                        <input
-                          type="url"
-                          value={profileForm.avatarUrl}
-                          onChange={(event) =>
-                            updateProfileField("avatarUrl", event.target.value)
-                          }
-                          className={styles.input}
-                          placeholder="https://..."
-                          disabled={isProfileSaving}
-                        />
-                      </label>
-
-                      <label className={styles.field}>
-                        <span className={styles.fieldLabel}>Timezone</span>
-                        <input
-                          type="text"
-                          value={profileForm.timezone}
-                          onChange={(event) =>
-                            updateProfileField("timezone", event.target.value)
-                          }
-                          className={styles.input}
-                          placeholder="America/Chicago"
-                          disabled={isProfileSaving}
-                        />
-                      </label>
-
-                      {profileFeedback ? (
-                        <div
-                          className={
-                            profileFeedback.tone === "error"
-                              ? styles.errorMessage
-                              : styles.successMessage
-                          }
-                          role={
-                            profileFeedback.tone === "error"
-                              ? "alert"
-                              : undefined
-                          }
-                        >
-                          {profileFeedback.message}
+                        <div className={styles.signedInBadge}>
+                          <span aria-hidden="true" />
+                          Signed In
                         </div>
-                      ) : null}
+                      </div>
+                    </div>
 
+                    <div className={styles.summaryRows}>
                       <button
-                        type="submit"
-                        className={styles.saveButton}
-                        disabled={isProfileSaving}
+                        type="button"
+                        className={styles.summaryRow}
+                        onClick={() => updateSection("connected-accounts")}
                       >
-                        {isProfileSaving ? "Saving..." : "Save Profile"}
+                        <AccountIcon name="leagues" />
+                        <span>Connected Leagues</span>
+                        <strong>
+                          {isProfileSummaryLoading
+                            ? "…"
+                            : (profileSummaryCounts.connectedLeagues ?? "—")}
+                        </strong>
+                        <AccountIcon name="chevron" />
                       </button>
-                    </form>
-                  )}
+                      <button
+                        type="button"
+                        className={styles.summaryRow}
+                        onClick={() => updateSection("saved-teams")}
+                      >
+                        <AccountIcon name="teams" />
+                        <span>Saved Teams</span>
+                        <strong>
+                          {isProfileSummaryLoading
+                            ? "…"
+                            : (profileSummaryCounts.savedTeams ?? "—")}
+                        </strong>
+                        <AccountIcon name="chevron" />
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.summaryRow}
+                        onClick={() => updateSection("connected-accounts")}
+                      >
+                        <AccountIcon name="link" />
+                        <span>Connected Accounts</span>
+                        <strong>
+                          {isProfileSummaryLoading
+                            ? "…"
+                            : (profileSummaryCounts.connectedAccounts ?? "—")}
+                        </strong>
+                        <AccountIcon name="chevron" />
+                      </button>
+                    </div>
+                  </section>
+
+                  <section
+                    className={`${styles.profileCard} ${styles.preferencesCard}`}
+                    aria-labelledby="preferences-title"
+                  >
+                    <h2
+                      id="preferences-title"
+                      className={styles.profileSectionTitle}
+                    >
+                      Preferences
+                    </h2>
+                    <button
+                      type="button"
+                      className={styles.preferenceRow}
+                      onClick={() => timezoneInputRef.current?.focus()}
+                    >
+                      <AccountIcon name="timezone" />
+                      <span>Timezone</span>
+                      <strong>
+                        {isProfileLoading
+                          ? "…"
+                          : profileForm.timezone || "Not set"}
+                      </strong>
+                      <AccountIcon name="chevron" />
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.preferencesButton}
+                      onClick={() => timezoneInputRef.current?.focus()}
+                    >
+                      Edit Preferences
+                    </button>
+                  </section>
+
+                  <section
+                    className={`${styles.profileCard} ${styles.profileDetailsCard}`}
+                    aria-labelledby="profile-details-title"
+                  >
+                    <h2
+                      id="profile-details-title"
+                      className={styles.profileSectionTitle}
+                    >
+                      Profile Details
+                    </h2>
+
+                    {isProfileLoading ? (
+                      <div
+                        className={styles.profileDetailsLoading}
+                        role="status"
+                      >
+                        Loading profile fields...
+                      </div>
+                    ) : (
+                      <form
+                        className={styles.profileDetailsForm}
+                        onSubmit={(event) => void handleProfileSubmit(event)}
+                        aria-busy={isProfileSaving}
+                      >
+                        <div className={styles.profileFields}>
+                          {profileRecordState === "error" ? (
+                            <div className={styles.errorMessage} role="alert">
+                              We could not load your saved profile. Refresh the
+                              page or try saving again.
+                            </div>
+                          ) : null}
+
+                          <div className={styles.profileFieldGroup}>
+                            <label htmlFor="profile-display-name">
+                              Display Name
+                            </label>
+                            <p id="profile-display-name-help">
+                              This is how your name will appear across FHFH.
+                            </p>
+                            <input
+                              id="profile-display-name"
+                              type="text"
+                              value={profileForm.displayName}
+                              onChange={(event) =>
+                                updateProfileField(
+                                  "displayName",
+                                  event.target.value,
+                                )
+                              }
+                              className={styles.profileInput}
+                              aria-describedby="profile-display-name-help"
+                              disabled={isProfileSaving}
+                            />
+                          </div>
+
+                          <div className={styles.profileFieldGroup}>
+                            <label htmlFor="profile-email">Email Address</label>
+                            <p id="profile-email-help">
+                              Used for sign in and important notifications.
+                            </p>
+                            <div className={styles.profileInputWithStatus}>
+                              <input
+                                id="profile-email"
+                                type="email"
+                                value={user?.email || ""}
+                                className={styles.profileInput}
+                                aria-describedby="profile-email-help"
+                                readOnly
+                              />
+                              {user?.isEmailVerified ? (
+                                <span className={styles.verifiedStatus}>
+                                  <AccountIcon name="verified" />
+                                  Verified
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+
+                          <div className={styles.profileFieldGroup}>
+                            <label htmlFor="profile-avatar-url">
+                              Avatar URL
+                            </label>
+                            <p id="profile-avatar-url-help">
+                              Link to a public image for your profile avatar.
+                            </p>
+                            <div className={styles.profileInputWithAction}>
+                              <input
+                                id="profile-avatar-url"
+                                type="url"
+                                value={profileForm.avatarUrl}
+                                onChange={(event) =>
+                                  updateProfileField(
+                                    "avatarUrl",
+                                    event.target.value,
+                                  )
+                                }
+                                className={styles.profileInput}
+                                aria-describedby="profile-avatar-url-help"
+                                placeholder="https://..."
+                                disabled={isProfileSaving}
+                              />
+                              {safeAvatarLink ? (
+                                <a
+                                  className={styles.inputAction}
+                                  href={safeAvatarLink}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  aria-label="Open current avatar image"
+                                >
+                                  <AccountIcon name="external" />
+                                </a>
+                              ) : null}
+                            </div>
+                          </div>
+
+                          <div className={styles.profileFieldGroup}>
+                            <label htmlFor="profile-timezone">Timezone</label>
+                            <p id="profile-timezone-help">
+                              Used to display times in your local time.
+                            </p>
+                            <input
+                              ref={timezoneInputRef}
+                              id="profile-timezone"
+                              type="text"
+                              value={profileForm.timezone}
+                              onChange={(event) =>
+                                updateProfileField(
+                                  "timezone",
+                                  event.target.value,
+                                )
+                              }
+                              className={styles.profileInput}
+                              aria-describedby="profile-timezone-help"
+                              placeholder="America/New_York"
+                              autoComplete="off"
+                              disabled={isProfileSaving}
+                            />
+                          </div>
+                        </div>
+
+                        <div className={styles.profileActionFooter}>
+                          {profileFeedback ? (
+                            <div
+                              className={
+                                profileFeedback.tone === "error"
+                                  ? styles.errorMessage
+                                  : styles.successMessage
+                              }
+                              role={
+                                profileFeedback.tone === "error"
+                                  ? "alert"
+                                  : "status"
+                              }
+                            >
+                              {profileFeedback.message}
+                            </div>
+                          ) : null}
+
+                          <button
+                            type="submit"
+                            className={`${styles.saveButton} ${styles.profileSaveButton}`}
+                            disabled={isProfileSaving}
+                          >
+                            <AccountIcon name="save" />
+                            {isProfileSaving ? "Saving..." : "Save Profile"}
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </section>
                 </div>
-              </div>
+              </>
             ) : null}
 
             {activeSection === "league-settings" ? (
               <div className={styles.panel}>
-                <h2 className={styles.panelTitle}>
-                  Scoring and Roster Defaults
-                </h2>
+                <h2 className={styles.panelTitle}>League Settings</h2>
 
                 {isLeagueLoading ? (
                   <div className={styles.profileLoading}>
@@ -2032,31 +2370,54 @@ export default function AccountSettingsPage() {
                   >
                     {leagueRecordState === "missing" ? (
                       <div className={styles.infoMessage}>
-                        Your league defaults have not been saved yet. Site
-                        defaults are shown here until you save your first
-                        personalized settings row.
+                        Site defaults are shown until you save your own league
+                        settings.
                       </div>
                     ) : null}
 
                     {leagueRecordState === "error" ? (
                       <div className={styles.errorMessage} role="alert">
-                        We could not load your stored league settings. The form
-                        is showing safe defaults until the next successful save.
+                        We could not load your league settings. Site defaults
+                        are shown instead.
                       </div>
                     ) : null}
 
-                    <div className={styles.formSection}>
+                    <div
+                      className={styles.subnav}
+                      role="tablist"
+                      aria-label="League setting groups"
+                    >
+                      {LEAGUE_SETTINGS_VIEWS.map((view) => (
+                        <button
+                          key={view.key}
+                          id={`league-settings-tab-${view.key}`}
+                          type="button"
+                          role="tab"
+                          aria-selected={leagueSettingsView === view.key}
+                          aria-controls={`league-settings-panel-${view.key}`}
+                          className={`${styles.subnavButton} ${
+                            leagueSettingsView === view.key
+                              ? styles.subnavButtonActive
+                              : ""
+                          }`}
+                          onClick={() => setLeagueSettingsView(view.key)}
+                        >
+                          {view.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div
+                      id="league-settings-panel-context-import"
+                      className={styles.formSection}
+                      role="tabpanel"
+                      aria-labelledby="league-settings-tab-context"
+                      hidden={leagueSettingsView !== "context"}
+                    >
                       <div className={styles.formSectionHeader}>
                         <h3 className={styles.formSectionTitle}>
                           Imported Yahoo League
                         </h3>
-                        <p className={styles.formSectionBody}>
-                          When your active context points at Yahoo, this
-                          imported league is the source of truth for scoring
-                          shape and roster slots. Manual defaults remain below
-                          as a fallback for manual teams and future unsupported
-                          providers.
-                        </p>
                       </div>
 
                       {isYahooLoading ? (
@@ -2161,8 +2522,10 @@ export default function AccountSettingsPage() {
                             </div>
                           </div>
 
-                          <div className={styles.yahooLeagueDetailsGrid}>
-                            <div className={styles.yahooLeagueDetailCard}>
+                          <details className={styles.detailsDisclosure}>
+                            <summary>View synced scoring and roster</summary>
+                            <div className={styles.yahooLeagueDetailsGrid}>
+                              <div className={styles.yahooLeagueDetailCard}>
                               <h4 className={styles.yahooLeagueDetailTitle}>
                                 Synced Scoring
                               </h4>
@@ -2198,7 +2561,7 @@ export default function AccountSettingsPage() {
                               </div>
                             </div>
 
-                            <div className={styles.yahooLeagueDetailCard}>
+                              <div className={styles.yahooLeagueDetailCard}>
                               <h4 className={styles.yahooLeagueDetailTitle}>
                                 Synced Roster Slots
                               </h4>
@@ -2232,8 +2595,9 @@ export default function AccountSettingsPage() {
                                   </div>
                                 )}
                               </div>
+                              </div>
                             </div>
-                          </div>
+                          </details>
                         </div>
                       ) : (
                         <div className={styles.infoMessage}>
@@ -2244,14 +2608,9 @@ export default function AccountSettingsPage() {
                       )}
                     </div>
 
-                    <div className={styles.formSection}>
+                    <div className={styles.settingsToolbar}>
                       <div className={styles.formSectionHeader}>
                         <h3 className={styles.formSectionTitle}>League Mode</h3>
-                        <p className={styles.formSectionBody}>
-                          These defaults persist independently from Draft
-                          Dashboard so users can update account-level scoring
-                          without losing page state elsewhere.
-                        </p>
                       </div>
 
                       <label className={styles.field}>
@@ -2268,25 +2627,46 @@ export default function AccountSettingsPage() {
                           <option value="categories">Categories</option>
                         </select>
                       </label>
+
+                      <div className={styles.actionRow}>
+                        <button
+                          type="button"
+                          className={styles.secondaryButton}
+                          onClick={resetLeagueDefaults}
+                          disabled={isLeagueSaving}
+                        >
+                          Reset to Site Defaults
+                        </button>
+                        <button
+                          type="submit"
+                          className={styles.saveButton}
+                          disabled={isLeagueSaving}
+                        >
+                          {isLeagueSaving
+                            ? "Saving..."
+                            : "Save League Defaults"}
+                        </button>
+                      </div>
                     </div>
 
-                    <div className={styles.formSection}>
+                    <div
+                      id="league-settings-panel-scoring"
+                      className={styles.formSection}
+                      role="tabpanel"
+                      aria-labelledby="league-settings-tab-scoring"
+                      hidden={leagueSettingsView !== "scoring"}
+                    >
                       <div className={styles.formSectionHeader}>
                         <h3 className={styles.formSectionTitle}>
                           Points Scoring
                         </h3>
-                        <p className={styles.formSectionBody}>
-                          These values map to the existing `scoringCategories`
-                          shape and remain the active defaults whenever league
-                          type is set to points.
-                        </p>
                       </div>
 
                       <div className={styles.numericGrid}>
                         {scoringEntries.map(([key, value]) => (
                           <label key={key} className={styles.field}>
                             <span className={styles.fieldLabel}>
-                              Points: {key}
+                              Points · {getSettingLabel(key)}
                             </span>
                             <input
                               type="number"
@@ -2305,25 +2685,55 @@ export default function AccountSettingsPage() {
                           </label>
                         ))}
                       </div>
+
+                      <div className={styles.formSectionHeader}>
+                        <h3 className={styles.formSectionTitle}>
+                          Goalie Points Scoring
+                        </h3>
+                      </div>
+                      <div className={styles.numericGrid}>
+                        {goalieScoringEntries.map(([key, value]) => (
+                          <label key={key} className={styles.field}>
+                            <span className={styles.fieldLabel}>
+                              Goalie points · {getSettingLabel(key)}
+                            </span>
+                            <input
+                              type="number"
+                              step="0.05"
+                              value={String(value)}
+                              onChange={(event) =>
+                                updateLeagueNumberField(
+                                  "goalieScoringCategories",
+                                  key,
+                                  event.target.value,
+                                )
+                              }
+                              className={styles.input}
+                              disabled={isLeagueSaving}
+                            />
+                          </label>
+                        ))}
+                      </div>
                     </div>
 
-                    <div className={styles.formSection}>
+                    <div
+                      id="league-settings-panel-categories"
+                      className={styles.formSection}
+                      role="tabpanel"
+                      aria-labelledby="league-settings-tab-categories"
+                      hidden={leagueSettingsView !== "categories"}
+                    >
                       <div className={styles.formSectionHeader}>
                         <h3 className={styles.formSectionTitle}>
                           Category Weights
                         </h3>
-                        <p className={styles.formSectionBody}>
-                          These values are stored separately so categories
-                          leagues can reuse the same account-level defaults
-                          later without coupling to the dashboard screen.
-                        </p>
                       </div>
 
                       <div className={styles.numericGrid}>
                         {categoryWeightEntries.map(([key, value]) => (
                           <label key={key} className={styles.field}>
                             <span className={styles.fieldLabel}>
-                              Weight: {key}
+                              Weight · {getSettingLabel(key)}
                             </span>
                             <input
                               type="number"
@@ -2344,23 +2754,65 @@ export default function AccountSettingsPage() {
                       </div>
                     </div>
 
-                    <div className={styles.formSection}>
+                    <div
+                      id="league-settings-panel-roster"
+                      className={styles.formSection}
+                      role="tabpanel"
+                      aria-labelledby="league-settings-tab-roster"
+                      hidden={leagueSettingsView !== "roster"}
+                    >
                       <div className={styles.formSectionHeader}>
                         <h3 className={styles.formSectionTitle}>
                           Roster Defaults
                         </h3>
-                        <p className={styles.formSectionBody}>
-                          These values map to your existing `rosterConfig` shape
-                          and give the future league-sync flow a stable manual
-                          fallback.
-                        </p>
                       </div>
 
                       <div className={styles.numericGrid}>
+                        <label className={styles.field}>
+                          <span className={styles.fieldLabel}>League teams</span>
+                          <input
+                            type="number"
+                            min="2"
+                            max="40"
+                            step="1"
+                            value={String(leagueForm.teamCount)}
+                            onChange={(event) =>
+                              setLeagueForm((current) => ({
+                                ...current,
+                                teamCount: Math.min(
+                                  40,
+                                  Math.max(2, Number(event.target.value) || 2),
+                                ),
+                              }))
+                            }
+                            className={styles.input}
+                            disabled={isLeagueSaving}
+                          />
+                        </label>
+                        <label className={styles.field}>
+                          <span className={styles.fieldLabel}>Draft format</span>
+                          <select
+                            value={leagueForm.draftOrderType}
+                            onChange={(event) =>
+                              setLeagueForm((current) => ({
+                                ...current,
+                                draftOrderType:
+                                  event.target.value === "straight"
+                                    ? "straight"
+                                    : "snake",
+                              }))
+                            }
+                            className={styles.select}
+                            disabled={isLeagueSaving}
+                          >
+                            <option value="snake">Snake</option>
+                            <option value="straight">Straight</option>
+                          </select>
+                        </label>
                         {rosterEntries.map(([key, value]) => (
                           <label key={key} className={styles.field}>
                             <span className={styles.fieldLabel}>
-                              Roster: {key}
+                              Roster · {getSettingLabel(key)}
                             </span>
                             <input
                               type="number"
@@ -2382,17 +2834,20 @@ export default function AccountSettingsPage() {
                       </div>
                     </div>
 
-                    <div className={styles.formSection}>
+                    <div
+                      id="league-settings-panel-context"
+                      className={styles.formSection}
+                      role="tabpanel"
+                      aria-labelledby="league-settings-tab-context"
+                      hidden={leagueSettingsView !== "context"}
+                    >
                       <div className={styles.formSectionHeader}>
                         <h3 className={styles.formSectionTitle}>
                           Active League Context
                         </h3>
                         <p className={styles.formSectionBody}>
-                          Use these quick switchers to change the active Yahoo
-                          league and team without reconnecting. The selection
-                          persists to both
-                          `user_provider_preferences.active_context` and
-                          `user_settings.active_context`.
+                          Choose the Yahoo league and team used across your
+                          account.
                         </p>
                       </div>
 
@@ -2493,23 +2948,6 @@ export default function AccountSettingsPage() {
                       </div>
                     ) : null}
 
-                    <div className={styles.actionRow}>
-                      <button
-                        type="button"
-                        className={styles.secondaryButton}
-                        onClick={resetLeagueDefaults}
-                        disabled={isLeagueSaving}
-                      >
-                        Reset to Site Defaults
-                      </button>
-                      <button
-                        type="submit"
-                        className={styles.saveButton}
-                        disabled={isLeagueSaving}
-                      >
-                        {isLeagueSaving ? "Saving..." : "Save League Defaults"}
-                      </button>
-                    </div>
                   </form>
                 )}
               </div>
@@ -2531,11 +2969,8 @@ export default function AccountSettingsPage() {
                             Active Yahoo Context
                           </h3>
                           <p className={styles.formSectionBody}>
-                            Manual saved teams can still follow the same active
-                            Yahoo league/team context used elsewhere in the
-                            account UI. Use these dropdowns when you want to
-                            switch league focus before saving or comparing
-                            teams.
+                            Choose the Yahoo league and team you are working
+                            with.
                           </p>
                         </div>
 
@@ -2613,9 +3048,7 @@ export default function AccountSettingsPage() {
                           : "Create Saved Team"}
                       </h3>
                       <p className={styles.formSectionBody}>
-                        Manual teams store a lightweight roster note plus a
-                        snapshot of your current league defaults, so future
-                        provider sync can coexist with account-owned teams.
+                        Add a team name and any roster notes you want to keep.
                       </p>
                     </div>
 
@@ -2712,9 +3145,7 @@ export default function AccountSettingsPage() {
                         Saved Team List
                       </h3>
                       <p className={styles.formSectionBody}>
-                        The default badge marks the team the app should favor
-                        when later provider-linked accounts expose multiple
-                        leagues or teams.
+                        Your default team is used when no team is selected.
                       </p>
                     </div>
 
@@ -2724,9 +3155,7 @@ export default function AccountSettingsPage() {
                       </div>
                     ) : savedTeams.length === 0 ? (
                       <div className={styles.emptyState}>
-                        No manual saved teams yet. Create one here to establish
-                        a default team before Yahoo, Fantrax, or ESPN
-                        connections are introduced.
+                        No saved teams yet. Create one to get started.
                       </div>
                     ) : (
                       <div className={styles.savedTeamsStack}>
@@ -2802,9 +3231,7 @@ export default function AccountSettingsPage() {
 
             {activeSection === "connected-accounts" ? (
               <div className={styles.panel}>
-                <h2 className={styles.panelTitle}>
-                  Provider Connection Architecture
-                </h2>
+                <h2 className={styles.panelTitle}>Fantasy Providers</h2>
 
                 {yahooFeedback ? (
                   <div
@@ -2821,143 +3248,125 @@ export default function AccountSettingsPage() {
                   </div>
                 ) : null}
 
-                <div className={styles.providerCardGrid}>
-                  {CONNECTED_ACCOUNT_PROVIDERS.map((provider) => (
-                    <div key={provider.key} className={styles.providerCard}>
-                      <div className={styles.providerHeader}>
-                        <div>
-                          <div className={styles.providerName}>
-                            {provider.name}
-                          </div>
-                          <div className={styles.providerLocation}>
-                            {provider.location}
-                          </div>
-                        </div>
-                        <span className={styles.providerStatus}>
-                          {provider.key === YAHOO_PROVIDER
-                            ? yahooConnectedAccount?.status === "connected"
-                              ? "Connected"
-                              : isYahooLoading
-                                ? "Loading"
-                                : "Ready"
-                            : provider.status}
-                        </span>
-                      </div>
-
-                      <p className={styles.providerSummary}>
-                        {provider.key === YAHOO_PROVIDER &&
-                        yahooConnectedAccount
-                          ? `Connected through account settings. ${yahooTeams.length} Yahoo team${yahooTeams.length === 1 ? "" : "s"} discovered across ${yahooLeagues.length} league${yahooLeagues.length === 1 ? "" : "s"}.`
-                          : provider.summary}
-                      </p>
-
-                      <div className={styles.providerPillRow}>
-                        <span className={styles.statusPill}>
-                          Core auth stays separate
-                        </span>
-                        <span className={styles.statusPill}>
-                          {provider.key === YAHOO_PROVIDER &&
-                          yahooConnectedAccount
-                            ? `Last sync ${formatSavedTeamTimestamp(
-                                yahooConnectedAccount.last_synced_at ||
-                                  yahooConnectedAccount.updated_at,
-                              )}`
-                            : "No live token flow yet"}
-                        </span>
-                        {provider.key === YAHOO_PROVIDER && yahooDefaultTeam ? (
-                          <span className={styles.statusPill}>
-                            Default team:{" "}
-                            {yahooDefaultTeam.team_name || "Yahoo team"}
-                          </span>
-                        ) : null}
-                      </div>
-
-                      {provider.key === YAHOO_PROVIDER &&
-                      yahooConnectedAccount ? (
-                        <div className={styles.providerBulletList}>
-                          <div className={styles.providerBullet}>
-                            Connected account label:{" "}
-                            {yahooConnectedAccount.account_label ||
-                              "Yahoo Fantasy"}
-                          </div>
-                          <div className={styles.providerBullet}>
-                            Discovered leagues: {yahooLeagues.length}
-                          </div>
-                          <div className={styles.providerBullet}>
-                            Discovered teams: {yahooTeams.length}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className={styles.providerBulletList}>
-                          {provider.bullets.map((bullet) => (
-                            <div key={bullet} className={styles.providerBullet}>
-                              {bullet}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      <div className={styles.providerFooter}>
-                        {provider.key === YAHOO_PROVIDER ? (
-                          <div className={styles.cardActionRow}>
-                            {!yahooConnectedAccount ? (
-                              <button
-                                type="button"
-                                className={styles.saveButton}
-                                onClick={() => void handleYahooConnect()}
-                                disabled={isYahooActionLoading}
-                              >
-                                Connect Yahoo Fantasy
-                              </button>
-                            ) : (
-                              <>
-                                <button
-                                  type="button"
-                                  className={styles.secondaryButton}
-                                  onClick={() => void handleYahooRefresh()}
-                                  disabled={
-                                    isYahooActionLoading || yahooRefreshBlocked
-                                  }
-                                >
-                                  {yahooLatestSyncRun?.status === "running"
-                                    ? "Yahoo Refresh Running"
-                                    : "Refresh Yahoo Data"}
-                                </button>
-                                <button
-                                  type="button"
-                                  className={styles.dangerButton}
-                                  onClick={() => void handleYahooDisconnect()}
-                                  disabled={isYahooActionLoading}
-                                >
-                                  Disconnect Yahoo Fantasy
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        ) : (
-                          "This card is architectural only in MVP. Real OAuth, token storage, sync runs, and refresh controls remain deferred."
-                        )}
-                      </div>
-                    </div>
+                <div
+                  className={styles.subnav}
+                  role="tablist"
+                  aria-label="Fantasy account providers"
+                >
+                  {CONNECTED_ACCOUNT_VIEWS.map((view) => (
+                    <button
+                      key={view.key}
+                      id={`connected-account-tab-${view.key}`}
+                      type="button"
+                      role="tab"
+                      aria-selected={connectedAccountsView === view.key}
+                      aria-controls={`connected-account-panel-${view.key}`}
+                      className={`${styles.subnavButton} ${
+                        connectedAccountsView === view.key
+                          ? styles.subnavButtonActive
+                          : ""
+                      }`}
+                      onClick={() => setConnectedAccountsView(view.key)}
+                    >
+                      {view.label}
+                    </button>
                   ))}
                 </div>
 
-                <FantraxImportPanel />
+                <div
+                  id="connected-account-panel-yahoo"
+                  className={styles.providerView}
+                  role="tabpanel"
+                  aria-labelledby="connected-account-tab-yahoo"
+                  hidden={connectedAccountsView !== "yahoo"}
+                >
+                  <div className={styles.providerCard}>
+                    <div className={styles.providerHeader}>
+                      <div>
+                        <div className={styles.providerName}>Yahoo Fantasy</div>
+                        <p className={styles.providerSummary}>
+                          Sync leagues, teams, scoring, and rosters from Yahoo.
+                        </p>
+                      </div>
+                      <span className={styles.providerStatus}>
+                        {yahooConnectedAccount?.status === "connected"
+                          ? "Connected"
+                          : isYahooLoading
+                            ? "Loading"
+                            : "Not connected"}
+                      </span>
+                    </div>
 
-                <EspnImportPanel />
+                    {yahooConnectedAccount ? (
+                      <div className={styles.providerMetrics}>
+                        <span>
+                          <strong>{yahooLeagues.length}</strong> leagues
+                        </span>
+                        <span>
+                          <strong>{yahooTeams.length}</strong> teams
+                        </span>
+                        <span>
+                          Last sync{" "}
+                          <strong>
+                            {formatSavedTeamTimestamp(
+                              yahooConnectedAccount.last_synced_at ||
+                                yahooConnectedAccount.updated_at,
+                            )}
+                          </strong>
+                        </span>
+                        <span>
+                          Default{" "}
+                          <strong>
+                            {yahooDefaultTeam?.team_name || "Not selected"}
+                          </strong>
+                        </span>
+                      </div>
+                    ) : null}
+
+                    <div className={styles.cardActionRow}>
+                      {!yahooConnectedAccount ? (
+                        <button
+                          type="button"
+                          className={styles.saveButton}
+                          onClick={() => void handleYahooConnect()}
+                          disabled={isYahooActionLoading}
+                        >
+                          Connect Yahoo Fantasy
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            className={styles.secondaryButton}
+                            onClick={() => void handleYahooRefresh()}
+                            disabled={
+                              isYahooActionLoading || yahooRefreshBlocked
+                            }
+                          >
+                            {yahooLatestSyncRun?.status === "running"
+                              ? "Refresh Running"
+                              : "Refresh Yahoo Data"}
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.dangerButton}
+                            onClick={() => void handleYahooDisconnect()}
+                            disabled={isYahooActionLoading}
+                          >
+                            Disconnect Yahoo
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
 
                 {yahooConnectedAccount ? (
                   <div className={styles.providerControlGrid}>
                     <div className={styles.providerControlCard}>
                       <div className={styles.formSectionHeader}>
                         <h3 className={styles.formSectionTitle}>
-                          Yahoo League Discovery
+                          Leagues
                         </h3>
-                        <p className={styles.formSectionBody}>
-                          The initial Yahoo sync imports the leagues attached to
-                          your Yahoo account so you can choose a stable default
-                          league/team context without leaving the account page.
-                        </p>
                       </div>
 
                       <div className={styles.providerControlRows}>
@@ -2985,11 +3394,6 @@ export default function AccountSettingsPage() {
                     <div className={styles.providerControlCard}>
                       <div className={styles.formSectionHeader}>
                         <h3 className={styles.formSectionTitle}>Yahoo Teams</h3>
-                        <p className={styles.formSectionBody}>
-                          Multiple Yahoo leagues and teams are supported. Pick a
-                          default team here and the stored active context will
-                          remain stable for future league-aware screens.
-                        </p>
                       </div>
 
                       <div className={styles.providerControlRows}>
@@ -3128,12 +3532,10 @@ export default function AccountSettingsPage() {
                     <div className={styles.providerControlCard}>
                       <div className={styles.formSectionHeader}>
                         <h3 className={styles.formSectionTitle}>
-                          Stored Yahoo Context
+                          Sync Status
                         </h3>
                         <p className={styles.formSectionBody}>
-                          Manual refresh is guarded by one in-flight run per
-                          Yahoo account and a five-minute cooldown after success
-                          or failure.
+                          Yahoo data can be refreshed every five minutes.
                         </p>
                       </div>
 
@@ -3167,143 +3569,47 @@ export default function AccountSettingsPage() {
                   </div>
                 ) : null}
 
-                <div className={styles.providerControlGrid}>
-                  {FUTURE_PROVIDER_CONTROL_SURFACES.map((surface) => (
-                    <div
-                      key={surface.title}
-                      className={styles.providerControlCard}
-                    >
-                      <div className={styles.formSectionHeader}>
-                        <h3 className={styles.formSectionTitle}>
-                          {surface.title}
-                        </h3>
-                        <p className={styles.formSectionBody}>{surface.body}</p>
-                      </div>
+                </div>
 
-                      <div className={styles.providerControlRows}>
-                        {surface.rows.map((row) => (
-                          <div key={row} className={styles.providerControlRow}>
-                            {row}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                <div
+                  id="connected-account-panel-fantrax"
+                  className={styles.providerView}
+                  role="tabpanel"
+                  aria-labelledby="connected-account-tab-fantrax"
+                  hidden={connectedAccountsView !== "fantrax"}
+                >
+                  <FantraxImportPanel
+                    onSettingsApplied={(settings) => {
+                      setLeagueForm(settings);
+                      setLeagueRecordState("present");
+                    }}
+                  />
+                </div>
+
+                <div
+                  id="connected-account-panel-espn"
+                  className={styles.providerView}
+                  role="tabpanel"
+                  aria-labelledby="connected-account-tab-espn"
+                  hidden={connectedAccountsView !== "espn"}
+                >
+                  <EspnImportPanel
+                    onSettingsApplied={(settings) => {
+                      setLeagueForm(settings);
+                      setLeagueRecordState("present");
+                    }}
+                  />
                 </div>
               </div>
             ) : null}
 
             {activeSection === "patreon" ? (
               <div className={styles.panel}>
-                <h2 className={styles.panelTitle}>
-                  Patreon Account Link and Entitlements
-                </h2>
+                <h2 className={styles.panelTitle}>Membership</h2>
 
                 <PatreonConnectionPanel />
-
-                <div className={styles.providerControlGrid}>
-                  <div className={styles.providerControlCard}>
-                    <div className={styles.formSectionHeader}>
-                      <h3 className={styles.formSectionTitle}>
-                        Connection Intent
-                      </h3>
-                      <p className={styles.formSectionBody}>
-                        Patreon is linked here from account settings only. It
-                        should never become the primary site login path, and it
-                        does not need to share the same email address as the
-                        site auth identity.
-                      </p>
-                    </div>
-
-                    <div className={styles.providerControlRows}>
-                      <div className={styles.providerControlRow}>
-                        Connection location: account settings, not auth modal
-                      </div>
-                      <div className={styles.providerControlRow}>
-                        Login separation: Patreon identity stays distinct from
-                        Supabase app auth
-                      </div>
-                      <div className={styles.providerControlRow}>
-                        Link action: signed Patreon OAuth v2 with identity-only
-                        scope
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={styles.providerControlCard}>
-                    <div className={styles.formSectionHeader}>
-                      <h3 className={styles.formSectionTitle}>
-                        Entitlement Model
-                      </h3>
-                      <p className={styles.formSectionBody}>
-                        Site access should be granted from site-owned
-                        entitlements, not directly from the raw Patreon account
-                        record. This leaves room for future sync reconciliation
-                        and perk history.
-                      </p>
-                    </div>
-
-                    <div className={styles.providerControlRows}>
-                      <div className={styles.providerControlRow}>
-                        Current entitlement state: generic site-owned supporter
-                        eligibility
-                      </div>
-                      <div className={styles.providerControlRow}>
-                        Perk mapping: explicit future campaign/tier-to-feature
-                        policy; no inferred grants
-                      </div>
-                      <div className={styles.providerControlRow}>
-                        Last Patreon sync: visible from the membership link
-                        panel
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={styles.providerControlCard}>
-                    <div className={styles.formSectionHeader}>
-                      <h3 className={styles.formSectionTitle}>
-                        Anti-Sharing Controls
-                      </h3>
-                      <p className={styles.formSectionBody}>
-                        Patreon account sharing needs explicit protection. The
-                        current model prevents one stable Patreon identity from
-                        being attached to multiple user accounts for perk
-                        access.
-                      </p>
-                    </div>
-
-                    <div className={styles.providerControlRows}>
-                      <div className={styles.providerControlRow}>
-                        Duplicate attachment check: stable Patreon user and
-                        member IDs are single-account constrained
-                      </div>
-                      <div className={styles.providerControlRow}>
-                        Access audit trail: provider sync runs plus entitlement
-                        timestamps and source reference
-                      </div>
-                      <div className={styles.providerControlRow}>
-                        Failure state: clear mismatch messaging without blocking
-                        core site auth
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             ) : null}
-
-            {sectionConfig.panels.map((panel) => (
-              <div key={panel.title} className={styles.panel}>
-                <h2 className={styles.panelTitle}>{panel.title}</h2>
-                <p className={styles.panelBody}>{panel.body}</p>
-              </div>
-            ))}
-
-            <div className={styles.emptyState}>
-              This authenticated shell is intentionally incremental. The next
-              `5.x` slices will wire saved team records, connected-account
-              placeholders, provider refresh states, and guarded missing-row
-              handling into the same layout.
-            </div>
           </div>
         </section>
       </div>

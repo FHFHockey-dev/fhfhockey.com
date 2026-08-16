@@ -92,7 +92,11 @@ describe("/api/v1/account/fantrax/import", () => {
       {
         method: "POST",
         headers: {},
-        body: { format: "csv", content: "league_name,team_name" },
+        body: {
+          format: "csv",
+          content: "league_name,team_name",
+          targetConnectedAccountId: "account-1",
+        },
       } as any,
       res,
     );
@@ -101,6 +105,7 @@ describe("/api/v1/account/fantrax/import", () => {
       userId: "user-1",
       format: "csv",
       content: "league_name,team_name",
+      targetConnectedAccountId: "account-1",
     });
     expect(res.body).toEqual(
       expect.objectContaining({ success: true, leagueCount: 2, teamCount: 4 }),

@@ -1,0 +1,69 @@
+{
+  "leagueName": "Fixture NHL Points League",
+  "sport": "NHL",
+  "seasonYear": "2026",
+  "numTeams": 2,
+  "draftSettings": {
+    "draftType": "SNAKE"
+  },
+  "rosterInfo": {
+    "positionConstraints": {
+      "C": { "name": "Center", "maxActive": 2 },
+      "LW": { "name": "Left Wing", "maxActive": 2 },
+      "RW": { "name": "Right Wing", "maxActive": 2 },
+      "D": { "name": "Defense", "maxActive": 4 },
+      "G": { "name": "Goalie", "maxActive": 2 },
+      "F": { "name": "Forward", "maxActive": 1 },
+      "IR": { "name": "Injured Reserve", "maxActive": 2 }
+    },
+    "maxTotalReservePlayers": 4
+  },
+  "scoringSystem": {
+    "type": "HEAD_TO_HEAD_POINTS",
+    "scoringCategorySettings": [
+      {
+        "configs": [
+          {
+            "position": { "code": "SKATER" },
+            "scoringCategory": { "code": "G", "name": "Goals" },
+            "points": 3
+          },
+          {
+            "position": { "code": "SKATER" },
+            "scoringCategory": { "code": "GP", "name": "Games Played" },
+            "points": 0.1
+          },
+          {
+            "position": { "code": "GOALIE" },
+            "scoringCategory": { "code": "GP", "name": "Games Played" },
+            "points": 0.5
+          },
+          {
+            "position": { "code": "GOALIE" },
+            "scoringCategory": { "code": "W", "name": "Wins" },
+            "points": 4
+          },
+          {
+            "position": { "code": "SKATER" },
+            "scoringCategory": { "code": "PIM", "name": "Penalty Minutes" },
+            "points": 1,
+            "thresholds": [{ "minimum": 5 }]
+          },
+          {
+            "position": { "code": "TEAM_GOALIE" },
+            "scoringCategory": { "code": "W", "name": "Team Goalie Wins" },
+            "points": 2
+          }
+        ]
+      }
+    ]
+  },
+  "teamInfo": {
+    "team-b": { "id": "team-b", "name": "Blue Line", "division": "East" },
+    "team-a": { "id": "team-a", "name": "High Slot", "division": "West" }
+  },
+  "playerInfo": {
+    "not-persisted": { "name": "Fixture Player" }
+  },
+  "matchups": [{ "period": 1 }]
+}

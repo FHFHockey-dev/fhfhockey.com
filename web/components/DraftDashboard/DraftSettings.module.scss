@@ -30,6 +30,15 @@
   border-bottom: 2px solid v.$border-secondary;
 }
 
+.lockNotice {
+  padding: v.$space-xs v.$space-sm;
+  color: v.$warning-color;
+  background: rgba(v.$warning-color, 0.1);
+  border: 1px solid rgba(v.$warning-color, 0.55);
+  border-radius: v.$border-radius-sm;
+  font-size: v.$font-size-sm;
+}
+
 .title {
   font-family: v.$font-family-accent, sans-serif;
   font-size: clamp(1.25rem, 1.8vw, 2rem);

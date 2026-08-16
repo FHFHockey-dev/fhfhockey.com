@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { timingSafeEqual } from "crypto";
 
+import { parseIftttDateToIso } from "lib/sources/lineSourceIftttReceiver";
 import supabase from "lib/supabase/server";
 
 type ResponseBody =
@@ -52,12 +53,6 @@ function getBodyValue(body: unknown, keys: string[]): string | null {
 function extractTweetId(value: string | null): string | null {
   if (!value) return null;
   return value.match(/\/status(?:es)?\/(\d+)/i)?.[1] ?? null;
-}
-
-function parseDateToIso(value: string | null): string | null {
-  if (!value) return null;
-  const parsed = Date.parse(value);
-  return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
 }
 
 function parseBooleanQueryFlag(value: string | string[] | undefined): boolean {
@@ -207,7 +202,7 @@ export default async function handler(
     link_to_tweet: linkToTweet,
     tweet_id: tweetId,
     tweet_embed_code: tweetEmbedCode,
-    tweet_created_at: parseDateToIso(createdAt),
+    tweet_created_at: parseIftttDateToIso(createdAt),
     created_at_label: createdAt,
     processing_status: "pending",
     raw_payload: req.body && typeof req.body === "object" ? req.body : {},

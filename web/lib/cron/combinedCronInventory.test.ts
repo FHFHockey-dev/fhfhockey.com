@@ -268,8 +268,15 @@ SELECT cron.schedule(
     ).toHaveLength(59);
     expect(
       inventory.jobs.filter((job) => job.provider === "vercel"),
-    ).toHaveLength(20);
-    expect(inventory.jobs).toHaveLength(79);
+    ).toHaveLength(22);
+    expect(inventory.jobs).toHaveLength(81);
+    expect(inventory.jobs).toContainEqual(
+      expect.objectContaining({
+        provider: "vercel",
+        routePath: "/api/internal/espn-sync",
+        normalizedCronExpression: "37 * * * *",
+      }),
+    );
     expect(inventory.vercelMaxDurationMs).toBe(240_000);
     expect(inventory.jobs.every((job) => job.active)).toBe(true);
   });

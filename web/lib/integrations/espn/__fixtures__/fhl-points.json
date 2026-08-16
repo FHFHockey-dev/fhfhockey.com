@@ -1,0 +1,71 @@
+{
+  "id": 123456,
+  "seasonId": 2026,
+  "scoringPeriodId": 3,
+  "settings": {
+    "name": "Redacted Points League",
+    "size": 2,
+    "scoringSettings": {
+      "scoringType": "H2H_POINTS",
+      "scoringItems": [
+        { "statId": 13, "points": 3 },
+        { "statId": 14, "points": 2 },
+        { "statId": 1, "points": 4 },
+        { "statId": 6, "points": 0.2 }
+      ]
+    },
+    "rosterSettings": {
+      "lineupSlotCounts": { "0": 1, "1": 1, "2": 1, "4": 2, "5": 1, "7": 3 }
+    },
+    "draftSettings": { "type": "SNAKE", "pickOrder": [1, 2] }
+  },
+  "members": [
+    {
+      "id": "{00000000-0000-0000-0000-000000000001}",
+      "displayName": "REDACTED",
+      "email": "redacted@example.invalid",
+      "profileImageUrl": "https://example.invalid/redacted.png"
+    }
+  ],
+  "teams": [
+    {
+      "id": 1,
+      "name": "High Slot",
+      "abbrev": "HIGH",
+      "owners": ["{00000000-0000-0000-0000-000000000001}"],
+      "divisionId": 1,
+      "record": { "overall": { "wins": 2, "losses": 1, "ties": 0, "pointsFor": 20, "pointsAgainst": 15, "percentage": 0.667 } },
+      "roster": {
+        "entries": [
+          {
+            "playerId": 9001,
+            "lineupSlotId": 0,
+            "acquisitionType": "DRAFT",
+            "playerPoolEntry": { "player": { "id": 9001, "fullName": "Redacted Center", "defaultPositionId": 1, "proTeamId": 21 } }
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "name": "Low Slot",
+      "abbrev": "LOW",
+      "owners": ["{00000000-0000-0000-0000-000000000002}"],
+      "divisionId": 1,
+      "record": { "overall": { "wins": 1, "losses": 2, "ties": 0, "pointsFor": 15, "pointsAgainst": 20, "percentage": 0.333 } },
+      "roster": { "entries": [] }
+    }
+  ],
+  "schedule": [
+    {
+      "id": 10,
+      "matchupPeriodId": 3,
+      "home": { "teamId": 1, "totalPoints": 12.5 },
+      "away": { "teamId": 2, "totalPoints": 10 },
+      "winner": "HOME"
+    }
+  ],
+  "transactions": [],
+  "draftDetail": { "drafted": false, "inProgress": false, "picks": [] },
+  "status": { "currentMatchupPeriod": 3, "isActive": true }
+}

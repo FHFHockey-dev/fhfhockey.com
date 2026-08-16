@@ -434,11 +434,27 @@ type CalculatedMetricsSubset = Omit<
   "player_id" | "strength" | "updated_at"
 > | null;
 
+export function selectCompletedWgoAverageSeasons(
+  sourceSeasons: number[],
+  seasonMetadata: { id: number; regularSeasonEndDate: string }[],
+  today: string,
+): number[] {
+  const completedSeasonIds = new Set(
+    seasonMetadata
+      .filter((season) => season.regularSeasonEndDate < today)
+      .map((season) => Number(season.id)),
+  );
+  return [...new Set(sourceSeasons)]
+    .filter((season) => completedSeasonIds.has(season))
+    .sort((a, b) => b - a);
+}
+
 // --- *** NEW: Pagination Helper *** ---
 const fetchAllPages = async <
   TableName extends keyof Database["public"]["Tables"],
 >(
   tableName: TableName,
+  orderColumns: string[] = ["season", "player_id", "strength", "team"],
 ): Promise<Database["public"]["Tables"][TableName]["Row"][]> => {
   const PAGE_SIZE = 1000; // Supabase default limit
   let allData: Database["public"]["Tables"][TableName]["Row"][] = []; // Use specific Row type
@@ -453,10 +469,11 @@ const fetchAllPages = async <
 
     // No explicit : PostgrestResponse<T> needed, let TS infer from the specific table call
     // Pass the specific TableName literal to .from()
-    const { data, error, count } = await supabase
-      .from(tableName) // Use the specific TableName literal
-      .select("*", { count: "exact" })
-      .range(from, to);
+    let query = supabase.from(tableName).select("*");
+    for (const column of orderColumns) {
+      query = query.order(column, { ascending: true });
+    }
+    const { data, error } = await query.range(from, to);
 
     // Type checking for error
     const postgrestError = error as PostgrestError | null;
@@ -479,7 +496,7 @@ const fetchAllPages = async <
       console.log(
         `  Fetched ${pageData.length} rows from ${tableName} (Page ${
           page + 1
-        }, Total: ${allData.length}${count ? `/${count}` : ""})`,
+        }, Total: ${allData.length})`,
       );
       if (pageData.length < PAGE_SIZE) {
         keepFetching = false; // Last page fetched
@@ -977,32 +994,31 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       // Use fetchAllPages for the large counts tables
       individualCountsData,
       onIceCountsData,
-      // Fetch smaller lookup tables directly (assuming they are < 1000 rows)
+      // Fetch the small team identity lookup directly.
       { data: teamsInfoData, error: tiError },
-      { data: teamSummaryYearsData, error: tsyError },
-      { data: maxSeasonData, error: msError },
+      teamSummaryYearsData,
+      { data: seasonMetadata, error: seasonMetadataError },
     ] = await Promise.all([
       fetchAllPages<any>("nst_seasonal_individual_counts"), // Fetch all pages
       fetchAllPages<any>("nst_seasonal_on_ice_counts"), // Fetch all pages
       supabase.from("teamsinfo").select("nst_abbr, name"),
+      fetchAllPages<any>("team_summary_years", [
+        "season_id",
+        "team_full_name",
+      ]),
       supabase
-        .from("team_summary_years")
-        .select("season_id, team_full_name, games_played"),
-      supabase
-        .from("nst_seasonal_individual_counts")
-        .select("season")
-        .order("season", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
+        .from("seasons")
+        .select("id, regularSeasonEndDate")
+        .order("id", { ascending: true }),
     ]);
 
     // Error checking for lookup tables (fetchAllPages handles its own errors)
     if (tiError) throw new Error(`Teams Info Fetch Error: ${tiError.message}`);
-    if (tsyError)
-      throw new Error(`Team Summary Years Fetch Error: ${tsyError.message}`);
-    if (msError && msError.code !== "PGRST116")
-      throw new Error(`Max Season Fetch Error: ${msError.message}`); // Allow null from maybeSingle
-    if (!teamsInfoData || !teamSummaryYearsData) {
+    if (seasonMetadataError)
+      throw new Error(
+        `Season Metadata Fetch Error: ${seasonMetadataError.message}`,
+      );
+    if (!teamsInfoData || !seasonMetadata) {
       throw new Error(
         "Missing essential lookup data (teamsinfo, team_summary_years).",
       );
@@ -1012,8 +1028,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       `Total Fetched: ${individualCountsData.length} individual, ${onIceCountsData.length} on-ice rows.`,
     );
 
-    // Handle case where there's no data / no seasons yet
-    if (!maxSeasonData?.season) {
+    const sourceSeasons = [
+      ...new Set(individualCountsData?.map((row) => Number(row.season)) ?? []),
+    ];
+    if (sourceSeasons.length === 0) {
       console.log("No season data found. Exiting calculation.");
       return res.status(200).json({
         success: true,
@@ -1023,10 +1041,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         duration: `0.00 s`,
       });
     }
-    const currentSeason = maxSeasonData.season;
-    console.log(
-      `Current Season identified as: ${currentSeason}. Excluding from averages.`,
-    );
+    const today = new Date().toISOString().slice(0, 10);
 
     // 2. Prepare Lookups
     const teamAbbrToNameMap = new Map(
@@ -1043,11 +1058,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     });
 
     // 3. Determine Relevant Seasons
-    const allSeasons = [
-      ...new Set(individualCountsData?.map((r) => r.season) ?? []),
-    ]
-      .filter((s) => s < currentSeason)
-      .sort((a, b) => b - a);
+    const allSeasons = selectCompletedWgoAverageSeasons(
+      sourceSeasons,
+      seasonMetadata,
+      today,
+    );
     const threeYearSeasons = new Set(allSeasons.slice(0, 3));
     const careerSeasons = new Set(allSeasons);
     console.log(

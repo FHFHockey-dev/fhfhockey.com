@@ -10,17 +10,27 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const accountState = vi.hoisted(() => ({
   routerQuery: {},
   replace: vi.fn(),
+  authUser: {
+    id: "user-1",
+    email: "tim@example.com",
+    displayName: "Tim Tester",
+    avatarUrl: null,
+    isEmailVerified: true,
+  } as any,
   profileMaybeSingle: vi.fn(),
   profileUpsert: vi.fn(),
   settingsMaybeSingle: vi.fn(),
   settingsUpsert: vi.fn(),
   connectedAccountMaybeSingle: vi.fn(),
+  connectedAccountsCountEq: vi.fn(),
   externalLeaguesOrder: vi.fn(),
+  externalLeaguesCountEq: vi.fn(),
   externalTeamsOrder: vi.fn(),
   providerPreferencesMaybeSingle: vi.fn(),
   providerPreferencesUpsert: vi.fn(),
   providerSyncRunMaybeSingle: vi.fn(),
   savedTeamsRows: [] as Array<any>,
+  savedTeamsCountEq: vi.fn(),
   savedTeamsInsert: vi.fn(),
   savedTeamsUpdate: vi.fn(),
   savedTeamsDelete: vi.fn(),
@@ -36,13 +46,7 @@ vi.mock("next/router", () => ({
 
 vi.mock("contexts/AuthProviderContext", () => ({
   useAuth: () => ({
-    user: {
-      id: "user-1",
-      email: "tim@example.com",
-      displayName: "Tim Tester",
-      avatarUrl: null,
-      isEmailVerified: true,
-    },
+    user: accountState.authUser,
   }),
 }));
 
@@ -76,25 +80,31 @@ vi.mock("lib/supabase/client", () => ({
 
       if (table === "connected_accounts") {
         return {
-          select: () => ({
-            eq: (_field: string, _value: string) => ({
-              eq: (_nextField: string, _nextValue: string) => ({
-                maybeSingle: accountState.connectedAccountMaybeSingle,
-              }),
-            }),
-          }),
+          select: (_columns?: string, options?: { count?: string }) =>
+            options?.count
+              ? { eq: accountState.connectedAccountsCountEq }
+              : {
+                  eq: (_field: string, _value: string) => ({
+                    eq: (_nextField: string, _nextValue: string) => ({
+                      maybeSingle: accountState.connectedAccountMaybeSingle,
+                    }),
+                  }),
+                },
         };
       }
 
       if (table === "external_leagues") {
         return {
-          select: () => ({
-            eq: (_field: string, _value: string) => ({
-              eq: (_nextField: string, _nextValue: string) => ({
-                order: accountState.externalLeaguesOrder,
-              }),
-            }),
-          }),
+          select: (_columns?: string, options?: { count?: string }) =>
+            options?.count
+              ? { eq: accountState.externalLeaguesCountEq }
+              : {
+                  eq: (_field: string, _value: string) => ({
+                    eq: (_nextField: string, _nextValue: string) => ({
+                      order: accountState.externalLeaguesOrder,
+                    }),
+                  }),
+                },
         };
       }
 
@@ -141,17 +151,20 @@ vi.mock("lib/supabase/client", () => ({
 
       if (table === "user_saved_teams") {
         return {
-          select: () => ({
-            eq: () => ({
-              order: () =>
-                Promise.resolve({
-                  data: [...accountState.savedTeamsRows].sort((a, b) =>
-                    a.created_at < b.created_at ? 1 : -1,
-                  ),
-                  error: null,
-                }),
-            }),
-          }),
+          select: (_columns?: string, options?: { count?: string }) =>
+            options?.count
+              ? { eq: accountState.savedTeamsCountEq }
+              : {
+                  eq: () => ({
+                    order: () =>
+                      Promise.resolve({
+                        data: [...accountState.savedTeamsRows].sort((a, b) =>
+                          a.created_at < b.created_at ? 1 : -1,
+                        ),
+                        error: null,
+                      }),
+                  }),
+                },
           insert: (payload: any) => {
             accountState.savedTeamsInsert(payload);
             const row = {
@@ -202,18 +215,28 @@ import AccountSettingsPage from "components/account/AccountSettingsPage";
 describe("AccountSettingsPage profile section", () => {
   beforeEach(() => {
     accountState.routerQuery = {};
+    accountState.authUser = {
+      id: "user-1",
+      email: "tim@example.com",
+      displayName: "Tim Tester",
+      avatarUrl: null,
+      isEmailVerified: true,
+    };
     accountState.replace.mockReset();
     accountState.profileMaybeSingle.mockReset();
     accountState.profileUpsert.mockReset();
     accountState.settingsMaybeSingle.mockReset();
     accountState.settingsUpsert.mockReset();
     accountState.connectedAccountMaybeSingle.mockReset();
+    accountState.connectedAccountsCountEq.mockReset();
     accountState.externalLeaguesOrder.mockReset();
+    accountState.externalLeaguesCountEq.mockReset();
     accountState.externalTeamsOrder.mockReset();
     accountState.providerPreferencesMaybeSingle.mockReset();
     accountState.providerPreferencesUpsert.mockReset();
     accountState.providerSyncRunMaybeSingle.mockReset();
     accountState.savedTeamsRows = [];
+    accountState.savedTeamsCountEq.mockReset();
     accountState.savedTeamsInsert.mockReset();
     accountState.savedTeamsUpdate.mockReset();
     accountState.savedTeamsDelete.mockReset();
@@ -226,8 +249,16 @@ describe("AccountSettingsPage profile section", () => {
       data: null,
       error: null,
     });
+    accountState.connectedAccountsCountEq.mockResolvedValue({
+      count: 1,
+      error: null,
+    });
     accountState.externalLeaguesOrder.mockResolvedValue({
       data: [],
+      error: null,
+    });
+    accountState.externalLeaguesCountEq.mockResolvedValue({
+      count: 2,
       error: null,
     });
     accountState.externalTeamsOrder.mockResolvedValue({
@@ -243,6 +274,10 @@ describe("AccountSettingsPage profile section", () => {
     });
     accountState.providerSyncRunMaybeSingle.mockResolvedValue({
       data: null,
+      error: null,
+    });
+    accountState.savedTeamsCountEq.mockResolvedValue({
+      count: 3,
       error: null,
     });
     accountState.authGetSession.mockResolvedValue({
@@ -288,10 +323,97 @@ describe("AccountSettingsPage profile section", () => {
       screen.getByDisplayValue("https://example.com/tim.png"),
     ).toBeTruthy();
     expect(screen.getByDisplayValue("America/Chicago")).toBeTruthy();
-    expect(screen.getByAltText("Commissioner Tim")).toBeTruthy();
+    expect(
+      screen.getByAltText("Commissioner Tim profile avatar"),
+    ).toBeTruthy();
   });
 
-  it("shows an initialization notice when the profile row is missing", async () => {
+  it("renders truthful account status, counts, and a read-only verified email", async () => {
+    accountState.profileMaybeSingle.mockResolvedValue({
+      data: {
+        display_name: "Tim Tester",
+        avatar_url: null,
+        timezone: "America/New_York",
+      },
+      error: null,
+    });
+
+    render(<AccountSettingsPage />);
+
+    const emailInput = (await screen.findByLabelText(
+      "Email Address",
+    )) as HTMLInputElement;
+    expect(emailInput.value).toBe("tim@example.com");
+    expect(emailInput.readOnly).toBe(true);
+    expect(screen.getByText("Verified")).toBeTruthy();
+    expect(screen.getByText("Signed In")).toBeTruthy();
+    expect(
+      await screen.findByRole("button", { name: /Connected Leagues 2/ }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: /Saved Teams 3/ }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: /Connected Accounts 1/ }),
+    ).toBeTruthy();
+  });
+
+  it("omits the verification badge when the account email is unverified", async () => {
+    accountState.authUser = {
+      ...accountState.authUser,
+      isEmailVerified: false,
+    };
+    accountState.profileMaybeSingle.mockResolvedValue({
+      data: {
+        display_name: "Tim Tester",
+        avatar_url: null,
+        timezone: "America/New_York",
+      },
+      error: null,
+    });
+
+    render(<AccountSettingsPage />);
+
+    await screen.findByLabelText("Email Address");
+    expect(screen.queryByText("Verified")).toBeNull();
+  });
+
+  it("navigates through the account tabs and summary rows", async () => {
+    accountState.profileMaybeSingle.mockResolvedValue({
+      data: {
+        display_name: "Tim Tester",
+        avatar_url: null,
+        timezone: "America/New_York",
+      },
+      error: null,
+    });
+
+    render(<AccountSettingsPage />);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Connected Leagues 2/ }),
+    );
+    expect(accountState.replace).toHaveBeenCalledWith(
+      {
+        pathname: "/account",
+        query: { section: "connected-accounts" },
+      },
+      undefined,
+      { shallow: true },
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Saved Teams" }));
+    expect(accountState.replace).toHaveBeenLastCalledWith(
+      {
+        pathname: "/account",
+        query: { section: "saved-teams" },
+      },
+      undefined,
+      { shallow: true },
+    );
+  });
+
+  it("uses the current account identity when the profile row is missing", async () => {
     accountState.profileMaybeSingle.mockResolvedValue({
       data: null,
       error: null,
@@ -299,12 +421,7 @@ describe("AccountSettingsPage profile section", () => {
 
     render(<AccountSettingsPage />);
 
-    expect(
-      await screen.findByText(
-        "Your profile record is not stored yet. The form is using your current auth identity as a fallback, and saving will initialize the profile row.",
-      ),
-    ).toBeTruthy();
-    expect(screen.getByDisplayValue("Tim Tester")).toBeTruthy();
+    expect(await screen.findByDisplayValue("Tim Tester")).toBeTruthy();
   });
 
   it("saves updated profile settings", async () => {
@@ -343,6 +460,38 @@ describe("AccountSettingsPage profile section", () => {
       );
     });
 
+    expect(await screen.findByText("Profile settings saved.")).toBeTruthy();
+  });
+
+  it("disables the profile save action while a save is in progress", async () => {
+    accountState.profileMaybeSingle.mockResolvedValue({
+      data: {
+        display_name: "Tim Tester",
+        avatar_url: null,
+        timezone: "America/New_York",
+      },
+      error: null,
+    });
+    let resolveUpsert: ((value: { error: null }) => void) | undefined;
+    accountState.profileUpsert.mockReturnValue(
+      new Promise((resolve) => {
+        resolveUpsert = resolve;
+      }),
+    );
+
+    render(<AccountSettingsPage />);
+
+    await screen.findByDisplayValue("Tim Tester");
+    fireEvent.click(screen.getByRole("button", { name: "Save Profile" }));
+
+    await waitFor(() => {
+      expect(
+        (screen.getByRole("button", { name: "Saving..." }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(true);
+    });
+
+    resolveUpsert?.({ error: null });
     expect(await screen.findByText("Profile settings saved.")).toBeTruthy();
   });
 
@@ -395,7 +544,7 @@ describe("AccountSettingsPage profile section", () => {
       ).toBe("categories");
     });
     expect(
-      (screen.getByLabelText("Points: GOALS") as HTMLInputElement).value,
+      (screen.getByLabelText("Points · Goals") as HTMLInputElement).value,
     ).toBe("5");
     expect(screen.getByText("Source: yahoo")).toBeTruthy();
     expect(screen.getByText("Team: team-9")).toBeTruthy();
@@ -422,7 +571,7 @@ describe("AccountSettingsPage profile section", () => {
 
     expect(
       await screen.findByText(
-        "Your league defaults have not been saved yet. Site defaults are shown here until you save your first personalized settings row.",
+        "Site defaults are shown until you save your own league settings.",
       ),
     ).toBeTruthy();
     expect(
@@ -458,10 +607,10 @@ describe("AccountSettingsPage profile section", () => {
     fireEvent.change(screen.getByLabelText("League Type"), {
       target: { value: "categories" },
     });
-    fireEvent.change(screen.getByLabelText("Points: GOALS"), {
+    fireEvent.change(screen.getByLabelText("Points · Goals"), {
       target: { value: "4.5" },
     });
-    fireEvent.change(screen.getByLabelText("Roster: C"), {
+    fireEvent.change(screen.getByLabelText("Roster · Centers"), {
       target: { value: "3" },
     });
     fireEvent.click(
@@ -480,6 +629,12 @@ describe("AccountSettingsPage profile section", () => {
             SHOTS_ON_GOAL: 0.2,
             HITS: 0.2,
             BLOCKED_SHOTS: 0.25,
+          },
+          goalie_scoring_categories: {
+            GOALS_AGAINST_GOALIE: -1,
+            SAVES_GOALIE: 0.2,
+            SHUTOUTS_GOALIE: 3,
+            WINS_GOALIE: 4,
           },
           category_weights: {
             GOALS: 1,
@@ -501,6 +656,8 @@ describe("AccountSettingsPage profile section", () => {
             bench: 4,
             utility: 1,
           },
+          team_count: 12,
+          draft_order_type: "snake",
           ui_preferences: {
             account_settings_section: "league-settings",
             league_settings_panel_open: true,
@@ -508,10 +665,13 @@ describe("AccountSettingsPage profile section", () => {
           active_context: {
             source_type: "manual",
             provider: null,
+            connected_account_id: null,
             external_league_id: null,
             external_team_id: null,
             external_league_key: null,
             external_team_key: null,
+            applied_settings_hash: null,
+            applied_at: null,
           },
         },
         {
@@ -1118,12 +1278,12 @@ describe("AccountSettingsPage profile section", () => {
     ).toBeTruthy();
     expect(
       screen.getByText(
-        "No manual saved teams yet. Create one here to establish a default team before Yahoo, Fantrax, or ESPN connections are introduced.",
+        "No saved teams yet. Create one to get started.",
       ),
     ).toBeTruthy();
   });
 
-  it("shows explicit provider architecture cards in connected accounts", async () => {
+  it("shows user-facing provider tabs in connected accounts", async () => {
     accountState.routerQuery = {
       section: "connected-accounts",
     };
@@ -1138,30 +1298,16 @@ describe("AccountSettingsPage profile section", () => {
 
     render(<AccountSettingsPage />);
 
-    expect(await screen.findByText("Yahoo Fantasy")).toBeTruthy();
+    expect(
+      await screen.findByRole("tab", { name: "Yahoo Fantasy" }),
+    ).toBeTruthy();
     expect(
       screen.getByRole("button", { name: "Connect Yahoo Fantasy" }),
     ).toBeTruthy();
-    expect(screen.getByText("Fantrax")).toBeTruthy();
-    expect(screen.getAllByText("Patreon").length).toBeGreaterThan(1);
-    expect(screen.getByText("ESPN")).toBeTruthy();
-    expect(
-      screen.getAllByText("No live token flow yet").length,
-    ).toBeGreaterThan(0);
-    expect(screen.getByText("Linked League and Team Context")).toBeTruthy();
-    expect(
-      screen.getByText("Refresh on sign-in: planned preference toggle"),
-    ).toBeTruthy();
-    expect(
-      screen.getByText(
-        "Cooldown window: planned anti-throttling lockout after a sync run",
-      ),
-    ).toBeTruthy();
-    expect(
-      screen.getByText(
-        "Active league switcher: in-place context change without losing draft/dashboard progress",
-      ),
-    ).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Fantrax import" })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "ESPN import" })).toBeTruthy();
+    expect(screen.queryByText("No live token flow yet")).toBeNull();
+    expect(screen.queryByText("Linked League and Team Context")).toBeNull();
   });
 
   it("shows discovered Yahoo leagues and teams when the user is connected", async () => {
@@ -1296,18 +1442,15 @@ describe("AccountSettingsPage profile section", () => {
     expect(
       await screen.findByText("Yahoo synced 2 teams across 2 leagues."),
     ).toBeTruthy();
-    expect(
-      screen.getByText("Connected account label: Tim's Yahoo"),
-    ).toBeTruthy();
     expect(screen.getByText("Keeper League (default league)")).toBeTruthy();
-    expect(screen.getByText("Tim's Test Team")).toBeTruthy();
+    expect(screen.getAllByText("Tim's Test Team").length).toBeGreaterThan(0);
     expect(screen.getByText("League Rival")).toBeTruthy();
     expect(screen.getByText("League opponent · Standings rank 1")).toBeTruthy();
     expect(
       screen.getAllByText("Default team: Tim's Test Team").length,
     ).toBeGreaterThan(0);
     expect(
-      screen.getByRole("button", { name: "Disconnect Yahoo Fantasy" }),
+      screen.getByRole("button", { name: "Disconnect Yahoo" }),
     ).toBeTruthy();
     expect(screen.getByText("Default Team")).toBeTruthy();
 
@@ -1348,7 +1491,7 @@ describe("AccountSettingsPage profile section", () => {
     ).toBeTruthy();
   });
 
-  it("shows Patreon as an account-linked entitlement flow, not site auth", async () => {
+  it("shows Patreon membership controls without developer notes", async () => {
     accountState.routerQuery = {
       section: "patreon",
     };
@@ -1363,24 +1506,12 @@ describe("AccountSettingsPage profile section", () => {
 
     render(<AccountSettingsPage />);
 
+    expect(await screen.findByText("Patreon Membership")).toBeTruthy();
     expect(
-      await screen.findByText("Patreon Account Link and Entitlements"),
+      screen.getByText("Patreon connections are unavailable right now."),
     ).toBeTruthy();
-    expect(screen.getByText("Connection Intent")).toBeTruthy();
-    expect(screen.getByText("Entitlement Model")).toBeTruthy();
-    expect(screen.getByText("Anti-Sharing Controls")).toBeTruthy();
-    expect(
-      screen.getByText("Connection location: account settings, not auth modal"),
-    ).toBeTruthy();
-    expect(
-      screen.getByText(
-        "Duplicate attachment check: stable Patreon user and member IDs are single-account constrained",
-      ),
-    ).toBeTruthy();
-    expect(
-      screen.getByText(
-        "Failure state: clear mismatch messaging without blocking core site auth",
-      ),
-    ).toBeTruthy();
+    expect(screen.queryByText("Connection Intent")).toBeNull();
+    expect(screen.queryByText("Entitlement Model")).toBeNull();
+    expect(screen.queryByText("Anti-Sharing Controls")).toBeNull();
   });
 });

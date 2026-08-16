@@ -1,0 +1,123 @@
+{
+  "audit_run_id": "REPO-AUDIT-2026-08-09-FROZEN-36536C3",
+  "boundary": "External/disposable outputs were never copied into frozen product-source paths.",
+  "created_at": "2026-08-09T19:17:57Z",
+  "errors": [],
+  "indexed_outputs": 12,
+  "observations": [
+    {
+      "bytes_match": true,
+      "exists": true,
+      "kind": "command_log",
+      "lines_match": true,
+      "path_alias": "disposable/validation-bodhex/logs/tsc.log",
+      "record_id": "EXT-0001",
+      "sha256_matches": true
+    },
+    {
+      "bytes_match": true,
+      "exists": true,
+      "kind": "command_log",
+      "lines_match": true,
+      "path_alias": "disposable/validation-bodhex/logs/lint.log",
+      "record_id": "EXT-0002",
+      "sha256_matches": true
+    },
+    {
+      "bytes_match": true,
+      "exists": true,
+      "kind": "command_log",
+      "lines_match": true,
+      "path_alias": "disposable/validation-bodhex/logs/vitest.log",
+      "record_id": "EXT-0003",
+      "sha256_matches": true
+    },
+    {
+      "bytes_match": true,
+      "exists": true,
+      "kind": "command_log",
+      "lines_match": true,
+      "path_alias": "disposable/validation-bodhex/logs/vitest-rolling-validation.log",
+      "record_id": "EXT-0004",
+      "sha256_matches": true
+    },
+    {
+      "bytes_match": true,
+      "exists": true,
+      "kind": "command_log",
+      "lines_match": true,
+      "path_alias": "disposable/validation-bodhex/logs/python-capabilities.log",
+      "record_id": "EXT-0005",
+      "sha256_matches": true
+    },
+    {
+      "bytes_match": true,
+      "exists": true,
+      "kind": "command_log",
+      "lines_match": true,
+      "path_alias": "disposable/validation-bodhex/logs/pytest-functions.log",
+      "record_id": "EXT-0006",
+      "sha256_matches": true
+    },
+    {
+      "bytes_match": true,
+      "exists": true,
+      "kind": "command_log",
+      "lines_match": true,
+      "path_alias": "disposable/validation-bodhex/logs/pytest-modeling.log",
+      "record_id": "EXT-0007",
+      "sha256_matches": true
+    },
+    {
+      "bytes_match": true,
+      "exists": true,
+      "kind": "command_log",
+      "lines_match": true,
+      "path_alias": "disposable/validation-bodhex/logs/pytest-web-python.log",
+      "record_id": "EXT-0008",
+      "sha256_matches": true
+    },
+    {
+      "bytes_match": true,
+      "exists": true,
+      "kind": "command_log",
+      "lines_match": true,
+      "path_alias": "disposable/validation-bodhex/logs/playwright-rankings-list.log",
+      "record_id": "EXT-0009",
+      "sha256_matches": true
+    },
+    {
+      "bytes_match": true,
+      "exists": true,
+      "kind": "command_log",
+      "lines_match": true,
+      "path_alias": "disposable/validation-bodhex/logs/next-dev.log",
+      "record_id": "EXT-0010",
+      "sha256_matches": true
+    },
+    {
+      "allocated_kib": 60120,
+      "capture_hash_role": "Phase 5 capture-time receipt; reconciliation uses the documented algorithm above",
+      "capture_tree_sha256": "2bf6365fbf4360fc11e11cf332a2ee1749353c2c7e13b93c31938a67e3ec6c5d",
+      "exists": true,
+      "file_count": 42,
+      "file_count_matches": true,
+      "hash_algorithm": "sha256(sorted compact JSONL of relative path, mode, size_bytes, sha256)",
+      "kind": "generated_runtime_tree",
+      "path_alias": "disposable/validation-bodhex/source/web/.next",
+      "reconciliation_tree_sha256": "f4141e5541361cd738f20115e9d7f2d6ba5bceb2d45994b38554c00e2a98bf54",
+      "record_id": "EXT-0011"
+    },
+    {
+      "exists": true,
+      "kind": "disposable_baseline_path_mutation",
+      "path_alias": "disposable/validation-bodhex/source/web/next-env.d.ts",
+      "post_command_sha256_matches": true,
+      "record_id": "EXT-0012"
+    }
+  ],
+  "record_type": "external_disposable_output_integrity",
+  "result": "passed",
+  "schema_version": 1,
+  "verified_outputs": 12
+}

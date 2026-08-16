@@ -1,0 +1,24 @@
+{
+  "members": [
+    {
+      "id": "{00000000-0000-0000-0000-000000000001}",
+      "displayName": "PRIVATE MEMBER REDACTED",
+      "email": "private@example.invalid",
+      "profileImageUrl": "https://example.invalid/private.png"
+    }
+  ],
+  "teams": [
+    {
+      "id": 1,
+      "name": "Owned Redacted Team",
+      "owners": ["{00000000-0000-0000-0000-000000000001}"],
+      "roster": { "entries": [] }
+    },
+    {
+      "id": 2,
+      "name": "Other Redacted Team",
+      "owners": ["{00000000-0000-0000-0000-000000000002}"],
+      "roster": { "entries": [] }
+    }
+  ]
+}

@@ -2765,6 +2765,215 @@ export type Database = {
           },
         ]
       }
+      espn_draft_picks: {
+        Row: {
+          bid_amount: number | null
+          created_at: string
+          espn_player_id: string
+          espn_team_id: string
+          external_pick_key: string
+          external_team_id: string | null
+          fhfh_player_id: number | null
+          first_observed_at: string
+          is_active: boolean
+          is_correction: boolean
+          is_keeper: boolean
+          last_observed_at: string
+          mapping_status: string
+          pick_in_round: number
+          pick_number: number
+          player_name: string | null
+          position: string | null
+          pro_team_id: number | null
+          revision: number
+          round_number: number
+          session_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bid_amount?: number | null
+          created_at?: string
+          espn_player_id: string
+          espn_team_id: string
+          external_pick_key: string
+          external_team_id?: string | null
+          fhfh_player_id?: number | null
+          first_observed_at: string
+          is_active?: boolean
+          is_correction?: boolean
+          is_keeper?: boolean
+          last_observed_at: string
+          mapping_status: string
+          pick_in_round: number
+          pick_number: number
+          player_name?: string | null
+          position?: string | null
+          pro_team_id?: number | null
+          revision?: number
+          round_number: number
+          session_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bid_amount?: number | null
+          created_at?: string
+          espn_player_id?: string
+          espn_team_id?: string
+          external_pick_key?: string
+          external_team_id?: string | null
+          fhfh_player_id?: number | null
+          first_observed_at?: string
+          is_active?: boolean
+          is_correction?: boolean
+          is_keeper?: boolean
+          last_observed_at?: string
+          mapping_status?: string
+          pick_in_round?: number
+          pick_number?: number
+          player_name?: string | null
+          position?: string | null
+          pro_team_id?: number | null
+          revision?: number
+          round_number?: number
+          session_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "espn_draft_picks_player_fk"
+            columns: ["fhfh_player_id"]
+            isOneToOne: false
+            referencedRelation: "fhfh_player_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "espn_draft_picks_session_owner_fk"
+            columns: ["session_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "espn_draft_sessions"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "espn_draft_picks_team_owner_fk"
+            columns: ["external_team_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "external_teams"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      espn_draft_sessions: {
+        Row: {
+          completed_at: string | null
+          connected_account_id: string
+          consecutive_failures: number
+          created_at: string
+          diagnostics: Json
+          espn_league_id: string
+          espn_season: number
+          external_league_id: string
+          external_team_id: string | null
+          id: string
+          last_error_code: string | null
+          last_error_message: string | null
+          last_pick_number: number
+          last_polled_at: string | null
+          last_snapshot_at: string | null
+          next_poll_at: string
+          normalized_settings: Json
+          poll_lease_expires_at: string | null
+          poll_lease_token: string | null
+          provider_status: string
+          snapshot_hash: string | null
+          snapshot_version: number
+          started_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          connected_account_id: string
+          consecutive_failures?: number
+          created_at?: string
+          diagnostics?: Json
+          espn_league_id: string
+          espn_season: number
+          external_league_id: string
+          external_team_id?: string | null
+          id?: string
+          last_error_code?: string | null
+          last_error_message?: string | null
+          last_pick_number?: number
+          last_polled_at?: string | null
+          last_snapshot_at?: string | null
+          next_poll_at?: string
+          normalized_settings?: Json
+          poll_lease_expires_at?: string | null
+          poll_lease_token?: string | null
+          provider_status?: string
+          snapshot_hash?: string | null
+          snapshot_version?: number
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          connected_account_id?: string
+          consecutive_failures?: number
+          created_at?: string
+          diagnostics?: Json
+          espn_league_id?: string
+          espn_season?: number
+          external_league_id?: string
+          external_team_id?: string | null
+          id?: string
+          last_error_code?: string | null
+          last_error_message?: string | null
+          last_pick_number?: number
+          last_polled_at?: string | null
+          last_snapshot_at?: string | null
+          next_poll_at?: string
+          normalized_settings?: Json
+          poll_lease_expires_at?: string | null
+          poll_lease_token?: string | null
+          provider_status?: string
+          snapshot_hash?: string | null
+          snapshot_version?: number
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "espn_draft_sessions_account_owner_fk"
+            columns: ["connected_account_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "espn_draft_sessions_league_owner_fk"
+            columns: ["external_league_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "external_leagues"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "espn_draft_sessions_team_owner_fk"
+            columns: ["external_team_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "external_teams"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
       expected_goals: {
         Row: {
           away_api_win_odds: number | null
@@ -2918,6 +3127,69 @@ export type Database = {
             columns: ["connected_account_id", "user_id"]
             isOneToOne: false
             referencedRelation: "connected_accounts"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      external_league_state_snapshots: {
+        Row: {
+          connected_account_id: string
+          created_at: string
+          external_league_id: string
+          id: string
+          last_full_sync_at: string | null
+          last_incremental_sync_at: string | null
+          normalized_state: Json
+          provider: string
+          schema_version: number
+          snapshot_hash: string
+          sync_cursor: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connected_account_id: string
+          created_at?: string
+          external_league_id: string
+          id?: string
+          last_full_sync_at?: string | null
+          last_incremental_sync_at?: string | null
+          normalized_state?: Json
+          provider: string
+          schema_version?: number
+          snapshot_hash: string
+          sync_cursor?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connected_account_id?: string
+          created_at?: string
+          external_league_id?: string
+          id?: string
+          last_full_sync_at?: string | null
+          last_incremental_sync_at?: string | null
+          normalized_state?: Json
+          provider?: string
+          schema_version?: number
+          snapshot_hash?: string
+          sync_cursor?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_league_state_snapshots_account_owner_fk"
+            columns: ["connected_account_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "external_league_state_snapshots_league_owner_fk"
+            columns: ["external_league_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "external_leagues"
             referencedColumns: ["id", "user_id"]
           },
         ]
@@ -31790,9 +32062,12 @@ export type Database = {
           active_context: Json
           category_weights: Json
           created_at: string
+          draft_order_type: string
+          goalie_scoring_categories: Json
           league_type: string
           roster_config: Json
           scoring_categories: Json
+          team_count: number
           ui_preferences: Json
           updated_at: string
           user_id: string
@@ -31801,9 +32076,12 @@ export type Database = {
           active_context?: Json
           category_weights?: Json
           created_at?: string
+          draft_order_type?: string
+          goalie_scoring_categories?: Json
           league_type?: string
           roster_config?: Json
           scoring_categories?: Json
+          team_count?: number
           ui_preferences?: Json
           updated_at?: string
           user_id: string
@@ -31812,9 +32090,12 @@ export type Database = {
           active_context?: Json
           category_weights?: Json
           created_at?: string
+          draft_order_type?: string
+          goalie_scoring_categories?: Json
           league_type?: string
           roster_config?: Json
           scoring_categories?: Json
+          team_count?: number
           ui_preferences?: Json
           updated_at?: string
           user_id?: string
@@ -33354,6 +33635,7 @@ export type Database = {
           complete_game_pct: number | null
           complete_games: number | null
           date: string
+          game_id: number | null
           games_played: number | null
           games_played_days_rest_0: number | null
           games_played_days_rest_1: number | null
@@ -33366,9 +33648,11 @@ export type Database = {
           goals: number | null
           goals_against: number | null
           goals_against_avg: number | null
+          home_road: string | null
           incomplete_games: number | null
           losses: number | null
           ot_losses: number | null
+          opponent_team_abbrev: string | null
           position_code: string | null
           quality_start: number | null
           quality_starts_pct: number | null
@@ -33395,6 +33679,7 @@ export type Database = {
           complete_game_pct?: number | null
           complete_games?: number | null
           date: string
+          game_id?: number | null
           games_played?: number | null
           games_played_days_rest_0?: number | null
           games_played_days_rest_1?: number | null
@@ -33407,9 +33692,11 @@ export type Database = {
           goals?: number | null
           goals_against?: number | null
           goals_against_avg?: number | null
+          home_road?: string | null
           incomplete_games?: number | null
           losses?: number | null
           ot_losses?: number | null
+          opponent_team_abbrev?: string | null
           position_code?: string | null
           quality_start?: number | null
           quality_starts_pct?: number | null
@@ -33436,6 +33723,7 @@ export type Database = {
           complete_game_pct?: number | null
           complete_games?: number | null
           date?: string
+          game_id?: number | null
           games_played?: number | null
           games_played_days_rest_0?: number | null
           games_played_days_rest_1?: number | null
@@ -33448,9 +33736,11 @@ export type Database = {
           goals?: number | null
           goals_against?: number | null
           goals_against_avg?: number | null
+          home_road?: string | null
           incomplete_games?: number | null
           losses?: number | null
           ot_losses?: number | null
+          opponent_team_abbrev?: string | null
           position_code?: string | null
           quality_start?: number | null
           quality_starts_pct?: number | null
@@ -46936,6 +47226,40 @@ export type Database = {
         }
         Returns: Json
       }
+      apply_espn_draft_snapshot: {
+        Args: {
+          p_lease_token: string
+          p_next_poll_at: string
+          p_observed_at?: string
+          p_picks: Json
+          p_provider_status: string
+          p_session_id: string
+          p_snapshot_hash: string
+          p_status: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      apply_espn_settings_secure: {
+        Args: {
+          p_acknowledge_warnings?: boolean
+          p_external_league_id: string
+          p_external_team_id: string | null
+          p_settings_hash: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      apply_fantrax_settings_secure: {
+        Args: {
+          p_acknowledge_warnings?: boolean
+          p_external_league_id: string
+          p_external_team_id: string | null
+          p_settings_hash: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       begin_draft_ranker_placement: {
         Args: {
           p_expected_version: number
@@ -47007,6 +47331,52 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      claim_espn_draft_poll: {
+        Args: {
+          p_claimed_at?: string
+          p_lease_seconds?: number
+          p_session_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      claim_espn_sync_lease: {
+        Args: {
+          p_claimed_at?: string
+          p_connected_account_id: string
+          p_dedupe_key: string
+          p_external_league_id: string
+          p_lease_seconds?: number
+          p_trigger_source: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      commit_fantrax_connection_secure: {
+        Args: {
+          p_account_label: string
+          p_consent_version: string
+          p_leagues: Json
+          p_secret_id: string
+          p_target_account_id: string | null
+          p_user_id: string
+        }
+        Returns: string
+      }
+      commit_espn_connection_secure: {
+        Args: {
+          p_account_label: string
+          p_consent_version: string
+          p_espn_s2: string
+          p_league: Json
+          p_provider_user_digest: string
+          p_snapshot: Json
+          p_swid: string
+          p_target_account_id: string | null
+          p_user_id: string
+        }
+        Returns: Json
+      }
       confirm_draft_ranker_placement: {
         Args: {
           p_operation_id: string
@@ -47016,9 +47386,25 @@ export type Database = {
         }
         Returns: Json
       }
+      disconnect_fantrax_account_secure: {
+        Args: { p_connected_account_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      delete_espn_league_secure: {
+        Args: {
+          p_connected_account_id: string
+          p_external_league_id: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       delete_duplicate_players_in_rosters: {
         Args: { _seasonid: number }
         Returns: undefined
+      }
+      disconnect_espn_account_secure: {
+        Args: { p_connected_account_id: string; p_user_id: string }
+        Returns: boolean
       }
       enforce_draft_ranker_pairwise_rate_limit: {
         Args: {
@@ -47454,6 +47840,19 @@ export type Database = {
           outcome: string
           reason: string
         }[]
+      }
+      record_espn_draft_poll_failure: {
+        Args: {
+          p_error_code: string
+          p_error_message: string
+          p_failed_at?: string
+          p_lease_token: string
+          p_retry_at: string
+          p_session_id: string
+          p_status?: string | null
+          p_user_id: string
+        }
+        Returns: Json
       }
       refresh_player_lineup_deployment_tallies: {
         Args: { p_player_id?: number; p_season_id?: number }

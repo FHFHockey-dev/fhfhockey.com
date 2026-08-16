@@ -396,6 +396,11 @@ export type WGOGoalieStat = {
   wins: number;
   teamAbbrevs: string;
   seasonId: number;
+  gameDate?: string;
+  gameId?: number;
+  homeRoad?: string;
+  opponentTeamAbbrev?: string;
+  teamAbbrev?: string;
 };
 
 export type WGOAdvancedGoalieStat = {
@@ -409,6 +414,13 @@ export type WGOAdvancedGoalieStat = {
   regulationWins: number;
   shotsAgainstPer60: number;
   currentTeamAbbrev: string;
+  gameDate?: string;
+  gameId?: number;
+};
+
+export type WGOGoalieBio = {
+  currentTeamAbbrev: string;
+  playerId: number;
 };
 
 export type WGODaysLeftStat = {
@@ -430,6 +442,8 @@ export type WGODaysLeftStat = {
   savePctDaysRest2: number | null;
   savePctDaysRest3: number;
   savePctDaysRest4Plus: number | null;
+  gameDate?: string;
+  gameId?: number;
 };
 
 export type WGOSummarySkaterStat = {
@@ -615,7 +629,8 @@ export type WGOPuckPossessionSkaterStat = {
   satPct: number;
   timeOnIcePerGame5v5: number;
   usatPct: number;
-  zoneStartPct: number;
+  offensiveZoneStartRatio?: number;
+  zoneStartPct?: number;
 };
 
 export type WGOSatCountSkaterStat = {
@@ -930,7 +945,8 @@ export type lastPerPuckPossessionSkaterStat = {
   satPct: number;
   timeOnIcePerGame5v5: number;
   usatPct: number;
-  zoneStartPct: number;
+  offensiveZoneStartRatio?: number;
+  zoneStartPct?: number;
 };
 
 export type lastPerSatCountSkaterStat = {
@@ -1211,7 +1227,8 @@ export type WGOPuckPossessionSkaterTotal = {
   satPct: number;
   timeOnIcePerGame5v5: number;
   usatPct: number;
-  zoneStartPct: number;
+  offensiveZoneStartRatio?: number;
+  zoneStartPct?: number;
 };
 
 export type WGOSatCountSkaterTotal = {
@@ -1478,7 +1495,8 @@ export type WGOPuckPossessionSkaterTotalLY = {
   satPct: number;
   timeOnIcePerGame5v5: number;
   usatPct: number;
-  zoneStartPct: number;
+  offensiveZoneStartRatio?: number;
+  zoneStartPct?: number;
 };
 
 export type WGOSatCountSkaterTotalLY = {

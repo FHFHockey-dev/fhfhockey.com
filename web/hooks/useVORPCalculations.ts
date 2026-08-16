@@ -8,6 +8,7 @@ import {
   groupPlayerEligibility,
   normalizePlayerEligibility,
 } from "lib/draftDashboard/forwardGrouping";
+import { calculateCategoryScores } from "lib/scoring/categoryScores";
 
 export type LeagueType = "points" | "categories";
 
@@ -55,58 +56,10 @@ export interface UseVORPResult {
   expectedN?: number;
 }
 
-// Tunables: goalie rate regression and UTIL distribution
-const PRIOR_SHOTS = 1200; // shots prior for SV% regression
-const PRIOR_STARTS = 25; // starts prior for GAA regression
 const UTIL_TO_DEF_ENABLED = false; // if true, allocate UTIL to D as well
-
-// Debug guard; logs only in development
-// @ts-ignore
-const __DEV__ = process.env.NODE_ENV !== "production";
 
 const clamp = (v: number, lo: number, hi: number) =>
   Math.max(lo, Math.min(hi, v));
-const isFiniteNumber = (x: any): x is number =>
-  typeof x === "number" && Number.isFinite(x);
-
-// Category helpers
-// Goalie category identification: map common keys to goalie role
-const isGoalieKey = (k: string) =>
-  k.endsWith("_GOALIE") ||
-  k === "GOALS_AGAINST_AVERAGE" ||
-  k === "SAVE_PERCENTAGE" ||
-  k === "GOALS_AGAINST_GOALIE" ||
-  k === "SHOTS_AGAINST_GOALIE" ||
-  k === "SHUTOUTS_GOALIE" ||
-  k === "WINS_GOALIE" ||
-  k === "LOSSES_GOALIE" ||
-  k === "OTL_GOALIE";
-
-// Inversions: categories where lower is better (e.g., GAA, GA, Losses)
-const isInverted = (k: string) =>
-  k === "GOALS_AGAINST_AVERAGE" ||
-  k === "GOALS_AGAINST_GOALIE" ||
-  k === "LOSSES_GOALIE";
-
-// Goalie rate stats to regress by workload before z-scoring
-const isGoalieRate = (k: string) =>
-  k === "SAVE_PERCENTAGE" || k === "GOALS_AGAINST_AVERAGE";
-
-// Stats access
-const getProjected = (p: ProcessedPlayer, key: string): number | null => {
-  const v = (p.combinedStats as any)?.[key]?.projected;
-  return isFiniteNumber(v) ? (v as number) : null;
-};
-
-// Mean / StdDev
-const mean = (arr: number[]): number =>
-  arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : 0;
-const stdev = (arr: number[]): number => {
-  if (arr.length < 2) return 0;
-  const mu = mean(arr);
-  const v = arr.reduce((s, x) => s + (x - mu) * (x - mu), 0) / (arr.length - 1);
-  return Math.sqrt(v);
-};
 
 export function useVORPCalculations({
   players,
@@ -126,6 +79,9 @@ export function useVORPCalculations({
     // Value per player (points or categories composite)
     const values = new Map<string, number>();
     const eligibility = new Map<string, string[]>();
+    const includeGenericForward =
+      forwardGrouping === "split" &&
+      (draftSettings.rosterConfig.FWD ?? 0) > 0;
 
     players.forEach((p) => {
       const id = String(p.playerId);
@@ -133,7 +89,11 @@ export function useVORPCalculations({
         p.displayPosition,
         Array.isArray(p.eligiblePositions) ? p.eligiblePositions : undefined,
       );
-      const elig = groupPlayerEligibility(parsed, forwardGrouping);
+      const elig = groupPlayerEligibility(
+        parsed,
+        forwardGrouping,
+        includeGenericForward,
+      );
       eligibility.set(id, elig);
     });
 
@@ -165,163 +125,50 @@ export function useVORPCalculations({
         values.set(id, Number.isFinite(val) ? val : 0);
       });
     } else {
-      // ===============================
-      // Categories: per-role Z-score model on FULL pool (stable)
-      // ===============================
-      const DEFAULT_CATS = [
-        "GOALS",
-        "ASSISTS",
-        "PP_POINTS",
-        "SHOTS_ON_GOAL",
-        "HITS",
-        "BLOCKED_SHOTS",
-      ];
-      const allKeys: string[] = Object.keys(categoryWeights || {}).length
-        ? Object.keys(categoryWeights || {})
-        : DEFAULT_CATS;
-
-      // Build role-specific arrays from the FULL pool
-      const arraysSkater: Record<string, number[]> = {};
-      const arraysGoalie: Record<string, number[]> = {};
-      allKeys.forEach((k) => {
-        arraysSkater[k] = [];
-        arraysGoalie[k] = [];
-      });
-
-      players.forEach((p) => {
-        const elig = eligibility.get(String(p.playerId)) ?? [];
-        const isG = elig.includes("G");
-        allKeys.forEach((k) => {
-          if (isGoalieKey(k) !== isG) return;
-          const v = getProjected(p, k);
-          if (isFiniteNumber(v)) {
-            if (isG) arraysGoalie[k].push(v!);
-            else arraysSkater[k].push(v!);
-          }
-        });
-      });
-
-      // Means and std devs per role/category
-      const muSkater: Record<string, number> = {};
-      const sdSkater: Record<string, number> = {};
-      const muGoalie: Record<string, number> = {};
-      const sdGoalie: Record<string, number> = {};
-
-      allKeys.forEach((k) => {
-        muSkater[k] = mean(arraysSkater[k]);
-        sdSkater[k] = stdev(arraysSkater[k]);
-        muGoalie[k] = mean(arraysGoalie[k]);
-        sdGoalie[k] = stdev(arraysGoalie[k]);
-      });
-
-      // Helpers: estimate goalie workloads
-      const estimateShots = (p: ProcessedPlayer): number => {
-        const cs = (p.combinedStats as any) || {};
-        const shots = cs["SHOTS_AGAINST_GOALIE"]?.projected;
-        const saves = cs["SAVES_GOALIE"]?.projected;
-        const ga = cs["GOALS_AGAINST_GOALIE"]?.projected;
-        if (isFiniteNumber(shots)) return shots as number;
-        if (isFiniteNumber(saves) && isFiniteNumber(ga))
-          return (saves as number) + (ga as number);
-        return 0;
-      };
-      const estimateStarts = (p: ProcessedPlayer): number => {
-        const cs = (p.combinedStats as any) || {};
-        const keys = [
-          "STARTS_GOALIE",
-          "GAMES_STARTED_GOALIE",
-          "GAMES_GOALIE",
-          "GAMES_PLAYED_GOALIE",
-          "GP_GOALIE",
-        ];
-        for (const k of keys) {
-          const v = cs[k]?.projected;
-          if (isFiniteNumber(v)) return v as number;
-        }
-        return 0;
-      };
-
-      // Compute composite Z-sum per player
-      players.forEach((p) => {
-        const id = String(p.playerId);
-        const elig = eligibility.get(String(p.playerId)) ?? [];
-        const isG = elig.includes("G");
-        const keysForPlayer = allKeys.filter((k) =>
-          isG ? isGoalieKey(k) : !isGoalieKey(k),
+      const categoryPlayers = players.map((player) => {
+        const combinedStats = (player.combinedStats || {}) as Record<
+          string,
+          { projected?: unknown }
+        >;
+        const projectedValues = Object.fromEntries(
+          Object.entries(combinedStats).flatMap(([key, stat]) =>
+            typeof stat?.projected === "number" && Number.isFinite(stat.projected)
+              ? [[key, stat.projected]]
+              : [],
+          ),
         );
-        if (keysForPlayer.length === 0) {
-          values.set(id, 0);
-          return;
+        if (projectedValues.SHOTS_AGAINST_GOALIE == null) {
+          const saves = projectedValues.SAVES_GOALIE;
+          const goalsAgainst = projectedValues.GOALS_AGAINST_GOALIE;
+          if (Number.isFinite(saves) && Number.isFinite(goalsAgainst)) {
+            projectedValues.SHOTS_AGAINST_GOALIE = saves + goalsAgainst;
+          }
         }
-
-        let zsum = 0;
-
-        keysForPlayer.forEach((k) => {
-          let raw = getProjected(p, k);
-          if (!isFiniteNumber(raw)) return;
-
-          // Regress goalie rates to mean by workload
-          // rate* = (w*rate + w0*mu) / (w + w0)
-          // SV% uses projected shots as w; GAA uses projected starts as w.
-          if (isG && isGoalieRate(k)) {
-            if (k === "SAVE_PERCENTAGE") {
-              const shots = estimateShots(p);
-              const mu = muGoalie[k] || 0;
-              const w = Math.max(0, shots);
-              raw =
-                (w * (raw as number) + PRIOR_SHOTS * mu) /
-                Math.max(1, w + PRIOR_SHOTS);
-            } else if (k === "GOALS_AGAINST_AVERAGE") {
-              const starts = estimateStarts(p);
-              const mu = muGoalie[k] || 0;
-              const w = Math.max(0, starts);
-              raw =
-                (w * (raw as number) + PRIOR_STARTS * mu) /
-                Math.max(1, w + PRIOR_STARTS);
+        if (projectedValues.GAMES_STARTED == null) {
+          for (const key of [
+            "STARTS_GOALIE",
+            "GAMES_STARTED_GOALIE",
+            "GAMES_GOALIE",
+            "GAMES_PLAYED_GOALIE",
+            "GP_GOALIE",
+          ]) {
+            if (Number.isFinite(projectedValues[key])) {
+              projectedValues.GAMES_STARTED = projectedValues[key];
+              break;
             }
           }
-
-          const wUser = isFiniteNumber((categoryWeights as any)[k])
-            ? (categoryWeights as any)[k]
-            : 1;
-
-          // Choose role stats
-          const mu = isG ? muGoalie[k] : muSkater[k];
-          const sd = isG ? sdGoalie[k] : sdSkater[k];
-          if (!isFiniteNumber(sd) || sd === 0) return; // no variance; contribution ~ 0
-
-          // Z-score (invert where lower is better)
-          const z = isInverted(k)
-            ? (mu - (raw as number)) / sd
-            : ((raw as number) - mu) / sd;
-
-          zsum += wUser * z;
-        });
-
-        values.set(id, Number.isFinite(zsum) ? zsum : 0);
+        }
+        return {
+          id: String(player.playerId),
+          role: eligibility.get(String(player.playerId))?.includes("G")
+            ? ("goalie" as const)
+            : ("skater" as const),
+          values: projectedValues,
+        };
       });
-
-      // Dev-only: log a couple μ/σ for sanity on first render
-      // Avoid noise by logging once per module load
-      // @ts-ignore
-      if (__DEV__ && !globalThis.__VORP_Z_DEBUG_LOGGED__) {
-        // @ts-ignore
-        globalThis.__VORP_Z_DEBUG_LOGGED__ = true;
-        const sampleSkaterCats = ["GOALS", "ASSISTS", "SHOTS_ON_GOAL"];
-        const sampleGoalieCats = [
-          "SAVE_PERCENTAGE",
-          "GOALS_AGAINST_AVERAGE",
-          "WINS_GOALIE",
-        ];
-        const skaterDump = sampleSkaterCats
-          .filter((k) => k in muSkater)
-          .map((k) => ({ k, mu: muSkater[k], sd: sdSkater[k] }));
-        const goalieDump = sampleGoalieCats
-          .filter((k) => k in muGoalie)
-          .map((k) => ({ k, mu: muGoalie[k], sd: sdGoalie[k] }));
-        console.log("[VORP] Z-scale (skater):", skaterDump);
-        console.log("[VORP] Z-scale (goalie):", goalieDump);
-      }
+      calculateCategoryScores(categoryPlayers, categoryWeights).forEach(
+        (score, playerId) => values.set(playerId, score),
+      );
     }
 
     const T = draftSettings.teamCount;
@@ -329,7 +176,7 @@ export function useVORPCalculations({
       draftSettings.rosterConfig,
       forwardGrouping,
     );
-    const positions = getRosterPositions(forwardGrouping);
+    const positions = getRosterPositions(forwardGrouping, starters);
     const utilSkater = starters.utility ?? 0;
     const utilAdj: Record<string, number> = Object.fromEntries(
       positions.map((position) => [position, 0]),
@@ -352,12 +199,14 @@ export function useVORPCalculations({
       values,
       eligibility,
       forwardGrouping,
+      starters,
     );
     const byPosAvail = buildPositionPools(
       availablePlayers.map((player) => String(player.playerId)),
       values,
       eligibility,
       forwardGrouping,
+      starters,
     );
 
     const idxVORP: Record<string, number> = {};

@@ -12,6 +12,7 @@ from .contract import (
     DEVELOPMENT_END,
     TARGET_SEASON,
     load_and_verify_contract,
+    load_and_verify_season_contract,
     load_and_verify_validation_contract,
     repository_root,
 )
@@ -21,6 +22,15 @@ from .io import assert_output_outside_repository, read_json, require_database_ur
 from .lockbox import complete_lockbox_evidence_once, evaluate_lockbox_once, evaluate_prospective_once
 from .model import seal_for_lockbox, train_baseline, verify_model_artifact, verify_serving_bundle
 from .scoring import evaluate_range
+from .season import (
+    build_season_settlement_bundle,
+    freeze_season_dataset,
+    project_season_release,
+    run_season_audit,
+    train_season_artifact,
+    verify_season_release_bundle,
+    verify_season_settlement_bundle,
+)
 
 
 def parser() -> argparse.ArgumentParser:
@@ -74,19 +84,86 @@ def parser() -> argparse.ArgumentParser:
     prospective.add_argument("--output", type=Path, required=True)
     prospective.add_argument("--start", required=True)
     prospective.add_argument("--end", required=True)
+    season_audit = commands.add_parser("season-audit")
+    season_audit.add_argument("--output", type=Path, required=True)
+    season_freeze = commands.add_parser("season-freeze")
+    season_freeze.add_argument("--output", type=Path, required=True)
+    season_freeze.add_argument(
+        "--history-season", type=int, action="append", default=[20232024, 20242025]
+    )
+    season_freeze.add_argument(
+        "--base-freeze",
+        type=Path,
+        help="Reuse checksum-verified historical files while refreshing current identities and official state.",
+    )
+    season_train = commands.add_parser("season-train")
+    season_train.add_argument("--freeze", type=Path, required=True)
+    season_train.add_argument("--output", type=Path, required=True)
+    season_project = commands.add_parser("season-project")
+    season_project.add_argument("--freeze", type=Path, required=True)
+    season_project.add_argument("--artifact", type=Path, required=True)
+    season_project.add_argument("--output", type=Path, required=True)
+    season_project.add_argument("--view", choices=("opening", "current", "ros"), required=True)
+    season_project.add_argument("--cutoff", required=True)
+    season_verify = commands.add_parser("season-verify")
+    season_verify.add_argument("--bundle", type=Path, required=True)
+    season_settle = commands.add_parser("season-settle")
+    season_settle.add_argument("--freeze", type=Path, required=True)
+    season_settle.add_argument("--output", type=Path, required=True)
+    season_settle.add_argument("--cutoff", required=True)
+    season_settlement_verify = commands.add_parser("season-settlement-verify")
+    season_settlement_verify.add_argument("--bundle", type=Path, required=True)
     return root
 
 
 def main() -> None:
     arguments = parser().parse_args()
-    if arguments.command in {
+    season_commands = {
+        "season-audit", "season-freeze", "season-train", "season-project", "season-verify",
+        "season-settle", "season-settlement-verify",
+    }
+    if arguments.command in season_commands:
+        load_and_verify_season_contract()
+    elif arguments.command in {
         "freeze-validation-challenger", "build-validation-features", "train-validation-challenger",
         "verify-validation-challenger-artifact",
     }:
         load_and_verify_validation_contract()
     else:
         load_and_verify_contract()
-    if arguments.command == "audit":
+    if arguments.command == "season-audit":
+        assert_output_outside_repository(arguments.output, repository_root())
+        result = run_season_audit(require_database_url())
+        write_json(arguments.output, result)
+    elif arguments.command == "season-freeze":
+        assert_output_outside_repository(arguments.output, repository_root())
+        result = freeze_season_dataset(
+            require_database_url(), arguments.output, arguments.history_season, arguments.base_freeze
+        )
+    elif arguments.command == "season-train":
+        assert_output_outside_repository(arguments.output, repository_root())
+        result = train_season_artifact(arguments.freeze, arguments.output)
+    elif arguments.command == "season-project":
+        assert_output_outside_repository(arguments.output, repository_root())
+        result = project_season_release(
+            arguments.freeze,
+            arguments.artifact,
+            arguments.output,
+            arguments.view,
+            arguments.cutoff,
+        )
+    elif arguments.command == "season-verify":
+        result = verify_season_release_bundle(arguments.bundle)
+    elif arguments.command == "season-settle":
+        assert_output_outside_repository(arguments.output, repository_root())
+        result = build_season_settlement_bundle(
+            arguments.freeze,
+            arguments.output,
+            arguments.cutoff,
+        )
+    elif arguments.command == "season-settlement-verify":
+        result = verify_season_settlement_bundle(arguments.bundle)
+    elif arguments.command == "audit":
         assert_output_outside_repository(arguments.output, repository_root())
         result = run_audit(require_database_url(), TARGET_SEASON)
         write_json(arguments.output, result)

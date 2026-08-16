@@ -14,6 +14,7 @@ import {
   parseDailyFaceoffLineCombinationsPage,
   parseGameDayTweetsGoaliesPage,
   parseGameDayTweetsLinesPage,
+  parseGameDayTweetsPageCount,
   parseNhlLineupProjectionsPage,
   selectBestGoalieStartSource,
   selectBestPregameLineupSource,
@@ -236,6 +237,17 @@ describe("lineupSourceIngestion", () => {
         keywordHits: expect.arrayContaining(["warmups"])
       }
     });
+  });
+
+  it("reads the available GameDayTweets pagination depth", () => {
+    expect(
+      parseGameDayTweetsPageCount(`
+        <a href="/lines?team=ANA&amp;page=2">2</a>
+        <a href="/lines?team=ANA&amp;page=5">5</a>
+        <a href="/lines?team=ANA&amp;page=3">3</a>
+      `)
+    ).toBe(5);
+    expect(parseGameDayTweetsPageCount("<p>No pagination</p>")).toBe(1);
   });
 
   it("exposes reusable tweet classification, keyword, alias, initials, and structure helpers", () => {

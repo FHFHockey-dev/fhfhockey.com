@@ -24,6 +24,7 @@ interface DraftBoardProps {
   isSnakeDraft: boolean;
   allPlayers: ProcessedPlayer[]; // Add this prop for complete player data
   onUpdateTeamName: (teamId: string, newName: string) => void; // Add this prop
+  canEditTeamNames?: boolean;
   pickTrades?: PickTradeEntry[];
   // NEW: keepers list
   keepers?: KeeperEntry[];
@@ -59,6 +60,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   isSnakeDraft,
   allPlayers,
   onUpdateTeamName,
+  canEditTeamNames = true,
   pickTrades = [],
   keepers = [],
   vorpMetrics
@@ -81,7 +83,12 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
       if (!allPlayersMap.has(p.playerId)) {
         const placeholder: ProcessedPlayer = {
           playerId: Number(p.playerId),
-          fullName: `Player #${p.playerId}`,
+          fullName:
+            p.espnDisplayName ||
+            p.yahooDisplayName ||
+            (p.yahooPlayerId
+              ? `Unresolved Yahoo player #${p.yahooPlayerId}`
+              : `Player #${p.playerId}`),
           displayTeam: null,
           displayPosition: null,
           eligiblePositions: [],
@@ -150,6 +157,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
     teamId: string,
     currentName: string
   ) => {
+    if (!canEditTeamNames) return;
     e.preventDefault();
     e.stopPropagation();
     // Clear any pending blur submit from previous edits
@@ -386,12 +394,21 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
           ) : (
             <div
               className={styles.teamLabel}
-              onClick={(e) =>
-                handleTeamNameClick(
-                  e,
-                  teamId,
-                  teamNameById.get(teamId) || teamId
-                )
+              onClick={
+                canEditTeamNames
+                  ? (e) =>
+                      handleTeamNameClick(
+                        e,
+                        teamId,
+                        teamNameById.get(teamId) || teamId,
+                      )
+                  : undefined
+              }
+              aria-disabled={!canEditTeamNames || undefined}
+              title={
+                canEditTeamNames
+                  ? "Click to edit team name"
+                  : "Yahoo live sync controls team names"
               }
             >
               {teamNameById.get(teamId) || `T${teamIndex + 1}`}
@@ -837,12 +854,21 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                           ) : (
                             <div
                               className={styles.teamName}
-                              onClick={(e) =>
-                                handleTeamNameClick(
-                                  e,
-                                  team.teamId,
-                                  team.teamName
-                                )
+                              onClick={
+                                canEditTeamNames
+                                  ? (e) =>
+                                      handleTeamNameClick(
+                                        e,
+                                        team.teamId,
+                                        team.teamName,
+                                      )
+                                  : undefined
+                              }
+                              aria-disabled={!canEditTeamNames || undefined}
+                              title={
+                                canEditTeamNames
+                                  ? "Click to edit team name"
+                                  : "Yahoo live sync controls team names"
                               }
                             >
                               {team.teamName}

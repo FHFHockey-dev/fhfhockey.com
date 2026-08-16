@@ -313,6 +313,20 @@ export const tweetNewsPhraseDictionary = [
       "'Good to go' appeared 31 times but can attach to goalies or lineup context; review-gate until player role extraction is reliable.",
   },
   {
+    id: "return-training-camp-ready",
+    category: "RETURN",
+    subcategory: "FULLY HEALTHY",
+    confidence: "auto",
+    autoPublish: true,
+    phrases: ["fully healthy and ready for training camp"],
+    regexes: [
+      "\\bfully healthy\\b.{0,80}\\bready (?:to go )?for (?:training )?camp\\b",
+    ],
+    requiredEvidence: [],
+    corpusMatches: 1,
+    notes: "A player explicitly described as fully healthy and camp-ready is a confirmed return update.",
+  },
+  {
     id: "return-lineup-activated",
     category: "RETURN",
     subcategory: "RETURNING TO LINEUP",
@@ -402,6 +416,7 @@ export const tweetNewsPhraseDictionary = [
     regexes: [
       "\\bgetting an extension done\\b",
       "\\bclosing in on\\b.{0,100}\\b(?:contract )?extension\\b",
+      "\\bstill in talks\\b.{0,120}\\b(?:contract|deal|extension)\\b",
       "\\blanguage and details (?:are |being )?worked on\\b.{0,160}\\bextension\\b",
     ],
     requiredEvidence: [],
@@ -546,6 +561,7 @@ export const tweetNewsPhraseDictionary = [
     phrases: ["having surgery", "procedure done", "has been rehabbing"],
     regexes: [
       "\\b(?:having|undergo(?:ing)?)\\b.{0,40}\\bsurgery\\b",
+      "\\bhad\\b.{0,40}\\bsurgery\\b",
       "\\bconfirm(?:s|ed)?\\b.{0,50}\\bsurgery\\b",
       "\\bprocedure done\\b",
       "\\bhas been rehabbing\\b",

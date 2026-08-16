@@ -4,10 +4,23 @@ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server";
-import Fetch from "lib/cors-fetch";
 import { getCurrentSeason } from "lib/NHL/server";
-import { WGOGoalieStat, WGOAdvancedGoalieStat } from "lib/NHL/types";
+import {
+  WGOGoalieBio,
+  WGOGoalieStat,
+  WGOAdvancedGoalieStat,
+} from "lib/NHL/types";
 import pLimit from "p-limit";
+import {
+  fetchAllWgoStatsPages,
+  mapWgoRowsByPlayerId,
+  parseWgoSeasonId,
+} from "lib/cron/wgoIngestion";
+
+// Query parameters:
+// - no season or season=current: refresh the current season
+// - season=YYYYYYYY: refresh one validated season
+// - season=all: refresh every known season through the current season
 
 /**
  * Fetches aggregate goalie data for a given season by querying both the summary and advanced endpoints.
@@ -23,83 +36,39 @@ async function fetchTotalsDataForSeason(
 ): Promise<{
   goalieStats: WGOGoalieStat[];
   advancedGoalieStats: WGOAdvancedGoalieStat[];
-  bioGoalieStats: WGOAdvancedGoalieStat[];
+  bioGoalieStats: WGOGoalieBio[];
 }> {
-  let allGoalieStats: WGOGoalieStat[] = [];
-  let allAdvancedGoalieStats: WGOAdvancedGoalieStat[] = [];
-  let allBioGoalieStats: WGOAdvancedGoalieStat[] = [];
-  let start = 0;
-  const batchSize = 5; // Number of pages to fetch concurrently
-  let keepFetching = true;
-
   console.log(
-    `Starting batched fetch for season ${seasonId} with limit ${limit} per page.`,
+    `Starting aggregate goalie totals fetch for season ${seasonId}.`,
   );
+  const seasonFilter = `gameTypeId=2 and seasonId=${seasonId}`;
+  const fetchPages = <T>(report: string, label: string, factFilter = true) =>
+    fetchAllWgoStatsPages<T>({
+      buildUrl: (start) => {
+        const params = new URLSearchParams({
+          cayenneExp: seasonFilter,
+          isAggregate: report === "bios" ? "false" : "true",
+          isGame: "false",
+          limit: String(limit),
+          sort: '[{"property":"playerId","direction":"ASC"}]',
+          start: String(start),
+        });
+        if (factFilter) {
+          params.set("factCayenneExp", "gamesPlayed>0");
+        }
+        return `https://api.nhle.com/stats/rest/en/goalie/${report}?${params}`;
+      },
+      concurrency: 3,
+      label,
+      pageSize: limit,
+    });
 
-  while (keepFetching) {
-    const batchSummaryPromises = [];
-    const batchAdvancedPromises = [];
-    const batchBioPromises = [];
-
-    console.log(`Fetching batch starting at index ${start}`);
-
-    // Create a batch of requests
-    for (let i = 0; i < batchSize; i++) {
-      const pageStart = start + i * limit;
-      const summaryUrl = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=false&isGame=false&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${pageStart}&limit=${limit}&cayenneExp=gameTypeId=2%20and%20seasonId%3C%3D${seasonId}%20and%20seasonId%3E%3D${seasonId}`;
-      const advancedUrl = `https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=false&isGame=false&sort=%5B%7B%22property%22:%22qualityStart%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsAgainstAverage%22,%22direction%22:%22ASC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${pageStart}&limit=${limit}&cayenneExp=gameTypeId=2%20and%20seasonId%3C%3D${seasonId}%20and%20seasonId%3E%3D${seasonId}`;
-      const bioUrl = `https://api.nhle.com/stats/rest/en/goalie/bios?isAggregate=false&isGame=false&sort=%5B%7B%22property%22:%22lastName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22goalieFullName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${pageStart}&limit=${limit}&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${seasonId}%20and%20seasonId%3E=${seasonId}`;
-      batchSummaryPromises.push(Fetch(summaryUrl).then((res) => res.json()));
-      batchAdvancedPromises.push(Fetch(advancedUrl).then((res) => res.json()));
-      batchBioPromises.push(Fetch(bioUrl).then((res) => res.json()));
-    }
-
-    // Await the entire batch concurrently
-    const batchSummaryResults = await Promise.all(batchSummaryPromises);
-    const batchAdvancedResults = await Promise.all(batchAdvancedPromises);
-    const batchBioResults = await Promise.all(batchBioPromises);
-
-    let batchHasData = false;
-    for (let i = 0; i < batchSize; i++) {
-      const summaryData = batchSummaryResults[i].data as WGOGoalieStat[];
-      const advancedData = batchAdvancedResults[i]
-        .data as WGOAdvancedGoalieStat[];
-      const bioData = batchBioResults[i].data as WGOAdvancedGoalieStat[];
-
-      console.log(
-        `Page ${start + i * limit}: Summary returned ${
-          summaryData.length
-        } records; Advanced returned ${advancedData.length} records.`,
-      );
-
-      if (
-        summaryData.length > 0 ||
-        advancedData.length > 0 ||
-        bioData.length > 0
-      ) {
-        batchHasData = true;
-      }
-
-      allGoalieStats.push(...summaryData);
-      allAdvancedGoalieStats.push(...advancedData);
-      allBioGoalieStats.push(...bioData);
-
-      // If both endpoints return fewer than 'limit' records on any page, assume it's the last page.
-      if (
-        summaryData.length < limit &&
-        advancedData.length < limit &&
-        bioData.length < limit
-      ) {
-        keepFetching = false;
-      }
-    }
-
-    // If the entire batch returned no data, break out.
-    if (!batchHasData) {
-      break;
-    }
-    start += batchSize * limit;
-  }
+  const [allGoalieStats, allAdvancedGoalieStats, allBioGoalieStats] =
+    await Promise.all([
+      fetchPages<WGOGoalieStat>("summary", "goalie totals summary"),
+      fetchPages<WGOAdvancedGoalieStat>("advanced", "goalie totals advanced"),
+      fetchPages<WGOGoalieBio>("bios", "goalie totals bios", false),
+    ]);
 
   console.log(
     `Finished fetching. Total summary records: ${allGoalieStats.length}, total advanced records: ${allAdvancedGoalieStats.length}.`,
@@ -129,11 +98,14 @@ async function updateGoalieTotals(
     `Starting bulk upsert for season ${seasonId} with ${goalieStats.length} summary records.`,
   );
 
-  const advancedGoalieStatsByPlayer = new Map(
-    advancedGoalieStats.map((stat) => [stat.playerId, stat]),
+  mapWgoRowsByPlayerId(goalieStats, "goalie totals summary");
+  const advancedGoalieStatsByPlayer = mapWgoRowsByPlayerId(
+    advancedGoalieStats,
+    "goalie totals advanced",
   );
-  const bioGoalieStatsByPlayer = new Map(
-    bioGoalieStats.map((stat) => [stat.playerId, stat]),
+  const bioGoalieStatsByPlayer = mapWgoRowsByPlayerId(
+    bioGoalieStats,
+    "goalie totals bios",
   );
 
   // Build an array of combined records
@@ -160,7 +132,7 @@ async function updateGoalieTotals(
       shutouts: stat.shutouts,
       goals: stat.goals,
       assists: stat.assists,
-      team_abbrevs: stat.teamAbbrevs,
+      team_abbrevs: stat.teamAbbrevs ?? bioStats?.currentTeamAbbrev,
       complete_game_pct: advStats?.completeGamePct,
       complete_games: advStats?.completeGames,
       incomplete_games: advStats?.incompleteGames,
@@ -174,14 +146,16 @@ async function updateGoalieTotals(
     };
   });
 
-  // Perform a bulk upsert in a single request
-  const { error } = await supabase
-    .from("wgo_goalie_stats_totals")
-    .upsert(records, { onConflict: "goalie_id,season_id" });
-
-  if (error) {
-    console.error("Bulk upsert error:", error);
-    throw error;
+  const chunkSize = 500;
+  for (let index = 0; index < records.length; index += chunkSize) {
+    const { error } = await supabase
+      .from("wgo_goalie_stats_totals")
+      .upsert(records.slice(index, index + chunkSize), {
+        onConflict: "goalie_id,season_id",
+      });
+    if (error) {
+      throw new Error(`Goalie totals upsert failed: ${error.message}`);
+    }
   }
 
   console.log(
@@ -207,17 +181,17 @@ async function updateGoalieTotalsForSeasons(
   return results.reduce((sum, result) => sum + result.totalUpdates, 0);
 }
 
-/**
- * Fetches the list of all historical seasons from the NHL API.
- *
- * @returns An array of season objects.
- */
-async function fetchAllSeasons(): Promise<any[]> {
-  const seasonUrl =
-    "https://api.nhle.com/stats/rest/en/season?sort=%5B%7B%22property%22:%22id%22,%22direction%22:%22ASC%22%7D%5D";
-  const response = await Fetch(seasonUrl).then((res) => res.json());
-  console.log(`Fetched ${response.data.length} seasons from NHL API.`);
-  return response.data;
+async function fetchAllSeasons(): Promise<{ id: number }[]> {
+  const { data, error } = await supabase
+    .from("seasons")
+    .select("id")
+    .order("id", { ascending: true });
+  if (error) {
+    throw new Error(
+      `Could not fetch seasons from the database: ${error.message}`,
+    );
+  }
+  return (data ?? []).map((season) => ({ id: Number(season.id) }));
 }
 
 /**
@@ -229,17 +203,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const startTime = Date.now();
 
   try {
-    // Check for the "season=all" query parameter
-    const updateAll = req.query.season?.toString().toLowerCase() === "all";
+    const rawSeason = Array.isArray(req.query.season)
+      ? req.query.season[0]
+      : req.query.season;
+    const seasonParam = rawSeason?.toLowerCase();
+    const updateAll = seasonParam === "all";
+    const currentSeason = await getCurrentSeason();
+    const allSeasons = await fetchAllSeasons();
+    const validSeasons = allSeasons.filter(
+      (season) => Number(season.id) <= Number(currentSeason.seasonId),
+    );
 
     if (updateAll) {
       console.log(
         "Query parameter 'season=all' detected. Updating all seasons.",
-      );
-      const currentSeason = await getCurrentSeason();
-      const allSeasons = await fetchAllSeasons();
-      const validSeasons = allSeasons.filter(
-        (season) => Number(season.id) <= Number(currentSeason.seasonId),
       );
       const totalUpdatesOverall =
         await updateGoalieTotalsForSeasons(validSeasons);
@@ -254,54 +231,31 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         duration: `${durationSec} s`,
       });
     } else {
-      // Original behavior: Update only the most recent season if data exists,
-      // or update all seasons if there is no existing season data.
-      const { data: existingData } = await supabase
-        .from("wgo_goalie_stats_totals")
-        .select("season_id")
-        .order("season_id", { ascending: false })
-        .limit(1);
-      console.log("Existing season data in table:", existingData);
-
-      if (existingData && existingData.length > 0) {
-        const mostRecentSeasonId = Number(existingData[0].season_id);
-        console.log(
-          "Most recent season determined from table:",
-          mostRecentSeasonId,
-        );
-
-        // Update only the most recent season.
-        const result = await updateGoalieTotals(mostRecentSeasonId.toString());
-        const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
-        console.log(
-          `Completed update for season ${mostRecentSeasonId} in ${durationSec} s.`,
-        );
-        return res.status(200).json({
-          message: `Successfully refreshed (upserted) goalie season totals for season ${mostRecentSeasonId}.`,
-          success: true,
-          data: result,
-          duration: `${durationSec} s`,
-        });
-      } else {
-        console.log("No existing season data found. Updating all seasons.");
-        const currentSeason = await getCurrentSeason();
-        const allSeasons = await fetchAllSeasons();
-        const validSeasons = allSeasons.filter(
-          (season) => Number(season.id) <= Number(currentSeason.seasonId),
-        );
-        const totalUpdatesOverall =
-          await updateGoalieTotalsForSeasons(validSeasons);
-        const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
-        console.log(`Completed update for all seasons in ${durationSec} s.`);
-        return res.status(200).json({
-          message: `Successfully upserted goalie season totals for seasons: ${validSeasons
-            .map((s) => s.id)
-            .join(", ")}`,
-          success: true,
-          data: { totalUpdates: totalUpdatesOverall },
-          duration: `${durationSec} s`,
+      const requestedSeason =
+        !seasonParam || seasonParam === "current"
+          ? Number(currentSeason.seasonId)
+          : parseWgoSeasonId(seasonParam);
+      if (!requestedSeason) {
+        return res.status(400).json({
+          message:
+            "Invalid season. Use current, all, or a consecutive YYYYyyyy season ID.",
+          success: false,
         });
       }
+      if (!validSeasons.some((season) => season.id === requestedSeason)) {
+        return res.status(400).json({
+          message: `Season ${requestedSeason} was not found in the seasons table.`,
+          success: false,
+        });
+      }
+      const result = await updateGoalieTotals(String(requestedSeason));
+      const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
+      return res.status(200).json({
+        message: `Successfully refreshed goalie season totals for ${requestedSeason}.`,
+        success: true,
+        data: result,
+        duration: `${durationSec} s`,
+      });
     }
   } catch (e: any) {
     console.error("Update Totals Error:", e.message);

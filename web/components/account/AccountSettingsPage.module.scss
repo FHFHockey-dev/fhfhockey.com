@@ -3,309 +3,476 @@
 @use "sass:color";
 
 .page {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  padding: 52px 20px 84px;
-
-  &::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(circle at top left, rgba(v.$secondary-color, 0.12), transparent 30%),
-      radial-gradient(circle at top right, rgba(v.$primary-color, 0.14), transparent 36%),
-      linear-gradient(180deg, rgba(v.$background-dark, 0.18), transparent 22%);
-    pointer-events: none;
-  }
+  box-sizing: border-box;
+  width: 100%;
+  padding: clamp(v.$space-md, 2vw, v.$space-lg);
+  padding-bottom: v.$space-md;
+  overflow-x: hidden;
+  background:
+    radial-gradient(
+      circle at 50% 0,
+      rgba(v.$primary-color, 0.035),
+      transparent 34%
+    ),
+    v.$surface-0;
+  color: v.$text-primary;
+  font-family: v.$font-family-primary;
 }
 
 .shell {
-  position: relative;
   display: grid;
-  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
-  gap: 24px;
-  width: min(100%, 1180px);
-  z-index: 1;
+  gap: v.$space-md;
+  width: min(100%, 1400px);
+  min-width: 0;
+  margin: 0 auto;
 }
 
-.sidebar,
+.accountHeader,
 .content {
-  @include panel.panel-container(
-    $radius: 24px,
-    $padding: 0,
-    $gradient-start: rgba(255, 255, 255, 0.055),
-    $gradient-end: rgba(255, 255, 255, 0.018),
-    $blur: 14px
-  );
-  border: 2px solid rgba(v.$primary-color, 0.36);
-  background:
-    linear-gradient(180deg, rgba(v.$secondary-color, 0.12) 0%, transparent 24%),
-    linear-gradient(145deg, rgba(v.$background-light, 0.985), rgba(v.$background-dark, 0.985));
-  box-shadow:
-    0 26px 70px rgba(0, 0, 0, 0.36),
-    0 0 34px rgba(v.$secondary-color, 0.09);
-
-  &::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 10px;
-    background: v.$secondary-color;
-    box-shadow:
-      0 0 14px rgba(v.$secondary-color, 0.94),
-      0 0 26px rgba(v.$secondary-color, 0.56);
-  }
+  @include panel.panel-shell($radius: v.$radius-panel, $padding: 0);
 }
 
-.sidebar {
+.accountHeader {
+  display: grid;
+  grid-template-columns: minmax(340px, 400px) minmax(0, 1fr);
+  align-items: center;
+  gap: v.$space-lg;
+  min-height: 70px;
+  padding: 10px 14px 10px 28px;
+  overflow: visible;
+  background: color.adjust(v.$background-dark, $lightness: -3%);
+  box-shadow: none;
+}
+
+.accountIdentity {
+  min-width: 0;
+}
+
+.identityRow {
   display: flex;
-  flex-direction: column;
-  gap: 22px;
-  padding: 24px;
-}
-
-.content {
-  padding: 30px;
+  align-items: baseline;
+  gap: v.$space-lg;
+  min-width: 0;
 }
 
 .eyebrow {
-  color: v.$secondary-color;
-  font-family: v.$font-family-primary;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
+  margin-bottom: 3px;
+  color: v.$primary-color;
+  font-size: clamp(v.$font-size-xxs, 0.7vw, v.$font-size-xs);
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
 .userName {
+  overflow: hidden;
   color: v.$color-white;
-  font-family: v.$font-family-accent;
-  font-size: clamp(1.55rem, 3vw, 2rem);
+  font-family: v.$font-family-primary;
+  font-size: clamp(v.$font-size-md, 1.35vw, 1.375rem);
+  font-weight: v.$font-weight-bold;
   letter-spacing: 0.04em;
-  line-height: 1;
+  line-height: 1.2;
+  text-overflow: ellipsis;
   text-transform: uppercase;
-  text-shadow: 0 0 18px rgba(v.$secondary-color, 0.14);
+  white-space: nowrap;
 }
 
 .userMeta {
-  color: rgba(v.$text-primary, 0.94);
-  font-family: v.$font-family-primary;
-  line-height: 1.6;
+  overflow: hidden;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav,
+.subnav {
+  display: grid;
+  gap: v.$space-xs;
+  padding: v.$space-xs;
+  border: v.$border-default;
+  border-radius: v.$radius-md;
+  background: v.$background-dark;
 }
 
 .nav {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: v.$space-md;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.navButton,
+.subnavButton {
+  min-width: 0;
+  min-height: v.$control-height-md;
+  padding: 0 v.$space-sm;
+  border: 2px solid transparent;
+  border-radius: v.$radius-control;
+  background: transparent;
+  color: v.$text-secondary;
+  cursor: pointer;
+  transition:
+    border-color v.$transition-duration v.$transition-easing,
+    background-color v.$transition-duration v.$transition-easing,
+    color v.$transition-duration v.$transition-easing;
+
+  &:hover {
+    background: rgba(v.$primary-color, v.$fill-opacity-subtle);
+    color: v.$text-primary;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
 }
 
 .navButton {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 5px;
-  padding: 16px 18px;
-  border: 1px solid rgba(v.$border-secondary, 0.92);
-  border-radius: 18px;
+  min-height: 42px;
+  border: v.$border-subtle;
+  background: color.adjust(v.$background-dark, $lightness: -2%);
+}
+
+.navButtonActive,
+.subnavButtonActive {
+  border-color: v.$primary-color;
+  background: rgba(v.$primary-color, v.$fill-opacity);
+  color: v.$color-white;
+}
+
+.navButtonActive {
+  border-width: 2px;
   background:
-    linear-gradient(135deg, rgba(v.$color-white, 0.04), rgba(v.$color-white, 0.015)),
-    rgba(v.$background-dark, 0.82);
-  color: rgba(v.$text-primary, 0.88);
-  cursor: pointer;
-  text-align: left;
-  transition:
-    transform v.$transition-duration v.$transition-easing,
-    border-color v.$transition-duration v.$transition-easing,
-    background-color v.$transition-duration v.$transition-easing,
-    box-shadow v.$transition-duration v.$transition-easing,
-    color v.$transition-duration v.$transition-easing;
+    linear-gradient(
+      180deg,
+      rgba(v.$primary-color, 0.2),
+      rgba(v.$primary-color, 0.1)
+    ),
+    v.$background-dark;
+  box-shadow:
+    inset 0 0 16px rgba(v.$primary-color, 0.08),
+    0 0 10px rgba(v.$primary-color, 0.14);
+}
+
+.navLabel,
+.subnavButton {
+  overflow: hidden;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.content {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
 
   &::before {
     content: "";
     position: absolute;
-    left: 0;
-    top: 12px;
-    bottom: 12px;
-    width: 4px;
-    border-radius: 999px;
-    background: rgba(v.$secondary-color, 0);
-    box-shadow: 0 0 0 rgba(v.$secondary-color, 0);
-    transition:
-      background-color v.$transition-duration v.$transition-easing,
-      box-shadow v.$transition-duration v.$transition-easing;
-  }
-
-  &:hover,
-  &:focus-visible {
-    transform: translateX(3px);
-    border-color: rgba(v.$secondary-color, 0.56);
-    background:
-      linear-gradient(135deg, rgba(v.$secondary-color, 0.08), rgba(v.$primary-color, 0.09)),
-      rgba(v.$background-dark, 0.88);
-    box-shadow:
-      0 16px 34px rgba(0, 0, 0, 0.26),
-      0 0 22px rgba(v.$secondary-color, 0.1);
-    color: v.$color-white;
-    outline: none;
-
-    &::before {
-      background: rgba(v.$secondary-color, 0.95);
-      box-shadow: 0 0 16px rgba(v.$secondary-color, 0.58);
-    }
+    inset: 0 0 auto;
+    height: 4px;
+    border-radius: v.$radius-panel v.$radius-panel 0 0;
+    background: v.$primary-color;
+    pointer-events: none;
   }
 }
 
-.navButtonActive {
-  border-color: rgba(v.$secondary-color, 0.76);
-  background:
-    linear-gradient(135deg, rgba(v.$secondary-color, 0.14), rgba(v.$primary-color, 0.12)),
-    rgba(v.$background-dark, 0.9);
-  box-shadow:
-    0 18px 36px rgba(0, 0, 0, 0.28),
-    0 0 24px rgba(v.$secondary-color, 0.14);
-  color: v.$color-white;
+.profileContent {
+  display: block;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 
   &::before {
-    background: rgba(v.$secondary-color, 0.96);
-    box-shadow: 0 0 18px rgba(v.$secondary-color, 0.62);
+    display: none;
   }
-}
-
-.navLabel {
-  color: inherit;
-  font-family: v.$font-family-accent;
-  font-size: 0.76rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.navDescription {
-  color: rgba(v.$text-primary, 0.76);
-  font-family: v.$font-family-primary;
-  font-size: 0.88rem;
-  line-height: 1.45;
 }
 
 .header {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 24px;
+  @include panel.panel-header(
+    $padding-y: v.$space-sm,
+    $padding-x: v.$space-md,
+    $justify: flex-start
+  );
+  align-items: baseline;
+  padding-top: calc(v.$space-sm + 4px);
 }
 
 .title {
   margin: 0;
   color: v.$color-white;
   font-family: v.$font-family-accent;
-  font-size: clamp(2rem, 4vw, 2.8rem);
-  letter-spacing: 0.06em;
-  line-height: 0.98;
+  font-size: v.$font-size-lg;
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.07em;
+  line-height: 1.1;
   text-transform: uppercase;
-  text-shadow: 0 0 20px rgba(v.$secondary-color, 0.12);
 }
 
 .body {
   margin: 0;
-  color: rgba(v.$text-primary, 0.94);
-  font-family: v.$font-family-primary;
-  line-height: 1.68;
-}
-
-.statusRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 22px;
-}
-
-.statusPill,
-.providerStatus,
-.defaultBadge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 30px;
-  padding: 0 12px;
-  border-radius: 999px;
-  font-family: v.$font-family-accent;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.statusPill {
-  border: 1px solid rgba(v.$secondary-color, 0.34);
-  background: rgba(v.$secondary-color, 0.11);
-  color: v.$color-white;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  line-height: 1.35;
 }
 
 .panelGrid {
-  display: grid;
-  gap: 18px;
+  min-width: 0;
+  min-height: 0;
+  padding: v.$space-sm;
+  overflow: hidden;
 }
 
-.panel,
+.profilePanelGrid {
+  display: grid;
+  gap: v.$space-md;
+  padding: 0;
+  overflow: visible;
+}
+
+.panel {
+  display: grid;
+  align-content: start;
+  gap: v.$space-sm;
+  height: auto;
+  min-height: 0;
+  padding: v.$space-sm;
+  overflow: visible;
+  @include v.custom-scrollbar($width: 5px);
+}
+
+.panelTitle,
+.formSectionTitle {
+  margin: 0;
+  color: v.$color-white;
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.panelTitle {
+  padding-inline: v.$space-xs;
+}
+
+.formSection,
 .providerCard,
 .providerControlCard,
+.savedTeamForm,
+.savedTeamsList,
 .savedTeamCard,
-.formSection,
 .profileLoading {
-  position: relative;
-  display: grid;
-  gap: 14px;
-  padding: 18px;
-  border: 1px solid rgba(v.$border-secondary, 0.92);
-  border-radius: 18px;
-  background:
-    linear-gradient(180deg, rgba(v.$secondary-color, 0.08) 0%, transparent 36%),
-    linear-gradient(135deg, rgba(v.$color-white, 0.04), rgba(v.$color-white, 0.015)),
-    rgba(v.$background-dark, 0.76);
-  box-shadow:
-    inset 0 0 0 1px rgba(v.$color-white, 0.03),
-    0 18px 34px rgba(0, 0, 0, 0.18);
-  overflow: hidden;
+  border: v.$border-subtle;
+  border-radius: v.$radius-card;
+  background: v.$background-medium;
+}
 
-  &::before {
-    content: "";
+.profileHero {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  align-items: center;
+  min-height: 168px;
+  padding: v.$space-xl 38px;
+  overflow: hidden;
+  border: 1px solid rgba(v.$primary-color, 0.48);
+  border-radius: v.$radius-panel;
+  background:
+    radial-gradient(
+      circle at 56% 100%,
+      rgba(v.$primary-color, 0.1),
+      transparent 42%
+    ),
+    linear-gradient(
+      90deg,
+      color.adjust(v.$background-dark, $lightness: -5%),
+      rgba(v.$background-medium, 0.93)
+    );
+  box-shadow: v.$shadow-panel;
+
+  &::after {
     position: absolute;
-    left: 0;
-    top: 14px;
-    bottom: 14px;
-    width: 5px;
-    border-radius: 999px;
-    background: rgba(v.$secondary-color, 0.92);
-    box-shadow: 0 0 16px rgba(v.$secondary-color, 0.56);
+    z-index: -1;
+    inset: 0 0 0 46%;
+    background-image:
+      linear-gradient(rgba(v.$primary-color, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(v.$primary-color, 0.04) 1px, transparent 1px);
+    background-size: 36px 28px;
+    content: "";
+    mask-image: linear-gradient(90deg, transparent, black 24%, black);
+    pointer-events: none;
   }
 }
 
-.profileEditor {
-  display: grid;
-  gap: 18px;
-}
-
-.avatarCard {
+.profileHeroContent {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 38px;
+  width: min(620px, 52%);
 }
 
-.avatarFrame {
-  position: relative;
-  width: 84px;
-  height: 84px;
-  min-width: 84px;
-  overflow: hidden;
-  border: 2px solid rgba(v.$secondary-color, 0.46);
-  border-radius: 999px;
+.profileHeroIcon {
+  display: grid;
+  flex: 0 0 80px;
+  place-items: center;
+  width: 80px;
+  height: 80px;
+  border: 1px solid v.$primary-color;
+  border-radius: 50%;
+  color: v.$primary-color;
+  box-shadow: inset 0 0 20px rgba(v.$primary-color, 0.04);
+
+  svg {
+    width: 38px;
+    height: 38px;
+  }
+}
+
+.profileHeroTitle {
+  margin: 0;
+  color: v.$color-white;
+  font-family: v.$font-family-primary;
+  font-size: clamp(2.15rem, 3vw, 2.875rem);
+  font-weight: v.$font-weight-regular;
+  letter-spacing: 0.045em;
+  line-height: 1;
+  text-transform: uppercase;
+  text-shadow: 0 0 18px rgba(v.$primary-color, 0.14);
+  white-space: nowrap;
+}
+
+.profileHeroBody {
+  margin: v.$space-sm 0 0;
+  color: v.$text-primary;
+  font-size: v.$font-size-base;
+  line-height: 1.4;
+}
+
+.profileHeroGraph {
+  position: absolute;
+  z-index: 1;
+  inset: 10% 2.5% 5% 47%;
+  width: 50.5%;
+  height: 85%;
+  overflow: visible;
+  color: v.$color-blue-400;
+  opacity: 0.86;
+  pointer-events: none;
+
+  path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0 4px rgba(v.$primary-color, 0.28));
+  }
+
+  circle {
+    fill: v.$color-blue-300;
+    stroke: rgba(v.$color-blue-100, 0.65);
+    stroke-width: 1px;
+
+    &:last-child {
+      filter: drop-shadow(0 0 7px v.$color-blue-300);
+    }
+  }
+}
+
+.profileDashboard {
+  display: grid;
+  grid-template-columns: minmax(340px, 390px) minmax(0, 1fr);
+  grid-template-areas:
+    "summary details"
+    "preferences details";
+  grid-template-rows: auto 1fr;
+  align-items: stretch;
+  gap: v.$space-md;
+  min-width: 0;
+}
+
+.profileCard {
+  @include panel.panel-shell(
+    $radius: v.$radius-panel,
+    $padding: 0,
+    $variant: soft
+  );
+  min-width: 0;
   background:
-    radial-gradient(circle at top, rgba(v.$secondary-color, 0.24), transparent 58%),
-    linear-gradient(145deg, rgba(v.$background-light, 0.98), rgba(v.$background-dark, 0.98));
+    linear-gradient(145deg, rgba(v.$color-white, 0.018), transparent 42%),
+    color.adjust(v.$background-dark, $lightness: -3%);
+}
+
+.accountSummaryCard {
+  grid-area: summary;
+  padding: 20px 22px 0;
+}
+
+.preferencesCard {
+  grid-area: preferences;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+  padding: 20px 22px 22px;
+}
+
+.profileDetailsCard {
+  grid-area: details;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.profileSectionTitle {
+  margin: 0;
+  color: v.$primary-color;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.profileDetailsCard > .profileSectionTitle {
+  padding: 20px 22px 0;
+}
+
+.summaryIdentity {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: v.$space-md;
+  padding: 18px 10px 18px;
+  border-bottom: 1px solid v.$border-soft;
+}
+
+.summaryAvatarFrame {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  overflow: hidden;
+  border: 2px solid v.$primary-color;
+  border-radius: 50%;
+  background: v.$background-dark;
   box-shadow:
-    0 0 0 4px rgba(v.$secondary-color, 0.08),
-    0 0 22px rgba(v.$secondary-color, 0.14);
+    0 0 18px rgba(v.$primary-color, 0.3),
+    inset 0 0 0 3px rgba(v.$color-black, 0.25);
 }
 
 .avatarImage {
@@ -317,547 +484,1028 @@
 }
 
 .avatarFallback {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   width: 100%;
   height: 100%;
   color: v.$color-white;
   font-family: v.$font-family-accent;
-  font-size: 1.2rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: v.$font-size-md;
+  font-weight: v.$font-weight-bold;
+  line-height: 1;
 }
 
 .avatarMeta {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+  min-width: 0;
+}
+
+.avatarName,
+.avatarEmail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .avatarName {
   color: v.$color-white;
-  font-family: v.$font-family-accent;
-  font-size: 0.9rem;
-  letter-spacing: 0.08em;
+  font-size: v.$font-size-lg;
+  font-weight: v.$font-weight-bold;
   text-transform: uppercase;
 }
 
 .avatarEmail {
-  color: rgba(v.$text-primary, 0.74);
-  font-family: v.$font-family-primary;
-  line-height: 1.45;
+  margin-top: v.$space-xs;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
 }
 
-.profileLoading {
-  color: rgba(v.$text-primary, 0.88);
-  font-family: v.$font-family-primary;
+.signedInBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-xs;
+  width: fit-content;
+  min-height: 24px;
+  margin-top: v.$space-sm;
+  padding: 0 v.$space-sm;
+  border: 1px solid rgba(v.$success-color, 0.48);
+  border-radius: v.$radius-control;
+  background: rgba(v.$success-color, 0.07);
+  color: v.$success-color;
+  font-size: v.$font-size-xxs;
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+
+  > span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 6px rgba(v.$success-color, 0.55);
+  }
 }
 
-.profileForm {
+.summaryRows {
   display: grid;
-  gap: 14px;
 }
 
-.profileForm .saveButton {
+.summaryRow,
+.preferenceRow {
+  @include v.reset-button;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto 20px;
+  align-items: center;
+  gap: v.$space-sm;
   width: 100%;
+  min-height: 50px;
+  color: v.$text-primary;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background-color v.$transition-duration v.$transition-easing,
+    color v.$transition-duration v.$transition-easing;
+
+  + .summaryRow {
+    border-top: 1px solid rgba(v.$border-secondary, 0.45);
+  }
+
+  > svg:first-child {
+    width: 24px;
+    height: 24px;
+    color: v.$primary-color;
+  }
+
+  > svg:last-child {
+    width: 18px;
+    height: 18px;
+    color: v.$primary-color;
+  }
+
+  > span {
+    font-size: v.$font-size-sm;
+  }
+
+  > strong {
+    overflow: hidden;
+    color: v.$color-white;
+    font-family: v.$font-family-numbers;
+    font-size: v.$font-size-xs;
+    font-weight: v.$font-weight-medium;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &:hover {
+    background: rgba(v.$primary-color, 0.065);
+    color: v.$color-white;
+  }
+
+  &:focus-visible {
+    position: relative;
+    z-index: 1;
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
+}
+
+.preferenceRow {
+  padding: 0 v.$space-sm;
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  background: rgba(v.$color-black, 0.12);
+}
+
+.preferencesButton {
+  min-height: 42px;
+  border: 1px solid v.$primary-color;
+  border-radius: v.$radius-control;
+  background: rgba(v.$primary-color, 0.025);
+  color: v.$primary-color;
+  cursor: pointer;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition:
+    background-color v.$transition-duration v.$transition-easing,
+    color v.$transition-duration v.$transition-easing;
+
+  &:hover {
+    background: rgba(v.$primary-color, 0.12);
+    color: v.$color-white;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
+}
+
+.profileDetailsForm {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.profileFields {
+  display: grid;
+  gap: v.$space-lg;
+  padding: 18px 22px v.$space-lg;
+
+  > .errorMessage {
+    margin-bottom: calc(v.$space-sm * -1);
+  }
+}
+
+.profileFieldGroup {
+  display: grid;
+  gap: v.$space-xs;
+
+  label {
+    color: v.$color-white;
+    font-size: v.$font-size-sm;
+    font-weight: v.$font-weight-semibold;
+  }
+
+  p {
+    margin: 0 0 v.$space-xs;
+    color: v.$text-secondary;
+    font-size: v.$font-size-xs;
+    line-height: 1.35;
+  }
+}
+
+.profileInput,
+.inputAction {
+  min-height: 42px;
+  border: v.$border-subtle;
+  background: rgba(v.$background-dark, 0.94);
+  color: v.$text-primary;
+}
+
+.profileInput {
+  width: 100%;
+  padding: 0 v.$space-sm;
+  border-radius: v.$radius-control;
+  font: inherit;
+  transition:
+    border-color v.$transition-duration v.$transition-easing,
+    box-shadow v.$transition-duration v.$transition-easing;
+
+  &:hover:not(:disabled):not([readonly]) {
+    border-color: rgba(v.$primary-color, 0.72);
+  }
+
+  &:focus-visible {
+    border-color: v.$primary-color;
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.58;
+  }
+
+  &[readonly] {
+    color: v.$text-primary;
+    cursor: default;
+  }
+}
+
+.profileInputWithStatus,
+.profileInputWithAction {
+  position: relative;
+  min-width: 0;
+}
+
+.profileInputWithStatus .profileInput {
+  padding-right: 116px;
+}
+
+.verifiedStatus {
+  position: absolute;
+  top: 50%;
+  right: v.$space-sm;
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-xs;
+  color: v.$success-color;
+  font-size: v.$font-size-xxs;
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transform: translateY(-50%);
+
+  svg {
+    width: 17px;
+    height: 17px;
+  }
+}
+
+.profileInputWithAction {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+
+  .profileInput {
+    border-radius: v.$radius-control 0 0 v.$radius-control;
+  }
+}
+
+.inputAction {
+  display: grid;
+  place-items: center;
+  border-left: 0;
+  border-radius: 0 v.$radius-control v.$radius-control 0;
+  color: v.$primary-color;
+  text-decoration: none;
+  transition:
+    background-color v.$transition-duration v.$transition-easing,
+    color v.$transition-duration v.$transition-easing;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    background: rgba(v.$primary-color, 0.12);
+    color: v.$color-white;
+  }
+
+  &:focus-visible {
+    position: relative;
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
+}
+
+.profileActionFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: v.$space-md;
+  min-height: 70px;
+  margin-top: auto;
+  padding: v.$space-sm 22px;
+  border-top: 1px solid v.$border-soft;
+  background: rgba(v.$color-black, 0.1);
+
+  .errorMessage,
+  .successMessage {
+    flex: 1;
+  }
+}
+
+.saveButton.profileSaveButton {
+  min-width: 188px;
+  min-height: 42px;
+  gap: v.$space-sm;
+  padding-inline: v.$space-lg;
+  background: rgba(v.$primary-color, 0.28);
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-bold;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.profileDetailsLoading {
+  margin: 18px 22px v.$space-lg;
+  padding: v.$space-lg;
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  color: v.$text-secondary;
+}
+
+.settingsForm,
+.savedTeamForm,
+.savedTeamsList,
+.savedTeamsStack,
+.yahooLeagueStack,
+.yahooLeagueDetailRows,
+.providerView,
+.providerControlRows {
+  display: grid;
+  align-content: start;
+  gap: v.$space-sm;
 }
 
 .settingsForm {
-  display: grid;
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr);
 }
 
-.savedTeamForm,
-.savedTeamsList {
-  display: grid;
-  gap: 16px;
+.subnav {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.yahooLeagueStack,
-.yahooLeagueDetailRows {
-  display: grid;
-  gap: 16px;
+.settingsToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: v.$space-md;
+  padding: v.$space-sm v.$space-md;
+  border: v.$border-default;
+  border-radius: v.$radius-card;
+  background: v.$background-dark;
+
+  .field {
+    width: min(260px, 50%);
+  }
 }
 
-.yahooLeagueSummaryGrid,
-.yahooLeagueDetailsGrid {
-  display: grid;
-  gap: 14px;
+.formSection,
+.providerCard,
+.providerControlCard,
+.savedTeamCard,
+.profileLoading {
+  position: relative;
+  padding: v.$space-sm v.$space-md;
+  overflow: hidden;
 }
 
-.yahooContextSwitcher,
-.yahooContextGrid {
-  display: grid;
-  gap: 14px;
+.formSection::before,
+.providerCard::before,
+.providerControlCard::before,
+.savedTeamCard::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: v.$radius-card 0 0 v.$radius-card;
+  background: v.$primary-color;
+  pointer-events: none;
 }
 
+.formSectionHeader {
+  display: grid;
+  gap: v.$space-xs;
+}
+
+.formSectionBody,
+.providerSummary,
+.savedTeamMeta,
+.savedTeamNotes,
+.emptyState {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  line-height: 1.35;
+}
+
+.numericGrid,
 .yahooLeagueSummaryGrid {
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+  gap: v.$space-sm;
 }
 
+.field {
+  display: grid;
+  gap: v.$space-xs;
+  min-width: 0;
+}
+
+.fieldLabel {
+  overflow: hidden;
+  color: v.$text-primary;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.input,
+.textarea,
+.select {
+  width: 100%;
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  background: v.$background-dark;
+  color: v.$text-primary;
+  font: inherit;
+  transition:
+    border-color v.$transition-duration v.$transition-easing,
+    box-shadow v.$transition-duration v.$transition-easing;
+
+  &:hover {
+    border-color: v.$primary-color;
+  }
+
+  &:focus-visible {
+    border-color: v.$primary-color;
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
+}
+
+.input,
+.select {
+  min-height: v.$control-height-md;
+  padding: 0 v.$space-sm;
+}
+
+.textarea {
+  min-height: 78px;
+  padding: v.$space-sm;
+  line-height: 1.35;
+  resize: vertical;
+}
+
+.checkboxRow {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-sm;
+  width: fit-content;
+  color: v.$text-primary;
+
+  input {
+    accent-color: v.$primary-color;
+  }
+}
+
+.yahooContextGrid,
+.yahooLeagueDetailsGrid,
+.savedTeamsGrid,
+.providerControlGrid,
+.providerMetrics {
+  display: grid;
+  gap: v.$space-sm;
+}
+
+.yahooContextGrid,
 .yahooLeagueDetailsGrid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.yahooContextGrid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.yahooContextSwitcher {
+  display: grid;
+  gap: v.$space-sm;
 }
 
 .yahooLeagueSummaryCard,
 .yahooLeagueDetailCard,
-.yahooLeagueDetailRow {
+.yahooLeagueDetailRow,
+.providerControlRow {
+  border: v.$border-default;
+  border-radius: v.$radius-control;
+  background: v.$background-dark;
+}
+
+.yahooLeagueSummaryCard,
+.yahooLeagueDetailCard {
   display: grid;
-  gap: 6px;
-  padding: 14px;
-  border: 1px solid rgba(v.$border-secondary, 0.86);
-  border-radius: 16px;
-  background:
-    linear-gradient(135deg, rgba(v.$secondary-color, 0.09), rgba(v.$primary-color, 0.07)),
-    rgba(v.$background-dark, 0.72);
-  box-shadow: inset 0 0 0 1px rgba(v.$color-white, 0.03);
+  gap: v.$space-xs;
+  padding: v.$space-sm;
 }
 
 .yahooLeagueSummaryLabel,
 .yahooLeagueDetailTitle {
-  color: rgba(v.$text-primary, 0.74);
-  font-family: v.$font-family-primary;
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xxs;
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .yahooLeagueSummaryValue,
 .yahooLeagueDetailValue {
   color: v.$color-white;
-  font-family: v.$font-family-accent;
-  font-size: 0.88rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-xs;
 }
 
 .yahooLeagueSummaryHint,
 .yahooLeagueDetailLabel {
-  color: rgba(v.$text-primary, 0.88);
-  font-family: v.$font-family-primary;
-  line-height: 1.5;
-}
-
-.yahooLeagueDetailTitle {
-  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
 }
 
 .yahooLeagueDetailRow {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: v.$space-sm;
+  padding: v.$space-xs v.$space-sm;
+}
+
+.detailsDisclosure {
+  border: v.$border-default;
+  border-radius: v.$radius-control;
+  background: v.$background-dark;
+
+  summary {
+    padding: v.$space-sm;
+    color: v.$text-primary;
+    cursor: pointer;
+    font-size: v.$font-size-xs;
+    font-weight: v.$font-weight-semibold;
+  }
+
+  &[open] .yahooLeagueDetailsGrid {
+    padding: 0 v.$space-sm v.$space-sm;
+  }
 }
 
 .savedTeamsGrid {
-  display: grid;
-  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: minmax(290px, 0.8fr) minmax(0, 1.2fr);
+  min-height: 0;
 }
 
-.savedTeamsStack {
-  display: grid;
-  gap: 12px;
+.savedTeamForm,
+.savedTeamsList {
+  padding: v.$space-md;
 }
 
-.providerCardGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+.savedTeamsList {
+  min-height: 0;
+  overflow: auto;
+  @include v.custom-scrollbar($width: 5px);
 }
 
-.providerControlGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 16px;
-}
-
-.providerHeader,
-.savedTeamHeader {
+.savedTeamHeader,
+.providerHeader {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: v.$space-sm;
 }
 
-.providerName,
-.savedTeamName {
+.savedTeamName,
+.providerName {
   color: v.$color-white;
   font-family: v.$font-family-accent;
-  font-size: 0.84rem;
-  letter-spacing: 0.08em;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
   text-transform: uppercase;
-}
-
-.providerLocation,
-.providerSummary,
-.providerFooter,
-.providerBullet,
-.savedTeamMeta,
-.savedTeamNotes,
-.formSectionBody,
-.panelBody,
-.emptyState {
-  color: rgba(v.$text-primary, 0.9);
-  font-family: v.$font-family-primary;
-  line-height: 1.58;
-}
-
-.providerLocation {
-  margin-top: 4px;
-  font-size: 0.92rem;
-}
-
-.providerStatus {
-  border: 1px solid rgba(v.$secondary-color, 0.34);
-  background: rgba(v.$secondary-color, 0.11);
-  color: v.$color-white;
-}
-
-.providerPillRow,
-.savedTeamMetaRow,
-.contextSummary,
-.cardActionRow,
-.actionRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.providerBulletList,
-.providerControlRows {
-  display: grid;
-  gap: 10px;
-}
-
-.providerBullet {
-  position: relative;
-  padding-left: 16px;
-}
-
-.providerBullet::before {
-  content: "";
-  position: absolute;
-  top: 10px;
-  left: 0;
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: v.$secondary-color;
-  box-shadow: 0 0 10px rgba(v.$secondary-color, 0.5);
-}
-
-.providerControlRow {
-  padding: 12px 14px;
-  border: 1px solid rgba(v.$border-secondary, 0.86);
-  border-radius: 14px;
-  background:
-    linear-gradient(135deg, rgba(v.$secondary-color, 0.09), rgba(v.$primary-color, 0.08)),
-    rgba(v.$background-dark, 0.72);
-  color: rgba(v.$text-primary, 0.94);
-  font-family: v.$font-family-primary;
-  line-height: 1.5;
-}
-
-.yahooRosterPanel {
-  display: grid;
-  gap: 8px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(v.$border-secondary, 0.72);
-}
-
-.yahooRosterSummary {
-  color: rgba(v.$text-primary, 0.78);
-  font-size: 0.82rem;
-}
-
-.yahooRosterList {
-  display: grid;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.yahooRosterList li {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 6px 8px;
-  border-radius: 8px;
-  background: rgba(v.$background-dark, 0.58);
 }
 
 .savedTeamNotes {
   white-space: pre-wrap;
 }
 
-.defaultBadge {
-  border: 1px solid rgba(v.$success-color, 0.32);
-  background: rgba(v.$success-color, 0.12);
-  color: #d7ffee;
+.providerView {
+  min-height: 0;
 }
 
-.formSection {
-  gap: 14px;
+.providerMetrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  span {
+    padding: v.$space-sm;
+    border: v.$border-default;
+    border-radius: v.$radius-control;
+    background: v.$background-dark;
+    color: v.$text-secondary;
+    font-size: v.$font-size-xs;
+  }
+
+  strong {
+    color: v.$text-primary;
+    font-weight: v.$font-weight-semibold;
+  }
 }
 
-.formSectionHeader {
-  display: grid;
-  gap: 6px;
+.providerControlGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-height: 0;
 }
 
-.formSectionTitle,
-.panelTitle {
-  margin: 0;
-  color: v.$color-white;
-  font-family: v.$font-family-accent;
-  font-size: 0.78rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+.providerControlCard {
+  min-width: 0;
 }
 
-.panelTitle {
-  margin-bottom: 8px;
+.providerControlRows {
+  max-height: 260px;
+  overflow: auto;
+  @include v.custom-scrollbar($width: 5px);
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.fieldLabel {
-  color: v.$color-white;
-  font-family: v.$font-family-primary;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.input,
-.textarea,
-.select {
-  border: 1px solid rgba(v.$border-secondary, 0.95);
-  border-radius: 14px;
-  background:
-    linear-gradient(180deg, rgba(v.$color-white, 0.045), rgba(v.$color-white, 0.015)),
-    rgba(v.$background-darker, 0.88);
+.providerControlRow {
+  padding: v.$space-sm;
   color: v.$text-primary;
-  font-family: v.$font-family-primary;
-  font-size: 0.98rem;
-  box-shadow: inset 0 0 0 1px rgba(v.$color-white, 0.03);
-  transition:
-    border-color v.$transition-duration v.$transition-easing,
-    box-shadow v.$transition-duration v.$transition-easing,
-    background-color v.$transition-duration v.$transition-easing;
-
-  &:hover {
-    border-color: rgba(v.$secondary-color, 0.45);
-  }
-
-  &:focus-visible {
-    border-color: rgba(v.$secondary-color, 0.9);
-    box-shadow:
-      0 0 0 1px rgba(v.$secondary-color, 0.25),
-      0 0 24px rgba(v.$secondary-color, 0.14);
-    outline: none;
-  }
+  font-size: v.$font-size-xs;
+  line-height: 1.35;
 }
 
-.input,
-.select {
-  min-height: 48px;
-  padding: 0 14px;
-}
-
-.textarea {
-  min-height: 120px;
-  padding: 12px 14px;
-  line-height: 1.55;
-  resize: vertical;
-}
-
-.input::placeholder,
-.textarea::placeholder {
-  color: rgba(v.$text-primary, 0.4);
-}
-
-.numericGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-}
-
-.checkboxRow {
+.providerStatus,
+.defaultBadge,
+.statusPill {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  color: rgba(v.$text-primary, 0.92);
-  font-family: v.$font-family-primary;
+  width: fit-content;
+  min-height: 24px;
+  padding: 0 v.$space-sm;
+  border: 1px solid v.$primary-color;
+  border-radius: v.$radius-control;
+  background: rgba(v.$primary-color, v.$fill-opacity-subtle);
+  color: v.$text-primary;
+  font-size: v.$font-size-xxs;
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
-.errorMessage,
-.successMessage,
-.infoMessage {
-  padding: 12px 14px;
-  border-radius: 14px;
-  font-family: v.$font-family-primary;
-  font-size: 0.93rem;
-  line-height: 1.55;
-  box-shadow: inset 0 0 0 1px rgba(v.$color-white, 0.03);
+.defaultBadge {
+  border-color: v.$success-color;
+  background: rgba(v.$success-color, v.$fill-opacity-subtle);
 }
 
-.errorMessage {
-  border: 1px solid rgba(v.$danger-color, 0.45);
-  background: rgba(v.$danger-color-dark, 0.45);
-  color: #ffd9e1;
+.providerMetrics,
+.savedTeamMetaRow,
+.contextSummary,
+.cardActionRow,
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-sm;
 }
 
-.successMessage {
-  border: 1px solid rgba(v.$success-color, 0.32);
-  background: rgba(v.$success-color, 0.11);
-  color: #d7ffee;
+.providerMetrics {
+  display: grid;
 }
 
-.infoMessage {
-  border: 1px solid rgba(v.$secondary-color, 0.34);
-  background: rgba(v.$secondary-color, 0.11);
-  color: #d7f6ff;
+.cardActionRow,
+.actionRow {
+  align-items: center;
 }
 
 .saveButton,
+.primaryButton,
 .secondaryButton,
 .dangerButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 46px;
-  padding: 0 18px;
-  border-radius: 14px;
-  font-size: 0.8rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  min-height: v.$control-height-md;
+  padding: 0 v.$space-md;
+  border-radius: v.$radius-control;
   cursor: pointer;
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-transform: uppercase;
   transition:
-    transform v.$transition-duration v.$transition-easing,
     border-color v.$transition-duration v.$transition-easing,
     background-color v.$transition-duration v.$transition-easing,
-    box-shadow v.$transition-duration v.$transition-easing,
     color v.$transition-duration v.$transition-easing;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
 }
 
-.saveButton {
+.saveButton,
+.primaryButton {
   border: 2px solid v.$primary-color;
-  background: v.$primary-color-opaque;
-  color: v.$secondary-color;
-  font-family: v.$font-family-accent;
-  box-shadow:
-    0 12px 26px rgba(v.$primary-color, 0.16),
-    inset 0 0 18px rgba(v.$secondary-color, 0.08);
+  background: rgba(v.$primary-color, v.$fill-opacity);
+  color: v.$color-white;
 
-  &:hover,
-  &:focus-visible {
-    transform: translateY(-2px);
-    background: rgba(v.$primary-color, 0.54);
-    box-shadow:
-      0 16px 30px rgba(v.$primary-color, 0.2),
-      0 0 24px rgba(v.$secondary-color, 0.18);
-    outline: none;
+  &:hover:not(:disabled) {
+    background: rgba(v.$primary-color, v.$fill-opacity-strong);
   }
 }
 
 .secondaryButton {
-  border: 1px solid rgba(v.$border-secondary, 0.95);
-  background: rgba(v.$background-dark, 0.72);
+  border: v.$border-subtle;
+  background: v.$background-dark;
   color: v.$text-primary;
-  font-family: v.$font-family-accent;
 
-  &:hover,
-  &:focus-visible {
-    transform: translateY(-1px);
-    border-color: rgba(v.$secondary-color, 0.85);
-    background: rgba(v.$secondary-color, 0.08);
-    color: v.$secondary-color;
-    box-shadow: 0 0 18px rgba(v.$secondary-color, 0.12);
-    outline: none;
+  &:hover:not(:disabled) {
+    border-color: v.$primary-color;
+    color: v.$color-white;
   }
 }
 
 .dangerButton {
-  border: 1px solid rgba(v.$danger-color, 0.34);
-  background: rgba(v.$danger-color, 0.08);
-  color: #ffd5df;
-  font-family: v.$font-family-accent;
+  border: 1px solid v.$danger-color;
+  background: rgba(v.$danger-color, v.$fill-opacity-subtle);
+  color: v.$text-primary;
 
-  &:hover,
-  &:focus-visible {
-    transform: translateY(-1px);
-    border-color: rgba(v.$danger-color, 0.56);
-    background: rgba(v.$danger-color, 0.14);
-    box-shadow: 0 0 18px rgba(v.$danger-color, 0.12);
-    outline: none;
+  &:hover:not(:disabled) {
+    background: rgba(v.$danger-color, v.$fill-opacity);
+    color: v.$color-white;
   }
 }
 
-.saveButton:disabled,
-.secondaryButton:disabled,
-.dangerButton:disabled {
-  cursor: not-allowed;
-  opacity: 0.62;
-  transform: none;
-  box-shadow: none;
-}
-
+.errorMessage,
+.successMessage,
+.infoMessage,
 .emptyState {
-  padding: 18px;
-  border: 1px dashed rgba(v.$secondary-color, 0.34);
-  border-radius: 18px;
-  background: rgba(v.$secondary-color, 0.04);
+  padding: v.$space-sm v.$space-md;
+  border-radius: v.$radius-control;
+  font-size: v.$font-size-xs;
+  line-height: 1.35;
 }
 
-@media (max-width: 900px) {
-  .shell {
+.errorMessage {
+  border: 1px solid v.$danger-color;
+  background: rgba(v.$danger-color, v.$fill-opacity-subtle);
+  color: v.$text-primary;
+}
+
+.successMessage {
+  border: 1px solid v.$success-color;
+  background: rgba(v.$success-color, v.$fill-opacity-subtle);
+  color: v.$text-primary;
+}
+
+.infoMessage,
+.emptyState {
+  border: 1px solid v.$primary-color;
+  background: rgba(v.$primary-color, v.$fill-opacity-subtle);
+  color: v.$text-primary;
+}
+
+.profileLoading {
+  color: v.$text-secondary;
+}
+
+.yahooRosterPanel {
+  display: grid;
+  gap: v.$space-xs;
+  margin-top: v.$space-sm;
+  padding-top: v.$space-sm;
+  border-top: v.$border-default;
+}
+
+.yahooRosterSummary {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.yahooRosterList {
+  display: grid;
+  gap: v.$space-xs;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: v.$space-sm;
+    padding: v.$space-xs v.$space-sm;
+    background: v.$surface-1;
+  }
+}
+
+.formSection[hidden],
+.providerView[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 1150px) {
+  .accountHeader {
+    grid-template-columns: 1fr;
+    gap: v.$space-md;
+    padding: v.$space-md v.$space-lg;
+  }
+}
+
+@media (max-width: 1007px) {
+  .profileDashboard {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "summary"
+      "details"
+      "preferences";
+    grid-template-rows: auto;
+  }
+
+  .profileHeroContent {
+    width: 62%;
+  }
+
+  .profileHeroGraph {
+    inset-inline-start: 58%;
+    width: 39%;
+    opacity: 0.5;
+  }
+
+  .savedTeamsGrid {
     grid-template-columns: 1fr;
   }
 
-  .savedTeamsGrid,
-  .yahooContextGrid,
-  .yahooLeagueDetailsGrid,
-  .providerCardGrid,
   .providerControlGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 720px) {
   .page {
-    padding: 36px 16px 72px;
+    padding: v.$mobile-space-xs;
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
   }
 
-  .sidebar,
-  .content {
-    padding: 22px;
+  .shell {
+    gap: v.$space-sm;
   }
 
-  .avatarCard {
+  .accountHeader {
+    gap: v.$space-sm;
+    min-height: 0;
+    padding: v.$space-md;
+  }
+
+  .identityRow,
+  .header {
     align-items: flex-start;
     flex-direction: column;
   }
 
+  .identityRow {
+    gap: v.$space-xs;
+  }
+
+  .nav {
+    display: flex;
+    gap: v.$space-sm;
+    padding-bottom: v.$space-xs;
+    overflow-x: auto;
+    @include v.custom-scrollbar($width: 4px);
+  }
+
+  .navButton {
+    flex: 0 0 auto;
+    min-width: 138px;
+    min-height: v.$touch-target-min;
+  }
+
+  .profilePanelGrid {
+    gap: v.$space-sm;
+  }
+
+  .profileHero {
+    min-height: 146px;
+    padding: v.$space-lg v.$space-md;
+
+    &::after {
+      display: none;
+    }
+  }
+
+  .profileHeroContent {
+    gap: v.$space-md;
+    width: 100%;
+  }
+
+  .profileHeroIcon {
+    flex-basis: 64px;
+    width: 64px;
+    height: 64px;
+
+    svg {
+      width: 31px;
+      height: 31px;
+    }
+  }
+
+  .profileHeroTitle {
+    font-size: clamp(1.55rem, 7vw, 2rem);
+    white-space: normal;
+  }
+
+  .profileHeroBody {
+    font-size: v.$font-size-sm;
+  }
+
+  .profileHeroGraph {
+    display: none;
+  }
+
+  .accountSummaryCard,
+  .preferencesCard {
+    padding-inline: v.$space-md;
+  }
+
+  .summaryIdentity {
+    grid-template-columns: 80px minmax(0, 1fr);
+    padding-inline: 0;
+  }
+
+  .summaryAvatarFrame {
+    width: 80px;
+    height: 80px;
+  }
+
+  .avatarName {
+    font-size: v.$font-size-md;
+  }
+
+  .profileDetailsCard > .profileSectionTitle,
+  .profileFields,
+  .profileActionFooter {
+    padding-inline: v.$space-md;
+  }
+
+  .profileFields {
+    gap: v.$space-md;
+  }
+
+  .profileInput,
+  .inputAction,
+  .preferencesButton {
+    min-height: v.$touch-target-min;
+  }
+
+  .profileActionFooter {
+    align-items: stretch;
+    flex-direction: column;
+    padding-block: v.$space-md;
+  }
+
+  .subnav,
+  .providerControlGrid,
+  .yahooContextGrid,
+  .yahooLeagueDetailsGrid,
+  .providerMetrics {
+    grid-template-columns: 1fr;
+  }
+
+  .settingsForm {
+    display: grid;
+    grid-template-columns: 1fr;
+
+    > .settingsToolbar,
+    > .actionRow {
+      grid-column: 1;
+      grid-row: auto;
+    }
+  }
+
+  .settingsToolbar {
+    align-items: stretch;
+    flex-direction: column;
+
+    .field {
+      width: 100%;
+    }
+  }
+
   .actionRow,
   .cardActionRow {
+    align-items: stretch;
     flex-direction: column;
   }
 
   .saveButton,
+  .primaryButton,
   .secondaryButton,
   .dangerButton {
     width: 100%;

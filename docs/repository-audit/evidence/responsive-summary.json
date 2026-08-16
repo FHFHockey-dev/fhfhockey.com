@@ -1,0 +1,22 @@
+{
+  "audit_run_id": "REPO-AUDIT-2026-08-09-FROZEN-36536C3",
+  "justified_route_specific_change_records": 9,
+  "no_justified_route_specific_visual_change_records": 207,
+  "routes": 72,
+  "runtime_routes": [
+    "ROUTE-0270"
+  ],
+  "safety_stop_receipt": "evidence/runtime/404-desktop.json",
+  "schema_version": 1,
+  "static_fallback_routes": 72,
+  "verification_method_counts": {
+    "runtime-local": 1,
+    "static-fallback": 215
+  },
+  "viewport_counts": {
+    "desktop": 72,
+    "mobile": 72,
+    "tablet": 72
+  },
+  "viewport_records": 216
+}

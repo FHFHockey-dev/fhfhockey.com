@@ -1,0 +1,30 @@
+{
+  "settings": {
+    "name": "Redacted Keeper League",
+    "size": 2,
+    "scoringSettings": { "scoringType": "H2H_POINTS", "scoringItems": [{ "statId": 13, "points": 3 }] },
+    "rosterSettings": { "lineupSlotCounts": { "3": 3, "4": 2, "5": 1, "7": 2 } },
+    "draftSettings": { "type": "SNAKE", "pickOrder": [2, 1] }
+  },
+  "teams": [
+    {
+      "id": 1,
+      "name": "High Slot",
+      "owners": ["{00000000-0000-0000-0000-000000000001}"],
+      "roster": { "entries": [{ "playerId": 9001, "lineupSlotId": 0, "playerPoolEntry": { "player": { "id": 9001, "fullName": "Redacted Center", "defaultPositionId": 1, "proTeamId": 21 } } }] }
+    },
+    {
+      "id": 2,
+      "name": "Low Slot",
+      "owners": ["{00000000-0000-0000-0000-000000000002}"],
+      "roster": { "entries": [] }
+    }
+  ],
+  "draftDetail": {
+    "drafted": true,
+    "inProgress": true,
+    "picks": [
+      { "id": 1, "overallPickNumber": 1, "roundId": 1, "roundPickNumber": 1, "teamId": 1, "playerId": 9001, "keeper": true }
+    ]
+  }
+}

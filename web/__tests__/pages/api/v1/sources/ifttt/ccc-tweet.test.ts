@@ -86,6 +86,7 @@ describe("CCC IFTTT receiver", () => {
     expect(upsertMock).toHaveBeenCalledOnce();
     expect(upsertMock.mock.calls[0]?.[0]).toMatchObject({
       processing_status: "pending",
+      tweet_created_at: "2026-04-30T22:05:00.000Z",
     });
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({

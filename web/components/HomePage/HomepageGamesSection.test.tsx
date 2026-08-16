@@ -253,6 +253,11 @@ describe("HomepageGamesSection", () => {
     expect(
       screen.getByRole("heading", { name: /opening night countdown/i }),
     ).toBeTruthy();
+    expect(
+      screen
+        .getByRole("region", { name: /today's games/i })
+        .getAttribute("data-opening-night"),
+    ).toBe("true");
     expect(screen.getByText("2026-27 season")).toBeTruthy();
     expect(screen.getByText(/The season opens on/i)).toBeTruthy();
     expect(screen.getByText(/Sep 29, 2026/)).toBeTruthy();
@@ -463,6 +468,11 @@ describe("HomepageGamesSection", () => {
     expect(screen.getByText(/No games scheduled for 10\/12\/2026/i)).toBeTruthy();
     expect(screen.queryByText(/opening night countdown/i)).toBeNull();
     expect(screen.queryByText(/Western Conference/i)).toBeNull();
+    expect(
+      screen
+        .getByRole("region", { name: /upcoming games/i })
+        .hasAttribute("data-opening-night"),
+    ).toBe(false);
   });
 
   it.each([

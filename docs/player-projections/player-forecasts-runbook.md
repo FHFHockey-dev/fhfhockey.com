@@ -83,6 +83,16 @@ The web and functions processes must use the same inference secret. Keep all loc
 
    ```bash
    cd web
+   npm run dev:player-forecasts
+   ```
+
+   The launcher fails closed unless the Supabase CLI reports a localhost API,
+   derives the local anonymous/service/database credentials in memory, and
+   starts Next.js at `http://localhost:3101`. When no editor allowlist is
+   supplied, it enables editing only if the local database contains exactly one
+   admin profile. The equivalent manual command is:
+
+   ```bash
    pf_status_json="$(npm run --silent supabase:safe -- status -o json)"
    pf_local_api="$(jq -r '.API_URL' <<<"$pf_status_json")"
    pf_local_anon="$(jq -r '.ANON_KEY' <<<"$pf_status_json")"
@@ -440,6 +450,259 @@ PLAYER_FORECAST_PROSPECTIVE_CONFIRM=2026-27-fixed-artifact-once \
 The command rejects a non-2026–27 freeze, a changed artifact, an invalid primary
 receipt, an overlapping historical lockbox range, or an existing output. It
 always records `tuningPermitted=false` and does not itself authorize promotion.
+
+## 2026–27 season projection workflow
+
+The season platform is a permanent raw-hockey projection system, not a one-off
+test. Python trains and generates complete releases locally. The existing web
+application verifies the portable artifact, serves published releases, and
+provides the sole-editor workflow. All season records use the
+`player-forecasts-research-v3-season` contract and checksum
+`29c6766f63ba9a8dbf8890cb6a388418945134b70217d58e9d8645b34dc36b93`.
+
+Configure the owner allowlist without printing the UUID:
+
+```text
+PLAYER_FORECAST_EDITOR_USER_IDS=<one owner UUID>
+PLAYER_FORECAST_SEASON_INFERENCE_ENABLED=false
+```
+
+Production rejects zero or multiple editor UUIDs. Cron authorization never
+satisfies the season-editor middleware.
+
+Run the reproducible local pipeline from the repository root. Output paths must
+remain outside the repository:
+
+```bash
+PLAYER_FORECAST_DATABASE_URL="$pf_readonly_database_url" \
+  .venv/bin/python -m modeling.player_forecasts season-audit \
+  --output /private/tmp/fhfh-season-audit-v3.json
+
+PLAYER_FORECAST_DATABASE_URL="$pf_readonly_database_url" \
+  .venv/bin/python -m modeling.player_forecasts season-freeze \
+  --history-season 20232024 --history-season 20242025 \
+  --history-season 20252026 --history-season 20262027 \
+  --output /private/tmp/fhfh-season-freeze-v3
+
+pf_season_freeze=/private/tmp/fhfh-season-freeze-v3
+
+# When the local proof database does not contain the sealed historical tables,
+# refresh only current identity/official state from local Supabase and inherit
+# checksum-verified historical files from an existing immutable freeze:
+PLAYER_FORECAST_DATABASE_URL="$pf_local_database_url" \
+  .venv/bin/python -m modeling.player_forecasts season-freeze \
+  --base-freeze /private/tmp/fhfh-season-freeze-v3 \
+  --output /private/tmp/fhfh-season-freeze-v3-refreshed
+
+# Use this refreshed freeze for the remaining commands in that workflow.
+pf_season_freeze=/private/tmp/fhfh-season-freeze-v3-refreshed
+
+jq '{sourceCounts, unresolvedRows, invalidIdentityRows,
+  resolvedBoxScoreDisagreements, predictiveFeatureUse}' \
+  "$pf_season_freeze/assist-label-audit.json"
+jq '.publicationBlockers' "$pf_season_freeze/manifest.json"
+
+.venv/bin/python -m modeling.player_forecasts season-train \
+  --freeze "$pf_season_freeze" \
+  --output /private/tmp/fhfh-season-artifact-v3
+
+.venv/bin/python -m modeling.player_forecasts season-project \
+  --freeze "$pf_season_freeze" \
+  --artifact /private/tmp/fhfh-season-artifact-v3/season-artifact.json \
+  --output /private/tmp/fhfh-season-opening-v3 \
+  --view opening --cutoff 2026-09-29T20:59:59Z
+
+.venv/bin/python -m modeling.player_forecasts season-verify \
+  --bundle /private/tmp/fhfh-season-opening-v3
+
+.venv/bin/python -m modeling.player_forecasts season-project \
+  --freeze "$pf_season_freeze" \
+  --artifact /private/tmp/fhfh-season-artifact-v3/season-artifact.json \
+  --output /private/tmp/fhfh-season-current-v3 \
+  --view current --cutoff 2026-08-13T10:00:00Z
+
+.venv/bin/python -m modeling.player_forecasts season-project \
+  --freeze "$pf_season_freeze" \
+  --artifact /private/tmp/fhfh-season-artifact-v3/season-artifact.json \
+  --output /private/tmp/fhfh-season-ros-v3 \
+  --view ros --cutoff 2026-08-13T10:00:00Z
+
+.venv/bin/python -m modeling.player_forecasts season-verify \
+  --bundle /private/tmp/fhfh-season-current-v3
+
+.venv/bin/python -m modeling.player_forecasts season-verify \
+  --bundle /private/tmp/fhfh-season-ros-v3
+```
+
+`opening` contains all scheduled games after the cutoff. `ros` contains every
+remaining game after its cutoff. `current` adds cutoff-safe season actuals to
+the remaining-game distributions. None of these paths scales H1 by 84 or uses
+an H1–H10 subtotal as ROS. Historical participation is normalized to the
+82-game schedule used in 2023–24 through 2025–26; projection aggregation and
+GP/start interval caps use the 84 scheduled opportunities in 2026–27 (and the
+actual smaller remaining-game count after games are completed).
+
+Import a verified release into local Supabase only:
+
+```bash
+cd web
+pf_status_json="$(npm run --silent supabase:safe -- status -o json)"
+
+NEXT_PUBLIC_SUPABASE_URL="$(jq -r '.API_URL' <<<"$pf_status_json")" \
+NEXT_PUBLIC_SUPABASE_PUBLIC_KEY="$(jq -r '.ANON_KEY' <<<"$pf_status_json")" \
+SUPABASE_SERVICE_ROLE_KEY="$(jq -r '.SERVICE_ROLE_KEY' <<<"$pf_status_json")" \
+PLAYER_FORECAST_DATABASE_URL="$(jq -r '.DB_URL' <<<"$pf_status_json")" \
+PLAYER_FORECAST_SEASON_IMPORT_CONFIRM=local-only \
+PLAYER_FORECAST_PYTHON="$PWD/../.venv/bin/python" \
+  npm run import:player-forecast-season -- \
+  --bundle=/private/tmp/fhfh-season-opening-v3
+```
+
+The importer independently verifies every checksum and row count, invokes the
+Python bundle verifier, seeds only the local reference rows needed for the
+proof, uploads the artifact to its private checksum path, and imports in
+bounded conflict-safe chunks. Re-running a complete bundle returns the existing
+run; re-running an interrupted draft resumes missing chunks and reports success
+only after all three exact row counts match the manifest.
+
+After importing regenerated `current` and `ros` bundles, reconcile due local
+queue jobs only when a newer imported run covers each job's source watermark
+and requested player/team scope:
+
+```bash
+eval "$(npm run --silent supabase:safe -- status -o env 2>/dev/null)"
+
+NEXT_PUBLIC_SUPABASE_URL="$API_URL" \
+NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY" \
+SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+PLAYER_FORECAST_SEASON_IMPORT_CONFIRM=local-only \
+  npm run reconcile:player-forecast-season-local-queue
+```
+
+The local-only command claims and finishes jobs through the lease RPCs. It
+never deletes or blindly clears queue rows. Missing run, watermark, or scope
+coverage leaves the job failed and publication blocked.
+
+Validate and publish a local run with the same sole-editor allowlist and admin
+role checks as the web route:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL="$API_URL" \
+NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY" \
+SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+PLAYER_FORECAST_EDITOR_USER_IDS="$pf_editor_user_id" \
+PLAYER_FORECAST_SEASON_IMPORT_CONFIRM=local-only \
+  npm run publish:player-forecast-season-local -- \
+  --run-id="$pf_run_id" \
+  --label="2026–27 beta current v1" \
+  --reason="Local checksum-verified projection release."
+```
+
+Run this once for each intended opening/current/ROS run. The script is
+idempotent for an already-published run and fails unless validation reports no
+schedule, roster, identity, component-manifest, arithmetic, or queue issues.
+
+### Latest local acceptance evidence
+
+The final August 14, 2026 identity-resolved replay produced artifact checksum
+`11f21dfafd3a46c55b7ac8d8dbe588b0077eb43423423980d4c90a8391bbce53`.
+It contains 1,090 players and 32 roster-adjusted team contexts. Its frozen
+141,488 skater-game rows have zero unresolved or invalid assist labels; 98,612
+use frozen WGO settled labels, 42,688 complete normalized play-by-play, 27
+official-boxscore zero evidence, and 161 final Gamecenter resolutions. The
+reconciliation detected 149 source conflicts, checked 203 rows against final
+Gamecenter payloads, corrected 161, retained 42 official-supported
+selected-label/box-score disagreements, and left zero unresolved. Opening,
+current, and ROS each verified with 91,560 player-game components, 1,090 player
+aggregates, and 32 team aggregates. All eight previously unresolved official
+roster identities are mapped, player-pool review is empty, all 16 identity
+resolution queue jobs are succeeded, and no dirty job remains. Each view passed
+publication validation with 1,344 schedule games and zero issues, then became
+local beta release number 4 while releases 1 through 3 remained immutable
+rollback targets. The public local API returned the active current v4 release; Nathan
+MacKinnon was 132.79 points in 81.94 expected games, and every player's GP/start
+p90 was at most 84. No hosted Cron job, hosted migration, Vercel deployment, or
+blind-test claim was created.
+
+Raw WGO game-log metadata is not an eligible join key. In the source audit,
+347,791 of 441,274 `wgo_skater_stats` rows lacked `game_id`, and 253,362 rows
+tagged as 2024–25 fell outside that official season window. The freeze ignores
+WGO `game_id` and `season_id`, joins player plus game date to a unique official
+NHL game, and derives the season from that official game. The required settled
+outcome columns themselves passed completeness, identity, nonnegative-value,
+and duplicate-key checks.
+
+After normalized Gamecenter results are captured, build and verify a cutoff-safe
+settlement bundle. The command includes only final games whose immutable source
+capture was available by the supplied cutoff. A zero-game outcome is derived
+from complete-boxscore absence only for a player who had an issued forecast:
+
+```bash
+.venv/bin/python -m modeling.player_forecasts season-settle \
+  --freeze /private/tmp/fhfh-season-freeze-v3 \
+  --output /private/tmp/fhfh-season-settlement-v3 \
+  --cutoff 2026-10-09T10:00:00Z
+
+.venv/bin/python -m modeling.player_forecasts season-settlement-verify \
+  --bundle /private/tmp/fhfh-season-settlement-v3
+
+cd web
+pf_status_json="$(npm run --silent supabase:safe -- status -o json)"
+
+NEXT_PUBLIC_SUPABASE_URL="$(jq -r '.API_URL' <<<"$pf_status_json")" \
+NEXT_PUBLIC_SUPABASE_PUBLIC_KEY="$(jq -r '.ANON_KEY' <<<"$pf_status_json")" \
+SUPABASE_SERVICE_ROLE_KEY="$(jq -r '.SERVICE_ROLE_KEY' <<<"$pf_status_json")" \
+PLAYER_FORECAST_SEASON_SETTLEMENT_IMPORT_CONFIRM=local-only \
+PLAYER_FORECAST_PYTHON=.venv/bin/python \
+  npm run import:player-forecast-season-settlement -- \
+  --bundle=/private/tmp/fhfh-season-settlement-v3
+```
+
+The importer appends outcome revisions, compares every published release's
+model and editorial values independently, and records raw point, probability,
+and interval losses beside the versioned baseline-relative skill index.
+Corrections within 48 hours append revisions; earlier records are immutable.
+
+Inspect operations at:
+
+- `/api/v1/player-forecasts/season-readiness`
+- `/api/v1/player-forecasts/jobs/season-drain?dryRun=true`
+- `/api/v1/player-forecasts/jobs/season-settlement?dryRun=true`
+- `/api/v1/player-forecasts/jobs/season-daily?dryRun=true`
+- `/db/player-forecast-season-editor`
+- `/fantasy-projections`
+
+The editor maps or explicitly excludes every unresolved official-roster
+identity, then creates overrides, validates the draft, and manually publishes
+the opening release. Public APIs and `/fantasy-projections` remain empty until
+an immutable release becomes the active pointer. Eight unresolved identities
+were present in the August 12 freeze and were resolved in the August 13 replay;
+future unresolved identities remain hard publication blockers.
+
+Use **Resolve identity** to search canonical names, verified aliases, and
+external IDs with fuzzy matching. An existing match may be selected only when
+its NHL ID is empty or equals the official-review NHL ID; a different attached
+NHL ID is surfaced as a conflict and cannot be mapped directly. When no safe
+match exists, choose the lifecycle and use **Create verified identity & map**.
+The server re-fetches the official NHL player landing record, rejects missing
+or mismatched required fields, and atomically creates or updates the stable
+identity, records the NHL mapping, supersedes the review, and enqueues current
+and ROS reruns. Never paste the displayed NHL API ID into an FHFH-ID field.
+
+Role-probability overrides replace one complete family and use JSON such as
+`{"F1":0.7,"other":0.3}`; every value must be within `[0,1]` and the family
+must sum to one. Team line, pair, special-team, and goalie-order overrides use
+bounded JSON arrays of FHFH player IDs. Derived statistics remain read-only,
+and direct primitive-stat edits remain separate from the untouched model mean.
+
+Supabase Cron is intentionally absent after migration replay. After a capacity
+audit and explicit hosted-activation approval, register it with
+`select fhfh_internal.register_player_forecast_season_cron(true);`. This uses
+`cron.schedule`; do not write `cron.job` directly. Keep `true` until a separate
+non-dry-run activation is approved.
+
+Rollback is an atomic pointer change in the editor. It never deletes releases,
+artifacts, model values, overrides, or release events.
 
 ## Optional hosted activation checklist
 

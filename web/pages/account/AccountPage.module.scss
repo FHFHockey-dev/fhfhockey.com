@@ -1,0 +1,73 @@
+@use "styles/vars" as v;
+@use "styles/_panel" as panel;
+
+.routeState {
+  @include panel.panel-shell(
+    $radius: v.$radius-panel,
+    $padding: v.$space-lg,
+    $variant: flat
+  );
+  display: grid;
+  justify-items: center;
+  gap: v.$space-sm;
+  width: min(calc(100% - (2 * v.$space-lg)), 560px);
+  margin: v.$space-xl auto;
+  color: v.$text-primary;
+  font-family: v.$font-family-primary;
+  text-align: center;
+
+  h1,
+  p {
+    margin: 0;
+  }
+
+  h1 {
+    color: v.$color-white;
+    font-family: v.$font-family-accent;
+    font-size: v.$font-size-xl;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+}
+
+.authActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: v.$space-sm;
+  margin-top: v.$space-sm;
+}
+
+.primaryLink,
+.secondaryLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: v.$control-height-md;
+  padding-inline: v.$space-md;
+  border-radius: v.$radius-control;
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-bold;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-decoration: none;
+  text-transform: uppercase;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
+}
+
+.primaryLink {
+  border: 2px solid v.$primary-color;
+  background: rgba(v.$primary-color, v.$fill-opacity);
+  color: v.$color-white;
+}
+
+.secondaryLink {
+  border: v.$border-subtle;
+  background: v.$background-dark;
+  color: v.$text-primary;
+}

@@ -5,6 +5,8 @@ import {
   mergeYahooLeagueTeams,
   selectLatestYahooGames,
   selectYahooGamesForCanonicalSeason,
+  yahooDraftDiscoveryMetadata,
+  yahooTeamDraftPosition,
 } from "./discovery";
 import {
   extractYahooPlayerKeyPage,
@@ -105,6 +107,29 @@ describe("Yahoo discovery helpers", () => {
         standings: { rank: 1 },
       }),
     ]);
+  });
+
+  it("retains safe Yahoo draft discovery fields", () => {
+    expect(
+      yahooDraftDiscoveryMetadata(
+        { draft_status: "predraft" },
+        {
+          draft_type: "live",
+          is_auction_draft: "0",
+          draft_time: "1789000000",
+          settings: { pick_time: "45", is_snake_draft: "1" },
+        },
+      ),
+    ).toEqual({
+      draft_status: "predraft",
+      draft_type: "live",
+      is_auction_draft: "0",
+      draft_time: "1789000000",
+      pick_time: "45",
+      draft_order_type: "1",
+    });
+    expect(yahooTeamDraftPosition({ draft_position: "7" })).toBe(7);
+    expect(yahooTeamDraftPosition({ draft_position: "0" })).toBeNull();
   });
 
   it("selects the newest canonical game deterministically", () => {

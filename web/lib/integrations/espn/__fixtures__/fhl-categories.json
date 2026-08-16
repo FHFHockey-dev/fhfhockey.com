@@ -1,0 +1,17 @@
+{
+  "settings": {
+    "name": "Redacted Categories League",
+    "size": 2,
+    "scoringSettings": {
+      "scoringType": "H2H_MOST_CATEGORIES",
+      "scoringItems": [
+        { "statId": 13, "isReverseItem": false },
+        { "statId": 31, "isReverseItem": true },
+        { "statId": 10, "isReverseItem": true },
+        { "statId": 11, "isReverseItem": false }
+      ]
+    },
+    "rosterSettings": { "lineupSlotCounts": { "3": 3, "4": 2, "5": 1, "6": 1, "7": 2 } },
+    "draftSettings": { "type": "LINEAR", "pickOrder": [1, 2] }
+  }
+}

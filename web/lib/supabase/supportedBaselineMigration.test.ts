@@ -19,6 +19,22 @@ const archiveRoot = path.join(
 const readMigration = (name: string) =>
   readFileSync(path.join(migrationRoot, name), "utf8");
 
+const supportedPostFreezeMigrations = [
+  "20260802163747_add_player_forecast_foundation.sql",
+  "20260804160500_reduce_player_forecast_queue_polling.sql",
+  "20260805001038_add_player_forecast_rest_of_season_outputs.sql",
+  "20260805002036_add_player_forecast_runtime_feature_rpc.sql",
+  "20260805003121_add_player_forecast_runtime_context_rates.sql",
+  "20260813001304_player_forecast_season_v3.sql",
+  "20260813015112_yahoo_live_draft_companion.sql",
+  "20260813144701_player_forecast_season_identity_resolution.sql",
+  "20260813235143_player_forecast_season_wgo_label_contract.sql",
+  "20260814004505_player_forecast_season_settled_label_reconciliation.sql",
+  "20260814020808_harden_wgo_game_identity.sql",
+  "20260814192101_fantrax_settings_first.sql",
+  "20260815023132_espn_fantasy_private_beta.sql",
+] as const;
+
 describe("supported Supabase schema-baseline reconciliation", () => {
   it("keeps only the reviewed baseline and supported post-baseline deltas active", () => {
     expect(
@@ -54,6 +70,7 @@ describe("supported Supabase schema-baseline reconciliation", () => {
       "20260731035012_restrict_admin_metadata_views.sql",
       "20260731040341_privatize_unified_materialized_views.sql",
       "20260801195126_drop_legacy_public_rpcs_after_zero_use.sql",
+      ...supportedPostFreezeMigrations,
     ]);
 
     expect(
@@ -650,7 +667,13 @@ describe("supported Supabase schema-baseline reconciliation", () => {
         .filter((name) => name.endsWith(".sql"))
         .sort()
         .filter((name) => !appliedProductionMigrations.has(name))
-        .filter((name) => !separatelyAuthorizedMigrations.has(name)),
+        .filter((name) => !separatelyAuthorizedMigrations.has(name))
+        .filter(
+          (name) =>
+            !supportedPostFreezeMigrations.includes(
+              name as (typeof supportedPostFreezeMigrations)[number],
+            ),
+        ),
     );
 
     for (const row of manifestRows) {

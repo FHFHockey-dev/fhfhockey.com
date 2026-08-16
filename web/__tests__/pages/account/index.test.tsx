@@ -43,10 +43,7 @@ describe("Account page", () => {
     expect(
       screen.getByText("You need to sign in before accessing account settings.")
     ).toBeTruthy();
-    expect(
-      screen.getByText("Protected settings are only available to authenticated accounts.")
-    ).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Open Sign In" }).getAttribute("href")).toBe(
+    expect(screen.getByRole("link", { name: "Sign In" }).getAttribute("href")).toBe(
       "/auth?mode=sign-in"
     );
     expect(screen.getByRole("link", { name: "Create Account" }).getAttribute("href")).toBe(
@@ -73,7 +70,9 @@ describe("Account page", () => {
 
     render(<AccountPage />);
 
-    expect(screen.getByText("Profile Overview")).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Profile Overview", level: 1 })
+    ).toBeTruthy();
     expect(screen.getAllByText("Tim Tester").length).toBeGreaterThan(0);
     expect(screen.queryByText("Signed-in account")).toBeNull();
   });

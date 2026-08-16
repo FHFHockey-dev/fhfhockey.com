@@ -1,0 +1,4 @@
+{
+  "messages": ["You are not authorized to view this league."],
+  "details": [{ "message": "Authentication credentials are missing or expired." }]
+}

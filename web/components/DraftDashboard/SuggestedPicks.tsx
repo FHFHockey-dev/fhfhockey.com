@@ -42,6 +42,7 @@ export interface SuggestedPicksProps {
   forwardGrouping?: ForwardGrouping;
   onComparePlayer?: (playerId: string) => void;
   compareSelectedIds?: string[];
+  personalRankByPlayerId?: Readonly<Record<string, number>>;
 }
 
 const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
@@ -61,15 +62,17 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   catNeeds,
   rosterProgress,
   onDraftPlayer,
-  canDraft,
+  canDraft = true,
   personalizeReplacement,
   onPersonalizeReplacementChange,
   forwardGrouping = "split",
   onComparePlayer,
-  compareSelectedIds = []
+  compareSelectedIds = [],
+  personalRankByPlayerId = {}
 }) => {
   // UI state
-  type SortField = "rank" | "projFp" | "vorp" | "vbd" | "adp" | "avail" | "fit";
+  type SortField = "rank" | "myRank" | "projFp" | "vorp" | "vbd" | "adp" | "avail" | "fit";
+  const hasPersonalRanks = Object.keys(personalRankByPlayerId).length > 0;
   const [sortField, setSortField] = useState<SortField>(() => {
     if (typeof window !== "undefined") {
       return (
@@ -216,7 +219,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         e.preventDefault();
         setSortDir((d) => (d === "asc" ? "desc" : "asc"));
       } else if (key === "d") {
-        if (selectedId && onDraftPlayer) {
+        if (canDraft && selectedId && onDraftPlayer) {
           e.preventDefault();
           onDraftPlayer(selectedId);
         }
@@ -228,7 +231,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [sortField, limit, selectedId, onDraftPlayer]);
+  }, [canDraft, sortField, limit, selectedId, onDraftPlayer]);
 
   // Compute recommendations
   const { recommendations } = usePlayerRecommendations({
@@ -419,6 +422,14 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
       switch (sortField) {
         case "rank":
           return mul * (a.score - b.score);
+        case "myRank": {
+          const aRank = personalRankByPlayerId[String(a.player.playerId)];
+          const bRank = personalRankByPlayerId[String(b.player.playerId)];
+          if (aRank == null && bRank == null) return 0;
+          if (aRank == null) return 1;
+          if (bRank == null) return -1;
+          return mul * (aRank - bRank);
+        }
         case "projFp":
           return mul * (aFp - bFp);
         case "vorp":
@@ -434,7 +445,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
       }
     });
     return arr;
-  }, [filtered, rosterVorpEnabled, sortField, sortDir]);
+  }, [filtered, personalRankByPlayerId, rosterVorpEnabled, sortField, sortDir]);
 
   const top = useMemo(
     () => sorted.slice(0, Math.max(1, limit)),
@@ -468,7 +479,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
       onSelectPlayer && onSelectPlayer(ids[prev]);
     } else if (e.key === "Enter" || e.key.toLowerCase() === "d") {
       // Draft selected player
-      if (selectedId && onDraftPlayer) {
+      if (canDraft && selectedId && onDraftPlayer) {
         e.preventDefault();
         onDraftPlayer(selectedId);
       }
@@ -541,6 +552,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
               aria-label="Sort suggested picks"
             >
               <option value="rank">Rank</option>
+              {hasPersonalRanks && <option value="myRank">My Rank</option>}
               <option value="vorp">VORP</option>
               <option value="vbd">VBD</option>
               <option value="projFp">Proj FP</option>
@@ -640,6 +652,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                 typeof r.availability === "number" ? r.availability : undefined;
               const selected = selectedId === id;
               const compareSelected = compareSelectedIds.includes(id);
+              const personalRank = personalRankByPlayerId[id];
               return (
                 <article
                   key={id}
@@ -660,6 +673,14 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                     </div>
                   </div>
                   <div className={styles.statsRow}>
+                    {hasPersonalRanks && (
+                      <div className={styles.stat}>
+                        <div className={styles.statLabel}>My Rank</div>
+                        <div className={styles.statValue}>
+                          {personalRank ?? "—"}
+                        </div>
+                      </div>
+                    )}
                     <div className={styles.stat}>
                       <div className={styles.statLabel}>Proj FP</div>
                       <div className={styles.statValue}>
@@ -722,6 +743,12 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                             e.stopPropagation();
                             onDraftPlayer && onDraftPlayer(id);
                           }}
+                          disabled={!canDraft}
+                          title={
+                            canDraft
+                              ? "Draft this player"
+                              : "Manual drafting is locked while Yahoo sync is authoritative"
+                          }
                           aria-label={`Draft ${name}`}
                         >
                           Draft

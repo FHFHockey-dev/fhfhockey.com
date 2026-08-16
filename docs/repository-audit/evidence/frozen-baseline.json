@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "repository_relative_root": ".",
+  "branch": "octoberBranch",
+  "head": "36536c3f1cbf065c34dc0ee5eceec2094e17d858",
+  "status_porcelain_v2": [
+    "# branch.oid 36536c3f1cbf065c34dc0ee5eceec2094e17d858",
+    "# branch.head octoberBranch",
+    "# branch.upstream origin/octoberBranch",
+    "# branch.ab +0 -0",
+    "1 .M N... 100644 100644 100644 52369e64371f0d92e3c42f9625f468281ab6181c 52369e64371f0d92e3c42f9625f468281ab6181c web/components/HomePage/HomepageGamesSection.test.tsx",
+    "1 .M N... 100644 100644 100644 50a8b0880d31fa58b3950c33eda1c0ab83d29efa 50a8b0880d31fa58b3950c33eda1c0ab83d29efa web/components/HomePage/HomepageGamesSection.tsx",
+    "1 .M N... 100644 100644 100644 b37e883df3d501fc44c1b03db900e06606c88e4e b37e883df3d501fc44c1b03db900e06606c88e4e web/styles/Home.module.scss"
+  ],
+  "staged_name_status": [],
+  "unstaged_name_status": [
+    "M\tweb/components/HomePage/HomepageGamesSection.test.tsx",
+    "M\tweb/components/HomePage/HomepageGamesSection.tsx",
+    "M\tweb/styles/Home.module.scss"
+  ],
+  "combined_name_status": [
+    "M\tweb/components/HomePage/HomepageGamesSection.test.tsx",
+    "M\tweb/components/HomePage/HomepageGamesSection.tsx",
+    "M\tweb/styles/Home.module.scss"
+  ],
+  "diff_sha256": "b1ca9c5b8737a65d92fc4501c1cafecb8dc098bb20611d6a54c1d582e6d913ec",
+  "diff_stat": [
+    " .../HomePage/HomepageGamesSection.test.tsx         |  10 ++",
+    " web/components/HomePage/HomepageGamesSection.tsx   |   1 +",
+    " web/styles/Home.module.scss                        | 142 ++++++++++++++++++++-",
+    " 3 files changed, 151 insertions(+), 2 deletions(-)"
+  ],
+  "changed_files": [
+    {
+      "path": "web/components/HomePage/HomepageGamesSection.test.tsx",
+      "worktree_sha256": "b20c43bce3550138787d865b552ca75ba38235c9390035a0dfc738b4ec564734",
+      "mode": "0644"
+    },
+    {
+      "path": "web/components/HomePage/HomepageGamesSection.tsx",
+      "worktree_sha256": "871e437bcbb73aa72a170b49a360fd42d7267ea5ff90aa54f8fc025265dfe6f1",
+      "mode": "0644"
+    },
+    {
+      "path": "web/styles/Home.module.scss",
+      "worktree_sha256": "2fd4e402ef0f91aea0b5bb4bf75c0a52cdf9903cb8baad0b5f2da28ff366975c",
+      "mode": "0644"
+    }
+  ],
+  "file_count": 3580,
+  "manifest_sha256": "2634689a5aa2a130be38c50975ea52d038ba85321591ca24981ec3ecf771b56f",
+  "snapshot_source_root": "/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfhockey-audit-03m5dyb9/source",
+  "runtime_support_root": "/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfhockey-audit-03m5dyb9/runtime-support"
+}

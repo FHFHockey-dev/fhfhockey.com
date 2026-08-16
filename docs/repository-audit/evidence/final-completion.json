@@ -1,0 +1,23 @@
+{
+  "audit_run_id": "REPO-AUDIT-2026-08-09-FROZEN-36536C3",
+  "counts": {
+    "audit_generated_files": 77,
+    "canonical_findings": 30,
+    "cleanup_records": 626,
+    "dependency_edges": 14602,
+    "endpoints": 266,
+    "frozen_files": 3580,
+    "inventory_records": 12772,
+    "live_drift_records": 0,
+    "no_justified_change": 5,
+    "responsive_records": 216,
+    "routes": 338,
+    "ui_routes": 72,
+    "validation_receipts": 15
+  },
+  "created_at": "2026-08-09T19:19:56Z",
+  "errors": [],
+  "record_type": "final_completion_validation",
+  "result": "passed",
+  "schema_version": 1
+}
